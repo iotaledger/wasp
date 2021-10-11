@@ -23,9 +23,9 @@ func Test2Chains(t *testing.T) {
 		user := wasmsolo.NewSoloAgent(chain1.Env)
 		require.EqualValues(t, solo.Saldo, user.Balance())
 
-		ctx1 := setupTestForChain(t, w, chain1, nil)
+		ctx1 := deployTestCoreOnChain(t, w, chain1, nil)
 		require.NoError(t, ctx1.Err)
-		ctx2 := setupTestForChain(t, w, chain2, nil)
+		ctx2 := deployTestCoreOnChain(t, w, chain2, nil)
 		require.NoError(t, ctx2.Err)
 
 		require.EqualValues(t, 0, ctx1.Balance(user))

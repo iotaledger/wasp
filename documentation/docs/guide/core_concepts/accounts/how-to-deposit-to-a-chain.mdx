@@ -21,24 +21,45 @@ The `deposit` entrypoint credits the transferred IOTAS into your on-chain accoun
     defaultValue="solo"
     values={[
         {label: 'Solo', value: 'solo'},
-        {label: 'Rust (ISCP)', value: 'rust'},
+        {label: 'Solo (Schema)', value: 'soloctx'},
+        {label: 'Rust (Schema)', value: 'rust'},
+        {label: 'Go (Schema)', value: 'go'},
     ]}>
 <TabItem value="solo">
 
 ```go
-_, err := chain.PostRequestSync(
-	solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(N),
-	wallet,
-)
+// deposits N iotas from wallet into chain
+req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
+_, err := chain.PostRequestSync(req.WithIotas(N), wallet)
+require.NoError(t, err)
+```
+
+</TabItem>
+<TabItem value="soloctx">
+
+```go
+// deposits N iotas from wallet into chain *chainID*
+d := coreaccounts.ScFuncs.Deposit(ctx.Sign(wallet))
+d.Func.TransferIotas(N).PostToChain(chainID)
+require.NoError(t, ctx.Err)
 ```
 
 </TabItem>
 <TabItem value="rust">
 
 ```rust
-// deposits N iotas from current SC into another chain
-let transfer = ScTransfers::iotas(N);
-ctx.post(chainID, ScHname::new("accounts"), ScHname::new("deposit") , None, transfer,0);
+// deposits N iotas from current SC into chain *chainID*
+let d = coreaccounts::ScFuncs::deposit(ctx);
+d.func.transfer_iotas(N).post_to_chain(chainID);
+```
+
+</TabItem>
+<TabItem value="go">
+
+```go
+// deposits N iotas from current SC into chain *chainID*
+d := coreaccounts.ScFuncs.Deposit(ctx)
+d.Func.TransferIotas(N).PostToChain(chainID)
 ```
 
 </TabItem>

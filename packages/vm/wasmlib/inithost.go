@@ -35,6 +35,10 @@ func (h InitHost) CallFunc(objID, keyID int32, params []byte) []byte {
 }
 
 func (h InitHost) Exists(objID, keyID, typeID int32) bool {
+	if objID == int32(KeyParams) {
+		_, exists := h.params[keyID]
+		return exists
+	}
 	Panic("InitHost::Exists")
 	return false
 }
@@ -42,6 +46,9 @@ func (h InitHost) Exists(objID, keyID, typeID int32) bool {
 func (h InitHost) GetBytes(objID, keyID, typeID int32) []byte {
 	if objID == int32(KeyMaps) && keyID == int32(KeyLength) {
 		return nil
+	}
+	if objID == int32(KeyParams) {
+		return h.params[keyID]
 	}
 	Panic("InitHost::GetBytes")
 	return nil
@@ -69,6 +76,9 @@ func (h InitHost) GetObjectID(objID, keyID, typeID int32) int32 {
 }
 
 func (h InitHost) SetBytes(objID, keyID, typeID int32, value []byte) {
+	if objID == 1 && keyID == int32(KeyPanic) {
+		panic(string(value))
+	}
 	if objID == int32(KeyParams) {
 		h.params[keyID] = value
 		return

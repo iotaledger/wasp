@@ -9,7 +9,7 @@ import (
 
 func TestChainOwnerIDView(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestChainOwnerIDView(ctx)
 		f.Func.Call()
@@ -20,7 +20,7 @@ func TestChainOwnerIDView(t *testing.T) {
 
 func TestChainOwnerIDFull(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestChainOwnerIDFull(ctx)
 		f.Func.TransferIotas(1).Post()
@@ -31,7 +31,7 @@ func TestChainOwnerIDFull(t *testing.T) {
 
 func TestSandboxCall(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestSandboxCall(ctx)
 		f.Func.Call()

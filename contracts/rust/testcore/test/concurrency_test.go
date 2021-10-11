@@ -1,10 +1,12 @@
 package test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/wasp/contracts/rust/testcore"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
@@ -12,7 +14,7 @@ import (
 
 func TestCounter(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.IncCounter(ctx)
 		f.Func.TransferIotas(1)
@@ -30,7 +32,7 @@ func TestCounter(t *testing.T) {
 
 func TestSynchronous(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.IncCounter(ctx)
 		f.Func.TransferIotas(1)
@@ -66,7 +68,7 @@ func TestSynchronous(t *testing.T) {
 
 func TestConcurrency(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		// note that because SoloContext is not thread-safe we cannot use
 		// the following in parallel go-routines
@@ -106,7 +108,7 @@ func TestConcurrency(t *testing.T) {
 
 func TestConcurrency2(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		// note that because SoloContext is not thread-safe we cannot use
 		// the following in parallel go-routines
@@ -150,5 +152,42 @@ func TestConcurrency2(t *testing.T) {
 		require.EqualValues(t, sum, ctx.Balance(ctx.Account()))
 		require.EqualValues(t, sum, ctx.Balance(ctx.Account()))
 		chainAccountBalances(ctx, w, 2, uint64(2+sum))
+	})
+}
+
+func TestViewConcurrency(t *testing.T) {
+	run2(t, func(t *testing.T, w bool) {
+		ctx := deployTestCore(t, false)
+
+		f := testcore.ScFuncs.IncCounter(ctx)
+		f.Func.TransferIotas(1).Post()
+
+		const times = 2000
+		channels := make(chan error, times)
+		chain := ctx.Chain
+		for i := 0; i < times; i++ {
+			go func() {
+				res, err := chain.CallView(testcore.ScName, testcore.ViewGetCounter)
+				if err != nil {
+					channels <- err
+					return
+				}
+				v, err := codec.DecodeInt64(res.MustGet("counter"))
+				if err == nil && v != 1 {
+					err = errors.New("v != 1")
+				}
+				channels <- err
+			}()
+		}
+
+		for i := 0; i < times; i++ {
+			err := <-channels
+			require.NoError(t, err)
+		}
+
+		v := testcore.ScFuncs.GetCounter(ctx)
+		v.Func.Call()
+		require.NoError(t, ctx.Err)
+		require.EqualValues(t, 1, v.Results.Counter().Value())
 	})
 }

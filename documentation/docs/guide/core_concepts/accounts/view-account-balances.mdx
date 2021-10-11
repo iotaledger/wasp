@@ -35,23 +35,46 @@ examples:
     defaultValue="solo"
     values={[
         {label: 'Solo', value: 'solo'},
-        {label: 'Rust (ISCP)', value: 'rust'},
+        {label: 'Solo (Schema)', value: 'soloctx'},
+        {label: 'Rust (Schema)', value: 'rust'},
+        {label: 'Go (Schema)', value: 'go'},
     ]}>
 <TabItem value="solo">
 
 ```go
 balances := chain.GetAccountBalance(agentID)
+// require.NoError(t, ctx.Err) // happens in GetAccountBalance() wrapper function
+```
+
+</TabItem>
+<TabItem value="soloctx">
+
+```go
+b := coreaccounts.ScFuncs.Balance(ctx)
+b.Params.AgentID().SetValue(agentID)
+b.Func.Call()
+require.NoError(t, ctx.Err)
+balances := b.Results.Balances()
 ```
 
 </TabItem>
 <TabItem value="rust">
 
 ```rust
-// TODO does this work?
-let parms = ScMutableMap::new();
-parms.get_int64("a").set_value(AGENT_ID)
-let ret = ctx.call(ScHname::new("accounts"), ScHname::new("balance"), Some(params), None);
-let balances = ret.get_map(&KEY_BALANCES).immutable()
+let b = coreaccounts::ScFuncs::balance(ctx);
+b.params.agent_id().set_value(&agentID);
+b.func.call();
+let balances = b.results.balances();
+```
+
+</TabItem>
+<TabItem value="go">
+
+```go
+b := coreaccounts.ScFuncs.Balance(ctx)
+b.Params.AgentID().SetValue(agentID)
+b.Func.Call()
+balances := b.Results.Balances()
 ```
 
 </TabItem>
@@ -71,7 +94,9 @@ returns:
     defaultValue="solo"
     values={[
         {label: 'Solo', value: 'solo'},
-        {label: 'Rust (ISCP)', value: 'rust'},
+        {label: 'Solo (Schema)', value: 'soloctx'},
+        {label: 'Rust (Schema)', value: 'rust'},
+        {label: 'Go (Schema)', value: 'go'},
     ]}>
 <TabItem value="solo">
 
@@ -80,11 +105,31 @@ balances:= chain.GetTotalAssets()
 ```
 
 </TabItem>
+<TabItem value="soloctx">
+
+```go
+b := coreaccounts.ScFuncs.TotalAssets(ctx)
+b.Func.Call()
+require.NoError(t, ctx.Err)
+balances := b.Results.Balances()
+```
+
+</TabItem>
 <TabItem value="rust">
 
 ```rust
-let ret = ctx.call(ScHname::new("accounts"), ScHname::new("totalAssets") , None);
-let balances = ret.get_map(&KEY_BALANCES).immutable()
+let b = coreaccounts::ScFuncs::total_assets(ctx);
+b.func.call();
+let balances = b.results.balances();
+```
+
+</TabItem>
+<TabItem value="go">
+
+```go
+b := coreaccounts.ScFuncs.TotalAssets(ctx)
+b.Func.Call()
+balances := b.Results.Balances()
 ```
 
 </TabItem>
@@ -104,7 +149,9 @@ returns:
     defaultValue="solo"
     values={[
         {label: 'Solo', value: 'solo'},
-        {label: 'Rust (ISCP)', value: 'rust'},
+        {label: 'Solo (Schema)', value: 'soloctx'},
+        {label: 'Rust (Schema)', value: 'rust'},
+        {label: 'Go (Schema)', value: 'go'},
     ]}>
 <TabItem value="solo">
 
@@ -113,12 +160,31 @@ accounts := chain.GetAccounts()
 ```
 
 </TabItem>
+<TabItem value="soloctx">
+
+```go
+a := coreaccounts.ScFuncs.Accounts(ctx)
+a.Func.Call()
+require.NoError(t, ctx.Err)
+accounts := a.Results.Agents()
+```
+
+</TabItem>
 <TabItem value="rust">
 
 ```rust
-// TODO does this work?
-let ret = ctx.call(ScHname::new("accounts"), ScHname::new("accounts") , None);
-let account = ret.get_agent_id_array(&KEY_PARAMS)
+let a = coreaccounts::ScFuncs::accounts(ctx);
+a.func.call();
+let accounts = a.results.agents();
+```
+
+</TabItem>
+<TabItem value="go">
+
+```go
+a := coreaccounts.ScFuncs.Accounts(ctx)
+a.Func.Call()
+accounts := a.Results.Agents()
 ```
 
 </TabItem>
@@ -142,7 +208,9 @@ returns:
     defaultValue="solo"
     values={[
         {label: 'Solo', value: 'solo'},
-        {label: 'Rust (ISCP)', value: 'rust'},
+        {label: 'Solo (Schema)', value: 'soloctx'},
+        {label: 'Rust (Schema)', value: 'rust'},
+        {label: 'Go (Schema)', value: 'go'},
     ]}>
 <TabItem value="solo">
 
@@ -155,14 +223,34 @@ nonce, _, err := codec.DecodeUint64(ret.MustGet(accounts.ParamAccountNonce)
 ```
 
 </TabItem>
+<TabItem value="soloctx">
+
+```go
+n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
+n.Params.AgentID().SetValue(agentID)
+n.Func.Call()
+require.NoError(t, ctx.Err)
+nonce := n.Results.AccountNonce().Value()
+```
+
+</TabItem>
 <TabItem value="rust">
 
 ```rust
-// TODO does this work?
-let parms = ScMutableMap::new();
-parms.get_int64("a").set_value(AGENT_ID)
-let ret = ctx.call(ScHname::new("accounts"), ScHname::new("getAccountNonce"), Some(params), None);
-let nonce = ret.get_int64("n")
+let n = coreaccounts::ScFuncs::get_account_nonce(ctx);
+n.params.agent_id().set_value(&agentID);
+n.func.call();
+let nonce = n.results.account_nonce().value();
+```
+
+</TabItem>
+<TabItem value="go">
+
+```go
+n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
+n.Params.AgentID().SetValue(agentID)
+n.Func.Call()
+nonce := n.Results.AccountNonce().Value()
 ```
 
 </TabItem>
