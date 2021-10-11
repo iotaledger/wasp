@@ -12,6 +12,7 @@ import (
 
 const (
 	ContractNameDeployed = "exampleDeployTR"
+	MsgCoreOnlyPanic     = "========== core only ========="
 	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="
 	MsgViewPanic         = "========== panic VIEW ========="
 )
@@ -73,9 +74,10 @@ func funcIncCounter(ctx wasmlib.ScFuncContext, f *IncCounterContext) {
 	counter.SetValue(counter.Value() + 1)
 }
 
-//nolint:unparam
 func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
-	ctx.Log("doing nothing...")
+	if f.Params.Fail().Exists() {
+		ctx.Panic("failing on purpose")
+	}
 }
 
 func funcPassTypesFull(ctx wasmlib.ScFuncContext, f *PassTypesFullContext) {
@@ -223,4 +225,30 @@ func viewTestSandboxCall(ctx wasmlib.ScViewContext, f *TestSandboxCallContext) {
 	getChainInfo := coregovernance.ScFuncs.GetChainInfo(ctx)
 	getChainInfo.Func.Call()
 	f.Results.SandboxCall().SetValue(getChainInfo.Results.Description().Value())
+}
+
+//nolint:unparam
+func funcTestBlockContext1(ctx wasmlib.ScFuncContext, f *TestBlockContext1Context) {
+	ctx.Panic(MsgCoreOnlyPanic)
+}
+
+//nolint:unparam
+func funcTestBlockContext2(ctx wasmlib.ScFuncContext, f *TestBlockContext2Context) {
+	ctx.Panic(MsgCoreOnlyPanic)
+}
+
+//nolint:unparam
+func viewGetStringValue(ctx wasmlib.ScViewContext, f *GetStringValueContext) {
+	ctx.Panic(MsgCoreOnlyPanic)
+}
+
+func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
+	spawnName := ScName + "_spawned"
+	spawnDescr := "spawned contract description"
+	ctx.Deploy(f.Params.ProgHash().Value(), spawnName, spawnDescr, nil)
+
+	spawnHname := wasmlib.NewScHname(spawnName)
+	for i := 0; i < 5; i++ {
+		ctx.Call(spawnHname, HFuncIncCounter, nil, nil)
+	}
 }

@@ -89,6 +89,22 @@ func (s MutableCheckContextFromFullEPParams) ContractCreator() wasmlib.ScMutable
 	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamContractCreator])
 }
 
+type ImmutableInitParams struct {
+	id int32
+}
+
+func (s ImmutableInitParams) Fail() wasmlib.ScImmutableInt64 {
+	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamFail])
+}
+
+type MutableInitParams struct {
+	id int32
+}
+
+func (s MutableInitParams) Fail() wasmlib.ScMutableInt64 {
+	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamFail])
+}
+
 type ImmutablePassTypesFullParams struct {
 	id int32
 }
@@ -241,6 +257,22 @@ func (s MutableSetIntParams) Name() wasmlib.ScMutableString {
 	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamName])
 }
 
+type ImmutableSpawnParams struct {
+	id int32
+}
+
+func (s ImmutableSpawnParams) ProgHash() wasmlib.ScImmutableHash {
+	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamProgHash])
+}
+
+type MutableSpawnParams struct {
+	id int32
+}
+
+func (s MutableSpawnParams) ProgHash() wasmlib.ScMutableHash {
+	return wasmlib.NewScMutableHash(s.id, idxMap[IdxParamProgHash])
+}
+
 type ImmutableTestEventLogGenericDataParams struct {
 	id int32
 }
@@ -343,6 +375,22 @@ type MutableGetIntParams struct {
 
 func (s MutableGetIntParams) Name() wasmlib.ScMutableString {
 	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamName])
+}
+
+type ImmutableGetStringValueParams struct {
+	id int32
+}
+
+func (s ImmutableGetStringValueParams) VarName() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamVarName])
+}
+
+type MutableGetStringValueParams struct {
+	id int32
+}
+
+func (s MutableGetStringValueParams) VarName() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamVarName])
 }
 
 type ImmutablePassTypesViewParams struct {

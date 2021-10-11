@@ -123,19 +123,19 @@ func (h *KvStoreHost) GetBytes(objID, keyID, typeID int32) []byte {
 	bytes := obj.GetBytes(keyID, typeID)
 	switch typeID {
 	case OBJTYPE_INT16:
-		val16, _, err := codec.DecodeInt16(bytes)
+		val16, err := codec.DecodeInt16(bytes, 0)
 		if err != nil {
 			panic("GetBytes: invalid int16")
 		}
 		h.Tracef("GetBytes o%d k%d = %ds", objID, keyID, val16)
 	case OBJTYPE_INT32:
-		val32, _, err := codec.DecodeInt32(bytes)
+		val32, err := codec.DecodeInt32(bytes, 0)
 		if err != nil {
 			panic("GetBytes: invalid int32")
 		}
 		h.Tracef("GetBytes o%d k%d = %di", objID, keyID, val32)
 	case OBJTYPE_INT64:
-		val64, _, err := codec.DecodeInt64(bytes)
+		val64, err := codec.DecodeInt64(bytes, 0)
 		if err != nil {
 			panic("GetBytes: invalid int64")
 		}
@@ -232,19 +232,19 @@ func (h *KvStoreHost) SetBytes(objID, keyID, typeID int32, bytes []byte) {
 	h.FindObject(objID).SetBytes(keyID, typeID, bytes)
 	switch typeID {
 	case OBJTYPE_INT16:
-		val16, _, err := codec.DecodeInt16(bytes)
+		val16, err := codec.DecodeInt16(bytes, 0)
 		if err != nil {
 			panic("SetBytes: invalid int16")
 		}
 		h.Tracef("SetBytes o%d k%d v=%ds", objID, keyID, val16)
 	case OBJTYPE_INT32:
-		val32, _, err := codec.DecodeInt32(bytes)
+		val32, err := codec.DecodeInt32(bytes, 0)
 		if err != nil {
 			panic("SetBytes: invalid int32")
 		}
 		h.Tracef("SetBytes o%d k%d v=%di", objID, keyID, val32)
 	case OBJTYPE_INT64:
-		val64, _, err := codec.DecodeInt64(bytes)
+		val64, err := codec.DecodeInt64(bytes, 0)
 		if err != nil {
 			panic("SetBytes: invalid int64")
 		}

@@ -15,12 +15,12 @@ func TestDoNothing(t *testing.T) { run2(t, testDoNothing) }
 func testDoNothing(t *testing.T, w bool) {
 	env, chain := setupChain(t, nil)
 	cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
-	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(42)
-	_, err := chain.PostRequestSync(req, nil)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
+	_, err := chain.PostRequestSync(req.WithIotas(42), nil)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(cAID, 43)
 	chain.AssertCommonAccountIotas(2 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-2-1-42-extraToken)
@@ -31,12 +31,12 @@ func testDoNothingUser(t *testing.T, w bool) {
 	env, chain := setupChain(t, nil)
 	cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
 	user, userAddr, userAgentID := setupDeployer(t, chain)
-	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(42)
-	_, err := chain.PostRequestSync(req, user)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
+	_, err := chain.PostRequestSync(req.WithIotas(42), user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 43)
 	env.AssertAddressIotas(userAddr, solo.Saldo-42)
@@ -51,12 +51,12 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 	t.Logf("contract agentID: %s", cAID)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(42)
-	_, err := chain.PostRequestSync(req, user)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
+	_, err := chain.PostRequestSync(req.WithIotas(42), user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 43)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -67,12 +67,12 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	t.Logf("-------- send to address %s", userAddress.Base58())
 	req = solo.NewCallParams(ScName, sbtestsc.FuncSendToAddress.Name,
 		sbtestsc.ParamAddress, userAddress,
-	).WithIotas(1)
-	_, err = chain.PostRequestSync(req, nil)
+	)
+	_, err = chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 0)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -88,7 +88,7 @@ func testDoPanicUser(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -96,12 +96,12 @@ func testDoPanicUser(t *testing.T, w bool) {
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name).WithIotas(42)
-	_, err := chain.PostRequestSync(req, user)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name)
+	_, err := chain.PostRequestSync(req.WithIotas(42), user)
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -117,7 +117,7 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -125,12 +125,12 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name).WithIotas(42)
-	_, err := chain.PostRequestSync(req, user)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name)
+	_, err := chain.PostRequestSync(req.WithIotas(42), user)
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -138,11 +138,11 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
-	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(1)
-	_, err = chain.PostRequestSync(req, user)
+	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name)
+	_, err = chain.PostRequestSync(req.WithIotas(1), user)
 	require.NoError(t, err)
 
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(4 + extraToken)
@@ -158,7 +158,7 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -168,12 +168,11 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 		governance.ParamHname, cAID.Hname(),
-		governance.ParamOwnerFee, 10,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+		governance.ParamOwnerFee, 10)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(4 + extraToken)
@@ -181,12 +180,12 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-1-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
-	req = solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name).WithIotas(42)
-	_, err = chain.PostRequestSync(req, user)
+	req = solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name)
+	_, err = chain.PostRequestSync(req.WithIotas(42), user)
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(14 + extraToken)
@@ -202,7 +201,7 @@ func testRequestToView(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -211,12 +210,12 @@ func testRequestToView(t *testing.T, w bool) {
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
 	// sending request to the view entry point should return an error and invoke fallback for tokens
-	req := solo.NewCallParams(ScName, sbtestsc.FuncJustView.Name).WithIotas(42)
-	_, err := chain.PostRequestSync(req, user)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncJustView.Name)
+	_, err := chain.PostRequestSync(req.WithIotas(42), user)
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)

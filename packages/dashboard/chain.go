@@ -20,7 +20,7 @@ import (
 //go:embed templates/chain.tmpl
 var tplChain string
 
-func chainBreadcrumb(e *echo.Echo, chainID iscp.ChainID) Tab {
+func chainBreadcrumb(e *echo.Echo, chainID *iscp.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("chain"),
 		Title: fmt.Sprintf("Chain %.8s…", chainID.Base58()),
@@ -40,7 +40,7 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	tab := chainBreadcrumb(c.Echo(), *chainID)
+	tab := chainBreadcrumb(c.Echo(), chainID)
 
 	result := &ChainTemplateParams{
 		BaseTemplateParams: d.BaseParams(c, tab),
@@ -92,7 +92,7 @@ func (d *Dashboard) getLatestBlock(chainID *iscp.ChainID) (*LatestBlock, error) 
 	if err != nil {
 		return nil, err
 	}
-	index, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
+	index, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex), 0)
 	if err != nil {
 		return nil, err
 	}
@@ -111,11 +111,11 @@ func (d *Dashboard) fetchAccounts(chainID *iscp.ChainID) ([]*iscp.AgentID, error
 
 	ret := make([]*iscp.AgentID, 0)
 	for k := range accs {
-		agentid, _, err := codec.DecodeAgentID([]byte(k))
+		agentid, err := codec.DecodeAgentID([]byte(k))
 		if err != nil {
 			return nil, err
 		}
-		ret = append(ret, &agentid)
+		ret = append(ret, agentid)
 	}
 	return ret, nil
 }

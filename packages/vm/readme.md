@@ -56,7 +56,7 @@ type VMTask struct {
 	Requests           []iscp.Request
 	Timestamp          time.Time
 	Entropy            hashing.HashValue
-	ValidatorFeeTarget iscp.AgentID
+	ValidatorFeeTarget *iscp.AgentID
 	Log                *logger.Logger
 	// call when finished
 	OnFinish           func(callResult dict.Dict, callError error, vmError error)

@@ -467,9 +467,8 @@ func (e *chainEnv) callGetBlockIndex(nodeIndex int) (uint32, error) {
 	if err != nil {
 		return 0, err
 	}
-	v, ok, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
+	v, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 	require.NoError(e.t, err)
-	require.True(e.t, ok)
 	return v, nil
 }
 
@@ -512,9 +511,8 @@ func (e *chainEnv) callGetStateController(nodeIndex int) (ledgerstate.Address, e
 	if err != nil {
 		return nil, err
 	}
-	addr, ok, err := codec.DecodeAddress(ret.MustGet(blocklog.ParamStateControllerAddress))
+	addr, err := codec.DecodeAddress(ret.MustGet(blocklog.ParamStateControllerAddress))
 	require.NoError(e.t, err)
-	require.True(e.t, ok)
 	return addr, nil
 }
 
@@ -532,9 +530,8 @@ func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeInd
 		return false
 	}
 	for i := uint16(0); i < arrlen; i++ {
-		a, ok, err := codec.DecodeAddress(arr.MustGetAt(i))
+		a, err := codec.DecodeAddress(arr.MustGetAt(i))
 		require.NoError(t, err)
-		require.True(t, ok)
 		if a.Equals(addr) {
 			return true
 		}

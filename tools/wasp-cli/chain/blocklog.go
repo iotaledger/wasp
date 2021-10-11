@@ -38,7 +38,7 @@ func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 	if len(args) == 0 {
 		ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetLatestBlockInfo.Name, nil)
 		log.Check(err)
-		index, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
+		index, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 		log.Check(err)
 		b, err := blocklog.BlockInfoFromBytes(index, ret.MustGet(blocklog.ParamBlockInfo))
 		log.Check(err)
@@ -103,7 +103,7 @@ func requestCmd() *cobra.Command {
 			})
 			log.Check(err)
 
-			blockIndex, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
+			blockIndex, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 			log.Check(err)
 			req, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
 			log.Check(err)

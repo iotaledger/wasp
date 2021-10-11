@@ -3,6 +3,7 @@ package chain
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -46,13 +47,13 @@ var listContractsCmd = &cobra.Command{
 			})
 			log.Check(err)
 
-			ownerFee, _, err := codec.DecodeUint64(fees.MustGet(governance.VarOwnerFee))
+			ownerFee, err := codec.DecodeUint64(fees.MustGet(governance.VarOwnerFee))
 			log.Check(err)
 
-			validatorFee, _, err := codec.DecodeUint64(fees.MustGet(governance.VarValidatorFee))
+			validatorFee, err := codec.DecodeUint64(fees.MustGet(governance.VarValidatorFee))
 			log.Check(err)
 
-			feeColor, _, err := codec.DecodeColor(fees.MustGet(governance.VarFeeColor))
+			feeColor, err := codec.DecodeColor(fees.MustGet(governance.VarFeeColor), colored.IOTA)
 			log.Check(err)
 
 			rows[i] = []string{

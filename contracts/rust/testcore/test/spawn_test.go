@@ -3,27 +3,27 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/contracts/rust/testcore"
 	"github.com/iotaledger/wasp/packages/vm/core"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSpawn(t *testing.T) {
-	_, chain := setupChain(t, nil)
-	_, _ = setupTestSandboxSC(t, chain, nil, false)
+	run2(t, func(t *testing.T, w bool) {
+		ctx := setupTest(t, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncSpawn.Name).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
-	require.NoError(t, err)
+		f := testcore.ScFuncs.Spawn(ctx)
+		f.Params.ProgHash().SetValue(ctx.Convertor.ScHash(ctx.Hprog))
+		f.Func.TransferIotas(1).Post()
+		require.NoError(t, ctx.Err)
 
-	ret, err := chain.CallView(ScName+"_spawned", sbtestsc.FuncGetCounter.Name)
-	require.NoError(t, err)
-	res := kvdecoder.New(ret, chain.Log)
-	counter := res.MustGetUint64(sbtestsc.VarCounter)
-	require.EqualValues(t, 5, counter)
+		ctxSpawn := ctx.SoloContextForCore(t, testcore.ScName+"_spawned", testcore.OnLoad)
+		require.NoError(t, ctxSpawn.Err)
+		v := testcore.ScFuncs.GetCounter(ctxSpawn)
+		v.Func.Call()
+		require.EqualValues(t, 5, v.Results.Counter().Value())
 
-	_, _, recs := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(recs))
+		_, _, recs := ctx.Chain.GetInfo()
+		require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(recs))
+	})
 }

@@ -35,9 +35,9 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by the node
-func (c *WaspClient) WaitUntilAllRequestsProcessed(chainID iscp.ChainID, tx *ledgerstate.Transaction, timeout time.Duration) error {
-	for _, reqID := range request.RequestsInTransaction(&chainID, tx) {
-		if err := c.WaitUntilRequestProcessed(&chainID, reqID, timeout); err != nil {
+func (c *WaspClient) WaitUntilAllRequestsProcessed(chainID *iscp.ChainID, tx *ledgerstate.Transaction, timeout time.Duration) error {
+	for _, reqID := range request.RequestsInTransaction(chainID, tx) {
+		if err := c.WaitUntilRequestProcessed(chainID, reqID, timeout); err != nil {
 			return err
 		}
 	}

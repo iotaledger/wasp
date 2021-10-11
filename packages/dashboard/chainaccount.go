@@ -34,13 +34,13 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 	}
 
 	result := &ChainAccountTemplateParams{
-		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
+		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Account %.8s…", agentID),
 			Href:  "#",
 		}),
-		ChainID: *chainID,
-		AgentID: *agentID,
+		ChainID: chainID,
+		AgentID: agentID,
 	}
 
 	bal, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
@@ -60,8 +60,8 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 type ChainAccountTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID iscp.ChainID
-	AgentID iscp.AgentID
+	ChainID *iscp.ChainID
+	AgentID *iscp.AgentID
 
 	Balances colored.Balances
 }

@@ -101,14 +101,14 @@ func (vmctx *VMContext) getMyBalances() colored.Balances {
 }
 
 //nolint:unused
-func (vmctx *VMContext) moveBalance(target iscp.AgentID, col colored.Color, amount uint64) bool {
+func (vmctx *VMContext) moveBalance(target *iscp.AgentID, col colored.Color, amount uint64) bool {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	return accounts.MoveBetweenAccounts(
 		vmctx.State(),
 		vmctx.MyAgentID(),
-		&target,
+		target,
 		colored.NewBalancesForColor(col, amount),
 	)
 }

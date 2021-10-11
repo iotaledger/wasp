@@ -27,7 +27,7 @@ type stateManager struct {
 	peers                  peering.PeerDomainProvider
 	nodeConn               chain.NodeConnection
 	pullStateRetryTime     time.Time
-	solidState             state.VirtualState
+	solidState             state.VirtualStateAccess
 	stateOutput            *ledgerstate.AliasOutput
 	stateOutputTimestamp   time.Time
 	currentSyncData        atomic.Value

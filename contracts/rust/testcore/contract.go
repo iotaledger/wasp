@@ -34,7 +34,8 @@ type IncCounterCall struct {
 }
 
 type InitCall struct {
-	Func *wasmlib.ScInitFunc
+	Func   *wasmlib.ScInitFunc
+	Params MutableInitParams
 }
 
 type PassTypesFullCall struct {
@@ -56,6 +57,19 @@ type SendToAddressCall struct {
 type SetIntCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableSetIntParams
+}
+
+type SpawnCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableSpawnParams
+}
+
+type TestBlockContext1Call struct {
+	Func *wasmlib.ScFunc
+}
+
+type TestBlockContext2Call struct {
+	Func *wasmlib.ScFunc
 }
 
 type TestCallPanicFullEPCall struct {
@@ -113,6 +127,12 @@ type GetIntCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableGetIntParams
 	Results ImmutableGetIntResults
+}
+
+type GetStringValueCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableGetStringValueParams
+	Results ImmutableGetStringValueResults
 }
 
 type JustViewCall struct {
@@ -173,7 +193,9 @@ func (sc Funcs) IncCounter(ctx wasmlib.ScFuncCallContext) *IncCounterCall {
 }
 
 func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
-	return &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit, keyMap[:], idxMap[:])}
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit, keyMap[:], idxMap[:])}
+	f.Func.SetPtrs(&f.Params.id, nil)
+	return f
 }
 
 func (sc Funcs) PassTypesFull(ctx wasmlib.ScFuncCallContext) *PassTypesFullCall {
@@ -198,6 +220,20 @@ func (sc Funcs) SetInt(ctx wasmlib.ScFuncCallContext) *SetIntCall {
 	f := &SetIntCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetInt)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
+}
+
+func (sc Funcs) Spawn(ctx wasmlib.ScFuncCallContext) *SpawnCall {
+	f := &SpawnCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSpawn)}
+	f.Func.SetPtrs(&f.Params.id, nil)
+	return f
+}
+
+func (sc Funcs) TestBlockContext1(ctx wasmlib.ScFuncCallContext) *TestBlockContext1Call {
+	return &TestBlockContext1Call{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestBlockContext1)}
+}
+
+func (sc Funcs) TestBlockContext2(ctx wasmlib.ScFuncCallContext) *TestBlockContext2Call {
+	return &TestBlockContext2Call{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestBlockContext2)}
 }
 
 func (sc Funcs) TestCallPanicFullEP(ctx wasmlib.ScFuncCallContext) *TestCallPanicFullEPCall {
@@ -258,6 +294,12 @@ func (sc Funcs) GetCounter(ctx wasmlib.ScViewCallContext) *GetCounterCall {
 
 func (sc Funcs) GetInt(ctx wasmlib.ScViewCallContext) *GetIntCall {
 	f := &GetIntCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetInt)}
+	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	return f
+}
+
+func (sc Funcs) GetStringValue(ctx wasmlib.ScViewCallContext) *GetStringValueCall {
+	f := &GetStringValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetStringValue)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }

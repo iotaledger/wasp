@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
@@ -99,7 +100,7 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 	})
 	if err != nil {
 		reason := fmt.Sprintf("View call failed: %v", err)
-		if errors.Is(err, optimism.ErrStateHasBeenInvalidated) {
+		if errors.Is(err, coreutil.ErrStateHasBeenInvalidated) {
 			return httperrors.Conflict(reason)
 		}
 		return httperrors.BadRequest(reason)
