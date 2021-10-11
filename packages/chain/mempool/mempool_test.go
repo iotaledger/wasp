@@ -84,6 +84,9 @@ func (m *MockMempoolMetrics) CountRequestOut() {
 	m.processedRequestCounter++
 }
 
+func (m *MockMempoolMetrics) RecordRequestProcessingTime(reqID iscp.RequestID, elapse time.Duration) {
+}
+
 // Test if mempool is created
 func TestMempool(t *testing.T) {
 	log := testlogger.NewLogger(t)
