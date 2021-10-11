@@ -26,12 +26,7 @@ export const balance: Writable<bigint> = writable(0n)
 export const round: Writable<IRound> = writable(RESET_ROUND)
 
 export const timestamp: Writable<number> = writable()
-export const timeToFinished: Readable<number> = derived(timestamp, $timestamp => {
-    console.log('timestamp', $timestamp)
-    console.log('roundStarted', get(round)?.startedAt)
-    console.log('remaining', calculateRoundLengthLeft($timestamp))
-    return $timestamp ? calculateRoundLengthLeft($timestamp) : 0
-})
+export const timeToFinished: Readable<number> = derived(timestamp, $timestamp => $timestamp ? calculateRoundLengthLeft($timestamp) : 0)
 
 export const placingBet: Writable<boolean> = writable(false)
 export const showBettingSystem: Writable<boolean> = writable(false)
