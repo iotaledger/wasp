@@ -1,15 +1,34 @@
-import { get } from 'svelte/store';
 import config from '../../config.dev';
-import type { Bet } from './fairroulette_client';
-import { FairRouletteService } from './fairroulette_client';
-import { Notification, showNotification } from './notifications';
-import { address, addressesHistory, addressIndex, balance, firstTimeRequestingFunds, isAWinnerPlayer, keyPair, placingBet, requestingFunds, resetRound, round, seed, showBettingSystem, showWinnerAnimation, showWinningNumber, timestamp } from './store';
 import {
-    BasicClient, Colors, PoWWorkerManager,
-    WalletService
-} from './wasp_client';
+    address,
+    addressesHistory,
+    addressIndex,
+    balance,
+    firstTimeRequestingFunds,
+    isAWinnerPlayer,
+    keyPair,
+    placingBet,
+    requestingFunds,
+    resetRound,
+    round,
+    seed,
+    showBettingSystem,
+    showWinnerAnimation,
+    showWinningNumber,
+    timestamp
+    } from './store';
 import { Base58 } from './wasp_client/crypto/base58';
+import {
+    BasicClient,
+    Colors,
+    PoWWorkerManager,
+    WalletService
+    } from './wasp_client';
+import { FairRouletteService } from './fairroulette_client';
+import { get } from 'svelte/store';
+import { Notification, showNotification } from './notifications';
 import { Seed } from './wasp_client/crypto/seed';
+import type { Bet } from './fairroulette_client';
 
 let client: BasicClient;
 let walletService: WalletService;
@@ -18,8 +37,8 @@ let fairRouletteService: FairRouletteService;
 let fundsUpdaterHandle;
 
 const powManager: PoWWorkerManager = new PoWWorkerManager();
-export const BETTING_NUMBERS = 8
-export const ROUND_LENGTH = 60 //in seconds
+export const BETTING_NUMBERS = 8;
+export const ROUND_LENGTH = 60; //in seconds
 
 enum LogTag {
     Page = 'Page',
@@ -51,7 +70,7 @@ export function log(tag: string, description: string) {
         },
         );
         return _round;
-    })
+    });
 }
 
 export async function initialize() {
@@ -74,7 +93,7 @@ export async function initialize() {
                 type: Notification.Error,
                 message: ex.message,
                 timeout: 3000
-            })
+            });
             log(LogTag.Error, ex.message);
         }
     }
@@ -100,27 +119,37 @@ export async function initialize() {
     // As those requests can fail in certain cases, we need to wrap them in exception handlers,
     // to make sure that the other requests are being sent and that the page properly loads.
     const requests = [
-        () =>
-            fairRouletteService
-                .getRoundStatus()
-                .then((x) => round.update($round => ({ ...$round, active: x == 1 }))),
-        () =>
-            fairRouletteService
-                .getRoundNumber()
-                .then((x) => round.update($round => ({ ...$round, number: x }))),
-        () =>
-            fairRouletteService
-                .getLastWinningNumber()
-                .then((x) => round.update($round => ({ ...$round, winningNumber: x }))),
-        () =>
+
+        fairRouletteService
+            .getRoundStatus()
+            .then((x) => round.update($round => ({ ...$round, active: x == 1 }))),
+
+        fairRouletteService
+            .getRoundNumber()
+            .then((x) => { console.log(x); round.update($round => ({ ...$round, number: x })); }),
+
+        fairRouletteService
+            .getLastWinningNumber()
+            .then((x) => round.update($round => ({ ...$round, winningNumber: x }))),
+        /*() =>
             fairRouletteService
                 .getRoundStartedAt()
                 .then((x) => round.update($round => ({ ...$round, startedAt: x }))),
+*/
+        /*() =>
+            fairRouletteService
+                .getRoundTimeLeft()
+                .then((x) => {
+                    console.log(x);
+                    round.update($round => ({ ...$round, startedAt: Date.now() - (x * 1000) }));
+                }),*/
     ];
 
-    for (let request of requests) {
+    /*for (let request of requests) {
         await request().catch((e) => log(LogTag.Error, e.message));
-    }
+    }*/
+
+    await Promise.all(requests);
 
     log(LogTag.Page, 'Loaded');
 }
@@ -133,7 +162,7 @@ export function setAddress(index: number) {
 }
 
 export function createNewAddress() {
-    addressesHistory.update(_history => [..._history, get(address)])
+    addressesHistory.update(_history => [..._history, get(address)]);
     addressIndex.update(($addressIndex) => $addressIndex + 1);
     setAddress(get(addressIndex));
 }
@@ -159,9 +188,9 @@ export function startFundsUpdater() {
 }
 
 export async function placeBet() {
-    placingBet.set(true)
-    showBettingSystem.set(false)
-    showWinningNumber.set(false)
+    placingBet.set(true);
+    showBettingSystem.set(false);
+    showWinningNumber.set(false);
     try {
         await fairRouletteService.placeBetOnLedger(
             get(keyPair),
@@ -175,7 +204,7 @@ export async function placeBet() {
             title: 'Error placing bet',
             message: ex.message,
             timeout: 3000
-        })
+        });
 
         log(LogTag.Unknown, ex.message);
 
@@ -205,7 +234,7 @@ export async function sendFaucetRequest() {
             type: Notification.Error,
             message: ex.message,
             timeout: 3000
-        })
+        });
 
         log(LogTag.Round, ex.message);
     }
@@ -213,21 +242,23 @@ export async function sendFaucetRequest() {
 }
 
 export function calculateRoundLengthLeft(timestamp: number) {
-    const roundStarted = get(round).startedAt;
+    const roundStartedAt = get(round).startedAt;
 
-    if (!timestamp || !roundStarted) return undefined
+    if (!timestamp || !roundStartedAt) return undefined;
 
-    if (roundStarted == 0) {
+    if (roundStartedAt == 0) {
         return 0;
     }
 
-    const diff = timestamp - roundStarted;
+    const diff = Math.round(timestamp - roundStartedAt);
 
     // TODO: Explain.
-    const executionCompensation = 5;
+    const executionCompensation = 0;
     const roundTimeLeft = Math.round(
-        fairRouletteService?.roundLength + executionCompensation - diff
+        fairRouletteService?.roundLength - diff
     );
+
+    console.log(fairRouletteService?.roundLength, diff, roundTimeLeft);
 
     if (roundTimeLeft <= 0) {
         return 0;
@@ -238,7 +269,8 @@ export function calculateRoundLengthLeft(timestamp: number) {
 export function subscribeToRouletteEvents() {
     fairRouletteService.on('roundStarted', (timestamp) => {
         showWinningNumber.set(false);
-        round.update($round => ({ ...$round, active: true, startedAt: timestamp, logs: [] }))
+        // To mitigate time sync variances, we ignore the provided timestamp and use our local one.
+        round.update($round => ({ ...$round, active: true, startedAt: Date.now() / 1000, logs: [] }));
         log(LogTag.Round, 'Started');
     });
 
@@ -248,14 +280,14 @@ export function subscribeToRouletteEvents() {
                 type: Notification.Info,
                 message: 'The current round just ended. Your bet will be placed in the next round. ',
                 timeout: 3000
-            })
+            });
         }
         else if (get(round).betPlaced && !get(isAWinnerPlayer)) {
             showNotification({
                 type: Notification.Info,
                 message: 'Sorry, you lost this round. Try again!',
                 timeout: 3000
-            })
+            });
         }
 
         resetRound();
@@ -263,12 +295,12 @@ export function subscribeToRouletteEvents() {
     });
 
     fairRouletteService.on('roundNumber', (roundNumber: bigint) => {
-        round.update($round => ({ ...$round, number: roundNumber }))
+        round.update($round => ({ ...$round, number: roundNumber }));
         log(LogTag.Round, `Current round number: ${roundNumber}`);
     });
 
     fairRouletteService.on('winningNumber', (winningNumber: bigint) => {
-        round.update($round => ({ ...$round, winningNumber }))
+        round.update($round => ({ ...$round, winningNumber }));
         showWinningNumber.set(true);
 
         log(LogTag.Round, `The winning number was: ${winningNumber}`);
@@ -289,7 +321,7 @@ export function subscribeToRouletteEvents() {
                 },
             );
             return $round;
-        })
+        });
         log(
             'Bet',
             `Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`
@@ -303,7 +335,7 @@ export function subscribeToRouletteEvents() {
                 type: Notification.Win,
                 message: `Congratulations! You just won the round. You received ${bet.amount} iotas.`,
                 timeout: 3000
-            })
+            });
             showWinnerAnimation();
         }
 

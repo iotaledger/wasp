@@ -7,7 +7,7 @@
 
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasplib/packages/vm/wasmlib"
 
 type PayWinnersCall struct {
 	Func *wasmlib.ScFunc
@@ -43,46 +43,57 @@ type RoundStatusCall struct {
 	Results ImmutableRoundStatusResults
 }
 
+type RoundTimeLeftCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableRoundTimeLeftResults
+}
+
 type Funcs struct{}
 
 var ScFuncs Funcs
 
 func (sc Funcs) PayWinners(ctx wasmlib.ScFuncCallContext) *PayWinnersCall {
-	return &PayWinnersCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncPayWinners)}
+	return &PayWinnersCall{Func: wasmlib.NewScFunc(HScName, HFuncPayWinners)}
 }
 
 func (sc Funcs) PlaceBet(ctx wasmlib.ScFuncCallContext) *PlaceBetCall {
-	f := &PlaceBetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncPlaceBet)}
+	f := &PlaceBetCall{Func: wasmlib.NewScFunc(HScName, HFuncPlaceBet)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) PlayPeriod(ctx wasmlib.ScFuncCallContext) *PlayPeriodCall {
-	f := &PlayPeriodCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncPlayPeriod)}
+	f := &PlayPeriodCall{Func: wasmlib.NewScFunc(HScName, HFuncPlayPeriod)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) LastWinningNumber(ctx wasmlib.ScViewCallContext) *LastWinningNumberCall {
-	f := &LastWinningNumberCall{Func: wasmlib.NewScView(ctx, HScName, HViewLastWinningNumber)}
+	f := &LastWinningNumberCall{Func: wasmlib.NewScView(HScName, HViewLastWinningNumber)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) RoundNumber(ctx wasmlib.ScViewCallContext) *RoundNumberCall {
-	f := &RoundNumberCall{Func: wasmlib.NewScView(ctx, HScName, HViewRoundNumber)}
+	f := &RoundNumberCall{Func: wasmlib.NewScView(HScName, HViewRoundNumber)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) RoundStartedAt(ctx wasmlib.ScViewCallContext) *RoundStartedAtCall {
-	f := &RoundStartedAtCall{Func: wasmlib.NewScView(ctx, HScName, HViewRoundStartedAt)}
+	f := &RoundStartedAtCall{Func: wasmlib.NewScView(HScName, HViewRoundStartedAt)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) RoundStatus(ctx wasmlib.ScViewCallContext) *RoundStatusCall {
-	f := &RoundStatusCall{Func: wasmlib.NewScView(ctx, HScName, HViewRoundStatus)}
+	f := &RoundStatusCall{Func: wasmlib.NewScView(HScName, HViewRoundStatus)}
+	f.Func.SetPtrs(nil, &f.Results.id)
+	return f
+}
+
+func (sc Funcs) RoundTimeLeft(ctx wasmlib.ScViewCallContext) *RoundTimeLeftCall {
+	f := &RoundTimeLeftCall{Func: wasmlib.NewScView(HScName, HViewRoundTimeLeft)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }

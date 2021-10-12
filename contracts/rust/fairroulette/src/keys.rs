@@ -19,14 +19,15 @@ pub const IDX_RESULT_LAST_WINNING_NUMBER: usize = 2;
 pub const IDX_RESULT_ROUND_NUMBER:        usize = 3;
 pub const IDX_RESULT_ROUND_STARTED_AT:    usize = 4;
 pub const IDX_RESULT_ROUND_STATUS:        usize = 5;
-pub const IDX_STATE_BETS:                 usize = 6;
-pub const IDX_STATE_LAST_WINNING_NUMBER:  usize = 7;
-pub const IDX_STATE_PLAY_PERIOD:          usize = 8;
-pub const IDX_STATE_ROUND_NUMBER:         usize = 9;
-pub const IDX_STATE_ROUND_STARTED_AT:     usize = 10;
-pub const IDX_STATE_ROUND_STATUS:         usize = 11;
+pub const IDX_RESULT_ROUND_TIME_LEFT:     usize = 6;
+pub const IDX_STATE_BETS:                 usize = 7;
+pub const IDX_STATE_LAST_WINNING_NUMBER:  usize = 8;
+pub const IDX_STATE_PLAY_PERIOD:          usize = 9;
+pub const IDX_STATE_ROUND_NUMBER:         usize = 10;
+pub const IDX_STATE_ROUND_STARTED_AT:     usize = 11;
+pub const IDX_STATE_ROUND_STATUS:         usize = 12;
 
-pub const KEY_MAP_LEN: usize = 12;
+pub const KEY_MAP_LEN: usize = 13;
 
 pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
     PARAM_NUMBER,
@@ -35,6 +36,7 @@ pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
     RESULT_ROUND_NUMBER,
     RESULT_ROUND_STARTED_AT,
     RESULT_ROUND_STATUS,
+    RESULT_ROUND_TIME_LEFT,
     STATE_BETS,
     STATE_LAST_WINNING_NUMBER,
     STATE_PLAY_PERIOD,

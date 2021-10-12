@@ -7,7 +7,7 @@
 
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasplib/packages/vm/wasmlib"
 
 type ImmutableLastWinningNumberResults struct {
 	id int32
@@ -71,4 +71,20 @@ type MutableRoundStatusResults struct {
 
 func (s MutableRoundStatusResults) RoundStatus() wasmlib.ScMutableInt16 {
 	return wasmlib.NewScMutableInt16(s.id, idxMap[IdxResultRoundStatus])
+}
+
+type ImmutableRoundTimeLeftResults struct {
+	id int32
+}
+
+func (s ImmutableRoundTimeLeftResults) RoundTimeLeft() wasmlib.ScImmutableInt32 {
+	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxResultRoundTimeLeft])
+}
+
+type MutableRoundTimeLeftResults struct {
+	id int32
+}
+
+func (s MutableRoundTimeLeftResults) RoundTimeLeft() wasmlib.ScMutableInt32 {
+	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxResultRoundTimeLeft])
 }

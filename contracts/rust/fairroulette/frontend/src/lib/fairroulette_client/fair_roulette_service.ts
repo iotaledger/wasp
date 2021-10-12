@@ -1,11 +1,15 @@
-import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import config from '../../../config.dev';
 import {
-  BasicClient, Buffer,
+  BasicClient,
+  Buffer,
   Colors,
   IKeyPair,
-  IOffLedger, IOnLedger, OffLedger, WalletService
-} from '../wasp_client';
+  IOffLedger,
+  IOnLedger,
+  OffLedger,
+  WalletService
+  } from '../wasp_client';
+import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import { HName } from '../wasp_client/crypto/hname';
 
 type MessageHandlers = { [key: string]: (index: number) => void; };
@@ -31,10 +35,11 @@ export class ViewEntrypoints {
   public static readonly roundNumber: string = 'roundNumber';
   public static readonly roundStatus: string = 'roundStatus';
   public static readonly lastWinningNumber: string = 'lastWinningNumber';
+  public static readonly roundTimeLeft: string = 'roundTimeLeft';
 }
 
 export class FairRouletteService {
-  private readonly scName: string = 'fairroulette';
+  private readonly scName: string = 'fairroulette2';
   private readonly scHName: string = HName.HashAsString(this.scName);
   private readonly scPlaceBet: string = 'placeBet';
 
@@ -215,6 +220,17 @@ export class FairRouletteService {
     }
 
     return lastWinningNumber.readBigUInt64LE(0);
+  }
+
+  public async getRoundTimeLeft(): Promise<number> {
+    const response = await this.callView(ViewEntrypoints.roundTimeLeft);
+    const roundTimeLeft = response[ViewEntrypoints.roundTimeLeft];
+
+    if (!roundTimeLeft) {
+      throw Error(`Failed to get ${ViewEntrypoints.roundTimeLeft}`);
+    }
+
+    return roundTimeLeft.readInt32LE(0);
   }
 
   public on<E extends keyof Events>(event: E, callback: Events[E]): Unsubscribe {

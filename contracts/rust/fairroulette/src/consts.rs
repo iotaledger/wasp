@@ -21,6 +21,7 @@ pub const RESULT_LAST_WINNING_NUMBER: &str = "lastWinningNumber";
 pub const RESULT_ROUND_NUMBER:        &str = "roundNumber";
 pub const RESULT_ROUND_STARTED_AT:    &str = "roundStartedAt";
 pub const RESULT_ROUND_STATUS:        &str = "roundStatus";
+pub const RESULT_ROUND_TIME_LEFT:     &str = "roundTimeLeft";
 
 pub const STATE_BETS:                &str = "bets";
 pub const STATE_LAST_WINNING_NUMBER: &str = "lastWinningNumber";
@@ -36,6 +37,7 @@ pub const VIEW_LAST_WINNING_NUMBER: &str = "lastWinningNumber";
 pub const VIEW_ROUND_NUMBER:        &str = "roundNumber";
 pub const VIEW_ROUND_STARTED_AT:    &str = "roundStartedAt";
 pub const VIEW_ROUND_STATUS:        &str = "roundStatus";
+pub const VIEW_ROUND_TIME_LEFT:     &str = "roundTimeLeft";
 
 pub const HFUNC_PAY_WINNERS:         ScHname = ScHname(0xfb2b0144);
 pub const HFUNC_PLACE_BET:           ScHname = ScHname(0xdfba7d1b);
@@ -44,5 +46,6 @@ pub const HVIEW_LAST_WINNING_NUMBER: ScHname = ScHname(0x2f5f09fe);
 pub const HVIEW_ROUND_NUMBER:        ScHname = ScHname(0x0dcfe520);
 pub const HVIEW_ROUND_STARTED_AT:    ScHname = ScHname(0x725de8b4);
 pub const HVIEW_ROUND_STATUS:        ScHname = ScHname(0x145053b5);
+pub const HVIEW_ROUND_TIME_LEFT:     ScHname = ScHname(0xbbdd5ef5);
 
 // @formatter:on

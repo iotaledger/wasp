@@ -40,6 +40,7 @@ fn on_load() {
     exports.add_view(VIEW_ROUND_NUMBER, view_round_number_thunk);
     exports.add_view(VIEW_ROUND_STARTED_AT, view_round_started_at_thunk);
     exports.add_view(VIEW_ROUND_STATUS, view_round_status_thunk);
+    exports.add_view(VIEW_ROUND_TIME_LEFT, view_round_time_left_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {
@@ -183,6 +184,25 @@ fn view_round_status_thunk(ctx: &ScViewContext) {
     };
     view_round_status(ctx, &f);
     ctx.log("fairroulette.viewRoundStatus ok");
+}
+
+pub struct RoundTimeLeftContext {
+    results: MutableRoundTimeLeftResults,
+    state:   ImmutableFairRouletteState,
+}
+
+fn view_round_time_left_thunk(ctx: &ScViewContext) {
+    ctx.log("fairroulette.viewRoundTimeLeft");
+    let f = RoundTimeLeftContext {
+        results: MutableRoundTimeLeftResults {
+            id: OBJ_ID_RESULTS,
+        },
+        state: ImmutableFairRouletteState {
+            id: OBJ_ID_STATE,
+        },
+    };
+    view_round_time_left(ctx, &f);
+    ctx.log("fairroulette.viewRoundTimeLeft ok");
 }
 
 // @formatter:on

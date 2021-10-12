@@ -11,6 +11,7 @@ export default class ProofOfWork {
 
   public static calculateProofOfWork(target: number, message: Buffer): number {
     for (let nonce = 0; ; nonce++) {
+      console.log(nonce);
       const nonceLE = this.numberToUInt64LE(BigInt(nonce));
       const data = Buffer.concat([message, nonceLE]);
 
