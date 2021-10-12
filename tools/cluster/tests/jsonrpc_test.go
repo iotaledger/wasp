@@ -12,8 +12,8 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/contracts/native/evmchain"
-	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -40,12 +40,12 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	chainID := evm.DefaultChainID
 
 	_, err = chain.DeployContract(
-		evmchain.Contract.Name,
-		evmchain.Contract.ProgramHash.String(),
+		evmlight.Contract.Name,
+		evmlight.Contract.ProgramHash.String(),
 		"EVM chain on top of ISCP",
 		map[string]interface{}{
-			evmchain.FieldChainID: codec.EncodeUint16(uint16(chainID)),
-			evmchain.FieldGenesisAlloc: evmtypes.EncodeGenesisAlloc(core.GenesisAlloc{
+			evmlight.FieldChainID: codec.EncodeUint16(uint16(chainID)),
+			evmlight.FieldGenesisAlloc: evmtypes.EncodeGenesisAlloc(core.GenesisAlloc{
 				evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 			}),
 		},
@@ -56,7 +56,7 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	require.NoError(t, err)
 
 	backend := jsonrpc.NewWaspClientBackend(chain.Client(signer))
-	evmChain := jsonrpc.NewEVMChain(backend, chainID, evmchain.Contract.Name)
+	evmChain := jsonrpc.NewEVMChain(backend, chainID, evmlight.Contract.Name)
 
 	accountManager := jsonrpc.NewAccountManager(evmtest.Accounts)
 

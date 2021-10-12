@@ -1,13 +1,13 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmchain
+package evmlight
 
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/iotaledger/wasp/contracts/native/evmchain/iscpcontract"
-	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscpcontract"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"

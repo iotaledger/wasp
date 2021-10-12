@@ -9,7 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/iotaledger/wasp/contracts/native/evmchain"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -70,12 +70,12 @@ func start(cmd *cobra.Command, args []string) {
 
 	chainOwner, _ := env.NewKeyPairWithFunds()
 	chain := env.NewChain(chainOwner, "iscpchain")
-	err := chain.DeployContract(chainOwner, deployParams.Name, evmchain.Contract.ProgramHash,
-		evmchain.FieldChainID, codec.EncodeUint16(uint16(deployParams.ChainID)),
-		evmchain.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
+	err := chain.DeployContract(chainOwner, deployParams.Name, evmlight.Contract.ProgramHash,
+		evmlight.FieldChainID, codec.EncodeUint16(uint16(deployParams.ChainID)),
+		evmlight.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		})),
-		evmchain.FieldGasPerIota, deployParams.GasPerIOTA,
+		evmlight.FieldGasPerIota, deployParams.GasPerIOTA,
 	)
 	log.Check(err)
 

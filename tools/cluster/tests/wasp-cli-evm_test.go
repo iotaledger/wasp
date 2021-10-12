@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/iotaledger/wasp/contracts/native/evmchain"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,7 +35,7 @@ func TestWaspCLIEVMDeploy(t *testing.T) {
 	out := w.Run("chain", "list-contracts")
 	found := false
 	for _, s := range out {
-		if strings.Contains(s, evmchain.Contract.Name) {
+		if strings.Contains(s, evmlight.Contract.Name) {
 			found = true
 			break
 		}

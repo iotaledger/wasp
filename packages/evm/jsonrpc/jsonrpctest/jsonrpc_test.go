@@ -20,8 +20,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/contracts/native/evmchain"
-	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -40,19 +40,19 @@ func newSoloTestEnv(t *testing.T) *soloTestEnv {
 
 	chainID := evm.DefaultChainID
 
-	s := solo.New(t, true, false).WithNativeContract(evmchain.Processor)
+	s := solo.New(t, true, false).WithNativeContract(evmlight.Processor)
 	chainOwner, _ := s.NewKeyPairWithFunds()
 	chain := s.NewChain(chainOwner, "iscpchain")
-	err := chain.DeployContract(chainOwner, "evmchain", evmchain.Contract.ProgramHash,
-		evmchain.FieldChainID, codec.EncodeUint16(uint16(chainID)),
-		evmchain.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(core.GenesisAlloc{
+	err := chain.DeployContract(chainOwner, evmlight.Contract.Name, evmlight.Contract.ProgramHash,
+		evmlight.FieldChainID, codec.EncodeUint16(uint16(chainID)),
+		evmlight.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		}),
 	)
 	require.NoError(t, err)
 	signer, _ := s.NewKeyPairWithFunds()
 	backend := jsonrpc.NewSoloBackend(s, chain, signer)
-	evmChain := jsonrpc.NewEVMChain(backend, chainID, evmchain.Contract.Name)
+	evmChain := jsonrpc.NewEVMChain(backend, chainID, evmlight.Contract.Name)
 
 	accountManager := jsonrpc.NewAccountManager(evmtest.Accounts)
 

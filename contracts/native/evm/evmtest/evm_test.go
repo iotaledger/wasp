@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmchain
+package evmtest
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -132,7 +133,7 @@ func TestOwner(t *testing.T) {
 	user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
 	user1AgentID := iscp.NewAgentID(user1Address, 0)
 	_, err := evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(Contract.Name, FuncSetNextOwner.Name, FieldNextEvmOwner, user1AgentID).
+		solo.NewCallParams(evmlight.Contract.Name, evmlight.FuncSetNextOwner.Name, evmlight.FieldNextEvmOwner, user1AgentID).
 			WithIotas(100000),
 		user1Wallet,
 	)
@@ -144,7 +145,7 @@ func TestOwner(t *testing.T) {
 
 	// current owner is able to set a new "next owner"
 	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(Contract.Name, FuncSetNextOwner.Name, FieldNextEvmOwner, user1AgentID).
+		solo.NewCallParams(evmlight.Contract.Name, evmlight.FuncSetNextOwner.Name, evmlight.FieldNextEvmOwner, user1AgentID).
 			WithIotas(100000),
 		evmChain.soloChain.OriginatorKeyPair,
 	)
@@ -158,7 +159,7 @@ func TestOwner(t *testing.T) {
 	user2Wallet, _ := evmChain.solo.NewKeyPairWithFunds()
 
 	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(Contract.Name, FuncClaimOwnership.Name).
+		solo.NewCallParams(evmlight.Contract.Name, evmlight.FuncClaimOwnership.Name).
 			WithIotas(100000),
 		user2Wallet,
 	)
@@ -170,7 +171,7 @@ func TestOwner(t *testing.T) {
 
 	// claim ownership successfully
 	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(Contract.Name, FuncClaimOwnership.Name).
+		solo.NewCallParams(evmlight.Contract.Name, evmlight.FuncClaimOwnership.Name).
 			WithIotas(100000),
 		user1Wallet,
 	)
@@ -184,18 +185,18 @@ func TestGasPerIotas(t *testing.T) {
 	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
 	// the default value is correct
-	require.Equal(t, DefaultGasPerIota, evmChain.getGasPerIotas())
+	require.Equal(t, evmlight.DefaultGasPerIota, evmChain.getGasPerIotas())
 
 	res, err := storage.store(43)
 	require.NoError(t, err)
 	initialGasFee := res.iotaChargedFee
 
 	// only the owner can call the setGasPerIotas endpoint
-	newGasPerIota := DefaultGasPerIota * 1000
+	newGasPerIota := evmlight.DefaultGasPerIota * 1000
 	newUserWallet, _ := evmChain.solo.NewKeyPairWithFunds()
 	err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: newUserWallet})
 	require.Contains(t, err.Error(), "can only be called by the contract owner")
-	require.Equal(t, DefaultGasPerIota, evmChain.getGasPerIotas())
+	require.Equal(t, evmlight.DefaultGasPerIota, evmChain.getGasPerIotas())
 
 	// current owner is able to set a new gasPerIotas
 	err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: evmChain.soloChain.OriginatorKeyPair})
@@ -335,7 +336,7 @@ func TestPrePaidFees(t *testing.T) {
 
 	// test sending off-ledger request without depositing funds first
 	txdata, _, _ := storage.buildEthTxData(nil, "store", uint32(999))
-	offledgerRequest := evmChain.buildSoloRequest(FuncSendTransaction.Name, 100, FieldTransactionData, txdata)
+	offledgerRequest := evmChain.buildSoloRequest(evmlight.FuncSendTransaction.Name, 100, evmlight.FieldTransactionData, txdata)
 	evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
 
 	// check that the tx has no effect
@@ -410,7 +411,7 @@ func TestISCPEntropy(t *testing.T) {
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: deploy the evmchain contract
 	log := testlogger.NewSilentLogger(b.Name(), true)
-	env := solo.NewWithLogger(b, log).WithNativeContract(Processor)
+	env := solo.NewWithLogger(b, log).WithNativeContract(evmlight.Processor)
 	evmChain := initEVMChainWithSolo(b, env)
 	// setup: deploy the `storage` EVM contract
 	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
@@ -425,7 +426,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 		opt := ethCallOptions{sender: sender}
 		txdata, _, opt := storage.buildEthTxData([]ethCallOptions{opt}, "store", uint32(i))
 		iotaOpt := storage.chain.parseIotaCallOptions([]iotaCallOptions{opt.iota})
-		reqs[i] = storage.chain.buildSoloRequest(FuncSendTransaction.Name, iotaOpt.transfer, FieldTransactionData, txdata)
+		reqs[i] = storage.chain.buildSoloRequest(evmlight.FuncSendTransaction.Name, iotaOpt.transfer, evmlight.FieldTransactionData, txdata)
 	}
 
 	return evmChain.soloChain, reqs

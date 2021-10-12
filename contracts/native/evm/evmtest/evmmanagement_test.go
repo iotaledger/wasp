@@ -1,11 +1,12 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmchain
+package evmtest
 
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -27,13 +28,13 @@ var (
 	evmChainMgmtProcessor = evmChainMgmtContract.Processor(nil,
 		mgmtFuncClaimOwnership.WithHandler(func(ctx iscp.Sandbox) (dict.Dict, error) {
 			a := assert.NewAssert(ctx.Log())
-			_, err := ctx.Call(Contract.Hname(), FuncClaimOwnership.Hname(), nil, nil)
+			_, err := ctx.Call(evmlight.Contract.Hname(), evmlight.FuncClaimOwnership.Hname(), nil, nil)
 			a.RequireNoError(err)
 			return nil, nil
 		}),
 		mgmtFuncWithdrawGasFees.WithHandler(func(ctx iscp.Sandbox) (dict.Dict, error) {
 			a := assert.NewAssert(ctx.Log())
-			_, err := ctx.Call(Contract.Hname(), FuncWithdrawGasFees.Hname(), nil, nil)
+			_, err := ctx.Call(evmlight.Contract.Hname(), evmlight.FuncWithdrawGasFees.Hname(), nil, nil)
 			a.RequireNoError(err)
 			return nil, nil
 		}),
@@ -53,7 +54,7 @@ func TestRequestGasFees(t *testing.T) {
 	// change owner to evnchainmanagement SC
 	managerAgentID := iscp.NewAgentID(soloChain.ChainID.AsAddress(), iscp.Hn(evmChainMgmtContract.Name))
 	_, err = soloChain.PostRequestSync(
-		solo.NewCallParams(Contract.Name, FuncSetNextOwner.Name, FieldNextEvmOwner, managerAgentID).
+		solo.NewCallParams(evmlight.Contract.Name, evmlight.FuncSetNextOwner.Name, evmlight.FieldNextEvmOwner, managerAgentID).
 			WithIotas(1),
 		soloChain.OriginatorKeyPair,
 	)
