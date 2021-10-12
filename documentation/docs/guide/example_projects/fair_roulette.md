@@ -32,7 +32,7 @@ The mandatory setup consists out of:
 * 1 Beta Wasp node
 * 1 static file server for the frontend
 
-## Technicallity
+## Technicality
 
 Before we dive into the contents of the project, lets get an overview of what is actually required for this game.
 
