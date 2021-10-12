@@ -1,4 +1,6 @@
 ---
+description:  How to run a node. Requirements, configuration parameters, dashboard configuration and tests.
+image: /img/logo/WASP_logo_dark.png
 keywords:
 - ISCP
 - Smart Contracts
@@ -7,11 +9,9 @@ keywords:
 - GoShimmer
 - Requirements
 - Configuration
-- Dashborad
+- Dashboard
 - Grafana
 - Prometheus
-description:  How to run a node. Requirements, configuration parameters, dashboard configuration and tests.
-image: /img/logo/WASP_logo_dark.png
 ---
 
 # Running a Node
@@ -113,7 +113,7 @@ can subscribe to these messages.
   Each Wasp node publishes important events via a [Nanomsg](https://nanomsg.org/) message stream
   (just like ZMQ is used in IRI). Possibly, in the future, [ZMQ](https://zeromq.org/) and [MQTT](https://mqtt.org/) publishers will be supported too.
 
-  Any Nanomsg client can subscribe to the message stream. In Go you can use the
+  Any Nanomsg client can subscribe to the message stream. In Go, you can use the
   `packages/subscribe` package provided in Wasp for this.
 
   The Publisher port can be configured in `config.json` with the `nanomsg.port`
@@ -148,8 +148,9 @@ which can be accessed with a web browser.
 
 ### Prometheus
 
-`prometheus.bindAddress` specifies the bind address/port for the prometheus server, where its possible to get multiple system metrics.
-By default Prometheus is disabled and should be enabled by setting `prometheus.enabled` to `true`.
+`prometheus.bindAddress` specifies the bind address/port for the prometheus server, where it's possible to get multiple system metrics.
+
+By default, Prometheus is disabled and should be enabled by setting `prometheus.enabled` to `true`.
 
 ### Grafana
 
