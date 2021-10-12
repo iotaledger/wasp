@@ -185,4 +185,4 @@ Repeat this process to launch as many nodes as you want for your committee.
 
 ## Exposing a Port
 
-You can expose a port by 
+If you wish to expose a port, please follow the [instructions in the official Docker docs](https://docs.docker.com/engine/reference/commandline/run/#publish-or-expose-port--p---expose).
