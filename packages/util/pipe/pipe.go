@@ -17,32 +17,32 @@ func NewDefaultInfinitePipe() Pipe {
 	return newInfinitePipe(NewDefaultLimitedPriorityHashQueue())
 }
 
-func NewPriorityInfinitePipe(fun func(interface{}) bool) Pipe {
-	return newInfinitePipe(NewPriorityLimitedPriorityHashQueue(fun))
+func NewPriorityInfinitePipe(priorityFun func(interface{}) bool) Pipe {
+	return newInfinitePipe(NewPriorityLimitedPriorityHashQueue(priorityFun))
 }
 
 func NewLimitInfinitePipe(limit int) Pipe {
 	return newInfinitePipe(NewLimitLimitedPriorityHashQueue(limit))
 }
 
-func NewLimitPriorityInfinitePipe(fun func(interface{}) bool, limit int) Pipe {
-	return newInfinitePipe(NewLimitPriorityLimitedPriorityHashQueue(fun, limit))
+func NewLimitPriorityInfinitePipe(priorityFun func(interface{}) bool, limit int) Pipe {
+	return newInfinitePipe(NewLimitPriorityLimitedPriorityHashQueue(priorityFun, limit))
 }
 
-func NewHashInfinitePipe() Pipe {
-	return newInfinitePipe(NewHashLimitedPriorityHashQueue(true))
+func NewHashInfinitePipe(hashFun func(interface{}) interface{}) Pipe {
+	return newInfinitePipe(NewHashLimitedPriorityHashQueue(&hashFun))
 }
 
-func NewPriorityHashInfinitePipe(fun func(interface{}) bool) Pipe {
-	return newInfinitePipe(NewPriorityHashLimitedPriorityHashQueue(fun, true))
+func NewPriorityHashInfinitePipe(priorityFun func(interface{}) bool, hashFun func(interface{}) interface{}) Pipe {
+	return newInfinitePipe(NewPriorityHashLimitedPriorityHashQueue(priorityFun, &hashFun))
 }
 
-func NewLimitHashInfinitePipe(limit int) Pipe {
-	return newInfinitePipe(NewLimitHashLimitedPriorityHashQueue(limit, true))
+func NewLimitHashInfinitePipe(limit int, hashFun func(interface{}) interface{}) Pipe {
+	return newInfinitePipe(NewLimitHashLimitedPriorityHashQueue(limit, &hashFun))
 }
 
-func NewInfinitePipe(fun func(interface{}) bool, limit int) Pipe {
-	return newInfinitePipe(NewLimitedPriorityHashQueue(fun, limit, true))
+func NewInfinitePipe(priorityFun func(interface{}) bool, limit int, hashFun func(interface{}) interface{}) Pipe {
+	return newInfinitePipe(NewLimitedPriorityHashQueue(priorityFun, limit, &hashFun))
 }
 
 func newInfinitePipe(queue Queue) *InfinitePipe {

@@ -9,7 +9,7 @@ import (
 )
 
 func TestDefaultInfinitePipeWriteReadLen(t *testing.T) {
-	testDefaultPipeWriteReadLen(NewDefaultInfinitePipe(), 1000, identityFun, t)
+	testDefaultPipeWriteReadLen(NewDefaultInfinitePipe(), 1000, identityFunInt, t)
 }
 
 func TestPriorityInfinitePipeWriteReadLen(t *testing.T) {
@@ -33,34 +33,34 @@ func TestLimitPriorityInfinitePipeWriteReadLen(t *testing.T) {
 }
 
 func TestHashInfinitePipeWriteReadLen(t *testing.T) {
-	testDefaultPipeWriteReadLen(NewHashInfinitePipe(), 1000, identityFun, t)
+	testDefaultPipeWriteReadLen(NewHashInfinitePipe(identityFunInterface), 1000, identityFunInt, t)
 }
 
 func TestPriorityHashInfinitePipeWriteReadLen(t *testing.T) {
-	testPriorityPipeWriteReadLen(NewPriorityHashInfinitePipe, t)
+	testPriorityPipeWriteReadLen(newPriorityHashInfinitePipe, t)
 }
 
 func TestLimitHashInfinitePipeNoLimitWriteReadLen(t *testing.T) {
-	testLimitedPipeNoLimitWriteReadLen(NewLimitHashInfinitePipe, t)
+	testLimitedPipeNoLimitWriteReadLen(newLimitHashInfinitePipe, t)
 }
 
 func TestLimitHashInfinitePipeWriteReadLen(t *testing.T) {
-	testLimitedPipeWriteReadLen(NewLimitHashInfinitePipe, t)
+	testLimitedPipeWriteReadLen(newLimitHashInfinitePipe, t)
 }
 
 func TestInfinitePipeNoLimitWriteReadLen(t *testing.T) {
-	testLimitedPriorityPipeNoLimitWriteReadLen(NewInfinitePipe, t)
+	testLimitedPriorityPipeNoLimitWriteReadLen(newLimitPriorityHashInfinitePipe, t)
 }
 
 func TestInfinitePipeWriteReadLen(t *testing.T) {
-	testLimitedPriorityPipeWriteReadLen(NewInfinitePipe, t)
+	testLimitedPriorityPipeWriteReadLen(newLimitPriorityHashInfinitePipe, t)
 }
 
-func testLimitedPriorityPipeNoLimitWriteReadLen(makeLimitedPriorityPipeFun func(fun func(i interface{}) bool, limit int) Pipe, t *testing.T) {
-	testPriorityPipeWriteReadLen(func(fun func(i interface{}) bool) Pipe { return makeLimitedPriorityPipeFun(fun, 1200) }, t)
+func testLimitedPriorityPipeNoLimitWriteReadLen(makeLimitedPriorityPipeFun func(priorityFun func(i interface{}) bool, limit int) Pipe, t *testing.T) {
+	testPriorityPipeWriteReadLen(func(priorityFun func(i interface{}) bool) Pipe { return makeLimitedPriorityPipeFun(priorityFun, 1200) }, t)
 }
 
-func testLimitedPriorityPipeWriteReadLen(makeLimitedPriorityPipeFun func(fun func(i interface{}) bool, limit int) Pipe, t *testing.T) {
+func testLimitedPriorityPipeWriteReadLen(makeLimitedPriorityPipeFun func(priorityFun func(i interface{}) bool, limit int) Pipe, t *testing.T) {
 	limit := 800
 	p := makeLimitedPriorityPipeFun(func(i interface{}) bool {
 		return i.(int)%3 == 0
@@ -78,7 +78,7 @@ func testLimitedPriorityPipeWriteReadLen(makeLimitedPriorityPipeFun func(fun fun
 }
 
 func testLimitedPipeNoLimitWriteReadLen(makeLimitedPipeFun func(limit int) Pipe, t *testing.T) {
-	testDefaultPipeWriteReadLen(makeLimitedPipeFun(1200), 1000, identityFun, t)
+	testDefaultPipeWriteReadLen(makeLimitedPipeFun(1200), 1000, identityFunInt, t)
 }
 
 func testLimitedPipeWriteReadLen(makeLimitedPipeFun func(limit int) Pipe, t *testing.T) {
@@ -129,7 +129,7 @@ func testPipeWriteReadLen(p Pipe, elementsToWrite, elementsToRead int, result fu
 //--
 
 func TestDefaultInfinitePipeConcurrentWriteReadLen(t *testing.T) {
-	result := identityFun
+	result := identityFunInt
 	testDefaultPipeConcurrentWriteReadLen(NewDefaultInfinitePipe(), 1000, &result, t)
 }
 
@@ -154,35 +154,35 @@ func TestLimitPriorityInfinitePipeConcurrentWriteReadLen(t *testing.T) {
 }
 
 func TestHashInfinitePipeConcurrentWriteReadLen(t *testing.T) {
-	result := identityFun
-	testDefaultPipeConcurrentWriteReadLen(NewHashInfinitePipe(), 1000, &result, t)
+	result := identityFunInt
+	testDefaultPipeConcurrentWriteReadLen(NewHashInfinitePipe(identityFunInterface), 1000, &result, t)
 }
 
 func TestPriorityHashInfinitePipeConcurrentWriteReadLen(t *testing.T) {
-	testPriorityPipeConcurrentWriteReadLen(NewPriorityHashInfinitePipe, t)
+	testPriorityPipeConcurrentWriteReadLen(newPriorityHashInfinitePipe, t)
 }
 
 func TestLimitHashInfinitePipeNoLimitConcurrentWriteReadLen(t *testing.T) {
-	testLimitedPipeNoLimitConcurrentWriteReadLen(NewLimitHashInfinitePipe, t)
+	testLimitedPipeNoLimitConcurrentWriteReadLen(newLimitHashInfinitePipe, t)
 }
 
 func TestLimitHashInfinitePipeConcurrentWriteReadLen(t *testing.T) {
-	testLimitedPipeConcurrentWriteReadLen(NewLimitHashInfinitePipe, t)
+	testLimitedPipeConcurrentWriteReadLen(newLimitHashInfinitePipe, t)
 }
 
 func TestInfinitePipeNoLimitConcurrentWriteReadLen(t *testing.T) {
-	testLimitedPriorityPipeNoLimitConcurrentWriteReadLen(NewInfinitePipe, t)
+	testLimitedPriorityPipeNoLimitConcurrentWriteReadLen(newLimitPriorityHashInfinitePipe, t)
 }
 
 func TestInfinitePipeConcurrentWriteReadLen(t *testing.T) {
-	testLimitedPriorityPipeConcurrentWriteReadLen(NewInfinitePipe, t)
+	testLimitedPriorityPipeConcurrentWriteReadLen(newLimitPriorityHashInfinitePipe, t)
 }
 
-func testLimitedPriorityPipeNoLimitConcurrentWriteReadLen(makeLimitedPriorityPipeFun func(fun func(i interface{}) bool, limit int) Pipe, t *testing.T) {
-	testPriorityPipeConcurrentWriteReadLen(func(fun func(i interface{}) bool) Pipe { return makeLimitedPriorityPipeFun(fun, 1200) }, t)
+func testLimitedPriorityPipeNoLimitConcurrentWriteReadLen(makeLimitedPriorityPipeFun func(priorityFun func(i interface{}) bool, limit int) Pipe, t *testing.T) {
+	testPriorityPipeConcurrentWriteReadLen(func(priorityFun func(i interface{}) bool) Pipe { return makeLimitedPriorityPipeFun(priorityFun, 1200) }, t)
 }
 
-func testLimitedPriorityPipeConcurrentWriteReadLen(makeLimitedPriorityPipeFun func(fun func(i interface{}) bool, limit int) Pipe, t *testing.T) {
+func testLimitedPriorityPipeConcurrentWriteReadLen(makeLimitedPriorityPipeFun func(priorityFun func(i interface{}) bool, limit int) Pipe, t *testing.T) {
 	limit := 800
 	ch := makeLimitedPriorityPipeFun(func(i interface{}) bool {
 		return i.(int)%3 == 0
@@ -191,7 +191,7 @@ func testLimitedPriorityPipeConcurrentWriteReadLen(makeLimitedPriorityPipeFun fu
 }
 
 func testLimitedPipeNoLimitConcurrentWriteReadLen(makeLimitedPipeFun func(limit int) Pipe, t *testing.T) {
-	result := identityFun
+	result := identityFunInt
 	testDefaultPipeConcurrentWriteReadLen(makeLimitedPipeFun(1200), 1000, &result, t)
 }
 
@@ -254,4 +254,18 @@ func testPipeConcurrentWriteReadLen(p Pipe, elementsToWrite, elementsToRead int,
 	stop <- true
 	require.Equalf(t, elementsToWrite, written, "concurent write elements written missmatch")
 	require.Equalf(t, elementsToRead, read, "concurent read elements read missmatch")
+}
+
+//--
+
+func newPriorityHashInfinitePipe(priorityFun func(i interface{}) bool) Pipe {
+	return NewPriorityHashInfinitePipe(priorityFun, identityFunInterface)
+}
+
+func newLimitHashInfinitePipe(limit int) Pipe {
+	return NewLimitHashInfinitePipe(limit, identityFunInterface)
+}
+
+func newLimitPriorityHashInfinitePipe(priorityFun func(i interface{}) bool, limit int) Pipe {
+	return NewInfinitePipe(priorityFun, limit, identityFunInterface)
 }

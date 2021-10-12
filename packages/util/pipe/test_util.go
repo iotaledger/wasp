@@ -1,7 +1,11 @@
 package pipe
 
-func identityFun(index int) int {
+func identityFunInt(index int) int {
 	return index
+}
+
+func identityFunInterface(elem interface{}) interface{} {
+	return elem
 }
 
 func alwaysTrueFun(index int) bool {

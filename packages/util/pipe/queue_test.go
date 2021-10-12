@@ -52,7 +52,8 @@ func TestLimitPriorityLimitedPriorityHashQueueSimple(t *testing.T) {
 }
 
 func TestHashLimitedPriorityHashQueueSimple(t *testing.T) {
-	testDefaultQueueSimple(NewHashLimitedPriorityHashQueue(true), t)
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	testDefaultQueueSimple(NewHashLimitedPriorityHashQueue(&hashFun), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueSimple(t *testing.T) {
@@ -75,11 +76,11 @@ func TestLimitedPriorityHashQueueSimple(t *testing.T) {
 	testLimitedPriorityQueueSimple(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueNoLimitSimple(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
-	testPriorityQueueSimple(func(fun func(i interface{}) bool) Queue { return makeLimitedPriorityQueueFun(fun, 15) }, t)
+func testLimitedPriorityQueueNoLimitSimple(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+	testPriorityQueueSimple(func(priorityFun func(i interface{}) bool) Queue { return makeLimitedPriorityQueueFun(priorityFun, 15) }, t)
 }
 
-func testLimitedPriorityQueueSimple(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueSimple(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
 	resultArray := []int{9, 6, 3, 0, 4, 5, 7, 8}
 	limit := len(resultArray)
 	q := makeLimitedPriorityQueueFun(func(i interface{}) bool {
@@ -120,11 +121,11 @@ func testPriorityQueueSimple(makePriorityQueueFun func(func(i interface{}) bool)
 
 func testDefaultQueueSimple(q Queue, t *testing.T) {
 	elementsToAdd := 10
-	testQueueSimple(q, elementsToAdd, elementsToAdd, identityFun, t)
+	testQueueSimple(q, elementsToAdd, elementsToAdd, identityFunInt, t)
 }
 
 func testQueueSimple(q Queue, elementsToAdd, elementsToRemove int, result func(index int) int, t *testing.T) {
-	testQueueBasicAddLengthPeekRemove(q, elementsToAdd, identityFun, alwaysTrueFun, elementsToRemove, result, t)
+	testQueueBasicAddLengthPeekRemove(q, elementsToAdd, identityFunInt, alwaysTrueFun, elementsToRemove, result, t)
 }
 
 //--
@@ -153,7 +154,9 @@ func TestLimitLimitedPriorityHashQueueTwice(t *testing.T) {
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueNoLimitTwice(t *testing.T) {
-	testPriorityQueueTwice(func(fun func(i interface{}) bool) Queue { return NewLimitPriorityLimitedPriorityHashQueue(fun, 150) }, t)
+	testPriorityQueueTwice(func(priorityFun func(i interface{}) bool) Queue {
+		return NewLimitPriorityLimitedPriorityHashQueue(priorityFun, 150)
+	}, t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueTwice(t *testing.T) {
@@ -191,32 +194,34 @@ func TestPriorityHashLimitedPriorityHashQueueTwice(t *testing.T) {
 }
 
 func TestLimitHashLimitedPriorityHashQueueNoLimitTwice(t *testing.T) {
-	testHashQueueTwice(func(hashNeeded bool) Queue {
-		return NewLimitHashLimitedPriorityHashQueue(80, hashNeeded)
+	testHashQueueTwice(func(hashNeededFun *func(interface{}) interface{}) Queue {
+		return NewLimitHashLimitedPriorityHashQueue(80, hashNeededFun)
 	}, t)
 }
 
 func TestLimitHashLimitedPriorityHashQueueTwice(t *testing.T) {
 	limit := 30
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
 	elementsToAddSingle := 50
 	indexDiff := elementsToAddSingle - limit
 	resultFun := func(index int) int { return index + indexDiff }
-	q := NewLimitHashLimitedPriorityHashQueue(limit, true)
+	q := NewLimitHashLimitedPriorityHashQueue(limit, &hashFun)
 	testQueueTwice(q, elementsToAddSingle, alwaysTrueFun, limit, resultFun, t)
 }
 
 func TestLimitedPriorityHashQueueNoLimitTwice(t *testing.T) {
-	testPriorityHashQueueTwice(func(fun func(i interface{}) bool, hashNeeded bool) Queue {
-		return NewLimitedPriorityHashQueue(fun, 80, hashNeeded)
+	testPriorityHashQueueTwice(func(priorityFun func(i interface{}) bool, hashNeededFun *func(interface{}) interface{}) Queue {
+		return NewLimitedPriorityHashQueue(priorityFun, 80, hashNeededFun)
 	}, t)
 }
 
 func TestLimitedPriorityHashQueueTwice(t *testing.T) {
 	limit := 30
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
 	elementsToAddSingle := 50
 	q := NewLimitedPriorityHashQueue(func(i interface{}) bool {
 		return i.(int)%3 == 0
-	}, limit, true)
+	}, limit, &hashFun)
 	addResultFun := func(index int) bool { return (index < elementsToAddSingle) || ((index-elementsToAddSingle)%3 != 0) }
 	resultFun := func(index int) int {
 		if index <= 16 {
@@ -230,17 +235,19 @@ func TestLimitedPriorityHashQueueTwice(t *testing.T) {
 	testQueueTwice(q, elementsToAddSingle, addResultFun, limit, resultFun, t)
 }
 
-func testHashQueueTwice(makeHashQueueFun func(hashNeeded bool) Queue, t *testing.T) {
-	q := makeHashQueueFun(true)
+func testHashQueueTwice(makeHashQueueFun func(hashNeededFun *func(interface{}) interface{}) Queue, t *testing.T) {
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	q := makeHashQueueFun(&hashFun)
 	elementsToAddSingle := 50
 	addResultFun := func(index int) bool { return index < elementsToAddSingle }
-	testQueueTwice(q, elementsToAddSingle, addResultFun, elementsToAddSingle, identityFun, t)
+	testQueueTwice(q, elementsToAddSingle, addResultFun, elementsToAddSingle, identityFunInt, t)
 }
 
-func testPriorityHashQueueTwice(makePriorityHashQueueFun func(fun func(i interface{}) bool, hashNeeded bool) Queue, t *testing.T) {
+func testPriorityHashQueueTwice(makePriorityHashQueueFun func(priorityFun func(i interface{}) bool, hashNeededFun *func(interface{}) interface{}) Queue, t *testing.T) {
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
 	q := makePriorityHashQueueFun(func(i interface{}) bool {
 		return i.(int)%3 == 0
-	}, true)
+	}, &hashFun)
 	elementsToAddSingle := 50
 	addResultFun := func(index int) bool { return index < elementsToAddSingle }
 	resultFun := func(index int) int {
@@ -316,13 +323,14 @@ func TestLimitPriorityLimitedPriorityHashQueueOverflow(t *testing.T) {
 
 func TestLimitedPriorityHashQueueOverflow(t *testing.T) {
 	limit := 30
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
 	elementsToAddSingle := 50
 	cutOffLow := 20
 	cutOffHigh := 40
 	q := NewLimitedPriorityHashQueue(func(i interface{}) bool {
 		value := i.(int)
 		return value < cutOffLow || cutOffHigh <= value
-	}, limit, true)
+	}, limit, &hashFun)
 	addResultFun := func(index int) bool {
 		return index < elementsToAddSingle
 	}
@@ -339,10 +347,11 @@ func TestLimitedPriorityHashQueueOverflow(t *testing.T) {
 
 func TestLimitedPriorityHashQueueDuplicates(t *testing.T) {
 	limit := 80
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
 	elementsToAddFirstIteration := 50
 	q := NewLimitedPriorityHashQueue(func(i interface{}) bool {
 		return i.(int)%3 == 0
-	}, limit, true)
+	}, limit, &hashFun)
 	addFun := func(index int) int {
 		if index < elementsToAddFirstIteration {
 			return 2 * index
@@ -399,7 +408,8 @@ func TestLimitPriorityLimitedPriorityHashQueueAddRemove(t *testing.T) {
 }
 
 func TestHashLimitedPriorityHashQueueAddRemove(t *testing.T) {
-	testDefaultQueueAddRemove(NewHashLimitedPriorityHashQueue(true), t)
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	testDefaultQueueAddRemove(NewHashLimitedPriorityHashQueue(&hashFun), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueAddRemove(t *testing.T) {
@@ -422,11 +432,11 @@ func TestLimitedPriorityHashQueueAddRemove(t *testing.T) {
 	testLimitedPriorityQueueAddRemove(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueNoLimitAddRemove(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
-	testPriorityQueueAddRemove(func(fun func(i interface{}) bool) Queue { return makeLimitedPriorityQueueFun(fun, 150) }, t)
+func testLimitedPriorityQueueNoLimitAddRemove(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+	testPriorityQueueAddRemove(func(priorityFun func(i interface{}) bool) Queue { return makeLimitedPriorityQueueFun(priorityFun, 150) }, t)
 }
 
-func testLimitedPriorityQueueAddRemove(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueAddRemove(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
 	limit := 80
 	q := makeLimitedPriorityQueueFun(func(i interface{}) bool {
 		return i.(int)%3 == 0
@@ -526,7 +536,8 @@ func TestLimitPriorityLimitedPriorityHashQueueLength(t *testing.T) {
 }
 
 func TesHashLimitedPriorityHashQueueLength(t *testing.T) {
-	testDefaultQueueLength(NewHashLimitedPriorityHashQueue(true), t)
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	testDefaultQueueLength(NewHashLimitedPriorityHashQueue(&hashFun), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueLength(t *testing.T) {
@@ -549,11 +560,13 @@ func TestLimitedPriorityHashQueueLength(t *testing.T) {
 	testLimitedPriorityQueueLength(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueNoLimitLength(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
-	testPriorityQueueLength(func(fun func(i interface{}) bool) Queue { return makeLimitedPriorityQueueFun(fun, 1500) }, t)
+func testLimitedPriorityQueueNoLimitLength(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+	testPriorityQueueLength(func(priorityFun func(i interface{}) bool) Queue {
+		return makeLimitedPriorityQueueFun(priorityFun, 1500)
+	}, t)
 }
 
-func testLimitedPriorityQueueLength(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueLength(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
 	limit := 800
 	q := makeLimitedPriorityQueueFun(func(i interface{}) bool {
 		return i.(int)%3 == 0
@@ -633,7 +646,8 @@ func TestLimitPriorityLimitedPriorityHashQueueGet(t *testing.T) {
 }
 
 func TestHashLimitedPriorityHashQueueGet(t *testing.T) {
-	testDefaultQueueGet(NewHashLimitedPriorityHashQueue(true), t)
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	testDefaultQueueGet(NewHashLimitedPriorityHashQueue(&hashFun), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueGet(t *testing.T) {
@@ -656,11 +670,13 @@ func TestLimitedPriorityHashQueueGet(t *testing.T) {
 	testLimitedPriorityQueueGet(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueNoLimitGet(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
-	testPriorityQueueGet(func(fun func(i interface{}) bool) Queue { return makeLimitedPriorityQueueFun(fun, 1500) }, t)
+func testLimitedPriorityQueueNoLimitGet(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+	testPriorityQueueGet(func(priorityFun func(i interface{}) bool) Queue {
+		return makeLimitedPriorityQueueFun(priorityFun, 1500)
+	}, t)
 }
 
-func testLimitedPriorityQueueGet(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueGet(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
 	limit := 800
 	q := makeLimitedPriorityQueueFun(func(i interface{}) bool {
 		return i.(int)%2 == 0
@@ -750,7 +766,8 @@ func TestLimitPriorityLimitedPriorityHashQueueGetNegative(t *testing.T) {
 }
 
 func TestHashLimitedPriorityHashQueueGetNegative(t *testing.T) {
-	testDefaultQueueGetNegative(NewHashLimitedPriorityHashQueue(true), t)
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	testDefaultQueueGetNegative(NewHashLimitedPriorityHashQueue(&hashFun), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueGetNegative(t *testing.T) {
@@ -773,11 +790,13 @@ func TestLimitedPriorityHashQueueGetNegative(t *testing.T) {
 	testLimitedPriorityQueueGetNegative(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueNoLimitGetNegative(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
-	testPriorityQueueGetNegative(func(fun func(i interface{}) bool) Queue { return makeLimitedPriorityQueueFun(fun, 1500) }, t)
+func testLimitedPriorityQueueNoLimitGetNegative(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+	testPriorityQueueGetNegative(func(priorityFun func(i interface{}) bool) Queue {
+		return makeLimitedPriorityQueueFun(priorityFun, 1500)
+	}, t)
 }
 
-func testLimitedPriorityQueueGetNegative(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueGetNegative(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
 	limit := 800
 	q := makeLimitedPriorityQueueFun(func(i interface{}) bool {
 		return i.(int)%2 == 0
@@ -854,7 +873,8 @@ func TestLimitPriorityLimitedPriorityHashQueueGetOutOfRangePanics(t *testing.T) 
 }
 
 func TestHashLimitedPriorityHashQueueGetOutOfRangePanics(t *testing.T) {
-	testQueueGetOutOfRangePanics(NewHashLimitedPriorityHashQueue(true), t)
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	testQueueGetOutOfRangePanics(NewHashLimitedPriorityHashQueue(&hashFun), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueGetOutOfRangePanics(t *testing.T) {
@@ -869,7 +889,7 @@ func TestLimitedPriorityHashQueueGetOutOfRangePanics(t *testing.T) {
 	testLimitedPriorityQueueGetOutOfRangePanics(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueGetOutOfRangePanics(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueGetOutOfRangePanics(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
 	q := makeLimitedPriorityQueueFun(func(i interface{}) bool {
 		return i.(int)%2 == 0
 	}, 800)
@@ -914,7 +934,8 @@ func TestLimitPriorityLimitedPriorityHashQueuePeekOutOfRangePanics(t *testing.T)
 }
 
 func TestHashtLimitedPriorityHashQueuePeekOutOfRangePanics(t *testing.T) {
-	testQueuePeekOutOfRangePanics(NewHashLimitedPriorityHashQueue(true), t)
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	testQueuePeekOutOfRangePanics(NewHashLimitedPriorityHashQueue(&hashFun), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueuePeekOutOfRangePanics(t *testing.T) {
@@ -929,7 +950,7 @@ func TestLimitedPriorityHashQueuePeekOutOfRangePanics(t *testing.T) {
 	testLimitedPriorityQueuePeekOutOfRangePanics(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueuePeekOutOfRangePanics(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueuePeekOutOfRangePanics(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
 	q := makeLimitedPriorityQueueFun(func(i interface{}) bool {
 		return i.(int)%2 == 0
 	}, 800)
@@ -973,7 +994,8 @@ func TestLimitPriorityLimitedPriorityHashQueueRemoveOutOfRangePanics(t *testing.
 }
 
 func TestHashLimitedPriorityHashQueueRemoveOutOfRangePanics(t *testing.T) {
-	testQueueRemoveOutOfRangePanics(NewHashLimitedPriorityHashQueue(true), t)
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	testQueueRemoveOutOfRangePanics(NewHashLimitedPriorityHashQueue(&hashFun), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueRemoveOutOfRangePanics(t *testing.T) {
@@ -988,7 +1010,7 @@ func TestLimitedPriorityHashQueueRemoveOutOfRangePanics(t *testing.T) {
 	testLimitedPriorityQueueRemoveOutOfRangePanics(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueRemoveOutOfRangePanics(makeLimitedPriorityQueueFun func(fun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueRemoveOutOfRangePanics(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
 	q := makeLimitedPriorityQueueFun(func(i interface{}) bool {
 		return i.(int)%2 == 0
 	}, 800)
@@ -1015,14 +1037,17 @@ func testQueueRemoveOutOfRangePanics(q Queue, t *testing.T) {
 
 //--
 
-func newPriorityHashLimitedPriorityHashQueue(fun func(i interface{}) bool) Queue {
-	return NewPriorityHashLimitedPriorityHashQueue(fun, true)
+func newPriorityHashLimitedPriorityHashQueue(priorityFun func(i interface{}) bool) Queue {
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	return NewPriorityHashLimitedPriorityHashQueue(priorityFun, &hashFun)
 }
 
 func newLimitHashLimitedPriorityHashQueue(limit int) Queue {
-	return NewLimitHashLimitedPriorityHashQueue(limit, true)
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	return NewLimitHashLimitedPriorityHashQueue(limit, &hashFun)
 }
 
-func newLimitPriorityHashLimitedPriorityHashQueue(fun func(i interface{}) bool, limit int) Queue {
-	return NewLimitedPriorityHashQueue(fun, limit, true)
+func newLimitPriorityHashLimitedPriorityHashQueue(priorityFun func(i interface{}) bool, limit int) Queue {
+	hashFun := func(elem interface{}) interface{} { return elem.(int) * 5 }
+	return NewLimitedPriorityHashQueue(priorityFun, limit, &hashFun)
 }

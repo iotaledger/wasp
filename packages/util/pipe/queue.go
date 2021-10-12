@@ -11,6 +11,7 @@ type LimitedPriorityHashQueue struct {
 	priorityFun func(interface{}) bool
 	limit       int
 	hash        *map[interface{}]bool
+	hashFun     func(interface{}) interface{}
 }
 
 var _ Queue = &LimitedPriorityHashQueue{}
@@ -18,34 +19,34 @@ var _ Queue = &LimitedPriorityHashQueue{}
 const Infinity = 0
 
 func NewDefaultLimitedPriorityHashQueue() Queue {
-	return NewHashLimitedPriorityHashQueue(false)
+	return NewHashLimitedPriorityHashQueue(nil)
 }
 
-func NewPriorityLimitedPriorityHashQueue(fun func(interface{}) bool) Queue {
-	return NewPriorityHashLimitedPriorityHashQueue(fun, false)
+func NewPriorityLimitedPriorityHashQueue(priorityFun func(interface{}) bool) Queue {
+	return NewPriorityHashLimitedPriorityHashQueue(priorityFun, nil)
 }
 
 func NewLimitLimitedPriorityHashQueue(limit int) Queue {
-	return NewLimitHashLimitedPriorityHashQueue(limit, false)
+	return NewLimitHashLimitedPriorityHashQueue(limit, nil)
 }
 
-func NewLimitPriorityLimitedPriorityHashQueue(fun func(interface{}) bool, limit int) Queue {
-	return NewLimitedPriorityHashQueue(fun, limit, false)
+func NewLimitPriorityLimitedPriorityHashQueue(priorityFun func(interface{}) bool, limit int) Queue {
+	return NewLimitedPriorityHashQueue(priorityFun, limit, nil)
 }
 
-func NewHashLimitedPriorityHashQueue(hashNeeded bool) Queue {
-	return NewLimitHashLimitedPriorityHashQueue(Infinity, hashNeeded)
+func NewHashLimitedPriorityHashQueue(hashNeededFun *func(interface{}) interface{}) Queue {
+	return NewLimitHashLimitedPriorityHashQueue(Infinity, hashNeededFun)
 }
 
-func NewPriorityHashLimitedPriorityHashQueue(fun func(interface{}) bool, hashNeeded bool) Queue {
-	return NewLimitedPriorityHashQueue(fun, Infinity, hashNeeded)
+func NewPriorityHashLimitedPriorityHashQueue(priorityFun func(interface{}) bool, hashNeededFun *func(interface{}) interface{}) Queue {
+	return NewLimitedPriorityHashQueue(priorityFun, Infinity, hashNeededFun)
 }
 
-func NewLimitHashLimitedPriorityHashQueue(limit int, hashNeeded bool) Queue {
-	return NewLimitedPriorityHashQueue(func(interface{}) bool { return false }, limit, hashNeeded)
+func NewLimitHashLimitedPriorityHashQueue(limit int, hashNeededFun *func(interface{}) interface{}) Queue {
+	return NewLimitedPriorityHashQueue(func(interface{}) bool { return false }, limit, hashNeededFun)
 }
 
-func NewLimitedPriorityHashQueue(fun func(interface{}) bool, limit int, hashNeeded bool) Queue {
+func NewLimitedPriorityHashQueue(priorityFun func(interface{}) bool, limit int, hashNeededFun *func(interface{}) interface{}) Queue {
 	var initBufSize int
 	if (limit != Infinity) && (limit < minQueueLen) {
 		initBufSize = limit
@@ -53,11 +54,14 @@ func NewLimitedPriorityHashQueue(fun func(interface{}) bool, limit int, hashNeed
 		initBufSize = minQueueLen
 	}
 	var hash *map[interface{}]bool
-	if hashNeeded {
+	var hashFun func(interface{}) interface{}
+	if hashNeededFun == nil {
+		hash = nil
+		hashFun = func(elem interface{}) interface{} { return elem }
+	} else {
 		hashT := make(map[interface{}]bool)
 		hash = &hashT
-	} else {
-		hash = nil
+		hashFun = *hashNeededFun
 	}
 	return &LimitedPriorityHashQueue{
 		head:        0,
@@ -65,9 +69,10 @@ func NewLimitedPriorityHashQueue(fun func(interface{}) bool, limit int, hashNeed
 		tail:        0,
 		count:       0,
 		buf:         make([]interface{}, initBufSize),
-		priorityFun: fun,
+		priorityFun: priorityFun,
 		limit:       limit,
 		hash:        hash,
+		hashFun:     hashFun,
 	}
 }
 
@@ -116,15 +121,17 @@ func (q *LimitedPriorityHashQueue) resize() {
 // Add puts an element to the start or end of the queue, depending
 // on the result of priorityFun. If the limited queue is full it adds a new element
 // removing the previously added element, according to the following rules:
-//  * not prioritized element is chosen for deletion, if possible
+//	* not prioritized element is chosen for deletion, if possible
 //	* the chosen for deletion element is always the oldest among its type
 //	* not prioritized element can not be added if there are no not prioritized
 //	  element to delete
 // If it is a hash queue, the element is not added, if it is already in the queue.
 // If the add was successful, returns `true`.
 func (q *LimitedPriorityHashQueue) Add(elem interface{}) bool {
+	elemHash := elem
 	if q.hash != nil {
-		_, exists := (*(q.hash))[elem]
+		elemHash = q.hashFun(elem)
+		_, exists := (*(q.hash))[elemHash]
 		if exists {
 			// duplicate element; ignoring
 			return false
@@ -175,7 +182,7 @@ func (q *LimitedPriorityHashQueue) Add(elem interface{}) bool {
 			}
 		}
 		if q.hash != nil {
-			delete(*(q.hash), deleteElem)
+			delete(*(q.hash), q.hashFun(deleteElem))
 		}
 	}
 	if priority {
@@ -193,7 +200,7 @@ func (q *LimitedPriorityHashQueue) Add(elem interface{}) bool {
 		q.count++
 	}
 	if q.hash != nil {
-		(*(q.hash))[elem] = true
+		(*(q.hash))[elemHash] = true
 	}
 	return true
 }
@@ -241,7 +248,7 @@ func (q *LimitedPriorityHashQueue) Remove() interface{} {
 		q.resize()
 	}
 	if q.hash != nil {
-		delete(*(q.hash), ret)
+		delete(*(q.hash), q.hashFun(ret))
 	}
 	return ret
 }
