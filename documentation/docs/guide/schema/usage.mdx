@@ -17,16 +17,21 @@ Once you know what your smart contract will be named it is time to set up your s
 Simply navigate to the central smart contract folder, and run the schema tool's
 initialization function there like this:
 
-`schema -init MySmartContract`
+`schema -init MySmartContract -schemaType=json`
 
 This command will create a subfolder named `mysmartcontract` and generate an initial
-schema definition file `schema.json` inside this subfolder. Note that the generated
+schema definition file `schema.json` inside this subfolder. 
+To generate the schema in yaml format you can run the tool in the folder like this:
+`schema -init MySmartContract -schemaType=yaml`
+
+Note that the generated
 subfolder name is all lower case. This is due to best practices for package names both in
 Rust and in Go. The generated schema.json looks like this:
 
 <Tabs defaultValue="json"
       values={[
           {label: 'schema.json', value: 'json'},
+          {label: 'yaml.json', value: 'yaml'}
       ]}>
 
 <TabItem value="json">
@@ -64,14 +69,40 @@ Rust and in Go. The generated schema.json looks like this:
 ```
 
 </TabItem>
+
+<TabItem value="yaml">
+
+```yaml
+name: MySmartContract
+description: MySmartContract description
+structs: {}
+typedefs: {}
+state:
+  owner: AgentID // current owner of this smart contract
+funcs:
+  init:
+    params:
+      owner: ?AgentID // optional owner of this smart contract
+  setOwner:
+    access: owner // current owner of this smart contract
+    params:
+      owner: AgentID // new owner of this smart contract
+views:
+  getOwner:
+    results:
+      owner: AgentID // current owner of this smart contract
+
+```
+
+</TabItem>
 </Tabs>
 
-Schema.json has been pre-populated with all sections that you could need, and some
+The schema file has been pre-populated with all sections that you could need, and some
 functions that allow you to maintain the ownership of the smart contract. Now that
-schema.json exists it is up to you to modify it further to reflect the requirements of
+the schema exists it is up to you to modify it further to reflect the requirements of
 your smart contract.
 
-We use camel case naming convention throughout schema.json when naming items. Function and
+We use camel case naming convention throughout the schema when naming items. Function and
 variable names always start with a lower case character, and type names always start with
 an upper case character.
 
@@ -82,19 +113,28 @@ you will need.
 
 The next step is to go into the new `mysmartcontract` subfolder and run the schema tool
 there to generate the initial code. If you just want to generate Rust code you run the
-schema tool with the `-rust` option like this:
+schema tool with the `-rust` option and the type of the generated schema like this:
 
-`schema -rust`
+For Json:
+`schema -rust -schemaType=json`
+For Yaml:
+`schema -rust -schemaType=yaml`
 
 If you just want to generate Go code you run the schema tool with the `-go` option like
 this:
 
-`schema -go`
+For Json:
+`schema -go -schemaType=json`
+For Yaml:
+`schema -go -schemaType=yaml`
 
 And if you want to generate both Rust and Go code you need to specify both options like
 this:
 
-`schema -rust -go`
+For Json:
+`schema -rust -go -schemaType=json`
+For Yaml:
+`schema -rust -go -schemaType=yaml`
 
 The schema tool will generate a complete set of source files for the desired language(s).
 After generating the Rust code for the first time you should modify the Cargo.toml file to

@@ -8,7 +8,7 @@ declarations for such nested types. Especially because in a field definition you
 indicate either a single type, or an array of single type, or a map of single type.
 
 We devised a simple solution to this problem. You can add a `typedefs` section to
-schema.json where you can define a single type name for a container type. That way you can
+the schema file where you can define a single type name for a container type. That way you can
 easily create containers that contain such container types. The schema tool will
 automatically generate the in-between proxy types necessary to make all of this work.
 
@@ -16,11 +16,12 @@ To keep it at the `betting` smart contract from before, imagine we would want to
 track of all betting rounds. Since a betting round contains an array of all bets in a
 round you could not easily define it if it weren't for typedefs.
 
-Instead, now you add the following to your schema.json:
+Instead, now you add the following to your schema:
 
 <Tabs defaultValue="json"
       values={[
           {label: 'schema.json', value: 'json'},
+          {label: 'schema.yaml', value: 'yaml'},
       ]}>
 
 <TabItem value="json">
@@ -34,6 +35,17 @@ Instead, now you add the following to your schema.json:
     "rounds": "[]BettingRound // keep track of all betting rounds"
   }
 }
+```
+
+</TabItem>
+
+<TabItem value="yaml">
+
+```yaml
+typedefs:
+  BettingRound: '[]Bet // one round of bets'
+state:
+  rounds: '[]BettingRound // keep track of all betting rounds'
 ```
 
 </TabItem>
