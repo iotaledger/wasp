@@ -19,17 +19,17 @@ The Accounts contract provides the following views:
 
 ## balance
 
-`balance` - get the account balance of a specific account
+Get the account balance of a specific account.
 
-parameters:
+### Parameters
 
-- `ParamAgentID` - account's AgentID
+- `ParamAgentID`: account's AgentID.
 
-returns:
+### Returns
 
-- a map of [token_color] -> [amount]
+- A map of [token_color] -> [amount].
 
-examples:
+### Examples
 
 <Tabs
     defaultValue="solo"
@@ -84,11 +84,11 @@ balances := b.Results.Balances()
 
 ## totalAssets
 
-`totalAssets` - get the total colored balances controlled by the chain
+Get the total colored balances controlled by the chain.
 
-returns:
+### Returns
 
-- a map of [token_color] -> [amount]
+- A map of [token_color] -> [amount] .
 
 <Tabs
     defaultValue="solo"
@@ -139,11 +139,11 @@ balances := b.Results.Balances()
 
 ## accounts
 
-`accounts` - get a list of all accounts existing on the chain
+Get a list of all accounts existing on the chain.
 
-returns:
+### Returns
 
-- a list of accounts (AgentIDs)
+- A list of accounts (AgentIDs).
 
 <Tabs
     defaultValue="solo"
@@ -194,15 +194,15 @@ accounts := a.Results.Agents()
 
 ## getAccountNonce
 
-`getAccountNonce` - get the current nonce for a given account.
+Get the current nonce for a given account.
 
-parameters:
+### Parameters
 
-- `ParamAgentID` - account's AgentI
+- `ParamAgentID`: Account's AgentID.
 
-returns:
+#### Returns
 
-- the current nonce
+- The current nonce.
 
 <Tabs
     defaultValue="solo"
