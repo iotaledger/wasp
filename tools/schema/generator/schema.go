@@ -22,20 +22,20 @@ type (
 )
 
 type FuncDesc struct {
-	Access  string    `json:"access,omitempty"`
-	Params  StringMap `json:"params,omitempty"`
-	Results StringMap `json:"results,omitempty"`
+	Access  string    `json:"access,omitempty" yaml:"access,omitempty"`
+	Params  StringMap `json:"params,omitempty" yaml:"params,omitempty"`
+	Results StringMap `json:"results,omitempty" yaml:"results,omitempty"`
 }
 type FuncDescMap map[string]*FuncDesc
 
-type JSONSchema struct {
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	Structs     StringMapMap `json:"structs"`
-	Typedefs    StringMap    `json:"typedefs"`
-	State       StringMap    `json:"state"`
-	Funcs       FuncDescMap  `json:"funcs"`
-	Views       FuncDescMap  `json:"views"`
+type TemplateSchema struct {
+	Name        string       `json:"name" yaml:"name"`
+	Description string       `json:"description" yaml:"description"`
+	Structs     StringMapMap `json:"structs" yaml:"structs"`
+	Typedefs    StringMap    `json:"typedefs" yaml:"typedefs"`
+	State       StringMap    `json:"state" yaml:"state"`
+	Funcs       FuncDescMap  `json:"funcs" yaml:"funcs"`
+	Views       FuncDescMap  `json:"views" yaml:"views"`
 }
 
 type FuncDef struct {
@@ -81,29 +81,29 @@ func NewSchema() *Schema {
 	return &Schema{}
 }
 
-func (s *Schema) Compile(jsonSchema *JSONSchema) error {
-	s.FullName = strings.TrimSpace(jsonSchema.Name)
+func (s *Schema) Compile(templateSchema *TemplateSchema) error {
+	s.FullName = strings.TrimSpace(templateSchema.Name)
 	if s.FullName == "" {
 		return fmt.Errorf("missing contract name")
 	}
 	s.Name = lower(s.FullName)
-	s.Description = strings.TrimSpace(jsonSchema.Description)
+	s.Description = strings.TrimSpace(templateSchema.Description)
 
-	err := s.compileTypes(jsonSchema)
+	err := s.compileTypes(templateSchema)
 	if err != nil {
 		return err
 	}
-	err = s.compileSubtypes(jsonSchema)
+	err = s.compileSubtypes(templateSchema)
 	if err != nil {
 		return err
 	}
 	params := make(FieldMap)
 	results := make(FieldMap)
-	err = s.compileFuncs(jsonSchema, &params, &results, false)
+	err = s.compileFuncs(templateSchema, &params, &results, false)
 	if err != nil {
 		return err
 	}
-	err = s.compileFuncs(jsonSchema, &params, &results, true)
+	err = s.compileFuncs(templateSchema, &params, &results, true)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func (s *Schema) Compile(jsonSchema *JSONSchema) error {
 	for _, name := range sortedFields(results) {
 		s.Results = append(s.Results, results[name])
 	}
-	return s.compileStateVars(jsonSchema)
+	return s.compileStateVars(templateSchema)
 }
 
 func (s *Schema) CompileField(fldName, fldType string) (*Field, error) {
@@ -125,17 +125,17 @@ func (s *Schema) CompileField(fldName, fldType string) (*Field, error) {
 	return field, nil
 }
 
-func (s *Schema) compileFuncs(jsonSchema *JSONSchema, params, results *FieldMap, views bool) (err error) {
+func (s *Schema) compileFuncs(templateSchema *TemplateSchema, params, results *FieldMap, views bool) (err error) {
 	// TODO check for clashing Hnames
 
 	kind := "func"
-	jsonFuncs := jsonSchema.Funcs
+	jsonFuncs := templateSchema.Funcs
 	if views {
 		kind = "view"
-		jsonFuncs = jsonSchema.Views
+		jsonFuncs = templateSchema.Views
 	}
 	for _, funcName := range sortedFuncDescs(jsonFuncs) {
-		if views && jsonSchema.Funcs[funcName] != nil {
+		if views && templateSchema.Funcs[funcName] != nil {
 			return fmt.Errorf("duplicate func/view name")
 		}
 		funcDesc := jsonFuncs[funcName]
@@ -192,11 +192,11 @@ func (s *Schema) compileFuncFields(fieldMap StringMap, allFieldMap *FieldMap, wh
 	return fields, nil
 }
 
-func (s *Schema) compileStateVars(jsonSchema *JSONSchema) error {
+func (s *Schema) compileStateVars(templateSchema *TemplateSchema) error {
 	varNames := make(StringMap)
 	varAliases := make(StringMap)
-	for _, varName := range sortedKeys(jsonSchema.State) {
-		varType := jsonSchema.State[varName]
+	for _, varName := range sortedKeys(templateSchema.State) {
+		varType := templateSchema.State[varName]
 		varDef, err := s.CompileField(varName, varType)
 		if err != nil {
 			return err
@@ -214,11 +214,11 @@ func (s *Schema) compileStateVars(jsonSchema *JSONSchema) error {
 	return nil
 }
 
-func (s *Schema) compileSubtypes(jsonSchema *JSONSchema) error {
+func (s *Schema) compileSubtypes(templateSchema *TemplateSchema) error {
 	varNames := make(StringMap)
 	varAliases := make(StringMap)
-	for _, varName := range sortedKeys(jsonSchema.Typedefs) {
-		varType := jsonSchema.Typedefs[varName]
+	for _, varName := range sortedKeys(templateSchema.Typedefs) {
+		varType := templateSchema.Typedefs[varName]
 		varDef, err := s.CompileField(varName, varType)
 		if err != nil {
 			return err
@@ -236,9 +236,9 @@ func (s *Schema) compileSubtypes(jsonSchema *JSONSchema) error {
 	return nil
 }
 
-func (s *Schema) compileTypes(jsonSchema *JSONSchema) error {
-	for _, typeName := range sortedMaps(jsonSchema.Structs) {
-		fieldMap := jsonSchema.Structs[typeName]
+func (s *Schema) compileTypes(templateSchema *TemplateSchema) error {
+	for _, typeName := range sortedMaps(templateSchema.Structs) {
+		fieldMap := templateSchema.Structs[typeName]
 		typeDef := &Struct{}
 		typeDef.Name = typeName
 		fieldNames := make(StringMap)
