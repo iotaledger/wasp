@@ -69,6 +69,12 @@ All the nodes in a committee must trust each other to run the chain.
 $ wasp-cli request-funds
 ```
 
+After you have requested the funds, you can deposit funds to a chain by running:
+
+```shell
+wasp-cli chain deposit IOTA:10000
+```
+
 ### Deploy the ISCP Chain
 
 ```shell
