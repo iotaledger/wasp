@@ -129,16 +129,16 @@ func (s *Schema) compileFuncs(templateSchema *TemplateSchema, params, results *F
 	// TODO check for clashing Hnames
 
 	kind := "func"
-	jsonFuncs := templateSchema.Funcs
+	templateFuncs := templateSchema.Funcs
 	if views {
 		kind = "view"
-		jsonFuncs = templateSchema.Views
+		templateFuncs = templateSchema.Views
 	}
-	for _, funcName := range sortedFuncDescs(jsonFuncs) {
+	for _, funcName := range sortedFuncDescs(templateFuncs) {
 		if views && templateSchema.Funcs[funcName] != nil {
 			return fmt.Errorf("duplicate func/view name")
 		}
-		funcDesc := jsonFuncs[funcName]
+		funcDesc := templateFuncs[funcName]
 		f := &FuncDef{}
 		f.String = funcName
 		f.Kind = capitalize(kind)

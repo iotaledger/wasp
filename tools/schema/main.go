@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/iotaledger/wasp/tools/schema/generator"
@@ -19,14 +18,15 @@ import (
 )
 
 var (
-	disabledFlag        = false
-	flagCore            = flag.Bool("core", false, "generate core contract interface")
-	flagForce           = flag.Bool("force", false, "force code generation")
-	flagGo              = flag.Bool("go", false, "generate Go code")
-	flagInit            = flag.String("init", "", "generate new schema.json for smart contract named <string>")
-	flagJava            = &disabledFlag // flag.Bool("java", false, "generate Java code <outdated>")
-	flagRust            = flag.Bool("rust", false, "generate Rust code <default>")
-	flagSchemaExtension = flag.String("schemaExtension", ".json", "schema type to be used or generated. Values: .json or .yaml")
+	disabledFlag = false
+	flagCore     = flag.Bool("core", false, "generate core contract interface")
+	flagForce    = flag.Bool("force", false, "force code generation")
+	flagGo       = flag.Bool("go", false, "generate Go code")
+	flagInit     = flag.String("init", "", "generate new schema.json for smart contract named <string>")
+	flagJava     = &disabledFlag // flag.Bool("java", false, "generate Java code <outdated>")
+	flagRust     = flag.Bool("rust", false, "generate Rust code <default>")
+	flagJson     = flag.Bool("json", false, "generate/use the schema in json format.")
+	flagYaml     = flag.Bool("yaml", false, "generate/use the schema in yaml format.")
 )
 
 const (
@@ -40,7 +40,17 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	schemaExtension := strings.ToLower(*flagSchemaExtension)
+
+	if *flagJson && *flagYaml || !*flagJson && !*flagYaml {
+		panic("choose either json or yaml for the schema")
+	}
+
+	var schemaExtension string
+	if *flagJson {
+		schemaExtension = ".json"
+	} else if *flagYaml {
+		schemaExtension = ".yaml"
+	}
 
 	file, err := os.Open(schema + schemaExtension)
 	if err == nil {
@@ -57,7 +67,7 @@ func main() {
 	}
 
 	if *flagInit != "" {
-		err = gerateSchemaNew(schemaExtension)
+		err = generateSchemaNew(schemaExtension)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -128,7 +138,7 @@ func generateSchema(file *os.File) error {
 	return nil
 }
 
-func gerateSchemaNew(schemaExtension string) error {
+func generateSchemaNew(schemaExtension string) error {
 	name := *flagInit
 	fmt.Println("initializing " + name)
 
@@ -210,24 +220,20 @@ func WriteYamlSchema(templateSchema *generator.TemplateSchema, file *os.File) er
 }
 
 func loadSchema(file *os.File) (*generator.Schema, error) {
-	fileName := file.Name()
-	fileExtension := filepath.Ext(fileName)
 	fmt.Println("loading " + file.Name())
 	templateSchema := &generator.TemplateSchema{}
 
-	if fileExtension == ".json" {
+	if *flagJson {
 		err := json.NewDecoder(file).Decode(templateSchema)
 		if err != nil {
 			return nil, err
 		}
-	} else if fileExtension == ".yaml" {
+	} else if *flagYaml {
 		fileByteArray, _ := ioutil.ReadAll(file)
 		err := yaml.Unmarshal(fileByteArray, templateSchema)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		return nil, errors.New("Not implemented Schema Type " + fileExtension)
 	}
 
 	schema := generator.NewSchema()
