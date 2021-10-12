@@ -182,7 +182,4 @@ You can verify that your node is running by opening the dashboard with a web bro
 
 Repeat this process to launch as many nodes as you want for your committee.
 
-
-## Exposing a Port
-
-If you wish to expose a port, please follow the [instructions in the official Docker docs](https://docs.docker.com/engine/reference/commandline/run/#publish-or-expose-port--p---expose).
+tps://docs.docker.com/engine/reference/commandline/run/#publish-or-expose-port--p---expose).
