@@ -219,8 +219,8 @@ For Wasp, the `chainId` is the address to use.
 
 #### Dependencies
 
-* NodeJS >= 14
-* NPM
+* [NodeJS >= 14](https://nodejs.org/en/download/)
+* [NPM](https://www.npmjs.com/)
 
 #### Configuration
 
