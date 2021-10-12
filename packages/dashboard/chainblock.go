@@ -35,12 +35,12 @@ func (d *Dashboard) handleChainBlock(c echo.Context) error {
 	}
 
 	result := &ChainBlockTemplateParams{
-		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
+		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Block #%s", c.Param("index")),
 			Href:  "#",
 		}),
-		ChainID: *chainID,
+		ChainID: chainID,
 		Index:   uint32(index),
 	}
 
@@ -102,7 +102,7 @@ func (d *Dashboard) handleChainBlock(c echo.Context) error {
 
 type ChainBlockTemplateParams struct {
 	BaseTemplateParams
-	ChainID          iscp.ChainID
+	ChainID          *iscp.ChainID
 	Index            uint32
 	LatestBlockIndex uint32
 	Block            *blocklog.BlockInfo

@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
 )
@@ -32,6 +33,7 @@ type BaseTemplateParams struct {
 	Breadcrumbs []Tab
 	Path        string
 	MyNetworkID string
+	Version     string
 }
 
 type WaspServices interface {
@@ -85,6 +87,7 @@ func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateP
 		Breadcrumbs: breadcrumbs,
 		Path:        c.Path(),
 		MyNetworkID: d.wasp.MyNetworkID(),
+		Version:     wasp.Version,
 	}
 }
 

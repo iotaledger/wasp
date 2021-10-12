@@ -166,10 +166,3 @@ func (host *WasmProcessor) state() kv.KVStore {
 	}
 	return NewScViewState(host.ctxView)
 }
-
-func (host *WasmProcessor) utils() iscp.Utils {
-	if host.ctx != nil {
-		return host.ctx.Utils()
-	}
-	return host.ctxView.Utils()
-}

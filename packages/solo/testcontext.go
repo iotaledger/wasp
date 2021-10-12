@@ -11,6 +11,7 @@ type TestContext interface {
 	Name() string
 	Errorf(format string, args ...interface{})
 	FailNow()
+	Logf(format string, args ...interface{})
 }
 
 func NewTestContext(name string) TestContext {
@@ -31,4 +32,8 @@ func (f *testContext) Errorf(format string, args ...interface{}) {
 
 func (f *testContext) FailNow() {
 	panic("FailNow() called")
+}
+
+func (f *testContext) Logf(format string, args ...interface{}) {
+	fmt.Printf("["+f.name+"] "+format+"\n", args...)
 }

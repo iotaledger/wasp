@@ -113,8 +113,8 @@ func TestDeployGrant(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
@@ -138,8 +138,8 @@ func TestRevokeDeploy(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
@@ -169,8 +169,8 @@ func TestDeployGrantFail(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, user1)
+	)
+	_, err := chain.PostRequestSync(req.WithIotas(1), user1)
 	require.Error(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)

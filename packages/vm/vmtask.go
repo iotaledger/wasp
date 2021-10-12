@@ -25,15 +25,16 @@ type VMTask struct {
 	ACSSessionID             uint64
 	Processors               *processors.Cache
 	ChainInput               *ledgerstate.AliasOutput
-	VirtualState             state.VirtualState // in/out  Return uncommitted updated virtual state
+	VirtualStateAccess       state.VirtualStateAccess
 	SolidStateBaseline       coreutil.StateBaseline
 	Requests                 []iscp.Request
 	ProcessedRequestsCount   uint16
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue
-	ValidatorFeeTarget       iscp.AgentID
+	ValidatorFeeTarget       *iscp.AgentID
 	Log                      *logger.Logger
 	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
 	ResultTransactionEssence *ledgerstate.TransactionEssence // if not nil it is a normal block
 	RotationAddress          ledgerstate.Address             // if not nil, it is a rotation
+	StartTime                time.Time
 }

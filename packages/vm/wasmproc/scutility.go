@@ -5,7 +5,9 @@ package wasmproc
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -15,13 +17,12 @@ type ScUtility struct {
 	ScSandboxObject
 	nextRandom int
 	random     []byte
+	utils      iscp.Utils
 	vm         *WasmProcessor
 }
 
 func NewScUtility(vm *WasmProcessor) *ScUtility {
-	o := &ScUtility{}
-	o.vm = vm
-	return o
+	return &ScUtility{utils: sandbox_utils.NewUtils(), vm: vm}
 }
 
 func (o *ScUtility) InitObj(id, keyID int32, owner *ScDict) {
@@ -37,7 +38,7 @@ func (o *ScUtility) InitObj(id, keyID int32, owner *ScDict) {
 }
 
 func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
-	utils := o.vm.utils()
+	utils := o.utils
 	switch keyID {
 	case wasmhost.KeyBase58Decode:
 		base58Decoded, err := utils.Base58().Decode(string(bytes))
@@ -124,7 +125,7 @@ func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
 	for i := 0; i < count; i++ {
 		sigsBin[i] = decode.Bytes()
 	}
-	pubKeyBin, sigBin, err := o.vm.utils().BLS().AggregateBLSSignatures(pubKeysBin, sigsBin)
+	pubKeyBin, sigBin, err := o.utils.BLS().AggregateBLSSignatures(pubKeysBin, sigsBin)
 	if err != nil {
 		o.Panic(err.Error())
 	}
@@ -136,7 +137,7 @@ func (o *ScUtility) validBLSSignature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	return o.vm.utils().BLS().ValidSignature(data, pubKey, signature)
+	return o.utils.BLS().ValidSignature(data, pubKey, signature)
 }
 
 func (o *ScUtility) validED25519Signature(bytes []byte) bool {
@@ -144,5 +145,5 @@ func (o *ScUtility) validED25519Signature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	return o.vm.utils().ED25519().ValidSignature(data, pubKey, signature)
+	return o.utils.ED25519().ValidSignature(data, pubKey, signature)
 }

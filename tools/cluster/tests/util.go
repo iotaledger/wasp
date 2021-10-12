@@ -31,13 +31,16 @@ func (e *chainEnv) checkCoreContracts() {
 		ret, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		chid, _, _ := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
+		chid, err := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
+		require.NoError(e.t, err)
 		require.EqualValues(e.t, e.chain.ChainID, chid)
 
-		aid, _, _ := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
-		require.EqualValues(e.t, *e.chain.OriginatorID(), aid)
+		aid, err := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
+		require.NoError(e.t, err)
+		require.EqualValues(e.t, e.chain.OriginatorID(), aid)
 
-		desc, _, _ := codec.DecodeString(ret.MustGet(governance.VarDescription))
+		desc, err := codec.DecodeString(ret.MustGet(governance.VarDescription), "")
+		require.NoError(e.t, err)
 		require.EqualValues(e.t, e.chain.Description, desc)
 
 		records, err := e.chain.SCClient(root.Contract.Hname(), nil, i).
@@ -92,7 +95,7 @@ func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, col colored.Color, n
 		return 0
 	}
 
-	actual, _, err := codec.DecodeUint64(ret.MustGet(kv.Key(col[:])))
+	actual, err := codec.DecodeUint64(ret.MustGet(kv.Key(col[:])), 0)
 	require.NoError(e.t, err)
 
 	return actual
@@ -171,19 +174,17 @@ func (e *chainEnv) checkLedger() {
 	require.True(e.t, sum.Equals(e.getTotalBalance()))
 }
 
-func (e *chainEnv) getChainInfo() (iscp.ChainID, iscp.AgentID) {
+func (e *chainEnv) getChainInfo() (*iscp.ChainID, *iscp.AgentID) {
 	ret, err := e.chain.Cluster.WaspClient(0).CallView(
 		e.chain.ChainID, governance.Contract.Hname(), governance.FuncGetChainInfo.Name, nil,
 	)
 	require.NoError(e.t, err)
 
-	chainID, ok, err := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
+	chainID, err := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
 	require.NoError(e.t, err)
-	require.True(e.t, ok)
 
-	ownerID, ok, err := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
+	ownerID, err := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
 	require.NoError(e.t, err)
-	require.True(e.t, ok)
 	return chainID, ownerID
 }
 
@@ -235,7 +236,7 @@ func (e *chainEnv) counterEquals(expected int64) conditionFn {
 			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)
 			return false
 		}
-		counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
+		counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
 		require.NoError(t, err)
 		t.Logf("chainEnv::counterEquals: node %d: counter: %d, waiting for: %d", nodeIndex, counter, expected)
 		return counter == expected

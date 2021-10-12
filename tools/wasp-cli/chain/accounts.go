@@ -29,7 +29,7 @@ var listAccountsCmd = &cobra.Command{
 		rows := make([][]string, len(ret))
 		i := 0
 		for k := range ret {
-			agentID, _, err := codec.DecodeAgentID([]byte(k))
+			agentID, err := codec.DecodeAgentID([]byte(k))
 			log.Check(err)
 			rows[i] = []string{agentID.String()}
 			i++
@@ -58,7 +58,7 @@ var balanceCmd = &cobra.Command{
 		for k, v := range ret {
 			color, _, err := ledgerstate.ColorFromBytes([]byte(k))
 			log.Check(err)
-			bal, _, err := codec.DecodeUint64(v)
+			bal, err := codec.DecodeUint64(v)
 			log.Check(err)
 
 			rows[i] = []string{color.String(), fmt.Sprintf("%d", bal)}

@@ -24,9 +24,8 @@ package sbtests
 
 // 	for i := 1; i < 6; i++ {
 // 		req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
-// 			sbtestsc.VarCounter, i,
-// 		).WithIotas(1)
-// 		_, err := chain.PostRequestSync(req, nil)
+// 			sbtestsc.VarCounter, i)
+// 		_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 // 		require.NoError(t, err)
 // 	}
 
@@ -48,11 +47,9 @@ package sbtests
 // 	env.SetTimeStep(500 * time.Millisecond)
 // 	var err error
 // 	for i := 1; i < 6; i++ {
-// 		req := solo.NewCallParams(ScName,
-// 			sbtestsc.FuncEventLogGenericData.Name,
-// 			sbtestsc.VarCounter, i,
-// 		).WithIotas(1)
-// 		_, err = chain.PostRequestSync(req, nil)
+// 		req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
+// 			sbtestsc.VarCounter, i)
+// 		_, err = chain.PostRequestSync(req.WithIotas(1), nil)
 // 		require.NoError(t, err)
 // 	}
 
@@ -73,10 +70,8 @@ package sbtests
 // 	_, chain := setupChain(t, nil)
 // 	setupTestSandboxSC(t, chain, nil, w)
 
-// 	req := solo.NewCallParams(ScName,
-// 		sbtestsc.FuncEventLogEventData.Name,
-// 	).WithIotas(1)
-// 	_, err := chain.PostRequestSync(req, nil)
+// 	req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogEventData.Name)
+// 	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 // 	require.NoError(t, err)
 
 // 	res, err := chain.CallView(eventlog.Contract.Name, eventlog.FuncGetRecords.Name,
@@ -103,22 +98,18 @@ package sbtests
 // 	count := 1
 // 	// events
 // 	for i := 1; i <= 3; i++ {
-// 		req := solo.NewCallParams(ScName,
-// 			sbtestsc.FuncEventLogEventData.Name,
-// 			sbtestsc.VarCounter, count,
-// 		).WithIotas(1)
+// 		req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogEventData.Name,
+// 			sbtestsc.VarCounter, count)
 // 		count++
-// 		_, err := chain.PostRequestSync(req, nil)
+// 		_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 // 		require.NoError(t, err)
 // 	}
 // 	// generic
 // 	for i := 1; i <= 2; i++ {
-// 		req := solo.NewCallParams(ScName,
-// 			sbtestsc.FuncEventLogGenericData.Name,
-// 			sbtestsc.VarCounter, count,
-// 		).WithIotas(1)
+// 		req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
+// 			sbtestsc.VarCounter, count)
 // 		count++
-// 		_, err := chain.PostRequestSync(req, nil)
+// 		_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 // 		require.NoError(t, err)
 // 	}
 // 	res, err := chain.CallView(eventlog.Contract.Name, eventlog.FuncGetRecords.Name,
@@ -153,11 +144,9 @@ package sbtests
 // 	_, chain := setupChain(t, nil)
 // 	setupTestSandboxSC(t, chain, nil, w)
 
-// 	req := solo.NewCallParams(ScName,
-// 		sbtestsc.FuncEventLogGenericData.Name,
-// 		sbtestsc.VarCounter, solo.Saldo,
-// 	).WithIotas(1)
-// 	_, err := chain.PostRequestSync(req, nil)
+// 	req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
+// 		sbtestsc.VarCounter, solo.Saldo)
+// 	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 // 	require.NoError(t, err)
 
 // 	res, err := chain.CallView(eventlog.Contract.Name, eventlog.FuncGetNumRecords.Name,
@@ -195,10 +184,8 @@ package sbtests
 // 	_, chain := setupChain(t, nil)
 // 	setupTestSandboxSC(t, chain, nil, w)
 
-// 	req := solo.NewCallParams(ScName,
-// 		sbtestsc.FuncEventLogDeploy.Name,
-// 	).WithIotas(1)
-// 	_, err := chain.PostRequestSync(req, nil)
+// 	req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogDeploy.Name)
+// 	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 // 	require.NoError(t, err)
 
 // 	// This call should return only one record which should be the type of TRDeploy
@@ -232,23 +219,18 @@ package sbtests
 // 	_, chain := setupChain(t, nil)
 // 	setupTestSandboxSC(t, chain, nil, w)
 
-// 	req := solo.NewCallParams(ScName,
-// 		sbtestsc.FuncEventLogEventData.Name,
-// 	).WithIotas(1)
-// 	_, err := chain.PostRequestSync(req, nil)
+// 	req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogEventData.Name)
+// 	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 // 	require.NoError(t, err)
 
-// 	req = solo.NewCallParams(ScName,
-// 		sbtestsc.FuncEventLogGenericData.Name,
-// 		sbtestsc.VarCounter, 33333,
-// 	).WithIotas(1)
-// 	_, err = chain.PostRequestSync(req, nil)
+// 	req = solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
+// 		sbtestsc.VarCounter, 33333)
+// 	_, err = chain.PostRequestSync(req.WithIotas(1), nil)
 // 	require.NoError(t, err)
 
 // 	/////Should return 4 logs records/////
 // 	res, err := chain.CallView(eventlog.Contract.Name, eventlog.FuncGetRecords.Name,
-// 		eventlog.ParamContractHname, HScName,
-// 	)
+// 		eventlog.ParamContractHname, HScName)
 // 	require.NoError(t, err)
 // 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 // 	require.EqualValues(t, 2, array.MustLen())

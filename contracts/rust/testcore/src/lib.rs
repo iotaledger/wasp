@@ -42,6 +42,9 @@ fn on_load() {
     exports.add_func(FUNC_RUN_RECURSION, func_run_recursion_thunk);
     exports.add_func(FUNC_SEND_TO_ADDRESS, func_send_to_address_thunk);
     exports.add_func(FUNC_SET_INT, func_set_int_thunk);
+    exports.add_func(FUNC_SPAWN, func_spawn_thunk);
+    exports.add_func(FUNC_TEST_BLOCK_CONTEXT1, func_test_block_context1_thunk);
+    exports.add_func(FUNC_TEST_BLOCK_CONTEXT2, func_test_block_context2_thunk);
     exports.add_func(FUNC_TEST_CALL_PANIC_FULL_EP, func_test_call_panic_full_ep_thunk);
     exports.add_func(FUNC_TEST_CALL_PANIC_VIEW_EP_FROM_FULL, func_test_call_panic_view_ep_from_full_thunk);
     exports.add_func(FUNC_TEST_CHAIN_OWNER_ID_FULL, func_test_chain_owner_id_full_thunk);
@@ -54,6 +57,7 @@ fn on_load() {
     exports.add_view(VIEW_FIBONACCI, view_fibonacci_thunk);
     exports.add_view(VIEW_GET_COUNTER, view_get_counter_thunk);
     exports.add_view(VIEW_GET_INT, view_get_int_thunk);
+    exports.add_view(VIEW_GET_STRING_VALUE, view_get_string_value_thunk);
     exports.add_view(VIEW_JUST_VIEW, view_just_view_thunk);
     exports.add_view(VIEW_PASS_TYPES_VIEW, view_pass_types_view_thunk);
     exports.add_view(VIEW_TEST_CALL_PANIC_VIEW_EP_FROM_VIEW, view_test_call_panic_view_ep_from_view_thunk);
@@ -166,12 +170,16 @@ fn func_inc_counter_thunk(ctx: &ScFuncContext) {
 }
 
 pub struct InitContext {
-    state: MutableTestCoreState,
+    params: ImmutableInitParams,
+    state:  MutableTestCoreState,
 }
 
 fn func_init_thunk(ctx: &ScFuncContext) {
     ctx.log("testcore.funcInit");
     let f = InitContext {
+        params: ImmutableInitParams {
+            id: OBJ_ID_PARAMS,
+        },
         state: MutableTestCoreState {
             id: OBJ_ID_STATE,
         },
@@ -275,6 +283,56 @@ fn func_set_int_thunk(ctx: &ScFuncContext) {
     ctx.require(f.params.name().exists(), "missing mandatory name");
     func_set_int(ctx, &f);
     ctx.log("testcore.funcSetInt ok");
+}
+
+pub struct SpawnContext {
+    params: ImmutableSpawnParams,
+    state:  MutableTestCoreState,
+}
+
+fn func_spawn_thunk(ctx: &ScFuncContext) {
+    ctx.log("testcore.funcSpawn");
+    let f = SpawnContext {
+        params: ImmutableSpawnParams {
+            id: OBJ_ID_PARAMS,
+        },
+        state: MutableTestCoreState {
+            id: OBJ_ID_STATE,
+        },
+    };
+    ctx.require(f.params.prog_hash().exists(), "missing mandatory progHash");
+    func_spawn(ctx, &f);
+    ctx.log("testcore.funcSpawn ok");
+}
+
+pub struct TestBlockContext1Context {
+    state: MutableTestCoreState,
+}
+
+fn func_test_block_context1_thunk(ctx: &ScFuncContext) {
+    ctx.log("testcore.funcTestBlockContext1");
+    let f = TestBlockContext1Context {
+        state: MutableTestCoreState {
+            id: OBJ_ID_STATE,
+        },
+    };
+    func_test_block_context1(ctx, &f);
+    ctx.log("testcore.funcTestBlockContext1 ok");
+}
+
+pub struct TestBlockContext2Context {
+    state: MutableTestCoreState,
+}
+
+fn func_test_block_context2_thunk(ctx: &ScFuncContext) {
+    ctx.log("testcore.funcTestBlockContext2");
+    let f = TestBlockContext2Context {
+        state: MutableTestCoreState {
+            id: OBJ_ID_STATE,
+        },
+    };
+    func_test_block_context2(ctx, &f);
+    ctx.log("testcore.funcTestBlockContext2 ok");
 }
 
 pub struct TestCallPanicFullEPContext {
@@ -499,6 +557,30 @@ fn view_get_int_thunk(ctx: &ScViewContext) {
     ctx.require(f.params.name().exists(), "missing mandatory name");
     view_get_int(ctx, &f);
     ctx.log("testcore.viewGetInt ok");
+}
+
+pub struct GetStringValueContext {
+    params:  ImmutableGetStringValueParams,
+    results: MutableGetStringValueResults,
+    state:   ImmutableTestCoreState,
+}
+
+fn view_get_string_value_thunk(ctx: &ScViewContext) {
+    ctx.log("testcore.viewGetStringValue");
+    let f = GetStringValueContext {
+        params: ImmutableGetStringValueParams {
+            id: OBJ_ID_PARAMS,
+        },
+        results: MutableGetStringValueResults {
+            id: OBJ_ID_RESULTS,
+        },
+        state: ImmutableTestCoreState {
+            id: OBJ_ID_STATE,
+        },
+    };
+    ctx.require(f.params.var_name().exists(), "missing mandatory varName");
+    view_get_string_value(ctx, &f);
+    ctx.log("testcore.viewGetStringValue ok");
 }
 
 pub struct JustViewContext {

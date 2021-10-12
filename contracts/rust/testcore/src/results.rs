@@ -200,6 +200,52 @@ impl MutableGetIntResults {
     }
 }
 
+pub struct MapStringToImmutableString {
+    pub(crate) obj_id: i32,
+}
+
+impl MapStringToImmutableString {
+    pub fn get_string(&self, key: &str) -> ScImmutableString {
+        ScImmutableString::new(self.obj_id, key.get_key_id())
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct ImmutableGetStringValueResults {
+    pub(crate) id: i32,
+}
+
+impl ImmutableGetStringValueResults {
+    pub fn vars(&self) -> MapStringToImmutableString {
+        MapStringToImmutableString { obj_id: self.id }
+    }
+}
+
+pub struct MapStringToMutableString {
+    pub(crate) obj_id: i32,
+}
+
+impl MapStringToMutableString {
+    pub fn clear(&self) {
+        clear(self.obj_id)
+    }
+
+    pub fn get_string(&self, key: &str) -> ScMutableString {
+        ScMutableString::new(self.obj_id, key.get_key_id())
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableGetStringValueResults {
+    pub(crate) id: i32,
+}
+
+impl MutableGetStringValueResults {
+    pub fn vars(&self) -> MapStringToMutableString {
+        MapStringToMutableString { obj_id: self.id }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct ImmutableTestChainOwnerIDViewResults {
     pub(crate) id: i32,

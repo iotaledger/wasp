@@ -62,7 +62,7 @@ func (m *mockedChain) IsDismissed() bool {
 func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	return func(chainID *iscp.ChainID) chain.Chain {
 		return &mockedChain{
-			testchain.NewMockedChainCore(t, *chainID, testlogger.NewLogger(t)),
+			testchain.NewMockedChainCore(t, chainID, testlogger.NewLogger(t)),
 		}
 	}
 }

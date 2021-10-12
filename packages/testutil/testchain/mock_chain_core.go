@@ -20,7 +20,7 @@ import (
 
 type MockedChainCore struct {
 	T                                    *testing.T
-	chainID                              iscp.ChainID
+	chainID                              *iscp.ChainID
 	processors                           *processors.Cache
 	eventStateTransition                 *events.Event
 	eventRequestProcessed                *events.Event
@@ -41,7 +41,7 @@ type MockedChainCore struct {
 	log                                  *logger.Logger
 }
 
-func NewMockedChainCore(t *testing.T, chainID iscp.ChainID, log *logger.Logger) *MockedChainCore {
+func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger) *MockedChainCore {
 	receiveFailFun := func(typee string, msg interface{}) {
 		t.Fatalf("Receiving of %s is not implemented, but %v is received", typee, msg)
 	}
@@ -88,7 +88,7 @@ func (m *MockedChainCore) Log() *logger.Logger {
 }
 
 func (m *MockedChainCore) ID() *iscp.ChainID {
-	return &m.chainID
+	return m.chainID
 }
 
 func (m *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {

@@ -149,6 +149,42 @@ func (s MutableGetIntResults) Values() MapStringToMutableInt64 {
 	return MapStringToMutableInt64{objID: s.id}
 }
 
+type MapStringToImmutableString struct {
+	objID int32
+}
+
+func (m MapStringToImmutableString) GetString(key string) wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(m.objID, wasmlib.Key(key).KeyID())
+}
+
+type ImmutableGetStringValueResults struct {
+	id int32
+}
+
+func (s ImmutableGetStringValueResults) Vars() MapStringToImmutableString {
+	return MapStringToImmutableString{objID: s.id}
+}
+
+type MapStringToMutableString struct {
+	objID int32
+}
+
+func (m MapStringToMutableString) Clear() {
+	wasmlib.Clear(m.objID)
+}
+
+func (m MapStringToMutableString) GetString(key string) wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(m.objID, wasmlib.Key(key).KeyID())
+}
+
+type MutableGetStringValueResults struct {
+	id int32
+}
+
+func (s MutableGetStringValueResults) Vars() MapStringToMutableString {
+	return MapStringToMutableString{objID: s.id}
+}
+
 type ImmutableTestChainOwnerIDViewResults struct {
 	id int32
 }

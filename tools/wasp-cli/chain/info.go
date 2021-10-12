@@ -15,10 +15,10 @@ var infoCmd = &cobra.Command{
 	Short: "Show information about the chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		chain, err := config.WaspClient().GetChainRecord(*GetCurrentChainID())
+		chain, err := config.WaspClient().GetChainRecord(GetCurrentChainID())
 		log.Check(err)
 
-		committee, err := config.WaspClient().GetCommitteeForChain(*chain.ChainID)
+		committee, err := config.WaspClient().GetCommitteeForChain(chain.ChainID)
 		log.Check(err)
 
 		log.Printf("Chain ID: %s\n", chain.ChainID.Base58())
@@ -29,7 +29,7 @@ var infoCmd = &cobra.Command{
 			info, err := SCClient(governance.Contract.Hname()).CallView(governance.FuncGetChainInfo.Name, nil)
 			log.Check(err)
 
-			description, _, err := codec.DecodeString(info.MustGet(governance.VarDescription))
+			description, err := codec.DecodeString(info.MustGet(governance.VarDescription), "")
 			log.Check(err)
 			log.Printf("Description: %s\n", description)
 
@@ -39,13 +39,13 @@ var infoCmd = &cobra.Command{
 			log.Check(err)
 			log.Printf("#Contracts: %d\n", len(contracts))
 
-			ownerID, _, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
+			ownerID, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
 			log.Check(err)
 			log.Printf("Owner: %s\n", ownerID.String())
 
-			delegated, ok, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerIDDelegated))
-			log.Check(err)
-			if ok {
+			if info.MustHas(governance.VarChainOwnerIDDelegated) {
+				delegated, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerIDDelegated))
+				log.Check(err)
 				log.Printf("Delegated owner: %s\n", delegated.String())
 			}
 

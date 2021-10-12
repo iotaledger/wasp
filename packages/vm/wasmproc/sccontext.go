@@ -227,7 +227,11 @@ func (o *ScContext) processPost(bytes []byte) {
 	}
 	o.Tracef("POST c'%s' f'%s'", contract.String(), function.String())
 	params := o.getParams(decode.Int32())
-	transfer := o.getTransfer(decode.Int32())
+	transferID := decode.Int32()
+	if transferID == 0 {
+		o.Panic("transfer is required for post")
+	}
+	transfer := o.getTransfer(transferID)
 	metadata := &iscp.SendMetadata{
 		TargetContract: contract,
 		EntryPoint:     function,
@@ -274,11 +278,11 @@ func (o *ScContext) getTransfer(transferID int32) colored.Balances {
 	transfer := colored.NewBalances()
 	transferDict := o.host.FindObject(transferID).(*ScDict).kvStore
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
-		col, _, err := codec.DecodeColor([]byte(key))
+		col, err := codec.DecodeColor([]byte(key))
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		amount, _, err := codec.DecodeUint64(value)
+		amount, err := codec.DecodeUint64(value)
 		if err != nil {
 			o.Panic(err.Error())
 		}

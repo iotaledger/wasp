@@ -54,7 +54,7 @@ type chainObj struct {
 	mempoolLastCleanedIndex          uint32
 	dismissed                        atomic.Bool
 	dismissOnce                      sync.Once
-	chainID                          iscp.ChainID
+	chainID                          *iscp.ChainID
 	chainStateSync                   coreutil.ChainStateSync
 	stateReader                      state.OptimisticStateReader
 	procset                          *processors.Cache
@@ -77,6 +77,7 @@ type chainObj struct {
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
+	chainMetrics                     metrics.ChainMetrics
 }
 
 type committeeStruct struct {
@@ -124,7 +125,7 @@ func NewChain(
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
 		msgPipe:           pipe.NewInfinitePipe(messagePriorityFun, maxMsgBuffer),
-		chainID:           *chainID,
+		chainID:           chainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
 		db:                db,
@@ -145,6 +146,7 @@ func NewChain(
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
+		chainMetrics:                     chainMetrics,
 	}
 	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
@@ -462,7 +464,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
 	cmt, err := committee.New(
 		cmtRec,
-		&c.chainID,
+		c.chainID,
 		c.netProvider,
 		c.peerNetworkConfig,
 		c.dksProvider,
@@ -475,7 +477,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 	}
 	cmt.Attach(c)
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, cmt, c.nodeConn, c.pullMissingRequestsFromCommittee)
+	c.consensus = consensus.New(c, c.mempool, cmt, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
 	c.setCommittee(cmt)
 
 	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", cmtRec.Address.Base58())

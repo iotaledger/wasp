@@ -126,7 +126,7 @@ func TestOwner(t *testing.T) {
 
 	// the default owner is correct
 	owner := evmChain.getOwner()
-	require.True(t, owner.Equals(&evmChain.soloChain.OriginatorAgentID))
+	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
 
 	// only the owner can call the setOwner endpoint
 	user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
@@ -140,7 +140,7 @@ func TestOwner(t *testing.T) {
 
 	// ensure owner didn't change after a failed call
 	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(&evmChain.soloChain.OriginatorAgentID))
+	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
 
 	// current owner is able to set a new "next owner"
 	_, err = evmChain.soloChain.PostRequestSync(
@@ -152,7 +152,7 @@ func TestOwner(t *testing.T) {
 
 	// check that the owner didn't change yet (new owner needs to claim ownership)
 	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(&evmChain.soloChain.OriginatorAgentID))
+	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
 
 	// check no other user can claim ownership
 	user2Wallet, _ := evmChain.solo.NewKeyPairWithFunds()
@@ -166,7 +166,7 @@ func TestOwner(t *testing.T) {
 
 	// owner still the same
 	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(&evmChain.soloChain.OriginatorAgentID))
+	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
 
 	// claim ownership successfully
 	_, err = evmChain.soloChain.PostRequestSync(

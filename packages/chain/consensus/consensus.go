@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -27,7 +28,7 @@ type Consensus struct {
 	mempool                          chain.Mempool
 	nodeConn                         chain.NodeConnection
 	vmRunner                         vm.VMRunner
-	currentState                     state.VirtualState
+	currentState                     state.VirtualStateAccess
 	stateOutput                      *ledgerstate.AliasOutput
 	stateTimestamp                   time.Time
 	acsSessionID                     uint64
@@ -41,7 +42,7 @@ type Consensus struct {
 	delayRunVMUntil                  time.Time
 	delaySendingSignedResult         time.Time
 	resultTxEssence                  *ledgerstate.TransactionEssence
-	resultState                      state.VirtualState
+	resultState                      state.VirtualStateAccess
 	resultSignatures                 []*messages.SignedResultMsg
 	resultSigAck                     []uint16
 	finalTx                          *ledgerstate.Transaction
@@ -63,6 +64,7 @@ type Consensus struct {
 	missingRequestsFromBatch         map[iscp.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
 	pullMissingRequestsFromCommittee bool
+	consensusMetrics                 metrics.ConsensusMetrics
 }
 
 type workflowFlags struct {
@@ -79,7 +81,7 @@ type workflowFlags struct {
 
 var _ chain.Consensus = &Consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, timersOpt ...ConsensusTimers) *Consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) *Consensus {
 	var timers ConsensusTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -107,6 +109,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		closeCh:                          make(chan struct{}),
 		assert:                           assert.NewAssert(log),
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
+		consensusMetrics:                 consensusMetrics,
 	}
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()

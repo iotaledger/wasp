@@ -135,7 +135,7 @@ func toMap(params []interface{}) map[string]interface{} {
 
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
-// Locking on the mutex is needed to prevent mess when several goroutines work on he same address
+// Locking on the mutex is needed to prevent mess when several goroutines work on the same address
 func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, iscp.RequestID, error) {
 	if len(req.transfer) == 0 {
 		return nil, iscp.RequestID{}, xerrors.New("transfer can't be empty")

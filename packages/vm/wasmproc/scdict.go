@@ -103,7 +103,7 @@ func (o *ScDict) InitObj(id, keyID int32, owner *ScDict) {
 		key := o.NestedKey()[1:]
 		var err error
 		bytes := o.kvStore.MustGet(kv.Key(key))
-		o.length, _, err = codec.DecodeInt32(bytes)
+		o.length, err = codec.DecodeInt32(bytes, 0)
 		if err != nil {
 			o.Panic("InitObj: %v", err)
 		}

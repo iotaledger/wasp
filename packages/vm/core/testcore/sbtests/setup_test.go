@@ -14,20 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//nolint:revive
 const (
-	DEBUG        = false
-	ERC20_NAME   = "erc20"
-	ERC20_SUPPLY = 100000
-
-	// ERC20 constants
-	PARAM_SUPPLY  = "s"
-	PARAM_CREATOR = "c"
-)
-
-var (
+	DEBUG            = false
+	ScName           = "testcore"
+	HScName          = iscp.Hname(0x370d33ad)
 	WasmFileTestcore = "sbtestsc/testcore_bg.wasm"
-	WasmFileErc20    = "sbtestsc/erc20_bg.wasm"
 )
 
 func setupChain(t *testing.T, keyPairOriginator *ed25519.KeyPair) (*solo.Solo, *solo.Chain) {
@@ -42,9 +33,8 @@ func setupDeployer(t *testing.T, chain *solo.Chain) (*ed25519.KeyPair, ledgersta
 	chain.Env.AssertAddressIotas(userAddr, solo.Saldo)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
-		root.ParamDeployer, iscp.NewAgentID(userAddr, 0),
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+		root.ParamDeployer, iscp.NewAgentID(userAddr, 0))
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 	return user, userAddr, iscp.NewAgentID(userAddr, 0)
 }
@@ -75,36 +65,11 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, 
 	require.NoError(t, err)
 
 	deployed := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
-	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(1)
-	_, err = chain.PostRequestSync(req, user)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
+	_, err = chain.PostRequestSync(req.WithIotas(1), user)
 	require.NoError(t, err)
 	t.Logf("deployed test_sandbox'%s': %s", ScName, HScName)
 	return deployed, extraToken
-}
-
-//nolint:deadcode,unused
-func setupERC20(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, runWasm bool) *iscp.AgentID {
-	var err error
-	if !runWasm {
-		t.Logf("skipped %s. Only for Wasm tests, always loads %s", t.Name(), WasmFileErc20)
-		return nil
-	}
-	var userAgentID *iscp.AgentID
-	if user == nil {
-		userAgentID = &chain.OriginatorAgentID
-	} else {
-		userAddr := ledgerstate.NewED25519Address(user.PublicKey)
-		userAgentID = iscp.NewAgentID(userAddr, 0)
-	}
-	err = chain.DeployWasmContract(user, ERC20_NAME, WasmFileErc20,
-		PARAM_SUPPLY, 1000000,
-		PARAM_CREATOR, userAgentID,
-	)
-	require.NoError(t, err)
-
-	deployed := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
-	t.Logf("deployed erc20'%s': %s --  %s", ERC20_NAME, iscp.Hn(ERC20_NAME), deployed)
-	return deployed
 }
 
 func TestSetup1(t *testing.T) { run2(t, testSetup1) }
@@ -118,12 +83,4 @@ func testSetup2(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	user, _, _ := setupDeployer(t, chain)
 	setupTestSandboxSC(t, chain, user, w)
-}
-
-func TestSetup3(t *testing.T) { run2(t, testSetup3) }
-func testSetup3(t *testing.T, w bool) {
-	_, chain := setupChain(t, nil)
-	user, _, _ := setupDeployer(t, chain)
-	setupTestSandboxSC(t, chain, user, w)
-	// setupERC20(t, chain, user, w)
 }

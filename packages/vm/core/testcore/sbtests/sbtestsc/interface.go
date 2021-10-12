@@ -115,7 +115,7 @@ const (
 	ParamIntParamValue   = "intParamValue"
 	ParamHnameContract   = "hnameContract"
 	ParamHnameEP         = "hnameEP"
-	ParamVarName         = "paramVar"
+	ParamVarName         = "varName"
 
 	// error fragments for testing
 	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="

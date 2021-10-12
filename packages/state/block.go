@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv/buffered"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"golang.org/x/xerrors"
@@ -18,9 +20,9 @@ type blockImpl struct {
 }
 
 // validates, enumerates and creates a block from array of state updates
-func newBlock(stateUpdate StateUpdate) (Block, error) {
+func newBlock(muts *buffered.Mutations) (Block, error) {
 	ret := &blockImpl{stateUpdate: &stateUpdateImpl{
-		mutations: stateUpdate.Mutations(),
+		mutations: muts.Clone(),
 	}}
 	var err error
 	if ret.blockIndex, err = findBlockIndexMutation(ret.stateUpdate); err != nil {
@@ -43,7 +45,7 @@ func BlockFromBytes(data []byte) (Block, error) {
 
 // block with empty state update and nil state hash
 func newOriginBlock() Block {
-	ret, err := newBlock(NewStateUpdateWithBlocklogValues(0, time.Time{}, hashing.NilHash))
+	ret, err := newBlock(NewStateUpdateWithBlocklogValues(0, time.Time{}, hashing.NilHash).Mutations())
 	if err != nil {
 		panic(err)
 	}

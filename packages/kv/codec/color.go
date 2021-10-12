@@ -2,14 +2,17 @@ package codec
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"golang.org/x/xerrors"
 )
 
-func DecodeColor(b []byte) (colored.Color, bool, error) {
+func DecodeColor(b []byte, def ...colored.Color) (colored.Color, error) {
 	if b == nil {
-		return colored.Color{}, false, nil
+		if len(def) == 0 {
+			return colored.Color{}, xerrors.Errorf("cannot decode nil bytes")
+		}
+		return def[0], nil
 	}
-	ret, err := colored.ColorFromBytes(b)
-	return ret, err == nil, err
+	return colored.ColorFromBytes(b)
 }
 
 func EncodeColor(value colored.Color) []byte {

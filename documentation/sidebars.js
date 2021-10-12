@@ -31,11 +31,6 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'ISCP',
-                    id: 'guide/core_concepts/iscp',
-                },
-                {
-                    type: 'doc',
                     label: 'ISCP Architecture',
                     id: 'guide/core_concepts/iscp-architecture',
                 },
@@ -98,6 +93,11 @@ module.exports = {
                             label: 'Blocklog',
                             id: 'guide/core_concepts/core_contracts/blocklog',
                         },
+                        {
+                            type: 'doc',
+                            label: 'Governance',
+                            id: 'guide/core_concepts/core_contracts/governance',
+                        },
                     ],
                 },
                 {
@@ -146,49 +146,6 @@ module.exports = {
                             id: 'guide/core_concepts/smartcontract-interaction/off-ledger-requests',
                         }
                     ]
-                },
-                {
-                    type: 'category',
-                    label: 'Types of VMs/Languages',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'How ISCP Works As a Language/VM Agnostic Platform',
-                            id: 'guide/core_concepts/vm-types/iscp-vm',
-                        },
-                        {
-                            type: 'category',
-                            label: 'Rust/Wasm Based Smart Contracts',
-                            items: [
-                                {
-                                    type: 'doc',
-                                    label: 'Why and What Does It Look Like?',
-                                    id: 'guide/core_concepts/vm-types/rust-wasm',
-                                },
-                                {
-                                    type: 'doc',
-                                    label: 'Solidity/EVM Based Smart Contracts',
-                                    id: 'guide/core_concepts/vm-types/rust-wasm',
-                                },
-                            ]
-                        },
-                        {
-                            type: 'category',
-                            label: 'Solidity/EVM Based Smart Contracts',
-                            items: [
-                                {
-                                    type: 'doc',
-                                    label: 'Why and What Does It Look Like?',
-                                    id: 'guide/core_concepts/vm-types/evm',
-                                },
-                                {
-                                    type: 'doc',
-                                    label: 'Solidity/EVM Based Smart Contracts',
-                                    id: 'guide/core_concepts/vm-types/evm',
-                                },
-                            ]
-                        }
-                    ],
                 },
                 {
                     type: 'category',
@@ -283,6 +240,127 @@ module.exports = {
                     label: 'Introduction',
                     id: 'guide/rust_wasm/introduction',
                 },
+                {
+                    type: 'category',
+                    label: 'Schema tool',
+                    items: [
+                        {
+                            type: 'doc',
+                            label: 'Smart Contract Schemas',
+                            id: 'guide/schema/intro',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Data Access Proxies',
+                            id: 'guide/schema/proxies',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'WasmLib Data Types',
+                            id: 'guide/schema/types',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Function Call Context',
+                            id: 'guide/schema/context',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Smart Contract Schema Tool',
+                            id: 'guide/schema/schema',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Using the Schema Tool',
+                            id: 'guide/schema/usage',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Structured Data Types',
+                            id: 'guide/schema/structs',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Type Definitions',
+                            id: 'guide/schema/typedefs',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Smart Contract State',
+                            id: 'guide/schema/state',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Function Definitions',
+                            id: 'guide/schema/funcs',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Limiting Access',
+                            id: 'guide/schema/access',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Function Parameters',
+                            id: 'guide/schema/params',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Function Results',
+                            id: 'guide/schema/results',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Thunk Functions',
+                            id: 'guide/schema/thunks',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'View-Only Functions',
+                            id: 'guide/schema/views',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Smart Contract Initialization',
+                            id: 'guide/schema/init',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Token Transfers',
+                            id: 'guide/schema/transfers',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Function Descriptors',
+                            id: 'guide/schema/funcdesc',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Calling Functions',
+                            id: 'guide/schema/call',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Posting Asynchronous Requests',
+                            id: 'guide/schema/post',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Testing Smart Contracts',
+                            id: 'guide/schema/test',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Example Tests',
+                            id: 'guide/schema/examples',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Colored Tokens and Time Locks',
+                            id: 'guide/schema/timelock',
+                        },
+                    ]
+                },
             ]
         },
         {
@@ -303,182 +381,34 @@ module.exports = {
                     type: 'doc',
                     label: 'Creating a chain',
                     id: 'guide/evm/create-chain',
+                },
+                {
+                    type: 'doc',
+                    label: 'Example contract',
+                    id: 'guide/evm/example',
+                },
+                {
+                    type: 'doc',
+                    label: 'Tooling',
+                    id: 'guide/evm/tooling',
                 }
+            ]
+        },
+        {
+            type: 'category',
+            label: 'Example projects',
+            items: [
+                {
+                    type: 'doc',
+                    label: 'Fair Roulette',
+                    id: 'guide/example_projects/fair_roulette',
+                },
             ]
         },
         {
             type: 'doc',
             label: 'Contribute',
             id: 'contribute',
-        },
-        {
-            type: 'category',
-            label: 'Old',
-            items: [
-                {
-                    type: 'doc',
-                    label: 'Welcome',
-                    id: 'welcome',
-                },
-                {
-                    type: 'category',
-                    label: 'Tutorials',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'Overview',
-                            id: 'tutorial/readme',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'The Solo Package',
-                            id: 'tutorial/01',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Tokens and the UTXO Ledger',
-                            id: 'tutorial/02',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Creating a Chain; Core Contracts',
-                            id: 'tutorial/03',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Deploying and Running a Rust Smart Contract',
-                            id: 'tutorial/04',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Structure of the Smart Contract',
-                            id: 'tutorial/05',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Sending a Request',
-                            id: 'tutorial/06',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Calling a View',
-                            id: 'tutorial/07',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Deposit and Withdraw Tokens',
-                            id: 'tutorial/08',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Sending Tokens to a Smart Contract',
-                            id: 'tutorial/09',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Return Of Tokens in Case of Failure',
-                            id: 'tutorial/10',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Sending Tokens from a Smart Contract',
-                            id: 'tutorial/11',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'ISCP On-Chain Accounts',
-                            id: 'tutorial/12',
-                        },
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Core Contracts',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'Overview',
-                            id: 'contract_core/overview',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Root Contract',
-                            id: 'contract_core/root',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Accounts Contract',
-                            id: 'contract_core/accounts',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Blob Contract',
-                            id: 'contract_core/blob',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Blocklog Contract',
-                            id: 'contract_core/blocklog',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Governance Contract',
-                            id: 'contract_core/governance',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Default Contract',
-                            id: 'contract_core/default',
-                        },
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Miscellaneous',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'Run a Node',
-                            id: 'misc/runwasp',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Deploy with Wasp-CLI',
-                            id: 'misc/deploy',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Install',
-                            id: 'misc/install',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Invoke',
-                            id: 'misc/invoking',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'UTXO Ledger',
-                            id: 'misc/utxo',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Core Types',
-                            id: 'misc/coretypes',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'On-Chain Accounts',
-                            id: 'misc/accounts',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Wasp Publisher',
-                            id: 'misc/publisher',
-                        },
-                    ],
-                },
-            ]
-        },
+        }
     ],
 };

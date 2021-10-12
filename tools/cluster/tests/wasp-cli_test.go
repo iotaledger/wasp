@@ -199,7 +199,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	for _, line := range out {
 		if strings.Contains(line, "Error: ") {
 			found = true
-			require.Regexp(t, `mandatory parameter.*does not exist`, line)
+			require.Regexp(t, `cannot decode`, line)
 			break
 		}
 	}
