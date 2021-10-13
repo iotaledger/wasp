@@ -62,19 +62,23 @@
   </div>
 
   <div class="betting-actions">
-    <Button
-      label="Back"
-      secondary
-      disabled={$placingBet}
-      onClick={onBackClick}
-    />
-    <Button
-      label={isFirstStep ? 'Next' : 'Place bet'}
-      disabled={(isFirstStep && !$round.betSelection) ||
-        (isLastStep && !$round.betAmount)}
-      onClick={onNextClick}
-      loading={$placingBet}
-    />
+    <div>
+      <Button
+        label="Back"
+        secondary
+        disabled={$placingBet}
+        onClick={onBackClick}
+      />
+    </div>
+    <div>
+      <Button
+        label={isFirstStep ? 'Next' : 'Place bet'}
+        disabled={(isFirstStep && !$round.betSelection) ||
+          (isLastStep && !$round.betAmount)}
+        onClick={onNextClick}
+        loading={$placingBet}
+      />
+    </div>
   </div>
 </div>
 
@@ -84,11 +88,9 @@
     flex-direction: column;
     align-content: center;
     flex-wrap: wrap;
-    gap: 30px;
     @media (min-width: 1024px) {
       flex-direction: row;
       justify-content: center;
-      gap: 60px;
       align-items: flex-end;
     }
     &.disabled {
@@ -101,13 +103,15 @@
     }
     .betting-actions {
       display: flex;
-      gap: 32px;
-      width: 300px;
+      width: 350px;
       margin-top: 24px;
-
+      justify-content: space-evenly;
       @media (min-width: 1024px) {
-        width: 350px;
+        width: 400px;
         margin-top: 32px;
+      }
+      div {
+        width: 40%;
       }
     }
     .betting-panel {
