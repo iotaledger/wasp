@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte';
   import {
     BalancePanel,
     Button,
@@ -7,10 +7,10 @@
     PlayersPanel,
     Roulette,
     WalletPanel,
-  } from "../components";
-  import Animation from "../components/animation.svelte";
-  import ToastContainer from "../components/toast_container.svelte";
-  import { BettingStep, initialize, StateMessage } from "../lib/app";
+  } from '../components';
+  import Animation from '../components/animation.svelte';
+  import ToastContainer from '../components/toast_container.svelte';
+  import { BettingStep, initialize, StateMessage } from '../lib/app';
   import {
     balance,
     bettingStep,
@@ -21,8 +21,8 @@
     showBettingSystem,
     timeToFinished,
     requestingFunds,
-  } from "../lib/store";
-  import { fade } from "svelte/transition";
+  } from '../lib/store';
+  import { fade } from 'svelte/transition';
 
   let message: StateMessage;
 
@@ -35,32 +35,32 @@
 
   $: MESSAGES = {
     [StateMessage.Running]: {
-      title: "Game Running!",
-      description: `The round ends in ${$timeToFinished ?? "..."} seconds.`,
+      title: 'Game Running!',
+      description: `The round ends in ${$timeToFinished ?? '...'} seconds.`,
     },
     [StateMessage.Start]: {
-      title: "Start game",
+      title: 'Start game',
       description:
-        "Press the “Choose bet” button below and follow on-screen instructions.",
+        'Press the “Choose bet” button below and follow on-screen instructions.',
     },
     [StateMessage.AddFunds]: {
-      title: "Add funds",
+      title: 'Add funds',
       description:
-        "To play, first request funds for your wallet. These are dev-net tokens and hold no value.",
+        'To play, first request funds for your wallet. These are dev-net tokens and hold no value.',
     },
     [StateMessage.ChoosingNumber]: {
-      title: "Choose a number",
+      title: 'Choose a number',
       description:
-        "Select a number of the roulette that you want to bet on randomly winning",
+        'Select a number of the roulette that you want to bet on randomly winning',
     },
     [StateMessage.ChoosingAmount]: {
-      title: "Set your amount",
-      description: "Feeling lucky? How much will you risk?",
+      title: 'Set your amount',
+      description: 'Feeling lucky? How much will you risk?',
     },
     [StateMessage.PlacingBet]: {
-      title: "Placing Bet",
+      title: 'Placing Bet',
       description:
-        "Your bet is currently getting placed. The game is starting in a couple of seconds.",
+        'Your bet is currently getting placed. The game is starting in a couple of seconds.',
     },
   };
 
@@ -128,10 +128,10 @@
             loading={$placingBet ||
               (!$placingBet && $round.active && $round.betPlaced)}
             label={$placingBet
-              ? "Placing bet"
+              ? 'Placing bet'
               : $round.active && $round.betPlaced
-              ? "In progress"
-              : "Choose bet"}
+              ? 'In progress'
+              : 'Choose bet'}
           />
         {/if}
       </div>
@@ -162,7 +162,7 @@
     }
     .description {
       text-align: center;
-      font-family: "Metropolis Semi Bold";
+      font-family: 'Metropolis Semi Bold';
       font-size: 16px;
       line-height: 150%;
       letter-spacing: 0.75px;
@@ -188,7 +188,7 @@
       }
       .message {
         margin-top: 40px;
-        font-family: "Metropolis Semi Bold";
+        font-family: 'Metropolis Semi Bold';
         text-align: center;
         @media (min-width: 1024px) {
           margin-top: 0;
@@ -225,12 +225,14 @@
       }
       .players {
         height: min-content;
+        max-height: 500px;
         position: relative;
         min-height: 100px;
         @media (min-width: 1024px) {
           width: 25%;
           height: calc(100vh - 450px);
           margin-top: 32px;
+          max-height: 550px;
         }
       }
       .roulette_game {
