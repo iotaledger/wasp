@@ -3,7 +3,7 @@ import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
 import { Notification, showNotification } from './notifications';
-import { address, addressesHistory, addressIndex, balance, firstTimeRequestingFunds, isAWinnerPlayer, keyPair, placingBet, requestingFunds, resetRound, round, seed, showBettingSystem, showWinnerAnimation, showWinningNumber, timestamp } from './store';
+import { address, addressesHistory, addressIndex, balance, firstTimeRequestingFunds, isAWinnerPlayer, keyPair, placingBet, receivedRoundStarted, requestingFunds, resetRound, round, seed, showBettingSystem, showWinnerAnimation, showWinningNumber, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -237,6 +237,7 @@ export function calculateRoundLengthLeft(timestamp: number) {
 
 export function subscribeToRouletteEvents() {
     fairRouletteService.on('roundStarted', (timestamp) => {
+        receivedRoundStarted.set(true);
         showWinningNumber.set(false);
         round.update($round => ({ ...$round, active: true, startedAt: timestamp, logs: [] }))
         log(LogTag.Round, 'Started');
