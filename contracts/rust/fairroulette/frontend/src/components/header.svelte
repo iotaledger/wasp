@@ -175,7 +175,7 @@
         letter-spacing: 0.5px;
         color: var(--white);
         @media (min-width: 1024px) {
-          gap: 50px;
+          gap: 32px;
         }
         a {
           display: none;
@@ -201,7 +201,7 @@
             gap: 8px;
             width: 100px;
           }
-          @media (min-width: 1365px) {
+          @media (min-width: 1400px) {
             width: 0;
           }
         }
