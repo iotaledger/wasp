@@ -111,7 +111,7 @@
         margin-top: 32px;
       }
       div {
-        width: 35%;
+        width: 45%;
         @media (min-width: 1024px) {
           width: 40%;
         }
