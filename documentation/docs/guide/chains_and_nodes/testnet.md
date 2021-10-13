@@ -40,7 +40,7 @@ The testnet can be accessed via a series of endpoints that hve been made availab
 - https://demo.sc.iota.org
   - Our FairRoulette demo application to see a live smart contract
 
-## Smart Contract deployment and interaction
+## Configuring _wasp-cli_
 
 You will need to initialize `wasp-cli` in order to create a seed that will be used to generate addresses.
 
@@ -59,4 +59,38 @@ In order to deploy a smart contract you will need some funds. The wasp-cli tool 
 ```
 wasp-cli request-funds
 ```
+
+We need to let _wasp-cli_ know how to reach _Wasp_ by configuring the API address.
+
+```
+wasp-cli set wasp.0.api https://wasp.sc.iota.org/api
+```
+
+Now you need to set the chain ID in _wasp-cli_ so that the correct chain can be found. Yo can find the ChainID by navigating to the (chains)[https://wasp.sc.iota.org/chains] page of the wasp dashboard. Click on the ChainID of the chain you will be able to copy the ChainID from the next page. It will be formatted like `dCwCC8D2v2MJKtj4gvi8ixVtoerGDp9aVbAxbCyPGSwn`. 
+
+Use the ChainID to tell _wasp-cli_ which chain you want to interact with. 
+
+```
+wasp-cli set chains.testchain dCwCC8D2v2MJKtj4gvi8ixVtoerGDp9aVbAxbCyPGSwn
+wasp-cli set chain testchain
+```
+
+On the __testchain__ we have deployed a FairRoulette game that you can use to make sure your configuration is correct.
+
+```
+wasp-cli --verbose chain post-request fairroulete placeBet string number int 2
+```
+
+For simplicity, here is the full set of commands to configure _wasp-cli_.
+
+```
+wasp-cli init
+wasp-cli set goshimmer.api goshimmer.sc.iota.org/api
+wasp-cli request-funds
+wasp-cli set wasp.0.api https://wasp.sc.iota.org/api
+wasp-cli set chains.testchain dCwCC8D2v2MJKtj4gvi8ixVtoerGDp9aVbAxbCyPGSwn
+wasp-cli set chain testchain
+```
+
+<!-- TODO: ## Smart Contract deployment and interaction -->
 
