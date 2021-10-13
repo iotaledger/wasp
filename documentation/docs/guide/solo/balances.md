@@ -1,17 +1,34 @@
+---
+description: Smart contracts can exchange assets between themselves on the same chain and also between different chains, as well as with addresses on the UTXO Ledger.
+image: /img/logo/WASP_logo_dark.png
+keywords:
+- testing
+- solo
+- account
+- address
+- wallet
+- balances
+- ledger
+---
 # Account Balances
 
+:::note
+
+The example code can be found in the [Wasp repository](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples).
+
+:::
 Each chain in _ISCP_ is a separate ledger, different from the UTXO ledger.
-Multiple chains adds another dimension on top of the UTXO Ledger. Smart contracts
-can exchange assets between themselves on the same chain and also between different chains as well as with
-addresses on the UTXO Ledger. We will skip explaining the whole picture for time
+Multiple chains add another dimension on top of the UTXO Ledger. Smart contracts
+can exchange assets between themselves on the same chain and also between different chains, as well as with
+addresses on the UTXO Ledger. We will skip explaining the whole picture for the time
 being and will concentrate on one specific use case.
 
-Let's say we have a wallet, the private key (with the address) and some tokens on
+Imagine you have a wallet, the private key (with the address), and some tokens on
 that address on the UTXO Ledger, the Tangle. The use case is about sending those tokens to a smart contract on a chain
 and receiving these tokens back to the address.
 
-Here we explore the concept of `on-chain account` a.k.a. just `account`. On the UTXO
-Ledger the private key is represented by the address (the hash of the public
+Here we explore the concept of `on-chain account`(a.k.a. just `account`). On the UTXO
+Ledger, the private key is represented by the address (the hash of the public
 key). That address holds balances of colored tokens. Those tokens are
 _controlled_ by the private key.
 
@@ -24,7 +41,7 @@ associated address. So, an address can control tokens on the UTXO Ledger
 So, the chain essentially is a custodian of the tokens deposited in its `accounts`.
 
 The following test demonstrates how a wallet can deposit tokens in a chain
-account and then withdraw them back.
+account and then withdraw them.
 
 ```go
 func TestTutorial5(t *testing.T) {
@@ -71,7 +88,7 @@ a `deposit` request to the `accounts` core contract on that chain. That account
 will now contain 42 iotas. The address on the UTXO Ledger will contain 42 iotas
 less, of course.
 
-In the next step the same wallet (`userWallet`) will withdraw all 42 iotas back
+In the next step, the same wallet (`userWallet`) will withdraw all 42 iotas back
 to the address by sending a `withdraw` request to the `accounts` contract on
 the same chain.
 
