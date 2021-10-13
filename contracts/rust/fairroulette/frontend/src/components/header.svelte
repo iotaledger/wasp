@@ -27,6 +27,11 @@
     target: '_blank' | 'self';
   }[] = [
     {
+      label: 'About Demo',
+      href: '/',
+      target: 'self',
+    },
+    {
       label: 'Visit the Wiki',
       href: 'https://wiki.iota.org/wasp/welcome/',
       target: '_blank',
@@ -99,7 +104,7 @@
           >
             <img src="/assets/close.svg" alt="close" />
           </div>
-          <div>
+          <div class="aside-links">
             {#each NAV_LINKS as { label, href, target }}
               <a {target} {href}>{label}</a>
             {/each}
@@ -175,7 +180,7 @@
         letter-spacing: 0.5px;
         color: var(--white);
         @media (min-width: 1024px) {
-          gap: 50px;
+          gap: 32px;
         }
         a {
           display: none;
@@ -201,7 +206,7 @@
             gap: 8px;
             width: 100px;
           }
-          @media (min-width: 1365px) {
+          @media (min-width: 1400px) {
             width: 0;
           }
         }
@@ -248,6 +253,12 @@
         color: white;
         z-index: 2;
         padding: 24px;
+        .aside-links {
+          a {
+            margin-top: 20px;
+            display: block;
+          }
+        }
         .repositories-expanded {
           padding: 16px;
         }
