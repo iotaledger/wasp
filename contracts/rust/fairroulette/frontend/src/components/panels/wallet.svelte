@@ -15,6 +15,14 @@
 
 <style lang="scss">
   .wallet {
+    border-bottom: 1px solid transparent;
+    padding: 16px 24px;
+    height: 120px;
+    @media (min-width: 1024px) {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 8px 24px;
+      height: auto;
+    }
     .wallet-data {
       display: grid;
       grid-template-rows: 1fr;
