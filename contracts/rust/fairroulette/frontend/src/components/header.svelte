@@ -191,6 +191,7 @@
           display: none;
           position: relative;
           flex-shrink: 0;
+          margin-left: 16px;
           @media (min-width: 1024px) {
             display: flex;
           }
