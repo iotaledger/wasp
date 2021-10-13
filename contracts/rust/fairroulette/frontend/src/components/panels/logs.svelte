@@ -2,7 +2,9 @@
   import { LogTag } from "../../lib/app";
   import { round } from "../../lib/store";
 
-  const LOG_TAG_STYLE = {
+  const LOG_TAG_STYLE: {
+    [key in LogTag]: { color: string; backgroundColor: string };
+  } = {
     [LogTag.Site]: {
       color: "#36A1AC",
       backgroundColor: "rgba(0, 224, 202, 0.2);",
