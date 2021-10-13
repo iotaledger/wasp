@@ -5,10 +5,10 @@ export interface IRound {
     active: boolean
     logs: ILog[]
     players: IPlayer[]
-    betSelection: number
-    betAmount: bigint
-    winningNumber: bigint
-    startedAt: number
-    number: bigint
+    betSelection: number | undefined
+    betAmount: bigint | undefined
+    winningNumber: bigint | undefined
+    startedAt: number | undefined
+    number: bigint | undefined
     betPlaced: boolean
 }

@@ -2,7 +2,7 @@
   import { fade } from 'svelte/transition';
   import type { Notification } from '../lib/notifications';
 
-  export let title: string = undefined;
+  export let title: string | undefined = undefined;
   export let message: string;
   export let type: Notification;
   export let id: string = '';

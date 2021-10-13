@@ -3,7 +3,7 @@ import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
 import { Notification, showNotification } from './notifications';
-import { address, addressesHistory, addressIndex, balance, firstTimeRequestingFunds, isAWinnerPlayer, keyPair, placingBet, requestingFunds, resetRound, round, seed, showBettingSystem, showWinnerAnimation, showWinningNumber, timestamp } from './store';
+import { address, addressesHistory, addressIndex, balance, firstTimeRequestingFunds, isAWinnerPlayer, keyPair, placingBet, receivedRoundStarted, requestingFunds, resetRound, round, seed, showBettingSystem, showWinnerAnimation, showWinningNumber, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -15,7 +15,7 @@ let client: BasicClient;
 let walletService: WalletService;
 let fairRouletteService: FairRouletteService;
 
-let fundsUpdaterHandle;
+let fundsUpdaterHandle: NodeJS.Timer | undefined;
 
 const powManager: PoWWorkerManager = new PoWWorkerManager();
 export const BETTING_NUMBERS = 8
@@ -72,7 +72,7 @@ export async function initialize() {
             const response = await fetch(config.chainResolverUrl);
             const content = await response.json();
             config.chainId = content.chainId;
-        } catch (ex) {
+        } catch (ex: any) {
             showNotification({
                 type: Notification.Error,
                 message: ex.message,
@@ -149,15 +149,15 @@ export async function updateFunds() {
             get(address),
             Colors.IOTA_COLOR_STRING
         );
-    } catch (ex) { }
+    } catch (ex: any) { }
     balance.set(_balance);
 }
 
 export function startFundsUpdater() {
     if (fundsUpdaterHandle) {
-        fundsUpdaterHandle = clearInterval(fundsUpdaterHandle);
+        clearInterval(fundsUpdaterHandle);
+        fundsUpdaterHandle = undefined;
     }
-
     fundsUpdaterHandle = setInterval(updateFunds, 1000);
 }
 
@@ -172,7 +172,7 @@ export async function placeBet() {
             get(round).betSelection,
             get(round).betAmount,
         );
-    } catch (ex) {
+    } catch (ex: any) {
         showNotification({
             type: Notification.Error,
             title: 'Error placing bet',
@@ -242,6 +242,7 @@ export function calculateRoundLengthLeft(timestamp: number) {
 
 export function subscribeToRouletteEvents() {
     fairRouletteService.on('roundStarted', (timestamp) => {
+        receivedRoundStarted.set(true);
         showWinningNumber.set(false);
         round.update($round => ({ ...$round, active: true, startedAt: timestamp, logs: [] }))
     });

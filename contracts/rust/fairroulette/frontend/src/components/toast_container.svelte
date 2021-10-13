@@ -2,34 +2,9 @@
   import { Toast } from './../components';
   import {
     displayNotifications,
-    Notification,
-    NOTIFICATION_TIMEOUT_NEVER,
     removeDisplayNotification,
   } from './../lib/notifications';
   import { fade } from 'svelte/transition';
-
-  let dummyNotifications = [
-    {
-      type: Notification.Info,
-      message: 'Dummy info message',
-      id: '1',
-    },
-    {
-      type: Notification.Error,
-      message: 'Dummy error message',
-      id: '1',
-    },
-    {
-      type: Notification.Win,
-      message: 'Dummy win message',
-      id: '1',
-    },
-    {
-      type: Notification.Info,
-      message: 'Dummy lose message',
-      id: '1',
-    },
-  ];
 </script>
 
 <div class="toast-container">

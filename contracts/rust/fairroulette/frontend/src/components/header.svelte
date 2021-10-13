@@ -2,7 +2,7 @@
   import { navigateTo, routeIsActive } from 'svelte-router-spa';
   import { fly, slide } from 'svelte/transition';
 
-  export let currentRoute;
+  export let currentRoute: string;
   let isLanding: boolean = false;
 
   $: currentRoute, (isLanding = routeIsActive('/'));
@@ -18,7 +18,7 @@
     {
       label: 'Wasp',
       link: 'https://github.com/iotaledger/wasp',
-    }
+    },
   ];
 
   const NAV_LINKS: {
@@ -26,6 +26,11 @@
     href: string;
     target: '_blank' | 'self';
   }[] = [
+    {
+      label: 'About Demo',
+      href: '/',
+      target: 'self',
+    },
     {
       label: 'Visit the Wiki',
       href: 'https://wiki.iota.org/wasp/welcome/',
@@ -72,60 +77,62 @@
           {/if}
         </div>
         {#if isLanding}
-          <button class="try-demo" on:click={() => navigateTo("/demo")}
+          <div class="empty" />
+          <button class="try-demo" on:click={() => navigateTo('/demo')}
             >Try demo</button
           >
         {/if}
-      </div>
 
-      <!-- Mobile menu -->
-      <div
-        class="open-menu"
-        on:click={() => {
-          isMenuExpanded = true;
-        }}
-      >
-        <img src="/assets/burger.svg" alt="menu" />
-      </div>
-    </div>
-    {#if isMenuExpanded}
-      <aside class="aside-expanded" transition:slide={{ duration: 700 }}>
+        <!-- Mobile menu -->
         <div
-          class="close-expanded"
+          class="open-menu"
+          class:landingMenu={isLanding}
           on:click={() => {
-            isMenuExpanded = false;
+            isMenuExpanded = true;
           }}
         >
-          <img src="/assets/close.svg" alt="close" />
+          <img src="/assets/burger.svg" alt="menu" />
         </div>
-        <div>
-          {#each NAV_LINKS as { label, href, target }}
-            <a {target} {href}>{label}</a>
-          {/each}
+      </div>
+      {#if isMenuExpanded}
+        <aside class="aside-expanded" transition:slide={{ duration: 700 }}>
           <div
-            class="dropdown flex-shrink-0"
+            class="close-expanded"
             on:click={() => {
-              isRepositoriesExpanded = !isRepositoriesExpanded;
+              isMenuExpanded = false;
             }}
           >
-            <span>Repositories</span>
-            <img
-              class:expanded={isRepositoriesExpanded}
-              src="/assets/dropdown.svg"
-              alt="dropdown"
-              class="arrow"
-            />
-            {#if isRepositoriesExpanded}
-              <div class="repositories-expanded">
-                {#each REPOSITORIES as { label, link }}
-                  <a class="repo" target="_blank" href={link}>{label}</a>
-                {/each}
-              </div>
-            {/if}
+            <img src="/assets/close.svg" alt="close" />
           </div>
-        </div>
-      </aside>
-    {/if}
+          <div class="aside-links">
+            {#each NAV_LINKS as { label, href, target }}
+              <a {target} {href}>{label}</a>
+            {/each}
+            <div
+              class="dropdown flex-shrink-0"
+              on:click={() => {
+                isRepositoriesExpanded = !isRepositoriesExpanded;
+              }}
+            >
+              <span>Repositories</span>
+              <img
+                class:expanded={isRepositoriesExpanded}
+                src="/assets/dropdown.svg"
+                alt="dropdown"
+                class="arrow"
+              />
+              {#if isRepositoriesExpanded}
+                <div class="repositories-expanded">
+                  {#each REPOSITORIES as { label, link }}
+                    <a class="repo" target="_blank" href={link}>{label}</a>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          </div>
+        </aside>
+      {/if}
+    </div>
   </div>
 </header>
 
@@ -167,11 +174,14 @@
         letter-spacing: 0.75px;
         color: var(--gray-3);
         width: 100%;
-        gap: 50px;
+        gap: 10px;
         font-size: 14px;
         line-height: 21px;
         letter-spacing: 0.5px;
         color: var(--white);
+        @media (min-width: 1024px) {
+          gap: 32px;
+        }
         a {
           display: none;
           @media (min-width: 1024px) {
@@ -190,12 +200,25 @@
             display: flex;
           }
         }
+        .empty {
+          width: 0;
+          @media (min-width: 1010px) {
+            gap: 8px;
+            width: 100px;
+          }
+          @media (min-width: 1400px) {
+            width: 0;
+          }
+        }
       }
       .open-menu {
         display: flex;
-        margin-right: 15px;
+        margin-right: 20px;
         @media (min-width: 1024px) {
           display: none;
+        }
+        &.landingMenu {
+          margin-right: 120px;
         }
       }
       .dropdown {
@@ -204,7 +227,7 @@
         line-height: 150%;
         letter-spacing: 0.75px;
         color: var(--gray-3);
-        font-family: "Inter";
+        font-family: 'Inter';
         display: flex;
         justify-content: space-between;
         @media (min-width: 1024px) {
@@ -230,6 +253,12 @@
         color: white;
         z-index: 2;
         padding: 24px;
+        .aside-links {
+          a {
+            margin-top: 20px;
+            display: block;
+          }
+        }
         .repositories-expanded {
           padding: 16px;
         }
@@ -275,7 +304,7 @@
       letter-spacing: 0.75px;
       color: var(--gray-3);
       text-decoration: none;
-      font-family: "Inter";
+      font-family: 'Inter';
     }
     .try-demo {
       border: 0;
@@ -295,6 +324,7 @@
       font-size: 14px;
       line-height: 120%;
       padding: 16px;
+      position: absolute;
       @media (min-width: 1024px) {
         padding: 30px;
         font-size: 16px;
