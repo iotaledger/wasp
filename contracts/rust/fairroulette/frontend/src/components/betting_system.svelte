@@ -16,7 +16,7 @@
   $: isFirstStep = $bettingStep === BettingStep.NumberChoice;
   $: isLastStep = $bettingStep === BettingStep.AmountChoice;
 
-  function onNumberClick(number): void {
+  function onNumberClick(number: number): void {
     let betSelection = $round?.betSelection !== number ? number : undefined;
     round.update(($round) => ({ ...$round, betSelection }));
   }

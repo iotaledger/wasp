@@ -15,7 +15,7 @@ let client: BasicClient;
 let walletService: WalletService;
 let fairRouletteService: FairRouletteService;
 
-let fundsUpdaterHandle;
+let fundsUpdaterHandle: NodeJS.Timer | undefined;
 
 const powManager: PoWWorkerManager = new PoWWorkerManager();
 export const BETTING_NUMBERS = 8
@@ -69,7 +69,7 @@ export async function initialize() {
             const response = await fetch(config.chainResolverUrl);
             const content = await response.json();
             config.chainId = content.chainId;
-        } catch (ex) {
+        } catch (ex: any) {
             showNotification({
                 type: Notification.Error,
                 message: ex.message,
@@ -146,15 +146,15 @@ export async function updateFunds() {
             get(address),
             Colors.IOTA_COLOR_STRING
         );
-    } catch (ex) { }
+    } catch (ex: any) { }
     balance.set(_balance);
 }
 
 export function startFundsUpdater() {
     if (fundsUpdaterHandle) {
-        fundsUpdaterHandle = clearInterval(fundsUpdaterHandle);
+        clearInterval(fundsUpdaterHandle);
+        fundsUpdaterHandle = undefined;
     }
-
     fundsUpdaterHandle = setInterval(updateFunds, 1000);
 }
 
@@ -169,7 +169,7 @@ export async function placeBet() {
             get(round).betSelection,
             get(round).betAmount,
         );
-    } catch (ex) {
+    } catch (ex: any) {
         showNotification({
             type: Notification.Error,
             title: 'Error placing bet',
@@ -200,7 +200,7 @@ export async function sendFaucetRequest() {
 
     try {
         await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
-    } catch (ex) {
+    } catch (ex: any) {
         showNotification({
             type: Notification.Error,
             message: ex.message,

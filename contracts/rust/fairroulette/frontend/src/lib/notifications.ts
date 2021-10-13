@@ -35,7 +35,7 @@ export function showNotification(notificationData: NotificationData): string {
     return notificationData.id
 }
 
-export function removeDisplayNotification(id: string): void {
+export function removeDisplayNotification(id: string | undefined): void {
     displayNotifications.update((_currentNotifications) => {
         const idx = _currentNotifications.findIndex((n) => n.id === id)
         if (idx >= 0) {

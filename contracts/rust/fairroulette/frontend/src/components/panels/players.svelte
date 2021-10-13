@@ -1,11 +1,11 @@
 <script lang="ts">
   import {
-    round,
     address as currentAddress,
     addressesHistory,
+    round,
   } from "../../lib/store";
 
-  const isMyAddress = (addr) =>
+  const isMyAddress = (addr: string) =>
     $currentAddress === addr || $addressesHistory.includes(addr);
 </script>
 

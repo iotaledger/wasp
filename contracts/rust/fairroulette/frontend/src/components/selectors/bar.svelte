@@ -1,15 +1,13 @@
 <script lang="ts">
-  import { updateFunds } from "../../lib/app";
-
   import { balance } from "../../lib/store";
 
   export let value: number;
   export let disabled: boolean = false;
 
-  let invalidMessage, textValue;
+  let invalidMessage: string | undefined;
+  let textValue: number;
 
   $: value, updateLabel();
-
   $: textValue, validate();
 
   function updateLabel() {
@@ -25,9 +23,9 @@
     let regex = new RegExp(/^\d+$/);
     invalidMessage = undefined;
 
-    if (textValue < 0 || textValue > $balance) {
+    if (textValue < 0 || textValue > Number($balance)) {
       invalidMessage = VALIDATION_ERRORS.UNDER_RANGE_OF_BALANCE;
-    } else if (!regex.test(textValue)) {
+    } else if (!regex.test(textValue?.toString())) {
       invalidMessage = VALIDATION_ERRORS.MUST_BE_INTEGER;
     } else {
       value = textValue;

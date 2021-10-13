@@ -2,7 +2,7 @@
   import { navigateTo, routeIsActive } from 'svelte-router-spa';
   import { fly, slide } from 'svelte/transition';
 
-  export let currentRoute;
+  export let currentRoute: string;
   let isLanding: boolean = false;
 
   $: currentRoute, (isLanding = routeIsActive('/'));
@@ -12,31 +12,31 @@
 
   const REPOSITORIES: { label: string; link: string }[] = [
     {
-      label: 'Fair Roulette',
-      link: 'https://github.com/iotaledger/wasp/tree/roulette_poc/contracts/rust/fairroulette',
+      label: "Fair Roulette",
+      link: "https://github.com/iotaledger/wasp/tree/roulette_poc/contracts/rust/fairroulette",
     },
     {
-      label: 'Wasp',
-      link: 'https://github.com/iotaledger/wasp',
-    }
+      label: "Wasp",
+      link: "https://github.com/iotaledger/wasp",
+    },
   ];
 
   const NAV_LINKS: {
     label: string;
     href: string;
-    target: '_blank' | 'self';
+    target: "_blank" | "self";
   }[] = [
     {
-      label: 'Visit the Wiki',
-      href: 'https://wiki.iota.org/wasp/welcome/',
-      target: '_blank',
+      label: "Visit the Wiki",
+      href: "https://wiki.iota.org/wasp/welcome/",
+      target: "_blank",
     },
   ];
 </script>
 
 <header class="header">
   <div class="container">
-    <div class="logo" on:click={() => navigateTo('/')}>
+    <div class="logo" on:click={() => navigateTo("/")}>
       <img src="/assets/iota-roulette-logo.svg" alt="iota-logo-roulette" />
     </div>
 
