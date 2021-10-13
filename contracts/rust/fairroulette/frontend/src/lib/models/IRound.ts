@@ -9,7 +9,6 @@ export interface IRound {
     betAmount: bigint;
     winningNumber: bigint;
     startedAt: number;
-    roundTimeLeft: number;
     number: bigint;
     betPlaced: boolean;
 }
