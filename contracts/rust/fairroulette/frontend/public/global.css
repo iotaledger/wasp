@@ -14,7 +14,7 @@
   --gray-5: #909fbe;
   --gray-6: #677695;
   --gray-7: #485776;
-  
+
   --error: #ffa1ce;
 
   --border-color: rgba(255, 255, 255, 0.12);
@@ -32,7 +32,7 @@ body {
 }
 body {
   color: #333;
-  background-color: #091326 ;
+  background-color: #091326;
   margin: 0;
   box-sizing: border-box;
   font-family: "Inter", sans-serif;
@@ -56,6 +56,10 @@ input:disabled,
 button:disabled {
   cursor: default;
   pointer-events: none;
+}
+a {
+  color: var(--mint-green-light);
+  text-decoration: none;
 }
 h1 {
   font-size: 40px;
