@@ -103,7 +103,7 @@
     }
     .betting-actions {
       display: flex;
-      width: 350px;
+      width: 300px;
       margin-top: 24px;
       justify-content: space-evenly;
       @media (min-width: 1024px) {
@@ -111,7 +111,10 @@
         margin-top: 32px;
       }
       div {
-        width: 40%;
+        width: 35%;
+        @media (min-width: 1024px) {
+          width: 40%;
+        }
       }
     }
     .betting-panel {
