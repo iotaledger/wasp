@@ -20,7 +20,7 @@ For this example, we have created a very simple betting game in which players ca
 
 The goal of the game is to bet on the right number, to win a share of the placed funds. This is being done in rounds. 
 
-A round is running for a certain amount of time. In our example: 60 seconds. In this timeframe, incoming bets will be added to a list of bets. After 60 seconds have passed, a winning number gets randomly generated and all players who made the right guess will receive a share of the pot.
+A round is running for a certain amount of time. In our example: 60 seconds. In this timeframe, incoming bets will be added to a list of bets. After 60 seconds have passed, a winning number gets randomly generated and all players who made the right guess will receive a share of the pot depending on the amount of funds.
 
 If no round is active when a bet gets placed, the round gets initiated immediately.
 
@@ -28,13 +28,13 @@ If no round is active when a bet gets placed, the round gets initiated immediate
 
 The mandatory setup consists out of:
 
-* 1 GoShimmer node >= 0.7.5v
+* 1 GoShimmer node >= 0.7.5v ([25c827e8326a](https://github.com/iotaledger/goshimmer/commit/25c827e8326a))
 * 1 Beta Wasp node
-* 1 static file server for the frontend
+* 1 Static file server (nginx, apache, fasthttp)
 
 ## Technicallity
 
-Before we dive into the contents of the project, lets get an overview of what is actually required for this game.
+Before we dive into the contents of the project, lets introduce important fundamentals first.
 
 ### Fundamentals
 
@@ -44,47 +44,54 @@ There are two ways to interact with smart contracts.
 
 #### On Ledger requests
 
-OnLedger requests are sent to GoShimmer nodes. Wasp periodically asks GoShimmer nodes for new OnLedger requests and handles them accordingly. These messages are validated through the network and take some time to be processed. 
+See: [On-ledger Requests](/docs/guide/core_concepts/smartcontract-interaction/on-ledger-requests/)
+
+On-ledger requests are sent to GoShimmer nodes. Wasp periodically asks GoShimmer nodes for new On-ledger requests and handles them accordingly. These messages are validated through the network and take some time to be processed. 
 
 #### Off Ledger requests
 
-OffLedger requests are directly sent to Wasp nodes and do not require validation through GoShimmer nodes. They are therefore faster. However, they require an initial deposit of funds to a chain account as this account will initiate required OnLedger requests on the behalf of the desired contract or player.
+See: [Off-ledger Requests](/docs/guide/core_concepts/smartcontract-interaction/off-ledger-requests/)
 
-> In our example we use OnLedger requests to initiate a betting request, a method to invoke OffLedger requests is implemented inside the frontend to make use of.
+Off-ledger requests are directly sent to Wasp nodes and do not require validation through GoShimmer nodes. They are therefore faster. However, they require an initial deposit of funds to a chain account as this account will initiate required On-ledger requests on the behalf of the desired contract or player.
 
-[.. cleverly link some docs we hopefully have about this stuff :D]
+:::note
+We use On-ledger requests in our example to initiate a betting request. A method to invoke Off-ledger requests is implemented inside the frontend to make use of.
 
+See: [placeBetOffLedger](https://github.com/iotaledger/wasp/blob/roulette_poc/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L133)
+:::
 #### Funds
 
 As these requests do cost some fees and to be able to actually bet with real token, the player requires a source of funds.  
 
-Considering that the game runs on a testnet, funds can be requested from GoShimmer faucets inside the network[link faucet request]. 
+Considering that the game runs on a testnet, funds can be requested from GoShimmer faucets inside the network. 
+
+See: [How to Obtain Tokens From the Faucet](https://goshimmer.docs.iota.org/docs/tutorials/obtain_tokens)
 
 After aquiring some funds, they reside inside an address which is handled by a wallet.
 
-For this PoC, we have implemented our own very narrowed down wallet that runs inside the browser itself, mostly hidden from the player. 
+For this PoC, we have implemented a very narrowed down wallet that runs inside the browser itself, mostly hidden from the player. 
 
-In the future, we want to provide a solution that enables the use of Firefly or MetaMask(status?) as a secure external wallet.
+In the future, we want to provide a solution that enables the use of Firefly or MetaMask as a secure external wallet.
 
 #### Conclusion
 
-To interact with a smart contract, we require a Wasp node which hosts the contract, a GoShimmer node to interact with the tangle, funds from a GoShimmer faucet, and a client that invokes the contract by either an On or Off Ledger request. 
+To interact with a smart contract, we require a Wasp node which hosts the contract, a GoShimmer node to interact with the tangle, funds from a GoShimmer faucet, and a client that invokes the contract by either an On or Off Ledger request. In our example, the Frontend acts as the client.
 
 
 ### Implementation
 
 The PoC consists out of two projects residing in `contracts/rust/fairroulette`.
 
-One is the smart contract itself. Its boilerplate was generated using the new Schema tool[link] which is shipped with this beta release. 
-The contract logic is written in Rust but the same implementation can be archived interchangebly with Golang.
+One is the smart contract itself. Its boilerplate was generated using the new [Schema tool](/docs/guide/schema/intro) which is shipped with this beta release. 
+The contract logic is written in Rust but the same implementation can be archived interchangebly with Golang which is demonstrated in the root folder and `./src`.
 
-The second project is an interactive frontend written in TypeScript, made reactive with the light Svelte framework. 
-This frontend sends OnLedger requests to place bets towrds the fair roulette smart contract and makes use of the GoShimmer faucet to request funds.
+The second project is an interactive frontend written in TypeScript, made reactive with the light Svelte framework and to be found in the subfolder `./frontend`.
+This frontend sends On-ledger requests to place bets towards the fair roulette smart contract and makes use of the GoShimmer faucet to request funds.
 
 
 ### The smart contract 
 
-> https://iscp.docs.iota.org/docs/tutorial/05/
+See: [Structure of the smart contract](https://iscp.docs.iota.org/docs/tutorial/05)
 
 As the smart contract is the only actor that is allowed to modify state in the context of the game, it got delegated a few tasks such as:
 
@@ -197,9 +204,9 @@ The fairroulette service is a mere wrapper around smart contract invocation call
 
 Lets take a look into three parts of this service to make this more clear.
 
-##### placeBetOnLedger
+##### placeBetOn-ledger
 
-The [placeBetOnLedger](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L144) function is responsible to send an On Ledger bet requests. It constructs a simple IOnLedger object  containing:
+The [placeBetOn-ledger](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L144) function is responsible to send an On Ledger bet requests. It constructs a simple IOn-ledger object  containing:
 
 * the smart contract id: `fairroulette` 
 * the function to invoke: `placeBet` 
