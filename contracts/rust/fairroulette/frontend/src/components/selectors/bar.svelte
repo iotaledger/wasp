@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { balance } from "../../lib/store";
+  import { balance } from '../../lib/store';
 
   export let value: number;
   export let disabled: boolean = false;
@@ -16,7 +16,7 @@
 
   const VALIDATION_ERRORS = {
     UNDER_RANGE_OF_BALANCE: `Value must be less than or equal to ${$balance}.`,
-    MUST_BE_INTEGER: "Value must be an integer.",
+    MUST_BE_INTEGER: 'Value must be an integer.',
   };
 
   function validate(): void {
@@ -35,7 +35,7 @@
 
 <div class="bar-value">
   <div class="value">
-    <input bind:value={textValue} />{" "}i
+    <input bind:value={textValue} />{' '}i
   </div>
   {#if invalidMessage}
     <div class="invalid-message">{invalidMessage}</div>
@@ -63,7 +63,7 @@
       letter-spacing: 0.5px;
       color: var(--white);
       padding-bottom: 20px;
-      font-family: "Metropolis Semi Bold";
+      font-family: 'Metropolis Semi Bold';
       @media (min-width: 1024px) {
         font-size: 48px;
         padding-bottom: 45px;
@@ -76,7 +76,7 @@
         border: 1px solid var(--border-color);
         padding: 8px;
         width: 89%;
-        font-family: "Metropolis";
+        font-family: 'Metropolis Semi Bold';
         &:focus {
           outline: none;
         }
