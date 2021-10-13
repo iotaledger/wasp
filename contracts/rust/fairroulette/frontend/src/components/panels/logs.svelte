@@ -22,8 +22,8 @@
       backgroundColor: "rgba(255, 99, 22, 0.2)",
     },
     [LogTag.Error]: {
-      color: "#6464FF",
-      backgroundColor: "rgba(65, 64, 223, 0.2)",
+      color: "#EE5B4D",
+      backgroundColor: "rgba(238, 91, 77, 0.2)",
     },
   };
 </script>

@@ -204,7 +204,7 @@ export async function sendFaucetRequest() {
 
     try {
         await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
-        log(LogTag.Funds, "Funds sent to Wasp chain address using GoShimmer nodes");
+        log(LogTag.SmartContract, "Funds sent to Wasp chain address using GoShimmer nodes");
     } catch (ex) {
         showNotification({
             type: Notification.Error,
