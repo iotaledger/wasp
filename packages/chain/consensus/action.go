@@ -145,6 +145,7 @@ func (c *Consensus) runVMIfNeeded() {
 			"num req", len(vmTask.Requests),
 		)
 		c.workflow.vmStarted = true
+		vmTask.StartTime = time.Now()
 		go c.vmRunner.Run(vmTask)
 	} else {
 		c.log.Errorf("runVM: error preparing VM task")
@@ -237,6 +238,8 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		c.chain.ReceiveMessage(&messages.VMResultMsg{
 			Task: task,
 		})
+		elapsed := time.Since(task.StartTime)
+		c.consensusMetrics.RecordVMRunTime(elapsed)
 	}
 	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task

@@ -1,76 +1,72 @@
-# The `root` contract
+---
+description: The root contract is the first smart contract deployed on the chain. It functions as a smart contract factory for the chain, and manages chain ownership and fees.
+image: /img/logo/WASP_logo_dark.png
+keywords:
+- ISCP
+- core
+- root
+- initialization
+- entry points
+- fees
+- ownership
+- Views
+--- 
+# The `root` Contract
 
 The `root` contract is one of the [core contracts](overview.md) on each ISCP
 chain.
 
 The `root` contract provides the following functions:
 
-- It is the first smart contract deployed on the chain. It receives the `init` request and
-  bootstraps the state of the chain. Part of the state initialization is the deployment of all other core
-  contracts.
+- It is the first smart contract deployed on the chain. Upon receiving the `init` request, bootstraps the state of the chain. Part of the state initialization is the deployment of all other core contracts.
 
-- It functions as a smart contract factory for the chain: upon request, it deploys other smart
-  contracts and maintains an on-chain registry of smart contracts in its state.
+- It functions as a smart contract factory for the chain: upon request, it deploys other smart contracts and maintains an on-chain registry of smart contracts in its state.
 
-- It manages chain ownership. The _chain owner_ is a special `agentID`
-  (L1 address or another smart contract). Initially the deployer of the chain
-  becomes the _chain owner_. Certain functions on the chain can only be
-  performed by the _chain owner_. That includes changing the chain ownership
-  itself.
+- The contract registry keeps a list of contract records, which contain their respective name, hname, description and creator.
 
-- It manages default fees for the chain. There are two types of default fees:
-  _chain owner fees_ and _validator fees_. Initially both are set to 0.
+## Entry Points
 
-### Entry points
-
-The following are the functions / entry points of the `root` contract. Some of
+The following are the functions/entry points of the `root` contract. Some of
 them may require authorisation, i.e. can only be invoked by a specific caller,
 for example the _chain owner_.
 
-* **init** - The constructor. Automatically posted to the chain immediately after
-  confirmation of the origin transaction, as the first call.
-    * Initializes base values of the chain according to parameters
-    * sets the caller as the _chain owner_
-    * sets chain fee color (default is _IOTA color_)
-    * deploys all core contracts. The core contracts become part of the immutable state.
-      It makes them callable just like any other smart contract deployed on the chain.
+### init
 
-* **delegateChainOwnership** - Prepares a successor (an `agent ID`) to become the
-  owner of the chain. The ownership is not transferred until claimed.
+The constructor. Automatically posted to the chain immediately after confirmation of the origin transaction, as the first call.
 
-* **claimChainOwnership** - The new chain owner can claim ownership if it was
-  delegated. Chain ownership changes.
+* Initializes base values of the chain according to parameters
+* Sets the caller as the _chain owner_
+* Sets chain fee color (default is _IOTA color_)
+* Deploys all core contracts. The core contracts become part of the immutable state.
+  It makes them callable just like any other smart contract deployed on the chain.
 
-* **deployContract** - Deploys a smart contract on the chain, if the caller has
-  deploy permission. Parameters:
-    * hash of the _blob_ with the binary of the program and VM type
-    * name of the instance. This is later used in the hashed form of _hname_
-    * description of the instance
+### deployContract
 
-* **grantDeployPermission** - Chain owner grants deploy permission to an agent ID
+Deploys a smart contract on the chain, if the caller has deploy permission. 
 
-* **revokeDeployPermission** - Chain owner revokes deploy permission from an agent ID
+#### Parameters
 
-* **setContractFee** - Sets fee values for a particular smart contract. There
-  are two values for each smart contract: `validatorFee` and `chainOwnerFee`. If
-  a value is 0, it means the chain's default fee will be taken.
+* Hash of the _blob_ with the binary of the program and VM type
+* Name of the instance. This is later used in the hashed form of _hname_
+* Description of the instance
 
-* **setDefaultFee** - Sets chain-wide default fee values. There are two of
-  them: `validatorFee` and `chainOwnerFee`. Initially both are 0.
+### grantDeployPermission
 
-### Views
+The chain owner grants deploy permission to an agent ID.
+
+### revokeDeployPermission
+
+The chain owner revokes deploy permission from an agent ID.
+
+## Views
 
 Can be called directly. Calling a view does not modify the state of the smart
 contract.
 
-* **findContract** - Returns the data of the provided smart contract (if it
-  exists) in a marshalled binary form.
+###  findContract
 
-* **getChainInfo** - Returns main values of the chain, such as chain ID, chain
-  owner ID and description. It also returns the registry of all smart contracts
-  in a marshalled binary form
+Returns the record for a given smart contract (if it exists).
 
-* **getFeeInfo** - Returns fee information for the particular smart
-  contract: `validatorFee` and `chainOwnerFee`. If specific values for the
-  smart contract are not set, it returns chain-wide defaults.
+### getContractRecords
 
+Returns the list of all smart contracts deployed on the chain and related records.

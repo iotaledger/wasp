@@ -1,4 +1,6 @@
 ---
+description:  How to run a node. Requirements, configuration parameters, dashboard configuration and tests.
+image: /img/logo/WASP_logo_dark.png
 keywords:
 - ISCP
 - Smart Contracts
@@ -7,31 +9,38 @@ keywords:
 - GoShimmer
 - Requirements
 - Configuration
-- Dashborad
+- Dashboard
 - Grafana
 - Prometheus
-description:  How to run a node. Requirements, configuration parameters, dashboard configuration and tests.
-image: /img/logo/WASP_logo_dark.png
 ---
 
 # Running a Node
 
-In the following sections we describe how to use Wasp by cloning the repository and building the application.
-If you prefer to use a docker image, you can find instructions on how to build it [here](../../misc/docker.md) (official images will be provided in the future).
+In the following section we describe how to use Wasp by cloning the repository and building the application.
+If you prefer, you can also configure a node [using a docker image](../../misc/docker.md) (official images will be provided in the future).
 
 ## Requirements
 
-- Go 1.16
-- [RocksDB](https://github.com/linxGnu/grocksdb)
+### Hardware
+
+- **Cores**: At least 2 cores (most modern processors will suffice)
+- **RAM**: 4GB
+
+### Software
+
+- [Go 1.16](https://golang.org/doc/install)
+- [RocksDB](https://github.com/facebook/rocksdb/blob/master/INSTALL.md)
 - Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
   production operation
 
-Note: The Wasp node requires the Goshimmer node to have the
+:::info note 
+
+The Wasp node requires the Goshimmer node to have the
 [TXStream](https://github.com/iotaledger/goshimmer/tree/master/plugins/txstream)
 plugin enabled. Being an experimental plugin, it is currently disabled by default and can
 be enabled via configuration.
 
-- [RocksDB](https://github.com/facebook/rocksdb/blob/master/INSTALL.md)
+:::
 
 ### Microsoft Windows Installation Errors
 
@@ -58,11 +67,14 @@ On Windows you will need to use `go install -tags rocksdb -buildmode=exe ./...` 
 - Run all tests (including integration tests which may take several minutes): `go test -tags rocksdb -timeout 20m ./...`
 - Run only unit tests: `go test -tags rocksdb -short ./...`
 
-Note: Integration tests require the `wasp` and `wasp-cli` commands
+:::info Note
+
+Integration tests require the `wasp` and `wasp-cli` commands
 in the system path (i.e. you need to run `go install ./...` before running
 tests).
 
----
+:::
+
 
 ## Configuration
 
@@ -74,7 +86,7 @@ same host.
 
 Wasp nodes connect to other Wasp peers to form committees. There is exactly one
 TCP connection between two Wasp nodes participating in the same committee. Each
-node uses the `peering.port` setting to specify the port for peering.
+node uses the `peering.port` setting to specify the port that will be used for peering.
 
 `peering.netid` must have the form `host:port`, with `port` equal to
 `peering.port`, and where `host` must resolve to the machine where the node is
@@ -83,25 +95,25 @@ committee must have a unique `netid`.
 
 ### Goshimmer Connection Settings
 
-`nodeconn.address` specifies the Goshimmer host and port (exposed by the TXStream plugin) to
-connect to (more information about the goshimmer node [below](#goshimmer-provider)).
+`nodeconn.address` specifies the Goshimmer host and port (exposed by the
+[TXStream](https://github.com/iotaledger/goshimmer/tree/master/plugins/txstream) plugin) to
+connect to. You can find more information about the Goshimmer node in the [Goshimmer Provider section](#goshimmer-provider).
 
 ### Publisher
 
-`nanomsg.port` specifies the port for the Nanomsg event publisher. Wasp nodes
+`nanomsg.port` specifies the port for the [Nanomsg](https://nanomsg.org/) event publisher. Wasp nodes
 publish important events happening in smart contracts, such as state
 transitions, incoming and processed requests and similar. Any Nanomsg client
 can subscribe to these messages.
 
 <details>
-  <summary>More Information</summary>
+  <summary>More Information on Wasp and Nanomsg</summary>
   <div>
-  <br/>
   
   Each Wasp node publishes important events via a [Nanomsg](https://nanomsg.org/) message stream
-  (just like ZMQ is used in IRI. Possibly, in the future, ZMQ and MQTT publishers will be supported too).
+  (just like ZMQ is used in IRI). Possibly, in the future, [ZMQ](https://zeromq.org/) and [MQTT](https://mqtt.org/) publishers will be supported too.
 
-  Any Nanomsg client can subscribe to the message stream. In Go you can use the
+  Any Nanomsg client can subscribe to the message stream. In Go, you can use the
   `packages/subscribe` package provided in Wasp for this.
 
   The Publisher port can be configured in `config.json` with the `nanomsg.port`
@@ -136,69 +148,24 @@ which can be accessed with a web browser.
 
 ### Prometheus
 
-`prometheus.bindAddress` specifies the bind address/port for the prometheus server, where its possible to get multiple system metrics.
-By default Prometheus is disabled and should be enabled by setting `prometheus.enabled` to `true`.
+`prometheus.bindAddress` specifies the bind address/port for the prometheus server, where it's possible to get multiple system metrics.
+
+By default, Prometheus is disabled and should be enabled by setting `prometheus.enabled` to `true`.
 
 ### Grafana
 
 Grafana provides a dashboard to visualize system metrics, it can use the prometheus metrics as a data source.
-// TODO
 
 ## Goshimmer Provider
 
-For the Wasp node to communicate with the L1 (Tangle/Goshimmer Network), it needs access to a Goshimmer node with the TXStream plugin enabled.
-You can use any publicly available node, but the instructions on how to run your own node follows:
+For the Wasp node to communicate with the L1 (Tangle/Goshimmer Network), it needs access to a Goshimmer node with the TXStream plugin enabled. You can use any publicly available node, or [set up your own node](https://wiki.iota.org/goshimmer/tutorials/setup/).
 
-The `goshimmer` command must be compiled from the Goshimmer repository:
+:::info note
 
-```shell
-git clone https://github.com/iotaledger/goshimmer.git
-cd goshimmer
-go install -tags rocksdb
-```
-
-Create an empty working directory for Goshimmer, and download the `snapshot.bin` file needed for bootstrap
-
-```shell
-mkdir goshimmer-node
-cd goshimmer-node
-wget -O snapshot.bin https://dbfiles-goshimmer.s3.eu-central-1.amazonaws.com/snapshots/nectar/snapshot-latest.bin
-```
-
-Start the Goshimmer node:
-
-```shell
-$ goshimmer \
-        --skip-config=true \
-        --analysis.client.serverAddress=ressims.iota.cafe:21888 \
-        --autopeering.port=14626 \
-        --dashboard.bindAddress=0.0.0.0:8081 \
-        --gossip.port=14666 \
-        --webapi.bindAddress=0.0.0.0:8080 \
-        --profiling.bindAddress=0.0.0.0:6061 \
-        --networkdelay.originPublicKey=9DB3j9cWYSuEEtkvanrzqkzCQMdH1FGv3TawJdVbDxkd \
-        --fpc.bindAddress=0.0.0.0:10895 \
-        --prometheus.bindAddress=0.0.0.0:9311 \
-        --autopeering.entryNodes=2PV5487xMw5rasGBXXWeqSi4hLz7r19YBt8Y1TGAsQbj@ressims.iota.cafe:15626,5EDH4uY78EA6wrBkHHAVBWBMDt7EcksRq6pjzipoW15B@entryshimmer.tanglebay.com:14646 \
-        --node.disablePlugins= \
-        --node.enablePlugins=remotelog,networkdelay,spammer,prometheus,faucet,txstream \
-        --faucet.seed=7R1itJx5hVuo9w9hjg5cwKFmek4HMSoBDgJZN8hKGxih \
-        --logger.level=info \
-        --logger.disableEvents=false \
-        --logger.remotelog.serverAddress=ressims.iota.cafe:5213 \
-        --drng.pollen.instanceId=1 \
-        --drng.pollen.threshold=3 \
-        --drng.pollen.committeeMembers=AheLpbhRs1XZsRF8t8VBwuyQh9mqPHXQvthV5rsHytDG,FZ28bSTidszUBn8TTCAT9X1nVMwFNnoYBmZ1xfafez2z,GT3UxryW4rA9RN9ojnMGmZgE2wP7psagQxgVdA4B9L1P,4pB5boPvvk2o5MbMySDhqsmC2CtUdXyotPPEpb7YQPD7,64wCsTZpmKjRVHtBKXiFojw7uw3GszumfvC4kHdWsHga \
-        --drng.xteam.instanceId=1339 \
-        --drng.xteam.threshold=4 \
-        --drng.xteam.committeeMembers=GUdTwLDb6t6vZ7X5XzEnjFNDEVPteU7tVQ9nzKLfPjdo,68vNzBFE9HpmWLb2x4599AUUQNuimuhwn3XahTZZYUHt,Dc9n3JxYecaX3gpxVnWb4jS3KVz1K1SgSK1KpV1dzqT1,75g6r4tqGZhrgpDYZyZxVje1Qo54ezFYkCw94ELTLhPs,CN1XLXLHT9hv7fy3qNhpgNMD6uoHFkHtaNNKyNVCKybf,7SmttyqrKMkLo5NPYaiFoHs8LE6s7oCoWCQaZhui8m16,CypSmrHpTe3WQmCw54KP91F5gTmrQEL7EmTX38YStFXx
-```
-
-Note: Argument values are adapted from [these instructions](https://github.com/iotaledger/goshimmer/wiki/Setup-up-a-GoShimmer-node-%28Joining-the-pollen-testnet%29).
-We do not provide Docker images yet.
-
-Note: By default the TXStream plugin will be listening for Wasp connections on port `5000`.
+By default, the TXStream plugin will be listening for Wasp connections on port `5000`.
 To change this setting you can add the argument `--txstream.port: 12345`.
+
+:::
 
 ## Running the Node
 
@@ -215,3 +182,5 @@ wasp
 You can verify that your node is running by opening the dashboard with a web browser at `127.0.0.1:7000` (default url).
 
 Repeat this process to launch as many nodes as you want for your committee.
+
+tps://docs.docker.com/engine/reference/commandline/run/#publish-or-expose-port--p---expose).

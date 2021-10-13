@@ -10,7 +10,7 @@ import (
 
 func TestDoNothing(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		nop := testcore.ScFuncs.DoNothing(ctx)
 		nop.Func.TransferIotas(42).Post()
@@ -26,7 +26,7 @@ func TestDoNothing(t *testing.T) {
 
 func TestDoNothingUser(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		user := ctx.NewSoloAgent()
 		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
@@ -45,7 +45,7 @@ func TestDoNothingUser(t *testing.T) {
 
 func TestWithdrawToAddress(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		user := ctx.NewSoloAgent()
 
 		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
@@ -79,7 +79,7 @@ func TestWithdrawToAddress(t *testing.T) {
 
 func TestDoPanicUser(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		user := ctx.NewSoloAgent()
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
@@ -106,7 +106,7 @@ func TestDoPanicUser(t *testing.T) {
 
 func TestDoPanicUserFeeless(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		user := ctx.NewSoloAgent()
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
@@ -143,7 +143,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 
 func TestDoPanicUserFee(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		user := ctx.NewSoloAgent()
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
@@ -180,7 +180,7 @@ func TestDoPanicUserFee(t *testing.T) {
 
 func TestRequestToView(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		user := ctx.NewSoloAgent()
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())

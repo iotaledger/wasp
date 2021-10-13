@@ -16,7 +16,7 @@ var ErrContractNotFound = errors.New("contract not found")
 
 // Call
 func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
-	vmctx.log.Debugw("Call", "targetContract", targetContract, "epCode", epCode.String())
+	vmctx.log.Debugw("Call", "targetContract", targetContract, "epCode", epCode)
 	rec, ok := vmctx.findContractByHname(targetContract)
 	if !ok {
 		return nil, ErrContractNotFound

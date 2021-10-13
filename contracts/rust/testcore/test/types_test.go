@@ -11,7 +11,7 @@ import (
 
 func TestTypesFull(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.PassTypesFull(ctx)
 		f.Params.Address().SetValue(ctx.ChainID().Address())
@@ -32,7 +32,7 @@ func TestTypesFull(t *testing.T) {
 
 func TestTypesView(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		v := testcore.ScFuncs.PassTypesView(ctx)
 		v.Params.Address().SetValue(ctx.ChainID().Address())

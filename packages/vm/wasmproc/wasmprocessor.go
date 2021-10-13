@@ -112,6 +112,7 @@ func (host *WasmProcessor) call(ctx iscp.Sandbox, ctxView iscp.SandboxView) (dic
 	host.scContext.objects = make(map[int32]int32)
 	err := host.RunScFunction(host.function)
 	if err != nil {
+		host.log().Infof("VM call %s(): error %v", host.function, err)
 		return nil, err
 	}
 	results := host.FindSubObject(nil, wasmhost.KeyResults, wasmhost.OBJTYPE_MAP).(*ScDict).kvStore.(dict.Dict)

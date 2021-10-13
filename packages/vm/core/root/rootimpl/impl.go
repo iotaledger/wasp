@@ -95,7 +95,7 @@ func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 			initParams.Set(key, value)
 		}
 	}
-	// calls to loads VM from binary to check if it loads successfully
+	// call to load VM from binary to check if it loads successfully
 	err := ctx.DeployContract(progHash, "", "", nil)
 	a.Require(err == nil, "root.deployContract.fail 1: %v", err)
 
