@@ -7,6 +7,9 @@ all: build-lint
 build:
 	go build -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) ./...
 
+build-windows:
+	go build -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) -buildmode=exe ./...
+
 build-lint: build lint
 
 test: install
@@ -17,6 +20,9 @@ test-short:
 
 install:
 	go install -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) ./...
+
+install-windows:
+	go install -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) -buildmode=exe ./...
 
 lint:
 	golangci-lint run

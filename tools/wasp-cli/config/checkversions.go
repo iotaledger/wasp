@@ -20,7 +20,7 @@ var checkVersionsCmd = &cobra.Command{
 			if wasp.VersionHash == waspServerInfo.VersionHash {
 				log.Printf("Wasp-cli version matches Wasp #%d\n", i)
 			} else {
-				log.Printf("! -> Version mismatch with Wasp #%d. cli hash: %s, wasp hash: %s", i, wasp.VersionHash, waspServerInfo.VersionHash)
+				log.Printf("! -> Version mismatch with Wasp #%d. cli hash: %s, wasp hash: %s\n", i, wasp.VersionHash, waspServerInfo.VersionHash)
 			}
 		}
 	},
