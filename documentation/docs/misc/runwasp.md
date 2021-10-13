@@ -12,7 +12,7 @@ The `wasp` and `wasp-cli` commands can be installed from this repository:
 ```
 $ git clone https://github.com/iotaledger/wasp.git
 $ cd wasp
-$ go install -tags rocksdb ./...
+$ make install
 ```
 
 ## Step 2: Run Goshimmer
