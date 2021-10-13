@@ -211,10 +211,9 @@
         margin-bottom: 300px;
       }
       .players {
-        height: calc(100vh - 650px);
+        height: min-content;
         position: relative;
-        min-height: 400px;
-
+        min-height: 100px;
         @media (min-width: 1024px) {
           width: 25%;
           height: calc(100vh - 450px);
