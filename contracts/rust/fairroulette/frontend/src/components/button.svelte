@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { fade } from "svelte/transition";
-
   export let label: string;
   export let disabled: boolean = false;
   export let onClick: () => void;

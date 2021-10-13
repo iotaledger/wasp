@@ -21,7 +21,6 @@
     showBettingSystem,
     timeToFinished,
   } from '../lib/store';
-  import { fade } from 'svelte/transition';
 
   let message: StateMessage;
 
@@ -99,9 +98,11 @@
           {MESSAGES[message].title}
         </h2>
       {/if}
-      <div class="description">
-        {MESSAGES[message].description}
-      </div>
+      {#if !(message === StateMessage.Running && !$timeToFinished)}
+        <div class="description">
+          {MESSAGES[message].description}
+        </div>
+      {/if}
     </div>
   </div>
   <div class="layout_roulette">
