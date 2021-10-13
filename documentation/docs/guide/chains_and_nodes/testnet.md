@@ -51,7 +51,7 @@ wasp-cli init
 Now we need to tell `wasp-cli` how to reach our GoShimmer node.
 
 ```
-wasp-cli set goshimmer.api goshimmer.sc.iota.org/api
+wasp-cli set goshimmer.api https://goshimmer.sc.iota.org/api
 ```
 
 In order to deploy a smart contract you will need some funds. The wasp-cli tool makes this easy on our testnet. Run the following command to request some funds.
@@ -85,7 +85,7 @@ For simplicity, here is the full set of commands to configure _wasp-cli_.
 
 ```
 wasp-cli init
-wasp-cli set goshimmer.api goshimmer.sc.iota.org/api
+wasp-cli set goshimmer.api https://goshimmer.sc.iota.org/api
 wasp-cli request-funds
 wasp-cli set wasp.0.api https://wasp.sc.iota.org/api
 wasp-cli set chains.testchain dCwCC8D2v2MJKtj4gvi8ixVtoerGDp9aVbAxbCyPGSwn
