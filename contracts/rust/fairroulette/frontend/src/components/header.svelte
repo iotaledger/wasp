@@ -173,24 +173,20 @@
         letter-spacing: 0.75px;
         color: var(--gray-3);
         width: 100%;
-        gap: 10px;
         font-size: 14px;
         line-height: 21px;
         letter-spacing: 0.5px;
         color: var(--white);
-        @media (min-width: 1024px) {
-          gap: 32px;
-        }
         a {
           display: none;
           @media (min-width: 1024px) {
             display: flex;
             padding: 16px 0;
+            margin: 0 16px;
           }
         }
         .repositories {
           align-items: center;
-          gap: 8px;
           cursor: pointer;
           display: none;
           position: relative;
@@ -198,14 +194,16 @@
           @media (min-width: 1024px) {
             display: flex;
           }
+          img {
+            margin-right: 8px;
+          }
         }
         .empty {
           width: 0;
           @media (min-width: 1010px) {
-            gap: 8px;
-            width: 100px;
+            width: 140px;
           }
-          @media (min-width: 1400px) {
+          @media (min-width: 1440px) {
             width: 0;
           }
         }
@@ -260,6 +258,9 @@
         }
         .repositories-expanded {
           padding: 16px;
+          a {
+            margin: 0;
+          }
         }
         .close-expanded {
           display: flex;

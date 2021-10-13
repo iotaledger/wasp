@@ -66,7 +66,6 @@
       font-family: 'Metropolis Semi Bold';
       @media (min-width: 1024px) {
         font-size: 48px;
-        padding-bottom: 45px;
       }
       input {
         border-radius: 5px;
@@ -75,7 +74,7 @@
         background: var(--blue-dark);
         border: 1px solid var(--border-color);
         padding: 8px;
-        width: 89%;
+        width: 85%;
         font-family: 'Metropolis Semi Bold';
         &:focus {
           outline: none;
