@@ -169,7 +169,6 @@
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        font-size: 16px;
         line-height: 150%;
         letter-spacing: 0.75px;
         color: var(--gray-3);
@@ -223,7 +222,7 @@
       }
       .dropdown {
         position: relative;
-        font-size: 16px;
+        font-size: 14px;
         line-height: 150%;
         letter-spacing: 0.75px;
         color: var(--gray-3);
@@ -299,7 +298,7 @@
       height: 80px;
     }
     a {
-      font-size: 16px;
+      font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.75px;
       color: var(--gray-3);
@@ -327,7 +326,7 @@
       position: absolute;
       @media (min-width: 1024px) {
         padding: 30px;
-        font-size: 16px;
+        font-size: 14px;
         height: 80px;
       }
     }
