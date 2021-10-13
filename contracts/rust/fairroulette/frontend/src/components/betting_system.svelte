@@ -115,6 +115,9 @@
       top: 40%;
       left: 50%;
       transform: translate(-50%, -50%);
+      @media (min-width: 1024px) {
+        height: 230px;
+      }
       .step-title {
         font-weight: 600;
         font-size: 20px;

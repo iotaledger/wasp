@@ -156,6 +156,7 @@
       letter-spacing: 0.75px;
       color: var(--gray-5);
       padding: 10px 20px;
+      height: 80px;
     }
     .top_wrapper {
       display: flex;
