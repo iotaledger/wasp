@@ -15,7 +15,7 @@
 
   // Highlighted number
   let flashedNumber: number;
-  let interval;
+  let interval: number | undefined;
 
   $: $round.active,
     $round.winningNumber,
@@ -34,7 +34,7 @@
   let strokeDashoffset = 0;
   let animateProgressBar = false;
 
-  let timeout;
+  let timeout: number | undefined;
 
   $: if ($round.active) {
     if ($timeToFinished > 0) {
