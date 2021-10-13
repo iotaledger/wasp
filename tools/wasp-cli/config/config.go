@@ -45,6 +45,7 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().BoolVarP(&WaitForCompletion, "wait", "w", true, "wait for request completion")
 
 	rootCmd.AddCommand(configSetCmd)
+	rootCmd.AddCommand(checkVersionsCmd)
 }
 
 func Read() {
@@ -152,6 +153,10 @@ func committeeHost(kind string, i int) string {
 	}
 	defaultPort := defaultWaspPort(kind, i)
 	return fmt.Sprintf("127.0.0.1:%d", defaultPort)
+}
+
+func totalNumberOfWaspNodes() int {
+	return len(viper.Sub("wasp").AllSettings())
 }
 
 func defaultWaspPort(kind string, i int) int {
