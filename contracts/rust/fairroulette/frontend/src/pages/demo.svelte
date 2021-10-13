@@ -20,6 +20,7 @@
     round,
     showBettingSystem,
     timeToFinished,
+    requestingFunds,
   } from "../lib/store";
   import { fade } from "svelte/transition";
 
@@ -29,6 +30,7 @@
     $showBettingSystem,
     $bettingStep,
     $firstTimeRequestingFunds,
+    $requestingFunds,
     updateMessage();
 
   $: MESSAGES = {
@@ -55,6 +57,11 @@
       title: "Set your amount",
       description: "Feeling lucky? How much will you risk?",
     },
+    [StateMessage.PlacingBet]: {
+      title: "Placing Bet",
+      description:
+        "Your bet is currently getting placed. The game is starting in a couple of seconds.",
+    },
   };
 
   onMount(initialize);
@@ -66,13 +73,17 @@
       if ($showBettingSystem && $bettingStep === BettingStep.AmountChoice) {
         message = StateMessage.ChoosingAmount;
       } else {
-        if ($round.active) {
-          message = StateMessage.Running;
+        if ($placingBet) {
+          message = StateMessage.PlacingBet;
         } else {
-          if (!$firstTimeRequestingFunds) {
-            message = StateMessage.AddFunds;
+          if ($round.active) {
+            message = StateMessage.Running;
           } else {
-            message = StateMessage.Start;
+            if ($firstTimeRequestingFunds) {
+              message = StateMessage.AddFunds;
+            } else if (!$requestingFunds) {
+              message = StateMessage.Start;
+            }
           }
         }
       }

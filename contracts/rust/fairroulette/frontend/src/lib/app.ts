@@ -21,12 +21,14 @@ const powManager: PoWWorkerManager = new PoWWorkerManager();
 export const BETTING_NUMBERS = 8
 export const ROUND_LENGTH = 60 //in seconds
 
-enum LogTag {
-    Page = 'Page',
+const DEFAULT_AUTODISMISS_TOAST_TIME = 5000 //in milliseconds
+
+export enum LogTag {
+    Site = 'Site',
     Round = 'Round',
-    Win = 'Win',
-    Error = 'Error',
-    Unknown = 'Unknown'
+    Funds = 'Funds',
+    SmartContract = 'Smart Contract',
+    Error = 'Error'
 }
 
 export enum BettingStep {
@@ -40,6 +42,7 @@ export enum StateMessage {
     AddFunds = 'AddFunds',
     ChoosingNumber = 'ChoosingNumber',
     ChoosingAmount = 'ChoosingAmount',
+    PlacingBet = 'PlacingBet'
 }
 
 export function log(tag: string, description: string) {
@@ -55,7 +58,7 @@ export function log(tag: string, description: string) {
 }
 
 export async function initialize() {
-    log(LogTag.Page, 'Loading');
+    log(LogTag.Site, 'Initializing wallet.');
 
     if (config.seed) {
         seed.set(Base58.decode(config.seed));
@@ -73,7 +76,7 @@ export async function initialize() {
             showNotification({
                 type: Notification.Error,
                 message: ex.message,
-                timeout: 3000
+                timeout: DEFAULT_AUTODISMISS_TOAST_TIME
             })
             log(LogTag.Error, ex.message);
         }
@@ -122,7 +125,7 @@ export async function initialize() {
         await request().catch((e) => log(LogTag.Error, e.message));
     }
 
-    log(LogTag.Page, 'Loaded');
+    log(LogTag.Site, 'Demo loaded');
 }
 
 export function setAddress(index: number) {
@@ -174,16 +177,17 @@ export async function placeBet() {
             type: Notification.Error,
             title: 'Error placing bet',
             message: ex.message,
-            timeout: 3000
+            timeout: DEFAULT_AUTODISMISS_TOAST_TIME
         })
 
-        log(LogTag.Unknown, ex.message);
+        log(LogTag.Error, ex.message);
 
         throw ex;
     }
 }
 
 export async function sendFaucetRequest() {
+    log(LogTag.Funds, "Funds requested from devnet. The GoShimmer nodes have received them.  Sending funds to the requested wallet.");
 
     if (!get(firstTimeRequestingFunds)) {
         createNewAddress();
@@ -200,14 +204,15 @@ export async function sendFaucetRequest() {
 
     try {
         await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
+        log(LogTag.Funds, "Funds sent to Wasp chain address using GoShimmer nodes");
     } catch (ex) {
         showNotification({
             type: Notification.Error,
             message: ex.message,
-            timeout: 3000
+            timeout: DEFAULT_AUTODISMISS_TOAST_TIME
         })
 
-        log(LogTag.Round, ex.message);
+        log(LogTag.Error, ex.message);
     }
     requestingFunds.set(false);
 }
@@ -239,7 +244,6 @@ export function subscribeToRouletteEvents() {
     fairRouletteService.on('roundStarted', (timestamp) => {
         showWinningNumber.set(false);
         round.update($round => ({ ...$round, active: true, startedAt: timestamp, logs: [] }))
-        log(LogTag.Round, 'Started');
     });
 
     fairRouletteService.on('roundStopped', () => {
@@ -247,31 +251,33 @@ export function subscribeToRouletteEvents() {
             showNotification({
                 type: Notification.Info,
                 message: 'The current round just ended. Your bet will be placed in the next round. ',
-                timeout: 3000
+                timeout: DEFAULT_AUTODISMISS_TOAST_TIME
             })
         }
         else if (get(round).betPlaced && !get(isAWinnerPlayer)) {
             showNotification({
                 type: Notification.Info,
                 message: 'Sorry, you lost this round. Try again!',
-                timeout: 3000
+                timeout: DEFAULT_AUTODISMISS_TOAST_TIME
             })
         }
 
         resetRound();
         log(LogTag.Round, 'Ended');
+        log(LogTag.SmartContract, "Round Ended. Current bets cleared.");
     });
 
     fairRouletteService.on('roundNumber', (roundNumber: bigint) => {
         round.update($round => ({ ...$round, number: roundNumber }))
-        log(LogTag.Round, `Current round number: ${roundNumber}`);
+        log(LogTag.Round, `Started. Round number: ${roundNumber}`);
     });
 
     fairRouletteService.on('winningNumber', (winningNumber: bigint) => {
         round.update($round => ({ ...$round, winningNumber }))
         showWinningNumber.set(true);
 
-        log(LogTag.Round, `The winning number was: ${winningNumber}`);
+        log(LogTag.SmartContract, "The winning number was decided");
+        log(LogTag.SmartContract, `${winningNumber} is the winning number!`);
     });
 
     fairRouletteService.on('betPlaced', (bet: Bet) => {
@@ -280,6 +286,7 @@ export function subscribeToRouletteEvents() {
             if (bet.better === get(address)) {
                 $round.betPlaced = true;
                 $round.betAmount = 0n;
+                log(LogTag.SmartContract, "Your number and betting amounts are saved");
             }
             $round.players.push(
                 {
@@ -290,10 +297,7 @@ export function subscribeToRouletteEvents() {
             );
             return $round;
         })
-        log(
-            'Bet',
-            `Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`
-        );
+
     });
 
     fairRouletteService.on('payout', (bet: Bet) => {
@@ -302,12 +306,11 @@ export function subscribeToRouletteEvents() {
             showNotification({
                 type: Notification.Win,
                 message: `Congratulations! You just won the round. You received ${bet.amount} iotas.`,
-                timeout: 3000
+                timeout: DEFAULT_AUTODISMISS_TOAST_TIME
             })
             showWinnerAnimation();
         }
-
-        log(LogTag.Win, `Payout for ${bet.better} with ${bet.amount}`);
+        log(LogTag.SmartContract, `Payout for ${bet.better} with ${bet.amount}`);
     });
 }
 

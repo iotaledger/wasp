@@ -1,5 +1,29 @@
 <script lang="ts">
-  import { round } from '../../lib/store';
+  import { LogTag } from "../../lib/app";
+  import { round } from "../../lib/store";
+
+  const LOG_TAG_STYLE = {
+    [LogTag.Site]: {
+      color: "#36A1AC",
+      backgroundColor: "rgba(0, 224, 202, 0.2);",
+    },
+    [LogTag.Round]: {
+      color: "#38B86B",
+      backgroundColor: "rgba(56, 184, 107, 0.2)",
+    },
+    [LogTag.Funds]: {
+      color: "#6464FF",
+      backgroundColor: "rgba(65, 64, 223, 0.2)",
+    },
+    [LogTag.SmartContract]: {
+      color: "#FF6316",
+      backgroundColor: "rgba(255, 99, 22, 0.2)",
+    },
+    [LogTag.Error]: {
+      color: "#6464FF",
+      backgroundColor: "rgba(65, 64, 223, 0.2)",
+    },
+  };
 </script>
 
 <div class="panel">
@@ -11,7 +35,12 @@
           <div class="log-index">{index + 1}</div>
           <div class="log-content">
             <div class="log-content-header">
-              <div class="log-tag">{tag}</div>
+              <div
+                class="log-tag"
+                style={`color: ${LOG_TAG_STYLE[tag]?.color}; background: ${LOG_TAG_STYLE[tag]?.backgroundColor}`}
+              >
+                {tag}
+              </div>
               <div class="log-timestamp">{timestamp}</div>
             </div>
             <div class="log-description">{description}</div>
