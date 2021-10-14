@@ -19,7 +19,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 	for i := range e.chain.CommitteeNodes {
 		blockIndex, err := e.chain.BlockIndex(i)
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, numRequests+3, blockIndex)
+		require.EqualValues(e.t, numRequests+4, blockIndex)
 
 		cl := e.chain.SCClient(governance.Contract.Hname(), nil, i)
 		info, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
@@ -60,7 +60,7 @@ func (e *chainEnv) checkCounter(expected int) {
 }
 
 func TestIncDeployment(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 0)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
 
 	if !e.counter.WaitUntilExpectationsMet() {
 		t.Fail()
@@ -70,11 +70,11 @@ func TestIncDeployment(t *testing.T) {
 }
 
 func TestIncNothing(t *testing.T) {
-	testNothing(t, 1)
+	testNothing(t, 2)
 }
 
 func TestInc5xNothing(t *testing.T) {
-	testNothing(t, 5)
+	testNothing(t, 6)
 }
 
 func testNothing(t *testing.T, numRequests int) {
@@ -124,7 +124,7 @@ func testIncrement(t *testing.T, numRequests int) {
 }
 
 func TestIncrementWithTransfer(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
 
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
@@ -146,7 +146,7 @@ func TestIncrementWithTransfer(t *testing.T) {
 }
 
 func TestIncCallIncrement1(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
 
 	entryPoint := iscp.Hn("callIncrement")
 	e.postRequest(incHname, entryPoint, 1, nil)
@@ -155,7 +155,7 @@ func TestIncCallIncrement1(t *testing.T) {
 }
 
 func TestIncCallIncrement2Recurse5x(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
 
 	entryPoint := iscp.Hn("callIncrementRecurse5x")
 	e.postRequest(incHname, entryPoint, 0, nil)
@@ -164,7 +164,7 @@ func TestIncCallIncrement2Recurse5x(t *testing.T) {
 }
 
 func TestIncPostIncrement(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 3)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 4)
 
 	entryPoint := iscp.Hn("postIncrement")
 	e.postRequest(incHname, entryPoint, 1, nil)
@@ -174,7 +174,7 @@ func TestIncPostIncrement(t *testing.T) {
 
 func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, numRepeats+2)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, numRepeats+3)
 
 	entryPoint := iscp.Hn("repeatMany")
 	e.postRequest(incHname, entryPoint, numRepeats, map[string]interface{}{
@@ -197,28 +197,28 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 }
 
 func TestIncLocalStateInternalCall(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
 	entryPoint := iscp.Hn("localStateInternalCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(2)
 }
 
 func TestIncLocalStateSandboxCall(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
 	entryPoint := iscp.Hn("localStateSandboxCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(0)
 }
 
 func TestIncLocalStatePost(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 3)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 4)
 	entryPoint := iscp.Hn("localStatePost")
 	e.postRequest(incHname, entryPoint, 3, nil)
 	e.checkCounter(0)
 }
 
 func TestIncViewCounter(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(1)
@@ -233,7 +233,7 @@ func TestIncViewCounter(t *testing.T) {
 }
 
 func TestIncCounterDelay(t *testing.T) {
-	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 2)
 	e.postRequest(incHname, iscp.Hn("increment"), 0, nil)
 	e.checkCounter(1)
 
