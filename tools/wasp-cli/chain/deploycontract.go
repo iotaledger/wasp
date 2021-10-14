@@ -43,7 +43,7 @@ var deployContractCmd = &cobra.Command{
 				blob.VarFieldProgramDescription: description,
 				blob.VarFieldProgramBinary:      util.ReadFile(filename),
 			})
-			progHash = uploadBlob(blobFieldValues, true)
+			progHash = uploadBlob(blobFieldValues)
 		}
 
 		deployContract(name, description, progHash, initParams)

@@ -1,46 +1,30 @@
 package chainclient
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 )
 
-const optimalSize = 32
-
-// UploadBlob implements an optimized blob upload protocol to the chain.
-// It allows to avoid placing big data chunks into the request transaction
-// - creates optimized RequestArgs, which contain hash references instead of too big binary parameters
-// - uploads big binary data chunks to blob caches of at least `quorum` of `waspHosts` directly
-// - posts a 'storeBlob' request to the 'blob' contract with optimized parameters
-// - the chain reconstructs original parameters upn settlement of the request
-func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, optSize ...int) (hashing.HashValue, *ledgerstate.Transaction, error) {
-	var osize int
-	if len(optSize) > 0 {
-		osize = optSize[0]
-	}
-	if osize < optimalSize {
-		osize = optimalSize
-	}
-	argsEncoded, optimizedBlobs := requestargs.NewOptimizedRequestArgs(fields, osize)
-	fieldValues := make([][]byte, 0, len(fields))
-	for _, v := range optimizedBlobs {
-		fieldValues = append(fieldValues, v)
-	}
-	// nodesMultiAPI := multiclient.New(waspHosts)
-	// if err := nodesMultiAPI.UploadData(fieldValues, quorum); err != nil {
-	// 	return hashing.NilHash, nil, err
-	// }
+// UploadBlob sends an off-ledger request to call 'store' in the blob contract.
+func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, *request.OffLedger, error) {
 	blobHash := blob.MustGetBlobHash(fields)
 
-	reqTx, err := c.Post1Request(
+	req, err := c.PostOffLedgerRequest(
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
 		PostRequestParams{
-			Args: argsEncoded,
+			Args: requestargs.New().AddEncodeSimpleMany(fields),
 		},
 	)
-	return blobHash, reqTx, err
+	if err != nil {
+		return hashing.NilHash, nil, err
+	}
+
+	err = c.WaspClient.WaitUntilRequestProcessed(c.ChainID, req.ID(), 2*time.Minute)
+	return blobHash, req, err
 }
