@@ -29,9 +29,8 @@ var storeBlobCmd = &cobra.Command{
 
 func uploadBlob(fieldValues dict.Dict) (hash hashing.HashValue) {
 	hash, _, err := Client().UploadBlob(fieldValues)
-	if err == nil {
-		log.Printf("uploaded blob to chain -- hash: %s", hash)
-	}
+	log.Check(err)
+	log.Printf("uploaded blob to chain -- hash: %s", hash)
 	return hash
 }
 

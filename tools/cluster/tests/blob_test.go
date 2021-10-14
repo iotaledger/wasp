@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
@@ -135,9 +134,7 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 
 	fv := codec.MakeDict(blobFieldValues)
 	chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
-	expectedHash, tx, err := chClient.UploadBlob(fv, e.clu.Config.APIHosts(e.clu.Config.AllNodes()), int(e.chain.Quorum))
-	require.NoError(t, err)
-	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+	expectedHash, _, err := chClient.UploadBlob(fv)
 	require.NoError(t, err)
 	t.Logf("expected hash: %s", expectedHash.String())
 
@@ -152,62 +149,5 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 		fdata := e.getBlobFieldValue(expectedHash, fn)
 		require.NotNil(t, fdata)
 		require.EqualValues(t, fdata, blobs[i])
-	}
-}
-
-func TestBlobRefConsensus(t *testing.T) {
-	e := setupBlobTest(t)
-
-	fileNames := []string{"blob_test.go", "deploy_test.go", "inccounter_test.go", "account_test.go"}
-	blobs := make([][]byte, len(fileNames))
-	for i := range fileNames {
-		var err error
-		blobs[i], err = ioutil.ReadFile(fileNames[i])
-		require.NoError(t, err)
-	}
-	blobFieldValues := make(map[string]interface{})
-	for i, fn := range fileNames {
-		blobFieldValues[fn] = blobs[i]
-		t.Logf("================= uploading %s: size %d bytes", fn, len(blobs[i]))
-	}
-
-	fv := codec.MakeDict(blobFieldValues)
-	expectedHash := blob.MustGetBlobHash(fv)
-
-	// optimizing parameters
-	argsEncoded, optimizedBlobs := requestargs.NewOptimizedRequestArgs(fv)
-
-	// sending storeBlob request (data is not uploaded yet)
-	chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
-	reqTx, err := chClient.Post1Request(
-		blob.Contract.Hname(),
-		blob.FuncStoreBlob.Hname(),
-		chainclient.PostRequestParams{
-			Args: argsEncoded,
-		},
-	)
-	require.NoError(t, err)
-	time.Sleep(10 * time.Second)
-	// not waiting for the request to be processed because it is waiting for blob data to be uploaded to the cache
-	// Uploading the data
-	fieldValues := make([][]byte, 0, len(fv))
-	for _, v := range optimizedBlobs {
-		fieldValues = append(fieldValues, v)
-	}
-	nodesMultiAPI := multiclient.New(e.clu.Config.APIHosts(e.clu.Config.AllNodes()))
-	err = nodesMultiAPI.UploadData(fieldValues, int(e.chain.Quorum))
-	require.NoError(t, err)
-
-	// now waiting
-	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
-	require.NoError(t, err)
-
-	sizes := e.getBlobInfo(expectedHash)
-	require.NotZero(t, len(sizes))
-
-	for k, v := range blobFieldValues {
-		retBin := e.getBlobFieldValue(expectedHash, k)
-		require.NotNil(t, retBin)
-		require.EqualValues(t, v, retBin)
 	}
 }
