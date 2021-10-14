@@ -32,7 +32,7 @@ The mandatory setup consists out of:
 * 1 Beta Wasp node
 * 1 static file server for the frontend
 
-## Technicallity
+## Technicality
 
 Before we dive into the contents of the project, lets get an overview of what is actually required for this game.
 
@@ -76,10 +76,10 @@ To interact with a smart contract, we require a Wasp node which hosts the contra
 The PoC consists out of two projects residing in `contracts/rust/fairroulette`.
 
 One is the smart contract itself. Its boilerplate was generated using the new Schema tool[link] which is shipped with this beta release. 
-The contract logic is written in Rust but the same implementation can be archived interchangebly with Golang.
+The contract logic is written in Rust but the same implementation can be archived interchangeably with Golang.
 
 The second project is an interactive frontend written in TypeScript, made reactive with the light Svelte framework. 
-This frontend sends OnLedger requests to place bets towrds the fair roulette smart contract and makes use of the GoShimmer faucet to request funds.
+This frontend sends OnLedger requests to place bets towards the fair roulette smart contract and makes use of the GoShimmer faucet to request funds.
 
 
 ### The smart contract 
