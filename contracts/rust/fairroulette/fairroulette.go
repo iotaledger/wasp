@@ -10,6 +10,8 @@
 package fairroulette
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 )
 
@@ -72,6 +74,10 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// Append the bet data to the bets array. The bet array will automatically take care
 	// of serializing the bet struct into a bytes representation.
 	bets.GetBet(betNr).SetValue(bet)
+
+	ctx.Event(fmt.Sprintf("fairroulette.bet.placed %v %v %v", bet.Better.Address().String(),
+		bet.Amount,
+		bet.Number))
 
 	// Was this the first bet of this round?
 	if betNr == 0 {
@@ -209,7 +215,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 		}
 
 		// Announce who got sent what as event.
-		ctx.Event("fairroulette.payout " + bet.Better.String() + " " + ctx.Utility().String(payout))
+		ctx.Event("fairroulette.payout " + bet.Better.Address().String() + " " + ctx.Utility().String(payout))
 	}
 
 	// This is where we transfer the remainder after payout to the creator of the smart contract.
