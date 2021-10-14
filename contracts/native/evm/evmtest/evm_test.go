@@ -11,7 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmchain"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
+	"github.com/iotaledger/wasp/packages/evm/evmflavors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -44,7 +46,7 @@ func TestStorageContract(t *testing.T) {
 		// deploy solidity `storage` contract
 		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
-		// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 42
+		// call FuncCallView to call EVM contract's `retrieve` view, get 42
 		require.EqualValues(t, 42, storage.retrieve())
 
 		// call FuncSendTransaction with EVM tx that calls `store(43)`
@@ -331,7 +333,7 @@ func TestLoop(t *testing.T) {
 		require.Equal(t, res.iotaChargedFee, iotasSpent2)
 		require.Greater(t, res.receipt.GasUsed, gasUsed)
 
-		// ensure iotas sent are kept by the evmchain SC
+		// ensure iotas sent are kept in the ISCP chain
 		require.Equal(t, evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA), initialBalance-iotasSpent1-iotasSpent2)
 		evmChain.soloChain.AssertIotas(iotaAgentID, 0)
 	})
@@ -437,9 +439,9 @@ func TestISCPEntropy(t *testing.T) {
 }
 
 func initBenchmark(b *testing.B, evmFlavor *coreutil.ContractInfo) (*solo.Chain, []*solo.CallParams) {
-	// setup: deploy the evmchain contract
+	// setup: deploy the EVM chain
 	log := testlogger.NewSilentLogger(b.Name(), true)
-	env := solo.NewWithLogger(b, log).WithNativeContract(evmlight.Processor)
+	env := solo.NewWithLogger(b, log).WithNativeContract(evmflavors.Processors[evmFlavor.Name])
 	evmChain := initEVMChainWithSolo(b, evmFlavor, env)
 	// setup: deploy the `storage` EVM contract
 	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
@@ -460,22 +462,25 @@ func initBenchmark(b *testing.B, evmFlavor *coreutil.ContractInfo) (*solo.Chain,
 	return evmChain.soloChain, reqs
 }
 
-// BenchmarkEVMStorageSync is a benchmark for the evmchain contract running under solo,
-// processing requests synchronously, and producing 1 block per request.
-// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
-func BenchmarkEVMStorageSync(b *testing.B) {
-	withEVMFlavorsBenchmark(b, func(b *testing.B, evmFlavor *coreutil.ContractInfo) {
-		chain, reqs := initBenchmark(b, evmFlavor)
-		solobench.RunBenchmarkSync(b, chain, reqs, nil)
-	})
+// run benchmarks with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
+
+func doBenchmark(b *testing.B, evmFlavor *coreutil.ContractInfo, f solobench.Func) {
+	chain, reqs := initBenchmark(b, evmchain.Contract)
+	f(b, chain, reqs, nil)
 }
 
-// BenchmarkEVMStorageAsync is a benchmark for the evmchain contract running under solo,
-// processing requests asynchronously, and producing 1 block per many requests.
-// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
-func BenchmarkEVMStorageAsync(b *testing.B) {
-	withEVMFlavorsBenchmark(b, func(b *testing.B, evmFlavor *coreutil.ContractInfo) {
-		chain, reqs := initBenchmark(b, evmFlavor)
-		solobench.RunBenchmarkAsync(b, chain, reqs, nil)
-	})
+func BenchmarkEVMChainSync(b *testing.B) {
+	doBenchmark(b, evmchain.Contract, solobench.RunBenchmarkSync)
+}
+
+func BenchmarkEVMLightSync(b *testing.B) {
+	doBenchmark(b, evmlight.Contract, solobench.RunBenchmarkSync)
+}
+
+func BenchmarkEVMChainAsync(b *testing.B) {
+	doBenchmark(b, evmchain.Contract, solobench.RunBenchmarkAsync)
+}
+
+func BenchmarkEVMLightAsync(b *testing.B) {
+	doBenchmark(b, evmlight.Contract, solobench.RunBenchmarkAsync)
 }

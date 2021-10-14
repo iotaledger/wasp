@@ -36,12 +36,6 @@ func withEVMFlavors(t *testing.T, f func(*testing.T, *coreutil.ContractInfo)) {
 	}
 }
 
-func withEVMFlavorsBenchmark(t *testing.B, f func(*testing.B, *coreutil.ContractInfo)) {
-	for _, evmFlavor := range evmflavors.All {
-		t.Run(evmFlavor.Name, func(t *testing.B) { f(t, evmFlavor) })
-	}
-}
-
 type evmChainInstance struct {
 	t            testing.TB
 	evmFlavor    *coreutil.ContractInfo

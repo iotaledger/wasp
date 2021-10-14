@@ -437,7 +437,6 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 	for i := 0; i < b.N; i++ {
 		sender, err := crypto.GenerateKey() // send from a new address so that nonce is always 0
 		require.NoError(b, err)
-		senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
 		amount := big.NewInt(0)
 		nonce := uint64(0)
@@ -445,7 +444,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 		callArguments, err := contractABI.Pack("store", uint32(i))
 		require.NoError(b, err)
 
-		gas := estimateGas(b, emu, senderAddress, &contractAddress, amount, callArguments)
+		gas := evm.GasLimitDefault
 
 		txs[i], err = types.SignTx(
 			types.NewTransaction(nonce, contractAddress, amount, gas, evm.GasPrice, callArguments),
@@ -470,8 +469,9 @@ func BenchmarkEVMEmulator(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := emu.SendTransaction(txs[i])
+		receipt, err := emu.SendTransaction(txs[i])
 		require.NoError(b, err)
+		require.Equal(b, types.ReceiptStatusSuccessful, receipt.Status)
 	}
 
 	b.ReportMetric(dbSize(db)/float64(b.N), "db:bytes/op")

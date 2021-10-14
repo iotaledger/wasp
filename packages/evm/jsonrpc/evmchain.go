@@ -90,7 +90,7 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return err
 	}
-	// send the Ethereum transaction to the evmchain contract
+	// send the Ethereum transaction
 	return e.backend.PostOffLedgerRequest(e.contractName, evm.FuncSendTransaction.Name, fee, dict.Dict{
 		evm.FieldTransactionData: txdata,
 	})

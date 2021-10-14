@@ -28,7 +28,7 @@ func TestWaspCLIEVMDeploy(t *testing.T) {
 		faucetAddress := crypto.PubkeyToAddress(faucetKey.PublicKey)
 		faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 
-		// test that the evmchain contract can be deployed using wasp-cli
+		// test that the EVM chain can be deployed using wasp-cli
 		w.Run("chain", "evm", "deploy",
 			"--alloc", fmt.Sprintf("%s:%s", faucetAddress.String(), faucetSupply.String()),
 			"--evm-flavor", evmFlavor.Name,

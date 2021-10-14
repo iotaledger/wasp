@@ -174,19 +174,19 @@ func (e *EthService) GetBlockTransactionCountByNumber(blockNumber rpc.BlockNumbe
 }
 
 func (e *EthService) GetUncleCountByBlockHash(blockHash common.Hash) hexutil.Uint {
-	return hexutil.Uint(0) // no uncles are ever generated in evmchain contract
+	return hexutil.Uint(0) // no uncles are ever generated
 }
 
 func (e *EthService) GetUncleCountByBlockNumber(blockNumber rpc.BlockNumber) hexutil.Uint {
-	return hexutil.Uint(0) // no uncles are ever generated in evmchain contract
+	return hexutil.Uint(0) // no uncles are ever generated
 }
 
 func (e *EthService) GetUncleByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) map[string]interface{} {
-	return nil // no uncles are ever generated in evmchain contract
+	return nil // no uncles are ever generated
 }
 
 func (e *EthService) GetUncleByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) map[string]interface{} {
-	return nil // no uncles are ever generated in evmchain contract
+	return nil // no uncles are ever generated
 }
 
 func (e *EthService) Accounts() []common.Address {

@@ -35,6 +35,7 @@ transaction, it:
 
 Pros:
 - More space/time efficient than `evmchain`
+- Potentially easier to integrate with ISCP (still in experimental phase)
 
 Cons:
 - Less support for existing EVM tools that expect a 'real' Ethereum blockchain.
@@ -75,6 +76,9 @@ By default the `evmchain` contract will be deployed; you can change this with
 Once your EVM chain is deployed, you can use the `wasp-cli chain evm jsonrpc`
 command to start a JSON-RPC server. This will allow you to connect any standard
 Ethereum tool, like Metamask.
+
+Note: If you are using `evmlight` you should run the JSON-RPC server with
+`--name evmlight`.
 
 ## Complete example using `wasp-cluster`
 

@@ -37,8 +37,8 @@ evmemulator does the following:
 
 - Starts a Solo environment (a framework for running local ISCP chains in-memory)
 - Deploys an ISCP chain
-- Deploys the evmchain ISCP contract (which runs an Ethereum chain on top of the ISCP chain)
-- Starts a JSON-RPC server with the evmchain contract as backend
+- Deploys the evmchain/evmlight ISCP contract (which runs an Ethereum chain on top of the ISCP chain)
+- Starts a JSON-RPC server with the deployed ISCP contract as backend
 
 You can connect any Ethereum tool (eg Metamask) to this JSON-RPC server and use it for testing Ethereum contracts running on ISCP.
 
