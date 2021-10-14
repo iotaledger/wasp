@@ -212,6 +212,7 @@
       .open-menu {
         display: flex;
         margin-right: 20px;
+        cursor: pointer;
         @media (min-width: 1024px) {
           display: none;
         }
@@ -267,9 +268,11 @@
           display: flex;
           justify-content: flex-end;
           margin-bottom: 30px;
+          cursor: pointer;
         }
         .dropdown {
           margin-top: 20px;
+          cursor: pointer;
           a {
             padding: 15px 0;
           }
