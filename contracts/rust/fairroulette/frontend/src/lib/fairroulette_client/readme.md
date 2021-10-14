@@ -10,4 +10,3 @@ It is responsible for:
 * listening and handling emitted events
 * wrapping the invokactions into easy to use functions (See: placeBetOnLedger)
 
-//TODO: Go into more detail

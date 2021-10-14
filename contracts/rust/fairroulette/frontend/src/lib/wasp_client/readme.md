@@ -6,4 +6,3 @@ Our ambition is to create a client based on the learnings of PoCs and community 
 
 so we can build a library that is easy to use which keeps the entry barrier low.
 
-//TODO: Go into more detail

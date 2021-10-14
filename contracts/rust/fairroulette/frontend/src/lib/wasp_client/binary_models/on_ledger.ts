@@ -1,22 +1,13 @@
-import { Base58, ED25519 } from '../crypto';
-import { blake2b } from 'blakejs';
 import { Buffer } from '../buffer';
 import { SimpleBufferCursor } from '../simple_buffer_cursor';
-import type { IKeyPair } from '../models';
 import type { IOnLedger } from './IOnLedger';
 
 export class OnLedger {
   public static ToStruct(buffer: Buffer): IOnLedger {
-    const publicKeySize = 32;
-    const colorLength = 32;
-    const signatureSize = 64;
-
     let reader = new SimpleBufferCursor(buffer);
 
     const contract = reader.readUInt32LE();
     const entrypoint = reader.readUInt32LE();
-    const noonce = reader.readBytes(1);
-
     const numArguments = reader.readUInt32LE();
 
     const args = [];
@@ -52,8 +43,6 @@ export class OnLedger {
 
     if (req.arguments) {
       for (let arg of req.arguments) {
-        //  debugger;
-
         const keyBuffer = Buffer.from(arg.key);
 
         buffer.writeUInt16LE(keyBuffer.length);
@@ -71,28 +60,4 @@ export class OnLedger {
     return buffer.buffer;
   }
 
-  public static Sign(request: IOnLedger, keyPair: IKeyPair): IOnLedger {
-
-    // Create a copy without requestType and signature
-    // adding the requestType and|or an empty signature would result in an invalid signature in the next step.
-    const cleanCopyOfRequest: IOnLedger = {
-      arguments: request.arguments,
-      contract: request.contract,
-      entrypoint: request.entrypoint,
-      noonce: request.noonce,
-    };
-
-    const requestBuffer = this.ToBuffer(cleanCopyOfRequest);
-
-    return request;
-  }
-
-  public static GetRequestId(request: IOnLedger): string {
-    const bufferedRequest = OnLedger.ToBuffer(request);
-    const hash = blake2b(bufferedRequest, undefined, 32);
-    const extendedHash = Buffer.concat([hash, Buffer.alloc(2)]);
-    const id = Base58.encode(extendedHash);
-
-    return id;
-  }
 }
