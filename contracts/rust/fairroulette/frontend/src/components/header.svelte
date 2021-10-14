@@ -1,6 +1,6 @@
 <script lang="ts">
   import { navigateTo, routeIsActive } from 'svelte-router-spa';
-  import { fly, slide } from 'svelte/transition';
+  import { fly } from 'svelte/transition';
 
   export let currentRoute: string;
   let isLanding: boolean = false;
@@ -95,7 +95,10 @@
         </div>
       </div>
       {#if isMenuExpanded}
-        <aside class="aside-expanded" transition:slide={{ duration: 700 }}>
+        <aside
+          class="aside-expanded"
+          transition:fly={{ x: 800, duration: 500 }}
+        >
           <div
             class="close-expanded"
             on:click={() => {
@@ -251,7 +254,7 @@
         background-color: #091326;
         color: white;
         z-index: 2;
-        padding: 24px;
+        padding: 16px 24px;
         .aside-links {
           a {
             margin-top: 20px;
