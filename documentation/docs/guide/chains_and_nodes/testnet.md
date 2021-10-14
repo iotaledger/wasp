@@ -11,8 +11,8 @@ image: /img/logo/WASP_logo_dark.png
 
 The testnet is deployed for the community to use for testing and interacting with smart contracts. 
 
-:::danger
-This is an experimental, beta testnet and may not be entirely stable. We may be forced to destroy and recreate it from time to time. Don't expect anything on the testnet to be permanent. 
+:::caution
+To make the barrier to entry for trying out the testnet as low as possible we decided to set all possible fees to zero. Since we expect that this decision will pollute the chain quite quickly we’ll perform regular, unscheduled resets of this network if needed.
 :::
 
 ## Introduction
