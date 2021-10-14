@@ -262,8 +262,14 @@ export function subscribeToRouletteEvents() {
                 timeout: DEFAULT_AUTODISMISS_TOAST_TIME
             })
         }
+        const winners = get(round).winners;
+
+        if (winners > 0) {
+            log(LogTag.SmartContract, `Distributed the iotas to  ${winners === 1 ? '1 winner.' : `${winners} winners.`}`)
+        }
 
         resetRound();
+
         log(LogTag.Round, 'Ended');
         log(LogTag.SmartContract, "Round Ended. Current bets cleared.");
     });
@@ -303,6 +309,8 @@ export function subscribeToRouletteEvents() {
 
     fairRouletteService.on('payout', (bet: Bet) => {
 
+        round.update(($round) => { $round.winners = + 1; return $round })
+
         if (bet.better === get(address) || get(addressesHistory).includes(bet.better)) {
             showNotification({
                 type: Notification.Win,
@@ -311,7 +319,8 @@ export function subscribeToRouletteEvents() {
             })
             showWinnerAnimation();
         }
-        log(LogTag.SmartContract, `Payout for ${bet.better} with ${bet.amount}`);
+        log(LogTag.SmartContract, `Payout for ${bet.better} with ${bet.amount}i.`);
+
     });
 }
 

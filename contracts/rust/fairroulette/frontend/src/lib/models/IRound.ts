@@ -11,4 +11,5 @@ export interface IRound {
     startedAt: number | undefined
     number: bigint | undefined
     betPlaced: boolean
+    winners: number
 }

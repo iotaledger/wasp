@@ -38,6 +38,7 @@
       color: var(--white);
       font-weight: normal;
       line-height: 31px;
+
       @media (min-width: 1024px) {
         width: 70px;
         height: 70px;

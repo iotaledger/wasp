@@ -14,6 +14,7 @@ const RESET_ROUND: IRound = {
     winningNumber: undefined,
     startedAt: undefined,
     number: undefined,
+    winners: 0
 }
 
 export const seed: Writable<Buffer> = writable()

@@ -3,7 +3,7 @@
     address as currentAddress,
     addressesHistory,
     round,
-  } from '../../lib/store';
+  } from "../../lib/store";
 
   const isMyAddress = (addr: string) =>
     $currentAddress === addr || $addressesHistory.includes(addr);
@@ -12,14 +12,14 @@
 <div class="panel">
   <h3>Players</h3>
   <div class="players-wrapper">
-    <div>
+    <div class="players">
       {#each $round.players as { address, bet, number }, index}
         <div class="player" class:highlight={isMyAddress(address)}>
           <div class="player-index">{index + 1}</div>
           <div>
             <div class="player-address">{address}</div>
             <div class="player-bet">
-              <span>{isMyAddress(address) ? 'You bet: ' : 'Bet: '}</span>
+              <span>{isMyAddress(address) ? "You bet: " : "Bet: "}</span>
               <span class="bet-value">{bet}i on {number}. </span>
             </div>
           </div>
@@ -48,9 +48,16 @@
     .players-wrapper {
       display: flex;
       flex-direction: column-reverse;
+
       overflow-y: auto;
       margin-top: 16px;
       max-height: 500px;
+      @media (max-width: 1024px) {
+        .players {
+          max-height: 400px;
+          overflow-y: auto;
+        }
+      }
       .player {
         display: inline-flex;
         position: relative;
