@@ -11,6 +11,10 @@ image: /img/logo/WASP_logo_dark.png
 
 The testnet is deployed for the community to use for testing and interacting with smart contracts. 
 
+:::danger
+This is an experimental, beta testnet and may not be entirely stable. We may be forced to destroy and recreate it from time to time. Don't expect anything on the testnet to be permanent. 
+:::
+
 ## Introduction
 
 This testnet is deployed with our own GoShimmer cluster dedicated to backing smart contracts. There are multiple committee nodes that do the work for the chain as well as multiple access nodes that are exposed via the endpoints listed below. We do throttle the endpoints to prevent overloading the testnet because we are looking for functionality testing more than stress testing. 
