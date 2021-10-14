@@ -1,28 +1,30 @@
-GIT_COMMIT := $(shell git rev-list -1 HEAD)
-BUILD_FLAGS = rocksdb
-LINKER_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_COMMIT)"
+GIT_COMMIT_SHA := $(shell git rev-list -1 HEAD)
+BUILD_TAGS = rocksdb,builtin_static
+BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_COMMIT_SHA)"
 
-all: build-lint
+all: 
+	build-lint
 
 build:
-	go build -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) ./...
+	go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) ./...
 
 build-windows:
-	go build -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) -buildmode=exe ./...
+	go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) -buildmode=exe ./...
 
-build-lint: build lint
+build-lint:
+	build lint
 
 test: install
-	go test -tags $(BUILD_FLAGS) ./... --timeout 30m --count 1 -failfast
+	go test -tags $(BUILD_TAGS) ./... --timeout 30m --count 1 -failfast
 
 test-short:
-	go test -tags $(BUILD_FLAGS) --short --count 1 ./...
+	go test -tags $(BUILD_TAGS) --short --count 1 ./...
 
 install:
-	go install -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) ./...
+	go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) ./...
 
 install-windows:
-	go install -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) -buildmode=exe ./...
+	go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) -buildmode=exe ./...
 
 lint:
 	golangci-lint run
@@ -30,5 +32,11 @@ lint:
 gofumpt-list:
 	gofumpt -l ./
 
-.PHONY: all build test test-short lint gofumpt-list
+docker-build:
+	docker build \
+		--build-arg BUILD_TAGS=${BUILD_TAGS} \
+		--build-arg BUILD_LD_FLAGS='${BUILD_LD_FLAGS}' \
+		.
+
+.PHONY: all build build-windows build-lint test test-short install install-windows lint gofumpt-list docker-build
 
