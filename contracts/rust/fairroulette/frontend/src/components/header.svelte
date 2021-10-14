@@ -1,6 +1,6 @@
 <script lang="ts">
   import { navigateTo, routeIsActive } from "svelte-router-spa";
-  import { fly, slide } from "svelte/transition";
+  import { fly } from "svelte/transition";
 
   export let currentRoute: string;
   let isLanding: boolean = false;
@@ -46,20 +46,72 @@
     </div>
 
     <!-- Desktop menu -->
-    <div class="reverse-navbar-items">
-      <div class="nav-items">
-        {#each NAV_LINKS as { label, href, target }}
-          <a {target} {href}>{label}</a>
-        {/each}
+    <div class="nav-items">
+      {#each NAV_LINKS as { label, href, target }}
+        <a {target} {href}>{label}</a>
+      {/each}
 
+      <div
+        class="repositories"
+        on:click={() => {
+          isRepositoriesExpanded = !isRepositoriesExpanded;
+        }}
+      >
+        <img src="/assets/github.svg" alt="github" />
+        <div class="dropdown">
+          <span>Repositories</span>
+          <img
+            class:expanded={isRepositoriesExpanded}
+            src="/assets/dropdown.svg"
+            alt="dropdown"
+            class="arrow"
+          />
+        </div>
+        {#if isRepositoriesExpanded}
+          <div class="repositories-expanded">
+            {#each REPOSITORIES as { label, link }}
+              <a class="repo" target="_blank" href={link}>{label}</a>
+            {/each}
+          </div>
+        {/if}
+      </div>
+      {#if isLanding}
+        <div class="empty" />
+        <button class="try-demo" on:click={() => navigateTo("/demo")}
+          >Try demo</button
+        >
+      {/if}
+
+      <!-- Mobile menu -->
+      <div
+        class="open-menu"
+        on:click={() => {
+          isMenuExpanded = true;
+        }}
+      >
+        <img src="/assets/burger.svg" alt="menu" />
+      </div>
+    </div>
+    {#if isMenuExpanded}
+      <aside class="aside-expanded" transition:fly={{ x: 800, duration: 500 }}>
         <div
-          class="repositories"
+          class="close-expanded"
           on:click={() => {
-            isRepositoriesExpanded = !isRepositoriesExpanded;
+            isMenuExpanded = false;
           }}
         >
-          <img src="/assets/github.svg" alt="github" />
-          <div class="dropdown">
+          <img src="/assets/close.svg" alt="close" />
+        </div>
+        <div class="aside-links">
+          {#each NAV_LINKS as { label, href, target }}
+            <a {target} {href}>{label}</a>
+          {/each}
+          <div
+            class="dropdown flex-shrink-0"
+            on:click={() => {
+              isRepositoriesExpanded = !isRepositoriesExpanded;
+            }}
+          >
             <span>Repositories</span>
             <img
               class:expanded={isRepositoriesExpanded}
@@ -67,72 +119,17 @@
               alt="dropdown"
               class="arrow"
             />
+            {#if isRepositoriesExpanded}
+              <div class="repositories-expanded">
+                {#each REPOSITORIES as { label, link }}
+                  <a class="repo" target="_blank" href={link}>{label}</a>
+                {/each}
+              </div>
+            {/if}
           </div>
-          {#if isRepositoriesExpanded}
-            <div class="repositories-expanded">
-              {#each REPOSITORIES as { label, link }}
-                <a class="repo" target="_blank" href={link}>{label}</a>
-              {/each}
-            </div>
-          {/if}
         </div>
-        {#if isLanding}
-          <div class="empty" />
-          <button class="try-demo" on:click={() => navigateTo("/demo")}
-            >Try demo</button
-          >
-        {/if}
-
-        <!-- Mobile menu -->
-        <div
-          class="open-menu"
-          class:landingMenu={isLanding}
-          on:click={() => {
-            isMenuExpanded = true;
-          }}
-        >
-          <img src="/assets/burger.svg" alt="menu" />
-        </div>
-      </div>
-      {#if isMenuExpanded}
-        <aside class="aside-expanded" transition:slide={{ duration: 700 }}>
-          <div
-            class="close-expanded"
-            on:click={() => {
-              isMenuExpanded = false;
-            }}
-          >
-            <img src="/assets/close.svg" alt="close" />
-          </div>
-          <div class="aside-links">
-            {#each NAV_LINKS as { label, href, target }}
-              <a {target} {href}>{label}</a>
-            {/each}
-            <div
-              class="dropdown flex-shrink-0"
-              on:click={() => {
-                isRepositoriesExpanded = !isRepositoriesExpanded;
-              }}
-            >
-              <span>Repositories</span>
-              <img
-                class:expanded={isRepositoriesExpanded}
-                src="/assets/dropdown.svg"
-                alt="dropdown"
-                class="arrow"
-              />
-              {#if isRepositoriesExpanded}
-                <div class="repositories-expanded">
-                  {#each REPOSITORIES as { label, link }}
-                    <a class="repo" target="_blank" href={link}>{label}</a>
-                  {/each}
-                </div>
-              {/if}
-            </div>
-          </div>
-        </aside>
-      {/if}
-    </div>
+      </aside>
+    {/if}
   </div>
 </header>
 
@@ -153,18 +150,13 @@
         cursor: pointer;
         img {
           max-width: 200px;
-          padding: 10px 0px 10px 12px;
+          padding: 10px 0px 0px 12px;
           @media (min-width: 1024px) {
             padding: 16px 0;
             max-width: 300px;
           }
         }
       }
-      .reverse-navbar-items {
-        display: flex;
-        flex-direction: row-reverse;
-      }
-
       .nav-items {
         display: flex;
         justify-content: flex-end;
@@ -211,12 +203,10 @@
       }
       .open-menu {
         display: flex;
-        margin-right: 20px;
+        margin-right: 10px;
+        cursor: pointer;
         @media (min-width: 1024px) {
           display: none;
-        }
-        &.landingMenu {
-          margin-right: 120px;
         }
       }
       .dropdown {
@@ -250,7 +240,7 @@
         background-color: #091326;
         color: white;
         z-index: 2;
-        padding: 24px;
+        padding: 16px 24px;
         .aside-links {
           a {
             margin-top: 20px;
@@ -267,9 +257,11 @@
           display: flex;
           justify-content: flex-end;
           margin-bottom: 30px;
+          cursor: pointer;
         }
         .dropdown {
           margin-top: 20px;
+          cursor: pointer;
           a {
             padding: 15px 0;
           }
@@ -317,7 +309,7 @@
     .try-demo {
       border: 0;
       border-radius: 0;
-      right: 0;
+      right: 50px;
       top: 0;
       height: 50px;
       background: var(--mint-green-light);
@@ -337,6 +329,7 @@
         padding: 30px;
         font-size: 14px;
         height: 80px;
+        right: 0;
       }
     }
   }
