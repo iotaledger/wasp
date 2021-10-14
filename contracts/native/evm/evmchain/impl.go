@@ -1,15 +1,15 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmlight
+package evmchain
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/contracts/native/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmchain/emulator"
 	"github.com/iotaledger/wasp/contracts/native/evm/evminternal"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/emulator"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscpcontract"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -43,18 +43,14 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	genesisAlloc, err := evmtypes.DecodeGenesisAlloc(ctx.Params().MustGet(evm.FieldGenesisAlloc))
 	a.RequireNoError(err)
-
-	// add the standard ISCP contract at arbitrary address 0x1074
-	iscpcontract.DeployOnGenesis(genesisAlloc, ctx.ChainID())
-
 	chainID, err := codec.DecodeUint16(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
 	a.RequireNoError(err)
-	emulator.Init(
-		evmStateSubrealm(ctx.State()),
-		chainID,
-		evm.GasLimitDefault, // TODO: make gas limit configurable
-		timestamp(ctx),
+	emulator.InitGenesis(
+		int(chainID),
+		rawdb.NewDatabase(emulator.NewKVAdapter(ctx.State())), // TODO: use subrealm to avoid collisions with evm management
 		genesisAlloc,
+		evm.GasLimitDefault,
+		timestamp(ctx),
 	)
 	evminternal.InitializeManagement(ctx)
 	return nil, nil
@@ -68,7 +64,7 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.RequireNoError(err)
 
 	return evminternal.RequireGasFee(ctx, tx.Gas(), func() uint64 {
-		emu := createEmulator(ctx)
+		emu := getOrCreateEmulator(ctx)
 		receipt, err := emu.SendTransaction(tx)
 		a.RequireNoError(err)
 		return receipt.GasUsed
@@ -76,104 +72,160 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func getBalance(ctx iscp.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
-	emu := createEmulatorR(ctx)
-	_ = paramBlockNumber(ctx, emu, false)
-	return evminternal.Result(emu.StateDB().GetBalance(addr).Bytes()), nil
+	blockNumber := paramBlockNumber(ctx)
+
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+		bal, err := emu.BalanceAt(addr, blockNumber)
+		a.RequireNoError(err)
+		return evminternal.Result(bal.Bytes())
+	})
 }
 
 func getBlockNumber(ctx iscp.SandboxView) (dict.Dict, error) {
-	emu := createEmulatorR(ctx)
-	return evminternal.Result(emu.BlockchainDB().GetNumber().Bytes()), nil
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+		return evminternal.Result(emu.Blockchain().CurrentBlock().Number().Bytes())
+	})
 }
 
 func getBlockByNumber(ctx iscp.SandboxView) (dict.Dict, error) {
-	return blockResult(blockByNumber(ctx))
+	return withBlockByNumber(ctx, func(emu *emulator.EVMEmulator, block *types.Block) dict.Dict {
+		if block == nil {
+			return nil
+		}
+		return evminternal.Result(evmtypes.EncodeBlock(block))
+	})
 }
 
 func getBlockByHash(ctx iscp.SandboxView) (dict.Dict, error) {
-	return blockResult(blockByHash(ctx))
+	return withBlockByHash(ctx, func(emu *emulator.EVMEmulator, block *types.Block) dict.Dict {
+		if block == nil {
+			return nil
+		}
+		return evminternal.Result(evmtypes.EncodeBlock(block))
+	})
 }
 
 func getTransactionByHash(ctx iscp.SandboxView) (dict.Dict, error) {
-	return txResult(transactionByHash(ctx))
+	return withTransactionByHash(ctx, func(emu *emulator.EVMEmulator, tx *types.Transaction) dict.Dict {
+		return txResult(ctx, emu, tx)
+	})
 }
 
 func getTransactionByBlockHashAndIndex(ctx iscp.SandboxView) (dict.Dict, error) {
-	return txResult(transactionByBlockHashAndIndex(ctx))
+	return withTransactionByBlockHashAndIndex(ctx, func(emu *emulator.EVMEmulator, tx *types.Transaction) dict.Dict {
+		return txResult(ctx, emu, tx)
+	})
 }
 
 func getTransactionByBlockNumberAndIndex(ctx iscp.SandboxView) (dict.Dict, error) {
-	return txResult(transactionByBlockNumberAndIndex(ctx))
+	return withTransactionByBlockNumberAndIndex(ctx, func(emu *emulator.EVMEmulator, tx *types.Transaction) dict.Dict {
+		return txResult(ctx, emu, tx)
+	})
 }
 
 func getTransactionCountByBlockHash(ctx iscp.SandboxView) (dict.Dict, error) {
-	return txCountResult(blockByHash(ctx))
+	return withBlockByHash(ctx, func(emu *emulator.EVMEmulator, block *types.Block) dict.Dict {
+		if block == nil {
+			return nil
+		}
+		return evminternal.Result(codec.EncodeUint64(uint64(len(block.Transactions()))))
+	})
 }
 
 func getTransactionCountByBlockNumber(ctx iscp.SandboxView) (dict.Dict, error) {
-	return txCountResult(blockByNumber(ctx))
+	return withBlockByNumber(ctx, func(emu *emulator.EVMEmulator, block *types.Block) dict.Dict {
+		if block == nil {
+			return nil
+		}
+		return evminternal.Result(codec.EncodeUint64(uint64(len(block.Transactions()))))
+	})
 }
 
 func getReceipt(ctx iscp.SandboxView) (dict.Dict, error) {
-	txHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldTransactionHash))
-	emu := createEmulatorR(ctx)
-	r := emu.BlockchainDB().GetReceiptByTxHash(txHash)
-	if r == nil {
-		return nil, nil
-	}
-	return evminternal.Result(evmtypes.EncodeReceiptFull(r)), nil
+	a := assert.NewAssert(ctx.Log())
+	return withTransactionByHash(ctx, func(emu *emulator.EVMEmulator, tx *types.Transaction) dict.Dict {
+		if tx == nil {
+			return nil
+		}
+		receipt, err := emu.TransactionReceipt(tx.Hash())
+		a.RequireNoError(err)
+
+		return evminternal.Result(evmtypes.EncodeReceiptFull(receipt))
+	})
 }
 
 func getNonce(ctx iscp.SandboxView) (dict.Dict, error) {
-	emu := createEmulatorR(ctx)
+	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
-	_ = paramBlockNumber(ctx, emu, false)
-	return evminternal.Result(codec.EncodeUint64(emu.StateDB().GetNonce(addr))), nil
+	blockNumber := paramBlockNumber(ctx)
+
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+		nonce, err := emu.NonceAt(addr, blockNumber)
+		a.RequireNoError(err)
+		return evminternal.Result(codec.EncodeUint64(nonce))
+	})
 }
 
 func getCode(ctx iscp.SandboxView) (dict.Dict, error) {
-	emu := createEmulatorR(ctx)
+	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
-	_ = paramBlockNumber(ctx, emu, false)
-	return evminternal.Result(emu.StateDB().GetCode(addr)), nil
+	blockNumber := paramBlockNumber(ctx)
+
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+		code, err := emu.CodeAt(addr, blockNumber)
+		a.RequireNoError(err)
+		return evminternal.Result(code)
+	})
 }
 
 func getStorage(ctx iscp.SandboxView) (dict.Dict, error) {
-	emu := createEmulatorR(ctx)
+	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	key := common.BytesToHash(ctx.Params().MustGet(evm.FieldKey))
-	_ = paramBlockNumber(ctx, emu, false)
-	data := emu.StateDB().GetState(addr, key)
-	return evminternal.Result(data[:]), nil
+	blockNumber := paramBlockNumber(ctx)
+
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+		data, err := emu.StorageAt(addr, key, blockNumber)
+		a.RequireNoError(err)
+		return evminternal.Result(data)
+	})
 }
 
 func getLogs(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	q, err := evmtypes.DecodeFilterQuery(ctx.Params().MustGet(evm.FieldFilterQuery))
 	a.RequireNoError(err)
-	emu := createEmulatorR(ctx)
-	logs := emu.FilterLogs(q)
-	return evminternal.Result(evmtypes.EncodeLogs(logs)), nil
+
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+		logs, err := emu.FilterLogs(q)
+		a.RequireNoError(err)
+		return evminternal.Result(evmtypes.EncodeLogs(logs))
+	})
 }
 
 func callContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
 	a.RequireNoError(err)
-	emu := createEmulatorR(ctx)
-	_ = paramBlockNumber(ctx, emu, false)
-	res, err := emu.CallContract(callMsg)
-	a.RequireNoError(err)
-	return evminternal.Result(res), nil
+	blockNumber := paramBlockNumber(ctx)
+
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+		res, err := emu.CallContract(callMsg, blockNumber)
+		a.RequireNoError(err)
+		return evminternal.Result(res)
+	})
 }
 
 func estimateGas(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
 	a.RequireNoError(err)
-	emu := createEmulatorR(ctx)
-	gas, err := emu.EstimateGas(callMsg)
-	a.RequireNoError(err)
-	return evminternal.Result(codec.EncodeUint64(gas)), nil
+
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+		gas, err := emu.EstimateGas(callMsg)
+		a.RequireNoError(err)
+		return evminternal.Result(codec.EncodeUint64(gas))
+	})
 }

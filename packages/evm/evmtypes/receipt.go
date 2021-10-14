@@ -29,14 +29,6 @@ func DecodeReceipt(b []byte) (*types.Receipt, error) {
 	return receipt, err
 }
 
-// ReceiptExtra contains fields not serialized by Receipt.EncodeRLP()
-type ReceiptExtra struct {
-	TxHash          common.Hash
-	BlockHash       common.Hash
-	BlockNumber     *big.Int
-	ContractAddress common.Address
-}
-
 // EncodeReceiptFull encodes the receipt including fields not serialized by EncodeReceipt
 func EncodeReceiptFull(r *types.Receipt) []byte {
 	m := marshalutil.New()

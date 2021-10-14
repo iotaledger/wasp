@@ -9,8 +9,9 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
+	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -34,27 +35,27 @@ func (e *EVMChain) Signer() types.Signer {
 }
 
 func (e *EVMChain) GasPerIota() (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetGasPerIota.Name, nil)
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetGasPerIota.Name, nil)
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeUint64(ret.MustGet(evmlight.FieldResult))
+	return codec.DecodeUint64(ret.MustGet(evm.FieldResult))
 }
 
 func (e *EVMChain) BlockNumber() (*big.Int, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetBlockNumber.Name, nil)
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetBlockNumber.Name, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	bal := big.NewInt(0)
-	bal.SetBytes(ret.MustGet(evmlight.FieldResult))
+	bal.SetBytes(ret.MustGet(evm.FieldResult))
 	return bal, nil
 }
 
 func (e *EVMChain) FeeColor() (colored.Color, error) {
 	feeInfo, err := e.backend.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, dict.Dict{
-		root.ParamHname: evmlight.Contract.Hname().Bytes(),
+		root.ParamHname: iscp.Hn(e.contractName).Bytes(),
 	})
 	if err != nil {
 		return colored.Color{}, err
@@ -90,8 +91,8 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 		return err
 	}
 	// send the Ethereum transaction to the evmchain contract
-	return e.backend.PostOffLedgerRequest(e.contractName, evmlight.FuncSendTransaction.Name, fee, dict.Dict{
-		evmlight.FieldTransactionData: txdata,
+	return e.backend.PostOffLedgerRequest(e.contractName, evm.FuncSendTransaction.Name, fee, dict.Dict{
+		evm.FieldTransactionData: txdata,
 	})
 }
 
@@ -101,112 +102,107 @@ func paramsWithOptionalBlockNumber(blockNumber *big.Int, params dict.Dict) dict.
 		ret = dict.Dict{}
 	}
 	if blockNumber != nil {
-		ret.Set(evmlight.FieldBlockNumber, blockNumber.Bytes())
+		ret.Set(evm.FieldBlockNumber, blockNumber.Bytes())
 	}
 	return ret
 }
 
 func (e *EVMChain) Balance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetBalance.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
-		evmlight.FieldAddress: address.Bytes(),
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetBalance.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
+		evm.FieldAddress: address.Bytes(),
 	}))
 	if err != nil {
 		return nil, err
 	}
 
 	bal := big.NewInt(0)
-	bal.SetBytes(ret.MustGet(evmlight.FieldResult))
+	bal.SetBytes(ret.MustGet(evm.FieldResult))
 	return bal, nil
 }
 
 func (e *EVMChain) Code(address common.Address, blockNumber *big.Int) ([]byte, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetCode.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
-		evmlight.FieldAddress: address.Bytes(),
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetCode.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
+		evm.FieldAddress: address.Bytes(),
 	}))
 	if err != nil {
 		return nil, err
 	}
-	return ret.MustGet(evmlight.FieldResult), nil
+	return ret.MustGet(evm.FieldResult), nil
 }
 
 func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetBlockByNumber.Name, paramsWithOptionalBlockNumber(blockNumber, nil))
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetBlockByNumber.Name, paramsWithOptionalBlockNumber(blockNumber, nil))
 	if err != nil {
 		return nil, err
 	}
 
-	if !ret.MustHas(evmlight.FieldResult) {
+	if !ret.MustHas(evm.FieldResult) {
 		return nil, nil
 	}
 
-	block, err := evmtypes.DecodeBlock(ret.MustGet(evmlight.FieldResult))
+	block, err := evmtypes.DecodeBlock(ret.MustGet(evm.FieldResult))
 	if err != nil {
 		return nil, err
 	}
 	return block, nil
 }
 
-func (e *EVMChain) getTransactionBy(funcName string, args dict.Dict) (tx *types.Transaction, blockHash common.Hash, blockNumber, index uint64, err error) { // nolint:unparam
+func (e *EVMChain) getTransactionBy(funcName string, args dict.Dict) (tx *types.Transaction, blockHash common.Hash, blockNumber, index uint64, err error) {
 	var ret dict.Dict
 	ret, err = e.backend.CallView(e.contractName, funcName, args)
 	if err != nil {
 		return
 	}
 
-	if !ret.MustHas(evmlight.FieldTransaction) {
+	if !ret.MustHas(evm.FieldTransaction) {
 		return
 	}
 
-	tx, err = evmtypes.DecodeTransaction(ret.MustGet(evmlight.FieldTransaction))
+	tx, err = evmtypes.DecodeTransaction(ret.MustGet(evm.FieldTransaction))
 	if err != nil {
 		return
 	}
-	blockHash = common.BytesToHash(ret.MustGet(evmlight.FieldBlockHash))
-	blockNumber, err = codec.DecodeUint64(ret.MustGet(evmlight.FieldBlockNumber), 0)
+	blockHash = common.BytesToHash(ret.MustGet(evm.FieldBlockHash))
+	blockNumber, err = codec.DecodeUint64(ret.MustGet(evm.FieldBlockNumber), 0)
 	if err != nil {
 		return
 	}
-	// index is always 0
+	index, err = codec.DecodeUint64(ret.MustGet(evm.FieldTransactionIndex), 0)
 	return
 }
 
 func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, blockHash common.Hash, blockNumber, index uint64, err error) {
-	return e.getTransactionBy(evmlight.FuncGetTransactionByHash.Name, dict.Dict{
-		evmlight.FieldTransactionHash: hash.Bytes(),
+	return e.getTransactionBy(evm.FuncGetTransactionByHash.Name, dict.Dict{
+		evm.FieldTransactionHash: hash.Bytes(),
 	})
 }
 
 func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumber, indexRet uint64, err error) {
-	if index != 0 {
-		// all blocks have 1 tx
-		return
-	}
-	return e.getTransactionBy(evmlight.FuncGetTransactionByBlockHash.Name, dict.Dict{
-		evmlight.FieldBlockHash: hash.Bytes(),
+	return e.getTransactionBy(evm.FuncGetTransactionByBlockHashAndIndex.Name, dict.Dict{
+		evm.FieldBlockHash:        hash.Bytes(),
+		evm.FieldTransactionIndex: codec.EncodeUint64(index),
 	})
 }
 
 func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumberRet, indexRet uint64, err error) {
-	if index != 0 {
-		// all blocks have 1 tx
-		return
-	}
-	return e.getTransactionBy(evmlight.FuncGetTransactionByBlockNumber.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{}))
+	return e.getTransactionBy(evm.FuncGetTransactionByBlockNumberAndIndex.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
+		evm.FieldTransactionIndex: codec.EncodeUint64(index),
+	}))
 }
 
 func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetBlockByHash.Name, dict.Dict{
-		evmlight.FieldBlockHash: hash.Bytes(),
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetBlockByHash.Name, dict.Dict{
+		evm.FieldBlockHash: hash.Bytes(),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	if !ret.MustHas(evmlight.FieldResult) {
+	if !ret.MustHas(evm.FieldResult) {
 		return nil, nil
 	}
 
-	block, err := evmtypes.DecodeBlock(ret.MustGet(evmlight.FieldResult))
+	block, err := evmtypes.DecodeBlock(ret.MustGet(evm.FieldResult))
 	if err != nil {
 		return nil, err
 	}
@@ -214,18 +210,18 @@ func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
 }
 
 func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*types.Receipt, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetReceipt.Name, dict.Dict{
-		evmlight.FieldTransactionHash: txHash.Bytes(),
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetReceipt.Name, dict.Dict{
+		evm.FieldTransactionHash: txHash.Bytes(),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	if !ret.MustHas(evmlight.FieldResult) {
+	if !ret.MustHas(evm.FieldResult) {
 		return nil, nil
 	}
 
-	receipt, err := evmtypes.DecodeReceiptFull(ret.MustGet(evmlight.FieldResult))
+	receipt, err := evmtypes.DecodeReceiptFull(ret.MustGet(evm.FieldResult))
 	if err != nil {
 		return nil, err
 	}
@@ -233,70 +229,70 @@ func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*types.Receipt, error
 }
 
 func (e *EVMChain) TransactionCount(address common.Address, blockNumber *big.Int) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetNonce.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
-		evmlight.FieldAddress: address.Bytes(),
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetNonce.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
+		evm.FieldAddress: address.Bytes(),
 	}))
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeUint64(ret.MustGet(evmlight.FieldResult), 0)
+	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
 }
 
 func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncCallContract.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
-		evmlight.FieldCallMsg: evmtypes.EncodeCallMsg(args),
+	ret, err := e.backend.CallView(e.contractName, evm.FuncCallContract.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
+		evm.FieldCallMsg: evmtypes.EncodeCallMsg(args),
 	}))
 	if err != nil {
 		return nil, err
 	}
-	return ret.MustGet(evmlight.FieldResult), nil
+	return ret.MustGet(evm.FieldResult), nil
 }
 
 func (e *EVMChain) EstimateGas(args ethereum.CallMsg) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncEstimateGas.Name, dict.Dict{
-		evmlight.FieldCallMsg: evmtypes.EncodeCallMsg(args),
+	ret, err := e.backend.CallView(e.contractName, evm.FuncEstimateGas.Name, dict.Dict{
+		evm.FieldCallMsg: evmtypes.EncodeCallMsg(args),
 	})
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeUint64(ret.MustGet(evmlight.FieldResult), 0)
+	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
 }
 
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetStorage.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
-		evmlight.FieldAddress: address.Bytes(),
-		evmlight.FieldKey:     key.Bytes(),
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetStorage.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
+		evm.FieldAddress: address.Bytes(),
+		evm.FieldKey:     key.Bytes(),
 	}))
 	if err != nil {
 		return nil, err
 	}
-	return ret.MustGet(evmlight.FieldResult), nil
+	return ret.MustGet(evm.FieldResult), nil
 }
 
 func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetTransactionCountByBlockHash.Name, dict.Dict{
-		evmlight.FieldBlockHash: blockHash.Bytes(),
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetTransactionCountByBlockHash.Name, dict.Dict{
+		evm.FieldBlockHash: blockHash.Bytes(),
 	})
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeUint64(ret.MustGet(evmlight.FieldResult), 0)
+	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
 }
 
 func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetTransactionCountByBlockNumber.Name, paramsWithOptionalBlockNumber(blockNumber, nil))
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetTransactionCountByBlockNumber.Name, paramsWithOptionalBlockNumber(blockNumber, nil))
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeUint64(ret.MustGet(evmlight.FieldResult), 0)
+	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
 }
 
 func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
-	ret, err := e.backend.CallView(e.contractName, evmlight.FuncGetLogs.Name, dict.Dict{
-		evmlight.FieldFilterQuery: evmtypes.EncodeFilterQuery(q),
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetLogs.Name, dict.Dict{
+		evm.FieldFilterQuery: evmtypes.EncodeFilterQuery(q),
 	})
 	if err != nil {
 		return nil, err
 	}
-	return evmtypes.DecodeLogs(ret.MustGet(evmlight.FieldResult))
+	return evmtypes.DecodeLogs(ret.MustGet(evm.FieldResult))
 }

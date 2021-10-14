@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evm
+package emulator
 
 import (
 	"crypto/ecdsa"
@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -31,7 +32,7 @@ func estimateGas(t testing.TB, emu *EVMEmulator, from common.Address, to *common
 	})
 	if err != nil {
 		t.Logf("%v", err)
-		return GasLimitDefault - 1
+		return evm.GasLimitDefault - 1
 	}
 	return gas
 }
@@ -43,7 +44,7 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	gas := estimateGas(t, emu, senderAddress, &receiverAddress, amount, data)
 
 	tx, err := types.SignTx(
-		types.NewTransaction(nonce, receiverAddress, amount, gas, GasPrice, data),
+		types.NewTransaction(nonce, receiverAddress, amount, gas, evm.GasPrice, data),
 		emu.Signer(),
 		sender,
 	)
@@ -72,13 +73,13 @@ func TestBlockchain(t *testing.T) {
 	}
 
 	db := dict.Dict{}
-	Init(db, DefaultChainID, GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	// some assertions
 	{
-		require.EqualValues(t, GasLimitDefault, emu.BlockchainDB().GetGasLimit())
-		require.EqualValues(t, DefaultChainID, emu.BlockchainDB().GetChainID())
+		require.EqualValues(t, evm.GasLimitDefault, emu.BlockchainDB().GetGasLimit())
+		require.EqualValues(t, evm.DefaultChainID, emu.BlockchainDB().GetChainID())
 
 		genesis := emu.BlockchainDB().GetBlockByNumber(common.Big0)
 		require.NotNil(t, genesis)
@@ -92,7 +93,7 @@ func TestBlockchain(t *testing.T) {
 			// assert that current block is genesis
 			block := emu.BlockchainDB().GetCurrentBlock()
 			require.NotNil(t, block)
-			require.EqualValues(t, GasLimitDefault, block.Header().GasLimit)
+			require.EqualValues(t, evm.GasLimitDefault, block.Header().GasLimit)
 		}
 
 		{
@@ -119,7 +120,7 @@ func TestBlockchain(t *testing.T) {
 		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber().Uint64())
 		block := emu.BlockchainDB().GetCurrentBlock()
 		require.EqualValues(t, 1, block.Header().Number.Uint64())
-		require.EqualValues(t, GasLimitDefault, block.Header().GasLimit)
+		require.EqualValues(t, evm.GasLimitDefault, block.Header().GasLimit)
 		require.EqualValues(t, receipt.Bloom, block.Bloom())
 		require.EqualValues(t, receipt.GasUsed, block.GasUsed())
 		require.EqualValues(t, emu.BlockchainDB().GetBlockByNumber(common.Big0).Hash(), block.ParentHash())
@@ -151,7 +152,7 @@ func TestBlockchainPersistence(t *testing.T) {
 	transferAmount := big.NewInt(1000)
 
 	db := dict.Dict{}
-	Init(db, DefaultChainID, GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
 
 	// do a transfer using one instance of EVMEmulator
 	func() {
@@ -191,7 +192,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	require.NoError(t, err)
 
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, txValue, gas, GasPrice, data),
+		types.NewContractCreation(nonce, txValue, gas, evm.GasPrice, data),
 		emu.Signer(),
 		creator,
 	)
@@ -252,7 +253,7 @@ func TestStorageContract(t *testing.T) {
 	}
 
 	db := dict.Dict{}
-	Init(db, DefaultChainID, GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
@@ -326,7 +327,7 @@ func TestERC20Contract(t *testing.T) {
 	}
 
 	db := dict.Dict{}
-	Init(db, DefaultChainID, GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
@@ -417,7 +418,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 	}
 
 	db := dict.Dict{}
-	Init(db, DefaultChainID, GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
@@ -447,7 +448,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 		gas := estimateGas(b, emu, senderAddress, &contractAddress, amount, callArguments)
 
 		txs[i], err = types.SignTx(
-			types.NewTransaction(nonce, contractAddress, amount, gas, GasPrice, callArguments),
+			types.NewTransaction(nonce, contractAddress, amount, gas, evm.GasPrice, callArguments),
 			emu.Signer(),
 			sender,
 		)

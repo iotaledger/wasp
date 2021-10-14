@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evm
+package emulator
 
 import (
 	"errors"
@@ -31,13 +31,6 @@ type EVMEmulator struct {
 	kv          kv.KVStore
 	IEVMBackend vm.ISCPBackend
 }
-
-var (
-	GasLimitDefault = uint64(15000000)
-	GasPrice        = big.NewInt(0)
-)
-
-const DefaultChainID = 1074 // IOTA -- get it?
 
 func makeConfig(chainID int) *params.ChainConfig {
 	return &params.ChainConfig{

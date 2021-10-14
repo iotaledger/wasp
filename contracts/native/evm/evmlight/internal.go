@@ -10,29 +10,33 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm/evminternal"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/emulator"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
+
+// keyEVMState is the subrealm prefix for the EVM state
+// If changed, make sure it does not collide with evm management keys
+const keyEVMState = "s"
 
 func evmStateSubrealm(state kv.KVStore) kv.KVStore {
 	return subrealm.New(state, keyEVMState)
 }
 
-func createEmulator(ctx iscp.Sandbox) *evm.EVMEmulator {
-	return evm.NewEVMEmulator(evmStateSubrealm(ctx.State()), timestamp(ctx), &iscpBackend{ctx})
+func createEmulator(ctx iscp.Sandbox) *emulator.EVMEmulator {
+	return emulator.NewEVMEmulator(evmStateSubrealm(ctx.State()), timestamp(ctx), &iscpBackend{ctx})
 }
 
-func createEmulatorR(ctx iscp.SandboxView) *evm.EVMEmulator {
-	return evm.NewEVMEmulator(evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())), timestamp(ctx), &iscpBackendR{ctx})
+func createEmulatorR(ctx iscp.SandboxView) *emulator.EVMEmulator {
+	return emulator.NewEVMEmulator(evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())), timestamp(ctx), &iscpBackendR{ctx})
 }
 
 // timestamp returns the current timestamp in seconds since epoch
@@ -41,34 +45,27 @@ func timestamp(ctx iscp.SandboxBase) uint64 {
 	return uint64(tsNano / time.Second)
 }
 
-func result(value []byte) dict.Dict {
-	if value == nil {
-		return nil
-	}
-	return dict.Dict{FieldResult: value}
-}
-
-func blockResult(emu *evm.EVMEmulator, block *types.Block) (dict.Dict, error) {
+func blockResult(emu *emulator.EVMEmulator, block *types.Block) (dict.Dict, error) {
 	if block == nil {
 		return nil, nil
 	}
-	return result(evmtypes.EncodeBlock(block)), nil
+	return evminternal.Result(evmtypes.EncodeBlock(block)), nil
 }
 
-func txResult(emu *evm.EVMEmulator, tx *types.Transaction) (dict.Dict, error) {
+func txResult(emu *emulator.EVMEmulator, tx *types.Transaction) (dict.Dict, error) {
 	if tx == nil {
 		return nil, nil
 	}
 	bc := emu.BlockchainDB()
 	blockNumber := bc.GetBlockNumberByTxHash(tx.Hash())
 	return dict.Dict{
-		FieldTransaction: evmtypes.EncodeTransaction(tx),
-		FieldBlockHash:   bc.GetBlockHashByBlockNumber(blockNumber).Bytes(),
-		FieldBlockNumber: codec.EncodeUint64(blockNumber.Uint64()),
+		evm.FieldTransaction: evmtypes.EncodeTransaction(tx),
+		evm.FieldBlockHash:   bc.GetBlockHashByBlockNumber(blockNumber).Bytes(),
+		evm.FieldBlockNumber: codec.EncodeUint64(blockNumber.Uint64()),
 	}, nil
 }
 
-func txCountResult(emu *evm.EVMEmulator, block *types.Block) (dict.Dict, error) {
+func txCountResult(emu *emulator.EVMEmulator, block *types.Block) (dict.Dict, error) {
 	if block == nil {
 		return nil, nil
 	}
@@ -76,30 +73,39 @@ func txCountResult(emu *evm.EVMEmulator, block *types.Block) (dict.Dict, error) 
 	if block.NumberU64() != 0 {
 		n = 1
 	}
-	return result(codec.EncodeUint64(n)), nil
+	return evminternal.Result(codec.EncodeUint64(n)), nil
 }
 
-func blockByNumber(ctx iscp.SandboxView) (*evm.EVMEmulator, *types.Block) {
+func blockByNumber(ctx iscp.SandboxView) (*emulator.EVMEmulator, *types.Block) {
 	emu := createEmulatorR(ctx)
 	blockNumber := paramBlockNumber(ctx, emu, true)
 	return emu, emu.BlockchainDB().GetBlockByNumber(blockNumber)
 }
 
-func blockByHash(ctx iscp.SandboxView) (*evm.EVMEmulator, *types.Block) {
+func blockByHash(ctx iscp.SandboxView) (*emulator.EVMEmulator, *types.Block) {
 	emu := createEmulatorR(ctx)
-	hash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
+	hash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
 	return emu, emu.BlockchainDB().GetBlockByHash(hash)
 }
 
-func transactionByHash(ctx iscp.SandboxView) (*evm.EVMEmulator, *types.Transaction) {
+func transactionByHash(ctx iscp.SandboxView) (*emulator.EVMEmulator, *types.Transaction) {
 	emu := createEmulatorR(ctx)
-	txHash := common.BytesToHash(ctx.Params().MustGet(FieldTransactionHash))
+	txHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldTransactionHash))
 	return emu, emu.BlockchainDB().GetTransactionByHash(txHash)
 }
 
-func transactionByBlockHash(ctx iscp.SandboxView) (*evm.EVMEmulator, *types.Transaction) {
+func transactionByBlockHashAndIndex(ctx iscp.SandboxView) (*emulator.EVMEmulator, *types.Transaction) {
 	emu := createEmulatorR(ctx)
-	blockHash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
+	blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
+
+	a := assert.NewAssert(ctx.Log())
+	index, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldTransactionIndex), 0)
+	a.RequireNoError(err)
+	// all blocks contain at most 1 tx
+	if index > 0 {
+		return emu, nil
+	}
+
 	bc := emu.BlockchainDB()
 	blockNumber := bc.GetBlockNumberByBlockHash(blockHash)
 	if blockNumber == nil {
@@ -108,38 +114,31 @@ func transactionByBlockHash(ctx iscp.SandboxView) (*evm.EVMEmulator, *types.Tran
 	return emu, bc.GetTransactionByBlockNumber(blockNumber)
 }
 
-func transactionByBlockNumber(ctx iscp.SandboxView) (*evm.EVMEmulator, *types.Transaction) {
+func transactionByBlockNumberAndIndex(ctx iscp.SandboxView) (*emulator.EVMEmulator, *types.Transaction) {
 	emu := createEmulatorR(ctx)
 	blockNumber := paramBlockNumber(ctx, emu, true)
+
+	a := assert.NewAssert(ctx.Log())
+	index, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldTransactionIndex), 0)
+	a.RequireNoError(err)
+	// all blocks contain at most 1 tx
+	if index > 0 {
+		return emu, nil
+	}
+
 	return emu, emu.BlockchainDB().GetTransactionByBlockNumber(blockNumber)
 }
 
-func paramBlockNumber(ctx iscp.SandboxView, emu *evm.EVMEmulator, allowPrevious bool) *big.Int {
+func paramBlockNumber(ctx iscp.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) *big.Int {
 	current := emu.BlockchainDB().GetNumber()
-	if ctx.Params().MustHas(FieldBlockNumber) {
-		blockNumber := new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
+	if ctx.Params().MustHas(evm.FieldBlockNumber) {
+		blockNumber := new(big.Int).SetBytes(ctx.Params().MustGet(evm.FieldBlockNumber))
 		if blockNumber.Cmp(current) != 0 {
 			assert.NewAssert(ctx.Log()).Require(allowPrevious, "unsupported operation")
 		}
 		return blockNumber
 	}
 	return current
-}
-
-func getFeeColor(ctx iscp.Sandbox) colored.Color {
-	a := assert.NewAssert(ctx.Log())
-
-	// call root contract view to get the feecolor
-	feeInfo, err := ctx.Call(
-		governance.Contract.Hname(),
-		governance.FuncGetFeeInfo.Hname(),
-		dict.Dict{governance.ParamHname: Contract.Hname().Bytes()},
-		nil,
-	)
-	a.RequireNoError(err)
-	feeColor, err := codec.DecodeColor(feeInfo.MustGet(governance.ParamFeeColor))
-	a.RequireNoError(err)
-	return feeColor
 }
 
 type iscpBackend struct {

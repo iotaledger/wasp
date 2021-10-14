@@ -10,10 +10,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -22,343 +24,369 @@ import (
 )
 
 func TestDeploy(t *testing.T) {
-	initEVMChain(t)
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		initEVMChain(t, evmFlavor)
+	})
 }
 
 func TestFaucetBalance(t *testing.T) {
-	evmChain := initEVMChain(t)
-	bal := evmChain.getBalance(evmChain.faucetAddress())
-	require.Zero(t, evmChain.faucetSupply.Cmp(bal))
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
+		bal := evmChain.getBalance(evmChain.faucetAddress())
+		require.Zero(t, evmChain.faucetSupply.Cmp(bal))
+	})
 }
 
 func TestStorageContract(t *testing.T) {
-	evmChain := initEVMChain(t)
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
 
-	// deploy solidity `storage` contract
-	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
+		// deploy solidity `storage` contract
+		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
-	// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 42
-	require.EqualValues(t, 42, storage.retrieve())
+		// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 42
+		require.EqualValues(t, 42, storage.retrieve())
 
-	// call FuncSendTransaction with EVM tx that calls `store(43)`
-	res, err := storage.store(43)
-	require.NoError(t, err)
-	require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
+		// call FuncSendTransaction with EVM tx that calls `store(43)`
+		res, err := storage.store(43)
+		require.NoError(t, err)
+		require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
 
-	// call `retrieve` view, get 43
-	require.EqualValues(t, 43, storage.retrieve())
+		// call `retrieve` view, get 43
+		require.EqualValues(t, 43, storage.retrieve())
+	})
 }
 
 func TestERC20Contract(t *testing.T) {
-	evmChain := initEVMChain(t)
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
 
-	// deploy solidity `erc20` contract
-	erc20 := evmChain.deployERC20Contract(evmChain.faucetKey, "TestCoin", "TEST")
+		// deploy solidity `erc20` contract
+		erc20 := evmChain.deployERC20Contract(evmChain.faucetKey, "TestCoin", "TEST")
 
-	// call `totalSupply` view
-	{
-		v := erc20.totalSupply()
-		// 100 * 10^18
-		expected := new(big.Int).Mul(big.NewInt(100), new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
-		require.Zero(t, v.Cmp(expected))
-	}
+		// call `totalSupply` view
+		{
+			v := erc20.totalSupply()
+			// 100 * 10^18
+			expected := new(big.Int).Mul(big.NewInt(100), new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
+			require.Zero(t, v.Cmp(expected))
+		}
 
-	_, recipientAddress := generateEthereumKey(t)
-	transferAmount := big.NewInt(1337)
+		_, recipientAddress := generateEthereumKey(t)
+		transferAmount := big.NewInt(1337)
 
-	// call `transfer` => send 1337 TestCoin to recipientAddress
-	res, err := erc20.transfer(recipientAddress, transferAmount)
-	require.NoError(t, err)
+		// call `transfer` => send 1337 TestCoin to recipientAddress
+		res, err := erc20.transfer(recipientAddress, transferAmount)
+		require.NoError(t, err)
 
-	require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
-	require.Equal(t, 1, len(res.receipt.Logs))
+		require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
+		require.Equal(t, 1, len(res.receipt.Logs))
 
-	// call `balanceOf` view => check balance of recipient = 1337 TestCoin
-	require.Zero(t, erc20.balanceOf(recipientAddress).Cmp(transferAmount))
+		// call `balanceOf` view => check balance of recipient = 1337 TestCoin
+		require.Zero(t, erc20.balanceOf(recipientAddress).Cmp(transferAmount))
+	})
 }
 
 func TestGetCode(t *testing.T) {
-	evmChain := initEVMChain(t)
-	erc20 := evmChain.deployERC20Contract(evmChain.faucetKey, "TestCoin", "TEST")
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
+		erc20 := evmChain.deployERC20Contract(evmChain.faucetKey, "TestCoin", "TEST")
 
-	// get contract bytecode from EVM emulator
-	retrievedBytecode := evmChain.getCode(erc20.address)
+		// get contract bytecode from EVM emulator
+		retrievedBytecode := evmChain.getCode(erc20.address)
 
-	// ensure returned bytecode matches the expected runtime bytecode
-	require.True(t, bytes.Equal(retrievedBytecode, evmtest.ERC20ContractRuntimeBytecode), "bytecode retrieved from the chain must match the deployed bytecode")
+		// ensure returned bytecode matches the expected runtime bytecode
+		require.True(t, bytes.Equal(retrievedBytecode, evmtest.ERC20ContractRuntimeBytecode), "bytecode retrieved from the chain must match the deployed bytecode")
+	})
 }
 
 func TestGasCharged(t *testing.T) {
-	evmChain := initEVMChain(t)
-	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
+		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
-	iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
-	iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
+		iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
+		iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
 
-	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA)
-	iotasSent := initialBalance - 1
+		initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA)
+		iotasSent := initialBalance - 1
 
-	// call `store(999)` with enough gas
-	res, err := storage.store(999, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: iotasSent}})
-	require.NoError(t, err)
-	require.Greater(t, res.iotaChargedFee, uint64(0))
+		// call `store(999)` with enough gas
+		res, err := storage.store(999, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: iotasSent}})
+		require.NoError(t, err)
+		require.Greater(t, res.iotaChargedFee, uint64(0))
 
-	// call `retrieve` view, get 42
-	require.EqualValues(t, 999, storage.retrieve())
+		// call `retrieve` view, get 42
+		require.EqualValues(t, 999, storage.retrieve())
 
-	// user on-chain account is credited with excess iotas (iotasSent - gasUsed)
-	expectedUserBalance := iotasSent - res.iotaChargedFee
+		// user on-chain account is credited with excess iotas (iotasSent - gasUsed)
+		expectedUserBalance := iotasSent - res.iotaChargedFee
 
-	evmChain.soloChain.AssertIotas(iotaAgentID, expectedUserBalance)
+		evmChain.soloChain.AssertIotas(iotaAgentID, expectedUserBalance)
 
-	// call `store(123)` without enough gas
-	_, err = storage.store(123, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: 1}})
-	require.Contains(t, err.Error(), "transferred tokens (1) not enough")
+		// call `store(123)` without enough gas
+		_, err = storage.store(123, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: 1}})
+		require.Contains(t, err.Error(), "transferred tokens (1) not enough")
 
-	// call `retrieve` view, get 999 - which means store(123) failed and the previous state is kept
-	require.EqualValues(t, 999, storage.retrieve())
+		// call `retrieve` view, get 999 - which means store(123) failed and the previous state is kept
+		require.EqualValues(t, 999, storage.retrieve())
 
-	// verify user on-chain account still has the same balance (no refund happened)
-	evmChain.soloChain.AssertIotas(iotaAgentID, expectedUserBalance)
+		// verify user on-chain account still has the same balance (no refund happened)
+		evmChain.soloChain.AssertIotas(iotaAgentID, expectedUserBalance)
+	})
 }
 
 func TestOwner(t *testing.T) {
-	evmChain := initEVMChain(t)
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
 
-	// the default owner is correct
-	owner := evmChain.getOwner()
-	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
+		// the default owner is correct
+		owner := evmChain.getOwner()
+		require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
 
-	// only the owner can call the setOwner endpoint
-	user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
-	user1AgentID := iscp.NewAgentID(user1Address, 0)
-	_, err := evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(evmlight.Contract.Name, evmlight.FuncSetNextOwner.Name, evmlight.FieldNextEvmOwner, user1AgentID).
-			WithIotas(100000),
-		user1Wallet,
-	)
-	require.Error(t, err)
+		// only the owner can call the setOwner endpoint
+		user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
+		user1AgentID := iscp.NewAgentID(user1Address, 0)
+		_, err := evmChain.soloChain.PostRequestSync(
+			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
+				WithIotas(100000),
+			user1Wallet,
+		)
+		require.Error(t, err)
 
-	// ensure owner didn't change after a failed call
-	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
+		// ensure owner didn't change after a failed call
+		owner = evmChain.getOwner()
+		require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
 
-	// current owner is able to set a new "next owner"
-	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(evmlight.Contract.Name, evmlight.FuncSetNextOwner.Name, evmlight.FieldNextEvmOwner, user1AgentID).
-			WithIotas(100000),
-		evmChain.soloChain.OriginatorKeyPair,
-	)
-	require.NoError(t, err)
+		// current owner is able to set a new "next owner"
+		_, err = evmChain.soloChain.PostRequestSync(
+			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
+				WithIotas(100000),
+			evmChain.soloChain.OriginatorKeyPair,
+		)
+		require.NoError(t, err)
 
-	// check that the owner didn't change yet (new owner needs to claim ownership)
-	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
+		// check that the owner didn't change yet (new owner needs to claim ownership)
+		owner = evmChain.getOwner()
+		require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
 
-	// check no other user can claim ownership
-	user2Wallet, _ := evmChain.solo.NewKeyPairWithFunds()
+		// check no other user can claim ownership
+		user2Wallet, _ := evmChain.solo.NewKeyPairWithFunds()
 
-	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(evmlight.Contract.Name, evmlight.FuncClaimOwnership.Name).
-			WithIotas(100000),
-		user2Wallet,
-	)
-	require.Error(t, err)
+		_, err = evmChain.soloChain.PostRequestSync(
+			solo.NewCallParams(evmFlavor.Name, evm.FuncClaimOwnership.Name).
+				WithIotas(100000),
+			user2Wallet,
+		)
+		require.Error(t, err)
 
-	// owner still the same
-	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
+		// owner still the same
+		owner = evmChain.getOwner()
+		require.True(t, owner.Equals(evmChain.soloChain.OriginatorAgentID))
 
-	// claim ownership successfully
-	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(evmlight.Contract.Name, evmlight.FuncClaimOwnership.Name).
-			WithIotas(100000),
-		user1Wallet,
-	)
-	require.NoError(t, err)
-	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(user1AgentID))
+		// claim ownership successfully
+		_, err = evmChain.soloChain.PostRequestSync(
+			solo.NewCallParams(evmFlavor.Name, evm.FuncClaimOwnership.Name).
+				WithIotas(100000),
+			user1Wallet,
+		)
+		require.NoError(t, err)
+		owner = evmChain.getOwner()
+		require.True(t, owner.Equals(user1AgentID))
+	})
 }
 
 func TestGasPerIotas(t *testing.T) {
-	evmChain := initEVMChain(t)
-	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
+		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
-	// the default value is correct
-	require.Equal(t, evmlight.DefaultGasPerIota, evmChain.getGasPerIotas())
+		// the default value is correct
+		require.Equal(t, evm.DefaultGasPerIota, evmChain.getGasPerIotas())
 
-	res, err := storage.store(43)
-	require.NoError(t, err)
-	initialGasFee := res.iotaChargedFee
+		res, err := storage.store(43)
+		require.NoError(t, err)
+		initialGasFee := res.iotaChargedFee
 
-	// only the owner can call the setGasPerIotas endpoint
-	newGasPerIota := evmlight.DefaultGasPerIota * 1000
-	newUserWallet, _ := evmChain.solo.NewKeyPairWithFunds()
-	err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: newUserWallet})
-	require.Contains(t, err.Error(), "can only be called by the contract owner")
-	require.Equal(t, evmlight.DefaultGasPerIota, evmChain.getGasPerIotas())
+		// only the owner can call the setGasPerIotas endpoint
+		newGasPerIota := evm.DefaultGasPerIota * 1000
+		newUserWallet, _ := evmChain.solo.NewKeyPairWithFunds()
+		err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: newUserWallet})
+		require.Contains(t, err.Error(), "can only be called by the contract owner")
+		require.Equal(t, evm.DefaultGasPerIota, evmChain.getGasPerIotas())
 
-	// current owner is able to set a new gasPerIotas
-	err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: evmChain.soloChain.OriginatorKeyPair})
-	require.NoError(t, err)
-	require.Equal(t, newGasPerIota, evmChain.getGasPerIotas())
+		// current owner is able to set a new gasPerIotas
+		err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: evmChain.soloChain.OriginatorKeyPair})
+		require.NoError(t, err)
+		require.Equal(t, newGasPerIota, evmChain.getGasPerIotas())
 
-	// run an equivalent request and compare the gas fees
-	res, err = storage.store(44)
-	require.NoError(t, err)
-	require.Less(t, res.iotaChargedFee, initialGasFee)
+		// run an equivalent request and compare the gas fees
+		res, err = storage.store(44)
+		require.NoError(t, err)
+		require.Less(t, res.iotaChargedFee, initialGasFee)
+	})
 }
 
 func TestWithdrawalOwnerFees(t *testing.T) {
-	evmChain := initEVMChain(t)
-	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
+		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
-	// only the owner can call withdrawal
-	user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
-	user1AgentID := iscp.NewAgentID(user1Address, 0)
+		// only the owner can call withdrawal
+		user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
+		user1AgentID := iscp.NewAgentID(user1Address, 0)
 
-	err := evmChain.withdrawGasFees(user1Wallet)
-	require.Contains(t, err.Error(), "can only be called by the contract owner")
+		err := evmChain.withdrawGasFees(user1Wallet)
+		require.Contains(t, err.Error(), "can only be called by the contract owner")
 
-	// change owner to user1
-	err = evmChain.setNextOwner(user1AgentID)
-	require.NoError(t, err)
-	err = evmChain.claimOwnership(iotaCallOptions{wallet: user1Wallet})
-	require.NoError(t, err)
+		// change owner to user1
+		err = evmChain.setNextOwner(user1AgentID)
+		require.NoError(t, err)
+		err = evmChain.claimOwnership(iotaCallOptions{wallet: user1Wallet})
+		require.NoError(t, err)
 
-	// collect fees from contract deployment
-	user1Balance0 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
-	require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
-	user1Balance1 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
-	require.Greater(t, user1Balance1, user1Balance0)
+		// collect fees from contract deployment
+		user1Balance0 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
+		require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
+		user1Balance1 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
+		require.Greater(t, user1Balance1, user1Balance0)
 
-	// collect fees from a SC call, check that the collected fees matches the fees charged
-	user1Balance2 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
-	res, err := storage.store(43)
-	require.NoError(t, err)
-	require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
-	user1Balance3 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
-	require.Equal(t, user1Balance3, user1Balance2+res.iotaChargedFee)
+		// collect fees from a SC call, check that the collected fees matches the fees charged
+		user1Balance2 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
+		res, err := storage.store(43)
+		require.NoError(t, err)
+		require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
+		user1Balance3 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
+		require.Equal(t, user1Balance3, user1Balance2+res.iotaChargedFee)
 
-	// try to withdraw a second time, it should succeed, but owner balance shouldnt not change (there are no fees to withdraw)
-	require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
-	user1Balance4 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
-	require.Equal(t, user1Balance3, user1Balance4)
+		// try to withdraw a second time, it should succeed, but owner balance shouldnt not change (there are no fees to withdraw)
+		require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
+		user1Balance4 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
+		require.Equal(t, user1Balance3, user1Balance4)
 
-	// try to withdraw fees to another actor using using the FieldAgentId param
-	res, err = storage.store(44)
-	require.NoError(t, err)
-	_, user2Address := evmChain.solo.NewKeyPairWithFunds()
-	user2AgentID := iscp.NewAgentID(user2Address, 0)
-	user2Balance0 := evmChain.solo.GetAddressBalance(user2Address, colored.IOTA)
-	err = evmChain.withdrawGasFees(user1Wallet, user2AgentID)
-	require.NoError(t, err)
-	user2Balance1 := evmChain.solo.GetAddressBalance(user2Address, colored.IOTA)
-	require.Equal(t, user2Balance1, user2Balance0+res.iotaChargedFee+1) // 1 extra iota from the withdrawal request
+		// try to withdraw fees to another actor using using the FieldAgentId param
+		res, err = storage.store(44)
+		require.NoError(t, err)
+		_, user2Address := evmChain.solo.NewKeyPairWithFunds()
+		user2AgentID := iscp.NewAgentID(user2Address, 0)
+		user2Balance0 := evmChain.solo.GetAddressBalance(user2Address, colored.IOTA)
+		err = evmChain.withdrawGasFees(user1Wallet, user2AgentID)
+		require.NoError(t, err)
+		user2Balance1 := evmChain.solo.GetAddressBalance(user2Address, colored.IOTA)
+		require.Equal(t, user2Balance1, user2Balance0+res.iotaChargedFee+1) // 1 extra iota from the withdrawal request
+	})
 }
 
 // tests that the gas limits are correctly enforced based on the iotas sent
 func TestGasLimit(t *testing.T) {
-	evmChain := initEVMChain(t)
-	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
+		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
-	gasPerIotas := evmChain.getGasPerIotas()
+		gasPerIotas := evmChain.getGasPerIotas()
 
-	// estimate gas by sending a valid tx
-	result, err := storage.store(123)
-	require.NoError(t, err)
-	gas := result.receipt.GasUsed
+		// estimate gas by sending a valid tx
+		result, err := storage.store(123)
+		require.NoError(t, err)
+		gas := result.receipt.GasUsed
 
-	// send again with same gas limit but not enough iotas
-	_, err = storage.store(123, ethCallOptions{gasLimit: gas, iota: iotaCallOptions{transfer: (gas+1)/gasPerIotas - 1}})
-	require.Error(t, err)
-	require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.Error())
+		// send again with same gas limit but not enough iotas
+		_, err = storage.store(123, ethCallOptions{gasLimit: gas, iota: iotaCallOptions{transfer: (gas+1)/gasPerIotas - 1}})
+		require.Error(t, err)
+		require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.Error())
 
-	// send again with gas limit not enough for transaction
-	_, err = storage.store(123, ethCallOptions{gasLimit: 1 * gasPerIotas, iota: iotaCallOptions{transfer: 1}})
-	require.Error(t, err)
-	require.Regexp(t, `intrinsic gas too low: have \d+, want \d+`, err.Error())
+		// send again with gas limit not enough for transaction
+		_, err = storage.store(123, ethCallOptions{gasLimit: 1 * gasPerIotas, iota: iotaCallOptions{transfer: 1}})
+		require.Error(t, err)
+		require.Regexp(t, `intrinsic gas too low: have \d+, want \d+`, err.Error())
+	})
 }
 
 // ensure the amount of iotas sent impacts the amount of loop iterators (gas used)
 func TestLoop(t *testing.T) {
-	evmChain := initEVMChain(t)
-	loop := evmChain.deployLoopContract(evmChain.faucetKey)
-	gasPerIotas := evmChain.getGasPerIotas()
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
+		loop := evmChain.deployLoopContract(evmChain.faucetKey)
+		gasPerIotas := evmChain.getGasPerIotas()
 
-	iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
-	iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
+		iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
+		iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
 
-	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA)
-	iotasSpent1 := uint64(100)
-	res, err := loop.loop(ethCallOptions{
-		gasLimit: iotasSpent1 * gasPerIotas,
-		iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent1},
+		initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA)
+		iotasSpent1 := uint64(100)
+		res, err := loop.loop(ethCallOptions{
+			gasLimit: iotasSpent1 * gasPerIotas,
+			iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent1},
+		})
+		require.NoError(t, err)
+		require.Equal(t, res.iotaChargedFee, iotasSpent1)
+		gasUsed := res.receipt.GasUsed
+
+		iotasSpent2 := uint64(1000)
+		res, err = loop.loop(ethCallOptions{
+			gasLimit: iotasSpent2 * gasPerIotas,
+			iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent2},
+		})
+		require.NoError(t, err)
+		require.Equal(t, res.iotaChargedFee, iotasSpent2)
+		require.Greater(t, res.receipt.GasUsed, gasUsed)
+
+		// ensure iotas sent are kept by the evmchain SC
+		require.Equal(t, evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA), initialBalance-iotasSpent1-iotasSpent2)
+		evmChain.soloChain.AssertIotas(iotaAgentID, 0)
 	})
-	require.NoError(t, err)
-	require.Equal(t, res.iotaChargedFee, iotasSpent1)
-	gasUsed := res.receipt.GasUsed
-
-	iotasSpent2 := uint64(1000)
-	res, err = loop.loop(ethCallOptions{
-		gasLimit: iotasSpent2 * gasPerIotas,
-		iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent2},
-	})
-	require.NoError(t, err)
-	require.Equal(t, res.iotaChargedFee, iotasSpent2)
-	require.Greater(t, res.receipt.GasUsed, gasUsed)
-
-	// ensure iotas sent are kept by the evmchain SC
-	require.Equal(t, evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA), initialBalance-iotasSpent1-iotasSpent2)
-	evmChain.soloChain.AssertIotas(iotaAgentID, 0)
 }
 
 func TestNonFaucetUsers(t *testing.T) {
-	evmChain := initEVMChain(t)
-	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
+		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
-	// call EVM contract with a new key (that doesn't own ether on the EVM evmChain.soloChain)
-	gasPerIotas := evmChain.getGasPerIotas()
-	iotas := uint64(10000)
-	// this should be successful because gasPrice is 0
-	res, err := storage.store(123, ethCallOptions{gasLimit: iotas * gasPerIotas, iota: iotaCallOptions{transfer: iotas}})
-	require.NoError(t, err)
-	require.Greater(t, res.iotaChargedFee, uint64(0))
+		// call EVM contract with a new key (that doesn't own ether on the EVM evmChain.soloChain)
+		gasPerIotas := evmChain.getGasPerIotas()
+		iotas := uint64(10000)
+		// this should be successful because gasPrice is 0
+		res, err := storage.store(123, ethCallOptions{gasLimit: iotas * gasPerIotas, iota: iotaCallOptions{transfer: iotas}})
+		require.NoError(t, err)
+		require.Greater(t, res.iotaChargedFee, uint64(0))
 
-	require.EqualValues(t, 123, storage.retrieve())
+		require.EqualValues(t, 123, storage.retrieve())
+	})
 }
 
 func TestPrePaidFees(t *testing.T) {
-	evmChain := initEVMChain(t)
-	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
+	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
+		evmChain := initEVMChain(t, evmFlavor)
+		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
-	iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
+		iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
 
-	// test sending off-ledger request without depositing funds first
-	txdata, _, _ := storage.buildEthTxData(nil, "store", uint32(999))
-	offledgerRequest := evmChain.buildSoloRequest(evmlight.FuncSendTransaction.Name, 100, evmlight.FieldTransactionData, txdata)
-	evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
+		// test sending off-ledger request without depositing funds first
+		txdata, _, _ := storage.buildEthTxData(nil, "store", uint32(999))
+		offledgerRequest := evmChain.buildSoloRequest(evm.FuncSendTransaction.Name, 100, evm.FieldTransactionData, txdata)
+		evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
 
-	// check that the tx has no effect
-	require.EqualValues(t, 42, storage.retrieve())
+		// check that the tx has no effect
+		require.EqualValues(t, 42, storage.retrieve())
 
-	// deposit funds
-	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA)
-	_, err := evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(initialBalance),
-		iotaWallet,
-	)
-	require.NoError(t, err)
+		// deposit funds
+		initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA)
+		_, err := evmChain.soloChain.PostRequestSync(
+			solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(initialBalance),
+			iotaWallet,
+		)
+		require.NoError(t, err)
 
-	// send offledger request again and check that is works
-	evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
-	require.EqualValues(t, 999, storage.retrieve())
+		// send offledger request again and check that is works
+		evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
+		require.EqualValues(t, 999, storage.retrieve())
+	})
 }
 
 func TestISCPContract(t *testing.T) {
-	// deploy the evmchain contract, which starts an EVM chain and automatically
+	// deploy the evmlight contract, which starts an EVM chain and automatically
 	// deploys the iscp.sol EVM contract at address 0x1074
-	evmChain := initEVMChain(t)
+	evmChain := initEVMChain(t, evmlight.Contract)
 
 	// deploy the iscp-test.sol EVM contract
 	iscpTest := evmChain.deployISCPTestContract(evmChain.faucetKey)
@@ -372,13 +400,13 @@ func TestISCPContract(t *testing.T) {
 }
 
 func TestISCPTriggerEvent(t *testing.T) {
-	evmChain := initEVMChain(t)
+	evmChain := initEVMChain(t, evmlight.Contract)
 	iscpTest := evmChain.deployISCPTestContract(evmChain.faucetKey)
 
 	// call the triggerEvent(string) function of iscp-test.sol which in turn:
 	//  calls the iscpTriggerEvent(string) function of iscp.sol, which:
 	//   executes a custom opcode, which:
-	//    gets intercepted by the evmchain contract, which:
+	//    gets intercepted by the evmlight contract, which:
 	//     triggers an ISCP event with the given string parameter
 	res, err := iscpTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
@@ -390,13 +418,13 @@ func TestISCPTriggerEvent(t *testing.T) {
 }
 
 func TestISCPEntropy(t *testing.T) {
-	evmChain := initEVMChain(t)
+	evmChain := initEVMChain(t, evmlight.Contract)
 	iscpTest := evmChain.deployISCPTestContract(evmChain.faucetKey)
 
 	// call the emitEntropy() function of iscp-test.sol which in turn:
 	//  calls the iscpEntropy() function of iscp.sol, which:
 	//   executes a custom opcode, which:
-	//    gets intercepted by the evmchain contract, which:
+	//    gets intercepted by the evmlight contract, which:
 	//     returns the entropy value from the sandbox
 	//  emits an EVM event (aka log) with the entropy value
 	res, err := iscpTest.emitEntropy()
@@ -408,11 +436,11 @@ func TestISCPEntropy(t *testing.T) {
 	require.NotEqualValues(t, entropy, make([]byte, 32))
 }
 
-func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
+func initBenchmark(b *testing.B, evmFlavor *coreutil.ContractInfo) (*solo.Chain, []*solo.CallParams) {
 	// setup: deploy the evmchain contract
 	log := testlogger.NewSilentLogger(b.Name(), true)
 	env := solo.NewWithLogger(b, log).WithNativeContract(evmlight.Processor)
-	evmChain := initEVMChainWithSolo(b, env)
+	evmChain := initEVMChainWithSolo(b, evmFlavor, env)
 	// setup: deploy the `storage` EVM contract
 	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
@@ -426,7 +454,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 		opt := ethCallOptions{sender: sender}
 		txdata, _, opt := storage.buildEthTxData([]ethCallOptions{opt}, "store", uint32(i))
 		iotaOpt := storage.chain.parseIotaCallOptions([]iotaCallOptions{opt.iota})
-		reqs[i] = storage.chain.buildSoloRequest(evmlight.FuncSendTransaction.Name, iotaOpt.transfer, evmlight.FieldTransactionData, txdata)
+		reqs[i] = storage.chain.buildSoloRequest(evm.FuncSendTransaction.Name, iotaOpt.transfer, evm.FieldTransactionData, txdata)
 	}
 
 	return evmChain.soloChain, reqs
@@ -436,14 +464,18 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 // processing requests synchronously, and producing 1 block per request.
 // run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
 func BenchmarkEVMStorageSync(b *testing.B) {
-	chain, reqs := initBenchmark(b)
-	solobench.RunBenchmarkSync(b, chain, reqs, nil)
+	withEVMFlavorsBenchmark(b, func(b *testing.B, evmFlavor *coreutil.ContractInfo) {
+		chain, reqs := initBenchmark(b, evmFlavor)
+		solobench.RunBenchmarkSync(b, chain, reqs, nil)
+	})
 }
 
 // BenchmarkEVMStorageAsync is a benchmark for the evmchain contract running under solo,
 // processing requests asynchronously, and producing 1 block per many requests.
 // run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
 func BenchmarkEVMStorageAsync(b *testing.B) {
-	chain, reqs := initBenchmark(b)
-	solobench.RunBenchmarkAsync(b, chain, reqs, nil)
+	withEVMFlavorsBenchmark(b, func(b *testing.B, evmFlavor *coreutil.ContractInfo) {
+		chain, reqs := initBenchmark(b, evmFlavor)
+		solobench.RunBenchmarkAsync(b, chain, reqs, nil)
+	})
 }

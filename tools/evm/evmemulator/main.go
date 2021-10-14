@@ -9,7 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
+	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -30,8 +30,8 @@ func main() {
 		Args:  cobra.NoArgs,
 		Run:   start,
 		Use:   "evmemulator",
-		Short: "evmemulator runs an instance of the evmchain contract with Solo as backend",
-		Long: fmt.Sprintf(`evmemulator runs an instance of the evmchain contract with Solo as backend.
+		Short: "evmemulator runs an instance of the evmchain/evmlight contract with Solo as backend",
+		Long: fmt.Sprintf(`evmemulator runs an instance of the evmchain/evmlight contract with Solo as backend.
 
 evmemulator does the following:
 
@@ -70,17 +70,17 @@ func start(cmd *cobra.Command, args []string) {
 
 	chainOwner, _ := env.NewKeyPairWithFunds()
 	chain := env.NewChain(chainOwner, "iscpchain")
-	err := chain.DeployContract(chainOwner, deployParams.Name, evmlight.Contract.ProgramHash,
-		evmlight.FieldChainID, codec.EncodeUint16(uint16(deployParams.ChainID)),
-		evmlight.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
+	err := chain.DeployContract(chainOwner, deployParams.Name(), deployParams.EVMFlavor().ProgramHash,
+		evm.FieldChainID, codec.EncodeUint16(uint16(deployParams.ChainID)),
+		evm.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		})),
-		evmlight.FieldGasPerIota, deployParams.GasPerIOTA,
+		evm.FieldGasPerIota, deployParams.GasPerIOTA,
 	)
 	log.Check(err)
 
 	signer, _ := env.NewKeyPairWithFunds()
 
 	backend := jsonrpc.NewSoloBackend(env, chain, signer)
-	jsonRPCServer.ServeJSONRPC(backend, deployParams.ChainID, deployParams.Name)
+	jsonRPCServer.ServeJSONRPC(backend, deployParams.ChainID, deployParams.Name())
 }

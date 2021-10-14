@@ -16,10 +16,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscpcontract"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscptest"
+	"github.com/iotaledger/wasp/packages/evm/evmflavors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -30,8 +30,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func withEVMFlavors(t *testing.T, f func(*testing.T, *coreutil.ContractInfo)) {
+	for _, evmFlavor := range evmflavors.All {
+		t.Run(evmFlavor.Name, func(t *testing.T) { f(t, evmFlavor) })
+	}
+}
+
+func withEVMFlavorsBenchmark(t *testing.B, f func(*testing.B, *coreutil.ContractInfo)) {
+	for _, evmFlavor := range evmflavors.All {
+		t.Run(evmFlavor.Name, func(t *testing.B) { f(t, evmFlavor) })
+	}
+}
+
 type evmChainInstance struct {
 	t            testing.TB
+	evmFlavor    *coreutil.ContractInfo
 	solo         *solo.Solo
 	soloChain    *solo.Chain
 	faucetKey    *ecdsa.PrivateKey
@@ -74,28 +87,29 @@ type ethCallOptions struct {
 	gasLimit uint64
 }
 
-func initEVMChain(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
-	env := solo.New(t, true, true).WithNativeContract(evmlight.Processor)
+func initEVMChain(t testing.TB, evmFlavor *coreutil.ContractInfo, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
+	env := solo.New(t, true, true).WithNativeContract(evmflavors.Processors[evmFlavor.Name])
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)
 	}
-	return initEVMChainWithSolo(t, env)
+	return initEVMChainWithSolo(t, evmFlavor, env)
 }
 
-func initEVMChainWithSolo(t testing.TB, env *solo.Solo) *evmChainInstance {
+func initEVMChainWithSolo(t testing.TB, evmFlavor *coreutil.ContractInfo, env *solo.Solo) *evmChainInstance {
 	faucetKey, _ := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	chainID := evm.DefaultChainID
 	e := &evmChainInstance{
 		t:            t,
+		evmFlavor:    evmFlavor,
 		solo:         env,
 		soloChain:    env.NewChain(nil, "ch1"),
 		faucetKey:    faucetKey,
 		faucetSupply: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9)),
 		chainID:      chainID,
 	}
-	err := e.soloChain.DeployContract(nil, evmlight.Contract.Name, evmlight.Contract.ProgramHash,
-		evmlight.FieldChainID, codec.EncodeUint16(uint16(chainID)),
-		evmlight.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
+	err := e.soloChain.DeployContract(nil, evmFlavor.Name, evmFlavor.ProgramHash,
+		evm.FieldChainID, codec.EncodeUint16(uint16(chainID)),
+		evm.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
 			e.faucetAddress(): {Balance: e.faucetSupply},
 		}),
 	)
@@ -118,7 +132,7 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 }
 
 func (e *evmChainInstance) buildSoloRequest(funName string, transfer uint64, params ...interface{}) *solo.CallParams {
-	return solo.NewCallParams(evmlight.Contract.Name, funName, params...).WithIotas(transfer)
+	return solo.NewCallParams(e.evmFlavor.Name, funName, params...).WithIotas(transfer)
 }
 
 func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
@@ -130,44 +144,44 @@ func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, p
 }
 
 func (e *evmChainInstance) callView(funName string, params ...interface{}) (dict.Dict, error) {
-	return e.soloChain.CallView(evmlight.Contract.Name, funName, params...)
+	return e.soloChain.CallView(e.evmFlavor.Name, funName, params...)
 }
 
 func (e *evmChainInstance) getCode(addr common.Address) []byte {
-	ret, err := e.callView(evmlight.FuncGetCode.Name, evmlight.FieldAddress, addr.Bytes())
+	ret, err := e.callView(evm.FuncGetCode.Name, evm.FieldAddress, addr.Bytes())
 	require.NoError(e.t, err)
-	return ret.MustGet(evmlight.FieldResult)
+	return ret.MustGet(evm.FieldResult)
 }
 
 func (e *evmChainInstance) getGasPerIotas() uint64 {
-	ret, err := e.callView(evmlight.FuncGetGasPerIota.Name)
+	ret, err := e.callView(evm.FuncGetGasPerIota.Name)
 	require.NoError(e.t, err)
-	gasPerIotas, err := codec.DecodeUint64(ret.MustGet(evmlight.FieldResult))
+	gasPerIotas, err := codec.DecodeUint64(ret.MustGet(evm.FieldResult))
 	require.NoError(e.t, err)
 	return gasPerIotas
 }
 
 func (e *evmChainInstance) setGasPerIotas(newGasPerIota uint64, opts ...iotaCallOptions) error {
-	_, err := e.postRequest(opts, evmlight.FuncSetGasPerIota.Name, evmlight.FieldGasPerIota, newGasPerIota)
+	_, err := e.postRequest(opts, evm.FuncSetGasPerIota.Name, evm.FieldGasPerIota, newGasPerIota)
 	return err
 }
 
 func (e *evmChainInstance) claimOwnership(opts ...iotaCallOptions) error {
-	_, err := e.postRequest(opts, evmlight.FuncClaimOwnership.Name)
+	_, err := e.postRequest(opts, evm.FuncClaimOwnership.Name)
 	return err
 }
 
 func (e *evmChainInstance) setNextOwner(nextOwner *iscp.AgentID, opts ...iotaCallOptions) error {
-	_, err := e.postRequest(opts, evmlight.FuncSetNextOwner.Name, evmlight.FieldNextEvmOwner, nextOwner)
+	_, err := e.postRequest(opts, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, nextOwner)
 	return err
 }
 
 func (e *evmChainInstance) withdrawGasFees(wallet *ed25519.KeyPair, agentID ...*iscp.AgentID) error {
 	var params []interface{}
 	if len(agentID) > 0 {
-		params = append(params, evmlight.FieldAgentID, agentID[0])
+		params = append(params, evm.FieldAgentID, agentID[0])
 	}
-	_, err := e.postRequest([]iotaCallOptions{{wallet: wallet}}, evmlight.FuncWithdrawGasFees.Name, params...)
+	_, err := e.postRequest([]iotaCallOptions{{wallet: wallet}}, evm.FuncWithdrawGasFees.Name, params...)
 	return err
 }
 
@@ -176,25 +190,25 @@ func (e *evmChainInstance) faucetAddress() common.Address {
 }
 
 func (e *evmChainInstance) getBalance(addr common.Address) *big.Int {
-	ret, err := e.callView(evmlight.FuncGetBalance.Name, evmlight.FieldAddress, addr.Bytes())
+	ret, err := e.callView(evm.FuncGetBalance.Name, evm.FieldAddress, addr.Bytes())
 	require.NoError(e.t, err)
 	bal := big.NewInt(0)
-	bal.SetBytes(ret.MustGet(evmlight.FieldResult))
+	bal.SetBytes(ret.MustGet(evm.FieldResult))
 	return bal
 }
 
 func (e *evmChainInstance) getNonce(addr common.Address) uint64 {
-	ret, err := e.callView(evmlight.FuncGetNonce.Name, evmlight.FieldAddress, addr.Bytes())
+	ret, err := e.callView(evm.FuncGetNonce.Name, evm.FieldAddress, addr.Bytes())
 	require.NoError(e.t, err)
-	nonce, err := codec.DecodeUint64(ret.MustGet(evmlight.FieldResult))
+	nonce, err := codec.DecodeUint64(ret.MustGet(evm.FieldResult))
 	require.NoError(e.t, err)
 	return nonce
 }
 
 func (e *evmChainInstance) getOwner() *iscp.AgentID {
-	ret, err := e.callView(evmlight.FuncGetOwner.Name)
+	ret, err := e.callView(evm.FuncGetOwner.Name)
 	require.NoError(e.t, err)
-	owner, err := codec.DecodeAgentID(ret.MustGet(evmlight.FieldResult))
+	owner, err := codec.DecodeAgentID(ret.MustGet(evm.FieldResult))
 	require.NoError(e.t, err)
 	return owner
 }
@@ -252,8 +266,8 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	txdata, err := tx.MarshalBinary()
 	require.NoError(e.t, err)
 
-	req, toUpload := solo.NewCallParamsOptimized(evmlight.Contract.Name, evmlight.FuncSendTransaction.Name, 1024,
-		evmlight.FieldTransactionData, txdata,
+	req, toUpload := solo.NewCallParamsOptimized(e.evmFlavor.Name, evm.FuncSendTransaction.Name, 1024,
+		evm.FieldTransactionData, txdata,
 	)
 	req.WithIotas(gas / e.getGasPerIotas())
 	for _, v := range toUpload {
@@ -272,12 +286,12 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 }
 
 func (e *evmChainInstance) estimateGas(callMsg ethereum.CallMsg) uint64 {
-	ret, err := e.callView(evmlight.FuncEstimateGas.Name, evmlight.FieldCallMsg, evmtypes.EncodeCallMsg(callMsg))
+	ret, err := e.callView(evm.FuncEstimateGas.Name, evm.FieldCallMsg, evmtypes.EncodeCallMsg(callMsg))
 	if err != nil {
 		e.t.Logf("%v", err)
 		return evm.GasLimitDefault - 1
 	}
-	gas, err := codec.DecodeUint64(ret.MustGet(evmlight.FieldResult))
+	gas, err := codec.DecodeUint64(ret.MustGet(evm.FieldResult))
 	require.NoError(e.t, err)
 	return gas
 }
@@ -344,21 +358,21 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	txdata, tx, opt := e.buildEthTxData(opts, fnName, args...)
 	res.tx = tx
 
-	result, err := e.chain.postRequest([]iotaCallOptions{opt.iota}, evmlight.FuncSendTransaction.Name, evmlight.FieldTransactionData, txdata)
+	result, err := e.chain.postRequest([]iotaCallOptions{opt.iota}, evm.FuncSendTransaction.Name, evm.FieldTransactionData, txdata)
 	if err != nil {
 		return
 	}
 
-	res.iotaChargedFee, err = codec.DecodeUint64(result.MustGet(evmlight.FieldGasFee))
+	res.iotaChargedFee, err = codec.DecodeUint64(result.MustGet(evm.FieldGasFee))
 	require.NoError(e.chain.t, err)
 
-	gasUsed, err := codec.DecodeUint64(result.MustGet(evmlight.FieldGasUsed))
+	gasUsed, err := codec.DecodeUint64(result.MustGet(evm.FieldGasUsed))
 	require.NoError(e.chain.t, err)
 
-	receiptResult, err := e.chain.callView(evmlight.FuncGetReceipt.Name, evmlight.FieldTransactionHash, tx.Hash().Bytes())
+	receiptResult, err := e.chain.callView(evm.FuncGetReceipt.Name, evm.FieldTransactionHash, tx.Hash().Bytes())
 	require.NoError(e.chain.t, err)
 
-	res.receipt, err = evmtypes.DecodeReceiptFull(receiptResult.MustGet(evmlight.FieldResult))
+	res.receipt, err = evmtypes.DecodeReceiptFull(receiptResult.MustGet(evm.FieldResult))
 	require.NoError(e.chain.t, err)
 
 	require.LessOrEqual(e.chain.t, res.receipt.GasUsed, gasUsed)
@@ -378,10 +392,10 @@ func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, arg
 		Value:    opt.value,
 		Data:     callArguments,
 	})
-	ret, err := e.chain.callView(evmlight.FuncCallContract.Name, evmlight.FieldCallMsg, evmtypes.EncodeCallMsg(callMsg))
+	ret, err := e.chain.callView(evm.FuncCallContract.Name, evm.FieldCallMsg, evmtypes.EncodeCallMsg(callMsg))
 	require.NoError(e.chain.t, err)
 	if v != nil {
-		err = e.abi.UnpackIntoInterface(v, fnName, ret.MustGet(evmlight.FieldResult))
+		err = e.abi.UnpackIntoInterface(v, fnName, ret.MustGet(evm.FieldResult))
 		require.NoError(e.chain.t, err)
 	}
 }
