@@ -74,7 +74,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
 
     ctx.event(&format!(
         "fairroulette.bet.placed {0} {1} {2}",
-        &bet.better.to_string(),
+        &bet.better.address().to_string(),
         bet.amount,
         bet.number
     ));
@@ -227,7 +227,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
         // Announce who got sent what as event.
         ctx.event(&format!(
             "fairroulette.payout {} {}",
-            &bet.better.to_string(),
+            &bet.better.address().to_string(),
             payout
         ));
     }
