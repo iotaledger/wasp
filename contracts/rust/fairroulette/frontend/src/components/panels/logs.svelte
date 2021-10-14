@@ -105,7 +105,9 @@
               letter-spacing: 0.5px;
               color: var(--mint-green-dark);
               padding: 2px 6px;
-              word-break: break-word;
+              @media (min-width: 1024px) {
+                flex: 0;
+              }
             }
             .log-timestamp {
               font-weight: 500;
