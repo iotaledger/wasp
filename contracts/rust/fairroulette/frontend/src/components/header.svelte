@@ -153,7 +153,7 @@
         cursor: pointer;
         img {
           max-width: 200px;
-          padding: 10px 0px 10px 12px;
+          padding: 10px 0px 0px 12px;
           @media (min-width: 1024px) {
             padding: 16px 0;
             max-width: 300px;
