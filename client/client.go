@@ -22,7 +22,7 @@ type WaspClient struct {
 
 // NewWaspClient returns a new *WaspClient with the given baseURL and httpClient.
 func NewWaspClient(baseURL string, httpClient ...http.Client) *WaspClient {
-	if !strings.Contains(baseURL, "://") {
+	if !strings.HasPrefix(baseURL, "http") {
 		baseURL = "http://" + baseURL
 	}
 	if len(httpClient) > 0 {
