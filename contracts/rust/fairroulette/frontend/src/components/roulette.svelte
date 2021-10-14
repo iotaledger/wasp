@@ -98,7 +98,13 @@
     viewBox="0 0 500 500"
     preserveAspectRatio="xMinYMin meet"
   >
+    <defs>
+      <filter id="blur">
+        <feGaussianBlur stdDeviation="1" />
+      </filter>
+    </defs>
     <circle
+      filter="url(#blur)"
       stroke="#00E0CA"
       fill="transparent"
       stroke-dasharray="{circumference} {circumference}"
