@@ -79,6 +79,13 @@ func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map
 	if !*useWasp {
 		wasm, err := ioutil.ReadFile(wasmPath)
 		require.NoError(e.t, err)
+		chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, e.chain.OriginatorKeyPair())
+
+		reqTx, err := chClient.DepositFunds(100)
+		require.NoError(e.t, err)
+		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+		require.NoError(e.t, err)
+
 		ph, err := e.chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
 		require.NoError(e.t, err)
 		ret.programHash = ph

@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
@@ -85,6 +86,12 @@ func (c *Client) PostOffLedgerRequest(
 	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(c.ChainID, offledgerReq)
+}
+
+func (c *Client) DepositFunds(n uint64) (*ledgerstate.Transaction, error) {
+	return c.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), PostRequestParams{
+		Transfer: colored.NewBalancesForIotas(n),
+	})
 }
 
 // NewPostRequestParams simplifies encoding of request parameters
