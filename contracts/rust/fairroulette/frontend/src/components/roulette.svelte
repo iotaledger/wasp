@@ -98,13 +98,7 @@
     viewBox="0 0 500 500"
     preserveAspectRatio="xMinYMin meet"
   >
-    <defs>
-      <filter id="blur">
-        <feGaussianBlur stdDeviation="1" />
-      </filter>
-    </defs>
     <circle
-      filter="url(#blur)"
       stroke="#00E0CA"
       fill="transparent"
       stroke-dasharray="{circumference} {circumference}"
@@ -133,13 +127,14 @@
           <Animation animation="loading" loop />
         </div>
       {:else}
-        <img class="swirl" src="/assets/swirl.svg" alt="IOTA logo" />
+        <img class="swirl" src="/assets/swirl.svg" alt="IOTA logo" in:fade />
       {/if}
 
       <img
         class="roulette-background"
         src="/assets/roulette_background.svg"
         alt="roulette"
+        in:fade
       />
       {#if flashedNumber}
         <img
@@ -168,6 +163,7 @@
       transform: translate(-50%, calc(-50% + 3px));
       width: calc(100% - 25px);
       height: calc(100% - 25px);
+      filter: drop-shadow(0px 0px 10px rgba(0, 245, 221, 0.5));
       circle {
         &.animate {
           transition: stroke-dashoffset 0.5s linear;
@@ -179,6 +175,10 @@
     .roulette {
       position: relative;
       width: 100%;
+      height: 534px;
+      @media (min-width: 1024px) {
+        height: 434px;
+      }
       .roulette-progress-road {
         width: 100%;
         height: auto;
