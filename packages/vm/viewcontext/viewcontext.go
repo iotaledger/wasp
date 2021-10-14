@@ -3,7 +3,6 @@ package viewcontext
 import (
 	"fmt"
 	"runtime/debug"
-	"sync"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -25,7 +24,6 @@ type Viewcontext struct {
 	stateReader state.OptimisticStateReader
 	chainID     *iscp.ChainID
 	log         *logger.Logger
-	mu          sync.Mutex
 }
 
 func NewFromChain(ch chain.ChainCore) *Viewcontext {
@@ -43,8 +41,6 @@ func New(chainID *iscp.ChainID, stateReader state.OptimisticStateReader, proc *p
 
 // CallView in viewcontext implements own panic catcher.
 func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dict) (dict.Dict, error) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
 	var ret dict.Dict
 	var err error
 	func() {
@@ -88,7 +84,7 @@ func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dic
 
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, fmt.Errorf("trying to call contract '%s': can't find entry point '%s'", proc.GetDescription(), epCode)
+		return nil, fmt.Errorf("trying to call contract '%s': can't find entry point '%s'", proc.GetDescription(), epCode.String())
 	}
 
 	if !ep.IsView() {
