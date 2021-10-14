@@ -2,7 +2,6 @@ package chainclient
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -30,10 +29,10 @@ func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, op
 	for _, v := range optimizedBlobs {
 		fieldValues = append(fieldValues, v)
 	}
-	nodesMultiAPI := multiclient.New(waspHosts)
-	if err := nodesMultiAPI.UploadData(fieldValues, quorum); err != nil {
-		return hashing.NilHash, nil, err
-	}
+	// nodesMultiAPI := multiclient.New(waspHosts)
+	// if err := nodesMultiAPI.UploadData(fieldValues, quorum); err != nil {
+	// 	return hashing.NilHash, nil, err
+	// }
 	blobHash := blob.MustGetBlobHash(fields)
 
 	reqTx, err := c.Post1Request(
