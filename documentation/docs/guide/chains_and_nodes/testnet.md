@@ -92,5 +92,19 @@ wasp-cli set chains.testchain dCwCC8D2v2MJKtj4gvi8ixVtoerGDp9aVbAxbCyPGSwn
 wasp-cli set chain testchain
 ```
 
-<!-- TODO: ## Smart Contract deployment and interaction -->
+## Interact with EVM
 
+We have deployed an experimental EVM chain that you can interact with. To begin, add a custom network to Metamask with the following configuration:
+
+| Key | Value |
+| --- | ----- |
+| RPC URL | https://wasp.sc.iota.org/evm/ |
+| Chain ID | 1074 |
+
+It should look similar to this image. 
+
+![MetaMask](/img/metamask_testnet.png)
+
+:::note
+The other values (network name, currency symbol, and explorer URL) can be whatever value you like. We plan to add a block explorer soon and will update the docs to reflect that accordingly.
+:::
