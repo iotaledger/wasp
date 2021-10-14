@@ -89,7 +89,7 @@ The second project is an interactive frontend written in TypeScript, made reacti
 This frontend sends On-ledger requests to place bets towards the fair roulette smart contract and makes use of the GoShimmer faucet to request funds.
 
 
-### The smart contract 
+### The Smart Contract 
 
 See: [Structure of the smart contract](https://iscp.docs.iota.org/docs/tutorial/05)
 
@@ -128,7 +128,7 @@ cd contracts/rust/fairroulette
 wasm-pack build 
 ```
 
-### The frontend
+### The Frontend
 
 The frontend has two main tasks. 
 
@@ -155,7 +155,7 @@ This event displays a placed bet from the address `12sYqEZ5GM1BnqkZ88yJgPH3CdD9w
 
 However, there is a bit more to the idea than to just subscribe to a websocket and "do requests".
 
-### The communication layer
+### The Communication Layer
 
 On and Off Ledger requests have a predefined structure. They need to get encoded in strict way and include a list of transactions provided by GoShimmer. Furthermore, they need to get signed by the client using the private key originating from a seed.  
 
@@ -177,7 +177,7 @@ As we don't expect developers of contracts and frontends to write their own impl
 * The fairroulette_service
 * The wasp_client
 
-#### The wasp client
+#### The Wasp Client
 
 The wasp client is an example implementation of the communication protocol.
 
@@ -194,7 +194,7 @@ It provides:
 
 This wasp_client can be seen as a soon to be external library. For now this is a PoC client library shipped with the project. In the future however, we want to provide a library you can simply include into your project.
 
-#### The fairroulette service
+#### The Fairroulette Service
 
 This service is meant to be a high level implementation of the actual app. In other words: It's the service that app or frontend developers would concentrate on. 
 
@@ -204,9 +204,9 @@ The fairroulette service is a mere wrapper around smart contract invocation call
 
 Lets take a look into three parts of this service to make this more clear.
 
-##### placeBetOn-ledger
+##### PlaceBetOnLedger
 
-The [placeBetOn-ledger](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L144) function is responsible to send an On Ledger bet requests. It constructs a simple IOn-ledger object  containing:
+The [placeBetOnLedger](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L144) function is responsible to send an On Ledger bet requests. It constructs a simple IOn-ledger object  containing:
 
 * the smart contract id: `fairroulette` 
 * the function to invoke: `placeBet` 
