@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { BarSelector, MultipleSelector } from '../components';
-  import { BettingStep, placeBet } from '../lib/app';
+  import { BarSelector, MultipleSelector } from "../components";
+  import { BettingStep, placeBet } from "../lib/app";
   import {
     bettingStep,
     placingBet,
     resetBettingSystem,
     round,
-  } from '../lib/store';
-  import Button from './button.svelte';
+  } from "../lib/store";
+  import Button from "./button.svelte";
 
   let betAmount: number = 1;
 
@@ -72,7 +72,7 @@
     </div>
     <div>
       <Button
-        label={isFirstStep ? 'Next' : 'Place bet'}
+        label={isFirstStep ? "Next" : "Place bet"}
         disabled={(isFirstStep && !$round.betSelection) ||
           (isLastStep && !$round.betAmount)}
         onClick={onNextClick}
@@ -103,18 +103,15 @@
     }
     .betting-actions {
       display: flex;
-      width: 300px;
       margin-top: 24px;
       justify-content: space-evenly;
       @media (min-width: 1024px) {
-        width: 400px;
         margin-top: 32px;
       }
+
       div {
-        width: 35%;
-        @media (min-width: 1024px) {
-          width: 40%;
-        }
+        margin: 0 16px;
+        min-width: 160px;
       }
     }
     .betting-panel {
@@ -122,6 +119,7 @@
       top: 40%;
       left: 50%;
       transform: translate(-50%, -50%);
+      height: 200px;
       @media (min-width: 1024px) {
         height: 230px;
       }
