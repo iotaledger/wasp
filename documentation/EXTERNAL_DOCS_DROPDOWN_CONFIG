@@ -1,0 +1,6 @@
+{
+  label: "Wasp Node",
+  to: "wasp/welcome",
+  className: "icon-wasp",
+  activeBaseRegex: 'wasp/.*',
+},
