@@ -79,7 +79,7 @@ func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map
 	if !*useWasp {
 		wasm, err := ioutil.ReadFile(wasmPath)
 		require.NoError(e.t, err)
-		_, ph, err := e.chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
+		ph, err := e.chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
 		require.NoError(e.t, err)
 		ret.programHash = ph
 		e.t.Logf("deployContract: proghash = %s\n", ph.String())
