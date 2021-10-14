@@ -206,7 +206,7 @@ Let's take a look into three parts of this service to make this more clear.
 
 ##### PlaceBetOnLedger
 
-The [placeBetOnLedger](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L144) function is responsible to send an On Ledger bet requests. It constructs a simple IOnLedger object containing:
+The [placeBetOnLedger](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L144) function is responsible for sending On-Ledger bet requests. It constructs a simple IOnLedger object containing:
 
 * The smart contract ID: `fairroulette` 
 * The function to invoke: `placeBet` 
@@ -220,6 +220,31 @@ For Wasp, the address to send funds to is the chainId.
 :::
 
 See: [CoreTypes](https://iscp.docs.iota.org/docs/misc/coretypes/) and [Invoking](https://iscp.docs.iota.org/docs/misc/invoking/)
+
+
+##### CallView 
+
+The [callView](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L160) function is responsible for calling smart contract view functions. 
+
+See: [Calling a view](https://iscp.docs.iota.org/docs/guide/solo/view-sc/) 
+
+To give access to the smart contracts state, view functions can be used to return selected parts of the state. 
+
+In our use case, we poll the state of the contract at the initial page load of the frontend. 
+State changes that happen afterwords are published through the websocket event system.
+
+To give an example on how to build and call such functions take a look into:
+
+* Frontend: [getRoundStatus](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L176) 
+
+* Smart Contract: [view_round_status](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/src/fairroulette.rs#L289)
+
+Since the returned data of views are encoded in Base64, the frontend needs to decode this by using simple `Buffer` methods. 
+The `view_round_status` view returns an `UInt16` which has a state of either `0` or `1`. 
+
+This means to get a proper value from a view call, use `readUInt16LE` to decode the matching value.
+
+
 
 
 
