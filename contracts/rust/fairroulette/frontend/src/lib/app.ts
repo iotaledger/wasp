@@ -58,7 +58,7 @@ export function log(tag: string, description: string) {
 }
 
 export async function initialize() {
-    log(LogTag.Site, 'Initializing wallet.');
+    log(LogTag.Site, 'Initializing wallet');
 
     if (config.seed) {
         seed.set(Base58.decode(config.seed));
