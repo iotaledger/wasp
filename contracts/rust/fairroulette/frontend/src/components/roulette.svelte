@@ -175,10 +175,7 @@
     .roulette {
       position: relative;
       width: 100%;
-      height: 534px;
-      @media (min-width: 1024px) {
-        height: 434px;
-      }
+      height: 434px;
       .roulette-progress-road {
         width: 100%;
         height: auto;
