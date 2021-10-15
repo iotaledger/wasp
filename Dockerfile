@@ -22,4 +22,12 @@ RUN go build -o . -tags=${BUILD_TAGS} -ldflags="${BUILD_LD_FLAGS}" ./...
 # Wasp build
 FROM gcr.io/distroless/cc
 
+EXPOSE 7000/tcp
+EXPOSE 9090/tcp
+EXPOSE 5550/tcp
+EXPOSE 4000/udp
+
 COPY --from=build /wasp/wasp /usr/bin/wasp
+COPY docker_config.json /etc/wasp_config.json
+
+ENTRYPOINT ["wasp", "-c", "/etc/wasp_config.json"]
