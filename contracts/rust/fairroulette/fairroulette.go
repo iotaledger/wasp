@@ -38,6 +38,16 @@ const NanoTimeDivider = 1000_000_000
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
+	bets := f.State.Bets()
+
+	for i := int32(0); i < bets.Length(); i++ {
+		bet := bets.GetBet(i).Value();
+
+		if bet.Better.Address.String() == ctx.Caller().Address().String() {
+				ctx.Panic("Bet already placed for this round");
+		}
+}
+
 	// Since we are sure that the 'number' parameter actually exists we can
 	// retrieve its actual value into an i64.
 	number := f.Params.Number().Value()

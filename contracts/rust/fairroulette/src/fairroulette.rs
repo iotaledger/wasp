@@ -35,6 +35,16 @@ const NANO_TIME_DIVIDER: i64 = 1000000000;
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
+    let bets = f.state.bets();
+
+    for i in 0..bets.length() {
+        let bet: Bet = bets.get_bet(i).value();
+
+        if bet.better.address().to_string() == ctx.caller().address().to_string() {
+            ctx.panic("Bet already placed for this round");
+        }
+    }
+
     // Since we are sure that the 'number' parameter actually exists we can
     // retrieve its actual value into an i64.
     let number: i64 = f.params.number().value();
