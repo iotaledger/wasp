@@ -1,11 +1,15 @@
 package tests
 
 import (
+	"errors"
 	"testing"
+	"time"
 
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -56,4 +60,61 @@ func TestIncSoloRepeatMany(t *testing.T) {
 	counter, err := codec.DecodeInt64(ret.MustGet(varCounter))
 	require.NoError(t, err)
 	require.EqualValues(t, 3, counter)
+}
+
+func TestSpamCallViewWasm(t *testing.T) {
+	// TODO make concurrency work
+	t.SkipNow()
+	testutil.SkipHeavy(t)
+	clu := newCluster(t)
+	committee := []int{0}
+	quorum := uint16(1)
+	addr, err := clu.RunDKG(committee, quorum)
+	require.NoError(t, err)
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
+	require.NoError(t, err)
+
+	e := &env{t: t, clu: clu}
+	chEnv := &chainEnv{
+		env:   e,
+		chain: chain,
+	}
+
+	chEnv.requestFunds(scOwnerAddr, "client")
+	chEnv.deployContract(incName, incDescription, nil)
+
+	{
+		// increment counter once
+		tx, err := chEnv.chainClient().Post1Request(incHname, iscp.Hn("increment"))
+		require.NoError(t, err)
+		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+		require.NoError(t, err)
+	}
+
+	const n = 2
+	ch := make(chan error, n)
+
+	for i := 0; i < n; i++ {
+		go func() {
+			cl := chain.SCClient(incHname, nil)
+			r, err := cl.CallView("getCounter", nil)
+			if err != nil {
+				ch <- err
+				return
+			}
+
+			v, err := codec.DecodeInt64(r.MustGet(inccounter.VarCounter))
+			if err == nil && v != 1 {
+				err = errors.New("v != 1")
+			}
+			ch <- err
+		}()
+	}
+
+	for i := 0; i < n; i++ {
+		err := <-ch
+		if err != nil {
+			t.Error(err)
+		}
+	}
 }
