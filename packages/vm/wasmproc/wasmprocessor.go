@@ -112,6 +112,7 @@ func (host *WasmProcessor) call(ctx iscp.Sandbox, ctxView iscp.SandboxView) (dic
 	results := host.FindSubObject(nil, wasmhost.KeyResults, wasmhost.OBJTYPE_MAP).(*ScDict).kvStore.(dict.Dict)
 	host.scContext.objects = frameObjects
 	host.PopFrame(frame)
+
 	return results, nil
 }
 

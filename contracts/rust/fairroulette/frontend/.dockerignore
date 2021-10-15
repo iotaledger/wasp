@@ -1,0 +1,5 @@
+.git
+node_modules
+public/build
+config.dev.js
+Dockerfile
