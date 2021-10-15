@@ -7,7 +7,7 @@
 
 package fairroulette
 
-import "github.com/iotaledger/wasplib/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib"
 
 type Bet struct {
 	Amount int64

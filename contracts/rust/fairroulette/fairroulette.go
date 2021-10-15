@@ -43,7 +43,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	for i := int32(0); i < bets.Length(); i++ {
 		bet := bets.GetBet(i).Value();
 
-		if bet.Better.Address.String() == ctx.Caller().Address().String() {
+		if bet.Better.Address().String() == ctx.Caller().Address().String() {
 				ctx.Panic("Bet already placed for this round");
 		}
 }
@@ -74,9 +74,6 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 		Amount: amount,
 		Number: number,
 	}
-
-	// Get the array of current bets from state storage.
-	bets := f.State.Bets()
 
 	// Determine what the next bet number is by retrieving the length of the bets array.
 	betNr := bets.Length()
