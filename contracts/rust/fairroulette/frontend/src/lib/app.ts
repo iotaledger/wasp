@@ -123,7 +123,7 @@ export async function initialize(): Promise<void> {
     await Promise.all(requests);
 
     log(LogTag.Site, 'Demo loaded');
-    
+
     initialized = true;
 }
 
@@ -165,12 +165,16 @@ export async function placeBet(): Promise<void> {
     showBettingSystem.set(false);
     showWinningNumber.set(false);
     try {
+        
         await fairRouletteService.placeBetOnLedger(
             get(keyPair),
             get(address),
             get(round).betSelection,
             get(round).betAmount,
         );
+        
+        log(LogTag.SmartContract, "Funds sent to Wasp chain address using GoShimmer nodes");
+
     } catch (ex: any) {
         showNotification({
             type: Notification.Error,
@@ -203,7 +207,6 @@ export async function sendFaucetRequest(): Promise<void> {
 
     try {
         await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
-        log(LogTag.SmartContract, "Funds sent to Wasp chain address using GoShimmer nodes");
     } catch (ex: any) {
         showNotification({
             type: Notification.Error,
