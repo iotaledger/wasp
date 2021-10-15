@@ -48,10 +48,8 @@
     .players-wrapper {
       display: flex;
       flex-direction: column-reverse;
-
       overflow-y: auto;
       margin-top: 16px;
-      max-height: 500px;
       @media (max-width: 1024px) {
         .players {
           max-height: 400px;

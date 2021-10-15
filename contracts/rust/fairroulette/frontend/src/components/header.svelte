@@ -240,7 +240,7 @@
         background-color: #091326;
         color: white;
         z-index: 2;
-        padding: 16px 24px;
+        padding: 16px 20px;
         .aside-links {
           a {
             margin-top: 20px;
@@ -254,10 +254,10 @@
           }
         }
         .close-expanded {
-          display: flex;
-          justify-content: flex-end;
-          margin-bottom: 30px;
           cursor: pointer;
+          position: absolute;
+          right: 10px;
+          top: 10px;
         }
         .dropdown {
           margin-top: 20px;
