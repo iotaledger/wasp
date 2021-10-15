@@ -47,7 +47,7 @@ export enum StateMessage {
     PlacingBet = 'PlacingBet'
 }
 
-export function log(tag: string, description: string) {
+export function log(tag: string, description: string): void {
     round.update((_round) => {
         _round.logs.push({
             tag,
@@ -59,7 +59,7 @@ export function log(tag: string, description: string) {
     });
 }
 
-export async function initialize() {
+export async function initialize(): Promise<void> {
     log(LogTag.Site, 'Initializing wallet');
 
     if (config.seed) {
@@ -140,20 +140,20 @@ export async function initialize() {
     log(LogTag.Site, 'Demo loaded');
 }
 
-export function setAddress(index: number) {
+export function setAddress(index: number): void {
     addressIndex.set(index);
 
     address.set(Seed.generateAddress(get(seed), get(addressIndex)));
     keyPair.set(Seed.generateKeyPair(get(seed), get(addressIndex)));
 }
 
-export function createNewAddress() {
+export function createNewAddress(): void {
     addressesHistory.update(_history => [..._history, get(address)]);
     addressIndex.update(($addressIndex) => $addressIndex + 1);
     setAddress(get(addressIndex));
 }
 
-export async function updateFunds() {
+export async function updateFunds(): Promise<void> {
     let _balance = 0n;
     try {
         timestamp.set(Date.now() / 1000);
@@ -165,7 +165,7 @@ export async function updateFunds() {
     balance.set(_balance);
 }
 
-export function startFundsUpdater() {
+export function startFundsUpdater(): void {
     if (fundsUpdaterHandle) {
         clearInterval(fundsUpdaterHandle);
         fundsUpdaterHandle = undefined;
@@ -173,7 +173,7 @@ export function startFundsUpdater() {
     fundsUpdaterHandle = setInterval(updateFunds, 1000);
 }
 
-export async function placeBet() {
+export async function placeBet(): Promise<void> {
     placingBet.set(true);
     showBettingSystem.set(false);
     showWinningNumber.set(false);
@@ -198,7 +198,7 @@ export async function placeBet() {
     }
 }
 
-export async function sendFaucetRequest() {
+export async function sendFaucetRequest(): Promise<void> {
     log(LogTag.Funds, "Funds requested from devnet. The GoShimmer nodes have received them.  Sending funds to the requested wallet.");
 
     if (!get(firstTimeRequestingFunds)) {
@@ -217,7 +217,7 @@ export async function sendFaucetRequest() {
     try {
         await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
         log(LogTag.SmartContract, "Funds sent to Wasp chain address using GoShimmer nodes");
-    } catch (ex) {
+    } catch (ex: any) {
         showNotification({
             type: Notification.Error,
             message: ex.message,
@@ -229,7 +229,7 @@ export async function sendFaucetRequest() {
     requestingFunds.set(false);
 }
 
-export function calculateRoundLengthLeft(timestamp: number) {
+export function calculateRoundLengthLeft(timestamp: number): number | undefined {
     const roundStartedAt = get(round).startedAt;
 
     if (!timestamp || !roundStartedAt) return undefined;
@@ -252,7 +252,7 @@ export function calculateRoundLengthLeft(timestamp: number) {
     return roundTimeLeft;
 }
 
-export function subscribeToRouletteEvents() {
+export function subscribeToRouletteEvents(): void {
     fairRouletteService.on('roundStarted', (timestamp) => {
         receivedRoundStarted.set(true);
         showWinningNumber.set(false);
