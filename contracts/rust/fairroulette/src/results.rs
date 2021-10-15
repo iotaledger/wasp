@@ -101,25 +101,3 @@ impl MutableRoundStatusResults {
         ScMutableInt16::new(self.id, idx_map(IDX_RESULT_ROUND_STATUS))
     }
 }
-
-#[derive(Clone, Copy)]
-pub struct ImmutableRoundTimeLeftResults {
-    pub(crate) id: i32,
-}
-
-impl ImmutableRoundTimeLeftResults {
-    pub fn round_time_left(&self) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_ROUND_TIME_LEFT))
-    }
-}
-
-#[derive(Clone, Copy)]
-pub struct MutableRoundTimeLeftResults {
-    pub(crate) id: i32,
-}
-
-impl MutableRoundTimeLeftResults {
-    pub fn round_time_left(&self) -> ScMutableInt32 {
-        ScMutableInt32::new(self.id, idx_map(IDX_RESULT_ROUND_TIME_LEFT))
-    }
-}

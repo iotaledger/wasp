@@ -43,11 +43,6 @@ type RoundStatusCall struct {
 	Results ImmutableRoundStatusResults
 }
 
-type RoundTimeLeftCall struct {
-	Func    *wasmlib.ScView
-	Results ImmutableRoundTimeLeftResults
-}
-
 type Funcs struct{}
 
 var ScFuncs Funcs
@@ -88,12 +83,6 @@ func (sc Funcs) RoundStartedAt(ctx wasmlib.ScViewCallContext) *RoundStartedAtCal
 
 func (sc Funcs) RoundStatus(ctx wasmlib.ScViewCallContext) *RoundStatusCall {
 	f := &RoundStatusCall{Func: wasmlib.NewScView(HScName, HViewRoundStatus)}
-	f.Func.SetPtrs(nil, &f.Results.id)
-	return f
-}
-
-func (sc Funcs) RoundTimeLeft(ctx wasmlib.ScViewCallContext) *RoundTimeLeftCall {
-	f := &RoundTimeLeftCall{Func: wasmlib.NewScView(HScName, HViewRoundTimeLeft)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }

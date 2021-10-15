@@ -299,27 +299,3 @@ pub fn view_round_started_at(_ctx: &ScViewContext, f: &RoundStartedAtContext) {
     // Set the 'round_started_at' in results to the value from state storage.
     f.results.round_started_at().set_value(round_started_at);
 }
-
-pub fn view_round_time_left(ctx: &ScViewContext, f: &RoundTimeLeftContext) {
-    // Get the current timestamp
-    let timestamp = (ctx.timestamp() / NANO_TIME_DIVIDER) as i32;
-    // Get the 'round_started_at' int32 value from state storage.
-    let round_started_at = f.state.round_started_at().value();
-
-    // Get the 'playPeriod' int32 value from state storage.
-    let play_period: i32 = f.state.play_period().value();
-
-    let mut timeleft = play_period - (timestamp - round_started_at);
-
-    if timeleft < 0 {
-        timeleft = 0;
-    }
-
-    ctx.log(&format!(
-        "fairroulette.round.time_left {0} {1} {2} {3}",
-        timestamp, round_started_at, play_period, timeleft
-    ));
-
-    // Set the 'roundTimeLeft' in results to the value from state storage.
-    f.results.round_time_left().set_value(timeleft);
-}

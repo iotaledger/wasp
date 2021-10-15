@@ -19,7 +19,6 @@ func OnLoad() {
 	exports.AddView(ViewRoundNumber, viewRoundNumberThunk)
 	exports.AddView(ViewRoundStartedAt, viewRoundStartedAtThunk)
 	exports.AddView(ViewRoundStatus, viewRoundStatusThunk)
-	exports.AddView(ViewRoundTimeLeft, viewRoundTimeLeftThunk)
 
 	for i, key := range keyMap {
 		idxMap[i] = key.KeyID()
@@ -161,23 +160,4 @@ func viewRoundStatusThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewRoundStatus(ctx, f)
 	ctx.Log("fairroulette.viewRoundStatus ok")
-}
-
-type RoundTimeLeftContext struct {
-	Results MutableRoundTimeLeftResults
-	State   ImmutableFairRouletteState
-}
-
-func viewRoundTimeLeftThunk(ctx wasmlib.ScViewContext) {
-	ctx.Log("fairroulette.viewRoundTimeLeft")
-	f := &RoundTimeLeftContext{
-		Results: MutableRoundTimeLeftResults{
-			id: wasmlib.OBJ_ID_RESULTS,
-		},
-		State: ImmutableFairRouletteState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
-	viewRoundTimeLeft(ctx, f)
-	ctx.Log("fairroulette.viewRoundTimeLeft ok")
 }

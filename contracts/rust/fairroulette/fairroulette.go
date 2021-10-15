@@ -280,22 +280,3 @@ func viewRoundStartedAt(ctx wasmlib.ScViewContext, f *RoundStartedAtContext) {
 	// Set the 'roundStartedAt' in results to the value from state storage.
 	f.Results.RoundStartedAt().SetValue(roundStartedAt)
 }
-
-func viewRoundTimeLeft(ctx wasmlib.ScViewContext, f *RoundTimeLeftContext) {
-	// Get the current timestamp
-	timestamp := int32(ctx.Timestamp() / NanoTimeDivider)
-	// Get the 'roundStartedAt' int32 value from state storage.
-	roundStartedAt := f.State.RoundStartedAt().Value()
-	// Get the 'playPeriod' int32 value from state storage.
-	playPeriod := f.State.PlayPeriod().Value()
-
-	// Calculate the round length left
-  timeLeft := playPeriod - (timestamp - roundStartedAt)
-
-	if (timeLeft < 0) {
-		timeLeft = 0
-	}
-	
-	// Set the 'roundTimeLeft' in results to the value from state storage.
-	f.Results.RoundTimeLeft().SetValue(timeLeft)
-}

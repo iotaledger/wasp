@@ -51,11 +51,6 @@ pub struct RoundStatusCall {
     pub results: ImmutableRoundStatusResults,
 }
 
-pub struct RoundTimeLeftCall {
-    pub func:    ScView,
-    pub results: ImmutableRoundTimeLeftResults,
-}
-
 pub struct ScFuncs {
 }
 
@@ -109,14 +104,6 @@ impl ScFuncs {
         let mut f = RoundStatusCall {
             func:    ScView::new(HSC_NAME, HVIEW_ROUND_STATUS),
             results: ImmutableRoundStatusResults { id: 0 },
-        };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
-        f
-    }
-    pub fn round_time_left(_ctx: & dyn ScViewCallContext) -> RoundTimeLeftCall {
-        let mut f = RoundTimeLeftCall {
-            func:    ScView::new(HSC_NAME, HVIEW_ROUND_TIME_LEFT),
-            results: ImmutableRoundTimeLeftResults { id: 0 },
         };
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f

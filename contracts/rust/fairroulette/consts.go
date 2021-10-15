@@ -24,7 +24,6 @@ const (
 	ResultRoundNumber       = wasmlib.Key("roundNumber")
 	ResultRoundStartedAt    = wasmlib.Key("roundStartedAt")
 	ResultRoundStatus       = wasmlib.Key("roundStatus")
-	ResultRoundTimeLeft     = wasmlib.Key("roundTimeLeft")
 )
 
 const (
@@ -44,7 +43,6 @@ const (
 	ViewRoundNumber       = "roundNumber"
 	ViewRoundStartedAt    = "roundStartedAt"
 	ViewRoundStatus       = "roundStatus"
-	ViewRoundTimeLeft     = "roundTimeLeft"
 )
 
 const (
@@ -55,5 +53,4 @@ const (
 	HViewRoundNumber       = wasmlib.ScHname(0x0dcfe520)
 	HViewRoundStartedAt    = wasmlib.ScHname(0x725de8b4)
 	HViewRoundStatus       = wasmlib.ScHname(0x145053b5)
-	HViewRoundTimeLeft     = wasmlib.ScHname(0xbbdd5ef5)
 )
