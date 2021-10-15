@@ -3,7 +3,7 @@
     address as currentAddress,
     addressesHistory,
     round,
-  } from "../../lib/store";
+  } from '../../lib/store';
 
   const isMyAddress = (addr: string) =>
     $currentAddress === addr || $addressesHistory.includes(addr);
@@ -19,7 +19,7 @@
           <div>
             <div class="player-address">{address}</div>
             <div class="player-bet">
-              <span>{isMyAddress(address) ? "You bet: " : "Bet: "}</span>
+              <span>{isMyAddress(address) ? 'You bet: ' : 'Bet: '}</span>
               <span class="bet-value">{bet}i on {number}. </span>
             </div>
           </div>

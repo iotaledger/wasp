@@ -1,23 +1,23 @@
 <script lang="ts">
-  import Button from "../components/button.svelte";
-  import { navigateTo } from "svelte-router-spa";
+  import Button from '../components/button.svelte';
+  import { navigateTo } from 'svelte-router-spa';
 
   const HEADINGS = {
-    eyebrow: "Smart Contracts Demo",
-    title: "IOTA Roulette",
+    eyebrow: 'Smart Contracts Demo',
+    title: 'IOTA Roulette',
     description:
-      "The new IOTA Smart Contracts framework is here and can be used to power decentralized applications  – just like this Fair Roulette demo. The Proof of Concept demo gives a real-time impression of the performance of IOTA smart contracts by showcasing how the execution of a contract works in combination with a user-friendly front end. As the roulette shows, smart contracts can be about exchanging value, generating outcomes and trusting a decentralized software with your funds.",
+      'The new IOTA Smart Contracts framework is here and can be used to power decentralized applications  – just like this Fair Roulette demo. The Proof of Concept demo gives a real-time impression of the performance of IOTA smart contracts by showcasing how the execution of a contract works in combination with a user-friendly front end. As the roulette shows, smart contracts can be about exchanging value, generating outcomes and trusting a decentralized software with your funds.',
   };
   const CARDS = [
     {
-      title: "How it works",
+      title: 'How it works',
       description:
         "Because funds are necessary to make a smart contract transaction, our demo takes the form of a roulette. To start the demo, hit “request funds”. Coins from the IOTA Developer Network (DevNet) will be transferred to your demo balance. To start a round, place a bet on a number from one to eight, and let the roulette wheel spin. If your bet is successful, the underlying smart contract sends you your gained coins; if your bet isn’t successful, the smart contract keeps the coins. You can learn more about IOTA Smart contracts in our documentation, accessible through the <a target='_blank' href='https://wiki.iota.org/wasp/welcome/'> IOTA Wiki</a>, and review the smart contract executing this roulette demo.",
     },
     {
-      title: "What it does",
+      title: 'What it does',
       description:
-        "In the demo, you request tokens from the IOTA GoShimmer nodes, which send the tokens to your wallet. By placing a bet, you stake tokens from your wallet by sending them to the smart contract; these staked tokens are held by the smart contract in a pool along with tokens staked by other players. The smart contract generates a random number and automatically rewards the player(s) who bet tokens on the winning number. If more than one player bets on the winning number, the earned tokens are divided based on the amount of tokens bet in total. And it’s all immutable and automated – no one can change the outcome and there is no one to trust. ",
+        'In the demo, you request tokens from the IOTA GoShimmer nodes, which send the tokens to your wallet. By placing a bet, you stake tokens from your wallet by sending them to the smart contract; these staked tokens are held by the smart contract in a pool along with tokens staked by other players. The smart contract generates a random number and automatically rewards the player(s) who bet tokens on the winning number. If more than one player bets on the winning number, the earned tokens are divided based on the amount of tokens bet in total. And it’s all immutable and automated – no one can change the outcome and there is no one to trust. ',
     },
   ];
 </script>
@@ -29,7 +29,7 @@
       <h1 class="title">{HEADINGS.title}</h1>
       <p class="description">{HEADINGS.description}</p>
       <div class="demo-button">
-        <Button label="Try demo" onClick={() => navigateTo("demo")} />
+        <Button label="Try demo" onClick={() => navigateTo('demo')} />
       </div>
     </div>
     <div class="wheel">
@@ -69,14 +69,14 @@
         text-transform: uppercase;
         font-size: 16px;
         letter-spacing: 0.15em;
-        font-family: "Metropolis bold";
+        font-family: 'Metropolis bold';
         @media (min-width: 1024px) {
           color: var(--mint-green);
           font-size: 24px;
         }
       }
       .title {
-        font-family: "Metropolis bold";
+        font-family: 'Metropolis bold';
         margin-top: 16px;
       }
       .description {
@@ -141,7 +141,7 @@
         margin-bottom: 0;
       }
       .title {
-        font-family: "Metropolis bold";
+        font-family: 'Metropolis bold';
         font-size: 28px;
         line-height: 115%;
         letter-spacing: 0.75px;

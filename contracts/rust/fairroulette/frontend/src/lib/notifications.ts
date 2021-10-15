@@ -1,5 +1,5 @@
-import { writable } from "svelte/store"
-import { generateRandomId } from "./utils"
+import { writable } from 'svelte/store'
+import { generateRandomId } from './utils'
 
 const NOTIFICATION_TIMEOUT_DEFAULT = 5000
 export const NOTIFICATION_TIMEOUT_NEVER = -1

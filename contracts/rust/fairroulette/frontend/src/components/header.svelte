@@ -1,47 +1,47 @@
 <script lang="ts">
-  import { navigateTo, routeIsActive } from "svelte-router-spa";
-  import { fly } from "svelte/transition";
+  import { navigateTo, routeIsActive } from 'svelte-router-spa';
+  import { fly } from 'svelte/transition';
 
   export let currentRoute: string;
   let isLanding: boolean = false;
 
-  $: currentRoute, (isLanding = routeIsActive("/"));
+  $: currentRoute, (isLanding = routeIsActive('/'));
 
   let isRepositoriesExpanded: boolean = false;
   let isMenuExpanded: boolean = false;
 
   const REPOSITORIES: { label: string; link: string }[] = [
     {
-      label: "Fair Roulette",
-      link: "https://github.com/iotaledger/wasp/tree/roulette_poc/contracts/rust/fairroulette",
+      label: 'Fair Roulette',
+      link: 'https://github.com/iotaledger/wasp/tree/roulette_poc/contracts/rust/fairroulette',
     },
     {
-      label: "Wasp",
-      link: "https://github.com/iotaledger/wasp",
+      label: 'Wasp',
+      link: 'https://github.com/iotaledger/wasp',
     },
   ];
 
   const NAV_LINKS: {
     label: string;
     href: string;
-    target: "_blank" | "self";
+    target: '_blank' | 'self';
   }[] = [
     {
-      label: "About Demo",
-      href: "/",
-      target: "self",
+      label: 'About Demo',
+      href: '/',
+      target: 'self',
     },
     {
-      label: "Visit the Wiki",
-      href: "https://wiki.iota.org/wasp/welcome/",
-      target: "_blank",
+      label: 'Visit the Wiki',
+      href: 'https://wiki.iota.org/wasp/welcome/',
+      target: '_blank',
     },
   ];
 </script>
 
 <header class="header">
   <div class="container">
-    <div class="logo" on:click={() => navigateTo("/")}>
+    <div class="logo" on:click={() => navigateTo('/')}>
       <img src="/assets/iota-roulette-logo.svg" alt="iota-logo-roulette" />
     </div>
 
@@ -77,7 +77,7 @@
       </div>
       {#if isLanding}
         <div class="empty" />
-        <button class="try-demo" on:click={() => navigateTo("/demo")}
+        <button class="try-demo" on:click={() => navigateTo('/demo')}
           >Try demo</button
         >
       {/if}
@@ -215,7 +215,7 @@
         line-height: 150%;
         letter-spacing: 0.75px;
         color: var(--gray-3);
-        font-family: "Inter";
+        font-family: 'Inter';
         display: flex;
         justify-content: space-between;
         @media (min-width: 1024px) {
@@ -304,7 +304,7 @@
       letter-spacing: 0.75px;
       color: var(--gray-3);
       text-decoration: none;
-      font-family: "Inter";
+      font-family: 'Inter';
     }
     .try-demo {
       border: 0;
