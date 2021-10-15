@@ -246,8 +246,6 @@ export function calculateRoundLengthLeft(timestamp: number) {
         fairRouletteService?.roundLength - diff
     );
 
-    console.log(fairRouletteService?.roundLength, diff, roundTimeLeft);
-
     if (roundTimeLeft <= 0) {
         return 0;
     }
