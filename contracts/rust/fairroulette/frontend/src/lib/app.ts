@@ -10,7 +10,7 @@ import {
     PoWWorkerManager,
     WalletService
 } from './wasp_client';
-import { Base58 } from './wasp_client/crypto/base58';
+import { Base58 } from './wasp_client/crypto/base58'; 
 import { Seed } from './wasp_client/crypto/seed';
 
 let client: BasicClient;
@@ -18,6 +18,7 @@ let walletService: WalletService;
 let fairRouletteService: FairRouletteService;
 
 let fundsUpdaterHandle: NodeJS.Timer | undefined;
+let initialized: boolean = false;
 
 const powManager: PoWWorkerManager = new PoWWorkerManager();
 export const BETTING_NUMBERS = 8;
@@ -60,6 +61,10 @@ export function log(tag: string, description: string): void {
 }
 
 export async function initialize(): Promise<void> {
+    if (initialized) {
+        return;
+    }
+    
     log(LogTag.Site, 'Initializing wallet');
 
     if (config.seed) {
@@ -101,11 +106,7 @@ export async function initialize(): Promise<void> {
 
     startFundsUpdater();
 
-    // The best solution would be to call all of them in parallel. This is currently not possible.
-    // As those requests can fail in certain cases, we need to wrap them in exception handlers,
-    // to make sure that the other requests are being sent and that the page properly loads.
     const requests = [
-
         fairRouletteService
             .getRoundStatus()
             .then((x) => round.update($round => ({ ...$round, active: x == 1 }))),
@@ -117,27 +118,13 @@ export async function initialize(): Promise<void> {
         fairRouletteService
             .getLastWinningNumber()
             .then((x) => round.update($round => ({ ...$round, winningNumber: x }))),
-        /*() =>
-            fairRouletteService
-                .getRoundStartedAt()
-                .then((x) => round.update($round => ({ ...$round, startedAt: x }))),
-*/
-        /*() =>
-            fairRouletteService
-                .getRoundTimeLeft()
-                .then((x) => {
-                    console.log(x);
-                    round.update($round => ({ ...$round, startedAt: Date.now() - (x * 1000) }));
-                }),*/
     ];
-
-    /*for (let request of requests) {
-        await request().catch((e) => log(LogTag.Error, e.message));
-    }*/
 
     await Promise.all(requests);
 
     log(LogTag.Site, 'Demo loaded');
+    
+    initialized = true;
 }
 
 export function setAddress(index: number): void {
