@@ -52,15 +52,12 @@ func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteLppID li
 		}
 		return false
 	}
-	messageHashFun := func(msg interface{}) interface{} { // TODO
-		return msg
-	}
 	p := &peer{
 		remoteNetID:  remoteNetID,
 		remotePubKey: remotePubKey,
 		remoteLppID:  remoteLppID,
 		accessLock:   &sync.RWMutex{},
-		sendPipe:     pipe.NewInfinitePipe(messagePriorityFun, maxPeerMsgBuffer, messageHashFun),
+		sendPipe:     pipe.NewInfinitePipe(messagePriorityFun, maxPeerMsgBuffer),
 		lastMsgSent:  time.Time{},
 		lastMsgRecv:  time.Time{},
 		numUsers:     0,

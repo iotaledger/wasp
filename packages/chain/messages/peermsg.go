@@ -4,6 +4,7 @@
 package messages
 
 import (
+	"bytes"
 	"io"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 )
@@ -29,6 +31,20 @@ const (
 )
 
 type TimerTick int
+
+var _ pipe.Hashable = TimerTick(0)
+
+func (ttT TimerTick) GetHash() interface{} {
+	return ttT
+}
+
+func (ttT TimerTick) Equals(elem interface{}) bool {
+	other, ok := elem.(TimerTick)
+	if !ok {
+		return false
+	}
+	return ttT == other
+}
 
 type SignedResultMsg struct {
 	SenderIndex  uint16
@@ -60,6 +76,20 @@ type DismissChainMsg struct {
 	Reason string
 }
 
+var _ pipe.Hashable = &DismissChainMsg{}
+
+func (dcmT *DismissChainMsg) GetHash() interface{} {
+	return dcmT.Reason
+}
+
+func (dcmT *DismissChainMsg) Equals(elem interface{}) bool {
+	other, ok := elem.(*DismissChainMsg)
+	if !ok {
+		return false
+	}
+	return dcmT.Reason == other.Reason
+}
+
 // StateTransitionMsg Notifies chain about changed state
 type StateTransitionMsg struct {
 	// new variable state
@@ -70,15 +100,98 @@ type StateTransitionMsg struct {
 	StateTimestamp time.Time
 }
 
+var _ pipe.Hashable = &StateTransitionMsg{}
+
+func (stmT *StateTransitionMsg) GetHash() interface{} {
+	return struct {
+		// TODO: move state fields to state.VirtualStateAccess?
+		stateBlockIndex   uint32
+		statePreviousHash hashing.HashValue
+		stateCommitment   hashing.HashValue
+		outputID          ledgerstate.OutputID
+	}{
+		stateBlockIndex:   stmT.State.BlockIndex(),
+		statePreviousHash: stmT.State.PreviousStateHash(),
+		stateCommitment:   stmT.State.StateCommitment(),
+		outputID:          stmT.StateOutput.ID(),
+	}
+}
+
+func (stmT *StateTransitionMsg) Equals(elem interface{}) bool {
+	other, ok := elem.(*StateTransitionMsg)
+	if !ok {
+		return false
+	}
+	// TODO: move state fields to state.VirtualStateAccess?
+	if stmT.State.BlockIndex() != other.State.BlockIndex() {
+		return false
+	}
+	if stmT.State.PreviousStateHash() != other.State.PreviousStateHash() {
+		return false
+	}
+	if stmT.State.StateCommitment() != other.State.StateCommitment() {
+		return false
+	}
+	return stmT.StateOutput.ID() == other.StateOutput.ID()
+}
+
 // StateCandidateMsg Consensus sends the finalized next state to StateManager
 type StateCandidateMsg struct {
 	State             state.VirtualStateAccess
 	ApprovingOutputID ledgerstate.OutputID
 }
 
+var _ pipe.Hashable = &StateCandidateMsg{}
+
+func (scmT *StateCandidateMsg) GetHash() interface{} {
+	return struct {
+		stateBlockIndex   uint32
+		statePreviousHash hashing.HashValue
+		stateCommitment   hashing.HashValue
+		outputID          ledgerstate.OutputID
+	}{
+		stateBlockIndex:   scmT.State.BlockIndex(),
+		statePreviousHash: scmT.State.PreviousStateHash(),
+		stateCommitment:   scmT.State.StateCommitment(),
+		outputID:          scmT.ApprovingOutputID,
+	}
+}
+
+func (scmT *StateCandidateMsg) Equals(elem interface{}) bool {
+	other, ok := elem.(*StateCandidateMsg)
+	if !ok {
+		return false
+	}
+	if scmT.State.BlockIndex() != other.State.BlockIndex() {
+		return false
+	}
+	if scmT.State.PreviousStateHash() != other.State.PreviousStateHash() {
+		return false
+	}
+	if scmT.State.StateCommitment() != other.State.StateCommitment() {
+		return false
+	}
+	return scmT.ApprovingOutputID == other.ApprovingOutputID
+}
+
 // VMResultMsg Consensus -> Consensus. VM sends result of async task started by Consensus to itself
 type VMResultMsg struct {
 	Task *vm.VMTask
+}
+
+var _ pipe.Hashable = &VMResultMsg{}
+
+func (vrmT *VMResultMsg) GetHash() interface{} {
+	return vrmT.Task.ACSSessionID
+}
+
+func (vrmT *VMResultMsg) Equals(elem interface{}) bool {
+	other, ok := elem.(*VMResultMsg)
+	if !ok {
+		return false
+	}
+	// NOTE: is it enough???
+	return vrmT.Task.ACSSessionID == other.Task.ACSSessionID
 }
 
 // AsynchronousCommonSubsetMsg
@@ -87,16 +200,85 @@ type AsynchronousCommonSubsetMsg struct {
 	SessionID          uint64
 }
 
+var _ pipe.Hashable = &AsynchronousCommonSubsetMsg{}
+
+func (acsmT *AsynchronousCommonSubsetMsg) GetHash() interface{} {
+	var batchesHash hashing.HashValue
+	for i := 0; i < len(acsmT.ProposedBatchesBin); i++ {
+		batchHash := hashing.HashData(acsmT.ProposedBatchesBin[i])
+		for j := 0; j < len(batchesHash); j++ {
+			batchesHash[j] += batchHash[j]
+		}
+	}
+	return struct {
+		batchesHash hashing.HashValue
+		sessionID   uint64
+	}{
+		batchesHash: batchesHash,
+		sessionID:   acsmT.SessionID,
+	}
+}
+
+func (acsmT *AsynchronousCommonSubsetMsg) Equals(elem interface{}) bool {
+	other, ok := elem.(*AsynchronousCommonSubsetMsg)
+	if !ok {
+		return false
+	}
+	if acsmT.SessionID != other.SessionID {
+		return false
+	}
+	if len(acsmT.ProposedBatchesBin) != len(other.ProposedBatchesBin) {
+		return false
+	}
+	for i := 0; i < len(acsmT.ProposedBatchesBin); i++ {
+		if bytes.Equal(acsmT.ProposedBatchesBin[i], other.ProposedBatchesBin[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 // InclusionStateMsg txstream plugin sends inclusions state of the transaction to ConsensusOld
 type InclusionStateMsg struct {
 	TxID  ledgerstate.TransactionID
 	State ledgerstate.InclusionState
 }
 
+var _ pipe.Hashable = &InclusionStateMsg{}
+
+func (ismT *InclusionStateMsg) GetHash() interface{} {
+	return *ismT
+}
+
+func (ismT *InclusionStateMsg) Equals(elem interface{}) bool {
+	other, ok := elem.(*InclusionStateMsg)
+	if !ok {
+		return false
+	}
+	if ismT.TxID != other.TxID {
+		return false
+	}
+	return ismT.State == other.State
+}
+
 // StateMsg txstream plugin sends the only existing AliasOutput in the chain's address to StateManager
 type StateMsg struct {
 	ChainOutput *ledgerstate.AliasOutput
 	Timestamp   time.Time
+}
+
+var _ pipe.Hashable = &StateMsg{}
+
+func (smT *StateMsg) GetHash() interface{} {
+	return smT.ChainOutput.ID()
+}
+
+func (smT *StateMsg) Equals(elem interface{}) bool {
+	other, ok := elem.(*StateMsg)
+	if !ok {
+		return false
+	}
+	return smT.ChainOutput.ID() == other.ChainOutput.ID()
 }
 
 func (msg *GetBlockMsg) Write(w io.Writer) error {

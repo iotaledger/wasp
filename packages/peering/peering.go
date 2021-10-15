@@ -21,7 +21,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 )
@@ -234,6 +236,8 @@ type PeerMessage struct {
 	MsgData     []byte
 }
 
+var _ pipe.Hashable = &PeerMessage{}
+
 //nolint:gocritic
 func NewPeerMessageFromBytes(buf []byte, peerPubKey *ed25519.PublicKey) (*PeerMessage, error) {
 	var err error
@@ -368,6 +372,27 @@ func (m *PeerMessage) ChunkedBytes(chunkSize int, msgChopper *chopper.Chopper, n
 
 func (m *PeerMessage) IsUserMessage() bool {
 	return m.MsgType >= FirstUserMsgCode
+}
+
+func (m *PeerMessage) GetHash() interface{} {
+	return struct {
+		msgType     byte
+		msgDataHash hashing.HashValue
+	}{
+		msgType:     m.MsgType,
+		msgDataHash: hashing.HashData(m.MsgData),
+	}
+}
+
+func (m *PeerMessage) Equals(elem interface{}) bool {
+	other, ok := elem.(*PeerMessage)
+	if !ok {
+		return false
+	}
+	if m.MsgType != other.MsgType {
+		return false
+	}
+	return bytes.Equal(m.MsgData, other.MsgData)
 }
 
 // ParseNetID parses the NetID and returns the corresponding host and port.

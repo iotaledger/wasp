@@ -121,13 +121,10 @@ func NewChain(
 			return true
 		}
 	}
-	messageHashFun := func(msg interface{}) interface{} { // TODO
-		return msg
-	}
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
-		msgPipe:           pipe.NewInfinitePipe(messagePriorityFun, maxMsgBuffer, messageHashFun),
+		msgPipe:           pipe.NewInfinitePipe(messagePriorityFun, maxMsgBuffer),
 		chainID:           chainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),

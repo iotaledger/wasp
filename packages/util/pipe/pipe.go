@@ -29,20 +29,20 @@ func NewLimitPriorityInfinitePipe(priorityFun func(interface{}) bool, limit int)
 	return newInfinitePipe(NewLimitPriorityLimitedPriorityHashQueue(priorityFun, limit))
 }
 
-func NewHashInfinitePipe(hashFun func(interface{}) interface{}) Pipe {
-	return newInfinitePipe(NewHashLimitedPriorityHashQueue(&hashFun))
+func NewHashInfinitePipe() Pipe {
+	return newInfinitePipe(NewHashLimitedPriorityHashQueue(true))
 }
 
-func NewPriorityHashInfinitePipe(priorityFun func(interface{}) bool, hashFun func(interface{}) interface{}) Pipe {
-	return newInfinitePipe(NewPriorityHashLimitedPriorityHashQueue(priorityFun, &hashFun))
+func NewPriorityHashInfinitePipe(priorityFun func(interface{}) bool) Pipe {
+	return newInfinitePipe(NewPriorityHashLimitedPriorityHashQueue(priorityFun, true))
 }
 
-func NewLimitHashInfinitePipe(limit int, hashFun func(interface{}) interface{}) Pipe {
-	return newInfinitePipe(NewLimitHashLimitedPriorityHashQueue(limit, &hashFun))
+func NewLimitHashInfinitePipe(limit int) Pipe {
+	return newInfinitePipe(NewLimitHashLimitedPriorityHashQueue(limit, true))
 }
 
-func NewInfinitePipe(priorityFun func(interface{}) bool, limit int, hashFun func(interface{}) interface{}) Pipe {
-	return newInfinitePipe(NewLimitedPriorityHashQueue(priorityFun, limit, &hashFun))
+func NewInfinitePipe(priorityFun func(interface{}) bool, limit int) Pipe {
+	return newInfinitePipe(NewLimitedPriorityHashQueue(priorityFun, limit, true))
 }
 
 func newInfinitePipe(queue Queue) *InfinitePipe {
