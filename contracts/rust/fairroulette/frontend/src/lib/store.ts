@@ -14,6 +14,7 @@ const RESET_ROUND: IRound = {
     winningNumber: undefined,
     startedAt: undefined,
     number: undefined,
+    winners: 0
 }
 
 export const seed: Writable<Buffer> = writable()
@@ -26,7 +27,7 @@ export const balance: Writable<bigint> = writable(0n)
 export const round: Writable<IRound> = writable(RESET_ROUND)
 
 export const timestamp: Writable<number> = writable()
-export const timeToFinished: Readable<number> = derived(timestamp, $timestamp => $timestamp ? calculateRoundLengthLeft($timestamp) : 0)
+export const timeToFinished: Readable<number | undefined> = derived(timestamp, $timestamp => $timestamp && get(receivedRoundStarted) ? calculateRoundLengthLeft($timestamp) : undefined)
 
 export const placingBet: Writable<boolean> = writable(false)
 export const showBettingSystem: Writable<boolean> = writable(false)
@@ -41,7 +42,12 @@ export const isAWinnerPlayer: Writable<boolean> = writable(false)
 
 export const addressesHistory: Writable<string[]> = writable([])
 
+// Added to bugfix system clocks unsynced, 
+// we can only rely on timeToFinished if the user received a roundStarted event
+export const receivedRoundStarted: Writable<boolean> = writable(false)
+
 export function resetRound(): void {
+    receivedRoundStarted.set(false)
     round.set({ ...RESET_ROUND, winningNumber: get(round)?.winningNumber, players: [], logs: get(round)?.logs })
 }
 

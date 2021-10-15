@@ -1,15 +1,13 @@
 <script lang="ts">
-  import { updateFunds } from "../../lib/app";
-
-  import { balance } from "../../lib/store";
+  import { balance } from '../../lib/store';
 
   export let value: number;
   export let disabled: boolean = false;
 
-  let invalidMessage, textValue;
+  let invalidMessage: string | undefined;
+  let textValue: number;
 
   $: value, updateLabel();
-
   $: textValue, validate();
 
   function updateLabel() {
@@ -18,16 +16,16 @@
 
   const VALIDATION_ERRORS = {
     UNDER_RANGE_OF_BALANCE: `Value must be less than or equal to ${$balance}.`,
-    MUST_BE_INTEGER: "Value must be an integer.",
+    MUST_BE_INTEGER: 'Value must be an integer.',
   };
 
   function validate(): void {
     let regex = new RegExp(/^\d+$/);
     invalidMessage = undefined;
 
-    if (textValue < 0 || textValue > $balance) {
+    if (textValue < 0 || textValue > Number($balance)) {
       invalidMessage = VALIDATION_ERRORS.UNDER_RANGE_OF_BALANCE;
-    } else if (!regex.test(textValue)) {
+    } else if (!regex.test(textValue?.toString())) {
       invalidMessage = VALIDATION_ERRORS.MUST_BE_INTEGER;
     } else {
       value = textValue;
@@ -37,7 +35,7 @@
 
 <div class="bar-value">
   <div class="value">
-    <input bind:value={textValue} />{" "}i
+    <input bind:value={textValue} />{' '}i
   </div>
   {#if invalidMessage}
     <div class="invalid-message">{invalidMessage}</div>
@@ -65,10 +63,9 @@
       letter-spacing: 0.5px;
       color: var(--white);
       padding-bottom: 20px;
-      font-family: "Metropolis Semi Bold";
+      font-family: 'Metropolis Semi Bold';
       @media (min-width: 1024px) {
-        font-size: 48px;
-        padding-bottom: 45px;
+        font-size: 36px;
       }
       input {
         border-radius: 5px;
@@ -77,8 +74,8 @@
         background: var(--blue-dark);
         border: 1px solid var(--border-color);
         padding: 8px;
-        width: 89%;
-        font-family: "Metropolis";
+        width: 85%;
+        font-family: 'Metropolis Semi Bold';
         &:focus {
           outline: none;
         }
@@ -94,7 +91,7 @@
       text-align: center;
       width: 100%;
       @media (min-width: 1024px) {
-        top: 85px;
+        top: 55px;
       }
     }
     .bar-selector {

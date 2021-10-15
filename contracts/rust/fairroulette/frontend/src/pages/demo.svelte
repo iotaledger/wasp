@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte';
   import {
     BalancePanel,
     Button,
@@ -7,10 +7,10 @@
     PlayersPanel,
     Roulette,
     WalletPanel,
-  } from "../components";
-  import Animation from "../components/animation.svelte";
-  import ToastContainer from "../components/toast_container.svelte";
-  import { BettingStep, initialize, StateMessage } from "../lib/app";
+  } from '../components';
+  import Animation from '../components/animation.svelte';
+  import ToastContainer from '../components/toast_container.svelte';
+  import { BettingStep, initialize, StateMessage } from '../lib/app';
   import {
     balance,
     bettingStep,
@@ -20,8 +20,8 @@
     round,
     showBettingSystem,
     timeToFinished,
-  } from "../lib/store";
-  import { fade } from "svelte/transition";
+    requestingFunds,
+  } from '../lib/store';
 
   let message: StateMessage;
 
@@ -29,31 +29,37 @@
     $showBettingSystem,
     $bettingStep,
     $firstTimeRequestingFunds,
+    $requestingFunds,
     updateMessage();
 
   $: MESSAGES = {
     [StateMessage.Running]: {
-      title: "Game Running!",
-      description: `The round ends in ${$timeToFinished ?? "..."} seconds.`,
+      title: 'Game Running!',
+      description: `The round ends in ${$timeToFinished ?? '...'} seconds.`,
     },
     [StateMessage.Start]: {
-      title: "Start game",
+      title: 'Start game',
       description:
-        "Press the “Choose bet” button below and follow on-screen instructions.",
+        'Press the “Choose bet” button below and follow on-screen instructions.',
     },
     [StateMessage.AddFunds]: {
-      title: "Add funds",
+      title: 'Add funds',
       description:
-        "To play, first request funds for your wallet. These are dev-net tokens and hold no value.",
+        'To play, first request funds for your wallet. These are dev-net tokens and hold no value.',
     },
     [StateMessage.ChoosingNumber]: {
-      title: "Choose a number",
+      title: 'Choose a number',
       description:
-        "Select a number of the roulette that you want to bet on randomly winning",
+        'Select a number of the roulette that you want to bet on randomly winning',
     },
     [StateMessage.ChoosingAmount]: {
-      title: "Set your amount",
-      description: "Feeling lucky? How much will you risk?",
+      title: 'Set your amount',
+      description: 'Feeling lucky? How much will you risk?',
+    },
+    [StateMessage.PlacingBet]: {
+      title: 'Placing Bet',
+      description:
+        'Your bet is currently getting placed. The game is starting in a couple of seconds.',
     },
   };
 
@@ -66,13 +72,17 @@
       if ($showBettingSystem && $bettingStep === BettingStep.AmountChoice) {
         message = StateMessage.ChoosingAmount;
       } else {
-        if ($round.active) {
-          message = StateMessage.Running;
+        if ($placingBet) {
+          message = StateMessage.PlacingBet;
         } else {
-          if (!$firstTimeRequestingFunds) {
-            message = StateMessage.AddFunds;
+          if ($round.active) {
+            message = StateMessage.Running;
           } else {
-            message = StateMessage.Start;
+            if ($firstTimeRequestingFunds) {
+              message = StateMessage.AddFunds;
+            } else if (!$requestingFunds) {
+              message = StateMessage.Start;
+            }
           }
         }
       }
@@ -90,7 +100,7 @@
     <div class="balance">
       <BalancePanel />
     </div>
-    <div class="wallet">
+    <div class="wallet-desktop">
       <WalletPanel />
     </div>
     <div class="message">
@@ -99,9 +109,11 @@
           {MESSAGES[message].title}
         </h2>
       {/if}
-      <div class="description">
-        {MESSAGES[message].description}
-      </div>
+      {#if !(message === StateMessage.Running && !$timeToFinished)}
+        <div class="description">
+          {MESSAGES[message].description}
+        </div>
+      {/if}
     </div>
   </div>
   <div class="layout_roulette">
@@ -115,10 +127,10 @@
             loading={$placingBet ||
               (!$placingBet && $round.active && $round.betPlaced)}
             label={$placingBet
-              ? "Placing bet"
+              ? 'Placing bet'
               : $round.active && $round.betPlaced
-              ? "In progress"
-              : "Choose bet"}
+              ? 'In progress'
+              : 'Choose bet'}
           />
         {/if}
       </div>
@@ -137,122 +149,131 @@
       <LogsPanel />
     </div>
   </div>
+  <div class="wallet-mobile">
+    <WalletPanel />
+  </div>
   <ToastContainer />
 </div>
 
 <style lang="scss">
-  .animation {
-    position: absolute;
-    z-index: 1;
-  }
-  .description {
-    text-align: center;
-    font-family: "Metropolis Semi Bold";
-    font-size: 16px;
-    line-height: 150%;
-    letter-spacing: 0.75px;
-    color: var(--gray-5);
-    padding: 10px 20px;
-  }
-  .top_wrapper {
-    display: flex;
-    flex-direction: column;
+  .container {
     position: relative;
-    @media (min-width: 1024px) {
-      flex-direction: row-reverse;
-      justify-content: space-between;
-      margin-top: 50px;
+    .animation {
+      position: absolute;
+      z-index: 1;
     }
-    .wallet {
-      @media (min-width: 1024px) {
-        width: 25%;
-      }
-    }
-    .message {
-      margin-top: 40px;
-      font-family: "Metropolis Semi Bold";
+    .description {
       text-align: center;
-      @media (min-width: 1024px) {
-        margin-top: 0;
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-      .title {
-        text-align: center;
-        color: var(--white);
-      }
-      .subtitle {
-        font-size: 24px;
-        line-height: 120%;
-        letter-spacing: 0.02em;
-        color: var(--mint-green);
-        margin-bottom: 8px;
-      }
+      font-family: 'Metropolis Semi Bold';
+      font-size: 16px;
+      line-height: 150%;
+      letter-spacing: 0.75px;
+      color: var(--gray-5);
+      padding: 10px 20px;
+      height: 80px;
     }
-    .balance {
+    .top_wrapper {
+      display: flex;
+      flex-direction: column;
       @media (min-width: 1024px) {
+        flex-direction: row-reverse;
+        justify-content: space-between;
+        margin-top: 50px;
+      }
+      .wallet-desktop {
         width: 25%;
-      }
-    }
-  }
-  .layout_roulette {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    @media (min-width: 1024px) {
-      flex-direction: row;
-      justify-content: space-between;
-      margin-bottom: 300px;
-    }
-    .players {
-      height: calc(100vh - 650px);
-      position: relative;
-      min-height: 400px;
-
-      @media (min-width: 1024px) {
-        width: 25%;
-        height: calc(100vh - 450px);
-        margin-top: 32px;
-      }
-    }
-    .roulette_game {
-      max-width: max-content;
-      margin: 0 auto;
-      margin-bottom: 50px;
-      @media (min-width: 1024px) {
-        position: absolute;
-        top: -50px;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-      .start_button {
-        width: 50%;
-        margin: 0 auto;
-        margin-top: 30px;
-      }
-      .bet_system,
-      .request_button {
-        margin-top: 20px;
-        margin-bottom: 100px;
-      }
-      .request_button {
-        margin-top: 32px;
+        display: none;
+        position: relative;
         @media (min-width: 1024px) {
-          padding: 0 120px;
+          display: inherit;
+        }
+      }
+      .message {
+        margin-top: 40px;
+        font-family: 'Metropolis Semi Bold';
+        text-align: center;
+        @media (min-width: 1024px) {
+          margin-top: 0;
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+        }
+        .title {
+          text-align: center;
+          color: var(--white);
+        }
+        .subtitle {
+          font-size: 24px;
+          line-height: 120%;
+          letter-spacing: 0.02em;
+          color: var(--mint-green);
+          margin-bottom: 8px;
+        }
+      }
+      .balance {
+        @media (min-width: 1024px) {
+          width: 25%;
         }
       }
     }
-    .logs {
-      height: calc(100vh - 650px);
+    .layout_roulette {
+      display: flex;
+      flex-direction: column;
       position: relative;
-      min-height: 400px;
-      margin-bottom: 132px;
       @media (min-width: 1024px) {
-        margin-bottom: 0;
-        width: 25%;
-        height: calc(100vh - 450px);
-        margin-top: 32px;
+        flex-direction: row;
+        justify-content: space-between;
+        margin-bottom: 130px;
+      }
+      .players,
+      .logs {
+        height: min-content;
+        max-height: 500px;
+        position: relative;
+        min-height: 100px;
+        @media (min-width: 1024px) {
+          width: 25%;
+          height: calc(100vh - 400px);
+          margin-top: 32px;
+          max-height: 920px;
+        }
+        @media (min-width: 1135px) {
+          height: calc(100vh - 350px);
+        }
+      }
+      .roulette_game {
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+        margin-bottom: 50px;
+        @media (min-width: 1024px) {
+          position: absolute;
+          top: -50px;
+          left: 50%;
+          transform: translateX(-50%);
+        }
+        .start_button {
+          width: 50%;
+          margin: 0 auto;
+          margin-top: 30px;
+        }
+        .bet_system,
+        .request_button {
+          margin-top: 20px;
+          margin-bottom: 100px;
+        }
+        .request_button {
+          margin-top: 32px;
+          @media (min-width: 1024px) {
+            padding: 0 120px;
+          }
+        }
+      }
+    }
+    .wallet-mobile {
+      display: inherit;
+      @media (min-width: 1024px) {
+        display: none;
       }
     }
   }

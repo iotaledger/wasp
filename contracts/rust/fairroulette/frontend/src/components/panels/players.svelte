@@ -1,25 +1,25 @@
 <script lang="ts">
   import {
-    round,
     address as currentAddress,
     addressesHistory,
-  } from "../../lib/store";
+    round,
+  } from '../../lib/store';
 
-  const isMyAddress = (addr) =>
+  const isMyAddress = (addr: string) =>
     $currentAddress === addr || $addressesHistory.includes(addr);
 </script>
 
 <div class="panel">
   <h3>Players</h3>
   <div class="players-wrapper">
-    <div>
+    <div class="players">
       {#each $round.players as { address, bet, number }, index}
         <div class="player" class:highlight={isMyAddress(address)}>
           <div class="player-index">{index + 1}</div>
           <div>
             <div class="player-address">{address}</div>
             <div class="player-bet">
-              <span>{isMyAddress(address) ? "You bet: " : "Bet: "}</span>
+              <span>{isMyAddress(address) ? 'You bet: ' : 'Bet: '}</span>
               <span class="bet-value">{bet}i on {number}. </span>
             </div>
           </div>
@@ -50,14 +50,17 @@
       flex-direction: column-reverse;
       overflow-y: auto;
       margin-top: 16px;
-
+      @media (max-width: 1024px) {
+        .players {
+          max-height: 400px;
+          overflow-y: auto;
+        }
+      }
       .player {
         display: inline-flex;
         position: relative;
         padding: 4px;
         width: 100%;
-
-        gap: 24px;
         margin-bottom: 8px;
 
         &.highlight {
@@ -70,6 +73,7 @@
           letter-spacing: 0.5px;
           color: var(--gray-5);
           display: inline-block;
+          margin-right: 24px;
         }
         .player-address {
           font-weight: bold;

@@ -1,5 +1,5 @@
-import { writable } from "svelte/store"
-import { generateRandomId } from "./utils"
+import { writable } from 'svelte/store'
+import { generateRandomId } from './utils'
 
 const NOTIFICATION_TIMEOUT_DEFAULT = 5000
 export const NOTIFICATION_TIMEOUT_NEVER = -1
@@ -35,7 +35,7 @@ export function showNotification(notificationData: NotificationData): string {
     return notificationData.id
 }
 
-export function removeDisplayNotification(id: string): void {
+export function removeDisplayNotification(id: string | undefined): void {
     displayNotifications.update((_currentNotifications) => {
         const idx = _currentNotifications.findIndex((n) => n.id === id)
         if (idx >= 0) {

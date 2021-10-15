@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { BarSelector, MultipleSelector } from "../components";
-  import { BettingStep, placeBet } from "../lib/app";
+  import { BarSelector, MultipleSelector } from '../components';
+  import { BettingStep, placeBet } from '../lib/app';
   import {
     bettingStep,
     placingBet,
     resetBettingSystem,
     round,
-  } from "../lib/store";
-  import Button from "./button.svelte";
+  } from '../lib/store';
+  import Button from './button.svelte';
 
   let betAmount: number = 1;
 
@@ -16,7 +16,7 @@
   $: isFirstStep = $bettingStep === BettingStep.NumberChoice;
   $: isLastStep = $bettingStep === BettingStep.AmountChoice;
 
-  function onNumberClick(number): void {
+  function onNumberClick(number: number): void {
     let betSelection = $round?.betSelection !== number ? number : undefined;
     round.update(($round) => ({ ...$round, betSelection }));
   }
@@ -62,19 +62,23 @@
   </div>
 
   <div class="betting-actions">
-    <Button
-      label="Back"
-      secondary
-      disabled={$placingBet}
-      onClick={onBackClick}
-    />
-    <Button
-      label={isFirstStep ? "Next" : "Place bet"}
-      disabled={(isFirstStep && !$round.betSelection) ||
-        (isLastStep && !$round.betAmount)}
-      onClick={onNextClick}
-      loading={$placingBet}
-    />
+    <div>
+      <Button
+        label="Back"
+        secondary
+        disabled={$placingBet}
+        onClick={onBackClick}
+      />
+    </div>
+    <div>
+      <Button
+        label={isFirstStep ? 'Next' : 'Place bet'}
+        disabled={(isFirstStep && !$round.betSelection) ||
+          (isLastStep && !$round.betAmount)}
+        onClick={onNextClick}
+        loading={$placingBet}
+      />
+    </div>
   </div>
 </div>
 
@@ -84,11 +88,9 @@
     flex-direction: column;
     align-content: center;
     flex-wrap: wrap;
-    gap: 30px;
     @media (min-width: 1024px) {
       flex-direction: row;
       justify-content: center;
-      gap: 60px;
       align-items: flex-end;
     }
     &.disabled {
@@ -101,13 +103,15 @@
     }
     .betting-actions {
       display: flex;
-      gap: 32px;
-      width: 250px;
       margin-top: 24px;
-
+      justify-content: space-evenly;
       @media (min-width: 1024px) {
-        width: 350px;
         margin-top: 32px;
+      }
+
+      div {
+        margin: 0 16px;
+        min-width: 160px;
       }
     }
     .betting-panel {
@@ -115,6 +119,10 @@
       top: 40%;
       left: 50%;
       transform: translate(-50%, -50%);
+      height: 200px;
+      @media (min-width: 1024px) {
+        height: 230px;
+      }
       .step-title {
         font-weight: 600;
         font-size: 20px;

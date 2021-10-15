@@ -1,8 +1,8 @@
 <script lang="ts">
   import { navigateTo, routeIsActive } from 'svelte-router-spa';
-  import { fly, slide } from 'svelte/transition';
+  import { fly } from 'svelte/transition';
 
-  export let currentRoute;
+  export let currentRoute: string;
   let isLanding: boolean = false;
 
   $: currentRoute, (isLanding = routeIsActive('/'));
@@ -18,7 +18,7 @@
     {
       label: 'Wasp',
       link: 'https://github.com/iotaledger/wasp',
-    }
+    },
   ];
 
   const NAV_LINKS: {
@@ -26,6 +26,11 @@
     href: string;
     target: '_blank' | 'self';
   }[] = [
+    {
+      label: 'About Demo',
+      href: '/',
+      target: 'self',
+    },
     {
       label: 'Visit the Wiki',
       href: 'https://wiki.iota.org/wasp/welcome/',
@@ -41,42 +46,41 @@
     </div>
 
     <!-- Desktop menu -->
-    <div class="reverse-navbar-items">
-      <div class="nav-items">
-        {#each NAV_LINKS as { label, href, target }}
-          <a {target} {href}>{label}</a>
-        {/each}
+    <div class="nav-items">
+      {#each NAV_LINKS as { label, href, target }}
+        <a {target} {href}>{label}</a>
+      {/each}
 
-        <div
-          class="repositories"
-          on:click={() => {
-            isRepositoriesExpanded = !isRepositoriesExpanded;
-          }}
-        >
-          <img src="/assets/github.svg" alt="github" />
-          <div class="dropdown">
-            <span>Repositories</span>
-            <img
-              class:expanded={isRepositoriesExpanded}
-              src="/assets/dropdown.svg"
-              alt="dropdown"
-              class="arrow"
-            />
-          </div>
-          {#if isRepositoriesExpanded}
-            <div class="repositories-expanded">
-              {#each REPOSITORIES as { label, link }}
-                <a class="repo" target="_blank" href={link}>{label}</a>
-              {/each}
-            </div>
-          {/if}
+      <div
+        class="repositories"
+        on:click={() => {
+          isRepositoriesExpanded = !isRepositoriesExpanded;
+        }}
+      >
+        <img src="/assets/github.svg" alt="github" />
+        <div class="dropdown">
+          <span>Repositories</span>
+          <img
+            class:expanded={isRepositoriesExpanded}
+            src="/assets/dropdown.svg"
+            alt="dropdown"
+            class="arrow"
+          />
         </div>
-        {#if isLanding}
-          <button class="try-demo" on:click={() => navigateTo("/demo")}
-            >Try demo</button
-          >
+        {#if isRepositoriesExpanded}
+          <div class="repositories-expanded">
+            {#each REPOSITORIES as { label, link }}
+              <a class="repo" target="_blank" href={link}>{label}</a>
+            {/each}
+          </div>
         {/if}
       </div>
+      {#if isLanding}
+        <div class="empty" />
+        <button class="try-demo" on:click={() => navigateTo('/demo')}
+          >Try demo</button
+        >
+      {/if}
 
       <!-- Mobile menu -->
       <div
@@ -89,7 +93,7 @@
       </div>
     </div>
     {#if isMenuExpanded}
-      <aside class="aside-expanded" transition:slide={{ duration: 700 }}>
+      <aside class="aside-expanded" transition:fly={{ x: 800, duration: 500 }}>
         <div
           class="close-expanded"
           on:click={() => {
@@ -98,7 +102,7 @@
         >
           <img src="/assets/close.svg" alt="close" />
         </div>
-        <div>
+        <div class="aside-links">
           {#each NAV_LINKS as { label, href, target }}
             <a {target} {href}>{label}</a>
           {/each}
@@ -146,65 +150,72 @@
         cursor: pointer;
         img {
           max-width: 200px;
-          padding: 10px 0px 10px 12px;
+          padding: 10px 0px 0px 12px;
           @media (min-width: 1024px) {
             padding: 16px 0;
             max-width: 300px;
           }
         }
       }
-      .reverse-navbar-items {
-        display: flex;
-        flex-direction: row-reverse;
-      }
-
       .nav-items {
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        font-size: 16px;
         line-height: 150%;
         letter-spacing: 0.75px;
         color: var(--gray-3);
         width: 100%;
-        gap: 50px;
         font-size: 14px;
         line-height: 21px;
         letter-spacing: 0.5px;
         color: var(--white);
-        a {
+        & > a {
           display: none;
           @media (min-width: 1024px) {
             display: flex;
             padding: 16px 0;
+            margin: 0 16px;
           }
         }
         .repositories {
           align-items: center;
-          gap: 8px;
           cursor: pointer;
           display: none;
           position: relative;
           flex-shrink: 0;
+          margin-left: 16px;
           @media (min-width: 1024px) {
             display: flex;
+          }
+          img {
+            margin-right: 8px;
+          }
+        }
+        .empty {
+          width: 0;
+          @media (min-width: 1010px) {
+            width: 140px;
+          }
+          @media (min-width: 1440px) {
+            width: 0;
           }
         }
       }
       .open-menu {
         display: flex;
-        margin-right: 15px;
+        margin-right: 10px;
+        cursor: pointer;
         @media (min-width: 1024px) {
           display: none;
         }
       }
       .dropdown {
         position: relative;
-        font-size: 16px;
+        font-size: 14px;
         line-height: 150%;
         letter-spacing: 0.75px;
         color: var(--gray-3);
-        font-family: "Inter";
+        font-family: 'Inter';
         display: flex;
         justify-content: space-between;
         @media (min-width: 1024px) {
@@ -229,17 +240,28 @@
         background-color: #091326;
         color: white;
         z-index: 2;
-        padding: 24px;
+        padding: 16px 20px;
+        .aside-links {
+          a {
+            margin-top: 20px;
+            display: block;
+          }
+        }
         .repositories-expanded {
           padding: 16px;
+          a {
+            margin: 0;
+          }
         }
         .close-expanded {
-          display: flex;
-          justify-content: flex-end;
-          margin-bottom: 30px;
+          cursor: pointer;
+          position: absolute;
+          right: 10px;
+          top: 10px;
         }
         .dropdown {
           margin-top: 20px;
+          cursor: pointer;
           a {
             padding: 15px 0;
           }
@@ -257,6 +279,13 @@
       background-color: #091326;
       min-height: 50px;
       z-index: 2;
+      display: flex;
+      flex-direction: column;
+
+      a {
+        margin: 8px 0;
+      }
+
       @media (min-width: 1024px) {
         padding: 0 20px 20px 20px;
         border: 1px solid rgba(255, 255, 255, 0.12);
@@ -270,17 +299,17 @@
       height: 80px;
     }
     a {
-      font-size: 16px;
+      font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.75px;
       color: var(--gray-3);
       text-decoration: none;
-      font-family: "Inter";
+      font-family: 'Inter';
     }
     .try-demo {
       border: 0;
       border-radius: 0;
-      right: 0;
+      right: 50px;
       top: 0;
       height: 50px;
       background: var(--mint-green-light);
@@ -295,10 +324,12 @@
       font-size: 14px;
       line-height: 120%;
       padding: 16px;
+      position: absolute;
       @media (min-width: 1024px) {
         padding: 30px;
-        font-size: 16px;
+        font-size: 14px;
         height: 80px;
+        right: 0;
       }
     }
   }
