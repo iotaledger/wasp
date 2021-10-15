@@ -23,7 +23,7 @@ Fair roulette is an example reference implementation which demonstrates the deve
 
 The Fair roulette example project is a simple betting game in which players can bet on a number within a certain range.
 
-The game consists of many rounds in which the player will try to bet on the right number to win a share of the placed funds.
+The game consists of many rounds in which the player will try to bet on the right number to win a share of the bet funds.
 
 A round is running for a certain amount of time. In the example its 60 seconds. In this timeframe, incoming bets will be added to a list of bets. After 60 seconds have passed, a winning number will be randomly generated and all players who made the right guess will receive their share of the pot.
 
