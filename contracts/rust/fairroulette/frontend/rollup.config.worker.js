@@ -27,7 +27,7 @@ function serve() {
 }
 
 export default {
-	input: 'src/wasp_client/web_worker/pow.worker.ts',
+	input: 'src/lib/wasp_client/web_worker/pow.worker.ts',
 	output: {
 		sourcemap: true,
 		format: 'iife',

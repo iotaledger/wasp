@@ -15,3 +15,4 @@ wasp-cli.json
 .docusaurus
 node_modules
 goshimmer.log
+/*.sh

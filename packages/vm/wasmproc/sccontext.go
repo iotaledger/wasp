@@ -115,6 +115,8 @@ func (o *ScContext) getBytesForView(keyID, typeID int32) []byte {
 		return ctx.Contract().Bytes()
 	case wasmhost.KeyContractCreator:
 		return ctx.ContractCreator().Bytes()
+	case wasmhost.KeyTimestamp:
+		return codec.EncodeInt64(ctx.GetTimestamp())
 	}
 	o.InvalidKey(keyID)
 	return nil

@@ -48,7 +48,7 @@ func run(_ *node.Plugin) {
 	)
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		allChains.Attach(nodeconn.NodeConnection())
-		if parameters.GetBool(parameters.PrometheusEnabled) {
+		if parameters.GetBool(parameters.MetricsEnabled) {
 			allMetrics = metrics.AllMetrics()
 		}
 		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry, allMetrics); err != nil {

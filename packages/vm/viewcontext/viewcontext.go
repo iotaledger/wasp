@@ -84,7 +84,7 @@ func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dic
 
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, fmt.Errorf("trying to call contract '%s': can't find entry point '%s'", proc.GetDescription(), epCode)
+		return nil, fmt.Errorf("trying to call contract '%s': can't find entry point '%s'", proc.GetDescription(), epCode.String())
 	}
 
 	if !ep.IsView() {

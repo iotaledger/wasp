@@ -234,6 +234,11 @@ module.exports = {
                     label: 'Chain Management',
                     id: 'guide/chains_and_nodes/chain-management',
                 },
+                {
+                    type: 'doc',
+                    label: 'Testnet',
+                    id: 'guide/chains_and_nodes/testnet',
+                },
             ]
         },
         {

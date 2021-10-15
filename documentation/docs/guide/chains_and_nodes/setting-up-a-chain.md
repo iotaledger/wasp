@@ -136,3 +136,12 @@ counter value after calling `getCounter`:
 $ wasp-cli chain call-view inccounter getCounter | wasp-cli decode string counter int
 counter: 1
 ```
+
+### Troubleshooting
+
+Common issues can be caused by using an incompatible version of `wasp` / `wasp-cli`. 
+It's easy to verify that `wasp-cli` and `wasp` nodes are on the same version, by running:
+
+```shell
+$ wasp-cli check-versions
+```

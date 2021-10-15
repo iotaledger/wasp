@@ -130,29 +130,24 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 	return tx, nil
 }
 
-func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte, initParams map[string]interface{}) (*ledgerstate.Transaction, hashing.HashValue, error) {
+func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte, initParams map[string]interface{}) (hashing.HashValue, error) {
 	blobFieldValues := codec.MakeDict(map[string]interface{}{
 		blob.VarFieldVMType:             vmtypes.WasmTime,
 		blob.VarFieldProgramBinary:      progBinary,
 		blob.VarFieldProgramDescription: description,
 	})
 
-	quorum := (2*len(ch.CommitteeAPIHosts()))/3 + 1
-	programHash, tx, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.CommitteeAPIHosts(), quorum, 256)
+	programHash, _, err := ch.OriginatorClient().UploadBlob(blobFieldValues)
 	if err != nil {
-		return nil, hashing.NilHash, err
-	}
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
-	if err != nil {
-		return nil, hashing.NilHash, err
+		return hashing.NilHash, err
 	}
 
 	progBinaryBack, err := ch.GetBlobFieldValue(programHash, blob.VarFieldProgramBinary)
 	if err != nil {
-		return nil, hashing.NilHash, err
+		return hashing.NilHash, err
 	}
 	if !bytes.Equal(progBinary, progBinaryBack) {
-		return nil, hashing.NilHash, fmt.Errorf("!bytes.Equal(progBinary, progBinaryBack)")
+		return hashing.NilHash, fmt.Errorf("!bytes.Equal(progBinary, progBinaryBack)")
 	}
 	fmt.Printf("---- blob installed correctly len = %d\n", len(progBinaryBack))
 
@@ -165,7 +160,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	params[root.ParamDescription] = description
 
 	args := requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params))
-	tx, err = ch.OriginatorClient().Post1Request(
+	tx, err := ch.OriginatorClient().Post1Request(
 		root.Contract.Hname(),
 		root.FuncDeployContract.Hname(),
 		chainclient.PostRequestParams{
@@ -173,14 +168,14 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 		},
 	)
 	if err != nil {
-		return nil, hashing.NilHash, err
+		return hashing.NilHash, err
 	}
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
 	if err != nil {
-		return nil, hashing.NilHash, err
+		return hashing.NilHash, err
 	}
 
-	return tx, programHash, nil
+	return programHash, nil
 }
 
 func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {
