@@ -49,12 +49,7 @@ C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 
 ## Compile
 
-- Build the `wasp` binary (Wasp node): `go build -tags rocksdb`
-- Build the `wasp-cli` binary (CLI client): `go build -tags rocksdb ./tools/wasp-cli`
-
-Alternatively, build and install everything with `go install -tags rocksdb ./...`
-
-On Windows you will need to use `go install -tags rocksdb -buildmode=exe ./...` instead
+- Build the `wasp` (Wasp node) and the `wasp-cli` (CLI client) binaries: `make build` (or `make build-windows` if you're on a windows machine)
 
 ## Test
 

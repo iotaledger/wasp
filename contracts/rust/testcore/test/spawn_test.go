@@ -10,7 +10,7 @@ import (
 
 func TestSpawn(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.Spawn(ctx)
 		f.Params.ProgHash().SetValue(ctx.Convertor.ScHash(ctx.Hprog))

@@ -71,7 +71,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 				panic(err)
 			default:
 				vmctx.lastResult = nil
-				vmctx.lastError = xerrors.Errorf("panic in VM: %v", r)
+				vmctx.lastError = xerrors.Errorf("panic in VM: %v", err)
 				vmctx.Debugf("%v", vmctx.lastError)
 				vmctx.Debugf(string(debug.Stack()))
 			}

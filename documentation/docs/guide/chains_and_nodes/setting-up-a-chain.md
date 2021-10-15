@@ -69,6 +69,12 @@ All the nodes in a committee must trust each other to run the chain.
 $ wasp-cli request-funds
 ```
 
+After you have requested the funds, you can deposit funds to a chain by running:
+
+```shell
+wasp-cli chain deposit IOTA:10000
+```
+
 ### Deploy the ISCP Chain
 
 ```shell
@@ -89,7 +95,7 @@ You can check that the chain was properly deployed in the Wasp node dashboard
 It's now possible deploy a Wasm contract to the chain:
 
 ```shell
-$ wasp-cli chain deploy-contract wasmtimevm inccounter "inccounter SC" tools/cluster/tests/wasm/inccounter_bg.wasm
+$ wasp-cli chain deploy-contract wasmtime inccounter "inccounter SC" tools/cluster/tests/wasm/inccounter_bg.wasm
 ```
 
 The `inccounter_bg.wasm` file is a precompiled Wasm contract included in the Wasp repo as an example.
@@ -129,4 +135,13 @@ counter value after calling `getCounter`:
 ```shell
 $ wasp-cli chain call-view inccounter getCounter | wasp-cli decode string counter int
 counter: 1
+```
+
+### Troubleshooting
+
+Common issues can be caused by using an incompatible version of `wasp` / `wasp-cli`. 
+It's easy to verify that `wasp-cli` and `wasp` nodes are on the same version, by running:
+
+```shell
+$ wasp-cli check-versions
 ```

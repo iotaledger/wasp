@@ -26,7 +26,7 @@ In Windows:
 go get -buildmode=exe github.com/iotaledger/wasp/packages/solo
 ```
 
-To run Rust/Wasm smart contracts you will also need `Rust` and `wasm-pack`installed.
+To run Rust/Wasm smart contracts you will also need [Rust](https://www.rust-lang.org/tools/install) and [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/) installed.
 You can use any development environment for Rust and Go.
 The GoLand environment with the Rust plugin is a good combination.
 

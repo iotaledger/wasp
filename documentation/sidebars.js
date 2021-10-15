@@ -216,6 +216,11 @@ module.exports = {
                 },
                 {
                     type: 'doc',
+                    label: 'Using Docker',
+                    id: 'misc/docker',
+                },
+                {
+                    type: 'doc',
                     label: 'Configuring wasp-cli',
                     id: 'guide/chains_and_nodes/wasp-cli',
                 },
@@ -228,6 +233,11 @@ module.exports = {
                     type: 'doc',
                     label: 'Chain Management',
                     id: 'guide/chains_and_nodes/chain-management',
+                },
+                {
+                    type: 'doc',
+                    label: 'Testnet',
+                    id: 'guide/chains_and_nodes/testnet',
                 },
             ]
         },

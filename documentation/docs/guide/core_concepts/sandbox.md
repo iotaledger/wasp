@@ -1,3 +1,14 @@
+---
+description: Smart Contracts can only interact with the world by using the Sandbox interface which provides limited and deterministic access to the state through a key/value storage abstraction.
+image: /img/sandbox.png
+keywords:
+- ISCP
+- Smart Contracts
+- Sandbox
+- interface
+- storage abstraction
+---
+
 # Sandbox Interface
 
 The only way a smart contract can interact with the world (access the state, call other smart contracts or send transactions) is by using the Sandbox interface.
@@ -6,10 +17,10 @@ The Sandbox provides limited and deterministic access to the state through a key
 
 ![Sandbox](/img/sandbox.png)
 
-Besides read/write to the contract state, the Sandbox interface allows Smart contracts to access :
+Besides reading and writing to the contract state, the Sandbox interface allows Smart contracts to access:
 
 - the AgentID of the contract
-- the details of the current function invokation (request or view call)
+- the details of the current function invocation (request or view call)
 - the balances owned by the contract
 - the AgentID of whoever deployed the contract
 - the timestamp of the current block

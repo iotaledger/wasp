@@ -49,8 +49,8 @@ const (
 	ProfilingEnabled       = "profiling.enabled"
 	ProfilingWriteProfiles = "profiling.writeProfiles"
 
-	PrometheusBindAddress = "prometheus.bindAddress"
-	PrometheusEnabled     = "prometheus.enabled"
+	MetricsBindAddress = "metrics.bindAddress"
+	MetricsEnabled     = "metrics.enabled"
 )
 
 func Init() *configuration.Configuration {
@@ -94,8 +94,8 @@ func Init() *configuration.Configuration {
 	flag.Bool(ProfilingEnabled, false, "whether profiling is enabled")
 	flag.Bool(ProfilingWriteProfiles, false, "whether to write profiling profiles to disk on node shutdown (when enabled some metrics will be unavailable via pprof runtime endpoint)")
 
-	flag.String(PrometheusBindAddress, "127.0.0.1:2112", "prometheus metrics http server address")
-	flag.Bool(PrometheusEnabled, false, "disable and enable prometheus metrics")
+	flag.String(MetricsBindAddress, "127.0.0.1:2112", "prometheus metrics http server address")
+	flag.Bool(MetricsEnabled, false, "disable and enable prometheus metrics")
 
 	return all
 }

@@ -43,8 +43,8 @@ func HnameFromBytes(data []byte) (ret Hname, err error) {
 }
 
 // Hn create hname from arbitrary string.
-func Hn(funname string) (ret Hname) {
-	h := hashing.HashStrings(funname)
+func Hn(name string) (ret Hname) {
+	h := hashing.HashStrings(name)
 	_ = ret.Read(bytes.NewReader(h[:HnameLength]))
 	if ret == 0 || ret == Hname(^uint32(0)) {
 		// ensure 0 and ^0 are impossible

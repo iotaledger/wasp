@@ -11,7 +11,7 @@ import (
 
 func TestOffLedgerFailNoAccount(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		chainAccountBalances(ctx, w, 2, 2)
 
 		user := ctx.NewSoloAgent()
@@ -38,7 +38,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 
 func TestOffLedgerNoFeeNoTransfer(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		chainAccountBalances(ctx, w, 2, 2)
 
 		user := ctx.NewSoloAgent()
@@ -77,7 +77,7 @@ func TestOffLedgerNoFeeNoTransfer(t *testing.T) {
 
 func TestOffLedgerFeesEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		chainAccountBalances(ctx, w, 2, 2)
 
 		user := ctx.NewSoloAgent()
@@ -112,7 +112,7 @@ func TestOffLedgerFeesEnough(t *testing.T) {
 
 func TestOffLedgerFeesNotEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		chainAccountBalances(ctx, w, 2, 2)
 
 		user := ctx.NewSoloAgent()
@@ -148,7 +148,7 @@ func TestOffLedgerFeesNotEnough(t *testing.T) {
 
 func TestOffLedgerFeesExtra(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		chainAccountBalances(ctx, w, 2, 2)
 
 		user := ctx.NewSoloAgent()
@@ -183,7 +183,7 @@ func TestOffLedgerFeesExtra(t *testing.T) {
 
 func TestOffLedgerTransferWithFeesEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		chainAccountBalances(ctx, w, 2, 2)
 
 		user := ctx.NewSoloAgent()
@@ -218,7 +218,7 @@ func TestOffLedgerTransferWithFeesEnough(t *testing.T) {
 
 func TestOffLedgerTransferWithFeesNotEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		chainAccountBalances(ctx, w, 2, 2)
 
 		user := ctx.NewSoloAgent()
@@ -253,7 +253,7 @@ func TestOffLedgerTransferWithFeesNotEnough(t *testing.T) {
 
 func TestOffLedgerTransferWithFeesExtra(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		chainAccountBalances(ctx, w, 2, 2)
 
 		user := ctx.NewSoloAgent()
@@ -288,7 +288,7 @@ func TestOffLedgerTransferWithFeesExtra(t *testing.T) {
 
 func TestOffLedgerTransferEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		chainAccountBalances(ctx, w, 2, 2)
 
 		user := ctx.NewSoloAgent()
@@ -317,7 +317,7 @@ func TestOffLedgerTransferEnough(t *testing.T) {
 
 func TestOffLedgerTransferNotEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		chainAccountBalances(ctx, w, 2, 2)
 
 		user := ctx.NewSoloAgent()
@@ -346,7 +346,7 @@ func TestOffLedgerTransferNotEnough(t *testing.T) {
 
 func TestOffLedgerTransferExtra(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		chainAccountBalances(ctx, w, 2, 2)
 
 		user := ctx.NewSoloAgent()

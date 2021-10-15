@@ -72,7 +72,7 @@ func configure(*node.Plugin) {
 	if tnm == nil {
 		panic("dependency TrustedNetworkManager is missing in WebAPI")
 	}
-	if parameters.GetBool(parameters.PrometheusEnabled) {
+	if parameters.GetBool(parameters.MetricsEnabled) {
 		allMetrics = metrics.AllMetrics()
 	}
 	webapi.Init(
