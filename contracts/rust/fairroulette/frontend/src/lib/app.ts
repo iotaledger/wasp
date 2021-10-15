@@ -322,7 +322,7 @@ export function subscribeToRouletteEvents() {
 
     fairRouletteService.on('payout', (bet: Bet) => {
 
-        round.update(($round) => { $round.winners = + 1; return $round })
+        round.update(($round) => { $round.winners += 1; return $round })
 
         if (bet.better === get(address) || get(addressesHistory).includes(bet.better)) {
             showNotification({
