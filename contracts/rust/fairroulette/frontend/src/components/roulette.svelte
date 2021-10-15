@@ -154,9 +154,8 @@
 <style lang="scss">
   .roulette-wrapper {
     position: relative;
+    width: 100%;
     @media (min-width: 1024px) {
-      width: calc(100vh - 480px);
-      min-width: 400px;
       margin: 0 auto;
     }
     .circle-animated {
@@ -179,7 +178,7 @@
     .roulette-aspect-ratio {
       width: 100%;
       padding-bottom: 100%;
-      aspect-ratio: 100%;
+      aspect-ratio: 1/1;
     }
     .roulette {
       position: absolute;
