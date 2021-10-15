@@ -54,7 +54,7 @@ app "wasp-evm-server" {
         use "nomad-jobspec" {
             // Templated to perhaps bring in the artifact from a previous
             // build/registry, entrypoint env vars, etc.
-            jobspec = templatefile("${path.app}/wasp.nomad.tpl", { 
+            jobspec = templatefile("${path.app}/wasp-evm.nomad.tpl", { 
                 artifact = artifact
                 wallet_seed = var.wallet_seed
                 chainid = var.chainid
