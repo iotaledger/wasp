@@ -26,13 +26,13 @@ job "iscp-evm-server" {
 	update {
 		max_parallel      = 1
 		health_check      = "checks"
-		min_healthy_time  = "15s"
+		min_healthy_time  = "5s"
 		healthy_deadline  = "1m"
 		progress_deadline = "3m"
 		auto_revert       = true
 		auto_promote      = true
 		canary            = 1
-		stagger           = "30s"
+		stagger           = "5s"
 	}
 
 	group "node" {
@@ -60,6 +60,7 @@ job "iscp-evm-server" {
 			config {
 				network_mode = "host"
 				image = "${artifact.image}:${artifact.tag}"
+				entrypoint = [""]
 				command = "wasp-cli"
 				args = [
 					"-c=$${NOMAD_TASK_DIR}/wasp-cli.json",
