@@ -3,28 +3,33 @@ keywords:
 - ISCP
 - Smart Contracts
 - Rust
+- poc
+- proof of concept
+- node
+- nvm
+- tutorial
 - JavaScript
 - TypeScript
 - WASM
-description: An example game project with frontend and contract 
+description: An example game project with frontend and contract, demonstrating the development, setup, and interaction with a smart contract.
 image: /img/logo/WASP_logo_dark.png
 ---
 
 # Fair Roulette
 
-The fair roulette is an example reference implementation demonstrating the development, setup and interaction with a smart contract.
+Fair roulette is an example reference implementation which demonstrates the development, setup, and interaction with a smart contract.
 
 ## Introduction
 
-For this example, we have created a very simple betting game in which players can bet on a number of a certain range. 
+The Fair roulette example project is a simple betting game in which players can bet on a number within a certain range.
 
-The goal of the game is to bet on the right number, to win a share of the placed funds. This is being done in rounds. 
+The game consists of many rounds in which the player will try to bet on the right number to win a share of the placed funds.
 
-A round is running for a certain amount of time. In our example: 60 seconds. In this timeframe, incoming bets will be added to a list of bets. After 60 seconds have passed, a winning number gets randomly generated and all players who made the right guess will receive a share of the pot depending on the amount of funds.
+A round is running for a certain amount of time. In the example its 60 seconds. In this timeframe, incoming bets will be added to a list of bets. After 60 seconds have passed, a winning number will be randomly generated and all players who made the right guess will receive their share of the pot.
 
-If no round is active when a bet gets placed, the round gets initiated immediately.
+If no round is _active_ when a bet gets placed, the round gets initiated immediately.
 
-## Mandatory setup
+## Mandatory Setup
 
 The mandatory setup consists out of:
 
@@ -32,96 +37,97 @@ The mandatory setup consists out of:
 * 1 Beta Wasp node
 * 1 Static file server (nginx, Apache, fasthttp)
 
-## Technicality
+## Technicalities
 
-Before we dive into the contents of the project, let's introduce important fundamentals first.
+Before you dive into the contents of the project, you should take a look at important fundamentals.
 
 ### Fundamentals
 
-Wasp is part of the IOTA ecosystem which enables the execution of smart contracts. These contracts run logic and are allowed to do state (change) requests towards the Tangle. To be able to store state, a respective GoShimmer node is required. It receives state change requests and if valid - saves them onto the Tangle. 
+Wasp is part of the IOTA ecosystem that enables the execution of smart contracts. These contracts run logic and are allowed to do state (change) requests towards the Tangle. You will need a GoShimmer node to be able to store state. It receives state change requests and, if valid, saves them onto the Tangle. 
 
 There are two ways to interact with smart contracts.
 
-#### On Ledger requests
+#### On Ledger Requests
 
-See: [On-ledger Requests](/docs/guide/core_concepts/smartcontract-interaction/on-ledger-requests/)
+See: [On-ledger Requests](../core_concepts/smartcontract-interaction/on-ledger-requests.md)
 
-On-ledger requests are sent to GoShimmer nodes. Wasp periodically asks GoShimmer nodes for new On-ledger requests and handles them accordingly. These messages are validated through the network and take some time to be processed. 
+On-ledger requests are sent to GoShimmer nodes. Wasp periodically requests new On-ledger requests from GoShimmer nodes, and handles them accordingly. These messages are validated through the network and take some time to be processed. 
 
-#### Off Ledger requests
+#### Off Ledger Requests
 
-See: [Off-ledger Requests](/docs/guide/core_concepts/smartcontract-interaction/off-ledger-requests/)
+See: [Off-ledger Requests](../core_concepts/smartcontract-interaction/off-ledger-requests.md)
 
-Off-ledger requests are directly sent to Wasp nodes and do not require validation through GoShimmer nodes. They are therefore faster. However, they require an initial deposit of funds to a chain account as this account will initiate required On-ledger requests on the behalf of the desired contract or player.
+Off-ledger requests are directly sent to Wasp nodes and do not require validation through GoShimmer nodes. They are therefore faster. However, they require an initial deposit of funds to a chain account as this account will initiate required On-ledger requests on behalf of the desired contract or player.
 
 :::note
-We use On-ledger requests in our example to initiate a betting request. A method to invoke Off-ledger requests is implemented inside the frontend to make use of.
+This example uses On-ledger requests to initiate a betting request. A method to invoke Off-ledger requests is implemented inside the frontend.
 
 See: [placeBetOffLedger](https://github.com/iotaledger/wasp/blob/roulette_poc/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L133)
 :::
+
 #### Funds
 
-As these requests do cost some fees and to be able to actually bet with real token, the player requires a source of funds.  
+As these requests cost some fees, and to be able to bet with real tokens, the player will need a source of funds.  
 
-Considering that the game runs on a testnet, funds can be requested from GoShimmer faucets inside the network. 
+As the game runs on a testnet, you can request funds from the GoShimmer faucets inside the network. 
 
 See: [How to Obtain Tokens From the Faucet](https://goshimmer.docs.iota.org/docs/tutorials/obtain_tokens)
 
-After acquiring some funds, they reside inside an address which is handled by a wallet.
+After you have acquired some funds, they will reside inside an address that is handled by a wallet.
 
-For this PoC, we have implemented a very narrowed down wallet that runs inside the browser itself, mostly hidden from the player. 
+For this PoC, we have implemented a very narrowed-down wallet that runs inside the browser itself, mostly hidden from the player. 
 
-In the future, we want to provide a solution that enables the use of Firefly or MetaMask as a secure external wallet.
+In the future, we want to provide a solution that enables the use of [Firefly](https://firefly.iota.org/) or MetaMask as a secure external wallet.
 
 #### Conclusion
 
-To interact with a smart contract, we require a Wasp node which hosts the contract, a GoShimmer node to interact with the tangle, funds from a GoShimmer faucet, and a client that invokes the contract by either an On or Off Ledger request. In our example, the Frontend acts as the client.
+To interact with a smart contract, you will need:
 
+* A Wasp node that hosts the contract
+* A GoShimmer node to interact with the tangle
+* Funds from a GoShimmer faucet
+* A client that invokes the contract by either an On Ledger request or Off Ledger request. In this example, the Frontend acts as the client.
 
 ### Implementation
 
-The PoC consists out of two projects residing in `contracts/rust/fairroulette`.
+The PoC consists of two projects residing in `contracts/rust/fairroulette`.
 
-One is the smart contract itself. Its boilerplate was generated using the new [Schema tool](/docs/guide/schema/intro) which is shipped with this beta release. 
-The contract logic is written in Rust, but the same implementation can be archived interchangeably with Golang which is demonstrated in the root folder and `./src`.
+One is the smart contract itself. Its boilerplate was generated using the new [Schema tool](../schema/intro.mdx) which is shipped with this beta release. 
+The contract logic is written in Rust, but the same implementation can be achieved interchangeably with Golang which is demonstrated in the root folder and `./src`.
 
-The second project is an interactive frontend written in TypeScript, made reactive with the light Svelte framework and to be found in the subfolder `./frontend`.
+The second project is an interactive frontend written in TypeScript, made reactive with the light Svelte framework. You can find it in the sub-folder `./frontend`.
 This frontend sends On-ledger requests to place bets towards the fair roulette smart contract and makes use of the GoShimmer faucet to request funds.
 
 
 ### The Smart Contract 
 
-See: [Structure of the smart contract](https://iscp.docs.iota.org/docs/tutorial/05)
+See: [Structure of the smart contract](https://wiki.iota.org/wasp/tutorial/05)
 
-As the smart contract is the only actor that is allowed to modify state in the context of the game, it got delegated a few tasks such as:
+As the smart contract is the only actor that is allowed to modify state in the context of the game, it needs to handle a few tasks such as:
 
  * Validating and accepting placed bets
  * Starting and ending a betting round
- * Generation of a **random** winning number 
+ * Generating a **random** winning number 
  * Sending payouts to the winners
  * Emitting status updates through the event system
 
-Any incoming bet will be validated. This includes the amount of token which have been bet and also the number on which the player bet on. 
-A number over 8 or under 1 will be rejected.
+Any incoming bet will be validated. This includes the amount of tokens which have been bet and also the number on which the player bet on. For example, any number over 8 or under 1 will be rejected.
 
-If the bet is valid and no round is active, the round state will be changed to `1` marking an active round. 
-The bet will be the first of a list of bets. 
+If the bet is valid and no round is active, the round state will be changed to `1`, marking an active round. The bet will be the first of a list of bets. 
 
 A delayed function call will be activated which executes **after 60 seconds**. 
 
-This function is the payout function which generates a random winning number and pays out the winners of the round. 
-The round state will be set to `0` indicating the end of the round.   
+This function is the payout function that generates a random winning number, and pays out the winners of the round. After this, the round state will be set to `0` indicating the end of the round.   
 
-If the round is already active, the bet will be appended to the list of bets and await processing. 
+If a round is already active, the bet will be appended to the list of bets and await processing. 
 
-State changes such as the `round started` or `round ended` but also placed bets and the payout of the winners are published as events. 
-Events are published as messages through a public web socket.
+All state changes such as the `round started` ,`round ended`, `placed bets`, and the `payout of the winners` are published as events.  Events are published as messages through a public web socket.
 
 #### Dependencies
 
 * [wasm-pack](https://rustwasm.github.io/docs/wasm-pack/quickstart.html)
 
-#### Building
+#### Building the Contract
 
 ```
 cd contracts/rust/fairroulette
@@ -130,52 +136,50 @@ wasm-pack build
 
 ### The Frontend
 
-The frontend has two main tasks. 
+The frontend has two main tasks.
 
-One is to visualize the contracts state. This includes a list of all placed bets, if a round is currently active and how long it's still going. Any payouts will be shown as well, including a fancy animation in case the player itself has won. 
+1. **Visualize the contract's state**:  This includes the list of all placed bets, if a round is currently active and how long it's still going. Any payouts will be shown as well, including a fancy animation in case the player has won. The player can also see his current available funds, his seed, and his current address.
 
-Furthermore, the player can see his current available funds, his seed and his current address.
+  :::danger
+  The seed is the key to your funds. We display the seed for demonstration purposes only in this PoC. 
+  **Never share your seed with anyone under any circumstance.**
+  :::
 
-:::danger
-As always, the seed is the key to your funds. We display the seed for demonstration purposes in this PoC. 
-**Never** share your seed with anyone under any circumstance. 
-:::
+2. **Enable the player to request funds and participate in the game by placing bets**: This is done by showing the player a list of eight numbers, a selection of the amount of funds to bet, and a bet placing button. 
 
-The second task is to enable the player to request funds and to participate in the game by placing bets. This is being done by showing the player a list of eight numbers, a selection of the amount of funds to bet, and a placing bet button. 
+  As faucet requests require minimal proof of work, the calculation happens inside a web worker to prevent freezing the browser UI.
 
-As faucet requests require minimal proof of work, the calculation happens inside a web worker to prevent a freezing of the browser UI.
+  To provide the frontend with the required events, it subscribes to the public web socket of Wasp to receive state changes. 
 
-To provide the frontend with the required events, it subscribes to the public web socket of Wasp to receive changes of state. 
-
-Such events look like this:
-
-`vmmsg kUUCRkhjD4EGAxv3kM77ay3KMbo51UhaEoCr14TeVHc5 df79d138: fairroulette.bet.placed 2sYqEZ5GM1BnqkZ88yJgPH3CdD9wKqfgGKY1j8FYDSZb3ao5wu 531819 2` 
-
-This event displays a placed bet from the address `12sYqEZ5GM1BnqkZ88yJgPH3CdD9wKqfgGKY1j8FYDSZb3ao5wu`, a bet of `531819i` on the number `2`. Originating from the smart contract ID `df79d138`.
-
-However, there is a bit more to the idea than to just subscribe to a web socket and "do requests".
+  These state change events look like this:
+  
+  `vmmsg kUUCRkhjD4EGAxv3kM77ay3KMbo51UhaEoCr14TeVHc5 df79d138: fairroulette.bet.placed 2sYqEZ5GM1BnqkZ88yJgPH3CdD9wKqfgGKY1j8FYDSZb3ao5wu 531819 2` 
+  
+  This event displays a placed bet from the address `12sYqEZ5GM1BnqkZ88yJgPH3CdD9wKqfgGKY1j8FYDSZb3ao5wu`, a bet of `531819i` on the number `2`. Originating from the smart contract ID `df79d138`.
+  
+  However, there is a bit more to the concept than to simply subscribe to a web socket and "perform requests".
 
 ### The Communication Layer
 
-On and Off Ledger requests have a predefined structure. They need to get encoded in strict way and include a list of transactions provided by Shimmer. Furthermore, they need to get signed by the client using the private key originating from a seed.  
+On and Off Ledger requests have a predefined structure. They need to get encoded strictly and include a list of transactions provided by Goshimmer. They also need to get signed by the client using the private key originating from a seed.  
 
-Wasp is using the [ExtendedLockedOutput](https://goshimmer.docs.iota.org/docs/protocol_specification/components/advanced_outputs) message type, which enables certain additional properties such as: 
+Wasp uses the [ExtendedLockedOutput](https://wiki.iota.org/goshimmer/protocol_specification/components/advanced_outputs) message type, which enables certain additional properties such as: 
 
-* Fallback address and fallback timeout
+* A fallback address and a fallback timeout
 * Unlockable by AliasUnlockBlock (if address is of Misaddress type)
-* Introducing a time lock (execution after deadline)
-* Data payload for arbitrary metadata (size limits apply)
+* A time lock (execution after deadline)
+* A data payload for arbitrary metadata (size limits apply)
 
 This data payload is required to act on smart contracts as it contains: 
 
-* the smart contract ID to be selected
-* the function ID to be executed
-* a list of arguments to be passed into the function 
+* The smart contract ID to be selected
+* The function ID to be executed
+* A list of arguments to be passed into the function 
 
-As we don't expect developers of contracts and frontends to write their own implementation, we have separated the communication layer into two parts:
+As we do not expect contract and frontend developers to write their own implementation, we have separated the communication layer into two parts:
 
-* The fairroulette_service
-* The wasp_client
+* [The fairroulette_service](#the-fairroulette-service)
+* [The wasp_client](#the-wasp-client)
 
 #### The Wasp Client
 
@@ -187,106 +191,125 @@ It provides:
 * Hashing algorithms
 * A web worker to provide proof of work 
 * Construction of On/Off Ledger requests
-* Construction of smart contract arguments and payload
-* Generation of seeds including their private keys and addresses
+* Construction of smart contract arguments and payloads
+* Generation of seeds (including their private keys and addresses)
 * Serialization of data into binary messages
 * Deserialization of smart contract state
 
-This wasp_client can be seen as a soon-to-be external library. For now this is a PoC client library shipped with the project. In the future however, we want to provide a library you can simply include into your project.
+This wasp_client can be seen as a soon-to-be external library. For now, this is a PoC client library shipped with the project. However, in the future , we want to provide a library you can simply include in your project.
 
 #### The Fairroulette Service
 
-This service is meant to be a high level implementation of the actual app. In other words: It's the service that app or frontend developers would concentrate on. 
+This service is meant to be a high-level implementation of the actual app. In other words: it's the service that app or frontend developers would concentrate on. 
 
-It does not construct message types, nor does it interact with GoShimmer directly. Besides of subscribing to the web socket event system of Wasp, it does not interact directly with Wasp either. Any such communication is handled by the `wasp_client`.
+It does not construct message types, nor does it interact with GoShimmer directly. Besides subscribing to the web socket event system of Wasp, it does not interact directly with Wasp either. Such communications are handled by the [`wasp_client`](#the-wasp-client).
 
-The fairroulette service is a mere wrapper around smart contract invocation calls. It accesses smart contract state through the `wasp_client` and does minimal decoding of data. 
+The fairroulette service is a mere wrapper around smart contract invocation calls. It accesses the smart contract state through the `wasp_client` and does minimal decoding of data. 
 
 Let's take a look into three parts of this service to make this more clear.
 
+This service comprises two parts:
+
+* [PlaceBetOnLedger](#placebetonledger)
+* [CallView](#callview)
+
 ##### PlaceBetOnLedger
 
-The [placeBetOnLedger](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L144) function is responsible for sending On-Ledger bet requests. It constructs a simple IOnLedger object containing:
+The [placeBetOnLedger](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L144) function is responsible for sending On-Ledger bet requests. It constructs a simple OnLedger object containing:
 
 * The smart contract ID: `fairroulette` 
 * The function to invoke: `placeBet` 
 * An argument: `-number` 
-    * this is the number the player would bet on => the winning number  
+    * this is the number the player would bet on, the winning number  
 
-Furthermore, this transaction requires an address to send the request to and also a variable amount of funds over `0i`.
+This transaction also requires an address to send the request to, and also a variable amount of funds over `0i`.
 
 :::note
 For Wasp, the address to send funds to is the chainId.
 :::
 
-See: [CoreTypes](https://iscp.docs.iota.org/docs/misc/coretypes/) and [Invoking](https://iscp.docs.iota.org/docs/misc/invoking/)
+See: [CoreTypes](https://wiki.iota.org/wasp/misc/coretypes/) and [Invoking](https://wiki.iota.org/wasp/misc/invoking/)
 
 
 ##### CallView 
 
 The [callView](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L160) function is responsible for calling smart contract view functions. 
 
-See: [Calling a view](https://iscp.docs.iota.org/docs/guide/solo/view-sc/) 
+See: [Calling a view](https://wiki.iota.org/wasp/guide/solo/view-sc/) 
 
-To give access to the smart contracts state, view functions can be used to return selected parts of the state. 
+To give access to the smart contracts state, you can use view functions to return selected parts of the state. 
 
-In our use case, we poll the state of the contract at the initial page load of the frontend. 
-State changes that happen afterwords are published through the websocket event system.
+In this use case, you can poll the state of the contract at the initial page load of the frontend. 
+State changes that happen afterwards are published through the websocket event system.
 
-To give an example on how to build and call such functions take a look into:
+You can find examples to guide you in building similar functions in:
 
 * Frontend: [getRoundStatus](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L176) 
 
 * Smart Contract: [view_round_status](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/src/fairroulette.rs#L289)
 
-Since the returned data of views are encoded in Base64, the frontend needs to decode this by using simple `Buffer` methods. 
+Since data returned by the views is encoded in Base64, the frontend needs to decode this by using simple `Buffer` methods. 
 The `view_round_status` view returns an `UInt16` which has a state of either `0` or `1`. 
 
-This means to get a proper value from a view call, use `readUInt16LE` to decode the matching value.
-
-
-
-
+This means that to get a proper value from a view call, you should use `readUInt16LE` to decode the matching value.
 
 #### Dependencies
 
-* [NodeJS >= 14](https://nodejs.org/en/download/)
+* [NodeJS >= 14](https://nodejs.org/en/download/)  
+   If you use a different version of node, you can use [nvm](https://github.com/nvm-sh/nvm) to switch node versions.
 * [NPM](https://www.npmjs.com/)
 
+#### Install Dependencies
+
+1. Go to your frontend directory ( contracts/rust/fairroulette/frontend for example)
+    ```bash
+    cd  contracts/rust/fairroulette/frontend
+    ```
+2. Install dependencies running:
+
+    ```bash
+    npm install
+    ```
+   
 #### Configuration
 
-The frontend requires a config file to be created. The template can be copied from `contracts/rust/fairroulette/frontend/config.dev.sample.js` and renamed to `config.dev.js` inside the same folder.
+The frontend requires that you create a config file. You can copy the template from `contracts/rust/fairroulette/frontend/config.dev.sample.js`, and rename it to `config.dev.js` inside the same folder.
 
-Make sure to update the config values accordingly to your personal setup.
-The `chainId` is the chainId which gets defined after deploying a chain (link #Deployment). 
+Make sure to update the config values according to your setup.
 
-`waspWebSocketUrl`, `waspApiUrl`, `goShimmerApiUrl`: Are dependent on the location of your Wasp and GoShimmer node. Make sure to keep the path of the `waspWeb SocketUrl` (`/chain/%chainId/ws`) at the end. 
+The `chainId` is the chainId which gets defined after [deploying a chain](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain)
+
+`waspWebSocketUrl`, `waspApiUrl`, and `goShimmerApiUrl` are dependent on the location of your Wasp and GoShimmer nodes. Make sure to keep the path of the `waspWeb SocketUrl` (`/chain/%chainId/ws`) at the end. 
 
 `seed` can be either `undefined` or a predefined 44 length seed. If `seed` is set to `undefined` a new seed will be generated as soon a user opens the page. A predefined seed will be set for all users. This can be useful for development purposes. 
 
-#### Building
+#### Building The Fronted
 
-```
+You can build the frontend by running the following commands:
+
+```bash
 cd contracts/rust/fairroulette/frontend
 npm install
 npm run build_worker
-npm run dev
 ```
 
-`npm run dev` will run a development server that exposes the transpiled frontend on `http://localhost:5000`.
+After this, you can run `npm run dev` which will run a development server that exposes the transpiled frontend on [`http://localhost:5000`](http://localhost:5000).
 
 ## Deployment
 
-
-Follow the [Deployment](https://iscp.docs.iota.org/docs/misc/deploy/) documentation until you reach the `deploy-contract` command.
+You should follow the [Deployment](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain) documentation until you reach the `deploy-contract` command.
 
 The deployment of a contract requires funds to be deposited to the **chain**. 
-This is archived by executing: 
+You can do this by executing the following command: 
 
-`./wasp-cli chain deposit IOTA:10000`
+```bash
+./wasp-cli chain deposit IOTA:10000
+```
 
-To be able to deploy the contract make sure to [Build](#building) it first.
+Make sure to [Build](#building-the-contract) the contract before deploying it. 
 
-Now deploy the contract with a wasmtime configuration.
+Now, you can deploy the contract with a wasmtime configuration.
 
-`./wasp-cli chain deploy-contract wasmtime fairroulette "fairroulette"  contracts/rust/fairroulette/pkg/fairroulette_bg.wasm`
+```bash
+./wasp-cli chain deploy-contract wasmtime fairroulette "fairroulette"  contracts/rust/fairroulette/pkg/fairroulette_bg.wasm
+```
