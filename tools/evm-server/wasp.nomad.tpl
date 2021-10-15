@@ -6,14 +6,14 @@ variable "wasp_cli_config" {
     "testchain": "${chainid}"
   },
   "goshimmer": {
-    "api": "https://goshimmer.sc.iota.org/api"
+    "api": "https://api.goshimmer.sc.iota.org"
   },
   "wallet": {
     "seed": "${wallet_seed}"
   },
   "wasp": {
     "0": {
-      "api": "https://wasp.sc.iota.org/api"
+      "api": "https://api.wasp.sc.iota.org"
     }
   }
 }
@@ -46,6 +46,11 @@ job "iscp-evm-server" {
 
 			port "evm" {
 				host_network = "private"
+			}
+
+			port "explorer" {
+				host_network = "private"
+				to = "80"
 			}
 		}
 
@@ -91,6 +96,39 @@ job "iscp-evm-server" {
 				data = var.wasp_cli_config
 				destination = "/local/wasp-cli.json"
 				perms = "444"
+			}
+
+			resources {
+				memory = 256
+				cpu = 256
+			}
+		}
+
+		task "explorer" {
+			driver = "docker"
+
+			config {
+				network_mode = "bridge"
+				image = "alethio/ethereum-lite-explorer"
+				ports = [
+					"explorer",
+				]
+			}
+
+			env {
+				APP_NODE_URL = "https://evm.wasp.sc.iota.org"
+			}
+
+			service {
+				tags = ["wasp-cli", "explorer"]
+				port  = "explorer"
+				check {
+					type     = "http"
+					port     = "explorer"
+					path     = "/"
+					interval = "5s"
+					timeout  = "2s"
+				}
 			}
 
 			resources {
