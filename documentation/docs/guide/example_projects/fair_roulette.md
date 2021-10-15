@@ -21,7 +21,7 @@ Fair roulette is an example reference implementation which demonstrates the deve
 
 ## Introduction
 
-In this example, you will create a very simple betting game in which players can bet on a number within a certain range.
+The Fair roulette example project is a simple betting game in which players can bet on a number within a certain range.
 
 The game consists of many rounds in which the player will try to bet on the right number to win a share of the placed funds.
 
@@ -107,7 +107,7 @@ As the smart contract is the only actor that is allowed to modify state in the c
 
  * Validating and accepting placed bets
  * Starting and ending a betting round
- * Generating of a **random** winning number 
+ * Generating a **random** winning number 
  * Sending payouts to the winners
  * Emitting status updates through the event system
 
@@ -208,7 +208,7 @@ The fairroulette service is a mere wrapper around smart contract invocation call
 
 Let's take a look into three parts of this service to make this more clear.
 
-This service comprises three parts:
+This service comprises two parts:
 
 * [PlaceBetOnLedger](#placebetonledger)
 * [CallView](#callview)
