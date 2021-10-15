@@ -14,6 +14,10 @@ variable "wallet_seed" {
     type = string
 }
 
+variable "adminWhitelist" {
+    type = list(string)
+}
+
 variable "ghcr" {
     type = object({
         username = string
