@@ -112,7 +112,7 @@ export async function initialize() {
 
         fairRouletteService
             .getRoundNumber()
-            .then((x) => { console.log(x); round.update($round => ({ ...$round, number: x })); }),
+            .then((x) => { round.update($round => ({ ...$round, number: x })); }),
 
         fairRouletteService
             .getLastWinningNumber()
