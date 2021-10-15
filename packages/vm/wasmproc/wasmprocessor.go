@@ -4,8 +4,6 @@
 package wasmproc
 
 import (
-	"sync"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -20,7 +18,6 @@ type WasmProcessor struct {
 	function  string
 	nesting   int
 	scContext *ScContext
-	mu        sync.Mutex
 }
 
 var _ iscp.VMProcessor = &WasmProcessor{}
@@ -64,9 +61,6 @@ func GetProcessor(binaryCode []byte, log *logger.Logger) (iscp.VMProcessor, erro
 }
 
 func (host *WasmProcessor) call(ctx iscp.Sandbox, ctxView iscp.SandboxView) (dict.Dict, error) {
-	host.mu.Lock()
-	defer host.mu.Unlock()
-
 	if host.function == "" {
 		// init function was missing, do nothing
 		return nil, nil

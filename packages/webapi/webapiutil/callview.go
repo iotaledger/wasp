@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 )
 
+// TODO: Find a proper solution, this is not a desired fix
 var mu sync.Mutex
 
 func CallView(ch chain.ChainCore, contractHname, viewHname iscp.Hname, params dict.Dict) (dict.Dict, error) {
