@@ -19,7 +19,7 @@ func fibo(n int64) int64 {
 
 func TestCallFibonacci(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.Fibonacci(ctx)
 		f.Params.IntValue().SetValue(n)
@@ -33,7 +33,7 @@ func TestCallFibonacci(t *testing.T) {
 
 func TestCallFibonacciIndirect(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.CallOnChain(ctx)
 		f.Params.IntValue().SetValue(n)
@@ -61,7 +61,7 @@ func TestCallRecursive(t *testing.T) {
 			t.SkipNow()
 		}
 
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.CallOnChain(ctx)
 		f.Params.IntValue().SetValue(31)
@@ -81,7 +81,7 @@ func TestCallRecursive(t *testing.T) {
 
 func TestGetSet(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.SetInt(ctx)
 		f.Params.Name().SetValue("ppp")

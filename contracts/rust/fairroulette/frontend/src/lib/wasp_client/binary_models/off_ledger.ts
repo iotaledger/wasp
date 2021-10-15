@@ -73,8 +73,6 @@ export class OffLedger {
 
     if (req.arguments) {
       for (let arg of req.arguments) {
-        //  debugger;
-
         const keyBuffer = Buffer.from(arg.key);
 
         buffer.writeUInt16LE(keyBuffer.length);

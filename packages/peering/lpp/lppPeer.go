@@ -135,7 +135,7 @@ func (p *peer) sendMsgDirect(msg *peering.PeerMessage) {
 		return
 	}
 	if err := writeFrame(stream, msgBytes); err != nil {
-		p.log.Warnf("Failed to send outgoing message to , send failed with reason=%v", p.remoteNetID, err)
+		p.log.Warnf("Failed to send outgoing message to %s, send failed with reason=%v", p.remoteNetID, err)
 		return
 	}
 	p.accessLock.Lock()

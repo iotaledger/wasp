@@ -38,6 +38,11 @@ $ wasp-cli init
 $ wasp-cli request-funds
 ```
 
+After you have requested the funds, you can allocate balance by running:
+
+```shell
+wasp-cli chain deposit IOTA:10000
+```
 ---
 
 Now we can deploy a chain:

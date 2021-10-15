@@ -35,6 +35,16 @@ const NANO_TIME_DIVIDER: i64 = 1000000000;
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
+    let bets = f.state.bets();
+
+    for i in 0..bets.length() {
+        let bet: Bet = bets.get_bet(i).value();
+
+        if bet.better.address().to_string() == ctx.caller().address().to_string() {
+            ctx.panic("Bet already placed for this round");
+        }
+    }
+
     // Since we are sure that the 'number' parameter actually exists we can
     // retrieve its actual value into an i64.
     let number: i64 = f.params.number().value();
@@ -74,7 +84,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
 
     ctx.event(&format!(
         "fairroulette.bet.placed {0} {1} {2}",
-        &bet.better.to_string(),
+        &bet.better.address().to_string(),
         bet.amount,
         bet.number
     ));
@@ -90,6 +100,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
         // case a zero value was returned.
         if play_period < 10 {
             play_period = DEFAULT_PLAY_PERIOD;
+            f.state.play_period().set_value(play_period);
         }
 
         if ENABLE_SELF_POST {
@@ -226,7 +237,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
         // Announce who got sent what as event.
         ctx.event(&format!(
             "fairroulette.payout {} {}",
-            &bet.better.to_string(),
+            &bet.better.address().to_string(),
             payout
         ));
     }

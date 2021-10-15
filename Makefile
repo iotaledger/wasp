@@ -1,18 +1,28 @@
+GIT_COMMIT := $(shell git rev-list -1 HEAD)
+BUILD_FLAGS = rocksdb
+LINKER_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_COMMIT)"
+
 all: build-lint
 
 build:
-	go build -tags rocksdb ./...
+	go build -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) ./...
+
+build-windows:
+	go build -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) -buildmode=exe ./...
 
 build-lint: build lint
 
 test: install
-	go test -tags rocksdb ./... --timeout 30m --count 1 -failfast
+	go test -tags $(BUILD_FLAGS) ./... --timeout 30m --count 1 -failfast
 
 test-short:
-	go test -tags rocksdb --short --count 1 ./...
+	go test -tags $(BUILD_FLAGS) --short --count 1 ./...
 
 install:
-	go install -tags rocksdb ./...
+	go install -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) ./...
+
+install-windows:
+	go install -tags $(BUILD_FLAGS) -ldflags $(LINKER_FLAGS) -buildmode=exe ./...
 
 lint:
 	golangci-lint run

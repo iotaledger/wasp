@@ -6,7 +6,7 @@ keywords:
 - Ethereum
 - Implementation
 description: ISCP allows anyone to start their own chain and validators. Link to full technical description of the ISCP architecture  
-image: /img/logo/WASP_logo_dark.png
+image: /img/multichain.png
 ---
 # ISCP Architecture
 

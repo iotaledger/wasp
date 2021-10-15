@@ -5,7 +5,9 @@ import { FairRouletteService } from './fairroulette_client';
 import { Notification, showNotification } from './notifications';
 import { address, addressesHistory, addressIndex, balance, firstTimeRequestingFunds, isAWinnerPlayer, keyPair, placingBet, receivedRoundStarted, requestingFunds, resetRound, round, seed, showBettingSystem, showWinnerAnimation, showWinningNumber, timestamp } from './store';
 import {
-    BasicClient, Colors, PoWWorkerManager,
+    BasicClient,
+    Colors,
+    PoWWorkerManager,
     WalletService
 } from './wasp_client';
 import { Base58 } from './wasp_client/crypto/base58';
@@ -18,8 +20,8 @@ let fairRouletteService: FairRouletteService;
 let fundsUpdaterHandle: NodeJS.Timer | undefined;
 
 const powManager: PoWWorkerManager = new PoWWorkerManager();
-export const BETTING_NUMBERS = 8
-export const ROUND_LENGTH = 60 //in seconds
+export const BETTING_NUMBERS = 8;
+export const ROUND_LENGTH = 60; //in seconds
 
 const DEFAULT_AUTODISMISS_TOAST_TIME = 5000 //in milliseconds
 
@@ -54,7 +56,7 @@ export function log(tag: string, description: string) {
         },
         );
         return _round;
-    })
+    });
 }
 
 export async function initialize() {
@@ -103,27 +105,37 @@ export async function initialize() {
     // As those requests can fail in certain cases, we need to wrap them in exception handlers,
     // to make sure that the other requests are being sent and that the page properly loads.
     const requests = [
-        () =>
-            fairRouletteService
-                .getRoundStatus()
-                .then((x) => round.update($round => ({ ...$round, active: x == 1 }))),
-        () =>
-            fairRouletteService
-                .getRoundNumber()
-                .then((x) => round.update($round => ({ ...$round, number: x }))),
-        () =>
-            fairRouletteService
-                .getLastWinningNumber()
-                .then((x) => round.update($round => ({ ...$round, winningNumber: x }))),
-        () =>
+
+        fairRouletteService
+            .getRoundStatus()
+            .then((x) => round.update($round => ({ ...$round, active: x == 1 }))),
+
+        fairRouletteService
+            .getRoundNumber()
+            .then((x) => { console.log(x); round.update($round => ({ ...$round, number: x })); }),
+
+        fairRouletteService
+            .getLastWinningNumber()
+            .then((x) => round.update($round => ({ ...$round, winningNumber: x }))),
+        /*() =>
             fairRouletteService
                 .getRoundStartedAt()
                 .then((x) => round.update($round => ({ ...$round, startedAt: x }))),
+*/
+        /*() =>
+            fairRouletteService
+                .getRoundTimeLeft()
+                .then((x) => {
+                    console.log(x);
+                    round.update($round => ({ ...$round, startedAt: Date.now() - (x * 1000) }));
+                }),*/
     ];
 
-    for (let request of requests) {
+    /*for (let request of requests) {
         await request().catch((e) => log(LogTag.Error, e.message));
-    }
+    }*/
+
+    await Promise.all(requests);
 
     log(LogTag.Site, 'Demo loaded');
 }
@@ -136,7 +148,7 @@ export function setAddress(index: number) {
 }
 
 export function createNewAddress() {
-    addressesHistory.update(_history => [..._history, get(address)])
+    addressesHistory.update(_history => [..._history, get(address)]);
     addressIndex.update(($addressIndex) => $addressIndex + 1);
     setAddress(get(addressIndex));
 }
@@ -162,9 +174,9 @@ export function startFundsUpdater() {
 }
 
 export async function placeBet() {
-    placingBet.set(true)
-    showBettingSystem.set(false)
-    showWinningNumber.set(false)
+    placingBet.set(true);
+    showBettingSystem.set(false);
+    showWinningNumber.set(false);
     try {
         await fairRouletteService.placeBetOnLedger(
             get(keyPair),
@@ -218,21 +230,23 @@ export async function sendFaucetRequest() {
 }
 
 export function calculateRoundLengthLeft(timestamp: number) {
-    const roundStarted = get(round).startedAt;
+    const roundStartedAt = get(round).startedAt;
 
-    if (!timestamp || !roundStarted) return undefined
+    if (!timestamp || !roundStartedAt) return undefined;
 
-    if (roundStarted == 0) {
+    if (roundStartedAt == 0) {
         return 0;
     }
 
-    const diff = timestamp - roundStarted;
+    const diff = Math.round(timestamp - roundStartedAt);
 
     // TODO: Explain.
-    const executionCompensation = 5;
+    const executionCompensation = 0;
     const roundTimeLeft = Math.round(
-        fairRouletteService?.roundLength + executionCompensation - diff
+        fairRouletteService?.roundLength - diff
     );
+
+    console.log(fairRouletteService?.roundLength, diff, roundTimeLeft);
 
     if (roundTimeLeft <= 0) {
         return 0;
@@ -244,7 +258,9 @@ export function subscribeToRouletteEvents() {
     fairRouletteService.on('roundStarted', (timestamp) => {
         receivedRoundStarted.set(true);
         showWinningNumber.set(false);
-        round.update($round => ({ ...$round, active: true, startedAt: timestamp, logs: [] }))
+        // To mitigate time sync variances, we ignore the provided timestamp and use our local one.
+        round.update($round => ({ ...$round, active: true, startedAt: Date.now() / 1000, logs: [] }));
+        log(LogTag.Round, 'Started');
     });
 
     fairRouletteService.on('roundStopped', () => {
@@ -280,7 +296,7 @@ export function subscribeToRouletteEvents() {
     });
 
     fairRouletteService.on('winningNumber', (winningNumber: bigint) => {
-        round.update($round => ({ ...$round, winningNumber }))
+        round.update($round => ({ ...$round, winningNumber }));
         showWinningNumber.set(true);
 
         log(LogTag.SmartContract, "The winning number was decided");
@@ -303,8 +319,7 @@ export function subscribeToRouletteEvents() {
                 },
             );
             return $round;
-        })
-
+        });
     });
 
     fairRouletteService.on('payout', (bet: Bet) => {

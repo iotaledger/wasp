@@ -3,8 +3,9 @@ keywords:
 - ISCP
 - Smart Contracts
 - Core Concepts
-- Table of Contents
-description: IOTA Smart Contract Protocol Documentation Overview
+- scaling
+- flexibility
+description: IOTA Smart Contract Protocol is IOTA's solution for running smart contracts on top of the IOTA tangle.
 image: /img/logo/WASP_logo_dark.png
 ---
 # ISCP
@@ -13,17 +14,17 @@ ISCP stands for IOTA Smart Contract Protocol. It is IOTA's solution for running 
 
 Allowing multiple blockchains to anchor to the tangle will solve several problems with smart contracts.
 
-### Scaling and Fees
+## Scaling and Fees
 
 Due to the ordered structure and execution time of a smart contract, a single blockchain can only handle so many transactions per second before it needs to decide on which transactions it needs to postpone until other blocks are produced, as there is no processing power available for them on that chain. This eventually results in high fees on many chains, and limited functionality. 
 
 As we allow many chains (which can communicate with other chains) to be anchored to the IOTA tangle, we can simply add additional chains once this becomes a problem. This results in lower fees over solutions that just use a single blockchain for all their smart contracts. 
 
-### Custom Chains
+## Custom Chains
 
 Given that anyone can start a new chain, and set the rules for that chain, a lot is possible. Not only do you have full control over how the fees are handled on the chain you set up, but you also have full control over the validators and access to your chain. You can even spin up a private blockchain with no public data besides the state hash that is anchored to the main IOTA tangle. This allows parties that need private blockchains to use the security of the public IOTA network without actually exposing their blockchain to the public.
 
-### Flexibility
+## Flexibility
 
 You can run multiple types of virtual machines on any chain. We are starting with [Rust/WASM](https://rustwasm.github.io/docs/book/) based smart contracts, followed by [Solidity/EVM](https://docs.soliditylang.org/en/v0.8.6/) based smart contracts, but eventually all kinds of virtual machines can be supported in a ISCP chain depending on the demand. 
 

@@ -136,8 +136,8 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 }
 
 // UploadBlobOptimized does the same as UploadBlob, only better but more complicated
-// It allows  big data chunks to bypass the request transaction. Instead, in transaction only hash of the data is put
-// The data itself must be uploaded to the node (in this case into Solo environment, separately
+// It allows big data chunks to bypass the request transaction. Instead, in transaction only hash of the data is put.
+// The data itself must be uploaded to the node (in this case into Solo environment), separately.
 // Before running the request in VM, the hash references contained in the request transaction are resolved with
 // the real data, previously uploaded directly.
 func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
@@ -186,7 +186,7 @@ const (
 // UploadWasm is a syntactic sugar of the UploadBlob used to upload Wasm binary to the chain.
 //  parameter 'binaryCode' is the binary of Wasm smart contract program
 //
-// The blob for the Wasm binary used fixed field names which are statically known by the .
+// The blob for the Wasm binary used fixed field names which are statically known by the
 // 'root' smart contract which is responsible for the deployment of contracts on the chain
 func (ch *Chain) UploadWasm(keyPair *ed25519.KeyPair, binaryCode []byte) (ret hashing.HashValue, err error) {
 	if OptimizeUpload {

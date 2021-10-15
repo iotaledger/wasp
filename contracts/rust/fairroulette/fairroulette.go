@@ -10,6 +10,8 @@
 package fairroulette
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 )
 
@@ -36,6 +38,16 @@ const NanoTimeDivider = 1000_000_000
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
+	bets := f.State.Bets()
+
+	for i := int32(0); i < bets.Length(); i++ {
+		bet := bets.GetBet(i).Value();
+
+		if bet.Better.Address.String() == ctx.Caller().Address().String() {
+				ctx.Panic("Bet already placed for this round");
+		}
+}
+
 	// Since we are sure that the 'number' parameter actually exists we can
 	// retrieve its actual value into an i64.
 	number := f.Params.Number().Value()
@@ -72,6 +84,10 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// Append the bet data to the bets array. The bet array will automatically take care
 	// of serializing the bet struct into a bytes representation.
 	bets.GetBet(betNr).SetValue(bet)
+
+	ctx.Event(fmt.Sprintf("fairroulette.bet.placed %v %v %v", bet.Better.Address().String(),
+		bet.Amount,
+		bet.Number))
 
 	// Was this the first bet of this round?
 	if betNr == 0 {
@@ -209,7 +225,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 		}
 
 		// Announce who got sent what as event.
-		ctx.Event("fairroulette.payout " + bet.Better.String() + " " + ctx.Utility().String(payout))
+		ctx.Event("fairroulette.payout " + bet.Better.Address().String() + " " + ctx.Utility().String(payout))
 	}
 
 	// This is where we transfer the remainder after payout to the creator of the smart contract.
