@@ -43,7 +43,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	for i := int32(0); i < bets.Length(); i++ {
 		bet := bets.GetBet(i).Value()
 
-		if bet.Better.Address().String() == ctx.Caller().Address().String() {
+		if bet.Better.Address() == ctx.Caller().Address() {
 			ctx.Panic("Bet already placed for this round")
 		}
 	}

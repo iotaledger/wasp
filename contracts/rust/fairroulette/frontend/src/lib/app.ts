@@ -230,8 +230,6 @@ export function calculateRoundLengthLeft(timestamp: number): number | undefined 
 
     const diff = Math.round(timestamp - roundStartedAt);
 
-    // TODO: Explain.
-    const executionCompensation = 0;
     const roundTimeLeft = Math.round(
         fairRouletteService?.roundLength - diff
     );

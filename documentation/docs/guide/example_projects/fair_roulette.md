@@ -294,6 +294,8 @@ npm run build_worker
 
 After this, you can run `npm run dev` which will run a development server that exposes the transpiled frontend on [`http://localhost:5000`](http://localhost:5000).
 
+If you want to expose the dev server to the public, it might be required to bind the server to any endpoint like `HOST=0.0.0.0 PORT=5000 npm run dev`.
+
 ## Deployment
 
 You should follow the [Deployment](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain) documentation until you reach the `deploy-contract` command.

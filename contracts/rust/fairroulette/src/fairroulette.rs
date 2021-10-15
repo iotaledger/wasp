@@ -40,7 +40,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
     for i in 0..bets.length() {
         let bet: Bet = bets.get_bet(i).value();
 
-        if bet.better.address().to_string() == ctx.caller().address().to_string() {
+        if bet.better.address() == ctx.caller().address() {
             ctx.panic("Bet already placed for this round");
         }
     }
