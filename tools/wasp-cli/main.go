@@ -5,7 +5,6 @@ package main
 
 import (
 	"github.com/iotaledger/wasp/packages/wasp"
-	"github.com/iotaledger/wasp/tools/wasp-cli/blob"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
@@ -35,7 +34,6 @@ func init() {
 	wallet.Init(rootCmd)
 	chain.Init(rootCmd)
 	decode.Init(rootCmd)
-	blob.Init(rootCmd)
 	peering.Init(rootCmd)
 }
 

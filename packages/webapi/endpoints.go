@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
-	"github.com/iotaledger/wasp/packages/webapi/blob"
 	"github.com/iotaledger/wasp/packages/webapi/info"
 	"github.com/iotaledger/wasp/packages/webapi/reqstatus"
 	"github.com/iotaledger/wasp/packages/webapi/request"
@@ -43,7 +42,6 @@ func Init(
 	pub := server.Group("public", "").SetDescription("Public endpoints")
 	addWebSocketEndpoint(pub, log)
 
-	blob.AddEndpoints(pub, func() registry.BlobCache { return registryProvider() })
 	info.AddEndpoints(pub, network)
 	reqstatus.AddEndpoints(pub, chainsProvider.ChainProvider())
 	state.AddEndpoints(pub, chainsProvider)

@@ -4,7 +4,7 @@ This page describes the configuration of the Wasp node in combination with Docke
 
 ## Introduction
 
-The dockerfile is separated into several stages which effectively splits Wasp into four small pieces:
+The Dockerfile is separated into several stages which effectively splits Wasp into four small pieces:
 
 * Testing
     * Unit testing
@@ -44,7 +44,7 @@ $ docker run wasp-node
 After the build process has been completed, it is still possible to inject a different configuration file into a new container. 
 
 ```
-$ docker run -v $(pwd)/alternative_docker_config.json:/run/config.json wasp-node
+$ docker run -v $(pwd)/alternative_docker_config.json:/etc/wasp_config.json wasp-node
 ```
 
 Further configuration is possible using arguments:
@@ -58,32 +58,3 @@ To get a list of all available arguments, run the node with the argument '--help
 ```
 $ docker run wasp-node --help
 ```
-
-# Wasp CLI
-
-It is possible to create a micro image that just contains the wasp-cli application without any Wasp node related additions.
-
-This might be helpful if it's required to control but not to run a Wasp node.
-
-The image can be created like this:
-
-```
-$docker build --target wasp-cli -t wasp-cli . 
-```
-
-Like with the Wasp node setup, the container gets started by:
-
-```
-$ docker run wasp-cli
-```
-
-and can be controlled with further arguments:
-
-
-```
-$ docker run wasp-cli --help
-```
-
-# Testing
-
-Wip

@@ -8,10 +8,8 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"github.com/stretchr/testify/require"
 )
@@ -43,9 +41,7 @@ func TestMissingRequests(t *testing.T) {
 	// deposit funds before sending the off-ledger request
 	e.requestFunds(userAddress, "userWallet")
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chainID, userWallet)
-	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
-		Transfer: colored.NewBalancesForIotas(100),
-	})
+	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second)
 	require.NoError(t, err)

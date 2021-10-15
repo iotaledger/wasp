@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
@@ -243,25 +242,6 @@ func TestWaspCLIBlobContract(t *testing.T) {
 	out = w.Run("chain", "show-blob", blobHash)
 	out = w.Pipe(out, "decode", "string", blob.VarFieldProgramDescription, "string")
 	require.Contains(t, out[0], description)
-}
-
-func TestWaspCLIBlobRegistry(t *testing.T) {
-	w := newWaspCLITest(t)
-
-	// test that `blob has` returns false
-	out := w.Run("blob", "has", hashing.RandomHash(nil).String())
-	require.Contains(t, out[0], "false")
-
-	// test `blob put` command
-	w.CopyFile(srcFile)
-	out = w.Run("blob", "put", file)
-	blobHash := regexp.MustCompile(`(?m)Hash: ([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
-	require.NotEmpty(t, blobHash)
-	t.Logf("Blob hash: %s", blobHash)
-
-	// test that `blob has` returns true
-	out = w.Run("blob", "has", blobHash)
-	require.Contains(t, out[0], "true")
 }
 
 func TestWaspCLIMint(t *testing.T) {

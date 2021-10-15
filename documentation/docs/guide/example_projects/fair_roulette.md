@@ -98,7 +98,6 @@ The contract logic is written in Rust, but the same implementation can be achiev
 The second project is an interactive frontend written in TypeScript, made reactive with the light Svelte framework. You can find it in the sub-folder `./frontend`.
 This frontend sends On-ledger requests to place bets towards the fair roulette smart contract and makes use of the GoShimmer faucet to request funds.
 
-
 ### The Smart Contract 
 
 See: [Structure of the smart contract](https://wiki.iota.org/wasp/tutorial/05)

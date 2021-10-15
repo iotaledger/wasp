@@ -21,14 +21,15 @@ variable "wasp_config" {
 	},
 	"node": {
 		"disablePlugins": [],
-		"enablePlugins": []
+		"enablePlugins": ["metrics"]
 	},
 	"webapi": {
 		"bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_api" }}",
 		"adminWhitelist": ${adminWhitelist}
 	},
 	"metrics": {
-		"port": "{{ env "NOMAD_PORT_metrics" }}"
+        "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_metrics" }}",
+        "enabled": true
 	},
 	"dashboard": {
 		"auth": {
@@ -90,7 +91,7 @@ job "iscp-evm" {
 			port "peering" {
 				host_network = "private"
 			}
-			port "prometheus" {
+			port "metrics" {
 				host_network = "private"
 			}
 		}
@@ -110,7 +111,7 @@ job "iscp-evm" {
 					"api",
 					"nanomsg",
 					"peering",
-					"prometheus",
+					"metrics",
 				]
 
 				auth {
@@ -144,8 +145,8 @@ job "iscp-evm" {
 				port  = "peering"
 			}
 			service {
-				tags = ["wasp", "prometheus"]
-				port  = "prometheus"
+				tags = ["wasp", "metrics"]
+				port  = "metrics"
 			}
 
 			template {
@@ -184,7 +185,7 @@ job "iscp-evm" {
 			port "peering" {
 				host_network = "private"
 			}
-			port "prometheus" {
+			port "metrics" {
 				host_network = "private"
 			}
 		}
@@ -204,7 +205,7 @@ job "iscp-evm" {
 					"api",
 					"nanomsg",
 					"peering",
-					"prometheus",
+					"metrics",
 				]
 
 				auth {
@@ -238,8 +239,8 @@ job "iscp-evm" {
 				port  = "peering"
 			}
 			service {
-				tags = ["wasp", "prometheus"]
-				port  = "prometheus"
+				tags = ["wasp", "metrics"]
+				port  = "metrics"
 			}
 
 			template {
