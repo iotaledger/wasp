@@ -42,49 +42,32 @@ be enabled via configuration.
 
 :::
 
-### Microsoft Windows Installation Errors
+## Compile
 
-If the `go install` command tells you it cannot find `gcc` you will need to
-install [MinGW-w64](https://sourceforge.net/projects/mingw-w64/).Make sure 
+You can build and install both `wasp` and `wasp-cli` by running:
+
+### Linux/macOS
+
+```bash
+make install
+```
+
+### Microsoft Windows
+
+```bash
+make install-windows
+```
+
+#### Microsoft Windows Installation Errors
+
+If the `make install-windows` command tells you it cannot find `gcc` you will need to
+install [MinGW-w64](https://sourceforge.net/projects/mingw-w64/).Make sure
 to select *x86_64* architecture instead of the preselected *i686*
 architecture during the installation process. After the installation make sure to
 add the following folder to your PATH variable:
 
 ```
 C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
-```
-
-## Compile
-
-
-### Build the `wasp` Binary (Wasp node)
-
-You can build the `wasp` binary only by running the following command on any os:
-
-```bash
-go build -tags rocksdb
-```
-### Build the `wasp-cli` Binary (CLI client) 
-
-You can build the `wasp-cli` binary only by running the following command on any os:
-
-```bash
-go build -tags rocksdb ./tools/wasp-cli
-```
-### Build and Install Everything
-
-Alternatively, you can build and install the `wasp` and `wasp-cli` binaries using a single command. 
-
-#### Linux/macOS
-
-```bash
-go install -tags rocksdb ./...
-```
-
-#### Windows
-
-```bash
-go install -tags rocksdb -buildmode=exe ./...
 ```
 
 ## Test
