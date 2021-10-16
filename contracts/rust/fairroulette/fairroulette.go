@@ -10,8 +10,6 @@
 package fairroulette
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 )
 
@@ -82,9 +80,9 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// of serializing the bet struct into a bytes representation.
 	bets.GetBet(betNr).SetValue(bet)
 
-	ctx.Event(fmt.Sprintf("fairroulette.bet.placed %v %v %v", bet.Better.Address().String(),
-		bet.Amount,
-		bet.Number))
+	ctx.Event("fairroulette.bet.placed " + bet.Better.Address().String() +
+		" " + ctx.Utility().String(bet.Amount) +
+		" " + ctx.Utility().String(bet.Number))
 
 	// Was this the first bet of this round?
 	if betNr == 0 {

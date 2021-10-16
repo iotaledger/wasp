@@ -19,18 +19,14 @@ import (
 )
 
 var (
-	disabledFlag   = false
-	flagCore       = flag.Bool("core", false, "generate core contract interface")
-	flagForce      = flag.Bool("force", false, "force code generation")
-	flagGo         = flag.Bool("go", false, "generate Go code")
-	flagInit       = flag.String("init", "", "generate new schema file for smart contract named <string>")
-	flagJava       = &disabledFlag // flag.Bool("java", false, "generate Java code <outdated>")
-	flagRust       = flag.Bool("rust", false, "generate Rust code <default>")
-	flagSchemaType = flag.String("schemaType", "json", "Extension of the schema that will be generated/used. Values(json,yaml)")
-)
-
-const (
-	schema = "schema."
+	disabledFlag = false
+	flagCore     = flag.Bool("core", false, "generate core contract interface")
+	flagForce    = flag.Bool("force", false, "force code generation")
+	flagGo       = flag.Bool("go", false, "generate Go code")
+	flagInit     = flag.String("init", "", "generate new schema file for smart contract named <string>")
+	flagJava     = &disabledFlag // flag.Bool("java", false, "generate Java code <outdated>")
+	flagRust     = flag.Bool("rust", false, "generate Rust code <default>")
+	flagType     = flag.String("type", "yaml", "type of schema file that will be generated. Values(yaml,json)")
 )
 
 func init() {
@@ -44,11 +40,14 @@ func main() {
 		return
 	}
 
-	file, err := os.Open(schema + *flagSchemaType)
+	file, err := os.Open("schema.yaml")
+	if err != nil {
+		file, err = os.Open("schema.json")
+	}
 	if err == nil {
 		defer file.Close()
 		if *flagInit != "" {
-			fmt.Println(schema + *flagSchemaType + " already exists")
+			fmt.Println("schema definition file already exists")
 			return
 		}
 		err = generateSchema(file)
@@ -59,7 +58,7 @@ func main() {
 	}
 
 	if *flagInit != "" {
-		err = generateSchemaNew(*flagSchemaType)
+		err = generateSchemaNew()
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -76,24 +75,24 @@ func generateSchema(file *os.File) error {
 	}
 	schemaTime := info.ModTime()
 
-	schema, err := loadSchema(file)
+	s, err := loadSchema(file)
 	if err != nil {
 		return err
 	}
 
-	schema.CoreContracts = *flagCore
+	s.CoreContracts = *flagCore
 	if *flagGo {
 		info, err = os.Stat("consts.go")
 		if err == nil && info.ModTime().After(schemaTime) && !*flagForce {
 			fmt.Println("skipping Go code generation")
 		} else {
 			fmt.Println("generating Go code")
-			err = schema.GenerateGo()
+			err = s.GenerateGo()
 			if err != nil {
 				return err
 			}
-			if !schema.CoreContracts {
-				err = schema.GenerateGoTests()
+			if !s.CoreContracts {
+				err = s.GenerateGoTests()
 				if err != nil {
 					return err
 				}
@@ -103,7 +102,7 @@ func generateSchema(file *os.File) error {
 
 	if *flagJava {
 		fmt.Println("generating Java code")
-		err = schema.GenerateJava()
+		err = s.GenerateJava()
 		if err != nil {
 			return err
 		}
@@ -115,12 +114,12 @@ func generateSchema(file *os.File) error {
 			fmt.Println("skipping Rust code generation")
 		} else {
 			fmt.Println("generating Rust code")
-			err = schema.GenerateRust()
+			err = s.GenerateRust()
 			if err != nil {
 				return err
 			}
-			if !schema.CoreContracts {
-				err = schema.GenerateGoTests()
+			if !s.CoreContracts {
+				err = s.GenerateGoTests()
 				if err != nil {
 					return err
 				}
@@ -130,7 +129,7 @@ func generateSchema(file *os.File) error {
 	return nil
 }
 
-func generateSchemaNew(schemaExtension string) error {
+func generateSchemaNew() error {
 	name := *flagInit
 	fmt.Println("initializing " + name)
 
@@ -144,50 +143,48 @@ func generateSchemaNew(schemaExtension string) error {
 		return err
 	}
 
-	file, err := os.Create(schema + schemaExtension)
+	schemaDef := &generator.SchemaDef{}
+	schemaDef.Name = name
+	schemaDef.Description = name + " description"
+	schemaDef.Structs = make(generator.StringMapMap)
+	schemaDef.Typedefs = make(generator.StringMap)
+	schemaDef.State = make(generator.StringMap)
+	schemaDef.State["owner"] = "AgentID // current owner of this smart contract"
+	schemaDef.Funcs = make(generator.FuncDefMap)
+	schemaDef.Views = make(generator.FuncDefMap)
+
+	funcInit := &generator.FuncDef{}
+	funcInit.Params = make(generator.StringMap)
+	funcInit.Params["owner"] = "?AgentID // optional owner of this smart contract"
+	schemaDef.Funcs["init"] = funcInit
+
+	funcSetOwner := &generator.FuncDef{}
+	funcSetOwner.Access = "owner // current owner of this smart contract"
+	funcSetOwner.Params = make(generator.StringMap)
+	funcSetOwner.Params["owner"] = "AgentID // new owner of this smart contract"
+	schemaDef.Funcs["setOwner"] = funcSetOwner
+
+	viewGetOwner := &generator.FuncDef{}
+	viewGetOwner.Results = make(generator.StringMap)
+	viewGetOwner.Results["owner"] = "AgentID // current owner of this smart contract"
+	schemaDef.Views["getOwner"] = viewGetOwner
+	switch *flagType {
+	case "json":
+		return WriteJSONSchema(schemaDef)
+	case "yaml":
+		return WriteYAMLSchema(schemaDef)
+	}
+	return errors.New("invalid schema type: " + *flagType)
+}
+
+func WriteJSONSchema(schemaDef *generator.SchemaDef) error {
+	file, err := os.Create("schema.json")
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	templateSchema := &generator.TemplateSchema{}
-	templateSchema.Name = name
-	templateSchema.Description = name + " description"
-	templateSchema.Structs = make(generator.StringMapMap)
-	templateSchema.Typedefs = make(generator.StringMap)
-	templateSchema.State = make(generator.StringMap)
-	templateSchema.State["owner"] = "AgentID // current owner of this smart contract"
-	templateSchema.Funcs = make(generator.FuncDescMap)
-	templateSchema.Views = make(generator.FuncDescMap)
-
-	funcInit := &generator.FuncDesc{}
-	funcInit.Params = make(generator.StringMap)
-	funcInit.Params["owner"] = "?AgentID // optional owner of this smart contract"
-	templateSchema.Funcs["init"] = funcInit
-
-	funcSetOwner := &generator.FuncDesc{}
-	funcSetOwner.Access = "owner // current owner of this smart contract"
-	funcSetOwner.Params = make(generator.StringMap)
-	funcSetOwner.Params["owner"] = "AgentID // new owner of this smart contract"
-	templateSchema.Funcs["setOwner"] = funcSetOwner
-
-	viewGetOwner := &generator.FuncDesc{}
-	viewGetOwner.Results = make(generator.StringMap)
-	viewGetOwner.Results["owner"] = "AgentID // current owner of this smart contract"
-	templateSchema.Views["getOwner"] = viewGetOwner
-
-	if schemaExtension == "json" {
-		err := WriteJsonSchema(templateSchema, file)
-		return err
-	} else if schemaExtension == "yaml" {
-		err := WriteYamlSchema(templateSchema, file)
-		return err
-	}
-	return errors.New("Not implemented Schema Type " + schemaExtension)
-}
-
-func WriteJsonSchema(templateSchema *generator.TemplateSchema, file *os.File) error {
-	b, err := json.Marshal(templateSchema)
+	b, err := json.Marshal(schemaDef)
 	if err != nil {
 		return err
 	}
@@ -202,8 +199,14 @@ func WriteJsonSchema(templateSchema *generator.TemplateSchema, file *os.File) er
 	return err
 }
 
-func WriteYamlSchema(templateSchema *generator.TemplateSchema, file *os.File) error {
-	b, err := yaml.Marshal(templateSchema)
+func WriteYAMLSchema(schemaDef *generator.SchemaDef) error {
+	file, err := os.Create("schema.yaml")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	b, err := yaml.Marshal(schemaDef)
 	if err != nil {
 		return err
 	}
@@ -211,30 +214,29 @@ func WriteYamlSchema(templateSchema *generator.TemplateSchema, file *os.File) er
 	return err
 }
 
-func loadSchema(file *os.File) (*generator.Schema, error) {
+func loadSchema(file *os.File) (s *generator.Schema, err error) {
 	fmt.Println("loading " + file.Name())
-	fileExtension := filepath.Ext(file.Name())
-	templateSchema := &generator.TemplateSchema{}
-
-	if fileExtension == ".json" {
-		err := json.NewDecoder(file).Decode(templateSchema)
-		if err != nil {
-			return nil, err
+	schemaDef := &generator.SchemaDef{}
+	switch filepath.Ext(file.Name()) {
+	case ".json":
+		err = json.NewDecoder(file).Decode(schemaDef)
+		if err == nil {
+			err = WriteYAMLSchema(schemaDef)
 		}
-	} else if fileExtension == ".yaml" {
+	case ".yaml":
 		fileByteArray, _ := ioutil.ReadAll(file)
-		err := yaml.Unmarshal(fileByteArray, templateSchema)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, errors.New("Not implemented Schema Type " + fileExtension)
+		err = yaml.Unmarshal(fileByteArray, schemaDef)
+	default:
+		err = errors.New("unexpected file type: " + file.Name())
 	}
-
-	schema := generator.NewSchema()
-	err := schema.Compile(templateSchema)
 	if err != nil {
 		return nil, err
 	}
-	return schema, nil
+
+	s = generator.NewSchema()
+	err = s.Compile(schemaDef)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
 }

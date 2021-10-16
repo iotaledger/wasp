@@ -3,17 +3,15 @@
 
 package wasmproc
 
-import "github.com/iotaledger/wasp/packages/vm/wasmhost"
-
 type ScExports struct {
 	ScSandboxObject
-	wasmHost *wasmhost.WasmHost
+	wc *WasmContext
 }
 
-func NewScExports(wasmHost *wasmhost.WasmHost) *ScExports {
-	return &ScExports{wasmHost: wasmHost}
+func NewScExports(wc *WasmContext) *ScExports {
+	return &ScExports{wc: wc}
 }
 
 func (o *ScExports) SetBytes(keyID, typeID int32, bytes []byte) {
-	o.wasmHost.SetExport(keyID, string(bytes))
+	o.wc.host.SetExport(keyID, string(bytes))
 }

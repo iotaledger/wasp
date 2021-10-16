@@ -15,18 +15,16 @@ import (
 
 type ScTransfers struct {
 	ScSandboxObject
-	vm *WasmProcessor
+	wc *WasmContext
 }
 
-func NewScTransfers(vm *WasmProcessor) *ScTransfers {
-	a := &ScTransfers{}
-	a.vm = vm
-	return a
+func NewScTransfers(wc *WasmContext) *ScTransfers {
+	return &ScTransfers{wc: wc}
 }
 
 func (a *ScTransfers) GetObjectID(keyID, typeID int32) int32 {
 	return GetArrayObjectID(a, keyID, typeID, func() WaspObject {
-		return NewScTransferInfo(a.vm)
+		return NewScTransferInfo(a.wc)
 	})
 }
 
@@ -35,13 +33,11 @@ func (a *ScTransfers) GetObjectID(keyID, typeID int32) int32 {
 type ScTransferInfo struct {
 	ScSandboxObject
 	address ledgerstate.Address
-	vm      *WasmProcessor
+	wc      *WasmContext
 }
 
-func NewScTransferInfo(vm *WasmProcessor) *ScTransferInfo {
-	o := &ScTransferInfo{}
-	o.vm = vm
-	return o
+func NewScTransferInfo(wc *WasmContext) *ScTransferInfo {
+	return &ScTransferInfo{wc: wc}
 }
 
 // TODO refactor
@@ -64,7 +60,7 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 		transfer.Set(col, amount)
 		return true
 	})
-	if !o.vm.ctx.Send(o.address, transfer, nil) {
+	if !o.wc.ctx.Send(o.address, transfer, nil) {
 		o.Panic("failed to send to %s", o.address.Base58())
 	}
 }

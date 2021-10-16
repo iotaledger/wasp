@@ -22,7 +22,7 @@ type SoloScContext struct {
 }
 
 func NewSoloScContext(ctx *SoloContext) *SoloScContext {
-	return &SoloScContext{ScContext: *wasmproc.NewScContext(nil, &ctx.wasmHost.KvStoreHost), ctx: ctx}
+	return &SoloScContext{ScContext: *wasmproc.NewScContext(nil, &ctx.wc.KvStoreHost), ctx: ctx}
 }
 
 func (o *SoloScContext) Exists(keyID, typeID int32) bool {
@@ -40,7 +40,7 @@ func (o *SoloScContext) GetBytes(keyID, typeID int32) []byte {
 }
 
 func (o *SoloScContext) GetObjectID(keyID, typeID int32) int32 {
-	host := o.ctx.wasmHost
+	host := o.ctx.wc
 	return wasmproc.GetMapObjectID(o, keyID, typeID, wasmproc.ObjFactories{
 		// wasmhost.KeyBalances:  func() wasmproc.WaspObject { return wasmproc.NewScBalances(o.vm, keyID) },
 		wasmhost.KeyExports: func() wasmproc.WaspObject { return wasmproc.NewScExports(host) },
@@ -62,6 +62,10 @@ func (o *SoloScContext) SetBytes(keyID, typeID int32, bytes []byte) {
 		o.processCall(bytes)
 	case wasmhost.KeyPost:
 		o.processPost(bytes)
+	case wasmhost.KeyLog:
+		o.ctx.Chain.Log.Infof(string(bytes))
+	case wasmhost.KeyTrace:
+		o.ctx.Chain.Log.Debugf(string(bytes))
 	default:
 		o.ScContext.SetBytes(keyID, typeID, bytes)
 	}
@@ -85,7 +89,7 @@ func (o *SoloScContext) processCall(bytes []byte) {
 	}
 
 	ctx := o.ctx
-	funcName := ctx.wasmHost.FunctionFromCode(uint32(function))
+	funcName := ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		o.Panic("unknown function")
 	}
@@ -93,14 +97,14 @@ func (o *SoloScContext) processCall(bytes []byte) {
 	params := o.getParams(paramsID)
 	_ = wasmlib.ConnectHost(ctx.wasmHostOld)
 	res, err := ctx.Chain.CallView(ctx.scName, funcName, params)
-	_ = wasmlib.ConnectHost(ctx.wasmHost)
+	_ = wasmlib.ConnectHost(ctx.wc)
 	ctx.Err = err
 	if err != nil {
 		// o.Panic("failed to invoke call: " + err.Error())
 		return
 	}
 	returnID := o.GetObjectID(int32(wasmlib.KeyReturn), wasmlib.TYPE_MAP)
-	ctx.wasmHost.FindObject(returnID).(*wasmproc.ScDict).SetKvStore(res)
+	ctx.wc.FindObject(returnID).(*wasmproc.ScDict).SetKvStore(res)
 }
 
 func (o *SoloScContext) processPost(bytes []byte) {
@@ -155,7 +159,7 @@ func (o *SoloScContext) getParams(paramsID int32) dict.Dict {
 	if paramsID == 0 {
 		return dict.New()
 	}
-	params := o.ctx.wasmHost.FindObject(paramsID).(*wasmproc.ScDict).KvStore().(dict.Dict)
+	params := o.ctx.wc.FindObject(paramsID).(*wasmproc.ScDict).KvStore().(dict.Dict)
 	params.MustIterate("", func(key kv.Key, value []byte) bool {
 		o.Tracef("  PARAM '%s'", key)
 		return true
@@ -168,7 +172,7 @@ func (o *SoloScContext) getTransfer(transferID int32) colored.Balances {
 		return colored.NewBalances()
 	}
 	transfer := colored.NewBalances()
-	transferDict := o.ctx.wasmHost.FindObject(transferID).(*wasmproc.ScDict).KvStore()
+	transferDict := o.ctx.wc.FindObject(transferID).(*wasmproc.ScDict).KvStore()
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
 		color, err := codec.DecodeColor([]byte(key))
 		if err != nil {
@@ -193,7 +197,7 @@ func (o *SoloScContext) postSync(contract, function iscp.Hname, paramsID, transf
 	if contract != iscp.Hn(ctx.scName) {
 		o.Panic("invalid contract")
 	}
-	funcName := ctx.wasmHost.FunctionFromCode(uint32(function))
+	funcName := ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		o.Panic("unknown function")
 	}
@@ -222,10 +226,10 @@ func (o *SoloScContext) postSync(contract, function iscp.Hname, paramsID, transf
 			ctx.Chain.Env.EnqueueRequests(ctx.Tx)
 		}
 	}
-	_ = wasmlib.ConnectHost(ctx.wasmHost)
+	_ = wasmlib.ConnectHost(ctx.wc)
 	if ctx.Err != nil {
 		return
 	}
 	returnID := o.GetObjectID(int32(wasmlib.KeyReturn), wasmlib.TYPE_MAP)
-	ctx.wasmHost.FindObject(returnID).(*wasmproc.ScDict).SetKvStore(res)
+	ctx.wc.FindObject(returnID).(*wasmproc.ScDict).SetKvStore(res)
 }

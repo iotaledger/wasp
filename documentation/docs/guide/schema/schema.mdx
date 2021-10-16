@@ -31,12 +31,12 @@ of such repetition were:
 To facilitate the code generation we decided to use a _schema definition file_ for smart
 contracts. In such a schema definition file all aspects of a smart contract that should be
 known by someone who wants to use the contract are clearly defined in a single place. This
-schema definition then becomes the source of truth for how the smart contract works.
+schema definition file then becomes the source of truth for how the smart contract works.
 
-The schema file defines things like the state variables that the smart contract uses, the
-Funcs and Views that the contract implements, the access rights for each function, the
-input parameters and output results for each function, and additional data structures that
-the contract uses.
+The schema definition file defines things like the state variables that the smart
+contract uses, the Funcs and Views that the contract implements, the access rights for
+each function, the input parameters and output results for each function, and additional
+data structures that the contract uses.
 
 With detailed schema information readily available in a single location it suddenly
 becomes possible to do a lot more than just generating repetitive code fragments. We can
@@ -60,7 +60,7 @@ used.
 
 Future additions to the schema tool that we envision are the automatic generation of smart
 contract interface classes for use with client side Javascript, and automatic generation
-of a web API for smart contracts. The schema file can also provide a starting point for
-other tooling, for example a tool that automatically audits a smart contract
+of a web API for smart contracts. The schema defintion file can also provide a starting
+point for other tooling, for example a tool that automatically audits a smart contract.
 
 In the next section we will look at how the schema tool works.
