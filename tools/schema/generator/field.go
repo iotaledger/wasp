@@ -44,7 +44,7 @@ type Field struct {
 	TypeID   int32
 }
 
-func (f *Field) Compile(schema *Schema, fldName, fldType string) error {
+func (f *Field) Compile(s *Schema, fldName, fldType string) error {
 	fldName = strings.TrimSpace(fldName)
 	f.Name = fldName
 	f.Alias = fldName
@@ -92,12 +92,12 @@ func (f *Field) Compile(schema *Schema, fldName, fldType string) error {
 		f.TypeID = typeID
 		return nil
 	}
-	for _, typeDef := range schema.Structs {
+	for _, typeDef := range s.Structs {
 		if f.Type == typeDef.Name {
 			return nil
 		}
 	}
-	for _, subtype := range schema.Typedefs {
+	for _, subtype := range s.Typedefs {
 		if f.Type == subtype.Name {
 			return nil
 		}

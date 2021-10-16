@@ -314,7 +314,7 @@ func (s *Schema) generateGoFuncs() error {
 	return os.Remove(scOriginal)
 }
 
-func (s *Schema) generateGoFuncSignature(file *os.File, f *FuncDef) {
+func (s *Schema) generateGoFuncSignature(file *os.File, f *Func) {
 	fmt.Fprintf(file, "\nfunc %s(ctx wasmlib.Sc%sContext, f *%sContext) {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
 	case "funcInit":
@@ -753,7 +753,7 @@ func (s *Schema) GenerateGoTests() error {
 	return nil // s.generateGoConsts(true)
 }
 
-func (s *Schema) generateGoThunk(file *os.File, f *FuncDef) {
+func (s *Schema) generateGoThunk(file *os.File, f *Func) {
 	nameLen := f.nameLen(5)
 	fmt.Fprintf(file, "\ntype %sContext struct {\n", f.Type)
 	if len(f.Params) != 0 {
@@ -808,7 +808,7 @@ func (s *Schema) generateGoThunk(file *os.File, f *FuncDef) {
 	fmt.Fprintf(file, "}\n")
 }
 
-func (s *Schema) generateGoThunkAccessCheck(file *os.File, f *FuncDef) {
+func (s *Schema) generateGoThunkAccessCheck(file *os.File, f *Func) {
 	grant := f.Access
 	index := strings.Index(grant, "//")
 	if index >= 0 {

@@ -79,7 +79,7 @@ func (s *Schema) GenerateJava() error {
 	return nil
 }
 
-func (s *Schema) GenerateJavaFunc(file *os.File, f *FuncDef) error {
+func (s *Schema) GenerateJavaFunc(file *os.File, f *Func) error {
 	funcName := f.FuncName
 	funcKind := capitalize(f.FuncName[:4])
 	fmt.Fprintf(file, "\npublic static void %s(Sc%sContext ctx, %sParams params) {\n", funcName, funcKind, capitalize(funcName))
@@ -282,7 +282,7 @@ func (s *Schema) GenerateJavaConsts() error {
 	return nil
 }
 
-func (s *Schema) GenerateJavaThunk(file, params *os.File, f *FuncDef) {
+func (s *Schema) GenerateJavaThunk(file, params *os.File, f *Func) {
 	// calculate padding
 	nameLen, typeLen := calculatePadding(f.Params, javaTypes, false)
 
@@ -337,7 +337,7 @@ func (s *Schema) GenerateJavaThunk(file, params *os.File, f *FuncDef) {
 	fmt.Fprintf(file, "    }\n")
 }
 
-func (s *Schema) generateJavaThunkAccessCheck(file *os.File, f *FuncDef) {
+func (s *Schema) generateJavaThunkAccessCheck(file *os.File, f *Func) {
 	grant := f.Access
 	index := strings.Index(grant, "//")
 	if index >= 0 {

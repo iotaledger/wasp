@@ -7,21 +7,21 @@ Since we allow nesting of container types it is a bit difficult to create proper
 declarations for such nested types. Especially because in a field definition you can only
 indicate either a single type, or an array of single type, or a map of single type.
 
-We devised a simple solution to this problem. You can add a `typedefs` section to
-the schema file where you can define a single type name for a container type. That way you can
-easily create containers that contain such container types. The schema tool will
-automatically generate the in-between proxy types necessary to make all of this work.
+We devised a simple solution to this problem. You can add a `typedefs` section to the
+schema definition file where you can define a single type name for a container type. That
+way you can easily create containers that contain such container types. The schema tool
+will automatically generate the in-between proxy types necessary to make all of this work.
 
 To keep it at the `betting` smart contract from before, imagine we would want to keep
 track of all betting rounds. Since a betting round contains an array of all bets in a
 round you could not easily define it if it weren't for typedefs.
 
-Instead, now you add the following to your schema:
+Instead, now you add the following to your schema definition file:
 
-<Tabs defaultValue="json"
+<Tabs defaultValue="yaml"
       values={[
-          {label: 'schema.json', value: 'json'},
           {label: 'schema.yaml', value: 'yaml'},
+          {label: 'schema.json', value: 'json'},
       ]}>
 
 <TabItem value="json">

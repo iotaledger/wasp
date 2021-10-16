@@ -5,7 +5,7 @@ We won't go in depth about this topic. The specification of the _UTXO Ledger_ ca
 We only have to know that the _UTXO Ledger_ contains balances of colored tokens locked in
 addresses, like the following:
 
- ```log
+```log
 Address: Yk85765qdrwheQ4udj6RihxtPxudTSWF9qYe4NsAfp6K
     IOTA: 1000
     Red: 15

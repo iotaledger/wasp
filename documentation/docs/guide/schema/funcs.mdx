@@ -3,14 +3,14 @@ import TabItem from "@theme/TabItem"
 
 # Function Definitions
 
-Here is the full schema.json file for the `dividend` example. We will now focus on
+Here is the full schema definition file for the `dividend` example. We will now focus on
 its `funcs` and `views` sections. Since they are structured identically we will only need
 to explain the layout of these sections once.
 
-<Tabs defaultValue="json"
+<Tabs defaultValue="yaml"
     values={[
-        {label: 'schema.json', value: 'json'},
         {label: 'schema.yaml', value: 'yaml'},
+        {label: 'schema.json', value: 'json'},
     ]}>
 
 <TabItem value="json">
@@ -92,7 +92,6 @@ views:
       address: Address // address of dividend recipient
     results:
       factor: Int64 // relative division factor
-
 ```
 
 </TabItem>
@@ -104,9 +103,9 @@ same way. The only resulting difference is in the way the schema tool generates 
 them. The code generated for Funcs will be able to inspect and modify the smart contract
 state, whereas the code generated for Views will only be able to inspect the state.
 
-Functions are defined as named subsections in schema.json. The name of the subsection will
-become the name of the function. Under each function subsection in turn there can be 3
-optional subsections.
+Functions are defined as named subsections in the schema definition file. The name of the
+subsection will become the name of the function. Under each function subsection in turn
+there can be 3 optional subsections.
 
 * `access` indicates who is allowed to access the function.
 * `params` holds the field definitions that describe the function parameters.

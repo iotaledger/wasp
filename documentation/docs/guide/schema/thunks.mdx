@@ -189,11 +189,11 @@ fn func_set_owner_thunk(ctx: &ScFuncContext) {
 </Tabs>
 
 The thunk first logs the contract and function name to show the call has started. Then it
-sets up the access control for the function according to schema.json. In this case it
-retrieves the `owner` state variable, requires that it exists, and then requires that the
-caller() of the function equals that value. Any failing requirement will panic out of the
-function with an error message. So this code makes sure only the owner of the contract can
-call this function.
+sets up the access control for the function according to the schema definition file.
+In this case it retrieves the `owner` state variable, requires that it exists, and then
+requires that the caller() of the function equals that value. Any failing requirement will
+panic out of the function with an error message. So this code makes sure only the owner of
+the contract can call this function.
 
 Next we set up a strongly typed function-specific context structure. First we add the
 function-specific immutable `params` interface structure, which is only present when the

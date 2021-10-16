@@ -12,33 +12,30 @@ import (
 )
 
 type (
-	FieldMap    map[string]*Field
-	FieldMapMap map[string]FieldMap
-)
-
-type (
+	FieldMap     map[string]*Field
+	FieldMapMap  map[string]FieldMap
 	StringMap    map[string]string
 	StringMapMap map[string]StringMap
 )
 
-type FuncDesc struct {
+type FuncDef struct {
 	Access  string    `json:"access,omitempty" yaml:"access,omitempty"`
 	Params  StringMap `json:"params,omitempty" yaml:"params,omitempty"`
 	Results StringMap `json:"results,omitempty" yaml:"results,omitempty"`
 }
-type FuncDescMap map[string]*FuncDesc
+type FuncDefMap map[string]*FuncDef
 
-type TemplateSchema struct {
+type SchemaDef struct {
 	Name        string       `json:"name" yaml:"name"`
 	Description string       `json:"description" yaml:"description"`
 	Structs     StringMapMap `json:"structs" yaml:"structs"`
 	Typedefs    StringMap    `json:"typedefs" yaml:"typedefs"`
 	State       StringMap    `json:"state" yaml:"state"`
-	Funcs       FuncDescMap  `json:"funcs" yaml:"funcs"`
-	Views       FuncDescMap  `json:"views" yaml:"views"`
+	Funcs       FuncDefMap   `json:"funcs" yaml:"funcs"`
+	Views       FuncDefMap   `json:"views" yaml:"views"`
 }
 
-type FuncDef struct {
+type Func struct {
 	Access   string
 	Kind     string
 	FuncName string
@@ -48,7 +45,7 @@ type FuncDef struct {
 	Type     string
 }
 
-func (f *FuncDef) nameLen(smallest int) int {
+func (f *Func) nameLen(smallest int) int {
 	if len(f.Results) != 0 {
 		return 7
 	}
@@ -67,43 +64,43 @@ type Schema struct {
 	ConstNames    []string
 	ConstValues   []string
 	CoreContracts bool
-	Funcs         []*FuncDef
+	Funcs         []*Func
 	NewTypes      map[string]bool
 	Params        []*Field
 	Results       []*Field
 	StateVars     []*Field
 	Structs       []*Struct
 	Typedefs      []*Field
-	Views         []*FuncDef
+	Views         []*Func
 }
 
 func NewSchema() *Schema {
 	return &Schema{}
 }
 
-func (s *Schema) Compile(templateSchema *TemplateSchema) error {
-	s.FullName = strings.TrimSpace(templateSchema.Name)
+func (s *Schema) Compile(schemaDef *SchemaDef) error {
+	s.FullName = strings.TrimSpace(schemaDef.Name)
 	if s.FullName == "" {
 		return fmt.Errorf("missing contract name")
 	}
 	s.Name = lower(s.FullName)
-	s.Description = strings.TrimSpace(templateSchema.Description)
+	s.Description = strings.TrimSpace(schemaDef.Description)
 
-	err := s.compileTypes(templateSchema)
+	err := s.compileTypes(schemaDef)
 	if err != nil {
 		return err
 	}
-	err = s.compileSubtypes(templateSchema)
+	err = s.compileSubtypes(schemaDef)
 	if err != nil {
 		return err
 	}
 	params := make(FieldMap)
 	results := make(FieldMap)
-	err = s.compileFuncs(templateSchema, &params, &results, false)
+	err = s.compileFuncs(schemaDef, &params, &results, false)
 	if err != nil {
 		return err
 	}
-	err = s.compileFuncs(templateSchema, &params, &results, true)
+	err = s.compileFuncs(schemaDef, &params, &results, true)
 	if err != nil {
 		return err
 	}
@@ -113,7 +110,7 @@ func (s *Schema) Compile(templateSchema *TemplateSchema) error {
 	for _, name := range sortedFields(results) {
 		s.Results = append(s.Results, results[name])
 	}
-	return s.compileStateVars(templateSchema)
+	return s.compileStateVars(schemaDef)
 }
 
 func (s *Schema) CompileField(fldName, fldType string) (*Field, error) {
@@ -125,21 +122,21 @@ func (s *Schema) CompileField(fldName, fldType string) (*Field, error) {
 	return field, nil
 }
 
-func (s *Schema) compileFuncs(templateSchema *TemplateSchema, params, results *FieldMap, views bool) (err error) {
+func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, views bool) (err error) {
 	// TODO check for clashing Hnames
 
 	kind := "func"
-	templateFuncs := templateSchema.Funcs
+	templateFuncs := schemaDef.Funcs
 	if views {
 		kind = "view"
-		templateFuncs = templateSchema.Views
+		templateFuncs = schemaDef.Views
 	}
 	for _, funcName := range sortedFuncDescs(templateFuncs) {
-		if views && templateSchema.Funcs[funcName] != nil {
+		if views && schemaDef.Funcs[funcName] != nil {
 			return fmt.Errorf("duplicate func/view name")
 		}
 		funcDesc := templateFuncs[funcName]
-		f := &FuncDef{}
+		f := &Func{}
 		f.String = funcName
 		f.Kind = capitalize(kind)
 		f.Type = capitalize(funcName)
@@ -192,11 +189,11 @@ func (s *Schema) compileFuncFields(fieldMap StringMap, allFieldMap *FieldMap, wh
 	return fields, nil
 }
 
-func (s *Schema) compileStateVars(templateSchema *TemplateSchema) error {
+func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
 	varNames := make(StringMap)
 	varAliases := make(StringMap)
-	for _, varName := range sortedKeys(templateSchema.State) {
-		varType := templateSchema.State[varName]
+	for _, varName := range sortedKeys(schemaDef.State) {
+		varType := schemaDef.State[varName]
 		varDef, err := s.CompileField(varName, varType)
 		if err != nil {
 			return err
@@ -214,11 +211,11 @@ func (s *Schema) compileStateVars(templateSchema *TemplateSchema) error {
 	return nil
 }
 
-func (s *Schema) compileSubtypes(templateSchema *TemplateSchema) error {
+func (s *Schema) compileSubtypes(schemaDef *SchemaDef) error {
 	varNames := make(StringMap)
 	varAliases := make(StringMap)
-	for _, varName := range sortedKeys(templateSchema.Typedefs) {
-		varType := templateSchema.Typedefs[varName]
+	for _, varName := range sortedKeys(schemaDef.Typedefs) {
+		varType := schemaDef.Typedefs[varName]
 		varDef, err := s.CompileField(varName, varType)
 		if err != nil {
 			return err
@@ -236,9 +233,9 @@ func (s *Schema) compileSubtypes(templateSchema *TemplateSchema) error {
 	return nil
 }
 
-func (s *Schema) compileTypes(templateSchema *TemplateSchema) error {
-	for _, typeName := range sortedMaps(templateSchema.Structs) {
-		fieldMap := templateSchema.Structs[typeName]
+func (s *Schema) compileTypes(schemaDef *SchemaDef) error {
+	for _, typeName := range sortedMaps(schemaDef.Structs) {
+		fieldMap := schemaDef.Structs[typeName]
 		typeDef := &Struct{}
 		typeDef.Name = typeName
 		fieldNames := make(StringMap)
