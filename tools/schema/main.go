@@ -220,12 +220,15 @@ func loadSchema(file *os.File) (s *generator.Schema, err error) {
 	switch filepath.Ext(file.Name()) {
 	case ".json":
 		err = json.NewDecoder(file).Decode(schemaDef)
-		if err == nil {
+		if err == nil && *flagType == "convert" {
 			err = WriteYAMLSchema(schemaDef)
 		}
 	case ".yaml":
 		fileByteArray, _ := ioutil.ReadAll(file)
 		err = yaml.Unmarshal(fileByteArray, schemaDef)
+		if err == nil && *flagType == "convert" {
+			err = WriteJSONSchema(schemaDef)
+		}
 	default:
 		err = errors.New("unexpected file type: " + file.Name())
 	}
