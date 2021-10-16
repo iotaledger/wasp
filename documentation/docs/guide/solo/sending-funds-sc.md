@@ -1,23 +1,35 @@
-# Sending tokens from ISCP to the Tangle
+---
+description: Smart contract only allow their creator to withdraw tokens contained in the smart contract. If authorisation conditions are satisfied, the contract calls the transfer_to_address sandbox function to send all iotas, owned by the contract, to the caller's address.
+image: /img/logo/WASP_logo_dark.png
+keywords:
+- testing
+- solo
+- withdraw
+- tokens
+- tangle
+- send
+- withdrawIota
+- transfer_to_address
+---
+# Sending Tokens From ISCP to the Tangle
 
 The programmer of the `example` smart contract implemented the entry point
 `withdrawIota`. What it is for? The answer is: if not for this method, any tokens sent to the
-smart contract will be essentially lost: there's no other way to withdraw tokens
+smart contract will be essentially lost: there is no other way to withdraw tokens
 from the smart contract.
 
 The entry point requires the caller to be an address and to be equal to the
 `creator` of the instance of the contract. The `creator` (its `agentID`) is
-stored when contract is deployed and is always contained in the registry of contracts.
-Smart contract `example` is programmed to panic if the caller is not the `creator`.
+stored when a contract is deployed and is always contained in the registry of contracts.
+The smart contract `example` is programmed to panic if the caller is not the `creator`.
 This way the smart contract only allows to withdraw tokens contained in the smart contract by its `creator`.
 
-If authorisation conditions are satisfied, the contract calls the `transfer_to_address`
+If authorization conditions are satisfied, the contract calls the `transfer_to_address`
 sandbox function to send all iotas, owned by the contract, to the caller's
 address.
 
-What if we send some other colored tokens, not ordinary iotas, to the smart
-contract? Those will stay there forever, because in this contract we can only
-withdraw iotas.
+What if you send some other colored tokens, not ordinary iotas, to the smart
+contract? As in this contract you can only withdraw iotas, those will stay there forever.
 
 The following _Solo_ test demonstrates how it works:
 

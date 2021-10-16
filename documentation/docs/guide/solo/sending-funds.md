@@ -1,7 +1,16 @@
-# Sending tokens to a Smart Contract
+---
+description: The creator of the smart contract (and nobody else) may withdraw iotas to its address by sending a `withdrawIotas` request.
+image: /img/logo/WASP_logo_dark.png
+keywords:
+- testing
+- solo
+- withdraw
+- tokens
+---
+# Sending Tokens to a Smart Contract
 
 Let's send some tokens to the smart contract. The following example deploys the
-familiar `example1` Rust/Wasm smart contract on the chain and sends 42 iota to it.
+`example1` Rust/Wasm smart contract on the chain and sends 42 iota to it.
 
 ```go
 func TestTutorial6(t *testing.T) {
@@ -30,20 +39,18 @@ func TestTutorial6(t *testing.T) {
 }
 ```
 
-The statements
+The following statements attach 42 iotas to the ordinary call to the `storeString` entry point.
+`PostRequestSync` sends the request with the iotas to the smart contract. The 42
+iotas appear in the account controlled by the smart contract on its chain.
 
 ```go
  req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").WithIotas(42)
  _, err = chain.PostRequestSync(req, userWallet)
 ```
 
-attach 42 iotas to the ordinary call to the `storeString` entry point.
-`PostRequestSync` sends the request with the iotas to the smart contract. The 42
-iotas appear in the account controlled by the smart contract on its chain.
-
 So, what does the `example1` smart contract do with these 42 iotas? Nothing!
 However, the creator of the smart contract (and nobody else) may withdraw those
-iotas to its own address by sending a `withdrawIotas` request.
+iotas to its address by sending a `withdrawIotas` request.
 
 What if we send some other colored tokens, not iotas, to the `example1`
 smart contract? They will effectively be lost, because the programmer of

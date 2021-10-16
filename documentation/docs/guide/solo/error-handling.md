@@ -1,4 +1,21 @@
-# Error handling
+---
+description: Whatever happens during the execution of a smart contract's full entry point, processing of the request always results in the state transition.  The VM context catches exceptions (panics) in the program. Its consequences are recorded in the state of the chain during the fallback processing.
+image: /img/logo/WASP_logo_dark.png
+keywords:
+- testing
+- solo
+- error handling
+- panic
+- state
+- transition
+---
+# Error Handling
+
+:::note
+
+The example code can be found in the [Wasp repository](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples).
+
+:::
 
 The following test posts a request to the `example1` smart contract without
 the expected parameter `paramString`. The
@@ -32,15 +49,13 @@ The fragments in the output of the test:
 It shows that the panic indeed occurred. The test passes because the resulting
 error was expected.
 
-The log record
+The log record is a printed receipt of the request. It is stored on the chain for each request processed.
 
 ```log
 37:34.192828900	INFO	TestTutorial4.ex4	solo/run.go:148	REQ: 'tx/[0]9r5zoeusdwTcWkDTEMYjeqNj8reiUsLiHF81vExPrvNW: 'panic in VM: string parameter not found''
 ```
 
-is a printed receipt of the request. It is stored on the chain for each request processed.
-
-Note that this test ends with the state `#4`, despite the fact that the last
+Note that this test ends with the state `#4`, although the last
 request to the smart contract failed. This is important: **whatever happens
 during the execution of a smart contract's full entry point, processing of the 
 request always results in the state transition**.
@@ -52,4 +67,4 @@ triggered by the sandbox run-time code.
 
 In the case of `example1` the error event was recorded in the immutable record
 log of the chain, aka `receipt`, but the data state of the smart contract wasn't modified. In
-other cases the fallback actions may be more complex.
+other cases, the fallback actions may be more complex.
