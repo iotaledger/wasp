@@ -1,9 +1,17 @@
+---
+description: The UTXO Ledger contains balances of colored tokens locked in addresses.  You can only move tokens on the UTXO Ledger by unlocking the corresponding address with its private key
+image: /img/logo/WASP_logo_dark.png
+keywords:
+- testing 
+- solo
+- UTXO
+- colored coins
+- create wallet
+---
 # Tokens and the UTXO Ledger
 
-Goshimmer implements the IOTA _UTXO Ledger_, a distributed ledger of tokens.
-We won't go in depth about this topic. The specification of the _UTXO Ledger_ can be found [here](https://goshimmer.docs.iota.org/docs/protocol_specification/ledgerstate/).
-We only have to know that the _UTXO Ledger_ contains balances of colored tokens locked in
-addresses, like the following:
+Goshimmer implements the IOTA _UTXO Ledger_, a distributed ledger of tokens. 
+The specification of the _UTXO Ledger_ is not the target of this documentation (you can find more information in the [Goshimmer documentation](https://wiki.iota.org/goshimmer/protocol_specification/components/ledgerstate)). You only need to know that the _UTXO Ledger_ contains balances of colored tokens locked in addresses, like the following:
 
 ```log
 Address: Yk85765qdrwheQ4udj6RihxtPxudTSWF9qYe4NsAfp6K
@@ -12,9 +20,9 @@ Address: Yk85765qdrwheQ4udj6RihxtPxudTSWF9qYe4NsAfp6K
     Green: 200
 ```
 
-where `IOTA` is the color code of IOTA tokens and `Red` and `Green` are other
+Where `IOTA` is the color code of IOTA tokens and `Red` and `Green` are other
 color codes (color codes are 32-byte hashes, as defined by Goshimmer).
-Tokens can only be moved on the UTXO Ledger by unlocking the corresponding
+You can only move tokens on the UTXO Ledger by unlocking the corresponding
 address with its private key.
 
 (In this tutorial we will use `private key`, `signature scheme` and `wallet` as
@@ -23,9 +31,8 @@ synonyms).
 The _Solo_ environment implements a detailed in-memory _UTXO Ledger_. For example,
 you can only move tokens in the _Solo_ environment by creating and submitting
 valid and signed transactions. You can also create new wallets on the _UTXO
-Ledger_ and request iotas from the faucet to your wallet.
-
-The following code shows how to do it:
+Ledger_ and request iotas from the faucet to your wallet, as shown in the 
+following example: 
 
 ```go
 func TestTutorial2(t *testing.T) {
@@ -50,9 +57,9 @@ The deterministic output of the test:
 ```
 
 The UTXO Ledger in _Solo_ "lives" in the global environment `env` of the test.
-It is shared among all chains, which are deployed on that environment. It serves as a
+It is shared among all chains which are deployed on that environment. It serves as a
 medium for transactions between smart contracts on different chains. This way
 _Solo_ makes it possible to test transacting between chains.
 
-Note that in the test above we didn’t deploy any chains: the UTXO Ledger exists
+Note that in the test above we did not deploy any chains: the UTXO Ledger exists
 independently of any chains.

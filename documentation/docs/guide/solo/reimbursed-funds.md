@@ -1,9 +1,20 @@
-# Return of tokens in case of failure
+---
+description: In case of panic in the smart contract for whatever reason, the fallback logic of the ISCP VM returns all tokens (minus fees) to the sender.
+image: /img/logo/WASP_logo_dark.png
+keywords:
+- testing
+- solo
+- return
+- panic
+- error
+- sender
+---
+# Return of Tokens in Case of Failure
 
-Natural question: what if I attach tokens to the request, send it to the smart
+What if you attach tokens to a request, send it to the smart
 contract and the smart contract fails (panics)? The panics may occur for
 whatever reason: it may be due to wrong parameters, or it may be a runtime
-error, or a bug. What will happen with my tokens?
+error or a bug. What will happen with your tokens?
 
 The following test demonstrates the situation when the request results in a
 panic in the smart contract.
@@ -46,7 +57,7 @@ The programmer forgets the parameter `paramString` and the program panics:
 42:16.441706100 INFO TestTutorial7.ex7 solo/run.go:148 REQ: 'tx/[1]3ZWV9c8MrDPMnyJjEnF8HUuMzUmMNed4Gtg5A1SWgqDD: 'panic in VM: string parameter not found''
 ```
 
-We can see that all sent 42 tokens are returned to the sender's address.
+You can see that all sent 42 tokens are returned to the sender's address.
 
 In case of panic in the smart contract for whatever reason, the fallback logic of the ISCP VM:
 returns all tokens (minus fees) to the sender (to the sender's address in the example above).
