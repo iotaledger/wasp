@@ -67,7 +67,8 @@ struct:
       values={[
           {label: 'Go', value: 'go'},
           {label: 'Rust', value: 'rust'},
-      ]}>
+      ]}
+      groupId="language">
 
 <TabItem value="go">
 
@@ -135,7 +136,7 @@ func (o MutableBet) Value() *Bet {
 ```
 
 </TabItem>
-<TabItem>
+<TabItem value="rust">
 
 ```rust
 use wasmlib::*;
@@ -216,7 +217,8 @@ The generated code in `state.rs` that implements the state interface is shown he
       values={[
           {label: 'Go', value: 'go'},
           {label: 'Rust', value: 'rust'},
-      ]}>
+      ]}
+      groupId="language">
 
 <TabItem value="go">
 
@@ -281,7 +283,7 @@ func (s MutableBettingState) Owner() wasmlib.ScMutableAgentID {
 ```
 
 </TabItem>
-<TabItem>
+<TabItem value="rust">
 
 ```rust
 use wasmlib::*;
