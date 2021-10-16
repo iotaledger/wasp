@@ -41,7 +41,8 @@ func GetProcessor(binaryCode []byte, log *logger.Logger) (iscp.VMProcessor, erro
 	}
 
 	proc.Init()
-	proc.SetExport(0x8fff, ViewCopyAllState)
+	// TODO decide if we want be able to examine state directly from tests
+	// proc.SetExport(0x8fff, ViewCopyAllState)
 	proc.scContext = NewWasmContext("", proc)
 	wasmlib.ConnectHost(proc.scContext)
 	err = proc.LoadWasm(binaryCode)

@@ -88,16 +88,17 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 		return nil, nil
 	}
 
-	if wc.function == ViewCopyAllState {
-		// dump copy of entire state into result
-		state := wc.ctxView.State()
-		results := dict.New()
-		state.MustIterate("", func(key kv.Key, value []byte) bool {
-			results.Set(key, value)
-			return true
-		})
-		return results, nil
-	}
+	// TODO decide if we want be able to examine state directly from tests
+	//if wc.function == ViewCopyAllState {
+	//	// dump copy of entire state into result
+	//	state := wc.ctxView.State()
+	//	results := dict.New()
+	//	state.MustIterate("", func(key kv.Key, value []byte) bool {
+	//		results.Set(key, value)
+	//		return true
+	//	})
+	//	return results, nil
+	//}
 
 	wc.Tracef("Calling " + wc.function)
 	saveID := wc.proc.currentContextID
