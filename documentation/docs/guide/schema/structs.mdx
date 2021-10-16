@@ -5,7 +5,7 @@ import TabItem from "@theme/TabItem"
 
 The schema tool allows you to define your own structured data types that are composed of
 the predefined WasmLib value data types. The tool will generate a struct with named fields
-according to the definition in schema.json, and also generates code to serialize and
+according to the definition in the schema file, and also generates code to serialize and
 deserialize the structure to a byte array, so that it can be saved as a single unit of
 data, for example in state storage.
 
@@ -16,11 +16,12 @@ For example, let's say you are creating a `betting` smart contract. Then you wou
 store information for each bet. The Bet structure could consist of the bet amount and time
 of the bet, the number of the item that was bet on, and the agent ID of the one who placed
 the bet. And you would keep track of all bets in state storage in an array of Bet structs.
-You would insert the following into schema.json:
+You would insert the following into the schema file:
 
 <Tabs defaultValue="json"
       values={[
           {label: 'schema.json', value: 'json'},
+          {label: 'schema.yaml', value: 'yaml'}
       ]}>
 
 <TabItem value="json">
@@ -39,6 +40,21 @@ You would insert the following into schema.json:
     "bets": "[]Bet // all bets made in this round"
   }
 }
+```
+
+</TabItem>
+
+<TabItem value="yaml">
+
+```yaml
+structs:
+  Bet:
+    amount: Int64 // bet amount
+    time: Int64 // timestamp of this bet
+    number: Int32 // number of item we bet on
+    better: AgentID // Who placed this bet
+state:
+  bets: '[]Bet // all bets made in this round'
 ```
 
 </TabItem>
