@@ -7,7 +7,7 @@ structs:
     number: Int64
 typedefs: {}
 state:
-  bets: '[]Bet'
+  bets: Bet[]
   lastWinningNumber: Int64
   playPeriod: Int32
   roundNumber: Int64

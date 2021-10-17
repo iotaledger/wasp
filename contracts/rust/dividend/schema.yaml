@@ -3,15 +3,15 @@ description: Simple dividend smart contract
 structs: {}
 typedefs: {}
 state:
-  memberList: '[]Address // array with all the recipients of this dividend'
-  members: '[Address]Int64 // map with all the recipient factors of this dividend'
+  memberList: Address[] // array with all the recipients of this dividend
+  members: map[Address]Int64 // map with all the recipient factors of this dividend
   owner: AgentID // owner of contract, the only one who can call 'member' func
   totalFactor: Int64 // sum of all recipient factors
 funcs:
   divide: {}
   init:
     params:
-      owner: ?AgentID // optional owner of contract, defaults to contract creator
+      owner: AgentID? // optional owner of contract, defaults to contract creator
   member:
     access: owner // only defined owner of contract can add members
     params:

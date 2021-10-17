@@ -5,14 +5,14 @@ typedefs: {}
 state:
   counter: Int64
   hnameEP: Hname
-  ints: '[String]Int64'
+  ints: map[String]Int64
   mintedColor: Color
   mintedSupply: Int64
 funcs:
   callOnChain:
     params:
-      hnameContract: ?Hname
-      hnameEP: ?Hname
+      hnameContract: Hname?
+      hnameEP: Hname?
       intValue=intParamValue: Int64
     results:
       intValue=intParamValue: Int64
@@ -31,7 +31,7 @@ funcs:
   incCounter: {}
   init:
     params:
-      fail=initFailParam: ?Int64
+      fail=initFailParam: Int64?
   passTypesFull:
     params:
       address: Address
@@ -96,12 +96,12 @@ views:
     params:
       name=intParamName: String
     results:
-      values=this: '[String]Int64'
+      values=this: map[String]Int64
   getStringValue:
     params:
       varName: String
     results:
-      vars=this: '[String]String'
+      vars=this: map[String]String
   justView: {}
   passTypesView:
     params:

@@ -37,7 +37,7 @@ You would insert the following into the schema definition file:
     }
   },
   "state": {
-    "bets": "[]Bet // all bets made in this round"
+    "bets": "Bet[] // all bets made in this round"
   }
 }
 ```
@@ -54,7 +54,7 @@ structs:
     number: Int32 // number of item we bet on
     better: AgentID // Who placed this bet
 state:
-  bets: '[]Bet // all bets made in this round'
+  bets: Bet[] // all bets made in this round
 ```
 
 </TabItem>

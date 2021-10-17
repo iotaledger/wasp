@@ -30,8 +30,8 @@ example in more detail:
 ```json
 {
   "state": {
-    "memberList": "[]Address // array with all the recipients of this dividend",
-    "members": "[Address]Int64 // map with all the recipient factors of this dividend",
+    "memberList": "Address[] // array with all the recipients of this dividend",
+    "members": "map[Address]Int64 // map with all the recipient factors of this dividend",
     "owner": "AgentID // owner of contract, the only one who can call 'member' func",
     "totalFactor": "Int64 // sum of all recipient factors"
   }
@@ -44,9 +44,9 @@ example in more detail:
 
 ```yaml
 state:
-  memberList: '[]Address // array with all the recipients of this dividend'
-  members: '[Address]Int64 // map with all the recipient factors of this dividend'
-  owner: 'AgentID // owner of contract, the only one who can call ''member'' func'
+  memberList: Address[] // array with all the recipients of this dividend
+  members: map[Address]Int64 // map with all the recipient factors of this dividend
+  owner: AgentID // owner of contract, the only one who can call 'member' func
   totalFactor: Int64 // sum of all recipient factors
 ```
 

@@ -2,10 +2,10 @@ name: Erc20
 description: ERC-20 PoC for IOTA Smart Contracts
 structs: {}
 typedefs:
-  AllowancesForAgent: '[AgentID]Int64'
+  AllowancesForAgent: map[AgentID]Int64
 state:
-  allAllowances=a: '[AgentID]AllowancesForAgent'
-  balances=b: '[AgentID]Int64 // balances per account'
+  allAllowances=a: map[AgentID]AllowancesForAgent
+  balances=b: map[AgentID]Int64 // balances per account
   supply=s: Int64 // total supply of the token
 funcs:
   approve:

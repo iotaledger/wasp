@@ -6,7 +6,7 @@ state: {}
 funcs:
   deployContract:
     params:
-      description=ds: ?String // default 'N/A'
+      description=ds: String? // default 'N/A'
       name=nm: String
       programHash=ph: Hash //TODO variable init params for deployed contract
   grantDeployPermission:
@@ -24,4 +24,4 @@ views:
       contractRecData=dt: Bytes // encoded contract record
   getContractRecords:
     results:
-      contractRegistry=r: '[Hname]Bytes // contract records'
+      contractRegistry=r: map[Hname]Bytes // contract records

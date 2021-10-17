@@ -11,13 +11,13 @@ structs:
     userDefined: String // any user defined text
 typedefs: {}
 state:
-  colorList: '[]Color'
-  registry: '[Color]Token'
+  colorList: Color[]
+  registry: map[Color]Token
 funcs:
   mintSupply:
     params:
-      description: ?String // description what minted token represents
-      userDefined: ?String // any user defined text
+      description: String? // description what minted token represents
+      userDefined: String? // any user defined text
   transferOwnership:
     access: creator // TODO the one who can transfer token ownership
     params:

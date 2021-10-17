@@ -61,27 +61,36 @@ func (f *Field) Compile(s *Schema, fldName, fldType string) error {
 	}
 
 	fldType = strings.TrimSpace(fldType)
-	if strings.HasPrefix(fldType, "?") {
-		f.Optional = true
-		fldType = strings.TrimSpace(fldType[1:])
-	}
-	if strings.HasPrefix(fldType, "[") {
-		index = strings.Index(fldType, "]")
-		if index > 0 {
-			f.Array = index == 1
-			if !f.Array {
-				f.MapKey = strings.TrimSpace(fldType[1:index])
-				if !fldTypeRegexp.MatchString(f.MapKey) {
-					return fmt.Errorf("invalid key field type: %s", f.MapKey)
-				}
-			}
-			fldType = strings.TrimSpace(fldType[index+1:])
-		}
-	}
+
+	// remove // comment
 	index = strings.Index(fldType, "//")
 	if index >= 0 {
 		f.Comment = " " + fldType[index:]
 		fldType = strings.TrimSpace(fldType[:index])
+	}
+
+	// remove optional indicator
+	n := len(fldType)
+	if n > 1 && fldType[n-1:] == "?" {
+		f.Optional = true
+		fldType = strings.TrimSpace(fldType[:n-1])
+	}
+
+	n = len(fldType)
+	if n > 2 && fldType[n-2:] == "[]" {
+		// must be array
+		f.Array = true
+		fldType = strings.TrimSpace(fldType[:n-2])
+	} else if n > 4 && fldType[:4] == "map[" {
+		// must be map
+		index = strings.Index(fldType, "]")
+		if index > 5 {
+			f.MapKey = strings.TrimSpace(fldType[4:index])
+			if !fldTypeRegexp.MatchString(f.MapKey) {
+				return fmt.Errorf("invalid key field type: %s", f.MapKey)
+			}
+			fldType = strings.TrimSpace(fldType[index+1:])
+		}
 	}
 	f.Type = fldType
 	if !fldTypeRegexp.MatchString(f.Type) {

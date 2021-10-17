@@ -50,7 +50,7 @@ this:
   "funcs": {
     "init": {
       "params": {
-        "owner": "?AgentID // optional owner of this smart contract"
+        "owner": "AgentID? // optional owner of this smart contract"
       }
     },
     "setOwner": {
@@ -73,7 +73,7 @@ this:
 </TabItem>
 <TabItem value="yaml">
 
-```log
+```yaml
 name: MySmartContract
 description: MySmartContract description
 structs: {}
@@ -83,7 +83,7 @@ state:
 funcs:
   init:
     params:
-      owner: ?AgentID // optional owner of this smart contract
+      owner: AgentID? // optional owner of this smart contract
   setOwner:
     access: owner // current owner of this smart contract
     params:
