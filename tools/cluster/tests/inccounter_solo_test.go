@@ -63,8 +63,6 @@ func TestIncSoloRepeatMany(t *testing.T) {
 }
 
 func TestSpamCallViewWasm(t *testing.T) {
-	// TODO make concurrency work
-	t.SkipNow()
 	testutil.SkipHeavy(t)
 	clu := newCluster(t)
 	committee := []int{0}
@@ -91,7 +89,7 @@ func TestSpamCallViewWasm(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	const n = 2
+	const n = 200
 	ch := make(chan error, n)
 
 	for i := 0; i < n; i++ {

@@ -183,17 +183,22 @@ func (o *ScContext) processCall(bytes []byte) {
 	transfer := o.getTransfer(decode.Int32())
 
 	o.Tracef("CALL c'%s' f'%s'", contract.String(), function.String())
-	var results dict.Dict
-	if o.wc.ctx != nil {
-		results, err = o.wc.ctx.Call(contract, function, params, transfer)
-	} else {
-		results, err = o.wc.ctxView.Call(contract, function, params)
-	}
+	results, err := o.processCallUnlocked(contract, function, params, transfer)
 	if err != nil {
 		o.Panic("failed to invoke call: %v", err)
 	}
 	resultsID := o.GetObjectID(wasmhost.KeyReturn, wasmhost.OBJTYPE_MAP)
 	o.host.FindObject(resultsID).(*ScDict).kvStore = results
+}
+
+func (o *ScContext) processCallUnlocked(contract, function iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
+	o.wc.proc.instanceLock.Unlock()
+	defer o.wc.proc.instanceLock.Lock()
+
+	if o.wc.ctx != nil {
+		return o.wc.ctx.Call(contract, function, params, transfer)
+	}
+	return o.wc.ctxView.Call(contract, function, params)
 }
 
 func (o *ScContext) processDeploy(bytes []byte) {
@@ -206,10 +211,17 @@ func (o *ScContext) processDeploy(bytes []byte) {
 	description := string(decode.Bytes())
 	params := o.getParams(decode.Int32())
 	o.Tracef("DEPLOY c'%s' f'%s'", name, description)
-	err = o.wc.ctx.DeployContract(programHash, name, description, params)
+	err = o.processDeployUnlocked(programHash, name, description, params)
 	if err != nil {
 		o.Panic("failed to deploy: %v", err)
 	}
+}
+
+func (o *ScContext) processDeployUnlocked(programHash hashing.HashValue, name, description string, params dict.Dict) error {
+	o.wc.proc.instanceLock.Unlock()
+	defer o.wc.proc.instanceLock.Lock()
+
+	return o.wc.ctx.DeployContract(programHash, name, description, params)
 }
 
 // TODO refactor
