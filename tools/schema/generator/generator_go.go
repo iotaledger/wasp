@@ -749,8 +749,39 @@ func (s *Schema) GenerateGoTests() error {
 	defer func() {
 		_ = os.Chdir("..")
 	}()
-	// TODO <scname>_test.go
-	return nil // s.generateGoConsts(true)
+
+	// do not overwrite existing file
+	name := strings.ToLower(s.Name)
+	filename := name + "_test.go"
+	file, err := os.Open(filename)
+	if err == nil {
+		file.Close()
+		return nil
+	}
+
+	file, err = os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	module := ModuleName + strings.ReplaceAll(ModuleCwd[len(ModulePath):], "\\", "/")
+	fmt.Fprintln(file, "package test")
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, "import (")
+	fmt.Fprintln(file, "\t\"testing\"")
+	fmt.Fprintln(file)
+	fmt.Fprintf(file, "\t\"%s\"\n", module)
+	fmt.Fprintln(file, "\t\"github.com/iotaledger/wasp/packages/vm/wasmsolo\"")
+	fmt.Fprintln(file, "\t\"github.com/stretchr/testify/require\"")
+	fmt.Fprintln(file, ")")
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, "func TestDeploy(t *testing.T) {")
+	fmt.Fprintf(file, "\tctx := wasmsolo.NewSoloContext(t, %s.ScName, %s.OnLoad)\n", name, name)
+	fmt.Fprintf(file, "\trequire.NoError(t, ctx.ContractExists(%s.ScName))\n", name)
+	fmt.Fprintln(file, "}")
+
+	return nil
 }
 
 func (s *Schema) generateGoThunk(file *os.File, f *Func) {

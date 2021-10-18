@@ -12,8 +12,6 @@ import (
 	"strings"
 )
 
-// TODO generate initial tests
-
 const (
 	AccessChain   = "chain"
 	AccessCreator = "creator"
