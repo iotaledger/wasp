@@ -11,11 +11,19 @@ import (
 
 const defaultTimeout = 5 * time.Second
 
-// DisableWasmTimeout can be used to disable the annoying timeout during debugging
-var DisableWasmTimeout = false
+var (
+	// DisableWasmTimeout can be used to disable the annoying timeout during debugging
+	DisableWasmTimeout = false
 
-// WasmTimeout set this to non-zero for a one-time override of the defaultTimeout
-var WasmTimeout = 0 * time.Second
+	// HostTracing turns on debug tracing for ScHost calls
+	HostTracing = false
+
+	// HostTracingAll turns on *all* debug tracing for ScHost calls
+	HostTracingAll = false
+
+	// WasmTimeout set this to non-zero for a one-time override of the defaultTimeout
+	WasmTimeout = 0 * time.Second
+)
 
 type WasmVM interface {
 	Interrupt()

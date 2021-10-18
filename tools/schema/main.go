@@ -155,7 +155,7 @@ func generateSchemaNew() error {
 
 	funcInit := &generator.FuncDef{}
 	funcInit.Params = make(generator.StringMap)
-	funcInit.Params["owner"] = "?AgentID // optional owner of this smart contract"
+	funcInit.Params["owner"] = "AgentID? // optional owner of this smart contract"
 	schemaDef.Funcs["init"] = funcInit
 
 	funcSetOwner := &generator.FuncDef{}

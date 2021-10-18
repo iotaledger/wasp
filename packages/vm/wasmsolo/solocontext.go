@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	Debug      = false
-	StackTrace = false
-	TraceHost  = false
+	SoloDebug        = false
+	SoloHostTracing  = false
+	SoloStackTracing = false
 )
 
 var (
@@ -149,15 +149,15 @@ func soloContext(t *testing.T, chain *solo.Chain, scName string, creator *SoloAg
 
 // StartChain starts a new chain named chainName.
 func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
-	wasmhost.HostTracing = TraceHost
-	// wasmhost.ExtendedHostTracing = TraceHost
+	wasmhost.HostTracing = SoloHostTracing
+	// wasmhost.HostTracingAll = SoloHostTracing
 
 	var soloEnv *solo.Solo
 	if len(env) != 0 {
 		soloEnv = env[0]
 	}
 	if soloEnv == nil {
-		soloEnv = solo.New(t, Debug, StackTrace)
+		soloEnv = solo.New(t, SoloDebug, SoloStackTracing)
 	}
 	return soloEnv.NewChain(nil, chainName)
 }
@@ -320,11 +320,15 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 	}
 
 	wasmFile := ctx.scName + "_bg.wasm"
+
+	// try Rust first
 	exists, _ := util.ExistsFilePath("../pkg/" + wasmFile)
 	if exists {
 		wasmFile = "../pkg/" + wasmFile
 	}
-	if *GoWasm {
+
+	rustExists, _ := util.ExistsFilePath("../src/lib.rs")
+	if *GoWasm || !rustExists {
 		wasmFile = ctx.scName + "_go.wasm"
 		exists, _ = util.ExistsFilePath("../wasmmain/pkg/" + wasmFile)
 		if exists {

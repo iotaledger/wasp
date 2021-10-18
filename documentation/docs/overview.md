@@ -26,7 +26,9 @@ Given that anyone can start a new chain, and set the rules for that chain, a lot
 
 ## Flexibility
 
-You can run multiple types of virtual machines on any chain. We are starting with [Rust/WASM](https://rustwasm.github.io/docs/book/) based smart contracts, followed by [Solidity/EVM](https://docs.soliditylang.org/en/v0.8.6/) based smart contracts, but eventually all kinds of virtual machines can be supported in a ISCP chain depending on the demand. 
+You can run multiple types of virtual machines on any chain. We are starting with 
+[Rust/Wasm](https://rustwasm.github.io/docs/book/) based smart contracts, followed by 
+[Solidity/EVM](https://docs.soliditylang.org/en/v0.8.6/) based smart contracts, but eventually all kinds of virtual machines can be supported in a ISCP chain depending on the demand. 
 
 ISCP is more complex compared to conventional smart contracts, but this provides freedom and flexibility to allow the usage of smart contracts in a wide range of use cases.
 

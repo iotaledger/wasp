@@ -224,7 +224,6 @@ func (o *ScContext) processDeployUnlocked(programHash hashing.HashValue, name, d
 	return o.wc.ctx.DeployContract(programHash, name, description, params)
 }
 
-// TODO refactor
 func (o *ScContext) processPost(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
 	chainID, err := iscp.ChainIDFromBytes(decode.Bytes())
@@ -259,7 +258,7 @@ func (o *ScContext) processPost(bytes []byte) {
 		return
 	}
 
-	if delay < -1 {
+	if delay < 0 {
 		o.Panic("invalid delay: %d", delay)
 	}
 
