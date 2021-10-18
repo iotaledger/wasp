@@ -9,10 +9,6 @@
       color: '#36A1AC',
       backgroundColor: 'rgba(0, 224, 202, 0.2);',
     },
-    [LogTag.Round]: {
-      color: '#38B86B',
-      backgroundColor: 'rgba(56, 184, 107, 0.2)',
-    },
     [LogTag.Funds]: {
       color: '#6464FF',
       backgroundColor: 'rgba(65, 64, 223, 0.2)',

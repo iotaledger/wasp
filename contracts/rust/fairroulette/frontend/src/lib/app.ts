@@ -28,7 +28,6 @@ const DEFAULT_AUTODISMISS_TOAST_TIME = 5000 //in milliseconds
 
 export enum LogTag {
     Site = 'Site',
-    Round = 'Round',
     Funds = 'Funds',
     SmartContract = 'Smart Contract',
     Error = 'Error'
@@ -64,7 +63,7 @@ export async function initialize(): Promise<void> {
     if (initialized) {
         return;
     }
-    
+
     log(LogTag.Site, 'Initializing wallet');
 
     if (config.seed) {
@@ -120,9 +119,13 @@ export async function initialize(): Promise<void> {
             .then((x) => round.update($round => ({ ...$round, winningNumber: x }))),
     ];
 
-    await Promise.all(requests);
+    try {
+        await Promise.all(requests);
+        log(LogTag.Site, 'Demo loaded');
+    } catch (e: any) {
+        log(LogTag.Error, 'There was an error loading the demo');
+    }
 
-    log(LogTag.Site, 'Demo loaded');
 
     initialized = true;
 }
@@ -165,14 +168,14 @@ export async function placeBet(): Promise<void> {
     showBettingSystem.set(false);
     showWinningNumber.set(false);
     try {
-        
+
         await fairRouletteService.placeBetOnLedger(
             get(keyPair),
             get(address),
             get(round).betSelection,
             get(round).betAmount,
         );
-        
+
         log(LogTag.SmartContract, "Funds sent to Wasp chain address using GoShimmer nodes");
 
     } catch (ex: any) {
@@ -190,7 +193,7 @@ export async function placeBet(): Promise<void> {
 }
 
 export async function sendFaucetRequest(): Promise<void> {
-    log(LogTag.Funds, "Funds requested from devnet. The GoShimmer nodes have received them.  Sending funds to the requested wallet.");
+    log(LogTag.Funds, "GoShimmer nodes received a request for devnet funds. Sending funds to your wallet");
 
     if (!get(firstTimeRequestingFunds)) {
         createNewAddress();
@@ -246,7 +249,7 @@ export function subscribeToRouletteEvents(): void {
         showWinningNumber.set(false);
         // To mitigate time sync variances, we ignore the provided timestamp and use our local one.
         round.update($round => ({ ...$round, active: true, startedAt: Date.now() / 1000, logs: [] }));
-        log(LogTag.Round, 'Started');
+        log(LogTag.SmartContract, 'Round started');
     });
 
     fairRouletteService.on('roundStopped', () => {
@@ -272,13 +275,12 @@ export function subscribeToRouletteEvents(): void {
 
         resetRound();
 
-        log(LogTag.Round, 'Ended');
-        log(LogTag.SmartContract, "Round Ended. Current bets cleared.");
+        log(LogTag.SmartContract, "Round Ended. Current bets cleared");
     });
 
     fairRouletteService.on('roundNumber', (roundNumber: bigint) => {
         round.update($round => ({ ...$round, number: roundNumber }))
-        log(LogTag.Round, `Started. Round number: ${roundNumber}`);
+        log(LogTag.SmartContract, `Round number: ${roundNumber}`);
     });
 
     fairRouletteService.on('winningNumber', (winningNumber: bigint) => {
@@ -320,7 +322,7 @@ export function subscribeToRouletteEvents(): void {
             })
             showWinnerAnimation();
         }
-        log(LogTag.SmartContract, `Payout for ${bet.better} with ${bet.amount}i.`);
+        log(LogTag.SmartContract, `Payout for ${bet.better} with ${bet.amount}i`);
 
     });
 }
