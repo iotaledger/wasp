@@ -33,7 +33,7 @@
     },
     {
       label: 'Visit the Wiki',
-      href: 'https://wiki.iota.org/wasp/welcome/',
+      href: 'https://wiki.iota.org/wasp/guide/example_projects/fair_roulette',
       target: '_blank',
     },
   ];
