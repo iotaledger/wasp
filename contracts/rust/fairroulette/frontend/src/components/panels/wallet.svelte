@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { GOSHIMMER_ADDRESS_EXPLORER_URL } from '../../lib/app';
   import { address, seedString } from '../../lib/store';
 </script>
 
@@ -9,7 +10,16 @@
   </div>
   <div class="wallet-data">
     <div class="eyebrow">Your address</div>
-    <div class="address">{$address ?? '-'}</div>
+    {#if $address}
+      <a
+        class="seed"
+        href={`${GOSHIMMER_ADDRESS_EXPLORER_URL}/${$address}`}
+        target="_blank"
+        rel="noopener noreferrer">{$address}</a
+      >
+    {:else}
+      <div class="seed">-</div>
+    {/if}
   </div>
 </div>
 

@@ -26,6 +26,8 @@ export const ROUND_LENGTH = 60; //in seconds
 
 const DEFAULT_AUTODISMISS_TOAST_TIME = 5000 //in milliseconds
 
+export const GOSHIMMER_ADDRESS_EXPLORER_URL = 'https://goshimmer.sc.iota.org/explorer/address'
+
 export enum LogTag {
     Site = 'Site',
     Funds = 'Funds',

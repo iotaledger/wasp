@@ -4,6 +4,7 @@
     addressesHistory,
     round,
   } from '../../lib/store';
+  import { GOSHIMMER_ADDRESS_EXPLORER_URL } from '../../lib/app';
 
   const isMyAddress = (addr: string) =>
     $currentAddress === addr || $addressesHistory.includes(addr);
@@ -17,7 +18,12 @@
         <div class="player" class:highlight={isMyAddress(address)}>
           <div class="player-index">{index + 1}</div>
           <div>
-            <div class="player-address">{address}</div>
+            <a
+              class="player-address"
+              href={`${GOSHIMMER_ADDRESS_EXPLORER_URL}/${address}`}
+              target="_blank"
+              rel="noopener noreferrer">{address}</a
+            >
             <div class="player-bet">
               <span>{isMyAddress(address) ? 'You bet: ' : 'Bet: '}</span>
               <span class="bet-value">{bet}i on {number}. </span>
