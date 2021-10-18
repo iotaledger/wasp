@@ -10,7 +10,7 @@ keywords:
 - tutorial
 - JavaScript
 - TypeScript
-- WASM
+- Wasm
 description: An example game project with frontend and contract, demonstrating the development, setup, and interaction with a smart contract.
 image: /img/logo/WASP_logo_dark.png
 ---

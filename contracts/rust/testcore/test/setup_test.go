@@ -44,7 +44,7 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	})
 
 	if len(skipWasm) != 0 && skipWasm[0] {
-		t.Logf("skipped WASM versions of '%s'", t.Name())
+		t.Logf("skipped Wasm versions of '%s'", t.Name())
 		return
 	}
 

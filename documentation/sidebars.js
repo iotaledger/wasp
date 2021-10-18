@@ -243,7 +243,7 @@ module.exports = {
         },
         {
             type: 'category',
-            label: 'Rust/WASM',
+            label: 'Rust/Wasm',
             items: [
                 {
                     type: 'doc',
