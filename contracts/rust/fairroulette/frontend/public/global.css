@@ -63,6 +63,9 @@ a {
   color: var(--mint-green-light);
   text-decoration: none;
 }
+a:hover {
+  text-decoration: underline;
+}
 h1 {
   font-size: 40px;
   line-height: 115%;

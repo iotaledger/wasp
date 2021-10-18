@@ -19,7 +19,7 @@
     padding: 16px 24px;
     @media (min-width: 1024px) {
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 8px 24px;
+      padding: 10px 15px;
       height: auto;
     }
     .wallet-data {
@@ -37,9 +37,6 @@
         color: var(--gray-3);
         line-height: 150%;
         word-break: break-word;
-        @media (min-width: 1024px) {
-          font-weight: bold;
-        }
       }
     }
     .wallet-data:not(:last-child) {
