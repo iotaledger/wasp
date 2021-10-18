@@ -17,7 +17,7 @@
     {
       title: 'What it does',
       description:
-        'In the demo, you request tokens from the IOTA GoShimmer nodes, which send the tokens to your wallet. By placing a bet, you stake tokens from your wallet by sending them to the smart contract; these staked tokens are held by the smart contract in a pool along with tokens staked by other players. The smart contract generates a random number and automatically rewards the player(s) who bet tokens on the winning number. If more than one player bets on the winning number, the earned tokens are divided based on the amount of tokens bet in total. And it’s all immutable and automated – no one can change the outcome and there is no one to trust. ',
+        'In the demo, you request tokens from the IOTA GoShimmer nodes, which send the tokens to your wallet. By placing a bet, you wager tokens from your wallet by sending them to the smart contract; these staked tokens are held by the smart contract in a pool along with tokens staked by other players. The smart contract generates a random number and automatically rewards the player(s) who bet tokens on the winning number. If more than one player bets on the winning number, the earned tokens are divided based on the amount of tokens bet in total. And it’s all immutable and automated – no one can change the outcome and there is no one to trust.',
     },
   ];
 </script>
