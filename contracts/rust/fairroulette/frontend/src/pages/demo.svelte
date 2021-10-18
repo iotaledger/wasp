@@ -197,6 +197,7 @@
           position: absolute;
           left: 50%;
           transform: translateX(-50%);
+          width: 50%;
         }
         .title {
           text-align: center;
