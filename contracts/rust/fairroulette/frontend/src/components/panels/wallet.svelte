@@ -6,19 +6,19 @@
 <div class="panel wallet">
   <div class="wallet-data">
     <div class="eyebrow">Your seed</div>
-    <div class="seed">{$seedString ?? '-'}</div>
+    <div class="data">{$seedString ?? '-'}</div>
   </div>
   <div class="wallet-data">
     <div class="eyebrow">Your address</div>
     {#if $address}
       <a
-        class="seed"
+        class="data"
         href={`${GOSHIMMER_ADDRESS_EXPLORER_URL}/${$address}`}
         target="_blank"
         rel="noopener noreferrer">{$address}</a
       >
     {:else}
-      <div class="seed">-</div>
+      <div class="data">-</div>
     {/if}
   </div>
 </div>
@@ -39,8 +39,7 @@
       @media (min-width: 1024px) {
         grid-template-columns: 1fr;
       }
-      .seed,
-      .address {
+      .data {
         width: 100%;
         font-size: 14px;
         letter-spacing: 0.5px;
