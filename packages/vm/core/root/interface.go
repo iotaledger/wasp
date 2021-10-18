@@ -13,9 +13,10 @@ var (
 
 // state variables
 const (
-	VarContractRegistry  = "r"
-	VarDeployPermissions = "dep"
-	VarStateInitialized  = "i"
+	VarContractRegistry   = "r"
+	VarDeployOpenToAnyone = "a"
+	VarDeployPermissions  = "dep"
+	VarStateInitialized   = "i"
 )
 
 // param variables
@@ -31,9 +32,11 @@ const (
 
 // function names
 var (
-	FuncDeployContract         = coreutil.Func("deployContract")
-	FuncGrantDeployPermission  = coreutil.Func("grantDeployPermission")
-	FuncRevokeDeployPermission = coreutil.Func("revokeDeployPermission")
-	FuncFindContract           = coreutil.ViewFunc("findContract")
-	FuncGetContractRecords     = coreutil.ViewFunc("getContractRecords")
+	FuncDeployContract          = coreutil.Func("deployContract")
+	FuncGrantDeployPermission   = coreutil.Func("grantDeployPermission")
+	FuncRevokeDeployPermission  = coreutil.Func("revokeDeployPermission")
+	FuncOpenDeploymentToAnyone  = coreutil.Func("openDeploymentToAnyone")
+	FuncCloseDeploymentToAnyone = coreutil.Func("closeDeploymentToAnyone")
+	FuncFindContract            = coreutil.ViewFunc("findContract")
+	FuncGetContractRecords      = coreutil.ViewFunc("getContractRecords")
 )

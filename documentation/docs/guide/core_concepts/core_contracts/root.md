@@ -58,6 +58,14 @@ The chain owner grants deploy permission to an agent ID.
 
 The chain owner revokes deploy permission from an agent ID.
 
+### openDeploymentToAnyone
+
+Allows anyone to deploy smartcontracts on the chain. (only callable by the chain owner). (`deployPermissions` are not considered when the deployments are opened)
+
+### closeDeploymentToAnyone
+
+Disallows anyone to deploy smartcontracts on the chain. (only callable by the chain owner).
+
 ## Views
 
 Can be called directly. Calling a view does not modify the state of the smart

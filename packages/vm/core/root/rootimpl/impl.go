@@ -28,6 +28,8 @@ var Processor = root.Contract.Processor(initialize,
 	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
 	root.FuncFindContract.WithHandler(findContract),
 	root.FuncGetContractRecords.WithHandler(getContractRecords),
+	root.FuncOpenDeploymentToAnyone.WithHandler(openDeploymentToAnyone),
+	root.FuncCloseDeploymentToAnyone.WithHandler(closeDeploymentToAnyone),
 )
 
 // initialize handles constructor, the "init" request. This is the first call to the chain
@@ -61,6 +63,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	govParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes()) // chain owner is whoever sends init request
 	mustStoreAndInitCoreContract(ctx, governance.Contract, a, govParams)
 
+	state.Set(root.VarDeployOpenToAnyone, []byte{0})
 	state.Set(root.VarStateInitialized, []byte{0xFF})
 
 	ctx.Log().Debugf("root.initialize.success")
@@ -177,4 +180,24 @@ func getContractRecords(ctx iscp.SandboxView) (dict.Dict, error) {
 	})
 
 	return ret, nil
+}
+
+func setDeploymentOpenToAnyone(ctx iscp.Sandbox, enabled bool) {
+	a := assert.NewAssert(ctx.Log())
+	a.Require(isChainOwner(a, ctx), "root.revokeDeployPermissions: not authorized")
+	val := []byte{0}
+	if enabled {
+		val = []byte{1}
+	}
+	ctx.State().Set(root.VarDeployOpenToAnyone, val)
+}
+
+func openDeploymentToAnyone(ctx iscp.Sandbox) (dict.Dict, error) {
+	setDeploymentOpenToAnyone(ctx, true)
+	return nil, nil
+}
+
+func closeDeploymentToAnyone(ctx iscp.Sandbox) (dict.Dict, error) {
+	setDeploymentOpenToAnyone(ctx, false)
+	return nil, nil
 }
