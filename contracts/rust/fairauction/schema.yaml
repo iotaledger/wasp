@@ -18,12 +18,12 @@ structs:
     index: Int32 // index of bidder in bidder list
     timestamp: Int64 // timestamp of most recent bid
 typedefs:
-  BidderList: '[]AgentID'
-  Bids: '[AgentID]Bid'
+  BidderList: AgentID[]
+  Bids: map[AgentID]Bid
 state:
-  auctions: '[Color]Auction'
-  bidderList: '[Color]BidderList'
-  bids: '[Color]Bids'
+  auctions: map[Color]Auction
+  bidderList: map[Color]BidderList
+  bids: map[Color]Bids
   ownerMargin: Int64 // default auction owner's margin in promilles
 funcs:
   finalizeAuction:
@@ -40,8 +40,8 @@ funcs:
   startAuction:
     params:
       color: Color // color of the tokens being auctioned
-      description: ?String // description of the tokens being auctioned
-      duration: ?Int32 // duration of auction in minutes
+      description: String? // description of the tokens being auctioned
+      duration: Int32? // duration of auction in minutes
       minimumBid: Int64 // minimum required amount for any bid
 views:
   getInfo:

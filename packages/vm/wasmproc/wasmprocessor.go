@@ -17,6 +17,7 @@ type WasmProcessor struct {
 	contextLock      sync.Mutex
 	contexts         map[int32]*WasmContext
 	currentContextID int32
+	instanceLock     sync.Mutex
 	log              *logger.Logger
 	nextContextID    int32
 	scContext        *WasmContext

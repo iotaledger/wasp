@@ -19,19 +19,19 @@ views:
     params:
       blockIndex=n: Int32
     results:
-      event=e: '[]Bytes //TODO Array16'
+      event=e: Bytes[] //TODO Array16
   getEventsForContract:
     params:
       contractHname=h: Hname
-      fromBlock=f: ?Int32
-      toBlock=t: ?Int32
+      fromBlock=f: Int32?
+      toBlock=t: Int32?
     results:
-      event=e: '[]Bytes //TODO Array16'
+      event=e: Bytes[] //TODO Array16
   getEventsForRequest:
     params:
       requestID=u: RequestID
     results:
-      event=e: '[]Bytes //TODO Array16'
+      event=e: Bytes[] //TODO Array16
   getLatestBlockInfo:
     results:
       blockIndex=n: Int32
@@ -40,7 +40,7 @@ views:
     params:
       blockIndex=n: Int32
     results:
-      requestID=u: '[]RequestID //TODO Array16'
+      requestID=u: RequestID[] //TODO Array16
   getRequestReceipt:
     params:
       requestID=u: RequestID
@@ -52,7 +52,7 @@ views:
     params:
       blockIndex=n: Int32
     results:
-      requestRecord=d: '[]Bytes //TODO Array16'
+      requestRecord=d: Bytes[] //TODO Array16
   isRequestProcessed:
     params:
       requestID=u: RequestID

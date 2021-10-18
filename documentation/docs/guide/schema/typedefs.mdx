@@ -29,10 +29,10 @@ Instead, now you add the following to your schema definition file:
 ```json
 {
   "typedefs": {
-    "BettingRound": "[]Bet // one round of bets"
+    "BettingRound": "Bet[] // one round of bets"
   },
   "state": {
-    "rounds": "[]BettingRound // keep track of all betting rounds"
+    "rounds": "BettingRound[] // keep track of all betting rounds"
   }
 }
 ```
@@ -43,9 +43,9 @@ Instead, now you add the following to your schema definition file:
 
 ```yaml
 typedefs:
-  BettingRound: '[]Bet // one round of bets'
+  BettingRound: Bet[] // one round of bets
 state:
-  rounds: '[]BettingRound // keep track of all betting rounds'
+  rounds: BettingRound[] // keep track of all betting rounds
 ```
 
 </TabItem>

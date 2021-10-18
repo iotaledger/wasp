@@ -31,7 +31,8 @@ func TestStateAfterDeploy(t *testing.T) {
 func TestIncrementOnce(t *testing.T) {
 	ctx := setupTest(t)
 
-	inccounter.ScFuncs.Increment(ctx).Func.TransferIotas(1).Post()
+	increment := inccounter.ScFuncs.Increment(ctx)
+	increment.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
 	checkStateCounter(t, ctx, 1)
@@ -40,10 +41,12 @@ func TestIncrementOnce(t *testing.T) {
 func TestIncrementTwice(t *testing.T) {
 	ctx := setupTest(t)
 
-	inccounter.ScFuncs.Increment(ctx).Func.TransferIotas(1).Post()
+	increment := inccounter.ScFuncs.Increment(ctx)
+	increment.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
-	inccounter.ScFuncs.Increment(ctx).Func.TransferIotas(1).Post()
+	increment = inccounter.ScFuncs.Increment(ctx)
+	increment.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
 	checkStateCounter(t, ctx, 2)
@@ -65,7 +68,8 @@ func TestIncrementRepeatThrice(t *testing.T) {
 func TestIncrementCallIncrement(t *testing.T) {
 	ctx := setupTest(t)
 
-	inccounter.ScFuncs.CallIncrement(ctx).Func.TransferIotas(1).Post()
+	callIncrement := inccounter.ScFuncs.CallIncrement(ctx)
+	callIncrement.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
 	checkStateCounter(t, ctx, 2)
@@ -74,7 +78,8 @@ func TestIncrementCallIncrement(t *testing.T) {
 func TestIncrementCallIncrementRecurse5x(t *testing.T) {
 	ctx := setupTest(t)
 
-	inccounter.ScFuncs.CallIncrementRecurse5x(ctx).Func.TransferIotas(1).Post()
+	callIncrementRecurse5x := inccounter.ScFuncs.CallIncrementRecurse5x(ctx)
+	callIncrementRecurse5x.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
 	checkStateCounter(t, ctx, 6)
@@ -83,7 +88,8 @@ func TestIncrementCallIncrementRecurse5x(t *testing.T) {
 func TestIncrementPostIncrement(t *testing.T) {
 	ctx := setupTest(t)
 
-	inccounter.ScFuncs.PostIncrement(ctx).Func.TransferIotas(1).Post()
+	postIncrement := inccounter.ScFuncs.PostIncrement(ctx)
+	postIncrement.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
 	require.True(t, ctx.WaitForPendingRequests(1))
@@ -94,7 +100,8 @@ func TestIncrementPostIncrement(t *testing.T) {
 func TestIncrementLocalStateInternalCall(t *testing.T) {
 	ctx := setupTest(t)
 
-	inccounter.ScFuncs.LocalStateInternalCall(ctx).Func.TransferIotas(1).Post()
+	localStateInternalCall := inccounter.ScFuncs.LocalStateInternalCall(ctx)
+	localStateInternalCall.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
 	checkStateCounter(t, ctx, 2)
@@ -103,7 +110,8 @@ func TestIncrementLocalStateInternalCall(t *testing.T) {
 func TestIncrementLocalStateSandboxCall(t *testing.T) {
 	ctx := setupTest(t)
 
-	inccounter.ScFuncs.LocalStateSandboxCall(ctx).Func.TransferIotas(1).Post()
+	localStateSandboxCall := inccounter.ScFuncs.LocalStateSandboxCall(ctx)
+	localStateSandboxCall.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
 	if *wasmsolo.GoDebug {
@@ -120,7 +128,8 @@ func TestIncrementLocalStateSandboxCall(t *testing.T) {
 func TestIncrementLocalStatePost(t *testing.T) {
 	ctx := setupTest(t)
 
-	inccounter.ScFuncs.LocalStatePost(ctx).Func.TransferIotas(3).Post()
+	localStatePost := inccounter.ScFuncs.LocalStatePost(ctx)
+	localStatePost.Func.TransferIotas(3).Post()
 	require.NoError(t, ctx.Err)
 
 	require.True(t, ctx.WaitForPendingRequests(3))
@@ -139,7 +148,8 @@ func TestIncrementLocalStatePost(t *testing.T) {
 func TestLeb128(t *testing.T) {
 	ctx := setupTest(t)
 
-	inccounter.ScFuncs.TestLeb128(ctx).Func.TransferIotas(1).Post()
+	testLeb128 := inccounter.ScFuncs.TestLeb128(ctx)
+	testLeb128.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
 	//res, err := chain.CallView(
@@ -157,7 +167,7 @@ func TestLeb128(t *testing.T) {
 }
 
 func TestLoop(t *testing.T) {
-	if *wasmsolo.GoDebug {
+	if *wasmsolo.GoDebug || wasmhost.DisableWasmTimeout {
 		// no timeout possible with WasmGoVM
 		// because goroutines cannot be killed
 		t.SkipNow()
@@ -166,7 +176,8 @@ func TestLoop(t *testing.T) {
 	ctx := setupTest(t)
 
 	wasmhost.WasmTimeout = 1 * time.Second
-	inccounter.ScFuncs.EndlessLoop(ctx).Func.TransferIotas(1).Post()
+	endlessLoop := inccounter.ScFuncs.EndlessLoop(ctx)
+	endlessLoop.Func.TransferIotas(1).Post()
 	require.Error(t, ctx.Err)
 	require.Contains(t, ctx.Err.Error(), "interrupt")
 

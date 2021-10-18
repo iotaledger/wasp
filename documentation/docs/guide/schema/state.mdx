@@ -30,8 +30,8 @@ example in more detail:
 ```json
 {
   "state": {
-    "memberList": "[]Address // array with all the recipients of this dividend",
-    "members": "[Address]Int64 // map with all the recipient factors of this dividend",
+    "memberList": "Address[] // array with all the recipients of this dividend",
+    "members": "map[Address]Int64 // map with all the recipient factors of this dividend",
     "owner": "AgentID // owner of contract, the only one who can call 'member' func",
     "totalFactor": "Int64 // sum of all recipient factors"
   }
@@ -44,9 +44,9 @@ example in more detail:
 
 ```yaml
 state:
-  memberList: '[]Address // array with all the recipients of this dividend'
-  members: '[Address]Int64 // map with all the recipient factors of this dividend'
-  owner: 'AgentID // owner of contract, the only one who can call ''member'' func'
+  memberList: Address[] // array with all the recipients of this dividend
+  members: map[Address]Int64 // map with all the recipient factors of this dividend
+  owner: AgentID // owner of contract, the only one who can call 'member' func
   totalFactor: Int64 // sum of all recipient factors
 ```
 
@@ -57,13 +57,13 @@ Let's start with the simplest state variables. `totalFactor` is an Int64, and `o
 an AgentID. Both are predefined [WasmLib value types](types.mdx).
 
 Then we have the `memberList` variable. The empty brackets `[]` indicate that this is an
-array. The brackets are immediately followed by the homogenous type of the elements in the
-array, which in this case is the predefined Address value type.
+array. The brackets immediately follow the homogenous type of the elements in the array,
+which in this case is the predefined Address value type.
 
-Finally, we have the `members` variable. The non-empty brackets `[]` indicate that this is
-a map. Between the brackets is the homogenous type of the keys, which in this case are of
-the predefined Address type. The brackets are immediately followed by the homogenous type
-of the values in the map, which in this case are of the predefined Int64 type.
+Finally, we have the `members` variable. The `map[]` indicate that this is a map. Between
+the brackets is the homogenous type of the keys, which in this case are of the predefined
+Address type. The brackets are immediately followed by the homogenous type of the values
+in the map, which in this case are of the predefined Int64 type.
 
 Here is part of the Rust code in `state.rs` that the schema tool has generated. The
 MutableDividendState struct defines a type-safe interface to access each of the state
