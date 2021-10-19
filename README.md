@@ -8,6 +8,10 @@
 introduction](https://blog.iota.org/an-introduction-to-iota-smart-contracts-16ea6f247936)
 into ISCP.
 
+## Documentation
+
+The documentation for Wasp and IOTA Smart Contracts can be found on the [IOTA Wiki](https://wiki.iota.org/wasp/overview).
+
 ## Contributing
 
 If you want to contribute to this repository, consider posting a [bug
