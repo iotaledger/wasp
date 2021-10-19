@@ -234,8 +234,7 @@ func (s *Schema) generateRustConsts() error {
 
 		for _, f := range s.Funcs {
 			constHname := "H" + upper(snake(f.FuncName))
-			hName = iscp.Hn(f.String)
-			s.appendConst(constHname, "ScHname = ScHname(0x"+hName.String()+")")
+			s.appendConst(constHname, "ScHname = ScHname(0x"+f.Hname.String()+")")
 		}
 		s.flushRustConsts(file, s.CoreContracts)
 	}

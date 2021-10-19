@@ -172,8 +172,7 @@ func (s *Schema) generateGoConsts(test bool) error {
 
 		for _, f := range s.Funcs {
 			constHname := "H" + capitalize(f.FuncName)
-			hName = iscp.Hn(f.String)
-			s.appendConst(constHname, hNameType+"(0x"+hName.String()+")")
+			s.appendConst(constHname, hNameType+"(0x"+f.Hname.String()+")")
 		}
 		s.flushGoConsts(file)
 	}

@@ -65,6 +65,8 @@ type ScDict struct {
 	types   map[int32]int32
 }
 
+// TODO iterate over maps
+
 var _ WaspObject = &ScDict{}
 
 var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 2, 4, 8, 0, 34, 0}
