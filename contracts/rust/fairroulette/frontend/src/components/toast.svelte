@@ -58,7 +58,6 @@
       font-weight: 500;
       @media (min-width: 1024px) {
         letter-spacing: 0.75px;
-        width: 50%;
       }
     }
     button {
