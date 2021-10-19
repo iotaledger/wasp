@@ -51,7 +51,7 @@ Once you have this, you are ready to deploy the EVM chain with the following com
 wasp-cli chain evm deploy -a mychain --alloc 0x63c00c65BE86463491167eE26958a5A599BEbD2c:1000000000000000000000000
 ```
 * The `-a` parameter indicates the name of the chain that you want to deploy your EVM chain on top of. `mychain` in this case.
-* The `--alloc` parameter is the address that you copied from metamask(`0x63c00c65BE86463491167eE26958a5A599BEbD2c` in this case), followed by a `:`, and the value of Smart Contract Tokens that you want to be available to for use on EVM, followed by 18 decimal zeroes (`1000000000000000000000000` in this case).
+* The `--alloc` parameter is the address that you copied from metamask(`0x63c00c65BE86463491167eE26958a5A599BEbD2c` in this case), followed by a `:`, and the value of Smart Contract Tokens that you want to be available to for use on EVM(`1000000` tokens in this case, followed by 18 decimal zeroes).
 
 Once this command has been executed successfully your EVM chain is up and running, and ready to be used.
 
