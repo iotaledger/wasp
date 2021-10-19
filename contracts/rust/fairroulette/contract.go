@@ -9,6 +9,10 @@ package fairroulette
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib"
 
+type ForceResetCall struct {
+	Func *wasmlib.ScFunc
+}
+
 type PayWinnersCall struct {
 	Func *wasmlib.ScFunc
 }
@@ -46,6 +50,10 @@ type RoundStatusCall struct {
 type Funcs struct{}
 
 var ScFuncs Funcs
+
+func (sc Funcs) ForceReset(ctx wasmlib.ScFuncCallContext) *ForceResetCall {
+	return &ForceResetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncForceReset)}
+}
 
 func (sc Funcs) PayWinners(ctx wasmlib.ScFuncCallContext) *PayWinnersCall {
 	return &PayWinnersCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncPayWinners)}

@@ -11,6 +11,7 @@ import "github.com/iotaledger/wasp/packages/vm/wasmlib"
 
 func OnLoad() {
 	exports := wasmlib.NewScExports()
+	exports.AddFunc(FuncForceReset, funcForceResetThunk)
 	exports.AddFunc(FuncPayWinners, funcPayWinnersThunk)
 	exports.AddFunc(FuncPlaceBet, funcPlaceBetThunk)
 	exports.AddFunc(FuncPlayPeriod, funcPlayPeriodThunk)
@@ -22,6 +23,24 @@ func OnLoad() {
 	for i, key := range keyMap {
 		idxMap[i] = key.KeyID()
 	}
+}
+
+type ForceResetContext struct {
+	State MutableFairRouletteState
+}
+
+func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("fairroulette.funcForceReset")
+	// only SC creator can restart the round forcefully
+	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+
+	f := &ForceResetContext{
+		State: MutableFairRouletteState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	funcForceReset(ctx, f)
+	ctx.Log("fairroulette.funcForceReset ok")
 }
 
 type PayWinnersContext struct {

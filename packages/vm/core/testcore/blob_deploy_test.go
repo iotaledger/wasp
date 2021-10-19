@@ -202,3 +202,36 @@ func TestBigBlob(t *testing.T) {
 	_, err = ch.UploadWasm(ch.OriginatorKeyPair, blobBin)
 	require.NoError(t, err)
 }
+
+func TestOpenDeploymentToAnyone(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	userWallet, _ := env.NewKeyPairWithFunds()
+
+	// deployment is closed to anyone by default
+	err := chain.DeployWasmContract(userWallet, "testCore", wasmFile)
+	require.Error(t, err)
+
+	// enable open deployments
+	req := solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
+		root.ParamDeployPermissionsEnabled, []byte{0},
+	)
+	_, err = chain.PostRequestSync(req.WithIotas(1), nil)
+	require.NoError(t, err)
+
+	// deploy should now succeed
+	err = chain.DeployWasmContract(userWallet, "testCore1", wasmFile)
+	require.NoError(t, err)
+
+	// disable open deployments
+	req = solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
+		root.ParamDeployPermissionsEnabled, []byte{1},
+	)
+	_, err = chain.PostRequestSync(req.WithIotas(1), nil)
+	require.NoError(t, err)
+
+	// deployment should fail after "open deployment" is disabled
+	err = chain.DeployWasmContract(userWallet, "testCore3", wasmFile)
+	require.Error(t, err)
+}

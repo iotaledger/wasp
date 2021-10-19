@@ -29,6 +29,7 @@ pub const STATE_ROUND_NUMBER:        &str = "roundNumber";
 pub const STATE_ROUND_STARTED_AT:    &str = "roundStartedAt";
 pub const STATE_ROUND_STATUS:        &str = "roundStatus";
 
+pub const FUNC_FORCE_RESET:         &str = "forceReset";
 pub const FUNC_PAY_WINNERS:         &str = "payWinners";
 pub const FUNC_PLACE_BET:           &str = "placeBet";
 pub const FUNC_PLAY_PERIOD:         &str = "playPeriod";
@@ -37,6 +38,7 @@ pub const VIEW_ROUND_NUMBER:        &str = "roundNumber";
 pub const VIEW_ROUND_STARTED_AT:    &str = "roundStartedAt";
 pub const VIEW_ROUND_STATUS:        &str = "roundStatus";
 
+pub const HFUNC_FORCE_RESET:         ScHname = ScHname(0xa331951e);
 pub const HFUNC_PAY_WINNERS:         ScHname = ScHname(0xfb2b0144);
 pub const HFUNC_PLACE_BET:           ScHname = ScHname(0xdfba7d1b);
 pub const HFUNC_PLAY_PERIOD:         ScHname = ScHname(0xcb94b293);
