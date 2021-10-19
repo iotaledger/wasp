@@ -7,6 +7,7 @@ dist/
 .idea/
 .vscode/
 *.bak
+*.bat
 wasp-cli.json
 **/pkg/
 **/target/
