@@ -66,12 +66,12 @@
       width: 100%;
       div {
         width: 100%;
-      }
-      div:not(:last-of-type) {
-        margin-right: 15px;
-        @media (min-width: 600px) {
-          margin-bottom: 10px;
-          margin-right: 0;
+        &:not(:last-of-type) {
+          margin-right: 15px;
+          @media (min-width: 600px) {
+            margin-bottom: 10px;
+            margin-right: 0;
+          }
         }
       }
       @media (min-width: 600px) {
