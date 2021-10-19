@@ -1,15 +1,28 @@
+---
+keywords:
+- ISCP
+- data types
+- WasmLib
+- array
+- proxies
+- map
+description: The WasmLib provides direct support for the basic value data types that are found in all programming languages, and WasmLib version of ISCP-specific value data types.
+image: /img/logo/WASP_logo_dark.png
+---
 # WasmLib Data Types
 
-When creating smart contracts you will want to manipulate some data. WasmLib provides
+You will need to manipulate data when creating smart contracts. The WasmLib provides
 direct support for the following value data types:
 
-- `Int16` - 16-bit signed integer value.
+## Basic Value Data Types
+
+- `Int16` - 16-bit signed integer value.allocation
 - `Int32` - 32-bit signed integer value.
 - `Int64` - 64-bit signed integer value.
 - `Bytes` - An arbitrary-length byte array.
 - `String` - An UTF-8 encoded string value.
 
-&nbsp;
+## ISCP-specific Value Data Types
 
 - `Address` - A 33-byte Tangle address.
 - `AgentID` - A 37-byte ISCP Agent ID.
@@ -23,27 +36,26 @@ direct support for the following value data types:
 The first group consists of the basic value data types that are found in all programming
 languages, whereas the second group consists of WasmLib versions of ISCP-specific value
 data types. More detailed explanations about their specific uses can be found in the
-[documentation of the ISCP](https://github.com/iotaledger/wasp/blob/develop/documentation/docs/misc/coretypes.md)
+[ISCP documentation](https://github.com/iotaledger/wasp/blob/develop/documentation/docs/misc/coretypes.md)
 . WasmLib provides its own implementations for each of the ISCP value data types. They can
 all be serialized into and deserialized from a byte array. Each value data type can also
 be used as a key in key/value maps.
 
-WasmLib implements value [proxies](proxies.mdx) for each value type. WasmLib also
-implements a set of container proxies. There is a map proxy that allows the value types to
-be used as key and/or stored value. There are also array proxies for arrays of each of
-these value types and for arrays of maps.
+WasmLib implements [value proxies](proxies.mdx#value-proxies) for each value type, as well as a set of
+[container proxies](proxies.mdx#container-proxies), [map proxies](proxies.mdx#map-proxies) that allow the value types to
+be used as key and/or stored value and  [array proxies](#array-proxies) for arrays of each of
+these value types, and for arrays of maps.
 
-Another thing we need to consider is that some data provided by the host is mutable,
+Another thing to consider is that some data provided by the host is mutable,
 whereas other data may be immutable. To facilitate this distinction, each proxy type comes
-in two flavors that reflect this and makes sure the data can only be used as intended. The
+in two flavors that reflect this, and makes sure the data can only be used as intended. The
 rule is that from an immutable container proxy you can only derive immutable container and
 value proxies. The referenced data can never be changed through immutable proxies.
-Separating these constraints for types into separate proxy types allows us to use
-compile-time type-checking to enforce these constraints. The ISCP sandbox will also check
-these constraints at runtime on the host to guard against client code that tries to bypass
-them.
+Separating these constraints for types into separate proxy types allows the use of
+compile-time type-checking to enforce these constraints.  To guard against client code that tries to bypass
+them, the ISCP sandbox will also check these constraints at runtime on the host.
 
-Here is the full matrix of WasmLib types (excluding array proxies):
+## Full Matrix of WasmLib Types (excluding array proxies)
 
 | ISCP type  | WasmLib type     | Mutable proxy           | Immutable proxy           |
 | ---------- | ---------------- | ----------------------- | ------------------------- |
@@ -63,11 +75,11 @@ Here is the full matrix of WasmLib types (excluding array proxies):
 | Map        | Sc**Map**        | ScMutable**Map**        | ScImmutable**Map**        |
 | RequestId  | Sc**RequestId**  | ScMutable**RequestId**  | ScImmutable**RequestId**  |
 
-Note how consistent naming makes it easy to remember the type names and how Bytes, Int16,
+The consistent naming makes it easy to remember the type names and how Bytes, Int16,
 Int32, Int64, and String are the odd ones out. They are implemented in WasmLib by the
 closest equivalents in the chosen implementation programming language.
 
-Here is the full matrix of WasmLib types for array proxies:
+## Full Matrix of WasmLib Types for Array Proxies
 
 | ISCP type  | Mutable array proxy          | Immutable array proxy          |
 | ---------- | ---------------------------- | ------------------------------ |
