@@ -4,6 +4,7 @@ import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
 import { Notification, showNotification } from './notifications';
 import { address, addressesHistory, addressIndex, balance, firstTimeRequestingFunds, isAWinnerPlayer, keyPair, placingBet, receivedRoundStarted, requestingFunds, resetRound, round, seed, showBettingSystem, showWinnerAnimation, showWinningNumber, timestamp } from './store';
+import { delay } from './utils';
 import {
     BasicClient,
     Colors,
@@ -17,7 +18,7 @@ let client: BasicClient;
 let walletService: WalletService;
 let fairRouletteService: FairRouletteService;
 
-let fundsUpdaterHandle: NodeJS.Timer | undefined;
+let timestampUpdaterHandle: NodeJS.Timer | undefined;
 let initialized: boolean = false;
 
 const powManager: PoWWorkerManager = new PoWWorkerManager();
@@ -148,7 +149,6 @@ export function createNewAddress(): void {
 export async function updateFunds(): Promise<void> {
     let _balance = 0n;
     try {
-        timestamp.set(Date.now() / 1000);
         _balance = await walletService.getFunds(
             get(address),
             Colors.IOTA_COLOR_STRING
@@ -157,12 +157,28 @@ export async function updateFunds(): Promise<void> {
     balance.set(_balance);
 }
 
-export function startFundsUpdater(): void {
-    if (fundsUpdaterHandle) {
-        clearInterval(fundsUpdaterHandle);
-        fundsUpdaterHandle = undefined;
+export async function updateFundsMultiple(nTimes: number) {
+    let _balance = get(balance);
+
+    for (let i = 0; i < nTimes; i++) {
+        await updateFunds();
+
+        if (_balance != get(balance)) {
+            // Exit early if the balance updated
+            return;
+        }
+
+        await delay(2500);
     }
-    fundsUpdaterHandle = setInterval(updateFunds, 1000);
+}
+
+export function startFundsUpdater(): void {
+    if (timestampUpdaterHandle) {
+        clearInterval(timestampUpdaterHandle);
+        timestampUpdaterHandle = undefined;
+    }
+    timestampUpdaterHandle = setInterval(
+        () => timestamp.set(Date.now() / 1000), 1000);
 }
 
 export async function placeBet(): Promise<void> {
@@ -222,6 +238,7 @@ export async function sendFaucetRequest(): Promise<void> {
         log(LogTag.Error, ex.message);
     }
     requestingFunds.set(false);
+    await updateFundsMultiple(3);
 }
 
 export function calculateRoundLengthLeft(timestamp: number): number | undefined {
@@ -247,6 +264,7 @@ export function calculateRoundLengthLeft(timestamp: number): number | undefined 
 
 export function subscribeToRouletteEvents(): void {
     fairRouletteService.on('roundStarted', (timestamp) => {
+        updateFunds();
         receivedRoundStarted.set(true);
         showWinningNumber.set(false);
         // To mitigate time sync variances, we ignore the provided timestamp and use our local one.
@@ -255,6 +273,7 @@ export function subscribeToRouletteEvents(): void {
     });
 
     fairRouletteService.on('roundStopped', () => {
+        updateFunds();
         if (get(placingBet) || get(showBettingSystem)) {
             showNotification({
                 type: Notification.Info,
@@ -300,6 +319,7 @@ export function subscribeToRouletteEvents(): void {
                 $round.betPlaced = true;
                 $round.betAmount = 0n;
                 log(LogTag.SmartContract, "Your number and betting amounts are saved");
+                updateFunds();
             }
             $round.players.push(
                 {
@@ -323,6 +343,7 @@ export function subscribeToRouletteEvents(): void {
                 timeout: DEFAULT_AUTODISMISS_TOAST_TIME
             })
             showWinnerAnimation();
+            updateFunds();
         }
         log(LogTag.SmartContract, `Payout for ${bet.better} with ${bet.amount}i`);
 
