@@ -4,9 +4,16 @@
   export let onClick: () => void;
   export let loading: boolean = false;
   export let secondary: boolean = false;
+  export let decline: boolean = false;
 </script>
 
-<button {disabled} class:disabled class:secondary on:click={onClick}>
+<button
+  {disabled}
+  class:disabled
+  class:secondary
+  class:decline
+  on:click={onClick}
+>
   <div class="label">{label}</div>
   {#if loading}
     <div>
@@ -42,6 +49,11 @@
     &.secondary {
       background: var(--gray-7);
       border-color: var(--gray-7);
+    }
+    &.decline {
+      background-color: transparent;
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      color: var(--gray-5);
     }
     .spinner {
       position: relative;
