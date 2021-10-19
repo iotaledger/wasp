@@ -5,7 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:dupl
 package fairroulette
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib"
