@@ -62,7 +62,7 @@ Off-ledger requests are directly sent to Wasp nodes and do not require validatio
 :::note
 This example uses On-ledger requests to initiate a betting request. A method to invoke Off-ledger requests is implemented inside the frontend.
 
-See: [placeBetOffLedger](https://github.com/iotaledger/wasp/blob/roulette_poc/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L133)
+See: [placeBetOffLedger](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L133)
 :::
 
 #### Funds
@@ -71,7 +71,7 @@ As these requests cost some fees, and to be able to bet with real tokens, the pl
 
 As the game runs on a testnet, you can request funds from the GoShimmer faucets inside the network. 
 
-See: [How to Obtain Tokens From the Faucet](https://goshimmer.docs.iota.org/docs/tutorials/obtain_tokens)
+See: [How to Obtain Tokens From the Faucet](https://wiki.iota.org/goshimmer/tutorials/obtain_tokens)
 
 After you have acquired some funds, they will reside inside an address that is handled by a wallet.
 
@@ -100,7 +100,7 @@ This frontend sends On-ledger requests to place bets towards the fair roulette s
 
 ### The Smart Contract 
 
-See: [Structure of the smart contract](https://wiki.iota.org/wasp/tutorial/05)
+See: [Anatomy of a Smart Contract](https://wiki.iota.org/wasp/guide/core_concepts/smart-contract-anatomy)
 
 As the smart contract is the only actor that is allowed to modify state in the context of the game, it needs to handle a few tasks such as:
 
@@ -214,7 +214,7 @@ This service comprises two parts:
 
 ##### PlaceBetOnLedger
 
-The [placeBetOnLedger](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L144) function is responsible for sending On-Ledger bet requests. It constructs a simple OnLedger object containing:
+The [placeBetOnLedger](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L149) function is responsible for sending On-Ledger bet requests. It constructs a simple OnLedger object containing:
 
 * The smart contract ID: `fairroulette` 
 * The function to invoke: `placeBet` 
@@ -227,14 +227,14 @@ This transaction also requires an address to send the request to, and also a var
 For Wasp, the address to send funds to is the chainId.
 :::
 
-See: [CoreTypes](https://wiki.iota.org/wasp/misc/coretypes/) and [Invoking](https://wiki.iota.org/wasp/misc/invoking/)
+See: [CoreTypes](https://wiki.iota.org/wasp/misc/coretypes) and [Invoking](https://wiki.iota.org/wasp/guide/solo/invoking-sc)
 
 
 ##### CallView 
 
-The [callView](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L160) function is responsible for calling smart contract view functions. 
+The [callView](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L165) function is responsible for calling smart contract view functions. 
 
-See: [Calling a view](https://wiki.iota.org/wasp/guide/solo/view-sc/) 
+See: [Calling a view](https://wiki.iota.org/wasp/guide/solo/view-sc) 
 
 To give access to the smart contracts state, you can use view functions to return selected parts of the state. 
 
@@ -243,9 +243,9 @@ State changes that happen afterwards are published through the websocket event s
 
 You can find examples to guide you in building similar functions in:
 
-* Frontend: [getRoundStatus](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L176) 
+* Frontend: [getRoundStatus](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L181) 
 
-* Smart Contract: [view_round_status](https://github.com/boxfish-studio/wasp/blob/feat/roulette_poc_ui/contracts/rust/fairroulette/src/fairroulette.rs#L289)
+* Smart Contract: [view_round_status](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/src/fairroulette.rs#L312)
 
 Since data returned by the views is encoded in Base64, the frontend needs to decode this by using simple `Buffer` methods. 
 The `view_round_status` view returns an `UInt16` which has a state of either `0` or `1`. 
