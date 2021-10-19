@@ -21,7 +21,7 @@ An ISCP chain can only contain 1 EVM chain contract. If your ISCP chain already 
 
 ### 1. Creating the ISCP chain
 
-If you don't have a ISCP chain you should create one first. To do so, follow the instructions [on setting up a chain](../../chains_and_nodes/setting-up-a-chain/).
+If you don't have a ISCP chain you should create one first. To do so, follow the instructions [on setting up a chain](../chains_and_nodes/setting-up-a-chain/).
 
 ### 2. Fund your account on your newly created chain
 

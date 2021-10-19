@@ -38,11 +38,6 @@ const (
 // this allows us to display better readable tracing information
 const KeyFromBytes int32 = 0x4000
 
-var (
-	HostTracing         = false
-	ExtendedHostTracing = false
-)
-
 type HostObject interface {
 	CallFunc(keyID int32, params []byte) []byte
 	Exists(keyID, typeID int32) bool
@@ -250,7 +245,7 @@ func (h *KvStoreHost) Tracef(format string, a ...interface{}) {
 }
 
 func (h *KvStoreHost) TraceAllf(format string, a ...interface{}) {
-	if ExtendedHostTracing {
+	if HostTracingAll {
 		h.Tracef(format, a...)
 	}
 }

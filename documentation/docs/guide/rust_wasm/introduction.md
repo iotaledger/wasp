@@ -3,12 +3,12 @@ keywords:
 - ISCP
 - Smart Contracts
 - Rust
-- WASM
-description: Rust/WASM based smart contracts
+- Wasm
+description: Rust/Wasm based smart contracts
 image: /img/logo/WASP_logo_dark.png
 ---
 
-# Rust/WASM Based Smart Contracts
+# Rust/Wasm Based Smart Contracts
 
 
 
