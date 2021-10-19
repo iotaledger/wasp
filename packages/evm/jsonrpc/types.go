@@ -240,7 +240,7 @@ func (args *SendTxArgs) setDefaults(e *EthService) error {
 		args.Value = new(hexutil.Big)
 	}
 	if args.Nonce == nil {
-		nonce, err := e.evmChain.TransactionCount(args.From, nil)
+		nonce, err := e.evmChain.TransactionCount(args.From, rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber))
 		if err != nil {
 			return err
 		}
