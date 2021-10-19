@@ -106,7 +106,7 @@ export async function initialize(): Promise<void> {
     setAddress(get(addressIndex));
     updateFunds();
 
-    startFundsUpdater();
+    startTimeUpdater();
 
     const requests = [
         fairRouletteService
@@ -172,7 +172,7 @@ export async function updateFundsMultiple(nTimes: number) {
     }
 }
 
-export function startFundsUpdater(): void {
+export function startTimeUpdater(): void {
     if (timestampUpdaterHandle) {
         clearInterval(timestampUpdaterHandle);
         timestampUpdaterHandle = undefined;
