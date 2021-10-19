@@ -1,6 +1,6 @@
 <script lang="ts">
-  export let allowCookies: () => void;
-  export let declineCookies: () => void;
+  export let allow: () => void;
+  export let decline: () => void;
 </script>
 
 <div class="cookie-disclaimer">
@@ -9,8 +9,8 @@
     <a href="https://www.iota.org/privacy-policy">Read our Privacy Policy.</a>
   </div>
   <div class="disclaimer-buttons">
-    <button class="green-button" on:click={allowCookies}>Allow cookies</button>
-    <button on:click={declineCookies}>Decline cookies</button>
+    <button class="green-button" on:click={allow}>Allow cookies</button>
+    <button on:click={decline}>Decline cookies</button>
   </div>
 </div>
 
