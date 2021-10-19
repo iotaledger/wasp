@@ -206,9 +206,9 @@ export async function sendFaucetRequest(): Promise<void> {
 
     const faucetRequestResult = await walletService.getFaucetRequest(get(address));
 
-    // In this example a difficulty of 20 is enough, might need a retune for prod to 21 or 22
+    // In this example a difficulty of 12 is enough, might need a retune for prod to 21 or 22
     faucetRequestResult.faucetRequest.nonce =
-        await powManager.requestProofOfWork(20, faucetRequestResult.poWBuffer);
+        await powManager.requestProofOfWork(12, faucetRequestResult.poWBuffer);
 
     try {
         await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
