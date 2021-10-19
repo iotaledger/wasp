@@ -1,72 +1,81 @@
 ---
 keywords:
-- ISCP
-- Smart Contracts
+- create
 - Chain
 - EVM
 - Solidity
 - Deploy
-description: How to create a new EVM Chain and get started
+- hardhat
+- metamask
+- JSON
+- RPC
+description: Create, fund and deploy a new EVM Chain using ISCP.
 image: /img/logo/WASP_logo_dark.png
 ---
 # Creating an EVM Chain
 
-EVM chains run inside ISCP chains. So in order to start an EVM chain, you will first need to follow the steps to start an ISCP chain or use a existing ISCP chain to start the EVM chain on.
+EVM chains run inside ISCP chains. So in order to start an EVM chain, you will first need to follow the steps to [start an ISCP chain](../chains_and_nodes/setting-up-a-chain.md), or use an existing ISCP chain to start the EVM chain on.
 
 :::warning
 
-An ISCP chain can only contain 1 EVM chain contract. If your ISCP chain already has an EVM chain contract, then that is the one that should be used instead of creating a new one.
+**An ISCP chain can only contain 1 EVM chain contract**. If your ISCP chain already has an EVM chain contract, you should use that chain contract instead of creating a new one.
 
 :::
 
-### 1. Creating the ISCP chain
+## 1. Create the ISCP Chain
 
-If you don't have a ISCP chain you should create one first. To do so, follow the instructions [on setting up a chain](../chains_and_nodes/setting-up-a-chain/).
+If you don't have an ISCP chain, you should create one. To do so, follow the instructions [on setting up a chain](../chains_and_nodes/setting-up-a-chain.md).
 
-### 2. Fund your account on your newly created chain
+## 2. Fund Your Account on Your ISCP Chain
 
-In order to deploy the EVM chain contract you first need to have some IOTA locked on your newly created chain to fund that action. In order to do this simply run:
+In order to deploy the EVM chain contract, you need to have some IOTA locked on your newly created chain to fund that action. To do this, run:
 
-```bash=
+```bash
 wasp-cli chain deposit IOTA:10000
 ```
 
-This locks 10000 IOTA into your name on your newly created chain which can be used on that chain to pay for the creation of the EVM Chain contract.
-
-### 3. Deploy the EVM Chain Contract
-
-In order to deploy the EVM Chain contract, we first need to make sure that the token that will be used on that chain is supplied right at its inception to a given address. You will have to generate a compatible address first with a private key file. Probably the most intuitive way to do this is by utilizing [Metamask](https://metamask.io). In MetaMask we create a wallet (it does not matter what chain it is connected to). Once a wallet is generated you will see a wallet address under its name. You can copy this to your clipboard. This is the address that will receive the full supply of the tokens on that chain.
+This locks 10000 IOTA into your name on your chain, which can be used on to pay for the creation of the EVM Chain contract.
 
 
-![MetaMask](/img/metamask.png)
+## 3. Deploy the EVM Chain Contract
 
-Once you have this, we are ready to deploy the EVM chain with the following command:
+In order to deploy the EVM Chain contract, you need to make sure that the token that will be used on that chain is supplied right at its inception to a given address. You will have to generate a compatible address with a private key file. 
 
-```bash=
-wasp-cli chain evm deploy --alloc 0x0ad2406D4A50C199ddD08086bC89E8189e86d9d4:1000000000000000000000000
+The most intuitive way to do this is by using [Metamask](https://metamask.io). In MetaMask,  you can create a wallet (it does not matter what chain it is connected to). Once a wallet is generated, you will see a wallet address under its name. You can copy this to your clipboard. This is the address that will receive the full supply of tokens on that chain.
+
+[![MetaMask](/img/metamask.png)](/img/metamask.png)
+
+Once you have this, you are ready to deploy the EVM chain with the following command:
+
+```bash
+wasp-cli chain evm deploy -a mychain --alloc 0x63c00c65BE86463491167eE26958a5A599BEbD2c:1000000000000000000000000
 ```
+* The `-a` parameter indicates the name of the chain that you want to deploy your EVM chain on top of. `mychain` in this case.
+* The `--alloc` parameter is the address that you copied from metamask(`0x63c00c65BE86463491167eE26958a5A599BEbD2c` in this case), followed by a `:`, and the value of Smart Contract Tokens that you want to be available to for use on EVM, followed by 18 decimal zeroes (`1000000000000000000000000` in this case).
 
-The `--alloc` parameter makes sure the provided address (`0x0ad2406D4A50C199ddD08086bC89E8189e86d9d4` in this case) will receive 1 million tokens (it has a additional 18 zeroes for decimals).
+Once this command has been executed successfully your EVM chain is up and running, and ready to be used.
 
-Once this command has been executed successfully your EVM chain is up and running and ready to be used.
+You can verify the chain has been deployed by visiting the wasp dashboard and checking the smart contracts deployed on the chain. You should be able to see an evm contract over there.
 
-### Running the JSON/RPC interface
+## Running the JSON-RPC Interface
 
-In order to communicate with the EVM contract we need to run an additional server application that is compatible with how interaction usually takes place on other networks. This allows us to use other tools from those ecosystems to connect to our EVM chain like [MetaMask](https://metamask.io) and [Hardhat](https://hardhat.org/). To run this server simply run: 
+In order to communicate with the EVM contract, you will need to run an additional server application that is compatible with how interactions usually takes place on other networks. This allows you to use other tools from those ecosystems like [MetaMask](https://metamask.io) and [Hardhat](https://hardhat.org/) to connect to our EVM chain. 
 
-```bash=
+To run this server, run the following commands: 
+
+```bash
 wasp-cli chain evm jsonrpc --chainid 1074
 ```
 
-This will start the JSON/RPC server on port 8545 for us with Chain ID 1074. We can now simply point MetaMask or Hardhat to that server's address on port 8545 and interact with it like any other EVM based chain.
+This will start the [JSON-RPC](https://www.jsonrpc.org/) server on port 8545 for you with Chain ID 1074. You can now  point MetaMask or Hardhat to that server's address on port 8545, and interact with it like any other EVM based chain.
 
 :::caution
 
-Re-using an existing Chain ID is not recommended and can be a security risk. For any serious chain you will be running make sure you register a unique Chain ID on [Chainlist](https://chainlist.org/) and use that instead of the default.
+Re-using an existing Chain ID is not recommended, and can be a security risk. For any serious chain you will be running make sure you register a unique Chain ID on [Chainlist](https://chainlist.org/) and use that instead of the default.
 
 :::
 
 :::warning
 
-The current implementation uses the wasp-cli's saved account to pay for any fees in IOTA while using the JSON / RPC interface, this is of course not ideal in a normal usage scenario. Releases after this one will address this in a more user friendly way.
+The current implementation uses the wasp-cli's saves the account to pay for any fees in IOTA while using the JSON-RPC interface.  This is of course not ideal in a normal usage scenario. Upcoming releases  will address this in a more user-friendly way.
 :::
