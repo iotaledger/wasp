@@ -261,6 +261,21 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     ));
 }
 
+pub fn func_force_reset(ctx: &ScFuncContext, f: &ForceResetContext) {
+    // Get the 'bets' array in state storage.
+    let bets: ArrayOfMutableBet = f.state.bets();
+    
+    // Clear all bets.
+    bets.clear();
+    
+    // Set round status to 0, send out event to notify that the round has ended
+    f.state.round_status().set_value(0);
+    ctx.event(&format!(
+        "fairroulette.round.state {0}",
+        f.state.round_status().value()
+    ));
+}
+
 // 'playPeriod' can be used by the contract creator to set the length of a betting round
 // to a different value than the default value, which is 120 seconds.
 pub fn func_play_period(ctx: &ScFuncContext, f: &PlayPeriodContext) {
@@ -309,3 +324,5 @@ pub fn view_round_started_at(_ctx: &ScViewContext, f: &RoundStartedAtContext) {
     // Set the 'round_started_at' in results to the value from state storage.
     f.results.round_started_at().set_value(round_started_at);
 }
+
+
