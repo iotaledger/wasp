@@ -154,10 +154,7 @@ func paramBlockNumber(ctx iscp.SandboxView) *big.Int {
 	return nil // latest block
 }
 
-func paramBlockNumberOrHash(ctx iscp.SandboxView, emu *evm.EVMEmulator) *big.Int {
-	if ctx.Params().MustHas(FieldBlockNumber) {
-		return paramBlockNumber(ctx)
-	}
+func paramBlockNumberOrHashAsNumber(ctx iscp.SandboxView, emu *evm.EVMEmulator) *big.Int {
 	if ctx.Params().MustHas(FieldBlockHash) {
 		a := assert.NewAssert(ctx.Log())
 		blockHash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
@@ -166,7 +163,7 @@ func paramBlockNumberOrHash(ctx iscp.SandboxView, emu *evm.EVMEmulator) *big.Int
 		a.Require(header != nil, "block not found")
 		return header.Number
 	}
-	return nil // latest block
+	return paramBlockNumber(ctx)
 }
 
 func getFeeColor(ctx iscp.Sandbox) colored.Color {

@@ -108,7 +108,7 @@ func getBalance(ctx iscp.SandboxView) (dict.Dict, error) {
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
-		blockNumber := paramBlockNumberOrHash(ctx, emu)
+		blockNumber := paramBlockNumberOrHashAsNumber(ctx, emu)
 		bal, err := emu.BalanceAt(addr, blockNumber)
 		a.RequireNoError(err)
 		return result(bal.Bytes())
@@ -193,7 +193,7 @@ func getNonce(ctx iscp.SandboxView) (dict.Dict, error) {
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
-		blockNumber := paramBlockNumberOrHash(ctx, emu)
+		blockNumber := paramBlockNumberOrHashAsNumber(ctx, emu)
 		nonce, err := emu.NonceAt(addr, blockNumber)
 		a.RequireNoError(err)
 		return result(codec.EncodeUint64(nonce))
@@ -205,7 +205,7 @@ func getCode(ctx iscp.SandboxView) (dict.Dict, error) {
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
-		blockNumber := paramBlockNumberOrHash(ctx, emu)
+		blockNumber := paramBlockNumberOrHashAsNumber(ctx, emu)
 		code, err := emu.CodeAt(addr, blockNumber)
 		a.RequireNoError(err)
 		return result(code)
@@ -218,7 +218,7 @@ func getStorage(ctx iscp.SandboxView) (dict.Dict, error) {
 	key := common.BytesToHash(ctx.Params().MustGet(FieldKey))
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
-		blockNumber := paramBlockNumberOrHash(ctx, emu)
+		blockNumber := paramBlockNumberOrHashAsNumber(ctx, emu)
 		data, err := emu.StorageAt(addr, key, blockNumber)
 		a.RequireNoError(err)
 		return result(data)
@@ -243,7 +243,7 @@ func callContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	a.RequireNoError(err)
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
-		blockNumber := paramBlockNumberOrHash(ctx, emu)
+		blockNumber := paramBlockNumberOrHashAsNumber(ctx, emu)
 		res, err := emu.CallContract(callMsg, blockNumber)
 		a.RequireNoError(err)
 		return result(res)
