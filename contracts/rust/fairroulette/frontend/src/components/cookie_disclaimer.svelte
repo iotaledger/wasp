@@ -16,7 +16,7 @@
   </div>
   <div class="disclaimer-buttons">
     <div><Button label="Allow" onClick={allow} /></div>
-    <div><Button label="Decline" decline onClick={decline} /></div>
+    <div><Button label="Decline" secondary onClick={decline} /></div>
   </div>
 </div>
 
@@ -32,13 +32,13 @@
     bottom: 0;
     align-items: center;
     font-size: 14px;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     @media (min-width: 600px) {
       width: 462px;
       flex-direction: row;
       bottom: 20px;
       right: 20px;
-      border-radius: 0.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.12);
     }
     .disclaimer-description {
       display: flex;
