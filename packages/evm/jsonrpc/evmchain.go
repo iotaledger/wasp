@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -107,8 +108,21 @@ func paramsWithOptionalBlockNumber(blockNumber *big.Int, params dict.Dict) dict.
 	return ret
 }
 
-func (e *EVMChain) Balance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetBalance.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
+func paramsWithOptionalBlockNumberOrHash(blockNumberOrHash rpc.BlockNumberOrHash, params dict.Dict) dict.Dict {
+	if blockNumber, ok := blockNumberOrHash.Number(); ok {
+		return paramsWithOptionalBlockNumber(parseBlockNumber(blockNumber), params)
+	}
+	ret := params
+	if params == nil {
+		ret = dict.Dict{}
+	}
+	blockHash, _ := blockNumberOrHash.Hash()
+	ret.Set(evm.FieldBlockHash, blockHash.Bytes())
+	return ret
+}
+
+func (e *EVMChain) Balance(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (*big.Int, error) {
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetBalance.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
 		evm.FieldAddress: address.Bytes(),
 	}))
 	if err != nil {
@@ -120,8 +134,8 @@ func (e *EVMChain) Balance(address common.Address, blockNumber *big.Int) (*big.I
 	return bal, nil
 }
 
-func (e *EVMChain) Code(address common.Address, blockNumber *big.Int) ([]byte, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetCode.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
+func (e *EVMChain) Code(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetCode.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
 		evm.FieldAddress: address.Bytes(),
 	}))
 	if err != nil {
@@ -228,8 +242,8 @@ func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*types.Receipt, error
 	return receipt, nil
 }
 
-func (e *EVMChain) TransactionCount(address common.Address, blockNumber *big.Int) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetNonce.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
+func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (uint64, error) {
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetNonce.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
 		evm.FieldAddress: address.Bytes(),
 	}))
 	if err != nil {
@@ -238,8 +252,8 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumber *big.Int
 	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
 }
 
-func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncCallContract.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
+func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {
+	ret, err := e.backend.CallView(e.contractName, evm.FuncCallContract.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
 		evm.FieldCallMsg: evmtypes.EncodeCallMsg(args),
 	}))
 	if err != nil {
@@ -258,8 +272,8 @@ func (e *EVMChain) EstimateGas(args ethereum.CallMsg) (uint64, error) {
 	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
 }
 
-func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetStorage.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
+func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {
+	ret, err := e.backend.CallView(e.contractName, evm.FuncGetStorage.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
 		evm.FieldAddress: address.Bytes(),
 		evm.FieldKey:     key.Bytes(),
 	}))

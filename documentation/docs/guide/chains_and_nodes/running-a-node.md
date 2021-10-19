@@ -16,7 +16,7 @@ keywords:
 
 # Running a Node
 
-In the following section we describe how to use Wasp by cloning the repository and building the application.
+In the following section, you can find information on how to use Wasp by cloning the repository and building the application.
 If you prefer, you can also configure a node [using a docker image](../../misc/docker.md) (official images will be provided in the future).
 
 ## Requirements
@@ -42,40 +42,67 @@ be enabled via configuration.
 
 :::
 
-### Microsoft Windows Installation Errors
+## Compile
 
-If the go install command is telling you it cannot find gcc you will need to
-install [MinGW-w64](https://sourceforge.net/projects/mingw-w64/). When you do
-make sure to select *x86_64* architecture instead of the preselected *i686*
-architecture. After the installation make sure to add this folder to your PATH variable:
+You can build and install both `wasp` and `wasp-cli` by running:
+
+### Linux/macOS
+
+```bash
+make install
+```
+
+### Microsoft Windows
+
+```bash
+make install-windows
+```
+
+#### Microsoft Windows Installation Errors
+
+If the `make install-windows` command tells you it cannot find `gcc` you will need to
+install [MinGW-w64](https://sourceforge.net/projects/mingw-w64/).Make sure
+to select *x86_64* architecture instead of the preselected *i686*
+architecture during the installation process. After the installation make sure to
+add the following folder to your PATH variable:
 
 ```
 C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 ```
 
-## Compile
-
-You can build and install both `wasp` and `wasp-cli` with `make install` ( or `make install-windows` if you're on a windows machine)
-
 ## Test
 
-- Run all tests (including integration tests which may take several minutes): `go test -tags rocksdb -timeout 20m ./...`
-- Run only unit tests: `go test -tags rocksdb -short ./...`
+### Run All Tests
+
+You can run integration and unit test together with the following command:
+
+```bash
+go test -tags rocksdb -timeout 20m ./...
+```
+Keep in mind that this process may take several minutes.
 
 :::info Note
 
-Integration tests require the `wasp` and `wasp-cli` commands
-in the system path (i.e. you need to run `go install ./...` before running
-tests).
+Integration tests require the `wasp` and `wasp-cli` commands to be
+in the system path. This means you will need to run `go install ./...` before running
+tests.
 
 :::
 
+### Run Unit Tests
+
+You can run the unit tests without running integration tests with the following command:
+
+```bash
+go test -tags rocksdb -short ./...
+```
+
+This will take significantly less time than [running all tests](#run-all-tests).
 
 ## Configuration
 
-Below we explain some settings in `config.json` you may need to adjust. You
-will need to adjust ports especially if you plan to run several nodes in the
-same host.
+You can configure your node/s using the [`config.json`](https://github.com/iotaledger/wasp/blob/master/config.json)
+configuration file.  If you plan to run several nodes in the same host, you will need to adjust the port configuration.
 
 ### Peering
 
@@ -83,9 +110,9 @@ Wasp nodes connect to other Wasp peers to form committees. There is exactly one
 TCP connection between two Wasp nodes participating in the same committee. Each
 node uses the `peering.port` setting to specify the port that will be used for peering.
 
-`peering.netid` must have the form `host:port`, with `port` equal to
+`peering.netid` must have the form `host:port`, with a `port` value equal to
 `peering.port`, and where `host` must resolve to the machine where the node is
-running, and must be reachable by other nodes in the committee. Each node in a
+running and be reachable by other nodes in the committee. Each node in a
 committee must have a unique `netid`.
 
 ### Goshimmer Connection Settings
@@ -98,7 +125,7 @@ connect to. You can find more information about the Goshimmer node in the [Goshi
 
 `nanomsg.port` specifies the port for the [Nanomsg](https://nanomsg.org/) event publisher. Wasp nodes
 publish important events happening in smart contracts, such as state
-transitions, incoming and processed requests and similar. Any Nanomsg client
+transitions, incoming and processed requests, and similar. Any Nanomsg client
 can subscribe to these messages.
 
 <details>
@@ -114,7 +141,7 @@ can subscribe to these messages.
   The Publisher port can be configured in `config.json` with the `nanomsg.port`
   setting.
 
-  The Message format is simply a string consisting of a space separated list of tokens; and the first token
+  The Message format is simply a string consisting of a space-separated list of tokens, and the first token
   is the message type. Below is a list of all message types published by Wasp (you can search for
   `publisher.Publish` in the code to see the exact places where each message is published).
 
@@ -149,7 +176,7 @@ By default, Prometheus is disabled and should be enabled by setting `prometheus.
 
 ### Grafana
 
-Grafana provides a dashboard to visualize system metrics, it can use the prometheus metrics as a data source.
+Grafana provides a dashboard to visualize system metrics. It can use the prometheus metrics as a data source.
 
 ## Goshimmer Provider
 
@@ -164,7 +191,8 @@ To change this setting you can add the argument `--txstream.port: 12345`.
 
 ## Running the Node
 
-After `config.json` is tweaked as necessary you can simply start a Wasp node by executing `wasp` on the same directory.
+After you have tweaked `config.json` to your liking, you can start a Wasp node by executing `wasp` in the same directory
+as shown in the following snippet.
 
 ```shell
 mkdir wasp-node
@@ -174,8 +202,6 @@ cd wasp-node
 wasp
 ```
 
-You can verify that your node is running by opening the dashboard with a web browser at `127.0.0.1:7000` (default url).
+You can verify that your node is running by opening the dashboard with a web browser at [`127.0.0.1:7000`](http://127.0.0.1:7000) (default url).
 
 Repeat this process to launch as many nodes as you want for your committee.
-
-tps://docs.docker.com/engine/reference/commandline/run/#publish-or-expose-port--p---expose).

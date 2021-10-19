@@ -78,7 +78,7 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 func getBalance(ctx iscp.SandboxView) (dict.Dict, error) {
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	emu := createEmulatorR(ctx)
-	_ = paramBlockNumber(ctx, emu, false)
+	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	return evminternal.Result(emu.StateDB().GetBalance(addr).Bytes()), nil
 }
 
@@ -128,14 +128,14 @@ func getReceipt(ctx iscp.SandboxView) (dict.Dict, error) {
 func getNonce(ctx iscp.SandboxView) (dict.Dict, error) {
 	emu := createEmulatorR(ctx)
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
-	_ = paramBlockNumber(ctx, emu, false)
+	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	return evminternal.Result(codec.EncodeUint64(emu.StateDB().GetNonce(addr))), nil
 }
 
 func getCode(ctx iscp.SandboxView) (dict.Dict, error) {
 	emu := createEmulatorR(ctx)
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
-	_ = paramBlockNumber(ctx, emu, false)
+	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	return evminternal.Result(emu.StateDB().GetCode(addr)), nil
 }
 
@@ -143,7 +143,7 @@ func getStorage(ctx iscp.SandboxView) (dict.Dict, error) {
 	emu := createEmulatorR(ctx)
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	key := common.BytesToHash(ctx.Params().MustGet(evm.FieldKey))
-	_ = paramBlockNumber(ctx, emu, false)
+	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	data := emu.StateDB().GetState(addr, key)
 	return evminternal.Result(data[:]), nil
 }
@@ -162,7 +162,7 @@ func callContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
 	a.RequireNoError(err)
 	emu := createEmulatorR(ctx)
-	_ = paramBlockNumber(ctx, emu, false)
+	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	res, err := emu.CallContract(callMsg)
 	a.RequireNoError(err)
 	return evminternal.Result(res), nil

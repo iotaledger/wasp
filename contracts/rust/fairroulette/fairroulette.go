@@ -15,11 +15,11 @@ import (
 
 // Define some default configuration parameters.
 
-// The maximum number one can bet on. The range of numbers starts at 0.
-const MaxNumber = 36
+// The maximum number one can bet on. The range of numbers starts at 1.
+const MaxNumber = 8
 
 // The default playing period of one betting round in seconds.
-const DefaultPlayPeriod = 30
+const DefaultPlayPeriod = 60
 
 // Enable this if you deploy the contract to an actual node. It will pay out the prize after a certain timeout.
 const EnableSelfPost = true
@@ -32,10 +32,20 @@ const NanoTimeDivider = 1000_000_000
 // expires the smart contract will automatically pay out any winners and start a new betting
 // round upon arrival of a new bet.
 // The 'placeBet' function takes 1 mandatory parameter:
-// - 'number', which must be an Int64 number from 0 to MAX_NUMBER
+// - 'number', which must be an Int64 number from 1 to MAX_NUMBER
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
+	bets := f.State.Bets()
+
+	for i := int32(0); i < bets.Length(); i++ {
+		bet := bets.GetBet(i).Value()
+
+		if bet.Better.Address() == ctx.Caller().Address() {
+			ctx.Panic("Bet already placed for this round")
+		}
+	}
+
 	// Since we are sure that the 'number' parameter actually exists we can
 	// retrieve its actual value into an i64.
 	number := f.Params.Number().Value()
@@ -63,15 +73,16 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 		Number: number,
 	}
 
-	// Get the array of current bets from state storage.
-	bets := f.State.Bets()
-
 	// Determine what the next bet number is by retrieving the length of the bets array.
 	betNr := bets.Length()
 
 	// Append the bet data to the bets array. The bet array will automatically take care
 	// of serializing the bet struct into a bytes representation.
 	bets.GetBet(betNr).SetValue(bet)
+
+	ctx.Event("fairroulette.bet.placed " + bet.Better.Address().String() +
+		" " + ctx.Utility().String(bet.Amount) +
+		" " + ctx.Utility().String(bet.Number))
 
 	// Was this the first bet of this round?
 	if betNr == 0 {
@@ -120,8 +131,8 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	// using the transaction hash as initial entropy data. Note that the pseudo-random number
 	// generator will use the next 8 bytes from the hash as its random Int64 number and once
 	// it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
-	// Here we determine the winning number for this round in the range of 0 thru MaxNumber.
-	winningNumber := ctx.Utility().Random(MaxNumber)
+	// Here we determine the winning number for this round in the range of 1 thru MaxNumber.
+	winningNumber := ctx.Utility().Random(MaxNumber-1) + 1
 
 	// Save the last winning number in state storage under 'lastWinningNumber' so that there
 	// is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
@@ -209,7 +220,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 		}
 
 		// Announce who got sent what as event.
-		ctx.Event("fairroulette.payout " + bet.Better.String() + " " + ctx.Utility().String(payout))
+		ctx.Event("fairroulette.payout " + bet.Better.Address().String() + " " + ctx.Utility().String(payout))
 	}
 
 	// This is where we transfer the remainder after payout to the creator of the smart contract.
@@ -222,6 +233,18 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 		// Send the remainder to the contract creator.
 		ctx.TransferToAddress(ctx.ContractCreator().Address(), transfers)
 	}
+
+	// Set round status to 0, send out event to notify that the round has ended
+	f.State.RoundStatus().SetValue(0)
+	ctx.Event("fairroulette.round.state " + f.State.RoundStatus().String())
+}
+
+func funcForceReset(ctx wasmlib.ScFuncContext, f *ForceResetContext) {
+	// Get the 'bets' array in state storage.
+	bets := f.State.Bets()
+
+	// Clear all bets.
+	bets.Clear()
 
 	// Set round status to 0, send out event to notify that the round has ended
 	f.State.RoundStatus().SetValue(0)

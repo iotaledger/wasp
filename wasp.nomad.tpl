@@ -28,7 +28,8 @@ variable "wasp_config" {
 		"adminWhitelist": ${adminWhitelist}
 	},
 	"metrics": {
-		"port": "{{ env "NOMAD_PORT_metrics" }}"
+        "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_metrics" }}",
+        "enabled": true
 	},
 	"dashboard": {
 		"auth": {
@@ -58,13 +59,13 @@ job "iscp-evm" {
 	update {
 		max_parallel      = 1
 		health_check      = "checks"
-		min_healthy_time  = "15s"
-		healthy_deadline  = "1m"
-		progress_deadline = "3m"
+		min_healthy_time  = "1s"
+		healthy_deadline  = "30s"
+		progress_deadline = "5m"
 		auto_revert       = true
 		auto_promote      = true
 		canary            = 1
-		stagger           = "30s"
+		stagger           = "15s"
 	}
 
 	group "node" {
@@ -90,7 +91,7 @@ job "iscp-evm" {
 			port "peering" {
 				host_network = "private"
 			}
-			port "prometheus" {
+			port "metrics" {
 				host_network = "private"
 			}
 		}
@@ -102,6 +103,7 @@ job "iscp-evm" {
 				network_mode = "host"
 				image = "${artifact.image}:${artifact.tag}"
 				command = "wasp"
+				entrypoint = [""]
 				args = [
 					"-c=/local/config.json",
 				]
@@ -110,7 +112,7 @@ job "iscp-evm" {
 					"api",
 					"nanomsg",
 					"peering",
-					"prometheus",
+					"metrics",
 				]
 
 				auth {
@@ -144,8 +146,8 @@ job "iscp-evm" {
 				port  = "peering"
 			}
 			service {
-				tags = ["wasp", "prometheus"]
-				port  = "prometheus"
+				tags = ["wasp", "metrics"]
+				port  = "metrics"
 			}
 
 			template {
@@ -184,7 +186,7 @@ job "iscp-evm" {
 			port "peering" {
 				host_network = "private"
 			}
-			port "prometheus" {
+			port "metrics" {
 				host_network = "private"
 			}
 		}
@@ -196,6 +198,7 @@ job "iscp-evm" {
 				network_mode = "host"
 				image = "${artifact.image}:${artifact.tag}"
 				command = "wasp"
+				entrypoint = [""]
 				args = [
 					"-c=/local/config.json",
 				]
@@ -204,7 +207,7 @@ job "iscp-evm" {
 					"api",
 					"nanomsg",
 					"peering",
-					"prometheus",
+					"metrics",
 				]
 
 				auth {
@@ -238,8 +241,8 @@ job "iscp-evm" {
 				port  = "peering"
 			}
 			service {
-				tags = ["wasp", "prometheus"]
-				port  = "prometheus"
+				tags = ["wasp", "metrics"]
+				port  = "metrics"
 			}
 
 			template {

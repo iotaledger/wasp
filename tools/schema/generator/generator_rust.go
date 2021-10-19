@@ -383,7 +383,7 @@ func (s *Schema) generateRustFuncs() error {
 	return os.Remove(scOriginal)
 }
 
-func (s *Schema) generateRustFuncSignature(file *os.File, f *FuncDef) {
+func (s *Schema) generateRustFuncSignature(file *os.File, f *Func) {
 	switch f.FuncName {
 	case "funcInit":
 		fmt.Fprintf(file, "\npub fn %s(ctx: &Sc%sContext, f: &%sContext) {\n", snake(f.FuncName), f.Kind, capitalize(f.Type))
@@ -871,7 +871,7 @@ func (s *Schema) generateRustSubtypes() error {
 	return nil
 }
 
-func (s *Schema) generateRustThunk(file *os.File, f *FuncDef) {
+func (s *Schema) generateRustThunk(file *os.File, f *Func) {
 	nameLen := f.nameLen(5) + 1
 	fmt.Fprintf(file, "\npub struct %sContext {\n", f.Type)
 	if len(f.Params) != 0 {
@@ -926,7 +926,7 @@ func (s *Schema) generateRustThunk(file *os.File, f *FuncDef) {
 	fmt.Fprintf(file, "}\n")
 }
 
-func (s *Schema) generateRustThunkAccessCheck(file *os.File, f *FuncDef) {
+func (s *Schema) generateRustThunkAccessCheck(file *os.File, f *Func) {
 	grant := f.Access
 	index := strings.Index(grant, "//")
 	if index >= 0 {

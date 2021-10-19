@@ -134,6 +134,12 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 
 	fv := codec.MakeDict(blobFieldValues)
 	chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
+
+	reqTx, err := chClient.DepositFunds(100)
+	require.NoError(t, err)
+	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	require.NoError(t, err)
+
 	expectedHash, _, err := chClient.UploadBlob(fv)
 	require.NoError(t, err)
 	t.Logf("expected hash: %s", expectedHash.String())

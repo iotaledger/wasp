@@ -234,11 +234,16 @@ module.exports = {
                     label: 'Chain Management',
                     id: 'guide/chains_and_nodes/chain-management',
                 },
+                {
+                    type: 'doc',
+                    label: 'Testnet',
+                    id: 'guide/chains_and_nodes/testnet',
+                },
             ]
         },
         {
             type: 'category',
-            label: 'Rust/WASM',
+            label: 'Rust/Wasm',
             items: [
                 {
                     type: 'doc',
@@ -384,12 +389,12 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Creating a chain',
+                    label: 'Creating a Chain',
                     id: 'guide/evm/create-chain',
                 },
                 {
                     type: 'doc',
-                    label: 'Example contract',
+                    label: 'Example Contract',
                     id: 'guide/evm/example',
                 },
                 {

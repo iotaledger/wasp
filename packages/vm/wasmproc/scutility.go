@@ -18,11 +18,11 @@ type ScUtility struct {
 	nextRandom int
 	random     []byte
 	utils      iscp.Utils
-	vm         *WasmProcessor
+	wc         *WasmContext
 }
 
-func NewScUtility(vm *WasmProcessor) *ScUtility {
-	return &ScUtility{utils: sandbox_utils.NewUtils(), vm: vm}
+func NewScUtility(wc *WasmContext) *ScUtility {
+	return &ScUtility{utils: sandbox_utils.NewUtils(), wc: wc}
 }
 
 func (o *ScUtility) InitObj(id, keyID int32, owner *ScDict) {
@@ -95,7 +95,7 @@ func (o *ScUtility) getRandom8Bytes() []byte {
 	if o.random == nil {
 		// need to initialize pseudo-random generator with
 		// a sufficiently random, yet deterministic, value
-		id := o.vm.ctx.GetEntropy()
+		id := o.wc.ctx.GetEntropy()
 		o.random = id[:]
 	}
 	i := o.nextRandom

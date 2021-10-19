@@ -144,5 +144,17 @@ func paramBlockNumber(ctx iscp.SandboxView) *big.Int {
 	if ctx.Params().MustHas(evm.FieldBlockNumber) {
 		return new(big.Int).SetBytes(ctx.Params().MustGet(evm.FieldBlockNumber))
 	}
-	return nil
+	return nil // latest block
+}
+
+func paramBlockNumberOrHashAsNumber(ctx iscp.SandboxView, emu *emulator.EVMEmulator) *big.Int {
+	if ctx.Params().MustHas(evm.FieldBlockHash) {
+		a := assert.NewAssert(ctx.Log())
+		blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
+		header, err := emu.HeaderByHash(blockHash)
+		a.RequireNoError(err)
+		a.Require(header != nil, "block not found")
+		return header.Number
+	}
+	return paramBlockNumber(ctx)
 }

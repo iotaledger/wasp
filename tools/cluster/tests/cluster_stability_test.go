@@ -145,7 +145,7 @@ func (e *SabotageEnv) getActiveNodeList() []int {
 func runTestSuccessfulIncCounterIncreaseWithoutInstability(t *testing.T, clusterSize, numValidators, numRequests int) {
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
 	env.sendRequests(numRequests, time.Millisecond*250)
-	waitUntil(t, env.chainEnv.counterEquals(int64(numRequests)), env.getActiveNodeList(), 120*time.Second, "incCounter matches expectation")
+	waitUntil(t, env.chainEnv.counterEquals(int64(numRequests)), env.chainEnv.clu.Config.AllNodes(), 120*time.Second, "incCounter matches expectation")
 }
 
 func TestSuccessfulIncCounterIncreaseWithoutInstability(t *testing.T) {
@@ -339,7 +339,7 @@ func testConsenseusReconnectingNodesNoQuorum(t *testing.T, clusterSize, numValid
 	// unfreeze nodes, after bootstrapping it is expected to reach a full quorum leading to an equal incCounter
 	env.unfreezeNodes()
 
-	waitUntil(t, env.chainEnv.counterEquals(int64(numRequestsBeforeFailure+numRequestsAfterFailure)), env.getActiveNodeList(), 60*time.Second, "incCounter matches expectation")
+	waitUntil(t, env.chainEnv.counterEquals(int64(numRequestsBeforeFailure+numRequestsAfterFailure)), env.chainEnv.clu.Config.AllNodes(), 60*time.Second, "incCounter matches expectation")
 }
 
 func testConsenseusReconnectingNodesHighQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure int) {

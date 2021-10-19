@@ -1,0 +1,126 @@
+name: TestCore
+description: Core test for ISCP wasmlib Rust/Wasm library
+structs: {}
+typedefs: {}
+state:
+  counter: Int64
+  hnameEP: Hname
+  ints: map[String]Int64
+  mintedColor: Color
+  mintedSupply: Int64
+funcs:
+  callOnChain:
+    params:
+      hnameContract: Hname?
+      hnameEP: Hname?
+      intValue=intParamValue: Int64
+    results:
+      intValue=intParamValue: Int64
+  checkContextFromFullEP:
+    params:
+      agentID: AgentID
+      caller: AgentID
+      chainID: ChainID
+      chainOwnerID: AgentID
+      contractCreator: AgentID
+  doNothing: {}
+  getMintedSupply:
+    results:
+      mintedColor: Color
+      mintedSupply: Int64
+  incCounter: {}
+  init:
+    params:
+      fail=initFailParam: Int64?
+  passTypesFull:
+    params:
+      address: Address
+      agentID: AgentID
+      chainID: ChainID
+      contractID: AgentID
+      hash=Hash: Hash
+      hname=Hname: Hname
+      hnameZero=Hname-0: Hname
+      int64: Int64
+      int64Zero=int64-0: Int64
+      string: String
+      stringZero=string-0: String
+  runRecursion:
+    params:
+      intValue=intParamValue: Int64
+    results:
+      intValue=intParamValue: Int64
+  sendToAddress:
+    access: creator
+    params:
+      address: Address
+  setInt:
+    params:
+      intValue=intParamValue: Int64
+      name=intParamName: String
+  spawn:
+    params:
+      progHash: Hash
+  testBlockContext1: {}
+  testBlockContext2: {}
+  testCallPanicFullEP: {}
+  testCallPanicViewEPFromFull: {}
+  testChainOwnerIDFull:
+    results:
+      chainOwnerID=chainOwnerID: AgentID
+  testEventLogDeploy: {}
+  testEventLogEventData: {}
+  testEventLogGenericData:
+    params:
+      counter: Int64
+  testPanicFullEP: {}
+  withdrawToChain:
+    params:
+      chainID=chainID: ChainID
+views:
+  checkContextFromViewEP:
+    params:
+      agentID: AgentID
+      chainID: ChainID
+      chainOwnerID: AgentID
+      contractCreator: AgentID
+  fibonacci:
+    params:
+      intValue=intParamValue: Int64
+    results:
+      intValue=intParamValue: Int64
+  getCounter:
+    results:
+      counter: Int64
+  getInt:
+    params:
+      name=intParamName: String
+    results:
+      values=this: map[String]Int64
+  getStringValue:
+    params:
+      varName: String
+    results:
+      vars=this: map[String]String
+  justView: {}
+  passTypesView:
+    params:
+      address: Address
+      agentID: AgentID
+      chainID: ChainID
+      contractID: AgentID
+      hash=Hash: Hash
+      hname=Hname: Hname
+      hnameZero=Hname-0: Hname
+      int64: Int64
+      int64Zero=int64-0: Int64
+      string: String
+      stringZero=string-0: String
+  testCallPanicViewEPFromView: {}
+  testChainOwnerIDView:
+    results:
+      chainOwnerID: AgentID
+  testPanicViewEP: {}
+  testSandboxCall:
+    results:
+      sandboxCall: String

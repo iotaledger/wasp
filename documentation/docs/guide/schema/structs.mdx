@@ -1,25 +1,36 @@
+---
+keywords:
+- functions
+- state
+- structures
+- storage
+- named fields
+description: You can use structs directly as a type in state storage definitions and the schema tool will automatically generate the proxy code to access it properly.
+image: /img/logo/WASP_logo_dark.png
+---
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
 
 # Structured Data Types
 
-The schema tool allows you to define your own structured data types that are composed of
+The [schema tool](usage.mdx) allows you to define your own structured data types that are composed of
 the predefined WasmLib value data types. The tool will generate a struct with named fields
-according to the definition in schema.json, and also generates code to serialize and
-deserialize the structure to a byte array, so that it can be saved as a single unit of
-data, for example in state storage.
+according to the definition in the schema definition file, and also generate code to
+serialize and deserialize the structure to a byte array, so that it can be saved as a
+single unit of data, for example in state storage.
 
-You can use such structs directly as a type in state storage definitions and the schema
+You can use structs directly as a type in state storage definitions and the schema
 tool will automatically generate the proxy code to access it properly.
 
 For example, let's say you are creating a `betting` smart contract. Then you would want to
 store information for each bet. The Bet structure could consist of the bet amount and time
-of the bet, the number of the item that was bet on, and the agent ID of the one who placed
+, the number of the item that was bet on, and the agent ID of the one who placed
 the bet. And you would keep track of all bets in state storage in an array of Bet structs.
-You would insert the following into schema.json:
+To do so, you would insert the following into the schema definition file:
 
-<Tabs defaultValue="json"
+<Tabs defaultValue="yaml"
       values={[
+          {label: 'schema.yaml', value: 'yaml'},
           {label: 'schema.json', value: 'json'},
       ]}>
 
@@ -36,9 +47,24 @@ You would insert the following into schema.json:
     }
   },
   "state": {
-    "bets": "[]Bet // all bets made in this round"
+    "bets": "Bet[] // all bets made in this round"
   }
 }
+```
+
+</TabItem>
+
+<TabItem value="yaml">
+
+```yaml
+structs:
+  Bet:
+    amount: Int64 // bet amount
+    time: Int64 // timestamp of this bet
+    number: Int32 // number of item we bet on
+    better: AgentID // Who placed this bet
+state:
+  bets: Bet[] // all bets made in this round
 ```
 
 </TabItem>
@@ -51,7 +77,8 @@ struct:
       values={[
           {label: 'Go', value: 'go'},
           {label: 'Rust', value: 'rust'},
-      ]}>
+      ]}
+      groupId="language">
 
 <TabItem value="go">
 
@@ -119,7 +146,7 @@ func (o MutableBet) Value() *Bet {
 ```
 
 </TabItem>
-<TabItem>
+<TabItem value="rust">
 
 ```rust
 use wasmlib::*;
@@ -200,7 +227,8 @@ The generated code in `state.rs` that implements the state interface is shown he
       values={[
           {label: 'Go', value: 'go'},
           {label: 'Rust', value: 'rust'},
-      ]}>
+      ]}
+      groupId="language">
 
 <TabItem value="go">
 
@@ -265,7 +293,7 @@ func (s MutableBettingState) Owner() wasmlib.ScMutableAgentID {
 ```
 
 </TabItem>
-<TabItem>
+<TabItem value="rust">
 
 ```rust
 use wasmlib::*;
@@ -346,4 +374,4 @@ impl MutableBettingState {
 The end result is an ImmutableBettingState and MutableBettingState structure that can
 directly interface to the state of the betting contract.
 
-In the next section we will look at how to make even more complex type definitions.
+In the next section we will look at how to make even more [complex type definitions](typedefs.mdx).

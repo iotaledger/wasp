@@ -2,6 +2,8 @@ package wasmhost
 
 // all predefined key id values should exactly match their counterpart values on the client!
 // note that predefined key ids are negative values to distinguish them from indexes
+// this allows us to use them to initiate special functionality
+// for example array[KeyLength] returns the array length
 
 const (
 	KeyAccountID       = int32(-1)
@@ -47,14 +49,14 @@ const (
 	KeyUtility         = int32(-41)
 	KeyValid           = int32(-42)
 
-	// Treat this one like a version number. When anything changes
-	// to the keys give this one a different value and make sure
-	// that the client side is updated accordingly
+	// KeyZzzzzzz is treated like a version number.
+	// When anything changes to the keys give this one a different value
+	// and make sure that the client side is updated accordingly
 	KeyZzzzzzz = int32(-43)
 )
 
 // associate names with predefined key ids
-var keyMap = map[string]int32{
+var predefinedKeyMap = map[string]int32{
 	"$accountID":       KeyAccountID,
 	"$address":         KeyAddress,
 	"$balances":        KeyBalances,
@@ -97,4 +99,14 @@ var keyMap = map[string]int32{
 	"$transfers":       KeyTransfers,
 	"$utility":         KeyUtility,
 	"$valid":           KeyValid,
+}
+
+var predefinedKeys = initKeyMap()
+
+func initKeyMap() [][]byte {
+	keys := make([][]byte, len(predefinedKeyMap)+1)
+	for k, v := range predefinedKeyMap {
+		keys[-v] = []byte(k)
+	}
+	return keys
 }

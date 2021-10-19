@@ -54,7 +54,7 @@ func TestSynchronous(t *testing.T) {
 		if w {
 			reqs++
 		}
-		require.True(t, ctx.WaitForPendingRequests(-reqs, 20*time.Second))
+		require.True(t, ctx.WaitForPendingRequests(-reqs, 60*time.Second))
 
 		v := testcore.ScFuncs.GetCounter(ctx)
 		v.Func.Call()
@@ -94,7 +94,7 @@ func TestConcurrency(t *testing.T) {
 				}
 			}(r, n)
 		}
-		require.True(t, ctx.WaitForPendingRequests(sum, 20*time.Second))
+		require.True(t, ctx.WaitForPendingRequests(sum, 60*time.Second))
 
 		v := testcore.ScFuncs.GetCounter(ctx)
 		v.Func.Call()
@@ -137,7 +137,7 @@ func TestConcurrency2(t *testing.T) {
 			}(r, n)
 		}
 
-		require.True(t, ctx.WaitForPendingRequests(sum, 20*time.Second))
+		require.True(t, ctx.WaitForPendingRequests(sum, 60*time.Second))
 
 		v := testcore.ScFuncs.GetCounter(ctx)
 		v.Func.Call()

@@ -9,16 +9,16 @@
 
 use wasmlib::*;
 
-use crate::*;
 use crate::types::*;
+use crate::*;
 
 // Define some default configuration parameters.
 
-// The maximum number one can bet on. The range of numbers starts at 0.
-const MAX_NUMBER: i64 = 36;
+// The maximum number one can bet on. The range of numbers starts at 1.
+const MAX_NUMBER: i64 = 8;
 
 // The default playing period of one betting round in seconds.
-const DEFAULT_PLAY_PERIOD: i32 = 30;
+const DEFAULT_PLAY_PERIOD: i32 = 60;
 
 // Enable this if you deploy the contract to an actual node. It will pay out the prize after a certain timeout.
 const ENABLE_SELF_POST: bool = true;
@@ -26,21 +26,31 @@ const ENABLE_SELF_POST: bool = true;
 // The number to divide nano seconds to seconds.
 const NANO_TIME_DIVIDER: i64 = 1000000000;
 
-// 'placeBet' is used by betters to place a bet on a number from 0 to MAX_NUMBER. The first
+// 'placeBet' is used by betters to place a bet on a number from 1 to MAX_NUMBER. The first
 // incoming bet triggers a betting round of configurable duration. After the playing period
 // expires the smart contract will automatically pay out any winners and start a new betting
 // round upon arrival of a new bet.
 // The 'placeBet' function takes 1 mandatory parameter:
-// - 'number', which must be an Int64 number from 0 to MAX_NUMBER
+// - 'number', which must be an Int64 number from 1 to MAX_NUMBER
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
+    let bets = f.state.bets();
+
+    for i in 0..bets.length() {
+        let bet: Bet = bets.get_bet(i).value();
+
+        if bet.better.address() == ctx.caller().address() {
+            ctx.panic("Bet already placed for this round");
+        }
+    }
+
     // Since we are sure that the 'number' parameter actually exists we can
     // retrieve its actual value into an i64.
     let number: i64 = f.params.number().value();
 
     // Require that the number is a valid number to bet on, otherwise panic out.
-    ctx.require(number >= 0 && number <= MAX_NUMBER, "invalid number");
+    ctx.require(number >= 1 && number <= MAX_NUMBER, "invalid number");
 
     // Create ScBalances proxy to the incoming balances for this request.
     // Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
@@ -74,7 +84,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
 
     ctx.event(&format!(
         "fairroulette.bet.placed {0} {1} {2}",
-        &bet.better.to_string(),
+        &bet.better.address().to_string(),
         bet.amount,
         bet.number
     ));
@@ -90,6 +100,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
         // case a zero value was returned.
         if play_period < 10 {
             play_period = DEFAULT_PLAY_PERIOD;
+            f.state.play_period().set_value(play_period);
         }
 
         if ENABLE_SELF_POST {
@@ -132,8 +143,8 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     // using the transaction hash as initial entropy data. Note that the pseudo-random number
     // generator will use the next 8 bytes from the hash as its random Int64 number and once
     // it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
-    // Here we determine the winning number for this round in the range of 0 thru MAX_NUMBER.
-    let winning_number: i64 = ctx.utility().random(MAX_NUMBER);
+    // Here we determine the winning number for this round in the range of 1 thru MAX_NUMBER.
+    let winning_number: i64 = ctx.utility().random(MAX_NUMBER - 1) + 1;
 
     // Save the last winning number in state storage under 'lastWinningNumber' so that there
     // is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
@@ -178,7 +189,10 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     // so that the 'bets' array becomes available for when the next betting round ends.
     bets.clear();
 
-    ctx.event(&format!("fairroulette.round.winning_number {}", winning_number));
+    ctx.event(&format!(
+        "fairroulette.round.winning_number {}",
+        winning_number
+    ));
 
     // Did we have any winners at all?
     if winners.is_empty() {
@@ -221,7 +235,11 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
         }
 
         // Announce who got sent what as event.
-        ctx.event(&format!("fairroulette.payout {} {}", &bet.better.to_string(), payout));
+        ctx.event(&format!(
+            "fairroulette.payout {} {}",
+            &bet.better.address().to_string(),
+            payout
+        ));
     }
 
     // This is where we transfer the remainder after payout to the creator of the smart contract.
@@ -237,7 +255,25 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
 
     // Set round status to 0, send out event to notify that the round has ended
     f.state.round_status().set_value(0);
-    ctx.event(&format!("fairroulette.round.state {0}", f.state.round_status().value()));
+    ctx.event(&format!(
+        "fairroulette.round.state {0}",
+        f.state.round_status().value()
+    ));
+}
+
+pub fn func_force_reset(ctx: &ScFuncContext, f: &ForceResetContext) {
+    // Get the 'bets' array in state storage.
+    let bets: ArrayOfMutableBet = f.state.bets();
+    
+    // Clear all bets.
+    bets.clear();
+    
+    // Set round status to 0, send out event to notify that the round has ended
+    f.state.round_status().set_value(0);
+    ctx.event(&format!(
+        "fairroulette.round.state {0}",
+        f.state.round_status().value()
+    ));
 }
 
 // 'playPeriod' can be used by the contract creator to set the length of a betting round
@@ -260,7 +296,9 @@ pub fn view_last_winning_number(_ctx: &ScViewContext, f: &LastWinningNumberConte
     let last_winning_number = f.state.last_winning_number().value();
 
     // Set the 'last_winning_number' in results to the value from state storage.
-    f.results.last_winning_number().set_value(last_winning_number);
+    f.results
+        .last_winning_number()
+        .set_value(last_winning_number);
 }
 
 pub fn view_round_number(_ctx: &ScViewContext, f: &RoundNumberContext) {
@@ -286,3 +324,5 @@ pub fn view_round_started_at(_ctx: &ScViewContext, f: &RoundStartedAtContext) {
     // Set the 'round_started_at' in results to the value from state storage.
     f.results.round_started_at().set_value(round_started_at);
 }
+
+

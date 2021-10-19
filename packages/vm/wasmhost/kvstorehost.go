@@ -4,7 +4,8 @@
 package wasmhost
 
 import (
-	"github.com/iotaledger/hive.go/logger"
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 	"github.com/mr-tron/base58"
@@ -37,11 +38,6 @@ const (
 // this allows us to display better readable tracing information
 const KeyFromBytes int32 = 0x4000
 
-var (
-	HostTracing         = false
-	ExtendedHostTracing = false
-)
-
 type HostObject interface {
 	CallFunc(keyID int32, params []byte) []byte
 	Exists(keyID, typeID int32) bool
@@ -55,40 +51,17 @@ type HostObject interface {
 // it allows WasmGoVM to bypass Wasm and access the sandbox directly
 // so that it is possible to debug into SC code that was written in Go
 type KvStoreHost struct {
-	funcs         []func(ctx wasmlib.ScFuncContext)
-	views         []func(ctx wasmlib.ScViewContext)
-	keyIDToKey    [][]byte
-	keyIDToKeyMap [][]byte
-	keyToKeyID    map[string]int32
-	log           *logger.Logger
-	objIDToObj    []HostObject
+	scKeys     *KvStoreHost
+	keyIDToKey [][]byte
+	keyToKeyID map[string]int32
+	objIDToObj []HostObject
 }
 
-var _ wasmlib.ScHost = &KvStoreHost{}
-
-func (h *KvStoreHost) Init(log *logger.Logger) {
-	h.log = log
-	h.objIDToObj = make([]HostObject, 0, 16)
+func (h *KvStoreHost) Init(scKeys *KvStoreHost) {
+	h.scKeys = scKeys
 	h.keyIDToKey = [][]byte{[]byte("<null>")}
 	h.keyToKeyID = make(map[string]int32)
-	h.keyIDToKeyMap = make([][]byte, len(keyMap)+1)
-	for k, v := range keyMap {
-		h.keyIDToKeyMap[-v] = []byte(k)
-	}
-}
-
-func (h *KvStoreHost) AddFunc(f func(ctx wasmlib.ScFuncContext)) []func(ctx wasmlib.ScFuncContext) {
-	if f != nil {
-		h.funcs = append(h.funcs, f)
-	}
-	return h.funcs
-}
-
-func (h *KvStoreHost) AddView(v func(ctx wasmlib.ScViewContext)) []func(ctx wasmlib.ScViewContext) {
-	if v != nil {
-		h.views = append(h.views, v)
-	}
-	return h.views
+	h.objIDToObj = make([]HostObject, 0, 16)
 }
 
 func (h *KvStoreHost) CallFunc(objID, keyID int32, params []byte) []byte {
@@ -104,14 +77,6 @@ func (h *KvStoreHost) FindObject(objID int32) HostObject {
 		panic("FindObject: invalid objID")
 	}
 	return h.objIDToObj[objID]
-}
-
-func (h *KvStoreHost) FindSubObject(obj HostObject, keyID, typeID int32) HostObject {
-	if obj == nil {
-		// use root object
-		obj = h.FindObject(1)
-	}
-	return h.FindObject(obj.GetObjectID(keyID, typeID))
 }
 
 func (h *KvStoreHost) GetBytes(objID, keyID, typeID int32) []byte {
@@ -149,13 +114,27 @@ func (h *KvStoreHost) GetBytes(objID, keyID, typeID int32) []byte {
 }
 
 func (h *KvStoreHost) getKeyFromID(keyID int32) []byte {
-	// find predefined key
 	if keyID < 0 {
-		return h.keyIDToKeyMap[-keyID]
+		return predefinedKeys[-keyID]
 	}
 
 	// find user-defined key
-	return h.keyIDToKey[keyID & ^KeyFromBytes]
+	keyID &= ^KeyFromBytes
+	if h.scKeys != nil {
+		// get common SC user-defined keys count (skip null)
+		scKeysLen := int32(len(h.scKeys.keyIDToKey)) - 1
+
+		// find common SC user-defined key
+		if keyID <= scKeysLen {
+			return h.scKeys.keyIDToKey[keyID]
+		}
+
+		// correct for SC keys count
+		keyID -= scKeysLen
+	}
+
+	// user-defined key must be local
+	return h.keyIDToKey[keyID]
 }
 
 func (h *KvStoreHost) GetKeyFromID(keyID int32) []byte {
@@ -176,13 +155,27 @@ func (h *KvStoreHost) getKeyID(key []byte, fromBytes bool) int32 {
 	// so we will convert to (non-utf8) string
 	// most will have started out as string anyway
 	keyString := string(key)
+
+	var scKeysLen int32
+	if h.scKeys != nil {
+		// check common SC user-defined keys
+		keyID, ok := h.scKeys.keyToKeyID[keyString]
+		if ok {
+			return keyID
+		}
+
+		// get common SC user-defined keys count (skip null)
+		scKeysLen = int32(len(h.scKeys.keyIDToKey)) - 1
+	}
+
+	// check local user-defined keys
 	keyID, ok := h.keyToKeyID[keyString]
 	if ok {
 		return keyID
 	}
 
-	// unknown key, add it to user-defined key map
-	keyID = int32(len(h.keyIDToKey))
+	// unknown key, add it to local user-defined keys
+	keyID = int32(len(h.keyIDToKey)) + scKeysLen
 	if fromBytes {
 		keyID |= KeyFromBytes
 	}
@@ -214,20 +207,6 @@ func (h *KvStoreHost) GetObjectID(objID, keyID, typeID int32) int32 {
 	return subID
 }
 
-func (h *KvStoreHost) PopFrame(frame []HostObject) {
-	h.objIDToObj = frame
-}
-
-func (h *KvStoreHost) PushFrame() []HostObject {
-	// reset frame to contain only null and root object
-	// create a fresh slice to allow garbage collection
-	// it's up to the caller to save and/or restore the old frame
-	pushed := h.objIDToObj
-	h.objIDToObj = make([]HostObject, 2, 16)
-	copy(h.objIDToObj, pushed[:2])
-	return pushed
-}
-
 func (h *KvStoreHost) SetBytes(objID, keyID, typeID int32, bytes []byte) {
 	h.FindObject(objID).SetBytes(keyID, typeID, bytes)
 	switch typeID {
@@ -250,7 +229,9 @@ func (h *KvStoreHost) SetBytes(objID, keyID, typeID int32, bytes []byte) {
 		}
 		h.Tracef("SetBytes o%d k%d v=%dl", objID, keyID, val64)
 	case OBJTYPE_STRING:
-		h.Tracef("SetBytes o%d k%d v='%s'", objID, keyID, string(bytes))
+		if keyID != KeyTrace {
+			h.Tracef("SetBytes o%d k%d v='%s'", objID, keyID, string(bytes))
+		}
 	default:
 		h.Tracef("SetBytes o%d k%d v='%s'", objID, keyID, base58.Encode(bytes))
 	}
@@ -258,12 +239,13 @@ func (h *KvStoreHost) SetBytes(objID, keyID, typeID int32, bytes []byte) {
 
 func (h *KvStoreHost) Tracef(format string, a ...interface{}) {
 	if HostTracing {
-		h.log.Debugf(format, a...)
+		text := fmt.Sprintf(format, a...)
+		h.SetBytes(wasmlib.OBJ_ID_ROOT, KeyTrace, OBJTYPE_STRING, []byte(text))
 	}
 }
 
 func (h *KvStoreHost) TraceAllf(format string, a ...interface{}) {
-	if ExtendedHostTracing {
+	if HostTracingAll {
 		h.Tracef(format, a...)
 	}
 }

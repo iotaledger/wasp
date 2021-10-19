@@ -1,3 +1,16 @@
+---
+keywords:
+- params
+- parameters
+- field definition
+- field type
+- optional
+- schema tool
+- structure
+- immutable
+description: The optional params subsection contains field definitions for each of the parameters that a function takes.
+image: /img/logo/WASP_logo_dark.png
+---
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
 
@@ -5,8 +18,8 @@ import TabItem from "@theme/TabItem"
 
 The optional `params` subsection contains field definitions for each of the parameters
 that a function takes. The layout of the field definitions is identical to that of
-the [state](state.mdx) field definitions, with one addition. The field type can be prefixed
-with a question mark, which indicates that that parameter is optional.
+the [state](state.mdx) field definitions with one addition, the field type can be
+followed by a question mark which indicates that that parameter is optional.
 
 The schema tool will automatically generate an immutable structure with member variables
 for proxies to each parameter variable in the `params` map. It will also generate code to
@@ -69,4 +82,4 @@ impl ImmutableMemberParams {
 Note that the schema tool will also generate a mutable version of the structure, suitable
 for providing the parameters when calling this smart contract function.
 
-In the next section we will look at the `results` subsection.
+In the next section, we will look at the [`results`](results.mdx).

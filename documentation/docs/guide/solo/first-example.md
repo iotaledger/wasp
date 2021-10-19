@@ -1,3 +1,14 @@
+---
+description: Example of a _Solo_ test. It deploys a new chain and invokes a function in the root contract.
+image: /img/logo/WASP_logo_dark.png
+keywords:
+- testing framework
+- golang
+- solo
+- example
+- root contract
+- new chain
+---
 # First Example 
 
 The following is an example of a _Solo_ test. It deploys a new chain and invokes
@@ -54,7 +65,10 @@ The output of the test will be something like this:
 ```
 
 :::note
-Addresses, chain IDs and other hashes will be the same on each run of the test because of the constant seed. Also, the log produced by the test contains timestamps from computer timer, while the Solo environment operates in its own logical time
+
+* Addresses, chain IDs and other hashes will be the same on each run of the test because of the constant seed. 
+* The log produced by the test contains timestamps from computer timer, while the Solo environment operates in its own logical time
+
 :::
 
 The [core contracts](../core_concepts/core_contracts/overview.md) listed in the log (`_default`, `accounts`, `blob`, `blocklog`, `root`) are automatically deployed on each new chain. You can see
