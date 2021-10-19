@@ -1,20 +1,31 @@
+---
+keywords:
+- containers
+- types
+- container types
+- single type
+- array
+- schema definition file
+description: You can add a typedefs section to the schema definition file, where you can define a single type name for a container type. This way you can easily create containers that contain container types.
+image: /img/logo/WASP_logo_dark.png
+---
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
 
 # Type Definitions
 
-Since we allow nesting of container types it is a bit difficult to create proper
-declarations for such nested types. Especially because in a field definition you can only
-indicate either a single type, or an array of single type, or a map of single type.
+Since we allow nesting of [container types](proxies.mdx#container-proxies), it is a difficult to create proper
+declarations for such nested types. Especially because you can only indicate either a single type,
+or an array of single type, or a map of single type in a field definition.
 
-We devised a simple solution to this problem. You can add a `typedefs` section to the
-schema definition file where you can define a single type name for a container type. That
+There is a simple solution to this problem. You can add a `typedefs` section to the
+schema definition file, where you can define a single type name for a container type. That
 way you can easily create containers that contain such container types. The schema tool
-will automatically generate the in-between proxy types necessary to make all of this work.
+will automatically generate the in-between proxy types necessary to make this work.
 
-To keep it at the `betting` smart contract from before, imagine we would want to keep
+To keep it at the `betting` smart contract from [the previous section](structs.mdx), imagine you want to keep
 track of all betting rounds. Since a betting round contains an array of all bets in a
-round you could not easily define it if it weren't for typedefs.
+round, if it weren't for typedefs you could not define it easily.
 
 Instead, now you add the following to your schema definition file:
 
@@ -305,8 +316,7 @@ impl MutableBettingState {
 </Tabs>
 
 Notice how the rounds() member function returns a proxy to an array of BettingRound. Which
-in turn is an array of Bet. So the desired result has been achieved. And every access step
+in turn is an array of Bet. So, the desired result has been achieved. And every access step
 along the way only allows you to take the path laid out which is checked at compile-time.
 
-In the next section we will explore how the schema tool helps to simplify function
-definitions.
+In the next section we will explore how the schema tool generates a proxy interface for mutable [states](state.mdx).

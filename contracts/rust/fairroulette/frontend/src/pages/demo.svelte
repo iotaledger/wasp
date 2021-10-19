@@ -197,6 +197,7 @@
           position: absolute;
           left: 50%;
           transform: translateX(-50%);
+          width: 50%;
         }
         .title {
           text-align: center;
@@ -236,6 +237,7 @@
           height: calc(100vh - 400px);
           margin-top: 32px;
           max-height: 920px;
+          min-height: 500px;
         }
         @media (min-width: 1135px) {
           height: calc(100vh - 350px);

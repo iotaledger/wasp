@@ -1,3 +1,14 @@
+---
+keywords:
+- functions
+- views
+- state
+- access
+- params
+- results
+image: /img/logo/WASP_logo_dark.png
+description:  The code generated for Funcs will be able to inspect and modify the smart contract state, whereas the code generated for Views will only be able to inspect the state.
+---
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
 
@@ -64,7 +75,7 @@ to explain the layout of these sections once.
 
 <TabItem value="yaml">
 
-```yaml
+```YAML
 name: Dividend
 description: Simple dividend smart contract
 state:
@@ -104,12 +115,12 @@ them. The code generated for Funcs will be able to inspect and modify the smart 
 state, whereas the code generated for Views will only be able to inspect the state.
 
 Functions are defined as named subsections in the schema definition file. The name of the
-subsection will become the name of the function. Under each function subsection in turn
-there can be 3 optional subsections.
+subsection will become the name of the function. In turn, there can be 3 optional subsections
+under each function subsection.
 
 * `access` indicates who is allowed to access the function.
 * `params` holds the field definitions that describe the function parameters.
 * `results` holds the field definitions that describe the function results.
 
 We will now examine each subsection in more detail. In the next section we will first look
-at the `access` subsection.
+at the [`access`](access.mdx) subsection.

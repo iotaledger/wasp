@@ -1,3 +1,11 @@
+---
+keywords:
+- functions
+- thunk
+- insert operations
+description: Thunk functions encapsulate access and parameter checking and set up the type-safe function-specific contexts. Thunks are used to insert operations at the beginning or end of the other function to adapt it to changing requirements
+image: /img/logo/WASP_logo_dark.png
+---
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
 
@@ -112,7 +120,7 @@ fn on_load() {
 </TabItem>
 </Tabs>
 
-As you can see instead of calling the user functions directly, we now call thunk versions
+As you can see, instead of calling the user functions directly, we now call thunk versions
 of these functions. We also added initialization of a local array that holds all key IDs
 negotiated with the host, so that we can simply use (generated) indexes into this array
 instead of having to negotiate these IDs each time we need them. The rest of the generated
@@ -188,17 +196,17 @@ fn func_set_owner_thunk(ctx: &ScFuncContext) {
 </TabItem>
 </Tabs>
 
-The thunk first logs the contract and function name to show the call has started. Then it
+First, the thunk logs the contract and function name to show the call has started. Then it
 sets up the access control for the function according to the schema definition file.
 In this case it retrieves the `owner` state variable, requires that it exists, and then
 requires that the caller() of the function equals that value. Any failing requirement will
 panic out of the function with an error message. So this code makes sure only the owner of
 the contract can call this function.
 
-Next we set up a strongly typed function-specific context structure. First we add the
+Next, we set up a strongly typed function-specific context structure. First, we add the
 function-specific immutable `params` interface structure, which is only present when the
 function can have parameters. Then we add the contract-specific `state` interface
-structure. In this case it is mutable because setOwner is a Func. For Views this will be
+structure. In this case it is mutable because setOwner is a [Func](funcs.mdx). For [Views](views.mdx) this will be
 an immutable state interface. Finally, we add the function-specific mutable `results`
 interface structure, which is only present when the function returns results. Obviously,
 this is not the case for this setOwner function.
@@ -207,9 +215,9 @@ Now we get to the point where we can use the function-specific `params` interfac
 for mandatory parameters. Each mandatory parameter is required to exist, or else we will
 panic out of the function with an error message.
 
-With the automated checks and setup completed we now call the function implementation that
-is maintained by the user. After the user function has completed we log that the contract
+With the automated checks and setup completed, we now call the function implementation that
+is maintained by the user. After the user function has completed, we log that the contract
 function has completed successfully. Remember that any error within the user function will
 cause a panic, so this logging will never happen in that case.
 
-In the next section we will look at the specifics of view functions.
+In the next section we will look at the specifics of [view functions](views.mdx).
