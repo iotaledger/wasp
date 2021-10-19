@@ -9,7 +9,7 @@ export const generateRandomId = (): string => {
   }).join('')
 }
 
-export const googleAnalytics = (gaID: string): void => {
+export const loadGoogleAnalytics = (gaID: string): void => {
   window.dataLayer = window.dataLayer || []
   function gtag() { dataLayer.push(arguments) }
   gtag('js', new Date())

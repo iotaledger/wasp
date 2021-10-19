@@ -1,11 +1,11 @@
 <script lang="ts">
-  export let allowCookies: () => void;
-  export let declineCookies: () => void;
+  export let allow: () => void;
+  export let decline: () => void;
 </script>
 
 <div class="cookie-disclaimer">
-  <button on:click={declineCookies}>Decline cookies</button>
-  <button on:click={allowCookies}>Allow cookies</button>
+  <button on:click={decline}>Decline cookies</button>
+  <button on:click={allow}>Allow cookies</button>
 </div>
 
 <style lang="scss">
