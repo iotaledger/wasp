@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Button from "./button.svelte";
+  import Button from './button.svelte';
 
   export let allow: () => void;
   export let decline: () => void;
@@ -8,11 +8,13 @@
 <div class="cookie-disclaimer">
   <div class="disclaimer-description">
     <span
-      >By using the IOTA Roulette, you agree with our use of cookies. <a
+      >By using the IOTA Roulette site, you agree with our use of cookies.
+      <a
         href="https://www.iota.org/privacy-policy"
-        target="_blank">Read our Privacy Policy.</a
-      ></span
-    >
+        target="_blank"
+        rel="noopener noreferrer">Read our Privacy Policy.</a
+      >
+    </span>
   </div>
   <div class="disclaimer-buttons">
     <div><Button label="Allow" onClick={allow} /></div>
