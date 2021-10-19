@@ -30,6 +30,45 @@ func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) ChainMetrics {
 	if m == nil {
 		return DefaultChainMetrics()
 	}
+
+	return &chainMetricsObj{
+		metrics: m,
+		chainID: chainID,
+	}
+}
+
+func New(log *logger.Logger) *Metrics {
+	return &Metrics{log: log}
+}
+
+var once sync.Once
+
+func (m *Metrics) Start(addr string) {
+	once.Do(func() {
+		e := echo.New()
+		e.HideBanner = true
+		e.Use(middleware.Recover())
+		e.GET("/metrics", func(c echo.Context) error {
+			handler := promhttp.Handler()
+			handler.ServeHTTP(c.Response(), c.Request())
+			return nil
+		})
+		m.log.Infof("Prometheus metrics accessible at: %s", addr)
+		m.server = &http.Server{Addr: addr, Handler: e}
+		m.registerMetrics()
+		if err := m.server.ListenAndServe(); err != nil {
+			m.log.Error("Failed to start metrics server", err)
+		}
+	})
+}
+
+func (m *Metrics) Stop() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return m.server.Shutdown(ctx)
+}
+
+func (m *Metrics) registerMetrics() {
 	m.log.Info("Registering mempool metrics to prometheus")
 	m.offLedgerRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "wasp_off_ledger_request_counter",
@@ -72,39 +111,4 @@ func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) ChainMetrics {
 		Help: "Time it takes to run the vm",
 	}, []string{"chain"})
 	prometheus.MustRegister(m.vmRunTime)
-
-	return &chainMetricsObj{
-		metrics: m,
-		chainID: chainID,
-	}
-}
-
-func New(log *logger.Logger) *Metrics {
-	return &Metrics{log: log}
-}
-
-var once sync.Once
-
-func (m *Metrics) Start(addr string) {
-	once.Do(func() {
-		e := echo.New()
-		e.HideBanner = true
-		e.Use(middleware.Recover())
-		e.GET("/metrics", func(c echo.Context) error {
-			handler := promhttp.Handler()
-			handler.ServeHTTP(c.Response(), c.Request())
-			return nil
-		})
-		m.log.Infof("Prometheus metrics accessible at: %s", addr)
-		m.server = &http.Server{Addr: addr, Handler: e}
-		if err := m.server.ListenAndServe(); err != nil {
-			m.log.Error("Failed to start metrics server", err)
-		}
-	})
-}
-
-func (m *Metrics) Stop() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	return m.server.Shutdown(ctx)
 }
