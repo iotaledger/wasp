@@ -237,6 +237,7 @@
           height: calc(100vh - 400px);
           margin-top: 32px;
           max-height: 920px;
+          min-height: 500px;
         }
         @media (min-width: 1135px) {
           height: calc(100vh - 350px);
