@@ -239,6 +239,18 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	ctx.Event("fairroulette.round.state " + f.State.RoundStatus().String())
 }
 
+func funcForceReset(ctx wasmlib.ScFuncContext, f *ForceResetContext) {
+	// Get the 'bets' array in state storage.
+	bets := f.State.Bets()
+
+	// Clear all bets.
+	bets.Clear()
+
+	// Set round status to 0, send out event to notify that the round has ended
+	f.State.RoundStatus().SetValue(0)
+	ctx.Event("fairroulette.round.state " + f.State.RoundStatus().String())
+}
+
 // 'playPeriod' can be used by the contract creator to set the length of a betting round
 // to a different value than the default value, which is 120 seconds.
 func funcPlayPeriod(ctx wasmlib.ScFuncContext, f *PlayPeriodContext) {
