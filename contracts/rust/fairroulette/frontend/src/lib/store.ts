@@ -42,6 +42,8 @@ export const isAWinnerPlayer: Writable<boolean> = writable(false)
 
 export const addressesHistory: Writable<string[]> = writable([])
 
+export const googleAnalyticsInitialized: Writable<boolean> = writable(false)
+
 // Added to bugfix system clocks unsynced, 
 // we can only rely on timeToFinished if the user received a roundStarted event
 export const receivedRoundStarted: Writable<boolean> = writable(false)
