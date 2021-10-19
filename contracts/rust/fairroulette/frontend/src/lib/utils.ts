@@ -21,27 +21,22 @@ export const loadGoogleAnalytics = (gaID: string): void => {
   document.body.appendChild(script)
 }
 
-export const setCookie = (cookieName: string, cookieValue: string | boolean, expirationDays: number): void => {
-  var d = new Date()
-  d.setTime(d.getTime() + expirationDays * 24 * 60 * 60 * 1000)
-  var expires = 'expires=' + d.toUTCString()
-  if (document) document.cookie = cookieName + '=' + cookieValue + ';' + expires + ';path=/'
-}
+/*
+ * General utils for managing cookies in Typescript.
+ * Source: https://gist.github.com/joduplessis/7b3b4340353760e945f972a69e855d11
+ */
 
-export const getCookie = (cookieName: string): string => {
-  if (document) {
-    var name = cookieName + '='
-    var ca = document.cookie.split(';')
-    for (var i = 0; i < ca.length; i++) {
-      var c = ca[i]
-      while (c?.charAt(0) == ' ') {
-        c = c?.substring(1)
-      }
-      if (c?.indexOf(name) == 0) {
-        return c?.substring(name?.length, c?.length)
-      }
-    }
-    return ''
+export const setCookie = (name: string, val: string, expDays: number): void => {
+  const date = new Date();
+  const value = val;
+  date.setTime(date.getTime() + expDays * 24 * 60 * 60 * 1000);
+  document.cookie = name + "=" + value + "; expires=" + date.toUTCString() + "; path=/";
+}
+export function getCookie(name: string): string | undefined {
+  const value = "; " + document.cookie;
+  const parts = value.split("; " + name + "=");
+
+  if (parts?.length == 2) {
+    return parts?.pop()?.split(";")?.shift() ?? undefined;
   }
-  return ''
 }
