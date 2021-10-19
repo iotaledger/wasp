@@ -58,13 +58,13 @@ The chain owner grants deploy permission to an agent ID.
 
 The chain owner revokes deploy permission from an agent ID.
 
-### openDeploymentToAnyone
+### requireDeployPermissions
 
-Allows anyone to deploy smartcontracts on the chain. (only callable by the chain owner). (`deployPermissions` are not considered when the deployments are opened)
+#### Parameters
 
-### closeDeploymentToAnyone
+- enabled: true | false - whether permissions should be required to deploy a contract on the chain.
 
-Disallows anyone to deploy smartcontracts on the chain. (only callable by the chain owner).
+By default permissions are enabled (addresses need to be granted the right to deploy), but the chain owner can override this setting to allow anyone to deploy contracts on the chain.
 
 ## Views
 

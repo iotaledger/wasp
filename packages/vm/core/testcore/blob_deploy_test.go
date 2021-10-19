@@ -214,7 +214,9 @@ func TestOpenDeploymentToAnyone(t *testing.T) {
 	require.Error(t, err)
 
 	// enable open deployments
-	req := solo.NewCallParams(root.Contract.Name, root.FuncOpenDeploymentToAnyone.Name)
+	req := solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
+		root.ParamDeployPermissionsEnabled, []byte{0},
+	)
 	_, err = chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
@@ -223,7 +225,9 @@ func TestOpenDeploymentToAnyone(t *testing.T) {
 	require.NoError(t, err)
 
 	// disable open deployments
-	req = solo.NewCallParams(root.Contract.Name, root.FuncCloseDeploymentToAnyone.Name)
+	req = solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
+		root.ParamDeployPermissionsEnabled, []byte{1},
+	)
 	_, err = chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 

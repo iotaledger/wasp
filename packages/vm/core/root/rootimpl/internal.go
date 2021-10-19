@@ -36,7 +36,7 @@ func mustStoreContractRecord(ctx iscp.Sandbox, rec *root.ContractRecord, a asser
 
 // isAuthorizedToDeploy checks if caller is authorized to deploy smart contract
 func isAuthorizedToDeploy(ctx iscp.Sandbox) bool {
-	if ctx.State().MustGet(root.VarDeployOpenToAnyone)[0] == 1 {
+	if ctx.State().MustGet(root.VarDeployPermissionsEnabled)[0] == 0 {
 		return true
 	}
 

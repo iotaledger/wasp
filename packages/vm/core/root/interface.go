@@ -13,30 +13,30 @@ var (
 
 // state variables
 const (
-	VarContractRegistry   = "r"
-	VarDeployOpenToAnyone = "a"
-	VarDeployPermissions  = "dep"
-	VarStateInitialized   = "i"
+	VarContractRegistry         = "r"
+	VarDeployPermissionsEnabled = "a"
+	VarDeployPermissions        = "p"
+	VarStateInitialized         = "i"
 )
 
 // param variables
 const (
-	ParamDeployer        = "dp"
-	ParamHname           = "hn"
-	ParamName            = "nm"
-	ParamProgramHash     = "ph"
-	ParamContractRecData = "dt"
-	ParamContractFound   = "cf"
-	ParamDescription     = "ds"
+	ParamDeployer                 = "dp"
+	ParamHname                    = "hn"
+	ParamName                     = "nm"
+	ParamProgramHash              = "ph"
+	ParamContractRecData          = "dt"
+	ParamContractFound            = "cf"
+	ParamDescription              = "ds"
+	ParamDeployPermissionsEnabled = "de"
 )
 
 // function names
 var (
-	FuncDeployContract          = coreutil.Func("deployContract")
-	FuncGrantDeployPermission   = coreutil.Func("grantDeployPermission")
-	FuncRevokeDeployPermission  = coreutil.Func("revokeDeployPermission")
-	FuncOpenDeploymentToAnyone  = coreutil.Func("openDeploymentToAnyone")
-	FuncCloseDeploymentToAnyone = coreutil.Func("closeDeploymentToAnyone")
-	FuncFindContract            = coreutil.ViewFunc("findContract")
-	FuncGetContractRecords      = coreutil.ViewFunc("getContractRecords")
+	FuncDeployContract           = coreutil.Func("deployContract")
+	FuncGrantDeployPermission    = coreutil.Func("grantDeployPermission")
+	FuncRevokeDeployPermission   = coreutil.Func("revokeDeployPermission")
+	FuncRequireDeployPermissions = coreutil.Func("requireDeployPermissions")
+	FuncFindContract             = coreutil.ViewFunc("findContract")
+	FuncGetContractRecords       = coreutil.ViewFunc("getContractRecords")
 )
