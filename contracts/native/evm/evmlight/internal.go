@@ -146,7 +146,7 @@ func paramBlockNumber(ctx iscp.SandboxView, emu *emulator.EVMEmulator, allowPrev
 	return current
 }
 
-func paramBlockNumberOrHashAsNumber(ctx iscp.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) *big.Int {
+func paramBlockNumberOrHashAsNumber(ctx iscp.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) *big.Int { // nolint:unparam
 	if ctx.Params().MustHas(evm.FieldBlockHash) {
 		a := assert.NewAssert(ctx.Log())
 		blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))

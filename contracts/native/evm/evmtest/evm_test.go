@@ -453,7 +453,8 @@ func initBenchmark(b *testing.B, evmFlavor *coreutil.ContractInfo) (*solo.Chain,
 		sender, err := crypto.GenerateKey() // send from a new address so that nonce is always 0
 		require.NoError(b, err)
 
-		opt := ethCallOptions{sender: sender}
+		// TODO: for some reason, estimating gas does not work here
+		opt := ethCallOptions{sender: sender, gasLimit: 50000}
 		txdata, _, opt := storage.buildEthTxData([]ethCallOptions{opt}, "store", uint32(i))
 		iotaOpt := storage.chain.parseIotaCallOptions([]iotaCallOptions{opt.iota})
 		reqs[i] = storage.chain.buildSoloRequest(evm.FuncSendTransaction.Name, iotaOpt.transfer, evm.FieldTransactionData, txdata)
@@ -465,7 +466,7 @@ func initBenchmark(b *testing.B, evmFlavor *coreutil.ContractInfo) (*solo.Chain,
 // run benchmarks with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
 
 func doBenchmark(b *testing.B, evmFlavor *coreutil.ContractInfo, f solobench.Func) {
-	chain, reqs := initBenchmark(b, evmchain.Contract)
+	chain, reqs := initBenchmark(b, evmFlavor)
 	f(b, chain, reqs, nil)
 }
 
