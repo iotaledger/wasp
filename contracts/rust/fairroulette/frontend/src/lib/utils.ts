@@ -8,3 +8,15 @@ export const generateRandomId = (): string => {
     return ('0' + (byte & 0xff).toString(16)).slice(-2)
   }).join('')
 }
+
+export const googleAnalytics = (gaID: string): void => {
+  window.dataLayer = window.dataLayer || []
+  function gtag() { dataLayer.push(arguments) }
+  gtag('js', new Date())
+
+  gtag('config', gaID)
+
+  const script = document.createElement('script')
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${gaID}`
+  document.body.appendChild(script)
+}

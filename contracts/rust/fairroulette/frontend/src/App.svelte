@@ -4,5 +4,5 @@
 </script>
 
 <main>
-  <Router {routes} />
+  <Router {routes} options={{ gaPageviews: true }} />
 </main>
