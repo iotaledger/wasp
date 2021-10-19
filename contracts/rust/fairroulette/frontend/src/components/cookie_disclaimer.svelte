@@ -1,16 +1,22 @@
 <script lang="ts">
+  import Button from "./button.svelte";
+
   export let allow: () => void;
   export let decline: () => void;
 </script>
 
 <div class="cookie-disclaimer">
   <div class="disclaimer-description">
-    <span>By using the IOTA Roulette, you agree with our use of cookies. </span>
-    <a href="https://www.iota.org/privacy-policy">Read our Privacy Policy.</a>
+    <span
+      >By using the IOTA Roulette, you agree with our use of cookies. <a
+        href="https://www.iota.org/privacy-policy"
+        target="_blank">Read our Privacy Policy.</a
+      ></span
+    >
   </div>
   <div class="disclaimer-buttons">
-    <button class="green-button" on:click={allow}>Allow cookies</button>
-    <button on:click={decline}>Decline cookies</button>
+    <div><Button label="Allow" onClick={allow} /></div>
+    <div><Button label="Decline" decline onClick={decline} /></div>
   </div>
 </div>
 
@@ -20,62 +26,54 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    border-radius: 0.5rem;
     padding: 20px;
     color: var(--white);
     position: fixed;
     bottom: 0;
     align-items: center;
     font-size: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
     @media (min-width: 600px) {
       width: 462px;
       flex-direction: row;
       bottom: 20px;
       right: 20px;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
     }
     .disclaimer-description {
       display: flex;
       flex-direction: column;
-      margin-right: 15px;
+      margin-bottom: 15px;
+      @media (min-width: 600px) {
+        margin-right: 15px;
+        margin-bottom: 0;
+      }
       span {
         letter-spacing: 0.02em;
-        line-height: 22px;
-      }
-      a {
-        color: var(--mint-green-light);
-        font-weight: 700;
-        line-height: 22px;
-        text-decoration: none;
+        line-height: 24px;
+        a {
+          color: var(--mint-green-light);
+          font-weight: 700;
+          text-decoration: none;
+        }
       }
     }
     .disclaimer-buttons {
       display: flex;
       flex-direction: row;
       width: 100%;
+      div {
+        width: 100%;
+      }
+      div:not(:last-of-type) {
+        margin-right: 15px;
+        @media (min-width: 600px) {
+          margin-bottom: 10px;
+          margin-right: 0;
+        }
+      }
       @media (min-width: 600px) {
         flex-direction: column;
-      }
-      button {
-        width: 100%;
-        margin: 10px 5px;
-        border-radius: 0.5rem;
-        font-weight: 700;
-        padding: 0.75rem 1.5rem;
-        line-height: 14px;
-        text-align: center;
-        text-transform: uppercase;
-        background-color: transparent;
-        border: 2px solid rgba(255, 255, 255, 0.12);
-        color: var(--gray-5);
-        @media (min-width: 600px) {
-          margin: 10px 0;
-        }
-        &.green-button {
-          background: var(--mint-green-light);
-          color: var(--white);
-          border-color: var(--mint-green-light);
-        }
       }
     }
   }
