@@ -16,7 +16,6 @@ type VirtualStateAccess interface {
 	Timestamp() time.Time
 	PreviousStateHash() hashing.HashValue
 	StateCommitment() hashing.HashValue
-	StateCommitmentFromBlocks() hashing.HashValue
 	KVStoreReader() kv.KVStoreReader
 	ApplyStateUpdates(...StateUpdate)
 	ApplyBlock(Block) error

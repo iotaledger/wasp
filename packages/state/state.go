@@ -176,19 +176,13 @@ func (vs *virtualStateAccess) StateCommitment() hashing.HashValue {
 	if vs.kvs.Mutations().IsEmpty() {
 		return vs.committedHash
 	}
-	if vs.kvs.Mutations().IsModified() {
+	if len(vs.appliedBlockHashes) == 0 {
 		block, err := vs.ExtractBlock()
 		if err != nil {
 			panic(xerrors.Errorf("StateCommitment: %v", err))
 		}
-		vs.uncommittedHash = hashing.HashData(block.EssenceBytes())
-		vs.kvs.Mutations().ResetModified()
+		vs.appliedBlockHashes = append(vs.appliedBlockHashes, hashing.HashData(block.EssenceBytes()))
 	}
-	ret := hashing.HashData(vs.committedHash[:], vs.uncommittedHash[:])
-	return ret
-}
-
-func (vs *virtualStateAccess) StateCommitmentFromBlocks() hashing.HashValue {
 	ret := vs.committedHash
 	for i := range vs.appliedBlockHashes {
 		ret = hashing.HashData(ret[:], vs.appliedBlockHashes[i][:])
@@ -304,13 +298,6 @@ func (s *mustOptimisticVirtualStateAccess) StateCommitment() hashing.HashValue {
 	defer s.baseline.MustValidate()
 
 	return s.state.StateCommitment()
-}
-
-func (s *mustOptimisticVirtualStateAccess) StateCommitmentFromBlocks() hashing.HashValue {
-	s.baseline.MustValidate()
-	defer s.baseline.MustValidate()
-
-	return s.state.StateCommitmentFromBlocks()
 }
 
 func (s *mustOptimisticVirtualStateAccess) KVStoreReader() kv.KVStoreReader {
