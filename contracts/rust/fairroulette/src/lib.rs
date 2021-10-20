@@ -33,6 +33,7 @@ mod fairroulette;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
+    exports.add_func(FUNC_FORCE_PAYOUT, func_force_payout_thunk);
     exports.add_func(FUNC_FORCE_RESET, func_force_reset_thunk);
     exports.add_func(FUNC_PAY_WINNERS, func_pay_winners_thunk);
     exports.add_func(FUNC_PLACE_BET, func_place_bet_thunk);
@@ -47,6 +48,24 @@ fn on_load() {
             IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
         }
     }
+}
+
+pub struct ForcePayoutContext {
+    state: MutableFairRouletteState,
+}
+
+fn func_force_payout_thunk(ctx: &ScFuncContext) {
+    ctx.log("fairroulette.funcForcePayout");
+    // only SC creator can restart the round forcefully
+    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+    let f = ForcePayoutContext {
+        state: MutableFairRouletteState {
+            id: OBJ_ID_STATE,
+        },
+    };
+    func_force_payout(ctx, &f);
+    ctx.log("fairroulette.funcForcePayout ok");
 }
 
 pub struct ForceResetContext {

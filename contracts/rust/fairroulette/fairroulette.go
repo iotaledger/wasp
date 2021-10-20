@@ -297,3 +297,8 @@ func viewRoundStartedAt(ctx wasmlib.ScViewContext, f *RoundStartedAtContext) {
 	// Set the 'roundStartedAt' in results to the value from state storage.
 	f.Results.RoundStartedAt().SetValue(roundStartedAt)
 }
+
+//nolint
+func funcForcePayout(ctx wasmlib.ScFuncContext, f *ForcePayoutContext) {
+	ScFuncs.PayWinners(ctx).Func.Call()
+}

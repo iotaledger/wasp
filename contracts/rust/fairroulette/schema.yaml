@@ -21,6 +21,8 @@ funcs:
       number: Int64 // the number a better bets on
   forceReset:
     access: creator // only SC creator can restart the round forcefully 
+  forcePayout:
+    access: creator // only SC creator can restart the round forcefully 
   playPeriod:
     access: creator // only SC creator can update the play period
     params:
