@@ -17,7 +17,7 @@
     </span>
   </div>
   <div class="disclaimer-buttons">
-    <div><Button label="Allow" onClick={allow} /></div>
+    <div><Button label="Accept" onClick={allow} /></div>
     <div><Button label="Decline" secondary onClick={decline} /></div>
   </div>
 </div>
