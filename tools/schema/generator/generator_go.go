@@ -124,6 +124,14 @@ func (s *Schema) GenerateGo() error {
 	return nil
 }
 
+func (s *Schema) generateGoArrayType(varType string) string {
+	// native core contracts use Array16 instead of our nested array type
+	if s.CoreContracts {
+		return "wasmlib.TYPE_ARRAY16|" + varType
+	}
+	return "wasmlib.TYPE_ARRAY|" + varType
+}
+
 func (s *Schema) generateGoConsts(test bool) error {
 	file, err := os.Create("consts.go")
 	if err != nil {
@@ -494,7 +502,7 @@ func (s *Schema) generateGoProxyArrayNewType(file *os.File, field *Field, proxyT
 			if varType == "" {
 				varType = goTypeBytes
 			}
-			varType = "wasmlib.TYPE_ARRAY|" + varType
+			varType = s.generateGoArrayType(varType)
 		}
 		fmt.Fprintf(file, "\nfunc (a %s) Get%s(index int32) %s {\n", arrayType, field.Type, proxyType)
 		fmt.Fprintf(file, "\tsubID := wasmlib.GetObjectID(a.objID, wasmlib.Key32(index), %s)\n", varType)
@@ -555,7 +563,7 @@ func (s *Schema) generateGoProxyMapNewType(file *os.File, field *Field, proxyTyp
 			if varType == "" {
 				varType = goTypeBytes
 			}
-			varType = "wasmlib.TYPE_ARRAY|" + varType
+			varType = s.generateGoArrayType(varType)
 		}
 		fmt.Fprintf(file, "\nfunc (m %s) Get%s(key %s) %s {\n", mapType, field.Type, keyType, proxyType)
 		fmt.Fprintf(file, "\tsubID := wasmlib.GetObjectID(m.objID, %s.KeyID(), %s)\n", keyValue, varType)
@@ -677,7 +685,7 @@ func (s *Schema) generateGoStruct(file *os.File, fields []*Field, mutability, ty
 			varType = goTypeBytes
 		}
 		if field.Array {
-			varType = "wasmlib.TYPE_ARRAY|" + varType
+			varType = s.generateGoArrayType(varType)
 			arrayType := "ArrayOf" + mutability + field.Type
 			fmt.Fprintf(file, "\nfunc (s %s) %s() %s {\n", typeName, varName, arrayType)
 			fmt.Fprintf(file, "\tarrID := wasmlib.GetObjectID(s.id, %s, %s)\n", varID, varType)
