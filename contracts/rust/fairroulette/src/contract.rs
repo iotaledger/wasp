@@ -17,6 +17,10 @@ use crate::consts::*;
 use crate::params::*;
 use crate::results::*;
 
+pub struct ForcePayoutCall {
+    pub func: ScFunc,
+}
+
 pub struct ForceResetCall {
     pub func: ScFunc,
 }
@@ -59,6 +63,11 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
+    pub fn force_payout(_ctx: & dyn ScFuncCallContext) -> ForcePayoutCall {
+        ForcePayoutCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_FORCE_PAYOUT),
+        }
+    }
     pub fn force_reset(_ctx: & dyn ScFuncCallContext) -> ForceResetCall {
         ForceResetCall {
             func: ScFunc::new(HSC_NAME, HFUNC_FORCE_RESET),

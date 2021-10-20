@@ -262,6 +262,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
 }
 
 pub fn func_force_reset(ctx: &ScFuncContext, f: &ForceResetContext) {
+   
     // Get the 'bets' array in state storage.
     let bets: ArrayOfMutableBet = f.state.bets();
     
@@ -325,4 +326,6 @@ pub fn view_round_started_at(_ctx: &ScViewContext, f: &RoundStartedAtContext) {
     f.results.round_started_at().set_value(round_started_at);
 }
 
-
+pub fn func_force_payout(ctx: &ScFuncContext, f: &ForcePayoutContext) {
+    ctx.call_self(HFUNC_PAY_WINNERS, None, None);
+}
