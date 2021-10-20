@@ -8,6 +8,7 @@
 // through a minimal implementation and not to come up with a complete real-world solution.
 
 use wasmlib::*;
+use crate::contract::ScFuncs;
 
 use crate::types::*;
 use crate::*;
@@ -129,8 +130,10 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
             // amount of seconds. This will lock in the playing period, during which more bets can
             // be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather all
             // bets up to that moment as the ones to consider for determining the winner.
-            let transfer = ScTransfers::iotas(1);
-            ctx.post_self(HFUNC_PAY_WINNERS, None, transfer, play_period);
+            ScFuncs::pay_winners(ctx).func
+                .delay(play_period)
+                .transfer_iotas(1)
+                .post();
         }
     }
 }
@@ -327,5 +330,5 @@ pub fn view_round_started_at(_ctx: &ScViewContext, f: &RoundStartedAtContext) {
 }
 
 pub fn func_force_payout(ctx: &ScFuncContext, f: &ForcePayoutContext) {
-    ctx.call_self(HFUNC_PAY_WINNERS, None, None);
+    ScFuncs::pay_winners(ctx).func.call();
 }
