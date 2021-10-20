@@ -93,7 +93,7 @@ pub struct ImmutableGetEventsForBlockResults {
 
 impl ImmutableGetEventsForBlockResults {
     pub fn event(&self) -> ArrayOfImmutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
+        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
         ArrayOfImmutableBytes { obj_id: arr_id }
     }
 }
@@ -123,7 +123,7 @@ pub struct MutableGetEventsForBlockResults {
 
 impl MutableGetEventsForBlockResults {
     pub fn event(&self) -> ArrayOfMutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
+        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
         ArrayOfMutableBytes { obj_id: arr_id }
     }
 }
@@ -135,7 +135,7 @@ pub struct ImmutableGetEventsForContractResults {
 
 impl ImmutableGetEventsForContractResults {
     pub fn event(&self) -> ArrayOfImmutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
+        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
         ArrayOfImmutableBytes { obj_id: arr_id }
     }
 }
@@ -147,7 +147,7 @@ pub struct MutableGetEventsForContractResults {
 
 impl MutableGetEventsForContractResults {
     pub fn event(&self) -> ArrayOfMutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
+        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
         ArrayOfMutableBytes { obj_id: arr_id }
     }
 }
@@ -159,7 +159,7 @@ pub struct ImmutableGetEventsForRequestResults {
 
 impl ImmutableGetEventsForRequestResults {
     pub fn event(&self) -> ArrayOfImmutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
+        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
         ArrayOfImmutableBytes { obj_id: arr_id }
     }
 }
@@ -171,7 +171,7 @@ pub struct MutableGetEventsForRequestResults {
 
 impl MutableGetEventsForRequestResults {
     pub fn event(&self) -> ArrayOfMutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
+        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
         ArrayOfMutableBytes { obj_id: arr_id }
     }
 }
@@ -227,7 +227,7 @@ pub struct ImmutableGetRequestIDsForBlockResults {
 
 impl ImmutableGetRequestIDsForBlockResults {
     pub fn request_id(&self) -> ArrayOfImmutableRequestID {
-        let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY | TYPE_REQUEST_ID);
+        let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY16 | TYPE_REQUEST_ID);
         ArrayOfImmutableRequestID { obj_id: arr_id }
     }
 }
@@ -257,7 +257,7 @@ pub struct MutableGetRequestIDsForBlockResults {
 
 impl MutableGetRequestIDsForBlockResults {
     pub fn request_id(&self) -> ArrayOfMutableRequestID {
-        let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY | TYPE_REQUEST_ID);
+        let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY16 | TYPE_REQUEST_ID);
         ArrayOfMutableRequestID { obj_id: arr_id }
     }
 }
@@ -307,7 +307,7 @@ pub struct ImmutableGetRequestReceiptsForBlockResults {
 
 impl ImmutableGetRequestReceiptsForBlockResults {
     pub fn request_record(&self) -> ArrayOfImmutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
+        let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
         ArrayOfImmutableBytes { obj_id: arr_id }
     }
 }
@@ -319,7 +319,7 @@ pub struct MutableGetRequestReceiptsForBlockResults {
 
 impl MutableGetRequestReceiptsForBlockResults {
     pub fn request_record(&self) -> ArrayOfMutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
+        let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
         ArrayOfMutableBytes { obj_id: arr_id }
     }
 }

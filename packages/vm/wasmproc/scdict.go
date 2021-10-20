@@ -65,6 +65,8 @@ type ScDict struct {
 	types   map[int32]int32
 }
 
+// TODO iterate over maps
+
 var _ WaspObject = &ScDict{}
 
 var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 2, 4, 8, 0, 34, 0}
@@ -100,10 +102,7 @@ func (o *ScDict) InitObj(id, keyID int32, owner *ScDict) {
 		o.name = strings.TrimPrefix(o.name, ".")
 	}
 	if (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 && o.kvStore != nil {
-		key := o.NestedKey()[1:]
-		var err error
-		bytes := o.kvStore.MustGet(kv.Key(key))
-		o.length, err = codec.DecodeInt32(bytes, 0)
+		err := o.getArrayLength()
 		if err != nil {
 			o.Panic("InitObj: %v", err)
 		}
@@ -146,6 +145,20 @@ func (o *ScDict) FindOrMakeObjectID(keyID int32, factory ObjFactory) int32 {
 		}
 	}
 	return objID
+}
+
+func (o *ScDict) getArrayLength() (err error) {
+	key := o.NestedKey()[1:]
+	bytes := o.kvStore.MustGet(kv.Key(key))
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY16) != wasmhost.OBJTYPE_ARRAY16 {
+		o.length, err = codec.DecodeInt32(bytes, 0)
+		return err
+	}
+
+	var length uint16
+	length, err = codec.DecodeUint16(bytes, 0)
+	o.length = int32(length)
+	return err
 }
 
 func (o *ScDict) GetBytes(keyID, typeID int32) []byte {
@@ -236,9 +249,17 @@ func (o *ScDict) SetBytes(keyID, typeID int32, bytes []byte) {
 }
 
 func (o *ScDict) Suffix(keyID int32) string {
-	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
-		return fmt.Sprintf(".%d", keyID)
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY16) != 0 {
+		if (o.typeID & wasmhost.OBJTYPE_ARRAY16) != wasmhost.OBJTYPE_ARRAY16 {
+			return fmt.Sprintf(".%d", keyID)
+		}
+
+		buf := make([]byte, 3)
+		buf[0] = '#'
+		binary.LittleEndian.PutUint16(buf[1:], uint16(keyID))
+		return string(buf)
 	}
+
 	key := o.host.GetKeyFromID(keyID)
 	return "." + string(key)
 }
