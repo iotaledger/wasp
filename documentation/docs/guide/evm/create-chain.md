@@ -61,7 +61,7 @@ You can verify the chain has been deployed by visiting the wasp dashboard and ch
 
 In order to communicate with the EVM contract, you will need to run an additional server application that is compatible with how interactions usually takes place on other networks. This allows you to use other tools from those ecosystems like [MetaMask](https://metamask.io) and [Hardhat](https://hardhat.org/) to connect to our EVM chain. 
 
-To run this server, run the following commands: 
+To run this server, run the following command: 
 
 ```bash
 wasp-cli chain evm jsonrpc --chainid 1074
