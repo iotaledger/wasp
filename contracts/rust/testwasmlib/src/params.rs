@@ -96,6 +96,16 @@ impl MutableArraySetParams {
     }
 }
 
+pub struct MapStringToImmutableBytes {
+    pub(crate) obj_id: i32,
+}
+
+impl MapStringToImmutableBytes {
+    pub fn get_bytes(&self, key: &str) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.obj_id, key.get_key_id())
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct ImmutableParamTypesParams {
     pub(crate) id: i32,
@@ -142,12 +152,30 @@ impl ImmutableParamTypesParams {
         ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT64))
     }
 
+    pub fn param(&self) -> MapStringToImmutableBytes {
+        MapStringToImmutableBytes { obj_id: self.id }
+    }
+
     pub fn request_id(&self) -> ScImmutableRequestID {
         ScImmutableRequestID::new(self.id, idx_map(IDX_PARAM_REQUEST_ID))
     }
 
     pub fn string(&self) -> ScImmutableString {
         ScImmutableString::new(self.id, idx_map(IDX_PARAM_STRING))
+    }
+}
+
+pub struct MapStringToMutableBytes {
+    pub(crate) obj_id: i32,
+}
+
+impl MapStringToMutableBytes {
+    pub fn clear(&self) {
+        clear(self.obj_id)
+    }
+
+    pub fn get_bytes(&self, key: &str) -> ScMutableBytes {
+        ScMutableBytes::new(self.obj_id, key.get_key_id())
     }
 }
 
@@ -195,6 +223,10 @@ impl MutableParamTypesParams {
 
     pub fn int64(&self) -> ScMutableInt64 {
         ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT64))
+    }
+
+    pub fn param(&self) -> MapStringToMutableBytes {
+        MapStringToMutableBytes { obj_id: self.id }
     }
 
     pub fn request_id(&self) -> ScMutableRequestID {

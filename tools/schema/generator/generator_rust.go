@@ -777,7 +777,9 @@ func (s *Schema) generateRustResults() error {
 	if !s.CoreContracts {
 		fmt.Fprint(file, "\n"+useCrate)
 		fmt.Fprint(file, useKeys)
-		fmt.Fprint(file, useTypes)
+		if len(s.Structs) != 0 {
+			fmt.Fprint(file, useTypes)
+		}
 	}
 
 	for _, f := range s.Funcs {
