@@ -318,51 +318,37 @@ func testStorageContract(t testing.TB, db ethdb.Database) {
 		uint32(42),
 	)
 
-	// call `retrieve` view, get 42
-	{
+	retrieve := func(blockNumber *big.Int) uint32 {
 		callArguments, err := contractABI.Pack("retrieve")
 		require.NoError(t, err)
 		require.NotEmpty(t, callArguments)
 
-		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
+		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, blockNumber)
 		require.NoError(t, err)
 		require.NotEmpty(t, res)
 
 		var v uint32
 		err = contractABI.UnpackIntoInterface(&v, "retrieve", res)
 		require.NoError(t, err)
-		require.EqualValues(t, 42, v)
-
-		// no state change
-		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
+		return v
 	}
+
+	// call `retrieve` view, get 42
+	require.EqualValues(t, 42, retrieve(nil))
+	// no state change
+	require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
 
 	// send tx that calls `store(43)`
-	{
-		callFn(faucet, "store", uint32(43))
-		require.EqualValues(t, 2, emu.Blockchain().CurrentBlock().NumberU64())
-	}
+	callFn(faucet, "store", uint32(43))
+	require.EqualValues(t, 2, emu.Blockchain().CurrentBlock().NumberU64())
 
 	// call `retrieve` view again, get 43
-	{
-		callArguments, err := contractABI.Pack("retrieve")
-		require.NoError(t, err)
+	require.EqualValues(t, 43, retrieve(nil))
+	// no state change
+	require.EqualValues(t, 2, emu.Blockchain().CurrentBlock().NumberU64())
 
-		res, err := emu.CallContract(ethereum.CallMsg{
-			To:   &contractAddress,
-			Data: callArguments,
-		}, nil)
-		require.NoError(t, err)
-		require.NotEmpty(t, res)
-
-		var v uint32
-		err = contractABI.UnpackIntoInterface(&v, "retrieve", res)
-		require.NoError(t, err)
-		require.EqualValues(t, 43, v)
-
-		// no state change
-		require.EqualValues(t, 2, emu.Blockchain().CurrentBlock().NumberU64())
-	}
+	// call `retrieve` on block number 1, get 42
+	require.EqualValues(t, 42, retrieve(big.NewInt(1)))
 }
 
 func TestERC20Contract(t *testing.T) {
