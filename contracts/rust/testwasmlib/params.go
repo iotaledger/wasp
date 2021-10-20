@@ -73,6 +73,14 @@ func (s MutableArraySetParams) Value() wasmlib.ScMutableString {
 	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamValue])
 }
 
+type MapStringToImmutableBytes struct {
+	objID int32
+}
+
+func (m MapStringToImmutableBytes) GetBytes(key string) wasmlib.ScImmutableBytes {
+	return wasmlib.NewScImmutableBytes(m.objID, wasmlib.Key(key).KeyID())
+}
+
 type ImmutableParamTypesParams struct {
 	id int32
 }
@@ -117,12 +125,28 @@ func (s ImmutableParamTypesParams) Int64() wasmlib.ScImmutableInt64 {
 	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamInt64])
 }
 
+func (s ImmutableParamTypesParams) Param() MapStringToImmutableBytes {
+	return MapStringToImmutableBytes{objID: s.id}
+}
+
 func (s ImmutableParamTypesParams) RequestID() wasmlib.ScImmutableRequestID {
 	return wasmlib.NewScImmutableRequestID(s.id, idxMap[IdxParamRequestID])
 }
 
 func (s ImmutableParamTypesParams) String() wasmlib.ScImmutableString {
 	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamString])
+}
+
+type MapStringToMutableBytes struct {
+	objID int32
+}
+
+func (m MapStringToMutableBytes) Clear() {
+	wasmlib.Clear(m.objID)
+}
+
+func (m MapStringToMutableBytes) GetBytes(key string) wasmlib.ScMutableBytes {
+	return wasmlib.NewScMutableBytes(m.objID, wasmlib.Key(key).KeyID())
 }
 
 type MutableParamTypesParams struct {
@@ -169,8 +193,8 @@ func (s MutableParamTypesParams) Int64() wasmlib.ScMutableInt64 {
 	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamInt64])
 }
 
-func (s MutableParamTypesParams) Param(key wasmlib.Key) wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, key.KeyID())
+func (s MutableParamTypesParams) Param() MapStringToMutableBytes {
+	return MapStringToMutableBytes{objID: s.id}
 }
 
 func (s MutableParamTypesParams) RequestID() wasmlib.ScMutableRequestID {
