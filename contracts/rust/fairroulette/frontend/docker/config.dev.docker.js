@@ -5,5 +5,7 @@ module.exports = {
   waspApiUrl: '#WASP_URL#',
   goshimmerApiUrl: '#GOSHIMMER_URL#',
   chainId: '#CHAIN_ID#',
-  chainResolverUrl: undefined
+  contractName: '#CONTRACT_NAME#',
+  chainResolverUrl: undefined,
+  googleAnalyticsId: '#GOOGLE_ANALITICS_ID#'
 };

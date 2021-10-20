@@ -1,6 +1,7 @@
 export { default as Animation } from './animation.svelte'
 export { default as BettingSystem } from './betting_system.svelte'
 export { default as Button } from './button.svelte'
+export { default as CookieDisclaimer } from './cookie_disclaimer.svelte'
 export { default as Footer } from './footer.svelte'
 export { default as Header } from './header.svelte'
 export { default as BalancePanel } from './panels/balance.svelte'

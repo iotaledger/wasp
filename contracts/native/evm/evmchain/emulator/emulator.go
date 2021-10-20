@@ -36,7 +36,6 @@ import (
 )
 
 var (
-	errBlockNumberUnsupported  = errors.New("EVMEmulator cannot access blocks other than the latest block")
 	ErrBlockDoesNotExist       = errors.New("block does not exist in blockchain")
 	ErrTransactionDoesNotExist = errors.New("transaction does not exist")
 )
@@ -357,14 +356,15 @@ func (e *revertError) ErrorData() interface{} {
 
 // CallContract executes a contract call.
 func (e *EVMEmulator) CallContract(call ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	if blockNumber != nil && blockNumber.Cmp(e.blockchain.CurrentBlock().Number()) != 0 {
-		return nil, errBlockNumberUnsupported
-	}
-	stateDB, err := e.blockchain.State()
+	header, err := e.HeaderByNumber(blockNumber)
 	if err != nil {
 		return nil, err
 	}
-	res, err := e.callContract(call, e.blockchain.CurrentHeader(), stateDB)
+	stateDB, err := e.blockchain.StateAt(header.Root)
+	if err != nil {
+		return nil, err
+	}
+	res, err := e.callContract(call, header, stateDB)
 	if err != nil {
 		return nil, err
 	}
