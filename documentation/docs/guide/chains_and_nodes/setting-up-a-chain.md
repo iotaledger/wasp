@@ -34,7 +34,6 @@ connects to a different Goshimmer instance.
 
 ## Requirements
 
-- More than one wasp node running with access to the same L1 network (goshimmer).
 - [`wasp-cli` configured](wasp-cli.md) to interact with the wasp nodes. 
 
 ## Trust Setup
@@ -86,7 +85,7 @@ If you are using a seed that already holds fund, you can skip this step.
 :::
 
 ```shell
-$ wasp-cli request-funds
+wasp-cli request-funds
 ```
 
 After you have requested the funds, you can deposit funds to a chain by running:
@@ -106,6 +105,8 @@ wasp-cli chain deploy --committee=0,1,2,3 --quorum=3 --chain=mychain --descripti
 The indices in `--committee=0,1,2,3` will correspond to `wasp.0`, `wasp.1`, etc. in `wasp-cli.json`.
 
 The `--chain=mychain` flag sets up an alias for the chain. From now on all chain commands will be targeted to this chain.
+
+The `--quorum` flag indicates the minimum amount of nodes required to form a consensus.  The recommended formula to obtain this number `floor(N*2/3)+1` where `N` is the number of nodes in your committee. 
 
 ## Testing If It Works
 
@@ -179,5 +180,5 @@ Common issues can be caused by using an incompatible version of `wasp` / `wasp-c
 It's easy to verify that `wasp-cli` and `wasp` nodes are on the same version, by running:
 
 ```shell
-$ wasp-cli check-versions
+wasp-cli check-versions
 ```
