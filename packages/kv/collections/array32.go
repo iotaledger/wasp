@@ -1,4 +1,5 @@
-package collections //nolint:dupl
+//nolint:dupl
+package collections
 
 import (
 	"bytes"
@@ -14,7 +15,7 @@ type Array32 struct {
 	kvw kv.KVWriter
 }
 
-// ImmutableArray16 provides read-only access to an Array16 in a kv.KVStoreReader.
+// ImmutableArray32 provides read-only access to an Array32 in a kv.KVStoreReader.
 type ImmutableArray32 struct {
 	kvr  kv.KVStoreReader
 	name string
@@ -34,10 +35,7 @@ func NewArray32ReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableArray3
 	}
 }
 
-const (
-	array32SizeKeyCode = byte(0)
-	array32ElemKeyCode = byte(1)
-)
+const array32ElemKeyCode = byte('#')
 
 func (a *Array32) Immutable() *ImmutableArray32 {
 	return a.ImmutableArray32
@@ -48,10 +46,7 @@ func (a *ImmutableArray32) getSizeKey() kv.Key {
 }
 
 func array32SizeKey(name string) kv.Key {
-	var buf bytes.Buffer
-	buf.Write([]byte(name))
-	buf.WriteByte(array32SizeKeyCode)
-	return kv.Key(buf.Bytes())
+	return kv.Key(name)
 }
 
 func (a *ImmutableArray32) getArray32ElemKey(idx uint32) kv.Key {
@@ -66,7 +61,7 @@ func array32ElemKey(name string, idx uint32) kv.Key {
 	return kv.Key(buf.Bytes())
 }
 
-// Array16RangeKeys returns the KVStore keys for the items between [from, to) (`to` being not inclusive),
+// Array32RangeKeys returns the KVStore keys for the items between [from, to) (`to` being not inclusive),
 // assuming it has `length` elements.
 func Array32RangeKeys(name string, length, from, to uint32) []kv.Key {
 	keys := make([]kv.Key, 0)

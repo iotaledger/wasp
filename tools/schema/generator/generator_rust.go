@@ -159,6 +159,14 @@ func (s *Schema) GenerateRust() error {
 	return nil
 }
 
+func (s *Schema) generateRustArrayType(varType string) string {
+	// native core contracts use Array16 instead of our nested array type
+	if s.CoreContracts {
+		return "TYPE_ARRAY16 | " + varType
+	}
+	return "TYPE_ARRAY | " + varType
+}
+
 func (s *Schema) generateRustCargo() error {
 	file, err := os.Open("../Cargo.toml")
 	if err == nil {
@@ -234,8 +242,7 @@ func (s *Schema) generateRustConsts() error {
 
 		for _, f := range s.Funcs {
 			constHname := "H" + upper(snake(f.FuncName))
-			hName = iscp.Hn(f.String)
-			s.appendConst(constHname, "ScHname = ScHname(0x"+hName.String()+")")
+			s.appendConst(constHname, "ScHname = ScHname(0x"+f.Hname.String()+")")
 		}
 		s.flushRustConsts(file, s.CoreContracts)
 	}
@@ -617,7 +624,7 @@ func (s *Schema) generateRustProxyArrayNewType(file *os.File, field *Field, prox
 			if varType == "" {
 				varType = rustTypeBytes
 			}
-			varType = "TYPE_ARRAY | " + varType
+			varType = s.generateRustArrayType(varType)
 		}
 		fmt.Fprintf(file, "\n    pub fn get_%s(&self, index: i32) -> %s {\n", snake(field.Type), proxyType)
 		fmt.Fprintf(file, "        let sub_id = get_object_id(self.obj_id, Key32(index), %s)\n", varType)
@@ -681,7 +688,7 @@ func (s *Schema) generateRustProxyMapNewType(file *os.File, field *Field, proxyT
 			if varType == "" {
 				varType = rustTypeBytes
 			}
-			varType = "TYPE_ARRAY | " + varType
+			varType = s.generateRustArrayType(varType)
 		}
 		fmt.Fprintf(file, "\n    pub fn get_%s(&self, key: %s) -> %s {\n", snake(field.Type), keyType, proxyType)
 		fmt.Fprintf(file, "        let sub_id = get_object_id(self.obj_id, %s.get_key_id(), %s);\n", keyValue, varType)
@@ -813,7 +820,7 @@ func (s *Schema) generateRustStruct(file *os.File, fields []*Field, mutability, 
 			varType = rustTypeBytes
 		}
 		if field.Array {
-			varType = "TYPE_ARRAY | " + varType
+			varType = s.generateRustArrayType(varType)
 			arrayType := "ArrayOf" + mutability + field.Type
 			fmt.Fprintf(file, "\n    pub fn %s(&self) -> %s {\n", varName, arrayType)
 			fmt.Fprintf(file, "        let arr_id = get_object_id(self.id, %s, %s);\n", varID, varType)

@@ -26,7 +26,7 @@ type ImmutableGetAllowedStateControllerAddressesResults struct {
 }
 
 func (s ImmutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfImmutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultAllowedStateControllerAddresses.KeyID(), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, ResultAllowedStateControllerAddresses.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfImmutableBytes{objID: arrID}
 }
 
@@ -51,7 +51,7 @@ type MutableGetAllowedStateControllerAddressesResults struct {
 }
 
 func (s MutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfMutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultAllowedStateControllerAddresses.KeyID(), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, ResultAllowedStateControllerAddresses.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfMutableBytes{objID: arrID}
 }
 

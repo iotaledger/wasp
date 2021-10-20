@@ -9,6 +9,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 type (
@@ -39,6 +41,7 @@ type Func struct {
 	Access   string
 	Kind     string
 	FuncName string
+	Hname    iscp.Hname
 	String   string
 	Params   []*Field
 	Results  []*Field
@@ -123,8 +126,6 @@ func (s *Schema) CompileField(fldName, fldType string) (*Field, error) {
 }
 
 func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, views bool) (err error) {
-	// TODO check for clashing Hnames
-
 	kind := "func"
 	templateFuncs := schemaDef.Funcs
 	if views {
@@ -133,11 +134,19 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 	}
 	for _, funcName := range sortedFuncDescs(templateFuncs) {
 		if views && schemaDef.Funcs[funcName] != nil {
-			return fmt.Errorf("duplicate func/view name")
+			return fmt.Errorf("duplicate func/view name: %s", funcName)
 		}
 		funcDesc := templateFuncs[funcName]
 		f := &Func{}
 		f.String = funcName
+		f.Hname = iscp.Hn(funcName)
+
+		//  check for Hname collision
+		for _, other := range s.Funcs {
+			if other.Hname == f.Hname {
+				return fmt.Errorf("hname collision: %d (%s and %s)", f.Hname, f.String, other.String)
+			}
+		}
 		f.Kind = capitalize(kind)
 		f.Type = capitalize(funcName)
 		f.FuncName = kind + f.Type

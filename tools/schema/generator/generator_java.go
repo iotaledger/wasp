@@ -273,8 +273,7 @@ func (s *Schema) GenerateJavaConsts() error {
 		fmt.Fprintln(file)
 		for _, f := range s.Funcs {
 			name := capitalize(f.FuncName)
-			hName = iscp.Hn(f.String)
-			fmt.Fprintf(file, "    public static final ScHname H%s = new ScHname(0x%s);\n", name, hName.String())
+			fmt.Fprintf(file, "    public static final ScHname H%s = new ScHname(0x%s);\n", name, f.Hname.String())
 		}
 	}
 
