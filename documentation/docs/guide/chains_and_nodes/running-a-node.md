@@ -30,7 +30,6 @@ If you prefer, you can also configure a node [using a docker image](../../misc/d
 
 - [Go 1.16](https://golang.org/doc/install)
 - [RocksDB](https://github.com/facebook/rocksdb/blob/master/INSTALL.md)
-- [Rust](https://www.rust-lang.org/tools/install)
 - Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
   production operation
 
