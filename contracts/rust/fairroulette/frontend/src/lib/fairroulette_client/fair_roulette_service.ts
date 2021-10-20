@@ -39,7 +39,7 @@ export class ViewEntrypoints {
 }
 
 export class FairRouletteService {
-  private readonly scName: string = 'fairroulette';
+  private readonly scName: string = config.contractName;
   private readonly scHName: string = HName.HashAsString(this.scName);
   private readonly scPlaceBet: string = 'placeBet';
 
