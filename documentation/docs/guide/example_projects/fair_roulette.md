@@ -33,8 +33,8 @@ If no round is _active_ when a bet gets placed, the round gets initiated immedia
 
 The mandatory setup consists out of:
 
-* 1 GoShimmer node >= 0.7.5v ([25c827e8326a](https://github.com/iotaledger/goshimmer/commit/25c827e8326a))
-* 1 Beta Wasp node
+* 1 [GoShimmer](https://wiki.iota.org/goshimmer/welcome) node >= 0.7.5v ([25c827e8326a](https://github.com/iotaledger/goshimmer/commit/25c827e8326a))
+* 1 Beta [Wasp node](../../guide/chains_and_nodes/running-a-node.md).
 * 1 Static file server (nginx, Apache, fasthttp)
 
 ## Technicalities
@@ -280,7 +280,7 @@ cp config.dev.sample.js config.dev.js
 
 Make sure to update the config values according to your setup.
 
-The `chainId` is the chainId which gets defined after [deploying a chain](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain).  You can get your chain id by running:
+The `chainId` is the chainId which gets defined after [deploying a chain](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain).  You can get your chain id from your dashboard, or list all chains by running:
 
 ```bash
 wasp-cli chain list
@@ -308,7 +308,7 @@ If you want to expose the dev server to the public, it might be required to bind
 You should follow the [Deployment](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain) documentation until you reach the `deploy-contract` command.
 
 The deployment of a contract requires funds to be deposited to the **chain**. 
-You can do this by executing the following command: 
+You can do this by executing the following command from the directory where your Wasp node was configured: 
 
 ```bash
 wasp-cli chain deposit IOTA:10000
