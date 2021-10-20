@@ -59,7 +59,7 @@
     [StateMessage.PlacingBet]: {
       title: 'Placing Bet',
       description:
-        'Your bet is currently getting placed. The game is starting in a couple of seconds.',
+        'Your bet is currently getting placed. The next round will begin in a few seconds.',
     },
   };
 
