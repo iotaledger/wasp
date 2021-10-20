@@ -50,6 +50,7 @@ func (vs *virtualStateAccess) Commit(blocks ...Block) error {
 
 	vs.kvs.ClearMutations()
 	vs.kvs.Mutations().ResetModified()
+	vs.appliedBlockHashes = vs.appliedBlockHashes[:0]
 	vs.committedHash = stateCommitment
 	return nil
 }

@@ -25,21 +25,23 @@ import (
 // region VirtualStateAccess /////////////////////////////////////////////////
 
 type virtualStateAccess struct {
-	chainID         *iscp.ChainID
-	db              kvstore.KVStore
-	empty           bool
-	kvs             *buffered.BufferedKVStoreAccess
-	committedHash   hashing.HashValue
-	uncommittedHash hashing.HashValue
+	chainID            *iscp.ChainID
+	db                 kvstore.KVStore
+	empty              bool
+	kvs                *buffered.BufferedKVStoreAccess
+	committedHash      hashing.HashValue
+	uncommittedHash    hashing.HashValue
+	appliedBlockHashes []hashing.HashValue
 }
 
 // newVirtualState creates VirtualStateAccess interface with the partition of KVStore
 func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualStateAccess {
 	sub := subRealm(db, []byte{dbkeys.ObjectTypeStateVariable})
 	ret := &virtualStateAccess{
-		db:    db,
-		kvs:   buffered.NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(sub)),
-		empty: true,
+		db:                 db,
+		kvs:                buffered.NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(sub)),
+		empty:              true,
+		appliedBlockHashes: make([]hashing.HashValue, 0),
 	}
 	if chainID != nil {
 		ret.chainID = chainID
@@ -72,13 +74,15 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 
 func (vs *virtualStateAccess) Copy() VirtualStateAccess {
 	ret := &virtualStateAccess{
-		chainID:         vs.chainID.Clone(),
-		db:              vs.db,
-		committedHash:   vs.committedHash,
-		uncommittedHash: vs.uncommittedHash,
-		empty:           vs.empty,
-		kvs:             vs.kvs.Copy(),
+		chainID:            vs.chainID.Clone(),
+		db:                 vs.db,
+		committedHash:      vs.committedHash,
+		uncommittedHash:    vs.uncommittedHash,
+		appliedBlockHashes: make([]hashing.HashValue, len(vs.appliedBlockHashes)),
+		empty:              vs.empty,
+		kvs:                vs.kvs.Copy(),
 	}
+	copy(ret.appliedBlockHashes, vs.appliedBlockHashes)
 	return ret
 }
 
@@ -137,6 +141,7 @@ func (vs *virtualStateAccess) ApplyBlock(b Block) error {
 		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
 	vs.ApplyStateUpdates(b.(*blockImpl).stateUpdate)
+	vs.appliedBlockHashes = append(vs.appliedBlockHashes, hashing.HashData(b.Bytes()))
 	vs.empty = false
 	return nil
 }
@@ -166,7 +171,7 @@ func (vs *virtualStateAccess) ExtractBlock() (Block, error) {
 	return ret, nil
 }
 
-// StateCommitment returns the hash of the state, calculated as a recursive hashing of the previous state hash and the block.
+// StateCommitment returns the hash of the state, calculated as a hashing of the previous (committed) state hash and the block hash.
 func (vs *virtualStateAccess) StateCommitment() hashing.HashValue {
 	if vs.kvs.Mutations().IsEmpty() {
 		return vs.committedHash
@@ -180,6 +185,14 @@ func (vs *virtualStateAccess) StateCommitment() hashing.HashValue {
 		vs.kvs.Mutations().ResetModified()
 	}
 	ret := hashing.HashData(vs.committedHash[:], vs.uncommittedHash[:])
+	return ret
+}
+
+func (vs *virtualStateAccess) StateCommitmentFromBlocks() hashing.HashValue {
+	ret := vs.committedHash
+	for i := range vs.appliedBlockHashes {
+		ret = hashing.HashData(ret[:], vs.appliedBlockHashes[i][:])
+	}
 	return ret
 }
 
@@ -291,6 +304,13 @@ func (s *mustOptimisticVirtualStateAccess) StateCommitment() hashing.HashValue {
 	defer s.baseline.MustValidate()
 
 	return s.state.StateCommitment()
+}
+
+func (s *mustOptimisticVirtualStateAccess) StateCommitmentFromBlocks() hashing.HashValue {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.StateCommitmentFromBlocks()
 }
 
 func (s *mustOptimisticVirtualStateAccess) KVStoreReader() kv.KVStoreReader {
