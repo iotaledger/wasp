@@ -141,7 +141,7 @@ func (vs *virtualStateAccess) ApplyBlock(b Block) error {
 		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
 	vs.ApplyStateUpdates(b.(*blockImpl).stateUpdate)
-	vs.appliedBlockHashes = append(vs.appliedBlockHashes, hashing.HashData(b.Bytes()))
+	vs.appliedBlockHashes = append(vs.appliedBlockHashes, hashing.HashData(b.EssenceBytes()))
 	vs.empty = false
 	return nil
 }
@@ -181,7 +181,7 @@ func (vs *virtualStateAccess) StateCommitment() hashing.HashValue {
 		if err != nil {
 			panic(xerrors.Errorf("StateCommitment: %v", err))
 		}
-		vs.uncommittedHash = hashing.HashData(block.Bytes())
+		vs.uncommittedHash = hashing.HashData(block.EssenceBytes())
 		vs.kvs.Mutations().ResetModified()
 	}
 	ret := hashing.HashData(vs.committedHash[:], vs.uncommittedHash[:])
