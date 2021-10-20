@@ -24,7 +24,7 @@ smart contracts and simulate transactions.
 Solo directly interacts with the ISCP code, and uses all the data types that are
 [defined in the ISCP code](https://github.com/iotaledger/wasp/blob/develop/documentation/docs/misc/coretypes.md)
 directly. Because they run in a sandboxed environment our Wasm smart contracts cannot access these types directly.
-Therefore, WasmLib implements its [own versions](types.mdx) of these data types, and the VM layer acts as a data type
+Therefore, WasmLib implements its [own versions](../wasm_vm/types.mdx) of these data types, and the VM layer acts as a data type
 translator between both systems.
 
 The impact of this type transformation used to be that to be able to write tests in the

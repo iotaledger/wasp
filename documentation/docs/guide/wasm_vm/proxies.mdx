@@ -12,17 +12,17 @@ image: /img/schema_tool/Proxies.png
 ---
 # Data Access Proxies
 
-As we cannot call the ISCP sandbox functions directly, we need a library to access the sandbox functionality.
-There is no way for the Wasm code to access any memory outside its own memory space. Therefore, any data that is
-governed by the ISCP sandbox has to be copied in and out of that memory space through well-defined protected channels in
-the Wasm runtime system.
+As we cannot call the ISCP sandbox functions directly, we need a library to access the
+sandbox functionality. There is no way for the Wasm code to access any memory outside
+its own memory space. Therefore, any data that is governed by the ISCP sandbox has to be
+copied in and out of that memory space through well-defined protected channels in the Wasm
+runtime system.
 
-To make this whole process as seamless as possible the WasmLib interface provides a number
-of  `proxies`. Proxies are objects that can perform the underlying data transfers
-between the separate systems. Proxies are like data references in that regard, they
-refer to the actual objects or values stored on the ISCP host, and know how to
-manipulate them. They provide a consistent interface to the smart contract to achieve
-that.
+To make this whole process as seamless as possible the WasmLib interface uses so-called
+`proxies`. Proxies are objects that can perform the underlying data transfers between the
+separate systems. Proxies are like data references in that regard, they refer to the
+actual objects or values stored on the ISCP host, and know how to manipulate them. Proxies
+provide a consistent interface to access the smart contract data.
 
 ## Value Proxies
 
@@ -33,12 +33,13 @@ uniquely defines the value's location in the container object.
 
 ## Container Proxies
 
-To keep things as simple and understandable as possible these are limited to only two different kinds. Array proxies and map proxies.
-Because we allow nesting of container objects, these are enough to be able to define quite complex data structures.
-The underlying ISCP sandbox provides access to its data in the form of simple key/value stores that can have arbitrary
-byte data for both key and value. WasmLib provides an abstraction on top of this one-dimensional storage system that
-supports nesting of maps and arrays, very similar to the way objects in JSON can be
-nested.
+To keep things as simple and understandable as possible these are limited to only two
+different kinds. Array proxies and map proxies. Because we allow nesting of container
+objects, these are enough to be able to define quite complex data structures. The
+underlying ISCP sandbox provides access to its data in the form of simple key/value stores
+that can have arbitrary byte data for both key and value. WasmLib provides an abstraction
+on top of this one-dimensional storage system that supports nesting of maps and arrays,
+very similar to the way objects in YAML or JSON can be nested.
 
 ### Map Proxies
 
