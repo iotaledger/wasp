@@ -9,6 +9,12 @@ export const generateRandomId = (): string => {
   }).join('')
 }
 
+export const delay = (ms: number): Promise<void> => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 export const loadGoogleAnalytics = (gaID: string): void => {
   window.dataLayer = window.dataLayer || []
   function gtag() { dataLayer.push(arguments) }
@@ -40,3 +46,4 @@ export function getCookie(name: string): string | undefined {
     return parts?.pop()?.split(";")?.shift() ?? undefined;
   }
 }
+
