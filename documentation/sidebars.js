@@ -243,38 +243,39 @@ module.exports = {
         },
         {
             type: 'category',
-            label: 'Rust/Wasm',
+            label: 'Wasm VM',
             items: [
                 {
-                    type: 'doc',
-                    label: 'Introduction',
-                    id: 'guide/rust_wasm/introduction',
-                },
-                {
                     type: 'category',
-                    label: 'Schema tool',
+                    label: 'Introduction',
                     items: [
                         {
                             type: 'doc',
                             label: 'Smart Contract Schemas',
-                            id: 'guide/schema/intro',
+                            id: 'guide/wasm_vm/intro',
                         },
                         {
                             type: 'doc',
                             label: 'Data Access Proxies',
-                            id: 'guide/schema/proxies',
+                            id: 'guide/wasm_vm/proxies',
                         },
                         {
                             type: 'doc',
                             label: 'WasmLib Data Types',
-                            id: 'guide/schema/types',
+                            id: 'guide/wasm_vm/types',
                         },
                         {
                             type: 'doc',
                             label: 'Function Call Context',
-                            id: 'guide/schema/context',
+                            id: 'guide/wasm_vm/context',
                         },
-                        {
+                    ]
+                 },
+                {
+                    type: 'category',
+                    label: 'Schema tool',
+                    items: [
+                       {
                             type: 'doc',
                             label: 'Smart Contract Schema Tool',
                             id: 'guide/schema/schema',

@@ -92,7 +92,7 @@ To interact with a smart contract, you will need:
 
 The PoC consists of two projects residing in `contracts/rust/fairroulette`.
 
-One is the smart contract itself. Its boilerplate was generated using the new [Schema tool](../schema/intro.mdx) which is shipped with this beta release. 
+One is the smart contract itself. Its boilerplate was generated using the new [Schema tool](../wasm_vm/intro.mdx) which is shipped with this beta release. 
 The contract logic is written in Rust, but the same implementation can be achieved interchangeably with Golang which is demonstrated in the root folder and `./src`.
 
 The second project is an interactive frontend written in TypeScript, made reactive with the light Svelte framework. You can find it in the sub-folder `./frontend`.
