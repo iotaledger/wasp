@@ -708,6 +708,14 @@ func (s *Schema) generateGoStruct(file *os.File, fields []*Field, mutability, ty
 		}
 
 		proxyType := mutability + field.Type
+		if field.TypeID == 0 {
+			fmt.Fprintf(file, "\nfunc (s %s) %s() %s {\n", typeName, varName, proxyType)
+			fmt.Fprintf(file, "\treturn %s{objID: s.id, keyID: %s}\n", proxyType, varID)
+			fmt.Fprintf(file, "}\n")
+			continue
+		}
+
+		// TODO use self?
 		if field.Alias == "@" {
 			fmt.Fprintf(file, "\nfunc (s %s) %s(key wasmlib.Key) wasmlib.Sc%s {\n", typeName, varName, proxyType)
 			fmt.Fprintf(file, "\treturn wasmlib.NewSc%s(s.id, key.KeyID())\n", proxyType)
