@@ -44,7 +44,7 @@ be enabled via configuration.
 :::
 ## Download Wasp
 
-You can download the latest Wasp version from the [official repository](https://github.com/iotaledger/wasp).
+You can get the source code of the latest Wasp version from the [official repository](https://github.com/iotaledger/wasp).
 
 ```bash
 git clone https://github.com/iotaledger/wasp
@@ -233,7 +233,7 @@ Repeat this process to launch as many nodes as you want for your committee.
 
 ### Accessing Your Node From a Remote Machine 
 
-If you want to access your Wasp node outside your local network, you will need to add your IP to the `webpi.adminWhitelist`. You can do so by adding it to your config file, or running the node with the  `webapi.adminWhitelist` flag.
+If you want to access the Wasp node from outside its local network, you will need to add your public IP to the `webpi.adminWhitelist`. You can do so by adding it to your config file, or running the node with the `webapi.adminWhitelist` flag.
 
 ```bash
 wasp --webapi.adminWhitelist=127.0.0.1,YOUR_IP
