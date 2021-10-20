@@ -777,6 +777,7 @@ func (s *Schema) generateRustResults() error {
 	if !s.CoreContracts {
 		fmt.Fprint(file, "\n"+useCrate)
 		fmt.Fprint(file, useKeys)
+		fmt.Fprint(file, useTypes)
 	}
 
 	for _, f := range s.Funcs {
@@ -843,6 +844,13 @@ func (s *Schema) generateRustStruct(file *os.File, fields []*Field, mutability, 
 		}
 
 		proxyType := mutability + field.Type
+		if field.TypeID == 0 {
+			fmt.Fprintf(file, "\n    pub fn %s(&self) -> %s {\n", varName, proxyType)
+			fmt.Fprintf(file, "        %s { obj_id: self.id, key_id: %s }\n", proxyType, varID)
+			fmt.Fprintf(file, "    }\n")
+			continue
+		}
+
 		fmt.Fprintf(file, "\n    pub fn %s(&self) -> Sc%s {\n", varName, proxyType)
 		fmt.Fprintf(file, "        Sc%s::new(self.id, %s)\n", proxyType, varID)
 		fmt.Fprintf(file, "    }\n")
