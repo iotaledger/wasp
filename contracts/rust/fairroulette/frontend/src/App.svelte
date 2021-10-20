@@ -7,7 +7,7 @@
   import { routes } from './routes';
 
   const SITE_COOKIES_ENABLED_NAME = 'iota_roulette_cookies_enabled';
-  const googleAnalyticsId = config?.googleAnalytics;
+  const googleAnalyticsId = config?.googleAnalyticsId;
   const cookiesEnabled = getCookie(SITE_COOKIES_ENABLED_NAME) === 'true';
   let showCookieDisclaimer = false;
 
@@ -22,13 +22,13 @@
   const allowCookies = (): void => {
     if (googleAnalyticsId) {
       loadGoogleAnalytics(googleAnalyticsId);
-      setCookie(SITE_COOKIES_ENABLED_NAME, true, 30);
+      setCookie(SITE_COOKIES_ENABLED_NAME, 'true', 30);
       showCookieDisclaimer = false;
     }
   };
   const declineCookies = (): void => {
     if (googleAnalyticsId) {
-      setCookie(SITE_COOKIES_ENABLED_NAME, false, 30);
+      setCookie(SITE_COOKIES_ENABLED_NAME, 'false', 30);
       showCookieDisclaimer = false;
     }
   };
