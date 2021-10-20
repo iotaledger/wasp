@@ -22,6 +22,10 @@
   ];
 </script>
 
+<svelte:head>
+  <title>IOTA Roulette</title>
+</svelte:head>
+
 <section class="container">
   <div class="hero">
     <div class="hero-description">

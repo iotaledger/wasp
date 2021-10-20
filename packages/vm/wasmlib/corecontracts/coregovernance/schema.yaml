@@ -38,7 +38,7 @@ funcs:
 views:
   getAllowedStateControllerAddresses:
     results:
-      allowedStateControllerAddresses=a: Bytes[] //TODO Array16
+      allowedStateControllerAddresses=a: Bytes[] // note: native contract, so this is an Array16
   getChainInfo:
     results:
       chainID=c: ChainID

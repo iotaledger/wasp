@@ -151,16 +151,23 @@ func TestInvalidTypeParams(t *testing.T) {
 }
 
 func TestViewBlockRecords(t *testing.T) {
-	t.SkipNow()
 	ctx := testValidParams(t)
 
-	br := testwasmlib.ScFuncs.BlockRecords(ctx)
-	br.Params.BlockIndex().SetValue(1)
-	br.Func.Call()
+	recs := testwasmlib.ScFuncs.BlockRecords(ctx)
+	recs.Params.BlockIndex().SetValue(1)
+	recs.Func.Call()
 	require.NoError(t, ctx.Err)
-	count := br.Results.Count()
+	count := recs.Results.Count()
 	require.True(t, count.Exists())
 	require.EqualValues(t, 1, count.Value())
+
+	rec := testwasmlib.ScFuncs.BlockRecord(ctx)
+	rec.Params.BlockIndex().SetValue(1)
+	rec.Params.RecordIndex().SetValue(0)
+	rec.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.True(t, rec.Results.Record().Exists())
+	require.EqualValues(t, 37, len(rec.Results.Record().Value()))
 }
 
 func TestClearArray(t *testing.T) {
