@@ -298,6 +298,7 @@ func viewRoundStartedAt(ctx wasmlib.ScViewContext, f *RoundStartedAtContext) {
 	f.Results.RoundStartedAt().SetValue(roundStartedAt)
 }
 
+//nolint
 func funcForcePayout(ctx wasmlib.ScFuncContext, f *ForcePayoutContext) {
 	ScFuncs.PayWinners(ctx).Func.Call()
 }
