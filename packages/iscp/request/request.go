@@ -173,6 +173,10 @@ func (p *Metadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	return nil
 }
 
+func (p *Metadata) String() string {
+	return "TODO" // TODO
+}
+
 // endregion
 
 // region OnLedger //////////////////////////////////////////////////////////////////
@@ -346,6 +350,34 @@ func (req *OnLedger) SetParams(params dict.Dict) {
 
 func (req *OnLedger) Args() requestargs.RequestArgs {
 	return req.requestMetadata.Args()
+}
+
+func (req *OnLedger) String() string {
+	fallbackStr := "none"
+	if req.FallbackAddress() != nil {
+		fallbackStr = fmt.Sprintf(
+			"{Address: %s, Deadline: %s}",
+			req.FallbackAddress().Base58(),
+			req.FallbackDeadline().String(),
+		)
+	}
+	timelockStr := "none"
+	if !req.TimeLock().IsZero() {
+		timelockStr = req.TimeLock().String()
+	}
+	return fmt.Sprintf(
+		"OnLedger::{ ID: %s, sender: %s, senderHname: %s, target: %s, entrypoint: %s, args: %s, nonce: %d, timestamp: %s, fallback: %s, timelock: %s }",
+		req.ID().Base58(),
+		req.senderAddress.Base58(),
+		req.requestMetadata.senderContract.String(),
+		req.requestMetadata.targetContract.String(),
+		req.requestMetadata.entryPoint.String(),
+		req.Args().String(),
+		req.requestMetadata.requestNonce,
+		req.txTimestamp.String(),
+		fallbackStr,
+		timelockStr,
+	)
 }
 
 // endregion /////////////////////////////////////////////////////////////////
@@ -542,7 +574,14 @@ func (req *OffLedger) Args() requestargs.RequestArgs {
 }
 
 func (req *OffLedger) String() string {
-	return fmt.Sprintf("OffLedger:: target: %s, entry point: %s, args: %s", req.contract, req.entryPoint, req.args.String())
+	return fmt.Sprintf("OffLedger::{ ID: %s, sender: %s, target: %s, entrypoint: %s, args: %s, nonce: %d }",
+		req.ID().Base58(),
+		req.SenderAddress().Base58(),
+		req.contract.String(),
+		req.entryPoint.String(),
+		req.Args().String(),
+		req.nonce,
+	)
 }
 
 // endregion /////////////////////////////////////////////////////////////////
