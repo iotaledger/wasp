@@ -90,6 +90,10 @@
   };
 </script>
 
+<svelte:head>
+  <title>Demo | IOTA Roulette</title>
+</svelte:head>
+
 <div class="container">
   {#if $isAWinnerPlayer}
     <div class="animation">
