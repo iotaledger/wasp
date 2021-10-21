@@ -13,7 +13,7 @@ keywords:
 ---
 # Docker
 
-This page describes the configuration of the Wasp node in combination with Docker.
+This page describes the configuration of the Wasp node in combination with Docker. If you followed the instructions in [Running a Node](../guide/chains_and_nodes/running-a-node.md), you can skip to [Configuring wasp-cli](../guide/chains_and_nodes/wasp-cli.md).
 
 ## Introduction
 
@@ -58,7 +58,7 @@ docker run wasp-node
 After the build process has been completed, it is still possible to inject a different configuration file into a new container by running: 
 
 ```
-$ docker run -v $(pwd)/alternative_docker_config.json:/etc/wasp_config.json wasp-node
+docker run -v $(pwd)/alternative_docker_config.json:/etc/wasp_config.json wasp-node
 ```
 
 You can also add further configuration using arguments:
