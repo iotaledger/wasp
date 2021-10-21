@@ -8,7 +8,7 @@ contract. The API can be used by any kind of Virtual Machine (VM) to implement a
 program, load, and run smart contracts on top of the ISCP. The actual VMs can be
 implemented by whomever wants to create them.
 
-![Wasp node image](img/IscpHost.png)
+![Wasp node image](/img/schema/IscpHost.png)
 
 Of course, we are providing an example implementation of such a VM to allow anyone to get
 a taste of what it is like to program a smart contract for the ISCP. Our VM implementation
@@ -29,7 +29,7 @@ is provide access to the ISCP host's sandbox API environment. The way we do that
 providing a simple library that can be linked into the Wasm code. This library, for
 obvious reasons, has been named `WasmLib` for now.
 
-![Wasm VM image](img/WasmVM.png)
+![Wasm VM image](/img/schema/WasmVM.png)
 
 As you can see we can have any number of smart contracts running in our Wasm VM. Each
 smart contract is a separately compiled Wasm code unit that contains its own copy of
