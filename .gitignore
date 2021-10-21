@@ -6,6 +6,7 @@ cluster-data/
 dist/
 .idea/
 .vscode/
+*.bat
 *.bak
 wasp-cli.json
 **/pkg/
