@@ -35,3 +35,7 @@ ISCP is more complex compared to conventional smart contracts, but this provides
 ## What is Wasp?
 
 Wasp is the node software that we have built to let you validate smart contracts as a part of a committee while using a virtual machine of your choice. Multiple Wasp nodes connect and form a committee of validators. When they reach consensus on a virtual machine state-change, they anchor that state change to the IOTA tangle, making it immutable. 
+
+## Feedback
+
+We are very eager to receive your feedback about your experiences with the IOTA Smart Contracts Beta. You can use [this form](https://docs.google.com/forms/d/e/1FAIpQLSd4jcmLzCPUNDIijEwGzuWerO23MS0Jmgzszgs-D6_awJUWow/viewform) to share your developer experience with us. This feedback will help is improve the product in follow up releases.
