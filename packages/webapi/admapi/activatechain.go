@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -14,8 +15,8 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addChainEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, chainsProvider chains.Provider) {
-	c := &chainWebAPI{registryProvider, chainsProvider}
+func addChainEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, chainsProvider chains.Provider, allMetrics *metrics.Metrics) {
+	c := &chainWebAPI{registryProvider, chainsProvider, allMetrics}
 
 	adm.POST(routes.ActivateChain(":chainID"), c.handleActivateChain).
 		AddParamPath("", "chainID", "ChainID (base58)").
@@ -27,8 +28,9 @@ func addChainEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provi
 }
 
 type chainWebAPI struct {
-	registry registry.Provider
-	chains   chains.Provider
+	registry   registry.Provider
+	chains     chains.Provider
+	allMetrics *metrics.Metrics
 }
 
 func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
@@ -46,7 +48,7 @@ func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
 	}
 
 	log.Debugw("calling Chains.Activate", "chainID", rec.ChainID.String())
-	if err := w.chains().Activate(rec, w.registry); err != nil {
+	if err := w.chains().Activate(rec, w.registry, w.allMetrics); err != nil {
 		return err
 	}
 

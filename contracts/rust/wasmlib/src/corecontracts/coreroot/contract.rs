@@ -14,15 +14,6 @@ use std::ptr;
 use crate::*;
 use crate::corecontracts::coreroot::*;
 
-pub struct ClaimChainOwnershipCall {
-    pub func: ScFunc,
-}
-
-pub struct DelegateChainOwnershipCall {
-    pub func:   ScFunc,
-    pub params: MutableDelegateChainOwnershipParams,
-}
-
 pub struct DeployContractCall {
     pub func:   ScFunc,
     pub params: MutableDeployContractParams,
@@ -38,50 +29,21 @@ pub struct RevokeDeployPermissionCall {
     pub params: MutableRevokeDeployPermissionParams,
 }
 
-pub struct SetContractFeeCall {
-    pub func:   ScFunc,
-    pub params: MutableSetContractFeeParams,
-}
-
-pub struct SetDefaultFeeCall {
-    pub func:   ScFunc,
-    pub params: MutableSetDefaultFeeParams,
-}
-
 pub struct FindContractCall {
     pub func:    ScView,
     pub params:  MutableFindContractParams,
     pub results: ImmutableFindContractResults,
 }
 
-pub struct GetChainInfoCall {
+pub struct GetContractRecordsCall {
     pub func:    ScView,
-    pub results: ImmutableGetChainInfoResults,
-}
-
-pub struct GetFeeInfoCall {
-    pub func:    ScView,
-    pub params:  MutableGetFeeInfoParams,
-    pub results: ImmutableGetFeeInfoResults,
+    pub results: ImmutableGetContractRecordsResults,
 }
 
 pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn claim_chain_ownership(_ctx: & dyn ScFuncCallContext) -> ClaimChainOwnershipCall {
-        ClaimChainOwnershipCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_CLAIM_CHAIN_OWNERSHIP),
-        }
-    }
-    pub fn delegate_chain_ownership(_ctx: & dyn ScFuncCallContext) -> DelegateChainOwnershipCall {
-        let mut f = DelegateChainOwnershipCall {
-            func:   ScFunc::new(HSC_NAME, HFUNC_DELEGATE_CHAIN_OWNERSHIP),
-            params: MutableDelegateChainOwnershipParams { id: 0 },
-        };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
-        f
-    }
     pub fn deploy_contract(_ctx: & dyn ScFuncCallContext) -> DeployContractCall {
         let mut f = DeployContractCall {
             func:   ScFunc::new(HSC_NAME, HFUNC_DEPLOY_CONTRACT),
@@ -106,22 +68,6 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
-    pub fn set_contract_fee(_ctx: & dyn ScFuncCallContext) -> SetContractFeeCall {
-        let mut f = SetContractFeeCall {
-            func:   ScFunc::new(HSC_NAME, HFUNC_SET_CONTRACT_FEE),
-            params: MutableSetContractFeeParams { id: 0 },
-        };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
-        f
-    }
-    pub fn set_default_fee(_ctx: & dyn ScFuncCallContext) -> SetDefaultFeeCall {
-        let mut f = SetDefaultFeeCall {
-            func:   ScFunc::new(HSC_NAME, HFUNC_SET_DEFAULT_FEE),
-            params: MutableSetDefaultFeeParams { id: 0 },
-        };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
-        f
-    }
     pub fn find_contract(_ctx: & dyn ScViewCallContext) -> FindContractCall {
         let mut f = FindContractCall {
             func:    ScView::new(HSC_NAME, HVIEW_FIND_CONTRACT),
@@ -131,21 +77,12 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
-    pub fn get_chain_info(_ctx: & dyn ScViewCallContext) -> GetChainInfoCall {
-        let mut f = GetChainInfoCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_CHAIN_INFO),
-            results: ImmutableGetChainInfoResults { id: 0 },
+    pub fn get_contract_records(_ctx: & dyn ScViewCallContext) -> GetContractRecordsCall {
+        let mut f = GetContractRecordsCall {
+            func:    ScView::new(HSC_NAME, HVIEW_GET_CONTRACT_RECORDS),
+            results: ImmutableGetContractRecordsResults { id: 0 },
         };
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
-        f
-    }
-    pub fn get_fee_info(_ctx: & dyn ScViewCallContext) -> GetFeeInfoCall {
-        let mut f = GetFeeInfoCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_FEE_INFO),
-            params:  MutableGetFeeInfoParams { id: 0 },
-            results: ImmutableGetFeeInfoResults { id: 0 },
-        };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
 }

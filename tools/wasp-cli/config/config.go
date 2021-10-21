@@ -20,7 +20,7 @@ var (
 var configSetCmd = &cobra.Command{
 	Use:   "set <key> <value>",
 	Short: "Set a configuration value",
-	Args:  cobra.ExactArgs(2), //nolint:gomnd
+	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		v := args[1]
 		switch v {
@@ -45,6 +45,7 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().BoolVarP(&WaitForCompletion, "wait", "w", true, "wait for request completion")
 
 	rootCmd.AddCommand(configSetCmd)
+	rootCmd.AddCommand(checkVersionsCmd)
 }
 
 func Read() {
@@ -67,7 +68,7 @@ func GoshimmerAPI() string {
 func GoshimmerFaucetPoWTarget() int {
 	key := "goshimmer.faucetPoWTarget"
 	if !viper.IsSet(key) {
-		return 0 // by default assume utxodb is on the other side
+		return -1
 	}
 	return viper.GetInt(key)
 }
@@ -154,7 +155,10 @@ func committeeHost(kind string, i int) string {
 	return fmt.Sprintf("127.0.0.1:%d", defaultPort)
 }
 
-//nolint:gomnd
+func totalNumberOfWaspNodes() int {
+	return len(viper.Sub("wasp").AllSettings())
+}
+
 func defaultWaspPort(kind string, i int) int {
 	switch kind {
 	case HostKindNanomsg:

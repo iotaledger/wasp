@@ -20,6 +20,11 @@ func addPeeringEndpoints(adm echoswagger.ApiGroup, network peering.NetworkProvid
 		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiQ", NetID: "some-host:9081"},
 		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiR", NetID: "some-host:9082"},
 	}
+	peeringStatusExample := []*model.PeeringNodeStatus{
+		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiQ", IsAlive: true, NumUsers: 1, NetID: "some-host:9081"},
+		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiR", IsAlive: true, NumUsers: 1, NetID: "some-host:9082"},
+	}
+
 	addCtx := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			c.Set("net", network)
@@ -47,6 +52,10 @@ func addPeeringEndpoints(adm echoswagger.ApiGroup, network peering.NetworkProvid
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
 		SetSummary("Trust the specified peer, the pub key is passed via the path.")
 
+	adm.GET(routes.PeeringGetStatus(), handlePeeringGetStatus, addCtx).
+		AddResponse(http.StatusOK, "A list of all peers.", peeringStatusExample, nil).
+		SetSummary("Basic information about all configured peers.")
+
 	adm.POST(routes.PeeringTrustedPost(), handlePeeringTrustedPost, addCtx).
 		AddParamBody(listExample[0], "PeeringTrustedNode", "Info of the peer to trust.", true).
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
@@ -64,6 +73,24 @@ func handlePeeringSelfGet(c echo.Context) error {
 		NetID:  network.Self().NetID(),
 	}
 	return c.JSON(http.StatusOK, resp)
+}
+
+func handlePeeringGetStatus(c echo.Context) error {
+	network := c.Get("net").(peering.NetworkProvider)
+	peeringStatus := network.PeerStatus()
+
+	peers := make([]model.PeeringNodeStatus, len(peeringStatus))
+
+	for k, v := range peeringStatus {
+		peers[k] = model.PeeringNodeStatus{
+			PubKey:   v.PubKey().String(),
+			NetID:    v.NetID(),
+			IsAlive:  v.IsAlive(),
+			NumUsers: v.NumUsers(),
+		}
+	}
+
+	return c.JSON(http.StatusOK, peers)
 }
 
 func handlePeeringTrustedList(c echo.Context) error {

@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
-	peering_udp "github.com/iotaledger/wasp/packages/peering/udp"
+	peering_lpp "github.com/iotaledger/wasp/packages/peering/lpp"
 	"github.com/iotaledger/wasp/plugins/registry"
 )
 
@@ -37,7 +37,7 @@ func Init() *node.Plugin {
 			log.Panicf("Init.peering: %v", err)
 		}
 		netID := parameters.GetString(parameters.PeeringMyNetID)
-		netImpl, err := peering_udp.NewNetworkProvider(
+		netImpl, tnmImpl, err := peering_lpp.NewNetworkProvider(
 			netID,
 			parameters.GetInt(parameters.PeeringPort),
 			nodeKeyPair,
@@ -48,7 +48,7 @@ func Init() *node.Plugin {
 			log.Panicf("Init.peering: %v", err)
 		}
 		defaultNetworkProvider = netImpl
-		defaultTrustedNetworkManager = netImpl
+		defaultTrustedNetworkManager = tnmImpl
 		log.Infof("------------- NetID is %s ------------------", netID)
 	}
 	run := func(_ *node.Plugin) {

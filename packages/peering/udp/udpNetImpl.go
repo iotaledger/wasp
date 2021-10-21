@@ -310,6 +310,7 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 		n.peersLock.RLock()
 		if p, ok := n.peersByAddr[peerUDPAddr.String()]; ok {
 			if !p.isTrusted() {
+				n.peersLock.RUnlock()
 				n.log.Debugf("Dropping message from untrusted peer: %v.", p.NetID())
 				continue
 			}
@@ -393,10 +394,10 @@ func (n *NetImpl) receiveUserMsg(msg *peering.PeerMessage, peerUDPAddr *net.UDPA
 		return
 	}
 	remoteUDPAddrStr := peerUDPAddr.String()
-	n.peersLock.RLock()
-	defer n.peersLock.RUnlock()
 
+	n.peersLock.RLock()
 	if p, ok := n.peersByAddr[remoteUDPAddrStr]; ok {
+		n.peersLock.RUnlock()
 		p.noteReceived()
 		msg.SenderNetID = p.NetID()
 		n.recvQueue <- &peering.RecvEvent{
@@ -405,6 +406,7 @@ func (n *NetImpl) receiveUserMsg(msg *peering.PeerMessage, peerUDPAddr *net.UDPA
 		}
 		return
 	}
+	n.peersLock.RUnlock()
 	n.log.Warnf("Dropping received message from unknown peer=%v", remoteUDPAddrStr)
 }
 

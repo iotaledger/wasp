@@ -9,13 +9,11 @@ import (
 	"io/ioutil"
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -23,11 +21,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,7 +36,7 @@ func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
-	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.Hash().String())
+	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.StateCommitment().String())
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GetGenesisAddress())
 	return buf.String()
 }
@@ -50,8 +49,8 @@ func (ch *Chain) DumpAccounts() string {
 	for i := range acc {
 		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
-		bals := ch.GetAccountBalance(&aid)
-		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
+		bals := ch.GetAccountBalance(aid)
+		bals.ForEachRandomly(func(col colored.Color, bal uint64) bool {
 			ret += fmt.Sprintf("       %s: %d\n", col, bal)
 			return true
 		})
@@ -68,14 +67,14 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-	retBin, err := retDict.Get(root.VarData)
+	retBin, err := retDict.Get(root.ParamContractRecData)
 	if err != nil {
 		return nil, err
 	}
 	if retBin == nil {
 		return nil, fmt.Errorf("smart contract '%s' not found", scName)
 	}
-	record, err := root.DecodeContractRecord(retBin)
+	record, err := root.ContractRecordFromBytes(retBin)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +111,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 
 	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...)
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
+	require.EqualValues(ch.Env.T, feeColor, colored.IOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
 		req.WithIotas(totalFee)
@@ -124,12 +123,12 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 		return
 	}
 	resBin := res.MustGet(blob.ParamHash)
-	ret, ok, err := codec.DecodeHashValue(resBin)
-	if err != nil {
+	if resBin == nil {
+		err = fmt.Errorf("internal error: no hash returned")
 		return
 	}
-	if !ok {
-		err = fmt.Errorf("internal error: no hash returned")
+	ret, err = codec.DecodeHashValue(resBin)
+	if err != nil {
 		return
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
@@ -137,8 +136,8 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 }
 
 // UploadBlobOptimized does the same as UploadBlob, only better but more complicated
-// It allows  big data chunks to bypass the request transaction. Instead, in transaction only hash of the data is put
-// The data itself must be uploaded to the node (in this case into Solo environment, separately
+// It allows big data chunks to bypass the request transaction. Instead, in transaction only hash of the data is put.
+// The data itself must be uploaded to the node (in this case into Solo environment), separately.
 // Before running the request in VM, the hash references contained in the request transaction are resolved with
 // the real data, previously uploaded directly.
 func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
@@ -157,22 +156,22 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, 
 		ch.Env.PutBlobDataIntoRegistry(v)
 	}
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
+	require.EqualValues(ch.Env.T, feeColor, colored.IOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
-		req.WithTransfer(ledgerstate.ColorIOTA, totalFee)
+		req.WithIotas(totalFee)
 	}
 	res, err := ch.PostRequestSync(req, keyPair)
 	if err != nil {
 		return
 	}
 	resBin := res.MustGet(blob.ParamHash)
-	ret, ok, err := codec.DecodeHashValue(resBin)
-	if err != nil {
+	if resBin == nil {
+		err = fmt.Errorf("internal error: no hash returned")
 		return
 	}
-	if !ok {
-		err = fmt.Errorf("internal error: no hash returned")
+	ret, err = codec.DecodeHashValue(resBin)
+	if err != nil {
 		return
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
@@ -187,7 +186,7 @@ const (
 // UploadWasm is a syntactic sugar of the UploadBlob used to upload Wasm binary to the chain.
 //  parameter 'binaryCode' is the binary of Wasm smart contract program
 //
-// The blob for the Wasm binary used fixed field names which are statically known by the .
+// The blob for the Wasm binary used fixed field names which are statically known by the
 // 'root' smart contract which is responsible for the deployment of contracts on the chain
 func (ch *Chain) UploadWasm(keyPair *ed25519.KeyPair, binaryCode []byte) (ret hashing.HashValue, err error) {
 	if OptimizeUpload {
@@ -263,17 +262,18 @@ func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name, fname string
 //  - chainID
 //  - agentID of the chain owner
 //  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
-func (ch *Chain) GetInfo() (iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
-	res, err := ch.CallView(root.Contract.Name, root.FuncGetChainInfo.Name)
+func (ch *Chain) GetInfo() (*iscp.ChainID, *iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
+	res, err := ch.CallView(governance.Contract.Name, governance.FuncGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
-	chainID, ok, err := codec.DecodeChainID(res.MustGet(root.VarChainID))
+	chainID, err := codec.DecodeChainID(res.MustGet(governance.VarChainID))
 	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
 
-	chainOwnerID, ok, err := codec.DecodeAgentID(res.MustGet(root.VarChainOwnerID))
+	chainOwnerID, err := codec.DecodeAgentID(res.MustGet(governance.VarChainOwnerID))
 	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
+
+	res, err = ch.CallView(root.Contract.Name, root.FuncGetContractRecords.Name)
+	require.NoError(ch.Env.T, err)
 
 	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(res, root.VarContractRegistry))
 	require.NoError(ch.Env.T, err)
@@ -282,55 +282,54 @@ func (ch *Chain) GetInfo() (iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.Con
 
 // GetAddressBalance returns number of tokens of given color contained in the given address
 // on the UTXODB ledger
-func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col ledgerstate.Color) uint64 {
+func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col colored.Color) uint64 {
 	bals := env.GetAddressBalances(addr)
 	ret := bals[col]
 	return ret
 }
 
 // GetAddressBalances returns all colored balances of the address contained in the UTXODB ledger
-func (env *Solo) GetAddressBalances(addr ledgerstate.Address) map[ledgerstate.Color]uint64 {
-	return env.utxoDB.GetAddressBalances(addr)
+func (env *Solo) GetAddressBalances(addr ledgerstate.Address) colored.Balances {
+	return colored.BalancesFromL1Map(env.utxoDB.GetAddressBalances(addr))
 }
 
 // GetAccounts returns all accounts on the chain with non-zero balances
-func (ch *Chain) GetAccounts() []iscp.AgentID {
+func (ch *Chain) GetAccounts() []*iscp.AgentID {
 	d, err := ch.CallView(accounts.Contract.Name, accounts.FuncViewAccounts.Name)
 	require.NoError(ch.Env.T, err)
 	keys := d.KeysSorted()
-	ret := make([]iscp.AgentID, 0, len(keys)-1)
+	ret := make([]*iscp.AgentID, 0, len(keys)-1)
 	for _, key := range keys {
-		aid, ok, err := codec.DecodeAgentID([]byte(key))
+		aid, err := codec.DecodeAgentID([]byte(key))
 		require.NoError(ch.Env.T, err)
-		require.True(ch.Env.T, ok)
 		ret = append(ret, aid)
 	}
 	return ret
 }
 
-func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *ledgerstate.ColoredBalances {
+func (ch *Chain) parseAccountBalance(d dict.Dict, err error) colored.Balances {
 	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
-		return ledgerstate.NewColoredBalances(nil)
+		return colored.NewBalances()
 	}
-	ret := make(map[ledgerstate.Color]uint64)
+	ret := colored.NewBalances()
 	err = d.Iterate("", func(key kv.Key, value []byte) bool {
-		col, _, err := codec.DecodeColor([]byte(key))
+		col, err := codec.DecodeColor([]byte(key))
 		require.NoError(ch.Env.T, err)
-		val, _, err := codec.DecodeUint64(value)
+		val, err := codec.DecodeUint64(value)
 		require.NoError(ch.Env.T, err)
-		ret[col] = val
+		ret.Set(col, val)
 		return true
 	})
 	require.NoError(ch.Env.T, err)
-	return ledgerstate.NewColoredBalances(ret)
+	return ret
 }
 
-func (ch *Chain) GetOnChainLedger() map[string]*ledgerstate.ColoredBalances {
+func (ch *Chain) GetOnChainLedger() map[string]colored.Balances {
 	accs := ch.GetAccounts()
-	ret := make(map[string]*ledgerstate.ColoredBalances)
+	ret := make(map[string]colored.Balances)
 	for i := range accs {
-		ret[accs[i].String()] = ch.GetAccountBalance(&accs[i])
+		ret[accs[i].String()] = ch.GetAccountBalance(accs[i])
 	}
 	return ret
 }
@@ -352,23 +351,23 @@ func (ch *Chain) GetOnChainLedgerString() string {
 
 // GetAccountBalance return all balances of colored tokens contained in the on-chain
 // account controlled by the 'agentID'
-func (ch *Chain) GetAccountBalance(agentID *iscp.AgentID) *ledgerstate.ColoredBalances {
+func (ch *Chain) GetAccountBalance(agentID *iscp.AgentID) colored.Balances {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
 	)
 }
 
-func (ch *Chain) GetCommonAccountBalance() *ledgerstate.ColoredBalances {
+func (ch *Chain) GetCommonAccountBalance() colored.Balances {
 	return ch.GetAccountBalance(ch.CommonAccount())
 }
 
 func (ch *Chain) GetCommonAccountIotas() uint64 {
-	ret, _ := ch.GetAccountBalance(ch.CommonAccount()).Get(ledgerstate.ColorIOTA)
+	ret := ch.GetAccountBalance(ch.CommonAccount()).Get(colored.IOTA)
 	return ret
 }
 
 // GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
-func (ch *Chain) GetTotalAssets() *ledgerstate.ColoredBalances {
+func (ch *Chain) GetTotalAssets() colored.Balances {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewTotalAssets.Name),
 	)
@@ -376,7 +375,7 @@ func (ch *Chain) GetTotalAssets() *ledgerstate.ColoredBalances {
 
 // GetTotalIotas return total sum of iotas
 func (ch *Chain) GetTotalIotas() uint64 {
-	ret, _ := ch.GetTotalAssets().Get(ledgerstate.ColorIOTA)
+	ret := ch.GetTotalAssets().Get(colored.IOTA)
 	return ret
 }
 
@@ -385,79 +384,76 @@ func (ch *Chain) GetTotalIotas() uint64 {
 //  - chain owner part of the fee (number of tokens)
 //  - validator part of the fee (number of tokens)
 // Total fee is sum of owner fee and validator fee
-func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint64) {
+func (ch *Chain) GetFeeInfo(contactName string) (colored.Color, uint64, uint64) {
 	hname := iscp.Hn(contactName)
-	ret, err := ch.CallView(root.Contract.Name, root.FuncGetFeeInfo.Name, root.ParamHname, hname)
+	ret, err := ch.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, governance.ParamHname, hname)
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
 
-	feeColor, ok, err := codec.DecodeColor(ret.MustGet(root.VarFeeColor))
+	feeColor, err := codec.DecodeColor(ret.MustGet(governance.ParamFeeColor))
 	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
 	require.NotNil(ch.Env.T, feeColor)
 
-	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarValidatorFee))
+	validatorFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamValidatorFee))
 	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
 
-	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarOwnerFee))
+	ownerFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamOwnerFee))
 	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
 
 	return feeColor, ownerFee, validatorFee
 }
 
-// GetEventLogRecords calls the view in the  'eventlog' core smart contract to retrieve
-// latest up to 50 records for a given smart contract.
-// It returns records as array in time-descending order.
-// More than 50 records may be retrieved by calling the view directly
-func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRecord, error) {
-	res, err := ch.CallView(eventlog.Contract.Name, eventlog.FuncGetRecords.Name,
-		eventlog.ParamContractHname, iscp.Hn(name),
+func eventsFromViewResult(t TestContext, viewResult dict.Dict) []string {
+	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
+	ret := make([]string, recs.MustLen())
+	for i := range ret {
+		data, err := recs.GetAt(uint16(i))
+		require.NoError(t, err)
+		ret[i] = string(data)
+	}
+	return ret
+}
+
+// GetEventsForContract calls the view in the  'blocklog' core smart contract to retrieve events for a given smart contract.
+func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
+	viewResult, err := ch.CallView(
+		blocklog.Contract.Name, blocklog.FuncGetEventsForContract.Name,
+		blocklog.ParamContractHname, iscp.Hn(name),
 	)
 	if err != nil {
 		return nil, err
 	}
-	recs := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
-	ret := make([]collections.TimestampedLogRecord, recs.MustLen())
-	for i := uint16(0); i < recs.MustLen(); i++ {
-		data := recs.MustGetAt(i)
-		rec, err := collections.ParseRawLogRecord(data)
-		require.NoError(ch.Env.T, err)
-		ret[i] = *rec
-	}
-	return ret, nil
+
+	return eventsFromViewResult(ch.Env.T, viewResult), nil
 }
 
-// GetEventLogRecordsString return stringified response from GetEventLogRecords
-// Returns latest 50 records from the log
-func (ch *Chain) GetEventLogRecordsString(name string) (string, error) {
-	recs, err := ch.GetEventLogRecords(name)
-	if err != nil {
-		return "", err
-	}
-	ret := fmt.Sprintf("log records for '%s':", name)
-	for _, r := range recs {
-		ret += fmt.Sprintf("\n%d: %s", r.Timestamp, string(r.Data))
-	}
-	return ret, nil
-}
-
-// GetEventLogNumRecords returns total number of eventlog records for the given contact.
-func (ch *Chain) GetEventLogNumRecords(name string) int {
-	res, err := ch.CallView(eventlog.Contract.Name, eventlog.FuncGetNumRecords.Name,
-		eventlog.ParamContractHname, iscp.Hn(name),
+// GetEventsForRequest calls the view in the  'blocklog' core smart contract to retrieve events for a given request.
+func (ch *Chain) GetEventsForRequest(reqID iscp.RequestID) ([]string, error) {
+	viewResult, err := ch.CallView(
+		blocklog.Contract.Name, blocklog.FuncGetEventsForRequest.Name,
+		blocklog.ParamRequestID, reqID,
 	)
-	require.NoError(ch.Env.T, err)
-	ret, ok, err := codec.DecodeInt64(res.MustGet(eventlog.ParamNumRecords))
-	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
-	return int(ret)
+	if err != nil {
+		return nil, err
+	}
+	return eventsFromViewResult(ch.Env.T, viewResult), nil
+}
+
+// GetEventsForBlock calls the view in the 'blocklog' core smart contract to retrieve events for a given block.
+func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
+	viewResult, err := ch.CallView(
+		blocklog.Contract.Name, blocklog.FuncGetEventsForBlock.Name,
+		blocklog.ParamBlockIndex, blockIndex,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return eventsFromViewResult(ch.Env.T, viewResult), nil
 }
 
 // CommonAccount return the agentID of the common account (controlled by the owner)
 func (ch *Chain) CommonAccount() *iscp.AgentID {
-	return commonaccount.Get(&ch.ChainID)
+	return commonaccount.Get(ch.ChainID)
 }
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
@@ -622,9 +618,8 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
 	ret := make([]ledgerstate.Address, 0)
 	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedStateControllerAddresses)
 	for i := uint16(0); i < arr.MustLen(); i++ {
-		a, ok, err := codec.DecodeAddress(arr.MustGetAt(i))
+		a, err := codec.DecodeAddress(arr.MustGetAt(i))
 		require.NoError(ch.Env.T, err)
-		require.True(ch.Env.T, ok)
 		ret = append(ret, a)
 	}
 	return ret

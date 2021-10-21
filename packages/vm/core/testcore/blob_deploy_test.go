@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/vm/core"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
-
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
@@ -113,8 +113,8 @@ func TestDeployGrant(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
@@ -138,8 +138,8 @@ func TestRevokeDeploy(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
@@ -169,10 +169,69 @@ func TestDeployGrantFail(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, user1)
+	)
+	_, err := chain.PostRequestSync(req.WithIotas(1), user1)
 	require.Error(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
+	require.Error(t, err)
+}
+
+func TestBigBlob(t *testing.T) {
+	env := solo.New(t, false, false)
+	ch := env.NewChain(nil, "chain1")
+
+	// uploada blob that is too big
+	bigblobSize := governance.DefaultMaxBlobSize + 100
+	blobBin := make([]byte, bigblobSize)
+
+	_, err := ch.UploadWasm(ch.OriginatorKeyPair, blobBin)
+	require.Error(t, err)
+
+	// update max blob size to allow for bigger blobs_
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name, governance.FuncSetChainInfo.Name,
+			governance.ParamMaxBlobSize, bigblobSize,
+		).WithIotas(1),
+		nil,
+	)
+	require.NoError(t, err)
+
+	// blob upload must now succeed
+	_, err = ch.UploadWasm(ch.OriginatorKeyPair, blobBin)
+	require.NoError(t, err)
+}
+
+func TestOpenDeploymentToAnyone(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	userWallet, _ := env.NewKeyPairWithFunds()
+
+	// deployment is closed to anyone by default
+	err := chain.DeployWasmContract(userWallet, "testCore", wasmFile)
+	require.Error(t, err)
+
+	// enable open deployments
+	req := solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
+		root.ParamDeployPermissionsEnabled, []byte{0},
+	)
+	_, err = chain.PostRequestSync(req.WithIotas(1), nil)
+	require.NoError(t, err)
+
+	// deploy should now succeed
+	err = chain.DeployWasmContract(userWallet, "testCore1", wasmFile)
+	require.NoError(t, err)
+
+	// disable open deployments
+	req = solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
+		root.ParamDeployPermissionsEnabled, []byte{1},
+	)
+	_, err = chain.PostRequestSync(req.WithIotas(1), nil)
+	require.NoError(t, err)
+
+	// deployment should fail after "open deployment" is disabled
+	err = chain.DeployWasmContract(userWallet, "testCore3", wasmFile)
 	require.Error(t, err)
 }

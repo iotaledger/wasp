@@ -1,6 +1,6 @@
 {{define "ws"}}
 	<script>
-		const url = 'ws://' +  location.host + '{{ uri "chainWs" .Base58 }}';
+		const url = 'ws://' +  location.host + '{{ uri "chainWebSocket" .Base58 }}';
 		console.log('opening WebSocket to ' + url);
 		const ws = new WebSocket(url);
 

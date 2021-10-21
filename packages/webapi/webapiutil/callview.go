@@ -1,7 +1,7 @@
 package webapiutil
 
 import (
-	"time"
+	"sync"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -10,16 +10,20 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 )
 
-const retryOnStateInvalidatedRetry = 100 * time.Millisecond //nolint:gofumpt
-const retryOnStateInvalidatedTimeout = 5 * time.Minute
+// TODO: Find a proper solution, this is not a desired fix
+var mu sync.Mutex
 
 func CallView(ch chain.ChainCore, contractHname, viewHname iscp.Hname, params dict.Dict) (dict.Dict, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
 	vctx := viewcontext.NewFromChain(ch)
 	var ret dict.Dict
 	err := optimism.RetryOnStateInvalidated(func() error {
 		var err error
 		ret, err = vctx.CallView(contractHname, viewHname, params)
 		return err
-	}, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
+	})
+
 	return ret, err
 }

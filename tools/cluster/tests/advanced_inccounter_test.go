@@ -2,19 +2,18 @@ package tests
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -45,7 +44,9 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	description := "testing with inccounter"
 	progHash := inccounter.Contract.ProgramHash
 
-	_, err = chain.DeployContract(incCounterSCName, progHash.String(), description, nil)
+	params := make(map[string]interface{})
+	params[inccounter.VarCounter] = codec.EncodeInt64(0)
+	_, err = chain.DeployContract(incCounterSCName, progHash.String(), description, params)
 	require.NoError(t, err)
 
 	e := &env{t: t, clu: clu}
@@ -72,24 +73,6 @@ func (e *chainEnv) printBlocks(expected int) {
 	require.EqualValues(e.t, expected, sum)
 }
 
-//
-//func printBlocksWithRecords(t *testing.T, ch *cluster.Chain) {
-//	recs, err := ch.GetAllBlockInfoRecordsReverse()
-//	require.NoError(t, err)
-//
-//	sum := 0
-//	for _, rec := range recs {
-//		t.Logf("---- block #%d: total: %d, off-ledger: %d, success: %d", rec.BlockIndex, rec.TotalRequests, rec.NumOffLedgerRequests, rec.NumSuccessfulRequests)
-//		sum += int(rec.TotalRequests)
-//		recs, err := ch.GetRequestReceiptsForBlock(rec.BlockIndex)
-//		require.NoError(t, err)
-//		for _, rec := range recs {
-//			t.Logf("---------- %s : %s", rec.RequestID.String(), string(rec.LogData))
-//		}
-//	}
-//	t.Logf("Total requests processed: %d", sum)
-//}
-
 func TestAccessNodesOnLedger(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
@@ -109,6 +92,7 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const numRequests = 1000
 		const numValidatorNodes = 4
 		const clusterSize = 15
@@ -116,47 +100,12 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const numRequests = 1000
 		const numValidatorNodes = 6
 		const clusterSize = 15
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
-}
-
-var addressIndex uint64 = 1
-
-func (e *advancedInccounterEnv) createNewClient() *scclient.SCClient {
-	keyPair, _ := e.getOrCreateAddress()
-	client := e.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
-	return client
-}
-
-func (e *advancedInccounterEnv) getOrCreateAddress() (*ed25519.KeyPair, *ledgerstate.ED25519Address) {
-	const minTokenAmountBeforeRequestingNewFunds uint64 = 1000
-
-	randomAddress := rand.NewSource(time.Now().UnixNano())
-
-	keyPair := wallet.KeyPair(addressIndex)
-	myAddress := ledgerstate.NewED25519Address(keyPair.PublicKey)
-
-	funds, err := e.clu.GoshimmerClient().BalanceIOTA(myAddress)
-
-	require.NoError(e.t, err)
-
-	if funds <= minTokenAmountBeforeRequestingNewFunds {
-		// Requesting new token requires a new address
-
-		addressIndex = rand.New(randomAddress).Uint64()
-		e.t.Logf("Generating new address: %v", addressIndex)
-
-		keyPair = wallet.KeyPair(addressIndex)
-		myAddress = ledgerstate.NewED25519Address(keyPair.PublicKey)
-
-		e.requestFunds(myAddress, "myAddress")
-		e.t.Logf("Funds: %v, addressIndex: %v", funds, addressIndex)
-	}
-
-	return keyPair, myAddress
 }
 
 func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
@@ -197,6 +146,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=10,N=6,req=1000", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const waitFor = 120 * time.Second
 		const numRequests = 1000
 		const numValidatorNodes = 6
@@ -205,6 +155,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15,N=6,req=1000", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const waitFor = 120 * time.Second
 		const numRequests = 1000
 		const numValidatorNodes = 6
@@ -213,6 +164,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=30,N=15,req=8", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const waitFor = 60 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 15
@@ -221,6 +173,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=30,N=20,req=8", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const waitFor = 60 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 20
@@ -244,7 +197,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	accountsClient := e.chain.SCClient(accounts.Contract.Hname(), keyPair)
 	_, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTransferIotas(100),
+		Transfer: colored.NewBalancesForIotas(100),
 	})
 	require.NoError(t, err)
 
@@ -257,22 +210,20 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), to)
+	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), to, "requests counted")
 
 	e.printBlocks(numRequests + 4)
 }
 
 // extreme test
 func TestAccessNodesMany(t *testing.T) {
+	testutil.SkipHeavy(t)
 	const clusterSize = 15
 	const numValidatorNodes = 6
 	const requestsCountInitial = 2
 	const requestsCountProgression = 2
 	const iterationCount = 9
 
-	if iterationCount > 12 {
-		t.Skip("skipping test with iteration count > 8")
-	}
 	e := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))
 
 	keyPair, _ := e.getOrCreateAddress()
@@ -280,7 +231,7 @@ func TestAccessNodesMany(t *testing.T) {
 	myClient := e.chain.SCClient(incCounterSCHname, keyPair)
 
 	requestsCount := requestsCountInitial
-	requestsCummulative := 0
+	requestsCumulative := 0
 	posted := 0
 	for i := 0; i < iterationCount; i++ {
 		logMsg := fmt.Sprintf("iteration %v of %v requests", i, requestsCount)
@@ -290,8 +241,8 @@ func TestAccessNodesMany(t *testing.T) {
 			require.NoError(t, err)
 		}
 		posted += requestsCount
-		requestsCummulative += requestsCount
-		waitUntil(t, e.counterEquals(int64(requestsCummulative)), e.clu.Config.AllNodes(), 60*time.Second, logMsg)
+		requestsCumulative += requestsCount
+		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.clu.Config.AllNodes(), 60*time.Second, logMsg)
 		requestsCount *= requestsCountProgression
 	}
 	e.printBlocks(posted + 3)
@@ -389,8 +340,7 @@ func TestRotation(t *testing.T) {
 }
 
 func TestRotationMany(t *testing.T) {
-	t.Skip("skipping extreme test")
-
+	testutil.SkipHeavy(t)
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -489,7 +439,7 @@ func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.R
 	succ := waitTrue(timeout, func() bool {
 		rec, err := callGetRequestRecord(t, chain, nodeIndex, reqid)
 		if err == nil && rec != nil {
-			ret = string(rec.LogData)
+			ret = rec.Error
 			return true
 		}
 		return false
@@ -517,9 +467,8 @@ func (e *chainEnv) callGetBlockIndex(nodeIndex int) (uint32, error) {
 	if err != nil {
 		return 0, err
 	}
-	v, ok, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
+	v, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 	require.NoError(e.t, err)
-	require.True(e.t, ok)
 	return v, nil
 }
 
@@ -562,9 +511,8 @@ func (e *chainEnv) callGetStateController(nodeIndex int) (ledgerstate.Address, e
 	if err != nil {
 		return nil, err
 	}
-	addr, ok, err := codec.DecodeAddress(ret.MustGet(blocklog.ParamStateControllerAddress))
+	addr, err := codec.DecodeAddress(ret.MustGet(blocklog.ParamStateControllerAddress))
 	require.NoError(e.t, err)
-	require.True(e.t, ok)
 	return addr, nil
 }
 
@@ -582,9 +530,8 @@ func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeInd
 		return false
 	}
 	for i := uint16(0); i < arrlen; i++ {
-		a, ok, err := codec.DecodeAddress(arr.MustGetAt(i))
+		a, err := codec.DecodeAddress(arr.MustGetAt(i))
 		require.NoError(t, err)
-		require.True(t, ok)
 		if a.Equals(addr) {
 			return true
 		}

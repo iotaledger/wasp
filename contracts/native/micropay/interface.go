@@ -33,7 +33,6 @@ const (
 	ParamLastOrd = "lo"
 
 	StateVarPublicKeys = "k"
-	StateVarLastOrdNum = "o"
 
 	WarrantRevokePeriod = 1 * time.Hour
 )

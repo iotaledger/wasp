@@ -9,7 +9,7 @@ type WaspConfigParams struct {
 	TxStreamPort                 int
 	TxStreamHost                 string
 	ProfilingPort                int
-	PrometheusPort               int
+	MetricsPort                  int
 	OffledgerBroadcastUpToNPeers int
 }
 
@@ -60,10 +60,11 @@ const WaspConfig = `
   },
   "profiling":{
     "bindAddress": "0.0.0.0:{{.ProfilingPort}}",
+    "writeProfiles": true,
     "enabled": false
   },
-  "prometheus": {
-    "bindAddress": "0.0.0.0:{{.PrometheusPort}}",
+  "metrics": {
+    "bindAddress": "0.0.0.0:{{.MetricsPort}}",
     "enabled": false
   }
 }

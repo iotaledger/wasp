@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -49,19 +48,18 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	}
 	sm.log.Debugf("notifyStateTransition: %sstate IS SYNCED to index %d and is approved by output %v",
 		gu, stateOutputIndex, iscp.OID(stateOutputID))
-	go sm.chain.Events().ChainTransition().Trigger(&chain.ChainTransitionEventData{
-		VirtualState:    sm.solidState.Clone(),
+	sm.chain.Events().ChainTransition().Trigger(&chain.ChainTransitionEventData{
+		VirtualState:    sm.solidState.Copy(),
 		ChainOutput:     sm.stateOutput,
 		OutputTimestamp: sm.stateOutputTimestamp,
 	})
-	go sm.chain.Events().StateSynced().Trigger(stateOutputID, stateOutputIndex)
 }
 
 func (sm *stateManager) isSynced() bool {
 	if sm.stateOutput == nil {
 		return false
 	}
-	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
+	return bytes.Equal(sm.solidState.StateCommitment().Bytes(), sm.stateOutput.GetStateData())
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -76,17 +74,17 @@ func (sm *stateManager) pullStateIfNeeded() {
 		if sm.stateOutput == nil {
 			sm.log.Debugf("pullState not needed: retry in %v", sm.pullStateRetryTime.Sub(nowis))
 		} else {
-			sm.log.Debugf("pullState not needed at index #%d: retry in %v",
+			sm.log.Debugf("pullState not needed, have stateOutput.Index=%d: retry in %v",
 				sm.stateOutput.GetStateIndex(), sm.pullStateRetryTime.Sub(nowis))
 		}
 	}
 }
 
-func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualState, approvingOutput ledgerstate.OutputID) bool {
+func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualStateAccess, approvingOutput ledgerstate.OutputID) bool {
 	sm.log.Debugw("addStateCandidateFromConsensus: adding state candidate",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
-		"hash", nextState.Hash(),
+		"hash", nextState.StateCommitment(),
 		"output", iscp.OID(approvingOutput),
 	)
 
@@ -99,11 +97,21 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 		sm.log.Errorf("addStateCandidateFromConsensus: state candidate does not contain block")
 		return false
 	}
+	if sm.solidState != nil && sm.solidState.BlockIndex() >= block.BlockIndex() {
+		// already processed
+		sm.log.Warnf("addStateCandidateFromConsensus: block index %v is not needed as solid state is already at index %v", block.BlockIndex(), sm.solidState.BlockIndex())
+		return false
+	}
 	block.SetApprovingOutputID(approvingOutput)
 	sm.addBlockAndCheckStateOutput(block, nextState)
 
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < block.BlockIndex() {
-		sm.log.Debugf("addStateCandidateFromConsensus: delaying pullStateRetry")
+		if sm.stateOutput == nil {
+			sm.log.Debugf("addStateCandidateFromConsensus: delaying pullStateRetry for %v: state output is nil", sm.timers.PullStateAfterStateCandidateDelay)
+		} else {
+			sm.log.Debugf("addStateCandidateFromConsensus: delaying pullStateRetry for %v: state output index %v is less than block index %v",
+				sm.timers.PullStateAfterStateCandidateDelay, sm.stateOutput.GetStateIndex(), block.BlockIndex())
+		}
 		sm.pullStateRetryTime = time.Now().Add(sm.timers.PullStateAfterStateCandidateDelay)
 	}
 
@@ -127,7 +135,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 }
 
 // addBlockAndCheckStateOutput function adds block to candidate list and returns true iff the block is new and is not yet approved by current stateOutput
-func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState state.VirtualState) bool {
+func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState state.VirtualStateAccess) bool {
 	isBlockNew, candidate := sm.syncingBlocks.addBlockCandidate(block, nextState)
 	if candidate == nil {
 		return false
@@ -155,11 +163,11 @@ func (sm *stateManager) storeSyncingData() {
 		return
 	}
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateHash %v, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputHash %v, StateOutputTimestamp %v",
-		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.Hash().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateHash.String(), sm.stateOutputTimestamp)
+		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.StateCommitment().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateHash.String(), sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
 		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
-		SyncedStateHash:       sm.solidState.Hash(),
+		SyncedStateHash:       sm.solidState.StateCommitment(),
 		SyncedStateTimestamp:  sm.solidState.Timestamp(),
 		StateOutputBlockIndex: sm.stateOutput.GetStateIndex(),
 		StateOutputID:         sm.stateOutput.ID(),

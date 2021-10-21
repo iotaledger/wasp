@@ -10,7 +10,7 @@ var activateCmd = &cobra.Command{
 	Short: "Activate the chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Check(MultiClient().ActivateChain(*GetCurrentChainID()))
+		log.Check(MultiClient().ActivateChain(GetCurrentChainID()))
 	},
 }
 
@@ -19,6 +19,6 @@ var deactivateCmd = &cobra.Command{
 	Short: "Deactivate the chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Check(MultiClient().DeactivateChain(*GetCurrentChainID()))
+		log.Check(MultiClient().DeactivateChain(GetCurrentChainID()))
 	},
 }

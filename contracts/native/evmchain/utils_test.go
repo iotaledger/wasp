@@ -27,7 +27,7 @@ import (
 )
 
 type evmChainInstance struct {
-	t            *testing.T
+	t            testing.TB
 	solo         *solo.Solo
 	soloChain    *solo.Chain
 	faucetKey    *ecdsa.PrivateKey
@@ -66,11 +66,15 @@ type ethCallOptions struct {
 	gasLimit uint64
 }
 
-func initEVMChain(t *testing.T, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
-	env := solo.New(t, true, false).WithNativeContract(Processor)
+func initEVMChain(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
+	env := solo.New(t, false, false).WithNativeContract(Processor)
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)
 	}
+	return initEVMChainWithSolo(t, env)
+}
+
+func initEVMChainWithSolo(t testing.TB, env *solo.Solo) *evmChainInstance {
 	faucetKey, _ := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	chainID := evm.DefaultChainID
 	e := &evmChainInstance{
@@ -130,7 +134,7 @@ func (e *evmChainInstance) getCode(addr common.Address) []byte {
 func (e *evmChainInstance) getGasPerIotas() uint64 {
 	ret, err := e.callView(FuncGetGasPerIota.Name)
 	require.NoError(e.t, err)
-	gasPerIotas, _, err := codec.DecodeUint64(ret.MustGet(FieldResult))
+	gasPerIotas, err := codec.DecodeUint64(ret.MustGet(FieldResult))
 	require.NoError(e.t, err)
 	return gasPerIotas
 }
@@ -174,16 +178,15 @@ func (e *evmChainInstance) getBalance(addr common.Address) *big.Int {
 func (e *evmChainInstance) getNonce(addr common.Address) uint64 {
 	ret, err := e.callView(FuncGetNonce.Name, FieldAddress, addr.Bytes())
 	require.NoError(e.t, err)
-	nonce, ok, err := codec.DecodeUint64(ret.MustGet(FieldResult))
+	nonce, err := codec.DecodeUint64(ret.MustGet(FieldResult))
 	require.NoError(e.t, err)
-	require.True(e.t, ok)
 	return nonce
 }
 
-func (e *evmChainInstance) getOwner() iscp.AgentID {
+func (e *evmChainInstance) getOwner() *iscp.AgentID {
 	ret, err := e.callView(FuncGetOwner.Name)
 	require.NoError(e.t, err)
-	owner, _, err := codec.DecodeAgentID(ret.MustGet(FieldResult))
+	owner, err := codec.DecodeAgentID(ret.MustGet(FieldResult))
 	require.NoError(e.t, err)
 	return owner
 }
@@ -262,7 +265,7 @@ func (e *evmChainInstance) estimateGas(callMsg ethereum.CallMsg) uint64 {
 		e.t.Logf("%v", err)
 		return evm.GasLimitDefault - 1
 	}
-	gas, _, err := codec.DecodeUint64(ret.MustGet(FieldResult))
+	gas, err := codec.DecodeUint64(ret.MustGet(FieldResult))
 	require.NoError(e.t, err)
 	return gas
 }
@@ -334,10 +337,10 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 		return
 	}
 
-	res.iotaChargedFee, _, err = codec.DecodeUint64(result.MustGet(FieldGasFee))
+	res.iotaChargedFee, err = codec.DecodeUint64(result.MustGet(FieldGasFee))
 	require.NoError(e.chain.t, err)
 
-	gasUsed, _, err := codec.DecodeUint64(result.MustGet(FieldGasUsed))
+	gasUsed, err := codec.DecodeUint64(result.MustGet(FieldGasUsed))
 	require.NoError(e.chain.t, err)
 
 	receiptResult, err := e.chain.callView(FuncGetReceipt.Name, FieldTransactionHash, tx.Hash().Bytes())
@@ -401,7 +404,7 @@ func (l *loopContractInstance) loop(opts ...ethCallOptions) (res callFnResult, e
 	return l.callFn(opts, "loop")
 }
 
-func generateEthereumKey(t *testing.T) (*ecdsa.PrivateKey, common.Address) {
+func generateEthereumKey(t testing.TB) (*ecdsa.PrivateKey, common.Address) {
 	key, err := crypto.GenerateKey()
 	require.NoError(t, err)
 	addr := crypto.PubkeyToAddress(key.PublicKey)

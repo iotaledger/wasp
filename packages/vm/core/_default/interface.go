@@ -5,6 +5,6 @@ import (
 )
 
 var (
-	Contract = coreutil.NewContract(coreutil.CoreContractDefault, "Default core contract")
+	Contract  = coreutil.NewContract(coreutil.CoreContractDefault, "Default core contract")
 	Processor = Contract.Processor(nil)
 )

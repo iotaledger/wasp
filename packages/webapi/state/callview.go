@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
@@ -59,7 +59,7 @@ func (s *callViewService) handleCallView(c echo.Context) error {
 	fname := c.Param("fname")
 
 	var params dict.Dict
-	if c.Request().Body != nil {
+	if c.Request().Body != http.NoBody {
 		if err := json.NewDecoder(c.Request().Body).Decode(&params); err != nil {
 			return httperrors.BadRequest("Invalid request body")
 		}
@@ -75,11 +75,6 @@ func (s *callViewService) handleCallView(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, ret)
 }
-
-const (
-	retryOnStateInvalidatedRetry   = 100 * time.Millisecond
-	retryOnStateInvalidatedTimeout = 2 * time.Second
-)
 
 func (s *callViewService) handleStateGet(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
@@ -102,10 +97,10 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		var err error
 		ret, err = theChain.GetStateReader().KVStoreReader().Get(kv.Key(key))
 		return err
-	}, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
+	})
 	if err != nil {
 		reason := fmt.Sprintf("View call failed: %v", err)
-		if errors.Is(err, optimism.ErrStateHasBeenInvalidated) {
+		if errors.Is(err, coreutil.ErrStateHasBeenInvalidated) {
 			return httperrors.Conflict(reason)
 		}
 		return httperrors.BadRequest(reason)

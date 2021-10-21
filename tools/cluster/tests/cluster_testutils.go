@@ -41,7 +41,6 @@ func (e *chainEnv) deployIncCounterSC(counter *cluster.MessageCounter) *ledgerst
 
 		require.EqualValues(e.t, programHash, cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
-		require.EqualValues(e.t, 0, cr.OwnerFee)
 		require.EqualValues(e.t, cr.Name, incCounterSCName)
 
 		counterValue, err := e.chain.GetCounterValue(incCounterSCHname, i)

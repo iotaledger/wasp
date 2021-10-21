@@ -7,10 +7,12 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
@@ -18,38 +20,38 @@ import (
 func NewChainOriginTransaction(
 	keyPair *ed25519.KeyPair,
 	stateAddress ledgerstate.Address,
-	balance map[ledgerstate.Color]uint64,
+	balances colored.Balances,
 	timestamp time.Time,
 	allInputs ...ledgerstate.Output,
-) (*ledgerstate.Transaction, iscp.ChainID, error) {
+) (*ledgerstate.Transaction, *iscp.ChainID, error) {
 	walletAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	txb := utxoutil.NewBuilder(allInputs...).WithTimestamp(timestamp)
 
 	stateHash := state.OriginStateHash()
-	if len(balance) == 0 {
-		balance = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA}
+	if len(balances) == 0 {
+		balances = colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA)
 	}
-	if err := txb.AddNewAliasMint(balance, stateAddress, stateHash.Bytes()); err != nil {
-		return nil, iscp.ChainID{}, err
+	if err := txb.AddNewAliasMint(colored.ToL1Map(balances), stateAddress, stateHash.Bytes()); err != nil {
+		return nil, nil, err
 	}
 	// adding reminder in compressing mode, i.e. all provided inputs will be consumed
 	if err := txb.AddRemainderOutputIfNeeded(walletAddr, nil, true); err != nil {
-		return nil, iscp.ChainID{}, err
+		return nil, nil, err
 	}
 	tx, err := txb.BuildWithED25519(keyPair)
 	if err != nil {
-		return nil, iscp.ChainID{}, err
+		return nil, nil, err
 	}
 	// determine aliasAddress of the newly minted chain
 	chained, err := utxoutil.GetSingleChainedAliasOutput(tx)
 	if err != nil {
-		return nil, iscp.ChainID{}, err
+		return nil, nil, err
 	}
 	chainID, err := iscp.ChainIDFromAddress(chained.Address())
 	if err != nil {
-		return nil, iscp.ChainID{}, err
+		return nil, nil, err
 	}
-	return tx, *chainID, nil
+	return tx, chainID, nil
 }
 
 // NewRootInitRequestTransaction is a first request to be sent to the uninitialized
@@ -58,7 +60,7 @@ func NewChainOriginTransaction(
 // TransactionEssence must be signed by the same address which created origin transaction
 func NewRootInitRequestTransaction(
 	keyPair *ed25519.KeyPair,
-	chainID iscp.ChainID,
+	chainID *iscp.ChainID,
 	description string,
 	timestamp time.Time,
 	allInputs ...ledgerstate.Output,
@@ -67,20 +69,16 @@ func NewRootInitRequestTransaction(
 
 	args := requestargs.New(nil)
 
-	const paramChainID = "$$chainid$$"
-	const paramDescription = "$$description$$"
+	args.AddEncodeSimple(governance.ParamChainID, codec.EncodeChainID(chainID))
+	args.AddEncodeSimple(governance.ParamDescription, codec.EncodeString(description))
 
-	args.AddEncodeSimple(paramChainID, codec.EncodeChainID(chainID))
-	args.AddEncodeSimple(paramDescription, codec.EncodeString(description))
-
-	metadata := request.NewRequestMetadata().
+	metadata := request.NewMetadata().
 		WithTarget(iscp.Hn("root")).
 		WithEntryPoint(iscp.EntryPointInit).
 		WithArgs(args).
 		Bytes()
-	err := txb.AddExtendedOutputConsume(chainID.AsAddress(), metadata, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: 1,
-	})
+
+	err := txb.AddExtendedOutputConsume(chainID.AsAddress(), metadata, colored.Balances1IotaL1)
 	if err != nil {
 		return nil, err
 	}

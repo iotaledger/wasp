@@ -40,7 +40,7 @@ type ChainEntry interface {
 	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
 	ReceiveOutput(output ledgerstate.Output)
-	ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string)
+	ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID string)
 
 	Dismiss(reason string)
 	IsDismissed() bool
@@ -55,7 +55,6 @@ type ChainRequests interface {
 type ChainEvents interface {
 	RequestProcessed() *events.Event
 	ChainTransition() *events.Event
-	StateSynced() *events.Event
 }
 
 type Chain interface {
@@ -186,7 +185,7 @@ type PeerStatus struct {
 }
 
 type ChainTransitionEventData struct {
-	VirtualState    state.VirtualState
+	VirtualState    state.VirtualStateAccess
 	ChainOutput     *ledgerstate.AliasOutput
 	OutputTimestamp time.Time
 }
@@ -204,9 +203,6 @@ const (
 )
 
 const (
-	// time tick for consensus and state manager objects
+	// TimerTickPeriod time tick for consensus and state manager objects
 	TimerTickPeriod = 100 * time.Millisecond
-
-	// retry delay for congested input channel for the consensus and state manager objects.channel.
-	ReceiveMsgChannelRetryDelay = 500 * time.Millisecond
 )

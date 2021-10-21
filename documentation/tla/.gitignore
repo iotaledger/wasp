@@ -1,0 +1,7 @@
+__tlacache__
+*.toolbox/*_SnapShot_*
+*.toolbox/*.aux
+*.toolbox/*.log
+*.toolbox/*.pdf
+*.toolbox/*.tex
+*.out

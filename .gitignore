@@ -6,9 +6,14 @@ cluster-data/
 dist/
 .idea/
 .vscode/
+*.bat
 *.bak
 wasp-cli.json
-*/pkg/
+**/pkg/
 **/target/
 .DS_Store
-tools/wasp-cli/wasp-cli
+./tools/wasp-cli/wasp-cli
+.docusaurus
+node_modules
+goshimmer.log
+/*.sh

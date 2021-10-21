@@ -24,9 +24,9 @@ func TestMarshalling(t *testing.T) {
 		dict.Dict{foo: []byte("bar")},
 	)
 
-	msg := NewOffledgerRequestMsg(
+	msg := NewOffLedgerRequestMsg(
 		iscp.RandomChainID(),
-		request.NewRequestOffLedger(contract, entrypoint, args),
+		request.NewOffLedger(contract, entrypoint, args),
 	)
 
 	// marshall the msg

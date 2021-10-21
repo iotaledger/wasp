@@ -43,7 +43,7 @@ var deployContractCmd = &cobra.Command{
 				blob.VarFieldProgramDescription: description,
 				blob.VarFieldProgramBinary:      util.ReadFile(filename),
 			})
-			progHash = uploadBlob(blobFieldValues, true)
+			progHash = uploadBlob(blobFieldValues)
 		}
 
 		deployContract(name, description, progHash, initParams)
@@ -51,7 +51,7 @@ var deployContractCmd = &cobra.Command{
 }
 
 func deployContract(name, description string, progHash hashing.HashValue, initParams dict.Dict) {
-	util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.RequestOffLedger, error) {
+	util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.OffLedger, error) {
 		return Client().PostOffLedgerRequest(
 			root.Contract.Hname(),
 			root.FuncDeployContract.Hname(),

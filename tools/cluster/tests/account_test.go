@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -30,17 +31,26 @@ func TestBasicAccounts(t *testing.T) {
 	newChainEnv(t, e.clu, chain).testBasicAccounts(counter)
 }
 
-func TestBasicAccountsN1(t *testing.T) {
-	e := setupWithNoChain(t)
-	chainNodes := []int{0}
-	counter, err := cluster.NewMessageCounter(e.clu, chainNodes, map[string]int{
-		"state": 3,
-	})
-	require.NoError(t, err)
-	defer counter.Close()
-	chain, err := e.clu.DeployChainWithDKG("single_node_chain", chainNodes, chainNodes, 1)
-	require.NoError(t, err)
-	newChainEnv(t, e.clu, chain).testBasicAccounts(counter)
+func TestBasicAccountsNLow(t *testing.T) {
+	runTest := func(tt *testing.T, n, t int) {
+		e := setupWithNoChain(tt)
+		chainNodes := make([]int, n)
+		for i := range chainNodes {
+			chainNodes[i] = i
+		}
+		counter, err := cluster.NewMessageCounter(e.clu, chainNodes, map[string]int{
+			"state": 3,
+		})
+		require.NoError(tt, err)
+		defer counter.Close()
+		chain, err := e.clu.DeployChainWithDKG(fmt.Sprintf("low_node_chain_%v_%v", n, t), chainNodes, chainNodes, uint16(t))
+		require.NoError(tt, err)
+		newChainEnv(tt, e.clu, chain).testBasicAccounts(counter)
+	}
+	t.Run("N=1", func(tt *testing.T) { runTest(tt, 1, 1) })
+	t.Run("N=2", func(tt *testing.T) { runTest(tt, 2, 2) })
+	t.Run("N=3", func(tt *testing.T) { runTest(tt, 3, 3) })
+	t.Run("N=4", func(tt *testing.T) { runTest(tt, 4, 3) })
 }
 
 func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
@@ -75,7 +85,6 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 
 		require.EqualValues(e.t, programHash1, cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
-		require.EqualValues(e.t, 0, cr.OwnerFee)
 		require.EqualValues(e.t, incCounterSCName, cr.Name)
 
 		counterValue, err := e.chain.GetCounterValue(hname, i)
@@ -83,9 +92,8 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		require.EqualValues(e.t, 42, counterValue)
 	}
 
-	if !e.clu.VerifyAddressBalances(e.chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA + 2,
-	}, "chain after deployment") {
+	if !e.clu.VerifyAddressBalances(e.chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2,
+		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+2), "chain after deployment") {
 		e.t.Fail()
 	}
 
@@ -107,19 +115,16 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		require.EqualValues(e.t, 43, counterValue)
 	}
 
-	if !e.clu.VerifyAddressBalances(scOwnerAddr, solo.Saldo-transferIotas, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - transferIotas,
-	}, "owner after") {
+	if !e.clu.VerifyAddressBalances(scOwnerAddr, solo.Saldo-transferIotas, colored.NewBalancesForIotas(solo.Saldo-transferIotas)) {
 		e.t.Fail()
 	}
 
-	if !e.clu.VerifyAddressBalances(e.chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+transferIotas+2, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA + transferIotas + 2,
-	}, "chain after") {
+	if !e.clu.VerifyAddressBalances(e.chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+transferIotas+2,
+		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+transferIotas+2), "chain after") {
 		e.t.Fail()
 	}
 	agentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), hname)
-	actual := e.getBalanceOnChain(agentID, ledgerstate.ColorIOTA)
+	actual := e.getBalanceOnChain(agentID, colored.IOTA)
 	require.EqualValues(e.t, 42, actual)
 }
 
@@ -169,7 +174,6 @@ func TestBasic2Accounts(t *testing.T) {
 
 		require.EqualValues(t, programHash1, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, incCounterSCName, cr.Name)
 
 		counterValue, err := chain.GetCounterValue(hname, i)
@@ -177,18 +181,17 @@ func TestBasic2Accounts(t *testing.T) {
 		require.EqualValues(t, 42, counterValue)
 	}
 
-	if !e.clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA + 2,
-	}, "chain after deployment") {
+	if !e.clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2,
+		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+2), "chain after deployment") {
 		t.Fail()
 	}
 
 	originatorSigScheme := chain.OriginatorKeyPair()
 	originatorAddress := chain.OriginatorAddress()
 
-	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - ledgerstate.DustThresholdAliasOutputIOTA - 2, //
-	}, "originator after deployment") {
+	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2,
+		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2),
+		"originator after deployment") {
 		t.Fail()
 	}
 	chEnv.checkLedger()
@@ -214,24 +217,22 @@ func TestBasic2Accounts(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 43, counterValue)
 	}
-	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - ledgerstate.DustThresholdAliasOutputIOTA - 2, // 1 for chain, 1 init, 1 inccounter
-	}, "originator after") {
+	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2,
+		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2),
+		"originator after") {
 		t.Fail()
 	}
-	if !e.clu.VerifyAddressBalances(myWalletAddr, solo.Saldo-transferIotas, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - transferIotas,
-	}, "myWalletAddr after") {
+	if !e.clu.VerifyAddressBalances(myWalletAddr, solo.Saldo-transferIotas, colored.NewBalancesForIotas(solo.Saldo-transferIotas), "myWalletAddr after") {
 		t.Fail()
 	}
-	if !e.clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2+transferIotas, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA + 2 + transferIotas,
-	}, "chain after") {
+	if !e.clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2+transferIotas,
+		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+2+transferIotas),
+		"chain after") {
 		t.Fail()
 	}
 	// verify and print chain accounts
 	agentID := iscp.NewAgentID(chain.ChainID.AsAddress(), hname)
-	actual := chEnv.getBalanceOnChain(agentID, ledgerstate.ColorIOTA)
+	actual := chEnv.getBalanceOnChain(agentID, colored.IOTA)
 	require.EqualValues(t, 42, actual)
 
 	chEnv.printAccounts("withdraw before")
@@ -251,12 +252,12 @@ func TestBasic2Accounts(t *testing.T) {
 
 	// must remain 0 on chain
 	agentID = iscp.NewAgentID(originatorAddress, 0)
-	actual = chEnv.getBalanceOnChain(agentID, ledgerstate.ColorIOTA)
+	actual = chEnv.getBalanceOnChain(agentID, colored.IOTA)
 	require.EqualValues(t, 0, actual)
 
-	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-3, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - ledgerstate.DustThresholdAliasOutputIOTA - 3,
-	}, "originator after withdraw: "+originatorAddress.String()) {
+	if !e.clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-3,
+		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-3),
+		"originator after withdraw: "+originatorAddress.String()) {
 		t.Fail()
 	}
 }

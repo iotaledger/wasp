@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,4 +30,15 @@ func TestMutationsMarshaling(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, util.GetHashValue(ms), util.GetHashValue(ms2))
+}
+
+func TestMutationsMisc(t *testing.T) {
+	m := NewMutations()
+	require.True(t, !m.Contains("kuku"))
+	m.Del("kuku")
+	require.True(t, m.Contains("kuku"))
+	m.Set("kuku", []byte("v"))
+	require.True(t, m.Contains("kuku"))
+	m.Del("kuku")
+	require.True(t, m.Contains("kuku"))
 }

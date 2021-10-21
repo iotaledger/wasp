@@ -5,7 +5,9 @@ package wasmproc
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -15,13 +17,12 @@ type ScUtility struct {
 	ScSandboxObject
 	nextRandom int
 	random     []byte
-	vm         *WasmProcessor
+	utils      iscp.Utils
+	wc         *WasmContext
 }
 
-func NewScUtility(vm *WasmProcessor) *ScUtility {
-	o := &ScUtility{}
-	o.vm = vm
-	return o
+func NewScUtility(wc *WasmContext) *ScUtility {
+	return &ScUtility{utils: sandbox_utils.NewUtils(), wc: wc}
 }
 
 func (o *ScUtility) InitObj(id, keyID int32, owner *ScDict) {
@@ -29,7 +30,7 @@ func (o *ScUtility) InitObj(id, keyID int32, owner *ScDict) {
 	if TestMode {
 		// preset randomizer to generate sequence 1..8 before
 		// continuing with proper hashed values
-		o.random = make([]byte, 8*8) //nolint:gomnd
+		o.random = make([]byte, 8*8)
 		for i := 0; i < len(o.random); i += 8 {
 			o.random[i] = byte(i + 1)
 		}
@@ -37,7 +38,7 @@ func (o *ScUtility) InitObj(id, keyID int32, owner *ScDict) {
 }
 
 func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
-	utils := o.vm.utils()
+	utils := o.utils
 	switch keyID {
 	case wasmhost.KeyBase58Decode:
 		base58Decoded, err := utils.Base58().Decode(string(bytes))
@@ -94,7 +95,7 @@ func (o *ScUtility) getRandom8Bytes() []byte {
 	if o.random == nil {
 		// need to initialize pseudo-random generator with
 		// a sufficiently random, yet deterministic, value
-		id := o.vm.ctx.GetEntropy()
+		id := o.wc.ctx.GetEntropy()
 		o.random = id[:]
 	}
 	i := o.nextRandom
@@ -124,7 +125,7 @@ func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
 	for i := 0; i < count; i++ {
 		sigsBin[i] = decode.Bytes()
 	}
-	pubKeyBin, sigBin, err := o.vm.utils().BLS().AggregateBLSSignatures(pubKeysBin, sigsBin)
+	pubKeyBin, sigBin, err := o.utils.BLS().AggregateBLSSignatures(pubKeysBin, sigsBin)
 	if err != nil {
 		o.Panic(err.Error())
 	}
@@ -136,7 +137,7 @@ func (o *ScUtility) validBLSSignature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	return o.vm.utils().BLS().ValidSignature(data, pubKey, signature)
+	return o.utils.BLS().ValidSignature(data, pubKey, signature)
 }
 
 func (o *ScUtility) validED25519Signature(bytes []byte) bool {
@@ -144,5 +145,5 @@ func (o *ScUtility) validED25519Signature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	return o.vm.utils().ED25519().ValidSignature(data, pubKey, signature)
+	return o.utils.ED25519().ValidSignature(data, pubKey, signature)
 }

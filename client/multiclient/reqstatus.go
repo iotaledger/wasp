@@ -21,7 +21,7 @@ func (m *MultiClient) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID isc
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by all nodes
-func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID iscp.ChainID, tx *ledgerstate.Transaction, timeout time.Duration) error {
+func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID *iscp.ChainID, tx *ledgerstate.Transaction, timeout time.Duration) error {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 

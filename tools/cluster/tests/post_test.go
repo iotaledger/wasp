@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -41,7 +42,6 @@ func (e *chainEnv) deployInccounter42(counter int64) *iscp.AgentID { //nolint:un
 
 		require.EqualValues(e.t, programHash, cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
-		require.EqualValues(e.t, 0, cr.OwnerFee)
 		require.EqualValues(e.t, cr.Name, inccounterName)
 
 		counterValue, err := e.chain.GetCounterValue(hname, i)
@@ -56,9 +56,9 @@ func (e *chainEnv) deployInccounter42(counter int64) *iscp.AgentID { //nolint:un
 			root.ParamHname: hname.Bytes(),
 		})
 	require.NoError(e.t, err)
-	recb, err := ret.Get(root.VarData)
+	recb, err := ret.Get(root.ParamContractRecData)
 	require.NoError(e.t, err)
-	rec, err := root.DecodeContractRecord(recb)
+	rec, err := root.ContractRecordFromBytes(recb)
 	require.NoError(e.t, err)
 	require.EqualValues(e.t, description, rec.Description)
 
@@ -77,7 +77,7 @@ func (e *chainEnv) getCounter(hname iscp.Hname) int64 {
 	)
 	require.NoError(e.t, err)
 
-	counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
+	counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
 	require.NoError(e.t, err)
 
 	return counter
@@ -123,7 +123,7 @@ func TestPost3Recursive(t *testing.T) {
 	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTransferIotas(1),
+		Transfer: colored.NewBalancesForIotas(1),
 		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		})),
@@ -160,11 +160,11 @@ func TestPost5Requests(t *testing.T) {
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
-	e.checkBalanceOnChain(myAgentID, ledgerstate.ColorIOTA, 0)
+	e.checkBalanceOnChain(myAgentID, colored.IOTA, 0)
 
-	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 5,
-	}, "myAddress in the end") {
+	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo-5,
+		colored.NewBalancesForIotas(solo.Saldo-5),
+		"myAddress in the end") {
 		t.Fail()
 	}
 	e.checkLedger()
@@ -197,11 +197,11 @@ func TestPost5AsyncRequests(t *testing.T) {
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
-	e.checkBalanceOnChain(myAgentID, ledgerstate.ColorIOTA, 0)
+	e.checkBalanceOnChain(myAgentID, colored.IOTA, 0)
 
-	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 5,
-	}, "myAddress in the end") {
+	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo-5,
+		colored.NewBalancesForIotas(solo.Saldo-5),
+		"myAddress in the end") {
 		t.Fail()
 	}
 	e.checkLedger()

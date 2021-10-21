@@ -3,14 +3,18 @@ package tests
 import (
 	"flag"
 	"io/ioutil"
+	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -33,7 +37,8 @@ type env struct {
 
 type chainEnv struct {
 	*env
-	chain *cluster.Chain
+	chain        *cluster.Chain
+	addressIndex uint64
 }
 
 func newChainEnv(t *testing.T, clu *cluster.Cluster, chain *cluster.Chain) *chainEnv {
@@ -74,7 +79,14 @@ func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map
 	if !*useWasp {
 		wasm, err := ioutil.ReadFile(wasmPath)
 		require.NoError(e.t, err)
-		_, ph, err := e.chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
+		chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, e.chain.OriginatorKeyPair())
+
+		reqTx, err := chClient.DepositFunds(100)
+		require.NoError(e.t, err)
+		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+		require.NoError(e.t, err)
+
+		ph, err := e.chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
 		require.NoError(e.t, err)
 		ret.programHash = ph
 		e.t.Logf("deployContract: proghash = %s\n", ph.String())
@@ -94,20 +106,52 @@ func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map
 	// return nil
 }
 
+func (e *chainEnv) createNewClient() *scclient.SCClient {
+	keyPair, _ := e.getOrCreateAddress()
+	client := e.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
+	return client
+}
+
+func (e *chainEnv) getOrCreateAddress() (*ed25519.KeyPair, *ledgerstate.ED25519Address) {
+	const minTokenAmountBeforeRequestingNewFunds uint64 = 100
+
+	randomAddress := rand.NewSource(time.Now().UnixNano())
+
+	keyPair := wallet.KeyPair(e.addressIndex)
+	myAddress := ledgerstate.NewED25519Address(keyPair.PublicKey)
+
+	funds, err := e.clu.GoshimmerClient().BalanceIOTA(myAddress)
+
+	require.NoError(e.t, err)
+
+	if funds <= minTokenAmountBeforeRequestingNewFunds {
+		// Requesting new token requires a new address
+
+		e.addressIndex = rand.New(randomAddress).Uint64()
+		e.t.Logf("Generating new address: %v", e.addressIndex)
+
+		keyPair = wallet.KeyPair(e.addressIndex)
+		myAddress = ledgerstate.NewED25519Address(keyPair.PublicKey)
+
+		e.requestFunds(myAddress, "myAddress")
+		e.t.Logf("Funds: %v, addressIndex: %v", funds, e.addressIndex)
+	}
+
+	return keyPair, myAddress
+}
+
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint iscp.Hname, tokens int, params map[string]interface{}) {
-	var transfer map[ledgerstate.Color]uint64
+	transfer := colored.NewBalances()
 	if tokens != 0 {
-		transfer = map[ledgerstate.Color]uint64{
-			ledgerstate.ColorIOTA: uint64(tokens),
-		}
+		transfer = colored.NewBalancesForIotas(uint64(tokens))
 	}
 	e.postRequestFull(contract, entryPoint, transfer, params)
 }
 
-func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint iscp.Hname, transfer map[ledgerstate.Color]uint64, params map[string]interface{}) {
-	var b *ledgerstate.ColoredBalances
+func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint iscp.Hname, transfer colored.Balances, params map[string]interface{}) {
+	b := colored.NewBalances()
 	if transfer != nil {
-		b = ledgerstate.NewColoredBalances(transfer)
+		b = transfer
 	}
 	tx, err := e.chainClient().Post1Request(contract, entryPoint, chainclient.PostRequestParams{
 		Transfer: b,
@@ -121,12 +165,12 @@ func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint isc
 	}
 }
 
-func setupWithNoChain(t *testing.T) *env {
-	return &env{t: t, clu: newCluster(t)}
+func setupWithNoChain(t *testing.T, opt ...interface{}) *env {
+	return &env{t: t, clu: newCluster(t, opt...)}
 }
 
-func setupWithChain(t *testing.T) *chainEnv {
-	e := setupWithNoChain(t)
+func setupWithChain(t *testing.T, opt ...interface{}) *chainEnv {
+	e := setupWithNoChain(t, opt...)
 	chain, err := e.clu.DeployDefaultChain()
 	require.NoError(t, err)
 	return newChainEnv(e.t, e.clu, chain)

@@ -1,18 +1,16 @@
 package dashboard
 
 import (
-	"fmt"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 type RootInfo struct {
-	ChainID iscp.ChainID
+	ChainID *iscp.ChainID
 
 	OwnerID          *iscp.AgentID
 	OwnerIDDelegated *iscp.AgentID
@@ -20,42 +18,44 @@ type RootInfo struct {
 	Description string
 	Contracts   map[iscp.Hname]*root.ContractRecord
 
-	FeeColor            ledgerstate.Color
+	FeeColor            colored.Color
 	DefaultOwnerFee     uint64
 	DefaultValidatorFee uint64
 }
 
-func (d *Dashboard) fetchRootInfo(ch chain.ChainCore) (ret RootInfo, err error) {
-	info, err := d.wasp.CallView(ch, root.Contract.Hname(), root.FuncGetChainInfo.Name, nil)
-	if err != nil {
-		err = fmt.Errorf("root view call failed: %v", err)
-		return
-	}
-
-	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
-	if err != nil {
-		err = fmt.Errorf("DecodeContractRegistry() failed: %v", err)
-		return
-	}
-
-	ownerID, _, err := codec.DecodeAgentID(info.MustGet(root.VarChainOwnerID))
-	if err != nil {
-		return
-	}
-	ret.OwnerID = &ownerID
-	delegated, ok, err := codec.DecodeAgentID(info.MustGet(root.VarChainOwnerIDDelegated))
-	if err != nil {
-		return
-	}
-	if ok {
-		ret.OwnerIDDelegated = &delegated
-	}
-	ret.Description, _, err = codec.DecodeString(info.MustGet(root.VarDescription))
+func (d *Dashboard) fetchRootInfo(chainID *iscp.ChainID) (ret RootInfo, err error) {
+	info, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.FuncGetChainInfo.Name, nil)
 	if err != nil {
 		return
 	}
 
-	ret.FeeColor, ret.DefaultOwnerFee, ret.DefaultValidatorFee, err = root.GetDefaultFeeInfo(info)
+	ownerID, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
+	if err != nil {
+		return
+	}
+	ret.OwnerID = ownerID
+	if info.MustHas(governance.VarChainOwnerIDDelegated) {
+		delegated, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerIDDelegated))
+		if err != nil {
+			return ret, err
+		}
+		ret.OwnerIDDelegated = delegated
+	}
+	ret.Description, err = codec.DecodeString(info.MustGet(governance.VarDescription), "")
+	if err != nil {
+		return
+	}
+
+	ret.FeeColor, ret.DefaultOwnerFee, ret.DefaultValidatorFee, err = governance.GetDefaultFeeInfo(info)
+	if err != nil {
+		return
+	}
+
+	recs, err := d.wasp.CallView(chainID, root.Contract.Name, root.FuncGetContractRecords.Name, nil)
+	if err != nil {
+		return
+	}
+	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.VarContractRegistry))
 	if err != nil {
 		return
 	}

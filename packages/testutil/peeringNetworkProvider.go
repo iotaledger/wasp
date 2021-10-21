@@ -33,7 +33,7 @@ func NewPeeringNetworkForLocs(peerNetIDs []string, bufSize int, log *logger.Logg
 		nodeIdentity := ed25519.GenerateKeyPair()
 		identities[i] = &nodeIdentity
 	}
-	behavior := NewPeeringNetReliable()
+	behavior := NewPeeringNetReliable(log)
 	return NewPeeringNetwork(peerNetIDs, identities, bufSize, behavior, log)
 }
 

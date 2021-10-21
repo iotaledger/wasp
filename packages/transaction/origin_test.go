@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,7 +20,7 @@ func TestCreateOrigin(t *testing.T) {
 	require.EqualValues(t, utxodb.RequestFundsAmount, u.BalanceIOTA(addr))
 	require.EqualValues(t, 0, u.BalanceIOTA(stateAddr))
 
-	bal100 := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+	bal100 := colored.NewBalancesForIotas(100)
 	tx, chainID, err := NewChainOriginTransaction(user, stateAddr, bal100, time.Now(), u.GetAddressOutputs(addr)...)
 	require.NoError(t, err)
 
@@ -41,7 +41,7 @@ func TestInitChain(t *testing.T) {
 	require.EqualValues(t, utxodb.RequestFundsAmount, u.BalanceIOTA(addr))
 	require.EqualValues(t, 0, u.BalanceIOTA(stateAddr))
 
-	bal100 := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+	bal100 := colored.NewBalancesForIotas(100)
 	tx, chainID, err := NewChainOriginTransaction(user, stateAddr, bal100, time.Now(), u.GetAddressOutputs(addr)...)
 	require.NoError(t, err)
 

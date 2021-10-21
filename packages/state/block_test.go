@@ -12,56 +12,42 @@ import (
 )
 
 func TestBlockBasic(t *testing.T) {
-	t.Run("fail no arguments", func(t *testing.T) {
-		_, err := newBlock()
-		require.Error(t, err)
-	})
 	t.Run("fail no state index", func(t *testing.T) {
 		su := NewStateUpdate()
-		_, err := newBlock(su)
+		_, err := newBlock(su.Mutations())
 		require.Error(t, err)
 	})
 	t.Run("ok block index", func(t *testing.T) {
-		su := NewStateUpdateWithBlockIndexMutation(42)
-		b1, err := newBlock(su)
+		su := NewStateUpdateWithBlocklogValues(42, time.Time{}, hashing.NilHash)
+		b1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, b1.Timestamp().IsZero())
+		require.EqualValues(t, hashing.NilHash, b1.PreviousStateHash())
 	})
 	t.Run("with timestamp", func(t *testing.T) {
 		nowis := time.Now()
-		su := NewStateUpdateWithBlockIndexMutation(42, nowis)
-		b1, err := newBlock(su)
+		ph := hashing.HashStrings("dummy-dummy")
+		su := NewStateUpdateWithBlocklogValues(42, nowis, ph)
+		b1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, nowis.Equal(b1.Timestamp()))
-	})
-	t.Run("several state updates", func(t *testing.T) {
-		nowis := time.Now()
-		su1 := NewStateUpdateWithBlockIndexMutation(42, nowis)
-		su2 := NewStateUpdateWithBlockIndexMutation(10)
-		b1, err := newBlock(su1, su2)
-		require.NoError(t, err)
-		require.EqualValues(t, 10, b1.BlockIndex())
-		require.True(t, nowis.Equal(b1.Timestamp()))
+		require.EqualValues(t, ph, b1.PreviousStateHash())
 	})
 }
 
 func TestBatches(t *testing.T) {
-	suBlock := NewStateUpdateWithBlockIndexMutation(2)
-	su1 := NewStateUpdate()
-	su2 := NewStateUpdate()
+	suBlock := NewStateUpdateWithBlocklogValues(2, time.Time{}, hashing.NilHash)
 
-	block1, err := newBlock(suBlock, su1, su2)
+	block1, err := newBlock(suBlock.Mutations())
 	require.NoError(t, err)
-	assert.EqualValues(t, 3, block1.Size())
 	assert.EqualValues(t, 2, block1.BlockIndex())
 	assert.True(t, block1.Timestamp().IsZero())
 
 	block1Bin := block1.Bytes()
 	block2, err := BlockFromBytes(block1Bin)
 	assert.NoError(t, err)
-	assert.EqualValues(t, 3, block2.Size())
 	assert.EqualValues(t, 2, block2.BlockIndex())
 	assert.EqualValues(t, block1Bin, block2.Bytes())
 	assert.EqualValues(t, block1.EssenceBytes(), block2.EssenceBytes())
@@ -98,4 +84,8 @@ func TestOriginBlock(t *testing.T) {
 	require.True(t, b.Timestamp().IsZero())
 	require.True(t, b1.Timestamp().IsZero())
 	require.True(t, b2.Timestamp().IsZero())
+
+	require.EqualValues(t, hashing.NilHash, b.PreviousStateHash())
+	require.EqualValues(t, hashing.NilHash, b1.PreviousStateHash())
+	require.EqualValues(t, hashing.NilHash, b2.PreviousStateHash())
 }

@@ -115,13 +115,14 @@ func (vm *WasmTimeVM) RunScFunction(index int32) error {
 	if export == nil {
 		return errors.New("unknown export function: 'on_call'")
 	}
+
 	frame := vm.PreCall()
-	err := vm.Run(func() (err error) {
+	defer vm.PostCall(frame)
+
+	return vm.Run(func() (err error) {
 		_, err = export.Func().Call(index)
 		return
 	})
-	vm.PostCall(frame)
-	return err
 }
 
 func (vm *WasmTimeVM) UnsafeMemory() []byte {

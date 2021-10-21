@@ -22,8 +22,8 @@ import (
 type MockedStateTransition struct {
 	t           *testing.T
 	chainKey    *ed25519.KeyPair
-	onNextState func(virtualState state.VirtualState, tx *ledgerstate.Transaction)
-	onVMResult  func(virtualState state.VirtualState, tx *ledgerstate.TransactionEssence)
+	onNextState func(virtualState state.VirtualStateAccess, tx *ledgerstate.Transaction)
+	onVMResult  func(virtualState state.VirtualStateAccess, tx *ledgerstate.TransactionEssence)
 }
 
 func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedStateTransition {
@@ -33,22 +33,22 @@ func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedSt
 	}
 }
 
-func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *ledgerstate.AliasOutput, ts time.Time, reqs ...iscp.Request) {
+func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutput *ledgerstate.AliasOutput, ts time.Time, reqs ...iscp.Request) {
 	if c.chainKey != nil {
 		require.True(c.t, chainOutput.GetStateAddress().Equals(ledgerstate.NewED25519Address(c.chainKey.PublicKey)))
 	}
 
-	nextvs := vs.Clone()
+	nextvs := vs.Copy()
 	prevBlockIndex := vs.BlockIndex()
 	counterKey := kv.Key(coreutil.StateVarBlockIndex + "counter")
 
 	counterBin, err := nextvs.KVStore().Get(counterKey)
 	require.NoError(c.t, err)
 
-	counter, _, err := codec.DecodeUint64(counterBin)
+	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(c.t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlockIndexMutation(prevBlockIndex + 1)
+	suBlockIndex := state.NewStateUpdateWithBlocklogValues(prevBlockIndex+1, time.Time{}, vs.StateCommitment())
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
@@ -63,7 +63,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *le
 	nextvs.ApplyStateUpdates(suBlockIndex, suCounter, suReqs)
 	require.EqualValues(c.t, prevBlockIndex+1, nextvs.BlockIndex())
 
-	nextStateHash := nextvs.Hash()
+	nextStateHash := nextvs.StateCommitment()
 
 	txBuilder := utxoutil.NewBuilder(chainOutput).WithTimestamp(ts)
 	err = txBuilder.AddAliasOutputAsRemainder(chainOutput.GetAliasAddress(), nextStateHash[:])
@@ -80,10 +80,10 @@ func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *le
 	}
 }
 
-func (c *MockedStateTransition) OnNextState(f func(virtualStats state.VirtualState, tx *ledgerstate.Transaction)) {
+func (c *MockedStateTransition) OnNextState(f func(virtualStats state.VirtualStateAccess, tx *ledgerstate.Transaction)) {
 	c.onNextState = f
 }
 
-func (c *MockedStateTransition) OnVMResult(f func(virtualStats state.VirtualState, tx *ledgerstate.TransactionEssence)) {
+func (c *MockedStateTransition) OnVMResult(f func(virtualStats state.VirtualStateAccess, tx *ledgerstate.TransactionEssence)) {
 	c.onVMResult = f
 }

@@ -44,7 +44,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict
 		ChainInput:         ch.GetChainOutput(),
 		Requests:           reqs,
 		Timestamp:          ch.Env.LogicalTime(),
-		VirtualState:       ch.State.Clone(),
+		VirtualStateAccess: ch.State.Copy(),
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log,
@@ -93,8 +93,8 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict
 
 	if task.RotationAddress == nil {
 		// normal state transition
-		ch.State = task.VirtualState
-		ch.settleStateTransition(tx, stateOutput, iscp.TakeRequestIDs(reqs...))
+		ch.State = task.VirtualStateAccess
+		ch.settleStateTransition(tx, stateOutput, iscp.TakeRequestIDs(reqs[0:task.ProcessedRequestsCount]...))
 	} else {
 		ch.Log.Infof("ROTATED STATE CONTROLLER to %s", stateOutput.GetStateAddress().Base58())
 	}
@@ -116,13 +116,13 @@ func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, stateOu
 	err = ch.State.Commit(block)
 	require.NoError(ch.Env.T, err)
 
-	blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(&ch.ChainID), ch.State.BlockIndex())
+	blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(ch.ChainID), ch.State.BlockIndex())
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
 	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
 
-	chain.PublishStateTransition(&ch.ChainID, stateOutput, len(reqids))
-	chain.PublishRequestsSettled(&ch.ChainID, stateOutput.GetStateIndex(), reqids)
+	chain.PublishStateTransition(ch.ChainID, stateOutput, len(reqids))
+	chain.PublishRequestsSettled(ch.ChainID, stateOutput.GetStateIndex(), reqids)
 
 	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
 		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence().Outputs()))

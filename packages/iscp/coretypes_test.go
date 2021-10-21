@@ -25,7 +25,7 @@ func TestAgentID(t *testing.T) {
 	t.Logf("agent ID string: %s", aid.String())
 	t.Logf("agent ID base58: %s", aid.Base58())
 
-	aidBack, err := NewAgentIDFromBytes(aid.Bytes())
+	aidBack, err := AgentIDFromBytes(aid.Bytes())
 	require.NoError(t, err)
 	require.True(t, aid.Equals(aidBack))
 

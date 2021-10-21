@@ -14,7 +14,7 @@ import (
 )
 
 type syncingBlocks struct {
-	blocks            map[uint32]*syncingBlock
+	blocks            map[uint32]*syncingBlock // StateIndex -> BlockCandidates
 	log               *logger.Logger
 	initialBlockRetry time.Duration
 }
@@ -33,16 +33,14 @@ func newSyncingBlocks(log *logger.Logger, initialBlockRetry time.Duration) *sync
 }
 
 func (syncsT *syncingBlocks) getRequestBlockRetryTime(stateIndex uint32) time.Time {
-	sync, ok := syncsT.blocks[stateIndex]
-	if !ok {
-		return time.Time{}
+	if sync, ok := syncsT.blocks[stateIndex]; ok {
+		return sync.requestBlockRetryTime
 	}
-	return sync.requestBlockRetryTime
+	return time.Time{}
 }
 
 func (syncsT *syncingBlocks) setRequestBlockRetryTime(stateIndex uint32, requestBlockRetryTime time.Time) {
-	sync, ok := syncsT.blocks[stateIndex]
-	if ok {
+	if sync, ok := syncsT.blocks[stateIndex]; ok {
 		sync.requestBlockRetryTime = requestBlockRetryTime
 	}
 }
@@ -52,9 +50,11 @@ func (syncsT *syncingBlocks) getBlockCandidates(stateIndex uint32) []*candidateB
 	if !ok {
 		return make([]*candidateBlock, 0)
 	}
-	result := make([]*candidateBlock, 0, len(sync.blockCandidates))
+	result := make([]*candidateBlock, len(sync.blockCandidates))
+	i := 0
 	for _, candidate := range sync.blockCandidates {
-		result = append(result, candidate)
+		result[i] = candidate
+		i++
 	}
 	return result
 }
@@ -109,7 +109,7 @@ func (syncsT *syncingBlocks) hasBlockCandidatesNotOlderThan(index uint32) bool {
 	return false
 }
 
-func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState state.VirtualState) (isBlockNew bool, candidate *candidateBlock) {
+func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState state.VirtualStateAccess) (isBlockNew bool, candidate *candidateBlock) {
 	stateIndex := block.BlockIndex()
 	hash := hashing.HashData(block.EssenceBytes())
 	syncsT.log.Debugf("addBlockCandidate: adding block candidate for index %v with essence hash %v; next state provided: %v", stateIndex, hash.String(), nextState != nil)

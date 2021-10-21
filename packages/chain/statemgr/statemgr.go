@@ -27,7 +27,7 @@ type stateManager struct {
 	peers                  peering.PeerDomainProvider
 	nodeConn               chain.NodeConnection
 	pullStateRetryTime     time.Time
-	solidState             state.VirtualState
+	solidState             state.VirtualStateAccess
 	stateOutput            *ledgerstate.AliasOutput
 	stateOutputTimestamp   time.Time
 	currentSyncData        atomic.Value
@@ -37,13 +37,13 @@ type stateManager struct {
 	log                    *logger.Logger
 
 	// Channels for accepting external events.
-	eventGetBlockMsgCh     chan *messages.GetBlockMsg
-	eventBlockMsgCh        chan *messages.BlockMsg
-	eventStateOutputMsgCh  chan *messages.StateMsg
-	eventOutputMsgCh       chan ledgerstate.Output
-	eventPendingBlockMsgCh chan *messages.StateCandidateMsg
-	eventTimerMsgCh        chan messages.TimerTick
-	closeCh                chan bool
+	eventGetBlockMsgCh       chan *messages.GetBlockMsg
+	eventBlockMsgCh          chan *messages.BlockMsg
+	eventStateOutputMsgCh    chan *messages.StateMsg
+	eventOutputMsgCh         chan ledgerstate.Output
+	eventStateCandidateMsgCh chan *messages.StateCandidateMsg
+	eventTimerMsgCh          chan messages.TimerTick
+	closeCh                  chan bool
 }
 
 const (
@@ -59,22 +59,22 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		timers = NewStateManagerTimers()
 	}
 	ret := &stateManager{
-		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
-		store:                  store,
-		chain:                  c,
-		nodeConn:               nodeconn,
-		peers:                  peers,
-		syncingBlocks:          newSyncingBlocks(c.Log(), timers.GetBlockRetry),
-		timers:                 timers,
-		log:                    c.Log().Named("s"),
-		pullStateRetryTime:     time.Now(),
-		eventGetBlockMsgCh:     make(chan *messages.GetBlockMsg),
-		eventBlockMsgCh:        make(chan *messages.BlockMsg),
-		eventStateOutputMsgCh:  make(chan *messages.StateMsg),
-		eventOutputMsgCh:       make(chan ledgerstate.Output),
-		eventPendingBlockMsgCh: make(chan *messages.StateCandidateMsg),
-		eventTimerMsgCh:        make(chan messages.TimerTick),
-		closeCh:                make(chan bool),
+		ready:                    ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
+		store:                    store,
+		chain:                    c,
+		nodeConn:                 nodeconn,
+		peers:                    peers,
+		syncingBlocks:            newSyncingBlocks(c.Log(), timers.GetBlockRetry),
+		timers:                   timers,
+		log:                      c.Log().Named("s"),
+		pullStateRetryTime:       time.Now(),
+		eventGetBlockMsgCh:       make(chan *messages.GetBlockMsg),
+		eventBlockMsgCh:          make(chan *messages.BlockMsg),
+		eventStateOutputMsgCh:    make(chan *messages.StateMsg),
+		eventOutputMsgCh:         make(chan ledgerstate.Output),
+		eventStateCandidateMsgCh: make(chan *messages.StateCandidateMsg),
+		eventTimerMsgCh:          make(chan messages.TimerTick),
+		closeCh:                  make(chan bool),
 	}
 	go ret.initLoadState()
 
@@ -91,32 +91,31 @@ func (sm *stateManager) initLoadState() {
 	if err != nil {
 		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err),
-		},
-		)
+		})
 		return
 	}
 	if stateExists {
+		sm.solidState = solidState
+		sm.chain.GlobalStateSync().SetSolidIndex(solidState.BlockIndex())
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
-			solidState.BlockIndex(), solidState.Hash().String())
+			solidState.BlockIndex(), solidState.StateCommitment().String())
 	} else if err := sm.createOriginState(); err != nil {
 		// create origin state in DB
 		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
-		},
-		)
+		})
 		return
 	}
 	sm.recvLoop() // Check to process external events.
 }
 
 func (sm *stateManager) createOriginState() error {
-	sm.chain.GlobalStateSync().InvalidateSolidIndex()
-
-	sm.chain.GlobalStateSync().Mutex().Lock()
-	defer sm.chain.GlobalStateSync().Mutex().Unlock()
-
 	var err error
+
+	sm.chain.GlobalStateSync().InvalidateSolidIndex()
 	sm.solidState, err = state.CreateOriginState(sm.store, sm.chain.ID())
+	sm.chain.GlobalStateSync().SetSolidIndex(0)
+
 	if err != nil {
 		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
@@ -124,7 +123,6 @@ func (sm *stateManager) createOriginState() error {
 		)
 		return err
 	}
-	sm.chain.GlobalStateSync().SetSolidIndex(0)
 	sm.log.Infof("ORIGIN STATE has been created")
 	return nil
 }
@@ -161,7 +159,7 @@ func (sm *stateManager) recvLoop() {
 			if ok {
 				sm.eventOutputMsg(msg)
 			}
-		case msg, ok := <-sm.eventPendingBlockMsgCh:
+		case msg, ok := <-sm.eventStateCandidateMsgCh:
 			if ok {
 				sm.eventStateCandidateMsg(msg)
 			}

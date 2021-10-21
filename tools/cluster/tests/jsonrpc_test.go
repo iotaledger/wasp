@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build !noevm
 // +build !noevm
 
 package tests
@@ -80,4 +81,12 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 
 func TestEVMJsonRPCClusterGetLogs(t *testing.T) {
 	newClusterTestEnv(t).TestRPCGetLogs()
+}
+
+func TestEVMJsonRPCClusterGasLimit(t *testing.T) {
+	newClusterTestEnv(t).TestRPCGasLimit()
+}
+
+func TestEVMJsonRPCClusterInvalidNonce(t *testing.T) {
+	newClusterTestEnv(t).TestRPCInvalidNonce()
 }

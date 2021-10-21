@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -26,7 +29,7 @@ type CallParams struct {
 	target      iscp.Hname
 	epName      string
 	entryPoint  iscp.Hname
-	transfer    *ledgerstate.ColoredBalances
+	transfer    colored.Balances
 	mintAmount  uint64
 	mintAddress ledgerstate.Address
 	args        requestargs.RequestArgs
@@ -75,19 +78,19 @@ func NewCallParamsOptimized(scName, funName string, optSize int, params ...inter
 
 // WithTransfer is a shorthand for the most often used case where only
 // a single color is transferred by WithTransfers
-func (r *CallParams) WithTransfer(color ledgerstate.Color, amount uint64) *CallParams {
-	return r.WithTransfers(map[ledgerstate.Color]uint64{color: amount})
+func (r *CallParams) WithTransfer(col colored.Color, amount uint64) *CallParams {
+	return r.WithTransfers(colored.Balances{col: amount})
 }
 
 // WithTransfers complement CallParams structure with the colored balances of tokens
 // in the form of a collection of pairs 'color': 'balance'
-func (r *CallParams) WithTransfers(transfer map[ledgerstate.Color]uint64) *CallParams {
-	r.transfer = ledgerstate.NewColoredBalances(transfer)
+func (r *CallParams) WithTransfers(transfer colored.Balances) *CallParams {
+	r.transfer = transfer
 	return r
 }
 
 func (r *CallParams) WithIotas(amount uint64) *CallParams {
-	return r.WithTransfer(ledgerstate.ColorIOTA, amount)
+	return r.WithTransfer(colored.IOTA, amount)
 }
 
 // WithMint adds additional mint proof
@@ -98,8 +101,8 @@ func (r *CallParams) WithMint(targetAddress ledgerstate.Address, amount uint64) 
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters
-func (r *CallParams) NewRequestOffLedger(keyPair *ed25519.KeyPair) *request.RequestOffLedger {
-	ret := request.NewRequestOffLedger(r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
+func (r *CallParams) NewRequestOffLedger(keyPair *ed25519.KeyPair) *request.OffLedger {
+	ret := request.NewOffLedger(r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
 	ret.Sign(keyPair)
 	return ret
 }
@@ -132,9 +135,9 @@ func toMap(params []interface{}) map[string]interface{} {
 
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
-// Locking on the mutex is needed to prevent mess when several goroutines work on he same address
+// Locking on the mutex is needed to prevent mess when several goroutines work on the same address
 func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, iscp.RequestID, error) {
-	if req.transfer == nil || req.transfer.Size() == 0 {
+	if len(req.transfer) == 0 {
 		return nil, iscp.RequestID{}, xerrors.New("transfer can't be empty")
 	}
 
@@ -147,18 +150,18 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	allOuts := ch.Env.utxoDB.GetAddressOutputs(addr)
 
-	metadata := request.NewRequestMetadata().
+	metadata := request.NewMetadata().
 		WithTarget(req.target).
 		WithEntryPoint(req.entryPoint).
 		WithArgs(req.args)
 
 	mdata := metadata.Bytes()
-	mdataBack := request.RequestMetadataFromBytes(mdata)
+	mdataBack := request.MetadataFromBytes(mdata)
 	require.True(ch.Env.T, mdataBack.ParsedOk())
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())
 	var err error
-	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, req.transfer.Map())
+	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, colored.ToL1Map(req.transfer))
 	require.NoError(ch.Env.T, err)
 	if req.mintAmount > 0 {
 		err = txb.AddMintingOutputConsume(req.mintAddress, req.mintAmount)
@@ -214,13 +217,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 	if err != nil {
 		return nil, err
 	}
-	rec, _, _, ok := ch.GetRequestReceipt(r.ID())
-	require.True(ch.Env.T, ok)
-	err = nil
-	if len(rec.LogData) > 0 {
-		err = xerrors.New(string(rec.LogData))
-	}
-	return res, err
+	return res, ch.mustGetErrorFromReceipt(r.ID())
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
@@ -228,21 +225,25 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*
 
 	tx, reqid, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
-		return nil, nil, err
+		return tx, nil, err
 	}
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
 	res, err := ch.runRequestsSync(reqs, "post")
 	if err != nil {
-		return nil, nil, err
+		return tx, nil, err
 	}
+	return tx, res, ch.mustGetErrorFromReceipt(reqid)
+}
+
+func (ch *Chain) mustGetErrorFromReceipt(reqid iscp.RequestID) error {
 	rec, _, _, ok := ch.GetRequestReceipt(reqid)
 	require.True(ch.Env.T, ok)
-	err = nil
-	if len(rec.LogData) > 0 {
-		err = xerrors.New(string(rec.LogData))
+	var err error
+	if len(rec.Error) > 0 {
+		err = xerrors.New(rec.Error)
 	}
-	return tx, res, err
+	return err
 }
 
 // callViewFull calls the view entry point of the smart contract
@@ -298,4 +299,9 @@ func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bo
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+// MempoolInfo returns stats about the chain mempool
+func (ch *Chain) MempoolInfo() chain.MempoolInfo {
+	return ch.mempool.Info()
 }
