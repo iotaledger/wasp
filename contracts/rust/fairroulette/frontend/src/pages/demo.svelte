@@ -58,8 +58,8 @@
     },
     [StateMessage.PlacingBet]: {
       title: 'Placing Bet',
-      description:
-        'Your bet is currently getting placed. The next round will begin in a few seconds.',
+      description: 'Your bet is currently getting placed.',
+      extra: 'The next round will begin in a few seconds.',
     },
   };
 
@@ -116,6 +116,9 @@
       {#if !(message === StateMessage.Running && !$timeToFinished)}
         <div class="description">
           {MESSAGES[message].description}
+          {#if message === StateMessage.PlacingBet && !$round?.active && MESSAGES[message].extra}
+            {MESSAGES[message].extra}
+          {/if}
         </div>
       {/if}
     </div>
