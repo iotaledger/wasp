@@ -74,12 +74,12 @@ We need to let _wasp-cli_ know how to reach _Wasp_ by configuring the API addres
 wasp-cli set wasp.0.api https://api.wasp.sc.iota.org
 ```
 
-Now you need to set the chain ID in _wasp-cli_ so that the correct chain can be found. Yo can find the ChainID by navigating to the (chains)[https://wasp.sc.iota.org/chains] page of the wasp dashboard. Click on the ChainID of the chain you will be able to copy the ChainID from the next page. It will be formatted like `jU5omBdJwyCVgMHZt2KfzKLMMGLJg26f1gqPsuFmYa7o`. 
+Now you need to set the chain ID in _wasp-cli_ so that the correct chain can be found. Yo can find the ChainID by navigating to the (chains)[https://wasp.sc.iota.org/chains] page of the wasp dashboard. Click on the ChainID of the chain you will be able to copy the ChainID from the next page. It will be formatted like `jaSDxeZNtum7kLuRg8oWQ6nXKgYjb3XVq7yiwnvtUG3C`. 
 
 Use the ChainID to tell _wasp-cli_ which chain you want to interact with. 
 
 ```
-wasp-cli set chains.testchain jU5omBdJwyCVgMHZt2KfzKLMMGLJg26f1gqPsuFmYa7o
+wasp-cli set chains.testchain jaSDxeZNtum7kLuRg8oWQ6nXKgYjb3XVq7yiwnvtUG3C
 wasp-cli set chain testchain
 ```
 
@@ -96,7 +96,7 @@ wasp-cli init
 wasp-cli set goshimmer.api https://api.goshimmer.sc.iota.org
 wasp-cli request-funds
 wasp-cli set wasp.0.api https://api.wasp.sc.iota.org
-wasp-cli set chains.testchain jU5omBdJwyCVgMHZt2KfzKLMMGLJg26f1gqPsuFmYa7o
+wasp-cli set chains.testchain jaSDxeZNtum7kLuRg8oWQ6nXKgYjb3XVq7yiwnvtUG3C
 wasp-cli set chain testchain
 ```
 
