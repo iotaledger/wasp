@@ -243,6 +243,7 @@ func (req *OnLedger) Bytes() []byte {
 
 func (req *OnLedger) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(req.Output()).
+		Write(req.ID()). // Goshimmer doesnt include outputID in serialization, so we neeed to add it manually
 		Write(req.senderAddress).
 		WriteTime(req.txTimestamp).
 		Write(req.requestMetadata).
@@ -254,6 +255,11 @@ func (req *OnLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 
 	if req.outputObj, err = ledgerstate.ExtendedOutputFromMarshalUtil(mu); err != nil {
 		return err
+	}
+	if outputID, err := ledgerstate.OutputIDFromMarshalUtil(mu); err != nil {
+		return err
+	} else {
+		req.outputObj.SetID(outputID)
 	}
 	if req.senderAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
 		return err

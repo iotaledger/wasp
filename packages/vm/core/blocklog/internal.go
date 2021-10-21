@@ -302,7 +302,7 @@ func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID)
 		a.Require(found, "inconsistency: request log record wasn't found by exact reference")
 		rec, err := RequestReceiptFromBytes(recBin)
 		a.RequireNoError(err)
-		if rec.Request.ID() == reqID {
+		if rec.Request.ID() == reqID { // TODO WHAT IS HAPPENING HERE?
 			return recBin, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex(), true
 		}
 	}

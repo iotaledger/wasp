@@ -68,7 +68,9 @@ func rndAddress() ledgerstate.Address {
 func rndOutput() *ledgerstate.ExtendedLockedOutput {
 	addr := rndAddress()
 	bals := colored.ToL1Map(colored.NewBalancesForIotas(42))
-	return ledgerstate.NewExtendedLockedOutput(bals, addr)
+	out := ledgerstate.NewExtendedLockedOutput(bals, addr)
+	out.SetID([ledgerstate.OutputIDLength]byte{123})
+	return out
 }
 
 func TestOnLedger(t *testing.T) {
@@ -78,7 +80,7 @@ func TestOnLedger(t *testing.T) {
 		require.NoError(t, err)
 		_, ok := reqBack.(*OnLedger)
 		require.True(t, ok)
-
+		require.Equal(t, req.ID(), reqBack.ID())
 		require.EqualValues(t, req.Bytes(), reqBack.Bytes())
 	})
 }
