@@ -27,9 +27,9 @@ This testnet is deployed with our own GoShimmer cluster dedicated to backing sma
 
 ## Endpoints
 
-The testnet can be accessed via a series of endpoints that hve been made available. 
+The testnet can be accessed via a series of endpoints that have been made available. 
 
-- https://wasp.sc.iota.org
+- https://wasp.sc.iota.org . **Username**: wasp . **Password**: wasp.
   - The Wasp dashboard to explore the node configuration and view peering/chain configurations
   - https://api.wasp.sc.iota.org
     - The Wasp api to deploy and interact with smart contracts
