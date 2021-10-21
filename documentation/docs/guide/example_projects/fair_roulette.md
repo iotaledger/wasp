@@ -37,8 +37,8 @@ Therefore the roulette is Fair.
 
 The mandatory setup consists out of:
 
-* 1 GoShimmer node >= 0.7.5v ([25c827e8326a](https://github.com/iotaledger/goshimmer/commit/25c827e8326a))
-* 1 Beta Wasp node
+* 1 [GoShimmer](https://wiki.iota.org/goshimmer/welcome) node >= 0.7.5v ([25c827e8326a](https://github.com/iotaledger/goshimmer/commit/25c827e8326a))
+* 1 Beta [Wasp node](../../guide/chains_and_nodes/running-a-node.md).
 * 1 Static file server (nginx, Apache, fasthttp)
 
 ## Technicalities
@@ -278,9 +278,17 @@ This means that to get a proper value from a view call, you should use `readUInt
 
 The frontend requires that you create a config file. You can copy the template from `contracts/rust/fairroulette/frontend/config.dev.sample.js`, and rename it to `config.dev.js` inside the same folder.
 
+```bash
+cp config.dev.sample.js config.dev.js
+```
+
 Make sure to update the config values according to your setup.
 
-The `chainId` is the chainId which gets defined after [deploying a chain](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain)
+The `chainId` is the chainId which gets defined after [deploying a chain](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain).  You can get your chain id from your dashboard, or list all chains by running:
+
+```bash
+wasp-cli chain list
+```
 
 `waspWebSocketUrl`, `waspApiUrl`, and `goShimmerApiUrl` are dependent on the location of your Wasp and GoShimmer nodes. Make sure to keep the path of the `waspWeb SocketUrl` (`/chain/%chainId/ws`) at the end. 
 
@@ -292,7 +300,6 @@ You can build the frontend by running the following commands:
 
 ```bash
 cd contracts/rust/fairroulette/frontend
-npm install
 npm run build_worker
 ```
 
@@ -305,10 +312,10 @@ If you want to expose the dev server to the public, it might be required to bind
 You should follow the [Deployment](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain) documentation until you reach the `deploy-contract` command.
 
 The deployment of a contract requires funds to be deposited to the **chain**. 
-You can do this by executing the following command: 
+You can do this by executing the following command from the directory where your Wasp node was configured: 
 
 ```bash
-./wasp-cli chain deposit IOTA:10000
+wasp-cli chain deposit IOTA:10000
 ```
 
 Make sure to [Build](#building-the-contract) the contract before deploying it. 
@@ -316,5 +323,5 @@ Make sure to [Build](#building-the-contract) the contract before deploying it.
 Now, you can deploy the contract with a wasmtime configuration.
 
 ```bash
-./wasp-cli chain deploy-contract wasmtime fairroulette "fairroulette"  contracts/rust/fairroulette/pkg/fairroulette_bg.wasm
+wasp-cli chain deploy-contract wasmtime fairroulette "fairroulette"  contracts/rust/fairroulette/pkg/fairroulette_bg.wasm
 ```

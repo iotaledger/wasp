@@ -41,6 +41,13 @@ plugin enabled. Being an experimental plugin, it is currently disabled by defaul
 be enabled via configuration.
 
 :::
+## Download Wasp
+
+You can get the source code of the latest Wasp version from the [official repository](https://github.com/iotaledger/wasp).
+
+```bash
+git clone https://github.com/iotaledger/wasp
+```
 
 ## Compile
 
@@ -57,6 +64,10 @@ make install
 ```bash
 make install-windows
 ```
+
+### Add to Path
+
+It is recommendable to add `wasp` and `wasp-cli` to your PATH. Please follow the instructions specific to your OS to do this.
 
 #### Microsoft Windows Installation Errors
 
@@ -80,14 +91,6 @@ You can run integration and unit test together with the following command:
 go test -tags rocksdb -timeout 20m ./...
 ```
 Keep in mind that this process may take several minutes.
-
-:::info Note
-
-Integration tests require the `wasp` and `wasp-cli` commands to be
-in the system path. This means you will need to run `go install ./...` before running
-tests.
-
-:::
 
 ### Run Unit Tests
 
@@ -185,9 +188,30 @@ For the Wasp node to communicate with the L1 (Tangle/Goshimmer Network), it need
 :::info note
 
 By default, the TXStream plugin will be listening for Wasp connections on port `5000`.
-To change this setting you can add the argument `--txstream.port: 12345`.
 
 :::
+
+### Default Configuration Changes
+
+If you are using the default GoShimmer docker image you will need to [edit your GoShimmer docker-compose.yml](https://wiki.iota.org/goshimmer/tutorials/setup#define-the-docker-composeyml) file to include the following settings.
+
+#### Add the TXStream plugin port
+
+```yml
+ports:
+    [...]
+      # TXStream plugin
+      - "0.0.0.0:5000:5000/tcp"
+    [...]
+```
+
+#### Enable TXStream and Faucet Plugins
+
+```yml
+[...]
+--node.enablePlugins=remotelog,networkdelay,spammer,prometheus,txstream,faucet
+[...]
+```
 
 ## Running the Node
 
@@ -205,3 +229,11 @@ wasp
 You can verify that your node is running by opening the dashboard with a web browser at [`127.0.0.1:7000`](http://127.0.0.1:7000) (default url).
 
 Repeat this process to launch as many nodes as you want for your committee.
+
+### Accessing Your Node From a Remote Machine 
+
+If you want to access the Wasp node from outside its local network, you will need to add your public IP to the `webpi.adminWhitelist`. You can do so by adding it to your config file, or running the node with the `webapi.adminWhitelist` flag.
+
+```bash
+wasp --webapi.adminWhitelist=127.0.0.1,YOUR_IP
+```
