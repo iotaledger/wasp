@@ -38,4 +38,4 @@ Wasp is the node software that we have built to let you validate smart contracts
 
 ## Feedback
 
-We are very eager to receive your feedback about your experiences with the IOTA Smart Contracts Beta. You can use [this form](https://docs.google.com/forms/d/e/1FAIpQLSd4jcmLzCPUNDIijEwGzuWerO23MS0Jmgzszgs-D6_awJUWow/viewform) to share your developer experience with us. This feedback will help is improve the product in follow up releases.
+We are very eager to receive your feedback about your experiences with the IOTA Smart Contracts Beta. You can use [this form](https://docs.google.com/forms/d/e/1FAIpQLSd4jcmLzCPUNDIijEwGzuWerO23MS0Jmgzszgs-D6_awJUWow/viewform) to share your developer experience with us. This feedback will help us improve the product in follow up releases.
