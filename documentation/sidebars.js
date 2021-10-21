@@ -251,7 +251,7 @@ module.exports = {
                     items: [
                         {
                             type: 'doc',
-                            label: 'Smart Contract Schemas',
+                            label: 'Wasm VM for ISCP',
                             id: 'guide/wasm_vm/intro',
                         },
                         {
