@@ -6,124 +6,76 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/contracts/common"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/contracts/rust/donatewithfeedback"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
-func setupTest(t *testing.T) *solo.Chain {
-	return common.StartChainAndDeployWasmContractByName(t, ScName)
+func setupTest(t *testing.T) *wasmsolo.SoloContext {
+	return wasmsolo.NewSoloContext(t, donatewithfeedback.ScName, donatewithfeedback.OnLoad)
 }
 
 func TestDeploy(t *testing.T) {
-	chain := common.StartChainAndDeployWasmContractByName(t, ScName)
-	_, err := chain.FindContract(ScName)
-	require.NoError(t, err)
+	ctx := setupTest(t)
+	require.NoError(t, ctx.ContractExists(donatewithfeedback.ScName))
 }
 
 func TestStateAfterDeploy(t *testing.T) {
-	chain := setupTest(t)
+	ctx := setupTest(t)
 
-	ret, err := chain.CallView(
-		ScName, ViewDonationInfo,
-	)
-	require.NoError(t, err)
+	donationInfo := donatewithfeedback.ScFuncs.DonationInfo(ctx)
+	donationInfo.Func.Call()
 
-	count, _, err := codec.DecodeInt64(ret[ResultCount])
-	require.NoError(t, err)
-	require.EqualValues(t, 0, count)
-
-	max, _, err := codec.DecodeInt64(ret[ResultMaxDonation])
-	require.NoError(t, err)
-	require.EqualValues(t, 0, max)
-
-	tot, _, err := codec.DecodeInt64(ret[ResultTotalDonation])
-	require.NoError(t, err)
-	require.EqualValues(t, 0, tot)
+	require.EqualValues(t, 0, donationInfo.Results.Count().Value())
+	require.EqualValues(t, 0, donationInfo.Results.MaxDonation().Value())
+	require.EqualValues(t, 0, donationInfo.Results.TotalDonation().Value())
 }
 
 func TestDonateOnce(t *testing.T) {
-	chain := setupTest(t)
+	ctx := setupTest(t)
 
-	donator1, donator1Addr := chain.Env.NewKeyPairWithFunds()
-	req := solo.NewCallParams(ScName, FuncDonate,
-		ParamFeedback, "Nice work!",
-	).WithIotas(42)
-	_, err := chain.PostRequestSync(req, donator1)
-	require.NoError(t, err)
+	donator1 := ctx.NewSoloAgent()
+	donate := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
+	donate.Params.Feedback().SetValue("Nice work!")
+	donate.Func.TransferIotas(42).Post()
+	require.NoError(t, ctx.Err)
 
-	ret, err := chain.CallView(
-		ScName, ViewDonationInfo,
-	)
-	require.NoError(t, err)
+	donationInfo := donatewithfeedback.ScFuncs.DonationInfo(ctx)
+	donationInfo.Func.Call()
 
-	count, _, err := codec.DecodeInt64(ret[ResultCount])
-	require.NoError(t, err)
-	require.EqualValues(t, 1, count)
-
-	max, _, err := codec.DecodeInt64(ret[ResultMaxDonation])
-	require.NoError(t, err)
-	require.EqualValues(t, 42, max)
-
-	tot, _, err := codec.DecodeInt64(ret[ResultTotalDonation])
-	require.NoError(t, err)
-	require.EqualValues(t, 42, tot)
+	require.EqualValues(t, 1, donationInfo.Results.Count().Value())
+	require.EqualValues(t, 42, donationInfo.Results.MaxDonation().Value())
+	require.EqualValues(t, 42, donationInfo.Results.TotalDonation().Value())
 
 	// 42 iota transferred from wallet to contract
-	chain.Env.AssertAddressBalance(donator1Addr, ledgerstate.ColorIOTA, solo.Saldo-42)
-	// 42 iota transferred to contract
-	chain.AssertAccountBalance(chain.ContractAgentID(ScName), ledgerstate.ColorIOTA, 42)
-	// returned 1 used for transaction to wallet account
-	account1 := iscp.NewAgentID(donator1Addr, 0)
-	chain.AssertAccountBalance(account1, ledgerstate.ColorIOTA, 0)
+	require.EqualValues(t, solo.Saldo-42, donator1.Balance())
+	require.EqualValues(t, 42, ctx.Balance(ctx.Account()))
 }
 
 func TestDonateTwice(t *testing.T) {
-	chain := setupTest(t)
+	ctx := setupTest(t)
 
-	donator1, donator1Addr := chain.Env.NewKeyPairWithFunds()
-	req := solo.NewCallParams(ScName, FuncDonate,
-		ParamFeedback, "Nice work!",
-	).WithIotas(42)
-	_, err := chain.PostRequestSync(req, donator1)
-	require.NoError(t, err)
+	donator1 := ctx.NewSoloAgent()
+	donate1 := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
+	donate1.Params.Feedback().SetValue("Nice work!")
+	donate1.Func.TransferIotas(42).Post()
+	require.NoError(t, ctx.Err)
 
-	donator2, donator2Addr := chain.Env.NewKeyPairWithFunds()
-	req = solo.NewCallParams(ScName, FuncDonate,
-		ParamFeedback, "Exactly what I needed!",
-	).WithIotas(69)
-	_, err = chain.PostRequestSync(req, donator2)
-	require.NoError(t, err)
+	donator2 := ctx.NewSoloAgent()
+	donate2 := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator2))
+	donate2.Params.Feedback().SetValue("Exactly what I needed!")
+	donate2.Func.TransferIotas(69).Post()
+	require.NoError(t, ctx.Err)
 
-	ret, err := chain.CallView(
-		ScName, ViewDonationInfo,
-	)
-	require.NoError(t, err)
+	donationInfo := donatewithfeedback.ScFuncs.DonationInfo(ctx)
+	donationInfo.Func.Call()
 
-	count, _, err := codec.DecodeInt64(ret[ResultCount])
-	require.NoError(t, err)
-	require.EqualValues(t, 2, count)
+	require.EqualValues(t, 2, donationInfo.Results.Count().Value())
+	require.EqualValues(t, 69, donationInfo.Results.MaxDonation().Value())
+	require.EqualValues(t, 42+69, donationInfo.Results.TotalDonation().Value())
 
-	max, _, err := codec.DecodeInt64(ret[ResultMaxDonation])
-	require.NoError(t, err)
-	require.EqualValues(t, 69, max)
-
-	tot, _, err := codec.DecodeInt64(ret[ResultTotalDonation])
-	require.NoError(t, err)
-	require.EqualValues(t, 42+69, tot)
-
-	// 42 iota transferred from wallet to contract plus 1 used for transaction
-	chain.Env.AssertAddressBalance(donator1Addr, ledgerstate.ColorIOTA, solo.Saldo-42)
-	// 69 iota transferred from wallet to contract plus 1 used for transaction
-	chain.Env.AssertAddressBalance(donator2Addr, ledgerstate.ColorIOTA, solo.Saldo-69)
-	// 42+69 iota transferred to contract
-	chain.AssertAccountBalance(chain.ContractAgentID(ScName), ledgerstate.ColorIOTA, 42+69)
-	// returned 1 used for transaction to wallet accounts
-	account1 := iscp.NewAgentID(donator1Addr, 0)
-	chain.AssertAccountBalance(account1, ledgerstate.ColorIOTA, 0)
-	account2 := iscp.NewAgentID(donator2Addr, 0)
-	chain.AssertAccountBalance(account2, ledgerstate.ColorIOTA, 0)
+	require.EqualValues(t, solo.Saldo-42, donator1.Balance())
+	require.EqualValues(t, solo.Saldo-69, donator2.Balance())
+	require.EqualValues(t, 42+69, ctx.Balance(ctx.Account()))
 }

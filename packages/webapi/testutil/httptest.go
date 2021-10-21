@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 )
@@ -71,9 +72,13 @@ func CallWebAPIRequestHandler(
 	c.SetParamValues(paramValues...)
 
 	err := handler(c)
-	require.NoError(t, err)
-
-	require.Equal(t, exptectedStatus, rec.Code)
+	if exptectedStatus >= 400 {
+		require.Error(t, err)
+		require.Equal(t, exptectedStatus, err.(*httperrors.HTTPError).Code)
+	} else {
+		require.NoError(t, err)
+		require.Equal(t, exptectedStatus, rec.Code)
+	}
 
 	if res != nil {
 		err = json.Unmarshal(rec.Body.Bytes(), res)

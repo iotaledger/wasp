@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package consensus
 
 import (
@@ -75,7 +78,7 @@ func (c *Consensus) eventVMResultMsg(msg *messages.VMResultMsg) {
 		essenceString = fmt.Sprintf("essence hash: %s", hashing.HashData(msg.Task.ResultTransactionEssence.Bytes()))
 	}
 	c.log.Debugf("VMResultMsg received: state index: %d state hash: %s %s",
-		msg.Task.VirtualState.BlockIndex(), msg.Task.VirtualState.Hash(), essenceString)
+		msg.Task.VirtualStateAccess.BlockIndex(), msg.Task.VirtualStateAccess.StateCommitment(), essenceString)
 	c.processVMResult(msg.Task)
 	c.takeAction()
 }
@@ -94,4 +97,14 @@ func (c *Consensus) eventTimerMsg(msg messages.TimerTick) {
 		}
 	}
 	c.takeAction()
+	if c.stateOutput != nil {
+		c.log.Debugf("Consensus::eventTimerMsg: stateIndex=%v, workflow=%+v",
+			c.stateOutput.GetStateIndex(),
+			c.workflow,
+		)
+	} else {
+		c.log.Debugf("Consensus::eventTimerMsg: stateIndex=nil, workflow=%+v",
+			c.workflow,
+		)
+	}
 }

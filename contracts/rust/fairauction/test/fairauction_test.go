@@ -7,168 +7,137 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/contracts/common"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/contracts/rust/fairauction"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	auctioneer     *ed25519.KeyPair
-	auctioneerAddr ledgerstate.Address
-	tokenColor     ledgerstate.Color
+	auctioneer *wasmsolo.SoloAgent
+	tokenColor wasmlib.ScColor
 )
 
-func setupTest(t *testing.T) *solo.Chain {
-	chain := common.StartChainAndDeployWasmContractByName(t, ScName)
+func startAuction(t *testing.T) *wasmsolo.SoloContext {
+	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauction.OnLoad)
 
 	// set up auctioneer account and mint some tokens to auction off
-	auctioneer, auctioneerAddr = chain.Env.NewKeyPairWithFunds()
-	newColor, err := chain.Env.MintTokens(auctioneer, 10)
-	require.NoError(t, err)
-	chain.Env.AssertAddressBalance(auctioneerAddr, ledgerstate.ColorIOTA, solo.Saldo-10)
-	chain.Env.AssertAddressBalance(auctioneerAddr, newColor, 10)
-	tokenColor = newColor
+	auctioneer = ctx.NewSoloAgent()
+	tokenColor, ctx.Err = auctioneer.Mint(10)
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, solo.Saldo-10, auctioneer.Balance())
+	require.EqualValues(t, 10, auctioneer.Balance(tokenColor))
 
-	// start auction
-	req := solo.NewCallParams(ScName, FuncStartAuction,
-		ParamColor, tokenColor,
-		ParamMinimumBid, 500,
-		ParamDescription, "Cool tokens for sale!",
-	).WithTransfers(map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: 25, // deposit, must be >=minimum*margin
-		tokenColor:            10, // the tokens to auction
-	})
-	_, err = chain.PostRequestSync(req, auctioneer)
-	require.NoError(t, err)
-	return chain
+	// start the auction
+	sa := fairauction.ScFuncs.StartAuction(ctx.Sign(auctioneer))
+	sa.Params.Color().SetValue(tokenColor)
+	sa.Params.MinimumBid().SetValue(500)
+	sa.Params.Description().SetValue("Cool tokens for sale!")
+	transfer := ctx.Transfer()
+	transfer.Set(wasmlib.IOTA, 25) // deposit, must be >=minimum*margin
+	transfer.Set(tokenColor, 10)   // the tokens to auction
+	sa.Func.Transfer(transfer).Post()
+	require.NoError(t, ctx.Err)
+	return ctx
 }
 
 func TestDeploy(t *testing.T) {
-	chain := common.StartChainAndDeployWasmContractByName(t, ScName)
-	_, err := chain.FindContract(ScName)
-	require.NoError(t, err)
+	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauction.OnLoad)
+	require.NoError(t, ctx.ContractExists(fairauction.ScName))
 }
 
 func TestFaStartAuction(t *testing.T) {
-	chain := setupTest(t)
+	ctx := startAuction(t)
 
 	// note 1 iota should be stuck in the delayed finalize_auction
-	chain.AssertAccountBalance(chain.ContractAgentID(ScName), ledgerstate.ColorIOTA, 25-1)
-	chain.AssertAccountBalance(chain.ContractAgentID(ScName), tokenColor, 10)
+	require.EqualValues(t, 25-1, ctx.Balance(ctx.Account()))
+	require.EqualValues(t, 10, ctx.Balance(ctx.Account(), tokenColor))
 
-	// auctioneer sent 25 deposit + 10 tokenColor + used 1 for request
-	chain.Env.AssertAddressBalance(auctioneerAddr, ledgerstate.ColorIOTA, solo.Saldo-35)
-	// 1 used for request was sent back to auctioneer's account on chain
-	account := iscp.NewAgentID(auctioneerAddr, 0)
-	chain.AssertAccountBalance(account, ledgerstate.ColorIOTA, 0)
+	// auctioneer sent 25 deposit + 10 tokenColor
+	require.EqualValues(t, solo.Saldo-25-10, auctioneer.Balance())
+	require.EqualValues(t, 0, auctioneer.Balance(tokenColor))
+	require.EqualValues(t, 0, ctx.Balance(auctioneer))
 
-	// remove delayed finalize_auction from backlog
-	chain.Env.AdvanceClockBy(61 * time.Minute)
-	require.True(t, chain.WaitForRequestsThrough(5))
+	// remove pending finalize_auction from backlog
+	ctx.AdvanceClockBy(61 * time.Minute)
+	require.True(t, ctx.WaitForPendingRequests(1))
 }
 
 func TestFaAuctionInfo(t *testing.T) {
-	chain := setupTest(t)
+	ctx := startAuction(t)
 
-	res, err := chain.CallView(
-		ScName, ViewGetInfo,
-		ParamColor, tokenColor,
-	)
-	require.NoError(t, err)
-	account := iscp.NewAgentID(auctioneerAddr, 0)
-	requireAgent(t, res, ResultCreator, *account)
-	requireInt64(t, res, ResultBidders, 0)
+	getInfo := fairauction.ScFuncs.GetInfo(ctx)
+	getInfo.Params.Color().SetValue(tokenColor)
+	getInfo.Func.Call()
 
-	// remove delayed finalize_auction from backlog
-	chain.Env.AdvanceClockBy(61 * time.Minute)
-	require.True(t, chain.WaitForRequestsThrough(5))
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, auctioneer.ScAgentID(), getInfo.Results.Creator().Value())
+	require.EqualValues(t, 0, getInfo.Results.Bidders().Value())
+
+	// remove pending finalize_auction from backlog
+	ctx.AdvanceClockBy(61 * time.Minute)
+	require.True(t, ctx.WaitForPendingRequests(1))
 }
 
 func TestFaNoBids(t *testing.T) {
-	chain := setupTest(t)
+	ctx := startAuction(t)
 
 	// wait for finalize_auction
-	chain.Env.AdvanceClockBy(61 * time.Minute)
-	require.True(t, chain.WaitForRequestsThrough(5))
+	ctx.AdvanceClockBy(61 * time.Minute)
+	require.True(t, ctx.WaitForPendingRequests(1))
 
-	res, err := chain.CallView(
-		ScName, ViewGetInfo,
-		ParamColor, tokenColor,
-	)
-	require.NoError(t, err)
-	requireInt64(t, res, ResultBidders, 0)
+	getInfo := fairauction.ScFuncs.GetInfo(ctx)
+	getInfo.Params.Color().SetValue(tokenColor)
+	getInfo.Func.Call()
+
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, 0, getInfo.Results.Bidders().Value())
 }
 
 func TestFaOneBidTooLow(t *testing.T) {
-	chain := setupTest(t)
+	ctx := startAuction(t)
+	chain := ctx.Chain
 
-	req := solo.NewCallParams(ScName, FuncPlaceBid,
-		ParamColor, tokenColor,
-	).WithIotas(100)
-	_, err := chain.PostRequestSync(req, auctioneer)
-	require.Error(t, err)
+	bidder := ctx.NewSoloAgent()
+	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
+	placeBid.Params.Color().SetValue(tokenColor)
+	placeBid.Func.TransferIotas(100).Post()
+	require.Error(t, ctx.Err)
 
 	// wait for finalize_auction
 	chain.Env.AdvanceClockBy(61 * time.Minute)
-	require.True(t, chain.WaitForRequestsThrough(6))
+	require.True(t, ctx.WaitForPendingRequests(1))
 
-	res, err := chain.CallView(
-		ScName, ViewGetInfo,
-		ParamColor, tokenColor,
-	)
-	require.NoError(t, err)
-	requireInt64(t, res, ResultHighestBid, -1)
-	requireInt64(t, res, ResultBidders, 0)
+	getInfo := fairauction.ScFuncs.GetInfo(ctx)
+	getInfo.Params.Color().SetValue(tokenColor)
+	getInfo.Func.Call()
+
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, 0, getInfo.Results.Bidders().Value())
+	require.EqualValues(t, -1, getInfo.Results.HighestBid().Value())
 }
 
 func TestFaOneBid(t *testing.T) {
-	chain := setupTest(t)
+	ctx := startAuction(t)
+	chain := ctx.Chain
 
-	bidder, bidderAddr := chain.Env.NewKeyPairWithFunds()
-	req := solo.NewCallParams(ScName, FuncPlaceBid,
-		ParamColor, tokenColor,
-	).WithIotas(500)
-	_, err := chain.PostRequestSync(req, bidder)
-	require.NoError(t, err)
+	bidder := ctx.NewSoloAgent()
+	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
+	placeBid.Params.Color().SetValue(tokenColor)
+	placeBid.Func.TransferIotas(500).Post()
+	require.NoError(t, ctx.Err)
 
 	// wait for finalize_auction
 	chain.Env.AdvanceClockBy(61 * time.Minute)
-	require.True(t, chain.WaitForRequestsThrough(6))
+	require.True(t, ctx.WaitForPendingRequests(1))
 
-	res, err := chain.CallView(
-		ScName, ViewGetInfo,
-		ParamColor, tokenColor,
-	)
-	require.NoError(t, err)
-	requireInt64(t, res, ResultBidders, 1)
-	requireInt64(t, res, ResultHighestBid, 500)
-	requireAgent(t, res, ResultHighestBidder, *iscp.NewAgentID(bidderAddr, 0))
-}
+	getInfo := fairauction.ScFuncs.GetInfo(ctx)
+	getInfo.Params.Color().SetValue(tokenColor)
+	getInfo.Func.Call()
 
-func requireAgent(t *testing.T, res dict.Dict, key string, expected iscp.AgentID) {
-	actual, exists, err := codec.DecodeAgentID(res.MustGet(kv.Key(key)))
-	require.NoError(t, err)
-	require.True(t, exists)
-	require.EqualValues(t, expected, actual)
-}
-
-func requireInt64(t *testing.T, res dict.Dict, key string, expected int64) {
-	actual, exists, err := codec.DecodeInt64(res.MustGet(kv.Key(key)))
-	require.NoError(t, err)
-	require.True(t, exists)
-	require.EqualValues(t, expected, actual)
-}
-
-//nolint:unused,deadcode
-func requireString(t *testing.T, res dict.Dict, key, expected string) {
-	actual, exists, err := codec.DecodeString(res.MustGet(kv.Key(key)))
-	require.NoError(t, err)
-	require.True(t, exists)
-	require.EqualValues(t, expected, actual)
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, 1, getInfo.Results.Bidders().Value())
+	require.EqualValues(t, 500, getInfo.Results.HighestBid().Value())
+	require.Equal(t, bidder.ScAddress().AsAgentID(), getInfo.Results.HighestBidder().Value())
 }

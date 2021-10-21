@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package consensus
 
 import (
@@ -8,6 +11,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/metrics"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
@@ -52,7 +58,7 @@ type MockedEnv struct {
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	NetworkCloser     io.Closer
 	DKSRegistries     []registry.DKShareRegistryProvider
-	ChainID           iscp.ChainID
+	ChainID           *iscp.ChainID
 	MockedACS         chain.AsynchronousCommonSubsetRunner
 	InitStateOutput   *ledgerstate.AliasOutput
 	mutex             sync.Mutex
@@ -68,7 +74,7 @@ type mockedNode struct {
 	Mempool     chain.Mempool              // Consensus needs
 	Consensus   chain.Consensus            // Consensus needs
 	store       kvstore.KVStore            // State manager mock
-	SolidState  state.VirtualState         // State manager mock
+	SolidState  state.VirtualStateAccess   // State manager mock
 	StateOutput *ledgerstate.AliasOutput   // State manager mock
 	Log         *logger.Logger
 	mutex       sync.Mutex
@@ -121,7 +127,8 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	outputs := ret.Ledger.GetAddressOutputs(ret.OriginatorAddress)
 	require.True(t, len(outputs) == 1)
 
-	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+	bals := colored.ToL1Map(colored.NewBalancesForIotas(100))
+
 	txBuilder := utxoutil.NewBuilder(outputs...)
 	err = txBuilder.AddNewAliasMint(bals, ret.StateAddress, state.OriginStateHash().Bytes())
 	require.NoError(t, err)
@@ -135,7 +142,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	ret.InitStateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = *iscp.NewChainID(ret.InitStateOutput.GetAliasAddress())
+	ret.ChainID = iscp.NewChainID(ret.InitStateOutput.GetAliasAddress())
 
 	return ret, originTx
 }
@@ -197,7 +204,8 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 			})
 		}
 	})
-	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), iscp.NewInMemoryBlobCache(), log)
+	mempoolMetrics := metrics.DefaultChainMetrics()
+	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
 
 	cfg := &consensusTestConfigProvider{
 		ownNetID:  nodeID,
@@ -215,7 +223,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	}
 	cmt, err := committee.New(
 		cmtRec,
-		&env.ChainID,
+		env.ChainID,
 		env.NetworkProviders[nodeIndex],
 		cfg,
 		env.DKSRegistries[nodeIndex],
@@ -226,11 +234,11 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	cmt.Attach(ret.ChainCore)
 
 	ret.StateOutput = env.InitStateOutput
-	ret.SolidState, err = state.CreateOriginState(ret.store, &env.ChainID)
+	ret.SolidState, err = state.CreateOriginState(ret.store, env.ChainID)
 	ret.stateSync.SetSolidIndex(0)
 	require.NoError(env.T, err)
 
-	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, true, timers)
+	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, true, metrics.DefaultChainMetrics(), timers)
 	cons.vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
 
@@ -248,7 +256,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 		defer ret.mutex.Unlock()
 		newState := msg.State
 		ret.Log.Infof("chainCore.StateCandidateMsg: state hash: %s, approving output: %s",
-			msg.State.Hash(), iscp.OID(msg.ApprovingOutputID))
+			msg.State.StateCommitment(), iscp.OID(msg.ApprovingOutputID))
 
 		if ret.SolidState != nil && ret.SolidState.BlockIndex() == newState.BlockIndex() {
 			ret.Log.Debugf("new state already committed for index %d", newState.BlockIndex())
@@ -304,7 +312,7 @@ func (n *mockedNode) checkStateApproval() {
 	}
 	stateHash, err := hashing.HashValueFromBytes(n.StateOutput.GetStateData())
 	require.NoError(n.Env.T, err)
-	require.EqualValues(n.Env.T, stateHash, n.SolidState.Hash())
+	require.EqualValues(n.Env.T, stateHash, n.SolidState.StateCommitment())
 
 	reqIDsForLastState := make([]iscp.RequestID, 0)
 	prefix := kv.Key(util.Uint32To4Bytes(n.SolidState.BlockIndex()))
@@ -329,7 +337,7 @@ func (n *mockedNode) EventStateTransition() {
 	n.ChainCore.GlobalStateSync().SetSolidIndex(n.SolidState.BlockIndex())
 
 	n.Consensus.EventStateTransitionMsg(&messages.StateTransitionMsg{
-		State:          n.SolidState.Clone(),
+		State:          n.SolidState.Copy(),
 		StateOutput:    n.StateOutput,
 		StateTimestamp: time.Now(),
 	})
@@ -417,7 +425,7 @@ func (env *MockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, i
 			return nil
 		}
 		if total >= nodeCount {
-			return fmt.Errorf("Wait for %s: test timeouted", waitName)
+			return fmt.Errorf("Wait for %s: test timed out", waitName)
 		}
 	}
 	return fmt.Errorf("WaitMempool: timeout expired %v", to)

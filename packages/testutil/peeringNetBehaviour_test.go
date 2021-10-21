@@ -14,7 +14,7 @@ import (
 
 func TestPeeringNetReliable(t *testing.T) {
 	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg, 1000)
 	doneCh := make(chan bool)
 	go func() {
 		for i := 0; i < 10; i++ {
@@ -23,7 +23,7 @@ func TestPeeringNetReliable(t *testing.T) {
 		doneCh <- true
 	}()
 	someNode := peeringNode{netID: "src"}
-	behavior := NewPeeringNetReliable()
+	behavior := NewPeeringNetReliable(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 10; i++ {
 		inCh <- &peeringMsg{from: &someNode}
@@ -36,7 +36,7 @@ func TestPeeringNetUnreliable(t *testing.T) {
 	t.SkipNow()
 
 	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg, 1000)
 	//
 	// Receiver process.
 	stopCh := make(chan bool)
@@ -84,7 +84,7 @@ func TestPeeringNetUnreliable(t *testing.T) {
 
 func TestPeeringNetGoodQuality(t *testing.T) {
 	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg, 1000)
 	//
 	// Receiver process.
 	stopCh := make(chan bool)

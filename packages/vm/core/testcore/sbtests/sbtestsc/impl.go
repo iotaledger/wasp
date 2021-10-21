@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -21,12 +21,9 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 // testEventLogGenericData is called several times in log_test.go
 func testEventLogGenericData(ctx iscp.Sandbox) (dict.Dict, error) {
 	params := ctx.Params()
-	inc, ok, err := codec.DecodeInt64(params.MustGet(VarCounter))
+	inc, err := codec.DecodeInt64(params.MustGet(VarCounter), 1)
 	if err != nil {
 		return nil, err
-	}
-	if !ok {
-		inc = 1
 	}
 	ctx.Event(fmt.Sprintf("[GenericData] Counter Number: %d", inc))
 	return nil, nil
@@ -54,11 +51,11 @@ func testChainOwnerIDFull(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func testSandboxCall(ctx iscp.SandboxView) (dict.Dict, error) {
-	ret, err := ctx.Call(root.Contract.Hname(), root.FuncGetChainInfo.Hname(), nil)
+	ret, err := ctx.Call(governance.Contract.Hname(), governance.FuncGetChainInfo.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
-	desc := ret.MustGet(root.VarDescription)
+	desc := ret.MustGet(governance.VarDescription)
 
 	ret.Set(VarSandboxCall, desc)
 
@@ -106,7 +103,7 @@ func testCallPanicViewEPFromView(ctx iscp.SandboxView) (dict.Dict, error) {
 }
 
 func doNothing(ctx iscp.Sandbox) (dict.Dict, error) {
-	if ctx.IncomingTransfer() == nil || ctx.IncomingTransfer().Size() == 0 {
+	if len(ctx.IncomingTransfer()) == 0 {
 		ctx.Log().Infof(MsgDoNothing)
 	} else {
 		ctx.Log().Infof(MsgDoNothing+" with transfer\n%s", ctx.IncomingTransfer().String())

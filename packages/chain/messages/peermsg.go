@@ -63,7 +63,7 @@ type DismissChainMsg struct {
 // StateTransitionMsg Notifies chain about changed state
 type StateTransitionMsg struct {
 	// new variable state
-	State state.VirtualState
+	State state.VirtualStateAccess
 	// corresponding state transaction
 	StateOutput *ledgerstate.AliasOutput
 	//
@@ -72,7 +72,7 @@ type StateTransitionMsg struct {
 
 // StateCandidateMsg Consensus sends the finalized next state to StateManager
 type StateCandidateMsg struct {
-	State             state.VirtualState
+	State             state.VirtualStateAccess
 	ApprovingOutputID ledgerstate.OutputID
 }
 

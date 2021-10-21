@@ -24,12 +24,14 @@ type PeeringNetBehavior interface {
 // That's for basic tests.
 type peeringNetReliable struct {
 	closeChs []chan bool
+	log      *logger.Logger
 }
 
 // NewPeeringNetReliable constructs the PeeringNetBehavior.
-func NewPeeringNetReliable() PeeringNetBehavior {
+func NewPeeringNetReliable(log *logger.Logger) PeeringNetBehavior {
 	return &peeringNetReliable{
 		closeChs: make([]chan bool, 0),
+		log:      log,
 	}
 }
 
@@ -53,7 +55,7 @@ func (n *peeringNetReliable) recvLoop(inCh, outCh chan *peeringMsg, closeCh chan
 		case <-closeCh:
 			return
 		case recv := <-inCh:
-			safeSendPeeringMsg(outCh, recv)
+			safeSendPeeringMsg(outCh, recv, n.log)
 		}
 	}
 }
@@ -137,15 +139,20 @@ func (n *peeringNetUnreliable) sendDelayed(recv *peeringMsg, outCh chan *peering
 		"Network delivers message %v -%v-> %v (duplicate %v/%v, delay=%vms)",
 		recv.from.netID, recv.msg.MsgType, dstNetID, dupNum, dupCount, delay.Milliseconds(),
 	)
-	safeSendPeeringMsg(outCh, recv)
+	safeSendPeeringMsg(outCh, recv, n.log)
 }
 
 // To avoid panics when tests are being stopped.
-func safeSendPeeringMsg(outCh chan *peeringMsg, recv *peeringMsg) {
+func safeSendPeeringMsg(outCh chan *peeringMsg, recv *peeringMsg, log *logger.Logger) {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Printf("NOTE: peeringNetReliable dropping message: %v\n", err)
 		}
 	}()
-	outCh <- recv
+	select {
+	case outCh <- recv:
+		return
+	default:
+		log.Warnf("Dropping message, because outCh is overflown.")
+	}
 }

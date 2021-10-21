@@ -3,96 +3,93 @@
 {{define "body"}}
 	{{ $chainid := .ChainID }}
 
-	{{if .Record}}
-		{{ $rootinfo := .RootInfo }}
-		{{ $desc := trim 50 $rootinfo.Description }}
+	{{ $rootinfo := .RootInfo }}
+	{{ $desc := trim 50 $rootinfo.Description }}
 
+	<div class="card fluid">
+		<h2 class="section">{{if $desc}}{{$desc}}{{else}}Chain <code>{{$chainid.Base58}}</code>{{end}}</h2>
+
+		<dl>
+			<dt>ChainID</dt><dd><code>{{.Record.ChainID.Base58}}</code></dd>
+			<dt>Active</dt><dd><code>{{.Record.Active}}</code></dd>
+			{{if .Record.Active}}
+				<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $rootinfo.OwnerID)}}</dd>
+				<dt>Delegated Owner ID</dt><dd>
+					{{- if $rootinfo.OwnerIDDelegated -}}
+						{{- template "agentid" (args .ChainID $rootinfo.OwnerIDDelegated) -}}
+					{{- end -}}
+				</dd>
+				<dt>Default owner fee</dt><dd><code>{{$rootinfo.DefaultOwnerFee}} {{colorref $rootinfo.FeeColor}}</code></dd>
+				<dt>Default validator fee</dt><dd><code>{{$rootinfo.DefaultValidatorFee}} {{colorref $rootinfo.FeeColor}}</code></dd>
+			{{end}}
+		</dl>
+	</div>
+
+	{{if .Record.Active}}
 		<div class="card fluid">
-			<h2 class="section">{{if $desc}}{{$desc}}{{else}}Chain <tt>{{$chainid.Base58}}</tt>{{end}}</h2>
-
+			<h3 class="section">Contracts</h3>
 			<dl>
-				<dt>ChainID</dt><dd><tt>{{.Record.ChainID.Base58}}</tt></dd>
-				<dt>Active</dt><dd><tt>{{.Record.Active}}</tt></dd>
-				{{if .Record.Active}}
-					<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $rootinfo.OwnerID)}}</dd>
-					<dt>Delegated Owner ID</dt><dd>
-						{{- if $rootinfo.OwnerIDDelegated -}}
-							{{- template "agentid" (args .ChainID $rootinfo.OwnerIDDelegated) -}}
-						{{- end -}}
-					</dd>
-					<dt>Default owner fee</dt><dd><tt>{{$rootinfo.DefaultOwnerFee}} {{$rootinfo.FeeColor}}</tt></dd>
-					<dt>Default validator fee</dt><dd><tt>{{$rootinfo.DefaultValidatorFee}} {{$rootinfo.FeeColor}}</tt></dd>
-				{{end}}
+			{{range $_, $c := $rootinfo.Contracts}}
+				<dt><a href="{{ uri "chainContract" $chainid.Base58 $c.Hname }}"><code>{{trim 30 $c.Name}}</code></a></dt>
+				<dd><code>{{trim 50 $c.Description}}</code></dd>
+			{{end}}
 			</dl>
 		</div>
 
-		{{if .Record.Active}}
-			<div class="card fluid">
-				<h3 class="section">Contracts</h3>
-				<dl>
-				{{range $_, $c := $rootinfo.Contracts}}
-					<dt><a href="{{ uri "chainContract" $chainid.Base58 $c.Hname }}"><tt>{{trim 30 $c.Name}}</tt></a></dt>
-					<dd><tt>{{trim 50 $c.Description}}</tt></dd>
+		<div class="card fluid">
+			<h3 class="section">On-chain accounts</h3>
+			<table>
+				<thead>
+					<tr>
+						<th>AgentID</th>
+					</tr>
+				</thead>
+				<tbody>
+				{{range $_, $agentid := .Accounts}}
+					<tr>
+						<td>{{template "agentid" (args $chainid $agentid)}}</td>
+					</tr>
 				{{end}}
-				</dl>
-			</div>
+				</tbody>
+			</table>
+			<h4>Total assets</h4>
+			{{ template "balances" .TotalAssets }}
+		</div>
 
-			<div class="card fluid">
-				<h3 class="section">On-chain accounts</h3>
-				<table>
-					<thead>
-						<tr>
-							<th>AgentID</th>
-						</tr>
-					</thead>
-					<tbody>
-					{{range $_, $agentid := .Accounts}}
-						<tr>
-							<td>{{template "agentid" (args $chainid $agentid)}}</td>
-						</tr>
-					{{end}}
-					</tbody>
-				</table>
-				<h4>Total assets</h4>
-				{{ template "balances" .TotalAssets }}
-			</div>
+		<div class="card fluid">
+			<h3 class="section">Blobs</h3>
+			<table>
+				<thead>
+					<tr>
+						<th style="flex: 2">Hash</th>
+						<th>Size (bytes)</th>
+					</tr>
+				</thead>
+				<tbody>
+				{{range $hash, $size := .Blobs}}
+					<tr>
+						<td style="flex: 2"><a href="{{ uri "chainBlob" $chainid.Base58 (hashref $hash) }}"><code>{{ hashref $hash }}</code></a></td>
+						<td>{{ $size }}</td>
+					</tr>
+				{{end}}
+				</tbody>
+			</table>
+		</div>
 
-			<div class="card fluid">
-				<h3 class="section">Blobs</h3>
-				<table>
-					<thead>
-						<tr>
-							<th style="flex: 2">Hash</th>
-							<th>Size (bytes)</th>
-						</tr>
-					</thead>
-					<tbody>
-					{{range $hash, $size := .Blobs}}
-						<tr>
-							<td style="flex: 2"><a href="{{ uri "chainBlob" $chainid.Base58 (hashref $hash) }}"><tt>{{ hashref $hash }}</tt></a></td>
-							<td>{{ $size }}</td>
-						</tr>
-					{{end}}
-					</tbody>
-				</table>
-			</div>
-
-			<div class="card fluid">
-				<h3 class="section">State</h3>
-				<dl>
-					<dt>State index</dt><dd><tt>{{.State.Index}}</tt></dd>
-					<dt>State hash</dt><dd><tt>{{.State.Hash}}</tt></dd>
-					<dt>Last updated</dt><dd><tt>{{formatTimestamp .State.Timestamp}}</tt></dd>
-					<dt>Approving Output ID</dt><dd><tt>{{.State.ApprovingOutputID.Base58}}</tt></dd>
-				</dl>
-			</div>
-
+		<div class="card fluid">
+			<h3 class="section">Latest block</h3>
+			<dl>
+				<dt>Block index</dt><dd><code>{{.LatestBlock.Index}}</code> <a href="{{ uri "chainBlock" $chainid.Base58 .LatestBlock.Index }}">View block</a></dd>
+				<dt>Last updated</dt><dd><code>{{formatTimestamp .LatestBlock.Info.Timestamp}}</code></dd>
+			</dl>
+		</div>
+		{{if .Committee}}
 			<div class="card fluid">
 				<h3 class="section">Committee</h3>
 				<dl>
 				<dt>Address</dt>      <dd>{{template "address" .Committee.Address}}</dd>
-				<dt>Size</dt>      <dd><tt>{{.Committee.Size}}</tt></dd>
-				<dt>Quorum</dt>    <dd><tt>{{.Committee.Quorum}}</tt></dd>
+				<dt>Size</dt>      <dd><code>{{.Committee.Size}}</code></dd>
+				<dt>Quorum</dt>    <dd><code>{{.Committee.Quorum}}</code></dd>
 				<dt>Quorum status</dt>    <dd>{{if .Committee.QuorumIsAlive}}up{{else}}down{{end}}</dd>
 				</dl>
 				<h4>Peer status</h4>
@@ -108,7 +105,7 @@
 				{{range $_, $s := .Committee.PeerStatus}}
 					<tr>
 						<td>{{$s.Index}}</td>
-						<td><tt>{{$s.PeeringID}}</tt></td>
+						<td><code>{{$s.PeeringID}}</code></td>
 						<td>{{if $s.Connected}}up{{else}}down{{end}}</td>
 					</tr>
 				{{end}}
@@ -116,8 +113,6 @@
 				</table>
 			</div>
 		{{end}}
-		{{ template "ws" .ChainID }}
-	{{else}}
-		<div class="card fluid error">No chain record for ID <td>{{$chainid.Base58}}</tt></div>
 	{{end}}
+	{{ template "ws" .ChainID }}
 {{end}}

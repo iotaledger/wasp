@@ -35,7 +35,7 @@ type Chain struct {
 	Quorum         uint16
 	StateAddress   ledgerstate.Address
 
-	ChainID iscp.ChainID
+	ChainID *iscp.ChainID
 
 	Cluster *Cluster
 }
@@ -130,29 +130,24 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 	return tx, nil
 }
 
-func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte, initParams map[string]interface{}) (*ledgerstate.Transaction, hashing.HashValue, error) {
+func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte, initParams map[string]interface{}) (hashing.HashValue, error) {
 	blobFieldValues := codec.MakeDict(map[string]interface{}{
 		blob.VarFieldVMType:             vmtypes.WasmTime,
 		blob.VarFieldProgramBinary:      progBinary,
 		blob.VarFieldProgramDescription: description,
 	})
 
-	quorum := (2*len(ch.CommitteeAPIHosts()))/3 + 1
-	programHash, tx, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.CommitteeAPIHosts(), quorum, 256)
+	programHash, _, err := ch.OriginatorClient().UploadBlob(blobFieldValues)
 	if err != nil {
-		return nil, hashing.NilHash, err
-	}
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
-	if err != nil {
-		return nil, hashing.NilHash, err
+		return hashing.NilHash, err
 	}
 
 	progBinaryBack, err := ch.GetBlobFieldValue(programHash, blob.VarFieldProgramBinary)
 	if err != nil {
-		return nil, hashing.NilHash, err
+		return hashing.NilHash, err
 	}
 	if !bytes.Equal(progBinary, progBinaryBack) {
-		return nil, hashing.NilHash, fmt.Errorf("!bytes.Equal(progBinary, progBinaryBack)")
+		return hashing.NilHash, fmt.Errorf("!bytes.Equal(progBinary, progBinaryBack)")
 	}
 	fmt.Printf("---- blob installed correctly len = %d\n", len(progBinaryBack))
 
@@ -165,7 +160,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	params[root.ParamDescription] = description
 
 	args := requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params))
-	tx, err = ch.OriginatorClient().Post1Request(
+	tx, err := ch.OriginatorClient().Post1Request(
 		root.Contract.Hname(),
 		root.FuncDeployContract.Hname(),
 		chainclient.PostRequestParams{
@@ -173,14 +168,14 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 		},
 	)
 	if err != nil {
-		return nil, hashing.NilHash, err
+		return hashing.NilHash, err
 	}
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
 	if err != nil {
-		return nil, hashing.NilHash, err
+		return hashing.NilHash, err
 	}
 
-	return tx, programHash, nil
+	return programHash, nil
 }
 
 func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {
@@ -213,8 +208,7 @@ func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
 	if err != nil {
 		return 0, err
 	}
-	n, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
-	return n, err
+	return codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex), 0)
 }
 
 func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.BlockInfo, error) {
@@ -242,7 +236,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 
 func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.ContractRecord, error) {
 	cl := ch.SCClient(root.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
+	ret, err := cl.CallView(root.FuncGetContractRecords.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -255,8 +249,7 @@ func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int)
 	if err != nil {
 		return 0, err
 	}
-	n, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
-	return n, err
+	return codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
 }
 
 func (ch *Chain) GetStateVariable(contractHname iscp.Hname, key string, nodeIndex ...int) ([]byte, error) {
@@ -264,7 +257,7 @@ func (ch *Chain) GetStateVariable(contractHname iscp.Hname, key string, nodeInde
 	return cl.StateGet(key)
 }
 
-func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID, nodeIndex ...int) (*blocklog.RequestReceipt, uint32, uint16, error) {
+func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID, nodeIndex ...int) (*blocklog.RequestReceipt, uint32, uint16, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
 	ret, err := cl.CallView(blocklog.FuncGetRequestReceipt.Name, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
 	if err != nil {
@@ -284,7 +277,7 @@ func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID, nodeIndex ...int) (*b
 	return rec, blockIndex, requestIndex, nil
 }
 
-func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32, nodeIndex ...int) ([]*blocklog.RequestReceipt, error) {
+func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32, nodeIndex ...int) ([]*blocklog.RequestReceipt, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
 	res, err := cl.CallView(blocklog.FuncGetRequestReceiptsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(blockIndex),

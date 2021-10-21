@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -21,10 +23,7 @@ type ImmutableMap struct {
 	name string
 }
 
-const (
-	mapSizeKeyCode = byte(0)
-	mapElemKeyCode = byte(1)
-)
+const mapElemKeyCode = byte('#')
 
 func NewMap(kvStore kv.KVStore, name string) *Map {
 	return &Map{
@@ -49,10 +48,7 @@ func (m *ImmutableMap) Name() string {
 }
 
 func (m *ImmutableMap) getSizeKey() kv.Key {
-	var buf bytes.Buffer
-	buf.Write([]byte(m.name))
-	buf.WriteByte(mapSizeKeyCode)
-	return kv.Key(buf.Bytes())
+	return kv.Key(m.name)
 }
 
 func (m *ImmutableMap) getElemKey(key []byte) kv.Key {
@@ -209,18 +205,16 @@ func (m *ImmutableMap) MustIterateKeys(f func(elemKey []byte) bool) {
 	}
 }
 
-func (m *ImmutableMap) IterateBalances(f func(color ledgerstate.Color, bal uint64) bool) error {
-	var err error
+func (m *ImmutableMap) MustIterateBalances(f func(color colored.Color, bal uint64) bool) {
 	m.MustIterate(func(elemKey []byte, value []byte) bool {
-		col, _, err := ledgerstate.ColorFromBytes(elemKey)
+		col, err := colored.ColorFromBytes(elemKey)
 		if err != nil {
-			return false
+			panic(xerrors.Errorf("MustIterateBalances: %w", err))
 		}
 		v, err := util.Uint64From8Bytes(value)
 		if err != nil {
-			return false
+			panic(xerrors.Errorf("MustIterateBalances: %w", err))
 		}
 		return f(col, v)
 	})
-	return err
 }

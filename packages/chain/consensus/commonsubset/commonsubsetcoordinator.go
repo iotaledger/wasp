@@ -96,7 +96,7 @@ func (csc *CommonSubsetCoordinator) RunACSConsensus(
 		return
 	}
 	if cs, err = csc.getOrCreateCS(sessionID, stateIndex, callback); err != nil {
-		csc.log.Errorf("Unable to get a CommonSubset instance for sessionID=%v, reason=%v", sessionID, err)
+		csc.log.Debugf("Unable to get a CommonSubset instance for sessionID=%v, reason=%v", sessionID, err)
 		return
 	}
 	cs.Input(value)
@@ -117,7 +117,7 @@ func (csc *CommonSubsetCoordinator) TryHandleMessage(recv *peering.RecvEvent) bo
 	var err error
 	var cs *CommonSubset
 	if cs, err = csc.getOrCreateCS(mb.sessionID, mb.stateIndex, nil); err != nil {
-		csc.log.Errorf("Unable to get a CommonSubset instance for sessionID=%v, reason=%v", mb.sessionID, err)
+		csc.log.Debugf("Unable to get a CommonSubset instance for sessionID=%v, reason=%v", mb.sessionID, err)
 		return true
 	}
 	cs.HandleMsgBatch(&mb)

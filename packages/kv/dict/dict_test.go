@@ -1,7 +1,6 @@
 package dict
 
 import (
-	"bytes"
 	"encoding/json"
 	"testing"
 
@@ -66,7 +65,7 @@ func TestBytes(t *testing.T) {
 	assert.EqualValues(t, h11, h12)
 }
 
-func TestDetereminism(t *testing.T) {
+func TestDeterminism(t *testing.T) {
 	vars1 := New()
 	h1 := util.GetHashValue(vars1)
 
@@ -130,15 +129,9 @@ func TestMarshaling(t *testing.T) {
 	vars1.Set("k3", []byte("kuku"))
 	vars1.Set("k4", []byte{2})
 
-	var buf bytes.Buffer
-	err := vars1.Write(&buf)
+	vars2, err := FromBytes(vars1.Bytes())
 	assert.NoError(t, err)
-
-	vars2 := New()
-	err = vars2.Read(bytes.NewBuffer(buf.Bytes()))
-	assert.NoError(t, err)
-
-	assert.EqualValues(t, util.GetHashValue(vars1), util.GetHashValue(vars2))
+	require.EqualValues(t, vars1.Bytes(), vars2.Bytes())
 }
 
 func TestJSONMarshaling(t *testing.T) {
@@ -156,17 +149,4 @@ func TestJSONMarshaling(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, util.GetHashValue(vars1), util.GetHashValue(vars2))
-}
-
-func TestBytes2(t *testing.T) {
-	d := New()
-	d.Set("k1", []byte{})
-	data, err := util.Bytes(d)
-	require.NoError(t, err)
-
-	dBack := New()
-	rdr := bytes.NewReader(data)
-	err = dBack.Read(rdr)
-	require.NoError(t, err)
-	require.True(t, d.Equals(dBack))
 }

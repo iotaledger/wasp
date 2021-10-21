@@ -24,7 +24,7 @@ func TestEnv(t *testing.T) {
 	node0.StateManager.Ready().MustWait()
 
 	require.NotNil(t, node0.StateManager.(*stateManager).solidState)
-	require.EqualValues(t, state.OriginStateHash(), node0.StateManager.(*stateManager).solidState.Hash())
+	require.EqualValues(t, state.OriginStateHash(), node0.StateManager.(*stateManager).solidState.StateCommitment())
 	require.False(t, node0.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
 	env.AddNode(node0)
 
@@ -43,7 +43,7 @@ func TestEnv(t *testing.T) {
 
 	require.NotNil(t, node1.StateManager.(*stateManager).solidState)
 	require.False(t, node1.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
-	require.EqualValues(t, state.OriginStateHash(), node1.StateManager.(*stateManager).solidState.Hash())
+	require.EqualValues(t, state.OriginStateHash(), node1.StateManager.(*stateManager).solidState.StateCommitment())
 
 	node1.StartTimer()
 	waitSyncBlockIndexAndCheck(1*time.Second, t, node1, 0)
@@ -61,7 +61,7 @@ func TestGetInitialState(t *testing.T) {
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
 	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
-	require.EqualValues(t, state.OriginStateHash(), node.StateManager.(*stateManager).solidState.Hash())
+	require.EqualValues(t, state.OriginStateHash(), node.StateManager.(*stateManager).solidState.StateCommitment())
 
 	node.StartTimer()
 
@@ -74,7 +74,7 @@ func TestGetInitialState(t *testing.T) {
 	syncInfo := waitSyncBlockIndexAndCheck(3*time.Second, t, node, 0)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
-	require.EqualValues(t, manager.solidState.Hash(), state.OriginStateHash())
+	require.EqualValues(t, manager.solidState.StateCommitment(), state.OriginStateHash())
 	require.EqualValues(t, 0, syncInfo.SyncedBlockIndex)
 	require.EqualValues(t, 0, syncInfo.StateOutputBlockIndex)
 }
@@ -87,7 +87,7 @@ func TestGetNextState(t *testing.T) {
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
 	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
-	require.EqualValues(t, state.OriginStateHash(), node.StateManager.(*stateManager).solidState.Hash())
+	require.EqualValues(t, state.OriginStateHash(), node.StateManager.(*stateManager).solidState.StateCommitment())
 
 	node.StartTimer()
 
@@ -100,7 +100,7 @@ func TestGetNextState(t *testing.T) {
 	waitSyncBlockIndexAndCheck(1*time.Second, t, node, 0)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
-	require.EqualValues(t, manager.solidState.Hash(), state.OriginStateHash())
+	require.EqualValues(t, manager.solidState.StateCommitment(), state.OriginStateHash())
 
 	//-------------------------------------------------------------
 
@@ -108,14 +108,14 @@ func TestGetNextState(t *testing.T) {
 	require.NotNil(t, currentState)
 	currentStateOutput := manager.stateOutput
 	require.NotNil(t, currentState)
-	currh := currentState.Hash()
+	currh := currentState.StateCommitment()
 	require.EqualValues(t, currh[:], currentStateOutput.GetStateData())
 
 	node.StateTransition.NextState(currentState, currentStateOutput, time.Now())
 	waitSyncBlockIndexAndCheck(3*time.Second, t, node, 1)
 
 	require.EqualValues(t, 1, manager.stateOutput.GetStateIndex())
-	require.EqualValues(t, manager.solidState.Hash().Bytes(), manager.stateOutput.GetStateData())
+	require.EqualValues(t, manager.solidState.StateCommitment().Bytes(), manager.stateOutput.GetStateData())
 	require.False(t, manager.syncingBlocks.hasBlockCandidates())
 }
 

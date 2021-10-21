@@ -33,7 +33,7 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(listBlobsCmd)
 	chainCmd.AddCommand(storeBlobCmd)
 	chainCmd.AddCommand(showBlobCmd)
-	chainCmd.AddCommand(logCmd)
+	chainCmd.AddCommand(eventsCmd)
 	chainCmd.AddCommand(blockCmd())
 	chainCmd.AddCommand(requestCmd())
 	chainCmd.AddCommand(postRequestCmd())

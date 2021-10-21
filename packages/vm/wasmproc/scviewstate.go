@@ -5,10 +5,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
-// Wraps immutable view state into a mutable KVStore
+// ScViewState wraps immutable view state into a mutable KVStore
 // with the KVWriter functions implemented as panics
 // WaspLib already takes care of the immutability aspect,
-// so these panics should never trigger and we can avoid
+// so these panics should never trigger, and we can avoid
 // a much more drastic refactoring for now
 type ScViewState struct {
 	ctxView   iscp.SandboxView

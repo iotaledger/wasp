@@ -26,8 +26,14 @@ func TestBasic(t *testing.T) {
 	if !testing.Short() {
 		t.Run("N=10/T=7/allRandom=true", func(tt *testing.T) { testBasic(tt, 10, 7, true) })
 		t.Run("N=10/T=7/allRandom=false", func(tt *testing.T) { testBasic(tt, 10, 7, false) })
-		t.Run("N=40/T=27/allRandom=true", func(tt *testing.T) { testBasic(tt, 40, 27, true) })
-		t.Run("N=40/T=27/allRandom=false", func(tt *testing.T) { testBasic(tt, 40, 27, false) })
+		t.Run("N=40/T=27/allRandom=true", func(tt *testing.T) {
+			testutil.SkipHeavy(tt)
+			testBasic(tt, 40, 27, true)
+		})
+		t.Run("N=40/T=27/allRandom=false", func(tt *testing.T) {
+			testutil.SkipHeavy(tt)
+			testBasic(tt, 40, 27, false)
+		})
 	}
 }
 
@@ -36,9 +42,12 @@ func testBasic(t *testing.T, peerCount, threshold uint16, allRandom bool) {
 	defer log.Sync()
 	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
+	networkLog := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
 	networkProviders, networkCloser := testpeers.SetupNet(
-		peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(),
-		testlogger.WithLevel(log.Named("Network"), logger.LevelDebug, false),
+		peerNetIDs,
+		peerIdentities,
+		testutil.NewPeeringNetReliable(networkLog),
+		networkLog,
 	)
 	t.Logf("Network created.")
 
@@ -62,7 +71,8 @@ func testBasic(t *testing.T, peerCount, threshold uint16, allRandom bool) {
 	for a := range acsPeers {
 		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
-		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, dkShares[a], allRandom, nil, log)
+		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
+		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, dkShares[a], allRandom, nil, acsLog)
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")
@@ -117,7 +127,8 @@ func TestRandomized(t *testing.T) {
 	for a := range acsPeers {
 		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
-		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, dkShares[a], true, nil, log)
+		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
+		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, dkShares[a], true, nil, acsLog)
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")
@@ -176,9 +187,10 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16) {
 	defer log.Sync()
 	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
+	networkLog := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
 	networkProviders, networkCloser := testpeers.SetupNet(
-		peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(),
-		testlogger.WithLevel(log.Named("Network"), logger.LevelDebug, false),
+		peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(networkLog),
+		networkLog,
 	)
 	t.Logf("Network created.")
 
@@ -195,7 +207,8 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16) {
 		ii := i // Use a local copy in the callback.
 		group, err := networkProviders[i].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
-		acsCoords[i] = commonsubset.NewCommonSubsetCoordinator(peeringID, networkProviders[i], group, dkShares[i], log)
+		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("CSC[%02d]", i)), logger.LevelInfo, false)
+		acsCoords[i] = commonsubset.NewCommonSubsetCoordinator(peeringID, networkProviders[i], group, dkShares[i], acsLog)
 		networkProviders[ii].Attach(&peeringID, func(recv *peering.RecvEvent) {
 			if acsCoords[ii] != nil {
 				require.True(t, acsCoords[ii].TryHandleMessage(recv))
@@ -241,14 +254,17 @@ func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16) {
 	defer log.Sync()
 	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
+	networkLog := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
 	networkProviders, networkCloser := testpeers.SetupNet(
-		peerNetIDs, peerIdentities, testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 100*time.Millisecond, log),
-		testlogger.WithLevel(log.Named("Network"), logger.LevelDebug, false),
+		peerNetIDs,
+		peerIdentities,
+		testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 100*time.Millisecond, networkLog),
+		networkLog,
 	)
 	t.Logf("Network created.")
 	logs := make([]*logger.Logger, peerCount)
 	for i := range logs {
-		logs[i] = log.Named(fmt.Sprintf("%02d", i))
+		logs[i] = testlogger.WithLevel(log.Named(fmt.Sprintf("CSC[%02d]", i)), logger.LevelInfo, false)
 	}
 
 	dkAddress, dkShares := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())

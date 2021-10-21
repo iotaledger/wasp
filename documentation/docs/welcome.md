@@ -2,7 +2,7 @@
 
 [Wasp](https://github.com/iotaledger/wasp) is a node software developed by the
 [IOTA Foundation](http://iota.org) to run the _IOTA Smart Contract Protocol_
-(_ISCP_ in short) on top of the _IOTA Tangle_.  Please find here a [high level
+(_ISCP_ in short) on top of the _IOTA Tangle_. Please find here a [high level
 introduction](https://blog.iota.org/an-introduction-to-iota-smart-contracts-16ea6f247936)
 into ISCP.
 
@@ -12,30 +12,29 @@ the contract. Since the UTXO ledger is immutable, by extension the smart
 contract state is also immutable.
 
 A _committee_ of an arbitrary number of Wasp nodes runs a _chain_ of smart
-contracts.  The main purpose of the _committee_ is to ensure consistent
+contracts. The main purpose of the _committee_ is to ensure consistent
 transition from the previous state to the next, according to the attached
-program.  This ensures that the operation of smart contracts is distributed,
+program. This ensures that the operation of smart contracts is distributed,
 fault-tolerant and leaderless.
 
-The articles below explain how to run a Wasp node on the Pollen network, as
+The articles below explain how to run a Wasp node on the Goshimmer network, as
 well as concepts and architecture of ISCP and Wasp.
 
 _Disclaimer: Wasp node and articles is a work in progress, and most likely will
-always be.  The software presented in this repository is not ready for use in
+always be. The software presented in this repository is not ready for use in
 commercial settings or whenever processing of critical data is involved._
 
 ## Prerequisites
 
-- Go 1.15
-- Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
-  production operation
+- Go 1.16
+- Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node. (GoShimmer is a developing prototype, so some things are prone to break, for a smoother development experience it is recommend to use the GoShimmer code at [this commit](https://github.com/iotaledger/goshimmer/commit/25c827e8326a))
 
 Note: The Wasp node requires the Goshimmer node to have the
 [TXStream](https://github.com/iotaledger/goshimmer/tree/master/plugins/txstream)
 plugin enabled. Being an experimental plugin, it is currently disabled by default and can
 be enabled via configuration.
 
-- [RocksDB](https://github.com/facebook/rocksdb/blob/master/INSTALL.md)
+- [RocksDB 6.15.5](https://github.com/facebook/rocksdb/blob/master/INSTALL.md) (due to an open [issue](https://github.com/tecbot/gorocksdb/issues/203#issuecomment-801067439) more recent versions of rocksdb might not work currently)
 
 ### Microsoft Windows Installation Errors
 
@@ -50,12 +49,7 @@ C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 
 ## Compile
 
-- Build the `wasp` binary (Wasp node): `go build -tags rocksdb`
-- Build the `wasp-cli` binary (CLI client): `go build -tags rocksdb ./tools/wasp-cli`
-
-Alternatively, build and install everything with `go install -tags rocksdb ./...`
-
-On Windows you will need to use `go install -tags rocksdb -buildmode=exe ./...` instead
+- Build the `wasp` (Wasp node) and the `wasp-cli` (CLI client) binaries: `make build` (or `make build-windows` if you're on a windows machine)
 
 ## Test
 
@@ -68,7 +62,7 @@ tests).
 
 ## Run
 
-- [How to run a Wasp node on Pollen](misc/runwasp.md)
+- [How to run a Wasp node](misc/runwasp.md)
 - [Using `wasp-cli` to deploy a chain and a contract](misc/deploy.md)
 
 ## Learn

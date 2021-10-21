@@ -5,7 +5,7 @@ The documentation is built using [Docusaurus 2](https://docusaurus.io/). The dep
 ## Prerequisites
 
 - [Node.js v14.14+](https://nodejs.org/en/)
-- [npm](https://npmjs.com)
+- [yarn](https://yarnpkg.com/getting-started/install)
 
 ## Installation
 
@@ -33,7 +33,7 @@ npm run clean
 This command deletes the local wiki and local links.
 
 
-## Including .md file
+## Including .md file 
 
 ```console
 {@import <file path>}

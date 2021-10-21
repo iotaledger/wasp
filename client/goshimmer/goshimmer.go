@@ -2,6 +2,7 @@ package goshimmer
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/goshimmer/client"
@@ -19,8 +20,11 @@ type Client struct {
 
 // NewClient returns a new Goshimmer client
 func NewClient(goshimmerHost string, faucetPowTarget int) *Client {
+	if !strings.HasPrefix(goshimmerHost, "http") {
+		goshimmerHost = "http://" + goshimmerHost
+	}
 	return &Client{
-		api:             client.NewGoShimmerAPI("http://" + goshimmerHost),
+		api:             client.NewGoShimmerAPI(goshimmerHost),
 		faucetPowTarget: faucetPowTarget,
 	}
 }

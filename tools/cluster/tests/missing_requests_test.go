@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"github.com/stretchr/testify/require"
 )
@@ -42,33 +41,31 @@ func TestMissingRequests(t *testing.T) {
 	// deposit funds before sending the off-ledger request
 	e.requestFunds(userAddress, "userWallet")
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chainID, userWallet)
-	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
-		Transfer: iscp.NewTransferIotas(100),
-	})
+	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
 	// send off-ledger request to all nodes except #3
-	req := request.NewRequestOffLedger(incCounterSCHname, inccounter.FuncIncCounter.Hname(), requestargs.RequestArgs{}) //.WithTransfer(par.Transfer)
+	req := request.NewOffLedger(incCounterSCHname, inccounter.FuncIncCounter.Hname(), requestargs.RequestArgs{}) //.WithTransfer(par.Tokens)
 	req.Sign(userWallet)
 
-	err = clu.WaspClient(0).PostOffLedgerRequest(&chainID, req)
+	err = clu.WaspClient(0).PostOffLedgerRequest(chainID, req)
 	require.NoError(t, err)
-	err = clu.WaspClient(1).PostOffLedgerRequest(&chainID, req)
+	err = clu.WaspClient(1).PostOffLedgerRequest(chainID, req)
 	require.NoError(t, err)
 
 	// TODO try to send to only 2 nodes
-	err = clu.WaspClient(2).PostOffLedgerRequest(&chainID, req)
+	err = clu.WaspClient(2).PostOffLedgerRequest(chainID, req)
 	require.NoError(t, err)
 	// err = clu1.WaspClient(3).PostOffLedgerRequest(&chainID, req)
 	// require.NoError(t, err)
 
 	//------
 	// send a dummy request to node #3, so that it proposes a batch and the consensus hang is broken
-	req2 := request.NewRequestOffLedger(iscp.Hn("foo"), iscp.Hn("bar"), nil)
+	req2 := request.NewOffLedger(iscp.Hn("foo"), iscp.Hn("bar"), nil)
 	req2.Sign(userWallet)
-	err = clu.WaspClient(3).PostOffLedgerRequest(&chainID, req2)
+	err = clu.WaspClient(3).PostOffLedgerRequest(chainID, req2)
 	require.NoError(t, err)
 	//-------
 

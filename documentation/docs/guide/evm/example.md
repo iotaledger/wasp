@@ -1,0 +1,38 @@
+---
+keywords:
+- ISCP
+- Smart Contracts
+- EVM
+- Solidity
+- example
+description: Solidity smart contract example.
+image: /img/logo/WASP_logo_dark.png
+---
+# Solidity Smart Contract Example
+
+Solidity smart contracts on ISCP are compatible with Solidity smart contracts on any other network, so most smart contracts will work directly without any modification. To get a rough indication of how a simple Solidity smart contract looks like, see the example below:
+
+
+```solidity
+pragma solidity ^0.8.6;
+// No SafeMath needed for Solidity 0.8+
+
+contract Counter { 
+   
+    uint256 private _count;
+        
+    function current() public view returns (uint256) {
+        return _count;
+    }   
+
+    function increment() public {
+        _count += 1;
+    }   
+
+    function decrement() public {
+        _count -= 1;
+    }   
+}
+```
+
+For more information, please visit the [official Solidity documentation](https://docs.soliditylang.org/).

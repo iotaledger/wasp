@@ -16,7 +16,7 @@ func TestSerdeRequestLogRecord(t *testing.T) {
 	rec := &RequestReceipt{
 		RequestID: rid,
 		OffLedger: true,
-		LogData:   []byte("some log data"),
+		Error:     "some log data",
 	}
 	forward := rec.Bytes()
 	back, err := RequestReceiptFromBytes(forward)

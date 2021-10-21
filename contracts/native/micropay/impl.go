@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -58,7 +59,7 @@ func addWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 		fmt.Sprintf("unknown public key for address %s", payerAddr))
 
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
-	addWarrant, _ := ctx.IncomingTransfer().Get(ledgerstate.ColorIOTA)
+	addWarrant := ctx.IncomingTransfer().Get(colored.IOTA)
 	a.Require(addWarrant >= MinimumWarrantIotas, fmt.Sprintf("warrant must be larger than %d iotas", MinimumWarrantIotas))
 
 	warrant, revoke, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
@@ -68,10 +69,10 @@ func addWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	setWarrant(payerInfo, serviceAddr, warrant+addWarrant)
 
 	// all non-iota token accrue on-chain to the caller
-	sendBack := ctx.IncomingTransfer().Map()
-	delete(sendBack, ledgerstate.ColorIOTA)
+	sendBack := ctx.IncomingTransfer().Clone()
+	sendBack.Set(colored.IOTA, 0)
 	if len(sendBack) > 0 {
-		a.RequireNoError(vmcontext.Accrue(ctx, ctx.Caller(), ledgerstate.NewColoredBalances(sendBack)))
+		a.RequireNoError(vmcontext.Accrue(ctx, ctx.Caller(), sendBack))
 	}
 
 	ctx.Event(fmt.Sprintf("[micropay.addWarrant] %s increased warrant %d -> %d i for %s",
@@ -100,7 +101,7 @@ func revokeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	setWarrantRevoke(payerInfo, serviceAddr, revokeDeadline.Unix())
 
 	// send deterred request to self to revoke the warrant
-	iota1 := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1})
+	iota1 := colored.NewBalancesForIotas(1)
 	meta := &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
 		EntryPoint:     FuncCloseWarrant.Hname(),
@@ -128,7 +129,7 @@ func closeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
 	warrant, _, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 	if warrant > 0 {
-		tokens := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: warrant})
+		tokens := colored.NewBalancesForIotas(warrant)
 		succ := ctx.Send(payerAddr, tokens, nil)
 		a.Require(succ, "failed to send %d iotas to address %s", warrant, payerAddr)
 	}
@@ -184,27 +185,17 @@ func getWarrantInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-//  utility
-//nolint:ineffassign,staticcheck // TODO err is never checked, shouldn't errors be handled?
 func getWarrantInfoIntern(state kv.KVStoreReader, payer, service ledgerstate.Address, a assert.Assert) (uint64, uint64, uint64) {
 	payerInfo := collections.NewMapReadOnly(state, string(payer.Bytes()))
-	warrantBin, err := payerInfo.GetAt(service.Bytes())
+	warrantBin := payerInfo.MustGetAt(service.Bytes())
+	warrant, err := codec.DecodeUint64(warrantBin, 0)
 	a.RequireNoError(err)
-	warrant, exists, err := codec.DecodeUint64(warrantBin)
+	revokeBin := payerInfo.MustGetAt(getRevokeKey(service))
+	revoke, err := codec.DecodeUint64(revokeBin, 0)
 	a.RequireNoError(err)
-	if !exists {
-		warrant = 0
-	}
-	revokeBin, err := payerInfo.GetAt(getRevokeKey(service))
-	revoke, exists, err := codec.DecodeUint64(revokeBin)
-	if !exists {
-		revoke = 0
-	}
-	lastOrdBin, err := payerInfo.GetAt(getLastOrdKey(service))
-	lastOrd, exists, err := codec.DecodeUint64(lastOrdBin)
-	if !exists {
-		lastOrd = 0
-	}
+	lastOrdBin := payerInfo.MustGetAt(getLastOrdKey(service))
+	lastOrd, err := codec.DecodeUint64(lastOrdBin, 0)
+	a.RequireNoError(err)
 	return warrant, revoke, lastOrd
 }
 
@@ -290,7 +281,7 @@ func processPayments(ctx iscp.Sandbox, payments []*Payment, payerAddr, targetAdd
 		lastOrd = uint64(p.Ord)
 	}
 	if settledSum > 0 {
-		tokens := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: settledSum})
+		tokens := colored.NewBalancesForIotas(settledSum)
 		ctx.Send(targetAddr, tokens, nil)
 	}
 	payerInfo := collections.NewMap(ctx.State(), string(payerAddr.Bytes()))

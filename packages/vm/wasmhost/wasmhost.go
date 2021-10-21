@@ -6,24 +6,48 @@ package wasmhost
 import (
 	"errors"
 
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 )
 
+type WasmStore interface {
+	GetKvStore(id int32) *KvStoreHost
+}
+
 type WasmHost struct {
-	KvStoreHost
-	vm          WasmVM
 	codeToFunc  map[uint32]string
 	funcToCode  map[string]uint32
 	funcToIndex map[string]int32
+	funcs       []func(ctx wasmlib.ScFuncContext)
+	views       []func(ctx wasmlib.ScViewContext)
+	store       WasmStore
+	vm          WasmVM
 }
 
-func (host *WasmHost) InitVM(vm WasmVM) error {
+func (host *WasmHost) AddFunc(f func(ctx wasmlib.ScFuncContext)) []func(ctx wasmlib.ScFuncContext) {
+	if f != nil {
+		host.funcs = append(host.funcs, f)
+	}
+	return host.funcs
+}
+
+func (host *WasmHost) AddView(v func(ctx wasmlib.ScViewContext)) []func(ctx wasmlib.ScViewContext) {
+	if v != nil {
+		host.views = append(host.views, v)
+	}
+	return host.views
+}
+
+func (host *WasmHost) getKvStore(id int32) *KvStoreHost {
+	return host.store.GetKvStore(id)
+}
+
+func (host *WasmHost) InitVM(vm WasmVM, store WasmStore) error {
+	host.store = store
 	return vm.LinkHost(vm, host)
 }
 
-func (host *WasmHost) Init(log *logger.Logger) {
-	host.KvStoreHost.Init(log)
+func (host *WasmHost) Init() {
 	host.codeToFunc = make(map[uint32]string)
 	host.funcToCode = make(map[string]uint32)
 	host.funcToIndex = make(map[string]int32)
@@ -70,10 +94,15 @@ func (host *WasmHost) SetExport(index int32, functionName string) {
 		}
 		panic("SetExport: predefined key value mismatch")
 	}
-	_, ok := host.funcToCode[functionName]
+
+	funcIndex, ok := host.funcToIndex[functionName]
 	if ok {
-		panic("SetExport: duplicate function name")
+		if funcIndex != index {
+			panic("SetExport: duplicate function name")
+		}
+		return
 	}
+
 	hn := iscp.Hn(functionName)
 	hashedName := uint32(hn)
 	_, ok = host.codeToFunc[hashedName]

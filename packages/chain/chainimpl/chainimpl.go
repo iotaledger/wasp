@@ -5,7 +5,6 @@ package chainimpl
 
 import (
 	"bytes"
-	logpkg "log"
 	"sync"
 	"time"
 
@@ -24,7 +23,11 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -32,13 +35,16 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
+	"gopkg.in/eapache/channels.v1"
 )
 
-var _ chain.Chain = &chainObj{}     //nolint: gofumpt
-var _ chain.ChainCore = &chainObj{} //nolint: gofumpt
-var _ chain.ChainEntry = &chainObj{}
-var _ chain.ChainRequests = &chainObj{}
-var _ chain.ChainEvents = &chainObj{}
+var (
+	_ chain.Chain         = &chainObj{}
+	_ chain.ChainCore     = &chainObj{}
+	_ chain.ChainEntry    = &chainObj{}
+	_ chain.ChainRequests = &chainObj{}
+	_ chain.ChainEvents   = &chainObj{}
+)
 
 type chainObj struct {
 	committee                        atomic.Value
@@ -46,11 +52,11 @@ type chainObj struct {
 	mempoolLastCleanedIndex          uint32
 	dismissed                        atomic.Bool
 	dismissOnce                      sync.Once
-	chainID                          iscp.ChainID
+	chainID                          *iscp.ChainID
 	chainStateSync                   coreutil.ChainStateSync
 	stateReader                      state.OptimisticStateReader
 	procset                          *processors.Cache
-	chMsg                            chan interface{}
+	chMsg                            *channels.InfiniteChannel
 	stateMgr                         chain.StateManager
 	consensus                        chain.Consensus
 	log                              *logger.Logger
@@ -63,13 +69,13 @@ type chainObj struct {
 	blobProvider                     registry.BlobCache
 	eventRequestProcessed            *events.Event
 	eventChainTransition             *events.Event
-	eventSynced                      *events.Event
 	peers                            *peering.PeerDomainProvider
 	offLedgerReqsAcksMutex           sync.RWMutex
 	offLedgerReqsAcks                map[iscp.RequestID][]string
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
+	chainMetrics                     metrics.ChainMetrics
 }
 
 type committeeStruct struct {
@@ -91,16 +97,17 @@ func NewChain(
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
+	chainMetrics metrics.ChainMetrics,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chainID.String())
 
 	chainLog := log.Named(chainID.Base58()[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
-		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog),
+		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
-		chMsg:             make(chan interface{}, 100),
-		chainID:           *chainID,
+		chMsg:             channels.NewInfiniteChannel(),
+		chainID:           chainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
 		db:                db,
@@ -117,17 +124,14 @@ func NewChain(
 		eventChainTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
-		eventSynced: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
-		}),
 		offLedgerReqsAcks:                make(map[iscp.RequestID][]string),
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
+		chainMetrics:                     chainMetrics,
 	}
 	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
-	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
 
 	peers, err := netProvider.PeerDomain(peerNetConfig.Neighbors())
 	if err != nil {
@@ -141,7 +145,7 @@ func NewChain(
 		ret.ReceiveMessage(recv.Msg)
 	})
 	go func() {
-		for msg := range ret.chMsg {
+		for msg := range ret.chMsg.Out() {
 			ret.dispatchMessage(msg)
 		}
 	}()
@@ -281,7 +285,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	c.log.Debugf("processChainTransition: processing state %d", stateIndex)
 	if !msg.ChainOutput.GetIsGovernanceUpdated() {
 		c.log.Debugf("processChainTransition state %d: output %s is not governance updated; state hash %s; last cleaned state is %d",
-			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String(), c.mempoolLastCleanedIndex)
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String(), c.mempoolLastCleanedIndex)
 		// normal state update:
 		c.stateReader.SetBaseline()
 		chainID := iscp.NewChainID(msg.ChainOutput.GetAliasAddress())
@@ -294,7 +298,8 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 				// The error means a database error. The optimistic state read failure can't occur here
 				// because the state transition message is only sent only after state is committed and before consensus
 				// start new round
-				logpkg.Panicf("processChainTransition. unexpected error: %v", err)
+				c.log.Panicf("processChainTransition. unexpected error: %v", err)
+				return // to avoid "possible nil pointer dereference" in later use of `reqids`
 			}
 			// remove processed requests from the mempool
 			c.log.Debugf("processChainTransition state %d cleaning state %d: removing %d requests", stateIndex, i, len(reqids))
@@ -304,16 +309,18 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 			for _, reqid := range reqids {
 				c.eventRequestProcessed.Trigger(reqid)
 			}
+			c.publishNewBlockEvents(stateIndex)
 
 			c.log.Debugf("processChainTransition state %d: state %d cleaned, deleted requests: %+v",
 				stateIndex, i, iscp.ShortRequestIDs(reqids))
 		}
 		chain.PublishStateTransition(chainID, msg.ChainOutput, len(reqids))
 		chain.LogStateTransition(msg, reqids, c.log)
+
 		c.mempoolLastCleanedIndex = stateIndex
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
-			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String())
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String())
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
 	}
@@ -323,11 +330,28 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		StateOutput:    msg.ChainOutput,
 		StateTimestamp: msg.OutputTimestamp,
 	})
-	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.Hash().String())
+	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.StateCommitment().String())
 }
 
-func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint32) {
-	chain.LogSyncedEvent(outputID, blockIndex, c.log)
+func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
+	if blockIndex == 0 {
+		// don't run on state #0, root contracts not initialized yet.
+		return
+	}
+
+	kvPartition := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
+
+	evts, err := blocklog.GetBlockEventsInternal(kvPartition, blockIndex)
+	if err != nil {
+		c.log.Panicf("publishNewBlockEvents - something went wrong getting events for block. %v", err)
+	}
+
+	go func() {
+		for _, msg := range evts {
+			c.log.Infof("publishNewBlockEvents: '%s'", msg)
+			publisher.Publish("vmmsg", c.chainID.Base58(), msg)
+		}
+	}()
 }
 
 // processStateMessage processes the only chain output which exists on the chain's address
@@ -422,7 +446,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
 	cmt, err := committee.New(
 		cmtRec,
-		&c.chainID,
+		c.chainID,
 		c.netProvider,
 		c.peerNetworkConfig,
 		c.dksProvider,
@@ -435,7 +459,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 	}
 	cmt.Attach(c)
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, cmt, c.nodeConn, c.pullMissingRequestsFromCommittee)
+	c.consensus = consensus.New(c, c.mempool, cmt, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
 	c.setCommittee(cmt)
 
 	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", cmtRec.Address.Base58())

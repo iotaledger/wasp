@@ -6,6 +6,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -14,14 +15,14 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// StateUpdateImpl implement StateUpdate interface
-type StateUpdateImpl struct {
+// stateUpdateImpl implement StateUpdate interface
+type stateUpdateImpl struct {
 	mutations *buffered.Mutations
 }
 
 // NewStateUpdate creates a state update with timestamp mutation, if provided
-func NewStateUpdate(timestamp ...time.Time) *StateUpdateImpl {
-	ret := &StateUpdateImpl{
+func NewStateUpdate(timestamp ...time.Time) *stateUpdateImpl { //nolint
+	ret := &stateUpdateImpl{
 		mutations: buffered.NewMutations(),
 	}
 	if len(timestamp) > 0 {
@@ -30,148 +31,166 @@ func NewStateUpdate(timestamp ...time.Time) *StateUpdateImpl {
 	return ret
 }
 
-func NewStateUpdateWithBlockIndexMutation(blockIndex uint32, timestamp ...time.Time) *StateUpdateImpl {
-	ret := &StateUpdateImpl{
+func NewStateUpdateWithBlocklogValues(blockIndex uint32, timestamp time.Time, prevStateHash hashing.HashValue) StateUpdate {
+	ret := &stateUpdateImpl{
 		mutations: buffered.NewMutations(),
 	}
 	ret.setBlockIndexMutation(blockIndex)
-	if len(timestamp) > 0 {
-		ret.setTimestampMutation(timestamp[0])
-	}
+	ret.setTimestampMutation(timestamp)
+	ret.setPrevStateHashMutation(prevStateHash)
 	return ret
 }
 
-func newStateUpdateFromMutations(mutations *buffered.Mutations) *StateUpdateImpl { //nolint:deadcode,unused
-	return &StateUpdateImpl{
-		mutations: mutations.Clone(),
-	}
-}
-
-func newStateUpdateFromReader(r io.Reader) (*StateUpdateImpl, error) {
-	ret := &StateUpdateImpl{
+func newStateUpdateFromReader(r io.Reader) (*stateUpdateImpl, error) {
+	ret := &stateUpdateImpl{
 		mutations: buffered.NewMutations(),
 	}
 	err := ret.Read(r)
 	return ret, err
 }
 
-func (su *StateUpdateImpl) Mutations() *buffered.Mutations {
+func (su *stateUpdateImpl) Mutations() *buffered.Mutations {
 	return su.mutations
 }
 
 // StateUpdate
 
-func (su *StateUpdateImpl) Clone() StateUpdate {
+func (su *stateUpdateImpl) Clone() StateUpdate {
 	return su.clone()
 }
 
-func (su *StateUpdateImpl) clone() *StateUpdateImpl {
-	return &StateUpdateImpl{
+func (su *stateUpdateImpl) clone() *stateUpdateImpl {
+	return &stateUpdateImpl{
 		mutations: su.mutations.Clone(),
 	}
 }
 
-func (su *StateUpdateImpl) Bytes() []byte {
+func (su *stateUpdateImpl) Bytes() []byte {
 	var buf bytes.Buffer
 	_ = su.Write(&buf)
 	return buf.Bytes()
 }
 
-func (su *StateUpdateImpl) TimestampMutation() (time.Time, bool) {
-	timeBin, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixTimestamp))
-	if !ok {
-		return time.Time{}, false
-	}
-	ret, _, err := codec.DecodeTime(timeBin)
-	if err != nil {
-		return time.Time{}, false
-	}
-	return ret, true
-}
-
-func (su *StateUpdateImpl) StateIndexMutation() (uint32, bool) {
+func (su *stateUpdateImpl) stateIndexMutation() (uint32, bool, error) {
 	blockIndexBin, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixBlockIndex))
 	if !ok {
-		return 0, false
+		return 0, false, nil
 	}
 	ret, err := util.Uint64From8Bytes(blockIndexBin)
 	if err != nil {
-		return 0, false
+		return 0, false, err
 	}
 	if int(ret) > util.MaxUint32 {
-		return 0, false
+		return 0, false, xerrors.New("wrong state index")
 	}
-	return uint32(ret), true
+	return uint32(ret), true, nil
 }
 
-func (su *StateUpdateImpl) Write(w io.Writer) error {
+func (su *stateUpdateImpl) timestampMutation() (time.Time, bool, error) {
+	timeBin, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixTimestamp))
+	if !ok {
+		return time.Time{}, false, nil
+	}
+	ret, err := codec.DecodeTime(timeBin)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	return ret, true, nil
+}
+
+func (su *stateUpdateImpl) previousStateHashMutation() (hashing.HashValue, bool, error) {
+	hashBin, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixPrevStateHash))
+	if !ok {
+		return hashing.NilHash, false, nil
+	}
+	ret, err := codec.DecodeHashValue(hashBin)
+	if err != nil {
+		return hashing.NilHash, false, err
+	}
+	return ret, true, nil
+}
+
+func (su *stateUpdateImpl) Write(w io.Writer) error {
 	return su.mutations.Write(w)
 }
 
-func (su *StateUpdateImpl) Read(r io.Reader) error {
+func (su *stateUpdateImpl) Read(r io.Reader) error {
 	return su.mutations.Read(r)
 }
 
-func (su *StateUpdateImpl) String() string {
-	ts := "(none)"
-	if t, ok := su.TimestampMutation(); ok {
+const none = "(none)"
+
+func (su *stateUpdateImpl) String() string {
+	ts := none
+	t, ok, err := su.timestampMutation()
+	if err != nil {
+		ts = fmt.Sprintf("(%v)", err)
+	} else if ok {
 		ts = fmt.Sprintf("%v", t)
 	}
-	bi := "(none)"
-	if t, ok := su.StateIndexMutation(); ok {
-		bi = fmt.Sprintf("%d", t)
+	bi := none
+	idx, ok, err := su.stateIndexMutation()
+	if err != nil {
+		bi = fmt.Sprintf("(%v)", err)
+	} else if ok {
+		bi = fmt.Sprintf("%d", idx)
 	}
-
-	ret := fmt.Sprintf("StateUpdate:: ts: %s, blockIndex: %s muts: [%+v]", ts, bi, su.mutations)
-	return ret
+	ph := none
+	h, ok, err := su.previousStateHashMutation()
+	if err != nil {
+		ph = fmt.Sprintf("(%v)", err)
+	} else if ok {
+		ph = h.Base58()
+	}
+	return fmt.Sprintf("StateUpdate:: ts: %s, blockIndex: %s prevStateHash: %s muts: [%+v]", ts, bi, ph, su.mutations)
 }
 
 // findBlockIndexMutation goes backward and searches for the 'set' mutation of the blockIndex
-func findBlockIndexMutation(stateUpdates []*StateUpdateImpl) (uint32, error) {
-	if len(stateUpdates) == 0 {
-		return 0, xerrors.New("findBlockIndexMutation: no state updates were found")
+func findBlockIndexMutation(stateUpdate *stateUpdateImpl) (uint32, error) {
+	bi, exists, err := stateUpdate.stateIndexMutation()
+	if err != nil {
+		return 0, err
 	}
-	for i := len(stateUpdates) - 1; i >= 0; i-- {
-		blockIndexBin, exists := stateUpdates[i].Mutations().Get(kv.Key(coreutil.StatePrefixBlockIndex))
-		if !exists || blockIndexBin == nil {
-			continue
-		}
-		blockIndex, err := util.Uint64From8Bytes(blockIndexBin)
-		if err != nil {
-			return 0, xerrors.Errorf("findBlockIndexMutation: %w", err)
-		}
-		if int(blockIndex) > util.MaxUint32 {
-			return 0, xerrors.Errorf("findBlockIndexMutation: wrong block index value")
-		}
-		return uint32(blockIndex), nil
+	if !exists {
+		return 0, xerrors.Errorf("findBlockIndexMutation: state index mutation wasn't found in the block")
 	}
-	return 0, xerrors.Errorf("findBlockIndexMutation: state index mutation wasn't found in the block")
+	return bi, nil
 }
 
-// findBlockIndexMutation goes backward and searches for the 'set' mutation of the blockIndex
+// findTimestampMutation goes backward and searches for the 'set' mutation of the timestamp
 // Return zero time if not found
-func findTimestampMutation(stateUpdates []*StateUpdateImpl) (time.Time, error) {
-	if len(stateUpdates) == 0 {
-		return time.Time{}, xerrors.New("findTimestampMutation: no state updates were found")
+func findTimestampMutation(stateUpdate *stateUpdateImpl) (time.Time, error) {
+	ts, exists, err := stateUpdate.timestampMutation()
+	if err != nil {
+		return time.Time{}, err
 	}
-	for i := len(stateUpdates) - 1; i >= 0; i-- {
-		timestampBin, exists := stateUpdates[i].Mutations().Get(kv.Key(coreutil.StatePrefixTimestamp))
-		if !exists || timestampBin == nil {
-			continue
-		}
-		ts, ok, err := codec.DecodeTime(timestampBin)
-		if !ok || err != nil {
-			return time.Time{}, err
-		}
-		return ts, nil
+	if !exists {
+		return time.Time{}, nil
 	}
-	return time.Time{}, nil
+	return ts, nil
 }
 
-func (su *StateUpdateImpl) setTimestampMutation(ts time.Time) {
+// findPrevStateHashMutation goes backward and searches for the 'set' mutation of the previous state hash
+// Return NilHash if not found
+func findPrevStateHashMutation(stateUpdate *stateUpdateImpl) (hashing.HashValue, error) {
+	h, exists, err := stateUpdate.previousStateHashMutation()
+	if err != nil {
+		return hashing.NilHash, err
+	}
+	if !exists {
+		return hashing.NilHash, nil
+	}
+	return h, nil
+}
+
+func (su *stateUpdateImpl) setTimestampMutation(ts time.Time) {
 	su.mutations.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(ts))
 }
 
-func (su *StateUpdateImpl) setBlockIndexMutation(blockIndex uint32) {
+func (su *stateUpdateImpl) setBlockIndexMutation(blockIndex uint32) {
 	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), util.Uint64To8Bytes(uint64(blockIndex)))
+}
+
+func (su *stateUpdateImpl) setPrevStateHashMutation(prevStateHash hashing.HashValue) {
+	su.mutations.Set(kv.Key(coreutil.StatePrefixPrevStateHash), prevStateHash.Bytes())
 }

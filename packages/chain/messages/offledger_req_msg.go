@@ -4,11 +4,7 @@
 package messages
 
 import (
-	"bytes"
-	"io"
-	"io/ioutil"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"golang.org/x/xerrors"
@@ -16,56 +12,39 @@ import (
 
 type OffLedgerRequestMsg struct {
 	ChainID *iscp.ChainID
-	Req     *request.RequestOffLedger
+	Req     *request.OffLedger
 }
 
-func NewOffledgerRequestMsg(chainID *iscp.ChainID, req *request.RequestOffLedger) *OffLedgerRequestMsg {
+func NewOffLedgerRequestMsg(chainID *iscp.ChainID, req *request.OffLedger) *OffLedgerRequestMsg {
 	return &OffLedgerRequestMsg{
 		ChainID: chainID,
 		Req:     req,
 	}
 }
 
-func (msg *OffLedgerRequestMsg) write(w io.Writer) error {
-	if _, err := w.Write(msg.ChainID.Bytes()); err != nil {
-		return xerrors.Errorf("failed to write chainID: %w", err)
-	}
-	if _, err := w.Write(msg.Req.Bytes()); err != nil {
-		return xerrors.Errorf("failed to write reqDuest data")
-	}
-	return nil
-}
-
 func (msg *OffLedgerRequestMsg) Bytes() []byte {
-	var buf bytes.Buffer
-	_ = msg.write(&buf)
-	return buf.Bytes()
+	return marshalutil.New().
+		Write(msg.ChainID).
+		Write(msg.Req).
+		Bytes()
 }
 
-func (msg *OffLedgerRequestMsg) read(r io.Reader) error {
-	// read chainID
-	var chainIDBytes [ledgerstate.AddressLength]byte
-	_, err := r.Read(chainIDBytes[:])
+func OffLedgerRequestMsgFromBytes(data []byte) (*OffLedgerRequestMsg, error) {
+	mu := marshalutil.New(data)
+	chainID, err := iscp.ChainIDFromMarshalUtil(mu)
 	if err != nil {
-		return xerrors.Errorf("failed to read chainID: %w", err)
+		return nil, err
 	}
-	if msg.ChainID, err = iscp.ChainIDFromBytes(chainIDBytes[:]); err != nil {
-		return xerrors.Errorf("failed to read chainID: %w", err)
-	}
-	// read off-ledger request
-	reqBytes, err := ioutil.ReadAll(r)
+	req, err := request.FromMarshalUtil(mu)
 	if err != nil {
-		return xerrors.Errorf("failed to read request data: %w", err)
+		return nil, err
 	}
-	if msg.Req, err = request.OffLedgerFromBytes(reqBytes); err != nil {
-		return xerrors.Errorf("failed to read request data: %w", err)
+	reqCasted, ok := req.(*request.OffLedger)
+	if !ok {
+		return nil, xerrors.New("OffLedgerRequestMsgFromBytes: wrong type of request data")
 	}
-	return nil
-}
-
-func OffLedgerRequestMsgFromBytes(buf []byte) (OffLedgerRequestMsg, error) {
-	r := bytes.NewReader(buf)
-	msg := OffLedgerRequestMsg{}
-	err := msg.read(r)
-	return msg, err
+	return &OffLedgerRequestMsg{
+		ChainID: chainID,
+		Req:     reqCasted,
+	}, nil
 }

@@ -46,6 +46,11 @@ func NewNamedLogger(name string, timeLayout ...string) *logger.Logger {
 	return log.Named(name).Sugar()
 }
 
+func NewSilentLogger(name string, printStackTrace bool, timeLayout ...string) *logger.Logger {
+	log := NewNamedLogger(name)
+	return WithLevel(log, zapcore.ErrorLevel, printStackTrace)
+}
+
 // WithLevel returns a logger with a level increased.
 // Can be useful in tests to disable logging in some parts of the system.
 func WithLevel(log *logger.Logger, level logger.Level, printStackTrace bool) *logger.Logger {
