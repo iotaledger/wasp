@@ -30,6 +30,7 @@ app "wasp-evm" {
             build_args = {
                 GOLANG_IMAGE_TAG = "1.17-buster"
                 BUILD_TAGS = "rocksdb,builtin_static"
+                BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${gitrefhash()}"
             }
         }
 
