@@ -23,6 +23,9 @@
     requestingFunds,
   } from '../lib/store';
 
+  export let currentRoute;
+  export let params;
+
   let message: StateMessage;
 
   $: $round,
