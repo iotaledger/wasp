@@ -236,6 +236,7 @@
         max-height: 500px;
         position: relative;
         min-height: 100px;
+        display: flex;
         @media (min-width: 1024px) {
           width: 25%;
           height: calc(100vh - 400px);
