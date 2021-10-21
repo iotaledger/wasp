@@ -171,6 +171,9 @@
     .animation {
       position: absolute;
       z-index: 1;
+      overflow: hidden;
+      max-width: 100%;
+      max-height: 100%;
     }
     .description {
       text-align: center;
