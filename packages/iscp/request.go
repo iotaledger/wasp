@@ -35,6 +35,8 @@ type Request interface {
 	Bytes() []byte
 	// Hash returns the hash of the request (used for consensus)
 	Hash() [32]byte
+	// String representation of the request (humanly readable)
+	String() string
 }
 
 func TakeRequestIDs(reqs ...Request) []RequestID {

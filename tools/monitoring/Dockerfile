@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . ./
 
-RUN go build -tags rocksdb
+RUN go build -tags rocksdb,builtin_static
 
 FROM gcr.io/distroless/cc
 

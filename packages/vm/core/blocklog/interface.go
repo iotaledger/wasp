@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -261,9 +262,8 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
-	RequestID iscp.RequestID
-	OffLedger bool
-	Error     string
+	Request iscp.Request
+	Error   string
 	// not persistent
 	BlockIndex   uint32
 	RequestIndex uint16
@@ -276,10 +276,7 @@ func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
 func RequestReceiptFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
 	ret := &RequestReceipt{}
 	var err error
-	if ret.RequestID, err = iscp.RequestIDFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	if ret.OffLedger, err = mu.ReadBool(); err != nil {
+	if ret.Request, err = request.FromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	var size uint16
@@ -296,8 +293,7 @@ func RequestReceiptFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 
 func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.Write(r.RequestID).
-		WriteBool(r.OffLedger).
+	mu.WriteBytes(r.Request.Bytes()).
 		WriteUint16(uint16(len(r.Error))).
 		WriteBytes([]byte(r.Error))
 	return mu.Bytes()
@@ -309,31 +305,19 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 	return r
 }
 
-func (r *RequestReceipt) strPrefix() string {
-	prefix := "req"
-	if !r.OffLedger {
-		prefix += "/tx"
-	}
-	if r.BlockIndex != 0 {
-		prefix += fmt.Sprintf("[%d/%d]", r.BlockIndex, r.RequestIndex)
-	}
-	return prefix
-}
-
 func (r *RequestReceipt) String() string {
-	ret := fmt.Sprintf("%s %s", r.strPrefix(), r.RequestID.String())
 	if len(r.Error) > 0 {
-		ret += ": '" + r.Error + "'"
+		return fmt.Sprintf("%s: '%s'", r.Request.String(), r.Error)
 	}
-	return ret
+	return r.Request.String()
 }
 
 func (r *RequestReceipt) Short() string {
 	prefix := "tx"
-	if r.OffLedger {
+	if r.Request.IsOffLedger() {
 		prefix = "api"
 	}
-	ret := fmt.Sprintf("%s/%s", prefix, r.RequestID)
+	ret := fmt.Sprintf("%s/%s", prefix, r.Request.ID())
 	if len(r.Error) > 0 {
 		ret += ": '" + r.Error + "'"
 	}

@@ -18,7 +18,7 @@ func verifyReceipts(t *testing.T, w bool, ctx *wasmsolo.SoloContext, requests, p
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, requests+extra, strings.Count(str, "req/tx"))
+	require.EqualValues(t, requests+extra, strings.Count(str, "OnLedger::"))
 	require.EqualValues(t, panics, strings.Count(str, "panic in VM"))
 }
 
