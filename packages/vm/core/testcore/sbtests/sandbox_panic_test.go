@@ -26,7 +26,7 @@ func testPanicFull(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 4+extra, strings.Count(str, "req/tx"))
+	require.EqualValues(t, 4+extra, strings.Count(str, "OnLedger::"))
 	require.EqualValues(t, 1, strings.Count(str, "panic in VM"))
 }
 
@@ -46,7 +46,7 @@ func testPanicViewCall(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 3+extra, strings.Count(str, "req/tx"))
+	require.EqualValues(t, 3+extra, strings.Count(str, "OnLedger::"))
 	require.EqualValues(t, 0, strings.Count(str, "panic in VM"))
 }
 
@@ -67,7 +67,7 @@ func testCallPanicFull(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 4+extra, strings.Count(str, "req/tx"))
+	require.EqualValues(t, 4+extra, strings.Count(str, "OnLedger::"))
 	require.EqualValues(t, 1, strings.Count(str, "panic in VM"))
 }
 
@@ -88,7 +88,7 @@ func testCallPanicViewFromFull(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 4+extra, strings.Count(str, "req/tx"))
+	require.EqualValues(t, 4+extra, strings.Count(str, "OnLedger::"))
 	require.EqualValues(t, 1, strings.Count(str, "panic in VM"))
 }
 
@@ -108,6 +108,6 @@ func testCallPanicViewFromView(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 3+extra, strings.Count(str, "req/tx"))
+	require.EqualValues(t, 3+extra, strings.Count(str, "OnLedger::"))
 	require.EqualValues(t, 0, strings.Count(str, "panic in VM"))
 }
