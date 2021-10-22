@@ -15,7 +15,7 @@ ERC20 is a standard for fungible tokens and is defined in the [EIP-20 Token Stan
 With the ERC20 standart you can create your own tokens and transfer them in the EVM on IOTA Smart Contracts without fees.
 
 You can use the [Remix IDE](https://remix.ethereum.org/) to deploy any regular Solidity Smart Contract.
-Set the environment to `Injected Web3`, which should then connect with your MetaMask wallet. [See this article](http://localhost:3000/wasp/guide/chains_and_nodes/testnet#interact-with-evm), to learn how connect to your Metamask with the Tesnet.
+Set the environment to `Injected Web3`, which should then connect with your MetaMask wallet. [See this article](/wasp/guide/chains_and_nodes/testnet#interact-with-evm), to learn how connect to your Metamask with the Testnet.
 
 ## 1. Create a Smart Contract
 
