@@ -252,11 +252,12 @@ func (req *OnLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	if req.outputObj, err = ledgerstate.ExtendedOutputFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if outputID, err := ledgerstate.OutputIDFromMarshalUtil(mu); err != nil {
+	outputID, err := ledgerstate.OutputIDFromMarshalUtil(mu)
+	if err != nil {
 		return err
-	} else {
-		req.outputObj.SetID(outputID)
 	}
+	req.outputObj.SetID(outputID)
+
 	if req.senderAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
 		return err
 	}
