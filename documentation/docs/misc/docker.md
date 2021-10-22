@@ -37,7 +37,7 @@ docker build -t wasp-node .
 
 The build process will copy the docker_config.json file into the image, which will use it when the node gets started. 
 
-By default, the build process will use `-tags rocksdb` as a build argument. This argument can be modified with `--build-arg BUILD_TAGS=<tags>`.
+By default, the build process will use `-tags rocksdb,builtin_static` as a build argument. This argument can be modified with `--build-arg BUILD_TAGS=<tags>`.
 
 Depending on the use case, Wasp requires a different GoShimmer hostname which can be changed at this part inside the [docker_config.json](https://github.com/iotaledger/wasp/blob/develop/docker_config.json) file:
 

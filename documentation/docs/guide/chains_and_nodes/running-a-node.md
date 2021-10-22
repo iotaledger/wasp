@@ -88,7 +88,7 @@ C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 You can run integration and unit test together with the following command:
 
 ```bash
-go test -tags rocksdb -timeout 20m ./...
+go test -tags rocksdb,builtin_static -timeout 20m ./...
 ```
 Keep in mind that this process may take several minutes.
 
@@ -97,7 +97,7 @@ Keep in mind that this process may take several minutes.
 You can run the unit tests without running integration tests with the following command:
 
 ```bash
-go test -tags rocksdb -short ./...
+go test -tags rocksdb,builtin_static -short ./...
 ```
 
 This will take significantly less time than [running all tests](#run-all-tests).

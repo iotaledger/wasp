@@ -53,8 +53,8 @@ C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 
 ## Test
 
-- Run all tests (including integration tests which may take several minutes): `go test -tags rocksdb -timeout 20m ./...`
-- Run only unit tests: `go test -tags rocksdb -short ./...`
+- Run all tests (including integration tests which may take several minutes): `go test -tags rocksdb,builtin_static -timeout 20m ./...`
+- Run only unit tests: `go test -tags rocksdb,builtin_static -short ./...`
 
 Note: integration tests require the `wasp` and `wasp-cli` commands
 in the system path (i.e. you need to run `go install ./...` before running
