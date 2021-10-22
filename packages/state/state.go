@@ -30,7 +30,6 @@ type virtualStateAccess struct {
 	empty              bool
 	kvs                *buffered.BufferedKVStoreAccess
 	committedHash      hashing.HashValue
-	uncommittedHash    hashing.HashValue
 	appliedBlockHashes []hashing.HashValue
 }
 
@@ -77,7 +76,6 @@ func (vs *virtualStateAccess) Copy() VirtualStateAccess {
 		chainID:            vs.chainID.Clone(),
 		db:                 vs.db,
 		committedHash:      vs.committedHash,
-		uncommittedHash:    vs.uncommittedHash,
 		appliedBlockHashes: make([]hashing.HashValue, len(vs.appliedBlockHashes)),
 		empty:              vs.empty,
 		kvs:                vs.kvs.Copy(),
@@ -87,11 +85,16 @@ func (vs *virtualStateAccess) Copy() VirtualStateAccess {
 }
 
 func (vs *virtualStateAccess) DangerouslyConvertToString() string {
-	return fmt.Sprintf("#%d, ts: %v, committed hash: %s, uncommitted hash: %s\n%s",
+	blockHashes := "["
+	for _, blockHash := range vs.appliedBlockHashes {
+		blockHashes += blockHash.String() + ", "
+	}
+	blockHashes += "]"
+	return fmt.Sprintf("#%d, ts: %v, committed hash: %s, applied block hashes: %s\n%s",
 		vs.BlockIndex(),
 		vs.Timestamp(),
 		vs.committedHash.String(),
-		vs.uncommittedHash.String(),
+		blockHashes,
 		vs.KVStore().DangerouslyDumpToString(),
 	)
 }
