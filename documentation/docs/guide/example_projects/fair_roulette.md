@@ -94,7 +94,7 @@ To interact with a smart contract, you will need:
 
 ### Implementation
 
-The PoC consists of two projects residing in `contracts/rust/fairroulette`.
+The PoC consists of two projects residing in `contracts/wasm/fairroulette`.
 
 One is the smart contract itself. Its boilerplate was generated using the new [Schema tool](../wasm_vm/intro.mdx) which is shipped with this beta release. 
 The contract logic is written in Rust, but the same implementation can be achieved interchangeably with Golang which is demonstrated in the root folder and `./src`.
@@ -133,7 +133,7 @@ All state changes such as the `round started` ,`round ended`, `placed bets`, and
 #### Building the Contract
 
 ```
-cd contracts/rust/fairroulette
+cd contracts/wasm/fairroulette
 wasm-pack build 
 ```
 
@@ -264,9 +264,9 @@ This means that to get a proper value from a view call, you should use `readUInt
 
 #### Install Dependencies
 
-1. Go to your frontend directory ( contracts/rust/fairroulette/frontend for example)
+1. Go to your frontend directory ( contracts/wasm/fairroulette/frontend for example)
     ```bash
-    cd  contracts/rust/fairroulette/frontend
+    cd  contracts/wasm/fairroulette/frontend
     ```
 2. Install dependencies running:
 
@@ -276,7 +276,7 @@ This means that to get a proper value from a view call, you should use `readUInt
    
 #### Configuration
 
-The frontend requires that you create a config file. You can copy the template from `contracts/rust/fairroulette/frontend/config.dev.sample.js`, and rename it to `config.dev.js` inside the same folder.
+The frontend requires that you create a config file. You can copy the template from `contracts/wasm/fairroulette/frontend/config.dev.sample.js`, and rename it to `config.dev.js` inside the same folder.
 
 ```bash
 cp config.dev.sample.js config.dev.js
@@ -299,7 +299,7 @@ wasp-cli chain list
 You can build the frontend by running the following commands:
 
 ```bash
-cd contracts/rust/fairroulette/frontend
+cd contracts/wasm/fairroulette/frontend
 npm run build_worker
 ```
 
@@ -323,5 +323,5 @@ Make sure to [Build](#building-the-contract) the contract before deploying it.
 Now, you can deploy the contract with a wasmtime configuration.
 
 ```bash
-wasp-cli chain deploy-contract wasmtime fairroulette "fairroulette"  contracts/rust/fairroulette/pkg/fairroulette_bg.wasm
+wasp-cli chain deploy-contract wasmtime fairroulette "fairroulette"  contracts/wasm/fairroulette/pkg/fairroulette_bg.wasm
 ```
