@@ -237,3 +237,7 @@ If you want to access the Wasp node from outside its local network, you will nee
 ```bash
 wasp --webapi.adminWhitelist=127.0.0.1,YOUR_IP
 ```
+
+## Video Tutorial
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/al-88Ncw2bg" title="Running a Wasp Node" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
