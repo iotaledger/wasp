@@ -108,13 +108,7 @@ func requestCmd() *cobra.Command {
 			receipt, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
 			log.Check(err)
 
-			kind := "on-ledger"
-			if receipt.Request.IsOffLedger() {
-				kind = "off-ledger"
-			}
-
-			log.Printf("%s request %s in block %d\n", kind, reqID.Base58(), blockIndex)
-			log.Printf("Error: %q\n", receipt.Error)
+			log.Printf("request included in block %d\n, %s\n", blockIndex, receipt.String())
 
 			log.Printf("\n")
 			logEventsInRequest(reqID)

@@ -173,10 +173,6 @@ func (p *Metadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	return nil
 }
 
-func (p *Metadata) String() string {
-	return "TODO" // TODO
-}
-
 // endregion
 
 // region OnLedger //////////////////////////////////////////////////////////////////
