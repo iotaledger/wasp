@@ -2,10 +2,14 @@
 title: ERC20 Example
 keywords:
 - ISCP
+- IOTA
 - Smart Contracts
 - EVM
 - Solidity
 - ERC20
+- eip-20
+- token creation
+- mint tokens
 description: Solidity smart contract ERC20.
 image: /img/logo/WASP_logo_dark.png
 ---
@@ -15,11 +19,13 @@ ERC20 is a standard for fungible tokens and is defined in the [EIP-20 Token Stan
 With the ERC20 standart you can create your own tokens and transfer them in the EVM on IOTA Smart Contracts without fees.
 
 You can use the [Remix IDE](https://remix.ethereum.org/) to deploy any regular Solidity Smart Contract.
-Set the environment to `Injected Web3`, which should then connect with your MetaMask wallet. [See this article](/wasp/guide/chains_and_nodes/testnet#interact-with-evm), to learn how connect to your Metamask with the Testnet.
+
+Set the environment to `Injected Web3`, and connect Remix with your MetaMask wallet. 
+Read this [how to connect your Metamask with the public Testnet.](/wasp/guide/chains_and_nodes/testnet#interact-with-evm).
 
 ## 1. Create a Smart Contract
 
-Create a new solidity file, for example `ÈRC20.sol` in the contracts folder of your [Remix IDE](https://remix.ethereum.org/) and add this code snippet:
+Create a new Solidity file, for example `ÈRC20.sol` in the contracts folder of your [Remix IDE](https://remix.ethereum.org/) and add this code snippet:
 
 ```solidity
 pragma solidity ^0.8.7;
