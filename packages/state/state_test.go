@@ -249,6 +249,83 @@ func TestVariableStateBasic(t *testing.T) {
 	require.EqualValues(t, vs3.StateCommitment(), vs4.StateCommitment())
 }
 
+func TestStateCommitmentAssociativity(t *testing.T) {
+	store1 := mapdb.NewMapDB()
+	store2 := mapdb.NewMapDB()
+	chainID := iscp.RandomChainID([]byte("associative"))
+
+	// vsNode1 index 0 vsNode2 index 0
+
+	vsNode1, err := CreateOriginState(store1, chainID)
+	require.NoError(t, err)
+	vsNode2, err := CreateOriginState(store2, chainID)
+	require.NoError(t, err)
+
+	// vsNode1 index 1 vsNode2 index 0
+
+	nowis := time.Now()
+	su := NewStateUpdateWithBlocklogValues(1, nowis, hashing.NilHash)
+	su.Mutations().Set("key", []byte("value"))
+	block1, err := newBlock(su.Mutations())
+	require.NoError(t, err)
+
+	err = vsNode1.ApplyBlock(block1)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, vsNode1.BlockIndex())
+	require.True(t, nowis.Equal(vsNode1.Timestamp()))
+	sc1Node1BeforeCommit := vsNode1.StateCommitment()
+
+	err = vsNode1.Commit(block1)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, vsNode1.BlockIndex())
+	require.True(t, nowis.Equal(vsNode1.Timestamp()))
+	sc1Node1AfterCommit := vsNode1.StateCommitment()
+	require.Equal(t, sc1Node1BeforeCommit, sc1Node1AfterCommit)
+
+	// vsNode1 index 2 vsNode2 index 0
+
+	nowis = time.Now()
+	su = NewStateUpdateWithBlocklogValues(2, nowis, vsNode1.PreviousStateHash())
+	su.Mutations().Set("otherKey", []byte("otherValue"))
+	block2, err := newBlock(su.Mutations())
+	require.NoError(t, err)
+
+	err = vsNode1.ApplyBlock(block2)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, vsNode1.BlockIndex())
+	require.True(t, nowis.Equal(vsNode1.Timestamp()))
+	sc2Node1BeforeCommit := vsNode1.StateCommitment()
+
+	// vsNode1 index 2 vsNode2 index 2
+
+	err = vsNode2.ApplyBlock(block1)
+	require.NoError(t, err)
+	err = vsNode2.ApplyBlock(block2)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, vsNode2.BlockIndex())
+	require.True(t, nowis.Equal(vsNode2.Timestamp()))
+	sc2Node2BeforeCommit := vsNode2.StateCommitment()
+	require.Equal(t, sc2Node1BeforeCommit, sc2Node2BeforeCommit)
+
+	err = vsNode1.Commit(block2)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, vsNode1.BlockIndex())
+	require.True(t, nowis.Equal(vsNode1.Timestamp()))
+	sc2Node1AfterCommit := vsNode1.StateCommitment()
+	require.Equal(t, sc2Node1BeforeCommit, sc2Node1AfterCommit)
+	require.Equal(t, sc2Node1AfterCommit, sc2Node2BeforeCommit)
+
+	err = vsNode2.Commit(block1)
+	require.NoError(t, err)
+	err = vsNode2.Commit(block2)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, vsNode2.BlockIndex())
+	require.True(t, nowis.Equal(vsNode2.Timestamp()))
+	sc2Node2AfterCommit := vsNode2.StateCommitment()
+	require.Equal(t, sc2Node2BeforeCommit, sc2Node2AfterCommit)
+	require.Equal(t, sc2Node1AfterCommit, sc2Node2AfterCommit)
+}
+
 func TestStateReader(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
 		store := mapdb.NewMapDB()

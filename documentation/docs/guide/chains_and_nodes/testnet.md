@@ -31,18 +31,22 @@ The testnet can be accessed via a series of endpoints that hve been made availab
 
 - https://wasp.sc.iota.org
   - The Wasp dashboard to explore the node configuration and view peering/chain configurations
-  - https://wasp.sc.iota.org/api/
+  - https://api.wasp.sc.iota.org
     - The Wasp api to deploy and interact with smart contracts
-    - https://wasp.sc.iota.org/api/info
+    - https://api.wasp.sc.iota.org/info
       - Information about the Wasp access node
+  - https://evm.wasp.sc.iota.org
+    - The URL to interact with the Ethereum Virtual Machine on our testnet
+  - https://explorer.wasp.sc.iota.org
+    - The URL to interact with the Ethereum Block Explorer on our testnet
 - https://goshimmer.sc.iota.org
   - The GoShimmer dashboard to explore the Tangle backing our smart contract testnet
-  - https://goshimmer.sc.iota.org/api/
+  - https://api.goshimmer.sc.iota.org/
     - The GoShimmer api to interact with the Tangle directly
-    - https://goshimmer.sc.iota.org/api/info
+    - https://api.goshimmer.sc.iota.org/info
       - Information about GoShimmer via the API
 - https://demo.sc.iota.org
-  - Our FairRoulette demo application to see a live smart contract
+  - Our FairRoulette demo application to see a live smart contract in action
 
 ## Configuring _wasp-cli_
 
@@ -55,7 +59,7 @@ wasp-cli init
 Now we need to tell `wasp-cli` how to reach our GoShimmer node.
 
 ```
-wasp-cli set goshimmer.api https://goshimmer.sc.iota.org/api
+wasp-cli set goshimmer.api https://api.goshimmer.sc.iota.org
 ```
 
 In order to deploy a smart contract you will need some funds. The wasp-cli tool makes this easy on our testnet. Run the following command to request some funds.
@@ -67,15 +71,15 @@ wasp-cli request-funds
 We need to let _wasp-cli_ know how to reach _Wasp_ by configuring the API address.
 
 ```
-wasp-cli set wasp.0.api https://wasp.sc.iota.org/api
+wasp-cli set wasp.0.api https://api.wasp.sc.iota.org
 ```
 
-Now you need to set the chain ID in _wasp-cli_ so that the correct chain can be found. Yo can find the ChainID by navigating to the (chains)[https://wasp.sc.iota.org/chains] page of the wasp dashboard. Click on the ChainID of the chain you will be able to copy the ChainID from the next page. It will be formatted like `dCwCC8D2v2MJKtj4gvi8ixVtoerGDp9aVbAxbCyPGSwn`. 
+Now you need to set the chain ID in _wasp-cli_ so that the correct chain can be found. Yo can find the ChainID by navigating to the (chains)[https://wasp.sc.iota.org/chains] page of the wasp dashboard. Click on the ChainID of the chain you will be able to copy the ChainID from the next page. It will be formatted like `jaSDxeZNtum7kLuRg8oWQ6nXKgYjb3XVq7yiwnvtUG3C`. 
 
 Use the ChainID to tell _wasp-cli_ which chain you want to interact with. 
 
 ```
-wasp-cli set chains.testchain dCwCC8D2v2MJKtj4gvi8ixVtoerGDp9aVbAxbCyPGSwn
+wasp-cli set chains.testchain jaSDxeZNtum7kLuRg8oWQ6nXKgYjb3XVq7yiwnvtUG3C
 wasp-cli set chain testchain
 ```
 
@@ -89,10 +93,10 @@ For simplicity, here is the full set of commands to configure _wasp-cli_.
 
 ```
 wasp-cli init
-wasp-cli set goshimmer.api https://goshimmer.sc.iota.org/api
+wasp-cli set goshimmer.api https://api.goshimmer.sc.iota.org
 wasp-cli request-funds
-wasp-cli set wasp.0.api https://wasp.sc.iota.org/api
-wasp-cli set chains.testchain dCwCC8D2v2MJKtj4gvi8ixVtoerGDp9aVbAxbCyPGSwn
+wasp-cli set wasp.0.api https://api.wasp.sc.iota.org
+wasp-cli set chains.testchain jaSDxeZNtum7kLuRg8oWQ6nXKgYjb3XVq7yiwnvtUG3C
 wasp-cli set chain testchain
 ```
 
@@ -102,13 +106,14 @@ We have deployed an experimental EVM chain that you can interact with. To begin,
 
 | Key | Value |
 | --- | ----- |
-| RPC URL | https://wasp.sc.iota.org/evm/ |
+| RPC URL | https://evm.wasp.sc.iota.org |
 | Chain ID | 1074 |
+| Block Explorer URL | https://explorer.wasp.sc.iota.org |
 
 It should look similar to this image. 
 
 ![MetaMask](/img/metamask_testnet.png)
 
 :::note
-The other values (network name, currency symbol, and explorer URL) can be whatever value you like. We plan to add a block explorer soon and will update the docs to reflect that accordingly.
+The other values (network name and currency symbol) can be whatever value you like. 
 :::

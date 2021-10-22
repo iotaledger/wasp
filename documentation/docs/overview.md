@@ -26,10 +26,16 @@ Given that anyone can start a new chain, and set the rules for that chain, a lot
 
 ## Flexibility
 
-You can run multiple types of virtual machines on any chain. We are starting with [Rust/WASM](https://rustwasm.github.io/docs/book/) based smart contracts, followed by [Solidity/EVM](https://docs.soliditylang.org/en/v0.8.6/) based smart contracts, but eventually all kinds of virtual machines can be supported in a ISCP chain depending on the demand. 
+You can run multiple types of virtual machines on any chain. We are starting with 
+[Rust/Wasm](https://rustwasm.github.io/docs/book/) based smart contracts, followed by 
+[Solidity/EVM](https://docs.soliditylang.org/en/v0.8.6/) based smart contracts, but eventually all kinds of virtual machines can be supported in a ISCP chain depending on the demand. 
 
 ISCP is more complex compared to conventional smart contracts, but this provides freedom and flexibility to allow the usage of smart contracts in a wide range of use cases.
 
 ## What is Wasp?
 
 Wasp is the node software that we have built to let you validate smart contracts as a part of a committee while using a virtual machine of your choice. Multiple Wasp nodes connect and form a committee of validators. When they reach consensus on a virtual machine state-change, they anchor that state change to the IOTA tangle, making it immutable. 
+
+## Feedback
+
+We are very eager to receive your feedback about your experiences with the IOTA Smart Contracts Beta. You can use [this form](https://docs.google.com/forms/d/e/1FAIpQLSd4jcmLzCPUNDIijEwGzuWerO23MS0Jmgzszgs-D6_awJUWow/viewform) to share your developer experience with us. This feedback will help us improve the product in follow up releases.

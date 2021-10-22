@@ -29,7 +29,6 @@ const (
 	ParamInt32       = wasmlib.Key("int32")
 	ParamInt64       = wasmlib.Key("int64")
 	ParamName        = wasmlib.Key("name")
-	ParamParam       = wasmlib.Key("@")
 	ParamRecordIndex = wasmlib.Key("recordIndex")
 	ParamRequestID   = wasmlib.Key("requestID")
 	ParamString      = wasmlib.Key("string")

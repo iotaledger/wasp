@@ -79,17 +79,17 @@ Given that an on-chain account is identified by an AgentID:
 
 - The AgentID for accounts owned by L1 entities (regular IOTA wallets) looks like:
 
-    ```yaml
-    Hname: 0
-    Address: "some address"
-    ```
+```yaml
+Hname: 0
+Address: "some address"
+```
 
 - The AgentID for accounts owned by L2 entities (Smart Contracts):
 
-    ```yaml
-    Hname: "Hname of the entity"
-    Address: "Address of the chain where the entity exists"
-    ```
+```yaml
+Hname: "Hname of the entity"
+Address: "Address of the chain where the entity exists"
+```
 
 For example, the smart contract with hname `123` that exists on the chain with address `000`, can be identified on **any** chain by the following AgentID:
 

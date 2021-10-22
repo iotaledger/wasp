@@ -44,11 +44,11 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 		test(t, false)
 	})
 	if len(skipWasm) == 0 || !skipWasm[0] {
-		t.Run(fmt.Sprintf("run WASM version of %s", t.Name()), func(t *testing.T) {
+		t.Run(fmt.Sprintf("run Wasm version of %s", t.Name()), func(t *testing.T) {
 			test(t, true)
 		})
 	} else {
-		t.Logf("skipped WASM version of '%s'", t.Name())
+		t.Logf("skipped Wasm version of '%s'", t.Name())
 	}
 }
 

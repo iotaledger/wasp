@@ -8,8 +8,9 @@ import "encoding/binary"
 //nolint:revive
 const (
 	// all TYPE_* values should exactly match the counterpart OBJTYPE_* values on the host!
-	TYPE_ARRAY int32 = 0x20
-	TYPE_CALL  int32 = 0x40
+	TYPE_ARRAY   int32 = 0x20
+	TYPE_ARRAY16 int32 = 0x30
+	TYPE_CALL    int32 = 0x40
 
 	TYPE_ADDRESS    int32 = 1
 	TYPE_AGENT_ID   int32 = 2

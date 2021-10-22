@@ -33,7 +33,7 @@ pub struct ImmutableGetAllowedStateControllerAddressesResults {
 
 impl ImmutableGetAllowedStateControllerAddressesResults {
     pub fn allowed_state_controller_addresses(&self) -> ArrayOfImmutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_ALLOWED_STATE_CONTROLLER_ADDRESSES.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
+        let arr_id = get_object_id(self.id, RESULT_ALLOWED_STATE_CONTROLLER_ADDRESSES.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
         ArrayOfImmutableBytes { obj_id: arr_id }
     }
 }
@@ -63,7 +63,7 @@ pub struct MutableGetAllowedStateControllerAddressesResults {
 
 impl MutableGetAllowedStateControllerAddressesResults {
     pub fn allowed_state_controller_addresses(&self) -> ArrayOfMutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_ALLOWED_STATE_CONTROLLER_ADDRESSES.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
+        let arr_id = get_object_id(self.id, RESULT_ALLOWED_STATE_CONTROLLER_ADDRESSES.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
         ArrayOfMutableBytes { obj_id: arr_id }
     }
 }

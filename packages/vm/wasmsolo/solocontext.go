@@ -24,9 +24,14 @@ import (
 )
 
 const (
-	Debug      = false
-	StackTrace = false
-	TraceHost  = false
+	SoloDebug        = false
+	SoloHostTracing  = false
+	SoloStackTracing = false
+)
+
+var (
+	GoDebug = flag.Bool("godebug", false, "debug go smart contract code")
+	GoWasm  = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
 )
 
 type SoloContext struct {
@@ -41,15 +46,13 @@ type SoloContext struct {
 	offLedger   bool
 	scName      string
 	Tx          *ledgerstate.Transaction
-	wasmHost    *wasmhost.WasmHost
+	wc          *wasmproc.WasmContext
 	wasmHostOld wasmlib.ScHost
 }
 
 var (
-	_       wasmlib.ScFuncCallContext = &SoloContext{}
-	_       wasmlib.ScViewCallContext = &SoloContext{}
-	GoDebug                           = flag.Bool("godebug", false, "debug go smart contract code")
-	GoWasm                            = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
+	_ wasmlib.ScFuncCallContext = &SoloContext{}
+	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
 
 // NewSoloContext can be used to create a SoloContext associated with a smart contract
@@ -146,15 +149,15 @@ func soloContext(t *testing.T, chain *solo.Chain, scName string, creator *SoloAg
 
 // StartChain starts a new chain named chainName.
 func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
-	wasmhost.HostTracing = TraceHost
-	// wasmhost.ExtendedHostTracing = TraceHost
+	wasmhost.HostTracing = SoloHostTracing
+	// wasmhost.HostTracingAll = SoloHostTracing
 
 	var soloEnv *solo.Solo
 	if len(env) != 0 {
 		soloEnv = env[0]
 	}
 	if soloEnv == nil {
-		soloEnv = solo.New(t, Debug, StackTrace)
+		soloEnv = solo.New(t, SoloDebug, SoloStackTracing)
 	}
 	return soloEnv.NewChain(nil, chainName)
 }
@@ -233,23 +236,23 @@ func (ctx *SoloContext) Host() wasmlib.ScHost {
 
 // init further initializes the SoloContext.
 func (ctx *SoloContext) init(onLoad func()) *SoloContext {
-	ctx.wasmHost = &wasmhost.WasmHost{}
-	ctx.wasmHost.Init(ctx.Chain.Log)
-	ctx.wasmHost.TrackObject(wasmproc.NewNullObject(&ctx.wasmHost.KvStoreHost))
-	ctx.wasmHost.TrackObject(NewSoloScContext(ctx))
-	ctx.wasmHostOld = wasmlib.ConnectHost(ctx.wasmHost)
+	ctx.wc = wasmproc.NewWasmContext("-solo", nil)
+	ctx.wc.Init(nil)
+	ctx.wc.TrackObject(wasmproc.NewNullObject(&ctx.wc.KvStoreHost))
+	ctx.wc.TrackObject(NewSoloScContext(ctx))
+	ctx.wasmHostOld = wasmlib.ConnectHost(ctx.wc)
 	onLoad()
 	return ctx
 }
 
 // InitFuncCallContext is a function that is required to use SoloContext as an ScFuncCallContext
 func (ctx *SoloContext) InitFuncCallContext() {
-	_ = wasmlib.ConnectHost(ctx.wasmHost)
+	_ = wasmlib.ConnectHost(ctx.wc)
 }
 
 // InitViewCallContext is a function that is required to use SoloContext as an ScViewCallContext
 func (ctx *SoloContext) InitViewCallContext() {
-	_ = wasmlib.ConnectHost(ctx.wasmHost)
+	_ = wasmlib.ConnectHost(ctx.wc)
 }
 
 // Minted returns the color and amount of newly minted tokens
@@ -317,11 +320,15 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 	}
 
 	wasmFile := ctx.scName + "_bg.wasm"
+
+	// try Rust first
 	exists, _ := util.ExistsFilePath("../pkg/" + wasmFile)
 	if exists {
 		wasmFile = "../pkg/" + wasmFile
 	}
-	if *GoWasm {
+
+	rustExists, _ := util.ExistsFilePath("../src/lib.rs")
+	if *GoWasm || !rustExists {
 		wasmFile = ctx.scName + "_go.wasm"
 		exists, _ = util.ExistsFilePath("../wasmmain/pkg/" + wasmFile)
 		if exists {
@@ -345,6 +352,6 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 	}
 
 	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, maxWait...)
-	_ = wasmlib.ConnectHost(ctx.wasmHost)
+	_ = wasmlib.ConnectHost(ctx.wc)
 	return result
 }

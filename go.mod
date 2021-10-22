@@ -34,6 +34,7 @@ require (
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
+	gopkg.in/yaml.v2 v2.4.0
 	nhooyr.io/websocket v1.8.7
 )
 

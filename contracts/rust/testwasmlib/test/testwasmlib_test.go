@@ -13,17 +13,17 @@ import (
 )
 
 var (
-	allParams = []wasmlib.Key{
-		testwasmlib.ParamAddress,
-		testwasmlib.ParamAgentID,
-		testwasmlib.ParamChainID,
-		testwasmlib.ParamColor,
-		testwasmlib.ParamHash,
-		testwasmlib.ParamHname,
-		testwasmlib.ParamInt16,
-		testwasmlib.ParamInt32,
-		testwasmlib.ParamInt64,
-		testwasmlib.ParamRequestID,
+	allParams = []string{
+		string(testwasmlib.ParamAddress),
+		string(testwasmlib.ParamAgentID),
+		string(testwasmlib.ParamChainID),
+		string(testwasmlib.ParamColor),
+		string(testwasmlib.ParamHash),
+		string(testwasmlib.ParamHname),
+		string(testwasmlib.ParamInt16),
+		string(testwasmlib.ParamInt32),
+		string(testwasmlib.ParamInt64),
+		string(testwasmlib.ParamRequestID),
 	}
 	allLengths    = []int{33, 37, 33, 32, 32, 4, 2, 4, 8, 34}
 	invalidValues = map[wasmlib.Key][][]byte{
@@ -95,12 +95,12 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 func TestValidSizeParams(t *testing.T) {
 	ctx := setupTest(t)
 	for index, param := range allParams {
-		t.Run("ValidSize "+string(param), func(t *testing.T) {
+		t.Run("ValidSize "+param, func(t *testing.T) {
 			pt := testwasmlib.ScFuncs.ParamTypes(ctx)
-			pt.Params.Param(param).SetValue(make([]byte, allLengths[index]))
+			pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]))
 			pt.Func.TransferIotas(1).Post()
 			require.Error(t, ctx.Err)
-			if string(param) == string(testwasmlib.ParamChainID) {
+			if param == string(testwasmlib.ParamChainID) {
 				require.Contains(t, ctx.Err.Error(), "invalid ")
 			} else {
 				require.Contains(t, ctx.Err.Error(), "mismatch: ")
@@ -112,21 +112,21 @@ func TestValidSizeParams(t *testing.T) {
 func TestInvalidSizeParams(t *testing.T) {
 	ctx := setupTest(t)
 	for index, param := range allParams {
-		t.Run("InvalidSize "+string(param), func(t *testing.T) {
+		t.Run("InvalidSize "+param, func(t *testing.T) {
 			pt := testwasmlib.ScFuncs.ParamTypes(ctx)
-			pt.Params.Param(param).SetValue(make([]byte, 0))
+			pt.Params.Param().GetBytes(param).SetValue(make([]byte, 0))
 			pt.Func.TransferIotas(1).Post()
 			require.Error(t, ctx.Err)
 			require.True(t, strings.HasSuffix(ctx.Err.Error(), "invalid type size"))
 
 			pt = testwasmlib.ScFuncs.ParamTypes(ctx)
-			pt.Params.Param(param).SetValue(make([]byte, allLengths[index]-1))
+			pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]-1))
 			pt.Func.TransferIotas(1).Post()
 			require.Error(t, ctx.Err)
 			require.True(t, strings.HasSuffix(ctx.Err.Error(), "invalid type size"))
 
 			pt = testwasmlib.ScFuncs.ParamTypes(ctx)
-			pt.Params.Param(param).SetValue(make([]byte, allLengths[index]+1))
+			pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]+1))
 			pt.Func.TransferIotas(1).Post()
 			require.Error(t, ctx.Err)
 			require.Contains(t, ctx.Err.Error(), "invalid type size")
@@ -151,16 +151,23 @@ func TestInvalidTypeParams(t *testing.T) {
 }
 
 func TestViewBlockRecords(t *testing.T) {
-	t.SkipNow()
 	ctx := testValidParams(t)
 
-	br := testwasmlib.ScFuncs.BlockRecords(ctx)
-	br.Params.BlockIndex().SetValue(1)
-	br.Func.Call()
+	recs := testwasmlib.ScFuncs.BlockRecords(ctx)
+	recs.Params.BlockIndex().SetValue(1)
+	recs.Func.Call()
 	require.NoError(t, ctx.Err)
-	count := br.Results.Count()
+	count := recs.Results.Count()
 	require.True(t, count.Exists())
 	require.EqualValues(t, 1, count.Value())
+
+	rec := testwasmlib.ScFuncs.BlockRecord(ctx)
+	rec.Params.BlockIndex().SetValue(1)
+	rec.Params.RecordIndex().SetValue(0)
+	rec.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.True(t, rec.Results.Record().Exists())
+	require.EqualValues(t, 37, len(rec.Results.Record().Value()))
 }
 
 func TestClearArray(t *testing.T) {

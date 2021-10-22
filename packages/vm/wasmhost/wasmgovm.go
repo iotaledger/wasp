@@ -19,21 +19,12 @@ type WasmGoVM struct {
 var _ WasmVM = &WasmGoVM{}
 
 func NewWasmGoVM(scName string, onLoad func()) *WasmGoVM {
-	vm := &WasmGoVM{}
-	vm.scName = scName
-	vm.onLoad = onLoad
-	return vm
+	return &WasmGoVM{scName: scName, onLoad: onLoad}
 }
 
 func (vm *WasmGoVM) Interrupt() {
 	// disabled for now
 	// panic("implement me")
-}
-
-func (vm *WasmGoVM) LinkHost(impl WasmVM, host *WasmHost) error {
-	_ = vm.WasmVMBase.LinkHost(impl, host)
-	wasmlib.ConnectHost(host)
-	return nil
 }
 
 func (vm *WasmGoVM) LoadWasm(wasmData []byte) error {

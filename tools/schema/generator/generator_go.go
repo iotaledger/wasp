@@ -124,6 +124,14 @@ func (s *Schema) GenerateGo() error {
 	return nil
 }
 
+func (s *Schema) generateGoArrayType(varType string) string {
+	// native core contracts use Array16 instead of our nested array type
+	if s.CoreContracts {
+		return "wasmlib.TYPE_ARRAY16|" + varType
+	}
+	return "wasmlib.TYPE_ARRAY|" + varType
+}
+
 func (s *Schema) generateGoConsts(test bool) error {
 	file, err := os.Create("consts.go")
 	if err != nil {
@@ -172,8 +180,7 @@ func (s *Schema) generateGoConsts(test bool) error {
 
 		for _, f := range s.Funcs {
 			constHname := "H" + capitalize(f.FuncName)
-			hName = iscp.Hn(f.String)
-			s.appendConst(constHname, hNameType+"(0x"+hName.String()+")")
+			s.appendConst(constHname, hNameType+"(0x"+f.Hname.String()+")")
 		}
 		s.flushGoConsts(file)
 	}
@@ -314,7 +321,7 @@ func (s *Schema) generateGoFuncs() error {
 	return os.Remove(scOriginal)
 }
 
-func (s *Schema) generateGoFuncSignature(file *os.File, f *FuncDef) {
+func (s *Schema) generateGoFuncSignature(file *os.File, f *Func) {
 	fmt.Fprintf(file, "\nfunc %s(ctx wasmlib.Sc%sContext, f *%sContext) {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
 	case "funcInit":
@@ -495,7 +502,7 @@ func (s *Schema) generateGoProxyArrayNewType(file *os.File, field *Field, proxyT
 			if varType == "" {
 				varType = goTypeBytes
 			}
-			varType = "wasmlib.TYPE_ARRAY|" + varType
+			varType = s.generateGoArrayType(varType)
 		}
 		fmt.Fprintf(file, "\nfunc (a %s) Get%s(index int32) %s {\n", arrayType, field.Type, proxyType)
 		fmt.Fprintf(file, "\tsubID := wasmlib.GetObjectID(a.objID, wasmlib.Key32(index), %s)\n", varType)
@@ -556,7 +563,7 @@ func (s *Schema) generateGoProxyMapNewType(file *os.File, field *Field, proxyTyp
 			if varType == "" {
 				varType = goTypeBytes
 			}
-			varType = "wasmlib.TYPE_ARRAY|" + varType
+			varType = s.generateGoArrayType(varType)
 		}
 		fmt.Fprintf(file, "\nfunc (m %s) Get%s(key %s) %s {\n", mapType, field.Type, keyType, proxyType)
 		fmt.Fprintf(file, "\tsubID := wasmlib.GetObjectID(m.objID, %s.KeyID(), %s)\n", keyValue, varType)
@@ -568,25 +575,6 @@ func (s *Schema) generateGoProxyMapNewType(file *os.File, field *Field, proxyTyp
 	fmt.Fprintf(file, "\nfunc (m %s) Get%s(key %s) %s {\n", mapType, field.Type, keyType, proxyType)
 	fmt.Fprintf(file, "\treturn %s{objID: m.objID, keyID: %s.KeyID()}\n", proxyType, keyValue)
 	fmt.Fprintf(file, "}\n")
-}
-
-func (s *Schema) generateGoState() error {
-	file, err := os.Create("state.go")
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// write file header
-	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintf(file, "package %s\n", s.Name)
-	if len(s.StateVars) != 0 {
-		fmt.Fprintf(file, "\n"+importWasmLib)
-	}
-
-	s.generateGoStruct(file, s.StateVars, PropImmutable, s.FullName, "State")
-	s.generateGoStruct(file, s.StateVars, PropMutable, s.FullName, "State")
-	return nil
 }
 
 func (s *Schema) generateGoParams() error {
@@ -609,16 +597,10 @@ func (s *Schema) generateGoParams() error {
 	}
 
 	for _, f := range s.Funcs {
-		params := make([]*Field, 0, len(f.Params))
-		for _, param := range f.Params {
-			if param.Alias != "@" {
-				params = append(params, param)
-			}
-		}
 		if len(f.Params) == 0 {
 			continue
 		}
-		s.generateGoStruct(file, params, PropImmutable, f.Type, "Params")
+		s.generateGoStruct(file, f.Params, PropImmutable, f.Type, "Params")
 		s.generateGoStruct(file, f.Params, PropMutable, f.Type, "Params")
 	}
 
@@ -654,6 +636,25 @@ func (s *Schema) generateGoResults() error {
 	return nil
 }
 
+func (s *Schema) generateGoState() error {
+	file, err := os.Create("state.go")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// write file header
+	fmt.Fprintln(file, copyright(true))
+	fmt.Fprintf(file, "package %s\n", s.Name)
+	if len(s.StateVars) != 0 {
+		fmt.Fprintf(file, "\n"+importWasmLib)
+	}
+
+	s.generateGoStruct(file, s.StateVars, PropImmutable, s.FullName, "State")
+	s.generateGoStruct(file, s.StateVars, PropMutable, s.FullName, "State")
+	return nil
+}
+
 func (s *Schema) generateGoStruct(file *os.File, fields []*Field, mutability, typeName, kind string) {
 	typeName = mutability + typeName + kind
 	kind = strings.TrimSuffix(kind, "s")
@@ -678,7 +679,7 @@ func (s *Schema) generateGoStruct(file *os.File, fields []*Field, mutability, ty
 			varType = goTypeBytes
 		}
 		if field.Array {
-			varType = "wasmlib.TYPE_ARRAY|" + varType
+			varType = s.generateGoArrayType(varType)
 			arrayType := "ArrayOf" + mutability + field.Type
 			fmt.Fprintf(file, "\nfunc (s %s) %s() %s {\n", typeName, varName, arrayType)
 			fmt.Fprintf(file, "\tarrID := wasmlib.GetObjectID(s.id, %s, %s)\n", varID, varType)
@@ -701,9 +702,9 @@ func (s *Schema) generateGoStruct(file *os.File, fields []*Field, mutability, ty
 		}
 
 		proxyType := mutability + field.Type
-		if field.Alias == "@" {
-			fmt.Fprintf(file, "\nfunc (s %s) %s(key wasmlib.Key) wasmlib.Sc%s {\n", typeName, varName, proxyType)
-			fmt.Fprintf(file, "\treturn wasmlib.NewSc%s(s.id, key.KeyID())\n", proxyType)
+		if field.TypeID == 0 {
+			fmt.Fprintf(file, "\nfunc (s %s) %s() %s {\n", typeName, varName, proxyType)
+			fmt.Fprintf(file, "\treturn %s{objID: s.id, keyID: %s}\n", proxyType, varID)
 			fmt.Fprintf(file, "}\n")
 			continue
 		}
@@ -749,11 +750,42 @@ func (s *Schema) GenerateGoTests() error {
 	defer func() {
 		_ = os.Chdir("..")
 	}()
-	// TODO <scname>_test.go
-	return nil // s.generateGoConsts(true)
+
+	// do not overwrite existing file
+	name := strings.ToLower(s.Name)
+	filename := name + "_test.go"
+	file, err := os.Open(filename)
+	if err == nil {
+		file.Close()
+		return nil
+	}
+
+	file, err = os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	module := ModuleName + strings.ReplaceAll(ModuleCwd[len(ModulePath):], "\\", "/")
+	fmt.Fprintln(file, "package test")
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, "import (")
+	fmt.Fprintln(file, "\t\"testing\"")
+	fmt.Fprintln(file)
+	fmt.Fprintf(file, "\t\"%s\"\n", module)
+	fmt.Fprintln(file, "\t\"github.com/iotaledger/wasp/packages/vm/wasmsolo\"")
+	fmt.Fprintln(file, "\t\"github.com/stretchr/testify/require\"")
+	fmt.Fprintln(file, ")")
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, "func TestDeploy(t *testing.T) {")
+	fmt.Fprintf(file, "\tctx := wasmsolo.NewSoloContext(t, %s.ScName, %s.OnLoad)\n", name, name)
+	fmt.Fprintf(file, "\trequire.NoError(t, ctx.ContractExists(%s.ScName))\n", name)
+	fmt.Fprintln(file, "}")
+
+	return nil
 }
 
-func (s *Schema) generateGoThunk(file *os.File, f *FuncDef) {
+func (s *Schema) generateGoThunk(file *os.File, f *Func) {
 	nameLen := f.nameLen(5)
 	fmt.Fprintf(file, "\ntype %sContext struct {\n", f.Type)
 	if len(f.Params) != 0 {
@@ -808,7 +840,7 @@ func (s *Schema) generateGoThunk(file *os.File, f *FuncDef) {
 	fmt.Fprintf(file, "}\n")
 }
 
-func (s *Schema) generateGoThunkAccessCheck(file *os.File, f *FuncDef) {
+func (s *Schema) generateGoThunkAccessCheck(file *os.File, f *Func) {
 	grant := f.Access
 	index := strings.Index(grant, "//")
 	if index >= 0 {

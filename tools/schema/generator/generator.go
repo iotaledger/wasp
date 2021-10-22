@@ -12,8 +12,6 @@ import (
 	"strings"
 )
 
-// TODO generate initial tests
-
 const (
 	AccessChain   = "chain"
 	AccessCreator = "creator"
@@ -178,7 +176,7 @@ func sortedKeys(dict StringMap) []string {
 	return keys
 }
 
-func sortedFuncDescs(dict FuncDescMap) []string {
+func sortedFuncDescs(dict FuncDefMap) []string {
 	keys := make([]string, 0)
 	for key := range dict {
 		keys = append(keys, key)

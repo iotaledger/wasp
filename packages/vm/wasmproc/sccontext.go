@@ -47,12 +47,12 @@ var typeIds = map[int32]int32{
 
 type ScContext struct {
 	ScSandboxObject
-	vm *WasmProcessor
+	wc *WasmContext
 }
 
-func NewScContext(vm *WasmProcessor, host *wasmhost.KvStoreHost) *ScContext {
+func NewScContext(wc *WasmContext, host *wasmhost.KvStoreHost) *ScContext {
 	o := &ScContext{}
-	o.vm = vm
+	o.wc = wc
 	o.host = host
 	o.name = "root"
 	o.id = 1
@@ -63,16 +63,16 @@ func NewScContext(vm *WasmProcessor, host *wasmhost.KvStoreHost) *ScContext {
 
 func (o *ScContext) Exists(keyID, typeID int32) bool {
 	if keyID == wasmhost.KeyExports {
-		return o.vm.ctx == nil && o.vm.ctxView == nil
+		return o.wc.ctx == nil && o.wc.ctxView == nil
 	}
 	return o.GetTypeID(keyID) > 0
 }
 
 func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
-	if o.vm == nil {
+	if o.wc == nil {
 		o.Panic("missing context")
 	}
-	ctx := o.vm.ctx
+	ctx := o.wc.ctx
 	if ctx == nil {
 		return o.getBytesForView(keyID, typeID)
 	}
@@ -100,7 +100,7 @@ func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
 
 //nolint:unparam
 func (o *ScContext) getBytesForView(keyID, typeID int32) []byte {
-	ctx := o.vm.ctxView
+	ctx := o.wc.ctxView
 	if ctx == nil {
 		o.Panic("missing context")
 	}
@@ -115,30 +115,32 @@ func (o *ScContext) getBytesForView(keyID, typeID int32) []byte {
 		return ctx.Contract().Bytes()
 	case wasmhost.KeyContractCreator:
 		return ctx.ContractCreator().Bytes()
+	case wasmhost.KeyTimestamp:
+		return codec.EncodeInt64(ctx.GetTimestamp())
 	}
 	o.InvalidKey(keyID)
 	return nil
 }
 
 func (o *ScContext) GetObjectID(keyID, typeID int32) int32 {
-	if keyID == wasmhost.KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
-		// once map has entries (after on_load) this cannot be called any more
+	if keyID == wasmhost.KeyExports && (o.wc.ctx != nil || o.wc.ctxView != nil) {
+		// once map has entries (after on_load) this cannot be called any longer
 		o.InvalidKey(keyID)
 		return 0
 	}
 
 	return GetMapObjectID(o, keyID, typeID, ObjFactories{
-		wasmhost.KeyBalances:  func() WaspObject { return NewScBalances(o.vm, keyID) },
-		wasmhost.KeyExports:   func() WaspObject { return NewScExports(&o.vm.WasmHost) },
-		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.vm, keyID) },
+		wasmhost.KeyBalances:  func() WaspObject { return NewScBalances(o.wc, keyID) },
+		wasmhost.KeyExports:   func() WaspObject { return NewScExports(o.wc) },
+		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.wc, keyID) },
 		wasmhost.KeyMaps:      func() WaspObject { return NewScMaps(o.host) },
-		wasmhost.KeyMinted:    func() WaspObject { return NewScBalances(o.vm, keyID) },
-		wasmhost.KeyParams:    func() WaspObject { return NewScDict(o.host, o.vm.params()) },
+		wasmhost.KeyMinted:    func() WaspObject { return NewScBalances(o.wc, keyID) },
+		wasmhost.KeyParams:    func() WaspObject { return NewScDict(o.host, o.wc.params()) },
 		wasmhost.KeyResults:   func() WaspObject { return NewScDict(o.host, dict.New()) },
 		wasmhost.KeyReturn:    func() WaspObject { return NewScDict(o.host, dict.New()) },
-		wasmhost.KeyState:     func() WaspObject { return NewScDict(o.host, o.vm.state()) },
-		wasmhost.KeyTransfers: func() WaspObject { return NewScTransfers(o.vm) },
-		wasmhost.KeyUtility:   func() WaspObject { return NewScUtility(o.vm) },
+		wasmhost.KeyState:     func() WaspObject { return NewScDict(o.host, o.wc.state()) },
+		wasmhost.KeyTransfers: func() WaspObject { return NewScTransfers(o.wc) },
+		wasmhost.KeyUtility:   func() WaspObject { return NewScUtility(o.wc) },
 	})
 }
 
@@ -153,13 +155,13 @@ func (o *ScContext) SetBytes(keyID, typeID int32, bytes []byte) {
 	case wasmhost.KeyDeploy:
 		o.processDeploy(bytes)
 	case wasmhost.KeyEvent:
-		o.vm.ctx.Event(string(bytes))
+		o.wc.ctx.Event(string(bytes))
 	case wasmhost.KeyLog:
-		o.vm.log().Infof(string(bytes))
+		o.wc.log().Infof(string(bytes))
 	case wasmhost.KeyTrace:
-		o.vm.log().Debugf(string(bytes))
+		o.wc.log().Debugf(string(bytes))
 	case wasmhost.KeyPanic:
-		o.vm.log().Panicf(string(bytes))
+		o.wc.log().Panicf(string(bytes))
 	case wasmhost.KeyPost:
 		o.processPost(bytes)
 	default:
@@ -181,17 +183,22 @@ func (o *ScContext) processCall(bytes []byte) {
 	transfer := o.getTransfer(decode.Int32())
 
 	o.Tracef("CALL c'%s' f'%s'", contract.String(), function.String())
-	var results dict.Dict
-	if o.vm.ctx != nil {
-		results, err = o.vm.ctx.Call(contract, function, params, transfer)
-	} else {
-		results, err = o.vm.ctxView.Call(contract, function, params)
-	}
+	results, err := o.processCallUnlocked(contract, function, params, transfer)
 	if err != nil {
 		o.Panic("failed to invoke call: %v", err)
 	}
 	resultsID := o.GetObjectID(wasmhost.KeyReturn, wasmhost.OBJTYPE_MAP)
 	o.host.FindObject(resultsID).(*ScDict).kvStore = results
+}
+
+func (o *ScContext) processCallUnlocked(contract, function iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
+	o.wc.proc.instanceLock.Unlock()
+	defer o.wc.proc.instanceLock.Lock()
+
+	if o.wc.ctx != nil {
+		return o.wc.ctx.Call(contract, function, params, transfer)
+	}
+	return o.wc.ctxView.Call(contract, function, params)
 }
 
 func (o *ScContext) processDeploy(bytes []byte) {
@@ -204,13 +211,19 @@ func (o *ScContext) processDeploy(bytes []byte) {
 	description := string(decode.Bytes())
 	params := o.getParams(decode.Int32())
 	o.Tracef("DEPLOY c'%s' f'%s'", name, description)
-	err = o.vm.ctx.DeployContract(programHash, name, description, params)
+	err = o.processDeployUnlocked(programHash, name, description, params)
 	if err != nil {
 		o.Panic("failed to deploy: %v", err)
 	}
 }
 
-// TODO refactor
+func (o *ScContext) processDeployUnlocked(programHash hashing.HashValue, name, description string, params dict.Dict) error {
+	o.wc.proc.instanceLock.Unlock()
+	defer o.wc.proc.instanceLock.Lock()
+
+	return o.wc.ctx.DeployContract(programHash, name, description, params)
+}
+
 func (o *ScContext) processPost(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
 	chainID, err := iscp.ChainIDFromBytes(decode.Bytes())
@@ -239,22 +252,22 @@ func (o *ScContext) processPost(bytes []byte) {
 	}
 	delay := decode.Int32()
 	if delay == 0 {
-		if !o.vm.ctx.Send(chainID.AsAddress(), transfer, metadata) {
+		if !o.wc.ctx.Send(chainID.AsAddress(), transfer, metadata) {
 			o.Panic("failed to send to %s", chainID.AsAddress().String())
 		}
 		return
 	}
 
-	if delay < -1 {
+	if delay < 0 {
 		o.Panic("invalid delay: %d", delay)
 	}
 
-	timeLock := time.Unix(0, o.vm.ctx.GetTimestamp())
+	timeLock := time.Unix(0, o.wc.ctx.GetTimestamp())
 	timeLock = timeLock.Add(time.Duration(delay) * time.Second)
 	options := iscp.SendOptions{
 		TimeLock: uint32(timeLock.Unix()),
 	}
-	if !o.vm.ctx.Send(chainID.AsAddress(), transfer, metadata, options) {
+	if !o.wc.ctx.Send(chainID.AsAddress(), transfer, metadata, options) {
 		o.Panic("failed to send to %s", chainID.AsAddress().String())
 	}
 }

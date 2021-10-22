@@ -13,3 +13,4 @@ use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
+use crate::types::*;

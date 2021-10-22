@@ -28,6 +28,7 @@ var Processor = root.Contract.Processor(initialize,
 	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
 	root.FuncFindContract.WithHandler(findContract),
 	root.FuncGetContractRecords.WithHandler(getContractRecords),
+	root.FuncRequireDeployPermissions.WithHandler(requireDeployPermissions),
 )
 
 // initialize handles constructor, the "init" request. This is the first call to the chain
@@ -61,6 +62,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	govParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes()) // chain owner is whoever sends init request
 	mustStoreAndInitCoreContract(ctx, governance.Contract, a, govParams)
 
+	state.Set(root.VarDeployPermissionsEnabled, []byte{1})
 	state.Set(root.VarStateInitialized, []byte{0xFF})
 
 	ctx.Log().Debugf("root.initialize.success")
@@ -177,4 +179,17 @@ func getContractRecords(ctx iscp.SandboxView) (dict.Dict, error) {
 	})
 
 	return ret, nil
+}
+
+func requireDeployPermissions(ctx iscp.Sandbox) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	a.Require(isChainOwner(a, ctx), "root.revokeDeployPermissions: not authorized")
+	params := kvdecoder.New(ctx.Params())
+	permissionsEnabled := params.MustGetBytes(root.ParamDeployPermissionsEnabled)[0] == 1
+	val := []byte{0}
+	if permissionsEnabled {
+		val = []byte{1}
+	}
+	ctx.State().Set(root.VarDeployPermissionsEnabled, val)
+	return nil, nil
 }

@@ -85,7 +85,7 @@ func (cT *candidateBlock) getNextStateHash() hashing.HashValue {
 
 func (cT *candidateBlock) getNextState(currentState state.VirtualStateAccess) (state.VirtualStateAccess, error) {
 	if cT.isLocal() {
-		return cT.nextState, nil
+		return cT.nextState.Copy(), nil
 	}
 	err := currentState.ApplyBlock(cT.block)
 	return currentState, err

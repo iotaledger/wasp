@@ -36,6 +36,8 @@ const (
 )
 
 const (
+	FuncForcePayout       = "forcePayout"
+	FuncForceReset        = "forceReset"
 	FuncPayWinners        = "payWinners"
 	FuncPlaceBet          = "placeBet"
 	FuncPlayPeriod        = "playPeriod"
@@ -46,6 +48,8 @@ const (
 )
 
 const (
+	HFuncForcePayout       = wasmlib.ScHname(0x555a4c4f)
+	HFuncForceReset        = wasmlib.ScHname(0xa331951e)
 	HFuncPayWinners        = wasmlib.ScHname(0xfb2b0144)
 	HFuncPlaceBet          = wasmlib.ScHname(0xdfba7d1b)
 	HFuncPlayPeriod        = wasmlib.ScHname(0xcb94b293)

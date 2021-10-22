@@ -5,7 +5,7 @@ keywords:
 - structure
 - State
 - Entry points
-- WASM
+- Wasm
 description: Each smart contract instance has a program with a collection of entry points and a state. 
 image: /img/tutorial/SC-structure.png
 ---

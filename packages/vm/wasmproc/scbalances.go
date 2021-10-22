@@ -15,27 +15,27 @@ import (
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-func NewScBalances(vm *WasmProcessor, keyID int32) *ScDict {
-	o := NewScDict(&vm.KvStoreHost, dict.New())
+func NewScBalances(wc *WasmContext, keyID int32) *ScDict {
+	o := NewScDict(&wc.KvStoreHost, dict.New())
 	switch keyID {
 	case wasmhost.KeyIncoming:
-		if vm.ctx == nil {
+		if wc.ctx == nil {
 			o.Panic("no incoming() on views")
 		}
-		return loadBalances(o, vm.ctx.IncomingTransfer())
+		return loadBalances(o, wc.ctx.IncomingTransfer())
 	case wasmhost.KeyMinted:
-		if vm.ctx == nil {
+		if wc.ctx == nil {
 			o.Panic("no minted() on views")
 		}
-		return loadBalances(o, vm.ctx.Minted())
+		return loadBalances(o, wc.ctx.Minted())
 
 	case wasmhost.KeyBalances:
-		if vm.ctx != nil {
-			return loadBalances(o, vm.ctx.Balances())
+		if wc.ctx != nil {
+			return loadBalances(o, wc.ctx.Balances())
 		}
-		return loadBalances(o, vm.ctxView.Balances())
+		return loadBalances(o, wc.ctxView.Balances())
 	}
-	o.Panic("unknown balances: %s", vm.GetKeyStringFromID(keyID))
+	o.Panic("unknown balances: %s", wc.GetKeyStringFromID(keyID))
 	return nil
 }
 
