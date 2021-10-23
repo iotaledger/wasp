@@ -16,6 +16,7 @@ import (
 //nolint:revive
 const (
 	OBJTYPE_ARRAY    int32 = 0x20
+	OBJTYPE_ARRAY16  int32 = 0x30
 	OBJTYPE_CALL     int32 = 0x40
 	OBJTYPE_TYPEMASK int32 = 0x0f
 
@@ -37,11 +38,6 @@ const (
 // flag to indicate that this key id originally comes from a bytes key
 // this allows us to display better readable tracing information
 const KeyFromBytes int32 = 0x4000
-
-var (
-	HostTracing         = false
-	ExtendedHostTracing = false
-)
 
 type HostObject interface {
 	CallFunc(keyID int32, params []byte) []byte
@@ -250,7 +246,7 @@ func (h *KvStoreHost) Tracef(format string, a ...interface{}) {
 }
 
 func (h *KvStoreHost) TraceAllf(format string, a ...interface{}) {
-	if ExtendedHostTracing {
+	if HostTracingAll {
 		h.Tracef(format, a...)
 	}
 }

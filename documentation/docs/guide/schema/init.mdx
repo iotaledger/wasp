@@ -1,23 +1,35 @@
+---
+keywords:
+- init
+- initialization
+- owner
+- initial state
+- smart contract creator
+- one-time
+- contract deployment
+description: The init function will automatically be called immediately after the first time the contract has been deployed to the VM.  This is a one-time initialization call, meant to be performed by the contract deployment mechanism.
+image: /img/logo/WASP_logo_dark.png
+---
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
 
 # Smart Contract Initialization
 
-Smart contracts start out with a completely blank state. Sometimes you want to be able to
-define initial state, for example if your contract is configurable. You want to be able to
+Smart contracts start out with a completely blank state. Sometimes you may want to be able to
+define initial state, for example if your contract is configurable. You may want to be able to
 pass this configuration to the contract upon deployment, so that its state reflects that
 configuration once the first request comes in. To support this initialization we allow the
 smart contract creator to provide an optional function named `init`.
 
-This `init` function, when provided, will automatically be called immediately after the
+When provided, the `init` function will automatically be called immediately after the
 first time the contract has been deployed to the VM. Note that this is a one-time
 initialization call, meant to be performed by the contract deployment mechanism. ISCP will
 prevent anyone else from calling this function ever again. So if you need to be able to
-reconfigure the contract later on, then you will need to provide a separate configuration
+reconfigure the contract later on, you will need to provide a separate configuration
 function, and guard it from being accessed by anyone else than properly authorized
 entities.
 
-To show how creating a smart contract with WasmLib works we will slowly start fleshing out
+To show how creating a smart contract with WasmLib works, we will slowly start fleshing out
 the smart contract functions of the `dividend` example in this tutorial. Here is the first
 part of the Rust code that implements it, which contains the 'init' function:
 
@@ -130,7 +142,7 @@ We define an owner variable and allow it to be something other than the default 
 contract creator. It is always a good idea to be flexible enough to be able to transfer
 ownership to another entity if necessary. Remember that once a smart contract has been
 deployed it is no longer possible to change this. Therefore, it is good practice thinking
-through those situations that could require change in advance and allow the contract
+through situations that could require change in advance, and allow the contract
 itself to handle such changes through its state by providing a proper function interface:
 
 <Tabs defaultValue="go"
@@ -180,8 +192,8 @@ pub fn func_set_owner(_ctx: &ScFuncContext, f: &SetOwnerContext) {
 
 Note that we only define a single owner here. Proper fall-back could require multiple
 owners in case the owner entity could disappear, which would allow others to take over
-instead of the contract becoming immutable w.r.t. owner functionality. Again, we cannot
-stress enough how important it is to think through every aspect of a smart contract before
-deployment.
+instead of the contract becoming immutable with regard to owner functionality. Again, we cannot
+stress enough how important it is to **think through every aspect of a smart contract before
+deployment**.
 
-In the next section we will look at how a smart contract can transfer tokens.
+In the next section we will look at how a smart contract can [transfer tokens](transfers.mdx).

@@ -239,6 +239,7 @@ func (req *OnLedger) Bytes() []byte {
 
 func (req *OnLedger) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(req.Output()).
+		Write(req.ID()). // Goshimmer doesnt include outputID in serialization, so we neeed to add it manually
 		Write(req.senderAddress).
 		WriteTime(req.txTimestamp).
 		Write(req.requestMetadata).
@@ -251,6 +252,12 @@ func (req *OnLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	if req.outputObj, err = ledgerstate.ExtendedOutputFromMarshalUtil(mu); err != nil {
 		return err
 	}
+	outputID, err := ledgerstate.OutputIDFromMarshalUtil(mu)
+	if err != nil {
+		return err
+	}
+	req.outputObj.SetID(outputID)
+
 	if req.senderAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
 		return err
 	}
@@ -346,6 +353,34 @@ func (req *OnLedger) SetParams(params dict.Dict) {
 
 func (req *OnLedger) Args() requestargs.RequestArgs {
 	return req.requestMetadata.Args()
+}
+
+func (req *OnLedger) String() string {
+	fallbackStr := "none"
+	if req.FallbackAddress() != nil {
+		fallbackStr = fmt.Sprintf(
+			"{Address: %s, Deadline: %s}",
+			req.FallbackAddress().Base58(),
+			req.FallbackDeadline().String(),
+		)
+	}
+	timelockStr := "none"
+	if !req.TimeLock().IsZero() {
+		timelockStr = req.TimeLock().String()
+	}
+	return fmt.Sprintf(
+		"OnLedger::{ ID: %s, sender: %s, senderHname: %s, target: %s, entrypoint: %s, args: %s, nonce: %d, timestamp: %s, fallback: %s, timelock: %s }",
+		req.ID().Base58(),
+		req.senderAddress.Base58(),
+		req.requestMetadata.senderContract.String(),
+		req.requestMetadata.targetContract.String(),
+		req.requestMetadata.entryPoint.String(),
+		req.Args().String(),
+		req.requestMetadata.requestNonce,
+		req.txTimestamp.String(),
+		fallbackStr,
+		timelockStr,
+	)
 }
 
 // endregion /////////////////////////////////////////////////////////////////
@@ -542,7 +577,14 @@ func (req *OffLedger) Args() requestargs.RequestArgs {
 }
 
 func (req *OffLedger) String() string {
-	return fmt.Sprintf("OffLedger:: target: %s, entry point: %s, args: %s", req.contract, req.entryPoint, req.args.String())
+	return fmt.Sprintf("OffLedger::{ ID: %s, sender: %s, target: %s, entrypoint: %s, args: %s, nonce: %d }",
+		req.ID().Base58(),
+		req.SenderAddress().Base58(),
+		req.contract.String(),
+		req.entryPoint.String(),
+		req.Args().String(),
+		req.nonce,
+	)
 }
 
 // endregion /////////////////////////////////////////////////////////////////

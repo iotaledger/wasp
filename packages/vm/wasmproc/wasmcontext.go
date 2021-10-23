@@ -101,10 +101,7 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 	//}
 
 	wc.Tracef("Calling " + wc.function)
-	saveID := wc.proc.currentContextID
-	wc.proc.currentContextID = wc.id
-	err := wc.proc.RunScFunction(wc.function)
-	wc.proc.currentContextID = saveID
+	err := wc.callFunction()
 	if err != nil {
 		wc.log().Infof("VM call %s(): error %v", wc.function, err)
 		return nil, err
@@ -112,6 +109,17 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 	resultsID := wc.GetObjectID(wasmlib.OBJ_ID_ROOT, wasmhost.KeyResults, wasmhost.OBJTYPE_MAP)
 	results := wc.FindObject(resultsID).(*ScDict).kvStore.(dict.Dict)
 	return results, nil
+}
+
+func (wc *WasmContext) callFunction() error {
+	wc.proc.instanceLock.Lock()
+	defer wc.proc.instanceLock.Unlock()
+
+	saveID := wc.proc.currentContextID
+	wc.proc.currentContextID = wc.id
+	err := wc.proc.RunScFunction(wc.function)
+	wc.proc.currentContextID = saveID
+	return err
 }
 
 func (wc *WasmContext) FunctionFromCode(code uint32) string {

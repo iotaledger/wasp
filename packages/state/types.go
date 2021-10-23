@@ -53,7 +53,7 @@ type Block interface {
 	Bytes() []byte
 }
 
-const OriginStateHashBase58 = "4izFrcU7RCMLPwbtRjkoT3aAdZJrxR6h1TSYJiE5DZ6d"
+const OriginStateHashBase58 = "96yCdioNdifMb8xTeHQVQ8BzDnXDbRBoYzTq7iVaymvV"
 
 func OriginStateHash() hashing.HashValue {
 	ret, err := hashing.HashValueFromBase58(OriginStateHashBase58)

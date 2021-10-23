@@ -23,10 +23,7 @@ type ImmutableMap struct {
 	name string
 }
 
-const (
-	mapSizeKeyCode = byte(0)
-	mapElemKeyCode = byte(1)
-)
+const mapElemKeyCode = byte('#')
 
 func NewMap(kvStore kv.KVStore, name string) *Map {
 	return &Map{
@@ -51,10 +48,7 @@ func (m *ImmutableMap) Name() string {
 }
 
 func (m *ImmutableMap) getSizeKey() kv.Key {
-	var buf bytes.Buffer
-	buf.Write([]byte(m.name))
-	buf.WriteByte(mapSizeKeyCode)
-	return kv.Key(buf.Bytes())
+	return kv.Key(m.name)
 }
 
 func (m *ImmutableMap) getElemKey(key []byte) kv.Key {

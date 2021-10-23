@@ -4,12 +4,13 @@ keywords:
 - Smart Contracts
 - EVM
 - Solidity
-description: Solidity smart contract example
+- example
+description: Solidity smart contract example.
 image: /img/logo/WASP_logo_dark.png
 ---
 # Solidity Smart Contract Example
 
-Given Solidity smart contracts on ISCP are compatible with Solidity smart contracts on any other network most smart contracts will work directly without modification. To give a rough indication of how a very simple Solidity smart contract looks like see the example below:
+Solidity smart contracts on ISCP are compatible with Solidity smart contracts on any other network, so most smart contracts will work directly without any modification. To get a rough indication of how a simple Solidity smart contract looks like, see the example below:
 
 
 ```solidity
@@ -34,4 +35,4 @@ contract Counter {
 }
 ```
 
-The full documentation for Solidity is [available here](https://docs.soliditylang.org/).
+For more information, please visit the [official Solidity documentation](https://docs.soliditylang.org/).

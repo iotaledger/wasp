@@ -9,13 +9,21 @@ import (
 	"time"
 )
 
-const (
-	defaultTimeout     = 5 * time.Second
-	disableWasmTimeout = false
-)
+const defaultTimeout = 5 * time.Second
 
-// WasmTimeout set this to non-zero for a one-time override of the defaultTimeout
-var WasmTimeout = 0 * time.Second
+var (
+	// DisableWasmTimeout can be used to disable the annoying timeout during debugging
+	DisableWasmTimeout = false
+
+	// HostTracing turns on debug tracing for ScHost calls
+	HostTracing = false
+
+	// HostTracingAll turns on *all* debug tracing for ScHost calls
+	HostTracingAll = false
+
+	// WasmTimeout set this to non-zero for a one-time override of the defaultTimeout
+	WasmTimeout = 0 * time.Second
+)
 
 type WasmVM interface {
 	Interrupt()
@@ -43,7 +51,7 @@ type WasmVMBase struct {
 func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 	// trick vm into thinking it doesn't have to start the timeout timer
 	// useful when debugging to prevent timing out on breakpoints
-	vm.timeoutStarted = disableWasmTimeout
+	vm.timeoutStarted = DisableWasmTimeout
 
 	vm.impl = impl
 	vm.host = host

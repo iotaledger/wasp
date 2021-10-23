@@ -1,4 +1,5 @@
-package collections //nolint:dupl
+//nolint:dupl
+package collections
 
 import (
 	"bytes"
@@ -34,10 +35,7 @@ func NewArray16ReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableArray1
 	}
 }
 
-const (
-	array16SizeKeyCode = byte(0)
-	array16ElemKeyCode = byte(1)
-)
+const array16ElemKeyCode = byte('#')
 
 func (a *Array16) Immutable() *ImmutableArray16 {
 	return a.ImmutableArray16
@@ -48,10 +46,7 @@ func (a *ImmutableArray16) getSizeKey() kv.Key {
 }
 
 func array16SizeKey(name string) kv.Key {
-	var buf bytes.Buffer
-	buf.Write([]byte(name))
-	buf.WriteByte(array16SizeKeyCode)
-	return kv.Key(buf.Bytes())
+	return kv.Key(name)
 }
 
 func (a *ImmutableArray16) getArray16ElemKey(idx uint16) kv.Key {

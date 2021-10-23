@@ -130,9 +130,8 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 		errStr = errProvided.Error()
 	}
 	err := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestReceipt{
-		RequestID: vmctx.req.ID(),
-		OffLedger: vmctx.req.IsOffLedger(),
-		Error:     errStr,
+		Request: vmctx.req,
+		Error:   errStr,
 	}, vmctx.requestLookupKey())
 	if err != nil {
 		vmctx.Panicf("logRequestToBlockLog: %v", err)

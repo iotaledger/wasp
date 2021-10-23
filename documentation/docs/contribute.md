@@ -27,7 +27,7 @@ Before creating the Pull Request ensure that:
 - all the tests pass:
 
     ```bash
-    go test -tags rocksdb ./...
+    go test -tags rocksdb,builtin_static ./...
     ```
 
 - there are no linting violations (instructions on how to setup linting below):
@@ -61,15 +61,15 @@ Before creating the Pull Request ensure that:
 
     - [Install golintci plugin](https://plugins.jetbrains.com/plugin/12496-go-linter)
 
-        ![Install golintci plugin](/img/contributing/golintci-goland-1.png)
+        ![Install golintci plugin](../static/img/contributing/golintci-goland-1.png)
 
     - Configure path for golangci
 
-        ![Configure path for golangci](/img/contributing/golintci-goland-2.png)
+        ![Configure path for golangci](../static/img/contributing/golintci-goland-2.png)
 
     - Add a golangci file watcher with custom command (I recommend using --fix)
 
-        ![Add a golangci file watcher with custom command](/img/contributing/golintci-goland-3.png)
+        ![Add a golangci file watcher with custom command](../static/img/contributing/golintci-goland-3.png)
 
     **Other editors**: please look into the [`golangci` official documentation](https://github.com/golangci/golangci-lint).
 
