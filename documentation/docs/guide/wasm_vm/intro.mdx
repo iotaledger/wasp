@@ -9,7 +9,7 @@ keywords:
 - store
 - state
 description: The Iota Smart Contracts Protocol (ISCP) provides  a very flexible way of programming smart contracts by providing an API to a sandboxed environment that allows you to interact with the ISCP deterministically without any security risks.
-image: /img/schema_tool/IscpHost.png
+image: /img/wasm_vm/IscpHost.png
 ---
 # Introduction to the Wasm VM for ISCP
 
@@ -21,7 +21,7 @@ contract. The API can be used by any kind of Virtual Machine (VM) to implement a
 program, load, and run smart contracts on top of the ISCP. The actual VMs can be
 implemented by whoever wants to create them.
 
-[![Wasp node ISCP Host](/img/schema_tool/IscpHost.png)](/img/schema_tool/IscpHost.png)
+[![Wasp node ISCP Host](/img/wasm_vm/IscpHost.png)](/img/wasm_vm/IscpHost.png)
 
 Of course, we provide an example implementation of such a VM to allow anyone to get
 a taste of what it is like to program a smart contract for the ISCP. Our VM implementation
@@ -42,7 +42,7 @@ only provide access to the ISCP host's sandbox API environment. The way we do th
 providing a simple library that can be linked to the Wasm code. This library, for
 obvious reasons, has been named `WasmLib` for now.
 
-[![Wasm VM](/img/schema_tool/WasmVM.png)](/img/schema_tool/WasmVM.png)
+[![Wasm VM](/img/wasm_vm/WasmVM.png)](/img/wasm_vm/WasmVM.png)
 
 As you can see we can have any number of smart contracts running in our Wasm VM. Each
 smart contract is a separately compiled Wasm code unit that contains its own copy of
