@@ -239,7 +239,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 // The parameter 'programHash' can be one of the following:
 //   - it is and ID of  the blob stored on the chain in the format of Wasm binary
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
-//     smart contact must be made available with the call examples.AddProcessor
+//     smart contract must be made available with the call examples.AddProcessor
 func (ch *Chain) DeployContract(keyPair *ed25519.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
 	par := []interface{}{root.ParamProgramHash, programHash, root.ParamName, name}
 	par = append(par, params...)
@@ -384,8 +384,8 @@ func (ch *Chain) GetTotalIotas() uint64 {
 //  - chain owner part of the fee (number of tokens)
 //  - validator part of the fee (number of tokens)
 // Total fee is sum of owner fee and validator fee
-func (ch *Chain) GetFeeInfo(contactName string) (colored.Color, uint64, uint64) {
-	hname := iscp.Hn(contactName)
+func (ch *Chain) GetFeeInfo(contractName string) (colored.Color, uint64, uint64) {
+	hname := iscp.Hn(contractName)
 	ret, err := ch.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, governance.ParamHname, hname)
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
