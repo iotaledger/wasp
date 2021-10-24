@@ -100,7 +100,7 @@ pub fn func_run_recursion(ctx: &ScFuncContext, f: &RunRecursionContext) {
 }
 
 pub fn func_send_to_address(ctx: &ScFuncContext, f: &SendToAddressContext) {
-    let balances = ScTransfers::new_transfers_from_balances(ctx.balances());
+    let balances = ScTransfers::from_balances(ctx.balances());
     ctx.transfer_to_address(&f.params.address().value(), balances);
 }
 

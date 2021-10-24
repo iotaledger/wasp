@@ -655,6 +655,7 @@ func (s *Schema) generateGoState() error {
 	return nil
 }
 
+// TODO nested structs
 func (s *Schema) generateGoStruct(file *os.File, fields []*Field, mutability, typeName, kind string) {
 	typeName = mutability + typeName + kind
 	kind = strings.TrimSuffix(kind, "s")

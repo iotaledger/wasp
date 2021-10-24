@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
+// TODO describe schema details in docs
 type (
 	FieldMap     map[string]*Field
 	FieldMapMap  map[string]FieldMap

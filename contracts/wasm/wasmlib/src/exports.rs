@@ -15,14 +15,14 @@ use crate::mutable::*;
 // There are only 2 symbols the ISCP host will actually look for
 // in the export table:
 // on_load (which must be defined by the SC code) and
-// on_call_entrypoint (which is defined here as part of WasmLib)
+// on_call (which is defined here as part of WasmLib)
 
 static mut FUNCS: Vec<fn(&ScFuncContext)> = vec![];
 static mut VIEWS: Vec<fn(&ScViewContext)> = vec![];
 
 #[no_mangle]
 // general entrypoint for the host to call any SC function
-// the host will pass the index of one of the entrypoints
+// the host will pass the index of one of the entry points
 // that was provided by on_load during SC initialization
 fn on_call(index: i32) {
     let ctx = ScFuncContext {};
@@ -73,10 +73,10 @@ impl ScExports {
 
     // defines the external name of a smart contract view
     // and the entry point function associated with it
-    pub fn add_view(&self, name: &str, f: fn(&ScViewContext)) {
+    pub fn add_view(&self, name: &str, v: fn(&ScViewContext)) {
         unsafe {
             let index = VIEWS.len() as i32;
-            VIEWS.push(f);
+            VIEWS.push(v);
             self.exports.get_string(index | 0x8000).set_value(name);
         }
     }
