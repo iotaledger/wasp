@@ -1,6 +1,11 @@
 wasp.log
-./wasp
-./wasp-cli
+wasp
+wasp-cli
+wasp-cluster
+dbinspector
+evmemulator
+schema
+submsg
 waspdb/
 cluster-data/
 dist/
