@@ -179,14 +179,11 @@ func TestWaspCLIBlockLog(t *testing.T) {
 
 	out = w.Run("chain", "request", reqID)
 	t.Logf("%+v", out)
-	found = false
 	for _, line := range out {
-		if line == `Error: ""` { // error should be empty for successful request
-			found = true
-			break
+		if strings.Contains(line, "Error:") {
+			t.Fail()
 		}
 	}
-	require.True(t, found)
 
 	// try an unsuccessful request (missing params)
 	out = w.Run("chain", "post-request", "root", "deployContract")
