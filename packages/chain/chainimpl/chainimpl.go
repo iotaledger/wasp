@@ -124,7 +124,7 @@ func NewChain(
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
-		msgPipe:           pipe.NewInfinitePipe(messagePriorityFun, maxMsgBuffer),
+		msgPipe:           pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
 		chainID:           chainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),

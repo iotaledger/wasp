@@ -374,25 +374,8 @@ func (m *PeerMessage) IsUserMessage() bool {
 	return m.MsgType >= FirstUserMsgCode
 }
 
-func (m *PeerMessage) GetHash() interface{} {
-	return struct {
-		msgType     byte
-		msgDataHash hashing.HashValue
-	}{
-		msgType:     m.MsgType,
-		msgDataHash: hashing.HashData(m.MsgData),
-	}
-}
-
-func (m *PeerMessage) Equals(elem interface{}) bool {
-	other, ok := elem.(*PeerMessage)
-	if !ok {
-		return false
-	}
-	if m.MsgType != other.MsgType {
-		return false
-	}
-	return bytes.Equal(m.MsgData, other.MsgData)
+func (m *PeerMessage) GetHash() hashing.HashValue {
+	return hashing.HashValue{} // TODO
 }
 
 // ParseNetID parses the NetID and returns the corresponding host and port.

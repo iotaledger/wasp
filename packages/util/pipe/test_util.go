@@ -1,19 +1,19 @@
 package pipe
 
+import (
+	"encoding/binary"
+
+	"github.com/iotaledger/wasp/packages/hashing"
+)
+
 type SimpleHashable int
 
 var _ Hashable = SimpleHashable(0)
 
-func (sh SimpleHashable) GetHash() interface{} {
-	return sh
-}
-
-func (sh SimpleHashable) Equals(elem interface{}) bool {
-	other, ok := elem.(SimpleHashable)
-	if !ok {
-		return false
-	}
-	return sh == other
+func (sh SimpleHashable) GetHash() hashing.HashValue {
+	bin := make([]byte, binary.MaxVarintLen64)
+	binary.PutVarint(bin, int64(sh))
+	return hashing.HashData(bin)
 }
 
 //--
