@@ -130,7 +130,7 @@ If you check the dashboard again, you should see that the `inccounter` contract 
 You can interact with a contract by calling its exposed functions and views.
 
 For instance, the
-[`inccounter`](https://github.com/iotaledger/wasp/tree/master/contracts/rust/inccounter/src)
+[`inccounter`](https://github.com/iotaledger/wasp/tree/master/contracts/wasm/inccounter/src)
 contract exposes the `increment` function, which simply increments a counter
 stored in the state. It also has the `getCounter` view that returns the
 current value of the counter.

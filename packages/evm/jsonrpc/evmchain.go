@@ -10,8 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -75,16 +77,33 @@ func (e *EVMChain) GasLimitFee(tx *types.Transaction) (colored.Color, uint64, er
 	return feeColor, tx.Gas() / gpi, nil
 }
 
+func (e *EVMChain) GetOnChainBalance() (colored.Balances, error) {
+	agentID := iscp.NewAgentID(ledgerstate.NewED25519Address(e.backend.Signer().PublicKey), 0)
+	ret, err := e.backend.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
+		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
+	}))
+	if err != nil {
+		return nil, err
+	}
+	return accounts.DecodeBalances(ret)
+}
+
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	feeColor, feeAmount, err := e.GasLimitFee(tx)
 	if err != nil {
 		return err
 	}
-	fee := colored.NewBalancesForColor(feeColor, feeAmount)
-	// deposit fee into sender's on-chain account
-	err = e.backend.PostOnLedgerRequest(accounts.Contract.Name, accounts.FuncDeposit.Name, fee, nil)
+	bal, err := e.GetOnChainBalance()
 	if err != nil {
 		return err
+	}
+	fee := colored.NewBalancesForColor(feeColor, feeAmount)
+	if bal[feeColor] < feeAmount {
+		// make a deposit if not enough on-chain balance to cover the fees
+		err = e.backend.PostOnLedgerRequest(accounts.Contract.Name, accounts.FuncDeposit.Name, fee, nil)
+		if err != nil {
+			return err
+		}
 	}
 	txdata, err := tx.MarshalBinary()
 	if err != nil {
