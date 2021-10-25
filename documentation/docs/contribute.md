@@ -27,7 +27,7 @@ Before creating the Pull Request ensure that:
 - all the tests pass:
 
     ```bash
-    go test -tags rocksdb ./...
+    go test -tags rocksdb,builtin_static ./...
     ```
 
 - there are no linting violations (instructions on how to setup linting below):

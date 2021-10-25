@@ -30,8 +30,8 @@
 		{{range $i, $r := .Receipts}}
 			<tr>
 				<td>{{$i}}</td>
-				<td><code>{{$r.RequestID.Base58}}</code></td>
-				<td>{{ if $r.OffLedger -}} yes {{- else -}} no {{- end }}</td>
+				<td><code>{{$r.Request.ID.Base58}}</code></td>
+				<td>{{ if $r.Request.IsOffLedger -}} yes {{- else -}} no {{- end }}</td>
 				<td><code>{{ $r.Error }}</code></td>
 			</tr>
 		{{end}}
