@@ -37,7 +37,7 @@
     "netid": "127.0.0.1:4000"
   },
   "nodeconn": {
-    "address": "goshimmer:5000"
+    "address": "goshimmer.sc.iota.org:5000"
   },
   "nanomsg":{
     "port": 5550

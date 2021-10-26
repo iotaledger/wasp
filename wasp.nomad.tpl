@@ -21,7 +21,7 @@ variable "wasp_config" {
 	},
 	"node": {
 		"disablePlugins": [],
-		"enablePlugins": []
+		"enablePlugins": [metrics]
 	},
 	"webapi": {
 		"bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_api" }}",
