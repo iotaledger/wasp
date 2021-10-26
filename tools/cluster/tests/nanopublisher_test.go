@@ -40,7 +40,7 @@ func (c *nanoClientTest) start(t *testing.T, url string) {
 }
 
 func TestNanoPublisher(t *testing.T) {
-	testutil.SkipHeavy(t)
+	testutil.RunHeavy(t)
 	// single wasp node committee, to test if publishing can break state transitions
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
