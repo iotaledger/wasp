@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
@@ -40,7 +39,6 @@ func (c *nanoClientTest) start(t *testing.T, url string) {
 }
 
 func TestNanoPublisher(t *testing.T) {
-	testutil.RunHeavy(t)
 	// single wasp node committee, to test if publishing can break state transitions
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
