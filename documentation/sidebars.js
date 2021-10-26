@@ -217,7 +217,7 @@ module.exports = {
                 {
                     type: 'doc',
                     label: 'Using Docker',
-                    id: 'misc/docker',
+                    id: 'guide/chains_and_nodes/docker',
                 },
                 {
                     type: 'doc',

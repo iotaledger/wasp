@@ -13,7 +13,7 @@ keywords:
 ---
 # Docker
 
-This page describes the configuration of the Wasp node in combination with Docker. If you followed the instructions in [Running a Node](../guide/chains_and_nodes/running-a-node.md), you can skip to [Configuring wasp-cli](../guide/chains_and_nodes/wasp-cli.md).
+This page describes the configuration of the Wasp node in combination with Docker. If you followed the instructions in [Running a Node](running-a-node.md), you can skip to [Configuring wasp-cli](wasp-cli.md).
 
 ## Introduction
 
