@@ -13,7 +13,6 @@ variable "chainid" {
 
 variable "wallet_seed" {
     type = string
-    default = "57RjnURPs65XhfTXoh36ERL32oyRFybF4xa7npPjxpZZ"
 }
 
 variable "adminWhitelist" {

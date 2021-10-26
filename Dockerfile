@@ -2,10 +2,9 @@ ARG GOLANG_IMAGE_TAG=1.17-buster
 
 # Build stage
 FROM golang:${GOLANG_IMAGE_TAG} AS build
-ARG BUILD_TAGS="rocksdb,builtin_static"
+ARG BUILD_TAGS="rocksdb"
 ARG BUILD_LD_FLAGS=""
 ARG BUILD_TARGET="./..."
-ARG GIT_COMMIT_SHA=""
 
 WORKDIR /wasp
 
@@ -17,12 +16,10 @@ RUN go mod verify
 # Project build stage
 COPY . .
 
-# RUN go build -o . -tags=${BUILD_TAGS} -ldflags="${BUILD_LD_FLAGS}" ${BUILD_TARGET}
-RUN make build GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
+RUN go build -o . -tags=${BUILD_TAGS} -ldflags="${BUILD_LD_FLAGS}" ${BUILD_TARGET}
 
 # Wasp build
-# FROM gcr.io/distroless/cc
-FROM golang:${GOLANG_IMAGE_TAG}
+FROM gcr.io/distroless/cc
 
 ARG FINAL_BINARY="wasp"
 
