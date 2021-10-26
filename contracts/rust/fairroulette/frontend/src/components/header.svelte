@@ -25,14 +25,26 @@
     label: string;
     href: string;
     target: '_blank' | 'self';
+    landingPage?: boolean;
   }[] = [
     {
       label: 'About Demo',
       href: '/',
       target: 'self',
+      landingPage: true,
     },
     {
-      label: 'Visit the Wiki',
+      label: 'About ISCP',
+      href: 'https://blog.iota.org/an-introduction-to-iota-smart-contracts-16ea6f247936/',
+      target: '_blank',
+    },
+    {
+      label: 'Wasp Wiki',
+      href: 'https://wiki.iota.org/wasp/welcome/',
+      target: '_blank',
+    },
+    {
+      label: 'Demo Wiki',
       href: 'https://wiki.iota.org/wasp/guide/example_projects/fair_roulette',
       target: '_blank',
     },
@@ -47,8 +59,8 @@
 
     <!-- Desktop menu -->
     <div class="nav-items">
-      {#each NAV_LINKS as { label, href, target }}
-        <a {target} {href}>{label}</a>
+      {#each NAV_LINKS as { label, href, target, landingPage }}
+        <a {target} {href} class:active={landingPage && isLanding}>{label}</a>
       {/each}
 
       <div
@@ -103,8 +115,10 @@
           <img src="/assets/close.svg" alt="close" />
         </div>
         <div class="aside-links">
-          {#each NAV_LINKS as { label, href, target }}
-            <a {target} {href}>{label}</a>
+          {#each NAV_LINKS as { label, href, target, landingPage }}
+            <a {target} {href} class:active={landingPage && isLanding}
+              >{label}</a
+            >
           {/each}
           <div
             class="dropdown flex-shrink-0"
@@ -305,6 +319,9 @@
       color: var(--gray-3);
       text-decoration: none;
       font-family: 'Inter';
+      &.active {
+        color: var(--mint-green-light);
+      }
     }
     .try-demo {
       border: 0;

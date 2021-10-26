@@ -283,7 +283,7 @@ export function subscribeToRouletteEvents(): void {
         }
         else if (get(round).betPlaced && !get(isAWinnerPlayer)) {
             showNotification({
-                type: Notification.Info,
+                type: Notification.Lose,
                 message: 'Sorry, you lost this round. Try again!',
                 timeout: DEFAULT_AUTODISMISS_TOAST_TIME
             })

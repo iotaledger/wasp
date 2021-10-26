@@ -23,6 +23,9 @@
     requestingFunds,
   } from '../lib/store';
 
+  export let currentRoute;
+  export let params;
+
   let message: StateMessage;
 
   $: $round,
@@ -58,8 +61,8 @@
     },
     [StateMessage.PlacingBet]: {
       title: 'Placing Bet',
-      description:
-        'Your bet is currently getting placed. The next round will begin in a few seconds.',
+      description: 'Your bet is currently getting placed.',
+      extra: 'The next round will begin in a few seconds.',
     },
   };
 
@@ -116,6 +119,9 @@
       {#if !(message === StateMessage.Running && !$timeToFinished)}
         <div class="description">
           {MESSAGES[message].description}
+          {#if message === StateMessage.PlacingBet && !$round?.active && MESSAGES[message].extra}
+            {MESSAGES[message].extra}
+          {/if}
         </div>
       {/if}
     </div>
@@ -165,6 +171,9 @@
     .animation {
       position: absolute;
       z-index: 1;
+      overflow: hidden;
+      max-width: 100%;
+      max-height: 100%;
     }
     .description {
       text-align: center;
@@ -236,6 +245,7 @@
         max-height: 500px;
         position: relative;
         min-height: 100px;
+        display: flex;
         @media (min-width: 1024px) {
           width: 25%;
           height: calc(100vh - 400px);
