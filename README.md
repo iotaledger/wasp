@@ -18,7 +18,7 @@ If you want to contribute to this repository, consider posting a [bug
 report](https://github.com/iotaledger/wasp/issues/new-issue), feature request
 or a [pull request](https://github.com/iotaledger/wasp/pulls/).
 
-Please read [this](docOps/docs/contribute.md) before creating a pull request.
+Please read [this](documentation/docs/contribute.md) before creating a pull request.
 
 You can also join our [Discord server](https://discord.iota.org/) and ping us
 in `#smartcontracts-dev`.

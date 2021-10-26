@@ -17,6 +17,9 @@ func (c *Client) CheckRequestResult(reqID iscp.RequestID) error {
 	if err != nil {
 		return xerrors.Errorf("Could not fetch receipt for request: %w", err)
 	}
+	if !ret.MustHas(blocklog.ParamRequestRecord) {
+		return xerrors.Errorf("Could not fetch receipt for request: not found in blocklog")
+	}
 	req, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
 	if err != nil {
 		return xerrors.Errorf("Could not decode receipt for request: %w", err)

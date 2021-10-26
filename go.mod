@@ -43,4 +43,6 @@ replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-202108240834
 
 replace go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
 
+replace github.com/linxGnu/grocksdb => github.com/gohornet/grocksdb v1.6.38-0.20211012114404-55f425442260
+
 replace github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.9-0.20210930201820-68977625ebb2

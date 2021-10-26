@@ -22,7 +22,7 @@ After going through the instructions on [Running a node](./running-a-node.md), y
 You can create a basic default configuration by running:
 
 ```bash
-wasp-cli init .
+wasp-cli init 
 ````
 
 This command will create a configuration file named `wasp-cli.json` in the current directory.
@@ -31,17 +31,22 @@ After this, you will need to tell the `wasp-cli` the location of the Goshimmer n
 committee of Wasp nodes:
 
 ```shell
-$ wasp-cli set goshimmer.api 127.0.0.1:8080
+wasp-cli set goshimmer.api 127.0.0.1:8080
 
-$ wasp-cli set wasp.0.api 127.0.0.1:9090
-$ wasp-cli set wasp.0.nanomsg 127.0.0.1:5550
-$ wasp-cli set wasp.0.peering 127.0.0.1:4000
+wasp-cli set wasp.0.api 127.0.0.1:9090
+wasp-cli set wasp.0.nanomsg 127.0.0.1:5550
+wasp-cli set wasp.0.peering 127.0.0.1:4000
 
-$ wasp-cli set wasp.1.api 127.0.0.1:9091
-$ wasp-cli set wasp.1.nanomsg 127.0.0.1:5551
-$ wasp-cli set wasp.1.peering 127.0.0.1:4001
+## You can add as many nodes as you like in your committee
+wasp-cli set wasp.1.api 127.0.0.1:9091
+wasp-cli set wasp.1.nanomsg 127.0.0.1:5551
+wasp-cli set wasp.1.peering 127.0.0.1:4001
 
 ...
+
+wasp-cli set wasp.N.api 127.0.0.1:9091
+wasp-cli set wasp.N.nanomsg 127.0.0.1:5551
+wasp-cli set wasp.N.peering 127.0.0.1:4001
 ```
 
 Alternatively, you can edit the `wasp-cli.json` file and include the desired server locations:

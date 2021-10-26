@@ -40,7 +40,7 @@ Docker.
 ```
 $ git clone https://github.com/iotaledger/goshimmer.git
 $ cd goshimmer
-$ go install -tags rocksdb
+$ go install -tags rocksdb,builtin_static
 ```
 
 Then, create an empty working directory for Goshimmer, and download the

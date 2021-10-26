@@ -68,12 +68,12 @@ func logRequestsInBlock(index uint32) {
 		log.Check(err)
 
 		kind := "on-ledger"
-		if req.OffLedger {
+		if req.Request.IsOffLedger() {
 			kind = "off-ledger"
 		}
 
 		rows[i] = []string{
-			req.RequestID.Base58(),
+			req.Request.ID().Base58(),
 			kind,
 			fmt.Sprintf("%q", req.Error),
 		}
@@ -105,16 +105,10 @@ func requestCmd() *cobra.Command {
 
 			blockIndex, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 			log.Check(err)
-			req, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
+			receipt, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
 			log.Check(err)
 
-			kind := "on-ledger"
-			if req.OffLedger {
-				kind = "off-ledger"
-			}
-
-			log.Printf("%s request %s in block %d\n", kind, reqID.Base58(), blockIndex)
-			log.Printf("Error: %q\n", req.Error)
+			log.Printf("request included in block %d\n, %s\n", blockIndex, receipt.String())
 
 			log.Printf("\n")
 			logEventsInRequest(reqID)

@@ -577,25 +577,6 @@ func (s *Schema) generateGoProxyMapNewType(file *os.File, field *Field, proxyTyp
 	fmt.Fprintf(file, "}\n")
 }
 
-func (s *Schema) generateGoState() error {
-	file, err := os.Create("state.go")
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// write file header
-	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintf(file, "package %s\n", s.Name)
-	if len(s.StateVars) != 0 {
-		fmt.Fprintf(file, "\n"+importWasmLib)
-	}
-
-	s.generateGoStruct(file, s.StateVars, PropImmutable, s.FullName, "State")
-	s.generateGoStruct(file, s.StateVars, PropMutable, s.FullName, "State")
-	return nil
-}
-
 func (s *Schema) generateGoParams() error {
 	file, err := os.Create("params.go")
 	if err != nil {
@@ -616,16 +597,10 @@ func (s *Schema) generateGoParams() error {
 	}
 
 	for _, f := range s.Funcs {
-		params := make([]*Field, 0, len(f.Params))
-		for _, param := range f.Params {
-			if param.Alias != "@" {
-				params = append(params, param)
-			}
-		}
 		if len(f.Params) == 0 {
 			continue
 		}
-		s.generateGoStruct(file, params, PropImmutable, f.Type, "Params")
+		s.generateGoStruct(file, f.Params, PropImmutable, f.Type, "Params")
 		s.generateGoStruct(file, f.Params, PropMutable, f.Type, "Params")
 	}
 
@@ -658,6 +633,25 @@ func (s *Schema) generateGoResults() error {
 		s.generateGoStruct(file, f.Results, PropImmutable, f.Type, "Results")
 		s.generateGoStruct(file, f.Results, PropMutable, f.Type, "Results")
 	}
+	return nil
+}
+
+func (s *Schema) generateGoState() error {
+	file, err := os.Create("state.go")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// write file header
+	fmt.Fprintln(file, copyright(true))
+	fmt.Fprintf(file, "package %s\n", s.Name)
+	if len(s.StateVars) != 0 {
+		fmt.Fprintf(file, "\n"+importWasmLib)
+	}
+
+	s.generateGoStruct(file, s.StateVars, PropImmutable, s.FullName, "State")
+	s.generateGoStruct(file, s.StateVars, PropMutable, s.FullName, "State")
 	return nil
 }
 
@@ -711,14 +705,6 @@ func (s *Schema) generateGoStruct(file *os.File, fields []*Field, mutability, ty
 		if field.TypeID == 0 {
 			fmt.Fprintf(file, "\nfunc (s %s) %s() %s {\n", typeName, varName, proxyType)
 			fmt.Fprintf(file, "\treturn %s{objID: s.id, keyID: %s}\n", proxyType, varID)
-			fmt.Fprintf(file, "}\n")
-			continue
-		}
-
-		// TODO use self?
-		if field.Alias == "@" {
-			fmt.Fprintf(file, "\nfunc (s %s) %s(key wasmlib.Key) wasmlib.Sc%s {\n", typeName, varName, proxyType)
-			fmt.Fprintf(file, "\treturn wasmlib.NewSc%s(s.id, key.KeyID())\n", proxyType)
 			fmt.Fprintf(file, "}\n")
 			continue
 		}

@@ -5,7 +5,7 @@
     <id>UMLState</id>
     <coordinates>
       <x>126</x>
-      <y>414</y>
+      <y>279</y>
       <w>828</w>
       <h>90</h>
     </coordinates>
@@ -33,7 +33,7 @@ valign=top
     <id>UMLState</id>
     <coordinates>
       <x>126</x>
-      <y>522</y>
+      <y>387</y>
       <w>828</w>
       <h>693</h>
     </coordinates>
@@ -47,7 +47,7 @@ valign=top
     <id>UMLSpecialState</id>
     <coordinates>
       <x>144</x>
-      <y>459</y>
+      <y>324</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -58,7 +58,7 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>153</x>
-      <y>459</y>
+      <y>324</y>
       <w>45</w>
       <h>27</h>
     </coordinates>
@@ -69,7 +69,7 @@ valign=top
     <id>UMLSpecialState</id>
     <coordinates>
       <x>180</x>
-      <y>450</y>
+      <y>315</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -80,7 +80,7 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>207</x>
-      <y>450</y>
+      <y>315</y>
       <w>450</w>
       <h>36</h>
     </coordinates>
@@ -92,7 +92,7 @@ Now is after pullStateRetryTime</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>864</x>
-      <y>450</y>
+      <y>315</y>
       <w>81</w>
       <h>36</h>
     </coordinates>
@@ -103,7 +103,7 @@ Now is after pullStateRetryTime</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>936</x>
-      <y>450</y>
+      <y>315</y>
       <w>549</w>
       <h>36</h>
     </coordinates>
@@ -115,7 +115,7 @@ Now is after pullStateRetryTime</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1404</x>
-      <y>477</y>
+      <y>342</y>
       <w>306</w>
       <h>54</h>
     </coordinates>
@@ -127,7 +127,7 @@ m2=/StateMsg(output ledgerstate.AliasOutput)/</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>189</x>
-      <y>477</y>
+      <y>342</y>
       <w>252</w>
       <h>63</h>
     </coordinates>
@@ -139,7 +139,7 @@ Now is not after pullStateRetryTime</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>144</x>
-      <y>567</y>
+      <y>432</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -150,7 +150,7 @@ Now is not after pullStateRetryTime</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>153</x>
-      <y>567</y>
+      <y>432</y>
       <w>45</w>
       <h>27</h>
     </coordinates>
@@ -161,7 +161,7 @@ Now is not after pullStateRetryTime</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>180</x>
-      <y>558</y>
+      <y>423</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -172,19 +172,19 @@ Now is not after pullStateRetryTime</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>207</x>
-      <y>558</y>
+      <y>423</y>
       <w>810</w>
       <h>747</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 stateOutput == nil</panel_attributes>
-    <additional_attributes>10.0;20.0;880.0;20.0;10.0;20.0;160.0;20.0;10.0;20.0;880.0;20.0;880.0;810.0;580.0;810.0</additional_attributes>
+    <additional_attributes>10.0;20.0;880.0;20.0;10.0;20.0;160.0;20.0;10.0;20.0;880.0;20.0;880.0;810.0;830.0;810.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>189</x>
-      <y>585</y>
+      <y>450</y>
       <w>135</w>
       <h>54</h>
     </coordinates>
@@ -196,7 +196,7 @@ stateOutput != nil</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>180</x>
-      <y>621</y>
+      <y>486</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -207,20 +207,20 @@ stateOutput != nil</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>207</x>
-      <y>621</y>
+      <y>486</y>
       <w>801</w>
       <h>675</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 solidState.index == stateOutput.stateIndex
 </panel_attributes>
-    <additional_attributes>10.0;20.0;870.0;20.0;10.0;20.0;340.0;20.0;10.0;20.0;870.0;20.0;870.0;730.0;570.0;730.0</additional_attributes>
+    <additional_attributes>10.0;20.0;870.0;20.0;10.0;20.0;340.0;20.0;10.0;20.0;870.0;20.0;870.0;730.0;830.0;730.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>36</x>
-      <y>621</y>
+      <y>486</y>
       <w>162</w>
       <h>63</h>
     </coordinates>
@@ -234,7 +234,7 @@ stateOutput.stateIndex
     <id>Relation</id>
     <coordinates>
       <x>189</x>
-      <y>648</y>
+      <y>513</y>
       <w>288</w>
       <h>54</h>
     </coordinates>
@@ -246,7 +246,7 @@ solidState.index &lt; stateOutput.stateIndex</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>36</x>
-      <y>666</y>
+      <y>531</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -257,7 +257,7 @@ solidState.index &lt; stateOutput.stateIndex</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>27</x>
-      <y>666</y>
+      <y>531</y>
       <w>45</w>
       <h>45</h>
     </coordinates>
@@ -270,7 +270,7 @@ panic</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>162</x>
-      <y>684</y>
+      <y>549</y>
       <w>207</w>
       <h>36</h>
     </coordinates>
@@ -282,7 +282,7 @@ halign=left</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>180</x>
-      <y>738</y>
+      <y>603</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -293,7 +293,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>189</x>
-      <y>711</y>
+      <y>576</y>
       <w>27</w>
       <h>45</h>
     </coordinates>
@@ -304,7 +304,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>189</x>
-      <y>765</y>
+      <y>630</y>
       <w>198</w>
       <h>54</h>
     </coordinates>
@@ -316,7 +316,7 @@ i&lt;=stateOutput.stateIndex</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>180</x>
-      <y>864</y>
+      <y>729</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -327,7 +327,7 @@ i&lt;=stateOutput.stateIndex</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>207</x>
-      <y>864</y>
+      <y>729</y>
       <w>279</w>
       <h>36</h>
     </coordinates>
@@ -339,7 +339,7 @@ Now is after requestBlockRetryTime</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>702</x>
-      <y>864</y>
+      <y>729</y>
       <w>783</w>
       <h>36</h>
     </coordinates>
@@ -352,9 +352,9 @@ m1pos=0,-18</panel_attributes>
     <id>UMLDeployment</id>
     <coordinates>
       <x>1467</x>
-      <y>864</y>
-      <w>387</w>
-      <h>153</h>
+      <y>729</y>
+      <w>414</w>
+      <h>171</h>
     </coordinates>
     <panel_attributes>_Wasp:other_
 </panel_attributes>
@@ -363,20 +363,20 @@ m1pos=0,-18</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>711</x>
-      <y>891</y>
-      <w>279</w>
+      <x>756</x>
+      <y>756</y>
+      <w>234</w>
       <h>387</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 len(blockCandidates(i))==0</panel_attributes>
-    <additional_attributes>60.0;20.0;290.0;20.0;60.0;20.0;290.0;20.0;290.0;410.0;10.0;410.0</additional_attributes>
+    <additional_attributes>10.0;20.0;240.0;20.0;10.0;20.0;240.0;20.0;240.0;410.0;220.0;410.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>189</x>
-      <y>891</y>
+      <y>756</y>
       <w>279</w>
       <h>90</h>
     </coordinates>
@@ -388,7 +388,7 @@ Now is not after requestBlockRetryTime</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>180</x>
-      <y>963</y>
+      <y>828</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -399,7 +399,7 @@ Now is not after requestBlockRetryTime</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>207</x>
-      <y>963</y>
+      <y>828</y>
       <w>279</w>
       <h>36</h>
     </coordinates>
@@ -411,7 +411,7 @@ len(approvedBlockCandidates(i))&gt;0</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>468</x>
-      <y>963</y>
+      <y>828</y>
       <w>468</w>
       <h>126</h>
     </coordinates>
@@ -419,7 +419,7 @@ len(approvedBlockCandidates(i))&gt;0</panel_attributes>
   #retrieves a candidate from each state index between from and i
   #ensures that candidates[lastIndex] is approved
   #ensures that tentativeState.hash == candidates[lastIndex].stateHash
-  #tentativeState is obtain by aplying candidates elements
+  #tentativeState is obtained by aplying candidates elements
   #   one by one to solidState. (For local candidates new state ir stored
   #   and there is no need to apply block)
   #to optimise retrieval, candidate.votes is used
@@ -430,7 +430,7 @@ halign=left</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>423</x>
-      <y>1053</y>
+      <y>918</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -441,7 +441,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>198</x>
-      <y>1053</y>
+      <y>918</y>
       <w>243</w>
       <h>54</h>
     </coordinates>
@@ -453,7 +453,7 @@ candidates==nil</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>180</x>
-      <y>1089</y>
+      <y>954</y>
       <w>45</w>
       <h>36</h>
     </coordinates>
@@ -465,7 +465,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>189</x>
-      <y>990</y>
+      <y>855</y>
       <w>261</w>
       <h>117</h>
     </coordinates>
@@ -477,7 +477,7 @@ len(approvedBlockCandidates(i))==0</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>153</x>
-      <y>747</y>
+      <y>612</y>
       <w>45</w>
       <h>378</h>
     </coordinates>
@@ -488,19 +488,19 @@ len(approvedBlockCandidates(i))==0</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>207</x>
-      <y>738</y>
+      <y>603</y>
       <w>792</w>
       <h>549</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 r1=i &gt; stateOutput.stateIndex</panel_attributes>
-    <additional_attributes>10.0;20.0;860.0;20.0;860.0;590.0;570.0;590.0</additional_attributes>
+    <additional_attributes>10.0;20.0;860.0;20.0;860.0;590.0;830.0;590.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>432</x>
-      <y>1026</y>
+      <y>891</y>
       <w>54</w>
       <h>45</h>
     </coordinates>
@@ -511,7 +511,7 @@ r1=i &gt; stateOutput.stateIndex</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>342</x>
-      <y>1080</y>
+      <y>945</y>
       <w>144</w>
       <h>63</h>
     </coordinates>
@@ -612,7 +612,7 @@ stateOutput != null</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>468</x>
-      <y>1107</y>
+      <y>972</y>
       <w>288</w>
       <h>45</h>
     </coordinates>
@@ -636,7 +636,7 @@ halign=left</panel_attributes>
     <id>UMLDeployment</id>
     <coordinates>
       <x>1467</x>
-      <y>450</y>
+      <y>315</y>
       <w>99</w>
       <h>36</h>
     </coordinates>
@@ -647,7 +647,7 @@ halign=left</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>1062</x>
-      <y>531</y>
+      <y>396</y>
       <w>306</w>
       <h>36</h>
     </coordinates>
@@ -659,8 +659,8 @@ halign=left</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>297</x>
-      <y>1620</y>
+      <x>252</x>
+      <y>1485</y>
       <w>468</w>
       <h>54</h>
     </coordinates>
@@ -677,7 +677,7 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>1188</x>
-      <y>558</y>
+      <y>423</y>
       <w>27</w>
       <h>45</h>
     </coordinates>
@@ -689,19 +689,19 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>945</x>
-      <y>297</y>
+      <y>288</y>
       <w>135</w>
-      <h>324</h>
+      <h>198</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 </panel_attributes>
-    <additional_attributes>130.0;340.0;110.0;340.0;110.0;10.0;10.0;10.0</additional_attributes>
+    <additional_attributes>130.0;200.0;110.0;200.0;110.0;10.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1485</x>
-      <y>909</y>
+      <y>774</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -712,7 +712,7 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>1494</x>
-      <y>909</y>
+      <y>774</y>
       <w>45</w>
       <h>27</h>
     </coordinates>
@@ -723,7 +723,7 @@ valign=top
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1521</x>
-      <y>900</y>
+      <y>765</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -734,19 +734,20 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>1548</x>
-      <y>900</y>
-      <w>189</w>
-      <h>36</h>
+      <y>765</y>
+      <w>315</w>
+      <h>45</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-stateOutput == nil</panel_attributes>
-    <additional_attributes>10.0;20.0;190.0;20.0</additional_attributes>
+stateOutput == nil ||
+msg.blockIndex &gt; stateOutput.stateIndex</panel_attributes>
+    <additional_attributes>10.0;20.0;330.0;20.0</additional_attributes>
   </element>
   <element>
     <type>com.baselet.element.old.element.FinalState</type>
     <coordinates>
-      <x>1719</x>
-      <y>909</y>
+      <x>1845</x>
+      <y>774</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -757,19 +758,20 @@ stateOutput == nil</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1530</x>
-      <y>927</y>
-      <w>135</w>
-      <h>54</h>
+      <y>792</y>
+      <w>297</w>
+      <h>72</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-stateOutput != nil</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;20.0;10.0;10.0;10.0;40.0</additional_attributes>
+stateOutput != nil &amp;&amp;
+msg.blockIndex &lt;= stateOutput.stateIndex</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;40.0;10.0;10.0;10.0;60.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
     <coordinates>
       <x>1494</x>
-      <y>963</y>
+      <y>846</y>
       <w>333</w>
       <h>36</h>
     </coordinates>
@@ -782,7 +784,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1296</x>
-      <y>963</y>
+      <y>846</y>
       <w>216</w>
       <h>36</h>
     </coordinates>
@@ -794,7 +796,7 @@ halign=left</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1269</x>
-      <y>963</y>
+      <y>846</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -805,7 +807,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1098</x>
-      <y>963</y>
+      <y>846</y>
       <w>189</w>
       <h>36</h>
     </coordinates>
@@ -817,7 +819,7 @@ stateOutput == nil</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1278</x>
-      <y>990</y>
+      <y>873</y>
       <w>135</w>
       <h>54</h>
     </coordinates>
@@ -829,7 +831,7 @@ stateOutput != nil</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1269</x>
-      <y>1026</y>
+      <y>909</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -840,7 +842,7 @@ stateOutput != nil</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1098</x>
-      <y>1026</y>
+      <y>909</y>
       <w>189</w>
       <h>36</h>
     </coordinates>
@@ -852,7 +854,7 @@ stateOutput != nil</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1278</x>
-      <y>1053</y>
+      <y>936</y>
       <w>162</w>
       <h>54</h>
     </coordinates>
@@ -863,10 +865,10 @@ isSyncing(block.index)</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>783</x>
-      <y>1404</y>
-      <w>621</w>
-      <h>450</h>
+      <x>738</x>
+      <y>1341</y>
+      <w>693</w>
+      <h>378</h>
     </coordinates>
     <panel_attributes>*addBlockAndCheckStateOutput(block, nextState)*
 --
@@ -878,7 +880,7 @@ valign=top
     <id>UMLState</id>
     <coordinates>
       <x>1107</x>
-      <y>1089</y>
+      <y>972</y>
       <w>315</w>
       <h>36</h>
     </coordinates>
@@ -889,7 +891,7 @@ valign=top
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1269</x>
-      <y>1143</y>
+      <y>1026</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -900,7 +902,7 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>1278</x>
-      <y>1116</y>
+      <y>999</y>
       <w>27</w>
       <h>45</h>
     </coordinates>
@@ -911,7 +913,7 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>1278</x>
-      <y>1170</y>
+      <y>1053</y>
       <w>207</w>
       <h>63</h>
     </coordinates>
@@ -924,7 +926,7 @@ not approved by stateOutput</panel_attributes>
     <id>UMLDeployment</id>
     <coordinates>
       <x>1611</x>
-      <y>1215</y>
+      <y>1098</y>
       <w>99</w>
       <h>36</h>
     </coordinates>
@@ -935,7 +937,7 @@ not approved by stateOutput</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>1197</x>
-      <y>1215</y>
+      <y>1098</y>
       <w>171</w>
       <h>36</h>
     </coordinates>
@@ -946,7 +948,7 @@ not approved by stateOutput</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1359</x>
-      <y>1215</y>
+      <y>1098</y>
       <w>270</w>
       <h>72</h>
     </coordinates>
@@ -961,7 +963,7 @@ not approved by stateOutput</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1395</x>
-      <y>1242</y>
+      <y>1125</y>
       <w>324</w>
       <h>81</h>
     </coordinates>
@@ -970,22 +972,10 @@ m1=/output/</panel_attributes>
     <additional_attributes>291.0;10.0;290.0;50.0;10.0;50.0;10.0;70.0</additional_attributes>
   </element>
   <element>
-    <id>UMLState</id>
-    <coordinates>
-      <x>837</x>
-      <y>1440</y>
-      <w>261</w>
-      <h>36</h>
-    </coordinates>
-    <panel_attributes>startSyncingIfNeeded(block.index)
-halign=left</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
     <id>Relation</id>
     <coordinates>
-      <x>810</x>
-      <y>1449</y>
+      <x>765</x>
+      <y>1386</y>
       <w>45</w>
       <h>27</h>
     </coordinates>
@@ -995,8 +985,8 @@ halign=left</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>801</x>
-      <y>1449</y>
+      <x>756</x>
+      <y>1386</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -1004,21 +994,10 @@ halign=left</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>855</x>
-      <y>1467</y>
-      <w>27</w>
-      <h>45</h>
-    </coordinates>
-    <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;30.0</additional_attributes>
-  </element>
-  <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>846</x>
-      <y>1548</y>
+      <x>801</x>
+      <y>1449</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1028,8 +1007,8 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>873</x>
-      <y>1548</y>
+      <x>828</x>
+      <y>1449</y>
       <w>243</w>
       <h>36</h>
     </coordinates>
@@ -1040,30 +1019,31 @@ newCandidate</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1098</x>
-      <y>1539</y>
-      <w>288</w>
+      <x>1053</x>
+      <y>1440</y>
+      <w>360</w>
       <h>108</h>
     </coordinates>
     <panel_attributes>candidate := block
-candidate.local := (stateHash != nil)
+candidate.local := (nextState != nil)
 candidate.votes := 1
 candidate.approved := false
 candidate.nextStateHash := nextState.hash
 candidate.nextState := nextState
-blockCandidates.add(candidate)
+blockCandidates[block.index, block.hash] = candidate
 halign=left</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>837</x>
-      <y>1494</y>
-      <w>351</w>
-      <h>36</h>
+      <x>792</x>
+      <y>1377</y>
+      <w>360</w>
+      <h>54</h>
     </coordinates>
-    <panel_attributes>candidate := blockCandidates[block.index, block.hash]
+    <panel_attributes>startSyncingIfNeeded(block.index)
+candidate := blockCandidates[block.index, block.hash]
 newCandidate := (candidate == nil)
 halign=left</panel_attributes>
     <additional_attributes/>
@@ -1071,8 +1051,8 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>855</x>
-      <y>1521</y>
+      <x>810</x>
+      <y>1422</y>
       <w>27</w>
       <h>45</h>
     </coordinates>
@@ -1082,20 +1062,20 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>855</x>
-      <y>1575</y>
+      <x>810</x>
+      <y>1476</y>
       <w>117</w>
-      <h>54</h>
+      <h>108</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 m2=!newCandidate</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;40.0</additional_attributes>
+    <additional_attributes>10.0;10.0;10.0;100.0</additional_attributes>
   </element>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>846</x>
-      <y>1611</y>
+      <x>801</x>
+      <y>1566</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1105,36 +1085,36 @@ m2=!newCandidate</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>873</x>
-      <y>1611</y>
-      <w>225</w>
-      <h>63</h>
+      <x>810</x>
+      <y>1593</y>
+      <w>234</w>
+      <h>72</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 candidate.approvingOutputID !=
 block.approvingOutputID</panel_attributes>
-    <additional_attributes>10.0;20.0;230.0;20.0;230.0;50.0</additional_attributes>
+    <additional_attributes>10.0;40.0;10.0;10.0;10.0;60.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>855</x>
-      <y>1638</y>
-      <w>234</w>
-      <h>108</h>
+      <x>828</x>
+      <y>1566</y>
+      <w>270</w>
+      <h>45</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 candidate.approvingOutputID ==
 block.approvingOutputID</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;80.0;10.0;50.0;10.0;100.0</additional_attributes>
+    <additional_attributes>10.0;20.0;280.0;20.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>837</x>
-      <y>1728</y>
+      <x>1080</x>
+      <y>1566</y>
       <w>135</w>
-      <h>27</h>
+      <h>36</h>
     </coordinates>
     <panel_attributes>candidate.votes++
 halign=left</panel_attributes>
@@ -1143,30 +1123,30 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>963</x>
-      <y>1737</y>
-      <w>279</w>
+      <x>1206</x>
+      <y>1575</y>
+      <w>63</w>
       <h>27</h>
     </coordinates>
     <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>10.0;10.0;290.0;10.0</additional_attributes>
+    <additional_attributes>10.0;10.0;50.0;10.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1233</x>
-      <y>1638</y>
+      <x>1260</x>
+      <y>1539</y>
       <w>27</w>
-      <h>108</h>
+      <h>45</h>
     </coordinates>
     <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;100.0</additional_attributes>
+    <additional_attributes>10.0;10.0;10.0;30.0</additional_attributes>
   </element>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1224</x>
-      <y>1728</y>
+      <x>1251</x>
+      <y>1566</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1176,8 +1156,8 @@ halign=left</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>297</x>
-      <y>1692</y>
+      <x>252</x>
+      <y>1557</y>
       <w>468</w>
       <h>162</h>
     </coordinates>
@@ -1186,9 +1166,9 @@ halign=left</panel_attributes>
 if(candidate.index == output.stateIndex)
   if local candidate &amp;&amp; candidate.stateHash == output.stateData.hash {
     candidate.approved = true
-    candidate.approvingOutputID = output.ID
+    candidate.approvingOutputID = output.id
   }
-  if not local candidate &amp;&amp; candidate.approvingOutputID == output.ID {
+  if not local candidate &amp;&amp; candidate.approvingOutputID == output.id {
     candidate.approved = true
     candidate.stateHash = output.stateData.hash
   }
@@ -1200,8 +1180,8 @@ valign=top
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>981</x>
-      <y>1800</y>
+      <x>1008</x>
+      <y>1647</y>
       <w>342</w>
       <h>36</h>
     </coordinates>
@@ -1212,34 +1192,34 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1233</x>
-      <y>1755</y>
+      <x>1260</x>
+      <y>1593</y>
       <w>135</w>
-      <h>63</h>
+      <h>72</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 newCandidate &amp;&amp;
 stateOutput != nil</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;30.0;10.0;10.0;10.0;50.0</additional_attributes>
+    <additional_attributes>10.0;10.0;10.0;40.0;10.0;10.0;10.0;60.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1251</x>
-      <y>1728</y>
+      <x>1278</x>
+      <y>1566</y>
       <w>144</w>
-      <h>99</h>
+      <h>108</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 !newCandidate ||
 stateOutput == nil</panel_attributes>
-    <additional_attributes>10.0;20.0;140.0;20.0;140.0;90.0</additional_attributes>
+    <additional_attributes>10.0;20.0;140.0;20.0;140.0;100.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1314</x>
-      <y>1809</y>
+      <x>1341</x>
+      <y>1656</y>
       <w>72</w>
       <h>27</h>
     </coordinates>
@@ -1250,7 +1230,7 @@ stateOutput == nil</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1386</x>
-      <y>1305</y>
+      <y>1188</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1261,7 +1241,7 @@ stateOutput == nil</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1395</x>
-      <y>1332</y>
+      <y>1215</y>
       <w>207</w>
       <h>54</h>
     </coordinates>
@@ -1273,7 +1253,7 @@ m2=!isSyncing(output.stateIndex)</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1197</x>
-      <y>1305</y>
+      <y>1188</y>
       <w>207</w>
       <h>63</h>
     </coordinates>
@@ -1292,17 +1272,6 @@ m1pos=15,-18</panel_attributes>
     </coordinates>
     <panel_attributes/>
     <additional_attributes/>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>99</x>
-      <y>36</y>
-      <w>45</w>
-      <h>27</h>
-    </coordinates>
-    <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>10.0;15.0;30.0;15.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
@@ -1337,7 +1306,7 @@ halign=left</panel_attributes>
       <w>99</w>
       <h>36</h>
     </coordinates>
-    <panel_attributes>_Commitee_</panel_attributes>
+    <panel_attributes>_Consensus_</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
@@ -1442,7 +1411,7 @@ stateOutput.stateIndex &lt; block.index</panel_attributes>
       <x>0</x>
       <y>0</y>
       <w>1449</w>
-      <h>1872</h>
+      <h>1737</h>
     </coordinates>
     <panel_attributes>_Wasp:this_
 </panel_attributes>
@@ -1452,11 +1421,11 @@ stateOutput.stateIndex &lt; block.index</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>639</x>
-      <y>450</y>
+      <y>315</y>
       <w>207</w>
       <h>36</h>
     </coordinates>
-    <panel_attributes>pullStateRetryTime:= Now+2s
+    <panel_attributes>pullStateRetryTime:= Now+1s
 halign=left</panel_attributes>
     <additional_attributes/>
   </element>
@@ -1464,7 +1433,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>837</x>
-      <y>450</y>
+      <y>315</y>
       <w>45</w>
       <h>36</h>
     </coordinates>
@@ -1516,7 +1485,7 @@ stateOutput.stateIndex &gt;= block.index</panel_attributes>
       <w>207</w>
       <h>36</h>
     </coordinates>
-    <panel_attributes>pullStateRetryTime:= now+10s
+    <panel_attributes>pullStateRetryTime:= now+1s
 halign=left</panel_attributes>
     <additional_attributes/>
   </element>
@@ -1536,11 +1505,11 @@ halign=left</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>126</x>
-      <y>279</y>
+      <y>1098</y>
       <w>828</w>
       <h>117</h>
     </coordinates>
-    <panel_attributes>*notifyStateTransitionIfNeeded*
+    <panel_attributes>*notifyChainTransitionIfNeeded*
 --
 valign=top
 </panel_attributes>
@@ -1550,7 +1519,7 @@ valign=top
     <id>UMLSpecialState</id>
     <coordinates>
       <x>180</x>
-      <y>315</y>
+      <y>1134</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1561,7 +1530,7 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>153</x>
-      <y>324</y>
+      <y>1143</y>
       <w>45</w>
       <h>27</h>
     </coordinates>
@@ -1572,7 +1541,7 @@ valign=top
     <id>UMLSpecialState</id>
     <coordinates>
       <x>144</x>
-      <y>324</y>
+      <y>1143</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -1583,12 +1552,12 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>189</x>
-      <y>342</y>
-      <w>324</w>
+      <y>1161</y>
+      <w>315</w>
       <h>90</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-notifiedSyncedStateHash == solidState.hash ||
+notifiedAnchorOutputID == stateOutput.id ||
 solidState.hash != stateOutput.stateDataHash</panel_attributes>
     <additional_attributes>10.0;10.0;10.0;80.0</additional_attributes>
   </element>
@@ -1608,12 +1577,12 @@ TimerTick</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>207</x>
-      <y>315</y>
+      <y>1134</y>
       <w>351</w>
       <h>45</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-notifiedSyncedStateHash != solidState.hash &amp;&amp;
+notifiedAnchorOutputID != stateOutput.id &amp;&amp;
 solidState.hash == stateOutput.stateDataHash</panel_attributes>
     <additional_attributes>10.0;20.0;370.0;20.0</additional_attributes>
   </element>
@@ -1621,14 +1590,13 @@ solidState.hash == stateOutput.stateDataHash</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>540</x>
-      <y>315</y>
+      <y>1134</y>
       <w>396</w>
       <h>63</h>
     </coordinates>
-    <panel_attributes>StateTransition.Trigger(solidState, stateOutput,
+    <panel_attributes>notifiedAnchorOutputID = stateOutput.ID
+ChainTransition.Trigger(solidState, stateOutput,
     stateOutputTimestamp)
-StateSynced.Trigger(stateOutput.id, stateOutput.stateIndex)
-notifiedSyncedStateHash = solidState.hash
 halign=left</panel_attributes>
     <additional_attributes/>
   </element>
@@ -1636,7 +1604,7 @@ halign=left</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1377</x>
-      <y>486</y>
+      <y>351</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1647,7 +1615,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1089</x>
-      <y>486</y>
+      <y>351</y>
       <w>306</w>
       <h>63</h>
     </coordinates>
@@ -1660,7 +1628,7 @@ stateOutput.stateIndex &lt; output.stateIndex</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1386</x>
-      <y>513</y>
+      <y>378</y>
       <w>315</w>
       <h>81</h>
     </coordinates>
@@ -1673,7 +1641,7 @@ stateOutput.stateIndex &gt;= output.stateIndex</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1386</x>
-      <y>576</y>
+      <y>441</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -1684,7 +1652,7 @@ stateOutput.stateIndex &gt;= output.stateIndex</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>180</x>
-      <y>801</y>
+      <y>666</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1695,7 +1663,7 @@ stateOutput.stateIndex &gt;= output.stateIndex</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>72</x>
-      <y>801</y>
+      <y>666</y>
       <w>126</w>
       <h>54</h>
     </coordinates>
@@ -1708,7 +1676,7 @@ i &gt; from+10'000
     <id>UMLSpecialState</id>
     <coordinates>
       <x>72</x>
-      <y>837</y>
+      <y>702</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -1719,7 +1687,7 @@ i &gt; from+10'000
     <id>Relation</id>
     <coordinates>
       <x>36</x>
-      <y>837</y>
+      <y>702</y>
       <w>99</w>
       <h>45</h>
     </coordinates>
@@ -1732,7 +1700,7 @@ DismissChain</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>189</x>
-      <y>828</y>
+      <y>693</y>
       <w>144</w>
       <h>54</h>
     </coordinates>
@@ -1745,11 +1713,11 @@ i &lt;= from+10'000
     <id>UMLState</id>
     <coordinates>
       <x>468</x>
-      <y>864</y>
+      <y>729</y>
       <w>243</w>
       <h>54</h>
     </coordinates>
-    <panel_attributes>SendMsgToRandomNodes(5)
+    <panel_attributes>SendMsgToRandomPeers(5)
 startSyncingIfNeeded(i)
 requestBlockRetryTime = Now + 3s
 halign=left</panel_attributes>
@@ -1759,7 +1727,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>900</x>
-      <y>477</y>
+      <y>342</y>
       <w>27</w>
       <h>63</h>
     </coordinates>
@@ -1771,7 +1739,7 @@ halign=left</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>468</x>
-      <y>1170</y>
+      <y>1035</y>
       <w>189</w>
       <h>27</h>
     </coordinates>
@@ -1783,7 +1751,7 @@ halign=left</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>774</x>
-      <y>1116</y>
+      <y>981</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1794,7 +1762,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>648</x>
-      <y>1143</y>
+      <y>1008</y>
       <w>162</w>
       <h>54</h>
     </coordinates>
@@ -1806,7 +1774,7 @@ result == ok</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>747</x>
-      <y>1116</y>
+      <y>981</y>
       <w>45</w>
       <h>36</h>
     </coordinates>
@@ -1818,7 +1786,7 @@ result == ok</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>792</x>
-      <y>1116</y>
+      <y>981</y>
       <w>99</w>
       <h>72</h>
     </coordinates>
@@ -1830,7 +1798,7 @@ result == ok</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>828</x>
-      <y>1170</y>
+      <y>1035</y>
       <w>108</w>
       <h>27</h>
     </coordinates>
@@ -1842,7 +1810,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>477</x>
-      <y>1188</y>
+      <y>1053</y>
       <w>27</w>
       <h>63</h>
     </coordinates>
@@ -1852,19 +1820,19 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>711</x>
-      <y>1188</y>
-      <w>180</w>
-      <h>81</h>
+      <x>864</x>
+      <y>1053</y>
+      <w>27</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>180.0;10.0;180.0;70.0;10.0;70.0</additional_attributes>
+    <additional_attributes>10.0;10.0;10.0;50.0</additional_attributes>
   </element>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1089</x>
-      <y>1035</y>
+      <y>918</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -1875,7 +1843,7 @@ halign=left</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1089</x>
-      <y>972</y>
+      <y>855</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -1886,7 +1854,7 @@ halign=left</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1395</x>
-      <y>1368</y>
+      <y>1251</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -1896,10 +1864,10 @@ halign=left</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>963</x>
-      <y>1656</y>
+      <x>756</x>
+      <y>1647</y>
       <w>234</w>
-      <h>27</h>
+      <h>36</h>
     </coordinates>
     <panel_attributes>blockCandidates.delete(candidate)
 halign=left</panel_attributes>
@@ -1908,8 +1876,8 @@ halign=left</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1368</x>
-      <y>1809</y>
+      <x>1395</x>
+      <y>1656</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -1925,7 +1893,7 @@ halign=left</panel_attributes>
       <h>36</h>
     </coordinates>
     <panel_attributes>*StateManager*
-version: 7
+version: 8
 </panel_attributes>
     <additional_attributes/>
   </element>
@@ -1933,7 +1901,7 @@ version: 7
     <id>UMLSpecialState</id>
     <coordinates>
       <x>729</x>
-      <y>891</y>
+      <y>756</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1944,7 +1912,7 @@ version: 7
     <id>Relation</id>
     <coordinates>
       <x>702</x>
-      <y>891</y>
+      <y>756</y>
       <w>45</w>
       <h>36</h>
     </coordinates>
@@ -1956,7 +1924,7 @@ version: 7
     <id>Relation</id>
     <coordinates>
       <x>189</x>
-      <y>918</y>
+      <y>783</y>
       <w>576</w>
       <h>63</h>
     </coordinates>
@@ -2017,31 +1985,31 @@ solidState.index &gt;= nextState.block.index</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>945</x>
-      <y>315</y>
+      <y>306</y>
       <w>270</w>
-      <h>936</h>
+      <h>828</h>
     </coordinates>
     <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>280.0;1020.0;90.0;1020.0;90.0;10.0;10.0;10.0</additional_attributes>
+    <additional_attributes>280.0;900.0;90.0;900.0;90.0;10.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>945</x>
-      <y>306</y>
+      <y>297</y>
       <w>342</w>
-      <h>882</h>
+      <h>774</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 block is not new ||
 approved by stateOutput</panel_attributes>
-    <additional_attributes>360.0;950.0;100.0;950.0;350.0;950.0;100.0;950.0;100.0;10.0;10.0;10.0</additional_attributes>
+    <additional_attributes>360.0;830.0;100.0;830.0;360.0;830.0;100.0;830.0;100.0;10.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
     <coordinates>
       <x>1008</x>
-      <y>1350</y>
+      <y>1233</y>
       <w>252</w>
       <h>36</h>
     </coordinates>
@@ -2052,7 +2020,7 @@ approved by stateOutput</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>1062</x>
-      <y>585</y>
+      <y>450</y>
       <w>306</w>
       <h>36</h>
     </coordinates>
@@ -2063,7 +2031,7 @@ approved by stateOutput</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1125</x>
-      <y>1323</y>
+      <y>1206</y>
       <w>27</w>
       <h>45</h>
     </coordinates>
@@ -2074,7 +2042,7 @@ approved by stateOutput</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1116</x>
-      <y>1296</y>
+      <y>1179</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -2085,7 +2053,7 @@ approved by stateOutput</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>990</x>
-      <y>1296</y>
+      <y>1179</y>
       <w>144</w>
       <h>45</h>
     </coordinates>
@@ -2098,7 +2066,7 @@ were approved</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>981</x>
-      <y>1305</y>
+      <y>1188</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -2109,13 +2077,46 @@ were approved</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>945</x>
-      <y>324</y>
+      <y>315</y>
       <w>207</w>
-      <h>990</h>
+      <h>882</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 some candidates
 were approved</panel_attributes>
-    <additional_attributes>210.0;1080.0;210.0;1060.0;80.0;1060.0;80.0;10.0;10.0;10.0</additional_attributes>
+    <additional_attributes>210.0;960.0;210.0;940.0;80.0;940.0;80.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>810</x>
+      <y>1665</y>
+      <w>612</w>
+      <h>54</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;</panel_attributes>
+    <additional_attributes>10.0;20.0;10.0;40.0;660.0;40.0;660.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>99</x>
+      <y>36</y>
+      <w>45</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;30.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>711</x>
+      <y>1188</y>
+      <w>45</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;</panel_attributes>
+    <additional_attributes>30.0;10.0;30.0;80.0;10.0;80.0</additional_attributes>
   </element>
 </diagram>

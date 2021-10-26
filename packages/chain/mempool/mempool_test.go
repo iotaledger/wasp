@@ -245,7 +245,7 @@ func TestProcessedRequest(t *testing.T) {
 
 	// artificially put request log record into the state
 	rec := &blocklog.RequestReceipt{
-		RequestID: requests[0].ID(),
+		Request: requests[0],
 	}
 	blocklogPartition := subrealm.New(wrt, kv.Key(blocklog.Contract.Hname().Bytes()))
 	err := blocklog.SaveRequestLogRecord(blocklogPartition, rec, [6]byte{})
