@@ -1,10 +1,10 @@
 const parserOptions = {
-    ecmaVersion: 6,
+    ecmaVersion: 11,
     sourceType: 'module',
 }
 
 const eslintRules = {
-    'arrow-body-style': 'error',
+    'arrow-body-style': 'off',
     'arrow-spacing': 'error',
     'eol-last': 'error',
     'func-call-spacing': 'error',
@@ -39,13 +39,13 @@ const eslintRules = {
     'prefer-const': 'warn',
     'prefer-destructuring': 'off', // OFF b/c it's not really correct
     quotes: ['error', 'single'],
-    semi: 'off', // OFF b/c we aren't using semicolons
+    semi: 2,
     'space-before-function-paren': 'off', // OFF b/c we aren't using spaces before function parameters / signatures
     'spaced-comment': 'error',
 }
 
 const typescriptEslintRules = {
-    '@typescript-eslint/array-type': 'error',
+    '@typescript-eslint/array-type': 'off',
     '@typescript-eslint/await-thenable': 'error',
     '@typescript-eslint/ban-types': 'error',
     '@typescript-eslint/ban-ts-comment': 'warn',
@@ -90,8 +90,8 @@ const svelteSettings = {
 module.exports = {
     env: {
         browser: true,
-        es6: true,
         node: true,
+        es2020: true,
     },
     extends: ['eslint:recommended'],
     overrides: [
@@ -117,7 +117,7 @@ module.exports = {
             settings: svelteSettings,
         },
         {
-            files: '**/*.svelte',
+            files: 'src/**/*.svelte',
             processor: 'svelte3/svelte3',
             settings: svelteSettings,
             rules: {

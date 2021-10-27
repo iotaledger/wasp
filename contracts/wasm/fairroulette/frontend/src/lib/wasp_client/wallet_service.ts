@@ -22,7 +22,6 @@ export class WalletService {
   }
 
   public async getFunds(address: string, color: string): Promise<bigint> {
-
     const unspents = await this.client.unspentOutputs({ addresses: [address] });
     const currentUnspent = unspents.unspentOutputs.find((x) => x.address.base58 == address);
 
@@ -30,7 +29,7 @@ export class WalletService {
       .filter(
         (o) =>
           ['ExtendedLockedOutputType', 'SigLockedColoredOutputType'].includes(o.output.type) &&
-          typeof o.output.output.balances[color] != 'undefined'
+          typeof o.output.output.balances[color] != 'undefined',
       )
       .map((uid) => uid.output.output.balances)
       .reduce((balance: bigint, output) => (balance += BigInt(output[color])), BigInt(0));
@@ -48,22 +47,26 @@ export class WalletService {
       accessManaPledgeID: allowedManagePledge,
       consensusManaPledgeID: consenseusManaPledge,
       address: address,
-      nonce: -1
+      nonce: -1,
     };
 
     const poWBuffer = Faucet.ToBuffer(body);
 
     const result: IFaucetRequestContext = {
       poWBuffer: poWBuffer,
-      faucetRequest: body
+      faucetRequest: body,
     };
 
     return result;
   }
 
-
-
-  public async sendOnLedgerRequest(keyPair: IKeyPair, address: string, chainId: string, payload: IOnLedger, transfer: bigint = 1n): Promise<ISendTransactionResponse> {
+  public async sendOnLedgerRequest(
+    keyPair: IKeyPair,
+    address: string,
+    chainId: string,
+    payload: IOnLedger,
+    transfer: bigint = 1n,
+  ): Promise<ISendTransactionResponse> {
     if (transfer <= 0) {
       transfer = 1n;
     }
@@ -84,7 +87,7 @@ export class WalletService {
       outputs: outputs,
       chainId: chainId,
       payload: OnLedger.ToBuffer(payload),
-      unlockBlocks: []
+      unlockBlocks: [],
     };
 
     tx.unlockBlocks = wallet.unlockBlocks(tx, keyPair, address, consumedOutputs, inputs);
@@ -92,7 +95,7 @@ export class WalletService {
     const result = Transaction.bytes(tx);
 
     const response = await this.client.sendTransaction({
-      txn_bytes: result.toString("base64")
+      txn_bytes: result.toString('base64'),
     });
 
     return response;

@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="typescript">
   import { onMount } from 'svelte';
   import { Router } from 'svelte-router-spa';
   import config from '../config.dev';

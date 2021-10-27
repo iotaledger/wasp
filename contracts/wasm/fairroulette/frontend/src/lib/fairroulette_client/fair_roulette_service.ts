@@ -1,24 +1,15 @@
 import config from '../../../config.dev';
-import {
-  BasicClient,
-  Buffer,
-  Colors,
-  IKeyPair,
-  IOffLedger,
-  IOnLedger,
-  OffLedger,
-  WalletService
-  } from '../wasp_client';
+import { BasicClient, Buffer, Colors, IKeyPair, IOffLedger, IOnLedger, OffLedger, WalletService } from '../wasp_client';
 import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import { HName } from '../wasp_client/crypto/hname';
 
-type MessageHandlers = { [key: string]: (index: number) => void; };
-type ParameterResult = { [key: string]: Buffer; };
+type MessageHandlers = { [key: string]: (index: number) => void };
+type ParameterResult = { [key: string]: Buffer };
 
 export interface Bet {
-  better: string,
-  amount: number,
-  betNumber: number,
+  better: string;
+  amount: number;
+  betNumber: number;
 }
 
 export interface Events {
@@ -48,7 +39,6 @@ export class FairRouletteService {
   private webSocket: WebSocket;
   private emitter: Emitter;
 
-
   public chainId: string;
   public readonly roundLength: number = 60; // in seconds
 
@@ -63,6 +53,7 @@ export class FairRouletteService {
 
   private connectWebSocket(): void {
     const webSocketUrl = config.waspWebSocketUrl.replace('%chainId', this.chainId);
+    // eslint-disable-next-line no-console
     console.log(`Connecting to Websocket => ${webSocketUrl}`);
     this.webSocket = new WebSocket(webSocketUrl);
     this.webSocket.addEventListener('message', (x) => this.handleIncomingMessage(x));
@@ -75,7 +66,7 @@ export class FairRouletteService {
         const bet: Bet = {
           better: message[index + 1],
           amount: Number(message[index + 2]),
-          betNumber: Number(message[index + 3])
+          betNumber: Number(message[index + 3]),
         };
 
         this.emitter.emit('betPlaced', bet);
@@ -105,7 +96,7 @@ export class FairRouletteService {
         };
 
         this.emitter.emit('payout', bet);
-      }
+      },
     };
 
     const topicIndex = 3;
@@ -159,15 +150,14 @@ export class FairRouletteService {
     };
 
     await this.walletService.sendOnLedgerRequest(keyPair, address, this.chainId, betRequest, take);
-
   }
 
-  public async callView(viewName: string, args?: any): Promise<ParameterResult> {
+  public async callView(viewName: string): Promise<ParameterResult> {
     const response = await this.client.callView(this.chainId, this.scHName, viewName);
     const resultMap: ParameterResult = {};
 
     if (response.Items) {
-      for (let item of response.Items) {
+      for (const item of response.Items) {
         const key = Buffer.from(item.Key, 'base64').toString();
         const value = Buffer.from(item.Value, 'base64');
 
@@ -237,4 +227,3 @@ export class FairRouletteService {
     return this.emitter.on(event, callback);
   }
 }
-

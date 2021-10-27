@@ -1,7 +1,7 @@
-import type { Buffer } from "../buffer";
+import type { Buffer } from '../buffer';
 
 export interface OffLedgerArgument {
-  key: string,
+  key: string;
   value: number;
 }
 
@@ -11,14 +11,14 @@ export interface Balance {
 }
 
 export interface IOffLedger {
-  requestType?: number,
-  contract: number,
-  entrypoint: number,
-  arguments: OffLedgerArgument[],
-  noonce: bigint,
-  balances: Balance[],
+  requestType?: number;
+  contract: number;
+  entrypoint: number;
+  arguments: OffLedgerArgument[];
+  noonce: bigint;
+  balances: Balance[];
 
   // Public Key and Signature will get set in the Sign function, so no inital set is required
-  publicKey?: Buffer,
-  signature?: Buffer,
+  publicKey?: Buffer;
+  signature?: Buffer;
 }

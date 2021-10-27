@@ -1,20 +1,20 @@
 import type { ColorCollection } from '../colors';
-import type { IWalletOutputBalance } from "./IWalletOutputBalance";
-import type { IWalletOutputInclusionState } from "./IWalletOutputInclusionState";
+import type { IWalletOutputBalance } from './IWalletOutputBalance';
+import type { IWalletOutputInclusionState } from './IWalletOutputInclusionState';
 
 export interface IWalletOutput {
-    /**
-     * The id.
-     */
-    id: string;
+  /**
+   * The id.
+   */
+  id: string;
 
-    /**
-     * The balances.
-     */
-    balances: ColorCollection;
+  /**
+   * The balances.
+   */
+  balances: ColorCollection;
 
-    /**
-     * Inclusion state.
-     */
-    inclusionState: IWalletOutputInclusionState;
+  /**
+   * Inclusion state.
+   */
+  inclusionState: IWalletOutputInclusionState;
 }

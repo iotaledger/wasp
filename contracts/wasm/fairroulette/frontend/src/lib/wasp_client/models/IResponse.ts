@@ -1,3 +1,3 @@
 export interface IResponse {
-    error?: string;
+  error?: string;
 }

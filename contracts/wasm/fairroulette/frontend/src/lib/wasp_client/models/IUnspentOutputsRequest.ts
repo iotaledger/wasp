@@ -1,3 +1,3 @@
 export interface IUnspentOutputsRequest {
-    addresses: string[];
+  addresses: string[];
 }

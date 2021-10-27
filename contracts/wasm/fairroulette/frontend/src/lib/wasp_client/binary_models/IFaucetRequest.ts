@@ -1,6 +1,6 @@
 export interface IFaucetRequest {
-    accessManaPledgeID: string;
-    consensusManaPledgeID: string;
-    address: string;
-    nonce: number;
+  accessManaPledgeID: string;
+  consensusManaPledgeID: string;
+  address: string;
+  nonce: number;
 }
