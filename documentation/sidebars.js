@@ -395,14 +395,25 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Example Contract',
-                    id: 'guide/evm/example',
-                },
-                {
-                    type: 'doc',
                     label: 'Tooling',
                     id: 'guide/evm/tooling',
-                }
+                },
+                {
+                    type: 'category',
+                    label: 'Examples',
+                    items: [
+                        {
+                            type: 'doc',
+                            label: 'Example Contract',
+                            id: 'guide/evm/examples/introduction',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'ERC20',
+                            id: 'guide/evm/examples/ERC20',
+                        },
+                    ]
+                },
             ]
         },
         {

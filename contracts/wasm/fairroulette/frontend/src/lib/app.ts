@@ -88,7 +88,7 @@ export async function initialize(): Promise<void> {
     seed.set(Seed.generate());
   }
 
-  // TODO: Remove this at some point.
+  //TODO: Remove this at some point.
   if (!config.chainId && config.chainResolverUrl) {
     try {
       const response = await fetch(config.chainResolverUrl);
@@ -202,7 +202,6 @@ export async function placeBet(): Promise<void> {
     log(LogTag.SmartContract, 'Funds sent to Wasp chain address using GoShimmer nodes');
   } catch (ex: unknown) {
     const error = ex as Error;
-
     showNotification({
       type: Notification.Error,
       title: 'Error placing bet',
@@ -286,7 +285,7 @@ export function subscribeToRouletteEvents(): void {
       });
     } else if (get(round).betPlaced && !get(isAWinnerPlayer)) {
       showNotification({
-        type: Notification.Info,
+        type: Notification.Lose,
         message: 'Sorry, you lost this round. Try again!',
         timeout: DEFAULT_AUTODISMISS_TOAST_TIME,
       });

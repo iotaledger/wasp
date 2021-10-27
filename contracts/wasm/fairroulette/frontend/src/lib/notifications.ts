@@ -8,6 +8,7 @@ export enum Notification {
   Win = 'win',
   Error = 'error',
   Info = 'info',
+  Lose = 'lose',
 }
 export type NotificationData = {
   type: Notification;

@@ -1,7 +1,9 @@
 <script>
   import { Route } from 'svelte-router-spa';
   import { Header, Footer } from './../components';
+  
   export let currentRoute;
+  export let params;
 
   const FOUNDATION_DATA_URL = 'https://webassets.iota.org/data/foundation.json';
 

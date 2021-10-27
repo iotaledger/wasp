@@ -40,7 +40,7 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    width: 100%;
     h3 {
       font-weight: bold;
       font-size: 18px;
