@@ -7,7 +7,8 @@ export const NOTIFICATION_TIMEOUT_NEVER = -1
 export enum Notification {
     Win = 'win',
     Error = 'error',
-    Info = 'info'
+    Info = 'info',
+    Lose = 'lose',
 }
 export type NotificationData = {
     type: Notification
