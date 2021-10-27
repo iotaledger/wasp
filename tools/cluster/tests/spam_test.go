@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -43,7 +42,7 @@ func TestSpamOnledger(t *testing.T) {
 }
 
 func TestSpamOffledger(t *testing.T) {
-	testutil.RunHeavy(t)
+	// testutil.RunHeavy(t)
 	// single wasp node committee, to test if publishing can break state transitions
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
@@ -63,10 +62,14 @@ func TestSpamOffledger(t *testing.T) {
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
-		if err != nil {
-			time.Sleep(5 * time.Second)
-			fmt.Printf("ERROR sending offledger request, i: %d, err: %v\n", i, err)
-		}
+		// if err != nil {
+		// 	// Ideally this should be removed - no request should be stopped because of "invalid state read"
+		// 	time.Sleep(5 * time.Second)
+		// 	fmt.Printf("ERROR sending offledger request, i: %d, err: %v\n", i, err)
+		// 	// retry once
+		// 	_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
+		// 	require.NoError(t, err)
+		// }
 		require.NoError(t, err)
 	}
 

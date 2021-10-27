@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"errors"
 	"fmt"
 	"runtime/debug"
 	"time"
@@ -64,17 +65,19 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 			if r == nil {
 				return
 			}
+
 			switch err := r.(type) {
 			case *kv.DBError:
 				panic(err)
-			case *coreutil.ErrorStateInvalidated:
-				panic(err)
-			default:
-				vmctx.lastResult = nil
-				vmctx.lastError = xerrors.Errorf("panic in VM: %v", err)
-				vmctx.Debugf("%v", vmctx.lastError)
-				vmctx.Debugf(string(debug.Stack()))
+			case error:
+				if errors.Is(err, coreutil.ErrorStateInvalidated) {
+					panic(err)
+				}
 			}
+			vmctx.lastResult = nil
+			vmctx.lastError = xerrors.Errorf("panic in VM: %v", r)
+			vmctx.Debugf("%v", vmctx.lastError)
+			vmctx.Debugf(string(debug.Stack()))
 		}()
 		vmctx.mustCallFromRequest()
 	}()

@@ -46,6 +46,7 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 
 	params := make(map[string]interface{})
 	params[inccounter.VarCounter] = codec.EncodeInt64(0)
+	// TODO provide a way to chose WASM instaed of hardcoded contract....
 	_, err = chain.DeployContract(incCounterSCName, progHash.String(), description, params)
 	require.NoError(t, err)
 

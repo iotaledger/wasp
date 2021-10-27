@@ -230,7 +230,7 @@ func (r *OptimisticStateReaderImpl) Timestamp() (time.Time, error) {
 
 func (r *OptimisticStateReaderImpl) Hash() (hashing.HashValue, error) {
 	if !r.chainState.IsStateValid() {
-		return [32]byte{}, coreutil.ErrStateHasBeenInvalidated
+		return [32]byte{}, coreutil.ErrorStateInvalidated
 	}
 	hashBIn, err := r.db.Get(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash))
 	if err != nil {
@@ -241,7 +241,7 @@ func (r *OptimisticStateReaderImpl) Hash() (hashing.HashValue, error) {
 		return [32]byte{}, err
 	}
 	if !r.chainState.IsStateValid() {
-		return [32]byte{}, coreutil.ErrStateHasBeenInvalidated
+		return [32]byte{}, coreutil.ErrorStateInvalidated
 	}
 	return ret, nil
 }
@@ -260,7 +260,7 @@ func (r *OptimisticStateReaderImpl) SetBaseline() {
 
 // MustOptimisticVirtualState is a virtual state wrapper with global state baseline
 // Once baseline is invalidated globally any subsequent access to the mustOptimisticVirtualStateAccess
-// will lead to panic(coreutil.ErrStateHasBeenInvalidated)
+// will lead to panic(coreutil.ErrorStateInvalidated)
 type mustOptimisticVirtualStateAccess struct {
 	state    VirtualStateAccess
 	baseline coreutil.StateBaseline
