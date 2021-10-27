@@ -1,9 +1,9 @@
 variable "wasp_cli_config" {
 	default = <<EOH
 {
-  "chain": "testchain",
+  "chain": "evmchain",
   "chains": {
-    "testchain": "${chainid}"
+    "evmchain": "${chainid}"
   },
   "goshimmer": {
     "api": "https://api.goshimmer.sc.iota.org"
@@ -67,6 +67,7 @@ job "iscp-evm-server" {
 					"chain",
 					"evm",
 					"jsonrpc",
+					"-d",
 					"--chainid=1074",
 					"-l=0.0.0.0:$${NOMAD_PORT_evm}",
 				]

@@ -120,11 +120,12 @@ func TestRequestLogRecord(t *testing.T) {
 
 	require.True(t, chain.IsRequestProcessed(reqs[0].ID()))
 
-	rec, blockIndex, requestIndex, ok := chain.GetRequestReceipt(reqs[0].ID())
+	receipt, blockIndex, requestIndex, ok := chain.GetRequestReceipt(reqs[0].ID())
 	require.True(t, ok)
-	require.EqualValues(t, reqs[0].ID(), rec.RequestID)
-	require.False(t, rec.OffLedger)
-	require.EqualValues(t, 0, len(rec.Error))
+	a := reqs[0].Bytes()
+	b := receipt.Request.Bytes()
+	require.Equal(t, a, b)
+	require.EqualValues(t, 0, len(receipt.Error))
 	require.EqualValues(t, 2, blockIndex)
 	require.EqualValues(t, 0, requestIndex)
 }
@@ -146,7 +147,7 @@ func TestRequestLogRecordsForBlocks(t *testing.T) {
 
 	recs := chain.GetRequestReceiptsForBlock(2)
 	require.EqualValues(t, 1, len(recs))
-	require.EqualValues(t, reqs[0].ID(), recs[0].RequestID)
+	require.EqualValues(t, reqs[0].ID(), recs[0].Request.ID())
 }
 
 func TestRequestIDsForBlocks(t *testing.T) {
