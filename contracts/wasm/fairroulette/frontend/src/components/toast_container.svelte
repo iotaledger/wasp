@@ -1,5 +1,5 @@
 <script lang="typescript">
-  import { Toast } from './../components';
+  import Toast from './toast.svelte';
   import {
     displayNotifications,
     removeDisplayNotification,
@@ -23,18 +23,25 @@
 <style type="text/scss">
   .toast-container {
     position: fixed;
-    right: 20px;
     bottom: 50px;
     width: 100%;
+    padding: 0 20px;
     @media (min-width: 600px) {
-      width: 400px;
+      max-width: 400px;
+      padding: 0;
+      right: 20px;
     }
     ul {
       list-style-type: none;
       display: flex;
       flex-direction: column;
       z-index: 3;
-      gap: 8px;
+      padding-inline-start: 0;
+      margin-block-end: 0;
+      margin-block-start: 0;
+      li:not(first-of-type) {
+        margin-top: 8px;
+      }
     }
   }
 </style>

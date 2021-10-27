@@ -54,7 +54,7 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    width: 100%;
     h3 {
       font-weight: bold;
       font-size: 18px;
@@ -101,9 +101,6 @@
               letter-spacing: 0.5px;
               color: var(--mint-green-dark);
               padding: 2px 6px;
-              @media (min-width: 1024px) {
-                flex: 0;
-              }
             }
             .log-timestamp {
               font-weight: 500;
@@ -112,7 +109,7 @@
               letter-spacing: 0.5px;
               color: var(--gray-6);
               flex-shrink: 0;
-              margin-left: 4px;
+              margin-left: 10px;
             }
           }
 

@@ -1,4 +1,4 @@
-import type { Buffer } from "../buffer";
+import type { Buffer } from '../buffer';
 
 export interface IKeyPair {
   publicKey: Buffer;

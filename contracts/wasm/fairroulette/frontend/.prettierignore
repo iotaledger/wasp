@@ -1,0 +1,13 @@
+# Repository
+.vscode/
+
+build/*
+public/*
+
+# Common files and folders
+**/node_modules/
+**/out/
+src/lib/wasp_client/buffer/*
+
+# ESLint configuration and files
+**/.eslintrc.js

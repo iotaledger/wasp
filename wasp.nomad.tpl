@@ -21,7 +21,7 @@ variable "wasp_config" {
 	},
 	"node": {
 		"disablePlugins": [],
-		"enablePlugins": []
+		"enablePlugins": [metrics]
 	},
 	"webapi": {
 		"bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_api" }}",
@@ -44,7 +44,7 @@ variable "wasp_config" {
 		"netid": "{{ env "NOMAD_ADDR_peering" }}"
 	},
 	"nodeconn": {
-		"address": "{{ range service "goshimmer-testnet-leader" }}{{ if in .Tags "txstream" }}{{ $addr := .Address }}{{ $port := .Port }}{{ printf "%s:%d" $addr $port }}{{end}}{{end}}"
+		"address": "{{ range service "goshimmer-leader-node" }}{{ if in .Tags "txstream" }}{{ .Address }}:{{ .Port }}{{end}}{{end}}"
 	},
 	"nanomsg":{
 		"port": {{ env "NOMAD_PORT_nanomsg" }}
@@ -158,7 +158,7 @@ job "iscp-evm" {
 
 			resources {
 				memory = 512
-				cpu = 512
+				cpu = 1024
 			}
 		}
 	}
@@ -253,7 +253,7 @@ job "iscp-evm" {
 
 			resources {
 				memory = 512
-				cpu = 512
+				cpu = 1024
 			}
 		}
 	}

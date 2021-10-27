@@ -6,7 +6,7 @@
   } from '../../lib/store';
   import { GOSHIMMER_ADDRESS_EXPLORER_URL } from '../../lib/app';
 
-  const isMyAddress = (addr: string) =>
+  const isMyAddress = (addr: string): boolean =>
     $currentAddress === addr || $addressesHistory.includes(addr);
 </script>
 
@@ -40,7 +40,7 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    width: 100%;
     h3 {
       font-weight: bold;
       font-size: 18px;

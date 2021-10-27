@@ -63,7 +63,7 @@ func TestIncSoloRepeatMany(t *testing.T) {
 }
 
 func TestSpamCallViewWasm(t *testing.T) {
-	testutil.SkipHeavy(t)
+	testutil.RunHeavy(t)
 	clu := newCluster(t)
 	committee := []int{0}
 	quorum := uint16(1)

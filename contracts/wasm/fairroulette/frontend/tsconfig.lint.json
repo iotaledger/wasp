@@ -1,0 +1,15 @@
+// CAUTION: This tsconfig.lint.json file is NOT meant to be
+// used for compilation or building.
+
+{
+    "compilerOptions": {
+        "types": ["jest"]
+    },
+    "include": [
+        "src/",
+        "src/lib",
+        "src/pages",
+        "src/components"
+    ],
+    "exclude": [".eslintrc.js", "**/node_modules", "**/tests"]
+}

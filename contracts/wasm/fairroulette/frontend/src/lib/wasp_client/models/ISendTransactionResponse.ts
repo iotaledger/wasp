@@ -1,5 +1,5 @@
-import type { IResponse } from "./IResponse";
+import type { IResponse } from './IResponse';
 
 export interface ISendTransactionResponse extends IResponse {
-    transaction_id?: string;
+  transaction_id?: string;
 }

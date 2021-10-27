@@ -307,7 +307,7 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 
 func (r *RequestReceipt) String() string {
 	if len(r.Error) > 0 {
-		return fmt.Sprintf("%s: '%s'", r.Request.String(), r.Error)
+		return fmt.Sprintf("%s\n Error: '%s'", r.Request.String(), r.Error)
 	}
 	return r.Request.String()
 }

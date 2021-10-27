@@ -4,7 +4,8 @@ import typescript from '@rollup/plugin-typescript';
 import { terser } from 'rollup-plugin-terser';
 
 const production = !process.env.ROLLUP_WATCH;
-console.log("prod: " + production);
+// eslint-disable-next-line no-console
+console.log('prod: ' + production);
 function serve() {
 	let server;
 
