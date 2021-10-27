@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button } from '../../components';
+  import Button from '../button.svelte';
   import { sendFaucetRequest } from '../../lib/app';
   import { balance, placingBet, requestingFunds } from '../../lib/store';
 </script>

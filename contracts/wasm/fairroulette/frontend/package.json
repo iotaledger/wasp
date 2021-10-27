@@ -15,11 +15,18 @@
     "@rollup/plugin-replace": "^3.0.0",
     "@rollup/plugin-typescript": "^8.2.5",
     "@tsconfig/svelte": "^2.0.0",
+    "@types/gtag.js": "^0.0.7",
+    "@typescript-eslint/eslint-plugin": "^4.29.2",
+    "@typescript-eslint/parser": "^4.29.2",
     "base64-js": "^1.5.1",
     "blakejs": "^1.1.1",
+    "eslint": "^7.32.0",
+    "eslint-plugin-security": "^1.4.0",
+    "eslint-plugin-svelte3": "^3.2.0",
     "ieee754": "^1.2.1",
     "nanoevents": "^6.0.0",
     "node-sass": "^6.0.1",
+    "prettier": "^2.3.2",
     "random-number-csprng": "^1.0.2",
     "rollup": "^2.3.4",
     "rollup-plugin-css-only": "^3.1.0",
@@ -41,6 +48,7 @@
     "uuid": "^8.3.2"
   },
   "dependencies": {
+    "@babel/eslint-parser": "^7.15.8",
     "lottie-web": "^5.7.13",
     "svelte-router-spa": "^6.0.2"
   }

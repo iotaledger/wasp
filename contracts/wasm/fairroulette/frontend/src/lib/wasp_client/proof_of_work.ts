@@ -24,10 +24,10 @@ export default class ProofOfWork {
       const leadingZeros = Math.clz32(b.readUInt32BE(0));
 
       if (leadingZeros >= target) {
-        console.log("PoW Single Thread done");
+        // eslint-disable-next-line no-console
+        console.log('PoW Single Thread done');
         return nonce;
       }
     }
   }
 }
-

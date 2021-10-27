@@ -4,7 +4,7 @@ import type { IOnLedger } from './IOnLedger';
 
 export class OnLedger {
   public static ToStruct(buffer: Buffer): IOnLedger {
-    let reader = new SimpleBufferCursor(buffer);
+    const reader = new SimpleBufferCursor(buffer);
 
     const contract = reader.readUInt32LE();
     const entrypoint = reader.readUInt32LE();
@@ -13,15 +13,15 @@ export class OnLedger {
     const args = [];
 
     for (let i = 0; i < numArguments; i++) {
-      let sz16 = reader.readUInt16LE();
-      let key = reader.readBytes(sz16);
-      let sz32 = reader.readUInt32LE();
-      let value = reader.readBytes(sz32);
+      const sz16 = reader.readUInt16LE();
+      const key = reader.readBytes(sz16);
+      const sz32 = reader.readUInt32LE();
+      const value = reader.readBytes(sz32);
 
       args.push({ key: key, value: value });
     }
 
-    let offLedgerStruct: IOnLedger = {
+    const offLedgerStruct: IOnLedger = {
       contract: contract,
       entrypoint: entrypoint,
       arguments: args,
@@ -42,7 +42,7 @@ export class OnLedger {
     buffer.writeUInt32LE(req.arguments.length || 0);
 
     if (req.arguments) {
-      for (let arg of req.arguments) {
+      for (const arg of req.arguments) {
         const keyBuffer = Buffer.from(arg.key);
 
         buffer.writeUInt16LE(keyBuffer.length);
@@ -56,8 +56,6 @@ export class OnLedger {
       }
     }
 
-
     return buffer.buffer;
   }
-
 }

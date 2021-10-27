@@ -1,5 +1,5 @@
 <script lang="typescript">
-  import { Toast } from './../components';
+  import Toast from './toast.svelte';
   import {
     displayNotifications,
     removeDisplayNotification,

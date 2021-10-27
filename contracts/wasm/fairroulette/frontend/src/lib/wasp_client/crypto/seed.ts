@@ -1,8 +1,8 @@
-import { Base58 } from './base58'
-import { blake2b } from 'blakejs'
-import { Buffer } from '../buffer'
-import { ED25519 } from './ed25519'
-import type { IKeyPair } from "../models";
+import { Base58 } from './base58';
+import { blake2b } from 'blakejs';
+import { Buffer } from '../buffer';
+import { ED25519 } from './ed25519';
+import type { IKeyPair } from '../models';
 
 export class Seed {
   /**
@@ -14,14 +14,13 @@ export class Seed {
    * @returns The random seed.
    */
   public static generate(): Buffer {
-    let cryptoObj: Crypto = window.crypto;
-
+    const cryptoObj: Crypto = window.crypto;
     const array = new Uint32Array(Seed.SEED_SIZE);
+
     cryptoObj.getRandomValues(array);
 
     return Buffer.from(array);
   }
-
 
   /**
    * Generate the nth subseed.

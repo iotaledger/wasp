@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { BarSelector, MultipleSelector } from '../components';
-  import { BettingStep, placeBet } from '../lib/app';
+  import { BarSelector, MultipleSelector } from './selectors';
+  import { placeBet } from '../lib/app';
+  import { BettingStep } from '../lib/store';
   import {
     bettingStep,
     placingBet,
