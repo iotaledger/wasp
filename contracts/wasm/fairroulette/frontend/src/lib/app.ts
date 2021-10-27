@@ -88,23 +88,6 @@ export async function initialize(): Promise<void> {
     seed.set(Seed.generate());
   }
 
-  //TODO: Remove this at some point.
-  if (!config.chainId && config.chainResolverUrl) {
-    try {
-      const response = await fetch(config.chainResolverUrl);
-      const content = await response.json();
-      config.chainId = content.chainId;
-    } catch (ex: unknown) {
-      const error = ex as Error;
-      showNotification({
-        type: Notification.Error,
-        message: error.message,
-        timeout: DEFAULT_AUTODISMISS_TOAST_TIME,
-      });
-      log(LogTag.Error, error.message);
-    }
-  }
-
   client = new BasicClient({
     GoShimmerAPIUrl: config.goshimmerApiUrl,
     WaspAPIUrl: config.waspApiUrl,
