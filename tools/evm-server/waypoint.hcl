@@ -8,6 +8,7 @@ labels = { "team" = "iscp" }
 
 variable "chainid" {
     type = string
+    default = "jiCuv7Z4bYqAU8baSyCJP6HAxw8wC1YUYi722GibYPWW"
 }
 
 variable "wallet_seed" {
@@ -38,7 +39,7 @@ app "wasp-evm-server" {
             context    = "../.."
             build_args = {
                 GOLANG_IMAGE_TAG = "1.17-buster"
-                BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${gitrefpretty()}"
+                BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${gitrefhash()}"
                 BUILD_TARGET = "./tools/wasp-cli"
                 FINAL_BINARY = "wasp-cli"
             }
