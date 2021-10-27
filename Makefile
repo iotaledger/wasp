@@ -12,6 +12,9 @@ build-windows:
 
 build-lint: build lint
 
+test-full: install
+	go test -tags $(BUILD_TAGS),runheavy ./... --timeout 60m --count 1 -failfast
+
 test: install
 	go test -tags $(BUILD_TAGS) ./... --timeout 30m --count 1 -failfast
 
