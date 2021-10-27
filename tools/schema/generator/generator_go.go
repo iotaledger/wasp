@@ -46,7 +46,7 @@ var goKeys = StringMap{
 	"Hash":      "key",
 	"Hname":     "key",
 	"Int16":     "??TODO",
-	"Int32":     "wasmlib.Key32(int32)",
+	"Int32":     "wasmlib.Key32(key)",
 	"Int64":     "??TODO",
 	"RequestID": "key",
 	"String":    "wasmlib.Key(key)",
@@ -82,7 +82,7 @@ func (s *Schema) GenerateGo() error {
 	if err != nil {
 		return err
 	}
-	err = s.generateGoSubtypes()
+	err = s.generateGoTypeDefs()
 	if err != nil {
 		return err
 	}
@@ -716,7 +716,7 @@ func (s *Schema) generateGoStruct(file *os.File, fields []*Field, mutability, ty
 	}
 }
 
-func (s *Schema) generateGoSubtypes() error {
+func (s *Schema) generateGoTypeDefs() error {
 	if len(s.Typedefs) == 0 {
 		return nil
 	}

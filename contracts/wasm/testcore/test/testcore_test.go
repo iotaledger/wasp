@@ -50,11 +50,13 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 
 	saveGoDebug := *wasmsolo.GoDebug
 	saveGoWasm := *wasmsolo.GoWasm
+	saveTsWasm := *wasmsolo.TsWasm
+	*wasmsolo.GoDebug = false
+	*wasmsolo.GoWasm = false
+	*wasmsolo.TsWasm = false
 
 	exists, _ := util.ExistsFilePath("../pkg/testcore_bg.wasm")
 	if exists {
-		*wasmsolo.GoDebug = false
-		*wasmsolo.GoWasm = false
 		wasmlib.ConnectHost(nil)
 		t.Run(fmt.Sprintf("run RUST version of %s", t.Name()), func(t *testing.T) {
 			test(t, true)
@@ -63,16 +65,25 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 
 	exists, _ = util.ExistsFilePath("../wasmmain/pkg/testcore_go.wasm")
 	if exists {
-		*wasmsolo.GoDebug = false
 		*wasmsolo.GoWasm = true
 		wasmlib.ConnectHost(nil)
 		t.Run(fmt.Sprintf("run GO version of %s", t.Name()), func(t *testing.T) {
 			test(t, true)
 		})
+		*wasmsolo.GoWasm = false
+	}
+
+	exists, _ = util.ExistsFilePath("../pkg/testcore_ts.wasm")
+	if exists {
+		*wasmsolo.TsWasm = true
+		wasmlib.ConnectHost(nil)
+		t.Run(fmt.Sprintf("run TS version of %s", t.Name()), func(t *testing.T) {
+			test(t, true)
+		})
+		*wasmsolo.TsWasm = false
 	}
 
 	*wasmsolo.GoDebug = true
-	*wasmsolo.GoWasm = false
 	wasmlib.ConnectHost(nil)
 	t.Run(fmt.Sprintf("run GOVM version of %s", t.Name()), func(t *testing.T) {
 		test(t, true)
@@ -80,6 +91,7 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 
 	*wasmsolo.GoDebug = saveGoDebug
 	*wasmsolo.GoWasm = saveGoWasm
+	*wasmsolo.TsWasm = saveTsWasm
 }
 
 func TestDeployTestCore(t *testing.T) {

@@ -32,6 +32,7 @@ const (
 var (
 	GoDebug = flag.Bool("godebug", false, "debug go smart contract code")
 	GoWasm  = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
+	TsWasm  = flag.Bool("tswasm", false, "prefer typescript wasm smart contract code")
 )
 
 type SoloContext struct {
@@ -333,6 +334,13 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 		exists, _ = util.ExistsFilePath("../wasmmain/pkg/" + wasmFile)
 		if exists {
 			wasmFile = "../wasmmain/pkg/" + wasmFile
+		}
+	}
+	if *TsWasm {
+		wasmFile = ctx.scName + "_ts.wasm"
+		exists, _ = util.ExistsFilePath("../pkg/" + wasmFile)
+		if exists {
+			wasmFile = "../pkg/" + wasmFile
 		}
 	}
 	ctx.Hprog, ctx.Err = ctx.Chain.UploadWasmFromFile(keyPair, wasmFile)

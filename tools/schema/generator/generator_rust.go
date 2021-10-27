@@ -23,7 +23,7 @@ const (
 	useResults         = "use crate::results::*;\n"
 	useState           = "use crate::state::*;\n"
 	useStdPtr          = "use std::ptr;\n"
-	useSubtypes        = "use crate::typedefs::*;\n"
+	useTypeDefs        = "use crate::typedefs::*;\n"
 	useTypes           = "use crate::types::*;\n"
 	useWasmLib         = "use wasmlib::*;\n"
 	useWasmLibHost     = "use wasmlib::host::*;\n"
@@ -117,7 +117,7 @@ func (s *Schema) GenerateRust() error {
 	if err != nil {
 		return err
 	}
-	err = s.generateRustSubtypes()
+	err = s.generateRustTypeDefs()
 	if err != nil {
 		return err
 	}
@@ -424,7 +424,7 @@ func (s *Schema) generateRustFuncsNew(scFileName string) error {
 
 	fmt.Fprint(file, useCrate)
 	if len(s.Typedefs) != 0 {
-		fmt.Fprint(file, useSubtypes)
+		fmt.Fprint(file, useTypeDefs)
 	}
 	if len(s.Structs) != 0 {
 		fmt.Fprint(file, useTypes)
@@ -718,7 +718,7 @@ func (s *Schema) generateRustState() error {
 	fmt.Fprint(file, useCrate)
 	fmt.Fprint(file, useKeys)
 	if len(s.Typedefs) != 0 {
-		fmt.Fprint(file, useSubtypes)
+		fmt.Fprint(file, useTypeDefs)
 	}
 	if len(s.Structs) != 0 {
 		fmt.Fprint(file, useTypes)
@@ -859,7 +859,7 @@ func (s *Schema) generateRustStruct(file *os.File, fields []*Field, mutability, 
 	}
 }
 
-func (s *Schema) generateRustSubtypes() error {
+func (s *Schema) generateRustTypeDefs() error {
 	if len(s.Typedefs) == 0 {
 		return nil
 	}

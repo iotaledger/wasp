@@ -67,6 +67,15 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 		return err
 	}
 
+	// AssemblyScript Wasm versions uses this one to write panic message to console
+	err = vm.linker.DefineFunc("env", "abort",
+		func(p1 int32, p2 int32, p3 int32, p4 int32) {
+			panic("AssemblyScript env.abort")
+		})
+	if err != nil {
+		return err
+	}
+
 	// TinyGo Wasm versions uses this one to write panic message to console
 	fdWrite := func(fd int32, iovs int32, size int32, written int32) int32 {
 		return vm.HostFdWrite(fd, iovs, size, written)

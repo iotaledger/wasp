@@ -146,7 +146,9 @@ func TestIncrementLocalStatePost(t *testing.T) {
 }
 
 func TestLeb128(t *testing.T) {
+	wasmhost.DisableWasmTimeout = true
 	ctx := setupTest(t)
+	wasmhost.DisableWasmTimeout = false
 
 	testLeb128 := inccounter.ScFuncs.TestLeb128(ctx)
 	testLeb128.Func.TransferIotas(1).Post()
