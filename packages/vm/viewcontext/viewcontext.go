@@ -58,8 +58,8 @@ func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dic
 			default:
 				err = xerrors.Errorf("viewcontext: panic in VM: %v", err1)
 			}
-			v.log.Errorf("CallView: %v", err)
-			v.log.Errorf(string(debug.Stack()))
+			v.log.Debugf("CallView: %v", err)
+			v.log.Debugf(string(debug.Stack()))
 		}()
 		ret, err = v.callView(contractHname, epCode, params)
 	}()
