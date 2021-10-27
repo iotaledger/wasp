@@ -10,7 +10,7 @@
   } from '../components';
   import Animation from '../components/animation.svelte';
   import ToastContainer from '../components/toast_container.svelte';
-  import { BettingStep, initialize, StateMessage } from '../lib/app';
+  import { initialize, StateMessage } from '../lib/app';
   import {
     balance,
     bettingStep,
@@ -21,6 +21,7 @@
     showBettingSystem,
     timeToFinished,
     requestingFunds,
+    BettingStep,
   } from '../lib/store';
 
   export let currentRoute;

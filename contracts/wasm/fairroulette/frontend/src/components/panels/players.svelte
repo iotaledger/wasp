@@ -35,7 +35,7 @@
   </div>
 </div>
 
-<style lang="text/scss">
+<style lang="scss">
   .panel {
     padding: 16px;
     display: flex;

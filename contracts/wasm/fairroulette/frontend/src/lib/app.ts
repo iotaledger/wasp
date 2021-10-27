@@ -50,11 +50,6 @@ export enum LogTag {
   Error = 'Error',
 }
 
-export enum BettingStep {
-  NumberChoice = 1,
-  AmountChoice = 2,
-}
-
 export enum StateMessage {
   Running = 'Running',
   Start = 'Start',
@@ -227,25 +222,6 @@ export async function sendFaucetRequest(): Promise<void> {
   }
   requestingFunds.set(false);
   await updateFundsMultiple(3);
-}
-
-export function calculateRoundLengthLeft(timestamp: number): number | undefined {
-  const roundStartedAt = get(round).startedAt;
-
-  if (!timestamp || !roundStartedAt) return undefined;
-
-  if (roundStartedAt == 0) {
-    return 0;
-  }
-
-  const diff = Math.round(timestamp - roundStartedAt);
-
-  const roundTimeLeft = Math.round(fairRouletteService?.roundLength - diff);
-
-  if (roundTimeLeft <= 0) {
-    return 0;
-  }
-  return roundTimeLeft;
 }
 
 export function subscribeToRouletteEvents(): void {

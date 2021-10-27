@@ -40,7 +40,7 @@ export class FairRouletteService {
   private emitter: Emitter;
 
   public chainId: string;
-  public readonly roundLength: number = 60; // in seconds
+  public static readonly roundLength: number = 60; // in seconds
 
   constructor(client: BasicClient, chainId: string) {
     this.walletService = new WalletService(client);

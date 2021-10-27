@@ -1,8 +1,13 @@
 import { derived, get, Readable, Writable, writable } from 'svelte/store';
-import { BettingStep, calculateRoundLengthLeft } from './../lib/app';
+import { FairRouletteService } from './fairroulette_client';
 import type { IRound } from './models/IRound';
 import type { Buffer, IKeyPair } from './wasp_client';
 import { Base58 } from './wasp_client/crypto/base58';
+
+export enum BettingStep {
+  NumberChoice = 1,
+  AmountChoice = 2,
+}
 
 const RESET_ROUND: IRound = {
   active: false,
@@ -64,4 +69,23 @@ export function resetBettingSystem(): void {
   showBettingSystem.set(false);
   bettingStep.set(BettingStep.NumberChoice);
   round.update(($round) => ({ ...$round, betSelection: undefined, betAmount: undefined }));
+}
+
+export function calculateRoundLengthLeft(timestamp: number): number | undefined {
+  const roundStartedAt = get(round).startedAt;
+
+  if (!timestamp || !roundStartedAt) return undefined;
+
+  if (roundStartedAt == 0) {
+    return 0;
+  }
+
+  const diff = Math.round(timestamp - roundStartedAt);
+
+  const roundTimeLeft = Math.round(FairRouletteService.roundLength - diff);
+
+  if (roundTimeLeft <= 0) {
+    return 0;
+  }
+  return roundTimeLeft;
 }
