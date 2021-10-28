@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
+// TODO describe schema details in docs
 type (
 	FieldMap     map[string]*Field
 	FieldMapMap  map[string]FieldMap
@@ -93,7 +94,7 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	if err != nil {
 		return err
 	}
-	err = s.compileSubtypes(schemaDef)
+	err = s.compileTypeDefs(schemaDef)
 	if err != nil {
 		return err
 	}
@@ -220,7 +221,7 @@ func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
 	return nil
 }
 
-func (s *Schema) compileSubtypes(schemaDef *SchemaDef) error {
+func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
 	varNames := make(StringMap)
 	varAliases := make(StringMap)
 	for _, varName := range sortedKeys(schemaDef.Typedefs) {

@@ -6,6 +6,26 @@ use wasmlib::corecontracts::*;
 
 use crate::*;
 
+pub fn func_array_clear(_ctx: &ScFuncContext, f: &ArrayClearContext) {
+    let name = f.params.name().value();
+    let array = f.state.arrays().get_string_array(&name);
+    array.clear();
+}
+
+pub fn func_array_create(_ctx: &ScFuncContext, f: &ArrayCreateContext) {
+    let name = f.params.name().value();
+    let array = f.state.arrays().get_string_array(&name);
+    array.clear();
+}
+
+pub fn func_array_set(_ctx: &ScFuncContext, f: &ArraySetContext) {
+    let name = f.params.name().value();
+    let array = f.state.arrays().get_string_array(&name);
+    let index = f.params.index().value();
+    let value = f.params.value().value();
+    array.get_string(index).set_value(&value);
+}
+
 pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
     if f.params.address().exists() {
         ctx.require(f.params.address().value() == ctx.account_id().address(), "mismatch: Address");
@@ -49,6 +69,21 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
     }
 }
 
+pub fn view_array_length(_ctx: &ScViewContext, f: &ArrayLengthContext) {
+    let name = f.params.name().value();
+    let array = f.state.arrays().get_string_array(&name);
+    let length = array.length();
+    f.results.length().set_value(length);
+}
+
+pub fn view_array_value(_ctx: &ScViewContext, f: &ArrayValueContext) {
+    let name = f.params.name().value();
+    let array = f.state.arrays().get_string_array(&name);
+    let index = f.params.index().value();
+    let value = array.get_string(index).value();
+    f.results.value().set_value(&value);
+}
+
 pub fn view_block_record(ctx: &ScViewContext, f: &BlockRecordContext) {
     let records = coreblocklog::ScFuncs::get_request_receipts_for_block(ctx);
     records.params.block_index().set_value(f.params.block_index().value());
@@ -63,41 +98,6 @@ pub fn view_block_records(ctx: &ScViewContext, f: &BlockRecordsContext) {
     records.params.block_index().set_value(f.params.block_index().value());
     records.func.call();
     f.results.count().set_value(records.results.request_record().length());
-}
-
-pub fn func_array_clear(_ctx: &ScFuncContext, f: &ArrayClearContext) {
-    let name = f.params.name().value();
-    let array = f.state.arrays().get_string_array(&name);
-    array.clear();
-}
-
-pub fn func_array_create(_ctx: &ScFuncContext, f: &ArrayCreateContext) {
-    let name = f.params.name().value();
-    let array = f.state.arrays().get_string_array(&name);
-    array.clear();
-}
-
-pub fn func_array_set(_ctx: &ScFuncContext, f: &ArraySetContext) {
-    let name = f.params.name().value();
-    let array = f.state.arrays().get_string_array(&name);
-    let index = f.params.index().value();
-    let value = f.params.value().value();
-    array.get_string(index).set_value(&value);
-}
-
-pub fn view_array_length(_ctx: &ScViewContext, f: &ArrayLengthContext) {
-    let name = f.params.name().value();
-    let array = f.state.arrays().get_string_array(&name);
-    let length = array.length();
-    f.results.length().set_value(length);
-}
-
-pub fn view_array_value(_ctx: &ScViewContext, f: &ArrayValueContext) {
-    let name = f.params.name().value();
-    let array = f.state.arrays().get_string_array(&name);
-    let index = f.params.index().value();
-    let value = array.get_string(index).value();
-    f.results.value().set_value(&value);
 }
 
 pub fn view_iota_balance(ctx: &ScViewContext, f: &IotaBalanceContext) {

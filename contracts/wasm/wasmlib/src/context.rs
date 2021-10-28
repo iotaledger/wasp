@@ -44,30 +44,14 @@ pub struct ScTransfers {
 }
 
 impl ScTransfers {
-    // create a new transfers object and initialize it with the specified amount of iotas
-    pub fn iotas(amount: i64) -> ScTransfers {
-        ScTransfers::new(&ScColor::IOTA, amount)
-    }
-
-    // create a new transfers object and initialize it with the specified token transfer
-    pub fn new(color: &ScColor, amount: i64) -> ScTransfers {
-        let transfer = ScTransfers::new_transfers();
-        transfer.set(color, amount);
-        transfer
-    }
-
-    // create a new transfer object ready to add token transfers
-    pub fn new_transfers() -> ScTransfers {
+    // create a new transfers object ready to add token transfers
+    pub fn new() -> ScTransfers {
         ScTransfers { transfers: ScMutableMap::new() }
     }
 
-    pub fn none() -> ScTransfers {
-        ScTransfers { transfers: ScMutableMap { obj_id: 0 } }
-    }
-
-    // create a new transfer object from a balances object
-    pub fn new_transfers_from_balances(balances: ScBalances) -> ScTransfers {
-        let transfers = ScTransfers::new_transfers();
+    // create a new transfers object from a balances object
+    pub fn from_balances(balances: ScBalances) -> ScTransfers {
+        let transfers = ScTransfers::new();
         let colors = balances.colors();
         for i in 0..colors.length() {
             let color = colors.get_color(i).value();
@@ -76,7 +60,19 @@ impl ScTransfers {
         transfers
     }
 
-    // set the specified colored token transfer in the transfer object
+    // create a new transfers object and initialize it with the specified amount of iotas
+    pub fn iotas(amount: i64) -> ScTransfers {
+        ScTransfers::transfer(&ScColor::IOTA, amount)
+    }
+
+    // create a new transfers object and initialize it with the specified token transfer
+    pub fn transfer(color: &ScColor, amount: i64) -> ScTransfers {
+        let transfer = ScTransfers::new();
+        transfer.set(color, amount);
+        transfer
+    }
+
+    // set the specified colored token transfer in the transfers object
     // note that this will overwrite any previous amount for the specified color
     pub fn set(&self, color: &ScColor, amount: i64) {
         self.transfers.get_int64(color).set_value(amount);
@@ -307,7 +303,9 @@ impl ScFuncContext {
     }
 
     // retrieve the agent id of the caller of the smart contract
-    pub fn caller(&self) -> ScAgentID { ROOT.get_agent_id(&KEY_CALLER).value() }
+    pub fn caller(&self) -> ScAgentID {
+        ROOT.get_agent_id(&KEY_CALLER).value()
+    }
 
     // deploys a new instance of the specified smart contract on the current chain
     // the provided parameters are passed to the smart contract "init" function

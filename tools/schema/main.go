@@ -25,7 +25,8 @@ var (
 	flagGo       = flag.Bool("go", false, "generate Go code")
 	flagInit     = flag.String("init", "", "generate new schema file for smart contract named <string>")
 	flagJava     = &disabledFlag // flag.Bool("java", false, "generate Java code <outdated>")
-	flagRust     = flag.Bool("rust", false, "generate Rust code <default>")
+	flagRust     = flag.Bool("rust", false, "generate Rust code")
+	flagTs       = flag.Bool("ts", false, "generate TypScript code")
 	flagType     = flag.String("type", "yaml", "type of schema file that will be generated. Values(yaml,json)")
 )
 
@@ -79,8 +80,27 @@ func generateSchema(file *os.File) error {
 	if err != nil {
 		return err
 	}
-
 	s.CoreContracts = *flagCore
+
+	if *flagTs {
+		info, err = os.Stat("consts.ts")
+		if err == nil && info.ModTime().After(schemaTime) && !*flagForce {
+			fmt.Println("skipping AssemblyScript code generation")
+		} else {
+			fmt.Println("generating AssemblyScript code")
+			err = s.GenerateTs()
+			if err != nil {
+				return err
+			}
+			if !s.CoreContracts {
+				err = s.GenerateGoTests()
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	if *flagGo {
 		info, err = os.Stat("consts.go")
 		if err == nil && info.ModTime().After(schemaTime) && !*flagForce {

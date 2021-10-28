@@ -36,6 +36,7 @@ const NanoTimeDivider = 1000_000_000
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
+	// Get the array of current bets from state storage.
 	bets := f.State.Bets()
 
 	for i := int32(0); i < bets.Length(); i++ {

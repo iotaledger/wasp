@@ -6,13 +6,13 @@ use crate::host::*;
 
 // decodes separate entities from a byte buffer
 pub struct BytesDecoder<'a> {
-    data: &'a [u8],
+    buf: &'a [u8],
 }
 
 impl BytesDecoder<'_> {
     // constructs a decoder
     pub fn new(data: &[u8]) -> BytesDecoder {
-        BytesDecoder { data: data }
+        BytesDecoder { buf: data }
     }
 
     // decodes an ScAddress from the byte buffer
@@ -28,11 +28,11 @@ impl BytesDecoder<'_> {
     // decodes the next substring of bytes from the byte buffer
     pub fn bytes(&mut self) -> &[u8] {
         let size = self.int32() as usize;
-        if self.data.len() < size {
+        if self.buf.len() < size {
             panic("insufficient bytes");
         }
-        let value = &self.data[..size];
-        self.data = &self.data[size..];
+        let value = &self.buf[..size];
+        self.buf = &self.buf[size..];
         value
     }
 
@@ -79,11 +79,11 @@ impl BytesDecoder<'_> {
         let mut val = 0_i64;
         let mut s = 0;
         loop {
-            if self.data.len() == 0 {
+            if self.buf.len() == 0 {
                 panic("insufficient bytes");
             }
-            let mut b = self.data[0] as i8;
-            self.data = &self.data[1..];
+            let mut b = self.buf[0] as i8;
+            self.buf = &self.buf[1..];
             val |= ((b & 0x7f) as i64) << s;
 
             // termination bit set?
@@ -118,7 +118,7 @@ impl BytesDecoder<'_> {
 
 impl Drop for BytesDecoder<'_> {
     fn drop(&mut self) {
-        if self.data.len() != 0 {
+        if self.buf.len() != 0 {
             panic("extra bytes");
         }
     }
@@ -128,13 +128,13 @@ impl Drop for BytesDecoder<'_> {
 
 // encodes separate entities into a byte buffer
 pub struct BytesEncoder {
-    data: Vec<u8>,
+    buf: Vec<u8>,
 }
 
 impl BytesEncoder {
     // constructs an encoder
     pub fn new() -> BytesEncoder {
-        BytesEncoder { data: Vec::new() }
+        BytesEncoder { buf: Vec::new() }
     }
 
     // encodes an ScAddress into the byte buffer
@@ -152,7 +152,7 @@ impl BytesEncoder {
     // encodes a substring of bytes into the byte buffer
     pub fn bytes(&mut self, value: &[u8]) -> &BytesEncoder {
         self.int32(value.len() as i32);
-        self.data.extend_from_slice(value);
+        self.buf.extend_from_slice(value);
         self
     }
 
@@ -170,7 +170,7 @@ impl BytesEncoder {
 
     // retrieve the encoded byte buffer
     pub fn data(&self) -> Vec<u8> {
-        self.data.clone()
+        self.buf.clone()
     }
 
     // encodes an ScHash into the byte buffer
@@ -210,10 +210,10 @@ impl BytesEncoder {
             let s = b & 0x40;
             val >>= 7;
             if (val == 0 && s == 0) || (val == -1 && s != 0) {
-                self.data.push(b & 0x7f);
+                self.buf.push(b & 0x7f);
                 return self;
             }
-            self.data.push(b | 0x80)
+            self.buf.push(b | 0x80);
         }
     }
 

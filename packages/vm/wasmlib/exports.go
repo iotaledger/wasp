@@ -36,7 +36,7 @@ func NewScExports() ScExports {
 	exports := Root.GetStringArray(KeyExports)
 	// tell host what our highest predefined key is
 	// this helps detect missing or extra keys
-	exports.GetString(int32(KeyZzzzzzz)).SetValue("Go:KeyZzzzzzz")
+	exports.GetString(int32(KeyZzzzzzz)).SetValue("Go:KEY_ZZZZZZZ")
 	return ScExports{exports: exports}
 }
 
