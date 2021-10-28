@@ -9,7 +9,7 @@ require (
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go v0.21.0
-	github.com/ethereum/go-ethereum v1.10.9
+	github.com/ethereum/go-ethereum v1.10.10
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
 	github.com/iotaledger/hive.go v0.0.0-20210625103722-68b2cf52ef4e
 	github.com/knadh/koanf v0.15.0
@@ -45,4 +45,4 @@ replace go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.2
 
 replace github.com/linxGnu/grocksdb => github.com/gohornet/grocksdb v1.6.38-0.20211012114404-55f425442260
 
-replace github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.9-0.20210930201820-68977625ebb2
+replace github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20211028173333-c7f585c7534e

@@ -32,7 +32,7 @@ func NewEthService(evmChain *EVMChain, accounts *AccountManager) *EthService {
 }
 
 func (e *EthService) ProtocolVersion() hexutil.Uint {
-	return hexutil.Uint(eth.ETH65)
+	return hexutil.Uint(eth.ETH66)
 }
 
 func (e *EthService) GetTransactionCount(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Uint64, error) {

@@ -395,9 +395,12 @@ func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, arg
 }
 
 func (i *iscpTestContractInstance) getChainID() *iscp.ChainID {
-	var iscpAddress iscpcontract.ISCPAddress
-	i.callView(nil, "getChainId", nil, &iscpAddress)
-	return iscpcontract.ChainIDFromISCPAddress(iscpAddress)
+	type r struct {
+		Result iscpcontract.ISCPAddress
+	}
+	var v r
+	i.callView(nil, "getChainId", nil, &v)
+	return iscpcontract.ChainIDFromISCPAddress(v.Result)
 }
 
 func (i *iscpTestContractInstance) triggerEvent(s string) (res callFnResult, err error) {
