@@ -57,13 +57,13 @@ func commitEthereumBlock(blockContext interface{}) {
 	_ = emu.Close()
 }
 
-func withEmulatorR(ctx iscp.SandboxView, f func(*emulator.EVMEmulator) dict.Dict) (dict.Dict, error) {
+func withEmulatorR(ctx iscp.SandboxView, f func(*emulator.EVMEmulator) (dict.Dict, error)) (dict.Dict, error) {
 	emu := emulator.NewEVMEmulator(
 		rawdb.NewDatabase(emulator.NewKVAdapter(buffered.NewBufferedKVStoreAccess(ctx.State()))),
 		timestamp(ctx),
 	)
 	defer emu.Close()
-	return f(emu), nil
+	return f(emu)
 }
 
 func txResult(ctx iscp.SandboxView, emu *emulator.EVMEmulator, tx *types.Transaction) dict.Dict {
@@ -81,11 +81,11 @@ func txResult(ctx iscp.SandboxView, emu *emulator.EVMEmulator, tx *types.Transac
 	}
 }
 
-func withBlockByNumber(ctx iscp.SandboxView, f func(*emulator.EVMEmulator, *types.Block) dict.Dict) (dict.Dict, error) {
+func withBlockByNumber(ctx iscp.SandboxView, f func(*emulator.EVMEmulator, *types.Block) (dict.Dict, error)) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	blockNumber := paramBlockNumber(ctx)
 
-	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) (dict.Dict, error) {
 		block, err := emu.BlockByNumber(blockNumber)
 		if !isNotFound(err) {
 			a.RequireNoError(err)
@@ -95,31 +95,31 @@ func withBlockByNumber(ctx iscp.SandboxView, f func(*emulator.EVMEmulator, *type
 	})
 }
 
-func withBlockByHash(ctx iscp.SandboxView, f func(*emulator.EVMEmulator, *types.Block) dict.Dict) (dict.Dict, error) {
+func withBlockByHash(ctx iscp.SandboxView, f func(*emulator.EVMEmulator, *types.Block) (dict.Dict, error)) (dict.Dict, error) {
 	hash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
 
-	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) (dict.Dict, error) {
 		block := emu.BlockByHash(hash)
 		return f(emu, block)
 	})
 }
 
-func withTransactionByHash(ctx iscp.SandboxView, f func(*emulator.EVMEmulator, *types.Transaction) dict.Dict) (dict.Dict, error) {
+func withTransactionByHash(ctx iscp.SandboxView, f func(*emulator.EVMEmulator, *types.Transaction) (dict.Dict, error)) (dict.Dict, error) {
 	txHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldTransactionHash))
 
-	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) (dict.Dict, error) {
 		tx := emu.TransactionByHash(txHash)
 		return f(emu, tx)
 	})
 }
 
-func withTransactionByBlockHashAndIndex(ctx iscp.SandboxView, f func(*emulator.EVMEmulator, *types.Transaction) dict.Dict) (dict.Dict, error) {
+func withTransactionByBlockHashAndIndex(ctx iscp.SandboxView, f func(*emulator.EVMEmulator, *types.Transaction) (dict.Dict, error)) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
 	index, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldTransactionIndex), 0)
 	a.RequireNoError(err)
 
-	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) dict.Dict {
+	return withEmulatorR(ctx, func(emu *emulator.EVMEmulator) (dict.Dict, error) {
 		tx, err := emu.TransactionInBlock(blockHash, uint(index))
 		if !isNotFound(err) {
 			a.RequireNoError(err)
@@ -128,11 +128,11 @@ func withTransactionByBlockHashAndIndex(ctx iscp.SandboxView, f func(*emulator.E
 	})
 }
 
-func withTransactionByBlockNumberAndIndex(ctx iscp.SandboxView, f func(*emulator.EVMEmulator, *types.Transaction) dict.Dict) (dict.Dict, error) {
+func withTransactionByBlockNumberAndIndex(ctx iscp.SandboxView, f func(*emulator.EVMEmulator, *types.Transaction) (dict.Dict, error)) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	index, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldTransactionIndex), 0)
 	a.RequireNoError(err)
-	return withBlockByNumber(ctx, func(emu *emulator.EVMEmulator, block *types.Block) dict.Dict {
+	return withBlockByNumber(ctx, func(emu *emulator.EVMEmulator, block *types.Block) (dict.Dict, error) {
 		if block == nil || index >= uint64(len(block.Transactions())) {
 			return f(emu, nil)
 		}
