@@ -6,9 +6,9 @@ You can see all exposed metrics on https://metrics.wasp.sc.iota.org.
 Off ledger requests per chain
 
 ### wasp_on_ledger_request_counter
-Off ledger requests per chain
+On ledger requests per chain
 
-### wasp_processed_on_ledger_request_counter
+### wasp_processed_request_counter
 Total number of requests processed
 
 ### messages_received_per_chain
