@@ -1,5 +1,5 @@
-import { Base58 } from '../crypto'
-import { Buffer } from '../buffer'
+import { Base58 } from '../crypto';
+import { Buffer } from '../buffer';
 import type { IFaucetRequest } from './IFaucetRequest';
 
 export class Faucet {

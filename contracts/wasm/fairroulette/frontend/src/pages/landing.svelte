@@ -2,6 +2,9 @@
   import Button from '../components/button.svelte';
   import { navigateTo } from 'svelte-router-spa';
 
+  export let currentRoute;
+  export let params;
+
   const HEADINGS = {
     eyebrow: 'Smart Contracts Demo',
     title: 'IOTA Roulette',

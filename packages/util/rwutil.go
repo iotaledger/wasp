@@ -208,7 +208,7 @@ func ReadBytes16(r io.Reader) ([]byte, error) {
 
 func WriteBytes16(w io.Writer, data []byte) error {
 	if len(data) > MaxUint16 {
-		panic("WriteBytes16: too long data")
+		panic(fmt.Sprintf("WriteBytes16: too long data (%v)", len(data)))
 	}
 	err := WriteUint16(w, uint16(len(data)))
 	if err != nil {
@@ -243,7 +243,7 @@ func ReadBytes32(r io.Reader) ([]byte, error) {
 
 func WriteBytes32(w io.Writer, data []byte) error {
 	if len(data) > MaxUint32 {
-		panic("WriteBytes32: too long data")
+		panic(fmt.Sprintf("WriteBytes32: too long data (%v)", len(data)))
 	}
 	err := WriteUint32(w, uint32(len(data)))
 	if err != nil {
@@ -326,7 +326,7 @@ func ReadStrings16(r io.Reader) ([]string, error) {
 
 func WriteStrings16(w io.Writer, strs []string) error {
 	if len(strs) > MaxUint16 {
-		panic("WriteStrings16: too long array")
+		panic(fmt.Sprintf("WriteStrings16: too long array (%v)", len(strs)))
 	}
 	if err := WriteUint16(w, uint16(len(strs))); err != nil {
 		return err

@@ -1,5 +1,5 @@
 export type ILog = {
-    tag: string;
-    timestamp: string;
-    description: string;
-}
+  tag: string;
+  timestamp: string;
+  description: string;
+};
