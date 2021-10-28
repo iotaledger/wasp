@@ -167,7 +167,7 @@ func (o *OptimisticKVStoreReader) MustIterateKeysSorted(prefix kv.Key, f func(ke
 
 const (
 	defaultRetryDelay   = 300 * time.Millisecond
-	defaultRetryTimeout = 10 * time.Second
+	defaultRetryTimeout = 5 * time.Second
 )
 
 // RetryOnStateInvalidated repeats function while it returns ErrorStateInvalidated

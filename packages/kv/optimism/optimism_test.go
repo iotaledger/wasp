@@ -2,6 +2,7 @@ package optimism
 
 import (
 	"testing"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -30,9 +31,10 @@ func TestOptimismBasic(t *testing.T) {
 	require.False(t, base.IsValid())
 	_, err = r.Get("a")
 	require.Error(t, err)
-	require.ErrorIs(t, err, coreutil.ErrorStateInvalidated)
+	require.Equal(t, err, coreutil.ErrorStateInvalidated)
 
 	r.SetBaseline()
+	require.True(t, base.IsValid())
 	b, err = r.Get("a")
 	require.NoError(t, err)
 	require.EqualValues(t, "b", string(b))
@@ -40,19 +42,20 @@ func TestOptimismBasic(t *testing.T) {
 	glb.InvalidateSolidIndex()
 	_, err = r.Get("a")
 	require.Error(t, err)
-	require.ErrorIs(t, err, coreutil.ErrorStateInvalidated)
+	require.Equal(t, err, coreutil.ErrorStateInvalidated)
 }
 
 // returns the number of times the read operation was executed
-func tryReadFromDB(storeReader *OptimisticKVStoreReader) (int, error) {
+func tryReadFromDB(storeReader *OptimisticKVStoreReader, timeouts ...time.Duration) ([]byte, int, error) {
 	readCounter := 0
+	var ret []byte
 	err := RetryOnStateInvalidated(func() error {
 		var err error
 		readCounter++
-		_, err = storeReader.Get("foo")
+		ret, err = storeReader.Get("foo")
 		return err
-	})
-	return readCounter, err
+	}, timeouts...)
+	return ret, readCounter, err
 }
 
 func TestRetryOnStateInvalidation(t *testing.T) {
@@ -66,14 +69,25 @@ func TestRetryOnStateInvalidation(t *testing.T) {
 	base.Set()
 	require.True(t, base.IsValid())
 
-	nReads, err := tryReadFromDB(r)
+	_, nReads, err := tryReadFromDB(r)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, nReads)
 
 	glb.SetSolidIndex(3)
 	require.False(t, base.IsValid())
 
-	nReads, err = tryReadFromDB(r)
-	require.ErrorIs(t, err, coreutil.ErrorStateInvalidated)
+	_, nReads, err = tryReadFromDB(r)
+	require.NotEqual(t, err, coreutil.ErrorStateInvalidated)
 	require.Greater(t, nReads, 1)
+
+	// make sure it stops retrying and returns once a new baseline is set
+	go func() {
+		ret, nReads, err := tryReadFromDB(r, 5*time.Second, 10*time.Millisecond)
+		require.NoError(t, err)
+		require.Greater(t, nReads, 1)
+		require.Equal(t, ret, []byte("bar"))
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+	r.SetBaseline() // sets the baseline while the go-routine above is running, so
 }
