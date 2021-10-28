@@ -13,6 +13,12 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
+const (
+	specialFuncInit     = "funcInit"
+	specialFuncSetOwner = "setOwner"
+	specialViewGetOwner = "getOwner"
+)
+
 const importCoreTypes = `import "github.com/iotaledger/wasp/packages/iscp"
 `
 
@@ -324,15 +330,15 @@ func (s *Schema) generateGoFuncs() error {
 func (s *Schema) generateGoFuncSignature(file *os.File, f *Func) {
 	fmt.Fprintf(file, "\nfunc %s(ctx wasmlib.Sc%sContext, f *%sContext) {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
-	case "funcInit":
+	case specialFuncInit:
 		fmt.Fprintf(file, "    if f.Params.Owner().Exists() {\n")
 		fmt.Fprintf(file, "        f.State.Owner().SetValue(f.Params.Owner().Value())\n")
 		fmt.Fprintf(file, "        return\n")
 		fmt.Fprintf(file, "    }\n")
 		fmt.Fprintf(file, "    f.State.Owner().SetValue(ctx.ContractCreator())\n")
-	case "funcSetOwner":
+	case specialFuncSetOwner:
 		fmt.Fprintf(file, "    f.State.Owner().SetValue(f.Params.Owner().Value())\n")
-	case "viewGetOwner":
+	case specialViewGetOwner:
 		fmt.Fprintf(file, "    f.Results.Owner().SetValue(f.State.Owner().Value())\n")
 	default:
 	}

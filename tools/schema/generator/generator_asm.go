@@ -316,15 +316,15 @@ func (s *Schema) generateTsFuncs() error {
 func (s *Schema) generateTsFuncSignature(file *os.File, f *Func) {
 	fmt.Fprintf(file, "\nexport function %s(ctx: wasmlib.Sc%sContext, f: sc.%sContext): void {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
-	case "funcInit":
+	case specialFuncInit:
 		fmt.Fprintf(file, "    if (f.params.owner().exists()) {\n")
 		fmt.Fprintf(file, "        f.state.owner().setValue(f.params.owner().value());\n")
 		fmt.Fprintf(file, "        return;\n")
 		fmt.Fprintf(file, "    }\n")
 		fmt.Fprintf(file, "    f.state.owner().setValue(ctx.contractCreator());\n")
-	case "funcSetOwner":
+	case specialFuncSetOwner:
 		fmt.Fprintf(file, "    f.state.owner().setValue(f.params.owner().value());\n")
-	case "viewGetOwner":
+	case specialViewGetOwner:
 		fmt.Fprintf(file, "    f.results.owner().setValue(f.state.owner().value());\n")
 	default:
 	}
@@ -477,7 +477,7 @@ func (s *Schema) generateTsProxyArray(file *os.File, field *Field, mutability st
 	fmt.Fprintf(file, "    }\n")
 
 	if field.TypeID == 0 {
-		s.generateTsProxyArrayNewType(file, field, proxyType, arrayType)
+		s.generateTsProxyArrayNewType(file, field, proxyType)
 		fmt.Fprintf(file, "}\n")
 		return
 	}
@@ -490,7 +490,7 @@ func (s *Schema) generateTsProxyArray(file *os.File, field *Field, mutability st
 	fmt.Fprintf(file, "}\n")
 }
 
-func (s *Schema) generateTsProxyArrayNewType(file *os.File, field *Field, proxyType, arrayType string) {
+func (s *Schema) generateTsProxyArrayNewType(file *os.File, field *Field, proxyType string) {
 	for _, subtype := range s.Typedefs {
 		if subtype.Name != field.Type {
 			continue
@@ -544,7 +544,7 @@ func (s *Schema) generateTsProxyMap(file *os.File, field *Field, mutability stri
 	}
 
 	if field.TypeID == 0 {
-		s.generateTsProxyMapNewType(file, field, proxyType, mapType, keyType, keyValue)
+		s.generateTsProxyMapNewType(file, field, proxyType, keyType, keyValue)
 		fmt.Fprintf(file, "}\n")
 		return
 	}
@@ -557,7 +557,7 @@ func (s *Schema) generateTsProxyMap(file *os.File, field *Field, mutability stri
 	fmt.Fprintf(file, "}\n")
 }
 
-func (s *Schema) generateTsProxyMapNewType(file *os.File, field *Field, proxyType, mapType, keyType, keyValue string) {
+func (s *Schema) generateTsProxyMapNewType(file *os.File, field *Field, proxyType, keyType, keyValue string) {
 	for _, subtype := range s.Typedefs {
 		if subtype.Name != field.Type {
 			continue
