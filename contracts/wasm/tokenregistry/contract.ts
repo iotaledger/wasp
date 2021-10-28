@@ -13,9 +13,19 @@ export class MintSupplyCall {
     params: sc.MutableMintSupplyParams = new sc.MutableMintSupplyParams();
 }
 
+export class MintSupplyContext {
+    params: sc.ImmutableMintSupplyParams = new sc.ImmutableMintSupplyParams();
+    state: sc.MutableTokenRegistryState = new sc.MutableTokenRegistryState();
+}
+
 export class TransferOwnershipCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTransferOwnership);
     params: sc.MutableTransferOwnershipParams = new sc.MutableTransferOwnershipParams();
+}
+
+export class TransferOwnershipContext {
+    params: sc.ImmutableTransferOwnershipParams = new sc.ImmutableTransferOwnershipParams();
+    state: sc.MutableTokenRegistryState = new sc.MutableTokenRegistryState();
 }
 
 export class UpdateMetadataCall {
@@ -23,9 +33,19 @@ export class UpdateMetadataCall {
     params: sc.MutableUpdateMetadataParams = new sc.MutableUpdateMetadataParams();
 }
 
+export class UpdateMetadataContext {
+    params: sc.ImmutableUpdateMetadataParams = new sc.ImmutableUpdateMetadataParams();
+    state: sc.MutableTokenRegistryState = new sc.MutableTokenRegistryState();
+}
+
 export class GetInfoCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetInfo);
     params: sc.MutableGetInfoParams = new sc.MutableGetInfoParams();
+}
+
+export class GetInfoContext {
+    params: sc.ImmutableGetInfoParams = new sc.ImmutableGetInfoParams();
+    state: sc.ImmutableTokenRegistryState = new sc.ImmutableTokenRegistryState();
 }
 
 export class ScFuncs {

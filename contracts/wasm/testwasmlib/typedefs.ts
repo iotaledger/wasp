@@ -6,8 +6,10 @@
 // Change the json schema instead
 
 import * as wasmlib from "../wasmlib"
+import * as sc from "./index";
 
-export { ArrayOfImmutableString as ImmutableStringArray };
+export class ImmutableStringArray extends ArrayOfImmutableString {
+};
 
 export class ArrayOfImmutableString {
     objID: i32;
@@ -25,7 +27,8 @@ export class ArrayOfImmutableString {
     }
 }
 
-export { ArrayOfMutableString as MutableStringArray };
+export class MutableStringArray extends ArrayOfMutableString {
+};
 
 export class ArrayOfMutableString {
     objID: i32;

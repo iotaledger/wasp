@@ -31,6 +31,11 @@ func NewWasmTimeVM() *WasmTimeVM {
 	return vm
 }
 
+func (vm *WasmTimeVM) EnvAbort(p1 int32, p2 int32, p3 int32, p4 int32) {
+	// TODO determine message string from parameters
+	panic("AssemblyScript env.abort")
+}
+
 func (vm *WasmTimeVM) Interrupt() {
 	vm.interrupt.Interrupt()
 }
@@ -70,7 +75,7 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 	// AssemblyScript Wasm versions uses this one to write panic message to console
 	err = vm.linker.DefineFunc("env", "abort",
 		func(p1 int32, p2 int32, p3 int32, p4 int32) {
-			panic("AssemblyScript env.abort")
+			vm.EnvAbort(p1, p2, p3, p4)
 		})
 	if err != nil {
 		return err

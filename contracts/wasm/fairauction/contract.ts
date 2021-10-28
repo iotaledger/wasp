@@ -13,9 +13,19 @@ export class FinalizeAuctionCall {
     params: sc.MutableFinalizeAuctionParams = new sc.MutableFinalizeAuctionParams();
 }
 
+export class FinalizeAuctionContext {
+    params: sc.ImmutableFinalizeAuctionParams = new sc.ImmutableFinalizeAuctionParams();
+    state: sc.MutableFairAuctionState = new sc.MutableFairAuctionState();
+}
+
 export class PlaceBidCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPlaceBid);
     params: sc.MutablePlaceBidParams = new sc.MutablePlaceBidParams();
+}
+
+export class PlaceBidContext {
+    params: sc.ImmutablePlaceBidParams = new sc.ImmutablePlaceBidParams();
+    state: sc.MutableFairAuctionState = new sc.MutableFairAuctionState();
 }
 
 export class SetOwnerMarginCall {
@@ -23,15 +33,31 @@ export class SetOwnerMarginCall {
     params: sc.MutableSetOwnerMarginParams = new sc.MutableSetOwnerMarginParams();
 }
 
+export class SetOwnerMarginContext {
+    params: sc.ImmutableSetOwnerMarginParams = new sc.ImmutableSetOwnerMarginParams();
+    state: sc.MutableFairAuctionState = new sc.MutableFairAuctionState();
+}
+
 export class StartAuctionCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncStartAuction);
     params: sc.MutableStartAuctionParams = new sc.MutableStartAuctionParams();
+}
+
+export class StartAuctionContext {
+    params: sc.ImmutableStartAuctionParams = new sc.ImmutableStartAuctionParams();
+    state: sc.MutableFairAuctionState = new sc.MutableFairAuctionState();
 }
 
 export class GetInfoCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetInfo);
     params: sc.MutableGetInfoParams = new sc.MutableGetInfoParams();
     results: sc.ImmutableGetInfoResults = new sc.ImmutableGetInfoResults();
+}
+
+export class GetInfoContext {
+    params: sc.ImmutableGetInfoParams = new sc.ImmutableGetInfoParams();
+    results: sc.MutableGetInfoResults = new sc.MutableGetInfoResults();
+    state: sc.ImmutableFairAuctionState = new sc.ImmutableFairAuctionState();
 }
 
 export class ScFuncs {

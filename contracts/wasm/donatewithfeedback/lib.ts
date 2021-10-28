@@ -24,23 +24,13 @@ export function on_load(): void {
     }
 }
 
-export class DonateContext {
-    params: sc.ImmutableDonateParams = new sc.ImmutableDonateParams();
-    state: sc.MutableDonateWithFeedbackState = new sc.MutableDonateWithFeedbackState();
-}
-
 function funcDonateThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("donatewithfeedback.funcDonate");
-    let f = new DonateContext();
+    let f = new sc.DonateContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcDonate(ctx, f);
     ctx.log("donatewithfeedback.funcDonate ok");
-}
-
-export class WithdrawContext {
-    params: sc.ImmutableWithdrawParams = new sc.ImmutableWithdrawParams();
-    state: sc.MutableDonateWithFeedbackState = new sc.MutableDonateWithFeedbackState();
 }
 
 function funcWithdrawThunk(ctx: wasmlib.ScFuncContext): void {
@@ -48,22 +38,16 @@ function funcWithdrawThunk(ctx: wasmlib.ScFuncContext): void {
     // only SC creator can withdraw donated funds
     ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
-    let f = new WithdrawContext();
+    let f = new sc.WithdrawContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcWithdraw(ctx, f);
     ctx.log("donatewithfeedback.funcWithdraw ok");
 }
 
-export class DonationContext {
-    params: sc.ImmutableDonationParams = new sc.ImmutableDonationParams();
-    results: sc.MutableDonationResults = new sc.MutableDonationResults();
-    state: sc.ImmutableDonateWithFeedbackState = new sc.ImmutableDonateWithFeedbackState();
-}
-
 function viewDonationThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("donatewithfeedback.viewDonation");
-    let f = new DonationContext();
+    let f = new sc.DonationContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
@@ -72,14 +56,9 @@ function viewDonationThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("donatewithfeedback.viewDonation ok");
 }
 
-export class DonationInfoContext {
-    results: sc.MutableDonationInfoResults = new sc.MutableDonationInfoResults();
-    state: sc.ImmutableDonateWithFeedbackState = new sc.ImmutableDonateWithFeedbackState();
-}
-
 function viewDonationInfoThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("donatewithfeedback.viewDonationInfo");
-    let f = new DonationInfoContext();
+    let f = new sc.DonationInfoContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.viewDonationInfo(ctx, f);

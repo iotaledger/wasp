@@ -108,6 +108,11 @@ func TestIncrementLocalStateInternalCall(t *testing.T) {
 }
 
 func TestIncrementLocalStateSandboxCall(t *testing.T) {
+	// TODO need to save globals for TypeScript Wasm for this to succeed
+	if *wasmsolo.TsWasm {
+		t.SkipNow()
+	}
+
 	ctx := setupTest(t)
 
 	localStateSandboxCall := inccounter.ScFuncs.LocalStateSandboxCall(ctx)
@@ -126,6 +131,11 @@ func TestIncrementLocalStateSandboxCall(t *testing.T) {
 }
 
 func TestIncrementLocalStatePost(t *testing.T) {
+	// TODO need to save globals for TypeScript Wasm for this to succeed
+	if *wasmsolo.TsWasm {
+		t.SkipNow()
+	}
+
 	ctx := setupTest(t)
 
 	localStatePost := inccounter.ScFuncs.LocalStatePost(ctx)

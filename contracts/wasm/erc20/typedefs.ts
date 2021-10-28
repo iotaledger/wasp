@@ -6,8 +6,10 @@
 // Change the json schema instead
 
 import * as wasmlib from "../wasmlib"
+import * as sc from "./index";
 
-export { MapAgentIDToImmutableInt64 as ImmutableAllowancesForAgent };
+export class ImmutableAllowancesForAgent extends MapAgentIDToImmutableInt64 {
+};
 
 export class MapAgentIDToImmutableInt64 {
     objID: i32;
@@ -21,7 +23,8 @@ export class MapAgentIDToImmutableInt64 {
     }
 }
 
-export { MapAgentIDToMutableInt64 as MutableAllowancesForAgent };
+export class MutableAllowancesForAgent extends MapAgentIDToMutableInt64 {
+};
 
 export class MapAgentIDToMutableInt64 {
     objID: i32;

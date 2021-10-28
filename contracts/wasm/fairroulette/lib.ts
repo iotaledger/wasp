@@ -29,23 +29,15 @@ export function on_load(): void {
     }
 }
 
-export class ForcePayoutContext {
-    state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
-}
-
 function funcForcePayoutThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairroulette.funcForcePayout");
     // only SC creator can restart the round forcefully
     ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
-    let f = new ForcePayoutContext();
+    let f = new sc.ForcePayoutContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcForcePayout(ctx, f);
     ctx.log("fairroulette.funcForcePayout ok");
-}
-
-export class ForceResetContext {
-    state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }
 
 function funcForceResetThunk(ctx: wasmlib.ScFuncContext): void {
@@ -53,14 +45,10 @@ function funcForceResetThunk(ctx: wasmlib.ScFuncContext): void {
     // only SC creator can restart the round forcefully
     ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
-    let f = new ForceResetContext();
+    let f = new sc.ForceResetContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcForceReset(ctx, f);
     ctx.log("fairroulette.funcForceReset ok");
-}
-
-export class PayWinnersContext {
-    state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }
 
 function funcPayWinnersThunk(ctx: wasmlib.ScFuncContext): void {
@@ -68,20 +56,15 @@ function funcPayWinnersThunk(ctx: wasmlib.ScFuncContext): void {
     // only SC itself can invoke this function
     ctx.require(ctx.caller().equals(ctx.accountID()), "no permission");
 
-    let f = new PayWinnersContext();
+    let f = new sc.PayWinnersContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcPayWinners(ctx, f);
     ctx.log("fairroulette.funcPayWinners ok");
 }
 
-export class PlaceBetContext {
-    params: sc.ImmutablePlaceBetParams = new sc.ImmutablePlaceBetParams();
-    state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
-}
-
 function funcPlaceBetThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairroulette.funcPlaceBet");
-    let f = new PlaceBetContext();
+    let f = new sc.PlaceBetContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.number().exists(), "missing mandatory number")
@@ -89,17 +72,12 @@ function funcPlaceBetThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairroulette.funcPlaceBet ok");
 }
 
-export class PlayPeriodContext {
-    params: sc.ImmutablePlayPeriodParams = new sc.ImmutablePlayPeriodParams();
-    state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
-}
-
 function funcPlayPeriodThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairroulette.funcPlayPeriod");
     // only SC creator can update the play period
     ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
-    let f = new PlayPeriodContext();
+    let f = new sc.PlayPeriodContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.playPeriod().exists(), "missing mandatory playPeriod")
@@ -107,56 +85,36 @@ function funcPlayPeriodThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairroulette.funcPlayPeriod ok");
 }
 
-export class LastWinningNumberContext {
-    results: sc.MutableLastWinningNumberResults = new sc.MutableLastWinningNumberResults();
-    state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
-}
-
 function viewLastWinningNumberThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("fairroulette.viewLastWinningNumber");
-    let f = new LastWinningNumberContext();
+    let f = new sc.LastWinningNumberContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.viewLastWinningNumber(ctx, f);
     ctx.log("fairroulette.viewLastWinningNumber ok");
 }
 
-export class RoundNumberContext {
-    results: sc.MutableRoundNumberResults = new sc.MutableRoundNumberResults();
-    state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
-}
-
 function viewRoundNumberThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("fairroulette.viewRoundNumber");
-    let f = new RoundNumberContext();
+    let f = new sc.RoundNumberContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.viewRoundNumber(ctx, f);
     ctx.log("fairroulette.viewRoundNumber ok");
 }
 
-export class RoundStartedAtContext {
-    results: sc.MutableRoundStartedAtResults = new sc.MutableRoundStartedAtResults();
-    state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
-}
-
 function viewRoundStartedAtThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("fairroulette.viewRoundStartedAt");
-    let f = new RoundStartedAtContext();
+    let f = new sc.RoundStartedAtContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.viewRoundStartedAt(ctx, f);
     ctx.log("fairroulette.viewRoundStartedAt ok");
 }
 
-export class RoundStatusContext {
-    results: sc.MutableRoundStatusResults = new sc.MutableRoundStatusResults();
-    state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
-}
-
 function viewRoundStatusThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("fairroulette.viewRoundStatus");
-    let f = new RoundStatusContext();
+    let f = new sc.RoundStatusContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.viewRoundStatus(ctx, f);

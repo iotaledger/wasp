@@ -13,9 +13,19 @@ export class ApproveCall {
     params: sc.MutableApproveParams = new sc.MutableApproveParams();
 }
 
+export class ApproveContext {
+    params: sc.ImmutableApproveParams = new sc.ImmutableApproveParams();
+    state: sc.MutableErc20State = new sc.MutableErc20State();
+}
+
 export class InitCall {
     func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
     params: sc.MutableInitParams = new sc.MutableInitParams();
+}
+
+export class InitContext {
+    params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
+    state: sc.MutableErc20State = new sc.MutableErc20State();
 }
 
 export class TransferCall {
@@ -23,9 +33,19 @@ export class TransferCall {
     params: sc.MutableTransferParams = new sc.MutableTransferParams();
 }
 
+export class TransferContext {
+    params: sc.ImmutableTransferParams = new sc.ImmutableTransferParams();
+    state: sc.MutableErc20State = new sc.MutableErc20State();
+}
+
 export class TransferFromCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTransferFrom);
     params: sc.MutableTransferFromParams = new sc.MutableTransferFromParams();
+}
+
+export class TransferFromContext {
+    params: sc.ImmutableTransferFromParams = new sc.ImmutableTransferFromParams();
+    state: sc.MutableErc20State = new sc.MutableErc20State();
 }
 
 export class AllowanceCall {
@@ -34,15 +54,32 @@ export class AllowanceCall {
     results: sc.ImmutableAllowanceResults = new sc.ImmutableAllowanceResults();
 }
 
+export class AllowanceContext {
+    params: sc.ImmutableAllowanceParams = new sc.ImmutableAllowanceParams();
+    results: sc.MutableAllowanceResults = new sc.MutableAllowanceResults();
+    state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
+}
+
 export class BalanceOfCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBalanceOf);
     params: sc.MutableBalanceOfParams = new sc.MutableBalanceOfParams();
     results: sc.ImmutableBalanceOfResults = new sc.ImmutableBalanceOfResults();
 }
 
+export class BalanceOfContext {
+    params: sc.ImmutableBalanceOfParams = new sc.ImmutableBalanceOfParams();
+    results: sc.MutableBalanceOfResults = new sc.MutableBalanceOfResults();
+    state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
+}
+
 export class TotalSupplyCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTotalSupply);
     results: sc.ImmutableTotalSupplyResults = new sc.ImmutableTotalSupplyResults();
+}
+
+export class TotalSupplyContext {
+    results: sc.MutableTotalSupplyResults = new sc.MutableTotalSupplyResults();
+    state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
 }
 
 export class ScFuncs {

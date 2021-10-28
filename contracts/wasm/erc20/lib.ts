@@ -27,14 +27,9 @@ export function on_load(): void {
     }
 }
 
-export class ApproveContext {
-    params: sc.ImmutableApproveParams = new sc.ImmutableApproveParams();
-    state: sc.MutableErc20State = new sc.MutableErc20State();
-}
-
 function funcApproveThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("erc20.funcApprove");
-    let f = new ApproveContext();
+    let f = new sc.ApproveContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.amount().exists(), "missing mandatory amount")
@@ -43,14 +38,9 @@ function funcApproveThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("erc20.funcApprove ok");
 }
 
-export class InitContext {
-    params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
-    state: sc.MutableErc20State = new sc.MutableErc20State();
-}
-
 function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("erc20.funcInit");
-    let f = new InitContext();
+    let f = new sc.InitContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.creator().exists(), "missing mandatory creator")
@@ -59,14 +49,9 @@ function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("erc20.funcInit ok");
 }
 
-export class TransferContext {
-    params: sc.ImmutableTransferParams = new sc.ImmutableTransferParams();
-    state: sc.MutableErc20State = new sc.MutableErc20State();
-}
-
 function funcTransferThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("erc20.funcTransfer");
-    let f = new TransferContext();
+    let f = new sc.TransferContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.account().exists(), "missing mandatory account")
@@ -75,14 +60,9 @@ function funcTransferThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("erc20.funcTransfer ok");
 }
 
-export class TransferFromContext {
-    params: sc.ImmutableTransferFromParams = new sc.ImmutableTransferFromParams();
-    state: sc.MutableErc20State = new sc.MutableErc20State();
-}
-
 function funcTransferFromThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("erc20.funcTransferFrom");
-    let f = new TransferFromContext();
+    let f = new sc.TransferFromContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.account().exists(), "missing mandatory account")
@@ -92,15 +72,9 @@ function funcTransferFromThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("erc20.funcTransferFrom ok");
 }
 
-export class AllowanceContext {
-    params: sc.ImmutableAllowanceParams = new sc.ImmutableAllowanceParams();
-    results: sc.MutableAllowanceResults = new sc.MutableAllowanceResults();
-    state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
-}
-
 function viewAllowanceThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("erc20.viewAllowance");
-    let f = new AllowanceContext();
+    let f = new sc.AllowanceContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
@@ -110,15 +84,9 @@ function viewAllowanceThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("erc20.viewAllowance ok");
 }
 
-export class BalanceOfContext {
-    params: sc.ImmutableBalanceOfParams = new sc.ImmutableBalanceOfParams();
-    results: sc.MutableBalanceOfResults = new sc.MutableBalanceOfResults();
-    state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
-}
-
 function viewBalanceOfThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("erc20.viewBalanceOf");
-    let f = new BalanceOfContext();
+    let f = new sc.BalanceOfContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
@@ -127,14 +95,9 @@ function viewBalanceOfThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("erc20.viewBalanceOf ok");
 }
 
-export class TotalSupplyContext {
-    results: sc.MutableTotalSupplyResults = new sc.MutableTotalSupplyResults();
-    state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
-}
-
 function viewTotalSupplyThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("erc20.viewTotalSupply");
-    let f = new TotalSupplyContext();
+    let f = new sc.TotalSupplyContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.viewTotalSupply(ctx, f);

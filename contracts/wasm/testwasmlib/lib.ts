@@ -29,14 +29,9 @@ export function on_load(): void {
     }
 }
 
-export class ArrayClearContext {
-    params: sc.ImmutableArrayClearParams = new sc.ImmutableArrayClearParams();
-    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
-}
-
 function funcArrayClearThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("testwasmlib.funcArrayClear");
-    let f = new ArrayClearContext();
+    let f = new sc.ArrayClearContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.name().exists(), "missing mandatory name")
@@ -44,14 +39,9 @@ function funcArrayClearThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("testwasmlib.funcArrayClear ok");
 }
 
-export class ArrayCreateContext {
-    params: sc.ImmutableArrayCreateParams = new sc.ImmutableArrayCreateParams();
-    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
-}
-
 function funcArrayCreateThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("testwasmlib.funcArrayCreate");
-    let f = new ArrayCreateContext();
+    let f = new sc.ArrayCreateContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.name().exists(), "missing mandatory name")
@@ -59,14 +49,9 @@ function funcArrayCreateThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("testwasmlib.funcArrayCreate ok");
 }
 
-export class ArraySetContext {
-    params: sc.ImmutableArraySetParams = new sc.ImmutableArraySetParams();
-    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
-}
-
 function funcArraySetThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("testwasmlib.funcArraySet");
-    let f = new ArraySetContext();
+    let f = new sc.ArraySetContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.index().exists(), "missing mandatory index")
@@ -76,29 +61,18 @@ function funcArraySetThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("testwasmlib.funcArraySet ok");
 }
 
-export class ParamTypesContext {
-    params: sc.ImmutableParamTypesParams = new sc.ImmutableParamTypesParams();
-    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
-}
-
 function funcParamTypesThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("testwasmlib.funcParamTypes");
-    let f = new ParamTypesContext();
+    let f = new sc.ParamTypesContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcParamTypes(ctx, f);
     ctx.log("testwasmlib.funcParamTypes ok");
 }
 
-export class ArrayLengthContext {
-    params: sc.ImmutableArrayLengthParams = new sc.ImmutableArrayLengthParams();
-    results: sc.MutableArrayLengthResults = new sc.MutableArrayLengthResults();
-    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
-}
-
 function viewArrayLengthThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("testwasmlib.viewArrayLength");
-    let f = new ArrayLengthContext();
+    let f = new sc.ArrayLengthContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
@@ -107,15 +81,9 @@ function viewArrayLengthThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("testwasmlib.viewArrayLength ok");
 }
 
-export class ArrayValueContext {
-    params: sc.ImmutableArrayValueParams = new sc.ImmutableArrayValueParams();
-    results: sc.MutableArrayValueResults = new sc.MutableArrayValueResults();
-    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
-}
-
 function viewArrayValueThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("testwasmlib.viewArrayValue");
-    let f = new ArrayValueContext();
+    let f = new sc.ArrayValueContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
@@ -125,15 +93,9 @@ function viewArrayValueThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("testwasmlib.viewArrayValue ok");
 }
 
-export class BlockRecordContext {
-    params: sc.ImmutableBlockRecordParams = new sc.ImmutableBlockRecordParams();
-    results: sc.MutableBlockRecordResults = new sc.MutableBlockRecordResults();
-    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
-}
-
 function viewBlockRecordThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("testwasmlib.viewBlockRecord");
-    let f = new BlockRecordContext();
+    let f = new sc.BlockRecordContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
@@ -143,15 +105,9 @@ function viewBlockRecordThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("testwasmlib.viewBlockRecord ok");
 }
 
-export class BlockRecordsContext {
-    params: sc.ImmutableBlockRecordsParams = new sc.ImmutableBlockRecordsParams();
-    results: sc.MutableBlockRecordsResults = new sc.MutableBlockRecordsResults();
-    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
-}
-
 function viewBlockRecordsThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("testwasmlib.viewBlockRecords");
-    let f = new BlockRecordsContext();
+    let f = new sc.BlockRecordsContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
@@ -160,14 +116,9 @@ function viewBlockRecordsThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("testwasmlib.viewBlockRecords ok");
 }
 
-export class IotaBalanceContext {
-    results: sc.MutableIotaBalanceResults = new sc.MutableIotaBalanceResults();
-    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
-}
-
 function viewIotaBalanceThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("testwasmlib.viewIotaBalance");
-    let f = new IotaBalanceContext();
+    let f = new sc.IotaBalanceContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.viewIotaBalance(ctx, f);

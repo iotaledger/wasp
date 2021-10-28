@@ -12,16 +12,32 @@ export class CallIncrementCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncCallIncrement);
 }
 
+export class CallIncrementContext {
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+}
+
 export class CallIncrementRecurse5xCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncCallIncrementRecurse5x);
+}
+
+export class CallIncrementRecurse5xContext {
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class EndlessLoopCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncEndlessLoop);
 }
 
+export class EndlessLoopContext {
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+}
+
 export class IncrementCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncIncrement);
+}
+
+export class IncrementContext {
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class IncrementWithDelayCall {
@@ -29,25 +45,51 @@ export class IncrementWithDelayCall {
     params: sc.MutableIncrementWithDelayParams = new sc.MutableIncrementWithDelayParams();
 }
 
+export class IncrementWithDelayContext {
+    params: sc.ImmutableIncrementWithDelayParams = new sc.ImmutableIncrementWithDelayParams();
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+}
+
 export class InitCall {
     func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
     params: sc.MutableInitParams = new sc.MutableInitParams();
+}
+
+export class InitContext {
+    params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class LocalStateInternalCallCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncLocalStateInternalCall);
 }
 
+export class LocalStateInternalCallContext {
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+}
+
 export class LocalStatePostCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncLocalStatePost);
+}
+
+export class LocalStatePostContext {
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class LocalStateSandboxCallCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncLocalStateSandboxCall);
 }
 
+export class LocalStateSandboxCallContext {
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+}
+
 export class PostIncrementCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPostIncrement);
+}
+
+export class PostIncrementContext {
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class RepeatManyCall {
@@ -55,8 +97,17 @@ export class RepeatManyCall {
     params: sc.MutableRepeatManyParams = new sc.MutableRepeatManyParams();
 }
 
+export class RepeatManyContext {
+    params: sc.ImmutableRepeatManyParams = new sc.ImmutableRepeatManyParams();
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+}
+
 export class TestLeb128Call {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestLeb128);
+}
+
+export class TestLeb128Context {
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class WhenMustIncrementCall {
@@ -64,9 +115,19 @@ export class WhenMustIncrementCall {
     params: sc.MutableWhenMustIncrementParams = new sc.MutableWhenMustIncrementParams();
 }
 
+export class WhenMustIncrementContext {
+    params: sc.ImmutableWhenMustIncrementParams = new sc.ImmutableWhenMustIncrementParams();
+    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+}
+
 export class GetCounterCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetCounter);
     results: sc.ImmutableGetCounterResults = new sc.ImmutableGetCounterResults();
+}
+
+export class GetCounterContext {
+    results: sc.MutableGetCounterResults = new sc.MutableGetCounterResults();
+    state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState();
 }
 
 export class ScFuncs {

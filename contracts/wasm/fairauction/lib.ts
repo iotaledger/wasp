@@ -25,17 +25,12 @@ export function on_load(): void {
     }
 }
 
-export class FinalizeAuctionContext {
-    params: sc.ImmutableFinalizeAuctionParams = new sc.ImmutableFinalizeAuctionParams();
-    state: sc.MutableFairAuctionState = new sc.MutableFairAuctionState();
-}
-
 function funcFinalizeAuctionThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairauction.funcFinalizeAuction");
     // only SC itself can invoke this function
     ctx.require(ctx.caller().equals(ctx.accountID()), "no permission");
 
-    let f = new FinalizeAuctionContext();
+    let f = new sc.FinalizeAuctionContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.color().exists(), "missing mandatory color")
@@ -43,14 +38,9 @@ function funcFinalizeAuctionThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairauction.funcFinalizeAuction ok");
 }
 
-export class PlaceBidContext {
-    params: sc.ImmutablePlaceBidParams = new sc.ImmutablePlaceBidParams();
-    state: sc.MutableFairAuctionState = new sc.MutableFairAuctionState();
-}
-
 function funcPlaceBidThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairauction.funcPlaceBid");
-    let f = new PlaceBidContext();
+    let f = new sc.PlaceBidContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.color().exists(), "missing mandatory color")
@@ -58,17 +48,12 @@ function funcPlaceBidThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairauction.funcPlaceBid ok");
 }
 
-export class SetOwnerMarginContext {
-    params: sc.ImmutableSetOwnerMarginParams = new sc.ImmutableSetOwnerMarginParams();
-    state: sc.MutableFairAuctionState = new sc.MutableFairAuctionState();
-}
-
 function funcSetOwnerMarginThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairauction.funcSetOwnerMargin");
     // only SC creator can set owner margin
     ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
-    let f = new SetOwnerMarginContext();
+    let f = new sc.SetOwnerMarginContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.ownerMargin().exists(), "missing mandatory ownerMargin")
@@ -76,14 +61,9 @@ function funcSetOwnerMarginThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairauction.funcSetOwnerMargin ok");
 }
 
-export class StartAuctionContext {
-    params: sc.ImmutableStartAuctionParams = new sc.ImmutableStartAuctionParams();
-    state: sc.MutableFairAuctionState = new sc.MutableFairAuctionState();
-}
-
 function funcStartAuctionThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairauction.funcStartAuction");
-    let f = new StartAuctionContext();
+    let f = new sc.StartAuctionContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.color().exists(), "missing mandatory color")
@@ -92,15 +72,9 @@ function funcStartAuctionThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("fairauction.funcStartAuction ok");
 }
 
-export class GetInfoContext {
-    params: sc.ImmutableGetInfoParams = new sc.ImmutableGetInfoParams();
-    results: sc.MutableGetInfoResults = new sc.MutableGetInfoResults();
-    state: sc.ImmutableFairAuctionState = new sc.ImmutableFairAuctionState();
-}
-
 function viewGetInfoThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("fairauction.viewGetInfo");
-    let f = new GetInfoContext();
+    let f = new sc.GetInfoContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;

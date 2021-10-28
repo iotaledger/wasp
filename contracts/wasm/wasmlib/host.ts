@@ -70,7 +70,7 @@ export function callFunc(objID: i32, keyID: Key32, params: u8[]): u8[] {
 
     // -1 means non-existent, so return default value for type
     if (size <= 0) {
-        return new Array(0);
+        return [];
     }
 
     // allocate a sufficient length byte array in Wasm memory
@@ -107,7 +107,7 @@ export function getBytes(objID: i32, keyID: Key32, typeID: i32): u8[] {
 
         // -1 means non-existent, so return default value for type
         if (size < 0) {
-            return new Array(0);
+            return [];
         }
     }
 

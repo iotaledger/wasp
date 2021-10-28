@@ -12,9 +12,18 @@ export class HelloWorldCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncHelloWorld);
 }
 
+export class HelloWorldContext {
+    state: sc.MutableHelloWorldState = new sc.MutableHelloWorldState();
+}
+
 export class GetHelloWorldCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetHelloWorld);
     results: sc.ImmutableGetHelloWorldResults = new sc.ImmutableGetHelloWorldResults();
+}
+
+export class GetHelloWorldContext {
+    results: sc.MutableGetHelloWorldResults = new sc.MutableGetHelloWorldResults();
+    state: sc.ImmutableHelloWorldState = new sc.ImmutableHelloWorldState();
 }
 
 export class ScFuncs {

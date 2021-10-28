@@ -6,8 +6,10 @@
 // Change the json schema instead
 
 import * as wasmlib from "../wasmlib"
+import * as sc from "./index";
 
-export { ArrayOfImmutableAgentID as ImmutableBidderList };
+export class ImmutableBidderList extends ArrayOfImmutableAgentID {
+};
 
 export class ArrayOfImmutableAgentID {
     objID: i32;
@@ -25,7 +27,8 @@ export class ArrayOfImmutableAgentID {
     }
 }
 
-export { ArrayOfMutableAgentID as MutableBidderList };
+export class MutableBidderList extends ArrayOfMutableAgentID {
+};
 
 export class ArrayOfMutableAgentID {
     objID: i32;
@@ -47,7 +50,8 @@ export class ArrayOfMutableAgentID {
     }
 }
 
-export { MapAgentIDToImmutableBid as ImmutableBids };
+export class ImmutableBids extends MapAgentIDToImmutableBid {
+};
 
 export class MapAgentIDToImmutableBid {
     objID: i32;
@@ -61,7 +65,8 @@ export class MapAgentIDToImmutableBid {
     }
 }
 
-export { MapAgentIDToMutableBid as MutableBids };
+export class MutableBids extends MapAgentIDToMutableBid {
+};
 
 export class MapAgentIDToMutableBid {
     objID: i32;

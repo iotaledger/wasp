@@ -7,18 +7,18 @@
 
 import * as wasmlib from "../wasmlib"
 
-class Auction {
-    color        : wasmlib.ScColor   // color of tokens for sale;
-    creator      : wasmlib.ScAgentID // issuer of start_auction transaction;
-    deposit      : i64               // deposit by auction owner to cover the SC fees;
-    description  : string            // auction description;
-    duration     : i32               // auction duration in minutes;
-    highestBid   : i64               // the current highest bid amount;
-    highestBidder: wasmlib.ScAgentID // the current highest bidder;
-    minimumBid   : i64               // minimum bid amount;
-    numTokens    : i64               // number of tokens for sale;
-    ownerMargin  : i64               // auction owner's margin in promilles;
-    whenStarted  : i64               // timestamp when auction started;
+export class Auction {
+    color        : wasmlib.ScColor = new wasmlib.ScColor(0); // color of tokens for sale
+    creator      : wasmlib.ScAgentID = new wasmlib.ScAgentID(); // issuer of start_auction transaction
+    deposit      : i64 = 0;          // deposit by auction owner to cover the SC fees
+    description  : string = "";      // auction description
+    duration     : i32 = 0;          // auction duration in minutes
+    highestBid   : i64 = 0;          // the current highest bid amount
+    highestBidder: wasmlib.ScAgentID = new wasmlib.ScAgentID(); // the current highest bidder
+    minimumBid   : i64 = 0;          // minimum bid amount
+    numTokens    : i64 = 0;          // number of tokens for sale
+    ownerMargin  : i64 = 0;          // auction owner's margin in promilles
+    whenStarted  : i64 = 0;          // timestamp when auction started
 
     static fromBytes(bytes: u8[]): Auction {
         let decode = new wasmlib.BytesDecoder(bytes);
@@ -95,10 +95,10 @@ export class MutableAuction {
     }
 }
 
-class Bid {
-    amount   : i64 // cumulative amount of bids from same bidder;
-    index    : i32 // index of bidder in bidder list;
-    timestamp: i64 // timestamp of most recent bid;
+export class Bid {
+    amount   : i64 = 0; // cumulative amount of bids from same bidder
+    index    : i32 = 0; // index of bidder in bidder list
+    timestamp: i64 = 0; // timestamp of most recent bid
 
     static fromBytes(bytes: u8[]): Bid {
         let decode = new wasmlib.BytesDecoder(bytes);

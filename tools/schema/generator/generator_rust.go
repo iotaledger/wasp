@@ -890,16 +890,16 @@ func (s *Schema) generateRustTypeDefs() error {
 
 func (s *Schema) generateRustThunk(file *os.File, f *Func) {
 	nameLen := f.nameLen(5) + 1
+	mutability := PropMutable
+	if f.Kind == KindView {
+		mutability = PropImmutable
+	}
 	fmt.Fprintf(file, "\npub struct %sContext {\n", f.Type)
 	if len(f.Params) != 0 {
 		fmt.Fprintf(file, "    %s Immutable%sParams,\n", pad("params:", nameLen), f.Type)
 	}
 	if len(f.Results) != 0 {
 		fmt.Fprintf(file, "    results: Mutable%sResults,\n", f.Type)
-	}
-	mutability := PropMutable
-	if f.Kind == KindView {
-		mutability = PropImmutable
 	}
 	fmt.Fprintf(file, "    %s %s%sState,\n", pad("state:", nameLen), mutability, s.FullName)
 	fmt.Fprintf(file, "}\n")

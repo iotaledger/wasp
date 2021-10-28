@@ -7,12 +7,12 @@
 
 import * as wasmlib from "../wasmlib"
 
-class Donation {
-    amount   : i64               // amount donated;
-    donator  : wasmlib.ScAgentID // who donated;
-    error    : string            // error to be reported to donator if anything goes wrong;
-    feedback : string            // the feedback for the person donated to;
-    timestamp: i64               // when the donation took place;
+export class Donation {
+    amount   : i64 = 0;          // amount donated
+    donator  : wasmlib.ScAgentID = new wasmlib.ScAgentID(); // who donated
+    error    : string = "";      // error to be reported to donator if anything goes wrong
+    feedback : string = "";      // the feedback for the person donated to
+    timestamp: i64 = 0;          // when the donation took place
 
     static fromBytes(bytes: u8[]): Donation {
         let decode = new wasmlib.BytesDecoder(bytes);

@@ -788,16 +788,16 @@ func (s *Schema) GenerateGoTests() error {
 
 func (s *Schema) generateGoThunk(file *os.File, f *Func) {
 	nameLen := f.nameLen(5)
+	mutability := PropMutable
+	if f.Kind == KindView {
+		mutability = PropImmutable
+	}
 	fmt.Fprintf(file, "\ntype %sContext struct {\n", f.Type)
 	if len(f.Params) != 0 {
 		fmt.Fprintf(file, "\t%s Immutable%sParams\n", pad("Params", nameLen), f.Type)
 	}
 	if len(f.Results) != 0 {
 		fmt.Fprintf(file, "\tResults Mutable%sResults\n", f.Type)
-	}
-	mutability := PropMutable
-	if f.Kind == KindView {
-		mutability = PropImmutable
 	}
 	fmt.Fprintf(file, "\t%s %s%sState\n", pad("State", nameLen), mutability, s.FullName)
 	fmt.Fprintf(file, "}\n")

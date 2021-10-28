@@ -26,35 +26,21 @@ export function on_load(): void {
     }
 }
 
-export class DivideContext {
-    state: sc.MutableDividendState = new sc.MutableDividendState();
-}
-
 function funcDivideThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("dividend.funcDivide");
-    let f = new DivideContext();
+    let f = new sc.DivideContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcDivide(ctx, f);
     ctx.log("dividend.funcDivide ok");
 }
 
-export class InitContext {
-    params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
-    state: sc.MutableDividendState = new sc.MutableDividendState();
-}
-
 function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("dividend.funcInit");
-    let f = new InitContext();
+    let f = new sc.InitContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcInit(ctx, f);
     ctx.log("dividend.funcInit ok");
-}
-
-export class MemberContext {
-    params: sc.ImmutableMemberParams = new sc.ImmutableMemberParams();
-    state: sc.MutableDividendState = new sc.MutableDividendState();
 }
 
 function funcMemberThunk(ctx: wasmlib.ScFuncContext): void {
@@ -64,18 +50,13 @@ function funcMemberThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.require(access.exists(), "access not set: owner");
     ctx.require(ctx.caller().equals(access.value()), "no permission");
 
-    let f = new MemberContext();
+    let f = new sc.MemberContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.address().exists(), "missing mandatory address")
     ctx.require(f.params.factor().exists(), "missing mandatory factor")
     sc.funcMember(ctx, f);
     ctx.log("dividend.funcMember ok");
-}
-
-export class SetOwnerContext {
-    params: sc.ImmutableSetOwnerParams = new sc.ImmutableSetOwnerParams();
-    state: sc.MutableDividendState = new sc.MutableDividendState();
 }
 
 function funcSetOwnerThunk(ctx: wasmlib.ScFuncContext): void {
@@ -85,7 +66,7 @@ function funcSetOwnerThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.require(access.exists(), "access not set: owner");
     ctx.require(ctx.caller().equals(access.value()), "no permission");
 
-    let f = new SetOwnerContext();
+    let f = new sc.SetOwnerContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.owner().exists(), "missing mandatory owner")
@@ -93,15 +74,9 @@ function funcSetOwnerThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("dividend.funcSetOwner ok");
 }
 
-export class GetFactorContext {
-    params: sc.ImmutableGetFactorParams = new sc.ImmutableGetFactorParams();
-    results: sc.MutableGetFactorResults = new sc.MutableGetFactorResults();
-    state: sc.ImmutableDividendState = new sc.ImmutableDividendState();
-}
-
 function viewGetFactorThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("dividend.viewGetFactor");
-    let f = new GetFactorContext();
+    let f = new sc.GetFactorContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
@@ -110,14 +85,9 @@ function viewGetFactorThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("dividend.viewGetFactor ok");
 }
 
-export class GetOwnerContext {
-    results: sc.MutableGetOwnerResults = new sc.MutableGetOwnerResults();
-    state: sc.ImmutableDividendState = new sc.ImmutableDividendState();
-}
-
 function viewGetOwnerThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("dividend.viewGetOwner");
-    let f = new GetOwnerContext();
+    let f = new sc.GetOwnerContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.viewGetOwner(ctx, f);

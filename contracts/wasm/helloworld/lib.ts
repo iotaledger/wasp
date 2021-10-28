@@ -22,26 +22,17 @@ export function on_load(): void {
     }
 }
 
-export class HelloWorldContext {
-    state: sc.MutableHelloWorldState = new sc.MutableHelloWorldState();
-}
-
 function funcHelloWorldThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("helloworld.funcHelloWorld");
-    let f = new HelloWorldContext();
+    let f = new sc.HelloWorldContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcHelloWorld(ctx, f);
     ctx.log("helloworld.funcHelloWorld ok");
 }
 
-export class GetHelloWorldContext {
-    results: sc.MutableGetHelloWorldResults = new sc.MutableGetHelloWorldResults();
-    state: sc.ImmutableHelloWorldState = new sc.ImmutableHelloWorldState();
-}
-
 function viewGetHelloWorldThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("helloworld.viewGetHelloWorld");
-    let f = new GetHelloWorldContext();
+    let f = new sc.GetHelloWorldContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.viewGetHelloWorld(ctx, f);

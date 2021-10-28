@@ -130,7 +130,7 @@ export class BytesEncoder {
 
     // constructs an encoder
     constructor() {
-        this.buf = new Array(0)
+        this.buf = []
     }
 
     // encodes an ScAddress into the byte buffer

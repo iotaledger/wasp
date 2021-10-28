@@ -7,14 +7,14 @@
 
 import * as wasmlib from "../wasmlib"
 
-class Token {
-    created    : i64               // creation timestamp;
-    description: string            // description what minted token represents;
-    mintedBy   : wasmlib.ScAgentID // original minter;
-    owner      : wasmlib.ScAgentID // current owner;
-    supply     : i64               // amount of tokens originally minted;
-    updated    : i64               // last update timestamp;
-    userDefined: string            // any user defined text;
+export class Token {
+    created    : i64 = 0;          // creation timestamp
+    description: string = "";      // description what minted token represents
+    mintedBy   : wasmlib.ScAgentID = new wasmlib.ScAgentID(); // original minter
+    owner      : wasmlib.ScAgentID = new wasmlib.ScAgentID(); // current owner
+    supply     : i64 = 0;          // amount of tokens originally minted
+    updated    : i64 = 0;          // last update timestamp
+    userDefined: string = "";      // any user defined text
 
     static fromBytes(bytes: u8[]): Token {
         let decode = new wasmlib.BytesDecoder(bytes);

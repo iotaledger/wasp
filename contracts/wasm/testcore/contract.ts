@@ -14,13 +14,28 @@ export class CallOnChainCall {
     results: sc.ImmutableCallOnChainResults = new sc.ImmutableCallOnChainResults();
 }
 
+export class CallOnChainContext {
+    params: sc.ImmutableCallOnChainParams = new sc.ImmutableCallOnChainParams();
+    results: sc.MutableCallOnChainResults = new sc.MutableCallOnChainResults();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class CheckContextFromFullEPCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncCheckContextFromFullEP);
     params: sc.MutableCheckContextFromFullEPParams = new sc.MutableCheckContextFromFullEPParams();
 }
 
+export class CheckContextFromFullEPContext {
+    params: sc.ImmutableCheckContextFromFullEPParams = new sc.ImmutableCheckContextFromFullEPParams();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class DoNothingCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDoNothing);
+}
+
+export class DoNothingContext {
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
 }
 
 export class GetMintedSupplyCall {
@@ -28,8 +43,17 @@ export class GetMintedSupplyCall {
     results: sc.ImmutableGetMintedSupplyResults = new sc.ImmutableGetMintedSupplyResults();
 }
 
+export class GetMintedSupplyContext {
+    results: sc.MutableGetMintedSupplyResults = new sc.MutableGetMintedSupplyResults();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class IncCounterCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncIncCounter);
+}
+
+export class IncCounterContext {
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
 }
 
 export class InitCall {
@@ -37,9 +61,19 @@ export class InitCall {
     params: sc.MutableInitParams = new sc.MutableInitParams();
 }
 
+export class InitContext {
+    params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class PassTypesFullCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPassTypesFull);
     params: sc.MutablePassTypesFullParams = new sc.MutablePassTypesFullParams();
+}
+
+export class PassTypesFullContext {
+    params: sc.ImmutablePassTypesFullParams = new sc.ImmutablePassTypesFullParams();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
 }
 
 export class RunRecursionCall {
@@ -48,9 +82,20 @@ export class RunRecursionCall {
     results: sc.ImmutableRunRecursionResults = new sc.ImmutableRunRecursionResults();
 }
 
+export class RunRecursionContext {
+    params: sc.ImmutableRunRecursionParams = new sc.ImmutableRunRecursionParams();
+    results: sc.MutableRunRecursionResults = new sc.MutableRunRecursionResults();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class SendToAddressCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSendToAddress);
     params: sc.MutableSendToAddressParams = new sc.MutableSendToAddressParams();
+}
+
+export class SendToAddressContext {
+    params: sc.ImmutableSendToAddressParams = new sc.ImmutableSendToAddressParams();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
 }
 
 export class SetIntCall {
@@ -58,25 +103,51 @@ export class SetIntCall {
     params: sc.MutableSetIntParams = new sc.MutableSetIntParams();
 }
 
+export class SetIntContext {
+    params: sc.ImmutableSetIntParams = new sc.ImmutableSetIntParams();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class SpawnCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSpawn);
     params: sc.MutableSpawnParams = new sc.MutableSpawnParams();
+}
+
+export class SpawnContext {
+    params: sc.ImmutableSpawnParams = new sc.ImmutableSpawnParams();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
 }
 
 export class TestBlockContext1Call {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestBlockContext1);
 }
 
+export class TestBlockContext1Context {
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class TestBlockContext2Call {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestBlockContext2);
+}
+
+export class TestBlockContext2Context {
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
 }
 
 export class TestCallPanicFullEPCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestCallPanicFullEP);
 }
 
+export class TestCallPanicFullEPContext {
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class TestCallPanicViewEPFromFullCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestCallPanicViewEPFromFull);
+}
+
+export class TestCallPanicViewEPFromFullContext {
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
 }
 
 export class TestChainOwnerIDFullCall {
@@ -84,12 +155,25 @@ export class TestChainOwnerIDFullCall {
     results: sc.ImmutableTestChainOwnerIDFullResults = new sc.ImmutableTestChainOwnerIDFullResults();
 }
 
+export class TestChainOwnerIDFullContext {
+    results: sc.MutableTestChainOwnerIDFullResults = new sc.MutableTestChainOwnerIDFullResults();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class TestEventLogDeployCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestEventLogDeploy);
 }
 
+export class TestEventLogDeployContext {
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class TestEventLogEventDataCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestEventLogEventData);
+}
+
+export class TestEventLogEventDataContext {
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
 }
 
 export class TestEventLogGenericDataCall {
@@ -97,8 +181,17 @@ export class TestEventLogGenericDataCall {
     params: sc.MutableTestEventLogGenericDataParams = new sc.MutableTestEventLogGenericDataParams();
 }
 
+export class TestEventLogGenericDataContext {
+    params: sc.ImmutableTestEventLogGenericDataParams = new sc.ImmutableTestEventLogGenericDataParams();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class TestPanicFullEPCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestPanicFullEP);
+}
+
+export class TestPanicFullEPContext {
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
 }
 
 export class WithdrawToChainCall {
@@ -106,9 +199,19 @@ export class WithdrawToChainCall {
     params: sc.MutableWithdrawToChainParams = new sc.MutableWithdrawToChainParams();
 }
 
+export class WithdrawToChainContext {
+    params: sc.ImmutableWithdrawToChainParams = new sc.ImmutableWithdrawToChainParams();
+    state: sc.MutableTestCoreState = new sc.MutableTestCoreState();
+}
+
 export class CheckContextFromViewEPCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewCheckContextFromViewEP);
     params: sc.MutableCheckContextFromViewEPParams = new sc.MutableCheckContextFromViewEPParams();
+}
+
+export class CheckContextFromViewEPContext {
+    params: sc.ImmutableCheckContextFromViewEPParams = new sc.ImmutableCheckContextFromViewEPParams();
+    state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState();
 }
 
 export class FibonacciCall {
@@ -117,9 +220,20 @@ export class FibonacciCall {
     results: sc.ImmutableFibonacciResults = new sc.ImmutableFibonacciResults();
 }
 
+export class FibonacciContext {
+    params: sc.ImmutableFibonacciParams = new sc.ImmutableFibonacciParams();
+    results: sc.MutableFibonacciResults = new sc.MutableFibonacciResults();
+    state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState();
+}
+
 export class GetCounterCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetCounter);
     results: sc.ImmutableGetCounterResults = new sc.ImmutableGetCounterResults();
+}
+
+export class GetCounterContext {
+    results: sc.MutableGetCounterResults = new sc.MutableGetCounterResults();
+    state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState();
 }
 
 export class GetIntCall {
@@ -128,14 +242,30 @@ export class GetIntCall {
     results: sc.ImmutableGetIntResults = new sc.ImmutableGetIntResults();
 }
 
+export class GetIntContext {
+    params: sc.ImmutableGetIntParams = new sc.ImmutableGetIntParams();
+    results: sc.MutableGetIntResults = new sc.MutableGetIntResults();
+    state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState();
+}
+
 export class GetStringValueCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetStringValue);
     params: sc.MutableGetStringValueParams = new sc.MutableGetStringValueParams();
     results: sc.ImmutableGetStringValueResults = new sc.ImmutableGetStringValueResults();
 }
 
+export class GetStringValueContext {
+    params: sc.ImmutableGetStringValueParams = new sc.ImmutableGetStringValueParams();
+    results: sc.MutableGetStringValueResults = new sc.MutableGetStringValueResults();
+    state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState();
+}
+
 export class JustViewCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewJustView);
+}
+
+export class JustViewContext {
+    state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState();
 }
 
 export class PassTypesViewCall {
@@ -143,8 +273,17 @@ export class PassTypesViewCall {
     params: sc.MutablePassTypesViewParams = new sc.MutablePassTypesViewParams();
 }
 
+export class PassTypesViewContext {
+    params: sc.ImmutablePassTypesViewParams = new sc.ImmutablePassTypesViewParams();
+    state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState();
+}
+
 export class TestCallPanicViewEPFromViewCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTestCallPanicViewEPFromView);
+}
+
+export class TestCallPanicViewEPFromViewContext {
+    state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState();
 }
 
 export class TestChainOwnerIDViewCall {
@@ -152,13 +291,27 @@ export class TestChainOwnerIDViewCall {
     results: sc.ImmutableTestChainOwnerIDViewResults = new sc.ImmutableTestChainOwnerIDViewResults();
 }
 
+export class TestChainOwnerIDViewContext {
+    results: sc.MutableTestChainOwnerIDViewResults = new sc.MutableTestChainOwnerIDViewResults();
+    state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState();
+}
+
 export class TestPanicViewEPCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTestPanicViewEP);
+}
+
+export class TestPanicViewEPContext {
+    state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState();
 }
 
 export class TestSandboxCallCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTestSandboxCall);
     results: sc.ImmutableTestSandboxCallResults = new sc.ImmutableTestSandboxCallResults();
+}
+
+export class TestSandboxCallContext {
+    results: sc.MutableTestSandboxCallResults = new sc.MutableTestSandboxCallResults();
+    state: sc.ImmutableTestCoreState = new sc.ImmutableTestCoreState();
 }
 
 export class ScFuncs {

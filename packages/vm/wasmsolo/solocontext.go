@@ -338,9 +338,9 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 	}
 	if *TsWasm {
 		wasmFile = ctx.scName + "_ts.wasm"
-		exists, _ = util.ExistsFilePath("../pkg/" + wasmFile)
+		exists, _ = util.ExistsFilePath("../wasmmain/pkg/" + wasmFile)
 		if exists {
-			wasmFile = "../pkg/" + wasmFile
+			wasmFile = "../wasmmain/pkg/" + wasmFile
 		}
 	}
 	ctx.Hprog, ctx.Err = ctx.Chain.UploadWasmFromFile(keyPair, wasmFile)

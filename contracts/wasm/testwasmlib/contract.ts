@@ -13,9 +13,19 @@ export class ArrayClearCall {
     params: sc.MutableArrayClearParams = new sc.MutableArrayClearParams();
 }
 
+export class ArrayClearContext {
+    params: sc.ImmutableArrayClearParams = new sc.ImmutableArrayClearParams();
+    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+}
+
 export class ArrayCreateCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayCreate);
     params: sc.MutableArrayCreateParams = new sc.MutableArrayCreateParams();
+}
+
+export class ArrayCreateContext {
+    params: sc.ImmutableArrayCreateParams = new sc.ImmutableArrayCreateParams();
+    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
 export class ArraySetCall {
@@ -23,9 +33,19 @@ export class ArraySetCall {
     params: sc.MutableArraySetParams = new sc.MutableArraySetParams();
 }
 
+export class ArraySetContext {
+    params: sc.ImmutableArraySetParams = new sc.ImmutableArraySetParams();
+    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+}
+
 export class ParamTypesCall {
     func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncParamTypes);
     params: sc.MutableParamTypesParams = new sc.MutableParamTypesParams();
+}
+
+export class ParamTypesContext {
+    params: sc.ImmutableParamTypesParams = new sc.ImmutableParamTypesParams();
+    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
 export class ArrayLengthCall {
@@ -34,10 +54,22 @@ export class ArrayLengthCall {
     results: sc.ImmutableArrayLengthResults = new sc.ImmutableArrayLengthResults();
 }
 
+export class ArrayLengthContext {
+    params: sc.ImmutableArrayLengthParams = new sc.ImmutableArrayLengthParams();
+    results: sc.MutableArrayLengthResults = new sc.MutableArrayLengthResults();
+    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
+}
+
 export class ArrayValueCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayValue);
     params: sc.MutableArrayValueParams = new sc.MutableArrayValueParams();
     results: sc.ImmutableArrayValueResults = new sc.ImmutableArrayValueResults();
+}
+
+export class ArrayValueContext {
+    params: sc.ImmutableArrayValueParams = new sc.ImmutableArrayValueParams();
+    results: sc.MutableArrayValueResults = new sc.MutableArrayValueResults();
+    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
 }
 
 export class BlockRecordCall {
@@ -46,15 +78,32 @@ export class BlockRecordCall {
     results: sc.ImmutableBlockRecordResults = new sc.ImmutableBlockRecordResults();
 }
 
+export class BlockRecordContext {
+    params: sc.ImmutableBlockRecordParams = new sc.ImmutableBlockRecordParams();
+    results: sc.MutableBlockRecordResults = new sc.MutableBlockRecordResults();
+    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
+}
+
 export class BlockRecordsCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBlockRecords);
     params: sc.MutableBlockRecordsParams = new sc.MutableBlockRecordsParams();
     results: sc.ImmutableBlockRecordsResults = new sc.ImmutableBlockRecordsResults();
 }
 
+export class BlockRecordsContext {
+    params: sc.ImmutableBlockRecordsParams = new sc.ImmutableBlockRecordsParams();
+    results: sc.MutableBlockRecordsResults = new sc.MutableBlockRecordsResults();
+    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
+}
+
 export class IotaBalanceCall {
     func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewIotaBalance);
     results: sc.ImmutableIotaBalanceResults = new sc.ImmutableIotaBalanceResults();
+}
+
+export class IotaBalanceContext {
+    results: sc.MutableIotaBalanceResults = new sc.MutableIotaBalanceResults();
+    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
 }
 
 export class ScFuncs {

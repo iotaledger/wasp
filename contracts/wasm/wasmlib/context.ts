@@ -166,7 +166,7 @@ export class ScUtility {
 
     // generates a random value from 0 to max (exclusive max) using a deterministic RNG
     random(max: i64): i64 {
-        let result = this.utility.callFunc(keys.KEY_RANDOM, new Array(0));
+        let result = this.utility.callFunc(keys.KEY_RANDOM, []);
         let rnd = Convert.toI64(result);
         return (rnd as u64 % max as u64) as i64;
     }

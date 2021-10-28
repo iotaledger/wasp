@@ -13,11 +13,14 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
-const asmImportWasmLib = "import * as wasmlib from \"../wasmlib\""
+const (
+	tsImportSelf    = "import * as sc from \"./index\";"
+	tsImportWasmLib = "import * as wasmlib from \"../wasmlib\""
+)
 
-var asmFuncRegexp = regexp.MustCompile(`^export function (\w+).+$`)
+var tsFuncRegexp = regexp.MustCompile(`^export function (\w+).+$`)
 
-var asmTypes = StringMap{
+var tsTypes = StringMap{
 	"Address":   "wasmlib.ScAddress",
 	"AgentID":   "wasmlib.ScAgentID",
 	"ChainID":   "wasmlib.ScChainID",
@@ -31,7 +34,21 @@ var asmTypes = StringMap{
 	"String":    "string",
 }
 
-var asmKeys = StringMap{
+var tsInits = StringMap{
+	"Address":   "new wasmlib.ScAddress()",
+	"AgentID":   "new wasmlib.ScAgentID()",
+	"ChainID":   "new wasmlib.ScChainID()",
+	"Color":     "new wasmlib.ScColor(0)",
+	"Hash":      "new wasmlib.ScHash()",
+	"Hname":     "new wasmlib.ScHname(0)",
+	"Int16":     "0",
+	"Int32":     "0",
+	"Int64":     "0",
+	"RequestID": "new wasmlib.ScRequestID()",
+	"String":    "\"\"",
+}
+
+var tsKeys = StringMap{
 	"Address":   "key",
 	"AgentID":   "key",
 	"ChainID":   "key",
@@ -45,7 +62,7 @@ var asmKeys = StringMap{
 	"String":    "wasmlib.Key32.fromString(key)",
 }
 
-var asmTypeIds = StringMap{
+var tsTypeIds = StringMap{
 	"Address":   "wasmlib.TYPE_ADDRESS",
 	"AgentID":   "wasmlib.TYPE_AGENT_ID",
 	"ChainID":   "wasmlib.TYPE_CHAIN_ID",
@@ -60,8 +77,8 @@ var asmTypeIds = StringMap{
 }
 
 const (
-	asmTypeBytes = "wasmlib.TYPE_BYTES"
-	asmTypeMap   = "wasmlib.TYPE_MAP"
+	tsTypeBytes = "wasmlib.TYPE_BYTES"
+	tsTypeMap   = "wasmlib.TYPE_MAP"
 )
 
 func (s *Schema) GenerateTs() error {
@@ -109,12 +126,10 @@ func (s *Schema) GenerateTs() error {
 		if err != nil {
 			return err
 		}
-
-		// asm-specific stuff
-		return s.generateTsIndex()
 	}
 
-	return nil
+	// typescript-specific stuff
+	return s.generateTsIndex()
 }
 
 func (s *Schema) generateTsArrayType(varType string) string {
@@ -134,7 +149,7 @@ func (s *Schema) generateTsConsts() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintln(file, asmImportWasmLib)
+	fmt.Fprintln(file, tsImportWasmLib)
 
 	scName := s.Name
 	if s.CoreContracts {
@@ -194,8 +209,8 @@ func (s *Schema) generateTsContract() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintln(file, asmImportWasmLib)
-	fmt.Fprintf(file, "import * as sc from \"./index\";\n")
+	fmt.Fprintln(file, tsImportWasmLib)
+	fmt.Fprintln(file, tsImportSelf)
 
 	for _, f := range s.Funcs {
 		kind := f.Kind
@@ -211,6 +226,22 @@ func (s *Schema) generateTsContract() error {
 			fmt.Fprintf(file, "    results: sc.Immutable%sResults = new sc.Immutable%sResults();\n", f.Type, f.Type)
 		}
 		fmt.Fprintf(file, "}\n")
+
+		if !s.CoreContracts {
+			mutability := PropMutable
+			if f.Kind == KindView {
+				mutability = PropImmutable
+			}
+			fmt.Fprintf(file, "\nexport class %sContext {\n", f.Type)
+			if len(f.Params) != 0 {
+				fmt.Fprintf(file, "    params: sc.Immutable%sParams = new sc.Immutable%sParams();\n", f.Type, f.Type)
+			}
+			if len(f.Results) != 0 {
+				fmt.Fprintf(file, "    results: sc.Mutable%sResults = new sc.Mutable%sResults();\n", f.Type, f.Type)
+			}
+			fmt.Fprintf(file, "    state: sc.%s%sState = new sc.%s%sState();\n", mutability, s.FullName, mutability, s.FullName)
+			fmt.Fprintf(file, "}\n")
+		}
 	}
 
 	s.generateTsContractFuncs(file)
@@ -250,7 +281,7 @@ func (s *Schema) generateTsFuncs() error {
 
 	// append missing function signatures to existing code file
 
-	lines, existing, err := s.scanExistingCode(file, asmFuncRegexp)
+	lines, existing, err := s.scanExistingCode(file, tsFuncRegexp)
 	if err != nil {
 		return err
 	}
@@ -309,8 +340,8 @@ func (s *Schema) generateTsFuncsNew(scFileName string) error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(false))
-	fmt.Fprintln(file, asmImportWasmLib)
-	fmt.Fprintf(file, "import * as sc from \"./index\";\n")
+	fmt.Fprintln(file, tsImportWasmLib)
+	fmt.Fprintln(file, tsImportSelf)
 
 	for _, f := range s.Funcs {
 		s.generateTsFuncSignature(file, f)
@@ -327,8 +358,8 @@ func (s *Schema) generateTsKeys() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintln(file, asmImportWasmLib)
-	fmt.Fprintf(file, "import * as sc from \"./index\";\n")
+	fmt.Fprintln(file, tsImportWasmLib)
+	fmt.Fprintln(file, tsImportSelf)
 
 	s.KeyID = 0
 	s.generateTsKeysIndexes(s.Params, "Param")
@@ -378,8 +409,8 @@ func (s *Schema) generateTsLib() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintln(file, asmImportWasmLib)
-	fmt.Fprintf(file, "import * as sc from \"./index\";\n")
+	fmt.Fprintln(file, tsImportWasmLib)
+	fmt.Fprintln(file, tsImportSelf)
 
 	fmt.Fprintf(file, "\nexport function on_call(index: i32): void {\n")
 	fmt.Fprintf(file, "    return wasmlib.onCall(index);\n")
@@ -420,7 +451,7 @@ func (s *Schema) generateTsProxyArray(file *os.File, field *Field, mutability st
 	proxyType := mutability + field.Type
 	arrayType := "ArrayOf" + proxyType
 	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		fmt.Fprintf(file, "\nexport { %s as %s%s };\n", arrayType, mutability, field.Name)
+		fmt.Fprintf(file, "\nexport class %s%s extends %s {\n};\n", mutability, field.Name, arrayType)
 	}
 	if s.NewTypes[arrayType] {
 		// already generated this array
@@ -464,11 +495,11 @@ func (s *Schema) generateTsProxyArrayNewType(file *os.File, field *Field, proxyT
 		if subtype.Name != field.Type {
 			continue
 		}
-		varType := asmTypeMap
+		varType := tsTypeMap
 		if subtype.Array {
-			varType = asmTypeIds[subtype.Type]
+			varType = tsTypeIds[subtype.Type]
 			if varType == "" {
-				varType = asmTypeBytes
+				varType = tsTypeBytes
 			}
 			varType = s.generateTsArrayType(varType)
 		}
@@ -488,7 +519,7 @@ func (s *Schema) generateTsProxyMap(file *os.File, field *Field, mutability stri
 	proxyType := mutability + field.Type
 	mapType := "Map" + field.MapKey + "To" + proxyType
 	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		fmt.Fprintf(file, "\nexport { %s as %s%s };\n", mapType, mutability, field.Name)
+		fmt.Fprintf(file, "\nexport class %s%s extends %s {\n};\n", mutability, field.Name, mapType)
 	}
 	if s.NewTypes[mapType] {
 		// already generated this map
@@ -496,8 +527,8 @@ func (s *Schema) generateTsProxyMap(file *os.File, field *Field, mutability stri
 	}
 	s.NewTypes[mapType] = true
 
-	keyType := asmTypes[field.MapKey]
-	keyValue := asmKeys[field.MapKey]
+	keyType := tsTypes[field.MapKey]
+	keyValue := tsKeys[field.MapKey]
 
 	fmt.Fprintf(file, "\nexport class %s {\n", mapType)
 	fmt.Fprintf(file, "    objID: i32;\n")
@@ -531,11 +562,11 @@ func (s *Schema) generateTsProxyMapNewType(file *os.File, field *Field, proxyTyp
 		if subtype.Name != field.Type {
 			continue
 		}
-		varType := asmTypeMap
+		varType := tsTypeMap
 		if subtype.Array {
-			varType = asmTypeIds[subtype.Type]
+			varType = tsTypeIds[subtype.Type]
 			if varType == "" {
-				varType = asmTypeBytes
+				varType = tsTypeBytes
 			}
 			varType = s.generateTsArrayType(varType)
 		}
@@ -560,8 +591,8 @@ func (s *Schema) generateTsParams() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintln(file, asmImportWasmLib)
-	fmt.Fprintf(file, "import * as sc from \"./index\";\n")
+	fmt.Fprintln(file, tsImportWasmLib)
+	fmt.Fprintln(file, tsImportSelf)
 
 	for _, f := range s.Funcs {
 		if len(f.Params) == 0 {
@@ -583,8 +614,8 @@ func (s *Schema) generateTsResults() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintln(file, asmImportWasmLib)
-	fmt.Fprintf(file, "import * as sc from \"./index\";\n")
+	fmt.Fprintln(file, tsImportWasmLib)
+	fmt.Fprintln(file, tsImportSelf)
 
 	for _, f := range s.Funcs {
 		if len(f.Results) == 0 {
@@ -605,8 +636,8 @@ func (s *Schema) generateTsState() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintln(file, asmImportWasmLib)
-	fmt.Fprintf(file, "import * as sc from \"./index\";\n")
+	fmt.Fprintln(file, tsImportWasmLib)
+	fmt.Fprintln(file, tsImportSelf)
 
 	s.generateTsStruct(file, s.StateVars, PropImmutable, s.FullName, "State")
 	s.generateTsStruct(file, s.StateVars, PropMutable, s.FullName, "State")
@@ -631,9 +662,9 @@ func (s *Schema) generateTsStruct(file *os.File, fields []*Field, mutability, ty
 		if s.CoreContracts {
 			varID = "wasmlib.Key32.fromString(sc." + kind + capitalize(varName) + ")"
 		}
-		varType := asmTypeIds[field.Type]
+		varType := tsTypeIds[field.Type]
 		if varType == "" {
-			varType = asmTypeBytes
+			varType = tsTypeBytes
 		}
 		if field.Array {
 			varType = s.generateTsArrayType(varType)
@@ -645,7 +676,7 @@ func (s *Schema) generateTsStruct(file *os.File, fields []*Field, mutability, ty
 			continue
 		}
 		if field.MapKey != "" {
-			varType = asmTypeMap
+			varType = tsTypeMap
 			mapType := "Map" + field.MapKey + "To" + mutability + field.Type
 			fmt.Fprintf(file, "\n    %s(): sc.%s {\n", varName, mapType)
 			mapID := "this.mapID"
@@ -685,7 +716,8 @@ func (s *Schema) generateTsTypeDefs() error {
 	defer file.Close()
 
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintln(file, asmImportWasmLib)
+	fmt.Fprintln(file, tsImportWasmLib)
+	fmt.Fprintln(file, tsImportSelf)
 
 	for _, subtype := range s.Typedefs {
 		s.generateTsProxy(file, subtype, PropImmutable)
@@ -696,20 +728,6 @@ func (s *Schema) generateTsTypeDefs() error {
 }
 
 func (s *Schema) generateTsThunk(file *os.File, f *Func) {
-	fmt.Fprintf(file, "\nexport class %sContext {\n", f.Type)
-	if len(f.Params) != 0 {
-		fmt.Fprintf(file, "    params: sc.Immutable%sParams = new sc.Immutable%sParams();\n", f.Type, f.Type)
-	}
-	if len(f.Results) != 0 {
-		fmt.Fprintf(file, "    results: sc.Mutable%sResults = new sc.Mutable%sResults();\n", f.Type, f.Type)
-	}
-	mutability := PropMutable
-	if f.Kind == KindView {
-		mutability = PropImmutable
-	}
-	fmt.Fprintf(file, "    state: sc.%s%sState = new sc.%s%sState();\n", mutability, s.FullName, mutability, s.FullName)
-	fmt.Fprintf(file, "}\n")
-
 	fmt.Fprintf(file, "\nfunction %sThunk(ctx: wasmlib.Sc%sContext): void {\n", f.FuncName, f.Kind)
 	fmt.Fprintf(file, "    ctx.log(\"%s.%s\");\n", s.Name, f.FuncName)
 
@@ -717,7 +735,7 @@ func (s *Schema) generateTsThunk(file *os.File, f *Func) {
 		s.generateTsThunkAccessCheck(file, f)
 	}
 
-	fmt.Fprintf(file, "    let f = new %sContext();\n", f.Type)
+	fmt.Fprintf(file, "    let f = new sc.%sContext();\n", f.Type)
 
 	if len(f.Params) != 0 {
 		fmt.Fprintf(file, "    f.params.mapID = wasmlib.OBJ_ID_PARAMS;\n")
@@ -775,7 +793,7 @@ func (s *Schema) generateTsTypes() error {
 	defer file.Close()
 
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintln(file, asmImportWasmLib)
+	fmt.Fprintln(file, tsImportWasmLib)
 
 	for _, typeDef := range s.Structs {
 		s.generateTsType(file, typeDef)
@@ -785,16 +803,16 @@ func (s *Schema) generateTsTypes() error {
 }
 
 func (s *Schema) generateTsType(file *os.File, typeDef *Struct) {
-	nameLen, typeLen := calculatePadding(typeDef.Fields, asmTypes, false)
+	nameLen, typeLen := calculatePadding(typeDef.Fields, tsTypes, false)
 
-	fmt.Fprintf(file, "\nclass %s {\n", typeDef.Name)
+	fmt.Fprintf(file, "\nexport class %s {\n", typeDef.Name)
 	for _, field := range typeDef.Fields {
 		fldName := pad(field.Name, nameLen)
-		fldType := asmTypes[field.Type]
+		fldType := tsTypes[field.Type] + " = " + tsInits[field.Type] + ";"
 		if field.Comment != "" {
 			fldType = pad(fldType, typeLen)
 		}
-		fmt.Fprintf(file, "    %s: %s%s;\n", fldName, fldType, field.Comment)
+		fmt.Fprintf(file, "    %s: %s%s\n", fldName, fldType, field.Comment)
 	}
 
 	// write encoder and decoder for struct
@@ -863,26 +881,31 @@ func (s *Schema) generateTsIndex() error {
 
 	fmt.Fprintln(file, copyright(true))
 
-	fmt.Fprintf(file, "export * from \"./%s\"\n\n", s.Name)
+	if !s.CoreContracts {
+		fmt.Fprintf(file, "export * from \"./%s\"\n\n", s.Name)
+	}
 
 	fmt.Fprintln(file, "export * from \"./consts\"")
 	fmt.Fprintln(file, "export * from \"./contract\"")
-	fmt.Fprintln(file, "export * from \"./keys\"")
-	fmt.Fprintln(file, "export * from \"./lib\"")
+	if !s.CoreContracts {
+		fmt.Fprintln(file, "export * from \"./keys\"")
+		fmt.Fprintln(file, "export * from \"./lib\"")
+	}
 	if len(s.Params) != 0 {
 		fmt.Fprintln(file, "export * from \"./params\"")
 	}
 	if len(s.Results) != 0 {
 		fmt.Fprintln(file, "export * from \"./results\"")
 	}
-	fmt.Fprintln(file, "export * from \"./state\"")
-	if len(s.Structs) != 0 {
-		fmt.Fprintln(file, "export * from \"./types\"")
+	if !s.CoreContracts {
+		fmt.Fprintln(file, "export * from \"./state\"")
+		if len(s.Structs) != 0 {
+			fmt.Fprintln(file, "export * from \"./types\"")
+		}
+		if len(s.Typedefs) != 0 {
+			fmt.Fprintf(file, "export * from \"./typedefs\";\n")
+		}
 	}
-	if len(s.Typedefs) != 0 {
-		fmt.Fprintf(file, "export * from \"./typedefs\";\n")
-	}
-
 	return nil
 }
 

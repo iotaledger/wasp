@@ -34,62 +34,41 @@ export function on_load(): void {
     }
 }
 
-export class CallIncrementContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcCallIncrementThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcCallIncrement");
-    let f = new CallIncrementContext();
+    let f = new sc.CallIncrementContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcCallIncrement(ctx, f);
     ctx.log("inccounter.funcCallIncrement ok");
 }
 
-export class CallIncrementRecurse5xContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcCallIncrementRecurse5xThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcCallIncrementRecurse5x");
-    let f = new CallIncrementRecurse5xContext();
+    let f = new sc.CallIncrementRecurse5xContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcCallIncrementRecurse5x(ctx, f);
     ctx.log("inccounter.funcCallIncrementRecurse5x ok");
 }
 
-export class EndlessLoopContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcEndlessLoopThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcEndlessLoop");
-    let f = new EndlessLoopContext();
+    let f = new sc.EndlessLoopContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcEndlessLoop(ctx, f);
     ctx.log("inccounter.funcEndlessLoop ok");
 }
 
-export class IncrementContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcIncrementThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcIncrement");
-    let f = new IncrementContext();
+    let f = new sc.IncrementContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcIncrement(ctx, f);
     ctx.log("inccounter.funcIncrement ok");
 }
 
-export class IncrementWithDelayContext {
-    params: sc.ImmutableIncrementWithDelayParams = new sc.ImmutableIncrementWithDelayParams();
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcIncrementWithDelayThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcIncrementWithDelay");
-    let f = new IncrementWithDelayContext();
+    let f = new sc.IncrementWithDelayContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     ctx.require(f.params.delay().exists(), "missing mandatory delay")
@@ -97,116 +76,76 @@ function funcIncrementWithDelayThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcIncrementWithDelay ok");
 }
 
-export class InitContext {
-    params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcInit");
-    let f = new InitContext();
+    let f = new sc.InitContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcInit(ctx, f);
     ctx.log("inccounter.funcInit ok");
 }
 
-export class LocalStateInternalCallContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcLocalStateInternalCallThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcLocalStateInternalCall");
-    let f = new LocalStateInternalCallContext();
+    let f = new sc.LocalStateInternalCallContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcLocalStateInternalCall(ctx, f);
     ctx.log("inccounter.funcLocalStateInternalCall ok");
 }
 
-export class LocalStatePostContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcLocalStatePostThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcLocalStatePost");
-    let f = new LocalStatePostContext();
+    let f = new sc.LocalStatePostContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcLocalStatePost(ctx, f);
     ctx.log("inccounter.funcLocalStatePost ok");
 }
 
-export class LocalStateSandboxCallContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcLocalStateSandboxCallThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcLocalStateSandboxCall");
-    let f = new LocalStateSandboxCallContext();
+    let f = new sc.LocalStateSandboxCallContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcLocalStateSandboxCall(ctx, f);
     ctx.log("inccounter.funcLocalStateSandboxCall ok");
 }
 
-export class PostIncrementContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcPostIncrementThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcPostIncrement");
-    let f = new PostIncrementContext();
+    let f = new sc.PostIncrementContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcPostIncrement(ctx, f);
     ctx.log("inccounter.funcPostIncrement ok");
 }
 
-export class RepeatManyContext {
-    params: sc.ImmutableRepeatManyParams = new sc.ImmutableRepeatManyParams();
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcRepeatManyThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcRepeatMany");
-    let f = new RepeatManyContext();
+    let f = new sc.RepeatManyContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcRepeatMany(ctx, f);
     ctx.log("inccounter.funcRepeatMany ok");
 }
 
-export class TestLeb128Context {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcTestLeb128Thunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcTestLeb128");
-    let f = new TestLeb128Context();
+    let f = new sc.TestLeb128Context();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcTestLeb128(ctx, f);
     ctx.log("inccounter.funcTestLeb128 ok");
 }
 
-export class WhenMustIncrementContext {
-    params: sc.ImmutableWhenMustIncrementParams = new sc.ImmutableWhenMustIncrementParams();
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
-}
-
 function funcWhenMustIncrementThunk(ctx: wasmlib.ScFuncContext): void {
     ctx.log("inccounter.funcWhenMustIncrement");
-    let f = new WhenMustIncrementContext();
+    let f = new sc.WhenMustIncrementContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.funcWhenMustIncrement(ctx, f);
     ctx.log("inccounter.funcWhenMustIncrement ok");
 }
 
-export class GetCounterContext {
-    results: sc.MutableGetCounterResults = new sc.MutableGetCounterResults();
-    state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState();
-}
-
 function viewGetCounterThunk(ctx: wasmlib.ScViewContext): void {
     ctx.log("inccounter.viewGetCounter");
-    let f = new GetCounterContext();
+    let f = new sc.GetCounterContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
     sc.viewGetCounter(ctx, f);
