@@ -14,19 +14,10 @@ import (
 )
 
 const (
-	specialFuncInit     = "funcInit"
-	specialFuncSetOwner = "setOwner"
-	specialViewGetOwner = "getOwner"
+	goImportCoreTypes  = "import \"github.com/iotaledger/wasp/packages/iscp\""
+	goImportWasmLib    = "import \"github.com/iotaledger/wasp/packages/vm/wasmlib\""
+	goImportWasmClient = "import \"github.com/iotaledger/wasp/packages/vm/wasmclient\""
 )
-
-const importCoreTypes = `import "github.com/iotaledger/wasp/packages/iscp"
-`
-
-const importWasmLib = `import "github.com/iotaledger/wasp/packages/vm/wasmlib"
-`
-
-const importWasmClient = `import "github.com/iotaledger/wasp/packages/vm/wasmclient"
-`
 
 var goFuncRegexp = regexp.MustCompile(`^func (\w+).+$`)
 
@@ -145,16 +136,17 @@ func (s *Schema) generateGoConsts(test bool) error {
 	}
 	defer file.Close()
 
-	packageName := "test"
-	importTypes := importCoreTypes
+	packageName := "package test\n"
+	importTypes := goImportCoreTypes
 	if !test {
-		packageName = s.Name
-		importTypes = importWasmLib
+		packageName = s.packageName()
+		importTypes = goImportWasmLib
 	}
+
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintf(file, "package %s\n\n", packageName)
-	fmt.Fprint(file, importTypes)
+	fmt.Fprintln(file, packageName)
+	fmt.Fprintln(file, importTypes)
 
 	scName := s.Name
 	if s.CoreContracts {
@@ -220,8 +212,8 @@ func (s *Schema) generateGoContract() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintf(file, "package %s\n\n", s.Name)
-	fmt.Fprint(file, importWasmLib)
+	fmt.Fprintln(file, s.packageName())
+	fmt.Fprintln(file, goImportWasmLib)
 
 	for _, f := range s.Funcs {
 		nameLen := f.nameLen(4)
@@ -327,18 +319,19 @@ func (s *Schema) generateGoFuncs() error {
 	return os.Remove(scOriginal)
 }
 
+// TODO handle case where owner is type AgentID[]
 func (s *Schema) generateGoFuncSignature(file *os.File, f *Func) {
 	fmt.Fprintf(file, "\nfunc %s(ctx wasmlib.Sc%sContext, f *%sContext) {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
-	case specialFuncInit:
+	case SpecialFuncInit:
 		fmt.Fprintf(file, "    if f.Params.Owner().Exists() {\n")
 		fmt.Fprintf(file, "        f.State.Owner().SetValue(f.Params.Owner().Value())\n")
 		fmt.Fprintf(file, "        return\n")
 		fmt.Fprintf(file, "    }\n")
 		fmt.Fprintf(file, "    f.State.Owner().SetValue(ctx.ContractCreator())\n")
-	case specialFuncSetOwner:
+	case SpecialFuncSetOwner:
 		fmt.Fprintf(file, "    f.State.Owner().SetValue(f.Params.Owner().Value())\n")
-	case specialViewGetOwner:
+	case SpecialViewGetOwner:
 		fmt.Fprintf(file, "    f.Results.Owner().SetValue(f.State.Owner().Value())\n")
 	default:
 	}
@@ -354,8 +347,8 @@ func (s *Schema) generateGoFuncsNew(scFileName string) error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(false))
-	fmt.Fprintf(file, "package %s\n\n", s.Name)
-	fmt.Fprintln(file, importWasmLib)
+	fmt.Fprintln(file, s.packageName())
+	fmt.Fprintln(file, goImportWasmLib)
 
 	for _, f := range s.Funcs {
 		s.generateGoFuncSignature(file, f)
@@ -372,8 +365,8 @@ func (s *Schema) generateGoKeys() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintf(file, "package %s\n\n", s.Name)
-	fmt.Fprint(file, importWasmLib)
+	fmt.Fprintln(file, s.packageName())
+	fmt.Fprintln(file, goImportWasmLib)
 
 	s.KeyID = 0
 	s.generateGoKeysIndexes(s.Params, "Param")
@@ -426,10 +419,10 @@ func (s *Schema) generateGoLib() error {
 	// write file header
 	fmt.Fprintln(file, copyright(true))
 	fmt.Fprintln(file, "//nolint:dupl")
-	fmt.Fprintf(file, "package %s\n\n", s.Name)
-	fmt.Fprintln(file, importWasmLib)
+	fmt.Fprintln(file, s.packageName())
+	fmt.Fprintln(file, goImportWasmLib)
 
-	fmt.Fprintf(file, "func OnLoad() {\n")
+	fmt.Fprintf(file, "\nfunc OnLoad() {\n")
 	fmt.Fprintf(file, "\texports := wasmlib.NewScExports()\n")
 	for _, f := range s.Funcs {
 		constName := capitalize(f.FuncName)
@@ -592,14 +585,14 @@ func (s *Schema) generateGoParams() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintf(file, "package %s\n", s.Name)
+	fmt.Fprint(file, s.packageName())
 
 	totalParams := 0
 	for _, f := range s.Funcs {
 		totalParams += len(f.Params)
 	}
 	if totalParams != 0 {
-		fmt.Fprintf(file, "\n"+importWasmLib)
+		fmt.Fprintln(file, "\n", goImportWasmLib)
 	}
 
 	for _, f := range s.Funcs {
@@ -622,14 +615,14 @@ func (s *Schema) generateGoResults() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintf(file, "package %s\n", s.Name)
+	fmt.Fprint(file, s.packageName())
 
 	results := 0
 	for _, f := range s.Funcs {
 		results += len(f.Results)
 	}
 	if results != 0 {
-		fmt.Fprintf(file, "\n"+importWasmLib)
+		fmt.Fprintln(file, "\n", goImportWasmLib)
 	}
 
 	for _, f := range s.Funcs {
@@ -651,9 +644,9 @@ func (s *Schema) generateGoState() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintf(file, "package %s\n", s.Name)
+	fmt.Fprint(file, s.packageName())
 	if len(s.StateVars) != 0 {
-		fmt.Fprintf(file, "\n"+importWasmLib)
+		fmt.Fprintln(file, "\n", goImportWasmLib)
 	}
 
 	s.generateGoStruct(file, s.StateVars, PropImmutable, s.FullName, "State")
@@ -734,8 +727,8 @@ func (s *Schema) generateGoTypeDefs() error {
 	defer file.Close()
 
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintf(file, "package %s\n\n", s.Name)
-	fmt.Fprint(file, importWasmLib)
+	fmt.Fprintln(file, s.packageName())
+	fmt.Fprintln(file, goImportWasmLib)
 
 	for _, subtype := range s.Typedefs {
 		s.generateGoProxy(file, subtype, PropImmutable)
@@ -881,8 +874,8 @@ func (s *Schema) generateGoTypes() error {
 	defer file.Close()
 
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprintf(file, "package %s\n\n", s.Name)
-	fmt.Fprint(file, importWasmLib)
+	fmt.Fprintln(file, s.packageName())
+	fmt.Fprintln(file, goImportWasmLib)
 
 	for _, typeDef := range s.Structs {
 		s.generateGoType(file, typeDef)
@@ -971,7 +964,7 @@ func (s *Schema) generateGoWasmMain() error {
 	fmt.Fprintln(file, copyright(true))
 	fmt.Fprint(file, "// +build wasm\n\n")
 	fmt.Fprint(file, "package main\n\n")
-	fmt.Fprint(file, importWasmClient)
+	fmt.Fprintln(file, goImportWasmClient)
 	fmt.Fprintf(file, "import \"%s\"\n\n", importname)
 
 	fmt.Fprintf(file, "func main() {\n")
@@ -1005,4 +998,8 @@ func (s *Schema) flushGoConsts(file *os.File) {
 		fmt.Fprintf(file, "\t%s = %s\n", pad(name, padLen), value)
 	})
 	fmt.Fprintf(file, ")\n")
+}
+
+func (s *Schema) packageName() string {
+	return fmt.Sprintf("package %s\n", s.Name)
 }

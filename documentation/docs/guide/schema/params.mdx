@@ -35,10 +35,12 @@ For example, here is the structure generated for the immutable params for the `m
 function:
 
 <Tabs defaultValue="go"
-    values={[
-        {label: 'Go', value: 'go'},
-        {label: 'Rust', value: 'rust'},
-    ]}>
+      groupId="language"
+      values={[
+          {label: 'Go', value: 'go'},
+          {label: 'Rust', value: 'rust'},
+          {label: 'TypeScript', value: 'ts'},
+      ]}>
 
 <TabItem value="go">
 
@@ -72,6 +74,21 @@ impl ImmutableMemberParams {
 
     pub fn factor(&self) -> ScImmutableInt64 {
         ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_FACTOR))
+    }
+}
+```
+
+</TabItem>
+<TabItem value="ts">
+
+```ts
+export class ImmutableMemberParams extends wasmlib.ScMapID {
+    address(): wasmlib.ScImmutableAddress {
+        return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+    }
+
+    factor(): wasmlib.ScImmutableInt64 {
+        return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamFactor]);
     }
 }
 ```

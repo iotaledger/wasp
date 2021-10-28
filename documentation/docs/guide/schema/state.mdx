@@ -76,40 +76,42 @@ the brackets is the homogenous type of the keys, which in this case are of the p
 Address type. The brackets are immediately followed by the homogenous type of the values
 in the map, which in this case are of the predefined Int64 type.
 
-Here is part of the Rust code in `state.rs` that the schema tool has generated. The
+Here is part of the code in `state.xx` that the schema tool has generated. The
 MutableDividendState struct defines a type-safe interface to access each of the state
 variables through mutable proxies:
 
-<Tabs 
-    defaultValue="go"
-    values={[
-        {label: 'Go', value: 'go'},
-    ]}>
+<Tabs defaultValue="go"
+      groupId="language"
+      values={[
+          {label: 'Go', value: 'go'},
+          {label: 'Rust', value: 'rust'},
+          {label: 'TypeScript', value: 'ts'},
+      ]}>
 
 <TabItem value="go">
 
 ```go
-    type MutableDividendState struct {
-        id int32
-    }
+type MutableDividendState struct {
+    id int32
+}
 
-    func (s MutableDividendState) MemberList() ArrayOfMutableAddress {
-        arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateMemberList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS)
-        return ArrayOfMutableAddress{objID: arrID}
-    }
+func (s MutableDividendState) MemberList() ArrayOfMutableAddress {
+    arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateMemberList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS)
+    return ArrayOfMutableAddress{objID: arrID}
+}
 
-    func (s MutableDividendState) Members() MapAddressToMutableInt64 {
-        mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateMembers], wasmlib.TYPE_MAP)
-        return MapAddressToMutableInt64{objID: mapID}
-    }
+func (s MutableDividendState) Members() MapAddressToMutableInt64 {
+    mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateMembers], wasmlib.TYPE_MAP)
+    return MapAddressToMutableInt64{objID: mapID}
+}
 
-    func (s MutableDividendState) Owner() wasmlib.ScMutableAgentID {
-        return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxStateOwner])
-    }
+func (s MutableDividendState) Owner() wasmlib.ScMutableAgentID {
+    return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxStateOwner])
+}
 
-    func (s MutableDividendState) TotalFactor() wasmlib.ScMutableInt64 {
-        return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateTotalFactor])
-    }
+func (s MutableDividendState) TotalFactor() wasmlib.ScMutableInt64 {
+    return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateTotalFactor])
+}
 ```
 
 </TabItem>
@@ -143,6 +145,32 @@ impl MutableDividendState {
 ```
 
 </TabItem>
+<TabItem value="ts">
+
+```ts
+export class MutableDividendState extends wasmlib.ScMapID {
+
+    memberList(): sc.ArrayOfMutableAddress {
+        let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateMemberList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS);
+        return new sc.ArrayOfMutableAddress(arrID)
+    }
+
+        members(): sc.MapAddressToMutableInt64 {
+        let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateMembers], wasmlib.TYPE_MAP);
+        return new sc.MapAddressToMutableInt64(mapID);
+    }
+
+        owner(): wasmlib.ScMutableAgentID {
+        return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxStateOwner]);
+    }
+
+        totalFactor(): wasmlib.ScMutableInt64 {
+        return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateTotalFactor]);
+    }
+}
+```
+
+</TabItem>
 </Tabs>
 
 As you can see, the schema tool has generated a proxy interface for the mutable `dividend`
@@ -152,7 +180,7 @@ object for the corresponding variable. In addition, the schema tool generates an
 necessary intermediate map and array proxy types that force the usage of their respective
 homogenous types. In the above example both `ArrayOfMutableAddress` and
 `MapAddressToMutableInt64` are examples of such automatically generated proxy types.
-See the full `state.rs` for more details.
+See the full `state.xx` for more details.
 
 In the next section we will explore how the schema tool helps to simplify [function
 definitions](funcs.mdx).

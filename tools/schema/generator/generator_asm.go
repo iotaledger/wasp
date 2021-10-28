@@ -316,15 +316,15 @@ func (s *Schema) generateTsFuncs() error {
 func (s *Schema) generateTsFuncSignature(file *os.File, f *Func) {
 	fmt.Fprintf(file, "\nexport function %s(ctx: wasmlib.Sc%sContext, f: sc.%sContext): void {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
-	case specialFuncInit:
+	case SpecialFuncInit:
 		fmt.Fprintf(file, "    if (f.params.owner().exists()) {\n")
 		fmt.Fprintf(file, "        f.state.owner().setValue(f.params.owner().value());\n")
 		fmt.Fprintf(file, "        return;\n")
 		fmt.Fprintf(file, "    }\n")
 		fmt.Fprintf(file, "    f.state.owner().setValue(ctx.contractCreator());\n")
-	case specialFuncSetOwner:
+	case SpecialFuncSetOwner:
 		fmt.Fprintf(file, "    f.state.owner().setValue(f.params.owner().value());\n")
-	case specialViewGetOwner:
+	case SpecialViewGetOwner:
 		fmt.Fprintf(file, "    f.results.owner().setValue(f.state.owner().value());\n")
 	default:
 	}

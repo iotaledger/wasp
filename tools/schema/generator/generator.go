@@ -13,15 +13,18 @@ import (
 )
 
 const (
-	AccessChain   = "chain"
-	AccessCreator = "creator"
-	AccessSelf    = "self"
-	AliasThis     = "this"
-	InitFunc      = "Init"
-	KindFunc      = "Func"
-	KindView      = "View"
-	PropImmutable = "Immutable"
-	PropMutable   = "Mutable"
+	AccessChain         = "chain"
+	AccessCreator       = "creator"
+	AccessSelf          = "self"
+	AliasThis           = "this"
+	InitFunc            = "Init"
+	KindFunc            = "Func"
+	KindView            = "View"
+	PropImmutable       = "Immutable"
+	PropMutable         = "Mutable"
+	SpecialFuncInit     = "funcInit"
+	SpecialFuncSetOwner = "setOwner"
+	SpecialViewGetOwner = "getOwner"
 )
 
 var (

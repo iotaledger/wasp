@@ -391,7 +391,7 @@ func (s *Schema) GenerateJavaWasmMain() error {
 	fmt.Fprintln(file, copyright(true))
 	fmt.Fprint(file, "// +build wasm\n\n")
 	fmt.Fprint(file, "package main\n\n")
-	fmt.Fprint(file, importWasmClient)
+	fmt.Fprintln(file, goImportWasmClient)
 	fmt.Fprintf(file, "import \"%s\"\n\n", importname)
 
 	fmt.Fprintf(file, "func main() {\n")
