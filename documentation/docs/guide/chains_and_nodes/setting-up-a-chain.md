@@ -113,6 +113,10 @@ The `--quorum` flag indicates the minimum amount of nodes required to form a con
 You can check that the chain was properly deployed in the Wasp node dashboard
 (e.g. `127.0.0.1:7000`). Note that the chain was deployed with some [core contracts](../core_concepts/core_contracts/overview.md).
 
+## Video Tutorial
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/3mLpV_neB6I" title="Setting up Wasp Chain" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ### Deploying a Wasm Contract
 
 Now you can deploy a Wasm contract to the chain:
@@ -174,6 +178,11 @@ Example response:
 counter: 1
 ```
 
+
+## Video Tutorial
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Yaev4Cu1GW0" title="Deploy a Wasm Contract" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ### Troubleshooting
 
 Common issues can be caused by using an incompatible version of `wasp` / `wasp-cli`. 
@@ -182,7 +191,3 @@ It's easy to verify that `wasp-cli` and `wasp` nodes are on the same version, by
 ```shell
 wasp-cli check-versions
 ```
-
-## Video Tutorial
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/3mLpV_neB6I" title="Setting up Wasp Chain" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
