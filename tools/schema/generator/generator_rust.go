@@ -186,7 +186,7 @@ func (s *Schema) generateRustCargo() error {
 	fmt.Fprintf(file, "description = \"%s\"\n", s.Description)
 	fmt.Fprintf(file, "license = \"Apache-2.0\"\n")
 	fmt.Fprintf(file, "version = \"0.1.0\"\n")
-	fmt.Fprintf(file, "authors = [\"Eric Hop <eric@iota.org>\"]\n")
+	fmt.Fprintf(file, "authors = [\"John Doe <john@doe.org>\"]\n")
 	fmt.Fprintf(file, "edition = \"2018\"\n")
 	fmt.Fprintf(file, "repository = \"https://%s\"\n", ModuleName)
 	fmt.Fprintf(file, "\n[lib]\n")
