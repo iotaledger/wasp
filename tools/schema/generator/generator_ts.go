@@ -316,15 +316,15 @@ func (s *Schema) generateTsFuncs() error {
 func (s *Schema) generateTsFuncSignature(file *os.File, f *Func) {
 	fmt.Fprintf(file, "\nexport function %s(ctx: wasmlib.Sc%sContext, f: sc.%sContext): void {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
-	case specialFuncInit:
+	case SpecialFuncInit:
 		fmt.Fprintf(file, "    if (f.params.owner().exists()) {\n")
 		fmt.Fprintf(file, "        f.state.owner().setValue(f.params.owner().value());\n")
 		fmt.Fprintf(file, "        return;\n")
 		fmt.Fprintf(file, "    }\n")
 		fmt.Fprintf(file, "    f.state.owner().setValue(ctx.contractCreator());\n")
-	case specialFuncSetOwner:
+	case SpecialFuncSetOwner:
 		fmt.Fprintf(file, "    f.state.owner().setValue(f.params.owner().value());\n")
-	case specialViewGetOwner:
+	case SpecialViewGetOwner:
 		fmt.Fprintf(file, "    f.results.owner().setValue(f.state.owner().value());\n")
 	default:
 	}
@@ -439,20 +439,21 @@ func (s *Schema) generateTsLib() error {
 func (s *Schema) generateTsProxy(file *os.File, field *Field, mutability string) {
 	if field.Array {
 		s.generateTsProxyArray(file, field, mutability)
+		arrayType := "ArrayOf" + mutability + field.Type
+		s.generateTsProxyReference(file, field, mutability, arrayType)
 		return
 	}
 
 	if field.MapKey != "" {
 		s.generateTsProxyMap(file, field, mutability)
+		mapType := "Map" + field.MapKey + "To" + mutability + field.Type
+		s.generateTsProxyReference(file, field, mutability, mapType)
 	}
 }
 
 func (s *Schema) generateTsProxyArray(file *os.File, field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	arrayType := "ArrayOf" + proxyType
-	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		fmt.Fprintf(file, "\nexport class %s%s extends %s {\n};\n", mutability, field.Name, arrayType)
-	}
 	if s.NewTypes[arrayType] {
 		// already generated this array
 		return
@@ -518,9 +519,6 @@ func (s *Schema) generateTsProxyArrayNewType(file *os.File, field *Field, proxyT
 func (s *Schema) generateTsProxyMap(file *os.File, field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	mapType := "Map" + field.MapKey + "To" + proxyType
-	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		fmt.Fprintf(file, "\nexport class %s%s extends %s {\n};\n", mutability, field.Name, mapType)
-	}
 	if s.NewTypes[mapType] {
 		// already generated this map
 		return

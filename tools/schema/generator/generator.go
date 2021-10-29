@@ -13,21 +13,24 @@ import (
 )
 
 const (
-	AccessChain   = "chain"
-	AccessCreator = "creator"
-	AccessSelf    = "self"
-	AliasThis     = "this"
-	InitFunc      = "Init"
-	KindFunc      = "Func"
-	KindView      = "View"
-	PropImmutable = "Immutable"
-	PropMutable   = "Mutable"
+	AccessChain         = "chain"
+	AccessCreator       = "creator"
+	AccessSelf          = "self"
+	AliasThis           = "this"
+	InitFunc            = "Init"
+	KindFunc            = "Func"
+	KindView            = "View"
+	PropImmutable       = "Immutable"
+	PropMutable         = "Mutable"
+	SpecialFuncInit     = "funcInit"
+	SpecialFuncSetOwner = "setOwner"
+	SpecialViewGetOwner = "getOwner"
 )
 
 var (
-	ModuleCwd  string
-	ModuleName string
-	ModulePath string
+	ModuleCwd  = "???"
+	ModuleName = "???"
+	ModulePath = "???"
 )
 
 //nolint:unused
@@ -111,9 +114,14 @@ func FindModulePath() error {
 		if err != nil {
 			return fmt.Errorf("cannot find go.mod in cwd path")
 		}
+		prev := cwd
 		cwd, err = os.Getwd()
 		if err != nil {
 			return err
+		}
+		if cwd == prev {
+			// e.g. Chdir("..") gets us in a loop at Linux root
+			return fmt.Errorf("cannot find go.mod in cwd path")
 		}
 		file, err = os.Open("go.mod")
 	}

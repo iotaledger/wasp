@@ -315,16 +315,22 @@ func (s *Schema) crateOrWasmLib(withContract, withHost bool) string {
 	if s.CoreContracts {
 		retVal := useCrate
 		if withContract {
-			retVal += "use crate::corecontracts::" + s.Name + "::*;\n"
+			retVal += "\nuse crate::corecontracts::" + s.Name + "::*;"
 		}
 		if withHost {
-			retVal += "use crate::host::*;\n"
+			retVal += "\nuse crate::host::*;"
 		}
 		return retVal
 	}
 	retVal := useWasmLib
 	if withHost {
-		retVal += useWasmLibHost
+		retVal += "\n" + useWasmLibHost
 	}
 	return retVal
+}
+
+func (s *Schema) generateTsProxyReference(file *os.File, field *Field, mutability, typeName string) {
+	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
+		fmt.Fprintf(file, "\nexport class %s%s extends %s {\n};\n", mutability, field.Name, typeName)
+	}
 }

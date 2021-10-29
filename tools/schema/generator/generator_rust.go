@@ -14,19 +14,19 @@ import (
 )
 
 const (
-	allowDeadCode      = "#![allow(dead_code)]\n"
-	allowUnusedImports = "#![allow(unused_imports)]\n"
-	useConsts          = "use crate::consts::*;\n"
-	useCrate           = "use crate::*;\n"
-	useKeys            = "use crate::keys::*;\n"
-	useParams          = "use crate::params::*;\n"
-	useResults         = "use crate::results::*;\n"
-	useState           = "use crate::state::*;\n"
-	useStdPtr          = "use std::ptr;\n"
-	useTypeDefs        = "use crate::typedefs::*;\n"
-	useTypes           = "use crate::types::*;\n"
-	useWasmLib         = "use wasmlib::*;\n"
-	useWasmLibHost     = "use wasmlib::host::*;\n"
+	allowDeadCode      = "#![allow(dead_code)]"
+	allowUnusedImports = "#![allow(unused_imports)]"
+	useConsts          = "use crate::consts::*;"
+	useCrate           = "use crate::*;"
+	useKeys            = "use crate::keys::*;"
+	useParams          = "use crate::params::*;"
+	useResults         = "use crate::results::*;"
+	useState           = "use crate::state::*;"
+	useStdPtr          = "use std::ptr;"
+	useTypeDefs        = "use crate::typedefs::*;"
+	useTypes           = "use crate::types::*;"
+	useWasmLib         = "use wasmlib::*;"
+	useWasmLibHost     = "use wasmlib::host::*;"
 )
 
 var rustFuncRegexp = regexp.MustCompile(`^pub fn (\w+).+$`)
@@ -186,7 +186,7 @@ func (s *Schema) generateRustCargo() error {
 	fmt.Fprintf(file, "description = \"%s\"\n", s.Description)
 	fmt.Fprintf(file, "license = \"Apache-2.0\"\n")
 	fmt.Fprintf(file, "version = \"0.1.0\"\n")
-	fmt.Fprintf(file, "authors = [\"Eric Hop <eric@iota.org>\"]\n")
+	fmt.Fprintf(file, "authors = [\"John Doe <john@doe.org>\"]\n")
 	fmt.Fprintf(file, "edition = \"2018\"\n")
 	fmt.Fprintf(file, "repository = \"https://%s\"\n", ModuleName)
 	fmt.Fprintf(file, "\n[lib]\n")
@@ -214,7 +214,8 @@ func (s *Schema) generateRustConsts() error {
 	fmt.Fprintln(file, copyright(true))
 	formatter(file, false)
 	fmt.Fprintln(file, allowDeadCode)
-	fmt.Fprint(file, s.crateOrWasmLib(false, false))
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, s.crateOrWasmLib(false, false))
 
 	scName := s.Name
 	if s.CoreContracts {
@@ -276,12 +277,15 @@ func (s *Schema) generateRustContract() error {
 	fmt.Fprintln(file, copyright(true))
 	formatter(file, false)
 	fmt.Fprintln(file, allowDeadCode)
+	fmt.Fprintln(file)
 	fmt.Fprintln(file, useStdPtr)
-	fmt.Fprint(file, s.crateOrWasmLib(true, false))
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, s.crateOrWasmLib(true, false))
 	if !s.CoreContracts {
-		fmt.Fprint(file, "\n"+useConsts)
-		fmt.Fprint(file, useParams)
-		fmt.Fprint(file, useResults)
+		fmt.Fprintln(file)
+		fmt.Fprintln(file, useConsts)
+		fmt.Fprintln(file, useParams)
+		fmt.Fprintln(file, useResults)
 	}
 
 	for _, f := range s.Funcs {
@@ -392,17 +396,17 @@ func (s *Schema) generateRustFuncs() error {
 
 func (s *Schema) generateRustFuncSignature(file *os.File, f *Func) {
 	switch f.FuncName {
-	case specialFuncInit:
+	case SpecialFuncInit:
 		fmt.Fprintf(file, "\npub fn %s(ctx: &Sc%sContext, f: &%sContext) {\n", snake(f.FuncName), f.Kind, capitalize(f.Type))
 		fmt.Fprintf(file, "    if f.params.owner().exists() {\n")
 		fmt.Fprintf(file, "        f.state.owner().set_value(&f.params.owner().value());\n")
 		fmt.Fprintf(file, "        return;\n")
 		fmt.Fprintf(file, "    }\n")
 		fmt.Fprintf(file, "    f.state.owner().set_value(&ctx.contract_creator());\n")
-	case specialFuncSetOwner:
+	case SpecialFuncSetOwner:
 		fmt.Fprintf(file, "\npub fn %s(_ctx: &Sc%sContext, f: &%sContext) {\n", snake(f.FuncName), f.Kind, capitalize(f.Type))
 		fmt.Fprintf(file, "    f.state.owner().set_value(&f.params.owner().value());\n")
-	case specialViewGetOwner:
+	case SpecialViewGetOwner:
 		fmt.Fprintf(file, "\npub fn %s(_ctx: &Sc%sContext, f: &%sContext) {\n", snake(f.FuncName), f.Kind, capitalize(f.Type))
 		fmt.Fprintf(file, "    f.results.owner().set_value(&f.state.owner().value());\n")
 	default:
@@ -421,13 +425,13 @@ func (s *Schema) generateRustFuncsNew(scFileName string) error {
 	// write file header
 	fmt.Fprintln(file, copyright(false))
 	fmt.Fprintln(file, useWasmLib)
-
-	fmt.Fprint(file, useCrate)
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, useCrate)
 	if len(s.Typedefs) != 0 {
-		fmt.Fprint(file, useTypeDefs)
+		fmt.Fprintln(file, useTypeDefs)
 	}
 	if len(s.Structs) != 0 {
-		fmt.Fprint(file, useTypes)
+		fmt.Fprintln(file, useTypes)
 	}
 
 	for _, f := range s.Funcs {
@@ -447,8 +451,10 @@ func (s *Schema) generateRustKeys() error {
 	fmt.Fprintln(file, copyright(true))
 	formatter(file, false)
 	fmt.Fprintln(file, allowDeadCode)
+	fmt.Fprintln(file)
 	fmt.Fprintln(file, useWasmLib)
-	fmt.Fprint(file, useCrate)
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, useCrate)
 
 	s.KeyID = 0
 	s.generateRustKeysIndexes(s.Params, "PARAM_")
@@ -512,31 +518,34 @@ func (s *Schema) generateRustLib() error {
 	formatter(file, false)
 	fmt.Fprintln(file, allowDeadCode)
 	fmt.Fprintln(file, allowUnusedImports)
+	fmt.Fprintln(file)
 	fmt.Fprintf(file, "use %s::*;\n", s.Name)
-	fmt.Fprint(file, useWasmLib)
+	fmt.Fprintln(file, useWasmLib)
 	fmt.Fprintln(file, useWasmLibHost)
-	fmt.Fprint(file, useConsts)
-	fmt.Fprint(file, useKeys)
-	fmt.Fprint(file, useParams)
-	fmt.Fprint(file, useResults)
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, useConsts)
+	fmt.Fprintln(file, useKeys)
+	fmt.Fprintln(file, useParams)
+	fmt.Fprintln(file, useResults)
 	fmt.Fprintln(file, useState)
+	fmt.Fprintln(file)
 
-	fmt.Fprintf(file, "mod consts;\n")
-	fmt.Fprintf(file, "mod contract;\n")
-	fmt.Fprintf(file, "mod keys;\n")
-	fmt.Fprintf(file, "mod params;\n")
-	fmt.Fprintf(file, "mod results;\n")
-	fmt.Fprintf(file, "mod state;\n")
+	fmt.Fprintln(file, "mod consts;")
+	fmt.Fprintln(file, "mod contract;")
+	fmt.Fprintln(file, "mod keys;")
+	fmt.Fprintln(file, "mod params;")
+	fmt.Fprintln(file, "mod results;")
+	fmt.Fprintln(file, "mod state;")
 	if len(s.Typedefs) != 0 {
-		fmt.Fprintf(file, "mod typedefs;\n")
+		fmt.Fprintln(file, "mod typedefs;")
 	}
 	if len(s.Structs) != 0 {
-		fmt.Fprintf(file, "mod types;\n")
+		fmt.Fprintln(file, "mod types;")
 	}
 	fmt.Fprintf(file, "mod %s;\n", s.Name)
 
-	fmt.Fprintf(file, "\n#[no_mangle]\n")
-	fmt.Fprintf(file, "fn on_load() {\n")
+	fmt.Fprintln(file, "\n#[no_mangle]")
+	fmt.Fprintln(file, "fn on_load() {")
 	if len(s.Funcs) != 0 {
 		fmt.Fprintf(file, "    let exports = ScExports::new();\n")
 	}
@@ -711,17 +720,19 @@ func (s *Schema) generateRustState() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprint(file, allowDeadCode)
+	fmt.Fprintln(file, allowDeadCode)
 	fmt.Fprintln(file, allowUnusedImports)
-	fmt.Fprint(file, useWasmLib)
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, useWasmLib)
 	fmt.Fprintln(file, useWasmLibHost)
-	fmt.Fprint(file, useCrate)
-	fmt.Fprint(file, useKeys)
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, useCrate)
+	fmt.Fprintln(file, useKeys)
 	if len(s.Typedefs) != 0 {
-		fmt.Fprint(file, useTypeDefs)
+		fmt.Fprintln(file, useTypeDefs)
 	}
 	if len(s.Structs) != 0 {
-		fmt.Fprint(file, useTypes)
+		fmt.Fprintln(file, useTypes)
 	}
 
 	s.generateRustStruct(file, s.StateVars, PropImmutable, s.FullName, "State")
@@ -738,12 +749,14 @@ func (s *Schema) generateRustParams() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprint(file, allowDeadCode)
+	fmt.Fprintln(file, allowDeadCode)
 	fmt.Fprintln(file, allowUnusedImports)
-	fmt.Fprint(file, s.crateOrWasmLib(true, true))
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, s.crateOrWasmLib(true, true))
 	if !s.CoreContracts {
-		fmt.Fprint(file, "\n"+useCrate)
-		fmt.Fprint(file, useKeys)
+		fmt.Fprintln(file)
+		fmt.Fprintln(file, useCrate)
+		fmt.Fprintln(file, useKeys)
 	}
 
 	for _, f := range s.Funcs {
@@ -771,14 +784,16 @@ func (s *Schema) generateRustResults() error {
 
 	// write file header
 	fmt.Fprintln(file, copyright(true))
-	fmt.Fprint(file, allowDeadCode)
+	fmt.Fprintln(file, allowDeadCode)
 	fmt.Fprintln(file, allowUnusedImports)
-	fmt.Fprint(file, s.crateOrWasmLib(true, true))
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, s.crateOrWasmLib(true, true))
 	if !s.CoreContracts {
-		fmt.Fprint(file, "\n"+useCrate)
-		fmt.Fprint(file, useKeys)
+		fmt.Fprintln(file)
+		fmt.Fprintln(file, useCrate)
+		fmt.Fprintln(file, useKeys)
 		if len(s.Structs) != 0 {
-			fmt.Fprint(file, useTypes)
+			fmt.Fprintln(file, useTypes)
 		}
 	}
 
@@ -873,10 +888,12 @@ func (s *Schema) generateRustTypeDefs() error {
 	fmt.Fprintln(file, copyright(true))
 	formatter(file, false)
 	fmt.Fprintln(file, allowDeadCode)
-	fmt.Fprint(file, useWasmLib)
-	fmt.Fprint(file, useWasmLibHost)
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, useWasmLib)
+	fmt.Fprintln(file, useWasmLibHost)
 	if len(s.Structs) != 0 {
-		fmt.Fprint(file, "\n", useTypes)
+		fmt.Fprintln(file)
+		fmt.Fprintln(file, useTypes)
 	}
 
 	for _, subtype := range s.Typedefs {
@@ -980,8 +997,9 @@ func (s *Schema) generateRustTypes() error {
 	fmt.Fprintln(file, copyright(true))
 	formatter(file, false)
 	fmt.Fprintln(file, allowDeadCode)
-	fmt.Fprint(file, useWasmLib)
-	fmt.Fprint(file, useWasmLibHost)
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, useWasmLib)
+	fmt.Fprintln(file, useWasmLibHost)
 
 	// write structs
 	for _, typeDef := range s.Structs {

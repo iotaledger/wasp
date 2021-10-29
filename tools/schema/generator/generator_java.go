@@ -378,30 +378,3 @@ func (s *Schema) GenerateJavaTypes() error {
 
 	return nil
 }
-
-func (s *Schema) GenerateJavaWasmMain() error {
-	file, err := os.Create("wasmmain/" + s.Name + ".go")
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	importname := ModuleName + strings.Replace(ModuleCwd[len(ModulePath):], "\\", "/", -1)
-	// write file header
-	fmt.Fprintln(file, copyright(true))
-	fmt.Fprint(file, "// +build wasm\n\n")
-	fmt.Fprint(file, "package main\n\n")
-	fmt.Fprint(file, importWasmClient)
-	fmt.Fprintf(file, "import \"%s\"\n\n", importname)
-
-	fmt.Fprintf(file, "func main() {\n")
-	fmt.Fprintf(file, "}\n\n")
-
-	fmt.Fprintf(file, "//export on_load\n")
-	fmt.Fprintf(file, "func OnLoad() {\n")
-	fmt.Fprintf(file, "    wasmclient.ConnectWasmHost()\n")
-	fmt.Fprintf(file, "    %s.OnLoad()\n", s.Name)
-	fmt.Fprintf(file, "}\n")
-
-	return nil
-}

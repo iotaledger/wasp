@@ -36,7 +36,7 @@ func init() {
 
 func main() {
 	err := generator.FindModulePath()
-	if err != nil {
+	if err != nil && *flagGo {
 		fmt.Println(err)
 		return
 	}

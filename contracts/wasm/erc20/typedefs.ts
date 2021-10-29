@@ -8,9 +8,6 @@
 import * as wasmlib from "../wasmlib"
 import * as sc from "./index";
 
-export class ImmutableAllowancesForAgent extends MapAgentIDToImmutableInt64 {
-};
-
 export class MapAgentIDToImmutableInt64 {
     objID: i32;
 
@@ -23,7 +20,7 @@ export class MapAgentIDToImmutableInt64 {
     }
 }
 
-export class MutableAllowancesForAgent extends MapAgentIDToMutableInt64 {
+export class ImmutableAllowancesForAgent extends MapAgentIDToImmutableInt64 {
 };
 
 export class MapAgentIDToMutableInt64 {
@@ -41,3 +38,6 @@ export class MapAgentIDToMutableInt64 {
         return new wasmlib.ScMutableInt64(this.objID, key.getKeyID());
     }
 }
+
+export class MutableAllowancesForAgent extends MapAgentIDToMutableInt64 {
+};
