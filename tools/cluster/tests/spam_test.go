@@ -21,7 +21,6 @@ import (
 const numRequests = 100000
 
 func TestSpamOnledger(t *testing.T) {
-	t.SkipNow()
 	testutil.RunHeavy(t)
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
@@ -44,7 +43,6 @@ func TestSpamOnledger(t *testing.T) {
 }
 
 func TestSpamOffledger(t *testing.T) {
-	t.SkipNow()
 	testutil.RunHeavy(t)
 	// single wasp node committee, to test if publishing can break state transitions
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
