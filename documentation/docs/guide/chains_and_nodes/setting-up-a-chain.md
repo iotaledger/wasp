@@ -182,3 +182,7 @@ It's easy to verify that `wasp-cli` and `wasp` nodes are on the same version, by
 ```shell
 wasp-cli check-versions
 ```
+
+## Video Tutorial
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/3mLpV_neB6I" title="Setting up Wasp Chain" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
