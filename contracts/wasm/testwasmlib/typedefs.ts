@@ -24,7 +24,7 @@ export class ArrayOfImmutableString {
     }
 }
 
-export class ImmutableStringArray extends sc.ArrayOfImmutableString {
+export class ImmutableStringArray extends ArrayOfImmutableString {
 };
 
 export class ArrayOfMutableString {
@@ -47,5 +47,5 @@ export class ArrayOfMutableString {
     }
 }
 
-export class MutableStringArray extends sc.ArrayOfMutableString {
+export class MutableStringArray extends ArrayOfMutableString {
 };

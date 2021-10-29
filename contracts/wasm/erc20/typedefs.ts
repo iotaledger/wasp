@@ -20,7 +20,7 @@ export class MapAgentIDToImmutableInt64 {
     }
 }
 
-export class ImmutableAllowancesForAgent extends sc.MapAgentIDToImmutableInt64 {
+export class ImmutableAllowancesForAgent extends MapAgentIDToImmutableInt64 {
 };
 
 export class MapAgentIDToMutableInt64 {
@@ -39,5 +39,5 @@ export class MapAgentIDToMutableInt64 {
     }
 }
 
-export class MutableAllowancesForAgent extends sc.MapAgentIDToMutableInt64 {
+export class MutableAllowancesForAgent extends MapAgentIDToMutableInt64 {
 };

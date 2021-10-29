@@ -24,7 +24,7 @@ export class ArrayOfImmutableAgentID {
     }
 }
 
-export class ImmutableBidderList extends sc.ArrayOfImmutableAgentID {
+export class ImmutableBidderList extends ArrayOfImmutableAgentID {
 };
 
 export class ArrayOfMutableAgentID {
@@ -47,7 +47,7 @@ export class ArrayOfMutableAgentID {
     }
 }
 
-export class MutableBidderList extends sc.ArrayOfMutableAgentID {
+export class MutableBidderList extends ArrayOfMutableAgentID {
 };
 
 export class MapAgentIDToImmutableBid {
@@ -61,6 +61,9 @@ export class MapAgentIDToImmutableBid {
         return new sc.ImmutableBid(this.objID, key.getKeyID());
     }
 }
+
+export class ImmutableBids extends MapAgentIDToImmutableBid {
+};
 
 export class MapAgentIDToMutableBid {
     objID: i32;
@@ -77,3 +80,6 @@ export class MapAgentIDToMutableBid {
         return new sc.MutableBid(this.objID, key.getKeyID());
     }
 }
+
+export class MutableBids extends MapAgentIDToMutableBid {
+};
