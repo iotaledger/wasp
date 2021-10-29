@@ -135,7 +135,9 @@ func (p *peer) SendMsg(msg *peering.PeerMessage) {
 	p.sendPipe.In() <- msg
 }
 
-func (p *peer) RecvMsg(msg *peering.RecvEvent) {
+func (p *peer) RecvMsg(msg *peering.PeerMessage) {
+	p.noteReceived()
+	msg.SenderNetID = p.NetID()
 	p.recvPipe.In() <- msg
 }
 
@@ -147,7 +149,13 @@ func (p *peer) sendLoop() {
 
 func (p *peer) recvLoop() {
 	for msg := range p.recvPipe.Out() {
-		p.net.triggerRecvEvents(msg)
+		peerMsg, ok := msg.(*peering.PeerMessage)
+		if ok {
+			p.net.triggerRecvEvents(&peering.RecvEvent{
+				From: p,
+				Msg:  peerMsg,
+			})
+		}
 	}
 }
 
