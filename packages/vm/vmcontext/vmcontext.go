@@ -110,7 +110,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	blockIndex := optimisticStateAccess.BlockIndex()
 	if stateHash != stateHashFromState || blockIndex != task.ChainInput.GetStateIndex() {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
-		panic(coreutil.ErrStateHasBeenInvalidated)
+		panic(coreutil.ErrorStateInvalidated)
 	}
 	openingStateUpdate := state.NewStateUpdateWithBlocklogValues(blockIndex+1, task.Timestamp, stateHash)
 	optimisticStateAccess.ApplyStateUpdates(openingStateUpdate)
