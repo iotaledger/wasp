@@ -450,11 +450,9 @@ func (s *Schema) generateTsProxy(file *os.File, field *Field, mutability string)
 func (s *Schema) generateTsProxyArray(file *os.File, field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	arrayType := "ArrayOf" + proxyType
-	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		fmt.Fprintf(file, "\nexport class %s%s extends %s {\n};\n", mutability, field.Name, arrayType)
-	}
 	if s.NewTypes[arrayType] {
 		// already generated this array
+		s.generateTsProxyReference(file, field, mutability, arrayType)
 		return
 	}
 	s.NewTypes[arrayType] = true
@@ -488,6 +486,8 @@ func (s *Schema) generateTsProxyArray(file *os.File, field *Field, mutability st
 	fmt.Fprintf(file, "    }\n")
 
 	fmt.Fprintf(file, "}\n")
+
+	s.generateTsProxyReference(file, field, mutability, arrayType)
 }
 
 func (s *Schema) generateTsProxyArrayNewType(file *os.File, field *Field, proxyType string) {
@@ -518,11 +518,9 @@ func (s *Schema) generateTsProxyArrayNewType(file *os.File, field *Field, proxyT
 func (s *Schema) generateTsProxyMap(file *os.File, field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	mapType := "Map" + field.MapKey + "To" + proxyType
-	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		fmt.Fprintf(file, "\nexport class %s%s extends %s {\n};\n", mutability, field.Name, mapType)
-	}
 	if s.NewTypes[mapType] {
 		// already generated this map
+		s.generateTsProxyReference(file, field, mutability, mapType)
 		return
 	}
 	s.NewTypes[mapType] = true
@@ -555,6 +553,8 @@ func (s *Schema) generateTsProxyMap(file *os.File, field *Field, mutability stri
 	fmt.Fprintf(file, "    }\n")
 
 	fmt.Fprintf(file, "}\n")
+
+	s.generateTsProxyReference(file, field, mutability, mapType)
 }
 
 func (s *Schema) generateTsProxyMapNewType(file *os.File, field *Field, proxyType, keyType, keyValue string) {

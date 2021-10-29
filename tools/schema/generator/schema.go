@@ -328,3 +328,9 @@ func (s *Schema) crateOrWasmLib(withContract, withHost bool) string {
 	}
 	return retVal
 }
+
+func (s *Schema) generateTsProxyReference(file *os.File, field *Field, mutability, typeName string) {
+	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
+		fmt.Fprintf(file, "\nexport class %s%s extends sc.%s {\n};\n", mutability, field.Name, typeName)
+	}
+}

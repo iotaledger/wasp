@@ -8,9 +8,6 @@
 import * as wasmlib from "../wasmlib"
 import * as sc from "./index";
 
-export class ImmutableBidderList extends ArrayOfImmutableAgentID {
-};
-
 export class ArrayOfImmutableAgentID {
     objID: i32;
 
@@ -27,7 +24,7 @@ export class ArrayOfImmutableAgentID {
     }
 }
 
-export class MutableBidderList extends ArrayOfMutableAgentID {
+export class ImmutableBidderList extends sc.ArrayOfImmutableAgentID {
 };
 
 export class ArrayOfMutableAgentID {
@@ -50,7 +47,7 @@ export class ArrayOfMutableAgentID {
     }
 }
 
-export class ImmutableBids extends MapAgentIDToImmutableBid {
+export class MutableBidderList extends sc.ArrayOfMutableAgentID {
 };
 
 export class MapAgentIDToImmutableBid {
@@ -64,9 +61,6 @@ export class MapAgentIDToImmutableBid {
         return new sc.ImmutableBid(this.objID, key.getKeyID());
     }
 }
-
-export class MutableBids extends MapAgentIDToMutableBid {
-};
 
 export class MapAgentIDToMutableBid {
     objID: i32;

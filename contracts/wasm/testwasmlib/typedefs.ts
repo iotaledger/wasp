@@ -8,9 +8,6 @@
 import * as wasmlib from "../wasmlib"
 import * as sc from "./index";
 
-export class ImmutableStringArray extends ArrayOfImmutableString {
-};
-
 export class ArrayOfImmutableString {
     objID: i32;
 
@@ -27,7 +24,7 @@ export class ArrayOfImmutableString {
     }
 }
 
-export class MutableStringArray extends ArrayOfMutableString {
+export class ImmutableStringArray extends sc.ArrayOfImmutableString {
 };
 
 export class ArrayOfMutableString {
@@ -49,3 +46,6 @@ export class ArrayOfMutableString {
         return new wasmlib.ScMutableString(this.objID, new wasmlib.Key32(index));
     }
 }
+
+export class MutableStringArray extends sc.ArrayOfMutableString {
+};
