@@ -31,26 +31,12 @@ type ScTransfers struct {
 	transfers ScMutableMap
 }
 
-// special constructor for simplifying iota transfers
-func NewScTransferIotas(amount int64) ScTransfers {
-	return NewScTransfer(IOTA, amount)
-}
-
-// special constructor for simplifying single transfers
-func NewScTransfer(color ScColor, amount int64) ScTransfers {
-	transfer := NewScTransfers()
-	transfer.Set(color, amount)
-	return transfer
-}
-
+// create a new transfers object ready to add token transfers
 func NewScTransfers() ScTransfers {
 	return ScTransfers{transfers: *NewScMutableMap()}
 }
 
-func NoScTransfers() ScTransfers {
-	return ScTransfers{}
-}
-
+// create a new transfers object from a balances object
 func NewScTransfersFromBalances(balances ScBalances) ScTransfers {
 	transfers := NewScTransfers()
 	colors := balances.Colors()
@@ -62,7 +48,20 @@ func NewScTransfersFromBalances(balances ScBalances) ScTransfers {
 	return transfers
 }
 
-// transfers the specified amount of tokens of the specified color
+// create a new transfers object and initialize it with the specified amount of iotas
+func NewScTransferIotas(amount int64) ScTransfers {
+	return NewScTransfer(IOTA, amount)
+}
+
+// create a new transfers object and initialize it with the specified token transfer
+func NewScTransfer(color ScColor, amount int64) ScTransfers {
+	transfer := NewScTransfers()
+	transfer.Set(color, amount)
+	return transfer
+}
+
+// set the specified colored token transfer in the transfers object
+// note that this will overwrite any previous amount for the specified color
 func (ctx ScTransfers) Set(color ScColor, amount int64) {
 	ctx.transfers.GetInt64(color).SetValue(amount)
 }

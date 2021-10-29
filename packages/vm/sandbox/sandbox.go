@@ -38,7 +38,7 @@ func (s *sandbox) Balances() colored.Balances {
 	return s.vmctx.GetMyBalances()
 }
 
-// Call calls an entry point of contact, passes parameters and funds
+// Call calls an entry point of contract, passes parameters and funds
 func (s *sandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
 	return s.vmctx.Call(target, entryPoint, params, transfer)
 }

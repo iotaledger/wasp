@@ -153,6 +153,11 @@ func snake(name string) string {
 	return lower(name)
 }
 
+// uncapitalize first letter
+func uncapitalize(name string) string {
+	return lower(name[:1]) + name[1:]
+}
+
 // convert to upper case
 func upper(name string) string {
 	return strings.ToUpper(name)

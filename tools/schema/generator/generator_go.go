@@ -13,6 +13,12 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
+const (
+	specialFuncInit     = "funcInit"
+	specialFuncSetOwner = "setOwner"
+	specialViewGetOwner = "getOwner"
+)
+
 const importCoreTypes = `import "github.com/iotaledger/wasp/packages/iscp"
 `
 
@@ -46,7 +52,7 @@ var goKeys = StringMap{
 	"Hash":      "key",
 	"Hname":     "key",
 	"Int16":     "??TODO",
-	"Int32":     "wasmlib.Key32(int32)",
+	"Int32":     "wasmlib.Key32(key)",
 	"Int64":     "??TODO",
 	"RequestID": "key",
 	"String":    "wasmlib.Key(key)",
@@ -82,7 +88,7 @@ func (s *Schema) GenerateGo() error {
 	if err != nil {
 		return err
 	}
-	err = s.generateGoSubtypes()
+	err = s.generateGoTypeDefs()
 	if err != nil {
 		return err
 	}
@@ -324,15 +330,15 @@ func (s *Schema) generateGoFuncs() error {
 func (s *Schema) generateGoFuncSignature(file *os.File, f *Func) {
 	fmt.Fprintf(file, "\nfunc %s(ctx wasmlib.Sc%sContext, f *%sContext) {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
-	case "funcInit":
+	case specialFuncInit:
 		fmt.Fprintf(file, "    if f.Params.Owner().Exists() {\n")
 		fmt.Fprintf(file, "        f.State.Owner().SetValue(f.Params.Owner().Value())\n")
 		fmt.Fprintf(file, "        return\n")
 		fmt.Fprintf(file, "    }\n")
 		fmt.Fprintf(file, "    f.State.Owner().SetValue(ctx.ContractCreator())\n")
-	case "funcSetOwner":
+	case specialFuncSetOwner:
 		fmt.Fprintf(file, "    f.State.Owner().SetValue(f.Params.Owner().Value())\n")
-	case "viewGetOwner":
+	case specialViewGetOwner:
 		fmt.Fprintf(file, "    f.Results.Owner().SetValue(f.State.Owner().Value())\n")
 	default:
 	}
@@ -655,6 +661,7 @@ func (s *Schema) generateGoState() error {
 	return nil
 }
 
+// TODO nested structs
 func (s *Schema) generateGoStruct(file *os.File, fields []*Field, mutability, typeName, kind string) {
 	typeName = mutability + typeName + kind
 	kind = strings.TrimSuffix(kind, "s")
@@ -715,7 +722,7 @@ func (s *Schema) generateGoStruct(file *os.File, fields []*Field, mutability, ty
 	}
 }
 
-func (s *Schema) generateGoSubtypes() error {
+func (s *Schema) generateGoTypeDefs() error {
 	if len(s.Typedefs) == 0 {
 		return nil
 	}
@@ -787,16 +794,16 @@ func (s *Schema) GenerateGoTests() error {
 
 func (s *Schema) generateGoThunk(file *os.File, f *Func) {
 	nameLen := f.nameLen(5)
+	mutability := PropMutable
+	if f.Kind == KindView {
+		mutability = PropImmutable
+	}
 	fmt.Fprintf(file, "\ntype %sContext struct {\n", f.Type)
 	if len(f.Params) != 0 {
 		fmt.Fprintf(file, "\t%s Immutable%sParams\n", pad("Params", nameLen), f.Type)
 	}
 	if len(f.Results) != 0 {
 		fmt.Fprintf(file, "\tResults Mutable%sResults\n", f.Type)
-	}
-	mutability := PropMutable
-	if f.Kind == KindView {
-		mutability = PropImmutable
 	}
 	fmt.Fprintf(file, "\t%s %s%sState\n", pad("State", nameLen), mutability, s.FullName)
 	fmt.Fprintf(file, "}\n")

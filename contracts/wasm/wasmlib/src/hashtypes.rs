@@ -67,7 +67,7 @@ impl ScAgentID {
 
     // construct from byte array
     pub fn from_bytes(bytes: &[u8]) -> ScAgentID {
-        ScAgentID { id: bytes.try_into().expect("invalid agent id lengths") }
+        ScAgentID { id: bytes.try_into().expect("invalid agent id length") }
     }
 
     // gets Tangle address from agent id

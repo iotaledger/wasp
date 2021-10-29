@@ -23,7 +23,7 @@ const (
 	useResults         = "use crate::results::*;\n"
 	useState           = "use crate::state::*;\n"
 	useStdPtr          = "use std::ptr;\n"
-	useSubtypes        = "use crate::typedefs::*;\n"
+	useTypeDefs        = "use crate::typedefs::*;\n"
 	useTypes           = "use crate::types::*;\n"
 	useWasmLib         = "use wasmlib::*;\n"
 	useWasmLibHost     = "use wasmlib::host::*;\n"
@@ -117,7 +117,7 @@ func (s *Schema) GenerateRust() error {
 	if err != nil {
 		return err
 	}
-	err = s.generateRustSubtypes()
+	err = s.generateRustTypeDefs()
 	if err != nil {
 		return err
 	}
@@ -392,17 +392,17 @@ func (s *Schema) generateRustFuncs() error {
 
 func (s *Schema) generateRustFuncSignature(file *os.File, f *Func) {
 	switch f.FuncName {
-	case "funcInit":
+	case specialFuncInit:
 		fmt.Fprintf(file, "\npub fn %s(ctx: &Sc%sContext, f: &%sContext) {\n", snake(f.FuncName), f.Kind, capitalize(f.Type))
 		fmt.Fprintf(file, "    if f.params.owner().exists() {\n")
 		fmt.Fprintf(file, "        f.state.owner().set_value(&f.params.owner().value());\n")
 		fmt.Fprintf(file, "        return;\n")
 		fmt.Fprintf(file, "    }\n")
 		fmt.Fprintf(file, "    f.state.owner().set_value(&ctx.contract_creator());\n")
-	case "funcSetOwner":
+	case specialFuncSetOwner:
 		fmt.Fprintf(file, "\npub fn %s(_ctx: &Sc%sContext, f: &%sContext) {\n", snake(f.FuncName), f.Kind, capitalize(f.Type))
 		fmt.Fprintf(file, "    f.state.owner().set_value(&f.params.owner().value());\n")
-	case "viewGetOwner":
+	case specialViewGetOwner:
 		fmt.Fprintf(file, "\npub fn %s(_ctx: &Sc%sContext, f: &%sContext) {\n", snake(f.FuncName), f.Kind, capitalize(f.Type))
 		fmt.Fprintf(file, "    f.results.owner().set_value(&f.state.owner().value());\n")
 	default:
@@ -424,7 +424,7 @@ func (s *Schema) generateRustFuncsNew(scFileName string) error {
 
 	fmt.Fprint(file, useCrate)
 	if len(s.Typedefs) != 0 {
-		fmt.Fprint(file, useSubtypes)
+		fmt.Fprint(file, useTypeDefs)
 	}
 	if len(s.Structs) != 0 {
 		fmt.Fprint(file, useTypes)
@@ -718,7 +718,7 @@ func (s *Schema) generateRustState() error {
 	fmt.Fprint(file, useCrate)
 	fmt.Fprint(file, useKeys)
 	if len(s.Typedefs) != 0 {
-		fmt.Fprint(file, useSubtypes)
+		fmt.Fprint(file, useTypeDefs)
 	}
 	if len(s.Structs) != 0 {
 		fmt.Fprint(file, useTypes)
@@ -859,7 +859,7 @@ func (s *Schema) generateRustStruct(file *os.File, fields []*Field, mutability, 
 	}
 }
 
-func (s *Schema) generateRustSubtypes() error {
+func (s *Schema) generateRustTypeDefs() error {
 	if len(s.Typedefs) == 0 {
 		return nil
 	}
@@ -890,16 +890,16 @@ func (s *Schema) generateRustSubtypes() error {
 
 func (s *Schema) generateRustThunk(file *os.File, f *Func) {
 	nameLen := f.nameLen(5) + 1
+	mutability := PropMutable
+	if f.Kind == KindView {
+		mutability = PropImmutable
+	}
 	fmt.Fprintf(file, "\npub struct %sContext {\n", f.Type)
 	if len(f.Params) != 0 {
 		fmt.Fprintf(file, "    %s Immutable%sParams,\n", pad("params:", nameLen), f.Type)
 	}
 	if len(f.Results) != 0 {
 		fmt.Fprintf(file, "    results: Mutable%sResults,\n", f.Type)
-	}
-	mutability := PropMutable
-	if f.Kind == KindView {
-		mutability = PropImmutable
 	}
 	fmt.Fprintf(file, "    %s %s%sState,\n", pad("state:", nameLen), mutability, s.FullName)
 	fmt.Fprintf(file, "}\n")
