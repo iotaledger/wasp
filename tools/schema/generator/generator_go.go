@@ -975,7 +975,7 @@ func (s *Schema) generateGoWasmMain() error {
 	fmt.Fprint(file, "// +build wasm\n\n")
 	fmt.Fprint(file, "package main\n\n")
 	fmt.Fprintln(file, goImportWasmClient)
-	fmt.Fprintf(file, "import \"%s/go/%s\"\n\n", module, s.Name)
+	fmt.Fprintf(file, "\nimport \"%s/go/%s\"\n\n", module, s.Name)
 
 	fmt.Fprintf(file, "func main() {\n")
 	fmt.Fprintf(file, "}\n\n")

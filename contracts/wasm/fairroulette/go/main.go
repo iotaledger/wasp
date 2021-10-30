@@ -9,16 +9,15 @@
 
 package main
 
-import (
-	"github.com/iotaledger/wasp/contracts/wasm/fairroulette/go/fairroulette"
-	"github.com/iotaledger/wasp/packages/vm/wasmclient"
-)
+import "github.com/iotaledger/wasp/packages/vm/wasmclient"
+
+import "github.com/iotaledger/wasp/contracts/wasm/fairroulette/go/fairroulette"
 
 func main() {
 }
 
 //export on_load
-func OnLoad() {
+func onLoad() {
 	h := &wasmclient.WasmVMHost{}
 	h.ConnectWasmHost()
 	fairroulette.OnLoad()

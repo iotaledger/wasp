@@ -9,16 +9,15 @@
 
 package main
 
-import (
-	"github.com/iotaledger/wasp/contracts/wasm/tokenregistry/go/tokenregistry"
-	"github.com/iotaledger/wasp/packages/vm/wasmclient"
-)
+import "github.com/iotaledger/wasp/packages/vm/wasmclient"
+
+import "github.com/iotaledger/wasp/contracts/wasm/tokenregistry/go/tokenregistry"
 
 func main() {
 }
 
 //export on_load
-func OnLoad() {
+func onLoad() {
 	h := &wasmclient.WasmVMHost{}
 	h.ConnectWasmHost()
 	tokenregistry.OnLoad()
