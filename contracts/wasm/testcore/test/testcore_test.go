@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/testcore"
+	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -63,7 +63,7 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 		})
 	}
 
-	exists, _ = util.ExistsFilePath("../wasmmain/pkg/testcore_go.wasm")
+	exists, _ = util.ExistsFilePath("../go/pkg/testcore_go.wasm")
 	if exists {
 		*wasmsolo.GoWasm = true
 		wasmlib.ConnectHost(nil)
@@ -73,7 +73,7 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 		*wasmsolo.GoWasm = false
 	}
 
-	exists, _ = util.ExistsFilePath("../wasmmain/pkg/testcore_ts.wasm")
+	exists, _ = util.ExistsFilePath("../ts/pkg/testcore_ts.wasm")
 	if exists {
 		*wasmsolo.TsWasm = true
 		wasmlib.ConnectHost(nil)

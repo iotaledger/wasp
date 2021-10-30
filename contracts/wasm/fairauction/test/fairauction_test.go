@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/contracts/wasm/fairauction"
+	"github.com/iotaledger/wasp/contracts/wasm/fairauction/go/fairauction"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"

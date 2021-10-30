@@ -331,16 +331,16 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 	rustExists, _ := util.ExistsFilePath("../src/lib.rs")
 	if *GoWasm || !rustExists {
 		wasmFile = ctx.scName + "_go.wasm"
-		exists, _ = util.ExistsFilePath("../wasmmain/pkg/" + wasmFile)
+		exists, _ = util.ExistsFilePath("../go/pkg/" + wasmFile)
 		if exists {
-			wasmFile = "../wasmmain/pkg/" + wasmFile
+			wasmFile = "../go/pkg/" + wasmFile
 		}
 	}
 	if *TsWasm {
 		wasmFile = ctx.scName + "_ts.wasm"
-		exists, _ = util.ExistsFilePath("../wasmmain/pkg/" + wasmFile)
+		exists, _ = util.ExistsFilePath("../ts/pkg/" + wasmFile)
 		if exists {
-			wasmFile = "../wasmmain/pkg/" + wasmFile
+			wasmFile = "../ts/pkg/" + wasmFile
 		}
 	}
 	ctx.Hprog, ctx.Err = ctx.Chain.UploadWasmFromFile(keyPair, wasmFile)
