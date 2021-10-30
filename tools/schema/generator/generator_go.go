@@ -71,7 +71,19 @@ const (
 func (s *Schema) GenerateGo() error {
 	s.NewTypes = make(map[string]bool)
 
-	err := s.generateGoConsts(false)
+	err := os.MkdirAll("go/"+s.Name, 0o755)
+	if err != nil {
+		return err
+	}
+	err = os.Chdir("go/" + s.Name)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = os.Chdir("../..")
+	}()
+
+	err = s.generateGoConsts(false)
 	if err != nil {
 		return err
 	}
@@ -592,7 +604,8 @@ func (s *Schema) generateGoParams() error {
 		totalParams += len(f.Params)
 	}
 	if totalParams != 0 {
-		fmt.Fprintln(file, "\n", goImportWasmLib)
+		fmt.Fprintln(file)
+		fmt.Fprintln(file, goImportWasmLib)
 	}
 
 	for _, f := range s.Funcs {
@@ -622,7 +635,8 @@ func (s *Schema) generateGoResults() error {
 		results += len(f.Results)
 	}
 	if results != 0 {
-		fmt.Fprintln(file, "\n", goImportWasmLib)
+		fmt.Fprintln(file)
+		fmt.Fprintln(file, goImportWasmLib)
 	}
 
 	for _, f := range s.Funcs {
@@ -646,7 +660,8 @@ func (s *Schema) generateGoState() error {
 	fmt.Fprintln(file, copyright(true))
 	fmt.Fprint(file, s.packageName())
 	if len(s.StateVars) != 0 {
-		fmt.Fprintln(file, "\n", goImportWasmLib)
+		fmt.Fprintln(file)
+		fmt.Fprintln(file, goImportWasmLib)
 	}
 
 	s.generateGoStruct(file, s.StateVars, PropImmutable, s.FullName, "State")
@@ -772,7 +787,7 @@ func (s *Schema) GenerateGoTests() error {
 	fmt.Fprintln(file, "import (")
 	fmt.Fprintln(file, "\t\"testing\"")
 	fmt.Fprintln(file)
-	fmt.Fprintf(file, "\t\"%s\"\n", module)
+	fmt.Fprintf(file, "\t\"%s/go/%s\"\n", module, s.Name)
 	fmt.Fprintln(file, "\t\"github.com/iotaledger/wasp/packages/vm/wasmsolo\"")
 	fmt.Fprintln(file, "\t\"github.com/stretchr/testify/require\"")
 	fmt.Fprintln(file, ")")
@@ -948,30 +963,25 @@ func (s *Schema) generateGoTypeProxy(file *os.File, typeDef *Struct, mutable boo
 }
 
 func (s *Schema) generateGoWasmMain() error {
-	err := os.MkdirAll("wasmmain", 0o755)
-	if err != nil {
-		return err
-	}
-
-	file, err := os.Create("wasmmain/main.go")
+	file, err := os.Create("../main.go")
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	importname := ModuleName + strings.Replace(ModuleCwd[len(ModulePath):], "\\", "/", -1)
+	module := ModuleName + strings.Replace(ModuleCwd[len(ModulePath):], "\\", "/", -1)
 	// write file header
 	fmt.Fprintln(file, copyright(true))
 	fmt.Fprint(file, "// +build wasm\n\n")
 	fmt.Fprint(file, "package main\n\n")
 	fmt.Fprintln(file, goImportWasmClient)
-	fmt.Fprintf(file, "import \"%s\"\n\n", importname)
+	fmt.Fprintf(file, "import \"%s/go/%s\"\n\n", module, s.Name)
 
 	fmt.Fprintf(file, "func main() {\n")
 	fmt.Fprintf(file, "}\n\n")
 
 	fmt.Fprintf(file, "//export on_load\n")
-	fmt.Fprintf(file, "func OnLoad() {\n")
+	fmt.Fprintf(file, "func onLoad() {\n")
 	fmt.Fprintf(file, "\th := &wasmclient.WasmVMHost{}\n")
 	fmt.Fprintf(file, "\th.ConnectWasmHost()\n")
 	fmt.Fprintf(file, "\t%s.OnLoad()\n", s.Name)

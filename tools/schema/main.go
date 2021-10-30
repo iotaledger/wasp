@@ -83,7 +83,8 @@ func generateSchema(file *os.File) error {
 	s.CoreContracts = *flagCore
 
 	if *flagTs {
-		info, err = os.Stat("consts.ts")
+		// TODO
+		info, err = os.Stat("ts/consts.ts")
 		if err == nil && info.ModTime().After(schemaTime) && !*flagForce {
 			fmt.Println("skipping AssemblyScript code generation")
 		} else {
@@ -102,7 +103,7 @@ func generateSchema(file *os.File) error {
 	}
 
 	if *flagGo {
-		info, err = os.Stat("consts.go")
+		info, err = os.Stat("go/main.go")
 		if err == nil && info.ModTime().After(schemaTime) && !*flagForce {
 			fmt.Println("skipping Go code generation")
 		} else {
