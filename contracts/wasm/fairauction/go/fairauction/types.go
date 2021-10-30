@@ -7,7 +7,7 @@
 
 package fairauction
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 type Auction struct {
 	Color         wasmlib.ScColor   // color of tokens for sale

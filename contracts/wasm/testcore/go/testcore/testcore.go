@@ -5,9 +5,9 @@
 package testcore
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/corecontracts/coreaccounts"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/corecontracts/coregovernance"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/corecontracts/coreaccounts"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/corecontracts/coregovernance"
 )
 
 const (

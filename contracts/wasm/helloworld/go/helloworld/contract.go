@@ -7,7 +7,7 @@
 
 package helloworld
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 type HelloWorldCall struct {
 	Func *wasmlib.ScFunc

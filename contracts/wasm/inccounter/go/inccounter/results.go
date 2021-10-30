@@ -7,7 +7,7 @@
 
 package inccounter
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 type ImmutableGetCounterResults struct {
 	id int32

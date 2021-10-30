@@ -7,7 +7,7 @@
 
 package fairauction
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 type ImmutableGetInfoResults struct {
 	id int32

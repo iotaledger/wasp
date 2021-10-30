@@ -10,7 +10,7 @@
 package fairroulette
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 // Define some default configuration parameters.

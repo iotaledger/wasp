@@ -6,8 +6,8 @@ package testwasmlib
 import (
 	"bytes"
 
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/corecontracts/coreblocklog"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/corecontracts/coreblocklog"
 )
 
 func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {

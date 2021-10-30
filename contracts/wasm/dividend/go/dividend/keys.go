@@ -7,7 +7,7 @@
 
 package dividend
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
 	IdxParamAddress     = 0

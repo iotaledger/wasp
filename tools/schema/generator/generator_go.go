@@ -15,7 +15,7 @@ import (
 
 const (
 	goImportCoreTypes  = "import \"github.com/iotaledger/wasp/packages/iscp\""
-	goImportWasmLib    = "import \"github.com/iotaledger/wasp/packages/vm/wasmlib\""
+	goImportWasmLib    = "import \"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib\""
 	goImportWasmClient = "import \"github.com/iotaledger/wasp/packages/vm/wasmclient\""
 )
 

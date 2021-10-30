@@ -4,7 +4,7 @@
 package inccounter
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 var LocalStateMustIncrement = false

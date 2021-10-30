@@ -7,7 +7,7 @@
 
 package fairauction
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 type MapColorToImmutableAuction struct {
 	objID int32

@@ -4,7 +4,7 @@
 package donatewithfeedback
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {

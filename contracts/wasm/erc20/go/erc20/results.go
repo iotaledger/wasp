@@ -7,7 +7,7 @@
 
 package erc20
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 type ImmutableAllowanceResults struct {
 	id int32
