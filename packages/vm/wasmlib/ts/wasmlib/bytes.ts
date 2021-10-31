@@ -3,7 +3,7 @@
 
 import {Convert} from "./convert";
 import {ScAddress, ScAgentID, ScChainID, ScColor, ScHash, ScHname, ScRequestID} from "./hashtypes";
-import {log, panic} from "./host";
+import {panic} from "./host";
 
 // decodes separate entities from a byte buffer
 export class BytesDecoder {

@@ -34,25 +34,23 @@ const (
 	KeyLog             = int32(-26)
 	KeyMaps            = int32(-27)
 	KeyMinted          = int32(-28)
-	KeyName            = int32(-29)
-	KeyPanic           = int32(-30)
-	KeyParams          = int32(-31)
-	KeyPost            = int32(-32)
-	KeyRandom          = int32(-33)
-	KeyRequestID       = int32(-34)
-	KeyResults         = int32(-35)
-	KeyReturn          = int32(-36)
-	KeyState           = int32(-37)
-	KeyTimestamp       = int32(-38)
-	KeyTrace           = int32(-39)
-	KeyTransfers       = int32(-40)
-	KeyUtility         = int32(-41)
-	KeyValid           = int32(-42)
+	KeyPanic           = int32(-29)
+	KeyParams          = int32(-30)
+	KeyPost            = int32(-31)
+	KeyRandom          = int32(-32)
+	KeyRequestID       = int32(-33)
+	KeyResults         = int32(-34)
+	KeyReturn          = int32(-35)
+	KeyState           = int32(-36)
+	KeyTimestamp       = int32(-37)
+	KeyTrace           = int32(-38)
+	KeyTransfers       = int32(-39)
+	KeyUtility         = int32(-40)
 
 	// KeyZzzzzzz is treated like a version number.
 	// When anything changes to the keys give this one a different value
 	// and make sure that the client side is updated accordingly
-	KeyZzzzzzz = int32(-43)
+	KeyZzzzzzz = int32(-41)
 )
 
 // associate names with predefined key ids
@@ -85,7 +83,6 @@ var predefinedKeyMap = map[string]int32{
 	"$log":             KeyLog,
 	"$maps":            KeyMaps,
 	"$minted":          KeyMinted,
-	"$name":            KeyName,
 	"$panic":           KeyPanic,
 	"$params":          KeyParams,
 	"$post":            KeyPost,
@@ -98,7 +95,6 @@ var predefinedKeyMap = map[string]int32{
 	"$trace":           KeyTrace,
 	"$transfers":       KeyTransfers,
 	"$utility":         KeyUtility,
-	"$valid":           KeyValid,
 }
 
 var predefinedKeys = initKeyMap()
