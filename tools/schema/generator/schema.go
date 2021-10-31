@@ -68,6 +68,7 @@ type Schema struct {
 	ConstNames    []string
 	ConstValues   []string
 	CoreContracts bool
+	Folder        string
 	Funcs         []*Func
 	NewTypes      map[string]bool
 	Params        []*Field
@@ -315,7 +316,7 @@ func (s *Schema) crateOrWasmLib(withContract, withHost bool) string {
 	if s.CoreContracts {
 		retVal := useCrate
 		if withContract {
-			retVal += "\nuse crate::corecontracts::" + s.Name + "::*;"
+			retVal += "\nuse crate::" + s.Name + "::*;"
 		}
 		if withHost {
 			retVal += "\nuse crate::host::*;"

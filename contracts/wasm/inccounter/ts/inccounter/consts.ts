@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "../../../wasmlib/ts/wasmlib"
+import * as wasmlib from "wasmlib"
 
 export const ScName  = "inccounter";
 export const HScName = new wasmlib.ScHname(0xaf2438e9);

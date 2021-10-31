@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasmlib from "../../../wasmlib/ts/wasmlib"
+import * as wasmlib from "wasmlib"
 import * as sc from "./index";
 
 const DURATION_DEFAULT: i32 = 60;

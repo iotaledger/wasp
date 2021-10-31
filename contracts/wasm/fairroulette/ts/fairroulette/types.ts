@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "../../../wasmlib/ts/wasmlib"
+import * as wasmlib from "wasmlib"
 
 export class Bet {
     amount: i64 = 0;

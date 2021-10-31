@@ -1,9 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasmlib from "../../../wasmlib/ts/wasmlib"
-import * as coreaccounts from "../coreaccounts"
-import * as coregovernance from "../coregovernance"
+import * as wasmlib from "wasmlib"
+import * as coreaccounts from "wasmlib/coreaccounts"
+import * as coregovernance from "wasmlib/coregovernance"
 import * as sc from "./index";
 
 const CONTRACT_NAME_DEPLOYED = "exampleDeployTR";

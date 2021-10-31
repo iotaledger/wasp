@@ -5,6 +5,7 @@ package generator
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strconv"
@@ -95,20 +96,6 @@ const (
 func (s *Schema) GenerateRust() error {
 	s.NewTypes = make(map[string]bool)
 
-	if !s.CoreContracts {
-		err := os.MkdirAll("src", 0o755)
-		if err != nil {
-			return err
-		}
-		err = os.Chdir("src")
-		if err != nil {
-			return err
-		}
-		defer func() {
-			_ = os.Chdir("..")
-		}()
-	}
-
 	err := s.generateRustConsts()
 	if err != nil {
 		return err
@@ -156,7 +143,7 @@ func (s *Schema) GenerateRust() error {
 		return s.generateRustCargo()
 	}
 
-	return nil
+	return s.generateRustMod()
 }
 
 func (s *Schema) generateRustArrayType(varType string) string {
@@ -168,14 +155,14 @@ func (s *Schema) generateRustArrayType(varType string) string {
 }
 
 func (s *Schema) generateRustCargo() error {
-	file, err := os.Open("../Cargo.toml")
+	file, err := os.Open("Cargo.toml")
 	if err == nil {
 		// already exists
 		file.Close()
 		return nil
 	}
 
-	file, err = os.Create("../Cargo.toml")
+	file, err = os.Create("Cargo.toml")
 	if err != nil {
 		return err
 	}
@@ -204,7 +191,7 @@ func (s *Schema) generateRustCargo() error {
 }
 
 func (s *Schema) generateRustConsts() error {
-	file, err := os.Create("consts.rs")
+	file, err := os.Create(s.Folder + "consts.rs")
 	if err != nil {
 		return err
 	}
@@ -267,7 +254,7 @@ func (s *Schema) generateRustConstsFields(file *os.File, fields []*Field, prefix
 }
 
 func (s *Schema) generateRustContract() error {
-	file, err := os.Create("contract.rs")
+	file, err := os.Create(s.Folder + "contract.rs")
 	if err != nil {
 		return err
 	}
@@ -352,7 +339,7 @@ func (s *Schema) generateRustContractFuncs(file *os.File) {
 }
 
 func (s *Schema) generateRustFuncs() error {
-	scFileName := s.Name + ".rs"
+	scFileName := s.Folder + s.Name + ".rs"
 	file, err := os.Open(scFileName)
 	if err != nil {
 		// generate initial code file
@@ -367,7 +354,7 @@ func (s *Schema) generateRustFuncs() error {
 	}
 
 	// save old one from overwrite
-	scOriginal := s.Name + ".bak"
+	scOriginal := s.Folder + s.Name + ".bak"
 	err = os.Rename(scFileName, scOriginal)
 	if err != nil {
 		return err
@@ -441,7 +428,7 @@ func (s *Schema) generateRustFuncsNew(scFileName string) error {
 }
 
 func (s *Schema) generateRustKeys() error {
-	file, err := os.Create("keys.rs")
+	file, err := os.Create(s.Folder + "keys.rs")
 	if err != nil {
 		return err
 	}
@@ -507,7 +494,7 @@ func (s *Schema) generateRustKeysIndexes(fields []*Field, prefix string) {
 }
 
 func (s *Schema) generateRustLib() error {
-	file, err := os.Create("lib.rs")
+	file, err := os.Create(s.Folder + "lib.rs")
 	if err != nil {
 		return err
 	}
@@ -568,6 +555,55 @@ func (s *Schema) generateRustLib() error {
 	}
 
 	formatter(file, true)
+	return nil
+}
+
+func (s *Schema) generateRustMod() error {
+	file, err := os.Create(s.Folder + "mod.rs")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	fmt.Fprintln(file, copyright(true))
+	fmt.Fprintln(file, allowUnusedImports)
+	err = s.generateRustModLines(file, "pub use %s::*;\n")
+	if err != nil {
+		return err
+	}
+	return s.generateRustModLines(file, "pub mod %s;\n")
+}
+
+// pub use consts::*;
+func (s *Schema) generateRustModLines(file io.Writer, format string) error {
+	fmt.Fprintln(file)
+
+	if !s.CoreContracts {
+		fmt.Fprintf(file, format, s.Name)
+		fmt.Fprintln(file)
+	}
+
+	fmt.Fprintf(file, format, "consts")
+	fmt.Fprintf(file, format, "contract")
+	if !s.CoreContracts {
+		fmt.Fprintf(file, format, "keys")
+		fmt.Fprintf(file, format, "lib")
+	}
+	if len(s.Params) != 0 {
+		fmt.Fprintf(file, format, "params")
+	}
+	if len(s.Results) != 0 {
+		fmt.Fprintf(file, format, "results")
+	}
+	if !s.CoreContracts {
+		fmt.Fprintf(file, format, "state")
+		if len(s.Structs) != 0 {
+			fmt.Fprintf(file, format, "types")
+		}
+		if len(s.Typedefs) != 0 {
+			fmt.Fprintf(file, format, "typedefs")
+		}
+	}
 	return nil
 }
 
@@ -712,7 +748,7 @@ func (s *Schema) generateRustProxyMapNewType(file *os.File, field *Field, proxyT
 }
 
 func (s *Schema) generateRustState() error {
-	file, err := os.Create("state.rs")
+	file, err := os.Create(s.Folder + "state.rs")
 	if err != nil {
 		return err
 	}
@@ -741,7 +777,7 @@ func (s *Schema) generateRustState() error {
 }
 
 func (s *Schema) generateRustParams() error {
-	file, err := os.Create("params.rs")
+	file, err := os.Create(s.Folder + "params.rs")
 	if err != nil {
 		return err
 	}
@@ -776,7 +812,7 @@ func (s *Schema) generateRustParams() error {
 }
 
 func (s *Schema) generateRustResults() error {
-	file, err := os.Create("results.rs")
+	file, err := os.Create(s.Folder + "results.rs")
 	if err != nil {
 		return err
 	}
@@ -879,7 +915,7 @@ func (s *Schema) generateRustTypeDefs() error {
 		return nil
 	}
 
-	file, err := os.Create("typedefs.rs")
+	file, err := os.Create(s.Folder + "typedefs.rs")
 	if err != nil {
 		return err
 	}
@@ -987,7 +1023,7 @@ func (s *Schema) generateRustTypes() error {
 		return nil
 	}
 
-	file, err := os.Create("types.rs")
+	file, err := os.Create(s.Folder + "types.rs")
 	if err != nil {
 		return err
 	}

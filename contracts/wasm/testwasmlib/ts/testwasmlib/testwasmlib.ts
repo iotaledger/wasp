@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasmlib from "../../../wasmlib/ts/wasmlib"
-import * as coreblocklog from "../coreblocklog"
+import * as wasmlib from "wasmlib"
+import * as coreblocklog from "wasmlib/coreblocklog"
 import * as sc from "./index";
 
 export function funcArrayClear(ctx: wasmlib.ScFuncContext, f: sc.ArrayClearContext): void {

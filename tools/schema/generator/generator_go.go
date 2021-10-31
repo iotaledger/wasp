@@ -71,19 +71,7 @@ const (
 func (s *Schema) GenerateGo() error {
 	s.NewTypes = make(map[string]bool)
 
-	err := os.MkdirAll("go/"+s.Name, 0o755)
-	if err != nil {
-		return err
-	}
-	err = os.Chdir("go/" + s.Name)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = os.Chdir("../..")
-	}()
-
-	err = s.generateGoConsts(false)
+	err := s.generateGoConsts(false)
 	if err != nil {
 		return err
 	}
@@ -127,7 +115,7 @@ func (s *Schema) GenerateGo() error {
 		}
 
 		// go-specific stuff
-		return s.generateGoWasmMain()
+		return s.generateGoMain()
 	}
 
 	return nil
@@ -142,7 +130,7 @@ func (s *Schema) generateGoArrayType(varType string) string {
 }
 
 func (s *Schema) generateGoConsts(test bool) error {
-	file, err := os.Create("consts.go")
+	file, err := os.Create(s.Folder + "consts.go")
 	if err != nil {
 		return err
 	}
@@ -216,7 +204,7 @@ func (s *Schema) generateGoConstsFields(file *os.File, test bool, fields []*Fiel
 }
 
 func (s *Schema) generateGoContract() error {
-	file, err := os.Create("contract.go")
+	file, err := os.Create(s.Folder + "contract.go")
 	if err != nil {
 		return err
 	}
@@ -290,7 +278,7 @@ func (s *Schema) generateGoContractFuncs(file *os.File) {
 }
 
 func (s *Schema) generateGoFuncs() error {
-	scFileName := s.Name + ".go"
+	scFileName := s.Folder + s.Name + ".go"
 	file, err := os.Open(scFileName)
 	if err != nil {
 		// generate initial code file
@@ -305,7 +293,7 @@ func (s *Schema) generateGoFuncs() error {
 	}
 
 	// save old one from overwrite
-	scOriginal := s.Name + ".bak"
+	scOriginal := s.Folder + s.Name + ".bak"
 	err = os.Rename(scFileName, scOriginal)
 	if err != nil {
 		return err
@@ -369,7 +357,7 @@ func (s *Schema) generateGoFuncsNew(scFileName string) error {
 }
 
 func (s *Schema) generateGoKeys() error {
-	file, err := os.Create("keys.go")
+	file, err := os.Create(s.Folder + "keys.go")
 	if err != nil {
 		return err
 	}
@@ -422,7 +410,7 @@ func (s *Schema) generateGoKeysIndexes(fields []*Field, prefix string) {
 }
 
 func (s *Schema) generateGoLib() error {
-	file, err := os.Create("lib.go")
+	file, err := os.Create(s.Folder + "lib.go")
 	if err != nil {
 		return err
 	}
@@ -589,7 +577,7 @@ func (s *Schema) generateGoProxyMapNewType(file *os.File, field *Field, proxyTyp
 }
 
 func (s *Schema) generateGoParams() error {
-	file, err := os.Create("params.go")
+	file, err := os.Create(s.Folder + "params.go")
 	if err != nil {
 		return err
 	}
@@ -620,7 +608,7 @@ func (s *Schema) generateGoParams() error {
 }
 
 func (s *Schema) generateGoResults() error {
-	file, err := os.Create("results.go")
+	file, err := os.Create(s.Folder + "results.go")
 	if err != nil {
 		return err
 	}
@@ -650,7 +638,7 @@ func (s *Schema) generateGoResults() error {
 }
 
 func (s *Schema) generateGoState() error {
-	file, err := os.Create("state.go")
+	file, err := os.Create(s.Folder + "state.go")
 	if err != nil {
 		return err
 	}
@@ -735,7 +723,7 @@ func (s *Schema) generateGoTypeDefs() error {
 		return nil
 	}
 
-	file, err := os.Create("typedefs.go")
+	file, err := os.Create(s.Folder + "typedefs.go")
 	if err != nil {
 		return err
 	}
@@ -882,7 +870,7 @@ func (s *Schema) generateGoTypes() error {
 		return nil
 	}
 
-	file, err := os.Create("types.go")
+	file, err := os.Create(s.Folder + "types.go")
 	if err != nil {
 		return err
 	}
@@ -962,8 +950,8 @@ func (s *Schema) generateGoTypeProxy(file *os.File, typeDef *Struct, mutable boo
 	fmt.Fprintf(file, "}\n")
 }
 
-func (s *Schema) generateGoWasmMain() error {
-	file, err := os.Create("../main.go")
+func (s *Schema) generateGoMain() error {
+	file, err := os.Create("go/main.go")
 	if err != nil {
 		return err
 	}

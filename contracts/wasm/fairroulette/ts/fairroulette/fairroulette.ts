@@ -7,7 +7,7 @@
 // The intent is to showcase basic functionality of WasmLib and timed calling of functions
 // through a minimal implementation and not to come up with a complete real-world solution.
 
-import * as wasmlib from "../../../wasmlib/ts/wasmlib"
+import * as wasmlib from "wasmlib"
 import * as sc from "./index";
 
 // Define some default configuration parameters.

@@ -15,7 +15,7 @@ import (
 
 const (
 	tsImportSelf    = "import * as sc from \"./index\";"
-	tsImportWasmLib = "import * as wasmlib from \"../wasmlib\""
+	tsImportWasmLib = "import * as wasmlib from \"wasmlib\""
 )
 
 var tsFuncRegexp = regexp.MustCompile(`^export function (\w+).+$`)
@@ -141,7 +141,7 @@ func (s *Schema) generateTsArrayType(varType string) string {
 }
 
 func (s *Schema) generateTsConsts() error {
-	file, err := os.Create("consts.ts")
+	file, err := os.Create(s.Folder + "consts.ts")
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func (s *Schema) generateTsConstsFields(file *os.File, fields []*Field, prefix s
 }
 
 func (s *Schema) generateTsContract() error {
-	file, err := os.Create("contract.ts")
+	file, err := os.Create(s.Folder + "contract.ts")
 	if err != nil {
 		return err
 	}
@@ -272,7 +272,7 @@ func (s *Schema) generateTsContractFuncs(file *os.File) {
 }
 
 func (s *Schema) generateTsFuncs() error {
-	scFileName := s.Name + ".ts"
+	scFileName := s.Folder + s.Name + ".ts"
 	file, err := os.Open(scFileName)
 	if err != nil {
 		// generate initial code file
@@ -287,7 +287,7 @@ func (s *Schema) generateTsFuncs() error {
 	}
 
 	// save old one from overwrite
-	scOriginal := s.Name + ".bak"
+	scOriginal := s.Folder + s.Name + ".bak"
 	err = os.Rename(scFileName, scOriginal)
 	if err != nil {
 		return err
@@ -350,7 +350,7 @@ func (s *Schema) generateTsFuncsNew(scFileName string) error {
 }
 
 func (s *Schema) generateTsKeys() error {
-	file, err := os.Create("keys.ts")
+	file, err := os.Create(s.Folder + "keys.ts")
 	if err != nil {
 		return err
 	}
@@ -401,7 +401,7 @@ func (s *Schema) generateTsKeysIndexes(fields []*Field, prefix string) {
 }
 
 func (s *Schema) generateTsLib() error {
-	file, err := os.Create("lib.ts")
+	file, err := os.Create(s.Folder + "lib.ts")
 	if err != nil {
 		return err
 	}
@@ -581,7 +581,7 @@ func (s *Schema) generateTsProxyMapNewType(file *os.File, field *Field, proxyTyp
 }
 
 func (s *Schema) generateTsParams() error {
-	file, err := os.Create("params.ts")
+	file, err := os.Create(s.Folder + "params.ts")
 	if err != nil {
 		return err
 	}
@@ -604,7 +604,7 @@ func (s *Schema) generateTsParams() error {
 }
 
 func (s *Schema) generateTsResults() error {
-	file, err := os.Create("results.ts")
+	file, err := os.Create(s.Folder + "results.ts")
 	if err != nil {
 		return err
 	}
@@ -626,7 +626,7 @@ func (s *Schema) generateTsResults() error {
 }
 
 func (s *Schema) generateTsState() error {
-	file, err := os.Create("state.ts")
+	file, err := os.Create(s.Folder + "state.ts")
 	if err != nil {
 		return err
 	}
@@ -707,7 +707,7 @@ func (s *Schema) generateTsTypeDefs() error {
 		return nil
 	}
 
-	file, err := os.Create("typedefs.ts")
+	file, err := os.Create(s.Folder + "typedefs.ts")
 	if err != nil {
 		return err
 	}
@@ -784,7 +784,7 @@ func (s *Schema) generateTsTypes() error {
 		return nil
 	}
 
-	file, err := os.Create("types.ts")
+	file, err := os.Create(s.Folder + "types.ts")
 	if err != nil {
 		return err
 	}
@@ -871,7 +871,7 @@ func (s *Schema) generateTsTypeProxy(file *os.File, typeDef *Struct, mutable boo
 }
 
 func (s *Schema) generateTsIndex() error {
-	file, err := os.Create("index.ts")
+	file, err := os.Create(s.Folder + "index.ts")
 	if err != nil {
 		return err
 	}
@@ -880,28 +880,28 @@ func (s *Schema) generateTsIndex() error {
 	fmt.Fprintln(file, copyright(true))
 
 	if !s.CoreContracts {
-		fmt.Fprintf(file, "export * from \"./%s\"\n\n", s.Name)
+		fmt.Fprintf(file, "export * from \"./%s\";\n\n", s.Name)
 	}
 
-	fmt.Fprintln(file, "export * from \"./consts\"")
-	fmt.Fprintln(file, "export * from \"./contract\"")
+	fmt.Fprintln(file, "export * from \"./consts\";")
+	fmt.Fprintln(file, "export * from \"./contract\";")
 	if !s.CoreContracts {
-		fmt.Fprintln(file, "export * from \"./keys\"")
-		fmt.Fprintln(file, "export * from \"./lib\"")
+		fmt.Fprintln(file, "export * from \"./keys\";")
+		fmt.Fprintln(file, "export * from \"./lib\";")
 	}
 	if len(s.Params) != 0 {
-		fmt.Fprintln(file, "export * from \"./params\"")
+		fmt.Fprintln(file, "export * from \"./params\";")
 	}
 	if len(s.Results) != 0 {
-		fmt.Fprintln(file, "export * from \"./results\"")
+		fmt.Fprintln(file, "export * from \"./results\";")
 	}
 	if !s.CoreContracts {
-		fmt.Fprintln(file, "export * from \"./state\"")
+		fmt.Fprintln(file, "export * from \"./state\";")
 		if len(s.Structs) != 0 {
-			fmt.Fprintln(file, "export * from \"./types\"")
+			fmt.Fprintln(file, "export * from \"./types\";")
 		}
 		if len(s.Typedefs) != 0 {
-			fmt.Fprintf(file, "export * from \"./typedefs\";\n")
+			fmt.Fprintln(file, "export * from \"./typedefs\";")
 		}
 	}
 	return nil

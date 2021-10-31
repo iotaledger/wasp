@@ -9,6 +9,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -41,6 +42,11 @@ func main() {
 		return
 	}
 
+	if *flagCore {
+		generateCoreInterfaces()
+		return
+	}
+
 	file, err := os.Open("schema.yaml")
 	if err != nil {
 		file, err = os.Open("schema.json")
@@ -69,6 +75,30 @@ func main() {
 	flag.Usage()
 }
 
+func generateCoreInterfaces() {
+	err := filepath.WalkDir("interfaces", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if strings.HasSuffix(path, ".yaml") {
+			return generateCoreCoreInterface(path)
+		}
+		return nil
+	})
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func generateCoreCoreInterface(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return generateSchema(file)
+}
+
 func generateSchema(file *os.File) error {
 	info, err := file.Stat()
 	if err != nil {
@@ -83,8 +113,11 @@ func generateSchema(file *os.File) error {
 	s.CoreContracts = *flagCore
 
 	if *flagTs {
-		// TODO
-		info, err = os.Stat("ts/consts.ts")
+		err = setFolder(s, "ts", true)
+		if err != nil {
+			return err
+		}
+		info, err = os.Stat(s.Folder + "consts.ts")
 		if err == nil && info.ModTime().After(schemaTime) && !*flagForce {
 			fmt.Println("skipping AssemblyScript code generation")
 		} else {
@@ -103,7 +136,11 @@ func generateSchema(file *os.File) error {
 	}
 
 	if *flagGo {
-		info, err = os.Stat("go/main.go")
+		err = setFolder(s, "go", true)
+		if err != nil {
+			return err
+		}
+		info, err = os.Stat(s.Folder + "consts.go")
 		if err == nil && info.ModTime().After(schemaTime) && !*flagForce {
 			fmt.Println("skipping Go code generation")
 		} else {
@@ -130,7 +167,11 @@ func generateSchema(file *os.File) error {
 	}
 
 	if *flagRust {
-		info, err = os.Stat("src/consts.rs")
+		err = setFolder(s, "src", false)
+		if err != nil {
+			return err
+		}
+		info, err = os.Stat(s.Folder + "consts.rs")
 		if err == nil && info.ModTime().After(schemaTime) && !*flagForce {
 			fmt.Println("skipping Rust code generation")
 		} else {
@@ -148,6 +189,19 @@ func generateSchema(file *os.File) error {
 		}
 	}
 	return nil
+}
+
+func setFolder(s *generator.Schema, root string, moduleName bool) error {
+	s.Folder = root + "/"
+	if moduleName {
+		module := strings.ReplaceAll(generator.ModuleCwd, "\\", "/")
+		module = module[strings.LastIndex(module, "/")+1:]
+		s.Folder += module + "/"
+	}
+	if s.CoreContracts {
+		s.Folder += s.Name + "/"
+	}
+	return os.MkdirAll(s.Folder, 0o755)
 }
 
 func generateSchemaNew() error {

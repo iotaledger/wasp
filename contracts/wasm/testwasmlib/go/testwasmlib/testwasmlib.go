@@ -7,7 +7,7 @@ import (
 	"bytes"
 
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/corecontracts/coreblocklog"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreblocklog"
 )
 
 func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {

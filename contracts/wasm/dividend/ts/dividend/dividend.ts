@@ -11,7 +11,7 @@
 // step by step what is happening in the code. We also unnecessarily annotate
 // all 'let' statements with their assignment type to improve understanding.
 
-import * as wasmlib from "../../../wasmlib/ts/wasmlib"
+import * as wasmlib from "wasmlib"
 import * as sc from "./index";
 
 // 'init' is used as a way to initialize a smart contract. It is an optional
