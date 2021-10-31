@@ -5,14 +5,14 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-export * from "./fairauction"
+export * from "./fairauction";
 
-export * from "./consts"
-export * from "./contract"
-export * from "./keys"
-export * from "./lib"
-export * from "./params"
-export * from "./results"
-export * from "./state"
-export * from "./types"
+export * from "./consts";
+export * from "./contract";
+export * from "./keys";
+export * from "./lib";
+export * from "./params";
+export * from "./results";
+export * from "./state";
+export * from "./types";
 export * from "./typedefs";

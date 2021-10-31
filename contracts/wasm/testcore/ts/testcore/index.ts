@@ -5,12 +5,12 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-export * from "./testcore"
+export * from "./testcore";
 
-export * from "./consts"
-export * from "./contract"
-export * from "./keys"
-export * from "./lib"
-export * from "./params"
-export * from "./results"
-export * from "./state"
+export * from "./consts";
+export * from "./contract";
+export * from "./keys";
+export * from "./lib";
+export * from "./params";
+export * from "./results";
+export * from "./state";

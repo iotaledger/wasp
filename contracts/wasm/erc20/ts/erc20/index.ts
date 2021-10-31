@@ -5,13 +5,13 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-export * from "./erc20"
+export * from "./erc20";
 
-export * from "./consts"
-export * from "./contract"
-export * from "./keys"
-export * from "./lib"
-export * from "./params"
-export * from "./results"
-export * from "./state"
+export * from "./consts";
+export * from "./contract";
+export * from "./keys";
+export * from "./lib";
+export * from "./params";
+export * from "./results";
+export * from "./state";
 export * from "./typedefs";
