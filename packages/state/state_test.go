@@ -216,7 +216,7 @@ func TestStateWithDB(t *testing.T) {
 		glb.InvalidateSolidIndex()
 		_, err = rdr.Hash()
 		require.Error(t, err)
-		require.EqualValues(t, err, coreutil.ErrStateHasBeenInvalidated)
+		require.EqualValues(t, err, coreutil.ErrorStateInvalidated)
 	})
 }
 
@@ -358,19 +358,19 @@ func TestVirtualStateMustOptimistic1(t *testing.T) {
 	require.EqualValues(t, 0, vsOpt.BlockIndex())
 
 	glb.InvalidateSolidIndex()
-	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_ = vsOpt.StateCommitment()
 	})
-	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_ = vsOpt.BlockIndex()
 	})
-	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_, _ = vsOpt.ExtractBlock()
 	})
-	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_ = vsOpt.PreviousStateHash()
 	})
-	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_ = vsOpt.KVStore()
 	})
 }
