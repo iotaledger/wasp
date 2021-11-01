@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
 const (
@@ -40,26 +41,40 @@ var (
 	snakeRegExp2 = regexp.MustCompile(`[A-Z][A-Z]+[a-z]`)
 )
 
-type Generator struct {
-	s    *Schema
-	file *os.File
+type Generator interface {
+	funcName(f *Func) string
+	generate() error
+	generateFuncSignature(f *Func)
+	generateInitialFuncs() error
 }
 
-func (g *Generator) close() {
+type GenBase struct {
+	extension  string
+	file       *os.File
+	Folder     string
+	funcRegexp *regexp.Regexp
+	gen        Generator
+	language   string
+	NewTypes   map[string]bool
+	rootFolder string
+	s          *Schema
+}
+
+func (g *GenBase) close() {
 	_ = g.file.Close()
 }
 
-func (g *Generator) create(path string) (err error) {
+func (g *GenBase) create(path string) (err error) {
 	g.file, err = os.Create(path)
 	return err
 }
 
-func (g *Generator) exists(path string) (err error) {
+func (g *GenBase) exists(path string) (err error) {
 	_, err = os.Stat(path)
 	return err
 }
 
-func (g *Generator) formatter(on bool) {
+func (g *GenBase) formatter(on bool) {
 	if on {
 		g.printf("\n// @formatter:%s\n", "on")
 		return
@@ -67,7 +82,88 @@ func (g *Generator) formatter(on bool) {
 	g.printf("// @formatter:%s\n\n", "off")
 }
 
-func (g *Generator) GenerateGoTests() error {
+func (g *GenBase) Generate(s *Schema, schemaTime time.Time) error {
+	g.s = s
+	g.NewTypes = make(map[string]bool)
+
+	g.Folder = g.rootFolder + "/"
+	if g.rootFolder != "src" {
+		module := strings.ReplaceAll(ModuleCwd, "\\", "/")
+		module = module[strings.LastIndex(module, "/")+1:]
+		g.Folder += module + "/"
+	}
+	if g.s.CoreContracts {
+		g.Folder += g.s.Name + "/"
+	}
+
+	err := os.MkdirAll(g.Folder, 0o755)
+	if err != nil {
+		return err
+	}
+	info, err := os.Stat(g.Folder + "consts" + g.extension)
+	if err == nil && info.ModTime().After(schemaTime) {
+		fmt.Printf("skipping %s code generation\n", g.language)
+		return nil
+	}
+
+	fmt.Printf("generating %s code\n", g.language)
+	err = g.gen.generate()
+	if err != nil {
+		return err
+	}
+	if !g.s.CoreContracts {
+		err = g.generateTests()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *GenBase) generateFuncs() error {
+	scFileName := g.Folder + g.s.Name + g.extension
+	err := g.open(g.Folder + g.s.Name + g.extension)
+	if err != nil {
+		// generate initial code file
+		return g.gen.generateInitialFuncs()
+	}
+
+	// append missing function signatures to existing code file
+
+	// scan existing file for signatures
+	lines, existing, err := g.scanExistingCode()
+	if err != nil {
+		return err
+	}
+
+	// save old one from overwrite
+	scOriginal := g.Folder + g.s.Name + ".bak"
+	err = os.Rename(scFileName, scOriginal)
+	if err != nil {
+		return err
+	}
+	err = g.create(scFileName)
+	if err != nil {
+		return err
+	}
+	defer g.close()
+
+	// make copy of file
+	for _, line := range lines {
+		g.println(line)
+	}
+
+	// append any new funcs
+	for _, f := range g.s.Funcs {
+		if existing[g.gen.funcName(f)] == "" {
+			g.gen.generateFuncSignature(f)
+		}
+	}
+
+	return os.Remove(scOriginal)
+}
+
+func (g *GenBase) generateTests() error {
 	err := os.MkdirAll("test", 0o755)
 	if err != nil {
 		return err
@@ -106,31 +202,31 @@ func (g *Generator) GenerateGoTests() error {
 	return nil
 }
 
-func (g *Generator) open(path string) (err error) {
+func (g *GenBase) open(path string) (err error) {
 	g.file, err = os.Open(path)
 	return err
 }
 
-//func (g *Generator) print(a ...interface{}) {
+//func (g *GenBase) print(a ...interface{}) {
 //	_, _ = fmt.Fprint(g.file, a...)
 //}
 
-func (g *Generator) printf(format string, a ...interface{}) {
+func (g *GenBase) printf(format string, a ...interface{}) {
 	_, _ = fmt.Fprintf(g.file, format, a...)
 }
 
-func (g *Generator) println(a ...interface{}) {
+func (g *GenBase) println(a ...interface{}) {
 	_, _ = fmt.Fprintln(g.file, a...)
 }
 
-func (g *Generator) scanExistingCode(funcRegexp *regexp.Regexp) ([]string, StringMap, error) {
+func (g *GenBase) scanExistingCode() ([]string, StringMap, error) {
 	defer g.close()
 	existing := make(StringMap)
 	lines := make([]string, 0)
 	scanner := bufio.NewScanner(g.file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		matches := funcRegexp.FindStringSubmatch(line)
+		matches := g.funcRegexp.FindStringSubmatch(line)
 		if matches != nil {
 			existing[matches[1]] = line
 		}

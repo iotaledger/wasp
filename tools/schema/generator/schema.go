@@ -65,9 +65,7 @@ type Schema struct {
 	ConstNames    []string
 	ConstValues   []string
 	CoreContracts bool
-	Folder        string
 	Funcs         []*Func
-	NewTypes      map[string]bool
 	Params        []*Field
 	Results       []*Field
 	StateVars     []*Field

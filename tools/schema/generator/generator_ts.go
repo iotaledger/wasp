@@ -4,7 +4,6 @@
 package generator
 
 import (
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,8 +15,6 @@ const (
 	tsImportSelf    = "import * as sc from \"./index\";"
 	tsImportWasmLib = "import * as wasmlib from \"wasmlib\""
 )
-
-var tsFuncRegexp = regexp.MustCompile(`^export function (\w+).+$`)
 
 var tsTypes = StringMap{
 	"Address":   "wasmlib.ScAddress",
@@ -81,11 +78,17 @@ const (
 )
 
 type TypeScriptGenerator struct {
-	Generator
+	GenBase
 }
 
-func NewTypeScriptGenerator(s *Schema) *TypeScriptGenerator {
-	return &TypeScriptGenerator{Generator{s: s}}
+func NewTypeScriptGenerator() *TypeScriptGenerator {
+	g := &TypeScriptGenerator{}
+	g.extension = ".ts"
+	g.funcRegexp = regexp.MustCompile(`^export function (\w+).+$`)
+	g.language = "TypeScript"
+	g.rootFolder = "ts"
+	g.gen = g
+	return g
 }
 
 func (g *TypeScriptGenerator) flushTsConsts() {
@@ -99,9 +102,7 @@ func (g *TypeScriptGenerator) flushTsConsts() {
 	})
 }
 
-func (g *TypeScriptGenerator) GenerateTs() error {
-	g.s.NewTypes = make(map[string]bool)
-
+func (g *TypeScriptGenerator) generate() error {
 	err := g.generateTsConsts()
 	if err != nil {
 		return err
@@ -140,7 +141,7 @@ func (g *TypeScriptGenerator) GenerateTs() error {
 		if err != nil {
 			return err
 		}
-		err = g.generateTsFuncs()
+		err = g.generateFuncs()
 		if err != nil {
 			return err
 		}
@@ -163,13 +164,13 @@ func (g *TypeScriptGenerator) generateTsArrayType(varType string) string {
 }
 
 func (g *TypeScriptGenerator) generateTsConfig() error {
-	err := g.exists(g.s.Folder + "tsconfig.json")
+	err := g.exists(g.Folder + "tsconfig.json")
 	if err == nil {
 		// already exists
 		return nil
 	}
 
-	err = g.create(g.s.Folder + "tsconfig.json")
+	err = g.create(g.Folder + "tsconfig.json")
 	if err != nil {
 		return err
 	}
@@ -184,7 +185,7 @@ func (g *TypeScriptGenerator) generateTsConfig() error {
 }
 
 func (g *TypeScriptGenerator) generateTsConsts() error {
-	err := g.create(g.s.Folder + "consts.ts")
+	err := g.create(g.Folder + "consts" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -244,7 +245,7 @@ func (g *TypeScriptGenerator) generateTsConstsFields(fields []*Field, prefix str
 }
 
 func (g *TypeScriptGenerator) generateTsContract() error {
-	err := g.create(g.s.Folder + "contract.ts")
+	err := g.create(g.Folder + "contract" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -314,50 +315,11 @@ func (g *TypeScriptGenerator) generateTsContractFuncs() {
 	g.printf("}\n")
 }
 
-func (g *TypeScriptGenerator) generateTsFuncs() error {
-	scFileName := g.s.Folder + g.s.Name + ".ts"
-	err := g.open(scFileName)
-	if err != nil {
-		// generate initial code file
-		return g.generateTsFuncsNew(scFileName)
-	}
-
-	// append missing function signatures to existing code file
-
-	// scan existing file for signatures
-	lines, existing, err := g.scanExistingCode(tsFuncRegexp)
-	if err != nil {
-		return err
-	}
-
-	// save old one from overwrite
-	scOriginal := g.s.Folder + g.s.Name + ".bak"
-	err = os.Rename(scFileName, scOriginal)
-	if err != nil {
-		return err
-	}
-	err = g.create(scFileName)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// make copy of file
-	for _, line := range lines {
-		g.println(line)
-	}
-
-	// append any new funcs
-	for _, f := range g.s.Funcs {
-		if existing[f.FuncName] == "" {
-			g.generateTsFuncSignature(f)
-		}
-	}
-
-	return os.Remove(scOriginal)
+func (g *TypeScriptGenerator) funcName(f *Func) string {
+	return f.FuncName
 }
 
-func (g *TypeScriptGenerator) generateTsFuncSignature(f *Func) {
+func (g *TypeScriptGenerator) generateFuncSignature(f *Func) {
 	g.printf("\nexport function %s(ctx: wasmlib.Sc%sContext, f: sc.%sContext): void {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
 	case SpecialFuncInit:
@@ -375,8 +337,8 @@ func (g *TypeScriptGenerator) generateTsFuncSignature(f *Func) {
 	g.printf("}\n")
 }
 
-func (g *TypeScriptGenerator) generateTsFuncsNew(scFileName string) error {
-	err := g.create(scFileName)
+func (g *TypeScriptGenerator) generateInitialFuncs() error {
+	err := g.create(g.Folder + g.s.Name + g.extension)
 	if err != nil {
 		return err
 	}
@@ -388,13 +350,13 @@ func (g *TypeScriptGenerator) generateTsFuncsNew(scFileName string) error {
 	g.println(tsImportSelf)
 
 	for _, f := range g.s.Funcs {
-		g.generateTsFuncSignature(f)
+		g.generateFuncSignature(f)
 	}
 	return nil
 }
 
 func (g *TypeScriptGenerator) generateTsIndex() error {
-	err := g.create(g.s.Folder + "index.ts")
+	err := g.create(g.Folder + "index" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -431,7 +393,7 @@ func (g *TypeScriptGenerator) generateTsIndex() error {
 }
 
 func (g *TypeScriptGenerator) generateTsKeys() error {
-	err := g.create(g.s.Folder + "keys.ts")
+	err := g.create(g.Folder + "keys" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -482,7 +444,7 @@ func (g *TypeScriptGenerator) generateTsKeysIndexes(fields []*Field, prefix stri
 }
 
 func (g *TypeScriptGenerator) generateTsLib() error {
-	err := g.create(g.s.Folder + "lib.ts")
+	err := g.create(g.Folder + "lib" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -518,7 +480,7 @@ func (g *TypeScriptGenerator) generateTsLib() error {
 }
 
 func (g *TypeScriptGenerator) generateTsParams() error {
-	err := g.create(g.s.Folder + "params.ts")
+	err := g.create(g.Folder + "params" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -558,11 +520,11 @@ func (g *TypeScriptGenerator) generateTsProxy(field *Field, mutability string) {
 func (g *TypeScriptGenerator) generateTsProxyArray(field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	arrayType := "ArrayOf" + proxyType
-	if g.s.NewTypes[arrayType] {
+	if g.NewTypes[arrayType] {
 		// already generated this array
 		return
 	}
-	g.s.NewTypes[arrayType] = true
+	g.NewTypes[arrayType] = true
 
 	g.printf("\nexport class %s {\n", arrayType)
 	g.printf("    objID: i32;\n")
@@ -623,11 +585,11 @@ func (g *TypeScriptGenerator) generateTsProxyArrayNewType(field *Field, proxyTyp
 func (g *TypeScriptGenerator) generateTsProxyMap(field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	mapType := "Map" + field.MapKey + "To" + proxyType
-	if g.s.NewTypes[mapType] {
+	if g.NewTypes[mapType] {
 		// already generated this map
 		return
 	}
-	g.s.NewTypes[mapType] = true
+	g.NewTypes[mapType] = true
 
 	keyType := tsTypes[field.MapKey]
 	keyValue := tsKeys[field.MapKey]
@@ -691,7 +653,7 @@ func (g *TypeScriptGenerator) generateTsProxyReference(field *Field, mutability,
 }
 
 func (g *TypeScriptGenerator) generateTsResults() error {
-	err := g.create(g.s.Folder + "results.ts")
+	err := g.create(g.Folder + "results" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -713,7 +675,7 @@ func (g *TypeScriptGenerator) generateTsResults() error {
 }
 
 func (g *TypeScriptGenerator) generateTsState() error {
-	err := g.create(g.s.Folder + "state.ts")
+	err := g.create(g.Folder + "state" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -848,7 +810,7 @@ func (g *TypeScriptGenerator) generateTsTypes() error {
 		return nil
 	}
 
-	err := g.create(g.s.Folder + "types.ts")
+	err := g.create(g.Folder + "types" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -939,7 +901,7 @@ func (g *TypeScriptGenerator) generateTsTypeDefs() error {
 		return nil
 	}
 
-	err := g.create(g.s.Folder + "typedefs.ts")
+	err := g.create(g.Folder + "typedefs" + g.extension)
 	if err != nil {
 		return err
 	}

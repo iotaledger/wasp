@@ -5,7 +5,6 @@ package generator
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -18,8 +17,6 @@ const (
 	goImportWasmLib    = "import \"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib\""
 	goImportWasmClient = "import \"github.com/iotaledger/wasp/packages/vm/wasmclient\""
 )
-
-var goFuncRegexp = regexp.MustCompile(`^func (\w+).+$`)
 
 var goTypes = StringMap{
 	"Address":   "wasmlib.ScAddress",
@@ -69,11 +66,17 @@ const (
 )
 
 type GoGenerator struct {
-	Generator
+	GenBase
 }
 
-func NewGoGenerator(s *Schema) *GoGenerator {
-	return &GoGenerator{Generator{s: s}}
+func NewGoGenerator() *GoGenerator {
+	g := &GoGenerator{}
+	g.extension = ".go"
+	g.funcRegexp = regexp.MustCompile(`^func (\w+).+$`)
+	g.language = "Go"
+	g.rootFolder = "go"
+	g.gen = g
+	return g
 }
 
 func (g *GoGenerator) flushGoConsts() {
@@ -96,9 +99,7 @@ func (g *GoGenerator) flushGoConsts() {
 	g.printf(")\n")
 }
 
-func (g *GoGenerator) GenerateGo() error {
-	g.s.NewTypes = make(map[string]bool)
-
+func (g *GoGenerator) generate() error {
 	err := g.generateGoConsts(false)
 	if err != nil {
 		return err
@@ -137,7 +138,7 @@ func (g *GoGenerator) GenerateGo() error {
 		if err != nil {
 			return err
 		}
-		err = g.generateGoFuncs()
+		err = g.generateFuncs()
 		if err != nil {
 			return err
 		}
@@ -158,7 +159,7 @@ func (g *GoGenerator) generateGoArrayType(varType string) string {
 }
 
 func (g *GoGenerator) generateGoConsts(test bool) error {
-	err := g.create(g.s.Folder + "consts.go")
+	err := g.create(g.Folder + "consts" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -232,7 +233,7 @@ func (g *GoGenerator) generateGoConstsFields(test bool, fields []*Field, prefix 
 }
 
 func (g *GoGenerator) generateGoContract() error {
-	err := g.create(g.s.Folder + "contract.go")
+	err := g.create(g.Folder + "contract" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -305,51 +306,12 @@ func (g *GoGenerator) generateGoContractFuncs() {
 	}
 }
 
-func (g *GoGenerator) generateGoFuncs() error {
-	scFileName := g.s.Folder + g.s.Name + ".go"
-	err := g.open(scFileName)
-	if err != nil {
-		// generate initial code file
-		return g.generateGoFuncsNew(scFileName)
-	}
-
-	// append missing function signatures to existing code file
-
-	// scan existing file for signatures
-	lines, existing, err := g.scanExistingCode(goFuncRegexp)
-	if err != nil {
-		return err
-	}
-
-	// save old one from overwrite
-	scOriginal := g.s.Folder + g.s.Name + ".bak"
-	err = os.Rename(scFileName, scOriginal)
-	if err != nil {
-		return err
-	}
-	err = g.create(scFileName)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// make copy of file
-	for _, line := range lines {
-		g.println(line)
-	}
-
-	// append any new funcs
-	for _, f := range g.s.Funcs {
-		if existing[f.FuncName] == "" {
-			g.generateGoFuncSignature(f)
-		}
-	}
-
-	return os.Remove(scOriginal)
+func (g *GoGenerator) funcName(f *Func) string {
+	return f.FuncName
 }
 
 // TODO handle case where owner is type AgentID[]
-func (g *GoGenerator) generateGoFuncSignature(f *Func) {
+func (g *GoGenerator) generateFuncSignature(f *Func) {
 	g.printf("\nfunc %s(ctx wasmlib.Sc%sContext, f *%sContext) {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
 	case SpecialFuncInit:
@@ -367,8 +329,8 @@ func (g *GoGenerator) generateGoFuncSignature(f *Func) {
 	g.printf("}\n")
 }
 
-func (g *GoGenerator) generateGoFuncsNew(scFileName string) error {
-	err := g.create(scFileName)
+func (g *GoGenerator) generateInitialFuncs() error {
+	err := g.create(g.Folder + g.s.Name + g.extension)
 	if err != nil {
 		return err
 	}
@@ -380,13 +342,13 @@ func (g *GoGenerator) generateGoFuncsNew(scFileName string) error {
 	g.println(goImportWasmLib)
 
 	for _, f := range g.s.Funcs {
-		g.generateGoFuncSignature(f)
+		g.generateFuncSignature(f)
 	}
 	return nil
 }
 
 func (g *GoGenerator) generateGoKeys() error {
-	err := g.create(g.s.Folder + "keys.go")
+	err := g.create(g.Folder + "keys" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -439,7 +401,7 @@ func (g *GoGenerator) generateGoKeysIndexes(fields []*Field, prefix string) {
 }
 
 func (g *GoGenerator) generateGoLib() error {
-	err := g.create(g.s.Folder + "lib.go")
+	err := g.create(g.Folder + "lib" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -472,7 +434,7 @@ func (g *GoGenerator) generateGoLib() error {
 }
 
 func (g *GoGenerator) generateGoMain() error {
-	err := g.create("go/main.go")
+	err := g.create(g.Folder + "../main" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -503,7 +465,7 @@ func (g *GoGenerator) generateGoMain() error {
 }
 
 func (g *GoGenerator) generateGoParams() error {
-	err := g.create(g.s.Folder + "params.go")
+	err := g.create(g.Folder + "params" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -550,11 +512,11 @@ func (g *GoGenerator) generateGoProxyArray(field *Field, mutability string) {
 	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
 		g.printf("\ntype %s%s = %s\n", mutability, field.Name, arrayType)
 	}
-	if g.s.NewTypes[arrayType] {
+	if g.NewTypes[arrayType] {
 		// already generated this array
 		return
 	}
-	g.s.NewTypes[arrayType] = true
+	g.NewTypes[arrayType] = true
 
 	g.printf("\ntype %s struct {\n", arrayType)
 	g.printf("\tobjID int32\n")
@@ -612,11 +574,11 @@ func (g *GoGenerator) generateGoProxyMap(field *Field, mutability string) {
 	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
 		g.printf("\ntype %s%s = %s\n", mutability, field.Name, mapType)
 	}
-	if g.s.NewTypes[mapType] {
+	if g.NewTypes[mapType] {
 		// already generated this map
 		return
 	}
-	g.s.NewTypes[mapType] = true
+	g.NewTypes[mapType] = true
 
 	keyType := goTypes[field.MapKey]
 	keyValue := goKeys[field.MapKey]
@@ -668,7 +630,7 @@ func (g *GoGenerator) generateGoProxyMapNewType(field *Field, proxyType, mapType
 }
 
 func (g *GoGenerator) generateGoResults() error {
-	err := g.create(g.s.Folder + "results.go")
+	err := g.create(g.Folder + "results" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -698,7 +660,7 @@ func (g *GoGenerator) generateGoResults() error {
 }
 
 func (g *GoGenerator) generateGoState() error {
-	err := g.create(g.s.Folder + "state.go")
+	err := g.create(g.Folder + "state" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -860,7 +822,7 @@ func (g *GoGenerator) generateGoTypes() error {
 		return nil
 	}
 
-	err := g.create(g.s.Folder + "types.go")
+	err := g.create(g.Folder + "types" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -945,7 +907,7 @@ func (g *GoGenerator) generateGoTypeDefs() error {
 		return nil
 	}
 
-	err := g.create(g.s.Folder + "typedefs.go")
+	err := g.create(g.Folder + "typedefs" + g.extension)
 	if err != nil {
 		return err
 	}

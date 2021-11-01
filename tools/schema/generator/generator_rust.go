@@ -28,8 +28,6 @@ const (
 	useWasmLibHost     = "use wasmlib::host::*;"
 )
 
-var rustFuncRegexp = regexp.MustCompile(`^pub fn (\w+).+$`)
-
 var rustTypes = StringMap{
 	"Address":   "ScAddress",
 	"AgentID":   "ScAgentID",
@@ -92,11 +90,17 @@ const (
 )
 
 type RustGenerator struct {
-	Generator
+	GenBase
 }
 
-func NewRustGenerator(s *Schema) *RustGenerator {
-	return &RustGenerator{Generator{s: s}}
+func NewRustGenerator() *RustGenerator {
+	g := &RustGenerator{}
+	g.extension = ".rs"
+	g.funcRegexp = regexp.MustCompile(`^pub fn (\w+).+$`)
+	g.language = "Rust"
+	g.rootFolder = "src"
+	g.gen = g
+	return g
 }
 
 func (g *RustGenerator) flushRustConsts(crateOnly bool) {
@@ -114,9 +118,7 @@ func (g *RustGenerator) flushRustConsts(crateOnly bool) {
 	})
 }
 
-func (g *RustGenerator) GenerateRust() error {
-	g.s.NewTypes = make(map[string]bool)
-
+func (g *RustGenerator) generate() error {
 	err := g.generateRustConsts()
 	if err != nil {
 		return err
@@ -155,7 +157,7 @@ func (g *RustGenerator) GenerateRust() error {
 		if err != nil {
 			return err
 		}
-		err = g.generateRustFuncs()
+		err = g.generateFuncs()
 		if err != nil {
 			return err
 		}
@@ -211,7 +213,7 @@ func (g *RustGenerator) generateRustCargo() error {
 }
 
 func (g *RustGenerator) generateRustConsts() error {
-	err := g.create(g.s.Folder + "consts.rs")
+	err := g.create(g.Folder + "consts" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -243,13 +245,13 @@ func (g *RustGenerator) generateRustConsts() error {
 
 	if len(g.s.Funcs) != 0 {
 		for _, f := range g.s.Funcs {
-			constName := upper(snake(f.FuncName))
+			constName := upper(g.funcName(f))
 			g.s.appendConst(constName, "&str = \""+f.String+"\"")
 		}
 		g.flushRustConsts(g.s.CoreContracts)
 
 		for _, f := range g.s.Funcs {
-			constHname := "H" + upper(snake(f.FuncName))
+			constHname := "H" + upper(g.funcName(f))
 			g.s.appendConst(constHname, "ScHname = ScHname(0x"+f.Hname.String()+")")
 		}
 		g.flushRustConsts(g.s.CoreContracts)
@@ -274,7 +276,7 @@ func (g *RustGenerator) generateRustConstsFields(fields []*Field, prefix string)
 }
 
 func (g *RustGenerator) generateRustContract() error {
-	err := g.create(g.s.Folder + "contract.rs")
+	err := g.create(g.Folder + "contract" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -324,7 +326,7 @@ func (g *RustGenerator) generateRustContractFuncs() {
 
 	for _, f := range g.s.Funcs {
 		nameLen := f.nameLen(4) + 1
-		funcName := snake(f.FuncName)
+		funcName := g.funcName(f)
 		constName := upper(funcName)
 		letMut := ""
 		if len(f.Params) != 0 || len(f.Results) != 0 {
@@ -358,73 +360,33 @@ func (g *RustGenerator) generateRustContractFuncs() {
 	g.printf("}\n")
 }
 
-func (g *RustGenerator) generateRustFuncs() error {
-	scFileName := g.s.Folder + g.s.Name + ".rs"
-	err := g.open(scFileName)
-	if err != nil {
-		// generate initial code file
-		return g.generateRustFuncsNew(scFileName)
-	}
-
-	// append missing function signatures to existing code file
-
-	// scan existing file for signatures
-	lines, existing, err := g.scanExistingCode(rustFuncRegexp)
-	if err != nil {
-		return err
-	}
-
-	// save old one from overwrite
-	scOriginal := g.s.Folder + g.s.Name + ".bak"
-	err = os.Rename(scFileName, scOriginal)
-	if err != nil {
-		return err
-	}
-	err = g.create(scFileName)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// make copy of file
-	for _, line := range lines {
-		g.println(line)
-	}
-
-	// append any new funcs
-	for _, f := range g.s.Funcs {
-		name := snake(f.FuncName)
-		if existing[name] == "" {
-			g.generateRustFuncSignature(f)
-		}
-	}
-
-	return os.Remove(scOriginal)
+func (g *RustGenerator) funcName(f *Func) string {
+	return snake(f.FuncName)
 }
 
-func (g *RustGenerator) generateRustFuncSignature(f *Func) {
+func (g *RustGenerator) generateFuncSignature(f *Func) {
 	switch f.FuncName {
 	case SpecialFuncInit:
-		g.printf("\npub fn %s(ctx: &Sc%sContext, f: &%sContext) {\n", snake(f.FuncName), f.Kind, capitalize(f.Type))
+		g.printf("\npub fn %s(ctx: &Sc%sContext, f: &%sContext) {\n", g.funcName(f), f.Kind, capitalize(f.Type))
 		g.printf("    if f.params.owner().exists() {\n")
 		g.printf("        f.state.owner().set_value(&f.params.owner().value());\n")
 		g.printf("        return;\n")
 		g.printf("    }\n")
 		g.printf("    f.state.owner().set_value(&ctx.contract_creator());\n")
 	case SpecialFuncSetOwner:
-		g.printf("\npub fn %s(_ctx: &Sc%sContext, f: &%sContext) {\n", snake(f.FuncName), f.Kind, capitalize(f.Type))
+		g.printf("\npub fn %s(_ctx: &Sc%sContext, f: &%sContext) {\n", g.funcName(f), f.Kind, capitalize(f.Type))
 		g.printf("    f.state.owner().set_value(&f.params.owner().value());\n")
 	case SpecialViewGetOwner:
-		g.printf("\npub fn %s(_ctx: &Sc%sContext, f: &%sContext) {\n", snake(f.FuncName), f.Kind, capitalize(f.Type))
+		g.printf("\npub fn %s(_ctx: &Sc%sContext, f: &%sContext) {\n", g.funcName(f), f.Kind, capitalize(f.Type))
 		g.printf("    f.results.owner().set_value(&f.state.owner().value());\n")
 	default:
-		g.printf("\npub fn %s(_ctx: &Sc%sContext, _f: &%sContext) {\n", snake(f.FuncName), f.Kind, capitalize(f.Type))
+		g.printf("\npub fn %s(_ctx: &Sc%sContext, _f: &%sContext) {\n", g.funcName(f), f.Kind, capitalize(f.Type))
 	}
 	g.printf("}\n")
 }
 
-func (g *RustGenerator) generateRustFuncsNew(scFileName string) error {
-	err := g.create(scFileName)
+func (g *RustGenerator) generateInitialFuncs() error {
+	err := g.create(g.Folder + g.s.Name + g.extension)
 	if err != nil {
 		return err
 	}
@@ -443,13 +405,13 @@ func (g *RustGenerator) generateRustFuncsNew(scFileName string) error {
 	}
 
 	for _, f := range g.s.Funcs {
-		g.generateRustFuncSignature(f)
+		g.generateFuncSignature(f)
 	}
 	return nil
 }
 
 func (g *RustGenerator) generateRustKeys() error {
-	err := g.create(g.s.Folder + "keys.rs")
+	err := g.create(g.Folder + "keys" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -515,7 +477,7 @@ func (g *RustGenerator) generateRustKeysIndexes(fields []*Field, prefix string) 
 }
 
 func (g *RustGenerator) generateRustLib() error {
-	err := g.create(g.s.Folder + "lib.rs")
+	err := g.create(g.Folder + "lib" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -558,7 +520,7 @@ func (g *RustGenerator) generateRustLib() error {
 		g.printf("    let exports = ScExports::new();\n")
 	}
 	for _, f := range g.s.Funcs {
-		name := snake(f.FuncName)
+		name := g.funcName(f)
 		g.printf("    exports.add_%s(%s, %s_thunk);\n", lower(f.Kind), upper(name), name)
 	}
 
@@ -580,7 +542,7 @@ func (g *RustGenerator) generateRustLib() error {
 }
 
 func (g *RustGenerator) generateRustMod() error {
-	err := g.create(g.s.Folder + "mod.rs")
+	err := g.create(g.Folder + "mod" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -628,7 +590,7 @@ func (g *RustGenerator) generateRustModLines(format string) error {
 }
 
 func (g *RustGenerator) generateRustParams() error {
-	err := g.create(g.s.Folder + "params.rs")
+	err := g.create(g.Folder + "params" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -679,11 +641,11 @@ func (g *RustGenerator) generateRustProxyArray(field *Field, mutability string) 
 	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
 		g.printf("\npub type %s%s = %s;\n", mutability, field.Name, arrayType)
 	}
-	if g.s.NewTypes[arrayType] {
+	if g.NewTypes[arrayType] {
 		// already generated this array
 		return
 	}
-	g.s.NewTypes[arrayType] = true
+	g.NewTypes[arrayType] = true
 
 	g.printf("\npub struct %s {\n", arrayType)
 	g.printf("    pub(crate) obj_id: i32,\n")
@@ -744,11 +706,11 @@ func (g *RustGenerator) generateRustProxyMap(field *Field, mutability string) {
 	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
 		g.printf("\npub type %s%s = %s;\n", mutability, field.Name, mapType)
 	}
-	if g.s.NewTypes[mapType] {
+	if g.NewTypes[mapType] {
 		// already generated this map
 		return
 	}
-	g.s.NewTypes[mapType] = true
+	g.NewTypes[mapType] = true
 
 	keyType := rustKeyTypes[field.MapKey]
 	keyValue := rustKeys[field.MapKey]
@@ -803,7 +765,7 @@ func (g *RustGenerator) generateRustProxyMapNewType(field *Field, proxyType, key
 }
 
 func (g *RustGenerator) generateRustResults() error {
-	err := g.create(g.s.Folder + "results.rs")
+	err := g.create(g.Folder + "results" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -835,7 +797,7 @@ func (g *RustGenerator) generateRustResults() error {
 }
 
 func (g *RustGenerator) generateRustState() error {
-	err := g.create(g.s.Folder + "state.rs")
+	err := g.create(g.Folder + "state" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -946,7 +908,7 @@ func (g *RustGenerator) generateRustThunk(f *Func) {
 	g.printf("    %s %s%sState,\n", pad("state:", nameLen), mutability, g.s.FullName)
 	g.printf("}\n")
 
-	g.printf("\nfn %s_thunk(ctx: &Sc%sContext) {\n", snake(f.FuncName), f.Kind)
+	g.printf("\nfn %s_thunk(ctx: &Sc%sContext) {\n", g.funcName(f), f.Kind)
 	g.printf("    ctx.log(\"%s.%s\");\n", g.s.Name, f.FuncName)
 
 	if f.Access != "" {
@@ -980,7 +942,7 @@ func (g *RustGenerator) generateRustThunk(f *Func) {
 		}
 	}
 
-	g.printf("    %s(ctx, &f);\n", snake(f.FuncName))
+	g.printf("    %s(ctx, &f);\n", g.funcName(f))
 	g.printf("    ctx.log(\"%s.%s ok\");\n", g.s.Name, f.FuncName)
 	g.printf("}\n")
 }
@@ -1012,7 +974,7 @@ func (g *RustGenerator) generateRustTypes() error {
 		return nil
 	}
 
-	err := g.create(g.s.Folder + "types.rs")
+	err := g.create(g.Folder + "types" + g.extension)
 	if err != nil {
 		return err
 	}
@@ -1115,7 +1077,7 @@ func (g *RustGenerator) generateRustTypeDefs() error {
 		return nil
 	}
 
-	err := g.create(g.s.Folder + "typedefs.rs")
+	err := g.create(g.Folder + "typedefs" + g.extension)
 	if err != nil {
 		return err
 	}

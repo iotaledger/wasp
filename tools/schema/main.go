@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/iotaledger/wasp/tools/schema/generator"
 	"gopkg.in/yaml.v2"
@@ -105,6 +106,10 @@ func generateSchema(file *os.File) error {
 		return err
 	}
 	schemaTime := info.ModTime()
+	if *flagForce {
+		// make as if it has just been updated
+		schemaTime = time.Now()
+	}
 
 	s, err := loadSchema(file)
 	if err != nil {
@@ -113,98 +118,37 @@ func generateSchema(file *os.File) error {
 	s.CoreContracts = *flagCore
 
 	if *flagTs {
-		g := generator.NewTypeScriptGenerator(s)
-		err = setFolder(s, "ts", true)
+		g := generator.NewTypeScriptGenerator()
+		err = g.Generate(s, schemaTime)
 		if err != nil {
 			return err
-		}
-		info, err = os.Stat(s.Folder + "consts.ts")
-		if err == nil && info.ModTime().After(schemaTime) && !*flagForce {
-			fmt.Println("skipping AssemblyScript code generation")
-		} else {
-			fmt.Println("generating AssemblyScript code")
-			err = g.GenerateTs()
-			if err != nil {
-				return err
-			}
-			if !s.CoreContracts {
-				err = g.GenerateGoTests()
-				if err != nil {
-					return err
-				}
-			}
 		}
 	}
 
 	if *flagGo {
-		g := generator.NewGoGenerator(s)
-		err = setFolder(s, "go", true)
+		g := generator.NewGoGenerator()
+		err = g.Generate(s, schemaTime)
 		if err != nil {
 			return err
-		}
-		info, err = os.Stat(s.Folder + "consts.go")
-		if err == nil && info.ModTime().After(schemaTime) && !*flagForce {
-			fmt.Println("skipping Go code generation")
-		} else {
-			fmt.Println("generating Go code")
-			err = g.GenerateGo()
-			if err != nil {
-				return err
-			}
-			if !s.CoreContracts {
-				err = g.GenerateGoTests()
-				if err != nil {
-					return err
-				}
-			}
 		}
 	}
 
-	if *flagJava {
-		fmt.Println("generating Java code")
-		err = s.GenerateJava()
-		if err != nil {
-			return err
-		}
-	}
+	//if *flagJava {
+	//	fmt.Println("generating Java code")
+	//	err = s.GenerateJava()
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 
 	if *flagRust {
-		g := generator.NewRustGenerator(s)
-		err = setFolder(s, "src", false)
+		g := generator.NewRustGenerator()
+		err = g.Generate(s, schemaTime)
 		if err != nil {
 			return err
-		}
-		info, err = os.Stat(s.Folder + "consts.rs")
-		if err == nil && info.ModTime().After(schemaTime) && !*flagForce {
-			fmt.Println("skipping Rust code generation")
-		} else {
-			fmt.Println("generating Rust code")
-			err = g.GenerateRust()
-			if err != nil {
-				return err
-			}
-			if !s.CoreContracts {
-				err = g.GenerateGoTests()
-				if err != nil {
-					return err
-				}
-			}
 		}
 	}
 	return nil
-}
-
-func setFolder(s *generator.Schema, root string, moduleName bool) error {
-	s.Folder = root + "/"
-	if moduleName {
-		module := strings.ReplaceAll(generator.ModuleCwd, "\\", "/")
-		module = module[strings.LastIndex(module, "/")+1:]
-		s.Folder += module + "/"
-	}
-	if s.CoreContracts {
-		s.Folder += s.Name + "/"
-	}
-	return os.MkdirAll(s.Folder, 0o755)
 }
 
 func generateSchemaNew() error {
