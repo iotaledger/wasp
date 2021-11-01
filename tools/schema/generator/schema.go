@@ -4,10 +4,7 @@
 package generator
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"regexp"
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -275,26 +272,6 @@ func (s *Schema) compileTypes(schemaDef *SchemaDef) error {
 	return nil
 }
 
-func (s *Schema) scanExistingCode(file *os.File, funcRegexp *regexp.Regexp) ([]string, StringMap, error) {
-	defer file.Close()
-	existing := make(StringMap)
-	lines := make([]string, 0)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := funcRegexp.FindStringSubmatch(line)
-		if matches != nil {
-			existing[matches[1]] = line
-		}
-		lines = append(lines, line)
-	}
-	err := scanner.Err()
-	if err != nil {
-		return nil, nil, err
-	}
-	return lines, existing, nil
-}
-
 func (s *Schema) appendConst(name, value string) {
 	if s.ConstLen < len(name) {
 		s.ConstLen = len(name)
@@ -328,10 +305,4 @@ func (s *Schema) crateOrWasmLib(withContract, withHost bool) string {
 		retVal += "\n" + useWasmLibHost
 	}
 	return retVal
-}
-
-func (s *Schema) generateTsProxyReference(file *os.File, field *Field, mutability, typeName string) {
-	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		fmt.Fprintf(file, "\nexport class %s%s extends %s {\n};\n", mutability, field.Name, typeName)
-	}
 }

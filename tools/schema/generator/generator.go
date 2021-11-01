@@ -40,6 +40,109 @@ var (
 	snakeRegExp2 = regexp.MustCompile(`[A-Z][A-Z]+[a-z]`)
 )
 
+type Generator struct {
+	s    *Schema
+	file *os.File
+}
+
+func (g *Generator) close() {
+	_ = g.file.Close()
+}
+
+func (g *Generator) create(path string) (err error) {
+	g.file, err = os.Create(path)
+	return err
+}
+
+func (g *Generator) exists(path string) (err error) {
+	_, err = os.Stat(path)
+	return err
+}
+
+func (g *Generator) formatter(on bool) {
+	if on {
+		g.printf("\n// @formatter:%s\n", "on")
+		return
+	}
+	g.printf("// @formatter:%s\n\n", "off")
+}
+
+func (g *Generator) GenerateGoTests() error {
+	err := os.MkdirAll("test", 0o755)
+	if err != nil {
+		return err
+	}
+
+	// do not overwrite existing file
+	name := strings.ToLower(g.s.Name)
+	filename := "test/" + name + "_test.go"
+	err = g.exists(filename)
+	if err == nil {
+		return nil
+	}
+
+	err = g.create(filename)
+	if err != nil {
+		return err
+	}
+	defer g.close()
+
+	module := ModuleName + strings.ReplaceAll(ModuleCwd[len(ModulePath):], "\\", "/")
+	g.println("package test")
+	g.println()
+	g.println("import (")
+	g.println("\t\"testing\"")
+	g.println()
+	g.printf("\t\"%s/go/%s\"\n", module, g.s.Name)
+	g.println("\t\"github.com/iotaledger/wasp/packages/vm/wasmsolo\"")
+	g.println("\t\"github.com/stretchr/testify/require\"")
+	g.println(")")
+	g.println()
+	g.println("func TestDeploy(t *testing.T) {")
+	g.printf("\tctx := wasmsolo.NewSoloContext(t, %s.ScName, %s.OnLoad)\n", name, name)
+	g.printf("\trequire.NoError(t, ctx.ContractExists(%s.ScName))\n", name)
+	g.println("}")
+
+	return nil
+}
+
+func (g *Generator) open(path string) (err error) {
+	g.file, err = os.Open(path)
+	return err
+}
+
+//func (g *Generator) print(a ...interface{}) {
+//	_, _ = fmt.Fprint(g.file, a...)
+//}
+
+func (g *Generator) printf(format string, a ...interface{}) {
+	_, _ = fmt.Fprintf(g.file, format, a...)
+}
+
+func (g *Generator) println(a ...interface{}) {
+	_, _ = fmt.Fprintln(g.file, a...)
+}
+
+func (g *Generator) scanExistingCode(funcRegexp *regexp.Regexp) ([]string, StringMap, error) {
+	defer g.close()
+	existing := make(StringMap)
+	lines := make([]string, 0)
+	scanner := bufio.NewScanner(g.file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := funcRegexp.FindStringSubmatch(line)
+		if matches != nil {
+			existing[matches[1]] = line
+		}
+		lines = append(lines, line)
+	}
+	err := scanner.Err()
+	if err != nil {
+		return nil, nil, err
+	}
+	return lines, existing, nil
+}
+
 func calculatePadding(fields []*Field, types StringMap, snakeName bool) (nameLen, typeLen int) {
 	for _, param := range fields {
 		fldName := param.Name
@@ -73,6 +176,7 @@ func capitalize(name string) string {
 	return upper(name[:1]) + name[1:]
 }
 
+// TODO take copyright from schema?
 func copyright(noChange bool) string {
 	text := "// Copyright 2020 IOTA Stiftung\n" +
 		"// SPDX-License-Identifier: Apache-2.0\n"
@@ -82,14 +186,6 @@ func copyright(noChange bool) string {
 			"// Change the json schema instead\n"
 	}
 	return text
-}
-
-func formatter(file *os.File, on bool) {
-	if on {
-		fmt.Fprintf(file, "\n// @formatter:%s\n", "on")
-		return
-	}
-	fmt.Fprintf(file, "// @formatter:%s\n\n", "off")
 }
 
 // convert to lower case
@@ -127,7 +223,10 @@ func FindModulePath() error {
 	}
 
 	// now file is the go.mod and cwd holds the path
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
+
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()

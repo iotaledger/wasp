@@ -113,6 +113,7 @@ func generateSchema(file *os.File) error {
 	s.CoreContracts = *flagCore
 
 	if *flagTs {
+		g := generator.NewTypeScriptGenerator(s)
 		err = setFolder(s, "ts", true)
 		if err != nil {
 			return err
@@ -122,12 +123,12 @@ func generateSchema(file *os.File) error {
 			fmt.Println("skipping AssemblyScript code generation")
 		} else {
 			fmt.Println("generating AssemblyScript code")
-			err = s.GenerateTs()
+			err = g.GenerateTs()
 			if err != nil {
 				return err
 			}
 			if !s.CoreContracts {
-				err = s.GenerateGoTests()
+				err = g.GenerateGoTests()
 				if err != nil {
 					return err
 				}
@@ -136,6 +137,7 @@ func generateSchema(file *os.File) error {
 	}
 
 	if *flagGo {
+		g := generator.NewGoGenerator(s)
 		err = setFolder(s, "go", true)
 		if err != nil {
 			return err
@@ -145,12 +147,12 @@ func generateSchema(file *os.File) error {
 			fmt.Println("skipping Go code generation")
 		} else {
 			fmt.Println("generating Go code")
-			err = s.GenerateGo()
+			err = g.GenerateGo()
 			if err != nil {
 				return err
 			}
 			if !s.CoreContracts {
-				err = s.GenerateGoTests()
+				err = g.GenerateGoTests()
 				if err != nil {
 					return err
 				}
@@ -167,6 +169,7 @@ func generateSchema(file *os.File) error {
 	}
 
 	if *flagRust {
+		g := generator.NewRustGenerator(s)
 		err = setFolder(s, "src", false)
 		if err != nil {
 			return err
@@ -176,12 +179,12 @@ func generateSchema(file *os.File) error {
 			fmt.Println("skipping Rust code generation")
 		} else {
 			fmt.Println("generating Rust code")
-			err = s.GenerateRust()
+			err = g.GenerateRust()
 			if err != nil {
 				return err
 			}
 			if !s.CoreContracts {
-				err = s.GenerateGoTests()
+				err = g.GenerateGoTests()
 				if err != nil {
 					return err
 				}
