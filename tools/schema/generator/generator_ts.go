@@ -129,6 +129,10 @@ func (s *Schema) GenerateTs() error {
 	}
 
 	// typescript-specific stuff
+	err = s.generateTsConfig()
+	if err != nil {
+		return err
+	}
 	return s.generateTsIndex()
 }
 
@@ -916,4 +920,26 @@ func (s *Schema) flushTsConsts(file *os.File) {
 	s.flushConsts(func(name string, value string, padLen int) {
 		fmt.Fprintf(file, "export const %s = %s;\n", pad(name, padLen), value)
 	})
+}
+
+func (s *Schema) generateTsConfig() error {
+	file, err := os.Open(s.Folder + "tsconfig.json")
+	if err == nil {
+		// already exists
+		file.Close()
+		return nil
+	}
+
+	file, err = os.Create(s.Folder + "tsconfig.json")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	fmt.Fprintf(file, "{\n")
+	fmt.Fprintf(file, "  \"extends\": \"assemblyscript/std/assembly.json\",\n")
+	fmt.Fprintf(file, "  \"include\": [\"./*.ts\"]\n")
+	fmt.Fprintf(file, "}\n")
+
+	return nil
 }
