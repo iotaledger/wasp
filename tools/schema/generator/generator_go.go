@@ -99,58 +99,14 @@ func (g *GoGenerator) flushGoConsts() {
 	g.printf(")\n")
 }
 
-func (g *GoGenerator) generate() error {
-	err := g.generateGoConsts(false)
-	if err != nil {
-		return err
-	}
-	err = g.generateGoTypes()
-	if err != nil {
-		return err
-	}
-	err = g.generateGoTypeDefs()
-	if err != nil {
-		return err
-	}
-	err = g.generateGoParams()
-	if err != nil {
-		return err
-	}
-	err = g.generateGoResults()
-	if err != nil {
-		return err
-	}
-	err = g.generateGoContract()
-	if err != nil {
-		return err
-	}
-
+func (g *GoGenerator) generateLanguageSpecificFiles() error {
 	if !g.s.CoreContracts {
-		err = g.generateGoKeys()
-		if err != nil {
-			return err
-		}
-		err = g.generateGoState()
-		if err != nil {
-			return err
-		}
-		err = g.generateGoLib()
-		if err != nil {
-			return err
-		}
-		err = g.generateFuncs()
-		if err != nil {
-			return err
-		}
-
-		// go-specific stuff
-		return g.generateGoMain()
+		return g.generateMain()
 	}
-
 	return nil
 }
 
-func (g *GoGenerator) generateGoArrayType(varType string) string {
+func (g *GoGenerator) generateArrayType(varType string) string {
 	// native core contracts use Array16 instead of our nested array type
 	if g.s.CoreContracts {
 		return "wasmlib.TYPE_ARRAY16|" + varType
@@ -158,7 +114,7 @@ func (g *GoGenerator) generateGoArrayType(varType string) string {
 	return "wasmlib.TYPE_ARRAY|" + varType
 }
 
-func (g *GoGenerator) generateGoConsts(test bool) error {
+func (g *GoGenerator) generateConsts(test bool) error {
 	err := g.create(g.Folder + "consts" + g.extension)
 	if err != nil {
 		return err
@@ -194,9 +150,9 @@ func (g *GoGenerator) generateGoConsts(test bool) error {
 	g.s.appendConst("HScName", hNameType+"(0x"+hName.String()+")")
 	g.flushGoConsts()
 
-	g.generateGoConstsFields(test, g.s.Params, "Param")
-	g.generateGoConstsFields(test, g.s.Results, "Result")
-	g.generateGoConstsFields(test, g.s.StateVars, "State")
+	g.generateConstsFields(test, g.s.Params, "Param")
+	g.generateConstsFields(test, g.s.Results, "Result")
+	g.generateConstsFields(test, g.s.StateVars, "State")
 
 	if len(g.s.Funcs) != 0 {
 		for _, f := range g.s.Funcs {
@@ -215,7 +171,7 @@ func (g *GoGenerator) generateGoConsts(test bool) error {
 	return nil
 }
 
-func (g *GoGenerator) generateGoConstsFields(test bool, fields []*Field, prefix string) {
+func (g *GoGenerator) generateConstsFields(test bool, fields []*Field, prefix string) {
 	if len(fields) != 0 {
 		for _, field := range fields {
 			if field.Alias == AliasThis {
@@ -232,7 +188,7 @@ func (g *GoGenerator) generateGoConstsFields(test bool, fields []*Field, prefix 
 	}
 }
 
-func (g *GoGenerator) generateGoContract() error {
+func (g *GoGenerator) generateContract() error {
 	err := g.create(g.Folder + "contract" + g.extension)
 	if err != nil {
 		return err
@@ -261,7 +217,7 @@ func (g *GoGenerator) generateGoContract() error {
 		g.printf("}\n")
 	}
 
-	g.generateGoContractFuncs()
+	g.generateContractFuncs()
 
 	if g.s.CoreContracts {
 		g.printf("\nfunc OnLoad() {\n")
@@ -275,7 +231,7 @@ func (g *GoGenerator) generateGoContract() error {
 	return nil
 }
 
-func (g *GoGenerator) generateGoContractFuncs() {
+func (g *GoGenerator) generateContractFuncs() {
 	g.println("\ntype Funcs struct{}")
 	g.println("\nvar ScFuncs Funcs")
 	for _, f := range g.s.Funcs {
@@ -347,7 +303,7 @@ func (g *GoGenerator) generateInitialFuncs() error {
 	return nil
 }
 
-func (g *GoGenerator) generateGoKeys() error {
+func (g *GoGenerator) generateKeys() error {
 	err := g.create(g.Folder + "keys" + g.extension)
 	if err != nil {
 		return err
@@ -360,23 +316,23 @@ func (g *GoGenerator) generateGoKeys() error {
 	g.println(goImportWasmLib)
 
 	g.s.KeyID = 0
-	g.generateGoKeysIndexes(g.s.Params, "Param")
-	g.generateGoKeysIndexes(g.s.Results, "Result")
-	g.generateGoKeysIndexes(g.s.StateVars, "State")
+	g.generateKeysIndexes(g.s.Params, "Param")
+	g.generateKeysIndexes(g.s.Results, "Result")
+	g.generateKeysIndexes(g.s.StateVars, "State")
 	g.flushGoConsts()
 
 	size := g.s.KeyID
 	g.printf("\nconst keyMapLen = %d\n", size)
 	g.printf("\nvar keyMap = [keyMapLen]wasmlib.Key{\n")
-	g.generateGoKeysArray(g.s.Params, "Param")
-	g.generateGoKeysArray(g.s.Results, "Result")
-	g.generateGoKeysArray(g.s.StateVars, "State")
+	g.generateKeysArray(g.s.Params, "Param")
+	g.generateKeysArray(g.s.Results, "Result")
+	g.generateKeysArray(g.s.StateVars, "State")
 	g.printf("}\n")
 	g.printf("\nvar idxMap [keyMapLen]wasmlib.Key32\n")
 	return nil
 }
 
-func (g *GoGenerator) generateGoKeysArray(fields []*Field, prefix string) {
+func (g *GoGenerator) generateKeysArray(fields []*Field, prefix string) {
 	for _, field := range fields {
 		if field.Alias == AliasThis {
 			continue
@@ -387,7 +343,7 @@ func (g *GoGenerator) generateGoKeysArray(fields []*Field, prefix string) {
 	}
 }
 
-func (g *GoGenerator) generateGoKeysIndexes(fields []*Field, prefix string) {
+func (g *GoGenerator) generateKeysIndexes(fields []*Field, prefix string) {
 	for _, field := range fields {
 		if field.Alias == AliasThis {
 			continue
@@ -400,7 +356,7 @@ func (g *GoGenerator) generateGoKeysIndexes(fields []*Field, prefix string) {
 	}
 }
 
-func (g *GoGenerator) generateGoLib() error {
+func (g *GoGenerator) generateLib() error {
 	err := g.create(g.Folder + "lib" + g.extension)
 	if err != nil {
 		return err
@@ -428,12 +384,12 @@ func (g *GoGenerator) generateGoLib() error {
 
 	// generate parameter structs and thunks to set up and check parameters
 	for _, f := range g.s.Funcs {
-		g.generateGoThunk(f)
+		g.generateThunk(f)
 	}
 	return nil
 }
 
-func (g *GoGenerator) generateGoMain() error {
+func (g *GoGenerator) generateMain() error {
 	err := g.create(g.Folder + "../main" + g.extension)
 	if err != nil {
 		return err
@@ -464,7 +420,7 @@ func (g *GoGenerator) generateGoMain() error {
 	return nil
 }
 
-func (g *GoGenerator) generateGoParams() error {
+func (g *GoGenerator) generateParams() error {
 	err := g.create(g.Folder + "params" + g.extension)
 	if err != nil {
 		return err
@@ -488,25 +444,25 @@ func (g *GoGenerator) generateGoParams() error {
 		if len(f.Params) == 0 {
 			continue
 		}
-		g.generateGoStruct(f.Params, PropImmutable, f.Type, "Params")
-		g.generateGoStruct(f.Params, PropMutable, f.Type, "Params")
+		g.generateStruct(f.Params, PropImmutable, f.Type, "Params")
+		g.generateStruct(f.Params, PropMutable, f.Type, "Params")
 	}
 
 	return nil
 }
 
-func (g *GoGenerator) generateGoProxy(field *Field, mutability string) {
+func (g *GoGenerator) generateProxy(field *Field, mutability string) {
 	if field.Array {
-		g.generateGoProxyArray(field, mutability)
+		g.generateProxyArray(field, mutability)
 		return
 	}
 
 	if field.MapKey != "" {
-		g.generateGoProxyMap(field, mutability)
+		g.generateProxyMap(field, mutability)
 	}
 }
 
-func (g *GoGenerator) generateGoProxyArray(field *Field, mutability string) {
+func (g *GoGenerator) generateProxyArray(field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	arrayType := "ArrayOf" + proxyType
 	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
@@ -533,7 +489,7 @@ func (g *GoGenerator) generateGoProxyArray(field *Field, mutability string) {
 	g.printf("}\n")
 
 	if field.TypeID == 0 {
-		g.generateGoProxyArrayNewType(field, proxyType, arrayType)
+		g.generateProxyArrayNewType(field, proxyType, arrayType)
 		return
 	}
 
@@ -543,7 +499,7 @@ func (g *GoGenerator) generateGoProxyArray(field *Field, mutability string) {
 	g.printf("}\n")
 }
 
-func (g *GoGenerator) generateGoProxyArrayNewType(field *Field, proxyType, arrayType string) {
+func (g *GoGenerator) generateProxyArrayNewType(field *Field, proxyType, arrayType string) {
 	for _, subtype := range g.s.Typedefs {
 		if subtype.Name != field.Type {
 			continue
@@ -554,7 +510,7 @@ func (g *GoGenerator) generateGoProxyArrayNewType(field *Field, proxyType, array
 			if varType == "" {
 				varType = goTypeBytes
 			}
-			varType = g.generateGoArrayType(varType)
+			varType = g.generateArrayType(varType)
 		}
 		g.printf("\nfunc (a %s) Get%s(index int32) %s {\n", arrayType, field.Type, proxyType)
 		g.printf("\tsubID := wasmlib.GetObjectID(a.objID, wasmlib.Key32(index), %s)\n", varType)
@@ -568,7 +524,7 @@ func (g *GoGenerator) generateGoProxyArrayNewType(field *Field, proxyType, array
 	g.printf("}\n")
 }
 
-func (g *GoGenerator) generateGoProxyMap(field *Field, mutability string) {
+func (g *GoGenerator) generateProxyMap(field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	mapType := "Map" + field.MapKey + "To" + proxyType
 	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
@@ -594,7 +550,7 @@ func (g *GoGenerator) generateGoProxyMap(field *Field, mutability string) {
 	}
 
 	if field.TypeID == 0 {
-		g.generateGoProxyMapNewType(field, proxyType, mapType, keyType, keyValue)
+		g.generateProxyMapNewType(field, proxyType, mapType, keyType, keyValue)
 		return
 	}
 
@@ -604,7 +560,7 @@ func (g *GoGenerator) generateGoProxyMap(field *Field, mutability string) {
 	g.printf("}\n")
 }
 
-func (g *GoGenerator) generateGoProxyMapNewType(field *Field, proxyType, mapType, keyType, keyValue string) {
+func (g *GoGenerator) generateProxyMapNewType(field *Field, proxyType, mapType, keyType, keyValue string) {
 	for _, subtype := range g.s.Typedefs {
 		if subtype.Name != field.Type {
 			continue
@@ -615,7 +571,7 @@ func (g *GoGenerator) generateGoProxyMapNewType(field *Field, proxyType, mapType
 			if varType == "" {
 				varType = goTypeBytes
 			}
-			varType = g.generateGoArrayType(varType)
+			varType = g.generateArrayType(varType)
 		}
 		g.printf("\nfunc (m %s) Get%s(key %s) %s {\n", mapType, field.Type, keyType, proxyType)
 		g.printf("\tsubID := wasmlib.GetObjectID(m.objID, %s.KeyID(), %s)\n", keyValue, varType)
@@ -629,7 +585,7 @@ func (g *GoGenerator) generateGoProxyMapNewType(field *Field, proxyType, mapType
 	g.printf("}\n")
 }
 
-func (g *GoGenerator) generateGoResults() error {
+func (g *GoGenerator) generateResults() error {
 	err := g.create(g.Folder + "results" + g.extension)
 	if err != nil {
 		return err
@@ -653,13 +609,13 @@ func (g *GoGenerator) generateGoResults() error {
 		if len(f.Results) == 0 {
 			continue
 		}
-		g.generateGoStruct(f.Results, PropImmutable, f.Type, "Results")
-		g.generateGoStruct(f.Results, PropMutable, f.Type, "Results")
+		g.generateStruct(f.Results, PropImmutable, f.Type, "Results")
+		g.generateStruct(f.Results, PropMutable, f.Type, "Results")
 	}
 	return nil
 }
 
-func (g *GoGenerator) generateGoState() error {
+func (g *GoGenerator) generateState() error {
 	err := g.create(g.Folder + "state" + g.extension)
 	if err != nil {
 		return err
@@ -674,19 +630,19 @@ func (g *GoGenerator) generateGoState() error {
 		g.println(goImportWasmLib)
 	}
 
-	g.generateGoStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
-	g.generateGoStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
+	g.generateStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
+	g.generateStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
 	return nil
 }
 
 // TODO nested structs
-func (g *GoGenerator) generateGoStruct(fields []*Field, mutability, typeName, kind string) {
+func (g *GoGenerator) generateStruct(fields []*Field, mutability, typeName, kind string) {
 	typeName = mutability + typeName + kind
 	kind = strings.TrimSuffix(kind, "s")
 
 	// first generate necessary array and map types
 	for _, field := range fields {
-		g.generateGoProxy(field, mutability)
+		g.generateProxy(field, mutability)
 	}
 
 	g.printf("\ntype %s struct {\n", typeName)
@@ -704,7 +660,7 @@ func (g *GoGenerator) generateGoStruct(fields []*Field, mutability, typeName, ki
 			varType = goTypeBytes
 		}
 		if field.Array {
-			varType = g.generateGoArrayType(varType)
+			varType = g.generateArrayType(varType)
 			arrayType := "ArrayOf" + mutability + field.Type
 			g.printf("\nfunc (s %s) %s() %s {\n", typeName, varName, arrayType)
 			g.printf("\tarrID := wasmlib.GetObjectID(s.id, %s, %s)\n", varID, varType)
@@ -740,7 +696,7 @@ func (g *GoGenerator) generateGoStruct(fields []*Field, mutability, typeName, ki
 	}
 }
 
-func (g *GoGenerator) generateGoThunk(f *Func) {
+func (g *GoGenerator) generateThunk(f *Func) {
 	nameLen := f.nameLen(5)
 	mutability := PropMutable
 	if f.Kind == KindView {
@@ -760,7 +716,7 @@ func (g *GoGenerator) generateGoThunk(f *Func) {
 	g.printf("\tctx.Log(\"%s.%s\")\n", g.s.Name, f.FuncName)
 
 	if f.Access != "" {
-		g.generateGoThunkAccessCheck(f)
+		g.generateThunkAccessCheck(f)
 	}
 
 	g.printf("\tf := &%sContext{\n", f.Type)
@@ -795,7 +751,7 @@ func (g *GoGenerator) generateGoThunk(f *Func) {
 	g.printf("}\n")
 }
 
-func (g *GoGenerator) generateGoThunkAccessCheck(f *Func) {
+func (g *GoGenerator) generateThunkAccessCheck(f *Func) {
 	grant := f.Access
 	index := strings.Index(grant, "//")
 	if index >= 0 {
@@ -817,7 +773,7 @@ func (g *GoGenerator) generateGoThunkAccessCheck(f *Func) {
 	g.printf("\tctx.Require(ctx.Caller() == %s, \"no permission\")\n\n", grant)
 }
 
-func (g *GoGenerator) generateGoTypes() error {
+func (g *GoGenerator) generateTypes() error {
 	if len(g.s.Structs) == 0 {
 		return nil
 	}
@@ -833,13 +789,13 @@ func (g *GoGenerator) generateGoTypes() error {
 	g.println(goImportWasmLib)
 
 	for _, typeDef := range g.s.Structs {
-		g.generateGoType(typeDef)
+		g.generateType(typeDef)
 	}
 
 	return nil
 }
 
-func (g *GoGenerator) generateGoType(typeDef *Struct) {
+func (g *GoGenerator) generateType(typeDef *Struct) {
 	nameLen, typeLen := calculatePadding(typeDef.Fields, goTypes, false)
 
 	g.printf("\ntype %s struct {\n", typeDef.Name)
@@ -872,11 +828,11 @@ func (g *GoGenerator) generateGoType(typeDef *Struct) {
 	}
 	g.printf("\t\tData()\n}\n")
 
-	g.generateGoTypeProxy(typeDef, false)
-	g.generateGoTypeProxy(typeDef, true)
+	g.generateTypeProxy(typeDef, false)
+	g.generateTypeProxy(typeDef, true)
 }
 
-func (g *GoGenerator) generateGoTypeProxy(typeDef *Struct, mutable bool) {
+func (g *GoGenerator) generateTypeProxy(typeDef *Struct, mutable bool) {
 	typeName := PropImmutable + typeDef.Name
 	if mutable {
 		typeName = PropMutable + typeDef.Name
@@ -902,7 +858,7 @@ func (g *GoGenerator) generateGoTypeProxy(typeDef *Struct, mutable bool) {
 	g.printf("}\n")
 }
 
-func (g *GoGenerator) generateGoTypeDefs() error {
+func (g *GoGenerator) generateTypeDefs() error {
 	if len(g.s.Typedefs) == 0 {
 		return nil
 	}
@@ -918,8 +874,8 @@ func (g *GoGenerator) generateGoTypeDefs() error {
 	g.println(goImportWasmLib)
 
 	for _, subtype := range g.s.Typedefs {
-		g.generateGoProxy(subtype, PropImmutable)
-		g.generateGoProxy(subtype, PropMutable)
+		g.generateProxy(subtype, PropImmutable)
+		g.generateProxy(subtype, PropMutable)
 	}
 
 	return nil

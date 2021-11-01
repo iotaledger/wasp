@@ -102,60 +102,15 @@ func (g *TypeScriptGenerator) flushTsConsts() {
 	})
 }
 
-func (g *TypeScriptGenerator) generate() error {
-	err := g.generateTsConsts()
+func (g *TypeScriptGenerator) generateLanguageSpecificFiles() error {
+	err := g.generateConfig()
 	if err != nil {
 		return err
 	}
-	err = g.generateTsTypes()
-	if err != nil {
-		return err
-	}
-	err = g.generateTsTypeDefs()
-	if err != nil {
-		return err
-	}
-	err = g.generateTsParams()
-	if err != nil {
-		return err
-	}
-	err = g.generateTsResults()
-	if err != nil {
-		return err
-	}
-	err = g.generateTsContract()
-	if err != nil {
-		return err
-	}
-
-	if !g.s.CoreContracts {
-		err = g.generateTsKeys()
-		if err != nil {
-			return err
-		}
-		err = g.generateTsState()
-		if err != nil {
-			return err
-		}
-		err = g.generateTsLib()
-		if err != nil {
-			return err
-		}
-		err = g.generateFuncs()
-		if err != nil {
-			return err
-		}
-	}
-
-	// typescript-specific stuff
-	err = g.generateTsConfig()
-	if err != nil {
-		return err
-	}
-	return g.generateTsIndex()
+	return g.generateIndex()
 }
 
-func (g *TypeScriptGenerator) generateTsArrayType(varType string) string {
+func (g *TypeScriptGenerator) generateArrayType(varType string) string {
 	// native core contracts use Array16 instead of our nested array type
 	if g.s.CoreContracts {
 		return "wasmlib.TYPE_ARRAY16|" + varType
@@ -163,7 +118,7 @@ func (g *TypeScriptGenerator) generateTsArrayType(varType string) string {
 	return "wasmlib.TYPE_ARRAY|" + varType
 }
 
-func (g *TypeScriptGenerator) generateTsConfig() error {
+func (g *TypeScriptGenerator) generateConfig() error {
 	err := g.exists(g.Folder + "tsconfig.json")
 	if err == nil {
 		// already exists
@@ -184,7 +139,7 @@ func (g *TypeScriptGenerator) generateTsConfig() error {
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateTsConsts() error {
+func (g *TypeScriptGenerator) generateConsts(test bool) error {
 	err := g.create(g.Folder + "consts" + g.extension)
 	if err != nil {
 		return err
@@ -209,9 +164,9 @@ func (g *TypeScriptGenerator) generateTsConsts() error {
 	g.s.appendConst("HScName", hNameType+"(0x"+hName.String()+")")
 	g.flushTsConsts()
 
-	g.generateTsConstsFields(g.s.Params, "Param")
-	g.generateTsConstsFields(g.s.Results, "Result")
-	g.generateTsConstsFields(g.s.StateVars, "State")
+	g.generateConstsFields(g.s.Params, "Param")
+	g.generateConstsFields(g.s.Results, "Result")
+	g.generateConstsFields(g.s.StateVars, "State")
 
 	if len(g.s.Funcs) != 0 {
 		for _, f := range g.s.Funcs {
@@ -230,7 +185,7 @@ func (g *TypeScriptGenerator) generateTsConsts() error {
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateTsConstsFields(fields []*Field, prefix string) {
+func (g *TypeScriptGenerator) generateConstsFields(fields []*Field, prefix string) {
 	if len(fields) != 0 {
 		for _, field := range fields {
 			if field.Alias == AliasThis {
@@ -244,7 +199,7 @@ func (g *TypeScriptGenerator) generateTsConstsFields(fields []*Field, prefix str
 	}
 }
 
-func (g *TypeScriptGenerator) generateTsContract() error {
+func (g *TypeScriptGenerator) generateContract() error {
 	err := g.create(g.Folder + "contract" + g.extension)
 	if err != nil {
 		return err
@@ -288,11 +243,11 @@ func (g *TypeScriptGenerator) generateTsContract() error {
 		}
 	}
 
-	g.generateTsContractFuncs()
+	g.generateContractFuncs()
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateTsContractFuncs() {
+func (g *TypeScriptGenerator) generateContractFuncs() {
 	g.println("\nexport class ScFuncs {")
 	for _, f := range g.s.Funcs {
 		g.printf("\n    static %s(ctx: wasmlib.Sc%sCallContext): %sCall {\n", uncapitalize(f.Type), f.Kind, f.Type)
@@ -355,7 +310,7 @@ func (g *TypeScriptGenerator) generateInitialFuncs() error {
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateTsIndex() error {
+func (g *TypeScriptGenerator) generateIndex() error {
 	err := g.create(g.Folder + "index" + g.extension)
 	if err != nil {
 		return err
@@ -392,7 +347,7 @@ func (g *TypeScriptGenerator) generateTsIndex() error {
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateTsKeys() error {
+func (g *TypeScriptGenerator) generateKeys() error {
 	err := g.create(g.Folder + "keys" + g.extension)
 	if err != nil {
 		return err
@@ -405,21 +360,21 @@ func (g *TypeScriptGenerator) generateTsKeys() error {
 	g.println(tsImportSelf)
 
 	g.s.KeyID = 0
-	g.generateTsKeysIndexes(g.s.Params, "Param")
-	g.generateTsKeysIndexes(g.s.Results, "Result")
-	g.generateTsKeysIndexes(g.s.StateVars, "State")
+	g.generateKeysIndexes(g.s.Params, "Param")
+	g.generateKeysIndexes(g.s.Results, "Result")
+	g.generateKeysIndexes(g.s.StateVars, "State")
 	g.flushTsConsts()
 
 	g.printf("\nexport let keyMap: string[] = [\n")
-	g.generateTsKeysArray(g.s.Params, "Param")
-	g.generateTsKeysArray(g.s.Results, "Result")
-	g.generateTsKeysArray(g.s.StateVars, "State")
+	g.generateKeysArray(g.s.Params, "Param")
+	g.generateKeysArray(g.s.Results, "Result")
+	g.generateKeysArray(g.s.StateVars, "State")
 	g.printf("];\n")
 	g.printf("\nexport let idxMap: wasmlib.Key32[] = new Array(keyMap.length);\n")
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateTsKeysArray(fields []*Field, prefix string) {
+func (g *TypeScriptGenerator) generateKeysArray(fields []*Field, prefix string) {
 	for _, field := range fields {
 		if field.Alias == AliasThis {
 			continue
@@ -430,7 +385,7 @@ func (g *TypeScriptGenerator) generateTsKeysArray(fields []*Field, prefix string
 	}
 }
 
-func (g *TypeScriptGenerator) generateTsKeysIndexes(fields []*Field, prefix string) {
+func (g *TypeScriptGenerator) generateKeysIndexes(fields []*Field, prefix string) {
 	for _, field := range fields {
 		if field.Alias == AliasThis {
 			continue
@@ -443,7 +398,7 @@ func (g *TypeScriptGenerator) generateTsKeysIndexes(fields []*Field, prefix stri
 	}
 }
 
-func (g *TypeScriptGenerator) generateTsLib() error {
+func (g *TypeScriptGenerator) generateLib() error {
 	err := g.create(g.Folder + "lib" + g.extension)
 	if err != nil {
 		return err
@@ -474,12 +429,12 @@ func (g *TypeScriptGenerator) generateTsLib() error {
 
 	// generate parameter structs and thunks to set up and check parameters
 	for _, f := range g.s.Funcs {
-		g.generateTsThunk(f)
+		g.generateThunk(f)
 	}
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateTsParams() error {
+func (g *TypeScriptGenerator) generateParams() error {
 	err := g.create(g.Folder + "params" + g.extension)
 	if err != nil {
 		return err
@@ -495,29 +450,29 @@ func (g *TypeScriptGenerator) generateTsParams() error {
 		if len(f.Params) == 0 {
 			continue
 		}
-		g.generateTsStruct(f.Params, PropImmutable, f.Type, "Params")
-		g.generateTsStruct(f.Params, PropMutable, f.Type, "Params")
+		g.generateStruct(f.Params, PropImmutable, f.Type, "Params")
+		g.generateStruct(f.Params, PropMutable, f.Type, "Params")
 	}
 
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateTsProxy(field *Field, mutability string) {
+func (g *TypeScriptGenerator) generateProxy(field *Field, mutability string) {
 	if field.Array {
-		g.generateTsProxyArray(field, mutability)
+		g.generateProxyArray(field, mutability)
 		arrayType := "ArrayOf" + mutability + field.Type
-		g.generateTsProxyReference(field, mutability, arrayType)
+		g.generateProxyReference(field, mutability, arrayType)
 		return
 	}
 
 	if field.MapKey != "" {
-		g.generateTsProxyMap(field, mutability)
+		g.generateProxyMap(field, mutability)
 		mapType := "Map" + field.MapKey + "To" + mutability + field.Type
-		g.generateTsProxyReference(field, mutability, mapType)
+		g.generateProxyReference(field, mutability, mapType)
 	}
 }
 
-func (g *TypeScriptGenerator) generateTsProxyArray(field *Field, mutability string) {
+func (g *TypeScriptGenerator) generateProxyArray(field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	arrayType := "ArrayOf" + proxyType
 	if g.NewTypes[arrayType] {
@@ -544,7 +499,7 @@ func (g *TypeScriptGenerator) generateTsProxyArray(field *Field, mutability stri
 	g.printf("    }\n")
 
 	if field.TypeID == 0 {
-		g.generateTsProxyArrayNewType(field, proxyType)
+		g.generateProxyArrayNewType(field, proxyType)
 		g.printf("}\n")
 		return
 	}
@@ -557,7 +512,7 @@ func (g *TypeScriptGenerator) generateTsProxyArray(field *Field, mutability stri
 	g.printf("}\n")
 }
 
-func (g *TypeScriptGenerator) generateTsProxyArrayNewType(field *Field, proxyType string) {
+func (g *TypeScriptGenerator) generateProxyArrayNewType(field *Field, proxyType string) {
 	for _, subtype := range g.s.Typedefs {
 		if subtype.Name != field.Type {
 			continue
@@ -568,7 +523,7 @@ func (g *TypeScriptGenerator) generateTsProxyArrayNewType(field *Field, proxyTyp
 			if varType == "" {
 				varType = tsTypeBytes
 			}
-			varType = g.generateTsArrayType(varType)
+			varType = g.generateArrayType(varType)
 		}
 		g.printf("\n    get%s(index: i32): sc.%s {\n", field.Type, proxyType)
 		g.printf("        let subID = wasmlib.getObjectID(this.objID, new wasmlib.Key32(index), %s);\n", varType)
@@ -582,7 +537,7 @@ func (g *TypeScriptGenerator) generateTsProxyArrayNewType(field *Field, proxyTyp
 	g.printf("    }\n")
 }
 
-func (g *TypeScriptGenerator) generateTsProxyMap(field *Field, mutability string) {
+func (g *TypeScriptGenerator) generateProxyMap(field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	mapType := "Map" + field.MapKey + "To" + proxyType
 	if g.NewTypes[mapType] {
@@ -608,7 +563,7 @@ func (g *TypeScriptGenerator) generateTsProxyMap(field *Field, mutability string
 	}
 
 	if field.TypeID == 0 {
-		g.generateTsProxyMapNewType(field, proxyType, keyType, keyValue)
+		g.generateProxyMapNewType(field, proxyType, keyType, keyValue)
 		g.printf("}\n")
 		return
 	}
@@ -621,7 +576,7 @@ func (g *TypeScriptGenerator) generateTsProxyMap(field *Field, mutability string
 	g.printf("}\n")
 }
 
-func (g *TypeScriptGenerator) generateTsProxyMapNewType(field *Field, proxyType, keyType, keyValue string) {
+func (g *TypeScriptGenerator) generateProxyMapNewType(field *Field, proxyType, keyType, keyValue string) {
 	for _, subtype := range g.s.Typedefs {
 		if subtype.Name != field.Type {
 			continue
@@ -632,7 +587,7 @@ func (g *TypeScriptGenerator) generateTsProxyMapNewType(field *Field, proxyType,
 			if varType == "" {
 				varType = tsTypeBytes
 			}
-			varType = g.generateTsArrayType(varType)
+			varType = g.generateArrayType(varType)
 		}
 		g.printf("\n    get%s(key: %s): sc.%s {\n", field.Type, keyType, proxyType)
 		g.printf("        let subID = wasmlib.getObjectID(this.objID, %s.getKeyID(), %s);\n", keyValue, varType)
@@ -646,13 +601,13 @@ func (g *TypeScriptGenerator) generateTsProxyMapNewType(field *Field, proxyType,
 	g.printf("    }\n")
 }
 
-func (g *TypeScriptGenerator) generateTsProxyReference(field *Field, mutability, typeName string) {
+func (g *TypeScriptGenerator) generateProxyReference(field *Field, mutability, typeName string) {
 	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
 		g.printf("\nexport class %s%s extends %s {\n};\n", mutability, field.Name, typeName)
 	}
 }
 
-func (g *TypeScriptGenerator) generateTsResults() error {
+func (g *TypeScriptGenerator) generateResults() error {
 	err := g.create(g.Folder + "results" + g.extension)
 	if err != nil {
 		return err
@@ -668,13 +623,13 @@ func (g *TypeScriptGenerator) generateTsResults() error {
 		if len(f.Results) == 0 {
 			continue
 		}
-		g.generateTsStruct(f.Results, PropImmutable, f.Type, "Results")
-		g.generateTsStruct(f.Results, PropMutable, f.Type, "Results")
+		g.generateStruct(f.Results, PropImmutable, f.Type, "Results")
+		g.generateStruct(f.Results, PropMutable, f.Type, "Results")
 	}
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateTsState() error {
+func (g *TypeScriptGenerator) generateState() error {
 	err := g.create(g.Folder + "state" + g.extension)
 	if err != nil {
 		return err
@@ -686,19 +641,19 @@ func (g *TypeScriptGenerator) generateTsState() error {
 	g.println(tsImportWasmLib)
 	g.println(tsImportSelf)
 
-	g.generateTsStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
-	g.generateTsStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
+	g.generateStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
+	g.generateStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
 	return nil
 }
 
 // TODO nested structs
-func (g *TypeScriptGenerator) generateTsStruct(fields []*Field, mutability, typeName, kind string) {
+func (g *TypeScriptGenerator) generateStruct(fields []*Field, mutability, typeName, kind string) {
 	typeName = mutability + typeName + kind
 	kind = strings.TrimSuffix(kind, "s")
 
 	// first generate necessary array and map types
 	for _, field := range fields {
-		g.generateTsProxy(field, mutability)
+		g.generateProxy(field, mutability)
 	}
 
 	g.printf("\nexport class %s extends wasmlib.ScMapID {\n", typeName)
@@ -714,7 +669,7 @@ func (g *TypeScriptGenerator) generateTsStruct(fields []*Field, mutability, type
 			varType = tsTypeBytes
 		}
 		if field.Array {
-			varType = g.generateTsArrayType(varType)
+			varType = g.generateArrayType(varType)
 			arrayType := "ArrayOf" + mutability + field.Type
 			g.printf("\n    %s(): sc.%s {\n", varName, arrayType)
 			g.printf("        let arrID = wasmlib.getObjectID(this.mapID, %s, %s);\n", varID, varType)
@@ -751,12 +706,12 @@ func (g *TypeScriptGenerator) generateTsStruct(fields []*Field, mutability, type
 	g.printf("}\n")
 }
 
-func (g *TypeScriptGenerator) generateTsThunk(f *Func) {
+func (g *TypeScriptGenerator) generateThunk(f *Func) {
 	g.printf("\nfunction %sThunk(ctx: wasmlib.Sc%sContext): void {\n", f.FuncName, f.Kind)
 	g.printf("    ctx.log(\"%s.%s\");\n", g.s.Name, f.FuncName)
 
 	if f.Access != "" {
-		g.generateTsThunkAccessCheck(f)
+		g.generateThunkAccessCheck(f)
 	}
 
 	g.printf("    let f = new sc.%sContext();\n", f.Type)
@@ -783,7 +738,7 @@ func (g *TypeScriptGenerator) generateTsThunk(f *Func) {
 	g.printf("}\n")
 }
 
-func (g *TypeScriptGenerator) generateTsThunkAccessCheck(f *Func) {
+func (g *TypeScriptGenerator) generateThunkAccessCheck(f *Func) {
 	grant := f.Access
 	index := strings.Index(grant, "//")
 	if index >= 0 {
@@ -805,7 +760,7 @@ func (g *TypeScriptGenerator) generateTsThunkAccessCheck(f *Func) {
 	g.printf("    ctx.require(ctx.caller().equals(%s), \"no permission\");\n\n", grant)
 }
 
-func (g *TypeScriptGenerator) generateTsTypes() error {
+func (g *TypeScriptGenerator) generateTypes() error {
 	if len(g.s.Structs) == 0 {
 		return nil
 	}
@@ -820,13 +775,13 @@ func (g *TypeScriptGenerator) generateTsTypes() error {
 	g.println(tsImportWasmLib)
 
 	for _, typeDef := range g.s.Structs {
-		g.generateTsType(typeDef)
+		g.generateType(typeDef)
 	}
 
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateTsType(typeDef *Struct) {
+func (g *TypeScriptGenerator) generateType(typeDef *Struct) {
 	nameLen, typeLen := calculatePadding(typeDef.Fields, tsTypes, false)
 
 	g.printf("\nexport class %s {\n", typeDef.Name)
@@ -860,11 +815,11 @@ func (g *TypeScriptGenerator) generateTsType(typeDef *Struct) {
 
 	g.printf("}\n")
 
-	g.generateTsTypeProxy(typeDef, false)
-	g.generateTsTypeProxy(typeDef, true)
+	g.generateTypeProxy(typeDef, false)
+	g.generateTypeProxy(typeDef, true)
 }
 
-func (g *TypeScriptGenerator) generateTsTypeProxy(typeDef *Struct, mutable bool) {
+func (g *TypeScriptGenerator) generateTypeProxy(typeDef *Struct, mutable bool) {
 	typeName := PropImmutable + typeDef.Name
 	if mutable {
 		typeName = PropMutable + typeDef.Name
@@ -896,7 +851,7 @@ func (g *TypeScriptGenerator) generateTsTypeProxy(typeDef *Struct, mutable bool)
 	g.printf("}\n")
 }
 
-func (g *TypeScriptGenerator) generateTsTypeDefs() error {
+func (g *TypeScriptGenerator) generateTypeDefs() error {
 	if len(g.s.Typedefs) == 0 {
 		return nil
 	}
@@ -912,8 +867,8 @@ func (g *TypeScriptGenerator) generateTsTypeDefs() error {
 	g.println(tsImportSelf)
 
 	for _, subtype := range g.s.Typedefs {
-		g.generateTsProxy(subtype, PropImmutable)
-		g.generateTsProxy(subtype, PropMutable)
+		g.generateProxy(subtype, PropImmutable)
+		g.generateProxy(subtype, PropMutable)
 	}
 
 	return nil

@@ -21,15 +21,13 @@ import (
 )
 
 var (
-	disabledFlag = false
-	flagCore     = flag.Bool("core", false, "generate core contract interface")
-	flagForce    = flag.Bool("force", false, "force code generation")
-	flagGo       = flag.Bool("go", false, "generate Go code")
-	flagInit     = flag.String("init", "", "generate new schema file for smart contract named <string>")
-	flagJava     = &disabledFlag // flag.Bool("java", false, "generate Java code <outdated>")
-	flagRust     = flag.Bool("rust", false, "generate Rust code")
-	flagTs       = flag.Bool("ts", false, "generate TypScript code")
-	flagType     = flag.String("type", "yaml", "type of schema file that will be generated. Values(yaml,json)")
+	flagCore  = flag.Bool("core", false, "generate core contract interface")
+	flagForce = flag.Bool("force", false, "force code generation")
+	flagGo    = flag.Bool("go", false, "generate Go code")
+	flagInit  = flag.String("init", "", "generate new schema file for smart contract named <string>")
+	flagRust  = flag.Bool("rust", false, "generate Rust code")
+	flagTs    = flag.Bool("ts", false, "generate TypScript code")
+	flagType  = flag.String("type", "yaml", "type of schema file that will be generated. Values(yaml,json)")
 )
 
 func init() {

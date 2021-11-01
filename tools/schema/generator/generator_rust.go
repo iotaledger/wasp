@@ -118,58 +118,15 @@ func (g *RustGenerator) flushRustConsts(crateOnly bool) {
 	})
 }
 
-func (g *RustGenerator) generate() error {
-	err := g.generateRustConsts()
-	if err != nil {
-		return err
-	}
-	err = g.generateRustTypes()
-	if err != nil {
-		return err
-	}
-	err = g.generateRustTypeDefs()
-	if err != nil {
-		return err
-	}
-	err = g.generateRustParams()
-	if err != nil {
-		return err
-	}
-	err = g.generateRustResults()
-	if err != nil {
-		return err
-	}
-	err = g.generateRustContract()
-	if err != nil {
-		return err
-	}
-
+func (g *RustGenerator) generateLanguageSpecificFiles() error {
 	if !g.s.CoreContracts {
-		err = g.generateRustKeys()
-		if err != nil {
-			return err
-		}
-		err = g.generateRustState()
-		if err != nil {
-			return err
-		}
-		err = g.generateRustLib()
-		if err != nil {
-			return err
-		}
-		err = g.generateFuncs()
-		if err != nil {
-			return err
-		}
-
-		// rust-specific stuff
-		return g.generateRustCargo()
+		return g.generateCargo()
 	}
 
-	return g.generateRustMod()
+	return g.generateMod()
 }
 
-func (g *RustGenerator) generateRustArrayType(varType string) string {
+func (g *RustGenerator) generateArrayType(varType string) string {
 	// native core contracts use Array16 instead of our nested array type
 	if g.s.CoreContracts {
 		return "TYPE_ARRAY16 | " + varType
@@ -177,7 +134,7 @@ func (g *RustGenerator) generateRustArrayType(varType string) string {
 	return "TYPE_ARRAY | " + varType
 }
 
-func (g *RustGenerator) generateRustCargo() error {
+func (g *RustGenerator) generateCargo() error {
 	_, err := os.Stat("Cargo.toml")
 	if err == nil {
 		// already exists
@@ -212,7 +169,7 @@ func (g *RustGenerator) generateRustCargo() error {
 	return nil
 }
 
-func (g *RustGenerator) generateRustConsts() error {
+func (g *RustGenerator) generateConsts(test bool) error {
 	err := g.create(g.Folder + "consts" + g.extension)
 	if err != nil {
 		return err
@@ -239,9 +196,9 @@ func (g *RustGenerator) generateRustConsts() error {
 	g.s.appendConst("HSC_NAME", "ScHname = ScHname(0x"+hName.String()+")")
 	g.flushRustConsts(false)
 
-	g.generateRustConstsFields(g.s.Params, "PARAM_")
-	g.generateRustConstsFields(g.s.Results, "RESULT_")
-	g.generateRustConstsFields(g.s.StateVars, "STATE_")
+	g.generateConstsFields(g.s.Params, "PARAM_")
+	g.generateConstsFields(g.s.Results, "RESULT_")
+	g.generateConstsFields(g.s.StateVars, "STATE_")
 
 	if len(g.s.Funcs) != 0 {
 		for _, f := range g.s.Funcs {
@@ -261,7 +218,7 @@ func (g *RustGenerator) generateRustConsts() error {
 	return nil
 }
 
-func (g *RustGenerator) generateRustConstsFields(fields []*Field, prefix string) {
+func (g *RustGenerator) generateConstsFields(fields []*Field, prefix string) {
 	if len(fields) != 0 {
 		for _, field := range fields {
 			if field.Alias == AliasThis {
@@ -275,7 +232,7 @@ func (g *RustGenerator) generateRustConstsFields(fields []*Field, prefix string)
 	}
 }
 
-func (g *RustGenerator) generateRustContract() error {
+func (g *RustGenerator) generateContract() error {
 	err := g.create(g.Folder + "contract" + g.extension)
 	if err != nil {
 		return err
@@ -314,12 +271,12 @@ func (g *RustGenerator) generateRustContract() error {
 		g.printf("}\n")
 	}
 
-	g.generateRustContractFuncs()
+	g.generateContractFuncs()
 	g.formatter(true)
 	return nil
 }
 
-func (g *RustGenerator) generateRustContractFuncs() {
+func (g *RustGenerator) generateContractFuncs() {
 	g.println("\npub struct ScFuncs {")
 	g.println("}")
 	g.println("\nimpl ScFuncs {")
@@ -410,7 +367,7 @@ func (g *RustGenerator) generateInitialFuncs() error {
 	return nil
 }
 
-func (g *RustGenerator) generateRustKeys() error {
+func (g *RustGenerator) generateKeys() error {
 	err := g.create(g.Folder + "keys" + g.extension)
 	if err != nil {
 		return err
@@ -427,17 +384,17 @@ func (g *RustGenerator) generateRustKeys() error {
 	g.println(useCrate)
 
 	g.s.KeyID = 0
-	g.generateRustKeysIndexes(g.s.Params, "PARAM_")
-	g.generateRustKeysIndexes(g.s.Results, "RESULT_")
-	g.generateRustKeysIndexes(g.s.StateVars, "STATE_")
+	g.generateKeysIndexes(g.s.Params, "PARAM_")
+	g.generateKeysIndexes(g.s.Results, "RESULT_")
+	g.generateKeysIndexes(g.s.StateVars, "STATE_")
 	g.flushRustConsts(true)
 
 	size := g.s.KeyID
 	g.printf("\npub const KEY_MAP_LEN: usize = %d;\n", size)
 	g.printf("\npub const KEY_MAP: [&str; KEY_MAP_LEN] = [\n")
-	g.generateRustKeysArray(g.s.Params, "PARAM_")
-	g.generateRustKeysArray(g.s.Results, "RESULT_")
-	g.generateRustKeysArray(g.s.StateVars, "STATE_")
+	g.generateKeysArray(g.s.Params, "PARAM_")
+	g.generateKeysArray(g.s.Results, "RESULT_")
+	g.generateKeysArray(g.s.StateVars, "STATE_")
 	g.printf("];\n")
 
 	g.printf("\npub static mut IDX_MAP: [Key32; KEY_MAP_LEN] = [Key32(0); KEY_MAP_LEN];\n")
@@ -452,7 +409,7 @@ func (g *RustGenerator) generateRustKeys() error {
 	return nil
 }
 
-func (g *RustGenerator) generateRustKeysArray(fields []*Field, prefix string) {
+func (g *RustGenerator) generateKeysArray(fields []*Field, prefix string) {
 	for _, field := range fields {
 		if field.Alias == AliasThis {
 			continue
@@ -463,7 +420,7 @@ func (g *RustGenerator) generateRustKeysArray(fields []*Field, prefix string) {
 	}
 }
 
-func (g *RustGenerator) generateRustKeysIndexes(fields []*Field, prefix string) {
+func (g *RustGenerator) generateKeysIndexes(fields []*Field, prefix string) {
 	for _, field := range fields {
 		if field.Alias == AliasThis {
 			continue
@@ -476,7 +433,7 @@ func (g *RustGenerator) generateRustKeysIndexes(fields []*Field, prefix string) 
 	}
 }
 
-func (g *RustGenerator) generateRustLib() error {
+func (g *RustGenerator) generateLib() error {
 	err := g.create(g.Folder + "lib" + g.extension)
 	if err != nil {
 		return err
@@ -534,14 +491,14 @@ func (g *RustGenerator) generateRustLib() error {
 
 	// generate parameter structs and thunks to set up and check parameters
 	for _, f := range g.s.Funcs {
-		g.generateRustThunk(f)
+		g.generateThunk(f)
 	}
 
 	g.formatter(true)
 	return nil
 }
 
-func (g *RustGenerator) generateRustMod() error {
+func (g *RustGenerator) generateMod() error {
 	err := g.create(g.Folder + "mod" + g.extension)
 	if err != nil {
 		return err
@@ -550,14 +507,14 @@ func (g *RustGenerator) generateRustMod() error {
 
 	g.println(copyright(true))
 	g.println(allowUnusedImports)
-	err = g.generateRustModLines("pub use %s::*;\n")
+	err = g.generateModLines("pub use %s::*;\n")
 	if err != nil {
 		return err
 	}
-	return g.generateRustModLines("pub mod %s;\n")
+	return g.generateModLines("pub mod %s;\n")
 }
 
-func (g *RustGenerator) generateRustModLines(format string) error {
+func (g *RustGenerator) generateModLines(format string) error {
 	g.println()
 
 	if !g.s.CoreContracts {
@@ -589,7 +546,7 @@ func (g *RustGenerator) generateRustModLines(format string) error {
 	return nil
 }
 
-func (g *RustGenerator) generateRustParams() error {
+func (g *RustGenerator) generateParams() error {
 	err := g.create(g.Folder + "params" + g.extension)
 	if err != nil {
 		return err
@@ -618,24 +575,24 @@ func (g *RustGenerator) generateRustParams() error {
 		if len(params) == 0 {
 			continue
 		}
-		g.generateRustStruct(params, PropImmutable, f.Type, "Params")
-		g.generateRustStruct(params, PropMutable, f.Type, "Params")
+		g.generateStruct(params, PropImmutable, f.Type, "Params")
+		g.generateStruct(params, PropMutable, f.Type, "Params")
 	}
 	return nil
 }
 
-func (g *RustGenerator) generateRustProxy(field *Field, mutability string) {
+func (g *RustGenerator) generateProxy(field *Field, mutability string) {
 	if field.Array {
-		g.generateRustProxyArray(field, mutability)
+		g.generateProxyArray(field, mutability)
 		return
 	}
 
 	if field.MapKey != "" {
-		g.generateRustProxyMap(field, mutability)
+		g.generateProxyMap(field, mutability)
 	}
 }
 
-func (g *RustGenerator) generateRustProxyArray(field *Field, mutability string) {
+func (g *RustGenerator) generateProxyArray(field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	arrayType := "ArrayOf" + proxyType
 	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
@@ -665,7 +622,7 @@ func (g *RustGenerator) generateRustProxyArray(field *Field, mutability string) 
 	g.printf("    }\n")
 
 	if field.TypeID == 0 {
-		g.generateRustProxyArrayNewType(field, proxyType)
+		g.generateProxyArrayNewType(field, proxyType)
 		return
 	}
 
@@ -675,7 +632,7 @@ func (g *RustGenerator) generateRustProxyArray(field *Field, mutability string) 
 	g.printf("    }\n")
 }
 
-func (g *RustGenerator) generateRustProxyArrayNewType(field *Field, proxyType string) {
+func (g *RustGenerator) generateProxyArrayNewType(field *Field, proxyType string) {
 	for _, subtype := range g.s.Typedefs {
 		if subtype.Name != field.Type {
 			continue
@@ -686,7 +643,7 @@ func (g *RustGenerator) generateRustProxyArrayNewType(field *Field, proxyType st
 			if varType == "" {
 				varType = rustTypeBytes
 			}
-			varType = g.generateRustArrayType(varType)
+			varType = g.generateArrayType(varType)
 		}
 		g.printf("\n    pub fn get_%s(&self, index: i32) -> %s {\n", snake(field.Type), proxyType)
 		g.printf("        let sub_id = get_object_id(self.obj_id, Key32(index), %s)\n", varType)
@@ -700,7 +657,7 @@ func (g *RustGenerator) generateRustProxyArrayNewType(field *Field, proxyType st
 	g.printf("    }\n")
 }
 
-func (g *RustGenerator) generateRustProxyMap(field *Field, mutability string) {
+func (g *RustGenerator) generateProxyMap(field *Field, mutability string) {
 	proxyType := mutability + field.Type
 	mapType := "Map" + field.MapKey + "To" + proxyType
 	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
@@ -729,7 +686,7 @@ func (g *RustGenerator) generateRustProxyMap(field *Field, mutability string) {
 	}
 
 	if field.TypeID == 0 {
-		g.generateRustProxyMapNewType(field, proxyType, keyType, keyValue)
+		g.generateProxyMapNewType(field, proxyType, keyType, keyValue)
 		return
 	}
 
@@ -739,7 +696,7 @@ func (g *RustGenerator) generateRustProxyMap(field *Field, mutability string) {
 	g.printf("    }\n")
 }
 
-func (g *RustGenerator) generateRustProxyMapNewType(field *Field, proxyType, keyType, keyValue string) {
+func (g *RustGenerator) generateProxyMapNewType(field *Field, proxyType, keyType, keyValue string) {
 	for _, subtype := range g.s.Typedefs {
 		if subtype.Name != field.Type {
 			continue
@@ -750,7 +707,7 @@ func (g *RustGenerator) generateRustProxyMapNewType(field *Field, proxyType, key
 			if varType == "" {
 				varType = rustTypeBytes
 			}
-			varType = g.generateRustArrayType(varType)
+			varType = g.generateArrayType(varType)
 		}
 		g.printf("\n    pub fn get_%s(&self, key: %s) -> %s {\n", snake(field.Type), keyType, proxyType)
 		g.printf("        let sub_id = get_object_id(self.obj_id, %s.get_key_id(), %s);\n", keyValue, varType)
@@ -764,7 +721,7 @@ func (g *RustGenerator) generateRustProxyMapNewType(field *Field, proxyType, key
 	g.printf("    }\n")
 }
 
-func (g *RustGenerator) generateRustResults() error {
+func (g *RustGenerator) generateResults() error {
 	err := g.create(g.Folder + "results" + g.extension)
 	if err != nil {
 		return err
@@ -790,13 +747,13 @@ func (g *RustGenerator) generateRustResults() error {
 		if len(f.Results) == 0 {
 			continue
 		}
-		g.generateRustStruct(f.Results, PropImmutable, f.Type, "Results")
-		g.generateRustStruct(f.Results, PropMutable, f.Type, "Results")
+		g.generateStruct(f.Results, PropImmutable, f.Type, "Results")
+		g.generateStruct(f.Results, PropMutable, f.Type, "Results")
 	}
 	return nil
 }
 
-func (g *RustGenerator) generateRustState() error {
+func (g *RustGenerator) generateState() error {
 	err := g.create(g.Folder + "state" + g.extension)
 	if err != nil {
 		return err
@@ -820,19 +777,19 @@ func (g *RustGenerator) generateRustState() error {
 		g.println(useTypes)
 	}
 
-	g.generateRustStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
-	g.generateRustStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
+	g.generateStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
+	g.generateStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
 	return nil
 }
 
-func (g *RustGenerator) generateRustStruct(fields []*Field, mutability, typeName, kind string) {
+func (g *RustGenerator) generateStruct(fields []*Field, mutability, typeName, kind string) {
 	typeName = mutability + typeName + kind
 	kind = strings.TrimSuffix(kind, "s")
 	kind = upper(kind) + "_"
 
 	// first generate necessary array and map types
 	for _, field := range fields {
-		g.generateRustProxy(field, mutability)
+		g.generateProxy(field, mutability)
 	}
 
 	g.printf("\n#[derive(Clone, Copy)]\n")
@@ -856,7 +813,7 @@ func (g *RustGenerator) generateRustStruct(fields []*Field, mutability, typeName
 			varType = rustTypeBytes
 		}
 		if field.Array {
-			varType = g.generateRustArrayType(varType)
+			varType = g.generateArrayType(varType)
 			arrayType := "ArrayOf" + mutability + field.Type
 			g.printf("\n    pub fn %s(&self) -> %s {\n", varName, arrayType)
 			g.printf("        let arr_id = get_object_id(self.id, %s, %s);\n", varID, varType)
@@ -892,7 +849,7 @@ func (g *RustGenerator) generateRustStruct(fields []*Field, mutability, typeName
 	}
 }
 
-func (g *RustGenerator) generateRustThunk(f *Func) {
+func (g *RustGenerator) generateThunk(f *Func) {
 	nameLen := f.nameLen(5) + 1
 	mutability := PropMutable
 	if f.Kind == KindView {
@@ -912,7 +869,7 @@ func (g *RustGenerator) generateRustThunk(f *Func) {
 	g.printf("    ctx.log(\"%s.%s\");\n", g.s.Name, f.FuncName)
 
 	if f.Access != "" {
-		g.generateRustThunkAccessCheck(f)
+		g.generateThunkAccessCheck(f)
 	}
 
 	g.printf("    let f = %sContext {\n", f.Type)
@@ -947,7 +904,7 @@ func (g *RustGenerator) generateRustThunk(f *Func) {
 	g.printf("}\n")
 }
 
-func (g *RustGenerator) generateRustThunkAccessCheck(f *Func) {
+func (g *RustGenerator) generateThunkAccessCheck(f *Func) {
 	grant := f.Access
 	index := strings.Index(grant, "//")
 	if index >= 0 {
@@ -969,7 +926,7 @@ func (g *RustGenerator) generateRustThunkAccessCheck(f *Func) {
 	g.printf("    ctx.require(ctx.caller() == %s, \"no permission\");\n\n", grant)
 }
 
-func (g *RustGenerator) generateRustTypes() error {
+func (g *RustGenerator) generateTypes() error {
 	if len(g.s.Structs) == 0 {
 		return nil
 	}
@@ -990,14 +947,14 @@ func (g *RustGenerator) generateRustTypes() error {
 
 	// write structs
 	for _, typeDef := range g.s.Structs {
-		g.generateRustType(typeDef)
+		g.generateType(typeDef)
 	}
 
 	g.formatter(true)
 	return nil
 }
 
-func (g *RustGenerator) generateRustType(typeDef *Struct) {
+func (g *RustGenerator) generateType(typeDef *Struct) {
 	nameLen, typeLen := calculatePadding(typeDef.Fields, rustTypes, true)
 
 	g.printf("\npub struct %s {\n", typeDef.Name)
@@ -1038,11 +995,11 @@ func (g *RustGenerator) generateRustType(typeDef *Struct) {
 	g.printf("    }\n")
 	g.printf("}\n")
 
-	g.generateRustTypeProxy(typeDef, false)
-	g.generateRustTypeProxy(typeDef, true)
+	g.generateTypeProxy(typeDef, false)
+	g.generateTypeProxy(typeDef, true)
 }
 
-func (g *RustGenerator) generateRustTypeProxy(typeDef *Struct, mutable bool) {
+func (g *RustGenerator) generateTypeProxy(typeDef *Struct, mutable bool) {
 	typeName := PropImmutable + typeDef.Name
 	if mutable {
 		typeName = PropMutable + typeDef.Name
@@ -1072,7 +1029,7 @@ func (g *RustGenerator) generateRustTypeProxy(typeDef *Struct, mutable bool) {
 	g.printf("}\n")
 }
 
-func (g *RustGenerator) generateRustTypeDefs() error {
+func (g *RustGenerator) generateTypeDefs() error {
 	if len(g.s.Typedefs) == 0 {
 		return nil
 	}
@@ -1095,8 +1052,8 @@ func (g *RustGenerator) generateRustTypeDefs() error {
 	}
 
 	for _, subtype := range g.s.Typedefs {
-		g.generateRustProxy(subtype, PropImmutable)
-		g.generateRustProxy(subtype, PropMutable)
+		g.generateProxy(subtype, PropImmutable)
+		g.generateProxy(subtype, PropMutable)
 	}
 
 	g.formatter(true)

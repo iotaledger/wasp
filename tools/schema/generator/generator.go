@@ -44,8 +44,18 @@ var (
 type Generator interface {
 	funcName(f *Func) string
 	generate() error
+	generateConsts(test bool) error
+	generateContract() error
 	generateFuncSignature(f *Func)
 	generateInitialFuncs() error
+	generateKeys() error
+	generateLib() error
+	generateParams() error
+	generateResults() error
+	generateLanguageSpecificFiles() error
+	generateState() error
+	generateTypes() error
+	generateTypeDefs() error
 }
 
 type GenBase struct {
@@ -118,6 +128,54 @@ func (g *GenBase) Generate(s *Schema, schemaTime time.Time) error {
 		}
 	}
 	return nil
+}
+
+func (g *GenBase) generate() error {
+	err := g.gen.generateConsts(false)
+	if err != nil {
+		return err
+	}
+	err = g.gen.generateTypes()
+	if err != nil {
+		return err
+	}
+	err = g.gen.generateTypeDefs()
+	if err != nil {
+		return err
+	}
+	err = g.gen.generateParams()
+	if err != nil {
+		return err
+	}
+	err = g.gen.generateResults()
+	if err != nil {
+		return err
+	}
+	err = g.gen.generateContract()
+	if err != nil {
+		return err
+	}
+
+	if !g.s.CoreContracts {
+		err = g.gen.generateKeys()
+		if err != nil {
+			return err
+		}
+		err = g.gen.generateState()
+		if err != nil {
+			return err
+		}
+		err = g.gen.generateLib()
+		if err != nil {
+			return err
+		}
+		err = g.generateFuncs()
+		if err != nil {
+			return err
+		}
+	}
+
+	return g.gen.generateLanguageSpecificFiles()
 }
 
 func (g *GenBase) generateFuncs() error {
