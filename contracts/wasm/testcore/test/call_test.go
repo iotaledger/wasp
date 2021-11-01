@@ -19,6 +19,10 @@ func fibo(n int64) int64 {
 
 func TestCallFibonacci(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
+		if *wasmsolo.TsWasm {
+			t.SkipNow()
+		}
+
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.Fibonacci(ctx)
@@ -33,6 +37,10 @@ func TestCallFibonacci(t *testing.T) {
 
 func TestCallFibonacciIndirect(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
+		if *wasmsolo.TsWasm {
+			t.SkipNow()
+		}
+
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.CallOnChain(ctx)
@@ -57,7 +65,7 @@ func TestCallFibonacciIndirect(t *testing.T) {
 func TestCallRecursive(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		// TODO need to adjust stack size for Go Wasm for this to succeed
-		if *wasmsolo.GoWasm {
+		if *wasmsolo.GoWasm || *wasmsolo.TsWasm {
 			t.SkipNow()
 		}
 

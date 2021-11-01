@@ -48,9 +48,22 @@ type WasmVMBase struct {
 	timeoutStarted bool
 }
 
-func (vm *WasmVMBase) EnvAbort(p1, p2, p3, p4 int32) {
-	// TODO determine message string from parameters
-	panic("AssemblyScript env.abort")
+func (vm *WasmVMBase) EnvAbort(errMsg, fileName, line, col int32) {
+	ptr := vm.impl.UnsafeMemory()
+
+	// null-terminated UTF-16 error message
+	str1 := make([]byte, 0)
+	for i := errMsg; ptr[i] != 0; i += 2 {
+		str1 = append(str1, ptr[i])
+	}
+
+	// null-terminated UTF-16 file name
+	str2 := make([]byte, 0)
+	for i := fileName; ptr[i] != 0; i += 2 {
+		str2 = append(str2, ptr[i])
+	}
+
+	panic(fmt.Sprintf("AssemblyScript panic: %s (%s %d:%d)", string(str1), string(str2), line, col))
 }
 
 //nolint:unparam
