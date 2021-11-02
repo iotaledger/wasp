@@ -224,8 +224,8 @@ github.com/deckarep/golang-set v0.0.0-20180603214616-504e848d77ea/go.mod h1:93vs
 github.com/decred/dcrd/lru v1.0.0/go.mod h1:mxKOwFd7lFjN2GZYsiz/ecgqR6kkYAl+0pz0tEMk218=
 github.com/deepmap/oapi-codegen v1.6.0/go.mod h1:ryDa9AgbELGeB+YEXE1dR53yAjHwFvE9iAUlWl9Al3M=
 github.com/deepmap/oapi-codegen v1.8.2/go.mod h1:YLgSKSDv/bZQB7N4ws6luhozi3cEdRktEqrX88CvjIw=
-github.com/dessaya/go-ethereum v1.10.10-0.20211028173333-c7f585c7534e h1:ZyCYe6uDhLHxKBOWHrHdZrmjPMLoDV1GWScnp3eOEG8=
-github.com/dessaya/go-ethereum v1.10.10-0.20211028173333-c7f585c7534e/go.mod h1:2ooOi5k/YRIWlju65OTXaCH/oFX7gMouq8+EgIU0Kbk=
+github.com/dessaya/go-ethereum v1.10.10-0.20211102133541-45878bcd628c h1:dVcpMbGEVK3K0uHwXjB0RAoKnxeNx9z6MB211FjgJbE=
+github.com/dessaya/go-ethereum v1.10.10-0.20211102133541-45878bcd628c/go.mod h1:W3yfrFyL9C1pHcwY5hmRHVDaorTiQxhYBkKyu5mEDHw=
 github.com/dgraph-io/badger v1.5.5-0.20190226225317-8115aed38f8f/go.mod h1:VZxzAIRPHRVNRKRo6AXrX9BJegn6il06VMTZVJYCIjQ=
 github.com/dgraph-io/badger v1.6.0-rc1/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
