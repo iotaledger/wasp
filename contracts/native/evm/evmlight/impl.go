@@ -4,6 +4,8 @@
 package evmlight
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/contracts/native/evm"
@@ -20,6 +22,7 @@ import (
 var Processor = Contract.Processor(initialize, append(
 	evminternal.ManagementHandlers,
 
+	evm.FuncMintBlock.WithHandler(mintBlock),
 	evm.FuncSendTransaction.WithHandler(applyTransaction),
 	evm.FuncGetBalance.WithHandler(getBalance),
 	evm.FuncCallContract.WithHandler(callContract),
@@ -50,7 +53,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	chainID, err := codec.DecodeUint16(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
 	a.RequireNoError(err)
 	emulator.Init(
-		evmStateSubrealm(ctx.State()),
+		evminternal.EVMStateSubrealm(ctx.State()),
 		chainID,
 		evm.GasLimitDefault, // TODO: make gas limit configurable
 		timestamp(ctx),
@@ -60,19 +63,25 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
+func mintBlock(ctx iscp.Sandbox) (dict.Dict, error) {
+	evminternal.ScheduleNextBlock(ctx)
+	emu := createEmulator(ctx)
+	emu.MintBlock()
+	return nil, nil
+}
+
 func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-
-	tx := &types.Transaction{}
-	err := tx.UnmarshalBinary(ctx.Params().MustGet(evm.FieldTransactionData))
-	a.RequireNoError(err)
-
-	return evminternal.RequireGasFee(ctx, tx.Gas(), func() uint64 {
-		emu := createEmulator(ctx)
-		receipt, err := emu.SendTransaction(tx)
-		a.RequireNoError(err)
-		return receipt.GasUsed
-	}), nil
+	return evminternal.ApplyTransaction(ctx, func(tx *types.Transaction, blockTime uint32) (*types.Receipt, error) {
+		var emu *emulator.EVMEmulator
+		if blockTime > 0 {
+			// next block will be minted when mintBlock() is called (via timelocked request)
+			emu = createEmulator(ctx)
+		} else {
+			// next block will be minted when the ISCP block is closed
+			emu = getEmulatorInBlockContext(ctx)
+		}
+		return emu.SendTransaction(tx)
+	})
 }
 
 func getBalance(ctx iscp.SandboxView) (dict.Dict, error) {
@@ -84,7 +93,7 @@ func getBalance(ctx iscp.SandboxView) (dict.Dict, error) {
 
 func getBlockNumber(ctx iscp.SandboxView) (dict.Dict, error) {
 	emu := createEmulatorR(ctx)
-	return evminternal.Result(emu.BlockchainDB().GetNumber().Bytes()), nil
+	return evminternal.Result(new(big.Int).SetUint64(emu.BlockchainDB().GetNumber()).Bytes()), nil
 }
 
 func getBlockByNumber(ctx iscp.SandboxView) (dict.Dict, error) {
