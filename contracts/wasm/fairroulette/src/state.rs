@@ -13,7 +13,7 @@ use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
-use crate::types::*;
+use crate::structs::*;
 
 pub struct ArrayOfImmutableBet {
     pub(crate) obj_id: i32,

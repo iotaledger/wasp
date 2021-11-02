@@ -12,8 +12,6 @@
 use wasmlib::*;
 use wasmlib::host::*;
 
-pub type ImmutableStringArray = ArrayOfImmutableString;
-
 pub struct ArrayOfImmutableString {
     pub(crate) obj_id: i32,
 }
@@ -28,7 +26,7 @@ impl ArrayOfImmutableString {
     }
 }
 
-pub type MutableStringArray = ArrayOfMutableString;
+pub type ImmutableStringArray = ArrayOfImmutableString;
 
 pub struct ArrayOfMutableString {
     pub(crate) obj_id: i32,
@@ -47,5 +45,7 @@ impl ArrayOfMutableString {
         ScMutableString::new(self.obj_id, Key32(index))
     }
 }
+
+pub type MutableStringArray = ArrayOfMutableString;
 
 // @formatter:on

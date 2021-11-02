@@ -35,17 +35,13 @@ var (
 	ModulePath = "???"
 )
 
-//nolint:unused
-var (
-	camelRegExp  = regexp.MustCompile(`_[a-z]`)
-	snakeRegExp  = regexp.MustCompile(`[a-z0-9][A-Z]`)
-	snakeRegExp2 = regexp.MustCompile(`[A-Z][A-Z]+[a-z]`)
-)
-
 type Generator interface {
 	funcName(f *Func) string
 	generateFuncSignature(f *Func)
 	generateLanguageSpecificFiles() error
+	generateProxyArray(field *Field, mutability, arrayType, proxyType string)
+	generateProxyMap(field *Field, mutability, mapType, proxyType string)
+	generateProxyReference(field *Field, mutability, typeName string)
 	writeConsts()
 	writeContract()
 	writeInitialFuncs()
@@ -163,8 +159,7 @@ func (g *GenBase) generateCode() error {
 		return err
 	}
 	if len(g.s.Structs) != 0 {
-		// TODO name change: types -> structs
-		err = g.createSourceFile("types", g.gen.writeStructs)
+		err = g.createSourceFile("structs", g.gen.writeStructs)
 		if err != nil {
 			return err
 		}
@@ -175,13 +170,17 @@ func (g *GenBase) generateCode() error {
 			return err
 		}
 	}
-	err = g.createSourceFile("params", g.gen.writeParams)
-	if err != nil {
-		return err
+	if len(g.s.Params) != 0 {
+		err = g.createSourceFile("params", g.gen.writeParams)
+		if err != nil {
+			return err
+		}
 	}
-	err = g.createSourceFile("results", g.gen.writeResults)
-	if err != nil {
-		return err
+	if len(g.s.Results) != 0 {
+		err = g.createSourceFile("results", g.gen.writeResults)
+		if err != nil {
+			return err
+		}
 	}
 	err = g.createSourceFile("contract", g.gen.writeContract)
 	if err != nil {
@@ -252,6 +251,29 @@ func (g *GenBase) generateFuncs() error {
 	}
 
 	return os.Remove(scOriginal)
+}
+
+func (g *GenBase) generateProxy(field *Field, mutability string) {
+	if field.Array {
+		proxyType := mutability + field.Type
+		arrayType := "ArrayOf" + proxyType
+		if !g.NewTypes[arrayType] {
+			g.NewTypes[arrayType] = true
+			g.gen.generateProxyArray(field, mutability, arrayType, proxyType)
+		}
+		g.gen.generateProxyReference(field, mutability, arrayType)
+		return
+	}
+
+	if field.MapKey != "" {
+		proxyType := mutability + field.Type
+		mapType := "Map" + field.MapKey + "To" + proxyType
+		if !g.NewTypes[mapType] {
+			g.NewTypes[mapType] = true
+			g.gen.generateProxyMap(field, mutability, mapType, proxyType)
+		}
+		g.gen.generateProxyReference(field, mutability, mapType)
+	}
 }
 
 func (g *GenBase) generateTests() error {

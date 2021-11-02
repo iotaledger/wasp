@@ -21,8 +21,8 @@ const (
 	useResults         = "use crate::results::*;"
 	useState           = "use crate::state::*;"
 	useStdPtr          = "use std::ptr;"
+	useStructs         = "use crate::structs::*;"
 	useTypeDefs        = "use crate::typedefs::*;"
-	useTypes           = "use crate::types::*;"
 	useWasmLib         = "use wasmlib::*;"
 	useWasmLibHost     = "use wasmlib::host::*;"
 )
@@ -277,7 +277,7 @@ func (g *RustGenerator) generateModLines(format string) {
 	if !g.s.CoreContracts {
 		g.printf(format, "state")
 		if len(g.s.Structs) != 0 {
-			g.printf(format, "types")
+			g.printf(format, "structs")
 		}
 		if len(g.s.Typedefs) != 0 {
 			g.printf(format, "typedefs")
@@ -285,29 +285,7 @@ func (g *RustGenerator) generateModLines(format string) {
 	}
 }
 
-func (g *RustGenerator) generateProxy(field *Field, mutability string) {
-	if field.Array {
-		g.generateProxyArray(field, mutability)
-		return
-	}
-
-	if field.MapKey != "" {
-		g.generateProxyMap(field, mutability)
-	}
-}
-
-func (g *RustGenerator) generateProxyArray(field *Field, mutability string) {
-	proxyType := mutability + field.Type
-	arrayType := "ArrayOf" + proxyType
-	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		g.printf("\npub type %s%s = %s;\n", mutability, field.Name, arrayType)
-	}
-	if g.NewTypes[arrayType] {
-		// already generated this array
-		return
-	}
-	g.NewTypes[arrayType] = true
-
+func (g *RustGenerator) generateProxyArray(field *Field, mutability, arrayType, proxyType string) {
 	g.printf("\npub struct %s {\n", arrayType)
 	g.printf("    pub(crate) obj_id: i32,\n")
 	g.printf("}\n")
@@ -361,18 +339,7 @@ func (g *RustGenerator) generateProxyArrayNewType(field *Field, proxyType string
 	g.printf("    }\n")
 }
 
-func (g *RustGenerator) generateProxyMap(field *Field, mutability string) {
-	proxyType := mutability + field.Type
-	mapType := "Map" + field.MapKey + "To" + proxyType
-	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		g.printf("\npub type %s%s = %s;\n", mutability, field.Name, mapType)
-	}
-	if g.NewTypes[mapType] {
-		// already generated this map
-		return
-	}
-	g.NewTypes[mapType] = true
-
+func (g *RustGenerator) generateProxyMap(field *Field, mutability, mapType, proxyType string) {
 	keyType := rustKeyTypes[field.MapKey]
 	keyValue := rustKeys[field.MapKey]
 
@@ -423,6 +390,12 @@ func (g *RustGenerator) generateProxyMapNewType(field *Field, proxyType, keyType
 	g.printf("\n    pub fn get_%s(&self, key: %s) -> %s {\n", snake(field.Type), keyType, proxyType)
 	g.printf("        %s { obj_id: self.obj_id, key_id: %s.get_key_id() }\n", proxyType, keyValue)
 	g.printf("    }\n")
+}
+
+func (g *RustGenerator) generateProxyReference(field *Field, mutability, typeName string) {
+	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
+		g.printf("\npub type %s%s = %s;\n", mutability, field.Name, typeName)
+	}
 }
 
 func (g *RustGenerator) generateProxyStruct(fields []*Field, mutability, typeName, kind string) {
@@ -694,8 +667,12 @@ func (g *RustGenerator) writeContract() {
 	if !g.s.CoreContracts {
 		g.println()
 		g.println(useConsts)
-		g.println(useParams)
-		g.println(useResults)
+		if len(g.s.Params) != 0 {
+			g.println(useParams)
+		}
+		if len(g.s.Results) != 0 {
+			g.println(useResults)
+		}
 	}
 
 	for _, f := range g.s.Funcs {
@@ -723,11 +700,11 @@ func (g *RustGenerator) writeInitialFuncs() {
 	g.println(useWasmLib)
 	g.println()
 	g.println(useCrate)
+	if len(g.s.Structs) != 0 {
+		g.println(useStructs)
+	}
 	if len(g.s.Typedefs) != 0 {
 		g.println(useTypeDefs)
-	}
-	if len(g.s.Structs) != 0 {
-		g.println(useTypes)
 	}
 
 	for _, f := range g.s.Funcs {
@@ -779,22 +756,30 @@ func (g *RustGenerator) writeLib() {
 	g.println()
 	g.println(useConsts)
 	g.println(useKeys)
-	g.println(useParams)
-	g.println(useResults)
+	if len(g.s.Params) != 0 {
+		g.println(useParams)
+	}
+	if len(g.s.Results) != 0 {
+		g.println(useResults)
+	}
 	g.println(useState)
 	g.println()
 
 	g.println("mod consts;")
 	g.println("mod contract;")
 	g.println("mod keys;")
-	g.println("mod params;")
-	g.println("mod results;")
+	if len(g.s.Params) != 0 {
+		g.println("mod params;")
+	}
+	if len(g.s.Results) != 0 {
+		g.println("mod results;")
+	}
 	g.println("mod state;")
+	if len(g.s.Structs) != 0 {
+		g.println("mod structs;")
+	}
 	if len(g.s.Typedefs) != 0 {
 		g.println("mod typedefs;")
-	}
-	if len(g.s.Structs) != 0 {
-		g.println("mod types;")
 	}
 	g.printf("mod %s;\n", g.s.Name)
 
@@ -836,17 +821,11 @@ func (g *RustGenerator) writeParams() {
 	}
 
 	for _, f := range g.s.Funcs {
-		params := make([]*Field, 0, len(f.Params))
-		for _, param := range f.Params {
-			if param.Alias != "@" {
-				params = append(params, param)
-			}
-		}
-		if len(params) == 0 {
+		if len(f.Params) == 0 {
 			continue
 		}
-		g.generateProxyStruct(params, PropImmutable, f.Type, "Params")
-		g.generateProxyStruct(params, PropMutable, f.Type, "Params")
+		g.generateProxyStruct(f.Params, PropImmutable, f.Type, "Params")
+		g.generateProxyStruct(f.Params, PropMutable, f.Type, "Params")
 	}
 }
 
@@ -860,7 +839,7 @@ func (g *RustGenerator) writeResults() {
 		g.println(useCrate)
 		g.println(useKeys)
 		if len(g.s.Structs) != 0 {
-			g.println(useTypes)
+			g.println(useStructs)
 		}
 	}
 
@@ -923,34 +902,15 @@ func (g *RustGenerator) writeState() {
 	g.println()
 	g.println(useCrate)
 	g.println(useKeys)
+	if len(g.s.Structs) != 0 {
+		g.println(useStructs)
+	}
 	if len(g.s.Typedefs) != 0 {
 		g.println(useTypeDefs)
-	}
-	if len(g.s.Structs) != 0 {
-		g.println(useTypes)
 	}
 
 	g.generateProxyStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
 	g.generateProxyStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
-}
-
-func (g *RustGenerator) writeTypeDefs() {
-	g.formatter(false)
-	g.println(allowDeadCode)
-	g.println()
-	g.println(useWasmLib)
-	g.println(useWasmLibHost)
-	if len(g.s.Structs) != 0 {
-		g.println()
-		g.println(useTypes)
-	}
-
-	for _, subtype := range g.s.Typedefs {
-		g.generateProxy(subtype, PropImmutable)
-		g.generateProxy(subtype, PropMutable)
-	}
-
-	g.formatter(true)
 }
 
 func (g *RustGenerator) writeStructs() {
@@ -962,6 +922,25 @@ func (g *RustGenerator) writeStructs() {
 
 	for _, typeDef := range g.s.Structs {
 		g.generateStruct(typeDef)
+	}
+
+	g.formatter(true)
+}
+
+func (g *RustGenerator) writeTypeDefs() {
+	g.formatter(false)
+	g.println(allowDeadCode)
+	g.println()
+	g.println(useWasmLib)
+	g.println(useWasmLibHost)
+	if len(g.s.Structs) != 0 {
+		g.println()
+		g.println(useStructs)
+	}
+
+	for _, subtype := range g.s.Typedefs {
+		g.generateProxy(subtype, PropImmutable)
+		g.generateProxy(subtype, PropMutable)
 	}
 
 	g.formatter(true)

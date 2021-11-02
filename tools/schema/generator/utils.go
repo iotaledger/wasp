@@ -4,8 +4,16 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
+)
+
+var (
+	//nolint:unused
+	snakePart       = regexp.MustCompile(`_[a-z]`)
+	camelPart       = regexp.MustCompile(`[a-z0-9][A-Z]`)
+	camelPartWithID = regexp.MustCompile(`[A-Z][A-Z]+[a-z]`)
 )
 
 func calculatePadding(fields []*Field, types StringMap, snakeName bool) (nameLen, typeLen int) {
@@ -31,7 +39,8 @@ func calculatePadding(fields []*Field, types StringMap, snakeName bool) (nameLen
 // convert lowercase snake case to camel case
 //nolint:deadcode,unused
 func camel(name string) string {
-	return camelRegExp.ReplaceAllStringFunc(name, func(sub string) string {
+	// replace each underscore followed by [a-z] with [A-Z]
+	return snakePart.ReplaceAllStringFunc(name, func(sub string) string {
 		return strings.ToUpper(sub[1:])
 	})
 }
@@ -103,13 +112,18 @@ func pad(name string, size int) string {
 
 // convert camel case to lower case snake case
 func snake(name string) string {
-	name = snakeRegExp.ReplaceAllStringFunc(name, func(sub string) string {
+	// insert underscores between [a-z0-9] followed by [A-Z]
+	name = camelPart.ReplaceAllStringFunc(name, func(sub string) string {
 		return sub[:1] + "_" + sub[1:]
 	})
-	name = snakeRegExp2.ReplaceAllStringFunc(name, func(sub string) string {
+
+	// insert underscores between double [A-Z] followed by [a-z]
+	name = camelPartWithID.ReplaceAllStringFunc(name, func(sub string) string {
 		n := len(sub)
 		return sub[:n-2] + "_" + sub[n-2:]
 	})
+
+	// lowercase the entire final result
 	return lower(name)
 }
 

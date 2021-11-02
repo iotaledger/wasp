@@ -9,8 +9,6 @@ package fairauction
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
-type ImmutableBidderList = ArrayOfImmutableAgentID
-
 type ArrayOfImmutableAgentID struct {
 	objID int32
 }
@@ -23,7 +21,7 @@ func (a ArrayOfImmutableAgentID) GetAgentID(index int32) wasmlib.ScImmutableAgen
 	return wasmlib.NewScImmutableAgentID(a.objID, wasmlib.Key32(index))
 }
 
-type MutableBidderList = ArrayOfMutableAgentID
+type ImmutableBidderList = ArrayOfImmutableAgentID
 
 type ArrayOfMutableAgentID struct {
 	objID int32
@@ -41,7 +39,7 @@ func (a ArrayOfMutableAgentID) GetAgentID(index int32) wasmlib.ScMutableAgentID 
 	return wasmlib.NewScMutableAgentID(a.objID, wasmlib.Key32(index))
 }
 
-type ImmutableBids = MapAgentIDToImmutableBid
+type MutableBidderList = ArrayOfMutableAgentID
 
 type MapAgentIDToImmutableBid struct {
 	objID int32
@@ -51,7 +49,7 @@ func (m MapAgentIDToImmutableBid) GetBid(key wasmlib.ScAgentID) ImmutableBid {
 	return ImmutableBid{objID: m.objID, keyID: key.KeyID()}
 }
 
-type MutableBids = MapAgentIDToMutableBid
+type ImmutableBids = MapAgentIDToImmutableBid
 
 type MapAgentIDToMutableBid struct {
 	objID int32
@@ -64,3 +62,5 @@ func (m MapAgentIDToMutableBid) Clear() {
 func (m MapAgentIDToMutableBid) GetBid(key wasmlib.ScAgentID) MutableBid {
 	return MutableBid{objID: m.objID, keyID: key.KeyID()}
 }
+
+type MutableBids = MapAgentIDToMutableBid

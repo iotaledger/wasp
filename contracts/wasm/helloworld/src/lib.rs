@@ -16,14 +16,12 @@ use wasmlib::host::*;
 
 use crate::consts::*;
 use crate::keys::*;
-use crate::params::*;
 use crate::results::*;
 use crate::state::*;
 
 mod consts;
 mod contract;
 mod keys;
-mod params;
 mod results;
 mod state;
 mod helloworld;

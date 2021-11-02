@@ -201,30 +201,7 @@ func (g *TypeScriptGenerator) generateLanguageSpecificFiles() error {
 	return g.writeSpecialConfigJSON()
 }
 
-func (g *TypeScriptGenerator) generateProxy(field *Field, mutability string) {
-	if field.Array {
-		g.generateProxyArray(field, mutability)
-		arrayType := "ArrayOf" + mutability + field.Type
-		g.generateProxyReference(field, mutability, arrayType)
-		return
-	}
-
-	if field.MapKey != "" {
-		g.generateProxyMap(field, mutability)
-		mapType := "Map" + field.MapKey + "To" + mutability + field.Type
-		g.generateProxyReference(field, mutability, mapType)
-	}
-}
-
-func (g *TypeScriptGenerator) generateProxyArray(field *Field, mutability string) {
-	proxyType := mutability + field.Type
-	arrayType := "ArrayOf" + proxyType
-	if g.NewTypes[arrayType] {
-		// already generated this array
-		return
-	}
-	g.NewTypes[arrayType] = true
-
+func (g *TypeScriptGenerator) generateProxyArray(field *Field, mutability, arrayType, proxyType string) {
 	g.printf("\nexport class %s {\n", arrayType)
 	g.printf("    objID: i32;\n")
 
@@ -281,15 +258,7 @@ func (g *TypeScriptGenerator) generateProxyArrayNewType(field *Field, proxyType 
 	g.printf("    }\n")
 }
 
-func (g *TypeScriptGenerator) generateProxyMap(field *Field, mutability string) {
-	proxyType := mutability + field.Type
-	mapType := "Map" + field.MapKey + "To" + proxyType
-	if g.NewTypes[mapType] {
-		// already generated this map
-		return
-	}
-	g.NewTypes[mapType] = true
-
+func (g *TypeScriptGenerator) generateProxyMap(field *Field, mutability, mapType, proxyType string) {
 	keyType := tsTypes[field.MapKey]
 	keyValue := tsKeys[field.MapKey]
 
@@ -730,7 +699,7 @@ func (g *TypeScriptGenerator) writeSpecialIndex() {
 	if !g.s.CoreContracts {
 		g.println("export * from \"./state\";")
 		if len(g.s.Structs) != 0 {
-			g.println("export * from \"./types\";")
+			g.println("export * from \"./structs\";")
 		}
 		if len(g.s.Typedefs) != 0 {
 			g.println("export * from \"./typedefs\";")
@@ -746,6 +715,14 @@ func (g *TypeScriptGenerator) writeState() {
 	g.generateProxyStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
 }
 
+func (g *TypeScriptGenerator) writeStructs() {
+	g.println(tsImportWasmLib)
+
+	for _, typeDef := range g.s.Structs {
+		g.generateStruct(typeDef)
+	}
+}
+
 func (g *TypeScriptGenerator) writeTypeDefs() {
 	g.println(tsImportWasmLib)
 	g.println(tsImportSelf)
@@ -753,13 +730,5 @@ func (g *TypeScriptGenerator) writeTypeDefs() {
 	for _, subtype := range g.s.Typedefs {
 		g.generateProxy(subtype, PropImmutable)
 		g.generateProxy(subtype, PropMutable)
-	}
-}
-
-func (g *TypeScriptGenerator) writeStructs() {
-	g.println(tsImportWasmLib)
-
-	for _, typeDef := range g.s.Structs {
-		g.generateStruct(typeDef)
 	}
 }
