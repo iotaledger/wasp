@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evm
+package emulator
 
 import (
 	"github.com/ethereum/go-ethereum/common"
