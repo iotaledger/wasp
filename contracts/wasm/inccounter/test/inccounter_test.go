@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/contracts/wasm/inccounter"
+	"github.com/iotaledger/wasp/contracts/wasm/inccounter/go/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"

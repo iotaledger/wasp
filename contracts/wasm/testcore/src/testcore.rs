@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use wasmlib::*;
-use wasmlib::corecontracts::*;
 
 use crate::*;
 use crate::contract::*;

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/dividend"
+	"github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
