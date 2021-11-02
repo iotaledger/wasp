@@ -13,4 +13,4 @@ export * from "./keys";
 export * from "./lib";
 export * from "./params";
 export * from "./state";
-export * from "./types";
+export * from "./structs";

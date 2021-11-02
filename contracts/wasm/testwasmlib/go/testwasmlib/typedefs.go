@@ -9,8 +9,6 @@ package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
-type ImmutableStringArray = ArrayOfImmutableString
-
 type ArrayOfImmutableString struct {
 	objID int32
 }
@@ -23,7 +21,7 @@ func (a ArrayOfImmutableString) GetString(index int32) wasmlib.ScImmutableString
 	return wasmlib.NewScImmutableString(a.objID, wasmlib.Key32(index))
 }
 
-type MutableStringArray = ArrayOfMutableString
+type ImmutableStringArray = ArrayOfImmutableString
 
 type ArrayOfMutableString struct {
 	objID int32
@@ -40,3 +38,5 @@ func (a ArrayOfMutableString) Length() int32 {
 func (a ArrayOfMutableString) GetString(index int32) wasmlib.ScMutableString {
 	return wasmlib.NewScMutableString(a.objID, wasmlib.Key32(index))
 }
+
+type MutableStringArray = ArrayOfMutableString

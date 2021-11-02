@@ -204,29 +204,7 @@ func (g *GoGenerator) generateLanguageSpecificFiles() error {
 	return g.createSourceFile("../main", g.writeSpecialMain)
 }
 
-func (g *GoGenerator) generateProxy(field *Field, mutability string) {
-	if field.Array {
-		g.generateProxyArray(field, mutability)
-		return
-	}
-
-	if field.MapKey != "" {
-		g.generateProxyMap(field, mutability)
-	}
-}
-
-func (g *GoGenerator) generateProxyArray(field *Field, mutability string) {
-	proxyType := mutability + field.Type
-	arrayType := "ArrayOf" + proxyType
-	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		g.printf("\ntype %s%s = %s\n", mutability, field.Name, arrayType)
-	}
-	if g.NewTypes[arrayType] {
-		// already generated this array
-		return
-	}
-	g.NewTypes[arrayType] = true
-
+func (g *GoGenerator) generateProxyArray(field *Field, mutability, arrayType, proxyType string) {
 	g.printf("\ntype %s struct {\n", arrayType)
 	g.printf("\tobjID int32\n")
 	g.printf("}\n")
@@ -277,18 +255,7 @@ func (g *GoGenerator) generateProxyArrayNewType(field *Field, proxyType, arrayTy
 	g.printf("}\n")
 }
 
-func (g *GoGenerator) generateProxyMap(field *Field, mutability string) {
-	proxyType := mutability + field.Type
-	mapType := "Map" + field.MapKey + "To" + proxyType
-	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		g.printf("\ntype %s%s = %s\n", mutability, field.Name, mapType)
-	}
-	if g.NewTypes[mapType] {
-		// already generated this map
-		return
-	}
-	g.NewTypes[mapType] = true
-
+func (g *GoGenerator) generateProxyMap(field *Field, mutability, mapType, proxyType string) {
 	keyType := goTypes[field.MapKey]
 	keyValue := goKeys[field.MapKey]
 
@@ -336,6 +303,12 @@ func (g *GoGenerator) generateProxyMapNewType(field *Field, proxyType, mapType, 
 	g.printf("\nfunc (m %s) Get%s(key %s) %s {\n", mapType, field.Type, keyType, proxyType)
 	g.printf("\treturn %s{objID: m.objID, keyID: %s.KeyID()}\n", proxyType, keyValue)
 	g.printf("}\n")
+}
+
+func (g *GoGenerator) generateProxyReference(field *Field, mutability, typeName string) {
+	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
+		g.printf("\ntype %s%s = %s\n", mutability, field.Name, typeName)
+	}
 }
 
 func (g *GoGenerator) generateProxyStruct(fields []*Field, mutability, typeName, kind string) {
@@ -668,15 +641,7 @@ func (g *GoGenerator) writeLib() {
 
 func (g *GoGenerator) writeParams() {
 	g.printf(g.packageName())
-
-	totalParams := 0
-	for _, f := range g.s.Funcs {
-		totalParams += len(f.Params)
-	}
-	if totalParams != 0 {
-		g.println()
-		g.println(goImportWasmLib)
-	}
+	g.println(goImportWasmLib)
 
 	for _, f := range g.s.Funcs {
 		if len(f.Params) == 0 {
@@ -689,15 +654,7 @@ func (g *GoGenerator) writeParams() {
 
 func (g *GoGenerator) writeResults() {
 	g.printf(g.packageName())
-
-	results := 0
-	for _, f := range g.s.Funcs {
-		results += len(f.Results)
-	}
-	if results != 0 {
-		g.println()
-		g.println(goImportWasmLib)
-	}
+	g.println(goImportWasmLib)
 
 	for _, f := range g.s.Funcs {
 		if len(f.Results) == 0 {
@@ -730,12 +687,20 @@ func (g *GoGenerator) writeSpecialMain() {
 func (g *GoGenerator) writeState() {
 	g.printf(g.packageName())
 	if len(g.s.StateVars) != 0 {
-		g.println()
 		g.println(goImportWasmLib)
 	}
 
 	g.generateProxyStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
 	g.generateProxyStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
+}
+
+func (g *GoGenerator) writeStructs() {
+	g.println(g.packageName())
+	g.println(goImportWasmLib)
+
+	for _, typeDef := range g.s.Structs {
+		g.generateStruct(typeDef)
+	}
 }
 
 func (g *GoGenerator) writeTypeDefs() {
@@ -745,14 +710,5 @@ func (g *GoGenerator) writeTypeDefs() {
 	for _, subtype := range g.s.Typedefs {
 		g.generateProxy(subtype, PropImmutable)
 		g.generateProxy(subtype, PropMutable)
-	}
-}
-
-func (g *GoGenerator) writeStructs() {
-	g.println(g.packageName())
-	g.println(goImportWasmLib)
-
-	for _, typeDef := range g.s.Structs {
-		g.generateStruct(typeDef)
 	}
 }

@@ -362,7 +362,7 @@ func (s *Schema) GenerateJavaTypes() error {
 		return nil
 	}
 
-	err := os.MkdirAll("types", 0o755)
+	err := os.MkdirAll("structs", 0o755)
 	if err != nil {
 		return err
 	}
@@ -379,7 +379,7 @@ func (s *Schema) GenerateJavaTypes() error {
 }
 
 func (s *Schema) GenerateJavaType(td *Struct) error {
-	file, err := os.Create("types/" + td.Name + ".java")
+	file, err := os.Create("structs/" + td.Name + ".java")
 	if err != nil {
 		return err
 	}
@@ -390,7 +390,7 @@ func (s *Schema) GenerateJavaType(td *Struct) error {
 
 	// write file header
 	// fmt.Fprint(file, copyright(true))
-	fmt.Fprintf(file, "\npackage org.iota.wasp.contracts.%s.types;\n\n", s.Name)
+	fmt.Fprintf(file, "\npackage org.iota.wasp.contracts.%s.structs;\n\n", s.Name)
 	fmt.Fprint(file, "import org.iota.wasp.wasmlib.bytes.*;\n")
 	fmt.Fprint(file, "import org.iota.wasp.wasmlib.hashtypes.*;\n\n")
 

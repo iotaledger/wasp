@@ -8,10 +8,10 @@
 // through a minimal implementation and not to come up with a complete real-world solution.
 
 use wasmlib::*;
-use crate::contract::ScFuncs;
 
-use crate::types::*;
 use crate::*;
+use crate::contract::*;
+use crate::structs::*;
 
 // Define some default configuration parameters.
 

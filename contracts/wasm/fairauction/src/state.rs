@@ -13,8 +13,8 @@ use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
+use crate::structs::*;
 use crate::typedefs::*;
-use crate::types::*;
 
 pub struct MapColorToImmutableAuction {
     pub(crate) obj_id: i32,

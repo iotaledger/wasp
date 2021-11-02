@@ -26,7 +26,7 @@ mod keys;
 mod params;
 mod results;
 mod state;
-mod types;
+mod structs;
 mod fairroulette;
 
 #[no_mangle]
