@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmchain
+package evmtypes
 
 import (
 	"bytes"
@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/iotaledger/wasp/packages/evm"
 )
 
 func EncodeTransaction(tx *types.Transaction) []byte {
@@ -27,7 +26,7 @@ func DecodeTransaction(b []byte) (*types.Transaction, error) {
 	return tx, err
 }
 
-func getSender(tx *types.Transaction) common.Address {
-	sender, _ := types.Sender(evm.Signer(tx.ChainId()), tx)
+func GetSender(tx *types.Transaction) common.Address {
+	sender, _ := types.Sender(Signer(tx.ChainId()), tx)
 	return sender
 }

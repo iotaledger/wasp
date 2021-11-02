@@ -1,10 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// package evm provides tools to emulate Ethereum chains and contracts.
+// package emulator provides tools to emulate Ethereum chains and contracts.
 //
 // Code adapted from go-ethereum/accounts/abi/bind/backends/simulated.go
-package evm
+package emulator
 
 import (
 	"context"
@@ -31,6 +31,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/iotaledger/wasp/contracts/native/evm"
 	"golang.org/x/xerrors"
 )
 
@@ -55,14 +56,10 @@ type EVMEmulator struct {
 }
 
 var (
-	TxGas           = uint64(21000) // gas cost of simple transfer (not contract creation / call)
-	GasLimitDefault = uint64(15000000)
-	GasPrice        = big.NewInt(0)
-	vmConfig        = vm.Config{}
-	timeDelta       = uint64(1) // amount of seconds to add to timestamp by default for new blocks
+	TxGas     = uint64(21000) // gas cost of simple transfer (not contract creation / call)
+	vmConfig  = vm.Config{}
+	timeDelta = uint64(1) // amount of seconds to add to timestamp by default for new blocks
 )
-
-const DefaultChainID = 1074 // IOTA -- get it?
 
 func MakeConfig(chainID int) *params.ChainConfig {
 	return &params.ChainConfig{
@@ -387,7 +384,7 @@ func (e *EVMEmulator) PendingNonceAt(account common.Address) (uint64, error) {
 // SuggestGasPrice implements ContractTransactor.SuggestGasPrice. Since the simulated
 // chain doesn't have miners, we just return a gas price of 1 for any call.
 func (e *EVMEmulator) SuggestGasPrice() (*big.Int, error) {
-	return GasPrice, nil
+	return evm.GasPrice, nil
 }
 
 // EstimateGas executes the requested code against the currently pending block/state and

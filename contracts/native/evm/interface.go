@@ -1,15 +1,13 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// package evmchain provides the `evmchain` contract, which allows to emulate an
-// Ethereum blockchain on top of ISCP.
-package evmchain
+package evm
 
 import (
+	"math/big"
+
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
-
-var Contract = coreutil.NewContract("evmchain", "EVM chain smart contract")
 
 var (
 	// Ethereum blockchain
@@ -26,8 +24,8 @@ var (
 	FuncGetTransactionByHash                = coreutil.ViewFunc("getTransactionByHash")
 	FuncGetTransactionByBlockHashAndIndex   = coreutil.ViewFunc("getTransactionByBlockHashAndIndex")
 	FuncGetTransactionByBlockNumberAndIndex = coreutil.ViewFunc("getTransactionByBlockNumberAndIndex")
-	FuncGetBlockTransactionCountByHash      = coreutil.ViewFunc("getBlockTransactionCountByHash")
-	FuncGetBlockTransactionCountByNumber    = coreutil.ViewFunc("getBlockTransactionCountByNumber")
+	FuncGetTransactionCountByBlockHash      = coreutil.ViewFunc("getTransactionCountByBlockHash")
+	FuncGetTransactionCountByBlockNumber    = coreutil.ViewFunc("getTransactionCountByBlockNumber")
 	FuncGetStorage                          = coreutil.ViewFunc("getStorage")
 	FuncGetLogs                             = coreutil.ViewFunc("getLogs")
 
@@ -56,12 +54,18 @@ const (
 	FieldBlockNumber             = "bn"
 	FieldBlockHash               = "bh"
 	FieldCallMsg                 = "c"
-	FieldEvmOwner                = "o"
-	FieldNextEvmOwner            = "n"
+	FieldNextEVMOwner            = "n"
 	FieldGasPerIota              = "w"
 	FieldGasFee                  = "f"
 	FieldGasUsed                 = "gu"
 	FieldFilterQuery             = "fq"
 )
 
-const DefaultGasPerIota uint64 = 1000
+const (
+	DefaultChainID = 1074 // IOTA -- get it?
+
+	DefaultGasPerIota uint64 = 1000
+	GasLimitDefault          = uint64(15000000)
+)
+
+var GasPrice = big.NewInt(0)
