@@ -79,34 +79,26 @@ func generateCoreInterfaces() {
 		if err != nil {
 			return err
 		}
-		if strings.HasSuffix(path, ".yaml") {
-			return generateCoreCoreInterface(path)
+		if !strings.HasSuffix(path, ".yaml") {
+			return nil
 		}
-		return nil
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		return generateSchema(file)
 	})
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func generateCoreCoreInterface(path string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	return generateSchema(file)
-}
-
 func generateSchema(file *os.File) error {
 	info, err := file.Stat()
 	if err != nil {
 		return err
-	}
-	schemaTime := info.ModTime()
-	if *flagForce {
-		// make as if it has just been updated
-		schemaTime = time.Now()
 	}
 
 	s, err := loadSchema(file)
@@ -115,9 +107,15 @@ func generateSchema(file *os.File) error {
 	}
 	s.CoreContracts = *flagCore
 
+	s.SchemaTime = info.ModTime()
+	if *flagForce {
+		// make as if it has just been updated
+		s.SchemaTime = time.Now()
+	}
+
 	if *flagTs {
 		g := generator.NewTypeScriptGenerator()
-		err = g.Generate(s, schemaTime)
+		err = g.Generate(s)
 		if err != nil {
 			return err
 		}
@@ -125,23 +123,15 @@ func generateSchema(file *os.File) error {
 
 	if *flagGo {
 		g := generator.NewGoGenerator()
-		err = g.Generate(s, schemaTime)
+		err = g.Generate(s)
 		if err != nil {
 			return err
 		}
 	}
 
-	//if *flagJava {
-	//	fmt.Println("generating Java code")
-	//	err = s.GenerateJava()
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-
 	if *flagRust {
 		g := generator.NewRustGenerator()
-		err = g.Generate(s, schemaTime)
+		err = g.Generate(s)
 		if err != nil {
 			return err
 		}
@@ -197,6 +187,36 @@ func generateSchemaNew() error {
 	return errors.New("invalid schema type: " + *flagType)
 }
 
+func loadSchema(file *os.File) (s *generator.Schema, err error) {
+	fmt.Println("loading " + file.Name())
+	schemaDef := &generator.SchemaDef{}
+	switch filepath.Ext(file.Name()) {
+	case ".json":
+		err = json.NewDecoder(file).Decode(schemaDef)
+		if err == nil && *flagType == "convert" {
+			err = WriteYAMLSchema(schemaDef)
+		}
+	case ".yaml":
+		fileByteArray, _ := ioutil.ReadAll(file)
+		err = yaml.Unmarshal(fileByteArray, schemaDef)
+		if err == nil && *flagType == "convert" {
+			err = WriteJSONSchema(schemaDef)
+		}
+	default:
+		err = errors.New("unexpected file type: " + file.Name())
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	s = generator.NewSchema()
+	err = s.Compile(schemaDef)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
 func WriteJSONSchema(schemaDef *generator.SchemaDef) error {
 	file, err := os.Create("schema.json")
 	if err != nil {
@@ -232,34 +252,4 @@ func WriteYAMLSchema(schemaDef *generator.SchemaDef) error {
 	}
 	_, err = file.Write(b)
 	return err
-}
-
-func loadSchema(file *os.File) (s *generator.Schema, err error) {
-	fmt.Println("loading " + file.Name())
-	schemaDef := &generator.SchemaDef{}
-	switch filepath.Ext(file.Name()) {
-	case ".json":
-		err = json.NewDecoder(file).Decode(schemaDef)
-		if err == nil && *flagType == "convert" {
-			err = WriteYAMLSchema(schemaDef)
-		}
-	case ".yaml":
-		fileByteArray, _ := ioutil.ReadAll(file)
-		err = yaml.Unmarshal(fileByteArray, schemaDef)
-		if err == nil && *flagType == "convert" {
-			err = WriteJSONSchema(schemaDef)
-		}
-	default:
-		err = errors.New("unexpected file type: " + file.Name())
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	s = generator.NewSchema()
-	err = s.Compile(schemaDef)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
 }

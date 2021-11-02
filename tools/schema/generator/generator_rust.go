@@ -4,7 +4,6 @@
 package generator
 
 import (
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -103,7 +102,25 @@ func NewRustGenerator() *RustGenerator {
 	return g
 }
 
-func (g *RustGenerator) flushRustConsts(crateOnly bool) {
+func (g *RustGenerator) crateOrWasmLib(withContract, withHost bool) string {
+	if g.s.CoreContracts {
+		retVal := useCrate
+		if withContract {
+			retVal += "\nuse crate::" + g.s.Name + "::*;"
+		}
+		if withHost {
+			retVal += "\nuse crate::host::*;"
+		}
+		return retVal
+	}
+	retVal := useWasmLib
+	if withHost {
+		retVal += "\n" + useWasmLibHost
+	}
+	return retVal
+}
+
+func (g *RustGenerator) flushConsts(crateOnly bool) {
 	if len(g.s.ConstNames) == 0 {
 		return
 	}
@@ -118,12 +135,8 @@ func (g *RustGenerator) flushRustConsts(crateOnly bool) {
 	})
 }
 
-func (g *RustGenerator) generateLanguageSpecificFiles() error {
-	if !g.s.CoreContracts {
-		return g.generateCargo()
-	}
-
-	return g.generateMod()
+func (g *RustGenerator) funcName(f *Func) string {
+	return snake(f.FuncName)
 }
 
 func (g *RustGenerator) generateArrayType(varType string) string {
@@ -132,90 +145,6 @@ func (g *RustGenerator) generateArrayType(varType string) string {
 		return "TYPE_ARRAY16 | " + varType
 	}
 	return "TYPE_ARRAY | " + varType
-}
-
-func (g *RustGenerator) generateCargo() error {
-	_, err := os.Stat("Cargo.toml")
-	if err == nil {
-		// already exists
-		return nil
-	}
-
-	err = g.create("Cargo.toml")
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	g.printf("[package]\n")
-	g.printf("name = \"%s\"\n", g.s.Name)
-	g.printf("description = \"%s\"\n", g.s.Description)
-	g.printf("license = \"Apache-2.0\"\n")
-	g.printf("version = \"0.1.0\"\n")
-	g.printf("authors = [\"John Doe <john@doe.org>\"]\n")
-	g.printf("edition = \"2018\"\n")
-	g.printf("repository = \"https://%s\"\n", ModuleName)
-	g.printf("\n[lib]\n")
-	g.printf("crate-type = [\"cdylib\", \"rlib\"]\n")
-	g.printf("\n[features]\n")
-	g.printf("default = [\"console_error_panic_hook\"]\n")
-	g.printf("\n[dependencies]\n")
-	g.printf("wasmlib = { git = \"https://github.com/iotaledger/wasp\", branch = \"develop\" }\n")
-	g.printf("console_error_panic_hook = { version = \"0.1.6\", optional = true }\n")
-	g.printf("wee_alloc = { version = \"0.4.5\", optional = true }\n")
-	g.printf("\n[dev-dependencies]\n")
-	g.printf("wasm-bindgen-test = \"0.3.13\"\n")
-
-	return nil
-}
-
-func (g *RustGenerator) generateConsts(test bool) error {
-	err := g.create(g.Folder + "consts" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.formatter(false)
-	g.println(allowDeadCode)
-	g.println()
-	g.println(g.s.crateOrWasmLib(false, false))
-
-	scName := g.s.Name
-	if g.s.CoreContracts {
-		// remove 'core' prefix
-		scName = scName[4:]
-	}
-	g.s.appendConst("SC_NAME", "&str = \""+scName+"\"")
-	if g.s.Description != "" {
-		g.s.appendConst("SC_DESCRIPTION", "&str = \""+g.s.Description+"\"")
-	}
-	hName := iscp.Hn(scName)
-	g.s.appendConst("HSC_NAME", "ScHname = ScHname(0x"+hName.String()+")")
-	g.flushRustConsts(false)
-
-	g.generateConstsFields(g.s.Params, "PARAM_")
-	g.generateConstsFields(g.s.Results, "RESULT_")
-	g.generateConstsFields(g.s.StateVars, "STATE_")
-
-	if len(g.s.Funcs) != 0 {
-		for _, f := range g.s.Funcs {
-			constName := upper(g.funcName(f))
-			g.s.appendConst(constName, "&str = \""+f.String+"\"")
-		}
-		g.flushRustConsts(g.s.CoreContracts)
-
-		for _, f := range g.s.Funcs {
-			constHname := "H" + upper(g.funcName(f))
-			g.s.appendConst(constHname, "ScHname = ScHname(0x"+f.Hname.String()+")")
-		}
-		g.flushRustConsts(g.s.CoreContracts)
-	}
-
-	g.formatter(true)
-	return nil
 }
 
 func (g *RustGenerator) generateConstsFields(fields []*Field, prefix string) {
@@ -228,52 +157,8 @@ func (g *RustGenerator) generateConstsFields(fields []*Field, prefix string) {
 			value := "&str = \"" + field.Alias + "\""
 			g.s.appendConst(name, value)
 		}
-		g.flushRustConsts(g.s.CoreContracts)
+		g.flushConsts(g.s.CoreContracts)
 	}
-}
-
-func (g *RustGenerator) generateContract() error {
-	err := g.create(g.Folder + "contract" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.formatter(false)
-	g.println(allowDeadCode)
-	g.println()
-	g.println(useStdPtr)
-	g.println()
-	g.println(g.s.crateOrWasmLib(true, false))
-	if !g.s.CoreContracts {
-		g.println()
-		g.println(useConsts)
-		g.println(useParams)
-		g.println(useResults)
-	}
-
-	for _, f := range g.s.Funcs {
-		nameLen := f.nameLen(4) + 1
-		kind := f.Kind
-		if f.Type == InitFunc {
-			kind = f.Type + f.Kind
-		}
-		g.printf("\npub struct %sCall {\n", f.Type)
-		g.printf("    pub %s Sc%s,\n", pad("func:", nameLen), kind)
-		if len(f.Params) != 0 {
-			g.printf("    pub %s Mutable%sParams,\n", pad("params:", nameLen), f.Type)
-		}
-		if len(f.Results) != 0 {
-			g.printf("    pub results: Immutable%sResults,\n", f.Type)
-		}
-		g.printf("}\n")
-	}
-
-	g.generateContractFuncs()
-	g.formatter(true)
-	return nil
 }
 
 func (g *RustGenerator) generateContractFuncs() {
@@ -317,10 +202,6 @@ func (g *RustGenerator) generateContractFuncs() {
 	g.printf("}\n")
 }
 
-func (g *RustGenerator) funcName(f *Func) string {
-	return snake(f.FuncName)
-}
-
 func (g *RustGenerator) generateFuncSignature(f *Func) {
 	switch f.FuncName {
 	case SpecialFuncInit:
@@ -340,73 +221,6 @@ func (g *RustGenerator) generateFuncSignature(f *Func) {
 		g.printf("\npub fn %s(_ctx: &Sc%sContext, _f: &%sContext) {\n", g.funcName(f), f.Kind, capitalize(f.Type))
 	}
 	g.printf("}\n")
-}
-
-func (g *RustGenerator) generateInitialFuncs() error {
-	err := g.create(g.Folder + g.s.Name + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(false))
-	g.println(useWasmLib)
-	g.println()
-	g.println(useCrate)
-	if len(g.s.Typedefs) != 0 {
-		g.println(useTypeDefs)
-	}
-	if len(g.s.Structs) != 0 {
-		g.println(useTypes)
-	}
-
-	for _, f := range g.s.Funcs {
-		g.generateFuncSignature(f)
-	}
-	return nil
-}
-
-func (g *RustGenerator) generateKeys() error {
-	err := g.create(g.Folder + "keys" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.formatter(false)
-	g.println(allowDeadCode)
-	g.println()
-	g.println(useWasmLib)
-	g.println()
-	g.println(useCrate)
-
-	g.s.KeyID = 0
-	g.generateKeysIndexes(g.s.Params, "PARAM_")
-	g.generateKeysIndexes(g.s.Results, "RESULT_")
-	g.generateKeysIndexes(g.s.StateVars, "STATE_")
-	g.flushRustConsts(true)
-
-	size := g.s.KeyID
-	g.printf("\npub const KEY_MAP_LEN: usize = %d;\n", size)
-	g.printf("\npub const KEY_MAP: [&str; KEY_MAP_LEN] = [\n")
-	g.generateKeysArray(g.s.Params, "PARAM_")
-	g.generateKeysArray(g.s.Results, "RESULT_")
-	g.generateKeysArray(g.s.StateVars, "STATE_")
-	g.printf("];\n")
-
-	g.printf("\npub static mut IDX_MAP: [Key32; KEY_MAP_LEN] = [Key32(0); KEY_MAP_LEN];\n")
-
-	g.printf("\npub fn idx_map(idx: usize) -> Key32 {\n")
-	g.printf("    unsafe {\n")
-	g.printf("        IDX_MAP[idx]\n")
-	g.printf("    }\n")
-	g.printf("}\n")
-
-	g.formatter(true)
-	return nil
 }
 
 func (g *RustGenerator) generateKeysArray(fields []*Field, prefix string) {
@@ -433,88 +247,14 @@ func (g *RustGenerator) generateKeysIndexes(fields []*Field, prefix string) {
 	}
 }
 
-func (g *RustGenerator) generateLib() error {
-	err := g.create(g.Folder + "lib" + g.extension)
-	if err != nil {
-		return err
+func (g *RustGenerator) generateLanguageSpecificFiles() error {
+	if g.s.CoreContracts {
+		return g.createSourceFile("mod", g.writeSpecialMod)
 	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.formatter(false)
-	g.println(allowDeadCode)
-	g.println(allowUnusedImports)
-	g.println()
-	g.printf("use %s::*;\n", g.s.Name)
-	g.println(useWasmLib)
-	g.println(useWasmLibHost)
-	g.println()
-	g.println(useConsts)
-	g.println(useKeys)
-	g.println(useParams)
-	g.println(useResults)
-	g.println(useState)
-	g.println()
-
-	g.println("mod consts;")
-	g.println("mod contract;")
-	g.println("mod keys;")
-	g.println("mod params;")
-	g.println("mod results;")
-	g.println("mod state;")
-	if len(g.s.Typedefs) != 0 {
-		g.println("mod typedefs;")
-	}
-	if len(g.s.Structs) != 0 {
-		g.println("mod types;")
-	}
-	g.printf("mod %s;\n", g.s.Name)
-
-	g.println("\n#[no_mangle]")
-	g.println("fn on_load() {")
-	if len(g.s.Funcs) != 0 {
-		g.printf("    let exports = ScExports::new();\n")
-	}
-	for _, f := range g.s.Funcs {
-		name := g.funcName(f)
-		g.printf("    exports.add_%s(%s, %s_thunk);\n", lower(f.Kind), upper(name), name)
-	}
-
-	g.printf("\n    unsafe {\n")
-	g.printf("        for i in 0..KEY_MAP_LEN {\n")
-	g.printf("            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);\n")
-	g.printf("        }\n")
-	g.printf("    }\n")
-
-	g.printf("}\n")
-
-	// generate parameter structs and thunks to set up and check parameters
-	for _, f := range g.s.Funcs {
-		g.generateThunk(f)
-	}
-
-	g.formatter(true)
-	return nil
+	return g.writeSpecialCargoToml()
 }
 
-func (g *RustGenerator) generateMod() error {
-	err := g.create(g.Folder + "mod" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	g.println(copyright(true))
-	g.println(allowUnusedImports)
-	err = g.generateModLines("pub use %s::*;\n")
-	if err != nil {
-		return err
-	}
-	return g.generateModLines("pub mod %s;\n")
-}
-
-func (g *RustGenerator) generateModLines(format string) error {
+func (g *RustGenerator) generateModLines(format string) {
 	g.println()
 
 	if !g.s.CoreContracts {
@@ -543,42 +283,6 @@ func (g *RustGenerator) generateModLines(format string) error {
 			g.printf(format, "typedefs")
 		}
 	}
-	return nil
-}
-
-func (g *RustGenerator) generateParams() error {
-	err := g.create(g.Folder + "params" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(allowDeadCode)
-	g.println(allowUnusedImports)
-	g.println()
-	g.println(g.s.crateOrWasmLib(true, true))
-	if !g.s.CoreContracts {
-		g.println()
-		g.println(useCrate)
-		g.println(useKeys)
-	}
-
-	for _, f := range g.s.Funcs {
-		params := make([]*Field, 0, len(f.Params))
-		for _, param := range f.Params {
-			if param.Alias != "@" {
-				params = append(params, param)
-			}
-		}
-		if len(params) == 0 {
-			continue
-		}
-		g.generateStruct(params, PropImmutable, f.Type, "Params")
-		g.generateStruct(params, PropMutable, f.Type, "Params")
-	}
-	return nil
 }
 
 func (g *RustGenerator) generateProxy(field *Field, mutability string) {
@@ -721,68 +425,7 @@ func (g *RustGenerator) generateProxyMapNewType(field *Field, proxyType, keyType
 	g.printf("    }\n")
 }
 
-func (g *RustGenerator) generateResults() error {
-	err := g.create(g.Folder + "results" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(allowDeadCode)
-	g.println(allowUnusedImports)
-	g.println()
-	g.println(g.s.crateOrWasmLib(true, true))
-	if !g.s.CoreContracts {
-		g.println()
-		g.println(useCrate)
-		g.println(useKeys)
-		if len(g.s.Structs) != 0 {
-			g.println(useTypes)
-		}
-	}
-
-	for _, f := range g.s.Funcs {
-		if len(f.Results) == 0 {
-			continue
-		}
-		g.generateStruct(f.Results, PropImmutable, f.Type, "Results")
-		g.generateStruct(f.Results, PropMutable, f.Type, "Results")
-	}
-	return nil
-}
-
-func (g *RustGenerator) generateState() error {
-	err := g.create(g.Folder + "state" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(allowDeadCode)
-	g.println(allowUnusedImports)
-	g.println()
-	g.println(useWasmLib)
-	g.println(useWasmLibHost)
-	g.println()
-	g.println(useCrate)
-	g.println(useKeys)
-	if len(g.s.Typedefs) != 0 {
-		g.println(useTypeDefs)
-	}
-	if len(g.s.Structs) != 0 {
-		g.println(useTypes)
-	}
-
-	g.generateStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
-	g.generateStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
-	return nil
-}
-
-func (g *RustGenerator) generateStruct(fields []*Field, mutability, typeName, kind string) {
+func (g *RustGenerator) generateProxyStruct(fields []*Field, mutability, typeName, kind string) {
 	typeName = mutability + typeName + kind
 	kind = strings.TrimSuffix(kind, "s")
 	kind = upper(kind) + "_"
@@ -847,6 +490,81 @@ func (g *RustGenerator) generateStruct(fields []*Field, mutability, typeName, ki
 		g.printf("        Sc%s::new(self.id, %s)\n", proxyType, varID)
 		g.printf("    }\n")
 	}
+}
+
+func (g *RustGenerator) generateStruct(typeDef *Struct) {
+	nameLen, typeLen := calculatePadding(typeDef.Fields, rustTypes, true)
+
+	g.printf("\npub struct %s {\n", typeDef.Name)
+	for _, field := range typeDef.Fields {
+		fldName := pad(snake(field.Name)+":", nameLen+1)
+		fldType := rustTypes[field.Type] + ","
+		if field.Comment != "" {
+			fldType = pad(fldType, typeLen+1)
+		}
+		g.printf("    pub %s %s%s\n", fldName, fldType, field.Comment)
+	}
+	g.printf("}\n")
+
+	// write encoder and decoder for struct
+	g.printf("\nimpl %s {", typeDef.Name)
+
+	g.printf("\n    pub fn from_bytes(bytes: &[u8]) -> %s {\n", typeDef.Name)
+	g.printf("        let mut decode = BytesDecoder::new(bytes);\n")
+	g.printf("        %s {\n", typeDef.Name)
+	for _, field := range typeDef.Fields {
+		name := snake(field.Name)
+		g.printf("            %s: decode.%s(),\n", name, snake(field.Type))
+	}
+	g.printf("        }\n")
+	g.printf("    }\n")
+
+	g.printf("\n    pub fn to_bytes(&self) -> Vec<u8> {\n")
+	g.printf("        let mut encode = BytesEncoder::new();\n")
+	for _, field := range typeDef.Fields {
+		name := snake(field.Name)
+		ref := "&"
+		if field.Type == "Hname" || field.Type == "Int64" || field.Type == "Int32" || field.Type == "Int16" {
+			ref = ""
+		}
+		g.printf("        encode.%s(%sself.%s);\n", snake(field.Type), ref, name)
+	}
+	g.printf("        return encode.data();\n")
+	g.printf("    }\n")
+	g.printf("}\n")
+
+	g.generateStructProxy(typeDef, false)
+	g.generateStructProxy(typeDef, true)
+}
+
+func (g *RustGenerator) generateStructProxy(typeDef *Struct, mutable bool) {
+	typeName := PropImmutable + typeDef.Name
+	if mutable {
+		typeName = PropMutable + typeDef.Name
+	}
+
+	g.printf("\npub struct %s {\n", typeName)
+	g.printf("    pub(crate) obj_id: i32,\n")
+	g.printf("    pub(crate) key_id: Key32,\n")
+	g.printf("}\n")
+
+	g.printf("\nimpl %s {", typeName)
+
+	g.printf("\n    pub fn exists(&self) -> bool {\n")
+	g.printf("        exists(self.obj_id, self.key_id, TYPE_BYTES)\n")
+	g.printf("    }\n")
+
+	if mutable {
+		g.printf("\n    pub fn set_value(&self, value: &%s) {\n", typeDef.Name)
+		g.printf("        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());\n")
+		g.printf("    }\n")
+	}
+
+	g.printf("\n    pub fn value(&self) -> %s {\n", typeDef.Name)
+	g.printf("        %s::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))\n", typeDef.Name)
+	g.printf("    }\n")
+
+	g.printf("}\n")
 }
 
 func (g *RustGenerator) generateThunk(f *Func) {
@@ -926,121 +644,297 @@ func (g *RustGenerator) generateThunkAccessCheck(f *Func) {
 	g.printf("    ctx.require(ctx.caller() == %s, \"no permission\");\n\n", grant)
 }
 
-func (g *RustGenerator) generateTypes() error {
-	if len(g.s.Structs) == 0 {
-		return nil
+func (g *RustGenerator) writeConsts() {
+	g.formatter(false)
+	g.println(allowDeadCode)
+	g.println()
+	g.println(g.crateOrWasmLib(false, false))
+
+	scName := g.s.Name
+	if g.s.CoreContracts {
+		// remove 'core' prefix
+		scName = scName[4:]
+	}
+	g.s.appendConst("SC_NAME", "&str = \""+scName+"\"")
+	if g.s.Description != "" {
+		g.s.appendConst("SC_DESCRIPTION", "&str = \""+g.s.Description+"\"")
+	}
+	hName := iscp.Hn(scName)
+	g.s.appendConst("HSC_NAME", "ScHname = ScHname(0x"+hName.String()+")")
+	g.flushConsts(false)
+
+	g.generateConstsFields(g.s.Params, "PARAM_")
+	g.generateConstsFields(g.s.Results, "RESULT_")
+	g.generateConstsFields(g.s.StateVars, "STATE_")
+
+	if len(g.s.Funcs) != 0 {
+		for _, f := range g.s.Funcs {
+			constName := upper(g.funcName(f))
+			g.s.appendConst(constName, "&str = \""+f.String+"\"")
+		}
+		g.flushConsts(g.s.CoreContracts)
+
+		for _, f := range g.s.Funcs {
+			constHname := "H" + upper(g.funcName(f))
+			g.s.appendConst(constHname, "ScHname = ScHname(0x"+f.Hname.String()+")")
+		}
+		g.flushConsts(g.s.CoreContracts)
 	}
 
-	err := g.create(g.Folder + "types" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
+	g.formatter(true)
+}
 
-	// write file header
-	g.println(copyright(true))
+func (g *RustGenerator) writeContract() {
+	g.formatter(false)
+	g.println(allowDeadCode)
+	g.println()
+	g.println(useStdPtr)
+	g.println()
+	g.println(g.crateOrWasmLib(true, false))
+	if !g.s.CoreContracts {
+		g.println()
+		g.println(useConsts)
+		g.println(useParams)
+		g.println(useResults)
+	}
+
+	for _, f := range g.s.Funcs {
+		nameLen := f.nameLen(4) + 1
+		kind := f.Kind
+		if f.Type == InitFunc {
+			kind = f.Type + f.Kind
+		}
+		g.printf("\npub struct %sCall {\n", f.Type)
+		g.printf("    pub %s Sc%s,\n", pad("func:", nameLen), kind)
+		if len(f.Params) != 0 {
+			g.printf("    pub %s Mutable%sParams,\n", pad("params:", nameLen), f.Type)
+		}
+		if len(f.Results) != 0 {
+			g.printf("    pub results: Immutable%sResults,\n", f.Type)
+		}
+		g.printf("}\n")
+	}
+
+	g.generateContractFuncs()
+	g.formatter(true)
+}
+
+func (g *RustGenerator) writeInitialFuncs() {
+	g.println(useWasmLib)
+	g.println()
+	g.println(useCrate)
+	if len(g.s.Typedefs) != 0 {
+		g.println(useTypeDefs)
+	}
+	if len(g.s.Structs) != 0 {
+		g.println(useTypes)
+	}
+
+	for _, f := range g.s.Funcs {
+		g.generateFuncSignature(f)
+	}
+}
+
+func (g *RustGenerator) writeKeys() {
 	g.formatter(false)
 	g.println(allowDeadCode)
 	g.println()
 	g.println(useWasmLib)
-	g.println(useWasmLibHost)
+	g.println()
+	g.println(useCrate)
 
-	// write structs
-	for _, typeDef := range g.s.Structs {
-		g.generateType(typeDef)
-	}
+	g.s.KeyID = 0
+	g.generateKeysIndexes(g.s.Params, "PARAM_")
+	g.generateKeysIndexes(g.s.Results, "RESULT_")
+	g.generateKeysIndexes(g.s.StateVars, "STATE_")
+	g.flushConsts(true)
 
-	g.formatter(true)
-	return nil
-}
+	size := g.s.KeyID
+	g.printf("\npub const KEY_MAP_LEN: usize = %d;\n", size)
+	g.printf("\npub const KEY_MAP: [&str; KEY_MAP_LEN] = [\n")
+	g.generateKeysArray(g.s.Params, "PARAM_")
+	g.generateKeysArray(g.s.Results, "RESULT_")
+	g.generateKeysArray(g.s.StateVars, "STATE_")
+	g.printf("];\n")
 
-func (g *RustGenerator) generateType(typeDef *Struct) {
-	nameLen, typeLen := calculatePadding(typeDef.Fields, rustTypes, true)
+	g.printf("\npub static mut IDX_MAP: [Key32; KEY_MAP_LEN] = [Key32(0); KEY_MAP_LEN];\n")
 
-	g.printf("\npub struct %s {\n", typeDef.Name)
-	for _, field := range typeDef.Fields {
-		fldName := pad(snake(field.Name)+":", nameLen+1)
-		fldType := rustTypes[field.Type] + ","
-		if field.Comment != "" {
-			fldType = pad(fldType, typeLen+1)
-		}
-		g.printf("    pub %s %s%s\n", fldName, fldType, field.Comment)
-	}
+	g.printf("\npub fn idx_map(idx: usize) -> Key32 {\n")
+	g.printf("    unsafe {\n")
+	g.printf("        IDX_MAP[idx]\n")
+	g.printf("    }\n")
 	g.printf("}\n")
 
-	// write encoder and decoder for struct
-	g.printf("\nimpl %s {", typeDef.Name)
+	g.formatter(true)
+}
 
-	g.printf("\n    pub fn from_bytes(bytes: &[u8]) -> %s {\n", typeDef.Name)
-	g.printf("        let mut decode = BytesDecoder::new(bytes);\n")
-	g.printf("        %s {\n", typeDef.Name)
-	for _, field := range typeDef.Fields {
-		name := snake(field.Name)
-		g.printf("            %s: decode.%s(),\n", name, snake(field.Type))
+func (g *RustGenerator) writeLib() {
+	g.formatter(false)
+	g.println(allowDeadCode)
+	g.println(allowUnusedImports)
+	g.println()
+	g.printf("use %s::*;\n", g.s.Name)
+	g.println(useWasmLib)
+	g.println(useWasmLibHost)
+	g.println()
+	g.println(useConsts)
+	g.println(useKeys)
+	g.println(useParams)
+	g.println(useResults)
+	g.println(useState)
+	g.println()
+
+	g.println("mod consts;")
+	g.println("mod contract;")
+	g.println("mod keys;")
+	g.println("mod params;")
+	g.println("mod results;")
+	g.println("mod state;")
+	if len(g.s.Typedefs) != 0 {
+		g.println("mod typedefs;")
 	}
+	if len(g.s.Structs) != 0 {
+		g.println("mod types;")
+	}
+	g.printf("mod %s;\n", g.s.Name)
+
+	g.println("\n#[no_mangle]")
+	g.println("fn on_load() {")
+	if len(g.s.Funcs) != 0 {
+		g.printf("    let exports = ScExports::new();\n")
+	}
+	for _, f := range g.s.Funcs {
+		name := g.funcName(f)
+		g.printf("    exports.add_%s(%s, %s_thunk);\n", lower(f.Kind), upper(name), name)
+	}
+
+	g.printf("\n    unsafe {\n")
+	g.printf("        for i in 0..KEY_MAP_LEN {\n")
+	g.printf("            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);\n")
 	g.printf("        }\n")
 	g.printf("    }\n")
 
-	g.printf("\n    pub fn to_bytes(&self) -> Vec<u8> {\n")
-	g.printf("        let mut encode = BytesEncoder::new();\n")
-	for _, field := range typeDef.Fields {
-		name := snake(field.Name)
-		ref := "&"
-		if field.Type == "Hname" || field.Type == "Int64" || field.Type == "Int32" || field.Type == "Int16" {
-			ref = ""
+	g.printf("}\n")
+
+	// generate parameter structs and thunks to set up and check parameters
+	for _, f := range g.s.Funcs {
+		g.generateThunk(f)
+	}
+
+	g.formatter(true)
+}
+
+func (g *RustGenerator) writeParams() {
+	g.println(allowDeadCode)
+	g.println(allowUnusedImports)
+	g.println()
+	g.println(g.crateOrWasmLib(true, true))
+	if !g.s.CoreContracts {
+		g.println()
+		g.println(useCrate)
+		g.println(useKeys)
+	}
+
+	for _, f := range g.s.Funcs {
+		params := make([]*Field, 0, len(f.Params))
+		for _, param := range f.Params {
+			if param.Alias != "@" {
+				params = append(params, param)
+			}
 		}
-		g.printf("        encode.%s(%sself.%s);\n", snake(field.Type), ref, name)
+		if len(params) == 0 {
+			continue
+		}
+		g.generateProxyStruct(params, PropImmutable, f.Type, "Params")
+		g.generateProxyStruct(params, PropMutable, f.Type, "Params")
 	}
-	g.printf("        return encode.data();\n")
-	g.printf("    }\n")
-	g.printf("}\n")
-
-	g.generateTypeProxy(typeDef, false)
-	g.generateTypeProxy(typeDef, true)
 }
 
-func (g *RustGenerator) generateTypeProxy(typeDef *Struct, mutable bool) {
-	typeName := PropImmutable + typeDef.Name
-	if mutable {
-		typeName = PropMutable + typeDef.Name
+func (g *RustGenerator) writeResults() {
+	g.println(allowDeadCode)
+	g.println(allowUnusedImports)
+	g.println()
+	g.println(g.crateOrWasmLib(true, true))
+	if !g.s.CoreContracts {
+		g.println()
+		g.println(useCrate)
+		g.println(useKeys)
+		if len(g.s.Structs) != 0 {
+			g.println(useTypes)
+		}
 	}
 
-	g.printf("\npub struct %s {\n", typeName)
-	g.printf("    pub(crate) obj_id: i32,\n")
-	g.printf("    pub(crate) key_id: Key32,\n")
-	g.printf("}\n")
-
-	g.printf("\nimpl %s {", typeName)
-
-	g.printf("\n    pub fn exists(&self) -> bool {\n")
-	g.printf("        exists(self.obj_id, self.key_id, TYPE_BYTES)\n")
-	g.printf("    }\n")
-
-	if mutable {
-		g.printf("\n    pub fn set_value(&self, value: &%s) {\n", typeDef.Name)
-		g.printf("        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());\n")
-		g.printf("    }\n")
+	for _, f := range g.s.Funcs {
+		if len(f.Results) == 0 {
+			continue
+		}
+		g.generateProxyStruct(f.Results, PropImmutable, f.Type, "Results")
+		g.generateProxyStruct(f.Results, PropMutable, f.Type, "Results")
 	}
-
-	g.printf("\n    pub fn value(&self) -> %s {\n", typeDef.Name)
-	g.printf("        %s::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))\n", typeDef.Name)
-	g.printf("    }\n")
-
-	g.printf("}\n")
 }
 
-func (g *RustGenerator) generateTypeDefs() error {
-	if len(g.s.Typedefs) == 0 {
+func (g *RustGenerator) writeSpecialCargoToml() error {
+	err := g.exists("Cargo.toml")
+	if err == nil {
+		// already exists
 		return nil
 	}
 
-	err := g.create(g.Folder + "typedefs" + g.extension)
+	err = g.create("Cargo.toml")
 	if err != nil {
 		return err
 	}
 	defer g.close()
 
-	g.println(copyright(true))
+	g.printf("[package]\n")
+	g.printf("name = \"%s\"\n", g.s.Name)
+	g.printf("description = \"%s\"\n", g.s.Description)
+	g.printf("license = \"Apache-2.0\"\n")
+	g.printf("version = \"0.1.0\"\n")
+	g.printf("authors = [\"John Doe <john@doe.org>\"]\n")
+	g.printf("edition = \"2018\"\n")
+	g.printf("repository = \"https://%s\"\n", ModuleName)
+	g.printf("\n[lib]\n")
+	g.printf("crate-type = [\"cdylib\", \"rlib\"]\n")
+	g.printf("\n[features]\n")
+	g.printf("default = [\"console_error_panic_hook\"]\n")
+	g.printf("\n[dependencies]\n")
+	g.printf("wasmlib = { git = \"https://github.com/iotaledger/wasp\", branch = \"develop\" }\n")
+	g.printf("console_error_panic_hook = { version = \"0.1.6\", optional = true }\n")
+	g.printf("wee_alloc = { version = \"0.4.5\", optional = true }\n")
+	g.printf("\n[dev-dependencies]\n")
+	g.printf("wasm-bindgen-test = \"0.3.13\"\n")
+
+	return nil
+}
+
+func (g *RustGenerator) writeSpecialMod() {
+	g.println(allowUnusedImports)
+	g.generateModLines("pub use %s::*;\n")
+	g.generateModLines("pub mod %s;\n")
+}
+
+func (g *RustGenerator) writeState() {
+	g.println(allowDeadCode)
+	g.println(allowUnusedImports)
+	g.println()
+	g.println(useWasmLib)
+	g.println(useWasmLibHost)
+	g.println()
+	g.println(useCrate)
+	g.println(useKeys)
+	if len(g.s.Typedefs) != 0 {
+		g.println(useTypeDefs)
+	}
+	if len(g.s.Structs) != 0 {
+		g.println(useTypes)
+	}
+
+	g.generateProxyStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
+	g.generateProxyStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
+}
+
+func (g *RustGenerator) writeTypeDefs() {
 	g.formatter(false)
 	g.println(allowDeadCode)
 	g.println()
@@ -1057,5 +951,18 @@ func (g *RustGenerator) generateTypeDefs() error {
 	}
 
 	g.formatter(true)
-	return nil
+}
+
+func (g *RustGenerator) writeStructs() {
+	g.formatter(false)
+	g.println(allowDeadCode)
+	g.println()
+	g.println(useWasmLib)
+	g.println(useWasmLibHost)
+
+	for _, typeDef := range g.s.Structs {
+		g.generateStruct(typeDef)
+	}
+
+	g.formatter(true)
 }

@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	goImportCoreTypes  = "import \"github.com/iotaledger/wasp/packages/iscp\""
 	goImportWasmLib    = "import \"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib\""
 	goImportWasmClient = "import \"github.com/iotaledger/wasp/packages/vm/wasmclient\""
 )
@@ -79,7 +78,7 @@ func NewGoGenerator() *GoGenerator {
 	return g
 }
 
-func (g *GoGenerator) flushGoConsts() {
+func (g *GoGenerator) flushConsts() {
 	if len(g.s.ConstNames) == 0 {
 		return
 	}
@@ -99,11 +98,8 @@ func (g *GoGenerator) flushGoConsts() {
 	g.printf(")\n")
 }
 
-func (g *GoGenerator) generateLanguageSpecificFiles() error {
-	if !g.s.CoreContracts {
-		return g.generateMain()
-	}
-	return nil
+func (g *GoGenerator) funcName(f *Func) string {
+	return f.FuncName
 }
 
 func (g *GoGenerator) generateArrayType(varType string) string {
@@ -114,121 +110,18 @@ func (g *GoGenerator) generateArrayType(varType string) string {
 	return "wasmlib.TYPE_ARRAY|" + varType
 }
 
-func (g *GoGenerator) generateConsts(test bool) error {
-	err := g.create(g.Folder + "consts" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	packageName := "package test\n"
-	importTypes := goImportCoreTypes
-	if !test {
-		packageName = g.packageName()
-		importTypes = goImportWasmLib
-	}
-
-	// write file header
-	g.println(copyright(true))
-	g.println(packageName)
-	g.println(importTypes)
-
-	scName := g.s.Name
-	if g.s.CoreContracts {
-		// remove 'core' prefix
-		scName = scName[4:]
-	}
-	g.s.appendConst("ScName", "\""+scName+"\"")
-	if g.s.Description != "" {
-		g.s.appendConst("ScDescription", "\""+g.s.Description+"\"")
-	}
-	hName := iscp.Hn(scName)
-	hNameType := "wasmlib.ScHname"
-	if test {
-		hNameType = "iscp.Hname"
-	}
-	g.s.appendConst("HScName", hNameType+"(0x"+hName.String()+")")
-	g.flushGoConsts()
-
-	g.generateConstsFields(test, g.s.Params, "Param")
-	g.generateConstsFields(test, g.s.Results, "Result")
-	g.generateConstsFields(test, g.s.StateVars, "State")
-
-	if len(g.s.Funcs) != 0 {
-		for _, f := range g.s.Funcs {
-			constName := capitalize(f.FuncName)
-			g.s.appendConst(constName, "\""+f.String+"\"")
-		}
-		g.flushGoConsts()
-
-		for _, f := range g.s.Funcs {
-			constHname := "H" + capitalize(f.FuncName)
-			g.s.appendConst(constHname, hNameType+"(0x"+f.Hname.String()+")")
-		}
-		g.flushGoConsts()
-	}
-
-	return nil
-}
-
-func (g *GoGenerator) generateConstsFields(test bool, fields []*Field, prefix string) {
+func (g *GoGenerator) generateConstsFields(fields []*Field, prefix string) {
 	if len(fields) != 0 {
 		for _, field := range fields {
 			if field.Alias == AliasThis {
 				continue
 			}
 			name := prefix + capitalize(field.Name)
-			value := "\"" + field.Alias + "\""
-			if !test {
-				value = "wasmlib.Key(" + value + ")"
-			}
+			value := "wasmlib.Key(\"" + field.Alias + "\")"
 			g.s.appendConst(name, value)
 		}
-		g.flushGoConsts()
+		g.flushConsts()
 	}
-}
-
-func (g *GoGenerator) generateContract() error {
-	err := g.create(g.Folder + "contract" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(g.packageName())
-	g.println(goImportWasmLib)
-
-	for _, f := range g.s.Funcs {
-		nameLen := f.nameLen(4)
-		kind := f.Kind
-		if f.Type == InitFunc {
-			kind = f.Type + f.Kind
-		}
-		g.printf("\ntype %sCall struct {\n", f.Type)
-		g.printf("\t%s *wasmlib.Sc%s\n", pad(KindFunc, nameLen), kind)
-		if len(f.Params) != 0 {
-			g.printf("\t%s Mutable%sParams\n", pad("Params", nameLen), f.Type)
-		}
-		if len(f.Results) != 0 {
-			g.printf("\tResults Immutable%sResults\n", f.Type)
-		}
-		g.printf("}\n")
-	}
-
-	g.generateContractFuncs()
-
-	if g.s.CoreContracts {
-		g.printf("\nfunc OnLoad() {\n")
-		g.printf("\texports := wasmlib.NewScExports()\n")
-		for _, f := range g.s.Funcs {
-			constName := capitalize(f.FuncName)
-			g.printf("\texports.Add%s(%s, wasmlib.%sError)\n", f.Kind, constName, f.Kind)
-		}
-		g.printf("}\n")
-	}
-	return nil
 }
 
 func (g *GoGenerator) generateContractFuncs() {
@@ -262,11 +155,6 @@ func (g *GoGenerator) generateContractFuncs() {
 	}
 }
 
-func (g *GoGenerator) funcName(f *Func) string {
-	return f.FuncName
-}
-
-// TODO handle case where owner is type AgentID[]
 func (g *GoGenerator) generateFuncSignature(f *Func) {
 	g.printf("\nfunc %s(ctx wasmlib.Sc%sContext, f *%sContext) {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
@@ -283,53 +171,6 @@ func (g *GoGenerator) generateFuncSignature(f *Func) {
 	default:
 	}
 	g.printf("}\n")
-}
-
-func (g *GoGenerator) generateInitialFuncs() error {
-	err := g.create(g.Folder + g.s.Name + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(false))
-	g.println(g.packageName())
-	g.println(goImportWasmLib)
-
-	for _, f := range g.s.Funcs {
-		g.generateFuncSignature(f)
-	}
-	return nil
-}
-
-func (g *GoGenerator) generateKeys() error {
-	err := g.create(g.Folder + "keys" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(g.packageName())
-	g.println(goImportWasmLib)
-
-	g.s.KeyID = 0
-	g.generateKeysIndexes(g.s.Params, "Param")
-	g.generateKeysIndexes(g.s.Results, "Result")
-	g.generateKeysIndexes(g.s.StateVars, "State")
-	g.flushGoConsts()
-
-	size := g.s.KeyID
-	g.printf("\nconst keyMapLen = %d\n", size)
-	g.printf("\nvar keyMap = [keyMapLen]wasmlib.Key{\n")
-	g.generateKeysArray(g.s.Params, "Param")
-	g.generateKeysArray(g.s.Results, "Result")
-	g.generateKeysArray(g.s.StateVars, "State")
-	g.printf("}\n")
-	g.printf("\nvar idxMap [keyMapLen]wasmlib.Key32\n")
-	return nil
 }
 
 func (g *GoGenerator) generateKeysArray(fields []*Field, prefix string) {
@@ -356,99 +197,11 @@ func (g *GoGenerator) generateKeysIndexes(fields []*Field, prefix string) {
 	}
 }
 
-func (g *GoGenerator) generateLib() error {
-	err := g.create(g.Folder + "lib" + g.extension)
-	if err != nil {
-		return err
+func (g *GoGenerator) generateLanguageSpecificFiles() error {
+	if g.s.CoreContracts {
+		return nil
 	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println("//nolint:dupl")
-	g.println(g.packageName())
-	g.println(goImportWasmLib)
-
-	g.printf("\nfunc OnLoad() {\n")
-	g.printf("\texports := wasmlib.NewScExports()\n")
-	for _, f := range g.s.Funcs {
-		constName := capitalize(f.FuncName)
-		g.printf("\texports.Add%s(%s, %sThunk)\n", f.Kind, constName, f.FuncName)
-	}
-
-	g.printf("\n\tfor i, key := range keyMap {\n")
-	g.printf("\t\tidxMap[i] = key.KeyID()\n")
-	g.printf("\t}\n")
-
-	g.printf("}\n")
-
-	// generate parameter structs and thunks to set up and check parameters
-	for _, f := range g.s.Funcs {
-		g.generateThunk(f)
-	}
-	return nil
-}
-
-func (g *GoGenerator) generateMain() error {
-	err := g.create(g.Folder + "../main" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	module := ModuleName + strings.Replace(ModuleCwd[len(ModulePath):], "\\", "/", -1)
-
-	// write file header
-	g.println(copyright(true))
-	g.println("// +build wasm")
-
-	g.println("\npackage main")
-	g.println()
-	g.println(goImportWasmClient)
-	g.printf("\nimport \"%s/go/%s\"\n", module, g.s.Name)
-
-	g.printf("\nfunc main() {\n")
-	g.printf("}\n")
-
-	g.printf("\n//export on_load\n")
-	g.printf("func onLoad() {\n")
-	g.printf("\th := &wasmclient.WasmVMHost{}\n")
-	g.printf("\th.ConnectWasmHost()\n")
-	g.printf("\t%s.OnLoad()\n", g.s.Name)
-	g.printf("}\n")
-
-	return nil
-}
-
-func (g *GoGenerator) generateParams() error {
-	err := g.create(g.Folder + "params" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.printf(g.packageName())
-
-	totalParams := 0
-	for _, f := range g.s.Funcs {
-		totalParams += len(f.Params)
-	}
-	if totalParams != 0 {
-		g.println()
-		g.println(goImportWasmLib)
-	}
-
-	for _, f := range g.s.Funcs {
-		if len(f.Params) == 0 {
-			continue
-		}
-		g.generateStruct(f.Params, PropImmutable, f.Type, "Params")
-		g.generateStruct(f.Params, PropMutable, f.Type, "Params")
-	}
-
-	return nil
+	return g.createSourceFile("../main", g.writeSpecialMain)
 }
 
 func (g *GoGenerator) generateProxy(field *Field, mutability string) {
@@ -585,58 +338,7 @@ func (g *GoGenerator) generateProxyMapNewType(field *Field, proxyType, mapType, 
 	g.printf("}\n")
 }
 
-func (g *GoGenerator) generateResults() error {
-	err := g.create(g.Folder + "results" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.printf(g.packageName())
-
-	results := 0
-	for _, f := range g.s.Funcs {
-		results += len(f.Results)
-	}
-	if results != 0 {
-		g.println()
-		g.println(goImportWasmLib)
-	}
-
-	for _, f := range g.s.Funcs {
-		if len(f.Results) == 0 {
-			continue
-		}
-		g.generateStruct(f.Results, PropImmutable, f.Type, "Results")
-		g.generateStruct(f.Results, PropMutable, f.Type, "Results")
-	}
-	return nil
-}
-
-func (g *GoGenerator) generateState() error {
-	err := g.create(g.Folder + "state" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.printf(g.packageName())
-	if len(g.s.StateVars) != 0 {
-		g.println()
-		g.println(goImportWasmLib)
-	}
-
-	g.generateStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
-	g.generateStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
-	return nil
-}
-
-// TODO nested structs
-func (g *GoGenerator) generateStruct(fields []*Field, mutability, typeName, kind string) {
+func (g *GoGenerator) generateProxyStruct(fields []*Field, mutability, typeName, kind string) {
 	typeName = mutability + typeName + kind
 	kind = strings.TrimSuffix(kind, "s")
 
@@ -694,6 +396,69 @@ func (g *GoGenerator) generateStruct(fields []*Field, mutability, typeName, kind
 		g.printf("\treturn wasmlib.NewSc%s(s.id, %s)\n", proxyType, varID)
 		g.printf("}\n")
 	}
+}
+
+func (g *GoGenerator) generateStruct(typeDef *Struct) {
+	nameLen, typeLen := calculatePadding(typeDef.Fields, goTypes, false)
+
+	g.printf("\ntype %s struct {\n", typeDef.Name)
+	for _, field := range typeDef.Fields {
+		fldName := pad(capitalize(field.Name), nameLen)
+		fldType := goTypes[field.Type]
+		if field.Comment != "" {
+			fldType = pad(fldType, typeLen)
+		}
+		g.printf("\t%s %s%s\n", fldName, fldType, field.Comment)
+	}
+	g.printf("}\n")
+
+	// write encoder and decoder for struct
+	g.printf("\nfunc New%sFromBytes(bytes []byte) *%s {\n", typeDef.Name, typeDef.Name)
+	g.printf("\tdecode := wasmlib.NewBytesDecoder(bytes)\n")
+	g.printf("\tdata := &%s{}\n", typeDef.Name)
+	for _, field := range typeDef.Fields {
+		name := capitalize(field.Name)
+		g.printf("\tdata.%s = decode.%s()\n", name, field.Type)
+	}
+	g.printf("\tdecode.Close()\n")
+	g.printf("\treturn data\n}\n")
+
+	g.printf("\nfunc (o *%s) Bytes() []byte {\n", typeDef.Name)
+	g.printf("\treturn wasmlib.NewBytesEncoder().\n")
+	for _, field := range typeDef.Fields {
+		name := capitalize(field.Name)
+		g.printf("\t\t%s(o.%s).\n", field.Type, name)
+	}
+	g.printf("\t\tData()\n}\n")
+
+	g.generateStructProxy(typeDef, false)
+	g.generateStructProxy(typeDef, true)
+}
+
+func (g *GoGenerator) generateStructProxy(typeDef *Struct, mutable bool) {
+	typeName := PropImmutable + typeDef.Name
+	if mutable {
+		typeName = PropMutable + typeDef.Name
+	}
+
+	g.printf("\ntype %s struct {\n", typeName)
+	g.printf("\tobjID int32\n")
+	g.printf("\tkeyID wasmlib.Key32\n")
+	g.printf("}\n")
+
+	g.printf("\nfunc (o %s) Exists() bool {\n", typeName)
+	g.printf("\treturn wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)\n")
+	g.printf("}\n")
+
+	if mutable {
+		g.printf("\nfunc (o %s) SetValue(value *%s) {\n", typeName, typeDef.Name)
+		g.printf("\twasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())\n")
+		g.printf("}\n")
+	}
+
+	g.printf("\nfunc (o %s) Value() *%s {\n", typeName, typeDef.Name)
+	g.printf("\treturn New%sFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))\n", typeDef.Name)
+	g.printf("}\n")
 }
 
 func (g *GoGenerator) generateThunk(f *Func) {
@@ -773,103 +538,207 @@ func (g *GoGenerator) generateThunkAccessCheck(f *Func) {
 	g.printf("\tctx.Require(ctx.Caller() == %s, \"no permission\")\n\n", grant)
 }
 
-func (g *GoGenerator) generateTypes() error {
-	if len(g.s.Structs) == 0 {
-		return nil
-	}
+func (g *GoGenerator) packageName() string {
+	return fmt.Sprintf("package %s\n", g.s.Name)
+}
 
-	err := g.create(g.Folder + "types" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	g.println(copyright(true))
+func (g *GoGenerator) writeConsts() {
 	g.println(g.packageName())
 	g.println(goImportWasmLib)
 
-	for _, typeDef := range g.s.Structs {
-		g.generateType(typeDef)
+	scName := g.s.Name
+	if g.s.CoreContracts {
+		// remove 'core' prefix
+		scName = scName[4:]
 	}
+	g.s.appendConst("ScName", "\""+scName+"\"")
+	if g.s.Description != "" {
+		g.s.appendConst("ScDescription", "\""+g.s.Description+"\"")
+	}
+	hName := iscp.Hn(scName)
+	hNameType := "wasmlib.ScHname"
+	g.s.appendConst("HScName", hNameType+"(0x"+hName.String()+")")
+	g.flushConsts()
 
-	return nil
-}
+	g.generateConstsFields(g.s.Params, "Param")
+	g.generateConstsFields(g.s.Results, "Result")
+	g.generateConstsFields(g.s.StateVars, "State")
 
-func (g *GoGenerator) generateType(typeDef *Struct) {
-	nameLen, typeLen := calculatePadding(typeDef.Fields, goTypes, false)
-
-	g.printf("\ntype %s struct {\n", typeDef.Name)
-	for _, field := range typeDef.Fields {
-		fldName := pad(capitalize(field.Name), nameLen)
-		fldType := goTypes[field.Type]
-		if field.Comment != "" {
-			fldType = pad(fldType, typeLen)
+	if len(g.s.Funcs) != 0 {
+		for _, f := range g.s.Funcs {
+			constName := capitalize(f.FuncName)
+			g.s.appendConst(constName, "\""+f.String+"\"")
 		}
-		g.printf("\t%s %s%s\n", fldName, fldType, field.Comment)
-	}
-	g.printf("}\n")
+		g.flushConsts()
 
-	// write encoder and decoder for struct
-	g.printf("\nfunc New%sFromBytes(bytes []byte) *%s {\n", typeDef.Name, typeDef.Name)
-	g.printf("\tdecode := wasmlib.NewBytesDecoder(bytes)\n")
-	g.printf("\tdata := &%s{}\n", typeDef.Name)
-	for _, field := range typeDef.Fields {
-		name := capitalize(field.Name)
-		g.printf("\tdata.%s = decode.%s()\n", name, field.Type)
+		for _, f := range g.s.Funcs {
+			constHname := "H" + capitalize(f.FuncName)
+			g.s.appendConst(constHname, hNameType+"(0x"+f.Hname.String()+")")
+		}
+		g.flushConsts()
 	}
-	g.printf("\tdecode.Close()\n")
-	g.printf("\treturn data\n}\n")
-
-	g.printf("\nfunc (o *%s) Bytes() []byte {\n", typeDef.Name)
-	g.printf("\treturn wasmlib.NewBytesEncoder().\n")
-	for _, field := range typeDef.Fields {
-		name := capitalize(field.Name)
-		g.printf("\t\t%s(o.%s).\n", field.Type, name)
-	}
-	g.printf("\t\tData()\n}\n")
-
-	g.generateTypeProxy(typeDef, false)
-	g.generateTypeProxy(typeDef, true)
 }
 
-func (g *GoGenerator) generateTypeProxy(typeDef *Struct, mutable bool) {
-	typeName := PropImmutable + typeDef.Name
-	if mutable {
-		typeName = PropMutable + typeDef.Name
-	}
+func (g *GoGenerator) writeContract() {
+	g.println(g.packageName())
+	g.println(goImportWasmLib)
 
-	g.printf("\ntype %s struct {\n", typeName)
-	g.printf("\tobjID int32\n")
-	g.printf("\tkeyID wasmlib.Key32\n")
-	g.printf("}\n")
-
-	g.printf("\nfunc (o %s) Exists() bool {\n", typeName)
-	g.printf("\treturn wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)\n")
-	g.printf("}\n")
-
-	if mutable {
-		g.printf("\nfunc (o %s) SetValue(value *%s) {\n", typeName, typeDef.Name)
-		g.printf("\twasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())\n")
+	for _, f := range g.s.Funcs {
+		nameLen := f.nameLen(4)
+		kind := f.Kind
+		if f.Type == InitFunc {
+			kind = f.Type + f.Kind
+		}
+		g.printf("\ntype %sCall struct {\n", f.Type)
+		g.printf("\t%s *wasmlib.Sc%s\n", pad(KindFunc, nameLen), kind)
+		if len(f.Params) != 0 {
+			g.printf("\t%s Mutable%sParams\n", pad("Params", nameLen), f.Type)
+		}
+		if len(f.Results) != 0 {
+			g.printf("\tResults Immutable%sResults\n", f.Type)
+		}
 		g.printf("}\n")
 	}
 
-	g.printf("\nfunc (o %s) Value() *%s {\n", typeName, typeDef.Name)
-	g.printf("\treturn New%sFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))\n", typeDef.Name)
+	g.generateContractFuncs()
+
+	if g.s.CoreContracts {
+		g.printf("\nfunc OnLoad() {\n")
+		g.printf("\texports := wasmlib.NewScExports()\n")
+		for _, f := range g.s.Funcs {
+			constName := capitalize(f.FuncName)
+			g.printf("\texports.Add%s(%s, wasmlib.%sError)\n", f.Kind, constName, f.Kind)
+		}
+		g.printf("}\n")
+	}
+}
+
+func (g *GoGenerator) writeInitialFuncs() {
+	g.println(g.packageName())
+	g.println(goImportWasmLib)
+
+	for _, f := range g.s.Funcs {
+		g.generateFuncSignature(f)
+	}
+}
+
+func (g *GoGenerator) writeKeys() {
+	g.println(g.packageName())
+	g.println(goImportWasmLib)
+
+	g.s.KeyID = 0
+	g.generateKeysIndexes(g.s.Params, "Param")
+	g.generateKeysIndexes(g.s.Results, "Result")
+	g.generateKeysIndexes(g.s.StateVars, "State")
+	g.flushConsts()
+
+	size := g.s.KeyID
+	g.printf("\nconst keyMapLen = %d\n", size)
+	g.printf("\nvar keyMap = [keyMapLen]wasmlib.Key{\n")
+	g.generateKeysArray(g.s.Params, "Param")
+	g.generateKeysArray(g.s.Results, "Result")
+	g.generateKeysArray(g.s.StateVars, "State")
+	g.printf("}\n")
+	g.printf("\nvar idxMap [keyMapLen]wasmlib.Key32\n")
+}
+
+func (g *GoGenerator) writeLib() {
+	g.println("//nolint:dupl")
+	g.println(g.packageName())
+	g.println(goImportWasmLib)
+
+	g.printf("\nfunc OnLoad() {\n")
+	g.printf("\texports := wasmlib.NewScExports()\n")
+	for _, f := range g.s.Funcs {
+		constName := capitalize(f.FuncName)
+		g.printf("\texports.Add%s(%s, %sThunk)\n", f.Kind, constName, f.FuncName)
+	}
+
+	g.printf("\n\tfor i, key := range keyMap {\n")
+	g.printf("\t\tidxMap[i] = key.KeyID()\n")
+	g.printf("\t}\n")
+
+	g.printf("}\n")
+
+	// generate parameter structs and thunks to set up and check parameters
+	for _, f := range g.s.Funcs {
+		g.generateThunk(f)
+	}
+}
+
+func (g *GoGenerator) writeParams() {
+	g.printf(g.packageName())
+
+	totalParams := 0
+	for _, f := range g.s.Funcs {
+		totalParams += len(f.Params)
+	}
+	if totalParams != 0 {
+		g.println()
+		g.println(goImportWasmLib)
+	}
+
+	for _, f := range g.s.Funcs {
+		if len(f.Params) == 0 {
+			continue
+		}
+		g.generateProxyStruct(f.Params, PropImmutable, f.Type, "Params")
+		g.generateProxyStruct(f.Params, PropMutable, f.Type, "Params")
+	}
+}
+
+func (g *GoGenerator) writeResults() {
+	g.printf(g.packageName())
+
+	results := 0
+	for _, f := range g.s.Funcs {
+		results += len(f.Results)
+	}
+	if results != 0 {
+		g.println()
+		g.println(goImportWasmLib)
+	}
+
+	for _, f := range g.s.Funcs {
+		if len(f.Results) == 0 {
+			continue
+		}
+		g.generateProxyStruct(f.Results, PropImmutable, f.Type, "Results")
+		g.generateProxyStruct(f.Results, PropMutable, f.Type, "Results")
+	}
+}
+
+func (g *GoGenerator) writeSpecialMain() {
+	g.println("// +build wasm")
+	g.println("\npackage main")
+	g.println()
+	g.println(goImportWasmClient)
+	module := ModuleName + strings.Replace(ModuleCwd[len(ModulePath):], "\\", "/", -1)
+	g.printf("\nimport \"%s/go/%s\"\n", module, g.s.Name)
+
+	g.printf("\nfunc main() {\n")
+	g.printf("}\n")
+
+	g.printf("\n//export on_load\n")
+	g.printf("func onLoad() {\n")
+	g.printf("\th := &wasmclient.WasmVMHost{}\n")
+	g.printf("\th.ConnectWasmHost()\n")
+	g.printf("\t%s.OnLoad()\n", g.s.Name)
 	g.printf("}\n")
 }
 
-func (g *GoGenerator) generateTypeDefs() error {
-	if len(g.s.Typedefs) == 0 {
-		return nil
+func (g *GoGenerator) writeState() {
+	g.printf(g.packageName())
+	if len(g.s.StateVars) != 0 {
+		g.println()
+		g.println(goImportWasmLib)
 	}
 
-	err := g.create(g.Folder + "typedefs" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
+	g.generateProxyStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
+	g.generateProxyStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
+}
 
-	g.println(copyright(true))
+func (g *GoGenerator) writeTypeDefs() {
 	g.println(g.packageName())
 	g.println(goImportWasmLib)
 
@@ -877,10 +746,13 @@ func (g *GoGenerator) generateTypeDefs() error {
 		g.generateProxy(subtype, PropImmutable)
 		g.generateProxy(subtype, PropMutable)
 	}
-
-	return nil
 }
 
-func (g *GoGenerator) packageName() string {
-	return fmt.Sprintf("package %s\n", g.s.Name)
+func (g *GoGenerator) writeStructs() {
+	g.println(g.packageName())
+	g.println(goImportWasmLib)
+
+	for _, typeDef := range g.s.Structs {
+		g.generateStruct(typeDef)
+	}
 }

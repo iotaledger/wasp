@@ -91,7 +91,7 @@ func NewTypeScriptGenerator() *TypeScriptGenerator {
 	return g
 }
 
-func (g *TypeScriptGenerator) flushTsConsts() {
+func (g *TypeScriptGenerator) flushConsts() {
 	if len(g.s.ConstNames) == 0 {
 		return
 	}
@@ -102,12 +102,8 @@ func (g *TypeScriptGenerator) flushTsConsts() {
 	})
 }
 
-func (g *TypeScriptGenerator) generateLanguageSpecificFiles() error {
-	err := g.generateConfig()
-	if err != nil {
-		return err
-	}
-	return g.generateIndex()
+func (g *TypeScriptGenerator) funcName(f *Func) string {
+	return f.FuncName
 }
 
 func (g *TypeScriptGenerator) generateArrayType(varType string) string {
@@ -116,73 +112,6 @@ func (g *TypeScriptGenerator) generateArrayType(varType string) string {
 		return "wasmlib.TYPE_ARRAY16|" + varType
 	}
 	return "wasmlib.TYPE_ARRAY|" + varType
-}
-
-func (g *TypeScriptGenerator) generateConfig() error {
-	err := g.exists(g.Folder + "tsconfig.json")
-	if err == nil {
-		// already exists
-		return nil
-	}
-
-	err = g.create(g.Folder + "tsconfig.json")
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	g.println("{")
-	g.println("  \"extends\": \"assemblyscript/std/assembly.json\",")
-	g.println("  \"include\": [\"./*.ts\"]")
-	g.println("}")
-
-	return nil
-}
-
-func (g *TypeScriptGenerator) generateConsts(test bool) error {
-	err := g.create(g.Folder + "consts" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(tsImportWasmLib)
-
-	scName := g.s.Name
-	if g.s.CoreContracts {
-		// remove 'core' prefix
-		scName = scName[4:]
-	}
-	g.s.appendConst("ScName", "\""+scName+"\"")
-	if g.s.Description != "" {
-		g.s.appendConst("ScDescription", "\""+g.s.Description+"\"")
-	}
-	hName := iscp.Hn(scName)
-	hNameType := "new wasmlib.ScHname"
-	g.s.appendConst("HScName", hNameType+"(0x"+hName.String()+")")
-	g.flushTsConsts()
-
-	g.generateConstsFields(g.s.Params, "Param")
-	g.generateConstsFields(g.s.Results, "Result")
-	g.generateConstsFields(g.s.StateVars, "State")
-
-	if len(g.s.Funcs) != 0 {
-		for _, f := range g.s.Funcs {
-			constName := capitalize(f.FuncName)
-			g.s.appendConst(constName, "\""+f.String+"\"")
-		}
-		g.flushTsConsts()
-
-		for _, f := range g.s.Funcs {
-			constHname := "H" + capitalize(f.FuncName)
-			g.s.appendConst(constHname, hNameType+"(0x"+f.Hname.String()+")")
-		}
-		g.flushTsConsts()
-	}
-
-	return nil
 }
 
 func (g *TypeScriptGenerator) generateConstsFields(fields []*Field, prefix string) {
@@ -195,56 +124,8 @@ func (g *TypeScriptGenerator) generateConstsFields(fields []*Field, prefix strin
 			value := "\"" + field.Alias + "\""
 			g.s.appendConst(name, value)
 		}
-		g.flushTsConsts()
+		g.flushConsts()
 	}
-}
-
-func (g *TypeScriptGenerator) generateContract() error {
-	err := g.create(g.Folder + "contract" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(tsImportWasmLib)
-	g.println(tsImportSelf)
-
-	for _, f := range g.s.Funcs {
-		kind := f.Kind
-		if f.Type == InitFunc {
-			kind = f.Type + f.Kind
-		}
-		g.printf("\nexport class %sCall {\n", f.Type)
-		g.printf("    func: wasmlib.Sc%s = new wasmlib.Sc%s(sc.HScName, sc.H%s%s);\n", kind, kind, f.Kind, f.Type)
-		if len(f.Params) != 0 {
-			g.printf("    params: sc.Mutable%sParams = new sc.Mutable%sParams();\n", f.Type, f.Type)
-		}
-		if len(f.Results) != 0 {
-			g.printf("    results: sc.Immutable%sResults = new sc.Immutable%sResults();\n", f.Type, f.Type)
-		}
-		g.printf("}\n")
-
-		if !g.s.CoreContracts {
-			mutability := PropMutable
-			if f.Kind == KindView {
-				mutability = PropImmutable
-			}
-			g.printf("\nexport class %sContext {\n", f.Type)
-			if len(f.Params) != 0 {
-				g.printf("    params: sc.Immutable%sParams = new sc.Immutable%sParams();\n", f.Type, f.Type)
-			}
-			if len(f.Results) != 0 {
-				g.printf("    results: sc.Mutable%sResults = new sc.Mutable%sResults();\n", f.Type, f.Type)
-			}
-			g.printf("    state: sc.%s%sState = new sc.%s%sState();\n", mutability, g.s.FullName, mutability, g.s.FullName)
-			g.printf("}\n")
-		}
-	}
-
-	g.generateContractFuncs()
-	return nil
 }
 
 func (g *TypeScriptGenerator) generateContractFuncs() {
@@ -270,10 +151,6 @@ func (g *TypeScriptGenerator) generateContractFuncs() {
 	g.printf("}\n")
 }
 
-func (g *TypeScriptGenerator) funcName(f *Func) string {
-	return f.FuncName
-}
-
 func (g *TypeScriptGenerator) generateFuncSignature(f *Func) {
 	g.printf("\nexport function %s(ctx: wasmlib.Sc%sContext, f: sc.%sContext): void {\n", f.FuncName, f.Kind, f.Type)
 	switch f.FuncName {
@@ -290,88 +167,6 @@ func (g *TypeScriptGenerator) generateFuncSignature(f *Func) {
 	default:
 	}
 	g.printf("}\n")
-}
-
-func (g *TypeScriptGenerator) generateInitialFuncs() error {
-	err := g.create(g.Folder + g.s.Name + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(false))
-	g.println(tsImportWasmLib)
-	g.println(tsImportSelf)
-
-	for _, f := range g.s.Funcs {
-		g.generateFuncSignature(f)
-	}
-	return nil
-}
-
-func (g *TypeScriptGenerator) generateIndex() error {
-	err := g.create(g.Folder + "index" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	g.println(copyright(true))
-
-	if !g.s.CoreContracts {
-		g.printf("export * from \"./%s\";\n\n", g.s.Name)
-	}
-
-	g.println("export * from \"./consts\";")
-	g.println("export * from \"./contract\";")
-	if !g.s.CoreContracts {
-		g.println("export * from \"./keys\";")
-		g.println("export * from \"./lib\";")
-	}
-	if len(g.s.Params) != 0 {
-		g.println("export * from \"./params\";")
-	}
-	if len(g.s.Results) != 0 {
-		g.println("export * from \"./results\";")
-	}
-	if !g.s.CoreContracts {
-		g.println("export * from \"./state\";")
-		if len(g.s.Structs) != 0 {
-			g.println("export * from \"./types\";")
-		}
-		if len(g.s.Typedefs) != 0 {
-			g.println("export * from \"./typedefs\";")
-		}
-	}
-	return nil
-}
-
-func (g *TypeScriptGenerator) generateKeys() error {
-	err := g.create(g.Folder + "keys" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(tsImportWasmLib)
-	g.println(tsImportSelf)
-
-	g.s.KeyID = 0
-	g.generateKeysIndexes(g.s.Params, "Param")
-	g.generateKeysIndexes(g.s.Results, "Result")
-	g.generateKeysIndexes(g.s.StateVars, "State")
-	g.flushTsConsts()
-
-	g.printf("\nexport let keyMap: string[] = [\n")
-	g.generateKeysArray(g.s.Params, "Param")
-	g.generateKeysArray(g.s.Results, "Result")
-	g.generateKeysArray(g.s.StateVars, "State")
-	g.printf("];\n")
-	g.printf("\nexport let idxMap: wasmlib.Key32[] = new Array(keyMap.length);\n")
-	return nil
 }
 
 func (g *TypeScriptGenerator) generateKeysArray(fields []*Field, prefix string) {
@@ -398,63 +193,12 @@ func (g *TypeScriptGenerator) generateKeysIndexes(fields []*Field, prefix string
 	}
 }
 
-func (g *TypeScriptGenerator) generateLib() error {
-	err := g.create(g.Folder + "lib" + g.extension)
+func (g *TypeScriptGenerator) generateLanguageSpecificFiles() error {
+	err := g.createSourceFile("index", g.writeSpecialIndex)
 	if err != nil {
 		return err
 	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(tsImportWasmLib)
-	g.println(tsImportSelf)
-
-	g.printf("\nexport function on_call(index: i32): void {\n")
-	g.printf("    return wasmlib.onCall(index);\n")
-	g.printf("}\n")
-
-	g.printf("\nexport function on_load(): void {\n")
-	g.printf("    let exports = new wasmlib.ScExports();\n")
-	for _, f := range g.s.Funcs {
-		constName := capitalize(f.FuncName)
-		g.printf("    exports.add%s(sc.%s, %sThunk);\n", f.Kind, constName, f.FuncName)
-	}
-
-	g.printf("\n    for (let i = 0; i < sc.keyMap.length; i++) {\n")
-	g.printf("        sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);\n")
-	g.printf("    }\n")
-
-	g.printf("}\n")
-
-	// generate parameter structs and thunks to set up and check parameters
-	for _, f := range g.s.Funcs {
-		g.generateThunk(f)
-	}
-	return nil
-}
-
-func (g *TypeScriptGenerator) generateParams() error {
-	err := g.create(g.Folder + "params" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(tsImportWasmLib)
-	g.println(tsImportSelf)
-
-	for _, f := range g.s.Funcs {
-		if len(f.Params) == 0 {
-			continue
-		}
-		g.generateStruct(f.Params, PropImmutable, f.Type, "Params")
-		g.generateStruct(f.Params, PropMutable, f.Type, "Params")
-	}
-
-	return nil
+	return g.writeSpecialConfigJSON()
 }
 
 func (g *TypeScriptGenerator) generateProxy(field *Field, mutability string) {
@@ -607,47 +351,7 @@ func (g *TypeScriptGenerator) generateProxyReference(field *Field, mutability, t
 	}
 }
 
-func (g *TypeScriptGenerator) generateResults() error {
-	err := g.create(g.Folder + "results" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(tsImportWasmLib)
-	g.println(tsImportSelf)
-
-	for _, f := range g.s.Funcs {
-		if len(f.Results) == 0 {
-			continue
-		}
-		g.generateStruct(f.Results, PropImmutable, f.Type, "Results")
-		g.generateStruct(f.Results, PropMutable, f.Type, "Results")
-	}
-	return nil
-}
-
-func (g *TypeScriptGenerator) generateState() error {
-	err := g.create(g.Folder + "state" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	// write file header
-	g.println(copyright(true))
-	g.println(tsImportWasmLib)
-	g.println(tsImportSelf)
-
-	g.generateStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
-	g.generateStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
-	return nil
-}
-
-// TODO nested structs
-func (g *TypeScriptGenerator) generateStruct(fields []*Field, mutability, typeName, kind string) {
+func (g *TypeScriptGenerator) generateProxyStruct(fields []*Field, mutability, typeName, kind string) {
 	typeName = mutability + typeName + kind
 	kind = strings.TrimSuffix(kind, "s")
 
@@ -706,6 +410,76 @@ func (g *TypeScriptGenerator) generateStruct(fields []*Field, mutability, typeNa
 	g.printf("}\n")
 }
 
+func (g *TypeScriptGenerator) generateStruct(typeDef *Struct) {
+	nameLen, typeLen := calculatePadding(typeDef.Fields, tsTypes, false)
+
+	g.printf("\nexport class %s {\n", typeDef.Name)
+	for _, field := range typeDef.Fields {
+		fldName := pad(field.Name, nameLen)
+		fldType := tsTypes[field.Type] + " = " + tsInits[field.Type] + ";"
+		if field.Comment != "" {
+			fldType = pad(fldType, typeLen)
+		}
+		g.printf("    %s: %s%s\n", fldName, fldType, field.Comment)
+	}
+
+	// write encoder and decoder for struct
+	g.printf("\n    static fromBytes(bytes: u8[]): %s {\n", typeDef.Name)
+	g.printf("        let decode = new wasmlib.BytesDecoder(bytes);\n")
+	g.printf("        let data = new %s();\n", typeDef.Name)
+	for _, field := range typeDef.Fields {
+		name := field.Name
+		g.printf("        data.%s = decode.%s();\n", name, uncapitalize(field.Type))
+	}
+	g.printf("        decode.close();\n")
+	g.printf("        return data;\n    }\n")
+
+	g.printf("\n    bytes(): u8[] {\n")
+	g.printf("        return new wasmlib.BytesEncoder().\n")
+	for _, field := range typeDef.Fields {
+		name := field.Name
+		g.printf("            %s(this.%s).\n", uncapitalize(field.Type), name)
+	}
+	g.printf("            data();\n    }\n")
+
+	g.printf("}\n")
+
+	g.generateStructProxy(typeDef, false)
+	g.generateStructProxy(typeDef, true)
+}
+
+func (g *TypeScriptGenerator) generateStructProxy(typeDef *Struct, mutable bool) {
+	typeName := PropImmutable + typeDef.Name
+	if mutable {
+		typeName = PropMutable + typeDef.Name
+	}
+
+	g.printf("\nexport class %s {\n", typeName)
+	g.printf("    objID: i32;\n")
+	g.printf("    keyID: wasmlib.Key32;\n")
+
+	g.printf("\n    constructor(objID: i32, keyID: wasmlib.Key32) {\n")
+	g.printf("        this.objID = objID;\n")
+	g.printf("        this.keyID = keyID;\n")
+	g.printf("    }\n")
+
+	g.printf("\n    exists(): boolean {\n")
+	g.printf("        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);\n")
+	g.printf("    }\n")
+
+	if mutable {
+		g.printf("\n    setValue(value: %s): void {\n", typeDef.Name)
+		g.printf("        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());\n")
+		g.printf("    }\n")
+	}
+
+	g.printf("\n    value(): %s {\n", typeDef.Name)
+	g.printf("        return %s.fromBytes(wasmlib.getBytes(this.objID, this.keyID,wasmlib. TYPE_BYTES));\n", typeDef.Name)
+	g.printf("    }\n")
+
+	g.printf("}\n")
+}
+
 func (g *TypeScriptGenerator) generateThunk(f *Func) {
 	g.printf("\nfunction %sThunk(ctx: wasmlib.Sc%sContext): void {\n", f.FuncName, f.Kind)
 	g.printf("    ctx.log(\"%s.%s\");\n", g.s.Name, f.FuncName)
@@ -760,109 +534,219 @@ func (g *TypeScriptGenerator) generateThunkAccessCheck(f *Func) {
 	g.printf("    ctx.require(ctx.caller().equals(%s), \"no permission\");\n\n", grant)
 }
 
-func (g *TypeScriptGenerator) generateTypes() error {
-	if len(g.s.Structs) == 0 {
+func (g *TypeScriptGenerator) writeConsts() {
+	g.println(tsImportWasmLib)
+
+	scName := g.s.Name
+	if g.s.CoreContracts {
+		// remove 'core' prefix
+		scName = scName[4:]
+	}
+	g.s.appendConst("ScName", "\""+scName+"\"")
+	if g.s.Description != "" {
+		g.s.appendConst("ScDescription", "\""+g.s.Description+"\"")
+	}
+	hName := iscp.Hn(scName)
+	hNameType := "new wasmlib.ScHname"
+	g.s.appendConst("HScName", hNameType+"(0x"+hName.String()+")")
+	g.flushConsts()
+
+	g.generateConstsFields(g.s.Params, "Param")
+	g.generateConstsFields(g.s.Results, "Result")
+	g.generateConstsFields(g.s.StateVars, "State")
+
+	if len(g.s.Funcs) != 0 {
+		for _, f := range g.s.Funcs {
+			constName := capitalize(f.FuncName)
+			g.s.appendConst(constName, "\""+f.String+"\"")
+		}
+		g.flushConsts()
+
+		for _, f := range g.s.Funcs {
+			constHname := "H" + capitalize(f.FuncName)
+			g.s.appendConst(constHname, hNameType+"(0x"+f.Hname.String()+")")
+		}
+		g.flushConsts()
+	}
+}
+
+func (g *TypeScriptGenerator) writeContract() {
+	g.println(tsImportWasmLib)
+	g.println(tsImportSelf)
+
+	for _, f := range g.s.Funcs {
+		kind := f.Kind
+		if f.Type == InitFunc {
+			kind = f.Type + f.Kind
+		}
+		g.printf("\nexport class %sCall {\n", f.Type)
+		g.printf("    func: wasmlib.Sc%s = new wasmlib.Sc%s(sc.HScName, sc.H%s%s);\n", kind, kind, f.Kind, f.Type)
+		if len(f.Params) != 0 {
+			g.printf("    params: sc.Mutable%sParams = new sc.Mutable%sParams();\n", f.Type, f.Type)
+		}
+		if len(f.Results) != 0 {
+			g.printf("    results: sc.Immutable%sResults = new sc.Immutable%sResults();\n", f.Type, f.Type)
+		}
+		g.printf("}\n")
+
+		if !g.s.CoreContracts {
+			mutability := PropMutable
+			if f.Kind == KindView {
+				mutability = PropImmutable
+			}
+			g.printf("\nexport class %sContext {\n", f.Type)
+			if len(f.Params) != 0 {
+				g.printf("    params: sc.Immutable%sParams = new sc.Immutable%sParams();\n", f.Type, f.Type)
+			}
+			if len(f.Results) != 0 {
+				g.printf("    results: sc.Mutable%sResults = new sc.Mutable%sResults();\n", f.Type, f.Type)
+			}
+			g.printf("    state: sc.%s%sState = new sc.%s%sState();\n", mutability, g.s.FullName, mutability, g.s.FullName)
+			g.printf("}\n")
+		}
+	}
+
+	g.generateContractFuncs()
+}
+
+func (g *TypeScriptGenerator) writeInitialFuncs() {
+	g.println(tsImportWasmLib)
+	g.println(tsImportSelf)
+
+	for _, f := range g.s.Funcs {
+		g.generateFuncSignature(f)
+	}
+}
+
+func (g *TypeScriptGenerator) writeKeys() {
+	g.println(tsImportWasmLib)
+	g.println(tsImportSelf)
+
+	g.s.KeyID = 0
+	g.generateKeysIndexes(g.s.Params, "Param")
+	g.generateKeysIndexes(g.s.Results, "Result")
+	g.generateKeysIndexes(g.s.StateVars, "State")
+	g.flushConsts()
+
+	g.printf("\nexport let keyMap: string[] = [\n")
+	g.generateKeysArray(g.s.Params, "Param")
+	g.generateKeysArray(g.s.Results, "Result")
+	g.generateKeysArray(g.s.StateVars, "State")
+	g.printf("];\n")
+	g.printf("\nexport let idxMap: wasmlib.Key32[] = new Array(keyMap.length);\n")
+}
+
+func (g *TypeScriptGenerator) writeLib() {
+	g.println(tsImportWasmLib)
+	g.println(tsImportSelf)
+
+	g.printf("\nexport function on_call(index: i32): void {\n")
+	g.printf("    return wasmlib.onCall(index);\n")
+	g.printf("}\n")
+
+	g.printf("\nexport function on_load(): void {\n")
+	g.printf("    let exports = new wasmlib.ScExports();\n")
+	for _, f := range g.s.Funcs {
+		constName := capitalize(f.FuncName)
+		g.printf("    exports.add%s(sc.%s, %sThunk);\n", f.Kind, constName, f.FuncName)
+	}
+
+	g.printf("\n    for (let i = 0; i < sc.keyMap.length; i++) {\n")
+	g.printf("        sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);\n")
+	g.printf("    }\n")
+
+	g.printf("}\n")
+
+	// generate parameter structs and thunks to set up and check parameters
+	for _, f := range g.s.Funcs {
+		g.generateThunk(f)
+	}
+}
+
+func (g *TypeScriptGenerator) writeParams() {
+	g.println(tsImportWasmLib)
+	g.println(tsImportSelf)
+
+	for _, f := range g.s.Funcs {
+		if len(f.Params) == 0 {
+			continue
+		}
+		g.generateProxyStruct(f.Params, PropImmutable, f.Type, "Params")
+		g.generateProxyStruct(f.Params, PropMutable, f.Type, "Params")
+	}
+}
+
+func (g *TypeScriptGenerator) writeResults() {
+	g.println(tsImportWasmLib)
+	g.println(tsImportSelf)
+
+	for _, f := range g.s.Funcs {
+		if len(f.Results) == 0 {
+			continue
+		}
+		g.generateProxyStruct(f.Results, PropImmutable, f.Type, "Results")
+		g.generateProxyStruct(f.Results, PropMutable, f.Type, "Results")
+	}
+}
+
+func (g *TypeScriptGenerator) writeSpecialConfigJSON() error {
+	err := g.exists(g.Folder + "tsconfig.json")
+	if err == nil {
+		// already exists
 		return nil
 	}
 
-	err := g.create(g.Folder + "types" + g.extension)
+	err = g.create(g.Folder + "tsconfig.json")
 	if err != nil {
 		return err
 	}
 	defer g.close()
 
-	g.println(copyright(true))
-	g.println(tsImportWasmLib)
-
-	for _, typeDef := range g.s.Structs {
-		g.generateType(typeDef)
-	}
+	g.println("{")
+	g.println("  \"extends\": \"assemblyscript/std/assembly.json\",")
+	g.println("  \"include\": [\"./*.ts\"]")
+	g.println("}")
 
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateType(typeDef *Struct) {
-	nameLen, typeLen := calculatePadding(typeDef.Fields, tsTypes, false)
+func (g *TypeScriptGenerator) writeSpecialIndex() {
+	if !g.s.CoreContracts {
+		g.printf("export * from \"./%s\";\n\n", g.s.Name)
+	}
 
-	g.printf("\nexport class %s {\n", typeDef.Name)
-	for _, field := range typeDef.Fields {
-		fldName := pad(field.Name, nameLen)
-		fldType := tsTypes[field.Type] + " = " + tsInits[field.Type] + ";"
-		if field.Comment != "" {
-			fldType = pad(fldType, typeLen)
+	g.println("export * from \"./consts\";")
+	g.println("export * from \"./contract\";")
+	if !g.s.CoreContracts {
+		g.println("export * from \"./keys\";")
+		g.println("export * from \"./lib\";")
+	}
+	if len(g.s.Params) != 0 {
+		g.println("export * from \"./params\";")
+	}
+	if len(g.s.Results) != 0 {
+		g.println("export * from \"./results\";")
+	}
+	if !g.s.CoreContracts {
+		g.println("export * from \"./state\";")
+		if len(g.s.Structs) != 0 {
+			g.println("export * from \"./types\";")
 		}
-		g.printf("    %s: %s%s\n", fldName, fldType, field.Comment)
+		if len(g.s.Typedefs) != 0 {
+			g.println("export * from \"./typedefs\";")
+		}
 	}
-
-	// write encoder and decoder for struct
-	g.printf("\n    static fromBytes(bytes: u8[]): %s {\n", typeDef.Name)
-	g.printf("        let decode = new wasmlib.BytesDecoder(bytes);\n")
-	g.printf("        let data = new %s();\n", typeDef.Name)
-	for _, field := range typeDef.Fields {
-		name := field.Name
-		g.printf("        data.%s = decode.%s();\n", name, uncapitalize(field.Type))
-	}
-	g.printf("        decode.close();\n")
-	g.printf("        return data;\n    }\n")
-
-	g.printf("\n    bytes(): u8[] {\n")
-	g.printf("        return new wasmlib.BytesEncoder().\n")
-	for _, field := range typeDef.Fields {
-		name := field.Name
-		g.printf("            %s(this.%s).\n", uncapitalize(field.Type), name)
-	}
-	g.printf("            data();\n    }\n")
-
-	g.printf("}\n")
-
-	g.generateTypeProxy(typeDef, false)
-	g.generateTypeProxy(typeDef, true)
 }
 
-func (g *TypeScriptGenerator) generateTypeProxy(typeDef *Struct, mutable bool) {
-	typeName := PropImmutable + typeDef.Name
-	if mutable {
-		typeName = PropMutable + typeDef.Name
-	}
+func (g *TypeScriptGenerator) writeState() {
+	g.println(tsImportWasmLib)
+	g.println(tsImportSelf)
 
-	g.printf("\nexport class %s {\n", typeName)
-	g.printf("    objID: i32;\n")
-	g.printf("    keyID: wasmlib.Key32;\n")
-
-	g.printf("\n    constructor(objID: i32, keyID: wasmlib.Key32) {\n")
-	g.printf("        this.objID = objID;\n")
-	g.printf("        this.keyID = keyID;\n")
-	g.printf("    }\n")
-
-	g.printf("\n    exists(): boolean {\n")
-	g.printf("        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);\n")
-	g.printf("    }\n")
-
-	if mutable {
-		g.printf("\n    setValue(value: %s): void {\n", typeDef.Name)
-		g.printf("        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());\n")
-		g.printf("    }\n")
-	}
-
-	g.printf("\n    value(): %s {\n", typeDef.Name)
-	g.printf("        return %s.fromBytes(wasmlib.getBytes(this.objID, this.keyID,wasmlib. TYPE_BYTES));\n", typeDef.Name)
-	g.printf("    }\n")
-
-	g.printf("}\n")
+	g.generateProxyStruct(g.s.StateVars, PropImmutable, g.s.FullName, "State")
+	g.generateProxyStruct(g.s.StateVars, PropMutable, g.s.FullName, "State")
 }
 
-func (g *TypeScriptGenerator) generateTypeDefs() error {
-	if len(g.s.Typedefs) == 0 {
-		return nil
-	}
-
-	err := g.create(g.Folder + "typedefs" + g.extension)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	g.println(copyright(true))
+func (g *TypeScriptGenerator) writeTypeDefs() {
 	g.println(tsImportWasmLib)
 	g.println(tsImportSelf)
 
@@ -870,6 +754,12 @@ func (g *TypeScriptGenerator) generateTypeDefs() error {
 		g.generateProxy(subtype, PropImmutable)
 		g.generateProxy(subtype, PropMutable)
 	}
+}
 
-	return nil
+func (g *TypeScriptGenerator) writeStructs() {
+	g.println(tsImportWasmLib)
+
+	for _, typeDef := range g.s.Structs {
+		g.generateStruct(typeDef)
+	}
 }
