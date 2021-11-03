@@ -102,6 +102,11 @@ func NewRustGenerator() *RustGenerator {
 	return g
 }
 
+func (g *RustGenerator) init(s *Schema) {
+	g.GenBase.init(s)
+	// g.templates["exportLine"] = goExportLine
+}
+
 func (g *RustGenerator) crateOrWasmLib(withContract, withHost bool) string {
 	if g.s.CoreContracts {
 		retVal := useCrate

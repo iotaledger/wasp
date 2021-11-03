@@ -91,6 +91,11 @@ func NewTypeScriptGenerator() *TypeScriptGenerator {
 	return g
 }
 
+func (g *TypeScriptGenerator) init(s *Schema) {
+	g.GenBase.init(s)
+	// g.templates["exportLine"] = goExportLine
+}
+
 func (g *TypeScriptGenerator) flushConsts() {
 	if len(g.s.ConstNames) == 0 {
 		return
@@ -659,13 +664,13 @@ func (g *TypeScriptGenerator) writeResults() {
 }
 
 func (g *TypeScriptGenerator) writeSpecialConfigJSON() error {
-	err := g.exists(g.Folder + "tsconfig.json")
+	err := g.exists(g.folder + "tsconfig.json")
 	if err == nil {
 		// already exists
 		return nil
 	}
 
-	err = g.create(g.Folder + "tsconfig.json")
+	err = g.create(g.folder + "tsconfig.json")
 	if err != nil {
 		return err
 	}

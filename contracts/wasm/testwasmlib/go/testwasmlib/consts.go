@@ -43,7 +43,9 @@ const (
 	ResultValue  = wasmlib.Key("value")
 )
 
-const StateArrays = wasmlib.Key("arrays")
+const (
+	StateArrays = wasmlib.Key("arrays")
+)
 
 const (
 	FuncArrayClear   = "arrayClear"

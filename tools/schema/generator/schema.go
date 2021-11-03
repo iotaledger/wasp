@@ -138,10 +138,10 @@ func (s *Schema) compileField(fldName, fldType string) (*Field, error) {
 }
 
 func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, views bool) (err error) {
-	kind := "func"
+	kind := lower(KindFunc)
 	templateFuncs := schemaDef.Funcs
 	if views {
-		kind = "view"
+		kind = lower(KindView)
 		templateFuncs = schemaDef.Views
 	}
 	for _, funcName := range sortedFuncDescs(templateFuncs) {

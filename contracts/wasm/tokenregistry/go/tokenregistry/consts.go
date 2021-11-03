@@ -10,8 +10,9 @@ package tokenregistry
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
-	ScName  = "tokenregistry"
-	HScName = wasmlib.ScHname(0xe1ba0c78)
+	ScName        = "tokenregistry"
+	ScDescription = ""
+	HScName       = wasmlib.ScHname(0xe1ba0c78)
 )
 
 const (
