@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
+	"github.com/iotaledger/wasp/packages/database/registrykvstore"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
@@ -37,7 +38,7 @@ func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
 	}
 	// registry db is created with an empty chainID
 	dbm.registryDB = dbm.createDB(nil)
-	dbm.registryStore = dbm.registryDB.NewStore()
+	dbm.registryStore = registrykvstore.New(dbm.registryDB.NewStore())
 	return &dbm
 }
 
@@ -52,8 +53,10 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) database.DB {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
+	chainIDBase58 := getChainBase58(chainID)
+
 	if m.inMemory {
-		m.log.Infof("creating new in-memory database for: %s.", chainID.String())
+		m.log.Infof("creating new in-memory database for: %s.", chainIDBase58)
 		db, err := database.NewMemDB()
 		if err != nil {
 			m.log.Fatal(err)
@@ -70,12 +73,12 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) database.DB {
 			return nil
 		}
 	}
-	instanceDir := fmt.Sprintf("%s/%s", dbDir, getChainBase58(chainID))
 
+	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainIDBase58)
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
-		m.log.Infof("creating new database for: %s.", chainID.String())
+		m.log.Infof("creating new database for: %s.", chainIDBase58)
 	} else {
-		m.log.Infof("using existing database for: %s.", chainID.String())
+		m.log.Infof("using existing database for: %s.", chainIDBase58)
 	}
 
 	db, err := database.NewDB(instanceDir)
