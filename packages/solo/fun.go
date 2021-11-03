@@ -6,7 +6,7 @@ package solo
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sort"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -204,7 +204,7 @@ func (ch *Chain) UploadWasm(keyPair *ed25519.KeyPair, binaryCode []byte) (ret ha
 // UploadWasmFromFile is a syntactic sugar to upload file content as blob data to the chain
 func (ch *Chain) UploadWasmFromFile(keyPair *ed25519.KeyPair, fileName string) (ret hashing.HashValue, err error) {
 	var binary []byte
-	binary, err = ioutil.ReadFile(fileName)
+	binary, err = os.ReadFile(fileName)
 	if err != nil {
 		return
 	}
