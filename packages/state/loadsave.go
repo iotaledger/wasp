@@ -48,6 +48,11 @@ func (vs *virtualStateAccess) Commit(blocks ...Block) error {
 		return err
 	}
 
+	// call flush explicitly, because batched.Commit doesn't actually write the changes to disk.
+	if err := vs.db.Flush(); err != nil {
+		return err
+	}
+
 	vs.kvs.ClearMutations()
 	vs.kvs.Mutations().ResetModified()
 	vs.appliedBlockHashes = vs.appliedBlockHashes[:0]

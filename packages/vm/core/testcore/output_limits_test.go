@@ -62,7 +62,7 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 		wallet,
 	)
 	require.Error(t, err)
-	require.Contains(t, fmt.Sprintf("%v", err), "exceeded max number of allowed outputs")
+	require.Contains(t, err.Error(), "exceeded max number of allowed outputs")
 
 	finalBalance := env.GetAddressBalance(address, colored.IOTA)
 	require.Equal(t, finalBalance, initialBalance)
