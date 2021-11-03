@@ -52,12 +52,8 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) database.DB {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if chainID == nil {
-		m.log.Infof("creating new registry database. Persistent: %v", !m.inMemory)
-	} else {
-		m.log.Infof("creating new database for chain %s. Persistent: %v", chainID.String(), !m.inMemory)
-	}
 	if m.inMemory {
+		m.log.Infof("creating new in-memory database for: %s.", chainID.String())
 		db, err := database.NewMemDB()
 		if err != nil {
 			m.log.Fatal(err)
@@ -75,6 +71,13 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) database.DB {
 		}
 	}
 	instanceDir := fmt.Sprintf("%s/%s", dbDir, getChainBase58(chainID))
+
+	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
+		m.log.Infof("creating new database for: %s.", chainID.String())
+	} else {
+		m.log.Infof("using existing database for: %s.", chainID.String())
+	}
+
 	db, err := database.NewDB(instanceDir)
 	if err != nil {
 		m.log.Fatal(err)
