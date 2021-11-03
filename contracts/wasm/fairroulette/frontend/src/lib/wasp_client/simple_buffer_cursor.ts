@@ -1,11 +1,10 @@
 import { Buffer } from './buffer';
 
 export class SimpleBufferCursor {
-
   private _buffer: Buffer;
   private _traverse: number;
 
-  get buffer() {
+  get buffer(): Buffer {
     return this._buffer;
   }
 
@@ -13,7 +12,6 @@ export class SimpleBufferCursor {
     this._buffer = buffer;
     this._traverse = 0;
   }
-
 
   readIntBE(length: number): number {
     const value = this._buffer.readIntBE(this._traverse, length);
@@ -44,48 +42,48 @@ export class SimpleBufferCursor {
   }
 
   readBytes(length: number): Uint8Array {
-    let subBuffer = this._buffer.subarray(this._traverse, this._traverse + length);
+    const subBuffer = this._buffer.subarray(this._traverse, this._traverse + length);
     this._traverse += length;
 
     return subBuffer;
   }
 
-  writeIntBE(value: number, length: number) {
+  writeIntBE(value: number, length: number): void {
     const nBuffer = Buffer.alloc(length);
     nBuffer.writeIntBE(value, 0, length);
 
     this._buffer = Buffer.concat([this._buffer, nBuffer]);
   }
 
-  writeInt8(value: number) {
+  writeInt8(value: number): void {
     const nBuffer = Buffer.alloc(1);
     nBuffer.writeInt8(value, 0);
 
     this._buffer = Buffer.concat([this._buffer, nBuffer]);
   }
 
-  writeUInt32LE(value: number) {
+  writeUInt32LE(value: number): void {
     const nBuffer = Buffer.alloc(4);
     nBuffer.writeUInt32LE(value, 0);
 
     this._buffer = Buffer.concat([this._buffer, nBuffer]);
   }
 
-  writeUInt64LE(value: bigint) {
+  writeUInt64LE(value: bigint): void {
     const nBuffer = Buffer.alloc(8);
     nBuffer.writeBigUInt64LE(value, 0);
 
     this._buffer = Buffer.concat([this._buffer, nBuffer]);
   }
 
-  writeUInt16LE(value: number) {
+  writeUInt16LE(value: number): void {
     const nBuffer = Buffer.alloc(2);
     nBuffer.writeUInt16LE(value, 0);
 
     this._buffer = Buffer.concat([this._buffer, nBuffer]);
   }
 
-  writeBytes(bytes: Buffer) {
+  writeBytes(bytes: Buffer): void {
     this._buffer = Buffer.concat([this._buffer, bytes]);
   }
 }

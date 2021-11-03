@@ -5,11 +5,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type ErrorStateInvalidated struct {
-	error
-}
-
-var ErrStateHasBeenInvalidated = &ErrorStateInvalidated{xerrors.New("virtual state has been invalidated")}
+var ErrorStateInvalidated = xerrors.New("virtual state has been invalidated")
 
 // ChainStateSync and StateBaseline interfaces implements optimistic (non-blocking) access to the
 // global state (database) of the chain
@@ -89,7 +85,7 @@ func (g *stateBaseline) IsValid() bool {
 
 func (g *stateBaseline) MustValidate() {
 	if !g.IsValid() {
-		panic(ErrStateHasBeenInvalidated)
+		panic(ErrorStateInvalidated)
 	}
 }
 

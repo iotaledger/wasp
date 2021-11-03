@@ -8,10 +8,10 @@
 // through a minimal implementation and not to come up with a complete real-world solution.
 
 use wasmlib::*;
-use crate::contract::ScFuncs;
 
-use crate::types::*;
 use crate::*;
+use crate::contract::*;
+use crate::structs::*;
 
 // Define some default configuration parameters.
 
@@ -36,7 +36,8 @@ const NANO_TIME_DIVIDER: i64 = 1000000000;
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
-    let bets = f.state.bets();
+    // Get the array of current bets from state storage.
+    let bets: ArrayOfMutableBet = f.state.bets();
 
     for i in 0..bets.length() {
         let bet: Bet = bets.get_bet(i).value();
@@ -72,9 +73,6 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
         amount: amount,
         number: number,
     };
-
-    // Get the array of current bets from state storage.
-    let bets: ArrayOfMutableBet = f.state.bets();
 
     // Determine what the next bet number is by retrieving the length of the bets array.
     let bet_nr: i32 = bets.length();

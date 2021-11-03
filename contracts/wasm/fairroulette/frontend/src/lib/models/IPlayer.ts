@@ -1,6 +1,5 @@
 export type IPlayer = {
-    address: string;
-    bet: number;
-    number?: number;
-}
-
+  address: string;
+  bet: number;
+  number?: number;
+};

@@ -1,3 +1,3 @@
 export interface ISendTransactionRequest {
-    txn_bytes: string;
+  txn_bytes: string;
 }

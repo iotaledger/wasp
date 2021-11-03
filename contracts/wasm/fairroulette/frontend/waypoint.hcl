@@ -18,14 +18,11 @@ variable "goshimmer_url" {
 
 variable "chainid" {
     type = string
+    default = "be1j1GwB971eEAVfDmNFUtUfQ7rHEEF43Mz7yTP2bdkH"
 }
 
 variable "adminWhitelist" {
     type = list(string)
-}
-
-variable "wallet_seed" {
-    type = string
 }
 
 variable "ghcr" {

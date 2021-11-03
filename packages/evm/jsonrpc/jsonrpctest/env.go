@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package jsonrpctest
 
 import (
@@ -15,15 +18,19 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/stretchr/testify/require"
 )
 
 type Env struct {
 	T         *testing.T
+	EVMFlavor *coreutil.ContractInfo
 	Server    *rpc.Server
 	Client    *ethclient.Client
 	RawClient *rpc.Client
@@ -31,7 +38,7 @@ type Env struct {
 }
 
 func (e *Env) signer() types.Signer {
-	return evm.Signer(big.NewInt(int64(e.ChainID)))
+	return evmtypes.Signer(big.NewInt(int64(e.ChainID)))
 }
 
 var RequestFundsAmount = big.NewInt(1e18) // 1 ETH
@@ -40,7 +47,7 @@ func (e *Env) RequestFunds(target common.Address) *types.Transaction {
 	nonce, err := e.Client.NonceAt(context.Background(), evmtest.FaucetAddress, nil)
 	require.NoError(e.T, err)
 	tx, err := types.SignTx(
-		types.NewTransaction(nonce, target, RequestFundsAmount, evm.TxGas, evm.GasPrice, nil),
+		types.NewTransaction(nonce, target, RequestFundsAmount, params.TxGas, evm.GasPrice, nil),
 		e.signer(),
 		evmtest.FaucetKey,
 	)
@@ -269,7 +276,10 @@ func (e *Env) TestRPCGetLogs() {
 
 	require.Empty(e.T, e.getLogs(filterQuery))
 
-	e.DeployEVMContract(creator, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+	tx, _ := e.DeployEVMContract(creator, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+
+	receipt := e.MustTxReceipt(tx.Hash())
+	require.Equal(e.T, 1, len(receipt.Logs))
 
 	require.Equal(e.T, 1, len(e.getLogs(filterQuery)))
 
@@ -284,7 +294,7 @@ func (e *Env) TestRPCGetLogs() {
 		Data:  callArguments,
 	}))
 	require.NoError(e.T, err)
-	e.MustSendTransaction(&jsonrpc.SendTxArgs{
+	txHash := e.MustSendTransaction(&jsonrpc.SendTxArgs{
 		From:     creatorAddress,
 		To:       &contractAddress,
 		Gas:      &gas,
@@ -294,6 +304,9 @@ func (e *Env) TestRPCGetLogs() {
 		Data:     (*hexutil.Bytes)(&callArguments),
 	})
 
+	receipt = e.MustTxReceipt(txHash)
+	require.Equal(e.T, 1, len(receipt.Logs))
+
 	require.Equal(e.T, 2, len(e.getLogs(filterQuery)))
 }
 
@@ -302,7 +315,7 @@ func (e *Env) TestRPCGasLimit() {
 	toAddress := evmtest.AccountAddress(1)
 	value := big.NewInt(1)
 	nonce := e.NonceAt(fromAddress)
-	gasLimit := evm.TxGas - 1
+	gasLimit := params.TxGas - 1
 	tx, err := types.SignTx(
 		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
 		e.signer(),
@@ -320,7 +333,7 @@ func (e *Env) TestRPCInvalidNonce() {
 	toAddress := evmtest.AccountAddress(1)
 	value := big.NewInt(1)
 	nonce := e.NonceAt(fromAddress) + 1
-	gasLimit := evm.TxGas - 1
+	gasLimit := params.TxGas - 1
 	tx, err := types.SignTx(
 		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
 		e.signer(),

@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 	"github.com/mr-tron/base58"
 )
 
@@ -33,6 +32,12 @@ const (
 	OBJTYPE_MAP        int32 = 11
 	OBJTYPE_REQUEST_ID int32 = 12
 	OBJTYPE_STRING     int32 = 13
+
+	OBJID_NULL    int32 = 0
+	OBJID_ROOT    int32 = 1
+	OBJID_STATE   int32 = 2
+	OBJID_PARAMS  int32 = 3
+	OBJID_RESULTS int32 = 4
 )
 
 // flag to indicate that this key id originally comes from a bytes key
@@ -241,7 +246,7 @@ func (h *KvStoreHost) SetBytes(objID, keyID, typeID int32, bytes []byte) {
 func (h *KvStoreHost) Tracef(format string, a ...interface{}) {
 	if HostTracing {
 		text := fmt.Sprintf(format, a...)
-		h.SetBytes(wasmlib.OBJ_ID_ROOT, KeyTrace, OBJTYPE_STRING, []byte(text))
+		h.SetBytes(OBJID_ROOT, KeyTrace, OBJTYPE_STRING, []byte(text))
 	}
 }
 

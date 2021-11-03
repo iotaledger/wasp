@@ -431,6 +431,11 @@ module.exports = {
             type: 'doc',
             label: 'Contribute',
             id: 'contribute',
+        },
+        {
+            type: 'doc',
+            label: 'Metrics',
+            id: 'metrics',
         }
     ],
 };

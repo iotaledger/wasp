@@ -2,7 +2,7 @@ ARG GOLANG_IMAGE_TAG=1.17-buster
 
 # Build stage
 FROM golang:${GOLANG_IMAGE_TAG} AS build
-ARG BUILD_TAGS="rocksdb"
+ARG BUILD_TAGS="rocksdb,builtin_static"
 ARG BUILD_LD_FLAGS=""
 ARG BUILD_TARGET="./..."
 

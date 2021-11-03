@@ -14,7 +14,6 @@ use std::ptr;
 use wasmlib::*;
 
 use crate::consts::*;
-use crate::params::*;
 use crate::results::*;
 
 pub struct HelloWorldCall {

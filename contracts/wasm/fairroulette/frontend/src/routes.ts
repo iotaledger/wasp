@@ -9,8 +9,8 @@ const routes = [
   {
     name: 'demo',
     component: Demo,
-    layout: Layout
-  }
-]
+    layout: Layout,
+  },
+];
 
 export { routes };

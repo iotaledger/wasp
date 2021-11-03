@@ -35,18 +35,24 @@ The testnet can be accessed via a series of endpoints that have been made availa
     - The Wasp api to deploy and interact with smart contracts
     - https://api.wasp.sc.iota.org/info
       - Information about the Wasp access node
+    - https://api.wasp.sc.iota.org/doc
+      - API reference for the Wasp API
   - https://evm.wasp.sc.iota.org
     - The URL to interact with the Ethereum Virtual Machine on our testnet
   - https://explorer.wasp.sc.iota.org
     - The URL to interact with the Ethereum Block Explorer on our testnet
 - https://goshimmer.sc.iota.org
   - The GoShimmer dashboard to explore the Tangle backing our smart contract testnet
+  - goshimmer.sc.iota.org:5000
+    - The TXStream TCP port to use for the `nodeconn` address with Wasp nodes.
   - https://api.goshimmer.sc.iota.org/
     - The GoShimmer api to interact with the Tangle directly
     - https://api.goshimmer.sc.iota.org/info
       - Information about GoShimmer via the API
 - https://demo.sc.iota.org
   - Our FairRoulette demo application to see a live smart contract in action
+- https://metrics.wasp.sc.iota.org
+  - System metrics
 
 ## Configuring _wasp-cli_
 

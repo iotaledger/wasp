@@ -20,10 +20,10 @@ following:
 * `self`: Only the smart contract itself can call this function.
 * `chain`: Only the chain owner can call this function.
 * `creator`: Only the contract creator can call this function
-* anything else: The name of an AgentID or []AgentID variable in state storage. Only the
+* anything else: The name of an AgentID or AgentID[] variable in state storage. Only the
   agent(s) defined there can call this function. When this option is used you should also
   provide functionality that can initialize and/or modify this variable. As long as this
-  state variable has not been set, nobody is allowed to call this function.
+  state variable has not been set, nobody will be allowed to call this function.
 
 The schema tool will automatically generate code to properly check the access rights of
 the agent that called the function before the actual function is called.

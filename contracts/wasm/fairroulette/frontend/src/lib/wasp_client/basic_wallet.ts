@@ -3,28 +3,28 @@ import { Buffer } from './buffer';
 import { ColorCollection, Colors } from './colors';
 import { Transaction } from './transaction';
 import type { BasicClient } from './basic_client';
-import type { IKeyPair, ITransaction, IUnlockBlock, IWalletAddressOutput, IWalletOutput } from './models';
+import type {
+  IKeyPair,
+  ITransaction,
+  IUnlockBlock,
+  IUnspentOutputMap,
+  IUnspentOutputsResponse,
+  IWalletAddressOutput,
+  IWalletOutput,
+} from './models';
 
 export type BuiltOutputResult = {
   [address: string]: {
-    /**
-     * The color.
-     */
     color: string;
-    /**
-     * The value.
-     */
     value: bigint;
   }[];
 };
 
 export type ConsumedOutputs = {
-  [address: string]: { [outputID: string]: IWalletOutput; };
+  [address: string]: { [outputID: string]: IWalletOutput };
 };
 
-
 export class BasicWallet {
-
   private client: BasicClient;
   constructor(client: BasicClient) {
     this.client = client;
@@ -33,32 +33,32 @@ export class BasicWallet {
   private fakeBigBalance(balances: ColorCollection) {
     const colorCollection: ColorCollection = {};
 
-    for (let color in balances) {
+    for (const color in balances) {
       colorCollection[color] = BigInt(balances[color]);
     }
 
     return colorCollection;
   }
 
-  public async getUnspentOutputs(address: string) {
+  public async getUnspentOutputs(address: string): Promise<Array<IWalletAddressOutput>> {
     const unspents = await this.client.unspentOutputs({ addresses: [address] });
 
-    const usedAddresses = unspents.unspentOutputs.filter(u => u.outputs.length > 0);
+    const usedAddresses = unspents.unspentOutputs.filter((u) => u.outputs.length > 0);
 
-    const unspentOutputs = usedAddresses.map(uo => ({
+    const unspentOutputs = usedAddresses.map((uo) => ({
       address: uo.address.base58,
-      outputs: uo.outputs.map(uid => ({
+      outputs: uo.outputs.map((uid) => ({
         id: uid.output.outputID.base58,
         balances: this.fakeBigBalance(uid.output.output.balances),
-        inclusionState: uid.inclusionState
-      }))
+        inclusionState: uid.inclusionState,
+      })),
     }));
 
     return unspentOutputs;
   }
 
   public determineOutputsToConsume(unspentOutputs: IWalletAddressOutput[], iotas: bigint): ConsumedOutputs {
-    const outputsToConsume: { [address: string]: { [outputID: string]: IWalletOutput; }; } = {};
+    const outputsToConsume: { [address: string]: { [outputID: string]: IWalletOutput } } = {};
 
     let iotasLeft = iotas;
 
@@ -93,7 +93,6 @@ export class BasicWallet {
           // mark address as spent
           outputsFromAddressSpent = true;
         }
-
       }
 
       if (outputsFromAddressSpent) {
@@ -106,15 +105,19 @@ export class BasicWallet {
     return outputsToConsume;
   }
 
-  public buildOutputs(remainderAddress: string, destinationAddress: string, iotas: bigint, consumedFunds: ColorCollection): BuiltOutputResult {
-    const outputsByColor: { [address: string]: ColorCollection; } = {};
+  public buildOutputs(
+    remainderAddress: string,
+    destinationAddress: string,
+    iotas: bigint,
+    consumedFunds: ColorCollection,
+  ): BuiltOutputResult {
+    const outputsByColor: { [address: string]: ColorCollection } = {};
 
     // build outputs for destinations
 
     if (!outputsByColor[destinationAddress]) {
       outputsByColor[destinationAddress] = {};
     }
-
 
     if (!outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING]) {
       outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING] = 0n;
@@ -127,12 +130,10 @@ export class BasicWallet {
       delete consumedFunds[Colors.IOTA_COLOR_STRING];
     }
 
-
-
     // build outputs for remainder
     if (Object.keys(consumedFunds).length > 0) {
       if (!remainderAddress) {
-        throw new Error("No remainder address available");
+        throw new Error('No remainder address available');
       }
       if (!outputsByColor[remainderAddress]) {
         outputsByColor[remainderAddress] = {};
@@ -153,7 +154,7 @@ export class BasicWallet {
       for (const color in outputsByColor[address]) {
         outputsBySlice[address].push({
           color,
-          value: outputsByColor[address][color]
+          value: outputsByColor[address][color],
         });
       }
     }
@@ -161,7 +162,7 @@ export class BasicWallet {
     return outputsBySlice;
   }
 
-  public buildInputs(outputsToUseAsInputs: { [address: string]: { [outputID: string]: IWalletOutput; }; }): {
+  public buildInputs(outputsToUseAsInputs: { [address: string]: { [outputID: string]: IWalletOutput } }): {
     /**
      * The inputs to send.
      */
@@ -195,27 +196,45 @@ export class BasicWallet {
     return { inputs, consumedFunds };
   }
 
-  public unlockBlocks(tx: ITransaction, keyPair: IKeyPair, address: string, consumedOutputs: ConsumedOutputs, builtInputs: string[]) {
+  public unlockBlocks(
+    tx: ITransaction,
+    keyPair: IKeyPair,
+    address: string,
+    consumedOutputs: ConsumedOutputs,
+    builtInputs: string[],
+  ): Array<IUnlockBlock> {
     const unlockBlocks: IUnlockBlock[] = [];
     const txEssence = Transaction.essence(tx, Buffer.alloc(0));
 
-    const addressByOutputID: { [outputID: string]: string; } = {};
+    const addressByOutputID: { [outputID: string]: string } = {};
     for (const address in consumedOutputs) {
       for (const outputID in consumedOutputs[address]) {
         addressByOutputID[outputID] = address;
       }
     }
 
-    const existingUnlockBlocks: { [address: string]: number; } = {};
+    const existingUnlockBlocks: { [address: string]: number } = {};
+    // TODO: Update this in the next refactoring.
+    // eslint-disable-next-line @typescript-eslint/no-for-in-array
     for (const index in builtInputs) {
       const addr = address == addressByOutputID[builtInputs[index]];
       if (addr) {
         if (existingUnlockBlocks[address] !== undefined) {
-          unlockBlocks.push({ type: 1, referenceIndex: existingUnlockBlocks[address], publicKey: Buffer.alloc(0), signature: Buffer.alloc(0) });
+          unlockBlocks.push({
+            type: 1,
+            referenceIndex: existingUnlockBlocks[address],
+            publicKey: Buffer.alloc(0),
+            signature: Buffer.alloc(0),
+          });
           continue;
         }
 
-        const signatureUnlockBlock = { type: 0, referenceIndex: 0, publicKey: keyPair.publicKey, signature: Transaction.sign(keyPair, txEssence) };
+        const signatureUnlockBlock = {
+          type: 0,
+          referenceIndex: 0,
+          publicKey: keyPair.publicKey,
+          signature: Transaction.sign(keyPair, txEssence),
+        };
         existingUnlockBlocks[address] = unlockBlocks.length;
         unlockBlocks.push(signatureUnlockBlock);
       }

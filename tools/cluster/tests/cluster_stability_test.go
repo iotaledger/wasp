@@ -113,7 +113,7 @@ func (e *SabotageEnv) sabotageNodes(sabotageOption SabotageOption, startDelay, i
 
 func (e *SabotageEnv) unfreezeNodes() {
 	for _, nodeID := range e.SabotageList {
-		e.chainEnv.t.Logf("Unfreezing node %v", nodeID)
+		e.chainEnv.t.Logf("Unfreezing node %v (%s)", nodeID, time.Now())
 		err := e.chainEnv.clu.UnfreezeNode(nodeID)
 
 		require.NoError(e.chainEnv.t, err)

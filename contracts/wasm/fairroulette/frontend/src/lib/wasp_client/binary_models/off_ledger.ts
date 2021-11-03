@@ -11,7 +11,7 @@ export class OffLedger {
     const colorLength = 32;
     const signatureSize = 64;
 
-    let reader = new SimpleBufferCursor(buffer);
+    const reader = new SimpleBufferCursor(buffer);
 
     const requestType = reader.readIntBE(1);
     const contract = reader.readUInt32LE();
@@ -21,10 +21,10 @@ export class OffLedger {
     const args = [];
 
     for (let i = 0; i < numArguments; i++) {
-      let sz16 = reader.readUInt16LE();
-      let key = reader.readBytes(sz16);
-      let sz32 = reader.readUInt32LE();
-      let value = reader.readBytes(sz32);
+      const sz16 = reader.readUInt16LE();
+      const key = reader.readBytes(sz16);
+      const sz32 = reader.readUInt32LE();
+      const value = reader.readBytes(sz32);
 
       args.push({ key: key, value: value });
     }
@@ -44,7 +44,7 @@ export class OffLedger {
 
     const signature = reader.readBytes(signatureSize);
 
-    let offLedgerStruct: IOffLedger = {
+    const offLedgerStruct: IOffLedger = {
       requestType: requestType,
       contract: contract,
       entrypoint: entrypoint,
@@ -68,11 +68,10 @@ export class OffLedger {
     buffer.writeUInt32LE(req.contract);
     buffer.writeUInt32LE(req.entrypoint);
 
-
     buffer.writeUInt32LE(req.arguments.length || 0);
 
     if (req.arguments) {
-      for (let arg of req.arguments) {
+      for (const arg of req.arguments) {
         const keyBuffer = Buffer.from(arg.key);
 
         buffer.writeUInt16LE(keyBuffer.length);
@@ -92,7 +91,7 @@ export class OffLedger {
     buffer.writeUInt32LE(req.balances.length || 0);
 
     if (req.balances) {
-      for (let balance of req.balances) {
+      for (const balance of req.balances) {
         buffer.writeBytes(balance.color);
         buffer.writeUInt64LE(balance.balance);
       }
@@ -106,7 +105,6 @@ export class OffLedger {
   }
 
   public static Sign(request: IOffLedger, keyPair: IKeyPair): IOffLedger {
-
     // Create a copy without requestType and signature
     // adding the requestType and|or an empty signature would result in an invalid signature in the next step.
     const cleanCopyOfRequest: IOffLedger = {
@@ -118,7 +116,7 @@ export class OffLedger {
       publicKey: keyPair.publicKey,
 
       requestType: null,
-      signature: null
+      signature: null,
     };
 
     const requestBuffer = this.ToBuffer(cleanCopyOfRequest);

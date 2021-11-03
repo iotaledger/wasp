@@ -19,7 +19,7 @@
   $: selected = animations[animation];
 
   $: if (selected && container) {
-    let options = {
+    const options = {
       container,
       renderer,
       path: `assets/animations/${selected}.json`,
