@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -75,7 +76,7 @@ type GenBase struct {
 	currentField  *Field
 	currentFunc   *Func
 	currentStruct *Struct
-	emitters      map[string]func(g *GenBase) string
+	emitters      map[string]func(g *GenBase)
 	extension     string
 	file          *os.File
 	folder        string
@@ -92,7 +93,7 @@ type GenBase struct {
 
 func (g *GenBase) init(s *Schema) {
 	g.s = s
-	g.emitters = map[string]func(g *GenBase) string{}
+	g.emitters = map[string]func(g *GenBase){}
 	g.newTypes = map[string]bool{}
 	g.keys = map[string]string{}
 	g.templates = map[string]string{}
@@ -134,62 +135,66 @@ func (g *GenBase) createSourceFile(name string, generator func()) error {
 	return nil
 }
 
-var (
-	emitKeyRegExp = regexp.MustCompile(`\$[a-zA-Z_]+`)
-	emitCmdRegExp = regexp.MustCompile(`\$#[^\n]*\n`)
-)
+var emitKeyRegExp = regexp.MustCompile(`\$[a-zA-Z_]+`)
 
 func (g *GenBase) emit(template string) {
-	g.printf(g.emitAll(template))
-}
-
-func (g *GenBase) emitAll(template string) string {
 	template = g.templates[template]
+	lines := strings.Split(template, "\n")
+	for i := 1; i < len(lines)-1; i++ {
+		line := lines[i]
 
-	// first process special commands
-	text := emitCmdRegExp.ReplaceAllStringFunc(template, func(key string) string {
-		if strings.HasPrefix(key, "$#each ") {
-			return g.emitEach(strings.TrimSpace(key[7:]))
+		// first process special commands
+		if strings.HasPrefix(line, "$#") {
+			if strings.HasPrefix(line, "$#each ") {
+				g.emitEach(strings.TrimSpace(line[7:]))
+				continue
+			}
+			if strings.HasPrefix(line, "$#emit ") {
+				g.emit(strings.TrimSpace(line[7:]))
+				continue
+			}
+			if strings.HasPrefix(line, "$#func ") {
+				g.emitFunc(strings.TrimSpace(line[7:]))
+				continue
+			}
+			if strings.HasPrefix(line, "$#if ") {
+				g.emitIf(strings.TrimSpace(line[5:]))
+				continue
+			}
+			g.println("???:" + line)
+			continue
 		}
-		if strings.HasPrefix(key, "$#emit ") {
-			return g.emitAll(strings.TrimSpace(key[7:]))
-		}
-		if strings.HasPrefix(key, "$#func ") {
-			return g.emitFunc(strings.TrimSpace(key[7:]))
-		}
-		if strings.HasPrefix(key, "$#if ") {
-			return g.emitIf(strings.TrimSpace(key[5:]))
-		}
-		return "???:" + key
-	})
 
-	// then replace any remaining keys
-	text = emitKeyRegExp.ReplaceAllStringFunc(text, func(key string) string {
-		return g.emitKey(key)
-	})
+		// then replace any remaining keys
+		line = emitKeyRegExp.ReplaceAllStringFunc(line, func(key string) string {
+			text, ok := g.keys[key[1:]]
+			if ok {
+				return text
+			}
+			return "???:" + key
+		})
 
-	// remove concatenation markers
-	text = strings.ReplaceAll(text, "$+", "")
+		// finally remove concatenation markers
+		line = strings.ReplaceAll(line, "$+", "")
 
-	// remove leading newline
-	return strings.TrimPrefix(text, "\n")
+		g.println(line)
+	}
 }
 
-func (g *GenBase) emitEach(key string) string {
+func (g *GenBase) emitEach(key string) {
 	parts := strings.Split(key, " ")
 	if len(parts) != 2 {
-		return "???: " + key
+		g.println("???:" + key)
+		return
 	}
 
 	template := parts[1]
 	switch parts[0] {
 	case "func":
-		text := ""
 		for _, g.currentFunc = range g.s.Funcs {
 			g.setFuncKeys()
-			text += g.emitAll(template)
+			g.emit(template)
 		}
-		return text
 	case "mandatory":
 		mandatory := []*Field{}
 		for _, g.currentField = range g.currentFunc.Params {
@@ -197,57 +202,56 @@ func (g *GenBase) emitEach(key string) string {
 				mandatory = append(mandatory, g.currentField)
 			}
 		}
-		return g.emitFields(mandatory, template)
+		g.emitFields(mandatory, template)
 	case KeyParam:
-		return g.emitFields(g.currentFunc.Params, template)
+		g.emitFields(g.currentFunc.Params, template)
 	case KeyParams:
 		g.keys[constPrefix] = PrefixParam
-		return g.emitFields(g.s.Params, template)
+		g.emitFields(g.s.Params, template)
 	case KeyResult:
-		return g.emitFields(g.currentFunc.Results, template)
+		g.emitFields(g.currentFunc.Results, template)
 	case KeyResults:
 		g.keys[constPrefix] = PrefixResult
-		return g.emitFields(g.s.Results, template)
+		g.emitFields(g.s.Results, template)
 	case KeyState:
 		g.keys[constPrefix] = PrefixState
-		return g.emitFields(g.s.StateVars, template)
+		g.emitFields(g.s.StateVars, template)
 	case KeyStruct:
-		text := ""
 		for _, g.currentStruct = range g.s.Structs {
 			g.setStructKeys()
-			text += g.emitAll(template)
+			g.emit(template)
 		}
-		return text
 	case KeyTypeDef:
-		return g.emitFields(g.s.Typedefs, template)
+		g.emitFields(g.s.Typedefs, template)
+	default:
+		g.println("???:" + key)
 	}
-	return "???: " + key
 }
 
-func (g *GenBase) emitFields(fields []*Field, template string) string {
-	text := ""
+func (g *GenBase) emitFields(fields []*Field, template string) {
 	for _, g.currentField = range fields {
-		if g.currentField.Alias == "this" {
+		if g.currentField.Alias == AliasThis {
 			continue
 		}
 		g.setFieldKeys()
-		text += g.emitAll(template)
+		g.emit(template)
 	}
-	return text
 }
 
-func (g *GenBase) emitFunc(key string) string {
-	f, ok := g.emitters[key]
+func (g *GenBase) emitFunc(key string) {
+	emitter, ok := g.emitters[key]
 	if ok {
-		return f(g)
+		emitter(g)
+		return
 	}
-	return "???: " + key
+	g.println("???:" + key)
 }
 
-func (g *GenBase) emitIf(key string) string {
+func (g *GenBase) emitIf(key string) {
 	parts := strings.Split(key, " ")
 	if len(parts) < 2 || len(parts) > 3 {
-		return "???: " + key
+		g.println("???:" + key)
+		return
 	}
 
 	conditionKey := parts[0]
@@ -272,25 +276,20 @@ func (g *GenBase) emitIf(key string) string {
 	case KeyPtrs:
 		condition = len(g.currentFunc.Params) != 0 || len(g.currentFunc.Results) != 0
 	default:
-		return "???: " + key
+		g.println("???:" + key)
+		return
 	}
 
 	if condition {
-		return g.emitAll(template)
+		g.emit(template)
+		return
 	}
+
+	// else branch?
 	if len(parts) == 3 {
 		template = parts[2]
-		return g.emitAll(template)
+		g.emit(template)
 	}
-	return ""
-}
-
-func (g *GenBase) emitKey(key string) string {
-	text, ok := g.keys[key[1:]]
-	if ok {
-		return text
-	}
-	return "???: " + key
 }
 
 func (g *GenBase) exists(path string) (err error) {
@@ -581,6 +580,10 @@ func (g *GenBase) setFieldKeys() {
 	g.keys["fld_name"] = snake(fldName)
 	g.keys["FLD_NAME"] = upper(snake(fldName))
 	g.keys["fldAlias"] = g.currentField.Alias
+	g.keys["FldType"] = g.currentField.Type
+	g.keys["fldIndex"] = strconv.Itoa(g.s.KeyID)
+	g.s.KeyID++
+	g.keys["maxIndex"] = strconv.Itoa(g.s.KeyID)
 }
 
 func (g *GenBase) setKeys() {

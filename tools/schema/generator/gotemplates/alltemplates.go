@@ -22,6 +22,7 @@ var GoTemplates = []map[string]string{
 	constsGo,
 	contractGo,
 	funcsGo,
+	keysGo,
 	libGo,
 	mainGo,
 }

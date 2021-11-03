@@ -4,9 +4,7 @@
 package generator
 
 import (
-	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/iotaledger/wasp/tools/schema/generator/gotemplates"
@@ -82,26 +80,6 @@ func (g *GoGenerator) init(s *Schema) {
 	g.emitters["funcSignature"] = emitterFuncSignature
 }
 
-func (g *GoGenerator) flushConsts() {
-	if len(g.s.ConstNames) == 0 {
-		return
-	}
-
-	if len(g.s.ConstNames) == 1 {
-		name := g.s.ConstNames[0]
-		value := g.s.ConstValues[0]
-		g.printf("\nconst %s = %s\n", name, value)
-		g.s.flushConsts(func(name string, value string, padLen int) {})
-		return
-	}
-
-	g.printf("\nconst (\n")
-	g.s.flushConsts(func(name string, value string, padLen int) {
-		g.printf("\t%s = %s\n", pad(name, padLen), value)
-	})
-	g.printf(")\n")
-}
-
 func (g *GoGenerator) funcName(f *Func) string {
 	return f.FuncName
 }
@@ -112,30 +90,6 @@ func (g *GoGenerator) generateArrayType(varType string) string {
 		return "wasmlib.TYPE_ARRAY16|" + varType
 	}
 	return "wasmlib.TYPE_ARRAY|" + varType
-}
-
-func (g *GoGenerator) generateKeysArray(fields []*Field, prefix string) {
-	for _, field := range fields {
-		if field.Alias == AliasThis {
-			continue
-		}
-		name := prefix + capitalize(field.Name)
-		g.printf("\t%s,\n", name)
-		g.s.KeyID++
-	}
-}
-
-func (g *GoGenerator) generateKeysIndexes(fields []*Field, prefix string) {
-	for _, field := range fields {
-		if field.Alias == AliasThis {
-			continue
-		}
-		name := "Idx" + prefix + capitalize(field.Name)
-		field.KeyID = g.s.KeyID
-		value := strconv.Itoa(field.KeyID)
-		g.s.KeyID++
-		g.s.appendConst(name, value)
-	}
 }
 
 func (g *GoGenerator) generateLanguageSpecificFiles() error {
@@ -388,22 +342,8 @@ func (g *GoGenerator) writeInitialFuncs() {
 }
 
 func (g *GoGenerator) writeKeys() {
-	g.emit("goHeader")
-
 	g.s.KeyID = 0
-	g.generateKeysIndexes(g.s.Params, "Param")
-	g.generateKeysIndexes(g.s.Results, "Result")
-	g.generateKeysIndexes(g.s.StateVars, "State")
-	g.flushConsts()
-
-	size := g.s.KeyID
-	g.printf("\nconst keyMapLen = %d\n", size)
-	g.printf("\nvar keyMap = [keyMapLen]wasmlib.Key{\n")
-	g.generateKeysArray(g.s.Params, "Param")
-	g.generateKeysArray(g.s.Results, "Result")
-	g.generateKeysArray(g.s.StateVars, "State")
-	g.printf("}\n")
-	g.printf("\nvar idxMap [keyMapLen]wasmlib.Key32\n")
+	g.emit("keys.go")
 }
 
 func (g *GoGenerator) writeLib() {
@@ -466,15 +406,14 @@ func (g *GoGenerator) writeTypeDefs() {
 	}
 }
 
-func emitterAccessCheck(g *GenBase) string {
+func emitterAccessCheck(g *GenBase) {
 	if g.currentFunc.Access == "" {
-		return ""
+		return
 	}
-	text := ""
 	grant := g.currentFunc.Access
 	index := strings.Index(grant, "//")
 	if index >= 0 {
-		text = fmt.Sprintf("\t%s\n", grant[index:])
+		g.printf("\t%s\n", grant[index:])
 		grant = strings.TrimSpace(grant[:index])
 	}
 	switch grant {
@@ -486,20 +425,20 @@ func emitterAccessCheck(g *GenBase) string {
 		grant = "ctx.ContractCreator()"
 	default:
 		g.keys["grant"] = grant
-		text += g.emitAll("grantForKey")
+		g.emit("grantForKey")
 		grant = "access.Value()"
 	}
 	g.keys["grant"] = grant
-	return text + g.emitAll("grantRequire")
+	g.emit("grantRequire")
 }
 
-func emitterFuncSignature(g *GenBase) string {
+func emitterFuncSignature(g *GenBase) {
 	switch g.currentFunc.FuncName {
 	case SpecialFuncInit:
 	case SpecialFuncSetOwner:
 	case SpecialViewGetOwner:
 	default:
-		return ""
+		return
 	}
-	return g.emitAll(g.currentFunc.FuncName)
+	g.emit(g.currentFunc.FuncName)
 }
