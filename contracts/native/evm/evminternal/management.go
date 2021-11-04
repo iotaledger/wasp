@@ -59,11 +59,7 @@ func setBlockTime(ctx iscp.Sandbox) (dict.Dict, error) {
 	blockTime := params.MustGetUint32(evm.FieldBlockTime)
 	a.Require(blockTime > 0, "blockTime must be > 0")
 
-	mustSchedule := false
-	if !ctx.State().MustHas(keyBlockTime) {
-		// first call
-		mustSchedule = true
-	}
+	mustSchedule := !ctx.State().MustHas(keyBlockTime)
 
 	ctx.State().Set(keyBlockTime, codec.EncodeUint32(blockTime))
 	if mustSchedule {
