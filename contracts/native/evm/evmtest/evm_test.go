@@ -217,7 +217,7 @@ func TestGasPerIotas(t *testing.T) {
 		newGasPerIota := evm.DefaultGasPerIota * 1000
 		newUserWallet, _ := evmChain.solo.NewKeyPairWithFunds()
 		err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: newUserWallet})
-		require.Contains(t, err.Error(), "can only be called by the contract owner")
+		require.Contains(t, err.Error(), "unauthorized access")
 		require.Equal(t, evm.DefaultGasPerIota, evmChain.getGasPerIotas())
 
 		// current owner is able to set a new gasPerIotas
@@ -242,7 +242,7 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 		user1AgentID := iscp.NewAgentID(user1Address, 0)
 
 		err := evmChain.withdrawGasFees(user1Wallet)
-		require.Contains(t, err.Error(), "can only be called by the contract owner")
+		require.Contains(t, err.Error(), "unauthorized access")
 
 		// change owner to user1
 		err = evmChain.setNextOwner(user1AgentID)

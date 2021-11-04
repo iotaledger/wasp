@@ -115,7 +115,7 @@ func claimOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	nextOwner, err := codec.DecodeAgentID(ctx.State().MustGet(keyNextEVMOwner))
 	a.RequireNoError(err)
-	a.Require(nextOwner.Equals(ctx.Caller()), "Can only be called by the contract owner")
+	a.RequireCaller(ctx, []*iscp.AgentID{nextOwner})
 
 	ctx.State().Set(keyEVMOwner, codec.EncodeAgentID(nextOwner))
 	return nil, nil
