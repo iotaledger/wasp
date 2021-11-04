@@ -51,6 +51,8 @@ func InitializeManagement(ctx iscp.Sandbox) {
 }
 
 func setBlockTime(ctx iscp.Sandbox) (dict.Dict, error) {
+	requireOwner(ctx)
+
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
 
