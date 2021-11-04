@@ -3,11 +3,8 @@ package vmcontext
 import (
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
-
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
 type chainStateWrapper struct {
@@ -16,25 +13,24 @@ type chainStateWrapper struct {
 
 // chainState is a KVStore to access the whole state of the chain. To access the partition of the contract
 // use subrealm or methid (vmctx *VMContext) State() kv.KVStore
+// Each access to the state checks validity of the state. It panics optimistic reader error
+// if state has been invalidated (new state was committed)
 func (vmctx *VMContext) chainState() chainStateWrapper {
 	return chainStateWrapper{vmctx}
 }
 
 func (s chainStateWrapper) Has(name kv.Key) (bool, error) {
-	if !s.vmctx.solidStateBaseline.IsValid() {
-		panic(optimism.ErrStateHasBeenInvalidated)
-	}
-	_, ok := s.vmctx.currentStateUpdate.Mutations().Sets[name]
-	if ok {
+	s.vmctx.solidStateBaseline.MustValidate()
+
+	if _, ok := s.vmctx.currentStateUpdate.Mutations().Sets[name]; ok {
 		return true, nil
 	}
 	return s.vmctx.virtualState.KVStore().Has(name)
 }
 
 func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) error {
-	if !s.vmctx.solidStateBaseline.IsValid() {
-		panic(optimism.ErrStateHasBeenInvalidated)
-	}
+	s.vmctx.solidStateBaseline.MustValidate()
+
 	var err error
 	err2 := s.IterateKeys(prefix, func(k kv.Key) bool {
 		var v []byte
@@ -51,9 +47,8 @@ func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) e
 }
 
 func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
-	if !s.vmctx.solidStateBaseline.IsValid() {
-		panic(optimism.ErrStateHasBeenInvalidated)
-	}
+	s.vmctx.solidStateBaseline.MustValidate()
+
 	for k := range s.vmctx.currentStateUpdate.Mutations().Sets {
 		if k.HasPrefix(prefix) {
 			if !f(k) {
@@ -70,9 +65,8 @@ func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) e
 }
 
 func (s chainStateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) bool) error {
-	if !s.vmctx.solidStateBaseline.IsValid() {
-		panic(optimism.ErrStateHasBeenInvalidated)
-	}
+	s.vmctx.solidStateBaseline.MustValidate()
+
 	var err error
 	err2 := s.IterateKeysSorted(prefix, func(k kv.Key) bool {
 		var v []byte
@@ -89,9 +83,8 @@ func (s chainStateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) b
 }
 
 func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
-	if !s.vmctx.solidStateBaseline.IsValid() {
-		panic(optimism.ErrStateHasBeenInvalidated)
-	}
+	s.vmctx.solidStateBaseline.MustValidate()
+
 	var keys []kv.Key
 	for k := range s.vmctx.currentStateUpdate.Mutations().Sets {
 		if k.HasPrefix(prefix) {
@@ -117,9 +110,8 @@ func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) b
 }
 
 func (s chainStateWrapper) Get(name kv.Key) ([]byte, error) {
-	if !s.vmctx.solidStateBaseline.IsValid() {
-		panic(optimism.ErrStateHasBeenInvalidated)
-	}
+	s.vmctx.solidStateBaseline.MustValidate()
+
 	v, ok := s.vmctx.currentStateUpdate.Mutations().Sets[name]
 	if ok {
 		return v, nil
@@ -128,23 +120,20 @@ func (s chainStateWrapper) Get(name kv.Key) ([]byte, error) {
 }
 
 func (s chainStateWrapper) Del(name kv.Key) {
-	if !s.vmctx.solidStateBaseline.IsValid() {
-		panic(optimism.ErrStateHasBeenInvalidated)
-	}
+	s.vmctx.solidStateBaseline.MustValidate()
+
 	s.vmctx.currentStateUpdate.Mutations().Del(name)
 }
 
 func (s chainStateWrapper) Set(name kv.Key, value []byte) {
-	if !s.vmctx.solidStateBaseline.IsValid() {
-		panic(optimism.ErrStateHasBeenInvalidated)
-	}
+	s.vmctx.solidStateBaseline.MustValidate()
+
 	s.vmctx.currentStateUpdate.Mutations().Set(name, value)
 }
 
 func (vmctx *VMContext) State() kv.KVStore {
-	if !vmctx.solidStateBaseline.IsValid() {
-		panic(optimism.ErrStateHasBeenInvalidated)
-	}
+	vmctx.solidStateBaseline.MustValidate()
+
 	return subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 }
 

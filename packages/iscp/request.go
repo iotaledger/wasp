@@ -17,10 +17,10 @@ import (
 type Request interface {
 	// index == 0 for off ledger requests
 	ID() RequestID
+	// is request on transaction of not
+	IsOffLedger() bool
 	// true or false for on-ledger requests, always true for off-ledger
 	IsFeePrepaid() bool
-	// ledgerstate.Output interface for on-ledger requests, nil for off-ledger requests
-	Output() ledgerstate.Output
 	// arguments of the call with the flag if they are ready. No arguments mean empty dictionary and true
 	Params() (dict.Dict, bool)
 	// account of the sender
@@ -29,14 +29,14 @@ type Request interface {
 	SenderAddress() ledgerstate.Address
 	// returns contract/entry point pair
 	Target() (Hname, Hname)
-	// returns time lock time or zero time if no time lock
-	TimeLock() time.Time
-	// returns tokens to transfer
-	Tokens() *ledgerstate.ColoredBalances
-	// returns binary representation of the request
+	// Timestamp returns a request TX timestamp, if such TX exist, otherwise zero is returned.
+	Timestamp() time.Time
+	// Bytes returns binary representation of the request
 	Bytes() []byte
-	// returns the hash of the request (used for consensus)
+	// Hash returns the hash of the request (used for consensus)
 	Hash() [32]byte
+	// String representation of the request (humanly readable)
+	String() string
 }
 
 func TakeRequestIDs(reqs ...Request) []RequestID {

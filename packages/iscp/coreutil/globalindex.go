@@ -1,10 +1,15 @@
 package coreutil
 
 import (
-	"sync"
-
 	"go.uber.org/atomic"
+	"golang.org/x/xerrors"
 )
+
+type ErrorStateInvalidated struct {
+	error
+}
+
+var ErrStateHasBeenInvalidated = &ErrorStateInvalidated{xerrors.New("virtual state has been invalidated")}
 
 // ChainStateSync and StateBaseline interfaces implements optimistic (non-blocking) access to the
 // global state (database) of the chain
@@ -15,20 +20,16 @@ type ChainStateSync interface {
 	GetSolidIndexBaseline() StateBaseline
 	SetSolidIndex(idx uint32) ChainStateSync // for use in state manager
 	InvalidateSolidIndex() ChainStateSync    // only for state manager
-	Mutex() *sync.RWMutex
 }
 
 type ChainStateSyncImpl struct {
-	solidIndex  atomic.Uint32
-	globalMutex *sync.RWMutex
+	solidIndex atomic.Uint32
 }
 
 // we assume last state index 2^32 will never be reached :)
 
 func NewChainStateSync() *ChainStateSyncImpl {
-	ret := &ChainStateSyncImpl{
-		globalMutex: &sync.RWMutex{},
-	}
+	ret := &ChainStateSyncImpl{}
 	ret.solidIndex.Store(^uint32(0))
 	return ret
 }
@@ -56,12 +57,6 @@ func (g *ChainStateSyncImpl) InvalidateSolidIndex() ChainStateSync {
 	return g
 }
 
-// Mutex return global mutex which is locked by the state manager during write to DB
-// The read lock ar not used atm, it may be removed in the future
-func (g *ChainStateSyncImpl) Mutex() *sync.RWMutex {
-	return g.globalMutex
-}
-
 // endregion  ///////////////////////////////////////////////////
 
 // region StateBaseline //////////////////////////////////////////////
@@ -69,6 +64,7 @@ func (g *ChainStateSyncImpl) Mutex() *sync.RWMutex {
 type StateBaseline interface {
 	Set()
 	IsValid() bool
+	MustValidate()
 }
 
 type stateBaseline struct {
@@ -89,6 +85,12 @@ func (g *stateBaseline) Set() {
 
 func (g *stateBaseline) IsValid() bool {
 	return g.baseline != ^uint32(0) && g.baseline == g.solidStateIndex.Load()
+}
+
+func (g *stateBaseline) MustValidate() {
+	if !g.IsValid() {
+		panic(ErrStateHasBeenInvalidated)
+	}
 }
 
 // endregion /////////////////////////////////////////////////////////////

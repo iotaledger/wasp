@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -42,7 +44,7 @@ type MockedEnv struct {
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	NetworkCloser     io.Closer
-	ChainID           iscp.ChainID
+	ChainID           *iscp.ChainID
 	mutex             sync.Mutex
 	Nodes             map[string]*MockedNode
 	push              bool
@@ -82,7 +84,8 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 	outputs := ret.Ledger.GetAddressOutputs(ret.OriginatorAddress)
 	require.True(t, len(outputs) == 1)
 
-	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+	bals := colored.ToL1Map(colored.NewBalancesForIotas(100))
+
 	txBuilder := utxoutil.NewBuilder(outputs...)
 	err = txBuilder.AddNewAliasMint(bals, ret.OriginatorAddress, state.OriginStateHash().Bytes())
 	require.NoError(t, err)
@@ -96,7 +99,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 	retOut, err := utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = *iscp.NewChainID(retOut.GetAliasAddress())
+	ret.ChainID = iscp.NewChainID(retOut.GetAliasAddress())
 
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
@@ -200,7 +203,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 	})
 	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, timers)
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
-	ret.StateTransition.OnNextState(func(vstate state.VirtualState, tx *ledgerstate.Transaction) {
+	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
 		go ret.StateManager.EventStateCandidateMsg(&messages.StateCandidateMsg{State: vstate})
 		go ret.NodeConn.PostTransaction(tx)

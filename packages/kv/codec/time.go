@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 var zeroUnixNano = time.Time{}.UnixNano()
@@ -14,19 +15,21 @@ func init() {
 	}
 }
 
-func DecodeTime(b []byte) (time.Time, bool, error) {
+func DecodeTime(b []byte, def ...time.Time) (time.Time, error) {
 	if b == nil {
-		// special behavior for backward compatibility: nil value is treated as the absence of a value, not an error
-		return time.Time{}, false, nil
+		if len(def) == 0 {
+			return time.Time{}, xerrors.Errorf("cannot decode nil bytes")
+		}
+		return def[0], nil
 	}
 	nanos, err := util.Int64From8Bytes(b)
 	if err != nil {
-		return time.Time{}, false, err
+		return time.Time{}, err
 	}
 	if nanos == 0 {
-		return time.Time{}, true, nil
+		return time.Time{}, nil
 	}
-	return time.Unix(0, nanos), true, nil
+	return time.Unix(0, nanos), nil
 }
 
 var b8 [8]byte

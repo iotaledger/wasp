@@ -40,9 +40,8 @@ func test2Chains(t *testing.T, w bool) {
 	chain2.AssertTotalIotas(3 + extraToken2)
 
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name,
-		accounts.ParamAgentID, contractAgentID2,
-	).WithIotas(42)
-	_, err := chain1.PostRequestSync(req, userWallet)
+		accounts.ParamAgentID, contractAgentID2)
+	_, err := chain1.PostRequestSync(req.WithIotas(42), userWallet)
 	require.NoError(t, err)
 
 	env.AssertAddressIotas(userAddress, solo.Saldo-42)
@@ -60,10 +59,9 @@ func test2Chains(t *testing.T, w bool) {
 	chain2.AssertTotalIotas(3 + extraToken2)
 
 	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawToChain.Name,
-		sbtestsc.ParamChainID, chain1.ChainID,
-	).WithIotas(1)
+		sbtestsc.ParamChainID, chain1.ChainID)
 
-	_, err = chain2.PostRequestSync(req, userWallet)
+	_, err = chain2.PostRequestSync(req.WithIotas(1), userWallet)
 	require.NoError(t, err)
 
 	extra := 0
@@ -78,12 +76,12 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.AssertIotas(userAgentID, 0)
 	chain1.AssertIotas(contractAgentID1, 1)
 	chain1.AssertIotas(contractAgentID2, 0)
-	chain1.AssertCommonAccountIotas(3 + extraToken1)
-	chain1.AssertTotalIotas(4 + extraToken1)
+	chain1.AssertCommonAccountIotas(2 + extraToken1)
+	chain1.AssertTotalIotas(3 + extraToken1)
 
 	chain2.AssertIotas(userAgentID, 0)
 	chain2.AssertIotas(contractAgentID1, 0)
-	chain2.AssertIotas(contractAgentID2, 43)
+	chain2.AssertIotas(contractAgentID2, 44)
 	chain2.AssertCommonAccountIotas(2 + extraToken2)
-	chain2.AssertTotalIotas(45 + extraToken2)
+	chain2.AssertTotalIotas(46 + extraToken2)
 }

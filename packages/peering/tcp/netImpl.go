@@ -209,7 +209,7 @@ func (n *NetImpl) usePeer(netID string) *peer {
 	// new peer
 	ret := newPeer(netID, n)
 	n.peers[ret.peeringID()] = ret
-	n.log.Debugf("added new peer id %s inbound = %v", ret.peeringID(), ret.IsInbound())
+	n.log.Debugf("added new peer id %s", ret.peeringID())
 	return ret
 }
 

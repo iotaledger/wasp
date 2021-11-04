@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-func (c *WaspClient) PostOffLedgerRequest(chainID *iscp.ChainID, req *request.RequestOffLedger) error {
+func (c *WaspClient) PostOffLedgerRequest(chainID *iscp.ChainID, req *request.OffLedger) error {
 	data := model.OffLedgerRequestBody{
 		Request: model.NewBytes(req.Bytes()),
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -49,12 +50,15 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	genesisAlloc, err := DecodeGenesisAlloc(ctx.Params().MustGet(FieldGenesisAlloc))
 	a.RequireNoError(err)
-	chainID, ok, err := codec.DecodeUint16(ctx.Params().MustGet(FieldChainID))
+	chainID, err := codec.DecodeUint16(ctx.Params().MustGet(FieldChainID), evm.DefaultChainID)
 	a.RequireNoError(err)
-	if !ok {
-		chainID = evm.DefaultChainID
-	}
-	evm.InitGenesis(int(chainID), rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())), genesisAlloc, evm.GasLimitDefault)
+	evm.InitGenesis(
+		int(chainID),
+		rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())),
+		genesisAlloc,
+		evm.GasLimitDefault,
+		timestamp(ctx),
+	)
 	ctx.State().Set(FieldGasPerIota, codec.EncodeUint64(DefaultGasPerIota))
 	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(ctx.ContractCreator()))
 	return nil, nil
@@ -67,8 +71,8 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 	err := tx.UnmarshalBinary(ctx.Params().MustGet(FieldTransactionData))
 	a.RequireNoError(err)
 
-	transferredIotas, _ := ctx.IncomingTransfer().Get(getFeeColor(ctx))
-	gasPerIota, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota))
+	transferredIotas := ctx.IncomingTransfer().Get(getFeeColor(ctx))
+	gasPerIota, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota), 0)
 	a.RequireNoError(err)
 
 	a.Require(
@@ -77,10 +81,10 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 	)
 
 	emu := getOrCreateEmulator(ctx)
-	usedGas, err := emu.SendTransaction(tx)
+	receipt, err := emu.SendTransaction(tx)
 	a.RequireNoError(err)
 
-	iotasGasFee := usedGas / gasPerIota
+	iotasGasFee := receipt.GasUsed / gasPerIota
 	if transferredIotas > iotasGasFee {
 		// refund unspent gas fee to the sender's on-chain account
 		iotasGasRefund := transferredIotas - iotasGasFee
@@ -88,23 +92,23 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 			accounts.Contract.Hname(),
 			accounts.FuncDeposit.Hname(),
 			dict.Dict{accounts.ParamAgentID: codec.EncodeAgentID(ctx.Caller())},
-			iscp.NewTransferIotas(iotasGasRefund),
+			colored.NewBalancesForIotas(iotasGasRefund),
 		)
 		a.RequireNoError(err)
 	}
 
 	return dict.Dict{
 		FieldGasFee:  codec.EncodeUint64(iotasGasFee),
-		FieldGasUsed: codec.EncodeUint64(usedGas),
+		FieldGasUsed: codec.EncodeUint64(receipt.GasUsed),
 	}, nil
 }
 
 func getBalance(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
-	blockNumber := paramBlockNumber(ctx)
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		blockNumber := paramBlockNumberOrHashAsNumber(ctx, emu)
 		bal, err := emu.BalanceAt(addr, blockNumber)
 		a.RequireNoError(err)
 		return result(bal.Bytes())
@@ -187,9 +191,9 @@ func getReceipt(ctx iscp.SandboxView) (dict.Dict, error) {
 func getNonce(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
-	blockNumber := paramBlockNumber(ctx)
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		blockNumber := paramBlockNumberOrHashAsNumber(ctx, emu)
 		nonce, err := emu.NonceAt(addr, blockNumber)
 		a.RequireNoError(err)
 		return result(codec.EncodeUint64(nonce))
@@ -199,9 +203,9 @@ func getNonce(ctx iscp.SandboxView) (dict.Dict, error) {
 func getCode(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
-	blockNumber := paramBlockNumber(ctx)
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		blockNumber := paramBlockNumberOrHashAsNumber(ctx, emu)
 		code, err := emu.CodeAt(addr, blockNumber)
 		a.RequireNoError(err)
 		return result(code)
@@ -212,9 +216,9 @@ func getStorage(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 	key := common.BytesToHash(ctx.Params().MustGet(FieldKey))
-	blockNumber := paramBlockNumber(ctx)
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		blockNumber := paramBlockNumberOrHashAsNumber(ctx, emu)
 		data, err := emu.StorageAt(addr, key, blockNumber)
 		a.RequireNoError(err)
 		return result(data)
@@ -237,9 +241,9 @@ func callContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	callMsg, err := DecodeCallMsg(ctx.Params().MustGet(FieldCallMsg))
 	a.RequireNoError(err)
-	blockNumber := paramBlockNumber(ctx)
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		blockNumber := paramBlockNumberOrHashAsNumber(ctx, emu)
 		res, err := emu.CallContract(callMsg, blockNumber)
 		a.RequireNoError(err)
 		return result(res)
@@ -261,7 +265,7 @@ func estimateGas(ctx iscp.SandboxView) (dict.Dict, error) {
 // EVM chain management functions ///////////////////////////////////////////////////////////////////////////////////////
 
 func requireOwner(ctx iscp.Sandbox) {
-	contractOwner, _, err := codec.DecodeAgentID(ctx.State().MustGet(FieldEvmOwner))
+	contractOwner, err := codec.DecodeAgentID(ctx.State().MustGet(FieldEvmOwner))
 	a := assert.NewAssert(ctx.Log())
 	a.RequireNoError(err)
 	a.Require(contractOwner.Equals(ctx.Caller()), "can only be called by the contract owner")
@@ -277,11 +281,11 @@ func setNextOwner(ctx iscp.Sandbox) (dict.Dict, error) {
 func claimOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
-	nextOwner, _, err := codec.DecodeAgentID(ctx.State().MustGet(FieldNextEvmOwner))
+	nextOwner, err := codec.DecodeAgentID(ctx.State().MustGet(FieldNextEvmOwner))
 	a.RequireNoError(err)
 	a.Require(nextOwner.Equals(ctx.Caller()), "Can only be called by the contract owner")
 
-	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(&nextOwner))
+	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(nextOwner))
 	return nil, nil
 }
 
@@ -306,7 +310,7 @@ func withdrawGasFees(ctx iscp.Sandbox) (dict.Dict, error) {
 	requireOwner(ctx)
 
 	paramsDecoder := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAgentID := paramsDecoder.MustGetAgentID(FieldAgentID, *ctx.Caller())
+	targetAgentID := paramsDecoder.MustGetAgentID(FieldAgentID, ctx.Caller())
 
 	isOnChain := targetAgentID.Address().Equals(ctx.ChainID().AsAddress())
 

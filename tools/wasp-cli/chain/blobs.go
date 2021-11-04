@@ -3,12 +3,10 @@ package chain
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
@@ -17,7 +15,7 @@ import (
 var uploadQuorum int
 
 func initUploadFlags(chainCmd *cobra.Command) {
-	chainCmd.PersistentFlags().IntVarP(&uploadQuorum, "upload-quorum", "", 3, "quorum for blob upload") //nolint:gomnd
+	chainCmd.PersistentFlags().IntVarP(&uploadQuorum, "upload-quorum", "", 3, "quorum for blob upload")
 }
 
 var storeBlobCmd = &cobra.Command{
@@ -25,22 +23,15 @@ var storeBlobCmd = &cobra.Command{
 	Short: "Store a blob in the chain",
 	Args:  cobra.MinimumNArgs(4),
 	Run: func(cmd *cobra.Command, args []string) {
-		uploadBlob(util.EncodeParams(args), false)
+		uploadBlob(util.EncodeParams(args))
 	},
 }
 
-func uploadBlob(fieldValues dict.Dict, forceWait bool) (hash hashing.HashValue) {
-	util.WithSCTransaction(
-		GetCurrentChainID(),
-		func() (tx *ledgerstate.Transaction, err error) {
-			hash, tx, err = Client().UploadBlob(fieldValues, config.CommitteeAPI(chainCommittee()), uploadQuorum)
-			if err == nil {
-				log.Printf("uploaded blob to chain -- hash: %s", hash)
-			}
-			return
-		},
-		forceWait)
-	return
+func uploadBlob(fieldValues dict.Dict) (hash hashing.HashValue) {
+	hash, _, err := Client().UploadBlob(fieldValues)
+	log.Check(err)
+	log.Printf("uploaded blob to chain -- hash: %s", hash)
+	return hash
 }
 
 var showBlobCmd = &cobra.Command{
@@ -86,7 +77,7 @@ var listBlobsCmd = &cobra.Command{
 		rows := make([][]string, len(ret))
 		i := 0
 		for k, size := range blobs {
-			hash, _, err := codec.DecodeHashValue([]byte(k))
+			hash, err := codec.DecodeHashValue([]byte(k))
 			log.Check(err)
 			rows[i] = []string{hash.String(), fmt.Sprintf("%d", size)}
 			i++

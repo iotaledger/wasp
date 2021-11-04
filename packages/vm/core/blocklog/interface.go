@@ -10,8 +10,10 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -19,10 +21,12 @@ var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log co
 
 const (
 	// state variables
-	StateVarBlockRegistry      = "b"
-	StateVarControlAddresses   = "c"
-	StateVarRequestLookupIndex = "l"
-	StateVarRequestRecords     = "r"
+	StateVarBlockRegistry             = "b"
+	StateVarControlAddresses          = "c"
+	StateVarRequestLookupIndex        = "l"
+	StateVarRequestReceipts           = "r"
+	StateVarRequestEvents             = "e"
+	StateVarSmartContractEventsLookup = "e"
 )
 
 var (
@@ -33,6 +37,9 @@ var (
 	FuncGetRequestReceipt          = coreutil.ViewFunc("getRequestReceipt")
 	FuncGetRequestReceiptsForBlock = coreutil.ViewFunc("getRequestReceiptsForBlock")
 	FuncIsRequestProcessed         = coreutil.ViewFunc("isRequestProcessed")
+	FuncGetEventsForRequest        = coreutil.ViewFunc("getEventsForRequest")
+	FuncGetEventsForBlock          = coreutil.ViewFunc("getEventsForBlock")
+	FuncGetEventsForContract       = coreutil.ViewFunc("getEventsForContract")
 )
 
 const (
@@ -40,10 +47,14 @@ const (
 	ParamBlockIndex             = "n"
 	ParamBlockInfo              = "i"
 	ParamGoverningAddress       = "g"
+	ParamContractHname          = "h"
+	ParamFromBlock              = "f"
+	ParamToBlock                = "t"
 	ParamRequestID              = "u"
 	ParamRequestIndex           = "r"
 	ParamRequestProcessed       = "p"
 	ParamRequestRecord          = "d"
+	ParamEvent                  = "e"
 	ParamStateControllerAddress = "s"
 )
 
@@ -55,6 +66,7 @@ type BlockInfo struct {
 	TotalRequests         uint16
 	NumSuccessfulRequests uint16
 	NumOffLedgerRequests  uint16
+	PreviousStateHash     hashing.HashValue
 }
 
 func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
@@ -97,7 +109,13 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if err := util.WriteUint16(w, bi.NumSuccessfulRequests); err != nil {
 		return err
 	}
-	return util.WriteUint16(w, bi.NumOffLedgerRequests)
+	if err := util.WriteUint16(w, bi.NumOffLedgerRequests); err != nil {
+		return err
+	}
+	if _, err := w.Write(bi.PreviousStateHash.Bytes()); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (bi *BlockInfo) Read(r io.Reader) error {
@@ -110,7 +128,13 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := util.ReadUint16(r, &bi.NumSuccessfulRequests); err != nil {
 		return err
 	}
-	return util.ReadUint16(r, &bi.NumOffLedgerRequests)
+	if err := util.ReadUint16(r, &bi.NumOffLedgerRequests); err != nil {
+		return err
+	}
+	if err := util.ReadHashValue(r, &bi.PreviousStateHash); err != nil { // nolint:nolint
+		return err
+	}
+	return nil
 }
 
 // endregion //////////////////////////////////////////////////////////
@@ -188,13 +212,58 @@ func (ll RequestLookupKeyList) Bytes() []byte {
 
 // endregion /////////////////////////////////////////////////////////////
 
+// region RequestLookupKey /////////////////////////////////////////////
+
+// EventLookupKey is a globally unique reference to the event:
+// block index + index of the request within block + index of the event within the request
+type EventLookupKey [8]byte
+
+func NewEventLookupKey(blockIndex uint32, requestIndex, eventIndex uint16) EventLookupKey {
+	ret := EventLookupKey{}
+	copy(ret[:4], util.Uint32To4Bytes(blockIndex))
+	copy(ret[4:6], util.Uint16To2Bytes(requestIndex))
+	copy(ret[6:8], util.Uint16To2Bytes(eventIndex))
+	return ret
+}
+
+func (k EventLookupKey) BlockIndex() uint32 {
+	return util.MustUint32From4Bytes(k[:4])
+}
+
+func (k EventLookupKey) RequestIndex() uint16 {
+	return util.MustUint16From2Bytes(k[4:6])
+}
+
+func (k EventLookupKey) RequestEventIndex() uint16 {
+	return util.MustUint16From2Bytes(k[6:8])
+}
+
+func (k EventLookupKey) Bytes() []byte {
+	return k[:]
+}
+
+func (k *EventLookupKey) Write(w io.Writer) error {
+	_, err := w.Write(k[:])
+	return err
+}
+
+func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
+	k := EventLookupKey{}
+	n, err := r.Read(k[:])
+	if err != nil || n != 8 {
+		return nil, io.EOF
+	}
+	return &k, nil
+}
+
+// endregion ///////////////////////////////////////////////////////////
+
 // region RequestLogReqcord /////////////////////////////////////////////////////
 
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
-	RequestID iscp.RequestID
-	OffLedger bool
-	LogData   []byte
+	Request iscp.Request
+	Error   string
 	// not persistent
 	BlockIndex   uint32
 	RequestIndex uint16
@@ -207,28 +276,26 @@ func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
 func RequestReceiptFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
 	ret := &RequestReceipt{}
 	var err error
-	if ret.RequestID, err = iscp.RequestIDFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	if ret.OffLedger, err = mu.ReadBool(); err != nil {
+	if ret.Request, err = request.FromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	var size uint16
 	if size, err = mu.ReadUint16(); err != nil {
 		return nil, err
 	}
-	if ret.LogData, err = mu.ReadBytes(int(size)); err != nil {
+	strBytes, err := mu.ReadBytes(int(size))
+	if err != nil {
 		return nil, err
 	}
+	ret.Error = string(strBytes)
 	return ret, nil
 }
 
 func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.Write(r.RequestID).
-		WriteBool(r.OffLedger).
-		WriteUint16(uint16(len(r.LogData))).
-		WriteBytes(r.LogData)
+	mu.WriteBytes(r.Request.Bytes()).
+		WriteUint16(uint16(len(r.Error))).
+		WriteBytes([]byte(r.Error))
 	return mu.Bytes()
 }
 
@@ -238,33 +305,21 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 	return r
 }
 
-func (r *RequestReceipt) strPrefix() string {
-	prefix := "req"
-	if !r.OffLedger {
-		prefix += "/tx"
-	}
-	if r.BlockIndex != 0 {
-		prefix += fmt.Sprintf("[%d/%d]", r.BlockIndex, r.RequestIndex)
-	}
-	return prefix
-}
-
 func (r *RequestReceipt) String() string {
-	ret := fmt.Sprintf("%s %s", r.strPrefix(), r.RequestID.String())
-	if len(r.LogData) > 0 {
-		ret += ": '" + string(r.LogData) + "'"
+	if len(r.Error) > 0 {
+		return fmt.Sprintf("%s\n Error: '%s'", r.Request.String(), r.Error)
 	}
-	return ret
+	return r.Request.String()
 }
 
 func (r *RequestReceipt) Short() string {
 	prefix := "tx"
-	if r.OffLedger {
+	if r.Request.IsOffLedger() {
 		prefix = "api"
 	}
-	ret := fmt.Sprintf("%s/%s", prefix, r.RequestID)
-	if len(r.LogData) > 0 {
-		ret += ": '" + string(r.LogData) + "'"
+	ret := fmt.Sprintf("%s/%s", prefix, r.Request.ID())
+	if len(r.Error) > 0 {
+		ret += ": '" + r.Error + "'"
 	}
 	return ret
 }

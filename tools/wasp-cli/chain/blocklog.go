@@ -26,7 +26,10 @@ func blockCmd() *cobra.Command {
 			log.Printf("Total requests: %d\n", bi.TotalRequests)
 			log.Printf("Successful requests: %d\n", bi.NumSuccessfulRequests)
 			log.Printf("Off-ledger requests: %d\n", bi.NumOffLedgerRequests)
+			log.Printf("\n")
 			logRequestsInBlock(bi.BlockIndex)
+			log.Printf("\n")
+			logEventsInBlock(bi.BlockIndex)
 		},
 	}
 }
@@ -35,7 +38,7 @@ func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 	if len(args) == 0 {
 		ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetLatestBlockInfo.Name, nil)
 		log.Check(err)
-		index, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
+		index, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 		log.Check(err)
 		b, err := blocklog.BlockInfoFromBytes(index, ret.MustGet(blocklog.ParamBlockInfo))
 		log.Check(err)
@@ -58,25 +61,33 @@ func logRequestsInBlock(index uint32) {
 	})
 	log.Check(err)
 	arr := collections.NewArray16ReadOnly(ret, blocklog.ParamRequestRecord)
-	header := []string{"request ID", "kind", "log"}
-	var rows [][]string
+	header := []string{"request ID", "kind", "error"}
+	rows := make([][]string, arr.MustLen())
 	for i := uint16(0); i < arr.MustLen(); i++ {
 		req, err := blocklog.RequestReceiptFromBytes(arr.MustGetAt(i))
 		log.Check(err)
 
 		kind := "on-ledger"
-		if req.OffLedger {
+		if req.Request.IsOffLedger() {
 			kind = "off-ledger"
 		}
 
-		rows = append(rows, []string{
-			req.RequestID.Base58(),
+		rows[i] = []string{
+			req.Request.ID().Base58(),
 			kind,
-			fmt.Sprintf("%q", string(req.LogData)),
-		})
+			fmt.Sprintf("%q", req.Error),
+		}
 	}
 	log.Printf("Total %d requests\n", arr.MustLen())
 	log.PrintTable(header, rows)
+}
+
+func logEventsInBlock(index uint32) {
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetEventsForBlock.Name, dict.Dict{
+		blocklog.ParamBlockIndex: codec.EncodeUint32(index),
+	})
+	log.Check(err)
+	logEvents(ret)
 }
 
 func requestCmd() *cobra.Command {
@@ -92,18 +103,34 @@ func requestCmd() *cobra.Command {
 			})
 			log.Check(err)
 
-			blockIndex, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
+			blockIndex, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 			log.Check(err)
-			req, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
+			receipt, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
 			log.Check(err)
 
-			kind := "on-ledger"
-			if req.OffLedger {
-				kind = "off-ledger"
-			}
+			log.Printf("request included in block %d\n, %s\n", blockIndex, receipt.String())
 
-			log.Printf("%s request %s in block %d\n", kind, reqID.Base58(), blockIndex)
-			log.Printf("Log: %q\n", string(req.LogData))
+			log.Printf("\n")
+			logEventsInRequest(reqID)
 		},
 	}
+}
+
+func logEventsInRequest(reqID iscp.RequestID) {
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetEventsForRequest.Name, dict.Dict{
+		blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
+	})
+	log.Check(err)
+	logEvents(ret)
+}
+
+func logEvents(ret dict.Dict) {
+	arr := collections.NewArray16ReadOnly(ret, blocklog.ParamEvent)
+	header := []string{"event"}
+	rows := make([][]string, arr.MustLen())
+	for i := uint16(0); i < arr.MustLen(); i++ {
+		rows[i] = []string{string(arr.MustGetAt(i))}
+	}
+	log.Printf("Total %d events\n", arr.MustLen())
+	log.PrintTable(header, rows)
 }

@@ -10,6 +10,8 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/iotaledger/hive.go/marshalutil"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
 	"golang.org/x/xerrors"
@@ -27,22 +29,22 @@ const FuncInit = "init"
 // well known hnames
 var (
 	EntryPointInit = Hn(FuncInit)
-	HnameRoot      = Hn("root")
-	HnameAccounts  = Hn("accounts")
-	HnameBlob      = Hn("blob")
-	HnameEventlog  = Hn("eventlog")
-	HnameDefault   = Hname(0)
 )
 
 // HnameFromBytes constructor, unmarshalling
+func HnameFromMarshalUtil(mu *marshalutil.MarshalUtil) (ret Hname, err error) {
+	err = ret.ReadFromMarshalUtil(mu)
+	return
+}
+
 func HnameFromBytes(data []byte) (ret Hname, err error) {
-	err = ret.Read(bytes.NewReader(data))
+	ret, err = HnameFromMarshalUtil(marshalutil.New(data))
 	return
 }
 
 // Hn create hname from arbitrary string.
-func Hn(funname string) (ret Hname) {
-	h := hashing.HashStrings(funname)
+func Hn(name string) (ret Hname) {
+	h := hashing.HashStrings(name)
 	_ = ret.Read(bytes.NewReader(h[:HnameLength]))
 	if ret == 0 || ret == Hname(^uint32(0)) {
 		// ensure 0 and ^0 are impossible
@@ -71,6 +73,19 @@ func HnameFromString(s string) (Hname, error) {
 		return 0, errors.Wrap(err, "cannot parse hname")
 	}
 	return Hname(n), nil
+}
+
+func (hn *Hname) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	mu.Write(hn)
+}
+
+func (hn *Hname) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+	b, err := mu.ReadBytes(HnameLength)
+	if err != nil {
+		return err
+	}
+	*hn = Hname(binary.LittleEndian.Uint32(b))
+	return nil
 }
 
 func (hn *Hname) Write(w io.Writer) error {

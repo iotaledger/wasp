@@ -3,7 +3,8 @@ package sbtests
 import (
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -25,9 +26,8 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 		sbtestsc.ParamAgentID, iscp.NewAgentID(chain.ChainID.AsAddress(), HScName),
 		sbtestsc.ParamCaller, userAgentID,
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
-		sbtestsc.ParamContractCreator, userAgentID,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, user)
+		sbtestsc.ParamContractCreator, userAgentID)
+	_, err := chain.PostRequestSync(req.WithIotas(1), user)
 	require.NoError(t, err)
 }
 
@@ -57,37 +57,34 @@ func testMintedSupplyOk(t *testing.T, w bool) {
 
 	newSupply := uint64(42)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncGetMintedSupply.Name).
-		WithIotas(1).
 		WithMint(userAddress, newSupply)
-	tx, ret, err := chain.PostRequestSyncTx(req, user)
+	tx, ret, err := chain.PostRequestSyncTx(req.WithIotas(1), user)
 	require.NoError(t, err)
 
-	mintedAmounts := utxoutil.GetMintedAmounts(tx)
+	mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
 	t.Logf("minting request tx: %s", tx.ID().Base58())
 
 	require.Len(t, mintedAmounts, 1)
-	var color ledgerstate.Color
-	for col := range mintedAmounts {
-		color = col
+	var col colored.Color
+	for col1 := range mintedAmounts {
+		col = col1
 		break
 	}
-	t.Logf("Minted: amount = %d color = %s", newSupply, color.Base58())
+	t.Logf("Minted: amount = %d color = %s", newSupply, col.Base58())
 
 	extraIota := uint64(0)
 	if w {
 		extraIota = 1
 	}
 	chain.Env.AssertAddressIotas(userAddress, solo.Saldo-3-extraIota-newSupply)
-	chain.Env.AssertAddressBalance(userAddress, color, newSupply)
+	chain.Env.AssertAddressBalance(userAddress, col, newSupply)
 
-	colorBack, ok, err := codec.DecodeColor(ret.MustGet(sbtestsc.VarMintedColor))
+	colorBack, err := codec.DecodeColor(ret.MustGet(sbtestsc.VarMintedColor))
 	require.NoError(t, err)
-	require.True(t, ok)
 	t.Logf("color back: %s", colorBack.Base58())
-	require.EqualValues(t, color, colorBack)
-	supplyBack, ok, err := codec.DecodeUint64(ret.MustGet(sbtestsc.VarMintedSupply))
+	require.EqualValues(t, col, colorBack)
+	supplyBack, err := codec.DecodeUint64(ret.MustGet(sbtestsc.VarMintedSupply))
 	require.NoError(t, err)
-	require.True(t, ok)
 	t.Logf("supply back: %d", supplyBack)
 	require.EqualValues(t, int(newSupply), int(supplyBack))
 }

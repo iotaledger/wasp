@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package consensus
 
 import (
@@ -11,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -24,7 +28,7 @@ type Consensus struct {
 	mempool                          chain.Mempool
 	nodeConn                         chain.NodeConnection
 	vmRunner                         vm.VMRunner
-	currentState                     state.VirtualState
+	currentState                     state.VirtualStateAccess
 	stateOutput                      *ledgerstate.AliasOutput
 	stateTimestamp                   time.Time
 	acsSessionID                     uint64
@@ -38,7 +42,7 @@ type Consensus struct {
 	delayRunVMUntil                  time.Time
 	delaySendingSignedResult         time.Time
 	resultTxEssence                  *ledgerstate.TransactionEssence
-	resultState                      state.VirtualState
+	resultState                      state.VirtualStateAccess
 	resultSignatures                 []*messages.SignedResultMsg
 	resultSigAck                     []uint16
 	finalTx                          *ledgerstate.Transaction
@@ -60,6 +64,7 @@ type Consensus struct {
 	missingRequestsFromBatch         map[iscp.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
 	pullMissingRequestsFromCommittee bool
+	consensusMetrics                 metrics.ConsensusMetrics
 }
 
 type workflowFlags struct {
@@ -71,12 +76,12 @@ type workflowFlags struct {
 	transactionFinalized bool
 	transactionPosted    bool
 	transactionSeen      bool
-	finished             bool
+	inProgress           bool
 }
 
 var _ chain.Consensus = &Consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, timersOpt ...ConsensusTimers) *Consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) *Consensus {
 	var timers ConsensusTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -104,6 +109,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		closeCh:                          make(chan struct{}),
 		assert:                           assert.NewAssert(log),
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
+		consensusMetrics:                 consensusMetrics,
 	}
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
@@ -133,31 +139,45 @@ func (c *Consensus) recvLoop() {
 		select {
 		case msg, ok := <-c.eventStateTransitionMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventStateTransitionMsg...")
 				c.eventStateTransitionMsg(msg)
+				c.log.Debugf("Consensus::recvLoop, eventStateTransitionMsg... Done")
 			}
 		case msg, ok := <-c.eventSignedResultMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventSignedResult...")
 				c.eventSignedResult(msg)
+				c.log.Debugf("Consensus::recvLoop, eventSignedResult... Done")
 			}
 		case msg, ok := <-c.eventSignedResultAckMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventSignedResultAck...")
 				c.eventSignedResultAck(msg)
+				c.log.Debugf("Consensus::recvLoop, eventSignedResultAck... Done")
 			}
 		case msg, ok := <-c.eventInclusionStateMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventInclusionState...")
 				c.eventInclusionState(msg)
+				c.log.Debugf("Consensus::recvLoop, eventInclusionState... Done")
 			}
 		case msg, ok := <-c.eventACSMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventAsynchronousCommonSubset...")
 				c.eventAsynchronousCommonSubset(msg)
+				c.log.Debugf("Consensus::recvLoop, eventAsynchronousCommonSubset... Done")
 			}
 		case msg, ok := <-c.eventVMResultMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventVMResultMsg...")
 				c.eventVMResultMsg(msg)
+				c.log.Debugf("Consensus::recvLoop, eventVMResultMsg... Done")
 			}
 		case msg, ok := <-c.eventTimerMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventTimerMsg...")
 				c.eventTimerMsg(msg)
+				c.log.Debugf("Consensus::recvLoop, eventTimerMsg... Done")
 			}
 		case <-c.closeCh:
 			return

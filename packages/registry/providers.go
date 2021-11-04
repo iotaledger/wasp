@@ -16,7 +16,7 @@ import (
 type Provider func() *Impl
 
 // BlobCache is an access to the cache of big binary objects
-type BlobCache interface {
+type BlobCache interface { // TODO should blobcache be removed ?
 	GetBlob(h hashing.HashValue) ([]byte, bool, error)
 	HasBlob(h hashing.HashValue) (bool, error)
 	// PutBlob ttl s TimeToLive, expiration time in Unix nanoseconds

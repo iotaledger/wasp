@@ -14,8 +14,8 @@ func testPanicFull(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), sbtestsc.MsgFullPanic))
 
@@ -26,7 +26,7 @@ func testPanicFull(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 4+extra, strings.Count(str, "req/tx"))
+	require.EqualValues(t, 4+extra, strings.Count(str, "OnLedger::"))
 	require.EqualValues(t, 1, strings.Count(str, "panic in VM"))
 }
 
@@ -46,7 +46,7 @@ func testPanicViewCall(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 3+extra, strings.Count(str, "req/tx"))
+	require.EqualValues(t, 3+extra, strings.Count(str, "OnLedger::"))
 	require.EqualValues(t, 0, strings.Count(str, "panic in VM"))
 }
 
@@ -55,8 +55,8 @@ func testCallPanicFull(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncCallPanicFullEP.Name).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncCallPanicFullEP.Name)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), sbtestsc.MsgFullPanic))
 
@@ -67,7 +67,7 @@ func testCallPanicFull(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 4+extra, strings.Count(str, "req/tx"))
+	require.EqualValues(t, 4+extra, strings.Count(str, "OnLedger::"))
 	require.EqualValues(t, 1, strings.Count(str, "panic in VM"))
 }
 
@@ -76,8 +76,8 @@ func testCallPanicViewFromFull(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncCallPanicViewEPFromFull.Name).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncCallPanicViewEPFromFull.Name)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), sbtestsc.MsgViewPanic))
 
@@ -88,7 +88,7 @@ func testCallPanicViewFromFull(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 4+extra, strings.Count(str, "req/tx"))
+	require.EqualValues(t, 4+extra, strings.Count(str, "OnLedger::"))
 	require.EqualValues(t, 1, strings.Count(str, "panic in VM"))
 }
 
@@ -108,6 +108,6 @@ func testCallPanicViewFromView(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 3+extra, strings.Count(str, "req/tx"))
+	require.EqualValues(t, 3+extra, strings.Count(str, "OnLedger::"))
 	require.EqualValues(t, 0, strings.Count(str, "panic in VM"))
 }

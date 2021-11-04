@@ -29,7 +29,7 @@ func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex u
 		if err != nil {
 			panic(err)
 		}
-		ret[i] = rec.RequestID
+		ret[i] = rec.Request.ID()
 	}
 	return ret, nil
 }
@@ -37,5 +37,5 @@ func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex u
 // IsRequestProcessed check if reqid is stored in the chain state as processed
 func IsRequestProcessed(stateReader kv.KVStoreReader, reqid *iscp.RequestID) (bool, error) {
 	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
-	return isRequestProcessedIntern(partition, reqid)
+	return isRequestProcessedInternal(partition, reqid)
 }

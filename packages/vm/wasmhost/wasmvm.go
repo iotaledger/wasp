@@ -9,13 +9,21 @@ import (
 	"time"
 )
 
-const (
-	defaultTimeout     = 5 * time.Second
-	disableWasmTimeout = false
-)
+const defaultTimeout = 5 * time.Second
 
-// WasmTimeout set this to non-zero for a one-time override of the defaultTimeout
-var WasmTimeout = 0 * time.Second
+var (
+	// DisableWasmTimeout can be used to disable the annoying timeout during debugging
+	DisableWasmTimeout = false
+
+	// HostTracing turns on debug tracing for ScHost calls
+	HostTracing = false
+
+	// HostTracingAll turns on *all* debug tracing for ScHost calls
+	HostTracingAll = false
+
+	// WasmTimeout set this to non-zero for a one-time override of the defaultTimeout
+	WasmTimeout = 0 * time.Second
+)
 
 type WasmVM interface {
 	Interrupt()
@@ -43,7 +51,7 @@ type WasmVMBase struct {
 func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 	// trick vm into thinking it doesn't have to start the timeout timer
 	// useful when debugging to prevent timing out on breakpoints
-	vm.timeoutStarted = disableWasmTimeout
+	vm.timeoutStarted = DisableWasmTimeout
 
 	vm.impl = impl
 	vm.host = host
@@ -51,8 +59,14 @@ func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 	return nil
 }
 
+//nolint:unparam
+func (vm *WasmVMBase) getKvStore(id int32) *KvStoreHost {
+	return vm.host.getKvStore(id)
+}
+
 func (vm *WasmVMBase) HostFdWrite(fd, iovs, size, written int32) int32 {
-	vm.host.TraceAllf("HostFdWrite(...)")
+	host := vm.getKvStore(0)
+	host.TraceAllf("HostFdWrite(...)")
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
 	ptr := vm.impl.UnsafeMemory()
 	txt := binary.LittleEndian.Uint32(ptr[iovs : iovs+4])
@@ -63,7 +77,7 @@ func (vm *WasmVMBase) HostFdWrite(fd, iovs, size, written int32) int32 {
 }
 
 func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) int32 {
-	host := vm.host
+	host := vm.getKvStore(0)
 	host.TraceAllf("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
 
 	// only check for existence ?
@@ -109,7 +123,7 @@ func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) 
 }
 
 func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
-	host := vm.host
+	host := vm.getKvStore(0)
 	host.TraceAllf("HostGetKeyID(r%d,s%d)", keyRef, size)
 	// non-negative size means original key was a string
 	if size >= 0 {
@@ -123,13 +137,13 @@ func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
 }
 
 func (vm *WasmVMBase) HostGetObjectID(objID, keyID, typeID int32) int32 {
-	host := vm.host
+	host := vm.getKvStore(0)
 	host.TraceAllf("HostGetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
 	return host.GetObjectID(objID, keyID, typeID)
 }
 
 func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) {
-	host := vm.host
+	host := vm.getKvStore(0)
 	host.TraceAllf("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
 	bytes := vm.impl.VMGetBytes(stringRef, size)
 	host.SetBytes(objID, keyID, typeID, bytes)

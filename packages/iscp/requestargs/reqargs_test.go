@@ -4,9 +4,10 @@
 package requestargs
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
+
+	"github.com/iotaledger/hive.go/marshalutil"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/downloader"
@@ -33,39 +34,11 @@ func TestRequestArguments1(t *testing.T) {
 	h := hashing.HashStrings("data4")
 	require.EqualValues(t, r["*arg4"], h[:])
 
-	var buf bytes.Buffer
-	err := r.Write(&buf)
+	data := r.Bytes()
+	back, err := FromMarshalUtil(marshalutil.New(data))
 	require.NoError(t, err)
 
-	rdr := bytes.NewReader(buf.Bytes())
-	back := New(nil)
-	err = back.Read(rdr)
-	require.NoError(t, err)
-}
-
-func TestRequestArguments2(t *testing.T) {
-	r := New(nil)
-	r.AddEncodeSimple("arg1", []byte("data1"))
-	r.AddEncodeSimple("arg2", []byte("data2"))
-	r.AddEncodeSimple("arg3", []byte("data3"))
-	r.AddAsBlobRef("arg4", []byte("data4"))
-
-	h := hashing.HashStrings("data4")
-
-	require.Len(t, r, 4)
-	require.EqualValues(t, r["-arg1"], "data1")
-	require.EqualValues(t, r["-arg2"], "data2")
-	require.EqualValues(t, r["-arg3"], "data3")
-	require.EqualValues(t, r["*arg4"], h[:])
-
-	var buf bytes.Buffer
-	err := r.Write(&buf)
-	require.NoError(t, err)
-
-	rdr := bytes.NewReader(buf.Bytes())
-	back := New(nil)
-	err = back.Read(rdr)
-	require.NoError(t, err)
+	require.EqualValues(t, r.Bytes(), back.Bytes())
 
 	require.Len(t, back, 4)
 	require.EqualValues(t, back["-arg1"], "data1")
@@ -198,7 +171,7 @@ func TestRequestArgumentsDeterminism(t *testing.T) {
 	}
 
 	// hash should be deterministic; independent of order
-	h1 := hashing.HashData(util.MustBytes(r1))
-	h2 := hashing.HashData(util.MustBytes(r2))
+	h1 := util.GetHashValue(r1)
+	h2 := util.GetHashValue(r2)
 	require.EqualValues(t, h1, h2)
 }

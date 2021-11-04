@@ -6,17 +6,17 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSerdeRequestLogRecord(t *testing.T) {
 	var txid ledgerstate.TransactionID
 	rand.Read(txid[:])
-	rid := iscp.RequestID(ledgerstate.NewOutputID(txid, 0))
+	req := request.NewOffLedger(iscp.Hn("0"), iscp.Hn("0"), nil)
 	rec := &RequestReceipt{
-		RequestID: rid,
-		OffLedger: true,
-		LogData:   []byte("some log data"),
+		Request: req,
+		Error:   "some log data",
 	}
 	forward := rec.Bytes()
 	back, err := RequestReceiptFromBytes(forward)

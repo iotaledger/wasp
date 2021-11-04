@@ -79,7 +79,7 @@ func TestIpfsDownload(t *testing.T) {
 	case downloaded := <-chanDownloaded:
 		require.True(t, downloaded, "The downloader should successfully download the file")
 	case <-time.After(100 * time.Millisecond):
-		t.Fatalf("The download job of downloader timeouted")
+		t.Fatalf("The download job of downloader timed out")
 	}
 	result, err = reg.HasBlob(hash)
 	require.True(t, result, "The file must be part of the registry after the download")

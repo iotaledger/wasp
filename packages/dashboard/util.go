@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 )
 
 func args(args ...interface{}) []interface{} {
@@ -16,6 +17,10 @@ func hashref(hash hashing.HashValue) *hashing.HashValue {
 	return &hash
 }
 
+func colorref(color colored.Color) *colored.Color {
+	return &color
+}
+
 func trim(max int, s string) string {
 	if len(s) > max {
 		s = s[:max] + "…"
@@ -24,6 +29,14 @@ func trim(max int, s string) string {
 	s = fmt.Sprintf("%q", s)
 	// remove quotes
 	return s[1 : len(s)-1]
+}
+
+func incUint32(n uint32) uint32 {
+	return n + 1
+}
+
+func decUint32(n uint32) uint32 {
+	return n - 1
 }
 
 func bytesToString(b []byte) string {

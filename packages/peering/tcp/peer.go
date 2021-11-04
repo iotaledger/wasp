@@ -64,7 +64,7 @@ func (p *peer) NetID() string {
 
 // PubKey implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
 func (p *peer) PubKey() *ed25519.PublicKey {
-	p.log.Infof("Waiting for connection to become ready to get %v peer's public key, inbound=%v.", p.remoteNetID, p.IsInbound())
+	p.log.Infof("Waiting for connection to become ready to get %v peer's public key.", p.remoteNetID)
 	p.waitReady.Wait()
 	return p.remotePubKey
 }

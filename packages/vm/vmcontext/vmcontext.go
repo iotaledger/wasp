@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
@@ -19,46 +20,58 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var (
+	MaxBlockOutputCount = uint8(ledgerstate.MaxOutputCount - 1) // -1 for the chain transition output
+	MaxBlockInputCount  = uint8(ledgerstate.MaxInputCount - 2)  // // 125 (126 limit -1 for the previous state utxo)
+)
+
 // VMContext represents state of the chain during one run of the VM while processing
 // a batch of requests. VMContext object mutates with each request in the bathc.
 // The VMContext is created from immutable vm.VMTask object and UTXO state of the
 // chain address contained in the statetxbuilder.Builder
 type VMContext struct {
 	// same for the block
-	chainID              iscp.ChainID
-	chainOwnerID         iscp.AgentID
+	chainID              *iscp.ChainID
+	chainOwnerID         *iscp.AgentID
 	chainInput           *ledgerstate.AliasOutput
 	processors           *processors.Cache
 	txBuilder            *utxoutil.Builder
-	virtualState         state.VirtualState
+	virtualState         state.VirtualStateAccess
 	solidStateBaseline   coreutil.StateBaseline
-	remainingAfterFees   *ledgerstate.ColoredBalances
+	remainingAfterFees   colored.Balances
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
 	log                  *logger.Logger
+	blockOutputCount     uint8
 	// fee related
-	validatorFeeTarget iscp.AgentID // provided by validator
-	feeColor           ledgerstate.Color
+	validatorFeeTarget *iscp.AgentID // provided by validator
+	feeColor           colored.Color
 	ownerFee           uint64
 	validatorFee       uint64
+	// events related
+	maxEventSize    uint16
+	maxEventsPerReq uint16
 	// request context
-	req                iscp.Request
-	requestIndex       uint16
-	currentStateUpdate state.StateUpdate
-	entropy            hashing.HashValue // mutates with each request
-	contractRecord     *root.ContractRecord
-	lastError          error     // mutated
-	lastResult         dict.Dict // mutated. Used only by 'solo'
-	lastTotalAssets    *ledgerstate.ColoredBalances
-	callStack          []*callContext
+	req                      iscp.Request
+	requestIndex             uint16
+	requestEventIndex        uint16
+	requestOutputCount       uint8
+	currentStateUpdate       state.StateUpdate
+	entropy                  hashing.HashValue // mutates with each request
+	contractRecord           *root.ContractRecord
+	lastError                error     // mutated
+	lastResult               dict.Dict // mutated. Used only by 'solo'
+	lastTotalAssets          colored.Balances
+	callStack                []*callContext
+	exceededBlockOutputLimit bool
 }
 
 type callContext struct {
-	isRequestContext bool                         // is called from the request (true) or from another SC (false)
-	caller           iscp.AgentID                 // calling agent
-	contract         iscp.Hname                   // called contract
-	params           dict.Dict                    // params passed
-	transfer         *ledgerstate.ColoredBalances // transfer passed
+	isRequestContext bool             // is called from the request (true) or from another SC (false)
+	caller           *iscp.AgentID    // calling agent
+	contract         iscp.Hname       // called contract
+	params           dict.Dict        // params passed
+	transfer         colored.Balances // transfer passed
 }
 
 type blockContext struct {
@@ -66,35 +79,49 @@ type blockContext struct {
 	onClose func(interface{})
 }
 
-// CreateVMContext a constructor
-func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
+// CreateVMContext creates a context for the whole batch run
+func CreateVMContext(task *vm.VMTask) *VMContext {
+	// assert consistency. It is a bit redundant double check
+
+	if len(task.Requests) == 0 {
+		// should never happen
+		task.Log.Panicf("CreateVMContext.invalid params: must be at least 1 request")
+	}
+	txb := utxoutil.NewBuilder(task.ChainInput)
+
 	chainID, err := iscp.ChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
-		task.Log.Panicf("CreateVMContext: %v", err)
+		// should never happen
+		task.Log.Panicf("CreateVMContext.inconsistency: %v", err)
 	}
-	{
-		// assert consistency
-		stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
-		if err != nil {
-			return nil, xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err)
-		}
-		if stateHash != task.VirtualState.Hash() {
-			return nil, xerrors.New("CreateVMContext: state hash mismatch")
-		}
-		if task.VirtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
-			return nil, xerrors.New("CreateVMContext: state index is inconsistent")
-		}
+
+	// we create optimistic state access wrapper to be used inside the VM call.
+	// It will panic any time the state is accessed.
+	// The panic will be caught above and VM call will be abandoned peacefully
+	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
+
+	// assert consistency
+	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
+	if err != nil {
+		// should never happen
+		task.Log.Panicf("CreateVMContext: can't parse state hash from chain input %w", err)
 	}
-	{
-		openingStateUpdate := state.NewStateUpdateWithBlockIndexMutation(task.VirtualState.BlockIndex()+1, task.Timestamp)
-		task.VirtualState.ApplyStateUpdates(openingStateUpdate)
+	stateHashFromState := optimisticStateAccess.StateCommitment()
+	blockIndex := optimisticStateAccess.BlockIndex()
+	if stateHash != stateHashFromState || blockIndex != task.ChainInput.GetStateIndex() {
+		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
+		panic(coreutil.ErrStateHasBeenInvalidated)
 	}
+	openingStateUpdate := state.NewStateUpdateWithBlocklogValues(blockIndex+1, task.Timestamp, stateHash)
+	optimisticStateAccess.ApplyStateUpdates(openingStateUpdate)
+
 	ret := &VMContext{
-		chainID:              *chainID,
+		chainID:              chainID,
 		chainInput:           task.ChainInput,
 		txBuilder:            txb,
-		virtualState:         task.VirtualState,
+		virtualState:         optimisticStateAccess,
 		solidStateBaseline:   task.SolidStateBaseline,
+		validatorFeeTarget:   task.ValidatorFeeTarget,
 		processors:           task.Processors,
 		blockContext:         make(map[iscp.Hname]*blockContext),
 		blockContextCloseSeq: make([]iscp.Hname, 0),
@@ -105,13 +132,15 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 	// consume chain input
 	err = txb.ConsumeAliasInput(task.ChainInput.Address())
 	if err != nil {
-		return nil, xerrors.Errorf("CreateVMContext: consume chain input %w", err)
+		// should never happen
+		task.Log.Panicf("CreateVMContext: consume chain input %v", err)
 	}
-	return ret, nil
+	return ret
 }
 
-func (vmctx *VMContext) GetResult() (dict.Dict, *ledgerstate.ColoredBalances, error) {
-	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
+//nolint:revive
+func (vmctx *VMContext) GetResult() (dict.Dict, colored.Balances, error, bool) {
+	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError, vmctx.exceededBlockOutputLimit
 }
 
 func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {
@@ -127,10 +156,15 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) ledgerstate.Address {
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, ledgerstate.Address) {
 	rotationAddr := vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
-	return rotationAddr
+
+	blockIndex := vmctx.virtualState.BlockIndex()
+	stateCommitment := vmctx.virtualState.StateCommitment()
+	timestamp := vmctx.virtualState.Timestamp()
+
+	return blockIndex, stateCommitment, timestamp, rotationAddr
 }
 
 func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {
@@ -143,7 +177,7 @@ func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {
 // mustSaveBlockInfo is in the blocklog partition context
 // returns rotation address if this block is a rotation block
 func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) ledgerstate.Address {
-	vmctx.currentStateUpdate = state.NewStateUpdate() // need ths before to make state valid
+	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 
 	if rotationAddress := vmctx.checkRotationAddress(); rotationAddress != nil {
 		// block was marked fake by the governance contract because it is a committee rotation.
@@ -161,13 +195,16 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 		TotalRequests:         numRequests,
 		NumSuccessfulRequests: numSuccess,
 		NumOffLedgerRequests:  numOffLedger,
+		PreviousStateHash:     vmctx.StateHash(),
 	}
 
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
 	if idx != blockInfo.BlockIndex {
 		vmctx.log.Panicf("CloseVMContext: inconsistent block index")
 	}
-
+	if vmctx.virtualState.PreviousStateHash() != blockInfo.PreviousStateHash {
+		vmctx.log.Panicf("CloseVMContext: inconsistent previous state hash")
+	}
 	blocklog.SaveControlAddressesIfNecessary(
 		vmctx.State(),
 		vmctx.StateAddress(),
@@ -176,6 +213,7 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 	)
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil // invalidate
+
 	return nil
 }
 

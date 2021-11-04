@@ -1,6 +1,7 @@
 package util
 
 import (
+	"os"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -28,11 +29,10 @@ func WithTransaction(f func() (*ledgerstate.Transaction, error)) *ledgerstate.Tr
 	return tx
 }
 
-func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (*request.RequestOffLedger, error)) {
+func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (*request.OffLedger, error)) {
 	req, err := f()
 	log.Check(err)
-	log.Printf("Posted off-ledger request %s\n", req.ID().Base58())
-
+	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().Base58())
 	if config.WaitForCompletion {
 		log.Check(config.WaspClient().WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute))
 	}
@@ -45,7 +45,7 @@ func WithSCTransaction(chainID *iscp.ChainID, f func() (*ledgerstate.Transaction
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		log.Check(config.WaspClient().WaitUntilAllRequestsProcessed(*chainID, tx, 1*time.Minute))
+		log.Check(config.WaspClient().WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute))
 	}
 
 	return tx
@@ -54,16 +54,7 @@ func WithSCTransaction(chainID *iscp.ChainID, f func() (*ledgerstate.Transaction
 func logTx(tx *ledgerstate.Transaction, chainID *iscp.ChainID) {
 	var reqs []iscp.RequestID
 	if chainID != nil {
-		for _, out := range tx.Essence().Outputs() {
-			if !out.Address().Equals(chainID.AsAddress()) {
-				continue
-			}
-			out, ok := out.(*ledgerstate.ExtendedLockedOutput)
-			if !ok {
-				continue
-			}
-			reqs = append(reqs, iscp.RequestID(out.ID()))
-		}
+		reqs = request.RequestsInTransaction(chainID, tx)
 	}
 	if len(reqs) == 0 {
 		log.Printf("Posted on-ledger transaction %s\n", tx.ID().Base58())
@@ -73,8 +64,8 @@ func logTx(tx *ledgerstate.Transaction, chainID *iscp.ChainID) {
 			plural = "s"
 		}
 		log.Printf("Posted on-ledger transaction %s containing %d request%s:\n", tx.ID().Base58(), len(reqs), plural)
-		for _, reqID := range reqs {
-			log.Printf("  - Request %s\n", reqID.Base58())
+		for i, reqID := range reqs {
+			log.Printf("  - #%d (check result with: %s chain request %s)\n", i, os.Args[0], reqID.Base58())
 		}
 	}
 }

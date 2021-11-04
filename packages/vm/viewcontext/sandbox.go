@@ -1,23 +1,22 @@
 package viewcontext
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 )
 
 type sandboxview struct {
 	contractHname iscp.Hname
-	events        vm.ContractEventPublisher
 	params        dict.Dict
 	state         kv.KVStoreReader
 	vctx          *Viewcontext
@@ -25,7 +24,7 @@ type sandboxview struct {
 
 var _ iscp.SandboxView = &sandboxview{}
 
-var getChainInfoHname = root.FuncGetChainInfo.Hname()
+var getChainInfoHname = governance.FuncGetChainInfo.Hname()
 
 func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dict) *sandboxview {
 	return &sandboxview{
@@ -33,21 +32,27 @@ func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dic
 		contractHname: contractHname,
 		params:        params,
 		state:         contractStateSubpartition(vctx.stateReader.KVStoreReader(), contractHname),
-		events:        vm.NewContractEventPublisher(&vctx.chainID, contractHname, vctx.log),
 	}
 }
 
 func (s *sandboxview) AccountID() *iscp.AgentID {
 	hname := s.contractHname
 	switch hname {
-	case root.Contract.Hname(), accounts.Contract.Hname(), blob.Contract.Hname(), eventlog.Contract.Hname():
+	case root.Contract.Hname(), accounts.Contract.Hname(), blob.Contract.Hname(), blocklog.Contract.Hname():
 		hname = 0
 	}
 	return iscp.NewAgentID(s.vctx.chainID.AsAddress(), hname)
 }
 
-func (s *sandboxview) Balances() *ledgerstate.ColoredBalances {
-	panic("not implemented") // TODO: Implement
+func (s *sandboxview) Balances() colored.Balances {
+	r, err := s.Call(accounts.Contract.Hname(), accounts.FuncViewBalance.Hname(), dict.Dict{
+		accounts.ParamAgentID: s.AccountID().Bytes(),
+	})
+	a := assert.NewAssert(s.Log())
+	a.RequireNoError(err)
+	bals, err := accounts.DecodeBalances(r)
+	a.RequireNoError(err)
+	return bals
 }
 
 func (s *sandboxview) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) (dict.Dict, error) {
@@ -55,15 +60,15 @@ func (s *sandboxview) Call(contractHname, entryPoint iscp.Hname, params dict.Dic
 }
 
 func (s *sandboxview) ChainID() *iscp.ChainID {
-	return &s.vctx.chainID
+	return s.vctx.chainID
 }
 
 func (s *sandboxview) ChainOwnerID() *iscp.AgentID {
-	r, err := s.Call(root.Contract.Hname(), getChainInfoHname, nil)
+	r, err := s.Call(governance.Contract.Hname(), getChainInfoHname, nil)
 	a := assert.NewAssert(s.Log())
 	a.RequireNoError(err)
 	res := kvdecoder.New(r, s.Log())
-	return res.MustGetAgentID(root.VarChainOwnerID)
+	return res.MustGetAgentID(governance.VarChainOwnerID)
 }
 
 func (s *sandboxview) Contract() iscp.Hname {
@@ -71,10 +76,8 @@ func (s *sandboxview) Contract() iscp.Hname {
 }
 
 func (s *sandboxview) ContractCreator() *iscp.AgentID {
-	contractRecord, err := root.FindContract(contractStateSubpartition(s.vctx.stateReader.KVStoreReader(), root.Contract.Hname()), s.contractHname)
-	if err != nil {
-		s.Log().Panicf("failed to find contract %s: %v", s.contractHname, err)
-	}
+	contractRecord, found := root.FindContract(contractStateSubpartition(s.vctx.stateReader.KVStoreReader(), root.Contract.Hname()), s.contractHname)
+	assert.NewAssert(s.Log()).Require(found, "failed to find contract %s", s.contractHname)
 	return contractRecord.Creator
 }
 

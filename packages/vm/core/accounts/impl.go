@@ -3,9 +3,10 @@ package accounts
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
@@ -18,6 +19,7 @@ var Processor = Contract.Processor(initialize,
 	FuncDeposit.WithHandler(deposit),
 	FuncWithdraw.WithHandler(withdraw),
 	FuncHarvest.WithHandler(harvest),
+	FuncGetAccountNonce.WithHandler(getAccountNonce),
 )
 
 // initialize the init call
@@ -60,11 +62,10 @@ func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.deposit.begin -- %s", ctx.IncomingTransfer())
 
 	mustCheckLedger(ctx.State(), "accounts.deposit.begin")
-	defer mustCheckLedger(ctx.State(), "accounts.deposit.exit")
 
 	caller := ctx.Caller()
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAccount := params.MustGetAgentID(ParamAgentID, *caller)
+	targetAccount := params.MustGetAgentID(ParamAgentID, caller)
 	targetAccount = commonaccount.AdjustIfNeeded(targetAccount, ctx.ChainID())
 
 	// funds currently are in the common account (because call is to 'accounts'), they must be moved to the target
@@ -73,6 +74,8 @@ func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s",
 		targetAccount, ctx.IncomingTransfer().String())
+
+	mustCheckLedger(ctx.State(), "accounts.deposit.exit")
 	return nil, nil
 }
 
@@ -80,39 +83,39 @@ func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	mustCheckLedger(state, "accounts.withdraw.begin")
-	defer mustCheckLedger(state, "accounts.withdraw.exit")
 
 	if ctx.Caller().Address().Equals(ctx.ChainID().AsAddress()) {
 		// if the caller is on the same chain, do nothing
 		return nil, nil
 	}
-	bals, ok := GetAccountBalances(state, ctx.Caller())
+	tokensToWithdraw, ok := GetAccountBalances(state, ctx.Caller())
 	if !ok {
 		// empty balance, nothing to withdraw
 		return nil, nil
 	}
 	// will be sending back to default entry point
-
-	tokensToSend := ledgerstate.NewColoredBalances(bals)
-
 	a := assert.NewAssert(ctx.Log())
 	// bring balances to the current account (owner's account). It is needed for subsequent Send call
-	a.Require(MoveBetweenAccounts(state, ctx.Caller(), commonaccount.Get(ctx.ChainID()), tokensToSend),
+	a.Require(MoveBetweenAccounts(state, ctx.Caller(), commonaccount.Get(ctx.ChainID()), tokensToWithdraw),
 		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
 
-	// Send call assumes tokens in the current account
-	a.Require(ctx.Send(ctx.Caller().Address(), tokensToSend, &iscp.SendMetadata{
+	// add incoming tokens (after fees) to the balances to be withdrawn. Otherwise they would end up in the common account
+	tokensToWithdraw.AddAll(ctx.IncomingTransfer())
+	// Send call assumes tokens are in the current account
+	a.Require(ctx.Send(ctx.Caller().Address(), tokensToWithdraw, &iscp.SendMetadata{
 		TargetContract: ctx.Caller().Hname(),
 	}), "accounts.withdraw.inconsistency: failed sending tokens ")
 
-	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", tokensToSend.String())
+	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", tokensToWithdraw.String())
+
+	mustCheckLedger(state, "accounts.withdraw.exit")
 	return nil, nil
 }
 
 // owner of the chain moves all tokens from the common account to its own account
 // Params:
 //   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
-//   ParamWithdrawColor color to withdraw if amount is specified. Defaults to ledgerstate.ColorIOTA
+//   ParamWithdrawColor color to withdraw if amount is specified. Defaults to colored.IOTA
 func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.RequireChainOwner(ctx, "harvest")
@@ -129,8 +132,8 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	if err == nil && amount > 0 {
 		harvestAll = false
 	}
-	// if color not specified and amount is specified, default is harvest specified amount of iotas
-	color := par.MustGetColor(ParamWithdrawColor, ledgerstate.ColorIOTA)
+	// if dummyColor not specified and amount is specified, default is harvest specified amount of iotas
+	col := par.MustGetColor(ParamWithdrawColor, colored.IOTA)
 
 	sourceAccount := commonaccount.Get(ctx.ChainID())
 	bals, ok := GetAccountBalances(state, sourceAccount)
@@ -138,18 +141,22 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 		// empty balance, nothing to withdraw
 		return nil, nil
 	}
-	var tokensToSend *ledgerstate.ColoredBalances
-	if harvestAll {
-		tokensToSend = ledgerstate.NewColoredBalances(bals)
-	} else {
-		balCol := bals[color]
+	tokensToSend := bals
+	if !harvestAll {
+		balCol := bals[col]
 		a.Require(balCol >= amount, "accounts.harvest.error: not enough tokens")
-		tokensToSend = ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
-			color: amount,
-		})
+		tokensToSend = colored.NewBalancesForColor(col, amount)
 	}
-
 	a.Require(MoveBetweenAccounts(state, sourceAccount, ctx.Caller(), tokensToSend),
 		"accounts.harvest.inconsistency. failed to move tokens to owner's account")
 	return nil, nil
+}
+
+func getAccountNonce(ctx iscp.SandboxView) (dict.Dict, error) {
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	account := par.MustGetAgentID(ParamAgentID)
+	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
+	ret := dict.New()
+	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
+	return ret, nil
 }

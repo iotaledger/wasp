@@ -33,8 +33,8 @@ func TestDeployChain(t *testing.T) {
 		t.Fail()
 	}
 	chainID, chainOwnerID := chEnv.getChainInfo()
-	require.Equal(t, chainID, chain.ChainID)
-	require.Equal(t, chainOwnerID, *iscp.NewAgentID(chain.OriginatorAddress(), 0))
+	require.EqualValues(t, chainID, chain.ChainID)
+	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress(), 0))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
@@ -76,16 +76,16 @@ func TestDeployContractOnly(t *testing.T) {
 			root.ParamHname: iscp.Hn(incCounterSCName).Bytes(),
 		})
 	require.NoError(t, err)
-	recb, err := ret.Get(root.VarData)
+	recb, err := ret.Get(root.ParamContractRecData)
 	require.NoError(t, err)
-	rec, err := root.DecodeContractRecord(recb)
+	rec, err := root.ContractRecordFromBytes(recb)
 	require.NoError(t, err)
 	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
 
 	{
-		rec, _, _, err := chain.GetRequestLogRecord(iscp.NewRequestID(tx.ID(), 0))
+		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(tx.ID(), 0))
 		require.NoError(t, err)
-		require.Empty(t, string(rec.LogData))
+		require.Empty(t, rec.Error)
 	}
 }
 
@@ -135,7 +135,6 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 		cr := contractRegistry[hnameNew]
 		require.EqualValues(t, dscrNew, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, nameNew, cr.Name)
 
 		counterValue, err := chain.GetCounterValue(hname, i)

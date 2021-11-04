@@ -469,11 +469,11 @@ func (b *msgBatch) Write(w io.Writer) error {
 				if err = util.WriteBytes16(w, rbcMsgPayload.RootHash); err != nil {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].RootHash: %w", i, err)
 				}
-				if err = util.WriteUint16(w, uint16(len(rbcMsgPayload.Proof))); err != nil {
+				if err = util.WriteUint32(w, uint32(len(rbcMsgPayload.Proof))); err != nil {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].Proof.len: %w", i, err)
 				}
 				for pi, p := range rbcMsgPayload.Proof {
-					if err = util.WriteBytes16(w, p); err != nil {
+					if err = util.WriteBytes32(w, p); err != nil {
 						return xerrors.Errorf("failed to write msgBatch.msgs[%v].Proof[%v]: %w", i, pi, err)
 					}
 				}
@@ -490,11 +490,11 @@ func (b *msgBatch) Write(w io.Writer) error {
 				if err = util.WriteBytes16(w, rbcMsgPayload.RootHash); err != nil {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].RootHash: %w", i, err)
 				}
-				if err = util.WriteUint16(w, uint16(len(rbcMsgPayload.Proof))); err != nil {
+				if err = util.WriteUint32(w, uint32(len(rbcMsgPayload.Proof))); err != nil {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].Proof.len: %w", i, err)
 				}
 				for pi, p := range rbcMsgPayload.Proof {
-					if err = util.WriteBytes16(w, p); err != nil {
+					if err = util.WriteBytes32(w, p); err != nil {
 						return xerrors.Errorf("failed to write msgBatch.msgs[%v].Proof[%v]: %w", i, pi, err)
 					}
 				}
@@ -620,13 +620,13 @@ func (b *msgBatch) Read(r io.Reader) error {
 			if proofRequest.RootHash, err = util.ReadBytes16(r); err != nil {
 				return xerrors.Errorf("failed to read msgBatch.msgs[%v].RootHash: %w", mi, err)
 			}
-			var proofLen uint16
-			if err = util.ReadUint16(r, &proofLen); err != nil {
+			var proofLen uint32
+			if err = util.ReadUint32(r, &proofLen); err != nil {
 				return xerrors.Errorf("failed to read msgBatch.msgs[%v].Proof.len: %w", mi, err)
 			}
 			proofRequest.Proof = make([][]byte, proofLen)
 			for pi := range proofRequest.Proof {
-				if proofRequest.Proof[pi], err = util.ReadBytes16(r); err != nil {
+				if proofRequest.Proof[pi], err = util.ReadBytes32(r); err != nil {
 					return xerrors.Errorf("failed to read msgBatch.msgs[%v].Proof[%v]: %w", mi, pi, err)
 				}
 			}
@@ -648,13 +648,13 @@ func (b *msgBatch) Read(r io.Reader) error {
 			if echoRequest.RootHash, err = util.ReadBytes16(r); err != nil {
 				return xerrors.Errorf("failed to read msgBatch.msgs[%v].RootHash: %w", mi, err)
 			}
-			var proofLen uint16
-			if err = util.ReadUint16(r, &proofLen); err != nil {
+			var proofLen uint32
+			if err = util.ReadUint32(r, &proofLen); err != nil {
 				return xerrors.Errorf("failed to read msgBatch.msgs[%v].Proof.len: %w", mi, err)
 			}
 			echoRequest.Proof = make([][]byte, proofLen)
 			for pi := range echoRequest.Proof {
-				if echoRequest.Proof[pi], err = util.ReadBytes16(r); err != nil {
+				if echoRequest.Proof[pi], err = util.ReadBytes32(r); err != nil {
 					return xerrors.Errorf("failed to read msgBatch.msgs[%v].Proof[%v]: %w", mi, pi, err)
 				}
 			}

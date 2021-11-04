@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
@@ -23,6 +22,9 @@ func TestWaspCLINoChains(t *testing.T) {
 	w := newWaspCLITest(t)
 
 	w.Run("init")
+	if !*goShimmerUseProvidedNode {
+		w.Run("set", "goshimmer.faucetPoWTarget", "0")
+	}
 	w.Run("request-funds")
 
 	out := w.Run("address")
@@ -83,7 +85,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 	require.Regexp(t, `(?m)IOTA:\s+1$`, out[0])
 
 	// test the chainlog
-	out = w.Run("chain", "log", "root")
+	out = w.Run("chain", "events", "root")
 	require.Len(t, out, 1)
 }
 
@@ -139,6 +141,17 @@ func TestWaspCLIContract(t *testing.T) {
 	checkCounter(45)
 }
 
+func findRequestIDInOutput(out []string) string {
+	for _, line := range out {
+		m := regexp.MustCompile(`(?m)#\d+ \(check result with: wasp-cli chain request (\w+)\)$`).FindStringSubmatch(line)
+		if len(m) == 0 {
+			continue
+		}
+		return m[1]
+	}
+	return ""
+}
+
 func TestWaspCLIBlockLog(t *testing.T) {
 	w := newWaspCLITest(t)
 	w.Run("init")
@@ -147,14 +160,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	out := w.Run("chain", "deposit", "IOTA:100")
-	var reqID string
-	for _, line := range out {
-		m := regexp.MustCompile(`(?m)- Request (\w+)$`).FindStringSubmatch(line)
-		if len(m) == 0 {
-			continue
-		}
-		reqID = m[1]
-	}
+	reqID := findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
 	out = w.Run("chain", "block")
@@ -173,32 +179,23 @@ func TestWaspCLIBlockLog(t *testing.T) {
 
 	out = w.Run("chain", "request", reqID)
 	t.Logf("%+v", out)
-	found = false
 	for _, line := range out {
-		if line == `Log: ""` { // log should be empty for successful request
-			found = true
-			break
+		if strings.Contains(line, "Error:") {
+			t.Fail()
 		}
 	}
-	require.True(t, found)
 
 	// try an unsuccessful request (missing params)
 	out = w.Run("chain", "post-request", "root", "deployContract")
-	for _, line := range out {
-		m := regexp.MustCompile(`(?m)- Request (\w+)$`).FindStringSubmatch(line)
-		if len(m) == 0 {
-			continue
-		}
-		reqID = m[1]
-	}
+	reqID = findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
 	out = w.Run("chain", "request", reqID)
 	found = false
 	for _, line := range out {
-		if strings.Contains(line, "Log: ") {
+		if strings.Contains(line, "Error: ") {
 			found = true
-			require.Regexp(t, `mandatory parameter.*does not exist`, line)
+			require.Regexp(t, `cannot decode`, line)
 			break
 		}
 	}
@@ -242,25 +239,6 @@ func TestWaspCLIBlobContract(t *testing.T) {
 	out = w.Run("chain", "show-blob", blobHash)
 	out = w.Pipe(out, "decode", "string", blob.VarFieldProgramDescription, "string")
 	require.Contains(t, out[0], description)
-}
-
-func TestWaspCLIBlobRegistry(t *testing.T) {
-	w := newWaspCLITest(t)
-
-	// test that `blob has` returns false
-	out := w.Run("blob", "has", hashing.RandomHash(nil).String())
-	require.Contains(t, out[0], "false")
-
-	// test `blob put` command
-	w.CopyFile(srcFile)
-	out = w.Run("blob", "put", file)
-	blobHash := regexp.MustCompile(`(?m)Hash: ([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
-	require.NotEmpty(t, blobHash)
-	t.Logf("Blob hash: %s", blobHash)
-
-	// test that `blob has` returns true
-	out = w.Run("blob", "has", blobHash)
-	require.Contains(t, out[0], "true")
 }
 
 func TestWaspCLIMint(t *testing.T) {

@@ -19,8 +19,10 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
@@ -92,19 +94,19 @@ type Chain struct {
 	OriginatorKeyPair *ed25519.KeyPair
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
-	ChainID iscp.ChainID
+	ChainID *iscp.ChainID
 
 	// OriginatorAddress is the alias for OriginatorKeyPair.Address()
 	OriginatorAddress ledgerstate.Address
 
 	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
-	OriginatorAgentID iscp.AgentID
+	OriginatorAgentID *iscp.AgentID
 
 	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default is its equal to OriginatorAddress
-	ValidatorFeeTarget iscp.AgentID
+	ValidatorFeeTarget *iscp.AgentID
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
-	State       state.VirtualState
+	State       state.VirtualStateAccess
 	GlobalSync  coreutil.ChainStateSync
 	StateReader state.OptimisticStateReader
 
@@ -119,16 +121,26 @@ type Chain struct {
 	mempool    chain.Mempool
 }
 
-var (
-	doOnce    = sync.Once{}
-	glbLogger *logger.Logger
-)
-
-// New creates an instance of the `solo` environment for the test instances.
-//   If solo is used for unit testing, 't' should be the *testing.T instance; otherwise it can be either nil or an instance created with NewTestContext
-//   'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
-//   'printStackTrace' controls printing stack trace in case of errors
+// New creates an instance of the `solo` environment.
+//
+// If solo is used for unit testing, 't' should be the *testing.T instance;
+// otherwise it can be either nil or an instance created with NewTestContext.
+//
+// 'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
+// 'printStackTrace' controls printing stack trace in case of errors
 func New(t TestContext, debug, printStackTrace bool, seedOpt ...*ed25519.Seed) *Solo {
+	log := testlogger.NewNamedLogger(t.Name(), timeLayout)
+	if !debug {
+		log = testlogger.WithLevel(log, zapcore.InfoLevel, printStackTrace)
+	}
+	return NewWithLogger(t, log, seedOpt...)
+}
+
+// New creates an instance of the `solo` environment with the given logger.
+//
+// If solo is used for unit testing, 't' should be the *testing.T instance;
+// otherwise it can be either nil or an instance created with NewTestContext.
+func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...*ed25519.Seed) *Solo {
 	if t == nil {
 		t = NewTestContext("solo")
 	}
@@ -136,24 +148,18 @@ func New(t TestContext, debug, printStackTrace bool, seedOpt ...*ed25519.Seed) *
 	if len(seedOpt) > 0 {
 		seed = seedOpt[0]
 	}
-	doOnce.Do(func() {
-		glbLogger = testlogger.NewNamedLogger(t.Name(), timeLayout)
-		if !debug {
-			glbLogger = testlogger.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
-		}
-	})
 
 	processorConfig := processors.NewConfig()
 	err := processorConfig.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (iscp.VMProcessor, error) {
-		return wasmproc.GetProcessor(binary, glbLogger)
+		return wasmproc.GetProcessor(binary, log)
 	})
 	require.NoError(t, err)
 
 	initialTime := time.Unix(1, 0)
 	ret := &Solo{
 		T:               t,
-		logger:          glbLogger,
-		dbmanager:       dbmanager.NewDBManager(glbLogger.Named("db"), true),
+		logger:          log,
+		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
 		utxoDB:          utxodb.NewWithTimestamp(initialTime),
 		seed:            seed,
 		blobCache:       iscp.NewInMemoryBlobCache(),
@@ -192,7 +198,7 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //    '_default', 'blocklog', 'blob', 'accounts' and 'eventlog',
 // Upon return, the chain is fully functional to process requests
 //nolint:funlen
-func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...iscp.AgentID) *Chain {
+func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
 	var stateController ed25519.KeyPair
 	if env.seed == nil {
@@ -220,16 +226,17 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
 	feeTarget := originatorAgentID
 	if len(validatorFeeTarget) > 0 {
-		feeTarget = &validatorFeeTarget[0]
+		feeTarget = validatorFeeTarget[0]
 	}
 
-	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+	bals := colored.NewBalancesForIotas(100)
+
 	inputs := env.utxoDB.GetAddressOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, env.LogicalTime(), inputs...)
 	require.NoError(env.T, err)
 	err = env.utxoDB.AddTransaction(originTx)
 	require.NoError(env.T, err)
-	env.AssertAddressBalance(originatorAddr, ledgerstate.ColorIOTA, Saldo-100)
+	env.AssertAddressBalance(originatorAddr, colored.IOTA, Saldo-100)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateAddr.Base58())
@@ -237,8 +244,10 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Base58())
 
 	chainlog := env.logger.Named(name)
-	store := env.dbmanager.GetOrCreateKVStore(&chainID)
-	vs, err := state.CreateOriginState(store, &chainID)
+	store := env.dbmanager.GetOrCreateKVStore(chainID)
+	vs, err := state.CreateOriginState(store, chainID)
+	env.logger.Infof("     chain '%s'. origin state hash: %s", chainID.String(), vs.StateCommitment().String())
+
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
@@ -254,15 +263,15 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		StateControllerAddress: stateAddr,
 		OriginatorKeyPair:      chainOriginator,
 		OriginatorAddress:      originatorAddr,
-		OriginatorAgentID:      *originatorAgentID,
-		ValidatorFeeTarget:     *feeTarget,
+		OriginatorAgentID:      originatorAgentID,
+		ValidatorFeeTarget:     feeTarget,
 		State:                  vs,
 		StateReader:            srdr,
 		GlobalSync:             glbSync,
 		proc:                   processors.MustNew(env.processorConfig),
 		Log:                    chainlog,
 	}
-	ret.mempool = mempool.New(ret.StateReader, env.blobCache, chainlog)
+	ret.mempool = mempool.New(ret.StateReader, env.blobCache, chainlog, metrics.DefaultChainMetrics())
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
@@ -318,7 +327,7 @@ func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
 }
 
 // RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
-func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID iscp.ChainID) ([]iscp.Request, error) {
+func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID *iscp.ChainID) ([]iscp.Request, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
@@ -348,7 +357,8 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]isc
 		if !ok {
 			lst = make([]iscp.Request, 0)
 		}
-		ret[arr] = append(lst, request.RequestOnLedgerFromOutput(o, sender, utxoutil.GetMintedAmounts(tx)))
+		mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
+		ret[arr] = append(lst, request.OnLedgerFromOutput(o, sender, tx.Essence().Timestamp(), mintedAmounts))
 	}
 	return ret
 }
@@ -408,7 +418,7 @@ func (ch *Chain) collateBatch() []iscp.Request {
 	ready = ready[:batchSize]
 	for _, req := range ready {
 		// using logical clock
-		if onLegderRequest, ok := req.(*request.RequestOnLedger); ok {
+		if onLegderRequest, ok := req.(*request.OnLedger); ok {
 			if onLegderRequest.TimeLock().Before(ch.Env.LogicalTime()) {
 				if !onLegderRequest.TimeLock().IsZero() {
 					ch.Log.Infof("unlocked time-locked request %s", req.ID())

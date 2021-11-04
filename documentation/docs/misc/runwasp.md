@@ -1,39 +1,58 @@
-# How to run a Wasp node on Pollen
+# How to run a Wasp node
 
-Here we describe step by step instructions how to run Wasp nodes on the Pollen network.
+Here we describe step-by-step instructions how to run Wasp nodes on a Goshimmer network.
 
-## Step 1: Compile & install
+You will need the `wasp` and `wasp-cli` commands installed in the system, and
+access to a Goshimmer node.
 
-You will need the `wasp`, `wasp-cli` and `goshimmer` commands installed in
-the system.
-
-The `goshimmer` command must be compiled from the Goshimmer repository:
-
-```
-$ git clone https://github.com/iotaledger/goshimmer.git
-$ cd goshimmer
-$ go install -tags rocksdb
-```
+## Step 1: Compile & install Wasp
 
 The `wasp` and `wasp-cli` commands can be installed from this repository:
 
 ```
 $ git clone https://github.com/iotaledger/wasp.git
 $ cd wasp
-$ go install -tags rocksdb ./...
+$ make install
 ```
 
-## Step 2: Run Goshimmer connected to the Pollen network
+## Step 2: Run Goshimmer
 
-Create an empty working directory for Goshimmer, and download the `snapshot.bin` file needed for bootstrap:
+### Option 1: follow the official docs
+
+Please find detailed instructions on how to run a Goshimmer node
+[here](https://goshimmer.docs.iota.org/docs/tutorials/setup/).  This option
+uses the official Goshimmer Docker image, so you will need Docker and Docker
+Compose installed in your system.
+
+:::info Important
+The only change necessary from those instructions is to add some
+plugins to `node.enablePlugins`:
+
+- `txstream`: used by Wasp nodes to connect to the Goshimmer node
+- `faucet`: required by the `wasp-cli request-funds` command
+:::
+
+### Option 2: compile & run Goshimmer
+
+Alternatively, you can compile the `goshimmer` command and run it without
+Docker.
 
 ```
-$ mkdir goshimmer-pollen
-$ cd goshimmer-pollen
-$ curl 'https://raw.githubusercontent.com/iotaledger/goshimmer/master/snapshot.bin' -O
+$ git clone https://github.com/iotaledger/goshimmer.git
+$ cd goshimmer
+$ go install -tags rocksdb,builtin_static
 ```
 
-Start the Goshimmer node:
+Then, create an empty working directory for Goshimmer, and download the
+`snapshot.bin` file needed for bootstrap:
+
+```
+$ mkdir goshimmer-node
+$ cd goshimmer-node
+$ wget -O snapshot.bin https://dbfiles-goshimmer.s3.eu-central-1.amazonaws.com/snapshots/nectar/snapshot-latest.bin
+```
+
+Start the GoShimmer node:
 
 ```
 $ goshimmer \
@@ -62,15 +81,21 @@ $ goshimmer \
         --drng.xteam.committeeMembers=GUdTwLDb6t6vZ7X5XzEnjFNDEVPteU7tVQ9nzKLfPjdo,68vNzBFE9HpmWLb2x4599AUUQNuimuhwn3XahTZZYUHt,Dc9n3JxYecaX3gpxVnWb4jS3KVz1K1SgSK1KpV1dzqT1,75g6r4tqGZhrgpDYZyZxVje1Qo54ezFYkCw94ELTLhPs,CN1XLXLHT9hv7fy3qNhpgNMD6uoHFkHtaNNKyNVCKybf,7SmttyqrKMkLo5NPYaiFoHs8LE6s7oCoWCQaZhui8m16,CypSmrHpTe3WQmCw54KP91F5gTmrQEL7EmTX38YStFXx
 ```
 
-Note: argument values are adapted from [these instructions](https://github.com/iotaledger/goshimmer/wiki/Setup-up-a-GoShimmer-node-%28Joining-the-pollen-testnet%29).
-We do not provide Docker images yet.
+:::note
+Argument values are adapted from the [official
+instructions](https://goshimmer.docs.iota.org/docs/tutorials/setup/). You may
+need to adjust them if they are outdated.
+:::
 
-Note: by default the TXStream plugin will be listening for Wasp connections on port `5000`.
+:::tip
+by default the TXStream plugin will be listening for Wasp connections on port `5000`.
 To change this setting you can add the argument `--txstream.port: 12345`.
+:::
 
 ## Run Wasp
 
-Note: it is possible to run a "committee" composed of a single Wasp node, and
+:::note
+It is possible to run a "committee" composed of a single Wasp node, and
 this may be fine for testing purposes. However, in normal operation the idea is
 to have multiple Wasp nodes in order to run the smart contracts in a
 distributed fashion. If you want to run a committee of several nodes on the
@@ -81,6 +106,7 @@ accordingly.
 Also, for testing purposes, all Wasp nodes can be connected to the same
 Goshimmer instance.  In normal operation, it is recommended for each Wasp node
 to connect to a different Goshimmer instance.
+:::
 
 Create an empty working directory for the Wasp node, copy the
 [`config.json`](https://github.com/iotaledger/wasp/blob/master/config.json)
@@ -102,8 +128,38 @@ $ wasp
 You can check that your node is running by opening the dashboard with a web
 browser at `127.0.0.1:7000`.
 
-That's it! Repeat this process to launch as many nodes as you want for your
-committee.
+Repeat this process to launch as many nodes as you want for your committee.
+
+After starting all the `wasp` nodes, one should make them trust each other.
+Operators of the nodes should do that manually. That's their responsibility to
+accept trusted nodes only.
+
+The operator can read its node's public key and NetID by running `wasp-cli peering info`, e.g.:
+
+```
+$ wasp-cli peering info
+PubKey: 8oQ9xHWvfnShRxB22avvjbMyAumZ7EXKujuthqrzapNM
+NetID:  127.0.0.1:4000
+```
+
+PubKey and NetID should be provided to other node operators.
+They can use this info to trust your node and accept communications with it.
+That's done by invoking `wasp-cli peering trust <PubKey> <NetID>`, e.g.:
+
+```
+$ wasp-cli peering list-trusted
+$ wasp-cli peering trust 8oQ9xHWvfnShRxB22avvjbMyAumZ7EXKujuthqrzapNM 127.0.0.1:4000
+$ wasp-cli peering list-trusted
+------                                        -----
+PubKey                                        NetID
+------                                        -----
+8oQ9xHWvfnShRxB22avvjbMyAumZ7EXKujuthqrzapNM  127.0.0.1:4000
+```
+
+All the nodes in a committee must trust each other to run the chain.
+
+That's it!
+
 
 ### Wasp settings
 

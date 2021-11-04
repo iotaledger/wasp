@@ -29,36 +29,6 @@ func WriteByte(w io.Writer, val byte) error {
 	return err
 }
 
-//////////////////// int16 \\\\\\\\\\\\\\\\\\\\
-
-func Int16To2Bytes(val int16) []byte {
-	return Uint16To2Bytes(uint16(val))
-}
-
-func Int16From2Bytes(b []byte) (int16, error) {
-	ret, err := Uint16From2Bytes(b)
-	return int16(ret), err
-}
-
-func MustInt16From2Bytes(b []byte) int16 {
-	return int16(MustUint16From2Bytes(b))
-}
-
-func ReadInt16(r io.Reader, pval *int16) error {
-	var tmp2 [2]byte
-	_, err := r.Read(tmp2[:])
-	if err != nil {
-		return err
-	}
-	*pval = int16(binary.LittleEndian.Uint16(tmp2[:]))
-	return nil
-}
-
-func WriteInt16(w io.Writer, val int16) error {
-	_, err := w.Write(Uint16To2Bytes(uint16(val)))
-	return err
-}
-
 //////////////////// uint16 \\\\\\\\\\\\\\\\\\\\
 
 func Uint16To2Bytes(val uint16) []byte {
@@ -68,7 +38,7 @@ func Uint16To2Bytes(val uint16) []byte {
 }
 
 func Uint16From2Bytes(b []byte) (uint16, error) {
-	if len(b) != 2 { //nolint:gomnd
+	if len(b) != 2 {
 		return 0, errors.New("len(b) != 2")
 	}
 	return binary.LittleEndian.Uint16(b), nil
@@ -103,15 +73,6 @@ func Int32To4Bytes(val int32) []byte {
 	return Uint32To4Bytes(uint32(val))
 }
 
-func Int32From4Bytes(b []byte) (int32, error) {
-	ret, err := Uint32From4Bytes(b)
-	return int32(ret), err
-}
-
-func MustInt32From2Bytes(b []byte) int32 {
-	return int32(MustUint32From4Bytes(b))
-}
-
 func ReadInt32(r io.Reader, pval *int32) error {
 	var tmp4 [4]byte
 	_, err := r.Read(tmp4[:])
@@ -120,11 +81,6 @@ func ReadInt32(r io.Reader, pval *int32) error {
 	}
 	*pval = int32(binary.LittleEndian.Uint32(tmp4[:]))
 	return nil
-}
-
-func WriteInt32(w io.Writer, val int32) error {
-	_, err := w.Write(Uint32To4Bytes(uint32(val)))
-	return err
 }
 
 //////////////////// uint32 \\\\\\\\\\\\\\\\\\\\
@@ -136,7 +92,7 @@ func Uint32To4Bytes(val uint32) []byte {
 }
 
 func Uint32From4Bytes(b []byte) (uint32, error) {
-	if len(b) != 4 { //nolint:gomnd
+	if len(b) != 4 {
 		return 0, errors.New("len(b) != 4")
 	}
 	return binary.LittleEndian.Uint32(b), nil
@@ -176,10 +132,6 @@ func Int64From8Bytes(b []byte) (int64, error) {
 	return int64(ret), err
 }
 
-func MustInt64From2Bytes(b []byte) int64 {
-	return int64(MustUint64From8Bytes(b))
-}
-
 func ReadInt64(r io.Reader, pval *int64) error {
 	var tmp8 [8]byte
 	_, err := r.Read(tmp8[:])
@@ -204,7 +156,7 @@ func Uint64To8Bytes(val uint64) []byte {
 }
 
 func Uint64From8Bytes(b []byte) (uint64, error) {
-	if len(b) != 8 { //nolint:gomnd
+	if len(b) != 8 {
 		return 0, errors.New("len(b) != 8")
 	}
 	return binary.LittleEndian.Uint64(b), nil
@@ -256,7 +208,7 @@ func ReadBytes16(r io.Reader) ([]byte, error) {
 
 func WriteBytes16(w io.Writer, data []byte) error {
 	if len(data) > MaxUint16 {
-		panic("WriteBytes16: too long data")
+		panic(fmt.Sprintf("WriteBytes16: too long data (%v)", len(data)))
 	}
 	err := WriteUint16(w, uint16(len(data)))
 	if err != nil {
@@ -291,7 +243,7 @@ func ReadBytes32(r io.Reader) ([]byte, error) {
 
 func WriteBytes32(w io.Writer, data []byte) error {
 	if len(data) > MaxUint32 {
-		panic("WriteBytes32: too long data")
+		panic(fmt.Sprintf("WriteBytes32: too long data (%v)", len(data)))
 	}
 	err := WriteUint32(w, uint32(len(data)))
 	if err != nil {
@@ -374,7 +326,7 @@ func ReadStrings16(r io.Reader) ([]string, error) {
 
 func WriteStrings16(w io.Writer, strs []string) error {
 	if len(strs) > MaxUint16 {
-		panic("WriteStrings16: too long array")
+		panic(fmt.Sprintf("WriteStrings16: too long array (%v)", len(strs)))
 	}
 	if err := WriteUint16(w, uint16(len(strs))); err != nil {
 		return err
@@ -383,19 +335,6 @@ func WriteStrings16(w io.Writer, strs []string) error {
 		if err := WriteString16(w, s); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-//////////////////// color \\\\\\\\\\\\\\\\\\\\
-
-func ReadColor(r io.Reader, color *ledgerstate.Color) error {
-	n, err := r.Read(color[:])
-	if err != nil {
-		return err
-	}
-	if n != ledgerstate.ColorLength {
-		return errors.New("error while reading color code")
 	}
 	return nil
 }

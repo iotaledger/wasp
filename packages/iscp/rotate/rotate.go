@@ -24,7 +24,7 @@ func IsRotateStateControllerRequest(req iscp.Request) bool {
 func NewRotateRequestOffLedger(newStateAddress ledgerstate.Address, keyPair *ed25519.KeyPair) iscp.Request {
 	args := requestargs.New(nil)
 	args.AddEncodeSimple(coreutil.ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
-	ret := request.NewRequestOffLedger(coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname, args)
+	ret := request.NewOffLedger(coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname, args)
 	ret.Sign(keyPair)
 	return ret
 }

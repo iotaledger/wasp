@@ -3,7 +3,7 @@
 Once you have one or more Wasp nodes you can use the
 [`wasp-cli`](https://github.com/iotaledger/wasp/tree/master/tools/wasp-cli) tool to interact with it.  Here is
 an example set of commands that will deploy one chain and the example
-[`inccounter`](https://github.com/iotaledger/wasp/tree/master/contracts/rust/inccounter/src)
+[`inccounter`](https://github.com/iotaledger/wasp/tree/master/contracts/wasm/inccounter/src)
 contract to the chain.
 
 ---
@@ -38,6 +38,11 @@ $ wasp-cli init
 $ wasp-cli request-funds
 ```
 
+After you have requested the funds, you can allocate balance by running:
+
+```shell
+wasp-cli chain deposit IOTA:10000
+```
 ---
 
 Now we can deploy a chain:
@@ -53,15 +58,14 @@ The `--chain=mychain` sets up an alias for the chain. From now on all chain
 commands will be targeted to this chain.
 
 You can check that the chain was properly deployed in the Wasp node dashboard
-(e.g. `127.0.0.1:7000`). Note that the chain was deployed with some [core
-contracts](../contract_core/overview.md).
+(e.g. `127.0.0.1:7000`). Note that the chain was deployed with some [core contracts](../guide/core_concepts/core_contracts/overview.md)
 
 ---
 
-We can now deploy a Wasm contract to ur chain:
+We can now deploy a Wasm contract to our chain:
 
 ```
-$ wasp-cli chain deploy-contract wasmtimevm inccounter "inccounter SC" tools/cluster/tests/wasm/inccounter_bg.wasm
+$ wasp-cli chain deploy-contract wasmtime inccounter "inccounter SC" tools/cluster/tests/wasm/inccounter_bg.wasm
 ```
 
 The `inccounter_bg.wasm` file is a precompiled Wasm contract included as an
@@ -74,7 +78,7 @@ Check again in the dashboard that the `inccounter` contract is listed in the cha
 We can interact with a contract by calling its exposed functions and views.
 
 For instance, the
-[`inccounter`](https://github.com/iotaledger/wasp/tree/master/contracts/rust/inccounter/src)
+[`inccounter`](https://github.com/iotaledger/wasp/tree/master/contracts/wasm/inccounter/src)
 contract exposes the `increment` function, which simply increments a counter
 stored in the state. Also we have the `getCounter` view that returns the
 current value of the counter.

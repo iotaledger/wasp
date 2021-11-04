@@ -33,7 +33,7 @@ func TestBasic(t *testing.T) {
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
-		testutil.NewPeeringNetReliable(),
+		testutil.NewPeeringNetReliable(log),
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
@@ -77,7 +77,7 @@ func TestNoPubs(t *testing.T) {
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
-		testutil.NewPeeringNetReliable(),
+		testutil.NewPeeringNetReliable(log),
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
 	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
@@ -173,7 +173,7 @@ func TestLowN(t *testing.T) {
 		peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 		var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 			peerNetIDs, peerIdentities, 10000,
-			testutil.NewPeeringNetReliable(),
+			testutil.NewPeeringNetReliable(log),
 			testlogger.WithLevel(log, logger.LevelWarn, false),
 		)
 		var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()

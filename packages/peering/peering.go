@@ -14,6 +14,8 @@ import (
 	"bytes"
 	"io"
 	"math/rand"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -210,7 +212,6 @@ type PeerSender interface {
 type PeerStatusProvider interface {
 	NetID() string
 	PubKey() *ed25519.PublicKey
-	IsInbound() bool
 	IsAlive() bool
 	NumUsers() int
 }
@@ -264,22 +265,20 @@ func NewPeerMessageFromBytes(buf []byte, peerPubKey *ed25519.PublicKey) (*PeerMe
 		if m.MsgData, err = util.ReadBytes32(r); err != nil {
 			return nil, err
 		}
-		//
-		// Check the signature.
-		if peerPubKey == nil {
-			return nil, xerrors.New("peer pub key is mandatory to decode user messages")
-		}
-		lenBeforeSig := r.Len()
-		var signatureBin []byte
-		if signatureBin, err = util.ReadBytes16(r); err != nil {
-			return nil, xerrors.Errorf("failed to read signature: %w", err)
-		}
-		var signature ed25519.Signature
-		if signature, _, err = ed25519.SignatureFromBytes(signatureBin); err != nil {
-			return nil, xerrors.Errorf("failed to parse signature: %w", err)
-		}
-		if !peerPubKey.VerifySignature(buf[:len(buf)-lenBeforeSig], signature) {
-			return nil, xerrors.New("signature verification failed")
+		if peerPubKey != nil {
+			// Check the signature, if key is provided.
+			lenBeforeSig := r.Len()
+			var signatureBin []byte
+			if signatureBin, err = util.ReadBytes16(r); err != nil {
+				return nil, xerrors.Errorf("failed to read signature: %w", err)
+			}
+			var signature ed25519.Signature
+			if signature, _, err = ed25519.SignatureFromBytes(signatureBin); err != nil {
+				return nil, xerrors.Errorf("failed to parse signature: %w", err)
+			}
+			if !peerPubKey.VerifySignature(buf[:len(buf)-lenBeforeSig], signature) {
+				return nil, xerrors.New("signature verification failed")
+			}
 		}
 	}
 	return &m, nil
@@ -326,10 +325,13 @@ func (m *PeerMessage) Bytes(nodeIdentity *ed25519.KeyPair) ([]byte, error) {
 		if err := util.WriteBytes32(&buf, m.MsgData); err != nil {
 			return nil, err
 		}
-		payload := buf.Bytes()
-		signature := nodeIdentity.PrivateKey.Sign(payload).Bytes()
-		if err := util.WriteBytes16(&buf, signature); err != nil {
-			return nil, xerrors.Errorf("failed to write signature: %w", err)
+		if nodeIdentity != nil {
+			// Only use signatures, if the key is provided.
+			payload := buf.Bytes()
+			signature := nodeIdentity.PrivateKey.Sign(payload).Bytes()
+			if err := util.WriteBytes16(&buf, signature); err != nil {
+				return nil, xerrors.Errorf("failed to write signature: %w", err)
+			}
 		}
 	}
 	return buf.Bytes(), nil
@@ -366,4 +368,17 @@ func (m *PeerMessage) ChunkedBytes(chunkSize int, msgChopper *chopper.Chopper, n
 
 func (m *PeerMessage) IsUserMessage() bool {
 	return m.MsgType >= FirstUserMsgCode
+}
+
+// ParseNetID parses the NetID and returns the corresponding host and port.
+func ParseNetID(netID string) (string, int, error) {
+	parts := strings.Split(netID, ":")
+	if len(parts) != 2 {
+		return "", 0, xerrors.Errorf("invalid NetID: %v", netID)
+	}
+	port, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return "", 0, xerrors.Errorf("invalid port in NetID: %v", netID)
+	}
+	return parts[0], port, nil
 }

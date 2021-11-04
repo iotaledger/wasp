@@ -23,7 +23,7 @@ import (
 )
 
 func (c *chainObj) ID() *iscp.ChainID {
-	return &c.chainID
+	return c.chainID
 }
 
 func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
@@ -62,7 +62,7 @@ func (c *chainObj) Dismiss(reason string) {
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
 
-		close(c.chMsg)
+		c.chMsg.Close()
 
 		c.mempool.Close()
 		c.stateMgr.Close()
@@ -75,7 +75,6 @@ func (c *chainObj) Dismiss(reason string) {
 		}
 		c.eventRequestProcessed.DetachAll()
 		c.eventChainTransition.DetachAll()
-		c.eventSynced.DetachAll()
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
@@ -85,18 +84,17 @@ func (c *chainObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
+// ReceiveMessage accepts an incoming message asynchronously.
 func (c *chainObj) ReceiveMessage(msg interface{}) {
-	if !c.IsDismissed() {
-		select {
-		case c.chMsg <- msg:
-		default:
-			c.log.Warnf("ReceiveMessage with type '%T' failed. Retrying after %s", msg, chain.ReceiveMsgChannelRetryDelay)
-			go func() {
-				time.Sleep(chain.ReceiveMsgChannelRetryDelay)
-				c.ReceiveMessage(msg)
-			}()
-		}
+	c.receiveMessage(msg)
+	c.chainMetrics.CountMessages()
+}
+
+func (c *chainObj) receiveMessage(msg interface{}) {
+	if c.IsDismissed() {
+		return
 	}
+	c.chMsg.In() <- msg
 }
 
 func shouldSendToPeer(peerID string, ackPeers []string) bool {
@@ -108,9 +106,9 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 	return true
 }
 
-func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
+func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
-	msgData := messages.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
+	msgData := messages.NewOffLedgerRequestMsg(c.chainID, req).Bytes()
 	committee := c.getCommittee()
 	getPeerIDs := (*c.peers).GetRandomPeers
 
@@ -129,28 +127,36 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 	}
 
 	ticker := time.NewTicker(c.offledgerBroadcastInterval)
+	stopBroadcast := func() {
+		c.offLedgerReqsAcksMutex.Lock()
+		delete(c.offLedgerReqsAcks, req.ID())
+		c.offLedgerReqsAcksMutex.Unlock()
+		ticker.Stop()
+	}
+
 	go func() {
+		defer stopBroadcast()
 		for {
 			<-ticker.C
 			// check if processed (request already left the mempool)
 			if !c.mempool.HasRequest(req.ID()) {
-				c.offLedgerReqsAcksMutex.Lock()
-				delete(c.offLedgerReqsAcks, req.ID())
-				c.offLedgerReqsAcksMutex.Unlock()
-				ticker.Stop()
 				return
 			}
 			c.offLedgerReqsAcksMutex.RLock()
 			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
 			c.offLedgerReqsAcksMutex.RUnlock()
+			if committee != nil && len(ackPeers) >= int(committee.Size())-1 {
+				// this node is part of the committee and the message has already been received by every other committee node
+				return
+			}
 			sendMessage(ackPeers)
 		}
 	}()
 }
 
-func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
+func (c *chainObj) ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID string) {
 	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
-	c.sendRequestAckowledgementMsg(req.ID(), senderNetID)
+	c.sendRequestAcknowledgementMsg(req.ID(), senderNetID)
 	if !c.mempool.ReceiveRequest(req) {
 		return
 	}
@@ -158,8 +164,8 @@ func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger, sender
 	c.broadcastOffLedgerRequest(req)
 }
 
-func (c *chainObj) sendRequestAckowledgementMsg(reqID iscp.RequestID, peerID string) {
-	c.log.Debugf("sendRequestAckowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerID)
+func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerID string) {
+	c.log.Debugf("sendRequestAcknowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 	if peerID == "" {
 		return
 	}
@@ -172,10 +178,11 @@ func (c *chainObj) ReceiveRequestAckMessage(reqID *iscp.RequestID, peerID string
 	c.offLedgerReqsAcksMutex.Lock()
 	defer c.offLedgerReqsAcksMutex.Unlock()
 	c.offLedgerReqsAcks[*reqID] = append(c.offLedgerReqsAcks[*reqID], peerID)
+	c.chainMetrics.CountRequestAckMessages()
 }
 
 // SendMissingRequestsToPeer sends the requested missing requests by a peer
-func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, peerID string) {
+func (c *chainObj) SendMissingRequestsToPeer(msg *messages.MissingRequestIDsMsg, peerID string) {
 	for _, reqID := range msg.IDs {
 		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 		if req := c.mempool.GetRequest(reqID); req != nil {
@@ -187,7 +194,7 @@ func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, 
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	c.log.Debugf("ReceiveTransaction: %s", tx.ID().Base58())
-	reqs, err := request.RequestsOnLedgerFromTransaction(tx, c.chainID.AsAddress())
+	reqs, err := request.OnLedgerFromTransaction(tx, c.chainID.AsAddress())
 	if err != nil {
 		c.log.Warnf("failed to parse transaction %s: %v", tx.ID().Base58(), err)
 		return
@@ -260,10 +267,6 @@ func (c *chainObj) RequestProcessed() *events.Event {
 
 func (c *chainObj) ChainTransition() *events.Event {
 	return c.eventChainTransition
-}
-
-func (c *chainObj) StateSynced() *events.Event {
-	return c.eventSynced
 }
 
 func (c *chainObj) Events() chain.ChainEvents {

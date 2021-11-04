@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
+	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/labstack/echo/v4"
@@ -31,6 +32,7 @@ func AddEndpoints(
 	chainsProvider chains.Provider,
 	nodeProvider dkg.NodeProvider,
 	shutdown ShutdownFunc,
+	metrics *metricspkg.Metrics,
 ) {
 	initLogger()
 
@@ -39,7 +41,7 @@ func AddEndpoints(
 	addShutdownEndpoint(adm, shutdown)
 	addChainRecordEndpoints(adm, registryProvider)
 	addCommitteeRecordEndpoints(adm, registryProvider, chainsProvider)
-	addChainEndpoints(adm, registryProvider, chainsProvider)
+	addChainEndpoints(adm, registryProvider, chainsProvider, metrics)
 	addDKSharesEndpoints(adm, registryProvider, nodeProvider)
 	addPeeringEndpoints(adm, network, tnm)
 }
