@@ -67,7 +67,7 @@ func (c *Consensus) proposeBatchIfNeeded() {
 	// call the ACS consensus. The call should spawn goroutine itself
 	c.committee.RunACSConsensus(proposal.Bytes(), c.acsSessionID, c.stateOutput.GetStateIndex(), func(sessionID uint64, acs [][]byte) {
 		c.log.Debugf("proposeBatch RunACSConsensus callback: responding to ACS session ID %v: len = %d", sessionID, len(acs))
-		go c.chain.ReceiveMessage(&messages.AsynchronousCommonSubsetMsg{
+		go c.EventAsynchronousCommonSubsetMsg(&messages.AsynchronousCommonSubsetMsg{
 			ProposedBatchesBin: acs,
 			SessionID:          sessionID,
 		})
@@ -235,7 +235,7 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		}
 		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
 			task.VirtualStateAccess.BlockIndex(), task.VirtualStateAccess.StateCommitment())
-		c.chain.ReceiveMessage(&messages.VMResultMsg{
+		c.EventVMResultMsg(&messages.VMResultMsg{
 			Task: task,
 		})
 		elapsed := time.Since(task.StartTime)
@@ -336,10 +336,7 @@ func (c *Consensus) checkQuorum() {
 		// if it is not state controller rotation, sending message to state manager
 		// Otherwise state manager is not notified
 		chainOutputID := chainOutput.ID()
-		go c.chain.ReceiveMessage(&messages.StateCandidateMsg{
-			State:             c.resultState,
-			ApprovingOutputID: chainOutputID,
-		})
+		c.chain.StateCandidateToStateManager(c.resultState, chainOutputID)
 		c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
 			c.resultState.BlockIndex(), iscp.OID(chainOutputID))
 	}

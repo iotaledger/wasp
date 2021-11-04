@@ -26,7 +26,9 @@ import (
 type ChainCore interface {
 	ID() *iscp.ChainID
 	GetCommitteeInfo() *CommitteeInfo
-	ReceiveMessage(interface{})
+	AttachToPeerMessages(fun func(recv *peering.RecvEvent))
+	RequestDismissChain(reason string)
+	StateCandidateToStateManager(state.VirtualStateAccess, ledgerstate.OutputID)
 	Events() ChainEvents
 	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
@@ -75,7 +77,7 @@ type Committee interface {
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
-	Attach(chain ChainCore)
+	AttachToPeerMessages(fun func(recv *peering.RecvEvent))
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
@@ -98,17 +100,17 @@ type StateManager interface {
 	EventBlockMsg(msg *messages.BlockMsg)
 	EventStateMsg(msg *messages.StateMsg)
 	EventOutputMsg(msg ledgerstate.Output)
-	EventStateCandidateMsg(msg *messages.StateCandidateMsg)
+	EventStateCandidateMsg(state.VirtualStateAccess, ledgerstate.OutputID)
 	EventTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
 	Close()
 }
 
 type Consensus interface {
-	EventStateTransitionMsg(*messages.StateTransitionMsg)
+	EventStateTransitionMsg(state.VirtualStateAccess, *ledgerstate.AliasOutput, time.Time)
 	EventSignedResultMsg(*messages.SignedResultMsg)
 	EventSignedResultAckMsg(*messages.SignedResultAckMsg)
-	EventInclusionsStateMsg(*messages.InclusionStateMsg)
+	EventInclusionsStateMsg(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	EventAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
 	EventVMResultMsg(msg *messages.VMResultMsg)
 	EventTimerMsg(messages.TimerTick)

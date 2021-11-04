@@ -113,8 +113,11 @@ func (sm *stateManager) eventStateMsg(msg *messages.StateMsg) {
 	}
 }
 
-func (sm *stateManager) EventStateCandidateMsg(msg *messages.StateCandidateMsg) {
-	sm.eventStateCandidateMsgCh <- msg
+func (sm *stateManager) EventStateCandidateMsg(state state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+	sm.eventStateCandidateMsgCh <- &messages.StateCandidateMsg{
+		State:             state,
+		ApprovingOutputID: outputID,
+	}
 }
 
 func (sm *stateManager) eventStateCandidateMsg(msg *messages.StateCandidateMsg) {

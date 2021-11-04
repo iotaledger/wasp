@@ -231,7 +231,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 		acs...,
 	)
 	require.NoError(env.T, err)
-	cmt.Attach(ret.ChainCore)
+	//TODO cmt.Attach(ret.ChainCore)
 
 	ret.StateOutput = env.InitStateOutput
 	ret.SolidState, err = state.CreateOriginState(ret.store, env.ChainID)
@@ -249,7 +249,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 		ret.Consensus.EventVMResultMsg(msg)
 	})
 	ret.ChainCore.OnReceiveInclusionStateMsg(func(msg *messages.InclusionStateMsg) {
-		ret.Consensus.EventInclusionsStateMsg(msg)
+		//ret.Consensus.EventInclusionsStateMsg(msg) TODO
 	})
 	ret.ChainCore.OnReceiveStateCandidateMsg(func(msg *messages.StateCandidateMsg) {
 		ret.mutex.Lock()
@@ -336,11 +336,7 @@ func (n *mockedNode) EventStateTransition() {
 
 	n.ChainCore.GlobalStateSync().SetSolidIndex(n.SolidState.BlockIndex())
 
-	n.Consensus.EventStateTransitionMsg(&messages.StateTransitionMsg{
-		State:          n.SolidState.Copy(),
-		StateOutput:    n.StateOutput,
-		StateTimestamp: time.Now(),
-	})
+	n.Consensus.EventStateTransitionMsg(n.SolidState.Copy(), n.StateOutput, time.Now())
 }
 
 func (env *MockedEnv) StartTimers() {

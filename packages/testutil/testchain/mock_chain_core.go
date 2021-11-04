@@ -103,6 +103,13 @@ func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {
 	panic("implement me")
 }
 
+func (m *MockedChainCore) AttachToPeerMessages(fun func(recv *peering.RecvEvent)) {} // TODO
+
+func (m *MockedChainCore) RequestDismissChain(reason string) {} // TODO
+
+func (m *MockedChainCore) StateCandidateToStateManager(state.VirtualStateAccess, ledgerstate.OutputID) {
+} // TODO
+
 func (m *MockedChainCore) ReceiveMessage(msg interface{}) {
 	switch msgTypecasted := msg.(type) {
 	case *peering.PeerMessage:

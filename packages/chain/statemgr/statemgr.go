@@ -6,6 +6,7 @@
 package statemgr
 
 import (
+	"bytes"
 	"fmt"
 	"time"
 
@@ -76,9 +77,36 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		eventTimerMsgCh:          make(chan messages.TimerTick),
 		closeCh:                  make(chan bool),
 	}
+	c.AttachToPeerMessages(ret.receiveChainPeerMessages)
 	go ret.initLoadState()
 
 	return ret
+}
+
+func (sm *stateManager) receiveChainPeerMessages(event *peering.RecvEvent) {
+	msg := event.Msg
+	switch msg.MsgType {
+	case messages.MsgGetBlock:
+		msgt := &messages.GetBlockMsg{}
+		rdr := bytes.NewReader(msg.MsgData)
+		if err := msgt.Read(rdr); err != nil {
+			sm.log.Error(err)
+			return
+		}
+		msgt.SenderNetID = msg.SenderNetID
+		sm.EventGetBlockMsg(msgt)
+	case messages.MsgBlock:
+		msgt := &messages.BlockMsg{}
+		rdr := bytes.NewReader(msg.MsgData)
+		if err := msgt.Read(rdr); err != nil {
+			sm.log.Error(err)
+			return
+		}
+		msgt.SenderNetID = msg.SenderNetID
+		sm.EventBlockMsg(msgt)
+	default:
+		return
+	}
 }
 
 func (sm *stateManager) Close() {
@@ -89,9 +117,7 @@ func (sm *stateManager) Close() {
 func (sm *stateManager) initLoadState() {
 	solidState, stateExists, err := state.LoadSolidState(sm.store, sm.chain.ID())
 	if err != nil {
-		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
-			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err),
-		})
+		sm.chain.RequestDismissChain(fmt.Sprintf("StateManager.initLoadState: %v", err))
 		return
 	}
 	if stateExists {
@@ -101,9 +127,7 @@ func (sm *stateManager) initLoadState() {
 			solidState.BlockIndex(), solidState.StateCommitment().String())
 	} else if err := sm.createOriginState(); err != nil {
 		// create origin state in DB
-		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
-			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
-		})
+		sm.chain.RequestDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))
 		return
 	}
 	sm.recvLoop() // Check to process external events.
@@ -117,10 +141,7 @@ func (sm *stateManager) createOriginState() error {
 	sm.chain.GlobalStateSync().SetSolidIndex(0)
 
 	if err != nil {
-		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
-			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
-		},
-		)
+		sm.chain.RequestDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))
 		return err
 	}
 	sm.log.Infof("ORIGIN STATE has been created")

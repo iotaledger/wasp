@@ -5,14 +5,21 @@ package consensus
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
-func (c *Consensus) EventStateTransitionMsg(msg *messages.StateTransitionMsg) {
-	c.eventStateTransitionMsgCh <- msg
+func (c *Consensus) EventStateTransitionMsg(state state.VirtualStateAccess, stateOutput *ledgerstate.AliasOutput, stateTimestamp time.Time) {
+	c.eventStateTransitionMsgCh <- &messages.StateTransitionMsg{
+		State:          state,
+		StateOutput:    stateOutput,
+		StateTimestamp: stateTimestamp,
+	}
 }
 
 func (c *Consensus) eventStateTransitionMsg(msg *messages.StateTransitionMsg) {
@@ -44,8 +51,11 @@ func (c *Consensus) eventSignedResultAck(msg *messages.SignedResultAckMsg) {
 	c.takeAction()
 }
 
-func (c *Consensus) EventInclusionsStateMsg(msg *messages.InclusionStateMsg) {
-	c.eventInclusionStateMsgCh <- msg
+func (c *Consensus) EventInclusionsStateMsg(txID ledgerstate.TransactionID, state ledgerstate.InclusionState) {
+	c.eventInclusionStateMsgCh <- &messages.InclusionStateMsg{
+		TxID:  txID,
+		State: state,
+	}
 }
 
 func (c *Consensus) eventInclusionState(msg *messages.InclusionStateMsg) {

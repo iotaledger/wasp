@@ -4,7 +4,6 @@
 package chainimpl
 
 import (
-	"bytes"
 	"sync"
 	"time"
 
@@ -75,6 +74,8 @@ type chainObj struct {
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
+	peeringID                        peering.PeeringID
+	attachIDs                        []interface{}
 	chainMetrics                     metrics.ChainMetrics
 }
 
@@ -128,6 +129,8 @@ func NewChain(
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
+		peeringID:                        chainID.Array(),
+		attachIDs:                        make([]interface{}, 0),
 		chainMetrics:                     chainMetrics,
 	}
 	ret.committee.Store(&committeeStruct{})
@@ -140,10 +143,7 @@ func NewChain(
 	}
 	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn)
 	ret.peers = &peers
-	var peeringID peering.PeeringID = ret.chainID.Array()
-	peers.Attach(&peeringID, func(recv *peering.RecvEvent) {
-		ret.ReceiveMessage(recv.Msg)
-	})
+	ret.AttachToPeerMessages(ret.receiveChainPeerMessages)
 	go func() {
 		for msg := range ret.chMsg.Out() {
 			ret.dispatchMessage(msg)
@@ -159,27 +159,8 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		c.processPeerMessage(msgt)
 	case *messages.DismissChainMsg:
 		c.Dismiss(msgt.Reason)
-	case *messages.StateTransitionMsg:
-		if c.consensus != nil {
-			c.consensus.EventStateTransitionMsg(msgt)
-		}
-	case *messages.StateCandidateMsg:
-		c.stateMgr.EventStateCandidateMsg(msgt)
-	case *messages.InclusionStateMsg:
-		if c.consensus != nil {
-			c.consensus.EventInclusionsStateMsg(msgt)
-		}
 	case *messages.StateMsg:
 		c.processStateMessage(msgt)
-	case *messages.VMResultMsg:
-		// VM finished working
-		if c.consensus != nil {
-			c.consensus.EventVMResultMsg(msgt)
-		}
-	case *messages.AsynchronousCommonSubsetMsg:
-		if c.consensus != nil {
-			c.consensus.EventAsynchronousCommonSubsetMsg(msgt)
-		}
 	case messages.TimerTick:
 		if msgt%2 == 0 {
 			c.stateMgr.EventTimerMsg(msgt / 2)
@@ -195,48 +176,7 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 
 //nolint:funlen
 func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
-	rdr := bytes.NewReader(msg.MsgData)
-
 	switch msg.MsgType {
-	case messages.MsgGetBlock:
-		msgt := &messages.GetBlockMsg{}
-		if err := msgt.Read(rdr); err != nil {
-			c.log.Error(err)
-			return
-		}
-		msgt.SenderNetID = msg.SenderNetID
-		c.stateMgr.EventGetBlockMsg(msgt)
-
-	case messages.MsgBlock:
-		msgt := &messages.BlockMsg{}
-		if err := msgt.Read(rdr); err != nil {
-			c.log.Error(err)
-			return
-		}
-		msgt.SenderNetID = msg.SenderNetID
-		c.stateMgr.EventBlockMsg(msgt)
-
-	case messages.MsgSignedResult:
-		msgt := &messages.SignedResultMsg{}
-		if err := msgt.Read(rdr); err != nil {
-			c.log.Error(err)
-			return
-		}
-		msgt.SenderIndex = msg.SenderIndex
-		if c.consensus != nil {
-			c.consensus.EventSignedResultMsg(msgt)
-		}
-	case messages.MsgSignedResultAck:
-		if c.consensus == nil {
-			return
-		}
-		msgt := &messages.SignedResultAckMsg{}
-		if err := msgt.Read(rdr); err != nil {
-			c.log.Error(err)
-			return
-		}
-		msgt.SenderIndex = msg.SenderIndex
-		c.consensus.EventSignedResultAckMsg(msgt)
 	case messages.MsgOffLedgerRequest:
 		msgt, err := messages.OffLedgerRequestMsgFromBytes(msg.MsgData)
 		if err != nil {
@@ -275,6 +215,23 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 		}
 	default:
 		c.log.Errorf("processPeerMessage: wrong msg type")
+	}
+}
+
+func (c *chainObj) receiveCommitteePeerMessages(event *peering.RecvEvent) {
+	if event.Msg.MsgType == messages.MsgMissingRequestIDs {
+		c.receiveMessage(event.Msg)
+	}
+}
+
+func (c *chainObj) receiveChainPeerMessages(event *peering.RecvEvent) {
+	switch event.Msg.MsgType {
+	case
+		messages.MsgOffLedgerRequest,
+		messages.MsgRequestAck,
+		messages.MsgMissingRequest:
+		c.receiveMessage(event.Msg)
+	default:
 	}
 }
 
@@ -324,12 +281,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
 	}
-	// send to consensus
-	c.ReceiveMessage(&messages.StateTransitionMsg{
-		State:          msg.VirtualState,
-		StateOutput:    msg.ChainOutput,
-		StateTimestamp: msg.OutputTimestamp,
-	})
+	c.consensus.EventStateTransitionMsg(msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
 	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.StateCommitment().String())
 }
 
@@ -457,7 +409,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
 			cmtRec.Address.Base58(), err)
 	}
-	cmt.Attach(c)
+	cmt.AttachToPeerMessages(c.receiveCommitteePeerMessages)
 	c.log.Debugf("creating new consensus object...")
 	c.consensus = consensus.New(c, c.mempool, cmt, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
 	c.setCommittee(cmt)

@@ -32,9 +32,11 @@ type committee struct {
 	quorum         uint16
 	ownIndex       uint16
 	dkshare        *tcrypto.DKShare
-	attachID       interface{}
+	attachIDs      []interface{}
 	log            *logger.Logger
 }
+
+var _ chain.Committee = &committee{}
 
 const waitReady = false
 
@@ -83,6 +85,7 @@ func New(
 		quorum:         dkshare.T,
 		ownIndex:       *dkshare.Index,
 		dkshare:        dkshare,
+		attachIDs:      make([]interface{}, 0),
 		log:            log,
 	}
 	if len(acsRunner) > 0 {
@@ -98,6 +101,11 @@ func New(
 			log,
 		)
 	}
+	ret.AttachToPeerMessages(func(recv *peering.RecvEvent) {
+		if ret.acsRunner != nil {
+			ret.acsRunner.TryHandleMessage(recv)
+		}
+	})
 	go ret.waitReady(waitReady)
 
 	return ret, nil
@@ -202,20 +210,15 @@ func (c *committee) PeerStatus() []*chain.PeerStatus {
 	return ret
 }
 
-func (c *committee) Attach(ch chain.ChainCore) {
-	c.attachID = c.validatorNodes.Attach(&c.peeringID, func(recv *peering.RecvEvent) {
-		if c.acsRunner != nil && c.acsRunner.TryHandleMessage(recv) {
-			return
-		}
-		ch.ReceiveMessage(recv.Msg)
-	})
+func (c *committee) AttachToPeerMessages(fun func(recv *peering.RecvEvent)) {
+	c.attachIDs = append(c.attachIDs, c.validatorNodes.Attach(&c.peeringID, fun))
 }
 
 func (c *committee) Close() {
 	c.acsRunner.Close()
 	c.isReady.Store(false)
-	if c.attachID != nil {
-		c.validatorNodes.Detach(c.attachID)
+	for _, attachID := range c.attachIDs {
+		c.validatorNodes.Detach(attachID)
 	}
 	c.validatorNodes.Close()
 }

@@ -4,6 +4,7 @@
 package consensus
 
 import (
+	"bytes"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -111,9 +113,36 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
 	}
+	committee.AttachToPeerMessages(ret.receiveCommitteePeerMessages)
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret
+}
+
+func (c *Consensus) receiveCommitteePeerMessages(event *peering.RecvEvent) {
+	msg := event.Msg
+	switch msg.MsgType {
+	case messages.MsgSignedResult:
+		msgt := &messages.SignedResultMsg{}
+		rdr := bytes.NewReader(msg.MsgData)
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		msgt.SenderIndex = msg.SenderIndex
+		c.EventSignedResultMsg(msgt)
+	case messages.MsgSignedResultAck:
+		msgt := &messages.SignedResultAckMsg{}
+		rdr := bytes.NewReader(msg.MsgData)
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		msgt.SenderIndex = msg.SenderIndex
+		c.EventSignedResultAckMsg(msgt)
+	default:
+		return
+	}
 }
 
 func (c *Consensus) IsReady() bool {

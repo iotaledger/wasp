@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
@@ -50,7 +51,7 @@ func (c *chainObj) startTimer() {
 		tick := 0
 		for !c.IsDismissed() {
 			time.Sleep(chain.TimerTickPeriod)
-			c.ReceiveMessage(messages.TimerTick(tick))
+			c.receiveMessage(messages.TimerTick(tick))
 			tick++
 		}
 	}()
@@ -75,6 +76,9 @@ func (c *chainObj) Dismiss(reason string) {
 		}
 		c.eventRequestProcessed.DetachAll()
 		c.eventChainTransition.DetachAll()
+		for _, attachID := range c.attachIDs {
+			(*c.peers).Detach(attachID)
+		}
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
@@ -84,11 +88,23 @@ func (c *chainObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
-// ReceiveMessage accepts an incoming message asynchronously.
-func (c *chainObj) ReceiveMessage(msg interface{}) {
-	c.receiveMessage(msg)
-	c.chainMetrics.CountMessages()
+func (c *chainObj) AttachToPeerMessages(fun func(recv *peering.RecvEvent)) {
+	c.attachIDs = append(c.attachIDs, (*c.peers).Attach(&c.peeringID, fun))
 }
+
+func (c *chainObj) RequestDismissChain(reason string) {
+	c.receiveMessage(messages.DismissChainMsg{Reason: reason})
+}
+
+func (c *chainObj) StateCandidateToStateManager(state state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+	c.stateMgr.EventStateCandidateMsg(state, outputID)
+}
+
+// ReceiveMessage accepts an incoming message asynchronously.
+/*func (c *chainObj) ReceiveMessage(msg interface{}) {
+	c.receiveMessage(msg)
+	c.chainMetrics.CountMessages() TODO
+}*/
 
 func (c *chainObj) receiveMessage(msg interface{}) {
 	if c.IsDismissed() {
@@ -215,17 +231,16 @@ func (c *chainObj) ReceiveRequest(req iscp.Request) {
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
 	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
 		stateOutput.GetStateIndex(), iscp.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
-	c.ReceiveMessage(&messages.StateMsg{
+	c.receiveMessage(&messages.StateMsg{
 		ChainOutput: stateOutput,
 		Timestamp:   timestamp,
 	})
 }
 
 func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
-	c.ReceiveMessage(&messages.InclusionStateMsg{
-		TxID:  txID,
-		State: inclusionState,
-	}) // TODO special entry point
+	if c.consensus != nil {
+		c.consensus.EventInclusionsStateMsg(txID, inclusionState) // TODO special entry point
+	}
 }
 
 func (c *chainObj) ReceiveOutput(output ledgerstate.Output) {
