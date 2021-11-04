@@ -25,4 +25,10 @@ var GoTemplates = []map[string]string{
 	keysGo,
 	libGo,
 	mainGo,
+	paramsGo,
+	proxyGo,
+	resultsGo,
+	stateGo,
+	structsGo,
+	typedefsGo,
 }

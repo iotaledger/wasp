@@ -2,6 +2,9 @@ package generator
 
 var templates = map[string]string{
 	// *******************************
+	"nil": `
+`,
+	// *******************************
 	"copyright": `
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
