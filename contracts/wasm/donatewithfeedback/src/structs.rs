@@ -13,11 +13,11 @@ use wasmlib::*;
 use wasmlib::host::*;
 
 pub struct Donation {
-    pub amount:    i64,       // amount donated
-    pub donator:   ScAgentID, // who donated
-    pub error:     String,    // error to be reported to donator if anything goes wrong
-    pub feedback:  String,    // the feedback for the person donated to
-    pub timestamp: i64,       // when the donation took place
+    pub amount: i64,  // amount donated
+    pub donator: ScAgentID,  // who donated
+    pub error: String,  // error to be reported to donator if anything goes wrong
+    pub feedback: String,  // the feedback for the person donated to
+    pub timestamp: i64,  // when the donation took place
 }
 
 impl Donation {
@@ -34,11 +34,11 @@ impl Donation {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut encode = BytesEncoder::new();
-        encode.int64(self.amount);
-        encode.agent_id(&self.donator);
-        encode.string(&self.error);
-        encode.string(&self.feedback);
-        encode.int64(self.timestamp);
+		encode.int64(self.amount);
+		encode.agent_id(&self.donator);
+		encode.string(&self.error);
+		encode.string(&self.feedback);
+		encode.int64(self.timestamp);
         return encode.data();
     }
 }

@@ -43,88 +43,88 @@ fn on_load() {
 }
 
 pub struct MintSupplyContext {
-    params: ImmutableMintSupplyParams,
-    state:  MutableTokenRegistryState,
+	params: ImmutableMintSupplyParams,
+	state: MutableTokenRegistryState,
 }
 
 fn func_mint_supply_thunk(ctx: &ScFuncContext) {
-    ctx.log("tokenregistry.funcMintSupply");
-    let f = MintSupplyContext {
-        params: ImmutableMintSupplyParams {
-            id: OBJ_ID_PARAMS,
-        },
-        state: MutableTokenRegistryState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    func_mint_supply(ctx, &f);
-    ctx.log("tokenregistry.funcMintSupply ok");
+	ctx.log("tokenregistry.funcMintSupply");
+	let f = MintSupplyContext {
+		params: ImmutableMintSupplyParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: MutableTokenRegistryState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	func_mint_supply(ctx, &f);
+	ctx.log("tokenregistry.funcMintSupply ok");
 }
 
 pub struct TransferOwnershipContext {
-    params: ImmutableTransferOwnershipParams,
-    state:  MutableTokenRegistryState,
+	params: ImmutableTransferOwnershipParams,
+	state: MutableTokenRegistryState,
 }
 
 fn func_transfer_ownership_thunk(ctx: &ScFuncContext) {
-    ctx.log("tokenregistry.funcTransferOwnership");
+	ctx.log("tokenregistry.funcTransferOwnership");
     // TODO the one who can transfer token ownership
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-    let f = TransferOwnershipContext {
-        params: ImmutableTransferOwnershipParams {
-            id: OBJ_ID_PARAMS,
-        },
-        state: MutableTokenRegistryState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    ctx.require(f.params.color().exists(), "missing mandatory color");
-    func_transfer_ownership(ctx, &f);
-    ctx.log("tokenregistry.funcTransferOwnership ok");
+	let f = TransferOwnershipContext {
+		params: ImmutableTransferOwnershipParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: MutableTokenRegistryState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.color().exists(), "missing mandatory color");
+	func_transfer_ownership(ctx, &f);
+	ctx.log("tokenregistry.funcTransferOwnership ok");
 }
 
 pub struct UpdateMetadataContext {
-    params: ImmutableUpdateMetadataParams,
-    state:  MutableTokenRegistryState,
+	params: ImmutableUpdateMetadataParams,
+	state: MutableTokenRegistryState,
 }
 
 fn func_update_metadata_thunk(ctx: &ScFuncContext) {
-    ctx.log("tokenregistry.funcUpdateMetadata");
+	ctx.log("tokenregistry.funcUpdateMetadata");
     // TODO the one who can change the token info
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-    let f = UpdateMetadataContext {
-        params: ImmutableUpdateMetadataParams {
-            id: OBJ_ID_PARAMS,
-        },
-        state: MutableTokenRegistryState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    ctx.require(f.params.color().exists(), "missing mandatory color");
-    func_update_metadata(ctx, &f);
-    ctx.log("tokenregistry.funcUpdateMetadata ok");
+	let f = UpdateMetadataContext {
+		params: ImmutableUpdateMetadataParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: MutableTokenRegistryState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.color().exists(), "missing mandatory color");
+	func_update_metadata(ctx, &f);
+	ctx.log("tokenregistry.funcUpdateMetadata ok");
 }
 
 pub struct GetInfoContext {
-    params: ImmutableGetInfoParams,
-    state:  ImmutableTokenRegistryState,
+	params: ImmutableGetInfoParams,
+	state: ImmutableTokenRegistryState,
 }
 
 fn view_get_info_thunk(ctx: &ScViewContext) {
-    ctx.log("tokenregistry.viewGetInfo");
-    let f = GetInfoContext {
-        params: ImmutableGetInfoParams {
-            id: OBJ_ID_PARAMS,
-        },
-        state: ImmutableTokenRegistryState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    ctx.require(f.params.color().exists(), "missing mandatory color");
-    view_get_info(ctx, &f);
-    ctx.log("tokenregistry.viewGetInfo ok");
+	ctx.log("tokenregistry.viewGetInfo");
+	let f = GetInfoContext {
+		params: ImmutableGetInfoParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: ImmutableTokenRegistryState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.color().exists(), "missing mandatory color");
+	view_get_info(ctx, &f);
+	ctx.log("tokenregistry.viewGetInfo ok");
 }
 
 // @formatter:on

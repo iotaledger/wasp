@@ -737,3 +737,49 @@ func (g *TypeScriptGenerator) writeTypeDefs() {
 		g.generateProxy(subtype, PropMutable)
 	}
 }
+
+func (g *TypeScriptGenerator) setFieldKeys() {
+	g.GenBase.setFieldKeys()
+
+	fldTypeID := rustTypeIds[g.currentField.Type]
+	if fldTypeID == "" {
+		fldTypeID = "TYPE_BYTES"
+	}
+	g.keys["FldTypeID"] = fldTypeID
+	g.keys["FldTypeKey"] = rustKeys[g.currentField.Type]
+	g.keys["FldLangType"] = rustTypes[g.currentField.Type]
+	g.keys["FldMapKeyLangType"] = rustTypes[g.currentField.MapKey]
+	g.keys["FldMapKeyKey"] = rustKeys[g.currentField.MapKey]
+
+	// native core contracts use Array16 instead of our nested array type
+	arrayTypeID := "TYPE_ARRAY"
+	if g.s.CoreContracts {
+		arrayTypeID = "TYPE_ARRAY16"
+	}
+	g.keys["ArrayTypeID"] = arrayTypeID
+}
+
+func (g *TypeScriptGenerator) setFuncKeys() {
+	g.GenBase.setFuncKeys()
+
+	paramsID := "nil"
+	if len(g.currentFunc.Params) != 0 {
+		paramsID = "&f.Params.id"
+	}
+	g.keys["paramsID"] = paramsID
+
+	resultsID := "nil"
+	if len(g.currentFunc.Results) != 0 {
+		resultsID = "&f.Results.id"
+	}
+	g.keys["resultsID"] = resultsID
+
+	initFunc := ""
+	initMap := ""
+	if g.currentFunc.Type == InitFunc {
+		initFunc = InitFunc
+		initMap = ", keyMap[:], idxMap[:]"
+	}
+	g.keys["initFunc"] = initFunc
+	g.keys["initMap"] = initMap
+}

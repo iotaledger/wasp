@@ -27,7 +27,7 @@ type $mut$FldName = $proxy
 	// *******************************
 	"typedefProxyArray": `
 $#set proxy ArrayOf$mut$FldType
-$#if exist nil typedefProxyArrayNew
+$#if exist else typedefProxyArrayNew
 `,
 	// *******************************
 	"typedefProxyArrayNew": `
@@ -82,7 +82,7 @@ func (a $proxy) Get$FldType(index int32) $mut$FldType {
 	// *******************************
 	"typedefProxyMap": `
 $#set proxy Map$FldMapKey$+To$mut$FldType
-$#if exist nil typedefProxyMapNew
+$#if exist else typedefProxyMapNew
 `,
 	// *******************************
 	"typedefProxyMapNew": `

@@ -1,0 +1,80 @@
+package rstemplates
+
+var structsRs = map[string]string{
+	// *******************************
+	"structs.rs": `
+// @formatter:off
+
+#![allow(dead_code)]
+
+use wasmlib::*;
+use wasmlib::host::*;
+$#each structs structType
+
+// @formatter:on
+`,
+	// *******************************
+	"structType": `
+
+pub struct $StrName {
+$#each struct structField
+}
+
+impl $StrName {
+    pub fn from_bytes(bytes: &[u8]) -> $StrName {
+        let mut decode = BytesDecoder::new(bytes);
+        $StrName {
+$#each struct structDecode
+        }
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut encode = BytesEncoder::new();
+$#each struct structEncode
+        return encode.data();
+    }
+}
+$#set mut Immutable
+$#emit structMethods
+$#set mut Mutable
+$#emit structMethods
+`,
+	// *******************************
+	"structField": `
+    pub $fld_name: $FldLangType, $FldComment
+`,
+	// *******************************
+	"structDecode": `
+            $fld_name: decode.$fld_type(),
+`,
+	// *******************************
+	"structEncode": `
+		encode.$fld_type($ref$+self.$fld_name);
+`,
+	// *******************************
+	"structMethods": `
+
+pub struct $mut$StrName {
+    pub(crate) obj_id: i32,
+    pub(crate) key_id: Key32,
+}
+
+impl $mut$StrName {
+    pub fn exists(&self) -> bool {
+        exists(self.obj_id, self.key_id, TYPE_BYTES)
+    }
+$#if mut structMethodSetValue
+
+    pub fn value(&self) -> $StrName {
+        $StrName::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+    }
+}
+`,
+	// *******************************
+	"structMethodSetValue": `
+
+    pub fn set_value(&self, value: &$StrName) {
+        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+    }
+`,
+}

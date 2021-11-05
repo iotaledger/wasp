@@ -20,9 +20,10 @@ pub struct ImmutableGetCounterResults {
 }
 
 impl ImmutableGetCounterResults {
+
     pub fn counter(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -31,7 +32,8 @@ pub struct MutableGetCounterResults {
 }
 
 impl MutableGetCounterResults {
+
     pub fn counter(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
+	}
 }

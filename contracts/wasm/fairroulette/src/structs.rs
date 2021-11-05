@@ -13,9 +13,9 @@ use wasmlib::*;
 use wasmlib::host::*;
 
 pub struct Bet {
-    pub amount: i64,
-    pub better: ScAgentID,
-    pub number: i64,
+    pub amount: i64, 
+    pub better: ScAgentID, 
+    pub number: i64, 
 }
 
 impl Bet {
@@ -30,9 +30,9 @@ impl Bet {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut encode = BytesEncoder::new();
-        encode.int64(self.amount);
-        encode.agent_id(&self.better);
-        encode.int64(self.number);
+		encode.int64(self.amount);
+		encode.agent_id(&self.better);
+		encode.int64(self.number);
         return encode.data();
     }
 }

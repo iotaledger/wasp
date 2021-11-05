@@ -17,12 +17,12 @@ use crate::consts::*;
 use crate::results::*;
 
 pub struct HelloWorldCall {
-    pub func: ScFunc,
+	pub func: ScFunc,
 }
 
 pub struct GetHelloWorldCall {
-    pub func:    ScView,
-    pub results: ImmutableGetHelloWorldResults,
+	pub func: ScView,
+	pub results: ImmutableGetHelloWorldResults,
 }
 
 pub struct ScFuncs {
@@ -36,7 +36,7 @@ impl ScFuncs {
     }
     pub fn get_hello_world(_ctx: & dyn ScViewCallContext) -> GetHelloWorldCall {
         let mut f = GetHelloWorldCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_HELLO_WORLD),
+            func: ScView::new(HSC_NAME, HVIEW_GET_HELLO_WORLD),
             results: ImmutableGetHelloWorldResults { id: 0 },
         };
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);

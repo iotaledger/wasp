@@ -52,10 +52,6 @@ var goTypeIds = StringMap{
 	"String":    "wasmlib.TYPE_STRING",
 }
 
-const (
-	goTypeBytes = "wasmlib.TYPE_BYTES"
-)
-
 type GoGenerator struct {
 	GenBase
 }
@@ -75,8 +71,7 @@ func (g *GoGenerator) init(s *Schema) {
 	for _, template := range gotemplates.GoTemplates {
 		g.addTemplates(template)
 	}
-	g.emitters["accessCheck"] = emitterAccessCheck
-	g.emitters["funcSignature"] = emitterFuncSignature
+	g.emitters["accessCheck"] = emitterGoAccessCheck
 }
 
 func (g *GoGenerator) funcName(f *Func) string {
@@ -115,7 +110,6 @@ func (g *GoGenerator) writeInitialFuncs() {
 }
 
 func (g *GoGenerator) writeKeys() {
-	g.s.KeyID = 0
 	g.emit("keys.go")
 }
 
@@ -145,14 +139,9 @@ func (g *GoGenerator) writeStructs() {
 
 func (g *GoGenerator) writeTypeDefs() {
 	g.emit("typedefs.go")
-
-	//for _, subtype := range g.s.Typedefs {
-	//	g.generateProxy(subtype, PropImmutable)
-	//	g.generateProxy(subtype, PropMutable)
-	//}
 }
 
-func emitterAccessCheck(g *GenBase) {
+func emitterGoAccessCheck(g *GenBase) {
 	if g.currentFunc.Access == "" {
 		return
 	}
@@ -178,13 +167,48 @@ func emitterAccessCheck(g *GenBase) {
 	g.emit("grantRequire")
 }
 
-func emitterFuncSignature(g *GenBase) {
-	switch g.currentFunc.FuncName {
-	case SpecialFuncInit:
-	case SpecialFuncSetOwner:
-	case SpecialViewGetOwner:
-	default:
-		return
+func (g *GoGenerator) setFieldKeys() {
+	g.GenBase.setFieldKeys()
+
+	fldTypeID := goTypeIds[g.currentField.Type]
+	if fldTypeID == "" {
+		fldTypeID = "wasmlib.TYPE_BYTES"
 	}
-	g.emit(g.currentFunc.FuncName)
+	g.keys["FldTypeID"] = fldTypeID
+	g.keys["FldTypeKey"] = goKeys[g.currentField.Type]
+	g.keys["FldLangType"] = goTypes[g.currentField.Type]
+	g.keys["FldMapKeyLangType"] = goTypes[g.currentField.MapKey]
+	g.keys["FldMapKeyKey"] = goKeys[g.currentField.MapKey]
+
+	// native core contracts use Array16 instead of our nested array type
+	arrayTypeID := "wasmlib.TYPE_ARRAY"
+	if g.s.CoreContracts {
+		arrayTypeID = "wasmlib.TYPE_ARRAY16"
+	}
+	g.keys["ArrayTypeID"] = arrayTypeID
+}
+
+func (g *GoGenerator) setFuncKeys() {
+	g.GenBase.setFuncKeys()
+
+	paramsID := "nil"
+	if len(g.currentFunc.Params) != 0 {
+		paramsID = "&f.Params.id"
+	}
+	g.keys["paramsID"] = paramsID
+
+	resultsID := "nil"
+	if len(g.currentFunc.Results) != 0 {
+		resultsID = "&f.Results.id"
+	}
+	g.keys["resultsID"] = resultsID
+
+	initFunc := ""
+	initMap := ""
+	if g.currentFunc.Type == InitFunc {
+		initFunc = InitFunc
+		initMap = ", keyMap[:], idxMap[:]"
+	}
+	g.keys["initFunc"] = initFunc
+	g.keys["initMap"] = initMap
 }

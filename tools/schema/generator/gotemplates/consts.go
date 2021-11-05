@@ -26,6 +26,7 @@ $#each func constHFunc
 	"constParams": `
 
 const (
+$#set constPrefix Param
 $#each params constField
 )
 `,
@@ -33,6 +34,7 @@ $#each params constField
 	"constResults": `
 
 const (
+$#set constPrefix Result
 $#each results constField
 )
 `,
@@ -40,6 +42,7 @@ $#each results constField
 	"constState": `
 
 const (
+$#set constPrefix State
 $#each state constField
 )
 `,

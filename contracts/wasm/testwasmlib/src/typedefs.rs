@@ -13,7 +13,7 @@ use wasmlib::*;
 use wasmlib::host::*;
 
 pub struct ArrayOfImmutableString {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl ArrayOfImmutableString {
@@ -29,7 +29,7 @@ impl ArrayOfImmutableString {
 pub type ImmutableStringArray = ArrayOfImmutableString;
 
 pub struct ArrayOfMutableString {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl ArrayOfMutableString {

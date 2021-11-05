@@ -18,52 +18,52 @@ use crate::params::*;
 use crate::results::*;
 
 pub struct ArrayClearCall {
-    pub func:   ScFunc,
-    pub params: MutableArrayClearParams,
+	pub func: ScFunc,
+	pub params: MutableArrayClearParams,
 }
 
 pub struct ArrayCreateCall {
-    pub func:   ScFunc,
-    pub params: MutableArrayCreateParams,
+	pub func: ScFunc,
+	pub params: MutableArrayCreateParams,
 }
 
 pub struct ArraySetCall {
-    pub func:   ScFunc,
-    pub params: MutableArraySetParams,
+	pub func: ScFunc,
+	pub params: MutableArraySetParams,
 }
 
 pub struct ParamTypesCall {
-    pub func:   ScFunc,
-    pub params: MutableParamTypesParams,
+	pub func: ScFunc,
+	pub params: MutableParamTypesParams,
 }
 
 pub struct ArrayLengthCall {
-    pub func:    ScView,
-    pub params:  MutableArrayLengthParams,
-    pub results: ImmutableArrayLengthResults,
+	pub func: ScView,
+	pub params: MutableArrayLengthParams,
+	pub results: ImmutableArrayLengthResults,
 }
 
 pub struct ArrayValueCall {
-    pub func:    ScView,
-    pub params:  MutableArrayValueParams,
-    pub results: ImmutableArrayValueResults,
+	pub func: ScView,
+	pub params: MutableArrayValueParams,
+	pub results: ImmutableArrayValueResults,
 }
 
 pub struct BlockRecordCall {
-    pub func:    ScView,
-    pub params:  MutableBlockRecordParams,
-    pub results: ImmutableBlockRecordResults,
+	pub func: ScView,
+	pub params: MutableBlockRecordParams,
+	pub results: ImmutableBlockRecordResults,
 }
 
 pub struct BlockRecordsCall {
-    pub func:    ScView,
-    pub params:  MutableBlockRecordsParams,
-    pub results: ImmutableBlockRecordsResults,
+	pub func: ScView,
+	pub params: MutableBlockRecordsParams,
+	pub results: ImmutableBlockRecordsResults,
 }
 
 pub struct IotaBalanceCall {
-    pub func:    ScView,
-    pub results: ImmutableIotaBalanceResults,
+	pub func: ScView,
+	pub results: ImmutableIotaBalanceResults,
 }
 
 pub struct ScFuncs {
@@ -72,7 +72,7 @@ pub struct ScFuncs {
 impl ScFuncs {
     pub fn array_clear(_ctx: & dyn ScFuncCallContext) -> ArrayClearCall {
         let mut f = ArrayClearCall {
-            func:   ScFunc::new(HSC_NAME, HFUNC_ARRAY_CLEAR),
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_CLEAR),
             params: MutableArrayClearParams { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
@@ -80,7 +80,7 @@ impl ScFuncs {
     }
     pub fn array_create(_ctx: & dyn ScFuncCallContext) -> ArrayCreateCall {
         let mut f = ArrayCreateCall {
-            func:   ScFunc::new(HSC_NAME, HFUNC_ARRAY_CREATE),
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_CREATE),
             params: MutableArrayCreateParams { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
@@ -88,7 +88,7 @@ impl ScFuncs {
     }
     pub fn array_set(_ctx: & dyn ScFuncCallContext) -> ArraySetCall {
         let mut f = ArraySetCall {
-            func:   ScFunc::new(HSC_NAME, HFUNC_ARRAY_SET),
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_SET),
             params: MutableArraySetParams { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
@@ -96,7 +96,7 @@ impl ScFuncs {
     }
     pub fn param_types(_ctx: & dyn ScFuncCallContext) -> ParamTypesCall {
         let mut f = ParamTypesCall {
-            func:   ScFunc::new(HSC_NAME, HFUNC_PARAM_TYPES),
+            func: ScFunc::new(HSC_NAME, HFUNC_PARAM_TYPES),
             params: MutableParamTypesParams { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
@@ -104,8 +104,8 @@ impl ScFuncs {
     }
     pub fn array_length(_ctx: & dyn ScViewCallContext) -> ArrayLengthCall {
         let mut f = ArrayLengthCall {
-            func:    ScView::new(HSC_NAME, HVIEW_ARRAY_LENGTH),
-            params:  MutableArrayLengthParams { id: 0 },
+            func: ScView::new(HSC_NAME, HVIEW_ARRAY_LENGTH),
+            params: MutableArrayLengthParams { id: 0 },
             results: ImmutableArrayLengthResults { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
@@ -113,8 +113,8 @@ impl ScFuncs {
     }
     pub fn array_value(_ctx: & dyn ScViewCallContext) -> ArrayValueCall {
         let mut f = ArrayValueCall {
-            func:    ScView::new(HSC_NAME, HVIEW_ARRAY_VALUE),
-            params:  MutableArrayValueParams { id: 0 },
+            func: ScView::new(HSC_NAME, HVIEW_ARRAY_VALUE),
+            params: MutableArrayValueParams { id: 0 },
             results: ImmutableArrayValueResults { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
@@ -122,8 +122,8 @@ impl ScFuncs {
     }
     pub fn block_record(_ctx: & dyn ScViewCallContext) -> BlockRecordCall {
         let mut f = BlockRecordCall {
-            func:    ScView::new(HSC_NAME, HVIEW_BLOCK_RECORD),
-            params:  MutableBlockRecordParams { id: 0 },
+            func: ScView::new(HSC_NAME, HVIEW_BLOCK_RECORD),
+            params: MutableBlockRecordParams { id: 0 },
             results: ImmutableBlockRecordResults { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
@@ -131,8 +131,8 @@ impl ScFuncs {
     }
     pub fn block_records(_ctx: & dyn ScViewCallContext) -> BlockRecordsCall {
         let mut f = BlockRecordsCall {
-            func:    ScView::new(HSC_NAME, HVIEW_BLOCK_RECORDS),
-            params:  MutableBlockRecordsParams { id: 0 },
+            func: ScView::new(HSC_NAME, HVIEW_BLOCK_RECORDS),
+            params: MutableBlockRecordsParams { id: 0 },
             results: ImmutableBlockRecordsResults { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
@@ -140,7 +140,7 @@ impl ScFuncs {
     }
     pub fn iota_balance(_ctx: & dyn ScViewCallContext) -> IotaBalanceCall {
         let mut f = IotaBalanceCall {
-            func:    ScView::new(HSC_NAME, HVIEW_IOTA_BALANCE),
+            func: ScView::new(HSC_NAME, HVIEW_IOTA_BALANCE),
             results: ImmutableIotaBalanceResults { id: 0 },
         };
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);

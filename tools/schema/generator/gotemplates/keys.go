@@ -6,16 +6,22 @@ var keysGo = map[string]string{
 $#emit goHeader
 
 const (
+$#set constPrefix Param
 $#each params constFieldIdx
+$#set constPrefix Result
 $#each results constFieldIdx
+$#set constPrefix State
 $#each state constFieldIdx
 )
 
 const keyMapLen = $maxIndex
 
 var keyMap = [keyMapLen]wasmlib.Key{
+$#set constPrefix Param
 $#each params constFieldKey
+$#set constPrefix Result
 $#each results constFieldKey
+$#set constPrefix State
 $#each state constFieldKey
 }
 

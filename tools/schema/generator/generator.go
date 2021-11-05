@@ -22,7 +22,6 @@ const (
 	AccessCreator       = "creator"
 	AccessSelf          = "self"
 	AliasThis           = "this"
-	constPrefix         = "constPrefix"
 	InitFunc            = "Init"
 	KeyArray            = "array"
 	KeyBaseType         = "basetype"
@@ -43,12 +42,10 @@ const (
 	KeyStructs          = "structs"
 	KeyThis             = "this"
 	KeyTypeDef          = "typedef"
+	KeyTypeDefs         = "typedefs"
 	KeyView             = "view"
 	KindFunc            = "Func"
 	KindView            = "View"
-	PrefixParam         = "Param"
-	PrefixResult        = "Result"
-	PrefixState         = "State"
 	PropImmutable       = "Immutable"
 	PropMutable         = "Mutable"
 	SpecialFuncInit     = "funcInit"
@@ -69,6 +66,8 @@ type Generator interface {
 	generateProxyArray(field *Field, mutability, arrayType, proxyType string)
 	generateProxyMap(field *Field, mutability, mapType, proxyType string)
 	generateProxyReference(field *Field, mutability, typeName string)
+	setFieldKeys()
+	setFuncKeys()
 	writeConsts()
 	writeContract()
 	writeInitialFuncs()
@@ -108,6 +107,7 @@ func (g *GenBase) init(s *Schema) {
 	g.templates = map[string]string{}
 	g.addTemplates(templates)
 	g.setKeys()
+	g.emitters["funcSignature"] = emitterFuncSignature
 }
 
 func (g *GenBase) addTemplates(t map[string]string) {
@@ -125,7 +125,7 @@ func (g *GenBase) create(path string) (err error) {
 	return err
 }
 
-func (g *GenBase) createSourceFile(name string, generator func()) error {
+func (g *GenBase) createSourceFile(name string, generator ...func()) error {
 	err := g.create(g.folder + name + g.extension)
 	if err != nil {
 		return err
@@ -140,15 +140,19 @@ func (g *GenBase) createSourceFile(name string, generator func()) error {
 		g.emit("warning")
 	}
 	g.skipWarning = false
-	generator()
+	g.s.KeyID = 0
+	if len(generator) != 0 {
+		generator[0]()
+		return nil
+	}
+	g.emit(name + g.extension)
 	return nil
 }
 
 var emitKeyRegExp = regexp.MustCompile(`\$[a-zA-Z_]+`)
 
 func (g *GenBase) emit(template string) {
-	template = g.templates[template]
-	lines := strings.Split(template, "\n")
+	lines := strings.Split(g.templates[template], "\n")
 	for i := 1; i < len(lines)-1; i++ {
 		line := lines[i]
 
@@ -207,7 +211,7 @@ func (g *GenBase) emitEach(key string) {
 	switch parts[0] {
 	case KeyFunc:
 		for _, g.currentFunc = range g.s.Funcs {
-			g.setFuncKeys()
+			g.gen.setFuncKeys()
 			g.emit(template)
 		}
 	case KeyMandatory:
@@ -221,15 +225,12 @@ func (g *GenBase) emitEach(key string) {
 	case KeyParam:
 		g.emitFields(g.currentFunc.Params, template)
 	case KeyParams:
-		g.keys[constPrefix] = PrefixParam
 		g.emitFields(g.s.Params, template)
 	case KeyResult:
 		g.emitFields(g.currentFunc.Results, template)
 	case KeyResults:
-		g.keys[constPrefix] = PrefixResult
 		g.emitFields(g.s.Results, template)
 	case KeyState:
-		g.keys[constPrefix] = PrefixState
 		g.emitFields(g.s.StateVars, template)
 	case KeyStruct:
 		g.emitFields(g.currentStruct.Fields, template)
@@ -250,7 +251,7 @@ func (g *GenBase) emitFields(fields []*Field, template string) {
 		//if g.currentField.Alias == KeyThis {
 		//	continue
 		//}
-		g.setFieldKeys()
+		g.gen.setFieldKeys()
 		g.emit(template)
 	}
 }
@@ -301,10 +302,14 @@ func (g *GenBase) emitIf(key string) {
 		condition = len(g.s.Results) != 0
 	case KeyState:
 		condition = len(g.s.StateVars) != 0
+	case KeyStructs:
+		condition = len(g.s.Structs) != 0
 	case KeyThis:
 		condition = g.currentField.Alias == KeyThis
 	case KeyTypeDef:
 		condition = g.fieldIsTypeDef()
+	case KeyTypeDefs:
+		condition = len(g.s.Typedefs) != 0
 	case KeyPtrs:
 		condition = len(g.currentFunc.Params) != 0 || len(g.currentFunc.Results) != 0
 	default:
@@ -328,7 +333,7 @@ func (g *GenBase) fieldIsTypeDef() bool {
 	for _, typeDef := range g.s.Typedefs {
 		if typeDef.Name == g.currentField.Type {
 			g.currentField = typeDef
-			g.setFieldKeys()
+			g.gen.setFieldKeys()
 			return true
 		}
 	}
@@ -354,14 +359,6 @@ func (g *GenBase) emitSet(key string) {
 func (g *GenBase) exists(path string) (err error) {
 	_, err = os.Stat(path)
 	return err
-}
-
-func (g *GenBase) formatter(on bool) {
-	if on {
-		g.printf("\n// @formatter:%s\n", "on")
-		return
-	}
-	g.printf("// @formatter:%s\n\n", "off")
 }
 
 func (g *GenBase) Generate(s *Schema) error {
@@ -597,62 +594,27 @@ func (g *GenBase) scanExistingCode() ([]string, StringMap, error) {
 	return lines, existing, nil
 }
 
+func (g *GenBase) setFieldKeys() {
+	g.setKeyValues("fldName", g.currentField.Name)
+	g.setKeyValues("fldType", g.currentField.Type)
+
+	g.keys["fldAlias"] = g.currentField.Alias
+	g.keys["FldComment"] = g.currentField.Comment
+	g.keys["FldMapKey"] = g.currentField.MapKey
+
+	g.keys["fldIndex"] = strconv.Itoa(g.s.KeyID)
+	g.s.KeyID++
+	g.keys["maxIndex"] = strconv.Itoa(g.s.KeyID)
+}
+
 func (g *GenBase) setFuncKeys() {
 	g.setKeyValues("funcName", g.currentFunc.FuncName[4:])
 	g.setKeyValues("kind", g.currentFunc.FuncName[:4])
 	g.keys["funcHName"] = iscp.Hn(g.keys["funcName"]).String()
-
-	paramsID := "nil"
-	if len(g.currentFunc.Params) != 0 {
-		paramsID = "&f.Params.id"
-	}
-	g.keys["paramsID"] = paramsID
-
-	resultsID := "nil"
-	if len(g.currentFunc.Results) != 0 {
-		resultsID = "&f.Results.id"
-	}
-	g.keys["resultsID"] = resultsID
-
-	initFunc := ""
-	initMap := ""
-	if g.currentFunc.Type == InitFunc {
-		initFunc = InitFunc
-		initMap = ", keyMap[:], idxMap[:]"
-	}
-	g.keys["initFunc"] = initFunc
-	g.keys["initMap"] = initMap
-}
-
-func (g *GenBase) setFieldKeys() {
-	g.setKeyValues("fldName", g.currentField.Name)
-
-	g.keys["fldAlias"] = g.currentField.Alias
-	g.keys["FldComment"] = g.currentField.Comment
-	g.keys["FldType"] = g.currentField.Type
-	fldTypeID := goTypeIds[g.currentField.Type]
-	if fldTypeID == "" {
-		fldTypeID = goTypeBytes
-	}
-	g.keys["FldTypeID"] = fldTypeID
-	g.keys["FldTypeKey"] = goKeys[g.currentField.Type]
-	g.keys["FldLangType"] = goTypes[g.currentField.Type]
-	g.keys["FldMapKey"] = g.currentField.MapKey
-	g.keys["FldMapKeyLangType"] = goTypes[g.currentField.MapKey]
-	g.keys["FldMapKeyKey"] = goKeys[g.currentField.MapKey]
-	g.keys["fldIndex"] = strconv.Itoa(g.s.KeyID)
-	g.s.KeyID++
-	g.keys["maxIndex"] = strconv.Itoa(g.s.KeyID)
-
-	// native core contracts use Array16 instead of our nested array type
-	arrayTypeID := "wasmlib.TYPE_ARRAY"
-	if g.s.CoreContracts {
-		arrayTypeID = "wasmlib.TYPE_ARRAY16"
-	}
-	g.keys["ArrayTypeID"] = arrayTypeID
 }
 
 func (g *GenBase) setKeys() {
+	g.keys["space"] = " "
 	g.keys["package"] = g.s.Name
 	g.keys["Package"] = g.s.FullName
 	g.keys["module"] = ModuleName + strings.Replace(ModuleCwd[len(ModulePath):], "\\", "/", -1)
@@ -672,4 +634,15 @@ func (g *GenBase) setKeyValues(key, value string) {
 	g.keys[capitalize(key)] = capitalize(value)
 	g.keys[snake(key)] = snake(value)
 	g.keys[upper(snake(key))] = upper(snake(value))
+}
+
+func emitterFuncSignature(g *GenBase) {
+	switch g.currentFunc.FuncName {
+	case SpecialFuncInit:
+	case SpecialFuncSetOwner:
+	case SpecialViewGetOwner:
+	default:
+		return
+	}
+	g.emit(g.currentFunc.FuncName)
 }

@@ -50,176 +50,176 @@ fn on_load() {
 }
 
 pub struct ForcePayoutContext {
-    state: MutableFairRouletteState,
+	state: MutableFairRouletteState,
 }
 
 fn func_force_payout_thunk(ctx: &ScFuncContext) {
-    ctx.log("fairroulette.funcForcePayout");
+	ctx.log("fairroulette.funcForcePayout");
     // only SC creator can restart the round forcefully
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-    let f = ForcePayoutContext {
-        state: MutableFairRouletteState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    func_force_payout(ctx, &f);
-    ctx.log("fairroulette.funcForcePayout ok");
+	let f = ForcePayoutContext {
+		state: MutableFairRouletteState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	func_force_payout(ctx, &f);
+	ctx.log("fairroulette.funcForcePayout ok");
 }
 
 pub struct ForceResetContext {
-    state: MutableFairRouletteState,
+	state: MutableFairRouletteState,
 }
 
 fn func_force_reset_thunk(ctx: &ScFuncContext) {
-    ctx.log("fairroulette.funcForceReset");
+	ctx.log("fairroulette.funcForceReset");
     // only SC creator can restart the round forcefully
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-    let f = ForceResetContext {
-        state: MutableFairRouletteState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    func_force_reset(ctx, &f);
-    ctx.log("fairroulette.funcForceReset ok");
+	let f = ForceResetContext {
+		state: MutableFairRouletteState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	func_force_reset(ctx, &f);
+	ctx.log("fairroulette.funcForceReset ok");
 }
 
 pub struct PayWinnersContext {
-    state: MutableFairRouletteState,
+	state: MutableFairRouletteState,
 }
 
 fn func_pay_winners_thunk(ctx: &ScFuncContext) {
-    ctx.log("fairroulette.funcPayWinners");
+	ctx.log("fairroulette.funcPayWinners");
     // only SC itself can invoke this function
-    ctx.require(ctx.caller() == ctx.account_id(), "no permission");
+	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
-    let f = PayWinnersContext {
-        state: MutableFairRouletteState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    func_pay_winners(ctx, &f);
-    ctx.log("fairroulette.funcPayWinners ok");
+	let f = PayWinnersContext {
+		state: MutableFairRouletteState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	func_pay_winners(ctx, &f);
+	ctx.log("fairroulette.funcPayWinners ok");
 }
 
 pub struct PlaceBetContext {
-    params: ImmutablePlaceBetParams,
-    state:  MutableFairRouletteState,
+	params: ImmutablePlaceBetParams,
+	state: MutableFairRouletteState,
 }
 
 fn func_place_bet_thunk(ctx: &ScFuncContext) {
-    ctx.log("fairroulette.funcPlaceBet");
-    let f = PlaceBetContext {
-        params: ImmutablePlaceBetParams {
-            id: OBJ_ID_PARAMS,
-        },
-        state: MutableFairRouletteState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    ctx.require(f.params.number().exists(), "missing mandatory number");
-    func_place_bet(ctx, &f);
-    ctx.log("fairroulette.funcPlaceBet ok");
+	ctx.log("fairroulette.funcPlaceBet");
+	let f = PlaceBetContext {
+		params: ImmutablePlaceBetParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: MutableFairRouletteState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.number().exists(), "missing mandatory number");
+	func_place_bet(ctx, &f);
+	ctx.log("fairroulette.funcPlaceBet ok");
 }
 
 pub struct PlayPeriodContext {
-    params: ImmutablePlayPeriodParams,
-    state:  MutableFairRouletteState,
+	params: ImmutablePlayPeriodParams,
+	state: MutableFairRouletteState,
 }
 
 fn func_play_period_thunk(ctx: &ScFuncContext) {
-    ctx.log("fairroulette.funcPlayPeriod");
+	ctx.log("fairroulette.funcPlayPeriod");
     // only SC creator can update the play period
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-    let f = PlayPeriodContext {
-        params: ImmutablePlayPeriodParams {
-            id: OBJ_ID_PARAMS,
-        },
-        state: MutableFairRouletteState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    ctx.require(f.params.play_period().exists(), "missing mandatory playPeriod");
-    func_play_period(ctx, &f);
-    ctx.log("fairroulette.funcPlayPeriod ok");
+	let f = PlayPeriodContext {
+		params: ImmutablePlayPeriodParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: MutableFairRouletteState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.play_period().exists(), "missing mandatory playPeriod");
+	func_play_period(ctx, &f);
+	ctx.log("fairroulette.funcPlayPeriod ok");
 }
 
 pub struct LastWinningNumberContext {
-    results: MutableLastWinningNumberResults,
-    state:   ImmutableFairRouletteState,
+	results: MutableLastWinningNumberResults,
+	state: ImmutableFairRouletteState,
 }
 
 fn view_last_winning_number_thunk(ctx: &ScViewContext) {
-    ctx.log("fairroulette.viewLastWinningNumber");
-    let f = LastWinningNumberContext {
-        results: MutableLastWinningNumberResults {
-            id: OBJ_ID_RESULTS,
-        },
-        state: ImmutableFairRouletteState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    view_last_winning_number(ctx, &f);
-    ctx.log("fairroulette.viewLastWinningNumber ok");
+	ctx.log("fairroulette.viewLastWinningNumber");
+	let f = LastWinningNumberContext {
+		results: MutableLastWinningNumberResults {
+			id: OBJ_ID_RESULTS,
+		},
+		state: ImmutableFairRouletteState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	view_last_winning_number(ctx, &f);
+	ctx.log("fairroulette.viewLastWinningNumber ok");
 }
 
 pub struct RoundNumberContext {
-    results: MutableRoundNumberResults,
-    state:   ImmutableFairRouletteState,
+	results: MutableRoundNumberResults,
+	state: ImmutableFairRouletteState,
 }
 
 fn view_round_number_thunk(ctx: &ScViewContext) {
-    ctx.log("fairroulette.viewRoundNumber");
-    let f = RoundNumberContext {
-        results: MutableRoundNumberResults {
-            id: OBJ_ID_RESULTS,
-        },
-        state: ImmutableFairRouletteState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    view_round_number(ctx, &f);
-    ctx.log("fairroulette.viewRoundNumber ok");
+	ctx.log("fairroulette.viewRoundNumber");
+	let f = RoundNumberContext {
+		results: MutableRoundNumberResults {
+			id: OBJ_ID_RESULTS,
+		},
+		state: ImmutableFairRouletteState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	view_round_number(ctx, &f);
+	ctx.log("fairroulette.viewRoundNumber ok");
 }
 
 pub struct RoundStartedAtContext {
-    results: MutableRoundStartedAtResults,
-    state:   ImmutableFairRouletteState,
+	results: MutableRoundStartedAtResults,
+	state: ImmutableFairRouletteState,
 }
 
 fn view_round_started_at_thunk(ctx: &ScViewContext) {
-    ctx.log("fairroulette.viewRoundStartedAt");
-    let f = RoundStartedAtContext {
-        results: MutableRoundStartedAtResults {
-            id: OBJ_ID_RESULTS,
-        },
-        state: ImmutableFairRouletteState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    view_round_started_at(ctx, &f);
-    ctx.log("fairroulette.viewRoundStartedAt ok");
+	ctx.log("fairroulette.viewRoundStartedAt");
+	let f = RoundStartedAtContext {
+		results: MutableRoundStartedAtResults {
+			id: OBJ_ID_RESULTS,
+		},
+		state: ImmutableFairRouletteState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	view_round_started_at(ctx, &f);
+	ctx.log("fairroulette.viewRoundStartedAt ok");
 }
 
 pub struct RoundStatusContext {
-    results: MutableRoundStatusResults,
-    state:   ImmutableFairRouletteState,
+	results: MutableRoundStatusResults,
+	state: ImmutableFairRouletteState,
 }
 
 fn view_round_status_thunk(ctx: &ScViewContext) {
-    ctx.log("fairroulette.viewRoundStatus");
-    let f = RoundStatusContext {
-        results: MutableRoundStatusResults {
-            id: OBJ_ID_RESULTS,
-        },
-        state: ImmutableFairRouletteState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    view_round_status(ctx, &f);
-    ctx.log("fairroulette.viewRoundStatus ok");
+	ctx.log("fairroulette.viewRoundStatus");
+	let f = RoundStatusContext {
+		results: MutableRoundStatusResults {
+			id: OBJ_ID_RESULTS,
+		},
+		state: ImmutableFairRouletteState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	view_round_status(ctx, &f);
+	ctx.log("fairroulette.viewRoundStatus ok");
 }
 
 // @formatter:on

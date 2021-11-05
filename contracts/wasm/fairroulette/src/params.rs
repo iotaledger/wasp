@@ -20,9 +20,10 @@ pub struct ImmutablePlaceBetParams {
 }
 
 impl ImmutablePlaceBetParams {
+
     pub fn number(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_NUMBER))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_NUMBER))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -31,9 +32,10 @@ pub struct MutablePlaceBetParams {
 }
 
 impl MutablePlaceBetParams {
+
     pub fn number(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_NUMBER))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_NUMBER))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -42,9 +44,10 @@ pub struct ImmutablePlayPeriodParams {
 }
 
 impl ImmutablePlayPeriodParams {
+
     pub fn play_period(&self) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_PLAY_PERIOD))
-    }
+		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_PLAY_PERIOD))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -53,7 +56,8 @@ pub struct MutablePlayPeriodParams {
 }
 
 impl MutablePlayPeriodParams {
+
     pub fn play_period(&self) -> ScMutableInt32 {
-        ScMutableInt32::new(self.id, idx_map(IDX_PARAM_PLAY_PERIOD))
-    }
+		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_PLAY_PERIOD))
+	}
 }

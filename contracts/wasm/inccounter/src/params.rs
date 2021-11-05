@@ -20,9 +20,10 @@ pub struct ImmutableIncrementWithDelayParams {
 }
 
 impl ImmutableIncrementWithDelayParams {
+
     pub fn delay(&self) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_DELAY))
-    }
+		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_DELAY))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -31,9 +32,10 @@ pub struct MutableIncrementWithDelayParams {
 }
 
 impl MutableIncrementWithDelayParams {
+
     pub fn delay(&self) -> ScMutableInt32 {
-        ScMutableInt32::new(self.id, idx_map(IDX_PARAM_DELAY))
-    }
+		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_DELAY))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -42,9 +44,10 @@ pub struct ImmutableInitParams {
 }
 
 impl ImmutableInitParams {
+
     pub fn counter(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -53,9 +56,10 @@ pub struct MutableInitParams {
 }
 
 impl MutableInitParams {
+
     pub fn counter(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -64,9 +68,10 @@ pub struct ImmutableRepeatManyParams {
 }
 
 impl ImmutableRepeatManyParams {
+
     pub fn num_repeats(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_NUM_REPEATS))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_NUM_REPEATS))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -75,9 +80,10 @@ pub struct MutableRepeatManyParams {
 }
 
 impl MutableRepeatManyParams {
+
     pub fn num_repeats(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_NUM_REPEATS))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_NUM_REPEATS))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -86,9 +92,10 @@ pub struct ImmutableWhenMustIncrementParams {
 }
 
 impl ImmutableWhenMustIncrementParams {
+
     pub fn dummy(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_DUMMY))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_DUMMY))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -97,7 +104,8 @@ pub struct MutableWhenMustIncrementParams {
 }
 
 impl MutableWhenMustIncrementParams {
+
     pub fn dummy(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_DUMMY))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_DUMMY))
+	}
 }
