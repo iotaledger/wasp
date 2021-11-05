@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -249,32 +248,6 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 			publisher.Publish("vmmsg", c.chainID.Base58(), msg)
 		}
 	}()
-}
-
-// processStateMessage processes the only chain output which exists on the chain's address
-// If necessary, it creates/changes/rotates committee object
-func (c *chainObj) processStateMessage(msg *messages.StateMsg) {
-	sh, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
-	if err != nil {
-		c.log.Error(xerrors.Errorf("parsing state hash: %w", err))
-		return
-	}
-	c.log.Debugf("processStateMessage. stateIndex: %d, stateHash: %s, stateAddr: %s, state transition: %v",
-		msg.ChainOutput.GetStateIndex(), sh.String(),
-		msg.ChainOutput.GetStateAddress().Base58(), !msg.ChainOutput.GetIsGovernanceUpdated(),
-	)
-	cmt := c.getCommittee()
-
-	if cmt != nil {
-		err = c.rotateCommitteeIfNeeded(msg.ChainOutput, cmt)
-	} else {
-		err = c.createCommitteeIfNeeded(msg.ChainOutput)
-	}
-	if err != nil {
-		c.log.Errorf("processStateMessage: %v", err)
-		return
-	}
-	c.stateMgr.EventStateMsg(msg)
 }
 
 func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput, currentCmt chain.Committee) error {

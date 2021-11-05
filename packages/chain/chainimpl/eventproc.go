@@ -8,8 +8,9 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
-	//	"github.com/iotaledger/wasp/packages/hashing"
+	"golang.org/x/xerrors"
 	//	"github.com/iotaledger/wasp/packages/iscp"
 	//	"github.com/iotaledger/wasp/packages/state"
 	//	"github.com/iotaledger/wasp/packages/util"
@@ -101,7 +102,14 @@ func (c *chainObj) handleMissingRequestIDsPeerMsg(peerMsg *peering.PeerMessage) 
 		c.log.Error(err)
 		return
 	}
-	c.SendMissingRequestsToPeer(msg, peerMsg.SenderNetID)
+	peerID := peerMsg.SenderNetID
+	for _, reqID := range msg.IDs {
+		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID.Base58(), peerID)
+		if req := c.mempool.GetRequest(reqID); req != nil {
+			msg := messages.NewMissingRequestMsg(req)
+			(*c.peers).SendSimple(peerID, messages.MsgMissingRequest, msg.Bytes())
+		}
+	}
 }
 
 func (c *chainObj) enqueueOffLedgerRequestPeerMsg(peerMsg *peering.PeerMessage) {
@@ -155,8 +163,30 @@ func (c *chainObj) enqueueLedgerState(chainOutput *ledgerstate.AliasOutput, time
 	}
 }
 
+// handleLedgerState processes the only chain output which exists on the chain's address
+// If necessary, it creates/changes/rotates committee object
 func (c *chainObj) handleLedgerState(msg *messages.StateMsg) {
-	c.processStateMessage(msg)
+	sh, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
+	if err != nil {
+		c.log.Error(xerrors.Errorf("parsing state hash: %w", err))
+		return
+	}
+	c.log.Debugf("processStateMessage. stateIndex: %d, stateHash: %s, stateAddr: %s, state transition: %v",
+		msg.ChainOutput.GetStateIndex(), sh.String(),
+		msg.ChainOutput.GetStateAddress().Base58(), !msg.ChainOutput.GetIsGovernanceUpdated(),
+	)
+	cmt := c.getCommittee()
+
+	if cmt != nil {
+		err = c.rotateCommitteeIfNeeded(msg.ChainOutput, cmt)
+	} else {
+		err = c.createCommitteeIfNeeded(msg.ChainOutput)
+	}
+	if err != nil {
+		c.log.Errorf("processStateMessage: %v", err)
+		return
+	}
+	c.stateMgr.EventStateMsg(msg)
 }
 
 func (c *chainObj) enqueueTimerTick(tick int) {

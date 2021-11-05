@@ -105,7 +105,7 @@ func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {
 
 func (m *MockedChainCore) AttachToPeerMessages(fun func(recv *peering.RecvEvent)) {} // TODO
 
-func (m *MockedChainCore) RequestDismissChain(reason string) {} // TODO
+func (m *MockedChainCore) EnqueDismissChain(reason string) {} // TODO
 
 func (m *MockedChainCore) StateCandidateToStateManager(state.VirtualStateAccess, ledgerstate.OutputID) {
 } // TODO

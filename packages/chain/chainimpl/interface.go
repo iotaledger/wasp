@@ -192,17 +192,6 @@ func (c *chainObj) ReceiveRequestAckMessage(reqID *iscp.RequestID, peerID string
 	c.chainMetrics.CountRequestAckMessages()
 }
 
-// SendMissingRequestsToPeer sends the requested missing requests by a peer
-func (c *chainObj) SendMissingRequestsToPeer(msg *messages.MissingRequestIDsMsg, peerID string) {
-	for _, reqID := range msg.IDs {
-		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID.Base58(), peerID)
-		if req := c.mempool.GetRequest(reqID); req != nil {
-			msg := messages.NewMissingRequestMsg(req)
-			(*c.peers).SendSimple(peerID, messages.MsgMissingRequest, msg.Bytes())
-		}
-	}
-}
-
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	c.log.Debugf("ReceiveTransaction: %s", tx.ID().Base58())
 	reqs, err := request.OnLedgerFromTransaction(tx, c.chainID.AsAddress())
