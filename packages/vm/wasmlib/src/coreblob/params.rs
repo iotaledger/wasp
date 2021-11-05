@@ -39,7 +39,7 @@ pub struct MapStringToMutableBytes {
 
 impl MapStringToMutableBytes {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_bytes(&self, key: &str) -> ScMutableBytes {

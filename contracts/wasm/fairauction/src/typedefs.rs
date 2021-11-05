@@ -68,7 +68,7 @@ pub struct MapAgentIDToMutableBid {
 
 impl MapAgentIDToMutableBid {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_bid(&self, key: &ScAgentID) -> MutableBid {

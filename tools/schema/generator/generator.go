@@ -25,8 +25,8 @@ const (
 	PropImmutable       = "Immutable"
 	PropMutable         = "Mutable"
 	SpecialFuncInit     = "funcInit"
-	SpecialFuncSetOwner = "setOwner"
-	SpecialViewGetOwner = "getOwner"
+	SpecialFuncSetOwner = "funcSetOwner"
+	SpecialViewGetOwner = "viewGetOwner"
 )
 
 var (
@@ -89,7 +89,14 @@ func (g *GenBase) create(path string) (err error) {
 }
 
 func (g *GenBase) createSourceFile(name string, generator func()) error {
-	err := g.create(g.Folder + name + g.extension)
+	path := g.Folder + name + g.extension
+	if g.exists(path) == nil {
+		err := os.Remove(path)
+		if err != nil {
+			return err
+		}
+	}
+	err := g.create(path)
 	if err != nil {
 		return err
 	}

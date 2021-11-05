@@ -83,7 +83,7 @@ pub struct MapStringToMutableInt32 {
 
 impl MapStringToMutableInt32 {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_int32(&self, key: &str) -> ScMutableInt32 {
@@ -129,7 +129,7 @@ pub struct MapHashToMutableInt32 {
 
 impl MapHashToMutableInt32 {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_int32(&self, key: &ScHash) -> ScMutableInt32 {

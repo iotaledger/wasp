@@ -352,7 +352,7 @@ func (g *RustGenerator) generateProxyMap(field *Field, mutability, mapType, prox
 
 	if mutability == PropMutable {
 		g.printf("\n    pub fn clear(&self) {\n")
-		g.printf("        clear(self.obj_id)\n")
+		g.printf("        clear(self.obj_id);\n")
 		g.printf("    }\n")
 	}
 

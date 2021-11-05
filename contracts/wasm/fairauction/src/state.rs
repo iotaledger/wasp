@@ -80,7 +80,7 @@ pub struct MapColorToMutableAuction {
 
 impl MapColorToMutableAuction {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_auction(&self, key: &ScColor) -> MutableAuction {
@@ -94,7 +94,7 @@ pub struct MapColorToMutableBidderList {
 
 impl MapColorToMutableBidderList {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_bidder_list(&self, key: &ScColor) -> MutableBidderList {
@@ -109,7 +109,7 @@ pub struct MapColorToMutableBids {
 
 impl MapColorToMutableBids {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_bids(&self, key: &ScColor) -> MutableBids {

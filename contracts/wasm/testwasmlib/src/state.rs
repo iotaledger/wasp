@@ -44,7 +44,7 @@ pub struct MapStringToMutableStringArray {
 
 impl MapStringToMutableStringArray {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_string_array(&self, key: &str) -> MutableStringArray {

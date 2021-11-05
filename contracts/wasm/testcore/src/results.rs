@@ -181,7 +181,7 @@ pub struct MapStringToMutableInt64 {
 
 impl MapStringToMutableInt64 {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_int64(&self, key: &str) -> ScMutableInt64 {
@@ -227,7 +227,7 @@ pub struct MapStringToMutableString {
 
 impl MapStringToMutableString {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_string(&self, key: &str) -> ScMutableString {
