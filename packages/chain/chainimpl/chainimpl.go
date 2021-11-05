@@ -55,7 +55,6 @@ type chainObj struct {
 	chainStateSync                   coreutil.ChainStateSync
 	stateReader                      state.OptimisticStateReader
 	procset                          *processors.Cache
-	chMsg                            *channels.InfiniteChannel
 	stateMgr                         chain.StateManager
 	consensus                        chain.Consensus
 	log                              *logger.Logger
@@ -77,6 +76,13 @@ type chainObj struct {
 	peeringID                        peering.PeeringID
 	attachIDs                        []interface{}
 	chainMetrics                     metrics.ChainMetrics
+	dismissChainMsgChannel           *channels.InfiniteChannel
+	stateMsgChannel                  *channels.InfiniteChannel
+	offLedgerRequestPeerMsgChannel   *channels.InfiniteChannel
+	requestAckPeerMsgChannel         *channels.InfiniteChannel
+	missingRequestIDsPeerMsgChannel  *channels.InfiniteChannel
+	missingRequestPeerMsgChannel     *channels.InfiniteChannel
+	timerTickMsgChannel              *channels.InfiniteChannel
 }
 
 type committeeStruct struct {
@@ -107,7 +113,6 @@ func NewChain(
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
-		chMsg:             channels.NewInfiniteChannel(),
 		chainID:           chainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
@@ -132,6 +137,13 @@ func NewChain(
 		peeringID:                        chainID.Array(),
 		attachIDs:                        make([]interface{}, 0),
 		chainMetrics:                     chainMetrics,
+		dismissChainMsgChannel:           channels.NewInfiniteChannel(),
+		stateMsgChannel:                  channels.NewInfiniteChannel(),
+		offLedgerRequestPeerMsgChannel:   channels.NewInfiniteChannel(),
+		requestAckPeerMsgChannel:         channels.NewInfiniteChannel(),
+		missingRequestIDsPeerMsgChannel:  channels.NewInfiniteChannel(),
+		missingRequestPeerMsgChannel:     channels.NewInfiniteChannel(),
+		timerTickMsgChannel:              channels.NewInfiniteChannel(),
 	}
 	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
@@ -144,93 +156,26 @@ func NewChain(
 	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn)
 	ret.peers = &peers
 	ret.AttachToPeerMessages(ret.receiveChainPeerMessages)
-	go func() {
-		for msg := range ret.chMsg.Out() {
-			ret.dispatchMessage(msg)
-		}
-	}()
+	go ret.handleMessagesLoop()
 	ret.startTimer()
 	return ret
 }
 
-func (c *chainObj) dispatchMessage(msg interface{}) {
-	switch msgt := msg.(type) {
-	case *peering.PeerMessage:
-		c.processPeerMessage(msgt)
-	case *messages.DismissChainMsg:
-		c.Dismiss(msgt.Reason)
-	case *messages.StateMsg:
-		c.processStateMessage(msgt)
-	case messages.TimerTick:
-		if msgt%2 == 0 {
-			c.stateMgr.EventTimerMsg(msgt / 2)
-		} else if c.consensus != nil {
-			c.consensus.EventTimerMsg(msgt / 2)
-		}
-		if msgt%40 == 0 {
-			stats := c.mempool.Info()
-			c.log.Debugf("mempool total = %d, ready = %d, in = %d, out = %d", stats.TotalPool, stats.ReadyCounter, stats.InPoolCounter, stats.OutPoolCounter)
-		}
-	}
-}
-
-//nolint:funlen
-func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
-	switch msg.MsgType {
-	case messages.MsgOffLedgerRequest:
-		msgt, err := messages.OffLedgerRequestMsgFromBytes(msg.MsgData)
-		if err != nil {
-			c.log.Error(err)
-			return
-		}
-		c.ReceiveOffLedgerRequest(msgt.Req, msg.SenderNetID)
-	case messages.MsgRequestAck:
-		msgt, err := messages.RequestAckMsgFromBytes(msg.MsgData)
-		if err != nil {
-			c.log.Error(err)
-			return
-		}
-		c.ReceiveRequestAckMessage(msgt.ReqID, msg.SenderNetID)
-	case messages.MsgMissingRequestIDs:
-		if !c.pullMissingRequestsFromCommittee {
-			return
-		}
-		msgt, err := messages.MissingRequestIDsMsgFromBytes(msg.MsgData)
-		if err != nil {
-			c.log.Error(err)
-			return
-		}
-		c.SendMissingRequestsToPeer(msgt, msg.SenderNetID)
-	case messages.MsgMissingRequest:
-		if !c.pullMissingRequestsFromCommittee {
-			return
-		}
-		msgt, err := messages.MissingRequestMsgFromBytes(msg.MsgData)
-		if err != nil {
-			c.log.Error(err)
-			return
-		}
-		if c.consensus.ShouldReceiveMissingRequest(msgt.Request) {
-			c.mempool.ReceiveRequest(msgt.Request)
-		}
-	default:
-		c.log.Errorf("processPeerMessage: wrong msg type")
-	}
-}
-
 func (c *chainObj) receiveCommitteePeerMessages(event *peering.RecvEvent) {
 	if event.Msg.MsgType == messages.MsgMissingRequestIDs {
-		c.receiveMessage(event.Msg)
+		c.enqueueMissingRequestIDsPeerMsg(event.Msg)
 	}
 }
 
 func (c *chainObj) receiveChainPeerMessages(event *peering.RecvEvent) {
+	msg := event.Msg
 	switch event.Msg.MsgType {
-	case
-		messages.MsgOffLedgerRequest,
-		messages.MsgRequestAck,
-		messages.MsgMissingRequest:
-		c.receiveMessage(event.Msg)
+	case messages.MsgOffLedgerRequest:
+		c.enqueueOffLedgerRequestPeerMsg(msg)
+	case messages.MsgRequestAck:
+		c.enqueueRequestAckPeerMsg(msg)
+	case messages.MsgMissingRequest:
+		c.enqueueMissingRequestPeerMsg(msg)
 	default:
 	}
 }

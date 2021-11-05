@@ -51,7 +51,7 @@ func (c *chainObj) startTimer() {
 		tick := 0
 		for !c.IsDismissed() {
 			time.Sleep(chain.TimerTickPeriod)
-			c.receiveMessage(messages.TimerTick(tick))
+			c.enqueueTimerTick(tick)
 			tick++
 		}
 	}()
@@ -63,7 +63,13 @@ func (c *chainObj) Dismiss(reason string) {
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
 
-		c.chMsg.Close()
+		c.dismissChainMsgChannel.Close()
+		c.stateMsgChannel.Close()
+		c.offLedgerRequestPeerMsgChannel.Close()
+		c.requestAckPeerMsgChannel.Close()
+		c.missingRequestIDsPeerMsgChannel.Close()
+		c.missingRequestPeerMsgChannel.Close()
+		c.timerTickMsgChannel.Close()
 
 		c.mempool.Close()
 		c.stateMgr.Close()
@@ -92,12 +98,8 @@ func (c *chainObj) AttachToPeerMessages(fun func(recv *peering.RecvEvent)) {
 	c.attachIDs = append(c.attachIDs, (*c.peers).Attach(&c.peeringID, fun))
 }
 
-func (c *chainObj) RequestDismissChain(reason string) {
-	c.receiveMessage(messages.DismissChainMsg{Reason: reason})
-}
-
-func (c *chainObj) StateCandidateToStateManager(state state.VirtualStateAccess, outputID ledgerstate.OutputID) {
-	c.stateMgr.EventStateCandidateMsg(state, outputID)
+func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+	c.stateMgr.EventStateCandidateMsg(virtualState, outputID)
 }
 
 // ReceiveMessage accepts an incoming message asynchronously.
@@ -105,13 +107,6 @@ func (c *chainObj) StateCandidateToStateManager(state state.VirtualStateAccess, 
 	c.receiveMessage(msg)
 	c.chainMetrics.CountMessages() TODO
 }*/
-
-func (c *chainObj) receiveMessage(msg interface{}) {
-	if c.IsDismissed() {
-		return
-	}
-	c.chMsg.In() <- msg
-}
 
 func shouldSendToPeer(peerID string, ackPeers []string) bool {
 	for _, p := range ackPeers {
@@ -231,10 +226,7 @@ func (c *chainObj) ReceiveRequest(req iscp.Request) {
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
 	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
 		stateOutput.GetStateIndex(), iscp.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
-	c.receiveMessage(&messages.StateMsg{
-		ChainOutput: stateOutput,
-		Timestamp:   timestamp,
-	})
+	c.enqueueLedgerState(stateOutput, timestamp)
 }
 
 func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {

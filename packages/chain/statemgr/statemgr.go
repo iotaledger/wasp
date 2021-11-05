@@ -117,7 +117,7 @@ func (sm *stateManager) Close() {
 func (sm *stateManager) initLoadState() {
 	solidState, stateExists, err := state.LoadSolidState(sm.store, sm.chain.ID())
 	if err != nil {
-		sm.chain.RequestDismissChain(fmt.Sprintf("StateManager.initLoadState: %v", err))
+		sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.initLoadState: %v", err))
 		return
 	}
 	if stateExists {
@@ -127,7 +127,7 @@ func (sm *stateManager) initLoadState() {
 			solidState.BlockIndex(), solidState.StateCommitment().String())
 	} else if err := sm.createOriginState(); err != nil {
 		// create origin state in DB
-		sm.chain.RequestDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))
+		sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))
 		return
 	}
 	sm.recvLoop() // Check to process external events.
@@ -141,7 +141,7 @@ func (sm *stateManager) createOriginState() error {
 	sm.chain.GlobalStateSync().SetSolidIndex(0)
 
 	if err != nil {
-		sm.chain.RequestDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))
+		sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))
 		return err
 	}
 	sm.log.Infof("ORIGIN STATE has been created")

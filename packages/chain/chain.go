@@ -27,7 +27,7 @@ type ChainCore interface {
 	ID() *iscp.ChainID
 	GetCommitteeInfo() *CommitteeInfo
 	AttachToPeerMessages(fun func(recv *peering.RecvEvent))
-	RequestDismissChain(reason string)
+	EnqueueDismissChain(reason string)
 	StateCandidateToStateManager(state.VirtualStateAccess, ledgerstate.OutputID)
 	Events() ChainEvents
 	Processors() *processors.Cache
