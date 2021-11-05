@@ -118,8 +118,9 @@ transaction. In other words, by default no EVM blocks will be minted until an
 EVM transaction is received.
 
 However, the `evmlight` implementation supports emulating predictable block
-times. To enable this feature, call the `setBlockTime` function with parameter
-`FieldBlockTime (uint32)` as the average amount of seconds between blocks.
+times. To enable this feature, just pass the `--block-time n` flag when
+deploying the EVM chain with `wasp-cli chain evm deploy`, where `n` is
+the desired average amount of seconds between blocks.
 
 Note that this may change the behavior of JSON-RPC functions that query the
 EVM state (e.g. `getBalance`), since `evmlight` is not able to store the state
