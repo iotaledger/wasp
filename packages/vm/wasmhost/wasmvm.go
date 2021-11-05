@@ -48,15 +48,22 @@ type WasmVMBase struct {
 	timeoutStarted bool
 }
 
-func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
-	// trick vm into thinking it doesn't have to start the timeout timer
-	// useful when debugging to prevent timing out on breakpoints
-	vm.timeoutStarted = DisableWasmTimeout
+func (vm *WasmVMBase) EnvAbort(errMsg, fileName, line, col int32) {
+	ptr := vm.impl.UnsafeMemory()
 
-	vm.impl = impl
-	vm.host = host
-	host.vm = impl
-	return nil
+	// null-terminated UTF-16 error message
+	str1 := make([]byte, 0)
+	for i := errMsg; ptr[i] != 0; i += 2 {
+		str1 = append(str1, ptr[i])
+	}
+
+	// null-terminated UTF-16 file name
+	str2 := make([]byte, 0)
+	for i := fileName; ptr[i] != 0; i += 2 {
+		str2 = append(str2, ptr[i])
+	}
+
+	panic(fmt.Sprintf("AssemblyScript panic: %s (%s %d:%d)", string(str1), string(str2), line, col))
 }
 
 //nolint:unparam
@@ -147,6 +154,17 @@ func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) 
 	host.TraceAllf("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
 	bytes := vm.impl.VMGetBytes(stringRef, size)
 	host.SetBytes(objID, keyID, typeID, bytes)
+}
+
+func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
+	// trick vm into thinking it doesn't have to start the timeout timer
+	// useful when debugging to prevent timing out on breakpoints
+	vm.timeoutStarted = DisableWasmTimeout
+
+	vm.impl = impl
+	vm.host = host
+	host.vm = impl
+	return nil
 }
 
 func (vm *WasmVMBase) PreCall() []byte {

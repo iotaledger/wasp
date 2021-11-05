@@ -18,7 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
 	"github.com/stretchr/testify/require"
 )
@@ -32,6 +32,7 @@ const (
 var (
 	GoDebug = flag.Bool("godebug", false, "debug go smart contract code")
 	GoWasm  = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
+	TsWasm  = flag.Bool("tswasm", false, "prefer typescript wasm smart contract code")
 )
 
 type SoloContext struct {
@@ -240,19 +241,19 @@ func (ctx *SoloContext) init(onLoad func()) *SoloContext {
 	ctx.wc.Init(nil)
 	ctx.wc.TrackObject(wasmproc.NewNullObject(&ctx.wc.KvStoreHost))
 	ctx.wc.TrackObject(NewSoloScContext(ctx))
-	ctx.wasmHostOld = wasmlib.ConnectHost(ctx.wc)
+	ctx.wasmHostOld = wasmhost.Connect(ctx.wc)
 	onLoad()
 	return ctx
 }
 
 // InitFuncCallContext is a function that is required to use SoloContext as an ScFuncCallContext
 func (ctx *SoloContext) InitFuncCallContext() {
-	_ = wasmlib.ConnectHost(ctx.wc)
+	_ = wasmhost.Connect(ctx.wc)
 }
 
 // InitViewCallContext is a function that is required to use SoloContext as an ScViewCallContext
 func (ctx *SoloContext) InitViewCallContext() {
-	_ = wasmlib.ConnectHost(ctx.wc)
+	_ = wasmhost.Connect(ctx.wc)
 }
 
 // Minted returns the color and amount of newly minted tokens
@@ -327,14 +328,22 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 		wasmFile = "../pkg/" + wasmFile
 	}
 
-	rustExists, _ := util.ExistsFilePath("../src/lib.rs")
-	if *GoWasm || !rustExists {
+	if *GoWasm {
 		wasmFile = ctx.scName + "_go.wasm"
-		exists, _ = util.ExistsFilePath("../wasmmain/pkg/" + wasmFile)
+		exists, _ = util.ExistsFilePath("../go/pkg/" + wasmFile)
 		if exists {
-			wasmFile = "../wasmmain/pkg/" + wasmFile
+			wasmFile = "../go/pkg/" + wasmFile
 		}
 	}
+
+	if *TsWasm {
+		wasmFile = ctx.scName + "_ts.wasm"
+		exists, _ = util.ExistsFilePath("../ts/pkg/" + wasmFile)
+		if exists {
+			wasmFile = "../ts/pkg/" + wasmFile
+		}
+	}
+
 	ctx.Hprog, ctx.Err = ctx.Chain.UploadWasmFromFile(keyPair, wasmFile)
 }
 
@@ -343,7 +352,7 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 // The function will wait for maxWait (default 5 seconds) duration before giving up with a timeout.
 // The function returns the false in case of a timeout.
 func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...time.Duration) bool {
-	_ = wasmlib.ConnectHost(ctx.wasmHostOld)
+	_ = wasmhost.Connect(ctx.wasmHostOld)
 	if expectedRequests > 0 {
 		info := ctx.Chain.MempoolInfo()
 		expectedRequests += info.OutPoolCounter
@@ -352,6 +361,6 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 	}
 
 	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, maxWait...)
-	_ = wasmlib.ConnectHost(ctx.wc)
+	_ = wasmhost.Connect(ctx.wc)
 	return result
 }

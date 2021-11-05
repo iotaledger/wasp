@@ -1,11 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use types::*;
 use wasmlib::*;
 
 use crate::*;
 use crate::contract::*;
+use crate::structs::*;
 
 const DURATION_DEFAULT: i32 = 60;
 const DURATION_MIN: i32 = 1;
@@ -205,10 +205,10 @@ pub fn view_get_info(ctx: &ScViewContext, f: &GetInfoContext) {
 fn transfer_tokens(ctx: &ScFuncContext, agent: &ScAgentID, color: &ScColor, amount: i64) {
     if agent.is_address() {
         // send back to original Tangle address
-        ctx.transfer_to_address(&agent.address(), ScTransfers::new(color, amount));
+        ctx.transfer_to_address(&agent.address(), ScTransfers::transfer(color, amount));
         return;
     }
 
     // TODO not an address, deposit into account on chain
-    ctx.transfer_to_address(&agent.address(), ScTransfers::new(color, amount));
+    ctx.transfer_to_address(&agent.address(), ScTransfers::transfer(color, amount));
 }

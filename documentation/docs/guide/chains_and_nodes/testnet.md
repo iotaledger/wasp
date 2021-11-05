@@ -51,6 +51,8 @@ The testnet can be accessed via a series of endpoints that have been made availa
       - Information about GoShimmer via the API
 - https://demo.sc.iota.org
   - Our FairRoulette demo application to see a live smart contract in action
+- https://metrics.wasp.sc.iota.org
+  - System metrics
 
 ## Configuring _wasp-cli_
 

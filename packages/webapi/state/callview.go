@@ -100,7 +100,7 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 	})
 	if err != nil {
 		reason := fmt.Sprintf("View call failed: %v", err)
-		if errors.Is(err, coreutil.ErrStateHasBeenInvalidated) {
+		if errors.Is(err, coreutil.ErrorStateInvalidated) {
 			return httperrors.Conflict(reason)
 		}
 		return httperrors.BadRequest(reason)

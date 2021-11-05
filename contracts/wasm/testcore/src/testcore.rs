@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use wasmlib::*;
-use wasmlib::corecontracts::*;
 
 use crate::*;
 use crate::contract::*;
@@ -100,12 +99,31 @@ pub fn func_run_recursion(ctx: &ScFuncContext, f: &RunRecursionContext) {
 }
 
 pub fn func_send_to_address(ctx: &ScFuncContext, f: &SendToAddressContext) {
-    let balances = ScTransfers::new_transfers_from_balances(ctx.balances());
+    let balances = ScTransfers::from_balances(ctx.balances());
     ctx.transfer_to_address(&f.params.address().value(), balances);
 }
 
 pub fn func_set_int(_ctx: &ScFuncContext, f: &SetIntContext) {
     f.state.ints().get_int64(&f.params.name().value()).set_value(f.params.int_value().value());
+}
+
+pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
+    let spawn_name = SC_NAME.to_string() + "_spawned";
+    let spawn_descr = "spawned contract description";
+    ctx.deploy(&f.params.prog_hash().value(), &spawn_name, spawn_descr, None);
+
+    let spawn_hname = ScHname::new(&spawn_name);
+    for _i in 0..5 {
+        ctx.call(spawn_hname, HFUNC_INC_COUNTER, None, None);
+    }
+}
+
+pub fn func_test_block_context1(ctx: &ScFuncContext, _f: &TestBlockContext1Context) {
+    ctx.panic(MSG_CORE_ONLY_PANIC);
+}
+
+pub fn func_test_block_context2(ctx: &ScFuncContext, _f: &TestBlockContext2Context) {
+    ctx.panic(MSG_CORE_ONLY_PANIC);
 }
 
 pub fn func_test_call_panic_full_ep(ctx: &ScFuncContext, _f: &TestCallPanicFullEPContext) {
@@ -181,6 +199,10 @@ pub fn view_get_int(ctx: &ScViewContext, f: &GetIntContext) {
     f.results.values().get_int64(&name).set_value(value.value());
 }
 
+pub fn view_get_string_value(ctx: &ScViewContext, _f: &GetStringValueContext) {
+    ctx.panic(MSG_CORE_ONLY_PANIC);
+}
+
 pub fn view_just_view(ctx: &ScViewContext, _f: &JustViewContext) {
     ctx.log("doing nothing...");
 }
@@ -212,27 +234,4 @@ pub fn view_test_sandbox_call(ctx: &ScViewContext, f: &TestSandboxCallContext) {
     let get_chain_info = coregovernance::ScFuncs::get_chain_info(ctx);
     get_chain_info.func.call();
     f.results.sandbox_call().set_value(&get_chain_info.results.description().value());
-}
-
-pub fn func_test_block_context1(ctx: &ScFuncContext, _f: &TestBlockContext1Context) {
-    ctx.panic(MSG_CORE_ONLY_PANIC);
-}
-
-pub fn func_test_block_context2(ctx: &ScFuncContext, _f: &TestBlockContext2Context) {
-    ctx.panic(MSG_CORE_ONLY_PANIC);
-}
-
-pub fn view_get_string_value(ctx: &ScViewContext, _f: &GetStringValueContext) {
-    ctx.panic(MSG_CORE_ONLY_PANIC);
-}
-
-pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
-    let spawn_name = SC_NAME.to_string() + "_spawned";
-    let spawn_descr = "spawned contract description";
-    ctx.deploy(&f.params.prog_hash().value(), &spawn_name, spawn_descr, None);
-
-    let spawn_hname = ScHname::new(&spawn_name);
-    for _i in 0..5 {
-        ctx.call(spawn_hname, HFUNC_INC_COUNTER, None, None);
-    }
 }

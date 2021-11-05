@@ -8,7 +8,6 @@
 // @formatter:off
 
 #![allow(dead_code)]
-
 #![allow(unused_imports)]
 
 use donatewithfeedback::*;
@@ -27,7 +26,7 @@ mod keys;
 mod params;
 mod results;
 mod state;
-mod types;
+mod structs;
 mod donatewithfeedback;
 
 #[no_mangle]

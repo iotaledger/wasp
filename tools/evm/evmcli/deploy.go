@@ -10,28 +10,55 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/iotaledger/wasp/contracts/native/evmchain"
-	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm"
+	"github.com/iotaledger/wasp/contracts/native/evm/evmchain"
+	"github.com/iotaledger/wasp/packages/evm/evmflavors"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
 
 type DeployParams struct {
+	evmFlavor   string
 	ChainID     int
-	Name        string
-	Description string
+	name        string
+	description string
 	alloc       []string
 	allocBase64 string
 	GasPerIOTA  uint64
 }
 
 func (d *DeployParams) InitFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&d.evmFlavor, "evm-flavor", "", evmchain.Contract.Name, "EVM flavor. One of `evmchain`, `evmlight`")
 	cmd.Flags().IntVarP(&d.ChainID, "chainid", "", evm.DefaultChainID, "ChainID")
-	cmd.Flags().StringVarP(&d.Name, "name", "", evmchain.Contract.Name, "Contract name")
-	cmd.Flags().StringVarP(&d.Description, "description", "", evmchain.Contract.Description, "Contract description")
+	cmd.Flags().StringVarP(&d.name, "name", "", "", "Contract name. Default: same as --evm-flavor")
+	cmd.Flags().StringVarP(&d.description, "description", "", "", "Contract description")
 	cmd.Flags().StringSliceVarP(&d.alloc, "alloc", "", nil, "Genesis allocation (format: <address>:<wei>,<address>:<wei>,...)")
 	cmd.Flags().StringVarP(&d.allocBase64, "alloc-bytes", "", "", "Genesis allocation (base64-encoded)")
-	cmd.Flags().Uint64VarP(&d.GasPerIOTA, "gas-per-iota", "", evmchain.DefaultGasPerIota, "Gas per IOTA charged as fee")
+	cmd.Flags().Uint64VarP(&d.GasPerIOTA, "gas-per-iota", "", evm.DefaultGasPerIota, "Gas per IOTA charged as fee")
+}
+
+func (d *DeployParams) Name() string {
+	if d.name != "" {
+		return d.name
+	}
+	return d.EVMFlavor().Name
+}
+
+func (d *DeployParams) Description() string {
+	if d.description != "" {
+		return d.description
+	}
+	return d.EVMFlavor().Description
+}
+
+func (d *DeployParams) EVMFlavor() *coreutil.ContractInfo {
+	r, ok := evmflavors.All[d.evmFlavor]
+	if !ok {
+		log.Fatalf("unknown EVM flavor: %s", d.evmFlavor)
+	}
+	return r
 }
 
 func (d *DeployParams) GetGenesis(def core.GenesisAlloc) core.GenesisAlloc {
@@ -62,7 +89,7 @@ func (d *DeployParams) GetGenesis(def core.GenesisAlloc) core.GenesisAlloc {
 	// --alloc-bytes provided
 	b, err := base64.StdEncoding.DecodeString(d.allocBase64)
 	log.Check(err)
-	ret, err := evmchain.DecodeGenesisAlloc(b)
+	ret, err := evmtypes.DecodeGenesisAlloc(b)
 	log.Check(err)
 	return ret
 }

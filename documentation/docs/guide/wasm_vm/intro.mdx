@@ -1,6 +1,8 @@
 ---
 keywords:
 - Rust
+- Go
+- TypeScript
 - WASM
 - memory space
 - smart contract state
@@ -8,7 +10,7 @@ keywords:
 - Access
 - store
 - state
-description: The Iota Smart Contracts Protocol (ISCP) provides  a very flexible way of programming smart contracts by providing an API to a sandboxed environment that allows you to interact with the ISCP deterministically without any security risks.
+description: The Iota Smart Contracts Protocol (ISCP) provides a very flexible way of programming smart contracts by providing an API to a sandboxed environment that allows you to interact with the ISCP deterministically without any security risks.
 image: /img/wasm_vm/IscpHost.png
 ---
 # Introduction to the Wasm VM for ISCP
@@ -64,17 +66,22 @@ The ISCP sandbox environment enables the following functionality:
 - Access to logging functionality
 - Access to several utility functions provided by the host
 
-The initial implementation of WasmLib has been created for the Rust programming language.
-Rust had the most advanced and stable support for generating Wasm code at the time when we
-started implementing our Wasm VM environment. In the meantime, we have also implemented a
-fully functional [TinyGo](https://tinygo.org/) version.
+The initial WasmLib implementation  was created for the [Rust](https://www.rust-lang.org/)
+programming language. Rust had the most advanced and stable support for generating Wasm
+code at the time when we started implementing our Wasm VM environment. In the meantime, we
+have also implemented fully functional [Go](https://golang.org/) and
+[TypeScript](https://www.typescriptlang.org/) implementations.
+The Go implementation uses the [TinyGo](https://tinygo.org/) compiler to generate Wasm
+code.
+The TypeScript implementation uses the [AssemblyScript](https://www.assemblyscript.org/)
+compiler to generate Wasm code.
 
-Both implementations use only a very small common subset of their host languages. This
+All implementations use only a very small common subset of their host languages. This
 keeps the coding style very similar, barring some syntactic idiosyncrasies. The reason for
 this is that we wanted to make it as easy as possible for anyone to start working with our
 smart contract system. If you have any previous experience in any C-style language you
-should quickly feel comfortable writing smart contracts in either language, without having
-to dive deeply into all aspects of the chosen language.
+should quickly feel comfortable writing smart contracts in any of the supported
+languages, without having to dive deeply into all aspects of the chosen language.
 
 We will now dive deeper into the concepts that are central to WasmLib smart contract
 programming.
