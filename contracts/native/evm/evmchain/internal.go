@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmchain/emulator"
+	"github.com/iotaledger/wasp/contracts/native/evm/evminternal"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -33,16 +34,16 @@ func isNotFound(err error) bool {
 	return false
 }
 
-// getOrCreateEmulator creates a new emulator instance if this is the first call to applyTransaction
+// getEmulatorInBlockContext creates a new emulator instance if this is the first call to applyTransaction
 // in the ISCP block; otherwise it returns the previously created instance. The purpose is to
 // create a single Ethereum block for each ISCP block.
-func getOrCreateEmulator(ctx iscp.Sandbox) *emulator.EVMEmulator {
+func getEmulatorInBlockContext(ctx iscp.Sandbox) *emulator.EVMEmulator {
 	bctx := ctx.BlockContext(createEmulator, commitEthereumBlock)
 	return bctx.(*emulator.EVMEmulator)
 }
 
 func createEmulator(ctx iscp.Sandbox) interface{} {
-	return emulator.NewEVMEmulator(rawdb.NewDatabase(emulator.NewKVAdapter(ctx.State())), timestamp(ctx))
+	return emulator.NewEVMEmulator(rawdb.NewDatabase(emulator.NewKVAdapter(evminternal.EVMStateSubrealm(ctx.State()))), timestamp(ctx))
 }
 
 // timestamp returns the current timestamp in seconds since epoch
@@ -59,7 +60,7 @@ func commitEthereumBlock(blockContext interface{}) {
 
 func withEmulatorR(ctx iscp.SandboxView, f func(*emulator.EVMEmulator) (dict.Dict, error)) (dict.Dict, error) {
 	emu := emulator.NewEVMEmulator(
-		rawdb.NewDatabase(emulator.NewKVAdapter(buffered.NewBufferedKVStoreAccess(ctx.State()))),
+		rawdb.NewDatabase(emulator.NewKVAdapter(evminternal.EVMStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())))),
 		timestamp(ctx),
 	)
 	defer emu.Close()
