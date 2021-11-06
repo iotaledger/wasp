@@ -100,32 +100,8 @@ func (g *TypeScriptGenerator) generateLanguageSpecificFiles() error {
 	return g.writeSpecialConfigJSON()
 }
 
-func (g *TypeScriptGenerator) writeConsts() {
-	g.emit("consts.ts")
-}
-
-func (g *TypeScriptGenerator) writeContract() {
-	g.emit("contract.ts")
-}
-
 func (g *TypeScriptGenerator) writeInitialFuncs() {
 	g.emit("funcs.ts")
-}
-
-func (g *TypeScriptGenerator) writeKeys() {
-	g.emit("keys.ts")
-}
-
-func (g *TypeScriptGenerator) writeLib() {
-	g.emit("lib.ts")
-}
-
-func (g *TypeScriptGenerator) writeParams() {
-	g.emit("params.ts")
-}
-
-func (g *TypeScriptGenerator) writeResults() {
-	g.emit("results.ts")
 }
 
 func (g *TypeScriptGenerator) writeSpecialConfigJSON() error {
@@ -175,18 +151,6 @@ func (g *TypeScriptGenerator) writeSpecialIndex() {
 			g.println("export * from \"./typedefs\";")
 		}
 	}
-}
-
-func (g *TypeScriptGenerator) writeState() {
-	g.emit("state.ts")
-}
-
-func (g *TypeScriptGenerator) writeStructs() {
-	g.emit("structs.ts")
-}
-
-func (g *TypeScriptGenerator) writeTypeDefs() {
-	g.emit("typedefs.ts")
 }
 
 func emitterTsAccessCheck(g *GenBase) {

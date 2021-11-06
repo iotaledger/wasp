@@ -85,48 +85,12 @@ func (g *GoGenerator) generateLanguageSpecificFiles() error {
 	return g.createSourceFile("../main", g.writeSpecialMain)
 }
 
-func (g *GoGenerator) writeConsts() {
-	g.emit("consts.go")
-}
-
-func (g *GoGenerator) writeContract() {
-	g.emit("contract.go")
-}
-
 func (g *GoGenerator) writeInitialFuncs() {
 	g.emit("funcs.go")
 }
 
-func (g *GoGenerator) writeKeys() {
-	g.emit("keys.go")
-}
-
-func (g *GoGenerator) writeLib() {
-	g.emit("lib.go")
-}
-
-func (g *GoGenerator) writeParams() {
-	g.emit("params.go")
-}
-
-func (g *GoGenerator) writeResults() {
-	g.emit("results.go")
-}
-
 func (g *GoGenerator) writeSpecialMain() {
 	g.emit("main.go")
-}
-
-func (g *GoGenerator) writeState() {
-	g.emit("state.go")
-}
-
-func (g *GoGenerator) writeStructs() {
-	g.emit("structs.go")
-}
-
-func (g *GoGenerator) writeTypeDefs() {
-	g.emit("typedefs.go")
 }
 
 func emitterGoAccessCheck(g *GenBase) {

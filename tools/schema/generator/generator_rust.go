@@ -134,32 +134,8 @@ func (g *RustGenerator) generateModLines(format string) {
 	}
 }
 
-func (g *RustGenerator) writeConsts() {
-	g.emit("consts.rs")
-}
-
-func (g *RustGenerator) writeContract() {
-	g.emit("contract.rs")
-}
-
 func (g *RustGenerator) writeInitialFuncs() {
 	g.emit("funcs.rs")
-}
-
-func (g *RustGenerator) writeKeys() {
-	g.emit("keys.rs")
-}
-
-func (g *RustGenerator) writeLib() {
-	g.emit("lib.rs")
-}
-
-func (g *RustGenerator) writeParams() {
-	g.emit("params.rs")
-}
-
-func (g *RustGenerator) writeResults() {
-	g.emit("results.rs")
 }
 
 func (g *RustGenerator) writeSpecialCargoToml() error {
@@ -184,18 +160,6 @@ func (g *RustGenerator) writeSpecialMod() {
 	g.println(allowUnusedImports)
 	g.generateModLines("pub use %s::*;\n")
 	g.generateModLines("pub mod %s;\n")
-}
-
-func (g *RustGenerator) writeState() {
-	g.emit("state.rs")
-}
-
-func (g *RustGenerator) writeStructs() {
-	g.emit("structs.rs")
-}
-
-func (g *RustGenerator) writeTypeDefs() {
-	g.emit("typedefs.rs")
 }
 
 func emitterRsAccessCheck(g *GenBase) {
