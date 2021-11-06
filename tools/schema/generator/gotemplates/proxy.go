@@ -28,7 +28,7 @@ $#set varID $Kind$FldName.KeyID()
 	"proxyArray": `
 
 func (s $TypeName) $FldName() ArrayOf$mut$FldType {
-	arrID := wasmlib.GetObjectID(s.id, $varID, $ArrayTypeID|$FldTypeID)
+	arrID := wasmlib.GetObjectID(s.id, $varID, $arrayTypeID|$FldTypeID)
 	return ArrayOf$mut$FldType{objID: arrID}
 }
 `,

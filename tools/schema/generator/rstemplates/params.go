@@ -6,13 +6,14 @@ var paramsRs = map[string]string{
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use wasmlib::*;
-use wasmlib::host::*;
-$#if core else paramsUses
+$#if core useCrate useWasmLib
+$#if core useCoreContract
+$#if core useHost paramsUses
 $#each func paramsFunc
 `,
 	// *******************************
 	"paramsUses": `
+use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
@@ -44,4 +45,3 @@ $#each param proxyMethods
 }
 `,
 }
-

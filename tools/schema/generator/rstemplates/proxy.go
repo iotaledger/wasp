@@ -22,13 +22,13 @@ $#if basetype proxyBaseType proxyNewType
 `,
 	// *******************************
 	"setCoreVarID": `
-$#set varID $Kind$FLD_NAME.KeyID()
+$#set varID $Kind$FLD_NAME.get_key_id()
 `,
 	// *******************************
 	"proxyArray": `
 
     pub fn $fld_name(&self) -> ArrayOf$mut$FldType {
-		let arr_id = get_object_id(self.id, $varID, $ArrayTypeID | $FldTypeID);
+		let arr_id = get_object_id(self.id, $varID, $arrayTypeID | $FldTypeID);
 		ArrayOf$mut$FldType { obj_id: arr_id }
 	}
 `,

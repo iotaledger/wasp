@@ -3,30 +3,34 @@ package tstemplates
 var funcsTs = map[string]string{
 	// *******************************
 	"funcs.ts": `
-$#emit tsHeader
+use wasmlib::*;
+
+use crate::*;
+$#if structs useStructs
+$#if typedefs useTypeDefs
 $#each func funcSignature
 `,
 	// *******************************
 	"funcSignature": `
 
-func $kind$FuncName(ctx wasmlib.Sc$Kind$+Context, f *$FuncName$+Context) {
-$#func funcSignature
+pub fn $kind&+_$func_name(ctx: &Sc$Kind$+Context, f: &$FuncName$+Context) {
+$#emit init$FuncName
 }
 `,
 	// *******************************
-	"funcInit": `
-    if f.Params.Owner().Exists() {
-        f.State.Owner().SetValue(f.Params.Owner().Value())
-        return
+	"initFuncInit": `
+    if f.params.owner().exists() {
+        f.state.owner().set_value(&f.params.owner().value());
+        return;
     }
-    f.State.Owner().SetValue(ctx.ContractCreator())
+    f.state.owner().set_value(&ctx.contract_creator());
 `,
 	// *******************************
-	"getOwner": `
-	f.Results.Owner().SetValue(f.State.Owner().Value())
+	"initGetOwner": `
+    f.results.owner().set_value(&f.state.owner().value());
 `,
 	// *******************************
-	"setOwner": `
-	f.State.Owner().SetValue(f.Params.Owner().Value())
+	"initSetOwner": `
+    f.state.owner().set_value(&f.params.owner().value());
 `,
 }

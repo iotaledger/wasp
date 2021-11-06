@@ -107,7 +107,6 @@ func (g *GenBase) init(s *Schema) {
 	g.templates = map[string]string{}
 	g.addTemplates(templates)
 	g.setKeys()
-	g.emitters["funcSignature"] = emitterFuncSignature
 }
 
 func (g *GenBase) addTemplates(t map[string]string) {
@@ -156,59 +155,57 @@ func (g *GenBase) emit(template string) {
 	for i := 1; i < len(lines)-1; i++ {
 		line := lines[i]
 
-		// first process special commands
-		if strings.HasPrefix(line, "$#") {
-			if strings.HasPrefix(line, "$#each ") {
-				g.emitEach(strings.TrimSpace(line[7:]))
-				continue
+		// replace any placeholder keys
+		line = emitKeyRegExp.ReplaceAllStringFunc(line, func(key string) string {
+			text, ok := g.keys[key[1:]]
+			if ok {
+				return text
 			}
+			return "???:" + key
+		})
+
+		// remove concatenation markers
+		line = strings.ReplaceAll(line, "$+", "")
+
+		// now process special commands
+		if strings.HasPrefix(line, "$#") {
 			if strings.HasPrefix(line, "$#emit ") {
 				g.emit(strings.TrimSpace(line[7:]))
 				continue
 			}
+			if strings.HasPrefix(line, "$#each ") {
+				g.emitEach(line)
+				continue
+			}
 			if strings.HasPrefix(line, "$#func ") {
-				g.emitFunc(strings.TrimSpace(line[7:]))
+				g.emitFunc(line)
 				continue
 			}
 			if strings.HasPrefix(line, "$#if ") {
-				g.emitIf(strings.TrimSpace(line[5:]))
+				g.emitIf(line)
 				continue
 			}
 			if strings.HasPrefix(line, "$#set ") {
-				g.emitSet(strings.TrimSpace(line[6:]))
+				g.emitSet(line)
 				continue
 			}
 			g.println("???:" + line)
 			continue
 		}
 
-		g.println(g.replaceKeys(line))
+		g.println(line)
 	}
-}
-
-func (g *GenBase) replaceKeys(line string) string {
-	// replace any keys
-	line = emitKeyRegExp.ReplaceAllStringFunc(line, func(key string) string {
-		text, ok := g.keys[key[1:]]
-		if ok {
-			return text
-		}
-		return "???:" + key
-	})
-
-	// remove concatenation markers
-	return strings.ReplaceAll(line, "$+", "")
 }
 
 func (g *GenBase) emitEach(key string) {
 	parts := strings.Split(key, " ")
-	if len(parts) != 2 {
+	if len(parts) != 3 {
 		g.println("???:" + key)
 		return
 	}
 
-	template := parts[1]
-	switch parts[0] {
+	template := parts[2]
+	switch parts[1] {
 	case KeyFunc:
 		for _, g.currentFunc = range g.s.Funcs {
 			g.gen.setFuncKeys()
@@ -257,7 +254,13 @@ func (g *GenBase) emitFields(fields []*Field, template string) {
 }
 
 func (g *GenBase) emitFunc(key string) {
-	emitter, ok := g.emitters[key]
+	parts := strings.Split(key, " ")
+	if len(parts) != 2 {
+		g.println("???:" + key)
+		return
+	}
+
+	emitter, ok := g.emitters[parts[1]]
 	if ok {
 		emitter(g)
 		return
@@ -267,13 +270,13 @@ func (g *GenBase) emitFunc(key string) {
 
 func (g *GenBase) emitIf(key string) {
 	parts := strings.Split(key, " ")
-	if len(parts) < 2 || len(parts) > 3 {
+	if len(parts) < 3 || len(parts) > 4 {
 		g.println("???:" + key)
 		return
 	}
 
-	conditionKey := parts[0]
-	template := parts[1]
+	conditionKey := parts[1]
+	template := parts[2]
 
 	condition := false
 	switch conditionKey {
@@ -323,8 +326,8 @@ func (g *GenBase) emitIf(key string) {
 	}
 
 	// else branch?
-	if len(parts) == 3 {
-		template = parts[2]
+	if len(parts) == 4 {
+		template = parts[3]
 		g.emit(template)
 	}
 }
@@ -340,15 +343,15 @@ func (g *GenBase) fieldIsTypeDef() bool {
 	return false
 }
 
-func (g *GenBase) emitSet(key string) {
-	parts := strings.Split(key, " ")
-	if len(parts) != 2 {
-		g.println("???:" + key)
+func (g *GenBase) emitSet(line string) {
+	parts := strings.Split(line, " ")
+	if len(parts) < 3 {
+		g.println("???:" + line)
 		return
 	}
 
-	key = parts[0]
-	value := g.replaceKeys(parts[1])
+	key := parts[1]
+	value := line[len(parts[0])+len(key)+2:]
 	g.keys[key] = value
 
 	if key == KeyExist {
@@ -634,15 +637,4 @@ func (g *GenBase) setKeyValues(key, value string) {
 	g.keys[capitalize(key)] = capitalize(value)
 	g.keys[snake(key)] = snake(value)
 	g.keys[upper(snake(key))] = upper(snake(value))
-}
-
-func emitterFuncSignature(g *GenBase) {
-	switch g.currentFunc.FuncName {
-	case SpecialFuncInit:
-	case SpecialFuncSetOwner:
-	case SpecialViewGetOwner:
-	default:
-		return
-	}
-	g.emit(g.currentFunc.FuncName)
 }

@@ -756,7 +756,7 @@ func (g *TypeScriptGenerator) setFieldKeys() {
 	if g.s.CoreContracts {
 		arrayTypeID = "TYPE_ARRAY16"
 	}
-	g.keys["ArrayTypeID"] = arrayTypeID
+	g.keys["arrayTypeID"] = arrayTypeID
 }
 
 func (g *TypeScriptGenerator) setFuncKeys() {

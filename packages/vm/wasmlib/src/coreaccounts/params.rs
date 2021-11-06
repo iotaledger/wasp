@@ -18,9 +18,10 @@ pub struct ImmutableDepositParams {
 }
 
 impl ImmutableDepositParams {
+
     pub fn agent_id(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
-    }
+		ScImmutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -29,9 +30,10 @@ pub struct MutableDepositParams {
 }
 
 impl MutableDepositParams {
+
     pub fn agent_id(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
-    }
+		ScMutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -40,13 +42,14 @@ pub struct ImmutableHarvestParams {
 }
 
 impl ImmutableHarvestParams {
+
     pub fn withdraw_amount(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, PARAM_WITHDRAW_AMOUNT.get_key_id())
-    }
+		ScImmutableInt64::new(self.id, PARAM_WITHDRAW_AMOUNT.get_key_id())
+	}
 
     pub fn withdraw_color(&self) -> ScImmutableColor {
-        ScImmutableColor::new(self.id, PARAM_WITHDRAW_COLOR.get_key_id())
-    }
+		ScImmutableColor::new(self.id, PARAM_WITHDRAW_COLOR.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -55,13 +58,14 @@ pub struct MutableHarvestParams {
 }
 
 impl MutableHarvestParams {
+
     pub fn withdraw_amount(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, PARAM_WITHDRAW_AMOUNT.get_key_id())
-    }
+		ScMutableInt64::new(self.id, PARAM_WITHDRAW_AMOUNT.get_key_id())
+	}
 
     pub fn withdraw_color(&self) -> ScMutableColor {
-        ScMutableColor::new(self.id, PARAM_WITHDRAW_COLOR.get_key_id())
-    }
+		ScMutableColor::new(self.id, PARAM_WITHDRAW_COLOR.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -70,9 +74,10 @@ pub struct ImmutableBalanceParams {
 }
 
 impl ImmutableBalanceParams {
+
     pub fn agent_id(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
-    }
+		ScImmutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -81,9 +86,10 @@ pub struct MutableBalanceParams {
 }
 
 impl MutableBalanceParams {
+
     pub fn agent_id(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
-    }
+		ScMutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -92,9 +98,10 @@ pub struct ImmutableGetAccountNonceParams {
 }
 
 impl ImmutableGetAccountNonceParams {
+
     pub fn agent_id(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
-    }
+		ScImmutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -103,7 +110,8 @@ pub struct MutableGetAccountNonceParams {
 }
 
 impl MutableGetAccountNonceParams {
+
     pub fn agent_id(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
-    }
+		ScMutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+	}
 }

@@ -12,11 +12,6 @@ import (
 
 const (
 	allowUnusedImports = "#![allow(unused_imports)]"
-	useCrate           = "use crate::*;"
-	useStructs         = "use crate::structs::*;"
-	useTypeDefs        = "use crate::typedefs::*;"
-	useWasmLib         = "use wasmlib::*;"
-	useWasmLibHost     = "use wasmlib::host::*;"
 )
 
 var rustTypes = StringMap{
@@ -75,10 +70,6 @@ var rustTypeIds = StringMap{
 	"String":    "TYPE_STRING",
 }
 
-const (
-	rustTypeMap = "TYPE_MAP"
-)
-
 type RustGenerator struct {
 	GenBase
 }
@@ -101,55 +92,8 @@ func (g *RustGenerator) init(s *Schema) {
 	g.emitters["accessCheck"] = emitterRsAccessCheck
 }
 
-func (g *RustGenerator) crateOrWasmLib(withContract, withHost bool) string {
-	if g.s.CoreContracts {
-		retVal := useCrate
-		if withContract {
-			retVal += "\nuse crate::" + g.s.Name + "::*;"
-		}
-		if withHost {
-			retVal += "\nuse crate::host::*;"
-		}
-		return retVal
-	}
-	retVal := useWasmLib
-	if withHost {
-		retVal += "\n" + useWasmLibHost
-	}
-	return retVal
-}
-
 func (g *RustGenerator) funcName(f *Func) string {
 	return snake(f.FuncName)
-}
-
-func (g *RustGenerator) generateArrayType(varType string) string {
-	// native core contracts use Array16 instead of our nested array type
-	if g.s.CoreContracts {
-		return "TYPE_ARRAY16 | " + varType
-	}
-	return "TYPE_ARRAY | " + varType
-}
-
-func (g *RustGenerator) generateFuncSignature(f *Func) {
-	switch f.FuncName {
-	case SpecialFuncInit:
-		g.printf("\npub fn %s(ctx: &Sc%sContext, f: &%sContext) {\n", g.funcName(f), f.Kind, capitalize(f.Type))
-		g.printf("    if f.params.owner().exists() {\n")
-		g.printf("        f.state.owner().set_value(&f.params.owner().value());\n")
-		g.printf("        return;\n")
-		g.printf("    }\n")
-		g.printf("    f.state.owner().set_value(&ctx.contract_creator());\n")
-	case SpecialFuncSetOwner:
-		g.printf("\npub fn %s(_ctx: &Sc%sContext, f: &%sContext) {\n", g.funcName(f), f.Kind, capitalize(f.Type))
-		g.printf("    f.state.owner().set_value(&f.params.owner().value());\n")
-	case SpecialViewGetOwner:
-		g.printf("\npub fn %s(_ctx: &Sc%sContext, f: &%sContext) {\n", g.funcName(f), f.Kind, capitalize(f.Type))
-		g.printf("    f.results.owner().set_value(&f.state.owner().value());\n")
-	default:
-		g.printf("\npub fn %s(_ctx: &Sc%sContext, _f: &%sContext) {\n", g.funcName(f), f.Kind, capitalize(f.Type))
-	}
-	g.printf("}\n")
 }
 
 func (g *RustGenerator) generateLanguageSpecificFiles() error {
@@ -191,116 +135,15 @@ func (g *RustGenerator) generateModLines(format string) {
 }
 
 func (g *RustGenerator) generateProxyArray(field *Field, mutability, arrayType, proxyType string) {
-	g.printf("\npub struct %s {\n", arrayType)
-	g.printf("    pub(crate) obj_id: i32,\n")
-	g.printf("}\n")
-
-	g.printf("\nimpl %s {", arrayType)
-	defer g.printf("}\n")
-
-	if mutability == PropMutable {
-		g.printf("\n    pub fn clear(&self) {\n")
-		g.printf("        clear(self.obj_id);\n")
-		g.printf("    }\n")
-	}
-
-	g.printf("\n    pub fn length(&self) -> i32 {\n")
-	g.printf("        get_length(self.obj_id)\n")
-	g.printf("    }\n")
-
-	if field.TypeID == 0 {
-		g.generateProxyArrayNewType(field, proxyType)
-		return
-	}
-
-	// array of predefined type
-	g.printf("\n    pub fn get_%s(&self, index: i32) -> Sc%s {\n", snake(field.Type), proxyType)
-	g.printf("        Sc%s::new(self.obj_id, Key32(index))\n", proxyType)
-	g.printf("    }\n")
-}
-
-func (g *RustGenerator) generateProxyArrayNewType(field *Field, proxyType string) {
-	for _, subtype := range g.s.Typedefs {
-		if subtype.Name != field.Type {
-			continue
-		}
-		varType := rustTypeMap
-		if subtype.Array {
-			varType = rustTypeIds[subtype.Type]
-			if varType == "" {
-				varType = "TYPE_BYTES"
-			}
-			varType = g.generateArrayType(varType)
-		}
-		g.printf("\n    pub fn get_%s(&self, index: i32) -> %s {\n", snake(field.Type), proxyType)
-		g.printf("        let sub_id = get_object_id(self.obj_id, Key32(index), %s)\n", varType)
-		g.printf("        %s { obj_id: sub_id }\n", proxyType)
-		g.printf("    }\n")
-		return
-	}
-
-	g.printf("\n    pub fn get_%s(&self, index: i32) -> %s {\n", snake(field.Type), proxyType)
-	g.printf("        %s { obj_id: self.obj_id, key_id: Key32(index) }\n", proxyType)
-	g.printf("    }\n")
+	panic("generateProxyArray")
 }
 
 func (g *RustGenerator) generateProxyMap(field *Field, mutability, mapType, proxyType string) {
-	keyType := rustKeyTypes[field.MapKey]
-	keyValue := rustKeys[field.MapKey]
-
-	g.printf("\npub struct %s {\n", mapType)
-	g.printf("    pub(crate) obj_id: i32,\n")
-	g.printf("}\n")
-
-	g.printf("\nimpl %s {", mapType)
-	defer g.printf("}\n")
-
-	if mutability == PropMutable {
-		g.printf("\n    pub fn clear(&self) {\n")
-		g.printf("        clear(self.obj_id)\n")
-		g.printf("    }\n")
-	}
-
-	if field.TypeID == 0 {
-		g.generateProxyMapNewType(field, proxyType, keyType, keyValue)
-		return
-	}
-
-	// map of predefined type
-	g.printf("\n    pub fn get_%s(&self, key: %s) -> Sc%s {\n", snake(field.Type), keyType, proxyType)
-	g.printf("        Sc%s::new(self.obj_id, %s.get_key_id())\n", proxyType, keyValue)
-	g.printf("    }\n")
-}
-
-func (g *RustGenerator) generateProxyMapNewType(field *Field, proxyType, keyType, keyValue string) {
-	for _, subtype := range g.s.Typedefs {
-		if subtype.Name != field.Type {
-			continue
-		}
-		varType := rustTypeMap
-		if subtype.Array {
-			varType = rustTypeIds[subtype.Type]
-			if varType == "" {
-				varType = "TYPE_BYTES"
-			}
-			varType = g.generateArrayType(varType)
-		}
-		g.printf("\n    pub fn get_%s(&self, key: %s) -> %s {\n", snake(field.Type), keyType, proxyType)
-		g.printf("        let sub_id = get_object_id(self.obj_id, %s.get_key_id(), %s);\n", keyValue, varType)
-		g.printf("        %s { obj_id: sub_id }\n", proxyType)
-		g.printf("    }\n")
-		return
-	}
-
-	g.printf("\n    pub fn get_%s(&self, key: %s) -> %s {\n", snake(field.Type), keyType, proxyType)
-	g.printf("        %s { obj_id: self.obj_id, key_id: %s.get_key_id() }\n", proxyType, keyValue)
-	g.printf("    }\n")
+	panic("generateProxyMap")
 }
 
 func (g *RustGenerator) generateProxyReference(field *Field, mutability, typeName string) {
-	if field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
-		g.printf("\npub type %s%s = %s;\n", mutability, field.Name, typeName)
-	}
+	panic("generateProxyReference")
 }
 
 func (g *RustGenerator) writeConsts() {
@@ -312,19 +155,7 @@ func (g *RustGenerator) writeContract() {
 }
 
 func (g *RustGenerator) writeInitialFuncs() {
-	g.println(useWasmLib)
-	g.println()
-	g.println(useCrate)
-	if len(g.s.Structs) != 0 {
-		g.println(useStructs)
-	}
-	if len(g.s.Typedefs) != 0 {
-		g.println(useTypeDefs)
-	}
-
-	for _, f := range g.s.Funcs {
-		g.generateFuncSignature(f)
-	}
+	g.emit("funcs.rs")
 }
 
 func (g *RustGenerator) writeKeys() {
@@ -344,37 +175,20 @@ func (g *RustGenerator) writeResults() {
 }
 
 func (g *RustGenerator) writeSpecialCargoToml() error {
-	err := g.exists("Cargo.toml")
+	cargoToml := "Cargo.toml"
+	err := g.exists(cargoToml)
 	if err == nil {
 		// already exists
 		return nil
 	}
 
-	err = g.create("Cargo.toml")
+	err = g.create(cargoToml)
 	if err != nil {
 		return err
 	}
 	defer g.close()
 
-	g.printf("[package]\n")
-	g.printf("name = \"%s\"\n", g.s.Name)
-	g.printf("description = \"%s\"\n", g.s.Description)
-	g.printf("license = \"Apache-2.0\"\n")
-	g.printf("version = \"0.1.0\"\n")
-	g.printf("authors = [\"John Doe <john@doe.org>\"]\n")
-	g.printf("edition = \"2018\"\n")
-	g.printf("repository = \"https://%s\"\n", ModuleName)
-	g.printf("\n[lib]\n")
-	g.printf("crate-type = [\"cdylib\", \"rlib\"]\n")
-	g.printf("\n[features]\n")
-	g.printf("default = [\"console_error_panic_hook\"]\n")
-	g.printf("\n[dependencies]\n")
-	g.printf("wasmlib = { git = \"https://github.com/iotaledger/wasp\", branch = \"develop\" }\n")
-	g.printf("console_error_panic_hook = { version = \"0.1.6\", optional = true }\n")
-	g.printf("wee_alloc = { version = \"0.4.5\", optional = true }\n")
-	g.printf("\n[dev-dependencies]\n")
-	g.printf("wasm-bindgen-test = \"0.3.13\"\n")
-
+	g.emit(cargoToml)
 	return nil
 }
 
@@ -441,29 +255,10 @@ func (g *RustGenerator) setFieldKeys() {
 	g.keys["FldLangType"] = rustTypes[field.Type]
 	g.keys["FldMapKeyLangType"] = rustKeyTypes[field.MapKey]
 	g.keys["FldMapKeyKey"] = rustKeys[field.MapKey]
-
-	// native core contracts use Array16 instead of our nested array type
-	arrayTypeID := "TYPE_ARRAY"
-	if g.s.CoreContracts {
-		arrayTypeID = "TYPE_ARRAY16"
-	}
-	g.keys["ArrayTypeID"] = arrayTypeID
 }
 
 func (g *RustGenerator) setFuncKeys() {
 	g.GenBase.setFuncKeys()
-
-	paramsID := "ptr::null_mut()"
-	if len(g.currentFunc.Params) != 0 {
-		paramsID = "&mut f.params.id"
-	}
-	g.keys["paramsID"] = paramsID
-
-	resultsID := "ptr::null_mut()"
-	if len(g.currentFunc.Results) != 0 {
-		resultsID = "&mut f.results.id"
-	}
-	g.keys["resultsID"] = resultsID
 
 	initFunc := ""
 	if g.currentFunc.Type == InitFunc {

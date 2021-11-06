@@ -3,8 +3,16 @@ package tstemplates
 var typedefsTs = map[string]string{
 	// *******************************
 	"typedefs.ts": `
-$#emit tsHeader
+// @formatter:off
+
+#![allow(dead_code)]
+
+use wasmlib::*;
+use wasmlib::host::*;
+$#if structs useStructs
 $#each typedef typedefProxy
+
+// @formatter:on
 `,
 	// *******************************
 	"typedefProxy": `
@@ -22,7 +30,7 @@ $#if map typedefProxyAlias
 	// *******************************
 	"typedefProxyAlias": `
 
-type $mut$FldName = $proxy
+pub type $mut$FldName = $proxy;
 `,
 	// *******************************
 	"typedefProxyArray": `
@@ -32,30 +40,32 @@ $#if exist else typedefProxyArrayNew
 	// *******************************
 	"typedefProxyArrayNew": `
 
-type $proxy struct {
-	objID int32
+pub struct $proxy {
+	pub(crate) obj_id: i32,
 }
-$#if mut typedefProxyArrayClear
 
-func (a $proxy) Length() int32 {
-	return wasmlib.GetLength(a.objID)
-}
+impl $proxy {
+$#if mut typedefProxyArrayClear
+    pub fn length(&self) -> i32 {
+        get_length(self.obj_id)
+    }
+
 $#if basetype typedefProxyArrayNewBaseType typedefProxyArrayNewOtherType
+}
 $#set exist $proxy
 `,
 	// *******************************
 	"typedefProxyArrayClear": `
+    pub fn clear(&self) {
+        clear(self.obj_id);
+    }
 
-func (a $proxy) Clear() {
-	wasmlib.Clear(a.objID)
-}
 `,
 	// *******************************
 	"typedefProxyArrayNewBaseType": `
-
-func (a $proxy) Get$FldType(index int32) wasmlib.Sc$mut$FldType {
-	return wasmlib.NewSc$mut$FldType(a.objID, wasmlib.Key32(index))
-}
+    pub fn get_$fld_type(&self, index: i32) -> Sc$mut$FldType {
+        Sc$mut$FldType::new(self.obj_id, Key32(index))
+    }
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherType": `
@@ -64,20 +74,19 @@ $#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeS
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherTypeTypeDef": `
-$#set varType wasmlib.TYPE_MAP
+$#set varType TYPE_MAP
 $#if array setVarTypeArray
 
-func (a $proxy) Get$OldType(index int32) $mut$OldType {
-	subID := wasmlib.GetObjectID(a.objID, wasmlib.Key32(index), $varType)
-	return $mut$OldType{objID: subID}
-}
+	pub fn Get$OldType(&self, index: i32) -> $mut$OldType {
+		let sub_id = get_object_id(self.obj_id, Key32(index), $varType);
+		$mut$OldType { obj_id: sub_id }
+	}
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherTypeStruct": `
-
-func (a $proxy) Get$FldType(index int32) $mut$FldType {
-	return $mut$FldType{objID: a.objID, keyID: wasmlib.Key32(index)}
-}
+	pub fn get_$fld_type(&self, index: i32) -> $mut$FldType {
+		$mut$FldType { obj_id: self.obj_id, key_id: Key32(index) }
+	}
 `,
 	// *******************************
 	"typedefProxyMap": `
@@ -87,29 +96,32 @@ $#if exist else typedefProxyMapNew
 	// *******************************
 	"typedefProxyMapNew": `
 
-type $proxy struct {
-	objID int32
+pub struct $proxy {
+	pub(crate) obj_id: i32,
 }
+
+impl $proxy {
 $#if mut typedefProxyMapClear
 $#if basetype typedefProxyMapNewBaseType typedefProxyMapNewOtherType
+}
 $#set exist $proxy
 `,
 	// *******************************
 	"typedefProxyMapClear": `
+    pub fn clear(&self) {
+        clear(self.obj_id);
+    }
 
-func (m $proxy) Clear() {
-	wasmlib.Clear(m.objID)
-}
 `,
 	// *******************************
 	"typedefProxyMapNewBaseType": `
-
-func (m $proxy) Get$FldType(key $FldMapKeyLangType) wasmlib.Sc$mut$FldType {
-	return wasmlib.NewSc$mut$FldType(m.objID, $FldMapKeyKey.KeyID())
-}
+    pub fn get_$fld_type(&self, key: $FldMapKeyLangType) -> Sc$mut$FldType {
+        Sc$mut$FldType::new(self.obj_id, key.get_key_id())
+    }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
+$#set old_type $fld_type
 $#set OldType $FldType
 $#set OldMapKeyLangType $FldMapKeyLangType
 $#set OldMapKeyKey $FldMapKeyKey
@@ -117,23 +129,21 @@ $#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruc
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeTypeDef": `
-$#set varType wasmlib.TYPE_MAP
+$#set varType TYPE_MAP
 $#if array setVarTypeArray
-
-func (m $proxy) Get$OldType(key $OldMapKeyLangType) $mut$OldType {
-	subID := wasmlib.GetObjectID(m.objID, $OldMapKeyKey.KeyID(), $varType)
-	return $mut$OldType{objID: subID}
-}
+    pub fn get_$old_type(&self, key: $OldMapKeyLangType) -> $mut$OldType {
+        let sub_id = get_object_id(self.obj_id, key.get_key_id(), $varType);
+        $mut$OldType { obj_id: sub_id }
+    }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeStruct": `
-
-func (m $proxy) Get$FldType(key $FldMapKeyLangType) $mut$FldType {
-	return $mut$FldType{objID: m.objID, keyID: $FldMapKeyKey.KeyID()}
-}
+    pub fn get_$old_type(&self, key: $OldMapKeyLangType) -> $mut$OldType {
+        $mut$OldType { obj_id: self.obj_id, key_id: key.get_key_id() }
+    }
 `,
 	// *******************************
 	"setVarTypeArray": `
-$#set varType $ArrayTypeID|$FldTypeID
+$#set varType $arrayTypeID | $FldTypeID
 `,
 }

@@ -3,59 +3,89 @@ package tstemplates
 var contractTs = map[string]string{
 	// *******************************
 	"contract.ts": `
-$#emit tsHeader
+// @formatter:off
+
+#![allow(dead_code)]
+
+use std::ptr;
+
+$#if core useCrate useWasmLib
+$#if core useCoreContract contractUses
 $#each func FuncNameCall
 
-type Funcs struct{}
+pub struct ScFuncs {
+}
 
-var ScFuncs Funcs
+impl ScFuncs {
 $#each func FuncNameForCall
-$#if core coreOnload
+}
+
+// @formatter:on
+`,
+	// *******************************
+	"contractUses": `
+
+use crate::consts::*;
+$#if params useParams
+$#if results useResults
 `,
 	// *******************************
 	"FuncNameCall": `
 
-type $FuncName$+Call struct {
-	Func    *wasmlib.Sc$initFunc$Kind
+pub struct $FuncName$+Call {
+	pub func: Sc$initFunc$Kind,
 $#if param MutableFuncNameParams
 $#if result ImmutableFuncNameResults
 }
 `,
 	// *******************************
 	"MutableFuncNameParams": `
-	Params  Mutable$FuncName$+Params
+	pub params: Mutable$FuncName$+Params,
 `,
 	// *******************************
 	"ImmutableFuncNameResults": `
-	Results Immutable$FuncName$+Results
+	pub results: Immutable$FuncName$+Results,
 `,
 	// *******************************
 	"FuncNameForCall": `
-
-func (sc Funcs) $FuncName(ctx wasmlib.Sc$Kind$+CallContext) *$FuncName$+Call {
+    pub fn $func_name(_ctx: & dyn Sc$Kind$+CallContext) -> $FuncName$+Call {
+$#set paramsID ptr::null_mut()
+$#set resultsID ptr::null_mut()
+$#if param setParamsID
+$#if result setResultsID
 $#if ptrs setPtrs noPtrs
-}
-`,
-	// *******************************
-	"coreOnload": `
-
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-$#each func coreExportFunc
-}
-`,
-	// *******************************
-	"coreExportFunc": `
-	exports.Add$Kind($Kind$FuncName, wasmlib.$Kind$+Error)
+    }
 `,
 	// *******************************
 	"setPtrs": `
-	f := &$FuncName$+Call{Func: wasmlib.NewSc$initFunc$Kind(ctx, HScName, H$Kind$FuncName$initMap)}
-	f.Func.SetPtrs($paramsID, $resultsID)
-	return f
+        let mut f = $FuncName$+Call {
+            func: Sc$initFunc$Kind::new(HSC_NAME, H$KIND$+_$FUNC_NAME),
+$#if param FuncNameParamsInit
+$#if result FuncNameResultsInit
+        };
+        f.func.set_ptrs($paramsID, $resultsID);
+        f
+`,
+	// *******************************
+	"FuncNameParamsInit": `
+            params: Mutable$FuncName$+Params { id: 0 },
+`,
+	// *******************************
+	"FuncNameResultsInit": `
+            results: Immutable$FuncName$+Results { id: 0 },
+`,
+	// *******************************
+	"setParamsID": `
+$#set paramsID &mut f.params.id
+`,
+	// *******************************
+	"setResultsID": `
+$#set resultsID &mut f.results.id
 `,
 	// *******************************
 	"noPtrs": `
-	return &$FuncName$+Call{Func: wasmlib.NewSc$initFunc$Kind(ctx, HScName, H$Kind$FuncName$initMap)}
+        $FuncName$+Call {
+            func: Sc$initFunc$Kind::new(HSC_NAME, H$KIND$+_$FUNC_NAME),
+        }
 `,
 }

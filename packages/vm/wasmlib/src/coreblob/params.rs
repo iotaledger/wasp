@@ -13,7 +13,7 @@ use crate::coreblob::*;
 use crate::host::*;
 
 pub struct MapStringToImmutableBytes {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapStringToImmutableBytes {
@@ -28,18 +28,19 @@ pub struct ImmutableStoreBlobParams {
 }
 
 impl ImmutableStoreBlobParams {
+
     pub fn blobs(&self) -> MapStringToImmutableBytes {
-        MapStringToImmutableBytes { obj_id: self.id }
-    }
+		MapStringToImmutableBytes { obj_id: self.id }
+	}
 }
 
 pub struct MapStringToMutableBytes {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapStringToMutableBytes {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_bytes(&self, key: &str) -> ScMutableBytes {
@@ -53,9 +54,10 @@ pub struct MutableStoreBlobParams {
 }
 
 impl MutableStoreBlobParams {
+
     pub fn blobs(&self) -> MapStringToMutableBytes {
-        MapStringToMutableBytes { obj_id: self.id }
-    }
+		MapStringToMutableBytes { obj_id: self.id }
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -64,13 +66,14 @@ pub struct ImmutableGetBlobFieldParams {
 }
 
 impl ImmutableGetBlobFieldParams {
+
     pub fn field(&self) -> ScImmutableString {
-        ScImmutableString::new(self.id, PARAM_FIELD.get_key_id())
-    }
+		ScImmutableString::new(self.id, PARAM_FIELD.get_key_id())
+	}
 
     pub fn hash(&self) -> ScImmutableHash {
-        ScImmutableHash::new(self.id, PARAM_HASH.get_key_id())
-    }
+		ScImmutableHash::new(self.id, PARAM_HASH.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -79,13 +82,14 @@ pub struct MutableGetBlobFieldParams {
 }
 
 impl MutableGetBlobFieldParams {
+
     pub fn field(&self) -> ScMutableString {
-        ScMutableString::new(self.id, PARAM_FIELD.get_key_id())
-    }
+		ScMutableString::new(self.id, PARAM_FIELD.get_key_id())
+	}
 
     pub fn hash(&self) -> ScMutableHash {
-        ScMutableHash::new(self.id, PARAM_HASH.get_key_id())
-    }
+		ScMutableHash::new(self.id, PARAM_HASH.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -94,9 +98,10 @@ pub struct ImmutableGetBlobInfoParams {
 }
 
 impl ImmutableGetBlobInfoParams {
+
     pub fn hash(&self) -> ScImmutableHash {
-        ScImmutableHash::new(self.id, PARAM_HASH.get_key_id())
-    }
+		ScImmutableHash::new(self.id, PARAM_HASH.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -105,7 +110,8 @@ pub struct MutableGetBlobInfoParams {
 }
 
 impl MutableGetBlobInfoParams {
+
     pub fn hash(&self) -> ScMutableHash {
-        ScMutableHash::new(self.id, PARAM_HASH.get_key_id())
-    }
+		ScMutableHash::new(self.id, PARAM_HASH.get_key_id())
+	}
 }

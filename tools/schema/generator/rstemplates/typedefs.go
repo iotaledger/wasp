@@ -144,6 +144,6 @@ $#if array setVarTypeArray
 `,
 	// *******************************
 	"setVarTypeArray": `
-$#set varType $ArrayTypeID$space|$space$FldTypeID
+$#set varType $arrayTypeID | $FldTypeID
 `,
 }

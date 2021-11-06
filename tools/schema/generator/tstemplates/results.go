@@ -3,8 +3,21 @@ package tstemplates
 var resultsTs = map[string]string{
 	// *******************************
 	"results.ts": `
-$#emit tsHeader
+#![allow(dead_code)]
+#![allow(unused_imports)]
+
+$#if core useCrate useWasmLib
+$#if core useCoreContract
+$#if core useHost resultsUses
 $#each func resultsFunc
+`,
+	// *******************************
+	"resultsUses": `
+use wasmlib::host::*;
+
+use crate::*;
+use crate::keys::*;
+$#if structs useStructs
 `,
 	// *******************************
 	"resultsFunc": `
@@ -12,7 +25,7 @@ $#if results resultsFuncResults
 `,
 	// *******************************
 	"resultsFuncResults": `
-$#set Kind Result
+$#set Kind RESULT_
 $#set mut Immutable
 $#if result resultsProxyStruct
 $#set mut Mutable
@@ -23,10 +36,13 @@ $#if result resultsProxyStruct
 $#set TypeName $mut$FuncName$+Results
 $#each result proxyContainers
 
-type $TypeName struct {
-	id int32
-}
-$#each result proxyMethods
-`,
+#[derive(Clone, Copy)]
+pub struct $TypeName {
+    pub(crate) id: i32,
 }
 
+impl $TypeName {
+$#each result proxyMethods
+}
+`,
+}

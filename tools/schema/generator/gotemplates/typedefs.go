@@ -134,6 +134,6 @@ func (m $proxy) Get$FldType(key $FldMapKeyLangType) $mut$FldType {
 `,
 	// *******************************
 	"setVarTypeArray": `
-$#set varType $ArrayTypeID|$FldTypeID
+$#set varType $arrayTypeID|$FldTypeID
 `,
 }

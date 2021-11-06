@@ -3,28 +3,36 @@ package tstemplates
 var structsTs = map[string]string{
 	// *******************************
 	"structs.ts": `
-$#emit tsHeader
+// @formatter:off
+
+#![allow(dead_code)]
+
+use wasmlib::*;
+use wasmlib::host::*;
 $#each structs structType
+
+// @formatter:on
 `,
 	// *******************************
 	"structType": `
 
-type $StrName struct {
+pub struct $StrName {
 $#each struct structField
 }
 
-func New$StrName$+FromBytes(bytes []byte) *$StrName {
-	decode := wasmlib.NewBytesDecoder(bytes)
-	data := &$StrName$+{}
+impl $StrName {
+    pub fn from_bytes(bytes: &[u8]) -> $StrName {
+        let mut decode = BytesDecoder::new(bytes);
+        $StrName {
 $#each struct structDecode
-	decode.Close()
-	return data
-}
+        }
+    }
 
-func (o *$StrName) Bytes() []byte {
-	return wasmlib.NewBytesEncoder().
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut encode = BytesEncoder::new();
 $#each struct structEncode
-		Data()
+        return encode.data();
+    }
 }
 $#set mut Immutable
 $#emit structMethods
@@ -33,38 +41,40 @@ $#emit structMethods
 `,
 	// *******************************
 	"structField": `
-	$FldName $FldLangType $FldComment
+    pub $fld_name: $FldLangType, $FldComment
 `,
 	// *******************************
 	"structDecode": `
-	data.$FldName = decode.$FldType()
+            $fld_name: decode.$fld_type(),
 `,
 	// *******************************
 	"structEncode": `
-		$FldType(o.$FldName).
+		encode.$fld_type($ref$+self.$fld_name);
 `,
 	// *******************************
 	"structMethods": `
 
-type $mut$StrName struct {
-	objID int32
-	keyID wasmlib.Key32
+pub struct $mut$StrName {
+    pub(crate) obj_id: i32,
+    pub(crate) key_id: Key32,
 }
 
-func (o $mut$StrName) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
-}
+impl $mut$StrName {
+    pub fn exists(&self) -> bool {
+        exists(self.obj_id, self.key_id, TYPE_BYTES)
+    }
 $#if mut structMethodSetValue
 
-func (o $mut$StrName) Value() *$StrName {
-	return New$StrName$+FromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+    pub fn value(&self) -> $StrName {
+        $StrName::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+    }
 }
 `,
 	// *******************************
 	"structMethodSetValue": `
 
-func (o $mut$StrName) SetValue(value *$StrName) {
-	wasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())
-}
+    pub fn set_value(&self, value: &$StrName) {
+        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+    }
 `,
 }

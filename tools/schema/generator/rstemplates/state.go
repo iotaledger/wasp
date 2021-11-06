@@ -38,4 +38,3 @@ $#each state proxyMethods
 }
 `,
 }
-

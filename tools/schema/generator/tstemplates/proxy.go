@@ -8,7 +8,7 @@ $#if map typedefProxyMap
 `,
 	// *******************************
 	"proxyMethods": `
-$#set varID idxMap[Idx$Kind$FldName]
+$#set varID idx_map(IDX_$Kind$FLD_NAME)
 $#if core setCoreVarID
 $#if array proxyArray proxyMethods2
 `,
@@ -22,15 +22,15 @@ $#if basetype proxyBaseType proxyNewType
 `,
 	// *******************************
 	"setCoreVarID": `
-$#set varID $Kind$FldName.KeyID()
+$#set varID $Kind$FLD_NAME.get_key_id()
 `,
 	// *******************************
 	"proxyArray": `
 
-func (s $TypeName) $FldName() ArrayOf$mut$FldType {
-	arrID := wasmlib.GetObjectID(s.id, $varID, $ArrayTypeID|$FldTypeID)
-	return ArrayOf$mut$FldType{objID: arrID}
-}
+    pub fn $fld_name(&self) -> ArrayOf$mut$FldType {
+		let arr_id = get_object_id(self.id, $varID, $arrayTypeID | $FldTypeID);
+		ArrayOf$mut$FldType { obj_id: arr_id }
+	}
 `,
 	// *******************************
 	"proxyMap": `
@@ -39,30 +39,30 @@ $#if this proxyMapThis proxyMapOther
 	// *******************************
 	"proxyMapThis": `
 
-func (s $TypeName) $FldName() Map$FldMapKey$+To$mut$FldType {
-	return Map$FldMapKey$+To$mut$FldType{objID: s.id}
-}
+    pub fn $fld_name(&self) -> Map$FldMapKey$+To$mut$FldType {
+		Map$FldMapKey$+To$mut$FldType { obj_id: self.id }
+	}
 `,
 	// *******************************
 	"proxyMapOther": `55544444.0
 
-func (s $TypeName) $FldName() Map$FldMapKey$+To$mut$FldType {
-	mapID := wasmlib.GetObjectID(s.id, $varID, wasmlib.TYPE_MAP)
-	return Map$FldMapKey$+To$mut$FldType{objID: mapID}
-}
+    pub fn $fld_name(&self) -> Map$FldMapKey$+To$mut$FldType {
+		let map_id = get_object_id(self.id, $varID, TYPE_MAP);
+		Map$FldMapKey$+To$mut$FldType { obj_id: map_id }
+	}
 `,
 	// *******************************
 	"proxyBaseType": `
 
-func (s $TypeName) $FldName() wasmlib.Sc$mut$FldType {
-	return wasmlib.NewSc$mut$FldType(s.id, $varID)
-}
+    pub fn $fld_name(&self) -> Sc$mut$FldType {
+		Sc$mut$FldType::new(self.id, $varID)
+	}
 `,
 	// *******************************
 	"proxyNewType": `
 
-func (s $TypeName) $FldName() $mut$FldType {
-	return $mut$FldType{objID: s.id, keyID: $varID}
-}
+    pub fn $fld_name(&self) -> $mut$FldType {
+		$mut$FldType { obj_id: self.id, key_id: $varID }
+	}
 `,
 }

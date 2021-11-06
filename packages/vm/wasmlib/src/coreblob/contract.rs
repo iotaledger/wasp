@@ -15,26 +15,26 @@ use crate::*;
 use crate::coreblob::*;
 
 pub struct StoreBlobCall {
-    pub func:    ScFunc,
-    pub params:  MutableStoreBlobParams,
-    pub results: ImmutableStoreBlobResults,
+	pub func: ScFunc,
+	pub params: MutableStoreBlobParams,
+	pub results: ImmutableStoreBlobResults,
 }
 
 pub struct GetBlobFieldCall {
-    pub func:    ScView,
-    pub params:  MutableGetBlobFieldParams,
-    pub results: ImmutableGetBlobFieldResults,
+	pub func: ScView,
+	pub params: MutableGetBlobFieldParams,
+	pub results: ImmutableGetBlobFieldResults,
 }
 
 pub struct GetBlobInfoCall {
-    pub func:    ScView,
-    pub params:  MutableGetBlobInfoParams,
-    pub results: ImmutableGetBlobInfoResults,
+	pub func: ScView,
+	pub params: MutableGetBlobInfoParams,
+	pub results: ImmutableGetBlobInfoResults,
 }
 
 pub struct ListBlobsCall {
-    pub func:    ScView,
-    pub results: ImmutableListBlobsResults,
+	pub func: ScView,
+	pub results: ImmutableListBlobsResults,
 }
 
 pub struct ScFuncs {
@@ -43,8 +43,8 @@ pub struct ScFuncs {
 impl ScFuncs {
     pub fn store_blob(_ctx: & dyn ScFuncCallContext) -> StoreBlobCall {
         let mut f = StoreBlobCall {
-            func:    ScFunc::new(HSC_NAME, HFUNC_STORE_BLOB),
-            params:  MutableStoreBlobParams { id: 0 },
+            func: ScFunc::new(HSC_NAME, HFUNC_STORE_BLOB),
+            params: MutableStoreBlobParams { id: 0 },
             results: ImmutableStoreBlobResults { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
@@ -52,8 +52,8 @@ impl ScFuncs {
     }
     pub fn get_blob_field(_ctx: & dyn ScViewCallContext) -> GetBlobFieldCall {
         let mut f = GetBlobFieldCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_BLOB_FIELD),
-            params:  MutableGetBlobFieldParams { id: 0 },
+            func: ScView::new(HSC_NAME, HVIEW_GET_BLOB_FIELD),
+            params: MutableGetBlobFieldParams { id: 0 },
             results: ImmutableGetBlobFieldResults { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
@@ -61,8 +61,8 @@ impl ScFuncs {
     }
     pub fn get_blob_info(_ctx: & dyn ScViewCallContext) -> GetBlobInfoCall {
         let mut f = GetBlobInfoCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_BLOB_INFO),
-            params:  MutableGetBlobInfoParams { id: 0 },
+            func: ScView::new(HSC_NAME, HVIEW_GET_BLOB_INFO),
+            params: MutableGetBlobInfoParams { id: 0 },
             results: ImmutableGetBlobInfoResults { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
@@ -70,7 +70,7 @@ impl ScFuncs {
     }
     pub fn list_blobs(_ctx: & dyn ScViewCallContext) -> ListBlobsCall {
         let mut f = ListBlobsCall {
-            func:    ScView::new(HSC_NAME, HVIEW_LIST_BLOBS),
+            func: ScView::new(HSC_NAME, HVIEW_LIST_BLOBS),
             results: ImmutableListBlobsResults { id: 0 },
         };
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);

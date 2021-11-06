@@ -6,13 +6,14 @@ var resultsRs = map[string]string{
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use wasmlib::*;
-use wasmlib::host::*;
-$#if core else resultsUses
+$#if core useCrate useWasmLib
+$#if core useCoreContract
+$#if core useHost resultsUses
 $#each func resultsFunc
 `,
 	// *******************************
 	"resultsUses": `
+use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
@@ -45,4 +46,3 @@ $#each result proxyMethods
 }
 `,
 }
-

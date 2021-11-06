@@ -29,4 +29,3 @@ type $TypeName struct {
 $#each param proxyMethods
 `,
 }
-

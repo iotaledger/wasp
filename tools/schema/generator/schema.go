@@ -47,16 +47,6 @@ type Func struct {
 	Type     string
 }
 
-func (f *Func) nameLen(smallest int) int {
-	if len(f.Results) != 0 {
-		return 7
-	}
-	if len(f.Params) != 0 {
-		return 6
-	}
-	return smallest
-}
-
 type Struct struct {
 	Name   string
 	Fields []*Field

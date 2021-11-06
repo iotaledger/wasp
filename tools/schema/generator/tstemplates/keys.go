@@ -3,36 +3,48 @@ package tstemplates
 var keysTs = map[string]string{
 	// *******************************
 	"keys.ts": `
-$#emit tsHeader
+// @formatter:off
 
-const (
-$#set constPrefix "Param"
+#![allow(dead_code)]
+
+use wasmlib::*;
+
+use crate::*;
+
+$#set constPrefix PARAM_
 $#each params constFieldIdx
-$#set constPrefix "Result"
+$#set constPrefix RESULT_
 $#each results constFieldIdx
-$#set constPrefix "State"
+$#set constPrefix STATE_
 $#each state constFieldIdx
-)
 
-const keyMapLen = $maxIndex
+pub const KEY_MAP_LEN: usize = $maxIndex;
 
-var keyMap = [keyMapLen]wasmlib.Key{
-$#set constPrefix "Param"
+pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
+$#set constPrefix PARAM_
 $#each params constFieldKey
-$#set constPrefix "Result"
+$#set constPrefix RESULT_
 $#each results constFieldKey
-$#set constPrefix "State"
+$#set constPrefix STATE_
 $#each state constFieldKey
+];
+
+pub static mut IDX_MAP: [Key32; KEY_MAP_LEN] = [Key32(0); KEY_MAP_LEN];
+
+pub fn idx_map(idx: usize) -> Key32 {
+    unsafe {
+        IDX_MAP[idx]
+    }
 }
 
-var idxMap [keyMapLen]wasmlib.Key32
+// @formatter:on
 `,
 	// *******************************
 	"constFieldIdx": `
-	Idx$constPrefix$FldName = $fldIndex
+pub(crate) const IDX_$constPrefix$FLD_NAME: usize = $fldIndex;
 `,
 	// *******************************
 	"constFieldKey": `
-	$constPrefix$FldName,
+	$constPrefix$FLD_NAME,
 `,
 }

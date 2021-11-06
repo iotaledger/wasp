@@ -22,4 +22,3 @@ type $TypeName struct {
 $#each state proxyMethods
 `,
 }
-

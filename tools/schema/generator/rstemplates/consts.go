@@ -7,7 +7,7 @@ var constsRs = map[string]string{
 
 #![allow(dead_code)]
 
-$#emit rsHeader
+$#if core useCrate useWasmLib
 
 pub const SC_NAME:        &str = "$scName";
 pub const SC_DESCRIPTION: &str = "$scDesc";
@@ -42,14 +42,14 @@ $#each state constField
 `,
 	// *******************************
 	"constField": `
-pub const $constPrefix$FLD_NAME: &str = "$fldAlias";
+pub$crate const $constPrefix$FLD_NAME: &str = "$fldAlias";
 `,
 	// *******************************
 	"constFunc": `
-pub const $KIND$+_$FUNC_NAME:  &str = "$funcName";
+pub$crate const $KIND$+_$FUNC_NAME:  &str = "$funcName";
 `,
 	// *******************************
 	"constHFunc": `
-pub const H$KIND$+_$FUNC_NAME: ScHname = ScHname(0x$funcHName);
+pub$crate const H$KIND$+_$FUNC_NAME: ScHname = ScHname(0x$funcHName);
 `,
 }

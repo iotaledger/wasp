@@ -6,7 +6,6 @@ var funcsRs = map[string]string{
 use wasmlib::*;
 
 use crate::*;
-use crate::contract::*;
 $#if structs useStructs
 $#if typedefs useTypeDefs
 $#each func funcSignature
@@ -15,11 +14,11 @@ $#each func funcSignature
 	"funcSignature": `
 
 pub fn $kind&+_$func_name(ctx: &Sc$Kind$+Context, f: &$FuncName$+Context) {
-$#func funcSignature
+$#emit init$FuncName
 }
 `,
 	// *******************************
-	"funcInit": `
+	"initFuncInit": `
     if f.params.owner().exists() {
         f.state.owner().set_value(&f.params.owner().value());
         return;
@@ -27,11 +26,11 @@ $#func funcSignature
     f.state.owner().set_value(&ctx.contract_creator());
 `,
 	// *******************************
-	"getOwner": `
+	"initGetOwner": `
     f.results.owner().set_value(&f.state.owner().value());
 `,
 	// *******************************
-	"setOwner": `
+	"initSetOwner": `
     f.state.owner().set_value(&f.params.owner().value());
 `,
 }

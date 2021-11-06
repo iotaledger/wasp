@@ -9,8 +9,8 @@ var contractRs = map[string]string{
 
 use std::ptr;
 
-use wasmlib::*;
-$#if core else ContractUses
+$#if core useCrate useWasmLib
+$#if core useCoreContract contractUses
 $#each func FuncNameCall
 
 pub struct ScFuncs {
@@ -23,7 +23,7 @@ $#each func FuncNameForCall
 // @formatter:on
 `,
 	// *******************************
-	"ContractUses": `
+	"contractUses": `
 
 use crate::consts::*;
 $#if params useParams
@@ -49,6 +49,10 @@ $#if result ImmutableFuncNameResults
 	// *******************************
 	"FuncNameForCall": `
     pub fn $func_name(_ctx: & dyn Sc$Kind$+CallContext) -> $FuncName$+Call {
+$#set paramsID ptr::null_mut()
+$#set resultsID ptr::null_mut()
+$#if param setParamsID
+$#if result setResultsID
 $#if ptrs setPtrs noPtrs
     }
 `,
@@ -69,6 +73,14 @@ $#if result FuncNameResultsInit
 	// *******************************
 	"FuncNameResultsInit": `
             results: Immutable$FuncName$+Results { id: 0 },
+`,
+	// *******************************
+	"setParamsID": `
+$#set paramsID &mut f.params.id
+`,
+	// *******************************
+	"setResultsID": `
+$#set resultsID &mut f.results.id
 `,
 	// *******************************
 	"noPtrs": `

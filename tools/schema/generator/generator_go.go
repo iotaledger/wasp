@@ -179,29 +179,10 @@ func (g *GoGenerator) setFieldKeys() {
 	g.keys["FldLangType"] = goTypes[g.currentField.Type]
 	g.keys["FldMapKeyLangType"] = goTypes[g.currentField.MapKey]
 	g.keys["FldMapKeyKey"] = goKeys[g.currentField.MapKey]
-
-	// native core contracts use Array16 instead of our nested array type
-	arrayTypeID := "wasmlib.TYPE_ARRAY"
-	if g.s.CoreContracts {
-		arrayTypeID = "wasmlib.TYPE_ARRAY16"
-	}
-	g.keys["ArrayTypeID"] = arrayTypeID
 }
 
 func (g *GoGenerator) setFuncKeys() {
 	g.GenBase.setFuncKeys()
-
-	paramsID := "nil"
-	if len(g.currentFunc.Params) != 0 {
-		paramsID = "&f.Params.id"
-	}
-	g.keys["paramsID"] = paramsID
-
-	resultsID := "nil"
-	if len(g.currentFunc.Results) != 0 {
-		resultsID = "&f.Results.id"
-	}
-	g.keys["resultsID"] = resultsID
 
 	initFunc := ""
 	initMap := ""

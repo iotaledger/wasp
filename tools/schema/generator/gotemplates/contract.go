@@ -33,6 +33,10 @@ $#if result ImmutableFuncNameResults
 	"FuncNameForCall": `
 
 func (sc Funcs) $FuncName(ctx wasmlib.Sc$Kind$+CallContext) *$FuncName$+Call {
+$#set paramsID nil
+$#set resultsID nil
+$#if param setParamsID
+$#if result setResultsID
 $#if ptrs setPtrs noPtrs
 }
 `,
@@ -53,6 +57,14 @@ $#each func coreExportFunc
 	f := &$FuncName$+Call{Func: wasmlib.NewSc$initFunc$Kind(ctx, HScName, H$Kind$FuncName$initMap)}
 	f.Func.SetPtrs($paramsID, $resultsID)
 	return f
+`,
+	// *******************************
+	"setParamsID": `
+$#set paramsID &f.Params.id
+`,
+	// *******************************
+	"setResultsID": `
+$#set resultsID &f.Results.id
 `,
 	// *******************************
 	"noPtrs": `

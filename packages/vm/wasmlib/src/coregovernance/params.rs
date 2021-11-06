@@ -18,17 +18,18 @@ pub struct ImmutableAddAllowedStateControllerAddressParams {
 }
 
 impl ImmutableAddAllowedStateControllerAddressParams {
+
     pub fn chain_owner(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
-    }
+		ScImmutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
+	}
 
     pub fn fee_color(&self) -> ScImmutableColor {
-        ScImmutableColor::new(self.id, PARAM_FEE_COLOR.get_key_id())
-    }
+		ScImmutableColor::new(self.id, PARAM_FEE_COLOR.get_key_id())
+	}
 
     pub fn state_controller_address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
-    }
+		ScImmutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -37,17 +38,18 @@ pub struct MutableAddAllowedStateControllerAddressParams {
 }
 
 impl MutableAddAllowedStateControllerAddressParams {
+
     pub fn chain_owner(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
-    }
+		ScMutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
+	}
 
     pub fn fee_color(&self) -> ScMutableColor {
-        ScMutableColor::new(self.id, PARAM_FEE_COLOR.get_key_id())
-    }
+		ScMutableColor::new(self.id, PARAM_FEE_COLOR.get_key_id())
+	}
 
     pub fn state_controller_address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
-    }
+		ScMutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -56,9 +58,10 @@ pub struct ImmutableDelegateChainOwnershipParams {
 }
 
 impl ImmutableDelegateChainOwnershipParams {
+
     pub fn chain_owner(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
-    }
+		ScImmutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -67,9 +70,10 @@ pub struct MutableDelegateChainOwnershipParams {
 }
 
 impl MutableDelegateChainOwnershipParams {
+
     pub fn chain_owner(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
-    }
+		ScMutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -78,9 +82,10 @@ pub struct ImmutableRemoveAllowedStateControllerAddressParams {
 }
 
 impl ImmutableRemoveAllowedStateControllerAddressParams {
+
     pub fn state_controller_address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
-    }
+		ScImmutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -89,9 +94,10 @@ pub struct MutableRemoveAllowedStateControllerAddressParams {
 }
 
 impl MutableRemoveAllowedStateControllerAddressParams {
+
     pub fn state_controller_address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
-    }
+		ScMutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -100,9 +106,10 @@ pub struct ImmutableRotateStateControllerParams {
 }
 
 impl ImmutableRotateStateControllerParams {
+
     pub fn state_controller_address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
-    }
+		ScImmutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -111,9 +118,10 @@ pub struct MutableRotateStateControllerParams {
 }
 
 impl MutableRotateStateControllerParams {
+
     pub fn state_controller_address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
-    }
+		ScMutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -122,25 +130,26 @@ pub struct ImmutableSetChainInfoParams {
 }
 
 impl ImmutableSetChainInfoParams {
+
     pub fn max_blob_size(&self) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.id, PARAM_MAX_BLOB_SIZE.get_key_id())
-    }
+		ScImmutableInt32::new(self.id, PARAM_MAX_BLOB_SIZE.get_key_id())
+	}
 
     pub fn max_event_size(&self) -> ScImmutableInt16 {
-        ScImmutableInt16::new(self.id, PARAM_MAX_EVENT_SIZE.get_key_id())
-    }
+		ScImmutableInt16::new(self.id, PARAM_MAX_EVENT_SIZE.get_key_id())
+	}
 
     pub fn max_events_per_req(&self) -> ScImmutableInt16 {
-        ScImmutableInt16::new(self.id, PARAM_MAX_EVENTS_PER_REQ.get_key_id())
-    }
+		ScImmutableInt16::new(self.id, PARAM_MAX_EVENTS_PER_REQ.get_key_id())
+	}
 
     pub fn owner_fee(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
-    }
+		ScImmutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+	}
 
     pub fn validator_fee(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
-    }
+		ScImmutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -149,25 +158,26 @@ pub struct MutableSetChainInfoParams {
 }
 
 impl MutableSetChainInfoParams {
+
     pub fn max_blob_size(&self) -> ScMutableInt32 {
-        ScMutableInt32::new(self.id, PARAM_MAX_BLOB_SIZE.get_key_id())
-    }
+		ScMutableInt32::new(self.id, PARAM_MAX_BLOB_SIZE.get_key_id())
+	}
 
     pub fn max_event_size(&self) -> ScMutableInt16 {
-        ScMutableInt16::new(self.id, PARAM_MAX_EVENT_SIZE.get_key_id())
-    }
+		ScMutableInt16::new(self.id, PARAM_MAX_EVENT_SIZE.get_key_id())
+	}
 
     pub fn max_events_per_req(&self) -> ScMutableInt16 {
-        ScMutableInt16::new(self.id, PARAM_MAX_EVENTS_PER_REQ.get_key_id())
-    }
+		ScMutableInt16::new(self.id, PARAM_MAX_EVENTS_PER_REQ.get_key_id())
+	}
 
     pub fn owner_fee(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
-    }
+		ScMutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+	}
 
     pub fn validator_fee(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
-    }
+		ScMutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -176,17 +186,18 @@ pub struct ImmutableSetContractFeeParams {
 }
 
 impl ImmutableSetContractFeeParams {
+
     pub fn hname(&self) -> ScImmutableHname {
-        ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
-    }
+		ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
+	}
 
     pub fn owner_fee(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
-    }
+		ScImmutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+	}
 
     pub fn validator_fee(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
-    }
+		ScImmutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -195,17 +206,18 @@ pub struct MutableSetContractFeeParams {
 }
 
 impl MutableSetContractFeeParams {
+
     pub fn hname(&self) -> ScMutableHname {
-        ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
-    }
+		ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
+	}
 
     pub fn owner_fee(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
-    }
+		ScMutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+	}
 
     pub fn validator_fee(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
-    }
+		ScMutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -214,13 +226,14 @@ pub struct ImmutableSetDefaultFeeParams {
 }
 
 impl ImmutableSetDefaultFeeParams {
+
     pub fn owner_fee(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
-    }
+		ScImmutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+	}
 
     pub fn validator_fee(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
-    }
+		ScImmutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -229,13 +242,14 @@ pub struct MutableSetDefaultFeeParams {
 }
 
 impl MutableSetDefaultFeeParams {
+
     pub fn owner_fee(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
-    }
+		ScMutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+	}
 
     pub fn validator_fee(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
-    }
+		ScMutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -244,9 +258,10 @@ pub struct ImmutableGetFeeInfoParams {
 }
 
 impl ImmutableGetFeeInfoParams {
+
     pub fn hname(&self) -> ScImmutableHname {
-        ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
-    }
+		ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -255,7 +270,8 @@ pub struct MutableGetFeeInfoParams {
 }
 
 impl MutableGetFeeInfoParams {
+
     pub fn hname(&self) -> ScMutableHname {
-        ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
-    }
+		ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
+	}
 }
