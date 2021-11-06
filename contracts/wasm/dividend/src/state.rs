@@ -87,7 +87,7 @@ pub struct MapAddressToMutableInt64 {
 
 impl MapAddressToMutableInt64 {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_int64(&self, key: &ScAddress) -> ScMutableInt64 {

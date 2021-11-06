@@ -39,7 +39,7 @@ pub struct MapAgentIDToMutableBytes {
 
 impl MapAgentIDToMutableBytes {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_bytes(&self, key: &ScAgentID) -> ScMutableBytes {
@@ -85,7 +85,7 @@ pub struct MapColorToMutableInt64 {
 
 impl MapColorToMutableInt64 {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_int64(&self, key: &ScColor) -> ScMutableInt64 {

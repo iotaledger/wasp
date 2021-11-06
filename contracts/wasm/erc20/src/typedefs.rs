@@ -30,7 +30,7 @@ pub struct MapAgentIDToMutableInt64 {
 
 impl MapAgentIDToMutableInt64 {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_int64(&self, key: &ScAgentID) -> ScMutableInt64 {

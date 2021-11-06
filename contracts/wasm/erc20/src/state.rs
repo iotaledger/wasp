@@ -53,7 +53,7 @@ pub struct MapAgentIDToMutableAllowancesForAgent {
 
 impl MapAgentIDToMutableAllowancesForAgent {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_allowances_for_agent(&self, key: &ScAgentID) -> MutableAllowancesForAgent {

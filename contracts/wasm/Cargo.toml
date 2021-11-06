@@ -12,6 +12,7 @@ members = [
     "inccounter",
     "testcore",
     "testwasmlib",
+    "timestamp",
     "tokenregistry",
 ]
 
