@@ -47,7 +47,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.RequireNoError(err)
 	emulator.InitGenesis(
 		int(chainID),
-		rawdb.NewDatabase(emulator.NewKVAdapter(ctx.State())), // TODO: use subrealm to avoid collisions with evm management
+		rawdb.NewDatabase(emulator.NewKVAdapter(evminternal.EVMStateSubrealm(ctx.State()))),
 		genesisAlloc,
 		evm.GasLimitDefault,
 		timestamp(ctx),
@@ -57,18 +57,10 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-
-	tx := &types.Transaction{}
-	err := tx.UnmarshalBinary(ctx.Params().MustGet(evm.FieldTransactionData))
-	a.RequireNoError(err)
-
-	return evminternal.RequireGasFee(ctx, tx.Gas(), func() uint64 {
-		emu := getOrCreateEmulator(ctx)
-		receipt, err := emu.SendTransaction(tx)
-		a.RequireNoError(err)
-		return receipt.GasUsed
-	}), nil
+	return evminternal.ApplyTransaction(ctx, func(tx *types.Transaction, _ uint32) (*types.Receipt, error) {
+		emu := getEmulatorInBlockContext(ctx)
+		return emu.SendTransaction(tx)
+	})
 }
 
 func getBalance(ctx iscp.SandboxView) (dict.Dict, error) {

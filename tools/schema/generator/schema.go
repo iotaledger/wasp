@@ -131,6 +131,9 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 			return fmt.Errorf("duplicate func/view name: %s", funcName)
 		}
 		funcDesc := templateFuncs[funcName]
+		if funcDesc == nil {
+			funcDesc = &FuncDef{}
+		}
 		f := &Func{}
 		f.String = funcName
 		f.Hname = iscp.Hn(funcName)

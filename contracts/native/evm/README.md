@@ -108,3 +108,22 @@ Finally we start the JSON-RPC server:
 ```
 wasp-cli chain evm jsonrpc
 ```
+
+## Predictable block time
+
+Some EVM contracts depend on blocks being minted periodically with regular
+intervals. ISCP does not support that natively, so by default a new EVM block
+is minted every time an ISCP batch is executed that contains at least one EVM
+transaction. In other words, by default no EVM blocks will be minted until an
+EVM transaction is received.
+
+However, the `evmlight` implementation supports emulating predictable block
+times. To enable this feature, just pass the `--block-time n` flag when
+deploying the EVM chain with `wasp-cli chain evm deploy`, where `n` is
+the desired average amount of seconds between blocks.
+
+Note that this may change the behavior of JSON-RPC functions that query the
+EVM state (e.g. `getBalance`), since `evmlight` is not able to store the state
+in both the latest minted block and the pending block. These functions will
+always return the state computed after accepting the latest transaction (i.e.
+the state of the pending block).

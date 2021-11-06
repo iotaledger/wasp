@@ -2,7 +2,7 @@ package request
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -125,7 +125,7 @@ func parseParams(c echo.Context) (chainID *iscp.ChainID, req *request.OffLedger,
 		}
 		rGeneric, err := request.FromMarshalUtil(marshalutil.New(r.Request.Bytes()))
 		if err != nil {
-			return nil, nil, httperrors.BadRequest(fmt.Sprintf("Error constructing off-ledger request from base64 string: \"%s\"", r.Request))
+			return nil, nil, httperrors.BadRequest(fmt.Sprintf("Error constructing off-ledger request from base64 string: %q", r.Request))
 		}
 		var ok bool
 		if req, ok = rGeneric.(*request.OffLedger); !ok {
@@ -135,7 +135,7 @@ func parseParams(c echo.Context) (chainID *iscp.ChainID, req *request.OffLedger,
 	}
 
 	// binary format
-	reqBytes, err := ioutil.ReadAll(c.Request().Body)
+	reqBytes, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return nil, nil, httperrors.BadRequest("Error parsing request from payload")
 	}

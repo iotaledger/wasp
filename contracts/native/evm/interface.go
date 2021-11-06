@@ -36,6 +36,8 @@ var (
 	FuncSetGasPerIota   = coreutil.Func("setGasPerIota")
 	FuncGetGasPerIota   = coreutil.ViewFunc("getGasPerIota")
 	FuncWithdrawGasFees = coreutil.Func("withdrawGasFees")
+	FuncSetBlockTime    = coreutil.Func("setBlockTime") // only implemented by evmlight
+	FuncMintBlock       = coreutil.Func("mintBlock")    // only implemented by evmlight
 )
 
 const (
@@ -59,6 +61,7 @@ const (
 	FieldGasFee                  = "f"
 	FieldGasUsed                 = "gu"
 	FieldFilterQuery             = "fq"
+	FieldBlockTime               = "bt" // uint32, avg block time in seconds
 )
 
 const (
