@@ -32,7 +32,7 @@ $#if view ImmutablePackageState
 
 func $kind$FuncName$+Thunk(ctx wasmlib.Sc$Kind$+Context) {
 	ctx.Log("$package.$kind$FuncName")
-$#func accessCheck
+$#emit accessCheck
 	f := &$FuncName$+Context{
 $#if param ImmutableFuncNameParamsInit
 $#if result MutableFuncNameResultsInit
@@ -88,14 +88,43 @@ $#each mandatory requireMandatory
 	"requireMandatory": `
 	ctx.Require(f.Params.$FldName().Exists(), "missing mandatory $fldName")
 `,
+
 	// *******************************
-	"grantForKey": `
-	access := ctx.State().GetAgentID(wasmlib.Key("$grant"))
-	ctx.Require(access.Exists(), "access not set: $grant")
+	"accessCheck": `
+$#set accessFinalize accessOther
+$#emit caseAccess$funcAccess
+$#emit $accessFinalize
 `,
 	// *******************************
-	"grantRequire": `
-	ctx.Require(ctx.Caller() == $grant, "no permission")
+	"caseAccess": `
+$#set accessFinalize accessDone
+`,
+	// *******************************
+	"caseAccessself": `
+$funcAccessComment	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
+$#set accessFinalize accessDone
+`,
+	// *******************************
+	"caseAccesschain": `
+$funcAccessComment	ctx.Require(ctx.Caller() == ctx.ChainOwnerID(), "no permission")
+
+$#set accessFinalize accessDone
+`,
+	// *******************************
+	"caseAccesscreator": `
+$funcAccessComment	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+
+$#set accessFinalize accessDone
+`,
+	// *******************************
+	"accessOther": `
+$funcAccessComment	access := ctx.State().GetAgentID(wasmlib.Key("$funcAccess"))
+	ctx.Require(access.Exists(), "access not set: $funcAccess")
+	ctx.Require(ctx.Caller() == access.Value(), "no permission")
+
+`,
+	// *******************************
+	"accessDone": `
 `,
 }

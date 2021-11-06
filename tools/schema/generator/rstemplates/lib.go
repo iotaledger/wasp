@@ -59,7 +59,7 @@ $#if view ImmutablePackageState
 
 fn $kind$+_$func_name$+_thunk(ctx: &Sc$Kind$+Context) {
 	ctx.log("$package.$kind$FuncName");
-$#func accessCheck
+$#emit accessCheck
 	let f = $FuncName$+Context {
 $#if param ImmutableFuncNameParamsInit
 $#if result MutableFuncNameResultsInit
@@ -115,14 +115,43 @@ $#each mandatory requireMandatory
 	"requireMandatory": `
 	ctx.require(f.params.$fld_name().exists(), "missing mandatory $fldName");
 `,
+
 	// *******************************
-	"grantForKey": `
-	let access = ctx.state().get_agent_id("$grant");
-	ctx.require(access.exists(), "access not set: $grant");
+	"accessCheck": `
+$#set accessFinalize accessOther
+$#emit caseAccess$funcAccess
+$#emit $accessFinalize
 `,
 	// *******************************
-	"grantRequire": `
-	ctx.require(ctx.caller() == $grant, "no permission");
+	"caseAccess": `
+$#set accessFinalize accessDone
+`,
+	// *******************************
+	"caseAccessself": `
+$funcAccessComment	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
+$#set accessFinalize accessDone
+`,
+	// *******************************
+	"caseAccesschain": `
+$funcAccessComment	ctx.require(ctx.caller() == ctx.chain_owner_id(), "no permission");
+
+$#set accessFinalize accessDone
+`,
+	// *******************************
+	"caseAccesscreator": `
+$funcAccessComment		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+$#set accessFinalize accessDone
+`,
+	// *******************************
+	"accessOther": `
+$funcAccessComment	let access = ctx.state().get_agent_id("$funcAccess");
+	ctx.require(access.exists(), "access not set: $funcAccess");
+	ctx.require(ctx.caller() == access.value(), "no permission");
+
+`,
+	// *******************************
+	"accessDone": `
 `,
 }

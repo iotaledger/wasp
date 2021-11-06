@@ -5,6 +5,7 @@ var TsTemplates = []map[string]string{
 	constsTs,
 	contractTs,
 	funcsTs,
+	indexTs,
 	keysTs,
 	libTs,
 	paramsTs,
@@ -33,4 +34,10 @@ import * as wasmlib from "wasmlib";
 	"importSc": `
 import * as sc from "./index";
 `,
+	// *******************************
+	"tsconfig.json": `
+{
+  "extends": "assemblyscript/std/assembly.json",
+  "include": ["./*.ts"]
+}`,
 }

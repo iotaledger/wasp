@@ -248,7 +248,7 @@ pub struct SendToAddressContext {
 
 fn func_send_to_address_thunk(ctx: &ScFuncContext) {
 	ctx.log("testcore.funcSendToAddress");
-	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = SendToAddressContext {
 		params: ImmutableSendToAddressParams {

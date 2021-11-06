@@ -356,6 +356,15 @@ func (g *GenBase) setFuncKeys() {
 	g.setMultiKeyValues("funcName", g.currentFunc.FuncName[4:])
 	g.setMultiKeyValues("kind", g.currentFunc.FuncName[:4])
 	g.keys["funcHName"] = iscp.Hn(g.keys["funcName"]).String()
+	grant := g.currentFunc.Access
+	comment := ""
+	index := strings.Index(grant, "//")
+	if index >= 0 {
+		comment = fmt.Sprintf("    %s\n", grant[index:])
+		grant = strings.TrimSpace(grant[:index])
+	}
+	g.keys["funcAccess"] = grant
+	g.keys["funcAccessComment"] = comment
 }
 
 func (g *GenBase) setMultiKeyValues(key, value string) {

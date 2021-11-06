@@ -5,7 +5,6 @@ package generator
 
 import (
 	"regexp"
-	"strings"
 
 	"github.com/iotaledger/wasp/tools/schema/generator/rstemplates"
 )
@@ -89,7 +88,6 @@ func (g *RustGenerator) init(s *Schema) {
 	for _, template := range rstemplates.RsTemplates {
 		g.addTemplates(template)
 	}
-	g.emitters["accessCheck"] = emitterRsAccessCheck
 }
 
 func (g *RustGenerator) funcName(f *Func) string {
@@ -160,32 +158,6 @@ func (g *RustGenerator) writeSpecialMod() {
 	g.println(allowUnusedImports)
 	g.generateModLines("pub use %s::*;\n")
 	g.generateModLines("pub mod %s;\n")
-}
-
-func emitterRsAccessCheck(g *GenBase) {
-	if g.currentFunc.Access == "" {
-		return
-	}
-	grant := g.currentFunc.Access
-	index := strings.Index(grant, "//")
-	if index >= 0 {
-		g.printf("    %s\n", grant[index:])
-		grant = strings.TrimSpace(grant[:index])
-	}
-	switch grant {
-	case AccessSelf:
-		grant = "ctx.account_id()"
-	case AccessChain:
-		grant = "ctx.chain_owner_id()"
-	case AccessCreator:
-		grant = "ctx.contract_creator()"
-	default:
-		g.keys["grant"] = grant
-		g.emit("grantForKey")
-		grant = "access.value()"
-	}
-	g.keys["grant"] = grant
-	g.emit("grantRequire")
 }
 
 func (g *RustGenerator) setFieldKeys() {

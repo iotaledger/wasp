@@ -97,7 +97,7 @@ pub struct SetOwnerMarginContext {
 fn func_set_owner_margin_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairauction.funcSetOwnerMargin");
     // only SC creator can set owner margin
-	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = SetOwnerMarginContext {
 		params: ImmutableSetOwnerMarginParams {

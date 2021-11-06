@@ -5,7 +5,6 @@ package generator
 
 import (
 	"regexp"
-	"strings"
 
 	"github.com/iotaledger/wasp/tools/schema/generator/gotemplates"
 )
@@ -71,7 +70,6 @@ func (g *GoGenerator) init(s *Schema) {
 	for _, template := range gotemplates.GoTemplates {
 		g.addTemplates(template)
 	}
-	g.emitters["accessCheck"] = emitterGoAccessCheck
 }
 
 func (g *GoGenerator) funcName(f *Func) string {
@@ -91,32 +89,6 @@ func (g *GoGenerator) writeInitialFuncs() {
 
 func (g *GoGenerator) writeSpecialMain() {
 	g.emit("main.go")
-}
-
-func emitterGoAccessCheck(g *GenBase) {
-	if g.currentFunc.Access == "" {
-		return
-	}
-	grant := g.currentFunc.Access
-	index := strings.Index(grant, "//")
-	if index >= 0 {
-		g.printf("\t%s\n", grant[index:])
-		grant = strings.TrimSpace(grant[:index])
-	}
-	switch grant {
-	case AccessSelf:
-		grant = "ctx.AccountID()"
-	case AccessChain:
-		grant = "ctx.ChainOwnerID()"
-	case AccessCreator:
-		grant = "ctx.ContractCreator()"
-	default:
-		g.keys["grant"] = grant
-		g.emit("grantForKey")
-		grant = "access.Value()"
-	}
-	g.keys["grant"] = grant
-	g.emit("grantRequire")
 }
 
 func (g *GoGenerator) setFieldKeys() {

@@ -140,6 +140,7 @@ func generateSchema(file *os.File) error {
 }
 
 func generateSchemaNew() error {
+	// TODO make sure name is valid: no path characters
 	name := *flagInit
 	fmt.Println("initializing " + name)
 

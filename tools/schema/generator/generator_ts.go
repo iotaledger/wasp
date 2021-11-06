@@ -5,7 +5,6 @@ package generator
 
 import (
 	"regexp"
-	"strings"
 
 	"github.com/iotaledger/wasp/tools/schema/generator/tstemplates"
 )
@@ -85,7 +84,6 @@ func (g *TypeScriptGenerator) init(s *Schema) {
 	for _, template := range tstemplates.TsTemplates {
 		g.addTemplates(template)
 	}
-	g.emitters["accessCheck"] = emitterTsAccessCheck
 }
 
 func (g *TypeScriptGenerator) funcName(f *Func) string {
@@ -105,78 +103,25 @@ func (g *TypeScriptGenerator) writeInitialFuncs() {
 }
 
 func (g *TypeScriptGenerator) writeSpecialConfigJSON() error {
-	err := g.exists(g.folder + "tsconfig.json")
+	tsconfig := "tsconfig.json"
+	err := g.exists(g.folder + tsconfig)
 	if err == nil {
 		// already exists
 		return nil
 	}
 
-	err = g.create(g.folder + "tsconfig.json")
+	err = g.create(g.folder + tsconfig)
 	if err != nil {
 		return err
 	}
 	defer g.close()
 
-	g.println("{")
-	g.println("  \"extends\": \"assemblyscript/std/assembly.json\",")
-	g.println("  \"include\": [\"./*.ts\"]")
-	g.println("}")
-
+	g.emit(tsconfig)
 	return nil
 }
 
 func (g *TypeScriptGenerator) writeSpecialIndex() {
-	if !g.s.CoreContracts {
-		g.printf("export * from \"./%s\";\n\n", g.s.Name)
-	}
-
-	g.println("export * from \"./consts\";")
-	g.println("export * from \"./contract\";")
-	if !g.s.CoreContracts {
-		g.println("export * from \"./keys\";")
-		g.println("export * from \"./lib\";")
-	}
-	if len(g.s.Params) != 0 {
-		g.println("export * from \"./params\";")
-	}
-	if len(g.s.Results) != 0 {
-		g.println("export * from \"./results\";")
-	}
-	if !g.s.CoreContracts {
-		g.println("export * from \"./state\";")
-		if len(g.s.Structs) != 0 {
-			g.println("export * from \"./structs\";")
-		}
-		if len(g.s.Typedefs) != 0 {
-			g.println("export * from \"./typedefs\";")
-		}
-	}
-}
-
-func emitterTsAccessCheck(g *GenBase) {
-	if g.currentFunc.Access == "" {
-		return
-	}
-	grant := g.currentFunc.Access
-	index := strings.Index(grant, "//")
-	if index >= 0 {
-		g.printf("    %s\n", grant[index:])
-		grant = strings.TrimSpace(grant[:index])
-	}
-	switch grant {
-	case AccessSelf:
-		grant = "ctx.accountID()"
-	case AccessChain:
-		grant = "ctx.chainOwnerID()"
-	case AccessCreator:
-		grant = "ctx.contractCreator()"
-	default:
-		g.keys["grant"] = grant
-		g.emit("grantForKey")
-		grant = "access.value()"
-	}
-	g.keys["grant"] = grant
-	g.emit("grantRequire")
+	g.emit("index.ts")
 }
 
 func (g *TypeScriptGenerator) setFieldKeys() {
