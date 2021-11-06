@@ -3,54 +3,64 @@ package tstemplates
 var contractTs = map[string]string{
 	// *******************************
 	"contract.ts": `
-// @formatter:off
-
-#![allow(dead_code)]
-
-use std::ptr;
-
-$#if core useCrate useWasmLib
-$#if core useCoreContract contractUses
+$#emit importWasmLib
+$#emit importSc
 $#each func FuncNameCall
 
-pub struct ScFuncs {
-}
-
-impl ScFuncs {
+export class ScFuncs {
 $#each func FuncNameForCall
 }
-
-// @formatter:on
-`,
-	// *******************************
-	"contractUses": `
-
-use crate::consts::*;
-$#if params useParams
-$#if results useResults
 `,
 	// *******************************
 	"FuncNameCall": `
 
-pub struct $FuncName$+Call {
-	pub func: Sc$initFunc$Kind,
+export class $FuncName$+Call {
+	func: wasmlib.Sc$initFunc$Kind = new wasmlib.Sc$initFunc$Kind(sc.HScName, sc.H$Kind$FuncName);
 $#if param MutableFuncNameParams
 $#if result ImmutableFuncNameResults
 }
+$#if core else FuncNameContext
+`,
+	// *******************************
+	"FuncNameContext": `
+
+export class $FuncName$+Context {
+$#if param ImmutableFuncNameParams
+$#if result MutableFuncNameResults
+$#if func MutablePackageState
+$#if view ImmutablePackageState
+}
+`,
+	// *******************************
+	"ImmutableFuncNameParams": `
+	params: sc.Immutable$FuncName$+Params = new sc.Immutable$FuncName$+Params();
 `,
 	// *******************************
 	"MutableFuncNameParams": `
-	pub params: Mutable$FuncName$+Params,
+	params: sc.Mutable$FuncName$+Params = new sc.Mutable$FuncName$+Params();
 `,
 	// *******************************
 	"ImmutableFuncNameResults": `
-	pub results: Immutable$FuncName$+Results,
+	results: sc.Immutable$FuncName$+Results = new sc.Immutable$FuncName$+Results();
+`,
+	// *******************************
+	"MutableFuncNameResults": `
+	results: sc.Mutable$FuncName$+Results = new sc.Mutable$FuncName$+Results();
+`,
+	// *******************************
+	"ImmutablePackageState": `
+	state: sc.Immutable$Package$+State = new sc.Immutable$Package$+State();
+`,
+	// *******************************
+	"MutablePackageState": `
+	state: sc.Mutable$Package$+State = new sc.Mutable$Package$+State();
 `,
 	// *******************************
 	"FuncNameForCall": `
-    pub fn $func_name(_ctx: & dyn Sc$Kind$+CallContext) -> $FuncName$+Call {
-$#set paramsID ptr::null_mut()
-$#set resultsID ptr::null_mut()
+
+    static $funcName(ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
+$#set paramsID null
+$#set resultsID null
 $#if param setParamsID
 $#if result setResultsID
 $#if ptrs setPtrs noPtrs
@@ -58,34 +68,20 @@ $#if ptrs setPtrs noPtrs
 `,
 	// *******************************
 	"setPtrs": `
-        let mut f = $FuncName$+Call {
-            func: Sc$initFunc$Kind::new(HSC_NAME, H$KIND$+_$FUNC_NAME),
-$#if param FuncNameParamsInit
-$#if result FuncNameResultsInit
-        };
-        f.func.set_ptrs($paramsID, $resultsID);
-        f
-`,
-	// *******************************
-	"FuncNameParamsInit": `
-            params: Mutable$FuncName$+Params { id: 0 },
-`,
-	// *******************************
-	"FuncNameResultsInit": `
-            results: Immutable$FuncName$+Results { id: 0 },
+        let f = new $FuncName$+Call();
+        f.func.setPtrs($paramsID, $resultsID);
+        return f;
 `,
 	// *******************************
 	"setParamsID": `
-$#set paramsID &mut f.params.id
+$#set paramsID f.params
 `,
 	// *******************************
 	"setResultsID": `
-$#set resultsID &mut f.results.id
+$#set resultsID f.results
 `,
 	// *******************************
 	"noPtrs": `
-        $FuncName$+Call {
-            func: Sc$initFunc$Kind::new(HSC_NAME, H$KIND$+_$FUNC_NAME),
-        }
+        return new $FuncName$+Call();
 `,
 }

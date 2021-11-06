@@ -85,18 +85,6 @@ func (g *GoGenerator) generateLanguageSpecificFiles() error {
 	return g.createSourceFile("../main", g.writeSpecialMain)
 }
 
-func (g *GoGenerator) generateProxyArray(field *Field, mutability, arrayType, proxyType string) {
-	panic("generateProxyArray")
-}
-
-func (g *GoGenerator) generateProxyMap(field *Field, mutability, mapType, proxyType string) {
-	panic("generateProxyMap")
-}
-
-func (g *GoGenerator) generateProxyReference(field *Field, mutability, typeName string) {
-	panic("generateProxyReference")
-}
-
 func (g *GoGenerator) writeConsts() {
 	g.emit("consts.go")
 }

@@ -3,126 +3,62 @@ package tstemplates
 var libTs = map[string]string{
 	// *******************************
 	"lib.ts": `
-// @formatter:off
+$#emit importWasmLib
+$#emit importSc
 
-#![allow(dead_code)]
-#![allow(unused_imports)]
+export function on_call(index: i32): void {
+    return wasmlib.onCall(index);
+}
 
-use $package::*;
-use wasmlib::*;
-use wasmlib::host::*;
-
-use crate::consts::*;
-use crate::keys::*;
-$#if params useParams
-$#if results useResults
-use crate::state::*;
-
-mod consts;
-mod contract;
-mod keys;
-$#if params modParams
-$#if results modResults
-mod state;
-$#if structs modStructs
-$#if typedefs modTypeDefs
-mod $package;
-
-#[no_mangle]
-fn on_load() {
-    let exports = ScExports::new();
+export function on_load(): void {
+    let exports = new wasmlib.ScExports();
 $#each func libExportFunc
 
-    unsafe {
-        for i in 0..KEY_MAP_LEN {
-            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
-        }
+    for (let i = 0; i < sc.keyMap.length; i++) {
+        sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
     }
 }
 $#each func libThunk
-
-// @formatter:on
 `,
 	// *******************************
 	"libExportFunc": `
-    exports.add_$kind($KIND$+_$FUNC_NAME, $kind$+_$func_name$+_thunk);
+    exports.add$Kind(sc.$Kind$FuncName, $kind$FuncName$+Thunk);
 `,
 	// *******************************
 	"libThunk": `
 
-pub struct $FuncName$+Context {
-$#if param ImmutableFuncNameParams
-$#if result MutableFuncNameResults
-$#if func MutablePackageState
-$#if view ImmutablePackageState
-}
-
-fn $kind$+_$func_name$+_thunk(ctx: &Sc$Kind$+Context) {
+function $kind$FuncName$+Thunk(ctx: wasmlib.Sc$Kind$+Context): void {
 	ctx.log("$package.$kind$FuncName");
 $#func accessCheck
-	let f = $FuncName$+Context {
+	let f = new sc.$FuncName$+Context();
 $#if param ImmutableFuncNameParamsInit
 $#if result MutableFuncNameResultsInit
-$#if func MutablePackageStateInit
-$#if view ImmutablePackageStateInit
-	};
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
 $#each mandatory requireMandatory
-	$kind$+_$func_name(ctx, &f);
+	sc.$kind$FuncName(ctx, f);
 	ctx.log("$package.$kind$FuncName ok");
 }
 `,
 	// *******************************
-	"ImmutableFuncNameParams": `
-	params: Immutable$FuncName$+Params,
-`,
-	// *******************************
 	"ImmutableFuncNameParamsInit": `
-		params: Immutable$FuncName$+Params {
-			id: OBJ_ID_PARAMS,
-		},
-`,
-	// *******************************
-	"MutableFuncNameResults": `
-	results: Mutable$FuncName$+Results,
+    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
 `,
 	// *******************************
 	"MutableFuncNameResultsInit": `
-		results: Mutable$FuncName$+Results {
-			id: OBJ_ID_RESULTS,
-		},
-`,
-	// *******************************
-	"MutablePackageState": `
-	state: Mutable$Package$+State,
-`,
-	// *******************************
-	"MutablePackageStateInit": `
-		state: Mutable$Package$+State {
-			id: OBJ_ID_STATE,
-		},
-`,
-	// *******************************
-	"ImmutablePackageState": `
-	state: Immutable$Package$+State,
-`,
-	// *******************************
-	"ImmutablePackageStateInit": `
-		state: Immutable$Package$+State {
-			id: OBJ_ID_STATE,
-		},
+    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
 `,
 	// *******************************
 	"requireMandatory": `
-	ctx.require(f.params.$fld_name().exists(), "missing mandatory $fldName");
+	ctx.require(f.params.$fldName().exists(), "missing mandatory $fldName");
 `,
 	// *******************************
 	"grantForKey": `
-	let access = ctx.state().get_agent_id("$grant");
+	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("$grant"));
 	ctx.require(access.exists(), "access not set: $grant");
 `,
 	// *******************************
 	"grantRequire": `
-	ctx.require(ctx.caller() == $grant, "no permission");
+	ctx.require(ctx.caller().equals($grant), "no permission");
 
 `,
 }

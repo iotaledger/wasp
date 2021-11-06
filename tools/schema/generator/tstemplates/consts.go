@@ -3,15 +3,11 @@ package tstemplates
 var constsTs = map[string]string{
 	// *******************************
 	"consts.ts": `
-// @formatter:off
+$#emit importWasmLib
 
-#![allow(dead_code)]
-
-$#if core useCrate useWasmLib
-
-pub const SC_NAME:        &str = "$scName";
-pub const SC_DESCRIPTION: &str = "$scDesc";
-pub const HSC_NAME:       ScHname = ScHname(0x$hscName);
+export const ScName        = "$scName";
+export const ScDescription = "$scDesc";
+export const HScName       = new wasmlib.ScHname(0x$hscName);
 $#if params constParams
 $#if results constResults
 $#if state constState
@@ -19,37 +15,35 @@ $#if state constState
 $#each func constFunc
 
 $#each func constHFunc
-
-// @formatter:on
 `,
 	// *******************************
 	"constParams": `
 
-$#set constPrefix PARAM_
+$#set constPrefix Param
 $#each params constField
 `,
 	// *******************************
 	"constResults": `
 
-$#set constPrefix RESULT_
+$#set constPrefix Result
 $#each results constField
 `,
 	// *******************************
 	"constState": `
 
-$#set constPrefix STATE_
+$#set constPrefix State
 $#each state constField
 `,
 	// *******************************
 	"constField": `
-pub$crate const $constPrefix$FLD_NAME: &str = "$fldAlias";
+export const $constPrefix$FldName = "$fldAlias";
 `,
 	// *******************************
 	"constFunc": `
-pub$crate const $KIND$+_$FUNC_NAME:  &str = "$funcName";
+export const $Kind$FuncName = "$funcName";
 `,
 	// *******************************
 	"constHFunc": `
-pub$crate const H$KIND$+_$FUNC_NAME: ScHname = ScHname(0x$funcHName);
+export const H$Kind$FuncName = new wasmlib.ScHname(0x$funcHName);
 `,
 }

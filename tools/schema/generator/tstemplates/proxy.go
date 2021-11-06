@@ -8,7 +8,7 @@ $#if map typedefProxyMap
 `,
 	// *******************************
 	"proxyMethods": `
-$#set varID idx_map(IDX_$Kind$FLD_NAME)
+$#set varID sc.idxMap[sc.Idx$Kind$FldName]
 $#if core setCoreVarID
 $#if array proxyArray proxyMethods2
 `,
@@ -22,14 +22,14 @@ $#if basetype proxyBaseType proxyNewType
 `,
 	// *******************************
 	"setCoreVarID": `
-$#set varID $Kind$FLD_NAME.get_key_id()
+$#set varID wasmlib.Key32.fromString(sc.$Kind$FldName)
 `,
 	// *******************************
 	"proxyArray": `
 
-    pub fn $fld_name(&self) -> ArrayOf$mut$FldType {
-		let arr_id = get_object_id(self.id, $varID, $arrayTypeID | $FldTypeID);
-		ArrayOf$mut$FldType { obj_id: arr_id }
+    $fldName(): sc.ArrayOf$mut$FldType {
+		let arrID = wasmlib.getObjectID(this.mapID, $varID, $arrayTypeID|$FldTypeID);
+		return new sc.ArrayOf$mut$FldType(arrID);
 	}
 `,
 	// *******************************
@@ -39,30 +39,30 @@ $#if this proxyMapThis proxyMapOther
 	// *******************************
 	"proxyMapThis": `
 
-    pub fn $fld_name(&self) -> Map$FldMapKey$+To$mut$FldType {
-		Map$FldMapKey$+To$mut$FldType { obj_id: self.id }
+    $fldName(): sc.Map$FldMapKey$+To$mut$FldType {
+		return new sc.Map$FldMapKey$+To$mut$FldType(this.mapID);
 	}
 `,
 	// *******************************
-	"proxyMapOther": `55544444.0
+	"proxyMapOther": `
 
-    pub fn $fld_name(&self) -> Map$FldMapKey$+To$mut$FldType {
-		let map_id = get_object_id(self.id, $varID, TYPE_MAP);
-		Map$FldMapKey$+To$mut$FldType { obj_id: map_id }
+    $fldName(): sc.Map$FldMapKey$+To$mut$FldType {
+		let mapID = wasmlib.getObjectID(this.mapID, $varID, wasmlib.TYPE_MAP);
+		return new sc.Map$FldMapKey$+To$mut$FldType(mapID);
 	}
 `,
 	// *******************************
 	"proxyBaseType": `
 
-    pub fn $fld_name(&self) -> Sc$mut$FldType {
-		Sc$mut$FldType::new(self.id, $varID)
+    $fldName(): wasmlib.Sc$mut$FldType {
+		return new wasmlib.Sc$mut$FldType(this.mapID, $varID);
 	}
 `,
 	// *******************************
 	"proxyNewType": `
 
-    pub fn $fld_name(&self) -> $mut$FldType {
-		$mut$FldType { obj_id: self.id, key_id: $varID }
+    $fldName(): sc.$mut$FldType {
+		return new sc.$mut$FldType(this.mapID, $varID);
 	}
 `,
 }

@@ -3,17 +3,9 @@ package tstemplates
 var stateTs = map[string]string{
 	// *******************************
 	"state.ts": `
-#![allow(dead_code)]
-#![allow(unused_imports)]
-
-use wasmlib::*;
-use wasmlib::host::*;
-
-use crate::*;
-use crate::keys::*;
-$#if structs useStructs
-$#if typedefs useTypeDefs
-$#set Kind STATE_
+$#emit importWasmLib
+$#emit importSc
+$#set Kind State
 $#set mut Immutable
 $#emit stateProxyStruct
 $#set mut Mutable
@@ -24,16 +16,7 @@ $#emit stateProxyStruct
 $#set TypeName $mut$Package$+State
 $#each state proxyContainers
 
-#[derive(Clone, Copy)]
-pub struct $TypeName {
-    pub(crate) id: i32,
-}
-$#if state stateProxyImpl
-`,
-	// *******************************
-	"stateProxyImpl": `
-
-impl $TypeName {
+export class $TypeName extends wasmlib.ScMapID {
 $#each state proxyMethods
 }
 `,

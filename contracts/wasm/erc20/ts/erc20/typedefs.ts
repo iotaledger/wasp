@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class MapAgentIDToImmutableInt64 {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -24,14 +24,14 @@ export class ImmutableAllowancesForAgent extends MapAgentIDToImmutableInt64 {
 };
 
 export class MapAgentIDToMutableInt64 {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
     }
 
     clear(): void {
-        wasmlib.clear(this.objID)
+        wasmlib.clear(this.objID);
     }
 
     getInt64(key: wasmlib.ScAgentID): wasmlib.ScMutableInt64 {

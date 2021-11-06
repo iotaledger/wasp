@@ -75,14 +75,6 @@ func NewSchema() *Schema {
 	return &Schema{}
 }
 
-func (s *Schema) appendConst(name, value string) {
-	if s.ConstLen < len(name) {
-		s.ConstLen = len(name)
-	}
-	s.ConstNames = append(s.ConstNames, name)
-	s.ConstValues = append(s.ConstValues, value)
-}
-
 func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	s.FullName = strings.TrimSpace(schemaDef.Name)
 	if s.FullName == "" {
@@ -273,13 +265,4 @@ func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
 		s.Typedefs = append(s.Typedefs, varDef)
 	}
 	return nil
-}
-
-func (s *Schema) flushConsts(printer func(name string, value string, padLen int)) {
-	for i, name := range s.ConstNames {
-		printer(name, s.ConstValues[i], s.ConstLen)
-	}
-	s.ConstLen = 0
-	s.ConstNames = nil
-	s.ConstValues = nil
 }

@@ -63,9 +63,6 @@ type Generator interface {
 	init(s *Schema)
 	funcName(f *Func) string
 	generateLanguageSpecificFiles() error
-	generateProxyArray(field *Field, mutability, arrayType, proxyType string)
-	generateProxyMap(field *Field, mutability, mapType, proxyType string)
-	generateProxyReference(field *Field, mutability, typeName string)
 	setFieldKeys()
 	setFuncKeys()
 	writeConsts()
@@ -500,29 +497,6 @@ func (g *GenBase) generateFuncs() error {
 	}
 
 	return os.Remove(scOriginal)
-}
-
-func (g *GenBase) generateProxy(field *Field, mutability string) {
-	if field.Array {
-		proxyType := mutability + field.Type
-		arrayType := "ArrayOf" + proxyType
-		if !g.newTypes[arrayType] {
-			g.newTypes[arrayType] = true
-			g.gen.generateProxyArray(field, mutability, arrayType, proxyType)
-		}
-		g.gen.generateProxyReference(field, mutability, arrayType)
-		return
-	}
-
-	if field.MapKey != "" {
-		proxyType := mutability + field.Type
-		mapType := "Map" + field.MapKey + "To" + proxyType
-		if !g.newTypes[mapType] {
-			g.newTypes[mapType] = true
-			g.gen.generateProxyMap(field, mutability, mapType, proxyType)
-		}
-		g.gen.generateProxyReference(field, mutability, mapType)
-	}
 }
 
 func (g *GenBase) generateTests() error {

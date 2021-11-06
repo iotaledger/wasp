@@ -134,18 +134,6 @@ func (g *RustGenerator) generateModLines(format string) {
 	}
 }
 
-func (g *RustGenerator) generateProxyArray(field *Field, mutability, arrayType, proxyType string) {
-	panic("generateProxyArray")
-}
-
-func (g *RustGenerator) generateProxyMap(field *Field, mutability, mapType, proxyType string) {
-	panic("generateProxyMap")
-}
-
-func (g *RustGenerator) generateProxyReference(field *Field, mutability, typeName string) {
-	panic("generateProxyReference")
-}
-
 func (g *RustGenerator) writeConsts() {
 	g.emit("consts.rs")
 }

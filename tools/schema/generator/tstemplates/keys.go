@@ -3,48 +3,33 @@ package tstemplates
 var keysTs = map[string]string{
 	// *******************************
 	"keys.ts": `
-// @formatter:off
+$#emit importWasmLib
+$#emit importSc
 
-#![allow(dead_code)]
-
-use wasmlib::*;
-
-use crate::*;
-
-$#set constPrefix PARAM_
+$#set constPrefix Param
 $#each params constFieldIdx
-$#set constPrefix RESULT_
+$#set constPrefix Result
 $#each results constFieldIdx
-$#set constPrefix STATE_
+$#set constPrefix State
 $#each state constFieldIdx
 
-pub const KEY_MAP_LEN: usize = $maxIndex;
-
-pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
-$#set constPrefix PARAM_
+export let keyMap: string[] = [
+$#set constPrefix Param
 $#each params constFieldKey
-$#set constPrefix RESULT_
+$#set constPrefix Result
 $#each results constFieldKey
-$#set constPrefix STATE_
+$#set constPrefix State
 $#each state constFieldKey
 ];
 
-pub static mut IDX_MAP: [Key32; KEY_MAP_LEN] = [Key32(0); KEY_MAP_LEN];
-
-pub fn idx_map(idx: usize) -> Key32 {
-    unsafe {
-        IDX_MAP[idx]
-    }
-}
-
-// @formatter:on
+export let idxMap: wasmlib.Key32[] = new Array(keyMap.length);
 `,
 	// *******************************
 	"constFieldIdx": `
-pub(crate) const IDX_$constPrefix$FLD_NAME: usize = $fldIndex;
+export const Idx$constPrefix$FldName = $fldIndex;
 `,
 	// *******************************
 	"constFieldKey": `
-	$constPrefix$FLD_NAME,
+	sc.$constPrefix$FldName,
 `,
 }

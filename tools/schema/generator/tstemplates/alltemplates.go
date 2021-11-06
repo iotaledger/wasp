@@ -18,65 +18,19 @@ var TsTemplates = []map[string]string{
 var tsCommon = map[string]string{
 	// *******************************
 	"initGlobals": `
-$#set arrayTypeID TYPE_ARRAY
-$#set crate 
+$#set arrayTypeID wasmlib.TYPE_ARRAY
 $#if core setArrayTypeID
 `,
 	// *******************************
 	"setArrayTypeID": `
-$#set arrayTypeID TYPE_ARRAY16
-$#set crate (crate)
+$#set arrayTypeID wasmlib.TYPE_ARRAY16
 `,
 	// *******************************
-	"tsHeader": `
-$#if core useCrate useWasmLib
+	"importWasmLib": `
+import * as wasmlib from "wasmlib";
 `,
 	// *******************************
-	"modParams": `
-mod params;
-`,
-	// *******************************
-	"modResults": `
-mod results;
-`,
-	// *******************************
-	"modStructs": `
-mod structs;
-`,
-	// *******************************
-	"modTypeDefs": `
-mod typedefs;
-`,
-	// *******************************
-	"useCrate": `
-use crate::*;
-`,
-	// *******************************
-	"useCoreContract": `
-use crate::$package::*;
-`,
-	// *******************************
-	"useHost": `
-use crate::host::*;
-`,
-	// *******************************
-	"useParams": `
-use crate::params::*;
-`,
-	// *******************************
-	"useResults": `
-use crate::results::*;
-`,
-	// *******************************
-	"useStructs": `
-use crate::structs::*;
-`,
-	// *******************************
-	"useTypeDefs": `
-use crate::typedefs::*;
-`,
-	// *******************************
-	"useWasmLib": `
-use wasmlib::*;
+	"importSc": `
+import * as sc from "./index";
 `,
 }
