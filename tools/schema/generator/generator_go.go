@@ -69,10 +69,6 @@ func (g *GoGenerator) init(s *Schema) {
 	g.GenBase.init(s, gotemplates.GoTemplates)
 }
 
-func (g *GoGenerator) funcName(f *Func) string {
-	return f.FuncName
-}
-
 func (g *GoGenerator) generateLanguageSpecificFiles() error {
 	if g.s.CoreContracts {
 		return nil
@@ -87,22 +83,8 @@ func (g *GoGenerator) setFieldKeys() {
 	if fldTypeID == "" {
 		fldTypeID = "wasmlib.TYPE_BYTES"
 	}
-	g.keys["FldTypeID"] = fldTypeID
-	g.keys["FldTypeKey"] = goKeys[g.currentField.Type]
-	g.keys["FldLangType"] = goTypes[g.currentField.Type]
-	g.keys["FldMapKeyLangType"] = goTypes[g.currentField.MapKey]
-	g.keys["FldMapKeyKey"] = goKeys[g.currentField.MapKey]
-}
-
-func (g *GoGenerator) setFuncKeys() {
-	g.GenBase.setFuncKeys()
-
-	initFunc := ""
-	initMap := ""
-	if g.currentFunc.Type == InitFunc {
-		initFunc = InitFunc
-		initMap = ", keyMap[:], idxMap[:]"
-	}
-	g.keys["initFunc"] = initFunc
-	g.keys["initMap"] = initMap
+	g.keys["fldTypeID"] = fldTypeID
+	g.keys["fldLangType"] = goTypes[g.currentField.Type]
+	g.keys["fldMapKeyLangType"] = goTypes[g.currentField.MapKey]
+	g.keys["fldMapKeyKey"] = goKeys[g.currentField.MapKey]
 }

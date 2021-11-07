@@ -28,7 +28,7 @@ $#set varID wasmlib.Key32.fromString(sc.$Kind$FldName)
 	"proxyArray": `
 
     $fldName(): sc.ArrayOf$mut$FldType {
-		let arrID = wasmlib.getObjectID(this.mapID, $varID, $arrayTypeID|$FldTypeID);
+		let arrID = wasmlib.getObjectID(this.mapID, $varID, $arrayTypeID|$fldTypeID);
 		return new sc.ArrayOf$mut$FldType(arrID);
 	}
 `,
@@ -39,16 +39,16 @@ $#if this proxyMapThis proxyMapOther
 	// *******************************
 	"proxyMapThis": `
 
-    $fldName(): sc.Map$FldMapKey$+To$mut$FldType {
-		return new sc.Map$FldMapKey$+To$mut$FldType(this.mapID);
+    $fldName(): sc.Map$fldMapKey$+To$mut$FldType {
+		return new sc.Map$fldMapKey$+To$mut$FldType(this.mapID);
 	}
 `,
 	// *******************************
 	"proxyMapOther": `
 
-    $fldName(): sc.Map$FldMapKey$+To$mut$FldType {
+    $fldName(): sc.Map$fldMapKey$+To$mut$FldType {
 		let mapID = wasmlib.getObjectID(this.mapID, $varID, wasmlib.TYPE_MAP);
-		return new sc.Map$FldMapKey$+To$mut$FldType(mapID);
+		return new sc.Map$fldMapKey$+To$mut$FldType(mapID);
 	}
 `,
 	// *******************************

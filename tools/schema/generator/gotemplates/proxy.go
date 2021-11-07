@@ -28,7 +28,7 @@ $#set varID $Kind$FldName.KeyID()
 	"proxyArray": `
 
 func (s $TypeName) $FldName() ArrayOf$mut$FldType {
-	arrID := wasmlib.GetObjectID(s.id, $varID, $arrayTypeID|$FldTypeID)
+	arrID := wasmlib.GetObjectID(s.id, $varID, $arrayTypeID|$fldTypeID)
 	return ArrayOf$mut$FldType{objID: arrID}
 }
 `,
@@ -39,16 +39,16 @@ $#if this proxyMapThis proxyMapOther
 	// *******************************
 	"proxyMapThis": `
 
-func (s $TypeName) $FldName() Map$FldMapKey$+To$mut$FldType {
-	return Map$FldMapKey$+To$mut$FldType{objID: s.id}
+func (s $TypeName) $FldName() Map$fldMapKey$+To$mut$FldType {
+	return Map$fldMapKey$+To$mut$FldType{objID: s.id}
 }
 `,
 	// *******************************
 	"proxyMapOther": `55544444.0
 
-func (s $TypeName) $FldName() Map$FldMapKey$+To$mut$FldType {
+func (s $TypeName) $FldName() Map$fldMapKey$+To$mut$FldType {
 	mapID := wasmlib.GetObjectID(s.id, $varID, wasmlib.TYPE_MAP)
-	return Map$FldMapKey$+To$mut$FldType{objID: mapID}
+	return Map$fldMapKey$+To$mut$FldType{objID: mapID}
 }
 `,
 	// *******************************

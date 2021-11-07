@@ -83,10 +83,6 @@ func (g *TypeScriptGenerator) init(s *Schema) {
 	g.GenBase.init(s, tstemplates.TsTemplates)
 }
 
-func (g *TypeScriptGenerator) funcName(f *Func) string {
-	return f.FuncName
-}
-
 func (g *TypeScriptGenerator) generateLanguageSpecificFiles() error {
 	err := g.createSourceFile("index")
 	if err != nil {
@@ -117,23 +113,9 @@ func (g *TypeScriptGenerator) setFieldKeys() {
 	if fldTypeID == "" {
 		fldTypeID = "wasmlib.TYPE_BYTES"
 	}
-	g.keys["FldTypeID"] = fldTypeID
-	g.keys["FldTypeKey"] = tsKeys[g.currentField.Type]
-	g.keys["FldTypeInit"] = tsInits[g.currentField.Type]
-	g.keys["FldLangType"] = tsTypes[g.currentField.Type]
-	g.keys["FldMapKeyLangType"] = tsTypes[g.currentField.MapKey]
-	g.keys["FldMapKeyKey"] = tsKeys[g.currentField.MapKey]
-}
-
-func (g *TypeScriptGenerator) setFuncKeys() {
-	g.GenBase.setFuncKeys()
-
-	initFunc := ""
-	initMap := ""
-	if g.currentFunc.Type == InitFunc {
-		initFunc = InitFunc
-		initMap = ", keyMap[:], idxMap[:]"
-	}
-	g.keys["initFunc"] = initFunc
-	g.keys["initMap"] = initMap
+	g.keys["fldTypeID"] = fldTypeID
+	g.keys["fldTypeInit"] = tsInits[g.currentField.Type]
+	g.keys["fldLangType"] = tsTypes[g.currentField.Type]
+	g.keys["fldMapKeyLangType"] = tsTypes[g.currentField.MapKey]
+	g.keys["fldMapKeyKey"] = tsKeys[g.currentField.MapKey]
 }

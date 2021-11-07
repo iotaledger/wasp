@@ -37,7 +37,7 @@ $#emit structMethods
 `,
 	// *******************************
 	"structField": `
-    pub $fld_name: $FldLangType, $FldComment
+    pub $fld_name: $fldLangType, $fldComment
 `,
 	// *******************************
 	"structDecode": `

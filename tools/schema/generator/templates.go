@@ -39,4 +39,15 @@ func TestDeploy(t *testing.T) {
 	require.NoError(t, ctx.ContractExists($package.ScName))
 }
 `,
+	// *******************************
+	"setupInitFunc": `
+$#set initFunc 
+$#set initMap 
+$#if init setInitFunc
+`,
+	// *******************************
+	"setInitFunc": `
+$#set initFunc Init
+$#set initMap , keyMap[:], idxMap[:]
+`,
 }

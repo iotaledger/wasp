@@ -10,49 +10,16 @@ import (
 )
 
 var (
-	//nolint:unused
-	snakePart       = regexp.MustCompile(`_[a-z]`)
 	camelPart       = regexp.MustCompile(`[a-z0-9][A-Z]`)
 	camelPartWithID = regexp.MustCompile(`[A-Z][A-Z]+[a-z]`)
+	moduleCwd       = "???"
+	moduleName      = "???"
+	modulePath      = "???"
 )
-
-func calculatePadding(fields []*Field, types StringMap, snakeName bool) (nameLen, typeLen int) {
-	for _, param := range fields {
-		fldName := param.Name
-		if snakeName {
-			fldName = snake(fldName)
-		}
-		if nameLen < len(fldName) {
-			nameLen = len(fldName)
-		}
-		fldType := param.Type
-		if types != nil {
-			fldType = types[fldType]
-		}
-		if typeLen < len(fldType) {
-			typeLen = len(fldType)
-		}
-	}
-	return
-}
-
-// convert lowercase snake case to camel case
-//nolint:deadcode,unused
-func camel(name string) string {
-	// replace each underscore followed by [a-z] with [A-Z]
-	return snakePart.ReplaceAllStringFunc(name, func(sub string) string {
-		return strings.ToUpper(sub[1:])
-	})
-}
 
 // capitalize first letter
 func capitalize(name string) string {
 	return upper(name[:1]) + name[1:]
-}
-
-// convert to lower case
-func lower(name string) string {
-	return strings.ToLower(name)
 }
 
 func FindModulePath() error {
@@ -61,9 +28,9 @@ func FindModulePath() error {
 		return err
 	}
 	// we're going to walk up the path, make sure to restore
-	ModuleCwd = cwd
+	moduleCwd = cwd
 	defer func() {
-		_ = os.Chdir(ModuleCwd)
+		_ = os.Chdir(moduleCwd)
 	}()
 
 	file, err := os.Open("go.mod")
@@ -93,13 +60,18 @@ func FindModulePath() error {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "module ") {
-			ModuleName = strings.TrimSpace(line[len("module"):])
-			ModulePath = cwd
+			moduleName = strings.TrimSpace(line[len("module"):])
+			modulePath = cwd
 			return nil
 		}
 	}
 
 	return fmt.Errorf("cannot find module definition in go.mod")
+}
+
+// convert to lower case
+func lower(name string) string {
+	return strings.ToLower(name)
 }
 
 // pad to specified size with spaces
@@ -125,16 +97,6 @@ func snake(name string) string {
 
 	// lowercase the entire final result
 	return lower(name)
-}
-
-// uncapitalize first letter
-func uncapitalize(name string) string {
-	return lower(name[:1]) + name[1:]
-}
-
-// convert to upper case
-func upper(name string) string {
-	return strings.ToUpper(name)
 }
 
 func sortedFields(dict FieldMap) []string {
@@ -171,4 +133,14 @@ func sortedMaps(dict StringMapMap) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// uncapitalize first letter
+func uncapitalize(name string) string {
+	return lower(name[:1]) + name[1:]
+}
+
+// convert to upper case
+func upper(name string) string {
+	return strings.ToUpper(name)
 }

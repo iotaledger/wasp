@@ -14,6 +14,7 @@ $#if core coreOnload
 `,
 	// *******************************
 	"FuncNameCall": `
+$#emit setupInitFunc
 
 type $FuncName$+Call struct {
 	Func    *wasmlib.Sc$initFunc$Kind
@@ -31,6 +32,7 @@ $#if result ImmutableFuncNameResults
 `,
 	// *******************************
 	"FuncNameForCall": `
+$#emit setupInitFunc
 
 func (sc Funcs) $FuncName(ctx wasmlib.Sc$Kind$+CallContext) *$FuncName$+Call {
 $#set paramsID nil

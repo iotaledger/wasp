@@ -12,6 +12,7 @@ $#each func FuncNameForCall
 `,
 	// *******************************
 	"FuncNameCall": `
+$#emit setupInitFunc
 
 export class $FuncName$+Call {
 	func: wasmlib.Sc$initFunc$Kind = new wasmlib.Sc$initFunc$Kind(sc.HScName, sc.H$Kind$FuncName);
@@ -56,6 +57,7 @@ $#if view ImmutablePackageState
 `,
 	// *******************************
 	"FuncNameForCall": `
+$#emit setupInitFunc
 
     static $funcName(ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
 $#set paramsID null

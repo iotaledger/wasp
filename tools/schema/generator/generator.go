@@ -17,21 +17,6 @@ import (
 // TODO nested structs
 // TODO handle case where owner is type AgentID[]
 
-const (
-	AccessChain   = "chain"
-	AccessCreator = "creator"
-	AccessSelf    = "self"
-	InitFunc      = "Init"
-	KindFunc      = "Func"
-	KindView      = "View"
-)
-
-var (
-	ModuleCwd  = "???"
-	ModuleName = "???"
-	ModulePath = "???"
-)
-
 type Generator interface {
 	init(s *Schema)
 	funcName(f *Func) string
@@ -102,7 +87,6 @@ func (g *GenBase) createSourceFile(name string, generator ...func()) error {
 		g.emit("warning")
 	}
 	g.skipWarning = false
-	g.s.KeyID = 0
 	if len(generator) != 0 {
 		generator[0]()
 		return nil
@@ -116,12 +100,16 @@ func (g *GenBase) exists(path string) (err error) {
 	return err
 }
 
+func (g *GenBase) funcName(f *Func) string {
+	return f.Kind + capitalize(f.Name)
+}
+
 func (g *GenBase) Generate(s *Schema) error {
 	g.gen.init(s)
 
 	g.folder = g.rootFolder + "/"
 	if g.rootFolder != "src" {
-		module := strings.ReplaceAll(ModuleCwd, "\\", "/")
+		module := strings.ReplaceAll(moduleCwd, "\\", "/")
 		module = module[strings.LastIndex(module, "/")+1:]
 		g.folder += module + "/"
 	}
@@ -313,7 +301,7 @@ func (g *GenBase) setCommonKeys() {
 	g.keys["space"] = " "
 	g.keys["package"] = g.s.Name
 	g.keys["Package"] = g.s.FullName
-	g.keys["module"] = ModuleName + strings.Replace(ModuleCwd[len(ModulePath):], "\\", "/", -1)
+	g.keys["module"] = moduleName + strings.Replace(moduleCwd[len(modulePath):], "\\", "/", -1)
 	scName := g.s.Name
 	if g.s.CoreContracts {
 		// strip off "core" prefix
@@ -322,6 +310,7 @@ func (g *GenBase) setCommonKeys() {
 	g.keys["scName"] = scName
 	g.keys["hscName"] = iscp.Hn(scName).String()
 	g.keys["scDesc"] = g.s.Description
+	g.keys["maxIndex"] = strconv.Itoa(g.s.KeyID)
 }
 
 func (g *GenBase) setFieldKeys() {
@@ -329,17 +318,14 @@ func (g *GenBase) setFieldKeys() {
 	g.setMultiKeyValues("fldType", g.currentField.Type)
 
 	g.keys["fldAlias"] = g.currentField.Alias
-	g.keys["FldComment"] = g.currentField.Comment
-	g.keys["FldMapKey"] = g.currentField.MapKey
-
-	g.keys["fldIndex"] = strconv.Itoa(g.s.KeyID)
-	g.s.KeyID++
-	g.keys["maxIndex"] = strconv.Itoa(g.s.KeyID)
+	g.keys["fldComment"] = g.currentField.Comment
+	g.keys["fldMapKey"] = g.currentField.MapKey
+	g.keys["fldIndex"] = strconv.Itoa(g.currentField.KeyID)
 }
 
 func (g *GenBase) setFuncKeys() {
-	g.setMultiKeyValues("funcName", g.currentFunc.FuncName[4:])
-	g.setMultiKeyValues("kind", g.currentFunc.FuncName[:4])
+	g.setMultiKeyValues("funcName", g.currentFunc.Name)
+	g.setMultiKeyValues("kind", g.currentFunc.Kind)
 	g.keys["funcHName"] = iscp.Hn(g.keys["funcName"]).String()
 	grant := g.currentFunc.Access
 	comment := ""

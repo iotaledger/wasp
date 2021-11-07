@@ -10,10 +10,11 @@ const (
 	KeyBaseType  = "basetype"
 	KeyCore      = "core"
 	KeyExist     = "exist"
+	KeyFunc      = "func"
+	KeyInit      = "init"
+	KeyMandatory = "mandatory"
 	KeyMap       = "map"
 	KeyMut       = "mut"
-	KeyFunc      = "func"
-	KeyMandatory = "mandatory"
 	KeyParam     = "param"
 	KeyParams    = "params"
 	KeyProxy     = "proxy"
@@ -126,9 +127,6 @@ func (g *GenBase) emitEach(key string) {
 
 func (g *GenBase) emitFields(fields []*Field, template string) {
 	for _, g.currentField = range fields {
-		//if g.currentField.Alias == KeyThis {
-		//	continue
-		//}
 		g.gen.setFieldKeys()
 		g.emit(template)
 	}
@@ -169,6 +167,8 @@ func (g *GenBase) emitIf(key string) {
 	case KeyExist:
 		proxy := g.keys[KeyProxy]
 		condition = g.newTypes[proxy]
+	case KeyInit:
+		condition = g.currentFunc.Name == KeyInit
 	case KeyMap:
 		condition = g.currentField.MapKey != ""
 	case KeyMut:

@@ -27,6 +27,7 @@ $#if results useResults
 `,
 	// *******************************
 	"FuncNameCall": `
+$#emit setupInitFunc
 
 pub struct $FuncName$+Call {
 	pub func: Sc$initFunc$Kind,
@@ -44,6 +45,7 @@ $#if result ImmutableFuncNameResults
 `,
 	// *******************************
 	"FuncNameForCall": `
+$#emit setupInitFunc
     pub fn $func_name(_ctx: & dyn Sc$Kind$+CallContext) -> $FuncName$+Call {
 $#set paramsID ptr::null_mut()
 $#set resultsID ptr::null_mut()
