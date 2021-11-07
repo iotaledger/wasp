@@ -11,17 +11,19 @@ use wasmlib::*;
 
 use crate::*;
 
-pub(crate) const IDX_PARAM_ACCOUNT: usize = 0;
-pub(crate) const IDX_PARAM_AMOUNT: usize = 1;
-pub(crate) const IDX_PARAM_CREATOR: usize = 2;
-pub(crate) const IDX_PARAM_DELEGATION: usize = 3;
-pub(crate) const IDX_PARAM_RECIPIENT: usize = 4;
-pub(crate) const IDX_PARAM_SUPPLY: usize = 5;
-pub(crate) const IDX_RESULT_AMOUNT: usize = 6;
-pub(crate) const IDX_RESULT_SUPPLY: usize = 7;
-pub(crate) const IDX_STATE_ALL_ALLOWANCES: usize = 8;
-pub(crate) const IDX_STATE_BALANCES: usize = 9;
-pub(crate) const IDX_STATE_SUPPLY: usize = 10;
+pub(crate) const IDX_PARAM_ACCOUNT    : usize = 0;
+pub(crate) const IDX_PARAM_AMOUNT     : usize = 1;
+pub(crate) const IDX_PARAM_CREATOR    : usize = 2;
+pub(crate) const IDX_PARAM_DELEGATION : usize = 3;
+pub(crate) const IDX_PARAM_RECIPIENT  : usize = 4;
+pub(crate) const IDX_PARAM_SUPPLY     : usize = 5;
+
+pub(crate) const IDX_RESULT_AMOUNT : usize = 6;
+pub(crate) const IDX_RESULT_SUPPLY : usize = 7;
+
+pub(crate) const IDX_STATE_ALL_ALLOWANCES : usize = 8;
+pub(crate) const IDX_STATE_BALANCES       : usize = 9;
+pub(crate) const IDX_STATE_SUPPLY         : usize = 10;
 
 pub const KEY_MAP_LEN: usize = 11;
 

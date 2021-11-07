@@ -76,8 +76,8 @@ func (g *GoGenerator) generateLanguageSpecificFiles() error {
 	return g.createSourceFile("../main")
 }
 
-func (g *GoGenerator) setFieldKeys() {
-	g.GenBase.setFieldKeys()
+func (g *GoGenerator) setFieldKeys(pad bool) {
+	g.GenBase.setFieldKeys(pad)
 
 	fldTypeID := goTypeIds[g.currentField.Type]
 	if fldTypeID == "" {

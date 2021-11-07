@@ -18,7 +18,7 @@ $#each func libThunk
 `,
 	// *******************************
 	"libExportFunc": `
-	exports.Add$Kind($Kind$FuncName, $kind$FuncName$+Thunk)
+	exports.Add$Kind($Kind$FuncName,$funcPad $kind$FuncName$+Thunk)
 `,
 	// *******************************
 	"libThunk": `

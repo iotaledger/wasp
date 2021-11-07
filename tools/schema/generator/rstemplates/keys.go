@@ -11,8 +11,10 @@ use crate::*;
 
 $#set constPrefix PARAM_
 $#each params constFieldIdx
+
 $#set constPrefix RESULT_
 $#each results constFieldIdx
+
 $#set constPrefix STATE_
 $#each state constFieldIdx
 
@@ -37,7 +39,7 @@ pub fn idx_map(idx: usize) -> Key32 {
 `,
 	// *******************************
 	"constFieldIdx": `
-pub(crate) const IDX_$constPrefix$FLD_NAME: usize = $fldIndex;
+pub(crate) const IDX_$constPrefix$FLD_NAME$fld_pad : usize = $fldIndex;
 `,
 	// *******************************
 	"constFieldKey": `

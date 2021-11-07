@@ -15,8 +15,8 @@ export const ResultTimestamp = "timestamp";
 
 export const StateTimestamp = "timestamp";
 
-export const FuncNow = "now";
+export const FuncNow          = "now";
 export const ViewGetTimestamp = "getTimestamp";
 
-export const HFuncNow = new wasmlib.ScHname(0xd73b7fc9);
+export const HFuncNow          = new wasmlib.ScHname(0xd73b7fc9);
 export const HViewGetTimestamp = new wasmlib.ScHname(0x40c6376a);

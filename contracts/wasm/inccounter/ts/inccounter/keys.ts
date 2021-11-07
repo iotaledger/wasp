@@ -8,12 +8,14 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
-export const IdxParamCounter = 0;
-export const IdxParamDelay = 1;
-export const IdxParamDummy = 2;
+export const IdxParamCounter    = 0;
+export const IdxParamDelay      = 1;
+export const IdxParamDummy      = 2;
 export const IdxParamNumRepeats = 3;
+
 export const IdxResultCounter = 4;
-export const IdxStateCounter = 5;
+
+export const IdxStateCounter    = 5;
 export const IdxStateNumRepeats = 6;
 
 export let keyMap: string[] = [

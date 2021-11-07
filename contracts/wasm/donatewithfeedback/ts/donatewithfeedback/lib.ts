@@ -14,9 +14,9 @@ export function on_call(index: i32): void {
 
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncDonate, funcDonateThunk);
-    exports.addFunc(sc.FuncWithdraw, funcWithdrawThunk);
-    exports.addView(sc.ViewDonation, viewDonationThunk);
+    exports.addFunc(sc.FuncDonate,       funcDonateThunk);
+    exports.addFunc(sc.FuncWithdraw,     funcWithdrawThunk);
+    exports.addView(sc.ViewDonation,     viewDonationThunk);
     exports.addView(sc.ViewDonationInfo, viewDonationInfoThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {

@@ -74,14 +74,6 @@ func lower(name string) string {
 	return strings.ToLower(name)
 }
 
-// pad to specified size with spaces
-func pad(name string, size int) string {
-	for i := len(name); i < size; i++ {
-		name += " "
-	}
-	return name
-}
-
 // convert camel case to lower case snake case
 func snake(name string) string {
 	// insert underscores between [a-z0-9] followed by [A-Z]

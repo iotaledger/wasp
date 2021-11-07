@@ -14,12 +14,12 @@ export function on_call(index: i32): void {
 
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncDivide, funcDivideThunk);
-    exports.addFunc(sc.FuncInit, funcInitThunk);
-    exports.addFunc(sc.FuncMember, funcMemberThunk);
-    exports.addFunc(sc.FuncSetOwner, funcSetOwnerThunk);
+    exports.addFunc(sc.FuncDivide,    funcDivideThunk);
+    exports.addFunc(sc.FuncInit,      funcInitThunk);
+    exports.addFunc(sc.FuncMember,    funcMemberThunk);
+    exports.addFunc(sc.FuncSetOwner,  funcSetOwnerThunk);
     exports.addView(sc.ViewGetFactor, viewGetFactorThunk);
-    exports.addView(sc.ViewGetOwner, viewGetOwnerThunk);
+    exports.addView(sc.ViewGetOwner,  viewGetOwnerThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);

@@ -7,9 +7,9 @@ var constsRs = map[string]string{
 
 $#if core useCrate useWasmLib
 
-pub const SC_NAME:        &str = "$scName";
-pub const SC_DESCRIPTION: &str = "$scDesc";
-pub const HSC_NAME:       ScHname = ScHname(0x$hscName);
+pub const SC_NAME        : &str = "$scName";
+pub const SC_DESCRIPTION : &str = "$scDesc";
+pub const HSC_NAME       : ScHname = ScHname(0x$hscName);
 $#if params constParams
 $#if results constResults
 $#if state constState
@@ -38,14 +38,14 @@ $#each state constField
 `,
 	// *******************************
 	"constField": `
-pub$crate const $constPrefix$FLD_NAME: &str = "$fldAlias";
+pub$crate const $constPrefix$FLD_NAME$fld_pad : &str = "$fldAlias";
 `,
 	// *******************************
 	"constFunc": `
-pub$crate const $KIND$+_$FUNC_NAME:  &str = "$funcName";
+pub$crate const $KIND$+_$FUNC_NAME$func_pad : &str = "$funcName";
 `,
 	// *******************************
 	"constHFunc": `
-pub$crate const H$KIND$+_$FUNC_NAME: ScHname = ScHname(0x$funcHName);
+pub$crate const H$KIND$+_$FUNC_NAME$func_pad : ScHname = ScHname(0x$funcHName);
 `,
 }

@@ -89,45 +89,83 @@ func (g *GenBase) emitEach(key string) {
 	template := parts[2]
 	switch parts[1] {
 	case KeyFunc:
-		for _, g.currentFunc = range g.s.Funcs {
-			g.gen.setFuncKeys()
-			g.emit(template)
-		}
+		g.emitEachFunc(g.s.Funcs, template)
 	case KeyMandatory:
-		mandatory := make([]*Field, 0)
-		for _, g.currentField = range g.currentFunc.Params {
-			if !g.currentField.Optional {
-				mandatory = append(mandatory, g.currentField)
-			}
-		}
-		g.emitFields(mandatory, template)
+		g.emitEachMandatoryField(template)
 	case KeyParam:
-		g.emitFields(g.currentFunc.Params, template)
+		g.emitEachField(g.currentFunc.Params, template)
 	case KeyParams:
-		g.emitFields(g.s.Params, template)
+		g.emitEachField(g.s.Params, template)
 	case KeyResult:
-		g.emitFields(g.currentFunc.Results, template)
+		g.emitEachField(g.currentFunc.Results, template)
 	case KeyResults:
-		g.emitFields(g.s.Results, template)
+		g.emitEachField(g.s.Results, template)
 	case KeyState:
-		g.emitFields(g.s.StateVars, template)
+		g.emitEachField(g.s.StateVars, template)
 	case KeyStruct:
-		g.emitFields(g.currentStruct.Fields, template)
+		g.emitEachField(g.currentStruct.Fields, template)
 	case KeyStructs:
-		for _, g.currentStruct = range g.s.Structs {
-			g.setMultiKeyValues("strName", g.currentStruct.Name)
-			g.emit(template)
-		}
+		g.emitEachStruct(g.s.Structs, template)
 	case KeyTypeDef:
-		g.emitFields(g.s.Typedefs, template)
+		g.emitEachField(g.s.Typedefs, template)
 	default:
 		g.println("???:" + key)
 	}
 }
 
-func (g *GenBase) emitFields(fields []*Field, template string) {
+func (g *GenBase) emitEachField(fields []*Field, template string) {
+	g.maxCamelFldLen = 0
+	g.maxSnakeFldLen = 0
 	for _, g.currentField = range fields {
-		g.gen.setFieldKeys()
+		camelLen := len(g.currentField.Name)
+		if g.maxCamelFldLen < camelLen {
+			g.maxCamelFldLen = camelLen
+		}
+		snakeLen := len(snake(g.currentField.Name))
+		if g.maxSnakeFldLen < snakeLen {
+			g.maxSnakeFldLen = snakeLen
+		}
+	}
+
+	for _, g.currentField = range fields {
+		g.gen.setFieldKeys(true)
+		g.emit(template)
+	}
+}
+
+func (g *GenBase) emitEachFunc(funcs []*Func, template string) {
+	g.maxCamelFuncLen = 0
+	g.maxSnakeFuncLen = 0
+	for _, g.currentFunc = range funcs {
+		camelLen := len(g.currentFunc.Name)
+		if g.maxCamelFuncLen < camelLen {
+			g.maxCamelFuncLen = camelLen
+		}
+		snakeLen := len(snake(g.currentFunc.Name))
+		if g.maxSnakeFuncLen < snakeLen {
+			g.maxSnakeFuncLen = snakeLen
+		}
+	}
+
+	for _, g.currentFunc = range funcs {
+		g.gen.setFuncKeys()
+		g.emit(template)
+	}
+}
+
+func (g *GenBase) emitEachMandatoryField(template string) {
+	mandatoryFields := make([]*Field, 0)
+	for _, g.currentField = range g.currentFunc.Params {
+		if !g.currentField.Optional {
+			mandatoryFields = append(mandatoryFields, g.currentField)
+		}
+	}
+	g.emitEachField(mandatoryFields, template)
+}
+
+func (g *GenBase) emitEachStruct(structs []*Struct, template string) {
+	for _, g.currentStruct = range structs {
+		g.setMultiKeyValues("strName", g.currentStruct.Name)
 		g.emit(template)
 	}
 }
@@ -234,7 +272,7 @@ func (g *GenBase) fieldIsTypeDef() bool {
 	for _, typeDef := range g.s.Typedefs {
 		if typeDef.Name == g.currentField.Type {
 			g.currentField = typeDef
-			g.gen.setFieldKeys()
+			g.gen.setFieldKeys(false)
 			return true
 		}
 	}

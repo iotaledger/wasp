@@ -30,15 +30,15 @@ mod fairroulette;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_FORCE_PAYOUT, func_force_payout_thunk);
-    exports.add_func(FUNC_FORCE_RESET, func_force_reset_thunk);
-    exports.add_func(FUNC_PAY_WINNERS, func_pay_winners_thunk);
-    exports.add_func(FUNC_PLACE_BET, func_place_bet_thunk);
-    exports.add_func(FUNC_PLAY_PERIOD, func_play_period_thunk);
+    exports.add_func(FUNC_FORCE_PAYOUT,        func_force_payout_thunk);
+    exports.add_func(FUNC_FORCE_RESET,         func_force_reset_thunk);
+    exports.add_func(FUNC_PAY_WINNERS,         func_pay_winners_thunk);
+    exports.add_func(FUNC_PLACE_BET,           func_place_bet_thunk);
+    exports.add_func(FUNC_PLAY_PERIOD,         func_play_period_thunk);
     exports.add_view(VIEW_LAST_WINNING_NUMBER, view_last_winning_number_thunk);
-    exports.add_view(VIEW_ROUND_NUMBER, view_round_number_thunk);
-    exports.add_view(VIEW_ROUND_STARTED_AT, view_round_started_at_thunk);
-    exports.add_view(VIEW_ROUND_STATUS, view_round_status_thunk);
+    exports.add_view(VIEW_ROUND_NUMBER,        view_round_number_thunk);
+    exports.add_view(VIEW_ROUND_STARTED_AT,    view_round_started_at_thunk);
+    exports.add_view(VIEW_ROUND_STATUS,        view_round_status_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {

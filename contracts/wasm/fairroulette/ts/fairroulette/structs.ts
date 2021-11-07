@@ -8,9 +8,9 @@
 import * as wasmlib from "wasmlib";
 
 export class Bet {
-    amount: i64 = 0; 
-    better: wasmlib.ScAgentID = new wasmlib.ScAgentID(); 
-    number: i64 = 0; 
+    amount : i64 = 0; 
+    better : wasmlib.ScAgentID = new wasmlib.ScAgentID(); 
+    number : i64 = 0; 
 
     static fromBytes(bytes: u8[]): Bet {
         let decode = new wasmlib.BytesDecoder(bytes);

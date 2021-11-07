@@ -14,15 +14,15 @@ export function on_call(index: i32): void {
 
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncForcePayout, funcForcePayoutThunk);
-    exports.addFunc(sc.FuncForceReset, funcForceResetThunk);
-    exports.addFunc(sc.FuncPayWinners, funcPayWinnersThunk);
-    exports.addFunc(sc.FuncPlaceBet, funcPlaceBetThunk);
-    exports.addFunc(sc.FuncPlayPeriod, funcPlayPeriodThunk);
+    exports.addFunc(sc.FuncForcePayout,       funcForcePayoutThunk);
+    exports.addFunc(sc.FuncForceReset,        funcForceResetThunk);
+    exports.addFunc(sc.FuncPayWinners,        funcPayWinnersThunk);
+    exports.addFunc(sc.FuncPlaceBet,          funcPlaceBetThunk);
+    exports.addFunc(sc.FuncPlayPeriod,        funcPlayPeriodThunk);
     exports.addView(sc.ViewLastWinningNumber, viewLastWinningNumberThunk);
-    exports.addView(sc.ViewRoundNumber, viewRoundNumberThunk);
-    exports.addView(sc.ViewRoundStartedAt, viewRoundStartedAtThunk);
-    exports.addView(sc.ViewRoundStatus, viewRoundStatusThunk);
+    exports.addView(sc.ViewRoundNumber,       viewRoundNumberThunk);
+    exports.addView(sc.ViewRoundStartedAt,    viewRoundStartedAtThunk);
+    exports.addView(sc.ViewRoundStatus,       viewRoundStatusThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);

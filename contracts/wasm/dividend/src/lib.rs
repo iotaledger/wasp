@@ -29,12 +29,12 @@ mod dividend;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_DIVIDE, func_divide_thunk);
-    exports.add_func(FUNC_INIT, func_init_thunk);
-    exports.add_func(FUNC_MEMBER, func_member_thunk);
-    exports.add_func(FUNC_SET_OWNER, func_set_owner_thunk);
+    exports.add_func(FUNC_DIVIDE,     func_divide_thunk);
+    exports.add_func(FUNC_INIT,       func_init_thunk);
+    exports.add_func(FUNC_MEMBER,     func_member_thunk);
+    exports.add_func(FUNC_SET_OWNER,  func_set_owner_thunk);
     exports.add_view(VIEW_GET_FACTOR, view_get_factor_thunk);
-    exports.add_view(VIEW_GET_OWNER, view_get_owner_thunk);
+    exports.add_view(VIEW_GET_OWNER,  view_get_owner_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {

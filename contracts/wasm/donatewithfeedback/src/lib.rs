@@ -30,9 +30,9 @@ mod donatewithfeedback;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_DONATE, func_donate_thunk);
-    exports.add_func(FUNC_WITHDRAW, func_withdraw_thunk);
-    exports.add_view(VIEW_DONATION, view_donation_thunk);
+    exports.add_func(FUNC_DONATE,        func_donate_thunk);
+    exports.add_func(FUNC_WITHDRAW,      func_withdraw_thunk);
+    exports.add_view(VIEW_DONATION,      view_donation_thunk);
     exports.add_view(VIEW_DONATION_INFO, view_donation_info_thunk);
 
     unsafe {

@@ -14,7 +14,9 @@ const (
 	IdxParamDelay      = 1
 	IdxParamDummy      = 2
 	IdxParamNumRepeats = 3
-	IdxResultCounter   = 4
+
+	IdxResultCounter = 4
+
 	IdxStateCounter    = 5
 	IdxStateNumRepeats = 6
 )

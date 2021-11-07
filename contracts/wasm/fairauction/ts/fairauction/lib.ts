@@ -15,10 +15,10 @@ export function on_call(index: i32): void {
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
     exports.addFunc(sc.FuncFinalizeAuction, funcFinalizeAuctionThunk);
-    exports.addFunc(sc.FuncPlaceBid, funcPlaceBidThunk);
-    exports.addFunc(sc.FuncSetOwnerMargin, funcSetOwnerMarginThunk);
-    exports.addFunc(sc.FuncStartAuction, funcStartAuctionThunk);
-    exports.addView(sc.ViewGetInfo, viewGetInfoThunk);
+    exports.addFunc(sc.FuncPlaceBid,        funcPlaceBidThunk);
+    exports.addFunc(sc.FuncSetOwnerMargin,  funcSetOwnerMarginThunk);
+    exports.addFunc(sc.FuncStartAuction,    funcStartAuctionThunk);
+    exports.addView(sc.ViewGetInfo,         viewGetInfoThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);

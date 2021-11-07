@@ -11,11 +11,13 @@ use wasmlib::*;
 
 use crate::*;
 
-pub(crate) const IDX_PARAM_COLOR: usize = 0;
-pub(crate) const IDX_PARAM_DESCRIPTION: usize = 1;
-pub(crate) const IDX_PARAM_USER_DEFINED: usize = 2;
-pub(crate) const IDX_STATE_COLOR_LIST: usize = 3;
-pub(crate) const IDX_STATE_REGISTRY: usize = 4;
+pub(crate) const IDX_PARAM_COLOR        : usize = 0;
+pub(crate) const IDX_PARAM_DESCRIPTION  : usize = 1;
+pub(crate) const IDX_PARAM_USER_DEFINED : usize = 2;
+
+
+pub(crate) const IDX_STATE_COLOR_LIST : usize = 3;
+pub(crate) const IDX_STATE_REGISTRY   : usize = 4;
 
 pub const KEY_MAP_LEN: usize = 5;
 

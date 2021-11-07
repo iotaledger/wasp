@@ -22,7 +22,7 @@ $#if basetype proxyBaseType proxyNewType
 `,
 	// *******************************
 	"setCoreVarID": `
-$#set varID $Kind$FldName.KeyID()
+$#set varID wasmlib.KeyID($Kind$FldName)
 `,
 	// *******************************
 	"proxyArray": `

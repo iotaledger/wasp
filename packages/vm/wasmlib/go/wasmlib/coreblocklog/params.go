@@ -14,7 +14,7 @@ type ImmutableGetBlockInfoParams struct {
 }
 
 func (s ImmutableGetBlockInfoParams) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ParamBlockIndex.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
 }
 
 type MutableGetBlockInfoParams struct {
@@ -22,7 +22,7 @@ type MutableGetBlockInfoParams struct {
 }
 
 func (s MutableGetBlockInfoParams) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ParamBlockIndex.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
 }
 
 type ImmutableGetEventsForBlockParams struct {
@@ -30,7 +30,7 @@ type ImmutableGetEventsForBlockParams struct {
 }
 
 func (s ImmutableGetEventsForBlockParams) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ParamBlockIndex.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
 }
 
 type MutableGetEventsForBlockParams struct {
@@ -38,7 +38,7 @@ type MutableGetEventsForBlockParams struct {
 }
 
 func (s MutableGetEventsForBlockParams) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ParamBlockIndex.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
 }
 
 type ImmutableGetEventsForContractParams struct {
@@ -46,15 +46,15 @@ type ImmutableGetEventsForContractParams struct {
 }
 
 func (s ImmutableGetEventsForContractParams) ContractHname() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, ParamContractHname.KeyID())
+	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamContractHname))
 }
 
 func (s ImmutableGetEventsForContractParams) FromBlock() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ParamFromBlock.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamFromBlock))
 }
 
 func (s ImmutableGetEventsForContractParams) ToBlock() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ParamToBlock.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamToBlock))
 }
 
 type MutableGetEventsForContractParams struct {
@@ -62,15 +62,15 @@ type MutableGetEventsForContractParams struct {
 }
 
 func (s MutableGetEventsForContractParams) ContractHname() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, ParamContractHname.KeyID())
+	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamContractHname))
 }
 
 func (s MutableGetEventsForContractParams) FromBlock() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ParamFromBlock.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamFromBlock))
 }
 
 func (s MutableGetEventsForContractParams) ToBlock() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ParamToBlock.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamToBlock))
 }
 
 type ImmutableGetEventsForRequestParams struct {
@@ -78,7 +78,7 @@ type ImmutableGetEventsForRequestParams struct {
 }
 
 func (s ImmutableGetEventsForRequestParams) RequestID() wasmlib.ScImmutableRequestID {
-	return wasmlib.NewScImmutableRequestID(s.id, ParamRequestID.KeyID())
+	return wasmlib.NewScImmutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
 }
 
 type MutableGetEventsForRequestParams struct {
@@ -86,7 +86,7 @@ type MutableGetEventsForRequestParams struct {
 }
 
 func (s MutableGetEventsForRequestParams) RequestID() wasmlib.ScMutableRequestID {
-	return wasmlib.NewScMutableRequestID(s.id, ParamRequestID.KeyID())
+	return wasmlib.NewScMutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
 }
 
 type ImmutableGetRequestIDsForBlockParams struct {
@@ -94,7 +94,7 @@ type ImmutableGetRequestIDsForBlockParams struct {
 }
 
 func (s ImmutableGetRequestIDsForBlockParams) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ParamBlockIndex.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
 }
 
 type MutableGetRequestIDsForBlockParams struct {
@@ -102,7 +102,7 @@ type MutableGetRequestIDsForBlockParams struct {
 }
 
 func (s MutableGetRequestIDsForBlockParams) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ParamBlockIndex.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
 }
 
 type ImmutableGetRequestReceiptParams struct {
@@ -110,7 +110,7 @@ type ImmutableGetRequestReceiptParams struct {
 }
 
 func (s ImmutableGetRequestReceiptParams) RequestID() wasmlib.ScImmutableRequestID {
-	return wasmlib.NewScImmutableRequestID(s.id, ParamRequestID.KeyID())
+	return wasmlib.NewScImmutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
 }
 
 type MutableGetRequestReceiptParams struct {
@@ -118,7 +118,7 @@ type MutableGetRequestReceiptParams struct {
 }
 
 func (s MutableGetRequestReceiptParams) RequestID() wasmlib.ScMutableRequestID {
-	return wasmlib.NewScMutableRequestID(s.id, ParamRequestID.KeyID())
+	return wasmlib.NewScMutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
 }
 
 type ImmutableGetRequestReceiptsForBlockParams struct {
@@ -126,7 +126,7 @@ type ImmutableGetRequestReceiptsForBlockParams struct {
 }
 
 func (s ImmutableGetRequestReceiptsForBlockParams) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ParamBlockIndex.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
 }
 
 type MutableGetRequestReceiptsForBlockParams struct {
@@ -134,7 +134,7 @@ type MutableGetRequestReceiptsForBlockParams struct {
 }
 
 func (s MutableGetRequestReceiptsForBlockParams) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ParamBlockIndex.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
 }
 
 type ImmutableIsRequestProcessedParams struct {
@@ -142,7 +142,7 @@ type ImmutableIsRequestProcessedParams struct {
 }
 
 func (s ImmutableIsRequestProcessedParams) RequestID() wasmlib.ScImmutableRequestID {
-	return wasmlib.NewScImmutableRequestID(s.id, ParamRequestID.KeyID())
+	return wasmlib.NewScImmutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
 }
 
 type MutableIsRequestProcessedParams struct {
@@ -150,5 +150,5 @@ type MutableIsRequestProcessedParams struct {
 }
 
 func (s MutableIsRequestProcessedParams) RequestID() wasmlib.ScMutableRequestID {
-	return wasmlib.NewScMutableRequestID(s.id, ParamRequestID.KeyID())
+	return wasmlib.NewScMutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
 }

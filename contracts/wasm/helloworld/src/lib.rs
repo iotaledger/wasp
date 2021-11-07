@@ -27,7 +27,7 @@ mod helloworld;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_HELLO_WORLD, func_hello_world_thunk);
+    exports.add_func(FUNC_HELLO_WORLD,     func_hello_world_thunk);
     exports.add_view(VIEW_GET_HELLO_WORLD, view_get_hello_world_thunk);
 
     unsafe {

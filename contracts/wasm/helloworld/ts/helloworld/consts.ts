@@ -13,8 +13,8 @@ export const HScName       = new wasmlib.ScHname(0x0683223c);
 
 export const ResultHelloWorld = "helloWorld";
 
-export const FuncHelloWorld = "helloWorld";
+export const FuncHelloWorld    = "helloWorld";
 export const ViewGetHelloWorld = "getHelloWorld";
 
-export const HFuncHelloWorld = new wasmlib.ScHname(0x9d042e65);
+export const HFuncHelloWorld    = new wasmlib.ScHname(0x9d042e65);
 export const HViewGetHelloWorld = new wasmlib.ScHname(0x210439ce);

@@ -106,8 +106,8 @@ func (g *TypeScriptGenerator) generateLanguageSpecificFiles() error {
 	return nil
 }
 
-func (g *TypeScriptGenerator) setFieldKeys() {
-	g.GenBase.setFieldKeys()
+func (g *TypeScriptGenerator) setFieldKeys(pad bool) {
+	g.GenBase.setFieldKeys(pad)
 
 	fldTypeID := tsTypeIds[g.currentField.Type]
 	if fldTypeID == "" {

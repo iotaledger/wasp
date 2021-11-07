@@ -21,28 +21,34 @@ type Generator interface {
 	init(s *Schema)
 	funcName(f *Func) string
 	generateLanguageSpecificFiles() error
-	setFieldKeys()
+	setFieldKeys(pad bool)
 	setFuncKeys()
 }
 
 type GenBase struct {
-	currentField  *Field
-	currentFunc   *Func
-	currentStruct *Struct
-	emitters      map[string]func(g *GenBase)
-	extension     string
-	file          *os.File
-	folder        string
-	funcRegexp    *regexp.Regexp
-	gen           Generator
-	keys          map[string]string
-	language      string
-	newTypes      map[string]bool
-	rootFolder    string
-	s             *Schema
-	skipWarning   bool
-	templates     map[string]string
+	currentField    *Field
+	currentFunc     *Func
+	currentStruct   *Struct
+	emitters        map[string]func(g *GenBase)
+	extension       string
+	file            *os.File
+	folder          string
+	funcRegexp      *regexp.Regexp
+	gen             Generator
+	keys            map[string]string
+	language        string
+	maxCamelFuncLen int
+	maxSnakeFuncLen int
+	maxCamelFldLen  int
+	maxSnakeFldLen  int
+	newTypes        map[string]bool
+	rootFolder      string
+	s               *Schema
+	skipWarning     bool
+	templates       map[string]string
 }
+
+const spaces = "                                             "
 
 func (g *GenBase) init(s *Schema, templates []map[string]string) {
 	g.s = s
@@ -313,7 +319,7 @@ func (g *GenBase) setCommonKeys() {
 	g.keys["maxIndex"] = strconv.Itoa(g.s.KeyID)
 }
 
-func (g *GenBase) setFieldKeys() {
+func (g *GenBase) setFieldKeys(pad bool) {
 	g.setMultiKeyValues("fldName", g.currentField.Name)
 	g.setMultiKeyValues("fldType", g.currentField.Type)
 
@@ -321,6 +327,11 @@ func (g *GenBase) setFieldKeys() {
 	g.keys["fldComment"] = g.currentField.Comment
 	g.keys["fldMapKey"] = g.currentField.MapKey
 	g.keys["fldIndex"] = strconv.Itoa(g.currentField.KeyID)
+
+	if pad {
+		g.keys["fldPad"] = spaces[:g.maxCamelFldLen-len(g.keys["fldName"])]
+		g.keys["fld_pad"] = spaces[:g.maxSnakeFldLen-len(g.keys["fld_name"])]
+	}
 }
 
 func (g *GenBase) setFuncKeys() {
@@ -336,6 +347,9 @@ func (g *GenBase) setFuncKeys() {
 	}
 	g.keys["funcAccess"] = grant
 	g.keys["funcAccessComment"] = comment
+
+	g.keys["funcPad"] = spaces[:g.maxCamelFuncLen-len(g.keys["funcName"])]
+	g.keys["func_pad"] = spaces[:g.maxSnakeFuncLen-len(g.keys["func_name"])]
 }
 
 func (g *GenBase) setMultiKeyValues(key, value string) {

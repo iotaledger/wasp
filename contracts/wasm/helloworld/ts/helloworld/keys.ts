@@ -8,7 +8,9 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+
 export const IdxResultHelloWorld = 0;
+
 
 export let keyMap: string[] = [
 	sc.ResultHelloWorld,

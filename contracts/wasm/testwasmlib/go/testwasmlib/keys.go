@@ -28,14 +28,16 @@ const (
 	IdxParamRequestID   = 15
 	IdxParamString      = 16
 	IdxParamValue       = 17
-	IdxResultCount      = 18
-	IdxResultIotas      = 19
-	IdxResultLength     = 20
-	IdxResultRandom     = 21
-	IdxResultRecord     = 22
-	IdxResultValue      = 23
-	IdxStateArrays      = 24
-	IdxStateRandom      = 25
+
+	IdxResultCount  = 18
+	IdxResultIotas  = 19
+	IdxResultLength = 20
+	IdxResultRandom = 21
+	IdxResultRecord = 22
+	IdxResultValue  = 23
+
+	IdxStateArrays = 24
+	IdxStateRandom = 25
 )
 
 const keyMapLen = 26

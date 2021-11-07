@@ -21,7 +21,7 @@ $#each func libThunk
 `,
 	// *******************************
 	"libExportFunc": `
-    exports.add$Kind(sc.$Kind$FuncName, $kind$FuncName$+Thunk);
+    exports.add$Kind(sc.$Kind$FuncName,$funcPad $kind$FuncName$+Thunk);
 `,
 	// *******************************
 	"libThunk": `

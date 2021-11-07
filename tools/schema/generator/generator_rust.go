@@ -109,8 +109,8 @@ func (g *RustGenerator) generateLanguageSpecificFiles() error {
 	return nil
 }
 
-func (g *RustGenerator) setFieldKeys() {
-	g.GenBase.setFieldKeys()
+func (g *RustGenerator) setFieldKeys(pad bool) {
+	g.GenBase.setFieldKeys(pad)
 
 	field := g.currentField
 	fldRef := "&"

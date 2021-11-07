@@ -41,7 +41,7 @@ $#each func libThunk
 `,
 	// *******************************
 	"libExportFunc": `
-    exports.add_$kind($KIND$+_$FUNC_NAME, $kind$+_$func_name$+_thunk);
+    exports.add_$kind($KIND$+_$FUNC_NAME,$func_pad $kind$+_$func_name$+_thunk);
 `,
 	// *******************************
 	"libThunk": `

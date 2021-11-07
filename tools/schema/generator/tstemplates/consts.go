@@ -36,14 +36,14 @@ $#each state constField
 `,
 	// *******************************
 	"constField": `
-export const $constPrefix$FldName = "$fldAlias";
+export const $constPrefix$FldName$fldPad = "$fldAlias";
 `,
 	// *******************************
 	"constFunc": `
-export const $Kind$FuncName = "$funcName";
+export const $Kind$FuncName$funcPad = "$funcName";
 `,
 	// *******************************
 	"constHFunc": `
-export const H$Kind$FuncName = new wasmlib.ScHname(0x$funcHName);
+export const H$Kind$FuncName$funcPad = new wasmlib.ScHname(0x$funcHName);
 `,
 }
