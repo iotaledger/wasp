@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ArrayOfImmutableAgentID {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -28,7 +28,7 @@ export class ImmutableBidderList extends ArrayOfImmutableAgentID {
 };
 
 export class ArrayOfMutableAgentID {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -51,7 +51,7 @@ export class MutableBidderList extends ArrayOfMutableAgentID {
 };
 
 export class MapAgentIDToImmutableBid {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -66,14 +66,14 @@ export class ImmutableBids extends MapAgentIDToImmutableBid {
 };
 
 export class MapAgentIDToMutableBid {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
     }
 
     clear(): void {
-        wasmlib.clear(this.objID)
+        wasmlib.clear(this.objID);
     }
 
     getBid(key: wasmlib.ScAgentID): sc.MutableBid {

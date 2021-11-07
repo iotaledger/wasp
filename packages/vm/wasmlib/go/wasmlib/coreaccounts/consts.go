@@ -21,7 +21,11 @@ const (
 	ParamWithdrawColor  = wasmlib.Key("c")
 )
 
-const ResultAccountNonce = wasmlib.Key("n")
+const (
+	ResultAccountNonce = wasmlib.Key("n")
+	ResultAgents       = wasmlib.Key("this")
+	ResultBalances     = wasmlib.Key("this")
+)
 
 const (
 	FuncDeposit         = "deposit"

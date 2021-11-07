@@ -47,16 +47,6 @@ type Func struct {
 	Type     string
 }
 
-func (f *Func) nameLen(smallest int) int {
-	if len(f.Results) != 0 {
-		return 7
-	}
-	if len(f.Params) != 0 {
-		return 6
-	}
-	return smallest
-}
-
 type Struct struct {
 	Name   string
 	Fields []*Field
@@ -83,14 +73,6 @@ type Schema struct {
 
 func NewSchema() *Schema {
 	return &Schema{}
-}
-
-func (s *Schema) appendConst(name, value string) {
-	if s.ConstLen < len(name) {
-		s.ConstLen = len(name)
-	}
-	s.ConstNames = append(s.ConstNames, name)
-	s.ConstValues = append(s.ConstValues, value)
 }
 
 func (s *Schema) Compile(schemaDef *SchemaDef) error {
@@ -138,10 +120,10 @@ func (s *Schema) compileField(fldName, fldType string) (*Field, error) {
 }
 
 func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, views bool) (err error) {
-	kind := "func"
+	kind := lower(KindFunc)
 	templateFuncs := schemaDef.Funcs
 	if views {
-		kind = "view"
+		kind = lower(KindView)
 		templateFuncs = schemaDef.Views
 	}
 	for _, funcName := range sortedFuncDescs(templateFuncs) {
@@ -286,13 +268,4 @@ func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
 		s.Typedefs = append(s.Typedefs, varDef)
 	}
 	return nil
-}
-
-func (s *Schema) flushConsts(printer func(name string, value string, padLen int)) {
-	for i, name := range s.ConstNames {
-		printer(name, s.ConstValues[i], s.ConstLen)
-	}
-	s.ConstLen = 0
-	s.ConstNames = nil
-	s.ConstValues = nil
 }

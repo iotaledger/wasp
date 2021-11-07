@@ -5,21 +5,19 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
 use wasmlib::host::*;
 
 pub struct Token {
-    pub created:      i64,       // creation timestamp
-    pub description:  String,    // description what minted token represents
-    pub minted_by:    ScAgentID, // original minter
-    pub owner:        ScAgentID, // current owner
-    pub supply:       i64,       // amount of tokens originally minted
-    pub updated:      i64,       // last update timestamp
-    pub user_defined: String,    // any user defined text
+    pub created: i64,  // creation timestamp
+    pub description: String,  // description what minted token represents
+    pub minted_by: ScAgentID,  // original minter
+    pub owner: ScAgentID,  // current owner
+    pub supply: i64,  // amount of tokens originally minted
+    pub updated: i64,  // last update timestamp
+    pub user_defined: String,  // any user defined text
 }
 
 impl Token {
@@ -38,13 +36,13 @@ impl Token {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut encode = BytesEncoder::new();
-        encode.int64(self.created);
-        encode.string(&self.description);
-        encode.agent_id(&self.minted_by);
-        encode.agent_id(&self.owner);
-        encode.int64(self.supply);
-        encode.int64(self.updated);
-        encode.string(&self.user_defined);
+		encode.int64(self.created);
+		encode.string(&self.description);
+		encode.agent_id(&self.minted_by);
+		encode.agent_id(&self.owner);
+		encode.int64(self.supply);
+		encode.int64(self.updated);
+		encode.string(&self.user_defined);
         return encode.data();
     }
 }
@@ -82,5 +80,3 @@ impl MutableToken {
         Token::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
     }
 }
-
-// @formatter:on

@@ -20,9 +20,10 @@ pub struct ImmutableInitParams {
 }
 
 impl ImmutableInitParams {
+
     pub fn owner(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -31,9 +32,10 @@ pub struct MutableInitParams {
 }
 
 impl MutableInitParams {
+
     pub fn owner(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -42,13 +44,14 @@ pub struct ImmutableMemberParams {
 }
 
 impl ImmutableMemberParams {
+
     pub fn address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
-    }
+		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+	}
 
     pub fn factor(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_FACTOR))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_FACTOR))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -57,13 +60,14 @@ pub struct MutableMemberParams {
 }
 
 impl MutableMemberParams {
+
     pub fn address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
-    }
+		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+	}
 
     pub fn factor(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_FACTOR))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_FACTOR))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -72,9 +76,10 @@ pub struct ImmutableSetOwnerParams {
 }
 
 impl ImmutableSetOwnerParams {
+
     pub fn owner(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -83,9 +88,10 @@ pub struct MutableSetOwnerParams {
 }
 
 impl MutableSetOwnerParams {
+
     pub fn owner(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -94,9 +100,10 @@ pub struct ImmutableGetFactorParams {
 }
 
 impl ImmutableGetFactorParams {
+
     pub fn address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
-    }
+		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -105,7 +112,8 @@ pub struct MutableGetFactorParams {
 }
 
 impl MutableGetFactorParams {
+
     pub fn address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
-    }
+		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+	}
 }

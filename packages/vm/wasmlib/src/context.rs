@@ -14,7 +14,7 @@ use crate::keys::*;
 use crate::mutable::*;
 
 // all access to the objects in host's object tree starts here
-pub(crate) static ROOT: ScMutableMap = ScMutableMap { obj_id: 1 };
+pub(crate) static ROOT: ScMutableMap = ScMutableMap { obj_id: OBJ_ID_ROOT };
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -162,13 +162,6 @@ impl ScUtility {
     pub fn hname(&self, value: &str) -> ScHname {
         let result = self.utility.call_func(KEY_HNAME, value.as_bytes());
         ScHname::from_bytes(&result)
-    }
-
-    // generates a random value from 0 to max (exclusive max) using a deterministic RNG
-    pub fn random(&self, max: i64) -> i64 {
-        let result = self.utility.call_func(KEY_RANDOM, &vec![0_u8; 0]);
-        let rnd = i64::from_le_bytes(result.try_into().expect("invalid i64 length"));
-        (rnd as u64 % max as u64) as i64
     }
 }
 
@@ -358,6 +351,20 @@ impl ScFuncContext {
     // shorthand to asynchronously call a smart contract function of the current contract
     pub fn post_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfer: ScTransfers, delay: i32) {
         self.post(&self.chain_id(), self.contract(), hfunction, params, transfer, delay);
+    }
+
+    // generates a random value from 0 to max (exclusive max) using a deterministic RNG
+    pub fn random(&self, max: i64) -> i64 {
+        let state = ScMutableMap { obj_id: OBJ_ID_STATE };
+        let rnd = state.get_bytes(&KEY_RANDOM);
+        let mut seed = rnd.value();
+        if seed.is_empty() {
+            // get initial entropy from sandbox
+            seed = ROOT.get_bytes(&KEY_RANDOM).value();
+        }
+        rnd.set_value(&self.utility().hash_sha3(&seed).to_bytes());
+        let rnd = i64::from_le_bytes(seed[0..8].try_into().expect("invalid i64 length"));
+        (rnd as u64 % max as u64) as i64
     }
 
     // retrieve the request id of this transaction

@@ -73,6 +73,22 @@ func (s MutableBlockRecordsResults) Count() wasmlib.ScMutableInt32 {
 	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxResultCount])
 }
 
+type ImmutableGetRandomResults struct {
+	id int32
+}
+
+func (s ImmutableGetRandomResults) Random() wasmlib.ScImmutableInt64 {
+	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultRandom])
+}
+
+type MutableGetRandomResults struct {
+	id int32
+}
+
+func (s MutableGetRandomResults) Random() wasmlib.ScMutableInt64 {
+	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultRandom])
+}
+
 type ImmutableIotaBalanceResults struct {
 	id int32
 }

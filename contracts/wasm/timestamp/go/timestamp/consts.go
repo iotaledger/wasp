@@ -15,9 +15,13 @@ const (
 	HScName       = wasmlib.ScHname(0x3988002e)
 )
 
-const ResultTimestamp = wasmlib.Key("timestamp")
+const (
+	ResultTimestamp = wasmlib.Key("timestamp")
+)
 
-const StateTimestamp = wasmlib.Key("timestamp")
+const (
+	StateTimestamp = wasmlib.Key("timestamp")
+)
 
 const (
 	FuncNow          = "now"

@@ -1,0 +1,32 @@
+package gotemplates
+
+var funcsGo = map[string]string{
+	// *******************************
+	"funcs.go": `
+$#emit goHeader
+$#each func funcSignature
+`,
+	// *******************************
+	"funcSignature": `
+
+func $kind$FuncName(ctx wasmlib.Sc$Kind$+Context, f *$FuncName$+Context) {
+$#emit init$Kind$FuncName
+}
+`,
+	// *******************************
+	"initFuncInit": `
+    if f.Params.Owner().Exists() {
+        f.State.Owner().SetValue(f.Params.Owner().Value())
+        return
+    }
+    f.State.Owner().SetValue(ctx.ContractCreator())
+`,
+	// *******************************
+	"initFuncSetOwner": `
+	f.State.Owner().SetValue(f.Params.Owner().Value())
+`,
+	// *******************************
+	"initViewGetOwner": `
+	f.Results.Owner().SetValue(f.State.Owner().Value())
+`,
+}

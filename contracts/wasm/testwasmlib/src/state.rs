@@ -16,7 +16,7 @@ use crate::keys::*;
 use crate::typedefs::*;
 
 pub struct MapStringToImmutableStringArray {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapStringToImmutableStringArray {
@@ -32,14 +32,19 @@ pub struct ImmutableTestWasmLibState {
 }
 
 impl ImmutableTestWasmLibState {
+
     pub fn arrays(&self) -> MapStringToImmutableStringArray {
-        let map_id = get_object_id(self.id, idx_map(IDX_STATE_ARRAYS), TYPE_MAP);
-        MapStringToImmutableStringArray { obj_id: map_id }
-    }
+		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ARRAYS), TYPE_MAP);
+		MapStringToImmutableStringArray { obj_id: map_id }
+	}
+
+    pub fn random(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_RANDOM))
+	}
 }
 
 pub struct MapStringToMutableStringArray {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapStringToMutableStringArray {
@@ -59,8 +64,13 @@ pub struct MutableTestWasmLibState {
 }
 
 impl MutableTestWasmLibState {
+
     pub fn arrays(&self) -> MapStringToMutableStringArray {
-        let map_id = get_object_id(self.id, idx_map(IDX_STATE_ARRAYS), TYPE_MAP);
-        MapStringToMutableStringArray { obj_id: map_id }
-    }
+		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ARRAYS), TYPE_MAP);
+		MapStringToMutableStringArray { obj_id: map_id }
+	}
+
+    pub fn random(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.id, idx_map(IDX_STATE_RANDOM))
+	}
 }

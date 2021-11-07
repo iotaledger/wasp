@@ -102,3 +102,11 @@ export function viewBlockRecords(ctx: wasmlib.ScViewContext, f: sc.BlockRecordsC
 export function viewIotaBalance(ctx: wasmlib.ScViewContext, f: sc.IotaBalanceContext): void {
     f.results.iotas().setValue(ctx.balances().balance(wasmlib.ScColor.IOTA));
 }
+
+export function funcRandom(ctx: wasmlib.ScFuncContext, f: sc.RandomContext): void {
+    f.state.random().setValue(ctx.random(1000));
+}
+
+export function viewGetRandom(ctx: wasmlib.ScViewContext, f: sc.GetRandomContext): void {
+    f.results.random().setValue(f.state.random().value());
+}

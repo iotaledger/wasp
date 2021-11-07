@@ -47,6 +47,8 @@ const (
 	ResultMintedColor  = wasmlib.Key("mintedColor")
 	ResultMintedSupply = wasmlib.Key("mintedSupply")
 	ResultSandboxCall  = wasmlib.Key("sandboxCall")
+	ResultValues       = wasmlib.Key("this")
+	ResultVars         = wasmlib.Key("this")
 )
 
 const (

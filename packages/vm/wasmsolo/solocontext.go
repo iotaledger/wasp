@@ -328,19 +328,19 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 		wasmFile = "../pkg/" + wasmFile
 	}
 
-	if *GoWasm || !exists {
-		goPath := "../go/pkg/" + ctx.scName + "_go.wasm"
-		exists, _ = util.ExistsFilePath(goPath)
+	if *GoWasm {
+		wasmFile = ctx.scName + "_go.wasm"
+		exists, _ = util.ExistsFilePath("../go/pkg/" + wasmFile)
 		if exists {
-			wasmFile = goPath
+			wasmFile = "../go/pkg/" + wasmFile
 		}
 	}
 
-	if *TsWasm || !exists {
-		tsPath := "../ts/pkg/" + ctx.scName + "_ts.wasm"
-		exists, _ = util.ExistsFilePath(tsPath)
+	if *TsWasm {
+		wasmFile = ctx.scName + "_ts.wasm"
+		exists, _ = util.ExistsFilePath("../ts/pkg/" + wasmFile)
 		if exists {
-			wasmFile = tsPath
+			wasmFile = "../ts/pkg/" + wasmFile
 		}
 	}
 

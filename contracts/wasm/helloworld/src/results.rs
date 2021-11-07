@@ -20,9 +20,10 @@ pub struct ImmutableGetHelloWorldResults {
 }
 
 impl ImmutableGetHelloWorldResults {
+
     pub fn hello_world(&self) -> ScImmutableString {
-        ScImmutableString::new(self.id, idx_map(IDX_RESULT_HELLO_WORLD))
-    }
+		ScImmutableString::new(self.id, idx_map(IDX_RESULT_HELLO_WORLD))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -31,7 +32,8 @@ pub struct MutableGetHelloWorldResults {
 }
 
 impl MutableGetHelloWorldResults {
+
     pub fn hello_world(&self) -> ScMutableString {
-        ScMutableString::new(self.id, idx_map(IDX_RESULT_HELLO_WORLD))
-    }
+		ScMutableString::new(self.id, idx_map(IDX_RESULT_HELLO_WORLD))
+	}
 }

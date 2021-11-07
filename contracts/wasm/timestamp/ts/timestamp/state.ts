@@ -5,19 +5,19 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutabletimestampState extends wasmlib.ScMapID {
 
     timestamp(): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateTimestamp]);
-    }
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateTimestamp]);
+	}
 }
 
 export class MutabletimestampState extends wasmlib.ScMapID {
 
     timestamp(): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateTimestamp]);
-    }
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateTimestamp]);
+	}
 }

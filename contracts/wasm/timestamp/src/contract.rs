@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use std::ptr;
@@ -17,12 +15,12 @@ use crate::consts::*;
 use crate::results::*;
 
 pub struct NowCall {
-    pub func: ScFunc,
+	pub func: ScFunc,
 }
 
 pub struct GetTimestampCall {
-    pub func:    ScView,
-    pub results: ImmutableGetTimestampResults,
+	pub func: ScView,
+	pub results: ImmutableGetTimestampResults,
 }
 
 pub struct ScFuncs {
@@ -36,12 +34,10 @@ impl ScFuncs {
     }
     pub fn get_timestamp(_ctx: & dyn ScViewCallContext) -> GetTimestampCall {
         let mut f = GetTimestampCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_TIMESTAMP),
+            func: ScView::new(HSC_NAME, HVIEW_GET_TIMESTAMP),
             results: ImmutableGetTimestampResults { id: 0 },
         };
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
     }
 }
-
-// @formatter:on

@@ -5,32 +5,31 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class NowCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncNow);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncNow);
 }
 
 export class NowContext {
-    state: sc.MutabletimestampState = new sc.MutabletimestampState();
+	state: sc.MutabletimestampState = new sc.MutabletimestampState();
 }
 
 export class GetTimestampCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetTimestamp);
-    results: sc.ImmutableGetTimestampResults = new sc.ImmutableGetTimestampResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetTimestamp);
+	results: sc.ImmutableGetTimestampResults = new sc.ImmutableGetTimestampResults();
 }
 
 export class GetTimestampContext {
-    results: sc.MutableGetTimestampResults = new sc.MutableGetTimestampResults();
-    state: sc.ImmutabletimestampState = new sc.ImmutabletimestampState();
+	results: sc.MutableGetTimestampResults = new sc.MutableGetTimestampResults();
+	state: sc.ImmutabletimestampState = new sc.ImmutabletimestampState();
 }
 
 export class ScFuncs {
 
     static now(ctx: wasmlib.ScFuncCallContext): NowCall {
-        let f = new NowCall();
-        return f;
+        return new NowCall();
     }
 
     static getTimestamp(ctx: wasmlib.ScViewCallContext): GetTimestampCall {

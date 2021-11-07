@@ -10,8 +10,9 @@ package fairroulette
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
-	ScName  = "fairroulette"
-	HScName = wasmlib.ScHname(0xdf79d138)
+	ScName        = "fairroulette"
+	ScDescription = ""
+	HScName       = wasmlib.ScHname(0xdf79d138)
 )
 
 const (

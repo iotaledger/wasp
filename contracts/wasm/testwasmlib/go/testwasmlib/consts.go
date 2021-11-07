@@ -29,6 +29,7 @@ const (
 	ParamInt32       = wasmlib.Key("int32")
 	ParamInt64       = wasmlib.Key("int64")
 	ParamName        = wasmlib.Key("name")
+	ParamParam       = wasmlib.Key("this")
 	ParamRecordIndex = wasmlib.Key("recordIndex")
 	ParamRequestID   = wasmlib.Key("requestID")
 	ParamString      = wasmlib.Key("string")
@@ -39,21 +40,27 @@ const (
 	ResultCount  = wasmlib.Key("count")
 	ResultIotas  = wasmlib.Key("iotas")
 	ResultLength = wasmlib.Key("length")
+	ResultRandom = wasmlib.Key("random")
 	ResultRecord = wasmlib.Key("record")
 	ResultValue  = wasmlib.Key("value")
 )
 
-const StateArrays = wasmlib.Key("arrays")
+const (
+	StateArrays = wasmlib.Key("arrays")
+	StateRandom = wasmlib.Key("random")
+)
 
 const (
 	FuncArrayClear   = "arrayClear"
 	FuncArrayCreate  = "arrayCreate"
 	FuncArraySet     = "arraySet"
 	FuncParamTypes   = "paramTypes"
+	FuncRandom       = "random"
 	ViewArrayLength  = "arrayLength"
 	ViewArrayValue   = "arrayValue"
 	ViewBlockRecord  = "blockRecord"
 	ViewBlockRecords = "blockRecords"
+	ViewGetRandom    = "getRandom"
 	ViewIotaBalance  = "iotaBalance"
 )
 
@@ -62,9 +69,11 @@ const (
 	HFuncArrayCreate  = wasmlib.ScHname(0x1ed5b23b)
 	HFuncArraySet     = wasmlib.ScHname(0x2c4150b3)
 	HFuncParamTypes   = wasmlib.ScHname(0x6921c4cd)
+	HFuncRandom       = wasmlib.ScHname(0xe86c97ca)
 	HViewArrayLength  = wasmlib.ScHname(0x3a831021)
 	HViewArrayValue   = wasmlib.ScHname(0x662dbd81)
 	HViewBlockRecord  = wasmlib.ScHname(0xad13b2f8)
 	HViewBlockRecords = wasmlib.ScHname(0x16e249ea)
+	HViewGetRandom    = wasmlib.ScHname(0x46263045)
 	HViewIotaBalance  = wasmlib.ScHname(0x9d3920bd)
 )

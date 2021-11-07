@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
@@ -40,37 +38,35 @@ fn on_load() {
 }
 
 pub struct NowContext {
-    state: MutabletimestampState,
+	state: MutabletimestampState,
 }
 
 fn func_now_thunk(ctx: &ScFuncContext) {
-    ctx.log("timestamp.funcNow");
-    let f = NowContext {
-        state: MutabletimestampState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    func_now(ctx, &f);
-    ctx.log("timestamp.funcNow ok");
+	ctx.log("timestamp.funcNow");
+	let f = NowContext {
+		state: MutabletimestampState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	func_now(ctx, &f);
+	ctx.log("timestamp.funcNow ok");
 }
 
 pub struct GetTimestampContext {
-    results: MutableGetTimestampResults,
-    state:   ImmutabletimestampState,
+	results: MutableGetTimestampResults,
+	state: ImmutabletimestampState,
 }
 
 fn view_get_timestamp_thunk(ctx: &ScViewContext) {
-    ctx.log("timestamp.viewGetTimestamp");
-    let f = GetTimestampContext {
-        results: MutableGetTimestampResults {
-            id: OBJ_ID_RESULTS,
-        },
-        state: ImmutabletimestampState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    view_get_timestamp(ctx, &f);
-    ctx.log("timestamp.viewGetTimestamp ok");
+	ctx.log("timestamp.viewGetTimestamp");
+	let f = GetTimestampContext {
+		results: MutableGetTimestampResults {
+			id: OBJ_ID_RESULTS,
+		},
+		state: ImmutabletimestampState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	view_get_timestamp(ctx, &f);
+	ctx.log("timestamp.viewGetTimestamp ok");
 }
-
-// @formatter:on

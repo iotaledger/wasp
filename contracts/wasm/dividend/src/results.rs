@@ -20,9 +20,10 @@ pub struct ImmutableGetFactorResults {
 }
 
 impl ImmutableGetFactorResults {
+
     pub fn factor(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_FACTOR))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_FACTOR))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -31,9 +32,10 @@ pub struct MutableGetFactorResults {
 }
 
 impl MutableGetFactorResults {
+
     pub fn factor(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_FACTOR))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_FACTOR))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -42,9 +44,10 @@ pub struct ImmutableGetOwnerResults {
 }
 
 impl ImmutableGetOwnerResults {
+
     pub fn owner(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_OWNER))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_OWNER))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -53,7 +56,8 @@ pub struct MutableGetOwnerResults {
 }
 
 impl MutableGetOwnerResults {
+
     pub fn owner(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_OWNER))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_OWNER))
+	}
 }
