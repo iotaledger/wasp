@@ -13,7 +13,7 @@ $#each func funcSignature
 	// *******************************
 	"funcSignature": `
 
-pub fn $kind&+_$func_name(ctx: &Sc$Kind$+Context, f: &$FuncName$+Context) {
+pub fn $kind$+_$func_name(ctx: &Sc$Kind$+Context, f: &$FuncName$+Context) {
 $#emit init$FuncName
 }
 `,

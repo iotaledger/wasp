@@ -111,6 +111,30 @@ impl MutableBlockRecordsResults {
 }
 
 #[derive(Clone, Copy)]
+pub struct ImmutableGetRandomResults {
+    pub(crate) id: i32,
+}
+
+impl ImmutableGetRandomResults {
+
+    pub fn random(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_RANDOM))
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableGetRandomResults {
+    pub(crate) id: i32,
+}
+
+impl MutableGetRandomResults {
+
+    pub fn random(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_RANDOM))
+	}
+}
+
+#[derive(Clone, Copy)]
 pub struct ImmutableIotaBalanceResults {
     pub(crate) id: i32,
 }

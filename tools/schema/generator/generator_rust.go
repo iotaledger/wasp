@@ -9,10 +9,6 @@ import (
 	"github.com/iotaledger/wasp/tools/schema/generator/rstemplates"
 )
 
-const (
-	allowUnusedImports = "#![allow(unused_imports)]"
-)
-
 var rustTypes = StringMap{
 	"Address":   "ScAddress",
 	"AgentID":   "ScAgentID",
@@ -84,10 +80,7 @@ func NewRustGenerator() *RustGenerator {
 }
 
 func (g *RustGenerator) init(s *Schema) {
-	g.GenBase.init(s)
-	for _, template := range rstemplates.RsTemplates {
-		g.addTemplates(template)
-	}
+	g.GenBase.init(s, rstemplates.RsTemplates)
 }
 
 func (g *RustGenerator) funcName(f *Func) string {
@@ -96,40 +89,9 @@ func (g *RustGenerator) funcName(f *Func) string {
 
 func (g *RustGenerator) generateLanguageSpecificFiles() error {
 	if g.s.CoreContracts {
-		return g.createSourceFile("mod", g.writeSpecialMod)
+		return g.createSourceFile("mod")
 	}
 	return g.writeSpecialCargoToml()
-}
-
-func (g *RustGenerator) generateModLines(format string) {
-	g.println()
-
-	if !g.s.CoreContracts {
-		g.printf(format, g.s.Name)
-		g.println()
-	}
-
-	g.printf(format, "consts")
-	g.printf(format, "contract")
-	if !g.s.CoreContracts {
-		g.printf(format, "keys")
-		g.printf(format, "lib")
-	}
-	if len(g.s.Params) != 0 {
-		g.printf(format, "params")
-	}
-	if len(g.s.Results) != 0 {
-		g.printf(format, "results")
-	}
-	if !g.s.CoreContracts {
-		g.printf(format, "state")
-		if len(g.s.Structs) != 0 {
-			g.printf(format, "structs")
-		}
-		if len(g.s.Typedefs) != 0 {
-			g.printf(format, "typedefs")
-		}
-	}
 }
 
 func (g *RustGenerator) writeInitialFuncs() {
@@ -152,12 +114,6 @@ func (g *RustGenerator) writeSpecialCargoToml() error {
 
 	g.emit(cargoToml)
 	return nil
-}
-
-func (g *RustGenerator) writeSpecialMod() {
-	g.println(allowUnusedImports)
-	g.generateModLines("pub use %s::*;\n")
-	g.generateModLines("pub mod %s;\n")
 }
 
 func (g *RustGenerator) setFieldKeys() {

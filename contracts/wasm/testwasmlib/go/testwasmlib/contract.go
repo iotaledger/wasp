@@ -29,6 +29,10 @@ type ParamTypesCall struct {
 	Params MutableParamTypesParams
 }
 
+type RandomCall struct {
+	Func *wasmlib.ScFunc
+}
+
 type ArrayLengthCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableArrayLengthParams
@@ -51,6 +55,11 @@ type BlockRecordsCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableBlockRecordsParams
 	Results ImmutableBlockRecordsResults
+}
+
+type GetRandomCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableGetRandomResults
 }
 
 type IotaBalanceCall struct {
@@ -86,6 +95,10 @@ func (sc Funcs) ParamTypes(ctx wasmlib.ScFuncCallContext) *ParamTypesCall {
 	return f
 }
 
+func (sc Funcs) Random(ctx wasmlib.ScFuncCallContext) *RandomCall {
+	return &RandomCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRandom)}
+}
+
 func (sc Funcs) ArrayLength(ctx wasmlib.ScViewCallContext) *ArrayLengthCall {
 	f := &ArrayLengthCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayLength)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
@@ -107,6 +120,12 @@ func (sc Funcs) BlockRecord(ctx wasmlib.ScViewCallContext) *BlockRecordCall {
 func (sc Funcs) BlockRecords(ctx wasmlib.ScViewCallContext) *BlockRecordsCall {
 	f := &BlockRecordsCall{Func: wasmlib.NewScView(ctx, HScName, HViewBlockRecords)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	return f
+}
+
+func (sc Funcs) GetRandom(ctx wasmlib.ScViewCallContext) *GetRandomCall {
+	f := &GetRandomCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetRandom)}
+	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }
 

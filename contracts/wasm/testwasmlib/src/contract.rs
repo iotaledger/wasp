@@ -37,6 +37,10 @@ pub struct ParamTypesCall {
 	pub params: MutableParamTypesParams,
 }
 
+pub struct RandomCall {
+	pub func: ScFunc,
+}
+
 pub struct ArrayLengthCall {
 	pub func: ScView,
 	pub params: MutableArrayLengthParams,
@@ -59,6 +63,11 @@ pub struct BlockRecordsCall {
 	pub func: ScView,
 	pub params: MutableBlockRecordsParams,
 	pub results: ImmutableBlockRecordsResults,
+}
+
+pub struct GetRandomCall {
+	pub func: ScView,
+	pub results: ImmutableGetRandomResults,
 }
 
 pub struct IotaBalanceCall {
@@ -102,6 +111,11 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+    pub fn random(_ctx: & dyn ScFuncCallContext) -> RandomCall {
+        RandomCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_RANDOM),
+        }
+    }
     pub fn array_length(_ctx: & dyn ScViewCallContext) -> ArrayLengthCall {
         let mut f = ArrayLengthCall {
             func: ScView::new(HSC_NAME, HVIEW_ARRAY_LENGTH),
@@ -136,6 +150,14 @@ impl ScFuncs {
             results: ImmutableBlockRecordsResults { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        f
+    }
+    pub fn get_random(_ctx: & dyn ScViewCallContext) -> GetRandomCall {
+        let mut f = GetRandomCall {
+            func: ScView::new(HSC_NAME, HVIEW_GET_RANDOM),
+            results: ImmutableGetRandomResults { id: 0 },
+        };
+        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
     }
     pub fn iota_balance(_ctx: & dyn ScViewCallContext) -> IotaBalanceCall {

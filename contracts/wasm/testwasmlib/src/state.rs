@@ -37,6 +37,10 @@ impl ImmutableTestWasmLibState {
 		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ARRAYS), TYPE_MAP);
 		MapStringToImmutableStringArray { obj_id: map_id }
 	}
+
+    pub fn random(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_RANDOM))
+	}
 }
 
 pub struct MapStringToMutableStringArray {
@@ -64,5 +68,9 @@ impl MutableTestWasmLibState {
     pub fn arrays(&self) -> MapStringToMutableStringArray {
 		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ARRAYS), TYPE_MAP);
 		MapStringToMutableStringArray { obj_id: map_id }
+	}
+
+    pub fn random(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.id, idx_map(IDX_STATE_RANDOM))
 	}
 }

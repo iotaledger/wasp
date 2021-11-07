@@ -10,7 +10,7 @@ $#each func funcSignature
 	// *******************************
 	"funcSignature": `
 
-$kind&+$FuncName(ctx: wasmlib.Sc$Kind$+Context, f: $FuncName$+Context): void {
+export function $kind$+$FuncName(ctx: wasmlib.Sc$Kind$+Context, f: sc.$FuncName$+Context): void {
 $#emit init$FuncName
 }
 `,

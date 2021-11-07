@@ -1,6 +1,6 @@
 package generator
 
-var templates = map[string]string{
+var commonTemplates = map[string]string{
 	// *******************************
 	"else": `
 `,

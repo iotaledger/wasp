@@ -34,11 +34,13 @@ pub(crate) const IDX_PARAM_VALUE: usize = 17;
 pub(crate) const IDX_RESULT_COUNT: usize = 18;
 pub(crate) const IDX_RESULT_IOTAS: usize = 19;
 pub(crate) const IDX_RESULT_LENGTH: usize = 20;
-pub(crate) const IDX_RESULT_RECORD: usize = 21;
-pub(crate) const IDX_RESULT_VALUE: usize = 22;
-pub(crate) const IDX_STATE_ARRAYS: usize = 23;
+pub(crate) const IDX_RESULT_RANDOM: usize = 21;
+pub(crate) const IDX_RESULT_RECORD: usize = 22;
+pub(crate) const IDX_RESULT_VALUE: usize = 23;
+pub(crate) const IDX_STATE_ARRAYS: usize = 24;
+pub(crate) const IDX_STATE_RANDOM: usize = 25;
 
-pub const KEY_MAP_LEN: usize = 24;
+pub const KEY_MAP_LEN: usize = 26;
 
 pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
 	PARAM_ADDRESS,
@@ -62,9 +64,11 @@ pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
 	RESULT_COUNT,
 	RESULT_IOTAS,
 	RESULT_LENGTH,
+	RESULT_RANDOM,
 	RESULT_RECORD,
 	RESULT_VALUE,
 	STATE_ARRAYS,
+	STATE_RANDOM,
 ];
 
 pub static mut IDX_MAP: [Key32; KEY_MAP_LEN] = [Key32(0); KEY_MAP_LEN];

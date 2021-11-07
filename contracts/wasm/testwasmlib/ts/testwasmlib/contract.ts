@@ -48,6 +48,14 @@ export class ParamTypesContext {
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
+export class RandomCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRandom);
+}
+
+export class RandomContext {
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+}
+
 export class ArrayLengthCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayLength);
 	params: sc.MutableArrayLengthParams = new sc.MutableArrayLengthParams();
@@ -96,6 +104,16 @@ export class BlockRecordsContext {
 	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
 }
 
+export class GetRandomCall {
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetRandom);
+	results: sc.ImmutableGetRandomResults = new sc.ImmutableGetRandomResults();
+}
+
+export class GetRandomContext {
+	results: sc.MutableGetRandomResults = new sc.MutableGetRandomResults();
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
+}
+
 export class IotaBalanceCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewIotaBalance);
 	results: sc.ImmutableIotaBalanceResults = new sc.ImmutableIotaBalanceResults();
@@ -132,6 +150,10 @@ export class ScFuncs {
         return f;
     }
 
+    static random(ctx: wasmlib.ScFuncCallContext): RandomCall {
+        return new RandomCall();
+    }
+
     static arrayLength(ctx: wasmlib.ScViewCallContext): ArrayLengthCall {
         let f = new ArrayLengthCall();
         f.func.setPtrs(f.params, f.results);
@@ -153,6 +175,12 @@ export class ScFuncs {
     static blockRecords(ctx: wasmlib.ScViewCallContext): BlockRecordsCall {
         let f = new BlockRecordsCall();
         f.func.setPtrs(f.params, f.results);
+        return f;
+    }
+
+    static getRandom(ctx: wasmlib.ScViewCallContext): GetRandomCall {
+        let f = new GetRandomCall();
+        f.func.setPtrs(null, f.results);
         return f;
     }
 

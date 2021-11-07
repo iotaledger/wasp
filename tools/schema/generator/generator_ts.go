@@ -80,10 +80,7 @@ func NewTypeScriptGenerator() *TypeScriptGenerator {
 }
 
 func (g *TypeScriptGenerator) init(s *Schema) {
-	g.GenBase.init(s)
-	for _, template := range tstemplates.TsTemplates {
-		g.addTemplates(template)
-	}
+	g.GenBase.init(s, tstemplates.TsTemplates)
 }
 
 func (g *TypeScriptGenerator) funcName(f *Func) string {

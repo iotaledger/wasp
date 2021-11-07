@@ -29,9 +29,11 @@ export const IdxParamValue = 17;
 export const IdxResultCount = 18;
 export const IdxResultIotas = 19;
 export const IdxResultLength = 20;
-export const IdxResultRecord = 21;
-export const IdxResultValue = 22;
-export const IdxStateArrays = 23;
+export const IdxResultRandom = 21;
+export const IdxResultRecord = 22;
+export const IdxResultValue = 23;
+export const IdxStateArrays = 24;
+export const IdxStateRandom = 25;
 
 export let keyMap: string[] = [
 	sc.ParamAddress,
@@ -55,9 +57,11 @@ export let keyMap: string[] = [
 	sc.ResultCount,
 	sc.ResultIotas,
 	sc.ResultLength,
+	sc.ResultRandom,
 	sc.ResultRecord,
 	sc.ResultValue,
 	sc.StateArrays,
+	sc.StateRandom,
 ];
 
 export let idxMap: wasmlib.Key32[] = new Array(keyMap.length);

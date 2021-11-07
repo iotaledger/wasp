@@ -27,6 +27,10 @@ export class ImmutableTestWasmLibState extends wasmlib.ScMapID {
 		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateArrays], wasmlib.TYPE_MAP);
 		return new sc.MapStringToImmutableStringArray(mapID);
 	}
+
+    random(): wasmlib.ScImmutableInt64 {
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateRandom]);
+	}
 }
 
 export class MapStringToMutableStringArray {
@@ -51,5 +55,9 @@ export class MutableTestWasmLibState extends wasmlib.ScMapID {
     arrays(): sc.MapStringToMutableStringArray {
 		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateArrays], wasmlib.TYPE_MAP);
 		return new sc.MapStringToMutableStringArray(mapID);
+	}
+
+    random(): wasmlib.ScMutableInt64 {
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateRandom]);
 	}
 }

@@ -66,10 +66,7 @@ func NewGoGenerator() *GoGenerator {
 }
 
 func (g *GoGenerator) init(s *Schema) {
-	g.GenBase.init(s)
-	for _, template := range gotemplates.GoTemplates {
-		g.addTemplates(template)
-	}
+	g.GenBase.init(s, gotemplates.GoTemplates)
 }
 
 func (g *GoGenerator) funcName(f *Func) string {

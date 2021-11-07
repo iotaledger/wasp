@@ -60,14 +60,17 @@ type GenBase struct {
 	templates     map[string]string
 }
 
-func (g *GenBase) init(s *Schema) {
+func (g *GenBase) init(s *Schema, templates []map[string]string) {
 	g.s = s
 	g.emitters = map[string]func(g *GenBase){}
 	g.newTypes = map[string]bool{}
 	g.keys = map[string]string{}
-	g.templates = map[string]string{}
-	g.addTemplates(templates)
 	g.setCommonKeys()
+	g.templates = map[string]string{}
+	g.addTemplates(commonTemplates)
+	for _, template := range templates {
+		g.addTemplates(template)
+	}
 }
 
 func (g *GenBase) addTemplates(t map[string]string) {

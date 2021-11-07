@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-var Root = ScMutableMap{objID: 1}
+var Root = ScMutableMap{objID: OBJ_ID_ROOT}
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 

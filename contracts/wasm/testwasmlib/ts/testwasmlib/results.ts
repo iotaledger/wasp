@@ -64,6 +64,20 @@ export class MutableBlockRecordsResults extends wasmlib.ScMapID {
 	}
 }
 
+export class ImmutableGetRandomResults extends wasmlib.ScMapID {
+
+    random(): wasmlib.ScImmutableInt64 {
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultRandom]);
+	}
+}
+
+export class MutableGetRandomResults extends wasmlib.ScMapID {
+
+    random(): wasmlib.ScMutableInt64 {
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultRandom]);
+	}
+}
+
 export class ImmutableIotaBalanceResults extends wasmlib.ScMapID {
 
     iotas(): wasmlib.ScImmutableInt64 {

@@ -37,29 +37,35 @@ pub const PARAM_VALUE: &str = "value";
 pub const RESULT_COUNT: &str = "count";
 pub const RESULT_IOTAS: &str = "iotas";
 pub const RESULT_LENGTH: &str = "length";
+pub const RESULT_RANDOM: &str = "random";
 pub const RESULT_RECORD: &str = "record";
 pub const RESULT_VALUE: &str = "value";
 
 pub const STATE_ARRAYS: &str = "arrays";
+pub const STATE_RANDOM: &str = "random";
 
 pub const FUNC_ARRAY_CLEAR:  &str = "arrayClear";
 pub const FUNC_ARRAY_CREATE:  &str = "arrayCreate";
 pub const FUNC_ARRAY_SET:  &str = "arraySet";
 pub const FUNC_PARAM_TYPES:  &str = "paramTypes";
+pub const FUNC_RANDOM:  &str = "random";
 pub const VIEW_ARRAY_LENGTH:  &str = "arrayLength";
 pub const VIEW_ARRAY_VALUE:  &str = "arrayValue";
 pub const VIEW_BLOCK_RECORD:  &str = "blockRecord";
 pub const VIEW_BLOCK_RECORDS:  &str = "blockRecords";
+pub const VIEW_GET_RANDOM:  &str = "getRandom";
 pub const VIEW_IOTA_BALANCE:  &str = "iotaBalance";
 
 pub const HFUNC_ARRAY_CLEAR: ScHname = ScHname(0x88021821);
 pub const HFUNC_ARRAY_CREATE: ScHname = ScHname(0x1ed5b23b);
 pub const HFUNC_ARRAY_SET: ScHname = ScHname(0x2c4150b3);
 pub const HFUNC_PARAM_TYPES: ScHname = ScHname(0x6921c4cd);
+pub const HFUNC_RANDOM: ScHname = ScHname(0xe86c97ca);
 pub const HVIEW_ARRAY_LENGTH: ScHname = ScHname(0x3a831021);
 pub const HVIEW_ARRAY_VALUE: ScHname = ScHname(0x662dbd81);
 pub const HVIEW_BLOCK_RECORD: ScHname = ScHname(0xad13b2f8);
 pub const HVIEW_BLOCK_RECORDS: ScHname = ScHname(0x16e249ea);
+pub const HVIEW_GET_RANDOM: ScHname = ScHname(0x46263045);
 pub const HVIEW_IOTA_BALANCE: ScHname = ScHname(0x9d3920bd);
 
 // @formatter:on

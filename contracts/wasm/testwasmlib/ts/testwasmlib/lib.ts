@@ -18,10 +18,12 @@ export function on_load(): void {
     exports.addFunc(sc.FuncArrayCreate, funcArrayCreateThunk);
     exports.addFunc(sc.FuncArraySet, funcArraySetThunk);
     exports.addFunc(sc.FuncParamTypes, funcParamTypesThunk);
+    exports.addFunc(sc.FuncRandom, funcRandomThunk);
     exports.addView(sc.ViewArrayLength, viewArrayLengthThunk);
     exports.addView(sc.ViewArrayValue, viewArrayValueThunk);
     exports.addView(sc.ViewBlockRecord, viewBlockRecordThunk);
     exports.addView(sc.ViewBlockRecords, viewBlockRecordsThunk);
+    exports.addView(sc.ViewGetRandom, viewGetRandomThunk);
     exports.addView(sc.ViewIotaBalance, viewIotaBalanceThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
@@ -70,6 +72,14 @@ function funcParamTypesThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testwasmlib.funcParamTypes ok");
 }
 
+function funcRandomThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcRandom");
+	let f = new sc.RandomContext();
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	sc.funcRandom(ctx, f);
+	ctx.log("testwasmlib.funcRandom ok");
+}
+
 function viewArrayLengthThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testwasmlib.viewArrayLength");
 	let f = new sc.ArrayLengthContext();
@@ -114,6 +124,15 @@ function viewBlockRecordsThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.require(f.params.blockIndex().exists(), "missing mandatory blockIndex");
 	sc.viewBlockRecords(ctx, f);
 	ctx.log("testwasmlib.viewBlockRecords ok");
+}
+
+function viewGetRandomThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewGetRandom");
+	let f = new sc.GetRandomContext();
+    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	sc.viewGetRandom(ctx, f);
+	ctx.log("testwasmlib.viewGetRandom ok");
 }
 
 function viewIotaBalanceThunk(ctx: wasmlib.ScViewContext): void {

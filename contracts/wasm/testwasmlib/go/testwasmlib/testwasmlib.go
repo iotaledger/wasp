@@ -107,3 +107,11 @@ func viewArrayValue(ctx wasmlib.ScViewContext, f *ArrayValueContext) {
 func viewIotaBalance(ctx wasmlib.ScViewContext, f *IotaBalanceContext) {
 	f.Results.Iotas().SetValue(ctx.Balances().Balance(wasmlib.IOTA))
 }
+
+func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
+	f.State.Random().SetValue(ctx.Random(1000))
+}
+
+func viewGetRandom(ctx wasmlib.ScViewContext, f *GetRandomContext) {
+	f.Results.Random().SetValue(f.State.Random().Value())
+}

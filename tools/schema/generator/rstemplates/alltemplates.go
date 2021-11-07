@@ -8,6 +8,7 @@ var RsTemplates = []map[string]string{
 	funcsRs,
 	keysRs,
 	libRs,
+	modRs,
 	paramsRs,
 	proxyRs,
 	resultsRs,

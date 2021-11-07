@@ -36,10 +36,12 @@ fn on_load() {
     exports.add_func(FUNC_ARRAY_CREATE, func_array_create_thunk);
     exports.add_func(FUNC_ARRAY_SET, func_array_set_thunk);
     exports.add_func(FUNC_PARAM_TYPES, func_param_types_thunk);
+    exports.add_func(FUNC_RANDOM, func_random_thunk);
     exports.add_view(VIEW_ARRAY_LENGTH, view_array_length_thunk);
     exports.add_view(VIEW_ARRAY_VALUE, view_array_value_thunk);
     exports.add_view(VIEW_BLOCK_RECORD, view_block_record_thunk);
     exports.add_view(VIEW_BLOCK_RECORDS, view_block_records_thunk);
+    exports.add_view(VIEW_GET_RANDOM, view_get_random_thunk);
     exports.add_view(VIEW_IOTA_BALANCE, view_iota_balance_thunk);
 
     unsafe {
@@ -128,6 +130,21 @@ fn func_param_types_thunk(ctx: &ScFuncContext) {
 	};
 	func_param_types(ctx, &f);
 	ctx.log("testwasmlib.funcParamTypes ok");
+}
+
+pub struct RandomContext {
+	state: MutableTestWasmLibState,
+}
+
+fn func_random_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcRandom");
+	let f = RandomContext {
+		state: MutableTestWasmLibState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	func_random(ctx, &f);
+	ctx.log("testwasmlib.funcRandom ok");
 }
 
 pub struct ArrayLengthContext {
@@ -226,6 +243,25 @@ fn view_block_records_thunk(ctx: &ScViewContext) {
 	ctx.require(f.params.block_index().exists(), "missing mandatory blockIndex");
 	view_block_records(ctx, &f);
 	ctx.log("testwasmlib.viewBlockRecords ok");
+}
+
+pub struct GetRandomContext {
+	results: MutableGetRandomResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_get_random_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewGetRandom");
+	let f = GetRandomContext {
+		results: MutableGetRandomResults {
+			id: OBJ_ID_RESULTS,
+		},
+		state: ImmutableTestWasmLibState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	view_get_random(ctx, &f);
+	ctx.log("testwasmlib.viewGetRandom ok");
 }
 
 pub struct IotaBalanceContext {
