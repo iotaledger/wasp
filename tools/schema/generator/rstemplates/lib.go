@@ -3,8 +3,6 @@ package rstemplates
 var libRs = map[string]string{
 	// *******************************
 	"lib.rs": `
-// @formatter:off
-
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
@@ -40,8 +38,6 @@ $#each func libExportFunc
     }
 }
 $#each func libThunk
-
-// @formatter:on
 `,
 	// *******************************
 	"libExportFunc": `

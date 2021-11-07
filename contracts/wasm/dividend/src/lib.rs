@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
@@ -172,5 +170,3 @@ fn view_get_owner_thunk(ctx: &ScViewContext) {
 	view_get_owner(ctx, &f);
 	ctx.log("dividend.viewGetOwner ok");
 }
-
-// @formatter:on

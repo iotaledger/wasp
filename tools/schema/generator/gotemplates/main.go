@@ -2,7 +2,7 @@ package gotemplates
 
 var mainGo = map[string]string{
 	// *******************************
-	"main.go": `
+	"../main.go": `
 // +build wasm
 
 package main

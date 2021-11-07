@@ -3,8 +3,6 @@ package rstemplates
 var constsRs = map[string]string{
 	// *******************************
 	"consts.rs": `
-// @formatter:off
-
 #![allow(dead_code)]
 
 $#if core useCrate useWasmLib
@@ -19,8 +17,6 @@ $#if state constState
 $#each func constFunc
 
 $#each func constHFunc
-
-// @formatter:on
 `,
 	// *******************************
 	"constParams": `

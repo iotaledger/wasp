@@ -3,8 +3,7 @@ package tstemplates
 var keysTs = map[string]string{
 	// *******************************
 	"keys.ts": `
-$#emit importWasmLib
-$#emit importSc
+$#emit tsImports
 
 $#set constPrefix Param
 $#each params constFieldIdx

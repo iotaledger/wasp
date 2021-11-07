@@ -88,20 +88,13 @@ func (g *TypeScriptGenerator) funcName(f *Func) string {
 }
 
 func (g *TypeScriptGenerator) generateLanguageSpecificFiles() error {
-	err := g.createSourceFile("index", g.writeSpecialIndex)
+	err := g.createSourceFile("index")
 	if err != nil {
 		return err
 	}
-	return g.writeSpecialConfigJSON()
-}
 
-func (g *TypeScriptGenerator) writeInitialFuncs() {
-	g.emit("funcs.ts")
-}
-
-func (g *TypeScriptGenerator) writeSpecialConfigJSON() error {
 	tsconfig := "tsconfig.json"
-	err := g.exists(g.folder + tsconfig)
+	err = g.exists(g.folder + tsconfig)
 	if err == nil {
 		// already exists
 		return nil
@@ -115,10 +108,6 @@ func (g *TypeScriptGenerator) writeSpecialConfigJSON() error {
 
 	g.emit(tsconfig)
 	return nil
-}
-
-func (g *TypeScriptGenerator) writeSpecialIndex() {
-	g.emit("index.ts")
 }
 
 func (g *TypeScriptGenerator) setFieldKeys() {

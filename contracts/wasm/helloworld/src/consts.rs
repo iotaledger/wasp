@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
@@ -22,5 +20,3 @@ pub const VIEW_GET_HELLO_WORLD:  &str = "getHelloWorld";
 
 pub const HFUNC_HELLO_WORLD: ScHname = ScHname(0x9d042e65);
 pub const HVIEW_GET_HELLO_WORLD: ScHname = ScHname(0x210439ce);
-
-// @formatter:on

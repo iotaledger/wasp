@@ -3,8 +3,7 @@ package tstemplates
 var paramsTs = map[string]string{
 	// *******************************
 	"params.ts": `
-$#emit importWasmLib
-$#emit importSc
+$#emit tsImports
 $#each func paramsFunc
 `,
 	// *******************************

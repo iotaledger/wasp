@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use crate::*;
@@ -52,5 +50,3 @@ pub(crate) const HVIEW_GET_REQUEST_I_DS_FOR_BLOCK: ScHname = ScHname(0x5a20327a)
 pub(crate) const HVIEW_GET_REQUEST_RECEIPT: ScHname = ScHname(0xb7f9534f);
 pub(crate) const HVIEW_GET_REQUEST_RECEIPTS_FOR_BLOCK: ScHname = ScHname(0x77e3beef);
 pub(crate) const HVIEW_IS_REQUEST_PROCESSED: ScHname = ScHname(0xd57d50a9);
-
-// @formatter:on

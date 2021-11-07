@@ -38,7 +38,6 @@ type Generator interface {
 	generateLanguageSpecificFiles() error
 	setFieldKeys()
 	setFuncKeys()
-	writeInitialFuncs()
 }
 
 type GenBase struct {
@@ -216,7 +215,9 @@ func (g *GenBase) generateFuncs() error {
 	if err != nil {
 		// generate initial SC function file
 		g.skipWarning = true
-		return g.createSourceFile(g.s.Name, g.gen.writeInitialFuncs)
+		return g.createSourceFile(g.s.Name, func() {
+			g.emit("funcs" + g.extension)
+		})
 	}
 
 	// append missing function signatures to existing code file
@@ -275,32 +276,13 @@ func (g *GenBase) generateTests() error {
 	}
 	defer g.close()
 
-	module := ModuleName + strings.ReplaceAll(ModuleCwd[len(ModulePath):], "\\", "/")
-	g.println("package test")
-	g.println()
-	g.println("import (")
-	g.println("\t\"testing\"")
-	g.println()
-	g.printf("\t\"%s/go/%s\"\n", module, g.s.Name)
-	g.println("\t\"github.com/iotaledger/wasp/packages/vm/wasmsolo\"")
-	g.println("\t\"github.com/stretchr/testify/require\"")
-	g.println(")")
-	g.println()
-	g.println("func TestDeploy(t *testing.T) {")
-	g.printf("\tctx := wasmsolo.NewSoloContext(t, %s.ScName, %s.OnLoad)\n", name, name)
-	g.printf("\trequire.NoError(t, ctx.ContractExists(%s.ScName))\n", name)
-	g.println("}")
-
+	g.emit("test.go")
 	return nil
 }
 
 func (g *GenBase) open(path string) (err error) {
 	g.file, err = os.Open(path)
 	return err
-}
-
-func (g *GenBase) printf(format string, a ...interface{}) {
-	_, _ = fmt.Fprintf(g.file, format, a...)
 }
 
 func (g *GenBase) println(a ...interface{}) {

@@ -3,8 +3,7 @@ package tstemplates
 var stateTs = map[string]string{
 	// *******************************
 	"state.ts": `
-$#emit importWasmLib
-$#emit importSc
+$#emit tsImports
 $#set Kind State
 $#set mut Immutable
 $#emit stateProxyStruct

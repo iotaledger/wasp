@@ -3,15 +3,11 @@ package rstemplates
 var structsRs = map[string]string{
 	// *******************************
 	"structs.rs": `
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
 use wasmlib::host::*;
 $#each structs structType
-
-// @formatter:on
 `,
 	// *******************************
 	"structType": `

@@ -3,8 +3,7 @@ package tstemplates
 var resultsTs = map[string]string{
 	// *******************************
 	"results.ts": `
-$#emit importWasmLib
-$#emit importSc
+$#emit tsImports
 $#each func resultsFunc
 `,
 	// *******************************

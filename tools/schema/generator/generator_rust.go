@@ -91,14 +91,7 @@ func (g *RustGenerator) generateLanguageSpecificFiles() error {
 	if g.s.CoreContracts {
 		return g.createSourceFile("mod")
 	}
-	return g.writeSpecialCargoToml()
-}
 
-func (g *RustGenerator) writeInitialFuncs() {
-	g.emit("funcs.rs")
-}
-
-func (g *RustGenerator) writeSpecialCargoToml() error {
 	cargoToml := "Cargo.toml"
 	err := g.exists(cargoToml)
 	if err == nil {

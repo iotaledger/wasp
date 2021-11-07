@@ -3,8 +3,7 @@ package tstemplates
 var libTs = map[string]string{
 	// *******************************
 	"lib.ts": `
-$#emit importWasmLib
-$#emit importSc
+$#emit tsImports
 
 export function on_call(index: i32): void {
     return wasmlib.onCall(index);

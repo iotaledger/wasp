@@ -3,16 +3,12 @@ package rstemplates
 var typedefsRs = map[string]string{
 	// *******************************
 	"typedefs.rs": `
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
 use wasmlib::host::*;
 $#if structs useStructs
 $#each typedef typedefProxy
-
-// @formatter:on
 `,
 	// *******************************
 	"typedefProxy": `

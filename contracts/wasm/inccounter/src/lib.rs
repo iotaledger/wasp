@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
@@ -283,5 +281,3 @@ fn view_get_counter_thunk(ctx: &ScViewContext) {
 	view_get_counter(ctx, &f);
 	ctx.log("inccounter.viewGetCounter ok");
 }
-
-// @formatter:on

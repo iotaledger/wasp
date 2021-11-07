@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use crate::*;
@@ -36,5 +34,3 @@ pub(crate) const HFUNC_GRANT_DEPLOY_PERMISSION: ScHname = ScHname(0xf440263a);
 pub(crate) const HFUNC_REVOKE_DEPLOY_PERMISSION: ScHname = ScHname(0x850744f1);
 pub(crate) const HVIEW_FIND_CONTRACT: ScHname = ScHname(0xc145ca00);
 pub(crate) const HVIEW_GET_CONTRACT_RECORDS: ScHname = ScHname(0x078b3ef3);
-
-// @formatter:on

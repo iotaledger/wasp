@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
@@ -282,5 +280,3 @@ fn view_iota_balance_thunk(ctx: &ScViewContext) {
 	view_iota_balance(ctx, &f);
 	ctx.log("testwasmlib.viewIotaBalance ok");
 }
-
-// @formatter:on

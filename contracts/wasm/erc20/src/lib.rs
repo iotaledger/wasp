@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
@@ -199,5 +197,3 @@ fn view_total_supply_thunk(ctx: &ScViewContext) {
 	view_total_supply(ctx, &f);
 	ctx.log("erc20.viewTotalSupply ok");
 }
-
-// @formatter:on

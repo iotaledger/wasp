@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
@@ -76,5 +74,3 @@ impl MapAgentIDToMutableBid {
 }
 
 pub type MutableBids = MapAgentIDToMutableBid;
-
-// @formatter:on

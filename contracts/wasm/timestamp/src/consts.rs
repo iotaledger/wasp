@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
@@ -24,5 +22,3 @@ pub const VIEW_GET_TIMESTAMP:  &str = "getTimestamp";
 
 pub const HFUNC_NOW: ScHname = ScHname(0xd73b7fc9);
 pub const HVIEW_GET_TIMESTAMP: ScHname = ScHname(0x40c6376a);
-
-// @formatter:on

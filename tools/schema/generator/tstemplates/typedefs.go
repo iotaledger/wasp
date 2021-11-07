@@ -3,8 +3,7 @@ package tstemplates
 var typedefsTs = map[string]string{
 	// *******************************
 	"typedefs.ts": `
-$#emit importWasmLib
-$#emit importSc
+$#emit tsImports
 $#each typedef typedefProxy
 `,
 	// *******************************

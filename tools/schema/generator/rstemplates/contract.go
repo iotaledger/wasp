@@ -3,8 +3,6 @@ package rstemplates
 var contractRs = map[string]string{
 	// *******************************
 	"contract.rs": `
-// @formatter:off
-
 #![allow(dead_code)]
 
 use std::ptr;
@@ -19,8 +17,6 @@ pub struct ScFuncs {
 impl ScFuncs {
 $#each func FuncNameForCall
 }
-
-// @formatter:on
 `,
 	// *******************************
 	"contractUses": `

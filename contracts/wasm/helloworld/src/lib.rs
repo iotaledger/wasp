@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
@@ -72,5 +70,3 @@ fn view_get_hello_world_thunk(ctx: &ScViewContext) {
 	view_get_hello_world(ctx, &f);
 	ctx.log("helloworld.viewGetHelloWorld ok");
 }
-
-// @formatter:on

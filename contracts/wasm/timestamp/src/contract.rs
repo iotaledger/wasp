@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use std::ptr;
@@ -43,5 +41,3 @@ impl ScFuncs {
         f
     }
 }
-
-// @formatter:on

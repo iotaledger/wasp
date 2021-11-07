@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use crate::*;
@@ -63,5 +61,3 @@ pub(crate) const HVIEW_GET_ALLOWED_STATE_CONTROLLER_ADDRESSES: ScHname = ScHname
 pub(crate) const HVIEW_GET_CHAIN_INFO: ScHname = ScHname(0x434477e2);
 pub(crate) const HVIEW_GET_FEE_INFO: ScHname = ScHname(0x9fe54b48);
 pub(crate) const HVIEW_GET_MAX_BLOB_SIZE: ScHname = ScHname(0xe1db3d28);
-
-// @formatter:on

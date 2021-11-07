@@ -77,15 +77,7 @@ func (g *GoGenerator) generateLanguageSpecificFiles() error {
 	if g.s.CoreContracts {
 		return nil
 	}
-	return g.createSourceFile("../main", g.writeSpecialMain)
-}
-
-func (g *GoGenerator) writeInitialFuncs() {
-	g.emit("funcs.go")
-}
-
-func (g *GoGenerator) writeSpecialMain() {
-	g.emit("main.go")
+	return g.createSourceFile("../main")
 }
 
 func (g *GoGenerator) setFieldKeys() {

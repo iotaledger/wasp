@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
@@ -40,5 +38,3 @@ pub const HFUNC_MEMBER: ScHname = ScHname(0xc07da2cb);
 pub const HFUNC_SET_OWNER: ScHname = ScHname(0x2a15fe7b);
 pub const HVIEW_GET_FACTOR: ScHname = ScHname(0x0ee668fe);
 pub const HVIEW_GET_OWNER: ScHname = ScHname(0x137107a6);
-
-// @formatter:on

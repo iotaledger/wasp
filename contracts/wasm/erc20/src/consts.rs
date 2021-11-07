@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
@@ -44,5 +42,3 @@ pub const HFUNC_TRANSFER_FROM: ScHname = ScHname(0xd5e0a602);
 pub const HVIEW_ALLOWANCE: ScHname = ScHname(0x5e16006a);
 pub const HVIEW_BALANCE_OF: ScHname = ScHname(0x67ef8df4);
 pub const HVIEW_TOTAL_SUPPLY: ScHname = ScHname(0x9505e6ca);
-
-// @formatter:on

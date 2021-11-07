@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use crate::*;
@@ -38,5 +36,3 @@ pub(crate) const HVIEW_ACCOUNTS: ScHname = ScHname(0x3c4b5e02);
 pub(crate) const HVIEW_BALANCE: ScHname = ScHname(0x84168cb4);
 pub(crate) const HVIEW_GET_ACCOUNT_NONCE: ScHname = ScHname(0x529d7df9);
 pub(crate) const HVIEW_TOTAL_ASSETS: ScHname = ScHname(0xfab0f8d2);
-
-// @formatter:on

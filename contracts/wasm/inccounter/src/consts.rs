@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
@@ -54,5 +52,3 @@ pub const HFUNC_REPEAT_MANY: ScHname = ScHname(0x4ff450d3);
 pub const HFUNC_TEST_LEB128: ScHname = ScHname(0xd8364cb9);
 pub const HFUNC_WHEN_MUST_INCREMENT: ScHname = ScHname(0xb4c3e7a6);
 pub const HVIEW_GET_COUNTER: ScHname = ScHname(0xb423e607);
-
-// @formatter:on

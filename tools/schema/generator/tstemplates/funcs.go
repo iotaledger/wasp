@@ -3,31 +3,30 @@ package tstemplates
 var funcsTs = map[string]string{
 	// *******************************
 	"funcs.ts": `
-$#emit importWasmLib
-$#emit importSc
+$#emit tsImports
 $#each func funcSignature
 `,
 	// *******************************
 	"funcSignature": `
 
 export function $kind$+$FuncName(ctx: wasmlib.Sc$Kind$+Context, f: sc.$FuncName$+Context): void {
-$#emit init$FuncName
+$#emit init$Kind$FuncName
 }
 `,
 	// *******************************
 	"initFuncInit": `
-    if f.params.owner().exists() {
-        f.state.owner().setValue(&f.params.owner().value());
+    if (f.params.owner().exists()) {
+        f.state.owner().setValue(f.params.owner().value());
         return;
     }
     f.state.owner().setValue(ctx.contractCreator());
 `,
 	// *******************************
-	"initGetOwner": `
-    f.results.owner().setValue(f.state.owner().value());
+	"initFuncSetOwner": `
+    f.state.owner().setValue(f.params.owner().value());
 `,
 	// *******************************
-	"initSetOwner": `
-    f.state.owner().setValue(f.params.owner().value());
+	"initViewGetOwner": `
+    f.results.owner().setValue(f.state.owner().value());
 `,
 }

@@ -35,9 +35,15 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 `,
 	// *******************************
+	"tsImports": `
+$#emit importWasmLib
+$#emit importSc
+`,
+	// *******************************
 	"tsconfig.json": `
 {
   "extends": "assemblyscript/std/assembly.json",
   "include": ["./*.ts"]
-}`,
+}
+`,
 }

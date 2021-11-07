@@ -3,8 +3,6 @@ package rstemplates
 var keysRs = map[string]string{
 	// *******************************
 	"keys.rs": `
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
@@ -36,8 +34,6 @@ pub fn idx_map(idx: usize) -> Key32 {
         IDX_MAP[idx]
     }
 }
-
-// @formatter:on
 `,
 	// *******************************
 	"constFieldIdx": `

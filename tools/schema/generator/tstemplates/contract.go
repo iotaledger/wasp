@@ -3,8 +3,7 @@ package tstemplates
 var contractTs = map[string]string{
 	// *******************************
 	"contract.ts": `
-$#emit importWasmLib
-$#emit importSc
+$#emit tsImports
 $#each func FuncNameCall
 
 export class ScFuncs {

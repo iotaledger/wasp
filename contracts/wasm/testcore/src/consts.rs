@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
@@ -118,5 +116,3 @@ pub const HVIEW_TEST_CALL_PANIC_VIEW_EP_FROM_VIEW: ScHname = ScHname(0x91b10c99)
 pub const HVIEW_TEST_CHAIN_OWNER_ID_VIEW: ScHname = ScHname(0x26586c33);
 pub const HVIEW_TEST_PANIC_VIEW_EP: ScHname = ScHname(0x22bc4d72);
 pub const HVIEW_TEST_SANDBOX_CALL: ScHname = ScHname(0x42d72b63);
-
-// @formatter:on

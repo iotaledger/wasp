@@ -10,7 +10,7 @@ $#each func funcSignature
 	"funcSignature": `
 
 func $kind$FuncName(ctx wasmlib.Sc$Kind$+Context, f *$FuncName$+Context) {
-$#emit init$FuncName
+$#emit init$Kind$FuncName
 }
 `,
 	// *******************************
@@ -22,11 +22,11 @@ $#emit init$FuncName
     f.State.Owner().SetValue(ctx.ContractCreator())
 `,
 	// *******************************
-	"intGetOwner": `
-	f.Results.Owner().SetValue(f.State.Owner().Value())
+	"initFuncSetOwner": `
+	f.State.Owner().SetValue(f.Params.Owner().Value())
 `,
 	// *******************************
-	"initSetOwner": `
-	f.State.Owner().SetValue(f.Params.Owner().Value())
+	"initViewGetOwner": `
+	f.Results.Owner().SetValue(f.State.Owner().Value())
 `,
 }

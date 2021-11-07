@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
@@ -49,5 +47,3 @@ pub const HVIEW_LAST_WINNING_NUMBER: ScHname = ScHname(0x2f5f09fe);
 pub const HVIEW_ROUND_NUMBER: ScHname = ScHname(0x0dcfe520);
 pub const HVIEW_ROUND_STARTED_AT: ScHname = ScHname(0x725de8b4);
 pub const HVIEW_ROUND_STATUS: ScHname = ScHname(0x145053b5);
-
-// @formatter:on
