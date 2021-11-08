@@ -49,11 +49,7 @@ func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualStateAcc
 func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, Block) {
 	ret := newVirtualState(db, chainID)
 	originBlock := newOriginBlock()
-
-	// Applying origin block to empty virtual state
-	ret.ApplyStateUpdates(originBlock.(*blockImpl).stateUpdate)
-	ret.appliedBlockHashes = []hashing.HashValue{hashing.HashData(originBlock.EssenceBytes())}
-
+	ret.applyBlockNoCheck(originBlock)
 	_, _ = ret.ExtractBlock() // clear the update log
 	return ret, originBlock
 }
@@ -140,9 +136,13 @@ func (vs *virtualStateAccess) ApplyBlock(b Block) error {
 	if vs.Timestamp().After(b.Timestamp()) {
 		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
+	vs.applyBlockNoCheck(b)
+	return nil
+}
+
+func (vs *virtualStateAccess) applyBlockNoCheck(b Block) {
 	vs.ApplyStateUpdates(b.(*blockImpl).stateUpdate)
 	vs.appliedBlockHashes = append(vs.appliedBlockHashes, hashing.HashData(b.EssenceBytes()))
-	return nil
 }
 
 // ApplyStateUpdates applies one state update. Doesn't change the state hash: it can be changed by Apply block
