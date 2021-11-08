@@ -32,6 +32,7 @@ type ForcePayoutContext struct {
 
 func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcForcePayout")
+
 	// only SC creator can restart the round forcefully
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
@@ -50,6 +51,7 @@ type ForceResetContext struct {
 
 func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcForceReset")
+
 	// only SC creator can restart the round forcefully
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
@@ -68,6 +70,7 @@ type PayWinnersContext struct {
 
 func funcPayWinnersThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcPayWinners")
+
 	// only SC itself can invoke this function
 	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
@@ -107,6 +110,7 @@ type PlayPeriodContext struct {
 
 func funcPlayPeriodThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcPlayPeriod")
+
 	// only SC creator can update the play period
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 

@@ -35,7 +35,8 @@ function funcDonateThunk(ctx: wasmlib.ScFuncContext): void {
 
 function funcWithdrawThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("donatewithfeedback.funcWithdraw");
-    // only SC creator can withdraw donated funds
+
+	// only SC creator can withdraw donated funds
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 	let f = new sc.WithdrawContext();

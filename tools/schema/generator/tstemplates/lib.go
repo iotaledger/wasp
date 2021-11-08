@@ -63,30 +63,39 @@ $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccessself": `
-$funcAccessComment	ctx.require(ctx.caller().equals(ctx.accountID()), "no permission");
+$#if funcAccessComment accessComment
+	ctx.require(ctx.caller().equals(ctx.accountID()), "no permission");
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccesschain": `
-$funcAccessComment	ctx.require(ctx.caller().equals(ctx.chainOwnerID()), "no permission");
+$#if funcAccessComment accessComment
+	ctx.require(ctx.caller().equals(ctx.chainOwnerID()), "no permission");
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccesscreator": `
-$funcAccessComment	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
+$#if funcAccessComment accessComment
+	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"accessOther": `
-$funcAccessComment	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("$funcAccess"));
+$#if funcAccessComment accessComment
+	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("$funcAccess"));
 	ctx.require(access.exists(), "access not set: $funcAccess");
 	ctx.require(ctx.caller().equals(access.value()), "no permission");
 
 `,
 	// *******************************
 	"accessDone": `
+`,
+	// *******************************
+	"accessComment": `
+
+	$funcAccessComment
 `,
 }

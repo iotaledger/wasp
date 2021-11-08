@@ -66,8 +66,9 @@ pub struct TransferOwnershipContext {
 
 fn func_transfer_ownership_thunk(ctx: &ScFuncContext) {
 	ctx.log("tokenregistry.funcTransferOwnership");
-    // TODO the one who can transfer token ownership
-		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+	// TODO the one who can transfer token ownership
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = TransferOwnershipContext {
 		params: ImmutableTransferOwnershipParams {
@@ -89,8 +90,9 @@ pub struct UpdateMetadataContext {
 
 fn func_update_metadata_thunk(ctx: &ScFuncContext) {
 	ctx.log("tokenregistry.funcUpdateMetadata");
-    // TODO the one who can change the token info
-		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+	// TODO the one who can change the token info
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = UpdateMetadataContext {
 		params: ImmutableUpdateMetadataParams {

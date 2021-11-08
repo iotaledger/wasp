@@ -8,10 +8,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
-
-	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 // TODO nested structs
@@ -152,15 +149,15 @@ func (g *GenBase) generateCode() error {
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("contract", true)
-	if err != nil {
-		return err
-	}
 	err = g.createSourceFile("keys", !g.s.CoreContracts)
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("lib", !g.s.CoreContracts)
+	err = g.createSourceFile("structs", len(g.s.Structs) != 0)
+	if err != nil {
+		return err
+	}
+	err = g.createSourceFile("typedefs", len(g.s.Typedefs) != 0)
 	if err != nil {
 		return err
 	}
@@ -176,11 +173,11 @@ func (g *GenBase) generateCode() error {
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("structs", len(g.s.Structs) != 0)
+	err = g.createSourceFile("contract", true)
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("typedefs", len(g.s.Typedefs) != 0)
+	err = g.createSourceFile("lib", !g.s.CoreContracts)
 	if err != nil {
 		return err
 	}
@@ -281,61 +278,4 @@ func (g *GenBase) scanExistingCode(path string, existing *StringMap, lines *[]st
 		}
 		return scanner.Err()
 	})
-}
-
-func (g *GenBase) setCommonKeys() {
-	g.keys["space"] = " "
-	g.keys["package"] = g.s.Name
-	g.keys["Package"] = g.s.FullName
-	g.keys["module"] = moduleName + strings.Replace(moduleCwd[len(modulePath):], "\\", "/", -1)
-	scName := g.s.Name
-	if g.s.CoreContracts {
-		// strip off "core" prefix
-		scName = scName[4:]
-	}
-	g.keys["scName"] = scName
-	g.keys["hscName"] = iscp.Hn(scName).String()
-	g.keys["scDesc"] = g.s.Description
-	g.keys["maxIndex"] = strconv.Itoa(g.s.KeyID)
-}
-
-func (g *GenBase) setFieldKeys(pad bool) {
-	g.setMultiKeyValues("fldName", g.currentField.Name)
-	g.setMultiKeyValues("fldType", g.currentField.Type)
-
-	g.keys["fldAlias"] = g.currentField.Alias
-	g.keys["fldComment"] = g.currentField.Comment
-	g.keys["fldMapKey"] = g.currentField.MapKey
-	g.keys["fldIndex"] = strconv.Itoa(g.currentField.KeyID)
-
-	if pad {
-		g.keys["fldPad"] = spaces[:g.maxCamelFldLen-len(g.keys["fldName"])]
-		g.keys["fld_pad"] = spaces[:g.maxSnakeFldLen-len(g.keys["fld_name"])]
-	}
-}
-
-func (g *GenBase) setFuncKeys() {
-	g.setMultiKeyValues("funcName", g.currentFunc.Name)
-	g.setMultiKeyValues("kind", g.currentFunc.Kind)
-	g.keys["funcHName"] = iscp.Hn(g.keys["funcName"]).String()
-	grant := g.currentFunc.Access
-	comment := ""
-	index := strings.Index(grant, "//")
-	if index >= 0 {
-		comment = fmt.Sprintf("    %s\n", grant[index:])
-		grant = strings.TrimSpace(grant[:index])
-	}
-	g.keys["funcAccess"] = grant
-	g.keys["funcAccessComment"] = comment
-
-	g.keys["funcPad"] = spaces[:g.maxCamelFuncLen-len(g.keys["funcName"])]
-	g.keys["func_pad"] = spaces[:g.maxSnakeFuncLen-len(g.keys["func_name"])]
-}
-
-func (g *GenBase) setMultiKeyValues(key, value string) {
-	value = uncapitalize(value)
-	g.keys[key] = value
-	g.keys[capitalize(key)] = capitalize(value)
-	g.keys[snake(key)] = snake(value)
-	g.keys[upper(snake(key))] = upper(snake(value))
 }

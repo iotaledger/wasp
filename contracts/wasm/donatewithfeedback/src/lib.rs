@@ -68,8 +68,9 @@ pub struct WithdrawContext {
 
 fn func_withdraw_thunk(ctx: &ScFuncContext) {
 	ctx.log("donatewithfeedback.funcWithdraw");
-    // only SC creator can withdraw donated funds
-		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+	// only SC creator can withdraw donated funds
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = WithdrawContext {
 		params: ImmutableWithdrawParams {

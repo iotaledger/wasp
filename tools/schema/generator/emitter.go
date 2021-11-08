@@ -2,7 +2,10 @@ package generator
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
+
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 const (
@@ -243,8 +246,12 @@ func (g *GenBase) emitIf(line string) {
 	case KeyView:
 		condition = g.keys["kind"] == KeyView
 	default:
-		g.error(line)
-		return
+		key, ok := g.keys[parts[1]]
+		if !ok {
+			g.error(line)
+			return
+		}
+		condition = key != ""
 	}
 
 	if condition {
@@ -288,4 +295,64 @@ func (g *GenBase) fieldIsTypeDef() bool {
 		}
 	}
 	return false
+}
+
+func (g *GenBase) setCommonKeys() {
+	g.keys["false"] = ""
+	g.keys["true"] = "true"
+	g.keys["empty"] = ""
+	g.keys["space"] = " "
+	g.keys["package"] = g.s.Name
+	g.keys["Package"] = g.s.FullName
+	g.keys["module"] = moduleName + strings.Replace(moduleCwd[len(modulePath):], "\\", "/", -1)
+	scName := g.s.Name
+	if g.s.CoreContracts {
+		// strip off "core" prefix
+		scName = scName[4:]
+	}
+	g.keys["scName"] = scName
+	g.keys["hscName"] = iscp.Hn(scName).String()
+	g.keys["scDesc"] = g.s.Description
+	g.keys["maxIndex"] = strconv.Itoa(g.s.KeyID)
+}
+
+func (g *GenBase) setFieldKeys(pad bool) {
+	g.setMultiKeyValues("fldName", g.currentField.Name)
+	g.setMultiKeyValues("fldType", g.currentField.Type)
+
+	g.keys["fldAlias"] = g.currentField.Alias
+	g.keys["fldComment"] = g.currentField.Comment
+	g.keys["fldMapKey"] = g.currentField.MapKey
+	g.keys["fldIndex"] = strconv.Itoa(g.currentField.KeyID)
+
+	if pad {
+		g.keys["fldPad"] = spaces[:g.maxCamelFldLen-len(g.keys["fldName"])]
+		g.keys["fld_pad"] = spaces[:g.maxSnakeFldLen-len(g.keys["fld_name"])]
+	}
+}
+
+func (g *GenBase) setFuncKeys() {
+	g.setMultiKeyValues("funcName", g.currentFunc.Name)
+	g.setMultiKeyValues("kind", g.currentFunc.Kind)
+	g.keys["funcHName"] = iscp.Hn(g.keys["funcName"]).String()
+	grant := g.currentFunc.Access
+	comment := ""
+	index := strings.Index(grant, "//")
+	if index >= 0 {
+		comment = grant[index:]
+		grant = strings.TrimSpace(grant[:index])
+	}
+	g.keys["funcAccess"] = grant
+	g.keys["funcAccessComment"] = comment
+
+	g.keys["funcPad"] = spaces[:g.maxCamelFuncLen-len(g.keys["funcName"])]
+	g.keys["func_pad"] = spaces[:g.maxSnakeFuncLen-len(g.keys["func_name"])]
+}
+
+func (g *GenBase) setMultiKeyValues(key, value string) {
+	value = uncapitalize(value)
+	g.keys[key] = value
+	g.keys[capitalize(key)] = capitalize(value)
+	g.keys[snake(key)] = snake(value)
+	g.keys[upper(snake(key))] = upper(snake(value))
 }

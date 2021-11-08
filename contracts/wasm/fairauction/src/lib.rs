@@ -51,7 +51,8 @@ pub struct FinalizeAuctionContext {
 
 fn func_finalize_auction_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairauction.funcFinalizeAuction");
-    // only SC itself can invoke this function
+
+	// only SC itself can invoke this function
 	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
 	let f = FinalizeAuctionContext {
@@ -94,8 +95,9 @@ pub struct SetOwnerMarginContext {
 
 fn func_set_owner_margin_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairauction.funcSetOwnerMargin");
-    // only SC creator can set owner margin
-		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+	// only SC creator can set owner margin
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = SetOwnerMarginContext {
 		params: ImmutableSetOwnerMarginParams {

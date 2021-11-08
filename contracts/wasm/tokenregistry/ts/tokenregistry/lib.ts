@@ -35,7 +35,8 @@ function funcMintSupplyThunk(ctx: wasmlib.ScFuncContext): void {
 
 function funcTransferOwnershipThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("tokenregistry.funcTransferOwnership");
-    // TODO the one who can transfer token ownership
+
+	// TODO the one who can transfer token ownership
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 	let f = new sc.TransferOwnershipContext();
@@ -48,7 +49,8 @@ function funcTransferOwnershipThunk(ctx: wasmlib.ScFuncContext): void {
 
 function funcUpdateMetadataThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("tokenregistry.funcUpdateMetadata");
-    // TODO the one who can change the token info
+
+	// TODO the one who can change the token info
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 	let f = new sc.UpdateMetadataContext();

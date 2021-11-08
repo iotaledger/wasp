@@ -27,7 +27,8 @@ export function on_load(): void {
 
 function funcFinalizeAuctionThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairauction.funcFinalizeAuction");
-    // only SC itself can invoke this function
+
+	// only SC itself can invoke this function
 	ctx.require(ctx.caller().equals(ctx.accountID()), "no permission");
 
 	let f = new sc.FinalizeAuctionContext();
@@ -50,7 +51,8 @@ function funcPlaceBidThunk(ctx: wasmlib.ScFuncContext): void {
 
 function funcSetOwnerMarginThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairauction.funcSetOwnerMargin");
-    // only SC creator can set owner margin
+
+	// only SC creator can set owner margin
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 	let f = new sc.SetOwnerMarginContext();

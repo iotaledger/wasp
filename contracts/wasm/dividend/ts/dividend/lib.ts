@@ -45,7 +45,8 @@ function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
 
 function funcMemberThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("dividend.funcMember");
-    // only defined owner of contract can add members
+
+	// only defined owner of contract can add members
 	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("owner"));
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller().equals(access.value()), "no permission");
@@ -61,7 +62,8 @@ function funcMemberThunk(ctx: wasmlib.ScFuncContext): void {
 
 function funcSetOwnerThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("dividend.funcSetOwner");
-    // only defined owner of contract can change owner
+
+	// only defined owner of contract can change owner
 	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("owner"));
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller().equals(access.value()), "no permission");

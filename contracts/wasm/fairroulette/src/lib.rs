@@ -53,8 +53,9 @@ pub struct ForcePayoutContext {
 
 fn func_force_payout_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairroulette.funcForcePayout");
-    // only SC creator can restart the round forcefully
-		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+	// only SC creator can restart the round forcefully
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = ForcePayoutContext {
 		state: MutableFairRouletteState {
@@ -71,8 +72,9 @@ pub struct ForceResetContext {
 
 fn func_force_reset_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairroulette.funcForceReset");
-    // only SC creator can restart the round forcefully
-		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+	// only SC creator can restart the round forcefully
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = ForceResetContext {
 		state: MutableFairRouletteState {
@@ -89,7 +91,8 @@ pub struct PayWinnersContext {
 
 fn func_pay_winners_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairroulette.funcPayWinners");
-    // only SC itself can invoke this function
+
+	// only SC itself can invoke this function
 	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
 	let f = PayWinnersContext {
@@ -128,8 +131,9 @@ pub struct PlayPeriodContext {
 
 fn func_play_period_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairroulette.funcPlayPeriod");
-    // only SC creator can update the play period
-		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+	// only SC creator can update the play period
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = PlayPeriodContext {
 		params: ImmutablePlayPeriodParams {
