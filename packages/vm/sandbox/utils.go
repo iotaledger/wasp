@@ -17,6 +17,7 @@ type utilImpl struct {
 	gas iscp.Gas
 }
 
+// needed separate implementation to resolve conflict between function names
 type utilImplBLS struct {
 	gas iscp.Gas
 }
