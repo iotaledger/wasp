@@ -93,20 +93,9 @@ func (g *RustGenerator) generateLanguageSpecificFiles() error {
 	}
 
 	cargoToml := "Cargo.toml"
-	err := g.exists(cargoToml)
-	if err == nil {
-		// already exists
-		return nil
-	}
-
-	err = g.create(cargoToml)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	g.emit(cargoToml)
-	return nil
+	return g.createFile(cargoToml, false, func() {
+		g.emit(cargoToml)
+	})
 }
 
 func (g *RustGenerator) setFieldKeys(pad bool) {

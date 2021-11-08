@@ -44,7 +44,6 @@ type GenBase struct {
 	newTypes        map[string]bool
 	rootFolder      string
 	s               *Schema
-	skipWarning     bool
 	templates       map[string]string
 }
 
@@ -73,32 +72,26 @@ func (g *GenBase) close() {
 	_ = g.file.Close()
 }
 
-func (g *GenBase) create(path string) (err error) {
+func (g *GenBase) createFile(path string, overwrite bool, generator func()) (err error) {
+	if !overwrite && g.exists(path) == nil {
+		return nil
+	}
 	g.file, err = os.Create(path)
-	return err
-}
-
-func (g *GenBase) createSourceFile(name string, generator ...func()) error {
-	err := g.create(g.folder + name + g.extension)
 	if err != nil {
 		return err
 	}
 	defer g.close()
-
-	// TODO take copyright from schema?
-
-	// always add copyright to source file
-	g.emit("copyright")
-	if !g.skipWarning {
-		g.emit("warning")
-	}
-	g.skipWarning = false
-	if len(generator) != 0 {
-		generator[0]()
-		return nil
-	}
-	g.emit(name + g.extension)
+	generator()
 	return nil
+}
+
+// TODO take copyright from schema?
+func (g *GenBase) createSourceFile(name string) error {
+	return g.createFile(g.folder+name+g.extension, true, func() {
+		g.emit("copyright")
+		g.emit("warning")
+		g.emit(name + g.extension)
+	})
 }
 
 func (g *GenBase) exists(path string) (err error) {
@@ -205,19 +198,20 @@ func (g *GenBase) generateCode() error {
 
 func (g *GenBase) generateFuncs() error {
 	scFileName := g.folder + g.s.Name + g.extension
-	err := g.open(g.folder + g.s.Name + g.extension)
-	if err != nil {
+	if g.exists(scFileName) != nil {
 		// generate initial SC function file
-		g.skipWarning = true
-		return g.createSourceFile(g.s.Name, func() {
+		return g.createFile(scFileName, false, func() {
+			g.emit("copyright")
 			g.emit("funcs" + g.extension)
 		})
 	}
 
-	// append missing function signatures to existing code file
+	// append missing SC functions to existing code file
 
-	// scan existing file for signatures
-	lines, existing, err := g.scanExistingCode()
+	// scan existing file for function names
+	existing := make(StringMap)
+	lines := make([]string, 0)
+	err := g.scanExistingCode(scFileName, &existing, &lines)
 	if err != nil {
 		return err
 	}
@@ -228,25 +222,24 @@ func (g *GenBase) generateFuncs() error {
 	if err != nil {
 		return err
 	}
-	err = g.create(scFileName)
+
+	err = g.createFile(scFileName, false, func() {
+		// make copy of original file
+		for _, line := range lines {
+			g.println(line)
+		}
+
+		// append any new funcs
+		for _, g.currentFunc = range g.s.Funcs {
+			if existing[g.gen.funcName(g.currentFunc)] == "" {
+				g.setFuncKeys()
+				g.emit("funcSignature")
+			}
+		}
+	})
 	if err != nil {
 		return err
 	}
-	defer g.close()
-
-	// make copy of file
-	for _, line := range lines {
-		g.println(line)
-	}
-
-	// append any new funcs
-	for _, g.currentFunc = range g.s.Funcs {
-		if existing[g.gen.funcName(g.currentFunc)] == "" {
-			g.setFuncKeys()
-			g.emit("funcSignature")
-		}
-	}
-
 	return os.Remove(scOriginal)
 }
 
@@ -259,48 +252,37 @@ func (g *GenBase) generateTests() error {
 	// do not overwrite existing file
 	name := strings.ToLower(g.s.Name)
 	filename := "test/" + name + "_test.go"
-	err = g.exists(filename)
-	if err == nil {
-		return nil
-	}
+	return g.createFile(filename, false, func() {
+		g.emit("test.go")
+	})
+}
 
-	err = g.create(filename)
+func (g *GenBase) openFile(path string, processor func() error) (err error) {
+	g.file, err = os.Open(path)
 	if err != nil {
 		return err
 	}
 	defer g.close()
-
-	g.emit("test.go")
-	return nil
-}
-
-func (g *GenBase) open(path string) (err error) {
-	g.file, err = os.Open(path)
-	return err
+	return processor()
 }
 
 func (g *GenBase) println(a ...interface{}) {
 	_, _ = fmt.Fprintln(g.file, a...)
 }
 
-func (g *GenBase) scanExistingCode() ([]string, StringMap, error) {
-	defer g.close()
-	existing := make(StringMap)
-	lines := make([]string, 0)
-	scanner := bufio.NewScanner(g.file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := g.funcRegexp.FindStringSubmatch(line)
-		if matches != nil {
-			existing[matches[1]] = line
+func (g *GenBase) scanExistingCode(path string, existing *StringMap, lines *[]string) error {
+	return g.openFile(path, func() error {
+		scanner := bufio.NewScanner(g.file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			matches := g.funcRegexp.FindStringSubmatch(line)
+			if matches != nil {
+				(*existing)[matches[1]] = line
+			}
+			*lines = append(*lines, line)
 		}
-		lines = append(lines, line)
-	}
-	err := scanner.Err()
-	if err != nil {
-		return nil, nil, err
-	}
-	return lines, existing, nil
+		return scanner.Err()
+	})
 }
 
 func (g *GenBase) setCommonKeys() {

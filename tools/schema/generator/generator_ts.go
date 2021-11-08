@@ -90,20 +90,9 @@ func (g *TypeScriptGenerator) generateLanguageSpecificFiles() error {
 	}
 
 	tsconfig := "tsconfig.json"
-	err = g.exists(g.folder + tsconfig)
-	if err == nil {
-		// already exists
-		return nil
-	}
-
-	err = g.create(g.folder + tsconfig)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	g.emit(tsconfig)
-	return nil
+	return g.createFile(g.folder+tsconfig, false, func() {
+		g.emit(tsconfig)
+	})
 }
 
 func (g *TypeScriptGenerator) setFieldKeys(pad bool) {
