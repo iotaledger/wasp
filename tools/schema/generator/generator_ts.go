@@ -84,7 +84,7 @@ func (g *TypeScriptGenerator) init(s *Schema) {
 }
 
 func (g *TypeScriptGenerator) generateLanguageSpecificFiles() error {
-	err := g.createSourceFile("index")
+	err := g.createSourceFile("index", true)
 	if err != nil {
 		return err
 	}

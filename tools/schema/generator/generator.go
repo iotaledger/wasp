@@ -86,12 +86,19 @@ func (g *GenBase) createFile(path string, overwrite bool, generator func()) (err
 }
 
 // TODO take copyright from schema?
-func (g *GenBase) createSourceFile(name string) error {
+func (g *GenBase) createSourceFile(name string, condition bool) error {
+	if !condition {
+		return nil
+	}
 	return g.createFile(g.folder+name+g.extension, true, func() {
 		g.emit("copyright")
 		g.emit("warning")
 		g.emit(name + g.extension)
 	})
+}
+
+func (g *GenBase) error(what string) {
+	g.println("???:" + what)
 }
 
 func (g *GenBase) exists(path string) (err error) {
@@ -141,52 +148,43 @@ func (g *GenBase) Generate(s *Schema) error {
 }
 
 func (g *GenBase) generateCode() error {
-	err := g.createSourceFile("consts")
+	err := g.createSourceFile("consts", true)
 	if err != nil {
 		return err
 	}
-	if len(g.s.Structs) != 0 {
-		err = g.createSourceFile("structs")
-		if err != nil {
-			return err
-		}
-	}
-	if len(g.s.Typedefs) != 0 {
-		err = g.createSourceFile("typedefs")
-		if err != nil {
-			return err
-		}
-	}
-	if len(g.s.Params) != 0 {
-		err = g.createSourceFile("params")
-		if err != nil {
-			return err
-		}
-	}
-	if len(g.s.Results) != 0 {
-		err = g.createSourceFile("results")
-		if err != nil {
-			return err
-		}
-	}
-	err = g.createSourceFile("contract")
+	err = g.createSourceFile("contract", true)
 	if err != nil {
 		return err
 	}
-
+	err = g.createSourceFile("keys", !g.s.CoreContracts)
+	if err != nil {
+		return err
+	}
+	err = g.createSourceFile("lib", !g.s.CoreContracts)
+	if err != nil {
+		return err
+	}
+	err = g.createSourceFile("params", len(g.s.Params) != 0)
+	if err != nil {
+		return err
+	}
+	err = g.createSourceFile("results", len(g.s.Results) != 0)
+	if err != nil {
+		return err
+	}
+	err = g.createSourceFile("state", !g.s.CoreContracts)
+	if err != nil {
+		return err
+	}
+	err = g.createSourceFile("structs", len(g.s.Structs) != 0)
+	if err != nil {
+		return err
+	}
+	err = g.createSourceFile("typedefs", len(g.s.Typedefs) != 0)
+	if err != nil {
+		return err
+	}
 	if !g.s.CoreContracts {
-		err = g.createSourceFile("keys")
-		if err != nil {
-			return err
-		}
-		err = g.createSourceFile("state")
-		if err != nil {
-			return err
-		}
-		err = g.createSourceFile("lib")
-		if err != nil {
-			return err
-		}
 		err = g.generateFuncs()
 		if err != nil {
 			return err

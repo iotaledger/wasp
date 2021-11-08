@@ -70,10 +70,7 @@ func (g *GoGenerator) init(s *Schema) {
 }
 
 func (g *GoGenerator) generateLanguageSpecificFiles() error {
-	if g.s.CoreContracts {
-		return nil
-	}
-	return g.createSourceFile("../main")
+	return g.createSourceFile("../main", !g.s.CoreContracts)
 }
 
 func (g *GoGenerator) setFieldKeys(pad bool) {

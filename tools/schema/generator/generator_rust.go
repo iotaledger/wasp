@@ -89,7 +89,7 @@ func (g *RustGenerator) funcName(f *Func) string {
 
 func (g *RustGenerator) generateLanguageSpecificFiles() error {
 	if g.s.CoreContracts {
-		return g.createSourceFile("mod")
+		return g.createSourceFile("mod", true)
 	}
 
 	cargoToml := "Cargo.toml"
