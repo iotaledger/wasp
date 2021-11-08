@@ -167,14 +167,24 @@ func (c *chainObj) receiveCommitteePeerMessages(event *peering.RecvEvent) {
 }
 
 func (c *chainObj) receiveChainPeerMessages(event *peering.RecvEvent) {
-	msg := event.Msg
+	peerMsg := event.Msg
 	switch event.Msg.MsgType {
 	case messages.MsgOffLedgerRequest:
-		c.enqueueOffLedgerRequestPeerMsg(msg)
+		msg, err := messages.OffLedgerRequestPeerMsgFromBytes(peerMsg.MsgData)
+		if err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.EnqueueOffLedgerRequestPeerMsg(msg.Req, peerMsg.SenderNetID)
 	case messages.MsgRequestAck:
-		c.enqueueRequestAckPeerMsg(msg)
+		msg, err := messages.RequestAckPeerMsgFromBytes(peerMsg.MsgData)
+		if err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.enqueueRequestAckPeerMsg(msg.ReqID, peerMsg.SenderNetID)
 	case messages.MsgMissingRequest:
-		c.enqueueMissingRequestPeerMsg(msg)
+		//c.enqueueMissingRequestPeerMsg(msg)
 	default:
 	}
 }

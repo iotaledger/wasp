@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/request"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -16,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -27,13 +26,17 @@ type ChainCore interface {
 	ID() *iscp.ChainID
 	GetCommitteeInfo() *CommitteeInfo
 	AttachToPeerMessages(fun func(recv *peering.RecvEvent))
-	EnqueueDismissChain(reason string)
 	StateCandidateToStateManager(state.VirtualStateAccess, ledgerstate.OutputID)
 	Events() ChainEvents
 	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
 	Log() *logger.Logger
+
+	// Most of these methods are made publick for mocking in tests
+	EnqueueDismissChain(reason string) // This one should really be public
+	EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, timestamp time.Time)
+	EnqueueOffLedgerRequestPeerMsg(req *request.OffLedger, senderNetID string)
 }
 
 // ChainEntry interface to access chain from the chain registry side
@@ -42,7 +45,6 @@ type ChainEntry interface {
 	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
 	ReceiveOutput(output ledgerstate.Output)
-	ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID string)
 
 	Dismiss(reason string)
 	IsDismissed() bool

@@ -119,7 +119,7 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 
 func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
-	msgData := messages.NewOffLedgerRequestMsg(c.chainID, req).Bytes()
+	msgData := messages.NewOffLedgerRequestPeerMsg(c.chainID, req).Bytes()
 	committee := c.getCommittee()
 	getPeerIDs := (*c.peers).GetRandomPeers
 
@@ -165,16 +165,6 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	}()
 }
 
-func (c *chainObj) ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID string) {
-	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
-	c.sendRequestAcknowledgementMsg(req.ID(), senderNetID)
-	if !c.mempool.ReceiveRequest(req) {
-		return
-	}
-	c.log.Debugf("ReceiveOffLedgerRequest - added to mempool: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
-	c.broadcastOffLedgerRequest(req)
-}
-
 func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerID string) {
 	c.log.Debugf("sendRequestAcknowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 	if peerID == "" {
@@ -215,7 +205,7 @@ func (c *chainObj) ReceiveRequest(req iscp.Request) {
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
 	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
 		stateOutput.GetStateIndex(), iscp.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
-	c.enqueueLedgerState(stateOutput, timestamp)
+	c.EnqueueLedgerState(stateOutput, timestamp)
 }
 
 func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {

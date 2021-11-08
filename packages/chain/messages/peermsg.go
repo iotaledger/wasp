@@ -55,11 +55,6 @@ type BlockMsg struct {
 	BlockBytes  []byte
 }
 
-// DismissChainMsg sent by component to the chain core in case of major setback
-type DismissChainMsg struct {
-	Reason string
-}
-
 // StateTransitionMsg Notifies chain about changed state
 type StateTransitionMsg struct {
 	// new variable state

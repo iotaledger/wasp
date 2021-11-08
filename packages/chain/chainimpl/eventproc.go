@@ -9,9 +9,10 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
-	//	"github.com/iotaledger/wasp/packages/iscp"
 	//	"github.com/iotaledger/wasp/packages/state"
 	//	"github.com/iotaledger/wasp/packages/util"
 )
@@ -28,7 +29,7 @@ func (c *chainObj) handleMessagesLoop() {
 		select {
 		case msg, ok := <-nDismissChainMsgChannel:
 			if ok {
-				c.handleDismissChain(msg.(messages.DismissChainMsg))
+				c.handleDismissChain(msg.(DismissChainMsg))
 			} else {
 				nDismissChainMsgChannel = nil
 			}
@@ -40,13 +41,13 @@ func (c *chainObj) handleMessagesLoop() {
 			}
 		case msg, ok := <-nOffLedgerRequestPeerMsgChannel:
 			if ok {
-				c.handleOffLedgerRequestPeerMsg(msg.(*peering.PeerMessage))
+				c.handleOffLedgerRequestPeerMsg(msg.(OffLedgerRequestMsg))
 			} else {
 				nOffLedgerRequestPeerMsgChannel = nil
 			}
 		case msg, ok := <-nRequestAckPeerMsgChannel:
 			if ok {
-				c.handleRequestAckPeerMsg(msg.(*peering.PeerMessage))
+				c.handleRequestAckPeerMsg(msg.(RequestAckMsg))
 			} else {
 				nRequestAckPeerMsgChannel = nil
 			}
@@ -82,14 +83,14 @@ func (c *chainObj) handleMessagesLoop() {
 }
 
 func (c *chainObj) EnqueueDismissChain(reason string) {
-	c.dismissChainMsgChannel.In() <- messages.DismissChainMsg{Reason: reason}
+	c.dismissChainMsgChannel.In() <- DismissChainMsg{Reason: reason}
 }
 
-func (c *chainObj) handleDismissChain(msg messages.DismissChainMsg) {
+func (c *chainObj) handleDismissChain(msg DismissChainMsg) {
 	c.Dismiss(msg.Reason)
 }
 
-func (c *chainObj) enqueueLedgerState(chainOutput *ledgerstate.AliasOutput, timestamp time.Time) {
+func (c *chainObj) EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, timestamp time.Time) {
 	c.stateMsgChannel.In() <- &messages.StateMsg{
 		ChainOutput: chainOutput,
 		Timestamp:   timestamp,
@@ -122,30 +123,34 @@ func (c *chainObj) handleLedgerState(msg *messages.StateMsg) {
 	c.stateMgr.EventStateMsg(msg)
 }
 
-func (c *chainObj) enqueueOffLedgerRequestPeerMsg(peerMsg *peering.PeerMessage) {
-	c.offLedgerRequestPeerMsgChannel.In() <- peerMsg
+func (c *chainObj) EnqueueOffLedgerRequestPeerMsg(req *request.OffLedger, senderNetID string) {
+	c.offLedgerRequestPeerMsgChannel.In() <- OffLedgerRequestMsg{
+		Req:         req,
+		SenderNetID: senderNetID,
+	}
 }
 
-func (c *chainObj) handleOffLedgerRequestPeerMsg(peerMsg *peering.PeerMessage) {
-	msg, err := messages.OffLedgerRequestMsgFromBytes(peerMsg.MsgData)
-	if err != nil {
-		c.log.Error(err)
+func (c *chainObj) handleOffLedgerRequestPeerMsg(msg OffLedgerRequestMsg) {
+	req := msg.Req
+	senderNetID := msg.SenderNetID
+	c.log.Debugf("handleOffLedgerRequestPeerMsg: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
+	c.sendRequestAcknowledgementMsg(req.ID(), senderNetID)
+	if !c.mempool.ReceiveRequest(req) {
 		return
 	}
-	c.ReceiveOffLedgerRequest(msg.Req, peerMsg.SenderNetID)
+	c.log.Debugf("handleOffLedgerRequestPeerMsg - added to mempool: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
+	c.broadcastOffLedgerRequest(req)
 }
 
-func (c *chainObj) enqueueRequestAckPeerMsg(peerMsg *peering.PeerMessage) {
-	c.requestAckPeerMsgChannel.In() <- peerMsg
-}
-
-func (c *chainObj) handleRequestAckPeerMsg(peerMsg *peering.PeerMessage) {
-	msg, err := messages.RequestAckMsgFromBytes(peerMsg.MsgData)
-	if err != nil {
-		c.log.Error(err)
-		return
+func (c *chainObj) enqueueRequestAckPeerMsg(requestID *iscp.RequestID, senderNetID string) {
+	c.requestAckPeerMsgChannel.In() <- RequestAckMsg{
+		ReqID:       requestID,
+		SenderNetID: senderNetID,
 	}
-	c.ReceiveRequestAckMessage(msg.ReqID, peerMsg.SenderNetID)
+}
+
+func (c *chainObj) handleRequestAckPeerMsg(msg RequestAckMsg) {
+	c.ReceiveRequestAckMessage(msg.ReqID, msg.SenderNetID)
 }
 
 func (c *chainObj) enqueueMissingRequestIDsPeerMsg(peerMsg *peering.PeerMessage) {
