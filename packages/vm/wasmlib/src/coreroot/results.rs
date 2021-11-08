@@ -18,7 +18,6 @@ pub struct ImmutableFindContractResults {
 }
 
 impl ImmutableFindContractResults {
-
     pub fn contract_found(&self) -> ScImmutableBytes {
 		ScImmutableBytes::new(self.id, RESULT_CONTRACT_FOUND.get_key_id())
 	}
@@ -34,7 +33,6 @@ pub struct MutableFindContractResults {
 }
 
 impl MutableFindContractResults {
-
     pub fn contract_found(&self) -> ScMutableBytes {
 		ScMutableBytes::new(self.id, RESULT_CONTRACT_FOUND.get_key_id())
 	}
@@ -60,7 +58,6 @@ pub struct ImmutableGetContractRecordsResults {
 }
 
 impl ImmutableGetContractRecordsResults {
-
     pub fn contract_registry(&self) -> MapHnameToImmutableBytes {
 		let map_id = get_object_id(self.id, RESULT_CONTRACT_REGISTRY.get_key_id(), TYPE_MAP);
 		MapHnameToImmutableBytes { obj_id: map_id }
@@ -87,7 +84,6 @@ pub struct MutableGetContractRecordsResults {
 }
 
 impl MutableGetContractRecordsResults {
-
     pub fn contract_registry(&self) -> MapHnameToMutableBytes {
 		let map_id = get_object_id(self.id, RESULT_CONTRACT_REGISTRY.get_key_id(), TYPE_MAP);
 		MapHnameToMutableBytes { obj_id: map_id }

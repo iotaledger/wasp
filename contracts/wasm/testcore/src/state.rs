@@ -20,7 +20,6 @@ pub struct ImmutableTestCoreState {
 }
 
 impl ImmutableTestCoreState {
-
     pub fn counter(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
 	}
@@ -49,7 +48,6 @@ pub struct MutableTestCoreState {
 }
 
 impl MutableTestCoreState {
-
     pub fn counter(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
 	}

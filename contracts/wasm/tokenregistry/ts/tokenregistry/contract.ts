@@ -49,7 +49,6 @@ export class GetInfoContext {
 }
 
 export class ScFuncs {
-
     static mintSupply(ctx: wasmlib.ScFuncCallContext): MintSupplyCall {
         let f = new MintSupplyCall();
         f.func.setPtrs(f.params, null);

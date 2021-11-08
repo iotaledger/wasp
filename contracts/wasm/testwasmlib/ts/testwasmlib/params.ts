@@ -9,35 +9,30 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableArrayClearParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScImmutableString {
 		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
 	}
 }
 
 export class MutableArrayClearParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScMutableString {
 		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
 	}
 }
 
 export class ImmutableArrayCreateParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScImmutableString {
 		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
 	}
 }
 
 export class MutableArrayCreateParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScMutableString {
 		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
 	}
 }
 
 export class ImmutableArraySetParams extends wasmlib.ScMapID {
-
     index(): wasmlib.ScImmutableInt32 {
 		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
 	}
@@ -52,7 +47,6 @@ export class ImmutableArraySetParams extends wasmlib.ScMapID {
 }
 
 export class MutableArraySetParams extends wasmlib.ScMapID {
-
     index(): wasmlib.ScMutableInt32 {
 		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
 	}
@@ -79,7 +73,6 @@ export class MapStringToImmutableBytes {
 }
 
 export class ImmutableParamTypesParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScImmutableAddress {
 		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}
@@ -150,7 +143,6 @@ export class MapStringToMutableBytes {
 }
 
 export class MutableParamTypesParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScMutableAddress {
 		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}
@@ -205,21 +197,18 @@ export class MutableParamTypesParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableArrayLengthParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScImmutableString {
 		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
 	}
 }
 
 export class MutableArrayLengthParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScMutableString {
 		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
 	}
 }
 
 export class ImmutableArrayValueParams extends wasmlib.ScMapID {
-
     index(): wasmlib.ScImmutableInt32 {
 		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
 	}
@@ -230,7 +219,6 @@ export class ImmutableArrayValueParams extends wasmlib.ScMapID {
 }
 
 export class MutableArrayValueParams extends wasmlib.ScMapID {
-
     index(): wasmlib.ScMutableInt32 {
 		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
 	}
@@ -241,7 +229,6 @@ export class MutableArrayValueParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableBlockRecordParams extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScImmutableInt32 {
 		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
 	}
@@ -252,7 +239,6 @@ export class ImmutableBlockRecordParams extends wasmlib.ScMapID {
 }
 
 export class MutableBlockRecordParams extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScMutableInt32 {
 		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
 	}
@@ -263,14 +249,12 @@ export class MutableBlockRecordParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableBlockRecordsParams extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScImmutableInt32 {
 		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
 	}
 }
 
 export class MutableBlockRecordsParams extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScMutableInt32 {
 		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
 	}

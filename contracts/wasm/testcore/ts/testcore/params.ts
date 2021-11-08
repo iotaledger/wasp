@@ -9,7 +9,6 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableCallOnChainParams extends wasmlib.ScMapID {
-
     hnameContract(): wasmlib.ScImmutableHname {
 		return new wasmlib.ScImmutableHname(this.mapID, sc.idxMap[sc.IdxParamHnameContract]);
 	}
@@ -24,7 +23,6 @@ export class ImmutableCallOnChainParams extends wasmlib.ScMapID {
 }
 
 export class MutableCallOnChainParams extends wasmlib.ScMapID {
-
     hnameContract(): wasmlib.ScMutableHname {
 		return new wasmlib.ScMutableHname(this.mapID, sc.idxMap[sc.IdxParamHnameContract]);
 	}
@@ -39,7 +37,6 @@ export class MutableCallOnChainParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableCheckContextFromFullEPParams extends wasmlib.ScMapID {
-
     agentID(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAgentID]);
 	}
@@ -62,7 +59,6 @@ export class ImmutableCheckContextFromFullEPParams extends wasmlib.ScMapID {
 }
 
 export class MutableCheckContextFromFullEPParams extends wasmlib.ScMapID {
-
     agentID(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAgentID]);
 	}
@@ -85,21 +81,18 @@ export class MutableCheckContextFromFullEPParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableInitParams extends wasmlib.ScMapID {
-
     fail(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamFail]);
 	}
 }
 
 export class MutableInitParams extends wasmlib.ScMapID {
-
     fail(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamFail]);
 	}
 }
 
 export class ImmutablePassTypesFullParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScImmutableAddress {
 		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}
@@ -146,7 +139,6 @@ export class ImmutablePassTypesFullParams extends wasmlib.ScMapID {
 }
 
 export class MutablePassTypesFullParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScMutableAddress {
 		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}
@@ -193,35 +185,30 @@ export class MutablePassTypesFullParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableRunRecursionParams extends wasmlib.ScMapID {
-
     intValue(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamIntValue]);
 	}
 }
 
 export class MutableRunRecursionParams extends wasmlib.ScMapID {
-
     intValue(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamIntValue]);
 	}
 }
 
 export class ImmutableSendToAddressParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScImmutableAddress {
 		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}
 }
 
 export class MutableSendToAddressParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScMutableAddress {
 		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}
 }
 
 export class ImmutableSetIntParams extends wasmlib.ScMapID {
-
     intValue(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamIntValue]);
 	}
@@ -232,7 +219,6 @@ export class ImmutableSetIntParams extends wasmlib.ScMapID {
 }
 
 export class MutableSetIntParams extends wasmlib.ScMapID {
-
     intValue(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamIntValue]);
 	}
@@ -243,49 +229,42 @@ export class MutableSetIntParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableSpawnParams extends wasmlib.ScMapID {
-
     progHash(): wasmlib.ScImmutableHash {
 		return new wasmlib.ScImmutableHash(this.mapID, sc.idxMap[sc.IdxParamProgHash]);
 	}
 }
 
 export class MutableSpawnParams extends wasmlib.ScMapID {
-
     progHash(): wasmlib.ScMutableHash {
 		return new wasmlib.ScMutableHash(this.mapID, sc.idxMap[sc.IdxParamProgHash]);
 	}
 }
 
 export class ImmutableTestEventLogGenericDataParams extends wasmlib.ScMapID {
-
     counter(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamCounter]);
 	}
 }
 
 export class MutableTestEventLogGenericDataParams extends wasmlib.ScMapID {
-
     counter(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamCounter]);
 	}
 }
 
 export class ImmutableWithdrawToChainParams extends wasmlib.ScMapID {
-
     chainID(): wasmlib.ScImmutableChainID {
 		return new wasmlib.ScImmutableChainID(this.mapID, sc.idxMap[sc.IdxParamChainID]);
 	}
 }
 
 export class MutableWithdrawToChainParams extends wasmlib.ScMapID {
-
     chainID(): wasmlib.ScMutableChainID {
 		return new wasmlib.ScMutableChainID(this.mapID, sc.idxMap[sc.IdxParamChainID]);
 	}
 }
 
 export class ImmutableCheckContextFromViewEPParams extends wasmlib.ScMapID {
-
     agentID(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAgentID]);
 	}
@@ -304,7 +283,6 @@ export class ImmutableCheckContextFromViewEPParams extends wasmlib.ScMapID {
 }
 
 export class MutableCheckContextFromViewEPParams extends wasmlib.ScMapID {
-
     agentID(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAgentID]);
 	}
@@ -323,49 +301,42 @@ export class MutableCheckContextFromViewEPParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableFibonacciParams extends wasmlib.ScMapID {
-
     intValue(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamIntValue]);
 	}
 }
 
 export class MutableFibonacciParams extends wasmlib.ScMapID {
-
     intValue(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamIntValue]);
 	}
 }
 
 export class ImmutableGetIntParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScImmutableString {
 		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
 	}
 }
 
 export class MutableGetIntParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScMutableString {
 		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
 	}
 }
 
 export class ImmutableGetStringValueParams extends wasmlib.ScMapID {
-
     varName(): wasmlib.ScImmutableString {
 		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamVarName]);
 	}
 }
 
 export class MutableGetStringValueParams extends wasmlib.ScMapID {
-
     varName(): wasmlib.ScMutableString {
 		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamVarName]);
 	}
 }
 
 export class ImmutablePassTypesViewParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScImmutableAddress {
 		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}
@@ -412,7 +383,6 @@ export class ImmutablePassTypesViewParams extends wasmlib.ScMapID {
 }
 
 export class MutablePassTypesViewParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScMutableAddress {
 		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}

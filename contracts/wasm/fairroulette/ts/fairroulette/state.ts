@@ -25,7 +25,6 @@ export class ArrayOfImmutableBet {
 }
 
 export class ImmutableFairRouletteState extends wasmlib.ScMapID {
-
     bets(): sc.ArrayOfImmutableBet {
 		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
 		return new sc.ArrayOfImmutableBet(arrID);
@@ -73,7 +72,6 @@ export class ArrayOfMutableBet {
 }
 
 export class MutableFairRouletteState extends wasmlib.ScMapID {
-
     bets(): sc.ArrayOfMutableBet {
 		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
 		return new sc.ArrayOfMutableBet(arrID);

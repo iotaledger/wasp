@@ -20,7 +20,6 @@ pub struct ImmutableArrayClearParams {
 }
 
 impl ImmutableArrayClearParams {
-
     pub fn name(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
 	}
@@ -32,7 +31,6 @@ pub struct MutableArrayClearParams {
 }
 
 impl MutableArrayClearParams {
-
     pub fn name(&self) -> ScMutableString {
 		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
 	}
@@ -44,7 +42,6 @@ pub struct ImmutableArrayCreateParams {
 }
 
 impl ImmutableArrayCreateParams {
-
     pub fn name(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
 	}
@@ -56,7 +53,6 @@ pub struct MutableArrayCreateParams {
 }
 
 impl MutableArrayCreateParams {
-
     pub fn name(&self) -> ScMutableString {
 		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
 	}
@@ -68,7 +64,6 @@ pub struct ImmutableArraySetParams {
 }
 
 impl ImmutableArraySetParams {
-
     pub fn index(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_INDEX))
 	}
@@ -88,7 +83,6 @@ pub struct MutableArraySetParams {
 }
 
 impl MutableArraySetParams {
-
     pub fn index(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_INDEX))
 	}
@@ -118,7 +112,6 @@ pub struct ImmutableParamTypesParams {
 }
 
 impl ImmutableParamTypesParams {
-
     pub fn address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}
@@ -192,7 +185,6 @@ pub struct MutableParamTypesParams {
 }
 
 impl MutableParamTypesParams {
-
     pub fn address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}
@@ -252,7 +244,6 @@ pub struct ImmutableArrayLengthParams {
 }
 
 impl ImmutableArrayLengthParams {
-
     pub fn name(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
 	}
@@ -264,7 +255,6 @@ pub struct MutableArrayLengthParams {
 }
 
 impl MutableArrayLengthParams {
-
     pub fn name(&self) -> ScMutableString {
 		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
 	}
@@ -276,7 +266,6 @@ pub struct ImmutableArrayValueParams {
 }
 
 impl ImmutableArrayValueParams {
-
     pub fn index(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_INDEX))
 	}
@@ -292,7 +281,6 @@ pub struct MutableArrayValueParams {
 }
 
 impl MutableArrayValueParams {
-
     pub fn index(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_INDEX))
 	}
@@ -308,7 +296,6 @@ pub struct ImmutableBlockRecordParams {
 }
 
 impl ImmutableBlockRecordParams {
-
     pub fn block_index(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_BLOCK_INDEX))
 	}
@@ -324,7 +311,6 @@ pub struct MutableBlockRecordParams {
 }
 
 impl MutableBlockRecordParams {
-
     pub fn block_index(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_BLOCK_INDEX))
 	}
@@ -340,7 +326,6 @@ pub struct ImmutableBlockRecordsParams {
 }
 
 impl ImmutableBlockRecordsParams {
-
     pub fn block_index(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_BLOCK_INDEX))
 	}
@@ -352,7 +337,6 @@ pub struct MutableBlockRecordsParams {
 }
 
 impl MutableBlockRecordsParams {
-
     pub fn block_index(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_BLOCK_INDEX))
 	}

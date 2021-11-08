@@ -18,7 +18,6 @@ pub struct ImmutableStoreBlobResults {
 }
 
 impl ImmutableStoreBlobResults {
-
     pub fn hash(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.id, RESULT_HASH.get_key_id())
 	}
@@ -30,7 +29,6 @@ pub struct MutableStoreBlobResults {
 }
 
 impl MutableStoreBlobResults {
-
     pub fn hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.id, RESULT_HASH.get_key_id())
 	}
@@ -42,7 +40,6 @@ pub struct ImmutableGetBlobFieldResults {
 }
 
 impl ImmutableGetBlobFieldResults {
-
     pub fn bytes(&self) -> ScImmutableBytes {
 		ScImmutableBytes::new(self.id, RESULT_BYTES.get_key_id())
 	}
@@ -54,7 +51,6 @@ pub struct MutableGetBlobFieldResults {
 }
 
 impl MutableGetBlobFieldResults {
-
     pub fn bytes(&self) -> ScMutableBytes {
 		ScMutableBytes::new(self.id, RESULT_BYTES.get_key_id())
 	}
@@ -76,7 +72,6 @@ pub struct ImmutableGetBlobInfoResults {
 }
 
 impl ImmutableGetBlobInfoResults {
-
     pub fn blob_sizes(&self) -> MapStringToImmutableInt32 {
 		MapStringToImmutableInt32 { obj_id: self.id }
 	}
@@ -102,7 +97,6 @@ pub struct MutableGetBlobInfoResults {
 }
 
 impl MutableGetBlobInfoResults {
-
     pub fn blob_sizes(&self) -> MapStringToMutableInt32 {
 		MapStringToMutableInt32 { obj_id: self.id }
 	}
@@ -124,7 +118,6 @@ pub struct ImmutableListBlobsResults {
 }
 
 impl ImmutableListBlobsResults {
-
     pub fn blob_sizes(&self) -> MapHashToImmutableInt32 {
 		MapHashToImmutableInt32 { obj_id: self.id }
 	}
@@ -150,7 +143,6 @@ pub struct MutableListBlobsResults {
 }
 
 impl MutableListBlobsResults {
-
     pub fn blob_sizes(&self) -> MapHashToMutableInt32 {
 		MapHashToMutableInt32 { obj_id: self.id }
 	}

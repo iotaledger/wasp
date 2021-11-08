@@ -32,7 +32,6 @@ pub struct ImmutableErc20State {
 }
 
 impl ImmutableErc20State {
-
     pub fn all_allowances(&self) -> MapAgentIDToImmutableAllowancesForAgent {
 		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ALL_ALLOWANCES), TYPE_MAP);
 		MapAgentIDToImmutableAllowancesForAgent { obj_id: map_id }
@@ -69,7 +68,6 @@ pub struct MutableErc20State {
 }
 
 impl MutableErc20State {
-
     pub fn all_allowances(&self) -> MapAgentIDToMutableAllowancesForAgent {
 		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ALL_ALLOWANCES), TYPE_MAP);
 		MapAgentIDToMutableAllowancesForAgent { obj_id: map_id }

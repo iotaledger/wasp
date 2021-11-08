@@ -20,7 +20,6 @@ pub struct ImmutableMintSupplyParams {
 }
 
 impl ImmutableMintSupplyParams {
-
     pub fn description(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, idx_map(IDX_PARAM_DESCRIPTION))
 	}
@@ -36,7 +35,6 @@ pub struct MutableMintSupplyParams {
 }
 
 impl MutableMintSupplyParams {
-
     pub fn description(&self) -> ScMutableString {
 		ScMutableString::new(self.id, idx_map(IDX_PARAM_DESCRIPTION))
 	}
@@ -52,7 +50,6 @@ pub struct ImmutableTransferOwnershipParams {
 }
 
 impl ImmutableTransferOwnershipParams {
-
     pub fn color(&self) -> ScImmutableColor {
 		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -64,7 +61,6 @@ pub struct MutableTransferOwnershipParams {
 }
 
 impl MutableTransferOwnershipParams {
-
     pub fn color(&self) -> ScMutableColor {
 		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -76,7 +72,6 @@ pub struct ImmutableUpdateMetadataParams {
 }
 
 impl ImmutableUpdateMetadataParams {
-
     pub fn color(&self) -> ScImmutableColor {
 		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -88,7 +83,6 @@ pub struct MutableUpdateMetadataParams {
 }
 
 impl MutableUpdateMetadataParams {
-
     pub fn color(&self) -> ScMutableColor {
 		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -100,7 +94,6 @@ pub struct ImmutableGetInfoParams {
 }
 
 impl ImmutableGetInfoParams {
-
     pub fn color(&self) -> ScImmutableColor {
 		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -112,7 +105,6 @@ pub struct MutableGetInfoParams {
 }
 
 impl MutableGetInfoParams {
-
     pub fn color(&self) -> ScMutableColor {
 		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}

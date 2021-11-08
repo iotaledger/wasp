@@ -35,7 +35,6 @@ export class GetContractRecordsCall {
 }
 
 export class ScFuncs {
-
     static deployContract(ctx: wasmlib.ScFuncCallContext): DeployContractCall {
         let f = new DeployContractCall();
         f.func.setPtrs(f.params, null);

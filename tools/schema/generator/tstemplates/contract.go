@@ -7,6 +7,7 @@ $#emit tsImports
 $#each func FuncNameCall
 
 export class ScFuncs {
+$#set separator $false
 $#each func FuncNameForCall
 }
 `,
@@ -58,7 +59,8 @@ $#if view ImmutablePackageState
 	// *******************************
 	"FuncNameForCall": `
 $#emit setupInitFunc
-
+$#if separator newline
+$#set separator $true
     static $funcName(ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
 $#set paramsID null
 $#set resultsID null

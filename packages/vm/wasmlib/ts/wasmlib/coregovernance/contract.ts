@@ -69,7 +69,6 @@ export class GetMaxBlobSizeCall {
 }
 
 export class ScFuncs {
-
     static addAllowedStateControllerAddress(ctx: wasmlib.ScFuncCallContext): AddAllowedStateControllerAddressCall {
         let f = new AddAllowedStateControllerAddressCall();
         f.func.setPtrs(f.params, null);

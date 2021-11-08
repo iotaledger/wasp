@@ -28,7 +28,6 @@ pub struct ImmutableAccountsResults {
 }
 
 impl ImmutableAccountsResults {
-
     pub fn agents(&self) -> MapAgentIDToImmutableBytes {
 		MapAgentIDToImmutableBytes { obj_id: self.id }
 	}
@@ -54,7 +53,6 @@ pub struct MutableAccountsResults {
 }
 
 impl MutableAccountsResults {
-
     pub fn agents(&self) -> MapAgentIDToMutableBytes {
 		MapAgentIDToMutableBytes { obj_id: self.id }
 	}
@@ -76,7 +74,6 @@ pub struct ImmutableBalanceResults {
 }
 
 impl ImmutableBalanceResults {
-
     pub fn balances(&self) -> MapColorToImmutableInt64 {
 		MapColorToImmutableInt64 { obj_id: self.id }
 	}
@@ -102,7 +99,6 @@ pub struct MutableBalanceResults {
 }
 
 impl MutableBalanceResults {
-
     pub fn balances(&self) -> MapColorToMutableInt64 {
 		MapColorToMutableInt64 { obj_id: self.id }
 	}
@@ -114,7 +110,6 @@ pub struct ImmutableGetAccountNonceResults {
 }
 
 impl ImmutableGetAccountNonceResults {
-
     pub fn account_nonce(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, RESULT_ACCOUNT_NONCE.get_key_id())
 	}
@@ -126,7 +121,6 @@ pub struct MutableGetAccountNonceResults {
 }
 
 impl MutableGetAccountNonceResults {
-
     pub fn account_nonce(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, RESULT_ACCOUNT_NONCE.get_key_id())
 	}
@@ -138,7 +132,6 @@ pub struct ImmutableTotalAssetsResults {
 }
 
 impl ImmutableTotalAssetsResults {
-
     pub fn balances(&self) -> MapColorToImmutableInt64 {
 		MapColorToImmutableInt64 { obj_id: self.id }
 	}
@@ -150,7 +143,6 @@ pub struct MutableTotalAssetsResults {
 }
 
 impl MutableTotalAssetsResults {
-
     pub fn balances(&self) -> MapColorToMutableInt64 {
 		MapColorToMutableInt64 { obj_id: self.id }
 	}

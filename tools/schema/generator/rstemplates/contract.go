@@ -15,6 +15,7 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
+$#set separator $false
 $#each func FuncNameForCall
 }
 `,
@@ -46,6 +47,8 @@ $#if result ImmutableFuncNameResults
 	// *******************************
 	"FuncNameForCall": `
 $#emit setupInitFunc
+$#if separator newline
+$#set separator $true
     pub fn $func_name(_ctx: & dyn Sc$Kind$+CallContext) -> $FuncName$+Call {
 $#set paramsID ptr::null_mut()
 $#set resultsID ptr::null_mut()

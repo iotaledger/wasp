@@ -27,7 +27,6 @@ export class GetTimestampContext {
 }
 
 export class ScFuncs {
-
     static now(ctx: wasmlib.ScFuncCallContext): NowCall {
         return new NowCall();
     }

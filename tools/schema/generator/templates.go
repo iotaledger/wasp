@@ -8,6 +8,10 @@ var commonTemplates = map[string]string{
 	"nil": `
 `,
 	// *******************************
+	"newline": `
+
+`,
+	// *******************************
 	"copyright": `
 $#emit initGlobals
 // Copyright 2020 IOTA Stiftung

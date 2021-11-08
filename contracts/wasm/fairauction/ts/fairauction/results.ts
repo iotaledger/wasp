@@ -9,7 +9,6 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableGetInfoResults extends wasmlib.ScMapID {
-
     bidders(): wasmlib.ScImmutableInt32 {
 		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxResultBidders]);
 	}
@@ -60,7 +59,6 @@ export class ImmutableGetInfoResults extends wasmlib.ScMapID {
 }
 
 export class MutableGetInfoResults extends wasmlib.ScMapID {
-
     bidders(): wasmlib.ScMutableInt32 {
 		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxResultBidders]);
 	}

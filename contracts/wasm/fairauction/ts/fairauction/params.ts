@@ -9,49 +9,42 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableFinalizeAuctionParams extends wasmlib.ScMapID {
-
     color(): wasmlib.ScImmutableColor {
 		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
 	}
 }
 
 export class MutableFinalizeAuctionParams extends wasmlib.ScMapID {
-
     color(): wasmlib.ScMutableColor {
 		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
 	}
 }
 
 export class ImmutablePlaceBidParams extends wasmlib.ScMapID {
-
     color(): wasmlib.ScImmutableColor {
 		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
 	}
 }
 
 export class MutablePlaceBidParams extends wasmlib.ScMapID {
-
     color(): wasmlib.ScMutableColor {
 		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
 	}
 }
 
 export class ImmutableSetOwnerMarginParams extends wasmlib.ScMapID {
-
     ownerMargin(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamOwnerMargin]);
 	}
 }
 
 export class MutableSetOwnerMarginParams extends wasmlib.ScMapID {
-
     ownerMargin(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamOwnerMargin]);
 	}
 }
 
 export class ImmutableStartAuctionParams extends wasmlib.ScMapID {
-
     color(): wasmlib.ScImmutableColor {
 		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
 	}
@@ -70,7 +63,6 @@ export class ImmutableStartAuctionParams extends wasmlib.ScMapID {
 }
 
 export class MutableStartAuctionParams extends wasmlib.ScMapID {
-
     color(): wasmlib.ScMutableColor {
 		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
 	}
@@ -89,14 +81,12 @@ export class MutableStartAuctionParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableGetInfoParams extends wasmlib.ScMapID {
-
     color(): wasmlib.ScImmutableColor {
 		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
 	}
 }
 
 export class MutableGetInfoParams extends wasmlib.ScMapID {
-
     color(): wasmlib.ScMutableColor {
 		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
 	}

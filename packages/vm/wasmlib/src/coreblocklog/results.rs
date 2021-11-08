@@ -18,7 +18,6 @@ pub struct ImmutableControlAddressesResults {
 }
 
 impl ImmutableControlAddressesResults {
-
     pub fn block_index(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
@@ -38,7 +37,6 @@ pub struct MutableControlAddressesResults {
 }
 
 impl MutableControlAddressesResults {
-
     pub fn block_index(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
@@ -58,7 +56,6 @@ pub struct ImmutableGetBlockInfoResults {
 }
 
 impl ImmutableGetBlockInfoResults {
-
     pub fn block_info(&self) -> ScImmutableBytes {
 		ScImmutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
 	}
@@ -70,7 +67,6 @@ pub struct MutableGetBlockInfoResults {
 }
 
 impl MutableGetBlockInfoResults {
-
     pub fn block_info(&self) -> ScMutableBytes {
 		ScMutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
 	}
@@ -96,7 +92,6 @@ pub struct ImmutableGetEventsForBlockResults {
 }
 
 impl ImmutableGetEventsForBlockResults {
-
     pub fn event(&self) -> ArrayOfImmutableBytes {
 		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
 		ArrayOfImmutableBytes { obj_id: arr_id }
@@ -127,7 +122,6 @@ pub struct MutableGetEventsForBlockResults {
 }
 
 impl MutableGetEventsForBlockResults {
-
     pub fn event(&self) -> ArrayOfMutableBytes {
 		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
 		ArrayOfMutableBytes { obj_id: arr_id }
@@ -140,7 +134,6 @@ pub struct ImmutableGetEventsForContractResults {
 }
 
 impl ImmutableGetEventsForContractResults {
-
     pub fn event(&self) -> ArrayOfImmutableBytes {
 		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
 		ArrayOfImmutableBytes { obj_id: arr_id }
@@ -153,7 +146,6 @@ pub struct MutableGetEventsForContractResults {
 }
 
 impl MutableGetEventsForContractResults {
-
     pub fn event(&self) -> ArrayOfMutableBytes {
 		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
 		ArrayOfMutableBytes { obj_id: arr_id }
@@ -166,7 +158,6 @@ pub struct ImmutableGetEventsForRequestResults {
 }
 
 impl ImmutableGetEventsForRequestResults {
-
     pub fn event(&self) -> ArrayOfImmutableBytes {
 		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
 		ArrayOfImmutableBytes { obj_id: arr_id }
@@ -179,7 +170,6 @@ pub struct MutableGetEventsForRequestResults {
 }
 
 impl MutableGetEventsForRequestResults {
-
     pub fn event(&self) -> ArrayOfMutableBytes {
 		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
 		ArrayOfMutableBytes { obj_id: arr_id }
@@ -192,7 +182,6 @@ pub struct ImmutableGetLatestBlockInfoResults {
 }
 
 impl ImmutableGetLatestBlockInfoResults {
-
     pub fn block_index(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
@@ -208,7 +197,6 @@ pub struct MutableGetLatestBlockInfoResults {
 }
 
 impl MutableGetLatestBlockInfoResults {
-
     pub fn block_index(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
@@ -238,7 +226,6 @@ pub struct ImmutableGetRequestIDsForBlockResults {
 }
 
 impl ImmutableGetRequestIDsForBlockResults {
-
     pub fn request_id(&self) -> ArrayOfImmutableRequestID {
 		let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY16 | TYPE_REQUEST_ID);
 		ArrayOfImmutableRequestID { obj_id: arr_id }
@@ -269,7 +256,6 @@ pub struct MutableGetRequestIDsForBlockResults {
 }
 
 impl MutableGetRequestIDsForBlockResults {
-
     pub fn request_id(&self) -> ArrayOfMutableRequestID {
 		let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY16 | TYPE_REQUEST_ID);
 		ArrayOfMutableRequestID { obj_id: arr_id }
@@ -282,7 +268,6 @@ pub struct ImmutableGetRequestReceiptResults {
 }
 
 impl ImmutableGetRequestReceiptResults {
-
     pub fn block_index(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
@@ -302,7 +287,6 @@ pub struct MutableGetRequestReceiptResults {
 }
 
 impl MutableGetRequestReceiptResults {
-
     pub fn block_index(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
@@ -322,7 +306,6 @@ pub struct ImmutableGetRequestReceiptsForBlockResults {
 }
 
 impl ImmutableGetRequestReceiptsForBlockResults {
-
     pub fn request_record(&self) -> ArrayOfImmutableBytes {
 		let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
 		ArrayOfImmutableBytes { obj_id: arr_id }
@@ -335,7 +318,6 @@ pub struct MutableGetRequestReceiptsForBlockResults {
 }
 
 impl MutableGetRequestReceiptsForBlockResults {
-
     pub fn request_record(&self) -> ArrayOfMutableBytes {
 		let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
 		ArrayOfMutableBytes { obj_id: arr_id }
@@ -348,7 +330,6 @@ pub struct ImmutableIsRequestProcessedResults {
 }
 
 impl ImmutableIsRequestProcessedResults {
-
     pub fn request_processed(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, RESULT_REQUEST_PROCESSED.get_key_id())
 	}
@@ -360,7 +341,6 @@ pub struct MutableIsRequestProcessedResults {
 }
 
 impl MutableIsRequestProcessedResults {
-
     pub fn request_processed(&self) -> ScMutableString {
 		ScMutableString::new(self.id, RESULT_REQUEST_PROCESSED.get_key_id())
 	}

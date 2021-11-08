@@ -24,6 +24,7 @@ $#set TypeName $mut$FuncName$+Params
 $#each param proxyContainers
 
 export class $TypeName extends wasmlib.ScMapID {
+$#set separator $false
 $#each param proxyMethods
 }
 `,

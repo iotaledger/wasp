@@ -85,6 +85,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn array_create(_ctx: & dyn ScFuncCallContext) -> ArrayCreateCall {
         let mut f = ArrayCreateCall {
             func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_CREATE),
@@ -93,6 +94,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn array_set(_ctx: & dyn ScFuncCallContext) -> ArraySetCall {
         let mut f = ArraySetCall {
             func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_SET),
@@ -101,6 +103,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn param_types(_ctx: & dyn ScFuncCallContext) -> ParamTypesCall {
         let mut f = ParamTypesCall {
             func: ScFunc::new(HSC_NAME, HFUNC_PARAM_TYPES),
@@ -109,11 +112,13 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn random(_ctx: & dyn ScFuncCallContext) -> RandomCall {
         RandomCall {
             func: ScFunc::new(HSC_NAME, HFUNC_RANDOM),
         }
     }
+
     pub fn array_length(_ctx: & dyn ScViewCallContext) -> ArrayLengthCall {
         let mut f = ArrayLengthCall {
             func: ScView::new(HSC_NAME, HVIEW_ARRAY_LENGTH),
@@ -123,6 +128,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn array_value(_ctx: & dyn ScViewCallContext) -> ArrayValueCall {
         let mut f = ArrayValueCall {
             func: ScView::new(HSC_NAME, HVIEW_ARRAY_VALUE),
@@ -132,6 +138,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn block_record(_ctx: & dyn ScViewCallContext) -> BlockRecordCall {
         let mut f = BlockRecordCall {
             func: ScView::new(HSC_NAME, HVIEW_BLOCK_RECORD),
@@ -141,6 +148,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn block_records(_ctx: & dyn ScViewCallContext) -> BlockRecordsCall {
         let mut f = BlockRecordsCall {
             func: ScView::new(HSC_NAME, HVIEW_BLOCK_RECORDS),
@@ -150,6 +158,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_random(_ctx: & dyn ScViewCallContext) -> GetRandomCall {
         let mut f = GetRandomCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_RANDOM),
@@ -158,6 +167,7 @@ impl ScFuncs {
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
     }
+
     pub fn iota_balance(_ctx: & dyn ScViewCallContext) -> IotaBalanceCall {
         let mut f = IotaBalanceCall {
             func: ScView::new(HSC_NAME, HVIEW_IOTA_BALANCE),

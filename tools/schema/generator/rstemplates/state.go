@@ -34,6 +34,7 @@ $#if state stateProxyImpl
 	"stateProxyImpl": `
 
 impl $TypeName {
+$#set separator $false
 $#each state proxyMethods
 }
 `,

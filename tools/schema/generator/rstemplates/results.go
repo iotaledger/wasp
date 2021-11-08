@@ -42,6 +42,7 @@ pub struct $TypeName {
 }
 
 impl $TypeName {
+$#set separator $false
 $#each result proxyMethods
 }
 `,

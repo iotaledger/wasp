@@ -48,6 +48,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_blob_field(_ctx: & dyn ScViewCallContext) -> GetBlobFieldCall {
         let mut f = GetBlobFieldCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_BLOB_FIELD),
@@ -57,6 +58,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_blob_info(_ctx: & dyn ScViewCallContext) -> GetBlobInfoCall {
         let mut f = GetBlobInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_BLOB_INFO),
@@ -66,6 +68,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn list_blobs(_ctx: & dyn ScViewCallContext) -> ListBlobsCall {
         let mut f = ListBlobsCall {
             func: ScView::new(HSC_NAME, HVIEW_LIST_BLOBS),

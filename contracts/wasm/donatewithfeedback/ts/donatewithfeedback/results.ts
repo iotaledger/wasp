@@ -9,7 +9,6 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableDonationResults extends wasmlib.ScMapID {
-
     amount(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultAmount]);
 	}
@@ -32,7 +31,6 @@ export class ImmutableDonationResults extends wasmlib.ScMapID {
 }
 
 export class MutableDonationResults extends wasmlib.ScMapID {
-
     amount(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultAmount]);
 	}
@@ -55,7 +53,6 @@ export class MutableDonationResults extends wasmlib.ScMapID {
 }
 
 export class ImmutableDonationInfoResults extends wasmlib.ScMapID {
-
     count(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultCount]);
 	}
@@ -70,7 +67,6 @@ export class ImmutableDonationInfoResults extends wasmlib.ScMapID {
 }
 
 export class MutableDonationInfoResults extends wasmlib.ScMapID {
-
     count(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultCount]);
 	}

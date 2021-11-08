@@ -20,7 +20,6 @@ pub struct ImmutableIncrementWithDelayParams {
 }
 
 impl ImmutableIncrementWithDelayParams {
-
     pub fn delay(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_DELAY))
 	}
@@ -32,7 +31,6 @@ pub struct MutableIncrementWithDelayParams {
 }
 
 impl MutableIncrementWithDelayParams {
-
     pub fn delay(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_DELAY))
 	}
@@ -44,7 +42,6 @@ pub struct ImmutableInitParams {
 }
 
 impl ImmutableInitParams {
-
     pub fn counter(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
 	}
@@ -56,7 +53,6 @@ pub struct MutableInitParams {
 }
 
 impl MutableInitParams {
-
     pub fn counter(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
 	}
@@ -68,7 +64,6 @@ pub struct ImmutableRepeatManyParams {
 }
 
 impl ImmutableRepeatManyParams {
-
     pub fn num_repeats(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_NUM_REPEATS))
 	}
@@ -80,7 +75,6 @@ pub struct MutableRepeatManyParams {
 }
 
 impl MutableRepeatManyParams {
-
     pub fn num_repeats(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_NUM_REPEATS))
 	}
@@ -92,7 +86,6 @@ pub struct ImmutableWhenMustIncrementParams {
 }
 
 impl ImmutableWhenMustIncrementParams {
-
     pub fn dummy(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_DUMMY))
 	}
@@ -104,7 +97,6 @@ pub struct MutableWhenMustIncrementParams {
 }
 
 impl MutableWhenMustIncrementParams {
-
     pub fn dummy(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_DUMMY))
 	}

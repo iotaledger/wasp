@@ -25,7 +25,6 @@ export class ArrayOfImmutableBytes {
 }
 
 export class ImmutableGetAllowedStateControllerAddressesResults extends wasmlib.ScMapID {
-
     allowedStateControllerAddresses(): sc.ArrayOfImmutableBytes {
 		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultAllowedStateControllerAddresses), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
 		return new sc.ArrayOfImmutableBytes(arrID);
@@ -53,7 +52,6 @@ export class ArrayOfMutableBytes {
 }
 
 export class MutableGetAllowedStateControllerAddressesResults extends wasmlib.ScMapID {
-
     allowedStateControllerAddresses(): sc.ArrayOfMutableBytes {
 		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultAllowedStateControllerAddresses), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
 		return new sc.ArrayOfMutableBytes(arrID);
@@ -61,7 +59,6 @@ export class MutableGetAllowedStateControllerAddressesResults extends wasmlib.Sc
 }
 
 export class ImmutableGetChainInfoResults extends wasmlib.ScMapID {
-
     chainID(): wasmlib.ScImmutableChainID {
 		return new wasmlib.ScImmutableChainID(this.mapID, wasmlib.Key32.fromString(sc.ResultChainID));
 	}
@@ -100,7 +97,6 @@ export class ImmutableGetChainInfoResults extends wasmlib.ScMapID {
 }
 
 export class MutableGetChainInfoResults extends wasmlib.ScMapID {
-
     chainID(): wasmlib.ScMutableChainID {
 		return new wasmlib.ScMutableChainID(this.mapID, wasmlib.Key32.fromString(sc.ResultChainID));
 	}
@@ -139,7 +135,6 @@ export class MutableGetChainInfoResults extends wasmlib.ScMapID {
 }
 
 export class ImmutableGetFeeInfoResults extends wasmlib.ScMapID {
-
     feeColor(): wasmlib.ScImmutableColor {
 		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ResultFeeColor));
 	}
@@ -154,7 +149,6 @@ export class ImmutableGetFeeInfoResults extends wasmlib.ScMapID {
 }
 
 export class MutableGetFeeInfoResults extends wasmlib.ScMapID {
-
     feeColor(): wasmlib.ScMutableColor {
 		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ResultFeeColor));
 	}
@@ -169,14 +163,12 @@ export class MutableGetFeeInfoResults extends wasmlib.ScMapID {
 }
 
 export class ImmutableGetMaxBlobSizeResults extends wasmlib.ScMapID {
-
     maxBlobSize(): wasmlib.ScImmutableInt32 {
 		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxBlobSize));
 	}
 }
 
 export class MutableGetMaxBlobSizeResults extends wasmlib.ScMapID {
-
     maxBlobSize(): wasmlib.ScMutableInt32 {
 		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxBlobSize));
 	}
