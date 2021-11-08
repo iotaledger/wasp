@@ -11,7 +11,7 @@ import (
 
 // package present processor interface. It must be implemented by VM
 
-// VMProcessor is a abstract interface to the VM processor instance.
+// VMProcessor is an interface to the VM processor instance.
 type VMProcessor interface {
 	GetEntryPoint(code Hname) (VMProcessorEntryPoint, bool)
 	GetDefaultEntryPoint() VMProcessorEntryPoint // return EP which can only be called with Sandbox
@@ -25,7 +25,4 @@ type VMProcessorEntryPoint interface {
 	IsView() bool
 }
 
-var (
-	ErrInternalWrongTypeEntryPoint = xerrors.New("internal error: wrong type of the entry point")
-	ErrWrongTypeEntryPoint         = xerrors.New("wrong type of the entry point")
-)
+var ErrWrongTypeEntryPoint = xerrors.New("wrong type of the entry point")

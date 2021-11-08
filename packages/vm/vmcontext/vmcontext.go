@@ -51,19 +51,22 @@ type VMContext struct {
 	// events related
 	maxEventSize    uint16
 	maxEventsPerReq uint16
-	// request context
+	// ---- request context
 	req                      iscp.Request
 	requestIndex             uint16
 	requestEventIndex        uint16
 	requestOutputCount       uint8
 	currentStateUpdate       state.StateUpdate
-	entropy                  hashing.HashValue // mutates with each request
+	entropy                  hashing.HashValue
 	contractRecord           *root.ContractRecord
-	lastError                error     // mutated
-	lastResult               dict.Dict // mutated. Used only by 'solo'
+	lastError                error
+	lastResult               dict.Dict
 	lastTotalAssets          colored.Balances
 	callStack                []*callContext
 	exceededBlockOutputLimit bool
+	// gas related
+	gas              int64
+	gasBudgetEnabled bool
 }
 
 type callContext struct {

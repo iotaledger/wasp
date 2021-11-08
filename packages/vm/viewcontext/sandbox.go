@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -12,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
+	"github.com/iotaledger/wasp/packages/vm/sandbox"
 )
 
 type sandboxview struct {
@@ -20,6 +21,9 @@ type sandboxview struct {
 	params        dict.Dict
 	state         kv.KVStoreReader
 	vctx          *Viewcontext
+	// gas related
+	gas              int64
+	gasBudgetEnabled bool
 }
 
 var _ iscp.SandboxView = &sandboxview{}
@@ -102,5 +106,25 @@ func (s *sandboxview) State() kv.KVStoreReader {
 }
 
 func (s *sandboxview) Utils() iscp.Utils {
-	return sandbox_utils.NewUtils()
+	return sandbox.NewUtils(s.Gas())
+}
+
+func (s *sandboxview) Gas() iscp.Gas {
+	return s
+}
+
+func (s *sandboxview) Burn(gas int64) {
+	s.gas -= gas
+	if s.gasBudgetEnabled && s.gas < 0 {
+		panic(coreutil.ErrorGasBudgetExceeded)
+	}
+}
+
+func (s *sandboxview) Budget() int64 {
+	return s.gas
+}
+
+func (s *sandboxview) SetBudget(gas int64) {
+	s.gas = gas
+	s.gasBudgetEnabled = s.gas > 0
 }

@@ -6,7 +6,7 @@ package wasmproc
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
+	"github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -17,7 +17,10 @@ type ScUtility struct {
 }
 
 func NewScUtility(wc *WasmContext) *ScUtility {
-	return &ScUtility{utils: sandbox_utils.NewUtils(), wc: wc}
+	if wc.ctx != nil {
+		return &ScUtility{utils: sandbox.NewUtils(wc.ctx.Gas()), wc: wc}
+	}
+	return &ScUtility{utils: sandbox.NewUtils(wc.ctxView.Gas()), wc: wc}
 }
 
 func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {

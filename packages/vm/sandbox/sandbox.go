@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
@@ -111,7 +110,7 @@ func (s *sandbox) State() kv.KVStore {
 }
 
 func (s *sandbox) Utils() iscp.Utils {
-	return sandbox_utils.NewUtils()
+	return NewUtils(s.Gas())
 }
 
 func (s *sandbox) BlockContext(construct func(ctx iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
@@ -120,4 +119,20 @@ func (s *sandbox) BlockContext(construct func(ctx iscp.Sandbox) interface{}, onC
 
 func (s *sandbox) StateAnchor() iscp.StateAnchor {
 	return s.vmctx
+}
+
+func (s *sandbox) Gas() iscp.Gas {
+	return s
+}
+
+func (s *sandbox) Burn(gas int64) {
+	s.vmctx.GasBurn(gas)
+}
+
+func (s *sandbox) Budget() int64 {
+	return s.vmctx.GasBudget()
+}
+
+func (s *sandbox) SetBudget(gasBudget int64) {
+	s.vmctx.GasBudget()
 }

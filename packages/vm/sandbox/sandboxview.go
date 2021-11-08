@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
@@ -69,5 +68,21 @@ func (s sandboxView) State() kv.KVStoreReader {
 }
 
 func (s sandboxView) Utils() iscp.Utils {
-	return sandbox_utils.NewUtils()
+	return NewUtils(s.Gas())
+}
+
+func (s sandboxView) Gas() iscp.Gas {
+	return s
+}
+
+func (s sandboxView) Burn(gas int64) {
+	s.vmctx.GasBurn(gas)
+}
+
+func (s sandboxView) Budget() int64 {
+	return s.vmctx.GasBudget()
+}
+
+func (s sandboxView) SetBudget(gasBudget int64) {
+	s.vmctx.GasSetBudget(gasBudget)
 }

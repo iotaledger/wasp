@@ -36,6 +36,8 @@ type SandboxBase interface {
 	Log() LogInterface
 	// Utils provides access to common necessary functionality
 	Utils() Utils
+	// Gas returns interface for gas related functions
+	Gas() Gas
 }
 
 // Sandbox is an interface given to the processor to access the VMContext
@@ -73,6 +75,12 @@ type Sandbox interface {
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// properties of the anchor output
 	StateAnchor() StateAnchor
+}
+
+type Gas interface {
+	Burn(int64)
+	Budget() int64
+	SetBudget(int64)
 }
 
 // properties of the anchor output/transaction in the current context

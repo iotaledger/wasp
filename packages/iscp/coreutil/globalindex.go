@@ -5,7 +5,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var ErrorStateInvalidated = xerrors.New("virtual state has been invalidated")
+var (
+	ErrorStateInvalidated  = xerrors.New("virtual state has been invalidated")
+	ErrorGasBudgetExceeded = xerrors.New("gas budget exceeded")
+)
 
 // ChainStateSync and StateBaseline interfaces implements optimistic (non-blocking) access to the
 // global state (database) of the chain
