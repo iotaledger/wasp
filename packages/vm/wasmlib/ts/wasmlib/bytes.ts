@@ -11,6 +11,9 @@ export class BytesDecoder {
 
     // constructs a decoder
     constructor(data: u8[]) {
+        if (data.length == 0) {
+            panic("cannot decode empty byte array, use exist()");
+        }
         this.buf = data;
     }
 

@@ -8,6 +8,9 @@ type BytesDecoder struct {
 }
 
 func NewBytesDecoder(data []byte) *BytesDecoder {
+	if len(data) == 0 {
+		panic("cannot decode empty byte array, use exist()")
+	}
 	return &BytesDecoder{data: data}
 }
 
