@@ -196,8 +196,8 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	onLedgerRequests, keyPair := getRequestsOnLedger(t, 2)
 
 	offFromOnLedgerFun := func(onLedger *request.OnLedger) *request.OffLedger {
-		contract, emptyPoint := onLedger.Target()
-		return request.NewOffLedger(contract, emptyPoint, onLedger.GetMetadata().Args())
+		target := onLedger.Target()
+		return request.NewOffLedger(target.Contract, target.EntryPoint, onLedger.GetMetadata().Args())
 	}
 	offLedgerRequestUnsigned := offFromOnLedgerFun(onLedgerRequests[0])
 	offLedgerRequestSigned := offFromOnLedgerFun(onLedgerRequests[1])
