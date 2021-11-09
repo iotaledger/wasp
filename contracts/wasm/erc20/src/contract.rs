@@ -64,6 +64,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn init(_ctx: & dyn ScFuncCallContext) -> InitCall {
         let mut f = InitCall {
             func: ScInitFunc::new(HSC_NAME, HFUNC_INIT),
@@ -72,6 +73,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn transfer(_ctx: & dyn ScFuncCallContext) -> TransferCall {
         let mut f = TransferCall {
             func: ScFunc::new(HSC_NAME, HFUNC_TRANSFER),
@@ -80,6 +82,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn transfer_from(_ctx: & dyn ScFuncCallContext) -> TransferFromCall {
         let mut f = TransferFromCall {
             func: ScFunc::new(HSC_NAME, HFUNC_TRANSFER_FROM),
@@ -88,6 +91,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn allowance(_ctx: & dyn ScViewCallContext) -> AllowanceCall {
         let mut f = AllowanceCall {
             func: ScView::new(HSC_NAME, HVIEW_ALLOWANCE),
@@ -97,6 +101,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn balance_of(_ctx: & dyn ScViewCallContext) -> BalanceOfCall {
         let mut f = BalanceOfCall {
             func: ScView::new(HSC_NAME, HVIEW_BALANCE_OF),
@@ -106,6 +111,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn total_supply(_ctx: & dyn ScViewCallContext) -> TotalSupplyCall {
         let mut f = TotalSupplyCall {
             func: ScView::new(HSC_NAME, HVIEW_TOTAL_SUPPLY),

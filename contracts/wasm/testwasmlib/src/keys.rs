@@ -11,32 +11,34 @@ use wasmlib::*;
 
 use crate::*;
 
-pub(crate) const IDX_PARAM_ADDRESS: usize = 0;
-pub(crate) const IDX_PARAM_AGENT_ID: usize = 1;
-pub(crate) const IDX_PARAM_BLOCK_INDEX: usize = 2;
-pub(crate) const IDX_PARAM_BYTES: usize = 3;
-pub(crate) const IDX_PARAM_CHAIN_ID: usize = 4;
-pub(crate) const IDX_PARAM_COLOR: usize = 5;
-pub(crate) const IDX_PARAM_HASH: usize = 6;
-pub(crate) const IDX_PARAM_HNAME: usize = 7;
-pub(crate) const IDX_PARAM_INDEX: usize = 8;
-pub(crate) const IDX_PARAM_INT16: usize = 9;
-pub(crate) const IDX_PARAM_INT32: usize = 10;
-pub(crate) const IDX_PARAM_INT64: usize = 11;
-pub(crate) const IDX_PARAM_NAME: usize = 12;
-pub(crate) const IDX_PARAM_PARAM: usize = 13;
-pub(crate) const IDX_PARAM_RECORD_INDEX: usize = 14;
-pub(crate) const IDX_PARAM_REQUEST_ID: usize = 15;
-pub(crate) const IDX_PARAM_STRING: usize = 16;
-pub(crate) const IDX_PARAM_VALUE: usize = 17;
-pub(crate) const IDX_RESULT_COUNT: usize = 18;
-pub(crate) const IDX_RESULT_IOTAS: usize = 19;
-pub(crate) const IDX_RESULT_LENGTH: usize = 20;
-pub(crate) const IDX_RESULT_RANDOM: usize = 21;
-pub(crate) const IDX_RESULT_RECORD: usize = 22;
-pub(crate) const IDX_RESULT_VALUE: usize = 23;
-pub(crate) const IDX_STATE_ARRAYS: usize = 24;
-pub(crate) const IDX_STATE_RANDOM: usize = 25;
+pub(crate) const IDX_PARAM_ADDRESS      : usize = 0;
+pub(crate) const IDX_PARAM_AGENT_ID     : usize = 1;
+pub(crate) const IDX_PARAM_BLOCK_INDEX  : usize = 2;
+pub(crate) const IDX_PARAM_BYTES        : usize = 3;
+pub(crate) const IDX_PARAM_CHAIN_ID     : usize = 4;
+pub(crate) const IDX_PARAM_COLOR        : usize = 5;
+pub(crate) const IDX_PARAM_HASH         : usize = 6;
+pub(crate) const IDX_PARAM_HNAME        : usize = 7;
+pub(crate) const IDX_PARAM_INDEX        : usize = 8;
+pub(crate) const IDX_PARAM_INT16        : usize = 9;
+pub(crate) const IDX_PARAM_INT32        : usize = 10;
+pub(crate) const IDX_PARAM_INT64        : usize = 11;
+pub(crate) const IDX_PARAM_NAME         : usize = 12;
+pub(crate) const IDX_PARAM_PARAM        : usize = 13;
+pub(crate) const IDX_PARAM_RECORD_INDEX : usize = 14;
+pub(crate) const IDX_PARAM_REQUEST_ID   : usize = 15;
+pub(crate) const IDX_PARAM_STRING       : usize = 16;
+pub(crate) const IDX_PARAM_VALUE        : usize = 17;
+
+pub(crate) const IDX_RESULT_COUNT  : usize = 18;
+pub(crate) const IDX_RESULT_IOTAS  : usize = 19;
+pub(crate) const IDX_RESULT_LENGTH : usize = 20;
+pub(crate) const IDX_RESULT_RANDOM : usize = 21;
+pub(crate) const IDX_RESULT_RECORD : usize = 22;
+pub(crate) const IDX_RESULT_VALUE  : usize = 23;
+
+pub(crate) const IDX_STATE_ARRAYS : usize = 24;
+pub(crate) const IDX_STATE_RANDOM : usize = 25;
 
 pub const KEY_MAP_LEN: usize = 26;
 

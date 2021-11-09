@@ -315,7 +315,6 @@ export class TestSandboxCallContext {
 }
 
 export class ScFuncs {
-
     static callOnChain(ctx: wasmlib.ScFuncCallContext): CallOnChainCall {
         let f = new CallOnChainCall();
         f.func.setPtrs(f.params, f.results);

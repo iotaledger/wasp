@@ -14,12 +14,12 @@ export function on_call(index: i32): void {
 
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncDivide, funcDivideThunk);
-    exports.addFunc(sc.FuncInit, funcInitThunk);
-    exports.addFunc(sc.FuncMember, funcMemberThunk);
-    exports.addFunc(sc.FuncSetOwner, funcSetOwnerThunk);
+    exports.addFunc(sc.FuncDivide,    funcDivideThunk);
+    exports.addFunc(sc.FuncInit,      funcInitThunk);
+    exports.addFunc(sc.FuncMember,    funcMemberThunk);
+    exports.addFunc(sc.FuncSetOwner,  funcSetOwnerThunk);
     exports.addView(sc.ViewGetFactor, viewGetFactorThunk);
-    exports.addView(sc.ViewGetOwner, viewGetOwnerThunk);
+    exports.addView(sc.ViewGetOwner,  viewGetOwnerThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
@@ -45,7 +45,8 @@ function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
 
 function funcMemberThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("dividend.funcMember");
-    // only defined owner of contract can add members
+
+	// only defined owner of contract can add members
 	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("owner"));
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller().equals(access.value()), "no permission");
@@ -61,7 +62,8 @@ function funcMemberThunk(ctx: wasmlib.ScFuncContext): void {
 
 function funcSetOwnerThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("dividend.funcSetOwner");
-    // only defined owner of contract can change owner
+
+	// only defined owner of contract can change owner
 	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("owner"));
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller().equals(access.value()), "no permission");

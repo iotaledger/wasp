@@ -16,23 +16,23 @@ const (
 )
 
 const (
-	ParamBlockIndex    = wasmlib.Key("n")
-	ParamContractHname = wasmlib.Key("h")
-	ParamFromBlock     = wasmlib.Key("f")
-	ParamRequestID     = wasmlib.Key("u")
-	ParamToBlock       = wasmlib.Key("t")
+	ParamBlockIndex    = "n"
+	ParamContractHname = "h"
+	ParamFromBlock     = "f"
+	ParamRequestID     = "u"
+	ParamToBlock       = "t"
 )
 
 const (
-	ResultBlockIndex             = wasmlib.Key("n")
-	ResultBlockInfo              = wasmlib.Key("i")
-	ResultEvent                  = wasmlib.Key("e")
-	ResultGoverningAddress       = wasmlib.Key("g")
-	ResultRequestID              = wasmlib.Key("u")
-	ResultRequestIndex           = wasmlib.Key("r")
-	ResultRequestProcessed       = wasmlib.Key("p")
-	ResultRequestRecord          = wasmlib.Key("d")
-	ResultStateControllerAddress = wasmlib.Key("s")
+	ResultBlockIndex             = "n"
+	ResultBlockInfo              = "i"
+	ResultEvent                  = "e"
+	ResultGoverningAddress       = "g"
+	ResultRequestID              = "u"
+	ResultRequestIndex           = "r"
+	ResultRequestProcessed       = "p"
+	ResultRequestRecord          = "d"
+	ResultStateControllerAddress = "s"
 )
 
 const (

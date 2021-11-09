@@ -37,7 +37,6 @@ export class MapColorToImmutableToken {
 }
 
 export class ImmutableTokenRegistryState extends wasmlib.ScMapID {
-
     colorList(): sc.ArrayOfImmutableColor {
 		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateColorList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_COLOR);
 		return new sc.ArrayOfImmutableColor(arrID);
@@ -86,7 +85,6 @@ export class MapColorToMutableToken {
 }
 
 export class MutableTokenRegistryState extends wasmlib.ScMapID {
-
     colorList(): sc.ArrayOfMutableColor {
 		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateColorList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_COLOR);
 		return new sc.ArrayOfMutableColor(arrID);

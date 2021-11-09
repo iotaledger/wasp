@@ -14,11 +14,11 @@ type ImmutableFindContractResults struct {
 }
 
 func (s ImmutableFindContractResults) ContractFound() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, ResultContractFound.KeyID())
+	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultContractFound))
 }
 
 func (s ImmutableFindContractResults) ContractRecData() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, ResultContractRecData.KeyID())
+	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultContractRecData))
 }
 
 type MutableFindContractResults struct {
@@ -26,11 +26,11 @@ type MutableFindContractResults struct {
 }
 
 func (s MutableFindContractResults) ContractFound() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, ResultContractFound.KeyID())
+	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultContractFound))
 }
 
 func (s MutableFindContractResults) ContractRecData() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, ResultContractRecData.KeyID())
+	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultContractRecData))
 }
 
 type MapHnameToImmutableBytes struct {
@@ -46,7 +46,7 @@ type ImmutableGetContractRecordsResults struct {
 }
 
 func (s ImmutableGetContractRecordsResults) ContractRegistry() MapHnameToImmutableBytes {
-	mapID := wasmlib.GetObjectID(s.id, ResultContractRegistry.KeyID(), wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultContractRegistry), wasmlib.TYPE_MAP)
 	return MapHnameToImmutableBytes{objID: mapID}
 }
 
@@ -67,6 +67,6 @@ type MutableGetContractRecordsResults struct {
 }
 
 func (s MutableGetContractRecordsResults) ContractRegistry() MapHnameToMutableBytes {
-	mapID := wasmlib.GetObjectID(s.id, ResultContractRegistry.KeyID(), wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultContractRegistry), wasmlib.TYPE_MAP)
 	return MapHnameToMutableBytes{objID: mapID}
 }

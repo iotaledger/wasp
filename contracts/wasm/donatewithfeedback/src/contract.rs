@@ -48,6 +48,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn withdraw(_ctx: & dyn ScFuncCallContext) -> WithdrawCall {
         let mut f = WithdrawCall {
             func: ScFunc::new(HSC_NAME, HFUNC_WITHDRAW),
@@ -56,6 +57,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn donation(_ctx: & dyn ScViewCallContext) -> DonationCall {
         let mut f = DonationCall {
             func: ScView::new(HSC_NAME, HVIEW_DONATION),
@@ -65,6 +67,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn donation_info(_ctx: & dyn ScViewCallContext) -> DonationInfoCall {
         let mut f = DonationInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_DONATION_INFO),

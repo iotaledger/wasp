@@ -9,7 +9,6 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableAddAllowedStateControllerAddressParams extends wasmlib.ScMapID {
-
     chainOwner(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamChainOwner));
 	}
@@ -24,7 +23,6 @@ export class ImmutableAddAllowedStateControllerAddressParams extends wasmlib.ScM
 }
 
 export class MutableAddAllowedStateControllerAddressParams extends wasmlib.ScMapID {
-
     chainOwner(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamChainOwner));
 	}
@@ -39,49 +37,42 @@ export class MutableAddAllowedStateControllerAddressParams extends wasmlib.ScMap
 }
 
 export class ImmutableDelegateChainOwnershipParams extends wasmlib.ScMapID {
-
     chainOwner(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamChainOwner));
 	}
 }
 
 export class MutableDelegateChainOwnershipParams extends wasmlib.ScMapID {
-
     chainOwner(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamChainOwner));
 	}
 }
 
 export class ImmutableRemoveAllowedStateControllerAddressParams extends wasmlib.ScMapID {
-
     stateControllerAddress(): wasmlib.ScImmutableAddress {
 		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamStateControllerAddress));
 	}
 }
 
 export class MutableRemoveAllowedStateControllerAddressParams extends wasmlib.ScMapID {
-
     stateControllerAddress(): wasmlib.ScMutableAddress {
 		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamStateControllerAddress));
 	}
 }
 
 export class ImmutableRotateStateControllerParams extends wasmlib.ScMapID {
-
     stateControllerAddress(): wasmlib.ScImmutableAddress {
 		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamStateControllerAddress));
 	}
 }
 
 export class MutableRotateStateControllerParams extends wasmlib.ScMapID {
-
     stateControllerAddress(): wasmlib.ScMutableAddress {
 		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamStateControllerAddress));
 	}
 }
 
 export class ImmutableSetChainInfoParams extends wasmlib.ScMapID {
-
     maxBlobSize(): wasmlib.ScImmutableInt32 {
 		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamMaxBlobSize));
 	}
@@ -104,7 +95,6 @@ export class ImmutableSetChainInfoParams extends wasmlib.ScMapID {
 }
 
 export class MutableSetChainInfoParams extends wasmlib.ScMapID {
-
     maxBlobSize(): wasmlib.ScMutableInt32 {
 		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamMaxBlobSize));
 	}
@@ -127,7 +117,6 @@ export class MutableSetChainInfoParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableSetContractFeeParams extends wasmlib.ScMapID {
-
     hname(): wasmlib.ScImmutableHname {
 		return new wasmlib.ScImmutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
 	}
@@ -142,7 +131,6 @@ export class ImmutableSetContractFeeParams extends wasmlib.ScMapID {
 }
 
 export class MutableSetContractFeeParams extends wasmlib.ScMapID {
-
     hname(): wasmlib.ScMutableHname {
 		return new wasmlib.ScMutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
 	}
@@ -157,7 +145,6 @@ export class MutableSetContractFeeParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableSetDefaultFeeParams extends wasmlib.ScMapID {
-
     ownerFee(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerFee));
 	}
@@ -168,7 +155,6 @@ export class ImmutableSetDefaultFeeParams extends wasmlib.ScMapID {
 }
 
 export class MutableSetDefaultFeeParams extends wasmlib.ScMapID {
-
     ownerFee(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerFee));
 	}
@@ -179,14 +165,12 @@ export class MutableSetDefaultFeeParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableGetFeeInfoParams extends wasmlib.ScMapID {
-
     hname(): wasmlib.ScImmutableHname {
 		return new wasmlib.ScImmutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
 	}
 }
 
 export class MutableGetFeeInfoParams extends wasmlib.ScMapID {
-
     hname(): wasmlib.ScMutableHname {
 		return new wasmlib.ScMutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
 	}

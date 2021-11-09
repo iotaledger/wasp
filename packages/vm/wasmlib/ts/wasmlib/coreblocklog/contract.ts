@@ -67,7 +67,6 @@ export class IsRequestProcessedCall {
 }
 
 export class ScFuncs {
-
     static controlAddresses(ctx: wasmlib.ScViewCallContext): ControlAddressesCall {
         let f = new ControlAddressesCall();
         f.func.setPtrs(null, f.results);

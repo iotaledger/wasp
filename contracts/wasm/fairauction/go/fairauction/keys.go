@@ -10,11 +10,12 @@ package fairauction
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
-	IdxParamColor          = 0
-	IdxParamDescription    = 1
-	IdxParamDuration       = 2
-	IdxParamMinimumBid     = 3
-	IdxParamOwnerMargin    = 4
+	IdxParamColor       = 0
+	IdxParamDescription = 1
+	IdxParamDuration    = 2
+	IdxParamMinimumBid  = 3
+	IdxParamOwnerMargin = 4
+
 	IdxResultBidders       = 5
 	IdxResultColor         = 6
 	IdxResultCreator       = 7
@@ -27,10 +28,11 @@ const (
 	IdxResultNumTokens     = 14
 	IdxResultOwnerMargin   = 15
 	IdxResultWhenStarted   = 16
-	IdxStateAuctions       = 17
-	IdxStateBidderList     = 18
-	IdxStateBids           = 19
-	IdxStateOwnerMargin    = 20
+
+	IdxStateAuctions    = 17
+	IdxStateBidderList  = 18
+	IdxStateBids        = 19
+	IdxStateOwnerMargin = 20
 )
 
 const keyMapLen = 21

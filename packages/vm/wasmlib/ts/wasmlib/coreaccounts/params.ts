@@ -9,21 +9,18 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableDepositParams extends wasmlib.ScMapID {
-
     agentID(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
 	}
 }
 
 export class MutableDepositParams extends wasmlib.ScMapID {
-
     agentID(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
 	}
 }
 
 export class ImmutableHarvestParams extends wasmlib.ScMapID {
-
     withdrawAmount(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamWithdrawAmount));
 	}
@@ -34,7 +31,6 @@ export class ImmutableHarvestParams extends wasmlib.ScMapID {
 }
 
 export class MutableHarvestParams extends wasmlib.ScMapID {
-
     withdrawAmount(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamWithdrawAmount));
 	}
@@ -45,28 +41,24 @@ export class MutableHarvestParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableBalanceParams extends wasmlib.ScMapID {
-
     agentID(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
 	}
 }
 
 export class MutableBalanceParams extends wasmlib.ScMapID {
-
     agentID(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
 	}
 }
 
 export class ImmutableGetAccountNonceParams extends wasmlib.ScMapID {
-
     agentID(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
 	}
 }
 
 export class MutableGetAccountNonceParams extends wasmlib.ScMapID {
-
     agentID(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
 	}

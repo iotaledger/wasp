@@ -11,26 +11,26 @@ use wasmlib::*;
 use wasmlib::host::*;
 
 pub struct Token {
-    pub created: i64,  // creation timestamp
-    pub description: String,  // description what minted token represents
-    pub minted_by: ScAgentID,  // original minter
-    pub owner: ScAgentID,  // current owner
-    pub supply: i64,  // amount of tokens originally minted
-    pub updated: i64,  // last update timestamp
-    pub user_defined: String,  // any user defined text
+    pub created      : i64,  // creation timestamp
+    pub description  : String,  // description what minted token represents
+    pub minted_by    : ScAgentID,  // original minter
+    pub owner        : ScAgentID,  // current owner
+    pub supply       : i64,  // amount of tokens originally minted
+    pub updated      : i64,  // last update timestamp
+    pub user_defined : String,  // any user defined text
 }
 
 impl Token {
     pub fn from_bytes(bytes: &[u8]) -> Token {
         let mut decode = BytesDecoder::new(bytes);
         Token {
-            created: decode.int64(),
-            description: decode.string(),
-            minted_by: decode.agent_id(),
-            owner: decode.agent_id(),
-            supply: decode.int64(),
-            updated: decode.int64(),
-            user_defined: decode.string(),
+            created      : decode.int64(),
+            description  : decode.string(),
+            minted_by    : decode.agent_id(),
+            owner        : decode.agent_id(),
+            supply       : decode.int64(),
+            updated      : decode.int64(),
+            user_defined : decode.string(),
         }
     }
 

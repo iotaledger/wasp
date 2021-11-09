@@ -20,7 +20,6 @@ pub struct ImmutableGetTimestampResults {
 }
 
 impl ImmutableGetTimestampResults {
-
     pub fn timestamp(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_TIMESTAMP))
 	}
@@ -32,7 +31,6 @@ pub struct MutableGetTimestampResults {
 }
 
 impl MutableGetTimestampResults {
-
     pub fn timestamp(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_TIMESTAMP))
 	}

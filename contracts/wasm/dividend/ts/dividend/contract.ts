@@ -69,7 +69,6 @@ export class GetOwnerContext {
 }
 
 export class ScFuncs {
-
     static divide(ctx: wasmlib.ScFuncCallContext): DivideCall {
         return new DivideCall();
     }

@@ -8,19 +8,21 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
-export const IdxParamAmount = 0;
+export const IdxParamAmount   = 0;
 export const IdxParamFeedback = 1;
-export const IdxParamNr = 2;
-export const IdxResultAmount = 3;
-export const IdxResultCount = 4;
-export const IdxResultDonator = 5;
-export const IdxResultError = 6;
-export const IdxResultFeedback = 7;
-export const IdxResultMaxDonation = 8;
-export const IdxResultTimestamp = 9;
+export const IdxParamNr       = 2;
+
+export const IdxResultAmount        = 3;
+export const IdxResultCount         = 4;
+export const IdxResultDonator       = 5;
+export const IdxResultError         = 6;
+export const IdxResultFeedback      = 7;
+export const IdxResultMaxDonation   = 8;
+export const IdxResultTimestamp     = 9;
 export const IdxResultTotalDonation = 10;
-export const IdxStateLog = 11;
-export const IdxStateMaxDonation = 12;
+
+export const IdxStateLog           = 11;
+export const IdxStateMaxDonation   = 12;
 export const IdxStateTotalDonation = 13;
 
 export let keyMap: string[] = [

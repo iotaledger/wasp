@@ -21,7 +21,6 @@ pub struct ImmutableGetInfoResults {
 }
 
 impl ImmutableGetInfoResults {
-
     pub fn bidders(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_BIDDERS))
 	}
@@ -77,7 +76,6 @@ pub struct MutableGetInfoResults {
 }
 
 impl MutableGetInfoResults {
-
     pub fn bidders(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, idx_map(IDX_RESULT_BIDDERS))
 	}

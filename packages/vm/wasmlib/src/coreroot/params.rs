@@ -18,7 +18,6 @@ pub struct ImmutableDeployContractParams {
 }
 
 impl ImmutableDeployContractParams {
-
     pub fn description(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, PARAM_DESCRIPTION.get_key_id())
 	}
@@ -38,7 +37,6 @@ pub struct MutableDeployContractParams {
 }
 
 impl MutableDeployContractParams {
-
     pub fn description(&self) -> ScMutableString {
 		ScMutableString::new(self.id, PARAM_DESCRIPTION.get_key_id())
 	}
@@ -58,7 +56,6 @@ pub struct ImmutableGrantDeployPermissionParams {
 }
 
 impl ImmutableGrantDeployPermissionParams {
-
     pub fn deployer(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
 	}
@@ -70,7 +67,6 @@ pub struct MutableGrantDeployPermissionParams {
 }
 
 impl MutableGrantDeployPermissionParams {
-
     pub fn deployer(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
 	}
@@ -82,7 +78,6 @@ pub struct ImmutableRevokeDeployPermissionParams {
 }
 
 impl ImmutableRevokeDeployPermissionParams {
-
     pub fn deployer(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
 	}
@@ -94,7 +89,6 @@ pub struct MutableRevokeDeployPermissionParams {
 }
 
 impl MutableRevokeDeployPermissionParams {
-
     pub fn deployer(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
 	}
@@ -106,7 +100,6 @@ pub struct ImmutableFindContractParams {
 }
 
 impl ImmutableFindContractParams {
-
     pub fn hname(&self) -> ScImmutableHname {
 		ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
 	}
@@ -118,7 +111,6 @@ pub struct MutableFindContractParams {
 }
 
 impl MutableFindContractParams {
-
     pub fn hname(&self) -> ScMutableHname {
 		ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
 	}

@@ -8,6 +8,10 @@ var commonTemplates = map[string]string{
 	"nil": `
 `,
 	// *******************************
+	"newline": `
+
+`,
+	// *******************************
 	"copyright": `
 $#emit initGlobals
 // Copyright 2020 IOTA Stiftung
@@ -38,5 +42,16 @@ func TestDeploy(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, $package.ScName, $package.OnLoad)
 	require.NoError(t, ctx.ContractExists($package.ScName))
 }
+`,
+	// *******************************
+	"setupInitFunc": `
+$#set initFunc 
+$#set initMap 
+$#if init setInitFunc
+`,
+	// *******************************
+	"setInitFunc": `
+$#set initFunc Init
+$#set initMap , keyMap[:], idxMap[:]
 `,
 }

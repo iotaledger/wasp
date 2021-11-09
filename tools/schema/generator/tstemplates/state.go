@@ -16,6 +16,7 @@ $#set TypeName $mut$Package$+State
 $#each state proxyContainers
 
 export class $TypeName extends wasmlib.ScMapID {
+$#set separator $false
 $#each state proxyMethods
 }
 `,

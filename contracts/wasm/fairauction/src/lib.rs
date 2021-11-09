@@ -32,10 +32,10 @@ mod fairauction;
 fn on_load() {
     let exports = ScExports::new();
     exports.add_func(FUNC_FINALIZE_AUCTION, func_finalize_auction_thunk);
-    exports.add_func(FUNC_PLACE_BID, func_place_bid_thunk);
+    exports.add_func(FUNC_PLACE_BID,        func_place_bid_thunk);
     exports.add_func(FUNC_SET_OWNER_MARGIN, func_set_owner_margin_thunk);
-    exports.add_func(FUNC_START_AUCTION, func_start_auction_thunk);
-    exports.add_view(VIEW_GET_INFO, view_get_info_thunk);
+    exports.add_func(FUNC_START_AUCTION,    func_start_auction_thunk);
+    exports.add_view(VIEW_GET_INFO,         view_get_info_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {
@@ -51,7 +51,8 @@ pub struct FinalizeAuctionContext {
 
 fn func_finalize_auction_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairauction.funcFinalizeAuction");
-    // only SC itself can invoke this function
+
+	// only SC itself can invoke this function
 	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
 	let f = FinalizeAuctionContext {
@@ -94,8 +95,9 @@ pub struct SetOwnerMarginContext {
 
 fn func_set_owner_margin_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairauction.funcSetOwnerMargin");
-    // only SC creator can set owner margin
-		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+	// only SC creator can set owner margin
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = SetOwnerMarginContext {
 		params: ImmutableSetOwnerMarginParams {

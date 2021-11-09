@@ -66,16 +66,19 @@ impl ScFuncs {
             func: ScFunc::new(HSC_NAME, HFUNC_FORCE_PAYOUT),
         }
     }
+
     pub fn force_reset(_ctx: & dyn ScFuncCallContext) -> ForceResetCall {
         ForceResetCall {
             func: ScFunc::new(HSC_NAME, HFUNC_FORCE_RESET),
         }
     }
+
     pub fn pay_winners(_ctx: & dyn ScFuncCallContext) -> PayWinnersCall {
         PayWinnersCall {
             func: ScFunc::new(HSC_NAME, HFUNC_PAY_WINNERS),
         }
     }
+
     pub fn place_bet(_ctx: & dyn ScFuncCallContext) -> PlaceBetCall {
         let mut f = PlaceBetCall {
             func: ScFunc::new(HSC_NAME, HFUNC_PLACE_BET),
@@ -84,6 +87,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn play_period(_ctx: & dyn ScFuncCallContext) -> PlayPeriodCall {
         let mut f = PlayPeriodCall {
             func: ScFunc::new(HSC_NAME, HFUNC_PLAY_PERIOD),
@@ -92,6 +96,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn last_winning_number(_ctx: & dyn ScViewCallContext) -> LastWinningNumberCall {
         let mut f = LastWinningNumberCall {
             func: ScView::new(HSC_NAME, HVIEW_LAST_WINNING_NUMBER),
@@ -100,6 +105,7 @@ impl ScFuncs {
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
     }
+
     pub fn round_number(_ctx: & dyn ScViewCallContext) -> RoundNumberCall {
         let mut f = RoundNumberCall {
             func: ScView::new(HSC_NAME, HVIEW_ROUND_NUMBER),
@@ -108,6 +114,7 @@ impl ScFuncs {
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
     }
+
     pub fn round_started_at(_ctx: & dyn ScViewCallContext) -> RoundStartedAtCall {
         let mut f = RoundStartedAtCall {
             func: ScView::new(HSC_NAME, HVIEW_ROUND_STARTED_AT),
@@ -116,6 +123,7 @@ impl ScFuncs {
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
     }
+
     pub fn round_status(_ctx: & dyn ScViewCallContext) -> RoundStatusCall {
         let mut f = RoundStatusCall {
             func: ScView::new(HSC_NAME, HVIEW_ROUND_STATUS),

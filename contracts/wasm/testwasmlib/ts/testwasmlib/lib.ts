@@ -14,17 +14,17 @@ export function on_call(index: i32): void {
 
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncArrayClear, funcArrayClearThunk);
-    exports.addFunc(sc.FuncArrayCreate, funcArrayCreateThunk);
-    exports.addFunc(sc.FuncArraySet, funcArraySetThunk);
-    exports.addFunc(sc.FuncParamTypes, funcParamTypesThunk);
-    exports.addFunc(sc.FuncRandom, funcRandomThunk);
-    exports.addView(sc.ViewArrayLength, viewArrayLengthThunk);
-    exports.addView(sc.ViewArrayValue, viewArrayValueThunk);
-    exports.addView(sc.ViewBlockRecord, viewBlockRecordThunk);
+    exports.addFunc(sc.FuncArrayClear,   funcArrayClearThunk);
+    exports.addFunc(sc.FuncArrayCreate,  funcArrayCreateThunk);
+    exports.addFunc(sc.FuncArraySet,     funcArraySetThunk);
+    exports.addFunc(sc.FuncParamTypes,   funcParamTypesThunk);
+    exports.addFunc(sc.FuncRandom,       funcRandomThunk);
+    exports.addView(sc.ViewArrayLength,  viewArrayLengthThunk);
+    exports.addView(sc.ViewArrayValue,   viewArrayValueThunk);
+    exports.addView(sc.ViewBlockRecord,  viewBlockRecordThunk);
     exports.addView(sc.ViewBlockRecords, viewBlockRecordsThunk);
-    exports.addView(sc.ViewGetRandom, viewGetRandomThunk);
-    exports.addView(sc.ViewIotaBalance, viewIotaBalanceThunk);
+    exports.addView(sc.ViewGetRandom,    viewGetRandomThunk);
+    exports.addView(sc.ViewIotaBalance,  viewIotaBalanceThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);

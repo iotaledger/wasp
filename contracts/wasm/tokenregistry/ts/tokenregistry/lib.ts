@@ -14,10 +14,10 @@ export function on_call(index: i32): void {
 
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncMintSupply, funcMintSupplyThunk);
+    exports.addFunc(sc.FuncMintSupply,        funcMintSupplyThunk);
     exports.addFunc(sc.FuncTransferOwnership, funcTransferOwnershipThunk);
-    exports.addFunc(sc.FuncUpdateMetadata, funcUpdateMetadataThunk);
-    exports.addView(sc.ViewGetInfo, viewGetInfoThunk);
+    exports.addFunc(sc.FuncUpdateMetadata,    funcUpdateMetadataThunk);
+    exports.addView(sc.ViewGetInfo,           viewGetInfoThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
@@ -35,7 +35,8 @@ function funcMintSupplyThunk(ctx: wasmlib.ScFuncContext): void {
 
 function funcTransferOwnershipThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("tokenregistry.funcTransferOwnership");
-    // TODO the one who can transfer token ownership
+
+	// TODO the one who can transfer token ownership
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 	let f = new sc.TransferOwnershipContext();
@@ -48,7 +49,8 @@ function funcTransferOwnershipThunk(ctx: wasmlib.ScFuncContext): void {
 
 function funcUpdateMetadataThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("tokenregistry.funcUpdateMetadata");
-    // TODO the one who can change the token info
+
+	// TODO the one who can change the token info
 	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
 
 	let f = new sc.UpdateMetadataContext();

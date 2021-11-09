@@ -16,11 +16,11 @@ const (
 )
 
 const (
-	ResultTimestamp = wasmlib.Key("timestamp")
+	ResultTimestamp = "timestamp"
 )
 
 const (
-	StateTimestamp = wasmlib.Key("timestamp")
+	StateTimestamp = "timestamp"
 )
 
 const (

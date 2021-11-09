@@ -16,7 +16,7 @@ const (
 )
 
 const (
-	ResultHelloWorld = wasmlib.Key("helloWorld")
+	ResultHelloWorld = "helloWorld"
 )
 
 const (

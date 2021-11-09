@@ -26,7 +26,7 @@ type ImmutableGetAllowedStateControllerAddressesResults struct {
 }
 
 func (s ImmutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfImmutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultAllowedStateControllerAddresses.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultAllowedStateControllerAddresses), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfImmutableBytes{objID: arrID}
 }
 
@@ -51,7 +51,7 @@ type MutableGetAllowedStateControllerAddressesResults struct {
 }
 
 func (s MutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfMutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultAllowedStateControllerAddresses.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultAllowedStateControllerAddresses), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfMutableBytes{objID: arrID}
 }
 
@@ -60,39 +60,39 @@ type ImmutableGetChainInfoResults struct {
 }
 
 func (s ImmutableGetChainInfoResults) ChainID() wasmlib.ScImmutableChainID {
-	return wasmlib.NewScImmutableChainID(s.id, ResultChainID.KeyID())
+	return wasmlib.NewScImmutableChainID(s.id, wasmlib.KeyID(ResultChainID))
 }
 
 func (s ImmutableGetChainInfoResults) ChainOwnerID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, ResultChainOwnerID.KeyID())
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
 }
 
 func (s ImmutableGetChainInfoResults) DefaultOwnerFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ResultDefaultOwnerFee.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultDefaultOwnerFee))
 }
 
 func (s ImmutableGetChainInfoResults) DefaultValidatorFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ResultDefaultValidatorFee.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultDefaultValidatorFee))
 }
 
 func (s ImmutableGetChainInfoResults) Description() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, ResultDescription.KeyID())
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultDescription))
 }
 
 func (s ImmutableGetChainInfoResults) FeeColor() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, ResultFeeColor.KeyID())
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ResultFeeColor))
 }
 
 func (s ImmutableGetChainInfoResults) MaxBlobSize() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ResultMaxBlobSize.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultMaxBlobSize))
 }
 
 func (s ImmutableGetChainInfoResults) MaxEventSize() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, ResultMaxEventSize.KeyID())
+	return wasmlib.NewScImmutableInt16(s.id, wasmlib.KeyID(ResultMaxEventSize))
 }
 
 func (s ImmutableGetChainInfoResults) MaxEventsPerReq() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, ResultMaxEventsPerReq.KeyID())
+	return wasmlib.NewScImmutableInt16(s.id, wasmlib.KeyID(ResultMaxEventsPerReq))
 }
 
 type MutableGetChainInfoResults struct {
@@ -100,39 +100,39 @@ type MutableGetChainInfoResults struct {
 }
 
 func (s MutableGetChainInfoResults) ChainID() wasmlib.ScMutableChainID {
-	return wasmlib.NewScMutableChainID(s.id, ResultChainID.KeyID())
+	return wasmlib.NewScMutableChainID(s.id, wasmlib.KeyID(ResultChainID))
 }
 
 func (s MutableGetChainInfoResults) ChainOwnerID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, ResultChainOwnerID.KeyID())
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
 }
 
 func (s MutableGetChainInfoResults) DefaultOwnerFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ResultDefaultOwnerFee.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultDefaultOwnerFee))
 }
 
 func (s MutableGetChainInfoResults) DefaultValidatorFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ResultDefaultValidatorFee.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultDefaultValidatorFee))
 }
 
 func (s MutableGetChainInfoResults) Description() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, ResultDescription.KeyID())
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultDescription))
 }
 
 func (s MutableGetChainInfoResults) FeeColor() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, ResultFeeColor.KeyID())
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ResultFeeColor))
 }
 
 func (s MutableGetChainInfoResults) MaxBlobSize() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ResultMaxBlobSize.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultMaxBlobSize))
 }
 
 func (s MutableGetChainInfoResults) MaxEventSize() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, ResultMaxEventSize.KeyID())
+	return wasmlib.NewScMutableInt16(s.id, wasmlib.KeyID(ResultMaxEventSize))
 }
 
 func (s MutableGetChainInfoResults) MaxEventsPerReq() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, ResultMaxEventsPerReq.KeyID())
+	return wasmlib.NewScMutableInt16(s.id, wasmlib.KeyID(ResultMaxEventsPerReq))
 }
 
 type ImmutableGetFeeInfoResults struct {
@@ -140,15 +140,15 @@ type ImmutableGetFeeInfoResults struct {
 }
 
 func (s ImmutableGetFeeInfoResults) FeeColor() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, ResultFeeColor.KeyID())
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ResultFeeColor))
 }
 
 func (s ImmutableGetFeeInfoResults) OwnerFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ResultOwnerFee.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultOwnerFee))
 }
 
 func (s ImmutableGetFeeInfoResults) ValidatorFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ResultValidatorFee.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultValidatorFee))
 }
 
 type MutableGetFeeInfoResults struct {
@@ -156,15 +156,15 @@ type MutableGetFeeInfoResults struct {
 }
 
 func (s MutableGetFeeInfoResults) FeeColor() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, ResultFeeColor.KeyID())
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ResultFeeColor))
 }
 
 func (s MutableGetFeeInfoResults) OwnerFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ResultOwnerFee.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultOwnerFee))
 }
 
 func (s MutableGetFeeInfoResults) ValidatorFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ResultValidatorFee.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultValidatorFee))
 }
 
 type ImmutableGetMaxBlobSizeResults struct {
@@ -172,7 +172,7 @@ type ImmutableGetMaxBlobSizeResults struct {
 }
 
 func (s ImmutableGetMaxBlobSizeResults) MaxBlobSize() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ResultMaxBlobSize.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultMaxBlobSize))
 }
 
 type MutableGetMaxBlobSizeResults struct {
@@ -180,5 +180,5 @@ type MutableGetMaxBlobSizeResults struct {
 }
 
 func (s MutableGetMaxBlobSizeResults) MaxBlobSize() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ResultMaxBlobSize.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultMaxBlobSize))
 }

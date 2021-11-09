@@ -14,20 +14,20 @@ export function on_call(index: i32): void {
 
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncCallIncrement, funcCallIncrementThunk);
+    exports.addFunc(sc.FuncCallIncrement,          funcCallIncrementThunk);
     exports.addFunc(sc.FuncCallIncrementRecurse5x, funcCallIncrementRecurse5xThunk);
-    exports.addFunc(sc.FuncEndlessLoop, funcEndlessLoopThunk);
-    exports.addFunc(sc.FuncIncrement, funcIncrementThunk);
-    exports.addFunc(sc.FuncIncrementWithDelay, funcIncrementWithDelayThunk);
-    exports.addFunc(sc.FuncInit, funcInitThunk);
+    exports.addFunc(sc.FuncEndlessLoop,            funcEndlessLoopThunk);
+    exports.addFunc(sc.FuncIncrement,              funcIncrementThunk);
+    exports.addFunc(sc.FuncIncrementWithDelay,     funcIncrementWithDelayThunk);
+    exports.addFunc(sc.FuncInit,                   funcInitThunk);
     exports.addFunc(sc.FuncLocalStateInternalCall, funcLocalStateInternalCallThunk);
-    exports.addFunc(sc.FuncLocalStatePost, funcLocalStatePostThunk);
-    exports.addFunc(sc.FuncLocalStateSandboxCall, funcLocalStateSandboxCallThunk);
-    exports.addFunc(sc.FuncPostIncrement, funcPostIncrementThunk);
-    exports.addFunc(sc.FuncRepeatMany, funcRepeatManyThunk);
-    exports.addFunc(sc.FuncTestLeb128, funcTestLeb128Thunk);
-    exports.addFunc(sc.FuncWhenMustIncrement, funcWhenMustIncrementThunk);
-    exports.addView(sc.ViewGetCounter, viewGetCounterThunk);
+    exports.addFunc(sc.FuncLocalStatePost,         funcLocalStatePostThunk);
+    exports.addFunc(sc.FuncLocalStateSandboxCall,  funcLocalStateSandboxCallThunk);
+    exports.addFunc(sc.FuncPostIncrement,          funcPostIncrementThunk);
+    exports.addFunc(sc.FuncRepeatMany,             funcRepeatManyThunk);
+    exports.addFunc(sc.FuncTestLeb128,             funcTestLeb128Thunk);
+    exports.addFunc(sc.FuncWhenMustIncrement,      funcWhenMustIncrementThunk);
+    exports.addView(sc.ViewGetCounter,             viewGetCounterThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);

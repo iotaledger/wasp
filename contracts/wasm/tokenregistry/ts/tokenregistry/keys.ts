@@ -8,11 +8,13 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
-export const IdxParamColor = 0;
+export const IdxParamColor       = 0;
 export const IdxParamDescription = 1;
 export const IdxParamUserDefined = 2;
+
+
 export const IdxStateColorList = 3;
-export const IdxStateRegistry = 4;
+export const IdxStateRegistry  = 4;
 
 export let keyMap: string[] = [
 	sc.ParamColor,

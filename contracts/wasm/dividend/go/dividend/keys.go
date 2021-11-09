@@ -10,11 +10,13 @@ package dividend
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
-	IdxParamAddress     = 0
-	IdxParamFactor      = 1
-	IdxParamOwner       = 2
-	IdxResultFactor     = 3
-	IdxResultOwner      = 4
+	IdxParamAddress = 0
+	IdxParamFactor  = 1
+	IdxParamOwner   = 2
+
+	IdxResultFactor = 3
+	IdxResultOwner  = 4
+
 	IdxStateMemberList  = 5
 	IdxStateMembers     = 6
 	IdxStateOwner       = 7

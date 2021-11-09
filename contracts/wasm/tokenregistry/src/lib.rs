@@ -28,10 +28,10 @@ mod tokenregistry;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_MINT_SUPPLY, func_mint_supply_thunk);
+    exports.add_func(FUNC_MINT_SUPPLY,        func_mint_supply_thunk);
     exports.add_func(FUNC_TRANSFER_OWNERSHIP, func_transfer_ownership_thunk);
-    exports.add_func(FUNC_UPDATE_METADATA, func_update_metadata_thunk);
-    exports.add_view(VIEW_GET_INFO, view_get_info_thunk);
+    exports.add_func(FUNC_UPDATE_METADATA,    func_update_metadata_thunk);
+    exports.add_view(VIEW_GET_INFO,           view_get_info_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {
@@ -66,8 +66,9 @@ pub struct TransferOwnershipContext {
 
 fn func_transfer_ownership_thunk(ctx: &ScFuncContext) {
 	ctx.log("tokenregistry.funcTransferOwnership");
-    // TODO the one who can transfer token ownership
-		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+	// TODO the one who can transfer token ownership
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = TransferOwnershipContext {
 		params: ImmutableTransferOwnershipParams {
@@ -89,8 +90,9 @@ pub struct UpdateMetadataContext {
 
 fn func_update_metadata_thunk(ctx: &ScFuncContext) {
 	ctx.log("tokenregistry.funcUpdateMetadata");
-    // TODO the one who can change the token info
-		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+	// TODO the one who can change the token info
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = UpdateMetadataContext {
 		params: ImmutableUpdateMetadataParams {

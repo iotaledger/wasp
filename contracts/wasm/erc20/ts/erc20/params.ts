@@ -9,7 +9,6 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableApproveParams extends wasmlib.ScMapID {
-
     amount(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamAmount]);
 	}
@@ -20,7 +19,6 @@ export class ImmutableApproveParams extends wasmlib.ScMapID {
 }
 
 export class MutableApproveParams extends wasmlib.ScMapID {
-
     amount(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamAmount]);
 	}
@@ -31,7 +29,6 @@ export class MutableApproveParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableInitParams extends wasmlib.ScMapID {
-
     creator(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamCreator]);
 	}
@@ -42,7 +39,6 @@ export class ImmutableInitParams extends wasmlib.ScMapID {
 }
 
 export class MutableInitParams extends wasmlib.ScMapID {
-
     creator(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamCreator]);
 	}
@@ -53,7 +49,6 @@ export class MutableInitParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableTransferParams extends wasmlib.ScMapID {
-
     account(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
 	}
@@ -64,7 +59,6 @@ export class ImmutableTransferParams extends wasmlib.ScMapID {
 }
 
 export class MutableTransferParams extends wasmlib.ScMapID {
-
     account(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
 	}
@@ -75,7 +69,6 @@ export class MutableTransferParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableTransferFromParams extends wasmlib.ScMapID {
-
     account(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
 	}
@@ -90,7 +83,6 @@ export class ImmutableTransferFromParams extends wasmlib.ScMapID {
 }
 
 export class MutableTransferFromParams extends wasmlib.ScMapID {
-
     account(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
 	}
@@ -105,7 +97,6 @@ export class MutableTransferFromParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableAllowanceParams extends wasmlib.ScMapID {
-
     account(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
 	}
@@ -116,7 +107,6 @@ export class ImmutableAllowanceParams extends wasmlib.ScMapID {
 }
 
 export class MutableAllowanceParams extends wasmlib.ScMapID {
-
     account(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
 	}
@@ -127,14 +117,12 @@ export class MutableAllowanceParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableBalanceOfParams extends wasmlib.ScMapID {
-
     account(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
 	}
 }
 
 export class MutableBalanceOfParams extends wasmlib.ScMapID {
-
     account(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
 	}

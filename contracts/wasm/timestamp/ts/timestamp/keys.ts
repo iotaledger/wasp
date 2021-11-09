@@ -8,7 +8,9 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+
 export const IdxResultTimestamp = 0;
+
 export const IdxStateTimestamp = 1;
 
 export let keyMap: string[] = [

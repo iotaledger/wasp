@@ -85,21 +85,25 @@ impl ScFuncs {
             func: ScFunc::new(HSC_NAME, HFUNC_CALL_INCREMENT),
         }
     }
+
     pub fn call_increment_recurse5x(_ctx: & dyn ScFuncCallContext) -> CallIncrementRecurse5xCall {
         CallIncrementRecurse5xCall {
             func: ScFunc::new(HSC_NAME, HFUNC_CALL_INCREMENT_RECURSE5X),
         }
     }
+
     pub fn endless_loop(_ctx: & dyn ScFuncCallContext) -> EndlessLoopCall {
         EndlessLoopCall {
             func: ScFunc::new(HSC_NAME, HFUNC_ENDLESS_LOOP),
         }
     }
+
     pub fn increment(_ctx: & dyn ScFuncCallContext) -> IncrementCall {
         IncrementCall {
             func: ScFunc::new(HSC_NAME, HFUNC_INCREMENT),
         }
     }
+
     pub fn increment_with_delay(_ctx: & dyn ScFuncCallContext) -> IncrementWithDelayCall {
         let mut f = IncrementWithDelayCall {
             func: ScFunc::new(HSC_NAME, HFUNC_INCREMENT_WITH_DELAY),
@@ -108,6 +112,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn init(_ctx: & dyn ScFuncCallContext) -> InitCall {
         let mut f = InitCall {
             func: ScInitFunc::new(HSC_NAME, HFUNC_INIT),
@@ -116,26 +121,31 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn local_state_internal_call(_ctx: & dyn ScFuncCallContext) -> LocalStateInternalCallCall {
         LocalStateInternalCallCall {
             func: ScFunc::new(HSC_NAME, HFUNC_LOCAL_STATE_INTERNAL_CALL),
         }
     }
+
     pub fn local_state_post(_ctx: & dyn ScFuncCallContext) -> LocalStatePostCall {
         LocalStatePostCall {
             func: ScFunc::new(HSC_NAME, HFUNC_LOCAL_STATE_POST),
         }
     }
+
     pub fn local_state_sandbox_call(_ctx: & dyn ScFuncCallContext) -> LocalStateSandboxCallCall {
         LocalStateSandboxCallCall {
             func: ScFunc::new(HSC_NAME, HFUNC_LOCAL_STATE_SANDBOX_CALL),
         }
     }
+
     pub fn post_increment(_ctx: & dyn ScFuncCallContext) -> PostIncrementCall {
         PostIncrementCall {
             func: ScFunc::new(HSC_NAME, HFUNC_POST_INCREMENT),
         }
     }
+
     pub fn repeat_many(_ctx: & dyn ScFuncCallContext) -> RepeatManyCall {
         let mut f = RepeatManyCall {
             func: ScFunc::new(HSC_NAME, HFUNC_REPEAT_MANY),
@@ -144,11 +154,13 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn test_leb128(_ctx: & dyn ScFuncCallContext) -> TestLeb128Call {
         TestLeb128Call {
             func: ScFunc::new(HSC_NAME, HFUNC_TEST_LEB128),
         }
     }
+
     pub fn when_must_increment(_ctx: & dyn ScFuncCallContext) -> WhenMustIncrementCall {
         let mut f = WhenMustIncrementCall {
             func: ScFunc::new(HSC_NAME, HFUNC_WHEN_MUST_INCREMENT),
@@ -157,6 +169,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn get_counter(_ctx: & dyn ScViewCallContext) -> GetCounterCall {
         let mut f = GetCounterCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_COUNTER),

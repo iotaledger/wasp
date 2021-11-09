@@ -20,7 +20,6 @@ pub struct ImmutableArrayLengthResults {
 }
 
 impl ImmutableArrayLengthResults {
-
     pub fn length(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_LENGTH))
 	}
@@ -32,7 +31,6 @@ pub struct MutableArrayLengthResults {
 }
 
 impl MutableArrayLengthResults {
-
     pub fn length(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, idx_map(IDX_RESULT_LENGTH))
 	}
@@ -44,7 +42,6 @@ pub struct ImmutableArrayValueResults {
 }
 
 impl ImmutableArrayValueResults {
-
     pub fn value(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, idx_map(IDX_RESULT_VALUE))
 	}
@@ -56,7 +53,6 @@ pub struct MutableArrayValueResults {
 }
 
 impl MutableArrayValueResults {
-
     pub fn value(&self) -> ScMutableString {
 		ScMutableString::new(self.id, idx_map(IDX_RESULT_VALUE))
 	}
@@ -68,7 +64,6 @@ pub struct ImmutableBlockRecordResults {
 }
 
 impl ImmutableBlockRecordResults {
-
     pub fn record(&self) -> ScImmutableBytes {
 		ScImmutableBytes::new(self.id, idx_map(IDX_RESULT_RECORD))
 	}
@@ -80,7 +75,6 @@ pub struct MutableBlockRecordResults {
 }
 
 impl MutableBlockRecordResults {
-
     pub fn record(&self) -> ScMutableBytes {
 		ScMutableBytes::new(self.id, idx_map(IDX_RESULT_RECORD))
 	}
@@ -92,7 +86,6 @@ pub struct ImmutableBlockRecordsResults {
 }
 
 impl ImmutableBlockRecordsResults {
-
     pub fn count(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_COUNT))
 	}
@@ -104,7 +97,6 @@ pub struct MutableBlockRecordsResults {
 }
 
 impl MutableBlockRecordsResults {
-
     pub fn count(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, idx_map(IDX_RESULT_COUNT))
 	}
@@ -116,7 +108,6 @@ pub struct ImmutableGetRandomResults {
 }
 
 impl ImmutableGetRandomResults {
-
     pub fn random(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_RANDOM))
 	}
@@ -128,7 +119,6 @@ pub struct MutableGetRandomResults {
 }
 
 impl MutableGetRandomResults {
-
     pub fn random(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_RANDOM))
 	}
@@ -140,7 +130,6 @@ pub struct ImmutableIotaBalanceResults {
 }
 
 impl ImmutableIotaBalanceResults {
-
     pub fn iotas(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_IOTAS))
 	}
@@ -152,7 +141,6 @@ pub struct MutableIotaBalanceResults {
 }
 
 impl MutableIotaBalanceResults {
-
     pub fn iotas(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_IOTAS))
 	}

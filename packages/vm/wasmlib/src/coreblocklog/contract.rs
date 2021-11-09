@@ -82,6 +82,7 @@ impl ScFuncs {
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
     }
+
     pub fn get_block_info(_ctx: & dyn ScViewCallContext) -> GetBlockInfoCall {
         let mut f = GetBlockInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_BLOCK_INFO),
@@ -91,6 +92,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_events_for_block(_ctx: & dyn ScViewCallContext) -> GetEventsForBlockCall {
         let mut f = GetEventsForBlockCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_EVENTS_FOR_BLOCK),
@@ -100,6 +102,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_events_for_contract(_ctx: & dyn ScViewCallContext) -> GetEventsForContractCall {
         let mut f = GetEventsForContractCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_EVENTS_FOR_CONTRACT),
@@ -109,6 +112,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_events_for_request(_ctx: & dyn ScViewCallContext) -> GetEventsForRequestCall {
         let mut f = GetEventsForRequestCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_EVENTS_FOR_REQUEST),
@@ -118,6 +122,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_latest_block_info(_ctx: & dyn ScViewCallContext) -> GetLatestBlockInfoCall {
         let mut f = GetLatestBlockInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_LATEST_BLOCK_INFO),
@@ -126,6 +131,7 @@ impl ScFuncs {
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
     }
+
     pub fn get_request_i_ds_for_block(_ctx: & dyn ScViewCallContext) -> GetRequestIDsForBlockCall {
         let mut f = GetRequestIDsForBlockCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_REQUEST_I_DS_FOR_BLOCK),
@@ -135,6 +141,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_request_receipt(_ctx: & dyn ScViewCallContext) -> GetRequestReceiptCall {
         let mut f = GetRequestReceiptCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_REQUEST_RECEIPT),
@@ -144,6 +151,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_request_receipts_for_block(_ctx: & dyn ScViewCallContext) -> GetRequestReceiptsForBlockCall {
         let mut f = GetRequestReceiptsForBlockCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_REQUEST_RECEIPTS_FOR_BLOCK),
@@ -153,6 +161,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn is_request_processed(_ctx: & dyn ScViewCallContext) -> IsRequestProcessedCall {
         let mut f = IsRequestProcessedCall {
             func: ScView::new(HSC_NAME, HVIEW_IS_REQUEST_PROCESSED),

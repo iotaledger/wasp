@@ -50,6 +50,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn grant_deploy_permission(_ctx: & dyn ScFuncCallContext) -> GrantDeployPermissionCall {
         let mut f = GrantDeployPermissionCall {
             func: ScFunc::new(HSC_NAME, HFUNC_GRANT_DEPLOY_PERMISSION),
@@ -58,6 +59,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn revoke_deploy_permission(_ctx: & dyn ScFuncCallContext) -> RevokeDeployPermissionCall {
         let mut f = RevokeDeployPermissionCall {
             func: ScFunc::new(HSC_NAME, HFUNC_REVOKE_DEPLOY_PERMISSION),
@@ -66,6 +68,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn find_contract(_ctx: & dyn ScViewCallContext) -> FindContractCall {
         let mut f = FindContractCall {
             func: ScView::new(HSC_NAME, HVIEW_FIND_CONTRACT),
@@ -75,6 +78,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_contract_records(_ctx: & dyn ScViewCallContext) -> GetContractRecordsCall {
         let mut f = GetContractRecordsCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_CONTRACT_RECORDS),

@@ -9,21 +9,18 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableInitParams extends wasmlib.ScMapID {
-
     owner(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
 	}
 }
 
 export class MutableInitParams extends wasmlib.ScMapID {
-
     owner(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
 	}
 }
 
 export class ImmutableMemberParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScImmutableAddress {
 		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}
@@ -34,7 +31,6 @@ export class ImmutableMemberParams extends wasmlib.ScMapID {
 }
 
 export class MutableMemberParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScMutableAddress {
 		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}
@@ -45,28 +41,24 @@ export class MutableMemberParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableSetOwnerParams extends wasmlib.ScMapID {
-
     owner(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
 	}
 }
 
 export class MutableSetOwnerParams extends wasmlib.ScMapID {
-
     owner(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
 	}
 }
 
 export class ImmutableGetFactorParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScImmutableAddress {
 		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}
 }
 
 export class MutableGetFactorParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScMutableAddress {
 		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
 	}

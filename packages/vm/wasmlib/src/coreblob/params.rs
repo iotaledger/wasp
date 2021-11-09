@@ -28,7 +28,6 @@ pub struct ImmutableStoreBlobParams {
 }
 
 impl ImmutableStoreBlobParams {
-
     pub fn blobs(&self) -> MapStringToImmutableBytes {
 		MapStringToImmutableBytes { obj_id: self.id }
 	}
@@ -54,7 +53,6 @@ pub struct MutableStoreBlobParams {
 }
 
 impl MutableStoreBlobParams {
-
     pub fn blobs(&self) -> MapStringToMutableBytes {
 		MapStringToMutableBytes { obj_id: self.id }
 	}
@@ -66,7 +64,6 @@ pub struct ImmutableGetBlobFieldParams {
 }
 
 impl ImmutableGetBlobFieldParams {
-
     pub fn field(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, PARAM_FIELD.get_key_id())
 	}
@@ -82,7 +79,6 @@ pub struct MutableGetBlobFieldParams {
 }
 
 impl MutableGetBlobFieldParams {
-
     pub fn field(&self) -> ScMutableString {
 		ScMutableString::new(self.id, PARAM_FIELD.get_key_id())
 	}
@@ -98,7 +94,6 @@ pub struct ImmutableGetBlobInfoParams {
 }
 
 impl ImmutableGetBlobInfoParams {
-
     pub fn hash(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.id, PARAM_HASH.get_key_id())
 	}
@@ -110,7 +105,6 @@ pub struct MutableGetBlobInfoParams {
 }
 
 impl MutableGetBlobInfoParams {
-
     pub fn hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.id, PARAM_HASH.get_key_id())
 	}

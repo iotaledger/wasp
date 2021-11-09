@@ -11,18 +11,18 @@ use wasmlib::*;
 use wasmlib::host::*;
 
 pub struct Bet {
-    pub amount: i64, 
-    pub better: ScAgentID, 
-    pub number: i64, 
+    pub amount : i64, 
+    pub better : ScAgentID, 
+    pub number : i64, 
 }
 
 impl Bet {
     pub fn from_bytes(bytes: &[u8]) -> Bet {
         let mut decode = BytesDecoder::new(bytes);
         Bet {
-            amount: decode.int64(),
-            better: decode.agent_id(),
-            number: decode.int64(),
+            amount : decode.int64(),
+            better : decode.agent_id(),
+            number : decode.int64(),
         }
     }
 

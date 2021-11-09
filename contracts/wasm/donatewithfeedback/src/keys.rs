@@ -11,20 +11,22 @@ use wasmlib::*;
 
 use crate::*;
 
-pub(crate) const IDX_PARAM_AMOUNT: usize = 0;
-pub(crate) const IDX_PARAM_FEEDBACK: usize = 1;
-pub(crate) const IDX_PARAM_NR: usize = 2;
-pub(crate) const IDX_RESULT_AMOUNT: usize = 3;
-pub(crate) const IDX_RESULT_COUNT: usize = 4;
-pub(crate) const IDX_RESULT_DONATOR: usize = 5;
-pub(crate) const IDX_RESULT_ERROR: usize = 6;
-pub(crate) const IDX_RESULT_FEEDBACK: usize = 7;
-pub(crate) const IDX_RESULT_MAX_DONATION: usize = 8;
-pub(crate) const IDX_RESULT_TIMESTAMP: usize = 9;
-pub(crate) const IDX_RESULT_TOTAL_DONATION: usize = 10;
-pub(crate) const IDX_STATE_LOG: usize = 11;
-pub(crate) const IDX_STATE_MAX_DONATION: usize = 12;
-pub(crate) const IDX_STATE_TOTAL_DONATION: usize = 13;
+pub(crate) const IDX_PARAM_AMOUNT   : usize = 0;
+pub(crate) const IDX_PARAM_FEEDBACK : usize = 1;
+pub(crate) const IDX_PARAM_NR       : usize = 2;
+
+pub(crate) const IDX_RESULT_AMOUNT         : usize = 3;
+pub(crate) const IDX_RESULT_COUNT          : usize = 4;
+pub(crate) const IDX_RESULT_DONATOR        : usize = 5;
+pub(crate) const IDX_RESULT_ERROR          : usize = 6;
+pub(crate) const IDX_RESULT_FEEDBACK       : usize = 7;
+pub(crate) const IDX_RESULT_MAX_DONATION   : usize = 8;
+pub(crate) const IDX_RESULT_TIMESTAMP      : usize = 9;
+pub(crate) const IDX_RESULT_TOTAL_DONATION : usize = 10;
+
+pub(crate) const IDX_STATE_LOG            : usize = 11;
+pub(crate) const IDX_STATE_MAX_DONATION   : usize = 12;
+pub(crate) const IDX_STATE_TOTAL_DONATION : usize = 13;
 
 pub const KEY_MAP_LEN: usize = 14;
 

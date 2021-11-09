@@ -81,7 +81,7 @@ func (a $proxy) Get$FldType(index int32) $mut$FldType {
 `,
 	// *******************************
 	"typedefProxyMap": `
-$#set proxy Map$FldMapKey$+To$mut$FldType
+$#set proxy Map$fldMapKey$+To$mut$FldType
 $#if exist else typedefProxyMapNew
 `,
 	// *******************************
@@ -104,15 +104,15 @@ func (m $proxy) Clear() {
 	// *******************************
 	"typedefProxyMapNewBaseType": `
 
-func (m $proxy) Get$FldType(key $FldMapKeyLangType) wasmlib.Sc$mut$FldType {
-	return wasmlib.NewSc$mut$FldType(m.objID, $FldMapKeyKey.KeyID())
+func (m $proxy) Get$FldType(key $fldMapKeyLangType) wasmlib.Sc$mut$FldType {
+	return wasmlib.NewSc$mut$FldType(m.objID, $fldMapKeyKey.KeyID())
 }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
 $#set OldType $FldType
-$#set OldMapKeyLangType $FldMapKeyLangType
-$#set OldMapKeyKey $FldMapKeyKey
+$#set oldMapKeyLangType $fldMapKeyLangType
+$#set oldMapKeyKey $fldMapKeyKey
 $#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruct
 `,
 	// *******************************
@@ -120,20 +120,20 @@ $#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruc
 $#set varType wasmlib.TYPE_MAP
 $#if array setVarTypeArray
 
-func (m $proxy) Get$OldType(key $OldMapKeyLangType) $mut$OldType {
-	subID := wasmlib.GetObjectID(m.objID, $OldMapKeyKey.KeyID(), $varType)
+func (m $proxy) Get$OldType(key $oldMapKeyLangType) $mut$OldType {
+	subID := wasmlib.GetObjectID(m.objID, $oldMapKeyKey.KeyID(), $varType)
 	return $mut$OldType{objID: subID}
 }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeStruct": `
 
-func (m $proxy) Get$FldType(key $FldMapKeyLangType) $mut$FldType {
-	return $mut$FldType{objID: m.objID, keyID: $FldMapKeyKey.KeyID()}
+func (m $proxy) Get$FldType(key $fldMapKeyLangType) $mut$FldType {
+	return $mut$FldType{objID: m.objID, keyID: $fldMapKeyKey.KeyID()}
 }
 `,
 	// *******************************
 	"setVarTypeArray": `
-$#set varType $arrayTypeID|$FldTypeID
+$#set varType $arrayTypeID|$fldTypeID
 `,
 }

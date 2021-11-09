@@ -8,8 +8,10 @@ $#emit goHeader
 const (
 $#set constPrefix Param
 $#each params constFieldIdx
+
 $#set constPrefix Result
 $#each results constFieldIdx
+
 $#set constPrefix State
 $#each state constFieldIdx
 )
@@ -29,7 +31,7 @@ var idxMap [keyMapLen]wasmlib.Key32
 `,
 	// *******************************
 	"constFieldIdx": `
-	Idx$constPrefix$FldName = $fldIndex
+	Idx$constPrefix$FldName$fldPad = $fldIndex
 `,
 	// *******************************
 	"constFieldKey": `

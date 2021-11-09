@@ -9,7 +9,6 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableFindContractResults extends wasmlib.ScMapID {
-
     contractFound(): wasmlib.ScImmutableBytes {
 		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultContractFound));
 	}
@@ -20,7 +19,6 @@ export class ImmutableFindContractResults extends wasmlib.ScMapID {
 }
 
 export class MutableFindContractResults extends wasmlib.ScMapID {
-
     contractFound(): wasmlib.ScMutableBytes {
 		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultContractFound));
 	}
@@ -43,7 +41,6 @@ export class MapHnameToImmutableBytes {
 }
 
 export class ImmutableGetContractRecordsResults extends wasmlib.ScMapID {
-
     contractRegistry(): sc.MapHnameToImmutableBytes {
 		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultContractRegistry), wasmlib.TYPE_MAP);
 		return new sc.MapHnameToImmutableBytes(mapID);
@@ -67,7 +64,6 @@ export class MapHnameToMutableBytes {
 }
 
 export class MutableGetContractRecordsResults extends wasmlib.ScMapID {
-
     contractRegistry(): sc.MapHnameToMutableBytes {
 		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultContractRegistry), wasmlib.TYPE_MAP);
 		return new sc.MapHnameToMutableBytes(mapID);

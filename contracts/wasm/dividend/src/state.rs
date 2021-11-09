@@ -44,7 +44,6 @@ pub struct ImmutableDividendState {
 }
 
 impl ImmutableDividendState {
-
     pub fn member_list(&self) -> ArrayOfImmutableAddress {
 		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_MEMBER_LIST), TYPE_ARRAY | TYPE_ADDRESS);
 		ArrayOfImmutableAddress { obj_id: arr_id }
@@ -102,7 +101,6 @@ pub struct MutableDividendState {
 }
 
 impl MutableDividendState {
-
     pub fn member_list(&self) -> ArrayOfMutableAddress {
 		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_MEMBER_LIST), TYPE_ARRAY | TYPE_ADDRESS);
 		ArrayOfMutableAddress { obj_id: arr_id }

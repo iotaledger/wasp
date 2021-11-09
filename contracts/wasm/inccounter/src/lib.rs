@@ -29,20 +29,20 @@ mod inccounter;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_CALL_INCREMENT, func_call_increment_thunk);
-    exports.add_func(FUNC_CALL_INCREMENT_RECURSE5X, func_call_increment_recurse5x_thunk);
-    exports.add_func(FUNC_ENDLESS_LOOP, func_endless_loop_thunk);
-    exports.add_func(FUNC_INCREMENT, func_increment_thunk);
-    exports.add_func(FUNC_INCREMENT_WITH_DELAY, func_increment_with_delay_thunk);
-    exports.add_func(FUNC_INIT, func_init_thunk);
+    exports.add_func(FUNC_CALL_INCREMENT,            func_call_increment_thunk);
+    exports.add_func(FUNC_CALL_INCREMENT_RECURSE5X,  func_call_increment_recurse5x_thunk);
+    exports.add_func(FUNC_ENDLESS_LOOP,              func_endless_loop_thunk);
+    exports.add_func(FUNC_INCREMENT,                 func_increment_thunk);
+    exports.add_func(FUNC_INCREMENT_WITH_DELAY,      func_increment_with_delay_thunk);
+    exports.add_func(FUNC_INIT,                      func_init_thunk);
     exports.add_func(FUNC_LOCAL_STATE_INTERNAL_CALL, func_local_state_internal_call_thunk);
-    exports.add_func(FUNC_LOCAL_STATE_POST, func_local_state_post_thunk);
-    exports.add_func(FUNC_LOCAL_STATE_SANDBOX_CALL, func_local_state_sandbox_call_thunk);
-    exports.add_func(FUNC_POST_INCREMENT, func_post_increment_thunk);
-    exports.add_func(FUNC_REPEAT_MANY, func_repeat_many_thunk);
-    exports.add_func(FUNC_TEST_LEB128, func_test_leb128_thunk);
-    exports.add_func(FUNC_WHEN_MUST_INCREMENT, func_when_must_increment_thunk);
-    exports.add_view(VIEW_GET_COUNTER, view_get_counter_thunk);
+    exports.add_func(FUNC_LOCAL_STATE_POST,          func_local_state_post_thunk);
+    exports.add_func(FUNC_LOCAL_STATE_SANDBOX_CALL,  func_local_state_sandbox_call_thunk);
+    exports.add_func(FUNC_POST_INCREMENT,            func_post_increment_thunk);
+    exports.add_func(FUNC_REPEAT_MANY,               func_repeat_many_thunk);
+    exports.add_func(FUNC_TEST_LEB128,               func_test_leb128_thunk);
+    exports.add_func(FUNC_WHEN_MUST_INCREMENT,       func_when_must_increment_thunk);
+    exports.add_view(VIEW_GET_COUNTER,               view_get_counter_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {

@@ -32,7 +32,6 @@ export class ListBlobsCall {
 }
 
 export class ScFuncs {
-
     static storeBlob(ctx: wasmlib.ScFuncCallContext): StoreBlobCall {
         let f = new StoreBlobCall();
         f.func.setPtrs(f.params, f.results);

@@ -9,7 +9,6 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableIncCounterState extends wasmlib.ScMapID {
-
     counter(): wasmlib.ScImmutableInt64 {
 		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateCounter]);
 	}
@@ -20,7 +19,6 @@ export class ImmutableIncCounterState extends wasmlib.ScMapID {
 }
 
 export class MutableIncCounterState extends wasmlib.ScMapID {
-
     counter(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateCounter]);
 	}

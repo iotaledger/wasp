@@ -30,9 +30,9 @@ mod donatewithfeedback;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_DONATE, func_donate_thunk);
-    exports.add_func(FUNC_WITHDRAW, func_withdraw_thunk);
-    exports.add_view(VIEW_DONATION, view_donation_thunk);
+    exports.add_func(FUNC_DONATE,        func_donate_thunk);
+    exports.add_func(FUNC_WITHDRAW,      func_withdraw_thunk);
+    exports.add_view(VIEW_DONATION,      view_donation_thunk);
     exports.add_view(VIEW_DONATION_INFO, view_donation_info_thunk);
 
     unsafe {
@@ -68,8 +68,9 @@ pub struct WithdrawContext {
 
 fn func_withdraw_thunk(ctx: &ScFuncContext) {
 	ctx.log("donatewithfeedback.funcWithdraw");
-    // only SC creator can withdraw donated funds
-		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+
+	// only SC creator can withdraw donated funds
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = WithdrawContext {
 		params: ImmutableWithdrawParams {

@@ -83,7 +83,6 @@ export class TotalSupplyContext {
 }
 
 export class ScFuncs {
-
     static approve(ctx: wasmlib.ScFuncCallContext): ApproveCall {
         let f = new ApproveCall();
         f.func.setPtrs(f.params, null);

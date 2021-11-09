@@ -14,15 +14,15 @@ type ImmutableAddAllowedStateControllerAddressParams struct {
 }
 
 func (s ImmutableAddAllowedStateControllerAddressParams) ChainOwner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, ParamChainOwner.KeyID())
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamChainOwner))
 }
 
 func (s ImmutableAddAllowedStateControllerAddressParams) FeeColor() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, ParamFeeColor.KeyID())
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamFeeColor))
 }
 
 func (s ImmutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, ParamStateControllerAddress.KeyID())
+	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ParamStateControllerAddress))
 }
 
 type MutableAddAllowedStateControllerAddressParams struct {
@@ -30,15 +30,15 @@ type MutableAddAllowedStateControllerAddressParams struct {
 }
 
 func (s MutableAddAllowedStateControllerAddressParams) ChainOwner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, ParamChainOwner.KeyID())
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamChainOwner))
 }
 
 func (s MutableAddAllowedStateControllerAddressParams) FeeColor() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, ParamFeeColor.KeyID())
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamFeeColor))
 }
 
 func (s MutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, ParamStateControllerAddress.KeyID())
+	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ParamStateControllerAddress))
 }
 
 type ImmutableDelegateChainOwnershipParams struct {
@@ -46,7 +46,7 @@ type ImmutableDelegateChainOwnershipParams struct {
 }
 
 func (s ImmutableDelegateChainOwnershipParams) ChainOwner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, ParamChainOwner.KeyID())
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamChainOwner))
 }
 
 type MutableDelegateChainOwnershipParams struct {
@@ -54,7 +54,7 @@ type MutableDelegateChainOwnershipParams struct {
 }
 
 func (s MutableDelegateChainOwnershipParams) ChainOwner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, ParamChainOwner.KeyID())
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamChainOwner))
 }
 
 type ImmutableRemoveAllowedStateControllerAddressParams struct {
@@ -62,7 +62,7 @@ type ImmutableRemoveAllowedStateControllerAddressParams struct {
 }
 
 func (s ImmutableRemoveAllowedStateControllerAddressParams) StateControllerAddress() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, ParamStateControllerAddress.KeyID())
+	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ParamStateControllerAddress))
 }
 
 type MutableRemoveAllowedStateControllerAddressParams struct {
@@ -70,7 +70,7 @@ type MutableRemoveAllowedStateControllerAddressParams struct {
 }
 
 func (s MutableRemoveAllowedStateControllerAddressParams) StateControllerAddress() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, ParamStateControllerAddress.KeyID())
+	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ParamStateControllerAddress))
 }
 
 type ImmutableRotateStateControllerParams struct {
@@ -78,7 +78,7 @@ type ImmutableRotateStateControllerParams struct {
 }
 
 func (s ImmutableRotateStateControllerParams) StateControllerAddress() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, ParamStateControllerAddress.KeyID())
+	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ParamStateControllerAddress))
 }
 
 type MutableRotateStateControllerParams struct {
@@ -86,7 +86,7 @@ type MutableRotateStateControllerParams struct {
 }
 
 func (s MutableRotateStateControllerParams) StateControllerAddress() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, ParamStateControllerAddress.KeyID())
+	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ParamStateControllerAddress))
 }
 
 type ImmutableSetChainInfoParams struct {
@@ -94,23 +94,23 @@ type ImmutableSetChainInfoParams struct {
 }
 
 func (s ImmutableSetChainInfoParams) MaxBlobSize() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ParamMaxBlobSize.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamMaxBlobSize))
 }
 
 func (s ImmutableSetChainInfoParams) MaxEventSize() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, ParamMaxEventSize.KeyID())
+	return wasmlib.NewScImmutableInt16(s.id, wasmlib.KeyID(ParamMaxEventSize))
 }
 
 func (s ImmutableSetChainInfoParams) MaxEventsPerReq() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, ParamMaxEventsPerReq.KeyID())
+	return wasmlib.NewScImmutableInt16(s.id, wasmlib.KeyID(ParamMaxEventsPerReq))
 }
 
 func (s ImmutableSetChainInfoParams) OwnerFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ParamOwnerFee.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamOwnerFee))
 }
 
 func (s ImmutableSetChainInfoParams) ValidatorFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ParamValidatorFee.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamValidatorFee))
 }
 
 type MutableSetChainInfoParams struct {
@@ -118,23 +118,23 @@ type MutableSetChainInfoParams struct {
 }
 
 func (s MutableSetChainInfoParams) MaxBlobSize() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ParamMaxBlobSize.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamMaxBlobSize))
 }
 
 func (s MutableSetChainInfoParams) MaxEventSize() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, ParamMaxEventSize.KeyID())
+	return wasmlib.NewScMutableInt16(s.id, wasmlib.KeyID(ParamMaxEventSize))
 }
 
 func (s MutableSetChainInfoParams) MaxEventsPerReq() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, ParamMaxEventsPerReq.KeyID())
+	return wasmlib.NewScMutableInt16(s.id, wasmlib.KeyID(ParamMaxEventsPerReq))
 }
 
 func (s MutableSetChainInfoParams) OwnerFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ParamOwnerFee.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamOwnerFee))
 }
 
 func (s MutableSetChainInfoParams) ValidatorFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ParamValidatorFee.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamValidatorFee))
 }
 
 type ImmutableSetContractFeeParams struct {
@@ -142,15 +142,15 @@ type ImmutableSetContractFeeParams struct {
 }
 
 func (s ImmutableSetContractFeeParams) Hname() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, ParamHname.KeyID())
+	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamHname))
 }
 
 func (s ImmutableSetContractFeeParams) OwnerFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ParamOwnerFee.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamOwnerFee))
 }
 
 func (s ImmutableSetContractFeeParams) ValidatorFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ParamValidatorFee.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamValidatorFee))
 }
 
 type MutableSetContractFeeParams struct {
@@ -158,15 +158,15 @@ type MutableSetContractFeeParams struct {
 }
 
 func (s MutableSetContractFeeParams) Hname() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, ParamHname.KeyID())
+	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamHname))
 }
 
 func (s MutableSetContractFeeParams) OwnerFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ParamOwnerFee.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamOwnerFee))
 }
 
 func (s MutableSetContractFeeParams) ValidatorFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ParamValidatorFee.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamValidatorFee))
 }
 
 type ImmutableSetDefaultFeeParams struct {
@@ -174,11 +174,11 @@ type ImmutableSetDefaultFeeParams struct {
 }
 
 func (s ImmutableSetDefaultFeeParams) OwnerFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ParamOwnerFee.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamOwnerFee))
 }
 
 func (s ImmutableSetDefaultFeeParams) ValidatorFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ParamValidatorFee.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamValidatorFee))
 }
 
 type MutableSetDefaultFeeParams struct {
@@ -186,11 +186,11 @@ type MutableSetDefaultFeeParams struct {
 }
 
 func (s MutableSetDefaultFeeParams) OwnerFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ParamOwnerFee.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamOwnerFee))
 }
 
 func (s MutableSetDefaultFeeParams) ValidatorFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ParamValidatorFee.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamValidatorFee))
 }
 
 type ImmutableGetFeeInfoParams struct {
@@ -198,7 +198,7 @@ type ImmutableGetFeeInfoParams struct {
 }
 
 func (s ImmutableGetFeeInfoParams) Hname() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, ParamHname.KeyID())
+	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamHname))
 }
 
 type MutableGetFeeInfoParams struct {
@@ -206,5 +206,5 @@ type MutableGetFeeInfoParams struct {
 }
 
 func (s MutableGetFeeInfoParams) Hname() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, ParamHname.KeyID())
+	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamHname))
 }

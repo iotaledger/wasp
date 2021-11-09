@@ -16,26 +16,26 @@ const (
 )
 
 const (
-	ParamAmount   = wasmlib.Key("amount")
-	ParamFeedback = wasmlib.Key("feedback")
-	ParamNr       = wasmlib.Key("nr")
+	ParamAmount   = "amount"
+	ParamFeedback = "feedback"
+	ParamNr       = "nr"
 )
 
 const (
-	ResultAmount        = wasmlib.Key("amount")
-	ResultCount         = wasmlib.Key("count")
-	ResultDonator       = wasmlib.Key("donator")
-	ResultError         = wasmlib.Key("error")
-	ResultFeedback      = wasmlib.Key("feedback")
-	ResultMaxDonation   = wasmlib.Key("maxDonation")
-	ResultTimestamp     = wasmlib.Key("timestamp")
-	ResultTotalDonation = wasmlib.Key("totalDonation")
+	ResultAmount        = "amount"
+	ResultCount         = "count"
+	ResultDonator       = "donator"
+	ResultError         = "error"
+	ResultFeedback      = "feedback"
+	ResultMaxDonation   = "maxDonation"
+	ResultTimestamp     = "timestamp"
+	ResultTotalDonation = "totalDonation"
 )
 
 const (
-	StateLog           = wasmlib.Key("log")
-	StateMaxDonation   = wasmlib.Key("maxDonation")
-	StateTotalDonation = wasmlib.Key("totalDonation")
+	StateLog           = "log"
+	StateMaxDonation   = "maxDonation"
+	StateTotalDonation = "totalDonation"
 )
 
 const (

@@ -35,7 +35,6 @@ pub struct ImmutableFairRouletteState {
 }
 
 impl ImmutableFairRouletteState {
-
     pub fn bets(&self) -> ArrayOfImmutableBet {
 		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_BETS), TYPE_ARRAY | TYPE_BYTES);
 		ArrayOfImmutableBet { obj_id: arr_id }
@@ -86,7 +85,6 @@ pub struct MutableFairRouletteState {
 }
 
 impl MutableFairRouletteState {
-
     pub fn bets(&self) -> ArrayOfMutableBet {
 		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_BETS), TYPE_ARRAY | TYPE_BYTES);
 		ArrayOfMutableBet { obj_id: arr_id }

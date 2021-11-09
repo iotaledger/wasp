@@ -16,38 +16,38 @@ const (
 )
 
 const (
-	ParamAddress     = wasmlib.Key("address")
-	ParamAgentID     = wasmlib.Key("agentID")
-	ParamBlockIndex  = wasmlib.Key("blockIndex")
-	ParamBytes       = wasmlib.Key("bytes")
-	ParamChainID     = wasmlib.Key("chainID")
-	ParamColor       = wasmlib.Key("color")
-	ParamHash        = wasmlib.Key("hash")
-	ParamHname       = wasmlib.Key("hname")
-	ParamIndex       = wasmlib.Key("index")
-	ParamInt16       = wasmlib.Key("int16")
-	ParamInt32       = wasmlib.Key("int32")
-	ParamInt64       = wasmlib.Key("int64")
-	ParamName        = wasmlib.Key("name")
-	ParamParam       = wasmlib.Key("this")
-	ParamRecordIndex = wasmlib.Key("recordIndex")
-	ParamRequestID   = wasmlib.Key("requestID")
-	ParamString      = wasmlib.Key("string")
-	ParamValue       = wasmlib.Key("value")
+	ParamAddress     = "address"
+	ParamAgentID     = "agentID"
+	ParamBlockIndex  = "blockIndex"
+	ParamBytes       = "bytes"
+	ParamChainID     = "chainID"
+	ParamColor       = "color"
+	ParamHash        = "hash"
+	ParamHname       = "hname"
+	ParamIndex       = "index"
+	ParamInt16       = "int16"
+	ParamInt32       = "int32"
+	ParamInt64       = "int64"
+	ParamName        = "name"
+	ParamParam       = "this"
+	ParamRecordIndex = "recordIndex"
+	ParamRequestID   = "requestID"
+	ParamString      = "string"
+	ParamValue       = "value"
 )
 
 const (
-	ResultCount  = wasmlib.Key("count")
-	ResultIotas  = wasmlib.Key("iotas")
-	ResultLength = wasmlib.Key("length")
-	ResultRandom = wasmlib.Key("random")
-	ResultRecord = wasmlib.Key("record")
-	ResultValue  = wasmlib.Key("value")
+	ResultCount  = "count"
+	ResultIotas  = "iotas"
+	ResultLength = "length"
+	ResultRandom = "random"
+	ResultRecord = "record"
+	ResultValue  = "value"
 )
 
 const (
-	StateArrays = wasmlib.Key("arrays")
-	StateRandom = wasmlib.Key("random")
+	StateArrays = "arrays"
+	StateRandom = "random"
 )
 
 const (

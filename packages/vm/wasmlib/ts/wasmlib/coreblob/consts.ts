@@ -13,18 +13,18 @@ export const HScName       = new wasmlib.ScHname(0xfd91bc63);
 
 export const ParamBlobs = "this";
 export const ParamField = "field";
-export const ParamHash = "hash";
+export const ParamHash  = "hash";
 
 export const ResultBlobSizes = "this";
-export const ResultBytes = "bytes";
-export const ResultHash = "hash";
+export const ResultBytes     = "bytes";
+export const ResultHash      = "hash";
 
-export const FuncStoreBlob = "storeBlob";
+export const FuncStoreBlob    = "storeBlob";
 export const ViewGetBlobField = "getBlobField";
-export const ViewGetBlobInfo = "getBlobInfo";
-export const ViewListBlobs = "listBlobs";
+export const ViewGetBlobInfo  = "getBlobInfo";
+export const ViewListBlobs    = "listBlobs";
 
-export const HFuncStoreBlob = new wasmlib.ScHname(0xddd4c281);
+export const HFuncStoreBlob    = new wasmlib.ScHname(0xddd4c281);
 export const HViewGetBlobField = new wasmlib.ScHname(0x1f448130);
-export const HViewGetBlobInfo = new wasmlib.ScHname(0xfde4ab46);
-export const HViewListBlobs = new wasmlib.ScHname(0x62ca7990);
+export const HViewGetBlobInfo  = new wasmlib.ScHname(0xfde4ab46);
+export const HViewListBlobs    = new wasmlib.ScHname(0x62ca7990);

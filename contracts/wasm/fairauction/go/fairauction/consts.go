@@ -16,33 +16,33 @@ const (
 )
 
 const (
-	ParamColor       = wasmlib.Key("color")
-	ParamDescription = wasmlib.Key("description")
-	ParamDuration    = wasmlib.Key("duration")
-	ParamMinimumBid  = wasmlib.Key("minimumBid")
-	ParamOwnerMargin = wasmlib.Key("ownerMargin")
+	ParamColor       = "color"
+	ParamDescription = "description"
+	ParamDuration    = "duration"
+	ParamMinimumBid  = "minimumBid"
+	ParamOwnerMargin = "ownerMargin"
 )
 
 const (
-	ResultBidders       = wasmlib.Key("bidders")
-	ResultColor         = wasmlib.Key("color")
-	ResultCreator       = wasmlib.Key("creator")
-	ResultDeposit       = wasmlib.Key("deposit")
-	ResultDescription   = wasmlib.Key("description")
-	ResultDuration      = wasmlib.Key("duration")
-	ResultHighestBid    = wasmlib.Key("highestBid")
-	ResultHighestBidder = wasmlib.Key("highestBidder")
-	ResultMinimumBid    = wasmlib.Key("minimumBid")
-	ResultNumTokens     = wasmlib.Key("numTokens")
-	ResultOwnerMargin   = wasmlib.Key("ownerMargin")
-	ResultWhenStarted   = wasmlib.Key("whenStarted")
+	ResultBidders       = "bidders"
+	ResultColor         = "color"
+	ResultCreator       = "creator"
+	ResultDeposit       = "deposit"
+	ResultDescription   = "description"
+	ResultDuration      = "duration"
+	ResultHighestBid    = "highestBid"
+	ResultHighestBidder = "highestBidder"
+	ResultMinimumBid    = "minimumBid"
+	ResultNumTokens     = "numTokens"
+	ResultOwnerMargin   = "ownerMargin"
+	ResultWhenStarted   = "whenStarted"
 )
 
 const (
-	StateAuctions    = wasmlib.Key("auctions")
-	StateBidderList  = wasmlib.Key("bidderList")
-	StateBids        = wasmlib.Key("bids")
-	StateOwnerMargin = wasmlib.Key("ownerMargin")
+	StateAuctions    = "auctions"
+	StateBidderList  = "bidderList"
+	StateBids        = "bids"
+	StateOwnerMargin = "ownerMargin"
 )
 
 const (

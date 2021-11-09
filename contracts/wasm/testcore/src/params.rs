@@ -20,7 +20,6 @@ pub struct ImmutableCallOnChainParams {
 }
 
 impl ImmutableCallOnChainParams {
-
     pub fn hname_contract(&self) -> ScImmutableHname {
 		ScImmutableHname::new(self.id, idx_map(IDX_PARAM_HNAME_CONTRACT))
 	}
@@ -40,7 +39,6 @@ pub struct MutableCallOnChainParams {
 }
 
 impl MutableCallOnChainParams {
-
     pub fn hname_contract(&self) -> ScMutableHname {
 		ScMutableHname::new(self.id, idx_map(IDX_PARAM_HNAME_CONTRACT))
 	}
@@ -60,7 +58,6 @@ pub struct ImmutableCheckContextFromFullEPParams {
 }
 
 impl ImmutableCheckContextFromFullEPParams {
-
     pub fn agent_id(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
 	}
@@ -88,7 +85,6 @@ pub struct MutableCheckContextFromFullEPParams {
 }
 
 impl MutableCheckContextFromFullEPParams {
-
     pub fn agent_id(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
 	}
@@ -116,7 +112,6 @@ pub struct ImmutableInitParams {
 }
 
 impl ImmutableInitParams {
-
     pub fn fail(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_FAIL))
 	}
@@ -128,7 +123,6 @@ pub struct MutableInitParams {
 }
 
 impl MutableInitParams {
-
     pub fn fail(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_FAIL))
 	}
@@ -140,7 +134,6 @@ pub struct ImmutablePassTypesFullParams {
 }
 
 impl ImmutablePassTypesFullParams {
-
     pub fn address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}
@@ -192,7 +185,6 @@ pub struct MutablePassTypesFullParams {
 }
 
 impl MutablePassTypesFullParams {
-
     pub fn address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}
@@ -244,7 +236,6 @@ pub struct ImmutableRunRecursionParams {
 }
 
 impl ImmutableRunRecursionParams {
-
     pub fn int_value(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
 	}
@@ -256,7 +247,6 @@ pub struct MutableRunRecursionParams {
 }
 
 impl MutableRunRecursionParams {
-
     pub fn int_value(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
 	}
@@ -268,7 +258,6 @@ pub struct ImmutableSendToAddressParams {
 }
 
 impl ImmutableSendToAddressParams {
-
     pub fn address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}
@@ -280,7 +269,6 @@ pub struct MutableSendToAddressParams {
 }
 
 impl MutableSendToAddressParams {
-
     pub fn address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}
@@ -292,7 +280,6 @@ pub struct ImmutableSetIntParams {
 }
 
 impl ImmutableSetIntParams {
-
     pub fn int_value(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
 	}
@@ -308,7 +295,6 @@ pub struct MutableSetIntParams {
 }
 
 impl MutableSetIntParams {
-
     pub fn int_value(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
 	}
@@ -324,7 +310,6 @@ pub struct ImmutableSpawnParams {
 }
 
 impl ImmutableSpawnParams {
-
     pub fn prog_hash(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_PROG_HASH))
 	}
@@ -336,7 +321,6 @@ pub struct MutableSpawnParams {
 }
 
 impl MutableSpawnParams {
-
     pub fn prog_hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.id, idx_map(IDX_PARAM_PROG_HASH))
 	}
@@ -348,7 +332,6 @@ pub struct ImmutableTestEventLogGenericDataParams {
 }
 
 impl ImmutableTestEventLogGenericDataParams {
-
     pub fn counter(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
 	}
@@ -360,7 +343,6 @@ pub struct MutableTestEventLogGenericDataParams {
 }
 
 impl MutableTestEventLogGenericDataParams {
-
     pub fn counter(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
 	}
@@ -372,7 +354,6 @@ pub struct ImmutableWithdrawToChainParams {
 }
 
 impl ImmutableWithdrawToChainParams {
-
     pub fn chain_id(&self) -> ScImmutableChainID {
 		ScImmutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
 	}
@@ -384,7 +365,6 @@ pub struct MutableWithdrawToChainParams {
 }
 
 impl MutableWithdrawToChainParams {
-
     pub fn chain_id(&self) -> ScMutableChainID {
 		ScMutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
 	}
@@ -396,7 +376,6 @@ pub struct ImmutableCheckContextFromViewEPParams {
 }
 
 impl ImmutableCheckContextFromViewEPParams {
-
     pub fn agent_id(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
 	}
@@ -420,7 +399,6 @@ pub struct MutableCheckContextFromViewEPParams {
 }
 
 impl MutableCheckContextFromViewEPParams {
-
     pub fn agent_id(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
 	}
@@ -444,7 +422,6 @@ pub struct ImmutableFibonacciParams {
 }
 
 impl ImmutableFibonacciParams {
-
     pub fn int_value(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
 	}
@@ -456,7 +433,6 @@ pub struct MutableFibonacciParams {
 }
 
 impl MutableFibonacciParams {
-
     pub fn int_value(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT_VALUE))
 	}
@@ -468,7 +444,6 @@ pub struct ImmutableGetIntParams {
 }
 
 impl ImmutableGetIntParams {
-
     pub fn name(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
 	}
@@ -480,7 +455,6 @@ pub struct MutableGetIntParams {
 }
 
 impl MutableGetIntParams {
-
     pub fn name(&self) -> ScMutableString {
 		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
 	}
@@ -492,7 +466,6 @@ pub struct ImmutableGetStringValueParams {
 }
 
 impl ImmutableGetStringValueParams {
-
     pub fn var_name(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, idx_map(IDX_PARAM_VAR_NAME))
 	}
@@ -504,7 +477,6 @@ pub struct MutableGetStringValueParams {
 }
 
 impl MutableGetStringValueParams {
-
     pub fn var_name(&self) -> ScMutableString {
 		ScMutableString::new(self.id, idx_map(IDX_PARAM_VAR_NAME))
 	}
@@ -516,7 +488,6 @@ pub struct ImmutablePassTypesViewParams {
 }
 
 impl ImmutablePassTypesViewParams {
-
     pub fn address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}
@@ -568,7 +539,6 @@ pub struct MutablePassTypesViewParams {
 }
 
 impl MutablePassTypesViewParams {
-
     pub fn address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}

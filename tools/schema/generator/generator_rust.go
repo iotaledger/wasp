@@ -84,33 +84,22 @@ func (g *RustGenerator) init(s *Schema) {
 }
 
 func (g *RustGenerator) funcName(f *Func) string {
-	return snake(f.FuncName)
+	return snake(g.GenBase.funcName(f))
 }
 
 func (g *RustGenerator) generateLanguageSpecificFiles() error {
 	if g.s.CoreContracts {
-		return g.createSourceFile("mod")
+		return g.createSourceFile("mod", true)
 	}
 
 	cargoToml := "Cargo.toml"
-	err := g.exists(cargoToml)
-	if err == nil {
-		// already exists
-		return nil
-	}
-
-	err = g.create(cargoToml)
-	if err != nil {
-		return err
-	}
-	defer g.close()
-
-	g.emit(cargoToml)
-	return nil
+	return g.createFile(cargoToml, false, func() {
+		g.emit(cargoToml)
+	})
 }
 
-func (g *RustGenerator) setFieldKeys() {
-	g.GenBase.setFieldKeys()
+func (g *RustGenerator) setFieldKeys(pad bool) {
+	g.GenBase.setFieldKeys(pad)
 
 	field := g.currentField
 	fldRef := "&"
@@ -123,19 +112,8 @@ func (g *RustGenerator) setFieldKeys() {
 	if fldTypeID == "" {
 		fldTypeID = "TYPE_BYTES"
 	}
-	g.keys["FldTypeID"] = fldTypeID
-	g.keys["FldTypeKey"] = rustKeys[field.Type]
-	g.keys["FldLangType"] = rustTypes[field.Type]
-	g.keys["FldMapKeyLangType"] = rustKeyTypes[field.MapKey]
-	g.keys["FldMapKeyKey"] = rustKeys[field.MapKey]
-}
-
-func (g *RustGenerator) setFuncKeys() {
-	g.GenBase.setFuncKeys()
-
-	initFunc := ""
-	if g.currentFunc.Type == InitFunc {
-		initFunc = InitFunc
-	}
-	g.keys["initFunc"] = initFunc
+	g.keys["fldTypeID"] = fldTypeID
+	g.keys["fldLangType"] = rustTypes[field.Type]
+	g.keys["fldMapKeyLangType"] = rustKeyTypes[field.MapKey]
+	g.keys["fldMapKeyKey"] = rustKeys[field.MapKey]
 }
