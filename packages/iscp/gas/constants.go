@@ -1,7 +1,9 @@
 package gas
 
 const (
-	// for the iscp.Sandbox.Utils inteface
+	// Gas burned per 1 stored byte
+	PerByte = 1
+	// for the iscp.Sandbox.Utils interface
 	UtilsHashingBlake2b              = 200
 	UtilsHashingSha3                 = 300
 	UtilsHashingHname                = 210

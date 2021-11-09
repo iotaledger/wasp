@@ -3,6 +3,8 @@ package blob
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/iscp/gas"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -24,18 +26,6 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func getMaxBlobSize(ctx iscp.Sandbox) uint32 {
-	r, err := ctx.Call(governance.Contract.Hname(), governance.FuncGetMaxBlobSize.Hname(), nil, nil)
-	if err != nil {
-		ctx.Log().Panicf("error getting max blob size, %v", err)
-	}
-	maxBlobSize, err := codec.DecodeUint32(r.MustGet(governance.ParamMaxBlobSize), 0)
-	if err != nil {
-		ctx.Log().Panicf("error getting max blob size, %v", err)
-	}
-	return maxBlobSize
-}
-
 // storeBlob treats parameters as names of fields and field values
 // it stores it in the state in deterministic binary representation
 // Returns hash of the blob
@@ -55,6 +45,7 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 	blbSizes := GetBlobSizes(state, blobHash)
 
 	totalSize := uint32(0)
+	totalSizeWithKeys := uint32(0)
 
 	// save record of the blob. In parallel save record of sizes of blob fields
 	sizes := make([]uint32, len(kSorted))
@@ -67,7 +58,13 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 		blbSizes.MustSetAt([]byte(k), EncodeSize(size))
 		sizes[i] = size
 		totalSize += size
+		totalSizeWithKeys += size + uint32(len(k))
 	}
+
+	// TODO experimental. Alternative approach would be burning gas directly in the state access interface
+	//  Set and Del mutation would burn net difference between size of the current key+value and the new one
+	//  Burning storage gas can be negative, which means we are saving the space and therefore adding to the available budget
+	ctx.Gas().Burn(gas.PerByte * int64(totalSizeWithKeys))
 
 	ret := dict.New()
 	ret.Set(ParamHash, codec.EncodeHashValue(blobHash))
@@ -123,4 +120,16 @@ func listBlobs(ctx iscp.SandboxView) (dict.Dict, error) {
 		return true
 	})
 	return ret, nil
+}
+
+func getMaxBlobSize(ctx iscp.Sandbox) uint32 {
+	r, err := ctx.Call(governance.Contract.Hname(), governance.FuncGetMaxBlobSize.Hname(), nil, nil)
+	if err != nil {
+		ctx.Log().Panicf("error getting max blob size, %v", err)
+	}
+	maxBlobSize, err := codec.DecodeUint32(r.MustGet(governance.ParamMaxBlobSize), 0)
+	if err != nil {
+		ctx.Log().Panicf("error getting max blob size, %v", err)
+	}
+	return maxBlobSize
 }
