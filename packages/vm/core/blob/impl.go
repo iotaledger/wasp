@@ -61,7 +61,7 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 		totalSizeWithKeys += size + uint32(len(k))
 	}
 
-	// TODO experimental. Alternative approach would be burning gas directly in the state access interface
+	// TODO this code is experimental. Alternative approach would be burning gas directly in the state access interface
 	//  Set and Del mutation would burn net difference between size of the current key+value and the new one
 	//  Burning storage gas can be negative, which means we are saving the space and therefore adding to the available budget
 	ctx.Gas().Burn(gas.PerByte * int64(totalSizeWithKeys))
