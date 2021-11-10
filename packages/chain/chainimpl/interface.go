@@ -62,7 +62,7 @@ func (c *chainObj) Dismiss(reason string) {
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
 
-		c.chMsg.Close()
+		c.msgPipe.Close()
 
 		c.mempool.Close()
 		c.stateMgr.Close()
@@ -94,7 +94,7 @@ func (c *chainObj) receiveMessage(msg interface{}) {
 	if c.IsDismissed() {
 		return
 	}
-	c.chMsg.In() <- msg
+	c.msgPipe.In() <- msg
 }
 
 func shouldSendToPeer(peerID string, ackPeers []string) bool {

@@ -19,9 +19,10 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 )
@@ -35,8 +36,6 @@ const (
 	// All the equal and larger msg types are committee messages.
 	// those with smaller are reserved by the package for heartbeat and handshake messages
 	FirstUserMsgCode = byte(0x10)
-
-	chunkMessageOverhead = 8 + 1
 )
 
 // PeeringID is relates peers in different nodes for a particular
@@ -232,10 +231,13 @@ type PeerMessage struct {
 	Timestamp   int64
 	MsgType     byte
 	MsgData     []byte
+	serialized  *[]byte
 }
 
+var _ pipe.Hashable = &PeerMessage{}
+
 //nolint:gocritic
-func NewPeerMessageFromBytes(buf []byte, peerPubKey *ed25519.PublicKey) (*PeerMessage, error) {
+func NewPeerMessageFromBytes(buf []byte) (*PeerMessage, error) {
 	var err error
 	r := bytes.NewBuffer(buf)
 	m := PeerMessage{}
@@ -265,39 +267,22 @@ func NewPeerMessageFromBytes(buf []byte, peerPubKey *ed25519.PublicKey) (*PeerMe
 		if m.MsgData, err = util.ReadBytes32(r); err != nil {
 			return nil, err
 		}
-		if peerPubKey != nil {
-			// Check the signature, if key is provided.
-			lenBeforeSig := r.Len()
-			var signatureBin []byte
-			if signatureBin, err = util.ReadBytes16(r); err != nil {
-				return nil, xerrors.Errorf("failed to read signature: %w", err)
-			}
-			var signature ed25519.Signature
-			if signature, _, err = ed25519.SignatureFromBytes(signatureBin); err != nil {
-				return nil, xerrors.Errorf("failed to parse signature: %w", err)
-			}
-			if !peerPubKey.VerifySignature(buf[:len(buf)-lenBeforeSig], signature) {
-				return nil, xerrors.New("signature verification failed")
-			}
-		}
 	}
 	return &m, nil
 }
 
-// NewPeerMessageFromChunks can return nil, if there is not enough chunks to reconstruct the message.
-func NewPeerMessageFromChunks(chunkBytes []byte, chunkSize int, msgChopper *chopper.Chopper, peerPubKey *ed25519.PublicKey) (*PeerMessage, error) {
-	var err error
-	var msgBytes []byte
-	if msgBytes, err = msgChopper.IncomingChunk(chunkBytes, chunkSize, chunkMessageOverhead); err != nil {
-		return nil, err
+func (m *PeerMessage) Bytes() ([]byte, error) {
+	if m.serialized == nil {
+		serialized, err := m.bytes()
+		if err != nil {
+			return nil, err
+		}
+		m.serialized = &serialized
 	}
-	if msgBytes == nil {
-		return nil, nil
-	}
-	return NewPeerMessageFromBytes(msgBytes, peerPubKey)
+	return *(m.serialized), nil
 }
 
-func (m *PeerMessage) Bytes(nodeIdentity *ed25519.KeyPair) ([]byte, error) {
+func (m *PeerMessage) bytes() ([]byte, error) {
 	var buf bytes.Buffer
 	if err := util.WriteInt64(&buf, m.Timestamp); err != nil {
 		return nil, err
@@ -325,49 +310,20 @@ func (m *PeerMessage) Bytes(nodeIdentity *ed25519.KeyPair) ([]byte, error) {
 		if err := util.WriteBytes32(&buf, m.MsgData); err != nil {
 			return nil, err
 		}
-		if nodeIdentity != nil {
-			// Only use signatures, if the key is provided.
-			payload := buf.Bytes()
-			signature := nodeIdentity.PrivateKey.Sign(payload).Bytes()
-			if err := util.WriteBytes16(&buf, signature); err != nil {
-				return nil, xerrors.Errorf("failed to write signature: %w", err)
-			}
-		}
 	}
 	return buf.Bytes(), nil
 }
 
-func (m *PeerMessage) ChunkedBytes(chunkSize int, msgChopper *chopper.Chopper, nodeIdentity *ed25519.KeyPair) ([][]byte, error) {
-	var err error
-	var msgBytes []byte
-	if msgBytes, err = m.Bytes(nodeIdentity); err != nil {
-		return nil, err
-	}
-	var choppedBytes [][]byte
-	var chopped bool
-	choppedBytes, chopped, err = msgChopper.ChopData(msgBytes, chunkSize, chunkMessageOverhead)
-	if err != nil {
-		return nil, err
-	}
-	if chopped {
-		msgs := make([][]byte, len(choppedBytes))
-		for i := range choppedBytes {
-			chunkMsg := PeerMessage{
-				Timestamp: m.Timestamp,
-				MsgType:   MsgTypeMsgChunk,
-				MsgData:   choppedBytes[i],
-			}
-			if msgs[i], err = chunkMsg.Bytes(nil); err != nil {
-				return nil, err
-			}
-		}
-		return msgs, nil
-	}
-	return [][]byte{msgBytes}, nil
-}
-
 func (m *PeerMessage) IsUserMessage() bool {
 	return m.MsgType >= FirstUserMsgCode
+}
+
+func (m *PeerMessage) GetHash() hashing.HashValue {
+	mBytes, err := m.Bytes()
+	if err != nil {
+		return hashing.HashValue{}
+	}
+	return hashing.HashData(mBytes)
 }
 
 // ParseNetID parses the NetID and returns the corresponding host and port.
