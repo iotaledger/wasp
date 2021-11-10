@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class MapStringToImmutableStringArray {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -22,22 +22,25 @@ export class MapStringToImmutableStringArray {
 }
 
 export class ImmutableTestWasmLibState extends wasmlib.ScMapID {
-
     arrays(): sc.MapStringToImmutableStringArray {
-        let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateArrays], wasmlib.TYPE_MAP);
-        return new sc.MapStringToImmutableStringArray(mapID);
-    }
+		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateArrays], wasmlib.TYPE_MAP);
+		return new sc.MapStringToImmutableStringArray(mapID);
+	}
+
+    random(): wasmlib.ScImmutableInt64 {
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateRandom]);
+	}
 }
 
 export class MapStringToMutableStringArray {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
     }
 
     clear(): void {
-        wasmlib.clear(this.objID)
+        wasmlib.clear(this.objID);
     }
 
     getStringArray(key: string): sc.MutableStringArray {
@@ -47,9 +50,12 @@ export class MapStringToMutableStringArray {
 }
 
 export class MutableTestWasmLibState extends wasmlib.ScMapID {
-
     arrays(): sc.MapStringToMutableStringArray {
-        let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateArrays], wasmlib.TYPE_MAP);
-        return new sc.MapStringToMutableStringArray(mapID);
-    }
+		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateArrays], wasmlib.TYPE_MAP);
+		return new sc.MapStringToMutableStringArray(mapID);
+	}
+
+    random(): wasmlib.ScMutableInt64 {
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateRandom]);
+	}
 }

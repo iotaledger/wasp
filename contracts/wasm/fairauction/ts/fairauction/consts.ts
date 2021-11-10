@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 
 export const ScName        = "fairauction";
 export const ScDescription = "Decentralized auction to securely sell tokens to the highest bidder";

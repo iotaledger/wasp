@@ -10,29 +10,30 @@ package fairroulette
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
-	ScName  = "fairroulette"
-	HScName = wasmlib.ScHname(0xdf79d138)
+	ScName        = "fairroulette"
+	ScDescription = ""
+	HScName       = wasmlib.ScHname(0xdf79d138)
 )
 
 const (
-	ParamNumber     = wasmlib.Key("number")
-	ParamPlayPeriod = wasmlib.Key("playPeriod")
+	ParamNumber     = "number"
+	ParamPlayPeriod = "playPeriod"
 )
 
 const (
-	ResultLastWinningNumber = wasmlib.Key("lastWinningNumber")
-	ResultRoundNumber       = wasmlib.Key("roundNumber")
-	ResultRoundStartedAt    = wasmlib.Key("roundStartedAt")
-	ResultRoundStatus       = wasmlib.Key("roundStatus")
+	ResultLastWinningNumber = "lastWinningNumber"
+	ResultRoundNumber       = "roundNumber"
+	ResultRoundStartedAt    = "roundStartedAt"
+	ResultRoundStatus       = "roundStatus"
 )
 
 const (
-	StateBets              = wasmlib.Key("bets")
-	StateLastWinningNumber = wasmlib.Key("lastWinningNumber")
-	StatePlayPeriod        = wasmlib.Key("playPeriod")
-	StateRoundNumber       = wasmlib.Key("roundNumber")
-	StateRoundStartedAt    = wasmlib.Key("roundStartedAt")
-	StateRoundStatus       = wasmlib.Key("roundStatus")
+	StateBets              = "bets"
+	StateLastWinningNumber = "lastWinningNumber"
+	StatePlayPeriod        = "playPeriod"
+	StateRoundNumber       = "roundNumber"
+	StateRoundStartedAt    = "roundStartedAt"
+	StateRoundStatus       = "roundStatus"
 )
 
 const (

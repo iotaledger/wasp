@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export function on_call(index: i32): void {
@@ -14,12 +14,12 @@ export function on_call(index: i32): void {
 
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncDivide, funcDivideThunk);
-    exports.addFunc(sc.FuncInit, funcInitThunk);
-    exports.addFunc(sc.FuncMember, funcMemberThunk);
-    exports.addFunc(sc.FuncSetOwner, funcSetOwnerThunk);
+    exports.addFunc(sc.FuncDivide,    funcDivideThunk);
+    exports.addFunc(sc.FuncInit,      funcInitThunk);
+    exports.addFunc(sc.FuncMember,    funcMemberThunk);
+    exports.addFunc(sc.FuncSetOwner,  funcSetOwnerThunk);
     exports.addView(sc.ViewGetFactor, viewGetFactorThunk);
-    exports.addView(sc.ViewGetOwner, viewGetOwnerThunk);
+    exports.addView(sc.ViewGetOwner,  viewGetOwnerThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
@@ -27,69 +27,71 @@ export function on_load(): void {
 }
 
 function funcDivideThunk(ctx: wasmlib.ScFuncContext): void {
-    ctx.log("dividend.funcDivide");
-    let f = new sc.DivideContext();
+	ctx.log("dividend.funcDivide");
+	let f = new sc.DivideContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    sc.funcDivide(ctx, f);
-    ctx.log("dividend.funcDivide ok");
+	sc.funcDivide(ctx, f);
+	ctx.log("dividend.funcDivide ok");
 }
 
 function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
-    ctx.log("dividend.funcInit");
-    let f = new sc.InitContext();
+	ctx.log("dividend.funcInit");
+	let f = new sc.InitContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    sc.funcInit(ctx, f);
-    ctx.log("dividend.funcInit ok");
+	sc.funcInit(ctx, f);
+	ctx.log("dividend.funcInit ok");
 }
 
 function funcMemberThunk(ctx: wasmlib.ScFuncContext): void {
-    ctx.log("dividend.funcMember");
-    // only defined owner of contract can add members
-    let access = ctx.state().getAgentID(wasmlib.Key32.fromString("owner"));
-    ctx.require(access.exists(), "access not set: owner");
-    ctx.require(ctx.caller().equals(access.value()), "no permission");
+	ctx.log("dividend.funcMember");
 
-    let f = new sc.MemberContext();
+	// only defined owner of contract can add members
+	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("owner"));
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller().equals(access.value()), "no permission");
+
+	let f = new sc.MemberContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    ctx.require(f.params.address().exists(), "missing mandatory address")
-    ctx.require(f.params.factor().exists(), "missing mandatory factor")
-    sc.funcMember(ctx, f);
-    ctx.log("dividend.funcMember ok");
+	ctx.require(f.params.address().exists(), "missing mandatory address");
+	ctx.require(f.params.factor().exists(), "missing mandatory factor");
+	sc.funcMember(ctx, f);
+	ctx.log("dividend.funcMember ok");
 }
 
 function funcSetOwnerThunk(ctx: wasmlib.ScFuncContext): void {
-    ctx.log("dividend.funcSetOwner");
-    // only defined owner of contract can change owner
-    let access = ctx.state().getAgentID(wasmlib.Key32.fromString("owner"));
-    ctx.require(access.exists(), "access not set: owner");
-    ctx.require(ctx.caller().equals(access.value()), "no permission");
+	ctx.log("dividend.funcSetOwner");
 
-    let f = new sc.SetOwnerContext();
+	// only defined owner of contract can change owner
+	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("owner"));
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller().equals(access.value()), "no permission");
+
+	let f = new sc.SetOwnerContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    ctx.require(f.params.owner().exists(), "missing mandatory owner")
-    sc.funcSetOwner(ctx, f);
-    ctx.log("dividend.funcSetOwner ok");
+	ctx.require(f.params.owner().exists(), "missing mandatory owner");
+	sc.funcSetOwner(ctx, f);
+	ctx.log("dividend.funcSetOwner ok");
 }
 
 function viewGetFactorThunk(ctx: wasmlib.ScViewContext): void {
-    ctx.log("dividend.viewGetFactor");
-    let f = new sc.GetFactorContext();
+	ctx.log("dividend.viewGetFactor");
+	let f = new sc.GetFactorContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    ctx.require(f.params.address().exists(), "missing mandatory address")
-    sc.viewGetFactor(ctx, f);
-    ctx.log("dividend.viewGetFactor ok");
+	ctx.require(f.params.address().exists(), "missing mandatory address");
+	sc.viewGetFactor(ctx, f);
+	ctx.log("dividend.viewGetFactor ok");
 }
 
 function viewGetOwnerThunk(ctx: wasmlib.ScViewContext): void {
-    ctx.log("dividend.viewGetOwner");
-    let f = new sc.GetOwnerContext();
+	ctx.log("dividend.viewGetOwner");
+	let f = new sc.GetOwnerContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    sc.viewGetOwner(ctx, f);
-    ctx.log("dividend.viewGetOwner ok");
+	sc.viewGetOwner(ctx, f);
+	ctx.log("dividend.viewGetOwner ok");
 }

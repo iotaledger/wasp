@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class MapAgentIDToImmutableBytes {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -21,21 +21,20 @@ export class MapAgentIDToImmutableBytes {
 }
 
 export class ImmutableAccountsResults extends wasmlib.ScMapID {
-
     agents(): sc.MapAgentIDToImmutableBytes {
-        return new sc.MapAgentIDToImmutableBytes(this.mapID);
-    }
+		return new sc.MapAgentIDToImmutableBytes(this.mapID);
+	}
 }
 
 export class MapAgentIDToMutableBytes {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
     }
 
     clear(): void {
-        wasmlib.clear(this.objID)
+        wasmlib.clear(this.objID);
     }
 
     getBytes(key: wasmlib.ScAgentID): wasmlib.ScMutableBytes {
@@ -44,14 +43,13 @@ export class MapAgentIDToMutableBytes {
 }
 
 export class MutableAccountsResults extends wasmlib.ScMapID {
-
     agents(): sc.MapAgentIDToMutableBytes {
-        return new sc.MapAgentIDToMutableBytes(this.mapID);
-    }
+		return new sc.MapAgentIDToMutableBytes(this.mapID);
+	}
 }
 
 export class MapColorToImmutableInt64 {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -63,21 +61,20 @@ export class MapColorToImmutableInt64 {
 }
 
 export class ImmutableBalanceResults extends wasmlib.ScMapID {
-
     balances(): sc.MapColorToImmutableInt64 {
-        return new sc.MapColorToImmutableInt64(this.mapID);
-    }
+		return new sc.MapColorToImmutableInt64(this.mapID);
+	}
 }
 
 export class MapColorToMutableInt64 {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
     }
 
     clear(): void {
-        wasmlib.clear(this.objID)
+        wasmlib.clear(this.objID);
     }
 
     getInt64(key: wasmlib.ScColor): wasmlib.ScMutableInt64 {
@@ -86,36 +83,31 @@ export class MapColorToMutableInt64 {
 }
 
 export class MutableBalanceResults extends wasmlib.ScMapID {
-
     balances(): sc.MapColorToMutableInt64 {
-        return new sc.MapColorToMutableInt64(this.mapID);
-    }
+		return new sc.MapColorToMutableInt64(this.mapID);
+	}
 }
 
 export class ImmutableGetAccountNonceResults extends wasmlib.ScMapID {
-
     accountNonce(): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultAccountNonce));
-    }
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultAccountNonce));
+	}
 }
 
 export class MutableGetAccountNonceResults extends wasmlib.ScMapID {
-
     accountNonce(): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultAccountNonce));
-    }
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultAccountNonce));
+	}
 }
 
 export class ImmutableTotalAssetsResults extends wasmlib.ScMapID {
-
     balances(): sc.MapColorToImmutableInt64 {
-        return new sc.MapColorToImmutableInt64(this.mapID);
-    }
+		return new sc.MapColorToImmutableInt64(this.mapID);
+	}
 }
 
 export class MutableTotalAssetsResults extends wasmlib.ScMapID {
-
     balances(): sc.MapColorToMutableInt64 {
-        return new sc.MapColorToMutableInt64(this.mapID);
-    }
+		return new sc.MapColorToMutableInt64(this.mapID);
+	}
 }

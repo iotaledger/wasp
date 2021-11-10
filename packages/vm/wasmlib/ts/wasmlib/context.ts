@@ -7,7 +7,7 @@ import {BytesDecoder, BytesEncoder} from "./bytes";
 import {Convert} from "./convert";
 import {ScFuncCallContext, ScViewCallContext} from "./contract";
 import {ScAddress, ScAgentID, ScChainID, ScColor, ScHash, ScHname, ScRequestID} from "./hashtypes";
-import {log, OBJ_ID_ROOT, panic} from "./host";
+import {log, OBJ_ID_ROOT, OBJ_ID_STATE, panic} from "./host";
 import {ScImmutableColorArray, ScImmutableMap} from "./immutable";
 import * as keys from "./keys";
 import {ScMutableMap} from "./mutable";
@@ -162,13 +162,6 @@ export class ScUtility {
     hname(name: string): ScHname {
         let result = this.utility.callFunc(keys.KEY_HNAME, Convert.fromString(name));
         return ScHname.fromBytes(result);
-    }
-
-    // generates a random value from 0 to max (exclusive max) using a deterministic RNG
-    random(max: i64): i64 {
-        let result = this.utility.callFunc(keys.KEY_RANDOM, []);
-        let rnd = Convert.toI64(result);
-        return (rnd as u64 % max as u64) as i64;
     }
 }
 
@@ -332,6 +325,18 @@ export class ScFuncContext extends ScBaseContext implements ScViewCallContext, S
     // shorthand to asynchronously call a smart contract function of the current contract
     postSelf(hfunction: ScHname, params: ScMutableMap | null, transfer: ScTransfers, delay: i32): void {
         this.post(this.chainID(), this.contract(), hfunction, params, transfer, delay);
+    }
+
+    // generates a random value from 0 to max (exclusive max) using a deterministic RNG
+    random(max: i64): i64 {
+        let state = new ScMutableMap(OBJ_ID_STATE);
+        let rnd = state.getBytes(keys.KEY_RANDOM);
+        let seed = rnd.value();
+        if (seed.length == 0) {
+            seed = ROOT.getBytes(keys.KEY_RANDOM).value();
+        }
+        rnd.setValue(this.utility().hashSha3(seed).toBytes());
+        return (Convert.toI64(seed.slice(0, 8)) as u64 % max as u64) as i64;
     }
 
     // retrieve the request id of this transaction

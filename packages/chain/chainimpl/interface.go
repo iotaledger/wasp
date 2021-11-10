@@ -100,7 +100,7 @@ func (c *chainObj) AttachToPeerMessages(fun func(recv *peering.RecvEvent)) {
 
 func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
 	c.stateMgr.EventStateCandidateMsg(virtualState, outputID)
-}
+	}
 
 // ReceiveMessage accepts an incoming message asynchronously.
 /*func (c *chainObj) ReceiveMessage(msg interface{}) {

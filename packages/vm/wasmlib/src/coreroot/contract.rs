@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use std::ptr;
@@ -15,29 +13,29 @@ use crate::*;
 use crate::coreroot::*;
 
 pub struct DeployContractCall {
-    pub func:   ScFunc,
-    pub params: MutableDeployContractParams,
+	pub func: ScFunc,
+	pub params: MutableDeployContractParams,
 }
 
 pub struct GrantDeployPermissionCall {
-    pub func:   ScFunc,
-    pub params: MutableGrantDeployPermissionParams,
+	pub func: ScFunc,
+	pub params: MutableGrantDeployPermissionParams,
 }
 
 pub struct RevokeDeployPermissionCall {
-    pub func:   ScFunc,
-    pub params: MutableRevokeDeployPermissionParams,
+	pub func: ScFunc,
+	pub params: MutableRevokeDeployPermissionParams,
 }
 
 pub struct FindContractCall {
-    pub func:    ScView,
-    pub params:  MutableFindContractParams,
-    pub results: ImmutableFindContractResults,
+	pub func: ScView,
+	pub params: MutableFindContractParams,
+	pub results: ImmutableFindContractResults,
 }
 
 pub struct GetContractRecordsCall {
-    pub func:    ScView,
-    pub results: ImmutableGetContractRecordsResults,
+	pub func: ScView,
+	pub results: ImmutableGetContractRecordsResults,
 }
 
 pub struct ScFuncs {
@@ -46,45 +44,47 @@ pub struct ScFuncs {
 impl ScFuncs {
     pub fn deploy_contract(_ctx: & dyn ScFuncCallContext) -> DeployContractCall {
         let mut f = DeployContractCall {
-            func:   ScFunc::new(HSC_NAME, HFUNC_DEPLOY_CONTRACT),
+            func: ScFunc::new(HSC_NAME, HFUNC_DEPLOY_CONTRACT),
             params: MutableDeployContractParams { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn grant_deploy_permission(_ctx: & dyn ScFuncCallContext) -> GrantDeployPermissionCall {
         let mut f = GrantDeployPermissionCall {
-            func:   ScFunc::new(HSC_NAME, HFUNC_GRANT_DEPLOY_PERMISSION),
+            func: ScFunc::new(HSC_NAME, HFUNC_GRANT_DEPLOY_PERMISSION),
             params: MutableGrantDeployPermissionParams { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn revoke_deploy_permission(_ctx: & dyn ScFuncCallContext) -> RevokeDeployPermissionCall {
         let mut f = RevokeDeployPermissionCall {
-            func:   ScFunc::new(HSC_NAME, HFUNC_REVOKE_DEPLOY_PERMISSION),
+            func: ScFunc::new(HSC_NAME, HFUNC_REVOKE_DEPLOY_PERMISSION),
             params: MutableRevokeDeployPermissionParams { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn find_contract(_ctx: & dyn ScViewCallContext) -> FindContractCall {
         let mut f = FindContractCall {
-            func:    ScView::new(HSC_NAME, HVIEW_FIND_CONTRACT),
-            params:  MutableFindContractParams { id: 0 },
+            func: ScView::new(HSC_NAME, HVIEW_FIND_CONTRACT),
+            params: MutableFindContractParams { id: 0 },
             results: ImmutableFindContractResults { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_contract_records(_ctx: & dyn ScViewCallContext) -> GetContractRecordsCall {
         let mut f = GetContractRecordsCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_CONTRACT_RECORDS),
+            func: ScView::new(HSC_NAME, HVIEW_GET_CONTRACT_RECORDS),
             results: ImmutableGetContractRecordsResults { id: 0 },
         };
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
     }
 }
-
-// @formatter:on

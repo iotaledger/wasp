@@ -21,12 +21,12 @@ pub struct ImmutableIncCounterState {
 
 impl ImmutableIncCounterState {
     pub fn counter(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
+	}
 
     pub fn num_repeats(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_STATE_NUM_REPEATS))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_NUM_REPEATS))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -36,10 +36,10 @@ pub struct MutableIncCounterState {
 
 impl MutableIncCounterState {
     pub fn counter(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
+	}
 
     pub fn num_repeats(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_STATE_NUM_REPEATS))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_STATE_NUM_REPEATS))
+	}
 }

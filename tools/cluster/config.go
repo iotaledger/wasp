@@ -3,7 +3,7 @@ package cluster
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 
@@ -63,7 +63,7 @@ func ConfigExists(dataPath string) (bool, error) {
 }
 
 func LoadConfig(dataPath string) (*ClusterConfig, error) {
-	b, err := ioutil.ReadFile(configPath(dataPath))
+	b, err := os.ReadFile(configPath(dataPath))
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (c *ClusterConfig) Save(dataPath string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(configPath(dataPath), b, 0o600)
+	return os.WriteFile(configPath(dataPath), b, 0o600)
 }
 
 func configPath(dataPath string) string {

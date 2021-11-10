@@ -141,6 +141,25 @@ func (e *evmChainInstance) callView(funName string, params ...interface{}) (dict
 	return e.soloChain.CallView(e.evmFlavor.Name, funName, params...)
 }
 
+func (e *evmChainInstance) setBlockTime(t uint32) {
+	_, err := e.postRequest(nil, evm.FuncSetBlockTime.Name, evm.FieldBlockTime, codec.EncodeUint32(t))
+	require.NoError(e.t, err)
+}
+
+func (e *evmChainInstance) getBlockNumber() uint64 {
+	ret, err := e.callView(evm.FuncGetBlockNumber.Name)
+	require.NoError(e.t, err)
+	return new(big.Int).SetBytes(ret.MustGet(evm.FieldResult)).Uint64()
+}
+
+func (e *evmChainInstance) getBlockByNumber(n uint64) *types.Block {
+	ret, err := e.callView(evm.FuncGetBlockByNumber.Name, evm.FieldBlockNumber, new(big.Int).SetUint64(n).Bytes())
+	require.NoError(e.t, err)
+	block, err := evmtypes.DecodeBlock(ret.MustGet(evm.FieldResult))
+	require.NoError(e.t, err)
+	return block
+}
+
 func (e *evmChainInstance) getCode(addr common.Address) []byte {
 	ret, err := e.callView(evm.FuncGetCode.Name, evm.FieldAddress, addr.Bytes())
 	require.NoError(e.t, err)
@@ -369,7 +388,7 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	res.receipt, err = evmtypes.DecodeReceiptFull(receiptResult.MustGet(evm.FieldResult))
 	require.NoError(e.chain.t, err)
 
-	require.LessOrEqual(e.chain.t, res.receipt.GasUsed, gasUsed)
+	require.EqualValues(e.chain.t, res.receipt.GasUsed, gasUsed)
 	return
 }
 

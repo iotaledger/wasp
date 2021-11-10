@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ArrayOfImmutableBet {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -19,41 +19,40 @@ export class ArrayOfImmutableBet {
         return wasmlib.getLength(this.objID);
     }
 
-    getBet(index: i32): sc.ImmutableBet {
-        return new sc.ImmutableBet(this.objID, new wasmlib.Key32(index));
-    }
+	getBet(index: i32): sc.ImmutableBet {
+		return new sc.ImmutableBet(this.objID, new wasmlib.Key32(index));
+	}
 }
 
 export class ImmutableFairRouletteState extends wasmlib.ScMapID {
-
     bets(): sc.ArrayOfImmutableBet {
-        let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
-        return new sc.ArrayOfImmutableBet(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
+		return new sc.ArrayOfImmutableBet(arrID);
+	}
 
     lastWinningNumber(): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateLastWinningNumber]);
-    }
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateLastWinningNumber]);
+	}
 
     playPeriod(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxStatePlayPeriod]);
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxStatePlayPeriod]);
+	}
 
     roundNumber(): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateRoundNumber]);
-    }
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateRoundNumber]);
+	}
 
     roundStartedAt(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxStateRoundStartedAt]);
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxStateRoundStartedAt]);
+	}
 
     roundStatus(): wasmlib.ScImmutableInt16 {
-        return new wasmlib.ScImmutableInt16(this.mapID, sc.idxMap[sc.IdxStateRoundStatus]);
-    }
+		return new wasmlib.ScImmutableInt16(this.mapID, sc.idxMap[sc.IdxStateRoundStatus]);
+	}
 }
 
 export class ArrayOfMutableBet {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -67,35 +66,34 @@ export class ArrayOfMutableBet {
         return wasmlib.getLength(this.objID);
     }
 
-    getBet(index: i32): sc.MutableBet {
-        return new sc.MutableBet(this.objID, new wasmlib.Key32(index));
-    }
+	getBet(index: i32): sc.MutableBet {
+		return new sc.MutableBet(this.objID, new wasmlib.Key32(index));
+	}
 }
 
 export class MutableFairRouletteState extends wasmlib.ScMapID {
-
     bets(): sc.ArrayOfMutableBet {
-        let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
-        return new sc.ArrayOfMutableBet(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
+		return new sc.ArrayOfMutableBet(arrID);
+	}
 
     lastWinningNumber(): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateLastWinningNumber]);
-    }
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateLastWinningNumber]);
+	}
 
     playPeriod(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxStatePlayPeriod]);
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxStatePlayPeriod]);
+	}
 
     roundNumber(): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateRoundNumber]);
-    }
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateRoundNumber]);
+	}
 
     roundStartedAt(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxStateRoundStartedAt]);
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxStateRoundStartedAt]);
+	}
 
     roundStatus(): wasmlib.ScMutableInt16 {
-        return new wasmlib.ScMutableInt16(this.mapID, sc.idxMap[sc.IdxStateRoundStatus]);
-    }
+		return new wasmlib.ScMutableInt16(this.mapID, sc.idxMap[sc.IdxStateRoundStatus]);
+	}
 }

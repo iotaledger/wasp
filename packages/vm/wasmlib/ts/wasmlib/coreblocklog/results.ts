@@ -5,55 +5,51 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableControlAddressesResults extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+	}
 
     governingAddress(): wasmlib.ScImmutableAddress {
-        return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultGoverningAddress));
-    }
+		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultGoverningAddress));
+	}
 
     stateControllerAddress(): wasmlib.ScImmutableAddress {
-        return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultStateControllerAddress));
-    }
+		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultStateControllerAddress));
+	}
 }
 
 export class MutableControlAddressesResults extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+	}
 
     governingAddress(): wasmlib.ScMutableAddress {
-        return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultGoverningAddress));
-    }
+		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultGoverningAddress));
+	}
 
     stateControllerAddress(): wasmlib.ScMutableAddress {
-        return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultStateControllerAddress));
-    }
+		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultStateControllerAddress));
+	}
 }
 
 export class ImmutableGetBlockInfoResults extends wasmlib.ScMapID {
-
     blockInfo(): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
-    }
+		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
+	}
 }
 
 export class MutableGetBlockInfoResults extends wasmlib.ScMapID {
-
     blockInfo(): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
-    }
+		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
+	}
 }
 
 export class ArrayOfImmutableBytes {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -69,15 +65,14 @@ export class ArrayOfImmutableBytes {
 }
 
 export class ImmutableGetEventsForBlockResults extends wasmlib.ScMapID {
-
     event(): sc.ArrayOfImmutableBytes {
-        let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-        return new sc.ArrayOfImmutableBytes(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
+		return new sc.ArrayOfImmutableBytes(arrID);
+	}
 }
 
 export class ArrayOfMutableBytes {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -97,69 +92,62 @@ export class ArrayOfMutableBytes {
 }
 
 export class MutableGetEventsForBlockResults extends wasmlib.ScMapID {
-
     event(): sc.ArrayOfMutableBytes {
-        let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-        return new sc.ArrayOfMutableBytes(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
+		return new sc.ArrayOfMutableBytes(arrID);
+	}
 }
 
 export class ImmutableGetEventsForContractResults extends wasmlib.ScMapID {
-
     event(): sc.ArrayOfImmutableBytes {
-        let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-        return new sc.ArrayOfImmutableBytes(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
+		return new sc.ArrayOfImmutableBytes(arrID);
+	}
 }
 
 export class MutableGetEventsForContractResults extends wasmlib.ScMapID {
-
     event(): sc.ArrayOfMutableBytes {
-        let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-        return new sc.ArrayOfMutableBytes(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
+		return new sc.ArrayOfMutableBytes(arrID);
+	}
 }
 
 export class ImmutableGetEventsForRequestResults extends wasmlib.ScMapID {
-
     event(): sc.ArrayOfImmutableBytes {
-        let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-        return new sc.ArrayOfImmutableBytes(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
+		return new sc.ArrayOfImmutableBytes(arrID);
+	}
 }
 
 export class MutableGetEventsForRequestResults extends wasmlib.ScMapID {
-
     event(): sc.ArrayOfMutableBytes {
-        let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-        return new sc.ArrayOfMutableBytes(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
+		return new sc.ArrayOfMutableBytes(arrID);
+	}
 }
 
 export class ImmutableGetLatestBlockInfoResults extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+	}
 
     blockInfo(): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
-    }
+		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
+	}
 }
 
 export class MutableGetLatestBlockInfoResults extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+	}
 
     blockInfo(): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
-    }
+		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
+	}
 }
 
 export class ArrayOfImmutableRequestID {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -175,15 +163,14 @@ export class ArrayOfImmutableRequestID {
 }
 
 export class ImmutableGetRequestIDsForBlockResults extends wasmlib.ScMapID {
-
     requestID(): sc.ArrayOfImmutableRequestID {
-        let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestID), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_REQUEST_ID);
-        return new sc.ArrayOfImmutableRequestID(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestID), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_REQUEST_ID);
+		return new sc.ArrayOfImmutableRequestID(arrID);
+	}
 }
 
 export class ArrayOfMutableRequestID {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -203,69 +190,62 @@ export class ArrayOfMutableRequestID {
 }
 
 export class MutableGetRequestIDsForBlockResults extends wasmlib.ScMapID {
-
     requestID(): sc.ArrayOfMutableRequestID {
-        let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestID), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_REQUEST_ID);
-        return new sc.ArrayOfMutableRequestID(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestID), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_REQUEST_ID);
+		return new sc.ArrayOfMutableRequestID(arrID);
+	}
 }
 
 export class ImmutableGetRequestReceiptResults extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+	}
 
     requestIndex(): wasmlib.ScImmutableInt16 {
-        return new wasmlib.ScImmutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestIndex));
-    }
+		return new wasmlib.ScImmutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestIndex));
+	}
 
     requestRecord(): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord));
-    }
+		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord));
+	}
 }
 
 export class MutableGetRequestReceiptResults extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+	}
 
     requestIndex(): wasmlib.ScMutableInt16 {
-        return new wasmlib.ScMutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestIndex));
-    }
+		return new wasmlib.ScMutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestIndex));
+	}
 
     requestRecord(): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord));
-    }
+		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord));
+	}
 }
 
 export class ImmutableGetRequestReceiptsForBlockResults extends wasmlib.ScMapID {
-
     requestRecord(): sc.ArrayOfImmutableBytes {
-        let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-        return new sc.ArrayOfImmutableBytes(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
+		return new sc.ArrayOfImmutableBytes(arrID);
+	}
 }
 
 export class MutableGetRequestReceiptsForBlockResults extends wasmlib.ScMapID {
-
     requestRecord(): sc.ArrayOfMutableBytes {
-        let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-        return new sc.ArrayOfMutableBytes(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
+		return new sc.ArrayOfMutableBytes(arrID);
+	}
 }
 
 export class ImmutableIsRequestProcessedResults extends wasmlib.ScMapID {
-
     requestProcessed(): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestProcessed));
-    }
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestProcessed));
+	}
 }
 
 export class MutableIsRequestProcessedResults extends wasmlib.ScMapID {
-
     requestProcessed(): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestProcessed));
-    }
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestProcessed));
+	}
 }

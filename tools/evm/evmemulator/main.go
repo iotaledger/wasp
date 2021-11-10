@@ -6,10 +6,12 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evm"
+	"github.com/iotaledger/wasp/packages/evm/evmflavors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -66,11 +68,15 @@ By default the server has no unlocked accounts. To send transactions, either:
 }
 
 func start(cmd *cobra.Command, args []string) {
-	env := solo.New(nil, log.DebugFlag, log.DebugFlag)
+	blockTime := deployParams.BlockTime()
+	evmFlavor := deployParams.EVMFlavor()
+
+	env := solo.New(solo.NewTestContext("evmemulator"), log.DebugFlag, log.DebugFlag).
+		WithNativeContract(evmflavors.Processors[evmFlavor.Name])
 
 	chainOwner, _ := env.NewKeyPairWithFunds()
 	chain := env.NewChain(chainOwner, "iscpchain")
-	err := chain.DeployContract(chainOwner, deployParams.Name(), deployParams.EVMFlavor().ProgramHash,
+	err := chain.DeployContract(chainOwner, deployParams.Name(), evmFlavor.ProgramHash,
 		evm.FieldChainID, codec.EncodeUint16(uint16(deployParams.ChainID)),
 		evm.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
@@ -78,6 +84,23 @@ func start(cmd *cobra.Command, args []string) {
 		evm.FieldGasPerIota, deployParams.GasPerIOTA,
 	)
 	log.Check(err)
+
+	if blockTime > 0 {
+		_, err := chain.PostRequestSync(
+			solo.NewCallParams(deployParams.Name(), evm.FuncSetBlockTime.Name,
+				evm.FieldBlockTime, blockTime,
+			).WithIotas(1),
+			chain.OriginatorKeyPair,
+		)
+		log.Check(err)
+		go func() {
+			const step = 1 * time.Second
+			for {
+				time.Sleep(step)
+				env.AdvanceClockBy(step)
+			}
+		}()
+	}
 
 	signer, _ := env.NewKeyPairWithFunds()
 

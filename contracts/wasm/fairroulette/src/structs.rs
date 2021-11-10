@@ -5,34 +5,32 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
 use wasmlib::host::*;
 
 pub struct Bet {
-    pub amount: i64,
-    pub better: ScAgentID,
-    pub number: i64,
+    pub amount : i64, 
+    pub better : ScAgentID, 
+    pub number : i64, 
 }
 
 impl Bet {
     pub fn from_bytes(bytes: &[u8]) -> Bet {
         let mut decode = BytesDecoder::new(bytes);
         Bet {
-            amount: decode.int64(),
-            better: decode.agent_id(),
-            number: decode.int64(),
+            amount : decode.int64(),
+            better : decode.agent_id(),
+            number : decode.int64(),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut encode = BytesEncoder::new();
-        encode.int64(self.amount);
-        encode.agent_id(&self.better);
-        encode.int64(self.number);
+		encode.int64(self.amount);
+		encode.agent_id(&self.better);
+		encode.int64(self.number);
         return encode.data();
     }
 }
@@ -70,5 +68,3 @@ impl MutableBet {
         Bet::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
     }
 }
-
-// @formatter:on

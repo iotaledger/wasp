@@ -16,17 +16,17 @@ const (
 )
 
 const (
-	ParamDeployer    = wasmlib.Key("dp")
-	ParamDescription = wasmlib.Key("ds")
-	ParamHname       = wasmlib.Key("hn")
-	ParamName        = wasmlib.Key("nm")
-	ParamProgramHash = wasmlib.Key("ph")
+	ParamDeployer    = "dp"
+	ParamDescription = "ds"
+	ParamHname       = "hn"
+	ParamName        = "nm"
+	ParamProgramHash = "ph"
 )
 
 const (
-	ResultContractFound    = wasmlib.Key("cf")
-	ResultContractRecData  = wasmlib.Key("dt")
-	ResultContractRegistry = wasmlib.Key("r")
+	ResultContractFound    = "cf"
+	ResultContractRecData  = "dt"
+	ResultContractRegistry = "r"
 )
 
 const (

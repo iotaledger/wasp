@@ -5,109 +5,126 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ArrayClearCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayClear);
-    params: sc.MutableArrayClearParams = new sc.MutableArrayClearParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayClear);
+	params: sc.MutableArrayClearParams = new sc.MutableArrayClearParams();
 }
 
 export class ArrayClearContext {
-    params: sc.ImmutableArrayClearParams = new sc.ImmutableArrayClearParams();
-    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+	params: sc.ImmutableArrayClearParams = new sc.ImmutableArrayClearParams();
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
 export class ArrayCreateCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayCreate);
-    params: sc.MutableArrayCreateParams = new sc.MutableArrayCreateParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayCreate);
+	params: sc.MutableArrayCreateParams = new sc.MutableArrayCreateParams();
 }
 
 export class ArrayCreateContext {
-    params: sc.ImmutableArrayCreateParams = new sc.ImmutableArrayCreateParams();
-    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+	params: sc.ImmutableArrayCreateParams = new sc.ImmutableArrayCreateParams();
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
 export class ArraySetCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArraySet);
-    params: sc.MutableArraySetParams = new sc.MutableArraySetParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArraySet);
+	params: sc.MutableArraySetParams = new sc.MutableArraySetParams();
 }
 
 export class ArraySetContext {
-    params: sc.ImmutableArraySetParams = new sc.ImmutableArraySetParams();
-    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+	params: sc.ImmutableArraySetParams = new sc.ImmutableArraySetParams();
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
 export class ParamTypesCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncParamTypes);
-    params: sc.MutableParamTypesParams = new sc.MutableParamTypesParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncParamTypes);
+	params: sc.MutableParamTypesParams = new sc.MutableParamTypesParams();
 }
 
 export class ParamTypesContext {
-    params: sc.ImmutableParamTypesParams = new sc.ImmutableParamTypesParams();
-    state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+	params: sc.ImmutableParamTypesParams = new sc.ImmutableParamTypesParams();
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+}
+
+export class RandomCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRandom);
+}
+
+export class RandomContext {
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
 export class ArrayLengthCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayLength);
-    params: sc.MutableArrayLengthParams = new sc.MutableArrayLengthParams();
-    results: sc.ImmutableArrayLengthResults = new sc.ImmutableArrayLengthResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayLength);
+	params: sc.MutableArrayLengthParams = new sc.MutableArrayLengthParams();
+	results: sc.ImmutableArrayLengthResults = new sc.ImmutableArrayLengthResults();
 }
 
 export class ArrayLengthContext {
-    params: sc.ImmutableArrayLengthParams = new sc.ImmutableArrayLengthParams();
-    results: sc.MutableArrayLengthResults = new sc.MutableArrayLengthResults();
-    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
+	params: sc.ImmutableArrayLengthParams = new sc.ImmutableArrayLengthParams();
+	results: sc.MutableArrayLengthResults = new sc.MutableArrayLengthResults();
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
 }
 
 export class ArrayValueCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayValue);
-    params: sc.MutableArrayValueParams = new sc.MutableArrayValueParams();
-    results: sc.ImmutableArrayValueResults = new sc.ImmutableArrayValueResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewArrayValue);
+	params: sc.MutableArrayValueParams = new sc.MutableArrayValueParams();
+	results: sc.ImmutableArrayValueResults = new sc.ImmutableArrayValueResults();
 }
 
 export class ArrayValueContext {
-    params: sc.ImmutableArrayValueParams = new sc.ImmutableArrayValueParams();
-    results: sc.MutableArrayValueResults = new sc.MutableArrayValueResults();
-    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
+	params: sc.ImmutableArrayValueParams = new sc.ImmutableArrayValueParams();
+	results: sc.MutableArrayValueResults = new sc.MutableArrayValueResults();
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
 }
 
 export class BlockRecordCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBlockRecord);
-    params: sc.MutableBlockRecordParams = new sc.MutableBlockRecordParams();
-    results: sc.ImmutableBlockRecordResults = new sc.ImmutableBlockRecordResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBlockRecord);
+	params: sc.MutableBlockRecordParams = new sc.MutableBlockRecordParams();
+	results: sc.ImmutableBlockRecordResults = new sc.ImmutableBlockRecordResults();
 }
 
 export class BlockRecordContext {
-    params: sc.ImmutableBlockRecordParams = new sc.ImmutableBlockRecordParams();
-    results: sc.MutableBlockRecordResults = new sc.MutableBlockRecordResults();
-    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
+	params: sc.ImmutableBlockRecordParams = new sc.ImmutableBlockRecordParams();
+	results: sc.MutableBlockRecordResults = new sc.MutableBlockRecordResults();
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
 }
 
 export class BlockRecordsCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBlockRecords);
-    params: sc.MutableBlockRecordsParams = new sc.MutableBlockRecordsParams();
-    results: sc.ImmutableBlockRecordsResults = new sc.ImmutableBlockRecordsResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBlockRecords);
+	params: sc.MutableBlockRecordsParams = new sc.MutableBlockRecordsParams();
+	results: sc.ImmutableBlockRecordsResults = new sc.ImmutableBlockRecordsResults();
 }
 
 export class BlockRecordsContext {
-    params: sc.ImmutableBlockRecordsParams = new sc.ImmutableBlockRecordsParams();
-    results: sc.MutableBlockRecordsResults = new sc.MutableBlockRecordsResults();
-    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
+	params: sc.ImmutableBlockRecordsParams = new sc.ImmutableBlockRecordsParams();
+	results: sc.MutableBlockRecordsResults = new sc.MutableBlockRecordsResults();
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
+}
+
+export class GetRandomCall {
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetRandom);
+	results: sc.ImmutableGetRandomResults = new sc.ImmutableGetRandomResults();
+}
+
+export class GetRandomContext {
+	results: sc.MutableGetRandomResults = new sc.MutableGetRandomResults();
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
 }
 
 export class IotaBalanceCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewIotaBalance);
-    results: sc.ImmutableIotaBalanceResults = new sc.ImmutableIotaBalanceResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewIotaBalance);
+	results: sc.ImmutableIotaBalanceResults = new sc.ImmutableIotaBalanceResults();
 }
 
 export class IotaBalanceContext {
-    results: sc.MutableIotaBalanceResults = new sc.MutableIotaBalanceResults();
-    state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
+	results: sc.MutableIotaBalanceResults = new sc.MutableIotaBalanceResults();
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
 }
 
 export class ScFuncs {
-
     static arrayClear(ctx: wasmlib.ScFuncCallContext): ArrayClearCall {
         let f = new ArrayClearCall();
         f.func.setPtrs(f.params, null);
@@ -132,6 +149,10 @@ export class ScFuncs {
         return f;
     }
 
+    static random(ctx: wasmlib.ScFuncCallContext): RandomCall {
+        return new RandomCall();
+    }
+
     static arrayLength(ctx: wasmlib.ScViewCallContext): ArrayLengthCall {
         let f = new ArrayLengthCall();
         f.func.setPtrs(f.params, f.results);
@@ -153,6 +174,12 @@ export class ScFuncs {
     static blockRecords(ctx: wasmlib.ScViewCallContext): BlockRecordsCall {
         let f = new BlockRecordsCall();
         f.func.setPtrs(f.params, f.results);
+        return f;
+    }
+
+    static getRandom(ctx: wasmlib.ScViewCallContext): GetRandomCall {
+        let f = new GetRandomCall();
+        f.func.setPtrs(null, f.results);
         return f;
     }
 

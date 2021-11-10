@@ -14,7 +14,7 @@ type ImmutableStoreBlobResults struct {
 }
 
 func (s ImmutableStoreBlobResults) Hash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, ResultHash.KeyID())
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ResultHash))
 }
 
 type MutableStoreBlobResults struct {
@@ -22,7 +22,7 @@ type MutableStoreBlobResults struct {
 }
 
 func (s MutableStoreBlobResults) Hash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, ResultHash.KeyID())
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ResultHash))
 }
 
 type ImmutableGetBlobFieldResults struct {
@@ -30,7 +30,7 @@ type ImmutableGetBlobFieldResults struct {
 }
 
 func (s ImmutableGetBlobFieldResults) Bytes() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, ResultBytes.KeyID())
+	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultBytes))
 }
 
 type MutableGetBlobFieldResults struct {
@@ -38,7 +38,7 @@ type MutableGetBlobFieldResults struct {
 }
 
 func (s MutableGetBlobFieldResults) Bytes() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, ResultBytes.KeyID())
+	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultBytes))
 }
 
 type MapStringToImmutableInt32 struct {

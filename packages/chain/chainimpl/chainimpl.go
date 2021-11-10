@@ -29,12 +29,14 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
-	"gopkg.in/eapache/channels.v1"
 )
+
+const maxMsgBuffer = 10000
 
 var (
 	_ chain.Chain         = &chainObj{}
@@ -75,13 +77,13 @@ type chainObj struct {
 	peeringID                        peering.PeeringID
 	attachIDs                        []interface{}
 	chainMetrics                     metrics.ChainMetrics
-	dismissChainMsgChannel           *channels.InfiniteChannel
-	stateMsgChannel                  *channels.InfiniteChannel
-	offLedgerRequestPeerMsgChannel   *channels.InfiniteChannel
-	requestAckPeerMsgChannel         *channels.InfiniteChannel
-	missingRequestIDsPeerMsgChannel  *channels.InfiniteChannel
-	missingRequestPeerMsgChannel     *channels.InfiniteChannel
-	timerTickMsgChannel              *channels.InfiniteChannel
+	dismissChainMsgPipe              pipe.Pipe
+	stateMsgPipe                     pipe.Pipe
+	offLedgerRequestPeerMsgPipe      pipe.Pipe
+	requestAckPeerMsgPipe            pipe.Pipe
+	missingRequestIDsPeerMsgPipe     pipe.Pipe
+	missingRequestPeerMsgPipe        pipe.Pipe
+	timerTickMsgPipe                 pipe.Pipe
 }
 
 type committeeStruct struct {
@@ -109,6 +111,9 @@ func NewChain(
 
 	chainLog := log.Named(chainID.Base58()[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
+	messagePriorityFun := func(msg interface{}) bool {
+		TODO
+	}
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
@@ -136,13 +141,13 @@ func NewChain(
 		peeringID:                        chainID.Array(),
 		attachIDs:                        make([]interface{}, 0),
 		chainMetrics:                     chainMetrics,
-		dismissChainMsgChannel:           channels.NewInfiniteChannel(),
-		stateMsgChannel:                  channels.NewInfiniteChannel(),
-		offLedgerRequestPeerMsgChannel:   channels.NewInfiniteChannel(),
-		requestAckPeerMsgChannel:         channels.NewInfiniteChannel(),
-		missingRequestIDsPeerMsgChannel:  channels.NewInfiniteChannel(),
-		missingRequestPeerMsgChannel:     channels.NewInfiniteChannel(),
-		timerTickMsgChannel:              channels.NewInfiniteChannel(),
+		dismissChainMsgChannel:           pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
+		stateMsgChannel:                  pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
+		offLedgerRequestPeerMsgChannel:   pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
+		requestAckPeerMsgChannel:         pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
+		missingRequestIDsPeerMsgChannel:  pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
+		missingRequestPeerMsgChannel:     pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
+		timerTickMsgChannel:              pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
 	}
 	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))

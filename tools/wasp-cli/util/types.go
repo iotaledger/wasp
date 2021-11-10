@@ -33,6 +33,10 @@ func ValueFromString(vtype, s string) []byte {
 		n, err := strconv.Atoi(s)
 		log.Check(err)
 		return codec.EncodeInt64(int64(n))
+	case "bool":
+		b, err := strconv.ParseBool(s)
+		log.Check(err)
+		return codec.EncodeBool(b)
 	case "color":
 		col, err := ledgerstate.ColorFromBase58EncodedString(s)
 		log.Check(err)

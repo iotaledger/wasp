@@ -5,17 +5,19 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 
 export const ScName        = "blob";
 export const ScDescription = "Core blob contract";
 export const HScName       = new wasmlib.ScHname(0xfd91bc63);
 
+export const ParamBlobs = "this";
 export const ParamField = "field";
 export const ParamHash  = "hash";
 
-export const ResultBytes = "bytes";
-export const ResultHash  = "hash";
+export const ResultBlobSizes = "this";
+export const ResultBytes     = "bytes";
+export const ResultHash      = "hash";
 
 export const FuncStoreBlob    = "storeBlob";
 export const ViewGetBlobField = "getBlobField";

@@ -5,71 +5,70 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class AddAllowedStateControllerAddressCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncAddAllowedStateControllerAddress);
-    params: sc.MutableAddAllowedStateControllerAddressParams = new sc.MutableAddAllowedStateControllerAddressParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncAddAllowedStateControllerAddress);
+	params: sc.MutableAddAllowedStateControllerAddressParams = new sc.MutableAddAllowedStateControllerAddressParams();
 }
 
 export class ClaimChainOwnershipCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncClaimChainOwnership);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncClaimChainOwnership);
 }
 
 export class DelegateChainOwnershipCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDelegateChainOwnership);
-    params: sc.MutableDelegateChainOwnershipParams = new sc.MutableDelegateChainOwnershipParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDelegateChainOwnership);
+	params: sc.MutableDelegateChainOwnershipParams = new sc.MutableDelegateChainOwnershipParams();
 }
 
 export class RemoveAllowedStateControllerAddressCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRemoveAllowedStateControllerAddress);
-    params: sc.MutableRemoveAllowedStateControllerAddressParams = new sc.MutableRemoveAllowedStateControllerAddressParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRemoveAllowedStateControllerAddress);
+	params: sc.MutableRemoveAllowedStateControllerAddressParams = new sc.MutableRemoveAllowedStateControllerAddressParams();
 }
 
 export class RotateStateControllerCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRotateStateController);
-    params: sc.MutableRotateStateControllerParams = new sc.MutableRotateStateControllerParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRotateStateController);
+	params: sc.MutableRotateStateControllerParams = new sc.MutableRotateStateControllerParams();
 }
 
 export class SetChainInfoCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetChainInfo);
-    params: sc.MutableSetChainInfoParams = new sc.MutableSetChainInfoParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetChainInfo);
+	params: sc.MutableSetChainInfoParams = new sc.MutableSetChainInfoParams();
 }
 
 export class SetContractFeeCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetContractFee);
-    params: sc.MutableSetContractFeeParams = new sc.MutableSetContractFeeParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetContractFee);
+	params: sc.MutableSetContractFeeParams = new sc.MutableSetContractFeeParams();
 }
 
 export class SetDefaultFeeCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetDefaultFee);
-    params: sc.MutableSetDefaultFeeParams = new sc.MutableSetDefaultFeeParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetDefaultFee);
+	params: sc.MutableSetDefaultFeeParams = new sc.MutableSetDefaultFeeParams();
 }
 
 export class GetAllowedStateControllerAddressesCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetAllowedStateControllerAddresses);
-    results: sc.ImmutableGetAllowedStateControllerAddressesResults = new sc.ImmutableGetAllowedStateControllerAddressesResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetAllowedStateControllerAddresses);
+	results: sc.ImmutableGetAllowedStateControllerAddressesResults = new sc.ImmutableGetAllowedStateControllerAddressesResults();
 }
 
 export class GetChainInfoCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetChainInfo);
-    results: sc.ImmutableGetChainInfoResults = new sc.ImmutableGetChainInfoResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetChainInfo);
+	results: sc.ImmutableGetChainInfoResults = new sc.ImmutableGetChainInfoResults();
 }
 
 export class GetFeeInfoCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetFeeInfo);
-    params: sc.MutableGetFeeInfoParams = new sc.MutableGetFeeInfoParams();
-    results: sc.ImmutableGetFeeInfoResults = new sc.ImmutableGetFeeInfoResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetFeeInfo);
+	params: sc.MutableGetFeeInfoParams = new sc.MutableGetFeeInfoParams();
+	results: sc.ImmutableGetFeeInfoResults = new sc.ImmutableGetFeeInfoResults();
 }
 
 export class GetMaxBlobSizeCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetMaxBlobSize);
-    results: sc.ImmutableGetMaxBlobSizeResults = new sc.ImmutableGetMaxBlobSizeResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetMaxBlobSize);
+	results: sc.ImmutableGetMaxBlobSizeResults = new sc.ImmutableGetMaxBlobSizeResults();
 }
 
 export class ScFuncs {
-
     static addAllowedStateControllerAddress(ctx: wasmlib.ScFuncCallContext): AddAllowedStateControllerAddressCall {
         let f = new AddAllowedStateControllerAddressCall();
         f.func.setPtrs(f.params, null);
@@ -77,8 +76,7 @@ export class ScFuncs {
     }
 
     static claimChainOwnership(ctx: wasmlib.ScFuncCallContext): ClaimChainOwnershipCall {
-        let f = new ClaimChainOwnershipCall();
-        return f;
+        return new ClaimChainOwnershipCall();
     }
 
     static delegateChainOwnership(ctx: wasmlib.ScFuncCallContext): DelegateChainOwnershipCall {

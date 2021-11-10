@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 
 export const ScName        = "erc20";
 export const ScDescription = "ERC-20 PoC for IOTA Smart Contracts";

@@ -5,37 +5,36 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class DeployContractCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDeployContract);
-    params: sc.MutableDeployContractParams = new sc.MutableDeployContractParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDeployContract);
+	params: sc.MutableDeployContractParams = new sc.MutableDeployContractParams();
 }
 
 export class GrantDeployPermissionCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncGrantDeployPermission);
-    params: sc.MutableGrantDeployPermissionParams = new sc.MutableGrantDeployPermissionParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncGrantDeployPermission);
+	params: sc.MutableGrantDeployPermissionParams = new sc.MutableGrantDeployPermissionParams();
 }
 
 export class RevokeDeployPermissionCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRevokeDeployPermission);
-    params: sc.MutableRevokeDeployPermissionParams = new sc.MutableRevokeDeployPermissionParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRevokeDeployPermission);
+	params: sc.MutableRevokeDeployPermissionParams = new sc.MutableRevokeDeployPermissionParams();
 }
 
 export class FindContractCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewFindContract);
-    params: sc.MutableFindContractParams = new sc.MutableFindContractParams();
-    results: sc.ImmutableFindContractResults = new sc.ImmutableFindContractResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewFindContract);
+	params: sc.MutableFindContractParams = new sc.MutableFindContractParams();
+	results: sc.ImmutableFindContractResults = new sc.ImmutableFindContractResults();
 }
 
 export class GetContractRecordsCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetContractRecords);
-    results: sc.ImmutableGetContractRecordsResults = new sc.ImmutableGetContractRecordsResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetContractRecords);
+	results: sc.ImmutableGetContractRecordsResults = new sc.ImmutableGetContractRecordsResults();
 }
 
 export class ScFuncs {
-
     static deployContract(ctx: wasmlib.ScFuncCallContext): DeployContractCall {
         let f = new DeployContractCall();
         f.func.setPtrs(f.params, null);

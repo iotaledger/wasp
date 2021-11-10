@@ -8,10 +8,12 @@ del /s state.*
 del /s typedefs.*
 del /s types.*
 del /s main.go
-del /s index.ts
-del /s tsconfig.json
 del /s /q *.wasm
-for /d %%f in (*.) do del /s /q %%f\go\pkg\*.*
+
+rem careful, this could fuck up fairroulette frontend
+for /d %%f in (*.) do del %%f\ts\%%f\index.ts
+for /d %%f in (*.) do del %%f\ts\%%f\tsconfig.json
+
 for /d %%f in (*.) do del /s /q %%f\pkg\*.*
 for /d %%f in (*.) do del /s /q %%f\ts\pkg\*.*
 del /s /q target\*.*

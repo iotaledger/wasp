@@ -16,45 +16,47 @@ const (
 )
 
 const (
-	ParamAddress         = wasmlib.Key("address")
-	ParamAgentID         = wasmlib.Key("agentID")
-	ParamCaller          = wasmlib.Key("caller")
-	ParamChainID         = wasmlib.Key("chainID")
-	ParamChainOwnerID    = wasmlib.Key("chainOwnerID")
-	ParamContractCreator = wasmlib.Key("contractCreator")
-	ParamContractID      = wasmlib.Key("contractID")
-	ParamCounter         = wasmlib.Key("counter")
-	ParamFail            = wasmlib.Key("initFailParam")
-	ParamHash            = wasmlib.Key("Hash")
-	ParamHname           = wasmlib.Key("Hname")
-	ParamHnameContract   = wasmlib.Key("hnameContract")
-	ParamHnameEP         = wasmlib.Key("hnameEP")
-	ParamHnameZero       = wasmlib.Key("Hname-0")
-	ParamInt64           = wasmlib.Key("int64")
-	ParamInt64Zero       = wasmlib.Key("int64-0")
-	ParamIntValue        = wasmlib.Key("intParamValue")
-	ParamName            = wasmlib.Key("intParamName")
-	ParamProgHash        = wasmlib.Key("progHash")
-	ParamString          = wasmlib.Key("string")
-	ParamStringZero      = wasmlib.Key("string-0")
-	ParamVarName         = wasmlib.Key("varName")
+	ParamAddress         = "address"
+	ParamAgentID         = "agentID"
+	ParamCaller          = "caller"
+	ParamChainID         = "chainID"
+	ParamChainOwnerID    = "chainOwnerID"
+	ParamContractCreator = "contractCreator"
+	ParamContractID      = "contractID"
+	ParamCounter         = "counter"
+	ParamFail            = "initFailParam"
+	ParamHash            = "Hash"
+	ParamHname           = "Hname"
+	ParamHnameContract   = "hnameContract"
+	ParamHnameEP         = "hnameEP"
+	ParamHnameZero       = "Hname-0"
+	ParamInt64           = "int64"
+	ParamInt64Zero       = "int64-0"
+	ParamIntValue        = "intParamValue"
+	ParamName            = "intParamName"
+	ParamProgHash        = "progHash"
+	ParamString          = "string"
+	ParamStringZero      = "string-0"
+	ParamVarName         = "varName"
 )
 
 const (
-	ResultChainOwnerID = wasmlib.Key("chainOwnerID")
-	ResultCounter      = wasmlib.Key("counter")
-	ResultIntValue     = wasmlib.Key("intParamValue")
-	ResultMintedColor  = wasmlib.Key("mintedColor")
-	ResultMintedSupply = wasmlib.Key("mintedSupply")
-	ResultSandboxCall  = wasmlib.Key("sandboxCall")
+	ResultChainOwnerID = "chainOwnerID"
+	ResultCounter      = "counter"
+	ResultIntValue     = "intParamValue"
+	ResultMintedColor  = "mintedColor"
+	ResultMintedSupply = "mintedSupply"
+	ResultSandboxCall  = "sandboxCall"
+	ResultValues       = "this"
+	ResultVars         = "this"
 )
 
 const (
-	StateCounter      = wasmlib.Key("counter")
-	StateHnameEP      = wasmlib.Key("hnameEP")
-	StateInts         = wasmlib.Key("ints")
-	StateMintedColor  = wasmlib.Key("mintedColor")
-	StateMintedSupply = wasmlib.Key("mintedSupply")
+	StateCounter      = "counter"
+	StateHnameEP      = "hnameEP"
+	StateInts         = "ints"
+	StateMintedColor  = "mintedColor"
+	StateMintedSupply = "mintedSupply"
 )
 
 const (

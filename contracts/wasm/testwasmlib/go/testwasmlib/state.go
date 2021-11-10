@@ -27,6 +27,10 @@ func (s ImmutableTestWasmLibState) Arrays() MapStringToImmutableStringArray {
 	return MapStringToImmutableStringArray{objID: mapID}
 }
 
+func (s ImmutableTestWasmLibState) Random() wasmlib.ScImmutableInt64 {
+	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateRandom])
+}
+
 type MapStringToMutableStringArray struct {
 	objID int32
 }
@@ -47,4 +51,8 @@ type MutableTestWasmLibState struct {
 func (s MutableTestWasmLibState) Arrays() MapStringToMutableStringArray {
 	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateArrays], wasmlib.TYPE_MAP)
 	return MapStringToMutableStringArray{objID: mapID}
+}
+
+func (s MutableTestWasmLibState) Random() wasmlib.ScMutableInt64 {
+	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateRandom])
 }

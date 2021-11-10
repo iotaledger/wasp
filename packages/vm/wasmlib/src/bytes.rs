@@ -12,6 +12,9 @@ pub struct BytesDecoder<'a> {
 impl BytesDecoder<'_> {
     // constructs a decoder
     pub fn new(data: &[u8]) -> BytesDecoder {
+        if data.len() == 0 {
+            panic("cannot decode empty byte array, use exist()");
+        }
         BytesDecoder { buf: data }
     }
 

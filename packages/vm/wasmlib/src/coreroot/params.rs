@@ -19,16 +19,16 @@ pub struct ImmutableDeployContractParams {
 
 impl ImmutableDeployContractParams {
     pub fn description(&self) -> ScImmutableString {
-        ScImmutableString::new(self.id, PARAM_DESCRIPTION.get_key_id())
-    }
+		ScImmutableString::new(self.id, PARAM_DESCRIPTION.get_key_id())
+	}
 
     pub fn name(&self) -> ScImmutableString {
-        ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
-    }
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
+	}
 
     pub fn program_hash(&self) -> ScImmutableHash {
-        ScImmutableHash::new(self.id, PARAM_PROGRAM_HASH.get_key_id())
-    }
+		ScImmutableHash::new(self.id, PARAM_PROGRAM_HASH.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -38,16 +38,16 @@ pub struct MutableDeployContractParams {
 
 impl MutableDeployContractParams {
     pub fn description(&self) -> ScMutableString {
-        ScMutableString::new(self.id, PARAM_DESCRIPTION.get_key_id())
-    }
+		ScMutableString::new(self.id, PARAM_DESCRIPTION.get_key_id())
+	}
 
     pub fn name(&self) -> ScMutableString {
-        ScMutableString::new(self.id, PARAM_NAME.get_key_id())
-    }
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
+	}
 
     pub fn program_hash(&self) -> ScMutableHash {
-        ScMutableHash::new(self.id, PARAM_PROGRAM_HASH.get_key_id())
-    }
+		ScMutableHash::new(self.id, PARAM_PROGRAM_HASH.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -57,8 +57,8 @@ pub struct ImmutableGrantDeployPermissionParams {
 
 impl ImmutableGrantDeployPermissionParams {
     pub fn deployer(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
-    }
+		ScImmutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -68,8 +68,8 @@ pub struct MutableGrantDeployPermissionParams {
 
 impl MutableGrantDeployPermissionParams {
     pub fn deployer(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
-    }
+		ScMutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -79,8 +79,8 @@ pub struct ImmutableRevokeDeployPermissionParams {
 
 impl ImmutableRevokeDeployPermissionParams {
     pub fn deployer(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
-    }
+		ScImmutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -90,8 +90,8 @@ pub struct MutableRevokeDeployPermissionParams {
 
 impl MutableRevokeDeployPermissionParams {
     pub fn deployer(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
-    }
+		ScMutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -101,8 +101,8 @@ pub struct ImmutableFindContractParams {
 
 impl ImmutableFindContractParams {
     pub fn hname(&self) -> ScImmutableHname {
-        ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
-    }
+		ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -112,6 +112,6 @@ pub struct MutableFindContractParams {
 
 impl MutableFindContractParams {
     pub fn hname(&self) -> ScMutableHname {
-        ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
-    }
+		ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
+	}
 }

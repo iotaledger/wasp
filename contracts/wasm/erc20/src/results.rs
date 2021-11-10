@@ -21,8 +21,8 @@ pub struct ImmutableAllowanceResults {
 
 impl ImmutableAllowanceResults {
     pub fn amount(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -32,8 +32,8 @@ pub struct MutableAllowanceResults {
 
 impl MutableAllowanceResults {
     pub fn amount(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -43,8 +43,8 @@ pub struct ImmutableBalanceOfResults {
 
 impl ImmutableBalanceOfResults {
     pub fn amount(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -54,8 +54,8 @@ pub struct MutableBalanceOfResults {
 
 impl MutableBalanceOfResults {
     pub fn amount(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -65,8 +65,8 @@ pub struct ImmutableTotalSupplyResults {
 
 impl ImmutableTotalSupplyResults {
     pub fn supply(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_SUPPLY))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_SUPPLY))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -76,6 +76,6 @@ pub struct MutableTotalSupplyResults {
 
 impl MutableTotalSupplyResults {
     pub fn supply(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_SUPPLY))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_SUPPLY))
+	}
 }

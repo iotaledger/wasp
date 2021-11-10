@@ -5,33 +5,29 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableGetFactorResults extends wasmlib.ScMapID {
-
     factor(): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultFactor]);
-    }
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultFactor]);
+	}
 }
 
 export class MutableGetFactorResults extends wasmlib.ScMapID {
-
     factor(): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultFactor]);
-    }
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultFactor]);
+	}
 }
 
 export class ImmutableGetOwnerResults extends wasmlib.ScMapID {
-
     owner(): wasmlib.ScImmutableAgentID {
-        return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxResultOwner]);
-    }
+		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxResultOwner]);
+	}
 }
 
 export class MutableGetOwnerResults extends wasmlib.ScMapID {
-
     owner(): wasmlib.ScMutableAgentID {
-        return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxResultOwner]);
-    }
+		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxResultOwner]);
+	}
 }

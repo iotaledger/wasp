@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 
 export const ScName        = "testcore";
 export const ScDescription = "Core test for ISCP wasmlib Rust/Wasm library";
@@ -40,6 +40,8 @@ export const ResultIntValue     = "intParamValue";
 export const ResultMintedColor  = "mintedColor";
 export const ResultMintedSupply = "mintedSupply";
 export const ResultSandboxCall  = "sandboxCall";
+export const ResultValues       = "this";
+export const ResultVars         = "this";
 
 export const StateCounter      = "counter";
 export const StateHnameEP      = "hnameEP";

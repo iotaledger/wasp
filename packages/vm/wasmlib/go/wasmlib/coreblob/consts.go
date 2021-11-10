@@ -16,13 +16,15 @@ const (
 )
 
 const (
-	ParamField = wasmlib.Key("field")
-	ParamHash  = wasmlib.Key("hash")
+	ParamBlobs = "this"
+	ParamField = "field"
+	ParamHash  = "hash"
 )
 
 const (
-	ResultBytes = wasmlib.Key("bytes")
-	ResultHash  = wasmlib.Key("hash")
+	ResultBlobSizes = "this"
+	ResultBytes     = "bytes"
+	ResultHash      = "hash"
 )
 
 const (

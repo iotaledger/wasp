@@ -9,7 +9,9 @@ package helloworld
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
-const IdxResultHelloWorld = 0
+const (
+	IdxResultHelloWorld = 0
+)
 
 const keyMapLen = 1
 

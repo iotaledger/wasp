@@ -102,3 +102,11 @@ pub fn view_block_records(ctx: &ScViewContext, f: &BlockRecordsContext) {
 pub fn view_iota_balance(ctx: &ScViewContext, f: &IotaBalanceContext) {
     f.results.iotas().set_value(ctx.balances().balance(&ScColor::IOTA));
 }
+
+pub fn func_random(ctx: &ScFuncContext, f: &RandomContext) {
+    f.state.random().set_value(ctx.random(1000));
+}
+
+pub fn view_get_random(_ctx: &ScViewContext, f: &GetRandomContext) {
+    f.results.random().set_value(f.state.random().value());
+}

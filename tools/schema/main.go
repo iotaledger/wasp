@@ -9,8 +9,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -140,6 +140,7 @@ func generateSchema(file *os.File) error {
 }
 
 func generateSchemaNew() error {
+	// TODO make sure name is valid: no path characters
 	name := *flagInit
 	fmt.Println("initializing " + name)
 
@@ -197,7 +198,7 @@ func loadSchema(file *os.File) (s *generator.Schema, err error) {
 			err = WriteYAMLSchema(schemaDef)
 		}
 	case ".yaml":
-		fileByteArray, _ := ioutil.ReadAll(file)
+		fileByteArray, _ := io.ReadAll(file)
 		err = yaml.Unmarshal(fileByteArray, schemaDef)
 		if err == nil && *flagType == "convert" {
 			err = WriteJSONSchema(schemaDef)

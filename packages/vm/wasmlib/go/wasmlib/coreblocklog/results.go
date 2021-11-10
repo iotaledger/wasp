@@ -14,15 +14,15 @@ type ImmutableControlAddressesResults struct {
 }
 
 func (s ImmutableControlAddressesResults) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ResultBlockIndex.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultBlockIndex))
 }
 
 func (s ImmutableControlAddressesResults) GoverningAddress() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, ResultGoverningAddress.KeyID())
+	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ResultGoverningAddress))
 }
 
 func (s ImmutableControlAddressesResults) StateControllerAddress() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, ResultStateControllerAddress.KeyID())
+	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ResultStateControllerAddress))
 }
 
 type MutableControlAddressesResults struct {
@@ -30,15 +30,15 @@ type MutableControlAddressesResults struct {
 }
 
 func (s MutableControlAddressesResults) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ResultBlockIndex.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultBlockIndex))
 }
 
 func (s MutableControlAddressesResults) GoverningAddress() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, ResultGoverningAddress.KeyID())
+	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ResultGoverningAddress))
 }
 
 func (s MutableControlAddressesResults) StateControllerAddress() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, ResultStateControllerAddress.KeyID())
+	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ResultStateControllerAddress))
 }
 
 type ImmutableGetBlockInfoResults struct {
@@ -46,7 +46,7 @@ type ImmutableGetBlockInfoResults struct {
 }
 
 func (s ImmutableGetBlockInfoResults) BlockInfo() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, ResultBlockInfo.KeyID())
+	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultBlockInfo))
 }
 
 type MutableGetBlockInfoResults struct {
@@ -54,7 +54,7 @@ type MutableGetBlockInfoResults struct {
 }
 
 func (s MutableGetBlockInfoResults) BlockInfo() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, ResultBlockInfo.KeyID())
+	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultBlockInfo))
 }
 
 type ArrayOfImmutableBytes struct {
@@ -74,7 +74,7 @@ type ImmutableGetEventsForBlockResults struct {
 }
 
 func (s ImmutableGetEventsForBlockResults) Event() ArrayOfImmutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultEvent.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfImmutableBytes{objID: arrID}
 }
 
@@ -99,7 +99,7 @@ type MutableGetEventsForBlockResults struct {
 }
 
 func (s MutableGetEventsForBlockResults) Event() ArrayOfMutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultEvent.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfMutableBytes{objID: arrID}
 }
 
@@ -108,7 +108,7 @@ type ImmutableGetEventsForContractResults struct {
 }
 
 func (s ImmutableGetEventsForContractResults) Event() ArrayOfImmutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultEvent.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfImmutableBytes{objID: arrID}
 }
 
@@ -117,7 +117,7 @@ type MutableGetEventsForContractResults struct {
 }
 
 func (s MutableGetEventsForContractResults) Event() ArrayOfMutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultEvent.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfMutableBytes{objID: arrID}
 }
 
@@ -126,7 +126,7 @@ type ImmutableGetEventsForRequestResults struct {
 }
 
 func (s ImmutableGetEventsForRequestResults) Event() ArrayOfImmutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultEvent.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfImmutableBytes{objID: arrID}
 }
 
@@ -135,7 +135,7 @@ type MutableGetEventsForRequestResults struct {
 }
 
 func (s MutableGetEventsForRequestResults) Event() ArrayOfMutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultEvent.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfMutableBytes{objID: arrID}
 }
 
@@ -144,11 +144,11 @@ type ImmutableGetLatestBlockInfoResults struct {
 }
 
 func (s ImmutableGetLatestBlockInfoResults) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ResultBlockIndex.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultBlockIndex))
 }
 
 func (s ImmutableGetLatestBlockInfoResults) BlockInfo() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, ResultBlockInfo.KeyID())
+	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultBlockInfo))
 }
 
 type MutableGetLatestBlockInfoResults struct {
@@ -156,11 +156,11 @@ type MutableGetLatestBlockInfoResults struct {
 }
 
 func (s MutableGetLatestBlockInfoResults) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ResultBlockIndex.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultBlockIndex))
 }
 
 func (s MutableGetLatestBlockInfoResults) BlockInfo() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, ResultBlockInfo.KeyID())
+	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultBlockInfo))
 }
 
 type ArrayOfImmutableRequestID struct {
@@ -180,7 +180,7 @@ type ImmutableGetRequestIDsForBlockResults struct {
 }
 
 func (s ImmutableGetRequestIDsForBlockResults) RequestID() ArrayOfImmutableRequestID {
-	arrID := wasmlib.GetObjectID(s.id, ResultRequestID.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_REQUEST_ID)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultRequestID), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_REQUEST_ID)
 	return ArrayOfImmutableRequestID{objID: arrID}
 }
 
@@ -205,7 +205,7 @@ type MutableGetRequestIDsForBlockResults struct {
 }
 
 func (s MutableGetRequestIDsForBlockResults) RequestID() ArrayOfMutableRequestID {
-	arrID := wasmlib.GetObjectID(s.id, ResultRequestID.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_REQUEST_ID)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultRequestID), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_REQUEST_ID)
 	return ArrayOfMutableRequestID{objID: arrID}
 }
 
@@ -214,15 +214,15 @@ type ImmutableGetRequestReceiptResults struct {
 }
 
 func (s ImmutableGetRequestReceiptResults) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, ResultBlockIndex.KeyID())
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultBlockIndex))
 }
 
 func (s ImmutableGetRequestReceiptResults) RequestIndex() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, ResultRequestIndex.KeyID())
+	return wasmlib.NewScImmutableInt16(s.id, wasmlib.KeyID(ResultRequestIndex))
 }
 
 func (s ImmutableGetRequestReceiptResults) RequestRecord() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, ResultRequestRecord.KeyID())
+	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultRequestRecord))
 }
 
 type MutableGetRequestReceiptResults struct {
@@ -230,15 +230,15 @@ type MutableGetRequestReceiptResults struct {
 }
 
 func (s MutableGetRequestReceiptResults) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, ResultBlockIndex.KeyID())
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultBlockIndex))
 }
 
 func (s MutableGetRequestReceiptResults) RequestIndex() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, ResultRequestIndex.KeyID())
+	return wasmlib.NewScMutableInt16(s.id, wasmlib.KeyID(ResultRequestIndex))
 }
 
 func (s MutableGetRequestReceiptResults) RequestRecord() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, ResultRequestRecord.KeyID())
+	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultRequestRecord))
 }
 
 type ImmutableGetRequestReceiptsForBlockResults struct {
@@ -246,7 +246,7 @@ type ImmutableGetRequestReceiptsForBlockResults struct {
 }
 
 func (s ImmutableGetRequestReceiptsForBlockResults) RequestRecord() ArrayOfImmutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultRequestRecord.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultRequestRecord), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfImmutableBytes{objID: arrID}
 }
 
@@ -255,7 +255,7 @@ type MutableGetRequestReceiptsForBlockResults struct {
 }
 
 func (s MutableGetRequestReceiptsForBlockResults) RequestRecord() ArrayOfMutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, ResultRequestRecord.KeyID(), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultRequestRecord), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
 	return ArrayOfMutableBytes{objID: arrID}
 }
 
@@ -264,7 +264,7 @@ type ImmutableIsRequestProcessedResults struct {
 }
 
 func (s ImmutableIsRequestProcessedResults) RequestProcessed() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, ResultRequestProcessed.KeyID())
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultRequestProcessed))
 }
 
 type MutableIsRequestProcessedResults struct {
@@ -272,5 +272,5 @@ type MutableIsRequestProcessedResults struct {
 }
 
 func (s MutableIsRequestProcessedResults) RequestProcessed() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, ResultRequestProcessed.KeyID())
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultRequestProcessed))
 }

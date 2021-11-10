@@ -15,7 +15,9 @@ const (
 	HScName       = wasmlib.ScHname(0x0683223c)
 )
 
-const ResultHelloWorld = wasmlib.Key("helloWorld")
+const (
+	ResultHelloWorld = "helloWorld"
+)
 
 const (
 	FuncHelloWorld    = "helloWorld"

@@ -5,10 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 
-export const ScName  = "tokenregistry";
-export const HScName = new wasmlib.ScHname(0xe1ba0c78);
+export const ScName        = "tokenregistry";
+export const ScDescription = "";
+export const HScName       = new wasmlib.ScHname(0xe1ba0c78);
 
 export const ParamColor       = "color";
 export const ParamDescription = "description";

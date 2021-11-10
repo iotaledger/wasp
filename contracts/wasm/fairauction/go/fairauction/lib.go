@@ -29,6 +29,7 @@ type FinalizeAuctionContext struct {
 
 func funcFinalizeAuctionThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairauction.funcFinalizeAuction")
+
 	// only SC itself can invoke this function
 	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
@@ -72,6 +73,7 @@ type SetOwnerMarginContext struct {
 
 func funcSetOwnerMarginThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairauction.funcSetOwnerMargin")
+
 	// only SC creator can set owner margin
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 

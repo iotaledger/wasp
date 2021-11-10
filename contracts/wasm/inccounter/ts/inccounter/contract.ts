@@ -5,151 +5,146 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class CallIncrementCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncCallIncrement);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncCallIncrement);
 }
 
 export class CallIncrementContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class CallIncrementRecurse5xCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncCallIncrementRecurse5x);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncCallIncrementRecurse5x);
 }
 
 export class CallIncrementRecurse5xContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class EndlessLoopCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncEndlessLoop);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncEndlessLoop);
 }
 
 export class EndlessLoopContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class IncrementCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncIncrement);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncIncrement);
 }
 
 export class IncrementContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class IncrementWithDelayCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncIncrementWithDelay);
-    params: sc.MutableIncrementWithDelayParams = new sc.MutableIncrementWithDelayParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncIncrementWithDelay);
+	params: sc.MutableIncrementWithDelayParams = new sc.MutableIncrementWithDelayParams();
 }
 
 export class IncrementWithDelayContext {
-    params: sc.ImmutableIncrementWithDelayParams = new sc.ImmutableIncrementWithDelayParams();
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	params: sc.ImmutableIncrementWithDelayParams = new sc.ImmutableIncrementWithDelayParams();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class InitCall {
-    func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
-    params: sc.MutableInitParams = new sc.MutableInitParams();
+	func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
+	params: sc.MutableInitParams = new sc.MutableInitParams();
 }
 
 export class InitContext {
-    params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class LocalStateInternalCallCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncLocalStateInternalCall);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncLocalStateInternalCall);
 }
 
 export class LocalStateInternalCallContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class LocalStatePostCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncLocalStatePost);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncLocalStatePost);
 }
 
 export class LocalStatePostContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class LocalStateSandboxCallCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncLocalStateSandboxCall);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncLocalStateSandboxCall);
 }
 
 export class LocalStateSandboxCallContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class PostIncrementCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPostIncrement);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPostIncrement);
 }
 
 export class PostIncrementContext {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class RepeatManyCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRepeatMany);
-    params: sc.MutableRepeatManyParams = new sc.MutableRepeatManyParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRepeatMany);
+	params: sc.MutableRepeatManyParams = new sc.MutableRepeatManyParams();
 }
 
 export class RepeatManyContext {
-    params: sc.ImmutableRepeatManyParams = new sc.ImmutableRepeatManyParams();
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	params: sc.ImmutableRepeatManyParams = new sc.ImmutableRepeatManyParams();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class TestLeb128Call {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestLeb128);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestLeb128);
 }
 
 export class TestLeb128Context {
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class WhenMustIncrementCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncWhenMustIncrement);
-    params: sc.MutableWhenMustIncrementParams = new sc.MutableWhenMustIncrementParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncWhenMustIncrement);
+	params: sc.MutableWhenMustIncrementParams = new sc.MutableWhenMustIncrementParams();
 }
 
 export class WhenMustIncrementContext {
-    params: sc.ImmutableWhenMustIncrementParams = new sc.ImmutableWhenMustIncrementParams();
-    state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	params: sc.ImmutableWhenMustIncrementParams = new sc.ImmutableWhenMustIncrementParams();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
 export class GetCounterCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetCounter);
-    results: sc.ImmutableGetCounterResults = new sc.ImmutableGetCounterResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetCounter);
+	results: sc.ImmutableGetCounterResults = new sc.ImmutableGetCounterResults();
 }
 
 export class GetCounterContext {
-    results: sc.MutableGetCounterResults = new sc.MutableGetCounterResults();
-    state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState();
+	results: sc.MutableGetCounterResults = new sc.MutableGetCounterResults();
+	state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState();
 }
 
 export class ScFuncs {
-
     static callIncrement(ctx: wasmlib.ScFuncCallContext): CallIncrementCall {
-        let f = new CallIncrementCall();
-        return f;
+        return new CallIncrementCall();
     }
 
     static callIncrementRecurse5x(ctx: wasmlib.ScFuncCallContext): CallIncrementRecurse5xCall {
-        let f = new CallIncrementRecurse5xCall();
-        return f;
+        return new CallIncrementRecurse5xCall();
     }
 
     static endlessLoop(ctx: wasmlib.ScFuncCallContext): EndlessLoopCall {
-        let f = new EndlessLoopCall();
-        return f;
+        return new EndlessLoopCall();
     }
 
     static increment(ctx: wasmlib.ScFuncCallContext): IncrementCall {
-        let f = new IncrementCall();
-        return f;
+        return new IncrementCall();
     }
 
     static incrementWithDelay(ctx: wasmlib.ScFuncCallContext): IncrementWithDelayCall {
@@ -165,23 +160,19 @@ export class ScFuncs {
     }
 
     static localStateInternalCall(ctx: wasmlib.ScFuncCallContext): LocalStateInternalCallCall {
-        let f = new LocalStateInternalCallCall();
-        return f;
+        return new LocalStateInternalCallCall();
     }
 
     static localStatePost(ctx: wasmlib.ScFuncCallContext): LocalStatePostCall {
-        let f = new LocalStatePostCall();
-        return f;
+        return new LocalStatePostCall();
     }
 
     static localStateSandboxCall(ctx: wasmlib.ScFuncCallContext): LocalStateSandboxCallCall {
-        let f = new LocalStateSandboxCallCall();
-        return f;
+        return new LocalStateSandboxCallCall();
     }
 
     static postIncrement(ctx: wasmlib.ScFuncCallContext): PostIncrementCall {
-        let f = new PostIncrementCall();
-        return f;
+        return new PostIncrementCall();
     }
 
     static repeatMany(ctx: wasmlib.ScFuncCallContext): RepeatManyCall {
@@ -191,8 +182,7 @@ export class ScFuncs {
     }
 
     static testLeb128(ctx: wasmlib.ScFuncCallContext): TestLeb128Call {
-        let f = new TestLeb128Call();
-        return f;
+        return new TestLeb128Call();
     }
 
     static whenMustIncrement(ctx: wasmlib.ScFuncCallContext): WhenMustIncrementCall {

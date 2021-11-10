@@ -5,75 +5,77 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableArrayLengthResults extends wasmlib.ScMapID {
-
     length(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxResultLength]);
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxResultLength]);
+	}
 }
 
 export class MutableArrayLengthResults extends wasmlib.ScMapID {
-
     length(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxResultLength]);
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxResultLength]);
+	}
 }
 
 export class ImmutableArrayValueResults extends wasmlib.ScMapID {
-
     value(): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxResultValue]);
-    }
+		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxResultValue]);
+	}
 }
 
 export class MutableArrayValueResults extends wasmlib.ScMapID {
-
     value(): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxResultValue]);
-    }
+		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxResultValue]);
+	}
 }
 
 export class ImmutableBlockRecordResults extends wasmlib.ScMapID {
-
     record(): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.mapID, sc.idxMap[sc.IdxResultRecord]);
-    }
+		return new wasmlib.ScImmutableBytes(this.mapID, sc.idxMap[sc.IdxResultRecord]);
+	}
 }
 
 export class MutableBlockRecordResults extends wasmlib.ScMapID {
-
     record(): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.mapID, sc.idxMap[sc.IdxResultRecord]);
-    }
+		return new wasmlib.ScMutableBytes(this.mapID, sc.idxMap[sc.IdxResultRecord]);
+	}
 }
 
 export class ImmutableBlockRecordsResults extends wasmlib.ScMapID {
-
     count(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxResultCount]);
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxResultCount]);
+	}
 }
 
 export class MutableBlockRecordsResults extends wasmlib.ScMapID {
-
     count(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxResultCount]);
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxResultCount]);
+	}
+}
+
+export class ImmutableGetRandomResults extends wasmlib.ScMapID {
+    random(): wasmlib.ScImmutableInt64 {
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultRandom]);
+	}
+}
+
+export class MutableGetRandomResults extends wasmlib.ScMapID {
+    random(): wasmlib.ScMutableInt64 {
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultRandom]);
+	}
 }
 
 export class ImmutableIotaBalanceResults extends wasmlib.ScMapID {
-
     iotas(): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultIotas]);
-    }
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultIotas]);
+	}
 }
 
 export class MutableIotaBalanceResults extends wasmlib.ScMapID {
-
     iotas(): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultIotas]);
-    }
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultIotas]);
+	}
 }

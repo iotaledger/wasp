@@ -5,19 +5,17 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableGetCounterResults extends wasmlib.ScMapID {
-
     counter(): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultCounter]);
-    }
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultCounter]);
+	}
 }
 
 export class MutableGetCounterResults extends wasmlib.ScMapID {
-
     counter(): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultCounter]);
-    }
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultCounter]);
+	}
 }
