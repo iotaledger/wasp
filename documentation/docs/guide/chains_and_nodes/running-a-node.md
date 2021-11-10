@@ -17,7 +17,7 @@ keywords:
 # Running a Node
 
 In the following section, you can find information on how to use Wasp by cloning the repository and building the application.
-If you prefer, you can also configure a node [using a docker image](../../misc/docker.md) (official images will be provided in the future).
+If you prefer, you can also configure a node [using a docker image](docker.md) (official images will be provided in the future).
 
 ## Requirements
 
@@ -31,7 +31,13 @@ If you prefer, you can also configure a node [using a docker image](../../misc/d
 - [Go 1.16](https://golang.org/doc/install)
 - [RocksDB](https://github.com/facebook/rocksdb/blob/master/INSTALL.md)
 - Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
-  production operation
+  production operation.  
+
+:::warning
+
+GoShimmer is a developing prototype, so some things are prone to break. For a smooth development experience, you should use the GoShimmer code at [this commit](https://github.com/iotaledger/goshimmer/commit/25c827e8326a).
+
+:::
 
 :::info note 
 
@@ -240,4 +246,4 @@ wasp --webapi.adminWhitelist=127.0.0.1,YOUR_IP
 
 ## Video Tutorial
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/al-88Ncw2bg" title="Running a Wasp Node" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/G889YQDeYPo" title="Wasp Node Setup" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

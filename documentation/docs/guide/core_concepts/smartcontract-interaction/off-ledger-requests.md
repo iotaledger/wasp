@@ -17,7 +17,7 @@ You can send `off-ledger` requests by sending an API call to a WASP node, which 
 
 ## Nonce
 
-In order to [prevent replay attacks](../../../rfc/prevent-mev.md),  off-ledger requests must include a special parameter, the `nonce`.
+In order to prevent replay attacks, off-ledger requests must include a special parameter, the `nonce`.
 Nonces are account-bound; the current nonce for a given account can be obtained via the [`accounts`](../core_contracts/accounts.md) core contract `getAccountNonce` view.
 
 :::info Important

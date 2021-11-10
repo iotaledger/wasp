@@ -5,6 +5,7 @@ typedefs:
   StringArray: String[]
 state:
   arrays: map[String]StringArray
+  random: Int64
 funcs:
   arrayClear:
     params:
@@ -32,6 +33,7 @@ funcs:
       param=this: map[String]Bytes? // special hook to be able to pass key/values as raw bytes
       requestID: RequestID?
       string: String?
+  random:
 views:
   arrayLength:
     params:
@@ -58,3 +60,6 @@ views:
   iotaBalance:
     results:
       iotas: Int64
+  getRandom:
+    results:
+      random: Int64

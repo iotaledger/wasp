@@ -11,6 +11,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -62,7 +63,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	govParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes()) // chain owner is whoever sends init request
 	mustStoreAndInitCoreContract(ctx, governance.Contract, a, govParams)
 
-	state.Set(root.VarDeployPermissionsEnabled, []byte{1})
+	state.Set(root.VarDeployPermissionsEnabled, codec.EncodeBool(true))
 	state.Set(root.VarStateInitialized, []byte{0xFF})
 
 	ctx.Log().Debugf("root.initialize.success")
@@ -185,11 +186,8 @@ func requireDeployPermissions(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.Require(isChainOwner(a, ctx), "root.revokeDeployPermissions: not authorized")
 	params := kvdecoder.New(ctx.Params())
-	permissionsEnabled := params.MustGetBytes(root.ParamDeployPermissionsEnabled)[0] == 1
-	val := []byte{0}
-	if permissionsEnabled {
-		val = []byte{1}
-	}
-	ctx.State().Set(root.VarDeployPermissionsEnabled, val)
+	a.Require(ctx.Params().MustHas(root.ParamDeployPermissionsEnabled), "root.revokeDeployPermissions: ParamDeployPermissionsEnabled missing")
+	permissionsEnabled := params.MustGetBool(root.ParamDeployPermissionsEnabled)
+	ctx.State().Set(root.VarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
 	return nil, nil
 }

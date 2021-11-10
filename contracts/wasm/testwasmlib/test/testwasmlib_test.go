@@ -1,13 +1,14 @@
 package test
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib"
+	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -254,4 +255,41 @@ func TestViewBalanceWithTokens(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	require.True(t, v.Results.Iotas().Exists())
 	require.EqualValues(t, 42, v.Results.Iotas().Value())
+}
+
+func TestRandom(t *testing.T) {
+	ctx := setupTest(t)
+
+	f := testwasmlib.ScFuncs.Random(ctx)
+	f.Func.TransferIotas(1).Post()
+	require.NoError(t, ctx.Err)
+
+	v := testwasmlib.ScFuncs.GetRandom(ctx)
+	v.Func.Call()
+	require.NoError(t, ctx.Err)
+	random := v.Results.Random().Value()
+	require.True(t, random >= 0 && random < 1000)
+	fmt.Printf("Random value: %d\n", random)
+}
+
+func TestMultiRandom(t *testing.T) {
+	ctx := setupTest(t)
+
+	numbers := make([]int64, 0)
+	for i := 0; i < 10; i++ {
+		f := testwasmlib.ScFuncs.Random(ctx)
+		f.Func.TransferIotas(1).Post()
+		require.NoError(t, ctx.Err)
+
+		v := testwasmlib.ScFuncs.GetRandom(ctx)
+		v.Func.Call()
+		require.NoError(t, ctx.Err)
+		random := v.Results.Random().Value()
+		require.True(t, random >= 0 && random < 1000)
+		numbers = append(numbers, random)
+	}
+
+	for _, number := range numbers {
+		fmt.Printf("Random value: %d\n", number)
+	}
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -193,10 +194,16 @@ func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID iscp.RequestID) 
 	return events
 }
 
-func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber int32) []string {
-	res, err := chain.CallView(blocklog.Contract.Name, blocklog.FuncGetEventsForBlock.Name,
-		blocklog.ParamBlockIndex, blockNumber,
-	)
+func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) []string {
+	var res dict.Dict
+	var err error
+	if len(blockNumber) > 0 {
+		res, err = chain.CallView(blocklog.Contract.Name, blocklog.FuncGetEventsForBlock.Name,
+			blocklog.ParamBlockIndex, blockNumber[0],
+		)
+	} else {
+		res, err = chain.CallView(blocklog.Contract.Name, blocklog.FuncGetEventsForBlock.Name)
+	}
 	require.NoError(t, err)
 	events, err := EventsViewResultToStringArray(res)
 	require.NoError(t, err)
@@ -245,6 +252,9 @@ func TestGetEvents(t *testing.T) {
 	require.Len(t, events, 1)
 	require.Contains(t, events[0], "counter = 2")
 	events = getEventsForBlock(t, chain, 5)
+	require.Len(t, events, 1)
+	require.Contains(t, events[0], "counter = 3")
+	events = getEventsForBlock(t, chain) // latest block should be 5
 	require.Len(t, events, 1)
 	require.Contains(t, events[0], "counter = 3")
 

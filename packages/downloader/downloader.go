@@ -2,7 +2,7 @@ package downloader
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -139,5 +139,5 @@ func (*Downloader) donwloadFromHTTP(url string) ([]byte, error) {
 	}
 	defer response.Body.Close()
 
-	return ioutil.ReadAll(response.Body)
+	return io.ReadAll(response.Body)
 }

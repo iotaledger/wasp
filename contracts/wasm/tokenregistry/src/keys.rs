@@ -5,28 +5,28 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use wasmlib::*;
 
 use crate::*;
 
-pub(crate) const IDX_PARAM_COLOR:        usize = 0;
-pub(crate) const IDX_PARAM_DESCRIPTION:  usize = 1;
-pub(crate) const IDX_PARAM_USER_DEFINED: usize = 2;
-pub(crate) const IDX_STATE_COLOR_LIST:   usize = 3;
-pub(crate) const IDX_STATE_REGISTRY:     usize = 4;
+pub(crate) const IDX_PARAM_COLOR        : usize = 0;
+pub(crate) const IDX_PARAM_DESCRIPTION  : usize = 1;
+pub(crate) const IDX_PARAM_USER_DEFINED : usize = 2;
+
+
+pub(crate) const IDX_STATE_COLOR_LIST : usize = 3;
+pub(crate) const IDX_STATE_REGISTRY   : usize = 4;
 
 pub const KEY_MAP_LEN: usize = 5;
 
 pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
-    PARAM_COLOR,
-    PARAM_DESCRIPTION,
-    PARAM_USER_DEFINED,
-    STATE_COLOR_LIST,
-    STATE_REGISTRY,
+	PARAM_COLOR,
+	PARAM_DESCRIPTION,
+	PARAM_USER_DEFINED,
+	STATE_COLOR_LIST,
+	STATE_REGISTRY,
 ];
 
 pub static mut IDX_MAP: [Key32; KEY_MAP_LEN] = [Key32(0); KEY_MAP_LEN];
@@ -36,5 +36,3 @@ pub fn idx_map(idx: usize) -> Key32 {
         IDX_MAP[idx]
     }
 }
-
-// @formatter:on

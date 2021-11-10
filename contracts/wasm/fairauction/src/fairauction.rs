@@ -1,11 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use types::*;
 use wasmlib::*;
 
 use crate::*;
 use crate::contract::*;
+use crate::structs::*;
 
 const DURATION_DEFAULT: i32 = 60;
 const DURATION_MIN: i32 = 1;

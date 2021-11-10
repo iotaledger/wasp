@@ -435,8 +435,16 @@ func (ch *Chain) collateBatch() []iscp.Request {
 // batchLoop mimics behavior Wasp consensus
 func (ch *Chain) batchLoop() {
 	for {
+		ch.Sync()
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+// Sync runs all ready requests
+func (ch *Chain) Sync() {
+	for {
 		if !ch.collateAndRunBatch() {
-			time.Sleep(50 * time.Millisecond)
+			return
 		}
 	}
 }
@@ -456,8 +464,8 @@ func (ch *Chain) collateAndRunBatch() bool {
 	return false
 }
 
-// backlogLen is a thread-safe function to return size of the current backlog
-func (ch *Chain) backlogLen() int { //nolint:unused
+// BacklogLen is a thread-safe function to return size of the current backlog
+func (ch *Chain) BacklogLen() int {
 	mstats := ch.mempool.Info()
 	return mstats.InBufCounter - mstats.OutPoolCounter
 }

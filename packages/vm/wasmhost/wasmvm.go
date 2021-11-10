@@ -34,6 +34,7 @@ type WasmVM interface {
 	SaveMemory()
 	UnsafeMemory() []byte
 	VMGetBytes(offset int32, size int32) []byte
+	VMGetSize() int32
 	VMSetBytes(offset int32, size int32, bytes []byte) int32
 }
 
@@ -42,15 +43,32 @@ type WasmVMBase struct {
 	host           *WasmHost
 	memoryCopy     []byte
 	memoryDirty    bool
-	memoryNonZero  int
+	memoryNonZero  int32
 	result         []byte
 	resultKeyID    int32
 	timeoutStarted bool
 }
 
-func (vm *WasmVMBase) EnvAbort(p1, p2, p3, p4 int32) {
-	// TODO determine message string from parameters
-	panic("AssemblyScript env.abort")
+func (vm *WasmVMBase) EnvAbort(errMsg, fileName, line, col int32) {
+	// crude implementation assumes texts to only use ASCII part of UTF-16
+
+	// null-terminated UTF-16 error message
+	str1 := make([]byte, 0)
+	ptr := vm.impl.VMGetBytes(errMsg, 2)
+	for i := errMsg; ptr[0] != 0; i += 2 {
+		str1 = append(str1, ptr[0])
+		ptr = vm.impl.VMGetBytes(i, 2)
+	}
+
+	// null-terminated UTF-16 file name
+	str2 := make([]byte, 0)
+	ptr = vm.impl.VMGetBytes(fileName, 2)
+	for i := fileName; ptr[0] != 0; i += 2 {
+		str2 = append(str2, ptr[0])
+		ptr = vm.impl.VMGetBytes(i, 2)
+	}
+
+	panic(fmt.Sprintf("AssemblyScript panic: %s (%s %d:%d)", string(str1), string(str2), line, col))
 }
 
 //nolint:unparam
@@ -58,16 +76,19 @@ func (vm *WasmVMBase) getKvStore(id int32) *KvStoreHost {
 	return vm.host.getKvStore(id)
 }
 
-func (vm *WasmVMBase) HostFdWrite(fd, iovs, size, written int32) int32 {
+func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostFdWrite(...)")
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
-	ptr := vm.impl.UnsafeMemory()
-	txt := binary.LittleEndian.Uint32(ptr[iovs : iovs+4])
-	siz := binary.LittleEndian.Uint32(ptr[iovs+4 : iovs+8])
-	fmt.Print(string(ptr[txt : txt+siz]))
-	binary.LittleEndian.PutUint32(ptr[written:written+4], siz)
-	return int32(siz)
+	ptr := vm.impl.VMGetBytes(iovs, 8)
+	text := int32(binary.LittleEndian.Uint32(ptr[0:4]))
+	size := int32(binary.LittleEndian.Uint32(ptr[4:8]))
+	msg := vm.impl.VMGetBytes(text, size)
+	fmt.Print(string(msg))
+	ptr = make([]byte, 4)
+	binary.LittleEndian.PutUint32(ptr, uint32(size))
+	vm.impl.VMSetBytes(written, size, ptr)
+	return size
 }
 
 func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) int32 {
@@ -155,21 +176,20 @@ func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 }
 
 func (vm *WasmVMBase) PreCall() []byte {
-	ptr := vm.impl.UnsafeMemory()
-	frame := make([]byte, len(ptr))
-	copy(frame, ptr)
+	bytes := vm.impl.VMGetSize()
+	frame := vm.impl.VMGetBytes(0, bytes)
 	if vm.memoryDirty {
 		// clear memory and restore initialized data range
-		copy(ptr, make([]byte, len(ptr)))
-		copy(ptr[vm.memoryNonZero:], vm.memoryCopy)
+		vm.impl.VMSetBytes(0, bytes, make([]byte, bytes))
+		size := int32(len(vm.memoryCopy))
+		vm.impl.VMSetBytes(vm.memoryNonZero, size, vm.memoryCopy)
 	}
 	vm.memoryDirty = true
 	return frame
 }
 
 func (vm *WasmVMBase) PostCall(frame []byte) {
-	ptr := vm.impl.UnsafeMemory()
-	copy(ptr, frame)
+	vm.impl.VMSetBytes(0, int32(len(frame)), frame)
 }
 
 func (vm *WasmVMBase) Run(runner func() error) (err error) {
@@ -207,7 +227,8 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 
 func (vm *WasmVMBase) SaveMemory() {
 	// find initialized data range in memory
-	ptr := vm.impl.UnsafeMemory()
+	bytes := vm.impl.VMGetSize()
+	ptr := vm.impl.VMGetBytes(0, bytes)
 	if ptr == nil {
 		// this vm implementation does not communicate via mem pool
 		return
@@ -224,9 +245,9 @@ func (vm *WasmVMBase) SaveMemory() {
 	}
 
 	// save copy of initialized data range
-	vm.memoryNonZero = len(ptr)
+	vm.memoryNonZero = bytes
 	if firstNonZero >= 0 {
-		vm.memoryNonZero = firstNonZero
+		vm.memoryNonZero = int32(firstNonZero)
 		size := lastNonZero + 1 - firstNonZero
 		vm.memoryCopy = make([]byte, size)
 		copy(vm.memoryCopy, ptr[vm.memoryNonZero:])
@@ -238,6 +259,11 @@ func (vm *WasmVMBase) VMGetBytes(offset, size int32) []byte {
 	bytes := make([]byte, size)
 	copy(bytes, ptr[offset:offset+size])
 	return bytes
+}
+
+func (vm *WasmVMBase) VMGetSize() int32 {
+	ptr := vm.impl.UnsafeMemory()
+	return int32(len(ptr))
 }
 
 func (vm *WasmVMBase) VMSetBytes(offset, size int32, bytes []byte) int32 {

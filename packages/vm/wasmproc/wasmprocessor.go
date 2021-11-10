@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 )
 
 type WasmProcessor struct {
@@ -45,7 +44,7 @@ func GetProcessor(binaryCode []byte, log *logger.Logger) (iscp.VMProcessor, erro
 	// TODO decide if we want be able to examine state directly from tests
 	// proc.SetExport(0x8fff, ViewCopyAllState)
 	proc.scContext = NewWasmContext("", proc)
-	wasmlib.ConnectHost(proc.scContext)
+	wasmhost.Connect(proc.scContext)
 	err = proc.LoadWasm(binaryCode)
 	if err != nil {
 		return nil, err

@@ -8,10 +8,10 @@
 // through a minimal implementation and not to come up with a complete real-world solution.
 
 use wasmlib::*;
-use crate::contract::ScFuncs;
 
-use crate::types::*;
 use crate::*;
+use crate::contract::*;
+use crate::structs::*;
 
 // Define some default configuration parameters.
 
@@ -145,7 +145,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     // generator will use the next 8 bytes from the hash as its random Int64 number and once
     // it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
     // Here we determine the winning number for this round in the range of 1 thru MAX_NUMBER.
-    let winning_number: i64 = ctx.utility().random(MAX_NUMBER - 1) + 1;
+    let winning_number: i64 = ctx.random(MAX_NUMBER - 1) + 1;
 
     // Save the last winning number in state storage under 'lastWinningNumber' so that there
     // is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
