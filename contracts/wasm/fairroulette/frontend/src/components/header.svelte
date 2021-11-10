@@ -50,7 +50,7 @@
     },
     {
       label: 'White Paper',
-      href: 'https://files.iota.org/papers/ISC_WP.pdf',
+      href: 'https://files.iota.org/papers/ISC_WP_Nov_10_2021.pdf',
       target: '_blank',
     },
   ];
