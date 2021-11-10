@@ -43,13 +43,17 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	genesisAlloc, err := evmtypes.DecodeGenesisAlloc(ctx.Params().MustGet(evm.FieldGenesisAlloc))
 	a.RequireNoError(err)
+
+	gasLimit, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldGasLimit), evm.GasLimitDefault)
+	a.RequireNoError(err)
+
 	chainID, err := codec.DecodeUint16(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
 	a.RequireNoError(err)
 	emulator.InitGenesis(
 		int(chainID),
 		rawdb.NewDatabase(emulator.NewKVAdapter(evminternal.EVMStateSubrealm(ctx.State()))),
 		genesisAlloc,
-		evm.GasLimitDefault,
+		gasLimit,
 		timestamp(ctx),
 	)
 	evminternal.InitializeManagement(ctx)
