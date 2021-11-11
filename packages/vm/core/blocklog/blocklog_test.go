@@ -13,7 +13,7 @@ import (
 func TestSerdeRequestLogRecord(t *testing.T) {
 	var txid ledgerstate.TransactionID
 	rand.Read(txid[:])
-	req := request.NewOffLedger(iscp.Hn("0"), iscp.Hn("0"), nil)
+	req := request.NewOffLedger(iscp.RandomChainID(), iscp.Hn("0"), iscp.Hn("0"), nil)
 	rec := &RequestReceipt{
 		Request: req,
 		Error:   "some log data",

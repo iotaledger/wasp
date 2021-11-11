@@ -101,8 +101,8 @@ func (r *CallParams) WithMint(targetAddress ledgerstate.Address, amount uint64) 
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters
-func (r *CallParams) NewRequestOffLedger(keyPair *ed25519.KeyPair) *request.OffLedger {
-	ret := request.NewOffLedger(r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
+func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *ed25519.KeyPair) *request.OffLedger {
+	ret := request.NewOffLedger(chainID, r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
 	ret.Sign(keyPair)
 	return ret
 }
@@ -212,7 +212,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 	if keyPair == nil {
 		keyPair = ch.OriginatorKeyPair
 	}
-	r := req.NewRequestOffLedger(keyPair)
+	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res, err := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
 	if err != nil {
 		return nil, err
