@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"sort"
 	"sync"
-	"time"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -12,7 +11,6 @@ import (
 )
 
 type DomainImpl struct {
-	attachedTo  peering.PeeringID
 	netProvider peering.NetworkProvider
 	nodes       map[string]peering.PeerSender
 	permutation *util.Permutation16
@@ -20,6 +18,8 @@ type DomainImpl struct {
 	log         *logger.Logger
 	mutex       *sync.RWMutex
 }
+
+var _ peering.PeerDomainProvider = &DomainImpl{}
 
 // NewPeerDomain creates a collection. Ignores self
 func NewPeerDomain(netProvider peering.NetworkProvider, initialNodes []peering.PeerSender, log *logger.Logger) *DomainImpl {
@@ -53,7 +53,7 @@ func NewPeerDomainByNetIDs(netProvider peering.NetworkProvider, peerNetIDs []str
 	return NewPeerDomain(netProvider, peers, log), nil
 }
 
-func (d *DomainImpl) SendMsgByNetID(netID string, msg *peering.PeerMessage) {
+func (d *DomainImpl) SendMsgByNetID(netID string, msg *peering.PeerMessageData) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
 	peer, ok := d.nodes[netID]
@@ -61,19 +61,10 @@ func (d *DomainImpl) SendMsgByNetID(netID string, msg *peering.PeerMessage) {
 		d.log.Warnf("SendMsgByNetID: NetID %v is not in the domain", netID)
 		return
 	}
-	peer.SendMsg(msg)
+	peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *msg})
 }
 
-func (d *DomainImpl) SendSimple(netID string, msgType byte, msgData []byte) {
-	d.SendMsgByNetID(netID, &peering.PeerMessage{
-		PeeringID: d.attachedTo,
-		Timestamp: time.Now().UnixNano(),
-		MsgType:   msgType,
-		MsgData:   msgData,
-	})
-}
-
-func (d *DomainImpl) SendMsgToRandomPeers(upToNumPeers uint16, msg *peering.PeerMessage) {
+func (d *DomainImpl) SendMsgToRandomPeers(upToNumPeers uint16, msg *peering.PeerMessageData) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
 
@@ -83,15 +74,6 @@ func (d *DomainImpl) SendMsgToRandomPeers(upToNumPeers uint16, msg *peering.Peer
 	for i := uint16(0); i < upToNumPeers; i++ {
 		d.SendMsgByNetID(d.netIDs[d.permutation.Next()], msg)
 	}
-}
-
-func (d *DomainImpl) SendMsgToRandomPeersSimple(upToNumPeers uint16, msgType byte, msgData []byte) {
-	d.SendMsgToRandomPeers(upToNumPeers, &peering.PeerMessage{
-		PeeringID: d.attachedTo,
-		Timestamp: time.Now().UnixNano(),
-		MsgType:   msgType,
-		MsgData:   msgData,
-	})
 }
 
 func (d *DomainImpl) GetRandomPeers(upToNumPeers int) []string {
@@ -157,17 +139,20 @@ func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
 	d.permutation.Shuffle(seedB)
 }
 
-func (d *DomainImpl) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
-	d.attachedTo = *peeringID
-	return d.netProvider.Attach(peeringID, func(recv *peering.RecvEvent) {
-		peer, ok := d.nodes[recv.From.NetID()]
-		if ok && peer.NetID() != d.netProvider.Self().NetID() {
-			recv.Msg.SenderNetID = peer.NetID()
-			callback(recv)
+func (d *DomainImpl) Attach(peeringID *peering.PeeringID, receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {
+	return d.netProvider.Attach(peeringID, receiver, func(recv *peering.PeerMessageIn) {
+		if recv.SenderNetID == d.netProvider.Self().NetID() {
+			d.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: message from self.",
+				recv.MsgReceiver, recv.MsgType, recv.SenderNetID)
 			return
 		}
-		d.log.Warnf("dropping message MsgType=%v from %v, it does not belong to the peer domain.",
-			recv.Msg.MsgType, recv.From.NetID())
+		_, ok := d.nodes[recv.SenderNetID]
+		if !ok {
+			d.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: it does not belong to the peer domain.",
+				recv.MsgReceiver, recv.MsgType, recv.SenderNetID)
+			return
+		}
+		callback(recv)
 	})
 }
 

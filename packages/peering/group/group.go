@@ -27,6 +27,8 @@ type groupImpl struct {
 	log         *logger.Logger
 }
 
+var _ peering.GroupProvider = &groupImpl{}
+
 // NewPeeringGroupProvider creates a generic peering group.
 // That should be used as a helper for peering implementations.
 func NewPeeringGroupProvider(netProvider peering.NetworkProvider, nodes []peering.PeerSender, log *logger.Logger) (peering.GroupProvider, error) {
@@ -74,12 +76,12 @@ func (g *groupImpl) PeerIndexByNetID(peerNetID string) (uint16, error) {
 }
 
 // SendMsgByIndex implements peering.GroupProvider.
-func (g *groupImpl) SendMsgByIndex(peerIdx uint16, msg *peering.PeerMessage) {
-	g.nodes[peerIdx].SendMsg(msg)
+func (g *groupImpl) SendMsgByIndex(peerIdx uint16, msg *peering.PeerMessageData) {
+	g.nodes[peerIdx].SendMsg(&peering.PeerMessageNet{PeerMessageData: *msg})
 }
 
 // Broadcast implements peering.GroupProvider.
-func (g *groupImpl) Broadcast(msg *peering.PeerMessage, includingSelf bool, except ...uint16) {
+func (g *groupImpl) SendMsgBroadcast(msg *peering.PeerMessageData, includingSelf bool, except ...uint16) {
 	var peers map[uint16]peering.PeerSender
 	if includingSelf {
 		peers = g.AllNodes(except...)
@@ -87,7 +89,7 @@ func (g *groupImpl) Broadcast(msg *peering.PeerMessage, includingSelf bool, exce
 		peers = g.OtherNodes(except...)
 	}
 	for i := range peers {
-		peers[i].SendMsg(msg)
+		g.SendMsgByIndex(i, msg)
 	}
 }
 
@@ -95,11 +97,11 @@ func (g *groupImpl) Broadcast(msg *peering.PeerMessage, includingSelf bool, exce
 // Resends the messages if acks are not received for some time.
 func (g *groupImpl) ExchangeRound(
 	peers map[uint16]peering.PeerSender,
-	recvCh chan *peering.RecvEvent,
+	recvCh chan *peering.PeerMessageGroupIn,
 	retryTimeout time.Duration,
 	giveUpTimeout time.Duration,
 	sendCB func(peerIdx uint16, peer peering.PeerSender),
-	recvCB func(recv *peering.RecvEvent) (bool, error),
+	recvCB func(recv *peering.PeerMessageGroupIn) (bool, error),
 ) error {
 	var err error
 	acks := make(map[uint16]bool)
@@ -124,29 +126,29 @@ func (g *groupImpl) ExchangeRound(
 			if !ok {
 				return errors.New("recv_channel_closed")
 			}
-			if recvMsg.Msg.SenderIndex, err = g.PeerIndex(recvMsg.From); err != nil {
+			/*if recvMsg.Msg.SenderIndex, err = g.PeerIndex(recvMsg.From); err != nil {
 				g.log.Warnf(
 					"Dropping message %v -> %v, MsgType=%v because of %v",
 					recvMsg.From.NetID(), g.netProvider.Self().NetID(),
 					recvMsg.Msg.MsgType, err,
 				)
 				continue
-			}
-			if acks[recvMsg.Msg.SenderIndex] { // Only consider first successful message.
+			}*/
+			if acks[recvMsg.SenderIndex] { // Only consider first successful message.
 				g.log.Warnf(
-					"Dropping duplicate message %v -> %v, MsgType=%v",
-					recvMsg.From.NetID(), g.netProvider.Self().NetID(),
-					recvMsg.Msg.MsgType,
+					"Dropping duplicate message %v -> %v, receiver=%v, MsgType=%v",
+					recvMsg.SenderNetID, g.netProvider.Self().NetID(),
+					recvMsg.MsgReceiver, recvMsg.MsgType,
 				)
 				continue
 			}
-			if acks[recvMsg.Msg.SenderIndex], err = recvCB(recvMsg); err != nil {
-				errs[recvMsg.Msg.SenderIndex] = err
+			if acks[recvMsg.SenderIndex], err = recvCB(recvMsg); err != nil {
+				errs[recvMsg.SenderIndex] = err
 				continue
 			}
-			if acks[recvMsg.Msg.SenderIndex] {
+			if acks[recvMsg.SenderIndex] {
 				// Clear previous errors on success.
-				delete(errs, recvMsg.Msg.SenderIndex)
+				delete(errs, recvMsg.SenderIndex)
 			}
 		case <-retryCh:
 			for i := range peers {
@@ -216,14 +218,22 @@ func (g *groupImpl) OtherNodes(except ...uint16) map[uint16]peering.PeerSender {
 // Attach starts listening for messages. Messages in this case will be filtered
 // to those received from nodes in the group only. SenderIndex will be filled
 // for the messages according to the message source.
-func (g *groupImpl) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
-	return g.netProvider.Attach(peeringID, func(recv *peering.RecvEvent) {
-		if idx, err := g.PeerIndexByNetID(recv.From.NetID()); err == nil && idx != NotInGroup {
-			recv.Msg.SenderIndex = idx
-			callback(recv)
+func (g *groupImpl) Attach(peeringID *peering.PeeringID, receiver byte, callback func(recv *peering.PeerMessageGroupIn)) interface{} {
+	return g.netProvider.Attach(peeringID, receiver, func(recv *peering.PeerMessageIn) {
+		idx, err := g.PeerIndexByNetID(recv.SenderNetID)
+		if idx == NotInGroup {
+			err = xerrors.Errorf("sender does not belong to the group")
+		}
+		if err != nil {
+			g.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: %v.",
+				recv.MsgReceiver, recv.MsgType, recv.SenderNetID, err)
 			return
 		}
-		g.log.Warnf("Dropping message MsgType=%v from %v, it does not belong to the group.", recv.Msg.MsgType, recv.From.NetID())
+		gRecv := &peering.PeerMessageGroupIn{
+			PeerMessageIn: *recv,
+			SenderIndex:   idx,
+		}
+		callback(gRecv)
 	})
 }
 
