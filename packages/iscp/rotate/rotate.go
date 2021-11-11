@@ -17,8 +17,8 @@ import (
 
 // IsRotateStateControllerRequest determines if request may be a committee rotation request
 func IsRotateStateControllerRequest(req iscp.Request) bool {
-	targetContract, targetEP := req.Target()
-	return targetContract == coreutil.CoreContractGovernanceHname && targetEP == coreutil.CoreEPRotateStateControllerHname
+	target := req.Target()
+	return target.Contract == coreutil.CoreContractGovernanceHname && target.EntryPoint == coreutil.CoreEPRotateStateControllerHname
 }
 
 func NewRotateRequestOffLedger(newStateAddress ledgerstate.Address, keyPair *ed25519.KeyPair) iscp.Request {

@@ -289,6 +289,7 @@ func (req *OnLedger) Output() ledgerstate.Output {
 
 // Params returns solid args if decoded already or nil otherwise
 func (req *OnLedger) Params() (dict.Dict, bool) {
+	// FIXME: this returns nil after deserializing a processed request (see tools/wasp-cli/chain/blocklog.go)
 	par := req.params.Load()
 	if par == nil {
 		return nil, false
@@ -305,8 +306,8 @@ func (req *OnLedger) SenderAddress() ledgerstate.Address {
 }
 
 // Target returns target contract and target entry point
-func (req *OnLedger) Target() (iscp.Hname, iscp.Hname) {
-	return req.requestMetadata.TargetContract(), req.requestMetadata.EntryPoint()
+func (req *OnLedger) Target() iscp.RequestTarget {
+	return iscp.NewRequestTarget(req.requestMetadata.TargetContract(), req.requestMetadata.EntryPoint())
 }
 
 func (req *OnLedger) Timestamp() time.Time {
@@ -541,6 +542,7 @@ func (req *OffLedger) IsOffLedger() bool {
 }
 
 func (req *OffLedger) Params() (dict.Dict, bool) {
+	// FIXME: this returns nil after deserializing a processed request (see tools/wasp-cli/chain/blocklog.go)
 	par := req.params.Load()
 	if par == nil {
 		return nil, false
@@ -559,8 +561,8 @@ func (req *OffLedger) SenderAddress() ledgerstate.Address {
 	return req.sender
 }
 
-func (req *OffLedger) Target() (iscp.Hname, iscp.Hname) {
-	return req.contract, req.entryPoint
+func (req *OffLedger) Target() iscp.RequestTarget {
+	return iscp.NewRequestTarget(req.contract, req.entryPoint)
 }
 
 func (req *OffLedger) Timestamp() time.Time {

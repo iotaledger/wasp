@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 func args(args ...interface{}) []interface{} {
@@ -37,6 +38,10 @@ func incUint32(n uint32) uint32 {
 
 func decUint32(n uint32) uint32 {
 	return n - 1
+}
+
+func keyToString(k kv.Key) string {
+	return string(k)
 }
 
 func bytesToString(b []byte) string {
