@@ -36,7 +36,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const maxMsgBuffer = 10000
+const maxMsgBuffer = 1000
 
 var (
 	_ chain.Chain         = &chainObj{}
@@ -111,9 +111,6 @@ func NewChain(
 
 	chainLog := log.Named(chainID.Base58()[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
-	messagePriorityFun := func(msg interface{}) bool {
-		TODO
-	}
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
@@ -141,13 +138,13 @@ func NewChain(
 		peeringID:                        chainID.Array(),
 		attachIDs:                        make([]interface{}, 0),
 		chainMetrics:                     chainMetrics,
-		dismissChainMsgChannel:           pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
-		stateMsgChannel:                  pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
-		offLedgerRequestPeerMsgChannel:   pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
-		requestAckPeerMsgChannel:         pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
-		missingRequestIDsPeerMsgChannel:  pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
-		missingRequestPeerMsgChannel:     pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
-		timerTickMsgChannel:              pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
+		dismissChainMsgPipe:              pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		stateMsgPipe:                     pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		offLedgerRequestPeerMsgPipe:      pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		requestAckPeerMsgPipe:            pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		missingRequestIDsPeerMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		missingRequestPeerMsgPipe:        pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
 	}
 	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))

@@ -18,72 +18,72 @@ import (
 )
 
 func (c *chainObj) handleMessagesLoop() {
-	nDismissChainMsgChannel := c.dismissChainMsgChannel.Out()
-	nStateMsgChannel := c.stateMsgChannel.Out()
-	nOffLedgerRequestPeerMsgChannel := c.offLedgerRequestPeerMsgChannel.Out()
-	nRequestAckPeerMsgChannel := c.requestAckPeerMsgChannel.Out()
-	nMissingRequestIDsPeerMsgChannel := c.missingRequestIDsPeerMsgChannel.Out()
-	nMissingRequestPeerMsgChannel := c.missingRequestPeerMsgChannel.Out()
-	nTimerTickMsgChannel := c.timerTickMsgChannel.Out()
+	dismissChainMsgChannel := c.dismissChainMsgPipe.Out()
+	stateMsgChannel := c.stateMsgPipe.Out()
+	offLedgerRequestPeerMsgChannel := c.offLedgerRequestPeerMsgPipe.Out()
+	requestAckPeerMsgChannel := c.requestAckPeerMsgPipe.Out()
+	missingRequestIDsPeerMsgChannel := c.missingRequestIDsPeerMsgPipe.Out()
+	missingRequestPeerMsgChannel := c.missingRequestPeerMsgPipe.Out()
+	timerTickMsgChannel := c.timerTickMsgPipe.Out()
 	for {
 		select {
-		case msg, ok := <-nDismissChainMsgChannel:
+		case msg, ok := <-dismissChainMsgChannel:
 			if ok {
 				c.handleDismissChain(msg.(DismissChainMsg))
 			} else {
-				nDismissChainMsgChannel = nil
+				dismissChainMsgChannel = nil
 			}
-		case msg, ok := <-nStateMsgChannel:
+		case msg, ok := <-stateMsgChannel:
 			if ok {
 				c.handleLedgerState(msg.(*messages.StateMsg))
 			} else {
-				nStateMsgChannel = nil
+				stateMsgChannel = nil
 			}
-		case msg, ok := <-nOffLedgerRequestPeerMsgChannel:
+		case msg, ok := <-offLedgerRequestPeerMsgChannel:
 			if ok {
 				c.handleOffLedgerRequestPeerMsg(msg.(OffLedgerRequestMsg))
 			} else {
-				nOffLedgerRequestPeerMsgChannel = nil
+				offLedgerRequestPeerMsgChannel = nil
 			}
-		case msg, ok := <-nRequestAckPeerMsgChannel:
+		case msg, ok := <-requestAckPeerMsgChannel:
 			if ok {
 				c.handleRequestAckPeerMsg(msg.(RequestAckMsg))
 			} else {
-				nRequestAckPeerMsgChannel = nil
+				requestAckPeerMsgChannel = nil
 			}
-		case msg, ok := <-nMissingRequestIDsPeerMsgChannel:
+		case msg, ok := <-missingRequestIDsPeerMsgChannel:
 			if ok {
 				c.handleMissingRequestIDsPeerMsg(msg.(*peering.PeerMessage))
 			} else {
-				nMissingRequestIDsPeerMsgChannel = nil
+				missingRequestIDsPeerMsgChannel = nil
 			}
-		case msg, ok := <-nMissingRequestPeerMsgChannel:
+		case msg, ok := <-missingRequestPeerMsgChannel:
 			if ok {
 				c.handleMissingRequestPeerMsg(msg.(*peering.PeerMessage))
 			} else {
-				nMissingRequestPeerMsgChannel = nil
+				missingRequestPeerMsgChannel = nil
 			}
-		case msg, ok := <-nTimerTickMsgChannel:
+		case msg, ok := <-timerTickMsgChannel:
 			if ok {
 				c.handleTimerTick(msg.(messages.TimerTick))
 			} else {
-				nTimerTickMsgChannel = nil
+				timerTickMsgChannel = nil
 			}
 		}
-		if nDismissChainMsgChannel == nil &&
-			nStateMsgChannel == nil &&
-			nOffLedgerRequestPeerMsgChannel == nil &&
-			nRequestAckPeerMsgChannel == nil &&
-			nMissingRequestIDsPeerMsgChannel == nil &&
-			nMissingRequestPeerMsgChannel == nil &&
-			nTimerTickMsgChannel == nil {
+		if dismissChainMsgChannel == nil &&
+			stateMsgChannel == nil &&
+			offLedgerRequestPeerMsgChannel == nil &&
+			requestAckPeerMsgChannel == nil &&
+			missingRequestIDsPeerMsgChannel == nil &&
+			missingRequestPeerMsgChannel == nil &&
+			timerTickMsgChannel == nil {
 			return
 		}
 	}
 }
 
 func (c *chainObj) EnqueueDismissChain(reason string) {
-	c.dismissChainMsgChannel.In() <- DismissChainMsg{Reason: reason}
+	c.dismissChainMsgPipe.In() <- DismissChainMsg{Reason: reason}
 }
 
 func (c *chainObj) handleDismissChain(msg DismissChainMsg) {
@@ -91,7 +91,7 @@ func (c *chainObj) handleDismissChain(msg DismissChainMsg) {
 }
 
 func (c *chainObj) EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, timestamp time.Time) {
-	c.stateMsgChannel.In() <- &messages.StateMsg{
+	c.stateMsgPipe.In() <- &messages.StateMsg{
 		ChainOutput: chainOutput,
 		Timestamp:   timestamp,
 	}
@@ -124,7 +124,7 @@ func (c *chainObj) handleLedgerState(msg *messages.StateMsg) {
 }
 
 func (c *chainObj) EnqueueOffLedgerRequestPeerMsg(req *request.OffLedger, senderNetID string) {
-	c.offLedgerRequestPeerMsgChannel.In() <- OffLedgerRequestMsg{
+	c.offLedgerRequestPeerMsgPipe.In() <- OffLedgerRequestMsg{
 		Req:         req,
 		SenderNetID: senderNetID,
 	}
@@ -143,7 +143,7 @@ func (c *chainObj) handleOffLedgerRequestPeerMsg(msg OffLedgerRequestMsg) {
 }
 
 func (c *chainObj) enqueueRequestAckPeerMsg(requestID *iscp.RequestID, senderNetID string) {
-	c.requestAckPeerMsgChannel.In() <- RequestAckMsg{
+	c.requestAckPeerMsgPipe.In() <- RequestAckMsg{
 		ReqID:       requestID,
 		SenderNetID: senderNetID,
 	}
@@ -154,7 +154,7 @@ func (c *chainObj) handleRequestAckPeerMsg(msg RequestAckMsg) {
 }
 
 func (c *chainObj) enqueueMissingRequestIDsPeerMsg(peerMsg *peering.PeerMessage) {
-	c.missingRequestIDsPeerMsgChannel.In() <- peerMsg
+	c.missingRequestIDsPeerMsgPipe.In() <- peerMsg
 }
 
 func (c *chainObj) handleMissingRequestIDsPeerMsg(peerMsg *peering.PeerMessage) {
@@ -177,7 +177,7 @@ func (c *chainObj) handleMissingRequestIDsPeerMsg(peerMsg *peering.PeerMessage) 
 }
 
 func (c *chainObj) enqueueMissingRequestPeerMsg(peerMsg *peering.PeerMessage) {
-	c.missingRequestPeerMsgChannel.In() <- peerMsg
+	c.missingRequestPeerMsgPipe.In() <- peerMsg
 }
 
 func (c *chainObj) handleMissingRequestPeerMsg(peerMsg *peering.PeerMessage) {
@@ -195,7 +195,7 @@ func (c *chainObj) handleMissingRequestPeerMsg(peerMsg *peering.PeerMessage) {
 }
 
 func (c *chainObj) enqueueTimerTick(tick int) {
-	c.timerTickMsgChannel.In() <- messages.TimerTick(tick)
+	c.timerTickMsgPipe.In() <- messages.TimerTick(tick)
 }
 
 func (c *chainObj) handleTimerTick(msg messages.TimerTick) {

@@ -63,13 +63,13 @@ func (c *chainObj) Dismiss(reason string) {
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
 
-		c.dismissChainMsgChannel.Close()
-		c.stateMsgChannel.Close()
-		c.offLedgerRequestPeerMsgChannel.Close()
-		c.requestAckPeerMsgChannel.Close()
-		c.missingRequestIDsPeerMsgChannel.Close()
-		c.missingRequestPeerMsgChannel.Close()
-		c.timerTickMsgChannel.Close()
+		c.dismissChainMsgPipe.Close()
+		c.stateMsgPipe.Close()
+		c.offLedgerRequestPeerMsgPipe.Close()
+		c.requestAckPeerMsgPipe.Close()
+		c.missingRequestIDsPeerMsgPipe.Close()
+		c.missingRequestPeerMsgPipe.Close()
+		c.timerTickMsgPipe.Close()
 
 		c.mempool.Close()
 		c.stateMgr.Close()
@@ -100,7 +100,7 @@ func (c *chainObj) AttachToPeerMessages(fun func(recv *peering.RecvEvent)) {
 
 func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
 	c.stateMgr.EventStateCandidateMsg(virtualState, outputID)
-	}
+}
 
 // ReceiveMessage accepts an incoming message asynchronously.
 /*func (c *chainObj) ReceiveMessage(msg interface{}) {
