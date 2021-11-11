@@ -154,9 +154,19 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	}()
 }
 
+func (c *chainObj) isRequestValid(req *request.OffLedger) bool {
+	return req.ChainID().Equals(c.ID()) && req.VerifySignature()
+}
+
 func (c *chainObj) ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID string) {
 	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
 	c.sendRequestAcknowledgementMsg(req.ID(), senderNetID)
+
+	if !c.isRequestValid(req) {
+		// this means some node broadcasted an invalid request (bad chainID or signature)
+		// TODO should the sender node be punished somehow?
+		return
+	}
 	if !c.mempool.ReceiveRequest(req) {
 		return
 	}
@@ -200,16 +210,11 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 		return
 	}
 	for _, req := range reqs {
-		c.ReceiveRequest(req)
+		c.mempool.ReceiveRequest(req)
 	}
 	if chainOut := transaction.GetAliasOutput(tx, c.chainID.AsAddress()); chainOut != nil {
 		c.ReceiveState(chainOut, tx.Essence().Timestamp())
 	}
-}
-
-func (c *chainObj) ReceiveRequest(req iscp.Request) {
-	c.log.Debugf("ReceiveRequest: %s", req.ID())
-	c.mempool.ReceiveRequests(req)
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {

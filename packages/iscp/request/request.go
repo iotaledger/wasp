@@ -390,6 +390,7 @@ func (req *OnLedger) String() string {
 
 type OffLedger struct {
 	args       requestargs.RequestArgs
+	chainID    *iscp.ChainID
 	contract   iscp.Hname
 	entryPoint iscp.Hname
 	params     atomic.Value // mutable
@@ -404,8 +405,9 @@ type OffLedger struct {
 var _ iscp.Request = &OffLedger{}
 
 // NewOffLedger creates a basic request
-func NewOffLedger(contract, entryPoint iscp.Hname, args requestargs.RequestArgs) *OffLedger {
+func NewOffLedger(chainID *iscp.ChainID, contract, entryPoint iscp.Hname, args requestargs.RequestArgs) *OffLedger {
 	return &OffLedger{
+		chainID:    chainID,
 		args:       args.Clone(),
 		contract:   contract,
 		entryPoint: entryPoint,
@@ -448,7 +450,8 @@ func (req *OffLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 }
 
 func (req *OffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.Write(req.contract).
+	mu.Write(req.chainID).
+		Write(req.contract).
 		Write(req.entryPoint).
 		Write(req.args).
 		WriteBytes(req.publicKey[:]).
@@ -457,6 +460,11 @@ func (req *OffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
 }
 
 func (req *OffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+	var err error
+	if req.chainID, err = iscp.ChainIDFromMarshalUtil(mu); err != nil {
+		return err
+	}
+
 	if err := req.contract.ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
@@ -520,6 +528,10 @@ func (req *OffLedger) VerifySignature() bool {
 func (req *OffLedger) ID() (requestID iscp.RequestID) {
 	txid := ledgerstate.TransactionID(hashing.HashData(req.Bytes()))
 	return iscp.RequestID(ledgerstate.NewOutputID(txid, 0))
+}
+
+func (req *OffLedger) ChainID() (chainID *iscp.ChainID) {
+	return req.chainID
 }
 
 // IsFeePrepaid always true for off-ledger
