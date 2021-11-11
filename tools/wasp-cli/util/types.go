@@ -72,6 +72,10 @@ func ValueToString(vtype string, v []byte) string {
 		n, err := codec.DecodeUint64(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
+	case "int16":
+		n, err := codec.DecodeInt16(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
 	case "int", "int64":
 		n, err := codec.DecodeInt64(v)
 		log.Check(err)
