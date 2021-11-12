@@ -44,9 +44,12 @@ func initEVMDeploy(evmCmd *cobra.Command) {
 		Short: "Deploy the evmchain/evmlight contract (i.e. create a new EVM chain)",
 		Run: func(cmd *cobra.Command, args []string) {
 			blockTime := deployParams.BlockTime()
+			blockKeepAmount := deployParams.BlockKeepAmount()
 			deployContract(deployParams.Name(), deployParams.Description(), deployParams.EVMFlavor().ProgramHash, dict.Dict{
-				evm.FieldChainID:      codec.EncodeUint16(uint16(deployParams.ChainID)),
-				evm.FieldGenesisAlloc: evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(nil)),
+				evm.FieldChainID:         codec.EncodeUint16(uint16(deployParams.ChainID)),
+				evm.FieldGenesisAlloc:    evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(nil)),
+				evm.FieldGasLimit:        codec.EncodeUint64(deployParams.GasLimit),
+				evm.FieldBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
 			})
 			log.Printf("%s contract successfully deployed.\n", deployParams.Name())
 

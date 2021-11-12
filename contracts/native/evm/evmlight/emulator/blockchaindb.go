@@ -20,8 +20,12 @@ import (
 const (
 	// config values:
 
-	keyChainID  = "c"
+	// EVM chain ID
+	keyChainID = "c"
+	// Block gas limit
 	keyGasLimit = "g"
+	// Amount of blocks to keep in DB. Older blocks will be pruned every time a transaction is added
+	keyKeepAmount = "k"
 
 	// blocks:
 
@@ -38,9 +42,6 @@ const (
 	keyBlockIndexByTxHash     = "th:i"
 )
 
-// Amount of blocks to keep in DB. Older blocks will be pruned every time a transaction is added
-const keepAmount = 100
-
 // BlockchainDB contains logic for storing a fake blockchain (more like a list of blocks),
 // intended for satisfying EVM tools that depend on the concept of a block.
 type BlockchainDB struct {
@@ -55,9 +56,10 @@ func (bc *BlockchainDB) Initialized() bool {
 	return bc.kv.MustGet(keyChainID) != nil
 }
 
-func (bc *BlockchainDB) Init(chainID uint16, gasLimit, timestamp uint64) {
+func (bc *BlockchainDB) Init(chainID uint16, keepAmount int32, gasLimit, timestamp uint64) {
 	bc.SetChainID(chainID)
 	bc.SetGasLimit(gasLimit)
+	bc.SetKeepAmount(keepAmount)
 	bc.addBlock(bc.makeHeader(nil, nil, 0, timestamp), timestamp+1)
 }
 
@@ -79,6 +81,18 @@ func (bc *BlockchainDB) SetGasLimit(gas uint64) {
 
 func (bc *BlockchainDB) GetGasLimit() uint64 {
 	gas, err := codec.DecodeUint64(bc.kv.MustGet(keyGasLimit))
+	if err != nil {
+		panic(err)
+	}
+	return gas
+}
+
+func (bc *BlockchainDB) SetKeepAmount(keepAmount int32) {
+	bc.kv.Set(keyKeepAmount, codec.EncodeInt32(keepAmount))
+}
+
+func (bc *BlockchainDB) keepAmount() int32 {
+	gas, err := codec.DecodeInt32(bc.kv.MustGet(keyKeepAmount), -1)
 	if err != nil {
 		panic(err)
 	}
@@ -198,22 +212,37 @@ func (bc *BlockchainDB) MintBlock(timestamp uint64) {
 }
 
 func (bc *BlockchainDB) prune(currentNumber uint64) {
-	if currentNumber <= keepAmount {
+	keepAmount := bc.keepAmount()
+	if keepAmount < 0 {
+		// keep all blocks
 		return
 	}
-	forget := currentNumber - keepAmount
-	blockHash := bc.GetBlockHashByBlockNumber(forget)
-	txs := bc.getTxArray(forget)
+	if currentNumber <= uint64(keepAmount) {
+		return
+	}
+	toDelete := currentNumber - uint64(keepAmount)
+	// assume that all blocks prior to `toDelete` have been already deleted, so
+	// we only need to delete this one.
+	bc.deleteBlock(toDelete)
+}
+
+func (bc *BlockchainDB) deleteBlock(blockNumber uint64) {
+	header := bc.getHeaderGobByBlockNumber(blockNumber)
+	if header == nil {
+		// already deleted?
+		return
+	}
+	txs := bc.getTxArray(blockNumber)
 	n := txs.MustLen()
 	for i := uint32(0); i < n; i++ {
-		txHash := bc.GetTransactionByBlockNumberAndIndex(forget, i).Hash()
+		txHash := bc.GetTransactionByBlockNumberAndIndex(blockNumber, i).Hash()
 		bc.kv.Del(makeBlockNumberByTxHashKey(txHash))
 		bc.kv.Del(makeBlockIndexByTxHashKey(txHash))
 	}
 	txs.MustErase()
-	bc.getReceiptArray(forget).MustErase()
-	bc.kv.Del(makeBlockHeaderByBlockNumberKey(forget))
-	bc.kv.Del(makeBlockNumberByBlockHashKey(blockHash))
+	bc.getReceiptArray(blockNumber).MustErase()
+	bc.kv.Del(makeBlockHeaderByBlockNumberKey(blockNumber))
+	bc.kv.Del(makeBlockNumberByBlockHashKey(header.Hash))
 }
 
 type headerGob struct {

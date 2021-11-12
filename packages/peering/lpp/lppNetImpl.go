@@ -208,19 +208,12 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 		n.log.Warnf("Failed to read incoming payload from %v, reason=%v", remotePeer.remoteNetID, err)
 		return
 	}
-	peerMsg, err := peering.NewPeerMessageFromBytes(payload, nil) // Do not use the signatures, we have TLS.
+	peerMsg, err := peering.NewPeerMessageFromBytes(payload) // Do not use the signatures, we have TLS.
 	if err != nil {
 		n.log.Warnf("Error while decoding a message, reason=%v", err)
 		return
 	}
-	remotePeer.noteReceived()
-	peerMsg.SenderNetID = remotePeer.NetID()
-	remotePeer.RecvMsg(
-		&peering.RecvEvent{
-			From: remotePeer,
-			Msg:  peerMsg,
-		},
-	)
+	remotePeer.RecvMsg(peerMsg)
 }
 
 func (n *netImpl) lppHeartbeatProtocolHandler(stream network.Stream) {
@@ -418,7 +411,7 @@ func (n *netImpl) SendMsg(msg *peering.PeerMessage) {
 	})
 }
 
-func (n *netImpl) triggerRecvEvents(msg interface{}) {
+func (n *netImpl) triggerRecvEvents(msg *peering.RecvEvent) {
 	n.recvEvents.Trigger(msg)
 }
 

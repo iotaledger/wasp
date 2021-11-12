@@ -18,7 +18,7 @@ $#each func libThunk
 `,
 	// *******************************
 	"libExportFunc": `
-	exports.Add$Kind($Kind$FuncName, $kind$FuncName$+Thunk)
+	exports.Add$Kind($Kind$FuncName,$funcPad $kind$FuncName$+Thunk)
 `,
 	// *******************************
 	"libThunk": `
@@ -101,30 +101,39 @@ $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccessself": `
-$funcAccessComment	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
+$#if funcAccessComment accessComment
+	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccesschain": `
-$funcAccessComment	ctx.Require(ctx.Caller() == ctx.ChainOwnerID(), "no permission")
+$#if funcAccessComment accessComment
+	ctx.Require(ctx.Caller() == ctx.ChainOwnerID(), "no permission")
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccesscreator": `
-$funcAccessComment	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+$#if funcAccessComment accessComment
+	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"accessOther": `
-$funcAccessComment	access := ctx.State().GetAgentID(wasmlib.Key("$funcAccess"))
+$#if funcAccessComment accessComment
+	access := ctx.State().GetAgentID(wasmlib.Key("$funcAccess"))
 	ctx.Require(access.Exists(), "access not set: $funcAccess")
 	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
 `,
 	// *******************************
 	"accessDone": `
+`,
+	// *******************************
+	"accessComment": `
+
+	$funcAccessComment
 `,
 }

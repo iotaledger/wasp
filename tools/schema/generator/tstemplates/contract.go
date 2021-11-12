@@ -7,11 +7,13 @@ $#emit tsImports
 $#each func FuncNameCall
 
 export class ScFuncs {
+$#set separator $false
 $#each func FuncNameForCall
 }
 `,
 	// *******************************
 	"FuncNameCall": `
+$#emit setupInitFunc
 
 export class $FuncName$+Call {
 	func: wasmlib.Sc$initFunc$Kind = new wasmlib.Sc$initFunc$Kind(sc.HScName, sc.H$Kind$FuncName);
@@ -56,7 +58,9 @@ $#if view ImmutablePackageState
 `,
 	// *******************************
 	"FuncNameForCall": `
-
+$#emit setupInitFunc
+$#if separator newline
+$#set separator $true
     static $funcName(ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
 $#set paramsID null
 $#set resultsID null

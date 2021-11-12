@@ -41,7 +41,7 @@ $#each func libThunk
 `,
 	// *******************************
 	"libExportFunc": `
-    exports.add_$kind($KIND$+_$FUNC_NAME, $kind$+_$func_name$+_thunk);
+    exports.add_$kind($KIND$+_$FUNC_NAME,$func_pad $kind$+_$func_name$+_thunk);
 `,
 	// *******************************
 	"libThunk": `
@@ -124,30 +124,39 @@ $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccessself": `
-$funcAccessComment	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
+$#if funcAccessComment accessComment
+	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccesschain": `
-$funcAccessComment	ctx.require(ctx.caller() == ctx.chain_owner_id(), "no permission");
+$#if funcAccessComment accessComment
+	ctx.require(ctx.caller() == ctx.chain_owner_id(), "no permission");
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccesscreator": `
-$funcAccessComment		ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+$#if funcAccessComment accessComment
+	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"accessOther": `
-$funcAccessComment	let access = ctx.state().get_agent_id("$funcAccess");
+$#if funcAccessComment accessComment
+	let access = ctx.state().get_agent_id("$funcAccess");
 	ctx.require(access.exists(), "access not set: $funcAccess");
 	ctx.require(ctx.caller() == access.value(), "no permission");
 
 `,
 	// *******************************
 	"accessDone": `
+`,
+	// *******************************
+	"accessComment": `
+
+	$funcAccessComment
 `,
 }

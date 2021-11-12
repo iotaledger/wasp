@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -215,7 +216,7 @@ func TestOpenDeploymentToAnyone(t *testing.T) {
 
 	// enable open deployments
 	req := solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
-		root.ParamDeployPermissionsEnabled, []byte{0},
+		root.ParamDeployPermissionsEnabled, codec.EncodeBool(false),
 	)
 	_, err = chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
@@ -226,7 +227,7 @@ func TestOpenDeploymentToAnyone(t *testing.T) {
 
 	// disable open deployments
 	req = solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
-		root.ParamDeployPermissionsEnabled, []byte{1},
+		root.ParamDeployPermissionsEnabled, codec.EncodeBool(true),
 	)
 	_, err = chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)

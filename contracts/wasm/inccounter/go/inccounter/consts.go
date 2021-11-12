@@ -16,19 +16,19 @@ const (
 )
 
 const (
-	ParamCounter    = wasmlib.Key("counter")
-	ParamDelay      = wasmlib.Key("delay")
-	ParamDummy      = wasmlib.Key("dummy")
-	ParamNumRepeats = wasmlib.Key("numRepeats")
+	ParamCounter    = "counter"
+	ParamDelay      = "delay"
+	ParamDummy      = "dummy"
+	ParamNumRepeats = "numRepeats"
 )
 
 const (
-	ResultCounter = wasmlib.Key("counter")
+	ResultCounter = "counter"
 )
 
 const (
-	StateCounter    = wasmlib.Key("counter")
-	StateNumRepeats = wasmlib.Key("numRepeats")
+	StateCounter    = "counter"
+	StateNumRepeats = "numRepeats"
 )
 
 const (

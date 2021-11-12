@@ -53,6 +53,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn place_bid(_ctx: & dyn ScFuncCallContext) -> PlaceBidCall {
         let mut f = PlaceBidCall {
             func: ScFunc::new(HSC_NAME, HFUNC_PLACE_BID),
@@ -61,6 +62,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn set_owner_margin(_ctx: & dyn ScFuncCallContext) -> SetOwnerMarginCall {
         let mut f = SetOwnerMarginCall {
             func: ScFunc::new(HSC_NAME, HFUNC_SET_OWNER_MARGIN),
@@ -69,6 +71,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn start_auction(_ctx: & dyn ScFuncCallContext) -> StartAuctionCall {
         let mut f = StartAuctionCall {
             func: ScFunc::new(HSC_NAME, HFUNC_START_AUCTION),
@@ -77,6 +80,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn get_info(_ctx: & dyn ScViewCallContext) -> GetInfoCall {
         let mut f = GetInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_INFO),

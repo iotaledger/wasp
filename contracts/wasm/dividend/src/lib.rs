@@ -29,12 +29,12 @@ mod dividend;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_DIVIDE, func_divide_thunk);
-    exports.add_func(FUNC_INIT, func_init_thunk);
-    exports.add_func(FUNC_MEMBER, func_member_thunk);
-    exports.add_func(FUNC_SET_OWNER, func_set_owner_thunk);
+    exports.add_func(FUNC_DIVIDE,     func_divide_thunk);
+    exports.add_func(FUNC_INIT,       func_init_thunk);
+    exports.add_func(FUNC_MEMBER,     func_member_thunk);
+    exports.add_func(FUNC_SET_OWNER,  func_set_owner_thunk);
     exports.add_view(VIEW_GET_FACTOR, view_get_factor_thunk);
-    exports.add_view(VIEW_GET_OWNER, view_get_owner_thunk);
+    exports.add_view(VIEW_GET_OWNER,  view_get_owner_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {
@@ -84,7 +84,8 @@ pub struct MemberContext {
 
 fn func_member_thunk(ctx: &ScFuncContext) {
 	ctx.log("dividend.funcMember");
-    // only defined owner of contract can add members
+
+	// only defined owner of contract can add members
 	let access = ctx.state().get_agent_id("owner");
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller() == access.value(), "no permission");
@@ -110,7 +111,8 @@ pub struct SetOwnerContext {
 
 fn func_set_owner_thunk(ctx: &ScFuncContext) {
 	ctx.log("dividend.funcSetOwner");
-    // only defined owner of contract can change owner
+
+	// only defined owner of contract can change owner
 	let access = ctx.state().get_agent_id("owner");
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller() == access.value(), "no permission");

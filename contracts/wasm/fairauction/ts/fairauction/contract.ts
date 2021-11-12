@@ -61,7 +61,6 @@ export class GetInfoContext {
 }
 
 export class ScFuncs {
-
     static finalizeAuction(ctx: wasmlib.ScFuncCallContext): FinalizeAuctionCall {
         let f = new FinalizeAuctionCall();
         f.func.setPtrs(f.params, null);

@@ -27,7 +27,6 @@ export class GetHelloWorldContext {
 }
 
 export class ScFuncs {
-
     static helloWorld(ctx: wasmlib.ScFuncCallContext): HelloWorldCall {
         return new HelloWorldCall();
     }

@@ -7,8 +7,10 @@ $#emit tsImports
 
 $#set constPrefix Param
 $#each params constFieldIdx
+
 $#set constPrefix Result
 $#each results constFieldIdx
+
 $#set constPrefix State
 $#each state constFieldIdx
 
@@ -25,7 +27,7 @@ export let idxMap: wasmlib.Key32[] = new Array(keyMap.length);
 `,
 	// *******************************
 	"constFieldIdx": `
-export const Idx$constPrefix$FldName = $fldIndex;
+export const Idx$constPrefix$FldName$fldPad = $fldIndex;
 `,
 	// *******************************
 	"constFieldKey": `

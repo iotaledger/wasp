@@ -11,8 +11,10 @@ use wasmlib::*;
 
 use crate::*;
 
-pub(crate) const IDX_RESULT_TIMESTAMP: usize = 0;
-pub(crate) const IDX_STATE_TIMESTAMP: usize = 1;
+
+pub(crate) const IDX_RESULT_TIMESTAMP : usize = 0;
+
+pub(crate) const IDX_STATE_TIMESTAMP : usize = 1;
 
 pub const KEY_MAP_LEN: usize = 2;
 

@@ -16,14 +16,14 @@ const (
 )
 
 const (
-	ParamColor       = wasmlib.Key("color")
-	ParamDescription = wasmlib.Key("description")
-	ParamUserDefined = wasmlib.Key("userDefined")
+	ParamColor       = "color"
+	ParamDescription = "description"
+	ParamUserDefined = "userDefined"
 )
 
 const (
-	StateColorList = wasmlib.Key("colorList")
-	StateRegistry  = wasmlib.Key("registry")
+	StateColorList = "colorList"
+	StateRegistry  = "registry"
 )
 
 const (

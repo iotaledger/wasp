@@ -11,18 +11,20 @@ use wasmlib::*;
 
 use crate::*;
 
-pub(crate) const IDX_PARAM_NUMBER: usize = 0;
-pub(crate) const IDX_PARAM_PLAY_PERIOD: usize = 1;
-pub(crate) const IDX_RESULT_LAST_WINNING_NUMBER: usize = 2;
-pub(crate) const IDX_RESULT_ROUND_NUMBER: usize = 3;
-pub(crate) const IDX_RESULT_ROUND_STARTED_AT: usize = 4;
-pub(crate) const IDX_RESULT_ROUND_STATUS: usize = 5;
-pub(crate) const IDX_STATE_BETS: usize = 6;
-pub(crate) const IDX_STATE_LAST_WINNING_NUMBER: usize = 7;
-pub(crate) const IDX_STATE_PLAY_PERIOD: usize = 8;
-pub(crate) const IDX_STATE_ROUND_NUMBER: usize = 9;
-pub(crate) const IDX_STATE_ROUND_STARTED_AT: usize = 10;
-pub(crate) const IDX_STATE_ROUND_STATUS: usize = 11;
+pub(crate) const IDX_PARAM_NUMBER      : usize = 0;
+pub(crate) const IDX_PARAM_PLAY_PERIOD : usize = 1;
+
+pub(crate) const IDX_RESULT_LAST_WINNING_NUMBER : usize = 2;
+pub(crate) const IDX_RESULT_ROUND_NUMBER        : usize = 3;
+pub(crate) const IDX_RESULT_ROUND_STARTED_AT    : usize = 4;
+pub(crate) const IDX_RESULT_ROUND_STATUS        : usize = 5;
+
+pub(crate) const IDX_STATE_BETS                : usize = 6;
+pub(crate) const IDX_STATE_LAST_WINNING_NUMBER : usize = 7;
+pub(crate) const IDX_STATE_PLAY_PERIOD         : usize = 8;
+pub(crate) const IDX_STATE_ROUND_NUMBER        : usize = 9;
+pub(crate) const IDX_STATE_ROUND_STARTED_AT    : usize = 10;
+pub(crate) const IDX_STATE_ROUND_STATUS        : usize = 11;
 
 pub const KEY_MAP_LEN: usize = 12;
 

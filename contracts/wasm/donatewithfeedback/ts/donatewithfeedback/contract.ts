@@ -51,7 +51,6 @@ export class DonationInfoContext {
 }
 
 export class ScFuncs {
-
     static donate(ctx: wasmlib.ScFuncCallContext): DonateCall {
         let f = new DonateCall();
         f.func.setPtrs(f.params, null);

@@ -8,17 +8,19 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
-export const IdxParamAccount = 0;
-export const IdxParamAmount = 1;
-export const IdxParamCreator = 2;
+export const IdxParamAccount    = 0;
+export const IdxParamAmount     = 1;
+export const IdxParamCreator    = 2;
 export const IdxParamDelegation = 3;
-export const IdxParamRecipient = 4;
-export const IdxParamSupply = 5;
+export const IdxParamRecipient  = 4;
+export const IdxParamSupply     = 5;
+
 export const IdxResultAmount = 6;
 export const IdxResultSupply = 7;
+
 export const IdxStateAllAllowances = 8;
-export const IdxStateBalances = 9;
-export const IdxStateSupply = 10;
+export const IdxStateBalances      = 9;
+export const IdxStateSupply        = 10;
 
 export let keyMap: string[] = [
 	sc.ParamAccount,

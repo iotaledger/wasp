@@ -60,6 +60,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn harvest(_ctx: & dyn ScFuncCallContext) -> HarvestCall {
         let mut f = HarvestCall {
             func: ScFunc::new(HSC_NAME, HFUNC_HARVEST),
@@ -68,11 +69,13 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn withdraw(_ctx: & dyn ScFuncCallContext) -> WithdrawCall {
         WithdrawCall {
             func: ScFunc::new(HSC_NAME, HFUNC_WITHDRAW),
         }
     }
+
     pub fn accounts(_ctx: & dyn ScViewCallContext) -> AccountsCall {
         let mut f = AccountsCall {
             func: ScView::new(HSC_NAME, HVIEW_ACCOUNTS),
@@ -81,6 +84,7 @@ impl ScFuncs {
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
     }
+
     pub fn balance(_ctx: & dyn ScViewCallContext) -> BalanceCall {
         let mut f = BalanceCall {
             func: ScView::new(HSC_NAME, HVIEW_BALANCE),
@@ -90,6 +94,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn get_account_nonce(_ctx: & dyn ScViewCallContext) -> GetAccountNonceCall {
         let mut f = GetAccountNonceCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_ACCOUNT_NONCE),
@@ -99,6 +104,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
+
     pub fn total_assets(_ctx: & dyn ScViewCallContext) -> TotalAssetsCall {
         let mut f = TotalAssetsCall {
             func: ScView::new(HSC_NAME, HVIEW_TOTAL_ASSETS),

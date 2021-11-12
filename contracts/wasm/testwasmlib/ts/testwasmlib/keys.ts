@@ -8,30 +8,32 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
-export const IdxParamAddress = 0;
-export const IdxParamAgentID = 1;
-export const IdxParamBlockIndex = 2;
-export const IdxParamBytes = 3;
-export const IdxParamChainID = 4;
-export const IdxParamColor = 5;
-export const IdxParamHash = 6;
-export const IdxParamHname = 7;
-export const IdxParamIndex = 8;
-export const IdxParamInt16 = 9;
-export const IdxParamInt32 = 10;
-export const IdxParamInt64 = 11;
-export const IdxParamName = 12;
-export const IdxParamParam = 13;
+export const IdxParamAddress     = 0;
+export const IdxParamAgentID     = 1;
+export const IdxParamBlockIndex  = 2;
+export const IdxParamBytes       = 3;
+export const IdxParamChainID     = 4;
+export const IdxParamColor       = 5;
+export const IdxParamHash        = 6;
+export const IdxParamHname       = 7;
+export const IdxParamIndex       = 8;
+export const IdxParamInt16       = 9;
+export const IdxParamInt32       = 10;
+export const IdxParamInt64       = 11;
+export const IdxParamName        = 12;
+export const IdxParamParam       = 13;
 export const IdxParamRecordIndex = 14;
-export const IdxParamRequestID = 15;
-export const IdxParamString = 16;
-export const IdxParamValue = 17;
-export const IdxResultCount = 18;
-export const IdxResultIotas = 19;
+export const IdxParamRequestID   = 15;
+export const IdxParamString      = 16;
+export const IdxParamValue       = 17;
+
+export const IdxResultCount  = 18;
+export const IdxResultIotas  = 19;
 export const IdxResultLength = 20;
 export const IdxResultRandom = 21;
 export const IdxResultRecord = 22;
-export const IdxResultValue = 23;
+export const IdxResultValue  = 23;
+
 export const IdxStateArrays = 24;
 export const IdxStateRandom = 25;
 

@@ -47,6 +47,12 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	genesisAlloc, err := evmtypes.DecodeGenesisAlloc(ctx.Params().MustGet(evm.FieldGenesisAlloc))
 	a.RequireNoError(err)
 
+	gasLimit, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldGasLimit), evm.GasLimitDefault)
+	a.RequireNoError(err)
+
+	blockKeepAmount, err := codec.DecodeInt32(ctx.Params().MustGet(evm.FieldBlockKeepAmount), evm.BlockKeepAmountDefault)
+	a.RequireNoError(err)
+
 	// add the standard ISCP contract at arbitrary address 0x1074
 	iscpcontract.DeployOnGenesis(genesisAlloc, ctx.ChainID())
 
@@ -55,7 +61,8 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	emulator.Init(
 		evminternal.EVMStateSubrealm(ctx.State()),
 		chainID,
-		evm.GasLimitDefault, // TODO: make gas limit configurable
+		blockKeepAmount,
+		gasLimit,
 		timestamp(ctx),
 		genesisAlloc,
 	)

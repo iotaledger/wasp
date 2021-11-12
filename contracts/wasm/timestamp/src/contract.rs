@@ -32,6 +32,7 @@ impl ScFuncs {
             func: ScFunc::new(HSC_NAME, HFUNC_NOW),
         }
     }
+
     pub fn get_timestamp(_ctx: & dyn ScViewCallContext) -> GetTimestampCall {
         let mut f = GetTimestampCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_TIMESTAMP),

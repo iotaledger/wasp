@@ -69,6 +69,7 @@ By default the server has no unlocked accounts. To send transactions, either:
 
 func start(cmd *cobra.Command, args []string) {
 	blockTime := deployParams.BlockTime()
+	blockKeepAmount := deployParams.BlockKeepAmount()
 	evmFlavor := deployParams.EVMFlavor()
 
 	env := solo.New(solo.NewTestContext("evmemulator"), log.DebugFlag, log.DebugFlag).
@@ -82,6 +83,8 @@ func start(cmd *cobra.Command, args []string) {
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		})),
 		evm.FieldGasPerIota, deployParams.GasPerIOTA,
+		evm.FieldGasLimit, deployParams.GasLimit,
+		evm.FieldBlockKeepAmount, blockKeepAmount,
 	)
 	log.Check(err)
 

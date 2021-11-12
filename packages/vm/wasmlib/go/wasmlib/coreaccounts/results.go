@@ -86,7 +86,7 @@ type ImmutableGetAccountNonceResults struct {
 }
 
 func (s ImmutableGetAccountNonceResults) AccountNonce() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ResultAccountNonce.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultAccountNonce))
 }
 
 type MutableGetAccountNonceResults struct {
@@ -94,7 +94,7 @@ type MutableGetAccountNonceResults struct {
 }
 
 func (s MutableGetAccountNonceResults) AccountNonce() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ResultAccountNonce.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultAccountNonce))
 }
 
 type ImmutableTotalAssetsResults struct {

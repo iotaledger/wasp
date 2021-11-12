@@ -20,7 +20,6 @@ pub struct ImmutableInitParams {
 }
 
 impl ImmutableInitParams {
-
     pub fn owner(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
 	}
@@ -32,7 +31,6 @@ pub struct MutableInitParams {
 }
 
 impl MutableInitParams {
-
     pub fn owner(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
 	}
@@ -44,7 +42,6 @@ pub struct ImmutableMemberParams {
 }
 
 impl ImmutableMemberParams {
-
     pub fn address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}
@@ -60,7 +57,6 @@ pub struct MutableMemberParams {
 }
 
 impl MutableMemberParams {
-
     pub fn address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}
@@ -76,7 +72,6 @@ pub struct ImmutableSetOwnerParams {
 }
 
 impl ImmutableSetOwnerParams {
-
     pub fn owner(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
 	}
@@ -88,7 +83,6 @@ pub struct MutableSetOwnerParams {
 }
 
 impl MutableSetOwnerParams {
-
     pub fn owner(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
 	}
@@ -100,7 +94,6 @@ pub struct ImmutableGetFactorParams {
 }
 
 impl ImmutableGetFactorParams {
-
     pub fn address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}
@@ -112,7 +105,6 @@ pub struct MutableGetFactorParams {
 }
 
 impl MutableGetFactorParams {
-
     pub fn address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
 	}

@@ -27,7 +27,7 @@ mod timestamp;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_NOW, func_now_thunk);
+    exports.add_func(FUNC_NOW,           func_now_thunk);
     exports.add_view(VIEW_GET_TIMESTAMP, view_get_timestamp_thunk);
 
     unsafe {

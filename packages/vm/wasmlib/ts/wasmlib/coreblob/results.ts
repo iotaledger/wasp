@@ -9,28 +9,24 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableStoreBlobResults extends wasmlib.ScMapID {
-
     hash(): wasmlib.ScImmutableHash {
 		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ResultHash));
 	}
 }
 
 export class MutableStoreBlobResults extends wasmlib.ScMapID {
-
     hash(): wasmlib.ScMutableHash {
 		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ResultHash));
 	}
 }
 
 export class ImmutableGetBlobFieldResults extends wasmlib.ScMapID {
-
     bytes(): wasmlib.ScImmutableBytes {
 		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBytes));
 	}
 }
 
 export class MutableGetBlobFieldResults extends wasmlib.ScMapID {
-
     bytes(): wasmlib.ScMutableBytes {
 		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBytes));
 	}
@@ -49,7 +45,6 @@ export class MapStringToImmutableInt32 {
 }
 
 export class ImmutableGetBlobInfoResults extends wasmlib.ScMapID {
-
     blobSizes(): sc.MapStringToImmutableInt32 {
 		return new sc.MapStringToImmutableInt32(this.mapID);
 	}
@@ -72,7 +67,6 @@ export class MapStringToMutableInt32 {
 }
 
 export class MutableGetBlobInfoResults extends wasmlib.ScMapID {
-
     blobSizes(): sc.MapStringToMutableInt32 {
 		return new sc.MapStringToMutableInt32(this.mapID);
 	}
@@ -91,7 +85,6 @@ export class MapHashToImmutableInt32 {
 }
 
 export class ImmutableListBlobsResults extends wasmlib.ScMapID {
-
     blobSizes(): sc.MapHashToImmutableInt32 {
 		return new sc.MapHashToImmutableInt32(this.mapID);
 	}
@@ -114,7 +107,6 @@ export class MapHashToMutableInt32 {
 }
 
 export class MutableListBlobsResults extends wasmlib.ScMapID {
-
     blobSizes(): sc.MapHashToMutableInt32 {
 		return new sc.MapHashToMutableInt32(this.mapID);
 	}

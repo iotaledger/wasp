@@ -21,7 +21,6 @@ pub struct ImmutableDonationResults {
 }
 
 impl ImmutableDonationResults {
-
     pub fn amount(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
 	}
@@ -49,7 +48,6 @@ pub struct MutableDonationResults {
 }
 
 impl MutableDonationResults {
-
     pub fn amount(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
 	}
@@ -77,7 +75,6 @@ pub struct ImmutableDonationInfoResults {
 }
 
 impl ImmutableDonationInfoResults {
-
     pub fn count(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_COUNT))
 	}
@@ -97,7 +94,6 @@ pub struct MutableDonationInfoResults {
 }
 
 impl MutableDonationInfoResults {
-
     pub fn count(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_COUNT))
 	}

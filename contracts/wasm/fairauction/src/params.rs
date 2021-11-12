@@ -20,7 +20,6 @@ pub struct ImmutableFinalizeAuctionParams {
 }
 
 impl ImmutableFinalizeAuctionParams {
-
     pub fn color(&self) -> ScImmutableColor {
 		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -32,7 +31,6 @@ pub struct MutableFinalizeAuctionParams {
 }
 
 impl MutableFinalizeAuctionParams {
-
     pub fn color(&self) -> ScMutableColor {
 		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -44,7 +42,6 @@ pub struct ImmutablePlaceBidParams {
 }
 
 impl ImmutablePlaceBidParams {
-
     pub fn color(&self) -> ScImmutableColor {
 		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -56,7 +53,6 @@ pub struct MutablePlaceBidParams {
 }
 
 impl MutablePlaceBidParams {
-
     pub fn color(&self) -> ScMutableColor {
 		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -68,7 +64,6 @@ pub struct ImmutableSetOwnerMarginParams {
 }
 
 impl ImmutableSetOwnerMarginParams {
-
     pub fn owner_margin(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_OWNER_MARGIN))
 	}
@@ -80,7 +75,6 @@ pub struct MutableSetOwnerMarginParams {
 }
 
 impl MutableSetOwnerMarginParams {
-
     pub fn owner_margin(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_OWNER_MARGIN))
 	}
@@ -92,7 +86,6 @@ pub struct ImmutableStartAuctionParams {
 }
 
 impl ImmutableStartAuctionParams {
-
     pub fn color(&self) -> ScImmutableColor {
 		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -116,7 +109,6 @@ pub struct MutableStartAuctionParams {
 }
 
 impl MutableStartAuctionParams {
-
     pub fn color(&self) -> ScMutableColor {
 		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -140,7 +132,6 @@ pub struct ImmutableGetInfoParams {
 }
 
 impl ImmutableGetInfoParams {
-
     pub fn color(&self) -> ScImmutableColor {
 		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}
@@ -152,7 +143,6 @@ pub struct MutableGetInfoParams {
 }
 
 impl MutableGetInfoParams {
-
     pub fn color(&self) -> ScMutableColor {
 		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
 	}

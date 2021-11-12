@@ -20,7 +20,6 @@ pub struct ImmutablePlaceBetParams {
 }
 
 impl ImmutablePlaceBetParams {
-
     pub fn number(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_NUMBER))
 	}
@@ -32,7 +31,6 @@ pub struct MutablePlaceBetParams {
 }
 
 impl MutablePlaceBetParams {
-
     pub fn number(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_NUMBER))
 	}
@@ -44,7 +42,6 @@ pub struct ImmutablePlayPeriodParams {
 }
 
 impl ImmutablePlayPeriodParams {
-
     pub fn play_period(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_PLAY_PERIOD))
 	}
@@ -56,7 +53,6 @@ pub struct MutablePlayPeriodParams {
 }
 
 impl MutablePlayPeriodParams {
-
     pub fn play_period(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_PLAY_PERIOD))
 	}

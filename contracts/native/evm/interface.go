@@ -60,8 +60,13 @@ const (
 	FieldGasPerIota              = "w"
 	FieldGasFee                  = "f"
 	FieldGasUsed                 = "gu"
+	FieldGasLimit                = "gl"
 	FieldFilterQuery             = "fq"
-	FieldBlockTime               = "bt" // uint32, avg block time in seconds
+
+	// evmlight only:
+
+	FieldBlockTime       = "bt" // uint32, avg block time in seconds
+	FieldBlockKeepAmount = "bk" // int32
 )
 
 const (
@@ -69,6 +74,9 @@ const (
 
 	DefaultGasPerIota uint64 = 1000
 	GasLimitDefault          = uint64(15000000)
+
+	BlockKeepAll           = -1
+	BlockKeepAmountDefault = BlockKeepAll
 )
 
 var GasPrice = big.NewInt(0)

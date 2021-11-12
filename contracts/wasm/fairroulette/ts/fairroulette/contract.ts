@@ -93,7 +93,6 @@ export class RoundStatusContext {
 }
 
 export class ScFuncs {
-
     static forcePayout(ctx: wasmlib.ScFuncCallContext): ForcePayoutCall {
         return new ForcePayoutCall();
     }

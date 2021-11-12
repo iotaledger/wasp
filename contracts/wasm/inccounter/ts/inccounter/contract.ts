@@ -131,7 +131,6 @@ export class GetCounterContext {
 }
 
 export class ScFuncs {
-
     static callIncrement(ctx: wasmlib.ScFuncCallContext): CallIncrementCall {
         return new CallIncrementCall();
     }

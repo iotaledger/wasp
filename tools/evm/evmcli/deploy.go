@@ -20,14 +20,16 @@ import (
 )
 
 type DeployParams struct {
-	evmFlavor   string
-	ChainID     int
-	name        string
-	description string
-	alloc       []string
-	allocBase64 string
-	GasPerIOTA  uint64
-	blockTime   uint32
+	evmFlavor       string
+	ChainID         int
+	name            string
+	description     string
+	alloc           []string
+	allocBase64     string
+	GasPerIOTA      uint64
+	GasLimit        uint64
+	blockTime       uint32
+	blockKeepAmount int32
 }
 
 func (d *DeployParams) InitFlags(cmd *cobra.Command) {
@@ -38,7 +40,9 @@ func (d *DeployParams) InitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVarP(&d.alloc, "alloc", "", nil, "Genesis allocation (format: <address>:<wei>,<address>:<wei>,...)")
 	cmd.Flags().StringVarP(&d.allocBase64, "alloc-bytes", "", "", "Genesis allocation (base64-encoded)")
 	cmd.Flags().Uint64VarP(&d.GasPerIOTA, "gas-per-iota", "", evm.DefaultGasPerIota, "Gas per IOTA charged as fee")
-	cmd.Flags().Uint32VarP(&d.blockTime, "block-time", "", 0, "Average block time (0: disabled) (only supported by evmlight)")
+	cmd.Flags().Uint32VarP(&d.blockTime, "block-time", "", 0, "Average block time (0: disabled) [evmlight only]")
+	cmd.Flags().Uint64VarP(&d.GasLimit, "gas-limit", "", evm.GasLimitDefault, "Block gas limit")
+	cmd.Flags().Int32VarP(&d.blockKeepAmount, "block-keep-amount", "", evm.BlockKeepAmountDefault, "Amount of blocks to keep in DB (-1: keep all blocks) [evmlight only]")
 }
 
 func (d *DeployParams) Name() string {
@@ -68,6 +72,13 @@ func (d *DeployParams) BlockTime() uint32 {
 		log.Fatalf("block time is only supported by evmlight flavor")
 	}
 	return d.blockTime
+}
+
+func (d *DeployParams) BlockKeepAmount() int32 {
+	if d.blockKeepAmount > 0 && d.evmFlavor != "evmlight" {
+		log.Fatalf("block-keep-amount is only supported by evmlight flavor")
+	}
+	return d.blockKeepAmount
 }
 
 func (d *DeployParams) GetGenesis(def core.GenesisAlloc) core.GenesisAlloc {

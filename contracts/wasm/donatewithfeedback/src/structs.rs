@@ -11,22 +11,22 @@ use wasmlib::*;
 use wasmlib::host::*;
 
 pub struct Donation {
-    pub amount: i64,  // amount donated
-    pub donator: ScAgentID,  // who donated
-    pub error: String,  // error to be reported to donator if anything goes wrong
-    pub feedback: String,  // the feedback for the person donated to
-    pub timestamp: i64,  // when the donation took place
+    pub amount    : i64,  // amount donated
+    pub donator   : ScAgentID,  // who donated
+    pub error     : String,  // error to be reported to donator if anything goes wrong
+    pub feedback  : String,  // the feedback for the person donated to
+    pub timestamp : i64,  // when the donation took place
 }
 
 impl Donation {
     pub fn from_bytes(bytes: &[u8]) -> Donation {
         let mut decode = BytesDecoder::new(bytes);
         Donation {
-            amount: decode.int64(),
-            donator: decode.agent_id(),
-            error: decode.string(),
-            feedback: decode.string(),
-            timestamp: decode.int64(),
+            amount    : decode.int64(),
+            donator   : decode.agent_id(),
+            error     : decode.string(),
+            feedback  : decode.string(),
+            timestamp : decode.int64(),
         }
     }
 

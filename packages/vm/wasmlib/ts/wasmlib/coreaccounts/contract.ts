@@ -45,7 +45,6 @@ export class TotalAssetsCall {
 }
 
 export class ScFuncs {
-
     static deposit(ctx: wasmlib.ScFuncCallContext): DepositCall {
         let f = new DepositCall();
         f.func.setPtrs(f.params, null);

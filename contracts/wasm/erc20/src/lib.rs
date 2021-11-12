@@ -30,13 +30,13 @@ mod erc20;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_APPROVE, func_approve_thunk);
-    exports.add_func(FUNC_INIT, func_init_thunk);
-    exports.add_func(FUNC_TRANSFER, func_transfer_thunk);
+    exports.add_func(FUNC_APPROVE,       func_approve_thunk);
+    exports.add_func(FUNC_INIT,          func_init_thunk);
+    exports.add_func(FUNC_TRANSFER,      func_transfer_thunk);
     exports.add_func(FUNC_TRANSFER_FROM, func_transfer_from_thunk);
-    exports.add_view(VIEW_ALLOWANCE, view_allowance_thunk);
-    exports.add_view(VIEW_BALANCE_OF, view_balance_of_thunk);
-    exports.add_view(VIEW_TOTAL_SUPPLY, view_total_supply_thunk);
+    exports.add_view(VIEW_ALLOWANCE,     view_allowance_thunk);
+    exports.add_view(VIEW_BALANCE_OF,    view_balance_of_thunk);
+    exports.add_view(VIEW_TOTAL_SUPPLY,  view_total_supply_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {

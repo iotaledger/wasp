@@ -32,7 +32,6 @@ pub struct ImmutableGetAllowedStateControllerAddressesResults {
 }
 
 impl ImmutableGetAllowedStateControllerAddressesResults {
-
     pub fn allowed_state_controller_addresses(&self) -> ArrayOfImmutableBytes {
 		let arr_id = get_object_id(self.id, RESULT_ALLOWED_STATE_CONTROLLER_ADDRESSES.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
 		ArrayOfImmutableBytes { obj_id: arr_id }
@@ -63,7 +62,6 @@ pub struct MutableGetAllowedStateControllerAddressesResults {
 }
 
 impl MutableGetAllowedStateControllerAddressesResults {
-
     pub fn allowed_state_controller_addresses(&self) -> ArrayOfMutableBytes {
 		let arr_id = get_object_id(self.id, RESULT_ALLOWED_STATE_CONTROLLER_ADDRESSES.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
 		ArrayOfMutableBytes { obj_id: arr_id }
@@ -76,7 +74,6 @@ pub struct ImmutableGetChainInfoResults {
 }
 
 impl ImmutableGetChainInfoResults {
-
     pub fn chain_id(&self) -> ScImmutableChainID {
 		ScImmutableChainID::new(self.id, RESULT_CHAIN_ID.get_key_id())
 	}
@@ -120,7 +117,6 @@ pub struct MutableGetChainInfoResults {
 }
 
 impl MutableGetChainInfoResults {
-
     pub fn chain_id(&self) -> ScMutableChainID {
 		ScMutableChainID::new(self.id, RESULT_CHAIN_ID.get_key_id())
 	}
@@ -164,7 +160,6 @@ pub struct ImmutableGetFeeInfoResults {
 }
 
 impl ImmutableGetFeeInfoResults {
-
     pub fn fee_color(&self) -> ScImmutableColor {
 		ScImmutableColor::new(self.id, RESULT_FEE_COLOR.get_key_id())
 	}
@@ -184,7 +179,6 @@ pub struct MutableGetFeeInfoResults {
 }
 
 impl MutableGetFeeInfoResults {
-
     pub fn fee_color(&self) -> ScMutableColor {
 		ScMutableColor::new(self.id, RESULT_FEE_COLOR.get_key_id())
 	}
@@ -204,7 +198,6 @@ pub struct ImmutableGetMaxBlobSizeResults {
 }
 
 impl ImmutableGetMaxBlobSizeResults {
-
     pub fn max_blob_size(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, RESULT_MAX_BLOB_SIZE.get_key_id())
 	}
@@ -216,7 +209,6 @@ pub struct MutableGetMaxBlobSizeResults {
 }
 
 impl MutableGetMaxBlobSizeResults {
-
     pub fn max_blob_size(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, RESULT_MAX_BLOB_SIZE.get_key_id())
 	}

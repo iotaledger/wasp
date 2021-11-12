@@ -46,6 +46,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn transfer_ownership(_ctx: & dyn ScFuncCallContext) -> TransferOwnershipCall {
         let mut f = TransferOwnershipCall {
             func: ScFunc::new(HSC_NAME, HFUNC_TRANSFER_OWNERSHIP),
@@ -54,6 +55,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn update_metadata(_ctx: & dyn ScFuncCallContext) -> UpdateMetadataCall {
         let mut f = UpdateMetadataCall {
             func: ScFunc::new(HSC_NAME, HFUNC_UPDATE_METADATA),
@@ -62,6 +64,7 @@ impl ScFuncs {
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
+
     pub fn get_info(_ctx: & dyn ScViewCallContext) -> GetInfoCall {
         let mut f = GetInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_INFO),

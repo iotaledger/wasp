@@ -18,7 +18,6 @@ pub struct ImmutableAddAllowedStateControllerAddressParams {
 }
 
 impl ImmutableAddAllowedStateControllerAddressParams {
-
     pub fn chain_owner(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
 	}
@@ -38,7 +37,6 @@ pub struct MutableAddAllowedStateControllerAddressParams {
 }
 
 impl MutableAddAllowedStateControllerAddressParams {
-
     pub fn chain_owner(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
 	}
@@ -58,7 +56,6 @@ pub struct ImmutableDelegateChainOwnershipParams {
 }
 
 impl ImmutableDelegateChainOwnershipParams {
-
     pub fn chain_owner(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
 	}
@@ -70,7 +67,6 @@ pub struct MutableDelegateChainOwnershipParams {
 }
 
 impl MutableDelegateChainOwnershipParams {
-
     pub fn chain_owner(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
 	}
@@ -82,7 +78,6 @@ pub struct ImmutableRemoveAllowedStateControllerAddressParams {
 }
 
 impl ImmutableRemoveAllowedStateControllerAddressParams {
-
     pub fn state_controller_address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
 	}
@@ -94,7 +89,6 @@ pub struct MutableRemoveAllowedStateControllerAddressParams {
 }
 
 impl MutableRemoveAllowedStateControllerAddressParams {
-
     pub fn state_controller_address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
 	}
@@ -106,7 +100,6 @@ pub struct ImmutableRotateStateControllerParams {
 }
 
 impl ImmutableRotateStateControllerParams {
-
     pub fn state_controller_address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
 	}
@@ -118,7 +111,6 @@ pub struct MutableRotateStateControllerParams {
 }
 
 impl MutableRotateStateControllerParams {
-
     pub fn state_controller_address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
 	}
@@ -130,7 +122,6 @@ pub struct ImmutableSetChainInfoParams {
 }
 
 impl ImmutableSetChainInfoParams {
-
     pub fn max_blob_size(&self) -> ScImmutableInt32 {
 		ScImmutableInt32::new(self.id, PARAM_MAX_BLOB_SIZE.get_key_id())
 	}
@@ -158,7 +149,6 @@ pub struct MutableSetChainInfoParams {
 }
 
 impl MutableSetChainInfoParams {
-
     pub fn max_blob_size(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, PARAM_MAX_BLOB_SIZE.get_key_id())
 	}
@@ -186,7 +176,6 @@ pub struct ImmutableSetContractFeeParams {
 }
 
 impl ImmutableSetContractFeeParams {
-
     pub fn hname(&self) -> ScImmutableHname {
 		ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
 	}
@@ -206,7 +195,6 @@ pub struct MutableSetContractFeeParams {
 }
 
 impl MutableSetContractFeeParams {
-
     pub fn hname(&self) -> ScMutableHname {
 		ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
 	}
@@ -226,7 +214,6 @@ pub struct ImmutableSetDefaultFeeParams {
 }
 
 impl ImmutableSetDefaultFeeParams {
-
     pub fn owner_fee(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
 	}
@@ -242,7 +229,6 @@ pub struct MutableSetDefaultFeeParams {
 }
 
 impl MutableSetDefaultFeeParams {
-
     pub fn owner_fee(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
 	}
@@ -258,7 +244,6 @@ pub struct ImmutableGetFeeInfoParams {
 }
 
 impl ImmutableGetFeeInfoParams {
-
     pub fn hname(&self) -> ScImmutableHname {
 		ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
 	}
@@ -270,7 +255,6 @@ pub struct MutableGetFeeInfoParams {
 }
 
 impl MutableGetFeeInfoParams {
-
     pub fn hname(&self) -> ScMutableHname {
 		ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
 	}

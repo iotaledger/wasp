@@ -125,7 +125,6 @@ export class IotaBalanceContext {
 }
 
 export class ScFuncs {
-
     static arrayClear(ctx: wasmlib.ScFuncCallContext): ArrayClearCall {
         let f = new ArrayClearCall();
         f.func.setPtrs(f.params, null);

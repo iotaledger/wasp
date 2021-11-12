@@ -30,17 +30,17 @@ mod testwasmlib;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_ARRAY_CLEAR, func_array_clear_thunk);
-    exports.add_func(FUNC_ARRAY_CREATE, func_array_create_thunk);
-    exports.add_func(FUNC_ARRAY_SET, func_array_set_thunk);
-    exports.add_func(FUNC_PARAM_TYPES, func_param_types_thunk);
-    exports.add_func(FUNC_RANDOM, func_random_thunk);
-    exports.add_view(VIEW_ARRAY_LENGTH, view_array_length_thunk);
-    exports.add_view(VIEW_ARRAY_VALUE, view_array_value_thunk);
-    exports.add_view(VIEW_BLOCK_RECORD, view_block_record_thunk);
+    exports.add_func(FUNC_ARRAY_CLEAR,   func_array_clear_thunk);
+    exports.add_func(FUNC_ARRAY_CREATE,  func_array_create_thunk);
+    exports.add_func(FUNC_ARRAY_SET,     func_array_set_thunk);
+    exports.add_func(FUNC_PARAM_TYPES,   func_param_types_thunk);
+    exports.add_func(FUNC_RANDOM,        func_random_thunk);
+    exports.add_view(VIEW_ARRAY_LENGTH,  view_array_length_thunk);
+    exports.add_view(VIEW_ARRAY_VALUE,   view_array_value_thunk);
+    exports.add_view(VIEW_BLOCK_RECORD,  view_block_record_thunk);
     exports.add_view(VIEW_BLOCK_RECORDS, view_block_records_thunk);
-    exports.add_view(VIEW_GET_RANDOM, view_get_random_thunk);
-    exports.add_view(VIEW_IOTA_BALANCE, view_iota_balance_thunk);
+    exports.add_view(VIEW_GET_RANDOM,    view_get_random_thunk);
+    exports.add_view(VIEW_IOTA_BALANCE,  view_iota_balance_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {

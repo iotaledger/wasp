@@ -14,7 +14,7 @@ type ImmutableDepositParams struct {
 }
 
 func (s ImmutableDepositParams) AgentID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, ParamAgentID.KeyID())
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
 }
 
 type MutableDepositParams struct {
@@ -22,7 +22,7 @@ type MutableDepositParams struct {
 }
 
 func (s MutableDepositParams) AgentID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, ParamAgentID.KeyID())
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
 }
 
 type ImmutableHarvestParams struct {
@@ -30,11 +30,11 @@ type ImmutableHarvestParams struct {
 }
 
 func (s ImmutableHarvestParams) WithdrawAmount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, ParamWithdrawAmount.KeyID())
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamWithdrawAmount))
 }
 
 func (s ImmutableHarvestParams) WithdrawColor() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, ParamWithdrawColor.KeyID())
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamWithdrawColor))
 }
 
 type MutableHarvestParams struct {
@@ -42,11 +42,11 @@ type MutableHarvestParams struct {
 }
 
 func (s MutableHarvestParams) WithdrawAmount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, ParamWithdrawAmount.KeyID())
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamWithdrawAmount))
 }
 
 func (s MutableHarvestParams) WithdrawColor() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, ParamWithdrawColor.KeyID())
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamWithdrawColor))
 }
 
 type ImmutableBalanceParams struct {
@@ -54,7 +54,7 @@ type ImmutableBalanceParams struct {
 }
 
 func (s ImmutableBalanceParams) AgentID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, ParamAgentID.KeyID())
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
 }
 
 type MutableBalanceParams struct {
@@ -62,7 +62,7 @@ type MutableBalanceParams struct {
 }
 
 func (s MutableBalanceParams) AgentID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, ParamAgentID.KeyID())
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
 }
 
 type ImmutableGetAccountNonceParams struct {
@@ -70,7 +70,7 @@ type ImmutableGetAccountNonceParams struct {
 }
 
 func (s ImmutableGetAccountNonceParams) AgentID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, ParamAgentID.KeyID())
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
 }
 
 type MutableGetAccountNonceParams struct {
@@ -78,5 +78,5 @@ type MutableGetAccountNonceParams struct {
 }
 
 func (s MutableGetAccountNonceParams) AgentID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, ParamAgentID.KeyID())
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
 }

@@ -8,18 +8,20 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
-export const IdxParamNumber = 0;
+export const IdxParamNumber     = 0;
 export const IdxParamPlayPeriod = 1;
+
 export const IdxResultLastWinningNumber = 2;
-export const IdxResultRoundNumber = 3;
-export const IdxResultRoundStartedAt = 4;
-export const IdxResultRoundStatus = 5;
-export const IdxStateBets = 6;
+export const IdxResultRoundNumber       = 3;
+export const IdxResultRoundStartedAt    = 4;
+export const IdxResultRoundStatus       = 5;
+
+export const IdxStateBets              = 6;
 export const IdxStateLastWinningNumber = 7;
-export const IdxStatePlayPeriod = 8;
-export const IdxStateRoundNumber = 9;
-export const IdxStateRoundStartedAt = 10;
-export const IdxStateRoundStatus = 11;
+export const IdxStatePlayPeriod        = 8;
+export const IdxStateRoundNumber       = 9;
+export const IdxStateRoundStartedAt    = 10;
+export const IdxStateRoundStatus       = 11;
 
 export let keyMap: string[] = [
 	sc.ParamNumber,

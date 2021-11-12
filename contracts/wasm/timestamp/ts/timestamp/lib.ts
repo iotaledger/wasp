@@ -14,7 +14,7 @@ export function on_call(index: i32): void {
 
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncNow, funcNowThunk);
+    exports.addFunc(sc.FuncNow,          funcNowThunk);
     exports.addView(sc.ViewGetTimestamp, viewGetTimestampThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {

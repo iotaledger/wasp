@@ -20,7 +20,6 @@ pub struct ImmutableIncCounterState {
 }
 
 impl ImmutableIncCounterState {
-
     pub fn counter(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
 	}
@@ -36,7 +35,6 @@ pub struct MutableIncCounterState {
 }
 
 impl MutableIncCounterState {
-
     pub fn counter(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
 	}

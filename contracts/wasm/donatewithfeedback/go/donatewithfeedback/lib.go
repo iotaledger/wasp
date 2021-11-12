@@ -47,6 +47,7 @@ type WithdrawContext struct {
 
 func funcWithdrawThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("donatewithfeedback.funcWithdraw")
+
 	// only SC creator can withdraw donated funds
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 

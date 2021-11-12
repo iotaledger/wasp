@@ -63,12 +63,12 @@ func newBlockchainDB(store kv.KVStore) *BlockchainDB {
 }
 
 // Init initializes the EVM state with the provided genesis allocation parameters
-func Init(store kv.KVStore, chainID uint16, gasLimit, timestamp uint64, alloc core.GenesisAlloc) {
+func Init(store kv.KVStore, chainID uint16, blockKeepAmount int32, gasLimit, timestamp uint64, alloc core.GenesisAlloc) {
 	bdb := newBlockchainDB(store)
 	if bdb.Initialized() {
 		panic("evm state already initialized in kvstore")
 	}
-	bdb.Init(chainID, gasLimit, timestamp)
+	bdb.Init(chainID, blockKeepAmount, gasLimit, timestamp)
 
 	statedb := newStateDB(store)
 	for addr, account := range alloc {

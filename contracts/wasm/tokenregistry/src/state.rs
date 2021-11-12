@@ -45,7 +45,6 @@ pub struct ImmutableTokenRegistryState {
 }
 
 impl ImmutableTokenRegistryState {
-
     pub fn color_list(&self) -> ArrayOfImmutableColor {
 		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_COLOR_LIST), TYPE_ARRAY | TYPE_COLOR);
 		ArrayOfImmutableColor { obj_id: arr_id }
@@ -95,7 +94,6 @@ pub struct MutableTokenRegistryState {
 }
 
 impl MutableTokenRegistryState {
-
     pub fn color_list(&self) -> ArrayOfMutableColor {
 		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_COLOR_LIST), TYPE_ARRAY | TYPE_COLOR);
 		ArrayOfMutableColor { obj_id: arr_id }

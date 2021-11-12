@@ -20,7 +20,6 @@ pub struct ImmutableAllowanceResults {
 }
 
 impl ImmutableAllowanceResults {
-
     pub fn amount(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
 	}
@@ -32,7 +31,6 @@ pub struct MutableAllowanceResults {
 }
 
 impl MutableAllowanceResults {
-
     pub fn amount(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
 	}
@@ -44,7 +42,6 @@ pub struct ImmutableBalanceOfResults {
 }
 
 impl ImmutableBalanceOfResults {
-
     pub fn amount(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
 	}
@@ -56,7 +53,6 @@ pub struct MutableBalanceOfResults {
 }
 
 impl MutableBalanceOfResults {
-
     pub fn amount(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
 	}
@@ -68,7 +64,6 @@ pub struct ImmutableTotalSupplyResults {
 }
 
 impl ImmutableTotalSupplyResults {
-
     pub fn supply(&self) -> ScImmutableInt64 {
 		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_SUPPLY))
 	}
@@ -80,7 +75,6 @@ pub struct MutableTotalSupplyResults {
 }
 
 impl MutableTotalSupplyResults {
-
     pub fn supply(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_SUPPLY))
 	}

@@ -35,7 +35,6 @@ pub struct ImmutableDonateWithFeedbackState {
 }
 
 impl ImmutableDonateWithFeedbackState {
-
     pub fn log(&self) -> ArrayOfImmutableDonation {
 		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_LOG), TYPE_ARRAY | TYPE_BYTES);
 		ArrayOfImmutableDonation { obj_id: arr_id }
@@ -74,7 +73,6 @@ pub struct MutableDonateWithFeedbackState {
 }
 
 impl MutableDonateWithFeedbackState {
-
     pub fn log(&self) -> ArrayOfMutableDonation {
 		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_LOG), TYPE_ARRAY | TYPE_BYTES);
 		ArrayOfMutableDonation { obj_id: arr_id }

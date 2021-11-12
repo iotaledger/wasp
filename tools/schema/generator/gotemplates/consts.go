@@ -48,14 +48,14 @@ $#each state constField
 `,
 	// *******************************
 	"constField": `
-	$constPrefix$FldName = wasmlib.Key("$fldAlias")
+	$constPrefix$FldName$fldPad = "$fldAlias"
 `,
 	// *******************************
 	"constFunc": `
-	$Kind$FuncName = "$funcName"
+	$Kind$FuncName$funcPad = "$funcName"
 `,
 	// *******************************
 	"constHFunc": `
-	H$Kind$FuncName = wasmlib.ScHname(0x$funcHName)
+	H$Kind$FuncName$funcPad = wasmlib.ScHname(0x$funcHName)
 `,
 }
