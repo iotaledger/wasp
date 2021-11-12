@@ -16,11 +16,15 @@ type ScUtility struct {
 	wc    *WasmContext
 }
 
-func NewScUtility(wc *WasmContext) *ScUtility {
-	if wc.ctx != nil {
-		return &ScUtility{utils: sandbox.NewUtils(wc.ctx.Gas()), wc: wc}
+func NewScUtility(wc *WasmContext, gasProcessor iscp.Gas) *ScUtility {
+	if gasProcessor == nil {
+		if wc.ctx != nil {
+			gasProcessor = wc.ctx.Gas()
+		} else {
+			gasProcessor = wc.ctxView.Gas()
+		}
 	}
-	return &ScUtility{utils: sandbox.NewUtils(wc.ctxView.Gas()), wc: wc}
+	return &ScUtility{utils: sandbox.NewUtils(gasProcessor), wc: wc}
 }
 
 func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {

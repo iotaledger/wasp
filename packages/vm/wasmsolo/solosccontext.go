@@ -51,11 +51,7 @@ func (o *SoloScContext) GetObjectID(keyID, typeID int32) int32 {
 		wasmhost.KeyReturn:  func() wasmproc.WaspObject { return wasmproc.NewScDict(&host.KvStoreHost, dict.New()) },
 		// wasmhost.KeyState:     func() wasmproc.WaspObject { return wasmproc.NewScDict(o.host, o.vm.state()) },
 		// wasmhost.KeyTransfers: func() wasmproc.WaspObject { return wasmproc.NewScTransfers(o.vm) },
-
-		// FIXME wasmproc.NewScUtility expect real WasmContext because it needs it for Gas().Burn()
-		// Test TestMintedSupplyOk in C:\Users\evaldas\Documents\proj\Go\src\github.com\iotaledger\wasp\contracts\wasm\testcore\test\check_ctx_test.go
-		// fails
-		wasmhost.KeyUtility: func() wasmproc.WaspObject { return wasmproc.NewScUtility(nil) },
+		wasmhost.KeyUtility: func() wasmproc.WaspObject { return wasmproc.NewScUtility(nil, o.ctx) },
 	})
 }
 

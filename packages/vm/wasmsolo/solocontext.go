@@ -52,9 +52,23 @@ type SoloContext struct {
 }
 
 var (
+	_ iscp.Gas                  = &SoloContext{}
 	_ wasmlib.ScFuncCallContext = &SoloContext{}
 	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
+
+func (ctx *SoloContext) Burn(i int64) {
+	// ignore gas for now
+}
+
+func (ctx *SoloContext) Budget() int64 {
+	// ignore gas for now
+	return 0
+}
+
+func (ctx *SoloContext) SetBudget(i int64) {
+	// ignore gas for now
+}
 
 // NewSoloContext can be used to create a SoloContext associated with a smart contract
 // with minimal information and will verify successful creation before returning ctx.
