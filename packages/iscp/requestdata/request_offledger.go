@@ -4,36 +4,34 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
+	"github.com/iotaledger/wasp/packages/iscp/requestdata/iotago"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"go.uber.org/atomic"
 )
 
 type OffLedger struct {
-	args       requestargs.RequestArgs
-	contract   iscp.Hname
-	entryPoint iscp.Hname
-	params     atomic.Value // mutable
-	publicKey  ed25519.PublicKey
-	sender     ledgerstate.Address
-	signature  ed25519.Signature
-	nonce      uint64
-	transfer   colored.Balances
+	contract       iscp.Hname
+	entryPoint     iscp.Hname
+	params         dict.Dict
+	publicKey      ed25519.PublicKey
+	sender         iotago.Address
+	signature      ed25519.Signature
+	nonce          uint64
+	transferIotas  uint64
+	transferTokens iotago.NativeTokens
+	gasBudget      int64
 }
 
 // implements iscp.Request interface
-var _ iscp.Request = &OffLedger{}
+var _ Request = &OffLedger{}
 
 // NewOffLedger creates a basic request
-func NewOffLedger(contract, entryPoint iscp.Hname, args requestargs.RequestArgs) *OffLedger {
+func NewOffLedger(contract, entryPoint iscp.Hname, params dict.Dict) *OffLedger {
 	return &OffLedger{
-		args:       args.Clone(),
+		params:     params.Clone(),
 		contract:   contract,
 		entryPoint: entryPoint,
 		nonce:      uint64(time.Now().UnixNano()),
@@ -43,7 +41,7 @@ func NewOffLedger(contract, entryPoint iscp.Hname, args requestargs.RequestArgs)
 // Bytes encodes request as bytes with first type byte
 func (req *OffLedger) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteByte(byte(RequestDataTypeOffLedger))
+	mu.WriteByte(byte(TypeOffLedger))
 	req.writeToMarshalUtil(mu)
 	return mu.Bytes()
 }
@@ -77,10 +75,11 @@ func (req *OffLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 func (req *OffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(req.contract).
 		Write(req.entryPoint).
-		Write(req.args).
+		Write(req.params).
 		WriteBytes(req.publicKey[:]).
 		WriteUint64(req.nonce).
-		Write(req.transfer)
+		WriteUint64(req.transferIotas)
+	// TODO write native tokens
 }
 
 func (req *OffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
@@ -90,11 +89,11 @@ func (req *OffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) er
 	if err := req.entryPoint.ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	a, err := dict.FromMarshalUtil(mu)
+	_, err := dict.FromMarshalUtil(mu)
 	if err != nil {
 		return err
 	}
-	req.args = requestargs.New(a)
+	req.params = dict.New()
 	pk, err := mu.ReadBytes(len(req.publicKey))
 	if err != nil {
 		return err
@@ -103,9 +102,10 @@ func (req *OffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) er
 	if req.nonce, err = mu.ReadUint64(); err != nil {
 		return err
 	}
-	if req.transfer, err = colored.BalancesFromMarshalUtil(mu); err != nil {
-		return err
-	}
+	// TODO read native tokens
+	//if req.transferTokens, err = colored.BalancesFromMarshalUtil(mu); err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -123,13 +123,24 @@ func (req *OffLedger) Sign(keyPair *ed25519.KeyPair) {
 }
 
 // Tokens returns the transfers passed to the request
-func (req *OffLedger) Tokens() colored.Balances {
-	return req.transfer
+func (req *OffLedger) Assets() (uint64, iotago.NativeTokens) {
+	return req.transferIotas, req.transferTokens
+}
+
+func (req *OffLedger) WithGasBudget(gasBudget int64) *OffLedger {
+	req.gasBudget = gasBudget
+	return req
 }
 
 // Tokens sets the transfers passed to the request
-func (req *OffLedger) WithTransfer(transfer colored.Balances) *OffLedger {
-	req.transfer = transfer
+func (req *OffLedger) WithIotas(transferIotas uint64) *OffLedger {
+	req.transferIotas = transferIotas
+	return req
+}
+
+// Tokens sets the transfers passed to the request
+func (req *OffLedger) WithTokens(tokens iotago.NativeTokens) *OffLedger {
+	req.transferTokens = tokens // TODO clone
 	return req
 }
 
@@ -144,14 +155,8 @@ func (req *OffLedger) VerifySignature() bool {
 // index part of request id is always 0 for off ledger requests
 // note that request needs to have been signed before this value is
 // considered valid
-func (req *OffLedger) ID() (requestID iscp.RequestID) {
-	txid := ledgerstate.TransactionID(hashing.HashData(req.Bytes()))
-	return iscp.RequestID(ledgerstate.NewOutputID(txid, 0))
-}
-
-// IsFeePrepaid always true for off-ledger
-func (req *OffLedger) IsFeePrepaid() bool {
-	return true
+func (req *OffLedger) ID() (requestID RequestID) {
+	return NewRequestID(iotago.TransactionID(hashing.HashData(req.Bytes())), 0)
 }
 
 // Order number used for replay protection
@@ -159,30 +164,23 @@ func (req *OffLedger) Nonce() uint64 {
 	return req.nonce
 }
 
-func (req *OffLedger) WithNonce(nonce uint64) iscp.Request {
+func (req *OffLedger) WithNonce(nonce uint64) Request {
 	req.nonce = nonce
 	return req
 }
 
-func (req *OffLedger) IsOffLedger() bool {
-	return true
-}
-
-func (req *OffLedger) Params() (dict.Dict, bool) {
-	par := req.params.Load()
-	if par == nil {
-		return nil, false
-	}
-	return par.(dict.Dict), true
+func (req *OffLedger) Params() dict.Dict {
+	return req.params
 }
 
 func (req *OffLedger) SenderAccount() *iscp.AgentID {
-	return iscp.NewAgentID(req.SenderAddress(), 0)
+	// TODO return iscp.NewAgentID(req.SenderAddress(), 0)
+	return nil
 }
 
-func (req *OffLedger) SenderAddress() ledgerstate.Address {
+func (req *OffLedger) SenderAddress() iotago.Address {
 	if req.sender == nil {
-		req.sender = ledgerstate.NewED25519Address(req.publicKey)
+		req.sender = iotago.NewED25519Address(req.publicKey)
 	}
 	return req.sender
 }
@@ -196,21 +194,17 @@ func (req *OffLedger) Timestamp() time.Time {
 	return time.Time{}
 }
 
-func (req *OffLedger) SetParams(params dict.Dict) {
-	req.params.Store(params)
-}
-
-func (req *OffLedger) Args() requestargs.RequestArgs {
-	return req.args
+func (req *OffLedger) GasBudget() int64 {
+	return req.gasBudget
 }
 
 func (req *OffLedger) String() string {
 	return fmt.Sprintf("OffLedger::{ ID: %s, sender: %s, target: %s, entrypoint: %s, args: %s, nonce: %d }",
 		req.ID().Base58(),
-		req.SenderAddress().Base58(),
+		"**not impl**", // TODO req.SenderAddress().Base58(),
 		req.contract.String(),
 		req.entryPoint.String(),
-		req.Args().String(),
+		req.Params().String(),
 		req.nonce,
 	)
 }

@@ -12,7 +12,6 @@ require (
 	github.com/ethereum/go-ethereum v1.10.10
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
 	github.com/iotaledger/hive.go v0.0.0-20210625103722-68b2cf52ef4e
-	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.14.4
@@ -25,7 +24,7 @@ require (
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
-	github.com/second-state/WasmEdge-go v0.9.0-rc3 // indirect
+	github.com/second-state/WasmEdge-go v0.9.0-rc3
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0

@@ -1,82 +1,78 @@
 package requestdata
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	iotago "github.com/iotaledger/iota.go"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/requestdata/iotago"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-type RequestDataType byte
+type TypeCode byte
 
 const (
-	RequestDataTypeUnknown = RequestDataType(iota)
-	RequestDataTypeOffLedger
-	RequestDataTypeUTXOSimple
-	RequestDataTypeUTXOAlias
-	RequestDataTypeUTXOExtended
-	RequestDataTypeUTXONFT
-	RequestDataTypeUTXOFoundry
-	RequestDataTypeUTXOUnknown
+	TypeUnknown = TypeCode(iota)
+	TypeOffLedger
+	TypeSimpleOutput
+	TypeAliasOutput
+	TypeExtendedOutput
+	TypeFoundryOutput
+	TypeNFTOutput
+	TypeUnknownOutput
 )
 
-var requestDataTypes = map[RequestDataType]string{
-	RequestDataTypeUnknown:      "(wrong)",
-	RequestDataTypeOffLedger:    "Off-ledger",
-	RequestDataTypeUTXOSimple:   "SimpleUTXO",
-	RequestDataTypeUTXOAlias:    "AliasUTXO",
-	RequestDataTypeUTXOExtended: "ExtendedUTXO",
-	RequestDataTypeUTXONFT:      "NTF-UTXO",
-	RequestDataTypeUTXOFoundry:  "FoundryUTXO",
-	RequestDataTypeUTXOUnknown:  "UnknownUTXO",
+var typeCodes = map[TypeCode]string{
+	TypeUnknown:        "(wrong)",
+	TypeOffLedger:      "Off-ledger",
+	TypeSimpleOutput:   "SimpleUTXO",
+	TypeAliasOutput:    "AliasUTXO",
+	TypeExtendedOutput: "ExtendedUTXO",
+	TypeNFTOutput:      "NTF-UTXO",
+	TypeFoundryOutput:  "FoundryUTXO",
+	TypeUnknownOutput:  "UnknownUTXO",
 }
 
-func (t RequestDataType) String() string {
-	ret, ok := requestDataTypes[t]
+func (t TypeCode) String() string {
+	ret, ok := typeCodes[t]
 	if ok {
 		return ret
 	}
 	return "(wrong))"
 }
 
-type RequestNew interface {
-	ID() iscp.RequestID
-	Params() (dict.Dict, bool)
+// RequestData wraps any data which can be treated as a request
+type RequestData interface {
+	Type() TypeCode
+
+	Request() Request
+	TimeData() *TimeData
+
+	Bytes() []byte
+	String() string
+	MustUnwrap() unwrap
+	Features() Features
+}
+
+type TimeData struct {
+	ConfirmingMilestoneIndex uint32
+	ConfirmationTime         time.Time // should better be UnixNano ?
+}
+
+type Request interface {
+	ID() RequestID
+	Params() dict.Dict
 	SenderAccount() *iscp.AgentID
-	SenderAddress() ledgerstate.Address
+	SenderAddress() iotago.Address
 	Target() (iscp.Hname, iscp.Hname)
 	Assets() (uint64, iotago.NativeTokens)
 	GasBudget() int64
 }
 
-type RequestDataOptions interface {
-	Timelock() (TimelockOptions, bool)
+type Features interface {
+	TimeLock() (TimeLockOptions, bool)
 	Expiry() (ExpiryOptions, bool)
 	ReturnAmount() (ReturnAmountOptions, bool)
 	SwapOption() (SwapOptions, bool)
-}
-
-type TimelockOptions interface {
-}
-
-type ExpiryOptions interface {
-}
-
-type ReturnAmountOptions interface {
-}
-
-type SwapOptions interface {
-}
-
-// RequestData wraps any data which can be treated as a request under one interface
-type RequestData interface {
-	Type() RequestDataType
-
-	Request() RequestNew
-	Bytes() []byte
-	String() string
-	Unwrap() unwrap
-	Options() RequestDataOptions
 }
 
 type unwrap interface {
@@ -85,18 +81,28 @@ type unwrap interface {
 }
 
 type unwrapUTXO interface {
-	Simple() simpleOutput
-	Alias() aliasOutput
-	Extended() extendedOutput
-	NFT() nftOutput
-	Foundry() foundryOutput
-	Unknown() unknownOutput
+	Simple() *iotago.SimpleOutput
+	Alias() *iotago.AliasOutput
+	Extended() *iotago.ExtendedOutput
+	NFT() *iotago.NFTOutput
+	Foundry() *iotago.FoundryOutput
+	Unknown() *iotago.UnknownOutput
 }
 
-// placeholders
-type simpleOutput struct{}
-type aliasOutput struct{}
-type extendedOutput struct{}
-type nftOutput struct{}
-type foundryOutput struct{}
-type unknownOutput struct{}
+type TimeLockOptions interface {
+	Deadline() (time.Time, bool)
+	MilestoneIndex() (uint32, bool)
+}
+
+type ExpiryOptions interface {
+	Deadline() time.Time
+}
+
+type ReturnAmountOptions interface {
+	Amount() uint64
+}
+
+type SwapOptions interface {
+	ExpiryOptions
+	ReturnAmountOptions
+}
