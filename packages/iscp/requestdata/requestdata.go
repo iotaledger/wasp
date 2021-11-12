@@ -47,10 +47,11 @@ type RequestData interface {
 	Request() Request
 	TimeData() *TimeData
 
-	Bytes() []byte
-	String() string
 	MustUnwrap() unwrap
 	Features() Features
+
+	Bytes() []byte
+	String() string
 }
 
 type TimeData struct {
