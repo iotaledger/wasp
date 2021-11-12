@@ -1,3 +1,5 @@
+// Wrapping interfaces for the request
+// see also https://hackmd.io/@Evaldas/r1-L2UcDF and https://hackmd.io/@Evaldas/ryFK3Qr8Y and
 package requestdata
 
 import (
