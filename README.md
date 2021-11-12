@@ -8,6 +8,9 @@
 introduction](https://blog.iota.org/an-introduction-to-iota-smart-contracts-16ea6f247936)
 into ISCP.
 
+The comprehensive overview of design decisions of _IOTA Smart Contracts_ can be found in the
+[whitepaper](https://github.com/iotaledger/wasp/raw/master/documentation/ISC_WP_Nov_10_2021.pdf).
+
 ## Documentation
 
 The documentation for Wasp and IOTA Smart Contracts can be found on the [IOTA Wiki](https://wiki.iota.org/wasp/overview).
