@@ -29,7 +29,7 @@ func (r *reqNFTOutput) MustUnwrap() unwrap {
 }
 
 func (r *reqNFTOutput) Features() Features {
-	panic("implement me")
+	return r
 }
 
 func (r *reqNFTOutput) Bytes() []byte {
@@ -76,4 +76,23 @@ func (r *reqNFTOutput) Foundry() *iotago.FoundryOutput {
 
 func (r *reqNFTOutput) Unknown() *placeholders.UnknownOutput {
 	panic("not an Unknown RequestData ")
+}
+
+// implements Features interface
+var _ Features = &reqNFTOutput{}
+
+func (r *reqNFTOutput) TimeLock() (TimeLockOptions, bool) {
+	panic("implement me")
+}
+
+func (r *reqNFTOutput) Expiry() (ExpiryOptions, bool) {
+	panic("implement me")
+}
+
+func (r *reqNFTOutput) ReturnAmount() (ReturnAmountOptions, bool) {
+	panic("implement me")
+}
+
+func (r *reqNFTOutput) SwapOption() (SwapOptions, bool) {
+	panic("implement me")
 }

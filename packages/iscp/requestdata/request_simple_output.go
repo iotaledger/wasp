@@ -29,7 +29,7 @@ func (r *reqSimpleOutput) MustUnwrap() unwrap {
 }
 
 func (r *reqSimpleOutput) Features() Features {
-	panic("implement me")
+	return r
 }
 
 func (r *reqSimpleOutput) Bytes() []byte {
@@ -76,4 +76,23 @@ func (r *reqSimpleOutput) Foundry() *iotago.FoundryOutput {
 
 func (r *reqSimpleOutput) Unknown() *placeholders.UnknownOutput {
 	panic("not an Unknown RequestData ")
+}
+
+// implements Features interface
+var _ Features = &reqSimpleOutput{}
+
+func (r *reqSimpleOutput) TimeLock() (TimeLockOptions, bool) {
+	return nil, false
+}
+
+func (r *reqSimpleOutput) Expiry() (ExpiryOptions, bool) {
+	return nil, false
+}
+
+func (r *reqSimpleOutput) ReturnAmount() (ReturnAmountOptions, bool) {
+	return nil, false
+}
+
+func (r *reqSimpleOutput) SwapOption() (SwapOptions, bool) {
+	return nil, false
 }
