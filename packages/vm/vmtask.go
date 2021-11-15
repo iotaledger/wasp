@@ -3,9 +3,11 @@ package vm
 import (
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp/requestdata"
+
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -24,17 +26,17 @@ type VMRunner interface {
 type VMTask struct {
 	ACSSessionID             uint64
 	Processors               *processors.Cache
-	ChainInput               *ledgerstate.AliasOutput
+	ChainInput               *iotago.AliasOutput
 	VirtualStateAccess       state.VirtualStateAccess
 	SolidStateBaseline       coreutil.StateBaseline
-	Requests                 []iscp.Request
+	Requests                 []requestdata.RequestData
 	ProcessedRequestsCount   uint16
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue
 	ValidatorFeeTarget       *iscp.AgentID
 	Log                      *logger.Logger
 	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
-	ResultTransactionEssence *ledgerstate.TransactionEssence // if not nil it is a normal block
-	RotationAddress          ledgerstate.Address             // if not nil, it is a rotation
+	ResultTransactionEssence *iotago.TransactionEssence // if not nil it is a normal block
+	RotationAddress          iotago.Address             // if not nil, it is a rotation
 	StartTime                time.Time
 }

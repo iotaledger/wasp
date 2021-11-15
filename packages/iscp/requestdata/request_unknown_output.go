@@ -6,8 +6,8 @@ import (
 )
 
 type reqUnknownOutput struct {
-	*placeholders.UnknownOutput
 	UTXOMetaData
+	*placeholders.UnknownOutput
 }
 
 // implements RequestData interface

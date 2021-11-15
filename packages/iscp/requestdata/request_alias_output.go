@@ -6,8 +6,8 @@ import (
 )
 
 type reqAliasOutput struct {
-	*iotago.AliasOutput
 	UTXOMetaData
+	*iotago.AliasOutput
 }
 
 // implements RequestData interface
@@ -17,8 +17,9 @@ func (r *reqAliasOutput) Type() TypeCode {
 	return TypeAliasOutput
 }
 
+// AliasOutput is not considered a valid request. We may implement is as a request in the future
 func (r *reqAliasOutput) Request() Request {
-	panic("implement me")
+	return nil
 }
 
 func (r *reqAliasOutput) TimeData() *TimeData {

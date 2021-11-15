@@ -55,7 +55,7 @@ type UTXOMetaData struct {
 type RequestData interface {
 	Type() TypeCode
 
-	Request() Request
+	Request() Request // nil if the RequestData cannot be interpreted as request, for example does not contain Sender
 	TimeData() *TimeData
 
 	MustUnwrap() unwrap

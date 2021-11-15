@@ -6,8 +6,8 @@ import (
 )
 
 type reqNFTOutput struct {
-	*iotago.NFTOutput
 	UTXOMetaData
+	*iotago.NFTOutput
 }
 
 // implements RequestData interface

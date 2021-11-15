@@ -14,4 +14,7 @@ const (
 	UtilsBLSValidSignature           = UtilsED25519ValidSignature * 40
 	UtilsBLSAddressFromPublicKey     = UtilsHashingBlake2b
 	UtilsBLSAggregateBLSSignature1   = 500
+
+	// fixed gas budged to process NFT in the VM
+	FixedGasBudgedNFT = 100
 )

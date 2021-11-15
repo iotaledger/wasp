@@ -8,11 +8,11 @@ import (
 )
 
 type reqExtendedOutput struct {
-	*iotago.ExtendedOutput
 	UTXOMetaData
+	*iotago.ExtendedOutput
 }
 
-func NewExtendedOutoutData(data UTXOMetaData, o *iotago.ExtendedOutput) *reqExtendedOutput {
+func NewExtendedOutputData(data UTXOMetaData, o *iotago.ExtendedOutput) *reqExtendedOutput {
 	return &reqExtendedOutput{
 		ExtendedOutput: o,
 		UTXOMetaData:   data,

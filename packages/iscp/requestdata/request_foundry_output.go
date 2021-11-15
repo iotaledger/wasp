@@ -6,8 +6,8 @@ import (
 )
 
 type reqFoundryOutput struct {
-	*iotago.FoundryOutput
 	UTXOMetaData
+	*iotago.FoundryOutput
 }
 
 // implements RequestData interface

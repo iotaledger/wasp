@@ -6,6 +6,8 @@ package iscp
 import (
 	"strings"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/mr-tron/base58"
@@ -16,14 +18,14 @@ import (
 // If address is and alias address and hname is != 0 the agent id is interpreted as
 // ad contract id
 type AgentID struct {
-	a ledgerstate.Address
+	a iotago.Address
 	h Hname
 }
 
 var NilAgentID AgentID
 
 func init() {
-	var b [ledgerstate.AddressLength]byte
+	var b [iotago.AddressLength]byte
 	nilAddr, _, err := ledgerstate.AddressFromBytes(b[:])
 	if err != nil {
 		panic(err)

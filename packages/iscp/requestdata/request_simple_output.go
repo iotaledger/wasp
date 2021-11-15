@@ -6,8 +6,8 @@ import (
 )
 
 type reqSimpleOutput struct {
-	*iotago.SimpleOutput
 	UTXOMetaData
+	*iotago.SimpleOutput
 }
 
 // implements RequestData interface
