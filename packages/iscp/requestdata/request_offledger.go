@@ -15,6 +15,7 @@ import (
 )
 
 type OffLedger struct {
+	chainID        *iscp.ChainID
 	contract       iscp.Hname
 	entryPoint     iscp.Hname
 	params         dict.Dict
@@ -128,7 +129,8 @@ func (r *OffLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 }
 
 func (r *OffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.Write(r.contract).
+	mu.Write(r.chainID).
+		Write(r.contract).
 		Write(r.entryPoint).
 		Write(r.params).
 		WriteBytes(r.publicKey[:]).
@@ -138,13 +140,17 @@ func (r *OffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
 }
 
 func (r *OffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+	var err error
+	if r.chainID, err = iscp.ChainIDFromMarshalUtil(mu); err != nil {
+		return err
+	}
 	if err := r.contract.ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
 	if err := r.entryPoint.ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	_, err := dict.FromMarshalUtil(mu)
+	_, err = dict.FromMarshalUtil(mu)
 	if err != nil {
 		return err
 	}
