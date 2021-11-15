@@ -43,6 +43,14 @@ func (t TypeCode) String() string {
 	return "(wrong))"
 }
 
+// UTXOMetaData is coming together with UTXO from L1
+// It is a part of each implementation of RequestData
+type UTXOMetaData struct {
+	UTXOInput          iotago.UTXOInput
+	MilestoneIndex     uint32
+	MilestoneTimestamp time.Time
+}
+
 // RequestData wraps any data which can be potentially be interpreted as a request
 type RequestData interface {
 	Type() TypeCode
@@ -109,4 +117,8 @@ type ReturnAmountOptions interface {
 type SwapOptions interface {
 	ExpiryOptions
 	ReturnAmountOptions
+}
+
+func (txm *UTXOMetaData) RequestID() RequestID {
+	return RequestID(txm.UTXOInput)
 }

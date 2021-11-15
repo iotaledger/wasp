@@ -1,8 +1,6 @@
 package requestdata
 
 import (
-	"time"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/requestdata/placeholders"
@@ -11,16 +9,21 @@ import (
 
 type reqExtendedOutput struct {
 	*iotago.ExtendedOutput
-	utxoID             iotago.UTXOInput
-	milestoneIndex     uint32
-	milestoneTimestamp time.Time
+	UTXOMetaData
+}
+
+func NewExtendedOutoutData(data UTXOMetaData, o *iotago.ExtendedOutput) *reqExtendedOutput {
+	return &reqExtendedOutput{
+		ExtendedOutput: o,
+		UTXOMetaData:   data,
+	}
 }
 
 // implements Request interface
 var _ Request = &reqExtendedOutput{}
 
 func (r *reqExtendedOutput) ID() RequestID {
-	return RequestID(r.utxoID)
+	return r.UTXOMetaData.RequestID()
 }
 
 func (r *reqExtendedOutput) Params() dict.Dict {
