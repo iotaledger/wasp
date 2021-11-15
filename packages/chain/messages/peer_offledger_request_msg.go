@@ -10,26 +10,17 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type OffLedgerRequestPeerMsg struct {
+type OffLedgerRequestMsg struct {
 	ChainID *iscp.ChainID
 	Req     *request.OffLedger
 }
 
-func NewOffLedgerRequestPeerMsg(chainID *iscp.ChainID, req *request.OffLedger) *OffLedgerRequestPeerMsg {
-	return &OffLedgerRequestPeerMsg{
-		ChainID: chainID,
-		Req:     req,
-	}
+type OffLedgerRequestMsgIn struct {
+	OffLedgerRequestMsg
+	SenderNetID string
 }
 
-func (msg *OffLedgerRequestPeerMsg) Bytes() []byte {
-	return marshalutil.New().
-		Write(msg.ChainID).
-		Write(msg.Req).
-		Bytes()
-}
-
-func OffLedgerRequestPeerMsgFromBytes(data []byte) (*OffLedgerRequestPeerMsg, error) {
+func NewOffLedgerRequestMsg(data []byte) (*OffLedgerRequestMsg, error) {
 	mu := marshalutil.New(data)
 	chainID, err := iscp.ChainIDFromMarshalUtil(mu)
 	if err != nil {
@@ -43,8 +34,15 @@ func OffLedgerRequestPeerMsgFromBytes(data []byte) (*OffLedgerRequestPeerMsg, er
 	if !ok {
 		return nil, xerrors.New("OffLedgerRequestMsgFromBytes: wrong type of request data")
 	}
-	return &OffLedgerRequestPeerMsg{
+	return &OffLedgerRequestMsg{
 		ChainID: chainID,
 		Req:     reqCasted,
 	}, nil
+}
+
+func (msg *OffLedgerRequestMsg) Bytes() []byte {
+	return marshalutil.New().
+		Write(msg.ChainID).
+		Write(msg.Req).
+		Bytes()
 }

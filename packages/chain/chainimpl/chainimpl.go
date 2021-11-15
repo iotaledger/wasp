@@ -4,6 +4,7 @@
 package chainimpl
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -156,37 +157,64 @@ func NewChain(
 	}
 	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn)
 	ret.peers = &peers
-	ret.AttachToPeerMessages(ret.receiveChainPeerMessages)
+	ret.AttachToPeerMessages(chain.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
 	go ret.handleMessagesLoop()
 	ret.startTimer()
 	return ret
 }
 
-func (c *chainObj) receiveCommitteePeerMessages(event *peering.RecvEvent) {
-	if event.Msg.MsgType == messages.MsgMissingRequestIDs {
-		c.enqueueMissingRequestIDsPeerMsg(event.Msg)
+func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGroupIn) {
+	if peerMsg.MsgReceiver != chain.PeerMessageReceiverChain {
+		panic(fmt.Errorf("Chain does not accept peer messages of other receiver type %v, message type=%v",
+			peerMsg.MsgReceiver, peerMsg.MsgType))
 	}
+	if peerMsg.MsgType != chain.PeerMsgTypeMissingRequestIDs {
+		panic(fmt.Errorf("Wrong type of chain message: %v", peerMsg.MsgType))
+	}
+	msg, err := messages.NewMissingRequestIDsMsg(peerMsg.MsgData)
+	if err != nil {
+		c.log.Error(err)
+		return
+	}
+	c.enqueueMissingRequestIDsMsg(&messages.MissingRequestIDsMsgIn{
+		MissingRequestIDsMsg: *msg,
+		SenderNetID:          peerMsg.SenderNetID,
+	})
 }
 
-func (c *chainObj) receiveChainPeerMessages(event *peering.RecvEvent) {
-	peerMsg := event.Msg
-	switch event.Msg.MsgType {
-	case messages.MsgOffLedgerRequest:
-		msg, err := messages.OffLedgerRequestPeerMsgFromBytes(peerMsg.MsgData)
+func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
+	if peerMsg.MsgReceiver != chain.PeerMessageReceiverChain {
+		panic(fmt.Errorf("Chain does not accept peer messages of other receiver type %v, message type=%v",
+			peerMsg.MsgReceiver, peerMsg.MsgType))
+	}
+	switch peerMsg.MsgType {
+	case chain.PeerMsgTypeOffLedgerRequest:
+		msg, err := messages.NewOffLedgerRequestMsg(peerMsg.MsgData)
 		if err != nil {
 			c.log.Error(err)
 			return
 		}
-		c.EnqueueOffLedgerRequestPeerMsg(msg.Req, peerMsg.SenderNetID)
-	case messages.MsgRequestAck:
-		msg, err := messages.RequestAckPeerMsgFromBytes(peerMsg.MsgData)
+		c.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
+			OffLedgerRequestMsg: *msg,
+			SenderNetID:         peerMsg.SenderNetID,
+		})
+	case chain.PeerMsgTypeRequestAck:
+		msg, err := messages.NewRequestAckMsg(peerMsg.MsgData)
 		if err != nil {
 			c.log.Error(err)
 			return
 		}
-		c.enqueueRequestAckPeerMsg(msg.ReqID, peerMsg.SenderNetID)
+		c.enqueueRequestAckMsg(&messages.RequestAckMsgIn{
+			RequestAckMsg: *msg,
+			SenderNetID:   peerMsg.SenderNetID,
+		})
 	case messages.MsgMissingRequest:
-		//c.enqueueMissingRequestPeerMsg(msg)
+		msg, err := messages.NewMissingRequestMsg(peerMsg.MsgData)
+		if err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.enqueueMissingRequestMsg(msg)
 	default:
 	}
 }
@@ -339,7 +367,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
 			cmtRec.Address.Base58(), err)
 	}
-	cmt.AttachToPeerMessages(c.receiveCommitteePeerMessages)
+	cmt.AttachToPeerMessages(chain.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
 	c.log.Debugf("creating new consensus object...")
 	c.consensus = consensus.New(c, c.mempool, cmt, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
 	c.setCommittee(cmt)

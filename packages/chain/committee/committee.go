@@ -94,18 +94,13 @@ func New(
 		// That's the default implementation of the ACS.
 		// We use it, of the mocked variant was not passed.
 		ret.acsRunner = commonsubset.NewCommonSubsetCoordinator(
-			peerGroupID,
+			ret,
 			netProvider,
 			peers,
 			dkshare,
 			log,
 		)
 	}
-	ret.AttachToPeerMessages(func(recv *peering.RecvEvent) {
-		if ret.acsRunner != nil {
-			ret.acsRunner.TryHandleMessage(recv)
-		}
-	})
 	go ret.waitReady(waitReady)
 
 	return ret, nil
@@ -135,28 +130,31 @@ func (c *committee) DKShare() *tcrypto.DKShare {
 	return c.dkshare
 }
 
-func (c *committee) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
+func (c *committee) SendMsgByIndex(targetPeerIndex uint16, msgReceiver byte, msgType byte, msgData []byte) error {
 	if peer, ok := c.validatorNodes.OtherNodes()[targetPeerIndex]; ok {
-		peer.SendMsg(&peering.PeerMessage{
-			PeeringID:   c.peeringID,
-			SenderIndex: c.ownIndex,
-			MsgType:     msgType,
-			MsgData:     msgData,
+		peer.SendMsg(&peering.PeerMessageNet{
+			PeerMessageData: peering.PeerMessageData{
+				PeeringID:   c.peeringID,
+				Timestamp:   time.Now().UnixNano(),
+				MsgReceiver: msgReceiver,
+				MsgType:     msgType,
+				MsgData:     msgData,
+			},
 		})
 		return nil
 	}
 	return fmt.Errorf("SendMsg: wrong peer index")
 }
 
-func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64, except ...uint16) {
-	msg := &peering.PeerMessage{
+func (c *committee) SendMsgBroadcast(msgReceiver byte, msgType byte, msgData []byte, except ...uint16) {
+	msg := &peering.PeerMessageData{
 		PeeringID:   c.peeringID,
-		SenderIndex: c.ownIndex,
-		Timestamp:   ts,
+		Timestamp:   time.Now().UnixNano(),
+		MsgReceiver: msgReceiver,
 		MsgType:     msgType,
 		MsgData:     msgData,
 	}
-	c.validatorNodes.Broadcast(msg, false, except...)
+	c.validatorNodes.SendMsgBroadcast(msg, false, except...)
 }
 
 func (c *committee) IsAlivePeer(peerIndex uint16) bool {
@@ -210,8 +208,8 @@ func (c *committee) PeerStatus() []*chain.PeerStatus {
 	return ret
 }
 
-func (c *committee) AttachToPeerMessages(fun func(recv *peering.RecvEvent)) {
-	c.attachIDs = append(c.attachIDs, c.validatorNodes.Attach(&c.peeringID, fun))
+func (c *committee) AttachToPeerMessages(peerMsgReceiver byte, fun func(peerMsg *peering.PeerMessageGroupIn)) {
+	c.attachIDs = append(c.attachIDs, c.validatorNodes.Attach(&c.peeringID, peerMsgReceiver, fun))
 }
 
 func (c *committee) Close() {

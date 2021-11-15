@@ -38,6 +38,7 @@ import (
 
 	"github.com/anthdm/hbbft"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -63,11 +64,10 @@ type CommonSubset struct {
 	recvMsgBatches []map[uint32]uint32  // [PeerId]ReceivedMbID -> AckedInMb (0 -- unacked). It remains 0, if acked in non-data message.
 	sentMsgBatches map[uint32]*msgBatch // BatchID -> MsgBatch
 
-	sessionID   uint64                // Unique identifier for this consensus instance. Used to route messages.
-	stateIndex  uint32                // Sequence number of the CS transaction we are agreeing on.
-	peeringID   peering.PeeringID     // ID for the communication group.
-	netGroup    peering.GroupProvider // Group of nodes we are communicating with.
-	netOwnIndex uint16                // Our index in the group.
+	sessionID   uint64 // Unique identifier for this consensus instance. Used to route messages.
+	stateIndex  uint32 // Sequence number of the CS transaction we are agreeing on.
+	committee   chain.Committee
+	netOwnIndex uint16 // Our index in the group.
 
 	inputCh  chan []byte            // For our input to the consensus.
 	recvCh   chan *msgBatch         // For incoming messages.
@@ -80,7 +80,7 @@ type CommonSubset struct {
 func NewCommonSubset(
 	sessionID uint64,
 	stateIndex uint32,
-	peeringID peering.PeeringID,
+	committee chain.Committee,
 	netGroup peering.GroupProvider,
 	dkShare *tcrypto.DKShare,
 	allRandom bool, // Set to true to have real CC rounds for each epoch. That's for testing mostly.
@@ -118,8 +118,7 @@ func NewCommonSubset(
 		sentMsgBatches: make(map[uint32]*msgBatch),
 		sessionID:      sessionID,
 		stateIndex:     stateIndex,
-		peeringID:      peeringID,
-		netGroup:       netGroup,
+		committee:      committee,
 		netOwnIndex:    ownIndex,
 		inputCh:        make(chan []byte, 1),
 		recvCh:         make(chan *msgBatch, 1),
@@ -145,22 +144,6 @@ func (cs *CommonSubset) OutputCh() chan map[uint16][]byte {
 // Input accepts the current node's proposal for the consensus.
 func (cs *CommonSubset) Input(input []byte) {
 	cs.inputCh <- input
-}
-
-// TryHandleMessage checks, if the RecvEvent is of suitable type and
-// processed the message as an input from a peer if the type matches.
-// This one is called from the ACS tests.
-func (cs *CommonSubset) TryHandleMessage(recv *peering.RecvEvent) bool {
-	if recv.Msg.MsgType != acsMsgType {
-		return false
-	}
-	mb := msgBatch{}
-	if err := mb.FromBytes(recv.Msg.MsgData); err != nil {
-		cs.log.Errorf("Cannot decode message: %v", err)
-		return true
-	}
-	cs.HandleMsgBatch(&mb)
-	return true
 }
 
 // HandleMsgBatch accepts a parsed msgBatch as an input from other node.
@@ -396,13 +379,7 @@ func (cs *CommonSubset) send(msgBatch *msgBatch) {
 		return
 	}
 	cs.log.Debugf("ACS::IO - Sending a msgBatch=%+v", msgBatch)
-	cs.netGroup.SendMsgByIndex(msgBatch.dst, &peering.PeerMessage{
-		PeeringID:   cs.peeringID,
-		SenderIndex: cs.netOwnIndex,
-		Timestamp:   0,
-		MsgType:     acsMsgType,
-		MsgData:     msgBatch.Bytes(),
-	})
+	cs.committee.SendMsgByIndex(msgBatch.dst, peerMessageReceiverCommonSubset, peerMsgTypeBatch, msgBatch.Bytes())
 }
 
 // endregion ///////////////////////////////////////////////////////////////////
@@ -429,6 +406,15 @@ const (
 	acsMsgTypeAbaCCRequest    byte = 6 << 4
 	acsMsgTypeAbaDoneRequest  byte = 7 << 4
 )
+
+func newMsgBatch(data []byte) (*msgBatch, error) {
+	mb := &msgBatch{}
+	r := bytes.NewReader(data)
+	if err := mb.Read(r); err != nil {
+		return nil, err
+	}
+	return mb, nil
+}
 
 func (b *msgBatch) NeedsAck() bool {
 	return b.id != 0
@@ -738,11 +724,6 @@ func (b *msgBatch) Read(r io.Reader) error {
 		}
 	}
 	return nil
-}
-
-func (b *msgBatch) FromBytes(buf []byte) error {
-	r := bytes.NewReader(buf)
-	return b.Read(r)
 }
 
 func (b *msgBatch) Bytes() []byte {

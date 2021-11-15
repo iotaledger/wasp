@@ -86,10 +86,8 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		if nowis.After(requestBlockRetryTime) {
 			// have to pull
 			sm.log.Debugf("doSyncAction: requesting block index %v from %v random peers", i, numberOfNodesToRequestBlockFromConst)
-			data := util.MustBytes(&messages.GetBlockMsg{
-				BlockIndex: i,
-			})
-			sm.peers.SendMsgToRandomPeersSimple(numberOfNodesToRequestBlockFromConst, messages.MsgGetBlock, data)
+			getBlockMsg := &messages.GetBlockMsg{BlockIndex: i}
+			sm.chain.SendPeerMsgToRandomPeers(numberOfNodesToRequestBlockFromConst, peerMessageReceiverStateManager, peerMsgTypeGetBlock, util.MustBytes(getBlockMsg))
 			sm.syncingBlocks.startSyncingIfNeeded(i)
 			sm.syncingBlocks.setRequestBlockRetryTime(i, nowis.Add(sm.timers.GetBlockRetry))
 			if blockCandidatesCount == 0 {

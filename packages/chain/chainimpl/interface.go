@@ -94,8 +94,28 @@ func (c *chainObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
-func (c *chainObj) AttachToPeerMessages(fun func(recv *peering.RecvEvent)) {
-	c.attachIDs = append(c.attachIDs, (*c.peers).Attach(&c.peeringID, fun))
+func (c *chainObj) AttachToPeerMessages(msgReceiver byte, fun func(recv *peering.PeerMessageIn)) {
+	c.attachIDs = append(c.attachIDs, (*c.peers).Attach(&c.peeringID, msgReceiver, fun))
+}
+
+func (c *chainObj) SendPeerMsgByNetID(netID string, msgReceiver byte, msgType byte, msgData []byte) {
+	(*c.peers).SendMsgByNetID(netID, &peering.PeerMessageData{
+		PeeringID:   c.peeringID,
+		Timestamp:   time.Now().UnixNano(),
+		MsgReceiver: msgReceiver,
+		MsgType:     msgType,
+		MsgData:     msgData,
+	})
+}
+
+func (c *chainObj) SendPeerMsgToRandomPeers(upToNumPeers uint16, msgReceiver byte, msgType byte, msgData []byte) {
+	(*c.peers).SendMsgToRandomPeers(upToNumPeers, &peering.PeerMessageData{
+		PeeringID:   c.peeringID,
+		Timestamp:   time.Now().UnixNano(),
+		MsgReceiver: msgReceiver,
+		MsgType:     msgType,
+		MsgData:     msgData,
+	})
 }
 
 func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
@@ -119,7 +139,10 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 
 func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
-	msgData := messages.NewOffLedgerRequestPeerMsg(c.chainID, req).Bytes()
+	msg := &messages.OffLedgerRequestMsg{
+		ChainID: c.chainID,
+		Req:     req,
+	}
 	committee := c.getCommittee()
 	getPeerIDs := (*c.peers).GetRandomPeers
 
@@ -132,7 +155,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 		for _, peerID := range peerIDs {
 			if shouldSendToPeer(peerID, ackPeers) {
 				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID().Base58(), peerID)
-				(*c.peers).SendSimple(peerID, messages.MsgOffLedgerRequest, msgData)
+				c.SendPeerMsgByNetID(peerID, chain.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
 			}
 		}
 	}
@@ -170,16 +193,8 @@ func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerID st
 	if peerID == "" {
 		return
 	}
-	msgData := messages.NewRequestAckMsg(reqID).Bytes()
-	(*c.peers).SendSimple(peerID, messages.MsgRequestAck, msgData)
-}
-
-func (c *chainObj) ReceiveRequestAckMessage(reqID *iscp.RequestID, peerID string) {
-	c.log.Debugf("ReceiveRequestAckMessage: reqID: %s, peerID: %s", reqID.Base58(), peerID)
-	c.offLedgerReqsAcksMutex.Lock()
-	defer c.offLedgerReqsAcksMutex.Unlock()
-	c.offLedgerReqsAcks[*reqID] = append(c.offLedgerReqsAcks[*reqID], peerID)
-	c.chainMetrics.CountRequestAckMessages()
+	msg := &messages.RequestAckMsg{ReqID: &reqID}
+	c.SendPeerMsgByNetID(peerID, chain.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
 }
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {

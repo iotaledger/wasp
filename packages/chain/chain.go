@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -25,7 +24,9 @@ import (
 type ChainCore interface {
 	ID() *iscp.ChainID
 	GetCommitteeInfo() *CommitteeInfo
-	AttachToPeerMessages(fun func(recv *peering.RecvEvent))
+	AttachToPeerMessages(receiver byte, fun func(recv *peering.PeerMessageIn))
+	SendPeerMsgByNetID(netID string, msgReceiver byte, msgType byte, msgData []byte)
+	SendPeerMsgToRandomPeers(upToNumPeers uint16, msgReceiver byte, msgType byte, msgData []byte)
 	StateCandidateToStateManager(state.VirtualStateAccess, ledgerstate.OutputID)
 	Events() ChainEvents
 	Processors() *processors.Cache
@@ -36,7 +37,7 @@ type ChainCore interface {
 	// Most of these methods are made publick for mocking in tests
 	EnqueueDismissChain(reason string) // This one should really be public
 	EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, timestamp time.Time)
-	EnqueueOffLedgerRequestPeerMsg(req *request.OffLedger, senderNetID string)
+	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 }
 
 // ChainEntry interface to access chain from the chain registry side
@@ -74,12 +75,12 @@ type Committee interface {
 	Quorum() uint16
 	OwnPeerIndex() uint16
 	DKShare() *tcrypto.DKShare
-	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendMsgToPeers(msgType byte, msgData []byte, ts int64, except ...uint16)
+	SendMsgByIndex(peerIdx uint16, msgReceiver byte, msgType byte, msgData []byte) error
+	SendMsgBroadcast(msgReceiver byte, msgType byte, msgData []byte, except ...uint16)
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
-	AttachToPeerMessages(fun func(recv *peering.RecvEvent))
+	AttachToPeerMessages(receiver byte, fun func(recv *peering.PeerMessageGroupIn))
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
@@ -98,8 +99,8 @@ type NodeConnection interface {
 
 type StateManager interface {
 	Ready() *ready.Ready
-	EventGetBlockMsg(msg *messages.GetBlockMsg)
-	EventBlockMsg(msg *messages.BlockMsg)
+	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
+	EnqueueBlockMsg(msg *messages.BlockMsgIn)
 	EventStateMsg(msg *messages.StateMsg)
 	EventOutputMsg(msg ledgerstate.Output)
 	EventStateCandidateMsg(state.VirtualStateAccess, ledgerstate.OutputID)
@@ -110,8 +111,8 @@ type StateManager interface {
 
 type Consensus interface {
 	EventStateTransitionMsg(state.VirtualStateAccess, *ledgerstate.AliasOutput, time.Time)
-	EventSignedResultMsg(*messages.SignedResultMsg)
-	EventSignedResultAckMsg(*messages.SignedResultAckMsg)
+	EnqueueSignedResultMsg(*messages.SignedResultMsgIn)
+	EnqueueSignedResultAckMsg(*messages.SignedResultAckMsgIn)
 	EventInclusionsStateMsg(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	EventAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
 	EventVMResultMsg(msg *messages.VMResultMsg)
@@ -138,7 +139,7 @@ type Mempool interface {
 
 type AsynchronousCommonSubsetRunner interface {
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
-	TryHandleMessage(recv *peering.RecvEvent) bool
+	//TryHandleMessage(recv *peering.PeerMessageGroupIn) bool
 	Close()
 }
 
@@ -209,4 +210,13 @@ const (
 const (
 	// TimerTickPeriod time tick for consensus and state manager objects
 	TimerTickPeriod = 100 * time.Millisecond
+)
+
+const (
+	PeerMessageReceiverChain = byte(3)
+
+	PeerMsgTypeMissingRequestIDs = iota
+	PeerMsgTypeMissingRequest
+	PeerMsgTypeOffLedgerRequest
+	PeerMsgTypeRequestAck
 )

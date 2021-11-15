@@ -66,13 +66,14 @@ type GroupProvider interface {
 	SelfIndex() uint16
 	PeerIndex(peer PeerSender) (uint16, error)
 	PeerIndexByNetID(peerNetID string) (uint16, error)
+	NetIDByIndex(index uint16) (string, error)
 	Attach(peeringID *PeeringID, receiver byte, callback func(recv *PeerMessageGroupIn)) interface{}
 	Detach(attachID interface{})
 	SendMsgByIndex(peerIdx uint16, msg *PeerMessageData)
 	SendMsgBroadcast(msg *PeerMessageData, includingSelf bool, except ...uint16)
 	ExchangeRound(
 		peers map[uint16]PeerSender,
-		recvCh chan *PeerMessageGroupIn,
+		recvCh chan *PeerMessageIn,
 		retryTimeout time.Duration,
 		giveUpTimeout time.Duration,
 		sendCB func(peerIdx uint16, peer PeerSender),

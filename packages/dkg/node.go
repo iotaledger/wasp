@@ -27,19 +27,19 @@ type NodeProvider func() *Node
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity    *ed25519.KeyPair                 // Keys of the current node.
-	secKey      kyber.Scalar                     // Derived from the identity.
-	pubKey      kyber.Point                      // Derived from the identity.
-	blsSuite    Suite                            // Cryptography to use for the Pairing based operations.
-	edSuite     rabin_dkg.Suite                  // Cryptography to use for the Ed25519 based operations.
-	netProvider peering.NetworkProvider          // Network to communicate through.
-	registry    registry.DKShareRegistryProvider // Where to store the generated keys.
-	processes   map[string]*proc                 // Only for introspection.
-	procLock    *sync.RWMutex                    // To guard access to the process pool.
-	recvQueue   chan *peering.RecvEvent          // Incoming events processed async.
-	recvStopCh  chan bool                        // To coordinate shutdown.
-	attachID    interface{}                      // Peering attach ID
-	log         *logger.Logger
+	identity     *ed25519.KeyPair                 // Keys of the current node.
+	secKey       kyber.Scalar                     // Derived from the identity.
+	pubKey       kyber.Point                      // Derived from the identity.
+	blsSuite     Suite                            // Cryptography to use for the Pairing based operations.
+	edSuite      rabin_dkg.Suite                  // Cryptography to use for the Ed25519 based operations.
+	netProvider  peering.NetworkProvider          // Network to communicate through.
+	registry     registry.DKShareRegistryProvider // Where to store the generated keys.
+	processes    map[string]*proc                 // Only for introspection.
+	procLock     *sync.RWMutex                    // To guard access to the process pool.
+	initMsgQueue chan *initiatorInitMsgIn         // Incoming events processed async.
+	recvStopCh   chan bool                        // To coordinate shutdown.
+	attachID     interface{}                      // Peering attach ID
+	log          *logger.Logger
 }
 
 // Init creates new node, that can participate in the DKG procedure.
@@ -55,29 +55,46 @@ func NewNode(
 		return nil, err
 	}
 	n := Node{
-		identity:    identity,
-		secKey:      kyberEdDSSA.Secret,
-		pubKey:      kyberEdDSSA.Public,
-		blsSuite:    tcrypto.DefaultSuite(),
-		edSuite:     edwards25519.NewBlakeSHA256Ed25519(),
-		netProvider: netProvider,
-		registry:    reg,
-		processes:   make(map[string]*proc),
-		procLock:    &sync.RWMutex{},
-		recvQueue:   make(chan *peering.RecvEvent),
-		recvStopCh:  make(chan bool),
-		log:         log,
+		identity:     identity,
+		secKey:       kyberEdDSSA.Secret,
+		pubKey:       kyberEdDSSA.Public,
+		blsSuite:     tcrypto.DefaultSuite(),
+		edSuite:      edwards25519.NewBlakeSHA256Ed25519(),
+		netProvider:  netProvider,
+		registry:     reg,
+		processes:    make(map[string]*proc),
+		procLock:     &sync.RWMutex{},
+		initMsgQueue: make(chan *initiatorInitMsgIn),
+		recvStopCh:   make(chan bool),
+		log:          log,
 	}
-	n.attachID = netProvider.Attach(nil, func(recv *peering.RecvEvent) {
-		n.recvQueue <- recv
-	})
+	n.attachID = netProvider.Attach(&initPeeringID, peerMessageReceiverDkgInit, n.receiveInitMessage)
 	go n.recvLoop()
 	return &n, nil
 }
 
+func (n *Node) receiveInitMessage(peerMsg *peering.PeerMessageIn) {
+	if peerMsg.MsgReceiver != peerMessageReceiverDkgInit {
+		panic(fmt.Errorf("DKG init handler does not accept peer messages of other receiver type %v, message type=%v",
+			peerMsg.MsgReceiver, peerMsg.MsgType))
+	}
+	if peerMsg.MsgType != initiatorInitMsgType {
+		panic(fmt.Errorf("Wrong type of DKG init message: %v", peerMsg.MsgType))
+	}
+	msg := &initiatorInitMsg{}
+	if err := msg.fromBytes(peerMsg.MsgData); err != nil {
+		n.log.Warnf("Dropping unknown message: %v", peerMsg)
+		return
+	}
+	n.initMsgQueue <- &initiatorInitMsgIn{
+		initiatorInitMsg: *msg,
+		SenderNetID:      peerMsg.SenderNetID,
+	}
+}
+
 func (n *Node) Close() {
 	close(n.recvStopCh)
-	close(n.recvQueue)
+	close(n.initMsgQueue)
 	n.netProvider.Detach(n.attachID)
 }
 
@@ -113,8 +130,8 @@ func (n *Node) GenerateDistributedKey(
 	}
 	defer netGroup.Close()
 	dkgID := peering.RandomPeeringID()
-	recvCh := make(chan *peering.RecvEvent, peerCount*2)
-	attachID := n.netProvider.Attach(&dkgID, func(recv *peering.RecvEvent) {
+	recvCh := make(chan *peering.PeerMessageIn, peerCount*2)
+	attachID := n.netProvider.Attach(&dkgID, peerMessageReceiverDkg, func(recv *peering.PeerMessageIn) {
 		recvCh <- recv
 	})
 	defer n.netProvider.Detach(attachID)
@@ -139,15 +156,16 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep0Initialize,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.NetID())
-			peer.SendMsg(makePeerMessage(dkgID, rabinStep0Initialize, &initiatorInitMsg{
+			peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *makePeerMessage(initPeeringID, peerMessageReceiverDkgInit, rabinStep0Initialize, &initiatorInitMsg{
 				dkgRef:       dkgID.String(), // It could be some other identifier.
+				peeringID:    dkgID,
 				peerNetIDs:   peerNetIDs,
 				peerPubs:     peerPubs,
 				initiatorPub: n.identity.PublicKey,
 				threshold:    threshold,
 				timeout:      timeout,
 				roundRetry:   roundRetry,
-			}))
+			})})
 		},
 	); err != nil {
 		return nil, err
@@ -179,12 +197,12 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorMsgs(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep6R6SendReconstructCommits,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.NetID())
-			peer.SendMsg(makePeerMessage(dkgID, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
+			peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *makePeerMessage(dkgID, peerMessageReceiverDkg, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{})})
 		},
-		func(recv *peering.RecvEvent, initMsg initiatorMsg) (bool, error) {
+		func(recv *peering.PeerMessageGroupIn, initMsg initiatorMsg) (bool, error) {
 			switch msg := initMsg.(type) {
 			case *initiatorPubShareMsg:
-				pubShareResponses[int(recv.Msg.SenderIndex)] = msg
+				pubShareResponses[int(recv.SenderIndex)] = msg
 				return true, nil
 			default:
 				n.log.Errorf("unexpected message type instead of initiatorPubShareMsg: %V", msg)
@@ -227,9 +245,9 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.NetID())
-			peer.SendMsg(makePeerMessage(dkgID, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
+			peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *makePeerMessage(dkgID, peerMessageReceiverDkg, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
 				pubShares: publicShares,
-			}))
+			})})
 		},
 	); err != nil {
 		return nil, err
@@ -253,7 +271,7 @@ func (n *Node) recvLoop() {
 		select {
 		case <-n.recvStopCh:
 			return
-		case recv, ok := <-n.recvQueue:
+		case recv, ok := <-n.initMsgQueue:
 			if ok {
 				n.onInitMsg(recv)
 			}
@@ -262,22 +280,15 @@ func (n *Node) recvLoop() {
 }
 
 // onInitMsg is a callback to handle the DKG initialization messages.
-func (n *Node) onInitMsg(recv *peering.RecvEvent) {
-	if recv.Msg.MsgType != initiatorInitMsgType {
-		return
-	}
+func (n *Node) onInitMsg(msg *initiatorInitMsgIn) {
 	var err error
 	var p *proc
-	req := initiatorInitMsg{}
-	if err = req.fromBytes(recv.Msg.MsgData); err != nil {
-		n.log.Warnf("Dropping unknown message: %v", recv)
-	}
 	n.procLock.RLock()
-	if _, ok := n.processes[req.dkgRef]; ok {
+	if _, ok := n.processes[msg.dkgRef]; ok {
 		// To have idempotence for retries, we need to consider duplicate
 		// messages as success, if process is already created.
 		n.procLock.RUnlock()
-		recv.From.SendMsg(makePeerMessage(recv.Msg.PeeringID, req.step, &initiatorStatusMsg{
+		n.netProvider.SendMsgByNetID(msg.SenderNetID, makePeerMessage(msg.peeringID, peerMessageReceiverDkg, msg.step, &initiatorStatusMsg{
 			error: nil,
 		}))
 		return
@@ -287,11 +298,11 @@ func (n *Node) onInitMsg(recv *peering.RecvEvent) {
 		// This part should be executed async, because it accesses the network again, and can
 		// be locked because of the naive implementation of `events.Event`. It locks on all the callbacks.
 		n.procLock.Lock()
-		if p, err = onInitiatorInit(recv.Msg.PeeringID, &req, n); err == nil {
+		if p, err = onInitiatorInit(msg.peeringID, &msg.initiatorInitMsg, n); err == nil {
 			n.processes[p.dkgRef] = p
 		}
 		n.procLock.Unlock()
-		recv.From.SendMsg(makePeerMessage(recv.Msg.PeeringID, req.step, &initiatorStatusMsg{
+		n.netProvider.SendMsgByNetID(msg.SenderNetID, makePeerMessage(msg.peeringID, peerMessageReceiverDkg, msg.step, &initiatorStatusMsg{
 			error: err,
 		}))
 	}()
@@ -311,7 +322,7 @@ func (n *Node) dropProcess(p *proc) bool {
 func (n *Node) exchangeInitiatorStep(
 	netGroup peering.GroupProvider,
 	peers map[uint16]peering.PeerSender,
-	recvCh chan *peering.RecvEvent,
+	recvCh chan *peering.PeerMessageIn,
 	retryTimeout time.Duration,
 	giveUpTimeout time.Duration,
 	dkgID peering.PeeringID,
@@ -319,7 +330,7 @@ func (n *Node) exchangeInitiatorStep(
 ) error {
 	sendCB := func(peerIdx uint16, peer peering.PeerSender) {
 		n.log.Debugf("Initiator sends step=%v command to %v", step, peer.NetID())
-		peer.SendMsg(makePeerMessage(dkgID, step, &initiatorStepMsg{}))
+		peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *makePeerMessage(dkgID, peerMessageReceiverDkg, step, &initiatorStepMsg{})})
 	}
 	return n.exchangeInitiatorAcks(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB)
 }
@@ -327,14 +338,14 @@ func (n *Node) exchangeInitiatorStep(
 func (n *Node) exchangeInitiatorAcks(
 	netGroup peering.GroupProvider,
 	peers map[uint16]peering.PeerSender,
-	recvCh chan *peering.RecvEvent,
+	recvCh chan *peering.PeerMessageIn,
 	retryTimeout time.Duration,
 	giveUpTimeout time.Duration,
 	step byte,
 	sendCB func(peerIdx uint16, peer peering.PeerSender),
 ) error {
-	recvCB := func(recv *peering.RecvEvent, msg initiatorMsg) (bool, error) {
-		n.log.Debugf("Initiator recv. step=%v response %v from %v", step, msg, recv.From.NetID())
+	recvCB := func(recv *peering.PeerMessageGroupIn, msg initiatorMsg) (bool, error) {
+		n.log.Debugf("Initiator recv. step=%v response %v from %v", step, msg, recv.SenderNetID)
 		return true, nil
 	}
 	return n.exchangeInitiatorMsgs(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB, recvCB)
@@ -343,23 +354,23 @@ func (n *Node) exchangeInitiatorAcks(
 func (n *Node) exchangeInitiatorMsgs(
 	netGroup peering.GroupProvider,
 	peers map[uint16]peering.PeerSender,
-	recvCh chan *peering.RecvEvent,
+	recvCh chan *peering.PeerMessageIn,
 	retryTimeout time.Duration,
 	giveUpTimeout time.Duration,
 	step byte,
 	sendCB func(peerIdx uint16, peer peering.PeerSender),
-	recvCB func(recv *peering.RecvEvent, initMsg initiatorMsg) (bool, error),
+	recvCB func(recv *peering.PeerMessageGroupIn, initMsg initiatorMsg) (bool, error),
 ) error {
-	recvInitCB := func(recv *peering.RecvEvent) (bool, error) {
+	recvInitCB := func(recv *peering.PeerMessageGroupIn) (bool, error) {
 		var err error
 		var initMsg initiatorMsg
 		var isInitMsg bool
-		isInitMsg, initMsg, err = readInitiatorMsg(recv.Msg, n.blsSuite)
+		isInitMsg, initMsg, err = readInitiatorMsg(&recv.PeerMessageData, n.blsSuite)
 		if !isInitMsg {
 			return false, nil
 		}
 		if err != nil {
-			n.log.Warnf("Failed to read message from %v: %v", recv.From.NetID(), recv.Msg)
+			n.log.Warnf("Failed to read message from %v: %v", recv.SenderNetID, recv.PeerMessageData)
 			return false, err
 		}
 		if !initMsg.IsResponse() {

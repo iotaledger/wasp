@@ -75,6 +75,13 @@ func (g *groupImpl) PeerIndexByNetID(peerNetID string) (uint16, error) {
 	return NotInGroup, errors.New("peer_not_found_by_net_id")
 }
 
+func (g *groupImpl) NetIDByIndex(index uint16) (string, error) {
+	if index < uint16(len(g.nodes)) {
+		return g.nodes[index].NetID(), nil
+	}
+	return "", errors.New("peer_index_out_of_scope")
+}
+
 // SendMsgByIndex implements peering.GroupProvider.
 func (g *groupImpl) SendMsgByIndex(peerIdx uint16, msg *peering.PeerMessageData) {
 	g.nodes[peerIdx].SendMsg(&peering.PeerMessageNet{PeerMessageData: *msg})
@@ -97,13 +104,12 @@ func (g *groupImpl) SendMsgBroadcast(msg *peering.PeerMessageData, includingSelf
 // Resends the messages if acks are not received for some time.
 func (g *groupImpl) ExchangeRound(
 	peers map[uint16]peering.PeerSender,
-	recvCh chan *peering.PeerMessageGroupIn,
+	recvCh chan *peering.PeerMessageIn,
 	retryTimeout time.Duration,
 	giveUpTimeout time.Duration,
 	sendCB func(peerIdx uint16, peer peering.PeerSender),
 	recvCB func(recv *peering.PeerMessageGroupIn) (bool, error),
 ) error {
-	var err error
 	acks := make(map[uint16]bool)
 	errs := make(map[uint16]error)
 	retryCh := time.After(retryTimeout)
@@ -122,18 +128,23 @@ func (g *groupImpl) ExchangeRound(
 	}
 	for !haveAllAcks() {
 		select {
-		case recvMsg, ok := <-recvCh:
+		case recvMsgNoIndex, ok := <-recvCh:
 			if !ok {
 				return errors.New("recv_channel_closed")
 			}
-			/*if recvMsg.Msg.SenderIndex, err = g.PeerIndex(recvMsg.From); err != nil {
+			senderIndex, err := g.PeerIndexByNetID(recvMsgNoIndex.SenderNetID)
+			if err != nil {
 				g.log.Warnf(
 					"Dropping message %v -> %v, MsgType=%v because of %v",
-					recvMsg.From.NetID(), g.netProvider.Self().NetID(),
-					recvMsg.Msg.MsgType, err,
+					recvMsgNoIndex.SenderNetID, g.netProvider.Self().NetID(),
+					recvMsgNoIndex.MsgType, err,
 				)
 				continue
-			}*/
+			}
+			recvMsg := peering.PeerMessageGroupIn{
+				PeerMessageIn: *recvMsgNoIndex,
+				SenderIndex:   senderIndex,
+			}
 			if acks[recvMsg.SenderIndex] { // Only consider first successful message.
 				g.log.Warnf(
 					"Dropping duplicate message %v -> %v, receiver=%v, MsgType=%v",
@@ -142,7 +153,7 @@ func (g *groupImpl) ExchangeRound(
 				)
 				continue
 			}
-			if acks[recvMsg.SenderIndex], err = recvCB(recvMsg); err != nil {
+			if acks[recvMsg.SenderIndex], err = recvCB(&recvMsg); err != nil {
 				errs[recvMsg.SenderIndex] = err
 				continue
 			}

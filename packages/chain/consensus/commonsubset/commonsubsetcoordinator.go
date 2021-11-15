@@ -4,10 +4,12 @@
 package commonsubset
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"golang.org/x/xerrors"
@@ -16,6 +18,10 @@ import (
 const (
 	futureInstances = 5 // How many future instances to accept.
 	pastInstances   = 2 // How many past instance to keep not closed.
+
+	peerMessageReceiverCommonSubset = byte(2)
+
+	peerMsgTypeBatch = iota
 )
 
 // CommonSubsetCoordinator is responsible for maintaining a series of ACS
@@ -47,28 +53,30 @@ type CommonSubsetCoordinator struct {
 	currentStateIndex uint32                   // Last state index passed by this node.
 	lock              sync.RWMutex
 
-	peeringID peering.PeeringID
+	committee chain.Committee
 	netGroup  peering.GroupProvider
 	dkShare   *tcrypto.DKShare
 	log       *logger.Logger
 }
 
 func NewCommonSubsetCoordinator(
-	peeringID peering.PeeringID,
+	committee chain.Committee,
 	net peering.NetworkProvider,
 	netGroup peering.GroupProvider,
 	dkShare *tcrypto.DKShare,
 	log *logger.Logger,
 ) *CommonSubsetCoordinator {
-	return &CommonSubsetCoordinator{
+	ret := &CommonSubsetCoordinator{
 		csInsts:   make(map[uint64]*CommonSubset),
 		csAsked:   make(map[uint64]bool),
 		lock:      sync.RWMutex{},
-		peeringID: peeringID,
+		committee: committee,
 		netGroup:  netGroup,
 		dkShare:   dkShare,
 		log:       log,
 	}
+	committee.AttachToPeerMessages(peerMessageReceiverCommonSubset, ret.receiveCommitteePeerMessages)
+	return ret
 }
 
 // Close implements the AsynchronousCommonSubsetRunner interface.
@@ -104,24 +112,26 @@ func (csc *CommonSubsetCoordinator) RunACSConsensus(
 
 // TryHandleMessage implements the AsynchronousCommonSubsetRunner interface.
 // It handles the network messages, if they are of correct type.
-func (csc *CommonSubsetCoordinator) TryHandleMessage(recv *peering.RecvEvent) bool {
-	if recv.Msg.MsgType != acsMsgType {
-		return false
+func (csc *CommonSubsetCoordinator) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGroupIn) {
+	if peerMsg.MsgReceiver != peerMessageReceiverCommonSubset {
+		panic(fmt.Errorf("Committee does not accept peer messages of other receiver type %v, message type=%v",
+			peerMsg.MsgReceiver, peerMsg.MsgType))
 	}
-	mb := msgBatch{}
-	if err := mb.FromBytes(recv.Msg.MsgData); err != nil {
-		csc.log.Errorf("Cannot decode message: %v", err)
-		return true
+	if peerMsg.MsgType != peerMsgTypeBatch {
+		panic(fmt.Errorf("Wrong type of committee message: %v", peerMsg.MsgType))
 	}
-	csc.log.Debugf("ACS::IO - Received a msgBatch=%+v", mb)
-	var err error
+	mb, err := newMsgBatch(peerMsg.MsgData)
+	if err != nil {
+		csc.log.Error(err)
+		return
+	}
+	csc.log.Debugf("ACS::IO - Received a msgBatch=%+v", *mb)
 	var cs *CommonSubset
 	if cs, err = csc.getOrCreateCS(mb.sessionID, mb.stateIndex, nil); err != nil {
 		csc.log.Debugf("Unable to get a CommonSubset instance for sessionID=%v, reason=%v", mb.sessionID, err)
-		return true
+		return
 	}
-	cs.HandleMsgBatch(&mb)
-	return true
+	cs.HandleMsgBatch(mb)
 }
 
 func (csc *CommonSubsetCoordinator) getOrCreateCS(
@@ -167,7 +177,7 @@ func (csc *CommonSubsetCoordinator) getOrCreateCS(
 		var err error
 		var newCS *CommonSubset
 		outCh := make(chan map[uint16][]byte, 1)
-		if newCS, err = NewCommonSubset(sessionID, stateIndex, csc.peeringID, csc.netGroup, csc.dkShare, false, outCh, csc.log); err != nil {
+		if newCS, err = NewCommonSubset(sessionID, stateIndex, csc.committee, csc.netGroup, csc.dkShare, false, outCh, csc.log); err != nil {
 			return nil, err
 		}
 		csc.csInsts[sessionID] = newCS

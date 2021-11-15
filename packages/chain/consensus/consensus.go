@@ -4,7 +4,7 @@
 package consensus
 
 import (
-	"bytes"
+	"fmt"
 	"sync"
 	"time"
 
@@ -23,7 +23,7 @@ import (
 	"go.uber.org/atomic"
 )
 
-type Consensus struct {
+type consensus struct {
 	isReady                          atomic.Bool
 	chain                            chain.ChainCore
 	committee                        chain.Committee
@@ -45,7 +45,7 @@ type Consensus struct {
 	delaySendingSignedResult         time.Time
 	resultTxEssence                  *ledgerstate.TransactionEssence
 	resultState                      state.VirtualStateAccess
-	resultSignatures                 []*messages.SignedResultMsg
+	resultSignatures                 []*messages.SignedResultMsgIn
 	resultSigAck                     []uint16
 	finalTx                          *ledgerstate.Transaction
 	postTxDeadline                   time.Time
@@ -55,8 +55,8 @@ type Consensus struct {
 	timers                           ConsensusTimers
 	log                              *logger.Logger
 	eventStateTransitionMsgCh        chan *messages.StateTransitionMsg
-	eventSignedResultMsgCh           chan *messages.SignedResultMsg
-	eventSignedResultAckMsgCh        chan *messages.SignedResultAckMsg
+	eventSignedResultMsgCh           chan *messages.SignedResultMsgIn
+	eventSignedResultAckMsgCh        chan *messages.SignedResultAckMsgIn
 	eventInclusionStateMsgCh         chan *messages.InclusionStateMsg
 	eventACSMsgCh                    chan *messages.AsynchronousCommonSubsetMsg
 	eventVMResultMsgCh               chan *messages.VMResultMsg
@@ -81,9 +81,16 @@ type workflowFlags struct {
 	inProgress           bool
 }
 
-var _ chain.Consensus = &Consensus{}
+var _ chain.Consensus = &consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) *Consensus {
+const (
+	peerMessageReceiverConsensus = byte(1)
+
+	peerMsgTypeSignedResult = iota
+	peerMsgTypeSignedResultAck
+)
+
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) chain.Consensus {
 	var timers ConsensusTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -91,19 +98,19 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		timers = NewConsensusTimers()
 	}
 	log := chainCore.Log().Named("c")
-	ret := &Consensus{
+	ret := &consensus{
 		chain:                            chainCore,
 		committee:                        committee,
 		mempool:                          mempool,
 		nodeConn:                         nodeConn,
 		vmRunner:                         runvm.NewVMRunner(),
-		resultSignatures:                 make([]*messages.SignedResultMsg, committee.Size()),
+		resultSignatures:                 make([]*messages.SignedResultMsgIn, committee.Size()),
 		resultSigAck:                     make([]uint16, 0, committee.Size()),
 		timers:                           timers,
 		log:                              log,
 		eventStateTransitionMsgCh:        make(chan *messages.StateTransitionMsg),
-		eventSignedResultMsgCh:           make(chan *messages.SignedResultMsg),
-		eventSignedResultAckMsgCh:        make(chan *messages.SignedResultAckMsg),
+		eventSignedResultMsgCh:           make(chan *messages.SignedResultMsgIn),
+		eventSignedResultAckMsgCh:        make(chan *messages.SignedResultAckMsgIn),
 		eventInclusionStateMsgCh:         make(chan *messages.InclusionStateMsg),
 		eventACSMsgCh:                    make(chan *messages.AsynchronousCommonSubsetMsg),
 		eventVMResultMsgCh:               make(chan *messages.VMResultMsg),
@@ -113,47 +120,50 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
 	}
-	committee.AttachToPeerMessages(ret.receiveCommitteePeerMessages)
+	committee.AttachToPeerMessages(peerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret
 }
 
-func (c *Consensus) receiveCommitteePeerMessages(event *peering.RecvEvent) {
-	msg := event.Msg
-	switch msg.MsgType {
-	case messages.MsgSignedResult:
-		msgt := &messages.SignedResultMsg{}
-		rdr := bytes.NewReader(msg.MsgData)
-		if err := msgt.Read(rdr); err != nil {
+func (c *consensus) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGroupIn) {
+	if peerMsg.MsgReceiver != peerMessageReceiverConsensus {
+		panic(fmt.Errorf("Consensus does not accept peer messages of other receiver type %v, message type=%v",
+			peerMsg.MsgReceiver, peerMsg.MsgType))
+	}
+	switch peerMsg.MsgType {
+	case peerMsgTypeSignedResult:
+		msg, err := messages.NewSignedResultMsg(peerMsg.MsgData)
+		if err != nil {
 			c.log.Error(err)
 			return
 		}
-		msgt.SenderIndex = msg.SenderIndex
-		c.EventSignedResultMsg(msgt)
-	case messages.MsgSignedResultAck:
-		msgt := &messages.SignedResultAckMsg{}
-		rdr := bytes.NewReader(msg.MsgData)
-		if err := msgt.Read(rdr); err != nil {
+		c.EnqueueSignedResultMsg(&messages.SignedResultMsgIn{
+			SignedResultMsg: *msg,
+			SenderIndex:     peerMsg.SenderIndex,
+		})
+	case peerMsgTypeSignedResultAck:
+		msg, err := messages.NewSignedResultAckMsg(peerMsg.MsgData)
+		if err != nil {
 			c.log.Error(err)
 			return
 		}
-		msgt.SenderIndex = msg.SenderIndex
-		c.EventSignedResultAckMsg(msgt)
-	default:
-		return
+		c.EnqueueSignedResultAckMsg(&messages.SignedResultAckMsgIn{
+			SignedResultAckMsg: *msg,
+			SenderIndex:        peerMsg.SenderIndex,
+		})
 	}
 }
 
-func (c *Consensus) IsReady() bool {
+func (c *consensus) IsReady() bool {
 	return c.isReady.Load()
 }
 
-func (c *Consensus) Close() {
+func (c *consensus) Close() {
 	close(c.closeCh)
 }
 
-func (c *Consensus) recvLoop() {
+func (c *consensus) recvLoop() {
 	// wait at startup
 	for !c.committee.IsReady() {
 		select {
@@ -174,15 +184,15 @@ func (c *Consensus) recvLoop() {
 			}
 		case msg, ok := <-c.eventSignedResultMsgCh:
 			if ok {
-				c.log.Debugf("Consensus::recvLoop, eventSignedResult...")
-				c.eventSignedResult(msg)
-				c.log.Debugf("Consensus::recvLoop, eventSignedResult... Done")
+				c.log.Debugf("Consensus::recvLoop, handleSignedResultMsg...")
+				c.handleSignedResultMsg(msg)
+				c.log.Debugf("Consensus::recvLoop, handleSignedResultMsg... Done")
 			}
 		case msg, ok := <-c.eventSignedResultAckMsgCh:
 			if ok {
-				c.log.Debugf("Consensus::recvLoop, eventSignedResultAck...")
-				c.eventSignedResultAck(msg)
-				c.log.Debugf("Consensus::recvLoop, eventSignedResultAck... Done")
+				c.log.Debugf("Consensus::recvLoop, handleSignedResultAckMsg...")
+				c.handleSignedResultAckMsg(msg)
+				c.log.Debugf("Consensus::recvLoop, handleSignedResultAckMsg... Done")
 			}
 		case msg, ok := <-c.eventInclusionStateMsgCh:
 			if ok {
@@ -214,7 +224,7 @@ func (c *Consensus) recvLoop() {
 	}
 }
 
-func (c *Consensus) refreshConsensusInfo() {
+func (c *consensus) refreshConsensusInfo() {
 	index := uint32(0)
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
@@ -235,7 +245,7 @@ func (c *Consensus) refreshConsensusInfo() {
 	c.consensusInfoSnapshot.Store(consensusInfo)
 }
 
-func (c *Consensus) GetStatusSnapshot() *chain.ConsensusInfo {
+func (c *consensus) GetStatusSnapshot() *chain.ConsensusInfo {
 	ret := c.consensusInfoSnapshot.Load()
 	if ret == nil {
 		return nil
