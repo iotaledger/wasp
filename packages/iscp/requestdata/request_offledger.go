@@ -27,6 +27,40 @@ type OffLedger struct {
 	gasBudget      int64
 }
 
+// implement RequestData interface
+var _ RequestData = &OffLedger{}
+
+func (req *OffLedger) Type() TypeCode {
+	return TypeOffLedger
+}
+
+func (req *OffLedger) Request() Request {
+	return req
+}
+
+func (req *OffLedger) TimeData() *TimeData {
+	panic("implement me")
+}
+
+func (req *OffLedger) MustUnwrap() unwrap {
+	panic("implement me")
+}
+
+func (req *OffLedger) Features() Features {
+	panic("implement me")
+}
+
+// implements unwrap interface
+var _ unwrap = &OffLedger{}
+
+func (req *OffLedger) OffLedger() *OffLedger {
+	return req
+}
+
+func (req *OffLedger) UTXO() unwrapUTXO {
+	panic("not an UTXO RequestData")
+}
+
 // implements iscp.Request interface
 var _ Request = &OffLedger{}
 
