@@ -51,7 +51,7 @@ func (c *chainObj) startTimer() {
 		tick := 0
 		for !c.IsDismissed() {
 			time.Sleep(chain.TimerTickPeriod)
-			c.enqueueTimerTick(tick)
+			c.EnqueueTimerTick(tick)
 			tick++
 		}
 	}()

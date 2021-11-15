@@ -60,6 +60,9 @@ func NewPeerMessageDataFromBytes(buf []byte) (*PeerMessageData, error) {
 	if err = util.ReadInt64(r, &m.Timestamp); err != nil {
 		return nil, err
 	}
+	if m.MsgReceiver, err = util.ReadByte(r); err != nil {
+		return nil, err
+	}
 	if m.MsgType, err = util.ReadByte(r); err != nil {
 		return nil, err
 	}
@@ -97,6 +100,9 @@ func (m *PeerMessageNet) Bytes() ([]byte, error) {
 func (m *PeerMessageData) bytes() ([]byte, error) {
 	var buf bytes.Buffer
 	if err := util.WriteInt64(&buf, m.Timestamp); err != nil {
+		return nil, err
+	}
+	if err := util.WriteByte(&buf, m.MsgReceiver); err != nil {
 		return nil, err
 	}
 	if err := util.WriteByte(&buf, m.MsgType); err != nil {

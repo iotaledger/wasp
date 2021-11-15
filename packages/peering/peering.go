@@ -51,7 +51,7 @@ type TrustedNetworkManager interface {
 }
 
 type PeerCollection interface {
-	Attach(peeringID *PeeringID, reveiver byte, callback func(recv *PeerMessageIn)) interface{}
+	Attach(peeringID *PeeringID, receiver byte, callback func(recv *PeerMessageIn)) interface{}
 	Detach(attachID interface{})
 	SendMsgByNetID(netID string, msg *PeerMessageData)
 }

@@ -257,8 +257,8 @@ func averageDuration(durations []time.Duration) int64 {
 
 func sendMessage(from *peeringNode, inCh chan *peeringMsg) {
 	inCh <- &peeringMsg{
-		from: from,
-		msg: peering.PeerMessage{
+		from: from.netID,
+		msg: peering.PeerMessageData{
 			Timestamp: time.Now().UnixNano(),
 		},
 	}

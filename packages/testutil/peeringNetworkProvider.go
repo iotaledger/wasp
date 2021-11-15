@@ -108,14 +108,15 @@ type peeringNode struct {
 }
 
 type peeringMsg struct {
-	from *peeringNode
-	msg  peering.PeerMessage
+	from string
+	msg  peering.PeerMessageData
 }
 
 type peeringCb struct {
-	callback  func(recv *peering.RecvEvent) // Receive callback.
-	destNP    *peeringNetworkProvider       // Destination node.
-	peeringID *peering.PeeringID            // Only listen for specific chain msgs.
+	callback  func(recv *peering.PeerMessageIn) // Receive callback.
+	destNP    *peeringNetworkProvider           // Destination node.
+	peeringID *peering.PeeringID                // Only listen for specific chain msgs.
+	receiver  byte
 }
 
 func newPeeringNode(netID string, identity *ed25519.KeyPair, network *PeeringNetwork) *peeringNode {
@@ -140,17 +141,17 @@ func (n *peeringNode) recvLoop() {
 	for pm := range n.recvCh {
 		msgPeeringID := pm.msg.PeeringID.String()
 		for _, cb := range n.recvCbs {
-			if cb.peeringID == nil || cb.peeringID.String() == msgPeeringID {
-				cb.callback(&peering.RecvEvent{
-					From: cb.destNP.senderByNetID(pm.from.netID),
-					Msg:  &pm.msg,
+			if cb.peeringID.String() == msgPeeringID && cb.receiver == pm.msg.MsgReceiver {
+				cb.callback(&peering.PeerMessageIn{
+					PeerMessageData: pm.msg,
+					SenderNetID:     pm.from,
 				})
 			}
 		}
 	}
 }
 
-func (n *peeringNode) sendMsg(from *peeringNode, msg *peering.PeerMessage) {
+func (n *peeringNode) sendMsg(from string, msg *peering.PeerMessageData) {
 	n.sendCh <- &peeringMsg{
 		from: from,
 		msg:  *msg,
@@ -170,6 +171,8 @@ type peeringNetworkProvider struct {
 	network *PeeringNetwork
 	senders []*peeringSender // Senders for all the nodes.
 }
+
+var _ peering.NetworkProvider = &peeringNetworkProvider{}
 
 // NewpeeringNetworkProvider initializes new network provider (a local view).
 func newPeeringNetworkProvider(self *peeringNode, network *PeeringNetwork) *peeringNetworkProvider {
@@ -216,12 +219,14 @@ func (p *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDo
 // Attach implements peering.NetworkProvider.
 func (p *peeringNetworkProvider) Attach(
 	peeringID *peering.PeeringID,
-	callback func(recv *peering.RecvEvent),
+	receiver byte,
+	callback func(recv *peering.PeerMessageIn),
 ) interface{} {
 	p.self.recvCbs = append(p.self.recvCbs, &peeringCb{
 		callback:  callback,
 		destNP:    p,
 		peeringID: peeringID,
+		receiver:  receiver,
 	})
 	return nil // We don't care on the attachIDs for now.
 }
@@ -229,6 +234,13 @@ func (p *peeringNetworkProvider) Attach(
 // Detach implements peering.NetworkProvider.
 func (p *peeringNetworkProvider) Detach(attachID interface{}) {
 	// Detach is not important in tests.
+}
+
+func (p *peeringNetworkProvider) SendMsgByNetID(netID string, msg *peering.PeerMessageData) {
+	s, err := p.PeerByNetID(netID)
+	if err == nil {
+		s.SendMsg(&peering.PeerMessageNet{PeerMessageData: *msg})
+	}
 }
 
 // PeerByNetID implements peering.NetworkProvider.
@@ -294,8 +306,8 @@ func (p *peeringSender) PubKey() *ed25519.PublicKey {
 }
 
 // Send implements peering.PeerSender.
-func (p *peeringSender) SendMsg(msg *peering.PeerMessage) {
-	p.node.sendMsg(p.netProvider.self, msg)
+func (p *peeringSender) SendMsg(msg *peering.PeerMessageNet) {
+	p.node.sendMsg(p.netProvider.self.netID, &msg.PeerMessageData)
 }
 
 // IsAlive implements peering.PeerSender.

@@ -23,16 +23,18 @@ func TestGroupProvider(t *testing.T) {
 
 	//
 	// Listen for messages on all the nodes.
+	peeringID := peering.RandomPeeringID()
+	receiver := byte(4)
 	doneCh0 := make(chan bool)
 	doneCh1 := make(chan bool)
 	doneCh2 := make(chan bool)
-	nodes[0].Attach(nil, func(recv *peering.RecvEvent) {
+	nodes[0].Attach(&peeringID, receiver, func(recv *peering.PeerMessageIn) {
 		doneCh0 <- true
 	})
-	nodes[1].Attach(nil, func(recv *peering.RecvEvent) {
+	nodes[1].Attach(&peeringID, receiver, func(recv *peering.PeerMessageIn) {
 		doneCh1 <- true
 	})
-	nodes[2].Attach(nil, func(recv *peering.RecvEvent) {
+	nodes[2].Attach(&peeringID, receiver, func(recv *peering.PeerMessageIn) {
 		doneCh2 <- true
 	})
 	//
@@ -42,7 +44,7 @@ func TestGroupProvider(t *testing.T) {
 	require.Nil(t, err)
 	//
 	// Broadcast a message and wait until it will be received on all the nodes.
-	g.Broadcast(&peering.PeerMessage{PeeringID: peering.RandomPeeringID(), MsgType: 125}, true)
+	g.SendMsgBroadcast(&peering.PeerMessageData{PeeringID: peeringID, MsgReceiver: receiver, MsgType: 125}, true)
 	<-doneCh0
 	<-doneCh1
 	<-doneCh2

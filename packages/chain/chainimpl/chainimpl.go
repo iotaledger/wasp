@@ -176,7 +176,7 @@ func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGrou
 		c.log.Error(err)
 		return
 	}
-	c.enqueueMissingRequestIDsMsg(&messages.MissingRequestIDsMsgIn{
+	c.EnqueueMissingRequestIDsMsg(&messages.MissingRequestIDsMsgIn{
 		MissingRequestIDsMsg: *msg,
 		SenderNetID:          peerMsg.SenderNetID,
 	})
@@ -204,7 +204,7 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 			c.log.Error(err)
 			return
 		}
-		c.enqueueRequestAckMsg(&messages.RequestAckMsgIn{
+		c.EnqueueRequestAckMsg(&messages.RequestAckMsgIn{
 			RequestAckMsg: *msg,
 			SenderNetID:   peerMsg.SenderNetID,
 		})
@@ -214,7 +214,7 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 			c.log.Error(err)
 			return
 		}
-		c.enqueueMissingRequestMsg(msg)
+		c.EnqueueMissingRequestMsg(msg)
 	default:
 	}
 }

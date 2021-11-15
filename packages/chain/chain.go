@@ -38,6 +38,10 @@ type ChainCore interface {
 	EnqueueDismissChain(reason string) // This one should really be public
 	EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, timestamp time.Time)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
+	EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn)
+	EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn)
+	EnqueueMissingRequestMsg(msg *messages.MissingRequestMsg)
+	EnqueueTimerTick(tick int)
 }
 
 // ChainEntry interface to access chain from the chain registry side

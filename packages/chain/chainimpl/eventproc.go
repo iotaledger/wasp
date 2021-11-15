@@ -137,7 +137,7 @@ func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn
 	c.broadcastOffLedgerRequest(req)
 }
 
-func (c *chainObj) enqueueRequestAckMsg(msg *messages.RequestAckMsgIn) {
+func (c *chainObj) EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn) {
 	c.requestAckPeerMsgPipe.In() <- msg
 }
 
@@ -149,7 +149,7 @@ func (c *chainObj) handleRequestAckPeerMsg(msg *messages.RequestAckMsgIn) {
 	c.chainMetrics.CountRequestAckMessages()
 }
 
-func (c *chainObj) enqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn) {
+func (c *chainObj) EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn) {
 	c.missingRequestIDsPeerMsgPipe.In() <- msg
 }
 
@@ -167,7 +167,7 @@ func (c *chainObj) handleMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsg
 	}
 }
 
-func (c *chainObj) enqueueMissingRequestMsg(msg *messages.MissingRequestMsg) {
+func (c *chainObj) EnqueueMissingRequestMsg(msg *messages.MissingRequestMsg) {
 	c.missingRequestPeerMsgPipe.In() <- msg
 }
 
@@ -180,7 +180,7 @@ func (c *chainObj) handleMissingRequestMsg(msg *messages.MissingRequestMsg) {
 	}
 }
 
-func (c *chainObj) enqueueTimerTick(tick int) {
+func (c *chainObj) EnqueueTimerTick(tick int) {
 	c.timerTickMsgPipe.In() <- messages.TimerTick(tick)
 }
 
