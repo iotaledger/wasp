@@ -6,7 +6,7 @@ import (
 )
 
 type reqExtendedOutput struct {
-	output *iotago.ExtendedOutput
+	*iotago.ExtendedOutput
 }
 
 // implements RequestData interface
@@ -63,7 +63,7 @@ func (r *reqExtendedOutput) Alias() *iotago.AliasOutput {
 }
 
 func (r *reqExtendedOutput) Extended() *iotago.ExtendedOutput {
-	return r.output
+	return r.ExtendedOutput
 }
 
 func (r *reqExtendedOutput) NFT() *iotago.NFTOutput {
