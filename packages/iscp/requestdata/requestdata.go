@@ -5,8 +5,9 @@ package requestdata
 import (
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/requestdata/iotago"
+	"github.com/iotaledger/wasp/packages/iscp/requestdata/placeholders"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -42,7 +43,7 @@ func (t TypeCode) String() string {
 	return "(wrong))"
 }
 
-// RequestData wraps any data which can be treated as a request
+// RequestData wraps any data which can be potentially be interpreted as a request
 type RequestData interface {
 	Type() TypeCode
 
@@ -75,7 +76,7 @@ type Features interface {
 	TimeLock() (TimeLockOptions, bool)
 	Expiry() (ExpiryOptions, bool)
 	ReturnAmount() (ReturnAmountOptions, bool)
-	SwapOption() (SwapOptions, bool)
+	SwapOption() (SwapOptions, bool) // for the new swap
 }
 
 type unwrap interface {
@@ -89,7 +90,7 @@ type unwrapUTXO interface {
 	Extended() *iotago.ExtendedOutput
 	NFT() *iotago.NFTOutput
 	Foundry() *iotago.FoundryOutput
-	Unknown() *iotago.UnknownOutput
+	Unknown() *placeholders.UnknownOutput
 }
 
 type TimeLockOptions interface {

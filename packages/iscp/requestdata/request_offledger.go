@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/requestdata/iotago"
+	"github.com/iotaledger/wasp/packages/iscp/requestdata/placeholders"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -180,7 +182,7 @@ func (req *OffLedger) SenderAccount() *iscp.AgentID {
 
 func (req *OffLedger) SenderAddress() iotago.Address {
 	if req.sender == nil {
-		req.sender = iotago.NewED25519Address(req.publicKey)
+		req.sender = placeholders.NewED25519Address(req.publicKey)
 	}
 	return req.sender
 }

@@ -3,7 +3,7 @@ package requestdata
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp/requestdata/iotago"
+	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
