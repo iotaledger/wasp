@@ -26,7 +26,7 @@ func TestMarshalling(t *testing.T) {
 
 	msg := NewOffLedgerRequestMsg(
 		iscp.RandomChainID(),
-		request.NewOffLedger(contract, entrypoint, args),
+		request.NewOffLedger(iscp.RandomChainID(), contract, entrypoint, args),
 	)
 
 	// marshall the msg
