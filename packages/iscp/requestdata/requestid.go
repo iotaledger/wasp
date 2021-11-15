@@ -74,7 +74,7 @@ func (rid RequestID) Short() string {
 }
 
 func OID(o iotago.UTXOInput) string {
-	return fmt.Sprintf("[%d]%s", o.TransactionOutputIndex, "") // o.TransactionID.Base58())
+	return fmt.Sprintf("[%d]%s", 0, "") // o.TransactionID.Base58())
 }
 
 func ShortRequestIDs(ids []RequestID) []string {

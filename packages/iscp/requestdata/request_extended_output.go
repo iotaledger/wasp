@@ -11,8 +11,7 @@ import (
 
 type reqExtendedOutput struct {
 	*iotago.ExtendedOutput
-	txid               iotago.TransactionID
-	index              uint16
+	utxoID             iotago.UTXOInput
 	milestoneIndex     uint32
 	milestoneTimestamp time.Time
 }
@@ -21,7 +20,7 @@ type reqExtendedOutput struct {
 var _ Request = &reqExtendedOutput{}
 
 func (r *reqExtendedOutput) ID() RequestID {
-	panic("implement me")
+	return RequestID(r.utxoID)
 }
 
 func (r *reqExtendedOutput) Params() dict.Dict {
