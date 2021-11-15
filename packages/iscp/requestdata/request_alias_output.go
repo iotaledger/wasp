@@ -51,7 +51,7 @@ func (r *reqAliasOutput) UTXO() unwrapUTXO {
 	return r
 }
 
-// implements RequestData interface
+// implements unwrapUTXO interface
 var _ unwrapUTXO = &reqAliasOutput{}
 
 func (r *reqAliasOutput) Simple() *iotago.SimpleOutput {
