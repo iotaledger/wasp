@@ -1,12 +1,51 @@
 package requestdata
 
 import (
+	"time"
+
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/requestdata/placeholders"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 type reqExtendedOutput struct {
 	*iotago.ExtendedOutput
+	txid               iotago.TransactionID
+	index              uint16
+	milestoneIndex     uint32
+	milestoneTimestamp time.Time
+}
+
+// implements Request interface
+var _ Request = &reqExtendedOutput{}
+
+func (r *reqExtendedOutput) ID() RequestID {
+	panic("implement me")
+}
+
+func (r *reqExtendedOutput) Params() dict.Dict {
+	panic("implement me")
+}
+
+func (r *reqExtendedOutput) SenderAccount() *iscp.AgentID {
+	panic("implement me")
+}
+
+func (r *reqExtendedOutput) SenderAddress() iotago.Address {
+	panic("implement me")
+}
+
+func (r *reqExtendedOutput) Target() (iscp.Hname, iscp.Hname) {
+	panic("implement me")
+}
+
+func (r *reqExtendedOutput) Assets() (uint64, iotago.NativeTokens) {
+	panic("implement me")
+}
+
+func (r *reqExtendedOutput) GasBudget() int64 {
+	panic("implement me")
 }
 
 // implements RequestData interface
@@ -17,7 +56,7 @@ func (r *reqExtendedOutput) Type() TypeCode {
 }
 
 func (r *reqExtendedOutput) Request() Request {
-	panic("implement me")
+	return r
 }
 
 func (r *reqExtendedOutput) TimeData() *TimeData {
