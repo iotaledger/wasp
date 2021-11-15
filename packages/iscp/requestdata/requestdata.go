@@ -93,6 +93,7 @@ type unwrap interface {
 }
 
 type unwrapUTXO interface {
+	MetaData() UTXOMetaData
 	Simple() *iotago.SimpleOutput
 	Alias() *iotago.AliasOutput
 	Extended() *iotago.ExtendedOutput

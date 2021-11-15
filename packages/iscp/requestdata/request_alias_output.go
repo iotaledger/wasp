@@ -7,6 +7,7 @@ import (
 
 type reqAliasOutput struct {
 	*iotago.AliasOutput
+	UTXOMetaData
 }
 
 // implements RequestData interface
@@ -53,6 +54,10 @@ func (r *reqAliasOutput) UTXO() unwrapUTXO {
 
 // implements unwrapUTXO interface
 var _ unwrapUTXO = &reqAliasOutput{}
+
+func (r *reqAliasOutput) MetaData() UTXOMetaData {
+	return r.UTXOMetaData
+}
 
 func (r *reqAliasOutput) Simple() *iotago.SimpleOutput {
 	panic("not an Simple RequestData ")

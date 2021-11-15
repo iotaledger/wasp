@@ -7,6 +7,7 @@ import (
 
 type reqUnknownOutput struct {
 	*placeholders.UnknownOutput
+	UTXOMetaData
 }
 
 // implements RequestData interface
@@ -53,6 +54,10 @@ func (r *reqUnknownOutput) UTXO() unwrapUTXO {
 
 // implements unwrapUTXO interface
 var _ unwrapUTXO = &reqUnknownOutput{}
+
+func (r *reqUnknownOutput) MetaData() UTXOMetaData {
+	return r.UTXOMetaData
+}
 
 func (r *reqUnknownOutput) Simple() *iotago.SimpleOutput {
 	panic("not an Simple RequestData ")

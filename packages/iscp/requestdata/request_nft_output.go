@@ -7,6 +7,7 @@ import (
 
 type reqNFTOutput struct {
 	*iotago.NFTOutput
+	UTXOMetaData
 }
 
 // implements RequestData interface
@@ -53,6 +54,10 @@ func (r *reqNFTOutput) UTXO() unwrapUTXO {
 
 // implements unwrapUTXO interface
 var _ unwrapUTXO = &reqNFTOutput{}
+
+func (r *reqNFTOutput) MetaData() UTXOMetaData {
+	return r.UTXOMetaData
+}
 
 func (r *reqNFTOutput) Simple() *iotago.SimpleOutput {
 	panic("not an Simple RequestData ")

@@ -95,6 +95,10 @@ func (r *reqExtendedOutput) UTXO() unwrapUTXO {
 // implements unwrapUTXO interface
 var _ unwrapUTXO = &reqExtendedOutput{}
 
+func (r *reqExtendedOutput) MetaData() UTXOMetaData {
+	return r.UTXOMetaData
+}
+
 func (r *reqExtendedOutput) Simple() *iotago.SimpleOutput {
 	panic("not an Simple RequestData ")
 }
