@@ -4,7 +4,6 @@
 package statemgr
 
 import (
-	"bytes"
 	"io"
 	"sync"
 	"testing"
@@ -181,6 +180,7 @@ func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, ou
 }
 
 func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *MockedNode {
+	var peeringID peering.PeeringID = env.ChainID.Array()
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
 	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.NodeIDs)
@@ -191,7 +191,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		NodeConn:  testchain.NewMockedNodeConnection("Node_" + nodeID),
 		store:     mapdb.NewMapDB(),
 		stateSync: coreutil.NewChainStateSync(),
-		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, log),
+		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, peeringID, peers, log),
 		Peers:     peers,
 		Log:       log,
 	}
@@ -205,7 +205,9 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
-		go ret.StateManager.EventStateCandidateMsg(&messages.StateCandidateMsg{State: vstate})
+		stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
+		require.NoError(env.T, err)
+		go ret.StateManager.EventStateCandidateMsg(vstate, stateOutput.ID())
 		go ret.NodeConn.PostTransaction(tx)
 	})
 	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
@@ -224,34 +226,33 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		log.Debugf("MockedNode.OnPullConfirmedOutput call EventOutputMsg")
 		go ret.StateManager.EventOutputMsg(response)
 	})
-	var peeringID peering.PeeringID = env.ChainID.Array()
-	peers.Attach(&peeringID, func(recvEvent *peering.RecvEvent) {
-		log.Debugf("MockedChain recvEvent from %v of type %v", recvEvent.From.NetID(), recvEvent.Msg.MsgType)
-		rdr := bytes.NewReader(recvEvent.Msg.MsgData)
-
-		switch recvEvent.Msg.MsgType {
-		case messages.MsgGetBlock:
-			msgt := &messages.GetBlockMsg{}
-			if err := msgt.Read(rdr); err != nil {
+	peers.Attach(&peeringID, peerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
+		log.Debugf("State manager recvEvent from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
+		if peerMsg.MsgReceiver != peerMessageReceiverStateManager {
+			env.T.Fatalf("State manager does not accept peer messages of other receiver type %v, message type=%v",
+				peerMsg.MsgReceiver, peerMsg.MsgType)
+		}
+		switch peerMsg.MsgType {
+		case peerMsgTypeGetBlock:
+			msg, err := messages.NewGetBlockMsg(peerMsg.MsgData)
+			if err != nil {
 				log.Error(err)
 				return
 			}
-
-			msgt.SenderNetID = recvEvent.Msg.SenderNetID
-			ret.StateManager.EventGetBlockMsg(msgt)
-
-		case messages.MsgBlock:
-			msgt := &messages.BlockMsg{}
-			if err := msgt.Read(rdr); err != nil {
+			ret.StateManager.EnqueueGetBlockMsg(&messages.GetBlockMsgIn{
+				GetBlockMsg: *msg,
+				SenderNetID: peerMsg.SenderNetID,
+			})
+		case peerMsgTypeBlock:
+			msg, err := messages.NewBlockMsg(peerMsg.MsgData)
+			if err != nil {
 				log.Error(err)
 				return
 			}
-
-			msgt.SenderNetID = recvEvent.Msg.SenderNetID
-			ret.StateManager.EventBlockMsg(msgt)
-
-		default:
-			log.Errorf("MockedChain recvEvent: wrong msg type")
+			ret.StateManager.EnqueueBlockMsg(&messages.BlockMsgIn{
+				BlockMsg:    *msg,
+				SenderNetID: peerMsg.SenderNetID,
+			})
 		}
 	})
 

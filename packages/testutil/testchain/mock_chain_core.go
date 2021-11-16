@@ -1,7 +1,6 @@
 package testchain
 
 import (
-	"math/rand"
 	"testing"
 	"time"
 
@@ -24,6 +23,8 @@ type MockedChainCore struct {
 	T                       *testing.T
 	chainID                 *iscp.ChainID
 	processors              *processors.Cache
+	peeringID               peering.PeeringID
+	peers                   peering.PeerDomainProvider
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
 	getNetIDsFun            func() []string
@@ -46,7 +47,7 @@ type MockedChainCore struct {
 
 var _ chain.ChainCore = &MockedChainCore{}
 
-func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger) *MockedChainCore {
+func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, peeringID peering.PeeringID, peers peering.PeerDomainProvider, log *logger.Logger) *MockedChainCore {
 	receiveFailFun := func(typee string, msg interface{}) {
 		t.Fatalf("Receiving of %s is not implemented, but %v is received", typee, msg)
 	}
@@ -54,6 +55,8 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 		T:          t,
 		chainID:    chainID,
 		processors: processors.MustNew(processors.NewConfig(inccounter.Processor)),
+		peeringID:  peeringID,
+		peers:      peers,
 		log:        log,
 		getNetIDsFun: func() []string {
 			t.Fatalf("List of netIDs is not known")
@@ -117,23 +120,20 @@ func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {
 }
 
 func (m *MockedChainCore) AttachToPeerMessages(receiver byte, fun func(recv *peering.PeerMessageIn)) {
-	// Attach not needed; send is direct through mocking SendPeerMsg* methods
+	m.peers.Attach(&m.peeringID, receiver, fun)
 }
 
 func (m *MockedChainCore) SendPeerMsgByNetID(netID string, msgReceiver byte, msgType byte, msgData []byte) {
-	m.onSendPeerMsg(netID, msgReceiver, msgType, msgData)
+	m.peers.SendMsgByNetID(netID, &peering.PeerMessageData{
+		PeeringID:   m.peeringID,
+		MsgReceiver: msgReceiver,
+		MsgType:     msgType,
+		MsgData:     msgData,
+	})
 }
 
 func (m *MockedChainCore) SendPeerMsgToRandomPeers(upToNumPeers uint16, msgReceiver byte, msgType byte, msgData []byte) {
-	netIDs := m.getNetIDsFun()
-	var sendPeers []string
-	if upToNumPeers < uint16(len(netIDs)) {
-		rand.Seed(time.Now().UnixNano())
-		rand.Shuffle(len(netIDs), func(i int, j int) { netIDs[i], netIDs[j] = netIDs[j], netIDs[i] })
-		sendPeers = netIDs[:upToNumPeers]
-	} else {
-		sendPeers = netIDs
-	}
+	sendPeers := m.peers.GetRandomPeers(int(upToNumPeers))
 	for _, netID := range sendPeers {
 		m.SendPeerMsgByNetID(netID, msgReceiver, msgType, msgData)
 	}
