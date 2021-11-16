@@ -289,11 +289,12 @@ func (bc *BlockchainDB) headerFromGob(g *headerGob, blockNumber uint64) *types.H
 		parentHash = bc.GetBlockHashByBlockNumber(blockNumber - 1)
 	}
 	return &types.Header{
-		ParentHash:  parentHash,
+		Difficulty:  &big.Int{},
 		Number:      new(big.Int).SetUint64(blockNumber),
 		GasLimit:    bc.GetGasLimit(),
-		GasUsed:     g.GasUsed,
 		Time:        g.Time,
+		ParentHash:  parentHash,
+		GasUsed:     g.GasUsed,
 		TxHash:      g.TxHash,
 		ReceiptHash: g.ReceiptHash,
 		Bloom:       g.Bloom,
@@ -418,33 +419,32 @@ func (bc *BlockchainDB) GetTimestampByBlockNumber(blockNumber uint64) uint64 {
 }
 
 func (bc *BlockchainDB) makeHeader(txs []*types.Transaction, receipts []*types.Receipt, blockNumber, timestamp uint64) *types.Header {
+	header := &types.Header{
+		Difficulty:  &big.Int{},
+		Number:      new(big.Int).SetUint64(blockNumber),
+		GasLimit:    bc.GetGasLimit(),
+		Time:        timestamp,
+		TxHash:      types.EmptyRootHash,
+		ReceiptHash: types.EmptyRootHash,
+		UncleHash:   types.EmptyUncleHash,
+	}
 	if blockNumber == 0 {
 		// genesis block hash
-		return &types.Header{
-			Number:      new(big.Int).SetUint64(blockNumber),
-			GasLimit:    bc.GetGasLimit(),
-			Time:        timestamp,
-			TxHash:      types.EmptyRootHash,
-			ReceiptHash: types.EmptyRootHash,
-			UncleHash:   types.EmptyUncleHash,
-		}
+		return header
 	}
 	prevBlockNumber := blockNumber - 1
 	gasUsed := uint64(0)
 	if len(receipts) > 0 {
 		gasUsed = receipts[len(receipts)-1].CumulativeGasUsed
 	}
-	return &types.Header{
-		ParentHash:  bc.GetBlockHashByBlockNumber(prevBlockNumber),
-		Number:      new(big.Int).SetUint64(blockNumber),
-		GasLimit:    bc.GetGasLimit(),
-		GasUsed:     gasUsed,
-		Time:        timestamp,
-		TxHash:      types.DeriveSha(types.Transactions(txs), &fakeHasher{}),
-		ReceiptHash: types.DeriveSha(types.Receipts(receipts), &fakeHasher{}),
-		Bloom:       types.CreateBloom(receipts),
-		UncleHash:   types.EmptyUncleHash,
+	header.ParentHash = bc.GetBlockHashByBlockNumber(prevBlockNumber)
+	header.GasUsed = gasUsed
+	if len(txs) > 0 {
+		header.TxHash = types.DeriveSha(types.Transactions(txs), &fakeHasher{})
+		header.ReceiptHash = types.DeriveSha(types.Receipts(receipts), &fakeHasher{})
 	}
+	header.Bloom = types.CreateBloom(receipts)
+	return header
 }
 
 func (bc *BlockchainDB) GetHeaderByBlockNumber(blockNumber uint64) *types.Header {
