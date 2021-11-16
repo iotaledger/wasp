@@ -56,6 +56,7 @@ func (c *consensus) proposeBatchIfNeeded() {
 		return
 	}
 	if time.Now().Before(c.stateTimestamp.Add(c.timers.ProposeBatchDelayForNewState)) {
+		c.log.Debugf("proposeBatch not needed: delayed for %v from %v", c.timers.ProposeBatchDelayForNewState, c.stateTimestamp)
 		return
 	}
 	reqs := c.mempool.ReadyNow()

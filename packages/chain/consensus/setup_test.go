@@ -4,7 +4,6 @@
 package consensus
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"math/rand"
@@ -156,12 +155,14 @@ func (env *MockedEnv) CreateNodes(timers ConsensusTimers) {
 func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedNode { //nolint:revive
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
+	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.NodeIDs)
+	require.NoError(env.T, err)
 	ret := &mockedNode{
 		NodeID:    nodeID,
 		Env:       env,
 		NodeConn:  testchain.NewMockedNodeConnection("Node_" + nodeID),
 		store:     mapdb.NewMapDB(),
-		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, log),
+		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, peers, log),
 		stateSync: coreutil.NewChainStateSync(),
 		Log:       log,
 	}
@@ -198,10 +199,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	})
 	ret.NodeConn.OnPullTransactionInclusionState(func(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
 		if _, already := env.Ledger.GetTransaction(txid); already {
-			go ret.ChainCore.ReceiveMessage(&messages.InclusionStateMsg{
-				TxID:  txid,
-				State: ledgerstate.Confirmed,
-			})
+			go ret.Consensus.EventInclusionsStateMsg(txid, ledgerstate.Confirmed)
 		}
 	})
 	mempoolMetrics := metrics.DefaultChainMetrics()
@@ -231,7 +229,35 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 		acs...,
 	)
 	require.NoError(env.T, err)
-	//TODO cmt.Attach(ret.ChainCore)
+	cmt.AttachToPeerMessages(peerMessageReceiverConsensus, func(peerMsg *peering.PeerMessageGroupIn) {
+		log.Debugf("Consensus received peer message from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
+		if peerMsg.MsgReceiver != peerMessageReceiverConsensus {
+			env.T.Fatalf("Consensus does not accept peer messages of other receiver type %v, message type=%v",
+				peerMsg.MsgReceiver, peerMsg.MsgType)
+		}
+		switch peerMsg.MsgType {
+		case peerMsgTypeSignedResult:
+			msg, err := messages.NewSignedResultMsg(peerMsg.MsgData)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			ret.Consensus.EnqueueSignedResultMsg(&messages.SignedResultMsgIn{
+				SignedResultMsg: *msg,
+				SenderIndex:     peerMsg.SenderIndex,
+			})
+		case peerMsgTypeSignedResultAck:
+			msg, err := messages.NewSignedResultAckMsg(peerMsg.MsgData)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			ret.Consensus.EnqueueSignedResultAckMsg(&messages.SignedResultAckMsgIn{
+				SignedResultAckMsg: *msg,
+				SenderIndex:        peerMsg.SenderIndex,
+			})
+		}
+	})
 
 	ret.StateOutput = env.InitStateOutput
 	ret.SolidState, err = state.CreateOriginState(ret.store, env.ChainID)
@@ -239,49 +265,28 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	require.NoError(env.T, err)
 
 	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, true, metrics.DefaultChainMetrics(), timers)
-	cons.vmRunner = testchain.NewMockedVMRunner(env.T, log)
+	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
 
-	ret.ChainCore.OnReceiveAsynchronousCommonSubsetMsg(func(msg *messages.AsynchronousCommonSubsetMsg) {
-		ret.Consensus.EventAsynchronousCommonSubsetMsg(msg)
-	})
-	ret.ChainCore.OnReceiveVMResultMsg(func(msg *messages.VMResultMsg) {
-		ret.Consensus.EventVMResultMsg(msg)
-	})
-	ret.ChainCore.OnReceiveInclusionStateMsg(func(msg *messages.InclusionStateMsg) {
-		//ret.Consensus.EventInclusionsStateMsg(msg) TODO
-	})
-	ret.ChainCore.OnReceiveStateCandidateMsg(func(msg *messages.StateCandidateMsg) {
-		ret.mutex.Lock()
-		defer ret.mutex.Unlock()
-		newState := msg.State
-		ret.Log.Infof("chainCore.StateCandidateMsg: state hash: %s, approving output: %s",
-			msg.State.StateCommitment(), iscp.OID(msg.ApprovingOutputID))
+	ret.ChainCore.OnStateCandidate(func(newState state.VirtualStateAccess, approvingOutputID ledgerstate.OutputID) {
+		go func() {
+			ret.mutex.Lock()
+			defer ret.mutex.Unlock()
+			ret.Log.Infof("chainCore.StateCandidateMsg: state hash: %s, approving output: %s",
+				newState.StateCommitment(), iscp.OID(approvingOutputID))
 
-		if ret.SolidState != nil && ret.SolidState.BlockIndex() == newState.BlockIndex() {
-			ret.Log.Debugf("new state already committed for index %d", newState.BlockIndex())
-			return
-		}
-		err := newState.Commit()
-		require.NoError(env.T, err)
-
-		ret.SolidState = newState
-		ret.Log.Debugf("committed new state for index %d", newState.BlockIndex())
-
-		ret.checkStateApproval()
-	})
-	ret.ChainCore.OnReceivePeerMessage(func(msg *peering.PeerMessage) {
-		var err error
-		if msg.MsgType == messages.MsgSignedResult {
-			decoded := messages.SignedResultMsg{}
-			if err = decoded.Read(bytes.NewReader(msg.MsgData)); err == nil {
-				decoded.SenderIndex = msg.SenderIndex
-				ret.Consensus.EventSignedResultMsg(&decoded)
+			if ret.SolidState != nil && ret.SolidState.BlockIndex() == newState.BlockIndex() {
+				ret.Log.Debugf("new state already committed for index %d", newState.BlockIndex())
+				return
 			}
-		}
-		if err != nil {
-			ret.Log.Errorf("unexpected peer message type = %d", msg.MsgType)
-		}
+			err := newState.Commit()
+			require.NoError(env.T, err)
+
+			ret.SolidState = newState
+			ret.Log.Debugf("committed new state for index %d", newState.BlockIndex())
+
+			ret.checkStateApproval()
+		}()
 	})
 	return ret
 }
