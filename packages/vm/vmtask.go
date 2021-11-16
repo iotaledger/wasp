@@ -3,14 +3,12 @@ package vm
 import (
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp/requestdata"
-
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/requestdata"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"

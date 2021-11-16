@@ -3,8 +3,11 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/requestdata"
+
+	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -21,8 +24,8 @@ import (
 )
 
 var (
-	MaxBlockOutputCount = uint8(ledgerstate.MaxOutputCount - 1) // -1 for the chain transition output
-	MaxBlockInputCount  = uint8(ledgerstate.MaxInputCount - 2)  // // 125 (126 limit -1 for the previous state utxo)
+	MaxBlockOutputCount = uint8(iotago.MaxOutputsCount - 1) // -1 for the chain transition output
+	MaxBlockInputCount  = uint8(iotago.MaxInputsCount - 2)  // // 125 (126 limit -1 for the previous state utxo)
 )
 
 // VMContext represents state of the chain during one run of the VM while processing
@@ -31,11 +34,10 @@ var (
 // chain address contained in the statetxbuilder.Builder
 type VMContext struct {
 	// same for the block
-	chainID              *iscp.ChainID
+	chainID              iscp.ChainID
 	chainOwnerID         *iscp.AgentID
-	chainInput           *ledgerstate.AliasOutput
+	chainInput           *iotago.AliasOutput
 	processors           *processors.Cache
-	txBuilder            *utxoutil.Builder
 	virtualState         state.VirtualStateAccess
 	solidStateBaseline   coreutil.StateBaseline
 	remainingAfterFees   colored.Balances
@@ -52,7 +54,7 @@ type VMContext struct {
 	maxEventSize    uint16
 	maxEventsPerReq uint16
 	// ---- request context
-	req                      iscp.Request
+	req                      requestdata.Request
 	requestIndex             uint16
 	requestEventIndex        uint16
 	requestOutputCount       uint8
@@ -88,30 +90,22 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 	if len(task.Requests) == 0 {
 		// should never happen
-		task.Log.Panicf("CreateVMContext.invalid params: must be at least 1 request")
+		panic(xerrors.Errorf("CreateVMContext.invalid params: must be at least 1 request"))
 	}
-	txb := utxoutil.NewBuilder(task.ChainInput)
-
-	chainID, err := iscp.ChainIDFromAddress(task.ChainInput.Address())
-	if err != nil {
-		// should never happen
-		task.Log.Panicf("CreateVMContext.inconsistency: %v", err)
-	}
-
 	// we create optimistic state access wrapper to be used inside the VM call.
 	// It will panic any time the state is accessed.
 	// The panic will be caught above and VM call will be abandoned peacefully
 	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
 	// assert consistency
-	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
+	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.StateMetadata)
 	if err != nil {
 		// should never happen
-		task.Log.Panicf("CreateVMContext: can't parse state hash from chain input %w", err)
+		panic(xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err))
 	}
 	stateHashFromState := optimisticStateAccess.StateCommitment()
 	blockIndex := optimisticStateAccess.BlockIndex()
-	if stateHash != stateHashFromState || blockIndex != task.ChainInput.GetStateIndex() {
+	if stateHash != stateHashFromState || blockIndex != task.ChainInput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
@@ -119,9 +113,8 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	optimisticStateAccess.ApplyStateUpdates(openingStateUpdate)
 
 	ret := &VMContext{
-		chainID:              chainID,
+		chainID:              iscp.NewChainID(task.ChainInput.AliasID),
 		chainInput:           task.ChainInput,
-		txBuilder:            txb,
 		virtualState:         optimisticStateAccess,
 		solidStateBaseline:   task.SolidStateBaseline,
 		validatorFeeTarget:   task.ValidatorFeeTarget,
@@ -132,29 +125,13 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),
 	}
-	// consume chain input
-	err = txb.ConsumeAliasInput(task.ChainInput.Address())
-	if err != nil {
-		// should never happen
-		task.Log.Panicf("CreateVMContext: consume chain input %v", err)
-	}
+	ret.initTxBuilder()
 	return ret
 }
 
 //nolint:revive
 func (vmctx *VMContext) GetResult() (dict.Dict, colored.Balances, error, bool) {
 	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError, vmctx.exceededBlockOutputLimit
-}
-
-func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {
-	if err := vmctx.txBuilder.AddAliasOutputAsRemainder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
-		return nil, xerrors.Errorf("mustFinalizeRequestCall: %v", err)
-	}
-	tx, _, err := vmctx.txBuilder.WithTimestamp(timestamp).BuildEssence()
-	if err != nil {
-		return nil, err
-	}
-	return tx, nil
 }
 
 // CloseVMContext does the closing actions on the block
@@ -203,16 +180,16 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
 	if idx != blockInfo.BlockIndex {
-		vmctx.log.Panicf("CloseVMContext: inconsistent block index")
+		panic("CloseVMContext: inconsistent block index")
 	}
 	if vmctx.virtualState.PreviousStateHash() != blockInfo.PreviousStateHash {
-		vmctx.log.Panicf("CloseVMContext: inconsistent previous state hash")
+		panic("CloseVMContext: inconsistent previous state hash")
 	}
 	blocklog.SaveControlAddressesIfNecessary(
 		vmctx.State(),
 		vmctx.StateAddress(),
 		vmctx.GoverningAddress(),
-		vmctx.chainInput.GetStateIndex(),
+		vmctx.chainInput.StateIndex,
 	)
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil // invalidate

@@ -6,6 +6,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/requestdata"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -30,7 +32,7 @@ const OffLedgerNonceStrictOrderTolerance = 10000
 func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 	defer vmctx.mustFinalizeRequestCall()
 
-	// snapshot tx builder to be able to rollbck and not include this request in the current block
+	// snapshot tx builder to be able to rollback and not include this request in the current block
 	snapshotTxBuilderWithoutInput := vmctx.txBuilder.Clone()
 	vmctx.mustSetUpRequestContext(req, requestIndex)
 
@@ -102,7 +104,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 }
 
 // mustSetUpRequestContext sets up VMContext for request
-func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex uint16) {
+func (vmctx *VMContext) mustSetUpRequestContext(req requestdata.RequestData, requestIndex uint16) {
 	if _, ok := req.Params(); !ok {
 		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: request args should had been solidified")
 	}
