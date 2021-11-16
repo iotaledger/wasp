@@ -71,7 +71,7 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 
 func (vs *virtualStateAccess) Copy() VirtualStateAccess {
 	ret := &virtualStateAccess{
-		chainID:            vs.chainID.Clone(),
+		chainID:            vs.chainID,
 		db:                 vs.db,
 		committedHash:      vs.committedHash,
 		appliedBlockHashes: make([]hashing.HashValue, len(vs.appliedBlockHashes)),

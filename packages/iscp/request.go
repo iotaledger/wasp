@@ -14,6 +14,7 @@ import (
 // Request has two main implementations
 // - RequestOnLedger
 // - RequestOffLedger
+// Deprecated: use requestdata.Request instead
 type Request interface {
 	// index == 0 for off ledger requests
 	ID() RequestID
