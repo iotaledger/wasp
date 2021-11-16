@@ -180,7 +180,6 @@ func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, ou
 }
 
 func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *MockedNode {
-	var peeringID peering.PeeringID = env.ChainID.Array()
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
 	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.NodeIDs)
@@ -191,7 +190,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		NodeConn:  testchain.NewMockedNodeConnection("Node_" + nodeID),
 		store:     mapdb.NewMapDB(),
 		stateSync: coreutil.NewChainStateSync(),
-		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, peeringID, peers, log),
+		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, peers, log),
 		Peers:     peers,
 		Log:       log,
 	}
@@ -201,32 +200,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
 		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
 	})
-	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, timers)
-	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
-	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *ledgerstate.Transaction) {
-		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
-		stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
-		require.NoError(env.T, err)
-		go ret.StateManager.EventStateCandidateMsg(vstate, stateOutput.ID())
-		go ret.NodeConn.PostTransaction(tx)
-	})
-	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
-		log.Debugf("MockedNode.OnPostTransaction: transaction %v posted", tx.ID().Base58())
-		env.PostTransactionToLedger(tx)
-	})
-	ret.NodeConn.OnPullState(func(addr *ledgerstate.AliasAddress) {
-		log.Debugf("MockedNode.OnPullState request received for address %v", addr.Base58)
-		response := env.PullStateFromLedger(addr)
-		log.Debugf("MockedNode.OnPullState call EventStateMsg: chain output %s", iscp.OID(response.ChainOutput.ID()))
-		go ret.StateManager.EventStateMsg(response)
-	})
-	ret.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
-		log.Debugf("MockedNode.OnPullConfirmedOutput %v", iscp.OID(outputID))
-		response := env.PullConfirmedOutputFromLedger(addr, outputID)
-		log.Debugf("MockedNode.OnPullConfirmedOutput call EventOutputMsg")
-		go ret.StateManager.EventOutputMsg(response)
-	})
-	peers.Attach(&peeringID, peerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
+	ret.ChainCore.AttachToPeerMessages(peerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
 		log.Debugf("State manager recvEvent from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
 		if peerMsg.MsgReceiver != peerMessageReceiverStateManager {
 			env.T.Fatalf("State manager does not accept peer messages of other receiver type %v, message type=%v",
@@ -254,6 +228,31 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 				SenderNetID: peerMsg.SenderNetID,
 			})
 		}
+	})
+	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, timers)
+	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
+	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *ledgerstate.Transaction) {
+		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
+		stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
+		require.NoError(env.T, err)
+		go ret.StateManager.EventStateCandidateMsg(vstate, stateOutput.ID())
+		go ret.NodeConn.PostTransaction(tx)
+	})
+	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
+		log.Debugf("MockedNode.OnPostTransaction: transaction %v posted", tx.ID().Base58())
+		env.PostTransactionToLedger(tx)
+	})
+	ret.NodeConn.OnPullState(func(addr *ledgerstate.AliasAddress) {
+		log.Debugf("MockedNode.OnPullState request received for address %v", addr.Base58)
+		response := env.PullStateFromLedger(addr)
+		log.Debugf("MockedNode.OnPullState call EventStateMsg: chain output %s", iscp.OID(response.ChainOutput.ID()))
+		go ret.StateManager.EventStateMsg(response)
+	})
+	ret.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
+		log.Debugf("MockedNode.OnPullConfirmedOutput %v", iscp.OID(outputID))
+		response := env.PullConfirmedOutputFromLedger(addr, outputID)
+		log.Debugf("MockedNode.OnPullConfirmedOutput call EventOutputMsg")
+		go ret.StateManager.EventOutputMsg(response)
 	})
 
 	return ret

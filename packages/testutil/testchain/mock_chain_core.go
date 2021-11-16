@@ -47,7 +47,7 @@ type MockedChainCore struct {
 
 var _ chain.ChainCore = &MockedChainCore{}
 
-func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, peeringID peering.PeeringID, peers peering.PeerDomainProvider, log *logger.Logger) *MockedChainCore {
+func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, peers peering.PeerDomainProvider, log *logger.Logger) *MockedChainCore {
 	receiveFailFun := func(typee string, msg interface{}) {
 		t.Fatalf("Receiving of %s is not implemented, but %v is received", typee, msg)
 	}
@@ -55,7 +55,7 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, peeringID peering.P
 		T:          t,
 		chainID:    chainID,
 		processors: processors.MustNew(processors.NewConfig(inccounter.Processor)),
-		peeringID:  peeringID,
+		peeringID:  chainID.Array(),
 		peers:      peers,
 		log:        log,
 		getNetIDsFun: func() []string {
