@@ -25,16 +25,23 @@ import (
 //  the number is approximate assumed maximum number of requests in the batch
 //  The node must guarantee at least this number of last requests processed recorded in the state
 //  for each address
-const OffLedgerNonceStrictOrderTolerance = 10000
+const (
+	OffLedgerNonceStrictOrderTolerance = 10000
+	txBuilderSnapshotWithoutInput      = 1
+	txBuilderSnapshotBeforeCall        = 2
+)
 
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
-func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
+func (vmctx *VMContext) RunTheRequest(req requestdata.RequestData, requestIndex uint16) {
 	defer vmctx.mustFinalizeRequestCall()
+	vmctx.createTxBuilderSnapshot(txBuilderSnapshotWithoutInput)
+	if vmctx.preprocessRequestData(req, requestIndex) {
+		// request does not require invocation of smart contract
+		return
+	}
 
 	// snapshot tx builder to be able to rollback and not include this request in the current block
-	snapshotTxBuilderWithoutInput := vmctx.txBuilder.Clone()
-	vmctx.mustSetUpRequestContext(req, requestIndex)
 
 	// guard against replaying off-ledger requests here to prevent replaying fee deduction
 	// also verifies that account for off-ledger request exists
@@ -54,7 +61,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 	}
 
 	// snapshot state baseline for rollback in case of panic
-	snapshotTxBuilder := vmctx.txBuilder.Clone()
+	vmctx.createTxBuilderSnapshot(txBuilderSnapshotBeforeCall)
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	// request run updates will be collected to the new state update
 	vmctx.currentStateUpdate = state.NewStateUpdate()
@@ -89,24 +96,57 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 		vmctx.blockOutputCount -= vmctx.requestOutputCount
 		vmctx.Debugf("outputs produced by this request do not fit inside the current block, reqID: %s", vmctx.req.ID().Base58())
 		// rollback request processing, don't consume output or send funds back as this request should be processed in a following batch
-		vmctx.txBuilder = snapshotTxBuilderWithoutInput
+		vmctx.restoreTxBuilderSnapshot(txBuilderSnapshotWithoutInput)
 		vmctx.currentStateUpdate = state.NewStateUpdate()
 	}
 
 	if vmctx.lastError != nil {
 		// treating panic and error returned from request the same way
 		// restore the txbuilder and dispose mutations in the last state update
-		vmctx.txBuilder = snapshotTxBuilder
+		vmctx.restoreTxBuilderSnapshot(txBuilderSnapshotBeforeCall)
 		vmctx.currentStateUpdate = state.NewStateUpdate()
 
 		vmctx.mustSendBack(vmctx.remainingAfterFees)
 	}
 }
 
-// mustSetUpRequestContext sets up VMContext for request
-func (vmctx *VMContext) mustSetUpRequestContext(req requestdata.RequestData, requestIndex uint16) {
+func (vmctx *VMContext) preprocessRequestData(req requestdata.RequestData, requestIndex uint16) bool {
+	switch req.Type() {
+	case requestdata.TypeSimpleOutput:
+		// consume it an assign all assets to owner's account
+		return true
+	case requestdata.TypeOffLedger:
+		// prepare off ledger
+		return false
+	case requestdata.TypeExtendedOutput:
+		// prepare extended
+		return false
+	case requestdata.TypeNFTOutput:
+		// prepare NFT request
+		return false
+	case requestdata.TypeFoundryOutput:
+		// do not consume. Check consistency in the state
+		return true
+	case requestdata.TypeAliasOutput:
+		// do not consume. It is unexpected.
+		// assign ownership to the owner
+		return true
+	case requestdata.TypeUnknownOutput:
+		// do not consume.
+		// Assign ownership to the owner
+		return true
+	case requestdata.TypeUnknown:
+		// an error. probably panic
+		return true
+	}
+	return true
+}
+
+// mustSetUpRequestContextOld sets up VMContext for request
+// Deprecated:
+func (vmctx *VMContext) mustSetUpRequestContextOld(req requestdata.RequestData, requestIndex uint16) {
 	if _, ok := req.Params(); !ok {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: request args should had been solidified")
+		vmctx.log.Panicf("mustSetUpRequestContextOld.inconsistency: request args should had been solidified")
 	}
 	vmctx.req = req
 	vmctx.requestIndex = requestIndex
@@ -117,7 +157,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req requestdata.RequestData, req
 	if !req.IsOffLedger() {
 		vmctx.txBuilder.AddConsumable(vmctx.req.(*request.OnLedger).Output())
 		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.(*request.OnLedger).Output().ID()); err != nil {
-			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
+			vmctx.log.Panicf("mustSetUpRequestContextOld.inconsistency : %v", err)
 		}
 	}
 	ts := vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond)
@@ -127,7 +167,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req requestdata.RequestData, req
 	vmctx.callStack = vmctx.callStack[:0]
 
 	if isRequestTimeLockedNow(req, ts) {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", ts, req.ID().String())
+		vmctx.log.Panicf("mustSetUpRequestContextOld.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", ts, req.ID().String())
 	}
 	if !req.IsOffLedger() {
 		// on-ledger request
@@ -135,11 +175,11 @@ func (vmctx *VMContext) mustSetUpRequestContext(req requestdata.RequestData, req
 		if input, ok := reqt.Output().(*ledgerstate.ExtendedLockedOutput); ok {
 			// it is an on-ledger request
 			if !input.UnlockAddressNow(ts).Equals(vmctx.chainID.AsAddress()) {
-				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
+				vmctx.log.Panicf("mustSetUpRequestContextOld.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
 					ts, input.String(), vmctx.chainID.String())
 			}
 		} else {
-			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected UTXO type")
+			vmctx.log.Panicf("mustSetUpRequestContextOld.inconsistency: unexpected UTXO type")
 		}
 		vmctx.remainingAfterFees = colored.BalancesFromL1Balances(reqt.Output().Balances())
 	} else {
@@ -323,6 +363,8 @@ func (vmctx *VMContext) mustUpdateOffledgerRequestMaxAssumedNonce() {
 }
 
 func (vmctx *VMContext) mustFinalizeRequestCall() {
+	vmctx.clearTxBuilderSnapshots()
+
 	if vmctx.exceededBlockOutputLimit {
 		return
 	}

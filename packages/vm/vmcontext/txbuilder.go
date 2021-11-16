@@ -25,3 +25,15 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 	//return tx, nil
 	return nil, nil
 }
+
+func (vmctx *VMContext) createTxBuilderSnapshot(id int) {
+
+}
+
+func (vmctx *VMContext) restoreTxBuilderSnapshot(id int) {
+
+}
+
+func (vmctx *VMContext) clearTxBuilderSnapshots() {
+
+}
