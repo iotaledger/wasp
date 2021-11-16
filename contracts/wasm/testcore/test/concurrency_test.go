@@ -33,7 +33,7 @@ func TestCounter(t *testing.T) {
 func TestSynchronous(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		// TODO fails with 999 instead of 1000 at WaitForPendingRequests
-		if *wasmsolo.GoDebug {
+		if *wasmsolo.GoDebug || *wasmsolo.GoWasmEdge {
 			t.SkipNow()
 		}
 		ctx := deployTestCore(t, w)
@@ -58,7 +58,7 @@ func TestSynchronous(t *testing.T) {
 		if w {
 			reqs++
 		}
-		require.True(t, ctx.WaitForPendingRequests(-reqs, 60*time.Second))
+		require.True(t, ctx.WaitForPendingRequests(-reqs, 180*time.Second))
 
 		v := testcore.ScFuncs.GetCounter(ctx)
 		v.Func.Call()
@@ -98,7 +98,7 @@ func TestConcurrency(t *testing.T) {
 				}
 			}(r, n)
 		}
-		require.True(t, ctx.WaitForPendingRequests(sum, 60*time.Second))
+		require.True(t, ctx.WaitForPendingRequests(sum, 180*time.Second))
 
 		v := testcore.ScFuncs.GetCounter(ctx)
 		v.Func.Call()
@@ -141,7 +141,7 @@ func TestConcurrency2(t *testing.T) {
 			}(r, n)
 		}
 
-		require.True(t, ctx.WaitForPendingRequests(sum, 60*time.Second))
+		require.True(t, ctx.WaitForPendingRequests(sum, 180*time.Second))
 
 		v := testcore.ScFuncs.GetCounter(ctx)
 		v.Func.Call()

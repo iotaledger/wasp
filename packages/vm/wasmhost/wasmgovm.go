@@ -16,10 +16,12 @@ type WasmGoVM struct {
 	onLoad func()
 }
 
-var _ WasmVM = &WasmGoVM{}
-
-func NewWasmGoVM(scName string, onLoad func()) *WasmGoVM {
+func NewWasmGoVM(scName string, onLoad func()) WasmVM {
 	return &WasmGoVM{scName: scName, onLoad: onLoad}
+}
+
+func (vm *WasmGoVM) NewInstance() WasmVM {
+	return NewWasmGoVM(vm.scName, vm.onLoad)
 }
 
 func Connect(h wasmlib.ScHost) wasmlib.ScHost {
