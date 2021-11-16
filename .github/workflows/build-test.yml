@@ -1,10 +1,11 @@
 name: Test
 
 on:
-  push:
-    branches: [develop]
   pull_request:
     branches: [develop]
+    paths-ignore:
+      - 'documentation/**'
+      - 'temupdates/**'
 
 jobs:
   build:

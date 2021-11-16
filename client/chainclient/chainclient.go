@@ -82,7 +82,7 @@ func (c *Client) PostOffLedgerRequest(
 		c.nonces[c.KeyPair.PublicKey]++
 		par.Nonce = c.nonces[c.KeyPair.PublicKey]
 	}
-	offledgerReq := request.NewOffLedger(contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
+	offledgerReq := request.NewOffLedger(c.ChainID, contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
 	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(c.ChainID, offledgerReq)

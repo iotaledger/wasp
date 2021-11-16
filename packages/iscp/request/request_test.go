@@ -90,7 +90,7 @@ func TestOffLedger(t *testing.T) {
 		target := iscp.Hn("target")
 		ep := iscp.Hn("entry point")
 		args := requestargs.New()
-		req := NewOffLedger(target, ep, args)
+		req := NewOffLedger(iscp.RandomChainID(), target, ep, args)
 		reqBack, err := FromMarshalUtil(marshalutil.New(req.Bytes()))
 		require.NoError(t, err)
 		_, ok := reqBack.(*OffLedger)
