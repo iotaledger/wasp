@@ -25,24 +25,16 @@ type AgentID struct {
 var NilAgentID AgentID
 
 func init() {
-	var b [iotago.AddressLength]byte
-	nilAddr, _, err := ledgerstate.AddressFromBytes(b[:])
-	if err != nil {
-		panic(err)
-	}
 	NilAgentID = AgentID{
-		a: nilAddr,
+		a: nil,
 		h: 0,
 	}
 }
 
 // NewAgentID makes new AgentID
-func NewAgentID(addr ledgerstate.Address, hname Hname) *AgentID {
-	if addr == nil {
-		panic("NewAgentID: address can't be nil")
-	}
+func NewAgentID(addr iotago.Address, hname Hname) *AgentID {
 	return &AgentID{
-		a: addr.Clone(),
+		a: addr,
 		h: hname,
 	}
 }
@@ -50,9 +42,10 @@ func NewAgentID(addr ledgerstate.Address, hname Hname) *AgentID {
 func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
 	var err error
 	ret := &AgentID{}
-	if ret.a, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
+	// TODO
+	//if ret.a, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
+	//	return nil, err
+	//}
 	if ret.h, err = HnameFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
@@ -96,19 +89,11 @@ func NewAgentIDFromString(s string) (*AgentID, error) {
 
 // NewRandomAgentID creates random AgentID
 func NewRandomAgentID() *AgentID {
-	addr := RandomChainID().AsAddress()
-	hname := Hn("testName")
-	return NewAgentID(addr, hname)
+	raddr := RandomChainID()
+	return NewAgentID(raddr.AsAddress(), Hn("testName"))
 }
 
-func (a *AgentID) Clone() *AgentID {
-	return &AgentID{
-		a: a.a.Clone(),
-		h: a.h,
-	}
-}
-
-func (a *AgentID) Address() ledgerstate.Address {
+func (a *AgentID) Address() iotago.Address {
 	return a.a
 }
 
@@ -127,7 +112,7 @@ func (a *AgentID) Bytes() []byte {
 }
 
 func (a *AgentID) Equals(a1 *AgentID) bool {
-	if !a.a.Equals(a1.a) {
+	if !a.a.Equal(a1.a) {
 		return false
 	}
 	if a.h != a1.h {
@@ -138,7 +123,7 @@ func (a *AgentID) Equals(a1 *AgentID) bool {
 
 // String human readable string
 func (a *AgentID) String() string {
-	return "A/" + a.a.Base58() + "::" + a.h.String()
+	return "A/" + a.a.String() + "::" + a.h.String()
 }
 
 func (a *AgentID) Base58() string {
