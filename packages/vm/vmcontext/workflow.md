@@ -103,8 +103,8 @@ Here is described the workflow of how one `RequestData` is processed in the `Run
 ### Extended output
 * check if time unlockable. Ignore if not
 * check if it has sender. If not, accrue all assets to the owner. Write respective receipt with apologies
-* check if it is own account by checking sender's address and the flag.
-* If it is an own account, ignore (or maybe assert consistency with the state?)
+* check if it is internal chain's account by checking sender's address and the flag of the internal account.
+* If it is an internal account, ignore it all (or maybe assert consistency with the state?)
 * check if it is a duplicate by looking up into the `blocklog` receipts
 * otherwise it is a request.
 * credit `sender's assets` to the sender's account
