@@ -100,8 +100,8 @@ func (r *onLedgerRequestData) Request() Request {
 
 func (r *onLedgerRequestData) TimeData() *TimeData {
 	return &TimeData{
-		ConfirmingMilestoneIndex: r.UTXOMetaData.MilestoneIndex,
-		ConfirmationTime:         r.UTXOMetaData.MilestoneTimestamp,
+		MilestoneIndex: r.UTXOMetaData.MilestoneIndex,
+		Timestamp:      r.UTXOMetaData.MilestoneTimestamp,
 	}
 }
 
@@ -150,13 +150,13 @@ func (r *onLedgerRequestData) MetaData() UTXOMetaData {
 // implements Features interface
 var _ Features = &onLedgerRequestData{}
 
-func (r *onLedgerRequestData) TimeLock() *TimeInstant {
+func (r *onLedgerRequestData) TimeLock() *TimeData {
 	timelockMilestoneFB, hasMilestoneFB := r.featureBlocksCache[iotago.FeatureBlockTimelockMilestoneIndex]
 	timelockDeadlineFB, hasDeadlineFB := r.featureBlocksCache[iotago.FeatureBlockTimelockUnix]
 	if !hasMilestoneFB && !hasDeadlineFB {
 		return nil
 	}
-	ret := &TimeInstant{}
+	ret := &TimeData{}
 	if hasMilestoneFB {
 		ret.MilestoneIndex = timelockMilestoneFB.(*iotago.TimelockMilestoneIndexFeatureBlock).MilestoneIndex
 	}
@@ -166,13 +166,13 @@ func (r *onLedgerRequestData) TimeLock() *TimeInstant {
 	return ret
 }
 
-func (r *onLedgerRequestData) Expiry() *TimeInstant {
+func (r *onLedgerRequestData) Expiry() *TimeData {
 	expiryMilestoneFB, hasMilestoneFB := r.featureBlocksCache[iotago.FeatureBlockExpirationMilestoneIndex]
 	expiryDeadlineFB, hasDeadlineFB := r.featureBlocksCache[iotago.FeatureBlockExpirationUnix]
 	if !hasMilestoneFB && !hasDeadlineFB {
 		return nil
 	}
-	ret := &TimeInstant{}
+	ret := &TimeData{}
 	if hasMilestoneFB {
 		ret.MilestoneIndex = expiryMilestoneFB.(*iotago.ExpirationMilestoneIndexFeatureBlock).MilestoneIndex
 	}

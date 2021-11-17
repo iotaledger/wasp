@@ -3,8 +3,6 @@
 package requestdata
 
 import (
-	"time"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -47,7 +45,7 @@ func (t TypeCode) String() string {
 type UTXOMetaData struct {
 	UTXOInput          iotago.UTXOInput
 	MilestoneIndex     uint32
-	MilestoneTimestamp time.Time
+	MilestoneTimestamp uint64
 }
 
 // RequestData wraps any data which can be potentially be interpreted as a request
@@ -65,8 +63,8 @@ type RequestData interface {
 }
 
 type TimeData struct {
-	ConfirmingMilestoneIndex uint32
-	ConfirmationTime         time.Time // should better be UnixNano ?
+	MilestoneIndex uint32
+	Timestamp      uint64
 }
 
 type NFT struct {
@@ -91,8 +89,8 @@ type Request interface {
 }
 
 type Features interface {
-	TimeLock() *TimeInstant
-	Expiry() *TimeInstant
+	TimeLock() *TimeData
+	Expiry() *TimeData
 	ReturnAmount() (uint64, bool)
 	SwapOption() (SwapOptions, bool) // for the new swap
 }
@@ -100,11 +98,6 @@ type Features interface {
 type unwrap interface {
 	OffLedger() *OffLedger
 	UTXO() iotago.Output
-}
-
-type TimeInstant struct {
-	Timestamp      uint64
-	MilestoneIndex uint32
 }
 
 type ReturnAmountOptions interface {
