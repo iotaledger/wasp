@@ -13,8 +13,6 @@ type RequestMetadata struct {
 	targetContract iscp.Hname
 	// entry point code
 	entryPoint iscp.Hname
-	// used to prevent identical outputs from being generated
-	requestNonce uint8 // TODO check if this is still needed
 	// request arguments, not decoded yet wrt blobRefs
 	args dict.Dict
 }
@@ -55,11 +53,6 @@ func (p *RequestMetadata) WithEntryPoint(ep iscp.Hname) *RequestMetadata {
 	return p
 }
 
-func (p *RequestMetadata) WithRequestNonce(nonce uint8) *RequestMetadata {
-	p.requestNonce = nonce
-	return p
-}
-
 func (p *RequestMetadata) WithArgs(args dict.Dict) *RequestMetadata {
 	p.args = args.Clone()
 	return p
@@ -96,8 +89,7 @@ func (p *RequestMetadata) Bytes() []byte {
 func (p *RequestMetadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(p.senderContract).
 		Write(p.targetContract).
-		Write(p.entryPoint).
-		WriteByte(p.requestNonce)
+		Write(p.entryPoint)
 	p.args.WriteToMarshalUtil(mu)
 }
 
@@ -110,9 +102,6 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 		return err
 	}
 	if p.entryPoint, err = iscp.HnameFromMarshalUtil(mu); err != nil {
-		return err
-	}
-	if p.requestNonce, err = mu.ReadByte(); err != nil {
 		return err
 	}
 	if err = (p.args).ReadFromMarshalUtil(mu); err != nil {

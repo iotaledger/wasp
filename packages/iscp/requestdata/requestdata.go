@@ -7,7 +7,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/requestdata/placeholders"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -100,21 +99,11 @@ type Features interface {
 
 type unwrap interface {
 	OffLedger() *OffLedger
-	UTXO() unwrapUTXO
-}
-
-type unwrapUTXO interface {
-	MetaData() UTXOMetaData
-	Simple() *iotago.SimpleOutput
-	Alias() *iotago.AliasOutput
-	Extended() *iotago.ExtendedOutput
-	NFT() *iotago.NFTOutput
-	Foundry() *iotago.FoundryOutput
-	Unknown() *placeholders.UnknownOutput
+	UTXO() iotago.Output
 }
 
 type TimeInstant struct {
-	Timestamp      time.Time
+	Timestamp      uint64
 	MilestoneIndex uint32
 }
 

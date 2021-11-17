@@ -13,7 +13,7 @@ type UnknownOutput struct {
 
 // NewED25519Address creates a new ED25519Address from the given public key.
 func NewED25519Address(publicKey ed25519.PublicKey) iotago.Address {
-	//digest := blake2b.Sum256(publicKey[:])
+	// digest := blake2b.Sum256(publicKey[:])
 
 	return nil
 }

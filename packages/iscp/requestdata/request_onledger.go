@@ -1,13 +1,10 @@
 package requestdata
 
 import (
-	"time"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/requestdata/placeholders"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -137,40 +134,15 @@ func (r *onLedgerRequestData) OffLedger() *OffLedger {
 	panic("not an off-ledger RequestData")
 }
 
-func (r *onLedgerRequestData) UTXO() unwrapUTXO {
-	return r
+func (r *onLedgerRequestData) UTXO() iotago.Output {
+	return r.output
 }
 
 // implements unwrapUTXO interface
-var _ unwrapUTXO = &onLedgerRequestData{}
+var _ unwrap = &onLedgerRequestData{}
 
 func (r *onLedgerRequestData) MetaData() UTXOMetaData {
 	return r.UTXOMetaData
-}
-
-func (r *onLedgerRequestData) Simple() *iotago.SimpleOutput {
-	return r.output.(*iotago.SimpleOutput)
-}
-
-func (r *onLedgerRequestData) Alias() *iotago.AliasOutput {
-	return r.output.(*iotago.AliasOutput)
-}
-
-func (r *onLedgerRequestData) Extended() *iotago.ExtendedOutput {
-	return r.output.(*iotago.ExtendedOutput)
-}
-
-func (r *onLedgerRequestData) NFT() *iotago.NFTOutput {
-	return r.output.(*iotago.NFTOutput)
-}
-
-func (r *onLedgerRequestData) Foundry() *iotago.FoundryOutput {
-	return r.output.(*iotago.FoundryOutput)
-}
-
-func (r *onLedgerRequestData) Unknown() *placeholders.UnknownOutput {
-	// TODO not sure what to do here
-	panic("not an Unknown RequestData ")
 }
 
 // implements Features interface
@@ -187,7 +159,7 @@ func (r *onLedgerRequestData) TimeLock() *TimeInstant {
 		ret.MilestoneIndex = timelockMilestoneFB.(*iotago.TimelockMilestoneIndexFeatureBlock).MilestoneIndex
 	}
 	if hasDeadlineFB {
-		ret.Timestamp = time.Unix(int64(timelockDeadlineFB.(*iotago.TimelockUnixFeatureBlock).UnixTime), 0)
+		ret.Timestamp = timelockDeadlineFB.(*iotago.TimelockUnixFeatureBlock).UnixTime
 	}
 	return ret
 }
@@ -203,7 +175,7 @@ func (r *onLedgerRequestData) Expiry() *TimeInstant {
 		ret.MilestoneIndex = expiryMilestoneFB.(*iotago.ExpirationMilestoneIndexFeatureBlock).MilestoneIndex
 	}
 	if hasDeadlineFB {
-		ret.Timestamp = time.Unix(int64(expiryDeadlineFB.(*iotago.ExpirationUnixFeatureBlock).UnixTime), 0)
+		ret.Timestamp = expiryDeadlineFB.(*iotago.ExpirationUnixFeatureBlock).UnixTime
 	}
 	return ret
 }
