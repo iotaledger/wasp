@@ -35,6 +35,7 @@ const (
 // doesn't parse correctly as a SC request
 func (vmctx *VMContext) RunTheRequest(req requestdata.RequestData, requestIndex uint16) {
 	defer vmctx.mustFinalizeRequestCall()
+
 	vmctx.createTxBuilderSnapshot(txBuilderSnapshotWithoutInput)
 	if vmctx.preprocessRequestData(req, requestIndex) {
 		// request does not require invocation of smart contract
@@ -108,43 +109,6 @@ func (vmctx *VMContext) RunTheRequest(req requestdata.RequestData, requestIndex 
 
 		vmctx.mustSendBack(vmctx.remainingAfterFees)
 	}
-}
-
-func (vmctx *VMContext) preprocessRequestData(req requestdata.RequestData, requestIndex uint16) bool {
-	switch req.Type() {
-	case requestdata.TypeSimpleOutput:
-		// consume it an assign all assets to owner's account
-		// no need to invoke SC
-		return true
-	case requestdata.TypeOffLedger:
-		// prepare off ledger
-		return false
-	case requestdata.TypeExtendedOutput:
-		// prepare extended
-		return false
-	case requestdata.TypeNFTOutput:
-		// prepare NFT request
-		return false
-	case requestdata.TypeFoundryOutput:
-		// do not consume. Check consistency in the state
-		// no need to invoke SC
-		return true
-	case requestdata.TypeAliasOutput:
-		// do not consume. It is unexpected.
-		// assign ownership to the owner
-		// no need to invoke SC
-		return true
-	case requestdata.TypeUnknownOutput:
-		// do not consume.
-		// Assign ownership to the owner
-		// no need to invoke SC
-		return true
-	case requestdata.TypeUnknown:
-		// an error. probably panic
-		// no need to invoke SC
-		return true
-	}
-	panic("wrong request data type")
 }
 
 // mustSetUpRequestContextOld sets up VMContext for request
