@@ -92,7 +92,7 @@ func New(
 		ret.acsRunner = acsRunner[0]
 	} else {
 		// That's the default implementation of the ACS.
-		// We use it, of the mocked variant was not passed.
+		// We use it, if the mocked variant was not passed.
 		ret.acsRunner = commonsubset.NewCommonSubsetCoordinator(
 			ret,
 			netProvider,
