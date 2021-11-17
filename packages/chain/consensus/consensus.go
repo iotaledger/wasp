@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"go.uber.org/atomic"
@@ -54,14 +55,13 @@ type consensus struct {
 	consensusInfoSnapshot            atomic.Value
 	timers                           ConsensusTimers
 	log                              *logger.Logger
-	eventStateTransitionMsgCh        chan *messages.StateTransitionMsg
-	eventSignedResultMsgCh           chan *messages.SignedResultMsgIn
-	eventSignedResultAckMsgCh        chan *messages.SignedResultAckMsgIn
-	eventInclusionStateMsgCh         chan *messages.InclusionStateMsg
-	eventACSMsgCh                    chan *messages.AsynchronousCommonSubsetMsg
-	eventVMResultMsgCh               chan *messages.VMResultMsg
-	eventTimerMsgCh                  chan messages.TimerTick
-	closeCh                          chan struct{}
+	eventStateTransitionMsgPipe      pipe.Pipe
+	eventSignedResultMsgPipe         pipe.Pipe
+	eventSignedResultAckMsgPipe      pipe.Pipe
+	eventInclusionStateMsgPipe       pipe.Pipe
+	eventACSMsgPipe                  pipe.Pipe
+	eventVMResultMsgPipe             pipe.Pipe
+	eventTimerMsgPipe                pipe.Pipe
 	assert                           assert.Assert
 	missingRequestsFromBatch         map[iscp.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
@@ -88,6 +88,8 @@ const (
 
 	peerMsgTypeSignedResult = iota
 	peerMsgTypeSignedResultAck
+
+	maxMsgBuffer = 1000
 )
 
 func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) chain.Consensus {
@@ -108,14 +110,13 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		resultSigAck:                     make([]uint16, 0, committee.Size()),
 		timers:                           timers,
 		log:                              log,
-		eventStateTransitionMsgCh:        make(chan *messages.StateTransitionMsg),
-		eventSignedResultMsgCh:           make(chan *messages.SignedResultMsgIn),
-		eventSignedResultAckMsgCh:        make(chan *messages.SignedResultAckMsgIn),
-		eventInclusionStateMsgCh:         make(chan *messages.InclusionStateMsg),
-		eventACSMsgCh:                    make(chan *messages.AsynchronousCommonSubsetMsg),
-		eventVMResultMsgCh:               make(chan *messages.VMResultMsg),
-		eventTimerMsgCh:                  make(chan messages.TimerTick),
-		closeCh:                          make(chan struct{}),
+		eventStateTransitionMsgPipe:      pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventSignedResultMsgPipe:         pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventSignedResultAckMsgPipe:      pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventInclusionStateMsgPipe:       pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventACSMsgPipe:                  pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventVMResultMsgPipe:             pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventTimerMsgPipe:                pipe.NewLimitInfinitePipe(1),
 		assert:                           assert.NewAssert(log),
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
@@ -160,15 +161,39 @@ func (c *consensus) IsReady() bool {
 }
 
 func (c *consensus) Close() {
-	close(c.closeCh)
+	c.eventStateTransitionMsgPipe.Close()
+	c.eventSignedResultMsgPipe.Close()
+	c.eventSignedResultAckMsgPipe.Close()
+	c.eventInclusionStateMsgPipe.Close()
+	c.eventACSMsgPipe.Close()
+	c.eventVMResultMsgPipe.Close()
+	c.eventTimerMsgPipe.Close()
 }
 
 func (c *consensus) recvLoop() {
+	eventStateTransitionMsgCh := c.eventStateTransitionMsgPipe.Out()
+	eventSignedResultMsgCh := c.eventSignedResultMsgPipe.Out()
+	eventSignedResultAckMsgCh := c.eventSignedResultAckMsgPipe.Out()
+	eventInclusionStateMsgCh := c.eventInclusionStateMsgPipe.Out()
+	eventACSMsgCh := c.eventACSMsgPipe.Out()
+	eventVMResultMsgCh := c.eventVMResultMsgPipe.Out()
+	eventTimerMsgCh := c.eventTimerMsgPipe.Out()
+	isClosedFun := func() bool {
+		return eventStateTransitionMsgCh == nil &&
+			eventSignedResultMsgCh == nil &&
+			eventSignedResultAckMsgCh == nil &&
+			eventInclusionStateMsgCh == nil &&
+			eventACSMsgCh == nil &&
+			eventVMResultMsgCh == nil &&
+			eventTimerMsgCh == nil
+	}
+
 	// wait at startup
 	for !c.committee.IsReady() {
 		select {
 		case <-time.After(100 * time.Millisecond):
-		case <-c.closeCh:
+		}
+		if isClosedFun() {
 			return
 		}
 	}
@@ -176,49 +201,64 @@ func (c *consensus) recvLoop() {
 	c.isReady.Store(true)
 	for {
 		select {
-		case msg, ok := <-c.eventStateTransitionMsgCh:
+		case msg, ok := <-eventStateTransitionMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventStateTransitionMsg...")
-				c.eventStateTransitionMsg(msg)
+				c.eventStateTransitionMsg(msg.(*messages.StateTransitionMsg))
 				c.log.Debugf("Consensus::recvLoop, eventStateTransitionMsg... Done")
+			} else {
+				eventStateTransitionMsgCh = nil
 			}
-		case msg, ok := <-c.eventSignedResultMsgCh:
+		case msg, ok := <-eventSignedResultMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, handleSignedResultMsg...")
-				c.handleSignedResultMsg(msg)
+				c.handleSignedResultMsg(msg.(*messages.SignedResultMsgIn))
 				c.log.Debugf("Consensus::recvLoop, handleSignedResultMsg... Done")
+			} else {
+				eventSignedResultMsgCh = nil
 			}
-		case msg, ok := <-c.eventSignedResultAckMsgCh:
+		case msg, ok := <-eventSignedResultAckMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, handleSignedResultAckMsg...")
-				c.handleSignedResultAckMsg(msg)
+				c.handleSignedResultAckMsg(msg.(*messages.SignedResultAckMsgIn))
 				c.log.Debugf("Consensus::recvLoop, handleSignedResultAckMsg... Done")
+			} else {
+				eventSignedResultAckMsgCh = nil
 			}
-		case msg, ok := <-c.eventInclusionStateMsgCh:
+		case msg, ok := <-eventInclusionStateMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventInclusionState...")
-				c.eventInclusionState(msg)
+				c.eventInclusionState(msg.(*messages.InclusionStateMsg))
 				c.log.Debugf("Consensus::recvLoop, eventInclusionState... Done")
+			} else {
+				eventInclusionStateMsgCh = nil
 			}
-		case msg, ok := <-c.eventACSMsgCh:
+		case msg, ok := <-eventACSMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventAsynchronousCommonSubset...")
-				c.eventAsynchronousCommonSubset(msg)
+				c.eventAsynchronousCommonSubset(msg.(*messages.AsynchronousCommonSubsetMsg))
 				c.log.Debugf("Consensus::recvLoop, eventAsynchronousCommonSubset... Done")
+			} else {
+				eventACSMsgCh = nil
 			}
-		case msg, ok := <-c.eventVMResultMsgCh:
+		case msg, ok := <-eventVMResultMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventVMResultMsg...")
-				c.eventVMResultMsg(msg)
+				c.eventVMResultMsg(msg.(*messages.VMResultMsg))
 				c.log.Debugf("Consensus::recvLoop, eventVMResultMsg... Done")
+			} else {
+				eventVMResultMsgCh = nil
 			}
-		case msg, ok := <-c.eventTimerMsgCh:
+		case msg, ok := <-eventTimerMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventTimerMsg...")
-				c.eventTimerMsg(msg)
+				c.eventTimerMsg(msg.(messages.TimerTick))
 				c.log.Debugf("Consensus::recvLoop, eventTimerMsg... Done")
+			} else {
+				eventTimerMsgCh = nil
 			}
-		case <-c.closeCh:
+		}
+		if isClosedFun() {
 			return
 		}
 	}

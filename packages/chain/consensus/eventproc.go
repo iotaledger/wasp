@@ -15,7 +15,7 @@ import (
 )
 
 func (c *consensus) EventStateTransitionMsg(state state.VirtualStateAccess, stateOutput *ledgerstate.AliasOutput, stateTimestamp time.Time) {
-	c.eventStateTransitionMsgCh <- &messages.StateTransitionMsg{
+	c.eventStateTransitionMsgPipe.In() <- &messages.StateTransitionMsg{
 		State:          state,
 		StateOutput:    stateOutput,
 		StateTimestamp: stateTimestamp,
@@ -30,7 +30,7 @@ func (c *consensus) eventStateTransitionMsg(msg *messages.StateTransitionMsg) {
 }
 
 func (c *consensus) EnqueueSignedResultMsg(msg *messages.SignedResultMsgIn) {
-	c.eventSignedResultMsgCh <- msg
+	c.eventSignedResultMsgPipe.In() <- msg
 }
 
 func (c *consensus) handleSignedResultMsg(msg *messages.SignedResultMsgIn) {
@@ -41,7 +41,7 @@ func (c *consensus) handleSignedResultMsg(msg *messages.SignedResultMsgIn) {
 }
 
 func (c *consensus) EnqueueSignedResultAckMsg(msg *messages.SignedResultAckMsgIn) {
-	c.eventSignedResultAckMsgCh <- msg
+	c.eventSignedResultAckMsgPipe.In() <- msg
 }
 
 func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn) {
@@ -52,7 +52,7 @@ func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn)
 }
 
 func (c *consensus) EventInclusionsStateMsg(txID ledgerstate.TransactionID, state ledgerstate.InclusionState) {
-	c.eventInclusionStateMsgCh <- &messages.InclusionStateMsg{
+	c.eventInclusionStateMsgPipe.In() <- &messages.InclusionStateMsg{
 		TxID:  txID,
 		State: state,
 	}
@@ -66,7 +66,7 @@ func (c *consensus) eventInclusionState(msg *messages.InclusionStateMsg) {
 }
 
 func (c *consensus) EventAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg) {
-	c.eventACSMsgCh <- msg
+	c.eventACSMsgPipe.In() <- msg
 }
 
 func (c *consensus) eventAsynchronousCommonSubset(msg *messages.AsynchronousCommonSubsetMsg) {
@@ -77,7 +77,7 @@ func (c *consensus) eventAsynchronousCommonSubset(msg *messages.AsynchronousComm
 }
 
 func (c *consensus) EventVMResultMsg(msg *messages.VMResultMsg) {
-	c.eventVMResultMsgCh <- msg
+	c.eventVMResultMsgPipe.In() <- msg
 }
 
 func (c *consensus) eventVMResultMsg(msg *messages.VMResultMsg) {
@@ -94,7 +94,7 @@ func (c *consensus) eventVMResultMsg(msg *messages.VMResultMsg) {
 }
 
 func (c *consensus) EventTimerMsg(msg messages.TimerTick) {
-	c.eventTimerMsgCh <- msg
+	c.eventTimerMsgPipe.In() <- msg
 }
 
 func (c *consensus) eventTimerMsg(msg messages.TimerTick) {
