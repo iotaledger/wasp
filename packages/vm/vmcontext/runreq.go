@@ -114,6 +114,7 @@ func (vmctx *VMContext) preprocessRequestData(req requestdata.RequestData, reque
 	switch req.Type() {
 	case requestdata.TypeSimpleOutput:
 		// consume it an assign all assets to owner's account
+		// no need to invoke SC
 		return true
 	case requestdata.TypeOffLedger:
 		// prepare off ledger
@@ -126,20 +127,24 @@ func (vmctx *VMContext) preprocessRequestData(req requestdata.RequestData, reque
 		return false
 	case requestdata.TypeFoundryOutput:
 		// do not consume. Check consistency in the state
+		// no need to invoke SC
 		return true
 	case requestdata.TypeAliasOutput:
 		// do not consume. It is unexpected.
 		// assign ownership to the owner
+		// no need to invoke SC
 		return true
 	case requestdata.TypeUnknownOutput:
 		// do not consume.
 		// Assign ownership to the owner
+		// no need to invoke SC
 		return true
 	case requestdata.TypeUnknown:
 		// an error. probably panic
+		// no need to invoke SC
 		return true
 	}
-	return true
+	panic("wrong request data type")
 }
 
 // mustSetUpRequestContextOld sets up VMContext for request

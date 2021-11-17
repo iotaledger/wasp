@@ -13,7 +13,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.12
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
 	github.com/iotaledger/hive.go v0.0.0-20211114115219-34d09af1fc8c
-	github.com/iotaledger/iota.go/v3 v3.0.0-20211114115654-b7529e9a9893 // indirect
+	github.com/iotaledger/iota.go/v3 v3.0.0-20211114115654-b7529e9a9893
 	github.com/knadh/koanf v1.2.1
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.14.4
@@ -36,12 +36,12 @@ require (
 	go.nanomsg.org/mangos/v3 v3.0.1
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.0
-	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
-	golang.org/x/sys v0.0.0-20211113001501-0c823b97ae02 // indirect
+	golang.org/x/crypto v0.0.0-20211115234514-b4de73f9ece8
+	golang.org/x/net v0.0.0-20211116231205-47ca1ff31462 // indirect
+	golang.org/x/sys v0.0.0-20211116061358-0a5406a5449c // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
-	google.golang.org/genproto v0.0.0-20211112145013-271947fe86fd // indirect
+	google.golang.org/genproto v0.0.0-20211116182654-e63d96a377c4 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	nhooyr.io/websocket v1.8.7
