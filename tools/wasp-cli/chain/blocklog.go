@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -87,8 +86,7 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 		timestamp = req.Timestamp().UTC().Format(time.RFC3339)
 	}
 
-	// TODO: use req.Params() instead (buggy atm)
-	args := req.(request.SolidifiableRequest).Args()
+	args := req.Args()
 	var argsTree interface{} = "(empty)"
 	if len(args) > 0 {
 		argsTree = dict.Dict(args)

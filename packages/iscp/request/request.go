@@ -11,9 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/registry"
 	"go.uber.org/atomic"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/xerrors"
@@ -52,13 +50,13 @@ type Metadata struct {
 	entryPoint iscp.Hname
 	// used to prevent identical outputs from being generated
 	requestNonce uint8
-	// request arguments, not decoded yet wrt blobRefs
-	args requestargs.RequestArgs
+	// request arguments
+	args dict.Dict
 }
 
 func NewMetadata() *Metadata {
 	return &Metadata{
-		args: requestargs.RequestArgs(dict.New()),
+		args: dict.New(),
 	}
 }
 
@@ -69,6 +67,12 @@ func MetadataFromBytes(data []byte) *Metadata {
 func MetadataFromMarshalUtil(mu *marshalutil.MarshalUtil) *Metadata {
 	ret := NewMetadata()
 	ret.err = ret.ReadFromMarshalUtil(mu)
+	if ret.err != nil {
+		ret.senderContract = 0
+		ret.targetContract = 0
+		ret.entryPoint = 0
+		ret.args = dict.Dict{}
+	}
 	return ret
 }
 
@@ -92,7 +96,7 @@ func (p *Metadata) WithRequestNonce(nonce uint8) *Metadata {
 	return p
 }
 
-func (p *Metadata) WithArgs(args requestargs.RequestArgs) *Metadata {
+func (p *Metadata) WithArgs(args dict.Dict) *Metadata {
 	p.args = args.Clone()
 	return p
 }
@@ -112,30 +116,18 @@ func (p *Metadata) ParsedError() error {
 }
 
 func (p *Metadata) SenderContract() iscp.Hname {
-	if !p.ParsedOk() {
-		return 0
-	}
 	return p.senderContract
 }
 
 func (p *Metadata) TargetContract() iscp.Hname {
-	if !p.ParsedOk() {
-		return 0
-	}
 	return p.targetContract
 }
 
 func (p *Metadata) EntryPoint() iscp.Hname {
-	if !p.ParsedOk() {
-		return 0
-	}
 	return p.entryPoint
 }
 
-func (p *Metadata) Args() requestargs.RequestArgs {
-	if !p.ParsedOk() {
-		return requestargs.RequestArgs(dict.New())
-	}
+func (p *Metadata) Args() dict.Dict {
 	return p.args
 }
 
@@ -149,8 +141,8 @@ func (p *Metadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(p.senderContract).
 		Write(p.targetContract).
 		Write(p.entryPoint).
-		WriteByte(p.requestNonce)
-	p.args.WriteToMarshalUtil(mu)
+		WriteByte(p.requestNonce).
+		Write(p.args)
 }
 
 func (p *Metadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
@@ -167,7 +159,7 @@ func (p *Metadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	if p.requestNonce, err = mu.ReadByte(); err != nil {
 		return err
 	}
-	if p.args, err = requestargs.FromMarshalUtil(mu); err != nil {
+	if p.args, err = dict.FromMarshalUtil(mu); err != nil {
 		return err
 	}
 	return nil
@@ -178,12 +170,11 @@ func (p *Metadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 // region OnLedger //////////////////////////////////////////////////////////////////
 
 type OnLedger struct {
-	outputObj       *ledgerstate.ExtendedLockedOutput
-	requestMetadata *Metadata
-	senderAddress   ledgerstate.Address
-	txTimestamp     time.Time    // Timestamp of the TX contaning this request.
-	params          atomic.Value // this part is mutable
-	minted          colored.Balances
+	*Metadata
+	outputObj     *ledgerstate.ExtendedLockedOutput
+	senderAddress ledgerstate.Address
+	txTimestamp   time.Time // Timestamp of the TX contaning this request.
+	minted        colored.Balances
 }
 
 // implements iscp.Request interface
@@ -191,11 +182,11 @@ var _ iscp.Request = &OnLedger{}
 
 func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, txTimestamp time.Time, minted ...colored.Balances) *OnLedger {
 	ret := &OnLedger{
+		Metadata:      MetadataFromBytes(output.GetPayload()),
 		outputObj:     output,
 		senderAddress: senderAddr,
 		txTimestamp:   txTimestamp,
 	}
-	ret.requestMetadata = MetadataFromBytes(output.GetPayload())
 	if len(minted) > 0 {
 		ret.minted = minted[0].Clone()
 	}
@@ -242,7 +233,7 @@ func (req *OnLedger) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 		Write(req.ID()). // Goshimmer doesnt include outputID in serialization, so we neeed to add it manually
 		Write(req.senderAddress).
 		WriteTime(req.txTimestamp).
-		Write(req.requestMetadata).
+		Write(req.Metadata).
 		Write(req.minted)
 }
 
@@ -264,7 +255,7 @@ func (req *OnLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	if req.txTimestamp, err = mu.ReadTime(); err != nil {
 		return err
 	}
-	req.requestMetadata = MetadataFromMarshalUtil(mu)
+	req.Metadata = MetadataFromMarshalUtil(mu)
 	if req.minted, err = colored.BalancesFromMarshalUtil(mu); err != nil {
 		return err
 	}
@@ -287,18 +278,13 @@ func (req *OnLedger) Output() ledgerstate.Output {
 	return req.outputObj
 }
 
-// Params returns solid args if decoded already or nil otherwise
-func (req *OnLedger) Params() (dict.Dict, bool) {
-	// FIXME: this returns nil after deserializing a processed request (see tools/wasp-cli/chain/blocklog.go)
-	par := req.params.Load()
-	if par == nil {
-		return nil, false
-	}
-	return par.(dict.Dict), true
+// Args returns the request arguments
+func (req *OnLedger) Args() dict.Dict {
+	return req.args
 }
 
 func (req *OnLedger) SenderAccount() *iscp.AgentID {
-	return iscp.NewAgentID(req.senderAddress, req.requestMetadata.SenderContract())
+	return iscp.NewAgentID(req.senderAddress, req.SenderContract())
 }
 
 func (req *OnLedger) SenderAddress() ledgerstate.Address {
@@ -307,7 +293,7 @@ func (req *OnLedger) SenderAddress() ledgerstate.Address {
 
 // Target returns target contract and target entry point
 func (req *OnLedger) Target() iscp.RequestTarget {
-	return iscp.NewRequestTarget(req.requestMetadata.TargetContract(), req.requestMetadata.EntryPoint())
+	return iscp.NewRequestTarget(req.TargetContract(), req.EntryPoint())
 }
 
 func (req *OnLedger) Timestamp() time.Time {
@@ -327,14 +313,6 @@ func (req *OnLedger) FallbackDeadline() time.Time {
 	return t
 }
 
-func (req *OnLedger) SetMetadata(d *Metadata) {
-	req.requestMetadata = d.Clone()
-}
-
-func (req *OnLedger) GetMetadata() *Metadata {
-	return req.requestMetadata
-}
-
 func (req *OnLedger) MintedAmounts() colored.Balances {
 	return req.minted
 }
@@ -346,14 +324,6 @@ func (req *OnLedger) Short() string {
 // only used for consensus
 func (req *OnLedger) Hash() [32]byte {
 	return blake2b.Sum256(req.Bytes())
-}
-
-func (req *OnLedger) SetParams(params dict.Dict) {
-	req.params.Store(params)
-}
-
-func (req *OnLedger) Args() requestargs.RequestArgs {
-	return req.requestMetadata.Args()
 }
 
 func (req *OnLedger) String() string {
@@ -373,11 +343,11 @@ func (req *OnLedger) String() string {
 		"OnLedger::{ ID: %s, sender: %s, senderHname: %s, target: %s, entrypoint: %s, args: %s, nonce: %d, timestamp: %s, fallback: %s, timelock: %s }",
 		req.ID().Base58(),
 		req.senderAddress.Base58(),
-		req.requestMetadata.senderContract.String(),
-		req.requestMetadata.targetContract.String(),
-		req.requestMetadata.entryPoint.String(),
-		req.Args().String(),
-		req.requestMetadata.requestNonce,
+		req.senderContract.String(),
+		req.targetContract.String(),
+		req.entryPoint.String(),
+		req.args.String(),
+		req.requestNonce,
 		req.txTimestamp.String(),
 		fallbackStr,
 		timelockStr,
@@ -389,7 +359,7 @@ func (req *OnLedger) String() string {
 // region OffLedger  ///////////////////////////////////////////////////////
 
 type OffLedger struct {
-	args       requestargs.RequestArgs
+	args       dict.Dict
 	chainID    *iscp.ChainID
 	contract   iscp.Hname
 	entryPoint iscp.Hname
@@ -405,7 +375,7 @@ type OffLedger struct {
 var _ iscp.Request = &OffLedger{}
 
 // NewOffLedger creates a basic request
-func NewOffLedger(chainID *iscp.ChainID, contract, entryPoint iscp.Hname, args requestargs.RequestArgs) *OffLedger {
+func NewOffLedger(chainID *iscp.ChainID, contract, entryPoint iscp.Hname, args dict.Dict) *OffLedger {
 	return &OffLedger{
 		chainID:    chainID,
 		args:       args.Clone(),
@@ -464,18 +434,15 @@ func (req *OffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) er
 	if req.chainID, err = iscp.ChainIDFromMarshalUtil(mu); err != nil {
 		return err
 	}
-
 	if err := req.contract.ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
 	if err := req.entryPoint.ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	a, err := dict.FromMarshalUtil(mu)
-	if err != nil {
+	if req.args, err = dict.FromMarshalUtil(mu); err != nil {
 		return err
 	}
-	req.args = requestargs.New(a)
 	pk, err := mu.ReadBytes(len(req.publicKey))
 	if err != nil {
 		return err
@@ -553,13 +520,8 @@ func (req *OffLedger) IsOffLedger() bool {
 	return true
 }
 
-func (req *OffLedger) Params() (dict.Dict, bool) {
-	// FIXME: this returns nil after deserializing a processed request (see tools/wasp-cli/chain/blocklog.go)
-	par := req.params.Load()
-	if par == nil {
-		return nil, false
-	}
-	return par.(dict.Dict), true
+func (req *OffLedger) Args() dict.Dict {
+	return req.args
 }
 
 func (req *OffLedger) SenderAccount() *iscp.AgentID {
@@ -582,14 +544,6 @@ func (req *OffLedger) Timestamp() time.Time {
 	return time.Time{}
 }
 
-func (req *OffLedger) SetParams(params dict.Dict) {
-	req.params.Store(params)
-}
-
-func (req *OffLedger) Args() requestargs.RequestArgs {
-	return req.args
-}
-
 func (req *OffLedger) String() string {
 	return fmt.Sprintf("OffLedger::{ ID: %s, sender: %s, target: %s, entrypoint: %s, args: %s, nonce: %d }",
 		req.ID().Base58(),
@@ -602,36 +556,6 @@ func (req *OffLedger) String() string {
 }
 
 // endregion /////////////////////////////////////////////////////////////////
-
-// SolidifiableRequest is the minimal interface required for SolidifyArgs
-type SolidifiableRequest interface {
-	Params() (dict.Dict, bool)
-	SetParams(params dict.Dict)
-	Args() requestargs.RequestArgs
-}
-
-var (
-	_ SolidifiableRequest = &OnLedger{}
-	_ SolidifiableRequest = &OffLedger{}
-)
-
-// SolidifyArgs solidifies the request arguments
-func SolidifyArgs(req iscp.Request, reg registry.BlobCache) (bool, error) {
-	sreq := req.(SolidifiableRequest)
-	par, _ := sreq.Params()
-	if par != nil {
-		return true, nil
-	}
-	solid, ok, err := sreq.Args().SolidifyRequestArguments(reg)
-	if err != nil || !ok {
-		return ok, err
-	}
-	if solid == nil {
-		panic("solid == nil")
-	}
-	sreq.SetParams(solid)
-	return true, nil
-}
 
 func RequestsInTransaction(chainID *iscp.ChainID, tx *ledgerstate.Transaction) []iscp.RequestID {
 	var reqs []iscp.RequestID

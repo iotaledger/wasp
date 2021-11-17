@@ -150,9 +150,6 @@ func (vmctx *VMContext) preprocessRequestData(req requestdata.RequestData, reque
 // mustSetUpRequestContextOld sets up VMContext for request
 // Deprecated:
 func (vmctx *VMContext) mustSetUpRequestContextOld(req requestdata.RequestData, requestIndex uint16) {
-	if _, ok := req.Params(); !ok {
-		vmctx.log.Panicf("mustSetUpRequestContextOld.inconsistency: request args should had been solidified")
-	}
 	vmctx.req = req
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0
@@ -353,9 +350,8 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	// calling only non view entry points. Calling the view will trigger error and fallback
 	entryPoint := vmctx.req.Target().EntryPoint
 	targetContract := vmctx.contractRecord.Hname()
-	params, _ := vmctx.req.Params()
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
-		targetContract, entryPoint, params, vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
+		targetContract, entryPoint, vmctx.req.Args(), vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
 }
 
 func (vmctx *VMContext) mustUpdateOffledgerRequestMaxAssumedNonce() {

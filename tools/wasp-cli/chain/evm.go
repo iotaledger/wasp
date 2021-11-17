@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/evm/evmcli"
@@ -60,9 +59,9 @@ func initEVMDeploy(evmCmd *cobra.Command) {
 						evm.FuncSetBlockTime.Name,
 						chainclient.PostRequestParams{
 							Transfer: colored.NewBalancesForIotas(1),
-							Args: requestargs.New().AddEncodeSimple(
-								evm.FieldBlockTime, codec.EncodeUint32(blockTime),
-							),
+							Args: dict.Dict{
+								evm.FieldBlockTime: codec.EncodeUint32(blockTime),
+							},
 						},
 					)
 				})

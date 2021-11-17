@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 )
@@ -18,7 +17,7 @@ func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, *request.OffLe
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
 		PostRequestParams{
-			Args: requestargs.New().AddEncodeSimpleMany(fields),
+			Args: fields,
 		},
 	)
 	if err != nil {

@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
@@ -155,7 +154,7 @@ func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint isc
 	}
 	tx, err := e.chainClient().Post1Request(contract, entryPoint, chainclient.PostRequestParams{
 		Transfer: b,
-		Args:     requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
+		Args:     codec.MakeDict(params),
 	})
 	require.NoError(e.t, err)
 	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 60*time.Second)

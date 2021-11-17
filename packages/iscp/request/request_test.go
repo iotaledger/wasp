@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )
 
@@ -89,7 +89,7 @@ func TestOffLedger(t *testing.T) {
 	t.Run("marshal", func(t *testing.T) {
 		target := iscp.Hn("target")
 		ep := iscp.Hn("entry point")
-		args := requestargs.New()
+		args := dict.New()
 		req := NewOffLedger(iscp.RandomChainID(), target, ep, args)
 		reqBack, err := FromMarshalUtil(marshalutil.New(req.Bytes()))
 		require.NoError(t, err)

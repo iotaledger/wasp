@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )
@@ -20,9 +19,7 @@ func TestMarshalling(t *testing.T) {
 	// construct a dummy offledger request
 	contract := iscp.Hn("somecontract")
 	entrypoint := iscp.Hn("someentrypoint")
-	args := requestargs.New(
-		dict.Dict{foo: []byte("bar")},
-	)
+	args := dict.Dict{foo: []byte("bar")}
 
 	msg := NewOffLedgerRequestMsg(
 		iscp.RandomChainID(),

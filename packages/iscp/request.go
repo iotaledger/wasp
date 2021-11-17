@@ -22,8 +22,8 @@ type Request interface {
 	IsOffLedger() bool
 	// true or false for on-ledger requests, always true for off-ledger
 	IsFeePrepaid() bool
-	// arguments of the call with the flag if they are ready. No arguments mean empty dictionary and true
-	Params() (dict.Dict, bool)
+	// Args returns the call arguments
+	Args() dict.Dict
 	// account of the sender
 	SenderAccount() *AgentID
 	// address of the sender for all requests,

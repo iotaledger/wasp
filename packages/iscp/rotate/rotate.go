@@ -11,8 +11,8 @@ import (
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 // IsRotateStateControllerRequest determines if request may be a committee rotation request
@@ -21,9 +21,9 @@ func IsRotateStateControllerRequest(req iscp.Request) bool {
 	return target.Contract == coreutil.CoreContractGovernanceHname && target.EntryPoint == coreutil.CoreEPRotateStateControllerHname
 }
 
-func NewRotateRequestOffLedger(chainID *iscp.ChainID, newStateAddress ledgerstate.Address, keyPair *ed25519.KeyPair) *request.OffLedger {
-	args := requestargs.New(nil)
-	args.AddEncodeSimple(coreutil.ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
+func NewRotateRequestOffLedger(chainID *iscp.ChainID, newStateAddress ledgerstate.Address, keyPair *ed25519.KeyPair) iscp.Request {
+	args := dict.New()
+	args.Set(coreutil.ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
 	ret := request.NewOffLedger(chainID, coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname, args)
 	ret.Sign(keyPair)
 	return ret

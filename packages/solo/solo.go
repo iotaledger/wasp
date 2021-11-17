@@ -24,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -61,7 +60,6 @@ type Solo struct {
 	dbmanager   *dbmanager.DBManager
 	utxoDB      *utxodb.UtxoDB
 	seed        *ed25519.Seed
-	blobCache   registry.BlobCache
 	glbMutex    sync.RWMutex
 	ledgerMutex sync.RWMutex
 	clockMutex  sync.RWMutex
@@ -162,7 +160,6 @@ func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...*ed25519.Seed) 
 		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
 		utxoDB:          utxodb.NewWithTimestamp(initialTime),
 		seed:            seed,
-		blobCache:       iscp.NewInMemoryBlobCache(),
 		logicalTime:     initialTime,
 		timeStep:        DefaultTimeStep,
 		chains:          make(map[[33]byte]*Chain),
@@ -271,7 +268,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		proc:                   processors.MustNew(env.processorConfig),
 		Log:                    chainlog,
 	}
-	ret.mempool = mempool.New(ret.StateReader, env.blobCache, chainlog, metrics.DefaultChainMetrics())
+	ret.mempool = mempool.New(ret.StateReader, chainlog, metrics.DefaultChainMetrics())
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
@@ -308,9 +305,6 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 
 	initReq, err := env.RequestsForChain(initTx, chainID)
 	require.NoError(env.T, err)
-
-	// put to mempool and take back to solidify
-	ret.solidifyRequest(initReq[0])
 
 	_, err = ret.runRequestsSync(initReq, "new")
 	require.NoError(env.T, err)
@@ -468,11 +462,4 @@ func (ch *Chain) collateAndRunBatch() bool {
 func (ch *Chain) BacklogLen() int {
 	mstats := ch.mempool.Info()
 	return mstats.InBufCounter - mstats.OutPoolCounter
-}
-
-// solidifies request arguments without mempool (only for solo)
-func (ch *Chain) solidifyRequest(req iscp.Request) {
-	ok, err := request.SolidifyArgs(req, ch.Env.blobCache)
-	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
 }

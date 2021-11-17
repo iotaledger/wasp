@@ -7,8 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
-	"github.com/iotaledger/wasp/packages/kv"
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
@@ -77,19 +75,9 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances
 		WithRequestNonce(vmctx.blockOutputCount).
 		WithSender(vmctx.CurrentContractHname())
 	if metadata != nil {
-		var args requestargs.RequestArgs
-		if metadata.Args != nil && len(metadata.Args) > 0 {
-			var opt map[kv.Key][]byte
-			args, opt = requestargs.NewOptimizedRequestArgs(metadata.Args, maxParamSize)
-			if len(opt) > 0 {
-				// some parameters  too big
-				vmctx.log.Errorf("Send: too big data in parameters")
-				return false
-			}
-		}
 		data.WithTarget(metadata.TargetContract).
 			WithEntryPoint(metadata.EntryPoint).
-			WithArgs(args)
+			WithArgs(metadata.Args)
 	}
 	sourceAccount := vmctx.adjustAccount(vmctx.MyAgentID())
 	if !vmctx.debitFromAccount(sourceAccount, tokens) {

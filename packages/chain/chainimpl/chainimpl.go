@@ -68,7 +68,6 @@ type chainObj struct {
 	netProvider                      peering.NetworkProvider
 	dksProvider                      registry.DKShareRegistryProvider
 	committeeRegistry                registry.CommitteeRegistryProvider
-	blobProvider                     registry.BlobCache
 	eventRequestProcessed            *events.Event
 	eventChainTransition             *events.Event
 	peers                            *peering.PeerDomainProvider
@@ -94,7 +93,6 @@ func NewChain(
 	netProvider peering.NetworkProvider,
 	dksProvider registry.DKShareRegistryProvider,
 	committeeRegistry registry.CommitteeRegistryProvider,
-	blobProvider registry.BlobCache,
 	processorConfig *processors.Config,
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
@@ -122,7 +120,7 @@ func NewChain(
 		}
 	}
 	ret := &chainObj{
-		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
+		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
 		msgPipe:           pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
 		chainID:           chainID,
@@ -135,7 +133,6 @@ func NewChain(
 		netProvider:       netProvider,
 		dksProvider:       dksProvider,
 		committeeRegistry: committeeRegistry,
-		blobProvider:      blobProvider,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ iscp.RequestID))(params[0].(iscp.RequestID))
 		}),

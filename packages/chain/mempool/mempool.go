@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
@@ -31,7 +30,6 @@ type Mempool struct {
 	stateReader             state.OptimisticStateReader
 	pool                    map[iscp.RequestID]*requestRef
 	chStop                  chan struct{}
-	blobCache               registry.BlobCache
 	solidificationLoopDelay time.Duration
 	log                     *logger.Logger
 	mempoolMetrics          metrics.MempoolMetrics
@@ -49,13 +47,12 @@ const (
 
 var _ chain.Mempool = &Mempool{}
 
-func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) *Mempool {
+func New(stateReader state.OptimisticStateReader, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) *Mempool {
 	ret := &Mempool{
 		inBuffer:       make(map[iscp.RequestID]iscp.Request),
 		stateReader:    stateReader,
 		pool:           make(map[iscp.RequestID]*requestRef),
 		chStop:         make(chan struct{}),
-		blobCache:      blobCache,
 		log:            log.Named("m"),
 		mempoolMetrics: mempoolMetrics,
 	}
@@ -65,7 +62,6 @@ func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, 
 		ret.solidificationLoopDelay = defaultSolidificationLoopDelay
 	}
 	go ret.moveToPoolLoop()
-	go ret.solidificationLoop()
 	return ret
 }
 
@@ -138,9 +134,7 @@ func (m *Mempool) addToPool(req iscp.Request) bool {
 		req:          req,
 		whenReceived: nowis,
 	}
-	if _, err := request.SolidifyArgs(req, m.blobCache); err != nil {
-		m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
-	}
+
 	// return true to remove from the in-buffer
 	return true
 }
@@ -233,9 +227,6 @@ func isRequestReady(ref *requestRef, nowis time.Time) (isReady, shouldBeRemoved 
 		}
 	}
 	// time lock
-	if _, paramsReady := r.Params(); !paramsReady {
-		return false, false
-	}
 	return r.TimeLock().IsZero() || r.TimeLock().Before(nowis), false
 }
 
@@ -438,29 +429,6 @@ func (m *Mempool) moveToPoolLoop() {
 				}
 				buf[i] = nil // to please GC
 			}
-		}
-	}
-}
-
-// the loop solidifies requests
-func (m *Mempool) solidificationLoop() {
-	for {
-		select {
-		case <-m.chStop:
-			return
-		case <-time.After(m.solidificationLoopDelay):
-			m.doSolidifyRequests()
-		}
-	}
-}
-
-func (m *Mempool) doSolidifyRequests() {
-	m.poolMutex.Lock()
-	defer m.poolMutex.Unlock()
-
-	for _, ref := range m.pool {
-		if ref.req != nil {
-			_, _ = request.SolidifyArgs(ref.req, m.blobCache)
 		}
 	}
 }

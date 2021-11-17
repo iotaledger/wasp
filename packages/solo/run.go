@@ -35,10 +35,6 @@ func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (dict.Dict, 
 func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict, error) {
 	ch.Log.Debugf("runRequestsSync ('%s')", trace)
 
-	for _, r := range reqs {
-		_, solidArgs := r.Params()
-		require.True(ch.Env.T, solidArgs)
-	}
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		ChainInput:         ch.GetChainOutput(),

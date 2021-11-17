@@ -168,7 +168,7 @@ func TestViewBlockRecords(t *testing.T) {
 	rec.Func.Call()
 	require.NoError(t, ctx.Err)
 	require.True(t, rec.Results.Record().Exists())
-	require.EqualValues(t, 339, len(rec.Results.Record().Value()))
+	require.EqualValues(t, 335, len(rec.Results.Record().Value()))
 }
 
 func TestClearArray(t *testing.T) {
