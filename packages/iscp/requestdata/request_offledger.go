@@ -248,10 +248,10 @@ func (r *OffLedger) SenderAddress() iotago.Address {
 	return r.sender
 }
 
-func (r *OffLedger) Target() iscp.Target {
-	return iscp.Target{
+func (r *OffLedger) Target() iscp.RequestTarget {
+	return iscp.RequestTarget{
 		Contract:   r.contract,
-		Entrypoint: r.entryPoint,
+		EntryPoint: r.entryPoint,
 	}
 }
 

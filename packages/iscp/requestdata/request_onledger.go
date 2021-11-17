@@ -64,10 +64,10 @@ func (r *onLedgerRequestData) SenderAddress() iotago.Address {
 	return senderBlock.(*iotago.SenderFeatureBlock).Address
 }
 
-func (r *onLedgerRequestData) Target() iscp.Target {
-	return iscp.Target{
+func (r *onLedgerRequestData) Target() iscp.RequestTarget {
+	return iscp.RequestTarget{
 		Contract:   r.requestMetadata.TargetContract(),
-		Entrypoint: r.requestMetadata.EntryPoint(),
+		EntryPoint: r.requestMetadata.EntryPoint(),
 	}
 }
 

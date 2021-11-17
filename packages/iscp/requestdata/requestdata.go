@@ -83,7 +83,7 @@ type Request interface {
 	Params() dict.Dict
 	SenderAccount() *iscp.AgentID
 	SenderAddress() iotago.Address
-	Target() iscp.Target
+	Target() iscp.RequestTarget
 	Assets() Transfer
 	GasBudget() int64
 }
