@@ -155,8 +155,8 @@ func NewChain(
 		log.Errorf("NewChain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn)
 	ret.peers = &peers
+	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn)
 	ret.AttachToPeerMessages(chain.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
 	go ret.handleMessagesLoop()
 	ret.startTimer()
