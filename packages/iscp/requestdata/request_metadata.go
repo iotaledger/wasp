@@ -15,6 +15,8 @@ type RequestMetadata struct {
 	entryPoint iscp.Hname
 	// request arguments, not decoded yet wrt blobRefs
 	args dict.Dict
+	// gas budget
+	gasBudget int64
 }
 
 func NewRequestMetadata() *RequestMetadata {
@@ -80,6 +82,10 @@ func (p *RequestMetadata) Args() dict.Dict {
 	return p.args
 }
 
+func (p *RequestMetadata) GasBudget() int64 {
+	return p.gasBudget
+}
+
 func (p *RequestMetadata) Bytes() []byte {
 	mu := marshalutil.New()
 	p.WriteToMarshalUtil(mu)
@@ -89,7 +95,8 @@ func (p *RequestMetadata) Bytes() []byte {
 func (p *RequestMetadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(p.senderContract).
 		Write(p.targetContract).
-		Write(p.entryPoint)
+		Write(p.entryPoint).
+		WriteInt64(p.gasBudget)
 	p.args.WriteToMarshalUtil(mu)
 }
 
@@ -102,6 +109,9 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 		return err
 	}
 	if p.entryPoint, err = iscp.HnameFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	if p.gasBudget, err = mu.ReadInt64(); err != nil {
 		return err
 	}
 	if err = (p.args).ReadFromMarshalUtil(mu); err != nil {

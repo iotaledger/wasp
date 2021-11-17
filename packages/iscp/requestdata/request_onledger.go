@@ -10,9 +10,11 @@ import (
 
 type onLedgerRequestData struct {
 	UTXOMetaData
-	output          iotago.Output
-	featureBlocks   iotago.FeatureBlocksSet
-	requestMetadata *RequestMetadata
+	output iotago.Output
+
+	// featureBlocksCache and requestMetadata originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
+	featureBlocksCache iotago.FeatureBlocksSet
+	requestMetadata    *RequestMetadata
 }
 
 func NewExtendedOutputData(data UTXOMetaData, o iotago.Output) (*onLedgerRequestData, error) {
@@ -32,10 +34,10 @@ func NewExtendedOutputData(data UTXOMetaData, o iotago.Output) (*onLedgerRequest
 	}
 
 	return &onLedgerRequestData{
-		output:          o,
-		UTXOMetaData:    data,
-		featureBlocks:   fbSet,
-		requestMetadata: reqMetadata,
+		output:             o,
+		UTXOMetaData:       data,
+		featureBlocksCache: fbSet,
+		requestMetadata:    reqMetadata,
 	}, nil
 }
 
@@ -55,7 +57,7 @@ func (r *onLedgerRequestData) SenderAccount() *iscp.AgentID {
 }
 
 func (r *onLedgerRequestData) SenderAddress() iotago.Address {
-	senderBlock, has := r.featureBlocks[iotago.FeatureBlockSender]
+	senderBlock, has := r.featureBlocksCache[iotago.FeatureBlockSender]
 	if !has {
 		return nil
 	}
@@ -82,7 +84,7 @@ func (r *onLedgerRequestData) Assets() Transfer {
 }
 
 func (r *onLedgerRequestData) GasBudget() int64 {
-	panic("implement me") // TODO
+	return r.requestMetadata.GasBudget()
 }
 
 // implements RequestData interface
@@ -149,8 +151,8 @@ func (r *onLedgerRequestData) MetaData() UTXOMetaData {
 var _ Features = &onLedgerRequestData{}
 
 func (r *onLedgerRequestData) TimeLock() *TimeInstant {
-	timelockMilestoneFB, hasMilestoneFB := r.featureBlocks[iotago.FeatureBlockTimelockMilestoneIndex]
-	timelockDeadlineFB, hasDeadlineFB := r.featureBlocks[iotago.FeatureBlockTimelockUnix]
+	timelockMilestoneFB, hasMilestoneFB := r.featureBlocksCache[iotago.FeatureBlockTimelockMilestoneIndex]
+	timelockDeadlineFB, hasDeadlineFB := r.featureBlocksCache[iotago.FeatureBlockTimelockUnix]
 	if !hasMilestoneFB && !hasDeadlineFB {
 		return nil
 	}
@@ -165,8 +167,8 @@ func (r *onLedgerRequestData) TimeLock() *TimeInstant {
 }
 
 func (r *onLedgerRequestData) Expiry() *TimeInstant {
-	expiryMilestoneFB, hasMilestoneFB := r.featureBlocks[iotago.FeatureBlockExpirationMilestoneIndex]
-	expiryDeadlineFB, hasDeadlineFB := r.featureBlocks[iotago.FeatureBlockExpirationUnix]
+	expiryMilestoneFB, hasMilestoneFB := r.featureBlocksCache[iotago.FeatureBlockExpirationMilestoneIndex]
+	expiryDeadlineFB, hasDeadlineFB := r.featureBlocksCache[iotago.FeatureBlockExpirationUnix]
 	if !hasMilestoneFB && !hasDeadlineFB {
 		return nil
 	}
@@ -181,7 +183,7 @@ func (r *onLedgerRequestData) Expiry() *TimeInstant {
 }
 
 func (r *onLedgerRequestData) ReturnAmount() (uint64, bool) {
-	senderBlock, has := r.featureBlocks[iotago.FeatureBlockReturn]
+	senderBlock, has := r.featureBlocksCache[iotago.FeatureBlockReturn]
 	if !has {
 		return 0, false
 	}
