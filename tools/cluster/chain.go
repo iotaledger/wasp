@@ -100,10 +100,12 @@ func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 }
 
 func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*ledgerstate.Transaction, error) {
+	fmt.Printf("XXX1\n")
 	programHash, err := hashing.HashValueFromBase58(progHashStr)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("XXX2\n")
 
 	params := map[string]interface{}{
 		root.ParamName:        name,
@@ -120,13 +122,16 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 		},
 	)
+	fmt.Printf("XXX3\n")
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("XXX4\n")
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("XXX5\n")
 	return tx, nil
 }
 

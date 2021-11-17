@@ -14,7 +14,7 @@ import (
 
 // EventGetBlockMsg is a request for a block while syncing
 func (sm *stateManager) EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn) {
-	sm.eventGetBlockMsgCh <- msg
+	sm.eventGetBlockMsgPipe.In() <- msg
 }
 
 func (sm *stateManager) handleGetBlockMsg(msg *messages.GetBlockMsgIn) {
@@ -50,7 +50,7 @@ func (sm *stateManager) handleGetBlockMsg(msg *messages.GetBlockMsgIn) {
 
 // EventBlockMsg
 func (sm *stateManager) EnqueueBlockMsg(msg *messages.BlockMsgIn) {
-	sm.eventBlockMsgCh <- msg
+	sm.eventBlockMsgPipe.In() <- msg
 }
 
 func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
@@ -77,7 +77,7 @@ func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
 }
 
 func (sm *stateManager) EventOutputMsg(msg ledgerstate.Output) {
-	sm.eventOutputMsgCh <- msg
+	sm.eventOutputMsgPipe.In() <- msg
 }
 
 func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
@@ -95,7 +95,7 @@ func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
 // EventStateTransactionMsg triggered whenever new state transaction arrives
 // the state transaction may be confirmed or not
 func (sm *stateManager) EventStateMsg(msg *messages.StateMsg) {
-	sm.eventStateOutputMsgCh <- msg
+	sm.eventStateOutputMsgPipe.In() <- msg
 }
 
 func (sm *stateManager) eventStateMsg(msg *messages.StateMsg) {
@@ -115,7 +115,7 @@ func (sm *stateManager) eventStateMsg(msg *messages.StateMsg) {
 }
 
 func (sm *stateManager) EventStateCandidateMsg(state state.VirtualStateAccess, outputID ledgerstate.OutputID) {
-	sm.eventStateCandidateMsgCh <- &messages.StateCandidateMsg{
+	sm.eventStateCandidateMsgPipe.In() <- &messages.StateCandidateMsg{
 		State:             state,
 		ApprovingOutputID: outputID,
 	}
@@ -136,7 +136,7 @@ func (sm *stateManager) eventStateCandidateMsg(msg *messages.StateCandidateMsg) 
 
 func (sm *stateManager) EventTimerMsg(msg messages.TimerTick) {
 	if msg%2 == 0 {
-		sm.eventTimerMsgCh <- msg
+		sm.eventTimerMsgPipe.In() <- msg
 	}
 }
 
