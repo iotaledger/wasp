@@ -70,20 +70,31 @@ type TimeData struct {
 	ConfirmationTime         time.Time // should better be UnixNano ?
 }
 
+type NFT struct {
+	NFTID       iotago.NFTID
+	NFTMetadata []byte
+}
+
+type Transfer struct {
+	amount uint64
+	tokens iotago.NativeTokens
+	NFT    NFT
+}
+
 type Request interface {
 	ID() RequestID
 	Params() dict.Dict
 	SenderAccount() *iscp.AgentID
 	SenderAddress() iotago.Address
-	Target() (iscp.Hname, iscp.Hname)
-	Assets() (uint64, iotago.NativeTokens)
+	Target() iscp.Target
+	Assets() Transfer
 	GasBudget() int64
 }
 
 type Features interface {
-	TimeLock() (TimeLockOptions, bool)
-	Expiry() (ExpiryOptions, bool)
-	ReturnAmount() (ReturnAmountOptions, bool)
+	TimeLock() *TimeInstant
+	Expiry() *TimeInstant
+	ReturnAmount() (uint64, bool)
 	SwapOption() (SwapOptions, bool) // for the new swap
 }
 
@@ -102,13 +113,9 @@ type unwrapUTXO interface {
 	Unknown() *placeholders.UnknownOutput
 }
 
-type TimeLockOptions interface {
-	Deadline() (time.Time, bool)
-	MilestoneIndex() (uint32, bool)
-}
-
-type ExpiryOptions interface {
-	Deadline() time.Time
+type TimeInstant struct {
+	Timestamp      time.Time
+	MilestoneIndex uint32
 }
 
 type ReturnAmountOptions interface {
@@ -116,7 +123,6 @@ type ReturnAmountOptions interface {
 }
 
 type SwapOptions interface {
-	ExpiryOptions
 	ReturnAmountOptions
 }
 
