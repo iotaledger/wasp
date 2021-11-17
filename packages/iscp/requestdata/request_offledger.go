@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/marshalutil"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/requestdata/placeholders"
@@ -15,7 +14,7 @@ import (
 )
 
 type OffLedger struct {
-	chainID        *iscp.ChainID
+	chainID        iscp.ChainID
 	contract       iscp.Hname
 	entryPoint     iscp.Hname
 	params         dict.Dict
@@ -58,23 +57,23 @@ func (r *OffLedger) OffLedger() *OffLedger {
 	return r
 }
 
-func (r *OffLedger) UTXO() unwrapUTXO {
+func (r *OffLedger) UTXO() iotago.Output {
 	panic("not an UTXO RequestData")
 }
 
 // implements Features interface
 var _ Features = &OffLedger{}
 
-func (r *OffLedger) TimeLock() (TimeLockOptions, bool) {
-	return nil, false
+func (r *OffLedger) TimeLock() *TimeData {
+	return nil
 }
 
-func (r *OffLedger) Expiry() (ExpiryOptions, bool) {
-	return nil, false
+func (r *OffLedger) Expiry() *TimeData {
+	return nil
 }
 
-func (r *OffLedger) ReturnAmount() (ReturnAmountOptions, bool) {
-	return nil, false
+func (r *OffLedger) ReturnAmount() (uint64, bool) {
+	return 0, false
 }
 
 func (r *OffLedger) SwapOption() (SwapOptions, bool) {
@@ -184,8 +183,11 @@ func (r *OffLedger) Sign(keyPair *ed25519.KeyPair) {
 }
 
 // Tokens returns the transfers passed to the request
-func (r *OffLedger) Assets() (uint64, iotago.NativeTokens) {
-	return r.transferIotas, r.transferTokens
+func (r *OffLedger) Assets() Transfer {
+	return Transfer{
+		amount: r.transferIotas,
+		tokens: r.transferTokens,
+	}
 }
 
 func (r *OffLedger) WithGasBudget(gasBudget int64) *OffLedger {
@@ -246,8 +248,11 @@ func (r *OffLedger) SenderAddress() iotago.Address {
 	return r.sender
 }
 
-func (r *OffLedger) Target() (iscp.Hname, iscp.Hname) {
-	return r.contract, r.entryPoint
+func (r *OffLedger) Target() iscp.RequestTarget {
+	return iscp.RequestTarget{
+		Contract:   r.contract,
+		EntryPoint: r.entryPoint,
+	}
 }
 
 func (r *OffLedger) Timestamp() time.Time {

@@ -3,11 +3,8 @@
 package requestdata
 
 import (
-	"time"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/requestdata/placeholders"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -48,7 +45,7 @@ func (t TypeCode) String() string {
 type UTXOMetaData struct {
 	UTXOInput          iotago.UTXOInput
 	MilestoneIndex     uint32
-	MilestoneTimestamp time.Time
+	MilestoneTimestamp uint64
 }
 
 // RequestData wraps any data which can be potentially be interpreted as a request
@@ -66,8 +63,19 @@ type RequestData interface {
 }
 
 type TimeData struct {
-	ConfirmingMilestoneIndex uint32
-	ConfirmationTime         time.Time // should better be UnixNano ?
+	MilestoneIndex uint32
+	Timestamp      uint64
+}
+
+type NFT struct {
+	NFTID       iotago.NFTID
+	NFTMetadata []byte
+}
+
+type Transfer struct {
+	amount uint64
+	tokens iotago.NativeTokens
+	NFT    NFT
 }
 
 type Request interface {
@@ -75,40 +83,21 @@ type Request interface {
 	Params() dict.Dict
 	SenderAccount() *iscp.AgentID
 	SenderAddress() iotago.Address
-	Target() (iscp.Hname, iscp.Hname)
-	Assets() (uint64, iotago.NativeTokens)
+	Target() iscp.RequestTarget
+	Assets() Transfer
 	GasBudget() int64
 }
 
 type Features interface {
-	TimeLock() (TimeLockOptions, bool)
-	Expiry() (ExpiryOptions, bool)
-	ReturnAmount() (ReturnAmountOptions, bool)
+	TimeLock() *TimeData
+	Expiry() *TimeData
+	ReturnAmount() (uint64, bool)
 	SwapOption() (SwapOptions, bool) // for the new swap
 }
 
 type unwrap interface {
 	OffLedger() *OffLedger
-	UTXO() unwrapUTXO
-}
-
-type unwrapUTXO interface {
-	MetaData() UTXOMetaData
-	Simple() *iotago.SimpleOutput
-	Alias() *iotago.AliasOutput
-	Extended() *iotago.ExtendedOutput
-	NFT() *iotago.NFTOutput
-	Foundry() *iotago.FoundryOutput
-	Unknown() *placeholders.UnknownOutput
-}
-
-type TimeLockOptions interface {
-	Deadline() (time.Time, bool)
-	MilestoneIndex() (uint32, bool)
-}
-
-type ExpiryOptions interface {
-	Deadline() time.Time
+	UTXO() iotago.Output
 }
 
 type ReturnAmountOptions interface {
@@ -116,7 +105,6 @@ type ReturnAmountOptions interface {
 }
 
 type SwapOptions interface {
-	ExpiryOptions
 	ReturnAmountOptions
 }
 

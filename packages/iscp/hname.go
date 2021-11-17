@@ -11,7 +11,6 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
 	"golang.org/x/xerrors"
