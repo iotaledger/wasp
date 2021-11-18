@@ -74,7 +74,7 @@ func TestBlockchain(t *testing.T) {
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	// some assertions
@@ -153,7 +153,7 @@ func TestBlockchainPersistence(t *testing.T) {
 	transferAmount := big.NewInt(1000)
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.GasLimitDefault, 0, genesisAlloc)
 
 	// do a transfer using one instance of EVMEmulator
 	func() {
@@ -255,7 +255,7 @@ func TestStorageContract(t *testing.T) {
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
@@ -329,7 +329,7 @@ func TestERC20Contract(t *testing.T) {
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
@@ -420,7 +420,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))

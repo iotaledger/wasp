@@ -107,7 +107,7 @@ func (c *chainObj) SendPeerMsgByNetID(netID string, msgReceiver byte, msgType by
 		MsgType:     msgType,
 		MsgData:     msgData,
 	})
-}
+	}
 
 func (c *chainObj) SendPeerMsgToRandomPeers(upToNumPeers uint16, msgReceiver byte, msgType byte, msgData []byte) {
 	(*c.peers).SendMsgToRandomPeers(upToNumPeers, &peering.PeerMessageData{
@@ -206,16 +206,11 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 		return
 	}
 	for _, req := range reqs {
-		c.ReceiveRequest(req)
+		c.mempool.ReceiveRequest(req)
 	}
 	if chainOut := transaction.GetAliasOutput(tx, c.chainID.AsAddress()); chainOut != nil {
 		c.ReceiveState(chainOut, tx.Essence().Timestamp())
 	}
-}
-
-func (c *chainObj) ReceiveRequest(req iscp.Request) {
-	c.log.Debugf("ReceiveRequest: %s", req.ID())
-	c.mempool.ReceiveRequests(req)
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {

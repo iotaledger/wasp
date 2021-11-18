@@ -10,9 +10,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"golang.org/x/xerrors"
-	//	"github.com/iotaledger/wasp/packages/state"
-	//	"github.com/iotaledger/wasp/packages/util"
 )
 
 func (c *chainObj) handleMessagesLoop() {
@@ -129,12 +128,23 @@ func (c *chainObj) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgI
 func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
 	c.log.Debugf("handleOffLedgerRequestMsg message received from peer %v, reqID: %s", msg.SenderNetID, msg.Req.ID().Base58())
 	c.sendRequestAcknowledgementMsg(msg.Req.ID(), msg.SenderNetID)
+
+	if !c.isRequestValid(msg.Req) {
+		// this means some node broadcasted an invalid request (bad chainID or signature)
+		// TODO should the sender node be punished somehow?
+		c.log.Errorf("handleOffLedgerRequestMsg message ignored: request is not valid")
+		return
+	}
 	if !c.mempool.ReceiveRequest(msg.Req) {
 		c.log.Errorf("handleOffLedgerRequestMsg message ignored: mempool hasn't accepted it")
 		return
 	}
 	c.broadcastOffLedgerRequest(msg.Req)
 	c.log.Debugf("handleOffLedgerRequestMsg message added to mempool and broadcasted: reqID: %s", msg.Req.ID().Base58())
+}
+
+func (c *chainObj) isRequestValid(req *request.OffLedger) bool {
+	return req.ChainID().Equals(c.ID()) && req.VerifySignature()
 }
 
 func (c *chainObj) EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn) {

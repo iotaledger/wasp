@@ -20,8 +20,12 @@ import (
 const (
 	// config values:
 
-	keyChainID  = "c"
+	// EVM chain ID
+	keyChainID = "c"
+	// Block gas limit
 	keyGasLimit = "g"
+	// Amount of blocks to keep in DB. Older blocks will be pruned every time a transaction is added
+	keyKeepAmount = "k"
 
 	// blocks:
 
@@ -38,9 +42,6 @@ const (
 	keyBlockIndexByTxHash     = "th:i"
 )
 
-// Amount of blocks to keep in DB. Older blocks will be pruned every time a transaction is added
-const keepAmount = 100
-
 // BlockchainDB contains logic for storing a fake blockchain (more like a list of blocks),
 // intended for satisfying EVM tools that depend on the concept of a block.
 type BlockchainDB struct {
@@ -55,9 +56,10 @@ func (bc *BlockchainDB) Initialized() bool {
 	return bc.kv.MustGet(keyChainID) != nil
 }
 
-func (bc *BlockchainDB) Init(chainID uint16, gasLimit, timestamp uint64) {
+func (bc *BlockchainDB) Init(chainID uint16, keepAmount int32, gasLimit, timestamp uint64) {
 	bc.SetChainID(chainID)
 	bc.SetGasLimit(gasLimit)
+	bc.SetKeepAmount(keepAmount)
 	bc.addBlock(bc.makeHeader(nil, nil, 0, timestamp), timestamp+1)
 }
 
@@ -79,6 +81,18 @@ func (bc *BlockchainDB) SetGasLimit(gas uint64) {
 
 func (bc *BlockchainDB) GetGasLimit() uint64 {
 	gas, err := codec.DecodeUint64(bc.kv.MustGet(keyGasLimit))
+	if err != nil {
+		panic(err)
+	}
+	return gas
+}
+
+func (bc *BlockchainDB) SetKeepAmount(keepAmount int32) {
+	bc.kv.Set(keyKeepAmount, codec.EncodeInt32(keepAmount))
+}
+
+func (bc *BlockchainDB) keepAmount() int32 {
+	gas, err := codec.DecodeInt32(bc.kv.MustGet(keyKeepAmount), -1)
 	if err != nil {
 		panic(err)
 	}
@@ -198,22 +212,37 @@ func (bc *BlockchainDB) MintBlock(timestamp uint64) {
 }
 
 func (bc *BlockchainDB) prune(currentNumber uint64) {
-	if currentNumber <= keepAmount {
+	keepAmount := bc.keepAmount()
+	if keepAmount < 0 {
+		// keep all blocks
 		return
 	}
-	forget := currentNumber - keepAmount
-	blockHash := bc.GetBlockHashByBlockNumber(forget)
-	txs := bc.getTxArray(forget)
+	if currentNumber <= uint64(keepAmount) {
+		return
+	}
+	toDelete := currentNumber - uint64(keepAmount)
+	// assume that all blocks prior to `toDelete` have been already deleted, so
+	// we only need to delete this one.
+	bc.deleteBlock(toDelete)
+}
+
+func (bc *BlockchainDB) deleteBlock(blockNumber uint64) {
+	header := bc.getHeaderGobByBlockNumber(blockNumber)
+	if header == nil {
+		// already deleted?
+		return
+	}
+	txs := bc.getTxArray(blockNumber)
 	n := txs.MustLen()
 	for i := uint32(0); i < n; i++ {
-		txHash := bc.GetTransactionByBlockNumberAndIndex(forget, i).Hash()
+		txHash := bc.GetTransactionByBlockNumberAndIndex(blockNumber, i).Hash()
 		bc.kv.Del(makeBlockNumberByTxHashKey(txHash))
 		bc.kv.Del(makeBlockIndexByTxHashKey(txHash))
 	}
 	txs.MustErase()
-	bc.getReceiptArray(forget).MustErase()
-	bc.kv.Del(makeBlockHeaderByBlockNumberKey(forget))
-	bc.kv.Del(makeBlockNumberByBlockHashKey(blockHash))
+	bc.getReceiptArray(blockNumber).MustErase()
+	bc.kv.Del(makeBlockHeaderByBlockNumberKey(blockNumber))
+	bc.kv.Del(makeBlockNumberByBlockHashKey(header.Hash))
 }
 
 type headerGob struct {
@@ -260,11 +289,12 @@ func (bc *BlockchainDB) headerFromGob(g *headerGob, blockNumber uint64) *types.H
 		parentHash = bc.GetBlockHashByBlockNumber(blockNumber - 1)
 	}
 	return &types.Header{
-		ParentHash:  parentHash,
+		Difficulty:  &big.Int{},
 		Number:      new(big.Int).SetUint64(blockNumber),
 		GasLimit:    bc.GetGasLimit(),
-		GasUsed:     g.GasUsed,
 		Time:        g.Time,
+		ParentHash:  parentHash,
+		GasUsed:     g.GasUsed,
 		TxHash:      g.TxHash,
 		ReceiptHash: g.ReceiptHash,
 		Bloom:       g.Bloom,
@@ -389,33 +419,32 @@ func (bc *BlockchainDB) GetTimestampByBlockNumber(blockNumber uint64) uint64 {
 }
 
 func (bc *BlockchainDB) makeHeader(txs []*types.Transaction, receipts []*types.Receipt, blockNumber, timestamp uint64) *types.Header {
+	header := &types.Header{
+		Difficulty:  &big.Int{},
+		Number:      new(big.Int).SetUint64(blockNumber),
+		GasLimit:    bc.GetGasLimit(),
+		Time:        timestamp,
+		TxHash:      types.EmptyRootHash,
+		ReceiptHash: types.EmptyRootHash,
+		UncleHash:   types.EmptyUncleHash,
+	}
 	if blockNumber == 0 {
 		// genesis block hash
-		return &types.Header{
-			Number:      new(big.Int).SetUint64(blockNumber),
-			GasLimit:    bc.GetGasLimit(),
-			Time:        timestamp,
-			TxHash:      types.EmptyRootHash,
-			ReceiptHash: types.EmptyRootHash,
-			UncleHash:   types.EmptyUncleHash,
-		}
+		return header
 	}
 	prevBlockNumber := blockNumber - 1
 	gasUsed := uint64(0)
 	if len(receipts) > 0 {
 		gasUsed = receipts[len(receipts)-1].CumulativeGasUsed
 	}
-	return &types.Header{
-		ParentHash:  bc.GetBlockHashByBlockNumber(prevBlockNumber),
-		Number:      new(big.Int).SetUint64(blockNumber),
-		GasLimit:    bc.GetGasLimit(),
-		GasUsed:     gasUsed,
-		Time:        timestamp,
-		TxHash:      types.DeriveSha(types.Transactions(txs), &fakeHasher{}),
-		ReceiptHash: types.DeriveSha(types.Receipts(receipts), &fakeHasher{}),
-		Bloom:       types.CreateBloom(receipts),
-		UncleHash:   types.EmptyUncleHash,
+	header.ParentHash = bc.GetBlockHashByBlockNumber(prevBlockNumber)
+	header.GasUsed = gasUsed
+	if len(txs) > 0 {
+		header.TxHash = types.DeriveSha(types.Transactions(txs), &fakeHasher{})
+		header.ReceiptHash = types.DeriveSha(types.Receipts(receipts), &fakeHasher{})
 	}
+	header.Bloom = types.CreateBloom(receipts)
+	return header
 }
 
 func (bc *BlockchainDB) GetHeaderByBlockNumber(blockNumber uint64) *types.Header {

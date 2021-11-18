@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/hex"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -178,24 +179,37 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	require.Equal(t, "Block index: 2", out[0])
 
 	out = w.Run("chain", "request", reqID)
-	t.Logf("%+v", out)
+	found = false
 	for _, line := range out {
-		if strings.Contains(line, "Error:") {
-			t.Fail()
+		if strings.Contains(line, "Error: (empty)") {
+			found = true
+			break
 		}
 	}
+	require.True(t, found)
 
 	// try an unsuccessful request (missing params)
-	out = w.Run("chain", "post-request", "root", "deployContract")
+	out = w.Run("chain", "post-request", "root", "deployContract", "string", "foo", "string", "bar")
 	reqID = findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
 	out = w.Run("chain", "request", reqID)
+
 	found = false
 	for _, line := range out {
 		if strings.Contains(line, "Error: ") {
 			found = true
 			require.Regexp(t, `cannot decode`, line)
+			break
+		}
+	}
+	require.True(t, found)
+
+	found = false
+	for _, line := range out {
+		if strings.Contains(line, "foo") {
+			found = true
+			require.Contains(t, line, hex.EncodeToString([]byte("bar")))
 			break
 		}
 	}

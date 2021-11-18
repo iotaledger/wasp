@@ -12,11 +12,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	util "github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
-	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -80,72 +77,53 @@ func hasRequestBeenProcessedMocked(ret bool) hasRequestBeenProcessedFn {
 	}
 }
 
-func dummyOffledgerRequest() *request.OffLedger {
-	contract := iscp.Hn("somecontract")
-	entrypoint := iscp.Hn("someentrypoint")
-	args := requestargs.New(dict.Dict{})
-	req := request.NewOffLedger(contract, entrypoint, args)
-	keys, _ := testkey.GenKeyAddr()
-	req.Sign(keys)
-	return req
+func newMockedAPI(t *testing.T) *offLedgerReqAPI {
+	return &offLedgerReqAPI{
+		getChain:                createMockedGetChain(t),
+		getAccountBalance:       getAccountBalanceMocked,
+		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(false),
+		requestsCache:           expiringcache.New(10 * time.Second),
+	}
+}
+
+func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID *iscp.ChainID, body interface{}, expectedStatus int) {
+	testutil.CallWebAPIRequestHandler(
+		t,
+		instance.handleNewRequest,
+		http.MethodPost,
+		routes.NewRequest(":chainID"),
+		map[string]string{"chainID": chainID.Base58()},
+		body,
+		nil,
+		expectedStatus,
+	)
 }
 
 func TestNewRequestBase64(t *testing.T) {
-	instance := &offLedgerReqAPI{
-		getChain:                createMockedGetChain(t),
-		getAccountBalance:       getAccountBalanceMocked,
-		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(false),
-		requestsCache:           expiringcache.New(10 * time.Second),
-	}
-
-	testutil.CallWebAPIRequestHandler(
-		t,
-		instance.handleNewRequest,
-		http.MethodPost,
-		routes.NewRequest(":chainID"),
-		map[string]string{"chainID": iscp.RandomChainID().Base58()},
-		model.OffLedgerRequestBody{Request: model.NewBytes(dummyOffledgerRequest().Bytes())},
-		nil,
-		http.StatusAccepted,
-	)
+	instance := newMockedAPI(t)
+	chainID := iscp.RandomChainID()
+	body := model.OffLedgerRequestBody{Request: model.NewBytes(util.DummyOffledgerRequest(chainID).Bytes())}
+	testRequest(t, instance, chainID, body, http.StatusAccepted)
 }
 
 func TestNewRequestBinary(t *testing.T) {
-	instance := &offLedgerReqAPI{
-		getChain:                createMockedGetChain(t),
-		getAccountBalance:       getAccountBalanceMocked,
-		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(false),
-		requestsCache:           expiringcache.New(10 * time.Second),
-	}
-
-	testutil.CallWebAPIRequestHandler(
-		t,
-		instance.handleNewRequest,
-		http.MethodPost,
-		routes.NewRequest(":chainID"),
-		map[string]string{"chainID": iscp.RandomChainID().Base58()},
-		dummyOffledgerRequest().Bytes(),
-		nil,
-		http.StatusAccepted,
-	)
+	instance := newMockedAPI(t)
+	chainID := iscp.RandomChainID()
+	body := util.DummyOffledgerRequest(chainID).Bytes()
+	testRequest(t, instance, chainID, body, http.StatusAccepted)
 }
 
 func TestRequestAlreadyProcessed(t *testing.T) {
-	instance := &offLedgerReqAPI{
-		getChain:                createMockedGetChain(t),
-		getAccountBalance:       getAccountBalanceMocked,
-		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(true),
-		requestsCache:           expiringcache.New(10 * time.Second),
-	}
+	instance := newMockedAPI(t)
+	instance.hasRequestBeenProcessed = hasRequestBeenProcessedMocked(true)
 
-	testutil.CallWebAPIRequestHandler(
-		t,
-		instance.handleNewRequest,
-		http.MethodPost,
-		routes.NewRequest(":chainID"),
-		map[string]string{"chainID": iscp.RandomChainID().Base58()},
-		dummyOffledgerRequest().Bytes(),
-		nil,
-		http.StatusBadRequest,
-	)
+	chainID := iscp.RandomChainID()
+	body := util.DummyOffledgerRequest(chainID).Bytes()
+	testRequest(t, instance, chainID, body, http.StatusBadRequest)
+}
+
+func TestWrongChainID(t *testing.T) {
+	instance := newMockedAPI(t)
+	body := util.DummyOffledgerRequest(iscp.RandomChainID()).Bytes()
+	testRequest(t, instance, iscp.RandomChainID(), body, http.StatusBadRequest)
 }

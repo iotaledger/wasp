@@ -68,21 +68,28 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 		return err
 	}
 
+	reqID := offLedgerReq.ID()
+
+	if o.requestsCache.Get(reqID) != nil {
+		return httperrors.BadRequest("request already processed")
+	}
+
 	// check req signature
 	if !offLedgerReq.VerifySignature() {
+		o.requestsCache.Set(reqID, true)
 		return httperrors.BadRequest("Invalid signature.")
+	}
+
+	// check req is for the correct chain
+	if !offLedgerReq.ChainID().Equals(chainID) {
+		// do not add to cache, it can still be sent to the correct chain
+		return httperrors.BadRequest("Request is for a different chain")
 	}
 
 	// check chain exists
 	ch := o.getChain(chainID)
 	if ch == nil {
 		return httperrors.NotFound(fmt.Sprintf("Unknown chain: %s", chainID.Base58()))
-	}
-
-	reqID := offLedgerReq.ID()
-
-	if o.requestsCache.Get(reqID) != nil {
-		return httperrors.BadRequest("request already processed")
 	}
 
 	alreadyProcessed, err := o.hasRequestBeenProcessed(ch, reqID)
@@ -92,6 +99,7 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	}
 
 	if alreadyProcessed {
+		o.requestsCache.Set(reqID, true)
 		return httperrors.BadRequest("request already processed")
 	}
 

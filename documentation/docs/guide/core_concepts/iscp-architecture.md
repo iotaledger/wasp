@@ -16,7 +16,7 @@ Each chain has its own state where a state update (going from one block to the n
 
 The multi-chain nature of ISCP makes it a more complex implementation of smart contracts, over say Ethereum, as illustrated here:
 
-![ISCP multichain architecture](/img/multichain.png)
+![ISCP multichain architecture](../../../static/img/multichain.png)
 
-A full and extensive documentation of the IOTA Architecture describing all components in detail can be found in this
-[technical description](https://github.com/iotaledger/wasp/raw/master/documentation/ISCP%20architecture%20description%20v3.pdf).
+The comprehensive overview of architectural design decisions of IOTA Smart Contracts can be found in the
+[whitepaper](https://github.com/iotaledger/wasp/raw/master/documentation/ISC_WP_Nov_10_2021.pdf).

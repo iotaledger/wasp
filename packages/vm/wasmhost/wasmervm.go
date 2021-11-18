@@ -18,15 +18,16 @@ type WasmerVM struct {
 	store    *wasmer.Store
 }
 
-var _ WasmVM = &WasmerVM{}
-
 var i32 = []wasmer.ValueKind{wasmer.I32, wasmer.I32, wasmer.I32, wasmer.I32, wasmer.I32}
 
-func NewWasmerVM() *WasmerVM {
+func NewWasmerVM() WasmVM {
 	vm := &WasmerVM{}
 	vm.store = wasmer.NewStore(wasmer.NewEngine())
-	vm.linker = wasmer.NewImportObject()
 	return vm
+}
+
+func (vm *WasmerVM) NewInstance() WasmVM {
+	return &WasmerVM{ store: vm.store }
 }
 
 //TODO
@@ -35,6 +36,7 @@ func (vm *WasmerVM) Interrupt() {
 }
 
 func (vm *WasmerVM) LinkHost(impl WasmVM, host *WasmHost) error {
+	vm.linker = wasmer.NewImportObject()
 	_ = vm.WasmVMBase.LinkHost(impl, host)
 
 	funcs := map[string]wasmer.IntoExtern{
