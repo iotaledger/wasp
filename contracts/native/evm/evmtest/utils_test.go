@@ -141,6 +141,7 @@ func (e *evmChainInstance) callView(funName string, params ...interface{}) (dict
 	return e.soloChain.CallView(e.evmFlavor.Name, funName, params...)
 }
 
+// nolint:unused
 func (e *evmChainInstance) setBlockTime(t uint32) {
 	_, err := e.postRequest(nil, evm.FuncSetBlockTime.Name, evm.FieldBlockTime, codec.EncodeUint32(t))
 	require.NoError(e.t, err)
@@ -152,6 +153,7 @@ func (e *evmChainInstance) getBlockNumber() uint64 {
 	return new(big.Int).SetBytes(ret.MustGet(evm.FieldResult)).Uint64()
 }
 
+// nolint:unused
 func (e *evmChainInstance) getBlockByNumber(n uint64) *types.Block {
 	ret, err := e.callView(evm.FuncGetBlockByNumber.Name, evm.FieldBlockNumber, new(big.Int).SetUint64(n).Bytes())
 	require.NoError(e.t, err)
