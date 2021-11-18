@@ -85,6 +85,7 @@ func (c *chainObj) EnqueueDismissChain(reason string) {
 }
 
 func (c *chainObj) handleDismissChain(msg DismissChainMsg) {
+	c.log.Debugf("handleDismissChain message received, reason=%s", msg.Reason)
 	c.Dismiss(msg.Reason)
 }
 
@@ -98,15 +99,14 @@ func (c *chainObj) EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, time
 // handleLedgerState processes the only chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
 func (c *chainObj) handleLedgerState(msg *messages.StateMsg) {
+	c.log.Debugf("handleLedgerState message received, stateIndex: %d, stateAddr: %s, state transition: %v, timestamp: ",
+		msg.ChainOutput.GetStateIndex(), msg.ChainOutput.GetStateAddress().Base58(), !msg.ChainOutput.GetIsGovernanceUpdated(), msg.Timestamp)
 	sh, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
 	if err != nil {
 		c.log.Error(xerrors.Errorf("parsing state hash: %w", err))
 		return
 	}
-	c.log.Debugf("processStateMessage. stateIndex: %d, stateHash: %s, stateAddr: %s, state transition: %v",
-		msg.ChainOutput.GetStateIndex(), sh.String(),
-		msg.ChainOutput.GetStateAddress().Base58(), !msg.ChainOutput.GetIsGovernanceUpdated(),
-	)
+	c.log.Debugf("handleLedgerState stateHash: %s", sh.String())
 	cmt := c.getCommittee()
 
 	if cmt != nil {
@@ -119,6 +119,7 @@ func (c *chainObj) handleLedgerState(msg *messages.StateMsg) {
 		return
 	}
 	c.stateMgr.EventStateMsg(msg)
+	c.log.Debugf("handleLedgerState passed to state manager")
 }
 
 func (c *chainObj) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
@@ -126,15 +127,14 @@ func (c *chainObj) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgI
 }
 
 func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
-	req := msg.Req
-	senderNetID := msg.SenderNetID
-	c.log.Debugf("handleOffLedgerRequestPeerMsg: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
-	c.sendRequestAcknowledgementMsg(req.ID(), senderNetID)
-	if !c.mempool.ReceiveRequest(req) {
+	c.log.Debugf("handleOffLedgerRequestMsg message received from peer %v, reqID: %s", msg.SenderNetID, msg.Req.ID().Base58())
+	c.sendRequestAcknowledgementMsg(msg.Req.ID(), msg.SenderNetID)
+	if !c.mempool.ReceiveRequest(msg.Req) {
+		c.log.Errorf("handleOffLedgerRequestMsg message ignored: mempool hasn't accepted it")
 		return
 	}
-	c.log.Debugf("handleOffLedgerRequestPeerMsg - added to mempool: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
-	c.broadcastOffLedgerRequest(req)
+	c.broadcastOffLedgerRequest(msg.Req)
+	c.log.Debugf("handleOffLedgerRequestMsg message added to mempool and broadcasted: reqID: %s", msg.Req.ID().Base58())
 }
 
 func (c *chainObj) EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn) {
@@ -142,11 +142,12 @@ func (c *chainObj) EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn) {
 }
 
 func (c *chainObj) handleRequestAckPeerMsg(msg *messages.RequestAckMsgIn) {
-	c.log.Debugf("handleRequestAckPeerMsg: reqID: %s, peerID: %s", msg.ReqID.Base58(), msg.SenderNetID)
+	c.log.Debugf("handleRequestAckPeerMsg message received from peer %v, reqID: %s", msg.SenderNetID, msg.ReqID.Base58())
 	c.offLedgerReqsAcksMutex.Lock()
 	defer c.offLedgerReqsAcksMutex.Unlock()
 	c.offLedgerReqsAcks[*msg.ReqID] = append(c.offLedgerReqsAcks[*msg.ReqID], msg.SenderNetID)
 	c.chainMetrics.CountRequestAckMessages()
+	c.log.Debugf("handleRequestAckPeerMsg comleted: reqID: %s", msg.ReqID.Base58())
 }
 
 func (c *chainObj) EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn) {
@@ -154,17 +155,22 @@ func (c *chainObj) EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMs
 }
 
 func (c *chainObj) handleMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn) {
+	c.log.Debugf("handleMissingRequestIDsMsg message received from peer %v, number of reqIDs: %v", msg.SenderNetID, len(msg.IDs))
 	if !c.pullMissingRequestsFromCommittee {
+		c.log.Warnf("handleMissingRequestIDsMsg ignored: pull from committee disabled")
 		return
 	}
-	peerID := msg.SenderNetID
 	for _, reqID := range msg.IDs {
-		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID.Base58(), peerID)
+		c.log.Debugf("handleMissingRequestIDsMsg: finding reqID %s...", reqID.Base58())
 		if req := c.mempool.GetRequest(reqID); req != nil {
-			msg := &messages.MissingRequestMsg{Request: req}
-			c.SendPeerMsgByNetID(peerID, chain.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequest, msg.Bytes())
+			resultMsg := &messages.MissingRequestMsg{Request: req}
+			c.SendPeerMsgByNetID(msg.SenderNetID, chain.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequest, resultMsg.Bytes())
+			c.log.Warnf("handleMissingRequestIDsMsg: reqID %s sent to %v.", reqID.Base58(), msg.SenderNetID)
+		} else {
+			c.log.Warnf("handleMissingRequestIDsMsg: reqID %s not found.", reqID.Base58())
 		}
 	}
+	c.log.Debugf("handleMissingRequestIDsMsg completed")
 }
 
 func (c *chainObj) EnqueueMissingRequestMsg(msg *messages.MissingRequestMsg) {
@@ -172,11 +178,16 @@ func (c *chainObj) EnqueueMissingRequestMsg(msg *messages.MissingRequestMsg) {
 }
 
 func (c *chainObj) handleMissingRequestMsg(msg *messages.MissingRequestMsg) {
+	c.log.Debugf("handleMissingRequestMsg message received, reqID: %v", msg.Request.ID().Base58())
 	if !c.pullMissingRequestsFromCommittee {
+		c.log.Warnf("handleMissingRequestMsg ignored: pull from committee disabled")
 		return
 	}
 	if c.consensus.ShouldReceiveMissingRequest(msg.Request) {
 		c.mempool.ReceiveRequest(msg.Request)
+		c.log.Warnf("handleMissingRequestMsg request with ID %v added to mempool", msg.Request.ID().Base58())
+	} else {
+		c.log.Warnf("handleMissingRequestMsg ignored: consensus denied the need of request with ID %v", msg.Request.ID().Base58())
 	}
 }
 

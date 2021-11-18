@@ -167,13 +167,15 @@ func (c *consensus) pollMissingRequests(missingRequestIndexes []int) {
 		return
 	}
 	missingRequestIds := []iscp.RequestID{}
+	missingRequestIDsString := ""
 	for _, idx := range missingRequestIndexes {
 		reqID := c.consensusBatch.RequestIDs[idx]
 		reqHash := c.consensusBatch.RequestHashes[idx]
 		c.missingRequestsFromBatch[reqID] = reqHash
 		missingRequestIds = append(missingRequestIds, reqID)
+		missingRequestIDsString += reqID.Base58() + ", "
 	}
-	c.log.Debugf("runVMIfNeeded: asking for missing requests, ids: %v", missingRequestIds)
+	c.log.Debugf("runVMIfNeeded: asking for missing requests, ids: [%v]", missingRequestIDsString)
 	msg := &messages.MissingRequestIDsMsg{IDs: missingRequestIds}
 	c.committee.SendMsgBroadcast(chain.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequestIDs, msg.Bytes())
 }
@@ -617,10 +619,23 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 	return tx, chained, nil
 }
 
-func (c *consensus) setNewState(msg *messages.StateTransitionMsg) {
+func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 	if msg.State.BlockIndex() != msg.StateOutput.GetStateIndex() {
-		c.log.Panicf("consensus::setNewState: state index is inconsistent: block: #%d != chain output: #%d",
+		// NOTE: should be a panic. However this situation may occur (and occurs) in normal circumstations:
+		// 1) State manager synchronizes to state index n and passes state transmission message through event to consensus asynchronously
+		// 2) Consensus is overwhelmed and receives a message after delay
+		// 3) Meanwhile state manager is quick enough to synchronize to state index n+1 and commits a block of state index n+1
+		// 4) Only then the consensus receives a message sent in step 1. Due to imperfect implementation of virtual state copying it thinks
+		//    that state is at index n+1, however chain output is (as was transmitted) and at index n.
+		// The virtual state copying (earlier called "cloning") works in a following way: it copies all the mutations, stored in buffered KVS,
+		// however it obtains the same kvs object to access the database. BlockIndex method of virtual state checks if there are mutations editing
+		// the index value. If so, it returns the newest value in respect to mutations. Otherwise it checks the database for newest index value.
+		// In this case, in there are no mutations neither in step 1 nor in step 3, because just before completing state synchronization all the
+		// mutations are written to the DB. However, reading the same DB in step 1 results in index n and in step 4 (after the commit of block
+		// index n+1) -- in index n+1. Thus effectively the virtual state received is different than the virtual state sent.
+		c.log.Errorf("consensus::setNewState: state index is inconsistent: block: #%d != chain output: #%d",
 			msg.State.BlockIndex(), msg.StateOutput.GetStateIndex())
+		return false
 	}
 
 	c.stateOutput = msg.StateOutput
@@ -634,6 +649,7 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) {
 	c.log.Debugf("SET NEW STATE #%d%s, output: %s, hash: %s",
 		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.StateCommitment().String())
 	c.resetWorkflow()
+	return true
 }
 
 func (c *consensus) resetWorkflow() {

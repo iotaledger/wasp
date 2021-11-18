@@ -88,6 +88,7 @@ func (c *chainObj) Dismiss(reason string) {
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
+	c.log.Debug("Chain dismissed")
 }
 
 func (c *chainObj) IsDismissed() bool {

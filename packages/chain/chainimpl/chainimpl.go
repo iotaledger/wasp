@@ -208,14 +208,13 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 			RequestAckMsg: *msg,
 			SenderNetID:   peerMsg.SenderNetID,
 		})
-	case messages.MsgMissingRequest:
+	case chain.PeerMsgTypeMissingRequest:
 		msg, err := messages.NewMissingRequestMsg(peerMsg.MsgData)
 		if err != nil {
 			c.log.Error(err)
 			return
 		}
 		c.EnqueueMissingRequestMsg(msg)
-	default:
 	}
 }
 
@@ -265,7 +264,11 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
 	}
-	c.consensus.EventStateTransitionMsg(msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
+	if c.consensus == nil {
+		c.log.Warnf("processChainTransition: skipping notifying consensus as it is not initiated")
+	} else {
+		c.consensus.EventStateTransitionMsg(msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
+	}
 	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.StateCommitment().String())
 }
 
