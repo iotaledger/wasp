@@ -36,7 +36,7 @@ const (
 func (vmctx *VMContext) RunTheRequest(req requestdata.RequestData, requestIndex uint16) {
 
 	if req.Unwrap().UTXO() != nil && vmctx.txbuilder.inputsFull() {
-		// ignore the UTXO request. Exceeded limit of inout in the anchor transaction
+		// ignore the UTXO request. Exceeded limit of input in the anchor transaction
 		return
 	}
 

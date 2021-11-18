@@ -129,7 +129,8 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),
 	}
-	ret.initTxBuilder()
+	ret.txbuilder = ret.newTxBuilder()
+	ret.txbuilderSnapshots = make(map[int]*txbuilder)
 	return ret
 }
 

@@ -11,30 +11,37 @@ import (
 // implements transaction builder used internally by the VM during batch run
 
 type txbuilder struct {
-	chainOutput        *iotago.AliasOutput
-	consumedInputs     []iotago.UTXOInput
-	outputsCount       int // maintained during the run. Final outputs will be constructed in the end
-	initialIotaAmount  uint64
-	updateIotaAmountTo uint64
-	deltaNativeTokens  map[iotago.NativeTokenID]*big.Int
+	vmctx *VMContext
+	// anchor output of the chain
+	chainOutput *iotago.AliasOutput
+	// already consumed inputs
+	consumedInputs []iotago.UTXOInput
+	// maintained during the run. Final outputs will be constructed in the end
+	outputsCount        int
+	balanceIotasInitial *uint64
+	balanceIotas        uint64
+	balanceNativeTokens map[iotago.NativeTokenID]*nativeTokenBalance
 	// TODO
 }
 
-// TODO
-func newTxBuilder(chainOutput *iotago.AliasOutput, chainOutputID iotago.UTXOInput) *txbuilder {
-	return &txbuilder{
-		chainOutput:       chainOutput,
-		consumedInputs:    []iotago.UTXOInput{chainOutputID},
-		deltaNativeTokens: make(map[iotago.NativeTokenID]*big.Int),
-	}
+type nativeTokenBalance struct {
+	initial *big.Int
+	balance *big.Int
 }
 
 func (txb *txbuilder) clone() *txbuilder {
-	ret := newTxBuilder(txb.chainOutput, txb.consumedInputs[0])
+	ret := txb.vmctx.newTxBuilder()
 	copy(ret.consumedInputs, txb.consumedInputs)
 	ret.outputsCount = txb.outputsCount
-	for k, v := range txb.deltaNativeTokens {
-		ret.deltaNativeTokens[k] = new(big.Int).Set(v)
+	ret.balanceIotas = txb.balanceIotas
+	i := *txb.balanceIotasInitial
+	ret.balanceIotasInitial = &i
+	ret.balanceIotas = txb.balanceIotas
+	for k, v := range txb.balanceNativeTokens {
+		ret.balanceNativeTokens[k] = &nativeTokenBalance{
+			initial: new(big.Int).Set(v.balance),
+			balance: new(big.Int).Set(v.balance),
+		}
 	}
 	// TODO the rest
 	return ret
@@ -57,55 +64,92 @@ func (txb *txbuilder) inputs() iotago.Inputs {
 	return ret
 }
 
+func (txb *txbuilder) numInputsConsumed() int {
+	ret := len(txb.consumedInputs)
+	if txb.balanceIotasInitial != nil && *txb.balanceIotasInitial != txb.balanceIotas && txb.balanceIotas > 0 {
+		ret++
+	}
+	for _, v := range txb.balanceNativeTokens {
+		if v.balance.Cmp(v.initial) != 0 {
+			ret++
+		}
+	}
+	return ret
+}
+
 func (txb *txbuilder) inputsFull() bool {
-	return len(txb.consumedInputs) >= iotago.MaxInputsCount
+	return txb.numInputsConsumed() >= iotago.MaxInputsCount
+}
+
+func (txb *txbuilder) numOutputsConsumed() int {
+	ret := 1 // for chain output
+	for _, v := range txb.balanceNativeTokens {
+		// see https://stackoverflow.com/questions/64257065/is-there-another-way-of-testing-if-a-big-int-is-0
+		if v.balance.Cmp(v.initial) != 0 && len(v.balance.Bits()) > 0 {
+			ret++
+		}
+	}
+	return ret
 }
 
 func (txb *txbuilder) outputsFull() bool {
-	return txb.outputsCount >= iotago.MaxOutputsCount
+	return txb.numOutputsConsumed() >= iotago.MaxOutputsCount
+}
+
+func (txb *txbuilder) ensureIotasBalance() {
+	if txb.balanceIotasInitial != nil {
+		return
+	}
+	b := txb.vmctx.loadOnChainIotas()
+	txb.balanceIotasInitial = &b
+	txb.balanceIotas = b
 }
 
 func (txb *txbuilder) addDeltaIotas(delta uint64) {
+	txb.ensureIotasBalance()
 	// safe arithmetics
-	n := txb.updateIotaAmountTo + delta
-	if n < txb.updateIotaAmountTo {
+	n := txb.balanceIotas + delta
+	if n < txb.balanceIotas {
 		panic("addDeltaIotas: overflow")
 	}
-	txb.updateIotaAmountTo = n
+	txb.balanceIotas = n
 }
 
 func (txb *txbuilder) subDeltaIotas(delta uint64) {
 	// safe arithmetics
-	if delta > txb.updateIotaAmountTo {
+	if delta > txb.balanceIotas {
 		panic("subDeltaIotas: overflow")
 	}
-	txb.updateIotaAmountTo -= delta
+	txb.balanceIotas -= delta
+}
+
+func (txb *txbuilder) ensureNativeTokenBalance(id iotago.NativeTokenID) *nativeTokenBalance {
+	if b, ok := txb.balanceNativeTokens[id]; ok {
+		return b
+	}
+	b := &nativeTokenBalance{
+		balance: txb.vmctx.loadNativeTokensOnChain(id),
+	}
+	txb.balanceNativeTokens[id] = b
+	return b
 }
 
 // use negative to subtract
 func (txb *txbuilder) addDeltaNativeToken(id iotago.NativeTokenID, delta *big.Int) {
-	b, ok := txb.deltaNativeTokens[id]
-	if !ok {
-		b = new(big.Int).Set(delta)
-	} else {
-		// TODO safe arithmetic
-		b.Add(b, delta)
-	}
-	// see https://stackoverflow.com/questions/64257065/is-there-another-way-of-testing-if-a-big-int-is-0
-	if len(b.Bits()) == 0 {
-		delete(txb.deltaNativeTokens, id)
-	} else {
-		txb.deltaNativeTokens[id] = b
-	}
+	b := txb.ensureNativeTokenBalance(id)
+	// TODO safe arithmetic
+	b.balance.Add(b.balance, delta)
 }
 
 /////////// vmcontext methods
 
-// initTxBuilder creates anchor transaction builder for the block
-func (vmctx *VMContext) initTxBuilder() {
-	vmctx.txbuilder = newTxBuilder(vmctx.chainInput, vmctx.chainInputID)
-	vmctx.txbuilderSnapshots = make(map[int]*txbuilder)
-	// fetch current iota amount from the state into initialIotaAmount
+func (vmctx *VMContext) newTxBuilder() *txbuilder {
+	return &txbuilder{
+		vmctx:               vmctx,
+		chainOutput:         vmctx.chainInput,
+		consumedInputs:      []iotago.UTXOInput{vmctx.chainInputID},
+		balanceNativeTokens: make(map[iotago.NativeTokenID]*nativeTokenBalance),
+	}
 }
 
 func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*iotago.TransactionEssence, error) {
@@ -131,4 +175,12 @@ func (vmctx *VMContext) restoreTxBuilderSnapshot(id int) {
 
 func (vmctx *VMContext) clearTxBuilderSnapshots() {
 	vmctx.txbuilderSnapshots = make(map[int]*txbuilder)
+}
+
+func (vmctx *VMContext) loadOnChainIotas() uint64 {
+	panic("not implemented")
+}
+
+func (vmctx *VMContext) loadNativeTokensOnChain(id iotago.NativeTokenID) *big.Int {
+	panic("not implemented")
 }
