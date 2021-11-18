@@ -630,8 +630,8 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 		// The virtual state copying (earlier called "cloning") works in a following way: it copies all the mutations, stored in buffered KVS,
 		// however it obtains the same kvs object to access the database. BlockIndex method of virtual state checks if there are mutations editing
 		// the index value. If so, it returns the newest value in respect to mutations. Otherwise it checks the database for newest index value.
-		// In this case, in there are no mutations neither in step 1 nor in step 3, because just before completing state synchronization all the
-		// mutations are written to the DB. However, reading the same DB in step 1 results in index n and in step 4 (after the commit of block
+		// In the described scenario, there are no mutations neither in step 1, nor in step 3, because just before completing state synchronization
+		// all the mutations are written to the DB. However, reading the same DB in step 1 results in index n and in step 4 (after the commit of block
 		// index n+1) -- in index n+1. Thus effectively the virtual state received is different than the virtual state sent.
 		c.log.Errorf("consensus::setNewState: state index is inconsistent: block: #%d != chain output: #%d",
 			msg.State.BlockIndex(), msg.StateOutput.GetStateIndex())
