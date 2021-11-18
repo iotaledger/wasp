@@ -17,20 +17,22 @@ type onLedgerRequestData struct {
 	requestMetadata    *RequestMetadata
 }
 
-func NewExtendedOutputData(data UTXOMetaData, o iotago.Output) (*onLedgerRequestData, error) {
+func NewOnLedgerRequestData(data UTXOMetaData, o iotago.Output) (*onLedgerRequestData, error) {
 	var fbSet iotago.FeatureBlocksSet
 	var reqMetadata *RequestMetadata
 	var err error
 
-	if fbo, ok := o.(iotago.FeatureBlockOutput); ok {
-		fbSet, err = fbo.FeatureBlocks().Set()
-		if err != nil {
-			return nil, err
-		}
-		reqMetadata, err = RequestMetadataFromFeatureBlocksSet(fbSet)
-		if err != nil {
-			return nil, err
-		}
+	fbo, ok := o.(iotago.FeatureBlockOutput)
+	if !ok {
+		panic("wrong type. Expected iotago.FeatureBlockOutput")
+	}
+	fbSet, err = fbo.FeatureBlocks().Set()
+	if err != nil {
+		return nil, err
+	}
+	reqMetadata, err = RequestMetadataFromFeatureBlocksSet(fbSet)
+	if err != nil {
+		return nil, err
 	}
 
 	return &onLedgerRequestData{
@@ -105,7 +107,7 @@ func (r *onLedgerRequestData) TimeData() *TimeData {
 	}
 }
 
-func (r *onLedgerRequestData) MustUnwrap() unwrap {
+func (r *onLedgerRequestData) Unwrap() unwrap {
 	return r
 }
 
@@ -188,9 +190,4 @@ func (r *onLedgerRequestData) ReturnAmount() (uint64, bool) {
 		return 0, false
 	}
 	return senderBlock.(*iotago.ReturnFeatureBlock).Amount, true
-}
-
-func (r *onLedgerRequestData) SwapOption() (SwapOptions, bool) {
-	// TODO
-	panic("implement me")
 }

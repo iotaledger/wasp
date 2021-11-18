@@ -74,11 +74,16 @@ func RandomChainID(seed ...[]byte) ChainID {
 	return ret
 }
 
+func (chid *ChainID) Bytes() []byte {
+	return chid[:]
+}
+
 // Equals for using
 func (chid *ChainID) Equals(chid1 *ChainID) bool {
 	return chid == chid1
 }
 
+// TODO replace all base58 to Bech
 func (chid *ChainID) Base58() string {
 	return base58.Encode(chid[:])
 }

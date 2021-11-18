@@ -37,7 +37,7 @@ func (t TypeCode) String() string {
 	if ok {
 		return ret
 	}
-	return "(wrong))"
+	return "(wrong)"
 }
 
 // UTXOMetaData is coming together with UTXO from L1
@@ -55,7 +55,7 @@ type RequestData interface {
 	Request() Request // nil if the RequestData cannot be interpreted as request, for example does not contain Sender
 	TimeData() *TimeData
 
-	MustUnwrap() unwrap
+	Unwrap() unwrap
 	Features() Features
 
 	Bytes() []byte
@@ -75,7 +75,7 @@ type NFT struct {
 type Transfer struct {
 	amount uint64
 	tokens iotago.NativeTokens
-	NFT    NFT
+	NFT    *NFT
 }
 
 type Request interface {
@@ -92,7 +92,6 @@ type Features interface {
 	TimeLock() *TimeData
 	Expiry() *TimeData
 	ReturnAmount() (uint64, bool)
-	SwapOption() (SwapOptions, bool) // for the new swap
 }
 
 type unwrap interface {
@@ -101,11 +100,8 @@ type unwrap interface {
 }
 
 type ReturnAmountOptions interface {
+	ReturnTo() iotago.Address
 	Amount() uint64
-}
-
-type SwapOptions interface {
-	ReturnAmountOptions
 }
 
 func (txm *UTXOMetaData) RequestID() RequestID {

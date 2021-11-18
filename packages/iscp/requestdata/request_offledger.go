@@ -30,6 +30,10 @@ type OffLedger struct {
 // implement RequestData interface
 var _ RequestData = &OffLedger{}
 
+func NewOffLedgerRequest() *OffLedger {
+	return nil // TODO
+}
+
 func (r *OffLedger) Type() TypeCode {
 	return TypeOffLedger
 }
@@ -42,7 +46,7 @@ func (r *OffLedger) TimeData() *TimeData {
 	panic("implement me")
 }
 
-func (r *OffLedger) MustUnwrap() unwrap {
+func (r *OffLedger) Unwrap() unwrap {
 	panic("implement me")
 }
 
@@ -74,10 +78,6 @@ func (r *OffLedger) Expiry() *TimeData {
 
 func (r *OffLedger) ReturnAmount() (uint64, bool) {
 	return 0, false
-}
-
-func (r *OffLedger) SwapOption() (SwapOptions, bool) {
-	return nil, false
 }
 
 // implements iscp.Request interface
@@ -128,7 +128,7 @@ func (r *OffLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 }
 
 func (r *OffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.Write(r.chainID).
+	mu.Write(&r.chainID).
 		Write(r.contract).
 		Write(r.entryPoint).
 		Write(r.params).
