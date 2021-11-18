@@ -123,12 +123,6 @@ func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateA
 	c.stateMgr.EventStateCandidateMsg(virtualState, outputID)
 }
 
-// ReceiveMessage accepts an incoming message asynchronously.
-/*func (c *chainObj) ReceiveMessage(msg interface{}) {
-	c.receiveMessage(msg)
-	c.chainMetrics.CountMessages() TODO
-}*/
-
 func shouldSendToPeer(peerID string, ackPeers []string) bool {
 	for _, p := range ackPeers {
 		if p == peerID {

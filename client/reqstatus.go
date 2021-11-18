@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -38,7 +37,6 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp
 // by the node
 func (c *WaspClient) WaitUntilAllRequestsProcessed(chainID *iscp.ChainID, tx *ledgerstate.Transaction, timeout time.Duration) error {
 	for _, reqID := range request.RequestsInTransaction(chainID, tx) {
-		fmt.Printf("XXX reqID %v\n", reqID)
 		if err := c.WaitUntilRequestProcessed(chainID, reqID, timeout); err != nil {
 			return err
 		}
