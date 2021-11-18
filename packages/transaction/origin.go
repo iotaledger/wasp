@@ -9,8 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
@@ -67,10 +67,10 @@ func NewRootInitRequestTransaction(
 ) (*ledgerstate.Transaction, error) {
 	txb := utxoutil.NewBuilder(allInputs...).WithTimestamp(timestamp)
 
-	args := requestargs.New(nil)
+	args := dict.New()
 
-	args.AddEncodeSimple(governance.ParamChainID, codec.EncodeChainID(chainID))
-	args.AddEncodeSimple(governance.ParamDescription, codec.EncodeString(description))
+	args.Set(governance.ParamChainID, codec.EncodeChainID(chainID))
+	args.Set(governance.ParamDescription, codec.EncodeString(description))
 
 	metadata := request.NewMetadata().
 		WithTarget(iscp.Hn("root")).

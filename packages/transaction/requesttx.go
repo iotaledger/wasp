@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 type RequestParams struct {
@@ -15,7 +15,7 @@ type RequestParams struct {
 	Contract   iscp.Hname
 	EntryPoint iscp.Hname
 	Transfer   colored.Balances
-	Args       requestargs.RequestArgs
+	Args       dict.Dict
 }
 
 type NewRequestTransactionParams struct {

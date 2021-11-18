@@ -200,7 +200,7 @@ func TestTutorial8(t *testing.T) {
 	// deposited to the user's account on the chain
 	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-2)
 	chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0) // empty on-chain
-	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 1)
 
 	// user send a "storeString" request to the smart contract. It attaches 42 iotas to the request
 	// It also takes 1 iota for the request token
@@ -211,7 +211,7 @@ func TestTutorial8(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(contractAgentID, colored.IOTA, 42)
-	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 1)
 	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-44)
 
 	// user withdraws all iotas from the smart contract back
@@ -223,6 +223,6 @@ func TestTutorial8(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0)
-	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 1)
 	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-44+42)
 }

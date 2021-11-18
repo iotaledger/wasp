@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -34,7 +33,7 @@ func (w *WaspClientBackend) Signer() *ed25519.KeyPair {
 func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer colored.Balances, args dict.Dict) error {
 	tx, err := w.ChainClient.Post1Request(iscp.Hn(scName), iscp.Hn(funName), chainclient.PostRequestParams{
 		Transfer: transfer,
-		Args:     requestargs.New(nil).AddEncodeSimpleMany(args),
+		Args:     args,
 	})
 	if err != nil {
 		return err
@@ -52,7 +51,7 @@ func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer
 func (w *WaspClientBackend) PostOffLedgerRequest(scName, funName string, transfer colored.Balances, args dict.Dict) error {
 	req, err := w.ChainClient.PostOffLedgerRequest(iscp.Hn(scName), iscp.Hn(funName), chainclient.PostRequestParams{
 		Transfer: transfer,
-		Args:     requestargs.New().AddEncodeSimpleMany(args),
+		Args:     args,
 	})
 	if err != nil {
 		return err

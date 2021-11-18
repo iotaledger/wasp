@@ -103,22 +103,40 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 //
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
 func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
+	if keyPair == nil {
+		keyPair = ch.OriginatorKeyPair
+	}
+
 	expectedHash := blob.MustGetBlobHash(parseParams(params))
 	if _, ok := ch.GetBlobInfo(expectedHash); ok {
 		// blob exists, return hash of existing
 		return expectedHash, nil
 	}
 
-	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...)
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
 	require.EqualValues(ch.Env.T, feeColor, colored.IOTA)
 	totalFee := ownerFee + validatorFee
-	if totalFee > 0 {
-		req.WithIotas(totalFee)
-	} else {
-		req.WithIotas(1)
+	if totalFee == 0 {
+		bal := ch.GetAccountBalance(iscp.NewAgentID(ledgerstate.NewED25519Address(keyPair.PublicKey), 0))
+		if bal.Get(feeColor) == 0 {
+			totalFee = 1 // off-ledger request requires at least 1 token in the balance
+		}
 	}
-	res, err := ch.PostRequestSync(req, keyPair)
+	if totalFee > 0 {
+		_, err = ch.PostRequestSync(
+			NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+				WithTransfer(feeColor, totalFee),
+			keyPair,
+		)
+		if err != nil {
+			return
+		}
+	}
+
+	res, err := ch.PostRequestOffLedger(
+		NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...),
+		keyPair,
+	)
 	if err != nil {
 		return
 	}
@@ -134,54 +152,6 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 	require.EqualValues(ch.Env.T, expectedHash, ret)
 	return ret, err
 }
-
-// UploadBlobOptimized does the same as UploadBlob, only better but more complicated
-// It allows big data chunks to bypass the request transaction. Instead, in transaction only hash of the data is put.
-// The data itself must be uploaded to the node (in this case into Solo environment), separately.
-// Before running the request in VM, the hash references contained in the request transaction are resolved with
-// the real data, previously uploaded directly.
-func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
-	expectedHash := blob.MustGetBlobHash(parseParams(params))
-	if _, ok := ch.GetBlobInfo(expectedHash); ok {
-		// blob exists, return hash of existing
-		return expectedHash, nil
-	}
-	// creates call parameters by optimizing big data chunks, the ones larger than optimalSize.
-	// The call returns map of keys/value pairs which were replaced by hashes. These data must be uploaded
-	// separately
-	req, toUpload := NewCallParamsOptimized(blob.Contract.Name, blob.FuncStoreBlob.Name, optimalSize, params...)
-	req.WithIotas(1)
-	// the too big data we first upload into the blobCache
-	for _, v := range toUpload {
-		ch.Env.PutBlobDataIntoRegistry(v)
-	}
-	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, colored.IOTA)
-	totalFee := ownerFee + validatorFee
-	if totalFee > 0 {
-		req.WithIotas(totalFee)
-	}
-	res, err := ch.PostRequestSync(req, keyPair)
-	if err != nil {
-		return
-	}
-	resBin := res.MustGet(blob.ParamHash)
-	if resBin == nil {
-		err = fmt.Errorf("internal error: no hash returned")
-		return
-	}
-	ret, err = codec.DecodeHashValue(resBin)
-	if err != nil {
-		return
-	}
-	require.EqualValues(ch.Env.T, expectedHash, ret)
-	return ret, err
-}
-
-const (
-	OptimizeUpload  = true
-	OptimalBlobSize = 512
-)
 
 // UploadWasm is a syntactic sugar of the UploadBlob used to upload Wasm binary to the chain.
 //  parameter 'binaryCode' is the binary of Wasm smart contract program
@@ -189,12 +159,6 @@ const (
 // The blob for the Wasm binary used fixed field names which are statically known by the
 // 'root' smart contract which is responsible for the deployment of contracts on the chain
 func (ch *Chain) UploadWasm(keyPair *ed25519.KeyPair, binaryCode []byte) (ret hashing.HashValue, err error) {
-	if OptimizeUpload {
-		return ch.UploadBlobOptimized(OptimalBlobSize, keyPair,
-			blob.VarFieldVMType, vmtypes.WasmTime,
-			blob.VarFieldProgramBinary, binaryCode,
-		)
-	}
 	return ch.UploadBlob(keyPair,
 		blob.VarFieldVMType, vmtypes.WasmTime,
 		blob.VarFieldProgramBinary, binaryCode,

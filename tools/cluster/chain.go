@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -117,7 +116,7 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 		root.Contract.Hname(),
 		root.FuncDeployContract.Hname(),
 		chainclient.PostRequestParams{
-			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
+			Args: codec.MakeDict(params),
 		},
 	)
 	if err != nil {
@@ -159,7 +158,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	params[root.ParamProgramHash] = programHash
 	params[root.ParamDescription] = description
 
-	args := requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params))
+	args := codec.MakeDict(params)
 	tx, err := ch.OriginatorClient().Post1Request(
 		root.Contract.Hname(),
 		root.FuncDeployContract.Hname(),

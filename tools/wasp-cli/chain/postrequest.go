@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
@@ -27,7 +26,7 @@ func postRequestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			fname := args[1]
 			params := chainclient.PostRequestParams{
-				Args:     requestargs.New().AddEncodeSimpleMany(util.EncodeParams(args[2:])),
+				Args:     util.EncodeParams(args[2:]),
 				Transfer: parseColoredBalances(transfer),
 			}
 

@@ -27,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
 )
 
@@ -191,15 +192,6 @@ func (e *evmChainInstance) setNextOwner(nextOwner *iscp.AgentID, opts ...iotaCal
 	return err
 }
 
-func (e *evmChainInstance) withdrawGasFees(wallet *ed25519.KeyPair, agentID ...*iscp.AgentID) error {
-	var params []interface{}
-	if len(agentID) > 0 {
-		params = append(params, evm.FieldAgentID, agentID[0])
-	}
-	_, err := e.postRequest([]iotaCallOptions{{wallet: wallet}}, evm.FuncWithdrawGasFees.Name, params...)
-	return err
-}
-
 func (e *evmChainInstance) faucetAddress() common.Address {
 	return crypto.PubkeyToAddress(e.faucetKey.PublicKey)
 }
@@ -281,15 +273,21 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	txdata, err := tx.MarshalBinary()
 	require.NoError(e.t, err)
 
-	req, toUpload := solo.NewCallParamsOptimized(e.evmFlavor.Name, evm.FuncSendTransaction.Name, 1024,
-		evm.FieldTransactionData, txdata,
+	// deposit gas fee
+	_, err = e.soloChain.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			WithIotas(gas/e.getGasPerIotas()),
+		nil,
 	)
-	req.WithIotas(gas / e.getGasPerIotas())
-	for _, v := range toUpload {
-		e.solo.PutBlobDataIntoRegistry(v)
-	}
+	require.NoError(e.t, err)
 
-	_, err = e.soloChain.PostRequestSync(req, nil)
+	// send EVM tx
+	_, err = e.soloChain.PostRequestOffLedger(
+		solo.NewCallParamsFromDic(e.evmFlavor.Name, evm.FuncSendTransaction.Name, dict.Dict{
+			evm.FieldTransactionData: txdata,
+		}),
+		nil,
+	)
 	require.NoError(e.t, err)
 
 	return &evmContractInstance{

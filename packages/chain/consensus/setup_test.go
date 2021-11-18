@@ -205,7 +205,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 		}
 	})
 	mempoolMetrics := metrics.DefaultChainMetrics()
-	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
+	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), log, mempoolMetrics)
 
 	cfg := &consensusTestConfigProvider{
 		ownNetID:  nodeID,

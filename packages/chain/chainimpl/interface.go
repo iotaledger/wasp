@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -235,10 +234,6 @@ func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusi
 
 func (c *chainObj) ReceiveOutput(output ledgerstate.Output) {
 	c.stateMgr.EventOutputMsg(output)
-}
-
-func (c *chainObj) BlobCache() registry.BlobCache {
-	return c.blobProvider
 }
 
 func (c *chainObj) GetRequestProcessingStatus(reqID iscp.RequestID) chain.RequestProcessingStatus {

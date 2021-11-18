@@ -61,7 +61,7 @@ func TestBlockInfoLatestSeveral(t *testing.T) {
 
 	bi := chain.GetLatestBlockInfo()
 	require.NotNil(t, bi)
-	require.EqualValues(t, 3, bi.BlockIndex)
+	require.EqualValues(t, 4, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
 	require.EqualValues(t, 0, bi.NumOffLedgerRequests)
@@ -82,11 +82,11 @@ func TestBlockInfoSeveral(t *testing.T) {
 		bi1, err := chain.GetBlockInfo(blockIndex)
 		require.NoError(t, err)
 		require.NotNil(t, bi1)
+		t.Logf("%s", bi1.String())
 		require.EqualValues(t, blockIndex, bi1.BlockIndex)
 		require.EqualValues(t, 1, bi1.TotalRequests)
 		require.EqualValues(t, 1, bi1.NumSuccessfulRequests)
-		require.EqualValues(t, 0, bi1.NumOffLedgerRequests)
-		t.Logf("%s", bi1.String())
+		require.LessOrEqual(t, bi1.NumOffLedgerRequests, bi1.TotalRequests)
 	}
 }
 

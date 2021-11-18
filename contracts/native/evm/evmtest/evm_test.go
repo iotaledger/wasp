@@ -125,16 +125,18 @@ func TestGasCharged(t *testing.T) {
 		require.EqualValues(t, 999, storage.retrieve())
 
 		// user on-chain account is credited with excess iotas (iotasSent - gasUsed)
-		expectedUserBalance := iotasSent - res.iotaChargedFee
+		// TODO: gas is currently not being charged
+		expectedUserBalance := uint64(0) // iotasSent - res.iotaChargedFee
 
 		evmChain.soloChain.AssertIotas(iotaAgentID, expectedUserBalance)
 
 		// call `store(123)` without enough gas
 		_, err = storage.store(123, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: 1}})
-		require.Contains(t, err.Error(), "transferred tokens (1) not enough")
-
-		// call `retrieve` view, get 999 - which means store(123) failed and the previous state is kept
-		require.EqualValues(t, 999, storage.retrieve())
+		require.NoError(t, err)
+		require.EqualValues(t, 123, storage.retrieve())
+		// TODO:
+		// require.Contains(t, err.Error(), "transferred tokens (1) not enough")
+		// require.EqualValues(t, 999, storage.retrieve())
 
 		// verify user on-chain account still has the same balance (no refund happened)
 		evmChain.soloChain.AssertIotas(iotaAgentID, expectedUserBalance)
@@ -232,56 +234,6 @@ func TestGasPerIotas(t *testing.T) {
 	})
 }
 
-func TestWithdrawalOwnerFees(t *testing.T) {
-	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
-		evmChain := initEVMChain(t, evmFlavor)
-		storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
-
-		// only the owner can call withdrawal
-		user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
-		user1AgentID := iscp.NewAgentID(user1Address, 0)
-
-		err := evmChain.withdrawGasFees(user1Wallet)
-		require.Contains(t, err.Error(), "unauthorized access")
-
-		// change owner to user1
-		err = evmChain.setNextOwner(user1AgentID)
-		require.NoError(t, err)
-		err = evmChain.claimOwnership(iotaCallOptions{wallet: user1Wallet})
-		require.NoError(t, err)
-
-		// collect fees from contract deployment
-		user1Balance0 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
-		require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
-		user1Balance1 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
-		require.Greater(t, user1Balance1, user1Balance0)
-
-		// collect fees from a SC call, check that the collected fees matches the fees charged
-		user1Balance2 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
-		res, err := storage.store(43)
-		require.NoError(t, err)
-		require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
-		user1Balance3 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
-		require.Equal(t, user1Balance3, user1Balance2+res.iotaChargedFee)
-
-		// try to withdraw a second time, it should succeed, but owner balance shouldnt not change (there are no fees to withdraw)
-		require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
-		user1Balance4 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
-		require.Equal(t, user1Balance3, user1Balance4)
-
-		// try to withdraw fees to another actor using using the FieldAgentId param
-		res, err = storage.store(44)
-		require.NoError(t, err)
-		_, user2Address := evmChain.solo.NewKeyPairWithFunds()
-		user2AgentID := iscp.NewAgentID(user2Address, 0)
-		user2Balance0 := evmChain.solo.GetAddressBalance(user2Address, colored.IOTA)
-		err = evmChain.withdrawGasFees(user1Wallet, user2AgentID)
-		require.NoError(t, err)
-		user2Balance1 := evmChain.solo.GetAddressBalance(user2Address, colored.IOTA)
-		require.Equal(t, user2Balance1, user2Balance0+res.iotaChargedFee+1) // 1 extra iota from the withdrawal request
-	})
-}
-
 // tests that the gas limits are correctly enforced based on the iotas sent
 func TestGasLimit(t *testing.T) {
 	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
@@ -297,8 +249,10 @@ func TestGasLimit(t *testing.T) {
 
 		// send again with same gas limit but not enough iotas
 		_, err = storage.store(123, ethCallOptions{gasLimit: gas, iota: iotaCallOptions{transfer: (gas+1)/gasPerIotas - 1}})
-		require.Error(t, err)
-		require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.Error())
+		// TODO: gas is currently not being charged
+		//require.Error(t, err)
+		//require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.Error())
+		require.NoError(t, err)
 
 		// send again with gas limit not enough for transaction
 		_, err = storage.store(123, ethCallOptions{gasLimit: 1 * gasPerIotas, iota: iotaCallOptions{transfer: 1}})

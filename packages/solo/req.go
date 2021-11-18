@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -15,8 +14,6 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
@@ -32,7 +29,7 @@ type CallParams struct {
 	transfer    colored.Balances
 	mintAmount  uint64
 	mintAddress ledgerstate.Address
-	args        requestargs.RequestArgs
+	args        dict.Dict
 }
 
 func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
@@ -42,9 +39,9 @@ func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
 		epName:     funName,
 		entryPoint: iscp.Hn(funName),
 	}
-	ret.args = requestargs.New(nil)
+	ret.args = dict.New()
 	for k, v := range par {
-		ret.args.AddEncodeSimple(k, v)
+		ret.args.Set(k, v)
 	}
 	return ret
 }
@@ -59,21 +56,6 @@ func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
 // tokens sent together with the request
 func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
-}
-
-func NewCallParamsOptimized(scName, funName string, optSize int, params ...interface{}) (*CallParams, map[kv.Key][]byte) {
-	if optSize <= 32 {
-		optSize = 32
-	}
-	ret := &CallParams{
-		targetName: scName,
-		target:     iscp.Hn(scName),
-		epName:     funName,
-		entryPoint: iscp.Hn(funName),
-	}
-	var retOptimized map[kv.Key][]byte
-	ret.args, retOptimized = requestargs.NewOptimizedRequestArgs(parseParams(params), optSize)
-	return ret, retOptimized
 }
 
 // WithTransfer is a shorthand for the most often used case where only
@@ -254,11 +236,7 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 	defer ch.runVMMutex.Unlock()
 
 	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
-	a, ok, err := req.args.SolidifyRequestArguments(ch.Env.blobCache)
-	if err != nil || !ok {
-		return nil, fmt.Errorf("solo.internal error: can't solidify args")
-	}
-	return vctx.CallView(req.target, req.entryPoint, a)
+	return vctx.CallView(req.target, req.entryPoint, req.args)
 }
 
 // CallView calls the view entry point of the smart contract.

@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/dashboard"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/dkg"
-	"github.com/iotaledger/wasp/plugins/downloader"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/iotaledger/wasp/plugins/logger"
 	"github.com/iotaledger/wasp/plugins/metrics"
@@ -34,7 +33,6 @@ func main() {
 		config.Init(params),
 		logger.Init(params),
 		gracefulshutdown.Init(),
-		downloader.Init(),
 		cli.Init(),
 		database.Init(),
 		registry.Init(),

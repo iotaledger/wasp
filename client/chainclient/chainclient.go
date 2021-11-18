@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -42,7 +41,7 @@ func New(
 
 type PostRequestParams struct {
 	Transfer colored.Balances
-	Args     requestargs.RequestArgs
+	Args     dict.Dict
 	Nonce    uint64
 }
 
@@ -97,7 +96,7 @@ func (c *Client) DepositFunds(n uint64) (*ledgerstate.Transaction, error) {
 // NewPostRequestParams simplifies encoding of request parameters
 func NewPostRequestParams(p ...interface{}) *PostRequestParams {
 	return &PostRequestParams{
-		Args: requestargs.New(nil).AddEncodeSimpleMany(parseParams(p)),
+		Args: parseParams(p),
 	}
 }
 

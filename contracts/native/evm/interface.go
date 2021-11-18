@@ -30,14 +30,13 @@ var (
 	FuncGetLogs                             = coreutil.ViewFunc("getLogs")
 
 	// EVMchain SC management
-	FuncSetNextOwner    = coreutil.Func("setNextOwner")
-	FuncClaimOwnership  = coreutil.Func("claimOwnership")
-	FuncGetOwner        = coreutil.ViewFunc("getOwner")
-	FuncSetGasPerIota   = coreutil.Func("setGasPerIota")
-	FuncGetGasPerIota   = coreutil.ViewFunc("getGasPerIota")
-	FuncWithdrawGasFees = coreutil.Func("withdrawGasFees")
-	FuncSetBlockTime    = coreutil.Func("setBlockTime") // only implemented by evmlight
-	FuncMintBlock       = coreutil.Func("mintBlock")    // only implemented by evmlight
+	FuncSetNextOwner   = coreutil.Func("setNextOwner")
+	FuncClaimOwnership = coreutil.Func("claimOwnership")
+	FuncGetOwner       = coreutil.ViewFunc("getOwner")
+	FuncSetGasPerIota  = coreutil.Func("setGasPerIota")
+	FuncGetGasPerIota  = coreutil.ViewFunc("getGasPerIota")
+	FuncSetBlockTime   = coreutil.Func("setBlockTime") // only implemented by evmlight
+	FuncMintBlock      = coreutil.Func("mintBlock")    // only implemented by evmlight
 )
 
 const (

@@ -113,11 +113,17 @@ func TestDeployTestCoreWithCreator(t *testing.T) {
 func chainAccountBalances(ctx *wasmsolo.SoloContext, w bool, chain, total uint64) {
 	if w {
 		// wasm setup takes 1 more iota than core setup due to uploadWasm()
-		chain++
 		total++
 	}
 	ctx.Chain.AssertCommonAccountIotas(chain)
 	ctx.Chain.AssertTotalIotas(total)
+}
+
+func requireOriginatorBalance(ctx *wasmsolo.SoloContext, w bool, expected int) {
+	if w {
+		expected++
+	}
+	require.EqualValues(ctx.Chain.Env.T, expected, ctx.Balance(ctx.Originator()))
 }
 
 // originatorBalanceReducedBy checks the balance of the originator address has
