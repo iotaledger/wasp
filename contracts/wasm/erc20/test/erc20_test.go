@@ -80,8 +80,8 @@ func transfer(ctx *wasmsolo.SoloContext, from, to *wasmsolo.SoloAgent, amount ui
 	return ctx.Err
 }
 
-func transferFrom(ctx *wasmsolo.SoloContext, from, to *wasmsolo.SoloAgent, amount uint64) error {
-	tx := erc20.ScFuncs.TransferFrom(ctx.Sign(from))
+func transferFrom(ctx *wasmsolo.SoloContext, delegate, from, to *wasmsolo.SoloAgent, amount uint64) error {
+	tx := erc20.ScFuncs.TransferFrom(ctx.Sign(delegate))
 	tx.Params.Account().SetValue(from.ScAgentID())
 	tx.Params.Recipient().SetValue(to.ScAgentID())
 	tx.Params.Amount().SetValue(int64(amount))
@@ -143,68 +143,87 @@ func TestTransferNotEnoughFunds2(t *testing.T) {
 
 func TestNoAllowance(t *testing.T) {
 	ctx := setupErc20(t)
-	user := ctx.NewSoloAgent()
-	checkErc20Allowance(ctx, creator, user, 0)
+	delegate := ctx.NewSoloAgent()
+	checkErc20Allowance(ctx, creator, delegate, 0)
 }
 
 func TestApprove(t *testing.T) {
 	ctx := setupErc20(t)
-	user := ctx.NewSoloAgent()
+	delegate := ctx.NewSoloAgent()
 
-	require.NoError(t, approve(ctx, creator, user, 100))
+	require.NoError(t, approve(ctx, creator, delegate, 100))
 
-	checkErc20Allowance(ctx, creator, user, 100)
+	checkErc20Allowance(ctx, creator, delegate, 100)
 	checkErc20Balance(ctx, creator, solo.Saldo)
-	checkErc20Balance(ctx, user, 0)
+	checkErc20Balance(ctx, delegate, 0)
 }
 
 func TestTransferFromOk1(t *testing.T) {
 	ctx := setupErc20(t)
-	user := ctx.NewSoloAgent()
+	delegate := ctx.NewSoloAgent()
 
-	require.NoError(t, approve(ctx, creator, user, 100))
+	require.NoError(t, approve(ctx, creator, delegate, 100))
 
-	checkErc20Allowance(ctx, creator, user, 100)
+	checkErc20Allowance(ctx, creator, delegate, 100)
 	checkErc20Balance(ctx, creator, solo.Saldo)
-	checkErc20Balance(ctx, user, 0)
+	checkErc20Balance(ctx, delegate, 0)
 
-	require.NoError(t, transferFrom(ctx, creator, user, 50))
+	require.NoError(t, transferFrom(ctx, delegate, creator, delegate, 50))
 
-	checkErc20Allowance(ctx, creator, user, 50)
+	checkErc20Allowance(ctx, creator, delegate, 50)
 	checkErc20Balance(ctx, creator, solo.Saldo-50)
-	checkErc20Balance(ctx, user, 50)
+	checkErc20Balance(ctx, delegate, 50)
 }
 
 func TestTransferFromOk2(t *testing.T) {
 	ctx := setupErc20(t)
-	user := ctx.NewSoloAgent()
+	delegate := ctx.NewSoloAgent()
 
-	require.NoError(t, approve(ctx, creator, user, 100))
+	require.NoError(t, approve(ctx, creator, delegate, 100))
 
-	checkErc20Allowance(ctx, creator, user, 100)
+	checkErc20Allowance(ctx, creator, delegate, 100)
 	checkErc20Balance(ctx, creator, solo.Saldo)
-	checkErc20Balance(ctx, user, 0)
+	checkErc20Balance(ctx, delegate, 0)
 
-	require.NoError(t, transferFrom(ctx, creator, user, 100))
+	require.NoError(t, transferFrom(ctx, delegate, creator, delegate, 100))
 
-	checkErc20Allowance(ctx, creator, user, 0)
+	checkErc20Allowance(ctx, creator, delegate, 0)
 	checkErc20Balance(ctx, creator, solo.Saldo-100)
-	checkErc20Balance(ctx, user, 100)
+	checkErc20Balance(ctx, delegate, 100)
 }
 
-func TestTransferFromFail(t *testing.T) {
+func TestTransferFromFailNoDelegate(t *testing.T) {
 	ctx := setupErc20(t)
-	user := ctx.NewSoloAgent()
+	delegate := ctx.NewSoloAgent()
 
-	require.NoError(t, approve(ctx, creator, user, 100))
+	require.NoError(t, approve(ctx, creator, delegate, 100))
 
-	checkErc20Allowance(ctx, creator, user, 100)
+	checkErc20Allowance(ctx, creator, delegate, 100)
 	checkErc20Balance(ctx, creator, solo.Saldo)
-	checkErc20Balance(ctx, user, 0)
+	checkErc20Balance(ctx, delegate, 0)
 
-	require.Error(t, transferFrom(ctx, creator, user, 101))
+	noDelegate := ctx.NewSoloAgent()
+	require.Error(t, transferFrom(ctx, noDelegate, creator, delegate, 100))
 
-	checkErc20Allowance(ctx, creator, user, 100)
+	checkErc20Allowance(ctx, creator, delegate, 100)
 	checkErc20Balance(ctx, creator, solo.Saldo)
-	checkErc20Balance(ctx, user, 0)
+	checkErc20Balance(ctx, delegate, 0)
+	checkErc20Balance(ctx, noDelegate, 0)
+}
+
+func TestTransferFromFailTooMuch(t *testing.T) {
+	ctx := setupErc20(t)
+	delegate := ctx.NewSoloAgent()
+
+	require.NoError(t, approve(ctx, creator, delegate, 100))
+
+	checkErc20Allowance(ctx, creator, delegate, 100)
+	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, delegate, 0)
+
+	require.Error(t, transferFrom(ctx, delegate, creator, delegate, 101))
+
+	checkErc20Allowance(ctx, creator, delegate, 100)
+	checkErc20Balance(ctx, creator, solo.Saldo)
+	checkErc20Balance(ctx, delegate, 0)
 }

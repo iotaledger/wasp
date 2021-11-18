@@ -5,6 +5,7 @@ package wasmhost
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -26,9 +27,12 @@ var (
 )
 
 type WasmVM interface {
+	Instantiate() error
 	Interrupt()
 	LinkHost(impl WasmVM, host *WasmHost) error
 	LoadWasm(wasmData []byte) error
+	NewInstance() WasmVM
+	PoolSize() int
 	RunFunction(functionName string, args ...interface{}) error
 	RunScFunction(index int32) error
 	SaveMemory()
@@ -164,6 +168,10 @@ func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) 
 	host.SetBytes(objID, keyID, typeID, bytes)
 }
 
+func (vm *WasmVMBase) Instantiate() error {
+	return errors.New("cannot be cloned")
+}
+
 func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 	// trick vm into thinking it doesn't have to start the timeout timer
 	// useful when debugging to prevent timing out on breakpoints
@@ -175,7 +183,15 @@ func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 	return nil
 }
 
+func (vm *WasmVMBase) PoolSize() int {
+	return 0
+}
+
 func (vm *WasmVMBase) PreCall() []byte {
+	if vm.PoolSize() != 0 {
+		return nil
+	}
+
 	bytes := vm.impl.VMGetSize()
 	frame := vm.impl.VMGetBytes(0, bytes)
 	if vm.memoryDirty {
@@ -189,6 +205,10 @@ func (vm *WasmVMBase) PreCall() []byte {
 }
 
 func (vm *WasmVMBase) PostCall(frame []byte) {
+	if vm.PoolSize() != 0 {
+		return
+	}
+
 	vm.impl.VMSetBytes(0, int32(len(frame)), frame)
 }
 
@@ -226,6 +246,10 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 }
 
 func (vm *WasmVMBase) SaveMemory() {
+	if vm.PoolSize() != 0 {
+		return
+	}
+
 	// find initialized data range in memory
 	bytes := vm.impl.VMGetSize()
 	ptr := vm.impl.VMGetBytes(0, bytes)

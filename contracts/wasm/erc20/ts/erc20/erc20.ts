@@ -78,7 +78,7 @@ export function funcTransferFrom(ctx: wasmlib.ScFuncContext, f: sc.TransferFromC
 
     // allowances are in the map under the name of the account
     let allowances = f.state.allAllowances().getAllowancesForAgent(account);
-    let allowance = allowances.getInt64(recipient);
+    let allowance = allowances.getInt64(ctx.caller());
     ctx.require(allowance.value() >= amount, "erc20.transferFrom.fail: not enough allowance");
 
     let balances = f.state.balances();

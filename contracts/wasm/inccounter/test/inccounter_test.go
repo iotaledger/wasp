@@ -108,11 +108,6 @@ func TestIncrementLocalStateInternalCall(t *testing.T) {
 }
 
 func TestIncrementLocalStateSandboxCall(t *testing.T) {
-	// TODO need to save globals for TypeScript Wasm for this to succeed
-	if *wasmsolo.TsWasm {
-		t.SkipNow()
-	}
-
 	ctx := setupTest(t)
 
 	localStateSandboxCall := inccounter.ScFuncs.LocalStateSandboxCall(ctx)
@@ -131,11 +126,6 @@ func TestIncrementLocalStateSandboxCall(t *testing.T) {
 }
 
 func TestIncrementLocalStatePost(t *testing.T) {
-	// TODO need to save globals for TypeScript Wasm for this to succeed
-	if *wasmsolo.TsWasm {
-		t.SkipNow()
-	}
-
 	ctx := setupTest(t)
 
 	localStatePost := inccounter.ScFuncs.LocalStatePost(ctx)
@@ -179,9 +169,9 @@ func TestLeb128(t *testing.T) {
 }
 
 func TestLoop(t *testing.T) {
-	if *wasmsolo.GoDebug || wasmhost.DisableWasmTimeout {
-		// no timeout possible with WasmGoVM
-		// because goroutines cannot be killed
+	if *wasmsolo.GoDebug || *wasmsolo.GoWasmEdge || wasmhost.DisableWasmTimeout {
+		// no timeout possible with WasmGoVM because goroutines cannot be killed
+		// or because there is no way to interrupt the Wasm code
 		t.SkipNow()
 	}
 
