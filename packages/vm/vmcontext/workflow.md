@@ -40,8 +40,8 @@ To be taken into account:
 Situation is output-type-specific. In general:
 * the output produced by the VM itself may later come back to the VM as a `RequestData`.
   Can be recognized by `sender` being `self chain id`. *Extended outputs* may also be a self-posted requests, so VM must recognize those
-  as such and act accordingly. One way of doing it is keeping a list of self posted requests in the state.
-  Alternatively, a special flag or field in the output metadata can be introduced for this.
+  as such and act accordingly. Internal Extended output is recognized by empty metadata field. The self-posted request will always contain  
+  target specification, so metadata won't be empty.
 * UTXO may come again as a duplicate. It can only be prevented by performing a lookup into the `blocklog` receipts or in the `NFT` registry
 * off-ledger request may be a duplicate (replay attack). It must be handled according to [replay-off-ledger.md](../../../documentation/temp/rfc/replay-off-ledger.md)
 
@@ -58,7 +58,7 @@ They should not reach VM. But if it reaches, it can easily be deterministically 
 * Gas metering is always present, i.e. global gas variable is updated by `GasBurn` by the running SC
 * Gas budget is always provided in the request
 * View calls have a fixed gas budget, a constant set by chain. It should not be provided in the view call but it is used to cap the run.
-* Gas checking is panic-ing when budget is exceeded and it is enabled
+* Gas checking is panic-ing when budget is enabled and is exceeded
 * Gas checking is always enabled. One of 2 options:
   * option I: fixed gas budget for each call. Fixed budget defined by chain level default, possibly contract level value. In this case gas budgets from requests are ignored
   * option II: dynamic gas budget for each call, taken from each request individually
@@ -69,19 +69,18 @@ They should not reach VM. But if it reaches, it can easily be deterministically 
 
 Question: what is the gas policy when processing NFT output? Probably fixed budget
 
-### Asset transfers and caller's balance (temporary, to be discussed)
-* assets in the request = iotas + native tokens
-* each call carries some assets as transfer
-* for UTXO request:
-  * assets are coming with the output
-  * total balances available for the target SC in the request as `Balances()` = `on-chain balances` + `incoming`
-  * total balances available for gas is equal to on-chain balance of the sender (**this is different from what was before!!!**)
-  * in the same request we may want have special property in the metadata `sender's assets`. It specifies balances to be taken from the
-    `total assets in the UTXO` and credited to the sender's account.
-  * `incoming` available for the target SC = `total assets in the UTXO` - `sender's assets`
-* for off-ledger request:
-  * attached assets just reference the on-ledger account of the sender. In the SC sandbox it is known as `incoming`
-  * total balances available for the SC **and for the gas** in the off-ledger request = `on-chain balance`
+### Asset transfer semantics
+* All `Assets attached` to the request are intended to the sender, i.e. sender's account is credited with `Assets attached` to the request
+  * UTXO has `Assets attached` = iotas + native tokens
+  * Off-ledger don't have `Assets attached` = 0
+* Optionally, the request may also have `Transfer` specified in the metadata: `Transfer` = iotas+native tokens
+* Semantics of `Transfer` means these are assets given to the target SC in te call of the entry point. In the call `Transfer` it is available `IncomingTransfer()`.
+* The full balances of the SC in the call is returned with `Balances()`. It includes `IncomingTransfer()`
+* When request is processed:
+  1. all `Assets attached` are credited to `sender's` account
+  2. The `Transfer` = `IncomingTransfer()` is debited from the `senders account` and credited to the account of the `Target`. If not enough, it panics
+* So, `Transfer()` may consume funds more than `Asset attached`. The remaining will be taken from the on-chain account of the caller
+* On-chain balance of the caller will be used to pay for gas
 
 Option: `sender's assets` metadata instead of being `any assets` may just be balance of the tokens used to pay for gas (usually iotas)
 
@@ -105,10 +104,10 @@ Here is described the workflow of how one `RequestData` is processed in the `Run
 ### Extended output
 * check if time unlockable. Ignore if not
 * check if it has sender. If not, accrue all assets to the owner. Write respective receipt with apologies
-* check if it is internal chain's account by checking sender's address and the flag of the internal account.
+* check if it is internal chain's account by checking sender's address and checking if metadata is empty
 * If it is an internal account, ignore it all (or maybe assert consistency with the state?)
 * check if it is a duplicate by looking up into the `blocklog` receipts
-* otherwise it is a request.
+* otherwise it is a request
 * credit `sender's assets` to the sender's account
 * `incoming` will become `assets on the output` - `sender's assets`
 * run the request by calling target SC/entry point

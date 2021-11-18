@@ -91,8 +91,8 @@ func (txb *txbuilder) addDeltaNativeToken(id iotago.NativeTokenID, delta *big.In
 		// TODO safe arithmetic
 		b.Add(b, delta)
 	}
+	// see https://stackoverflow.com/questions/64257065/is-there-another-way-of-testing-if-a-big-int-is-0
 	if len(b.Bits()) == 0 {
-		// see https://stackoverflow.com/questions/64257065/is-there-another-way-of-testing-if-a-big-int-is-0
 		delete(txb.deltaNativeTokens, id)
 	} else {
 		txb.deltaNativeTokens[id] = b
