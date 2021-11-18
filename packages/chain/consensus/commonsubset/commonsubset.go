@@ -47,7 +47,6 @@ import (
 )
 
 const (
-	acsMsgType   = 50 + peering.FirstUserMsgCode
 	resendPeriod = 500 * time.Millisecond
 )
 
@@ -379,7 +378,9 @@ func (cs *CommonSubset) send(msgBatch *msgBatch) {
 		return
 	}
 	cs.log.Debugf("ACS::IO - Sending a msgBatch=%+v", msgBatch)
-	cs.committee.SendMsgByIndex(msgBatch.dst, peerMessageReceiverCommonSubset, peerMsgTypeBatch, msgBatch.Bytes())
+	if err := cs.committee.SendMsgByIndex(msgBatch.dst, peerMessageReceiverCommonSubset, peerMsgTypeBatch, msgBatch.Bytes()); err != nil {
+		cs.log.Errorf("Error sending message batch %+v: %v", msgBatch, err)
+	}
 }
 
 // endregion ///////////////////////////////////////////////////////////////////

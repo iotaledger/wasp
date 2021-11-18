@@ -123,7 +123,7 @@ func (m *MockedChainCore) AttachToPeerMessages(receiver byte, fun func(recv *pee
 	m.peers.Attach(&m.peeringID, receiver, fun)
 }
 
-func (m *MockedChainCore) SendPeerMsgByNetID(netID string, msgReceiver byte, msgType byte, msgData []byte) {
+func (m *MockedChainCore) SendPeerMsgByNetID(netID string, msgReceiver, msgType byte, msgData []byte) {
 	m.peers.SendMsgByNetID(netID, &peering.PeerMessageData{
 		PeeringID:   m.peeringID,
 		MsgReceiver: msgReceiver,
@@ -132,15 +132,15 @@ func (m *MockedChainCore) SendPeerMsgByNetID(netID string, msgReceiver byte, msg
 	})
 }
 
-func (m *MockedChainCore) SendPeerMsgToRandomPeers(upToNumPeers uint16, msgReceiver byte, msgType byte, msgData []byte) {
+func (m *MockedChainCore) SendPeerMsgToRandomPeers(upToNumPeers uint16, msgReceiver, msgType byte, msgData []byte) {
 	sendPeers := m.peers.GetRandomPeers(int(upToNumPeers))
 	for _, netID := range sendPeers {
 		m.SendPeerMsgByNetID(netID, msgReceiver, msgType, msgData)
 	}
 }
 
-func (m *MockedChainCore) StateCandidateToStateManager(state state.VirtualStateAccess, outputID ledgerstate.OutputID) {
-	m.onStateCandidate(state, outputID)
+func (m *MockedChainCore) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+	m.onStateCandidate(virtualState, outputID)
 }
 
 func (m *MockedChainCore) EnqueueDismissChain(reason string) {

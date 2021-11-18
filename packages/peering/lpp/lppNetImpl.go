@@ -70,8 +70,10 @@ type netImpl struct {
 	log         *logger.Logger
 }
 
-var _ peering.NetworkProvider = &netImpl{}
-var _ peering.PeerSender = &netImpl{}
+var (
+	_ peering.NetworkProvider = &netImpl{}
+	_ peering.PeerSender      = &netImpl{}
+)
 
 // NewNetworkProvider is a constructor for the TCP based
 // peering network implementation.
@@ -356,7 +358,6 @@ func (n *netImpl) SendMsgByNetID(netID string, msg *peering.PeerMessageData) {
 // Attach implements peering.NetworkProvider.
 func (n *netImpl) Attach(peeringID *peering.PeeringID, receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {
 	closure := events.NewClosure(func(recv *peering.PeerMessageIn) {
-		//if peeringID == nil || *peeringID == recv.Msg.PeeringID {
 		if *peeringID == recv.PeeringID && receiver == recv.MsgReceiver {
 			callback(recv)
 		}

@@ -99,7 +99,7 @@ func (c *chainObj) AttachToPeerMessages(msgReceiver byte, fun func(recv *peering
 	c.attachIDs = append(c.attachIDs, (*c.peers).Attach(&c.peeringID, msgReceiver, fun))
 }
 
-func (c *chainObj) SendPeerMsgByNetID(netID string, msgReceiver byte, msgType byte, msgData []byte) {
+func (c *chainObj) SendPeerMsgByNetID(netID string, msgReceiver, msgType byte, msgData []byte) {
 	(*c.peers).SendMsgByNetID(netID, &peering.PeerMessageData{
 		PeeringID:   c.peeringID,
 		Timestamp:   time.Now().UnixNano(),
@@ -107,9 +107,9 @@ func (c *chainObj) SendPeerMsgByNetID(netID string, msgReceiver byte, msgType by
 		MsgType:     msgType,
 		MsgData:     msgData,
 	})
-	}
+}
 
-func (c *chainObj) SendPeerMsgToRandomPeers(upToNumPeers uint16, msgReceiver byte, msgType byte, msgData []byte) {
+func (c *chainObj) SendPeerMsgToRandomPeers(upToNumPeers uint16, msgReceiver, msgType byte, msgData []byte) {
 	(*c.peers).SendMsgToRandomPeers(upToNumPeers, &peering.PeerMessageData{
 		PeeringID:   c.peeringID,
 		Timestamp:   time.Now().UnixNano(),

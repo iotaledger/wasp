@@ -24,8 +24,7 @@ type GetBlockMsgIn struct {
 func NewGetBlockMsg(data []byte) (*GetBlockMsg, error) {
 	msg := &GetBlockMsg{}
 	r := bytes.NewReader(data)
-	var err error
-	if err = util.ReadUint32(r, &msg.BlockIndex); err != nil {
+	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
 		return nil, err
 	}
 	return msg, nil

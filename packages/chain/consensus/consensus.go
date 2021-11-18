@@ -192,9 +192,7 @@ func (c *consensus) recvLoop() {
 
 	// wait at startup
 	for !c.committee.IsReady() {
-		select {
-		case <-time.After(100 * time.Millisecond):
-		}
+		time.Sleep(100 * time.Millisecond)
 		if isClosedFun() {
 			return
 		}

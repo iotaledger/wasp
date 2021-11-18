@@ -60,27 +60,12 @@ func testBasic(t *testing.T, peerCount, threshold uint16, allRandom bool) {
 
 	acsPeers := make([]*CommonSubset, peerCount)
 	for a := range acsPeers {
-		ii := a // Use a local copy in the callback.
 		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
 		cmt := NewCommitteeMock(peeringID, group, t)
-		cmt.AttachToPeerMessages(peerMessageReceiverCommonSubset, func(peerMsg *peering.PeerMessageGroupIn) {
-			if peerMsg.MsgReceiver != peerMessageReceiverCommonSubset {
-				panic(fmt.Errorf("Committee does not accept peer messages of other receiver type %v, message type=%v",
-					peerMsg.MsgReceiver, peerMsg.MsgType))
-			}
-			if peerMsg.MsgType != peerMsgTypeBatch {
-				panic(fmt.Errorf("Wrong type of committee message: %v", peerMsg.MsgType))
-			}
-			mb, err := newMsgBatch(peerMsg.MsgData)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			acsPeers[ii].HandleMsgBatch(mb)
-		})
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
 		acsPeers[a], err = NewCommonSubset(0, 0, cmt, group, dkShares[a], allRandom, nil, acsLog)
+		cmt.AttachToPeerMessages(peerMessageReceiverCommonSubset, makeReceiveCommitteePeerMessagesFun(acsPeers[a], log))
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")
@@ -125,27 +110,12 @@ func TestRandomized(t *testing.T) {
 
 	acsPeers := make([]*CommonSubset, peerCount)
 	for a := range acsPeers {
-		ii := a // Use a local copy in the callback.
 		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
 		cmt := NewCommitteeMock(peeringID, group, t)
-		cmt.AttachToPeerMessages(peerMessageReceiverCommonSubset, func(peerMsg *peering.PeerMessageGroupIn) {
-			if peerMsg.MsgReceiver != peerMessageReceiverCommonSubset {
-				panic(fmt.Errorf("Committee does not accept peer messages of other receiver type %v, message type=%v",
-					peerMsg.MsgReceiver, peerMsg.MsgType))
-			}
-			if peerMsg.MsgType != peerMsgTypeBatch {
-				panic(fmt.Errorf("Wrong type of committee message: %v", peerMsg.MsgType))
-			}
-			mb, err := newMsgBatch(peerMsg.MsgData)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			acsPeers[ii].HandleMsgBatch(mb)
-		})
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
 		acsPeers[a], err = NewCommonSubset(0, 0, cmt, group, dkShares[a], true, nil, acsLog)
+		cmt.AttachToPeerMessages(peerMessageReceiverCommonSubset, makeReceiveCommitteePeerMessagesFun(acsPeers[a], log))
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")
@@ -191,6 +161,24 @@ func TestRandomized(t *testing.T) {
 		}
 	}
 	require.NoError(t, networkCloser.Close())
+}
+
+func makeReceiveCommitteePeerMessagesFun(peer *CommonSubset, log *logger.Logger) func(peerMsg *peering.PeerMessageGroupIn) {
+	return func(peerMsg *peering.PeerMessageGroupIn) {
+		if peerMsg.MsgReceiver != peerMessageReceiverCommonSubset {
+			panic(fmt.Errorf("Committee does not accept peer messages of other receiver type %v, message type=%v",
+				peerMsg.MsgReceiver, peerMsg.MsgType))
+		}
+		if peerMsg.MsgType != peerMsgTypeBatch {
+			panic(fmt.Errorf("Wrong type of committee message: %v", peerMsg.MsgType))
+		}
+		mb, err := newMsgBatch(peerMsg.MsgData)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		peer.HandleMsgBatch(mb)
+	}
 }
 
 func TestCoordinator(t *testing.T) {

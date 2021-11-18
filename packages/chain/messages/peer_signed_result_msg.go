@@ -29,13 +29,13 @@ func NewSignedResultMsg(data []byte) (*SignedResultMsg, error) {
 	msg := &SignedResultMsg{}
 	r := bytes.NewReader(data)
 	var err error
-	if err = util.ReadHashValue(r, &msg.EssenceHash); err != nil {
+	if err = util.ReadHashValue(r, &msg.EssenceHash); err != nil { // nolint:gocritic // - ignore sloppyReassign
 		return nil, err
 	}
 	if msg.SigShare, err = util.ReadBytes16(r); err != nil {
 		return nil, err
 	}
-	if err = util.ReadOutputID(r, &msg.ChainInputID); /* nolint:revive */ err != nil {
+	if err = util.ReadOutputID(r, &msg.ChainInputID); err != nil { // nolint:gocritic // - ignore sloppyReassign
 		return nil, err
 	}
 	return msg, nil

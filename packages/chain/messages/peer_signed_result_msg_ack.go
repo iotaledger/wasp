@@ -27,10 +27,10 @@ func NewSignedResultAckMsg(data []byte) (*SignedResultAckMsg, error) {
 	msg := &SignedResultAckMsg{}
 	r := bytes.NewReader(data)
 	var err error
-	if err = util.ReadHashValue(r, &msg.EssenceHash); err != nil {
+	if err = util.ReadHashValue(r, &msg.EssenceHash); err != nil { // nolint:gocritic // - ignore sloppyReassign
 		return nil, err
 	}
-	if err = util.ReadOutputID(r, &msg.ChainInputID); err != nil {
+	if err = util.ReadOutputID(r, &msg.ChainInputID); err != nil { // nolint:gocritic // - ignore sloppyReassign
 		return nil, err
 	}
 	return msg, nil

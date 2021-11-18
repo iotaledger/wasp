@@ -117,7 +117,7 @@ type msgByteCoder interface {
 	Read(io.Reader) error
 }
 
-func makePeerMessage(peeringID peering.PeeringID, receiver byte, step byte, msg msgByteCoder) *peering.PeerMessageData {
+func makePeerMessage(peeringID peering.PeeringID, receiver, step byte, msg msgByteCoder) *peering.PeerMessageData {
 	msg.SetStep(step)
 	return &peering.PeerMessageData{
 		PeeringID:   peeringID,

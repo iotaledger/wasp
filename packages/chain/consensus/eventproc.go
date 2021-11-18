@@ -14,9 +14,9 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-func (c *consensus) EventStateTransitionMsg(state state.VirtualStateAccess, stateOutput *ledgerstate.AliasOutput, stateTimestamp time.Time) {
+func (c *consensus) EventStateTransitionMsg(virtualState state.VirtualStateAccess, stateOutput *ledgerstate.AliasOutput, stateTimestamp time.Time) {
 	c.eventStateTransitionMsgPipe.In() <- &messages.StateTransitionMsg{
-		State:          state,
+		State:          virtualState,
 		StateOutput:    stateOutput,
 		StateTimestamp: stateTimestamp,
 	}
@@ -52,10 +52,10 @@ func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn)
 	c.takeAction()
 }
 
-func (c *consensus) EventInclusionsStateMsg(txID ledgerstate.TransactionID, state ledgerstate.InclusionState) {
+func (c *consensus) EventInclusionsStateMsg(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
 	c.eventInclusionStateMsgPipe.In() <- &messages.InclusionStateMsg{
 		TxID:  txID,
-		State: state,
+		State: inclusionState,
 	}
 }
 

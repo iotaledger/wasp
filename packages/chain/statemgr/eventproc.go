@@ -114,9 +114,9 @@ func (sm *stateManager) eventStateMsg(msg *messages.StateMsg) {
 	}
 }
 
-func (sm *stateManager) EventStateCandidateMsg(state state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+func (sm *stateManager) EventStateCandidateMsg(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
 	sm.eventStateCandidateMsgPipe.In() <- &messages.StateCandidateMsg{
-		State:             state,
+		State:             virtualState,
 		ApprovingOutputID: outputID,
 	}
 }

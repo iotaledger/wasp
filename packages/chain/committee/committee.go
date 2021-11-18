@@ -130,7 +130,7 @@ func (c *committee) DKShare() *tcrypto.DKShare {
 	return c.dkshare
 }
 
-func (c *committee) SendMsgByIndex(targetPeerIndex uint16, msgReceiver byte, msgType byte, msgData []byte) error {
+func (c *committee) SendMsgByIndex(targetPeerIndex uint16, msgReceiver, msgType byte, msgData []byte) error {
 	if peer, ok := c.validatorNodes.OtherNodes()[targetPeerIndex]; ok {
 		peer.SendMsg(&peering.PeerMessageNet{
 			PeerMessageData: peering.PeerMessageData{
@@ -146,7 +146,7 @@ func (c *committee) SendMsgByIndex(targetPeerIndex uint16, msgReceiver byte, msg
 	return fmt.Errorf("SendMsg: wrong peer index")
 }
 
-func (c *committee) SendMsgBroadcast(msgReceiver byte, msgType byte, msgData []byte, except ...uint16) {
+func (c *committee) SendMsgBroadcast(msgReceiver, msgType byte, msgData []byte, except ...uint16) {
 	msg := &peering.PeerMessageData{
 		PeeringID:   c.peeringID,
 		Timestamp:   time.Now().UnixNano(),
