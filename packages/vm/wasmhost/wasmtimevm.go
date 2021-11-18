@@ -19,16 +19,17 @@ type WasmTimeVM struct {
 	store     *wasmtime.Store
 }
 
-var _ WasmVM = &WasmTimeVM{}
-
-func NewWasmTimeVM() *WasmTimeVM {
+func NewWasmTimeVM() WasmVM {
 	vm := &WasmTimeVM{}
 	config := wasmtime.NewConfig()
 	config.SetInterruptable(true)
 	vm.store = wasmtime.NewStore(wasmtime.NewEngineWithConfig(config))
 	vm.interrupt, _ = vm.store.InterruptHandle()
-	vm.linker = wasmtime.NewLinker(vm.store)
 	return vm
+}
+
+func (vm *WasmTimeVM) NewInstance() WasmVM {
+	return &WasmTimeVM{store: vm.store, module: vm.module, interrupt: vm.interrupt}
 }
 
 func (vm *WasmTimeVM) Interrupt() {
@@ -36,6 +37,7 @@ func (vm *WasmTimeVM) Interrupt() {
 }
 
 func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
+	vm.linker = wasmtime.NewLinker(vm.store)
 	_ = vm.WasmVMBase.LinkHost(impl, host)
 
 	err := vm.linker.DefineFunc("WasmLib", "hostGetBytes", vm.HostGetBytes)
@@ -74,6 +76,10 @@ func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
 	if err != nil {
 		return err
 	}
+	return vm.Instantiate()
+}
+
+func (vm *WasmTimeVM) Instantiate() (err error) {
 	vm.instance, err = vm.linker.Instantiate(vm.module)
 	if err != nil {
 		return err
@@ -87,6 +93,10 @@ func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
 		return errors.New("not a memory type")
 	}
 	return nil
+}
+
+func (vm *WasmTimeVM) PoolSize() int {
+	return 10
 }
 
 func (vm *WasmTimeVM) RunFunction(functionName string, args ...interface{}) error {

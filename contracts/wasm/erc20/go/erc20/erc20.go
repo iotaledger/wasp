@@ -81,7 +81,7 @@ func funcTransferFrom(ctx wasmlib.ScFuncContext, f *TransferFromContext) {
 
 	// allowances are in the map under the name of the account
 	allowances := f.State.AllAllowances().GetAllowancesForAgent(account)
-	allowance := allowances.GetInt64(recipient)
+	allowance := allowances.GetInt64(ctx.Caller())
 	ctx.Require(allowance.Value() >= amount, "erc20.transfer_from.fail: not enough allowance")
 
 	balances := f.State.Balances()

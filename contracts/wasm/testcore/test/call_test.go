@@ -4,11 +4,10 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
-	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
-const n = 10
+const fiboN = 10
 
 func fibo(n int64) int64 {
 	if n == 0 || n == 1 {
@@ -19,39 +18,31 @@ func fibo(n int64) int64 {
 
 func TestCallFibonacci(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		if *wasmsolo.TsWasm {
-			t.SkipNow()
-		}
-
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.Fibonacci(ctx)
-		f.Params.IntValue().SetValue(n)
+		f.Params.IntValue().SetValue(fiboN)
 		f.Func.Call()
 		require.NoError(t, ctx.Err)
 		result := f.Results.IntValue()
 		require.True(t, result.Exists())
-		require.EqualValues(t, fibo(n), result.Value())
+		require.EqualValues(t, fibo(fiboN), result.Value())
 	})
 }
 
 func TestCallFibonacciIndirect(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		if *wasmsolo.TsWasm {
-			t.SkipNow()
-		}
-
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.CallOnChain(ctx)
-		f.Params.IntValue().SetValue(n)
+		f.Params.IntValue().SetValue(fiboN)
 		f.Params.HnameContract().SetValue(testcore.HScName)
 		f.Params.HnameEP().SetValue(testcore.HViewFibonacci)
 		f.Func.TransferIotas(1).Post()
 		require.NoError(t, ctx.Err)
 		result := f.Results.IntValue()
 		require.True(t, result.Exists())
-		require.EqualValues(t, fibo(n), result.Value())
+		require.EqualValues(t, fibo(fiboN), result.Value())
 
 		v := testcore.ScFuncs.GetCounter(ctx)
 		v.Func.Call()
@@ -64,11 +55,6 @@ func TestCallFibonacciIndirect(t *testing.T) {
 
 func TestCallRecursive(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		// TODO need to adjust stack size for Go Wasm for this to succeed
-		if *wasmsolo.GoWasm || *wasmsolo.TsWasm {
-			t.SkipNow()
-		}
-
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.CallOnChain(ctx)

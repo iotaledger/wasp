@@ -20,15 +20,13 @@ type WasmEdgeVM struct {
 	importers []*wasmedge.ImportObject
 }
 
-var _ WasmVM = &WasmEdgeVM{}
-
 type HostFunction func(params []interface{}) []interface{}
 
 const I32 = wasmedge.ValType_I32
 
 var i32 = []wasmedge.ValType{I32, I32, I32, I32, I32}
 
-func NewWasmEdgeVM() *WasmEdgeVM {
+func NewWasmEdgeVM() WasmVM {
 	vm := &WasmEdgeVM{}
 	wasmedge.SetLogErrorLevel()
 
@@ -39,6 +37,10 @@ func NewWasmEdgeVM() *WasmEdgeVM {
 	//vm.store = wasmedge.NewStore(wasmedge.NewEngineWithConfig(config))
 	//vm.interrupt, _ = vm.store.InterruptHandle()
 	return vm
+}
+
+func (vm *WasmEdgeVM) NewInstance() WasmVM {
+	return NewWasmEdgeVM()
 }
 
 //TODO
@@ -102,7 +104,11 @@ func (vm *WasmEdgeVM) LoadWasm(wasmData []byte) error {
 	if err != nil {
 		return err
 	}
-	err = vm.edge.Instantiate()
+	return vm.Instantiate()
+}
+
+func (vm *WasmEdgeVM) Instantiate() error {
+	err := vm.edge.Instantiate()
 	if err != nil {
 		return err
 	}
@@ -111,6 +117,10 @@ func (vm *WasmEdgeVM) LoadWasm(wasmData []byte) error {
 		return errors.New("no memory export")
 	}
 	return nil
+}
+
+func (vm *WasmEdgeVM) PoolSize() int {
+	return 10
 }
 
 func (vm *WasmEdgeVM) RunFunction(functionName string, args ...interface{}) error {

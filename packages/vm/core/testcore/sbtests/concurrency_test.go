@@ -57,7 +57,7 @@ func testConcurrency(t *testing.T, w bool) {
 			}
 		}(r, n)
 	}
-	require.True(t, chain.WaitForRequestsThrough(sum+3+extra, 20*time.Second))
+	require.True(t, chain.WaitForRequestsThrough(sum+3+extra, 180*time.Second))
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
@@ -105,7 +105,7 @@ func testConcurrency2(t *testing.T, w bool) {
 		}(r, n)
 	}
 
-	require.True(t, chain.WaitForRequestsThrough(sum+3+extra, 20*time.Second))
+	require.True(t, chain.WaitForRequestsThrough(sum+3+extra, 180*time.Second))
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
