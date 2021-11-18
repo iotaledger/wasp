@@ -1,23 +1,25 @@
 # Worklflow of request processing in the VM (very draft)
 
 ## General
-Each UTXO and off-ledger request reaches the VM wrapped in `RequestData` interface. The data wrapped in the `RequestData`:
-* The parsed output itself (as one of `iota.go` types) or an off-ledger request with request metadata and assets
+Each UTXO and off-ledger request reaches the VM wrapped in `RequestData` interface. The `RequestData` wraps the following:
+* The parsed output itself (as one of `iota.go` types) or off-ledger request in its entirety
 * Gas budget
-* UTXO metadata if it is an output:
+* if it is an output, the UTXO metadata:
     * Transaction ID
     * Output index in the transaction
     * Milestone index which confirmed the transaction
     * Milestone timestamp
 
 ###  Assumptions in the VM
-* VM deals only with _correct_ UTXOs and off-ledger requests. If UTXO or off-ledger request does not parse as correct UTXO it should not reach the VM.
-The L1 node the Wasp it is connected to is a **trusted party**. So, we should not expect malicious data (like wrong unparseable UTXO) from the L1 side.
-In these situations the node just panics.  
+* VM deals only with _correct_ UTXOs and off-ledger requests. If UTXO or off-ledger request does
+  not parse as correct UTXO it should not reach the VM.
+  The L1 node the Wasp it is connected to, is a **trusted party**. So, we should not expect malicious data
+  (like wrong unparseable UTXO) from the L1 side. In these situations the node just panics.
 * However, unexpected situations may happen due to asynchronicity, downtimes and so on. It must be processed gracefully
 * chain's *alias output* never comes as `RequestData`. It is early recognized and comes to VM as `anchor`.
+* if VM does not panic, it **always** produces a valid (confirmable) transaction essence and data state mutations
+* A malicious data should always be expected from the off-ledger requests
 
-A malicious data should be expected from the off-ledger.  
 So,
 * the VM should provide reasonable reaction to any `RequestData` and any edge situation, or otherwise panic the node
 * some `RequestData` may be skipped in the processing. It must be deterministic
@@ -26,36 +28,36 @@ _Question: is there a difference between syntactical and semantical correctness 
 
 ### Edge situations
 To be taken into account:
-* *Replay*. `RequestData` may represent a duplicate i.e. it was already processed by the VM or it was even produced by the VM.
-  The duplicate may come to the VM in ordinatry course, also some unexpected or malicious way
-* *No sender*. `sender` block in the UTXO may be absent
-* *Time unlockable* means the output can't be consumed based on time assumptions of the output and of the consensus time
+* *Replays*. `RequestData` may represent a duplicate i.e. it was already processed by the VM or it was even produced by the VM.
+  The duplicate may come to the VM in ordinary course of events, also some unexpected or malicious way
+* *No sender*. `sender` block in the UTXO may be absent, we cannot prevent it
+* *Time unlockable* it means the received output can't be consumed based on time assumptions of the output and of the consensus time
 * *Gas related* edge cases
 * *Dust related* edge cases, for example not enough iotas to create new internal UTXO account
 * some other?
 
 #### Handling replays
 Situation is output-type-specific. In general:
-* the output produced by the VM itself may come back.
-  Recognized by sender being self. *Extended outputs* may also be a self-posted requests, so VM must recognize those
+* the output produced by the VM itself may later come back to the VM as a `RequestData`.
+  Can be recognized by `sender` being `self chain id`. *Extended outputs* may also be a self-posted requests, so VM must recognize those
   as such and act accordingly. One way of doing it is keeping a list of self posted requests in the state.
-  Alternatively, a special flag or field in the metadata can be introduced for this.
-* UTXO may come again as a duplicate. It can only be prevented by lookup into the `blocklog` receipts or in the `NFT` registry
-* off-ledger request may be a duplicate. It must be handled according to [replay-off-ledger.md](../../../documentation/temp/rfc/replay-off-ledger.md)
+  Alternatively, a special flag or field in the output metadata can be introduced for this.
+* UTXO may come again as a duplicate. It can only be prevented by performing a lookup into the `blocklog` receipts or in the `NFT` registry
+* off-ledger request may be a duplicate (replay attack). It must be handled according to [replay-off-ledger.md](../../../documentation/temp/rfc/replay-off-ledger.md)
 
 #### Handling wrong sender
 If the UTXO have no sender block in general it is an error. The handling policy:
 * accruing all iotas and native assets to the *common account* (owner's)
 * consuming the output and destroying whenever relevant (extended, simple, unexpected alias output)
-* alternatively: assigning UTXO as an asset owned by the owner. Owner would del with it using special wallet functions of the `governance` contract
+* alternatively: assigning UTXO as an asset owned by the owner. The owner would deal with it using special wallet functions of the `governance` contract
 
 #### Time unlockable output
 They should not reach VM. But if it reaches, it can easily be deterministically checked and respective `RequestData` ignored.
 
-#### Gas and fee policy(temporary, to be discussed)
-* Gas metering is always present, i.e. global gas variable is update by `GasBurn` by smart contracts
+#### Gas and fee policy (temporary, to be discussed)
+* Gas metering is always present, i.e. global gas variable is updated by `GasBurn` by the running SC
 * Gas budget is always provided in the request
-* View calls have a fixed gas budget, a constant set by chain. It should not provided by the view call but it is used to cap the run.
+* View calls have a fixed gas budget, a constant set by chain. It should not be provided in the view call but it is used to cap the run.
 * Gas checking is panic-ing when budget is exceeded and it is enabled
 * Gas checking is always enabled. One of 2 options:
   * option I: fixed gas budget for each call. Fixed budget defined by chain level default, possibly contract level value. In this case gas budgets from requests are ignored
@@ -81,7 +83,7 @@ Question: what is the gas policy when processing NFT output? Probably fixed budg
   * attached assets just reference the on-ledger account of the sender. In the SC sandbox it is known as `incoming`
   * total balances available for the SC **and for the gas** in the off-ledger request = `on-chain balance`
 
-Option: `sender's assets` metadata may be not any assets but just balance of the tokens used to pay for gas (usually iotas)
+Option: `sender's assets` metadata instead of being `any assets` may just be balance of the tokens used to pay for gas (usually iotas)
 
 ## Workflow per `RequestData` type
 
