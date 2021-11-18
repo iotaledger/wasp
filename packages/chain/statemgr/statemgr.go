@@ -115,6 +115,8 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 			BlockMsg:    *msg,
 			SenderNetID: peerMsg.SenderNetID,
 		})
+	default:
+		sm.log.Warnf("Wrong type of state manager message: %v, ignoring it", peerMsg.MsgType)
 	}
 }
 

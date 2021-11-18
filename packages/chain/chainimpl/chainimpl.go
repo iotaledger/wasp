@@ -169,7 +169,8 @@ func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGrou
 			peerMsg.MsgReceiver, peerMsg.MsgType))
 	}
 	if peerMsg.MsgType != chain.PeerMsgTypeMissingRequestIDs {
-		panic(fmt.Errorf("Wrong type of chain message: %v", peerMsg.MsgType))
+		c.log.Warnf("Wrong type of chain message (with committee peering ID): %v, ignoring it", peerMsg.MsgType)
+		return
 	}
 	msg, err := messages.NewMissingRequestIDsMsg(peerMsg.MsgData)
 	if err != nil {
@@ -215,6 +216,8 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 			return
 		}
 		c.EnqueueMissingRequestMsg(msg)
+	default:
+		c.log.Warnf("Wrong type of chain message (with chain peering ID): %v, ignoring it", peerMsg.MsgType)
 	}
 }
 

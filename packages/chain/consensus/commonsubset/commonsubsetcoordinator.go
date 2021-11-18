@@ -118,7 +118,8 @@ func (csc *CommonSubsetCoordinator) receiveCommitteePeerMessages(peerMsg *peerin
 			peerMsg.MsgReceiver, peerMsg.MsgType))
 	}
 	if peerMsg.MsgType != peerMsgTypeBatch {
-		panic(fmt.Errorf("Wrong type of committee message: %v", peerMsg.MsgType))
+		csc.log.Warnf("Wrong type of committee message: %v, ignoring it", peerMsg.MsgType)
+		return
 	}
 	mb, err := newMsgBatch(peerMsg.MsgData)
 	if err != nil {

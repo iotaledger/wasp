@@ -153,6 +153,8 @@ func (c *consensus) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGro
 			SignedResultAckMsg: *msg,
 			SenderIndex:        peerMsg.SenderIndex,
 		})
+	default:
+		c.log.Warnf("Wrong type of consensus message: %v, ignoring it", peerMsg.MsgType)
 	}
 }
 
