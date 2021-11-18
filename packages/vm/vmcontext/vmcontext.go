@@ -37,6 +37,7 @@ type VMContext struct {
 	chainID              iscp.ChainID
 	chainOwnerID         *iscp.AgentID
 	chainInput           *iotago.AliasOutput
+	chainInputID         iotago.UTXOInput
 	processors           *processors.Cache
 	virtualState         state.VirtualStateAccess
 	solidStateBaseline   coreutil.StateBaseline
@@ -45,6 +46,9 @@ type VMContext struct {
 	blockContextCloseSeq []iscp.Hname
 	log                  *logger.Logger
 	blockOutputCount     uint8
+	// txbuilder
+	txbuilder          *txbuilder
+	txbuilderSnapshots map[int]*txbuilder
 	// fee related
 	validatorFeeTarget *iscp.AgentID // provided by validator
 	feeColor           colored.Color

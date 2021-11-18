@@ -34,6 +34,12 @@ const (
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
 func (vmctx *VMContext) RunTheRequest(req requestdata.RequestData, requestIndex uint16) {
+
+	if req.Unwrap().UTXO() != nil && vmctx.txbuilder.inputsFull() {
+		// ignore the UTXO request. Exceeded limit of inout in the anchor transaction
+		return
+	}
+
 	defer vmctx.mustFinalizeRequestCall()
 
 	vmctx.createTxBuilderSnapshot(txBuilderSnapshotWithoutInput)

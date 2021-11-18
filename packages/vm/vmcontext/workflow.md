@@ -136,5 +136,5 @@ Here is described the workflow of how one `RequestData` is processed in the `Run
 * How to know to which target SC send it? The metadata is used for other purposes, need some generic metadata parsing
 * check if time unlockable. Ignore if not
 
-Probably the best strategy is to assign all unclear outputs as owned by the chain's owner.
+Probably the best strategy is to assign all unclear outputs to the chain's owner.
 The `governance` contract should implement special wallet functions to deal with those unclear outputs: by sending them to sombody, destroying etc
