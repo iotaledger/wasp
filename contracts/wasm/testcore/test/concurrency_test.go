@@ -42,9 +42,15 @@ func TestSynchronous(t *testing.T) {
 		f.Func.TransferIotas(1)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
+		if wasmsolo.SoloDebug {
+			for i := range repeats {
+				repeats[i] /= 10
+			}
+		}
+
 		sum := 0
-		for _, i := range repeats {
-			sum += i
+		for _, n := range repeats {
+			sum += n
 		}
 
 		for _, n := range repeats {
@@ -83,9 +89,15 @@ func TestConcurrency(t *testing.T) {
 			WithIotas(1)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
+		if wasmsolo.SoloDebug {
+			for i := range repeats {
+				repeats[i] /= 10
+			}
+		}
+
 		sum := 0
-		for _, i := range repeats {
-			sum += i
+		for _, n := range repeats {
+			sum += n
 		}
 
 		chain := ctx.Chain
@@ -123,9 +135,15 @@ func TestConcurrency2(t *testing.T) {
 			WithIotas(1)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
+		if wasmsolo.SoloDebug {
+			for i := range repeats {
+				repeats[i] /= 10
+			}
+		}
+
 		sum := 0
-		for _, i := range repeats {
-			sum += i
+		for _, n := range repeats {
+			sum += n
 		}
 
 		chain := ctx.Chain
@@ -166,7 +184,11 @@ func TestViewConcurrency(t *testing.T) {
 		f := testcore.ScFuncs.IncCounter(ctx)
 		f.Func.TransferIotas(1).Post()
 
-		const times = 2000
+		times := 2000
+		if wasmsolo.SoloDebug {
+			times /= 10
+		}
+
 		channels := make(chan error, times)
 		chain := ctx.Chain
 		for i := 0; i < times; i++ {

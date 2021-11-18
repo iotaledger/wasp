@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const n = 10
+const fiboN = 10
 
 func fibo(n int64) int64 {
 	if n == 0 || n == 1 {
@@ -21,12 +21,12 @@ func TestCallFibonacci(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.Fibonacci(ctx)
-		f.Params.IntValue().SetValue(n)
+		f.Params.IntValue().SetValue(fiboN)
 		f.Func.Call()
 		require.NoError(t, ctx.Err)
 		result := f.Results.IntValue()
 		require.True(t, result.Exists())
-		require.EqualValues(t, fibo(n), result.Value())
+		require.EqualValues(t, fibo(fiboN), result.Value())
 	})
 }
 
@@ -35,14 +35,14 @@ func TestCallFibonacciIndirect(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.CallOnChain(ctx)
-		f.Params.IntValue().SetValue(n)
+		f.Params.IntValue().SetValue(fiboN)
 		f.Params.HnameContract().SetValue(testcore.HScName)
 		f.Params.HnameEP().SetValue(testcore.HViewFibonacci)
 		f.Func.TransferIotas(1).Post()
 		require.NoError(t, ctx.Err)
 		result := f.Results.IntValue()
 		require.True(t, result.Exists())
-		require.EqualValues(t, fibo(n), result.Value())
+		require.EqualValues(t, fibo(fiboN), result.Value())
 
 		v := testcore.ScFuncs.GetCounter(ctx)
 		v.Func.Call()

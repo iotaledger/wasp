@@ -79,7 +79,7 @@ pub fn func_transfer_from(ctx: &ScFuncContext, f: &TransferFromContext) {
 
     // allowances are in the map under the name of the account
     let allowances = f.state.all_allowances().get_allowances_for_agent(&account);
-    let allowance = allowances.get_int64(&recipient);
+    let allowance = allowances.get_int64(&ctx.caller());
     ctx.require(allowance.value() >= amount, "erc20.transfer_from.fail: not enough allowance");
 
     let balances = f.state.balances();
