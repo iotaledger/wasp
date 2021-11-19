@@ -16,7 +16,7 @@ type OnLedgerRequestData struct {
 	requestMetadata    *RequestMetadata
 }
 
-func NewOnLedgerRequestData(data UTXOMetaData, o iotago.Output) (*OnLedgerRequestData, error) {
+func NewOnLedgerRequestFromUTXO(data UTXOMetaData, o iotago.Output) (*OnLedgerRequestData, error) {
 	var fbSet iotago.FeatureBlocksSet
 	var reqMetadata *RequestMetadata
 	var err error

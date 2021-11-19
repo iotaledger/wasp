@@ -72,7 +72,5 @@ func TestNewTxBuilder(t *testing.T) {
 		//_, err := buf.Write(unTxData)
 		//tpkg.Must(err)
 		//sigTxPayload.Essence = unTx
-
 	})
-
 }

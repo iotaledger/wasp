@@ -170,7 +170,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Output
 
 		o := &iotago.ExtendedOutput{
 			Address:      pr.TargetAddress,
-			Amount:       pr.Assets.Amount, // TODO dust protection !!! Serialize, count bytes then put dust deposit
+			Amount:       pr.Assets.Iotas, // TODO dust protection !!! Serialize, count bytes then put dust deposit
 			NativeTokens: pr.Assets.Tokens,
 			Blocks: iotago.FeatureBlocks{
 				&iotago.SenderFeatureBlock{

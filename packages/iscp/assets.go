@@ -1,8 +1,6 @@
 package iscp
 
 import (
-	"math/big"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 )
@@ -10,18 +8,14 @@ import (
 // Assets is used as assets in the UTXO and as tokens in transfer
 type Assets struct {
 	Iotas  uint64
-	Tokens map[iotago.NativeTokenID]*big.Int
+	Tokens iotago.NativeTokens
 }
 
 func NewAssets(iotas uint64, tokens iotago.NativeTokens) *Assets {
-	ret := &Assets{
+	return &Assets{
 		Iotas:  iotas,
-		Tokens: make(map[iotago.NativeTokenID]*big.Int),
+		Tokens: tokens,
 	}
-	for _, token := range tokens {
-		ret.Tokens[token.ID] = token.Amount
-	}
-	return ret
 }
 
 func (a *Assets) String() string {
@@ -36,47 +30,19 @@ func (a *Assets) Bytes() []byte {
 
 func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.WriteUint64(a.Iotas)
-	for id, amount := range a.Tokens {
-		mu.WriteBytes(id[:])
-		amtBytes := amount.Bytes()
-		mu.WriteUint8(uint8(len(amtBytes)))
-		mu.Write(amount)
-	}
+	// tokenBytes, err := serializer.NewSerializer().WriteSliceOfObjects(&a.Tokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, nativeTokensArrayRules, func(err error) error {
+	// 	return fmt.Errorf("unable to serialize alias output native tokens: %w", err)
+	// }).Serialize()
+	// TODO this isn't complete, we're missing some stuff from iotago
+	panic("not implemented")
 }
 
-// NewAssetsFromMarshalUtil assumes that the data present in mu is already trimmed (only contains the assets bytes), it will read until EOF
 func NewAssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
-	ret := &Assets{
-		Tokens: make(map[iotago.NativeTokenID]*big.Int),
-	}
+	ret := &Assets{}
 	var err error
 	if ret.Iotas, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
-	for {
-		nativeTokenIDBytes, err := mu.ReadBytes(iotago.NativeTokenIDLength)
-		if err != nil {
-			return nil, err
-		}
-		var nativeTokenID [iotago.NativeTokenIDLength]byte
-		copy(nativeTokenID[:], nativeTokenIDBytes)
-
-		tokenAmountByteLen, err := mu.ReadUint8()
-		if err != nil {
-			return nil, err
-		}
-		tokenAmountBytes, err := mu.ReadBytes(int(tokenAmountByteLen))
-		if err != nil {
-			return nil, err
-		}
-		ret.Tokens[nativeTokenID] = new(big.Int).SetBytes(tokenAmountBytes)
-
-		isEOF, err := mu.DoneReading()
-		if err != nil {
-			return nil, err
-		}
-		if isEOF {
-			return ret, nil
-		}
-	}
+	// TODO this isn't complete, we're missing some stuff from iotago
+	panic("not implemented")
 }
