@@ -4,11 +4,17 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/requestdata"
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 // implements transaction builder used internally by the VM during batch run
+
+// TODO dust protection not covered yet !!!
 
 type txbuilder struct {
 	vmctx *VMContext
@@ -16,11 +22,12 @@ type txbuilder struct {
 	chainOutput *iotago.AliasOutput
 	// already consumed inputs
 	consumedInputs []iotago.UTXOInput
-	// maintained during the run. Final outputs will be constructed in the end
-	outputsCount        int
-	balanceIotasInitial *uint64
-	balanceIotas        uint64
+	// balance of iotas is kept in the chain output
+	balanceIotas uint64
+	// balances of each native token is kept each in separate ExtendedOutput
 	balanceNativeTokens map[iotago.NativeTokenID]*nativeTokenBalance
+	// posted requests
+	postedRequests []*postedRequest
 	// TODO
 }
 
@@ -29,13 +36,23 @@ type nativeTokenBalance struct {
 	balance *big.Int
 }
 
+// postedRequest represents on-ledger request posted in the anchor
+type postedRequest struct {
+	targetAddress iotago.Address
+	assets        *requestdata.Assets
+	metadata      *iscp.SendMetadata
+	options       *iscp.SendOptions
+}
+
+// error codes used for handled panics
+var (
+	ErrInputLimitExceeded  = xerrors.Errorf("exceeded maximum number of inputs in transaction: %d", iotago.MaxInputsCount)
+	ErrOutputLimitExceeded = xerrors.Errorf("exceeded maximum number of outputs in transaction: %d", iotago.MaxOutputsCount)
+)
+
 func (txb *txbuilder) clone() *txbuilder {
 	ret := txb.vmctx.newTxBuilder()
-	copy(ret.consumedInputs, txb.consumedInputs)
-	ret.outputsCount = txb.outputsCount
-	ret.balanceIotas = txb.balanceIotas
-	i := *txb.balanceIotasInitial
-	ret.balanceIotasInitial = &i
+	ret.consumedInputs = append(ret.consumedInputs, txb.consumedInputs...)
 	ret.balanceIotas = txb.balanceIotas
 	for k, v := range txb.balanceNativeTokens {
 		ret.balanceNativeTokens[k] = &nativeTokenBalance{
@@ -43,11 +60,15 @@ func (txb *txbuilder) clone() *txbuilder {
 			balance: new(big.Int).Set(v.balance),
 		}
 	}
+	ret.postedRequests = append(ret.postedRequests, txb.postedRequests...)
 	// TODO the rest
 	return ret
 }
 
 func (txb *txbuilder) addConsumedInput(inp iotago.UTXOInput) int {
+	if txb.inputsFull() {
+		panic(ErrInputLimitExceeded)
+	}
 	txb.consumedInputs = append(txb.consumedInputs, inp)
 	return len(txb.consumedInputs) - 1
 }
@@ -61,19 +82,18 @@ func (txb *txbuilder) inputs() iotago.Inputs {
 	for i := range txb.consumedInputs {
 		ret[i] = &txb.consumedInputs[i]
 	}
+	// TODO
 	return ret
 }
 
 func (txb *txbuilder) numInputsConsumed() int {
 	ret := len(txb.consumedInputs)
-	if txb.balanceIotasInitial != nil && *txb.balanceIotasInitial != txb.balanceIotas && txb.balanceIotas > 0 {
-		ret++
-	}
 	for _, v := range txb.balanceNativeTokens {
 		if v.balance.Cmp(v.initial) != 0 {
 			ret++
 		}
 	}
+	// TODO the rest
 	return ret
 }
 
@@ -89,6 +109,7 @@ func (txb *txbuilder) numOutputsConsumed() int {
 			ret++
 		}
 	}
+	ret += len(txb.postedRequests)
 	return ret
 }
 
@@ -96,23 +117,13 @@ func (txb *txbuilder) outputsFull() bool {
 	return txb.numOutputsConsumed() >= iotago.MaxOutputsCount
 }
 
-func (txb *txbuilder) ensureIotasBalance() {
-	if txb.balanceIotasInitial != nil {
-		return
-	}
-	b := txb.vmctx.loadOnChainIotas()
-	txb.balanceIotasInitial = &b
-	txb.balanceIotas = b
-}
-
 func (txb *txbuilder) addDeltaIotas(delta uint64) {
-	txb.ensureIotasBalance()
 	// safe arithmetics
 	n := txb.balanceIotas + delta
 	if n < txb.balanceIotas {
 		panic("addDeltaIotas: overflow")
 	}
-	txb.balanceIotas = n
+	txb.balanceIotas += n
 }
 
 func (txb *txbuilder) subDeltaIotas(delta uint64) {
@@ -131,6 +142,9 @@ func (txb *txbuilder) ensureNativeTokenBalance(id iotago.NativeTokenID) *nativeT
 		balance: txb.vmctx.loadNativeTokensOnChain(id),
 	}
 	txb.balanceNativeTokens[id] = b
+	if txb.outputsFull() {
+		panic(ErrOutputLimitExceeded)
+	}
 	return b
 }
 
@@ -141,6 +155,19 @@ func (txb *txbuilder) addDeltaNativeToken(id iotago.NativeTokenID, delta *big.In
 	b.balance.Add(b.balance, delta)
 }
 
+func (txb *txbuilder) addPostedRequest(
+	targetAddress iotago.Address,
+	assets *requestdata.Assets,
+	metadata *iscp.SendMetadata,
+	options *iscp.SendOptions) {
+	txb.postedRequests = append(txb.postedRequests, &postedRequest{
+		targetAddress: targetAddress,
+		assets:        assets,
+		metadata:      metadata,
+		options:       options,
+	})
+}
+
 /////////// vmcontext methods
 
 func (vmctx *VMContext) newTxBuilder() *txbuilder {
@@ -148,7 +175,9 @@ func (vmctx *VMContext) newTxBuilder() *txbuilder {
 		vmctx:               vmctx,
 		chainOutput:         vmctx.chainInput,
 		consumedInputs:      []iotago.UTXOInput{vmctx.chainInputID},
+		balanceIotas:        vmctx.chainInput.Amount,
 		balanceNativeTokens: make(map[iotago.NativeTokenID]*nativeTokenBalance),
+		postedRequests:      make([]*postedRequest, 0),
 	}
 }
 
@@ -164,21 +193,12 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 	return nil, nil
 }
 
-func (vmctx *VMContext) createTxBuilderSnapshot(id int) {
-	vmctx.txbuilderSnapshots[id] = vmctx.txbuilder.clone()
+func (vmctx *VMContext) createTxBuilderSnapshot(id int) *txbuilder {
+	return vmctx.txbuilder.clone()
 }
 
-func (vmctx *VMContext) restoreTxBuilderSnapshot(id int) {
-	vmctx.txbuilder = vmctx.txbuilderSnapshots[id]
-	delete(vmctx.txbuilderSnapshots, id)
-}
-
-func (vmctx *VMContext) clearTxBuilderSnapshots() {
-	vmctx.txbuilderSnapshots = make(map[int]*txbuilder)
-}
-
-func (vmctx *VMContext) loadOnChainIotas() uint64 {
-	panic("not implemented")
+func (vmctx *VMContext) restoreTxBuilderSnapshot(snapshot *txbuilder) {
+	vmctx.txbuilder = snapshot
 }
 
 func (vmctx *VMContext) loadNativeTokensOnChain(id iotago.NativeTokenID) *big.Int {

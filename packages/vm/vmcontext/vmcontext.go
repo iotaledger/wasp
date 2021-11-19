@@ -47,8 +47,7 @@ type VMContext struct {
 	log                  *logger.Logger
 	blockOutputCount     uint8
 	// txbuilder
-	txbuilder          *txbuilder
-	txbuilderSnapshots map[int]*txbuilder
+	txbuilder *txbuilder
 	// fee related
 	validatorFeeTarget *iscp.AgentID // provided by validator
 	feeColor           colored.Color
@@ -130,7 +129,6 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		callStack:            make([]*callContext, 0),
 	}
 	ret.txbuilder = ret.newTxBuilder()
-	ret.txbuilderSnapshots = make(map[int]*txbuilder)
 	return ret
 }
 
