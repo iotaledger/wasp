@@ -10,7 +10,7 @@ import (
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
-	return vmctx.chainID
+	return &vmctx.chainID
 }
 
 func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {

@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"math/big"
 	"sort"
+	"time"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/wasp/packages/util"
 
@@ -69,7 +72,7 @@ func (txb *AnchorTransactionBuilder) addConsumedInput(inp iotago.UTXOInput) int 
 	return len(txb.consumedInputs) - 1
 }
 
-func (txb *AnchorTransactionBuilder) Inputs() iotago.Inputs {
+func (txb *AnchorTransactionBuilder) inputs() iotago.Inputs {
 	ret := make(iotago.Inputs, 0, len(txb.consumedInputs)+len(txb.balanceNativeTokens))
 	for i := range txb.consumedInputs {
 		ret = append(ret, &txb.consumedInputs[i])
@@ -117,7 +120,7 @@ func (txb *AnchorTransactionBuilder) sortedListOfTokenIDsForOutputs() []iotago.N
 
 const dustAmountForInternalAccountUTXO = 100
 
-func (txb *AnchorTransactionBuilder) Outputs(stateMetadata []byte) iotago.Outputs {
+func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Outputs {
 	ret := make(iotago.Outputs, 0, 1+len(txb.balanceNativeTokens)+len(txb.postedRequests))
 	// creating chain output
 	anchorOutput := &iotago.AliasOutput{
@@ -129,7 +132,11 @@ func (txb *AnchorTransactionBuilder) Outputs(stateMetadata []byte) iotago.Output
 		StateIndex:           txb.anchorOutput.StateIndex + 1,
 		StateMetadata:        stateMetadata,
 		FoundryCounter:       txb.anchorOutput.FoundryCounter, // TODO
-		Blocks:               nil,                             // TODO ??
+		Blocks: iotago.FeatureBlocks{
+			&iotago.SenderFeatureBlock{
+				Address: txb.anchorOutput.AliasID.ToAddress(),
+			},
+		}, // TODO ??
 	}
 	ret = append(ret, anchorOutput)
 
@@ -254,6 +261,14 @@ func (txb *AnchorTransactionBuilder) addDeltaNativeToken(id iotago.NativeTokenID
 func (txb *AnchorTransactionBuilder) addPostedRequest(par iscp.PostRequestData) {
 	p := par
 	txb.postedRequests = append(txb.postedRequests, &p)
+}
+
+func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) *iotago.TransactionEssence {
+	return &iotago.TransactionEssence{
+		Inputs:  txb.inputs(),
+		Outputs: txb.outputs(stateHash[:]),
+		Payload: nil, // ??
+	}
 }
 
 /////////// vmcontext methods

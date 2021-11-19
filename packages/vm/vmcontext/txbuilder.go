@@ -11,11 +11,7 @@ import (
 )
 
 func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) *iotago.TransactionEssence {
-	return &iotago.TransactionEssence{
-		Inputs:  vmctx.txbuilder.Inputs(),
-		Outputs: vmctx.txbuilder.Outputs(stateHash[:]),
-		Payload: nil, // ??
-	}
+	return vmctx.txbuilder.BuildTransactionEssence(stateHash, timestamp)
 }
 
 func (vmctx *VMContext) createTxBuilderSnapshot(id int) *vmtxbuilder.AnchorTransactionBuilder {

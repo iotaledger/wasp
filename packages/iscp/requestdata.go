@@ -13,7 +13,6 @@ type TypeCode byte
 const (
 	TypeUnknown = TypeCode(iota)
 	TypeOffLedger
-	TypeSimpleOutput
 	TypeAliasOutput
 	TypeExtendedOutput
 	TypeFoundryOutput
@@ -24,7 +23,6 @@ const (
 var typeCodes = map[TypeCode]string{
 	TypeUnknown:        "(wrong)",
 	TypeOffLedger:      "Off-ledger",
-	TypeSimpleOutput:   "SimpleUTXO",
 	TypeAliasOutput:    "AliasUTXO",
 	TypeExtendedOutput: "ExtendedUTXO",
 	TypeNFTOutput:      "NTF-UTXO",

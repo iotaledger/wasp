@@ -19,11 +19,6 @@ func (vmctx *VMContext) checkReplay(req iscp.RequestData, requestIndex uint16) b
 
 func (vmctx *VMContext) preprocessRequestData(req iscp.RequestData, requestIndex uint16) bool {
 	switch req.Type() {
-	case iscp.TypeSimpleOutput:
-		// consume it an assign all Assets to owner's account
-		// no need to invoke SC
-
-		return true
 	case iscp.TypeOffLedger:
 		// prepare off ledger
 		return false

@@ -13,7 +13,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.12
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
 	github.com/iotaledger/hive.go v0.0.0-20211118140832-0930ef964406
-	github.com/iotaledger/iota.go/v3 v3.0.0-20211119094103-585278b128da
+	github.com/iotaledger/iota.go/v3 v3.0.0-20211119123830-d67d4f03c2fc
 	github.com/knadh/koanf v1.2.1
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.14.4
