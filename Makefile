@@ -18,6 +18,9 @@ test: install
 test-short:
 	go test -tags $(BUILD_TAGS) --short --count 1 -failfast ./...
 
+test-heavy:
+	go test -tags $(BUILD_TAGS),runheavy --timeout 30m --count 1 -failfast ./...
+
 install:
 	go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) ./...
 
@@ -36,5 +39,5 @@ docker-build:
 		--build-arg BUILD_LD_FLAGS='${BUILD_LD_FLAGS}' \
 		.
 
-.PHONY: all build build-windows build-lint test test-short install install-windows lint gofumpt-list docker-build
+.PHONY: all build build-windows build-lint test test-short test-heavy install install-windows lint gofumpt-list docker-build
 

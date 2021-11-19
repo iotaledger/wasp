@@ -5,6 +5,7 @@ package commonsubset_test
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"sync"
 	"testing"
@@ -177,12 +178,13 @@ func TestRandomized(t *testing.T) {
 }
 
 func TestCoordinator(t *testing.T) {
-	t.Run("N=1/T=1", func(tt *testing.T) { testCoordinator(tt, 1, 1) })
-	t.Run("N=4/T=3", func(tt *testing.T) { testCoordinator(tt, 4, 3) })
-	t.Run("N=10/T=7", func(tt *testing.T) { testCoordinator(tt, 10, 7) })
+	t.Run("N=1/T=1/P=1E2", func(tt *testing.T) { testCoordinator(tt, 1, 1, 100) })
+	t.Run("N=4/T=3/P=1E2", func(tt *testing.T) { testCoordinator(tt, 4, 3, 100) })
+	t.Run("N=10/T=7/P=1E2", func(tt *testing.T) { testCoordinator(tt, 10, 7, 100) })
+	t.Run("N=10/T=7/P=1E5", func(tt *testing.T) { testCoordinator(tt, 10, 7, 100000) })
 }
 
-func testCoordinator(t *testing.T, peerCount, threshold uint16) {
+func testCoordinator(t *testing.T, peerCount, threshold uint16, inputLen int) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	peeringID := peering.RandomPeeringID()
@@ -223,7 +225,8 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16) {
 	resultsWG.Add(int(peerCount))
 	for i := range acsCoords {
 		ii := i
-		input := []byte(peerNetIDs[i])
+		input := make([]byte, inputLen)
+		_, _ = rand.Read(input)
 		acsCoords[i].RunACSConsensus(input, sessionID, 1, func(sid uint64, res [][]byte) {
 			results[ii] = res
 			resultsWG.Done()
@@ -244,12 +247,13 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16) {
 }
 
 func TestRandomizedWithCC(t *testing.T) {
-	t.Run("N=1/T=1", func(tt *testing.T) { testRandomizedWithCC(tt, 1, 1) })
-	t.Run("N=4/T=3", func(tt *testing.T) { testRandomizedWithCC(tt, 4, 3) })
-	t.Run("N=10/T=7", func(tt *testing.T) { testRandomizedWithCC(tt, 10, 7) })
+	t.Run("N=1/T=1/P=1E2", func(tt *testing.T) { testRandomizedWithCC(tt, 1, 1, 100) })
+	t.Run("N=4/T=3/P=1E2", func(tt *testing.T) { testRandomizedWithCC(tt, 4, 3, 100) })
+	t.Run("N=10/T=7/P=1E2", func(tt *testing.T) { testRandomizedWithCC(tt, 10, 7, 100) })
+	t.Run("N=10/T=7/P=1E5", func(tt *testing.T) { testRandomizedWithCC(tt, 10, 7, 100000) })
 }
 
-func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16) {
+func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16, inputLen int) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	peeringID := peering.RandomPeeringID()
@@ -290,7 +294,8 @@ func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16) {
 	resultsWG.Add(int(peerCount))
 	for i := range acsCoords {
 		ii := i
-		input := []byte(peerNetIDs[i])
+		input := make([]byte, inputLen)
+		_, _ = rand.Read(input)
 		acsCoords[i].RunACSConsensus(input, sessionID, 1, func(sid uint64, res [][]byte) {
 			results[ii] = res
 			resultsWG.Done()
