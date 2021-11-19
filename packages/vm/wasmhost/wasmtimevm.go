@@ -43,38 +43,38 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) (err error) {
 		return err
 	}
 
-	vm.linker = wasmtime.NewLinker(vm.store)
+	vm.linker = wasmtime.NewLinker(vm.engine)
 	_ = vm.WasmVMBase.LinkHost(impl, host)
 
-	err = vm.linker.DefineFunc("WasmLib", "hostGetBytes", vm.HostGetBytes)
+	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostGetBytes, vm.HostGetBytes)
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("WasmLib", "hostGetKeyID", vm.HostGetKeyID)
+	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostGetKeyID, vm.HostGetKeyID)
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("WasmLib", "hostGetObjectID", vm.HostGetObjectID)
+	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostGetObjectID, vm.HostGetObjectID)
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("WasmLib", "hostSetBytes", vm.HostSetBytes)
+	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostSetBytes, vm.HostSetBytes)
 	if err != nil {
 		return err
 	}
 
 	// AssemblyScript Wasm versions uses this one to write panic message to console
-	err = vm.linker.DefineFunc("env", "abort", vm.EnvAbort)
+	err = vm.linker.DefineFunc(vm.store, ModuleEnv, FuncAbort, vm.HostAbort)
 	if err != nil {
 		return err
 	}
 
 	// TinyGo Wasm versions uses this one to write panic message to console
-	err = vm.linker.DefineFunc("wasi_unstable", "fd_write", vm.HostFdWrite)
+	err = vm.linker.DefineFunc(vm.store, ModuleWasi1, FuncFdWrite, vm.HostFdWrite)
 	if err != nil {
 		return err
 	}
-	return vm.linker.DefineFunc("wasi_snapshot_preview1", "fd_write", vm.HostFdWrite)
+	return vm.linker.DefineFunc(vm.store, ModuleWasi2, FuncFdWrite, vm.HostFdWrite)
 }
 
 func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
@@ -86,11 +86,11 @@ func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
 }
 
 func (vm *WasmTimeVM) Instantiate() (err error) {
-	vm.instance, err = vm.linker.Instantiate(vm.module)
+	vm.instance, err = vm.linker.Instantiate(vm.store, vm.module)
 	if err != nil {
 		return err
 	}
-	memory := vm.instance.GetExport("memory")
+	memory := vm.instance.GetExport(vm.store, "memory")
 	if memory == nil {
 		return errors.New("no memory export")
 	}
@@ -102,28 +102,28 @@ func (vm *WasmTimeVM) Instantiate() (err error) {
 }
 
 func (vm *WasmTimeVM) RunFunction(functionName string, args ...interface{}) error {
-	export := vm.instance.GetExport(functionName)
+	export := vm.instance.GetExport(vm.store, functionName)
 	if export == nil {
 		return errors.New("unknown export function: '" + functionName + "'")
 	}
 	return vm.Run(func() (err error) {
-		_, err = export.Func().Call(args...)
+		_, err = export.Func().Call(vm.store, args...)
 		return err
 	})
 }
 
 func (vm *WasmTimeVM) RunScFunction(index int32) error {
-	export := vm.instance.GetExport("on_call")
+	export := vm.instance.GetExport(vm.store, "on_call")
 	if export == nil {
 		return errors.New("unknown export function: 'on_call'")
 	}
 
 	return vm.Run(func() (err error) {
-		_, err = export.Func().Call(index)
+		_, err = export.Func().Call(vm.store, index)
 		return err
 	})
 }
 
 func (vm *WasmTimeVM) UnsafeMemory() []byte {
-	return vm.memory.UnsafeData()
+	return vm.memory.UnsafeData(vm.store)
 }

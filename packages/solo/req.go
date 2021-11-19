@@ -281,7 +281,7 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 // WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
 // requests in the mempool of the chain both become equal to the specified number
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
-	maxw := 5 * time.Second
+	maxw := 10 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
 		maxw = maxWait[0]

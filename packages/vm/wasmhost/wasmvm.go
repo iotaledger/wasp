@@ -10,7 +10,19 @@ import (
 	"time"
 )
 
-const defaultTimeout = 5 * time.Second
+const (
+	defaultTimeout      = 5 * time.Second
+	FuncAbort           = "abort"
+	FuncFdWrite         = "fd_write"
+	FuncHostGetBytes    = "hostGetBytes"
+	FuncHostGetKeyID    = "hostGetKeyID"
+	FuncHostGetObjectID = "hostGetObjectID"
+	FuncHostSetBytes    = "hostSetBytes"
+	ModuleEnv           = "env"
+	ModuleWasi1         = "wasi_unstable"
+	ModuleWasi2         = "wasi_snapshot_preview1"
+	ModuleWasmLib       = "WasmLib"
+)
 
 var (
 	// DisableWasmTimeout can be used to disable the annoying timeout during debugging
@@ -43,13 +55,43 @@ type WasmVM interface {
 type WasmVMBase struct {
 	impl           WasmVM
 	host           *WasmHost
+	panicErr       error
 	result         []byte
 	resultKeyID    int32
 	timeoutStarted bool
 }
 
-func (vm *WasmVMBase) EnvAbort(errMsg, fileName, line, col int32) {
+// catchPanicMessage is used in every host function to catch any panic.
+// It will save the first panic it encounters in the WasmVMBase so that
+// the caller of the Wasm function can retrieve the correct error.
+// This is a workaround to WasmTime saving the *last* panic instead of
+// the first, thereby reporting the wrong panic error sometimes
+func (vm *WasmVMBase) catchPanicMessage() {
+	panicMsg := recover()
+	if panicMsg == nil {
+		return
+	}
+	if vm.panicErr == nil {
+		switch msg := panicMsg.(type) {
+		case error:
+			vm.panicErr = msg
+		default:
+			vm.panicErr = fmt.Errorf("%v", msg)
+		}
+	}
+	// rethrow and let nature run its course...
+	panic(panicMsg)
+}
+
+//nolint:unparam
+func (vm *WasmVMBase) getKvStore(id int32) *KvStoreHost {
+	return vm.host.getKvStore(id)
+}
+
+func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 	// crude implementation assumes texts to only use ASCII part of UTF-16
+
+	defer vm.catchPanicMessage()
 
 	// null-terminated UTF-16 error message
 	str1 := make([]byte, 0)
@@ -70,12 +112,9 @@ func (vm *WasmVMBase) EnvAbort(errMsg, fileName, line, col int32) {
 	panic(fmt.Sprintf("AssemblyScript panic: %s (%s %d:%d)", string(str1), string(str2), line, col))
 }
 
-//nolint:unparam
-func (vm *WasmVMBase) getKvStore(id int32) *KvStoreHost {
-	return vm.host.getKvStore(id)
-}
-
 func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
+	defer vm.catchPanicMessage()
+
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostFdWrite(...)")
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
@@ -91,6 +130,8 @@ func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 }
 
 func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) int32 {
+	defer vm.catchPanicMessage()
+
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
 
@@ -137,6 +178,8 @@ func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) 
 }
 
 func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
+	defer vm.catchPanicMessage()
+
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostGetKeyID(r%d,s%d)", keyRef, size)
 	// non-negative size means original key was a string
@@ -151,12 +194,16 @@ func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
 }
 
 func (vm *WasmVMBase) HostGetObjectID(objID, keyID, typeID int32) int32 {
+	defer vm.catchPanicMessage()
+
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostGetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
 	return host.GetObjectID(objID, keyID, typeID)
 }
 
 func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) {
+	defer vm.catchPanicMessage()
+
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
 	bytes := vm.impl.VMGetBytes(stringRef, size)
@@ -179,9 +226,27 @@ func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 }
 
 func (vm *WasmVMBase) Run(runner func() error) (err error) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+		// could be the wrong panic message due to a WasmTime bug, so we always
+		// rethrow our intercepted first panic instead of WasmTime's last panic
+		if vm.panicErr != nil {
+			panic(vm.panicErr)
+		}
+		panic(r)
+	}()
+
 	if vm.timeoutStarted {
 		// no need to wrap nested calls in timeout code
-		return runner()
+		err = runner()
+		if vm.panicErr != nil {
+			err = vm.panicErr
+			vm.panicErr = nil
+		}
+		return err
 	}
 
 	timeout := defaultTimeout
@@ -208,6 +273,10 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 	err = runner()
 	done <- true
 	vm.timeoutStarted = false
+	if vm.panicErr != nil {
+		err = vm.panicErr
+		vm.panicErr = nil
+	}
 	return err
 }
 
