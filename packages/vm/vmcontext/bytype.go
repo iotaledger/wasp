@@ -6,7 +6,7 @@ func (vmctx *VMContext) checkReplay(req requestdata.RequestData, requestIndex ui
 	// checks replay in the state.
 	// - off ledger checks as usual with requestID in blocklog receipts + nonce
 	// - extended outputs checks:
-	// --- if extended output is produced by the chain itself (sender field) then special flag in metadata indicates if it is account or request
+	// --- if extended output is produced by the chain itself (sender field) then special flag in Metadata indicates if it is account or request
 	// --- if it is external, checked in the blocklog receipts
 	// - NFT output checks if NFT is known already in the NFT table
 	// - Foundry output checks if NFT is known already in the NFT table.
@@ -18,7 +18,7 @@ func (vmctx *VMContext) checkReplay(req requestdata.RequestData, requestIndex ui
 func (vmctx *VMContext) preprocessRequestData(req requestdata.RequestData, requestIndex uint16) bool {
 	switch req.Type() {
 	case requestdata.TypeSimpleOutput:
-		// consume it an assign all assets to owner's account
+		// consume it an assign all Assets to owner's account
 		// no need to invoke SC
 
 		return true

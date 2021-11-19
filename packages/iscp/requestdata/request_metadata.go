@@ -62,6 +62,11 @@ func (p *RequestMetadata) WithArgs(args dict.Dict) *RequestMetadata {
 	return p
 }
 
+func (p *RequestMetadata) WithTransfer(assets *Assets) *RequestMetadata {
+	p.transfer = assets // paraneter immutable
+	return p
+}
+
 func (p *RequestMetadata) Clone() *RequestMetadata {
 	ret := *p
 	ret.args = p.args.Clone()

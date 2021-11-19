@@ -135,7 +135,7 @@ func (r *OffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
 		WriteBytes(r.publicKey[:]).
 		WriteUint64(r.nonce).
 		WriteUint64(r.transferIotas)
-	// TODO write native tokens
+	// TODO write native Tokens
 }
 
 func (r *OffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
@@ -162,7 +162,7 @@ func (r *OffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) erro
 	if r.nonce, err = mu.ReadUint64(); err != nil {
 		return err
 	}
-	// TODO read native tokens
+	// TODO read native Tokens
 	//if r.transferTokens, err = colored.BalancesFromMarshalUtil(mu); err != nil {
 	//	return err
 	//}
@@ -190,8 +190,8 @@ func (r *OffLedger) Assets() *Assets {
 // Transfer transfer of assets from the sender's account to the target smart contract. Nil mean no transfer
 func (r *OffLedger) Transfer() *Assets {
 	return &Assets{
-		amount: r.transferIotas,
-		tokens: r.transferTokens,
+		Amount: r.transferIotas,
+		Tokens: r.transferTokens,
 	}
 }
 

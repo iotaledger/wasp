@@ -40,7 +40,7 @@ func printUsage() {
 			"  A IOTA Smartc Contracts node.\n\n"+
 			"Usage:\n\n"+
 			"  %s [OPTIONS]\n\n"+
-			"Options:\n",
+			"SendOptions:\n",
 		filepath.Base(os.Args[0]),
 	)
 	flag.PrintDefaults()

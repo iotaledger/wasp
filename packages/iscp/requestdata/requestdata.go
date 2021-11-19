@@ -73,10 +73,10 @@ type NFT struct {
 	NFTMetadata []byte
 }
 
-// Assets is used as assets in the UTXO and as tokens in transfer
+// Assets is used as assets in the UTXO and as Tokens in transfer
 type Assets struct {
-	amount uint64
-	tokens iotago.NativeTokens
+	Amount uint64
+	Tokens iotago.NativeTokens
 }
 
 type Request interface {

@@ -84,8 +84,8 @@ func (r *onLedgerRequestData) Assets() *Assets {
 		tokens = output.NativeTokenSet()
 	}
 	return &Assets{
-		amount: amount,
-		tokens: tokens,
+		Amount: amount,
+		Tokens: tokens,
 	}
 }
 
