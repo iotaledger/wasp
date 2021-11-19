@@ -31,10 +31,12 @@ For example, here is the structure generated for the mutable results for the `ge
 function:
 
 <Tabs defaultValue="go"
-    values={[
-        {label: 'Go', value: 'go'},
-        {label: 'Rust', value: 'rust'},
-    ]}>
+      groupId="language"
+      values={[
+          {label: 'Go', value: 'go'},
+          {label: 'Rust', value: 'rust'},
+          {label: 'TypeScript', value: 'ts'},
+      ]}>
 
 <TabItem value="go">
 
@@ -65,10 +67,26 @@ impl MutableGetFactorResults {
 ```
 
 </TabItem>
+<TabItem value="ts">
+
+```ts
+export class ImmutableMemberParams extends wasmlib.ScMapID {
+    address(): wasmlib.ScImmutableAddress {
+        return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+    }
+
+    factor(): wasmlib.ScImmutableInt64 {
+        return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamFactor]);
+    }
+}
+```
+
+</TabItem>
 </Tabs>
 
 Note that the schema tool will also generate an immutable version of the structure,
 suitable for accessing the results after calling this smart contract function.
 
-In the next section we will look at how so-called [thunk functions](thunks.mdx) encapsulate access and
-parameter checking and set up the type-safe function-specific contexts.
+In the next section we will look at how so-called [thunk functions](thunks.mdx)
+encapsulate access and parameter checking and set up the type-safe function-specific
+contexts.

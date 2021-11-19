@@ -31,12 +31,14 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
-	"gopkg.in/eapache/channels.v1"
 )
+
+const maxMsgBuffer = 10000
 
 var (
 	_ chain.Chain         = &chainObj{}
@@ -56,7 +58,7 @@ type chainObj struct {
 	chainStateSync                   coreutil.ChainStateSync
 	stateReader                      state.OptimisticStateReader
 	procset                          *processors.Cache
-	chMsg                            *channels.InfiniteChannel
+	msgPipe                          pipe.Pipe
 	stateMgr                         chain.StateManager
 	consensus                        chain.Consensus
 	log                              *logger.Logger
@@ -103,10 +105,26 @@ func NewChain(
 
 	chainLog := log.Named(chainID.Base58()[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
+	messagePriorityFun := func(msg interface{}) bool {
+		switch msgt := msg.(type) {
+		case *peering.PeerMessage:
+			switch msgt.MsgType {
+			case messages.MsgGetBlock,
+				messages.MsgBlock,
+				messages.MsgSignedResult,
+				messages.MsgSignedResultAck:
+				return true
+			default:
+				return false
+			}
+		default:
+			return true
+		}
+	}
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
-		chMsg:             channels.NewInfiniteChannel(),
+		msgPipe:           pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
 		chainID:           chainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
@@ -145,7 +163,7 @@ func NewChain(
 		ret.ReceiveMessage(recv.Msg)
 	})
 	go func() {
-		for msg := range ret.chMsg.Out() {
+		for msg := range ret.msgPipe.Out() {
 			ret.dispatchMessage(msg)
 		}
 	}()
@@ -348,7 +366,7 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 
 	go func() {
 		for _, msg := range evts {
-			c.log.Infof("publishNewBlockEvents: '%s'", msg)
+			c.log.Debugf("publishNewBlockEvents: '%s'", msg)
 			publisher.Publish("vmmsg", c.chainID.Base58(), msg)
 		}
 	}()

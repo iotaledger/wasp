@@ -50,7 +50,6 @@ import (
 
 const (
 	maintenancePeriod = 1 * time.Second
-	recvQueueSize     = 1024 * 5
 
 	lppProtocolPeering   = "/iotaledger/wasp/peering/1.0.0"
 	lppProtocolHeartbeat = "/iotaledger/wasp/heartbeat/1.0.0"
@@ -65,8 +64,7 @@ type netImpl struct {
 	ctxCancel   context.CancelFunc      // A way to close the context.
 	peers       map[libp2ppeer.ID]*peer // By remotePeer.ID()
 	peersLock   *sync.RWMutex
-	recvEvents  *events.Event           // Used to publish events to all attached clients.
-	recvQueue   chan *peering.RecvEvent // A queue for received messages.
+	recvEvents  *events.Event // Used to publish events to all attached clients.
 	nodeKeyPair *ed25519.KeyPair
 	trusted     peering.TrustedNetworkManager
 	log         *logger.Logger
@@ -111,7 +109,6 @@ func NewNetworkProvider(
 		peers:       make(map[libp2ppeer.ID]*peer),
 		peersLock:   &sync.RWMutex{},
 		recvEvents:  nil, // Initialized bellow.
-		recvQueue:   make(chan *peering.RecvEvent, recvQueueSize),
 		nodeKeyPair: nodeKeyPair,
 		trusted:     trusted,
 		log:         log,
@@ -211,17 +208,12 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 		n.log.Warnf("Failed to read incoming payload from %v, reason=%v", remotePeer.remoteNetID, err)
 		return
 	}
-	peerMsg, err := peering.NewPeerMessageFromBytes(payload, nil) // Do not use the signatures, we have TLS.
+	peerMsg, err := peering.NewPeerMessageFromBytes(payload) // Do not use the signatures, we have TLS.
 	if err != nil {
 		n.log.Warnf("Error while decoding a message, reason=%v", err)
 		return
 	}
-	remotePeer.noteReceived()
-	peerMsg.SenderNetID = remotePeer.NetID()
-	n.recvQueue <- &peering.RecvEvent{
-		From: remotePeer,
-		Msg:  peerMsg,
-	}
+	remotePeer.RecvMsg(peerMsg)
 }
 
 func (n *netImpl) lppHeartbeatProtocolHandler(stream network.Stream) {
@@ -307,7 +299,6 @@ func (n *netImpl) Run(shutdownSignal <-chan struct{}) {
 	queueRecvStopCh := make(chan bool)
 	receiveStopCh := make(chan bool)
 	maintenanceStopCh := make(chan bool)
-	go n.queueRecvLoop(queueRecvStopCh)
 	go n.maintenanceLoop(maintenanceStopCh)
 
 	<-shutdownSignal
@@ -414,10 +405,14 @@ func (n *netImpl) PubKey() *ed25519.PublicKey {
 // SendMsg implements peering.PeerSender for the Self() node.
 func (n *netImpl) SendMsg(msg *peering.PeerMessage) {
 	// Don't go via the network, if sending a message to self.
-	n.recvQueue <- &peering.RecvEvent{
+	n.triggerRecvEvents(&peering.RecvEvent{
 		From: n.Self(),
 		Msg:  msg,
-	}
+	})
+}
+
+func (n *netImpl) triggerRecvEvents(msg *peering.RecvEvent) {
+	n.recvEvents.Trigger(msg)
 }
 
 // IsAlive implements peering.PeerSender for the Self() node.
@@ -482,19 +477,6 @@ func (n *netImpl) usePeer(remoteNetID string) (peering.PeerSender, error) {
 		}
 	}
 	return nil, xerrors.Errorf("peer %v is not trusted", remoteNetID)
-}
-
-func (n *netImpl) queueRecvLoop(stopCh chan bool) {
-	for {
-		select {
-		case <-stopCh:
-			return
-		case recvEvent, ok := <-n.recvQueue:
-			if ok {
-				n.recvEvents.Trigger(recvEvent)
-			}
-		}
-	}
 }
 
 func (n *netImpl) maintenanceLoop(stopCh chan bool) {

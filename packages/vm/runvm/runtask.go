@@ -1,6 +1,8 @@
 package runvm
 
 import (
+	"errors"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -22,7 +24,7 @@ func (r VMRunner) Run(task *vm.VMTask) {
 		if r == nil {
 			return
 		}
-		if _, ok := r.(*coreutil.ErrorStateInvalidated); ok {
+		if err, ok := r.(error); ok && errors.Is(err, coreutil.ErrorStateInvalidated) {
 			task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
 			return
 		}
@@ -53,7 +55,7 @@ func runTask(task *vm.VMTask) {
 			numOffLedger++
 		} else {
 			if numOnLedger == vmcontext.MaxBlockInputCount {
-				break // max number of inputs to be included in state transition reached, do not process more on-ledger requests
+				continue // max number of inputs to be included in state transition reached, do not process more on-ledger requests
 			}
 			numOnLedger++
 		}

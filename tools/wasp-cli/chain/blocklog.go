@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -61,25 +62,59 @@ func logRequestsInBlock(index uint32) {
 	})
 	log.Check(err)
 	arr := collections.NewArray16ReadOnly(ret, blocklog.ParamRequestRecord)
-	header := []string{"request ID", "kind", "error"}
-	rows := make([][]string, arr.MustLen())
 	for i := uint16(0); i < arr.MustLen(); i++ {
-		req, err := blocklog.RequestReceiptFromBytes(arr.MustGetAt(i))
+		receipt, err := blocklog.RequestReceiptFromBytes(arr.MustGetAt(i))
 		log.Check(err)
-
-		kind := "on-ledger"
-		if req.Request.IsOffLedger() {
-			kind = "off-ledger"
-		}
-
-		rows[i] = []string{
-			req.Request.ID().Base58(),
-			kind,
-			fmt.Sprintf("%q", req.Error),
-		}
+		logReceipt(receipt, i)
 	}
-	log.Printf("Total %d requests\n", arr.MustLen())
-	log.PrintTable(header, rows)
+}
+
+func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
+	req := receipt.Request
+
+	feePrepaid := "no"
+	if req.IsFeePrepaid() {
+		feePrepaid = "yes"
+	}
+
+	kind := "on-ledger"
+	if req.IsOffLedger() {
+		kind = "off-ledger"
+	}
+
+	timestamp := "n/a"
+	if !req.IsOffLedger() {
+		timestamp = req.Timestamp().UTC().Format(time.RFC3339)
+	}
+
+	// TODO: use req.Params() instead (buggy atm)
+	args := req.(request.SolidifiableRequest).Args()
+	var argsTree interface{} = "(empty)"
+	if len(args) > 0 {
+		argsTree = dict.Dict(args)
+	}
+
+	errMsg := "(empty)"
+	if receipt.Error != "" {
+		errMsg = fmt.Sprintf("%q", receipt.Error)
+	}
+
+	tree := []log.TreeItem{
+		{K: "Kind", V: kind},
+		{K: "Fee prepaid", V: feePrepaid},
+		{K: "Sender", V: req.SenderAccount().String()},
+		{K: "Contract Hname", V: req.Target().Contract.String()},
+		{K: "Entry point", V: req.Target().EntryPoint.String()},
+		{K: "Timestamp", V: timestamp},
+		{K: "Arguments", V: argsTree},
+		{K: "Error", V: errMsg},
+	}
+	if len(index) > 0 {
+		log.Printf("Request #%d (%s):\n", index[0], req.ID().Base58())
+	} else {
+		log.Printf("Request %s:\n", req.ID().Base58())
+	}
+	log.PrintTree(tree, 2, 2)
 }
 
 func logEventsInBlock(index uint32) {
@@ -108,10 +143,11 @@ func requestCmd() *cobra.Command {
 			receipt, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
 			log.Check(err)
 
-			log.Printf("request included in block %d\n, %s\n", blockIndex, receipt.String())
-
+			log.Printf("Request found in block %d\n\n", blockIndex)
+			logReceipt(receipt)
 			log.Printf("\n")
 			logEventsInRequest(reqID)
+			log.Printf("\n")
 		},
 	}
 }

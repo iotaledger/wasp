@@ -16,7 +16,7 @@ use crate::keys::*;
 use crate::typedefs::*;
 
 pub struct MapAgentIDToImmutableAllowancesForAgent {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapAgentIDToImmutableAllowancesForAgent {
@@ -33,27 +33,27 @@ pub struct ImmutableErc20State {
 
 impl ImmutableErc20State {
     pub fn all_allowances(&self) -> MapAgentIDToImmutableAllowancesForAgent {
-        let map_id = get_object_id(self.id, idx_map(IDX_STATE_ALL_ALLOWANCES), TYPE_MAP);
-        MapAgentIDToImmutableAllowancesForAgent { obj_id: map_id }
-    }
+		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ALL_ALLOWANCES), TYPE_MAP);
+		MapAgentIDToImmutableAllowancesForAgent { obj_id: map_id }
+	}
 
     pub fn balances(&self) -> MapAgentIDToImmutableInt64 {
-        let map_id = get_object_id(self.id, idx_map(IDX_STATE_BALANCES), TYPE_MAP);
-        MapAgentIDToImmutableInt64 { obj_id: map_id }
-    }
+		let map_id = get_object_id(self.id, idx_map(IDX_STATE_BALANCES), TYPE_MAP);
+		MapAgentIDToImmutableInt64 { obj_id: map_id }
+	}
 
     pub fn supply(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_STATE_SUPPLY))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_SUPPLY))
+	}
 }
 
 pub struct MapAgentIDToMutableAllowancesForAgent {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapAgentIDToMutableAllowancesForAgent {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_allowances_for_agent(&self, key: &ScAgentID) -> MutableAllowancesForAgent {
@@ -69,16 +69,16 @@ pub struct MutableErc20State {
 
 impl MutableErc20State {
     pub fn all_allowances(&self) -> MapAgentIDToMutableAllowancesForAgent {
-        let map_id = get_object_id(self.id, idx_map(IDX_STATE_ALL_ALLOWANCES), TYPE_MAP);
-        MapAgentIDToMutableAllowancesForAgent { obj_id: map_id }
-    }
+		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ALL_ALLOWANCES), TYPE_MAP);
+		MapAgentIDToMutableAllowancesForAgent { obj_id: map_id }
+	}
 
     pub fn balances(&self) -> MapAgentIDToMutableInt64 {
-        let map_id = get_object_id(self.id, idx_map(IDX_STATE_BALANCES), TYPE_MAP);
-        MapAgentIDToMutableInt64 { obj_id: map_id }
-    }
+		let map_id = get_object_id(self.id, idx_map(IDX_STATE_BALANCES), TYPE_MAP);
+		MapAgentIDToMutableInt64 { obj_id: map_id }
+	}
 
     pub fn supply(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_STATE_SUPPLY))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_STATE_SUPPLY))
+	}
 }

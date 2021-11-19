@@ -12,9 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/metrics"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -28,8 +25,11 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -432,22 +432,20 @@ func (env *MockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, i
 }
 
 func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
-	reqs := make([]iscp.Request, n)
+	reqs := make([]*request.OffLedger, n)
 	for i := 0; i < n; i++ {
 		reqs[i] = solo.NewCallParams("dummy", "dummy", "c", i).
-			NewRequestOffLedger(env.OriginatorKeyPair)
+			NewRequestOffLedger(iscp.RandomChainID(), env.OriginatorKeyPair)
 	}
 	rnd := len(randomize) > 0 && randomize[0]
 	for _, n := range env.Nodes {
-		if rnd {
-			for _, req := range reqs {
-				go func(node *mockedNode, r iscp.Request) {
+		for _, req := range reqs {
+			go func(node *mockedNode, r *request.OffLedger) {
+				if rnd {
 					time.Sleep(time.Duration(rand.Intn(50)) * time.Millisecond)
-					node.Mempool.ReceiveRequests(r)
-				}(n, req)
-			}
-		} else {
-			n.Mempool.ReceiveRequests(reqs...)
+				}
+				node.Mempool.ReceiveRequest(r)
+			}(n, req)
 		}
 	}
 }

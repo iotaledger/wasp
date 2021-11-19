@@ -19,16 +19,17 @@ type WasmTimeVM struct {
 	store     *wasmtime.Store
 }
 
-var _ WasmVM = &WasmTimeVM{}
-
-func NewWasmTimeVM() *WasmTimeVM {
+func NewWasmTimeVM() WasmVM {
 	vm := &WasmTimeVM{}
 	config := wasmtime.NewConfig()
 	config.SetInterruptable(true)
 	vm.store = wasmtime.NewStore(wasmtime.NewEngineWithConfig(config))
 	vm.interrupt, _ = vm.store.InterruptHandle()
-	vm.linker = wasmtime.NewLinker(vm.store)
 	return vm
+}
+
+func (vm *WasmTimeVM) NewInstance() WasmVM {
+	return &WasmTimeVM{store: vm.store, module: vm.module, interrupt: vm.interrupt}
 }
 
 func (vm *WasmTimeVM) Interrupt() {
@@ -36,63 +37,49 @@ func (vm *WasmTimeVM) Interrupt() {
 }
 
 func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
+	vm.linker = wasmtime.NewLinker(vm.store)
 	_ = vm.WasmVMBase.LinkHost(impl, host)
 
-	err := vm.linker.DefineFunc("WasmLib", "hostGetBytes",
-		func(objID, keyID, typeID, stringRef, size int32) int32 {
-			return vm.HostGetBytes(objID, keyID, typeID, stringRef, size)
-		})
+	err := vm.linker.DefineFunc("WasmLib", "hostGetBytes", vm.HostGetBytes)
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("WasmLib", "hostGetKeyID",
-		func(keyRef, size int32) int32 {
-			return vm.HostGetKeyID(keyRef, size)
-		})
+	err = vm.linker.DefineFunc("WasmLib", "hostGetKeyID", vm.HostGetKeyID)
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("WasmLib", "hostGetObjectID",
-		func(objID, keyID, typeID int32) int32 {
-			return vm.HostGetObjectID(objID, keyID, typeID)
-		})
+	err = vm.linker.DefineFunc("WasmLib", "hostGetObjectID", vm.HostGetObjectID)
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("WasmLib", "hostSetBytes",
-		func(objID, keyID, typeID, stringRef, size int32) {
-			vm.HostSetBytes(objID, keyID, typeID, stringRef, size)
-		})
+	err = vm.linker.DefineFunc("WasmLib", "hostSetBytes", vm.HostSetBytes)
 	if err != nil {
 		return err
 	}
 
 	// AssemblyScript Wasm versions uses this one to write panic message to console
-	err = vm.linker.DefineFunc("env", "abort",
-		func(p1, p2, p3, p4 int32) {
-			vm.EnvAbort(p1, p2, p3, p4)
-		})
+	err = vm.linker.DefineFunc("env", "abort", vm.EnvAbort)
 	if err != nil {
 		return err
 	}
 
 	// TinyGo Wasm versions uses this one to write panic message to console
-	fdWrite := func(fd, iovs, size, written int32) int32 {
-		return vm.HostFdWrite(fd, iovs, size, written)
-	}
-	err = vm.linker.DefineFunc("wasi_unstable", "fd_write", fdWrite)
+	err = vm.linker.DefineFunc("wasi_unstable", "fd_write", vm.HostFdWrite)
 	if err != nil {
 		return err
 	}
-	return vm.linker.DefineFunc("wasi_snapshot_preview1", "fd_write", fdWrite)
+	return vm.linker.DefineFunc("wasi_snapshot_preview1", "fd_write", vm.HostFdWrite)
 }
 
-func (vm *WasmTimeVM) LoadWasm(wasmData []byte) error {
-	var err error
+func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
 	vm.module, err = wasmtime.NewModule(vm.store.Engine, wasmData)
 	if err != nil {
 		return err
 	}
+	return vm.Instantiate()
+}
+
+func (vm *WasmTimeVM) Instantiate() (err error) {
 	vm.instance, err = vm.linker.Instantiate(vm.module)
 	if err != nil {
 		return err
@@ -108,6 +95,10 @@ func (vm *WasmTimeVM) LoadWasm(wasmData []byte) error {
 	return nil
 }
 
+func (vm *WasmTimeVM) PoolSize() int {
+	return 10
+}
+
 func (vm *WasmTimeVM) RunFunction(functionName string, args ...interface{}) error {
 	export := vm.instance.GetExport(functionName)
 	if export == nil {
@@ -115,7 +106,7 @@ func (vm *WasmTimeVM) RunFunction(functionName string, args ...interface{}) erro
 	}
 	return vm.Run(func() (err error) {
 		_, err = export.Func().Call(args...)
-		return
+		return err
 	})
 }
 
@@ -130,7 +121,7 @@ func (vm *WasmTimeVM) RunScFunction(index int32) error {
 
 	return vm.Run(func() (err error) {
 		_, err = export.Func().Call(index)
-		return
+		return err
 	})
 }
 

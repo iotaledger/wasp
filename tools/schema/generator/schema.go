@@ -4,11 +4,9 @@
 package generator
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"regexp"
 	"strings"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 )
@@ -39,24 +37,17 @@ type SchemaDef struct {
 }
 
 type Func struct {
-	Access   string
-	Kind     string
-	FuncName string
-	Hname    iscp.Hname
-	String   string
-	Params   []*Field
-	Results  []*Field
-	Type     string
+	Name    string
+	Access  string
+	Kind    string
+	Hname   iscp.Hname
+	Params  []*Field
+	Results []*Field
 }
 
-func (f *Func) nameLen(smallest int) int {
-	if len(f.Results) != 0 {
-		return 7
-	}
-	if len(f.Params) != 0 {
-		return 6
-	}
-	return smallest
+type Struct struct {
+	Name   string
+	Fields []*Field
 }
 
 type Schema struct {
@@ -68,8 +59,8 @@ type Schema struct {
 	ConstNames    []string
 	ConstValues   []string
 	CoreContracts bool
+	SchemaTime    time.Time
 	Funcs         []*Func
-	NewTypes      map[string]bool
 	Params        []*Field
 	Results       []*Field
 	StateVars     []*Field
@@ -90,7 +81,7 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	s.Name = lower(s.FullName)
 	s.Description = strings.TrimSpace(schemaDef.Description)
 
-	err := s.compileTypes(schemaDef)
+	err := s.compileStructs(schemaDef)
 	if err != nil {
 		return err
 	}
@@ -108,16 +99,23 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	if err != nil {
 		return err
 	}
+	s.KeyID = 0
 	for _, name := range sortedFields(params) {
-		s.Params = append(s.Params, params[name])
+		param := params[name]
+		param.KeyID = s.KeyID
+		s.KeyID++
+		s.Params = append(s.Params, param)
 	}
 	for _, name := range sortedFields(results) {
-		s.Results = append(s.Results, results[name])
+		result := results[name]
+		result.KeyID = s.KeyID
+		s.KeyID++
+		s.Results = append(s.Results, result)
 	}
 	return s.compileStateVars(schemaDef)
 }
 
-func (s *Schema) CompileField(fldName, fldType string) (*Field, error) {
+func (s *Schema) compileField(fldName, fldType string) (*Field, error) {
 	field := &Field{}
 	err := field.Compile(s, fldName, fldType)
 	if err != nil {
@@ -127,10 +125,10 @@ func (s *Schema) CompileField(fldName, fldType string) (*Field, error) {
 }
 
 func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, views bool) (err error) {
-	kind := "func"
+	funcKind := "func"
 	templateFuncs := schemaDef.Funcs
 	if views {
-		kind = "view"
+		funcKind = "view"
 		templateFuncs = schemaDef.Views
 	}
 	for _, funcName := range sortedFuncDescs(templateFuncs) {
@@ -138,19 +136,22 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 			return fmt.Errorf("duplicate func/view name: %s", funcName)
 		}
 		funcDesc := templateFuncs[funcName]
+		if funcDesc == nil {
+			funcDesc = &FuncDef{}
+		}
+
 		f := &Func{}
-		f.String = funcName
+		f.Name = funcName
+		f.Kind = funcKind
 		f.Hname = iscp.Hn(funcName)
 
-		//  check for Hname collision
+		// check for Hname collision
 		for _, other := range s.Funcs {
 			if other.Hname == f.Hname {
-				return fmt.Errorf("hname collision: %d (%s and %s)", f.Hname, f.String, other.String)
+				return fmt.Errorf("hname collision: %d (%s and %s)", f.Hname, f.Name, other.Name)
 			}
 		}
-		f.Kind = capitalize(kind)
-		f.Type = capitalize(funcName)
-		f.FuncName = kind + f.Type
+
 		f.Access = funcDesc.Access
 		f.Params, err = s.compileFuncFields(funcDesc.Params, params, "param")
 		if err != nil {
@@ -171,7 +172,7 @@ func (s *Schema) compileFuncFields(fieldMap StringMap, allFieldMap *FieldMap, wh
 	fieldAliases := make(StringMap)
 	for _, fldName := range sortedKeys(fieldMap) {
 		fldType := fieldMap[fldName]
-		field, err := s.CompileField(fldName, fldType)
+		field, err := s.compileField(fldName, fldType)
 		if err != nil {
 			return nil, err
 		}
@@ -204,7 +205,7 @@ func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
 	varAliases := make(StringMap)
 	for _, varName := range sortedKeys(schemaDef.State) {
 		varType := schemaDef.State[varName]
-		varDef, err := s.CompileField(varName, varType)
+		varDef, err := s.compileField(varName, varType)
 		if err != nil {
 			return err
 		}
@@ -216,34 +217,14 @@ func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
 			return fmt.Errorf("duplicate var alias")
 		}
 		varAliases[varDef.Alias] = varDef.Alias
+		varDef.KeyID = s.KeyID
+		s.KeyID++
 		s.StateVars = append(s.StateVars, varDef)
 	}
 	return nil
 }
 
-func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
-	varNames := make(StringMap)
-	varAliases := make(StringMap)
-	for _, varName := range sortedKeys(schemaDef.Typedefs) {
-		varType := schemaDef.Typedefs[varName]
-		varDef, err := s.CompileField(varName, varType)
-		if err != nil {
-			return err
-		}
-		if _, ok := varNames[varDef.Name]; ok {
-			return fmt.Errorf("duplicate sybtype name")
-		}
-		varNames[varDef.Name] = varDef.Name
-		if _, ok := varAliases[varDef.Alias]; ok {
-			return fmt.Errorf("duplicate subtype alias")
-		}
-		varAliases[varDef.Alias] = varDef.Alias
-		s.Typedefs = append(s.Typedefs, varDef)
-	}
-	return nil
-}
-
-func (s *Schema) compileTypes(schemaDef *SchemaDef) error {
+func (s *Schema) compileStructs(schemaDef *SchemaDef) error {
 	for _, typeName := range sortedMaps(schemaDef.Structs) {
 		fieldMap := schemaDef.Structs[typeName]
 		typeDef := &Struct{}
@@ -252,7 +233,7 @@ func (s *Schema) compileTypes(schemaDef *SchemaDef) error {
 		fieldAliases := make(StringMap)
 		for _, fldName := range sortedKeys(fieldMap) {
 			fldType := fieldMap[fldName]
-			field, err := s.CompileField(fldName, fldType)
+			field, err := s.compileField(fldName, fldType)
 			if err != nil {
 				return err
 			}
@@ -274,57 +255,24 @@ func (s *Schema) compileTypes(schemaDef *SchemaDef) error {
 	return nil
 }
 
-func (s *Schema) scanExistingCode(file *os.File, funcRegexp *regexp.Regexp) ([]string, StringMap, error) {
-	defer file.Close()
-	existing := make(StringMap)
-	lines := make([]string, 0)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := funcRegexp.FindStringSubmatch(line)
-		if matches != nil {
-			existing[matches[1]] = line
+func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
+	varNames := make(StringMap)
+	varAliases := make(StringMap)
+	for _, varName := range sortedKeys(schemaDef.Typedefs) {
+		varType := schemaDef.Typedefs[varName]
+		varDef, err := s.compileField(varName, varType)
+		if err != nil {
+			return err
 		}
-		lines = append(lines, line)
-	}
-	err := scanner.Err()
-	if err != nil {
-		return nil, nil, err
-	}
-	return lines, existing, nil
-}
-
-func (s *Schema) appendConst(name, value string) {
-	if s.ConstLen < len(name) {
-		s.ConstLen = len(name)
-	}
-	s.ConstNames = append(s.ConstNames, name)
-	s.ConstValues = append(s.ConstValues, value)
-}
-
-func (s *Schema) flushConsts(printer func(name string, value string, padLen int)) {
-	for i, name := range s.ConstNames {
-		printer(name, s.ConstValues[i], s.ConstLen)
-	}
-	s.ConstLen = 0
-	s.ConstNames = nil
-	s.ConstValues = nil
-}
-
-func (s *Schema) crateOrWasmLib(withContract, withHost bool) string {
-	if s.CoreContracts {
-		retVal := useCrate
-		if withContract {
-			retVal += "use crate::corecontracts::" + s.Name + "::*;\n"
+		if _, ok := varNames[varDef.Name]; ok {
+			return fmt.Errorf("duplicate sybtype name")
 		}
-		if withHost {
-			retVal += "use crate::host::*;\n"
+		varNames[varDef.Name] = varDef.Name
+		if _, ok := varAliases[varDef.Alias]; ok {
+			return fmt.Errorf("duplicate subtype alias")
 		}
-		return retVal
+		varAliases[varDef.Alias] = varDef.Alias
+		s.Typedefs = append(s.Typedefs, varDef)
 	}
-	retVal := useWasmLib
-	if withHost {
-		retVal += useWasmLibHost
-	}
-	return retVal
+	return nil
 }

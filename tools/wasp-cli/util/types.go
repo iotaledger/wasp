@@ -17,38 +17,50 @@ import (
 
 func ValueFromString(vtype, s string) []byte {
 	switch vtype {
-	case "uint64":
-		n, err := strconv.Atoi(s)
-		log.Check(err)
-		return codec.EncodeUint64(uint64(n))
-	case "uint32":
-		n, err := strconv.Atoi(s)
-		log.Check(err)
-		return codec.EncodeUint32(uint32(n))
-	case "int32":
-		n, err := strconv.Atoi(s) //nolint:gosec // potential int32 overflow
-		log.Check(err)
-		return codec.EncodeInt32(int32(n))
-	case "int", "int64":
-		n, err := strconv.Atoi(s)
-		log.Check(err)
-		return codec.EncodeInt64(int64(n))
-	case "color":
-		col, err := ledgerstate.ColorFromBase58EncodedString(s)
-		log.Check(err)
-		return col.Bytes()
 	case "agentid":
 		agentid, err := iscp.NewAgentIDFromString(s)
 		log.Check(err)
 		return agentid.Bytes()
-	case "file":
-		return ReadFile(s)
-	case "string":
-		return []byte(s)
+	case "bool":
+		b, err := strconv.ParseBool(s)
+		log.Check(err)
+		return codec.EncodeBool(b)
 	case "bytes", "base58":
 		b, err := base58.Decode(s)
 		log.Check(err)
 		return b
+	case "color":
+		col, err := ledgerstate.ColorFromBase58EncodedString(s)
+		log.Check(err)
+		return col.Bytes()
+	case "file":
+		return ReadFile(s)
+	case "int16":
+		n, err := strconv.Atoi(s) //nolint:gosec // potential int32 overflow
+		log.Check(err)
+		return codec.EncodeInt16(int16(n))
+	case "int32":
+		n, err := strconv.Atoi(s) //nolint:gosec // potential int32 overflow
+		log.Check(err)
+		return codec.EncodeInt32(int32(n))
+	case "int64", "int":
+		n, err := strconv.Atoi(s)
+		log.Check(err)
+		return codec.EncodeInt64(int64(n))
+	case "string":
+		return []byte(s)
+	case "uint16":
+		n, err := strconv.Atoi(s)
+		log.Check(err)
+		return codec.EncodeUint16(uint16(n))
+	case "uint32":
+		n, err := strconv.Atoi(s)
+		log.Check(err)
+		return codec.EncodeUint32(uint32(n))
+	case "uint64":
+		n, err := strconv.Atoi(s)
+		log.Check(err)
+		return codec.EncodeUint64(uint64(n))
 	}
 	log.Fatalf("ValueFromString: No handler for type %s", vtype)
 	return nil
@@ -56,26 +68,49 @@ func ValueFromString(vtype, s string) []byte {
 
 func ValueToString(vtype string, v []byte) string {
 	switch vtype {
-	case "color":
-		col, err := codec.DecodeColor(v)
-		log.Check(err)
-		return col.String()
 	case "agentid":
 		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)
 		return aid.String()
-	case "uint64":
-		n, err := codec.DecodeUint64(v)
+	case "bool":
+		b, err := codec.DecodeBool(v)
+		log.Check(err)
+		if b {
+			return "true"
+		}
+		return "false"
+	case "bytes", "base58":
+		return base58.Encode(v)
+	case "color":
+		col, err := codec.DecodeColor(v)
+		log.Check(err)
+		return col.String()
+	case "int16":
+		n, err := codec.DecodeInt16(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
-	case "int", "int64":
+	case "int32":
+		n, err := codec.DecodeInt32(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
+	case "int64", "int":
 		n, err := codec.DecodeInt64(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	case "string":
 		return fmt.Sprintf("%q", string(v))
-	case "bytes", "base58":
-		return base58.Encode(v)
+	case "uint16":
+		n, err := codec.DecodeUint16(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
+	case "uint32":
+		n, err := codec.DecodeUint32(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
+	case "uint64":
+		n, err := codec.DecodeUint64(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
 	}
 	log.Fatalf("ValueToString: No handler for type %s", vtype)
 	return ""

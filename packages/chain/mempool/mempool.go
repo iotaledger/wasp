@@ -106,13 +106,6 @@ func (m *Mempool) takeInBuffer(buf []iscp.Request) []iscp.Request {
 // addToPool adds request to the pool. It may fail
 // returns true if it must be removed from the input buffer
 func (m *Mempool) addToPool(req iscp.Request) bool {
-	if offLedgerReq, ok := req.(*request.OffLedger); ok {
-		if !offLedgerReq.VerifySignature() {
-			// wrong signature, must be removed from in buffer
-			m.log.Warnf("ReceiveRequest.VerifySignature: invalid signature")
-			return true
-		}
-	}
 	reqid := req.ID()
 
 	// checking in the state if request is processed. Reading may fail
@@ -152,35 +145,27 @@ func (m *Mempool) addToPool(req iscp.Request) bool {
 	return true
 }
 
+func (m *Mempool) countRequestInMetrics(req iscp.Request) {
+	// TODO refactor, this should be part of metrics logic.
+	if req.IsOffLedger() {
+		m.mempoolMetrics.CountOffLedgerRequestIn()
+	} else {
+		m.mempoolMetrics.CountOnLedgerRequestIn()
+	}
+}
+
 // ReceiveRequests places requests into the inBuffer. InBuffer is unordered and non-deterministic
 func (m *Mempool) ReceiveRequests(reqs ...iscp.Request) {
 	for _, req := range reqs {
-		if req.IsOffLedger() {
-			m.mempoolMetrics.CountOffLedgerRequestIn()
-		} else {
-			m.mempoolMetrics.CountOnLedgerRequestIn()
-		}
+		m.countRequestInMetrics(req)
 		m.addToInBuffer(req)
 	}
 }
 
-// ReceiveRequest used to receive off-ledger request
+// ReceiveRequest receives a single request and returns whether that request has been added to the in-buffer
 func (m *Mempool) ReceiveRequest(req iscp.Request) bool {
-	// could be worth it to check if the request was already processed in the blocklog.
-	// Not adding this check now to avoid overhead, but should be looked into in case re-gossiping happens a lot
-	if m.checkInBuffer(req) {
-		return false
-	}
-	m.mempoolMetrics.CountOffLedgerRequestIn()
+	m.countRequestInMetrics(req)
 	return m.addToInBuffer(req)
-}
-
-func (m *Mempool) checkInBuffer(req iscp.Request) bool {
-	m.inMutex.RLock()
-	defer m.inMutex.RUnlock()
-
-	_, exists := m.inBuffer[req.ID()]
-	return exists
 }
 
 // RemoveRequests removes requests from the pool

@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"errors"
 	"fmt"
 	"runtime/debug"
 	"time"
@@ -64,17 +65,19 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 			if r == nil {
 				return
 			}
+
 			switch err := r.(type) {
 			case *kv.DBError:
 				panic(err)
-			case *coreutil.ErrorStateInvalidated:
-				panic(err)
-			default:
-				vmctx.lastResult = nil
-				vmctx.lastError = xerrors.Errorf("panic in VM: %v", err)
-				vmctx.Debugf("%v", vmctx.lastError)
-				vmctx.Debugf(string(debug.Stack()))
+			case error:
+				if errors.Is(err, coreutil.ErrorStateInvalidated) {
+					panic(err)
+				}
 			}
+			vmctx.lastResult = nil
+			vmctx.lastError = xerrors.Errorf("panic in VM: %v", r)
+			vmctx.Debugf("%v", vmctx.lastError)
+			vmctx.Debugf(string(debug.Stack()))
 		}()
 		vmctx.mustCallFromRequest()
 	}()
@@ -142,11 +145,11 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 		vmctx.remainingAfterFees = vmctx.adjustOffLedgerTransfer()
 	}
 
-	targetContract, _ := req.Target()
+	targetContract := req.Target().Contract
 	var ok bool
 	vmctx.contractRecord, ok = vmctx.findContractByHname(targetContract)
 	if !ok {
-		vmctx.log.Warnf("contact not found: %s", targetContract)
+		vmctx.log.Warnf("contract not found: %s", targetContract)
 	}
 	if vmctx.contractRecord.Hname() == 0 {
 		vmctx.log.Warn("default contract will be called")
@@ -301,7 +304,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	vmctx.mustUpdateOffledgerRequestMaxAssumedNonce()
 
 	// calling only non view entry points. Calling the view will trigger error and fallback
-	_, entryPoint := vmctx.req.Target()
+	entryPoint := vmctx.req.Target().EntryPoint
 	targetContract := vmctx.contractRecord.Hname()
 	params, _ := vmctx.req.Params()
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
@@ -327,10 +330,9 @@ func (vmctx *VMContext) mustFinalizeRequestCall() {
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil
 
-	_, ep := vmctx.req.Target()
 	vmctx.log.Debug("runTheRequest OUT. ",
 		"reqId: ", vmctx.req.ID().Short(),
-		" entry point: ", ep.String(),
+		" entry point: ", vmctx.req.Target().EntryPoint.String(),
 	)
 }
 
@@ -347,8 +349,8 @@ func (vmctx *VMContext) getChainConfigFromState() {
 }
 
 func (vmctx *VMContext) isInitChainRequest() bool {
-	targetContract, entryPoint := vmctx.req.Target()
-	return targetContract == root.Contract.Hname() && entryPoint == iscp.EntryPointInit
+	target := vmctx.req.Target()
+	return target.Contract == root.Contract.Hname() && target.EntryPoint == iscp.EntryPointInit
 }
 
 func isRequestTimeLockedNow(req iscp.Request, nowis time.Time) bool {
