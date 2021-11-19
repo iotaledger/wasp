@@ -280,7 +280,7 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 
 // WaitUntil waits until the condition specified by the given predicate yields true
 func (ch *Chain) WaitUntil(p func(chain.MempoolInfo) bool, maxWait ...time.Duration) bool {
-	maxw := 5 * time.Second
+	maxw := 10 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
 		maxw = maxWait[0]

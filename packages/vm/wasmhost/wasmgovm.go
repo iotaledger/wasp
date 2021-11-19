@@ -10,6 +10,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
+// provide implementation for Wasm-only function
+func Connect(h wasmlib.ScHost) wasmlib.ScHost {
+	return wasmlib.ConnectHost(h)
+}
+
 type WasmGoVM struct {
 	WasmVMBase
 	scName string
@@ -21,11 +26,11 @@ func NewWasmGoVM(scName string, onLoad func()) WasmVM {
 }
 
 func (vm *WasmGoVM) NewInstance() WasmVM {
-	return NewWasmGoVM(vm.scName, vm.onLoad)
+	return nil
 }
 
-func Connect(h wasmlib.ScHost) wasmlib.ScHost {
-	return wasmlib.ConnectHost(h)
+func (vm *WasmGoVM) Instantiate() error {
+	return nil
 }
 
 func (vm *WasmGoVM) Interrupt() {
@@ -41,16 +46,15 @@ func (vm *WasmGoVM) LoadWasm(wasmData []byte) error {
 	if scName[3:] != vm.scName {
 		return errors.New("WasmGoVM: unknown contract: " + scName)
 	}
-	vm.onLoad()
 	return nil
 }
 
 func (vm *WasmGoVM) RunFunction(functionName string, args ...interface{}) error {
-	// already ran on_load in LoadWasm, other functions are not supported
-	if functionName != "on_load" {
-		return errors.New("WasmGoVM: cannot run function: " + functionName)
+	if functionName == "on_load" {
+		vm.onLoad()
+		return nil
 	}
-	return nil
+	return errors.New("WasmGoVM: cannot run function: " + functionName)
 }
 
 func (vm *WasmGoVM) RunScFunction(index int32) error {
