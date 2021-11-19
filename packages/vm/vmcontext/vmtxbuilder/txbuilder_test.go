@@ -21,13 +21,22 @@ func rndAliasID() (ret iotago.AliasID) {
 	return
 }
 
+func sumDeposits(outs iotago.Outputs) uint64 {
+	var ret uint64
+	for _, o := range outs {
+		ret += o.Deposit()
+	}
+	return ret
+}
+
 func TestNewTxBuilder(t *testing.T) {
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	nextStateMetadata := hashing.HashStrings("test1")
 	aliasID := rndAliasID()
+	const totalIotas = 1000
 	anchor := &iotago.AliasOutput{
-		Amount:               1000,
+		Amount:               totalIotas,
 		NativeTokens:         nil,
 		AliasID:              aliasID,
 		StateController:      addr,
@@ -58,12 +67,35 @@ func TestNewTxBuilder(t *testing.T) {
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
-
-		essenceBack := iotago.TransactionEssence{}
-		consumed, err := essenceBack.Deserialize(essenceBytes, serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		require.EqualValues(t, len(essenceBytes), consumed)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
+
+		total := sumDeposits(essence.Outputs)
+		require.EqualValues(t, totalIotas, total)
+		//essenceBack := iotago.TransactionEssence{}
+		//consumed, err := essenceBack.Deserialize(essenceBytes, serializer.DeSeriModeNoValidation, nil)
+		//require.NoError(t, err)
+		//require.EqualValues(t, len(essenceBytes), consumed)
+
+	})
+
+	t.Run("2", func(t *testing.T) {
+		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
+			return nil, iotago.UTXOInput{}
+		})
+		txb.AddDeltaIotas(42)
+		essence := txb.BuildTransactionEssence(nextStateMetadata, time.Now())
+
+		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
+		require.NoError(t, err)
+		t.Logf("essence bytes len = %d", len(essenceBytes))
+
+		total := sumDeposits(essence.Outputs)
+		require.EqualValues(t, totalIotas+42, int(total))
+
+		//essenceBack := iotago.TransactionEssence{}
+		//consumed, err := essenceBack.Deserialize(essenceBytes, serializer.DeSeriModeNoValidation, nil)
+		//require.NoError(t, err)
+		//require.EqualValues(t, len(essenceBytes), consumed)
 
 		//var buf bytes.Buffer
 		//tpkg.Must(binary.Write(&buf, binary.LittleEndian, iotago.PayloadTransaction))

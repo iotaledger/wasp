@@ -216,13 +216,13 @@ func (txb *AnchorTransactionBuilder) outputsAreFull() bool {
 	return txb.numOutputsConsumed() >= iotago.MaxOutputsCount
 }
 
-func (txb *AnchorTransactionBuilder) addDeltaIotas(delta uint64) {
+func (txb *AnchorTransactionBuilder) AddDeltaIotas(delta uint64) {
 	// safe arithmetics
 	n := txb.balanceIotas + delta
 	if n < txb.balanceIotas {
-		panic("addDeltaIotas: overflow")
+		panic("AddDeltaIotas: overflow")
 	}
-	txb.balanceIotas += n
+	txb.balanceIotas = n
 }
 
 func (txb *AnchorTransactionBuilder) subDeltaIotas(delta uint64) {
