@@ -39,5 +39,5 @@ docker-build:
 		--build-arg BUILD_LD_FLAGS='${BUILD_LD_FLAGS}' \
 		.
 
-.PHONY: all build build-windows build-lint test test-short test-heavy install install-windows lint gofumpt-list docker-build
+.PHONY: all build build-windows build-lint test test-short test-full install install-windows lint gofumpt-list docker-build
 
