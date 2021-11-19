@@ -3,7 +3,6 @@
 package iscp
 
 import (
-	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -70,12 +69,6 @@ type NFT struct {
 	NFTMetadata []byte
 }
 
-// Assets is used as assets in the UTXO and as Tokens in transfer
-type Assets struct {
-	Amount uint64
-	Tokens iotago.NativeTokens
-}
-
 type Request interface {
 	ID() RequestID
 	Params() dict.Dict
@@ -125,14 +118,4 @@ func TakeRequestIDs(reqs ...Request) []RequestID {
 
 func (txm *UTXOMetaData) RequestID() RequestID {
 	return RequestID(txm.UTXOInput)
-}
-
-func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	// TODO
-	panic("not implemented")
-}
-
-func NewAssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
-	// TODO
-	panic("not implemented")
 }

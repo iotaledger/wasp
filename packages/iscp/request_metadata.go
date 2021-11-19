@@ -125,7 +125,7 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 	if p.gasBudget, err = mu.ReadInt64(); err != nil {
 		return err
 	}
-	if err = (p.args).ReadFromMarshalUtil(mu); err != nil {
+	if err := (p.args).ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
 	if p.transfer, err = NewAssetsFromMarshalUtil(mu); err != nil {

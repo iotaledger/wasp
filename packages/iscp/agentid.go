@@ -4,13 +4,12 @@
 package iscp
 
 import (
+	"encoding/hex"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp/placeholders"
-
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/serializer"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 )
@@ -40,13 +39,30 @@ func NewAgentID(addr iotago.Address, hname Hname) *AgentID {
 	}
 }
 
+// TODO move somewhere else
+func AddressFromMatshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error) {
+	typeByte, err := mu.ReadByte()
+	if err != nil {
+		return nil, err
+	}
+	addr, err := iotago.AddressSelector(uint32(typeByte))
+	if err != nil {
+		return nil, err
+	}
+	length, err := addr.Deserialize(mu.Bytes(), serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		return nil, err
+	}
+	mu.ReadSeek(mu.ReadOffset() + length)
+	return addr, nil
+}
+
 func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
 	var err error
 	ret := &AgentID{}
-	// TODO
-	//if ret.a, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
-	//	return nil, err
-	//}
+	if ret.a, err = AddressFromMatshalUtil(mu); err != nil {
+		return nil, err
+	}
 	if ret.h, err = HnameFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
@@ -77,8 +93,11 @@ func NewAgentIDFromString(s string) (*AgentID, error) {
 	if len(parts) != 2 {
 		return nil, xerrors.New("NewAgentIDFromString: wrong format")
 	}
-	// TODO placeholder
-	addr, err := placeholders.AddressFromStringTmp(parts[0]) // old ledgerstate.AddressFromBase58EncodedString(parts[0])
+	addrBytes, err := hex.DecodeString(parts[0])
+	if err != nil {
+		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
+	}
+	addr, err := AddressFromMatshalUtil(marshalutil.New(addrBytes))
 	if err != nil {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
 	}
@@ -107,9 +126,12 @@ func (a *AgentID) Bytes() []byte {
 	if a.a == nil {
 		panic("AgentID.Bytes: address == nil")
 	}
+	addressBytes, err := a.a.Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		return nil
+	}
 	mu := marshalutil.New()
-	// TODO placeholder
-	placeholders.WriteAddressToMarshalUtil(mu, a.a)
+	mu.WriteBytes(addressBytes)
 	mu.Write(a.h)
 	return mu.Bytes()
 }

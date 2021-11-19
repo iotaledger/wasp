@@ -2,11 +2,12 @@ package iscp
 
 import (
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/serializer"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-type onLedgerRequestData struct {
+type OnLedgerRequestData struct {
 	UTXOMetaData
 	output iotago.Output
 
@@ -15,7 +16,7 @@ type onLedgerRequestData struct {
 	requestMetadata    *RequestMetadata
 }
 
-func NewOnLedgerRequestData(data UTXOMetaData, o iotago.Output) (*onLedgerRequestData, error) {
+func NewOnLedgerRequestData(data UTXOMetaData, o iotago.Output) (*OnLedgerRequestData, error) {
 	var fbSet iotago.FeatureBlocksSet
 	var reqMetadata *RequestMetadata
 	var err error
@@ -33,7 +34,7 @@ func NewOnLedgerRequestData(data UTXOMetaData, o iotago.Output) (*onLedgerReques
 		return nil, err
 	}
 
-	return &onLedgerRequestData{
+	return &OnLedgerRequestData{
 		output:             o,
 		UTXOMetaData:       data,
 		featureBlocksCache: fbSet,
@@ -42,21 +43,21 @@ func NewOnLedgerRequestData(data UTXOMetaData, o iotago.Output) (*onLedgerReques
 }
 
 // implements Request interface
-var _ Request = &onLedgerRequestData{}
+var _ Request = &OnLedgerRequestData{}
 
-func (r *onLedgerRequestData) ID() RequestID {
+func (r *OnLedgerRequestData) ID() RequestID {
 	return r.UTXOMetaData.RequestID()
 }
 
-func (r *onLedgerRequestData) Params() dict.Dict {
+func (r *OnLedgerRequestData) Params() dict.Dict {
 	return r.requestMetadata.Args()
 }
 
-func (r *onLedgerRequestData) SenderAccount() *AgentID {
+func (r *OnLedgerRequestData) SenderAccount() *AgentID {
 	return NewAgentID(r.SenderAddress(), r.requestMetadata.SenderContract())
 }
 
-func (r *onLedgerRequestData) SenderAddress() iotago.Address {
+func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
 	senderBlock, has := r.featureBlocksCache[iotago.FeatureBlockSender]
 	if !has {
 		return nil
@@ -64,61 +65,58 @@ func (r *onLedgerRequestData) SenderAddress() iotago.Address {
 	return senderBlock.(*iotago.SenderFeatureBlock).Address
 }
 
-func (r *onLedgerRequestData) Target() RequestTarget {
+func (r *OnLedgerRequestData) Target() RequestTarget {
 	return RequestTarget{
 		Contract:   r.requestMetadata.TargetContract(),
 		EntryPoint: r.requestMetadata.EntryPoint(),
 	}
 }
 
-func (r *onLedgerRequestData) Transfer() *Assets {
+func (r *OnLedgerRequestData) Transfer() *Assets {
 	return r.requestMetadata.Transfer()
 }
 
-func (r *onLedgerRequestData) Assets() *Assets {
+func (r *OnLedgerRequestData) Assets() *Assets {
 	amount := r.output.Deposit()
 	var tokens iotago.NativeTokens
 	if output, ok := r.output.(iotago.NativeTokenOutput); ok {
 		tokens = output.NativeTokenSet()
 	}
-	return &Assets{
-		Amount: amount,
-		Tokens: tokens,
-	}
+	return NewAssets(amount, tokens)
 }
 
-func (r *onLedgerRequestData) GasBudget() int64 {
+func (r *OnLedgerRequestData) GasBudget() int64 {
 	return r.requestMetadata.GasBudget()
 }
 
 // implements RequestData interface
-var _ RequestData = &onLedgerRequestData{}
+var _ RequestData = &OnLedgerRequestData{}
 
-func (r *onLedgerRequestData) Type() TypeCode {
+func (r *OnLedgerRequestData) Type() TypeCode {
 	return TypeExtendedOutput
 }
 
-func (r *onLedgerRequestData) Request() Request {
+func (r *OnLedgerRequestData) Request() Request {
 	return r
 }
 
-func (r *onLedgerRequestData) TimeData() *TimeData {
+func (r *OnLedgerRequestData) TimeData() *TimeData {
 	return &TimeData{
 		MilestoneIndex: r.UTXOMetaData.MilestoneIndex,
 		Timestamp:      r.UTXOMetaData.MilestoneTimestamp,
 	}
 }
 
-func (r *onLedgerRequestData) Unwrap() unwrap {
+func (r *OnLedgerRequestData) Unwrap() unwrap {
 	return r
 }
 
-func (r *onLedgerRequestData) Features() Features {
+func (r *OnLedgerRequestData) Features() Features {
 	return r
 }
 
-func (r *onLedgerRequestData) Bytes() []byte {
-	outputBytes, err := []byte{}, error(nil) // r.output.Serialize(serializer.DeSeriModeNoValidation)
+func (r *OnLedgerRequestData) Bytes() []byte {
+	outputBytes, err := r.output.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		return nil
 	}
@@ -128,33 +126,33 @@ func (r *onLedgerRequestData) Bytes() []byte {
 	return mu.Bytes()
 }
 
-func (r *onLedgerRequestData) String() string {
+func (r *OnLedgerRequestData) String() string {
 	// TODO
 	panic("implement me")
 }
 
 // implements unwrap interface
-var _ unwrap = &onLedgerRequestData{}
+var _ unwrap = &OnLedgerRequestData{}
 
-func (r *onLedgerRequestData) OffLedger() *OffLedger {
+func (r *OnLedgerRequestData) OffLedger() *OffLedger {
 	panic("not an off-ledger RequestData")
 }
 
-func (r *onLedgerRequestData) UTXO() iotago.Output {
+func (r *OnLedgerRequestData) UTXO() iotago.Output {
 	return r.output
 }
 
 // implements unwrapUTXO interface
-var _ unwrap = &onLedgerRequestData{}
+var _ unwrap = &OnLedgerRequestData{}
 
-func (r *onLedgerRequestData) MetaData() UTXOMetaData {
+func (r *OnLedgerRequestData) MetaData() UTXOMetaData {
 	return r.UTXOMetaData
 }
 
 // implements Features interface
-var _ Features = &onLedgerRequestData{}
+var _ Features = &OnLedgerRequestData{}
 
-func (r *onLedgerRequestData) TimeLock() *TimeData {
+func (r *OnLedgerRequestData) TimeLock() *TimeData {
 	timelockMilestoneFB, hasMilestoneFB := r.featureBlocksCache[iotago.FeatureBlockTimelockMilestoneIndex]
 	timelockDeadlineFB, hasDeadlineFB := r.featureBlocksCache[iotago.FeatureBlockTimelockUnix]
 	if !hasMilestoneFB && !hasDeadlineFB {
@@ -170,7 +168,7 @@ func (r *onLedgerRequestData) TimeLock() *TimeData {
 	return ret
 }
 
-func (r *onLedgerRequestData) Expiry() *TimeData {
+func (r *OnLedgerRequestData) Expiry() *TimeData {
 	expiryMilestoneFB, hasMilestoneFB := r.featureBlocksCache[iotago.FeatureBlockExpirationMilestoneIndex]
 	expiryDeadlineFB, hasDeadlineFB := r.featureBlocksCache[iotago.FeatureBlockExpirationUnix]
 	if !hasMilestoneFB && !hasDeadlineFB {
@@ -186,11 +184,10 @@ func (r *onLedgerRequestData) Expiry() *TimeData {
 	return ret
 }
 
-func (r *onLedgerRequestData) ReturnAmount() (uint64, bool) {
-	//senderBlock, has := r.featureBlocksCache[iotago.FeatureBlockReturn]
-	//if !has {
-	//	return 0, false
-	//}
-	//return senderBlock.(*iotago.ReturnFeatureBlock).Amount, true
-	return 0, false
+func (r *OnLedgerRequestData) ReturnAmount() (uint64, bool) {
+	senderBlock, has := r.featureBlocksCache[iotago.FeatureBlockDustDepositReturn]
+	if !has {
+		return 0, false
+	}
+	return senderBlock.(*iotago.DustDepositReturnFeatureBlock).Amount, true
 }

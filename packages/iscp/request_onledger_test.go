@@ -10,9 +10,8 @@ import (
 // TODO does not compile
 func TestNewRequestData(t *testing.T) {
 	t.Run("OnLedger", func(t *testing.T) {
-		require.NotPanics(t, func() {
-			_, err := NewOnLedgerRequestData(UTXOMetaData{}, &iotago.ExtendedOutput{})
-			require.NoError(t, err)
-		})
+		req, err := NewOnLedgerRequestFromUTXO(UTXOMetaData{}, &iotago.ExtendedOutput{})
+		require.NoError(t, err)
+		req.Bytes()
 	})
 }

@@ -24,7 +24,7 @@ func NewRequestID(txid ledgerstate.TransactionID, index uint16) RequestID {
 
 // TODO
 func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
-	//ret, err := ledgerstate.OutputIDFromMarshalUtil(mu)
+	// ret, err := ledgerstate.OutputIDFromMarshalUtil(mu)
 	return RequestID{}, nil
 }
 
@@ -50,15 +50,15 @@ func (rid RequestID) OutputID() iotago.UTXOInput {
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {
 	ret := RequestLookupDigest{}
-	//copy(ret[:RequestIDDigestLen], rid[:RequestIDDigestLen])
-	//copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.OutputID().OutputIndex()))
+	// copy(ret[:RequestIDDigestLen], rid[:RequestIDDigestLen])
+	// copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.OutputID().OutputIndex()))
 	return ret
 }
 
 // TODO change all Base58 to Bech
 // Base58 returns a base58 encoded version of the request id.
 func (rid RequestID) Base58() string {
-	//return ledgerstate.OutputID(rid).Base58()
+	// return ledgerstate.OutputID(rid).Base58()
 	return ""
 }
 
@@ -72,8 +72,8 @@ func (rid RequestID) String() string {
 }
 
 func (rid RequestID) Short() string {
-	//txid := rid.OutputID().TransactionID().Base58() TODO
-	//return fmt.Sprintf("[%d]%s", rid.OutputID().TransactionOutputIndex, txid[:6]+"..")
+	// txid := rid.OutputID().TransactionID().Base58() TODO
+	// return fmt.Sprintf("[%d]%s", rid.OutputID().TransactionOutputIndex, txid[:6]+"..")
 	return ""
 }
 

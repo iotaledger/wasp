@@ -102,7 +102,7 @@ func (r *OffLedger) Bytes() []byte {
 }
 
 // offLedgerFromMarshalUtil creates a request from previously serialized bytes. Does not expect type byte
-func offLedgerFromMarshalUtil(mu *marshalutil.MarshalUtil) (req *OffLedger, err error) {
+func OffLedgerFromMarshalUtil(mu *marshalutil.MarshalUtil) (req *OffLedger, err error) {
 	req = &OffLedger{}
 	if err := req.readFromMarshalUtil(mu); err != nil {
 		return nil, err
@@ -189,10 +189,7 @@ func (r *OffLedger) Assets() *Assets {
 
 // Transfer transfer of assets from the sender's account to the target smart contract. Nil mean no transfer
 func (r *OffLedger) Transfer() *Assets {
-	return &Assets{
-		Amount: r.transferIotas,
-		Tokens: r.transferTokens,
-	}
+	return NewAssets(r.transferIotas, r.transferTokens)
 }
 
 func (r *OffLedger) WithGasBudget(gasBudget int64) *OffLedger {
