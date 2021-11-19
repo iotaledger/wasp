@@ -1,8 +1,10 @@
 package vmcontext
 
-import "github.com/iotaledger/wasp/packages/iscp/requestdata"
+import (
+	"github.com/iotaledger/wasp/packages/iscp"
+)
 
-func (vmctx *VMContext) checkReplay(req requestdata.RequestData, requestIndex uint16) bool {
+func (vmctx *VMContext) checkReplay(req iscp.RequestData, requestIndex uint16) bool {
 	// checks replay in the state.
 	// - off ledger checks as usual with requestID in blocklog receipts + nonce
 	// - extended outputs checks:
@@ -15,37 +17,37 @@ func (vmctx *VMContext) checkReplay(req requestdata.RequestData, requestIndex ui
 	_ = req.Request().ID()
 }
 
-func (vmctx *VMContext) preprocessRequestData(req requestdata.RequestData, requestIndex uint16) bool {
+func (vmctx *VMContext) preprocessRequestData(req iscp.RequestData, requestIndex uint16) bool {
 	switch req.Type() {
-	case requestdata.TypeSimpleOutput:
+	case iscp.TypeSimpleOutput:
 		// consume it an assign all Assets to owner's account
 		// no need to invoke SC
 
 		return true
-	case requestdata.TypeOffLedger:
+	case iscp.TypeOffLedger:
 		// prepare off ledger
 		return false
-	case requestdata.TypeExtendedOutput:
+	case iscp.TypeExtendedOutput:
 		// prepare extended
 		return false
-	case requestdata.TypeNFTOutput:
+	case iscp.TypeNFTOutput:
 		// prepare NFT request
 		return false
-	case requestdata.TypeFoundryOutput:
+	case iscp.TypeFoundryOutput:
 		// do not consume. Check consistency in the state
 		// no need to invoke SC
 		return true
-	case requestdata.TypeAliasOutput:
+	case iscp.TypeAliasOutput:
 		// do not consume. It is unexpected.
 		// assign ownership to the owner
 		// no need to invoke SC
 		return true
-	case requestdata.TypeUnknownOutput:
+	case iscp.TypeUnknownOutput:
 		// do not consume.
 		// Assign ownership to the owner
 		// no need to invoke SC
 		return true
-	case requestdata.TypeUnknown:
+	case iscp.TypeUnknown:
 		// an error. probably panic
 		// no need to invoke SC
 		return true

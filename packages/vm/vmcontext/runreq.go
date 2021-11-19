@@ -6,8 +6,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/requestdata"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -33,10 +31,10 @@ const (
 
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
-func (vmctx *VMContext) RunTheRequest(req requestdata.RequestData, requestIndex uint16) {
+func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16) {
 
 	if req.Unwrap().UTXO() != nil && vmctx.txbuilder.inputsAreFull() {
-		// ignore the UTXO request. Exceeded limit of input in the anchor transaction
+		// ignore the UTXO request. Exceeded limit of input in the anchorOutput transaction
 		return
 	}
 
@@ -119,7 +117,7 @@ func (vmctx *VMContext) RunTheRequest(req requestdata.RequestData, requestIndex 
 
 // mustSetUpRequestContextOld sets up VMContext for request
 // Deprecated:
-func (vmctx *VMContext) mustSetUpRequestContextOld(req requestdata.RequestData, requestIndex uint16) {
+func (vmctx *VMContext) mustSetUpRequestContextOld(req iscp.RequestData, requestIndex uint16) {
 	vmctx.req = req
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0

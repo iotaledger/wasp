@@ -1,18 +1,17 @@
-package requestdata
+package iscp
 
 import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 type RequestMetadata struct {
-	senderContract iscp.Hname
+	senderContract Hname
 	// ID of the target smart contract
-	targetContract iscp.Hname
+	targetContract Hname
 	// entry point code
-	entryPoint iscp.Hname
+	entryPoint Hname
 	// request arguments, not decoded yet wrt blobRefs
 	args dict.Dict
 	// transfer intended to the target contract. Always taken from the sender's account. Nil mean no transfer
@@ -42,17 +41,17 @@ func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {
 	return ret, err
 }
 
-func (p *RequestMetadata) WithSender(s iscp.Hname) *RequestMetadata {
+func (p *RequestMetadata) WithSender(s Hname) *RequestMetadata {
 	p.senderContract = s
 	return p
 }
 
-func (p *RequestMetadata) WithTarget(t iscp.Hname) *RequestMetadata {
+func (p *RequestMetadata) WithTarget(t Hname) *RequestMetadata {
 	p.targetContract = t
 	return p
 }
 
-func (p *RequestMetadata) WithEntryPoint(ep iscp.Hname) *RequestMetadata {
+func (p *RequestMetadata) WithEntryPoint(ep Hname) *RequestMetadata {
 	p.entryPoint = ep
 	return p
 }
@@ -73,15 +72,15 @@ func (p *RequestMetadata) Clone() *RequestMetadata {
 	return &ret
 }
 
-func (p *RequestMetadata) SenderContract() iscp.Hname {
+func (p *RequestMetadata) SenderContract() Hname {
 	return p.senderContract
 }
 
-func (p *RequestMetadata) TargetContract() iscp.Hname {
+func (p *RequestMetadata) TargetContract() Hname {
 	return p.targetContract
 }
 
-func (p *RequestMetadata) EntryPoint() iscp.Hname {
+func (p *RequestMetadata) EntryPoint() Hname {
 	return p.entryPoint
 }
 
@@ -114,13 +113,13 @@ func (p *RequestMetadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 
 func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	var err error
-	if p.senderContract, err = iscp.HnameFromMarshalUtil(mu); err != nil {
+	if p.senderContract, err = HnameFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if p.targetContract, err = iscp.HnameFromMarshalUtil(mu); err != nil {
+	if p.targetContract, err = HnameFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if p.entryPoint, err = iscp.HnameFromMarshalUtil(mu); err != nil {
+	if p.entryPoint, err = HnameFromMarshalUtil(mu); err != nil {
 		return err
 	}
 	if p.gasBudget, err = mu.ReadInt64(); err != nil {

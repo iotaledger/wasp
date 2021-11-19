@@ -1,4 +1,4 @@
-package requestdata
+package iscp
 
 import (
 	"fmt"

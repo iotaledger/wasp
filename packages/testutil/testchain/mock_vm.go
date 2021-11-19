@@ -39,14 +39,14 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 	reqstr := strings.Join(iscp.ShortRequestIDs(iscp.TakeRequestIDs(task.Requests...)), ",")
 
 	r.log.Debugf("VM input: state hash: %s, chain input: %s, requests: [%s]",
-		task.VirtualStateAccess.StateCommitment(), iscp.OID(task.ChainInput.ID()), reqstr)
+		task.VirtualStateAccess.StateCommitment(), iscp.OID(task.AnchorOutput.ID()), reqstr)
 
-	r.stateTransition.NextState(task.VirtualStateAccess, task.ChainInput, task.Timestamp, task.Requests...)
+	r.stateTransition.NextState(task.VirtualStateAccess, task.AnchorOutput, task.Timestamp, task.Requests...)
 	task.ResultTransactionEssence = r.tx
 	task.VirtualStateAccess = r.nextState
-	newOut := transaction.GetAliasOutputFromEssence(task.ResultTransactionEssence, task.ChainInput.GetAliasAddress())
+	newOut := transaction.GetAliasOutputFromEssence(task.ResultTransactionEssence, task.AnchorOutput.GetAliasAddress())
 	require.NotNil(r.t, newOut)
-	require.EqualValues(r.t, task.ChainInput.GetStateIndex()+1, newOut.GetStateIndex())
+	require.EqualValues(r.t, task.AnchorOutput.GetStateIndex()+1, newOut.GetStateIndex())
 	// essenceHash := hashing.HashData(task.ResultTransactionEssence.Bytes())
 	// r.log.Debugf("mockedVMRunner: new state produced: stateIndex: #%d state hash: %s, essence hash: %s stateOutput: %s\n essence : %s",
 	//	r.nextState.BlockIndex(), r.nextState.Hash().String(), essenceHash.String(), iscp.OID(newOut.ID()), task.ResultTransactionEssence.String())

@@ -6,7 +6,7 @@ package iscp
 import (
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp/requestdata/placeholders"
+	"github.com/iotaledger/wasp/packages/iscp/placeholders"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 

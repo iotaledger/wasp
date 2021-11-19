@@ -1,22 +1,22 @@
-package requestdata
+package iscp
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/placeholders"
+
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/requestdata/placeholders"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 type OffLedger struct {
-	chainID        iscp.ChainID
-	contract       iscp.Hname
-	entryPoint     iscp.Hname
+	chainID        ChainID
+	contract       Hname
+	entryPoint     Hname
 	params         dict.Dict
 	publicKey      ed25519.PublicKey
 	sender         iotago.Address
@@ -84,7 +84,7 @@ func (r *OffLedger) ReturnAmount() (uint64, bool) {
 var _ Request = &OffLedger{}
 
 // NewOffLedger creates a basic request
-func NewOffLedger(contract, entryPoint iscp.Hname, params dict.Dict) *OffLedger {
+func NewOffLedger(contract, entryPoint Hname, params dict.Dict) *OffLedger {
 	return &OffLedger{
 		params:     params.Clone(),
 		contract:   contract,
@@ -140,7 +140,7 @@ func (r *OffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
 
 func (r *OffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	var err error
-	if r.chainID, err = iscp.ChainIDFromMarshalUtil(mu); err != nil {
+	if r.chainID, err = ChainIDFromMarshalUtil(mu); err != nil {
 		return err
 	}
 	if err := r.contract.ReadFromMarshalUtil(mu); err != nil {
@@ -241,7 +241,7 @@ func (r *OffLedger) Params() dict.Dict {
 	return r.params
 }
 
-func (r *OffLedger) SenderAccount() *iscp.AgentID {
+func (r *OffLedger) SenderAccount() *AgentID {
 	// TODO return iscp.NewAgentID(r.SenderAddress(), 0)
 	return nil
 }
@@ -253,8 +253,8 @@ func (r *OffLedger) SenderAddress() iotago.Address {
 	return r.sender
 }
 
-func (r *OffLedger) Target() iscp.RequestTarget {
-	return iscp.RequestTarget{
+func (r *OffLedger) Target() RequestTarget {
+	return RequestTarget{
 		Contract:   r.contract,
 		EntryPoint: r.entryPoint,
 	}

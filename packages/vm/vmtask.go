@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/iscp/requestdata"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -19,15 +18,16 @@ type VMRunner interface {
 }
 
 // VMTask is task context (for batch of requests). It is used to pass parameters and take results
-// It is assumed that all requests/inputs are unlock-able by aliasAddress of provided ChainInput
+// It is assumed that all requests/inputs are unlock-able by aliasAddress of provided AnchorOutput
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
 	ACSSessionID             uint64
 	Processors               *processors.Cache
-	ChainInput               *iotago.AliasOutput
+	AnchorOutput             *iotago.AliasOutput
+	AnchorOutputID           iotago.UTXOInput
 	VirtualStateAccess       state.VirtualStateAccess
 	SolidStateBaseline       coreutil.StateBaseline
-	Requests                 []requestdata.RequestData
+	Requests                 []iscp.RequestData
 	ProcessedRequestsCount   uint16
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue

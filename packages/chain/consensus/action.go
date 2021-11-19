@@ -139,9 +139,9 @@ func (c *Consensus) runVMIfNeeded() {
 	c.log.Debugf("runVM: sorted requests and filtered onLedger request overhead, running VM with batch len = %d", len(reqsFiltered))
 	if vmTask := c.prepareVMTask(reqsFiltered); vmTask != nil {
 		c.log.Debugw("runVMIfNeeded: starting VM task",
-			"chainID", vmTask.ChainInput.Address().Base58(),
+			"chainID", vmTask.AnchorOutput.Address().Base58(),
 			"timestamp", vmTask.Timestamp,
-			"block index", vmTask.ChainInput.GetStateIndex(),
+			"block index", vmTask.AnchorOutput.GetStateIndex(),
 			"num req", len(vmTask.Requests),
 		)
 		c.workflow.vmStarted = true
@@ -219,7 +219,7 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 	task := &vm.VMTask{
 		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
-		ChainInput:         c.stateOutput,
+		AnchorOutput:       c.stateOutput,
 		SolidStateBaseline: stateBaseline,
 		Entropy:            c.consensusEntropy,
 		ValidatorFeeTarget: c.consensusBatch.FeeDestination,
@@ -686,7 +686,7 @@ func (c *Consensus) processVMResult(result *vm.VMTask) {
 
 	c.resultSignatures[c.committee.OwnPeerIndex()] = &messages.SignedResultMsg{
 		SenderIndex:  c.committee.OwnPeerIndex(),
-		ChainInputID: result.ChainInput.ID(),
+		ChainInputID: result.AnchorOutput.ID(),
 		EssenceHash:  essenceHash,
 		SigShare:     sigShare,
 	}
@@ -702,7 +702,7 @@ func (c *Consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledge
 	// TODO access and consensus pledge
 	essence, err := rotate.MakeRotateStateControllerTransaction(
 		task.RotationAddress,
-		task.ChainInput,
+		task.AnchorOutput,
 		task.Timestamp,
 		identity.ID{},
 		identity.ID{},

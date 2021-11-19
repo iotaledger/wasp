@@ -37,7 +37,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict
 
 	task := &vm.VMTask{
 		Processors:         ch.proc,
-		ChainInput:         ch.GetChainOutput(),
+		AnchorOutput:       ch.GetChainOutput(),
 		Requests:           reqs,
 		Timestamp:          ch.Env.LogicalTime(),
 		VirtualStateAccess: ch.State.Copy(),
@@ -67,7 +67,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict
 	} else {
 		essence, err = rotate.MakeRotateStateControllerTransaction(
 			task.RotationAddress,
-			task.ChainInput,
+			task.AnchorOutput,
 			task.Timestamp.Add(2*time.Nanosecond),
 			identity.ID{},
 			identity.ID{},

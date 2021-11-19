@@ -8,8 +8,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
-	"github.com/iotaledger/wasp/packages/iscp/requestdata"
-
 	"github.com/iotaledger/goshimmer/client/wallet/packages/sendoptions"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -115,14 +113,14 @@ type SendMetadata struct {
 	TargetContract Hname
 	EntryPoint     Hname
 	Args           dict.Dict
-	Transfer       requestdata.Assets
+	Transfer       Assets
 }
 
 // PostRequestData is a parameters for a cross-chain request
 type PostRequestData struct {
 	TargetAddress  iotago.Address
 	SenderContract Hname
-	Assets         *requestdata.Assets
+	Assets         *Assets
 	Metadata       *SendMetadata
 	SendOptions    *SendOptions
 }

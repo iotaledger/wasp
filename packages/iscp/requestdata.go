@@ -1,11 +1,10 @@
 // Wrapping interfaces for the request
 // see also https://hackmd.io/@Evaldas/r1-L2UcDF and https://hackmd.io/@Evaldas/ryFK3Qr8Y and
-package requestdata
+package iscp
 
 import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -82,9 +81,9 @@ type Assets struct {
 type Request interface {
 	ID() RequestID
 	Params() dict.Dict
-	SenderAccount() *iscp.AgentID
+	SenderAccount() *AgentID
 	SenderAddress() iotago.Address
-	Target() iscp.RequestTarget
+	Target() RequestTarget
 	Assets() *Assets   // attached assets for the UTXO request, nil for off-ledger. All goes to sender
 	Transfer() *Assets // transfer of assets to the smart contract. Debited from sender account
 	GasBudget() int64
@@ -104,6 +103,26 @@ type unwrap interface {
 type ReturnAmountOptions interface {
 	ReturnTo() iotago.Address
 	Amount() uint64
+}
+
+type RequestTarget struct {
+	Contract   Hname
+	EntryPoint Hname
+}
+
+func NewRequestTarget(contract, entryPoint Hname) RequestTarget {
+	return RequestTarget{
+		Contract:   contract,
+		EntryPoint: entryPoint,
+	}
+}
+
+func TakeRequestIDs(reqs ...Request) []RequestID {
+	ret := make([]RequestID, len(reqs))
+	for i := range reqs {
+		ret[i] = reqs[i].ID()
+	}
+	return ret
 }
 
 func (txm *UTXOMetaData) RequestID() RequestID {

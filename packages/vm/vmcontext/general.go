@@ -97,7 +97,7 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances
 	return true
 }
 
-// - anchor properties
+// - anchorOutput properties
 func (vmctx *VMContext) StateAddress() ledgerstate.Address {
 	return vmctx.chainInput.GetStateAddress()
 }

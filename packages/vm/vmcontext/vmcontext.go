@@ -1,9 +1,10 @@
 package vmcontext
 
 import (
+	"math/big"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/requestdata"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
@@ -47,7 +48,7 @@ type VMContext struct {
 	log                  *logger.Logger
 	blockOutputCount     uint8
 	// txbuilder
-	txbuilder *txbuilder
+	txbuilder *vmtxbuilder.AnchorTransactionBuilder
 	// fee related
 	validatorFeeTarget *iscp.AgentID // provided by validator
 	feeColor           colored.Color
@@ -57,7 +58,7 @@ type VMContext struct {
 	maxEventSize    uint16
 	maxEventsPerReq uint16
 	// ---- request context
-	req                      requestdata.Request
+	req                      iscp.Request
 	requestIndex             uint16
 	requestEventIndex        uint16
 	requestOutputCount       uint8
@@ -101,14 +102,14 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
 	// assert consistency
-	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.StateMetadata)
+	stateHash, err := hashing.HashValueFromBytes(task.AnchorOutput.StateMetadata)
 	if err != nil {
 		// should never happen
 		panic(xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err))
 	}
 	stateHashFromState := optimisticStateAccess.StateCommitment()
 	blockIndex := optimisticStateAccess.BlockIndex()
-	if stateHash != stateHashFromState || blockIndex != task.ChainInput.StateIndex {
+	if stateHash != stateHashFromState || blockIndex != task.AnchorOutput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
@@ -116,8 +117,9 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	optimisticStateAccess.ApplyStateUpdates(openingStateUpdate)
 
 	ret := &VMContext{
-		chainID:              iscp.NewChainID(task.ChainInput.AliasID),
-		chainInput:           task.ChainInput,
+		chainID:              iscp.NewChainID(task.AnchorOutput.AliasID),
+		chainInput:           task.AnchorOutput,
+		chainInputID:         task.AnchorOutputID,
 		virtualState:         optimisticStateAccess,
 		solidStateBaseline:   task.SolidStateBaseline,
 		validatorFeeTarget:   task.ValidatorFeeTarget,
@@ -128,7 +130,9 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),
 	}
-	ret.txbuilder = ret.newTxBuilder()
+	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(task.AnchorOutput, task.AnchorOutputID, task.AnchorOutput.Amount, func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
+		return ret.loadNativeTokensOnChain(id)
+	})
 	return ret
 }
 

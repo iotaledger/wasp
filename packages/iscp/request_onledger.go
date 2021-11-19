@@ -1,10 +1,8 @@
-package requestdata
+package iscp
 
 import (
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/hive.go/serializer"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -54,8 +52,8 @@ func (r *onLedgerRequestData) Params() dict.Dict {
 	return r.requestMetadata.Args()
 }
 
-func (r *onLedgerRequestData) SenderAccount() *iscp.AgentID {
-	return iscp.NewAgentID(r.SenderAddress(), r.requestMetadata.SenderContract())
+func (r *onLedgerRequestData) SenderAccount() *AgentID {
+	return NewAgentID(r.SenderAddress(), r.requestMetadata.SenderContract())
 }
 
 func (r *onLedgerRequestData) SenderAddress() iotago.Address {
@@ -66,8 +64,8 @@ func (r *onLedgerRequestData) SenderAddress() iotago.Address {
 	return senderBlock.(*iotago.SenderFeatureBlock).Address
 }
 
-func (r *onLedgerRequestData) Target() iscp.RequestTarget {
-	return iscp.RequestTarget{
+func (r *onLedgerRequestData) Target() RequestTarget {
+	return RequestTarget{
 		Contract:   r.requestMetadata.TargetContract(),
 		EntryPoint: r.requestMetadata.EntryPoint(),
 	}
@@ -120,7 +118,7 @@ func (r *onLedgerRequestData) Features() Features {
 }
 
 func (r *onLedgerRequestData) Bytes() []byte {
-	outputBytes, err := r.output.Serialize(serializer.DeSeriModeNoValidation)
+	outputBytes, err := []byte{}, error(nil) // r.output.Serialize(serializer.DeSeriModeNoValidation)
 	if err != nil {
 		return nil
 	}
@@ -189,9 +187,10 @@ func (r *onLedgerRequestData) Expiry() *TimeData {
 }
 
 func (r *onLedgerRequestData) ReturnAmount() (uint64, bool) {
-	senderBlock, has := r.featureBlocksCache[iotago.FeatureBlockReturn]
-	if !has {
-		return 0, false
-	}
-	return senderBlock.(*iotago.ReturnFeatureBlock).Amount, true
+	//senderBlock, has := r.featureBlocksCache[iotago.FeatureBlockReturn]
+	//if !has {
+	//	return 0, false
+	//}
+	//return senderBlock.(*iotago.ReturnFeatureBlock).Amount, true
+	return 0, false
 }
