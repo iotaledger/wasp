@@ -182,9 +182,14 @@ func (r *OffLedger) Sign(keyPair *ed25519.KeyPair) {
 	r.signature = keyPair.PrivateKey.Sign(mu.Bytes())
 }
 
-// Tokens returns the transfers passed to the request
-func (r *OffLedger) Assets() Transfer {
-	return Transfer{
+// Assets is attached assets to the UTXO. Nil for off-ledger
+func (r *OffLedger) Assets() *Assets {
+	return nil
+}
+
+// Transfer transfer of assets from the sender's account to the target smart contract. Nil mean no transfer
+func (r *OffLedger) Transfer() *Assets {
+	return &Assets{
 		amount: r.transferIotas,
 		tokens: r.transferTokens,
 	}

@@ -15,6 +15,8 @@ type RequestMetadata struct {
 	entryPoint iscp.Hname
 	// request arguments, not decoded yet wrt blobRefs
 	args dict.Dict
+	// transfer intended to the target contract. Always taken from the sender's account. Nil mean no transfer
+	transfer *Assets
 	// gas budget
 	gasBudget int64
 }
@@ -82,6 +84,10 @@ func (p *RequestMetadata) Args() dict.Dict {
 	return p.args
 }
 
+func (p *RequestMetadata) Transfer() *Assets {
+	return p.transfer
+}
+
 func (p *RequestMetadata) GasBudget() int64 {
 	return p.gasBudget
 }
@@ -98,6 +104,7 @@ func (p *RequestMetadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 		Write(p.entryPoint).
 		WriteInt64(p.gasBudget)
 	p.args.WriteToMarshalUtil(mu)
+	p.transfer.WriteToMarshalUtil(mu)
 }
 
 func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
@@ -115,6 +122,9 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 		return err
 	}
 	if err = (p.args).ReadFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	if p.transfer, err = NewAssetsFromMarshalUtil(mu); err != nil {
 		return err
 	}
 	return nil

@@ -73,13 +73,17 @@ func (r *onLedgerRequestData) Target() iscp.RequestTarget {
 	}
 }
 
-func (r *onLedgerRequestData) Assets() Transfer {
+func (r *onLedgerRequestData) Transfer() *Assets {
+	return r.requestMetadata.Transfer()
+}
+
+func (r *onLedgerRequestData) Assets() *Assets {
 	amount, _ := r.output.Deposit()
 	var tokens iotago.NativeTokens
 	if output, ok := r.output.(iotago.NativeTokenOutput); ok {
 		tokens = output.NativeTokenSet()
 	}
-	return Transfer{
+	return &Assets{
 		amount: amount,
 		tokens: tokens,
 	}

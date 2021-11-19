@@ -3,6 +3,7 @@
 package requestdata
 
 import (
+	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -72,10 +73,10 @@ type NFT struct {
 	NFTMetadata []byte
 }
 
-type Transfer struct {
+// Assets is used as assets in the UTXO and as tokens in transfer
+type Assets struct {
 	amount uint64
 	tokens iotago.NativeTokens
-	NFT    *NFT
 }
 
 type Request interface {
@@ -84,7 +85,8 @@ type Request interface {
 	SenderAccount() *iscp.AgentID
 	SenderAddress() iotago.Address
 	Target() iscp.RequestTarget
-	Assets() Transfer
+	Assets() *Assets   // attached assets for the UTXO request, nil for off-ledger. All goes to sender
+	Transfer() *Assets // transfer of assets to the smart contract. Debited from sender account
 	GasBudget() int64
 }
 
@@ -106,4 +108,14 @@ type ReturnAmountOptions interface {
 
 func (txm *UTXOMetaData) RequestID() RequestID {
 	return RequestID(txm.UTXOInput)
+}
+
+func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	// TODO
+	panic("not implemented")
+}
+
+func NewAssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
+	// TODO
+	panic("not implemented")
 }
