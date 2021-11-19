@@ -21,9 +21,6 @@ test: install
 test-short:
 	go test -tags $(BUILD_TAGS) --short --count 1 -failfast ./...
 
-test-heavy:
-	go test -tags $(BUILD_TAGS),runheavy --timeout 30m --count 1 -failfast ./...
-
 install:
 	go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) ./...
 
