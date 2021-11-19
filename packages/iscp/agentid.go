@@ -6,9 +6,10 @@ package iscp
 import (
 	"strings"
 
+	"github.com/iotaledger/wasp/packages/iscp/requestdata/placeholders"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
@@ -76,7 +77,8 @@ func NewAgentIDFromString(s string) (*AgentID, error) {
 	if len(parts) != 2 {
 		return nil, xerrors.New("NewAgentIDFromString: wrong format")
 	}
-	addr, err := ledgerstate.AddressFromBase58EncodedString(parts[0])
+	// TODO placeholder
+	addr, err := placeholders.AddressFromStringTmp(parts[0]) // old ledgerstate.AddressFromBase58EncodedString(parts[0])
 	if err != nil {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
 	}
@@ -106,7 +108,8 @@ func (a *AgentID) Bytes() []byte {
 		panic("AgentID.Bytes: address == nil")
 	}
 	mu := marshalutil.New()
-	mu.Write(a.a)
+	// TODO placeholder
+	placeholders.WriteAddressToMarshalUtil(mu, a.a)
 	mu.Write(a.h)
 	return mu.Bytes()
 }

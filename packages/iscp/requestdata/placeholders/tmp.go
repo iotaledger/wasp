@@ -3,6 +3,7 @@ package placeholders
 
 import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
@@ -16,4 +17,12 @@ func NewED25519Address(publicKey ed25519.PublicKey) iotago.Address {
 	// digest := blake2b.Sum256(publicKey[:])
 
 	return nil
+}
+
+func AddressFromStringTmp(str string) (iotago.Address, error) {
+	panic("not implemented")
+}
+
+func WriteAddressToMarshalUtil(mu *marshalutil.MarshalUtil, addr iotago.Address) {
+	panic("not implemented")
 }
