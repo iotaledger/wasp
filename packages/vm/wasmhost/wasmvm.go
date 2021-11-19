@@ -32,10 +32,8 @@ type WasmVM interface {
 	LinkHost(impl WasmVM, host *WasmHost) error
 	LoadWasm(wasmData []byte) error
 	NewInstance() WasmVM
-	PoolSize() int
 	RunFunction(functionName string, args ...interface{}) error
 	RunScFunction(index int32) error
-	SaveMemory()
 	UnsafeMemory() []byte
 	VMGetBytes(offset int32, size int32) []byte
 	VMGetSize() int32
@@ -45,9 +43,6 @@ type WasmVM interface {
 type WasmVMBase struct {
 	impl           WasmVM
 	host           *WasmHost
-	memoryCopy     []byte
-	memoryDirty    bool
-	memoryNonZero  int32
 	result         []byte
 	resultKeyID    int32
 	timeoutStarted bool
@@ -183,35 +178,6 @@ func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 	return nil
 }
 
-func (vm *WasmVMBase) PoolSize() int {
-	return 0
-}
-
-func (vm *WasmVMBase) PreCall() []byte {
-	if vm.PoolSize() != 0 {
-		return nil
-	}
-
-	bytes := vm.impl.VMGetSize()
-	frame := vm.impl.VMGetBytes(0, bytes)
-	if vm.memoryDirty {
-		// clear memory and restore initialized data range
-		vm.impl.VMSetBytes(0, bytes, make([]byte, bytes))
-		size := int32(len(vm.memoryCopy))
-		vm.impl.VMSetBytes(vm.memoryNonZero, size, vm.memoryCopy)
-	}
-	vm.memoryDirty = true
-	return frame
-}
-
-func (vm *WasmVMBase) PostCall(frame []byte) {
-	if vm.PoolSize() != 0 {
-		return
-	}
-
-	vm.impl.VMSetBytes(0, int32(len(frame)), frame)
-}
-
 func (vm *WasmVMBase) Run(runner func() error) (err error) {
 	if vm.timeoutStarted {
 		// no need to wrap nested calls in timeout code
@@ -243,39 +209,6 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 	done <- true
 	vm.timeoutStarted = false
 	return err
-}
-
-func (vm *WasmVMBase) SaveMemory() {
-	if vm.PoolSize() != 0 {
-		return
-	}
-
-	// find initialized data range in memory
-	bytes := vm.impl.VMGetSize()
-	ptr := vm.impl.VMGetBytes(0, bytes)
-	if ptr == nil {
-		// this vm implementation does not communicate via mem pool
-		return
-	}
-	firstNonZero := -1
-	lastNonZero := 0
-	for i, b := range ptr {
-		if b != 0 {
-			if firstNonZero < 0 {
-				firstNonZero = i
-			}
-			lastNonZero = i
-		}
-	}
-
-	// save copy of initialized data range
-	vm.memoryNonZero = bytes
-	if firstNonZero >= 0 {
-		vm.memoryNonZero = int32(firstNonZero)
-		size := lastNonZero + 1 - firstNonZero
-		vm.memoryCopy = make([]byte, size)
-		copy(vm.memoryCopy, ptr[vm.memoryNonZero:])
-	}
 }
 
 func (vm *WasmVMBase) VMGetBytes(offset, size int32) []byte {

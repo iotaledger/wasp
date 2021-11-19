@@ -119,10 +119,6 @@ func (vm *WasmEdgeVM) Instantiate() error {
 	return nil
 }
 
-func (vm *WasmEdgeVM) PoolSize() int {
-	return 10
-}
-
 func (vm *WasmEdgeVM) RunFunction(functionName string, args ...interface{}) error {
 	return vm.Run(func() (err error) {
 		_,err = vm.edge.Execute(functionName, args...)

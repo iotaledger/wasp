@@ -9,8 +9,7 @@ import (
 )
 
 const (
-	FuncDefault      = "_default"
-	ViewCopyAllState = "copy_all_state"
+	FuncDefault = "_default"
 )
 
 type WasmContext struct {
@@ -87,18 +86,6 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 		// TODO default function, do nothing for now
 		return nil, nil
 	}
-
-	// TODO decide if we want be able to examine state directly from tests
-	//if wc.function == ViewCopyAllState {
-	//	// dump copy of entire state into result
-	//	state := wc.ctxView.State()
-	//	results := dict.New()
-	//	state.MustIterate("", func(key kv.Key, value []byte) bool {
-	//		results.Set(key, value)
-	//		return true
-	//	})
-	//	return results, nil
-	//}
 
 	wc.Tracef("Calling " + wc.function)
 	err := wc.callFunction()

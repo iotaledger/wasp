@@ -11,6 +11,7 @@ import (
 
 type WasmTimeVM struct {
 	WasmVMBase
+	engine    *wasmtime.Engine
 	instance  *wasmtime.Instance
 	interrupt *wasmtime.InterruptHandle
 	linker    *wasmtime.Linker
@@ -23,24 +24,29 @@ func NewWasmTimeVM() WasmVM {
 	vm := &WasmTimeVM{}
 	config := wasmtime.NewConfig()
 	config.SetInterruptable(true)
-	vm.store = wasmtime.NewStore(wasmtime.NewEngineWithConfig(config))
-	vm.interrupt, _ = vm.store.InterruptHandle()
+	vm.engine = wasmtime.NewEngineWithConfig(config)
 	return vm
 }
 
 func (vm *WasmTimeVM) NewInstance() WasmVM {
-	return &WasmTimeVM{store: vm.store, module: vm.module, interrupt: vm.interrupt}
+	return &WasmTimeVM{engine: vm.engine, module: vm.module}
 }
 
 func (vm *WasmTimeVM) Interrupt() {
 	vm.interrupt.Interrupt()
 }
 
-func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
+func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) (err error) {
+	vm.store = wasmtime.NewStore(vm.engine)
+	vm.interrupt, err = vm.store.InterruptHandle()
+	if err != nil {
+		return err
+	}
+
 	vm.linker = wasmtime.NewLinker(vm.store)
 	_ = vm.WasmVMBase.LinkHost(impl, host)
 
-	err := vm.linker.DefineFunc("WasmLib", "hostGetBytes", vm.HostGetBytes)
+	err = vm.linker.DefineFunc("WasmLib", "hostGetBytes", vm.HostGetBytes)
 	if err != nil {
 		return err
 	}
@@ -72,7 +78,7 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 }
 
 func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
-	vm.module, err = wasmtime.NewModule(vm.store.Engine, wasmData)
+	vm.module, err = wasmtime.NewModule(vm.engine, wasmData)
 	if err != nil {
 		return err
 	}
@@ -95,10 +101,6 @@ func (vm *WasmTimeVM) Instantiate() (err error) {
 	return nil
 }
 
-func (vm *WasmTimeVM) PoolSize() int {
-	return 10
-}
-
 func (vm *WasmTimeVM) RunFunction(functionName string, args ...interface{}) error {
 	export := vm.instance.GetExport(functionName)
 	if export == nil {
@@ -115,9 +117,6 @@ func (vm *WasmTimeVM) RunScFunction(index int32) error {
 	if export == nil {
 		return errors.New("unknown export function: 'on_call'")
 	}
-
-	frame := vm.PreCall()
-	defer vm.PostCall(frame)
 
 	return vm.Run(func() (err error) {
 		_, err = export.Func().Call(index)
