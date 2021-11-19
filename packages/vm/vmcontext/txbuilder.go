@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/util"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/requestdata"
 	"golang.org/x/xerrors"
@@ -32,7 +34,8 @@ type txbuilder struct {
 }
 
 type nativeTokenBalance struct {
-	initial *big.Int
+	input   iotago.UTXOInput
+	initial *big.Int // if 0, it means output does not exists
 	balance *big.Int
 }
 
@@ -66,7 +69,7 @@ func (txb *txbuilder) clone() *txbuilder {
 }
 
 func (txb *txbuilder) addConsumedInput(inp iotago.UTXOInput) int {
-	if txb.inputsFull() {
+	if txb.inputsAreFull() {
 		panic(ErrInputLimitExceeded)
 	}
 	txb.consumedInputs = append(txb.consumedInputs, inp)
@@ -78,10 +81,21 @@ func (txb *txbuilder) numConsumedInputs() int {
 }
 
 func (txb *txbuilder) inputs() iotago.Inputs {
-	ret := make(iotago.Inputs, len(txb.consumedInputs))
+	ret := make(iotago.Inputs, 0, len(txb.consumedInputs)+len(txb.balanceNativeTokens))
 	for i := range txb.consumedInputs {
-		ret[i] = &txb.consumedInputs[i]
+		ret = append(ret, &txb.consumedInputs[i])
 	}
+	for _, nt := range txb.balanceNativeTokens {
+		if nt.initial == nil {
+			// entry didn't existed before
+			continue
+		}
+		if nt.initial.Cmp(nt.balance) == 0 {
+			// no need for input because nothing changed
+		}
+		ret = append(ret, &nt.input)
+	}
+	// sort inputs to avoid non-determinism of the map iteration
 	// TODO
 	return ret
 }
@@ -89,7 +103,7 @@ func (txb *txbuilder) inputs() iotago.Inputs {
 func (txb *txbuilder) numInputsConsumed() int {
 	ret := len(txb.consumedInputs)
 	for _, v := range txb.balanceNativeTokens {
-		if v.balance.Cmp(v.initial) != 0 {
+		if v.initial != nil && v.balance.Cmp(v.initial) != 0 {
 			ret++
 		}
 	}
@@ -97,15 +111,14 @@ func (txb *txbuilder) numInputsConsumed() int {
 	return ret
 }
 
-func (txb *txbuilder) inputsFull() bool {
+func (txb *txbuilder) inputsAreFull() bool {
 	return txb.numInputsConsumed() >= iotago.MaxInputsCount
 }
 
 func (txb *txbuilder) numOutputsConsumed() int {
 	ret := 1 // for chain output
 	for _, v := range txb.balanceNativeTokens {
-		// see https://stackoverflow.com/questions/64257065/is-there-another-way-of-testing-if-a-big-int-is-0
-		if v.balance.Cmp(v.initial) != 0 && len(v.balance.Bits()) > 0 {
+		if v.balance.Cmp(v.initial) != 0 && !util.IsZeroBigInt(v.balance) {
 			ret++
 		}
 	}
@@ -113,7 +126,7 @@ func (txb *txbuilder) numOutputsConsumed() int {
 	return ret
 }
 
-func (txb *txbuilder) outputsFull() bool {
+func (txb *txbuilder) outputsAreFull() bool {
 	return txb.numOutputsConsumed() >= iotago.MaxOutputsCount
 }
 
@@ -138,11 +151,15 @@ func (txb *txbuilder) ensureNativeTokenBalance(id iotago.NativeTokenID) *nativeT
 	if b, ok := txb.balanceNativeTokens[id]; ok {
 		return b
 	}
+	balance, input := txb.vmctx.loadNativeTokensOnChain(id)
 	b := &nativeTokenBalance{
-		balance: txb.vmctx.loadNativeTokensOnChain(id),
+		input:   input,
+		initial: balance,
+		balance: new(big.Int),
 	}
+	b.balance.Set(balance)
 	txb.balanceNativeTokens[id] = b
-	if txb.outputsFull() {
+	if txb.outputsAreFull() {
 		panic(ErrOutputLimitExceeded)
 	}
 	return b
@@ -201,6 +218,7 @@ func (vmctx *VMContext) restoreTxBuilderSnapshot(snapshot *txbuilder) {
 	vmctx.txbuilder = snapshot
 }
 
-func (vmctx *VMContext) loadNativeTokensOnChain(id iotago.NativeTokenID) *big.Int {
+func (vmctx *VMContext) loadNativeTokensOnChain(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
+	// calls `accounts` and `blocklog` to find UTXO ID for a specific token ID, if any
 	panic("not implemented")
 }

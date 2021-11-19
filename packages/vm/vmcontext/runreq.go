@@ -35,7 +35,7 @@ const (
 // doesn't parse correctly as a SC request
 func (vmctx *VMContext) RunTheRequest(req requestdata.RequestData, requestIndex uint16) {
 
-	if req.Unwrap().UTXO() != nil && vmctx.txbuilder.inputsFull() {
+	if req.Unwrap().UTXO() != nil && vmctx.txbuilder.inputsAreFull() {
 		// ignore the UTXO request. Exceeded limit of input in the anchor transaction
 		return
 	}

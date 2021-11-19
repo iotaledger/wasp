@@ -12,8 +12,8 @@ require (
 	github.com/bytecodealliance/wasmtime-go v0.21.0
 	github.com/ethereum/go-ethereum v1.10.12
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
-	github.com/iotaledger/hive.go v0.0.0-20211114115219-34d09af1fc8c
-	github.com/iotaledger/iota.go/v3 v3.0.0-20211114115654-b7529e9a9893
+	github.com/iotaledger/hive.go v0.0.0-20211118140832-0930ef964406
+	github.com/iotaledger/iota.go/v3 v3.0.0-20211119094103-585278b128da
 	github.com/knadh/koanf v1.2.1
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.14.4

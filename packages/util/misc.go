@@ -1,5 +1,7 @@
 package util
 
+import "math/big"
+
 func StringInList(s string, lst []string) bool {
 	for _, l := range lst {
 		if l == s {
@@ -39,4 +41,9 @@ func MakeRange(from, to int) []int {
 		a[i] = from + i
 	}
 	return a
+}
+
+func IsZeroBigInt(bi *big.Int) bool {
+	// see https://stackoverflow.com/questions/64257065/is-there-another-way-of-testing-if-a-big-int-is-0
+	return len(bi.Bits()) == 0
 }

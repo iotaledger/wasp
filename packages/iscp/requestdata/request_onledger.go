@@ -78,7 +78,7 @@ func (r *onLedgerRequestData) Transfer() *Assets {
 }
 
 func (r *onLedgerRequestData) Assets() *Assets {
-	amount, _ := r.output.Deposit()
+	amount := r.output.Deposit()
 	var tokens iotago.NativeTokens
 	if output, ok := r.output.(iotago.NativeTokenOutput); ok {
 		tokens = output.NativeTokenSet()
