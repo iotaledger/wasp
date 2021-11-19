@@ -21,22 +21,10 @@ func NewChainNodeConnImplementation(nodeConnClient chain.NodeConnection, log *lo
 	}
 }
 
-func (n *ChainNodeConnImplementation) PullBacklog(addr *ledgerstate.AliasAddress) {
-	n.log.Debugf("ChainNodeConnImplementation::PullBacklog(addr=%s)...", addr.Base58())
-	n.client.PullBacklog(addr)
-	n.log.Debugf("ChainNodeConnImplementation::PullBacklog(addr=%s)... Done", addr.Base58())
-}
-
 func (n *ChainNodeConnImplementation) PullState(addr *ledgerstate.AliasAddress) {
 	n.log.Debugf("ChainNodeConnImplementation::PullState(addr=%s)...", addr.Base58())
 	n.client.PullState(addr)
 	n.log.Debugf("ChainNodeConnImplementation::PullState(addr=%s)... Done", addr.Base58())
-}
-
-func (n *ChainNodeConnImplementation) PullConfirmedTransaction(addr ledgerstate.Address, txID ledgerstate.TransactionID) {
-	n.log.Debugf("ChainNodeConnImplementation::PullConfirmedTransaction(addr=%s, txID=%v)...", addr.Base58(), txID.Base58())
-	n.client.PullConfirmedTransaction(addr, txID)
-	n.log.Debugf("ChainNodeConnImplementation::PullConfirmedTransaction(addr=%s, txID=%v)... Done", addr.Base58(), txID.Base58())
 }
 
 func (n *ChainNodeConnImplementation) PullTransactionInclusionState(addr ledgerstate.Address, txID ledgerstate.TransactionID) {

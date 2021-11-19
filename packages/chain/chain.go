@@ -84,9 +84,7 @@ type Committee interface {
 }
 
 type NodeConnectionSender interface {
-	PullBacklog(addr *ledgerstate.AliasAddress)
 	PullState(addr *ledgerstate.AliasAddress)
-	PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)

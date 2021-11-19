@@ -27,16 +27,8 @@ func NewNodeConnection(nodeConnClient *txstream_client.Client, log *logger.Logge
 
 // NOTE: NodeConnectionSender methods are logged through each chain logger in ChainNodeConnImplementation
 
-func (n *NodeConnImplementation) PullBacklog(addr *ledgerstate.AliasAddress) {
-	n.client.RequestBacklog(addr)
-}
-
 func (n *NodeConnImplementation) PullState(addr *ledgerstate.AliasAddress) {
 	n.client.RequestUnspentAliasOutput(addr)
-}
-
-func (n *NodeConnImplementation) PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
-	n.client.RequestConfirmedTransaction(addr, txid)
 }
 
 func (n *NodeConnImplementation) PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
