@@ -3,6 +3,8 @@ package accounts
 import (
 	"fmt"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -17,6 +19,8 @@ const (
 	varStateAccounts    = "a"
 	varStateTotalAssets = "t"
 )
+
+var ErrNotEnoughFunds = xerrors.New("not enough funds")
 
 func getAccountsMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, varStateAccounts)
@@ -81,6 +85,12 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, transfer colored.
 	return true
 }
 
+func MustDebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, transfer colored.Balances) {
+	if !DebitFromAccount(state, agentID, transfer) {
+		panic(ErrNotEnoughFunds)
+	}
+}
+
 // debitFromAccount internal
 func debitFromAccount(state kv.KVStore, account *collections.Map, transfer colored.Balances) bool {
 	defer touchAccount(state, account)
@@ -124,6 +134,12 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 	}
 	creditToAccount(state, getAccount(state, toAgentID), transfer)
 	return true
+}
+
+func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer colored.Balances) {
+	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, transfer) {
+		panic(ErrNotEnoughFunds)
+	}
 }
 
 func touchAccount(state kv.KVStore, account *collections.Map) {
