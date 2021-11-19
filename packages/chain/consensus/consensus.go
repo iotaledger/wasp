@@ -26,7 +26,7 @@ type Consensus struct {
 	chain                            chain.ChainCore
 	committee                        chain.Committee
 	mempool                          chain.Mempool
-	nodeConn                         chain.NodeConnection
+	nodeConn                         chain.NodeConnectionSender
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
 	stateOutput                      *ledgerstate.AliasOutput
@@ -81,7 +81,7 @@ type workflowFlags struct {
 
 var _ chain.Consensus = &Consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) *Consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnectionSender, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) *Consensus {
 	var timers ConsensusTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]

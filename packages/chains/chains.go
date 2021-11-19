@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
-	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
@@ -34,7 +32,7 @@ type Chains struct {
 	mutex                            sync.RWMutex
 	log                              *logger.Logger
 	allChains                        map[[ledgerstate.AddressLength]byte]chain.Chain
-	nodeConn                         *txstream.Client
+	nodeConn                         chain.NodeConnection
 	processorConfig                  *processors.Config
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
@@ -75,15 +73,15 @@ func (c *Chains) Dismiss() {
 	c.allChains = make(map[[ledgerstate.AddressLength]byte]chain.Chain)
 }
 
-func (c *Chains) Attach(nodeConn *txstream.Client) {
+func (c *Chains) Attach(nodeConn chain.NodeConnection) {
 	if c.nodeConn != nil {
 		c.log.Panicf("Chains: already attached")
 	}
 	c.nodeConn = nodeConn
-	c.nodeConn.Events.TransactionReceived.Attach(events.NewClosure(c.dispatchTransactionMsg))
-	c.nodeConn.Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchInclusionStateMsg))
-	c.nodeConn.Events.OutputReceived.Attach(events.NewClosure(c.dispatchOutputMsg))
-	c.nodeConn.Events.UnspentAliasOutputReceived.Attach(events.NewClosure(c.dispatchUnspentAliasOutputMsg))
+	c.nodeConn.AttachToTransactionReceived(c.dispatchTransactionMsg)
+	c.nodeConn.AttachToInclusionStateReceived(c.dispatchInclusionStateMsg)
+	c.nodeConn.AttachToOutputReceived(c.dispatchOutputMsg)
+	c.nodeConn.AttachToUnspentAliasOutputReceived(c.dispatchUnspentAliasOutputMsg)
 }
 
 func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics *metrics.Metrics) error {

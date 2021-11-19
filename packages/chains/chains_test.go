@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/database"
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -28,5 +29,5 @@ func TestBasic(t *testing.T) {
 	nconn := txstream.New("dummyID", logger, func() (addr string, conn net.Conn, err error) {
 		return "", nil, xerrors.New("dummy dial error")
 	})
-	ch.Attach(nconn)
+	ch.Attach(nodeconnimpl.NewNodeConnection(nconn, logger))
 }

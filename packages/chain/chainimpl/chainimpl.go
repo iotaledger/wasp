@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
@@ -62,7 +61,7 @@ type chainObj struct {
 	stateMgr                         chain.StateManager
 	consensus                        chain.Consensus
 	log                              *logger.Logger
-	nodeConn                         chain.NodeConnection
+	nodeConn                         chain.NodeConnectionSender
 	db                               kvstore.KVStore
 	peerNetworkConfig                registry.PeerNetworkConfigProvider
 	netProvider                      peering.NetworkProvider
@@ -88,7 +87,7 @@ type committeeStruct struct {
 func NewChain(
 	chainID *iscp.ChainID,
 	log *logger.Logger,
-	txstreamClient *txstream.Client,
+	nc chain.NodeConnection,
 	peerNetConfig registry.PeerNetworkConfigProvider,
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
@@ -127,7 +126,7 @@ func NewChain(
 		msgPipe:           pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
 		chainID:           chainID,
 		log:               chainLog,
-		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
+		nodeConn:          nodeconnimpl.NewChainNodeConnImplementation(nc, chainLog),
 		db:                db,
 		chainStateSync:    chainStateSync,
 		stateReader:       state.NewOptimisticStateReader(db, chainStateSync),

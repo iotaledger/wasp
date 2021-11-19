@@ -25,7 +25,7 @@ type stateManager struct {
 	store                  kvstore.KVStore
 	chain                  chain.ChainCore
 	peers                  peering.PeerDomainProvider
-	nodeConn               chain.NodeConnection
+	nodeConn               chain.NodeConnectionSender
 	pullStateRetryTime     time.Time
 	solidState             state.VirtualStateAccess
 	stateOutput            *ledgerstate.AliasOutput
@@ -51,7 +51,7 @@ const (
 	maxBlocksToCommitConst               = 10000 // 10k
 )
 
-func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, timersOpt ...StateManagerTimers) chain.StateManager {
+func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnectionSender, timersOpt ...StateManagerTimers) chain.StateManager {
 	var timers StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]

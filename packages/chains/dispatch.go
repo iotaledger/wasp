@@ -1,87 +1,62 @@
 package chains
 
 import (
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/txstream"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
-func (c *Chains) dispatchTransactionMsg(msg *txstream.MsgTransaction) {
-	c.log.Debugf("NodeConnImplementation::dispatchTransactionMsg...")
-	defer c.log.Debugf("NodeConnImplementation::dispatchTransactionMsg... Done")
-	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
-	if !ok {
-		c.log.Warnf("chains: cannot dispatch transaction message to non-alias address")
-		return
-	}
-	chainID := iscp.NewChainID(aliasAddr)
+func (c *Chains) dispatchTransactionMsg(address *ledgerstate.AliasAddress, tx *ledgerstate.Transaction) {
+	c.log.Debugf("Chains::dispatchTransactionMsg tx ID %v to address %v", tx.ID().Base58(), address.String())
+	chainID := iscp.NewChainID(address)
 	chain := c.Get(chainID)
 	if chain == nil {
-		// not interested in this chainID
+		c.log.Warnf("Chains::dispatchTransactionMsg: not interested in tx ID %v, ignoring it", tx.ID().Base58())
 		return
 	}
-	c.log.Debugw("dispatch transaction",
-		"txid", msg.Tx.ID().Base58(),
-		"chainid", chainID.String(),
-	)
-	chain.ReceiveTransaction(msg.Tx)
+	c.log.Debugf("Chains::dispatchTransactionMsg: dispatching tx ID %v to chain ID %v", tx.ID().Base58(), chainID.String())
+	chain.ReceiveTransaction(tx)
+	c.log.Debugf("Chains::dispatchTransactionMsg: dispatching tx ID %v completed", tx.ID().Base58())
 }
 
-func (c *Chains) dispatchInclusionStateMsg(msg *txstream.MsgTxInclusionState) {
-	c.log.Debugf("NodeConnImplementation::dispatchInclusionStateMsg...")
-	defer c.log.Debugf("NodeConnImplementation::dispatchInclusionStateMsg... Done")
-	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
-	if !ok {
-		c.log.Warnf("chains: cannot dispatch inclusion state message to non-alias address")
-		return
-	}
-	chainID := iscp.NewChainID(aliasAddr)
+func (c *Chains) dispatchInclusionStateMsg(address *ledgerstate.AliasAddress, txID ledgerstate.TransactionID, iState ledgerstate.InclusionState) {
+	c.log.Debugf("Chains::dispatchInclusionStateMsg tx ID %v inclusion state %v to address %v", txID.Base58(), iState.String(), address.String())
+	chainID := iscp.NewChainID(address)
 	chain := c.Get(chainID)
 	if chain == nil {
-		// not interested in this chainID
+		c.log.Warnf("Chains::dispatchInclusionStateMsg: not interested in tx ID %v inclusion state, ignoring it", txID.Base58())
 		return
 	}
-	c.log.Debugw("dispatch transaction",
-		"txid", msg.TxID.Base58(),
-		"chainid", chainID.String(),
-		"inclusion", msg.State.String(),
-	)
-	chain.ReceiveInclusionState(msg.TxID, msg.State)
+	c.log.Debugf("Chains::dispatchInclusionStateMsg: dispatching tx ID %v inclusion state to chain ID %v", txID.Base58(), chainID.String())
+	chain.ReceiveInclusionState(txID, iState)
+	c.log.Debugf("Chains::dispatchInclusionStateMsg: dispatching tx ID %v inclusion state completed", txID.Base58())
 }
 
-func (c *Chains) dispatchOutputMsg(msg *txstream.MsgOutput) {
-	c.log.Debugf("NodeConnImplementation::dispatchOutputMsg...")
-	defer c.log.Debugf("NodeConnImplementation::dispatchOutputMsg... Done")
-	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
-	if !ok {
-		c.log.Warnf("chains: cannot dispatch output message to non-alias address")
-		return
-	}
-	chainID := iscp.NewChainID(aliasAddr)
+func (c *Chains) dispatchOutputMsg(address *ledgerstate.AliasAddress, output ledgerstate.Output) {
+	outputID := iscp.OID(output.ID())
+	c.log.Debugf("Chains::dispatchOutputMsg output ID %v to address %v", outputID, address.String())
+	chainID := iscp.NewChainID(address)
 	chain := c.Get(chainID)
 	if chain == nil {
-		// not interested in this message
+		c.log.Warnf("Chains::dispatchOutputMsg: not interested in output ID %v, ignoring it", outputID)
 		return
 	}
-	c.log.Debugw("dispatch output",
-		"outputID", iscp.OID(msg.Output.ID()),
-		"chainid", chainID.String(),
-	)
-	chain.ReceiveOutput(msg.Output)
+	c.log.Debugf("Chains::dispatchOutputMsg: dispatching output ID %v to chain ID %v", outputID, chainID.String())
+	chain.ReceiveOutput(output)
+	c.log.Debugf("Chains::dispatchOutputMsg: dispatching output ID %v completed", outputID)
 }
 
-func (c *Chains) dispatchUnspentAliasOutputMsg(msg *txstream.MsgUnspentAliasOutput) {
-	c.log.Debugf("NodeConnImplementation::dispatchUnspentAliasOutputMsg...")
-	defer c.log.Debugf("NodeConnImplementation::dispatchUnspentAliasOutputMsg... Done")
-	chainID := iscp.NewChainID(msg.AliasAddress)
+func (c *Chains) dispatchUnspentAliasOutputMsg(address *ledgerstate.AliasAddress, output *ledgerstate.AliasOutput, timestamp time.Time) {
+	outputID := iscp.OID(output.ID())
+	c.log.Debugf("Chains::dispatchUnspentAliasOutputMsg output ID %v timestamp %v to address %v", outputID, timestamp, address.String())
+	chainID := iscp.NewChainID(address)
 	chain := c.Get(chainID)
 	if chain == nil {
-		// not interested in this message
+		c.log.Warnf("Chains::dispatchUnspentAliasOutputMsg: not interested in output ID %v, ignoring it", outputID)
 		return
 	}
-	c.log.Debugw("dispatch state",
-		"outputID", iscp.OID(msg.AliasOutput.ID()),
-		"chainid", chainID.String(),
-	)
-	chain.ReceiveState(msg.AliasOutput, msg.Timestamp)
+	c.log.Debugf("Chains::dispatchUnspentAliasOutputMsg: dispatching output ID %v to chain ID %v", outputID, chainID.String())
+	chain.ReceiveState(output, timestamp)
+	c.log.Debugf("Chains::dispatchOutputMsg: dispatching output ID %v completed", outputID)
 }

@@ -83,13 +83,23 @@ type Committee interface {
 	GetRandomValidators(upToN int) []string
 }
 
-type NodeConnection interface {
+type NodeConnectionSender interface {
 	PullBacklog(addr *ledgerstate.AliasAddress)
 	PullState(addr *ledgerstate.AliasAddress)
 	PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
+}
+
+type NodeConnection interface {
+	NodeConnectionSender
+	AttachToTransactionReceived(func(*ledgerstate.AliasAddress, *ledgerstate.Transaction))
+	AttachToInclusionStateReceived(func(*ledgerstate.AliasAddress, ledgerstate.TransactionID, ledgerstate.InclusionState))
+	AttachToOutputReceived(func(*ledgerstate.AliasAddress, ledgerstate.Output))
+	AttachToUnspentAliasOutputReceived(func(*ledgerstate.AliasAddress, *ledgerstate.AliasOutput, time.Time))
+	Subscribe(addr ledgerstate.Address)
+	Unsubscribe(addr ledgerstate.Address)
 }
 
 type StateManager interface {
