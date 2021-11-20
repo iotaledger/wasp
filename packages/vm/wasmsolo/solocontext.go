@@ -170,6 +170,10 @@ func soloContext(t *testing.T, chain *solo.Chain, scName string, creator *SoloAg
 
 // StartChain starts a new chain named chainName.
 func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
+	if SoloDebug {
+		// avoid pesky timeouts during debugging
+		wasmhost.DisableWasmTimeout = true
+	}
 	wasmhost.HostTracing = SoloHostTracing
 	// wasmhost.HostTracingAll = SoloHostTracing
 

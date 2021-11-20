@@ -7,10 +7,11 @@ require (
 	github.com/NebulousLabs/fastrand v0.0.0-20181203155948-6fb6489aac4e // indirect
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
-	github.com/btcsuite/btcd v0.22.0-beta // indirect
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go v0.21.0
-	github.com/ethereum/go-ethereum v1.10.12
+	github.com/wasmerio/wasmer-go v1.0.4
+	github.com/second-state/WasmEdge-go v0.9.0-rc3 // indirect
+	github.com/ethereum/go-ethereum v1.10.10
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
 	github.com/iotaledger/hive.go v0.0.0-20211118140832-0930ef964406
 	github.com/iotaledger/iota.go/v3 v3.0.0-20211119123830-d67d4f03c2fc
@@ -26,12 +27,10 @@ require (
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
-	github.com/second-state/WasmEdge-go v0.9.0-rc3
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.7.0
-	github.com/wasmerio/wasmer-go v1.0.4
 	go.dedis.ch/kyber/v3 v3.0.13
 	go.nanomsg.org/mangos/v3 v3.0.1
 	go.uber.org/atomic v1.9.0

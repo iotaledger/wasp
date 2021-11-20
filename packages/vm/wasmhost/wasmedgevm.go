@@ -65,33 +65,33 @@ func (vm *WasmEdgeVM) importModule(name string) {
 func (vm *WasmEdgeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 	_ = vm.WasmVMBase.LinkHost(impl, host)
 
-	vm.importModule("WasmLib")
-	vm.importFunc(5, 1, "hostGetBytes", vm.exportHostGetBytes)
-	vm.importFunc(2, 1, "hostGetKeyID", vm.exportHostGetKeyID)
-	vm.importFunc(3, 1, "hostGetObjectID", vm.exportHostGetObjectID)
-	vm.importFunc(5, 0, "hostSetBytes", vm.exportHostSetBytes)
+	vm.importModule(ModuleWasmLib)
+	vm.importFunc(5, 1, FuncHostGetBytes, vm.exportHostGetBytes)
+	vm.importFunc(2, 1,FuncHostGetKeyID, vm.exportHostGetKeyID)
+	vm.importFunc(3, 1, FuncHostGetObjectID, vm.exportHostGetObjectID)
+	vm.importFunc(5, 0, FuncHostSetBytes, vm.exportHostSetBytes)
 	err := vm.edge.RegisterImport(vm.module)
 	if err != nil {
 		return err
 	}
 
 	// AssemblyScript Wasm versions uses this one to write panic message to console
-	vm.importModule("env")
-	vm.importFunc(4, 0, "abort", vm.exportAbort)
+	vm.importModule(ModuleEnv)
+	vm.importFunc(4, 0, FuncAbort, vm.exportAbort)
 	err = vm.edge.RegisterImport(vm.module)
 	if err != nil {
 		return err
 	}
 
 	// TinyGo Wasm versions uses these to write panic message to console
-	vm.importModule("wasi_unstable")
-	vm.importFunc(4, 1, "fd_write", vm.exportFdWrite)
+	vm.importModule(ModuleWasi1)
+	vm.importFunc(4, 1, FuncFdWrite, vm.exportFdWrite)
 	err = vm.edge.RegisterImport(vm.module)
 	if err != nil {
 		return err
 	}
-	vm.importModule("wasi_snapshot_preview1")
-	vm.importFunc(4, 1, "fd_write", vm.exportFdWrite)
+	vm.importModule(ModuleWasi2)
+	vm.importFunc(4, 1, FuncFdWrite, vm.exportFdWrite)
 	return vm.edge.RegisterImport(vm.module)
 }
 
@@ -117,10 +117,6 @@ func (vm *WasmEdgeVM) Instantiate() error {
 		return errors.New("no memory export")
 	}
 	return nil
-}
-
-func (vm *WasmEdgeVM) PoolSize() int {
-	return 10
 }
 
 func (vm *WasmEdgeVM) RunFunction(functionName string, args ...interface{}) error {

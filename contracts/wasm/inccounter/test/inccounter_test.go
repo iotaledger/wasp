@@ -153,19 +153,6 @@ func TestLeb128(t *testing.T) {
 	testLeb128 := inccounter.ScFuncs.TestLeb128(ctx)
 	testLeb128.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
-
-	//res, err := chain.CallView(
-	//	ScName, wasmproc.ViewCopyAllState,
-	//)
-	//require.NoError(t, err)
-	//keys := make([]string, 0)
-	//for key := range res {
-	//	keys = append(keys, string(key))
-	//}
-	//sort.Strings(keys)
-	//for _, key := range keys {
-	//	fmt.Printf("%s: %v\n", key, res[kv.Key(key)])
-	//}
 }
 
 func TestLoop(t *testing.T) {

@@ -40,24 +40,24 @@ func (vm *WasmerVM) LinkHost(impl WasmVM, host *WasmHost) error {
 	_ = vm.WasmVMBase.LinkHost(impl, host)
 
 	funcs := map[string]wasmer.IntoExtern{
-		"hostGetBytes":    vm.importFunc(5, 1, vm.exportHostGetBytes),
-		"hostGetKeyID":    vm.importFunc(2, 1, vm.exportHostGetKeyID),
-		"hostGetObjectID": vm.importFunc(3, 1, vm.exportHostGetObjectID),
-		"hostSetBytes":    vm.importFunc(5, 0, vm.exportHostSetBytes),
+		FuncHostGetBytes:    vm.importFunc(5, 1, vm.exportHostGetBytes),
+		FuncHostGetKeyID:    vm.importFunc(2, 1, vm.exportHostGetKeyID),
+		FuncHostGetObjectID: vm.importFunc(3, 1, vm.exportHostGetObjectID),
+		FuncHostSetBytes:    vm.importFunc(5, 0, vm.exportHostSetBytes),
 	}
-	vm.linker.Register("WasmLib", funcs)
+	vm.linker.Register(ModuleWasmLib, funcs)
 
 	funcs = map[string]wasmer.IntoExtern{
-		"abort": vm.importFunc(4, 0, vm.exportAbort),
+		FuncAbort: vm.importFunc(4, 0, vm.exportAbort),
 	}
-	vm.linker.Register("env", funcs)
+	vm.linker.Register(ModuleEnv, funcs)
 
 	// TinyGo Wasm implementation uses this one to write panic message to console
 	funcs = map[string]wasmer.IntoExtern{
-		"fd_write": vm.importFunc(4, 1, vm.exportFdWrite),
+		FuncFdWrite: vm.importFunc(4, 1, vm.exportFdWrite),
 	}
-	vm.linker.Register("wasi_unstable", funcs)
-	vm.linker.Register("wasi_snapshot_preview1", funcs)
+	vm.linker.Register(ModuleWasi1, funcs)
+	vm.linker.Register(ModuleWasi2, funcs)
 	return nil
 }
 
