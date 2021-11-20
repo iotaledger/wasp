@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
@@ -22,3 +23,5 @@ const (
 	ParamWithdrawAmount = "m"
 	ParamAccountNonce   = "n"
 )
+
+var CommonAccount = &iscp.NilAgentID

@@ -1,6 +1,8 @@
 package iscp
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -54,6 +56,9 @@ func (r *OnLedgerRequestData) Params() dict.Dict {
 }
 
 func (r *OnLedgerRequestData) SenderAccount() *AgentID {
+	if r.SenderAddress() == nil {
+		return &NilAgentID
+	}
 	return NewAgentID(r.SenderAddress(), r.requestMetadata.SenderContract())
 }
 
@@ -103,7 +108,7 @@ func (r *OnLedgerRequestData) Request() Request {
 func (r *OnLedgerRequestData) TimeData() *TimeData {
 	return &TimeData{
 		MilestoneIndex: r.UTXOMetaData.MilestoneIndex,
-		Timestamp:      r.UTXOMetaData.MilestoneTimestamp,
+		Time:           r.UTXOMetaData.MilestoneTimestamp,
 	}
 }
 
@@ -138,15 +143,19 @@ func (r *OnLedgerRequestData) OffLedger() *OffLedger {
 	panic("not an off-ledger RequestData")
 }
 
-func (r *OnLedgerRequestData) UTXO() iotago.Output {
-	return r.output
+func (r *OnLedgerRequestData) UTXO() unwrapUTXO {
+	return r
 }
 
 // implements unwrapUTXO interface
-var _ unwrap = &OnLedgerRequestData{}
+var _ unwrapUTXO = &OnLedgerRequestData{}
 
-func (r *OnLedgerRequestData) MetaData() UTXOMetaData {
-	return r.UTXOMetaData
+func (r *OnLedgerRequestData) Output() iotago.Output {
+	return r.output
+}
+
+func (r *OnLedgerRequestData) Metadata() *UTXOMetaData {
+	return &r.UTXOMetaData
 }
 
 // implements Features interface
@@ -163,25 +172,25 @@ func (r *OnLedgerRequestData) TimeLock() *TimeData {
 		ret.MilestoneIndex = timelockMilestoneFB.(*iotago.TimelockMilestoneIndexFeatureBlock).MilestoneIndex
 	}
 	if hasDeadlineFB {
-		ret.Timestamp = timelockDeadlineFB.(*iotago.TimelockUnixFeatureBlock).UnixTime
+		ret.Time = time.Unix(int64(timelockDeadlineFB.(*iotago.TimelockUnixFeatureBlock).UnixTime), 0)
 	}
 	return ret
 }
 
-func (r *OnLedgerRequestData) Expiry() *TimeData {
+func (r *OnLedgerRequestData) Expiry() (*TimeData, iotago.Address) {
 	expiryMilestoneFB, hasMilestoneFB := r.featureBlocksCache[iotago.FeatureBlockExpirationMilestoneIndex]
 	expiryDeadlineFB, hasDeadlineFB := r.featureBlocksCache[iotago.FeatureBlockExpirationUnix]
 	if !hasMilestoneFB && !hasDeadlineFB {
-		return nil
+		return nil, nil
 	}
 	ret := &TimeData{}
 	if hasMilestoneFB {
 		ret.MilestoneIndex = expiryMilestoneFB.(*iotago.ExpirationMilestoneIndexFeatureBlock).MilestoneIndex
 	}
 	if hasDeadlineFB {
-		ret.Timestamp = expiryDeadlineFB.(*iotago.ExpirationUnixFeatureBlock).UnixTime
+		ret.Time = time.Unix(int64(expiryDeadlineFB.(*iotago.ExpirationUnixFeatureBlock).UnixTime), 0)
 	}
-	return ret
+	return ret, r.SenderAddress()
 }
 
 func (r *OnLedgerRequestData) ReturnAmount() (uint64, bool) {

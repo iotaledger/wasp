@@ -14,7 +14,7 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 	return vmctx.txbuilder.BuildTransactionEssence(stateHash, timestamp)
 }
 
-func (vmctx *VMContext) createTxBuilderSnapshot(id int) *vmtxbuilder.AnchorTransactionBuilder {
+func (vmctx *VMContext) createTxBuilderSnapshot() *vmtxbuilder.AnchorTransactionBuilder {
 	return vmctx.txbuilder.Clone()
 }
 

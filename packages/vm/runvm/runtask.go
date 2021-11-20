@@ -60,7 +60,7 @@ func runTask(task *vm.VMTask) {
 			numOnLedger++
 		}
 
-		vmctx.RunTheRequest(req, uint16(i))
+		vmctx.RunTheRequestOld(req, uint16(i))
 		lastResult, lastTotalAssets, lastErr, exceededBlockOutputLimit = vmctx.GetResult()
 
 		if exceededBlockOutputLimit {

@@ -39,3 +39,11 @@ func IsRequestProcessed(stateReader kv.KVStoreReader, reqid *iscp.RequestID) (bo
 	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
 	return isRequestProcessedInternal(partition, reqid)
 }
+
+func MustIsRequestProcessed(stateReader kv.KVStoreReader, reqid *iscp.RequestID) bool {
+	ret, err := IsRequestProcessed(stateReader, reqid)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}

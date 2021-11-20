@@ -99,23 +99,23 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances
 
 // - anchorOutput properties
 func (vmctx *VMContext) StateAddress() ledgerstate.Address {
-	return vmctx.chainInput.GetStateAddress()
+	return vmctx.anchorOutput.GetStateAddress()
 }
 
 func (vmctx *VMContext) GoverningAddress() ledgerstate.Address {
-	return vmctx.chainInput.GetGoverningAddress()
+	return vmctx.anchorOutput.GetGoverningAddress()
 }
 
 func (vmctx *VMContext) StateIndex() uint32 {
-	return vmctx.chainInput.GetStateIndex()
+	return vmctx.anchorOutput.GetStateIndex()
 }
 
 func (vmctx *VMContext) StateHash() hashing.HashValue {
 	var h hashing.HashValue
-	h, _ = hashing.HashValueFromBytes(vmctx.chainInput.GetStateData())
+	h, _ = hashing.HashValueFromBytes(vmctx.anchorOutput.GetStateData())
 	return h
 }
 
 func (vmctx *VMContext) OutputID() ledgerstate.OutputID {
-	return vmctx.chainInput.ID()
+	return vmctx.anchorOutput.ID()
 }

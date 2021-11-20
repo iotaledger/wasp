@@ -74,6 +74,10 @@ func RandomChainID(seed ...[]byte) ChainID {
 	return ret
 }
 
+func (chid *ChainID) AsAliasID() *iotago.AliasID {
+	return (*iotago.AliasID)(chid)
+}
+
 func (chid *ChainID) Bytes() []byte {
 	return chid[:]
 }

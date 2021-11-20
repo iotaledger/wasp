@@ -29,7 +29,7 @@ type VMTask struct {
 	SolidStateBaseline       coreutil.StateBaseline
 	Requests                 []iscp.RequestData
 	ProcessedRequestsCount   uint16
-	Timestamp                time.Time
+	TimeAssumption           *iscp.TimeData
 	Entropy                  hashing.HashValue
 	ValidatorFeeTarget       *iscp.AgentID
 	Log                      *logger.Logger

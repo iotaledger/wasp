@@ -3,6 +3,8 @@
 package iscp
 
 import (
+	"time"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -42,7 +44,7 @@ func (t TypeCode) String() string {
 type UTXOMetaData struct {
 	UTXOInput          iotago.UTXOInput
 	MilestoneIndex     uint32
-	MilestoneTimestamp uint64
+	MilestoneTimestamp time.Time
 }
 
 // RequestData wraps any data which can be potentially be interpreted as a request
@@ -61,7 +63,7 @@ type RequestData interface {
 
 type TimeData struct {
 	MilestoneIndex uint32
-	Timestamp      uint64
+	Time           time.Time
 }
 
 type NFT struct {
@@ -72,7 +74,7 @@ type NFT struct {
 type Request interface {
 	ID() RequestID
 	Params() dict.Dict
-	SenderAccount() *AgentID
+	SenderAccount() *AgentID // returns CommonAccount if sender address is ot available
 	SenderAddress() iotago.Address
 	Target() RequestTarget
 	Assets() *Assets   // attached assets for the UTXO request, nil for off-ledger. All goes to sender
@@ -82,13 +84,18 @@ type Request interface {
 
 type Features interface {
 	TimeLock() *TimeData
-	Expiry() *TimeData
+	Expiry() (*TimeData, iotago.Address) // return expiry time data and sender address or nil, nil if does not exist
 	ReturnAmount() (uint64, bool)
 }
 
 type unwrap interface {
 	OffLedger() *OffLedger
-	UTXO() iotago.Output
+	UTXO() unwrapUTXO
+}
+
+type unwrapUTXO interface {
+	Output() iotago.Output
+	Metadata() *UTXOMetaData
 }
 
 type ReturnAmountOptions interface {

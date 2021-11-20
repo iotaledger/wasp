@@ -3,6 +3,8 @@ package accounts
 import (
 	"fmt"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -46,10 +48,16 @@ func getTotalAssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, varStateTotalAssets)
 }
 
-// CreditToAccount brings new funds to the on chain ledger.
-func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, transfer colored.Balances) {
-	mustCheckLedger(state, "CreditToAccount IN")
-	defer mustCheckLedger(state, "CreditToAccount OUT")
+// CreditToAccount brings new funds to the on chain ledger
+func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, deposit *iscp.Assets) {
+	panic("not implemented")
+}
+
+// CreditToAccountOld brings new funds to the on chain ledger.
+// Deprecated:
+func CreditToAccountOld(state kv.KVStore, agentID *iscp.AgentID, transfer colored.Balances) {
+	mustCheckLedger(state, "CreditToAccountOld IN")
+	defer mustCheckLedger(state, "CreditToAccountOld OUT")
 
 	creditToAccount(state, getAccount(state, agentID), transfer)
 	creditToAccount(state, getTotalAssetsAccount(state), transfer)
@@ -251,7 +259,7 @@ func DecodeBalances(balances dict.Dict) (colored.Balances, error) {
 
 const postfixMaxAssumedNonceKey = "non"
 
-func GetMaxAssumedNonce(state kv.KVStoreReader, address ledgerstate.Address) uint64 {
+func GetMaxAssumedNonce(state kv.KVStoreReader, address iotago.Address) uint64 {
 	nonce, err := codec.DecodeUint64(state.MustGet(kv.Key(address.Bytes())+postfixMaxAssumedNonceKey), 0)
 	if err != nil {
 		panic(err)

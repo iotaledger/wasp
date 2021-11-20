@@ -48,7 +48,7 @@ func TestCreditDebit1(t *testing.T) {
 
 	agentID1 := iscp.NewRandomAgentID()
 	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
-	CreditToAccount(state, agentID1, transfer)
+	CreditToAccountOld(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp1")
 
 	require.NotNil(t, total)
@@ -56,7 +56,7 @@ func TestCreditDebit1(t *testing.T) {
 	require.True(t, total.Equals(transfer))
 
 	transfer = colored.NewBalancesForIotas(1).Add(dummyColor, 2)
-	CreditToAccount(state, agentID1, transfer)
+	CreditToAccountOld(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp2")
 
 	expected := colored.NewBalancesForIotas(43).Add(dummyColor, 4)
@@ -80,7 +80,7 @@ func TestCreditDebit2(t *testing.T) {
 
 	agentID1 := iscp.NewRandomAgentID()
 	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
-	CreditToAccount(state, agentID1, transfer)
+	CreditToAccountOld(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp1")
 
 	expected := transfer
@@ -108,7 +108,7 @@ func TestCreditDebit3(t *testing.T) {
 
 	agentID1 := iscp.NewRandomAgentID()
 	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
-	CreditToAccount(state, agentID1, transfer)
+	CreditToAccountOld(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp1")
 
 	expected := transfer
@@ -133,7 +133,7 @@ func TestCreditDebit4(t *testing.T) {
 
 	agentID1 := iscp.NewRandomAgentID()
 	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
-	CreditToAccount(state, agentID1, transfer)
+	CreditToAccountOld(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp1")
 
 	expected := transfer
@@ -176,7 +176,7 @@ func TestCreditDebit5(t *testing.T) {
 
 	agentID1 := iscp.NewRandomAgentID()
 	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
-	CreditToAccount(state, agentID1, transfer)
+	CreditToAccountOld(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp1")
 
 	expected := transfer
@@ -216,7 +216,7 @@ func TestCreditDebit6(t *testing.T) {
 
 	agentID1 := iscp.NewRandomAgentID()
 	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
-	CreditToAccount(state, agentID1, transfer)
+	CreditToAccountOld(state, agentID1, transfer)
 	checkLedger(t, state, "cp1")
 
 	agentID2 := iscp.NewRandomAgentID()
@@ -245,7 +245,7 @@ func TestCreditDebit7(t *testing.T) {
 
 	agentID1 := iscp.NewRandomAgentID()
 	transfer := colored.NewBalancesForColor(dummyColor, 2)
-	CreditToAccount(state, agentID1, transfer)
+	CreditToAccountOld(state, agentID1, transfer)
 	checkLedger(t, state, "cp1")
 
 	debitTransfer := colored.NewBalancesForIotas(1)

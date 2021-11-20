@@ -47,7 +47,7 @@ func (r *OffLedger) TimeData() *TimeData {
 }
 
 func (r *OffLedger) Unwrap() unwrap {
-	panic("implement me")
+	return r
 }
 
 func (r *OffLedger) Features() Features {
@@ -61,7 +61,7 @@ func (r *OffLedger) OffLedger() *OffLedger {
 	return r
 }
 
-func (r *OffLedger) UTXO() iotago.Output {
+func (r *OffLedger) UTXO() unwrapUTXO {
 	panic("not an UTXO RequestData")
 }
 
@@ -72,8 +72,8 @@ func (r *OffLedger) TimeLock() *TimeData {
 	return nil
 }
 
-func (r *OffLedger) Expiry() *TimeData {
-	return nil
+func (r *OffLedger) Expiry() (*TimeData, iotago.Address) {
+	return nil, nil
 }
 
 func (r *OffLedger) ReturnAmount() (uint64, bool) {

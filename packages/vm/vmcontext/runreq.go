@@ -6,6 +6,10 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/util"
+
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -19,19 +23,112 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// TODO temporary place for the constant. In the future must be shared with pruning module
-//  the number is approximate assumed maximum number of requests in the batch
-//  The node must guarantee at least this number of last requests processed recorded in the state
-//  for each address
-const (
-	OffLedgerNonceStrictOrderTolerance = 10000
-	txBuilderSnapshotWithoutInput      = 1
-	txBuilderSnapshotBeforeCall        = 2
-)
-
-// RunTheRequest processes any request based on the Extended output, even if it
-// doesn't parse correctly as a SC request
+// RunTheRequestOld processes each iscp.RequestData in the batch
 func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16) {
+	// prepare context for the request
+	vmctx.req = req
+	vmctx.requestIndex = requestIndex
+	vmctx.requestEventIndex = 0
+	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
+	vmctx.callStack = vmctx.callStack[:0]
+
+	if err := vmctx.checkReasonToSkip(); err != nil {
+		vmctx.Log().Warnf("request skipped (ignored) by the VM: %s, reason: %v", req.Request().ID().String(), err)
+		return
+	}
+	vmctx.loadChainConfig()
+	vmctx.locateTargetContract()
+
+	// at this point state update is empty
+	// so far there ware no panics except optimistic reader
+	// No prepare state update (buffer) for mutations and panics
+	// TODO start handling panics
+
+	txsnapshot := vmctx.createTxBuilderSnapshot()
+	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
+
+	if err := vmctx.creditDepositToChain(); err != nil {
+		// have to skip the request. Rollback
+		vmctx.restoreTxBuilderSnapshot(txsnapshot)
+		vmctx.currentStateUpdate = nil
+		vmctx.Log().Warnf("request skipped due to not being able to accrue deposit: %s, reason: %v",
+			req.Request().ID().String(), err)
+		return
+	}
+	// create new transaction snapshot
+	txsnapshot = vmctx.createTxBuilderSnapshot()
+	// apply state update to the state because at this point it is consistent
+	// If further on panic will occur, the chain will be left with all assets on the sender's account
+	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.currentStateUpdate = state.NewStateUpdate()
+
+	// TODO
+	vmctx.callTheContract()
+
+	// TODO call SC, handle VM panics, finalize the request
+}
+
+func (vmctx *VMContext) callTheContract() error {
+	// handle panics, call the contract
+}
+
+// creditDepositToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
+func (vmctx *VMContext) creditDepositToChain() error {
+	if vmctx.req.Type() == iscp.TypeOffLedger {
+		// off ledger requests does not bring any deposit
+		return nil
+	}
+	// catches panics in txbuilder
+	err := util.CatchPanicReturnError(func() {
+		// update transaction builder
+		vmctx.txbuilder.AddDeltaIotas(vmctx.req.Request().Assets().Iotas)
+		for _, nt := range vmctx.req.Request().Assets().Tokens {
+			vmctx.txbuilder.AddDeltaNativeToken(nt.ID, nt.Amount)
+		}
+		// sender account will be CommonAccount if sender address is not available
+		vmctx.creditToAccount(vmctx.req.Request().SenderAccount(), vmctx.req.Request().Assets())
+	}, vmtxbuilder.ErrInputLimitExceeded, vmtxbuilder.ErrOutputLimitExceeded)
+
+	return err
+}
+
+func (vmctx *VMContext) locateTargetContract() {
+	// find target contract
+	targetContract := vmctx.req.Request().Target().Contract
+	var ok bool
+	vmctx.contractRecord, ok = vmctx.findContractByHname(targetContract)
+	if !ok {
+		vmctx.Log().Warnf("contract not found: %s", targetContract)
+	}
+	if vmctx.contractRecord.Hname() == 0 {
+		vmctx.Log().Warn("default contract will be called")
+	}
+}
+
+// loadChainConfig only makes sense if chain is already deployed
+func (vmctx *VMContext) loadChainConfig() {
+	if vmctx.isInitChainRequest() {
+		vmctx.chainOwnerID = vmctx.req.Request().SenderAccount()
+		return
+	}
+	cfg := vmctx.getChainInfo()
+	vmctx.chainOwnerID = cfg.ChainOwnerID
+	vmctx.maxEventSize = cfg.MaxEventSize
+	vmctx.maxEventsPerReq = cfg.MaxEventsPerReq
+	//vmctx.feeColor, vmctx.ownerFee, vmctx.validatorFee = vmctx.getFeeInfo()  // TODO fee policy
+}
+
+func (vmctx *VMContext) isInitChainRequest() bool {
+	target := vmctx.req.Request().Target()
+	return target.Contract == root.Contract.Hname() && target.EntryPoint == iscp.EntryPointInit
+}
+
+// new code from here up
+//======================================================================================
+// deprecated code from here down
+
+// RunTheRequestOld processes each iscp.RequestData in the batch
+func (vmctx *VMContext) RunTheRequestOld(req iscp.RequestData, requestIndex uint16) {
 
 	if req.Unwrap().UTXO() != nil && vmctx.txbuilder.InputsAreFull() {
 		// ignore the UTXO request. Exceeded limit of input in the anchorOutput transaction
@@ -40,7 +137,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 
 	defer vmctx.mustFinalizeRequestCall()
 
-	vmctx.createTxBuilderSnapshot(txBuilderSnapshotWithoutInput)
+	snap := vmctx.createTxBuilderSnapshot()
 	if vmctx.preprocessRequestData(req, requestIndex) {
 		// request does not require invocation of smart contract
 		return
@@ -51,7 +148,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 	// guard against replaying off-ledger requests here to prevent replaying fee deduction
 	// also verifies that account for off-ledger request exists
 	if !vmctx.validateRequest() {
-		vmctx.log.Debugw("vmctx.RunTheRequest: request failed validation", "id", vmctx.req.ID())
+		vmctx.log.Debugw("vmctx.RunTheRequestOld: request failed validation", "id", vmctx.req.ID())
 		return
 	}
 
@@ -347,31 +444,4 @@ func (vmctx *VMContext) mustFinalizeRequestCall() {
 		"reqId: ", vmctx.req.ID().Short(),
 		" entry point: ", vmctx.req.Target().EntryPoint.String(),
 	)
-}
-
-// getChainConfigFromState only makes sense if chain is already deployed
-func (vmctx *VMContext) getChainConfigFromState() {
-	cfg := vmctx.getChainInfo()
-	if !cfg.ChainID.Equals(vmctx.chainID) {
-		vmctx.log.Panicf("getChainConfigFromState: major inconsistency of chainID")
-	}
-	vmctx.chainOwnerID = cfg.ChainOwnerID
-	vmctx.maxEventSize = cfg.MaxEventSize
-	vmctx.maxEventsPerReq = cfg.MaxEventsPerReq
-	vmctx.feeColor, vmctx.ownerFee, vmctx.validatorFee = vmctx.getFeeInfo()
-}
-
-func (vmctx *VMContext) isInitChainRequest() bool {
-	target := vmctx.req.Target()
-	return target.Contract == root.Contract.Hname() && target.EntryPoint == iscp.EntryPointInit
-}
-
-func isRequestTimeLockedNow(req iscp.Request, nowis time.Time) bool {
-	if req.IsOffLedger() {
-		return false
-	}
-	if req.(*request.OnLedger).TimeLock().IsZero() {
-		return false
-	}
-	return req.(*request.OnLedger).TimeLock().After(nowis)
 }

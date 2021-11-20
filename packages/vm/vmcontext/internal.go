@@ -14,14 +14,14 @@ import (
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger
 // It is used when new tokens arrive with a request
-func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, transfer colored.Balances) {
+func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, deposit *iscp.Assets) {
 	if len(vmctx.callStack) > 0 {
-		vmctx.log.Panicf("creditToAccount must be called only from request")
+		panic("creditToAccount must be called only from request")
 	}
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
 	defer vmctx.popCallContext()
 
-	accounts.CreditToAccount(vmctx.State(), agentID, transfer)
+	accounts.CreditToAccount(vmctx.State(), agentID, deposit)
 }
 
 // debitFromAccount subtracts tokens from account if it is enough of it.
