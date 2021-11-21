@@ -66,6 +66,11 @@ func (p *RequestMetadata) WithTransfer(assets *Assets) *RequestMetadata {
 	return p
 }
 
+func (p *RequestMetadata) WithGasBudget(gasBudget uint64) *RequestMetadata {
+	p.gasBudget = gasBudget
+	return p
+}
+
 func (p *RequestMetadata) Clone() *RequestMetadata {
 	ret := *p
 	ret.args = p.args.Clone()

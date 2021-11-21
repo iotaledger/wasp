@@ -3,28 +3,23 @@ package vmcontext
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 func (vmctx *VMContext) AccountID() *iscp.AgentID {
 	hname := vmctx.CurrentContractHname()
-	switch hname {
-	case root.Contract.Hname(), accounts.Contract.Hname(), blob.Contract.Hname(), blocklog.Contract.Hname():
-		hname = 0
+	if commonaccount.IsCoreHname(hname) {
+		return vmctx.commonAccount()
 	}
-	return iscp.NewAgentID(vmctx.ChainID().AliasAddress, hname)
+	return iscp.NewAgentID(vmctx.task.AnchorOutput.AliasID.ToAddress(), hname)
 }
 
 func (vmctx *VMContext) adjustAccount(agentID *iscp.AgentID) *iscp.AgentID {
-	return commonaccount.AdjustIfNeeded(agentID, vmctx.chainID)
+	return commonaccount.AdjustIfNeeded(agentID, vmctx.ChainID())
 }
 
 func (vmctx *VMContext) commonAccount() *iscp.AgentID {
-	return commonaccount.Get(vmctx.chainID)
+	return commonaccount.Get(vmctx.ChainID())
 }
 
 // Deprecated:
@@ -32,10 +27,6 @@ func (vmctx *VMContext) GetBalanceOld(col colored.Color) uint64 {
 	panic("deprecated")
 }
 
-func (vmctx *VMContext) GetIncoming() colored.Balances {
+func (vmctx *VMContext) IncomingTransfer() *iscp.Assets {
 	return vmctx.getCallContext().transfer
-}
-
-func (vmctx *VMContext) GetMyBalances() colored.Balances {
-	return vmctx.getMyBalances()
 }

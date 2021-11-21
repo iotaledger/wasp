@@ -66,7 +66,7 @@ func TestCreditDebit1(t *testing.T) {
 	require.EqualValues(t, 4, GetBalanceOld(state, agentID1, dummyColor))
 	checkLedger(t, state, "cp2")
 
-	DebitFromAccount(state, agentID1, expected)
+	DebitFromAccountOld(state, agentID1, expected)
 	total = checkLedger(t, state, "cp3")
 	expected = colored.NewBalances()
 	require.True(t, expected.Equals(total))
@@ -88,7 +88,7 @@ func TestCreditDebit2(t *testing.T) {
 	require.True(t, expected.Equals(total))
 
 	transfer = colored.NewBalancesForColor(dummyColor, 2)
-	DebitFromAccount(state, agentID1, transfer)
+	DebitFromAccountOld(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp2")
 	require.EqualValues(t, 1, len(total))
 	expected = colored.NewBalancesForIotas(42)
@@ -116,7 +116,7 @@ func TestCreditDebit3(t *testing.T) {
 	require.True(t, expected.Equals(total))
 
 	transfer = colored.NewBalancesForColor(dummyColor, 100)
-	ok := DebitFromAccount(state, agentID1, transfer)
+	ok := DebitFromAccountOld(state, agentID1, transfer)
 	require.False(t, ok)
 	total = checkLedger(t, state, "cp2")
 
@@ -250,7 +250,7 @@ func TestCreditDebit7(t *testing.T) {
 
 	debitTransfer := colored.NewBalancesForIotas(1)
 	// debit must fail
-	ok := DebitFromAccount(state, agentID1, debitTransfer)
+	ok := DebitFromAccountOld(state, agentID1, debitTransfer)
 	require.False(t, ok)
 
 	total = checkLedger(t, state, "cp1")

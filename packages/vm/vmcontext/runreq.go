@@ -191,7 +191,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 			tokensAvailable = math.MaxUint64
 		}
 	} else {
-		tokensAvailable = vmctx.getIotaBalance(vmctx.req.Request().SenderAccount())
+		tokensAvailable = vmctx.GetIotaBalance(vmctx.req.Request().SenderAccount())
 	}
 	// safe arithmetics
 	if tokensAvailable < math.MaxUint64/vmctx.gasPolicyGasPerGasToken {

@@ -5,10 +5,6 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-
-	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -16,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -50,22 +47,16 @@ func getTotalAssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap {
 }
 
 // CreditToAccount brings new funds to the on chain ledger
-func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, deposit *iscp.Assets) {
-	panic("not implemented")
-}
-
-// CreditToAccountOld brings new funds to the on chain ledger.
-// Deprecated:
-func CreditToAccountOld(state kv.KVStore, agentID *iscp.AgentID, transfer colored.Balances) {
+func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Assets) {
 	mustCheckLedger(state, "CreditToAccountOld IN")
 	defer mustCheckLedger(state, "CreditToAccountOld OUT")
 
-	creditToAccount(state, getAccount(state, agentID), transfer)
-	creditToAccount(state, getTotalAssetsAccount(state), transfer)
+	creditToAccount(state, getAccount(state, agentID), assets)
+	creditToAccount(state, getTotalAssetsAccount(state), assets)
 }
 
 // creditToAccount internal
-func creditToAccount(state kv.KVStore, account *collections.Map, transfer colored.Balances) {
+func creditToAccount(state kv.KVStore, account *collections.Map, transfer *iscp.Assets) {
 	defer touchAccount(state, account)
 
 	// deterministic order of iteration is not important here
@@ -80,34 +71,26 @@ func creditToAccount(state kv.KVStore, account *collections.Map, transfer colore
 	})
 }
 
-// DebitFromAccount removes funds from the chain ledger.
-func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, transfer colored.Balances) bool {
-	mustCheckLedger(state, "DebitFromAccount IN")
-	defer mustCheckLedger(state, "DebitFromAccount OUT")
+func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Assets) {
+	mustCheckLedger(state, "DebitFromAccountOld IN")
+	defer mustCheckLedger(state, "DebitFromAccountOld OUT")
 
-	if !debitFromAccount(state, getAccount(state, agentID), transfer) {
-		return false
-	}
-	if !debitFromAccount(state, getTotalAssetsAccount(state), transfer) {
-		panic("debitFromAccount: inconsistent accounts ledger state")
-	}
-	return true
-}
-
-func MustDebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, transfer colored.Balances) {
-	if !DebitFromAccount(state, agentID, transfer) {
+	if !debitFromAccount(state, getAccount(state, agentID), assets) {
 		panic(ErrNotEnoughFunds)
+	}
+	if !debitFromAccount(state, getTotalAssetsAccount(state), assets) {
+		panic("debitFromAccount: inconsistent accounts ledger state")
 	}
 }
 
 // debitFromAccount internal
-func debitFromAccount(state kv.KVStore, account *collections.Map, transfer colored.Balances) bool {
+func debitFromAccount(state kv.KVStore, account *collections.Map, assets *iscp.Assets) bool {
 	defer touchAccount(state, account)
 
 	current := getAccountBalances(account.Immutable())
 	ok := true
 	// deterministic order of iteration is not important here
-	transfer.ForEachRandomly(func(col colored.Color, transferAmount uint64) bool {
+	assets.ForEachRandomly(func(col colored.Color, transferAmount uint64) bool {
 		bal := current[col]
 		if bal < transferAmount {
 			ok = false
@@ -174,14 +157,9 @@ func GetTokenBalance(state kv.KVStoreReader, agentID *iscp.AgentID, tokenID *iot
 	panic("not implemented")
 }
 
-// Deprecated:
-func GetBalanceOld(state kv.KVStoreReader, agentID *iscp.AgentID, col colored.Color) uint64 {
-	b := getAccountR(state, agentID).MustGetAt(col[:])
-	if b == nil {
-		return 0
-	}
-	ret, _ := util.Uint64From8Bytes(b)
-	return ret
+// GetAssets returns all assets owned by agentID. Returns nil if account does not exist
+func GetAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Assets {
+	panic("not implemented")
 }
 
 func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
@@ -253,7 +231,8 @@ func EncodeBalances(balances colored.Balances) dict.Dict {
 	return ret
 }
 
-func DecodeBalances(balances dict.Dict) (colored.Balances, error) {
+// TODO
+func DecodeBalances(balances dict.Dict) (*iscp.Assets, error) {
 	ret := colored.NewBalances()
 	for col, bal := range balances {
 		c, err := codec.DecodeColor([]byte(col))
@@ -280,13 +259,5 @@ func GetMaxAssumedNonce(state kv.KVStoreReader, address iotago.Address) uint64 {
 }
 
 func RecordMaxAssumedNonce(state kv.KVStore, address iotago.Address, nonce uint64) {
-}
-
-// Deprecated:
-func RecordMaxAssumedNonceOld(state kv.KVStore, address ledgerstate.Address, nonce uint64) {
-	next := GetMaxAssumedNonce(state, address) + 1
-	if nonce > next {
-		next = nonce
-	}
-	state.Set(kv.Key(address.Bytes())+postfixMaxAssumedNonceKey, codec.EncodeUint64(next))
+	panic("not implemented")
 }

@@ -29,11 +29,11 @@ func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, deposit *iscp.Ass
 
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
-func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer colored.Balances) bool {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
+func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *iscp.Assets) {
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return accounts.DebitFromAccount(vmctx.State(), agentID, transfer)
+	accounts.DebitFromAccount(vmctx.State(), agentID, transfer)
 }
 
 func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Assets) {
@@ -41,14 +41,6 @@ func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.Age
 	defer vmctx.popCallContext()
 
 	accounts.MustMoveBetweenAccounts(vmctx.State(), fromAgentID, toAgentID, transfer)
-}
-
-// Deprecated:
-func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer colored.Balances) bool {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
-	defer vmctx.popCallContext()
-
-	return accounts.MoveBetweenAccounts(vmctx.State(), fromAgentID, toAgentID, transfer)
 }
 
 func (vmctx *VMContext) totalAssets() colored.Balances {
@@ -72,7 +64,7 @@ func (vmctx *VMContext) getChainInfo() governance.ChainInfo {
 	return governance.MustGetChainInfo(vmctx.State())
 }
 
-func (vmctx *VMContext) getIotaBalance(agentID *iscp.AgentID) uint64 {
+func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
@@ -86,6 +78,17 @@ func (vmctx *VMContext) getTokenBalance(agentID *iscp.AgentID, tokenID *iotago.N
 	return accounts.GetTokenBalance(vmctx.State(), agentID, tokenID)
 }
 
+func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	ret := accounts.GetAssets(vmctx.State(), agentID)
+	if ret == nil {
+		ret = &iscp.Assets{}
+	}
+	return ret
+}
+
 func (vmctx *VMContext) getFeeInfo() (colored.Color, uint64, uint64) {
 	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
@@ -94,7 +97,7 @@ func (vmctx *VMContext) getFeeInfo() (colored.Color, uint64, uint64) {
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {
-	vmtype, ok := vmctx.processors.Config.GetNativeProcessorType(programHash)
+	vmtype, ok := vmctx.task.Processors.Config.GetNativeProcessorType(programHash)
 	if ok {
 		return vmtype, nil, nil
 	}
@@ -131,7 +134,7 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 		errStr = errProvided.Error()
 	}
 	err := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestReceipt{
-		Request: vmctx.req,
+		Request: vmctx.req.Request(),
 		Error:   errStr,
 	}, vmctx.requestLookupKey())
 	if err != nil {
@@ -150,7 +153,7 @@ func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 		vmctx.Panicf("event too large: %s, request index: %d", contract.String(), vmctx.requestIndex)
 	}
 
-	vmctx.log.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
+	vmctx.Log().Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
 	err := blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
 	if err != nil {
 		vmctx.Panicf("MustSaveEvent: %v", err)

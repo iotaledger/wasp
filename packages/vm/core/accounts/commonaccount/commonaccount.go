@@ -17,7 +17,7 @@ func IsCoreHname(hname iscp.Hname) bool {
 
 // AdjustIfNeeded makes account of the chain owner and all core contracts equal to (chainID, 0)
 func AdjustIfNeeded(agentID *iscp.AgentID, chainID *iscp.ChainID) *iscp.AgentID {
-	if !agentID.Address().Equals(chainID.AsAddress()) {
+	if !agentID.Address().Equal(chainID.AsAddress()) {
 		// from another chain
 		return agentID
 	}

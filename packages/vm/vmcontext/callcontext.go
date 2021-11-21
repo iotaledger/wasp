@@ -1,36 +1,22 @@
 package vmcontext
 
 import (
-	"fmt"
-
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func (vmctx *VMContext) pushCallContextWithTransfer(contract iscp.Hname, params dict.Dict, transfer colored.Balances) error {
+// pushCallContextAndMoveAssets moves funds from the caller to the target before pushing new context to the stack
+func (vmctx *VMContext) pushCallContextAndMoveAssets(contract iscp.Hname, params dict.Dict, transfer *iscp.Assets) error {
 	if transfer != nil {
 		targetAccount := iscp.NewAgentID(vmctx.ChainID().AsAddress(), contract)
 		targetAccount = vmctx.adjustAccount(targetAccount)
+		var sourceAccount *iscp.AgentID
 		if len(vmctx.callStack) == 0 {
-			// was this an off-ledger request?
-			if _, ok := vmctx.req.(*request.OffLedger); ok {
-				sender := vmctx.req.SenderAccount()
-				if !vmctx.moveBetweenAccounts(sender, targetAccount, transfer) {
-					return fmt.Errorf("pushCallContextWithTransfer: off-ledger transfer failed: not enough funds")
-				}
-			} else {
-				vmctx.creditToAccount(targetAccount, transfer)
-			}
+			sourceAccount = vmctx.req.Request().SenderAccount()
 		} else {
-			fromAgentID := iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
-			fromAgentID = vmctx.adjustAccount(fromAgentID)
-			if !vmctx.moveBetweenAccounts(fromAgentID, targetAccount, transfer) {
-				return fmt.Errorf("pushCallContextWithTransfer: transfer failed: not enough funds")
-			}
+			sourceAccount = vmctx.AccountID()
 		}
+		vmctx.mustMoveBetweenAccounts(sourceAccount, targetAccount, transfer)
 	}
 	vmctx.pushCallContext(contract, params, transfer)
 	return nil
@@ -43,8 +29,7 @@ func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, t
 		vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
 	}
 	var caller *iscp.AgentID
-	isRequestContext := len(vmctx.callStack) == 0
-	if isRequestContext {
+	if len(vmctx.callStack) == 0 {
 		// request context
 		caller = vmctx.req.Request().SenderAccount()
 	} else {
@@ -54,11 +39,10 @@ func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, t
 		vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
 	}
 	vmctx.callStack = append(vmctx.callStack, &callContext{
-		isRequestContext: isRequestContext,
-		caller:           caller,
-		contract:         contract,
-		params:           params.Clone(),
-		transfer:         transfer,
+		caller:   caller,
+		contract: contract,
+		params:   params.Clone(),
+		transfer: transfer,
 	})
 }
 

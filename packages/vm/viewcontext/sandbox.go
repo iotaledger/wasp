@@ -3,7 +3,6 @@ package viewcontext
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -22,8 +21,8 @@ type sandboxview struct {
 	state         kv.KVStoreReader
 	vctx          *Viewcontext
 	// gas related
-	gas              int64
-	gasBudgetEnabled bool
+	gasBudget uint64
+	gasBurned uint64
 }
 
 var _ iscp.SandboxView = &sandboxview{}
@@ -48,15 +47,22 @@ func (s *sandboxview) AccountID() *iscp.AgentID {
 	return iscp.NewAgentID(s.vctx.chainID.AsAddress(), hname)
 }
 
-func (s *sandboxview) Balances() colored.Balances {
-	r, err := s.Call(accounts.Contract.Hname(), accounts.FuncViewBalance.Hname(), dict.Dict{
-		accounts.ParamAgentID: s.AccountID().Bytes(),
-	})
-	a := assert.NewAssert(s.Log())
-	a.RequireNoError(err)
-	bals, err := accounts.DecodeBalances(r)
-	a.RequireNoError(err)
-	return bals
+func (s *sandboxview) BalanceIotas() uint64 {
+	panic("not implemented")
+	// TODO no need to call view, state can be accesses directly
+	//r, err := s.Call(accounts.Contract.Hname(), accounts.FuncViewBalance.Hname(), dict.Dict{
+	//	accounts.ParamAgentID: s.AccountID().Bytes(),
+	//})
+	//a := assert.NewAssert(s.Log())
+	//a.RequireNoError(err)
+	//bals, err := accounts.DecodeBalances(r)
+	//a.RequireNoError(err)
+	//return bals
+}
+
+func (s *sandboxview) Assets() *iscp.Assets {
+	// TODO no need to call view, state can be accesses directly
+	panic("not implemented")
 }
 
 func (s *sandboxview) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) (dict.Dict, error) {
@@ -113,18 +119,25 @@ func (s *sandboxview) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandboxview) Burn(gas int64) {
-	s.gas -= gas
-	if s.gasBudgetEnabled && s.gas < 0 {
+func (s *sandboxview) Burn(gas uint64) {
+	s.gasBurned += gas
+	if s.gasBurned > s.gasBudget {
 		panic(coreutil.ErrorGasBudgetExceeded)
 	}
 }
 
-func (s *sandboxview) Budget() int64 {
-	return s.gas
+func (s *sandboxview) Budget() uint64 {
+	return s.gasBudgetLeft()
 }
 
-func (s *sandboxview) SetBudget(gas int64) {
-	s.gas = gas
-	s.gasBudgetEnabled = s.gas > 0
+func (s *sandboxview) gasBudgetLeft() uint64 {
+	if s.gasBudget < s.gasBurned {
+		return 0
+	}
+	return s.gasBudget - s.gasBurned
+}
+
+func (s *sandboxview) gasSetBudget(gasBudget uint64) {
+	s.gasBudget = gasBudget
+	s.gasBurned = 0
 }

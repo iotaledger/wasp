@@ -1,16 +1,15 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/goshimmer/client/wallet/packages/sendoptions"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"math/big"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
-	return &vmctx.chainID
+	return (*iscp.ChainID)(&vmctx.task.AnchorOutput.AliasID)
 }
 
 func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
@@ -20,7 +19,7 @@ func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
 func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
 	rec, ok := vmctx.findContractByHname(vmctx.CurrentContractHname())
 	if !ok {
-		vmctx.log.Panicf("can't find current contract")
+		panic("can't find current contract")
 	}
 	return rec.Creator
 }
@@ -31,17 +30,6 @@ func (vmctx *VMContext) CurrentContractHname() iscp.Hname {
 
 func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
 	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
-}
-
-func (vmctx *VMContext) Minted() colored.Balances {
-	if req, ok := vmctx.req.(*request.OnLedger); ok {
-		return req.MintedAmounts()
-	}
-	return nil
-}
-
-func (vmctx *VMContext) IsRequestContext() bool {
-	return vmctx.getCallContext().isRequestContext
 }
 
 func (vmctx *VMContext) Caller() *iscp.AgentID {
@@ -57,65 +45,60 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 }
 
 func (vmctx *VMContext) Request() iscp.Request {
-	return vmctx.req
+	return vmctx.req.Request()
 }
 
-const maxParamSize = 512
+// TODO dust provision
+func (vmctx *VMContext) Send(target iotago.Address, assets *iscp.Assets, metadata *iscp.SendMetadata, options ...*iscp.SendOptions) {
+	if assets == nil {
+		panic("post request assets can't be nil")
+	}
+	var sendOptions *iscp.SendOptions
+	if len(options) > 0 {
+		sendOptions = options[0]
+	}
+	// debit the assets from the on-chain account
+	vmctx.debitFromAccount(vmctx.AccountID(), assets)
 
-func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
-	if vmctx.requestOutputCount >= MaxBlockOutputCount {
-		vmctx.log.Panicf("request with ID %s exceeded max number of allowed outputs (%d)", vmctx.req.ID().Base58(), MaxBlockOutputCount)
+	// instruct tx builder about changed totals on-chain
+	vmctx.txbuilder.SubDeltaIotas(assets.Iotas)
+	bi := new(big.Int)
+	for _, nt := range assets.Tokens {
+		bi.Neg(nt.Amount)
+		vmctx.txbuilder.AddDeltaNativeToken(nt.ID, bi)
 	}
 
-	if tokens == nil || len(tokens) == 0 {
-		vmctx.log.Errorf("Send: transfer can't be empty")
-		return false
-	}
-	data := request.NewMetadata().
-		WithRequestNonce(vmctx.blockOutputCount).
-		WithSender(vmctx.CurrentContractHname())
-	if metadata != nil {
-		data.WithTarget(metadata.TargetContract).
-			WithEntryPoint(metadata.EntryPoint).
-			WithArgs(metadata.Args)
-	}
-	sourceAccount := vmctx.adjustAccount(vmctx.MyAgentID())
-	if !vmctx.debitFromAccount(sourceAccount, tokens) {
-		return false
-	}
-	var opts *sendoptions.SendFundsOptions
-	if len(options) == 1 {
-		opts = options[0].ToGoshimmerSendOptions()
-	}
-	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), colored.ToL1Map(tokens), opts)
-	if err != nil {
-		vmctx.log.Errorf("Send: %v", err)
-		return false
-	}
-	vmctx.requestOutputCount++
-	vmctx.blockOutputCount++
-	return true
+	vmctx.txbuilder.AddPostedRequest(iscp.PostRequestData{
+		TargetAddress:  target,
+		SenderContract: vmctx.CurrentContractHname(),
+		Assets:         assets,
+		Metadata:       metadata,
+		SendOptions:    sendOptions,
+	})
 }
 
-// - anchorOutput properties
-func (vmctx *VMContext) StateAddress() ledgerstate.Address {
-	return vmctx.anchorOutput.GetStateAddress()
+var _ iscp.StateAnchor = &VMContext{}
+
+func (vmctx *VMContext) StateController() iotago.Address {
+	return vmctx.task.AnchorOutput.StateController
 }
 
-func (vmctx *VMContext) GoverningAddress() ledgerstate.Address {
-	return vmctx.anchorOutput.GetGoverningAddress()
+func (vmctx *VMContext) GovernanceController() iotago.Address {
+	return vmctx.task.AnchorOutput.GovernanceController
 }
 
 func (vmctx *VMContext) StateIndex() uint32 {
-	return vmctx.anchorOutput.GetStateIndex()
+	return vmctx.task.AnchorOutput.StateIndex
 }
 
 func (vmctx *VMContext) StateHash() hashing.HashValue {
-	var h hashing.HashValue
-	h, _ = hashing.HashValueFromBytes(vmctx.anchorOutput.GetStateData())
+	h, err := hashing.HashValueFromBytes(vmctx.task.AnchorOutput.StateMetadata)
+	if err != nil {
+		panic(err)
+	}
 	return h
 }
 
-func (vmctx *VMContext) OutputID() ledgerstate.OutputID {
-	return vmctx.anchorOutput.ID()
+func (vmctx *VMContext) OutputID() iotago.UTXOInput {
+	return vmctx.task.AnchorOutputID
 }

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -15,8 +15,8 @@ import (
 var ErrContractNotFound = errors.New("contract not found")
 
 // Call
-func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
-	vmctx.log.Debugw("Call", "targetContract", targetContract, "epCode", epCode)
+func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, transfer *iscp.Assets) (dict.Dict, error) {
+	vmctx.Log().Debugw("Call", "targetContract", targetContract, "epCode", epCode)
 	rec, ok := vmctx.findContractByHname(targetContract)
 	if !ok {
 		return nil, ErrContractNotFound
@@ -24,8 +24,8 @@ func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict
 	return vmctx.callByProgramHash(targetContract, epCode, params, transfer, rec.ProgramHash)
 }
 
-func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer colored.Balances, progHash hashing.HashValue) (dict.Dict, error) {
-	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
+func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer *iscp.Assets, progHash hashing.HashValue) (dict.Dict, error) {
+	proc, err := vmctx.task.Processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
 	if err != nil {
 		return nil, err
 	}
@@ -39,14 +39,14 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 			return nil, fmt.Errorf("'init' entry point can't be a view")
 		}
 		// passing nil as transfer: calling the view should not have effect on chain ledger
-		if err := vmctx.pushCallContextWithTransfer(targetContract, params, nil); err != nil {
+		if err := vmctx.pushCallContextAndMoveAssets(targetContract, params, nil); err != nil {
 			return nil, err
 		}
 		defer vmctx.popCallContext()
 
 		return ep.Call(NewSandboxView(vmctx))
 	}
-	if err := vmctx.pushCallContextWithTransfer(targetContract, params, transfer); err != nil {
+	if err := vmctx.pushCallContextAndMoveAssets(targetContract, params, transfer); err != nil {
 		return nil, err
 	}
 	defer vmctx.popCallContext()
@@ -69,11 +69,10 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hna
 	if !ok {
 		ep = proc.GetDefaultEntryPoint()
 	}
-	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
-		return nil, fmt.Errorf("non-view entry point expected")
+		return nil, xerrors.New("non-view entry point expected")
 	}
-	if err := vmctx.pushCallContextWithTransfer(targetContract, params, transfer); err != nil {
+	if err := vmctx.pushCallContextAndMoveAssets(targetContract, params, transfer); err != nil {
 		return nil, err
 	}
 	defer vmctx.popCallContext()
@@ -81,7 +80,7 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hna
 	// prevent calling 'init' not from root contract or not while initializing root
 	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
-			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
+			return nil, xerrors.New("attempt to callByProgramHash init not from the root contract")
 		}
 	}
 	return ep.Call(NewSandbox(vmctx))
@@ -89,15 +88,10 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hna
 
 func (vmctx *VMContext) callerIsRoot() bool {
 	caller := vmctx.Caller()
-	if !caller.Address().Equals(vmctx.chainID.AsAddress()) {
+	if !caller.Address().Equal(vmctx.ChainID().AsAddress()) {
 		return false
 	}
 	return caller.Hname() == root.Contract.Hname()
-}
-
-func (vmctx *VMContext) requesterIsLocal() bool {
-	return vmctx.chainOwnerID.Equals(vmctx.req.SenderAccount()) ||
-		vmctx.chainID.AsAddress().Equals(vmctx.req.SenderAccount().Address())
 }
 
 func (vmctx *VMContext) Params() dict.Dict {

@@ -4,10 +4,9 @@
 package sandbox
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
@@ -29,16 +28,16 @@ func (s *sandbox) AccountID() *iscp.AgentID {
 	return s.vmctx.AccountID()
 }
 
-func (s *sandbox) Balance(col colored.Color) uint64 {
-	return s.vmctx.GetBalanceOld(col)
+func (s *sandbox) BalanceIotas() uint64 {
+	return s.vmctx.GetIotaBalance(s.vmctx.AccountID())
 }
 
-func (s *sandbox) Balances() colored.Balances {
-	return s.vmctx.GetMyBalances()
+func (s *sandbox) Assets() *iscp.Assets {
+	return s.vmctx.GetAssets(s.vmctx.AccountID())
 }
 
 // Call calls an entry point of contract, passes parameters and funds
-func (s *sandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
+func (s *sandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *iscp.Assets) (dict.Dict, error) {
 	return s.vmctx.Call(target, entryPoint, params, transfer)
 }
 
@@ -81,16 +80,12 @@ func (s *sandbox) GetTimestamp() int64 {
 	return s.vmctx.Timestamp()
 }
 
-func (s *sandbox) IncomingTransfer() colored.Balances {
-	return s.vmctx.GetIncoming()
+func (s *sandbox) IncomingTransfer() *iscp.Assets {
+	return s.vmctx.IncomingTransfer()
 }
 
 func (s *sandbox) Log() iscp.LogInterface {
 	return s.vmctx
-}
-
-func (s *sandbox) Minted() colored.Balances {
-	return s.vmctx.Minted()
 }
 
 func (s *sandbox) Params() dict.Dict {
@@ -101,8 +96,8 @@ func (s *sandbox) Request() iscp.Request {
 	return s.vmctx.Request()
 }
 
-func (s *sandbox) Send(target ledgerstate.Address, tokens colored.Balances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
-	return s.vmctx.Send(target, tokens, metadata, options...)
+func (s *sandbox) Send(target iotago.Address, assets *iscp.Assets, metadata *iscp.SendMetadata, options ...*iscp.SendOptions) {
+	s.vmctx.Send(target, assets, metadata, options...)
 }
 
 func (s *sandbox) State() kv.KVStore {

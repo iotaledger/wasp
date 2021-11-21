@@ -84,7 +84,7 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	mustCheckLedger(state, "accounts.withdraw.begin")
 
-	if ctx.Caller().Address().Equals(ctx.ChainID().AsAddress()) {
+	if ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) {
 		// if the caller is on the same chain, do nothing
 		return nil, nil
 	}

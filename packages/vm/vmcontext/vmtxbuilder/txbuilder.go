@@ -203,7 +203,8 @@ func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Output
 			WithTarget(pr.Metadata.TargetContract).
 			WithEntryPoint(pr.Metadata.EntryPoint).
 			WithArgs(pr.Metadata.Args).
-			WithTransfer(pr.Assets)
+			WithTransfer(pr.Assets).
+			WithGasBudget(pr.GasBudget)
 
 		o := &iotago.ExtendedOutput{
 			Address:      pr.TargetAddress,

@@ -73,11 +73,10 @@ type VMContext struct {
 }
 
 type callContext struct {
-	isRequestContext bool          // is called from the request (true) or from another SC (false)
-	caller           *iscp.AgentID // calling agent
-	contract         iscp.Hname    // called contract
-	params           dict.Dict     // params passed
-	transfer         *iscp.Assets  // transfer passed
+	caller   *iscp.AgentID // calling agent
+	contract iscp.Hname    // called contract
+	params   dict.Dict     // params passed
+	transfer *iscp.Assets  // transfer passed
 }
 
 type blockContext struct {
@@ -186,8 +185,8 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 	}
 	blocklog.SaveControlAddressesIfNecessary(
 		vmctx.State(),
-		vmctx.StateAddress(),
-		vmctx.GoverningAddress(),
+		vmctx.StateController(),
+		vmctx.GovernanceController(),
 		vmctx.task.AnchorOutput.StateIndex,
 	)
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)

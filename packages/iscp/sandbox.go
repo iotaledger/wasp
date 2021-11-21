@@ -4,14 +4,8 @@
 package iscp
 
 import (
-	"time"
-
 	iotago "github.com/iotaledger/iota.go/v3"
-
-	"github.com/iotaledger/goshimmer/client/wallet/packages/sendoptions"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -22,8 +16,10 @@ type SandboxBase interface {
 	AccountID() *AgentID
 	// Params returns the parameters of the current call
 	Params() dict.Dict
-	// Balances returns the colored balances owned by the contract
-	Balances() colored.Balances
+	// Balance returns number of iotas in the balance of the smart contract
+	BalanceIotas() uint64
+	// Assets returns all assets: iotas and native tokens
+	Assets() *Assets
 	// ChainID returns the chain ID
 	ChainID() *ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
@@ -51,12 +47,11 @@ type Sandbox interface {
 	State() kv.KVStore
 	// Request return the request in the context of which the smart contract is called
 	Request() Request
-	// Balance return number of tokens of specific color in the balance of the smart contract
-	Balance(col colored.Color) uint64
+
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and
 	// target contract's accounts (if enough). If the entry point is view, 'transfer' has no effect
-	Call(target, entryPoint Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error)
+	Call(target, entryPoint Hname, params dict.Dict, transfer *Assets) (dict.Dict, error)
 	// Caller is the agentID of the caller.
 	Caller() *AgentID
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
@@ -66,13 +61,10 @@ type Sandbox interface {
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 	// IncomingTransfer return colored balances transferred by the call. They are already accounted into the Balances()
-	IncomingTransfer() colored.Balances
-	// Minted represents new colored tokens which has been minted in the request transaction
-	// Note that the minted tokens can be sent to any addresses, not necessarily the chain address
-	Minted() colored.Balances
+	IncomingTransfer() *Assets
 	// Send one generic method for sending assets with ledgerstate.ExtendedLockedOutput
 	// replaces TransferToAddress and Post1Request
-	Send(target ledgerstate.Address, tokens colored.Balances, metadata *SendMetadata, options ...SendOptions) bool
+	Send(target iotago.Address, assets *Assets, metadata *SendMetadata, options ...*SendOptions)
 	// Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// properties of the anchor output
@@ -86,25 +78,14 @@ type Gas interface {
 
 // properties of the anchor output/transaction in the current context
 type StateAnchor interface {
-	StateAddress() ledgerstate.Address
-	GoverningAddress() ledgerstate.Address
+	StateController() iotago.Address
+	GovernanceController() iotago.Address
 	StateIndex() uint32
 	StateHash() hashing.HashValue
-	OutputID() ledgerstate.OutputID
+	OutputID() iotago.UTXOInput
 }
 
 type SendOptions struct {
-	TimeLock         uint32 // unix seconds
-	FallbackAddress  ledgerstate.Address
-	FallbackDeadline uint32 // unix seconds
-}
-
-func (opt *SendOptions) ToGoshimmerSendOptions() *sendoptions.SendFundsOptions {
-	return &sendoptions.SendFundsOptions{
-		FallbackAddress:  opt.FallbackAddress,
-		FallbackDeadline: time.Unix(int64(opt.FallbackDeadline), 0),
-		LockUntil:        time.Unix(int64(opt.TimeLock), 0),
-	}
 }
 
 // RequestMetadata represents content of the data payload of the output
@@ -122,4 +103,5 @@ type PostRequestData struct {
 	Assets         *Assets
 	Metadata       *SendMetadata
 	SendOptions    *SendOptions
+	GasBudget      uint64
 }

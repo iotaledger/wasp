@@ -26,7 +26,7 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	a.Require(amap.MustHasAt(newStateControllerAddr.Bytes()), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr.Base58())
 
-	if !newStateControllerAddr.Equals(ctx.StateAnchor().StateAddress()) {
+	if !newStateControllerAddr.Equals(ctx.StateAnchor().StateController()) {
 		// rotate request to another address has been issued. State update will be taken over by VM and will have no effect
 		// By setting StateVarRotateToAddress we signal the VM this special situation
 		// StateVarRotateToAddress value should never persist in the state

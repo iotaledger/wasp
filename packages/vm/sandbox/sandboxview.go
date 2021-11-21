@@ -5,7 +5,6 @@ package sandbox
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
@@ -27,8 +26,9 @@ func (s sandboxView) AccountID() *iscp.AgentID {
 	return s.vmctx.AccountID()
 }
 
-func (s sandboxView) Balances() colored.Balances {
-	return s.vmctx.GetMyBalances()
+func (s sandboxView) Balances() *iscp.Assets {
+	panic("not implemented")
+	//return s.vmctx.GetMyBalances()
 }
 
 func (s sandboxView) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) (dict.Dict, error) {
