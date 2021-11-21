@@ -44,7 +44,7 @@ impl ScAddress {
 // can be used as key in maps
 impl MapKey for ScAddress {
     fn get_key_id(&self) -> Key32 {
-        get_key_id_from_bytes(self.to_bytes())
+        get_key_id_from_bytes(&self.id)
     }
 }
 
@@ -101,7 +101,7 @@ impl ScAgentID {
 // can be used as key in maps
 impl MapKey for ScAgentID {
     fn get_key_id(&self) -> Key32 {
-        get_key_id_from_bytes(self.to_bytes())
+        get_key_id_from_bytes(&self.id)
     }
 }
 
@@ -140,7 +140,7 @@ impl ScChainID {
 // can be used as key in maps
 impl MapKey for ScChainID {
     fn get_key_id(&self) -> Key32 {
-        get_key_id_from_bytes(self.to_bytes())
+        get_key_id_from_bytes(&self.id)
     }
 }
 
@@ -183,7 +183,7 @@ impl ScColor {
 // can be used as key in maps
 impl MapKey for ScColor {
     fn get_key_id(&self) -> Key32 {
-        get_key_id_from_bytes(self.to_bytes())
+        get_key_id_from_bytes(&self.id)
     }
 }
 
@@ -215,7 +215,7 @@ impl ScHash {
 // can be used as key in maps
 impl MapKey for ScHash {
     fn get_key_id(&self) -> Key32 {
-        get_key_id_from_bytes(self.to_bytes())
+        get_key_id_from_bytes(&self.id)
     }
 }
 
@@ -242,9 +242,16 @@ impl ScHname {
         self.0.to_le_bytes().to_vec()
     }
 
-    // human-readable string representation
+    // human-readable string representation: 8 hex digits
     pub fn to_string(&self) -> String {
-        self.0.to_string()
+        let hex = "0123456789abcdef".as_bytes();
+        let mut res = [0u8; 8];
+        let mut val = self.0;
+        for n in 0..8 {
+            res[7 - n] = hex[val as usize & 0x0f];
+            val >>= 4;
+        }
+        String::from_utf8(res.to_vec()).expect("WTF? invalid?")
     }
 }
 
@@ -283,6 +290,6 @@ impl ScRequestID {
 // can be used as key in maps
 impl MapKey for ScRequestID {
     fn get_key_id(&self) -> Key32 {
-        get_key_id_from_bytes(self.to_bytes())
+        get_key_id_from_bytes(&self.id)
     }
 }
