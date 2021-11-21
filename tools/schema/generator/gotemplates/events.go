@@ -3,6 +3,7 @@ package gotemplates
 var eventsGo = map[string]string{
 	// *******************************
 	"events.go": `
+//nolint:gocritic
 $#emit goHeader
 
 $#set TypeName $Package$+Events

@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:gocritic
 package erc20
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
