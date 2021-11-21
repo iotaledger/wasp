@@ -4,6 +4,7 @@ var GoTemplates = []map[string]string{
 	goCommon,
 	constsGo,
 	contractGo,
+	eventsGo,
 	funcsGo,
 	keysGo,
 	libGo,

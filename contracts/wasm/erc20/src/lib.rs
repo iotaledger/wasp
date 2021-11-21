@@ -13,6 +13,7 @@ use wasmlib::*;
 use wasmlib::host::*;
 
 use crate::consts::*;
+use crate::events::*;
 use crate::keys::*;
 use crate::params::*;
 use crate::results::*;
@@ -20,6 +21,7 @@ use crate::state::*;
 
 mod consts;
 mod contract;
+mod events;
 mod keys;
 mod params;
 mod results;
@@ -46,6 +48,7 @@ fn on_load() {
 }
 
 pub struct ApproveContext {
+	events:  Erc20Events,
 	params: ImmutableApproveParams,
 	state: MutableErc20State,
 }
@@ -53,6 +56,7 @@ pub struct ApproveContext {
 fn func_approve_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc20.funcApprove");
 	let f = ApproveContext {
+		events:  Erc20Events {},
 		params: ImmutableApproveParams {
 			id: OBJ_ID_PARAMS,
 		},
@@ -67,6 +71,7 @@ fn func_approve_thunk(ctx: &ScFuncContext) {
 }
 
 pub struct InitContext {
+	events:  Erc20Events,
 	params: ImmutableInitParams,
 	state: MutableErc20State,
 }
@@ -74,6 +79,7 @@ pub struct InitContext {
 fn func_init_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc20.funcInit");
 	let f = InitContext {
+		events:  Erc20Events {},
 		params: ImmutableInitParams {
 			id: OBJ_ID_PARAMS,
 		},
@@ -88,6 +94,7 @@ fn func_init_thunk(ctx: &ScFuncContext) {
 }
 
 pub struct TransferContext {
+	events:  Erc20Events,
 	params: ImmutableTransferParams,
 	state: MutableErc20State,
 }
@@ -95,6 +102,7 @@ pub struct TransferContext {
 fn func_transfer_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc20.funcTransfer");
 	let f = TransferContext {
+		events:  Erc20Events {},
 		params: ImmutableTransferParams {
 			id: OBJ_ID_PARAMS,
 		},
@@ -109,6 +117,7 @@ fn func_transfer_thunk(ctx: &ScFuncContext) {
 }
 
 pub struct TransferFromContext {
+	events:  Erc20Events,
 	params: ImmutableTransferFromParams,
 	state: MutableErc20State,
 }
@@ -116,6 +125,7 @@ pub struct TransferFromContext {
 fn func_transfer_from_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc20.funcTransferFrom");
 	let f = TransferFromContext {
+		events:  Erc20Events {},
 		params: ImmutableTransferFromParams {
 			id: OBJ_ID_PARAMS,
 		},

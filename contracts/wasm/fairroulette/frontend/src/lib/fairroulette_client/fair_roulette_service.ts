@@ -62,7 +62,7 @@ export class FairRouletteService {
 
   private handleVmMessage(message: string[]): void {
     const messageHandlers: MessageHandlers = {
-      'fairroulette.bet.placed': (index) => {
+      'fairroulette.bet': (index) => {
         const bet: Bet = {
           better: message[index + 1],
           amount: Number(message[index + 2]),
@@ -70,22 +70,6 @@ export class FairRouletteService {
         };
 
         this.emitter.emit('betPlaced', bet);
-      },
-
-      'fairroulette.round.state': (index) => {
-        if (message[index + 1] == '1') {
-          this.emitter.emit('roundStarted', message[index + 2]);
-        } else {
-          this.emitter.emit('roundStopped');
-        }
-      },
-
-      'fairroulette.round.number': (index) => {
-        this.emitter.emit('roundNumber', message[index + 1] || 0);
-      },
-
-      'fairroulette.round.winning_number': (index) => {
-        this.emitter.emit('winningNumber', message[index + 1] || 0);
       },
 
       'fairroulette.payout': (index) => {
@@ -96,6 +80,22 @@ export class FairRouletteService {
         };
 
         this.emitter.emit('payout', bet);
+      },
+
+      'fairroulette.round': (index) => {
+        this.emitter.emit('roundNumber', message[index + 1] || 0);
+      },
+
+      'fairroulette.start': (index) => {
+          this.emitter.emit('roundStarted', message[index + 1] || 0);
+      },
+
+      'fairroulette.stop': (index) => {
+           this.emitter.emit('roundStopped');
+      },
+
+      'fairroulette.winner': (index) => {
+        this.emitter.emit('winningNumber', message[index + 1] || 0);
       },
     };
 
@@ -108,7 +108,7 @@ export class FairRouletteService {
   }
 
   private handleIncomingMessage(message: MessageEvent<string>): void {
-    const msg = message.data.toString().split(' ');
+    const msg = message.data.toString().split('|');
 
     if (msg.length == 0) {
       return;

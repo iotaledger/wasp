@@ -4,6 +4,7 @@ var TsTemplates = []map[string]string{
 	tsCommon,
 	constsTs,
 	contractTs,
+	eventsTs,
 	funcsTs,
 	indexTs,
 	keysTs,

@@ -6,6 +6,7 @@ var indexTs = map[string]string{
 $#if core else exportName
 export * from "./consts";
 export * from "./contract";
+$#if events exportEvents
 $#if core else exportKeys
 $#if core else exportLib
 $#if params exportParams
@@ -16,6 +17,10 @@ $#if core else exportRest
 	"exportName": `
 export * from "./$package";
 
+`,
+	// *******************************
+	"exportEvents": `
+export * from "./events";
 `,
 	// *******************************
 	"exportKeys": `

@@ -1,5 +1,10 @@
 name: Erc20
 description: ERC-20 PoC for IOTA Smart Contracts
+events:
+  transfer:
+    amount: Int64
+    from: AgentID
+    to: AgentID
 structs: {}
 typedefs:
   AllowancesForAgent: map[AgentID]Int64

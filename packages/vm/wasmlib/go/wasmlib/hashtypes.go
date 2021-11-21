@@ -217,7 +217,7 @@ func (hn ScHname) KeyID() Key32 {
 }
 
 func (hn ScHname) String() string {
-	return strconv.FormatInt(int64(hn), 10)
+	return strconv.FormatInt(int64(hn), 16)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

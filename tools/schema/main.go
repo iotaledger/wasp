@@ -158,6 +158,7 @@ func generateSchemaNew() error {
 	schemaDef.Name = name
 	schemaDef.Description = name + " description"
 	schemaDef.Structs = make(generator.StringMapMap)
+	schemaDef.Events = make(generator.StringMapMap)
 	schemaDef.Typedefs = make(generator.StringMap)
 	schemaDef.State = make(generator.StringMap)
 	schemaDef.State["owner"] = "AgentID // current owner of this smart contract"

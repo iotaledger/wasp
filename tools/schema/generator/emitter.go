@@ -12,6 +12,8 @@ const (
 	KeyArray     = "array"
 	KeyBaseType  = "basetype"
 	KeyCore      = "core"
+	KeyEvent     = "event"
+	KeyEvents    = "events"
 	KeyExist     = "exist"
 	KeyFunc      = "func"
 	KeyInit      = "init"
@@ -93,6 +95,10 @@ func (g *GenBase) emitEach(line string) {
 
 	template := parts[2]
 	switch parts[1] {
+	case KeyEvent:
+		g.emitEachField(g.currentEvent.Fields, template)
+	case KeyEvents:
+		g.emitEachEvent(g.s.Events, template)
 	case KeyFunc:
 		g.emitEachFunc(g.s.Funcs, template)
 	case KeyMandatory:
@@ -115,6 +121,13 @@ func (g *GenBase) emitEach(line string) {
 		g.emitEachField(g.s.Typedefs, template)
 	default:
 		g.error(line)
+	}
+}
+
+func (g *GenBase) emitEachEvent(events []*Struct, template string) {
+	for _, g.currentEvent = range events {
+		g.setMultiKeyValues("evtName", g.currentEvent.Name)
+		g.emit(template)
 	}
 }
 
@@ -213,6 +226,10 @@ func (g *GenBase) emitIf(line string) {
 		condition = g.currentField.TypeID != 0
 	case KeyCore:
 		condition = g.s.CoreContracts
+	case KeyEvent:
+		condition = len(g.currentEvent.Fields) != 0
+	case KeyEvents:
+		condition = len(g.s.Events) != 0
 	case KeyExist:
 		condition = g.newTypes[g.keys[KeyProxy]]
 	case KeyFunc:
