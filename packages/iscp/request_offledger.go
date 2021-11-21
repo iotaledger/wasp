@@ -24,7 +24,7 @@ type OffLedger struct {
 	nonce          uint64
 	transferIotas  uint64
 	transferTokens iotago.NativeTokens
-	gasBudget      int64
+	gasBudget      uint64
 }
 
 // implement RequestData interface
@@ -134,6 +134,7 @@ func (r *OffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
 		Write(r.params).
 		WriteBytes(r.publicKey[:]).
 		WriteUint64(r.nonce).
+		WriteUint64(r.gasBudget).
 		WriteUint64(r.transferIotas)
 	// TODO write native Tokens
 }
@@ -162,6 +163,13 @@ func (r *OffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) erro
 	if r.nonce, err = mu.ReadUint64(); err != nil {
 		return err
 	}
+	if r.gasBudget, err = mu.ReadUint64(); err != nil {
+		return err
+	}
+	if r.transferIotas, err = mu.ReadUint64(); err != nil {
+		return err
+	}
+
 	// TODO read native Tokens
 	//if r.transferTokens, err = colored.BalancesFromMarshalUtil(mu); err != nil {
 	//	return err
@@ -192,7 +200,7 @@ func (r *OffLedger) Transfer() *Assets {
 	return NewAssets(r.transferIotas, r.transferTokens)
 }
 
-func (r *OffLedger) WithGasBudget(gasBudget int64) *OffLedger {
+func (r *OffLedger) WithGasBudget(gasBudget uint64) *OffLedger {
 	r.gasBudget = gasBudget
 	return r
 }
@@ -262,7 +270,7 @@ func (r *OffLedger) Timestamp() time.Time {
 	return time.Time{}
 }
 
-func (r *OffLedger) GasBudget() int64 {
+func (r *OffLedger) GasBudget() uint64 {
 	return r.gasBudget
 }
 

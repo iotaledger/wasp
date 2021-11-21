@@ -79,7 +79,7 @@ type Request interface {
 	Target() RequestTarget
 	Assets() *Assets   // attached assets for the UTXO request, nil for off-ledger. All goes to sender
 	Transfer() *Assets // transfer of assets to the smart contract. Debited from sender account
-	GasBudget() int64
+	GasBudget() uint64
 }
 
 type Features interface {

@@ -30,7 +30,7 @@ func (s *sandbox) AccountID() *iscp.AgentID {
 }
 
 func (s *sandbox) Balance(col colored.Color) uint64 {
-	return s.vmctx.GetBalance(col)
+	return s.vmctx.GetBalanceOld(col)
 }
 
 func (s *sandbox) Balances() colored.Balances {
@@ -125,14 +125,10 @@ func (s *sandbox) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandbox) Burn(gas int64) {
+func (s *sandbox) Burn(gas uint64) {
 	s.vmctx.GasBurn(gas)
 }
 
-func (s *sandbox) Budget() int64 {
-	return s.vmctx.GasBudget()
-}
-
-func (s *sandbox) SetBudget(gasBudget int64) {
-	s.vmctx.GasBudget()
+func (s *sandbox) Budget() uint64 {
+	return s.vmctx.GasBudgetLeft()
 }

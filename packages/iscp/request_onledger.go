@@ -90,7 +90,7 @@ func (r *OnLedgerRequestData) Assets() *Assets {
 	return NewAssets(amount, tokens)
 }
 
-func (r *OnLedgerRequestData) GasBudget() int64 {
+func (r *OnLedgerRequestData) GasBudget() uint64 {
 	return r.requestMetadata.GasBudget()
 }
 

@@ -62,8 +62,8 @@ func TestCreditDebit1(t *testing.T) {
 	expected := colored.NewBalancesForIotas(43).Add(dummyColor, 4)
 	require.True(t, expected.Equals(total))
 
-	require.EqualValues(t, 43, GetBalance(state, agentID1, colored.IOTA))
-	require.EqualValues(t, 4, GetBalance(state, agentID1, dummyColor))
+	require.EqualValues(t, 43, GetBalanceOld(state, agentID1, colored.IOTA))
+	require.EqualValues(t, 4, GetBalanceOld(state, agentID1, dummyColor))
 	checkLedger(t, state, "cp2")
 
 	DebitFromAccount(state, agentID1, expected)
@@ -94,7 +94,7 @@ func TestCreditDebit2(t *testing.T) {
 	expected = colored.NewBalancesForIotas(42)
 	require.True(t, expected.Equals(total))
 
-	require.EqualValues(t, 0, GetBalance(state, agentID1, dummyColor))
+	require.EqualValues(t, 0, GetBalanceOld(state, agentID1, dummyColor))
 	bal1, ok := GetAccountBalances(state, agentID1)
 	require.True(t, ok)
 	require.True(t, total.Equals(bal1))

@@ -75,14 +75,10 @@ func (s sandboxView) Gas() iscp.Gas {
 	return s
 }
 
-func (s sandboxView) Burn(gas int64) {
+func (s sandboxView) Burn(gas uint64) {
 	s.vmctx.GasBurn(gas)
 }
 
-func (s sandboxView) Budget() int64 {
-	return s.vmctx.GasBudget()
-}
-
-func (s sandboxView) SetBudget(gasBudget int64) {
-	s.vmctx.GasSetBudget(gasBudget)
+func (s sandboxView) Budget() uint64 {
+	return s.vmctx.GasBudgetLeft()
 }

@@ -60,8 +60,8 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	return ep.Call(NewSandbox(vmctx))
 }
 
-func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer colored.Balances, progHash hashing.HashValue) (dict.Dict, error) {
-	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
+func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer *iscp.Assets, progHash hashing.HashValue) (dict.Dict, error) {
+	proc, err := vmctx.task.Processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
 	if err != nil {
 		return nil, err
 	}

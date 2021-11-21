@@ -17,7 +17,7 @@ type RequestMetadata struct {
 	// transfer intended to the target contract. Always taken from the sender's account. Nil mean no transfer
 	transfer *Assets
 	// gas budget
-	gasBudget int64
+	gasBudget uint64
 }
 
 func NewRequestMetadata() *RequestMetadata {
@@ -92,7 +92,7 @@ func (p *RequestMetadata) Transfer() *Assets {
 	return p.transfer
 }
 
-func (p *RequestMetadata) GasBudget() int64 {
+func (p *RequestMetadata) GasBudget() uint64 {
 	return p.gasBudget
 }
 
@@ -106,7 +106,7 @@ func (p *RequestMetadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(p.senderContract).
 		Write(p.targetContract).
 		Write(p.entryPoint).
-		WriteInt64(p.gasBudget)
+		WriteUint64(p.gasBudget)
 	p.args.WriteToMarshalUtil(mu)
 	p.transfer.WriteToMarshalUtil(mu)
 }
@@ -122,7 +122,7 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 	if p.entryPoint, err = HnameFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if p.gasBudget, err = mu.ReadInt64(); err != nil {
+	if p.gasBudget, err = mu.ReadUint64(); err != nil {
 		return err
 	}
 	if err := (p.args).ReadFromMarshalUtil(mu); err != nil {

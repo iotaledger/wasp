@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"fmt"
+	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
@@ -129,7 +130,7 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, transfer color
 	return true
 }
 
-func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer colored.Balances) bool {
+func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Assets) bool {
 	mustCheckLedger(state, "MoveBetweenAccounts.IN")
 	defer mustCheckLedger(state, "MoveBetweenAccounts.OUT")
 	if fromAgentID.Equals(toAgentID) {
@@ -144,7 +145,7 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 	return true
 }
 
-func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer colored.Balances) {
+func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Assets) {
 	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, transfer) {
 		panic(ErrNotEnoughFunds)
 	}
@@ -163,7 +164,18 @@ func touchAccount(state kv.KVStore, account *collections.Map) {
 	}
 }
 
-func GetBalance(state kv.KVStoreReader, agentID *iscp.AgentID, col colored.Color) uint64 {
+// GetIotaBalance return iota balance. 0 mean it does not exist
+func GetIotaBalance(state kv.KVStoreReader, agentID *iscp.AgentID) uint64 {
+	panic("not implemented")
+}
+
+// GetTokenBalance returns balance or nil if it does not exist
+func GetTokenBalance(state kv.KVStoreReader, agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+	panic("not implemented")
+}
+
+// Deprecated:
+func GetBalanceOld(state kv.KVStoreReader, agentID *iscp.AgentID, col colored.Color) uint64 {
 	b := getAccountR(state, agentID).MustGetAt(col[:])
 	if b == nil {
 		return 0
@@ -267,7 +279,11 @@ func GetMaxAssumedNonce(state kv.KVStoreReader, address iotago.Address) uint64 {
 	return nonce
 }
 
-func RecordMaxAssumedNonce(state kv.KVStore, address ledgerstate.Address, nonce uint64) {
+func RecordMaxAssumedNonce(state kv.KVStore, address iotago.Address, nonce uint64) {
+}
+
+// Deprecated:
+func RecordMaxAssumedNonceOld(state kv.KVStore, address ledgerstate.Address, nonce uint64) {
 	next := GetMaxAssumedNonce(state, address) + 1
 	if nonce > next {
 		next = nonce

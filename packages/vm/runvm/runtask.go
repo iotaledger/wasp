@@ -1,7 +1,8 @@
 package runvm
 
 import (
-	"errors"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -16,21 +17,13 @@ import (
 type VMRunner struct{}
 
 func (r VMRunner) Run(task *vm.VMTask) {
-	// panic catcher for the whole VM task
-	// it returns gracefully if the panic was about invalidated state during optimistic read otherwise it panics again
-	// The smart contract panics are processed inside and do not reach this point
-	defer func() {
-		r := recover()
-		if r == nil {
-			return
-		}
-		if err, ok := r.(error); ok && errors.Is(err, coreutil.ErrorStateInvalidated) {
-			task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
-			return
-		}
-		panic(r)
-	}()
-	runTask(task)
+	// optimistic read panic catcher for the whole VM task
+	err := util.CatchPanicReturnError(func() {
+		runTask(task)
+	}, coreutil.ErrorStateInvalidated)
+	if err != nil {
+		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
+	}
 }
 
 func NewVMRunner() VMRunner {
@@ -44,39 +37,32 @@ func runTask(task *vm.VMTask) {
 	var lastResult dict.Dict
 	var lastErr error
 	var lastTotalAssets colored.Balances
-	var exceededBlockOutputLimit bool
 
-	// loop over the batch of requests and run each request on the VM.
-	// the result accumulates in the VMContext and in the list of stateUpdates
 	var numOffLedger, numSuccess uint16
 	var numOnLedger uint8
-	for i, req := range task.Requests {
-		if req.IsOffLedger() {
-			numOffLedger++
-		} else {
-			if numOnLedger == vmcontext.MaxBlockInputCount {
-				continue // max number of inputs to be included in state transition reached, do not process more on-ledger requests
-			}
-			numOnLedger++
-		}
+	reqIndexInTheBlock := 0
 
-		vmctx.RunTheRequestOld(req, uint16(i))
-		lastResult, lastTotalAssets, lastErr, exceededBlockOutputLimit = vmctx.GetResult()
-
-		if exceededBlockOutputLimit {
-			// current request exceeded the number of output limit and will be re-run next batch
-			if req.IsOffLedger() {
-				numOffLedger--
-			} else {
-				numOnLedger--
-			}
+	// main loop over the batch of requests and run each request on the VM.
+	// the result accumulates in the VMContext and in the list of stateUpdates
+	for _, req := range task.Requests {
+		if skipReason := vmctx.RunTheRequest(req, uint16(reqIndexInTheBlock)); skipReason != nil {
+			vmctx.Log().Warnf("request skipped (ignored) by the VM: %s, reason: %v",
+				req.Request().ID().String(), skipReason)
 			continue
 		}
+		reqIndexInTheBlock++
+		if req.Type() == iscp.TypeOffLedger {
+			numOffLedger++
+		} else {
+			numOnLedger++
+		}
+		lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
+
 		task.ProcessedRequestsCount++
 		if lastErr == nil {
 			numSuccess++
 		} else {
-			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().Base58(), lastErr)
+			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.Request().ID().String(), lastErr)
 		}
 	}
 

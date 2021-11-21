@@ -27,8 +27,9 @@ func (vmctx *VMContext) commonAccount() *iscp.AgentID {
 	return commonaccount.Get(vmctx.chainID)
 }
 
-func (vmctx *VMContext) GetBalance(col colored.Color) uint64 {
-	return vmctx.getBalance(col)
+// Deprecated:
+func (vmctx *VMContext) GetBalanceOld(col colored.Color) uint64 {
+	panic("deprecated")
 }
 
 func (vmctx *VMContext) GetIncoming() colored.Balances {

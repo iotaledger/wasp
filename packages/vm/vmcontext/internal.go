@@ -1,6 +1,9 @@
 package vmcontext
 
 import (
+	"math/big"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -33,6 +36,14 @@ func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer colored
 	return accounts.DebitFromAccount(vmctx.State(), agentID, transfer)
 }
 
+func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Assets) {
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
+	defer vmctx.popCallContext()
+
+	accounts.MustMoveBetweenAccounts(vmctx.State(), fromAgentID, toAgentID, transfer)
+}
+
+// Deprecated:
 func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer colored.Balances) bool {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
 	defer vmctx.popCallContext()
@@ -61,6 +72,20 @@ func (vmctx *VMContext) getChainInfo() governance.ChainInfo {
 	return governance.MustGetChainInfo(vmctx.State())
 }
 
+func (vmctx *VMContext) getIotaBalance(agentID *iscp.AgentID) uint64 {
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	return accounts.GetIotaBalance(vmctx.State(), agentID)
+}
+
+func (vmctx *VMContext) getTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	return accounts.GetTokenBalance(vmctx.State(), agentID, tokenID)
+}
+
 func (vmctx *VMContext) getFeeInfo() (colored.Color, uint64, uint64) {
 	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
@@ -79,17 +104,6 @@ func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte
 	return blob.LocateProgram(vmctx.State(), programHash)
 }
 
-func (vmctx *VMContext) getBalanceOfAccount(agentID *iscp.AgentID, col colored.Color) uint64 {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	return accounts.GetBalance(vmctx.State(), agentID, col)
-}
-
-func (vmctx *VMContext) getBalance(col colored.Color) uint64 {
-	return vmctx.getBalanceOfAccount(vmctx.MyAgentID(), col)
-}
-
 func (vmctx *VMContext) getMyBalances() colored.Balances {
 	agentID := vmctx.MyAgentID()
 
@@ -98,19 +112,6 @@ func (vmctx *VMContext) getMyBalances() colored.Balances {
 
 	ret, _ := accounts.GetAccountBalances(vmctx.State(), agentID)
 	return ret
-}
-
-//nolint:unused
-func (vmctx *VMContext) moveBalance(target *iscp.AgentID, col colored.Color, amount uint64) bool {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	return accounts.MoveBetweenAccounts(
-		vmctx.State(),
-		vmctx.MyAgentID(),
-		target,
-		colored.NewBalancesForColor(col, amount),
-	)
 }
 
 func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
@@ -155,4 +156,16 @@ func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 		vmctx.Panicf("MustSaveEvent: %v", err)
 	}
 	vmctx.requestEventIndex++
+}
+
+// updateOffLedgerRequestMaxAssumedNonce updates stored nonce for off ledger requests
+func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	accounts.RecordMaxAssumedNonce(
+		vmctx.State(),
+		vmctx.req.Request().SenderAddress(),
+		vmctx.req.Unwrap().OffLedger().Nonce(),
+	)
 }

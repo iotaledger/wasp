@@ -18,8 +18,8 @@ const (
 	ExpiryUnlockSafetyWindowMilestone = 3
 )
 
-// checkReasonToSkip checks if request must be ignored without even modifying the state
-func (vmctx *VMContext) checkReasonToSkip() error {
+// earlyCheckReasonToSkip checks if request must be ignored without even modifying the state
+func (vmctx *VMContext) earlyCheckReasonToSkip() error {
 	var err error
 	if vmctx.req.Type() == iscp.TypeOffLedger {
 		err = vmctx.checkReasonToSkipOffLedger()

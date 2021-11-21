@@ -80,9 +80,8 @@ type Sandbox interface {
 }
 
 type Gas interface {
-	Burn(int64)
-	Budget() int64
-	SetBudget(int64)
+	Burn(uint64)
+	Budget() uint64
 }
 
 // properties of the anchor output/transaction in the current context

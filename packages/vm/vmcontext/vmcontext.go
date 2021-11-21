@@ -24,11 +24,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var (
-	MaxBlockOutputCount = uint8(iotago.MaxOutputsCount - 1) // -1 for the chain transition output
-	MaxBlockInputCount  = uint8(iotago.MaxInputsCount - 2)  // // 125 (126 limit -1 for the previous state utxo)
-)
-
 // VMContext represents state of the chain during one run of the VM while processing
 // a batch of requests. VMContext object mutates with each request in the bathc.
 // The VMContext is created from immutable vm.VMTask object and UTXO state of the
@@ -61,17 +56,28 @@ type VMContext struct {
 	lastResult         dict.Dict
 	lastTotalAssets    colored.Balances
 	callStack          []*callContext
-	// gas related
-	gas              int64
-	gasBudgetEnabled bool
+	// --- gas related
+	// gas from the request
+	gasBudgetFromRequest uint64
+	// max gas budget capped by the number of tokens in the sender's account
+	gasBudgetAffordable uint64
+	// final gas budget set for the run
+	gasBudget uint64
+	// gas already burned
+	gasBurned uint64
+	// gas policy
+	gasFeeTokenNotIota      bool                 // if token used to pay for gas is native token, not iotas
+	gasFeeTokenID           iotago.NativeTokenID // specify tokenID used to pay for gas
+	gasPolicyFixedBudget    bool
+	gasPolicyGasPerGasToken uint64 // gas/iotas
 }
 
 type callContext struct {
-	isRequestContext bool             // is called from the request (true) or from another SC (false)
-	caller           *iscp.AgentID    // calling agent
-	contract         iscp.Hname       // called contract
-	params           dict.Dict        // params passed
-	transfer         colored.Balances // transfer passed
+	isRequestContext bool          // is called from the request (true) or from another SC (false)
+	caller           *iscp.AgentID // calling agent
+	contract         iscp.Hname    // called contract
+	params           dict.Dict     // params passed
+	transfer         *iscp.Assets  // transfer passed
 }
 
 type blockContext struct {
@@ -123,8 +129,8 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 }
 
 //nolint:revive
-func (vmctx *VMContext) GetResult() (dict.Dict, colored.Balances, error, bool) {
-	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError, vmctx.exceededBlockOutputLimit
+func (vmctx *VMContext) GetResult() (dict.Dict, colored.Balances, error) {
+	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
 }
 
 // CloseVMContext does the closing actions on the block

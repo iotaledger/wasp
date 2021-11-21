@@ -58,17 +58,13 @@ var (
 	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
 
-func (ctx *SoloContext) Burn(i int64) {
+func (ctx *SoloContext) Burn(i uint64) {
 	// ignore gas for now
 }
 
-func (ctx *SoloContext) Budget() int64 {
+func (ctx *SoloContext) Budget() uint64 {
 	// ignore gas for now
 	return 0
-}
-
-func (ctx *SoloContext) SetBudget(i int64) {
-	// ignore gas for now
 }
 
 // NewSoloContext can be used to create a SoloContext associated with a smart contract

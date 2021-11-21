@@ -38,23 +38,20 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract iscp.Hname, params 
 
 const traceStack = false
 
-func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, transfer colored.Balances) {
+func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, transfer *iscp.Assets) {
 	if traceStack {
-		vmctx.log.Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
+		vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
 	}
 	var caller *iscp.AgentID
 	isRequestContext := len(vmctx.callStack) == 0
 	if isRequestContext {
 		// request context
-		caller = vmctx.req.SenderAccount()
+		caller = vmctx.req.Request().SenderAccount()
 	} else {
 		caller = vmctx.MyAgentID()
 	}
 	if traceStack {
-		vmctx.log.Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
-	}
-	if transfer != nil {
-		transfer = transfer.Clone()
+		vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
 	}
 	vmctx.callStack = append(vmctx.callStack, &callContext{
 		isRequestContext: isRequestContext,
@@ -67,7 +64,7 @@ func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, t
 
 func (vmctx *VMContext) popCallContext() {
 	if traceStack {
-		vmctx.log.Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
+		vmctx.Log().Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
 	}
 	vmctx.callStack[len(vmctx.callStack)-1] = nil // for GC
 	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]
