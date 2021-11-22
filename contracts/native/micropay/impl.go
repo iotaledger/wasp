@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -13,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 var Processor = Contract.Processor(initialize,
@@ -69,10 +70,21 @@ func addWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	setWarrant(payerInfo, serviceAddr, warrant+addWarrant)
 
 	// all non-iota token accrue on-chain to the caller
+	// TODO refactor
 	sendBack := ctx.IncomingTransfer().Clone()
 	sendBack.Set(colored.IOTA, 0)
+
 	if len(sendBack) > 0 {
-		a.RequireNoError(vmcontext.Accrue(ctx, ctx.Caller(), sendBack))
+		_, err := ctx.Call(
+			accounts.Contract.Hname(),
+			accounts.FuncDeposit.Hname(),
+			codec.MakeDict(map[string]interface{}{
+				accounts.ParamAgentID: ctx.Caller(),
+			}),
+			sendBack,
+		)
+
+		a.RequireNoError(err)
 	}
 
 	ctx.Event(fmt.Sprintf("[micropay.addWarrant] %s increased warrant %d -> %d i for %s",
