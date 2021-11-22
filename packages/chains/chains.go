@@ -73,15 +73,11 @@ func (c *Chains) Dismiss() {
 	c.allChains = make(map[[ledgerstate.AddressLength]byte]chain.Chain)
 }
 
-func (c *Chains) Attach(nodeConn chain.NodeConnection) {
+func (c *Chains) SetNodeConn(nodeConn chain.NodeConnection) {
 	if c.nodeConn != nil {
-		c.log.Panicf("Chains: already attached")
+		c.log.Panicf("Chains: node conn already set")
 	}
 	c.nodeConn = nodeConn
-	c.nodeConn.AttachToTransactionReceived(c.dispatchTransactionMsg)
-	c.nodeConn.AttachToInclusionStateReceived(c.dispatchInclusionStateMsg)
-	c.nodeConn.AttachToOutputReceived(c.dispatchOutputMsg)
-	c.nodeConn.AttachToUnspentAliasOutputReceived(c.dispatchUnspentAliasOutputMsg)
 }
 
 func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics *metrics.Metrics) error {

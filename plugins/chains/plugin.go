@@ -48,7 +48,7 @@ func run(_ *node.Plugin) {
 		database.GetOrCreateKVStore,
 	)
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		allChains.Attach(nodeconnimpl.NewNodeConnection(nodeconn.NodeConnection(), log))
+		allChains.SetNodeConn(nodeconnimpl.NewNodeConnection(nodeconn.NodeConnection(), log))
 		if parameters.GetBool(parameters.MetricsEnabled) {
 			allMetrics = metrics.AllMetrics()
 		}

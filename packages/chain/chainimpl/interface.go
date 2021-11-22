@@ -226,17 +226,6 @@ func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp 
 	})
 }
 
-func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
-	c.ReceiveMessage(&messages.InclusionStateMsg{
-		TxID:  txID,
-		State: inclusionState,
-	}) // TODO special entry point
-}
-
-func (c *chainObj) ReceiveOutput(output ledgerstate.Output) {
-	c.stateMgr.EventOutputMsg(output)
-}
-
 func (c *chainObj) BlobCache() registry.BlobCache {
 	return c.blobProvider
 }

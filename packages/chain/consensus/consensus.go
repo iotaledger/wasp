@@ -26,7 +26,7 @@ type Consensus struct {
 	chain                            chain.ChainCore
 	committee                        chain.Committee
 	mempool                          chain.Mempool
-	nodeConn                         chain.NodeConnectionSender
+	nodeConn                         chain.ChainNodeConnection
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
 	stateOutput                      *ledgerstate.AliasOutput
@@ -81,7 +81,7 @@ type workflowFlags struct {
 
 var _ chain.Consensus = &Consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnectionSender, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) *Consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.ChainNodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) *Consensus {
 	var timers ConsensusTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -111,6 +111,12 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
 	}
+	ret.nodeConn.AttachToInclusionStateReceived(func(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
+		ret.EventInclusionsStateMsg(&messages.InclusionStateMsg{
+			TxID:  txID,
+			State: inclusionState,
+		})
+	})
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret

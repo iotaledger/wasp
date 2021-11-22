@@ -37,9 +37,7 @@ type ChainCore interface {
 // ChainEntry interface to access chain from the chain registry side
 type ChainEntry interface {
 	ReceiveTransaction(*ledgerstate.Transaction)
-	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
-	ReceiveOutput(output ledgerstate.Output)
 	ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID string)
 
 	Dismiss(reason string)
@@ -83,21 +81,38 @@ type Committee interface {
 	GetRandomValidators(upToN int) []string
 }
 
-type NodeConnectionSender interface {
+type (
+	NodeConnectionHandleTransactionFun        func(*ledgerstate.Transaction)
+	NodeConnectionHandleInclusionStateFun     func(ledgerstate.TransactionID, ledgerstate.InclusionState)
+	NodeConnectionHandleOutputFun             func(ledgerstate.Output)
+	NodeConnectionHandleUnspentAliasOutputFun func(*ledgerstate.AliasOutput, time.Time)
+)
+
+type NodeConnection interface {
+	Subscribe(addr ledgerstate.Address)
+	Unsubscribe(addr ledgerstate.Address)
+
+	AttachToTransactionReceived(*ledgerstate.AliasAddress, NodeConnectionHandleTransactionFun)
+	AttachToInclusionStateReceived(*ledgerstate.AliasAddress, NodeConnectionHandleInclusionStateFun)
+	AttachToOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleOutputFun)
+	AttachToUnspentAliasOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
+
 	PullState(addr *ledgerstate.AliasAddress)
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
 }
 
-type NodeConnection interface {
-	NodeConnectionSender
-	AttachToTransactionReceived(func(*ledgerstate.AliasAddress, *ledgerstate.Transaction))
-	AttachToInclusionStateReceived(func(*ledgerstate.AliasAddress, ledgerstate.TransactionID, ledgerstate.InclusionState))
-	AttachToOutputReceived(func(*ledgerstate.AliasAddress, ledgerstate.Output))
-	AttachToUnspentAliasOutputReceived(func(*ledgerstate.AliasAddress, *ledgerstate.AliasOutput, time.Time))
-	Subscribe(addr ledgerstate.Address)
-	Unsubscribe(addr ledgerstate.Address)
+type ChainNodeConnection interface {
+	AttachToTransactionReceived(NodeConnectionHandleTransactionFun)
+	AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)
+	AttachToOutputReceived(NodeConnectionHandleOutputFun)
+	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
+
+	PullState()
+	PullTransactionInclusionState(txid ledgerstate.TransactionID)
+	PullConfirmedOutput(outputID ledgerstate.OutputID)
+	PostTransaction(tx *ledgerstate.Transaction)
 }
 
 type StateManager interface {
