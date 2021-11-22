@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"go.uber.org/atomic"
 )
 
 type ChainCore interface {
@@ -113,6 +114,29 @@ type ChainNodeConnection interface {
 	PullTransactionInclusionState(txid ledgerstate.TransactionID)
 	PullConfirmedOutput(outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
+}
+
+type NodeConnectionMessageStats struct {
+	Total       atomic.Int32
+	LastEvent   time.Time
+	LastMessage interface{}
+}
+
+type NodeConnectionMessagesStats struct {
+	OutPullState                     NodeConnectionMessageStats
+	OutPullTransactionInclusionState NodeConnectionMessageStats
+	OutPullConfirmedOutput           NodeConnectionMessageStats
+	OutPostTransaction               NodeConnectionMessageStats
+
+	InTransaction        NodeConnectionMessageStats
+	InInclusionState     NodeConnectionMessageStats
+	InOutput             NodeConnectionMessageStats
+	InUnspentAliasOutput NodeConnectionMessageStats
+}
+
+type NodeConnectionStats struct {
+	NodeConnectionMessagesStats
+	Subscribed []ledgerstate.Address
 }
 
 type StateManager interface {

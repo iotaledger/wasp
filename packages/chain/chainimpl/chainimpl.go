@@ -77,6 +77,7 @@ type chainObj struct {
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
 	chainMetrics                     metrics.ChainMetrics
+	stats                            *chain.NodeConnectionMessagesStats
 }
 
 type committeeStruct struct {

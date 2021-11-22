@@ -2,6 +2,7 @@ package chain
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
@@ -64,4 +65,10 @@ func PublishGovernanceTransition(stateOutput *ledgerstate.AliasOutput) {
 		iscp.OID(stateOutput.ID()),
 		stateHash.String(),
 	)
+}
+
+func CountMessageStats(stats *NodeConnectionMessageStats, msg interface{}) {
+	stats.Total.Inc()
+	stats.LastEvent = time.Now()
+	stats.LastMessage = msg
 }
