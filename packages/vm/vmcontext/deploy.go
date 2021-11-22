@@ -17,10 +17,10 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, desc
 	}
 	if vmctx.CurrentContractHname() == root.Contract.Hname() {
 		// from root contract only loading VM
-		vmctx.log.Debugf("vmcontext.DeployContract: %s from root", programHash.String())
-		return vmctx.processors.NewProcessor(programHash, programBinary, vmtype)
+		vmctx.Debugf("vmcontext.DeployContract: %s from root", programHash.String())
+		return vmctx.task.Processors.NewProcessor(programHash, programBinary, vmtype)
 	}
-	vmctx.log.Debugf("vmcontext.DeployContract: %s, name: %s, dscr: '%s'", programHash.String(), name, description)
+	vmctx.Debugf("vmcontext.DeployContract: %s, name: %s, dscr: '%s'", programHash.String(), name, description)
 
 	// calling root contract from another contract to install contract
 	// adding parameters specific to deployment
