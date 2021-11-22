@@ -82,7 +82,7 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 	return s.vmctx.Entropy()
 }
 
-func (s *sandbox) GetTimestamp() int64 {
+func (s *sandbox) Timestamp() int64 {
 	return s.vmctx.Timestamp()
 }
 

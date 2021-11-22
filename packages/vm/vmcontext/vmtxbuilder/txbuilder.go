@@ -4,16 +4,11 @@ import (
 	"bytes"
 	"math/big"
 	"sort"
-	"time"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-
-	"github.com/iotaledger/wasp/packages/util"
-
-	"github.com/iotaledger/wasp/packages/iscp"
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 // implements transaction builder used internally by the VM during batch run
@@ -157,7 +152,7 @@ func (txb *AnchorTransactionBuilder) SortedListOfTokenIDsForOutputs() []iotago.N
 const dustAmountForInternalAccountUTXO = 100 // TODO dust
 
 // outputs generates outputs for the transaction essence
-func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Outputs {
+func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.Outputs {
 	ret := make(iotago.Outputs, 0, 1+len(txb.balanceNativeTokens)+len(txb.postedRequests))
 	// creating the anchor output
 	anchorOutput := &iotago.AliasOutput{
@@ -167,7 +162,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Output
 		StateController:      txb.anchorOutput.StateController,
 		GovernanceController: txb.anchorOutput.GovernanceController,
 		StateIndex:           txb.anchorOutput.StateIndex + 1,
-		StateMetadata:        stateMetadata,
+		StateMetadata:        stateData.Bytes(),
 		FoundryCounter:       txb.anchorOutput.FoundryCounter, // TODO should come from minting logic
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
@@ -327,10 +322,10 @@ func (txb *AnchorTransactionBuilder) AddPostedRequest(par iscp.PostRequestData) 
 	txb.postedRequests = append(txb.postedRequests, &p)
 }
 
-func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) *iotago.TransactionEssence {
+func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) *iotago.TransactionEssence {
 	return &iotago.TransactionEssence{
 		Inputs:  txb.inputs(),
-		Outputs: txb.outputs(stateHash[:]),
-		Payload: nil, // ??
+		Outputs: txb.outputs(stateData),
+		Payload: nil,
 	}
 }

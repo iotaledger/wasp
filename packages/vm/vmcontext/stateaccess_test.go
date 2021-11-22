@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/vm"
+
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -15,15 +17,15 @@ import (
 
 func TestSetThenGet(t *testing.T) {
 	chainID := iscp.RandomChainID([]byte("hmm"))
-	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
+	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), &chainID)
 
 	stateUpdate := state.NewStateUpdate()
 	hname := iscp.Hn("test")
 
 	vmctx := &VMContext{
+		task:               &vm.VMTask{SolidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline()},
 		virtualState:       virtualState,
 		currentStateUpdate: stateUpdate,
-		solidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline(),
 		callStack:          []*callContext{{contract: hname}},
 	}
 	s := vmctx.State()
@@ -75,14 +77,14 @@ func TestSetThenGet(t *testing.T) {
 
 func TestIterate(t *testing.T) {
 	chainID := iscp.RandomChainID([]byte("hmm"))
-	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
+	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), &chainID)
 
 	stateUpdate := state.NewStateUpdate()
 	hname := iscp.Hn("test")
 
 	vmctx := &VMContext{
+		task:               &vm.VMTask{SolidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline()},
 		virtualState:       virtualState,
-		solidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline(),
 		currentStateUpdate: stateUpdate,
 		callStack:          []*callContext{{contract: hname}},
 	}

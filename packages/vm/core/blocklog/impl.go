@@ -28,7 +28,7 @@ var Processor = Contract.Processor(initialize,
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	blockIndex := SaveNextBlockInfo(ctx.State(), &BlockInfo{
-		Timestamp:             time.Unix(0, ctx.GetTimestamp()),
+		Timestamp:             time.Unix(0, ctx.Timestamp()),
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,

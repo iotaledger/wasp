@@ -196,7 +196,7 @@ func GetAccountBalances(state kv.KVStoreReader, agentID *iscp.AgentID) (colored.
 	return getAccountBalances(account), true
 }
 
-func GetTotalAssets(state kv.KVStoreReader) colored.Balances {
+func GetTotalAssets(state kv.KVStoreReader) *iscp.Assets {
 	return getAccountBalances(getTotalAssetsAccountR(state))
 }
 

@@ -123,7 +123,7 @@ func (u utilImplBLS) AggregateBLSSignatures(pubKeysBin [][]byte, sigsBin [][]byt
 	if len(sigsBin) == 0 || len(pubKeysBin) != len(sigsBin) {
 		return nil, nil, xerrors.Errorf("BLSUtil: number of public keys must be equal to the number of signatures and not empty")
 	}
-	u.gas.Burn(gas.UtilsBLSAggregateBLSSignature1 * int64(len(pubKeysBin)))
+	u.gas.Burn(gas.UtilsBLSAggregateBLSSignature1 * uint64(len(pubKeysBin)))
 
 	sigPubKey := make([]bls.SignatureWithPublicKey, len(pubKeysBin))
 	for i := range pubKeysBin {

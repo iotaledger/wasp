@@ -74,7 +74,10 @@ func runTask(task *vm.VMTask) {
 
 	if rotationAddr == nil {
 		// rotation does not happen
-		task.ResultTransactionEssence = vmctx.BuildTransactionEssence(stateCommitment, timestamp)
+		task.ResultTransactionEssence = vmctx.BuildTransactionEssence(&iscp.StateData{
+			Commitment: stateCommitment,
+			Timestamp:  timestamp,
+		})
 
 		// TODO extract latest total assets
 		checkTotalAssets(task.ResultTransactionEssence, nil)

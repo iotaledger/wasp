@@ -3,11 +3,10 @@ package vmcontext
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
@@ -105,14 +104,15 @@ func (vmctx *VMContext) StateIndex() uint32 {
 	return vmctx.task.AnchorOutput.StateIndex
 }
 
-func (vmctx *VMContext) StateHash() hashing.HashValue {
-	h, err := hashing.HashValueFromBytes(vmctx.task.AnchorOutput.StateMetadata)
+func (vmctx *VMContext) OutputID() iotago.UTXOInput {
+	return vmctx.task.AnchorOutputID
+}
+
+func (vmctx *VMContext) StateData() (ret iscp.StateData) {
+	var err error
+	ret, err = iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
 	if err != nil {
 		panic(err)
 	}
-	return h
-}
-
-func (vmctx *VMContext) OutputID() iotago.UTXOInput {
-	return vmctx.task.AnchorOutputID
+	return
 }

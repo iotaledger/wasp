@@ -108,7 +108,7 @@ func revokeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.Require(w > 0, fmt.Sprintf("warrant of %s to %s does not exist", payerAddr, serviceAddr))
 	a.Require(r == 0, fmt.Sprintf("warrant of %s to %s is already being revoked", payerAddr, serviceAddr))
 
-	revokeDeadline := getRevokeDeadline(ctx.GetTimestamp())
+	revokeDeadline := getRevokeDeadline(ctx.Timestamp())
 	payerInfo := collections.NewMap(ctx.State(), string(payerAddr.Bytes()))
 	setWarrantRevoke(payerInfo, serviceAddr, revokeDeadline.Unix())
 

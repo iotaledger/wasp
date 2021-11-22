@@ -6,6 +6,8 @@ package iscp
 import (
 	"math/big"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -27,9 +29,9 @@ type SandboxBase interface {
 	Contract() Hname
 	// ContractCreator returns the agentID that deployed the contract
 	ContractCreator() *AgentID
-	// GetTimestamp returns the timestamp of the current state
-	GetTimestamp() int64
-	// Log returns a logger that ouputs on the local machine. It includes Panicf method
+	// Timestamp returns the UnixNano timestamp of the current state
+	Timestamp() int64
+	// Log returns a logger that outputs on the local machine. It includes Panicf method
 	Log() LogInterface
 	// Utils provides access to common necessary functionality
 	Utils() Utils
@@ -73,9 +75,9 @@ type Sandbox interface {
 	// Send one generic method for sending assets with ledgerstate.ExtendedLockedOutput
 	// replaces TransferToAddress and Post1Request
 	Send(target iotago.Address, assets *Assets, metadata *SendMetadata, options ...*SendOptions)
-	// Internal for use in native hardcoded contracts
+	// BlockContext Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
-	// properties of the anchor output
+	// StateAnchor properties of the anchor output
 	StateAnchor() StateAnchor
 }
 
@@ -89,11 +91,12 @@ type StateAnchor interface {
 	StateController() iotago.Address
 	GovernanceController() iotago.Address
 	StateIndex() uint32
-	StateHash() hashing.HashValue
 	OutputID() iotago.UTXOInput
+	StateData() StateData
 }
 
 type SendOptions struct {
+	// TODO
 }
 
 // RequestMetadata represents content of the data payload of the output
@@ -112,4 +115,35 @@ type PostRequestData struct {
 	Metadata       *SendMetadata
 	SendOptions    *SendOptions
 	GasBudget      uint64
+}
+
+// Utils implement various utilities which are faster on host side than on wasm VM
+// Implement deterministic stateless computations
+type Utils interface {
+	Base58() Base58
+	Hashing() Hashing
+	ED25519() ED25519
+	BLS() BLS
+}
+
+type Hashing interface {
+	Blake2b(data []byte) hashing.HashValue
+	Sha3(data []byte) hashing.HashValue
+	Hname(name string) Hname
+}
+
+type Base58 interface {
+	Decode(s string) ([]byte, error)
+	Encode(data []byte) string
+}
+
+type ED25519 interface {
+	ValidSignature(data []byte, pubKey []byte, signature []byte) bool
+	AddressFromPublicKey(pubKey []byte) (ledgerstate.Address, error)
+}
+
+type BLS interface {
+	ValidSignature(data []byte, pubKey []byte, signature []byte) bool
+	AddressFromPublicKey(pubKey []byte) (ledgerstate.Address, error)
+	AggregateBLSSignatures(pubKeysBin [][]byte, sigsBin [][]byte) ([]byte, []byte, error)
 }

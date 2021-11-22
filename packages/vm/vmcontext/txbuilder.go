@@ -2,16 +2,15 @@ package vmcontext
 
 import (
 	"math/big"
-	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) *iotago.TransactionEssence {
-	return vmctx.txbuilder.BuildTransactionEssence(stateHash, timestamp)
+func (vmctx *VMContext) BuildTransactionEssence(stateData *iscp.StateData) *iotago.TransactionEssence {
+	return vmctx.txbuilder.BuildTransactionEssence(stateData)
 }
 
 func (vmctx *VMContext) createTxBuilderSnapshot() *vmtxbuilder.AnchorTransactionBuilder {

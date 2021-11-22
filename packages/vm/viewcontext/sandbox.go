@@ -98,7 +98,7 @@ func (s *sandboxview) ContractCreator() *iscp.AgentID {
 	return contractRecord.Creator
 }
 
-func (s *sandboxview) GetTimestamp() int64 {
+func (s *sandboxview) Timestamp() int64 {
 	ret, err := s.vctx.stateReader.Timestamp()
 	if err != nil {
 		s.Log().Panicf("%v", err)

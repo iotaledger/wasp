@@ -95,7 +95,7 @@ func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
 	case wasmhost.KeyRequestID:
 		return ctx.Request().ID().Bytes()
 	case wasmhost.KeyTimestamp:
-		return codec.EncodeInt64(ctx.GetTimestamp())
+		return codec.EncodeInt64(ctx.Timestamp())
 	}
 	o.InvalidKey(keyID)
 	return nil
@@ -119,7 +119,7 @@ func (o *ScContext) getBytesForView(keyID, typeID int32) []byte {
 	case wasmhost.KeyContractCreator:
 		return ctx.ContractCreator().Bytes()
 	case wasmhost.KeyTimestamp:
-		return codec.EncodeInt64(ctx.GetTimestamp())
+		return codec.EncodeInt64(ctx.Timestamp())
 	}
 	o.InvalidKey(keyID)
 	return nil
@@ -265,7 +265,7 @@ func (o *ScContext) processPost(bytes []byte) {
 		o.Panic("invalid delay: %d", delay)
 	}
 
-	timeLock := time.Unix(0, o.wc.ctx.GetTimestamp())
+	timeLock := time.Unix(0, o.wc.ctx.Timestamp())
 	timeLock = timeLock.Add(time.Duration(delay) * time.Second)
 	options := iscp.SendOptions{
 		TimeLock: uint32(timeLock.Unix()),

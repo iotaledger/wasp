@@ -85,10 +85,10 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		// should never happen
 		panic(xerrors.Errorf("CreateVMContext.invalid params: must be at least 1 request"))
 	}
-	stateHash, err := hashing.HashValueFromBytes(task.AnchorOutput.StateMetadata)
+	stateData, err := iscp.StateDataFromBytes(task.AnchorOutput.StateMetadata)
 	if err != nil {
 		// should never happen
-		panic(xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err))
+		panic(xerrors.Errorf("CreateVMContext: can't parse state data from chain input %w", err))
 	}
 	// we create optimistic state access wrapper to be used inside the VM call.
 	// It will panic any time the state is accessed.
@@ -98,11 +98,11 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	// assert consistency
 	stateHashFromState := optimisticStateAccess.StateCommitment()
 	blockIndex := optimisticStateAccess.BlockIndex()
-	if stateHash != stateHashFromState || blockIndex != task.AnchorOutput.StateIndex {
+	if stateData.Commitment != stateHashFromState || blockIndex != task.AnchorOutput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
-	openingStateUpdate := state.NewStateUpdateWithBlocklogValues(blockIndex+1, task.TimeAssumption.Time, stateHash)
+	openingStateUpdate := state.NewStateUpdateWithBlocklogValues(blockIndex+1, task.TimeAssumption.Time, stateData.Commitment)
 	optimisticStateAccess.ApplyStateUpdates(openingStateUpdate)
 	finalStateTimestamp := task.TimeAssumption.Time.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
@@ -161,13 +161,17 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
+	prevStateData, err := iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
+	if err != nil {
+		panic(err)
+	}
 	blockInfo := &blocklog.BlockInfo{
 		BlockIndex:            vmctx.virtualState.BlockIndex(),
 		Timestamp:             vmctx.virtualState.Timestamp(),
 		TotalRequests:         numRequests,
 		NumSuccessfulRequests: numSuccess,
 		NumOffLedgerRequests:  numOffLedger,
-		PreviousStateHash:     vmctx.StateHash(),
+		PreviousStateHash:     prevStateData.Commitment,
 	}
 
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)

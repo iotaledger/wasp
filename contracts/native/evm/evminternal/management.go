@@ -82,7 +82,7 @@ func ScheduleNextBlock(ctx iscp.Sandbox) {
 		TargetContract: ctx.Contract(),
 		EntryPoint:     evm.FuncMintBlock.Hname(),
 	}, iscp.SendOptions{
-		TimeLock: uint32(time.Unix(0, ctx.GetTimestamp()).Unix()) + blockTime,
+		TimeLock: uint32(time.Unix(0, ctx.Timestamp()).Unix()) + blockTime,
 	})
 	a := assert.NewAssert(ctx.Log())
 	a.Require(ok, "failed to schedule next block")

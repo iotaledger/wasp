@@ -3,9 +3,9 @@ package vmtxbuilder
 import (
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/iotaledger/hive.go/serializer"
+	"github.com/iotaledger/wasp/packages/iscp"
 
 	"github.com/stretchr/testify/require"
 
@@ -32,7 +32,6 @@ func sumDeposits(outs iotago.Outputs) uint64 {
 func TestNewTxBuilder(t *testing.T) {
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
-	nextStateMetadata := hashing.HashStrings("test1")
 	aliasID := rndAliasID()
 	const totalIotas = 1000
 	anchor := &iotago.AliasOutput{
@@ -61,7 +60,7 @@ func TestNewTxBuilder(t *testing.T) {
 		require.False(t, txb.InputsAreFull())
 		require.False(t, txb.outputsAreFull())
 
-		essence := txb.BuildTransactionEssence(nextStateMetadata, time.Now())
+		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 		require.EqualValues(t, 1, len(essence.Inputs))
 		require.EqualValues(t, 1, len(essence.Outputs))
 
@@ -83,7 +82,7 @@ func TestNewTxBuilder(t *testing.T) {
 			return nil, iotago.UTXOInput{}
 		})
 		txb.AddDeltaIotas(42)
-		essence := txb.BuildTransactionEssence(nextStateMetadata, time.Now())
+		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)

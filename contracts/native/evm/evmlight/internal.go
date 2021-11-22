@@ -42,7 +42,7 @@ func createEmulatorR(ctx iscp.SandboxView) *emulator.EVMEmulator {
 
 // timestamp returns the current timestamp in seconds since epoch
 func timestamp(ctx iscp.SandboxBase) uint64 {
-	tsNano := time.Duration(ctx.GetTimestamp()) * time.Nanosecond
+	tsNano := time.Duration(ctx.Timestamp()) * time.Nanosecond
 	return uint64(tsNano / time.Second)
 }
 

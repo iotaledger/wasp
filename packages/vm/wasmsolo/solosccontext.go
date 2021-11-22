@@ -144,7 +144,7 @@ func (o *SoloScContext) processPost(bytes []byte) {
 	//	o.Panic("invalid delay: %d", delay)
 	//}
 	//
-	//timeLock := time.Unix(0, o.vm.ctx.GetTimestamp())
+	//timeLock := time.Unix(0, o.vm.ctx.Timestamp())
 	//timeLock = timeLock.Add(time.Duration(delay) * time.Second)
 	//options := iscp.SendOptions{
 	//	TimeLock: uint32(timeLock.Unix()),

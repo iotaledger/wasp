@@ -6,7 +6,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -42,7 +41,7 @@ func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.Age
 	accounts.MustMoveBetweenAccounts(vmctx.State(), fromAgentID, toAgentID, transfer)
 }
 
-func (vmctx *VMContext) totalAssets() colored.Balances {
+func (vmctx *VMContext) totalAssets() *iscp.Assets {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
@@ -88,13 +87,6 @@ func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
 	return ret
 }
 
-func (vmctx *VMContext) getFeeInfo() (colored.Color, uint64, uint64) {
-	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	return governance.GetFeeInfoByHname(vmctx.State(), vmctx.contractRecord.Hname())
-}
-
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {
 	vmtype, ok := vmctx.task.Processors.Config.GetNativeProcessorType(programHash)
 	if ok {
@@ -104,16 +96,6 @@ func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte
 	defer vmctx.popCallContext()
 
 	return blob.LocateProgram(vmctx.State(), programHash)
-}
-
-func (vmctx *VMContext) getMyBalances() colored.Balances {
-	agentID := vmctx.MyAgentID()
-
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	ret, _ := accounts.GetAccountBalances(vmctx.State(), agentID)
-	return ret
 }
 
 func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
