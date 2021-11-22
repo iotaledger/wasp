@@ -4,6 +4,8 @@
 package iscp
 
 import (
+	"math/big"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -12,14 +14,11 @@ import (
 
 // SandboxBase is the common interface of Sandbox and SandboxView
 type SandboxBase interface {
+	Balance
 	// AccountID returns the agentID of the current contract
 	AccountID() *AgentID
 	// Params returns the parameters of the current call
 	Params() dict.Dict
-	// Balance returns number of iotas in the balance of the smart contract
-	BalanceIotas() uint64
-	// Assets returns all assets: iotas and native tokens
-	Assets() *Assets
 	// ChainID returns the chain ID
 	ChainID() *ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
@@ -36,6 +35,15 @@ type SandboxBase interface {
 	Utils() Utils
 	// Gas returns interface for gas related functions
 	Gas() Gas
+}
+
+type Balance interface {
+	// BalanceIotas returns number of iotas in the balance of the smart contract
+	BalanceIotas() uint64
+	// BalanceNativeToken returns number of native token or nil if it is empty
+	BalanceNativeToken(id *iotago.NativeTokenID) *big.Int
+	// Assets returns all assets: iotas and native tokens
+	Assets() *Assets
 }
 
 // Sandbox is an interface given to the processor to access the VMContext

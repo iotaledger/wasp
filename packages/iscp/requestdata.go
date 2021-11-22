@@ -55,7 +55,6 @@ type RequestData interface {
 	TimeData() *TimeData
 
 	Unwrap() unwrap
-	Features() Features
 
 	Bytes() []byte
 	String() string
@@ -96,6 +95,7 @@ type unwrap interface {
 type unwrapUTXO interface {
 	Output() iotago.Output
 	Metadata() *UTXOMetaData
+	Features() Features
 }
 
 type ReturnAmountOptions interface {

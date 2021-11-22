@@ -29,6 +29,7 @@ func (vmctx *VMContext) earlyCheckReasonToSkip() error {
 	return err
 }
 
+// checkReasonRequestProcessed checks if request ID is already in the blocklog
 func (vmctx *VMContext) checkReasonRequestProcessed() error {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
@@ -40,22 +41,26 @@ func (vmctx *VMContext) checkReasonRequestProcessed() error {
 	return nil
 }
 
+// checkReasonToSkipOffLedger checks reasons to skip off ledger request
 func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
+	// first checks if it is already in backlog
 	if err := vmctx.checkReasonRequestProcessed(); err != nil {
 		return err
 	}
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
+	// check the account. It must exist
+	// TODO optimize: check the account balances and fetch nonce in one call
 	req := vmctx.req.Request()
 	// off-ledger account must exist, i.e. it should have non zero balance on the chain
 	if _, exists := accounts.GetAccountBalances(vmctx.State(), req.SenderAccount()); !exists {
-		// TODO check minimum balance
+		// TODO check minimum balance. Require some minimum balance
 		return xerrors.Errorf("unverified account for off-ledger request: %s", req.SenderAccount())
 	}
 
 	// this is a replay protection measure for off-ledger requests assuming in the batch order of requests is random.
-	// See replay-off-ledger.md
+	// It is checking if nonce is not too old. See replay-off-ledger.md
 	maxAssumed := accounts.GetMaxAssumedNonce(vmctx.State(), req.SenderAddress())
 
 	nonce := vmctx.req.Unwrap().OffLedger().Nonce()
@@ -71,6 +76,7 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	return nil
 }
 
+// checkReasonToSkipOnLedger check reasons to skip UTXO request
 func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 	if err := vmctx.checkReasonReturnAmount(); err != nil {
 		return err
@@ -93,8 +99,10 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 	return nil
 }
 
+// checkReasonTimeLock checking timelock conditions based on time assumptions.
+// VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonTimeLock() error {
-	lock := vmctx.req.Features().TimeLock()
+	lock := vmctx.req.Unwrap().UTXO().Features().TimeLock()
 	if lock != nil {
 		if lock.Time.Before(vmctx.finalStateTimestamp) {
 			return xerrors.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
@@ -106,8 +114,10 @@ func (vmctx *VMContext) checkReasonTimeLock() error {
 	return nil
 }
 
+// checkReasonExpiry checking expiry conditions based on time assumptions.
+// VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonExpiry() error {
-	expiry, senderAddr := vmctx.req.Features().Expiry()
+	expiry, senderAddr := vmctx.req.Unwrap().UTXO().Features().Expiry()
 	if expiry == nil {
 		return nil
 	}
@@ -138,8 +148,9 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	return nil
 }
 
+// checkReasonReturnAmount skipping anything with return amounts in this version. There's no risk to lose funds
 func (vmctx *VMContext) checkReasonReturnAmount() error {
-	if _, ok := vmctx.req.Features().ReturnAmount(); ok {
+	if _, ok := vmctx.req.Unwrap().UTXO().Features().ReturnAmount(); ok {
 		return xerrors.Errorf("return amount feature not supported in this version")
 	}
 	return nil

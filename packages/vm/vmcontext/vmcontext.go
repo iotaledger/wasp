@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -50,7 +49,6 @@ type VMContext struct {
 	contractRecord     *root.ContractRecord
 	lastError          error
 	lastResult         dict.Dict
-	lastTotalAssets    colored.Balances
 	callStack          []*callContext
 	// --- gas related
 	// gas from the request
@@ -124,13 +122,13 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 }
 
 //nolint:revive
-func (vmctx *VMContext) GetResult() (dict.Dict, colored.Balances, error) {
-	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
+func (vmctx *VMContext) GetResult() (dict.Dict, error) {
+	return vmctx.lastResult, vmctx.lastError
 }
 
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, ledgerstate.Address) {
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, iotago.Address) {
 	rotationAddr := vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
 
@@ -141,7 +139,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	return blockIndex, stateCommitment, timestamp, rotationAddr
 }
 
-func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {
+func (vmctx *VMContext) checkRotationAddress() iotago.Address {
 	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
@@ -150,7 +148,7 @@ func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {
 
 // mustSaveBlockInfo is in the blocklog partition context
 // returns rotation address if this block is a rotation block
-func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) ledgerstate.Address {
+func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) iotago.Address {
 	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 
 	if rotationAddress := vmctx.checkRotationAddress(); rotationAddress != nil {

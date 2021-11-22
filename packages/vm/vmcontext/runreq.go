@@ -182,7 +182,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	}
 	tokensAvailable := uint64(0)
 	if vmctx.gasFeeTokenNotIota {
-		tokensAvailableBig := vmctx.getTokenBalance(vmctx.req.Request().SenderAccount(), &vmctx.gasFeeTokenID)
+		tokensAvailableBig := vmctx.GetTokenBalance(vmctx.req.Request().SenderAccount(), &vmctx.gasFeeTokenID)
 		if tokensAvailableBig != nil {
 			if tokensAvailableBig.IsUint64() {
 				tokensAvailable = tokensAvailableBig.Uint64()

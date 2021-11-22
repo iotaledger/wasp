@@ -3,6 +3,8 @@ package vmcontext
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -46,6 +48,18 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 
 func (vmctx *VMContext) Request() iscp.Request {
 	return vmctx.req.Request()
+}
+
+func (vmctx *VMContext) AccountID() *iscp.AgentID {
+	hname := vmctx.CurrentContractHname()
+	if commonaccount.IsCoreHname(hname) {
+		return commonaccount.Get(vmctx.ChainID())
+	}
+	return iscp.NewAgentID(vmctx.task.AnchorOutput.AliasID.ToAddress(), hname)
+}
+
+func (vmctx *VMContext) IncomingTransfer() *iscp.Assets {
+	return vmctx.getCallContext().transfer
 }
 
 // TODO dust provision

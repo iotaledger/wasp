@@ -1,6 +1,9 @@
 package viewcontext
 
 import (
+	"math/big"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -58,6 +61,10 @@ func (s *sandboxview) BalanceIotas() uint64 {
 	//bals, err := accounts.DecodeBalances(r)
 	//a.RequireNoError(err)
 	//return bals
+}
+
+func (s *sandboxview) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
+	panic("not implemented")
 }
 
 func (s *sandboxview) Assets() *iscp.Assets {

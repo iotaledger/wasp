@@ -15,8 +15,7 @@ import (
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
-// It adds new tokens to the chain ledger
-// It is used when new tokens arrive with a request
+// It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
 func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, deposit *iscp.Assets) {
 	if len(vmctx.callStack) > 0 {
 		panic("creditToAccount must be called only from request")
@@ -71,7 +70,7 @@ func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
 	return accounts.GetIotaBalance(vmctx.State(), agentID)
 }
 
-func (vmctx *VMContext) getTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+func (vmctx *VMContext) GetTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 

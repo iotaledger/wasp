@@ -14,7 +14,6 @@ import (
 
 var ErrContractNotFound = errors.New("contract not found")
 
-// Call
 func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, transfer *iscp.Assets) (dict.Dict, error) {
 	vmctx.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
 	rec, ok := vmctx.findContractByHname(targetContract)

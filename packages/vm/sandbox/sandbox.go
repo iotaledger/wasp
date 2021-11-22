@@ -4,6 +4,8 @@
 package sandbox
 
 import (
+	"math/big"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -30,6 +32,10 @@ func (s *sandbox) AccountID() *iscp.AgentID {
 
 func (s *sandbox) BalanceIotas() uint64 {
 	return s.vmctx.GetIotaBalance(s.vmctx.AccountID())
+}
+
+func (s *sandbox) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
+	return s.vmctx.GetTokenBalance(s.vmctx.AccountID(), id)
 }
 
 func (s *sandbox) Assets() *iscp.Assets {
