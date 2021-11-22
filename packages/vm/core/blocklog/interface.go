@@ -8,6 +8,8 @@ import (
 	"io"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -329,8 +331,8 @@ func (r *RequestReceipt) Short() string {
 // region ControlAddresses ///////////////////////////////////////////////
 
 type ControlAddresses struct {
-	StateAddress     ledgerstate.Address
-	GoverningAddress ledgerstate.Address
+	StateAddress     iotago.Address
+	GoverningAddress iotago.Address
 	SinceBlockIndex  uint32
 }
 

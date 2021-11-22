@@ -120,7 +120,7 @@ func (vmctx *VMContext) callTheContract() {
 
 // callFromRequest is the call itself. Assumes sc exists
 func (vmctx *VMContext) callFromRequest() {
-	vmctx.Log().Debugf("callFromRequest: %s", vmctx.req.Request().ID().String())
+	vmctx.Debugf("callFromRequest: %s", vmctx.req.Request().ID().String())
 
 	// calling only non view entry points. Calling the view will trigger error and fallback
 	entryPoint := vmctx.req.Request().Target().EntryPoint
@@ -222,10 +222,10 @@ func (vmctx *VMContext) locateTargetContract() {
 	var ok bool
 	vmctx.contractRecord, ok = vmctx.findContractByHname(targetContract)
 	if !ok {
-		vmctx.Log().Warnf("contract not found: %s", targetContract)
+		vmctx.Warnf("contract not found: %s", targetContract)
 	}
 	if vmctx.contractRecord.Hname() == 0 {
-		vmctx.Log().Warn("default contract will be called")
+		vmctx.Warnf("default contract will be called")
 	}
 }
 

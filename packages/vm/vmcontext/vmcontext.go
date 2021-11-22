@@ -4,13 +4,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
-
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
-
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -21,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 )
 
@@ -185,8 +181,8 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 	}
 	blocklog.SaveControlAddressesIfNecessary(
 		vmctx.State(),
-		vmctx.StateController(),
-		vmctx.GovernanceController(),
+		vmctx.task.AnchorOutput.StateController,
+		vmctx.task.AnchorOutput.GovernanceController,
 		vmctx.task.AnchorOutput.StateIndex,
 	)
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
@@ -204,8 +200,4 @@ func (vmctx *VMContext) closeBlockContexts() {
 	}
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil
-}
-
-func (vmctx *VMContext) Log() *logger.Logger {
-	return vmctx.task.Log
 }

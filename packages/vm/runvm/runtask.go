@@ -46,7 +46,7 @@ func runTask(task *vm.VMTask) {
 	// the result accumulates in the VMContext and in the list of stateUpdates
 	for _, req := range task.Requests {
 		if skipReason := vmctx.RunTheRequest(req, uint16(reqIndexInTheBlock)); skipReason != nil {
-			vmctx.Log().Warnf("request skipped (ignored) by the VM: %s, reason: %v",
+			vmctx.Warnf("request skipped (ignored) by the VM: %s, reason: %v",
 				req.Request().ID().String(), skipReason)
 			continue
 		}

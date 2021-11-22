@@ -57,6 +57,9 @@ func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asset
 
 // creditToAccount internal
 func creditToAccount(state kv.KVStore, account *collections.Map, transfer *iscp.Assets) {
+	if transfer == nil {
+		return
+	}
 	defer touchAccount(state, account)
 
 	// deterministic order of iteration is not important here
@@ -85,6 +88,9 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 
 // debitFromAccount internal
 func debitFromAccount(state kv.KVStore, account *collections.Map, assets *iscp.Assets) bool {
+	if assets == nil {
+		return true
+	}
 	defer touchAccount(state, account)
 
 	current := getAccountBalances(account.Immutable())

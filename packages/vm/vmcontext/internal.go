@@ -153,7 +153,7 @@ func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 		vmctx.Panicf("event too large: %s, request index: %d", contract.String(), vmctx.requestIndex)
 	}
 
-	vmctx.Log().Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
+	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
 	err := blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
 	if err != nil {
 		vmctx.Panicf("MustSaveEvent: %v", err)

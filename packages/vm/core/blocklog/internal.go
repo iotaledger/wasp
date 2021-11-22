@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -24,7 +25,7 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 
 // SaveControlAddressesIfNecessary saves new information about state address in the blocklog partition
 // If state address does not change, it does nothing
-func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governingAddress ledgerstate.Address, blockIndex uint32) {
+func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governingAddress iotago.Address, blockIndex uint32) {
 	registry := collections.NewArray32(partition, StateVarControlAddresses)
 	l := registry.MustLen()
 	if l != 0 {
@@ -32,7 +33,7 @@ func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governi
 		if err != nil {
 			panic(fmt.Sprintf("SaveControlAddressesIfNecessary: %v", err))
 		}
-		if addrs.StateAddress.Equals(stateAddress) && addrs.GoverningAddress.Equals(governingAddress) {
+		if addrs.StateAddress.Equal(stateAddress) && addrs.GoverningAddress.Equals(governingAddress) {
 			return
 		}
 	}

@@ -58,6 +58,7 @@ func viewAccounts(ctx iscp.SandboxView) (dict.Dict, error) {
 // Params:
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
 //   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
+// TODO rewrite according to the new asset handling workflow
 func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.deposit.begin -- %s", ctx.IncomingTransfer())
 

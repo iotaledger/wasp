@@ -59,7 +59,7 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	maxAssumed := accounts.GetMaxAssumedNonce(vmctx.State(), req.SenderAddress())
 
 	nonce := vmctx.req.Unwrap().OffLedger().Nonce()
-	vmctx.Log().Debugf("vmctx.validateRequest - nonce check - maxAssumed: %d, tolerance: %d, request nonce: %d ",
+	vmctx.Debugf("vmctx.validateRequest - nonce check - maxAssumed: %d, tolerance: %d, request nonce: %d ",
 		maxAssumed, OffLedgerNonceStrictOrderTolerance, nonce)
 
 	if maxAssumed < OffLedgerNonceStrictOrderTolerance {
@@ -72,6 +72,9 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 }
 
 func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
+	if err := vmctx.checkReasonReturnAmount(); err != nil {
+		return err
+	}
 	if err := vmctx.checkReasonTimeLock(); err != nil {
 		return err
 	}
@@ -131,6 +134,13 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 			// somebody else is a sender
 			return xerrors.Errorf("expired after %v", expiry.Time)
 		}
+	}
+	return nil
+}
+
+func (vmctx *VMContext) checkReasonReturnAmount() error {
+	if _, ok := vmctx.req.Features().ReturnAmount(); ok {
+		return xerrors.Errorf("return amount feature not supported in this version")
 	}
 	return nil
 }

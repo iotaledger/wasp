@@ -3,13 +3,18 @@ package vmcontext
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
 
 // pushCallContextAndMoveAssets moves funds from the caller to the target before pushing new context to the stack
 func (vmctx *VMContext) pushCallContextAndMoveAssets(contract iscp.Hname, params dict.Dict, transfer *iscp.Assets) error {
+	if transfer != nil && commonaccount.IsCoreHname(contract) {
+		// if target contract is one of core contracts, transfer is ignored
+		transfer = nil
+		vmctx.Debugf("transfer ignored for core contract")
+	}
 	if transfer != nil {
 		targetAccount := iscp.NewAgentID(vmctx.ChainID().AsAddress(), contract)
-		targetAccount = vmctx.adjustAccount(targetAccount)
 		var sourceAccount *iscp.AgentID
 		if len(vmctx.callStack) == 0 {
 			sourceAccount = vmctx.req.Request().SenderAccount()
@@ -26,7 +31,7 @@ const traceStack = false
 
 func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, transfer *iscp.Assets) {
 	if traceStack {
-		vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
+		vmctx.Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
 	}
 	var caller *iscp.AgentID
 	if len(vmctx.callStack) == 0 {
@@ -36,7 +41,7 @@ func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, t
 		caller = vmctx.MyAgentID()
 	}
 	if traceStack {
-		vmctx.Log().Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
+		vmctx.Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
 	}
 	vmctx.callStack = append(vmctx.callStack, &callContext{
 		caller:   caller,
@@ -48,7 +53,7 @@ func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, t
 
 func (vmctx *VMContext) popCallContext() {
 	if traceStack {
-		vmctx.Log().Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
+		vmctx.Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
 	}
 	vmctx.callStack[len(vmctx.callStack)-1] = nil // for GC
 	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]

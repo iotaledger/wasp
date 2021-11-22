@@ -14,10 +14,6 @@ func (vmctx *VMContext) AccountID() *iscp.AgentID {
 	return iscp.NewAgentID(vmctx.task.AnchorOutput.AliasID.ToAddress(), hname)
 }
 
-func (vmctx *VMContext) adjustAccount(agentID *iscp.AgentID) *iscp.AgentID {
-	return commonaccount.AdjustIfNeeded(agentID, vmctx.ChainID())
-}
-
 func (vmctx *VMContext) commonAccount() *iscp.AgentID {
 	return commonaccount.Get(vmctx.ChainID())
 }
