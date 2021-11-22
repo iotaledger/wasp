@@ -90,10 +90,6 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 }
 
 func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
-	if peerMsg.MsgReceiver != peerMessageReceiverStateManager {
-		panic(fmt.Errorf("State manager does not accept peer messages of other receiver type %v, message type=%v",
-			peerMsg.MsgReceiver, peerMsg.MsgType))
-	}
 	switch peerMsg.MsgType {
 	case peerMsgTypeGetBlock:
 		msg, err := messages.NewGetBlockMsg(peerMsg.MsgData)

@@ -4,7 +4,6 @@
 package commonsubset
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 
@@ -113,10 +112,6 @@ func (csc *CommonSubsetCoordinator) RunACSConsensus(
 // TryHandleMessage implements the AsynchronousCommonSubsetRunner interface.
 // It handles the network messages, if they are of correct type.
 func (csc *CommonSubsetCoordinator) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGroupIn) {
-	if peerMsg.MsgReceiver != peerMessageReceiverCommonSubset {
-		panic(fmt.Errorf("Committee does not accept peer messages of other receiver type %v, message type=%v",
-			peerMsg.MsgReceiver, peerMsg.MsgType))
-	}
 	if peerMsg.MsgType != peerMsgTypeBatch {
 		csc.log.Warnf("Wrong type of committee message: %v, ignoring it", peerMsg.MsgType)
 		return

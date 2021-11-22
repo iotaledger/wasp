@@ -4,7 +4,6 @@
 package chainimpl
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -164,10 +163,6 @@ func NewChain(
 }
 
 func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGroupIn) {
-	if peerMsg.MsgReceiver != chain.PeerMessageReceiverChain {
-		panic(fmt.Errorf("Chain does not accept peer messages of other receiver type %v, message type=%v",
-			peerMsg.MsgReceiver, peerMsg.MsgType))
-	}
 	if peerMsg.MsgType != chain.PeerMsgTypeMissingRequestIDs {
 		c.log.Warnf("Wrong type of chain message (with committee peering ID): %v, ignoring it", peerMsg.MsgType)
 		return
@@ -184,10 +179,6 @@ func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGrou
 }
 
 func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
-	if peerMsg.MsgReceiver != chain.PeerMessageReceiverChain {
-		panic(fmt.Errorf("Chain does not accept peer messages of other receiver type %v, message type=%v",
-			peerMsg.MsgReceiver, peerMsg.MsgType))
-	}
 	switch peerMsg.MsgType {
 	case chain.PeerMsgTypeOffLedgerRequest:
 		msg, err := messages.NewOffLedgerRequestMsg(peerMsg.MsgData)

@@ -4,7 +4,6 @@
 package consensus
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -128,10 +127,6 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 }
 
 func (c *consensus) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGroupIn) {
-	if peerMsg.MsgReceiver != peerMessageReceiverConsensus {
-		panic(fmt.Errorf("Consensus does not accept peer messages of other receiver type %v, message type=%v",
-			peerMsg.MsgReceiver, peerMsg.MsgType))
-	}
 	switch peerMsg.MsgType {
 	case peerMsgTypeSignedResult:
 		msg, err := messages.NewSignedResultMsg(peerMsg.MsgData)
