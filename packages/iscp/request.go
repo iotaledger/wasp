@@ -9,36 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-type TypeCode byte
-
-const (
-	TypeUnknown = TypeCode(iota)
-	TypeOffLedger
-	TypeAliasOutput
-	TypeExtendedOutput
-	TypeFoundryOutput
-	TypeNFTOutput
-	TypeUnknownOutput
-)
-
-var typeCodes = map[TypeCode]string{
-	TypeUnknown:        "(wrong)",
-	TypeOffLedger:      "Off-ledger",
-	TypeAliasOutput:    "AliasUTXO",
-	TypeExtendedOutput: "ExtendedUTXO",
-	TypeNFTOutput:      "NTF-UTXO",
-	TypeFoundryOutput:  "FoundryUTXO",
-	TypeUnknownOutput:  "UnknownUTXO",
-}
-
-func (t TypeCode) String() string {
-	ret, ok := typeCodes[t]
-	if ok {
-		return ret
-	}
-	return "(wrong)"
-}
-
 // UTXOMetaData is coming together with UTXO from L1
 // It is a part of each implementation of RequestData
 type UTXOMetaData struct {
@@ -47,13 +17,18 @@ type UTXOMetaData struct {
 	MilestoneTimestamp time.Time
 }
 
+func (u *UTXOMetaData) Bytes() []byte {
+	panic("not implemented")
+}
+
+func UTXOMetaDataFromBytes() (*UTXOMetaData, error) {
+	panic("not implemented") // TODO
+}
+
 // RequestData wraps any data which can be potentially be interpreted as a request
 type RequestData interface {
-	Type() TypeCode
-
-	Request() Request // nil if the RequestData cannot be interpreted as request, for example does not contain Sender
-	TimeData() *TimeData
-
+	Request
+	IsOffLedger() bool
 	Unwrap() unwrap
 
 	Bytes() []byte
@@ -88,7 +63,7 @@ type Features interface {
 }
 
 type unwrap interface {
-	OffLedger() *OffLedger
+	OffLedger() *OffLedgerRequestData
 	UTXO() unwrapUTXO
 }
 

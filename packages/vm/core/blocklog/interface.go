@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -15,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -201,7 +201,7 @@ func RequestLookupKeyListFromBytes(data []byte) (RequestLookupKeyList, error) {
 }
 
 func (ll RequestLookupKeyList) Bytes() []byte {
-	if len(ll) > util.MaxUint16 {
+	if len(ll) > math.MaxUint16 {
 		panic("RequestLookupKeyList::Write: too long")
 	}
 	var buf bytes.Buffer

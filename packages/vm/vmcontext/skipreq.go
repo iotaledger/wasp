@@ -3,7 +3,6 @@ package vmcontext
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
@@ -11,9 +10,15 @@ import (
 )
 
 const (
+	// OffLedgerNonceStrictOrderTolerance how many steps back the nonce is considered too old
+	// within this limit order of nonces is not checked
 	OffLedgerNonceStrictOrderTolerance = 10000
-	OnLedgerTooOldMilestonesBack       = 10
 
+	// OnLedgerTooOldMilestonesBack how many milestones back confirmed UTXO we consider too old
+	OnLedgerTooOldMilestonesBack = 10
+
+	// ExpiryUnlockSafetyWindowDuration creates safety window around time assumption,
+	// the UTXO won't be consumed to avoid race conditions
 	ExpiryUnlockSafetyWindowDuration  = 1 * time.Minute
 	ExpiryUnlockSafetyWindowMilestone = 3
 )
@@ -21,7 +26,7 @@ const (
 // earlyCheckReasonToSkip checks if request must be ignored without even modifying the state
 func (vmctx *VMContext) earlyCheckReasonToSkip() error {
 	var err error
-	if vmctx.req.Type() == iscp.TypeOffLedger {
+	if vmctx.req.IsOffLedger() {
 		err = vmctx.checkReasonToSkipOffLedger()
 	} else {
 		err = vmctx.checkReasonToSkipOnLedger()
@@ -34,7 +39,7 @@ func (vmctx *VMContext) checkReasonRequestProcessed() error {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	reqid := vmctx.req.Request().ID()
+	reqid := vmctx.req.ID()
 	if blocklog.MustIsRequestProcessed(vmctx.State(), &reqid) {
 		return xerrors.New("already processed")
 	}
@@ -52,16 +57,15 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 
 	// check the account. It must exist
 	// TODO optimize: check the account balances and fetch nonce in one call
-	req := vmctx.req.Request()
 	// off-ledger account must exist, i.e. it should have non zero balance on the chain
-	if _, exists := accounts.GetAccountBalances(vmctx.State(), req.SenderAccount()); !exists {
+	if _, exists := accounts.GetAccountBalances(vmctx.State(), vmctx.req.SenderAccount()); !exists {
 		// TODO check minimum balance. Require some minimum balance
-		return xerrors.Errorf("unverified account for off-ledger request: %s", req.SenderAccount())
+		return xerrors.Errorf("unverified account for off-ledger request: %s", vmctx.req.SenderAccount())
 	}
 
 	// this is a replay protection measure for off-ledger requests assuming in the batch order of requests is random.
 	// It is checking if nonce is not too old. See replay-off-ledger.md
-	maxAssumed := accounts.GetMaxAssumedNonce(vmctx.State(), req.SenderAddress())
+	maxAssumed := accounts.GetMaxAssumedNonce(vmctx.State(), vmctx.req.SenderAddress())
 
 	nonce := vmctx.req.Unwrap().OffLedger().Nonce()
 	vmctx.Debugf("vmctx.validateRequest - nonce check - maxAssumed: %d, tolerance: %d, request nonce: %d ",
@@ -93,6 +97,7 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 	if err := vmctx.checkReasonRequestProcessed(); err != nil {
 		return err
 	}
+	// if the output was not consumed during last OnLedgerTooOldMilestonesBack milestones, skip it
 	if vmctx.req.Unwrap().UTXO().Metadata().MilestoneIndex < vmctx.task.TimeAssumption.MilestoneIndex-OnLedgerTooOldMilestonesBack {
 		return xerrors.Errorf("more than %d milestones back", OnLedgerTooOldMilestonesBack)
 	}
@@ -121,6 +126,11 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	if expiry == nil {
 		return nil
 	}
+
+	// TODO maybe iota.go has a function check(output/ expiry time data, own time assumptions) --> true/false
+	// To check is output is unlockable based on time assumptions
+	// Better reuse logic
+
 	windowFrom := vmctx.finalStateTimestamp.Add(-ExpiryUnlockSafetyWindowDuration)
 	windowTo := vmctx.finalStateTimestamp.Add(ExpiryUnlockSafetyWindowDuration)
 	if expiry.Time.After(windowFrom) && expiry.Time.Before(windowTo) {

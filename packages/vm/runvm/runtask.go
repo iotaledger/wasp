@@ -43,11 +43,11 @@ func runTask(task *vm.VMTask) {
 		if skipReason := vmctx.RunTheRequest(req, uint16(reqIndexInTheBlock)); skipReason != nil {
 			// some request are just ignored (deterministically)
 			task.Log.Warnf("request skipped (ignored) by the VM: %s, reason: %v",
-				req.Request().ID().String(), skipReason)
+				req.ID().String(), skipReason)
 			continue
 		}
 		reqIndexInTheBlock++
-		if req.Type() == iscp.TypeOffLedger {
+		if req.IsOffLedger() {
 			numOffLedger++
 		} else {
 			numOnLedger++
@@ -59,7 +59,7 @@ func runTask(task *vm.VMTask) {
 		if lastErr == nil {
 			numSuccess++
 		} else {
-			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.Request().ID().String(), lastErr)
+			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), lastErr)
 		}
 	}
 
@@ -98,7 +98,6 @@ func runTask(task *vm.VMTask) {
 
 // checkTotalAssets asserts if assets on transaction equals assets on ledger
 func checkTotalAssets(essence *iotago.TransactionEssence, lastTotalOnChainAssets *iscp.Assets) {
-	panic("checkTotalAssets: %w")
 	//var chainOutput *ledgerstate.AliasOutput
 	//for _, o := range essence.Outputs() {
 	//	if out, ok := o.(*ledgerstate.AliasOutput); ok {

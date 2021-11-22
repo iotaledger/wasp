@@ -65,17 +65,25 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
 func (vmctx *VMContext) creditAssetsToChain() {
-	if vmctx.req.Type() == iscp.TypeOffLedger {
+	if vmctx.req.IsOffLedger() {
 		// off ledger requests does not bring any deposit
 		return
 	}
-	// update transaction builder
-	vmctx.txbuilder.AddDeltaIotas(vmctx.req.Request().Assets().Iotas)
-	for _, nt := range vmctx.req.Request().Assets().Tokens {
+	// ---- update transaction builder
+	vmctx.txbuilder.ConsumeInput(vmctx.req.Unwrap().UTXO().Metadata().UTXOInput)
+	vmctx.txbuilder.AddDeltaIotas(vmctx.req.Assets().Iotas)
+	for _, nt := range vmctx.req.Assets().Tokens {
 		vmctx.txbuilder.AddDeltaNativeToken(nt.ID, nt.Amount)
 	}
-	// sender account will be CommonAccount if sender address is not available
-	vmctx.creditToAccount(vmctx.req.Request().SenderAccount(), vmctx.req.Request().Assets())
+	// ---- end update transaction builder
+
+	// ---- update the state, the account ledger
+	// NOTE: sender account will be CommonAccount if sender address is not available
+	vmctx.creditToAccount(vmctx.req.SenderAccount(), vmctx.req.Assets())
+	// ---- end update state
+
+	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
+	// TODO check and assert consistency
 }
 
 func (vmctx *VMContext) prepareGasBudget() {
@@ -86,13 +94,13 @@ func (vmctx *VMContext) prepareGasBudget() {
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
 func (vmctx *VMContext) callTheContract() {
+	// TODO
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
-	if vmctx.req.Type() == iscp.TypeOffLedger {
+	if vmctx.req.IsOffLedger() {
 		vmctx.updateOffLedgerRequestMaxAssumedNonce()
 	}
-
 	vmctx.lastError = nil
 	func() {
 		defer func() {
@@ -113,39 +121,6 @@ func (vmctx *VMContext) callTheContract() {
 		vmctx.currentStateUpdate = snapMutations
 	}
 	vmctx.chargeGasFee()
-}
-
-// callFromRequest is the call itself. Assumes sc exists
-func (vmctx *VMContext) callFromRequest() {
-	vmctx.Debugf("callFromRequest: %s", vmctx.req.Request().ID().String())
-
-	// calling only non view entry points. Calling the view will trigger error and fallback
-	entryPoint := vmctx.req.Request().Target().EntryPoint
-	targetContract := vmctx.contractRecord.Hname()
-	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
-		targetContract,
-		entryPoint,
-		vmctx.req.Request().Params(),
-		vmctx.req.Request().Transfer(),
-		vmctx.contractRecord.ProgramHash,
-	)
-}
-
-// chargeGasFee takes burned tokens from the sender's account
-// It should always be enough because gas budget is set affordable
-func (vmctx *VMContext) chargeGasFee() {
-	if vmctx.req.Request().SenderAddress() == nil {
-		panic("inconsistency: vmctx.req.Request().SenderAddress() == nil")
-	}
-	tokensToMove := vmctx.GasBurned() / vmctx.gasPolicyGasPerGasToken
-	transferToValidator := &iscp.Assets{}
-	if vmctx.gasFeeTokenNotIota {
-		transferToValidator.Tokens = iotago.NativeTokens{{vmctx.gasFeeTokenID, new(big.Int).SetUint64(tokensToMove)}}
-	} else {
-		transferToValidator.Iotas = tokensToMove
-	}
-	sender := vmctx.req.Request().SenderAccount()
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
 }
 
 func checkVMPluginPanic() error {
@@ -172,14 +147,48 @@ func checkVMPluginPanic() error {
 	return xerrors.Errorf("exception: %w", r)
 }
 
+// callFromRequest is the call itself. Assumes sc exists
+func (vmctx *VMContext) callFromRequest() {
+	vmctx.Debugf("callFromRequest: %s", vmctx.req.ID().String())
+
+	// calling only non view entry points. Calling the view will trigger error and fallback
+	entryPoint := vmctx.req.Target().EntryPoint
+	targetContract := vmctx.contractRecord.Hname()
+	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
+		targetContract,
+		entryPoint,
+		vmctx.req.Params(),
+		vmctx.req.Transfer(),
+		vmctx.contractRecord.ProgramHash,
+	)
+}
+
+// chargeGasFee takes burned tokens from the sender's account
+// It should always be enough because gas budget is set affordable
+func (vmctx *VMContext) chargeGasFee() {
+	if vmctx.req.SenderAddress() == nil {
+		panic("inconsistency: vmctx.req.Request().SenderAddress() == nil")
+	}
+	tokensToMove := vmctx.GasBurned() / vmctx.gasPolicyGasPerGasToken
+	transferToValidator := &iscp.Assets{}
+	if vmctx.gasFeeTokenNotIota {
+		transferToValidator.Tokens = iotago.NativeTokens{{vmctx.gasFeeTokenID, new(big.Int).SetUint64(tokensToMove)}}
+	} else {
+		transferToValidator.Iotas = tokensToMove
+	}
+	sender := vmctx.req.SenderAccount()
+	// TODO split validator/chain owner
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
+}
+
 // calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget
 func (vmctx *VMContext) calculateAffordableGasBudget() {
-	if vmctx.req.Request().SenderAddress() == nil {
-		panic("inconsistency: sender must be defined when running request")
+	if vmctx.req.SenderAddress() == nil {
+		panic("inconsistency: vmctx.req.SenderAddress() == nil")
 	}
 	tokensAvailable := uint64(0)
 	if vmctx.gasFeeTokenNotIota {
-		tokensAvailableBig := vmctx.GetTokenBalance(vmctx.req.Request().SenderAccount(), &vmctx.gasFeeTokenID)
+		tokensAvailableBig := vmctx.GetTokenBalance(vmctx.req.SenderAccount(), &vmctx.gasFeeTokenID)
 		if tokensAvailableBig != nil {
 			if tokensAvailableBig.IsUint64() {
 				tokensAvailable = tokensAvailableBig.Uint64()
@@ -188,7 +197,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 			tokensAvailable = math.MaxUint64
 		}
 	} else {
-		tokensAvailable = vmctx.GetIotaBalance(vmctx.req.Request().SenderAccount())
+		tokensAvailable = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
 	}
 	// safe arithmetics
 	if tokensAvailable < math.MaxUint64/vmctx.gasPolicyGasPerGasToken {
@@ -198,7 +207,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	}
 
 	// TODO introduce minimum balance on account
-	vmctx.gasBudgetFromRequest = vmctx.req.Request().GasBudget()
+	vmctx.gasBudgetFromRequest = vmctx.req.GasBudget()
 	vmctx.gasBudget = vmctx.gasBudgetFromRequest
 	if vmctx.gasBudget > vmctx.gasBudgetAffordable {
 		vmctx.gasBudget = vmctx.gasBudgetAffordable
@@ -215,7 +224,7 @@ func (vmctx *VMContext) loadGasPolicy() {
 
 func (vmctx *VMContext) locateTargetContract() {
 	// find target contract
-	targetContract := vmctx.req.Request().Target().Contract
+	targetContract := vmctx.req.Target().Contract
 	var ok bool
 	vmctx.contractRecord, ok = vmctx.findContractByHname(targetContract)
 	if !ok {
@@ -229,7 +238,7 @@ func (vmctx *VMContext) locateTargetContract() {
 // loadChainConfig only makes sense if chain is already deployed
 func (vmctx *VMContext) loadChainConfig() {
 	if vmctx.isInitChainRequest() {
-		vmctx.chainOwnerID = vmctx.req.Request().SenderAccount()
+		vmctx.chainOwnerID = vmctx.req.SenderAccount()
 		return
 	}
 	cfg := vmctx.getChainInfo()
@@ -240,6 +249,6 @@ func (vmctx *VMContext) loadChainConfig() {
 }
 
 func (vmctx *VMContext) isInitChainRequest() bool {
-	target := vmctx.req.Request().Target()
+	target := vmctx.req.Target()
 	return target.Contract == root.Contract.Hname() && target.EntryPoint == iscp.EntryPointInit
 }

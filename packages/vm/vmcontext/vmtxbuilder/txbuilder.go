@@ -78,10 +78,10 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 	return ret
 }
 
-// AddConsumedInput adds an input to the transaction. Return its index.
+// ConsumeInput adds an input to the transaction. Return its index.
 // It panics if transaction cannot hold that many inputs
 // All explicitly consumed inputs will hold fixed index in the transaction
-func (txb *AnchorTransactionBuilder) AddConsumedInput(inp iotago.UTXOInput) int {
+func (txb *AnchorTransactionBuilder) ConsumeInput(inp iotago.UTXOInput) int {
 	if txb.InputsAreFull() {
 		panic(ErrInputLimitExceeded)
 	}
