@@ -18,6 +18,7 @@ use wasmlib::host::*;
 use crate::*;
 use crate::keys::*;
 $#if structs useStructs
+$#if typedefs useTypeDefs
 `,
 	// *******************************
 	"resultsFunc": `

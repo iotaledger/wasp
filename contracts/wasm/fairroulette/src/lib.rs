@@ -13,6 +13,7 @@ use wasmlib::*;
 use wasmlib::host::*;
 
 use crate::consts::*;
+use crate::events::*;
 use crate::keys::*;
 use crate::params::*;
 use crate::results::*;
@@ -20,6 +21,7 @@ use crate::state::*;
 
 mod consts;
 mod contract;
+mod events;
 mod keys;
 mod params;
 mod results;
@@ -48,6 +50,7 @@ fn on_load() {
 }
 
 pub struct ForcePayoutContext {
+	events:  FairRouletteEvents,
 	state: MutableFairRouletteState,
 }
 
@@ -58,6 +61,7 @@ fn func_force_payout_thunk(ctx: &ScFuncContext) {
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = ForcePayoutContext {
+		events:  FairRouletteEvents {},
 		state: MutableFairRouletteState {
 			id: OBJ_ID_STATE,
 		},
@@ -67,6 +71,7 @@ fn func_force_payout_thunk(ctx: &ScFuncContext) {
 }
 
 pub struct ForceResetContext {
+	events:  FairRouletteEvents,
 	state: MutableFairRouletteState,
 }
 
@@ -77,6 +82,7 @@ fn func_force_reset_thunk(ctx: &ScFuncContext) {
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = ForceResetContext {
+		events:  FairRouletteEvents {},
 		state: MutableFairRouletteState {
 			id: OBJ_ID_STATE,
 		},
@@ -86,6 +92,7 @@ fn func_force_reset_thunk(ctx: &ScFuncContext) {
 }
 
 pub struct PayWinnersContext {
+	events:  FairRouletteEvents,
 	state: MutableFairRouletteState,
 }
 
@@ -96,6 +103,7 @@ fn func_pay_winners_thunk(ctx: &ScFuncContext) {
 	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
 	let f = PayWinnersContext {
+		events:  FairRouletteEvents {},
 		state: MutableFairRouletteState {
 			id: OBJ_ID_STATE,
 		},
@@ -105,6 +113,7 @@ fn func_pay_winners_thunk(ctx: &ScFuncContext) {
 }
 
 pub struct PlaceBetContext {
+	events:  FairRouletteEvents,
 	params: ImmutablePlaceBetParams,
 	state: MutableFairRouletteState,
 }
@@ -112,6 +121,7 @@ pub struct PlaceBetContext {
 fn func_place_bet_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairroulette.funcPlaceBet");
 	let f = PlaceBetContext {
+		events:  FairRouletteEvents {},
 		params: ImmutablePlaceBetParams {
 			id: OBJ_ID_PARAMS,
 		},
@@ -125,6 +135,7 @@ fn func_place_bet_thunk(ctx: &ScFuncContext) {
 }
 
 pub struct PlayPeriodContext {
+	events:  FairRouletteEvents,
 	params: ImmutablePlayPeriodParams,
 	state: MutableFairRouletteState,
 }
@@ -136,6 +147,7 @@ fn func_play_period_thunk(ctx: &ScFuncContext) {
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
 	let f = PlayPeriodContext {
+		events:  FairRouletteEvents {},
 		params: ImmutablePlayPeriodParams {
 			id: OBJ_ID_PARAMS,
 		},

@@ -27,7 +27,8 @@ func OnLoad() {
 }
 
 type ForcePayoutContext struct {
-	State MutableFairRouletteState
+	Events FairRouletteEvents
+	State  MutableFairRouletteState
 }
 
 func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
@@ -46,7 +47,8 @@ func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ForceResetContext struct {
-	State MutableFairRouletteState
+	Events FairRouletteEvents
+	State  MutableFairRouletteState
 }
 
 func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
@@ -65,7 +67,8 @@ func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type PayWinnersContext struct {
-	State MutableFairRouletteState
+	Events FairRouletteEvents
+	State  MutableFairRouletteState
 }
 
 func funcPayWinnersThunk(ctx wasmlib.ScFuncContext) {
@@ -84,6 +87,7 @@ func funcPayWinnersThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type PlaceBetContext struct {
+	Events FairRouletteEvents
 	Params ImmutablePlaceBetParams
 	State  MutableFairRouletteState
 }
@@ -104,6 +108,7 @@ func funcPlaceBetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type PlayPeriodContext struct {
+	Events FairRouletteEvents
 	Params ImmutablePlayPeriodParams
 	State  MutableFairRouletteState
 }

@@ -6,6 +6,7 @@
 // Change the json schema instead
 
 #![allow(dead_code)]
+#![allow(unused_imports)]
 
 use wasmlib::*;
 use wasmlib::host::*;

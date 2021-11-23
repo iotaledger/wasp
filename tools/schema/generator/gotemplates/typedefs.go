@@ -59,13 +59,11 @@ func (a $proxy) Get$FldType(index int32) wasmlib.Sc$mut$FldType {
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherType": `
-$#set OldType $FldType
 $#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeStruct
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherTypeTypeDef": `
-$#set varType wasmlib.TYPE_MAP
-$#if array setVarTypeArray
+$#emit setVarType
 
 func (a $proxy) Get$OldType(index int32) $mut$OldType {
 	subID := wasmlib.GetObjectID(a.objID, wasmlib.Key32(index), $varType)
@@ -110,15 +108,11 @@ func (m $proxy) Get$FldType(key $fldMapKeyLangType) wasmlib.Sc$mut$FldType {
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
-$#set OldType $FldType
-$#set oldMapKeyLangType $fldMapKeyLangType
-$#set oldMapKeyKey $fldMapKeyKey
 $#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruct
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeTypeDef": `
-$#set varType wasmlib.TYPE_MAP
-$#if array setVarTypeArray
+$#emit setVarType
 
 func (m $proxy) Get$OldType(key $oldMapKeyLangType) $mut$OldType {
 	subID := wasmlib.GetObjectID(m.objID, $oldMapKeyKey.KeyID(), $varType)
@@ -131,9 +125,5 @@ func (m $proxy) Get$OldType(key $oldMapKeyLangType) $mut$OldType {
 func (m $proxy) Get$FldType(key $fldMapKeyLangType) $mut$FldType {
 	return $mut$FldType{objID: m.objID, keyID: $fldMapKeyKey.KeyID()}
 }
-`,
-	// *******************************
-	"setVarTypeArray": `
-$#set varType $arrayTypeID|$fldTypeID
 `,
 }

@@ -13,6 +13,7 @@ use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
+use crate::typedefs::*;
 
 #[derive(Clone, Copy)]
 pub struct ImmutableArrayClearParams {

@@ -142,14 +142,12 @@ impl BytesEncoder {
 
     // encodes an ScAddress into the byte buffer
     pub fn address(&mut self, value: &ScAddress) -> &BytesEncoder {
-        self.bytes(value.to_bytes());
-        self
+        self.bytes(value.to_bytes())
     }
 
     // encodes an ScAgentID into the byte buffer
     pub fn agent_id(&mut self, value: &ScAgentID) -> &BytesEncoder {
-        self.bytes(value.to_bytes());
-        self
+        self.bytes(value.to_bytes())
     }
 
     // encodes a substring of bytes into the byte buffer
@@ -161,14 +159,12 @@ impl BytesEncoder {
 
     // encodes an ScChainID into the byte buffer
     pub fn chain_id(&mut self, value: &ScChainID) -> &BytesEncoder {
-        self.bytes(value.to_bytes());
-        self
+        self.bytes(value.to_bytes())
     }
 
     // encodes an ScColor into the byte buffer
     pub fn color(&mut self, value: &ScColor) -> &BytesEncoder {
-        self.bytes(value.to_bytes());
-        self
+        self.bytes(value.to_bytes())
     }
 
     // retrieve the encoded byte buffer
@@ -178,14 +174,12 @@ impl BytesEncoder {
 
     // encodes an ScHash into the byte buffer
     pub fn hash(&mut self, value: &ScHash) -> &BytesEncoder {
-        self.bytes(value.to_bytes());
-        self
+        self.bytes(value.to_bytes())
     }
 
     // encodes an ScHname into the byte buffer
     pub fn hname(&mut self, value: &ScHname) -> &BytesEncoder {
-        self.bytes(&value.to_bytes());
-        self
+        self.bytes(&value.to_bytes())
     }
 
     // encodes an int16 into the byte buffer
@@ -222,13 +216,11 @@ impl BytesEncoder {
 
     // encodes an ScRequestID into the byte buffer
     pub fn request_id(&mut self, value: &ScRequestID) -> &BytesEncoder {
-        self.bytes(value.to_bytes());
-        self
+        self.bytes(value.to_bytes())
     }
 
     // encodes an UTF-8 text string into the byte buffer
     pub fn string(&mut self, value: &str) -> &BytesEncoder {
-        self.bytes(value.as_bytes());
-        self
+        self.bytes(value.as_bytes())
     }
 }

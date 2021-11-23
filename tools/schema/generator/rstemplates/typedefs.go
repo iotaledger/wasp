@@ -65,15 +65,12 @@ $#set exist $proxy
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherType": `
-$#set OldType $FldType
 $#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeStruct
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherTypeTypeDef": `
-$#set varType TYPE_MAP
-$#if array setVarTypeArray
-
-	pub fn Get$OldType(&self, index: i32) -> $mut$OldType {
+$#emit setVarType
+	pub fn get_$old_type(&self, index: i32) -> $mut$OldType {
 		let sub_id = get_object_id(self.obj_id, Key32(index), $varType);
 		$mut$OldType { obj_id: sub_id }
 	}
@@ -117,16 +114,11 @@ $#set exist $proxy
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
-$#set old_type $fld_type
-$#set OldType $FldType
-$#set oldMapKeyLangType $fldMapKeyLangType
-$#set oldMapKeyKey $fldMapKeyKey
 $#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruct
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeTypeDef": `
-$#set varType TYPE_MAP
-$#if array setVarTypeArray
+$#emit setVarType
     pub fn get_$old_type(&self, key: $oldMapKeyLangType) -> $mut$OldType {
         let sub_id = get_object_id(self.obj_id, key.get_key_id(), $varType);
         $mut$OldType { obj_id: sub_id }
@@ -134,12 +126,8 @@ $#if array setVarTypeArray
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeStruct": `
-    pub fn get_$old_type(&self, key: $oldMapKeyLangType) -> $mut$OldType {
-        $mut$OldType { obj_id: self.obj_id, key_id: key.get_key_id() }
+    pub fn get_$fld_type(&self, key: $fldMapKeyLangType) -> $mut$FldType {
+        $mut$FldType { obj_id: self.obj_id, key_id: key.get_key_id() }
     }
-`,
-	// *******************************
-	"setVarTypeArray": `
-$#set varType $arrayTypeID | $fldTypeID
 `,
 }
