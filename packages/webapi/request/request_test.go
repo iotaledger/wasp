@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	util "github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -37,6 +38,10 @@ func (m *mockedChain) ReceiveTransaction(_ *ledgerstate.Transaction) {
 }
 
 func (m *mockedChain) ReceiveState(_ *ledgerstate.AliasOutput, _ time.Time) {
+	panic("implement me")
+}
+
+func (m *mockedChain) ReceiveOffLedgerRequest(_ *request.OffLedger, _ string) {
 	panic("implement me")
 }
 
