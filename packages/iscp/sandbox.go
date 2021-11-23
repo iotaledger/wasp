@@ -95,8 +95,7 @@ type StateAnchor interface {
 	StateData() StateData
 }
 
-type SendOptions struct {
-	// TODO
+type SendOptions struct { // TODO
 }
 
 // RequestMetadata represents content of the data payload of the output

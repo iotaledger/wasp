@@ -1,14 +1,12 @@
 package iscp
 
 import (
+	"encoding/binary"
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-
-	"github.com/iotaledger/hive.go/serializer"
-
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/serializer"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -30,14 +28,8 @@ func RequestDataFromBytes(data []byte) (RequestData, error) {
 		return req, nil
 	}
 	// on-ledger
-	req := &OnLedgerRequestData{}
-	if err := req.readFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	return req, nil
+	return OnledgerRequestFromMarshalUtil(mu)
 }
-
-// TODO refactor cryptography to iotago instead of hive.go
 
 // region OffLedgerRequestData  ////////////////////////////////////////////////////////////////////////////
 
@@ -47,8 +39,8 @@ type OffLedgerRequestData struct {
 	entryPoint     Hname
 	params         dict.Dict
 	publicKey      ed25519.PublicKey
-	sender         iotago.Address
-	signature      iotago.Signature
+	sender         *iotago.Ed25519Address
+	signature      []byte
 	nonce          uint64
 	transferIotas  uint64
 	transferTokens iotago.NativeTokens
@@ -104,19 +96,29 @@ func (r *OffLedgerRequestData) Bytes() []byte {
 
 func (r *OffLedgerRequestData) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	r.writeEssenceToMarshalUtil(mu)
-	mu.WriteBytes(r.signature[:])
+	mu.WriteUint8(uint8(len(r.signature)))
+	mu.WriteBytes(r.signature)
 }
 
 func (r *OffLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	if err := r.readEssenceFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	sig, err := mu.ReadBytes(len(r.signature))
+	sigLength, err := mu.ReadUint8()
 	if err != nil {
 		return err
 	}
-	copy(r.signature[:], sig)
+	r.signature, err = mu.ReadBytes(int(sigLength))
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func (r *OffLedgerRequestData) essenceBytes() []byte {
+	mu := marshalutil.New()
+	r.writeEssenceToMarshalUtil(mu)
+	return mu.Bytes()
 }
 
 func (r *OffLedgerRequestData) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
@@ -124,7 +126,7 @@ func (r *OffLedgerRequestData) writeEssenceToMarshalUtil(mu *marshalutil.Marshal
 		Write(r.contract).
 		Write(r.entryPoint).
 		Write(r.params).
-		WriteBytes(r.publicKey[:]).
+		WriteBytes(r.publicKey).
 		WriteUint64(r.nonce).
 		WriteUint64(r.gasBudget).
 		WriteUint64(r.transferIotas)
@@ -175,11 +177,9 @@ func (r *OffLedgerRequestData) Hash() [32]byte {
 }
 
 // Sign signs essence
-func (r *OffLedgerRequestData) Sign(keyPair *ed25519.KeyPair) {
-	r.publicKey = keyPair.PublicKey
-	mu := marshalutil.New()
-	r.writeEssenceToMarshalUtil(mu)
-	r.signature = keyPair.PrivateKey.Sign(mu.Bytes())
+func (r *OffLedgerRequestData) Sign(key ed25519.PrivateKey) {
+	r.publicKey = key.Public().(ed25519.PublicKey)
+	r.signature = ed25519.Sign(key, r.essenceBytes())
 }
 
 // Assets is attached assets to the UTXO. Nil for off-ledger
@@ -211,9 +211,7 @@ func (r *OffLedgerRequestData) WithTokens(tokens iotago.NativeTokens) *OffLedger
 
 // VerifySignature verifies essence signature
 func (r *OffLedgerRequestData) VerifySignature() bool {
-	mu := marshalutil.New()
-	r.writeEssenceToMarshalUtil(mu)
-	return r.publicKey.VerifySignature(mu.Bytes(), r.signature)
+	return ed25519.Verify(r.publicKey, r.essenceBytes(), r.signature)
 }
 
 // ID returns request id for this request
@@ -245,7 +243,8 @@ func (r *OffLedgerRequestData) SenderAccount() *AgentID {
 
 func (r *OffLedgerRequestData) SenderAddress() iotago.Address {
 	if r.sender == nil {
-		r.sender = iotago.Ed25519AddressFromPubKey(r.publicKey) // placeholders.NewED25519Address(r.publicKey)
+		addr := iotago.Ed25519AddressFromPubKey(r.publicKey)
+		r.sender = &addr
 	}
 	return r.sender
 }
@@ -285,13 +284,12 @@ type OnLedgerRequestData struct {
 	UTXOMetaData
 	output iotago.Output
 
-	// non-persistent
 	// featureBlocksCache and requestMetadata originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
 	featureBlocksCache iotago.FeatureBlocksSet
 	requestMetadata    *RequestMetadata
 }
 
-func OnLedgerFromUTXO(data UTXOMetaData, o iotago.Output) (*OnLedgerRequestData, error) {
+func OnLedgerFromUTXO(data *UTXOMetaData, o iotago.Output) (*OnLedgerRequestData, error) {
 	var fbSet iotago.FeatureBlocksSet
 	var reqMetadata *RequestMetadata
 	var err error
@@ -311,23 +309,51 @@ func OnLedgerFromUTXO(data UTXOMetaData, o iotago.Output) (*OnLedgerRequestData,
 
 	return &OnLedgerRequestData{
 		output:             o,
-		UTXOMetaData:       data,
+		UTXOMetaData:       *data,
 		featureBlocksCache: fbSet,
 		requestMetadata:    reqMetadata,
 	}, nil
 }
 
+func OnledgerRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OnLedgerRequestData, error) {
+	utxoMetadata, err := NewUTXOMetadataFromMarshalUtil(mu)
+	if err != nil {
+		return nil, err
+	}
+	outputBytesLength, err := mu.ReadUint16()
+	if err != nil {
+		return nil, err
+	}
+	outputBytes, err := mu.ReadBytes(int(outputBytesLength))
+	if err != nil {
+		return nil, err
+	}
+	outputType := binary.LittleEndian.Uint32(outputBytes)
+	output, err := iotago.OutputSelector(outputType)
+	if err != nil {
+		return nil, err
+	}
+	_, err = output.Deserialize(outputBytes, serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		return nil, err
+	}
+	return OnLedgerFromUTXO(utxoMetadata, output)
+}
+
 func (r *OnLedgerRequestData) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteBool(false)
 	r.writeToMarshalUtil(mu)
 	return mu.Bytes()
 }
 
 func (r *OnLedgerRequestData) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	outputBytes, _ := r.output.Serialize(serializer.DeSeriModeNoValidation, nil)
-	mu.WriteBytes(outputBytes)
+	outputBytes, err := r.output.Serialize(serializer.DeSeriModePerformLexicalOrdering, nil)
+	if err != nil {
+		return
+	}
 	mu.WriteBytes(r.UTXOMetaData.Bytes())
+	mu.WriteUint16(uint16(len(outputBytes)))
+	mu.WriteBytes(outputBytes)
 }
 
 func (r *OnLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
@@ -336,10 +362,6 @@ func (r *OnLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) e
 
 // implements Request interface
 var _ Request = &OnLedgerRequestData{}
-
-func (r *OnLedgerRequestData) IsOffLedger() bool {
-	return false
-}
 
 func (r *OnLedgerRequestData) ID() RequestID {
 	return r.UTXOMetaData.RequestID()
@@ -357,11 +379,11 @@ func (r *OnLedgerRequestData) SenderAccount() *AgentID {
 }
 
 func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
-	senderBlock, has := r.featureBlocksCache[iotago.FeatureBlockSender]
-	if !has {
+	senderBlock := r.featureBlocksCache.SenderFeatureBlock()
+	if senderBlock == nil {
 		return nil
 	}
-	return senderBlock.(*iotago.SenderFeatureBlock).Address
+	return senderBlock.Address
 }
 
 func (r *OnLedgerRequestData) Target() RequestTarget {
@@ -390,6 +412,10 @@ func (r *OnLedgerRequestData) GasBudget() uint64 {
 
 // implements RequestData interface
 var _ RequestData = &OnLedgerRequestData{}
+
+func (r *OnLedgerRequestData) IsOffLedger() bool {
+	return false
+}
 
 func (r *OnLedgerRequestData) Unwrap() unwrap {
 	return r
@@ -482,7 +508,7 @@ const RequestIDDigestLen = 6
 // if it was never seen
 type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
-func NewRequestID(txid ledgerstate.TransactionID, index uint16) RequestID {
+func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
 	return RequestID{}
 }
 
@@ -578,11 +604,11 @@ func NewRequestMetadata() *RequestMetadata {
 }
 
 func RequestMetadataFromFeatureBlocksSet(set iotago.FeatureBlocksSet) (*RequestMetadata, error) {
-	metadataFeatBlock, has := set[iotago.FeatureBlockMetadata]
-	if !has {
+	metadataFeatBlock := set.MetadataFeatureBlock()
+	if metadataFeatBlock == nil {
 		return nil, nil
 	}
-	bytes := metadataFeatBlock.(*iotago.MetadataFeatureBlock).Data
+	bytes := metadataFeatBlock.Data
 	return RequestMetadataFromBytes(bytes)
 }
 
