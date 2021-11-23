@@ -37,7 +37,6 @@ type Node struct {
 	processes    map[string]*proc                 // Only for introspection.
 	procLock     *sync.RWMutex                    // To guard access to the process pool.
 	initMsgQueue chan *initiatorInitMsgIn         // Incoming events processed async.
-	recvStopCh   chan bool                        // To coordinate shutdown.
 	attachID     interface{}                      // Peering attach ID
 	log          *logger.Logger
 }
@@ -65,7 +64,6 @@ func NewNode(
 		processes:    make(map[string]*proc),
 		procLock:     &sync.RWMutex{},
 		initMsgQueue: make(chan *initiatorInitMsgIn),
-		recvStopCh:   make(chan bool),
 		log:          log,
 	}
 	n.attachID = netProvider.Attach(&initPeeringID, peerMessageReceiverDkgInit, n.receiveInitMessage)
@@ -93,7 +91,6 @@ func (n *Node) receiveInitMessage(peerMsg *peering.PeerMessageIn) {
 }
 
 func (n *Node) Close() {
-	close(n.recvStopCh)
 	close(n.initMsgQueue)
 	n.netProvider.Detach(n.attachID)
 }
@@ -267,15 +264,8 @@ func (n *Node) GenerateDistributedKey(
 
 // Async recv is needed to avoid locking on the even publisher (Recv vs Attach in proc).
 func (n *Node) recvLoop() {
-	for {
-		select {
-		case <-n.recvStopCh:
-			return
-		case recv, ok := <-n.initMsgQueue:
-			if ok {
-				n.onInitMsg(recv)
-			}
-		}
+	for recv := range n.initMsgQueue {
+		n.onInitMsg(recv)
 	}
 }
 
