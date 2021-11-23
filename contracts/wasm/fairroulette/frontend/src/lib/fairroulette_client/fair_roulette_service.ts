@@ -64,9 +64,9 @@ export class FairRouletteService {
     const messageHandlers: MessageHandlers = {
       'fairroulette.bet': (index) => {
         const bet: Bet = {
-          better: message[index + 1],
-          amount: Number(message[index + 2]),
-          betNumber: Number(message[index + 3]),
+          better: message[index + 2],
+          amount: Number(message[index + 3]),
+          betNumber: Number(message[index + 4]),
         };
 
         this.emitter.emit('betPlaced', bet);
@@ -74,8 +74,8 @@ export class FairRouletteService {
 
       'fairroulette.payout': (index) => {
         const bet: Bet = {
-          better: message[index + 1],
-          amount: Number(message[index + 2]),
+          better: message[index + 2],
+          amount: Number(message[index + 3]),
           betNumber: undefined,
         };
 
@@ -83,7 +83,7 @@ export class FairRouletteService {
       },
 
       'fairroulette.round': (index) => {
-        this.emitter.emit('roundNumber', message[index + 1] || 0);
+        this.emitter.emit('roundNumber', message[index + 2] || 0);
       },
 
       'fairroulette.start': (index) => {
@@ -95,7 +95,7 @@ export class FairRouletteService {
       },
 
       'fairroulette.winner': (index) => {
-        this.emitter.emit('winningNumber', message[index + 1] || 0);
+        this.emitter.emit('winningNumber', message[index + 2] || 0);
       },
     };
 
