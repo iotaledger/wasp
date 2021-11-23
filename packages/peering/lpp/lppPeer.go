@@ -41,18 +41,7 @@ var _ peering.PeerSender = &peer{}
 func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteLppID libp2ppeer.ID, n *netImpl) *peer {
 	log := n.log.Named("peer:" + remoteNetID)
 	messagePriorityFun := func(msg interface{}) bool {
-		peerMsg, ok := msg.(*peering.PeerMessageNet)
-		if ok {
-			return peerMsg.MsgType > 0
-			/*switch peerMsg.MsgType {
-			case messages.MsgGetBlock,
-				messages.MsgBlock,
-				messages.MsgSignedResult,
-				messages.MsgSignedResultAck:
-				return true
-			default:
-			}*/
-		}
+		// TODO: decide if prioritetisation is needed and implement it then.
 		return false
 	}
 	p := &peer{
