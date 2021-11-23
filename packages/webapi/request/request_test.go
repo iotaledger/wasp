@@ -42,7 +42,6 @@ func (m *mockedChain) ReceiveState(_ *ledgerstate.AliasOutput, _ time.Time) {
 }
 
 func (m *mockedChain) ReceiveOffLedgerRequest(_ *request.OffLedger, _ string) {
-	panic("implement me")
 }
 
 func (m *mockedChain) Dismiss(_ string) {
