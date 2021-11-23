@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 )
 
-type NodeConnImplementation struct {
+type nodeConnImplementation struct {
 	client                 *txstream_client.Client
 	transactionHandlers    map[ledgerstate.AliasAddress]chain.NodeConnectionHandleTransactionFun
 	iStateHandlers         map[ledgerstate.AliasAddress]chain.NodeConnectionHandleInclusionStateFun
@@ -19,10 +19,10 @@ type NodeConnImplementation struct {
 	log                    *logger.Logger // general chains logger
 }
 
-var _ chain.NodeConnection = &NodeConnImplementation{}
+var _ chain.NodeConnection = &nodeConnImplementation{}
 
 func NewNodeConnection(nodeConnClient *txstream_client.Client, log *logger.Logger) chain.NodeConnection {
-	ret := &NodeConnImplementation{
+	ret := &nodeConnImplementation{
 		client:                 nodeConnClient,
 		transactionHandlers:    make(map[ledgerstate.AliasAddress]chain.NodeConnectionHandleTransactionFun),
 		iStateHandlers:         make(map[ledgerstate.AliasAddress]chain.NodeConnectionHandleInclusionStateFun),
@@ -95,12 +95,12 @@ func NewNodeConnection(nodeConnClient *txstream_client.Client, log *logger.Logge
 
 // NOTE: NodeConnectionSender methods are logged through each chain logger in ChainNodeConnImplementation
 
-func (n *NodeConnImplementation) PullState(addr *ledgerstate.AliasAddress) {
+func (n *nodeConnImplementation) PullState(addr *ledgerstate.AliasAddress) {
 	chain.CountMessageStats(&n.stats.OutPullState, addr)
 	n.client.RequestUnspentAliasOutput(addr)
 }
 
-func (n *NodeConnImplementation) PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
+func (n *nodeConnImplementation) PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
 	chain.CountMessageStats(&n.stats.OutPullTransactionInclusionState, struct {
 		Address       ledgerstate.Address
 		TransactionID ledgerstate.TransactionID
@@ -111,7 +111,7 @@ func (n *NodeConnImplementation) PullTransactionInclusionState(addr ledgerstate.
 	n.client.RequestTxInclusionState(addr, txid)
 }
 
-func (n *NodeConnImplementation) PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
+func (n *nodeConnImplementation) PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
 	chain.CountMessageStats(&n.stats.OutPullConfirmedOutput, struct {
 		Address  ledgerstate.Address
 		OutputID ledgerstate.OutputID
@@ -122,35 +122,35 @@ func (n *NodeConnImplementation) PullConfirmedOutput(addr ledgerstate.Address, o
 	n.client.RequestConfirmedOutput(addr, outputID)
 }
 
-func (n *NodeConnImplementation) PostTransaction(tx *ledgerstate.Transaction) {
+func (n *nodeConnImplementation) PostTransaction(tx *ledgerstate.Transaction) {
 	chain.CountMessageStats(&n.stats.OutPostTransaction, tx)
 	n.client.PostTransaction(tx)
 }
 
-func (n *NodeConnImplementation) AttachToTransactionReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleTransactionFun) {
+func (n *nodeConnImplementation) AttachToTransactionReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleTransactionFun) {
 	n.transactionHandlers[*addr] = handler
 }
 
-func (n *NodeConnImplementation) AttachToInclusionStateReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleInclusionStateFun) {
+func (n *nodeConnImplementation) AttachToInclusionStateReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleInclusionStateFun) {
 	n.iStateHandlers[*addr] = handler
 }
 
-func (n *NodeConnImplementation) AttachToOutputReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleOutputFun) {
+func (n *nodeConnImplementation) AttachToOutputReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleOutputFun) {
 	n.outputHandlers[*addr] = handler
 }
 
-func (n *NodeConnImplementation) AttachToUnspentAliasOutputReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleUnspentAliasOutputFun) {
+func (n *nodeConnImplementation) AttachToUnspentAliasOutputReceived(addr *ledgerstate.AliasAddress, handler chain.NodeConnectionHandleUnspentAliasOutputFun) {
 	n.unspentAOutputHandlers[*addr] = handler
 }
 
-func (n *NodeConnImplementation) Subscribe(addr ledgerstate.Address) {
+func (n *nodeConnImplementation) Subscribe(addr ledgerstate.Address) {
 	n.log.Debugf("NodeConnnection::Subscribing to %v...", addr.String())
 	defer n.log.Debugf("NodeConnnection::Subscribing done")
 	n.client.Subscribe(addr)
 	n.stats.Subscribed = append(n.stats.Subscribed, addr)
 }
 
-func (n *NodeConnImplementation) Unsubscribe(addr ledgerstate.Address) {
+func (n *nodeConnImplementation) Unsubscribe(addr ledgerstate.Address) {
 	n.log.Debugf("NodeConnnection::Unsubscribing from %v...", addr.String())
 	defer n.log.Debugf("NodeConnnection::Unsubscribing done")
 	n.client.Unsubscribe(addr)
