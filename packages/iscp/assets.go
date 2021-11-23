@@ -1,6 +1,8 @@
 package iscp
 
 import (
+	"math/big"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 )
@@ -16,6 +18,16 @@ func NewAssets(iotas uint64, tokens iotago.NativeTokens) *Assets {
 		Iotas:  iotas,
 		Tokens: tokens,
 	}
+}
+
+func NewAssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
+	ret := &Assets{}
+	var err error
+	if ret.Iotas, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	// TODO this isn't complete, we're missing some stuff from iotago
+	panic("not implemented")
 }
 
 func (a *Assets) String() string {
@@ -37,12 +49,12 @@ func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	panic("not implemented")
 }
 
-func NewAssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
-	ret := &Assets{}
-	var err error
-	if ret.Iotas, err = mu.ReadUint64(); err != nil {
-		return nil, err
+// ToMap creates respective map by summing up repetitive token IDs
+func FindNativeTokenBalance(nts iotago.NativeTokens, id *iotago.NativeTokenID) *big.Int {
+	for _, nt := range nts {
+		if nt.ID == *id {
+			return nt.Amount
+		}
 	}
-	// TODO this isn't complete, we're missing some stuff from iotago
-	panic("not implemented")
+	return nil
 }

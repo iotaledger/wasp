@@ -190,6 +190,16 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	if vmctx.gasFeeTokenNotIota {
 		tokensAvailableBig := vmctx.GetTokenBalance(vmctx.req.SenderAccount(), &vmctx.gasFeeTokenID)
 		if tokensAvailableBig != nil {
+			// safely subtract the transfer from the sender to the target
+			if transfer := vmctx.req.Transfer(); transfer != nil {
+				if transferTokens := iscp.FindNativeTokenBalance(transfer.Tokens, &vmctx.gasFeeTokenID); transferTokens != nil {
+					if tokensAvailableBig.Cmp(transferTokens) < 0 {
+						tokensAvailableBig.SetUint64(0)
+					} else {
+						tokensAvailableBig.Sub(tokensAvailableBig, transferTokens)
+					}
+				}
+			}
 			if tokensAvailableBig.IsUint64() {
 				tokensAvailable = tokensAvailableBig.Uint64()
 			} else {
@@ -198,6 +208,14 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 		}
 	} else {
 		tokensAvailable = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
+		// safely subtract the transfer from the sender to the target
+		if transfer := vmctx.req.Transfer(); transfer != nil {
+			if tokensAvailable < transfer.Iotas {
+				tokensAvailable = 0
+			} else {
+				tokensAvailable -= transfer.Iotas
+			}
+		}
 	}
 	// safe arithmetics
 	if tokensAvailable < math.MaxUint64/vmctx.gasPolicyGasPerGasToken {
@@ -206,7 +224,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 		vmctx.gasBudgetAffordable = math.MaxUint64
 	}
 
-	// TODO introduce minimum balance on account
+	// TODO introduce minimum balance on account ?
 	vmctx.gasBudgetFromRequest = vmctx.req.GasBudget()
 	vmctx.gasBudget = vmctx.gasBudgetFromRequest
 	if vmctx.gasBudget > vmctx.gasBudgetAffordable {
