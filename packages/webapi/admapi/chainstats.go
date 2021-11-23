@@ -5,64 +5,65 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
-	"go.uber.org/atomic"
 )
 
 func addChainStatsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Provider) {
-	chainExample := chain.NodeConnectionMessagesStats{
-		OutPullState: chain.NodeConnectionMessageStats{
-			Total:       *atomic.NewInt32(15),
+	chainExample := &model.NodeConnectionMessagesStats{
+		OutPullState: &model.NodeConnectionMessageStats{
+			Total:       15,
 			LastEvent:   time.Now().Add(-10 * time.Second),
 			LastMessage: "Last sent PullState message structure",
 		},
-		OutPullTransactionInclusionState: chain.NodeConnectionMessageStats{
-			Total:       *atomic.NewInt32(28),
+		OutPullTransactionInclusionState: &model.NodeConnectionMessageStats{
+			Total:       28,
 			LastEvent:   time.Now().Add(-5 * time.Second),
 			LastMessage: "Last sent PullTransactionInclusionState message structure",
 		},
-		OutPullConfirmedOutput: chain.NodeConnectionMessageStats{
-			Total:       *atomic.NewInt32(132),
+		OutPullConfirmedOutput: &model.NodeConnectionMessageStats{
+			Total:       132,
 			LastEvent:   time.Now().Add(100 * time.Second),
 			LastMessage: "Last sent PullConfirmedOutput message structure",
 		},
-		OutPostTransaction: chain.NodeConnectionMessageStats{
-			Total:       *atomic.NewInt32(3),
+		OutPostTransaction: &model.NodeConnectionMessageStats{
+			Total:       3,
 			LastEvent:   time.Now().Add(-2 * time.Millisecond),
 			LastMessage: "Last sent PostTransaction message structure",
 		},
-		InTransaction: chain.NodeConnectionMessageStats{
-			Total:       *atomic.NewInt32(101),
+		InTransaction: &model.NodeConnectionMessageStats{
+			Total:       101,
 			LastEvent:   time.Now().Add(-8 * time.Second),
 			LastMessage: "Last received Transaction message structure",
 		},
-		InInclusionState: chain.NodeConnectionMessageStats{
-			Total:       *atomic.NewInt32(203),
+		InInclusionState: &model.NodeConnectionMessageStats{
+			Total:       203,
 			LastEvent:   time.Now().Add(-123 * time.Millisecond),
 			LastMessage: "Last received InclusionState message structure",
 		},
-		InOutput: chain.NodeConnectionMessageStats{
-			Total:       *atomic.NewInt32(85),
+		InOutput: &model.NodeConnectionMessageStats{
+			Total:       85,
 			LastEvent:   time.Now().Add(-2 * time.Second),
 			LastMessage: "Last received Output message structure",
 		},
-		InUnspentAliasOutput: chain.NodeConnectionMessageStats{
-			Total:       *atomic.NewInt32(999),
+		InUnspentAliasOutput: &model.NodeConnectionMessageStats{
+			Total:       999,
 			LastEvent:   time.Now().Add(-1 * time.Second),
 			LastMessage: "Last received UnspentAliasOutput message structure",
 		},
 	}
 
-	example := chain.NodeConnectionStats{
-		Subscribed:                  []ledgerstate.Address{iscp.RandomChainID().AsAddress(), iscp.RandomChainID().AsAddress()},
-		NodeConnectionMessagesStats: chainExample,
+	example := &model.NodeConnectionStats{
+		NodeConnectionMessagesStats: *chainExample,
+		Subscribed: []model.Address{
+			model.NewAddress(iscp.RandomChainID().AsAddress()),
+			model.NewAddress(iscp.RandomChainID().AsAddress()),
+		},
 	}
 
 	s := &chainStatsService{chainsProvider}

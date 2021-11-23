@@ -126,7 +126,7 @@ type ChainNodeConnection interface {
 }
 
 type NodeConnectionMessageStats struct {
-	Total       atomic.Int32
+	Total       atomic.Uint32
 	LastEvent   time.Time
 	LastMessage interface{}
 }
