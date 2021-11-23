@@ -90,7 +90,6 @@ type PeerDomainProvider interface {
 	ReshufflePeers(seedBytes ...[]byte)
 	GetRandomPeers(upToNumPeers int) []string
 	PeerCollection
-	SendMsgToRandomPeers(upToNumPeers uint16, msg *PeerMessageData)
 	Close()
 }
 

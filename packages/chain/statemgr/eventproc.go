@@ -45,7 +45,7 @@ func (sm *stateManager) handleGetBlockMsg(msg *messages.GetBlockMsgIn) {
 	sm.log.Debugf("handleGetBlockMsg: responding to peer %s by block %v", msg.SenderNetID, msg.BlockIndex)
 
 	blockMsg := &messages.BlockMsg{BlockBytes: blockBytes}
-	sm.chain.SendPeerMsgByNetID(msg.SenderNetID, peerMessageReceiverStateManager, peerMsgTypeBlock, util.MustBytes(blockMsg))
+	sm.chainPeers.SendPeerMsgByNetID(msg.SenderNetID, peerMessageReceiverStateManager, peerMsgTypeBlock, util.MustBytes(blockMsg))
 }
 
 // EventBlockMsg

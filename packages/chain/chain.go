@@ -24,9 +24,6 @@ import (
 type ChainCore interface {
 	ID() *iscp.ChainID
 	GetCommitteeInfo() *CommitteeInfo
-	AttachToPeerMessages(receiver byte, fun func(recv *peering.PeerMessageIn))
-	SendPeerMsgByNetID(netID string, msgReceiver byte, msgType byte, msgData []byte)
-	SendPeerMsgToRandomPeers(upToNumPeers uint16, msgReceiver byte, msgType byte, msgData []byte)
 	StateCandidateToStateManager(state.VirtualStateAccess, ledgerstate.OutputID)
 	Events() ChainEvents
 	Processors() *processors.Cache
@@ -66,6 +63,14 @@ type ChainEvents interface {
 	ChainTransition() *events.Event
 }
 
+type ChainPeers interface {
+	AttachToPeerMessages(receiver byte, fun func(recv *peering.PeerMessageIn))
+	SendPeerMsgByNetID(netID string, msgReceiver byte, msgType byte, msgData []byte)
+	SendPeerMsgToRandomPeers(upToNumPeers int, msgReceiver byte, msgType byte, msgData []byte)
+	GetRandomPeers(upToNumPeers int) []string
+	Close()
+}
+
 type Chain interface {
 	ChainCore
 	ChainRequests
@@ -79,17 +84,24 @@ type Committee interface {
 	Quorum() uint16
 	OwnPeerIndex() uint16
 	DKShare() *tcrypto.DKShare
-	SendMsgByIndex(peerIdx uint16, msgReceiver byte, msgType byte, msgData []byte) error
-	SendMsgBroadcast(msgReceiver byte, msgType byte, msgData []byte, except ...uint16)
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
-	AttachToPeerMessages(receiver byte, fun func(recv *peering.PeerMessageGroupIn))
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
 	GetOtherValidatorsPeerIDs() []string
 	GetRandomValidators(upToN int) []string
+}
+
+type CommitteePeerGroup interface {
+	SendMsgByIndex(peerIdx uint16, msgReceiver byte, msgType byte, msgData []byte) error
+	SendMsgBroadcast(msgReceiver byte, msgType byte, msgData []byte, except ...uint16)
+	AttachToPeerMessages(receiver byte, fun func(recv *peering.PeerMessageGroupIn))
+	SelfIndex() uint16
+	AllNodes(except ...uint16) map[uint16]peering.PeerSender
+	OtherNodes(except ...uint16) map[uint16]peering.PeerSender
+	Close()
 }
 
 type NodeConnection interface {

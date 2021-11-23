@@ -155,14 +155,12 @@ func (env *MockedEnv) CreateNodes(timers ConsensusTimers) {
 func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedNode { //nolint:revive
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
-	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.NodeIDs)
-	require.NoError(env.T, err)
 	ret := &mockedNode{
 		NodeID:    nodeID,
 		Env:       env,
 		NodeConn:  testchain.NewMockedNodeConnection("Node_" + nodeID),
 		store:     mapdb.NewMapDB(),
-		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, peers, log),
+		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, log),
 		stateSync: coreutil.NewChainStateSync(),
 		Log:       log,
 	}
@@ -219,7 +217,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 		Address: env.StateAddress,
 		Nodes:   env.NodeIDs,
 	}
-	cmt, err := committee.New(
+	cmt, cmtPeerGroup, err := committee.New(
 		cmtRec,
 		env.ChainID,
 		env.NetworkProviders[nodeIndex],
@@ -229,7 +227,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 		acs...,
 	)
 	require.NoError(env.T, err)
-	cmt.AttachToPeerMessages(peerMessageReceiverConsensus, func(peerMsg *peering.PeerMessageGroupIn) {
+	cmtPeerGroup.AttachToPeerMessages(peerMessageReceiverConsensus, func(peerMsg *peering.PeerMessageGroupIn) {
 		log.Debugf("Consensus received peer message from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
 		if peerMsg.MsgReceiver != peerMessageReceiverConsensus {
 			env.T.Fatalf("Consensus does not accept peer messages of other receiver type %v, message type=%v",
@@ -264,7 +262,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	ret.stateSync.SetSolidIndex(0)
 	require.NoError(env.T, err)
 
-	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, true, metrics.DefaultChainMetrics(), timers)
+	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, ret.NodeConn, true, metrics.DefaultChainMetrics(), timers)
 	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
 

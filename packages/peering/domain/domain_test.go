@@ -104,8 +104,12 @@ func TestRandom(t *testing.T) {
 		wg.Add(sendTo * 2)
 		t.Log("----------------------------------")
 		msg := &peering.PeerMessageData{PeeringID: peeringID, MsgReceiver: receiver, MsgType: 125}
-		d1.SendMsgToRandomPeers(sendTo, msg)
-		d2.SendMsgToRandomPeers(sendTo, msg)
+		for _, netID := range d1.GetRandomPeers(sendTo) {
+			d1.SendMsgByNetID(netID, msg)
+		}
+		for _, netID := range d2.GetRandomPeers(sendTo) {
+			d2.SendMsgByNetID(netID, msg)
+		}
 		wg.Wait()
 	}
 	require.EqualValues(t, sendTo*5, r1)

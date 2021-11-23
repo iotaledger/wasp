@@ -40,7 +40,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
@@ -63,10 +62,10 @@ type CommonSubset struct {
 	recvMsgBatches []map[uint32]uint32  // [PeerId]ReceivedMbID -> AckedInMb (0 -- unacked). It remains 0, if acked in non-data message.
 	sentMsgBatches map[uint32]*msgBatch // BatchID -> MsgBatch
 
-	sessionID   uint64 // Unique identifier for this consensus instance. Used to route messages.
-	stateIndex  uint32 // Sequence number of the CS transaction we are agreeing on.
-	committee   chain.Committee
-	netOwnIndex uint16 // Our index in the group.
+	sessionID          uint64 // Unique identifier for this consensus instance. Used to route messages.
+	stateIndex         uint32 // Sequence number of the CS transaction we are agreeing on.
+	committeePeerGroup chain.CommitteePeerGroup
+	netOwnIndex        uint16 // Our index in the group.
 
 	inputCh  chan []byte            // For our input to the consensus.
 	recvCh   chan *msgBatch         // For incoming messages.
@@ -79,15 +78,14 @@ type CommonSubset struct {
 func NewCommonSubset(
 	sessionID uint64,
 	stateIndex uint32,
-	committee chain.Committee,
-	netGroup peering.GroupProvider,
+	committeePeerGroup chain.CommitteePeerGroup,
 	dkShare *tcrypto.DKShare,
 	allRandom bool, // Set to true to have real CC rounds for each epoch. That's for testing mostly.
 	outputCh chan map[uint16][]byte,
 	log *logger.Logger,
 ) (*CommonSubset, error) {
-	ownIndex := netGroup.SelfIndex()
-	allNodes := netGroup.AllNodes()
+	ownIndex := committeePeerGroup.SelfIndex()
+	allNodes := committeePeerGroup.AllNodes()
 	nodeCount := len(allNodes)
 	nodes := make([]uint64, nodeCount)
 	nodePos := 0
@@ -109,21 +107,21 @@ func NewCommonSubset(
 		CommonCoin: commoncoin.NewBlsCommonCoin(dkShare, salt[:], allRandom),
 	}
 	cs := CommonSubset{
-		impl:           hbbft.NewACS(acsCfg),
-		batchCounter:   0,
-		missingAcks:    make(map[uint32]time.Time),
-		pendingAcks:    make([][]uint32, nodeCount),
-		recvMsgBatches: make([]map[uint32]uint32, nodeCount),
-		sentMsgBatches: make(map[uint32]*msgBatch),
-		sessionID:      sessionID,
-		stateIndex:     stateIndex,
-		committee:      committee,
-		netOwnIndex:    ownIndex,
-		inputCh:        make(chan []byte, 1),
-		recvCh:         make(chan *msgBatch, 1),
-		closeCh:        make(chan bool),
-		outputCh:       outputCh,
-		log:            log,
+		impl:               hbbft.NewACS(acsCfg),
+		batchCounter:       0,
+		missingAcks:        make(map[uint32]time.Time),
+		pendingAcks:        make([][]uint32, nodeCount),
+		recvMsgBatches:     make([]map[uint32]uint32, nodeCount),
+		sentMsgBatches:     make(map[uint32]*msgBatch),
+		sessionID:          sessionID,
+		stateIndex:         stateIndex,
+		committeePeerGroup: committeePeerGroup,
+		netOwnIndex:        ownIndex,
+		inputCh:            make(chan []byte, 1),
+		recvCh:             make(chan *msgBatch, 1),
+		closeCh:            make(chan bool),
+		outputCh:           outputCh,
+		log:                log,
 	}
 	for i := range cs.recvMsgBatches {
 		cs.recvMsgBatches[i] = make(map[uint32]uint32)
@@ -378,7 +376,7 @@ func (cs *CommonSubset) send(msgBatch *msgBatch) {
 		return
 	}
 	cs.log.Debugf("ACS::IO - Sending a msgBatch=%+v", msgBatch)
-	if err := cs.committee.SendMsgByIndex(msgBatch.dst, peerMessageReceiverCommonSubset, peerMsgTypeBatch, msgBatch.Bytes()); err != nil {
+	if err := cs.committeePeerGroup.SendMsgByIndex(msgBatch.dst, peerMessageReceiverCommonSubset, peerMsgTypeBatch, msgBatch.Bytes()); err != nil {
 		cs.log.Errorf("Error sending message batch %+v: %v", msgBatch, err)
 	}
 }

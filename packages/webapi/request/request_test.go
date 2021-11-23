@@ -59,7 +59,7 @@ func (m *mockedChain) IsDismissed() bool {
 
 func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	return func(chainID *iscp.ChainID) chain.Chain {
-		chainCore := testchain.NewMockedChainCore(t, chainID, nil, testlogger.NewLogger(t))
+		chainCore := testchain.NewMockedChainCore(t, chainID, testlogger.NewLogger(t))
 		chainCore.OnOffLedgerRequest(func(msg *messages.OffLedgerRequestMsgIn) {
 			t.Logf("Offledger request %v received", msg)
 		})

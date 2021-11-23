@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/chainpeering"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -55,6 +56,7 @@ type MockedNode struct {
 	store           kvstore.KVStore
 	NodeConn        *testchain.MockedNodeConn
 	ChainCore       *testchain.MockedChainCore
+	ChainPeers      chain.ChainPeers
 	stateSync       coreutil.ChainStateSync
 	Peers           peering.PeerDomainProvider
 	StateManager    chain.StateManager
@@ -185,14 +187,15 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.NodeIDs)
 	require.NoError(env.T, err)
 	ret := &MockedNode{
-		NetID:     nodeID,
-		Env:       env,
-		NodeConn:  testchain.NewMockedNodeConnection("Node_" + nodeID),
-		store:     mapdb.NewMapDB(),
-		stateSync: coreutil.NewChainStateSync(),
-		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, peers, log),
-		Peers:     peers,
-		Log:       log,
+		NetID:      nodeID,
+		Env:        env,
+		NodeConn:   testchain.NewMockedNodeConnection("Node_" + nodeID),
+		store:      mapdb.NewMapDB(),
+		stateSync:  coreutil.NewChainStateSync(),
+		ChainCore:  testchain.NewMockedChainCore(env.T, env.ChainID, log),
+		ChainPeers: chainpeering.NewChainPeers(env.ChainID.Array(), peers),
+		Peers:      peers,
+		Log:        log,
 	}
 	ret.ChainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
 		return ret.stateSync
@@ -200,7 +203,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
 		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
 	})
-	ret.ChainCore.AttachToPeerMessages(peerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
+	ret.ChainPeers.AttachToPeerMessages(peerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
 		log.Debugf("State manager recvEvent from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
 		if peerMsg.MsgReceiver != peerMessageReceiverStateManager {
 			env.T.Fatalf("State manager does not accept peer messages of other receiver type %v, message type=%v",
@@ -229,7 +232,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 			})
 		}
 	})
-	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, timers)
+	ret.StateManager = New(ret.store, ret.ChainCore, ret.ChainPeers, ret.NodeConn, timers)
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())

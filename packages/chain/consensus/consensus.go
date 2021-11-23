@@ -27,6 +27,7 @@ type consensus struct {
 	isReady                          atomic.Bool
 	chain                            chain.ChainCore
 	committee                        chain.Committee
+	committeePeerGroup               chain.CommitteePeerGroup
 	mempool                          chain.Mempool
 	nodeConn                         chain.NodeConnection
 	vmRunner                         vm.VMRunner
@@ -91,7 +92,7 @@ const (
 	maxMsgBuffer = 1000
 )
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) chain.Consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, peerGroup chain.CommitteePeerGroup, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) chain.Consensus {
 	var timers ConsensusTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -102,6 +103,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 	ret := &consensus{
 		chain:                            chainCore,
 		committee:                        committee,
+		committeePeerGroup:               peerGroup,
 		mempool:                          mempool,
 		nodeConn:                         nodeConn,
 		vmRunner:                         runvm.NewVMRunner(),
@@ -120,7 +122,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
 	}
-	committee.AttachToPeerMessages(peerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
+	ret.committeePeerGroup.AttachToPeerMessages(peerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret

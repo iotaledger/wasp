@@ -177,7 +177,7 @@ func (c *consensus) pollMissingRequests(missingRequestIndexes []int) {
 	}
 	c.log.Debugf("runVMIfNeeded: asking for missing requests, ids: [%v]", missingRequestIDsString)
 	msg := &messages.MissingRequestIDsMsg{IDs: missingRequestIds}
-	c.committee.SendMsgBroadcast(chain.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequestIDs, msg.Bytes())
+	c.committeePeerGroup.SendMsgBroadcast(chain.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequestIDs, msg.Bytes())
 }
 
 // sortBatch deterministically sorts batch based on the value extracted from the consensus entropy
@@ -264,7 +264,7 @@ func (c *consensus) broadcastSignedResultIfNeeded() {
 			EssenceHash:  signedResult.EssenceHash,
 			SigShare:     signedResult.SigShare,
 		}
-		c.committee.SendMsgBroadcast(peerMessageReceiverConsensus, peerMsgTypeSignedResult, util.MustBytes(msg), c.resultSigAck...)
+		c.committeePeerGroup.SendMsgBroadcast(peerMessageReceiverConsensus, peerMsgTypeSignedResult, util.MustBytes(msg), c.resultSigAck...)
 		c.delaySendingSignedResult = time.Now().Add(c.timers.BroadcastSignedResultRetry)
 
 		c.log.Debugf("broadcastSignedResult: broadcasted: essence hash: %s, chain input %s",
@@ -763,7 +763,7 @@ func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 		ChainInputID: msg.ChainInputID,
 		EssenceHash:  msg.EssenceHash,
 	}
-	if err := c.committee.SendMsgByIndex(msg.SenderIndex, peerMessageReceiverConsensus, peerMsgTypeSignedResultAck, util.MustBytes(msgAck)); err != nil {
+	if err := c.committeePeerGroup.SendMsgByIndex(msg.SenderIndex, peerMessageReceiverConsensus, peerMsgTypeSignedResultAck, util.MustBytes(msgAck)); err != nil {
 		c.log.Errorf("receiveSignedResult: failed to send acknowledgement: %v", err)
 	}
 }

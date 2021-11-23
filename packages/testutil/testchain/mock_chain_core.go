@@ -24,7 +24,6 @@ type MockedChainCore struct {
 	chainID                 *iscp.ChainID
 	processors              *processors.Cache
 	peeringID               peering.PeeringID
-	peers                   peering.PeerDomainProvider
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
 	getNetIDsFun            func() []string
@@ -47,7 +46,7 @@ type MockedChainCore struct {
 
 var _ chain.ChainCore = &MockedChainCore{}
 
-func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, peers peering.PeerDomainProvider, log *logger.Logger) *MockedChainCore {
+func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger) *MockedChainCore {
 	receiveFailFun := func(typee string, msg interface{}) {
 		t.Fatalf("Receiving of %s is not implemented, but %v is received", typee, msg)
 	}
@@ -56,7 +55,6 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, peers peering.PeerD
 		chainID:    chainID,
 		processors: processors.MustNew(processors.NewConfig(inccounter.Processor)),
 		peeringID:  chainID.Array(),
-		peers:      peers,
 		log:        log,
 		getNetIDsFun: func() []string {
 			t.Fatalf("List of netIDs is not known")
@@ -117,26 +115,6 @@ func (m *MockedChainCore) GetStateReader() state.OptimisticStateReader {
 
 func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {
 	panic("implement me")
-}
-
-func (m *MockedChainCore) AttachToPeerMessages(receiver byte, fun func(recv *peering.PeerMessageIn)) {
-	m.peers.Attach(&m.peeringID, receiver, fun)
-}
-
-func (m *MockedChainCore) SendPeerMsgByNetID(netID string, msgReceiver, msgType byte, msgData []byte) {
-	m.peers.SendMsgByNetID(netID, &peering.PeerMessageData{
-		PeeringID:   m.peeringID,
-		MsgReceiver: msgReceiver,
-		MsgType:     msgType,
-		MsgData:     msgData,
-	})
-}
-
-func (m *MockedChainCore) SendPeerMsgToRandomPeers(upToNumPeers uint16, msgReceiver, msgType byte, msgData []byte) {
-	sendPeers := m.peers.GetRandomPeers(int(upToNumPeers))
-	for _, netID := range sendPeers {
-		m.SendPeerMsgByNetID(netID, msgReceiver, msgType, msgData)
-	}
 }
 
 func (m *MockedChainCore) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {

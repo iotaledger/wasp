@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
@@ -82,9 +81,7 @@ func (c *chainObj) Dismiss(reason string) {
 		}
 		c.eventRequestProcessed.DetachAll()
 		c.eventChainTransition.DetachAll()
-		for _, attachID := range c.attachIDs {
-			(*c.peers).Detach(attachID)
-		}
+		c.chainPeers.Close()
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
@@ -93,30 +90,6 @@ func (c *chainObj) Dismiss(reason string) {
 
 func (c *chainObj) IsDismissed() bool {
 	return c.dismissed.Load()
-}
-
-func (c *chainObj) AttachToPeerMessages(msgReceiver byte, fun func(recv *peering.PeerMessageIn)) {
-	c.attachIDs = append(c.attachIDs, (*c.peers).Attach(&c.peeringID, msgReceiver, fun))
-}
-
-func (c *chainObj) SendPeerMsgByNetID(netID string, msgReceiver, msgType byte, msgData []byte) {
-	(*c.peers).SendMsgByNetID(netID, &peering.PeerMessageData{
-		PeeringID:   c.peeringID,
-		Timestamp:   time.Now().UnixNano(),
-		MsgReceiver: msgReceiver,
-		MsgType:     msgType,
-		MsgData:     msgData,
-	})
-}
-
-func (c *chainObj) SendPeerMsgToRandomPeers(upToNumPeers uint16, msgReceiver, msgType byte, msgData []byte) {
-	(*c.peers).SendMsgToRandomPeers(upToNumPeers, &peering.PeerMessageData{
-		PeeringID:   c.peeringID,
-		Timestamp:   time.Now().UnixNano(),
-		MsgReceiver: msgReceiver,
-		MsgType:     msgType,
-		MsgData:     msgData,
-	})
 }
 
 func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
@@ -139,7 +112,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 		Req:     req,
 	}
 	committee := c.getCommittee()
-	getPeerIDs := (*c.peers).GetRandomPeers
+	getPeerIDs := c.chainPeers.GetRandomPeers
 
 	if committee != nil {
 		getPeerIDs = committee.GetRandomValidators
@@ -150,7 +123,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 		for _, peerID := range peerIDs {
 			if shouldSendToPeer(peerID, ackPeers) {
 				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID().Base58(), peerID)
-				c.SendPeerMsgByNetID(peerID, chain.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
+				c.chainPeers.SendPeerMsgByNetID(peerID, chain.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
 			}
 		}
 	}
@@ -189,7 +162,7 @@ func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerID st
 		return
 	}
 	msg := &messages.RequestAckMsg{ReqID: &reqID}
-	c.SendPeerMsgByNetID(peerID, chain.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
+	c.chainPeers.SendPeerMsgByNetID(peerID, chain.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
 }
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {

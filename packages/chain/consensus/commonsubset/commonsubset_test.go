@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chain/chainpeering"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -62,9 +63,9 @@ func testBasic(t *testing.T, peerCount, threshold uint16, allRandom bool) {
 	for a := range acsPeers {
 		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
-		cmt := NewCommitteeMock(peeringID, group, t)
+		cmt := chainpeering.NewCommitteePeerGroup(peeringID, group)
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
-		acsPeers[a], err = NewCommonSubset(0, 0, cmt, group, dkShares[a], allRandom, nil, acsLog)
+		acsPeers[a], err = NewCommonSubset(0, 0, cmt, dkShares[a], allRandom, nil, acsLog)
 		cmt.AttachToPeerMessages(peerMessageReceiverCommonSubset, makeReceiveCommitteePeerMessagesFun(acsPeers[a], log))
 		require.Nil(t, err)
 	}
@@ -112,9 +113,9 @@ func TestRandomized(t *testing.T) {
 	for a := range acsPeers {
 		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
-		cmt := NewCommitteeMock(peeringID, group, t)
+		cmt := chainpeering.NewCommitteePeerGroup(peeringID, group)
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
-		acsPeers[a], err = NewCommonSubset(0, 0, cmt, group, dkShares[a], true, nil, acsLog)
+		acsPeers[a], err = NewCommonSubset(0, 0, cmt, dkShares[a], true, nil, acsLog)
 		cmt.AttachToPeerMessages(peerMessageReceiverCommonSubset, makeReceiveCommitteePeerMessagesFun(acsPeers[a], log))
 		require.Nil(t, err)
 	}
@@ -212,7 +213,7 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16) {
 		group, err := networkProviders[i].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("CSC[%02d]", i)), logger.LevelInfo, false)
-		acsCoords[i] = NewCommonSubsetCoordinator(NewCommitteeMock(peeringID, group, t), networkProviders[i], group, dkShares[i], acsLog)
+		acsCoords[i] = NewCommonSubsetCoordinator(networkProviders[i], chainpeering.NewCommitteePeerGroup(peeringID, group), dkShares[i], acsLog)
 	}
 	t.Logf("ACS Nodes created.")
 
@@ -273,7 +274,7 @@ func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16) {
 		require.Nil(t, err)
 		dkShare, err := dkShares[i].LoadDKShare(dkAddress)
 		require.Nil(t, err)
-		acsCoords[i] = NewCommonSubsetCoordinator(NewCommitteeMock(peeringID, group, t), networkProviders[i], group, dkShare, logs[i])
+		acsCoords[i] = NewCommonSubsetCoordinator(networkProviders[i], chainpeering.NewCommitteePeerGroup(peeringID, group), dkShare, logs[i])
 	}
 	t.Logf("ACS Nodes created.")
 

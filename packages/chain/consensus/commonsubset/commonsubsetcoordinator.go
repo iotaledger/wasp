@@ -52,29 +52,26 @@ type CommonSubsetCoordinator struct {
 	currentStateIndex uint32                   // Last state index passed by this node.
 	lock              sync.RWMutex
 
-	committee chain.Committee
-	netGroup  peering.GroupProvider
-	dkShare   *tcrypto.DKShare
-	log       *logger.Logger
+	netGroup chain.CommitteePeerGroup
+	dkShare  *tcrypto.DKShare
+	log      *logger.Logger
 }
 
 func NewCommonSubsetCoordinator(
-	committee chain.Committee,
 	net peering.NetworkProvider,
-	netGroup peering.GroupProvider,
+	netGroup chain.CommitteePeerGroup,
 	dkShare *tcrypto.DKShare,
 	log *logger.Logger,
 ) *CommonSubsetCoordinator {
 	ret := &CommonSubsetCoordinator{
-		csInsts:   make(map[uint64]*CommonSubset),
-		csAsked:   make(map[uint64]bool),
-		lock:      sync.RWMutex{},
-		committee: committee,
-		netGroup:  netGroup,
-		dkShare:   dkShare,
-		log:       log,
+		csInsts:  make(map[uint64]*CommonSubset),
+		csAsked:  make(map[uint64]bool),
+		lock:     sync.RWMutex{},
+		netGroup: netGroup,
+		dkShare:  dkShare,
+		log:      log,
 	}
-	committee.AttachToPeerMessages(peerMessageReceiverCommonSubset, ret.receiveCommitteePeerMessages)
+	netGroup.AttachToPeerMessages(peerMessageReceiverCommonSubset, ret.receiveCommitteePeerMessages)
 	return ret
 }
 
@@ -173,7 +170,7 @@ func (csc *CommonSubsetCoordinator) getOrCreateCS(
 		var err error
 		var newCS *CommonSubset
 		outCh := make(chan map[uint16][]byte, 1)
-		if newCS, err = NewCommonSubset(sessionID, stateIndex, csc.committee, csc.netGroup, csc.dkShare, false, outCh, csc.log); err != nil {
+		if newCS, err = NewCommonSubset(sessionID, stateIndex, csc.netGroup, csc.dkShare, false, outCh, csc.log); err != nil {
 			return nil, err
 		}
 		csc.csInsts[sessionID] = newCS

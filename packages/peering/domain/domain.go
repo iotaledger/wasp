@@ -64,18 +64,6 @@ func (d *DomainImpl) SendMsgByNetID(netID string, msg *peering.PeerMessageData) 
 	peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *msg})
 }
 
-func (d *DomainImpl) SendMsgToRandomPeers(upToNumPeers uint16, msg *peering.PeerMessageData) {
-	d.mutex.RLock()
-	defer d.mutex.RUnlock()
-
-	if int(upToNumPeers) > len(d.nodes) {
-		upToNumPeers = uint16(len(d.nodes))
-	}
-	for i := uint16(0); i < upToNumPeers; i++ {
-		d.SendMsgByNetID(d.netIDs[d.permutation.Next()], msg)
-	}
-}
-
 func (d *DomainImpl) GetRandomPeers(upToNumPeers int) []string {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()

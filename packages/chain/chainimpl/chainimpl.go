@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/chainpeering"
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -68,14 +69,12 @@ type chainObj struct {
 	blobProvider                     registry.BlobCache
 	eventRequestProcessed            *events.Event
 	eventChainTransition             *events.Event
-	peers                            *peering.PeerDomainProvider
+	chainPeers                       chain.ChainPeers
 	offLedgerReqsAcksMutex           sync.RWMutex
 	offLedgerReqsAcks                map[iscp.RequestID][]string
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
-	peeringID                        peering.PeeringID
-	attachIDs                        []interface{}
 	chainMetrics                     metrics.ChainMetrics
 	dismissChainMsgPipe              pipe.Pipe
 	stateMsgPipe                     pipe.Pipe
@@ -135,8 +134,6 @@ func NewChain(
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
-		peeringID:                        chainID.Array(),
-		attachIDs:                        make([]interface{}, 0),
 		chainMetrics:                     chainMetrics,
 		dismissChainMsgPipe:              pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		stateMsgPipe:                     pipe.NewLimitInfinitePipe(maxMsgBuffer),
@@ -154,9 +151,9 @@ func NewChain(
 		log.Errorf("NewChain: %v", err)
 		return nil
 	}
-	ret.peers = &peers
-	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn)
-	ret.AttachToPeerMessages(chain.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
+	ret.chainPeers = chainpeering.NewChainPeers(chainID.Array(), peers)
+	ret.stateMgr = statemgr.New(db, ret, ret.chainPeers, ret.nodeConn)
+	ret.chainPeers.AttachToPeerMessages(chain.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
 	go ret.handleMessagesLoop()
 	ret.startTimer()
 	return ret
@@ -351,7 +348,7 @@ func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*registry.Co
 
 func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeRecord) error {
 	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
-	cmt, err := committee.New(
+	cmt, cmtPeerGroup, err := committee.New(
 		cmtRec,
 		c.chainID,
 		c.netProvider,
@@ -364,9 +361,9 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
 			cmtRec.Address.Base58(), err)
 	}
-	cmt.AttachToPeerMessages(chain.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
+	cmtPeerGroup.AttachToPeerMessages(chain.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, cmt, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
+	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
 	c.setCommittee(cmt)
 
 	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", cmtRec.Address.Base58())
