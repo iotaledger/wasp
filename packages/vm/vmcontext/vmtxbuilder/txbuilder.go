@@ -291,6 +291,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() (uint64, map[iotago.NativeToken
 	return sumIotas, sumTokens
 }
 
+// sumOutputs sums all balances in outputs
 func (txb *AnchorTransactionBuilder) sumOutputs() (uint64, map[iotago.NativeTokenID]*big.Int) {
 	sumIotas := txb.balanceIotas
 	sumTokens := make(map[iotago.NativeTokenID]*big.Int)
