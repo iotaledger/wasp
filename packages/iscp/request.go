@@ -5,6 +5,7 @@ package iscp
 import (
 	"time"
 
+	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -17,12 +18,37 @@ type UTXOMetaData struct {
 	MilestoneTimestamp time.Time
 }
 
-func (u *UTXOMetaData) Bytes() []byte {
-	panic("not implemented")
+func NewUTXOMetadataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*UTXOMetaData, error) {
+	m := &UTXOMetaData{
+		UTXOInput: iotago.UTXOInput{},
+	}
+	txIDBytes, err := mu.ReadBytes(iotago.TransactionIDLength)
+	copy(m.UTXOInput.TransactionID[:], txIDBytes[:iotago.TransactionIDLength])
+	if err != nil {
+		return nil, err
+	}
+	m.UTXOInput.TransactionOutputIndex, err = mu.ReadUint16()
+	if err != nil {
+		return nil, err
+	}
+	m.MilestoneIndex, err = mu.ReadUint32()
+	if err != nil {
+		return nil, err
+	}
+	m.MilestoneTimestamp, err = mu.ReadTime()
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
-func UTXOMetaDataFromBytes() (*UTXOMetaData, error) {
-	panic("not implemented") // TODO
+func (m *UTXOMetaData) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.WriteBytes(m.UTXOInput.TransactionID[:])
+	mu.WriteUint16(m.UTXOInput.TransactionOutputIndex)
+	mu.WriteUint32(m.MilestoneIndex)
+	mu.WriteTime(m.MilestoneTimestamp)
+	return mu.Bytes()
 }
 
 // RequestData wraps any data which can be potentially be interpreted as a request
@@ -76,18 +102,6 @@ type unwrapUTXO interface {
 type ReturnAmountOptions interface {
 	ReturnTo() iotago.Address
 	Amount() uint64
-}
-
-type RequestTarget struct {
-	Contract   Hname
-	EntryPoint Hname
-}
-
-func NewRequestTarget(contract, entryPoint Hname) RequestTarget {
-	return RequestTarget{
-		Contract:   contract,
-		EntryPoint: entryPoint,
-	}
 }
 
 func TakeRequestIDs(reqs ...Request) []RequestID {

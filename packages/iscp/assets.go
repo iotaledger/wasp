@@ -1,9 +1,11 @@
 package iscp
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/serializer"
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
@@ -20,16 +22,6 @@ func NewAssets(iotas uint64, tokens iotago.NativeTokens) *Assets {
 	}
 }
 
-func NewAssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
-	ret := &Assets{}
-	var err error
-	if ret.Iotas, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
-	// TODO this isn't complete, we're missing some stuff from iotago
-	panic("not implemented")
-}
-
 func (a *Assets) String() string {
 	panic("not implemented")
 }
@@ -40,13 +32,18 @@ func (a *Assets) Bytes() []byte {
 	return mu.Bytes()
 }
 
+var NativeAssetsSerializationArrayRules = iotago.NativeTokenArrayRules()
+
 func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.WriteUint64(a.Iotas)
-	// tokenBytes, err := serializer.NewSerializer().WriteSliceOfObjects(&a.Tokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, nativeTokensArrayRules, func(err error) error {
-	// 	return fmt.Errorf("unable to serialize alias output native tokens: %w", err)
-	// }).Serialize()
-	// TODO this isn't complete, we're missing some stuff from iotago
-	panic("not implemented")
+	tokenBytes, err := serializer.NewSerializer().WriteSliceOfObjects(&a.Tokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, &NativeAssetsSerializationArrayRules, func(err error) error {
+		return fmt.Errorf("unable to serialize alias output native tokens: %w", err)
+	}).Serialize()
+	if err != nil {
+		panic(fmt.Errorf("unexpected error serializing native tokens: %w", err))
+	}
+	mu.WriteUint16(uint16(len(tokenBytes)))
+	mu.WriteBytes(tokenBytes)
 }
 
 // ToMap creates respective map by summing up repetitive token IDs
@@ -57,4 +54,30 @@ func FindNativeTokenBalance(nts iotago.NativeTokens, id *iotago.NativeTokenID) *
 		}
 	}
 	return nil
+}
+
+func NewAssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
+	ret := &Assets{
+		Tokens: make(iotago.NativeTokens, 0),
+	}
+	var err error
+	if ret.Iotas, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	tokenBytesLength, err := mu.ReadUint16()
+	if err != nil {
+		return nil, err
+	}
+	tokenBytes, err := mu.ReadBytes(int(tokenBytesLength))
+	if err != nil {
+		return nil, err
+	}
+	_, err = serializer.NewDeserializer(tokenBytes).
+		ReadSliceOfObjects(&ret.Tokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, serializer.TypeDenotationNone, &NativeAssetsSerializationArrayRules, func(err error) error {
+			return fmt.Errorf("unable to deserialize native tokens for alias output: %w", err)
+		}).Done()
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }

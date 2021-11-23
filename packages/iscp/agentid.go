@@ -39,8 +39,7 @@ func NewAgentID(addr iotago.Address, hname Hname) *AgentID {
 	}
 }
 
-// TODO move somewhere else
-func AddressFromMatshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error) {
+func AddressFromMarshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error) {
 	typeByte, err := mu.ReadByte()
 	if err != nil {
 		return nil, err
@@ -60,7 +59,7 @@ func AddressFromMatshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error)
 func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
 	var err error
 	ret := &AgentID{}
-	if ret.a, err = AddressFromMatshalUtil(mu); err != nil {
+	if ret.a, err = AddressFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	if ret.h, err = HnameFromMarshalUtil(mu); err != nil {
@@ -97,7 +96,7 @@ func NewAgentIDFromString(s string) (*AgentID, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
 	}
-	addr, err := AddressFromMatshalUtil(marshalutil.New(addrBytes))
+	addr, err := AddressFromMarshalUtil(marshalutil.New(addrBytes))
 	if err != nil {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
 	}
