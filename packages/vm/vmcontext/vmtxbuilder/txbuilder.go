@@ -26,8 +26,10 @@ type AnchorTransactionBuilder struct {
 	loadNativeTokensOnChain tokenBalanceLoader
 	// anchorOutput output of the chain
 	anchorOutput *iotago.AliasOutput
-	// already consumed outputs, specified by ids
-	consumed []iotago.UTXOInput
+	// anchorOutputID is the ID of the anchor output
+	anchorOutputID iotago.UTXOInput
+	// already consumed outputs, specified by entire RequestData. It is needed for checking validity
+	consumed []iscp.RequestData
 	// balance of iotas is kept in the anchor output. TODO dust considerations
 	balanceIotas uint64
 	// balances of native tokens touched during the batch run
@@ -55,7 +57,8 @@ func NewAnchorTransactionBuilder(anchorOutput *iotago.AliasOutput, anchorOutputI
 	return &AnchorTransactionBuilder{
 		loadNativeTokensOnChain: tokenBalanceLoader,
 		anchorOutput:            anchorOutput,
-		consumed:                []iotago.UTXOInput{anchorOutputID},
+		anchorOutputID:          anchorOutputID,
+		consumed:                make([]iscp.RequestData, 0, iotago.MaxInputsCount-1),
 		balanceIotas:            balanceIotas,
 		balanceNativeTokens:     make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedRequests:          make([]*iscp.PostRequestData, 0, iotago.MaxOutputsCount-1),
@@ -64,7 +67,7 @@ func NewAnchorTransactionBuilder(anchorOutput *iotago.AliasOutput, anchorOutputI
 
 // Clone clones the AnchorTransactionBuilder object. Used to snapshot/recover
 func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
-	ret := NewAnchorTransactionBuilder(txb.anchorOutput, txb.consumed[0], txb.balanceIotas, txb.loadNativeTokensOnChain)
+	ret := NewAnchorTransactionBuilder(txb.anchorOutput, txb.anchorOutputID, txb.balanceIotas, txb.loadNativeTokensOnChain)
 	ret.consumed = append(ret.consumed, txb.consumed...)
 	ret.balanceIotas = txb.balanceIotas
 	for k, v := range txb.balanceNativeTokens {
@@ -78,10 +81,13 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 	return ret
 }
 
-// ConsumeInput adds an input to the transaction. Return its index.
+// ConsumeOutput adds an input to the transaction. Return its index.
 // It panics if transaction cannot hold that many inputs
 // All explicitly consumed inputs will hold fixed index in the transaction
-func (txb *AnchorTransactionBuilder) ConsumeInput(inp iotago.UTXOInput) int {
+func (txb *AnchorTransactionBuilder) ConsumeOutput(inp iscp.RequestData) int {
+	if inp.IsOffLedger() {
+		panic("ConsumeOutput: must be UTXO")
+	}
 	if txb.InputsAreFull() {
 		panic(ErrInputLimitExceeded)
 	}
@@ -89,14 +95,15 @@ func (txb *AnchorTransactionBuilder) ConsumeInput(inp iotago.UTXOInput) int {
 	return len(txb.consumed) - 1
 }
 
-// inputs generate a deterministic list of inputs for he transaction essence
+// inputs generate a deterministic list of inputs for the transaction essence
 // The explicitly consumed inputs hold fixed indices.
 // The consumed UTXO of internal accounts are sorted by tokenID for determinism
 // Consumed only internal UTXOs with changed token balances. The rest is left untouched
 func (txb *AnchorTransactionBuilder) inputs() iotago.Inputs {
 	ret := make(iotago.Inputs, 0, len(txb.consumed)+len(txb.balanceNativeTokens))
+	ret = append(ret, &txb.anchorOutputID)
 	for i := range txb.consumed {
-		ret = append(ret, &txb.consumed[i])
+		ret = append(ret, &txb.consumed[i].Unwrap().UTXO().Metadata().UTXOInput)
 	}
 	// sort to avoid non-determinism of the map iteration
 	tokenIDs := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
@@ -222,7 +229,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 
 // numInputs number of inputs in the future transaction
 func (txb *AnchorTransactionBuilder) numInputs() int {
-	ret := len(txb.consumed)
+	ret := len(txb.consumed) + 1 // + 1 for anchor UTXO
 	for _, v := range txb.balanceNativeTokens {
 		if v.initial != nil && v.balance.Cmp(v.initial) != 0 {
 			ret++
@@ -251,6 +258,89 @@ func (txb *AnchorTransactionBuilder) numOutputs() int {
 // outputsAreFull return if transaction cannot bear more outputs
 func (txb *AnchorTransactionBuilder) outputsAreFull() bool {
 	return txb.numOutputs() >= iotago.MaxOutputsCount
+}
+
+// sumInputs sums up all assets in inputs
+func (txb *AnchorTransactionBuilder) sumInputs() (uint64, map[iotago.NativeTokenID]*big.Int) {
+	sumIotas := txb.anchorOutput.Amount
+	sumTokens := make(map[iotago.NativeTokenID]*big.Int)
+	// sum up all initial values of internal accounts
+	for id, ntb := range txb.balanceNativeTokens {
+		if ntb.initial != nil {
+			s, ok := sumTokens[id]
+			if !ok {
+				s = new(big.Int)
+			}
+			s.Add(s, ntb.initial)
+			sumTokens[id] = s
+		}
+	}
+	// sum up all explicitly consumed outputs, except anchor output
+	for _, out := range txb.consumed {
+		a := out.Assets()
+		sumIotas += a.Iotas
+		for _, nt := range a.Tokens {
+			s, ok := sumTokens[nt.ID]
+			if !ok {
+				s = new(big.Int)
+			}
+			s.Add(s, nt.Amount)
+			sumTokens[nt.ID] = s
+		}
+	}
+	return sumIotas, sumTokens
+}
+
+func (txb *AnchorTransactionBuilder) sumOutputs() (uint64, map[iotago.NativeTokenID]*big.Int) {
+	sumIotas := txb.balanceIotas
+	sumTokens := make(map[iotago.NativeTokenID]*big.Int)
+	// sum up all initial values of internal accounts
+	for id, ntb := range txb.balanceNativeTokens {
+		if ntb.balance != nil && !util.IsZeroBigInt(ntb.balance) {
+			s, ok := sumTokens[id]
+			if !ok {
+				s = new(big.Int)
+			}
+			s.Add(s, ntb.balance)
+			sumTokens[id] = s
+		}
+	}
+	for _, pr := range txb.postedRequests {
+		sumIotas += pr.Assets.Iotas
+		for _, nt := range pr.Assets.Tokens {
+			s, ok := sumTokens[nt.ID]
+			if !ok {
+				s = new(big.Int)
+			}
+			s.Add(s, nt.Amount)
+			sumTokens[nt.ID] = s
+		}
+	}
+	return sumIotas, sumTokens
+}
+
+// TotalAssets check consistency. If input total equals with output totals, returns (iota total, native token totals, true)
+// Otherwise returns (0, nil, false)
+func (txb *AnchorTransactionBuilder) TotalAssets() (uint64, map[iotago.NativeTokenID]*big.Int, bool) {
+	sumIotasIN, sumTokensIN := txb.sumInputs()
+	sumIotasOUT, sumTokensOUT := txb.sumOutputs()
+
+	if sumIotasIN != sumIotasOUT {
+		return 0, nil, false
+	}
+	if len(sumTokensIN) != len(sumTokensOUT) {
+		return 0, nil, false
+	}
+	for id, bIN := range sumTokensIN {
+		bOUT, ok := sumTokensOUT[id]
+		if !ok {
+			return 0, nil, false
+		}
+		if bIN.Cmp(bOUT) != 0 {
+			return 0, nil, false
+		}
+	}
+	return sumIotasIN, sumTokensIN, true
 }
 
 // AddDeltaIotas increases number of on-chain iotas by delta

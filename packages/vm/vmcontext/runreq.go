@@ -70,7 +70,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		return
 	}
 	// ---- update transaction builder
-	vmctx.txbuilder.ConsumeInput(vmctx.req.Unwrap().UTXO().Metadata().UTXOInput)
+	vmctx.txbuilder.ConsumeOutput(vmctx.req)
 	vmctx.txbuilder.AddDeltaIotas(vmctx.req.Assets().Iotas)
 	for _, nt := range vmctx.req.Assets().Tokens {
 		vmctx.txbuilder.AddDeltaNativeToken(nt.ID, nt.Amount)
@@ -83,7 +83,12 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// ---- end update state
 
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
-	// TODO check and assert consistency
+
+	_, _, isBalanced := vmctx.txbuilder.TotalAssets()
+	if !isBalanced {
+		panic("internal inconsistency: transaction builder is not balanced")
+	}
+	// TODO check if total assets are consistent with the state
 }
 
 func (vmctx *VMContext) prepareGasBudget() {
@@ -182,6 +187,9 @@ func (vmctx *VMContext) chargeGasFee() {
 }
 
 // calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget
+// Affordable gas budget is calculated from gas budget provided in the request by the user and taking into account
+// how many tokens the sender has in its account.
+// Safe arithmetics is used
 func (vmctx *VMContext) calculateAffordableGasBudget() {
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.SenderAddress() == nil")
@@ -217,7 +225,6 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 			}
 		}
 	}
-	// safe arithmetics
 	if tokensAvailable < math.MaxUint64/vmctx.gasPolicyGasPerGasToken {
 		vmctx.gasBudgetAffordable = tokensAvailable * vmctx.gasPolicyGasPerGasToken
 	} else {

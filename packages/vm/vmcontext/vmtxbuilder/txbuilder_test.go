@@ -55,6 +55,9 @@ func TestNewTxBuilder(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
 			return nil, iotago.UTXOInput{}
 		})
+		_, _, isBalanced := txb.TotalAssets()
+		require.True(t, isBalanced)
+
 		require.EqualValues(t, 1, txb.numInputs())
 		require.EqualValues(t, 1, txb.numOutputs())
 		require.False(t, txb.InputsAreFull())
