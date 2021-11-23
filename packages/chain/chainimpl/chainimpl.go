@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -39,12 +40,11 @@ import (
 const maxMsgBuffer = 10000
 
 var (
-	_ chain.Chain               = &chainObj{}
-	_ chain.ChainCore           = &chainObj{}
-	_ chain.ChainEntry          = &chainObj{}
-	_ chain.ChainRequests       = &chainObj{}
-	_ chain.ChainEvents         = &chainObj{}
-	_ chain.ChainNodeConnection = &chainObj{}
+	_ chain.Chain         = &chainObj{}
+	_ chain.ChainCore     = &chainObj{}
+	_ chain.ChainEntry    = &chainObj{}
+	_ chain.ChainRequests = &chainObj{}
+	_ chain.ChainEvents   = &chainObj{}
 )
 
 type chainObj struct {
@@ -61,7 +61,7 @@ type chainObj struct {
 	stateMgr                         chain.StateManager
 	consensus                        chain.Consensus
 	log                              *logger.Logger
-	nodeConn                         chain.NodeConnection
+	nodeConn                         chain.ChainNodeConnection
 	db                               kvstore.KVStore
 	peerNetworkConfig                registry.PeerNetworkConfigProvider
 	netProvider                      peering.NetworkProvider
@@ -77,7 +77,6 @@ type chainObj struct {
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
 	chainMetrics                     metrics.ChainMetrics
-	stats                            *chain.NodeConnectionMessagesStats
 }
 
 type committeeStruct struct {
@@ -127,7 +126,7 @@ func NewChain(
 		msgPipe:           pipe.NewLimitPriorityInfinitePipe(messagePriorityFun, maxMsgBuffer),
 		chainID:           chainID,
 		log:               chainLog,
-		nodeConn:          nc,
+		nodeConn:          nodeconnimpl.NewChainNodeConnection(chainID, nc, chainLog),
 		db:                db,
 		chainStateSync:    chainStateSync,
 		stateReader:       state.NewOptimisticStateReader(db, chainStateSync),
@@ -150,15 +149,15 @@ func NewChain(
 	}
 	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
-	ret.AttachToTransactionReceived(ret.ReceiveTransaction)
-	ret.AttachToUnspentAliasOutputReceived(ret.ReceiveState)
+	ret.nodeConn.AttachToTransactionReceived(ret.ReceiveTransaction)
+	ret.nodeConn.AttachToUnspentAliasOutputReceived(ret.ReceiveState)
 
 	peers, err := netProvider.PeerDomain(peerNetConfig.Neighbors())
 	if err != nil {
 		log.Errorf("NewChain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(db, ret, peers, ret)
+	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn)
 	ret.peers = &peers
 	var peeringID peering.PeeringID = ret.chainID.Array()
 	peers.Attach(&peeringID, func(recv *peering.RecvEvent) {
@@ -475,7 +474,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 	}
 	cmt.Attach(c)
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, cmt, c, c.pullMissingRequestsFromCommittee, c.chainMetrics)
+	c.consensus = consensus.New(c, c.mempool, cmt, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
 	c.setCommittee(cmt)
 
 	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", cmtRec.Address.Base58())
