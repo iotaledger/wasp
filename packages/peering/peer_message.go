@@ -18,13 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
 
-// RecvEvent stands for a received message along with
-// the reference to its sender peer.
-/*type RecvEvent struct {
-	From PeerSender
-	Msg  *PeerMessage
-}*/
-
 // PeerMessage is an envelope for all the messages exchanged via
 // the peering module.
 type PeerMessageData struct {
@@ -116,10 +109,6 @@ func (m *PeerMessageData) bytes() ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
-
-/*func (m *PeerMessage) IsUserMessage() bool {
-	return m.MsgType >= FirstUserMsgCode
-}*/
 
 func (m *PeerMessageNet) GetHash() hashing.HashValue {
 	mBytes, err := m.Bytes()
