@@ -70,7 +70,7 @@ $#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeS
 	// *******************************
 	"typedefProxyArrayNewOtherTypeTypeDef": `
 $#emit setVarType
-	pub fn Get$OldType(&self, index: i32) -> $mut$OldType {
+	pub fn get_$old_type(&self, index: i32) -> $mut$OldType {
 		let sub_id = get_object_id(self.obj_id, Key32(index), $varType);
 		$mut$OldType { obj_id: sub_id }
 	}

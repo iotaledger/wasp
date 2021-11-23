@@ -70,7 +70,7 @@ $#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeS
 	"typedefProxyArrayNewOtherTypeTypeDef": `
 $#emit setVarType
 
-	Get$OldType(index: i32): sc.$mut$OldType {
+	get$OldType(index: i32): sc.$mut$OldType {
 		let subID = wasmlib.getObjectID(this.objID, new wasmlib.Key32(index), $varType);
 		return new sc.$mut$OldType(subID);
 	}
