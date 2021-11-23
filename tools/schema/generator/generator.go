@@ -42,6 +42,7 @@ type GenBase struct {
 	newTypes        map[string]bool
 	rootFolder      string
 	s               *Schema
+	tab             int
 	templates       map[string]string
 }
 

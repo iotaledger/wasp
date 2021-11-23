@@ -47,4 +47,13 @@ $#emit importSc
   "include": ["./*.ts"]
 }
 `,
+	// *******************************
+	"setVarType": `
+$#set varType wasmlib.TYPE_MAP
+$#if array setVarTypeArray
+`,
+	// *******************************
+	"setVarTypeArray": `
+$#set varType $arrayTypeID|$fldTypeID
+`,
 }

@@ -1,12 +1,15 @@
 package generator
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 )
+
+const enableLog = false
 
 const (
 	KeyArray     = "array"
@@ -37,12 +40,35 @@ const (
 
 var emitKeyRegExp = regexp.MustCompile(`\$[a-zA-Z_]+`)
 
+func (g *GenBase) indent() {
+	g.tab++
+}
+
+func (g *GenBase) undent() {
+	g.tab--
+}
+
+func (g *GenBase) log(text string) {
+	if !enableLog {
+		return
+	}
+
+	for i := 0; i < g.tab; i++ {
+		fmt.Print("  ")
+	}
+	fmt.Println(text)
+}
+
 // emit processes "$#emit template"
 // It processes all lines in the named template
 // If the template is non-existent nothing will happen
 // Any line starting with a special "$#" directive will recursively be processed
 // An unknown directive will result in an error
 func (g *GenBase) emit(template string) {
+	g.log("$#emit " + template)
+	g.indent()
+	defer g.undent()
+
 	lines := strings.Split(g.templates[template], "\n")
 	for i := 1; i < len(lines)-1; i++ {
 		// replace any placeholder keys
@@ -87,6 +113,10 @@ func (g *GenBase) emit(template string) {
 // It processes the template for each item in the array
 // Produces an error if the array key is unknown
 func (g *GenBase) emitEach(line string) {
+	g.log(line)
+	g.indent()
+	defer g.undent()
+
 	parts := strings.Split(line, " ")
 	if len(parts) != 3 {
 		g.error(line)
@@ -126,6 +156,7 @@ func (g *GenBase) emitEach(line string) {
 
 func (g *GenBase) emitEachEvent(events []*Struct, template string) {
 	for _, g.currentEvent = range events {
+		g.log("currentEvent: " + g.currentEvent.Name)
 		g.setMultiKeyValues("evtName", g.currentEvent.Name)
 		g.emit(template)
 	}
@@ -146,6 +177,7 @@ func (g *GenBase) emitEachField(fields []*Field, template string) {
 	}
 
 	for _, g.currentField = range fields {
+		g.log("currentField: " + g.currentField.Name)
 		g.gen.setFieldKeys(true)
 		g.emit(template)
 	}
@@ -166,6 +198,7 @@ func (g *GenBase) emitEachFunc(funcs []*Func, template string) {
 	}
 
 	for _, g.currentFunc = range funcs {
+		g.log("currentFunc: " + g.currentFunc.Name)
 		g.gen.setFuncKeys()
 		g.emit(template)
 	}
@@ -183,6 +216,7 @@ func (g *GenBase) emitEachMandatoryField(template string) {
 
 func (g *GenBase) emitEachStruct(structs []*Struct, template string) {
 	for _, g.currentStruct = range structs {
+		g.log("currentStruct: " + g.currentStruct.Name)
 		g.setMultiKeyValues("strName", g.currentStruct.Name)
 		g.emit(template)
 	}
@@ -192,6 +226,10 @@ func (g *GenBase) emitEachStruct(structs []*Struct, template string) {
 // It can call back into go code to emit more complex stuff
 // Produces an error if emitter is unknown
 func (g *GenBase) emitFunc(line string) {
+	g.log(line)
+	g.indent()
+	defer g.undent()
+
 	parts := strings.Split(line, " ")
 	if len(parts) != 2 {
 		g.error(line)
@@ -212,6 +250,10 @@ func (g *GenBase) emitFunc(line string) {
 // Produces an error if named condition is unknown
 //nolint:funlen
 func (g *GenBase) emitIf(line string) {
+	g.log(line)
+	g.indent()
+	defer g.undent()
+
 	parts := strings.Split(line, " ")
 	if len(parts) < 3 || len(parts) > 4 {
 		g.error(line)
@@ -288,6 +330,8 @@ func (g *GenBase) emitIf(line string) {
 // The special key "exist" is used to add a newly generated type
 // It can be used to prevent duplicate types from being generated
 func (g *GenBase) emitSet(line string) {
+	g.log(line)
+
 	parts := strings.Split(line, " ")
 	if len(parts) < 3 {
 		g.error(line)
@@ -334,6 +378,23 @@ func (g *GenBase) setCommonKeys() {
 }
 
 func (g *GenBase) setFieldKeys(pad bool) {
+	tmp := make(map[string]string)
+	for k, v := range g.keys {
+		if len(k) < 3 {
+			continue
+		}
+		switch k[:3] {
+		case "fld":
+			tmp["old"+k[3:]] = v
+		case "Fld":
+			tmp["Old"+k[3:]] = v
+		case "FLD":
+			tmp["OLD"+k[3:]] = v
+		}
+	}
+	for k, v := range tmp {
+		g.keys[k] = v
+	}
 	g.setMultiKeyValues("fldName", g.currentField.Name)
 	g.setMultiKeyValues("fldType", g.currentField.Type)
 

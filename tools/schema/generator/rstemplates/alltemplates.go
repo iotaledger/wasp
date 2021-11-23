@@ -90,4 +90,13 @@ use crate::typedefs::*;
 	"useWasmLib": `
 use wasmlib::*;
 `,
+	// *******************************
+	"setVarType": `
+$#set varType TYPE_MAP
+$#if array setVarTypeArray
+`,
+	// *******************************
+	"setVarTypeArray": `
+$#set varType $arrayTypeID | $fldTypeID
+`,
 }

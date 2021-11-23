@@ -18,7 +18,11 @@ $#if map proxyMap proxyMethods3
 `,
 	// *******************************
 	"proxyMethods3": `
-$#if basetype proxyBaseType proxyNewType
+$#if basetype proxyBaseType proxyMethods4
+`,
+	// *******************************
+	"proxyMethods4": `
+$#if typedef proxyTypeDef proxyStruct
 `,
 	// *******************************
 	"setCoreVarID": `
@@ -59,7 +63,16 @@ func (s $TypeName) $FldName() wasmlib.Sc$mut$FldType {
 }
 `,
 	// *******************************
-	"proxyNewType": `
+	"proxyTypeDef": `
+$#emit setVarType
+
+func (s $TypeName) $OldName() $mut$OldType {
+	subID := wasmlib.GetObjectID(s.id, $varID, $varType)
+	return $mut$OldType{objID: subID}
+}
+`,
+	// *******************************
+	"proxyStruct": `
 
 func (s $TypeName) $FldName() $mut$FldType {
 	return $mut$FldType{objID: s.id, keyID: $varID}

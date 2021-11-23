@@ -64,13 +64,11 @@ $#set exist $proxy
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherType": `
-$#set OldType $FldType
 $#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeStruct
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherTypeTypeDef": `
-$#set varType wasmlib.TYPE_MAP
-$#if array setVarTypeArray
+$#emit setVarType
 
 	Get$OldType(index: i32): sc.$mut$OldType {
 		let subID = wasmlib.getObjectID(this.objID, new wasmlib.Key32(index), $varType);
@@ -119,16 +117,11 @@ $#set exist $proxy
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
-$#set oldType $fldType
-$#set OldType $FldType
-$#set oldMapKeyLangType $fldMapKeyLangType
-$#set oldMapKeyKey $fldMapKeyKey
 $#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruct
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeTypeDef": `
-$#set varType wasmlib.TYPE_MAP
-$#if array setVarTypeArray
+$#emit setVarType
 
     get$OldType(key: $oldMapKeyLangType): sc.$mut$OldType {
         let subID = wasmlib.getObjectID(this.objID, $oldMapKeyKey.getKeyID(), $varType);
@@ -138,12 +131,8 @@ $#if array setVarTypeArray
 	// *******************************
 	"typedefProxyMapNewOtherTypeStruct": `
 
-    get$OldType(key: $oldMapKeyLangType): sc.$mut$OldType {
-        return new sc.$mut$OldType(this.objID, $oldMapKeyKey.getKeyID());
+    get$FldType(key: $fldMapKeyLangType): sc.$mut$FldType {
+        return new sc.$mut$FldType(this.objID, $fldMapKeyKey.getKeyID());
     }
-`,
-	// *******************************
-	"setVarTypeArray": `
-$#set varType $arrayTypeID|$fldTypeID
 `,
 }

@@ -20,7 +20,11 @@ $#if map proxyMap proxyMethods3
 `,
 	// *******************************
 	"proxyMethods3": `
-$#if basetype proxyBaseType proxyNewType
+$#if basetype proxyBaseType proxyMethods4
+`,
+	// *******************************
+	"proxyMethods4": `
+$#if typedef proxyTypeDef proxyStruct
 `,
 	// *******************************
 	"setCoreVarID": `
@@ -57,7 +61,15 @@ $#if this proxyMapThis proxyMapOther
 	}
 `,
 	// *******************************
-	"proxyNewType": `
+	"proxyTypeDef": `
+$#emit setVarType
+    $oldName(): sc.$mut$OldType {
+		let subID = wasmlib.getObjectID(this.mapID, $varID, $varType);
+		return new sc.$mut$OldType(subID);
+	}
+`,
+	// *******************************
+	"proxyStruct": `
     $fldName(): sc.$mut$FldType {
 		return new sc.$mut$FldType(this.mapID, $varID);
 	}
