@@ -39,7 +39,6 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 		AddParamBody(dictExample, "params", "Parameters", false).
 		AddResponse(http.StatusOK, "Result", dictExample, nil)
 
-	// Deprecated
 	server.GET(routes.CallView(":chainID", ":contractHname", ":fname"), s.handleCallView).
 		SetSummary("Call a view function on a contract").
 		AddParamPath("", "chainID", "ChainID (base58-encoded)").
