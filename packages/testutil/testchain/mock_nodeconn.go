@@ -61,3 +61,7 @@ func (m *MockedNodeConn) AttachToInclusionStateReceived(chain.NodeConnectionHand
 func (m *MockedNodeConn) AttachToOutputReceived(chain.NodeConnectionHandleOutputFun) {}
 func (m *MockedNodeConn) AttachToUnspentAliasOutputReceived(chain.NodeConnectionHandleUnspentAliasOutputFun) {
 }
+
+func (m *MockedNodeConn) GetStats() chain.NodeConnectionMessagesStats {
+	return chain.NodeConnectionMessagesStats{}
+}

@@ -162,3 +162,7 @@ func (n *nodeConnImplementation) Unsubscribe(addr ledgerstate.Address) {
 		}
 	}
 }
+
+func (n *nodeConnImplementation) GetStats() chain.NodeConnectionStats {
+	return *n.stats
+}

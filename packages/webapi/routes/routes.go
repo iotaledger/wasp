@@ -55,6 +55,14 @@ func GetCommitteeRecord(addr string) string {
 	return "/adm/committeerecord/" + addr
 }
 
+func GetChainsStats() string {
+	return "/adm/chain/stats"
+}
+
+func GetChainStats(chainID string) string {
+	return "/adm/chain/" + chainID + "/stats"
+}
+
 func GetCommitteeForChain(chainID string) string {
 	return "/adm/chain/" + chainID + "/committeerecord"
 }

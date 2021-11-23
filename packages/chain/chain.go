@@ -51,6 +51,10 @@ type ChainRequests interface {
 	EventRequestProcessed() *events.Event
 }
 
+type ChainStats interface {
+	GetNodeConnectionStats() NodeConnectionMessagesStats
+}
+
 type ChainEvents interface {
 	RequestProcessed() *events.Event
 	ChainTransition() *events.Event
@@ -60,6 +64,7 @@ type Chain interface {
 	ChainCore
 	ChainRequests
 	ChainEntry
+	ChainStats
 }
 
 // Committee is ordered (indexed 0..size-1) list of peers which run the consensus
@@ -102,6 +107,8 @@ type NodeConnection interface {
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
+
+	GetStats() NodeConnectionStats
 }
 
 type ChainNodeConnection interface {
@@ -114,6 +121,8 @@ type ChainNodeConnection interface {
 	PullTransactionInclusionState(txid ledgerstate.TransactionID)
 	PullConfirmedOutput(outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
+
+	GetStats() NodeConnectionMessagesStats
 }
 
 type NodeConnectionMessageStats struct {

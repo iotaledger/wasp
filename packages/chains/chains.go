@@ -188,3 +188,7 @@ func (c *Chains) Get(chainID *iscp.ChainID) chain.Chain {
 	}
 	return ret
 }
+
+func (c *Chains) GetNodeConnectionStats() chain.NodeConnectionStats {
+	return c.nodeConn.GetStats()
+}

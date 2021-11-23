@@ -36,15 +36,7 @@ func (m *mockedChain) ReceiveTransaction(_ *ledgerstate.Transaction) {
 	panic("implement me")
 }
 
-func (m *mockedChain) ReceiveInclusionState(_ ledgerstate.TransactionID, _ ledgerstate.InclusionState) {
-	panic("implement me")
-}
-
 func (m *mockedChain) ReceiveState(_ *ledgerstate.AliasOutput, _ time.Time) {
-	panic("implement me")
-}
-
-func (m *mockedChain) ReceiveOutput(_ ledgerstate.Output) {
 	panic("implement me")
 }
 
@@ -53,6 +45,10 @@ func (m *mockedChain) Dismiss(_ string) {
 }
 
 func (m *mockedChain) IsDismissed() bool {
+	panic("implement me")
+}
+
+func (m *mockedChain) GetNodeConnectionStats() chain.NodeConnectionMessagesStats {
 	panic("implement me")
 }
 

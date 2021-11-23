@@ -98,3 +98,7 @@ func (c *chainNodeConnImplementation) PostTransaction(tx *ledgerstate.Transactio
 	c.nodeConn.PostTransaction(tx)
 	c.log.Debugf("ChainNodeConnImplementation::PostTransaction(txID=%s)... Done", txIDStr)
 }
+
+func (c *chainNodeConnImplementation) GetStats() chain.NodeConnectionMessagesStats {
+	return *c.stats
+}
