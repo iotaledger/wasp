@@ -5,6 +5,9 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 
 	"github.com/iotaledger/hive.go/serializer"
@@ -37,7 +40,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, iotas uint64, id i
 	txb.Consume(reqData)
 }
 
-func TestNewTxBuilder(t *testing.T) {
+func TestTxBuilderBasic(t *testing.T) {
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
@@ -100,7 +103,6 @@ func TestNewTxBuilder(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
-
 	t.Run("2", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
 			return nil, iotago.UTXOInput{}
@@ -134,8 +136,7 @@ func TestNewTxBuilder(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
-
-	t.Run("4", func(t *testing.T) {
+	t.Run("consistency check", func(t *testing.T) {
 		const runTimes = 100
 		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
 		amounts := make(map[int]uint64)
@@ -168,5 +169,28 @@ func TestNewTxBuilder(t *testing.T) {
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
+	})
+	t.Run("exceed inputs", func(t *testing.T) {
+		const runTimes = 150
+		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
+		amounts := make(map[int]uint64)
+		err := util.CatchPanicReturnError(func() {
+			for i := 0; i < runTimes; i++ {
+				amount := uint64(rand.Intn(runTimes))
+				idx := rand.Intn(numInitBalances)
+				s, _ := amounts[idx]
+				amounts[idx] = s + amount
+
+				consumeUTXO(t, txb, 1, nativeTokensOnChain[idx].ID, amount)
+
+				totalIotas, _, isBalanced := txb.TotalAssets()
+				require.True(t, isBalanced)
+				require.EqualValues(t, initialTotalIotas+i+1, totalIotas)
+			}
+		}, ErrInputLimitExceeded)
+		require.True(t, xerrors.Is(err, ErrInputLimitExceeded))
+
+		_, _, isBalanced := txb.TotalAssets()
+		require.True(t, isBalanced)
 	})
 }
