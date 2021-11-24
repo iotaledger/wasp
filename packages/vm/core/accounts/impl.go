@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -58,26 +57,26 @@ func viewAccounts(ctx iscp.SandboxView) (dict.Dict, error) {
 // Params:
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
 //   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
-// TODO rewrite according to the new asset handling workflow
 func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.deposit.begin -- %s", ctx.IncomingTransfer())
+	// TODO maybe it still makes sense to keep the logic to use "deposit" to send funds between users
 
-	mustCheckLedger(ctx.State(), "accounts.deposit.begin")
+	// ctx.Log().Debugf("accounts.deposit.begin -- %s", ctx.IncomingTransfer())
 
-	caller := ctx.Caller()
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAccount := params.MustGetAgentID(ParamAgentID, caller)
-	targetAccount = commonaccount.AdjustIfNeeded(targetAccount, ctx.ChainID())
+	// mustCheckLedger(ctx.State(), "accounts.deposit.begin")
 
-	// funds currently are in the common account (because call is to 'accounts'), they must be moved to the target
-	succ := MoveBetweenAccounts(ctx.State(), commonaccount.Get(ctx.ChainID()), targetAccount, ctx.IncomingTransfer())
-	assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", targetAccount.String())
+	// caller := ctx.Caller()
+	// params := kvdecoder.New(ctx.Params(), ctx.Log())
+	// targetAccount := params.MustGetAgentID(ParamAgentID, caller)
 
-	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s",
-		targetAccount, ctx.IncomingTransfer().String())
+	// // funds currently are in the common account (because call is to 'accounts'), they must be moved to the target
+	// succ := MoveBetweenAccounts(ctx.State(), commonaccount.Get(ctx.ChainID()), targetAccount, ctx.IncomingTransfer())
+	// assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", targetAccount.String())
 
-	mustCheckLedger(ctx.State(), "accounts.deposit.exit")
-	return nil, nil
+	// ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s",
+	// 	targetAccount, ctx.IncomingTransfer().String())
+
+	// // mustCheckLedger(ctx.State(), "accounts.deposit.exit")
+	// return nil, nil
 }
 
 // withdraw sends caller's funds to the caller
@@ -101,11 +100,15 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
 
 	// add incoming tokens (after fees) to the balances to be withdrawn. Otherwise they would end up in the common account
-	tokensToWithdraw.AddAll(ctx.IncomingTransfer())
+	tokensToWithdraw.Add(ctx.IncomingTransfer())
 	// Send call assumes tokens are in the current account
-	a.Require(ctx.Send(ctx.Caller().Address(), tokensToWithdraw, &iscp.SendMetadata{
+	sendMetadata := &iscp.SendMetadata{
 		TargetContract: ctx.Caller().Hname(),
-	}), "accounts.withdraw.inconsistency: failed sending tokens ")
+	}
+	a.Require(
+		ctx.Send(ctx.Caller().Address(), tokensToWithdraw, sendMetadata),
+		"accounts.withdraw.inconsistency: failed sending tokens ",
+	)
 
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", tokensToWithdraw.String())
 
@@ -118,6 +121,7 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 //   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
 //   ParamWithdrawColor color to withdraw if amount is specified. Defaults to colored.IOTA
 func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
+	// TODO review
 	a := assert.NewAssert(ctx.Log())
 	a.RequireChainOwner(ctx, "harvest")
 
