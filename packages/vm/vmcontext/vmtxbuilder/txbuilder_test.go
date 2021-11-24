@@ -5,20 +5,15 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/wasp/packages/testutil/testiotago"
-
 	"github.com/iotaledger/hive.go/serializer"
-	"github.com/iotaledger/wasp/packages/iscp"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/testutil/testiotago"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
 )
 
 func rndAliasID() (ret iotago.AliasID) {
