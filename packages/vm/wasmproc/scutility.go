@@ -16,7 +16,15 @@ type ScUtility struct {
 	wc    *WasmContext
 }
 
-func NewScUtility(wc *WasmContext) *ScUtility {
+func NewScUtility(wc *WasmContext, gasProcessor interface{}) *ScUtility {
+	//if gasProcessor == nil {
+	//	if wc.ctx != nil {
+	//		gasProcessor = wc.ctx.Gas()
+	//	} else {
+	//		gasProcessor = wc.ctxView.Gas()
+	//	}
+	//}
+	//return &ScUtility{utils: sandbox.NewUtils(gasProcessor), wc: wc}
 	return &ScUtility{utils: sandbox_utils.NewUtils(), wc: wc}
 }
 

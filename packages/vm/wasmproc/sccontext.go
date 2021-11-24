@@ -143,7 +143,7 @@ func (o *ScContext) GetObjectID(keyID, typeID int32) int32 {
 		wasmhost.KeyReturn:    func() WaspObject { return NewScDict(o.host, dict.New()) },
 		wasmhost.KeyState:     func() WaspObject { return NewScDict(o.host, o.wc.state()) },
 		wasmhost.KeyTransfers: func() WaspObject { return NewScTransfers(o.wc) },
-		wasmhost.KeyUtility:   func() WaspObject { return NewScUtility(o.wc) },
+		wasmhost.KeyUtility:   func() WaspObject { return NewScUtility(o.wc, nil) },
 	})
 }
 
