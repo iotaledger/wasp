@@ -69,25 +69,18 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		// off ledger requests does not bring any deposit
 		return
 	}
-	// ---- update transaction builder
-	vmctx.txbuilder.ConsumeOutput(vmctx.req)
-	vmctx.txbuilder.AddDeltaIotas(vmctx.req.Assets().Iotas)
-	for _, nt := range vmctx.req.Assets().Tokens {
-		vmctx.txbuilder.AddDeltaNativeToken(nt.ID, nt.Amount)
-	}
-	// ---- end update transaction builder
-
-	// ---- update the state, the account ledger
-	// NOTE: sender account will be CommonAccount if sender address is not available
-	vmctx.creditToAccount(vmctx.req.SenderAccount(), vmctx.req.Assets())
-	// ---- end update state
-
-	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
-
+	// consume output into the transaction builder
+	vmctx.txbuilder.Consume(vmctx.req)
 	_, _, isBalanced := vmctx.txbuilder.TotalAssets()
 	if !isBalanced {
 		panic("internal inconsistency: transaction builder is not balanced")
 	}
+
+	// update the state, the account ledger
+	// NOTE: sender account will be CommonAccount if sender address is not available
+	vmctx.creditToAccount(vmctx.req.SenderAccount(), vmctx.req.Assets())
+
+	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
 	// TODO check if total assets are consistent with the state
 }
 

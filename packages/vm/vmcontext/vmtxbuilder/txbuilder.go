@@ -81,17 +81,22 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 	return ret
 }
 
-// ConsumeOutput adds an input to the transaction. Return its index.
+// Consume adds an input to the transaction. Return its index.
 // It panics if transaction cannot hold that many inputs
 // All explicitly consumed inputs will hold fixed index in the transaction
-func (txb *AnchorTransactionBuilder) ConsumeOutput(inp iscp.RequestData) int {
+// It updates total assets held by the chain. So it may panic due to exceed output counts
+func (txb *AnchorTransactionBuilder) Consume(inp iscp.RequestData) int {
 	if inp.IsOffLedger() {
-		panic("ConsumeOutput: must be UTXO")
+		panic(xerrors.New("Consume: must be UTXO"))
 	}
 	if txb.InputsAreFull() {
 		panic(ErrInputLimitExceeded)
 	}
 	txb.consumed = append(txb.consumed, inp)
+	txb.addDeltaIotas(inp.Assets().Iotas)
+	for _, nt := range inp.Assets().Tokens {
+		txb.addDeltaNativeToken(nt.ID, nt.Amount)
+	}
 	return len(txb.consumed) - 1
 }
 
@@ -344,27 +349,27 @@ func (txb *AnchorTransactionBuilder) TotalAssets() (uint64, map[iotago.NativeTok
 	return sumIotasIN, sumTokensIN, true
 }
 
-// AddDeltaIotas increases number of on-chain iotas by delta
-func (txb *AnchorTransactionBuilder) AddDeltaIotas(delta uint64) {
+// addDeltaIotas increases number of on-chain iotas by delta
+func (txb *AnchorTransactionBuilder) addDeltaIotas(delta uint64) {
 	if delta == 0 {
 		return
 	}
 	// safe arithmetics
 	n := txb.balanceIotas + delta
 	if n < txb.balanceIotas {
-		panic("AddDeltaIotas: overflow")
+		panic(xerrors.New("addDeltaIotas: overflow"))
 	}
 	txb.balanceIotas = n
 }
 
-// SubDeltaIotas decreases number of on-chain iotas
-func (txb *AnchorTransactionBuilder) SubDeltaIotas(delta uint64) {
+// subDeltaIotas decreases number of on-chain iotas
+func (txb *AnchorTransactionBuilder) subDeltaIotas(delta uint64) {
 	if delta == 0 {
 		return
 	}
 	// safe arithmetics
 	if delta > txb.balanceIotas {
-		panic("SubDeltaIotas: overflow")
+		panic(xerrors.New("subDeltaIotas: overflow"))
 	}
 	txb.balanceIotas -= delta
 }
@@ -393,9 +398,9 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id iotago.NativeTo
 	return b
 }
 
-// AddDeltaNativeToken adds delta to the token balance.
+// addDeltaNativeToken adds delta to the token balance.
 // Use negative to subtract
-func (txb *AnchorTransactionBuilder) AddDeltaNativeToken(id iotago.NativeTokenID, delta *big.Int) {
+func (txb *AnchorTransactionBuilder) addDeltaNativeToken(id iotago.NativeTokenID, delta *big.Int) {
 	if util.IsZeroBigInt(delta) {
 		return
 	}
@@ -409,8 +414,15 @@ func (txb *AnchorTransactionBuilder) AddPostedRequest(par iscp.PostRequestData) 
 	if txb.outputsAreFull() {
 		panic(ErrOutputLimitExceeded)
 	}
-	p := par
-	txb.postedRequests = append(txb.postedRequests, &p)
+
+	txb.subDeltaIotas(par.Assets.Iotas)
+	bi := new(big.Int)
+	for _, nt := range par.Assets.Tokens {
+		bi.Neg(nt.Amount)
+		txb.addDeltaNativeToken(nt.ID, bi)
+	}
+
+	txb.postedRequests = append(txb.postedRequests, &par)
 }
 
 func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) *iotago.TransactionEssence {

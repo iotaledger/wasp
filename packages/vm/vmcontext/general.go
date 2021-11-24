@@ -1,12 +1,11 @@
 package vmcontext
 
 import (
-	"math/big"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"golang.org/x/xerrors"
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
@@ -46,7 +45,7 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 }
 
 func (vmctx *VMContext) Request() iscp.Request {
-	return vmctx.req.Request()
+	return vmctx.req
 }
 
 func (vmctx *VMContext) AccountID() *iscp.AgentID {
@@ -64,7 +63,7 @@ func (vmctx *VMContext) IncomingTransfer() *iscp.Assets {
 // TODO dust provision
 func (vmctx *VMContext) Send(target iotago.Address, assets *iscp.Assets, metadata *iscp.SendMetadata, options ...*iscp.SendOptions) {
 	if assets == nil {
-		panic("post request assets can't be nil")
+		panic(xerrors.New("post request assets can't be nil"))
 	}
 	var sendOptions *iscp.SendOptions
 	if len(options) > 0 {
@@ -72,15 +71,6 @@ func (vmctx *VMContext) Send(target iotago.Address, assets *iscp.Assets, metadat
 	}
 	// debit the assets from the on-chain account
 	vmctx.debitFromAccount(vmctx.AccountID(), assets)
-
-	// instruct tx builder about changed totals on-chain
-	vmctx.txbuilder.SubDeltaIotas(assets.Iotas)
-	bi := new(big.Int)
-	for _, nt := range assets.Tokens {
-		bi.Neg(nt.Amount)
-		vmctx.txbuilder.AddDeltaNativeToken(nt.ID, bi)
-	}
-
 	vmctx.txbuilder.AddPostedRequest(iscp.PostRequestData{
 		TargetAddress:  target,
 		SenderContract: vmctx.CurrentContractHname(),
@@ -88,6 +78,7 @@ func (vmctx *VMContext) Send(target iotago.Address, assets *iscp.Assets, metadat
 		Metadata:       metadata,
 		SendOptions:    sendOptions,
 	})
+	// TODO check consistency between transaction builder and the on-chain accounts
 }
 
 var _ iscp.StateAnchor = &VMContext{}
