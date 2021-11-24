@@ -187,7 +187,7 @@ func (r *OffLedgerRequestData) Assets() *Assets {
 	return nil
 }
 
-// Transfer Transfer of assets from the sender's account to the target smart contract. Nil mean no Transfer
+// Transfer transfer of assets from the sender's account to the target smart contract. Nil mean no Transfer
 func (r *OffLedgerRequestData) Transfer() *Assets {
 	return NewAssets(r.transferIotas, r.transferTokens)
 }
