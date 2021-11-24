@@ -187,7 +187,7 @@ func (r *OffLedgerRequestData) Assets() *Assets {
 	return nil
 }
 
-// Transfer transfer of assets from the sender's account to the target smart contract. Nil mean no transfer
+// Transfer Transfer of assets from the sender's account to the target smart contract. Nil mean no Transfer
 func (r *OffLedgerRequestData) Transfer() *Assets {
 	return NewAssets(r.transferIotas, r.transferTokens)
 }
@@ -266,7 +266,7 @@ func (r *OffLedgerRequestData) GasBudget() uint64 {
 }
 
 func (r *OffLedgerRequestData) String() string {
-	return fmt.Sprintf("OffLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, args: %s, nonce: %d }",
+	return fmt.Sprintf("OffLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, nonce: %d }",
 		r.ID().Base58(),
 		"**not impl**", // TODO r.SenderAddress().Base58(),
 		r.contract.String(),
@@ -368,14 +368,14 @@ func (r *OnLedgerRequestData) ID() RequestID {
 }
 
 func (r *OnLedgerRequestData) Params() dict.Dict {
-	return r.requestMetadata.Args()
+	return r.requestMetadata.Params
 }
 
 func (r *OnLedgerRequestData) SenderAccount() *AgentID {
 	if r.SenderAddress() == nil {
 		return &NilAgentID
 	}
-	return NewAgentID(r.SenderAddress(), r.requestMetadata.SenderContract())
+	return NewAgentID(r.SenderAddress(), r.requestMetadata.SenderContract)
 }
 
 func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
@@ -388,13 +388,13 @@ func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
 
 func (r *OnLedgerRequestData) Target() RequestTarget {
 	return RequestTarget{
-		Contract:   r.requestMetadata.TargetContract(),
-		EntryPoint: r.requestMetadata.EntryPoint(),
+		Contract:   r.requestMetadata.TargetContract,
+		EntryPoint: r.requestMetadata.EntryPoint,
 	}
 }
 
 func (r *OnLedgerRequestData) Transfer() *Assets {
-	return r.requestMetadata.Transfer()
+	return r.requestMetadata.Transfer
 }
 
 func (r *OnLedgerRequestData) Assets() *Assets {
@@ -407,7 +407,7 @@ func (r *OnLedgerRequestData) Assets() *Assets {
 }
 
 func (r *OnLedgerRequestData) GasBudget() uint64 {
-	return r.requestMetadata.GasBudget()
+	return r.requestMetadata.GasBudget
 }
 
 // implements RequestData interface
@@ -584,23 +584,17 @@ func ShortRequestIDs(ids []RequestID) []string {
 // region RequestMetadata //////////////////////////////////////////////////
 
 type RequestMetadata struct {
-	senderContract Hname
+	SenderContract Hname
 	// ID of the target smart contract
-	targetContract Hname
+	TargetContract Hname
 	// entry point code
-	entryPoint Hname
-	// request arguments, not decoded yet wrt blobRefs
-	args dict.Dict
-	// transfer intended to the target contract. Always taken from the sender's account. Nil mean no transfer
-	transfer *Assets
+	EntryPoint Hname
+	// request arguments
+	Params dict.Dict
+	// Transfer intended to the target contract. Always taken from the sender's account. Nil mean no Transfer
+	Transfer *Assets
 	// gas budget
-	gasBudget uint64
-}
-
-func NewRequestMetadata() *RequestMetadata {
-	return &RequestMetadata{
-		args: dict.New(),
-	}
+	GasBudget uint64
 }
 
 func RequestMetadataFromFeatureBlocksSet(set iotago.FeatureBlocksSet) (*RequestMetadata, error) {
@@ -613,69 +607,9 @@ func RequestMetadataFromFeatureBlocksSet(set iotago.FeatureBlocksSet) (*RequestM
 }
 
 func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {
-	ret := NewRequestMetadata()
+	ret := &RequestMetadata{}
 	err := ret.ReadFromMarshalUtil(marshalutil.New(data))
 	return ret, err
-}
-
-func (p *RequestMetadata) WithSender(s Hname) *RequestMetadata {
-	p.senderContract = s
-	return p
-}
-
-func (p *RequestMetadata) WithTarget(t Hname) *RequestMetadata {
-	p.targetContract = t
-	return p
-}
-
-func (p *RequestMetadata) WithEntryPoint(ep Hname) *RequestMetadata {
-	p.entryPoint = ep
-	return p
-}
-
-func (p *RequestMetadata) WithArgs(args dict.Dict) *RequestMetadata {
-	p.args = args.Clone()
-	return p
-}
-
-func (p *RequestMetadata) WithTransfer(assets *Assets) *RequestMetadata {
-	p.transfer = assets // paraneter immutable
-	return p
-}
-
-func (p *RequestMetadata) WithGasBudget(gasBudget uint64) *RequestMetadata {
-	p.gasBudget = gasBudget
-	return p
-}
-
-func (p *RequestMetadata) Clone() *RequestMetadata {
-	ret := *p
-	ret.args = p.args.Clone()
-	return &ret
-}
-
-func (p *RequestMetadata) SenderContract() Hname {
-	return p.senderContract
-}
-
-func (p *RequestMetadata) TargetContract() Hname {
-	return p.targetContract
-}
-
-func (p *RequestMetadata) EntryPoint() Hname {
-	return p.entryPoint
-}
-
-func (p *RequestMetadata) Args() dict.Dict {
-	return p.args
-}
-
-func (p *RequestMetadata) Transfer() *Assets {
-	return p.transfer
-}
-
-func (p *RequestMetadata) GasBudget() uint64 {
-	return p.gasBudget
 }
 
 func (p *RequestMetadata) Bytes() []byte {
@@ -685,33 +619,40 @@ func (p *RequestMetadata) Bytes() []byte {
 }
 
 func (p *RequestMetadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.Write(p.senderContract).
-		Write(p.targetContract).
-		Write(p.entryPoint).
-		WriteUint64(p.gasBudget)
-	p.args.WriteToMarshalUtil(mu)
-	p.transfer.WriteToMarshalUtil(mu)
+	mu.Write(p.SenderContract).
+		Write(p.TargetContract).
+		Write(p.EntryPoint).
+		WriteUint64(p.GasBudget)
+	p.Params.WriteToMarshalUtil(mu)
+	mu.WriteBool(p.Transfer != nil)
+	if p.Transfer != nil {
+		p.Transfer.WriteToMarshalUtil(mu)
+	}
 }
 
 func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	var err error
-	if p.senderContract, err = HnameFromMarshalUtil(mu); err != nil {
+	if p.SenderContract, err = HnameFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if p.targetContract, err = HnameFromMarshalUtil(mu); err != nil {
+	if p.TargetContract, err = HnameFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if p.entryPoint, err = HnameFromMarshalUtil(mu); err != nil {
+	if p.EntryPoint, err = HnameFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if p.gasBudget, err = mu.ReadUint64(); err != nil {
+	if p.GasBudget, err = mu.ReadUint64(); err != nil {
 		return err
 	}
-	if err := (p.args).ReadFromMarshalUtil(mu); err != nil {
+	if err := (p.Params).ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if p.transfer, err = NewAssetsFromMarshalUtil(mu); err != nil {
-		return err
+	if transferPresent, err := mu.ReadBool(); err != nil {
+		if transferPresent {
+			if p.Transfer, err = NewAssetsFromMarshalUtil(mu); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

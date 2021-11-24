@@ -192,14 +192,14 @@ func TestTxBuilderConsistency(t *testing.T) {
 					},
 				},
 			}
-			txb.PostRequest(iscp.PostRequestData{
-				TargetAddress:  tpkg.RandEd25519Address(),
-				SenderContract: iscp.Hn("test"),
-				Assets:         assets,
-				Metadata:       &iscp.SendMetadata{},
-				SendOptions:    nil,
-				GasBudget:      0,
-			})
+			exout := ExtendedOutputFromPostData(
+				tpkg.RandEd25519Address(),
+				anchor.AliasID.ToAddress(),
+				iscp.Hn("test"),
+				assets,
+				&iscp.SendMetadata{},
+			)
+			txb.AddOutput(exout)
 		}
 	}
 	t.Run("consistency check 1", func(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
-// Assets is used as assets in the UTXO and as tokens in transfer
+// Assets is used as assets in the UTXO and as tokens in Transfer
 type Assets struct {
 	Iotas  uint64
 	Tokens iotago.NativeTokens

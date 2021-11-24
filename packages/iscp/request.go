@@ -78,7 +78,7 @@ type Request interface {
 	SenderAddress() iotago.Address
 	Target() RequestTarget
 	Assets() *Assets   // attached assets for the UTXO request, nil for off-ledger. All goes to sender
-	Transfer() *Assets // transfer of assets to the smart contract. Debited from sender account
+	Transfer() *Assets // Transfer of assets to the smart contract. Debited from sender account
 	GasBudget() uint64
 }
 
