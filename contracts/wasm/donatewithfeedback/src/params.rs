@@ -13,6 +13,7 @@ use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
+use crate::structs::*;
 
 #[derive(Clone, Copy)]
 pub struct ImmutableDonateParams {

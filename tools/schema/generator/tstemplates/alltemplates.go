@@ -4,6 +4,7 @@ var TsTemplates = []map[string]string{
 	tsCommon,
 	constsTs,
 	contractTs,
+	eventsTs,
 	funcsTs,
 	indexTs,
 	keysTs,
@@ -45,5 +46,14 @@ $#emit importSc
   "extends": "assemblyscript/std/assembly.json",
   "include": ["./*.ts"]
 }
+`,
+	// *******************************
+	"setVarType": `
+$#set varType wasmlib.TYPE_MAP
+$#if array setVarTypeArray
+`,
+	// *******************************
+	"setVarTypeArray": `
+$#set varType $arrayTypeID|$fldTypeID
 `,
 }

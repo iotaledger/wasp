@@ -4,6 +4,7 @@ var GoTemplates = []map[string]string{
 	goCommon,
 	constsGo,
 	contractGo,
+	eventsGo,
 	funcsGo,
 	keysGo,
 	libGo,
@@ -39,5 +40,14 @@ import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 	"goHeader": `
 $#emit goPackage
 $#emit importWasmLib
+`,
+	// *******************************
+	"setVarType": `
+$#set varType wasmlib.TYPE_MAP
+$#if array setVarTypeArray
+`,
+	// *******************************
+	"setVarTypeArray": `
+$#set varType $arrayTypeID|$fldTypeID
 `,
 }

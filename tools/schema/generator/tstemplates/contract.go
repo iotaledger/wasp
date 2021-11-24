@@ -26,11 +26,20 @@ $#if core else FuncNameContext
 	"FuncNameContext": `
 
 export class $FuncName$+Context {
+$#if func PackageEvents
 $#if param ImmutableFuncNameParams
 $#if result MutableFuncNameResults
 $#if func MutablePackageState
 $#if view ImmutablePackageState
 }
+`,
+	// *******************************
+	"PackageEvents": `
+$#if events PackageEventsExist
+`,
+	// *******************************
+	"PackageEventsExist": `
+	events:  sc.$Package$+Events = new sc.$Package$+Events();
 `,
 	// *******************************
 	"ImmutableFuncNameParams": `

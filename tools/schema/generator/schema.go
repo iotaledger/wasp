@@ -29,6 +29,7 @@ type FuncDefMap map[string]*FuncDef
 type SchemaDef struct {
 	Name        string       `json:"name" yaml:"name"`
 	Description string       `json:"description" yaml:"description"`
+	Events      StringMapMap `json:"events" yaml:"events"`
 	Structs     StringMapMap `json:"structs" yaml:"structs"`
 	Typedefs    StringMap    `json:"typedefs" yaml:"typedefs"`
 	State       StringMap    `json:"state" yaml:"state"`
@@ -60,13 +61,13 @@ type Schema struct {
 	ConstValues   []string
 	CoreContracts bool
 	SchemaTime    time.Time
+	Events        []*Struct
 	Funcs         []*Func
 	Params        []*Field
 	Results       []*Field
 	StateVars     []*Field
 	Structs       []*Struct
 	Typedefs      []*Field
-	Views         []*Func
 }
 
 func NewSchema() *Schema {
@@ -81,7 +82,11 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	s.Name = lower(s.FullName)
 	s.Description = strings.TrimSpace(schemaDef.Description)
 
-	err := s.compileStructs(schemaDef)
+	err := s.compileEvents(schemaDef)
+	if err != nil {
+		return err
+	}
+	err = s.compileStructs(schemaDef)
 	if err != nil {
 		return err
 	}
@@ -113,6 +118,17 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 		s.Results = append(s.Results, result)
 	}
 	return s.compileStateVars(schemaDef)
+}
+
+func (s *Schema) compileEvents(schemaDef *SchemaDef) error {
+	for _, eventName := range sortedMaps(schemaDef.Events) {
+		event, err := s.compileStruct("event", eventName, schemaDef.Events[eventName])
+		if err != nil {
+			return err
+		}
+		s.Events = append(s.Events, event)
+	}
+	return nil
 }
 
 func (s *Schema) compileField(fldName, fldType string) (*Field, error) {
@@ -225,34 +241,46 @@ func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
 }
 
 func (s *Schema) compileStructs(schemaDef *SchemaDef) error {
-	for _, typeName := range sortedMaps(schemaDef.Structs) {
-		fieldMap := schemaDef.Structs[typeName]
-		typeDef := &Struct{}
-		typeDef.Name = typeName
-		fieldNames := make(StringMap)
-		fieldAliases := make(StringMap)
-		for _, fldName := range sortedKeys(fieldMap) {
-			fldType := fieldMap[fldName]
-			field, err := s.compileField(fldName, fldType)
-			if err != nil {
-				return err
-			}
-			if field.Optional {
-				return fmt.Errorf("type field cannot be optional")
-			}
-			if _, ok := fieldNames[field.Name]; ok {
-				return fmt.Errorf("duplicate field name")
-			}
-			fieldNames[field.Name] = field.Name
-			if _, ok := fieldAliases[field.Alias]; ok {
-				return fmt.Errorf("duplicate field alias")
-			}
-			fieldAliases[field.Alias] = field.Alias
-			typeDef.Fields = append(typeDef.Fields, field)
+	for _, structName := range sortedMaps(schemaDef.Structs) {
+		structDef, err := s.compileStruct("struct", structName, schemaDef.Structs[structName])
+		if err != nil {
+			return err
 		}
-		s.Structs = append(s.Structs, typeDef)
+		s.Structs = append(s.Structs, structDef)
 	}
 	return nil
+}
+
+func (s *Schema) compileStruct(kind, structName string, structFields StringMap) (*Struct, error) {
+	structDef := &Struct{Name: structName}
+	fieldNames := make(StringMap)
+	fieldAliases := make(StringMap)
+	for _, fldName := range sortedKeys(structFields) {
+		fldType := structFields[fldName]
+		field, err := s.compileField(fldName, fldType)
+		if err != nil {
+			return nil, err
+		}
+		if field.Optional {
+			return nil, fmt.Errorf("%s field cannot be optional", kind)
+		}
+		if field.Array {
+			return nil, fmt.Errorf("%s field cannot be an array", kind)
+		}
+		if field.MapKey != "" {
+			return nil, fmt.Errorf("%s field cannot be a map", kind)
+		}
+		if _, ok := fieldNames[field.Name]; ok {
+			return nil, fmt.Errorf("duplicate %s field name", kind)
+		}
+		fieldNames[field.Name] = field.Name
+		if _, ok := fieldAliases[field.Alias]; ok {
+			return nil, fmt.Errorf("duplicate %s field alias", kind)
+		}
+		fieldAliases[field.Alias] = field.Alias
+		structDef.Fields = append(structDef.Fields, field)
+	}
+	return structDef, nil
 }
 
 func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {

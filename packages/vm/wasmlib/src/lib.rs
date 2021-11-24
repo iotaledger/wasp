@@ -6,6 +6,7 @@
 pub use bytes::*;
 pub use context::*;
 pub use contract::*;
+pub use events::*;
 pub use exports::ScExports;
 pub use hashtypes::*;
 pub use immutable::*;
@@ -20,6 +21,7 @@ pub mod coreblob;
 pub mod coreblocklog;
 pub mod coregovernance;
 pub mod coreroot;
+mod events;
 mod exports;
 mod hashtypes;
 pub mod host;
