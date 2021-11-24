@@ -24,6 +24,8 @@ type groupImpl struct {
 	nodes       []peering.PeerSender
 	other       map[uint16]peering.PeerSender
 	selfIndex   uint16
+	peeringID   peering.PeeringID
+	attachIDs   []interface{}
 	log         *logger.Logger
 }
 
@@ -31,7 +33,7 @@ var _ peering.GroupProvider = &groupImpl{}
 
 // NewPeeringGroupProvider creates a generic peering group.
 // That should be used as a helper for peering implementations.
-func NewPeeringGroupProvider(netProvider peering.NetworkProvider, nodes []peering.PeerSender, log *logger.Logger) (peering.GroupProvider, error) {
+func NewPeeringGroupProvider(netProvider peering.NetworkProvider, peeringID peering.PeeringID, nodes []peering.PeerSender, log *logger.Logger) (peering.GroupProvider, error) {
 	other := make(map[uint16]peering.PeerSender)
 	selfFound := false
 	selfIndex := uint16(0)
@@ -51,6 +53,8 @@ func NewPeeringGroupProvider(netProvider peering.NetworkProvider, nodes []peerin
 		nodes:       nodes,
 		other:       other,
 		selfIndex:   selfIndex,
+		peeringID:   peeringID,
+		attachIDs:   make([]interface{}, 0),
 		log:         log,
 	}, nil
 }
@@ -83,14 +87,19 @@ func (g *groupImpl) NetIDByIndex(index uint16) (string, error) {
 }
 
 // SendMsgByIndex implements peering.GroupProvider.
-func (g *groupImpl) SendMsgByIndex(peerIdx uint16, msg *peering.PeerMessageData) {
-	g.nodes[peerIdx].SendMsg(msg)
+func (g *groupImpl) SendMsgByIndex(peerIdx uint16, msgReceiver, msgType byte, msgData []byte) {
+	g.nodes[peerIdx].SendMsg(&peering.PeerMessageData{
+		PeeringID:   g.peeringID,
+		MsgReceiver: msgReceiver,
+		MsgType:     msgType,
+		MsgData:     msgData,
+	})
 }
 
 // Broadcast implements peering.GroupProvider.
-func (g *groupImpl) SendMsgBroadcast(msg *peering.PeerMessageData, except ...uint16) {
+func (g *groupImpl) SendMsgBroadcast(msgReceiver, msgType byte, msgData []byte, except ...uint16) {
 	for i := range g.OtherNodes(except...) {
-		g.SendMsgByIndex(i, msg)
+		g.SendMsgByIndex(i, msgReceiver, msgType, msgData)
 	}
 }
 
@@ -223,8 +232,8 @@ func (g *groupImpl) OtherNodes(except ...uint16) map[uint16]peering.PeerSender {
 // Attach starts listening for messages. Messages in this case will be filtered
 // to those received from nodes in the group only. SenderIndex will be filled
 // for the messages according to the message source.
-func (g *groupImpl) Attach(peeringID *peering.PeeringID, receiver byte, callback func(recv *peering.PeerMessageGroupIn)) interface{} {
-	return g.netProvider.Attach(peeringID, receiver, func(recv *peering.PeerMessageIn) {
+func (g *groupImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageGroupIn)) interface{} {
+	attachID := g.netProvider.Attach(&g.peeringID, receiver, func(recv *peering.PeerMessageIn) {
 		idx, err := g.PeerIndexByNetID(recv.SenderNetID)
 		if idx == NotInGroup {
 			err = xerrors.Errorf("sender does not belong to the group")
@@ -240,6 +249,8 @@ func (g *groupImpl) Attach(peeringID *peering.PeeringID, receiver byte, callback
 		}
 		callback(gRecv)
 	})
+	g.attachIDs = append(g.attachIDs, attachID)
+	return attachID
 }
 
 // Detach terminates listening for messages.
@@ -249,6 +260,9 @@ func (g *groupImpl) Detach(attachID interface{}) {
 
 // Close implements peering.GroupProvider.
 func (g *groupImpl) Close() {
+	for _, attachID := range g.attachIDs {
+		g.Detach(attachID)
+	}
 	for i := range g.nodes {
 		g.nodes[i].Close()
 	}

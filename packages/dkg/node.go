@@ -121,12 +121,12 @@ func (n *Node) GenerateDistributedKey(
 	}
 	//
 	// Setup network connections.
+	dkgID := peering.RandomPeeringID()
 	var netGroup peering.GroupProvider
-	if netGroup, err = n.netProvider.PeerGroup(peerNetIDs); err != nil {
+	if netGroup, err = n.netProvider.PeerGroup(dkgID, peerNetIDs); err != nil {
 		return nil, err
 	}
 	defer netGroup.Close()
-	dkgID := peering.RandomPeeringID()
 	recvCh := make(chan *peering.PeerMessageIn, peerCount*2)
 	attachID := n.netProvider.Attach(&dkgID, peerMessageReceiverDkg, func(recv *peering.PeerMessageIn) {
 		recvCh <- recv

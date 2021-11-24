@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/chainpeering"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -56,7 +55,7 @@ type MockedNode struct {
 	store           kvstore.KVStore
 	NodeConn        *testchain.MockedNodeConn
 	ChainCore       *testchain.MockedChainCore
-	ChainPeers      chain.ChainPeers
+	ChainPeers      peering.PeerDomainProvider
 	stateSync       coreutil.ChainStateSync
 	Peers           peering.PeerDomainProvider
 	StateManager    chain.StateManager
@@ -184,7 +183,7 @@ func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, ou
 func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *MockedNode {
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
-	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.NodeIDs)
+	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.ChainID.Array(), env.NodeIDs)
 	require.NoError(env.T, err)
 	ret := &MockedNode{
 		NetID:      nodeID,
@@ -193,7 +192,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		store:      mapdb.NewMapDB(),
 		stateSync:  coreutil.NewChainStateSync(),
 		ChainCore:  testchain.NewMockedChainCore(env.T, env.ChainID, log),
-		ChainPeers: chainpeering.NewChainPeers(env.ChainID.Array(), peers),
+		ChainPeers: peers,
 		Peers:      peers,
 		Log:        log,
 	}
@@ -203,7 +202,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
 		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
 	})
-	ret.ChainPeers.AttachToPeerMessages(peerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
+	ret.ChainPeers.Attach(peerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
 		log.Debugf("State manager recvEvent from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
 		if peerMsg.MsgReceiver != peerMessageReceiverStateManager {
 			env.T.Fatalf("State manager does not accept peer messages of other receiver type %v, message type=%v",

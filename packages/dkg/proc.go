@@ -62,7 +62,7 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 	var err error
 
 	var netGroup peering.GroupProvider
-	if netGroup, err = node.netProvider.PeerGroup(msg.peerNetIDs); err != nil {
+	if netGroup, err = node.netProvider.PeerGroup(dkgID, msg.peerNetIDs); err != nil {
 		return nil, err
 	}
 	var dkgImpl *rabin_dkg.DistKeyGenerator
@@ -146,7 +146,7 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		)
 	}
 	go p.processLoop(msg.timeout, p.steps[rabinStep7CommitAndTerminate].doneCh)
-	p.attachID = p.netGroup.Attach(&dkgID, peerMessageReceiverDkg, p.onPeerMessage)
+	p.attachID = p.netGroup.Attach(peerMessageReceiverDkg, p.onPeerMessage)
 	stepsStart <- make(map[uint16]*peering.PeerMessageData)
 	return &p, nil
 }
@@ -726,7 +726,7 @@ func (s *procStep) run() {
 			if s.initResp != nil {
 				if isDkgInitProcRecvMsg(recv.MsgType) {
 					s.log.Debugf("[%v -%v-> %v] Resending initiator response.", s.proc.myNetID, s.initResp.MsgType, recv.SenderNetID)
-					s.proc.netGroup.SendMsgByIndex(recv.SenderIndex, s.initResp)
+					s.proc.netGroup.SendMsgByIndex(recv.SenderIndex, s.initResp.MsgReceiver, s.initResp.MsgType, s.initResp.MsgData)
 					continue
 				}
 				if isDkgRabinEchoMsg(recv.MsgType) {
@@ -755,7 +755,7 @@ func (s *procStep) run() {
 					for i := range s.sentMsgs {
 						netID, _ := s.proc.netGroup.NetIDByIndex(i)
 						s.log.Debugf("[%v -%v-> %v] Sending peer message (first).", s.proc.myNetID, s.sentMsgs[i].MsgType, netID)
-						s.proc.netGroup.SendMsgByIndex(i, s.sentMsgs[i])
+						s.proc.netGroup.SendMsgByIndex(i, s.sentMsgs[i].MsgReceiver, s.sentMsgs[i].MsgType, s.sentMsgs[i].MsgData)
 					}
 					if s.haveAll() {
 						s.makeDone()
@@ -787,7 +787,7 @@ func (s *procStep) run() {
 				if s.recvMsgs[i] == nil {
 					netID, _ := s.proc.netGroup.NetIDByIndex(i)
 					s.log.Debugf("[%v -%v-> %v] Resending peer message (retry).", s.proc.myNetID, s.sentMsgs[i].MsgType, netID)
-					s.proc.netGroup.SendMsgByIndex(i, s.sentMsgs[i])
+					s.proc.netGroup.SendMsgByIndex(i, s.sentMsgs[i].MsgReceiver, s.sentMsgs[i].MsgType, s.sentMsgs[i].MsgData)
 				}
 			}
 			continue
@@ -806,7 +806,7 @@ func (s *procStep) sendEcho(recv *peering.PeerMessageGroupIn) {
 			return
 		}
 		s.log.Debugf("[%v -%v-> %v] Resending peer message (echo).", s.proc.myNetID, echoMsg.MsgType, recv.SenderNetID)
-		s.proc.netGroup.SendMsgByIndex(recv.SenderIndex, &echoMsg)
+		s.proc.netGroup.SendMsgByIndex(recv.SenderIndex, echoMsg.MsgReceiver, echoMsg.MsgType, echoMsg.MsgData)
 		return
 	}
 	s.log.Warnf("[%v -%v-> %v] Unable to send echo message, is was not produced yet.", s.proc.myNetID, recv.MsgType, recv.SenderNetID)
@@ -838,7 +838,7 @@ func (s *procStep) markDone(initResp *peering.PeerMessageData) {
 	s.doneCh <- s.recvMsgs // Activate the next step.
 	s.initResp = initResp  // Store the response for later resends.
 	if s.initRecv != nil {
-		s.proc.netGroup.SendMsgByIndex(s.initRecv.SenderIndex, initResp) // Send response to the initiator.
+		s.proc.netGroup.SendMsgByIndex(s.initRecv.SenderIndex, initResp.MsgReceiver, initResp.MsgType, initResp.MsgData) // Send response to the initiator.
 	} else {
 		s.log.Panicf("Step %v/%v closed with no initiator message.", s.proc.myNetID, s.step)
 	}

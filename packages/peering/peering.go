@@ -31,12 +31,14 @@ const (
 type NetworkProvider interface {
 	Run(stopCh <-chan struct{})
 	Self() PeerSender
-	PeerGroup(peerAddrs []string) (GroupProvider, error)
-	PeerDomain(peerAddrs []string) (PeerDomainProvider, error)
+	PeerGroup(peeringID PeeringID, peerAddrs []string) (GroupProvider, error)
+	PeerDomain(peeringID PeeringID, peerAddrs []string) (PeerDomainProvider, error)
 	PeerByNetID(peerNetID string) (PeerSender, error)
 	PeerByPubKey(peerPub *ed25519.PublicKey) (PeerSender, error)
 	PeerStatus() []PeerStatusProvider
-	PeerCollection
+	Attach(peeringID *PeeringID, receiver byte, callback func(recv *PeerMessageIn)) interface{}
+	Detach(attachID interface{})
+	SendMsgByNetID(netID string, msg *PeerMessageData)
 }
 
 // TrustedNetworkManager is used maintain a configuration which peers are trusted.
@@ -50,12 +52,6 @@ type TrustedNetworkManager interface {
 	TrustedPeers() ([]*TrustedPeer, error)
 }
 
-type PeerCollection interface {
-	Attach(peeringID *PeeringID, receiver byte, callback func(recv *PeerMessageIn)) interface{}
-	Detach(attachID interface{})
-	SendMsgByNetID(netID string, msg *PeerMessageData)
-}
-
 // GroupProvider stands for a subset of a peer-to-peer network
 // that is responsible for achieving some common goal, eg,
 // consensus committee, DKG group, etc.
@@ -67,10 +63,10 @@ type GroupProvider interface {
 	PeerIndex(peer PeerSender) (uint16, error)
 	PeerIndexByNetID(peerNetID string) (uint16, error)
 	NetIDByIndex(index uint16) (string, error)
-	Attach(peeringID *PeeringID, receiver byte, callback func(recv *PeerMessageGroupIn)) interface{}
+	Attach(receiver byte, callback func(recv *PeerMessageGroupIn)) interface{}
 	Detach(attachID interface{})
-	SendMsgByIndex(peerIdx uint16, msg *PeerMessageData)
-	SendMsgBroadcast(msg *PeerMessageData, except ...uint16)
+	SendMsgByIndex(peerIdx uint16, msgReceiver byte, msgType byte, msgData []byte)
+	SendMsgBroadcast(msgReceiver byte, msgType byte, msgData []byte, except ...uint16)
 	ExchangeRound(
 		peers map[uint16]PeerSender,
 		recvCh chan *PeerMessageIn,
@@ -89,7 +85,10 @@ type GroupProvider interface {
 type PeerDomainProvider interface {
 	ReshufflePeers(seedBytes ...[]byte)
 	GetRandomPeers(upToNumPeers int) []string
-	PeerCollection
+	Attach(receiver byte, callback func(recv *PeerMessageIn)) interface{}
+	Detach(attachID interface{})
+	SendMsgByNetID(netID string, msgReceiver byte, msgType byte, msgData []byte)
+	SendPeerMsgToRandomPeers(upToNumPeers int, msgReceiver byte, msgType byte, msgData []byte)
 	Close()
 }
 

@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/chainpeering"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -25,7 +24,7 @@ type committee struct {
 	isReady        *atomic.Bool
 	address        ledgerstate.Address
 	peerConfig     registry.PeerNetworkConfigProvider
-	validatorNodes chain.CommitteePeerGroup
+	validatorNodes peering.GroupProvider
 	acsRunner      chain.AsynchronousCommonSubsetRunner
 	size           uint16
 	quorum         uint16
@@ -46,7 +45,7 @@ func New(
 	dksProvider registry.DKShareRegistryProvider,
 	log *logger.Logger,
 	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
-) (chain.Committee, chain.CommitteePeerGroup, error) {
+) (chain.Committee, peering.GroupProvider, error) {
 	// load DKShare from the registry
 	dkshare, err := dksProvider.LoadDKShare(cmtRec.Address)
 	if err != nil {
@@ -58,11 +57,6 @@ func New(
 	if err := checkValidatorNodeIDs(peerConfig, dkshare.N, *dkshare.Index, cmtRec.Nodes); err != nil {
 		return nil, nil, xerrors.Errorf("NewCommittee: %w", err)
 	}
-	var peers peering.GroupProvider
-	if peers, err = netProvider.PeerGroup(cmtRec.Nodes); err != nil {
-		return nil, nil, xerrors.Errorf("NewCommittee: failed to create peer group for committee: %+v: %w", cmtRec.Nodes, err)
-	}
-	log.Debugf("NewCommittee: peer group: %+v", cmtRec.Nodes)
 	// peerGroupID is calculated by XORing chainID and stateAddr.
 	// It allows to use same statAddr for different chains
 	peerGroupID := cmtRec.Address.Array()
@@ -73,10 +67,15 @@ func New(
 	for i := range peerGroupID {
 		peerGroupID[i] ^= chainArr[i]
 	}
+	var peers peering.GroupProvider
+	if peers, err = netProvider.PeerGroup(peerGroupID, cmtRec.Nodes); err != nil {
+		return nil, nil, xerrors.Errorf("NewCommittee: failed to create peer group for committee: %+v: %w", cmtRec.Nodes, err)
+	}
+	log.Debugf("NewCommittee: peer group: %+v", cmtRec.Nodes)
 	ret := &committee{
 		isReady:        atomic.NewBool(false),
 		address:        cmtRec.Address,
-		validatorNodes: chainpeering.NewCommitteePeerGroup(peerGroupID, peers),
+		validatorNodes: peers,
 		peerConfig:     peerConfig,
 		size:           dkshare.N,
 		quorum:         dkshare.T,

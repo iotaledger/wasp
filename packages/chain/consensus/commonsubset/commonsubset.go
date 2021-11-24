@@ -38,8 +38,8 @@ import (
 
 	"github.com/anthdm/hbbft"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
@@ -64,7 +64,7 @@ type CommonSubset struct {
 
 	sessionID          uint64 // Unique identifier for this consensus instance. Used to route messages.
 	stateIndex         uint32 // Sequence number of the CS transaction we are agreeing on.
-	committeePeerGroup chain.CommitteePeerGroup
+	committeePeerGroup peering.GroupProvider
 	netOwnIndex        uint16 // Our index in the group.
 
 	inputCh  chan []byte            // For our input to the consensus.
@@ -78,7 +78,7 @@ type CommonSubset struct {
 func NewCommonSubset(
 	sessionID uint64,
 	stateIndex uint32,
-	committeePeerGroup chain.CommitteePeerGroup,
+	committeePeerGroup peering.GroupProvider,
 	dkShare *tcrypto.DKShare,
 	allRandom bool, // Set to true to have real CC rounds for each epoch. That's for testing mostly.
 	outputCh chan map[uint16][]byte,
@@ -376,9 +376,7 @@ func (cs *CommonSubset) send(msgBatch *msgBatch) {
 		return
 	}
 	cs.log.Debugf("ACS::IO - Sending a msgBatch=%+v", msgBatch)
-	if err := cs.committeePeerGroup.SendMsgByIndex(msgBatch.dst, peerMessageReceiverCommonSubset, peerMsgTypeBatch, msgBatch.Bytes()); err != nil {
-		cs.log.Errorf("Error sending message batch %+v: %v", msgBatch, err)
-	}
+	cs.committeePeerGroup.SendMsgByIndex(msgBatch.dst, peerMessageReceiverCommonSubset, peerMsgTypeBatch, msgBatch.Bytes())
 }
 
 // endregion ///////////////////////////////////////////////////////////////////

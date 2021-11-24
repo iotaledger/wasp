@@ -200,7 +200,7 @@ func (p *peeringNetworkProvider) Self() peering.PeerSender {
 }
 
 // Group implements peering.NetworkProvider.
-func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupProvider, error) {
+func (p *peeringNetworkProvider) PeerGroup(peeringID peering.PeeringID, peerAddrs []string) (peering.GroupProvider, error) {
 	peers := make([]peering.PeerSender, len(peerAddrs))
 	for i := range peerAddrs {
 		n := p.network.nodeByNetID(peerAddrs[i])
@@ -209,12 +209,12 @@ func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupPro
 		}
 		peers[i] = p.senders[i]
 	}
-	return group.NewPeeringGroupProvider(p, peers, p.network.log)
+	return group.NewPeeringGroupProvider(p, peeringID, peers, p.network.log)
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (p *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
-	return domain.NewPeerDomainByNetIDs(p, peerNetIDs, p.network.log)
+func (p *peeringNetworkProvider) PeerDomain(peeringID peering.PeeringID, peerNetIDs []string) (peering.PeerDomainProvider, error) {
+	return domain.NewPeerDomainByNetIDs(p, peeringID, peerNetIDs, p.network.log)
 }
 
 // Attach implements peering.NetworkProvider.

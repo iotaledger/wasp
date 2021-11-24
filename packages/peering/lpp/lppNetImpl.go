@@ -319,7 +319,7 @@ func (n *netImpl) Self() peering.PeerSender {
 }
 
 // Group creates peering.GroupProvider.
-func (n *netImpl) PeerGroup(peerNetIDs []string) (peering.GroupProvider, error) {
+func (n *netImpl) PeerGroup(peeringID peering.PeeringID, peerNetIDs []string) (peering.GroupProvider, error) {
 	var err error
 	groupPeers := make([]peering.PeerSender, len(peerNetIDs))
 	for i := range peerNetIDs {
@@ -327,11 +327,11 @@ func (n *netImpl) PeerGroup(peerNetIDs []string) (peering.GroupProvider, error) 
 			return nil, err
 		}
 	}
-	return group.NewPeeringGroupProvider(n, groupPeers, n.log)
+	return group.NewPeeringGroupProvider(n, peeringID, groupPeers, n.log)
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (n *netImpl) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+func (n *netImpl) PeerDomain(peeringID peering.PeeringID, peerNetIDs []string) (peering.PeerDomainProvider, error) {
 	peers := make([]peering.PeerSender, 0, len(peerNetIDs))
 	for _, nid := range peerNetIDs {
 		if nid == n.Self().NetID() {
@@ -343,7 +343,7 @@ func (n *netImpl) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, e
 		}
 		peers = append(peers, p)
 	}
-	return domain.NewPeerDomain(n, peers, n.log), nil
+	return domain.NewPeerDomain(n, peeringID, peers, n.log), nil
 }
 
 func (n *netImpl) SendMsgByNetID(netID string, msg *peering.PeerMessageData) {

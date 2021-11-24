@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/ready"
@@ -63,14 +62,6 @@ type ChainEvents interface {
 	ChainTransition() *events.Event
 }
 
-type ChainPeers interface {
-	AttachToPeerMessages(receiver byte, fun func(recv *peering.PeerMessageIn))
-	SendPeerMsgByNetID(netID string, msgReceiver byte, msgType byte, msgData []byte)
-	SendPeerMsgToRandomPeers(upToNumPeers int, msgReceiver byte, msgType byte, msgData []byte)
-	GetRandomPeers(upToNumPeers int) []string
-	Close()
-}
-
 type Chain interface {
 	ChainCore
 	ChainRequests
@@ -92,16 +83,6 @@ type Committee interface {
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
 	GetOtherValidatorsPeerIDs() []string
 	GetRandomValidators(upToN int) []string
-}
-
-type CommitteePeerGroup interface {
-	SendMsgByIndex(peerIdx uint16, msgReceiver byte, msgType byte, msgData []byte) error
-	SendMsgBroadcast(msgReceiver byte, msgType byte, msgData []byte, except ...uint16)
-	AttachToPeerMessages(receiver byte, fun func(recv *peering.PeerMessageGroupIn))
-	SelfIndex() uint16
-	AllNodes(except ...uint16) map[uint16]peering.PeerSender
-	OtherNodes(except ...uint16) map[uint16]peering.PeerSender
-	Close()
 }
 
 type NodeConnection interface {

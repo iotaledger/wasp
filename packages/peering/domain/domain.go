@@ -15,6 +15,8 @@ type DomainImpl struct {
 	nodes       map[string]peering.PeerSender
 	permutation *util.Permutation16
 	netIDs      []string
+	peeringID   peering.PeeringID
+	attachIDs   []interface{}
 	log         *logger.Logger
 	mutex       *sync.RWMutex
 }
@@ -22,12 +24,14 @@ type DomainImpl struct {
 var _ peering.PeerDomainProvider = &DomainImpl{}
 
 // NewPeerDomain creates a collection. Ignores self
-func NewPeerDomain(netProvider peering.NetworkProvider, initialNodes []peering.PeerSender, log *logger.Logger) *DomainImpl {
+func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.PeeringID, initialNodes []peering.PeerSender, log *logger.Logger) *DomainImpl {
 	ret := &DomainImpl{
 		netProvider: netProvider,
 		nodes:       make(map[string]peering.PeerSender),
 		permutation: util.NewPermutation16(uint16(len(initialNodes)), nil),
 		netIDs:      make([]string, 0, len(initialNodes)),
+		peeringID:   peeringID,
+		attachIDs:   make([]interface{}, 0),
 		log:         log,
 		mutex:       &sync.RWMutex{},
 	}
@@ -38,7 +42,7 @@ func NewPeerDomain(netProvider peering.NetworkProvider, initialNodes []peering.P
 	return ret
 }
 
-func NewPeerDomainByNetIDs(netProvider peering.NetworkProvider, peerNetIDs []string, log *logger.Logger) (*DomainImpl, error) {
+func NewPeerDomainByNetIDs(netProvider peering.NetworkProvider, peeringID peering.PeeringID, peerNetIDs []string, log *logger.Logger) (*DomainImpl, error) {
 	peers := make([]peering.PeerSender, 0, len(peerNetIDs))
 	for _, nid := range peerNetIDs {
 		if nid == netProvider.Self().NetID() {
@@ -50,10 +54,10 @@ func NewPeerDomainByNetIDs(netProvider peering.NetworkProvider, peerNetIDs []str
 		}
 		peers = append(peers, peer)
 	}
-	return NewPeerDomain(netProvider, peers, log), nil
+	return NewPeerDomain(netProvider, peeringID, peers, log), nil
 }
 
-func (d *DomainImpl) SendMsgByNetID(netID string, msg *peering.PeerMessageData) {
+func (d *DomainImpl) SendMsgByNetID(netID string, msgReceiver, msgType byte, msgData []byte) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
 	peer, ok := d.nodes[netID]
@@ -61,7 +65,18 @@ func (d *DomainImpl) SendMsgByNetID(netID string, msg *peering.PeerMessageData) 
 		d.log.Warnf("SendMsgByNetID: NetID %v is not in the domain", netID)
 		return
 	}
-	peer.SendMsg(msg)
+	peer.SendMsg(&peering.PeerMessageData{
+		PeeringID:   d.peeringID,
+		MsgReceiver: msgReceiver,
+		MsgType:     msgType,
+		MsgData:     msgData,
+	})
+}
+
+func (d *DomainImpl) SendPeerMsgToRandomPeers(upToNumPeers int, msgReceiver, msgType byte, msgData []byte) {
+	for _, netID := range d.GetRandomPeers(upToNumPeers) {
+		d.SendMsgByNetID(netID, msgReceiver, msgType, msgData)
+	}
 }
 
 func (d *DomainImpl) GetRandomPeers(upToNumPeers int) []string {
@@ -127,8 +142,8 @@ func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
 	d.permutation.Shuffle(seedB)
 }
 
-func (d *DomainImpl) Attach(peeringID *peering.PeeringID, receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {
-	return d.netProvider.Attach(peeringID, receiver, func(recv *peering.PeerMessageIn) {
+func (d *DomainImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {
+	attachID := d.netProvider.Attach(&d.peeringID, receiver, func(recv *peering.PeerMessageIn) {
 		if recv.SenderNetID == d.netProvider.Self().NetID() {
 			d.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: message from self.",
 				recv.MsgReceiver, recv.MsgType, recv.SenderNetID)
@@ -142,6 +157,8 @@ func (d *DomainImpl) Attach(peeringID *peering.PeeringID, receiver byte, callbac
 		}
 		callback(recv)
 	})
+	d.attachIDs = append(d.attachIDs, attachID)
+	return attachID
 }
 
 func (d *DomainImpl) Detach(attachID interface{}) {
@@ -149,6 +166,9 @@ func (d *DomainImpl) Detach(attachID interface{}) {
 }
 
 func (d *DomainImpl) Close() {
+	for _, attachID := range d.attachIDs {
+		d.Detach(attachID)
+	}
 	for i := range d.nodes {
 		d.nodes[i].Close()
 	}

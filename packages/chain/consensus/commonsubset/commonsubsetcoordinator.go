@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"golang.org/x/xerrors"
@@ -52,14 +51,14 @@ type CommonSubsetCoordinator struct {
 	currentStateIndex uint32                   // Last state index passed by this node.
 	lock              sync.RWMutex
 
-	netGroup chain.CommitteePeerGroup
+	netGroup peering.GroupProvider
 	dkShare  *tcrypto.DKShare
 	log      *logger.Logger
 }
 
 func NewCommonSubsetCoordinator(
 	net peering.NetworkProvider,
-	netGroup chain.CommitteePeerGroup,
+	netGroup peering.GroupProvider,
 	dkShare *tcrypto.DKShare,
 	log *logger.Logger,
 ) *CommonSubsetCoordinator {
@@ -71,7 +70,7 @@ func NewCommonSubsetCoordinator(
 		dkShare:  dkShare,
 		log:      log,
 	}
-	netGroup.AttachToPeerMessages(peerMessageReceiverCommonSubset, ret.receiveCommitteePeerMessages)
+	netGroup.Attach(peerMessageReceiverCommonSubset, ret.receiveCommitteePeerMessages)
 	return ret
 }
 

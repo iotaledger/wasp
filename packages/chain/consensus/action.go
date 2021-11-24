@@ -763,9 +763,7 @@ func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 		ChainInputID: msg.ChainInputID,
 		EssenceHash:  msg.EssenceHash,
 	}
-	if err := c.committeePeerGroup.SendMsgByIndex(msg.SenderIndex, peerMessageReceiverConsensus, peerMsgTypeSignedResultAck, util.MustBytes(msgAck)); err != nil {
-		c.log.Errorf("receiveSignedResult: failed to send acknowledgement: %v", err)
-	}
+	c.committeePeerGroup.SendMsgByIndex(msg.SenderIndex, peerMessageReceiverConsensus, peerMsgTypeSignedResultAck, util.MustBytes(msgAck))
 }
 
 func (c *consensus) receiveSignedResultAck(msg *messages.SignedResultAckMsgIn) {

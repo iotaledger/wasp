@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/chainpeering"
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -69,7 +68,7 @@ type chainObj struct {
 	blobProvider                     registry.BlobCache
 	eventRequestProcessed            *events.Event
 	eventChainTransition             *events.Event
-	chainPeers                       chain.ChainPeers
+	chainPeers                       peering.PeerDomainProvider
 	offLedgerReqsAcksMutex           sync.RWMutex
 	offLedgerReqsAcks                map[iscp.RequestID][]string
 	offledgerBroadcastUpToNPeers     int
@@ -146,14 +145,14 @@ func NewChain(
 	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
 
-	peers, err := netProvider.PeerDomain(peerNetConfig.Neighbors())
+	var err error
+	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), peerNetConfig.Neighbors())
 	if err != nil {
 		log.Errorf("NewChain: %v", err)
 		return nil
 	}
-	ret.chainPeers = chainpeering.NewChainPeers(chainID.Array(), peers)
 	ret.stateMgr = statemgr.New(db, ret, ret.chainPeers, ret.nodeConn)
-	ret.chainPeers.AttachToPeerMessages(chain.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
+	ret.chainPeers.Attach(chain.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
 	go ret.handleMessagesLoop()
 	ret.startTimer()
 	return ret
@@ -361,7 +360,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
 			cmtRec.Address.Base58(), err)
 	}
-	cmtPeerGroup.AttachToPeerMessages(chain.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
+	cmtPeerGroup.Attach(chain.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
 	c.log.Debugf("creating new consensus object...")
 	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
 	c.setCommittee(cmt)

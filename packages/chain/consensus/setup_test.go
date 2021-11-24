@@ -227,7 +227,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 		acs...,
 	)
 	require.NoError(env.T, err)
-	cmtPeerGroup.AttachToPeerMessages(peerMessageReceiverConsensus, func(peerMsg *peering.PeerMessageGroupIn) {
+	cmtPeerGroup.Attach(peerMessageReceiverConsensus, func(peerMsg *peering.PeerMessageGroupIn) {
 		log.Debugf("Consensus received peer message from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
 		if peerMsg.MsgReceiver != peerMessageReceiverConsensus {
 			env.T.Fatalf("Consensus does not accept peer messages of other receiver type %v, message type=%v",
