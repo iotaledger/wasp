@@ -6,6 +6,7 @@ package state
 import (
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -395,7 +396,7 @@ func loadStateIndexFromState(chainState kv.KVStoreReader) (uint32, error) {
 	if err != nil {
 		return 0, xerrors.Errorf("loadStateIndexFromState: %w", err)
 	}
-	if int(blockIndex) > util.MaxUint32 {
+	if int(blockIndex) > math.MaxUint32 {
 		return 0, xerrors.Errorf("loadStateIndexFromState: wrong state index value")
 	}
 	return uint32(blockIndex), nil

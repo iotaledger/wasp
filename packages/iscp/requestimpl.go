@@ -13,9 +13,14 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-// RequestDataFromBytes read RequestData from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
 func RequestDataFromBytes(data []byte) (RequestData, error) {
 	mu := marshalutil.New(data)
+
+	return RequestDataFromMarshalUtil(mu)
+}
+
+// RequestDataFromMarshalUtil read RequestData from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
+func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestData, error) {
 	isOffLedger, err := mu.ReadBool()
 	if err != nil {
 		return nil, err
@@ -45,6 +50,15 @@ type OffLedgerRequestData struct {
 	transferIotas  uint64
 	transferTokens iotago.NativeTokens
 	gasBudget      uint64
+}
+
+func NewOffLedgerRequest(chainID ChainID, contract, entryPoint Hname) *OffLedgerRequestData {
+	return &OffLedgerRequestData{
+		chainID:    chainID,
+		contract:   contract,
+		entryPoint: entryPoint,
+		nonce:      uint64(time.Now().UnixNano()),
+	}
 }
 
 // implement RequestData interface

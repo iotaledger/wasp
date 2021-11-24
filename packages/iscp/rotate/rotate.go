@@ -3,14 +3,13 @@ package rotate
 import (
 	"time"
 
+	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -21,10 +20,10 @@ func IsRotateStateControllerRequest(req iscp.Request) bool {
 	return target.Contract == coreutil.CoreContractGovernanceHname && target.EntryPoint == coreutil.CoreEPRotateStateControllerHname
 }
 
-func NewRotateRequestOffLedger(chainID *iscp.ChainID, newStateAddress ledgerstate.Address, keyPair *ed25519.KeyPair) iscp.Request {
+func NewRotateRequestOffLedger(chainID iscp.ChainID, newStateAddress ledgerstate.Address, keyPair ed25519.PrivateKey) iscp.Request {
 	args := dict.New()
 	args.Set(coreutil.ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
-	ret := request.NewOffLedger(chainID, coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname, args)
+	ret := iscp.NewOffLedgerRequest(chainID, coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname)
 	ret.Sign(keyPair)
 	return ret
 }

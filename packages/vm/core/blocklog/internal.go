@@ -33,7 +33,7 @@ func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governi
 		if err != nil {
 			panic(fmt.Sprintf("SaveControlAddressesIfNecessary: %v", err))
 		}
-		if addrs.StateAddress.Equal(stateAddress) && addrs.GoverningAddress.Equals(governingAddress) {
+		if addrs.StateAddress.Equal(stateAddress) && addrs.GoverningAddress.Equal(governingAddress) {
 			return
 		}
 	}
