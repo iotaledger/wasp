@@ -22,7 +22,6 @@ import (
 // the peering module.
 type PeerMessageData struct {
 	PeeringID   PeeringID
-	Timestamp   int64
 	MsgReceiver byte
 	MsgType     byte
 	MsgData     []byte
@@ -50,9 +49,6 @@ func NewPeerMessageDataFromBytes(buf []byte) (*PeerMessageData, error) {
 	var err error
 	r := bytes.NewBuffer(buf)
 	m := PeerMessageData{}
-	if err = util.ReadInt64(r, &m.Timestamp); err != nil {
-		return nil, err
-	}
 	if m.MsgReceiver, err = util.ReadByte(r); err != nil {
 		return nil, err
 	}
@@ -92,9 +88,6 @@ func (m *PeerMessageNet) Bytes() ([]byte, error) {
 
 func (m *PeerMessageData) bytes() ([]byte, error) {
 	var buf bytes.Buffer
-	if err := util.WriteInt64(&buf, m.Timestamp); err != nil {
-		return nil, err
-	}
 	if err := util.WriteByte(&buf, m.MsgReceiver); err != nil {
 		return nil, err
 	}

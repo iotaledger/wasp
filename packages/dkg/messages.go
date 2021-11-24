@@ -121,7 +121,6 @@ func makePeerMessage(peeringID peering.PeeringID, receiver, step byte, msg msgBy
 	msg.SetStep(step)
 	return &peering.PeerMessageData{
 		PeeringID:   peeringID,
-		Timestamp:   0, // We do not use it in the DKG.
 		MsgReceiver: receiver,
 		MsgType:     msg.MsgType(),
 		MsgData:     util.MustBytes(msg),

@@ -1,8 +1,6 @@
 package chainpeering
 
 import (
-	"time"
-
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/peering"
 )
@@ -30,7 +28,6 @@ func (cpiT *ChainPeersImpl) AttachToPeerMessages(receiver byte, fun func(recv *p
 func (cpiT *ChainPeersImpl) SendPeerMsgByNetID(netID string, msgReceiver, msgType byte, msgData []byte) {
 	cpiT.peers.SendMsgByNetID(netID, &peering.PeerMessageData{
 		PeeringID:   cpiT.peeringID,
-		Timestamp:   time.Now().UnixNano(),
 		MsgReceiver: msgReceiver,
 		MsgType:     msgType,
 		MsgData:     msgData,

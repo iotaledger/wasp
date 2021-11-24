@@ -5,7 +5,6 @@ package chainpeering
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -32,7 +31,6 @@ func (cpgT *committeePeerGroup) SendMsgByIndex(peerIdx uint16, msgReceiver, msgT
 		peer.SendMsg(&peering.PeerMessageNet{
 			PeerMessageData: peering.PeerMessageData{
 				PeeringID:   cpgT.peeringID,
-				Timestamp:   time.Now().UnixNano(),
 				MsgReceiver: msgReceiver,
 				MsgType:     msgType,
 				MsgData:     msgData,
@@ -46,7 +44,6 @@ func (cpgT *committeePeerGroup) SendMsgByIndex(peerIdx uint16, msgReceiver, msgT
 func (cpgT *committeePeerGroup) SendMsgBroadcast(msgReceiver, msgType byte, msgData []byte, except ...uint16) {
 	msg := &peering.PeerMessageData{
 		PeeringID:   cpgT.peeringID,
-		Timestamp:   time.Now().UnixNano(),
 		MsgReceiver: msgReceiver,
 		MsgType:     msgType,
 		MsgData:     msgData,

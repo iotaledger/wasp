@@ -108,8 +108,9 @@ type peeringNode struct {
 }
 
 type peeringMsg struct {
-	from string
-	msg  peering.PeerMessageData
+	from      string
+	msg       peering.PeerMessageData
+	timestamp int64
 }
 
 type peeringCb struct {
