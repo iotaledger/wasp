@@ -35,11 +35,12 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, iotas uint64, id i
 	txb.Consume(reqData)
 }
 
-func TestTxBuilderBasic(t *testing.T) {
+const initialTotalIotas = 1000
+
+func TestTxBuilderBasic1(t *testing.T) {
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
-	const initialTotalIotas = 1000
 	anchor := &iotago.AliasOutput{
 		Amount:               initialTotalIotas,
 		NativeTokens:         nil,
@@ -56,26 +57,14 @@ func TestTxBuilderBasic(t *testing.T) {
 		},
 	}
 	anchorID, _ := tpkg.RandUTXOInput()
-
-	const numInitBalances = 5
-
-	nativeTokensOnChain := make(iotago.NativeTokens, 0)
-	utxoInputsOnChain := make([]iotago.UTXOInput, 0)
-
-	for i := uint64(0); i < numInitBalances; i++ {
-		nativeTokensOnChain = append(nativeTokensOnChain, testiotago.RandNativeTokenAmount(2000+i))
-		utxoInputsOnChain = append(utxoInputsOnChain, testiotago.RandUTXOInput())
-	}
-
+	tokenID := testiotago.RandNativeTokenID()
+	const initialTokenBalance = 100
 	balanceLoader := func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
-		for i, nt := range nativeTokensOnChain {
-			if id == nt.ID {
-				return nt.Amount, utxoInputsOnChain[i]
-			}
+		if id == tokenID {
+			return new(big.Int).SetUint64(initialTokenBalance), testiotago.RandUTXOInput()
 		}
 		panic("too bad")
 	}
-
 	t.Run("1", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
 			return nil, iotago.UTXOInput{}
@@ -114,16 +103,16 @@ func TestTxBuilderBasic(t *testing.T) {
 	})
 	t.Run("3", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
-		consumeUTXO(t, txb, 42, nativeTokensOnChain[0].ID, 42)
+		consumeUTXO(t, txb, 42, tokenID, 42)
 
-		expectedBalance := new(big.Int).Set(nativeTokensOnChain[0].Amount)
+		expectedBalance := new(big.Int).SetUint64(initialTokenBalance)
 		expectedBalance.Add(expectedBalance, new(big.Int).SetUint64(42))
 
 		totalIotas, totalTokens, isBalanced := txb.TotalAssets()
 		require.True(t, isBalanced)
 		require.EqualValues(t, initialTotalIotas+42, totalIotas)
 		require.EqualValues(t, 1, len(totalTokens))
-		require.True(t, totalTokens[nativeTokensOnChain[0].ID].Cmp(expectedBalance) == 0)
+		require.True(t, totalTokens[tokenID].Cmp(expectedBalance) == 0)
 
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 
@@ -131,12 +120,56 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
-	t.Run("consistency check", func(t *testing.T) {
-		const runTimes = 100
-		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
-		amounts := make(map[int]uint64)
-		for i := 0; i < 100; i++ {
-			amount := uint64(rand.Intn(runTimes))
+}
+
+func TestTxBuilderConsistency(t *testing.T) {
+	addr := tpkg.RandEd25519Address()
+	stateMetadata := hashing.HashStrings("test")
+	aliasID := rndAliasID()
+	anchor := &iotago.AliasOutput{
+		Amount:               initialTotalIotas,
+		NativeTokens:         nil,
+		AliasID:              aliasID,
+		StateController:      addr,
+		GovernanceController: addr,
+		StateIndex:           0,
+		StateMetadata:        stateMetadata[:],
+		FoundryCounter:       0,
+		Blocks: iotago.FeatureBlocks{
+			&iotago.SenderFeatureBlock{
+				Address: aliasID.ToAddress(),
+			},
+		},
+	}
+	anchorID, _ := tpkg.RandUTXOInput()
+
+	const numInitBalances = 5
+
+	nativeTokensOnChain := make(iotago.NativeTokens, 0)
+	utxoInputsOnChain := make([]iotago.UTXOInput, 0)
+
+	for i := uint64(0); i < numInitBalances; i++ {
+		nativeTokensOnChain = append(nativeTokensOnChain, testiotago.RandNativeTokenAmount(2000+i))
+		utxoInputsOnChain = append(utxoInputsOnChain, testiotago.RandUTXOInput())
+	}
+
+	balanceLoader := func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
+		for i, nt := range nativeTokensOnChain {
+			if id == nt.ID {
+				return nt.Amount, utxoInputsOnChain[i]
+			}
+		}
+		panic("too bad")
+	}
+
+	var txb *AnchorTransactionBuilder
+	var amounts map[int]uint64
+
+	runIt := func(n int) {
+		txb = NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
+		amounts = make(map[int]uint64)
+		for i := 0; i < n; i++ {
+			amount := uint64(rand.Intn(n))
 			idx := rand.Intn(numInitBalances)
 			s, _ := amounts[idx]
 			amounts[idx] = s + amount
@@ -147,6 +180,11 @@ func TestTxBuilderBasic(t *testing.T) {
 			require.True(t, isBalanced)
 			require.EqualValues(t, initialTotalIotas+i+1, totalIotas)
 		}
+	}
+	t.Run("consistency check", func(t *testing.T) {
+		const runTimes = 100
+		runIt(runTimes)
+
 		totalIotas, totalTokens, isBalanced := txb.TotalAssets()
 		require.True(t, isBalanced)
 		require.EqualValues(t, initialTotalIotas+runTimes, totalIotas)
@@ -167,21 +205,8 @@ func TestTxBuilderBasic(t *testing.T) {
 	})
 	t.Run("exceed inputs", func(t *testing.T) {
 		const runTimes = 150
-		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
-		amounts := make(map[int]uint64)
 		err := util.CatchPanicReturnError(func() {
-			for i := 0; i < runTimes; i++ {
-				amount := uint64(rand.Intn(runTimes))
-				idx := rand.Intn(numInitBalances)
-				s, _ := amounts[idx]
-				amounts[idx] = s + amount
-
-				consumeUTXO(t, txb, 1, nativeTokensOnChain[idx].ID, amount)
-
-				totalIotas, _, isBalanced := txb.TotalAssets()
-				require.True(t, isBalanced)
-				require.EqualValues(t, initialTotalIotas+i+1, totalIotas)
-			}
+			runIt(runTimes)
 		}, ErrInputLimitExceeded)
 		require.True(t, xerrors.Is(err, ErrInputLimitExceeded))
 
