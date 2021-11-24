@@ -352,7 +352,7 @@ func (n *netImpl) SendMsgByNetID(netID string, msg *peering.PeerMessageData) {
 		n.log.Warnf("SendMsgByNetID: NetID %v is not in the network", netID)
 		return
 	}
-	peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *msg})
+	peer.SendMsg(msg)
 }
 
 // Attach implements peering.NetworkProvider.
@@ -413,9 +413,9 @@ func (n *netImpl) PubKey() *ed25519.PublicKey {
 }
 
 // SendMsg implements peering.PeerSender for the Self() node.
-func (n *netImpl) SendMsg(msg *peering.PeerMessageNet) {
+func (n *netImpl) SendMsg(msg *peering.PeerMessageData) {
 	// Don't go via the network, if sending a message to self.
-	n.triggerRecvEvents(n.Self().NetID(), msg)
+	n.triggerRecvEvents(n.Self().NetID(), &peering.PeerMessageNet{PeerMessageData: *msg})
 }
 
 func (n *netImpl) triggerRecvEvents(from string, msg *peering.PeerMessageNet) {

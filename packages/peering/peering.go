@@ -107,7 +107,7 @@ type PeerSender interface {
 
 	// SendMsg works in an asynchronous way, and therefore the
 	// errors are not returned here.
-	SendMsg(msg *PeerMessageNet)
+	SendMsg(msg *PeerMessageData)
 
 	// IsAlive indicates, if there is a working connection with the peer.
 	// It is always an approximate state.

@@ -240,7 +240,7 @@ func (p *peeringNetworkProvider) Detach(attachID interface{}) {
 func (p *peeringNetworkProvider) SendMsgByNetID(netID string, msg *peering.PeerMessageData) {
 	s, err := p.PeerByNetID(netID)
 	if err == nil {
-		s.SendMsg(&peering.PeerMessageNet{PeerMessageData: *msg})
+		s.SendMsg(msg)
 	}
 }
 
@@ -289,6 +289,8 @@ type peeringSender struct {
 	netProvider *peeringNetworkProvider
 }
 
+var _ peering.PeerSender = &peeringSender{}
+
 func newPeeringSender(node *peeringNode, netProvider *peeringNetworkProvider) *peeringSender {
 	return &peeringSender{
 		node:        node,
@@ -307,8 +309,8 @@ func (p *peeringSender) PubKey() *ed25519.PublicKey {
 }
 
 // Send implements peering.PeerSender.
-func (p *peeringSender) SendMsg(msg *peering.PeerMessageNet) {
-	p.node.sendMsg(p.netProvider.self.netID, &msg.PeerMessageData)
+func (p *peeringSender) SendMsg(msg *peering.PeerMessageData) {
+	p.node.sendMsg(p.netProvider.self.netID, msg)
 }
 
 // IsAlive implements peering.PeerSender.

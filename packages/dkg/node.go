@@ -153,7 +153,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep0Initialize,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.NetID())
-			peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *makePeerMessage(initPeeringID, peerMessageReceiverDkgInit, rabinStep0Initialize, &initiatorInitMsg{
+			peer.SendMsg(makePeerMessage(initPeeringID, peerMessageReceiverDkgInit, rabinStep0Initialize, &initiatorInitMsg{
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peeringID:    dkgID,
 				peerNetIDs:   peerNetIDs,
@@ -162,7 +162,7 @@ func (n *Node) GenerateDistributedKey(
 				threshold:    threshold,
 				timeout:      timeout,
 				roundRetry:   roundRetry,
-			})})
+			}))
 		},
 	); err != nil {
 		return nil, err
@@ -194,7 +194,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorMsgs(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep6R6SendReconstructCommits,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.NetID())
-			peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *makePeerMessage(dkgID, peerMessageReceiverDkg, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{})})
+			peer.SendMsg(makePeerMessage(dkgID, peerMessageReceiverDkg, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
 		},
 		func(recv *peering.PeerMessageGroupIn, initMsg initiatorMsg) (bool, error) {
 			switch msg := initMsg.(type) {
@@ -242,9 +242,9 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.NetID())
-			peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *makePeerMessage(dkgID, peerMessageReceiverDkg, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
+			peer.SendMsg(makePeerMessage(dkgID, peerMessageReceiverDkg, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
 				pubShares: publicShares,
-			})})
+			}))
 		},
 	); err != nil {
 		return nil, err
@@ -320,7 +320,7 @@ func (n *Node) exchangeInitiatorStep(
 ) error {
 	sendCB := func(peerIdx uint16, peer peering.PeerSender) {
 		n.log.Debugf("Initiator sends step=%v command to %v", step, peer.NetID())
-		peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *makePeerMessage(dkgID, peerMessageReceiverDkg, step, &initiatorStepMsg{})})
+		peer.SendMsg(makePeerMessage(dkgID, peerMessageReceiverDkg, step, &initiatorStepMsg{}))
 	}
 	return n.exchangeInitiatorAcks(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB)
 }

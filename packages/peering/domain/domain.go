@@ -61,7 +61,7 @@ func (d *DomainImpl) SendMsgByNetID(netID string, msg *peering.PeerMessageData) 
 		d.log.Warnf("SendMsgByNetID: NetID %v is not in the domain", netID)
 		return
 	}
-	peer.SendMsg(&peering.PeerMessageNet{PeerMessageData: *msg})
+	peer.SendMsg(msg)
 }
 
 func (d *DomainImpl) GetRandomPeers(upToNumPeers int) []string {

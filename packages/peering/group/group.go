@@ -84,7 +84,7 @@ func (g *groupImpl) NetIDByIndex(index uint16) (string, error) {
 
 // SendMsgByIndex implements peering.GroupProvider.
 func (g *groupImpl) SendMsgByIndex(peerIdx uint16, msg *peering.PeerMessageData) {
-	g.nodes[peerIdx].SendMsg(&peering.PeerMessageNet{PeerMessageData: *msg})
+	g.nodes[peerIdx].SendMsg(msg)
 }
 
 // Broadcast implements peering.GroupProvider.

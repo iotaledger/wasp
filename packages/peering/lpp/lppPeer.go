@@ -114,16 +114,17 @@ func (p *peer) PubKey() *ed25519.PublicKey {
 // SendMsg implements peering.PeerSender interface for the remote peers.
 // The send operation is performed asynchronously.
 // The async sending helped to cope with sporadic deadlocks.
-func (p *peer) SendMsg(msg *peering.PeerMessageNet) {
+func (p *peer) SendMsg(msg *peering.PeerMessageData) {
 	//
 	p.accessLock.RLock()
+	msgNet := &peering.PeerMessageNet{PeerMessageData: *msg}
 	if !p.trusted {
 		p.log.Infof("Dropping outgoing message, because it was meant to send to a distrusted peer.")
 		p.accessLock.RUnlock()
 		return
 	}
 	p.accessLock.RUnlock()
-	p.sendPipe.In() <- msg
+	p.sendPipe.In() <- msgNet
 }
 
 func (p *peer) RecvMsg(msg *peering.PeerMessageNet) {

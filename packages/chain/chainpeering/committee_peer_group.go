@@ -28,13 +28,11 @@ func NewCommitteePeerGroup(peeringID peering.PeeringID, group peering.GroupProvi
 
 func (cpgT *committeePeerGroup) SendMsgByIndex(peerIdx uint16, msgReceiver, msgType byte, msgData []byte) error {
 	if peer, ok := cpgT.group.OtherNodes()[peerIdx]; ok {
-		peer.SendMsg(&peering.PeerMessageNet{
-			PeerMessageData: peering.PeerMessageData{
-				PeeringID:   cpgT.peeringID,
-				MsgReceiver: msgReceiver,
-				MsgType:     msgType,
-				MsgData:     msgData,
-			},
+		peer.SendMsg(&peering.PeerMessageData{
+			PeeringID:   cpgT.peeringID,
+			MsgReceiver: msgReceiver,
+			MsgType:     msgType,
+			MsgData:     msgData,
 		})
 		return nil
 	}

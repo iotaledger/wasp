@@ -32,10 +32,10 @@ func TestFakeNetwork(t *testing.T) {
 	var a, c peering.PeerSender
 	a, _ = netProviders[1].PeerByNetID("a")
 	c, _ = netProviders[1].PeerByNetID("c")
-	a.SendMsg(&peering.PeerMessageNet{PeerMessageData: peering.PeerMessageData{PeeringID: chain1, MsgReceiver: receiver, MsgType: 1}}) // Will be delivered.
-	a.SendMsg(&peering.PeerMessageNet{PeerMessageData: peering.PeerMessageData{PeeringID: chain2, MsgReceiver: receiver, MsgType: 2}}) // Will be dropped.
-	a.SendMsg(&peering.PeerMessageNet{PeerMessageData: peering.PeerMessageData{PeeringID: chain1, MsgReceiver: byte(5), MsgType: 3}})  // Will be dropped.
-	c.SendMsg(&peering.PeerMessageNet{PeerMessageData: peering.PeerMessageData{PeeringID: chain1, MsgReceiver: receiver, MsgType: 4}}) // Will be dropped.
+	a.SendMsg(&peering.PeerMessageData{PeeringID: chain1, MsgReceiver: receiver, MsgType: 1}) // Will be delivered.
+	a.SendMsg(&peering.PeerMessageData{PeeringID: chain2, MsgReceiver: receiver, MsgType: 2}) // Will be dropped.
+	a.SendMsg(&peering.PeerMessageData{PeeringID: chain1, MsgReceiver: byte(5), MsgType: 3})  // Will be dropped.
+	c.SendMsg(&peering.PeerMessageData{PeeringID: chain1, MsgReceiver: receiver, MsgType: 4}) // Will be dropped.
 	//
 	// Wait for the result.
 	select {
