@@ -70,7 +70,7 @@ type GroupProvider interface {
 	Attach(peeringID *PeeringID, receiver byte, callback func(recv *PeerMessageGroupIn)) interface{}
 	Detach(attachID interface{})
 	SendMsgByIndex(peerIdx uint16, msg *PeerMessageData)
-	SendMsgBroadcast(msg *PeerMessageData, includingSelf bool, except ...uint16)
+	SendMsgBroadcast(msg *PeerMessageData, except ...uint16)
 	ExchangeRound(
 		peers map[uint16]PeerSender,
 		recvCh chan *PeerMessageIn,

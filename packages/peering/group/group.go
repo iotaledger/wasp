@@ -88,14 +88,8 @@ func (g *groupImpl) SendMsgByIndex(peerIdx uint16, msg *peering.PeerMessageData)
 }
 
 // Broadcast implements peering.GroupProvider.
-func (g *groupImpl) SendMsgBroadcast(msg *peering.PeerMessageData, includingSelf bool, except ...uint16) {
-	var peers map[uint16]peering.PeerSender
-	if includingSelf {
-		peers = g.AllNodes(except...)
-	} else {
-		peers = g.OtherNodes(except...)
-	}
-	for i := range peers {
+func (g *groupImpl) SendMsgBroadcast(msg *peering.PeerMessageData, except ...uint16) {
+	for i := range g.OtherNodes(except...) {
 		g.SendMsgByIndex(i, msg)
 	}
 }

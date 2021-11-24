@@ -48,7 +48,7 @@ func (cpgT *committeePeerGroup) SendMsgBroadcast(msgReceiver, msgType byte, msgD
 		MsgType:     msgType,
 		MsgData:     msgData,
 	}
-	cpgT.group.SendMsgBroadcast(msg, false, except...)
+	cpgT.group.SendMsgBroadcast(msg, except...)
 }
 
 func (cpgT *committeePeerGroup) AttachToPeerMessages(peerMsgReceiver byte, fun func(peerMsg *peering.PeerMessageGroupIn)) {
