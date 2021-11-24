@@ -35,7 +35,7 @@ type AnchorTransactionBuilder struct {
 	// balances of native tokens touched during the batch run
 	balanceNativeTokens map[iotago.NativeTokenID]*nativeTokenBalance
 	// requests posted by smart contracts
-	postedRequests []*iscp.PostRequestData
+	postedOutputs []iotago.Output
 	// TODO
 }
 
@@ -61,7 +61,7 @@ func NewAnchorTransactionBuilder(anchorOutput *iotago.AliasOutput, anchorOutputI
 		consumed:                make([]iscp.RequestData, 0, iotago.MaxInputsCount-1),
 		balanceIotas:            balanceIotas,
 		balanceNativeTokens:     make(map[iotago.NativeTokenID]*nativeTokenBalance),
-		postedRequests:          make([]*iscp.PostRequestData, 0, iotago.MaxOutputsCount-1),
+		postedOutputs:           make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
 	}
 }
 
@@ -77,7 +77,7 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 			balance: new(big.Int).Set(v.balance),
 		}
 	}
-	ret.postedRequests = append(ret.postedRequests, txb.postedRequests...)
+	ret.postedOutputs = append(ret.postedOutputs, txb.postedOutputs...)
 	return ret
 }
 
@@ -165,7 +165,7 @@ const dustAmountForInternalAccountUTXO = 100 // TODO dust
 
 // outputs generates outputs for the transaction essence
 func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.Outputs {
-	ret := make(iotago.Outputs, 0, 1+len(txb.balanceNativeTokens)+len(txb.postedRequests))
+	ret := make(iotago.Outputs, 0, 1+len(txb.balanceNativeTokens)+len(txb.postedOutputs))
 	// creating the anchor output
 	anchorOutput := &iotago.AliasOutput{
 		Amount:               txb.balanceIotas,
@@ -204,31 +204,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 		ret = append(ret, o)
 	}
 	// creating outputs for posted on-ledger requests
-	for _, pr := range txb.postedRequests {
-		reqMetadata := iscp.NewRequestMetadata().
-			WithSender(pr.SenderContract).
-			WithTarget(pr.Metadata.TargetContract).
-			WithEntryPoint(pr.Metadata.EntryPoint).
-			WithArgs(pr.Metadata.Args).
-			WithTransfer(pr.Assets).
-			WithGasBudget(pr.GasBudget)
-
-		o := &iotago.ExtendedOutput{
-			Address:      pr.TargetAddress,
-			Amount:       pr.Assets.Iotas, // TODO dust protection !!! Serialize, count bytes then put dust deposit
-			NativeTokens: pr.Assets.Tokens,
-			Blocks: iotago.FeatureBlocks{
-				&iotago.SenderFeatureBlock{
-					Address: txb.anchorOutput.AliasID.ToAddress(),
-				},
-				&iotago.MetadataFeatureBlock{
-					Data: reqMetadata.Bytes(),
-				},
-				// TODO feature blocks as per SendOptions
-			},
-		}
-		ret = append(ret, o)
-	}
+	ret = append(ret, txb.postedOutputs...)
 	return ret
 }
 
@@ -256,7 +232,7 @@ func (txb *AnchorTransactionBuilder) numOutputs() int {
 			ret++
 		}
 	}
-	ret += len(txb.postedRequests)
+	ret += len(txb.postedOutputs)
 	return ret
 }
 
@@ -311,9 +287,10 @@ func (txb *AnchorTransactionBuilder) sumOutputs() (uint64, map[iotago.NativeToke
 			sumTokens[id] = s
 		}
 	}
-	for _, pr := range txb.postedRequests {
-		sumIotas += pr.Assets.Iotas
-		for _, nt := range pr.Assets.Tokens {
+	for _, o := range txb.postedOutputs {
+		assets := assetsFromOutput(o)
+		sumIotas += assets.Iotas
+		for _, nt := range assets.Tokens {
 			s, ok := sumTokens[nt.ID]
 			if !ok {
 				s = new(big.Int)
@@ -409,20 +386,78 @@ func (txb *AnchorTransactionBuilder) addDeltaNativeToken(id iotago.NativeTokenID
 	b.balance.Add(b.balance, delta)
 }
 
-// PostRequest adds an information about posted request. It will produce output
-func (txb *AnchorTransactionBuilder) PostRequest(par iscp.PostRequestData) {
+// AddOutput adds an information about posted request. It will produce output
+func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
 	if txb.outputsAreFull() {
 		panic(ErrOutputLimitExceeded)
 	}
-
-	txb.subDeltaIotas(par.Assets.Iotas)
+	assets := assetsFromOutput(o)
+	txb.subDeltaIotas(assets.Iotas)
 	bi := new(big.Int)
-	for _, nt := range par.Assets.Tokens {
+	for _, nt := range assets.Tokens {
 		bi.Neg(nt.Amount)
 		txb.addDeltaNativeToken(nt.ID, bi)
 	}
 
-	txb.postedRequests = append(txb.postedRequests, &par)
+	txb.postedOutputs = append(txb.postedOutputs, o)
+}
+
+// ExtendedOutputFromPostData creates extended output object from the PostRequestData.
+// It automatically adjusts amount of iotas required for the dust deposit
+func ExtendedOutputFromPostData(
+	targetAddress, senderAddress iotago.Address,
+	senderContract iscp.Hname,
+	assets *iscp.Assets,
+	sendMetadata *iscp.SendMetadata,
+	options ...*iscp.SendOptions) *iotago.ExtendedOutput {
+	// --
+
+	reqMetadata := &iscp.RequestMetadata{
+		SenderContract: senderContract,
+		TargetContract: sendMetadata.TargetContract,
+		EntryPoint:     sendMetadata.EntryPoint,
+		Params:         sendMetadata.Params,
+		Transfer:       sendMetadata.Transfer,
+		GasBudget:      sendMetadata.GasBudget,
+	}
+
+	ret := &iotago.ExtendedOutput{
+		Address:      targetAddress,
+		Amount:       assets.Iotas,
+		NativeTokens: assets.Tokens,
+		Blocks: iotago.FeatureBlocks{
+			&iotago.SenderFeatureBlock{
+				Address: senderAddress,
+			},
+			&iotago.MetadataFeatureBlock{
+				Data: reqMetadata.Bytes(),
+			},
+			// TODO feature blocks as per SendOptions
+		},
+	}
+	// calculate and adjust required dust deposit amount TODO it is fake rental structure
+	fakeRentStructure := &iotago.RentStructure{
+		VByteCost:    1,
+		VBFactorData: 1,
+		VBFactorKey:  1,
+	}
+	dustDeposit := ret.VByteCost(fakeRentStructure, nil)
+	if dustDeposit < ret.Amount {
+		ret.Amount = dustDeposit
+	}
+	return ret
+}
+
+func assetsFromOutput(o iotago.Output) *iscp.Assets {
+	switch o := o.(type) {
+	case *iotago.ExtendedOutput:
+		return &iscp.Assets{
+			Iotas:  o.Amount,
+			Tokens: o.NativeTokens,
+		}
+	default:
+		panic(xerrors.Errorf("assetsFromOutput: not supported output type: %T", o))
+	}
 }
 
 func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) *iotago.TransactionEssence {

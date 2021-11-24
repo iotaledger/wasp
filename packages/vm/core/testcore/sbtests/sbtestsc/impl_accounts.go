@@ -19,7 +19,7 @@ func withdrawToChain(ctx iscp.Sandbox) (dict.Dict, error) {
 	succ := ctx.Send(targetChain.AsAddress(), colored.NewBalancesForIotas(1), &iscp.SendMetadata{
 		TargetContract: accounts.Contract.Hname(),
 		EntryPoint:     accounts.FuncWithdraw.Hname(),
-		Args:           nil,
+		Params:         nil,
 	})
 	if !succ {
 		return nil, fmt.Errorf("failed to post request")

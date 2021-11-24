@@ -102,17 +102,8 @@ type SendOptions struct { // TODO
 type SendMetadata struct {
 	TargetContract Hname
 	EntryPoint     Hname
-	Args           dict.Dict
-	Transfer       Assets
-}
-
-// PostRequestData is a parameters for a cross-chain request
-type PostRequestData struct {
-	TargetAddress  iotago.Address
-	SenderContract Hname
-	Assets         *Assets
-	Metadata       *SendMetadata
-	SendOptions    *SendOptions
+	Params         dict.Dict
+	Transfer       *Assets
 	GasBudget      uint64
 }
 

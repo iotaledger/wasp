@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
-	"golang.org/x/xerrors"
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
@@ -58,27 +57,6 @@ func (vmctx *VMContext) AccountID() *iscp.AgentID {
 
 func (vmctx *VMContext) IncomingTransfer() *iscp.Assets {
 	return vmctx.getCallContext().transfer
-}
-
-// TODO dust provision
-func (vmctx *VMContext) Send(target iotago.Address, assets *iscp.Assets, metadata *iscp.SendMetadata, options ...*iscp.SendOptions) {
-	if assets == nil {
-		panic(xerrors.New("post request assets can't be nil"))
-	}
-	var sendOptions *iscp.SendOptions
-	if len(options) > 0 {
-		sendOptions = options[0]
-	}
-	// debit the assets from the on-chain account
-	vmctx.debitFromAccount(vmctx.AccountID(), assets)
-	vmctx.txbuilder.PostRequest(iscp.PostRequestData{
-		TargetAddress:  target,
-		SenderContract: vmctx.CurrentContractHname(),
-		Assets:         assets,
-		Metadata:       metadata,
-		SendOptions:    sendOptions,
-	})
-	// TODO check consistency between transaction builder and the on-chain accounts
 }
 
 var _ iscp.StateAnchor = &VMContext{}
