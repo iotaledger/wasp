@@ -37,7 +37,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, iotas uint64, id i
 
 const initialTotalIotas = 1000
 
-func TestTxBuilderBasic1(t *testing.T) {
+func TestTxBuilderBasic(t *testing.T) {
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
@@ -149,7 +149,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	utxoInputsOnChain := make([]iotago.UTXOInput, 0)
 
 	for i := uint64(0); i < numInitBalances; i++ {
-		nativeTokensOnChain = append(nativeTokensOnChain, testiotago.RandNativeTokenAmount(2000+i))
+		nativeTokensOnChain = append(nativeTokensOnChain, testiotago.RandNativeTokenAmount(2000+i*10))
 		utxoInputsOnChain = append(utxoInputsOnChain, testiotago.RandUTXOInput())
 	}
 
@@ -165,29 +165,50 @@ func TestTxBuilderConsistency(t *testing.T) {
 	var txb *AnchorTransactionBuilder
 	var amounts map[int]uint64
 
-	runIt := func(n int) {
+	runCreateBuilderAndConsume := func(n int) {
 		txb = NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
 		amounts = make(map[int]uint64)
 		for i := 0; i < n; i++ {
-			amount := uint64(rand.Intn(n))
 			idx := rand.Intn(numInitBalances)
 			s, _ := amounts[idx]
-			amounts[idx] = s + amount
+			amounts[idx] = s + 10
 
-			consumeUTXO(t, txb, 1, nativeTokensOnChain[idx].ID, amount)
+			consumeUTXO(t, txb, 10, nativeTokensOnChain[idx].ID, 10)
 
 			totalIotas, _, isBalanced := txb.TotalAssets()
 			require.True(t, isBalanced)
-			require.EqualValues(t, initialTotalIotas+i+1, totalIotas)
+			require.EqualValues(t, initialTotalIotas+(i+1)*10, totalIotas)
 		}
 	}
-	t.Run("consistency check", func(t *testing.T) {
+	runPostRequest := func(n int) {
+		for i := 0; i < n; i++ {
+			rndIndex := rand.Intn(numInitBalances)
+			assets := &iscp.Assets{
+				Iotas: 10,
+				Tokens: iotago.NativeTokens{
+					&iotago.NativeToken{
+						ID:     nativeTokensOnChain[rndIndex].ID,
+						Amount: new(big.Int).SetUint64(10),
+					},
+				},
+			}
+			txb.PostRequest(iscp.PostRequestData{
+				TargetAddress:  tpkg.RandEd25519Address(),
+				SenderContract: iscp.Hn("test"),
+				Assets:         assets,
+				Metadata:       &iscp.SendMetadata{},
+				SendOptions:    nil,
+				GasBudget:      0,
+			})
+		}
+	}
+	t.Run("consistency check 1", func(t *testing.T) {
 		const runTimes = 100
-		runIt(runTimes)
+		runCreateBuilderAndConsume(runTimes)
 
 		totalIotas, totalTokens, isBalanced := txb.TotalAssets()
 		require.True(t, isBalanced)
-		require.EqualValues(t, initialTotalIotas+runTimes, totalIotas)
+		require.EqualValues(t, initialTotalIotas+runTimes*10, int(totalIotas))
 		require.EqualValues(t, numInitBalances, len(totalTokens))
 
 		for idx, b := range amounts {
@@ -206,9 +227,45 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("exceed inputs", func(t *testing.T) {
 		const runTimes = 150
 		err := util.CatchPanicReturnError(func() {
-			runIt(runTimes)
+			runCreateBuilderAndConsume(runTimes)
 		}, ErrInputLimitExceeded)
 		require.True(t, xerrors.Is(err, ErrInputLimitExceeded))
+
+		_, _, isBalanced := txb.TotalAssets()
+		require.True(t, isBalanced)
+	})
+	t.Run("consistency check 2", func(t *testing.T) {
+		const runTimes = 100
+		runCreateBuilderAndConsume(runTimes)
+
+		totalIotasBefore, totalAssetsBefore, ok := txb.TotalAssets()
+		require.True(t, ok)
+
+		runPostRequest(runTimes)
+
+		totalIotasAfter, totalAssetsAfter, ok := txb.TotalAssets()
+		require.True(t, ok)
+		require.EqualValues(t, totalIotasBefore, totalIotasAfter)
+		require.EqualValues(t, len(totalAssetsBefore), len(totalAssetsAfter))
+		sumBefore := new(big.Int)
+		sumAfter := new(big.Int)
+		for id := range totalAssetsAfter {
+			require.True(t, ok)
+			sumBefore.Add(sumBefore, totalAssetsBefore[id])
+			sumAfter.Add(sumAfter, totalAssetsAfter[id])
+		}
+		require.True(t, sumBefore.Cmp(sumAfter) == 0)
+	})
+	t.Run("exceeded outputs", func(t *testing.T) {
+		const runTimesInputs = 100
+		const runTimesOutputs = 150
+		runCreateBuilderAndConsume(runTimesInputs)
+
+		err := util.CatchPanicReturnError(func() {
+			runPostRequest(runTimesOutputs)
+		}, ErrOutputLimitExceeded)
+
+		require.True(t, xerrors.Is(err, ErrOutputLimitExceeded))
 
 		_, _, isBalanced := txb.TotalAssets()
 		require.True(t, isBalanced)

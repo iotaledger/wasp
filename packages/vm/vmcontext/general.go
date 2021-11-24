@@ -71,7 +71,7 @@ func (vmctx *VMContext) Send(target iotago.Address, assets *iscp.Assets, metadat
 	}
 	// debit the assets from the on-chain account
 	vmctx.debitFromAccount(vmctx.AccountID(), assets)
-	vmctx.txbuilder.AddPostedRequest(iscp.PostRequestData{
+	vmctx.txbuilder.PostRequest(iscp.PostRequestData{
 		TargetAddress:  target,
 		SenderContract: vmctx.CurrentContractHname(),
 		Assets:         assets,

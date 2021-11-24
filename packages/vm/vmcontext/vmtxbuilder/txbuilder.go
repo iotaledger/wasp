@@ -409,8 +409,8 @@ func (txb *AnchorTransactionBuilder) addDeltaNativeToken(id iotago.NativeTokenID
 	b.balance.Add(b.balance, delta)
 }
 
-// AddPostedRequest adds an information about posted request. It will produce output
-func (txb *AnchorTransactionBuilder) AddPostedRequest(par iscp.PostRequestData) {
+// PostRequest adds an information about posted request. It will produce output
+func (txb *AnchorTransactionBuilder) PostRequest(par iscp.PostRequestData) {
 	if txb.outputsAreFull() {
 		panic(ErrOutputLimitExceeded)
 	}
