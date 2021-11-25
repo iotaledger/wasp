@@ -23,7 +23,8 @@ func IsRotateStateControllerRequest(req iscp.Request) bool {
 func NewRotateRequestOffLedger(chainID iscp.ChainID, newStateAddress ledgerstate.Address, keyPair ed25519.PrivateKey) iscp.Request {
 	args := dict.New()
 	args.Set(coreutil.ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
-	ret := iscp.NewOffLedgerRequest(chainID, coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname)
+	nonce := uint64(time.Now().UnixNano())
+	ret := iscp.NewOffLedgerRequest(chainID, coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname, args, nonce)
 	ret.Sign(keyPair)
 	return ret
 }

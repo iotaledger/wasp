@@ -3,6 +3,7 @@ package blocklog
 import (
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -12,7 +13,8 @@ import (
 func TestSerdeRequestLogRecord(t *testing.T) {
 	var txid ledgerstate.TransactionID
 	rand.Read(txid[:])
-	req := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("0"), iscp.Hn("0"))
+	nonce := uint64(time.Now().UnixNano())
+	req := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("0"), iscp.Hn("0"), nil, nonce)
 
 	rec := &RequestReceipt{
 		Request: req,
