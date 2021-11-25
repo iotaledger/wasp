@@ -8,17 +8,17 @@ import (
 
 type TransactionTotals struct {
 	// includes also internal dust deposits
-	totalIotas uint64
+	TotalIotas uint64
 	// internal dust deposit
-	internalDustDeposit uint64
+	InternalDustDeposit uint64
 	// balances of native tokens
-	tokenBalances map[iotago.NativeTokenID]*big.Int
+	TokenBalances map[iotago.NativeTokenID]*big.Int
 }
 
 // sumInputs sums up all assets in inputs
 func (txb *AnchorTransactionBuilder) sumInputs() (ret TransactionTotals) {
-	ret.tokenBalances = make(map[iotago.NativeTokenID]*big.Int)
-	ret.totalIotas = txb.anchorOutput.Amount
+	ret.TokenBalances = make(map[iotago.NativeTokenID]*big.Int)
+	ret.TotalIotas = txb.anchorOutput.Amount
 	sumIotasInternalDustDeposit := uint64(0)
 
 	// sum up all initial values of internal accounts
@@ -27,27 +27,27 @@ func (txb *AnchorTransactionBuilder) sumInputs() (ret TransactionTotals) {
 			continue
 		}
 		sumIotasInternalDustDeposit += txb.vByteCostOfNativeTokenBalance()
-		s, ok := ret.tokenBalances[id]
+		s, ok := ret.TokenBalances[id]
 		if !ok {
 			s = new(big.Int)
 		}
 		s.Add(s, ntb.initial)
-		ret.tokenBalances[id] = s
+		ret.TokenBalances[id] = s
 		// sum up dust deposit in inputs of internal UTXOs
-		ret.totalIotas += txb.vByteCostOfNativeTokenBalance()
-		ret.internalDustDeposit += txb.vByteCostOfNativeTokenBalance()
+		ret.TotalIotas += txb.vByteCostOfNativeTokenBalance()
+		ret.InternalDustDeposit += txb.vByteCostOfNativeTokenBalance()
 	}
 	// sum up all explicitly consumed outputs, except anchor output
 	for _, out := range txb.consumed {
 		a := out.Assets()
-		ret.totalIotas += a.Iotas
+		ret.TotalIotas += a.Iotas
 		for _, nt := range a.Tokens {
-			s, ok := ret.tokenBalances[nt.ID]
+			s, ok := ret.TokenBalances[nt.ID]
 			if !ok {
 				s = new(big.Int)
 			}
 			s.Add(s, nt.Amount)
-			ret.tokenBalances[nt.ID] = s
+			ret.TokenBalances[nt.ID] = s
 		}
 	}
 	return
@@ -55,34 +55,34 @@ func (txb *AnchorTransactionBuilder) sumInputs() (ret TransactionTotals) {
 
 // sumOutputs sums all balances in outputs
 func (txb *AnchorTransactionBuilder) sumOutputs() (ret TransactionTotals) {
-	ret.tokenBalances = make(map[iotago.NativeTokenID]*big.Int)
-	ret.totalIotas = txb.currentBalanceIotasOnAnchor
+	ret.TokenBalances = make(map[iotago.NativeTokenID]*big.Int)
+	ret.TotalIotas = txb.currentBalanceIotasOnAnchor
 
 	// sum up all initial values of internal accounts
 	for id, ntb := range txb.balanceNativeTokens {
 		if !ntb.producesOutput() {
 			continue
 		}
-		s, ok := ret.tokenBalances[id]
+		s, ok := ret.TokenBalances[id]
 		if !ok {
 			s = new(big.Int)
 		}
 		s.Add(s, ntb.balance)
-		ret.tokenBalances[id] = s
+		ret.TokenBalances[id] = s
 		// sum up dust deposit in outputs of internal UTXOs
-		ret.totalIotas += txb.vByteCostOfNativeTokenBalance()
-		ret.internalDustDeposit += txb.vByteCostOfNativeTokenBalance()
+		ret.TotalIotas += txb.vByteCostOfNativeTokenBalance()
+		ret.InternalDustDeposit += txb.vByteCostOfNativeTokenBalance()
 	}
 	for _, o := range txb.postedOutputs {
 		assets := assetsFromOutput(o)
-		ret.totalIotas += assets.Iotas
+		ret.TotalIotas += assets.Iotas
 		for _, nt := range assets.Tokens {
-			s, ok := ret.tokenBalances[nt.ID]
+			s, ok := ret.TokenBalances[nt.ID]
 			if !ok {
 				s = new(big.Int)
 			}
 			s.Add(s, nt.Amount)
-			ret.tokenBalances[nt.ID] = s
+			ret.TokenBalances[nt.ID] = s
 		}
 	}
 	return
@@ -94,14 +94,14 @@ func (txb *AnchorTransactionBuilder) Totals() (TransactionTotals, TransactionTot
 	totalsIN := txb.sumInputs()
 	totalsOUT := txb.sumOutputs()
 
-	if totalsIN.totalIotas != totalsOUT.totalIotas {
+	if totalsIN.TotalIotas != totalsOUT.TotalIotas {
 		return TransactionTotals{}, TransactionTotals{}, false
 	}
-	if len(totalsIN.tokenBalances) != len(totalsOUT.tokenBalances) {
+	if len(totalsIN.TokenBalances) != len(totalsOUT.TokenBalances) {
 		return TransactionTotals{}, TransactionTotals{}, false
 	}
-	for id, bIN := range totalsIN.tokenBalances {
-		bOUT, ok := totalsOUT.tokenBalances[id]
+	for id, bIN := range totalsIN.TokenBalances {
+		bOUT, ok := totalsOUT.TokenBalances[id]
 		if !ok {
 			return TransactionTotals{}, TransactionTotals{}, false
 		}
