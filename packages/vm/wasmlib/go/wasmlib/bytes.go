@@ -22,6 +22,10 @@ func (d *BytesDecoder) AgentID() ScAgentID {
 	return NewScAgentIDFromBytes(d.Bytes())
 }
 
+func (d *BytesDecoder) Bool() bool {
+	return d.Int8() != 0
+}
+
 func (d *BytesDecoder) Bytes() []byte {
 	size := int(d.Int32())
 	if len(d.data) < size {
@@ -52,6 +56,15 @@ func (d *BytesDecoder) Hash() ScHash {
 
 func (d *BytesDecoder) Hname() ScHname {
 	return NewScHnameFromBytes(d.Bytes())
+}
+
+func (d *BytesDecoder) Int8() int8 {
+	if len(d.data) == 0 {
+		panic("insufficient bytes")
+	}
+	value := d.data[0]
+	d.data = d.data[1:]
+	return int8(value)
 }
 
 func (d *BytesDecoder) Int16() int16 {
@@ -103,6 +116,22 @@ func (d *BytesDecoder) String() string {
 	return string(d.Bytes())
 }
 
+func (d *BytesDecoder) Uint8() uint8 {
+	return uint8(d.Int8())
+}
+
+func (d *BytesDecoder) Uint16() uint16 {
+	return uint16(d.Int16())
+}
+
+func (d *BytesDecoder) Uint32() uint32 {
+	return uint32(d.Int32())
+}
+
+func (d *BytesDecoder) Uint64() uint64 {
+	return uint64(d.Int64())
+}
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type BytesEncoder struct {
@@ -119,6 +148,13 @@ func (e *BytesEncoder) Address(value ScAddress) *BytesEncoder {
 
 func (e *BytesEncoder) AgentID(value ScAgentID) *BytesEncoder {
 	return e.Bytes(value.Bytes())
+}
+
+func (e *BytesEncoder) Bool(value bool) *BytesEncoder {
+	if value {
+		return e.Int8(1)
+	}
+	return e.Int8(0)
 }
 
 func (e *BytesEncoder) Bytes(value []byte) *BytesEncoder {
@@ -145,6 +181,11 @@ func (e *BytesEncoder) Hash(value ScHash) *BytesEncoder {
 
 func (e *BytesEncoder) Hname(value ScHname) *BytesEncoder {
 	return e.Bytes(value.Bytes())
+}
+
+func (e *BytesEncoder) Int8(value int8) *BytesEncoder {
+	e.data = append(e.data, byte(value))
+	return e
 }
 
 func (e *BytesEncoder) Int16(value int16) *BytesEncoder {
@@ -179,4 +220,20 @@ func (e *BytesEncoder) RequestID(value ScRequestID) *BytesEncoder {
 
 func (e *BytesEncoder) String(value string) *BytesEncoder {
 	return e.Bytes([]byte(value))
+}
+
+func (e *BytesEncoder) Uint8(value uint8) *BytesEncoder {
+	return e.Int8(int8(value))
+}
+
+func (e *BytesEncoder) Uint16(value uint16) *BytesEncoder {
+	return e.Int16(int16(value))
+}
+
+func (e *BytesEncoder) Uint32(value uint32) *BytesEncoder {
+	return e.Int32(int32(value))
+}
+
+func (e *BytesEncoder) Uint64(value uint64) *BytesEncoder {
+	return e.Int64(int64(value))
 }
