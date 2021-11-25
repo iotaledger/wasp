@@ -1,13 +1,13 @@
 package apilib
 
 import (
+	"math"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"golang.org/x/xerrors"
 )
@@ -18,7 +18,7 @@ func RunDKG(apiHosts, peeringHosts []string, threshold, initiatorIndex uint16, t
 	to := uint32(60 * 1000)
 	if len(timeout) > 0 {
 		n := timeout[0].Milliseconds()
-		if n < int64(util.MaxUint16) {
+		if n < int64(math.MaxUint16) {
 			to = uint32(n)
 		}
 	}

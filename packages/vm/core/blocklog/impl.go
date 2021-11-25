@@ -148,8 +148,9 @@ func viewControlAddresses(ctx iscp.SandboxView) (dict.Dict, error) {
 	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
 	a.RequireNoError(err)
 	ret := dict.New()
-	ret.Set(ParamStateControllerAddress, codec.EncodeAddress(rec.StateAddress))
-	ret.Set(ParamGoverningAddress, codec.EncodeAddress(rec.GoverningAddress))
+
+	ret.Set(ParamStateControllerAddress, iscp.BytesFromAddress(rec.StateAddress))
+	ret.Set(ParamGoverningAddress, iscp.BytesFromAddress(rec.GoverningAddress))
 	ret.Set(ParamBlockIndex, codec.EncodeUint32(rec.SinceBlockIndex))
 	return ret, nil
 }

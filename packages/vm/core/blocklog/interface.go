@@ -11,7 +11,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -264,7 +263,7 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
-	Request iscp.Request
+	Request iscp.RequestData
 	Error   string
 	// not persistent
 	BlockIndex   uint32
@@ -278,7 +277,7 @@ func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
 func RequestReceiptFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
 	ret := &RequestReceipt{}
 	var err error
-	if ret.Request, err = request.FromMarshalUtil(mu); err != nil {
+	if ret.Request, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	var size uint16
@@ -295,6 +294,7 @@ func RequestReceiptFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 
 func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
+
 	mu.WriteBytes(r.Request.Bytes()).
 		WriteUint16(uint16(len(r.Error))).
 		WriteBytes([]byte(r.Error))
@@ -343,10 +343,11 @@ func ControlAddressesFromBytes(data []byte) (*ControlAddresses, error) {
 func ControlAddressesFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ControlAddresses, error) {
 	ret := &ControlAddresses{}
 	var err error
-	if ret.StateAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
+
+	if ret.StateAddress, err = iscp.AddressFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
-	if ret.GoverningAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
+	if ret.GoverningAddress, err = iscp.AddressFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	if ret.SinceBlockIndex, err = mu.ReadUint32(); err != nil {
@@ -357,19 +358,21 @@ func ControlAddressesFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ControlAddre
 
 func (ca *ControlAddresses) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.Write(ca.StateAddress).
-		Write(ca.GoverningAddress).
+
+	mu.WriteBytes(iscp.BytesFromAddress(ca.StateAddress)).
+		WriteBytes(iscp.BytesFromAddress(ca.GoverningAddress)).
 		WriteUint32(ca.SinceBlockIndex)
 	return mu.Bytes()
 }
 
 func (ca *ControlAddresses) String() string {
+	networkPrefix := iotago.PrefixMainnet
 	var ret string
-	if ca.StateAddress.Equals(ca.GoverningAddress) {
-		ret = fmt.Sprintf("ControlAddresses(%s), block: %d", ca.StateAddress.Base58(), ca.SinceBlockIndex)
+	if ca.StateAddress.Equal(ca.GoverningAddress) {
+		ret = fmt.Sprintf("ControlAddresses(%s), block: %d", ca.StateAddress.Bech32(networkPrefix), ca.SinceBlockIndex)
 	} else {
 		ret = fmt.Sprintf("ControlAddresses(%s, %s), block: %d",
-			ca.StateAddress.Base58(), ca.GoverningAddress.Base58(), ca.SinceBlockIndex)
+			ca.StateAddress.Bech32(networkPrefix), ca.GoverningAddress.Bech32(networkPrefix), ca.SinceBlockIndex)
 	}
 	return ret
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -80,7 +81,7 @@ func (su *stateUpdateImpl) stateIndexMutation() (uint32, bool, error) {
 	if err != nil {
 		return 0, false, err
 	}
-	if int(ret) > util.MaxUint32 {
+	if int(ret) > math.MaxUint32 {
 		return 0, false, xerrors.New("wrong state index")
 	}
 	return uint32(ret), true, nil

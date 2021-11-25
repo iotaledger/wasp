@@ -12,7 +12,10 @@ func DecodeChainID(b []byte, def ...*iscp.ChainID) (*iscp.ChainID, error) {
 		}
 		return def[0], nil
 	}
-	return iscp.ChainIDFromBytes(b)
+
+	chainId, err := iscp.ChainIDFromBytes(b)
+
+	return &chainId, err
 }
 
 func EncodeChainID(value *iscp.ChainID) []byte {
