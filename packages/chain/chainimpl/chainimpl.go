@@ -134,7 +134,7 @@ func NewChain(
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		chainMetrics:                     chainMetrics,
-		dismissChainMsgPipe:              pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		dismissChainMsgPipe:              pipe.NewLimitInfinitePipe(1),
 		stateMsgPipe:                     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		offLedgerRequestPeerMsgPipe:      pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		requestAckPeerMsgPipe:            pipe.NewLimitInfinitePipe(maxMsgBuffer),
