@@ -58,7 +58,7 @@ pub struct ScAgentID {
 
 impl ScAgentID {
     // construct from address and contract name hash
-    pub fn new(address: &ScAddress, hname: &ScHname) -> ScAgentID {
+    pub fn new(address: &ScAddress, hname: ScHname) -> ScAgentID {
         let mut agent_id = ScAgentID { id: [0; 37] };
         agent_id.id[..33].copy_from_slice(&address.to_bytes());
         agent_id.id[33..].copy_from_slice(&hname.to_bytes());

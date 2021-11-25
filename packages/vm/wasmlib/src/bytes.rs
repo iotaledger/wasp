@@ -178,7 +178,7 @@ impl BytesEncoder {
     }
 
     // encodes an ScHname into the byte buffer
-    pub fn hname(&mut self, value: &ScHname) -> &BytesEncoder {
+    pub fn hname(&mut self, value: ScHname) -> &BytesEncoder {
         self.bytes(&value.to_bytes())
     }
 

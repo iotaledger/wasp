@@ -47,7 +47,7 @@ $#emit structMethods
 `,
 	// *******************************
 	"structEncode": `
-		encode.$fld_type($ref$+self.$fld_name);
+		encode.$fld_type($fldRef$+self.$fld_name);
 `,
 	// *******************************
 	"structMethods": `

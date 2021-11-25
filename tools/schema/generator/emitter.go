@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/tools/schema/model"
 )
 
 const enableLog = false
@@ -38,7 +39,7 @@ const (
 	KeyView      = "view"
 )
 
-var emitKeyRegExp = regexp.MustCompile(`\$[a-zA-Z_]+`)
+var emitKeyRegExp = regexp.MustCompile(`\$[a-zA-Z_][a-zA-Z_0-9]*`)
 
 func (g *GenBase) indent() {
 	g.tab++
@@ -154,7 +155,7 @@ func (g *GenBase) emitEach(line string) {
 	}
 }
 
-func (g *GenBase) emitEachEvent(events []*Struct, template string) {
+func (g *GenBase) emitEachEvent(events []*model.Struct, template string) {
 	for _, g.currentEvent = range events {
 		g.log("currentEvent: " + g.currentEvent.Name)
 		g.setMultiKeyValues("evtName", g.currentEvent.Name)
@@ -162,7 +163,7 @@ func (g *GenBase) emitEachEvent(events []*Struct, template string) {
 	}
 }
 
-func (g *GenBase) emitEachField(fields []*Field, template string) {
+func (g *GenBase) emitEachField(fields []*model.Field, template string) {
 	g.maxCamelFldLen = 0
 	g.maxSnakeFldLen = 0
 	for _, g.currentField = range fields {
@@ -183,7 +184,7 @@ func (g *GenBase) emitEachField(fields []*Field, template string) {
 	}
 }
 
-func (g *GenBase) emitEachFunc(funcs []*Func, template string) {
+func (g *GenBase) emitEachFunc(funcs []*model.Func, template string) {
 	g.maxCamelFuncLen = 0
 	g.maxSnakeFuncLen = 0
 	for _, g.currentFunc = range funcs {
@@ -205,7 +206,7 @@ func (g *GenBase) emitEachFunc(funcs []*Func, template string) {
 }
 
 func (g *GenBase) emitEachMandatoryField(template string) {
-	mandatoryFields := make([]*Field, 0)
+	mandatoryFields := make([]*model.Field, 0)
 	for _, g.currentField = range g.currentFunc.Params {
 		if !g.currentField.Optional {
 			mandatoryFields = append(mandatoryFields, g.currentField)
@@ -214,7 +215,7 @@ func (g *GenBase) emitEachMandatoryField(template string) {
 	g.emitEachField(mandatoryFields, template)
 }
 
-func (g *GenBase) emitEachStruct(structs []*Struct, template string) {
+func (g *GenBase) emitEachStruct(structs []*model.Struct, template string) {
 	for _, g.currentStruct = range structs {
 		g.log("currentStruct: " + g.currentStruct.Name)
 		g.setMultiKeyValues("strName", g.currentStruct.Name)
@@ -378,7 +379,7 @@ func (g *GenBase) setCommonKeys() {
 }
 
 func (g *GenBase) setFieldKeys(pad bool) {
-	tmp := make(map[string]string)
+	tmp := make(model.StringMap)
 	for k, v := range g.keys {
 		if len(k) < 3 {
 			continue
@@ -406,6 +407,27 @@ func (g *GenBase) setFieldKeys(pad bool) {
 	if pad {
 		g.keys["fldPad"] = spaces[:g.maxCamelFldLen-len(g.keys["fldName"])]
 		g.keys["fld_pad"] = spaces[:g.maxSnakeFldLen-len(g.keys["fld_name"])]
+	}
+
+	for fieldName, typeValues := range g.typeDependent {
+		fieldValue := typeValues[g.currentField.Type]
+		if fieldValue == "" {
+			// get default value for this field
+			// TODO make this smarter w.r.t. maps and arrays?
+			fieldValue = typeValues[""]
+		}
+		g.keys[fieldName] = fieldValue
+
+		if fieldName[:3] == "fld" {
+			// we also want the 'fldKey' variant to facilitate the map key type
+			fieldValue = typeValues[g.currentField.MapKey]
+			if fieldValue == "" {
+				// get default value for this field
+				// TODO make this smarter w.r.t. maps and arrays?
+				fieldValue = typeValues[""]
+			}
+			g.keys["fldKey"+fieldName[3:]] = fieldValue
+		}
 	}
 }
 

@@ -106,6 +106,55 @@ impl ScImmutableAgentIDArray {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// value proxy for immutable Bool in host container
+pub struct ScImmutableBool {
+    obj_id: i32,
+    key_id: Key32,
+}
+
+impl ScImmutableBool {
+    pub fn new(obj_id: i32, key_id: Key32) -> ScImmutableBool {
+        ScImmutableBool { obj_id, key_id }
+    }
+
+    // check if value exists in host container
+    pub fn exists(&self) -> bool {
+        exists(self.obj_id, self.key_id, TYPE_BOOL)
+    }
+
+    // human-readable string representation
+    pub fn to_string(&self) -> String {
+        self.value().to_string()
+    }
+
+    // get value from host container
+    pub fn value(&self) -> bool {
+        let bytes = get_bytes(self.obj_id, self.key_id, TYPE_BOOL);
+        bytes[0] != 0
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// array proxy for immutable array of Bool
+pub struct ScImmutableBoolArray {
+    pub(crate) obj_id: i32,
+}
+
+impl ScImmutableBoolArray {
+    // get value proxy for item at index, index can be 0..length()-1
+    pub fn get_bool(&self, index: i32) -> ScImmutableBool {
+        ScImmutableBool { obj_id: self.obj_id, key_id: Key32(index) }
+    }
+
+    // number of items in array
+    pub fn length(&self) -> i32 {
+        get_length(self.obj_id)
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 // value proxy for immutable bytes array in host container
 pub struct ScImmutableBytes {
     obj_id: i32,
@@ -346,7 +395,56 @@ impl ScImmutableHnameArray {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// value proxy for immutable int16 in host container
+// value proxy for immutable Int8 in host container
+pub struct ScImmutableInt8 {
+    obj_id: i32,
+    key_id: Key32,
+}
+
+impl ScImmutableInt8 {
+    pub fn new(obj_id: i32, key_id: Key32) -> ScImmutableInt8 {
+        ScImmutableInt8 { obj_id, key_id }
+    }
+
+    // check if value exists in host container
+    pub fn exists(&self) -> bool {
+        exists(self.obj_id, self.key_id, TYPE_INT8)
+    }
+
+    // human-readable string representation
+    pub fn to_string(&self) -> String {
+        self.value().to_string()
+    }
+
+    // get value from host container
+    pub fn value(&self) -> i8 {
+        let bytes = get_bytes(self.obj_id, self.key_id, TYPE_INT8);
+        bytes[0] as i8
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// array proxy for immutable array of Int8
+pub struct ScImmutableInt8Array {
+    pub(crate) obj_id: i32,
+}
+
+impl ScImmutableInt8Array {
+    // get value proxy for item at index, index can be 0..length()-1
+    pub fn get_int8(&self, index: i32) -> ScImmutableInt8 {
+        ScImmutableInt8 { obj_id: self.obj_id, key_id: Key32(index) }
+    }
+
+    // number of items in array
+    pub fn length(&self) -> i32 {
+        get_length(self.obj_id)
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// value proxy for immutable Int16 in host container
 pub struct ScImmutableInt16 {
     obj_id: i32,
     key_id: Key32,
@@ -376,7 +474,7 @@ impl ScImmutableInt16 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for immutable array of int16
+// array proxy for immutable array of Int16
 pub struct ScImmutableInt16Array {
     pub(crate) obj_id: i32,
 }
@@ -395,7 +493,7 @@ impl ScImmutableInt16Array {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// value proxy for immutable int32 in host container
+// value proxy for immutable Int32 in host container
 pub struct ScImmutableInt32 {
     obj_id: i32,
     key_id: Key32,
@@ -425,7 +523,7 @@ impl ScImmutableInt32 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for immutable array of int32
+// array proxy for immutable array of Int32
 pub struct ScImmutableInt32Array {
     pub(crate) obj_id: i32,
 }
@@ -444,7 +542,7 @@ impl ScImmutableInt32Array {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// value proxy for immutable int64 in host container
+// value proxy for immutable Int64 in host container
 pub struct ScImmutableInt64 {
     obj_id: i32,
     key_id: Key32,
@@ -474,7 +572,7 @@ impl ScImmutableInt64 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for immutable array of int64
+// array proxy for immutable array of Int64
 pub struct ScImmutableInt64Array {
     pub(crate) obj_id: i32,
 }
@@ -523,6 +621,17 @@ impl ScImmutableMap {
     pub fn get_agent_id_array<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableAgentIDArray {
         let arr_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_AGENT_ID | TYPE_ARRAY);
         ScImmutableAgentIDArray { obj_id: arr_id }
+    }
+
+    // get value proxy for immutable Bool field specified by key
+    pub fn get_bool<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableBool {
+        ScImmutableBool { obj_id: self.obj_id, key_id: key.get_key_id() }
+    }
+
+    // get array proxy for ScImmutableBoolArray specified by key
+    pub fn get_bool_array<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableBoolArray {
+        let arr_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_BOOL | TYPE_ARRAY);
+        ScImmutableBoolArray { obj_id: arr_id }
     }
 
     // get value proxy for immutable bytes array field specified by key
@@ -580,7 +689,18 @@ impl ScImmutableMap {
         ScImmutableHnameArray { obj_id: arr_id }
     }
 
-    // get value proxy for immutable int16 field specified by key
+    // get value proxy for immutable Int8 field specified by key
+    pub fn get_int8<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableInt8 {
+        ScImmutableInt8 { obj_id: self.obj_id, key_id: key.get_key_id() }
+    }
+
+    // get array proxy for ScImmutableInt8Array specified by key
+    pub fn get_int8_array<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableInt8Array {
+        let arr_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_INT8 | TYPE_ARRAY);
+        ScImmutableInt8Array { obj_id: arr_id }
+    }
+
+    // get value proxy for immutable Int16 field specified by key
     pub fn get_int16<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableInt16 {
         ScImmutableInt16 { obj_id: self.obj_id, key_id: key.get_key_id() }
     }
@@ -591,7 +711,7 @@ impl ScImmutableMap {
         ScImmutableInt16Array { obj_id: arr_id }
     }
 
-    // get value proxy for immutable int32 field specified by key
+    // get value proxy for immutable Int32 field specified by key
     pub fn get_int32<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableInt32 {
         ScImmutableInt32 { obj_id: self.obj_id, key_id: key.get_key_id() }
     }
@@ -602,7 +722,7 @@ impl ScImmutableMap {
         ScImmutableInt32Array { obj_id: arr_id }
     }
 
-    // get value proxy for immutable int64 field specified by key
+    // get value proxy for immutable Int64 field specified by key
     pub fn get_int64<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableInt64 {
         ScImmutableInt64 { obj_id: self.obj_id, key_id: key.get_key_id() }
     }
@@ -645,6 +765,50 @@ impl ScImmutableMap {
     pub fn get_string_array<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableStringArray {
         let arr_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_STRING | TYPE_ARRAY);
         ScImmutableStringArray { obj_id: arr_id }
+    }
+
+    // get value proxy for immutable Uint8 field specified by key
+    pub fn get_uint8<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableUint8 {
+        ScImmutableUint8 { obj_id: self.obj_id, key_id: key.get_key_id() }
+    }
+
+    // get array proxy for ScImmutableUint8Array specified by key
+    pub fn get_uint8_array<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableUint8Array {
+        let arr_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_INT8 | TYPE_ARRAY);
+        ScImmutableUint8Array { obj_id: arr_id }
+    }
+
+    // get value proxy for immutable Uint16 field specified by key
+    pub fn get_uint16<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableUint16 {
+        ScImmutableUint16 { obj_id: self.obj_id, key_id: key.get_key_id() }
+    }
+
+    // get array proxy for ScImmutableUint16Array specified by key
+    pub fn get_uint16_array<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableUint16Array {
+        let arr_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_INT16 | TYPE_ARRAY);
+        ScImmutableUint16Array { obj_id: arr_id }
+    }
+
+    // get value proxy for immutable Uint32 field specified by key
+    pub fn get_uint32<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableUint32 {
+        ScImmutableUint32 { obj_id: self.obj_id, key_id: key.get_key_id() }
+    }
+
+    // get array proxy for ScImmutableUint32Array specified by key
+    pub fn get_uint32_array<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableUint32Array {
+        let arr_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_INT32 | TYPE_ARRAY);
+        ScImmutableUint32Array { obj_id: arr_id }
+    }
+
+    // get value proxy for immutable Uint64 field specified by key
+    pub fn get_uint64<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableUint64 {
+        ScImmutableUint64 { obj_id: self.obj_id, key_id: key.get_key_id() }
+    }
+
+    // get array proxy for ScImmutableUint64Array specified by key
+    pub fn get_uint64_array<T: MapKey + ?Sized>(&self, key: &T) -> ScImmutableUint64Array {
+        let arr_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_INT64 | TYPE_ARRAY);
+        ScImmutableUint64Array { obj_id: arr_id }
     }
 
     pub fn map_id(&self) -> i32 {
@@ -759,6 +923,202 @@ impl ScImmutableStringArray {
     // get value proxy for item at index, index can be 0..length()-1
     pub fn get_string(&self, index: i32) -> ScImmutableString {
         ScImmutableString { obj_id: self.obj_id, key_id: Key32(index) }
+    }
+
+    // number of items in array
+    pub fn length(&self) -> i32 {
+        get_length(self.obj_id)
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// value proxy for immutable Uint8 in host container
+pub struct ScImmutableUint8 {
+    obj_id: i32,
+    key_id: Key32,
+}
+
+impl ScImmutableUint8 {
+    pub fn new(obj_id: i32, key_id: Key32) -> ScImmutableUint8 {
+        ScImmutableUint8 { obj_id, key_id }
+    }
+
+    // check if value exists in host container
+    pub fn exists(&self) -> bool {
+        exists(self.obj_id, self.key_id, TYPE_INT8)
+    }
+
+    // human-readable string representation
+    pub fn to_string(&self) -> String {
+        self.value().to_string()
+    }
+
+    // get value from host container
+    pub fn value(&self) -> u8 {
+        let bytes = get_bytes(self.obj_id, self.key_id, TYPE_INT8);
+        bytes[0]
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// array proxy for immutable array of Uint8
+pub struct ScImmutableUint8Array {
+    pub(crate) obj_id: i32,
+}
+
+impl ScImmutableUint8Array {
+    // get value proxy for item at index, index can be 0..length()-1
+    pub fn get_uint8(&self, index: i32) -> ScImmutableUint8 {
+        ScImmutableUint8 { obj_id: self.obj_id, key_id: Key32(index) }
+    }
+
+    // number of items in array
+    pub fn length(&self) -> i32 {
+        get_length(self.obj_id)
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// value proxy for immutable Uint16 in host container
+pub struct ScImmutableUint16 {
+    obj_id: i32,
+    key_id: Key32,
+}
+
+impl ScImmutableUint16 {
+    pub fn new(obj_id: i32, key_id: Key32) -> ScImmutableUint16 {
+        ScImmutableUint16 { obj_id, key_id }
+    }
+
+    // check if value exists in host container
+    pub fn exists(&self) -> bool {
+        exists(self.obj_id, self.key_id, TYPE_INT16)
+    }
+
+    // human-readable string representation
+    pub fn to_string(&self) -> String {
+        self.value().to_string()
+    }
+
+    // get value from host container
+    pub fn value(&self) -> u16 {
+        let bytes = get_bytes(self.obj_id, self.key_id, TYPE_INT16);
+        u16::from_le_bytes(bytes.try_into().expect("invalid u16 length"))
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// array proxy for immutable array of Uint16
+pub struct ScImmutableUint16Array {
+    pub(crate) obj_id: i32,
+}
+
+impl ScImmutableUint16Array {
+    // get value proxy for item at index, index can be 0..length()-1
+    pub fn get_uint16(&self, index: i32) -> ScImmutableUint16 {
+        ScImmutableUint16 { obj_id: self.obj_id, key_id: Key32(index) }
+    }
+
+    // number of items in array
+    pub fn length(&self) -> i32 {
+        get_length(self.obj_id)
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// value proxy for immutable Uint32 in host container
+pub struct ScImmutableUint32 {
+    obj_id: i32,
+    key_id: Key32,
+}
+
+impl ScImmutableUint32 {
+    pub fn new(obj_id: i32, key_id: Key32) -> ScImmutableUint32 {
+        ScImmutableUint32 { obj_id, key_id }
+    }
+
+    // check if value exists in host container
+    pub fn exists(&self) -> bool {
+        exists(self.obj_id, self.key_id, TYPE_INT32)
+    }
+
+    // human-readable string representation
+    pub fn to_string(&self) -> String {
+        self.value().to_string()
+    }
+
+    // get value from host container
+    pub fn value(&self) -> u32 {
+        let bytes = get_bytes(self.obj_id, self.key_id, TYPE_INT32);
+        u32::from_le_bytes(bytes.try_into().expect("invalid u32 length"))
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// array proxy for immutable array of Uint32
+pub struct ScImmutableUint32Array {
+    pub(crate) obj_id: i32,
+}
+
+impl ScImmutableUint32Array {
+    // get value proxy for item at index, index can be 0..length()-1
+    pub fn get_uint32(&self, index: i32) -> ScImmutableUint32 {
+        ScImmutableUint32 { obj_id: self.obj_id, key_id: Key32(index) }
+    }
+
+    // number of items in array
+    pub fn length(&self) -> i32 {
+        get_length(self.obj_id)
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// value proxy for immutable Uint64 in host container
+pub struct ScImmutableUint64 {
+    obj_id: i32,
+    key_id: Key32,
+}
+
+impl ScImmutableUint64 {
+    pub fn new(obj_id: i32, key_id: Key32) -> ScImmutableUint64 {
+        ScImmutableUint64 { obj_id, key_id }
+    }
+
+    // check if value exists in host container
+    pub fn exists(&self) -> bool {
+        exists(self.obj_id, self.key_id, TYPE_INT64)
+    }
+
+    // human-readable string representation
+    pub fn to_string(&self) -> String {
+        self.value().to_string()
+    }
+
+    // get value from host container
+    pub fn value(&self) -> u64 {
+        let bytes = get_bytes(self.obj_id, self.key_id, TYPE_INT64);
+        u64::from_le_bytes(bytes.try_into().expect("invalid u64 length"))
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// array proxy for immutable array of Uint64
+pub struct ScImmutableUint64Array {
+    pub(crate) obj_id: i32,
+}
+
+impl ScImmutableUint64Array {
+    // get value proxy for item at index, index can be 0..length()-1
+    pub fn get_uint64(&self, index: i32) -> ScImmutableUint64 {
+        ScImmutableUint64 { obj_id: self.obj_id, key_id: Key32(index) }
     }
 
     // number of items in array

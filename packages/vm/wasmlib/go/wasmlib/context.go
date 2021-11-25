@@ -321,6 +321,8 @@ func (ctx ScFuncContext) PostSelf(hFunction ScHname, params *ScMutableMap, trans
 	ctx.Post(ctx.ChainID(), ctx.Contract(), hFunction, params, transfer, delay)
 }
 
+// TODO expose Entropy function
+
 // generates a random value from 0 to max (exclusive max) using a deterministic RNG
 func (ctx ScFuncContext) Random(max int64) int64 {
 	state := ScMutableMap{objID: OBJ_ID_STATE}

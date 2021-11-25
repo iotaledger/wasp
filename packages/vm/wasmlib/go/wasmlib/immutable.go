@@ -82,6 +82,47 @@ func (o ScImmutableAgentIDArray) Length() int32 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+type ScImmutableBool struct {
+	objID int32
+	keyID Key32
+}
+
+func NewScImmutableBool(objID int32, keyID Key32) ScImmutableBool {
+	return ScImmutableBool{objID: objID, keyID: keyID}
+}
+
+func (o ScImmutableBool) Exists() bool {
+	return Exists(o.objID, o.keyID, TYPE_BOOL)
+}
+
+func (o ScImmutableBool) String() string {
+	if o.Value() {
+		return "1"
+	}
+	return "0"
+}
+
+func (o ScImmutableBool) Value() bool {
+	bytes := GetBytes(o.objID, o.keyID, TYPE_BOOL)
+	return bytes[0] != 0
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScImmutableBoolArray struct {
+	objID int32
+}
+
+func (o ScImmutableBoolArray) GetBool(index int32) ScImmutableBool {
+	return ScImmutableBool{objID: o.objID, keyID: Key32(index)}
+}
+
+func (o ScImmutableBoolArray) Length() int32 {
+	return GetLength(o.objID)
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 type ScImmutableBytes struct {
 	objID int32
 	keyID Key32
@@ -267,6 +308,44 @@ func (o ScImmutableHnameArray) Length() int32 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+type ScImmutableInt8 struct {
+	objID int32
+	keyID Key32
+}
+
+func NewScImmutableInt8(objID int32, keyID Key32) ScImmutableInt8 {
+	return ScImmutableInt8{objID: objID, keyID: keyID}
+}
+
+func (o ScImmutableInt8) Exists() bool {
+	return Exists(o.objID, o.keyID, TYPE_INT8)
+}
+
+func (o ScImmutableInt8) String() string {
+	return strconv.FormatInt(int64(o.Value()), 10)
+}
+
+func (o ScImmutableInt8) Value() int8 {
+	bytes := GetBytes(o.objID, o.keyID, TYPE_INT8)
+	return int8(bytes[0])
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScImmutableInt8Array struct {
+	objID int32
+}
+
+func (o ScImmutableInt8Array) GetInt8(index int32) ScImmutableInt8 {
+	return ScImmutableInt8{objID: o.objID, keyID: Key32(index)}
+}
+
+func (o ScImmutableInt8Array) Length() int32 {
+	return GetLength(o.objID)
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 type ScImmutableInt16 struct {
 	objID int32
 	keyID Key32
@@ -407,6 +486,15 @@ func (o ScImmutableMap) GetAgentIDArray(key MapKey) ScImmutableAgentIDArray {
 	return ScImmutableAgentIDArray{objID: arrID}
 }
 
+func (o ScImmutableMap) GetBool(key MapKey) ScImmutableBool {
+	return ScImmutableBool{objID: o.objID, keyID: key.KeyID()}
+}
+
+func (o ScImmutableMap) GetBoolArray(key MapKey) ScImmutableBoolArray {
+	arrID := GetObjectID(o.objID, key.KeyID(), TYPE_BOOL|TYPE_ARRAY)
+	return ScImmutableBoolArray{objID: arrID}
+}
+
 func (o ScImmutableMap) GetBytes(key MapKey) ScImmutableBytes {
 	return ScImmutableBytes{objID: o.objID, keyID: key.KeyID()}
 }
@@ -450,6 +538,15 @@ func (o ScImmutableMap) GetHname(key MapKey) ScImmutableHname {
 func (o ScImmutableMap) GetHnameArray(key MapKey) ScImmutableHnameArray {
 	arrID := GetObjectID(o.objID, key.KeyID(), TYPE_HNAME|TYPE_ARRAY)
 	return ScImmutableHnameArray{objID: arrID}
+}
+
+func (o ScImmutableMap) GetInt8(key MapKey) ScImmutableInt8 {
+	return ScImmutableInt8{objID: o.objID, keyID: key.KeyID()}
+}
+
+func (o ScImmutableMap) GetInt8Array(key MapKey) ScImmutableInt8Array {
+	arrID := GetObjectID(o.objID, key.KeyID(), TYPE_INT8|TYPE_ARRAY)
+	return ScImmutableInt8Array{objID: arrID}
 }
 
 func (o ScImmutableMap) GetInt16(key MapKey) ScImmutableInt16 {
@@ -505,6 +602,42 @@ func (o ScImmutableMap) GetString(key MapKey) ScImmutableString {
 func (o ScImmutableMap) GetStringArray(key MapKey) ScImmutableStringArray {
 	arrID := GetObjectID(o.objID, key.KeyID(), TYPE_STRING|TYPE_ARRAY)
 	return ScImmutableStringArray{objID: arrID}
+}
+
+func (o ScImmutableMap) GetUint8(key MapKey) ScImmutableUint8 {
+	return ScImmutableUint8{objID: o.objID, keyID: key.KeyID()}
+}
+
+func (o ScImmutableMap) GetUint8Array(key MapKey) ScImmutableUint8Array {
+	arrID := GetObjectID(o.objID, key.KeyID(), TYPE_INT8|TYPE_ARRAY)
+	return ScImmutableUint8Array{objID: arrID}
+}
+
+func (o ScImmutableMap) GetUint16(key MapKey) ScImmutableUint16 {
+	return ScImmutableUint16{objID: o.objID, keyID: key.KeyID()}
+}
+
+func (o ScImmutableMap) GetUint16Array(key MapKey) ScImmutableUint16Array {
+	arrID := GetObjectID(o.objID, key.KeyID(), TYPE_INT16|TYPE_ARRAY)
+	return ScImmutableUint16Array{objID: arrID}
+}
+
+func (o ScImmutableMap) GetUint32(key MapKey) ScImmutableUint32 {
+	return ScImmutableUint32{objID: o.objID, keyID: key.KeyID()}
+}
+
+func (o ScImmutableMap) GetUint32Array(key MapKey) ScImmutableUint32Array {
+	arrID := GetObjectID(o.objID, key.KeyID(), TYPE_INT32|TYPE_ARRAY)
+	return ScImmutableUint32Array{objID: arrID}
+}
+
+func (o ScImmutableMap) GetUint64(key MapKey) ScImmutableUint64 {
+	return ScImmutableUint64{objID: o.objID, keyID: key.KeyID()}
+}
+
+func (o ScImmutableMap) GetUint64Array(key MapKey) ScImmutableUint64Array {
+	arrID := GetObjectID(o.objID, key.KeyID(), TYPE_INT64|TYPE_ARRAY)
+	return ScImmutableUint64Array{objID: arrID}
 }
 
 func (o ScImmutableMap) MapID() int32 {
@@ -601,5 +734,157 @@ func (o ScImmutableStringArray) GetString(index int32) ScImmutableString {
 }
 
 func (o ScImmutableStringArray) Length() int32 {
+	return GetLength(o.objID)
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScImmutableUint8 struct {
+	objID int32
+	keyID Key32
+}
+
+func NewScImmutableUint8(objID int32, keyID Key32) ScImmutableUint8 {
+	return ScImmutableUint8{objID: objID, keyID: keyID}
+}
+
+func (o ScImmutableUint8) Exists() bool {
+	return Exists(o.objID, o.keyID, TYPE_INT8)
+}
+
+func (o ScImmutableUint8) String() string {
+	return strconv.FormatUint(uint64(o.Value()), 10)
+}
+
+func (o ScImmutableUint8) Value() uint8 {
+	bytes := GetBytes(o.objID, o.keyID, TYPE_INT8)
+	return bytes[0]
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScImmutableUint8Array struct {
+	objID int32
+}
+
+func (o ScImmutableUint8Array) GetUint8(index int32) ScImmutableUint8 {
+	return ScImmutableUint8{objID: o.objID, keyID: Key32(index)}
+}
+
+func (o ScImmutableUint8Array) Length() int32 {
+	return GetLength(o.objID)
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScImmutableUint16 struct {
+	objID int32
+	keyID Key32
+}
+
+func NewScImmutableUint16(objID int32, keyID Key32) ScImmutableUint16 {
+	return ScImmutableUint16{objID: objID, keyID: keyID}
+}
+
+func (o ScImmutableUint16) Exists() bool {
+	return Exists(o.objID, o.keyID, TYPE_INT16)
+}
+
+func (o ScImmutableUint16) String() string {
+	return strconv.FormatUint(uint64(o.Value()), 10)
+}
+
+func (o ScImmutableUint16) Value() uint16 {
+	bytes := GetBytes(o.objID, o.keyID, TYPE_INT16)
+	return binary.LittleEndian.Uint16(bytes)
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScImmutableUint16Array struct {
+	objID int32
+}
+
+func (o ScImmutableUint16Array) GetUint16(index int32) ScImmutableUint16 {
+	return ScImmutableUint16{objID: o.objID, keyID: Key32(index)}
+}
+
+func (o ScImmutableUint16Array) Length() int32 {
+	return GetLength(o.objID)
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScImmutableUint32 struct {
+	objID int32
+	keyID Key32
+}
+
+func NewScImmutableUint32(objID int32, keyID Key32) ScImmutableUint32 {
+	return ScImmutableUint32{objID: objID, keyID: keyID}
+}
+
+func (o ScImmutableUint32) Exists() bool {
+	return Exists(o.objID, o.keyID, TYPE_INT32)
+}
+
+func (o ScImmutableUint32) String() string {
+	return strconv.FormatUint(uint64(o.Value()), 10)
+}
+
+func (o ScImmutableUint32) Value() uint32 {
+	bytes := GetBytes(o.objID, o.keyID, TYPE_INT32)
+	return binary.LittleEndian.Uint32(bytes)
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScImmutableUint32Array struct {
+	objID int32
+}
+
+func (o ScImmutableUint32Array) GetUint32(index int32) ScImmutableUint32 {
+	return ScImmutableUint32{objID: o.objID, keyID: Key32(index)}
+}
+
+func (o ScImmutableUint32Array) Length() int32 {
+	return GetLength(o.objID)
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScImmutableUint64 struct {
+	objID int32
+	keyID Key32
+}
+
+func NewScImmutableUint64(objID int32, keyID Key32) ScImmutableUint64 {
+	return ScImmutableUint64{objID: objID, keyID: keyID}
+}
+
+func (o ScImmutableUint64) Exists() bool {
+	return Exists(o.objID, o.keyID, TYPE_INT64)
+}
+
+func (o ScImmutableUint64) String() string {
+	return strconv.FormatUint(o.Value(), 10)
+}
+
+func (o ScImmutableUint64) Value() uint64 {
+	bytes := GetBytes(o.objID, o.keyID, TYPE_INT64)
+	return binary.LittleEndian.Uint64(bytes)
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type ScImmutableUint64Array struct {
+	objID int32
+}
+
+func (o ScImmutableUint64Array) GetUint64(index int32) ScImmutableUint64 {
+	return ScImmutableUint64{objID: o.objID, keyID: Key32(index)}
+}
+
+func (o ScImmutableUint64Array) Length() int32 {
 	return GetLength(o.objID)
 }

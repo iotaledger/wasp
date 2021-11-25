@@ -9,31 +9,33 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/iotaledger/wasp/tools/schema/model"
 )
 
 // TODO nested structs
 // TODO handle case where owner is type AgentID[]
 
 type Generator interface {
-	init(s *Schema)
-	funcName(f *Func) string
+	init(s *model.Schema)
+	funcName(f *model.Func) string
 	generateLanguageSpecificFiles() error
 	setFieldKeys(pad bool)
 	setFuncKeys()
 }
 
 type GenBase struct {
-	currentEvent    *Struct
-	currentField    *Field
-	currentFunc     *Func
-	currentStruct   *Struct
+	currentEvent    *model.Struct
+	currentField    *model.Field
+	currentFunc     *model.Func
+	currentStruct   *model.Struct
 	emitters        map[string]func(g *GenBase)
 	extension       string
 	file            *os.File
 	folder          string
 	funcRegexp      *regexp.Regexp
 	gen             Generator
-	keys            map[string]string
+	keys            model.StringMap
 	language        string
 	maxCamelFuncLen int
 	maxSnakeFuncLen int
@@ -41,27 +43,29 @@ type GenBase struct {
 	maxSnakeFldLen  int
 	newTypes        map[string]bool
 	rootFolder      string
-	s               *Schema
+	s               *model.Schema
 	tab             int
-	templates       map[string]string
+	templates       model.StringMap
+	typeDependent   model.StringMapMap
 }
 
 const spaces = "                                             "
 
-func (g *GenBase) init(s *Schema, templates []map[string]string) {
+func (g *GenBase) init(s *model.Schema, typeDependent model.StringMapMap, templates []map[string]string) {
 	g.s = s
 	g.emitters = map[string]func(g *GenBase){}
 	g.newTypes = map[string]bool{}
-	g.keys = map[string]string{}
+	g.keys = model.StringMap{}
 	g.setCommonKeys()
-	g.templates = map[string]string{}
+	g.typeDependent = typeDependent
+	g.templates = model.StringMap{}
 	g.addTemplates(commonTemplates)
 	for _, template := range templates {
 		g.addTemplates(template)
 	}
 }
 
-func (g *GenBase) addTemplates(t map[string]string) {
+func (g *GenBase) addTemplates(t model.StringMap) {
 	for k, v := range t {
 		g.templates[k] = v
 	}
@@ -105,11 +109,11 @@ func (g *GenBase) exists(path string) (err error) {
 	return err
 }
 
-func (g *GenBase) funcName(f *Func) string {
+func (g *GenBase) funcName(f *model.Func) string {
 	return f.Kind + capitalize(f.Name)
 }
 
-func (g *GenBase) Generate(s *Schema) error {
+func (g *GenBase) Generate(s *model.Schema) error {
 	g.gen.init(s)
 
 	g.folder = g.rootFolder + "/"
@@ -210,7 +214,7 @@ func (g *GenBase) generateFuncs() error {
 	// append missing SC functions to existing code file
 
 	// scan existing file for function names
-	existing := make(StringMap)
+	existing := make(model.StringMap)
 	lines := make([]string, 0)
 	err := g.scanExistingCode(scFileName, &existing, &lines)
 	if err != nil {
@@ -244,6 +248,10 @@ func (g *GenBase) generateFuncs() error {
 	return os.Remove(scOriginal)
 }
 
+func (g *GenBase) generateLanguageSpecificFiles() error {
+	return nil
+}
+
 func (g *GenBase) generateTests() error {
 	err := os.MkdirAll("test", 0o755)
 	if err != nil {
@@ -271,7 +279,7 @@ func (g *GenBase) println(a ...interface{}) {
 	_, _ = fmt.Fprintln(g.file, a...)
 }
 
-func (g *GenBase) scanExistingCode(path string, existing *StringMap, lines *[]string) error {
+func (g *GenBase) scanExistingCode(path string, existing *model.StringMap, lines *[]string) error {
 	return g.openFile(path, func() error {
 		scanner := bufio.NewScanner(g.file)
 		for scanner.Scan() {
