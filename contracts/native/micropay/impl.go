@@ -117,7 +117,7 @@ func revokeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	meta := &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
 		EntryPoint:     FuncCloseWarrant.Hname(),
-		Args: codec.MakeDict(map[string]interface{}{
+		Params: codec.MakeDict(map[string]interface{}{
 			ParamPayerAddress:   payerAddr,
 			ParamServiceAddress: serviceAddr,
 		}),

@@ -130,7 +130,7 @@ func (o *SoloScContext) processPost(bytes []byte) {
 	//metadata := &iscp.SendMetadata{
 	//	TargetContract: contract,
 	//	EntryPoint:     function,
-	//	Args:           params,
+	//	Params:           params,
 	//}
 	//delay := decode.Int32()
 	//if delay == 0 {

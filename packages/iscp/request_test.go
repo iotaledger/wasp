@@ -17,11 +17,11 @@ func TestOnledgerRequest(t *testing.T) {
 	}
 	sender, _ := iotago.ParseEd25519AddressFromHexString("0152fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649")
 	requestMetadata := &RequestMetadata{
-		senderContract: Hn("sender_contract"),
-		targetContract: Hn("target_contract"),
-		entryPoint:     Hn("entrypoint"),
-		transfer:       &Assets{Iotas: 1},
-		gasBudget:      1000,
+		SenderContract: Hn("sender_contract"),
+		TargetContract: Hn("target_contract"),
+		EntryPoint:     Hn("entrypoint"),
+		Transfer:       &Assets{Iotas: 1},
+		GasBudget:      1000,
 	}
 	output := &iotago.ExtendedOutput{
 		Address: sender,
@@ -43,6 +43,6 @@ func TestOnledgerRequest(t *testing.T) {
 	serialized := req.Bytes()
 	req2, err := OnledgerRequestFromMarshalUtil(marshalutil.New(serialized))
 	require.NoError(t, err)
-	require.True(t, req2.SenderAccount().Equals(NewAgentID(sender, requestMetadata.senderContract)))
-	require.True(t, req2.Target().Equals(NewRequestTarget(requestMetadata.targetContract, requestMetadata.entryPoint)))
+	require.True(t, req2.SenderAccount().Equals(NewAgentID(sender, requestMetadata.SenderContract)))
+	require.True(t, req2.Target().Equals(NewRequestTarget(requestMetadata.TargetContract, requestMetadata.EntryPoint)))
 }
