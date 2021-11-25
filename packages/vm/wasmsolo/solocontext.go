@@ -344,27 +344,31 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 		return
 	}
 
+	// start with file in test folder
 	wasmFile := ctx.scName + "_bg.wasm"
 
-	// try Rust first
-	exists, _ := util.ExistsFilePath("../pkg/" + wasmFile)
+	// try (newer?) Rust Wasm file first
+	rsFile := "../pkg/" + wasmFile
+	exists, _ := util.ExistsFilePath(rsFile)
 	if exists {
-		wasmFile = "../pkg/" + wasmFile
+		wasmFile = rsFile
 	}
 
+	// try Go Wasm file?
 	if !exists || *GoWasm {
-		wasmFile = ctx.scName + "_go.wasm"
-		exists, _ = util.ExistsFilePath("../go/pkg/" + wasmFile)
+		goFile := "../go/pkg/" + ctx.scName + "_go.wasm"
+		exists, _ = util.ExistsFilePath(goFile)
 		if exists {
-			wasmFile = "../go/pkg/" + wasmFile
+			wasmFile = goFile
 		}
 	}
 
+	// try TypeScript Wasm file?
 	if !exists || *TsWasm {
-		wasmFile = ctx.scName + "_ts.wasm"
-		exists, _ = util.ExistsFilePath("../ts/pkg/" + wasmFile)
+		tsFile := "../ts/pkg/" + ctx.scName + "_ts.wasm"
+		exists, _ = util.ExistsFilePath(tsFile)
 		if exists {
-			wasmFile = "../ts/pkg/" + wasmFile
+			wasmFile = tsFile
 		}
 	}
 
