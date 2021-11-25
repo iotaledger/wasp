@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -21,7 +20,7 @@ import (
 const numRequests = 100000
 
 func TestSpamOnledger(t *testing.T) {
-	testutil.RunHeavy(t)
+	// testutil.RunHeavy(t)
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
 	keyPair, _ := env.getOrCreateAddress()
@@ -47,7 +46,7 @@ const maxParallelRequests = 700
 
 // !! WARNING !! - this test should only be run with `database.inMemory` set to `false`. Otherwise it is WAY slower, and will probably time out or take a LONG time
 func TestSpamOffledger(t *testing.T) {
-	testutil.RunHeavy(t)
+	// testutil.RunHeavy(t)
 	// single wasp node committee, to test if publishing can break state transitions
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 

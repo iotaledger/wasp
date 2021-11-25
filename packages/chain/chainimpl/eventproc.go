@@ -81,6 +81,7 @@ func (c *chainObj) handleMessagesLoop() {
 
 func (c *chainObj) EnqueueDismissChain(reason string) {
 	c.dismissChainMsgPipe.In() <- DismissChainMsg{Reason: reason}
+	c.chainMetrics.CountMessages()
 }
 
 func (c *chainObj) handleDismissChain(msg DismissChainMsg) {
@@ -93,6 +94,7 @@ func (c *chainObj) EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, time
 		ChainOutput: chainOutput,
 		Timestamp:   timestamp,
 	}
+	c.chainMetrics.CountMessages()
 }
 
 // handleLedgerState processes the only chain output which exists on the chain's address
@@ -123,6 +125,7 @@ func (c *chainObj) handleLedgerState(msg *messages.StateMsg) {
 
 func (c *chainObj) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
 	c.offLedgerRequestPeerMsgPipe.In() <- msg
+	c.chainMetrics.CountMessages()
 }
 
 func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
@@ -149,6 +152,7 @@ func (c *chainObj) isRequestValid(req *request.OffLedger) bool {
 
 func (c *chainObj) EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn) {
 	c.requestAckPeerMsgPipe.In() <- msg
+	c.chainMetrics.CountMessages()
 }
 
 func (c *chainObj) handleRequestAckPeerMsg(msg *messages.RequestAckMsgIn) {
@@ -162,6 +166,7 @@ func (c *chainObj) handleRequestAckPeerMsg(msg *messages.RequestAckMsgIn) {
 
 func (c *chainObj) EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn) {
 	c.missingRequestIDsPeerMsgPipe.In() <- msg
+	c.chainMetrics.CountMessages()
 }
 
 func (c *chainObj) handleMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn) {
@@ -185,6 +190,7 @@ func (c *chainObj) handleMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsg
 
 func (c *chainObj) EnqueueMissingRequestMsg(msg *messages.MissingRequestMsg) {
 	c.missingRequestPeerMsgPipe.In() <- msg
+	c.chainMetrics.CountMessages()
 }
 
 func (c *chainObj) handleMissingRequestMsg(msg *messages.MissingRequestMsg) {
@@ -203,6 +209,7 @@ func (c *chainObj) handleMissingRequestMsg(msg *messages.MissingRequestMsg) {
 
 func (c *chainObj) EnqueueTimerTick(tick int) {
 	c.timerTickMsgPipe.In() <- messages.TimerTick(tick)
+	c.chainMetrics.CountMessages()
 }
 
 func (c *chainObj) handleTimerTick(msg messages.TimerTick) {
