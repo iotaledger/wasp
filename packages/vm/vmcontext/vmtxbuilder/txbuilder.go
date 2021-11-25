@@ -80,6 +80,7 @@ var (
 	ErrInputLimitExceeded                   = xerrors.Errorf("exceeded maximum number of inputs in transaction. iotago.MaxInputsCount = %d", iotago.MaxInputsCount)
 	ErrOutputLimitExceeded                  = xerrors.Errorf("exceeded maximum number of outputs in transaction. iotago.MaxOutputsCount = %d", iotago.MaxOutputsCount)
 	ErrNotEnoughFundsForInternalDustDeposit = xerrors.New("not enough funds for internal dust deposit")
+	ErrOverflow                             = xerrors.New("overflow")
 )
 
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
@@ -147,7 +148,6 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
 		bi.Neg(nt.Amount)
 		txb.addNativeTokenBalanceDelta(nt.ID, bi)
 	}
-
 	txb.postedOutputs = append(txb.postedOutputs, o)
 }
 
@@ -290,7 +290,7 @@ func (txb *AnchorTransactionBuilder) addDeltaIotasToAnchor(delta uint64) {
 	// safe arithmetics
 	n := txb.currentBalanceIotasOnAnchor + delta
 	if n < txb.currentBalanceIotasOnAnchor {
-		panic(xerrors.New("addDeltaIotasToAnchor: overflow"))
+		panic(xerrors.Errorf("addDeltaIotasToAnchor: %w", ErrOverflow))
 	}
 	txb.currentBalanceIotasOnAnchor = n
 }
@@ -302,7 +302,7 @@ func (txb *AnchorTransactionBuilder) subDeltaIotasFromAnchor(delta uint64) {
 	}
 	// safe arithmetics
 	if delta > txb.currentBalanceIotasOnAnchor {
-		panic(xerrors.New("subDeltaIotasFromAnchor: overflow"))
+		panic(xerrors.Errorf("subDeltaIotasFromAnchor: %w", ErrOverflow))
 	}
 	txb.currentBalanceIotasOnAnchor -= delta
 }
@@ -345,7 +345,7 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id iotago.Native
 	b := txb.ensureNativeTokenBalance(id)
 	b.balance.Add(b.balance, delta)
 	if b.balance.Sign() < 0 {
-		panic(xerrors.New("addNativeTokenBalanceDelta: balance can't be negative"))
+		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %w", ErrOverflow))
 	}
 	if b.dustDepositCharged && b.requiresInput() && !b.producesOutput() {
 		// this is an old token in the on-chain ledger. Now it disappears and dust deposit
