@@ -20,10 +20,8 @@ type WasmProcessor struct {
 	log              *logger.Logger
 	mainProcessor    *WasmProcessor
 	nextContextID    int32
-	// procesorPool     *WasmProcessor
-	scContext *WasmContext
-	wasmBytes []byte
-	wasmVM    func() wasmhost.WasmVM
+	scContext        *WasmContext
+	wasmVM           func() wasmhost.WasmVM
 }
 
 var _ iscp.VMProcessor = &WasmProcessor{}
@@ -32,27 +30,29 @@ var GoWasmVM func() wasmhost.WasmVM
 
 // GetProcessor creates a new Wasm VM processor.
 func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error) {
+	proc := &WasmProcessor{log: log, contexts: make(map[int32]*WasmContext), wasmVM: wasmhost.NewWasmTimeVM}
+	proc.Init()
+
 	// By default we will use WasmTimeVM, but this can be overruled by setting GoWasmVm
-	// This setting will be propagated to all the sub-processors of this processor
-	vm := GoWasmVM
-	GoWasmVM = nil
-	if vm == nil {
-		vm = wasmhost.NewWasmTimeVM
+	// This setting will also be propagated to all the sub-processors of this processor
+	if GoWasmVM != nil {
+		proc.wasmVM = GoWasmVM
+		GoWasmVM = nil
 	}
 
-	// run setup on main processor, because we will be sharing stuff with the sub-processors
-	proc := &WasmProcessor{log: log, contexts: make(map[int32]*WasmContext), wasmBytes: wasmBytes, wasmVM: vm}
-	err := proc.InitVM(vm(), proc)
+	// Run setup on main processor, because we will be sharing stuff with the sub-processors
+	err := proc.InitVM(proc.wasmVM(), proc)
 	if err != nil {
 		return nil, err
 	}
 
-	proc.Init()
-	// TODO decide if we want be able to examine state directly from tests
-	// proc.SetExport(0x8fff, ViewCopyAllState)
 	proc.scContext = NewWasmContext("", proc)
 	wasmhost.Connect(proc.scContext)
-	err = proc.LoadWasm(proc.wasmBytes)
+	err = proc.LoadWasm(wasmBytes)
+	if err != nil {
+		return nil, err
+	}
+	err = proc.RunFunction("on_load")
 	if err != nil {
 		return nil, err
 	}
@@ -97,21 +97,14 @@ func (proc *WasmProcessor) GetKvStore(id int32) *wasmhost.KvStoreHost {
 func (proc *WasmProcessor) KillContext(id int32) {
 	proc.contextLock.Lock()
 	defer proc.contextLock.Unlock()
-
-	// TODO release processor to pool? In that case, when taking it out, don't forget to reset its data
-
-	// owner := proc.proc
-	// proc.proc = owner.pool
-	// owner.pool = proc
-
 	delete(proc.contexts, id)
 }
 
 func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
-	// clone and setup processor for each context
 	processor := proc
-	if proc.WasmHost.PoolSize() != 0 {
-		processor = proc.getProcessor()
+	vmInstance := proc.NewInstance()
+	if vmInstance != nil {
+		processor = proc.getSubProcessor(vmInstance)
 	}
 	wc := NewWasmContext(function, processor)
 
@@ -124,44 +117,25 @@ func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
 	return wc
 }
 
-func (proc *WasmProcessor) getProcessor() *WasmProcessor {
-	//processor = proc.fromPool()
-	//if processor != nil {
-	//	err := processor.WasmHost.Instantiate()
-	//	if err != nil {
-	//		panic("Cannot instantiate processor: " + err.Error())
-	//	}
-	//	return processor
-	//}
-
-	processor := &WasmProcessor{log: proc.log, mainProcessor: proc, wasmBytes: proc.wasmBytes, wasmVM: proc.wasmVM}
-	err := processor.InitVM(proc.NewInstance(), processor)
+func (proc *WasmProcessor) getSubProcessor(vmInstance wasmhost.WasmVM) *WasmProcessor {
+	processor := &WasmProcessor{log: proc.log, mainProcessor: proc, wasmVM: proc.wasmVM}
+	processor.Init()
+	err := processor.InitVM(vmInstance, processor)
 	if err != nil {
 		panic("Cannot clone processor: " + err.Error())
 	}
-	processor.Init()
-	// TODO decide if we want be able to examine state directly from tests
-	// proc.SetExport(0x8fff, ViewCopyAllState)
+
 	processor.scContext = NewWasmContext("", processor)
 	wasmhost.Connect(processor.scContext)
 	err = processor.Instantiate()
 	if err != nil {
 		panic("Cannot instantiate: " + err.Error())
 	}
+
+	// TODO reuse on_load data from main processor
 	err = processor.RunFunction("on_load")
 	if err != nil {
 		panic("Cannot run on_load: " + err.Error())
 	}
 	return processor
 }
-
-//func (proc *WasmProcessor) fromPool() *WasmProcessor {
-//	proc.contextLock.Lock()
-//	defer proc.contextLock.Unlock()
-//	processor := proc.procesorPool
-//	if processor != nil {
-//		proc.procesorPool = processor.mainProcessor
-//		processor.mainProcessor = proc
-//	}
-//	return processor
-//}

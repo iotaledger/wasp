@@ -138,14 +138,12 @@ export class BytesEncoder {
 
     // encodes an ScAddress into the byte buffer
     address(value: ScAddress): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // encodes an ScAgentID into the byte buffer
     agentID(value: ScAgentID): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // encodes a substring of bytes into the byte buffer
@@ -159,14 +157,12 @@ export class BytesEncoder {
 
     // encodes an ScChainID into the byte buffer
     chainID(value: ScChainID): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // encodes an ScColor into the byte buffer
     color(value: ScColor): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // retrieve the encoded byte buffer
@@ -176,14 +172,12 @@ export class BytesEncoder {
 
     // encodes an ScHash into the byte buffer
     hash(value: ScHash): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // encodes an ScHname into the byte buffer
     hname(value: ScHname): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // encodes an int16 into the byte buffer
@@ -221,13 +215,11 @@ export class BytesEncoder {
 
     // encodes an ScRequestID into the byte buffer
     requestID(value: ScRequestID): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // encodes an UTF-8 text string into the byte buffer
     string(value: string): BytesEncoder {
-        this.bytes(Convert.fromString(value));
-        return this;
+        return this.bytes(Convert.fromString(value));
     }
 }

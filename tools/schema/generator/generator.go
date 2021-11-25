@@ -23,6 +23,7 @@ type Generator interface {
 }
 
 type GenBase struct {
+	currentEvent    *Struct
 	currentField    *Field
 	currentFunc     *Func
 	currentStruct   *Struct
@@ -41,6 +42,7 @@ type GenBase struct {
 	newTypes        map[string]bool
 	rootFolder      string
 	s               *Schema
+	tab             int
 	templates       map[string]string
 }
 
@@ -150,6 +152,10 @@ func (g *GenBase) generateCode() error {
 		return err
 	}
 	err = g.createSourceFile("keys", !g.s.CoreContracts)
+	if err != nil {
+		return err
+	}
+	err = g.createSourceFile("events", len(g.s.Events) != 0)
 	if err != nil {
 		return err
 	}

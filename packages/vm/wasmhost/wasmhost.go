@@ -66,24 +66,11 @@ func (host *WasmHost) IsView(function string) bool {
 }
 
 func (host *WasmHost) LoadWasm(wasmData []byte) error {
-	err := host.vm.LoadWasm(wasmData)
-	if err != nil {
-		return err
-	}
-	err = host.RunFunction("on_load")
-	if err != nil {
-		return err
-	}
-	host.vm.SaveMemory()
-	return nil
+	return host.vm.LoadWasm(wasmData)
 }
 
 func (host *WasmHost) NewInstance() WasmVM {
 	return host.vm.NewInstance()
-}
-
-func (host *WasmHost) PoolSize() int {
-	return host.vm.PoolSize()
 }
 
 func (host *WasmHost) RunFunction(functionName string, args ...interface{}) (err error) {

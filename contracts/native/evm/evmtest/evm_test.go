@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmchain"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/evm/evmflavors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -442,8 +443,6 @@ func TestISCPEntropy(t *testing.T) {
 }
 
 func TestBlockTime(t *testing.T) {
-	// FIXME test fails regularly on github
-	t.SkipNow()
 	evmChain := initEVMChain(t, evmlight.Contract)
 	evmChain.setBlockTime(60)
 
@@ -458,17 +457,28 @@ func TestBlockTime(t *testing.T) {
 	require.EqualValues(t, 43, storage.retrieve())
 	require.EqualValues(t, 0, evmChain.getBlockNumber())
 
+	// there is 1 timelocked request
+	mempoolInfo := evmChain.soloChain.MempoolInfo()
+	require.EqualValues(t, 1, mempoolInfo.InBufCounter-mempoolInfo.OutPoolCounter)
+
 	// first block gets minted
 	evmChain.solo.AdvanceClockBy(61 * time.Second)
-	evmChain.soloChain.Sync()
+	evmChain.soloChain.WaitUntil(func(mstats chain.MempoolInfo) bool {
+		return mstats.OutPoolCounter == mempoolInfo.InBufCounter
+	})
 	require.EqualValues(t, 1, evmChain.getBlockNumber())
 	block := evmChain.getBlockByNumber(1)
 	require.EqualValues(t, 2, len(block.Transactions()))
 
+	// there is 1 timelocked request
+	mempoolInfo = evmChain.soloChain.MempoolInfo()
+	require.EqualValues(t, 1, mempoolInfo.InBufCounter-mempoolInfo.OutPoolCounter)
+
 	// second (empty) block gets minted
 	evmChain.solo.AdvanceClockBy(61 * time.Second)
-	evmChain.soloChain.Sync()
-	time.Sleep(100 * time.Millisecond) // TODO this shouldn't be necessary?
+	evmChain.soloChain.WaitUntil(func(mstats chain.MempoolInfo) bool {
+		return mstats.OutPoolCounter == mempoolInfo.InBufCounter
+	})
 	require.EqualValues(t, 2, evmChain.getBlockNumber())
 	block = evmChain.getBlockByNumber(2)
 	require.EqualValues(t, 0, len(block.Transactions()))
@@ -502,8 +512,8 @@ func initBenchmark(b *testing.B, evmFlavor *coreutil.ContractInfo) (*solo.Chain,
 // run benchmarks with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
 
 func doBenchmark(b *testing.B, evmFlavor *coreutil.ContractInfo, f solobench.Func) {
-	chain, reqs := initBenchmark(b, evmFlavor)
-	f(b, chain, reqs, nil)
+	ch, reqs := initBenchmark(b, evmFlavor)
+	f(b, ch, reqs, nil)
 }
 
 func BenchmarkEVMChainSync(b *testing.B) {

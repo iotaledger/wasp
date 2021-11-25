@@ -11,6 +11,7 @@ use wasmlib::*;
 use wasmlib::host::*;
 
 use crate::consts::*;
+$#if events useEvents
 use crate::keys::*;
 $#if params useParams
 $#if results useResults
@@ -18,6 +19,7 @@ use crate::state::*;
 
 mod consts;
 mod contract;
+$#if events modEvents
 mod keys;
 $#if params modParams
 $#if results modResults
@@ -47,6 +49,7 @@ $#each func libThunk
 	"libThunk": `
 
 pub struct $FuncName$+Context {
+$#if func PackageEvents
 $#if param ImmutableFuncNameParams
 $#if result MutableFuncNameResults
 $#if func MutablePackageState
@@ -57,6 +60,7 @@ fn $kind$+_$func_name$+_thunk(ctx: &Sc$Kind$+Context) {
 	ctx.log("$package.$kind$FuncName");
 $#emit accessCheck
 	let f = $FuncName$+Context {
+$#if func PackageEventsInit
 $#if param ImmutableFuncNameParamsInit
 $#if result MutableFuncNameResultsInit
 $#if func MutablePackageStateInit
@@ -66,6 +70,22 @@ $#each mandatory requireMandatory
 	$kind$+_$func_name(ctx, &f);
 	ctx.log("$package.$kind$FuncName ok");
 }
+`,
+	// *******************************
+	"PackageEvents": `
+$#if events PackageEventsExist
+`,
+	// *******************************
+	"PackageEventsExist": `
+	events:  $Package$+Events,
+`,
+	// *******************************
+	"PackageEventsInit": `
+$#if events PackageEventsInitExist
+`,
+	// *******************************
+	"PackageEventsInitExist": `
+		events:  $Package$+Events {},
 `,
 	// *******************************
 	"ImmutableFuncNameParams": `

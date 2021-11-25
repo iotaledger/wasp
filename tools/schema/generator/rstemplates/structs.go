@@ -4,9 +4,11 @@ var structsRs = map[string]string{
 	// *******************************
 	"structs.rs": `
 #![allow(dead_code)]
+#![allow(unused_imports)]
 
 use wasmlib::*;
 use wasmlib::host::*;
+$#if typedefs useTypeDefs
 $#each structs structType
 `,
 	// *******************************

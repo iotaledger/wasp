@@ -5,6 +5,7 @@ var RsTemplates = []map[string]string{
 	cargoToml,
 	constsRs,
 	contractRs,
+	eventsRs,
 	funcsRs,
 	keysRs,
 	libRs,
@@ -34,6 +35,10 @@ $#set crate (crate)
 $#if core useCrate useWasmLib
 `,
 	// *******************************
+	"modEvents": `
+mod events;
+`,
+	// *******************************
 	"modParams": `
 mod params;
 `,
@@ -58,6 +63,10 @@ use crate::*;
 use crate::$package::*;
 `,
 	// *******************************
+	"useEvents": `
+use crate::events::*;
+`,
+	// *******************************
 	"useHost": `
 use crate::host::*;
 `,
@@ -80,5 +89,14 @@ use crate::typedefs::*;
 	// *******************************
 	"useWasmLib": `
 use wasmlib::*;
+`,
+	// *******************************
+	"setVarType": `
+$#set varType TYPE_MAP
+$#if array setVarTypeArray
+`,
+	// *******************************
+	"setVarTypeArray": `
+$#set varType $arrayTypeID | $fldTypeID
 `,
 }

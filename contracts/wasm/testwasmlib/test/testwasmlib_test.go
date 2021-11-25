@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
@@ -15,16 +16,16 @@ import (
 
 var (
 	allParams = []string{
-		string(testwasmlib.ParamAddress),
-		string(testwasmlib.ParamAgentID),
-		string(testwasmlib.ParamChainID),
-		string(testwasmlib.ParamColor),
-		string(testwasmlib.ParamHash),
-		string(testwasmlib.ParamHname),
-		string(testwasmlib.ParamInt16),
-		string(testwasmlib.ParamInt32),
-		string(testwasmlib.ParamInt64),
-		string(testwasmlib.ParamRequestID),
+		testwasmlib.ParamAddress,
+		testwasmlib.ParamAgentID,
+		testwasmlib.ParamChainID,
+		testwasmlib.ParamColor,
+		testwasmlib.ParamHash,
+		testwasmlib.ParamHname,
+		testwasmlib.ParamInt16,
+		testwasmlib.ParamInt32,
+		testwasmlib.ParamInt64,
+		testwasmlib.ParamRequestID,
 	}
 	allLengths    = []int{33, 37, 33, 32, 32, 4, 2, 4, 8, 34}
 	invalidValues = map[wasmlib.Key][][]byte{
@@ -98,14 +99,14 @@ func TestValidSizeParams(t *testing.T) {
 	for index, param := range allParams {
 		t.Run("ValidSize "+param, func(t *testing.T) {
 			pt := testwasmlib.ScFuncs.ParamTypes(ctx)
-			pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]))
+			bytes := make([]byte, allLengths[index])
+			if param == testwasmlib.ParamChainID {
+				bytes[0] = byte(ledgerstate.AliasAddressType)
+			}
+			pt.Params.Param().GetBytes(param).SetValue(bytes)
 			pt.Func.TransferIotas(1).Post()
 			require.Error(t, ctx.Err)
-			if param == string(testwasmlib.ParamChainID) {
-				require.Contains(t, ctx.Err.Error(), "invalid ")
-			} else {
-				require.Contains(t, ctx.Err.Error(), "mismatch: ")
-			}
+			require.Contains(t, ctx.Err.Error(), "mismatch: ")
 		})
 	}
 }

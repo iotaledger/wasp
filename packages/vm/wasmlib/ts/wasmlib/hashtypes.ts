@@ -41,7 +41,7 @@ export class ScAddress implements MapKey {
 
     // can be used as key in maps
     getKeyID(): Key32 {
-        return getKeyIDFromBytes(this.toBytes());
+        return getKeyIDFromBytes(this.id);
     }
 
     // convert to byte array representation
@@ -91,7 +91,7 @@ export class ScAgentID implements MapKey {
 
     // can be used as key in maps
     getKeyID(): Key32 {
-        return getKeyIDFromBytes(this.toBytes());
+        return getKeyIDFromBytes(this.id);
     }
 
     // get contract name hash for this agent
@@ -146,7 +146,7 @@ export class ScChainID implements MapKey {
 
     // can be used as key in maps
     getKeyID(): Key32 {
-        return getKeyIDFromBytes(this.toBytes());
+        return getKeyIDFromBytes(this.id);
     }
 
     // convert to byte array representation
@@ -197,7 +197,7 @@ export class ScColor implements MapKey {
 
     // can be used as key in maps
     getKeyID(): Key32 {
-        return getKeyIDFromBytes(this.toBytes());
+        return getKeyIDFromBytes(this.id);
     }
 
     // convert to byte array representation
@@ -233,7 +233,7 @@ export class ScHash implements MapKey {
 
     // can be used as key in maps
     getKeyID(): Key32 {
-        return getKeyIDFromBytes(this.toBytes());
+        return getKeyIDFromBytes(this.id);
     }
 
     // convert to byte array representation
@@ -288,10 +288,15 @@ export class ScHname implements MapKey {
         return this.id;
     }
 
-    // human-readable string representation
+    // human-readable string representation: 8 hex digits
     toString(): string {
-        let id = Convert.toI32(this.id);
-        return id.toString();
+        const hex = "0123456789abcdef";
+        let res = ""
+        for (let i = 3; i >= 0; i--) {
+            let b = this.id[i];
+            res += hex.charAt((b >> 4) & 0x0f) + hex.charAt(b & 0x0f);
+        }
+        return res;
     }
 }
 
@@ -317,7 +322,7 @@ export class ScRequestID implements MapKey {
 
     // can be used as key in maps
     getKeyID(): Key32 {
-        return getKeyIDFromBytes(this.toBytes());
+        return getKeyIDFromBytes(this.id);
     }
 
     // convert to byte array representation

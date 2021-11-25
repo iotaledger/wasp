@@ -24,6 +24,7 @@ $#each func libThunk
 	"libThunk": `
 
 type $FuncName$+Context struct {
+$#if func PackageEvents
 $#if param ImmutableFuncNameParams
 $#if result MutableFuncNameResults
 $#if func MutablePackageState
@@ -43,6 +44,14 @@ $#each mandatory requireMandatory
 	$kind$FuncName(ctx, f)
 	ctx.Log("$package.$kind$FuncName ok")
 }
+`,
+	// *******************************
+	"PackageEvents": `
+$#if events PackageEventsExist
+`,
+	// *******************************
+	"PackageEventsExist": `
+	Events  $Package$+Events
 `,
 	// *******************************
 	"ImmutableFuncNameParams": `
