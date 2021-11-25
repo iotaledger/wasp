@@ -115,7 +115,7 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 		errStr = errProvided.Error()
 	}
 	err := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestReceipt{
-		Request: vmctx.req.Request(),
+		Request: vmctx.Request(),
 		Error:   errStr,
 	}, vmctx.requestLookupKey())
 	if err != nil {
@@ -149,7 +149,7 @@ func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
 
 	accounts.RecordMaxAssumedNonce(
 		vmctx.State(),
-		vmctx.req.Request().SenderAddress(),
+		vmctx.req.SenderAddress(),
 		vmctx.req.Unwrap().OffLedger().Nonce(),
 	)
 }
