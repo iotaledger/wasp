@@ -9,8 +9,9 @@ use crate::keys::*;
 
 // all type id values should exactly match their counterpart values on the host!
 pub const TYPE_ARRAY: i32 = 0x20;
-pub const TYPE_ARRAY16: i32 = 0x30;
-pub const TYPE_CALL: i32 = 0x40;
+pub const TYPE_ARRAY16: i32 = 0x60;
+pub const TYPE_CALL: i32 = 0x80;
+pub const TYPE_MASK: i32 = 0x1f;
 
 pub const TYPE_ADDRESS: i32 = 1;
 pub const TYPE_AGENT_ID: i32 = 2;

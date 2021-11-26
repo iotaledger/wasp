@@ -6,15 +6,22 @@ var eventsTs = map[string]string{
 
 type Address = string;
 type AgentID = string;
+type Bool = boolean;
+type Bytes = Uint8Array;
 type ChainID = string;
 type Color = string;
 type Hash = string;
 type Hname = string;
+type Int8 = number;
 type Int16 = number;
 type Int32 = number;
 type Int64 = bigint;
 type RequestID = string;
 type String = string;
+type Uint8 = number;
+type Uint16 = number;
+type Uint32 = number;
+type Uint64 = bigint;
 
 export class $Package$+Events {
 $#each events eventConst

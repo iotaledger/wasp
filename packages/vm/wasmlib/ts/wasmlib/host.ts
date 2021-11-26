@@ -10,8 +10,9 @@ import * as keys from "./keys";
 import {Convert} from "./convert";
 
 export const TYPE_ARRAY: i32 = 0x20;
-export const TYPE_ARRAY16: i32 = 0x30;
-export const TYPE_CALL: i32 = 0x40;
+export const TYPE_ARRAY16: i32 = 0x60;
+export const TYPE_CALL: i32 = 0x80;
+export const TYPE_MASK: i32 = 0x1f;
 
 export const TYPE_ADDRESS: i32 = 1;
 export const TYPE_AGENT_ID: i32 = 2;

@@ -17,9 +17,9 @@ import (
 //nolint:revive
 const (
 	OBJTYPE_ARRAY    int32 = 0x20
-	OBJTYPE_ARRAY16  int32 = 0x30
-	OBJTYPE_CALL     int32 = 0x40
-	OBJTYPE_TYPEMASK int32 = 0x0f
+	OBJTYPE_ARRAY16  int32 = 0x60
+	OBJTYPE_CALL     int32 = 0x80
+	OBJTYPE_TYPEMASK int32 = 0x1f
 
 	OBJTYPE_ADDRESS    int32 = 1
 	OBJTYPE_AGENT_ID   int32 = 2
