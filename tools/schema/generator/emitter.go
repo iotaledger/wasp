@@ -434,7 +434,7 @@ func (g *GenBase) setFieldKeys(pad bool) {
 func (g *GenBase) setFuncKeys() {
 	g.setMultiKeyValues("funcName", g.currentFunc.Name)
 	g.setMultiKeyValues("kind", g.currentFunc.Kind)
-	g.keys["funcHName"] = iscp.Hn(g.keys["funcName"]).String()
+	g.keys["funcHname"] = iscp.Hn(g.keys["funcName"]).String()
 	grant := g.currentFunc.Access
 	comment := ""
 	index := strings.Index(grant, "//")
