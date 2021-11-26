@@ -2,12 +2,15 @@ package iscp
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 // region Request //////////////////////////////////////////////////////
@@ -92,6 +95,28 @@ func RequestIDFromBase58(b58 string) (ret RequestID, err error) {
 	}
 	ret = RequestID(oid)
 	return
+}
+
+func RequestIDFromString(s string) (ret RequestID, err error) {
+	if !strings.HasPrefix(s, "[") {
+		return RequestIDFromBase58(s)
+	}
+	parts := strings.Split(s[1:], "]")
+	if len(parts) != 2 {
+		err = xerrors.New("RequestIDFromString: wrong format")
+		return
+	}
+	index, err2 := strconv.ParseUint(parts[0], 10, 16)
+	if err2 != nil {
+		err = xerrors.Errorf("RequestIDFromString: %v", err2)
+		return
+	}
+	txid, err3 := ledgerstate.TransactionIDFromBase58(parts[1])
+	if err3 != nil {
+		err = xerrors.Errorf("RequestIDFromString: %v", err3)
+		return
+	}
+	return NewRequestID(txid, uint16(index)), nil
 }
 
 func (rid RequestID) OutputID() ledgerstate.OutputID {
