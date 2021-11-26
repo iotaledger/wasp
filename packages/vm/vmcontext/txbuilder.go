@@ -21,7 +21,24 @@ func (vmctx *VMContext) restoreTxBuilderSnapshot(snapshot *vmtxbuilder.AnchorTra
 	vmctx.txbuilder = snapshot
 }
 
+// loadNativeTokensOnChain calls
+// 1. `blocklog` to find UTXO ID for a specific token ID, if any
+// 2. `accounts` to load the balance
+// Returns nil if balance is empty (zero)
 func (vmctx *VMContext) loadNativeTokensOnChain(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
-	// calls `accounts` and `blocklog` to find UTXO ID for a specific token ID, if any
+	inp, ok := vmctx.findNativeTokenUTXOInput(id)
+	if !ok {
+		return nil, iotago.UTXOInput{}
+	}
+	b := vmctx.GetTokenBalanceTotal(&id)
+	if b == nil {
+		return nil, iotago.UTXOInput{}
+	}
+	return b, inp
+}
+
+// findNativeTokenUTXOInput call `blocklog` to find the UTXO input for the native token ID
+func (vmctx *VMContext) findNativeTokenUTXOInput(id iotago.NativeTokenID) (iotago.UTXOInput, bool) {
+	// TODO
 	panic("not implemented")
 }

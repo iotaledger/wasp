@@ -76,6 +76,13 @@ func (vmctx *VMContext) GetTokenBalance(agentID *iscp.AgentID, tokenID *iotago.N
 	return accounts.GetTokenBalance(vmctx.State(), agentID, tokenID)
 }
 
+func (vmctx *VMContext) GetTokenBalanceTotal(tokenID *iotago.NativeTokenID) *big.Int {
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	return accounts.GetTokenBalanceTotal(vmctx.State(), tokenID)
+}
+
 func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
