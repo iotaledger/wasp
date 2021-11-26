@@ -347,15 +347,15 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id iotago.Native
 	if b.balance.Sign() < 0 {
 		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %w", ErrOverflow))
 	}
-	if b.dustDepositCharged && b.requiresInput() && !b.producesOutput() {
+	switch {
+	case b.dustDepositCharged && b.requiresInput() && !b.producesOutput():
 		// this is an old token in the on-chain ledger. Now it disappears and dust deposit
 		// is released and delta of anchor is positive
 		b.dustDepositCharged = false
 		dd := txb.vByteCostOfNativeTokenBalance()
 		txb.addDeltaIotasToAnchor(dd)
 		return int64(dd)
-	}
-	if !b.dustDepositCharged && !b.requiresInput() && b.producesOutput() {
+	case !b.dustDepositCharged && !b.requiresInput() && b.producesOutput():
 		// this is a new token in the on-chain ledger
 		// There's a need for additional dust deposit on the respective UTXO, so delta for the anchor is negative
 		b.dustDepositCharged = true
