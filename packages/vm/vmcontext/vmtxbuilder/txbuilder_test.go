@@ -36,6 +36,26 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, iotas uint64, id i
 	require.True(t, isBalanced)
 }
 
+func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.NativeTokenID) {
+	assets := &iscp.Assets{
+		Iotas: amount,
+		Tokens: iotago.NativeTokens{
+			&iotago.NativeToken{
+				ID:     tokenID,
+				Amount: new(big.Int).SetUint64(amount),
+			},
+		},
+	}
+	exout := ExtendedOutputFromPostData(
+		tpkg.RandEd25519Address(),
+		txb.anchorOutput.AliasID.ToAddress(),
+		iscp.Hn("test"),
+		assets,
+		&iscp.SendMetadata{},
+	)
+	txb.AddOutput(exout)
+}
+
 func TestTxBuilderBasic(t *testing.T) {
 	const initialTotalIotas = 1000
 	addr := tpkg.RandEd25519Address()
@@ -198,45 +218,13 @@ func TestTxBuilderConsistency(t *testing.T) {
 	runPostRequest := func(n int, numNativeTokens int, amount uint64) {
 		for i := 0; i < n; i++ {
 			idx := i % numNativeTokens
-			assets := &iscp.Assets{
-				Iotas: amount,
-				Tokens: iotago.NativeTokens{
-					&iotago.NativeToken{
-						ID:     nativeTokenIDs[idx],
-						Amount: new(big.Int).SetUint64(amount),
-					},
-				},
-			}
-			exout := ExtendedOutputFromPostData(
-				tpkg.RandEd25519Address(),
-				anchor.AliasID.ToAddress(),
-				iscp.Hn("test"),
-				assets,
-				&iscp.SendMetadata{},
-			)
-			txb.AddOutput(exout)
+			addOutput(txb, amount, nativeTokenIDs[idx])
 		}
 	}
 	runPostRequestRandomly := func(n int, numNativeTokens int, amount uint64) {
 		for i := 0; i < n; i++ {
 			idx := rand.Intn(numNativeTokens)
-			assets := &iscp.Assets{
-				Iotas: amount,
-				Tokens: iotago.NativeTokens{
-					&iotago.NativeToken{
-						ID:     nativeTokenIDs[idx],
-						Amount: new(big.Int).SetUint64(amount),
-					},
-				},
-			}
-			exout := ExtendedOutputFromPostData(
-				tpkg.RandEd25519Address(),
-				anchor.AliasID.ToAddress(),
-				iscp.Hn("test"),
-				assets,
-				&iscp.SendMetadata{},
-			)
-			txb.AddOutput(exout)
+			addOutput(txb, amount, nativeTokenIDs[idx])
 		}
 	}
 
@@ -394,5 +382,33 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		_, _, isBalanced := txb.Totals()
 		require.False(t, isBalanced)
+	})
+	t.Run("randomize", func(t *testing.T) {
+		const runTimes = 100
+		const numNativeTokens = 5
+
+		genNativeTokenIDs(numNativeTokens)
+		txb = NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
+		for _, id := range nativeTokenIDs {
+			consumeUTXO(t, txb, runTimes, id, runTimes)
+		}
+		for i := 0; i < runTimes; i++ {
+			idx1 := rand.Intn(numNativeTokens)
+			consumeUTXO(t, txb, 1, nativeTokenIDs[idx1], 1)
+			idx2 := rand.Intn(numNativeTokens)
+			addOutput(txb, 1, nativeTokenIDs[idx2])
+			_, _, isBalanced := txb.Totals()
+			require.True(t, isBalanced)
+		}
+		totalsIN, totalsOUT, isBalanced := txb.Totals()
+		require.True(t, isBalanced)
+		require.EqualValues(t, 0, int(totalsIN.InternalDustDeposit))
+		require.EqualValues(t, int(numNativeTokens*txb.vByteCostOfNativeTokenBalance()), int(totalsOUT.InternalDustDeposit))
+
+		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+
+		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
+		require.NoError(t, err)
+		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 }
