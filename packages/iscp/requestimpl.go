@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mr-tron/base58"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -568,7 +570,7 @@ func (rid RequestID) Short() string {
 }
 
 func OID(o iotago.UTXOInput) string {
-	return fmt.Sprintf("[%d]%s", 0, "") // o.TransactionID.Base58()) TODO
+	return fmt.Sprintf("[%d]%s", o.TransactionOutputIndex, base58.Encode(o.TransactionID[:])) // TODO change to hex
 }
 
 func ShortRequestIDs(ids []RequestID) []string {

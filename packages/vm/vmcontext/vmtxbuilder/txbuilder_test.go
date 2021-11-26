@@ -385,7 +385,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	})
 	t.Run("randomize", func(t *testing.T) {
 		const runTimes = 100
-		const numNativeTokens = 5
+		const numNativeTokens = 10
 
 		genNativeTokenIDs(numNativeTokens)
 		txb = NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
@@ -404,6 +404,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.True(t, isBalanced)
 		require.EqualValues(t, 0, int(totalsIN.InternalDustDeposit))
 		require.EqualValues(t, int(numNativeTokens*txb.vByteCostOfNativeTokenBalance()), int(totalsOUT.InternalDustDeposit))
+
+		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 

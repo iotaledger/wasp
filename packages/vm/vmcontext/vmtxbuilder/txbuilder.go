@@ -2,8 +2,11 @@ package vmtxbuilder
 
 import (
 	"bytes"
+	"fmt"
 	"math/big"
 	"sort"
+
+	"github.com/mr-tron/base58"
 
 	"github.com/iotaledger/wasp/packages/rentstructure"
 
@@ -367,6 +370,37 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id iotago.Native
 		return -int64(dd)
 	}
 	return 0
+}
+
+func stringUTXOInput(inp *iotago.UTXOInput) string {
+	return fmt.Sprintf("[%d]%s", inp.TransactionOutputIndex, base58.Encode(inp.TransactionID[:]))
+}
+
+func stringNativeTokenID(id *iotago.NativeTokenID) string {
+	return base58.Encode(id[:])
+}
+
+func (txb *AnchorTransactionBuilder) String() string {
+	ret := ""
+	ret += fmt.Sprintf("%s\n", stringUTXOInput(&txb.anchorOutputID))
+	ret += fmt.Sprintf("initial IOTA balance: %d\n", txb.anchorOutput.Amount)
+	ret += fmt.Sprintf("Native tokens (%d):\n", len(txb.balanceNativeTokens))
+	for id, ntb := range txb.balanceNativeTokens {
+		initial := "0"
+		if ntb.initial != nil {
+			initial = ntb.initial.String()
+		}
+		current := ntb.balance.String()
+		ret += fmt.Sprintf("      %s: %s --> %s, dust deposit charged: %v\n",
+			stringNativeTokenID(&id), initial, current, ntb.dustDepositCharged)
+	}
+	ret += fmt.Sprintf("consumed inputs (%d):\n", len(txb.consumed))
+	//for _, inp := range txb.consumed {
+	//	ret += fmt.Sprintf("      %s\n", inp.ID().String())
+	//}
+	ret += fmt.Sprintf("added outputs (%d):\n", len(txb.postedOutputs))
+	ret += ">>>>>> TODO. Not finished....."
+	return ret
 }
 
 func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) *iotago.TransactionEssence {
