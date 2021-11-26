@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/hive.go/serializer"
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"

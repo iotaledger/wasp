@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/iotaledger/hive.go/serializer"
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -145,7 +145,6 @@ func TestTxBuilderBasic(t *testing.T) {
 
 func TestTxBuilderConsistency(t *testing.T) {
 	const initialTotalIotas = 1000
-
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
@@ -166,15 +165,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 	}
 	anchorID, _ := tpkg.RandUTXOInput()
 
-	// generate some random ids
-	nativeTokenIDs := make([]iotago.NativeTokenID, 0)
-	utxoInputsNativeTokens := make([]iotago.UTXOInput, 0)
-	genNativeTokenIDs := func(n int) {
-		for i := 0; i < n; i++ {
-			nativeTokenIDs = append(nativeTokenIDs, testiotago.RandNativeTokenID())
-			utxoInputsNativeTokens = append(utxoInputsNativeTokens, testiotago.RandUTXOInput())
-		}
-	}
+	var nativeTokenIDs []iotago.NativeTokenID
+	var utxoInputsNativeTokens []iotago.UTXOInput
 	// all token accounts initially are empty
 	balanceLoader := func(_ iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
 		return nil, iotago.UTXOInput{}
@@ -183,12 +175,23 @@ func TestTxBuilderConsistency(t *testing.T) {
 	var txb *AnchorTransactionBuilder
 	var amounts map[int]uint64
 
-	runCreateBuilderAndConsume := func(n int, numNativeTokens int, amount uint64) {
+	var numTokenIDs int
+
+	initTest := func() {
 		txb = NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
 		amounts = make(map[int]uint64)
 
-		for i := 0; i < n; i++ {
-			idx := i % numNativeTokens
+		nativeTokenIDs = make([]iotago.NativeTokenID, 0)
+		utxoInputsNativeTokens = make([]iotago.UTXOInput, 0)
+
+		for i := 0; i < numTokenIDs; i++ {
+			nativeTokenIDs = append(nativeTokenIDs, testiotago.RandNativeTokenID())
+			utxoInputsNativeTokens = append(utxoInputsNativeTokens, testiotago.RandUTXOInput())
+		}
+	}
+	runConsume := func(numRun int, amount uint64) {
+		for i := 0; i < numRun; i++ {
+			idx := i % numTokenIDs
 			s, _ := amounts[idx]
 			amounts[idx] = s + amount
 
@@ -199,12 +202,12 @@ func TestTxBuilderConsistency(t *testing.T) {
 			require.EqualValues(t, initialTotalIotas+uint64(i+1)*amount, totals.TotalIotas)
 		}
 	}
-	runCreateBuilderAndConsumeRandomly := func(n int, numNativeTokens int, amount uint64) {
+	runCreateBuilderAndConsumeRandomly := func(numRun int, amount uint64) {
 		txb = NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
 		amounts = make(map[int]uint64)
 
-		for i := 0; i < n; i++ {
-			idx := rand.Intn(numNativeTokens)
+		for i := 0; i < numRun; i++ {
+			idx := rand.Intn(numTokenIDs)
 			s, _ := amounts[idx]
 			amounts[idx] = s + 10
 
@@ -215,31 +218,31 @@ func TestTxBuilderConsistency(t *testing.T) {
 			require.EqualValues(t, initialTotalIotas+(i+1)*10, totals.TotalIotas)
 		}
 	}
-	runPostRequest := func(n int, numNativeTokens int, amount uint64) {
+	runPostRequest := func(n int, amount uint64) {
 		for i := 0; i < n; i++ {
-			idx := i % numNativeTokens
+			idx := i % numTokenIDs
 			addOutput(txb, amount, nativeTokenIDs[idx])
 		}
 	}
-	runPostRequestRandomly := func(n int, numNativeTokens int, amount uint64) {
+	runPostRequestRandomly := func(n int, amount uint64) {
 		for i := 0; i < n; i++ {
-			idx := rand.Intn(numNativeTokens)
+			idx := rand.Intn(numTokenIDs)
 			addOutput(txb, amount, nativeTokenIDs[idx])
 		}
 	}
 
 	t.Run("consistency check 1", func(t *testing.T) {
 		const runTimes = 5
-		const numNativeTokens = 5
 		const testAmount = 10
+		numTokenIDs = 5
 
-		genNativeTokenIDs(numNativeTokens)
-		runCreateBuilderAndConsume(runTimes, numNativeTokens, testAmount)
+		initTest()
+		runConsume(runTimes, testAmount)
 
 		totals, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
 		require.EqualValues(t, initialTotalIotas+runTimes*10, int(totals.TotalIotas))
-		require.EqualValues(t, numNativeTokens, len(totals.TokenBalances))
+		require.EqualValues(t, numTokenIDs, len(totals.TokenBalances))
 
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 
@@ -249,16 +252,16 @@ func TestTxBuilderConsistency(t *testing.T) {
 	})
 	t.Run("consistency check 2", func(t *testing.T) {
 		const runTimes = 100
-		const numNativeTokens = 5
 		const testAmount = 10
+		numTokenIDs = 5
 
-		genNativeTokenIDs(numNativeTokens)
-		runCreateBuilderAndConsume(runTimes, numNativeTokens, testAmount)
+		initTest()
+		runConsume(runTimes, testAmount)
 
 		totals, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
 		require.EqualValues(t, initialTotalIotas+runTimes*10, int(totals.TotalIotas))
-		require.EqualValues(t, numNativeTokens, len(totals.TokenBalances))
+		require.EqualValues(t, numTokenIDs, len(totals.TokenBalances))
 
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 
@@ -268,16 +271,16 @@ func TestTxBuilderConsistency(t *testing.T) {
 	})
 	t.Run("consistency check 3", func(t *testing.T) {
 		const runTimes = 100
-		const numNativeTokens = 5
 		const testAmount = 10
+		numTokenIDs = 5
 
-		genNativeTokenIDs(numNativeTokens)
-		runCreateBuilderAndConsumeRandomly(runTimes, numNativeTokens, testAmount)
+		initTest()
+		runCreateBuilderAndConsumeRandomly(runTimes, testAmount)
 
 		totals, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
 		require.EqualValues(t, initialTotalIotas+runTimes*10, int(totals.TotalIotas))
-		require.EqualValues(t, numNativeTokens, len(totals.TokenBalances))
+		require.EqualValues(t, numTokenIDs, len(totals.TokenBalances))
 
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 
@@ -287,12 +290,12 @@ func TestTxBuilderConsistency(t *testing.T) {
 	})
 	t.Run("consistency check 4", func(t *testing.T) {
 		const runTimes = 100
-		const numNativeTokens = 10
 		const testAmount = 10
+		numTokenIDs = 10
 
-		genNativeTokenIDs(numNativeTokens)
+		initTest()
 		err := util.CatchPanicReturnError(func() {
-			runCreateBuilderAndConsumeRandomly(runTimes, numNativeTokens, testAmount)
+			runCreateBuilderAndConsumeRandomly(runTimes, testAmount)
 		}, ErrNotEnoughFundsForInternalDustDeposit)
 		require.Error(t, err, ErrNotEnoughFundsForInternalDustDeposit)
 
@@ -302,12 +305,12 @@ func TestTxBuilderConsistency(t *testing.T) {
 	})
 	t.Run("exceed inputs", func(t *testing.T) {
 		const runTimes = 150
-		const numNativeTokens = 5
 		const testAmount = 10
+		numTokenIDs = 5
 
-		genNativeTokenIDs(numNativeTokens)
+		initTest()
 		err := util.CatchPanicReturnError(func() {
-			runCreateBuilderAndConsume(runTimes, numNativeTokens, testAmount)
+			runConsume(runTimes, testAmount)
 		}, ErrInputLimitExceeded)
 		require.Error(t, err, ErrInputLimitExceeded)
 
@@ -322,14 +325,14 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("exceeded outputs 1", func(t *testing.T) {
 		const runTimesInputs = 120
 		const runTimesOutputs = 130
-		const numNativeTokens = 5
 		const testAmount = 1
+		numTokenIDs = 5
 
-		genNativeTokenIDs(numNativeTokens)
-		runCreateBuilderAndConsume(runTimesInputs, numNativeTokens, testAmount+1)
+		initTest()
+		runConsume(runTimesInputs, testAmount+1)
 
 		err := util.CatchPanicReturnError(func() {
-			runPostRequest(runTimesOutputs, numNativeTokens, testAmount)
+			runPostRequest(runTimesOutputs, testAmount)
 		}, ErrOutputLimitExceeded)
 
 		require.Error(t, err, ErrOutputLimitExceeded)
@@ -345,14 +348,14 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("exceeded outputs 2", func(t *testing.T) {
 		const runTimesInputs = 120
 		const runTimesOutputs = 130
-		const numNativeTokens = 5
 		const testAmount = 1
+		numTokenIDs = 5
 
-		genNativeTokenIDs(numNativeTokens)
-		runCreateBuilderAndConsume(runTimesInputs, numNativeTokens, testAmount+1)
+		initTest()
+		runConsume(runTimesInputs, testAmount+1)
 
 		err := util.CatchPanicReturnError(func() {
-			runPostRequestRandomly(runTimesOutputs, numNativeTokens, testAmount)
+			runPostRequestRandomly(runTimesOutputs, testAmount)
 		}, ErrOutputLimitExceeded)
 
 		require.Error(t, err, ErrOutputLimitExceeded)
@@ -368,14 +371,14 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("overflow 2", func(t *testing.T) {
 		const runTimesInputs = 120
 		const runTimesOutputs = 130
-		const numNativeTokens = 5
 		const testAmount = 10
+		numTokenIDs = 5
 
-		genNativeTokenIDs(numNativeTokens)
-		runCreateBuilderAndConsume(runTimesInputs, numNativeTokens, testAmount+1)
+		initTest()
+		runConsume(runTimesInputs, testAmount+1)
 
 		err := util.CatchPanicReturnError(func() {
-			runPostRequestRandomly(runTimesOutputs, numNativeTokens, testAmount)
+			runPostRequestRandomly(runTimesOutputs, testAmount)
 		}, ErrOverflow)
 
 		require.Error(t, err, ErrOverflow)
@@ -384,18 +387,20 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.False(t, isBalanced)
 	})
 	t.Run("randomize", func(t *testing.T) {
-		const runTimes = 100
-		const numNativeTokens = 10
+		const runTimes = 50
+		numTokenIDs = 5
 
-		genNativeTokenIDs(numNativeTokens)
-		txb = NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
+		initTest()
 		for _, id := range nativeTokenIDs {
-			consumeUTXO(t, txb, runTimes, id, runTimes)
+			consumeUTXO(t, txb, 200, id, 10)
 		}
+		expectedIotas := initialTotalIotas + numTokenIDs*(200-int(txb.vByteCostOfNativeTokenBalance()))
+		require.EqualValues(t, int(expectedIotas), int(txb.currentBalanceIotasOnAnchor))
+
 		for i := 0; i < runTimes; i++ {
-			idx1 := rand.Intn(numNativeTokens)
+			idx1 := rand.Intn(numTokenIDs)
 			consumeUTXO(t, txb, 1, nativeTokenIDs[idx1], 1)
-			idx2 := rand.Intn(numNativeTokens)
+			idx2 := rand.Intn(numTokenIDs)
 			addOutput(txb, 1, nativeTokenIDs[idx2])
 			_, _, isBalanced := txb.Totals()
 			require.True(t, isBalanced)
@@ -403,7 +408,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		totalsIN, totalsOUT, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
 		require.EqualValues(t, 0, int(totalsIN.InternalDustDeposit))
-		require.EqualValues(t, int(numNativeTokens*txb.vByteCostOfNativeTokenBalance()), int(totalsOUT.InternalDustDeposit))
+		require.EqualValues(t, numTokenIDs*int(txb.vByteCostOfNativeTokenBalance()), int(totalsOUT.InternalDustDeposit))
+		require.EqualValues(t, int(expectedIotas), int(txb.currentBalanceIotasOnAnchor))
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
@@ -412,5 +418,34 @@ func TestTxBuilderConsistency(t *testing.T) {
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
+	})
+	t.Run("clone", func(t *testing.T) {
+		const runTimes = 100
+		numTokenIDs = 5
+
+		initTest()
+		for _, id := range nativeTokenIDs {
+			consumeUTXO(t, txb, runTimes, id, runTimes)
+		}
+		totals, _, isBalanced := txb.Totals()
+		require.True(t, isBalanced)
+
+		txbClone := txb.Clone()
+		totalsClone, _, isBalanced := txbClone.Totals()
+		require.True(t, isBalanced)
+		require.True(t, totals.Equal(totalsClone))
+
+		for i := 0; i < runTimes; i++ {
+			idx1 := rand.Intn(numTokenIDs)
+			consumeUTXO(t, txb, 1, nativeTokenIDs[idx1], 1)
+			idx2 := rand.Intn(numTokenIDs)
+			addOutput(txb, 1, nativeTokenIDs[idx2])
+			_, _, isBalanced = txb.Totals()
+			require.True(t, isBalanced)
+		}
+
+		totalsClone, _, isBalanced = txbClone.Totals()
+		require.True(t, isBalanced)
+		require.True(t, totals.Equal(totalsClone))
 	})
 }

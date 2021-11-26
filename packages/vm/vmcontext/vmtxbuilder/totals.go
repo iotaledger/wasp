@@ -98,21 +98,24 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionTotals, bool) {
 	totalsIN := txb.sumInputs()
 	totalsOUT := txb.sumOutputs()
+	return totalsIN, totalsOUT, totalsIN.Equal(totalsOUT)
+}
 
-	if totalsIN.TotalIotas != totalsOUT.TotalIotas {
-		return nil, nil, false
+func (t *TransactionTotals) Equal(another *TransactionTotals) bool {
+	if t.TotalIotas != another.TotalIotas {
+		return false
 	}
-	if len(totalsIN.TokenBalances) != len(totalsOUT.TokenBalances) {
-		return nil, nil, false
+	if len(t.TokenBalances) != len(another.TokenBalances) {
+		return false
 	}
-	for id, bIN := range totalsIN.TokenBalances {
-		bOUT, ok := totalsOUT.TokenBalances[id]
+	for id, bT := range t.TokenBalances {
+		bAnother, ok := another.TokenBalances[id]
 		if !ok {
-			return nil, nil, false
+			return false
 		}
-		if bIN.Cmp(bOUT) != 0 {
-			return nil, nil, false
+		if bT.Cmp(bAnother) != 0 {
+			return false
 		}
 	}
-	return totalsIN, totalsOUT, true
+	return true
 }

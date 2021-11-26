@@ -105,10 +105,15 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 	ret.consumed = append(ret.consumed, txb.consumed...)
 	ret.currentBalanceIotasOnAnchor = txb.currentBalanceIotasOnAnchor
 	for k, v := range txb.balanceNativeTokens {
+		initial := v.initial
+		if initial != nil {
+			initial = new(big.Int).Set(initial)
+		}
 		ret.balanceNativeTokens[k] = &nativeTokenBalance{
-			input:   v.input,
-			initial: new(big.Int).Set(v.balance),
-			balance: new(big.Int).Set(v.balance),
+			input:              v.input,
+			initial:            initial,
+			balance:            new(big.Int).Set(v.balance),
+			dustDepositCharged: v.dustDepositCharged,
 		}
 	}
 	ret.postedOutputs = append(ret.postedOutputs, txb.postedOutputs...)
