@@ -90,12 +90,12 @@ func TestTxBuilderBasic(t *testing.T) {
 		txb.addDeltaIotasToAnchor(42)
 		_, _, isBalanced := txb.Totals()
 		require.False(t, isBalanced)
-
-		essence := txb.BuildTransactionEssence(&iscp.StateData{})
-
-		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		t.Logf("essence bytes len = %d", len(essenceBytes))
+		//
+		//essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		//
+		//essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
+		//require.NoError(t, err)
+		//t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 	t.Run("3", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)

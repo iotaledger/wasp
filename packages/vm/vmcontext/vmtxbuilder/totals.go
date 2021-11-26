@@ -15,28 +15,38 @@ type TransactionTotals struct {
 	TokenBalances map[iotago.NativeTokenID]*big.Int
 }
 
-// sumInputs sums up all assets in inputs
-func (txb *AnchorTransactionBuilder) sumInputs() (ret TransactionTotals) {
-	ret.TokenBalances = make(map[iotago.NativeTokenID]*big.Int)
-	ret.TotalIotas = txb.anchorOutput.Amount
-	sumIotasInternalDustDeposit := uint64(0)
-
-	// sum up all initial values of internal accounts
+func (txb *AnchorTransactionBuilder) sumNativeTokens(totals *TransactionTotals, filter func(ntb *nativeTokenBalance) *big.Int) {
 	for id, ntb := range txb.balanceNativeTokens {
-		if !ntb.requiresInput() {
+		value := filter(ntb)
+		if value == nil {
 			continue
 		}
-		sumIotasInternalDustDeposit += txb.vByteCostOfNativeTokenBalance()
-		s, ok := ret.TokenBalances[id]
+		s, ok := totals.TokenBalances[id]
 		if !ok {
 			s = new(big.Int)
 		}
-		s.Add(s, ntb.initial)
-		ret.TokenBalances[id] = s
+		s.Add(s, value)
+		totals.TokenBalances[id] = s
 		// sum up dust deposit in inputs of internal UTXOs
-		ret.TotalIotas += txb.vByteCostOfNativeTokenBalance()
-		ret.InternalDustDeposit += txb.vByteCostOfNativeTokenBalance()
+		totals.TotalIotas += txb.vByteCostOfNativeTokenBalance()
+		totals.InternalDustDeposit += txb.vByteCostOfNativeTokenBalance()
 	}
+}
+
+// sumInputs sums up all assets in inputs
+func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
+	ret := &TransactionTotals{
+		TokenBalances:       make(map[iotago.NativeTokenID]*big.Int),
+		TotalIotas:          txb.anchorOutput.Amount,
+		InternalDustDeposit: 0,
+	}
+	// sum over native tokens which require inputs
+	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
+		if ntb.requiresInput() {
+			return ntb.initial
+		}
+		return nil
+	})
 	// sum up all explicitly consumed outputs, except anchor output
 	for _, out := range txb.consumed {
 		a := out.Assets()
@@ -50,29 +60,24 @@ func (txb *AnchorTransactionBuilder) sumInputs() (ret TransactionTotals) {
 			ret.TokenBalances[nt.ID] = s
 		}
 	}
-	return
+	return ret
 }
 
 // sumOutputs sums all balances in outputs
-func (txb *AnchorTransactionBuilder) sumOutputs() (ret TransactionTotals) {
-	ret.TokenBalances = make(map[iotago.NativeTokenID]*big.Int)
-	ret.TotalIotas = txb.currentBalanceIotasOnAnchor
-
-	// sum up all initial values of internal accounts
-	for id, ntb := range txb.balanceNativeTokens {
-		if !ntb.producesOutput() {
-			continue
-		}
-		s, ok := ret.TokenBalances[id]
-		if !ok {
-			s = new(big.Int)
-		}
-		s.Add(s, ntb.balance)
-		ret.TokenBalances[id] = s
-		// sum up dust deposit in outputs of internal UTXOs
-		ret.TotalIotas += txb.vByteCostOfNativeTokenBalance()
-		ret.InternalDustDeposit += txb.vByteCostOfNativeTokenBalance()
+func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
+	ret := &TransactionTotals{
+		TokenBalances:       make(map[iotago.NativeTokenID]*big.Int),
+		TotalIotas:          txb.currentBalanceIotasOnAnchor,
+		InternalDustDeposit: 0,
 	}
+	// sum over native tokens which produce outputs
+	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
+		if ntb.producesOutput() {
+			return ntb.balance
+		}
+		return nil
+	})
+
 	for _, o := range txb.postedOutputs {
 		assets := assetsFromOutput(o)
 		ret.TotalIotas += assets.Iotas
@@ -85,28 +90,28 @@ func (txb *AnchorTransactionBuilder) sumOutputs() (ret TransactionTotals) {
 			ret.TokenBalances[nt.ID] = s
 		}
 	}
-	return
+	return ret
 }
 
 // Totals check consistency. If input total equals with output totals, returns (iota total, native token totals, true)
 // Otherwise returns (0, nil, false)
-func (txb *AnchorTransactionBuilder) Totals() (TransactionTotals, TransactionTotals, bool) {
+func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionTotals, bool) {
 	totalsIN := txb.sumInputs()
 	totalsOUT := txb.sumOutputs()
 
 	if totalsIN.TotalIotas != totalsOUT.TotalIotas {
-		return TransactionTotals{}, TransactionTotals{}, false
+		return nil, nil, false
 	}
 	if len(totalsIN.TokenBalances) != len(totalsOUT.TokenBalances) {
-		return TransactionTotals{}, TransactionTotals{}, false
+		return nil, nil, false
 	}
 	for id, bIN := range totalsIN.TokenBalances {
 		bOUT, ok := totalsOUT.TokenBalances[id]
 		if !ok {
-			return TransactionTotals{}, TransactionTotals{}, false
+			return nil, nil, false
 		}
 		if bIN.Cmp(bOUT) != 0 {
-			return TransactionTotals{}, TransactionTotals{}, false
+			return nil, nil, false
 		}
 	}
 	return totalsIN, totalsOUT, true
