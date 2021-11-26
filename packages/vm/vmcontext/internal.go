@@ -76,6 +76,13 @@ func (vmctx *VMContext) GetTokenBalance(agentID *iscp.AgentID, tokenID *iotago.N
 	return accounts.GetTokenBalance(vmctx.State(), agentID, tokenID)
 }
 
+func (vmctx *VMContext) GetTokenBalanceTotal(tokenID *iotago.NativeTokenID) *big.Int {
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	return accounts.GetTokenBalanceTotal(vmctx.State(), tokenID)
+}
+
 func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
@@ -115,7 +122,7 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 		errStr = errProvided.Error()
 	}
 	err := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestReceipt{
-		Request: vmctx.req.Request(),
+		Request: vmctx.Request(),
 		Error:   errStr,
 	}, vmctx.requestLookupKey())
 	if err != nil {
@@ -149,7 +156,7 @@ func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
 
 	accounts.RecordMaxAssumedNonce(
 		vmctx.State(),
-		vmctx.req.Request().SenderAddress(),
+		vmctx.req.SenderAddress(),
 		vmctx.req.Unwrap().OffLedger().Nonce(),
 	)
 }

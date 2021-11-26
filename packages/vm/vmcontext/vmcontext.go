@@ -115,9 +115,10 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),
 	}
-	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(task.AnchorOutput, task.AnchorOutputID, task.AnchorOutput.Amount, func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
+	nativeTokenBalanceLoader := func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
 		return ret.loadNativeTokensOnChain(id)
-	})
+	}
+	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(task.AnchorOutput, task.AnchorOutputID, task.AnchorOutput.Amount, nativeTokenBalanceLoader)
 	return ret
 }
 

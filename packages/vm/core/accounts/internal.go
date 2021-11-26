@@ -163,6 +163,11 @@ func GetTokenBalance(state kv.KVStoreReader, agentID *iscp.AgentID, tokenID *iot
 	panic("not implemented")
 }
 
+// GetTokenBalanceTotal return total of the native token on-chain
+func GetTokenBalanceTotal(state kv.KVStoreReader, tokenID *iotago.NativeTokenID) *big.Int {
+	panic("not implemented")
+}
+
 // GetAssets returns all assets owned by agentID. Returns nil if account does not exist
 func GetAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Assets {
 	panic("not implemented")

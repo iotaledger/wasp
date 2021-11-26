@@ -7,6 +7,9 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -50,10 +53,10 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 		vmctx.prepareGasBudget()
 		// run the contract program
 		vmctx.callTheContract()
-	}, vmtxbuilder.ErrInputLimitExceeded, vmtxbuilder.ErrOutputLimitExceeded)
+	}, vmtxbuilder.ErrInputLimitExceeded, vmtxbuilder.ErrOutputLimitExceeded, vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
 
 	if err != nil {
-		// transaction limits exceeded. Skipping the request. Rollback
+		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		vmctx.currentStateUpdate = nil
 		return err
@@ -70,8 +73,9 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		return
 	}
 	// consume output into the transaction builder
-	vmctx.txbuilder.Consume(vmctx.req)
-	_, _, isBalanced := vmctx.txbuilder.TotalAssets()
+	// adjustmentOfTheCommonAccount is due to the dust in the internal UTXOs
+	adjustmentOfTheCommonAccount := vmctx.txbuilder.Consume(vmctx.req)
+	_, _, isBalanced := vmctx.txbuilder.Totals()
 	if !isBalanced {
 		panic("internal inconsistency: transaction builder is not balanced")
 	}
@@ -80,6 +84,24 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// NOTE: sender account will be CommonAccount if sender address is not available
 	vmctx.creditToAccount(vmctx.req.SenderAccount(), vmctx.req.Assets())
 
+	// adjust the common account with the dust consumed or returned by internal UTXOs
+	// If common account does not contain enough funds for internal dust, it panics with
+	// vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit and the request will be skipped
+	switch {
+	case adjustmentOfTheCommonAccount > 0:
+		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
+			Iotas: uint64(adjustmentOfTheCommonAccount),
+		})
+	case adjustmentOfTheCommonAccount < 0:
+		err := util.CatchPanicReturnError(func() {
+			vmctx.debitFromAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
+				Iotas: uint64(-adjustmentOfTheCommonAccount),
+			})
+		}, accounts.ErrNotEnoughFunds)
+		if err != nil {
+			panic(vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
+		}
+	}
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
 	// TODO check if total assets are consistent with the state
 }
