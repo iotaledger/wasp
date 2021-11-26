@@ -24,8 +24,8 @@ func configure(ctx *node.Plugin) {
          \/  \/ \__,_|___/ |__/
                          | |
                          |_|
-                %s
-`, wasp.Version)
+                %s (commit: %s)
+`, wasp.Version, wasp.VersionHash)
 	fmt.Println()
 
 	// TODO embed build time see https://stackoverflow.com/questions/53031035/generate-build-timestamp-in-go/53045029
