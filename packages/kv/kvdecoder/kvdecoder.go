@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -205,17 +204,6 @@ func (p *Decoder) GetChainID(key kv.Key, def ...*iscp.ChainID) (*iscp.ChainID, e
 
 func (p *Decoder) MustGetChainID(key kv.Key, def ...*iscp.ChainID) *iscp.ChainID {
 	ret, err := p.GetChainID(key, def...)
-	p.check(err)
-	return ret
-}
-
-func (p *Decoder) GetColor(key kv.Key, def ...colored.Color) (colored.Color, error) {
-	v, err := codec.DecodeColor(p.kv.MustGet(key), def...)
-	return v, p.wrapError(key, err)
-}
-
-func (p *Decoder) MustGetColor(key kv.Key, def ...colored.Color) colored.Color {
-	ret, err := p.GetColor(key, def...)
 	p.check(err)
 	return ret
 }

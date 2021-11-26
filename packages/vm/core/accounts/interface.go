@@ -12,16 +12,17 @@ var (
 	FuncViewTotalAssets = coreutil.ViewFunc("totalAssets")
 	FuncViewAccounts    = coreutil.ViewFunc("accounts")
 	FuncDeposit         = coreutil.Func("deposit")
+	FuncSendTo          = coreutil.Func("sendTo")
 	FuncWithdraw        = coreutil.Func("withdraw")
 	FuncHarvest         = coreutil.Func("harvest")
 	FuncGetAccountNonce = coreutil.ViewFunc("getAccountNonce")
 )
 
 const (
-	ParamAgentID        = "a"
-	ParamWithdrawColor  = "c"
-	ParamWithdrawAmount = "m"
-	ParamAccountNonce   = "n"
+	ParamAgentID         = "a"
+	ParamWithdrawAssetID = "c"
+	ParamWithdrawAmount  = "m"
+	ParamAccountNonce    = "n"
 )
 
 var CommonAccount = &iscp.NilAgentID

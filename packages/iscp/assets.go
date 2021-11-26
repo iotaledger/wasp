@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/hive.go/serializer"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -18,7 +17,7 @@ type Assets struct {
 	Tokens iotago.NativeTokens
 }
 
-var IOTA_TOKEN_ID = []byte{0}
+var IotaTokenID = []byte{0}
 
 func NewEmptyAssets() *Assets {
 	return &Assets{
@@ -36,21 +35,25 @@ func NewAssets(iotas uint64, tokens iotago.NativeTokens) *Assets {
 func NewAssetsFromDict(d dict.Dict) (*Assets, error) {
 	ret := NewEmptyAssets()
 	var err error
-	ret.Iotas, err = codec.DecodeUint64(d.MustGet(kv.Key(IOTA_TOKEN_ID)))
+	ret.Iotas = new(big.Int).SetBytes(d.MustGet(kv.Key(IotaTokenID))).Uint64()
 	if err != nil {
 		return ret, err
 	}
-	d.Del(kv.Key(IOTA_TOKEN_ID))
+	d.Del(kv.Key(IotaTokenID))
 	for key, val := range d {
-		var tokenID [iotago.NativeTokenIDLength]byte
-		copy(tokenID[:], []byte(key))
 		token := &iotago.NativeToken{
-			ID:     tokenID,
+			ID:     TokenIDFromAssetID([]byte(key)),
 			Amount: new(big.Int).SetBytes(val),
 		}
 		ret.Tokens = append(ret.Tokens, token)
 	}
 	return ret, nil
+}
+
+func TokenIDFromAssetID(assetID []byte) [iotago.NativeTokenIDLength]byte {
+	var tokenID [iotago.NativeTokenIDLength]byte
+	copy(tokenID[:], assetID)
+	return tokenID
 }
 
 func (a *Assets) String() string {
@@ -79,7 +82,7 @@ func (a *Assets) Equals(b *Assets) bool {
 	return true
 }
 
-func (a *Assets) Add(b *Assets) {
+func (a *Assets) Add(b *Assets) *Assets {
 	a.Iotas += b.Iotas
 	resultTokens := a.Tokens.MustSet()
 	for _, token := range b.Tokens {
@@ -93,11 +96,27 @@ func (a *Assets) Add(b *Assets) {
 		resultTokens[token.ID] = token
 	}
 	a.Tokens = nativeTokensFromSet(resultTokens)
+	return a
+}
+
+func (a *Assets) AddToken(tokenID iotago.NativeTokenID, amount *big.Int) *Assets {
+	b := NewAssets(0, iotago.NativeTokens{
+		&iotago.NativeToken{
+			ID:     tokenID,
+			Amount: amount,
+		},
+	})
+	return a.Add(b)
+}
+
+func (a *Assets) AddIotas(amount uint64) *Assets {
+	a.Iotas += amount
+	return a
 }
 
 func (a *Assets) ToDict() dict.Dict {
 	ret := dict.New()
-	ret.Set(kv.Key(IOTA_TOKEN_ID), codec.EncodeUint64(a.Iotas))
+	ret.Set(kv.Key(IotaTokenID), new(big.Int).SetUint64(a.Iotas).Bytes())
 	for _, token := range a.Tokens {
 		ret.Set(kv.Key(token.ID[:]), token.Amount.Bytes())
 	}

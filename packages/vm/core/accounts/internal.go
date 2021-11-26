@@ -8,8 +8,10 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
@@ -60,7 +62,7 @@ func creditToAccount(state kv.KVStore, account *collections.Map, transfer *iscp.
 	}
 	defer touchAccount(state, account)
 
-	creditAsset(account, iscp.IOTA_TOKEN_ID, new(big.Int).SetUint64(transfer.Iotas))
+	creditAsset(account, iscp.IotaTokenID, new(big.Int).SetUint64(transfer.Iotas))
 	for _, token := range transfer.Tokens {
 		creditAsset(account, token.ID[:], token.Amount)
 	}
@@ -71,16 +73,12 @@ func creditAsset(account *collections.Map, assetID []byte, amount *big.Int) {
 		return // cannot credit negative amounts. // TODO should it panic here?, or should this check be removed?
 	}
 	balance := big.NewInt(0)
-	v := account.MustGetAt(assetID[:])
+	v := account.MustGetAt(assetID)
 	if v != nil {
 		balance.SetBytes(v)
 	}
 	balance.Add(balance, amount)
-	account.MustSetAt(assetID[:], balance.Bytes())
-}
-
-func getAccountAssets(state kv.KVStore, agentID *iscp.AgentID) *iscp.Assets {
-	return nil
+	account.MustSetAt(assetID, balance.Bytes())
 }
 
 func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Assets) {
@@ -103,39 +101,47 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, assets *iscp.A
 	defer touchAccount(state, account)
 
 	// assert there is enough balance in the account
-	if !hasEnoughBalance(account, iscp.IOTA_TOKEN_ID, new(big.Int).SetUint64(assets.Iotas)) {
+	if !hasEnoughBalance(account.ImmutableMap, iscp.IotaTokenID, new(big.Int).SetUint64(assets.Iotas)) {
 		return false
 	}
 	for _, token := range assets.Tokens {
-		if !hasEnoughBalance(account, token.ID[:], token.Amount) {
+		if !hasEnoughBalance(account.ImmutableMap, token.ID[:], token.Amount) {
 			return false
 		}
 	}
 
 	// debit from the account
-	debitAsset(account, iscp.IOTA_TOKEN_ID, new(big.Int).SetUint64(assets.Iotas))
+	debitAsset(account, iscp.IotaTokenID, new(big.Int).SetUint64(assets.Iotas))
 	for _, token := range assets.Tokens {
 		debitAsset(account, token.ID[:], token.Amount)
 	}
 	return true
 }
 
-func hasEnoughBalance(account *collections.Map, assetID []byte, amount *big.Int) bool {
-	v := account.MustGetAt(assetID[:])
-	if v == nil {
+func hasEnoughBalance(account *collections.ImmutableMap, assetID []byte, amount *big.Int) bool {
+	balance := getAccountAssetBalance(account, assetID)
+	if balance == nil {
 		return false
 	}
-	balance := new(big.Int).SetBytes(account.MustGetAt(assetID[:]))
 	return balance.Cmp(amount) == 1 || balance.Cmp(amount) == 0
 }
 
-func debitAsset(account *collections.Map, assetID []byte, amount *big.Int) {
-	balance := new(big.Int).SetBytes(account.MustGetAt(assetID[:]))
-	balance.Sub(balance, amount)
-	if balance.Cmp(big.NewInt(0)) == 0 {
-		account.MustDelAt(assetID[:]) // remove asset entry if balance is empty
+func getAccountAssetBalance(account *collections.ImmutableMap, assetID []byte) *big.Int {
+	v := account.MustGetAt(assetID)
+	if v == nil {
+		return nil
 	}
-	account.MustSetAt(assetID[:], balance.Bytes())
+	return new(big.Int).SetBytes(account.MustGetAt(assetID))
+}
+
+func debitAsset(account *collections.Map, assetID []byte, amount *big.Int) {
+	balance := new(big.Int).SetBytes(account.MustGetAt(assetID))
+	balance.Sub(balance, amount)
+	if util.IsZeroBigInt(balance) {
+		account.MustDelAt(assetID) // remove asset entry if balance is empty
+		return
+	}
+	account.MustSetAt(assetID, balance.Bytes())
 }
 
 func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Assets) bool {
@@ -174,17 +180,37 @@ func touchAccount(state kv.KVStore, account *collections.Map) {
 
 // GetIotaBalance return iota balance. 0 mean it does not exist
 func GetIotaBalance(state kv.KVStoreReader, agentID *iscp.AgentID) uint64 {
-	panic("not implemented")
+	acc := getAccountR(state, agentID)
+	return getAccountAssetBalance(acc, iscp.IotaTokenID).Uint64()
 }
 
 // GetTokenBalance returns balance or nil if it does not exist
 func GetTokenBalance(state kv.KVStoreReader, agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
-	panic("not implemented")
+	acc := getAccountR(state, agentID)
+	balance := getAccountAssetBalance(acc, tokenID[:])
+	if balance == nil {
+		return big.NewInt(0)
+	}
+	return balance
 }
 
 // GetAssets returns all assets owned by agentID. Returns nil if account does not exist
 func GetAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Assets {
-	panic("not implemented")
+	acc := getAccountR(state, agentID)
+	ret := iscp.NewEmptyAssets()
+	acc.MustIterate(func(k []byte, v []byte) bool {
+		if bytes.Equal(k, iscp.IotaTokenID) {
+			ret.Iotas = new(big.Int).SetBytes(v).Uint64()
+			return true
+		}
+		token := iotago.NativeToken{
+			ID:     iscp.TokenIDFromAssetID(k),
+			Amount: new(big.Int).SetBytes(v),
+		}
+		ret.Tokens = append(ret.Tokens, &token)
+		return true
+	})
+	return ret
 }
 
 func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
@@ -199,7 +225,7 @@ func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 func getAccountBalances(account *collections.ImmutableMap) *iscp.Assets {
 	ret := iscp.NewEmptyAssets()
 	account.MustIterate(func(assetID []byte, val []byte) bool {
-		if bytes.Compare(assetID, iscp.IOTA_TOKEN_ID) == 0 {
+		if bytes.Equal(assetID, iscp.IotaTokenID) {
 			ret.Iotas = new(big.Int).SetBytes(val).Uint64()
 			return true
 		}
@@ -253,7 +279,7 @@ func mustCheckLedger(state kv.KVStore, checkpoint string) {
 	}
 }
 
-func getAccountBalanceDict(ctx iscp.SandboxView, account *collections.ImmutableMap, tag string) dict.Dict {
+func getAccountBalanceDict(account *collections.ImmutableMap) dict.Dict {
 	return getAccountBalances(account).ToDict()
 }
 
@@ -264,13 +290,14 @@ func DecodeBalances(balances dict.Dict) (*iscp.Assets, error) {
 const postfixMaxAssumedNonceKey = "non"
 
 func GetMaxAssumedNonce(state kv.KVStoreReader, address iotago.Address) uint64 {
-	return 0
-	// TODO refactor with BytesFromAddress util func
-	// nonce, err := codec.DecodeUint64(state.MustGet(kv.Key(address.Bytes())+postfixMaxAssumedNonceKey), 0)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// return nonce
+	nonce, err := codec.DecodeUint64(
+		state.MustGet(kv.Key(iscp.BytesFromAddress(address))+postfixMaxAssumedNonceKey),
+		0,
+	)
+	if err != nil {
+		panic(err)
+	}
+	return nonce
 }
 
 func RecordMaxAssumedNonce(state kv.KVStore, address iotago.Address, nonce uint64) {
