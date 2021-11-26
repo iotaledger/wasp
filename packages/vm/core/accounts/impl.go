@@ -72,7 +72,6 @@ func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
 //   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
 func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
-	// TODO update documentation
 	ctx.Log().Debugf("accounts.sendTo.begin -- %s", ctx.IncomingTransfer())
 
 	if ctx.IncomingTransfer() == nil {
