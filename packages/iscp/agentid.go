@@ -39,6 +39,17 @@ func NewAgentID(addr iotago.Address, hname Hname) *AgentID {
 	}
 }
 
+func BytesFromAddress(address iotago.Address) []byte {
+	addressInBytes, err := address.Serialize(serializer.DeSeriModeNoValidation, nil)
+
+	if err != nil {
+		// TODO: Ignoring errors here, as no validation takes place anyway. Maybe needs further discussion?
+		return nil
+	}
+
+	return addressInBytes
+}
+
 func AddressFromMarshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error) {
 	typeByte, err := mu.ReadByte()
 	if err != nil {

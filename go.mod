@@ -10,10 +10,11 @@ require (
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go v0.21.0
-	github.com/ethereum/go-ethereum v1.10.12
+	github.com/ethereum/go-ethereum v1.10.13
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
 	github.com/iotaledger/hive.go v0.0.0-20211123102045-85f0c1036bf7
-	github.com/iotaledger/iota.go/v3 v3.0.0-20211123102254-2d7000cf9a47 // indirect
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20211125134700-408c53353b22 // indirect
+	github.com/iotaledger/iota.go/v3 v3.0.0-20211125134902-41e2f9143887 // indirect
 	github.com/knadh/koanf v1.2.1
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.14.4

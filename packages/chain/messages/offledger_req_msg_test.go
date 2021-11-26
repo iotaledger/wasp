@@ -6,9 +6,9 @@ package messages
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )
@@ -20,10 +20,12 @@ func TestMarshalling(t *testing.T) {
 	contract := iscp.Hn("somecontract")
 	entrypoint := iscp.Hn("someentrypoint")
 	args := dict.Dict{foo: []byte("bar")}
+	nonce := uint64(time.Now().UnixNano())
+	chainId := iscp.RandomChainID()
 
 	msg := NewOffLedgerRequestMsg(
-		iscp.RandomChainID(),
-		request.NewOffLedger(iscp.RandomChainID(), contract, entrypoint, args),
+		&chainId,
+		iscp.NewOffLedgerRequest(iscp.RandomChainID(), contract, entrypoint, args, nonce),
 	)
 
 	// marshall the msg
@@ -33,6 +35,6 @@ func TestMarshalling(t *testing.T) {
 	unmarshalledMsg, err := OffLedgerRequestMsgFromBytes(msgBytes)
 	require.NoError(t, err)
 
-	require.True(t, unmarshalledMsg.ChainID.AliasAddress.Equals(msg.ChainID.AliasAddress))
+	require.Equal(t, unmarshalledMsg.ChainID.AsAliasAddress(), msg.ChainID.AsAliasAddress())
 	require.True(t, bytes.Equal(unmarshalledMsg.Req.Bytes(), msg.Req.Bytes()))
 }

@@ -12,10 +12,10 @@ import (
 
 type OffLedgerRequestMsg struct {
 	ChainID *iscp.ChainID
-	Req     *request.OffLedger
+	Req     *iscp.OffLedgerRequestData
 }
 
-func NewOffLedgerRequestMsg(chainID *iscp.ChainID, req *request.OffLedger) *OffLedgerRequestMsg {
+func NewOffLedgerRequestMsg(chainID *iscp.ChainID, req *iscp.OffLedgerRequestData) *OffLedgerRequestMsg {
 	return &OffLedgerRequestMsg{
 		ChainID: chainID,
 		Req:     req,
