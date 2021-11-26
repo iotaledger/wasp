@@ -9,10 +9,8 @@ import (
 	"github.com/iotaledger/iota.go/v3/ed25519"
 )
 
-type UnixSeconds uint64
-
 const (
-	DefaultIOTASupply = uint64(2779530283000000)
+	DefaultIOTASupply = uint64(2_779_530_283_277_761)
 
 	Mi = 1_000_000
 
@@ -25,6 +23,8 @@ var (
 	genesisAddress = iotago.Ed25519AddressFromPubKey(genesisKey.Public().(ed25519.PublicKey))
 	genesisSigner  = iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&genesisAddress, genesisKey))
 )
+
+type UnixSeconds uint64
 
 // UtxoDB mocks the Tangle ledger by implementing a fully synchronous in-memory database
 // of transactions. It ensures the consistency of the ledger and all added transactions
