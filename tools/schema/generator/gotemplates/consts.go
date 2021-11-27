@@ -56,6 +56,6 @@ $#each state constField
 `,
 	// *******************************
 	"constHFunc": `
-	H$Kind$FuncName$funcPad = wasmlib.ScHname(0x$funcHName)
+	H$Kind$FuncName$funcPad = wasmlib.ScHname(0x$funcHname)
 `,
 }

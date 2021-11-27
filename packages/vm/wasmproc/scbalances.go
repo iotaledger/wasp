@@ -20,12 +20,12 @@ func NewScBalances(wc *WasmContext, keyID int32) *ScDict {
 	switch keyID {
 	case wasmhost.KeyIncoming:
 		if wc.ctx == nil {
-			o.Panic("no incoming() on views")
+			o.Panicf("no incoming() on views")
 		}
 		return loadBalances(o, wc.ctx.IncomingTransfer())
 	case wasmhost.KeyMinted:
 		if wc.ctx == nil {
-			o.Panic("no minted() on views")
+			o.Panicf("no minted() on views")
 		}
 		return loadBalances(o, wc.ctx.Minted())
 
@@ -35,7 +35,7 @@ func NewScBalances(wc *WasmContext, keyID int32) *ScDict {
 		}
 		return loadBalances(o, wc.ctxView.Balances())
 	}
-	o.Panic("unknown balances: %s", wc.GetKeyStringFromID(keyID))
+	o.Panicf("unknown balances: %s", wc.GetKeyStringFromID(keyID))
 	return nil
 }
 

@@ -302,6 +302,11 @@ module.exports = {
                         },
                         {
                             type: 'doc',
+                            label: 'Triggering Events',
+                            id: 'guide/schema/events',
+                        },
+                        {
+                            type: 'doc',
                             label: 'Function Definitions',
                             id: 'guide/schema/funcs',
                         },

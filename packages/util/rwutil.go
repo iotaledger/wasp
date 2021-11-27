@@ -29,6 +29,42 @@ func WriteByte(w io.Writer, val byte) error {
 	return err
 }
 
+//////////////////// uint8 \\\\\\\\\\\\\\\\\\\\
+
+func Uint8To1Bytes(val uint8) []byte {
+	return []byte{val}
+}
+
+func Uint8From1Bytes(b []byte) (uint8, error) {
+	if len(b) != 1 {
+		return 0, errors.New("len(b) != 1")
+	}
+	return b[0], nil
+}
+
+func MustUint8From1Bytes(b []byte) uint8 {
+	ret, err := Uint8From1Bytes(b)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func ReadUint8(r io.Reader, pval *uint8) error {
+	var tmp2 [1]byte
+	_, err := r.Read(tmp2[:])
+	if err != nil {
+		return err
+	}
+	*pval = tmp2[0]
+	return nil
+}
+
+func WriteUint8(w io.Writer, val uint8) error {
+	_, err := w.Write(Uint8To1Bytes(val))
+	return err
+}
+
 //////////////////// uint16 \\\\\\\\\\\\\\\\\\\\
 
 func Uint16To2Bytes(val uint16) []byte {

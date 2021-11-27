@@ -59,6 +59,7 @@ this:
 {
   "name": "MySmartContract",
   "description": "MySmartContract description",
+  "events": {}
   "structs": {},
   "typedefs": {},
   "state": {
@@ -93,6 +94,7 @@ this:
 ```yaml
 name: MySmartContract
 description: MySmartContract description
+events: {}
 structs: {}
 typedefs: {}
 state:
@@ -220,7 +222,7 @@ regenerated and overwritten whenever the schema tool is run again.
 <TabItem value="ts">
 
 ```bash
-asc lib.ts --binaryFile output_ts.wasm
+asc lib.ts --binaryFile output_ts.wasm --lib path/to/node_modules
 ```
 
 This will use the TypeScript source files in the current folder. The only file in this
@@ -299,7 +301,7 @@ pub fn view_get_owner(_ctx: &ScViewContext, f: &GetOwnerContext) {
 <TabItem value="ts">
 
 ```ts
-import * as wasmlib from "../wasmlib"
+import * as wasmlib from "wasmlib"
 import * as sc from "./index";
 
 export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {

@@ -5,6 +5,7 @@ package iscp
 
 import (
 	"io"
+	"strings"
 
 	"github.com/iotaledger/hive.go/marshalutil"
 
@@ -24,7 +25,7 @@ func NewChainID(addr *ledgerstate.AliasAddress) *ChainID {
 	return &ChainID{addr}
 }
 
-// ChainIDFromAddress creates a chainIDD from alias address. Returns and error if not an alias address type
+// ChainIDFromAddress creates a chain ID from alias address. Returns and error if not an alias address type
 func ChainIDFromAddress(addr ledgerstate.Address) (*ChainID, error) {
 	alias, ok := addr.(*ledgerstate.AliasAddress)
 	if !ok {
@@ -57,6 +58,11 @@ func ChainIDFromBytes(data []byte) (*ChainID, error) {
 		return nil, err
 	}
 	return &ChainID{alias}, nil
+}
+
+// ChainIDFromString reconstructs a ChainID from its string representation.
+func ChainIDFromString(s string) (*ChainID, error) {
+	return ChainIDFromBase58(strings.TrimPrefix(s, "$/"))
 }
 
 // RandomChainID creates a random chain ID.

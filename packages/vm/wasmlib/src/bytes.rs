@@ -28,6 +28,11 @@ impl BytesDecoder<'_> {
         ScAgentID::from_bytes(self.bytes())
     }
 
+    // decodes a bool from the byte buffer
+    pub fn bool(&mut self) -> bool {
+        self.int8() != 0
+    }
+
     // decodes the next substring of bytes from the byte buffer
     pub fn bytes(&mut self) -> &[u8] {
         let size = self.int32() as usize;
@@ -57,6 +62,16 @@ impl BytesDecoder<'_> {
     // decodes an ScHname from the byte buffer
     pub fn hname(&mut self) -> ScHname {
         ScHname::from_bytes(self.bytes())
+    }
+
+    // decodes an int8 from the byte buffer
+    pub fn int8(&mut self) -> i8 {
+        if self.buf.len() == 0 {
+            panic("insufficient bytes");
+        }
+        let val = self.buf[0] as i8;
+        self.buf = &self.buf[1..];
+        val
     }
 
     // decodes an int16 from the byte buffer
@@ -117,6 +132,29 @@ impl BytesDecoder<'_> {
     pub fn string(&mut self) -> String {
         String::from_utf8_lossy(self.bytes()).to_string()
     }
+
+    // decodes an uint8 from the byte buffer
+    pub fn uint8(&mut self) -> u8 {
+        self.int8() as u8
+    }
+
+    // decodes an uint16 from the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    pub fn uint16(&mut self) -> u16 {
+        self.int16() as u16
+    }
+
+    // decodes an uint32 from the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    pub fn uint32(&mut self) -> u32 {
+        self.int32() as u32
+    }
+
+    // decodes an uint64 from the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    pub fn uint64(&mut self) -> u64 {
+        self.int64() as u64
+    }
 }
 
 impl Drop for BytesDecoder<'_> {
@@ -150,6 +188,14 @@ impl BytesEncoder {
         self.bytes(value.to_bytes())
     }
 
+    // encodes a bool into the byte buffer
+    pub fn bool(&mut self, val: bool) -> &BytesEncoder {
+        if val {
+            return self.int8(1);
+        }
+        self.int8(0)
+    }
+
     // encodes a substring of bytes into the byte buffer
     pub fn bytes(&mut self, value: &[u8]) -> &BytesEncoder {
         self.int32(value.len() as i32);
@@ -178,8 +224,14 @@ impl BytesEncoder {
     }
 
     // encodes an ScHname into the byte buffer
-    pub fn hname(&mut self, value: &ScHname) -> &BytesEncoder {
+    pub fn hname(&mut self, value: ScHname) -> &BytesEncoder {
         self.bytes(&value.to_bytes())
+    }
+
+    // encodes an int8 into the byte buffer
+    pub fn int8(&mut self, val: i8) -> &BytesEncoder {
+        self.buf.push(val as u8);
+        self
     }
 
     // encodes an int16 into the byte buffer
@@ -222,5 +274,28 @@ impl BytesEncoder {
     // encodes an UTF-8 text string into the byte buffer
     pub fn string(&mut self, value: &str) -> &BytesEncoder {
         self.bytes(value.as_bytes())
+    }
+
+    // encodes an uint8 into the byte buffer
+    pub fn uint8(&mut self, val: u8) -> &BytesEncoder {
+        self.int8(val as i8)
+    }
+
+    // encodes an uint16 into the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    pub fn uint16(&mut self, val: u16) -> &BytesEncoder {
+        self.int16(val as i16)
+    }
+
+    // encodes an uint32 into the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    pub fn uint32(&mut self, val: u32) -> &BytesEncoder {
+        self.int32(val as i32)
+    }
+
+    // encodes an uint64 into the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    pub fn uint64(&mut self, val: u64) -> &BytesEncoder {
+        self.int64(val as i64)
     }
 }
