@@ -7,11 +7,11 @@ import (
 )
 
 type TransactionTotals struct {
-	// includes also internal dust deposits
-	TotalIotas uint64
+	// does not include internal dust deposits
+	TotalIotasOnChain uint64
 	// internal dust deposit
-	InternalDustDeposit uint64
-	// balances of native tokens
+	TotalIotasInDustDeposit uint64
+	// balances of native tokens (in all inputs/outputs)
 	TokenBalances map[iotago.NativeTokenID]*big.Int
 }
 
@@ -28,17 +28,16 @@ func (txb *AnchorTransactionBuilder) sumNativeTokens(totals *TransactionTotals, 
 		s.Add(s, value)
 		totals.TokenBalances[id] = s
 		// sum up dust deposit in inputs of internal UTXOs
-		totals.TotalIotas += txb.vByteCostOfNativeTokenBalance()
-		totals.InternalDustDeposit += txb.vByteCostOfNativeTokenBalance()
+		totals.TotalIotasInDustDeposit += txb.vByteCostOfNativeTokenBalance()
 	}
 }
 
 // sumInputs sums up all assets in inputs
 func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	ret := &TransactionTotals{
-		TokenBalances:       make(map[iotago.NativeTokenID]*big.Int),
-		TotalIotas:          txb.anchorOutput.Amount,
-		InternalDustDeposit: 0,
+		TokenBalances:           make(map[iotago.NativeTokenID]*big.Int),
+		TotalIotasOnChain:       txb.anchorOutput.Amount,
+		TotalIotasInDustDeposit: 0,
 	}
 	// sum over native tokens which require inputs
 	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
@@ -50,7 +49,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	// sum up all explicitly consumed outputs, except anchor output
 	for _, out := range txb.consumed {
 		a := out.Assets()
-		ret.TotalIotas += a.Iotas
+		ret.TotalIotasOnChain += a.Iotas
 		for _, nt := range a.Tokens {
 			s, ok := ret.TokenBalances[nt.ID]
 			if !ok {
@@ -66,9 +65,9 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 // sumOutputs sums all balances in outputs
 func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	ret := &TransactionTotals{
-		TokenBalances:       make(map[iotago.NativeTokenID]*big.Int),
-		TotalIotas:          txb.currentBalanceIotasOnAnchor,
-		InternalDustDeposit: 0,
+		TokenBalances:           make(map[iotago.NativeTokenID]*big.Int),
+		TotalIotasOnChain:       txb.currentBalanceIotasOnAnchor,
+		TotalIotasInDustDeposit: 0,
 	}
 	// sum over native tokens which produce outputs
 	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
@@ -80,7 +79,7 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 
 	for _, o := range txb.postedOutputs {
 		assets := assetsFromOutput(o)
-		ret.TotalIotas += assets.Iotas
+		ret.TotalIotasOnChain += assets.Iotas
 		for _, nt := range assets.Tokens {
 			s, ok := ret.TokenBalances[nt.ID]
 			if !ok {
@@ -98,11 +97,28 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionTotals, bool) {
 	totalsIN := txb.sumInputs()
 	totalsOUT := txb.sumOutputs()
-	return totalsIN, totalsOUT, totalsIN.Equal(totalsOUT)
+	balanced := totalsIN.BalancedWith(totalsOUT)
+	return totalsIN, totalsOUT, balanced
 }
 
-func (t *TransactionTotals) Equal(another *TransactionTotals) bool {
-	if t.TotalIotas != another.TotalIotas {
+// InternalNativeTokenBalances returns internally maintained balances of native tokens in inputs and
+func (txb *AnchorTransactionBuilder) InternalNativeTokenBalances() (map[iotago.NativeTokenID]*big.Int, map[iotago.NativeTokenID]*big.Int) {
+	before := make(map[iotago.NativeTokenID]*big.Int)
+	after := make(map[iotago.NativeTokenID]*big.Int)
+
+	for id, ntb := range txb.balanceNativeTokens {
+		if ntb.requiresInput() {
+			before[id] = ntb.initial
+		}
+		if ntb.producesOutput() {
+			after[id] = ntb.balance
+		}
+	}
+	return before, after
+}
+
+func (t *TransactionTotals) BalancedWith(another *TransactionTotals) bool {
+	if t.TotalIotasOnChain+t.TotalIotasInDustDeposit != another.TotalIotasOnChain+another.TotalIotasInDustDeposit {
 		return false
 	}
 	if len(t.TokenBalances) != len(another.TokenBalances) {

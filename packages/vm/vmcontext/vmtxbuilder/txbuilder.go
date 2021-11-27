@@ -389,6 +389,7 @@ func (txb *AnchorTransactionBuilder) String() string {
 	ret := ""
 	ret += fmt.Sprintf("%s\n", stringUTXOInput(&txb.anchorOutputID))
 	ret += fmt.Sprintf("initial IOTA balance: %d\n", txb.anchorOutput.Amount)
+	ret += fmt.Sprintf("current IOTA balance: %d\n", txb.currentBalanceIotasOnAnchor)
 	ret += fmt.Sprintf("Native tokens (%d):\n", len(txb.balanceNativeTokens))
 	for id, ntb := range txb.balanceNativeTokens {
 		initial := "0"
