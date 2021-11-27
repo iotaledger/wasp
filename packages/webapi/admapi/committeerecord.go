@@ -3,6 +3,7 @@ package admapi
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -91,7 +92,8 @@ func (s *committeeRecordService) handleGetCommitteeForChain(c echo.Context) erro
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	chain := s.chains().Get(chainID)
+	includeDeactivated, _ := strconv.ParseBool(c.QueryParam("includeDeactivated"))
+	chain := s.chains().Get(chainID, includeDeactivated)
 	if chain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Active chain %s not found", chainID))
 	}
