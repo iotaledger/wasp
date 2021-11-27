@@ -16,9 +16,13 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// implements transaction builder used internally by the VM during batch run
-
-// TODO dust protection not covered yet !!!
+// error codes used for handled panics
+var (
+	ErrInputLimitExceeded                   = xerrors.Errorf("exceeded maximum number of inputs in transaction. iotago.MaxInputsCount = %d", iotago.MaxInputsCount)
+	ErrOutputLimitExceeded                  = xerrors.Errorf("exceeded maximum number of outputs in transaction. iotago.MaxOutputsCount = %d", iotago.MaxOutputsCount)
+	ErrNotEnoughFundsForInternalDustDeposit = xerrors.New("not enough funds for internal dust deposit")
+	ErrOverflow                             = xerrors.New("overflow")
+)
 
 // tokenBalanceLoader externally supplied function which loads balance of the native token from the state
 // it returns nil if balance exists. If balance exist, it also returns output ID which holds the balance for the token_id
@@ -77,14 +81,6 @@ func (n *nativeTokenBalance) requiresInput() bool {
 	}
 	return true
 }
-
-// error codes used for handled panics
-var (
-	ErrInputLimitExceeded                   = xerrors.Errorf("exceeded maximum number of inputs in transaction. iotago.MaxInputsCount = %d", iotago.MaxInputsCount)
-	ErrOutputLimitExceeded                  = xerrors.Errorf("exceeded maximum number of outputs in transaction. iotago.MaxOutputsCount = %d", iotago.MaxOutputsCount)
-	ErrNotEnoughFundsForInternalDustDeposit = xerrors.New("not enough funds for internal dust deposit")
-	ErrOverflow                             = xerrors.New("overflow")
-)
 
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
 func NewAnchorTransactionBuilder(anchorOutput *iotago.AliasOutput, anchorOutputID iotago.UTXOInput, balanceIotasOnAnchor uint64, tokenBalanceLoader tokenBalanceLoader) *AnchorTransactionBuilder {
@@ -267,7 +263,7 @@ func (txb *AnchorTransactionBuilder) numInputs() int {
 	return ret
 }
 
-// InputsAreFull returns if transaction cannot bear more inputs
+// InputsAreFull returns if transaction cannot hold more inputs
 func (txb *AnchorTransactionBuilder) InputsAreFull() bool {
 	return txb.numInputs() >= iotago.MaxInputsCount
 }
