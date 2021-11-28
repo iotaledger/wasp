@@ -164,43 +164,43 @@ func (g *GenBase) emitEachEvent(events []*model.Struct, template string) {
 }
 
 func (g *GenBase) emitEachField(fields []*model.Field, template string) {
-	g.maxCamelFldLen = 0
-	g.maxSnakeFldLen = 0
+	maxCamelLength := 0
+	maxSnakeLength := 0
 	for _, g.currentField = range fields {
 		camelLen := len(g.currentField.Name)
-		if g.maxCamelFldLen < camelLen {
-			g.maxCamelFldLen = camelLen
+		if maxCamelLength < camelLen {
+			maxCamelLength = camelLen
 		}
 		snakeLen := len(snake(g.currentField.Name))
-		if g.maxSnakeFldLen < snakeLen {
-			g.maxSnakeFldLen = snakeLen
+		if maxSnakeLength < snakeLen {
+			maxSnakeLength = snakeLen
 		}
 	}
 
 	for _, g.currentField = range fields {
 		g.log("currentField: " + g.currentField.Name)
-		g.gen.setFieldKeys(true)
+		g.setFieldKeys(true, maxCamelLength, maxSnakeLength)
 		g.emit(template)
 	}
 }
 
 func (g *GenBase) emitEachFunc(funcs []*model.Func, template string) {
-	g.maxCamelFuncLen = 0
-	g.maxSnakeFuncLen = 0
+	maxCamelLength := 0
+	maxSnakeLength := 0
 	for _, g.currentFunc = range funcs {
 		camelLen := len(g.currentFunc.Name)
-		if g.maxCamelFuncLen < camelLen {
-			g.maxCamelFuncLen = camelLen
+		if maxCamelLength < camelLen {
+			maxCamelLength = camelLen
 		}
 		snakeLen := len(snake(g.currentFunc.Name))
-		if g.maxSnakeFuncLen < snakeLen {
-			g.maxSnakeFuncLen = snakeLen
+		if maxSnakeLength < snakeLen {
+			maxSnakeLength = snakeLen
 		}
 	}
 
 	for _, g.currentFunc = range funcs {
 		g.log("currentFunc: " + g.currentFunc.Name)
-		g.gen.setFuncKeys()
+		g.setFuncKeys(true, maxCamelLength, maxSnakeLength)
 		g.emit(template)
 	}
 }
@@ -352,7 +352,7 @@ func (g *GenBase) fieldIsTypeDef() bool {
 	for _, typeDef := range g.s.Typedefs {
 		if typeDef.Name == g.currentField.Type {
 			g.currentField = typeDef
-			g.gen.setFieldKeys(false)
+			g.setFieldKeys(false, 0, 0)
 			return true
 		}
 	}
@@ -378,7 +378,7 @@ func (g *GenBase) setCommonKeys() {
 	g.keys["maxIndex"] = strconv.Itoa(g.s.KeyID)
 }
 
-func (g *GenBase) setFieldKeys(pad bool) {
+func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 	tmp := make(model.StringMap)
 	for k, v := range g.keys {
 		if len(k) < 3 {
@@ -405,8 +405,8 @@ func (g *GenBase) setFieldKeys(pad bool) {
 	g.keys["fldIndex"] = strconv.Itoa(g.currentField.KeyID)
 
 	if pad {
-		g.keys["fldPad"] = spaces[:g.maxCamelFldLen-len(g.keys["fldName"])]
-		g.keys["fld_pad"] = spaces[:g.maxSnakeFldLen-len(g.keys["fld_name"])]
+		g.keys["fldPad"] = spaces[:maxCamelLength-len(g.keys["fldName"])]
+		g.keys["fld_pad"] = spaces[:maxSnakeLength-len(g.keys["fld_name"])]
 	}
 
 	for fieldName, typeValues := range g.typeDependent {
@@ -431,7 +431,7 @@ func (g *GenBase) setFieldKeys(pad bool) {
 	}
 }
 
-func (g *GenBase) setFuncKeys() {
+func (g *GenBase) setFuncKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 	g.setMultiKeyValues("funcName", g.currentFunc.Name)
 	g.setMultiKeyValues("kind", g.currentFunc.Kind)
 	g.keys["funcHname"] = iscp.Hn(g.keys["funcName"]).String()
@@ -445,8 +445,10 @@ func (g *GenBase) setFuncKeys() {
 	g.keys["funcAccess"] = grant
 	g.keys["funcAccessComment"] = comment
 
-	g.keys["funcPad"] = spaces[:g.maxCamelFuncLen-len(g.keys["funcName"])]
-	g.keys["func_pad"] = spaces[:g.maxSnakeFuncLen-len(g.keys["func_name"])]
+	if pad {
+		g.keys["funcPad"] = spaces[:maxCamelLength-len(g.keys["funcName"])]
+		g.keys["func_pad"] = spaces[:maxSnakeLength-len(g.keys["func_name"])]
+	}
 }
 
 func (g *GenBase) setMultiKeyValues(key, value string) {

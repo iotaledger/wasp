@@ -2,7 +2,15 @@ package tstemplates
 
 import "github.com/iotaledger/wasp/tools/schema/model"
 
+var config = map[string]string{
+	"language":   "TypeScript",
+	"extension":  ".ts",
+	"rootFolder": "ts",
+	"funcRegexp": `^export function (\w+).+$`,
+}
+
 var Templates = []map[string]string{
+	config,
 	common,
 	constsTs,
 	contractTs,

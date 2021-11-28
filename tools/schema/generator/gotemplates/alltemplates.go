@@ -2,7 +2,15 @@ package gotemplates
 
 import "github.com/iotaledger/wasp/tools/schema/model"
 
+var config = map[string]string{
+	"language":   "Go",
+	"extension":  ".go",
+	"rootFolder": "go",
+	"funcRegexp": `^func (\w+).+$`,
+}
+
 var Templates = []map[string]string{
+	config,
 	common,
 	constsGo,
 	contractGo,

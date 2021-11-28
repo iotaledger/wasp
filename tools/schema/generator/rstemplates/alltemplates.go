@@ -2,7 +2,15 @@ package rstemplates
 
 import "github.com/iotaledger/wasp/tools/schema/model"
 
+var config = map[string]string{
+	"language":   "Rust",
+	"extension":  ".rs",
+	"rootFolder": "src",
+	"funcRegexp": `^pub fn (\w+).+$`,
+}
+
 var Templates = []map[string]string{
+	config,
 	common,
 	cargoToml,
 	constsRs,

@@ -116,32 +116,32 @@ func generateSchema(file *os.File) error {
 	}
 
 	if *flagClient {
-		g := generator.NewClientGenerator()
-		err = g.Generate(s)
+		g := generator.NewClientGenerator(s)
+		err = g.Generate()
 		if err != nil {
 			return err
 		}
 	}
 
 	if *flagGo {
-		g := generator.NewGoGenerator()
-		err = g.Generate(s)
+		g := generator.NewGoGenerator(s)
+		err = g.Generate()
 		if err != nil {
 			return err
 		}
 	}
 
 	if *flagRust {
-		g := generator.NewRustGenerator()
-		err = g.Generate(s)
+		g := generator.NewRustGenerator(s)
+		err = g.Generate()
 		if err != nil {
 			return err
 		}
 	}
 
 	if *flagTs {
-		g := generator.NewTypeScriptGenerator()
-		err = g.Generate(s)
+		g := generator.NewTypeScriptGenerator(s)
+		err = g.Generate()
 		if err != nil {
 			return err
 		}

@@ -16,53 +16,49 @@ import (
 // TODO nested structs
 // TODO handle case where owner is type AgentID[]
 
-type Generator interface {
-	init(s *model.Schema)
-	funcName(f *model.Func) string
-	generateLanguageSpecificFiles() error
-	setFieldKeys(pad bool)
-	setFuncKeys()
-}
-
 type GenBase struct {
-	currentEvent    *model.Struct
-	currentField    *model.Field
-	currentFunc     *model.Func
-	currentStruct   *model.Struct
-	emitters        map[string]func(g *GenBase)
-	extension       string
-	file            *os.File
-	folder          string
-	funcRegexp      *regexp.Regexp
-	gen             Generator
-	keys            model.StringMap
-	language        string
-	maxCamelFuncLen int
-	maxSnakeFuncLen int
-	maxCamelFldLen  int
-	maxSnakeFldLen  int
-	newTypes        map[string]bool
-	rootFolder      string
-	s               *model.Schema
-	tab             int
-	templates       model.StringMap
-	typeDependent   model.StringMapMap
+	currentEvent  *model.Struct
+	currentField  *model.Field
+	currentFunc   *model.Func
+	currentStruct *model.Struct
+	emitters      map[string]func(g *GenBase)
+	extension     string
+	file          *os.File
+	folder        string
+	funcRegexp    *regexp.Regexp
+	keys          model.StringMap
+	language      string
+	newTypes      map[string]bool
+	rootFolder    string
+	s             *model.Schema
+	tab           int
+	templates     model.StringMap
+	typeDependent model.StringMapMap
 }
 
 const spaces = "                                             "
 
 func (g *GenBase) init(s *model.Schema, typeDependent model.StringMapMap, templates []map[string]string) {
 	g.s = s
-	g.emitters = map[string]func(g *GenBase){}
-	g.newTypes = map[string]bool{}
-	g.keys = model.StringMap{}
-	g.setCommonKeys()
 	g.typeDependent = typeDependent
+
+	g.emitters = map[string]func(g *GenBase){}
+	g.keys = model.StringMap{}
+	g.newTypes = map[string]bool{}
 	g.templates = model.StringMap{}
+
+	config := templates[0]
+	g.language = config["language"]
+	g.extension = config["extension"]
+	g.rootFolder = config["rootFolder"]
+	g.funcRegexp = regexp.MustCompile(config["funcRegexp"])
+
 	g.addTemplates(commonTemplates)
 	for _, template := range templates {
 		g.addTemplates(template)
 	}
+
+	g.setCommonKeys()
 }
 
 func (g *GenBase) addTemplates(t model.StringMap) {
@@ -110,12 +106,14 @@ func (g *GenBase) exists(path string) (err error) {
 }
 
 func (g *GenBase) funcName(f *model.Func) string {
-	return f.Kind + capitalize(f.Name)
+	name := f.Kind + capitalize(f.Name)
+	if g.language == "Rust" {
+		name = snake(name)
+	}
+	return name
 }
 
-func (g *GenBase) Generate(s *model.Schema) error {
-	g.gen.init(s)
-
+func (g *GenBase) generateCommonFiles() error {
 	g.folder = g.rootFolder + "/"
 	if g.rootFolder != "src" {
 		module := strings.ReplaceAll(moduleCwd, "\\", "/")
@@ -131,7 +129,7 @@ func (g *GenBase) Generate(s *model.Schema) error {
 		return err
 	}
 	info, err := os.Stat(g.folder + "consts" + g.extension)
-	if err == nil && info.ModTime().After(s.SchemaTime) {
+	if err == nil && info.ModTime().After(g.s.SchemaTime) {
 		fmt.Printf("skipping %s code generation\n", g.language)
 		return nil
 	}
@@ -192,13 +190,9 @@ func (g *GenBase) generateCode() error {
 		return err
 	}
 	if !g.s.CoreContracts {
-		err = g.generateFuncs()
-		if err != nil {
-			return err
-		}
+		return g.generateFuncs()
 	}
-
-	return g.gen.generateLanguageSpecificFiles()
+	return nil
 }
 
 func (g *GenBase) generateFuncs() error {
@@ -236,8 +230,8 @@ func (g *GenBase) generateFuncs() error {
 
 		// append any new funcs
 		for _, g.currentFunc = range g.s.Funcs {
-			if existing[g.gen.funcName(g.currentFunc)] == "" {
-				g.setFuncKeys()
+			if existing[g.funcName(g.currentFunc)] == "" {
+				g.setFuncKeys(false, 0, 0)
 				g.emit("funcSignature")
 			}
 		}
@@ -246,10 +240,6 @@ func (g *GenBase) generateFuncs() error {
 		return err
 	}
 	return os.Remove(scOriginal)
-}
-
-func (g *GenBase) generateLanguageSpecificFiles() error {
-	return nil
 }
 
 func (g *GenBase) generateTests() error {

@@ -15,29 +15,20 @@ type ClientGenerator struct {
 	GenBase
 }
 
-func NewClientGenerator() *ClientGenerator {
+func NewClientGenerator(s *model.Schema) *ClientGenerator {
 	g := &ClientGenerator{}
-	g.extension = ".ts"
-	g.language = "Client"
-	g.rootFolder = "client"
-	g.gen = g
+	g.init(s, clienttemplates.TypeDependent, clienttemplates.Templates)
 	return g
 }
 
-func (g *ClientGenerator) init(s *model.Schema) {
-	g.GenBase.init(s, clienttemplates.TypeDependent, clienttemplates.Templates)
-}
-
-func (g *ClientGenerator) Generate(s *model.Schema) error {
-	g.gen.init(s)
-
+func (g *ClientGenerator) Generate() error {
 	g.folder = g.rootFolder + "/"
 	err := os.MkdirAll(g.folder, 0o755)
 	if err != nil {
 		return err
 	}
 	info, err := os.Stat(g.folder + "events" + g.extension)
-	if err == nil && info.ModTime().After(s.SchemaTime) {
+	if err == nil && info.ModTime().After(g.s.SchemaTime) {
 		fmt.Printf("skipping %s code generation\n", g.language)
 		return nil
 	}

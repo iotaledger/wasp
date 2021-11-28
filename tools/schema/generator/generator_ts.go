@@ -4,8 +4,6 @@
 package generator
 
 import (
-	"regexp"
-
 	"github.com/iotaledger/wasp/tools/schema/generator/tstemplates"
 	"github.com/iotaledger/wasp/tools/schema/model"
 )
@@ -14,22 +12,21 @@ type TypeScriptGenerator struct {
 	GenBase
 }
 
-func NewTypeScriptGenerator() *TypeScriptGenerator {
+func NewTypeScriptGenerator(s *model.Schema) *TypeScriptGenerator {
 	g := &TypeScriptGenerator{}
-	g.extension = ".ts"
-	g.funcRegexp = regexp.MustCompile(`^export function (\w+).+$`)
-	g.language = "TypeScript"
-	g.rootFolder = "ts"
-	g.gen = g
+	g.init(s, tstemplates.TypeDependent, tstemplates.Templates)
 	return g
 }
 
-func (g *TypeScriptGenerator) init(s *model.Schema) {
-	g.GenBase.init(s, tstemplates.TypeDependent, tstemplates.Templates)
-}
+func (g *TypeScriptGenerator) Generate() error {
+	err := g.generateCommonFiles()
+	if err != nil {
+		return err
+	}
 
-func (g *TypeScriptGenerator) generateLanguageSpecificFiles() error {
-	err := g.createSourceFile("index", true)
+	// now generate language-specific files
+
+	err = g.createSourceFile("index", true)
 	if err != nil {
 		return err
 	}
