@@ -16,7 +16,7 @@ export class MapStringToImmutableStringArray {
     }
 
     getStringArray(key: string): sc.ImmutableStringArray {
-        let subID = wasmlib.getObjectID(this.objID, wasmlib.Key32.fromString(key).getKeyID(), wasmlib.TYPE_ARRAY|wasmlib.TYPE_STRING);
+        let subID = wasmlib.getObjectID(this.objID, wasmlib.Key32.fromString(key), wasmlib.TYPE_ARRAY|wasmlib.TYPE_STRING);
         return new sc.ImmutableStringArray(subID);
     }
 }
@@ -44,7 +44,7 @@ export class MapStringToMutableStringArray {
     }
 
     getStringArray(key: string): sc.MutableStringArray {
-        let subID = wasmlib.getObjectID(this.objID, wasmlib.Key32.fromString(key).getKeyID(), wasmlib.TYPE_ARRAY|wasmlib.TYPE_STRING);
+        let subID = wasmlib.getObjectID(this.objID, wasmlib.Key32.fromString(key), wasmlib.TYPE_ARRAY|wasmlib.TYPE_STRING);
         return new sc.MutableStringArray(subID);
     }
 }
