@@ -17,6 +17,7 @@ import (
 const (
 	varStateAccounts    = "a"
 	varStateTotalAssets = "t"
+	varStateUtxoMapping = "u"
 )
 
 var ErrNotEnoughFunds = xerrors.New("not enough funds")
@@ -305,5 +306,33 @@ func GetMaxAssumedNonce(state kv.KVStoreReader, address iotago.Address) uint64 {
 }
 
 func RecordMaxAssumedNonce(state kv.KVStore, address iotago.Address, nonce uint64) {
+	// TODO
 	panic("not implemented")
+}
+
+func GetUtxoMapping(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, varStateTotalAssets)
+}
+
+func SetAssetsUtxoIndices(state kv.KVStore, stateIndex uint32, tokenUtxoIndices []iotago.NativeTokenID) {
+	mapping := GetUtxoMapping(state)
+	for index, assetID := range tokenUtxoIndices {
+		entry := codec.EncodeUint16(uint16(index))
+		entry = append(entry, codec.EncodeUint32(stateIndex)...)
+		mapping.MustSetAt(assetID[:], entry)
+	}
+}
+
+func GetUtxoForAsset(state kv.KVStore, id iotago.NativeTokenID) (stateIndex uint32, outputIndex uint16, err error) {
+	mapping := GetUtxoMapping(state)
+	entry := mapping.MustGetAt(id[:])
+	outputIndex, err = codec.DecodeUint16(entry[:2])
+	if err != nil {
+		return 0, 0, err
+	}
+	stateIndex, err = codec.DecodeUint32(entry[2:])
+	if err != nil {
+		return 0, 0, err
+	}
+	return stateIndex, outputIndex, nil
 }
