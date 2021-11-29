@@ -1,7 +1,6 @@
 package accounts
 
 import (
-	"bytes"
 	"fmt"
 	"math/big"
 
@@ -199,7 +198,7 @@ func GetAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Assets {
 	acc := getAccountR(state, agentID)
 	ret := iscp.NewEmptyAssets()
 	acc.MustIterate(func(k []byte, v []byte) bool {
-		if bytes.Equal(k, iscp.IotaTokenID) {
+		if iscp.IsIota(k) {
 			ret.Iotas = new(big.Int).SetBytes(v).Uint64()
 			return true
 		}
@@ -225,7 +224,7 @@ func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 func getAccountBalances(account *collections.ImmutableMap) *iscp.Assets {
 	ret := iscp.NewEmptyAssets()
 	account.MustIterate(func(assetID []byte, val []byte) bool {
-		if bytes.Equal(assetID, iscp.IotaTokenID) {
+		if iscp.IsIota(assetID) {
 			ret.Iotas = new(big.Int).SetBytes(val).Uint64()
 			return true
 		}

@@ -1,7 +1,6 @@
 package accounts
 
 import (
-	"bytes"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -163,7 +162,7 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	}
 
 	tokensToSend := iscp.NewEmptyAssets()
-	if bytes.Compare(assetID, iscp.IotaTokenID) == 0 {
+	if iscp.IsIota(assetID) {
 		if amount > 0 {
 			tokensToSend.Iotas = amount
 		} else {

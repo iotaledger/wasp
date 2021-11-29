@@ -1,6 +1,7 @@
 package iscp
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 
@@ -34,13 +35,11 @@ func NewAssets(iotas uint64, tokens iotago.NativeTokens) *Assets {
 
 func NewAssetsFromDict(d dict.Dict) (*Assets, error) {
 	ret := NewEmptyAssets()
-	var err error
-	ret.Iotas = new(big.Int).SetBytes(d.MustGet(kv.Key(IotaTokenID))).Uint64()
-	if err != nil {
-		return ret, err
-	}
-	d.Del(kv.Key(IotaTokenID))
 	for key, val := range d {
+		if IsIota([]byte(key)) {
+			ret.Iotas = new(big.Int).SetBytes(d.MustGet(kv.Key(IotaTokenID))).Uint64()
+			continue
+		}
 		token := &iotago.NativeToken{
 			ID:     TokenIDFromAssetID([]byte(key)),
 			Amount: new(big.Int).SetBytes(val),
@@ -131,6 +130,11 @@ func nativeTokensFromSet(set iotago.NativeTokensSet) iotago.NativeTokens {
 		i++
 	}
 	return ret
+}
+
+// IsIota return whether a given tokenID represents native Iotas
+func IsIota(tokenID []byte) bool {
+	return bytes.Equal(tokenID, IotaTokenID)
 }
 
 var NativeAssetsSerializationArrayRules = iotago.NativeTokenArrayRules()
