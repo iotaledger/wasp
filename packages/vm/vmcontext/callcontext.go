@@ -17,7 +17,7 @@ func (vmctx *VMContext) pushCallContextAndMoveAssets(contract iscp.Hname, params
 		targetAccount := iscp.NewAgentID(vmctx.ChainID().AsAddress(), contract)
 		var sourceAccount *iscp.AgentID
 		if len(vmctx.callStack) == 0 {
-			sourceAccount = vmctx.req.Request().SenderAccount()
+			sourceAccount = vmctx.req.SenderAccount()
 		} else {
 			sourceAccount = vmctx.AccountID()
 		}
@@ -36,7 +36,7 @@ func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, t
 	var caller *iscp.AgentID
 	if len(vmctx.callStack) == 0 {
 		// request context
-		caller = vmctx.req.Request().SenderAccount()
+		caller = vmctx.req.SenderAccount()
 	} else {
 		caller = vmctx.MyAgentID()
 	}

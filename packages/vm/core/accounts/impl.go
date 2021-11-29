@@ -1,11 +1,11 @@
 package accounts
 
 import (
-	"fmt"
+	"math/big"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -17,6 +17,7 @@ var Processor = Contract.Processor(initialize,
 	FuncViewTotalAssets.WithHandler(viewTotalAssets),
 	FuncViewAccounts.WithHandler(viewAccounts),
 	FuncDeposit.WithHandler(deposit),
+	FuncSendTo.WithHandler(sendTo),
 	FuncWithdraw.WithHandler(withdraw),
 	FuncHarvest.WithHandler(harvest),
 	FuncGetAccountNonce.WithHandler(getAccountNonce),
@@ -38,13 +39,13 @@ func viewBalance(ctx iscp.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	return getAccountBalanceDict(ctx, getAccountR(ctx.State(), aid), fmt.Sprintf("viewBalance for %s", aid)), nil
+	return getAccountBalanceDict(getAccountR(ctx.State(), aid)), nil
 }
 
 // viewTotalAssets returns total colored balances controlled by the chain
 func viewTotalAssets(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(ctx, getTotalAssetsAccountR(ctx.State()), "viewTotalAssets"), nil
+	return getAccountBalanceDict(getTotalAssetsAccountR(ctx.State())), nil
 }
 
 // viewAccounts returns list of all accounts as keys of the ImmutableCodec
@@ -52,32 +53,47 @@ func viewAccounts(ctx iscp.SandboxView) (dict.Dict, error) {
 	return getAccountsIntern(ctx.State()), nil
 }
 
-// deposit moves transfer to the specified account on the chain. Can be send as request or can be called
-// If the target account is a core contract on the same chain, it is adjusted to the common account
-// (controlled by the chain owner)
+// deposit is a generic function to deposit funds to the sender's chain account
+func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
+	ctx.Log().Debugf("accounts.deposit -- %s", ctx.IncomingTransfer())
+	// No need to do anything here because funds are already credited to the users account
+	// just send back anything that might have been included in "transfer" by mistake
+	if ctx.IncomingTransfer() == nil {
+		return nil, nil
+	}
+	sendIncomingTo(ctx, ctx.Caller())
+	return nil, nil
+}
+
+// sendTo moves transfer to the specified account on the chain. Can be send as request or can be called
+// If the target account is a core contract on the same chain
 // Params:
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
 //   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
-// TODO rewrite according to the new asset handling workflow
-func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.deposit.begin -- %s", ctx.IncomingTransfer())
+func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
+	ctx.Log().Debugf("accounts.sendTo.begin -- %s", ctx.IncomingTransfer())
 
-	mustCheckLedger(ctx.State(), "accounts.deposit.begin")
+	if ctx.IncomingTransfer() == nil {
+		return nil, nil
+	}
+	mustCheckLedger(ctx.State(), "accounts.sendTo.begin")
 
 	caller := ctx.Caller()
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetAccount := params.MustGetAgentID(ParamAgentID, caller)
-	targetAccount = commonaccount.AdjustIfNeeded(targetAccount, ctx.ChainID())
 
-	// funds currently are in the common account (because call is to 'accounts'), they must be moved to the target
-	succ := MoveBetweenAccounts(ctx.State(), commonaccount.Get(ctx.ChainID()), targetAccount, ctx.IncomingTransfer())
-	assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", targetAccount.String())
-
-	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s",
+	sendIncomingTo(ctx, targetAccount)
+	ctx.Log().Debugf("accounts.sendTo.success: target: %s\n%s",
 		targetAccount, ctx.IncomingTransfer().String())
 
-	mustCheckLedger(ctx.State(), "accounts.deposit.exit")
+	mustCheckLedger(ctx.State(), "accounts.sendTo.exit")
 	return nil, nil
+}
+
+func sendIncomingTo(ctx iscp.Sandbox, targetAccount *iscp.AgentID) {
+	// funds currently are in the common account (because call is to 'accounts'), they must be moved to the target
+	ok := MoveBetweenAccounts(ctx.State(), commonaccount.Get(ctx.ChainID()), targetAccount, ctx.IncomingTransfer())
+	assert.NewAssert(ctx.Log()).Require(ok, "internal error: failed to send funds to %s", targetAccount.String())
 }
 
 // withdraw sends caller's funds to the caller
@@ -89,6 +105,7 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 		// if the caller is on the same chain, do nothing
 		return nil, nil
 	}
+	// TODO maybe we need to deduct gas fees from tokensToWithdraw? - to check
 	tokensToWithdraw, ok := GetAccountBalances(state, ctx.Caller())
 	if !ok {
 		// empty balance, nothing to withdraw
@@ -101,11 +118,15 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
 
 	// add incoming tokens (after fees) to the balances to be withdrawn. Otherwise they would end up in the common account
-	tokensToWithdraw.AddAll(ctx.IncomingTransfer())
+	tokensToWithdraw.Add(ctx.IncomingTransfer())
 	// Send call assumes tokens are in the current account
-	a.Require(ctx.Send(ctx.Caller().Address(), tokensToWithdraw, &iscp.SendMetadata{
+	sendMetadata := &iscp.SendMetadata{
 		TargetContract: ctx.Caller().Hname(),
-	}), "accounts.withdraw.inconsistency: failed sending tokens ")
+	}
+	a.Require(
+		ctx.Send(ctx.Caller().Address(), tokensToWithdraw, sendMetadata),
+		"accounts.withdraw.inconsistency: failed sending tokens ",
+	)
 
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", tokensToWithdraw.String())
 
@@ -116,38 +137,51 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 // owner of the chain moves all tokens from the common account to its own account
 // Params:
 //   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
-//   ParamWithdrawColor color to withdraw if amount is specified. Defaults to colored.IOTA
+//   ParamWithdrawAssetID assetID to withdraw if amount is specified. Defaults to Iota
 func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.RequireChainOwner(ctx, "harvest")
 
 	state := ctx.State()
-	mustCheckLedger(state, "accounts.withdraw.begin")
-	defer mustCheckLedger(state, "accounts.withdraw.exit")
+	mustCheckLedger(state, "accounts.harvest.begin")
+	defer mustCheckLedger(state, "accounts.harvest.exit")
 
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	// if ParamWithdrawAmount > 0, take it as exact amount to withdraw
 	// otherwise assume harvest all
-	amount, err := par.GetUint64(ParamWithdrawAmount)
-	harvestAll := true
-	if err == nil && amount > 0 {
-		harvestAll = false
-	}
-	// if dummyColor not specified and amount is specified, default is harvest specified amount of iotas
-	col := par.MustGetColor(ParamWithdrawColor, colored.IOTA)
+	amount := par.MustGetUint64(ParamWithdrawAmount, 0)
+
+	// default is harvest specified amount of iotas
+	assetID := par.MustGetBytes(ParamWithdrawAssetID, iscp.IotaTokenID)
 
 	sourceAccount := commonaccount.Get(ctx.ChainID())
-	bals, ok := GetAccountBalances(state, sourceAccount)
+	balance, ok := GetAccountBalances(state, sourceAccount)
 	if !ok {
 		// empty balance, nothing to withdraw
 		return nil, nil
 	}
-	tokensToSend := bals
-	if !harvestAll {
-		balCol := bals[col]
-		a.Require(balCol >= amount, "accounts.harvest.error: not enough tokens")
-		tokensToSend = colored.NewBalancesForColor(col, amount)
+
+	tokensToSend := iscp.NewEmptyAssets()
+	if iscp.IsIota(assetID) {
+		if amount > 0 {
+			tokensToSend.Iotas = amount
+		} else {
+			tokensToSend.Iotas = balance.Iotas
+		}
+	} else {
+		token := &iotago.NativeToken{
+			ID: iscp.TokenIDFromAssetID(assetID),
+		}
+		if amount > 0 {
+			token.Amount = new(big.Int).SetUint64(amount)
+		} else {
+			tokenset, err := balance.Tokens.Set()
+			a.RequireNoError(err)
+			token.Amount = tokenset[token.ID].Amount
+		}
+		tokensToSend.Tokens = append(tokensToSend.Tokens, token)
 	}
+
 	a.Require(MoveBetweenAccounts(state, sourceAccount, ctx.Caller(), tokensToSend),
 		"accounts.harvest.inconsistency. failed to move tokens to owner's account")
 	return nil, nil

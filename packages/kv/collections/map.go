@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"errors"
 
-	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -203,18 +200,4 @@ func (m *ImmutableMap) MustIterateKeys(f func(elemKey []byte) bool) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func (m *ImmutableMap) MustIterateBalances(f func(color colored.Color, bal uint64) bool) {
-	m.MustIterate(func(elemKey []byte, value []byte) bool {
-		col, err := colored.ColorFromBytes(elemKey)
-		if err != nil {
-			panic(xerrors.Errorf("MustIterateBalances: %w", err))
-		}
-		v, err := util.Uint64From8Bytes(value)
-		if err != nil {
-			panic(xerrors.Errorf("MustIterateBalances: %w", err))
-		}
-		return f(col, v)
-	})
 }

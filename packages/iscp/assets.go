@@ -1,12 +1,15 @@
 package iscp
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 // Assets is used as assets in the UTXO and as tokens in transfer
@@ -15,11 +18,41 @@ type Assets struct {
 	Tokens iotago.NativeTokens
 }
 
+var IotaTokenID = []byte{0}
+
+func NewEmptyAssets() *Assets {
+	return &Assets{
+		Tokens: make([]*iotago.NativeToken, 0),
+	}
+}
+
 func NewAssets(iotas uint64, tokens iotago.NativeTokens) *Assets {
 	return &Assets{
 		Iotas:  iotas,
 		Tokens: tokens,
 	}
+}
+
+func NewAssetsFromDict(d dict.Dict) (*Assets, error) {
+	ret := NewEmptyAssets()
+	for key, val := range d {
+		if IsIota([]byte(key)) {
+			ret.Iotas = new(big.Int).SetBytes(d.MustGet(kv.Key(IotaTokenID))).Uint64()
+			continue
+		}
+		token := &iotago.NativeToken{
+			ID:     TokenIDFromAssetID([]byte(key)),
+			Amount: new(big.Int).SetBytes(val),
+		}
+		ret.Tokens = append(ret.Tokens, token)
+	}
+	return ret, nil
+}
+
+func TokenIDFromAssetID(assetID []byte) [iotago.NativeTokenIDLength]byte {
+	var tokenID [iotago.NativeTokenIDLength]byte
+	copy(tokenID[:], assetID)
+	return tokenID
 }
 
 func (a *Assets) String() string {
@@ -30,6 +63,78 @@ func (a *Assets) Bytes() []byte {
 	mu := marshalutil.New()
 	a.WriteToMarshalUtil(mu)
 	return mu.Bytes()
+}
+
+func (a *Assets) Equals(b *Assets) bool {
+	if a.Iotas != b.Iotas {
+		return false
+	}
+	if len(a.Tokens) != len(b.Tokens) {
+		return false
+	}
+	bTokensSet := b.Tokens.MustSet()
+	for _, token := range a.Tokens {
+		if token.Amount.Cmp(bTokensSet[token.ID].Amount) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func (a *Assets) Add(b *Assets) *Assets {
+	a.Iotas += b.Iotas
+	resultTokens := a.Tokens.MustSet()
+	for _, token := range b.Tokens {
+		if resultTokens[token.ID] != nil {
+			resultTokens[token.ID].Amount.Add(
+				resultTokens[token.ID].Amount,
+				token.Amount,
+			)
+			continue
+		}
+		resultTokens[token.ID] = token
+	}
+	a.Tokens = nativeTokensFromSet(resultTokens)
+	return a
+}
+
+func (a *Assets) AddToken(tokenID iotago.NativeTokenID, amount *big.Int) *Assets {
+	b := NewAssets(0, iotago.NativeTokens{
+		&iotago.NativeToken{
+			ID:     tokenID,
+			Amount: amount,
+		},
+	})
+	return a.Add(b)
+}
+
+func (a *Assets) AddIotas(amount uint64) *Assets {
+	a.Iotas += amount
+	return a
+}
+
+func (a *Assets) ToDict() dict.Dict {
+	ret := dict.New()
+	ret.Set(kv.Key(IotaTokenID), new(big.Int).SetUint64(a.Iotas).Bytes())
+	for _, token := range a.Tokens {
+		ret.Set(kv.Key(token.ID[:]), token.Amount.Bytes())
+	}
+	return ret
+}
+
+func nativeTokensFromSet(set iotago.NativeTokensSet) iotago.NativeTokens {
+	ret := make(iotago.NativeTokens, len(set))
+	i := 0
+	for _, token := range set {
+		ret[i] = token
+		i++
+	}
+	return ret
+}
+
+// IsIota return whether a given tokenID represents native Iotas
+func IsIota(tokenID []byte) bool {
+	return bytes.Equal(tokenID, IotaTokenID)
 }
 
 var NativeAssetsSerializationArrayRules = iotago.NativeTokenArrayRules()

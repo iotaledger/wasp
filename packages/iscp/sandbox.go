@@ -74,7 +74,7 @@ type Sandbox interface {
 	IncomingTransfer() *Assets
 	// Send one generic method for sending assets with ledgerstate.ExtendedLockedOutput
 	// replaces TransferToAddress and Post1Request
-	Send(target iotago.Address, assets *Assets, metadata *SendMetadata, options ...*SendOptions)
+	Send(target iotago.Address, assets *Assets, metadata *SendMetadata, options ...*SendOptions) bool
 	// BlockContext Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// StateAnchor properties of the anchor output

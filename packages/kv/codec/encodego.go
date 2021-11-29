@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -39,10 +37,6 @@ func Encode(v interface{}) []byte {
 		return EncodeHashValue(vt)
 	case ledgerstate.Address:
 		return EncodeAddress(vt)
-	case *colored.Color:
-		return EncodeColor(*vt)
-	case colored.Color:
-		return EncodeColor(vt)
 	case *iscp.ChainID:
 		return EncodeChainID(vt)
 	case iscp.ChainID:
