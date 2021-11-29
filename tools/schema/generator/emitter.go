@@ -364,10 +364,11 @@ func (g *GenBase) setCommonKeys() {
 	g.keys["true"] = "true"
 	g.keys["empty"] = ""
 	g.keys["space"] = " "
-	g.keys["package"] = g.s.Name
-	g.keys["Package"] = g.s.FullName
+	g.keys["package"] = g.s.PackageName
+	g.keys["Package"] = g.s.ContractName
+	g.setMultiKeyValues("pkgName", g.s.ContractName)
 	g.keys["module"] = moduleName + strings.Replace(moduleCwd[len(modulePath):], "\\", "/", -1)
-	scName := g.s.Name
+	scName := g.s.PackageName
 	if g.s.CoreContracts {
 		// strip off "core" prefix
 		scName = scName[4:]

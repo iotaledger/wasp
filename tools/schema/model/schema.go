@@ -53,13 +53,10 @@ type Struct struct {
 }
 
 type Schema struct {
-	Name          string
-	FullName      string
+	ContractName  string
+	PackageName   string
 	Description   string
 	KeyID         int
-	ConstLen      int
-	ConstNames    []string
-	ConstValues   []string
 	CoreContracts bool
 	SchemaTime    time.Time
 	Events        []*Struct
@@ -76,11 +73,11 @@ func NewSchema() *Schema {
 }
 
 func (s *Schema) Compile(schemaDef *SchemaDef) error {
-	s.FullName = strings.TrimSpace(schemaDef.Name)
-	if s.FullName == "" {
+	s.ContractName = strings.TrimSpace(schemaDef.Name)
+	if s.ContractName == "" {
 		return fmt.Errorf("missing contract name")
 	}
-	s.Name = strings.ToLower(s.FullName)
+	s.PackageName = strings.ToLower(s.ContractName)
 	s.Description = strings.TrimSpace(schemaDef.Description)
 
 	err := s.compileEvents(schemaDef)
@@ -210,7 +207,7 @@ func (s *Schema) compileFuncFields(fieldMap StringMap, allFieldMap *FieldMap, wh
 			return nil, fmt.Errorf("redefined %s alias: '%s' != '%s", what, existing.Alias, field.Alias)
 		}
 		if existing.Type != field.Type {
-			return nil, fmt.Errorf("redefined %s type", what)
+			return nil, fmt.Errorf("redefined %s type: %s", what, field.Name)
 		}
 		fields = append(fields, field)
 	}

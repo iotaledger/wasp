@@ -15,6 +15,7 @@ import (
 
 // TODO nested structs
 // TODO handle case where owner is type AgentID[]
+// TODO take copyright from schema?
 
 type GenBase struct {
 	currentEvent  *model.Struct
@@ -84,7 +85,6 @@ func (g *GenBase) createFile(path string, overwrite bool, generator func()) (err
 	return nil
 }
 
-// TODO take copyright from schema?
 func (g *GenBase) createSourceFile(name string, condition bool) error {
 	if !condition {
 		return nil
@@ -121,7 +121,7 @@ func (g *GenBase) generateCommonFiles() error {
 		g.folder += module + "/"
 	}
 	if g.s.CoreContracts {
-		g.folder += g.s.Name + "/"
+		g.folder += g.s.PackageName + "/"
 	}
 
 	err := os.MkdirAll(g.folder, 0o755)
@@ -196,7 +196,7 @@ func (g *GenBase) generateCode() error {
 }
 
 func (g *GenBase) generateFuncs() error {
-	scFileName := g.folder + g.s.Name + g.extension
+	scFileName := g.folder + g.s.PackageName + g.extension
 	if g.exists(scFileName) != nil {
 		// generate initial SC function file
 		return g.createFile(scFileName, false, func() {
@@ -216,7 +216,7 @@ func (g *GenBase) generateFuncs() error {
 	}
 
 	// save old one from overwrite
-	scOriginal := g.folder + g.s.Name + ".bak"
+	scOriginal := g.folder + g.s.PackageName + ".bak"
 	err = os.Rename(scFileName, scOriginal)
 	if err != nil {
 		return err
@@ -249,7 +249,7 @@ func (g *GenBase) generateTests() error {
 	}
 
 	// do not overwrite existing file
-	name := strings.ToLower(g.s.Name)
+	name := strings.ToLower(g.s.PackageName)
 	filename := "test/" + name + "_test.go"
 	return g.createFile(filename, false, func() {
 		g.emit("test.go")

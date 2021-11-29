@@ -42,5 +42,13 @@ func (g *ClientGenerator) generateCode() error {
 	if err != nil {
 		return err
 	}
+	err = g.createSourceFile("app", len(g.s.Events) != 0)
+	if err != nil {
+		return err
+	}
+	err = g.createSourceFile("service", len(g.s.Events) != 0)
+	if err != nil {
+		return err
+	}
 	return nil
 }
