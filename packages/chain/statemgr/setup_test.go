@@ -63,6 +63,10 @@ type MockedNode struct {
 	Log             *logger.Logger
 }
 
+type MockedStateManagerMetrics struct{}
+
+func (c *MockedStateManagerMetrics) RecordBlockSize(_ uint32, _ float64) {}
+
 func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
 	level := zapcore.InfoLevel
 	if debug {
@@ -195,13 +199,15 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		Peers:     peers,
 		Log:       log,
 	}
+
+	stateMgrMetrics := new(MockedStateManagerMetrics)
 	ret.ChainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
 		return ret.stateSync
 	})
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
 		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
 	})
-	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, timers)
+	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, stateMgrMetrics, timers)
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())

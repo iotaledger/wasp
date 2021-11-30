@@ -180,6 +180,9 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	// - any view call will return 'state invalidated message'
 	sm.chain.GlobalStateSync().InvalidateSolidIndex()
 	err := tentativeState.Commit(blocks...)
+	for _, block := range blocks {
+		sm.stateManagerMetrics.RecordBlockSize(block.BlockIndex(), float64(len(block.Bytes())))
+	}
 	sm.chain.GlobalStateSync().SetSolidIndex(tentativeState.BlockIndex())
 
 	if err != nil {

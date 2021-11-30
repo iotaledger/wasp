@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/ready"
@@ -44,6 +45,7 @@ type stateManager struct {
 	eventStateCandidateMsgCh chan *messages.StateCandidateMsg
 	eventTimerMsgCh          chan messages.TimerTick
 	closeCh                  chan bool
+	stateManagerMetrics      metrics.StateManagerMetrics
 }
 
 const (
@@ -51,7 +53,7 @@ const (
 	maxBlocksToCommitConst               = 10000 // 10k
 )
 
-func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, timersOpt ...StateManagerTimers) chain.StateManager {
+func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, stateManagerMetrics metrics.StateManagerMetrics, timersOpt ...StateManagerTimers) chain.StateManager {
 	var timers StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -75,6 +77,7 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		eventStateCandidateMsgCh: make(chan *messages.StateCandidateMsg),
 		eventTimerMsgCh:          make(chan messages.TimerTick),
 		closeCh:                  make(chan bool),
+		stateManagerMetrics:      stateManagerMetrics,
 	}
 	go ret.initLoadState()
 

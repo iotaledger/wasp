@@ -156,7 +156,7 @@ func NewChain(
 		log.Errorf("NewChain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn)
+	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn, chainMetrics)
 	ret.peers = &peers
 	var peeringID peering.PeeringID = ret.chainID.Array()
 	peers.Attach(&peeringID, func(recv *peering.RecvEvent) {

@@ -179,6 +179,7 @@ func (m *Mempool) RemoveRequests(reqs ...iscp.RequestID) {
 		}
 		m.outPoolCounter++
 		m.mempoolMetrics.CountRequestOut()
+		m.mempoolMetrics.CountBlocksPerChain()
 		elapsed := time.Since(m.pool[rid].whenReceived)
 		m.mempoolMetrics.RecordRequestProcessingTime(rid, elapsed)
 		delete(m.pool, rid)
