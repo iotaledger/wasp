@@ -58,7 +58,7 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	// check the account. It must exist
 	// TODO optimize: check the account balances and fetch nonce in one call
 	// off-ledger account must exist, i.e. it should have non zero balance on the chain
-	if _, exists := accounts.GetAccountBalances(vmctx.State(), vmctx.req.SenderAccount()); !exists {
+	if _, exists := accounts.GetAccountAssets(vmctx.State(), vmctx.req.SenderAccount()); !exists {
 		// TODO check minimum balance. Require some minimum balance
 		return xerrors.Errorf("unverified account for off-ledger request: %s", vmctx.req.SenderAccount())
 	}
@@ -149,7 +149,6 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 			// the request came back after expiration
 			// TODO ignoring temporary. Must be processed as returned request by consuming it back
 			return xerrors.Errorf("came back expired after %v. Ignore for now", expiry.Time)
-
 		} else {
 			// somebody else is a sender
 			return xerrors.Errorf("expired after %v", expiry.Time)

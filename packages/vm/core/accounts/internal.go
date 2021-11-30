@@ -85,16 +85,16 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 	mustCheckLedger(state, "DebitFromAccount IN")
 	defer mustCheckLedger(state, "DebitFromAccount OUT")
 
-	if !debitFromAccount(state, getAccount(state, agentID), assets) {
+	if !debitFromAccount(state, getAccount(state, agentID), assets, false) {
 		panic(ErrNotEnoughFunds)
 	}
-	if !debitFromAccount(state, getTotalAssetsAccount(state), assets) {
+	if !debitFromAccount(state, getTotalAssetsAccount(state), assets, true) {
 		panic("debitFromAccount: inconsistent accounts ledger state")
 	}
 }
 
 // debitFromAccount internal
-func debitFromAccount(state kv.KVStore, account *collections.Map, assets *iscp.Assets) bool {
+func debitFromAccount(state kv.KVStore, account *collections.Map, assets *iscp.Assets, isTotalAssetsAccount bool) bool {
 	if assets == nil {
 		return true
 	}
@@ -114,6 +114,15 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, assets *iscp.A
 	debitAsset(account, iscp.IotaTokenID, new(big.Int).SetUint64(assets.Iotas))
 	for _, token := range assets.Tokens {
 		debitAsset(account, token.ID[:], token.Amount)
+
+		// delete UTXO mapping when the chain no longer holds more of this asset
+		if !isTotalAssetsAccount {
+			continue
+		}
+		remainingChainAssetBalance := getAccountAssetBalance(account.ImmutableMap, token.ID[:])
+		if util.IsZeroBigInt(remainingChainAssetBalance) {
+			removeUTXOMapping(state, token.ID)
+		}
 	}
 	return true
 }
@@ -129,7 +138,7 @@ func hasEnoughBalance(account *collections.ImmutableMap, assetID []byte, amount 
 func getAccountAssetBalance(account *collections.ImmutableMap, assetID []byte) *big.Int {
 	v := account.MustGetAt(assetID)
 	if v == nil {
-		return nil
+		return big.NewInt(0)
 	}
 	return new(big.Int).SetBytes(account.MustGetAt(assetID))
 }
@@ -152,7 +161,7 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 		return true
 	}
 	// total assets account doesn't change
-	if !debitFromAccount(state, getAccount(state, fromAgentID), transfer) {
+	if !debitFromAccount(state, getAccount(state, fromAgentID), transfer, false) {
 		return false
 	}
 	creditToAccount(state, getAccount(state, toAgentID), transfer)
@@ -227,7 +236,7 @@ func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 	return ret
 }
 
-func getAccountBalances(account *collections.ImmutableMap) *iscp.Assets {
+func getAccountAssets(account *collections.ImmutableMap) *iscp.Assets {
 	ret := iscp.NewEmptyAssets()
 	account.MustIterate(func(assetID []byte, val []byte) bool {
 		if iscp.IsIota(assetID) {
@@ -246,18 +255,18 @@ func getAccountBalances(account *collections.ImmutableMap) *iscp.Assets {
 	return ret
 }
 
-// GetAccountBalances returns all assets belonging to the agentID on the state.
+// GetAccountAssets returns all assets belonging to the agentID on the state.
 // Normally, the state is the partition of the 'accountsc'
-func GetAccountBalances(state kv.KVStoreReader, agentID *iscp.AgentID) (*iscp.Assets, bool) {
+func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) (*iscp.Assets, bool) {
 	account := getAccountR(state, agentID)
 	if account.MustLen() == 0 {
 		return nil, false
 	}
-	return getAccountBalances(account), true
+	return getAccountAssets(account), true
 }
 
 func GetTotalAssets(state kv.KVStoreReader) *iscp.Assets {
-	return getAccountBalances(getTotalAssetsAccountR(state))
+	return getAccountAssets(getTotalAssetsAccountR(state))
 }
 
 func calcTotalAssets(state kv.KVStoreReader) *iscp.Assets {
@@ -268,7 +277,7 @@ func calcTotalAssets(state kv.KVStoreReader) *iscp.Assets {
 		if err != nil {
 			panic(err)
 		}
-		accBalances := getAccountBalances(getAccountR(state, agentID))
+		accBalances := getAccountAssets(getAccountR(state, agentID))
 		ret.Add(accBalances)
 		return true
 	})
@@ -285,7 +294,7 @@ func mustCheckLedger(state kv.KVStore, checkpoint string) {
 }
 
 func getAccountBalanceDict(account *collections.ImmutableMap) dict.Dict {
-	return getAccountBalances(account).ToDict()
+	return getAccountAssets(account).ToDict()
 }
 
 func DecodeBalances(balances dict.Dict) (*iscp.Assets, error) {
@@ -338,4 +347,9 @@ func GetUtxoForAsset(state kv.KVStore, id iotago.NativeTokenID) (stateIndex uint
 		return 0, 0, err
 	}
 	return stateIndex, outputIndex, nil
+}
+
+func removeUTXOMapping(state kv.KVStore, id iotago.NativeTokenID) {
+	mapping := GetUtxoMapping(state)
+	mapping.DelAt(id[:]) //nolint:errcheck // No need to check this error
 }

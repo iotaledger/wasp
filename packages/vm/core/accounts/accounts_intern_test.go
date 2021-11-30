@@ -88,7 +88,7 @@ func TestCreditDebit2(t *testing.T) {
 	require.True(t, expected.Equals(total))
 
 	require.True(t, util.IsZeroBigInt(GetTokenBalance(state, agentID1, &transfer.Tokens[0].ID)))
-	bal1, ok := GetAccountBalances(state, agentID1)
+	bal1, ok := GetAccountAssets(state, agentID1)
 	require.True(t, ok)
 	require.True(t, total.Equals(bal1))
 }
@@ -153,12 +153,12 @@ func TestCreditDebit4(t *testing.T) {
 	expected = iscp.NewAssets(42, nil).AddToken(dummyAssetID, big.NewInt(2))
 	require.True(t, expected.Equals(total))
 
-	bm1, ok := GetAccountBalances(state, agentID1)
+	bm1, ok := GetAccountAssets(state, agentID1)
 	require.True(t, ok)
 	expected = iscp.NewAssets(22, nil).AddToken(dummyAssetID, big.NewInt(2))
 	require.True(t, expected.Equals(bm1))
 
-	bm2, ok := GetAccountBalances(state, agentID2)
+	bm2, ok := GetAccountAssets(state, agentID2)
 	require.True(t, ok)
 	expected = iscp.NewAssets(20, nil)
 	require.True(t, expected.Equals(bm2))
@@ -196,11 +196,11 @@ func TestCreditDebit5(t *testing.T) {
 	expected = iscp.NewAssets(42, nil).AddToken(dummyAssetID, big.NewInt(2))
 	require.True(t, expected.Equals(total))
 
-	bm1, ok := GetAccountBalances(state, agentID1)
+	bm1, ok := GetAccountAssets(state, agentID1)
 	require.True(t, ok)
 	require.True(t, expected.Equals(bm1))
 
-	_, ok = GetAccountBalances(state, agentID2)
+	_, ok = GetAccountAssets(state, agentID2)
 	require.False(t, ok)
 }
 
@@ -225,10 +225,10 @@ func TestCreditDebit6(t *testing.T) {
 	keys := getAccountsIntern(state).Keys()
 	require.EqualValues(t, 1, len(keys))
 
-	_, ok = GetAccountBalances(state, agentID1)
+	_, ok = GetAccountAssets(state, agentID1)
 	require.False(t, ok)
 
-	bal2, ok := GetAccountBalances(state, agentID2)
+	bal2, ok := GetAccountAssets(state, agentID2)
 	require.True(t, ok)
 	require.True(t, total.Equals(bal2))
 }
