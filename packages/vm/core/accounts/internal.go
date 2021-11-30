@@ -306,8 +306,11 @@ func GetMaxAssumedNonce(state kv.KVStoreReader, address iotago.Address) uint64 {
 }
 
 func RecordMaxAssumedNonce(state kv.KVStore, address iotago.Address, nonce uint64) {
-	// TODO
-	panic("not implemented")
+	next := GetMaxAssumedNonce(state, address) + 1
+	if nonce > next {
+		next = nonce
+	}
+	state.Set(kv.Key(iscp.BytesFromAddress(address))+postfixMaxAssumedNonceKey, codec.EncodeUint64(next))
 }
 
 func GetUtxoMapping(state kv.KVStore) *collections.Map {

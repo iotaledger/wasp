@@ -122,7 +122,7 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 		errStr = errProvided.Error()
 	}
 	err := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestReceipt{
-		Request: vmctx.Request(),
+		Request: vmctx.req,
 		Error:   errStr,
 	}, vmctx.requestLookupKey())
 	if err != nil {
