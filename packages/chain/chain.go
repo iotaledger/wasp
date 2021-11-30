@@ -30,7 +30,7 @@ type ChainCore interface {
 	GetStateReader() state.OptimisticStateReader
 	Log() *logger.Logger
 
-	// Most of these methods are made publick for mocking in tests
+	// Most of these methods are made public for mocking in tests
 	EnqueueDismissChain(reason string) // This one should really be public
 	EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, timestamp time.Time)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
