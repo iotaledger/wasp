@@ -314,7 +314,7 @@ func RecordMaxAssumedNonce(state kv.KVStore, address iotago.Address, nonce uint6
 }
 
 func GetUtxoMapping(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, varStateTotalAssets)
+	return collections.NewMap(state, varStateUtxoMapping)
 }
 
 func SetAssetsUtxoIndices(state kv.KVStore, stateIndex uint32, tokenUtxoIndices []iotago.NativeTokenID) {
