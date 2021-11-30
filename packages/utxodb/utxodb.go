@@ -30,37 +30,40 @@ type UnixSeconds uint64
 // of transactions. It ensures the consistency of the ledger and all added transactions
 // by checking inputs, outputs and signatures.
 type UtxoDB struct {
-	mutex  sync.RWMutex
-	supply uint64
-	// enqueuedTxs contains all transactions that are not yet committed in a milestone
-	enqueuedTxs map[iotago.TransactionID]*iotago.Transaction
-	// transactions contains all committed transactions
-	transactions map[iotago.TransactionID]*iotago.Transaction
-	milestones   []milestone
-	utxo         map[iotago.OutputID]*iotago.UTXOInput
+	mutex                sync.RWMutex
+	supply               uint64
+	rentStructure        *iotago.RentStructure
+	milestones           []milestone
+	milestoneIndexByTxID map[iotago.TransactionID]uint32
+	utxo                 map[iotago.OutputID]*iotago.UTXOInput
+}
+
+type MilestoneInfo struct {
+	Index     uint32
+	Timestamp UnixSeconds
 }
 
 type milestone struct {
-	timestamp    UnixSeconds
-	transactions []iotago.TransactionID
+	timestamp UnixSeconds
+	tx        *iotago.Transaction // for simplicity, only one transaction per milestone
 }
 
 type InitParams struct {
-	timestamp UnixSeconds
-	supply    uint64
+	timestamp     UnixSeconds
+	supply        uint64
+	rentStructure *iotago.RentStructure
 }
 
 func DefaultInitParams() *InitParams {
 	return &InitParams{
-		timestamp: 0,
-		supply:    DefaultIOTASupply,
+		timestamp:     0,
+		supply:        DefaultIOTASupply,
+		rentStructure: &iotago.RentStructure{},
 	}
 }
 
 func WithTimestamp(timestamp UnixSeconds) *InitParams {
-	i := DefaultInitParams()
-	i.timestamp = timestamp
-	return i
+	return DefaultInitParams().WithTimestamp(timestamp)
 }
 
 func (i *InitParams) WithTimestamp(timestamp UnixSeconds) *InitParams {
@@ -68,10 +71,17 @@ func (i *InitParams) WithTimestamp(timestamp UnixSeconds) *InitParams {
 	return i
 }
 
-func WithSupply(supply uint64) *InitParams {
-	i := DefaultInitParams()
-	i.supply = supply
+func WithRentStructure(r *iotago.RentStructure) *InitParams {
+	return DefaultInitParams().WithRentStructure(r)
+}
+
+func (i *InitParams) WithRentStructure(r *iotago.RentStructure) *InitParams {
+	i.rentStructure = r
 	return i
+}
+
+func WithSupply(supply uint64) *InitParams {
+	return DefaultInitParams().WithSupply(supply)
 }
 
 func (i *InitParams) WithSupply(supply uint64) *InitParams {
@@ -88,106 +98,57 @@ func New(params ...*InitParams) *UtxoDB {
 		p = DefaultInitParams()
 	}
 	u := &UtxoDB{
-		supply:       p.supply,
-		enqueuedTxs:  make(map[iotago.TransactionID]*iotago.Transaction),
-		transactions: make(map[iotago.TransactionID]*iotago.Transaction),
-		utxo:         make(map[iotago.OutputID]*iotago.UTXOInput),
+		supply:               p.supply,
+		rentStructure:        p.rentStructure,
+		milestoneIndexByTxID: make(map[iotago.TransactionID]uint32),
+		utxo:                 make(map[iotago.OutputID]*iotago.UTXOInput),
 	}
 	u.genesisInit(p.timestamp)
 	return u
 }
 
-var deSeriParas = &iotago.DeSerializationParameters{RentStructure: &iotago.RentStructure{
-	VByteCost:    0,
-	VBFactorData: 0,
-	VBFactorKey:  0,
-}}
+func (u *UtxoDB) deSeriParas() *iotago.DeSerializationParameters {
+	return &iotago.DeSerializationParameters{RentStructure: u.rentStructure}
+}
 
 func (u *UtxoDB) genesisInit(timestamp UnixSeconds) {
 	genesisTx, err := iotago.NewTransactionBuilder().
 		AddInput(&iotago.ToBeSignedUTXOInput{Address: &genesisAddress, Input: &iotago.UTXOInput{}}).
 		AddOutput(&iotago.ExtendedOutput{Address: &genesisAddress, Amount: DefaultIOTASupply}).
-		Build(deSeriParas, genesisSigner)
+		Build(u.deSeriParas(), genesisSigner)
 	if err != nil {
 		panic(err)
 	}
+	u.addTransaction(genesisTx, timestamp)
+}
 
-	txID, err := genesisTx.ID()
+func (u *UtxoDB) addTransaction(tx *iotago.Transaction, timestamp UnixSeconds) {
+	txID, err := tx.ID()
 	if err != nil {
 		panic(err)
 	}
-	u.transactions[*txID] = genesisTx
 	u.milestones = append(u.milestones, milestone{
-		timestamp:    timestamp,
-		transactions: []iotago.TransactionID{*txID},
+		timestamp: timestamp,
+		tx:        tx,
 	})
-	utxo := &iotago.UTXOInput{
-		TransactionID:          *txID,
-		TransactionOutputIndex: 0,
-	}
-	u.utxo[utxo.ID()] = utxo
-}
+	u.milestoneIndexByTxID[*txID] = uint32(len(u.milestones) - 1)
 
-type CommitError struct {
-	error
-	TxID iotago.TransactionID
-}
-
-// Commit creates a new milestone with all transactions added since the latest milestone,
-// returning the list of discarded transactions (e.g. because of double spend).
-func (u *UtxoDB) Commit(timestamp ...UnixSeconds) (errors []*CommitError) {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
-
-	t := u.latestMilestone().timestamp + 1
-	if len(timestamp) > 0 {
-		if timestamp[0] < t {
-			panic("timestamp must be >= latest milestone timestamp")
-		}
-		t = timestamp[0]
+	// delete consumed outputs from the ledger
+	inputs, err := u.getTransactionInputs(tx)
+	for outID := range inputs {
+		delete(u.utxo, outID)
 	}
 
-	// process transactions in a deterministic order
-	txIDs := make([]iotago.TransactionID, 0, len(u.enqueuedTxs))
-	for txID := range u.enqueuedTxs {
-		txIDs = append(txIDs, txID)
+	// add unspent outputs to the ledger
+	for i := range tx.Essence.Outputs {
+		utxo := &iotago.UTXOInput{
+			TransactionID:          *txID,
+			TransactionOutputIndex: uint16(i),
+		}
+		u.utxo[utxo.ID()] = utxo
 	}
-	txIDs = serializer.RemoveDupsAndSortByLexicalOrderArrayOf32Bytes(txIDs)
-
-	for _, txID := range txIDs {
-		tx := u.enqueuedTxs[txID]
-
-		inputs, err := u.validateTransaction(tx)
-		if err != nil {
-			errors = append(errors, &CommitError{error: err, TxID: txID})
-			continue
-		}
-
-		// delete consumed outputs from the ledger
-		for outID := range inputs {
-			delete(u.utxo, outID)
-		}
-
-		u.transactions[txID] = tx
-
-		// add unspent outputs to the ledger
-		for i := range tx.Essence.Outputs {
-			utxo := &iotago.UTXOInput{
-				TransactionID:          txID,
-				TransactionOutputIndex: uint16(i),
-			}
-			u.utxo[utxo.ID()] = utxo
-		}
-	}
-
-	u.milestones = append(u.milestones, milestone{
-		timestamp:    t,
-		transactions: txIDs,
-	})
-	u.enqueuedTxs = make(map[iotago.TransactionID]*iotago.Transaction)
 
 	u.checkLedgerBalance()
-	return
 }
 
 func (u *UtxoDB) latestMilestone() milestone {
@@ -199,11 +160,15 @@ func (u *UtxoDB) milestoneIndex() uint32 {
 }
 
 func (u *UtxoDB) GenesisTransaction() *iotago.Transaction {
-	return u.transactions[u.GenesisTransactionID()]
+	return u.milestones[0].tx
 }
 
 func (u *UtxoDB) GenesisTransactionID() iotago.TransactionID {
-	return u.milestones[0].transactions[0]
+	txID, err := u.GenesisTransaction().ID()
+	if err != nil {
+		panic(err)
+	}
+	return *txID
 }
 
 // GenesisKey returns the private key of the creator of genesis.
@@ -227,7 +192,7 @@ func (u *UtxoDB) mustRequestFundsTx(target iotago.Address) *iotago.Transaction {
 		AddInput(&iotago.ToBeSignedUTXOInput{Address: &genesisAddress, Input: utxo}).
 		AddOutput(&iotago.ExtendedOutput{Address: target, Amount: RequestFundsAmount}).
 		AddOutput(&iotago.ExtendedOutput{Address: &genesisAddress, Amount: out.Amount - RequestFundsAmount}).
-		Build(deSeriParas, genesisSigner)
+		Build(u.deSeriParas(), genesisSigner)
 	if err != nil {
 		panic(err)
 	}
@@ -237,7 +202,7 @@ func (u *UtxoDB) mustRequestFundsTx(target iotago.Address) *iotago.Transaction {
 // RequestFunds sends RequestFundsAmount IOTA tokens from the genesis address to the given address.
 func (u *UtxoDB) RequestFunds(target iotago.Address) (*iotago.Transaction, error) {
 	tx := u.mustRequestFundsTx(target)
-	return tx, u.AddTransactionAndCommit(tx)
+	return tx, u.AddTransaction(tx)
 }
 
 // Supply returns supply of the instance.
@@ -246,14 +211,14 @@ func (u *UtxoDB) Supply() uint64 {
 }
 
 // IsConfirmed checks if the transaction is in the UtxoDB ledger.
-func (u *UtxoDB) IsConfirmed(txid *iotago.TransactionID) bool {
+func (u *UtxoDB) IsConfirmed(txID *iotago.TransactionID) bool {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
-	_, ok := u.transactions[*txid]
+	_, ok := u.milestoneIndexByTxID[*txID]
 	return ok
 }
 
-// getOutput finds an output by ID (either spent or unspent).
+// GetOutput finds an output by ID (either spent or unspent).
 func (u *UtxoDB) GetOutput(outID iotago.OutputID) iotago.Output {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
@@ -261,8 +226,8 @@ func (u *UtxoDB) GetOutput(outID iotago.OutputID) iotago.Output {
 }
 
 func (u *UtxoDB) getOutput(outID iotago.OutputID) iotago.Output {
-	tx := u.transactions[outID.TransactionID()]
-	if tx == nil {
+	tx, ok := u.getTransaction(outID.TransactionID())
+	if !ok {
 		return nil
 	}
 	if int(outID.Index()) >= len(tx.Essence.Outputs) {
@@ -291,19 +256,19 @@ func (u *UtxoDB) getTransactionInputs(tx *iotago.Transaction) (iotago.OutputSet,
 	return inputs, nil
 }
 
-func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) (iotago.OutputSet, error) {
+func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 	// serialize for syntactic check
-	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, deSeriParas); err != nil {
-		return nil, err
+	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, u.deSeriParas()); err != nil {
+		return err
 	}
 
 	inputs, err := u.getTransactionInputs(tx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	for outID := range inputs {
 		if u.utxo[outID] == nil {
-			return nil, fmt.Errorf("referenced output is not unspent")
+			return fmt.Errorf("referenced output is not unspent")
 		}
 	}
 
@@ -315,57 +280,59 @@ func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) (iotago.OutputSet, 
 			},
 		}
 		if err := tx.SemanticallyValidate(semValCtx, inputs); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return inputs, nil
-}
-
-// AddTransaction adds a transaction to UtxoDB or returns an error.
-// The function ensures consistency of the UtxoDB ledger.
-// The transaction is unconfirmed until Commit is called.
-func (u *UtxoDB) AddTransaction(tx *iotago.Transaction) error {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
-
-	if _, err := u.validateTransaction(tx); err != nil {
-		return err
-	}
-
-	txID, err := tx.ID()
-	if err != nil {
-		panic(err)
-	}
-	u.enqueuedTxs[*txID] = tx
 	return nil
 }
 
-func (u *UtxoDB) AddTransactionAndCommit(tx *iotago.Transaction) error {
-	err := u.AddTransaction(tx)
-	if err != nil {
+// AddTransaction adds a transaction to UtxoDB, ensuring consistency of the UtxoDB ledger.
+func (u *UtxoDB) AddTransaction(tx *iotago.Transaction, timestamp ...UnixSeconds) error {
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
+
+	t := u.latestMilestone().timestamp + 1
+	if len(timestamp) > 0 {
+		if timestamp[0] < t {
+			panic("timestamp must be >= latest milestone timestamp")
+		}
+		t = timestamp[0]
+	}
+
+	if err := u.validateTransaction(tx); err != nil {
 		return err
 	}
-	errors := u.Commit()
-	if len(errors) > 0 {
-		return errors[0]
-	}
+
+	u.addTransaction(tx, t)
 	return nil
 }
 
 // GetTransaction retrieves value transaction by its hash (ID).
-func (u *UtxoDB) GetTransaction(id iotago.TransactionID) (*iotago.Transaction, bool) {
+func (u *UtxoDB) GetTransaction(txID iotago.TransactionID) (*iotago.Transaction, bool) {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
-	return u.getTransaction(id)
+	return u.getTransaction(txID)
 }
 
 // MustGetTransaction same as GetTransaction only panics if transaction is not in UtxoDB.
-func (u *UtxoDB) MustGetTransaction(id iotago.TransactionID) *iotago.Transaction {
+func (u *UtxoDB) MustGetTransaction(txID iotago.TransactionID) *iotago.Transaction {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
-	return u.mustGetTransaction(id)
+	return u.mustGetTransaction(txID)
+}
+
+// GetTransactionMilestoneInfo returns the milestone index and timestamp of the transaction
+func (u *UtxoDB) GetTransactionMilestoneInfo(txID iotago.TransactionID) (MilestoneInfo, bool) {
+	u.mutex.RLock()
+	defer u.mutex.RUnlock()
+
+	idx, ok := u.milestoneIndexByTxID[txID]
+	if !ok {
+		return MilestoneInfo{}, false
+	}
+	return MilestoneInfo{Index: idx, Timestamp: u.milestones[idx].timestamp}, true
 }
 
 // GetUnspentOutputs returns all unspent outputs locked by the address, as spendable inputs.
@@ -406,15 +373,18 @@ func (u *UtxoDB) GetAliasOutputs(addr iotago.Address) []*iotago.AliasOutput {
 	return ret
 }
 
-func (u *UtxoDB) getTransaction(id iotago.TransactionID) (*iotago.Transaction, bool) {
-	tx, ok := u.transactions[id]
-	return tx, ok
+func (u *UtxoDB) getTransaction(txID iotago.TransactionID) (*iotago.Transaction, bool) {
+	milestoneIndex, ok := u.milestoneIndexByTxID[txID]
+	if !ok {
+		return nil, false
+	}
+	return u.milestones[milestoneIndex].tx, true
 }
 
-func (u *UtxoDB) mustGetTransaction(id iotago.TransactionID) *iotago.Transaction {
-	tx, ok := u.transactions[id]
+func (u *UtxoDB) mustGetTransaction(txID iotago.TransactionID) *iotago.Transaction {
+	tx, ok := u.getTransaction(txID)
 	if !ok {
-		panic(fmt.Errorf("utxodb.mustGetTransaction: tx id doesn't exist: %s", id))
+		panic(fmt.Errorf("utxodb.mustGetTransaction: tx id doesn't exist: %s", txID))
 	}
 	return tx
 }
