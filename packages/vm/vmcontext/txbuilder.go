@@ -4,6 +4,8 @@ import (
 	"math/big"
 
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -25,20 +27,42 @@ func (vmctx *VMContext) restoreTxBuilderSnapshot(snapshot *vmtxbuilder.AnchorTra
 // 1. `blocklog` to find UTXO ID for a specific token ID, if any
 // 2. `accounts` to load the balance
 // Returns nil if balance is empty (zero)
-func (vmctx *VMContext) loadNativeTokensOnChain(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
+func (vmctx *VMContext) loadNativeTokensOnChain(id iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
 	inp, ok := vmctx.findNativeTokenUTXOInput(id)
 	if !ok {
-		return nil, iotago.UTXOInput{}
+		return nil, nil
 	}
 	b := vmctx.GetTokenBalanceTotal(&id)
 	if b == nil {
-		return nil, iotago.UTXOInput{}
+		return nil, nil
 	}
 	return b, inp
 }
 
 // findNativeTokenUTXOInput call `blocklog` to find the UTXO input for the native token ID
-func (vmctx *VMContext) findNativeTokenUTXOInput(id iotago.NativeTokenID) (iotago.UTXOInput, bool) {
-	// TODO
-	panic("not implemented")
+func (vmctx *VMContext) findNativeTokenUTXOInput(id iotago.NativeTokenID) (*iotago.UTXOInput, bool) {
+	stateIndex, outputIndex, err := vmctx.getNativeTokenUtxoIndex(id)
+	if err != nil {
+		return nil, false
+	}
+	return &iotago.UTXOInput{
+		TransactionID:          vmctx.getTxIDForStateIndex(stateIndex),
+		TransactionOutputIndex: outputIndex,
+	}, true
+}
+
+func (vmctx *VMContext) getNativeTokenUtxoIndex(id iotago.NativeTokenID) (stateIndex uint32, outputIndex uint16, err error) {
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	return accounts.GetUtxoForAsset(vmctx.State(), id)
+}
+
+func (vmctx *VMContext) getTxIDForStateIndex(stateIndex uint32) [iotago.TransactionIDLength]byte {
+	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	// TODO get correct TXID for the given state index.
+	panic("implement me")
+	return nil
 }

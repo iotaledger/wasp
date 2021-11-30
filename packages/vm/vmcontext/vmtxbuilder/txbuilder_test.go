@@ -551,5 +551,4 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
-
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -132,6 +133,7 @@ func (vmctx *VMContext) GetResult() (dict.Dict, error) {
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, iotago.Address) {
 	rotationAddr := vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
+	vmctx.saveTokenIDInternalIndices()
 
 	blockIndex := vmctx.virtualState.BlockIndex()
 	stateCommitment := vmctx.virtualState.StateCommitment()
@@ -203,4 +205,13 @@ func (vmctx *VMContext) closeBlockContexts() {
 	}
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil
+}
+
+func (vmctx *VMContext) saveTokenIDInternalIndices() {
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	tokenUtxoIndices := vmctx.txbuilder.SortedListOfTokenIDsForOutputs()
+	stateIndex := vmctx.task.AnchorOutput.StateIndex + 1 // UTXOs for the native tokens will be produced together with the next block (state update)
+	accounts.SetAssetsUtxoIndices(vmctx.State(), stateIndex, tokenUtxoIndices)
 }

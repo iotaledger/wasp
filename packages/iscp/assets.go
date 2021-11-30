@@ -18,7 +18,7 @@ type Assets struct {
 	Tokens iotago.NativeTokens
 }
 
-var IotaTokenID = []byte{0}
+var IotaTokenID = []byte{}
 
 func NewEmptyAssets() *Assets {
 	return &Assets{

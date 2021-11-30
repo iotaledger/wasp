@@ -106,7 +106,7 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 		return nil, nil
 	}
 	// TODO maybe we need to deduct gas fees from tokensToWithdraw? - to check
-	tokensToWithdraw, ok := GetAccountBalances(state, ctx.Caller())
+	tokensToWithdraw, ok := GetAccountAssets(state, ctx.Caller())
 	if !ok {
 		// empty balance, nothing to withdraw
 		return nil, nil
@@ -155,7 +155,7 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	assetID := par.MustGetBytes(ParamWithdrawAssetID, iscp.IotaTokenID)
 
 	sourceAccount := commonaccount.Get(ctx.ChainID())
-	balance, ok := GetAccountBalances(state, sourceAccount)
+	balance, ok := GetAccountAssets(state, sourceAccount)
 	if !ok {
 		// empty balance, nothing to withdraw
 		return nil, nil
