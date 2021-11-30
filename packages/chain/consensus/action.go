@@ -149,6 +149,7 @@ func (c *consensus) runVMIfNeeded() {
 		)
 		c.workflow.vmStarted = true
 		vmTask.StartTime = time.Now()
+		c.consensusMetrics.CountVMRuns()
 		go c.vmRunner.Run(vmTask)
 	} else {
 		c.log.Errorf("runVM: error preparing VM task")
