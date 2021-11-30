@@ -84,8 +84,6 @@ type workflowFlags struct {
 var _ chain.Consensus = &consensus{}
 
 const (
-	peerMessageReceiverConsensus = byte(1)
-
 	peerMsgTypeSignedResult = iota
 	peerMsgTypeSignedResultAck
 
@@ -122,7 +120,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
 	}
-	ret.committeePeerGroup.Attach(peerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
+	ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret

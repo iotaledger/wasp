@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -177,7 +178,7 @@ func (c *consensus) pollMissingRequests(missingRequestIndexes []int) {
 	}
 	c.log.Debugf("runVMIfNeeded: asking for missing requests, ids: [%v]", missingRequestIDsString)
 	msg := &messages.MissingRequestIDsMsg{IDs: missingRequestIds}
-	c.committeePeerGroup.SendMsgBroadcast(chain.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequestIDs, msg.Bytes())
+	c.committeePeerGroup.SendMsgBroadcast(peering.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequestIDs, msg.Bytes())
 }
 
 // sortBatch deterministically sorts batch based on the value extracted from the consensus entropy
@@ -264,7 +265,7 @@ func (c *consensus) broadcastSignedResultIfNeeded() {
 			EssenceHash:  signedResult.EssenceHash,
 			SigShare:     signedResult.SigShare,
 		}
-		c.committeePeerGroup.SendMsgBroadcast(peerMessageReceiverConsensus, peerMsgTypeSignedResult, util.MustBytes(msg), c.resultSigAck...)
+		c.committeePeerGroup.SendMsgBroadcast(peering.PeerMessageReceiverConsensus, peerMsgTypeSignedResult, util.MustBytes(msg), c.resultSigAck...)
 		c.delaySendingSignedResult = time.Now().Add(c.timers.BroadcastSignedResultRetry)
 
 		c.log.Debugf("broadcastSignedResult: broadcasted: essence hash: %s, chain input %s",
@@ -763,7 +764,7 @@ func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 		ChainInputID: msg.ChainInputID,
 		EssenceHash:  msg.EssenceHash,
 	}
-	c.committeePeerGroup.SendMsgByIndex(msg.SenderIndex, peerMessageReceiverConsensus, peerMsgTypeSignedResultAck, util.MustBytes(msgAck))
+	c.committeePeerGroup.SendMsgByIndex(msg.SenderIndex, peering.PeerMessageReceiverConsensus, peerMsgTypeSignedResultAck, util.MustBytes(msgAck))
 }
 
 func (c *consensus) receiveSignedResultAck(msg *messages.SignedResultAckMsgIn) {

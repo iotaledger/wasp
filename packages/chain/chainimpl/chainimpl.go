@@ -152,7 +152,7 @@ func NewChain(
 		return nil
 	}
 	ret.stateMgr = statemgr.New(db, ret, ret.chainPeers, ret.nodeConn)
-	ret.chainPeers.Attach(chain.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
+	ret.chainPeers.Attach(peering.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
 	go ret.handleMessagesLoop()
 	ret.startTimer()
 	return ret
@@ -360,7 +360,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
 			cmtRec.Address.Base58(), err)
 	}
-	cmtPeerGroup.Attach(chain.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
+	cmtPeerGroup.Attach(peering.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
 	c.log.Debugf("creating new consensus object...")
 	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
 	c.setCommittee(cmt)

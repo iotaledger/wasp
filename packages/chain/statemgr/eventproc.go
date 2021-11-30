@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -45,7 +46,7 @@ func (sm *stateManager) handleGetBlockMsg(msg *messages.GetBlockMsgIn) {
 	sm.log.Debugf("handleGetBlockMsg: responding to peer %s by block %v", msg.SenderNetID, msg.BlockIndex)
 
 	blockMsg := &messages.BlockMsg{BlockBytes: blockBytes}
-	sm.chainPeers.SendMsgByNetID(msg.SenderNetID, peerMessageReceiverStateManager, peerMsgTypeBlock, util.MustBytes(blockMsg))
+	sm.chainPeers.SendMsgByNetID(msg.SenderNetID, peering.PeerMessageReceiverStateManager, peerMsgTypeBlock, util.MustBytes(blockMsg))
 }
 
 // EventBlockMsg

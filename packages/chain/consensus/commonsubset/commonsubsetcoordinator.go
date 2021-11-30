@@ -17,8 +17,6 @@ const (
 	futureInstances = 5 // How many future instances to accept.
 	pastInstances   = 2 // How many past instance to keep not closed.
 
-	peerMessageReceiverCommonSubset = byte(2)
-
 	peerMsgTypeBatch = iota
 )
 
@@ -70,7 +68,7 @@ func NewCommonSubsetCoordinator(
 		dkShare:  dkShare,
 		log:      log,
 	}
-	netGroup.Attach(peerMessageReceiverCommonSubset, ret.receiveCommitteePeerMessages)
+	netGroup.Attach(peering.PeerMessageReceiverCommonSubset, ret.receiveCommitteePeerMessages)
 	return ret
 }
 

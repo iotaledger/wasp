@@ -202,12 +202,8 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
 		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
 	})
-	ret.ChainPeers.Attach(peerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
+	ret.ChainPeers.Attach(peering.PeerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
 		log.Debugf("State manager recvEvent from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
-		if peerMsg.MsgReceiver != peerMessageReceiverStateManager {
-			env.T.Fatalf("State manager does not accept peer messages of other receiver type %v, message type=%v",
-				peerMsg.MsgReceiver, peerMsg.MsgType)
-		}
 		switch peerMsg.MsgType {
 		case peerMsgTypeGetBlock:
 			msg, err := messages.NewGetBlockMsg(peerMsg.MsgData)

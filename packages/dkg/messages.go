@@ -56,9 +56,6 @@ const (
 	// in response to duplicated messages from other peers. They should be treated
 	// in a special way to avoid infinite message loops.
 	rabinEcho byte = peering.FirstUserMsgCode + 44
-
-	peerMessageReceiverDkg     = byte(4)
-	peerMessageReceiverDkgInit = byte(5)
 )
 
 var initPeeringID peering.PeeringID

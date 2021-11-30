@@ -53,8 +53,6 @@ const (
 	maxBlocksToCommitConst               = 10000 // 10k
 	maxMsgBuffer                         = 1000
 
-	peerMessageReceiverStateManager = byte(0)
-
 	peerMsgTypeGetBlock = iota
 	peerMsgTypeBlock
 )
@@ -83,7 +81,7 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		eventStateCandidateMsgPipe: pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventTimerMsgPipe:          pipe.NewLimitInfinitePipe(1),
 	}
-	ret.chainPeers.Attach(peerMessageReceiverStateManager, ret.receiveChainPeerMessages)
+	ret.chainPeers.Attach(peering.PeerMessageReceiverStateManager, ret.receiveChainPeerMessages)
 	go ret.initLoadState()
 
 	return ret

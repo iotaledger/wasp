@@ -24,6 +24,13 @@ const (
 	// All the equal and larger msg types are committee messages.
 	// those with smaller are reserved by the package for heartbeat and handshake messages
 	FirstUserMsgCode = byte(0x10)
+
+	PeerMessageReceiverStateManager = byte(iota)
+	PeerMessageReceiverConsensus
+	PeerMessageReceiverCommonSubset
+	PeerMessageReceiverChain
+	PeerMessageReceiverDkg
+	PeerMessageReceiverDkgInit
 )
 
 // NetworkProvider stands for the peer-to-peer network, as seen

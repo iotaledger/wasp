@@ -376,7 +376,7 @@ func (cs *CommonSubset) send(msgBatch *msgBatch) {
 		return
 	}
 	cs.log.Debugf("ACS::IO - Sending a msgBatch=%+v", msgBatch)
-	cs.committeePeerGroup.SendMsgByIndex(msgBatch.dst, peerMessageReceiverCommonSubset, peerMsgTypeBatch, msgBatch.Bytes())
+	cs.committeePeerGroup.SendMsgByIndex(msgBatch.dst, peering.PeerMessageReceiverCommonSubset, peerMsgTypeBatch, msgBatch.Bytes())
 }
 
 // endregion ///////////////////////////////////////////////////////////////////

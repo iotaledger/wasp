@@ -66,13 +66,13 @@ func NewNode(
 		initMsgQueue: make(chan *initiatorInitMsgIn),
 		log:          log,
 	}
-	n.attachID = netProvider.Attach(&initPeeringID, peerMessageReceiverDkgInit, n.receiveInitMessage)
+	n.attachID = netProvider.Attach(&initPeeringID, peering.PeerMessageReceiverDkgInit, n.receiveInitMessage)
 	go n.recvLoop()
 	return &n, nil
 }
 
 func (n *Node) receiveInitMessage(peerMsg *peering.PeerMessageIn) {
-	if peerMsg.MsgReceiver != peerMessageReceiverDkgInit {
+	if peerMsg.MsgReceiver != peering.PeerMessageReceiverDkgInit {
 		panic(fmt.Errorf("DKG init handler does not accept peer messages of other receiver type %v, message type=%v",
 			peerMsg.MsgReceiver, peerMsg.MsgType))
 	}
@@ -128,7 +128,7 @@ func (n *Node) GenerateDistributedKey(
 	}
 	defer netGroup.Close()
 	recvCh := make(chan *peering.PeerMessageIn, peerCount*2)
-	attachID := n.netProvider.Attach(&dkgID, peerMessageReceiverDkg, func(recv *peering.PeerMessageIn) {
+	attachID := n.netProvider.Attach(&dkgID, peering.PeerMessageReceiverDkg, func(recv *peering.PeerMessageIn) {
 		recvCh <- recv
 	})
 	defer n.netProvider.Detach(attachID)
@@ -153,7 +153,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep0Initialize,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.NetID())
-			peer.SendMsg(makePeerMessage(initPeeringID, peerMessageReceiverDkgInit, rabinStep0Initialize, &initiatorInitMsg{
+			peer.SendMsg(makePeerMessage(initPeeringID, peering.PeerMessageReceiverDkgInit, rabinStep0Initialize, &initiatorInitMsg{
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peeringID:    dkgID,
 				peerNetIDs:   peerNetIDs,
@@ -194,7 +194,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorMsgs(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep6R6SendReconstructCommits,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.NetID())
-			peer.SendMsg(makePeerMessage(dkgID, peerMessageReceiverDkg, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
+			peer.SendMsg(makePeerMessage(dkgID, peering.PeerMessageReceiverDkg, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
 		},
 		func(recv *peering.PeerMessageGroupIn, initMsg initiatorMsg) (bool, error) {
 			switch msg := initMsg.(type) {
@@ -242,7 +242,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.NetID())
-			peer.SendMsg(makePeerMessage(dkgID, peerMessageReceiverDkg, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
+			peer.SendMsg(makePeerMessage(dkgID, peering.PeerMessageReceiverDkg, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
 				pubShares: publicShares,
 			}))
 		},
@@ -278,7 +278,7 @@ func (n *Node) onInitMsg(msg *initiatorInitMsgIn) {
 		// To have idempotence for retries, we need to consider duplicate
 		// messages as success, if process is already created.
 		n.procLock.RUnlock()
-		n.netProvider.SendMsgByNetID(msg.SenderNetID, makePeerMessage(msg.peeringID, peerMessageReceiverDkg, msg.step, &initiatorStatusMsg{
+		n.netProvider.SendMsgByNetID(msg.SenderNetID, makePeerMessage(msg.peeringID, peering.PeerMessageReceiverDkg, msg.step, &initiatorStatusMsg{
 			error: nil,
 		}))
 		return
@@ -292,7 +292,7 @@ func (n *Node) onInitMsg(msg *initiatorInitMsgIn) {
 			n.processes[p.dkgRef] = p
 		}
 		n.procLock.Unlock()
-		n.netProvider.SendMsgByNetID(msg.SenderNetID, makePeerMessage(msg.peeringID, peerMessageReceiverDkg, msg.step, &initiatorStatusMsg{
+		n.netProvider.SendMsgByNetID(msg.SenderNetID, makePeerMessage(msg.peeringID, peering.PeerMessageReceiverDkg, msg.step, &initiatorStatusMsg{
 			error: err,
 		}))
 	}()
@@ -320,7 +320,7 @@ func (n *Node) exchangeInitiatorStep(
 ) error {
 	sendCB := func(peerIdx uint16, peer peering.PeerSender) {
 		n.log.Debugf("Initiator sends step=%v command to %v", step, peer.NetID())
-		peer.SendMsg(makePeerMessage(dkgID, peerMessageReceiverDkg, step, &initiatorStepMsg{}))
+		peer.SendMsg(makePeerMessage(dkgID, peering.PeerMessageReceiverDkg, step, &initiatorStepMsg{}))
 	}
 	return n.exchangeInitiatorAcks(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB)
 }

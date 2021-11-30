@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
@@ -123,7 +124,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 		for _, peerID := range peerIDs {
 			if shouldSendToPeer(peerID, ackPeers) {
 				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID().Base58(), peerID)
-				c.chainPeers.SendMsgByNetID(peerID, chain.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
+				c.chainPeers.SendMsgByNetID(peerID, peering.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
 			}
 		}
 	}
@@ -162,7 +163,7 @@ func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerID st
 		return
 	}
 	msg := &messages.RequestAckMsg{ReqID: &reqID}
-	c.chainPeers.SendMsgByNetID(peerID, chain.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
+	c.chainPeers.SendMsgByNetID(peerID, peering.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
 }
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {

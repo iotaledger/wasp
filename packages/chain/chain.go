@@ -209,8 +209,6 @@ const (
 )
 
 const (
-	PeerMessageReceiverChain = byte(3)
-
 	PeerMsgTypeMissingRequestIDs = iota
 	PeerMsgTypeMissingRequest
 	PeerMsgTypeOffLedgerRequest

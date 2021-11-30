@@ -65,7 +65,7 @@ func testBasic(t *testing.T, peerCount, threshold uint16, allRandom bool) {
 		require.Nil(t, err)
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
 		acsPeers[a], err = NewCommonSubset(0, 0, group, dkShares[a], allRandom, nil, acsLog)
-		group.Attach(peerMessageReceiverCommonSubset, makeReceiveCommitteePeerMessagesFun(acsPeers[a], log))
+		group.Attach(peering.PeerMessageReceiverCommonSubset, makeReceiveCommitteePeerMessagesFun(acsPeers[a], log))
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")
@@ -114,7 +114,7 @@ func TestRandomized(t *testing.T) {
 		require.Nil(t, err)
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
 		acsPeers[a], err = NewCommonSubset(0, 0, group, dkShares[a], true, nil, acsLog)
-		group.Attach(peerMessageReceiverCommonSubset, makeReceiveCommitteePeerMessagesFun(acsPeers[a], log))
+		group.Attach(peering.PeerMessageReceiverCommonSubset, makeReceiveCommitteePeerMessagesFun(acsPeers[a], log))
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")
@@ -164,10 +164,6 @@ func TestRandomized(t *testing.T) {
 
 func makeReceiveCommitteePeerMessagesFun(peer *CommonSubset, log *logger.Logger) func(peerMsg *peering.PeerMessageGroupIn) {
 	return func(peerMsg *peering.PeerMessageGroupIn) {
-		if peerMsg.MsgReceiver != peerMessageReceiverCommonSubset {
-			panic(fmt.Errorf("Committee does not accept peer messages of other receiver type %v, message type=%v",
-				peerMsg.MsgReceiver, peerMsg.MsgType))
-		}
 		if peerMsg.MsgType != peerMsgTypeBatch {
 			panic(fmt.Errorf("Wrong type of committee message: %v", peerMsg.MsgType))
 		}
