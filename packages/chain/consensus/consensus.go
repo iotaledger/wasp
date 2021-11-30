@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -32,7 +32,7 @@ type consensus struct {
 	nodeConn                         chain.NodeConnection
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
-	stateOutput                      *ledgerstate.AliasOutput
+	stateOutput                      *iotago.AliasOutput
 	stateTimestamp                   time.Time
 	acsSessionID                     uint64
 	consensusBatch                   *BatchProposal
@@ -44,11 +44,11 @@ type consensus struct {
 	delayBatchProposalUntil          time.Time
 	delayRunVMUntil                  time.Time
 	delaySendingSignedResult         time.Time
-	resultTxEssence                  *ledgerstate.TransactionEssence
+	resultTxEssence                  *iotago.TransactionEssence
 	resultState                      state.VirtualStateAccess
 	resultSignatures                 []*messages.SignedResultMsgIn
 	resultSigAck                     []uint16
-	finalTx                          *ledgerstate.Transaction
+	finalTx                          *iotago.Transaction
 	postTxDeadline                   time.Time
 	pullInclusionStateDeadline       time.Time
 	lastTimerTick                    atomic.Int64

@@ -3,12 +3,11 @@ package webapiutil
 import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-func GetAccountBalance(ch chain.Chain, agentID *iscp.AgentID) (colored.Balances, error) {
+func GetAccountBalance(ch chain.Chain, agentID *iscp.AgentID) (*iscp.Assets, error) {
 	params := codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	})

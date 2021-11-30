@@ -6,16 +6,15 @@ package solo
 import (
 	"bytes"
 	"fmt"
+	"math/big"
 	"os"
 	"sort"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	 "github.com/iotaledger/iota.go/v3/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -50,10 +49,7 @@ func (ch *Chain) DumpAccounts() string {
 		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
 		bals := ch.GetAccountBalance(aid)
-		bals.ForEachRandomly(func(col colored.Color, bal uint64) bool {
-			ret += fmt.Sprintf("       %s: %d\n", col, bal)
-			return true
-		})
+		ret += fmt.Sprintf("%s\n", bals.String())
 	}
 	return ret
 }
@@ -102,9 +98,9 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 // Takes request token and necessary fees from the 'sigScheme' address (or OriginatorAddress if nil).
 //
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
-func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadBlob(key *ed25519.PrivateKey, params ...interface{}) (ret hashing.HashValue, err error) {
 	if keyPair == nil {
-		keyPair = ch.OriginatorKeyPair
+		keyPair = ch.OriginatorPrivateKey
 	}
 
 	expectedHash := blob.MustGetBlobHash(parseParams(params))
@@ -114,7 +110,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 	}
 
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, colored.IOTA)
+	require.EqualValues(ch.Env.T, feeColor, iscp.IotaAssetID)
 	totalFee := ownerFee + validatorFee
 	if totalFee == 0 {
 		bal := ch.GetAccountBalance(iscp.NewAgentID(ledgerstate.NewED25519Address(keyPair.PublicKey), 0))
@@ -158,7 +154,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 //
 // The blob for the Wasm binary used fixed field names which are statically known by the
 // 'root' smart contract which is responsible for the deployment of contracts on the chain
-func (ch *Chain) UploadWasm(keyPair *ed25519.KeyPair, binaryCode []byte) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadWasm(key *ed25519.PrivateKey, binaryCode []byte) (ret hashing.HashValue, err error) {
 	return ch.UploadBlob(keyPair,
 		blob.VarFieldVMType, vmtypes.WasmTime,
 		blob.VarFieldProgramBinary, binaryCode,
@@ -166,7 +162,7 @@ func (ch *Chain) UploadWasm(keyPair *ed25519.KeyPair, binaryCode []byte) (ret ha
 }
 
 // UploadWasmFromFile is a syntactic sugar to upload file content as blob data to the chain
-func (ch *Chain) UploadWasmFromFile(keyPair *ed25519.KeyPair, fileName string) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadWasmFromFile(key *ed25519.PrivateKey, fileName string) (ret hashing.HashValue, err error) {
 	var binary []byte
 	binary, err = os.ReadFile(fileName)
 	if err != nil {
@@ -204,7 +200,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 //   - it is and ID of  the blob stored on the chain in the format of Wasm binary
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
 //     smart contract must be made available with the call examples.AddProcessor
-func (ch *Chain) DeployContract(keyPair *ed25519.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
+func (ch *Chain) DeployContract(key *ed25519.PrivateKey, name string, programHash hashing.HashValue, params ...interface{}) error {
 	par := codec.MakeDict(map[string]interface{}{
 		root.ParamProgramHash: programHash,
 		root.ParamName:        name,
@@ -219,7 +215,7 @@ func (ch *Chain) DeployContract(keyPair *ed25519.KeyPair, name string, programHa
 
 // DeployWasmContract is syntactic sugar for uploading Wasm binary from file and
 // deploying the smart contract in one call
-func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name, fname string, params ...interface{}) error {
+func (ch *Chain) DeployWasmContract(key *ed25519.PrivateKey, name, fname string, params ...interface{}) error {
 	hprog, err := ch.UploadWasmFromFile(keyPair, fname)
 	if err != nil {
 		return err
@@ -251,15 +247,14 @@ func (ch *Chain) GetInfo() (*iscp.ChainID, *iscp.AgentID, map[iscp.Hname]*root.C
 
 // GetAddressBalance returns number of tokens of given color contained in the given address
 // on the UTXODB ledger
-func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col colored.Color) uint64 {
+func (env *Solo) GetAddressBalance(addr iotago.Address, assetID []byte) *big.Int {
 	bals := env.GetAddressBalances(addr)
-	ret := bals[col]
-	return ret
+	return bals.AmountOf(assetID)
 }
 
-// GetAddressBalances returns all colored balances of the address contained in the UTXODB ledger
-func (env *Solo) GetAddressBalances(addr ledgerstate.Address) colored.Balances {
-	return colored.BalancesFromL1Map(env.utxoDB.GetAddressBalances(addr))
+// GetAddressBalances returns all assets of the address contained in the UTXODB ledger
+func (env *Solo) GetAddressBalances(addr iotago.Address) *iscp.Assets {
+	return *iscp.AssetsFromL1Map(env.utxoDB.GetAddressBalances(addr))
 }
 
 // GetAccounts returns all accounts on the chain with non-zero balances
@@ -276,27 +271,19 @@ func (ch *Chain) GetAccounts() []*iscp.AgentID {
 	return ret
 }
 
-func (ch *Chain) parseAccountBalance(d dict.Dict, err error) colored.Balances {
+func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *iscp.Assets {
 	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
-		return colored.NewBalances()
+		return iscp.NewEmptyAssets()
 	}
-	ret := colored.NewBalances()
-	err = d.Iterate("", func(key kv.Key, value []byte) bool {
-		col, err := codec.DecodeColor([]byte(key))
-		require.NoError(ch.Env.T, err)
-		val, err := codec.DecodeUint64(value)
-		require.NoError(ch.Env.T, err)
-		ret.Set(col, val)
-		return true
-	})
+	ret, err := iscp.NewAssetsFromDict(d)
 	require.NoError(ch.Env.T, err)
 	return ret
 }
 
-func (ch *Chain) GetOnChainLedger() map[string]colored.Balances {
+func (ch *Chain) GetOnChainLedger() map[string]*iscp.Assets {
 	accs := ch.GetAccounts()
-	ret := make(map[string]colored.Balances)
+	ret := make(map[string]*iscp.Assets)
 	for i := range accs {
 		ret[accs[i].String()] = ch.GetAccountBalance(accs[i])
 	}
@@ -318,25 +305,24 @@ func (ch *Chain) GetOnChainLedgerString() string {
 	return ret
 }
 
-// GetAccountBalance return all balances of colored tokens contained in the on-chain
+// GetAccountBalance return all assets contained in the on-chain
 // account controlled by the 'agentID'
-func (ch *Chain) GetAccountBalance(agentID *iscp.AgentID) colored.Balances {
+func (ch *Chain) GetAccountBalance(agentID *iscp.AgentID) *iscp.Assets {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
 	)
 }
 
-func (ch *Chain) GetCommonAccountBalance() colored.Balances {
+func (ch *Chain) GetCommonAccountBalance() *iscp.Assets {
 	return ch.GetAccountBalance(ch.CommonAccount())
 }
 
 func (ch *Chain) GetCommonAccountIotas() uint64 {
-	ret := ch.GetAccountBalance(ch.CommonAccount()).Get(colored.IOTA)
-	return ret
+	return ch.GetAccountBalance(ch.CommonAccount()).Iotas
 }
 
-// GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
-func (ch *Chain) GetTotalAssets() colored.Balances {
+// GetTotalAssets return total sum of assets contained in the on-chain accounts
+func (ch *Chain) GetTotalAssets() *iscp.Assets {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewTotalAssets.Name),
 	)
@@ -344,8 +330,7 @@ func (ch *Chain) GetTotalAssets() colored.Balances {
 
 // GetTotalIotas return total sum of iotas
 func (ch *Chain) GetTotalIotas() uint64 {
-	ret := ch.GetTotalAssets().Get(colored.IOTA)
-	return ret
+	return ch.GetTotalAssets().Iotas
 }
 
 // GetFeeInfo returns the fee info for the specific chain and smart contract
@@ -353,23 +338,24 @@ func (ch *Chain) GetTotalIotas() uint64 {
 //  - chain owner part of the fee (number of tokens)
 //  - validator part of the fee (number of tokens)
 // Total fee is sum of owner fee and validator fee
-func (ch *Chain) GetFeeInfo(contractName string) (colored.Color, uint64, uint64) {
-	hname := iscp.Hn(contractName)
-	ret, err := ch.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, governance.ParamHname, hname)
-	require.NoError(ch.Env.T, err)
-	require.NotEqualValues(ch.Env.T, 0, len(ret))
+func (ch *Cha	// TODO implementin) GetFeeInfo(contractName string) ([]byte, uint64, uint64) {
+	panic("not implemented")
+	// hname := iscp.Hn(contractName)
+	// ret, err := ch.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, governance.ParamHname, hname)
+	// require.NoError(ch.Env.T, err)
+	// require.NotEqualValues(ch.Env.T, 0, len(ret))
 
-	feeColor, err := codec.DecodeColor(ret.MustGet(governance.ParamFeeColor))
-	require.NoError(ch.Env.T, err)
-	require.NotNil(ch.Env.T, feeColor)
+	// feeColor, err := codec.DecodeColor(ret.MustGet(governance.ParamFeeColor))
+	// require.NoError(ch.Env.T, err)
+	// require.NotNil(ch.Env.T, feeColor)
 
-	validatorFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamValidatorFee))
-	require.NoError(ch.Env.T, err)
+	// validatorFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamValidatorFee))
+	// require.NoError(ch.Env.T, err)
 
-	ownerFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamOwnerFee))
-	require.NoError(ch.Env.T, err)
+	// ownerFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamOwnerFee))
+	// require.NoError(ch.Env.T, err)
 
-	return feeColor, ownerFee, validatorFee
+	// return feeColor, ownerFee, validatorFee
 }
 
 func eventsFromViewResult(t TestContext, viewResult dict.Dict) []string {
@@ -560,7 +546,7 @@ func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 }
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) AddAllowedStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
+func (ch *Chain) AddAllowedStateController(addr iotago.Address,key *ed25519.PrivateKey) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
 	).WithIotas(1)
@@ -569,7 +555,7 @@ func (ch *Chain) AddAllowedStateController(addr ledgerstate.Address, keyPair *ed
 }
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) RemoveAllowedStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
+func (ch *Chain) RemoveAllowedStateController(addr iotago.Address,key *ed25519.PrivateKey) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
 	).WithIotas(1)
@@ -578,13 +564,13 @@ func (ch *Chain) RemoveAllowedStateController(addr ledgerstate.Address, keyPair 
 }
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
+func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 	res, err := ch.CallView(coreutil.CoreContractGovernance, governance.FuncGetAllowedStateControllerAddresses.Name)
 	require.NoError(ch.Env.T, err)
 	if len(res) == 0 {
 		return nil
 	}
-	ret := make([]ledgerstate.Address, 0)
+	ret := make([]iotago.Address, 0)
 	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedStateControllerAddresses)
 	for i := uint16(0); i < arr.MustLen(); i++ {
 		a, err := codec.DecodeAddress(arr.MustGetAt(i))
@@ -597,7 +583,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
 // Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr ledgerstate.Address, newStateKeyPair, ownerKeyPair *ed25519.KeyPair) error {
+func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair,key *ed25519.PrivateKey) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).WithIotas(1)
@@ -609,7 +595,7 @@ func (ch *Chain) RotateStateController(newStateAddr ledgerstate.Address, newStat
 	return err
 }
 
-func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *ed25519.KeyPair) error {
+func (ch *Chain) postRequestSyncTxSpecial(req *CallParams,key *ed25519.PrivateKey) error {
 	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
 		return err

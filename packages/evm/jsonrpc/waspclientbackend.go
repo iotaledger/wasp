@@ -9,8 +9,6 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -30,25 +28,26 @@ func (w *WaspClientBackend) Signer() *ed25519.KeyPair {
 	return w.ChainClient.KeyPair
 }
 
-func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer colored.Balances, args dict.Dict) error {
-	tx, err := w.ChainClient.Post1Request(iscp.Hn(scName), iscp.Hn(funName), chainclient.PostRequestParams{
-		Transfer: transfer,
-		Args:     args,
-	})
-	if err != nil {
-		return err
-	}
-	err = w.ChainClient.WaspClient.WaitUntilAllRequestsProcessed(w.ChainClient.ChainID, tx, 1*time.Minute)
-	if err != nil {
-		return err
-	}
-	for _, reqID := range request.RequestsInTransaction(w.ChainClient.ChainID, tx) {
-		return w.ChainClient.CheckRequestResult(reqID)
-	}
-	panic("should not reach here")
+func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer *iscp.Assets, args dict.Dict) error {
+	panic("TODO implement")
+	// tx, err := w.ChainClient.Post1Request(iscp.Hn(scName), iscp.Hn(funName), chainclient.PostRequestParams{
+	// 	Transfer: transfer,
+	// 	Args:     args,
+	// })
+	// if err != nil {
+	// 	return err
+	// }
+	// err = w.ChainClient.WaspClient.WaitUntilAllRequestsProcessed(w.ChainClient.ChainID, tx, 1*time.Minute)
+	// if err != nil {
+	// 	return err
+	// }
+	// for _, reqID := range request.RequestsInTransaction(w.ChainClient.ChainID, tx) {
+	// 	return w.ChainClient.CheckRequestResult(reqID)
+	// }
+	// panic("should not reach here")
 }
 
-func (w *WaspClientBackend) PostOffLedgerRequest(scName, funName string, transfer colored.Balances, args dict.Dict) error {
+func (w *WaspClientBackend) PostOffLedgerRequest(scName, funName string, transfer *iscp.Assets, args dict.Dict) error {
 	req, err := w.ChainClient.PostOffLedgerRequest(iscp.Hn(scName), iscp.Hn(funName), chainclient.PostRequestParams{
 		Transfer: transfer,
 		Args:     args,

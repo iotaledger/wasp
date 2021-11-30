@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mr-tron/base58"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/mr-tron/base58"
 )
 
 func RequestDataFromBytes(data []byte) (RequestData, error) {
@@ -41,7 +40,7 @@ func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestData, error
 // region OffLedgerRequestData  ////////////////////////////////////////////////////////////////////////////
 
 type OffLedgerRequestData struct {
-	chainID        ChainID
+	chainID        *ChainID
 	contract       Hname
 	entryPoint     Hname
 	params         dict.Dict
@@ -54,7 +53,7 @@ type OffLedgerRequestData struct {
 	gasBudget      uint64
 }
 
-func NewOffLedgerRequest(chainID ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) *OffLedgerRequestData {
+func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) *OffLedgerRequestData {
 	return &OffLedgerRequestData{
 		chainID:    chainID,
 		contract:   contract,
@@ -80,6 +79,10 @@ var _ unwrap = &OffLedgerRequestData{}
 
 func (r *OffLedgerRequestData) OffLedger() *OffLedgerRequestData {
 	return r
+}
+
+func (r *OffLedgerRequestData) ChainID() *ChainID {
+	return r.chainID
 }
 
 func (r *OffLedgerRequestData) UTXO() unwrapUTXO {
@@ -139,7 +142,7 @@ func (r *OffLedgerRequestData) essenceBytes() []byte {
 }
 
 func (r *OffLedgerRequestData) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.Write(&r.chainID).
+	mu.Write(r.chainID).
 		Write(r.contract).
 		Write(r.entryPoint).
 		Write(r.params).

@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -78,7 +77,7 @@ func ScheduleNextBlock(ctx iscp.Sandbox) {
 		return
 	}
 
-	ok := ctx.Send(ctx.ChainID().AsAddress(), colored.NewBalancesForIotas(1), &iscp.SendMetadata{
+	ok := ctx.Send(ctx.ChainID().AsAddress(), iscp.NewAssets(1, nil), &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
 		EntryPoint:     evm.FuncMintBlock.Hname(),
 	}, iscp.SendOptions{

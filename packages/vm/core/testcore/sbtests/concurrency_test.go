@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -89,7 +88,7 @@ func testConcurrency2(t *testing.T, w bool) {
 
 	repeats := []int{300, 100, 100, 100, 200, 100, 100}
 	users := make([]*ed25519.KeyPair, len(repeats))
-	userAddr := make([]ledgerstate.Address, len(repeats))
+	userAddr := make([]iotago.Address, len(repeats))
 	sum := 0
 	for _, i := range repeats {
 		sum += i

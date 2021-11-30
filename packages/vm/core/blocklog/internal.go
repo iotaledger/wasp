@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -24,7 +23,7 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 	return ret
 }
 
-func SetAnchorTransactionIDOfLatestBlock(partition kv.KVStore, transactionId ledgerstate.TransactionID) {
+func SetAnchorTransactionIDOfLatestBlock(partition kv.KVStore, transactionId iotago.TransactionID) {
 	registry := collections.NewArray32(partition, StateVarBlockRegistry)
 	lastBlockIndex := registry.MustLen() - 1
 	blockInfoBuffer := registry.MustGetAt(lastBlockIndex)
@@ -39,7 +38,6 @@ func GetAnchorTransactionIDByBlockIndex(partition kv.KVStore, blockIndex uint32)
 	registry := collections.NewArray32(partition, StateVarBlockRegistry)
 	blockInfoBuffer := registry.MustGetAt(blockIndex)
 	blockInfo, err := BlockInfoFromBytes(blockIndex, blockInfoBuffer)
-
 	if err != nil {
 		panic("Failed to parse blockinfo")
 	}

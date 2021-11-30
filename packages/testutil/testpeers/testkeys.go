@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -47,7 +46,7 @@ func SetupDkg(
 	peerIdentities []*ed25519.KeyPair,
 	suite tcrypto.Suite,
 	log *logger.Logger,
-) (ledgerstate.Address, []registry.DKShareRegistryProvider) {
+) (iotago.Address, []registry.DKShareRegistryProvider) {
 	timeout := 100 * time.Second
 	networkProviders, networkCloser := SetupNet(peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(log), log)
 	//
@@ -85,7 +84,7 @@ func SetupDkgPregenerated(
 	threshold uint16,
 	peerNetIDs []string,
 	suite tcrypto.Suite,
-) (ledgerstate.Address, []registry.DKShareRegistryProvider) {
+) (iotago.Address, []registry.DKShareRegistryProvider) {
 	var err error
 	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(peerNetIDs)), threshold)
 	dks := make([]*tcrypto.DKShare, len(serializedDks))

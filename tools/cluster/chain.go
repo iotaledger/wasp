@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/client/scclient"
@@ -18,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -27,19 +27,19 @@ import (
 type Chain struct {
 	Description string
 
-	OriginatorSeed *seed.Seed
+	OriginatorSeed *util.Seed
 
 	AllPeers       []int
 	CommitteeNodes []int
 	Quorum         uint16
-	StateAddress   ledgerstate.Address
+	StateAddress   iotago.Address
 
 	ChainID *iscp.ChainID
 
 	Cluster *Cluster
 }
 
-func (ch *Chain) ChainAddress() ledgerstate.Address {
+func (ch *Chain) ChainAddress() iotago.Address {
 	return ch.ChainID.AsAddress()
 }
 
@@ -59,7 +59,7 @@ func (ch *Chain) AllAPIHosts() []string {
 	return ch.Cluster.Config.APIHosts(ch.AllPeers)
 }
 
-func (ch *Chain) OriginatorAddress() ledgerstate.Address {
+func (ch *Chain) OriginatorAddress() iotago.Address {
 	addr := ch.OriginatorSeed.Address(0).Address()
 	return addr
 }
@@ -98,7 +98,7 @@ func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 	return multiclient.New(ch.CommitteeAPIHosts())
 }
 
-func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*ledgerstate.Transaction, error) {
+func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*iotago.Transaction, error) {
 	programHash, err := hashing.HashValueFromBase58(progHashStr)
 	if err != nil {
 		return nil, err

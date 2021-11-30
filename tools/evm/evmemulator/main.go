@@ -93,7 +93,7 @@ func start(cmd *cobra.Command, args []string) {
 			solo.NewCallParams(deployParams.Name(), evm.FuncSetBlockTime.Name,
 				evm.FieldBlockTime, blockTime,
 			).WithIotas(1),
-			chain.OriginatorKeyPair,
+			chain.OriginatorPrivateKey,
 		)
 		log.Check(err)
 		go func() {

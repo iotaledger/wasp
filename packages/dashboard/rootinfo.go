@@ -2,7 +2,6 @@ package dashboard
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -18,7 +17,7 @@ type RootInfo struct {
 	Description string
 	Contracts   map[iscp.Hname]*root.ContractRecord
 
-	FeeColor            colored.Color
+	FeeColor            []byte
 	DefaultOwnerFee     uint64
 	DefaultValidatorFee uint64
 }

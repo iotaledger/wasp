@@ -4,7 +4,6 @@
 package registry
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -29,11 +28,11 @@ type PeerNetworkConfigProvider interface { // TODO: KP: Remove or redesign.
 // It should be implemented by registry.impl
 type DKShareRegistryProvider interface {
 	SaveDKShare(dkShare *tcrypto.DKShare) error
-	LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error)
+	LoadDKShare(sharedAddress iotago.Address) (*tcrypto.DKShare, error)
 }
 
 type CommitteeRegistryProvider interface {
-	GetCommitteeRecord(addr ledgerstate.Address) (*CommitteeRecord, error)
+	GetCommitteeRecord(addr iotago.Address) (*CommitteeRecord, error)
 	SaveCommitteeRecord(rec *CommitteeRecord) error
 }
 

@@ -152,7 +152,7 @@ func TestConcurrency2(t *testing.T) {
 			go func(r, n int) {
 				users[r] = ctx.NewSoloAgent()
 				for i := 0; i < n; i++ {
-					tx, _, err := chain.RequestFromParamsToLedger(req, users[r].Pair)
+					tx, _, err := chain.RequestFromParamsToLedger(req, users[r].PrivateKey)
 					require.NoError(t, err)
 					chain.Env.EnqueueRequests(tx)
 				}

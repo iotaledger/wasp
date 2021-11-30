@@ -2,7 +2,6 @@ package governanceimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -41,8 +40,8 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	chainID := params.MustGetChainID(governance.ParamChainID)
 	chainDescription := params.MustGetString(governance.ParamDescription, "N/A")
-	feeColor := params.MustGetColor(governance.ParamFeeColor, colored.IOTA)
-	feeColorSet := feeColor == colored.IOTA
+	feeAssetID := params.MustGetBytes(governance.ParamFeeColor, iscp.IotaAssetID)
+	feeAssetIDSet := iscp.IsIota(feeAssetID)
 
 	state.Set(governance.VarChainID, codec.EncodeChainID(chainID))
 	state.Set(governance.VarChainOwnerID, params.MustGetAgentID(governance.ParamChainOwner).Bytes())
@@ -52,8 +51,8 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	state.Set(governance.VarMaxEventSize, codec.Encode(governance.DefaultMaxEventSize))
 	state.Set(governance.VarMaxEventsPerReq, codec.Encode(governance.DefaultMaxEventsPerRequest))
 
-	if feeColorSet {
-		state.Set(governance.VarFeeColor, codec.EncodeColor(feeColor))
+	if feeAssetIDSet {
+		state.Set(governance.VarFeeAssetID, feeAssetID)
 	}
 	return nil, nil
 }

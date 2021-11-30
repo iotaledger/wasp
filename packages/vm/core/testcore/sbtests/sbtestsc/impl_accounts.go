@@ -3,8 +3,6 @@ package sbtestsc
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -16,7 +14,7 @@ func withdrawToChain(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncWithdrawToChain.Name)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetChain := params.MustGetChainID(ParamChainID)
-	succ := ctx.Send(targetChain.AsAddress(), colored.NewBalancesForIotas(1), &iscp.SendMetadata{
+	succ := ctx.Send(targetChain.AsAddress(), iscp.NewAssets(1, nil), &iscp.SendMetadata{
 		TargetContract: accounts.Contract.Hname(),
 		EntryPoint:     accounts.FuncWithdraw.Hname(),
 		Params:         nil,

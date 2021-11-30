@@ -3,7 +3,7 @@ package state
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -45,8 +45,8 @@ type StateUpdate interface {
 // Block is a sequence of state updates applicable to the virtual state
 type Block interface {
 	BlockIndex() uint32
-	ApprovingOutputID() ledgerstate.OutputID
-	SetApprovingOutputID(ledgerstate.OutputID)
+	ApprovingOutputID() iotago.OutputID
+	SetApprovingOutputID(iotago.OutputID)
 	Timestamp() time.Time
 	PreviousStateHash() hashing.HashValue
 	EssenceBytes() []byte // except state transaction id

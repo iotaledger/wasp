@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
@@ -16,10 +16,6 @@ func args(args ...interface{}) []interface{} {
 
 func hashref(hash hashing.HashValue) *hashing.HashValue {
 	return &hash
-}
-
-func colorref(color colored.Color) *colored.Color {
-	return &color
 }
 
 func trim(max int, s string) string {
@@ -56,8 +52,8 @@ func formatTimestamp(ts interface{}) string {
 	return t.UTC().Format(time.RFC3339)
 }
 
-func exploreAddressURL(baseURL string) func(address ledgerstate.Address) string {
-	return func(address ledgerstate.Address) string {
-		return baseURL + "/" + address.Base58()
+func exploreAddressURL(baseURL string) func(address iotago.Address) string {
+	return func(address iotago.Address) string {
+		return baseURL + "/" + address.Bech32(iscp.Bech32Prefix)
 	}
 }

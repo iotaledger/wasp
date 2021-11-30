@@ -6,8 +6,6 @@ package wasmproc
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -194,7 +192,7 @@ func (o *ScContext) processCall(bytes []byte) {
 	o.host.FindObject(resultsID).(*ScDict).kvStore = results
 }
 
-func (o *ScContext) processCallUnlocked(contract, function iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
+func (o *ScContext) processCallUnlocked(contract, function iscp.Hname, params dict.Dict, transfer *iscp.Assets) (dict.Dict, error) {
 	o.wc.proc.instanceLock.Unlock()
 	defer o.wc.proc.instanceLock.Lock()
 
@@ -287,24 +285,25 @@ func (o *ScContext) getParams(paramsID int32) dict.Dict {
 	return params
 }
 
-func (o *ScContext) getTransfer(transferID int32) colored.Balances {
+func (o *ScContext) getTransfer(transferID int32) *iscp.Assets {
 	if transferID == 0 {
-		return colored.NewBalances()
+		return iscp.NewEmptyAssets()
 	}
-	transfer := colored.NewBalances()
+	transfer := iscp.NewEmptyAssets()
 	transferDict := o.host.FindObject(transferID).(*ScDict).kvStore
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
-		col, err := codec.DecodeColor([]byte(key))
-		if err != nil {
-			o.Panicf(err.Error())
-		}
-		amount, err := codec.DecodeUint64(value)
-		if err != nil {
-			o.Panicf(err.Error())
-		}
-		o.Tracef("  XFER %d '%s'", amount, col.String())
-		transfer.Set(col, amount)
-		return true
+		panic("TODO implement")
+		// col, err := codec.DecodeColor([]byte(key))
+		// if err != nil {
+		// 	o.Panicf(err.Error())
+		// }
+		// amount, err := codec.DecodeUint64(value)
+		// if err != nil {
+		// 	o.Panicf(err.Error())
+		// }
+		// o.Tracef("  XFER %d '%s'", amount, col.String())
+		// transfer.Set(col, amount)
+		// return true
 	})
 	return transfer
 }

@@ -3,8 +3,8 @@ package chain
 import (
 	"strconv"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -42,7 +42,7 @@ func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []i
 	}
 }
 
-func PublishStateTransition(chainID *iscp.ChainID, stateOutput *ledgerstate.AliasOutput, reqIDsLength int) {
+func PublishStateTransition(chainID *iscp.ChainID, stateOutput *iotago.AliasOutput, reqIDsLength int) {
 	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
 
 	publisher.Publish("state",
@@ -54,7 +54,7 @@ func PublishStateTransition(chainID *iscp.ChainID, stateOutput *ledgerstate.Alia
 	)
 }
 
-func PublishGovernanceTransition(stateOutput *ledgerstate.AliasOutput) {
+func PublishGovernanceTransition(stateOutput *iotago.AliasOutput) {
 	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
 	chainID := iscp.NewChainID(stateOutput.GetAliasAddress())
 

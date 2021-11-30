@@ -7,14 +7,14 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 // Consensus -> Consensus
 type SignedResultAckMsg struct {
-	ChainInputID ledgerstate.OutputID
+	ChainInputID iotago.OutputID
 	EssenceHash  hashing.HashValue
 }
 

@@ -4,11 +4,9 @@
 package wasmproc
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -32,7 +30,7 @@ func (a *ScTransfers) GetObjectID(keyID, typeID int32) int32 {
 
 type ScTransferInfo struct {
 	ScSandboxObject
-	address ledgerstate.Address
+	address iotago.Address
 	wc      *WasmContext
 }
 
@@ -42,23 +40,13 @@ func NewScTransferInfo(wc *WasmContext) *ScTransferInfo {
 
 // TODO refactor
 func (o *ScTransferInfo) Invoke(balances int32) {
-	transfer := colored.NewBalances()
+	transfer := iscp.NewEmptyAssets()
 	balancesObj := o.host.FindObject(balances).(*ScDict)
 	balancesObj.kvStore.MustIterate("", func(key kv.Key, value []byte) bool {
-		if len(key) != ledgerstate.ColorLength {
-			return true
-		}
-		col, err := codec.DecodeColor([]byte(key))
-		if err != nil {
-			o.Panicf(err.Error())
-		}
-		amount, err := codec.DecodeUint64(value)
-		if err != nil {
-			o.Panicf(err.Error())
-		}
-		o.Tracef("TRANSFER #%d c'%s' a'%s'", value, col.String(), o.address.Base58())
-		transfer.Set(col, amount)
-		return true
+		panic("TODO implement - we need to support big int on wasm :/")
+		// o.Tracef("TRANSFER #%d c'%s' a'%s'", value, new(big.Int).SetBytes(value).String(), o.address.Bech32(iscp.Bech32Prefix))
+		// transfer.AddAsset([]byte(key), new(big.Int).SetBytes(value))
+		// return true
 	})
 	if !o.wc.ctx.Send(o.address, transfer, nil) {
 		o.Panicf("failed to send to %s", o.address.Base58())
@@ -66,20 +54,21 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 }
 
 func (o *ScTransferInfo) SetBytes(keyID, typeID int32, bytes []byte) {
-	switch keyID {
-	case wasmhost.KeyAddress:
-		var err error
-		o.address, _, err = ledgerstate.AddressFromBytes(bytes)
-		if err != nil {
-			o.Panicf("SetBytes: invalid address: " + err.Error())
-		}
-	case wasmhost.KeyBalances:
-		balanceMapID, err := codec.DecodeInt32(bytes, 0)
-		if err != nil {
-			o.Panicf("SetBytes: invalid balance map id: " + err.Error())
-		}
-		o.Invoke(balanceMapID)
-	default:
-		o.InvalidKey(keyID)
-	}
+	panic("TODO implement")
+	// switch keyID {
+	// case wasmhost.KeyAddress:
+	// 	var err error
+	// 	o.address, _, err = iotago.AddressFromBytes(bytes)
+	// 	if err != nil {
+	// 		o.Panicf("SetBytes: invalid address: " + err.Error())
+	// 	}
+	// case wasmhost.KeyBalances:
+	// 	balanceMapID, err := codec.DecodeInt32(bytes, 0)
+	// 	if err != nil {
+	// 		o.Panicf("SetBytes: invalid balance map id: " + err.Error())
+	// 	}
+	// 	o.Invoke(balanceMapID)
+	// default:
+	// 	o.InvalidKey(keyID)
+	// }
 }

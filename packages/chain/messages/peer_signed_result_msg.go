@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3/sign/tbls"
@@ -15,7 +15,7 @@ import (
 
 // Consensus -> Consensus
 type SignedResultMsg struct {
-	ChainInputID ledgerstate.OutputID
+	ChainInputID iotago.OutputID
 	EssenceHash  hashing.HashValue
 	SigShare     tbls.SigShare
 }

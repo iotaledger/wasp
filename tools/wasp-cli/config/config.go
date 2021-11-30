@@ -2,11 +2,9 @@ package config
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -73,9 +71,10 @@ func GoshimmerFaucetPoWTarget() int {
 	return viper.GetInt(key)
 }
 
-func GoshimmerClient() *goshimmer.Client {
-	log.Verbosef("using Goshimmer host %s, faucet pow target %d\n", GoshimmerAPI(), GoshimmerFaucetPoWTarget())
-	return goshimmer.NewClient(GoshimmerAPI(), GoshimmerFaucetPoWTarget())
+func GoshimmerClient() interface{} {
+	panic("TODO implement")
+	// log.Verbosef("using Goshimmer host %s, faucet pow target %d\n", GoshimmerAPI(), GoshimmerFaucetPoWTarget())
+	// return goshimmer.NewClient(GoshimmerAPI(), GoshimmerFaucetPoWTarget())
 }
 
 func WaspClient() *client.WaspClient {
@@ -176,20 +175,22 @@ func Set(key string, value interface{}) {
 	log.Check(viper.WriteConfig())
 }
 
-func TrySCAddress(scAlias string) ledgerstate.Address {
-	b58 := viper.GetString("sc." + scAlias + ".address")
-	if b58 == "" {
-		return nil
-	}
-	address, err := ledgerstate.AddressFromBase58EncodedString(b58)
-	log.Check(err)
-	return address
+func TrySCAddress(scAlias string) iotago.Address {
+	panic("TODO implement")
+	// b58 := viper.GetString("sc." + scAlias + ".address")
+	// if b58 == "" {
+	// 	return nil
+	// }
+	// address, err := iotago.AddressFromBase58EncodedString(b58)
+	// log.Check(err)
+	// return address
 }
 
-func GetSCAddress(scAlias string) ledgerstate.Address {
-	address := TrySCAddress(scAlias)
-	if address == nil {
-		log.Fatalf("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)
-	}
-	return address
+func GetSCAddress(scAlias string) iotago.Address {
+	panic("TODO implement")
+	// address := TrySCAddress(scAlias)
+	// if address == nil {
+	// 	log.Fatalf("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)
+	// }
+	// return address
 }

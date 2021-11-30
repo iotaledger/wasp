@@ -4,10 +4,8 @@
 package wasmhost
 
 import (
-	"encoding/binary"
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/mr-tron/base58"
 )
@@ -287,30 +285,31 @@ func (h *KvStoreHost) TrackObject(obj HostObject) int32 {
 }
 
 func (h *KvStoreHost) TypeCheck(typeID int32, bytes []byte) {
-	typeSize := TypeSizes[typeID]
-	if typeSize != 0 && typeSize != len(bytes) {
-		h.Panicf("TypeCheck: invalid type size")
-	}
-	switch typeID {
-	case OBJTYPE_ADDRESS:
-		// address bytes must start with valid address type
-		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
-			h.Panicf("TypeCheck: invalid address type")
-		}
-	case OBJTYPE_AGENT_ID:
-		// address bytes in agent id must start with valid address type
-		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
-			h.Panicf("TypeCheck: invalid agent id address type")
-		}
-	case OBJTYPE_CHAIN_ID:
-		// chain id must be alias address
-		if ledgerstate.AddressType(bytes[0]) != ledgerstate.AliasAddressType {
-			h.Panicf("TypeCheck: invalid chain id address type")
-		}
-	case OBJTYPE_REQUEST_ID:
-		outputIndex := binary.LittleEndian.Uint16(bytes[ledgerstate.TransactionIDLength:])
-		if outputIndex > ledgerstate.MaxOutputCount {
-			h.Panicf("TypeCheck: invalid request id output index")
-		}
-	}
+	panic("TODO implement")
+	// typeSize := TypeSizes[typeID]
+	// if typeSize != 0 && typeSize != len(bytes) {
+	// 	h.Panicf("TypeCheck: invalid type size")
+	// }
+	// switch typeID {
+	// case OBJTYPE_ADDRESS:
+	// 	// address bytes must start with valid address type
+	// 	if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
+	// 		h.Panicf("TypeCheck: invalid address type")
+	// 	}
+	// case OBJTYPE_AGENT_ID:
+	// 	// address bytes in agent id must start with valid address type
+	// 	if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
+	// 		h.Panicf("TypeCheck: invalid agent id address type")
+	// 	}
+	// case OBJTYPE_CHAIN_ID:
+	// 	// chain id must be alias address
+	// 	if ledgerstate.AddressType(bytes[0]) != ledgerstate.AliasAddressType {
+	// 		h.Panicf("TypeCheck: invalid chain id address type")
+	// 	}
+	// case OBJTYPE_REQUEST_ID:
+	// 	outputIndex := binary.LittleEndian.Uint16(bytes[ledgerstate.TransactionIDLength:])
+	// 	if outputIndex > ledgerstate.MaxOutputCount {
+	// 		h.Panicf("TypeCheck: invalid request id output index")
+	// 	}
+	// }
 }

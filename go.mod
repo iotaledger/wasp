@@ -11,10 +11,9 @@ require (
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go v0.21.0
 	github.com/ethereum/go-ethereum v1.10.13
-	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
 	github.com/iotaledger/hive.go v0.0.0-20211123102045-85f0c1036bf7
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20211126120241-38c397025408 // indirect
-	github.com/iotaledger/iota.go/v3 v3.0.0-20211201140019-f762c7e39ea6 // indirect
+	github.com/iotaledger/iota.go/v3 v3.0.0-20211203105517-970190416763 // indirect
 	github.com/knadh/koanf v1.2.1
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.14.4
@@ -22,6 +21,7 @@ require (
 	github.com/libp2p/go-libp2p-quic-transport v0.12.0
 	github.com/libp2p/go-libp2p-tls v0.2.0
 	github.com/libp2p/go-tcp-transport v0.2.4
+	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1 // indirect
 	github.com/mr-tron/base58 v1.2.0
 	github.com/multiformats/go-multiaddr v0.3.3
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
@@ -37,7 +37,7 @@ require (
 	go.nanomsg.org/mangos/v3 v3.0.1
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.0
-	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
+	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
 	golang.org/x/net v0.0.0-20211201190559-0a0e4e1bb54c // indirect
 	golang.org/x/sys v0.0.0-20211124211545-fe61309f8881 // indirect
 	golang.org/x/text v0.3.7 // indirect

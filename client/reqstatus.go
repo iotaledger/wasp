@@ -4,9 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
@@ -14,7 +13,7 @@ import (
 // RequestStatus fetches the processing status of a request.
 func (c *WaspClient) RequestStatus(chainID *iscp.ChainID, reqID iscp.RequestID) (*model.RequestStatusResponse, error) {
 	res := &model.RequestStatusResponse{}
-	if err := c.do(http.MethodGet, routes.RequestStatus(chainID.Base58(), reqID.Base58()), nil, res); err != nil {
+	if err := c.do(http.MethodGet, routes.RequestStatus(chainID.String(), reqID.Base58()), nil, res); err != nil {
 		return nil, err
 	}
 	return res, nil
@@ -27,7 +26,7 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp
 	}
 	return c.do(
 		http.MethodGet,
-		routes.WaitRequestProcessed(chainID.Base58(), reqID.Base58()),
+		routes.WaitRequestProcessed(chainID.String(), reqID.Base58()),
 		&model.WaitRequestProcessedParams{Timeout: timeout},
 		nil,
 	)
@@ -35,11 +34,12 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by the node
-func (c *WaspClient) WaitUntilAllRequestsProcessed(chainID *iscp.ChainID, tx *ledgerstate.Transaction, timeout time.Duration) error {
-	for _, reqID := range request.RequestsInTransaction(chainID, tx) {
-		if err := c.WaitUntilRequestProcessed(chainID, reqID, timeout); err != nil {
-			return err
-		}
-	}
-	return nil
+func (c *WaspClient) WaitUntilAllRequestsProcessed(chainID *iscp.ChainID, tx *iotago.Transaction, timeout time.Duration) error {
+	panic("TODO implement")
+	// for _, reqID := range iscp.RequestsInTransaction(chainID, tx) {
+	// 	if err := c.WaitUntilRequestProcessed(chainID, reqID, timeout); err != nil {
+	// 		return err
+	// 	}
+	// }
+	// return nil
 }

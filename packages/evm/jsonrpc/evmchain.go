@@ -10,13 +10,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -55,30 +54,30 @@ func (e *EVMChain) BlockNumber() (*big.Int, error) {
 	return bal, nil
 }
 
-func (e *EVMChain) FeeColor() (colored.Color, error) {
+func (e *EVMChain) FeeColor() ([]byte, error) {
 	feeInfo, err := e.backend.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, dict.Dict{
 		root.ParamHname: iscp.Hn(e.contractName).Bytes(),
 	})
 	if err != nil {
-		return colored.Color{}, err
+		return []byte{}, err
 	}
-	return codec.DecodeColor(feeInfo.MustGet(governance.ParamFeeColor))
+	return feeInfo.Get(governance.ParamFeeColor)
 }
 
-func (e *EVMChain) GasLimitFee(tx *types.Transaction) (colored.Color, uint64, error) {
+func (e *EVMChain) GasLimitFee(tx *types.Transaction) ([]byte, uint64, error) {
 	gpi, err := e.GasPerIota()
 	if err != nil {
-		return colored.Color{}, 0, err
+		return []byte{}, 0, err
 	}
 	feeColor, err := e.FeeColor()
 	if err != nil {
-		return colored.Color{}, 0, err
+		return []byte{}, 0, err
 	}
 	return feeColor, tx.Gas() / gpi, nil
 }
 
-func (e *EVMChain) GetOnChainBalance() (colored.Balances, error) {
-	agentID := iscp.NewAgentID(ledgerstate.NewED25519Address(e.backend.Signer().PublicKey), 0)
+func (e *EVMChain) GetOnChainBalance() (*iscp.Assets, error) {
+	agentID := iscp.NewAgentID(util.AddreessFromKey(e.backend.Signer()), 0)
 	ret, err := e.backend.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	}))
