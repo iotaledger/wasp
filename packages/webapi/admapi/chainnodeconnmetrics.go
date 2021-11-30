@@ -15,51 +15,51 @@ import (
 )
 
 func addChainStatsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Provider) {
-	chainExample := &model.NodeConnectionMessagesStats{
-		OutPullState: &model.NodeConnectionMessageStats{
+	chainExample := &model.NodeConnectionMessagesMetrics{
+		OutPullState: &model.NodeConnectionMessageMetrics{
 			Total:       15,
 			LastEvent:   time.Now().Add(-10 * time.Second),
 			LastMessage: "Last sent PullState message structure",
 		},
-		OutPullTransactionInclusionState: &model.NodeConnectionMessageStats{
+		OutPullTransactionInclusionState: &model.NodeConnectionMessageMetrics{
 			Total:       28,
 			LastEvent:   time.Now().Add(-5 * time.Second),
 			LastMessage: "Last sent PullTransactionInclusionState message structure",
 		},
-		OutPullConfirmedOutput: &model.NodeConnectionMessageStats{
+		OutPullConfirmedOutput: &model.NodeConnectionMessageMetrics{
 			Total:       132,
 			LastEvent:   time.Now().Add(100 * time.Second),
 			LastMessage: "Last sent PullConfirmedOutput message structure",
 		},
-		OutPostTransaction: &model.NodeConnectionMessageStats{
+		OutPostTransaction: &model.NodeConnectionMessageMetrics{
 			Total:       3,
 			LastEvent:   time.Now().Add(-2 * time.Millisecond),
 			LastMessage: "Last sent PostTransaction message structure",
 		},
-		InTransaction: &model.NodeConnectionMessageStats{
+		InTransaction: &model.NodeConnectionMessageMetrics{
 			Total:       101,
 			LastEvent:   time.Now().Add(-8 * time.Second),
 			LastMessage: "Last received Transaction message structure",
 		},
-		InInclusionState: &model.NodeConnectionMessageStats{
+		InInclusionState: &model.NodeConnectionMessageMetrics{
 			Total:       203,
 			LastEvent:   time.Now().Add(-123 * time.Millisecond),
 			LastMessage: "Last received InclusionState message structure",
 		},
-		InOutput: &model.NodeConnectionMessageStats{
+		InOutput: &model.NodeConnectionMessageMetrics{
 			Total:       85,
 			LastEvent:   time.Now().Add(-2 * time.Second),
 			LastMessage: "Last received Output message structure",
 		},
-		InUnspentAliasOutput: &model.NodeConnectionMessageStats{
+		InUnspentAliasOutput: &model.NodeConnectionMessageMetrics{
 			Total:       999,
 			LastEvent:   time.Now().Add(-1 * time.Second),
 			LastMessage: "Last received UnspentAliasOutput message structure",
 		},
 	}
 
-	example := &model.NodeConnectionStats{
-		NodeConnectionMessagesStats: *chainExample,
+	example := &model.NodeConnectionMetrics{
+		NodeConnectionMessagesMetrics: *chainExample,
 		Subscribed: []model.Address{
 			model.NewAddress(iscp.RandomChainID().AsAddress()),
 			model.NewAddress(iscp.RandomChainID().AsAddress()),
@@ -83,9 +83,10 @@ type chainStatsService struct {
 }
 
 func (cssT *chainStatsService) handleGetChainsStats(c echo.Context) error {
-	stats := cssT.chains().GetNodeConnectionStats()
+	metrics := cssT.chains().GetNodeConnectionMetrics()
+	metricsModel := model.NewNodeConnectionMetrics(metrics)
 
-	return c.JSON(http.StatusOK, stats)
+	return c.JSON(http.StatusOK, metricsModel)
 }
 
 func (cssT *chainStatsService) handleGetChainStats(c echo.Context) error {
@@ -97,7 +98,8 @@ func (cssT *chainStatsService) handleGetChainStats(c echo.Context) error {
 	if theChain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Active chain %s not found", chainID))
 	}
-	stats := theChain.GetNodeConnectionStats()
+	metrics := theChain.GetNodeConnectionMetrics()
+	metricsModel := model.NewNodeConnectionMessagesMetrics(metrics)
 
-	return c.JSON(http.StatusOK, stats)
+	return c.JSON(http.StatusOK, metricsModel)
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -189,6 +190,6 @@ func (c *Chains) Get(chainID *iscp.ChainID) chain.Chain {
 	return ret
 }
 
-func (c *Chains) GetNodeConnectionStats() chain.NodeConnectionStats {
-	return c.nodeConn.GetStats()
+func (c *Chains) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
+	return c.nodeConn.GetMetrics()
 }

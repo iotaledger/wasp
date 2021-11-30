@@ -16,12 +16,12 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"go.uber.org/atomic"
 )
 
 type ChainCore interface {
@@ -51,8 +51,8 @@ type ChainRequests interface {
 	EventRequestProcessed() *events.Event
 }
 
-type ChainStats interface {
-	GetNodeConnectionStats() NodeConnectionMessagesStats
+type ChainMetrics interface {
+	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 }
 
 type ChainEvents interface {
@@ -64,7 +64,7 @@ type Chain interface {
 	ChainCore
 	ChainRequests
 	ChainEntry
-	ChainStats
+	ChainMetrics
 }
 
 // Committee is ordered (indexed 0..size-1) list of peers which run the consensus
@@ -108,7 +108,7 @@ type NodeConnection interface {
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
 
-	GetStats() NodeConnectionStats
+	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 }
 
 type ChainNodeConnection interface {
@@ -122,30 +122,7 @@ type ChainNodeConnection interface {
 	PullConfirmedOutput(outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
 
-	GetStats() NodeConnectionMessagesStats
-}
-
-type NodeConnectionMessageStats struct {
-	Total       atomic.Uint32
-	LastEvent   time.Time
-	LastMessage interface{}
-}
-
-type NodeConnectionMessagesStats struct {
-	OutPullState                     NodeConnectionMessageStats
-	OutPullTransactionInclusionState NodeConnectionMessageStats
-	OutPullConfirmedOutput           NodeConnectionMessageStats
-	OutPostTransaction               NodeConnectionMessageStats
-
-	InTransaction        NodeConnectionMessageStats
-	InInclusionState     NodeConnectionMessageStats
-	InOutput             NodeConnectionMessageStats
-	InUnspentAliasOutput NodeConnectionMessageStats
-}
-
-type NodeConnectionStats struct {
-	NodeConnectionMessagesStats
-	Subscribed []ledgerstate.Address
+	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 }
 
 type StateManager interface {

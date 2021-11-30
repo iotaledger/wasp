@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	util "github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -52,7 +53,7 @@ func (m *mockedChain) IsDismissed() bool {
 	panic("implement me")
 }
 
-func (m *mockedChain) GetNodeConnectionStats() chain.NodeConnectionMessagesStats {
+func (m *mockedChain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
 	panic("implement me")
 }
 

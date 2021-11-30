@@ -3,6 +3,7 @@ package testchain
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
 type MockedNodeConn struct {
@@ -62,6 +63,6 @@ func (m *MockedNodeConn) AttachToOutputReceived(chain.NodeConnectionHandleOutput
 func (m *MockedNodeConn) AttachToUnspentAliasOutputReceived(chain.NodeConnectionHandleUnspentAliasOutputFun) {
 }
 
-func (m *MockedNodeConn) GetStats() chain.NodeConnectionMessagesStats {
-	return chain.NodeConnectionMessagesStats{}
+func (m *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
+	return nodeconnmetrics.NewEmptyNodeConnectionMessagesMetrics()
 }

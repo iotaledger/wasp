@@ -45,7 +45,7 @@ var (
 	_ chain.ChainEntry    = &chainObj{}
 	_ chain.ChainRequests = &chainObj{}
 	_ chain.ChainEvents   = &chainObj{}
-	_ chain.ChainStats    = &chainObj{}
+	_ chain.ChainMetrics  = &chainObj{}
 )
 
 type chainObj struct {
