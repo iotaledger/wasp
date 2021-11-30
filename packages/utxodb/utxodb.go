@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	DefaultIOTASupply = uint64(2_779_530_283_277_761)
+	DefaultIOTASupply = iotago.TokenSupply
 
 	Mi = 1_000_000
 

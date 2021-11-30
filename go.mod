@@ -13,8 +13,8 @@ require (
 	github.com/ethereum/go-ethereum v1.10.13
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
 	github.com/iotaledger/hive.go v0.0.0-20211123102045-85f0c1036bf7
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20211125134700-408c53353b22 // indirect
-	github.com/iotaledger/iota.go/v3 v3.0.0-20211125134902-41e2f9143887 // indirect
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20211126120241-38c397025408 // indirect
+	github.com/iotaledger/iota.go/v3 v3.0.0-20211130111934-7f30aef37063 // indirect
 	github.com/knadh/koanf v1.2.1
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.14.4
@@ -42,7 +42,7 @@ require (
 	golang.org/x/sys v0.0.0-20211124211545-fe61309f8881 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
-	google.golang.org/genproto v0.0.0-20211118181313-81c1377c94b1 // indirect
+	google.golang.org/genproto v0.0.0-20211129164237-f09f9a12af12 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	nhooyr.io/websocket v1.8.7
