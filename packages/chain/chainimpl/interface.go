@@ -50,9 +50,9 @@ func (c *chainObj) startTimer() {
 		c.stateMgr.Ready().MustWait()
 		tick := 0
 		for !c.IsDismissed() {
-			time.Sleep(chain.TimerTickPeriod)
 			c.EnqueueTimerTick(tick)
 			tick++
+			time.Sleep(chain.TimerTickPeriod)
 		}
 	}()
 }
@@ -62,14 +62,6 @@ func (c *chainObj) Dismiss(reason string) {
 
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
-
-		c.dismissChainMsgPipe.Close()
-		c.stateMsgPipe.Close()
-		c.offLedgerRequestPeerMsgPipe.Close()
-		c.requestAckPeerMsgPipe.Close()
-		c.missingRequestIDsPeerMsgPipe.Close()
-		c.missingRequestPeerMsgPipe.Close()
-		c.timerTickMsgPipe.Close()
 
 		c.mempool.Close()
 		c.stateMgr.Close()
@@ -83,6 +75,14 @@ func (c *chainObj) Dismiss(reason string) {
 		c.eventRequestProcessed.DetachAll()
 		c.eventChainTransition.DetachAll()
 		c.chainPeers.Close()
+
+		c.dismissChainMsgPipe.Close()
+		c.stateMsgPipe.Close()
+		c.offLedgerRequestPeerMsgPipe.Close()
+		c.requestAckPeerMsgPipe.Close()
+		c.missingRequestIDsPeerMsgPipe.Close()
+		c.missingRequestPeerMsgPipe.Close()
+		c.timerTickMsgPipe.Close()
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
