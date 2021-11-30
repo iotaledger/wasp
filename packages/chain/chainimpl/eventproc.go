@@ -15,7 +15,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (c *chainObj) handleMessagesLoop() {
+func (c *chainObj) recvLoop() {
 	dismissChainMsgChannel := c.dismissChainMsgPipe.Out()
 	stateMsgChannel := c.stateMsgPipe.Out()
 	offLedgerRequestMsgChannel := c.offLedgerRequestPeerMsgPipe.Out()

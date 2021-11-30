@@ -153,7 +153,7 @@ func NewChain(
 	}
 	ret.stateMgr = statemgr.New(db, ret, ret.chainPeers, ret.nodeConn, chainMetrics)
 	ret.chainPeers.Attach(peering.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
-	go ret.handleMessagesLoop()
+	go ret.recvLoop()
 	ret.startTimer()
 	return ret
 }
