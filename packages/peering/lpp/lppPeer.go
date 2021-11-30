@@ -19,6 +19,7 @@ const (
 	inactiveDeadline = 1 * time.Minute
 	inactivePingTime = 30 * time.Second
 	maxPeerMsgBuffer = 10000
+	traceMessages    = false
 )
 
 type peer struct {
@@ -128,8 +129,10 @@ func (p *peer) SendMsg(msg *peering.PeerMessageData) {
 }
 
 func (p *peer) RecvMsg(msg *peering.PeerMessageNet) {
-	// p.log.Debugf("Peer message received from peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
-	//	p.NetID(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
+	if traceMessages {
+		p.log.Debugf("Peer message received from peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
+			p.NetID(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
+	}
 	p.noteReceived()
 	p.recvPipe.In() <- msg
 }
@@ -169,16 +172,18 @@ func (p *peer) sendMsgDirect(msg *peering.PeerMessageNet) {
 	p.accessLock.Lock()
 	p.lastMsgSent = time.Now()
 	p.accessLock.Unlock()
-	// p.log.Debugf("Peer message sent to peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
-	//	p.NetID(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
+	if traceMessages {
+		p.log.Debugf("Peer message sent to peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
+			p.NetID(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
+	}
 }
 
-/*func firstBytes(maxCount int, array []byte) []byte {
+func firstBytes(maxCount int, array []byte) []byte {
 	if len(array) <= maxCount {
 		return array
 	}
 	return array[:maxCount]
-}*/
+}
 
 // IsAlive implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
 // Return true if is alive and average latencyRingBuf in nanosec.
