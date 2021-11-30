@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/stretchr/testify/require"
 )
@@ -42,6 +43,50 @@ func TestAddTransactionFail(t *testing.T) {
 	err = u.AddTransaction(tx)
 	require.Error(t, err)
 	u.checkLedgerBalance()
+}
+
+func TestDoubleSpend(t *testing.T) {
+	key1 := tpkg.RandEd25519PrivateKey()
+	addr1 := iotago.Ed25519AddressFromPubKey(key1.Public().(ed25519.PublicKey))
+	key1Signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&addr1, key1))
+
+	addr2 := tpkg.RandEd25519Address()
+	addr3 := tpkg.RandEd25519Address()
+
+	u := New()
+
+	tx1, err := u.RequestFunds(&addr1)
+	require.NoError(t, err)
+	tx1ID, err := tx1.ID()
+	require.NoError(t, err)
+
+	spend2, err := iotago.NewTransactionBuilder().
+		AddInput(&iotago.ToBeSignedUTXOInput{Address: &addr1, Input: &iotago.UTXOInput{
+			TransactionID:          *tx1ID,
+			TransactionOutputIndex: 0,
+		}}).
+		AddOutput(&iotago.ExtendedOutput{Address: addr2, Amount: RequestFundsAmount}).
+		Build(deSeriParas, key1Signer)
+	require.NoError(t, err)
+	err = u.AddTransaction(spend2)
+	require.NoError(t, err)
+
+	spend3, err := iotago.NewTransactionBuilder().
+		AddInput(&iotago.ToBeSignedUTXOInput{Address: &addr1, Input: &iotago.UTXOInput{
+			TransactionID:          *tx1ID,
+			TransactionOutputIndex: 0,
+		}}).
+		AddOutput(&iotago.ExtendedOutput{Address: addr3, Amount: RequestFundsAmount}).
+		Build(deSeriParas, key1Signer)
+	require.NoError(t, err)
+	err = u.AddTransaction(spend3)
+	require.NoError(t, err)
+
+	errors := u.Commit()
+	require.Len(t, errors, 1)
+
+	require.EqualValues(t, 0, u.GetAddressBalance(&addr1))
+	require.EqualValues(t, RequestFundsAmount, u.GetAddressBalance(addr2)+u.GetAddressBalance(addr3))
 }
 
 func TestGetOutput(t *testing.T) {

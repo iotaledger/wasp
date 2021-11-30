@@ -33,7 +33,7 @@ type UtxoDB struct {
 	mutex  sync.RWMutex
 	supply uint64
 	// enqueuedTxs contains all transactions that are not yet committed in a milestone
-	enqueuedTxs []*iotago.Transaction
+	enqueuedTxs map[iotago.TransactionID]*iotago.Transaction
 	// transactions contains all committed transactions
 	transactions map[iotago.TransactionID]*iotago.Transaction
 	milestones   []milestone
@@ -89,6 +89,7 @@ func New(params ...*InitParams) *UtxoDB {
 	}
 	u := &UtxoDB{
 		supply:       p.supply,
+		enqueuedTxs:  make(map[iotago.TransactionID]*iotago.Transaction),
 		transactions: make(map[iotago.TransactionID]*iotago.Transaction),
 		utxo:         make(map[iotago.OutputID]*iotago.UTXOInput),
 	}
@@ -127,8 +128,14 @@ func (u *UtxoDB) genesisInit(timestamp UnixSeconds) {
 	u.utxo[utxo.ID()] = utxo
 }
 
-// Commit creates a new milestone with all transactions added since the latest milestone
-func (u *UtxoDB) Commit(timestamp ...UnixSeconds) {
+type CommitError struct {
+	error
+	TxID iotago.TransactionID
+}
+
+// Commit creates a new milestone with all transactions added since the latest milestone,
+// returning the list of discarded transactions (e.g. because of double spend).
+func (u *UtxoDB) Commit(timestamp ...UnixSeconds) (errors []*CommitError) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
@@ -140,34 +147,33 @@ func (u *UtxoDB) Commit(timestamp ...UnixSeconds) {
 		t = timestamp[0]
 	}
 
-	txs := u.enqueuedTxs
-	txIDs := make([]iotago.TransactionID, len(txs))
-	for i, tx := range txs {
-		txID, err := tx.ID()
-		if err != nil {
-			panic(err)
-		}
-		txIDs[i] = *txID
+	// process transactions in a deterministic order
+	txIDs := make([]iotago.TransactionID, 0, len(u.enqueuedTxs))
+	for txID := range u.enqueuedTxs {
+		txIDs = append(txIDs, txID)
+	}
+	txIDs = serializer.RemoveDupsAndSortByLexicalOrderArrayOf32Bytes(txIDs)
 
-		u.transactions[*txID] = tx
+	for _, txID := range txIDs {
+		tx := u.enqueuedTxs[txID]
 
-		inputs, err := u.getTransactionInputs(tx)
+		inputs, err := u.validateTransaction(tx)
 		if err != nil {
-			panic(err)
+			errors = append(errors, &CommitError{error: err, TxID: txID})
+			continue
 		}
 
 		// delete consumed outputs from the ledger
 		for outID := range inputs {
-			if u.utxo[outID] == nil {
-				panic("referenced output is not unspent")
-			}
 			delete(u.utxo, outID)
 		}
+
+		u.transactions[txID] = tx
 
 		// add unspent outputs to the ledger
 		for i := range tx.Essence.Outputs {
 			utxo := &iotago.UTXOInput{
-				TransactionID:          *txID,
+				TransactionID:          txID,
 				TransactionOutputIndex: uint16(i),
 			}
 			u.utxo[utxo.ID()] = utxo
@@ -178,9 +184,10 @@ func (u *UtxoDB) Commit(timestamp ...UnixSeconds) {
 		timestamp:    t,
 		transactions: txIDs,
 	})
-	u.enqueuedTxs = nil
+	u.enqueuedTxs = make(map[iotago.TransactionID]*iotago.Transaction)
 
 	u.checkLedgerBalance()
+	return
 }
 
 func (u *UtxoDB) latestMilestone() milestone {
@@ -284,25 +291,19 @@ func (u *UtxoDB) getTransactionInputs(tx *iotago.Transaction) (iotago.OutputSet,
 	return inputs, nil
 }
 
-// AddTransaction adds a transaction to UtxoDB or returns an error.
-// The function ensures consistency of the UtxoDB ledger.
-// The transaction is unconfirmed until Commit is called.
-func (u *UtxoDB) AddTransaction(tx *iotago.Transaction) error {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
-
+func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) (iotago.OutputSet, error) {
 	// serialize for syntactic check
 	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, deSeriParas); err != nil {
-		return err
+		return nil, err
 	}
 
 	inputs, err := u.getTransactionInputs(tx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for outID := range inputs {
 		if u.utxo[outID] == nil {
-			return fmt.Errorf("referenced output is not unspent")
+			return nil, fmt.Errorf("referenced output is not unspent")
 		}
 	}
 
@@ -314,11 +315,29 @@ func (u *UtxoDB) AddTransaction(tx *iotago.Transaction) error {
 			},
 		}
 		if err := tx.SemanticallyValidate(semValCtx, inputs); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	u.enqueuedTxs = append(u.enqueuedTxs, tx)
+	return inputs, nil
+}
+
+// AddTransaction adds a transaction to UtxoDB or returns an error.
+// The function ensures consistency of the UtxoDB ledger.
+// The transaction is unconfirmed until Commit is called.
+func (u *UtxoDB) AddTransaction(tx *iotago.Transaction) error {
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
+
+	if _, err := u.validateTransaction(tx); err != nil {
+		return err
+	}
+
+	txID, err := tx.ID()
+	if err != nil {
+		panic(err)
+	}
+	u.enqueuedTxs[*txID] = tx
 	return nil
 }
 
@@ -327,7 +346,10 @@ func (u *UtxoDB) AddTransactionAndCommit(tx *iotago.Transaction) error {
 	if err != nil {
 		return err
 	}
-	u.Commit()
+	errors := u.Commit()
+	if len(errors) > 0 {
+		return errors[0]
+	}
 	return nil
 }
 
