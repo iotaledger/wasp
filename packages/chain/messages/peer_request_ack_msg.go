@@ -11,30 +11,36 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type RequestAcKMsg struct {
+type RequestAckMsg struct {
 	ReqID *iscp.RequestID
 }
 
-func NewRequestAckMsg(reqID iscp.RequestID) *RequestAcKMsg {
-	return &RequestAcKMsg{
-		ReqID: &reqID,
-	}
+type RequestAckMsgIn struct {
+	RequestAckMsg
+	SenderNetID string
 }
 
-func (msg *RequestAcKMsg) write(w io.Writer) error {
+func NewRequestAckMsg(buf []byte) (*RequestAckMsg, error) {
+	r := bytes.NewReader(buf)
+	msg := &RequestAckMsg{}
+	err := msg.read(r)
+	return msg, err
+}
+
+func (msg *RequestAckMsg) write(w io.Writer) error {
 	if _, err := w.Write(msg.ReqID.Bytes()); err != nil {
 		return xerrors.Errorf("failed to write requestIDs: %w", err)
 	}
 	return nil
 }
 
-func (msg *RequestAcKMsg) Bytes() []byte {
+func (msg *RequestAckMsg) Bytes() []byte {
 	var buf bytes.Buffer
 	_ = msg.write(&buf)
 	return buf.Bytes()
 }
 
-func (msg *RequestAcKMsg) read(r io.Reader) error {
+func (msg *RequestAckMsg) read(r io.Reader) error {
 	b, err := io.ReadAll(r)
 	if err != nil {
 		return xerrors.Errorf("failed to read requestIDs: %w", err)
@@ -45,11 +51,4 @@ func (msg *RequestAcKMsg) read(r io.Reader) error {
 	}
 	msg.ReqID = &reqID
 	return nil
-}
-
-func RequestAckMsgFromBytes(buf []byte) (RequestAcKMsg, error) {
-	r := bytes.NewReader(buf)
-	msg := RequestAcKMsg{}
-	err := msg.read(r)
-	return msg, err
 }

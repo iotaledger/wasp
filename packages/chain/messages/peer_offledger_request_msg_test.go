@@ -24,16 +24,16 @@ func TestMarshalling(t *testing.T) {
 		dict.Dict{foo: []byte("bar")},
 	)
 
-	msg := NewOffLedgerRequestMsg(
-		iscp.RandomChainID(),
-		request.NewOffLedger(iscp.RandomChainID(), contract, entrypoint, args),
-	)
+	msg := &OffLedgerRequestMsg{
+		ChainID: iscp.RandomChainID(),
+		Req:     request.NewOffLedger(iscp.RandomChainID(), contract, entrypoint, args),
+	}
 
 	// marshall the msg
 	msgBytes := msg.Bytes()
 
 	// unmashal the message from bytes and ensure everything checks out
-	unmarshalledMsg, err := OffLedgerRequestMsgFromBytes(msgBytes)
+	unmarshalledMsg, err := NewOffLedgerRequestMsg(msgBytes)
 	require.NoError(t, err)
 
 	require.True(t, unmarshalledMsg.ChainID.AliasAddress.Equals(msg.ChainID.AliasAddress))

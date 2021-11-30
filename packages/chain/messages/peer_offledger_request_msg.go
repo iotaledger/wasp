@@ -15,21 +15,12 @@ type OffLedgerRequestMsg struct {
 	Req     *request.OffLedger
 }
 
-func NewOffLedgerRequestMsg(chainID *iscp.ChainID, req *request.OffLedger) *OffLedgerRequestMsg {
-	return &OffLedgerRequestMsg{
-		ChainID: chainID,
-		Req:     req,
-	}
+type OffLedgerRequestMsgIn struct {
+	OffLedgerRequestMsg
+	SenderNetID string
 }
 
-func (msg *OffLedgerRequestMsg) Bytes() []byte {
-	return marshalutil.New().
-		Write(msg.ChainID).
-		Write(msg.Req).
-		Bytes()
-}
-
-func OffLedgerRequestMsgFromBytes(data []byte) (*OffLedgerRequestMsg, error) {
+func NewOffLedgerRequestMsg(data []byte) (*OffLedgerRequestMsg, error) {
 	mu := marshalutil.New(data)
 	chainID, err := iscp.ChainIDFromMarshalUtil(mu)
 	if err != nil {
@@ -47,4 +38,11 @@ func OffLedgerRequestMsgFromBytes(data []byte) (*OffLedgerRequestMsg, error) {
 		ChainID: chainID,
 		Req:     reqCasted,
 	}, nil
+}
+
+func (msg *OffLedgerRequestMsg) Bytes() []byte {
+	return marshalutil.New().
+		Write(msg.ChainID).
+		Write(msg.Req).
+		Bytes()
 }
