@@ -199,7 +199,7 @@ func (c *consensus) recvLoop() {
 		case msg, ok := <-eventStateTransitionMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventStateTransitionMsg...")
-				c.eventStateTransitionMsg(msg.(*messages.StateTransitionMsg))
+				c.handleStateTransitionMsg(msg.(*messages.StateTransitionMsg))
 				c.log.Debugf("Consensus::recvLoop, eventStateTransitionMsg... Done")
 			} else {
 				eventStateTransitionMsgCh = nil
@@ -223,7 +223,7 @@ func (c *consensus) recvLoop() {
 		case msg, ok := <-eventInclusionStateMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventInclusionState...")
-				c.eventInclusionState(msg.(*messages.InclusionStateMsg))
+				c.handleInclusionState(msg.(*messages.InclusionStateMsg))
 				c.log.Debugf("Consensus::recvLoop, eventInclusionState... Done")
 			} else {
 				eventInclusionStateMsgCh = nil
@@ -231,7 +231,7 @@ func (c *consensus) recvLoop() {
 		case msg, ok := <-eventACSMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventAsynchronousCommonSubset...")
-				c.eventAsynchronousCommonSubset(msg.(*messages.AsynchronousCommonSubsetMsg))
+				c.handleAsynchronousCommonSubset(msg.(*messages.AsynchronousCommonSubsetMsg))
 				c.log.Debugf("Consensus::recvLoop, eventAsynchronousCommonSubset... Done")
 			} else {
 				eventACSMsgCh = nil
@@ -239,7 +239,7 @@ func (c *consensus) recvLoop() {
 		case msg, ok := <-eventVMResultMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventVMResultMsg...")
-				c.eventVMResultMsg(msg.(*messages.VMResultMsg))
+				c.handleVMResultMsg(msg.(*messages.VMResultMsg))
 				c.log.Debugf("Consensus::recvLoop, eventVMResultMsg... Done")
 			} else {
 				eventVMResultMsgCh = nil
@@ -247,7 +247,7 @@ func (c *consensus) recvLoop() {
 		case msg, ok := <-eventTimerMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventTimerMsg...")
-				c.eventTimerMsg(msg.(messages.TimerTick))
+				c.handleTimerMsg(msg.(messages.TimerTick))
 				c.log.Debugf("Consensus::recvLoop, eventTimerMsg... Done")
 			} else {
 				eventTimerMsgCh = nil

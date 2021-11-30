@@ -98,22 +98,22 @@ type StateManager interface {
 	Ready() *ready.Ready
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
-	EventStateMsg(msg *messages.StateMsg)
-	EventOutputMsg(msg ledgerstate.Output)
-	EventStateCandidateMsg(state.VirtualStateAccess, ledgerstate.OutputID)
-	EventTimerMsg(msg messages.TimerTick)
+	EnqueueStateMsg(msg *messages.StateMsg)
+	EnqueueOutputMsg(msg ledgerstate.Output)
+	EnqueueStateCandidateMsg(state.VirtualStateAccess, ledgerstate.OutputID)
+	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
 	Close()
 }
 
 type Consensus interface {
-	EventStateTransitionMsg(state.VirtualStateAccess, *ledgerstate.AliasOutput, time.Time)
+	EnqueueStateTransitionMsg(state.VirtualStateAccess, *ledgerstate.AliasOutput, time.Time)
 	EnqueueSignedResultMsg(*messages.SignedResultMsgIn)
 	EnqueueSignedResultAckMsg(*messages.SignedResultAckMsgIn)
-	EventInclusionsStateMsg(ledgerstate.TransactionID, ledgerstate.InclusionState)
-	EventAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
-	EventVMResultMsg(msg *messages.VMResultMsg)
-	EventTimerMsg(messages.TimerTick)
+	EnqueueInclusionsStateMsg(ledgerstate.TransactionID, ledgerstate.InclusionState)
+	EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
+	EnqueueVMResultMsg(msg *messages.VMResultMsg)
+	EnqueueTimerMsg(messages.TimerTick)
 	IsReady() bool
 	Close()
 	GetStatusSnapshot() *ConsensusInfo

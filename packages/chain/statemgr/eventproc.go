@@ -77,11 +77,11 @@ func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
 	}
 }
 
-func (sm *stateManager) EventOutputMsg(msg ledgerstate.Output) {
+func (sm *stateManager) EnqueueOutputMsg(msg ledgerstate.Output) {
 	sm.eventOutputMsgPipe.In() <- msg
 }
 
-func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
+func (sm *stateManager) handleOutputMsg(msg ledgerstate.Output) {
 	sm.log.Debugf("EventOutputMsg received: %s", iscp.OID(msg.ID()))
 	chainOutput, ok := msg.(*ledgerstate.AliasOutput)
 	if !ok {
@@ -95,11 +95,11 @@ func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
 
 // EventStateTransactionMsg triggered whenever new state transaction arrives
 // the state transaction may be confirmed or not
-func (sm *stateManager) EventStateMsg(msg *messages.StateMsg) {
+func (sm *stateManager) EnqueueStateMsg(msg *messages.StateMsg) {
 	sm.eventStateOutputMsgPipe.In() <- msg
 }
 
-func (sm *stateManager) eventStateMsg(msg *messages.StateMsg) {
+func (sm *stateManager) handleStateMsg(msg *messages.StateMsg) {
 	sm.log.Debugw("EventStateMsg received: ",
 		"state index", msg.ChainOutput.GetStateIndex(),
 		"chainOutput", iscp.OID(msg.ChainOutput.ID()),
@@ -115,14 +115,14 @@ func (sm *stateManager) eventStateMsg(msg *messages.StateMsg) {
 	}
 }
 
-func (sm *stateManager) EventStateCandidateMsg(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+func (sm *stateManager) EnqueueStateCandidateMsg(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
 	sm.eventStateCandidateMsgPipe.In() <- &messages.StateCandidateMsg{
 		State:             virtualState,
 		ApprovingOutputID: outputID,
 	}
 }
 
-func (sm *stateManager) eventStateCandidateMsg(msg *messages.StateCandidateMsg) {
+func (sm *stateManager) handleStateCandidateMsg(msg *messages.StateCandidateMsg) {
 	sm.log.Debugf("EventStateCandidateMsg received: state index: %d, timestamp: %v",
 		msg.State.BlockIndex(), msg.State.Timestamp(),
 	)
@@ -135,13 +135,13 @@ func (sm *stateManager) eventStateCandidateMsg(msg *messages.StateCandidateMsg) 
 	}
 }
 
-func (sm *stateManager) EventTimerMsg(msg messages.TimerTick) {
+func (sm *stateManager) EnqueueTimerMsg(msg messages.TimerTick) {
 	if msg%2 == 0 {
 		sm.eventTimerMsgPipe.In() <- msg
 	}
 }
 
-func (sm *stateManager) eventTimerMsg() {
+func (sm *stateManager) handleTimerMsg() {
 	sm.log.Debugf("EventTimerMsg received")
 	sm.takeAction()
 }

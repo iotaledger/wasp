@@ -120,7 +120,7 @@ func (c *chainObj) handleLedgerState(msg *messages.StateMsg) {
 		c.log.Errorf("processStateMessage: %v", err)
 		return
 	}
-	c.stateMgr.EventStateMsg(msg)
+	c.stateMgr.EnqueueStateMsg(msg)
 	c.log.Debugf("handleLedgerState passed to state manager")
 }
 
@@ -215,9 +215,9 @@ func (c *chainObj) EnqueueTimerTick(tick int) {
 
 func (c *chainObj) handleTimerTick(msg messages.TimerTick) {
 	if msg%2 == 0 {
-		c.stateMgr.EventTimerMsg(msg / 2)
+		c.stateMgr.EnqueueTimerMsg(msg / 2)
 	} else if c.consensus != nil {
-		c.consensus.EventTimerMsg(msg / 2)
+		c.consensus.EnqueueTimerMsg(msg / 2)
 	}
 	if msg%40 == 0 {
 		stats := c.mempool.Info()

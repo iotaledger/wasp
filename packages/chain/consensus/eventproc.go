@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-func (c *consensus) EventStateTransitionMsg(virtualState state.VirtualStateAccess, stateOutput *ledgerstate.AliasOutput, stateTimestamp time.Time) {
+func (c *consensus) EnqueueStateTransitionMsg(virtualState state.VirtualStateAccess, stateOutput *ledgerstate.AliasOutput, stateTimestamp time.Time) {
 	c.eventStateTransitionMsgPipe.In() <- &messages.StateTransitionMsg{
 		State:          virtualState,
 		StateOutput:    stateOutput,
@@ -22,7 +22,7 @@ func (c *consensus) EventStateTransitionMsg(virtualState state.VirtualStateAcces
 	}
 }
 
-func (c *consensus) eventStateTransitionMsg(msg *messages.StateTransitionMsg) {
+func (c *consensus) handleStateTransitionMsg(msg *messages.StateTransitionMsg) {
 	c.log.Debugf("StateTransitionMsg received: state index: %d, state output: %s, timestamp: %v",
 		msg.State.BlockIndex(), iscp.OID(msg.StateOutput.ID()), msg.StateTimestamp)
 	if c.setNewState(msg) {
@@ -52,36 +52,36 @@ func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn)
 	c.takeAction()
 }
 
-func (c *consensus) EventInclusionsStateMsg(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
+func (c *consensus) EnqueueInclusionsStateMsg(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
 	c.eventInclusionStateMsgPipe.In() <- &messages.InclusionStateMsg{
 		TxID:  txID,
 		State: inclusionState,
 	}
 }
 
-func (c *consensus) eventInclusionState(msg *messages.InclusionStateMsg) {
+func (c *consensus) handleInclusionState(msg *messages.InclusionStateMsg) {
 	c.log.Debugf("InclusionStateMsg received:  %s: '%s'", msg.TxID.Base58(), msg.State.String())
 	c.processInclusionState(msg)
 
 	c.takeAction()
 }
 
-func (c *consensus) EventAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg) {
+func (c *consensus) EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg) {
 	c.eventACSMsgPipe.In() <- msg
 }
 
-func (c *consensus) eventAsynchronousCommonSubset(msg *messages.AsynchronousCommonSubsetMsg) {
+func (c *consensus) handleAsynchronousCommonSubset(msg *messages.AsynchronousCommonSubsetMsg) {
 	c.log.Debugf("AsynchronousCommonSubsetMsg received for session %v: len = %d", msg.SessionID, len(msg.ProposedBatchesBin))
 	c.receiveACS(msg.ProposedBatchesBin, msg.SessionID)
 
 	c.takeAction()
 }
 
-func (c *consensus) EventVMResultMsg(msg *messages.VMResultMsg) {
+func (c *consensus) EnqueueVMResultMsg(msg *messages.VMResultMsg) {
 	c.eventVMResultMsgPipe.In() <- msg
 }
 
-func (c *consensus) eventVMResultMsg(msg *messages.VMResultMsg) {
+func (c *consensus) handleVMResultMsg(msg *messages.VMResultMsg) {
 	var essenceString string
 	if msg.Task.ResultTransactionEssence == nil {
 		essenceString = "essence is nil"
@@ -94,11 +94,11 @@ func (c *consensus) eventVMResultMsg(msg *messages.VMResultMsg) {
 	c.takeAction()
 }
 
-func (c *consensus) EventTimerMsg(msg messages.TimerTick) {
+func (c *consensus) EnqueueTimerMsg(msg messages.TimerTick) {
 	c.eventTimerMsgPipe.In() <- msg
 }
 
-func (c *consensus) eventTimerMsg(msg messages.TimerTick) {
+func (c *consensus) handleTimerMsg(msg messages.TimerTick) {
 	c.lastTimerTick.Store(int64(msg))
 	c.refreshConsensusInfo()
 	if msg%40 == 0 {

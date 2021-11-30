@@ -194,25 +194,25 @@ func (sm *stateManager) recvLoop() {
 			}
 		case msg, ok := <-eventStateOutputMsgCh:
 			if ok {
-				sm.eventStateMsg(msg.(*messages.StateMsg))
+				sm.handleStateMsg(msg.(*messages.StateMsg))
 			} else {
 				eventStateOutputMsgCh = nil
 			}
 		case msg, ok := <-eventOutputMsgCh:
 			if ok {
-				sm.eventOutputMsg(msg.(ledgerstate.Output))
+				sm.handleOutputMsg(msg.(ledgerstate.Output))
 			} else {
 				eventOutputMsgCh = nil
 			}
 		case msg, ok := <-eventStateCandidateMsgCh:
 			if ok {
-				sm.eventStateCandidateMsg(msg.(*messages.StateCandidateMsg))
+				sm.handleStateCandidateMsg(msg.(*messages.StateCandidateMsg))
 			} else {
 				eventStateCandidateMsgCh = nil
 			}
 		case _, ok := <-eventTimerMsgCh:
 			if ok {
-				sm.eventTimerMsg()
+				sm.handleTimerMsg()
 			} else {
 				eventTimerMsgCh = nil
 			}

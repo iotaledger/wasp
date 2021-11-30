@@ -257,7 +257,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	if c.consensus == nil {
 		c.log.Warnf("processChainTransition: skipping notifying consensus as it is not initiated")
 	} else {
-		c.consensus.EventStateTransitionMsg(msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
+		c.consensus.EnqueueStateTransitionMsg(msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
 	}
 	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.StateCommitment().String())
 }

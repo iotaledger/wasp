@@ -197,7 +197,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	})
 	ret.NodeConn.OnPullTransactionInclusionState(func(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
 		if _, already := env.Ledger.GetTransaction(txid); already {
-			go ret.Consensus.EventInclusionsStateMsg(txid, ledgerstate.Confirmed)
+			go ret.Consensus.EnqueueInclusionsStateMsg(txid, ledgerstate.Confirmed)
 		}
 	})
 	mempoolMetrics := metrics.DefaultChainMetrics()
@@ -335,7 +335,7 @@ func (n *mockedNode) EventStateTransition() {
 
 	n.ChainCore.GlobalStateSync().SetSolidIndex(n.SolidState.BlockIndex())
 
-	n.Consensus.EventStateTransitionMsg(n.SolidState.Copy(), n.StateOutput, time.Now())
+	n.Consensus.EnqueueStateTransitionMsg(n.SolidState.Copy(), n.StateOutput, time.Now())
 }
 
 func (env *MockedEnv) StartTimers() {
@@ -349,7 +349,7 @@ func (n *mockedNode) StartTimer() {
 	go func() {
 		counter := 0
 		for {
-			n.Consensus.EventTimerMsg(messages.TimerTick(counter))
+			n.Consensus.EnqueueTimerMsg(messages.TimerTick(counter))
 			counter++
 			time.Sleep(50 * time.Millisecond)
 		}

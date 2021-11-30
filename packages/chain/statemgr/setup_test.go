@@ -127,7 +127,7 @@ func (env *MockedEnv) pushStateToNodesIfSet(tx *ledgerstate.Transaction) {
 	require.NoError(env.T, err)
 
 	for _, node := range env.Nodes {
-		go node.StateManager.EventStateMsg(&messages.StateMsg{
+		go node.StateManager.EnqueueStateMsg(&messages.StateMsg{
 			ChainOutput: stateOutput,
 			Timestamp:   tx.Essence().Timestamp(),
 		})
@@ -233,7 +233,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
 		stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
 		require.NoError(env.T, err)
-		go ret.StateManager.EventStateCandidateMsg(vstate, stateOutput.ID())
+		go ret.StateManager.EnqueueStateCandidateMsg(vstate, stateOutput.ID())
 		go ret.NodeConn.PostTransaction(tx)
 	})
 	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
@@ -244,13 +244,13 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		log.Debugf("MockedNode.OnPullState request received for address %v", addr.Base58)
 		response := env.PullStateFromLedger(addr)
 		log.Debugf("MockedNode.OnPullState call EventStateMsg: chain output %s", iscp.OID(response.ChainOutput.ID()))
-		go ret.StateManager.EventStateMsg(response)
+		go ret.StateManager.EnqueueStateMsg(response)
 	})
 	ret.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
 		log.Debugf("MockedNode.OnPullConfirmedOutput %v", iscp.OID(outputID))
 		response := env.PullConfirmedOutputFromLedger(addr, outputID)
 		log.Debugf("MockedNode.OnPullConfirmedOutput call EventOutputMsg")
-		go ret.StateManager.EventOutputMsg(response)
+		go ret.StateManager.EnqueueOutputMsg(response)
 	})
 
 	return ret
@@ -261,7 +261,7 @@ func (node *MockedNode) StartTimer() {
 		node.StateManager.Ready().MustWait()
 		counter := 0
 		for {
-			node.StateManager.EventTimerMsg(messages.TimerTick(counter))
+			node.StateManager.EnqueueTimerMsg(messages.TimerTick(counter))
 			counter++
 			time.Sleep(50 * time.Millisecond)
 		}

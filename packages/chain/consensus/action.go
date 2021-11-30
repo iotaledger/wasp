@@ -70,7 +70,7 @@ func (c *consensus) proposeBatchIfNeeded() {
 	// call the ACS consensus. The call should spawn goroutine itself
 	c.committee.RunACSConsensus(proposal.Bytes(), c.acsSessionID, c.stateOutput.GetStateIndex(), func(sessionID uint64, acs [][]byte) {
 		c.log.Debugf("proposeBatch RunACSConsensus callback: responding to ACS session ID %v: len = %d", sessionID, len(acs))
-		go c.EventAsynchronousCommonSubsetMsg(&messages.AsynchronousCommonSubsetMsg{
+		go c.EnqueueAsynchronousCommonSubsetMsg(&messages.AsynchronousCommonSubsetMsg{
 			ProposedBatchesBin: acs,
 			SessionID:          sessionID,
 		})
@@ -240,7 +240,7 @@ func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		}
 		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
 			task.VirtualStateAccess.BlockIndex(), task.VirtualStateAccess.StateCommitment())
-		c.EventVMResultMsg(&messages.VMResultMsg{
+		c.EnqueueVMResultMsg(&messages.VMResultMsg{
 			Task: task,
 		})
 		elapsed := time.Since(task.StartTime)

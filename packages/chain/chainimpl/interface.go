@@ -94,7 +94,7 @@ func (c *chainObj) IsDismissed() bool {
 }
 
 func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
-	c.stateMgr.EventStateCandidateMsg(virtualState, outputID)
+	c.stateMgr.EnqueueStateCandidateMsg(virtualState, outputID)
 }
 
 func shouldSendToPeer(peerID string, ackPeers []string) bool {
@@ -189,12 +189,12 @@ func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp 
 
 func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
 	if c.consensus != nil {
-		c.consensus.EventInclusionsStateMsg(txID, inclusionState) // TODO special entry point
+		c.consensus.EnqueueInclusionsStateMsg(txID, inclusionState) // TODO special entry point
 	}
 }
 
 func (c *chainObj) ReceiveOutput(output ledgerstate.Output) {
-	c.stateMgr.EventOutputMsg(output)
+	c.stateMgr.EnqueueOutputMsg(output)
 }
 
 func (c *chainObj) BlobCache() registry.BlobCache {
