@@ -101,6 +101,12 @@ func GetKeyIDFromString(key string) Key32 {
 	return Key32(host.GetKeyIDFromString(key))
 }
 
+func GetKeyIDFromUint64(value uint64, nrOfBytes int) Key32 {
+	bytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bytes, value)
+	return GetKeyIDFromBytes(bytes[:nrOfBytes])
+}
+
 func GetLength(objID int32) int32 {
 	bytes := GetBytes(objID, KeyLength, TYPE_INT32)
 	return int32(binary.LittleEndian.Uint32(bytes))

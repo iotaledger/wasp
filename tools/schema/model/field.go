@@ -92,7 +92,7 @@ func (f *Field) Compile(s *Schema, fldName, fldType string) error {
 		index = strings.Index(fldType, "]")
 		if index > 5 {
 			f.MapKey = strings.TrimSpace(fldType[4:index])
-			if !fldTypeRegexp.MatchString(f.MapKey) {
+			if !fldTypeRegexp.MatchString(f.MapKey) || f.MapKey == "Bool" {
 				return fmt.Errorf("invalid key field type: %s", f.MapKey)
 			}
 			fldType = strings.TrimSpace(fldType[index+1:])

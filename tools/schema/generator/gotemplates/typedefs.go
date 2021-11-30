@@ -103,7 +103,7 @@ func (m $proxy) Clear() {
 	"typedefProxyMapNewBaseType": `
 
 func (m $proxy) Get$FldType(key $fldKeyLangType) wasmlib.Sc$mut$FldType {
-	return wasmlib.NewSc$mut$FldType(m.objID, $fldKeyToKey32.KeyID())
+	return wasmlib.NewSc$mut$FldType(m.objID, $fldKeyToKey32)
 }
 `,
 	// *******************************
@@ -115,7 +115,7 @@ $#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruc
 $#emit setVarType
 
 func (m $proxy) Get$OldType(key $oldKeyLangType) $mut$OldType {
-	subID := wasmlib.GetObjectID(m.objID, $oldKeyToKey32.KeyID(), $varType)
+	subID := wasmlib.GetObjectID(m.objID, $oldKeyToKey32, $varType)
 	return $mut$OldType{objID: subID}
 }
 `,
@@ -123,7 +123,7 @@ func (m $proxy) Get$OldType(key $oldKeyLangType) $mut$OldType {
 	"typedefProxyMapNewOtherTypeStruct": `
 
 func (m $proxy) Get$FldType(key $fldKeyLangType) $mut$FldType {
-	return $mut$FldType{objID: m.objID, keyID: $fldKeyToKey32.KeyID()}
+	return $mut$FldType{objID: m.objID, keyID: $fldKeyToKey32}
 }
 `,
 }

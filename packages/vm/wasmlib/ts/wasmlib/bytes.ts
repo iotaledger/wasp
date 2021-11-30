@@ -29,13 +29,13 @@ export class BytesDecoder {
 
     // decodes a bool from the byte buffer
     bool(): boolean {
-        return this.int8() != 0;
+        return this.uint8() != 0;
     }
 
     // decodes the next substring of bytes from the byte buffer
     bytes(): u8[] {
-        let size = this.int32();
-        if (this.buf.length < size) {
+        let size = this.uint32();
+        if (u32(this.buf.length) < size) {
             panic("insufficient bytes");
         }
         let value = this.buf.slice(0, size);
@@ -65,7 +65,7 @@ export class BytesDecoder {
 
     // decodes an int8 from the byte buffer
     int8(): i8 {
-        return this.buf.shift() as i8;
+        return this.uint8() as i8;
     }
 
     // decodes an int16 from the byte buffer
@@ -130,7 +130,7 @@ export class BytesDecoder {
 
     // decodes an uint8 from the byte buffer
     uint8(): u8 {
-        return this.int8() as u8;
+        return this.buf.shift();
     }
 
     // decodes an uint16 from the byte buffer
@@ -181,15 +181,12 @@ export class BytesEncoder {
 
     // encodes a bool into the byte buffer
     bool(val: boolean): BytesEncoder {
-        if (val) {
-            return this.int8(1);
-        }
-        return this.int8(0);
+         return this.int8(val ? 1 : 0);
     }
 
     // encodes a substring of bytes into the byte buffer
     bytes(value: u8[]): BytesEncoder {
-        this.int32(value.length);
+        this.uint32(value.length);
         for (let i = 0; i < value.length; i++) {
             this.buf.push(value[i]);
         }
@@ -223,8 +220,7 @@ export class BytesEncoder {
 
     // encodes an int8 into the byte buffer
     int8(val: i8): BytesEncoder {
-        this.buf.push(val as u8);
-        return this;
+        return this.uint8(val as u8);
     }
 
     // encodes an int16 into the byte buffer
@@ -272,7 +268,8 @@ export class BytesEncoder {
 
     // encodes an uint8 into the byte buffer
     uint8(val: u8): BytesEncoder {
-        return this.int8(val as i8);
+        this.buf.push(val);
+        return this;
     }
 
     // encodes an uint16 into the byte buffer

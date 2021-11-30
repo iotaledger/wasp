@@ -4,8 +4,6 @@
 package generator
 
 import (
-	"regexp"
-
 	"github.com/iotaledger/wasp/tools/schema/generator/rstemplates"
 	"github.com/iotaledger/wasp/tools/schema/model"
 )
@@ -14,25 +12,20 @@ type RustGenerator struct {
 	GenBase
 }
 
-func NewRustGenerator() *RustGenerator {
+func NewRustGenerator(s *model.Schema) *RustGenerator {
 	g := &RustGenerator{}
-	g.extension = ".rs"
-	g.funcRegexp = regexp.MustCompile(`^pub fn (\w+).+$`)
-	g.language = "Rust"
-	g.rootFolder = "src"
-	g.gen = g
+	g.init(s, rstemplates.TypeDependent, rstemplates.Templates)
 	return g
 }
 
-func (g *RustGenerator) init(s *model.Schema) {
-	g.GenBase.init(s, rstemplates.TypeDependent, rstemplates.Templates)
-}
+func (g *RustGenerator) Generate() error {
+	err := g.generateCommonFiles()
+	if err != nil {
+		return err
+	}
 
-func (g *RustGenerator) funcName(f *model.Func) string {
-	return snake(g.GenBase.funcName(f))
-}
+	// now generate language-specific files
 
-func (g *RustGenerator) generateLanguageSpecificFiles() error {
 	if g.s.CoreContracts {
 		return g.createSourceFile("mod", true)
 	}

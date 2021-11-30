@@ -2,7 +2,15 @@ package gotemplates
 
 import "github.com/iotaledger/wasp/tools/schema/model"
 
+var config = map[string]string{
+	"language":   "Go",
+	"extension":  ".go",
+	"rootFolder": "go",
+	"funcRegexp": `^func (\w+).+$`,
+}
+
 var Templates = []map[string]string{
+	config,
 	common,
 	constsGo,
 	contractGo,
@@ -60,23 +68,23 @@ var TypeDependent = model.StringMapMap{
 		"":          "wasmlib.TYPE_BYTES",
 	},
 	"fldToKey32": {
-		"Address":   "key",
-		"AgentID":   "key",
-		"Bool":      "wasmlib.Key32(key)",
-		"ChainID":   "key",
-		"Color":     "key",
-		"Hash":      "key",
-		"Hname":     "key",
-		"Int8":      "wasmlib.Key32(key)",
-		"Int16":     "wasmlib.Key32(key)",
-		"Int32":     "wasmlib.Key32(key)",
-		"Int64":     "wasmlib.Key32(key)",
-		"RequestID": "key",
-		"String":    "wasmlib.Key(key)",
-		"Uint8":     "wasmlib.Key32(key)",
-		"Uint16":    "wasmlib.Key32(key)",
-		"Uint32":    "wasmlib.Key32(key)",
-		"Uint64":    "wasmlib.Key32(key)",
+		"Address":   "key.KeyID()",
+		"AgentID":   "key.KeyID()",
+		"Bool":      "???cannot use Bool as map key",
+		"ChainID":   "key.KeyID()",
+		"Color":     "key.KeyID()",
+		"Hash":      "key.KeyID()",
+		"Hname":     "key.KeyID()",
+		"Int8":      "wasmlib.GetKeyIDFromUint64(uint64(key), 1)",
+		"Int16":     "wasmlib.GetKeyIDFromUint64(uint64(key), 2)",
+		"Int32":     "wasmlib.GetKeyIDFromUint64(uint64(key), 4)",
+		"Int64":     "wasmlib.GetKeyIDFromUint64(uint64(key), 8)",
+		"RequestID": "key.KeyID()",
+		"String":    "wasmlib.Key(key).KeyID()",
+		"Uint8":     "wasmlib.GetKeyIDFromUint64(uint64(key), 1)",
+		"Uint16":    "wasmlib.GetKeyIDFromUint64(uint64(key), 2)",
+		"Uint32":    "wasmlib.GetKeyIDFromUint64(uint64(key), 4)",
+		"Uint64":    "wasmlib.GetKeyIDFromUint64(key, 8)",
 	},
 }
 

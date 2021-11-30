@@ -30,12 +30,12 @@ impl BytesDecoder<'_> {
 
     // decodes a bool from the byte buffer
     pub fn bool(&mut self) -> bool {
-        self.int8() != 0
+        self.uint8() != 0
     }
 
     // decodes the next substring of bytes from the byte buffer
     pub fn bytes(&mut self) -> &[u8] {
-        let size = self.int32() as usize;
+        let size = self.uint32() as usize;
         if self.buf.len() < size {
             panic("insufficient bytes");
         }
@@ -66,12 +66,7 @@ impl BytesDecoder<'_> {
 
     // decodes an int8 from the byte buffer
     pub fn int8(&mut self) -> i8 {
-        if self.buf.len() == 0 {
-            panic("insufficient bytes");
-        }
-        let val = self.buf[0] as i8;
-        self.buf = &self.buf[1..];
-        val
+        self.uint8() as i8
     }
 
     // decodes an int16 from the byte buffer
@@ -135,7 +130,12 @@ impl BytesDecoder<'_> {
 
     // decodes an uint8 from the byte buffer
     pub fn uint8(&mut self) -> u8 {
-        self.int8() as u8
+        if self.buf.len() == 0 {
+            panic("insufficient bytes");
+        }
+        let val = self.buf[0];
+        self.buf = &self.buf[1..];
+        val
     }
 
     // decodes an uint16 from the byte buffer
@@ -190,15 +190,12 @@ impl BytesEncoder {
 
     // encodes a bool into the byte buffer
     pub fn bool(&mut self, val: bool) -> &BytesEncoder {
-        if val {
-            return self.int8(1);
-        }
-        self.int8(0)
+        self.uint8(val as u8)
     }
 
     // encodes a substring of bytes into the byte buffer
     pub fn bytes(&mut self, value: &[u8]) -> &BytesEncoder {
-        self.int32(value.len() as i32);
+        self.uint32(value.len() as u32);
         self.buf.extend_from_slice(value);
         self
     }
@@ -230,8 +227,7 @@ impl BytesEncoder {
 
     // encodes an int8 into the byte buffer
     pub fn int8(&mut self, val: i8) -> &BytesEncoder {
-        self.buf.push(val as u8);
-        self
+        self.uint8(val as u8)
     }
 
     // encodes an int16 into the byte buffer
@@ -278,7 +274,8 @@ impl BytesEncoder {
 
     // encodes an uint8 into the byte buffer
     pub fn uint8(&mut self, val: u8) -> &BytesEncoder {
-        self.int8(val as i8)
+        self.buf.push(val);
+        self
     }
 
     // encodes an uint16 into the byte buffer

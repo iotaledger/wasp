@@ -146,6 +146,12 @@ pub fn get_key_id_from_string(key: &str) -> Key32 {
     }
 }
 
+// Retrieve the key id that the host has associated with the specified integer key
+pub fn get_key_id_from_uint64(key: u64, nr_of_bytes: usize) -> Key32 {
+    let bytes = key.to_le_bytes();
+    get_key_id_from_bytes(&bytes[..nr_of_bytes])
+}
+
 // Retrieve the length of an array container object on the host
 pub fn get_length(obj_id: i32) -> i32 {
     // special integer key "length" is used

@@ -2,7 +2,15 @@ package tstemplates
 
 import "github.com/iotaledger/wasp/tools/schema/model"
 
+var config = map[string]string{
+	"language":   "TypeScript",
+	"extension":  ".ts",
+	"rootFolder": "ts",
+	"funcRegexp": `^export function (\w+).+$`,
+}
+
 var Templates = []map[string]string{
+	config,
 	common,
 	constsTs,
 	contractTs,
@@ -60,23 +68,23 @@ var TypeDependent = model.StringMapMap{
 		"":          "wasmlib.TYPE_BYTES",
 	},
 	"fldToKey32": {
-		"Address":   "key",
-		"AgentID":   "key",
-		"Bool":      "new wasmlib.Key32(key?1:0)",
-		"ChainID":   "key",
-		"Color":     "key",
-		"Hash":      "key",
-		"Hname":     "key",
-		"Int8":      "new wasmlib.Key32(key)",
-		"Int16":     "new wasmlib.Key32(key)",
-		"Int32":     "new wasmlib.Key32(key)",
-		"Int64":     "new wasmlib.Key32(key)",
-		"RequestID": "key",
+		"Address":   "key.getKeyID()",
+		"AgentID":   "key.getKeyID()",
+		"Bool":      "???cannot use Bool as map key",
+		"ChainID":   "key.getKeyID()",
+		"Color":     "key.getKeyID()",
+		"Hash":      "key.getKeyID()",
+		"Hname":     "key.getKeyID()",
+		"Int8":      "wasmlib.getKeyIDFromUint64(key as u64, 1)",
+		"Int16":     "wasmlib.getKeyIDFromUint64(key as u64, 2)",
+		"Int32":     "wasmlib.getKeyIDFromUint64(key as u64, 4)",
+		"Int64":     "wasmlib.getKeyIDFromUint64(key as u64, 8)",
+		"RequestID": "key.getKeyID()",
 		"String":    "wasmlib.Key32.fromString(key)",
-		"Uint8":     "new wasmlib.Key32(key)",
-		"Uint16":    "new wasmlib.Key32(key)",
-		"Uint32":    "new wasmlib.Key32(key)",
-		"Uint64":    "new wasmlib.Key32(key)",
+		"Uint8":     "wasmlib.getKeyIDFromUint64(key as u64, 1)",
+		"Uint16":    "wasmlib.getKeyIDFromUint64(key as u64, 2)",
+		"Uint32":    "wasmlib.getKeyIDFromUint64(key as u64, 4)",
+		"Uint64":    "wasmlib.getKeyIDFromUint64(key, 8)",
 	},
 	"fldTypeInit": {
 		"Address":   "new wasmlib.ScAddress()",
