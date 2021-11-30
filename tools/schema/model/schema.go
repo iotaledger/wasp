@@ -1,10 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package generator
+package model
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -79,7 +80,7 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	if s.FullName == "" {
 		return fmt.Errorf("missing contract name")
 	}
-	s.Name = lower(s.FullName)
+	s.Name = strings.ToLower(s.FullName)
 	s.Description = strings.TrimSpace(schemaDef.Description)
 
 	err := s.compileEvents(schemaDef)
@@ -303,4 +304,40 @@ func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
 		s.Typedefs = append(s.Typedefs, varDef)
 	}
 	return nil
+}
+
+func sortedFields(dict FieldMap) []string {
+	keys := make([]string, 0)
+	for key := range dict {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func sortedFuncDescs(dict FuncDefMap) []string {
+	keys := make([]string, 0)
+	for key := range dict {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func sortedKeys(dict StringMap) []string {
+	keys := make([]string, 0)
+	for key := range dict {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func sortedMaps(dict StringMapMap) []string {
+	keys := make([]string, 0)
+	for key := range dict {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }

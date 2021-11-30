@@ -16,7 +16,15 @@ type ScUtility struct {
 	wc    *WasmContext
 }
 
-func NewScUtility(wc *WasmContext) *ScUtility {
+func NewScUtility(wc *WasmContext, gasProcessor interface{}) *ScUtility {
+	//if gasProcessor == nil {
+	//	if wc.ctx != nil {
+	//		gasProcessor = wc.ctx.Gas()
+	//	} else {
+	//		gasProcessor = wc.ctxView.Gas()
+	//	}
+	//}
+	//return &ScUtility{utils: sandbox.NewUtils(gasProcessor), wc: wc}
 	return &ScUtility{utils: sandbox_utils.NewUtils(), wc: wc}
 }
 
@@ -26,7 +34,7 @@ func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
 	case wasmhost.KeyBase58Decode:
 		base58Decoded, err := utils.Base58().Decode(string(bytes))
 		if err != nil {
-			o.Panic(err.Error())
+			o.Panicf(err.Error())
 		}
 		return base58Decoded
 	case wasmhost.KeyBase58Encode:
@@ -34,7 +42,7 @@ func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
 	case wasmhost.KeyBlsAddress:
 		address, err := utils.BLS().AddressFromPublicKey(bytes)
 		if err != nil {
-			o.Panic(err.Error())
+			o.Panicf(err.Error())
 		}
 		return address.Bytes()
 	case wasmhost.KeyBlsAggregate:
@@ -48,7 +56,7 @@ func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
 	case wasmhost.KeyEd25519Address:
 		address, err := utils.ED25519().AddressFromPublicKey(bytes)
 		if err != nil {
-			o.Panic(err.Error())
+			o.Panicf(err.Error())
 		}
 		return address.Bytes()
 	case wasmhost.KeyEd25519Valid:
@@ -90,7 +98,7 @@ func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
 	}
 	pubKeyBin, sigBin, err := o.utils.BLS().AggregateBLSSignatures(pubKeysBin, sigsBin)
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	return NewBytesEncoder().Bytes(pubKeyBin).Bytes(sigBin).Data()
 }

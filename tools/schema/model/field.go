@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package generator
+package model
 
 import (
 	"fmt"
@@ -20,16 +20,22 @@ var (
 var FieldTypes = map[string]int32{
 	"Address":   wasmlib.TYPE_ADDRESS,
 	"AgentID":   wasmlib.TYPE_AGENT_ID,
+	"Bool":      wasmlib.TYPE_BOOL,
 	"Bytes":     wasmlib.TYPE_BYTES,
 	"ChainID":   wasmlib.TYPE_CHAIN_ID,
 	"Color":     wasmlib.TYPE_COLOR,
 	"Hash":      wasmlib.TYPE_HASH,
 	"Hname":     wasmlib.TYPE_HNAME,
+	"Int8":      wasmlib.TYPE_INT8,
 	"Int16":     wasmlib.TYPE_INT16,
 	"Int32":     wasmlib.TYPE_INT32,
 	"Int64":     wasmlib.TYPE_INT64,
 	"RequestID": wasmlib.TYPE_REQUEST_ID,
 	"String":    wasmlib.TYPE_STRING,
+	"Uint8":     wasmlib.TYPE_INT8,
+	"Uint16":    wasmlib.TYPE_INT16,
+	"Uint32":    wasmlib.TYPE_INT32,
+	"Uint64":    wasmlib.TYPE_INT64,
 }
 
 type Field struct {

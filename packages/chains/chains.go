@@ -120,8 +120,8 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		return xerrors.Errorf("cannot activate chain for deactivated chain record")
 	}
 	chainArr := chr.ChainID.Array()
-	_, ok := c.allChains[chainArr]
-	if ok {
+	ret, ok := c.allChains[chainArr]
+	if ok && !ret.IsDismissed() {
 		c.log.Debugf("chain is already active: %s", chr.ChainID.String())
 		return nil
 	}
@@ -181,15 +181,17 @@ func (c *Chains) Deactivate(chr *registry.ChainRecord) error {
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID *iscp.ChainID) chain.Chain {
+func (c *Chains) Get(chainID *iscp.ChainID, includeDeactivated ...bool) chain.Chain {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
 	addrArr := chainID.Array()
 	ret, ok := c.allChains[addrArr]
+
+	if len(includeDeactivated) > 0 && includeDeactivated[0] {
+		return ret
+	}
 	if ok && ret.IsDismissed() {
-		delete(c.allChains, addrArr)
-		c.nodeConn.Unsubscribe(chainID.AliasAddress)
 		return nil
 	}
 	return ret

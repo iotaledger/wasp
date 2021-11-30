@@ -55,7 +55,7 @@ impl EventEncoder {
     }
 
     // encodes an ScHname into the byte buffer
-    pub fn hname(&mut self, value: &ScHname) -> &EventEncoder {
+    pub fn hname(&mut self, value: ScHname) -> &EventEncoder {
         self.string(&value.to_string())
     }
 
