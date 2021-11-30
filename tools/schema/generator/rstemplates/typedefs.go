@@ -65,15 +65,12 @@ $#set exist $proxy
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherType": `
-$#set OldType $FldType
 $#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeStruct
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherTypeTypeDef": `
-$#set varType TYPE_MAP
-$#if array setVarTypeArray
-
-	pub fn Get$OldType(&self, index: i32) -> $mut$OldType {
+$#emit setVarType
+	pub fn get_$old_type(&self, index: i32) -> $mut$OldType {
 		let sub_id = get_object_id(self.obj_id, Key32(index), $varType);
 		$mut$OldType { obj_id: sub_id }
 	}
@@ -111,35 +108,26 @@ $#set exist $proxy
 `,
 	// *******************************
 	"typedefProxyMapNewBaseType": `
-    pub fn get_$fld_type(&self, key: $fldMapKeyLangType) -> Sc$mut$FldType {
-        Sc$mut$FldType::new(self.obj_id, key.get_key_id())
+    pub fn get_$fld_type(&self, key: $fldKeyRef$fldKeyParamLangType) -> Sc$mut$FldType {
+        Sc$mut$FldType::new(self.obj_id, $fldKeyToKey32)
     }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
-$#set old_type $fld_type
-$#set OldType $FldType
-$#set oldMapKeyLangType $fldMapKeyLangType
-$#set oldMapKeyKey $fldMapKeyKey
 $#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruct
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeTypeDef": `
-$#set varType TYPE_MAP
-$#if array setVarTypeArray
-    pub fn get_$old_type(&self, key: $oldMapKeyLangType) -> $mut$OldType {
-        let sub_id = get_object_id(self.obj_id, key.get_key_id(), $varType);
+$#emit setVarType
+    pub fn get_$old_type(&self, key: $oldKeyRef$oldKeyParamLangType) -> $mut$OldType {
+        let sub_id = get_object_id(self.obj_id, $oldKeyToKey32, $varType);
         $mut$OldType { obj_id: sub_id }
     }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeStruct": `
-    pub fn get_$old_type(&self, key: $oldMapKeyLangType) -> $mut$OldType {
-        $mut$OldType { obj_id: self.obj_id, key_id: key.get_key_id() }
+    pub fn get_$fld_type(&self, key: $fldKeyRef$fldKeyParamLangType) -> $mut$FldType {
+        $mut$FldType { obj_id: self.obj_id, key_id: $fldKeyToKey32 }
     }
-`,
-	// *******************************
-	"setVarTypeArray": `
-$#set varType $arrayTypeID | $fldTypeID
 `,
 }

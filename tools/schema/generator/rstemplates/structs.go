@@ -4,9 +4,11 @@ var structsRs = map[string]string{
 	// *******************************
 	"structs.rs": `
 #![allow(dead_code)]
+#![allow(unused_imports)]
 
 use wasmlib::*;
 use wasmlib::host::*;
+$#if typedefs useTypeDefs
 $#each structs structType
 `,
 	// *******************************
@@ -45,7 +47,7 @@ $#emit structMethods
 `,
 	// *******************************
 	"structEncode": `
-		encode.$fld_type($ref$+self.$fld_name);
+		encode.$fld_type($fldRef$+self.$fld_name);
 `,
 	// *******************************
 	"structMethods": `

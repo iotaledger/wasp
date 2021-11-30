@@ -153,35 +153,25 @@ func TestLeb128(t *testing.T) {
 	testLeb128 := inccounter.ScFuncs.TestLeb128(ctx)
 	testLeb128.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
-
-	//res, err := chain.CallView(
-	//	ScName, wasmproc.ViewCopyAllState,
-	//)
-	//require.NoError(t, err)
-	//keys := make([]string, 0)
-	//for key := range res {
-	//	keys = append(keys, string(key))
-	//}
-	//sort.Strings(keys)
-	//for _, key := range keys {
-	//	fmt.Printf("%s: %v\n", key, res[kv.Key(key)])
-	//}
 }
 
 func TestLoop(t *testing.T) {
-	if *wasmsolo.GoDebug || *wasmsolo.GoWasmEdge || wasmhost.DisableWasmTimeout {
-		// no timeout possible with WasmGoVM because goroutines cannot be killed
+	if *wasmsolo.GoDebug || *wasmsolo.GoWasmEdge {
+		// no timeout possible because goroutines cannot be killed
 		// or because there is no way to interrupt the Wasm code
 		t.SkipNow()
 	}
 
 	ctx := setupTest(t)
 
+	save := wasmhost.DisableWasmTimeout
+	wasmhost.DisableWasmTimeout = false
 	wasmhost.WasmTimeout = 1 * time.Second
 	endlessLoop := inccounter.ScFuncs.EndlessLoop(ctx)
 	endlessLoop.Func.TransferIotas(1).Post()
 	require.Error(t, ctx.Err)
 	require.Contains(t, ctx.Err.Error(), "interrupt")
+	wasmhost.DisableWasmTimeout = save
 
 	inccounter.ScFuncs.Increment(ctx).Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)

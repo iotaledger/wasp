@@ -13,6 +13,8 @@ use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
+use crate::structs::*;
+use crate::typedefs::*;
 
 #[derive(Clone, Copy)]
 pub struct ImmutableFinalizeAuctionParams {

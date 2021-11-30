@@ -64,15 +64,13 @@ $#set exist $proxy
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherType": `
-$#set OldType $FldType
 $#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeStruct
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherTypeTypeDef": `
-$#set varType wasmlib.TYPE_MAP
-$#if array setVarTypeArray
+$#emit setVarType
 
-	Get$OldType(index: i32): sc.$mut$OldType {
+	get$OldType(index: i32): sc.$mut$OldType {
 		let subID = wasmlib.getObjectID(this.objID, new wasmlib.Key32(index), $varType);
 		return new sc.$mut$OldType(subID);
 	}
@@ -113,37 +111,28 @@ $#set exist $proxy
 	// *******************************
 	"typedefProxyMapNewBaseType": `
 
-    get$FldType(key: $fldMapKeyLangType): wasmlib.Sc$mut$FldType {
-        return new wasmlib.Sc$mut$FldType(this.objID, $fldMapKeyKey.getKeyID());
+    get$FldType(key: $fldKeyLangType): wasmlib.Sc$mut$FldType {
+        return new wasmlib.Sc$mut$FldType(this.objID, $fldKeyToKey32);
     }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
-$#set oldType $fldType
-$#set OldType $FldType
-$#set oldMapKeyLangType $fldMapKeyLangType
-$#set oldMapKeyKey $fldMapKeyKey
 $#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruct
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeTypeDef": `
-$#set varType wasmlib.TYPE_MAP
-$#if array setVarTypeArray
+$#emit setVarType
 
-    get$OldType(key: $oldMapKeyLangType): sc.$mut$OldType {
-        let subID = wasmlib.getObjectID(this.objID, $oldMapKeyKey.getKeyID(), $varType);
+    get$OldType(key: $oldKeyLangType): sc.$mut$OldType {
+        let subID = wasmlib.getObjectID(this.objID, $oldKeyToKey32, $varType);
         return new sc.$mut$OldType(subID);
     }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeStruct": `
 
-    get$OldType(key: $oldMapKeyLangType): sc.$mut$OldType {
-        return new sc.$mut$OldType(this.objID, $oldMapKeyKey.getKeyID());
+    get$FldType(key: $fldKeyLangType): sc.$mut$FldType {
+        return new sc.$mut$FldType(this.objID, $fldKeyToKey32);
     }
-`,
-	// *******************************
-	"setVarTypeArray": `
-$#set varType $arrayTypeID|$fldTypeID
 `,
 }

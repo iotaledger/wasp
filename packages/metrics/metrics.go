@@ -25,6 +25,9 @@ type Metrics struct {
 	requestAckMessages      *prometheus.CounterVec
 	requestProcessingTime   *prometheus.GaugeVec
 	vmRunTime               *prometheus.GaugeVec
+	vmRunCounter            *prometheus.CounterVec
+	blocksPerChain          *prometheus.CounterVec
+	blockSizes              *prometheus.GaugeVec
 	nodeconnMetrics         nodeconnmetrics.NodeConnectionMetrics
 }
 
@@ -117,6 +120,24 @@ func (m *Metrics) registerMetrics() {
 		Help: "Time it takes to run the vm",
 	}, []string{"chain"})
 	prometheus.MustRegister(m.vmRunTime)
+
+	m.vmRunCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "wasp_vm_run_counter",
+		Help: "Time it takes to run the vm",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.vmRunCounter)
+
+	m.blocksPerChain = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "wasp_block_counter",
+		Help: "Number of blocks per chain",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.blocksPerChain)
+
+	m.blockSizes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "wasp_block_size",
+		Help: "Block sizes",
+	}, []string{"block_index", "chain"})
+	prometheus.MustRegister(m.blockSizes)
 }
 
 func (m *Metrics) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
