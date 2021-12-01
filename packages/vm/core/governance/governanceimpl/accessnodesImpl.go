@@ -13,6 +13,8 @@
 package governanceimpl
 
 import (
+	"bytes"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -67,8 +69,10 @@ func candidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	paramsCert := params.MustGetBytes(governance.ParamCandidateNodeCert)
 	paramsAPI := params.MustGetString(governance.ParamCandidateNodeAPI, "")
 
-	// TODO: Check against the Request sender? This approach is vulnerable to the replay attacks.
-	a.Require(ctx.Utils().ED25519().ValidSignature(paramsPubKey, paramsPubKey, paramsCert), "certificate invalid")
+	signedData := bytes.Buffer{} // TODO: Double-check, if such scheme is good enough.
+	signedData.Write(paramsPubKey)
+	signedData.Write(ctx.Request().SenderAddress().Bytes())
+	a.Require(ctx.Utils().ED25519().ValidSignature(signedData.Bytes(), paramsPubKey, paramsCert), "certificate invalid")
 
 	if paramCandidate {
 		ani := governance.AccessNodeInfo{

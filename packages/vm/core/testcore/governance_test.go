@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -112,6 +113,7 @@ func TestRotate(t *testing.T) {
 func TestAccessNodes(t *testing.T) {
 	env := solo.New(t, true, true)
 	node1KP, _ := env.NewKeyPairWithFunds()
+	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds()
 	chainKP, _ := env.NewKeyPairWithFunds()
 	chain := env.NewChain(chainKP, "chain1")
 	defer chain.Log.Sync()
@@ -132,6 +134,9 @@ func TestAccessNodes(t *testing.T) {
 
 	//
 	// Add a single access node candidate.
+	certData := bytes.Buffer{}
+	certData.Write(node1KP.PublicKey.Bytes())
+	certData.Write(node1OwnerAddr.Bytes())
 	_, err = chain.PostRequestSync(
 		solo.NewCallParamsFromDic(
 			governance.Contract.Name,
@@ -140,11 +145,11 @@ func TestAccessNodes(t *testing.T) {
 				Candidate: true,
 				Validator: false,
 				PubKey:    node1KP.PublicKey.Bytes(),
-				Cert:      node1KP.PrivateKey.Sign(node1KP.PublicKey[:]).Bytes(),
+				Cert:      node1KP.PrivateKey.Sign(certData.Bytes()).Bytes(),
 				API:       "http://my-api/url",
 			}.AsDict(),
 		).WithIotas(1),
-		chainKP,
+		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)
 	require.NoError(t, err)
 
