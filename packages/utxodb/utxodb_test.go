@@ -15,22 +15,30 @@ func TestBasic(t *testing.T) {
 	id, err := genTx.ID()
 	require.NoError(t, err)
 	require.EqualValues(t, *id, u.GenesisTransactionID())
-}
-
-func TestGenesis(t *testing.T) {
-	u := New()
 	require.EqualValues(t, u.Supply(), u.GetAddressBalance(u.GenesisAddress()))
-	u.checkLedgerBalance()
+
+	require.Same(t, genTx, u.MustGetTransaction(u.GenesisTransactionID()))
+
+	m, ok := u.GetTransactionMilestoneInfo(u.GenesisTransactionID())
+	require.True(t, ok)
+	require.Equal(t, MilestoneInfo{Index: 0, Timestamp: 0}, m)
 }
 
 func TestRequestFunds(t *testing.T) {
 	u := New()
 	addr := tpkg.RandEd25519Address()
-	_, err := u.RequestFunds(addr)
+	tx, err := u.RequestFunds(addr)
 	require.NoError(t, err)
 	require.EqualValues(t, u.Supply()-RequestFundsAmount, u.GetAddressBalance(u.GenesisAddress()))
 	require.EqualValues(t, RequestFundsAmount, u.GetAddressBalance(addr))
-	u.checkLedgerBalance()
+
+	txID, err := tx.ID()
+	require.NoError(t, err)
+	require.Same(t, tx, u.MustGetTransaction(*txID))
+
+	m, ok := u.GetTransactionMilestoneInfo(*txID)
+	require.True(t, ok)
+	require.Equal(t, MilestoneInfo{Index: 1, Timestamp: 1}, m)
 }
 
 func TestAddTransactionFail(t *testing.T) {
@@ -42,7 +50,6 @@ func TestAddTransactionFail(t *testing.T) {
 
 	err = u.AddTransaction(tx)
 	require.Error(t, err)
-	u.checkLedgerBalance()
 }
 
 func TestDoubleSpend(t *testing.T) {
@@ -66,7 +73,7 @@ func TestDoubleSpend(t *testing.T) {
 			TransactionOutputIndex: 0,
 		}}).
 		AddOutput(&iotago.ExtendedOutput{Address: addr2, Amount: RequestFundsAmount}).
-		Build(deSeriParas, key1Signer)
+		Build(u.deSeriParas(), key1Signer)
 	require.NoError(t, err)
 	err = u.AddTransaction(spend2)
 	require.NoError(t, err)
@@ -77,16 +84,10 @@ func TestDoubleSpend(t *testing.T) {
 			TransactionOutputIndex: 0,
 		}}).
 		AddOutput(&iotago.ExtendedOutput{Address: addr3, Amount: RequestFundsAmount}).
-		Build(deSeriParas, key1Signer)
+		Build(u.deSeriParas(), key1Signer)
 	require.NoError(t, err)
 	err = u.AddTransaction(spend3)
-	require.NoError(t, err)
-
-	errors := u.Commit()
-	require.Len(t, errors, 1)
-
-	require.EqualValues(t, 0, u.GetAddressBalance(&addr1))
-	require.EqualValues(t, RequestFundsAmount, u.GetAddressBalance(addr2)+u.GetAddressBalance(addr3))
+	require.Error(t, err)
 }
 
 func TestGetOutput(t *testing.T) {
