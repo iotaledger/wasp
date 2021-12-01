@@ -18,6 +18,8 @@ pub struct ScAddress {
 }
 
 impl ScAddress {
+    pub const ZERO: ScAddress = ScAddress { id: [0; 33] };
+
     // construct from byte array
     pub fn from_bytes(bytes: &[u8]) -> ScAddress {
         ScAddress { id: bytes.try_into().expect("invalid address id length") }
@@ -57,6 +59,8 @@ pub struct ScAgentID {
 }
 
 impl ScAgentID {
+    pub const ZERO: ScAgentID = ScAgentID { id: [0; 37] };
+
     // construct from address and contract name hash
     pub fn new(address: &ScAddress, hname: ScHname) -> ScAgentID {
         let mut agent_id = ScAgentID { id: [0; 37] };
@@ -196,6 +200,8 @@ pub struct ScHash {
 }
 
 impl ScHash {
+    pub const ZERO: ScHash = ScHash { id: [0; 32] };
+
     // construct from byte array
     pub fn from_bytes(bytes: &[u8]) -> ScHash {
         ScHash { id: bytes.try_into().expect("invalid hash id length") }
