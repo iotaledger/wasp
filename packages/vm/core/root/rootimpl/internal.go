@@ -49,7 +49,7 @@ func isAuthorizedToDeploy(ctx iscp.Sandbox) bool {
 		// chain owner is always authorized
 		return true
 	}
-	if caller.Address().Equals(ctx.ChainID().AsAddress()) {
+	if caller.Address().Equal(ctx.ChainID().AsAddress()) {
 		// smart contract from the same chain is always authorize
 		return true
 	}

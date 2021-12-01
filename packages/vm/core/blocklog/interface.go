@@ -68,6 +68,7 @@ type BlockInfo struct {
 	NumSuccessfulRequests uint16
 	NumOffLedgerRequests  uint16
 	PreviousStateHash     hashing.HashValue
+	AnchorTransactionID   iotago.TransactionID
 }
 
 func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
@@ -113,6 +114,9 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if err := util.WriteUint16(w, bi.NumOffLedgerRequests); err != nil {
 		return err
 	}
+	if _, err := w.Write(bi.AnchorTransactionID[:]); err != nil {
+		return err
+	}
 	if _, err := w.Write(bi.PreviousStateHash.Bytes()); err != nil {
 		return err
 	}
@@ -130,6 +134,9 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 		return err
 	}
 	if err := util.ReadUint16(r, &bi.NumOffLedgerRequests); err != nil {
+		return err
+	}
+	if err := util.ReadTransactionID(r, &bi.AnchorTransactionID); err != nil {
 		return err
 	}
 	if err := util.ReadHashValue(r, &bi.PreviousStateHash); err != nil { // nolint:nolint

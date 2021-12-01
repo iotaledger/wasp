@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -21,6 +22,29 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 	registry.MustPush(blockInfo.Bytes())
 	ret := registry.MustLen() - 1
 	return ret
+}
+
+func SetAnchorTransactionIdOfLastBlock(partition kv.KVStore, transactionId ledgerstate.TransactionID) {
+	registry := collections.NewArray32(partition, StateVarBlockRegistry)
+	lastBlockIndex := registry.MustLen() - 1
+	blockInfoBuffer := registry.MustGetAt(lastBlockIndex)
+	blockInfo, _ := BlockInfoFromBytes(lastBlockIndex, blockInfoBuffer)
+
+	blockInfo.AnchorTransactionID = transactionId
+
+	registry.MustSetAt(lastBlockIndex, blockInfo.Bytes())
+}
+
+func GetAnchorTransactionIdByBlockIndex(partition kv.KVStore, blockIndex uint32) (iotago.TransactionID, error) {
+	registry := collections.NewArray32(partition, StateVarBlockRegistry)
+	blockInfoBuffer := registry.MustGetAt(blockIndex)
+	blockInfo, err := BlockInfoFromBytes(blockIndex, blockInfoBuffer)
+
+	if err != nil {
+		return iotago.TransactionID{}, err
+	}
+
+	return blockInfo.AnchorTransactionID, nil
 }
 
 // SaveControlAddressesIfNecessary saves new information about state address in the blocklog partition
