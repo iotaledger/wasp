@@ -41,41 +41,44 @@ var (
 )
 
 type chainObj struct {
-	committee                        atomic.Value
-	mempool                          chain.Mempool
-	mempoolLastCleanedIndex          uint32
-	dismissed                        atomic.Bool
-	dismissOnce                      sync.Once
-	chainID                          *iscp.ChainID
-	chainStateSync                   coreutil.ChainStateSync
-	stateReader                      state.OptimisticStateReader
-	procset                          *processors.Cache
-	stateMgr                         chain.StateManager
-	consensus                        chain.Consensus
-	log                              *logger.Logger
-	nodeConn                         chain.ChainNodeConnection
-	db                               kvstore.KVStore
-	peerNetworkConfig                registry.PeerNetworkConfigProvider
-	netProvider                      peering.NetworkProvider
-	dksProvider                      registry.DKShareRegistryProvider
-	committeeRegistry                registry.CommitteeRegistryProvider
-	blobProvider                     registry.BlobCache
-	eventRequestProcessed            *events.Event
-	eventChainTransition             *events.Event
-	chainPeers                       peering.PeerDomainProvider
-	offLedgerReqsAcksMutex           sync.RWMutex
-	offLedgerReqsAcks                map[iscp.RequestID][]string
-	offledgerBroadcastUpToNPeers     int
-	offledgerBroadcastInterval       time.Duration
-	pullMissingRequestsFromCommittee bool
-	chainMetrics                     metrics.ChainMetrics
-	dismissChainMsgPipe              pipe.Pipe
-	stateMsgPipe                     pipe.Pipe
-	offLedgerRequestPeerMsgPipe      pipe.Pipe
-	requestAckPeerMsgPipe            pipe.Pipe
-	missingRequestIDsPeerMsgPipe     pipe.Pipe
-	missingRequestPeerMsgPipe        pipe.Pipe
-	timerTickMsgPipe                 pipe.Pipe
+	committee                          atomic.Value
+	mempool                            chain.Mempool
+	mempoolLastCleanedIndex            uint32
+	dismissed                          atomic.Bool
+	dismissOnce                        sync.Once
+	chainID                            *iscp.ChainID
+	chainStateSync                     coreutil.ChainStateSync
+	stateReader                        state.OptimisticStateReader
+	procset                            *processors.Cache
+	stateMgr                           chain.StateManager
+	consensus                          chain.Consensus
+	log                                *logger.Logger
+	nodeConn                           chain.ChainNodeConnection
+	db                                 kvstore.KVStore
+	peerNetworkConfig                  registry.PeerNetworkConfigProvider
+	netProvider                        peering.NetworkProvider
+	dksProvider                        registry.DKShareRegistryProvider
+	committeeRegistry                  registry.CommitteeRegistryProvider
+	blobProvider                       registry.BlobCache
+	eventRequestProcessed              *events.Event
+	eventChainTransition               *events.Event
+	eventChainTransitionClosure        *events.Closure
+	receiveChainPeerMessagesAttachID   interface{}
+	detachFromCommitteePeerMessagesFun func()
+	chainPeers                         peering.PeerDomainProvider
+	offLedgerReqsAcksMutex             sync.RWMutex
+	offLedgerReqsAcks                  map[iscp.RequestID][]string
+	offledgerBroadcastUpToNPeers       int
+	offledgerBroadcastInterval         time.Duration
+	pullMissingRequestsFromCommittee   bool
+	chainMetrics                       metrics.ChainMetrics
+	dismissChainMsgPipe                pipe.Pipe
+	stateMsgPipe                       pipe.Pipe
+	offLedgerRequestPeerMsgPipe        pipe.Pipe
+	requestAckPeerMsgPipe              pipe.Pipe
+	missingRequestIDsPeerMsgPipe       pipe.Pipe
+	missingRequestPeerMsgPipe          pipe.Pipe
+	timerTickMsgPipe                   pipe.Pipe
 }
 
 type committeeStruct struct {
@@ -137,9 +140,6 @@ func NewChain(
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
 	}
 	ret.committee.Store(&committeeStruct{})
-	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
-	ret.nodeConn.AttachToTransactionReceived(ret.ReceiveTransaction)
-	ret.nodeConn.AttachToUnspentAliasOutputReceived(ret.ReceiveState)
 
 	var err error
 	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), peerNetConfig.Neighbors())
@@ -148,7 +148,12 @@ func NewChain(
 		return nil
 	}
 	ret.stateMgr = statemgr.New(db, ret, ret.chainPeers, ret.nodeConn, chainMetrics)
-	ret.chainPeers.Attach(peering.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
+
+	ret.eventChainTransitionClosure = events.NewClosure(ret.processChainTransition)
+	ret.eventChainTransition.Attach(ret.eventChainTransitionClosure)
+	ret.nodeConn.AttachToTransactionReceived(ret.ReceiveTransaction)
+	ret.nodeConn.AttachToUnspentAliasOutputReceived(ret.ReceiveState)
+	ret.receiveChainPeerMessagesAttachID = ret.chainPeers.Attach(peering.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
 	go ret.recvLoop()
 	ret.startTimer()
 	return ret

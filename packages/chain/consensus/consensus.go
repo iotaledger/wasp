@@ -66,6 +66,7 @@ type consensus struct {
 	missingRequestsFromBatch         map[iscp.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
 	pullMissingRequestsFromCommittee bool
+	receivePeerMessagesAttachID      interface{}
 	consensusMetrics                 metrics.ConsensusMetrics
 }
 
@@ -120,7 +121,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
 	}
-	ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
+	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
 	ret.nodeConn.AttachToInclusionStateReceived(func(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
 		ret.EnqueueInclusionsStateMsg(txID, inclusionState)
 	})
@@ -161,6 +162,9 @@ func (c *consensus) IsReady() bool {
 }
 
 func (c *consensus) Close() {
+	c.nodeConn.DetachFromInclusionStateReceived()
+	c.committeePeerGroup.Detach(c.receivePeerMessagesAttachID)
+
 	c.eventStateTransitionMsgPipe.Close()
 	c.eventSignedResultMsgPipe.Close()
 	c.eventSignedResultAckMsgPipe.Close()

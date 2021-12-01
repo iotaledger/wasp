@@ -63,6 +63,13 @@ func (m *MockedNodeConn) AttachToOutputReceived(chain.NodeConnectionHandleOutput
 func (m *MockedNodeConn) AttachToUnspentAliasOutputReceived(chain.NodeConnectionHandleUnspentAliasOutputFun) {
 }
 
+func (m *MockedNodeConn) DetachFromTransactionReceived()        {}
+func (m *MockedNodeConn) DetachFromInclusionStateReceived()     {}
+func (m *MockedNodeConn) DetachFromOutputReceived()             {}
+func (m *MockedNodeConn) DetachFromUnspentAliasOutputReceived() {}
+
+func (m *MockedNodeConn) Close() {}
+
 func (m *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
 	return nodeconnmetrics.NewEmptyNodeConnectionMessagesMetrics()
 }

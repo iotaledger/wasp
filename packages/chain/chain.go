@@ -107,6 +107,12 @@ type NodeConnection interface {
 	PostTransaction(tx *ledgerstate.Transaction)
 
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
+
+	DetachFromTransactionReceived(*ledgerstate.AliasAddress)
+	DetachFromInclusionStateReceived(*ledgerstate.AliasAddress)
+	DetachFromOutputReceived(*ledgerstate.AliasAddress)
+	DetachFromUnspentAliasOutputReceived(*ledgerstate.AliasAddress)
+	Close()
 }
 
 type ChainNodeConnection interface {
@@ -121,6 +127,12 @@ type ChainNodeConnection interface {
 	PostTransaction(tx *ledgerstate.Transaction)
 
 	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
+
+	DetachFromTransactionReceived()
+	DetachFromInclusionStateReceived()
+	DetachFromOutputReceived()
+	DetachFromUnspentAliasOutputReceived()
+	Close()
 }
 
 type StateManager interface {

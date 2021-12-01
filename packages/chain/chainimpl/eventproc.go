@@ -193,6 +193,9 @@ func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*registry.Co
 
 func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeRecord) error {
 	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
+	if c.detachFromCommitteePeerMessagesFun != nil {
+		c.detachFromCommitteePeerMessagesFun()
+	}
 	cmt, cmtPeerGroup, err := committee.New(
 		cmtRec,
 		c.chainID,
@@ -206,7 +209,10 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
 			cmtRec.Address.Base58(), err)
 	}
-	cmtPeerGroup.Attach(peering.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
+	attachID := cmtPeerGroup.Attach(peering.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
+	c.detachFromCommitteePeerMessagesFun = func() {
+		cmtPeerGroup.Detach(attachID)
+	}
 	c.log.Debugf("creating new consensus object...")
 	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
 	c.setCommittee(cmt)

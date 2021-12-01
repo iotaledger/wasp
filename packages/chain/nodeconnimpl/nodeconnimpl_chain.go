@@ -30,6 +30,7 @@ func NewChainNodeConnection(chainID *iscp.ChainID, nodeConn chain.NodeConnection
 }
 
 func (c *chainNodeConnImplementation) AttachToTransactionReceived(fun chain.NodeConnectionHandleTransactionFun) {
+	c.log.Debugf("ChainNodeConnImplementation::AttachToTransactionReceived")
 	c.nodeConn.AttachToTransactionReceived(c.chainID.AsAliasAddress(), func(tx *ledgerstate.Transaction) {
 		c.metrics.GetInTransaction().CountLastMessage(tx)
 		fun(tx)
@@ -37,6 +38,7 @@ func (c *chainNodeConnImplementation) AttachToTransactionReceived(fun chain.Node
 }
 
 func (c *chainNodeConnImplementation) AttachToInclusionStateReceived(fun chain.NodeConnectionHandleInclusionStateFun) {
+	c.log.Debugf("ChainNodeConnImplementation::AttachToInclusionStateReceived")
 	c.nodeConn.AttachToInclusionStateReceived(c.chainID.AsAliasAddress(), func(txID ledgerstate.TransactionID, iState ledgerstate.InclusionState) {
 		c.metrics.GetInInclusionState().CountLastMessage(struct {
 			TransactionID  ledgerstate.TransactionID
@@ -50,6 +52,7 @@ func (c *chainNodeConnImplementation) AttachToInclusionStateReceived(fun chain.N
 }
 
 func (c *chainNodeConnImplementation) AttachToOutputReceived(fun chain.NodeConnectionHandleOutputFun) {
+	c.log.Debugf("ChainNodeConnImplementation::AttachToOutputReceived")
 	c.nodeConn.AttachToOutputReceived(c.chainID.AsAliasAddress(), func(output ledgerstate.Output) {
 		c.metrics.GetInOutput().CountLastMessage(output)
 		fun(output)
@@ -57,6 +60,7 @@ func (c *chainNodeConnImplementation) AttachToOutputReceived(fun chain.NodeConne
 }
 
 func (c *chainNodeConnImplementation) AttachToUnspentAliasOutputReceived(fun chain.NodeConnectionHandleUnspentAliasOutputFun) {
+	c.log.Debugf("ChainNodeConnImplementation::AttachToUnspentAliasOutputReceived")
 	c.nodeConn.AttachToUnspentAliasOutputReceived(c.chainID.AsAliasAddress(), func(output *ledgerstate.AliasOutput, timestamp time.Time) {
 		c.metrics.GetInUnspentAliasOutput().CountLastMessage(struct {
 			AliasOutput *ledgerstate.AliasOutput
@@ -67,6 +71,26 @@ func (c *chainNodeConnImplementation) AttachToUnspentAliasOutputReceived(fun cha
 		})
 		fun(output, timestamp)
 	})
+}
+
+func (c *chainNodeConnImplementation) DetachFromTransactionReceived() {
+	c.log.Debugf("ChainNodeConnImplementation::DetachFromTransactionReceived")
+	c.nodeConn.DetachFromTransactionReceived(c.chainID.AsAliasAddress())
+}
+
+func (c *chainNodeConnImplementation) DetachFromInclusionStateReceived() {
+	c.log.Debugf("ChainNodeConnImplementation::DetachFromInclusionStateReceived")
+	c.nodeConn.DetachFromInclusionStateReceived(c.chainID.AsAliasAddress())
+}
+
+func (c *chainNodeConnImplementation) DetachFromOutputReceived() {
+	c.log.Debugf("ChainNodeConnImplementation::DetachFromOutputReceived")
+	c.nodeConn.DetachFromOutputReceived(c.chainID.AsAliasAddress())
+}
+
+func (c *chainNodeConnImplementation) DetachFromUnspentAliasOutputReceived() {
+	c.log.Debugf("ChainNodeConnImplementation::DetachFromUnspentAliasOutputReceived")
+	c.nodeConn.DetachFromUnspentAliasOutputReceived(c.chainID.AsAliasAddress())
 }
 
 func (c *chainNodeConnImplementation) PullState() {
@@ -102,4 +126,12 @@ func (c *chainNodeConnImplementation) PostTransaction(tx *ledgerstate.Transactio
 
 func (c *chainNodeConnImplementation) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
 	return c.metrics
+}
+
+func (c *chainNodeConnImplementation) Close() {
+	c.log.Debugf("ChainNodeConnImplementation::Close")
+	c.DetachFromTransactionReceived()
+	c.DetachFromInclusionStateReceived()
+	c.DetachFromOutputReceived()
+	c.DetachFromUnspentAliasOutputReceived()
 }

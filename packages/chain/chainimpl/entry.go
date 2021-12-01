@@ -40,19 +40,26 @@ func (c *chainObj) Dismiss(reason string) {
 
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
+		c.chainPeers.Detach(c.receiveChainPeerMessagesAttachID)
+		c.nodeConn.DetachFromUnspentAliasOutputReceived()
+		c.nodeConn.DetachFromTransactionReceived()
+		c.eventChainTransition.Detach(c.eventChainTransitionClosure)
 
 		c.mempool.Close()
 		c.stateMgr.Close()
 		cmt := c.getCommittee()
 		if cmt != nil {
+			c.detachFromCommitteePeerMessagesFun()
 			cmt.Close()
 		}
 		if c.consensus != nil {
 			c.consensus.Close()
 		}
+
 		c.eventRequestProcessed.DetachAll()
 		c.eventChainTransition.DetachAll()
 		c.chainPeers.Close()
+		c.nodeConn.Close()
 
 		c.dismissChainMsgPipe.Close()
 		c.stateMsgPipe.Close()
