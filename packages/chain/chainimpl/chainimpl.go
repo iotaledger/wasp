@@ -42,7 +42,6 @@ var (
 	_ chain.ChainCore     = &chainObj{}
 	_ chain.ChainEntry    = &chainObj{}
 	_ chain.ChainRequests = &chainObj{}
-	_ chain.ChainEvents   = &chainObj{}
 	_ chain.ChainMetrics  = &chainObj{}
 )
 

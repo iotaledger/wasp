@@ -147,20 +147,12 @@ func (m *MockedChainCore) EnqueueTimerTick(tick int) {
 	m.onTimerTick(tick)
 }
 
-func (m *MockedChainCore) Events() chain.ChainEvents {
-	return m
-}
-
 func (m *MockedChainCore) Processors() *processors.Cache {
 	return m.processors
 }
 
-func (m *MockedChainCore) RequestProcessed() *events.Event {
-	return m.eventRequestProcessed
-}
-
-func (m *MockedChainCore) ChainTransition() *events.Event {
-	return m.eventStateTransition
+func (m *MockedChainCore) TriggerChainTransition(data *chain.ChainTransitionEventData) {
+	m.eventStateTransition.Trigger(data)
 }
 
 func (m *MockedChainCore) OnStateTransition(f func(data *chain.ChainTransitionEventData)) {

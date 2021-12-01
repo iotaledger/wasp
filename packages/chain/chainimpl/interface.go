@@ -212,20 +212,18 @@ func (c *chainObj) Processors() *processors.Cache {
 	return c.procset
 }
 
-func (c *chainObj) EventRequestProcessed() *events.Event {
-	return c.eventRequestProcessed
+func (c *chainObj) AttachToRequestProcessed(handler func(iscp.RequestID)) *events.Closure {
+	closure := events.NewClosure(handler)
+	c.eventRequestProcessed.Attach(closure)
+	return closure
 }
 
-func (c *chainObj) RequestProcessed() *events.Event {
-	return c.eventRequestProcessed
+func (c *chainObj) DetachFromRequestProcessed(attachID *events.Closure) {
+	c.eventRequestProcessed.Detach(attachID)
 }
 
-func (c *chainObj) ChainTransition() *events.Event {
-	return c.eventChainTransition
-}
-
-func (c *chainObj) Events() chain.ChainEvents {
-	return c
+func (c *chainObj) TriggerChainTransition(data *chain.ChainTransitionEventData) {
+	c.eventChainTransition.Trigger(data)
 }
 
 // GetStateReader returns a new copy of the optimistic state reader, with own baseline

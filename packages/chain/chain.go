@@ -25,7 +25,7 @@ type ChainCore interface {
 	ID() *iscp.ChainID
 	GetCommitteeInfo() *CommitteeInfo
 	StateCandidateToStateManager(state.VirtualStateAccess, ledgerstate.OutputID)
-	Events() ChainEvents
+	TriggerChainTransition(*ChainTransitionEventData)
 	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
@@ -53,16 +53,12 @@ type ChainEntry interface {
 // ChainRequests is an interface to query status of the request
 type ChainRequests interface {
 	GetRequestProcessingStatus(id iscp.RequestID) RequestProcessingStatus
-	EventRequestProcessed() *events.Event
+	AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure)
+	DetachFromRequestProcessed(attachID *events.Closure)
 }
 
 type ChainMetrics interface {
 	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
-}
-
-type ChainEvents interface {
-	RequestProcessed() *events.Event
-	ChainTransition() *events.Event
 }
 
 type Chain interface {

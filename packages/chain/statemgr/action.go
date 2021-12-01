@@ -48,7 +48,7 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	}
 	sm.log.Debugf("notifyStateTransition: %sstate IS SYNCED to index %d and is approved by output %v",
 		gu, stateOutputIndex, iscp.OID(stateOutputID))
-	sm.chain.Events().ChainTransition().Trigger(&chain.ChainTransitionEventData{
+	sm.chain.TriggerChainTransition(&chain.ChainTransitionEventData{
 		VirtualState:    sm.solidState.Copy(),
 		ChainOutput:     sm.stateOutput,
 		OutputTimestamp: sm.stateOutputTimestamp,
