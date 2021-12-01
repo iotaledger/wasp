@@ -7,13 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/committee"
-	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
@@ -27,12 +24,10 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
-	"golang.org/x/xerrors"
 )
 
 const maxMsgBuffer = 1000
@@ -159,6 +154,18 @@ func NewChain(
 	return ret
 }
 
+func (c *chainObj) startTimer() {
+	go func() {
+		c.stateMgr.Ready().MustWait()
+		tick := 0
+		for !c.IsDismissed() {
+			c.EnqueueTimerTick(tick)
+			tick++
+			time.Sleep(chain.TimerTickPeriod)
+		}
+	}()
+}
+
 func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGroupIn) {
 	if peerMsg.MsgType != chain.PeerMsgTypeMissingRequestIDs {
 		c.log.Warnf("Wrong type of chain message (with committee peering ID): %v, ignoring it", peerMsg.MsgType)
@@ -282,92 +289,6 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 			publisher.Publish("vmmsg", c.chainID.Base58(), msg)
 		}
 	}()
-}
-
-func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput, currentCmt chain.Committee) error {
-	if currentCmt.Address().Equals(anchorOutput.GetStateAddress()) {
-		// nothing changed. no rotation
-		return nil
-	}
-	// address changed
-	if !anchorOutput.GetIsGovernanceUpdated() {
-		return xerrors.Errorf("rotateCommitteeIfNeeded: inconsistency. Governance transition expected... New output: %s", anchorOutput.String())
-	}
-	rec, err := c.getOwnCommitteeRecord(anchorOutput.GetStateAddress())
-	if err != nil {
-		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
-	}
-	// rotation needed
-	// close current in any case
-	c.log.Infof("CLOSING COMMITTEE for %s", currentCmt.Address().Base58())
-
-	currentCmt.Close()
-	c.consensus.Close()
-	c.setCommittee(nil)
-	c.consensus = nil
-	if rec != nil {
-		// create new if committee record is available
-		if err = c.createNewCommitteeAndConsensus(rec); err != nil {
-			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
-		}
-	}
-	return nil
-}
-
-func (c *chainObj) createCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput) error {
-	// check if I am in the committee
-	rec, err := c.getOwnCommitteeRecord(anchorOutput.GetStateAddress())
-	if err != nil {
-		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
-	}
-	if rec != nil {
-		// create if record is present
-		if err = c.createNewCommitteeAndConsensus(rec); err != nil {
-			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
-		}
-	}
-	return nil
-}
-
-func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*registry.CommitteeRecord, error) {
-	rec, err := c.committeeRegistry.GetCommitteeRecord(addr)
-	if err != nil {
-		return nil, xerrors.Errorf("createCommitteeIfNeeded: reading committee record: %v", err)
-	}
-	if rec == nil {
-		// committee record wasn't found in th registry, I am not the part of the committee
-		return nil, nil
-	}
-	// just in case check if I am among committee nodes
-	// should not happen
-	if !util.StringInList(c.peerNetworkConfig.OwnNetID(), rec.Nodes) {
-		return nil, xerrors.Errorf("createCommitteeIfNeeded: I am not among nodes of the committee record. Inconsistency")
-	}
-	return rec, nil
-}
-
-func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeRecord) error {
-	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
-	cmt, cmtPeerGroup, err := committee.New(
-		cmtRec,
-		c.chainID,
-		c.netProvider,
-		c.peerNetworkConfig,
-		c.dksProvider,
-		c.log,
-	)
-	if err != nil {
-		c.setCommittee(nil)
-		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
-			cmtRec.Address.Base58(), err)
-	}
-	cmtPeerGroup.Attach(peering.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
-	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
-	c.setCommittee(cmt)
-
-	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", cmtRec.Address.Base58())
-	return nil
 }
 
 func (c *chainObj) getCommittee() chain.Committee {
