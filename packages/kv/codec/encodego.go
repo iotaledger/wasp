@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
-func Encode(v interface{}) []byte {
+func Encode(v interface{}) []byte { //nolint:funlen
 	switch vt := v.(type) {
 	case bool:
 		return EncodeBool(vt)
@@ -61,7 +61,6 @@ func Encode(v interface{}) []byte {
 		return vt.Bytes()
 	case time.Time:
 		return EncodeTime(vt)
-
 	default:
 		panic(fmt.Sprintf("Can't encode value %v", v))
 	}
