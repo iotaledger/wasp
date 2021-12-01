@@ -4,8 +4,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/stretchr/testify/require"
 )
 
@@ -105,4 +107,78 @@ func TestRotate(t *testing.T) {
 
 		require.True(t, chain.WaitForRequestsThrough(4))
 	})
+}
+
+func TestAccessNodes(t *testing.T) {
+	env := solo.New(t, true, true)
+	node1KP, _ := env.NewKeyPairWithFunds()
+	chainKP, _ := env.NewKeyPairWithFunds()
+	chain := env.NewChain(chainKP, "chain1")
+	defer chain.Log.Sync()
+	var res dict.Dict
+	var err error
+
+	//
+	// Initially the state is empty.
+	res, err = chain.CallView(
+		governance.Contract.Name,
+		governance.FuncGetChainNodes.Name,
+		governance.GetChainNodesRequest{}.AsDict(),
+	)
+	require.NoError(t, err)
+	getChainNodesResponse := governance.NewGetChainNodesResponseFromDict(res)
+	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
+	require.Empty(t, getChainNodesResponse.AccessNodes)
+
+	//
+	// Add a single access node candidate.
+	_, err = chain.PostRequestSync(
+		solo.NewCallParamsFromDic(
+			governance.Contract.Name,
+			governance.FuncCandidateNode.Name,
+			governance.CandidateNodeRequest{
+				Candidate: true,
+				Validator: false,
+				PubKey:    node1KP.PublicKey.Bytes(),
+				Cert:      node1KP.PrivateKey.Sign(node1KP.PublicKey[:]).Bytes(),
+				API:       "http://my-api/url",
+			}.AsDict(),
+		).WithIotas(1),
+		chainKP,
+	)
+	require.NoError(t, err)
+
+	res, err = chain.CallView(
+		governance.Contract.Name,
+		governance.FuncGetChainNodes.Name,
+		governance.GetChainNodesRequest{}.AsDict(),
+	)
+	require.NoError(t, err)
+	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
+	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
+	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].API)
+	require.Empty(t, getChainNodesResponse.AccessNodes)
+
+	//
+	// Accept the node as an access node.
+	_, err = chain.PostRequestSync(
+		solo.NewCallParamsFromDic(
+			governance.Contract.Name,
+			governance.FuncChangeAccessNodes.Name,
+			governance.NewChangeAccessNodesRequest().Accept(node1KP.PublicKey[:]).AsDict(),
+		).WithIotas(1),
+		chainKP,
+	)
+	require.NoError(t, err)
+
+	res, err = chain.CallView(
+		governance.Contract.Name,
+		governance.FuncGetChainNodes.Name,
+		governance.GetChainNodesRequest{}.AsDict(),
+	)
+	require.NoError(t, err)
+	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
+	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
+	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].API)
+	require.Equal(t, 1, len(getChainNodesResponse.AccessNodes))
 }

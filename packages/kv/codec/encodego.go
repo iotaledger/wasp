@@ -13,6 +13,8 @@ import (
 
 func Encode(v interface{}) []byte {
 	switch vt := v.(type) {
+	case bool:
+		return EncodeBool(vt)
 	case int: // default to int64
 		return EncodeInt64(int64(vt))
 	case byte:
