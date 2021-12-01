@@ -112,7 +112,7 @@ $#set exist $proxy
 	"typedefProxyMapNewBaseType": `
 
     get$FldType(key: $fldKeyLangType): wasmlib.Sc$mut$FldType {
-        return new wasmlib.Sc$mut$FldType(this.objID, $fldKeyToKey32.getKeyID());
+        return new wasmlib.Sc$mut$FldType(this.objID, $fldKeyToKey32);
     }
 `,
 	// *******************************
@@ -124,7 +124,7 @@ $#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruc
 $#emit setVarType
 
     get$OldType(key: $oldKeyLangType): sc.$mut$OldType {
-        let subID = wasmlib.getObjectID(this.objID, $oldKeyToKey32.getKeyID(), $varType);
+        let subID = wasmlib.getObjectID(this.objID, $oldKeyToKey32, $varType);
         return new sc.$mut$OldType(subID);
     }
 `,
@@ -132,7 +132,7 @@ $#emit setVarType
 	"typedefProxyMapNewOtherTypeStruct": `
 
     get$FldType(key: $fldKeyLangType): sc.$mut$FldType {
-        return new sc.$mut$FldType(this.objID, $fldKeyToKey32.getKeyID());
+        return new sc.$mut$FldType(this.objID, $fldKeyToKey32);
     }
 `,
 }

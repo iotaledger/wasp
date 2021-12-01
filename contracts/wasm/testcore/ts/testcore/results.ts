@@ -96,7 +96,7 @@ export class MapStringToImmutableInt64 {
     }
 
     getInt64(key: string): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScImmutableInt64(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 
@@ -118,7 +118,7 @@ export class MapStringToMutableInt64 {
     }
 
     getInt64(key: string): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScMutableInt64(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 
@@ -136,7 +136,7 @@ export class MapStringToImmutableString {
     }
 
     getString(key: string): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScImmutableString(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 
@@ -158,7 +158,7 @@ export class MapStringToMutableString {
     }
 
     getString(key: string): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScMutableString(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 

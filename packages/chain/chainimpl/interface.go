@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
@@ -49,9 +50,9 @@ func (c *chainObj) startTimer() {
 		c.stateMgr.Ready().MustWait()
 		tick := 0
 		for !c.IsDismissed() {
-			time.Sleep(chain.TimerTickPeriod)
-			c.ReceiveMessage(messages.TimerTick(tick))
+			c.EnqueueTimerTick(tick)
 			tick++
+			time.Sleep(chain.TimerTickPeriod)
 		}
 	}()
 }
@@ -61,8 +62,6 @@ func (c *chainObj) Dismiss(reason string) {
 
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
-
-		c.msgPipe.Close()
 
 		c.mempool.Close()
 		c.stateMgr.Close()
@@ -75,26 +74,27 @@ func (c *chainObj) Dismiss(reason string) {
 		}
 		c.eventRequestProcessed.DetachAll()
 		c.eventChainTransition.DetachAll()
+		c.chainPeers.Close()
+
+		c.dismissChainMsgPipe.Close()
+		c.stateMsgPipe.Close()
+		c.offLedgerRequestPeerMsgPipe.Close()
+		c.requestAckPeerMsgPipe.Close()
+		c.missingRequestIDsPeerMsgPipe.Close()
+		c.missingRequestPeerMsgPipe.Close()
+		c.timerTickMsgPipe.Close()
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
+	c.log.Debug("Chain dismissed")
 }
 
 func (c *chainObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
-// ReceiveMessage accepts an incoming message asynchronously.
-func (c *chainObj) ReceiveMessage(msg interface{}) {
-	c.receiveMessage(msg)
-	c.chainMetrics.CountMessages()
-}
-
-func (c *chainObj) receiveMessage(msg interface{}) {
-	if c.IsDismissed() {
-		return
-	}
-	c.msgPipe.In() <- msg
+func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+	c.stateMgr.EnqueueStateCandidateMsg(virtualState, outputID)
 }
 
 func shouldSendToPeer(peerID string, ackPeers []string) bool {
@@ -108,9 +108,12 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 
 func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
-	msgData := messages.NewOffLedgerRequestMsg(c.chainID, req).Bytes()
+	msg := &messages.OffLedgerRequestMsg{
+		ChainID: c.chainID,
+		Req:     req,
+	}
 	committee := c.getCommittee()
-	getPeerIDs := (*c.peers).GetRandomPeers
+	getPeerIDs := c.chainPeers.GetRandomPeers
 
 	if committee != nil {
 		getPeerIDs = committee.GetRandomValidators
@@ -121,7 +124,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 		for _, peerID := range peerIDs {
 			if shouldSendToPeer(peerID, ackPeers) {
 				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID().Base58(), peerID)
-				(*c.peers).SendSimple(peerID, messages.MsgOffLedgerRequest, msgData)
+				c.chainPeers.SendMsgByNetID(peerID, peering.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
 			}
 		}
 	}
@@ -154,52 +157,13 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	}()
 }
 
-func (c *chainObj) isRequestValid(req *request.OffLedger) bool {
-	return req.ChainID().Equals(c.ID()) && req.VerifySignature()
-}
-
-func (c *chainObj) ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID string) {
-	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
-	c.sendRequestAcknowledgementMsg(req.ID(), senderNetID)
-
-	if !c.isRequestValid(req) {
-		// this means some node broadcasted an invalid request (bad chainID or signature)
-		// TODO should the sender node be punished somehow?
-		return
-	}
-	if !c.mempool.ReceiveRequest(req) {
-		return
-	}
-	c.log.Debugf("ReceiveOffLedgerRequest - added to mempool: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
-	c.broadcastOffLedgerRequest(req)
-}
-
 func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerID string) {
 	c.log.Debugf("sendRequestAcknowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 	if peerID == "" {
 		return
 	}
-	msgData := messages.NewRequestAckMsg(reqID).Bytes()
-	(*c.peers).SendSimple(peerID, messages.MsgRequestAck, msgData)
-}
-
-func (c *chainObj) ReceiveRequestAckMessage(reqID *iscp.RequestID, peerID string) {
-	c.log.Debugf("ReceiveRequestAckMessage: reqID: %s, peerID: %s", reqID.Base58(), peerID)
-	c.offLedgerReqsAcksMutex.Lock()
-	defer c.offLedgerReqsAcksMutex.Unlock()
-	c.offLedgerReqsAcks[*reqID] = append(c.offLedgerReqsAcks[*reqID], peerID)
-	c.chainMetrics.CountRequestAckMessages()
-}
-
-// SendMissingRequestsToPeer sends the requested missing requests by a peer
-func (c *chainObj) SendMissingRequestsToPeer(msg *messages.MissingRequestIDsMsg, peerID string) {
-	for _, reqID := range msg.IDs {
-		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID.Base58(), peerID)
-		if req := c.mempool.GetRequest(reqID); req != nil {
-			msg := messages.NewMissingRequestMsg(req)
-			(*c.peers).SendSimple(peerID, messages.MsgMissingRequest, msg.Bytes())
-		}
-	}
+	msg := &messages.RequestAckMsg{ReqID: &reqID}
+	c.chainPeers.SendMsgByNetID(peerID, peering.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
 }
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
@@ -220,21 +184,17 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
 	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
 		stateOutput.GetStateIndex(), iscp.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
-	c.ReceiveMessage(&messages.StateMsg{
-		ChainOutput: stateOutput,
-		Timestamp:   timestamp,
-	})
+	c.EnqueueLedgerState(stateOutput, timestamp)
 }
 
 func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
-	c.ReceiveMessage(&messages.InclusionStateMsg{
-		TxID:  txID,
-		State: inclusionState,
-	}) // TODO special entry point
+	if c.consensus != nil {
+		c.consensus.EnqueueInclusionsStateMsg(txID, inclusionState) // TODO special entry point
+	}
 }
 
 func (c *chainObj) ReceiveOutput(output ledgerstate.Output) {
-	c.stateMgr.EventOutputMsg(output)
+	c.stateMgr.EnqueueOutputMsg(output)
 }
 
 func (c *chainObj) BlobCache() registry.BlobCache {

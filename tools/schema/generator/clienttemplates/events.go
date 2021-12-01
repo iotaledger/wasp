@@ -3,33 +3,17 @@ package clienttemplates
 var eventsTs = map[string]string{
 	// *******************************
 	"events.ts": `
+import * as wasmlib from "./wasmlib"
+import * as service from "./service"
 
-type Address = string;
-type AgentID = string;
-type Bool = boolean;
-type Bytes = Uint8Array;
-type ChainID = string;
-type Color = string;
-type Hash = string;
-type Hname = string;
-type Int8 = number;
-type Int16 = number;
-type Int32 = number;
-type Int64 = bigint;
-type RequestID = string;
-type String = string;
-type Uint8 = number;
-type Uint16 = number;
-type Uint32 = number;
-type Uint64 = bigint;
-
-export class $Package$+Events {
-$#each events eventConst
-}
 $#each events eventInterface
 
-  private handleVmMessage(message: string[]): void {
-    const messageHandlers: MessageHandlers = {
+export interface $Package$+Events {
+$#each events eventSignature
+}
+
+export function handleVmMessage(message: string[]): void {
+    const messageHandlers: wasmlib.MessageHandlers = {
 $#each events eventHandler
     };
 
@@ -39,36 +23,36 @@ $#each events eventHandler
     if (typeof messageHandlers[topic] != 'undefined') {
       messageHandlers[topic](topicIndex);
     }
-  }
+}
 `,
 	// *******************************
-	"eventConst": `
-  public static readonly EVENT_$EVT_NAME: string = '$package.$evtName';
+	"eventSignature": `
+	$package$+_$evtName: (event: Event$EvtName) => void;
 `,
 	// *******************************
 	"eventInterface": `
 
 export interface Event$EvtName {
-  timestamp: Int32;
+  timestamp: wasmlib.Int32;
 $#each event eventInterfaceField
 }
 `,
 	// *******************************
 	"eventInterfaceField": `
-  $fldName: $FldType;
+  $fldName: wasmlib.$FldType;
 `,
 	// *******************************
 	"eventHandler": `
-      EVENT_$EVT_NAME: (index) => {
-        const evt: Event$EvtName = {
-          timestamp: message[index + 1],
+		'$package.$evtName': (index) => {
+			const evt: Event$EvtName = {
+				timestamp: Number(message[++index]),
 $#each event eventHandlerField
-        };
-        this.emitter.emit(EVENT_$EVT_NAME, evt);
-      },
+			};
+			this.emitter.emit('$package$+_$evtName', evt);
+		},
 `,
 	// *******************************
 	"eventHandlerField": `
-          $fldName: message[index + 2],
+				$fldName: $msgConvert,
 `,
 }

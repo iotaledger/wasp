@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -58,9 +59,11 @@ func (m *mockedChain) IsDismissed() bool {
 
 func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	return func(chainID *iscp.ChainID) chain.Chain {
-		return &mockedChain{
-			testchain.NewMockedChainCore(t, chainID, testlogger.NewLogger(t)),
-		}
+		chainCore := testchain.NewMockedChainCore(t, chainID, testlogger.NewLogger(t))
+		chainCore.OnOffLedgerRequest(func(msg *messages.OffLedgerRequestMsgIn) {
+			t.Logf("Offledger request %v received", msg)
+		})
+		return &mockedChain{chainCore}
 	}
 }
 

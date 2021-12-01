@@ -141,6 +141,12 @@ export function getKeyIDFromString(key: string): Key32 {
     return getKeyID(bytes, bytes.length);
 }
 
+// Retrieve the key id that the host has associated with the specified integer key
+export function getKeyIDFromUint64(key: u64, nrOfBytes: usize): Key32 {
+    // negative size indicates this is a bytes key
+    return getKeyID(Convert.fromI64(key as i64), -nrOfBytes - 1);
+}
+
 // Retrieve the length of an array container object on the host
 export function getLength(objID: i32): i32 {
     // special integer key "length" is used

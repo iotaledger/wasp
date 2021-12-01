@@ -23,12 +23,12 @@ func (d *BytesDecoder) AgentID() ScAgentID {
 }
 
 func (d *BytesDecoder) Bool() bool {
-	return d.Int8() != 0
+	return d.Uint8() != 0
 }
 
 func (d *BytesDecoder) Bytes() []byte {
-	size := int(d.Int32())
-	if len(d.data) < size {
+	size := d.Uint32()
+	if uint32(len(d.data)) < size {
 		panic("insufficient bytes")
 	}
 	value := d.data[:size]
@@ -59,12 +59,7 @@ func (d *BytesDecoder) Hname() ScHname {
 }
 
 func (d *BytesDecoder) Int8() int8 {
-	if len(d.data) == 0 {
-		panic("insufficient bytes")
-	}
-	value := d.data[0]
-	d.data = d.data[1:]
-	return int8(value)
+	return int8(d.Uint8())
 }
 
 func (d *BytesDecoder) Int16() int16 {
@@ -117,7 +112,12 @@ func (d *BytesDecoder) String() string {
 }
 
 func (d *BytesDecoder) Uint8() uint8 {
-	return uint8(d.Int8())
+	if len(d.data) == 0 {
+		panic("insufficient bytes")
+	}
+	value := d.data[0]
+	d.data = d.data[1:]
+	return value
 }
 
 func (d *BytesDecoder) Uint16() uint16 {
@@ -152,13 +152,13 @@ func (e *BytesEncoder) AgentID(value ScAgentID) *BytesEncoder {
 
 func (e *BytesEncoder) Bool(value bool) *BytesEncoder {
 	if value {
-		return e.Int8(1)
+		return e.Uint8(1)
 	}
-	return e.Int8(0)
+	return e.Uint8(0)
 }
 
 func (e *BytesEncoder) Bytes(value []byte) *BytesEncoder {
-	e.Int32(int32(len(value)))
+	e.Uint32(uint32(len(value)))
 	e.data = append(e.data, value...)
 	return e
 }
@@ -184,8 +184,7 @@ func (e *BytesEncoder) Hname(value ScHname) *BytesEncoder {
 }
 
 func (e *BytesEncoder) Int8(value int8) *BytesEncoder {
-	e.data = append(e.data, byte(value))
-	return e
+	return e.Uint8(uint8(value))
 }
 
 func (e *BytesEncoder) Int16(value int16) *BytesEncoder {
@@ -223,7 +222,8 @@ func (e *BytesEncoder) String(value string) *BytesEncoder {
 }
 
 func (e *BytesEncoder) Uint8(value uint8) *BytesEncoder {
-	return e.Int8(int8(value))
+	e.data = append(e.data, value)
+	return e
 }
 
 func (e *BytesEncoder) Uint16(value uint16) *BytesEncoder {

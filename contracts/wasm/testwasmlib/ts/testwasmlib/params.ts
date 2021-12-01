@@ -68,7 +68,7 @@ export class MapStringToImmutableBytes {
     }
 
     getBytes(key: string): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScImmutableBytes(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 
@@ -162,7 +162,7 @@ export class MapStringToMutableBytes {
     }
 
     getBytes(key: string): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScMutableBytes(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 
