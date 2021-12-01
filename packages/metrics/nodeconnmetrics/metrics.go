@@ -39,7 +39,7 @@ func (ncmi *nodeConnectionMetricsImpl) RegisterMetrics() {
 		Name: "wasp_nodeconn_last_event_time_gauge",
 		Help: "Last time when the message was sent/received by node connection of the chain",
 	}, []string{chainLabelName, msgTypeLabelName})
-	prometheus.MustRegister(ncmi.messageTotalCounter)
+	prometheus.MustRegister(ncmi.lastEventTimeGauge)
 	ncmi.log.Info("Registering nodeconnection metrics to prometheus... Done")
 }
 
