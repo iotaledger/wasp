@@ -94,7 +94,7 @@ func candidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 // Can only be invoked by the chain owner.
 //
 //  changeAccessNodes(
-//    actions: map(pubKey => {0:remove, 1:accept, 2:drop})
+//    actions: map(pubKey => ChangeAccessNodeAction)
 //  ) => ()
 //
 func changeAccessNodesFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -106,12 +106,12 @@ func changeAccessNodesFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	paramNodeActions := collections.NewMapReadOnly(ctx.Params(), governance.ParamChangeAccessNodesActions)
 	paramNodeActions.MustIterate(func(pubKey, actionBin []byte) bool {
 		a.Require(len(actionBin) == 1, "action should be a single byte")
-		switch actionBin[0] {
-		case 0: // remove from a list of access nodes.
+		switch governance.ChangeAccessNodeAction(actionBin[0]) {
+		case governance.ChangeAccessNodeActionRemove:
 			accessNodes.MustDelAt(pubKey)
-		case 1: // accept to a list of access nodes.
+		case governance.ChangeAccessNodeActionAccept:
 			accessNodes.MustSetAt(pubKey, make([]byte, 0))
-		case 2: // drop from a list of candidates and the access nodes.
+		case governance.ChangeAccessNodeActionDrop:
 			accessNodes.MustDelAt(pubKey)
 			accessNodeCandidates.MustDelAt(pubKey)
 		default:

@@ -130,28 +130,37 @@ func (req CandidateNodeRequest) AsDict() dict.Dict {
 //
 //	ChangeAccessNodesRequest
 //
+
+type ChangeAccessNodeAction byte
+
+const (
+	ChangeAccessNodeActionRemove = ChangeAccessNodeAction(iota)
+	ChangeAccessNodeActionAccept
+	ChangeAccessNodeActionDrop
+)
+
 type ChangeAccessNodesRequest struct {
-	actions map[string]byte
+	actions map[string]ChangeAccessNodeAction
 }
 
 func NewChangeAccessNodesRequest() *ChangeAccessNodesRequest {
 	return &ChangeAccessNodesRequest{
-		actions: make(map[string]byte),
+		actions: make(map[string]ChangeAccessNodeAction),
 	}
 }
 
 func (req *ChangeAccessNodesRequest) Remove(pubKey ed25519.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[string(pubKey)] = 0
+	req.actions[string(pubKey)] = ChangeAccessNodeActionRemove
 	return req
 }
 
 func (req *ChangeAccessNodesRequest) Accept(pubKey ed25519.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[string(pubKey)] = 1
+	req.actions[string(pubKey)] = ChangeAccessNodeActionAccept
 	return req
 }
 
 func (req *ChangeAccessNodesRequest) Drop(pubKey ed25519.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[string(pubKey)] = 2
+	req.actions[string(pubKey)] = ChangeAccessNodeActionDrop
 	return req
 }
 
@@ -159,7 +168,7 @@ func (req *ChangeAccessNodesRequest) AsDict() dict.Dict {
 	d := dict.New()
 	actionsMap := collections.NewMap(d, ParamChangeAccessNodesActions)
 	for pubKey, action := range req.actions {
-		actionsMap.MustSetAt([]byte(pubKey), []byte{action})
+		actionsMap.MustSetAt([]byte(pubKey), []byte{byte(action)})
 	}
 	return d
 }
