@@ -335,11 +335,23 @@ func (u *UtxoDB) GetTransactionMilestoneInfo(txID iotago.TransactionID) (Milesto
 	return MilestoneInfo{Index: idx, Timestamp: u.milestones[idx].timestamp}, true
 }
 
-// GetUnspentOutputs returns all unspent outputs locked by the address, as spendable inputs.
+// GetUnspentOutputs returns all unspent outputs locked by the address.
 func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) iotago.Outputs {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
+	return u.getUnspentOutputs(addr)
+}
+
+// GetUnspentOutputsAsInputs returns all unspent outputs locked by the address, as spendable inputs
+func (u *UtxoDB) GetUnspentOutputsAsInputs(addr iotago.Address) []*iotago.UTXOInput {
+	u.mutex.RLock()
+	defer u.mutex.RUnlock()
+
+	return u.getUTXOInputs(addr)
+}
+
+func (u *UtxoDB) getUnspentOutputs(addr iotago.Address) iotago.Outputs {
 	ret := iotago.Outputs{}
 	for _, input := range u.getUTXOInputs(addr) {
 		out := u.getOutput(input.ID())
@@ -353,8 +365,11 @@ func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) iotago.Outputs {
 
 // GetAddressBalance returns the total amount of iotas owned by the address
 func (u *UtxoDB) GetAddressBalance(addr iotago.Address) uint64 {
+	u.mutex.RLock()
+	defer u.mutex.RUnlock()
+
 	ret := uint64(0)
-	outputs := u.GetUnspentOutputs(addr)
+	outputs := u.getUnspentOutputs(addr)
 	for _, out := range outputs {
 		ret += out.Deposit()
 	}
@@ -363,7 +378,10 @@ func (u *UtxoDB) GetAddressBalance(addr iotago.Address) uint64 {
 
 // GetAliasOutputs collects all outputs of type iotago.AliasOutput for the transaction.
 func (u *UtxoDB) GetAliasOutputs(addr iotago.Address) []*iotago.AliasOutput {
-	outs := u.GetUnspentOutputs(addr)
+	u.mutex.RLock()
+	defer u.mutex.RUnlock()
+
+	outs := u.getUnspentOutputs(addr)
 	ret := make([]*iotago.AliasOutput, 0)
 	for _, out := range outs {
 		if o, ok := out.(*iotago.AliasOutput); ok {
@@ -396,7 +414,7 @@ func getOutputAddress(out iotago.Output) iotago.Address {
 	case iotago.TransDepIdentOutput:
 		return out.Chain().ToAddress()
 	default:
-		panic("unknown ident output type in semantic unlocks")
+		panic("unknown ident output type")
 	}
 }
 
