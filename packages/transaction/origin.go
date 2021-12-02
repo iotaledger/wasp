@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/rentstructure"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
@@ -34,7 +34,7 @@ func NewChainOriginTransaction(
 	walletAddr := iotago.Ed25519AddressFromPubKey(key.Public().(ed25519.PublicKey))
 
 	txb := iotago.NewTransactionBuilder()
-	rentStructure := rentstructure.Get()
+	rentStructure := parameters.RentStructure()
 
 	aliasOutput := &iotago.AliasOutput{
 		Amount:               deposit,
@@ -70,10 +70,7 @@ func NewChainOriginTransaction(
 	txb.AddOutput(remainderOutput)
 
 	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, key))
-	tx, err := txb.Build(&iotago.DeSerializationParameters{
-		RentStructure:  rentStructure,
-		MinDustDeposit: 0, // TODO
-	}, signer)
+	tx, err := txb.Build(parameters.DeSerializationParameters(), signer)
 	if err != nil {
 		return nil, nil, err
 	}

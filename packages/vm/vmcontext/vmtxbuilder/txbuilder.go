@@ -6,13 +6,11 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/mr-tron/base58"
-
-	"github.com/iotaledger/wasp/packages/rentstructure"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 )
 
@@ -437,7 +435,7 @@ func (txb *AnchorTransactionBuilder) vByteCostOfNativeTokenBalance() uint64 {
 			},
 		},
 	}
-	dustAmountForInternalAccountUTXO = o.VByteCost(rentstructure.Get(), nil)
+	dustAmountForInternalAccountUTXO = o.VByteCost(parameters.RentStructure(), nil)
 	return dustAmountForInternalAccountUTXO
 }
 
@@ -474,7 +472,7 @@ func ExtendedOutputFromPostData(
 			// TODO feature blocks as per SendOptions
 		},
 	}
-	dustDeposit := ret.VByteCost(rentstructure.Get(), nil)
+	dustDeposit := ret.VByteCost(parameters.RentStructure(), nil)
 	if dustDeposit < ret.Amount {
 		ret.Amount = dustDeposit
 	}
