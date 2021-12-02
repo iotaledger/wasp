@@ -63,7 +63,7 @@
     },
     "node": {
       "disablePlugins": ["portcheck"],
-      "enablePlugins": ["analysis-server","snapshot","analysis-dashboard","prometheus","txstream","\"webapi tools endpoint\"","faucet","activity","spammer"]
+      "enablePlugins": ["analysis-server","snapshot","analysis-dashboard","prometheus","txstream","webapi tools endpoint","faucet","activity","spammer"]
     },
     "pow": {
       "difficulty": 2,
