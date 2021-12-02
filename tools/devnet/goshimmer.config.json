@@ -11,14 +11,15 @@
         "dev": false
       }
     },
+    "prometheus": {
+      "bindAddress": "0.0.0.0:9312",
+      "processMetrics": true
+    },
     "manualpeering": {
         "knownPeers": []
     },
     "autopeering": {
         "enabled": false,
-        "_entryNodes": [
-            "DLoMdp3nJ7jnFT1K13R2m5nZN7ijLcmaZhCdTPJs2duo@devnet_goshimmer:14626"
-        ],
         "enableGossipIntegration": false,
         "port": 14626
     },
@@ -32,18 +33,7 @@
       }
     },
     "database": {
-      "directory": "mainnetdb"
-    },
-    "drng": {
-      "custom": {
-        "instanceId": 111,
-        "threshold": 3,
-        "distributedPubKey": "",
-        "committeeMembers": ["EYsaGXnUVA9aTYL9FwYEvoQ8d1HCJveQVL7vogu6pqCP"]
-      }
-    },
-    "fpc": {
-      "drngInstanceID": 111
+      "directory": "/tmp/devnetdb"
     },
     "logger": {
       "level": "info",
@@ -67,9 +57,16 @@
       "bindAddress": "0.0.0.0",
       "externalAddress": "auto"
     },
+    "messageLayer" : {
+      "startSynced": true,
+      "snapshot": {
+        "genesisNode": "",
+        "file": "/tmp/snapshot.bin"
+      }
+    },
     "node": {
-      "disablePlugins": "portcheck",
-      "enablePlugins": []
+      "disablePlugins": ["portcheck"],
+      "enablePlugins": ["analysis-server","snapshot","analysis-dashboard","prometheus","txstream","\"webapi tools endpoint\"","faucet","activity","spammer"]
     },
     "pow": {
       "difficulty": 2,

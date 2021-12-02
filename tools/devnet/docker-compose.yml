@@ -1,4 +1,4 @@
-version: "3.5"
+version: "3.4"
 
 services:
   devnet_wasp:
@@ -12,21 +12,19 @@ services:
       - wasp-db:/wasp/db
       - ./wasp.config.json:/etc/wasp_config.json
     expose:
-      - "7000/tcp" # Dashboard
+      - "7000/tcp" # Wasp Dashboard
       - "9090/tcp" # Web API
       - "5550/tcp" # Nano MSG
       - "4000/udp" # Peering
     ports:
-      - "127.0.0.1:7000:7000/tcp" # Dashboard
+      - "127.0.0.1:7000:7000/tcp" # Wasp Dashboard
       - "127.0.0.1:9090:9090/tcp" # WebAPI
       - "127.0.0.1:5550:5550/tcp" # Nano MSG
       - "127.0.0.1:4000:4000/tcp" # Peering
   devnet_goshimmer:
-    depends_on:
-      - devnet_wasp
     restart: always
     container_name: devnet_goshimmer
-    image: iotaledger/goshimmer:v0.7.5
+    image: iotaledger/goshimmer:feat-document-devnet
     stop_grace_period: 1m
     networks:
       - wasp-devnet
@@ -36,12 +34,6 @@ services:
       --messageLayer.snapshot.file=/tmp/snapshot.bin
       --messageLayer.snapshot.genesisNode=
       --messageLayer.startSynced=true
-      --txstream.bindAddress=:5000
-      --prometheus.bindAddress=0.0.0.0:9312
-      --prometheus.processMetrics=false
-      --node.enablePlugins=bootstrap,analysis-server,snapshot,analysis-dashboard,prometheus,txstream,"webapi tools endpoint",faucet,activity,spammer
-      --node.disablePlugins=autopeering,portcheck,gossip
-      #--node.disablePlugins=portcheck,clock,dashboard,analysis-client,gossip,drng,issuer,messagelayer,mana,pow,valuetransfers,consensus,webapi,webapibroadcastdataendpoint,webapifindtransactionhashesendpoint,webapigetneighborsendpoint,webapigettransactionobjectsbyhashendpoint,webapigettransactiontrytesbyhashendpoint
     volumes:
       - goshimmer-db:/tmp/devnetdb
       - ./goshimmer.config.json:/tmp/config.json:ro
@@ -57,7 +49,6 @@ services:
       - "5000/tcp" # TXStream
       - "9000/tcp" # Analysis Dashboard
       - "9312/tcp" # Prometheus
-      - "7000/tcp" #
       - "8080/tcp" # GoShimmer API
       - "8081/tcp" # GoShimmer Dashboard
 

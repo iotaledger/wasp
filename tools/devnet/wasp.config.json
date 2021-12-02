@@ -23,7 +23,7 @@
   },
   "webapi": {
     "bindAddress": "0.0.0.0:9090",
-    "adminWhitelist":["host.docker.internal", "127.0.0.1"]
+    "adminWhitelistDisabled": true
   },
   "dashboard": {
     "auth": {

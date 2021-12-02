@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/labstack/echo/v4"
@@ -36,7 +37,11 @@ func AddEndpoints(
 ) {
 	initLogger()
 
-	adm.EchoGroup().Use(protected(adminWhitelist))
+	echoGroup := adm.EchoGroup()
+
+	if !parameters.GetBool(parameters.WebAPIAdminWhitelistDisabled) {
+		echoGroup.Use(protected(adminWhitelist))
+	}
 
 	addShutdownEndpoint(adm, shutdown)
 	addChainRecordEndpoints(adm, registryProvider)
