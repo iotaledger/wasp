@@ -97,7 +97,7 @@ func adminWhitelist() []net.IP {
 		if parsedIP == nil {
 			ips, err := net.LookupIP(ip)
 
-			if err != nil {
+			if err == nil {
 				r = append(r, ips...)
 			}
 		} else {
