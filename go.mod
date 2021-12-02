@@ -14,7 +14,7 @@ require (
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
 	github.com/iotaledger/hive.go v0.0.0-20211123102045-85f0c1036bf7
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20211126120241-38c397025408 // indirect
-	github.com/iotaledger/iota.go/v3 v3.0.0-20211130111934-7f30aef37063 // indirect
+	github.com/iotaledger/iota.go/v3 v3.0.0-20211201140019-f762c7e39ea6 // indirect
 	github.com/knadh/koanf v1.2.1
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.14.4
@@ -38,7 +38,7 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.0
 	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
-	golang.org/x/net v0.0.0-20211123203042-d83791d6bcd9 // indirect
+	golang.org/x/net v0.0.0-20211201190559-0a0e4e1bb54c // indirect
 	golang.org/x/sys v0.0.0-20211124211545-fe61309f8881 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
