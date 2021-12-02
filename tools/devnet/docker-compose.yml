@@ -9,7 +9,7 @@ services:
     networks:
       - wasp-devnet
     volumes:
-      - wasp-db:/wasp/db
+      - wasp-db:/wasp/waspdb
       - ./wasp.config.json:/etc/wasp_config.json
     expose:
       - "4000/udp" # Peering
