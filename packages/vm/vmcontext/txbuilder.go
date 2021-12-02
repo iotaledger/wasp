@@ -58,11 +58,11 @@ func (vmctx *VMContext) getNativeTokenUtxoIndex(id iotago.NativeTokenID) (stateI
 	return accounts.GetUtxoForAsset(vmctx.State(), id)
 }
 
-func (vmctx *VMContext) getTxIDForStateIndex(stateIndex uint32) [iotago.TransactionIDLength]byte {
+func (vmctx *VMContext) getTxIDForStateIndex(stateIndex uint32) iotago.TransactionID {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	// TODO get correct TXID for the given state index.
-	panic("implement me")
-	return nil
+	transactionId := blocklog.GetAnchorTransactionIDByBlockIndex(vmctx.State(), stateIndex)
+
+	return transactionId
 }

@@ -177,6 +177,8 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 		PreviousStateHash:     prevStateData.Commitment,
 	}
 
+	blocklog.SetAnchorTransactionIDOfLatestBlock(vmctx.State(), vmctx.task.AnchorOutputID.TransactionID)
+
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
 	if idx != blockInfo.BlockIndex {
 		panic("CloseVMContext: inconsistent block index")
