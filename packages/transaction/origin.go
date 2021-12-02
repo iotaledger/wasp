@@ -2,15 +2,10 @@ package transaction
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
@@ -27,7 +22,7 @@ func NewChainOriginTransaction(
 	allUnspentOutputs []iotago.Output,
 	allInputs []*iotago.UTXOInput,
 	deSeriParams *iotago.DeSerializationParameters,
-) (*iotago.Transaction, iotago.ChainID, error) {
+) (*iotago.Transaction, *iscp.ChainID, error) {
 	if len(allUnspentOutputs) != len(allInputs) {
 		panic("mismatched lengths of outputs and inputs slices")
 	}
@@ -74,7 +69,8 @@ func NewChainOriginTransaction(
 	if err != nil {
 		return nil, nil, err
 	}
-	return tx, aliasOutput.Chain(), nil
+	chainID := iscp.NewChainID(aliasOutput.AliasID)
+	return tx, &chainID, nil
 }
 
 func computeInputsAndRemainder(
@@ -103,38 +99,65 @@ func computeInputsAndRemainder(
 }
 
 // NewRootInitRequestTransaction is a first request to be sent to the uninitialized
-// chain. At this moment it only is able to process this specific request
-// the request contains minimum data needed to bootstrap the chain
-// TransactionEssence must be signed by the same address which created origin transaction
+// chain. At this moment it is only able to process this specific request.
+// The request contains the minimum data needed to bootstrap the chain.
+// The signer must be the same that created the origin transaction.
 func NewRootInitRequestTransaction(
-	keyPair *ed25519.KeyPair,
+	key ed25519.PrivateKey,
 	chainID *iscp.ChainID,
 	description string,
-	timestamp time.Time,
-	allInputs ...ledgerstate.Output,
-) (*ledgerstate.Transaction, error) {
-	txb := utxoutil.NewBuilder(allInputs...).WithTimestamp(timestamp)
+	allUnspentOutputs []iotago.Output,
+	allInputs []*iotago.UTXOInput,
+	deSeriParams *iotago.DeSerializationParameters,
+) (*iotago.Transaction, error) {
+	walletAddr := iotago.Ed25519AddressFromPubKey(key.Public().(ed25519.PublicKey))
 
-	args := dict.New()
+	args := dict.Dict{
+		governance.ParamChainID:     codec.EncodeChainID(chainID),
+		governance.ParamDescription: codec.EncodeString(description),
+	}
 
-	args.Set(governance.ParamChainID, codec.EncodeChainID(chainID))
-	args.Set(governance.ParamDescription, codec.EncodeString(description))
+	metadata := &iscp.RequestMetadata{
+		TargetContract: iscp.Hn("root"),
+		EntryPoint:     iscp.EntryPointInit,
+		Params:         args,
+	}
 
-	metadata := request.NewMetadata().
-		WithTarget(iscp.Hn("root")).
-		WithEntryPoint(iscp.EntryPointInit).
-		WithArgs(args).
-		Bytes()
+	txb := iotago.NewTransactionBuilder()
 
-	err := txb.AddExtendedOutputConsume(chainID.AsAddress(), metadata, colored.Balances1IotaL1)
+	requestOutput := &iotago.ExtendedOutput{
+		Address: chainID.AsAddress(),
+		Amount:  0,
+		Blocks: []iotago.FeatureBlock{
+			&iotago.MetadataFeatureBlock{
+				Data: metadata.Bytes(),
+			},
+		},
+	}
+	requestOutput.Amount = requestOutput.VByteCost(deSeriParams.RentStructure, nil)
+	txb.AddOutput(requestOutput)
+
+	inputs, remainder, err := computeInputsAndRemainder(
+		requestOutput.Amount,
+		allUnspentOutputs,
+		allInputs,
+		deSeriParams,
+	)
 	if err != nil {
 		return nil, err
 	}
-	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
-	if err := txb.AddRemainderOutputIfNeeded(addr, nil, true); err != nil {
-		return nil, err
+	for _, input := range inputs {
+		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: &walletAddr, Input: input})
 	}
-	tx, err := txb.BuildWithED25519(keyPair)
+	if remainder > 0 {
+		txb.AddOutput(&iotago.ExtendedOutput{
+			Address: &walletAddr,
+			Amount:  remainder,
+		})
+	}
+
+	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, key))
+	tx, err := txb.Build(deSeriParams, signer)
 	if err != nil {
 		return nil, err
 	}
