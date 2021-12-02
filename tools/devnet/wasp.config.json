@@ -1,6 +1,6 @@
 {
   "database": {
-    "directory": "waspdb"
+    "directory": "/wasp/waspdb"
   },
   "logger": {
     "level": "debug",
