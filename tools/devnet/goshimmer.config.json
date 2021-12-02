@@ -1,0 +1,93 @@
+{
+    "analysis": {
+      "client": {
+        "serverAddress": "devnet_goshimmer:1888"
+      },
+      "server": {
+        "bindAddress": "0.0.0.0:1888"
+      },
+      "dashboard": {
+        "bindAddress": "0.0.0.0:9000",
+        "dev": false
+      }
+    },
+    "manualpeering": {
+        "knownPeers": []
+    },
+    "autopeering": {
+        "enabled": false,
+        "_entryNodes": [
+            "DLoMdp3nJ7jnFT1K13R2m5nZN7ijLcmaZhCdTPJs2duo@devnet_goshimmer:14626"
+        ],
+        "enableGossipIntegration": false,
+        "port": 14626
+    },
+    "dashboard": {
+      "bindAddress": "0.0.0.0:8081",
+      "dev": false,
+      "basic_auth": {
+        "enabled": false,
+        "username": "goshimmer",
+        "password": "goshimmer"
+      }
+    },
+    "database": {
+      "directory": "mainnetdb"
+    },
+    "drng": {
+      "custom": {
+        "instanceId": 111,
+        "threshold": 3,
+        "distributedPubKey": "",
+        "committeeMembers": ["EYsaGXnUVA9aTYL9FwYEvoQ8d1HCJveQVL7vogu6pqCP"]
+      }
+    },
+    "fpc": {
+      "drngInstanceID": 111
+    },
+    "logger": {
+      "level": "info",
+      "disableCaller": false,
+      "disableStacktrace": false,
+      "encoding": "console",
+      "outputPaths": [
+        "stdout"
+      ],
+      "disableEvents": true,
+      "remotelog": {
+        "serverAddress": "remotelog.goshimmer.iota.cafe:5213"
+      }
+    },
+    "metrics":{
+      "manaUpdateInterval": 5,
+      "local": false,
+      "global": true
+    },
+    "network": {
+      "bindAddress": "0.0.0.0",
+      "externalAddress": "auto"
+    },
+    "node": {
+      "disablePlugins": "portcheck",
+      "enablePlugins": []
+    },
+    "pow": {
+      "difficulty": 2,
+      "numThreads": 1,
+      "timeout": "10s",
+      "parentsRefreshInterval": "300ms"
+    },
+    "webapi": {
+      "basic_auth": {
+        "enabled": false,
+        "username": "goshimmer",
+        "password": "goshimmer"
+      },
+      "bindAddress": "0.0.0.0:8080"
+    },
+    "faucet": {
+      "powDifficulty": 12,
+      "seed": "7R1itJx5hVuo9w9hjg5cwKFmek4HMSoBDgJZN8hKGxih"
+    }
+  }
+  

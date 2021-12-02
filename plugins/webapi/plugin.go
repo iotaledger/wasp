@@ -92,7 +92,18 @@ func configure(*node.Plugin) {
 func adminWhitelist() []net.IP {
 	r := make([]net.IP, 0)
 	for _, ip := range parameters.GetStringSlice(parameters.WebAPIAdminWhitelist) {
-		r = append(r, net.ParseIP(ip))
+		parsedIP := net.ParseIP(ip)
+
+		if parsedIP == nil {
+			ips, err := net.LookupIP(ip)
+
+			if err != nil {
+				r = append(r, ips...)
+			}
+		} else {
+			r = append(r, parsedIP)
+		}
+
 	}
 	return r
 }
