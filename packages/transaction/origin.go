@@ -25,10 +25,10 @@ func NewChainOriginTransaction(
 	governanceControllerAddress iotago.Address,
 	deposit uint64,
 	allUnspentOutputs []iotago.Output,
-	allInputs []*iotago.UTXOInput,
+	allUnspentOutputIDs []*iotago.UTXOInput,
 ) (*iotago.Transaction, iotago.ChainID, error) {
-	if len(allUnspentOutputs) != len(allInputs) {
-		panic("mismatched lenghts of outputs and inputs slices")
+	if len(allUnspentOutputs) != len(allUnspentOutputIDs) {
+		panic("mismatched lengths of outputs and inputs slices")
 	}
 
 	walletAddr := iotago.Ed25519AddressFromPubKey(key.Public().(ed25519.PublicKey))
@@ -60,7 +60,7 @@ func NewChainOriginTransaction(
 	consumed := uint64(0)
 	for i, out := range allUnspentOutputs {
 		consumed += out.Deposit()
-		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: &walletAddr, Input: allInputs[i]})
+		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: &walletAddr, Input: allUnspentOutputIDs[i]})
 		if consumed >= minDeposit {
 			break
 		}

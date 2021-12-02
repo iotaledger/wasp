@@ -72,13 +72,24 @@ type Sandbox interface {
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
 	// IncomingTransfer return colored balances transferred by the call. They are already accounted into the Balances()
 	IncomingTransfer() *Assets
-	// Send one generic method for sending assets with ledgerstate.ExtendedLockedOutput
-	// replaces TransferToAddress and Post1Request
-	Send(target iotago.Address, assets *Assets, metadata *SendMetadata, options ...*SendOptions) bool
+	Send(metadata RequestParameters) bool
 	// BlockContext Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// StateAnchor properties of the anchor output
 	StateAnchor() StateAnchor
+}
+
+// RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
+type RequestParameters struct {
+	// Target is the target address. It may represent another chain or L1 address
+	Target iotago.Address
+	// Assets attached to the output. It expected to contain iotas at least the amount required for dust deposit
+	// It depends on the context how it is handled when iotas are not enough for dust deposit
+	Assets *Assets
+	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address
+	Metadata *SendMetadata
+	// SendOptions includes options of the output, such as time lock or expiry parameters
+	Options *SendOptions
 }
 
 type Gas interface {

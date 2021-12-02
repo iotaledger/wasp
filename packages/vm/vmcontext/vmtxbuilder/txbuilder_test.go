@@ -47,11 +47,14 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 		},
 	}
 	exout := ExtendedOutputFromPostData(
-		tpkg.RandEd25519Address(),
 		txb.anchorOutput.AliasID.ToAddress(),
 		iscp.Hn("test"),
-		assets,
-		&iscp.SendMetadata{},
+		iscp.RequestParameters{
+			Target:   tpkg.RandEd25519Address(),
+			Assets:   assets,
+			Metadata: &iscp.SendMetadata{},
+			Options:  nil,
+		},
 	)
 	txb.AddOutput(exout)
 }
