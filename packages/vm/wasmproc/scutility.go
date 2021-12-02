@@ -6,6 +6,7 @@ package wasmproc
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -24,7 +25,7 @@ func NewScUtility(wc *WasmContext, gasProcessor interface{}) *ScUtility {
 	//	}
 	//}
 	//return &ScUtility{utils: sandbox.NewUtils(gasProcessor), wc: wc}
-	return &ScUtility{utils: sandbox_utils.NewUtils(), wc: wc}
+	return &ScUtility{utils: sandbox.NewUtils(), wc: wc}
 }
 
 func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
