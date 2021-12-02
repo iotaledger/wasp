@@ -12,15 +12,15 @@ services:
       - wasp-db:/wasp/db
       - ./wasp.config.json:/etc/wasp_config.json
     expose:
-      - "7000/tcp" # Wasp Dashboard
-      - "9090/tcp" # Web API
-      - "5550/tcp" # Nano MSG
       - "4000/udp" # Peering
+      - "5550/tcp" # Nano MSG
+      - "7000/tcp" # Wasp Dashboard
+      - "9090/tcp" # Wasp WebAPI
     ports:
-      - "127.0.0.1:7000:7000/tcp" # Wasp Dashboard
-      - "127.0.0.1:9090:9090/tcp" # WebAPI
-      - "127.0.0.1:5550:5550/tcp" # Nano MSG
       - "127.0.0.1:4000:4000/tcp" # Peering
+      - "127.0.0.1:5550:5550/tcp" # Nano MSG
+      - "127.0.0.1:7000:7000/tcp" # Wasp Dashboard
+      - "127.0.0.1:9090:9090/tcp" # Wasp WebAPI
   devnet_goshimmer:
     restart: always
     container_name: devnet_goshimmer
@@ -39,18 +39,18 @@ services:
       - ./goshimmer.config.json:/tmp/config.json:ro
       - ./snapshot.bin:/tmp/snapshot.bin:ro
     ports:
+      - "127.0.0.1:5000:5000/tcp" # TX Stream
       - "127.0.0.1:8080:8080/tcp" # GoShimmer API
       - "127.0.0.1:8081:8081/tcp" # GoShimmer Dashboard
       - "127.0.0.1:9000:9000/tcp" # Analysis Dashboard
       - "127.0.0.1:9312:9312/tcp" # Prometheus
-      - "127.0.0.1:5000:5000/tcp" # TX Stream
     expose:
       - "1888/tcp" # Analysis Server (within Docker network)
       - "5000/tcp" # TXStream
-      - "9000/tcp" # Analysis Dashboard
-      - "9312/tcp" # Prometheus
       - "8080/tcp" # GoShimmer API
       - "8081/tcp" # GoShimmer Dashboard
+      - "9000/tcp" # Analysis Dashboard
+      - "9312/tcp" # Prometheus
 
 volumes:
   goshimmer-db:
