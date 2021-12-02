@@ -76,7 +76,7 @@ func TestTxBuilderBasic(t *testing.T) {
 			},
 		},
 	}
-	anchorID, _ := tpkg.RandUTXOInput()
+	anchorID := tpkg.RandUTXOInput()
 	tokenID := testiotago.RandNativeTokenID()
 	balanceLoader := func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
 		return nil, iotago.UTXOInput{}
@@ -162,7 +162,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 			},
 		},
 	}
-	anchorID, _ := tpkg.RandUTXOInput()
+	anchorID := tpkg.RandUTXOInput()
 
 	var nativeTokenIDs []iotago.NativeTokenID
 	var utxoInputsNativeTokens []iotago.UTXOInput
