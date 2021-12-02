@@ -5,12 +5,14 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
@@ -18,40 +20,61 @@ import (
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
 // returns the transaction and newly minted chain ID
 func NewChainOriginTransaction(
-	keyPair *ed25519.KeyPair,
-	stateAddress ledgerstate.Address,
-	balances colored.Balances,
-	timestamp time.Time,
-	allInputs ...ledgerstate.Output,
-) (*ledgerstate.Transaction, *iscp.ChainID, error) {
-	walletAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
-	txb := utxoutil.NewBuilder(allInputs...).WithTimestamp(timestamp)
+	key ed25519.PrivateKey,
+	stateControllerAddress iotago.Address,
+	governanceControllerAddress iotago.Address,
+	deposit uint64,
+	allUnspentOutputs []iotago.Output,
+	allInputs []*iotago.UTXOInput,
+) (*iotago.Transaction, iotago.ChainID, error) {
+	if len(allUnspentOutputs) != len(allInputs) {
+		panic("mismatched lenghts of outputs and inputs slices")
+	}
 
-	stateHash := state.OriginStateHash()
-	if len(balances) == 0 {
-		balances = colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA)
+	walletAddr := iotago.Ed25519AddressFromPubKey(key.Public().(ed25519.PublicKey))
+
+	txb := iotago.NewTransactionBuilder()
+	rentStructure := parameters.RentStructure()
+
+	aliasOutput := &iotago.AliasOutput{
+		Amount:               deposit,
+		StateController:      stateControllerAddress,
+		GovernanceController: governanceControllerAddress,
+		StateMetadata:        state.OriginStateHash().Bytes(),
 	}
-	if err := txb.AddNewAliasMint(colored.ToL1Map(balances), stateAddress, stateHash.Bytes()); err != nil {
-		return nil, nil, err
+	{
+		dustDeposit := aliasOutput.VByteCost(rentStructure, nil)
+		if dustDeposit < aliasOutput.Amount {
+			aliasOutput.Amount = dustDeposit
+		}
 	}
-	// adding reminder in compressing mode, i.e. all provided inputs will be consumed
-	if err := txb.AddRemainderOutputIfNeeded(walletAddr, nil, true); err != nil {
-		return nil, nil, err
+	txb.AddOutput(aliasOutput)
+
+	remainderOutput := &iotago.ExtendedOutput{
+		Address: &walletAddr,
+		Amount:  0,
 	}
-	tx, err := txb.BuildWithED25519(keyPair)
+	remainderDustDeposit := remainderOutput.VByteCost(rentStructure, nil)
+	minDeposit := aliasOutput.Amount + remainderDustDeposit
+
+	consumed := uint64(0)
+	for i, out := range allUnspentOutputs {
+		consumed += out.Deposit()
+		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: &walletAddr, Input: allInputs[i]})
+		if consumed >= minDeposit {
+			break
+		}
+	}
+
+	remainderOutput.Amount = aliasOutput.Amount - consumed
+	txb.AddOutput(remainderOutput)
+
+	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, key))
+	tx, err := txb.Build(parameters.DeSerializationParameters(), signer)
 	if err != nil {
 		return nil, nil, err
 	}
-	// determine aliasAddress of the newly minted chain
-	chained, err := utxoutil.GetSingleChainedAliasOutput(tx)
-	if err != nil {
-		return nil, nil, err
-	}
-	chainID, err := iscp.ChainIDFromAddress(chained.Address())
-	if err != nil {
-		return nil, nil, err
-	}
-	return tx, chainID, nil
+	return tx, aliasOutput.Chain(), nil
 }
 
 // NewRootInitRequestTransaction is a first request to be sent to the uninitialized
