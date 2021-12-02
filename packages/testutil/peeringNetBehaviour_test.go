@@ -26,7 +26,7 @@ func TestPeeringNetReliable(t *testing.T) {
 	behavior := NewPeeringNetReliable(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 10; i++ {
-		inCh <- &peeringMsg{from: &someNode}
+		inCh <- &peeringMsg{from: someNode.netID}
 	}
 	<-doneCh
 	behavior.Close()
@@ -58,7 +58,7 @@ func TestPeeringNetUnreliable(t *testing.T) {
 	behavior := NewPeeringNetUnreliable(50, 50, 50*time.Millisecond, 100*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 1000; i++ {
-		inCh <- &peeringMsg{from: &someNode}
+		inCh <- &peeringMsg{from: someNode.netID}
 	}
 	time.Sleep(500 * time.Millisecond)
 	//
@@ -106,7 +106,7 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 	behavior := NewPeeringNetUnreliable(100, 0, 0*time.Microsecond, 0*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)) // NOTE: No drops, duplicates, delays.
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 1000; i++ {
-		inCh <- &peeringMsg{from: &someNode}
+		inCh <- &peeringMsg{from: someNode.netID}
 	}
 	time.Sleep(500 * time.Millisecond)
 	//

@@ -1,10 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package generator
+package model
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -52,13 +53,10 @@ type Struct struct {
 }
 
 type Schema struct {
-	Name          string
-	FullName      string
+	ContractName  string
+	PackageName   string
 	Description   string
 	KeyID         int
-	ConstLen      int
-	ConstNames    []string
-	ConstValues   []string
 	CoreContracts bool
 	SchemaTime    time.Time
 	Events        []*Struct
@@ -75,11 +73,11 @@ func NewSchema() *Schema {
 }
 
 func (s *Schema) Compile(schemaDef *SchemaDef) error {
-	s.FullName = strings.TrimSpace(schemaDef.Name)
-	if s.FullName == "" {
+	s.ContractName = strings.TrimSpace(schemaDef.Name)
+	if s.ContractName == "" {
 		return fmt.Errorf("missing contract name")
 	}
-	s.Name = lower(s.FullName)
+	s.PackageName = strings.ToLower(s.ContractName)
 	s.Description = strings.TrimSpace(schemaDef.Description)
 
 	err := s.compileEvents(schemaDef)
@@ -209,7 +207,7 @@ func (s *Schema) compileFuncFields(fieldMap StringMap, allFieldMap *FieldMap, wh
 			return nil, fmt.Errorf("redefined %s alias: '%s' != '%s", what, existing.Alias, field.Alias)
 		}
 		if existing.Type != field.Type {
-			return nil, fmt.Errorf("redefined %s type", what)
+			return nil, fmt.Errorf("redefined %s type: %s", what, field.Name)
 		}
 		fields = append(fields, field)
 	}
@@ -303,4 +301,40 @@ func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
 		s.Typedefs = append(s.Typedefs, varDef)
 	}
 	return nil
+}
+
+func sortedFields(dict FieldMap) []string {
+	keys := make([]string, 0)
+	for key := range dict {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func sortedFuncDescs(dict FuncDefMap) []string {
+	keys := make([]string, 0)
+	for key := range dict {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func sortedKeys(dict StringMap) []string {
+	keys := make([]string, 0)
+	for key := range dict {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func sortedMaps(dict StringMapMap) []string {
+	keys := make([]string, 0)
+	for key := range dict {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }

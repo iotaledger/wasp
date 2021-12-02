@@ -17,11 +17,12 @@ import (
 func funcApprove(ctx wasmlib.ScFuncContext, f *ApproveContext) {
 	delegation := f.Params.Delegation().Value()
 	amount := f.Params.Amount().Value()
-	ctx.Require(amount > 0, "erc20.approve.fail: wrong 'amount' parameter")
+	ctx.Require(amount >= 0, "erc20.approve.fail: wrong 'amount' parameter")
 
 	// all allowances are in the map under the name of he owner
 	allowances := f.State.AllAllowances().GetAllowancesForAgent(ctx.Caller())
 	allowances.GetInt64(delegation).SetValue(amount)
+	f.Events.Approval(amount, ctx.Caller(), delegation)
 }
 
 // on_init is a constructor entry point. It initializes the smart contract with the
@@ -52,7 +53,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 // - PARAM_AMOUNT: i64
 func funcTransfer(ctx wasmlib.ScFuncContext, f *TransferContext) {
 	amount := f.Params.Amount().Value()
-	ctx.Require(amount > 0, "erc20.transfer.fail: wrong 'amount' parameter")
+	ctx.Require(amount >= 0, "erc20.transfer.fail: wrong 'amount' parameter")
 
 	balances := f.State.Balances()
 	sourceAgent := ctx.Caller()
@@ -62,7 +63,7 @@ func funcTransfer(ctx wasmlib.ScFuncContext, f *TransferContext) {
 	targetAgent := f.Params.Account().Value()
 	targetBalance := balances.GetInt64(targetAgent)
 	result := targetBalance.Value() + amount
-	ctx.Require(result > 0, "erc20.transfer.fail: overflow")
+	ctx.Require(result >= 0, "erc20.transfer.fail: overflow")
 
 	sourceBalance.SetValue(sourceBalance.Value() - amount)
 	targetBalance.SetValue(targetBalance.Value() + amount)
@@ -80,7 +81,7 @@ func funcTransfer(ctx wasmlib.ScFuncContext, f *TransferContext) {
 func funcTransferFrom(ctx wasmlib.ScFuncContext, f *TransferFromContext) {
 	// validate parameters
 	amount := f.Params.Amount().Value()
-	ctx.Require(amount > 0, "erc20.transfer_from.fail: wrong 'amount' parameter")
+	ctx.Require(amount >= 0, "erc20.transfer_from.fail: wrong 'amount' parameter")
 
 	// allowances are in the map under the name of the account
 	sourceAgent := f.Params.Account().Value()
@@ -95,7 +96,7 @@ func funcTransferFrom(ctx wasmlib.ScFuncContext, f *TransferFromContext) {
 	targetAgent := f.Params.Recipient().Value()
 	targetBalance := balances.GetInt64(targetAgent)
 	result := targetBalance.Value() + amount
-	ctx.Require(result > 0, "erc20.transfer_from.fail: overflow")
+	ctx.Require(result >= 0, "erc20.transfer_from.fail: overflow")
 
 	sourceBalance.SetValue(sourceBalance.Value() - amount)
 	targetBalance.SetValue(targetBalance.Value() + amount)

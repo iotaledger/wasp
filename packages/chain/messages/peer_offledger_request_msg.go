@@ -15,6 +15,11 @@ type OffLedgerRequestMsg struct {
 	Req     *iscp.OffLedgerRequestData
 }
 
+type OffLedgerRequestMsgIn struct {
+	OffLedgerRequestMsg
+	SenderNetID string
+}
+
 func NewOffLedgerRequestMsg(chainID *iscp.ChainID, req *iscp.OffLedgerRequestData) *OffLedgerRequestMsg {
 	return &OffLedgerRequestMsg{
 		ChainID: chainID,

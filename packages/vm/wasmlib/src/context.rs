@@ -274,8 +274,8 @@ impl ScFuncContext {
     // passing the provided parameters and token transfers to it
     pub fn call(&self, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>) -> ScImmutableMap {
         let mut encode = BytesEncoder::new();
-        encode.hname(&hcontract);
-        encode.hname(&hfunction);
+        encode.hname(hcontract);
+        encode.hname(hfunction);
         if let Some(params) = params {
             encode.int32(params.map_id());
         } else {
@@ -336,8 +336,8 @@ impl ScFuncContext {
     pub fn post(&self, chain_id: &ScChainID, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: ScTransfers, delay: i32) {
         let mut encode = BytesEncoder::new();
         encode.chain_id(chain_id);
-        encode.hname(&hcontract);
-        encode.hname(&hfunction);
+        encode.hname(hcontract);
+        encode.hname(hfunction);
         if let Some(params) = &params {
             encode.int32(params.map_id());
         } else {
@@ -406,8 +406,8 @@ impl ScViewContext {
     // passing the provided parameters to it
     pub fn call(&self, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
         let mut encode = BytesEncoder::new();
-        encode.hname(&hcontract);
-        encode.hname(&hfunction);
+        encode.hname(hcontract);
+        encode.hname(hfunction);
         if let Some(params) = params {
             encode.int32(params.map_id());
         } else {

@@ -27,6 +27,13 @@ func (e *EventEncoder) AgentID(value ScAgentID) *EventEncoder {
 	return e.String(value.String())
 }
 
+func (e *EventEncoder) Bool(value bool) *EventEncoder {
+	if value {
+		return e.Uint8(1)
+	}
+	return e.Uint8(0)
+}
+
 func (e *EventEncoder) Bytes(value []byte) *EventEncoder {
 	return e.String(base58Encode(value))
 }
@@ -51,6 +58,10 @@ func (e *EventEncoder) Hname(value ScHname) *EventEncoder {
 	return e.String(value.String())
 }
 
+func (e *EventEncoder) Int8(value int8) *EventEncoder {
+	return e.Int64(int64(value))
+}
+
 func (e *EventEncoder) Int16(value int16) *EventEncoder {
 	return e.Int64(int64(value))
 }
@@ -71,4 +82,20 @@ func (e *EventEncoder) String(value string) *EventEncoder {
 	// TODO encode potential vertical bars that are present in the value string
 	e.event += "|" + value
 	return e
+}
+
+func (e *EventEncoder) Uint8(value uint8) *EventEncoder {
+	return e.Uint64(uint64(value))
+}
+
+func (e *EventEncoder) Uint16(value uint16) *EventEncoder {
+	return e.Uint64(uint64(value))
+}
+
+func (e *EventEncoder) Uint32(value uint32) *EventEncoder {
+	return e.Uint64(uint64(value))
+}
+
+func (e *EventEncoder) Uint64(value uint64) *EventEncoder {
+	return e.String(strconv.FormatUint(value, 10))
 }

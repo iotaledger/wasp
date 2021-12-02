@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"sort"
 	"strings"
 )
 
@@ -89,42 +88,6 @@ func snake(name string) string {
 
 	// lowercase the entire final result
 	return lower(name)
-}
-
-func sortedFields(dict FieldMap) []string {
-	keys := make([]string, 0)
-	for key := range dict {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-func sortedFuncDescs(dict FuncDefMap) []string {
-	keys := make([]string, 0)
-	for key := range dict {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-func sortedKeys(dict StringMap) []string {
-	keys := make([]string, 0)
-	for key := range dict {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-func sortedMaps(dict StringMapMap) []string {
-	keys := make([]string, 0)
-	for key := range dict {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 // uncapitalize first letter

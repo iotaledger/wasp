@@ -22,17 +22,23 @@ funcs:
     params:
       address: Address?
       agentID: AgentID?
+      bool: Bool?
       bytes: Bytes?
       chainID: ChainID?
       color: Color?
       hash: Hash?
       hname: Hname?
+      int8: Int8?
       int16: Int16?
       int32: Int32?
       int64: Int64?
       param=this: map[String]Bytes? // special hook to be able to pass key/values as raw bytes
       requestID: RequestID?
       string: String?
+      uint8: Uint8?
+      uint16: Uint16?
+      uint32: Uint32?
+      uint64: Uint64?
   random:
 views:
   arrayLength:

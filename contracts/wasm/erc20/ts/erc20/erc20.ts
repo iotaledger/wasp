@@ -14,11 +14,12 @@ import * as sc from "./index";
 export function funcApprove(ctx: wasmlib.ScFuncContext, f: sc.ApproveContext): void {
     let delegation = f.params.delegation().value();
     let amount = f.params.amount().value();
-    ctx.require(amount > 0, "erc20.approve.fail: wrong 'amount' parameter");
+    ctx.require(amount >= 0, "erc20.approve.fail: wrong 'amount' parameter");
 
     // all allowances are in the map under the name of he owner
     let allowances = f.state.allAllowances().getAllowancesForAgent(ctx.caller());
     allowances.getInt64(delegation).setValue(amount);
+    f.events.approval(amount, ctx.caller(), delegation)
 }
 
 // onInit is a constructor entry point. It initializes the smart contract with the
@@ -49,7 +50,7 @@ export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
 // - PARAM_AMOUNT: i64
 export function funcTransfer(ctx: wasmlib.ScFuncContext, f: sc.TransferContext): void {
     let amount = f.params.amount().value();
-    ctx.require(amount > 0, "erc20.transfer.fail: wrong 'amount' parameter");
+    ctx.require(amount >= 0, "erc20.transfer.fail: wrong 'amount' parameter");
 
     let balances = f.state.balances();
     let sourceAgent = ctx.caller();
@@ -59,7 +60,7 @@ export function funcTransfer(ctx: wasmlib.ScFuncContext, f: sc.TransferContext):
     let targetAgent = f.params.account().value();
     let targetBalance = balances.getInt64(targetAgent);
     let result = targetBalance.value() + amount;
-    ctx.require(result > 0, "erc20.transfer.fail: overflow");
+    ctx.require(result >= 0, "erc20.transfer.fail: overflow");
 
     sourceBalance.setValue(sourceBalance.value() - amount);
     targetBalance.setValue(targetBalance.value() + amount);
@@ -77,7 +78,7 @@ export function funcTransfer(ctx: wasmlib.ScFuncContext, f: sc.TransferContext):
 export function funcTransferFrom(ctx: wasmlib.ScFuncContext, f: sc.TransferFromContext): void {
     // validate parameters
     let amount = f.params.amount().value();
-    ctx.require(amount > 0, "erc20.transferFrom.fail: wrong 'amount' parameter");
+    ctx.require(amount >= 0, "erc20.transferFrom.fail: wrong 'amount' parameter");
 
     // allowances are in the map under the name of the account
     let sourceAgent = f.params.account().value();
@@ -92,7 +93,7 @@ export function funcTransferFrom(ctx: wasmlib.ScFuncContext, f: sc.TransferFromC
     let targetAgent = f.params.recipient().value();
     let recipientBalance = balances.getInt64(targetAgent);
     let result = recipientBalance.value() + amount;
-    ctx.require(result > 0, "erc20.transferFrom.fail: overflow");
+    ctx.require(result >= 0, "erc20.transferFrom.fail: overflow");
 
     sourceBalance.setValue(sourceBalance.value() - amount);
     recipientBalance.setValue(recipientBalance.value() + amount);

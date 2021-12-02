@@ -32,6 +32,9 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
     if f.params.agent_id().exists() {
         ctx.require(f.params.agent_id().value() == ctx.account_id(), "mismatch: AgentID");
     }
+    if f.params.bool().exists() {
+        ctx.require(f.params.bool().value(), "mismatch: Bool");
+    }
     if f.params.bytes().exists() {
         let byte_data = "these are bytes".as_bytes();
         ctx.require(f.params.bytes().value() == byte_data, "mismatch: Bytes");
@@ -50,14 +53,17 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
     if f.params.hname().exists() {
         ctx.require(f.params.hname().value() == ctx.account_id().hname(), "mismatch: Hname");
     }
+    if f.params.int8().exists() {
+        ctx.require(f.params.int8().value() == -123, "mismatch: Int8");
+    }
     if f.params.int16().exists() {
-        ctx.require(f.params.int16().value() == 12345, "mismatch: Int16");
+        ctx.require(f.params.int16().value() == -12345, "mismatch: Int16");
     }
     if f.params.int32().exists() {
-        ctx.require(f.params.int32().value() == 1234567890, "mismatch: Int32");
+        ctx.require(f.params.int32().value() == -1234567890, "mismatch: Int32");
     }
     if f.params.int64().exists() {
-        ctx.require(f.params.int64().value() == 1234567890123456789, "mismatch: Int64");
+        ctx.require(f.params.int64().value() == -1234567890123456789, "mismatch: Int64");
     }
     if f.params.request_id().exists() {
         let request_id = ScRequestID::from_bytes("abcdefghijklmnopqrstuvwxyz123456\x00\x00".as_bytes());
@@ -65,6 +71,18 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
     }
     if f.params.string().exists() {
         ctx.require(f.params.string().value() == "this is a string", "mismatch: String");
+    }
+    if f.params.uint8().exists() {
+        ctx.require(f.params.uint8().value() == 123, "mismatch: Uint8");
+    }
+    if f.params.uint16().exists() {
+        ctx.require(f.params.uint16().value() == 12345, "mismatch: Uint16");
+    }
+    if f.params.uint32().exists() {
+        ctx.require(f.params.uint32().value() == 1234567890, "mismatch: Uint32");
+    }
+    if f.params.uint64().exists() {
+        ctx.require(f.params.uint64().value() == 1234567890123456789, "mismatch: Uint64");
     }
 }
 
