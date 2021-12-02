@@ -178,7 +178,7 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 	}
 
 	// TODO: Make sure that AnchorOutputID.TransactionID == vmctx.chainInput.ID().TransactionID()
-	blocklog.SetAnchorTransactionIdOfLastBlock(vmctx.State(), vmctx.task.AnchorOutputID.TransactionID)
+	blocklog.SetAnchorTransactionIDOfLatestBlock(vmctx.State(), vmctx.task.AnchorOutputID.TransactionID)
 
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
 	if idx != blockInfo.BlockIndex {

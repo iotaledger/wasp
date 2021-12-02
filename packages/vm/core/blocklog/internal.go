@@ -24,7 +24,7 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 	return ret
 }
 
-func SetAnchorTransactionIdOfLastBlock(partition kv.KVStore, transactionId ledgerstate.TransactionID) {
+func SetAnchorTransactionIDOfLatestBlock(partition kv.KVStore, transactionId ledgerstate.TransactionID) {
 	registry := collections.NewArray32(partition, StateVarBlockRegistry)
 	lastBlockIndex := registry.MustLen() - 1
 	blockInfoBuffer := registry.MustGetAt(lastBlockIndex)
@@ -35,13 +35,13 @@ func SetAnchorTransactionIdOfLastBlock(partition kv.KVStore, transactionId ledge
 	registry.MustSetAt(lastBlockIndex, blockInfo.Bytes())
 }
 
-func GetAnchorTransactionIdByBlockIndex(partition kv.KVStore, blockIndex uint32) (iotago.TransactionID, error) {
+func GetAnchorTransactionIDByBlockIndex(partition kv.KVStore, blockIndex uint32) (iotago.TransactionID, error) {
 	registry := collections.NewArray32(partition, StateVarBlockRegistry)
 	blockInfoBuffer := registry.MustGetAt(blockIndex)
 	blockInfo, err := BlockInfoFromBytes(blockIndex, blockInfoBuffer)
 
 	if err != nil {
-		return iotago.TransactionID{}, err
+		panic("Failed to parse blockinfo")
 	}
 
 	return blockInfo.AnchorTransactionID, nil
