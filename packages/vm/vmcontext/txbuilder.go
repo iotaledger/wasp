@@ -62,12 +62,7 @@ func (vmctx *VMContext) getTxIDForStateIndex(stateIndex uint32) iotago.Transacti
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	transactionId, err := blocklog.GetAnchorTransactionIDByBlockIndex(vmctx.State(), stateIndex)
-
-	if err != nil {
-		// TODO: Panic, or rather return error?
-		panic("?")
-	}
+	transactionId := blocklog.GetAnchorTransactionIDByBlockIndex(vmctx.State(), stateIndex)
 
 	return transactionId
 }

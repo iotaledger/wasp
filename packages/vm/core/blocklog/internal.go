@@ -35,7 +35,7 @@ func SetAnchorTransactionIDOfLatestBlock(partition kv.KVStore, transactionId led
 	registry.MustSetAt(lastBlockIndex, blockInfo.Bytes())
 }
 
-func GetAnchorTransactionIDByBlockIndex(partition kv.KVStore, blockIndex uint32) (iotago.TransactionID, error) {
+func GetAnchorTransactionIDByBlockIndex(partition kv.KVStore, blockIndex uint32) iotago.TransactionID {
 	registry := collections.NewArray32(partition, StateVarBlockRegistry)
 	blockInfoBuffer := registry.MustGetAt(blockIndex)
 	blockInfo, err := BlockInfoFromBytes(blockIndex, blockInfoBuffer)
@@ -44,7 +44,7 @@ func GetAnchorTransactionIDByBlockIndex(partition kv.KVStore, blockIndex uint32)
 		panic("Failed to parse blockinfo")
 	}
 
-	return blockInfo.AnchorTransactionID, nil
+	return blockInfo.AnchorTransactionID
 }
 
 // SaveControlAddressesIfNecessary saves new information about state address in the blocklog partition
