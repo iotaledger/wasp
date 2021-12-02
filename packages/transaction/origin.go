@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -12,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
@@ -26,15 +26,15 @@ func NewChainOriginTransaction(
 	deposit uint64,
 	allUnspentOutputs []iotago.Output,
 	allInputs []*iotago.UTXOInput,
+	deSeriParams *iotago.DeSerializationParameters,
 ) (*iotago.Transaction, iotago.ChainID, error) {
 	if len(allUnspentOutputs) != len(allInputs) {
-		panic("mismatched lenghts of outputs and inputs slices")
+		panic("mismatched lengths of outputs and inputs slices")
 	}
 
 	walletAddr := iotago.Ed25519AddressFromPubKey(key.Public().(ed25519.PublicKey))
 
 	txb := iotago.NewTransactionBuilder()
-	rentStructure := parameters.RentStructure()
 
 	aliasOutput := &iotago.AliasOutput{
 		Amount:               deposit,
@@ -43,38 +43,63 @@ func NewChainOriginTransaction(
 		StateMetadata:        state.OriginStateHash().Bytes(),
 	}
 	{
-		dustDeposit := aliasOutput.VByteCost(rentStructure, nil)
-		if dustDeposit < aliasOutput.Amount {
-			aliasOutput.Amount = dustDeposit
+		aliasDustDeposit := aliasOutput.VByteCost(deSeriParams.RentStructure, nil)
+		if aliasOutput.Amount < aliasDustDeposit {
+			aliasOutput.Amount = aliasDustDeposit
 		}
 	}
 	txb.AddOutput(aliasOutput)
 
-	remainderOutput := &iotago.ExtendedOutput{
-		Address: &walletAddr,
-		Amount:  0,
+	inputs, remainder, err := computeInputsAndRemainder(
+		aliasOutput.Amount,
+		allUnspentOutputs,
+		allInputs,
+		deSeriParams,
+	)
+	if err != nil {
+		return nil, nil, err
 	}
-	remainderDustDeposit := remainderOutput.VByteCost(rentStructure, nil)
-	minDeposit := aliasOutput.Amount + remainderDustDeposit
-
-	consumed := uint64(0)
-	for i, out := range allUnspentOutputs {
-		consumed += out.Deposit()
-		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: &walletAddr, Input: allInputs[i]})
-		if consumed >= minDeposit {
-			break
-		}
+	for _, input := range inputs {
+		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: &walletAddr, Input: input})
 	}
-
-	remainderOutput.Amount = aliasOutput.Amount - consumed
-	txb.AddOutput(remainderOutput)
+	if remainder > 0 {
+		txb.AddOutput(&iotago.ExtendedOutput{
+			Address: &walletAddr,
+			Amount:  remainder,
+		})
+	}
 
 	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, key))
-	tx, err := txb.Build(parameters.DeSerializationParameters(), signer)
+	tx, err := txb.Build(deSeriParams, signer)
 	if err != nil {
 		return nil, nil, err
 	}
 	return tx, aliasOutput.Chain(), nil
+}
+
+func computeInputsAndRemainder(
+	amount uint64,
+	allUnspentOutputs []iotago.Output,
+	allInputs []*iotago.UTXOInput,
+	deSeriParams *iotago.DeSerializationParameters,
+) ([]*iotago.UTXOInput, uint64, error) {
+	remainderDustDeposit := (&iotago.ExtendedOutput{}).VByteCost(deSeriParams.RentStructure, nil)
+	var inputs []*iotago.UTXOInput
+	consumed := uint64(0)
+	for i, out := range allUnspentOutputs {
+		consumed += out.Deposit()
+		inputs = append(inputs, allInputs[i])
+		if consumed == amount {
+			return inputs, 0, nil
+		}
+		if consumed > amount {
+			remainder := amount - consumed
+			if remainder >= remainderDustDeposit {
+				return inputs, remainder, nil
+			}
+		}
+	}
+	return nil, 0, fmt.Errorf("insufficient funds")
 }
 
 // NewRootInitRequestTransaction is a first request to be sent to the uninitialized
