@@ -32,7 +32,7 @@ func TestMarshalling(t *testing.T) {
 	msgBytes := msg.Bytes()
 
 	// unmashal the message from bytes and ensure everything checks out
-	unmarshalledMsg, err := OffLedgerRequestMsgFromBytes(msgBytes)
+	unmarshalledMsg, err := NewOffLedgerRequestMsg(msgBytes)
 	require.NoError(t, err)
 
 	require.Equal(t, unmarshalledMsg.ChainID.AsAliasAddress(), msg.ChainID.AsAliasAddress())

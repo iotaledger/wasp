@@ -108,8 +108,8 @@ $#set exist $proxy
 `,
 	// *******************************
 	"typedefProxyMapNewBaseType": `
-    pub fn get_$fld_type(&self, key: $fldMapKeyLangType) -> Sc$mut$FldType {
-        Sc$mut$FldType::new(self.obj_id, key.get_key_id())
+    pub fn get_$fld_type(&self, key: $fldKeyRef$fldKeyParamLangType) -> Sc$mut$FldType {
+        Sc$mut$FldType::new(self.obj_id, $fldKeyToKey32)
     }
 `,
 	// *******************************
@@ -119,15 +119,15 @@ $#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruc
 	// *******************************
 	"typedefProxyMapNewOtherTypeTypeDef": `
 $#emit setVarType
-    pub fn get_$old_type(&self, key: $oldMapKeyLangType) -> $mut$OldType {
-        let sub_id = get_object_id(self.obj_id, key.get_key_id(), $varType);
+    pub fn get_$old_type(&self, key: $oldKeyRef$oldKeyParamLangType) -> $mut$OldType {
+        let sub_id = get_object_id(self.obj_id, $oldKeyToKey32, $varType);
         $mut$OldType { obj_id: sub_id }
     }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherTypeStruct": `
-    pub fn get_$fld_type(&self, key: $fldMapKeyLangType) -> $mut$FldType {
-        $mut$FldType { obj_id: self.obj_id, key_id: key.get_key_id() }
+    pub fn get_$fld_type(&self, key: $fldKeyRef$fldKeyParamLangType) -> $mut$FldType {
+        $mut$FldType { obj_id: self.obj_id, key_id: $fldKeyToKey32 }
     }
 `,
 }
