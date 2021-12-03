@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"crypto/ed25519"
 
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -15,54 +16,56 @@ import (
 )
 
 type AccessNodeInfo struct {
-	PubKey    []byte
-	Validator bool
-	API       string
+	NodePubKey    []byte // Public Key of the node. Stored as a key in the SC State and Params.
+	ValidatorAddr []byte // Address of the validator owning the node. Not sent via parameters.
+	Certificate   []byte // Proof that Validator owns the Node.
+	ForCommittee  bool   // true, if Node should be a candidate to a committee.
+	AccessAPI     string // API URL, if any.
 }
 
 func NewAccessNodeInfoFromBytes(pubKey, value []byte) (*AccessNodeInfo, error) {
 	var a AccessNodeInfo
 	var err error
 	r := bytes.NewReader(value)
-	if err := util.ReadBoolByte(r, &a.Validator); err != nil {
-		return nil, xerrors.Errorf("failed to read AccessNodeInfo.Validator: %v", err)
+	a.NodePubKey = pubKey // NodePubKey stored as a map key.
+	if a.ValidatorAddr, err = util.ReadBytes16(r); err != nil {
+		return nil, xerrors.Errorf("failed to read AccessNodeInfo.ValidatorAddr: %v", err)
 	}
-	if a.API, err = util.ReadString16(r); err != nil {
-		return nil, xerrors.Errorf("failed to read AccessNodeInfo.API: %v", err)
+	if a.Certificate, err = util.ReadBytes16(r); err != nil {
+		return nil, xerrors.Errorf("failed to read AccessNodeInfo.Certificate: %v", err)
 	}
-	a.PubKey = pubKey
+	if err := util.ReadBoolByte(r, &a.ForCommittee); err != nil {
+		return nil, xerrors.Errorf("failed to read AccessNodeInfo.ForCommittee: %v", err)
+	}
+	if a.AccessAPI, err = util.ReadString16(r); err != nil {
+		return nil, xerrors.Errorf("failed to read AccessNodeInfo.AccessAPI: %v", err)
+	}
 	return &a, nil
-}
-
-func NewAccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessNodeInfo, error) {
-	res := make([]*AccessNodeInfo, 0)
-	var accErr error
-	err := infoMap.Iterate(func(elemKey, value []byte) bool {
-		var a *AccessNodeInfo
-		if a, accErr = NewAccessNodeInfoFromBytes(elemKey, value); accErr != nil {
-			return false
-		}
-		res = append(res, a)
-		return true
-	})
-	if accErr != nil {
-		return nil, xerrors.Errorf("failed to iterate over AccessNodeInfo list: %v", accErr)
-	}
-	if err != nil {
-		return nil, xerrors.Errorf("failed to iterate over AccessNodeInfo list: %v", err)
-	}
-	return res, nil
 }
 
 func (a *AccessNodeInfo) Bytes() []byte {
 	w := bytes.Buffer{}
-	if err := util.WriteBoolByte(&w, a.Validator); err != nil {
-		panic(xerrors.Errorf("failed to write AccessNodeInfo.Validator: %v", err))
+	// NodePubKey stored as a map key.
+	if err := util.WriteBytes16(&w, a.ValidatorAddr); err != nil {
+		panic(xerrors.Errorf("failed to write AccessNodeInfo.ValidatorAddr: %v", err))
 	}
-	if err := util.WriteString16(&w, a.API); err != nil {
-		panic(xerrors.Errorf("failed to write AccessNodeInfo.Validator: %v", err))
+	if err := util.WriteBytes16(&w, a.Certificate); err != nil {
+		panic(xerrors.Errorf("failed to write AccessNodeInfo.Certificate: %v", err))
+	}
+	if err := util.WriteBoolByte(&w, a.ForCommittee); err != nil {
+		panic(xerrors.Errorf("failed to write AccessNodeInfo.ForCommittee: %v", err))
+	}
+	if err := util.WriteString16(&w, a.AccessAPI); err != nil {
+		panic(xerrors.Errorf("failed to write AccessNodeInfo.AccessAPI: %v", err))
 	}
 	return w.Bytes()
+}
+
+func (a *AccessNodeInfo) ValidateCert(ctx iscp.Sandbox) bool {
+	signedData := bytes.Buffer{}
+	signedData.Write(a.NodePubKey)
+	signedData.Write(a.ValidatorAddr)
+	return ctx.Utils().ED25519().ValidSignature(signedData.Bytes(), a.NodePubKey, a.Certificate)
 }
 
 //
@@ -110,20 +113,20 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 // CandidateNodeRequest
 //
 type CandidateNodeRequest struct {
-	Candidate bool
-	Validator bool
-	PubKey    []byte
-	Cert      []byte
-	API       string
+	Candidate    bool
+	ForCommittee bool
+	NodePubKey   []byte
+	Certificate  []byte
+	AccessAPI    string
 }
 
 func (req CandidateNodeRequest) AsDict() dict.Dict {
 	d := dict.New()
 	d.Set(ParamCandidateNodeCandidate, codec.EncodeBool(req.Candidate))
-	d.Set(ParamCandidateNodeValidator, codec.EncodeBool(req.Validator))
-	d.Set(ParamCandidateNodePubKey, req.PubKey)
-	d.Set(ParamCandidateNodeCert, req.Cert)
-	d.Set(ParamCandidateNodeAPI, codec.EncodeString(req.API))
+	d.Set(ParamCandidateNodeForCommittee, codec.EncodeBool(req.ForCommittee))
+	d.Set(ParamCandidateNodePubKey, req.NodePubKey)
+	d.Set(ParamCandidateNodeCertificate, req.Certificate)
+	d.Set(ParamCandidateNodeAccessAPI, codec.EncodeString(req.AccessAPI))
 	return d
 }
 

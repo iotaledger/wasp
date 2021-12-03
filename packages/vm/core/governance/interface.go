@@ -105,11 +105,11 @@ const (
 	ParamGetChainNodesAccessNodes          = "a"
 
 	// access nodes: candidateNode
-	ParamCandidateNodeCandidate = "c"
-	ParamCandidateNodeValidator = "v"
-	ParamCandidateNodePubKey    = "pk"
-	ParamCandidateNodeCert      = "cr"
-	ParamCandidateNodeAPI       = "a"
+	ParamCandidateNodeCandidate    = "c"
+	ParamCandidateNodeForCommittee = "fc"
+	ParamCandidateNodePubKey       = "pk"
+	ParamCandidateNodeCertificate  = "cr"
+	ParamCandidateNodeAccessAPI    = "a"
 
 	// access nodes: changeAccessNodes
 	ParamChangeAccessNodesActions = "a"

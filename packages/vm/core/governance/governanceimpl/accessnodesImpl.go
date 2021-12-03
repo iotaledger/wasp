@@ -13,8 +13,6 @@
 package governanceimpl
 
 import (
-	"bytes"
-
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -48,11 +46,11 @@ func getChainNodesFuncHandler(ctx iscp.SandboxView) (dict.Dict, error) {
 // SC Command Function handler.
 //
 //	candidateNode(
-//		candidate:	bool = true		// true, if we are adding the node as a candidate to access nodes.
-//		validator:	bool = false	// true, if we also want the node to become a validator.
-//		pubKey:		[]byte			// Public key of the node.
-//		cert:		[]byte			// Signature by the node over its public key.
-//      api:		string = ""		// Optional: API URL for the access node.
+//		candidate:		bool = true		// true, if we are adding the node as a candidate to access nodes.
+//		forCommittee:	bool = false	// true, if we also want the node to become a validator.
+//		nodePubKey:		[]byte			// Public key of the node.
+//		certificate:	[]byte			// Signature by the node over its publicKey||validatorAddress.
+//      accessAPI:		string = ""		// Optional: API URL for the access node.
 //	) => ()
 //
 // It is possible that after executing `candidateNode(false, false, ...)` a node will stay
@@ -64,28 +62,24 @@ func candidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	paramCandidate := params.MustGetBool(governance.ParamCandidateNodeCandidate, true)
-	paramValidator := params.MustGetBool(governance.ParamCandidateNodeValidator, false)
-	paramsPubKey := params.MustGetBytes(governance.ParamCandidateNodePubKey)
-	paramsCert := params.MustGetBytes(governance.ParamCandidateNodeCert)
-	paramsAPI := params.MustGetString(governance.ParamCandidateNodeAPI, "")
 
-	signedData := bytes.Buffer{} // TODO: Double-check, if such scheme is good enough.
-	signedData.Write(paramsPubKey)
-	signedData.Write(ctx.Request().SenderAddress().Bytes())
-	a.Require(ctx.Utils().ED25519().ValidSignature(signedData.Bytes(), paramsPubKey, paramsCert), "certificate invalid")
+	ani := governance.AccessNodeInfo{
+		NodePubKey:    params.MustGetBytes(governance.ParamCandidateNodePubKey),
+		ValidatorAddr: ctx.Request().SenderAddress().Bytes(), // Not from params, to have it validated.
+		Certificate:   params.MustGetBytes(governance.ParamCandidateNodeCertificate),
+		ForCommittee:  params.MustGetBool(governance.ParamCandidateNodeForCommittee, false),
+		AccessAPI:     params.MustGetString(governance.ParamCandidateNodeAccessAPI, ""),
+	}
+	a.Require(ani.ValidateCert(ctx), "certificate invalid")
 
 	if paramCandidate {
-		ani := governance.AccessNodeInfo{
-			Validator: paramValidator,
-			API:       paramsAPI,
-		}
 		accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
-		accessNodeCandidates.MustSetAt(paramsPubKey, ani.Bytes())
+		accessNodeCandidates.MustSetAt(ani.NodePubKey, ani.Bytes())
 	} else {
 		accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
-		accessNodeCandidates.MustDelAt(paramsPubKey)
+		accessNodeCandidates.MustDelAt(ani.NodePubKey)
 		accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
-		accessNodes.MustDelAt(paramsPubKey)
+		accessNodes.MustDelAt(ani.NodePubKey)
 	}
 	return nil, nil
 }

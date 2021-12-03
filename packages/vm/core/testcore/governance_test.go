@@ -142,11 +142,11 @@ func TestAccessNodes(t *testing.T) {
 			governance.Contract.Name,
 			governance.FuncCandidateNode.Name,
 			governance.CandidateNodeRequest{
-				Candidate: true,
-				Validator: false,
-				PubKey:    node1KP.PublicKey.Bytes(),
-				Cert:      node1KP.PrivateKey.Sign(certData.Bytes()).Bytes(),
-				API:       "http://my-api/url",
+				Candidate:    true,
+				ForCommittee: false,
+				NodePubKey:   node1KP.PublicKey.Bytes(),
+				Certificate:  node1KP.PrivateKey.Sign(certData.Bytes()).Bytes(),
+				AccessAPI:    "http://my-api/url",
 			}.AsDict(),
 		).WithIotas(1),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
@@ -161,7 +161,7 @@ func TestAccessNodes(t *testing.T) {
 	require.NoError(t, err)
 	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
-	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].API)
+	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].AccessAPI)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 
 	//
@@ -184,6 +184,6 @@ func TestAccessNodes(t *testing.T) {
 	require.NoError(t, err)
 	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
-	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].API)
+	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].AccessAPI)
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodes))
 }
