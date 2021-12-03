@@ -4,12 +4,10 @@
 package iscp
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/mr-tron/base58"
-
 	"github.com/iotaledger/hive.go/marshalutil"
-
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 )
 
@@ -26,44 +24,44 @@ func NewChainID(addr iotago.AliasID) ChainID {
 
 // ChainIDFromAddress creates a chainIDD from alias address. Returns and error if not an alias address type
 // Deprecated:
-func ChainIDFromAddress(addr iotago.Address) (ChainID, error) {
+func ChainIDFromAddress(addr iotago.Address) (*ChainID, error) {
 	if addr.Type() != iotago.AddressAlias {
-		return ChainID{}, xerrors.New("chain id must be an alias address")
+		return &ChainID{}, xerrors.New("chain id must be an alias address")
 	}
-	return ChainID{}, nil
+	return &ChainID{}, nil
 }
 
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.
-func ChainIDFromBytes(data []byte) (ChainID, error) {
+func ChainIDFromBytes(data []byte) (*ChainID, error) {
 	var ret ChainID
 	if len(ret) != len(data) {
-		return ChainID{}, xerrors.New("ChainIDFromBase58: wrong data length")
+		return &ChainID{}, xerrors.New("ChainIDFromBase58: wrong data length")
 	}
 	copy(ret[:], data)
-	return ret, nil
+	return &ret, nil
 }
 
 // ChainIDFromBase58 constructor decodes base58 string to the ChainID
-func ChainIDFromBase58(b58 string) (ChainID, error) {
+func ChainIDFromBase58(b58 string) (*ChainID, error) {
 	bin, err := base58.Decode(b58)
 	if err != nil {
-		return ChainID{}, err
+		return &ChainID{}, err
 	}
 	return ChainIDFromBytes(bin)
 }
 
 // TODO adjust to iotago style
 // ChainIDFromMarshalUtil reads from Marshalutil
-func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (ChainID, error) {
+func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainID, error) {
 	bin, err := mu.ReadBytes(ChainIDLength)
 	if err != nil {
-		return ChainID{}, err
+		return &ChainID{}, err
 	}
 	return ChainIDFromBytes(bin)
 }
 
 // RandomChainID creates a random chain ID. Used for testing only
-func RandomChainID(seed ...[]byte) ChainID {
+func RandomChainID(seed ...[]byte) *ChainID {
 	var h hashing.HashValue
 	if len(seed) > 0 {
 		h = hashing.HashData(seed[0])
@@ -87,14 +85,13 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 	return chid == chid1
 }
 
-// TODO replace all base58 to Bech
-func (chid *ChainID) Base58() string {
-	return base58.Encode(chid[:])
+func (chid *ChainID) Bech32(prefix iotago.NetworkPrefix) string {
+	chid.AsAddress().Bech32(prefix)
 }
 
 // String human readable form (base58 encoding)
 func (chid *ChainID) String() string {
-	return "$/" + chid.Base58()
+	return "$/" + chid.Bech32(Bech32Prefix)
 }
 
 func (chid *ChainID) AsAddress() iotago.Address {

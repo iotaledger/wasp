@@ -6,7 +6,6 @@ package messages
 import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"golang.org/x/xerrors"
 )
 
@@ -40,11 +39,11 @@ func OffLedgerRequestMsgFromBytes(data []byte) (*OffLedgerRequestMsg, error) {
 	if err != nil {
 		return nil, err
 	}
-	req, err := request.FromMarshalUtil(mu)
+	req, err := iscp.RequestDataFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
-	reqCasted, ok := req.(*request.OffLedger)
+	reqCasted, ok := req.(*iscp.OffLedgerRequestData)
 	if !ok {
 		return nil, xerrors.New("OffLedgerRequestMsgFromBytes: wrong type of request data")
 	}

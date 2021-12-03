@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) bool {
+func (sm *stateManager) outputPulled(output *iotago.AliasOutput) bool {
 	sm.log.Debugf("outputPulled: output index %v id %v", output.GetStateIndex(), iscp.OID(output.ID()))
 	if !sm.syncingBlocks.isSyncing(output.GetStateIndex()) {
 		// not interested
@@ -24,7 +24,7 @@ func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) bool {
 	return sm.syncingBlocks.approveBlockCandidates(output)
 }
 
-func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, timestamp time.Time) bool {
+func (sm *stateManager) stateOutputReceived(output *iotago.AliasOutput, timestamp time.Time) bool {
 	sm.log.Debugf("stateOutputReceived: received output index: %v, id: %v, timestamp: %v",
 		output.GetStateIndex(), iscp.OID(output.ID()), timestamp)
 	if sm.solidState.BlockIndex() > output.GetStateIndex() {

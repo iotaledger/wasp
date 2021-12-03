@@ -4,7 +4,6 @@
 package testutil
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry"
 )
@@ -12,12 +11,12 @@ import (
 // Mock implementation of a ChainRecordRegistryProvider for testing purposes
 
 type ChainRecordRegistryProvider struct {
-	DB map[[ledgerstate.AddressLength]byte]*registry.ChainRecord
+	DB map[[iotago.Ed25519AddressBytesLength]byte]*registry.ChainRecord
 }
 
 func NewChainRecordRegistryProvider() *ChainRecordRegistryProvider {
 	return &ChainRecordRegistryProvider{
-		DB: map[[ledgerstate.AddressLength]byte]*registry.ChainRecord{},
+		DB: map[[iotago.Ed25519AddressBytesLength]byte]*registry.ChainRecord{},
 	}
 }
 

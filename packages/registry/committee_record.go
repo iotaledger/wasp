@@ -3,19 +3,18 @@ package registry
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 )
 
 // CommitteeRecord represents committee information
 // TODO optimize: no need to persists address in the structure
 type CommitteeRecord struct {
-	Address ledgerstate.Address
+	Address iotago.Address
 	Nodes   []string // "host_addr:port"
 }
 
 // NewCommitteeRecord
-func NewCommitteeRecord(addr ledgerstate.Address, nodes ...string) *CommitteeRecord {
+func NewCommitteeRecord(addr iotago.Address, nodes ...string) *CommitteeRecord {
 	ret := &CommitteeRecord{
 		Address: addr,
 		Nodes:   make([]string, len(nodes)),
@@ -28,7 +27,7 @@ func NewCommitteeRecord(addr ledgerstate.Address, nodes ...string) *CommitteeRec
 func CommitteeRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*CommitteeRecord, error) {
 	ret := &CommitteeRecord{}
 	var err error
-	ret.Address, err = ledgerstate.AddressFromMarshalUtil(mu)
+	ret.Address, err = iotago.AddressFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}

@@ -373,13 +373,12 @@ func (ca *ControlAddresses) Bytes() []byte {
 }
 
 func (ca *ControlAddresses) String() string {
-	networkPrefix := iotago.PrefixMainnet
 	var ret string
 	if ca.StateAddress.Equal(ca.GoverningAddress) {
-		ret = fmt.Sprintf("ControlAddresses(%s), block: %d", ca.StateAddress.Bech32(networkPrefix), ca.SinceBlockIndex)
+		ret = fmt.Sprintf("ControlAddresses(%s), block: %d", ca.StateAddress.Bech32(iscp.Bech32Prefix), ca.SinceBlockIndex)
 	} else {
 		ret = fmt.Sprintf("ControlAddresses(%s, %s), block: %d",
-			ca.StateAddress.Bech32(networkPrefix), ca.GoverningAddress.Bech32(networkPrefix), ca.SinceBlockIndex)
+			ca.StateAddress.Bech32(iscp.Bech32Prefix), ca.GoverningAddress.Bech32(iscp.Bech32Prefix), ca.SinceBlockIndex)
 	}
 	return ret
 }

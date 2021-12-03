@@ -1,15 +1,15 @@
 package chains
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/txstream"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 func (c *Chains) dispatchTransactionMsg(msg *txstream.MsgTransaction) {
 	c.log.Debugf("NodeConnImplementation::dispatchTransactionMsg...")
 	defer c.log.Debugf("NodeConnImplementation::dispatchTransactionMsg... Done")
-	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
+	aliasAddr, ok := msg.Address.(*iotago.AliasAddress)
 	if !ok {
 		c.log.Warnf("chains: cannot dispatch transaction message to non-alias address")
 		return
@@ -30,7 +30,7 @@ func (c *Chains) dispatchTransactionMsg(msg *txstream.MsgTransaction) {
 func (c *Chains) dispatchInclusionStateMsg(msg *txstream.MsgTxInclusionState) {
 	c.log.Debugf("NodeConnImplementation::dispatchInclusionStateMsg...")
 	defer c.log.Debugf("NodeConnImplementation::dispatchInclusionStateMsg... Done")
-	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
+	aliasAddr, ok := msg.Address.(*iotago.AliasAddress)
 	if !ok {
 		c.log.Warnf("chains: cannot dispatch inclusion state message to non-alias address")
 		return
@@ -52,7 +52,7 @@ func (c *Chains) dispatchInclusionStateMsg(msg *txstream.MsgTxInclusionState) {
 func (c *Chains) dispatchOutputMsg(msg *txstream.MsgOutput) {
 	c.log.Debugf("NodeConnImplementation::dispatchOutputMsg...")
 	defer c.log.Debugf("NodeConnImplementation::dispatchOutputMsg... Done")
-	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
+	aliasAddr, ok := msg.Address.(*iotago.AliasAddress)
 	if !ok {
 		c.log.Warnf("chains: cannot dispatch output message to non-alias address")
 		return

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/labstack/echo/v4"
@@ -63,5 +62,5 @@ type ChainAccountTemplateParams struct {
 	ChainID *iscp.ChainID
 	AgentID *iscp.AgentID
 
-	Balances colored.Balances
+	Balances *iscp.Assets
 }

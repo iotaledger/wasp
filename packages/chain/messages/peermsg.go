@@ -6,7 +6,7 @@ package messages
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -31,7 +31,7 @@ type StateTransitionMsg struct {
 	// new variable state
 	State state.VirtualStateAccess
 	// corresponding state transaction
-	StateOutput *ledgerstate.AliasOutput
+	StateOutput *iotago.AliasOutput
 	//
 	StateTimestamp time.Time
 }
@@ -39,7 +39,7 @@ type StateTransitionMsg struct {
 // StateCandidateMsg Consensus sends the finalized next state to StateManager
 type StateCandidateMsg struct {
 	State             state.VirtualStateAccess
-	ApprovingOutputID ledgerstate.OutputID
+	ApprovingOutputID iotago.OutputID
 }
 
 // VMResultMsg Consensus -> Consensus. VM sends result of async task started by Consensus to itself
@@ -55,12 +55,12 @@ type AsynchronousCommonSubsetMsg struct {
 
 // InclusionStateMsg txstream plugin sends inclusions state of the transaction to ConsensusOld
 type InclusionStateMsg struct {
-	TxID  ledgerstate.TransactionID
-	State ledgerstate.InclusionState
+	TxID  iotago.TransactionID
+	State iotago.InclusionState
 }
 
 // StateMsg txstream plugin sends the only existing AliasOutput in the chain's address to StateManager
 type StateMsg struct {
-	ChainOutput *ledgerstate.AliasOutput
+	ChainOutput *iotago.AliasOutput
 	Timestamp   time.Time
 }

@@ -360,7 +360,7 @@ func TestRotationMany(t *testing.T) {
 	quorumPredef := []uint16{3, 3, 5, 5, 7}
 	cmt := cmtPredef[:numCmt]
 	quorum := quorumPredef[:numCmt]
-	addrs := make([]ledgerstate.Address, numCmt)
+	addrs := make([]iotago.Address, numCmt)
 
 	var err error
 	clu := newCluster(t, 10)
@@ -494,14 +494,14 @@ func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, req
 	return rec, nil
 }
 
-func (e *chainEnv) waitStateController(nodeIndex int, addr ledgerstate.Address, timeout time.Duration) bool {
+func (e *chainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeout time.Duration) bool {
 	return waitTrue(timeout, func() bool {
 		a, err := e.callGetStateController(nodeIndex)
 		return err == nil && a.Equals(addr)
 	})
 }
 
-func (e *chainEnv) callGetStateController(nodeIndex int) (ledgerstate.Address, error) {
+func (e *chainEnv) callGetStateController(nodeIndex int) (iotago.Address, error) {
 	ret, err := e.chain.Cluster.WaspClient(nodeIndex).CallView(
 		e.chain.ChainID,
 		blocklog.Contract.Hname(),
@@ -516,7 +516,7 @@ func (e *chainEnv) callGetStateController(nodeIndex int) (ledgerstate.Address, e
 	return addr, nil
 }
 
-func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr ledgerstate.Address) bool {
+func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr iotago.Address) bool {
 	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
 		governance.Contract.Hname(),

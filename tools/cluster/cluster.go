@@ -13,14 +13,12 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -48,14 +46,15 @@ func New(name string, config *ClusterConfig) *Cluster {
 	}
 }
 
-func (clu *Cluster) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address, error) {
+func (clu *Cluster) NewKeyPairWithFunds() (*ed25519.KeyPair, iotago.Address, error) {
 	key, addr := testkey.GenKeyAddr()
 	err := clu.GoshimmerClient().RequestFunds(addr)
 	return key, addr, err
 }
 
-func (clu *Cluster) GoshimmerClient() *goshimmer.Client {
-	return goshimmer.NewClient(clu.Config.goshimmerAPIHost(), clu.Config.Goshimmer.FaucetPoWTarget)
+func (clu *Cluster) GoshimmerClient() interface{} {
+	panic("TODO deprecate")
+	// return goshimmer.NewClient(clu.Config.goshimmerAPIHost(), clu.Config.Goshimmer.FaucetPoWTarget)
 }
 
 func (clu *Cluster) TrustAll() error {
@@ -88,7 +87,7 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	return clu.DeployChainWithDKG("Default chain", committee, committee, uint16(quorum))
 }
 
-func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, ledgerstate.Address, error) {
+func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, iotago.Address, error) {
 	cmt := util.MakeRange(0, committeeNodeCount)
 	quorum := uint16((2*len(cmt))/3 + 1)
 
@@ -97,7 +96,7 @@ func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, ledgerstate.Address,
 	return cmt, address, err
 }
 
-func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
+func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (iotago.Address, error) {
 	if threshold == 0 {
 		threshold = (uint16(len(committeeNodes))*2)/3 + 1
 	}
@@ -116,8 +115,8 @@ func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNo
 	return clu.DeployChain(description, allPeers, committeeNodes, quorum, stateAddr)
 }
 
-func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []int, quorum uint16, stateAddr ledgerstate.Address) (*Chain, error) {
-	ownerSeed := seed.NewSeed()
+func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address) (*Chain, error) {
+	ownerSeed := util.NewSeed()
 
 	if len(allPeers) == 0 {
 		allPeers = clu.Config.AllNodes()
@@ -140,14 +139,14 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	}
 
 	chainid, err := apilib.DeployChain(apilib.CreateChainParams{
-		Node:                  clu.GoshimmerClient(),
+		Layer1Client:          clu.GoshimmerClient(),
 		AllAPIHosts:           chain.AllAPIHosts(),
 		AllPeeringHosts:       chain.AllPeeringHosts(),
 		CommitteeAPIHosts:     chain.CommitteeAPIHosts(),
 		CommitteePeeringHosts: chain.CommitteePeeringHosts(),
 		N:                     uint16(len(committeeNodes)),
 		T:                     quorum,
-		OriginatorKeyPair:     chain.OriginatorKeyPair(),
+		OriginatorPrivateKey:  chain.OriginatorKeyPair(),
 		Description:           description,
 		Textout:               os.Stdout,
 		Prefix:                "[cluster] ",
@@ -496,80 +495,82 @@ func (clu *Cluster) StartMessageCounter(expectations map[string]int) (*MessageCo
 	return NewMessageCounter(clu, clu.Config.AllNodes(), expectations)
 }
 
-func (clu *Cluster) PostTransaction(tx *ledgerstate.Transaction) error {
-	fmt.Printf("[cluster] posting request tx: %s\n", tx.ID().String())
-	err := clu.GoshimmerClient().PostTransaction(tx)
-	if err != nil {
-		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.String(), err)
-		return err
-	}
-	if err = clu.GoshimmerClient().WaitForConfirmation(tx.ID()); err != nil {
-		fmt.Printf("[cluster] posting tx: %v\n", err)
-		return err
-	}
-	fmt.Printf("[cluster] request tx confirmed: %s\n", tx.ID().String())
-	return nil
+func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
+	panic("TODO implement")
+	// fmt.Printf("[cluster] posting request tx: %s\n", tx.ID().String())
+	// err := clu.GoshimmerClient().PostTransaction(tx)
+	// if err != nil {
+	// 	fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.String(), err)
+	// 	return err
+	// }
+	// if err = clu.GoshimmerClient().WaitForConfirmation(tx.ID()); err != nil {
+	// 	fmt.Printf("[cluster] posting tx: %v\n", err)
+	// 	return err
+	// }
+	// fmt.Printf("[cluster] request tx confirmed: %s\n", tx.ID().String())
+	// return nil
 }
 
-func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpected uint64, expect colored.Balances, comment ...string) bool {
-	allOuts, err := clu.GoshimmerClient().GetConfirmedOutputs(addr)
-	if err != nil {
-		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
-		return false
-	}
-	byColor, total := colored.OutputBalancesByColor(allOuts)
-	dumpStr, assertionOk := dumpBalancesByColor(byColor, expect)
+func (clu *Cluster) VerifyAddressBalances(addr iotago.Address, totalExpected uint64, expect *iscp.Assets, comment ...string) bool {
+	panic("TODO implement")
+	// allOuts, err := clu.GoshimmerClient().GetConfirmedOutputs(addr)
+	// if err != nil {
+	// 	fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
+	// 	return false
+	// }
+	// dumpStr, assertionOk := dumpAssets(iscp.AssetsFromOutputs(allOuts), expect)
 
-	var totalExpectedStr string
-	if totalExpected == total {
-		totalExpectedStr = fmt.Sprintf("(%d) OK", totalExpected)
-	} else {
-		totalExpectedStr = fmt.Sprintf("(%d) FAIL", totalExpected)
-		assertionOk = false
-	}
-	cmt := ""
-	if len(comment) > 0 {
-		cmt = " (" + comment[0] + ")"
-	}
-	fmt.Printf("[cluster] Inputs of the address %s%s\n      Total tokens: %d %s\n%s\n",
-		addr.Base58(), cmt, total, totalExpectedStr, dumpStr)
+	// var totalExpectedStr string
+	// if totalExpected == total {
+	// 	totalExpectedStr = fmt.Sprintf("(%d) OK", totalExpected)
+	// } else {
+	// 	totalExpectedStr = fmt.Sprintf("(%d) FAIL", totalExpected)
+	// 	assertionOk = false
+	// }
+	// cmt := ""
+	// if len(comment) > 0 {
+	// 	cmt = " (" + comment[0] + ")"
+	// }
+	// fmt.Printf("[cluster] Inputs of the address %s%s\n      Total tokens: %d %s\n%s\n",
+	// 	addr.Bech32(iscp.Bech32Prefix), cmt, total, totalExpectedStr, dumpStr)
 
-	if !assertionOk {
-		fmt.Printf("[cluster] assertion on balances failed\n")
-	}
-	return assertionOk
+	// if !assertionOk {
+	// 	fmt.Printf("[cluster] assertion on balances failed\n")
+	// }
+	// return assertionOk
 }
 
-func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
-	assertionOk := true
-	lst := make([]colored.Color, 0, len(expect))
-	for col := range expect {
-		lst = append(lst, col)
-	}
-	colored.Sort(lst)
-	ret := ""
-	for _, col := range lst {
-		act := actual[col]
-		isOk := "OK"
-		if act != expect[col] {
-			assertionOk = false
-			isOk = "FAIL"
-		}
-		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col, act, expect[col], isOk)
-	}
-	lst = lst[:0]
-	for col := range actual {
-		if _, ok := expect[col]; !ok {
-			lst = append(lst, col)
-		}
-	}
-	if len(lst) == 0 {
-		return ret, assertionOk
-	}
-	colored.Sort(lst)
-	ret += "      Unexpected colors in actual outputs:\n"
-	for _, col := range lst {
-		ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
-	}
-	return ret, assertionOk
+func dumpAssets(actual, expect *iscp.Assets) (string, bool) {
+	panic("TODO implement") // this will probably be simple - just call assets.String()
+	// assertionOk := true
+	// lst := make([]colored.Color, 0, len(expect))
+	// for col := range expect {
+	// 	lst = append(lst, col)
+	// }
+	// colored.Sort(lst)
+	// ret := ""
+	// for _, col := range lst {
+	// 	act := actual[col]
+	// 	isOk := "OK"
+	// 	if act != expect[col] {
+	// 		assertionOk = false
+	// 		isOk = "FAIL"
+	// 	}
+	// 	ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col, act, expect[col], isOk)
+	// }
+	// lst = lst[:0]
+	// for col := range actual {
+	// 	if _, ok := expect[col]; !ok {
+	// 		lst = append(lst, col)
+	// 	}
+	// }
+	// if len(lst) == 0 {
+	// 	return ret, assertionOk
+	// }
+	// colored.Sort(lst)
+	// ret += "      Unexpected colors in actual outputs:\n"
+	// for _, col := range lst {
+	// 	ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
+	// }
+	// return ret, assertionOk
 }

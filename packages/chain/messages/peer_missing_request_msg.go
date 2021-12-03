@@ -6,7 +6,6 @@ package messages
 import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 )
 
 type MissingRequestMsg struct {
@@ -20,7 +19,7 @@ func (msg *MissingRequestMsg) Bytes() []byte {
 func NewMissingRequestMsg(data []byte) (*MissingRequestMsg, error) {
 	msg := &MissingRequestMsg{}
 	var err error
-	msg.Request, err = request.FromMarshalUtil(marshalutil.New(data))
+	msg.Request, err = iscp.RequestDataFromMarshalUtil(marshalutil.New(data))
 	if err != nil {
 		return nil, err
 	}

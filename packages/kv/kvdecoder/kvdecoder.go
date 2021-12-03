@@ -6,7 +6,6 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -164,12 +163,12 @@ func (p *Decoder) MustGetHashValue(key kv.Key, def ...hashing.HashValue) hashing
 	return ret
 }
 
-func (p *Decoder) GetAddress(key kv.Key, def ...ledgerstate.Address) (ledgerstate.Address, error) {
+func (p *Decoder) GetAddress(key kv.Key, def ...iotago.Address) (iotago.Address, error) {
 	v, err := codec.DecodeAddress(p.kv.MustGet(key), def...)
 	return v, p.wrapError(key, err)
 }
 
-func (p *Decoder) MustGetAddress(key kv.Key, def ...ledgerstate.Address) ledgerstate.Address {
+func (p *Decoder) MustGetAddress(key kv.Key, def ...iotago.Address) iotago.Address {
 	ret, err := p.GetAddress(key, def...)
 	p.check(err)
 	return ret

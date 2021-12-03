@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 )
@@ -24,7 +24,7 @@ func RunBenchmarkSync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams, 
 
 // RunBenchmarkAsync processes requests asynchronously, producing 1 block per many requests
 func RunBenchmarkAsync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams, keyPair *ed25519.KeyPair) {
-	txs := make([]*ledgerstate.Transaction, b.N)
+	txs := make([]*iotago.Transaction, b.N)
 	for i := 0; i < b.N; i++ {
 		var err error
 		txs[i], _, err = chain.RequestFromParamsToLedger(reqs[i], nil)

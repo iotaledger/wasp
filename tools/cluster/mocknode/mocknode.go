@@ -1,16 +1,15 @@
 package mocknode
 
 import (
-	"github.com/iotaledger/goshimmer/packages/txstream/server"
-	"github.com/iotaledger/goshimmer/packages/txstream/utxodbledger"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/txstream"
 )
 
 // MockNode provides the bare minimum to emulate a Goshimmer node in a wasp-cluster
 // environment, namely the txstream plugin + a few web api endpoints.
 type MockNode struct {
-	Ledger         *utxodbledger.UtxoDBLedger
+	Ledger         *txstream.UtxoDBLedger
 	shutdownSignal chan struct{}
 	log            *logger.Logger
 }
@@ -22,12 +21,12 @@ func Start(txStreamBindAddress, webapiBindAddress string) *MockNode {
 	log.Infof("starting mocked goshimmer node...")
 	m := &MockNode{
 		log:            log,
-		Ledger:         utxodbledger.New(log),
+		Ledger:         txstream.New(log),
 		shutdownSignal: make(chan struct{}),
 	}
 
 	// start the txstream server
-	err := server.Listen(m.Ledger, txStreamBindAddress, m.log, m.shutdownSignal)
+	err := txstream.ServerListen(m.Ledger, txStreamBindAddress, m.log, m.shutdownSignal)
 	if err != nil {
 		panic(err)
 	}

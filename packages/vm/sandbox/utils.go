@@ -1,9 +1,9 @@
 package sandbox
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/bls"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/gas"
@@ -88,13 +88,10 @@ func (u utilImpl) ValidSignature(data []byte, pubKey []byte, signature []byte) b
 	return pk.VerifySignature(data, sig)
 }
 
-func (u utilImpl) AddressFromPublicKey(pubKey []byte) (ledgerstate.Address, error) {
+func (u utilImpl) AddressFromPublicKey(pubKey []byte) (iotago.Address, error) {
 	u.gas.Burn(gas.UtilsED25519AddressFromPublicKey)
-	pk, _, err := ed25519.PublicKeyFromBytes(pubKey)
-	if err != nil {
-		return nil, xerrors.Errorf("ED255519Util: wrong public key bytes. Err: %v", err)
-	}
-	return ledgerstate.NewED25519Address(pk), nil
+	addr := iotago.Ed25519AddressFromPubKey(pubKey)
+	return &addr, nil
 }
 
 // iscp.BLS interface
@@ -110,13 +107,14 @@ func (u utilImplBLS) ValidSignature(data []byte, pubKeyBin []byte, signature []b
 	return bdn.Verify(suite, pubKey, data, signature) == nil
 }
 
-func (u utilImplBLS) AddressFromPublicKey(pubKeyBin []byte) (ledgerstate.Address, error) {
-	u.gas.Burn(gas.UtilsBLSAddressFromPublicKey)
-	pubKey := suite.G2().Point()
-	if err := pubKey.UnmarshalBinary(pubKeyBin); err != nil {
-		return nil, xerrors.Errorf("BLSUtil: wrong public key bytes")
-	}
-	return ledgerstate.NewBLSAddress(pubKeyBin), nil
+func (u utilImplBLS) AddressFromPublicKey(pubKeyBin []byte) (iotago.Address, error) {
+	panic("deprecate BLS")
+	// u.gas.Burn(gas.UtilsBLSAddressFromPublicKey)
+	// pubKey := suite.G2().Point()
+	// if err := pubKey.UnmarshalBinary(pubKeyBin); err != nil {
+	// 	return nil, xerrors.Errorf("BLSUtil: wrong public key bytes")
+	// }
+	// return iotago.NewBLSAddress(pubKeyBin), nil
 }
 
 func (u utilImplBLS) AggregateBLSSignatures(pubKeysBin [][]byte, sigsBin [][]byte) ([]byte, []byte, error) {

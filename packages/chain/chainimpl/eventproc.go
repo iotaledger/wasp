@@ -6,11 +6,11 @@ package chainimpl
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
 )
@@ -90,7 +90,7 @@ func (c *chainObj) handleDismissChain(msg DismissChainMsg) {
 	c.Dismiss(msg.Reason)
 }
 
-func (c *chainObj) EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, timestamp time.Time) {
+func (c *chainObj) EnqueueLedgerState(chainOutput *iotago.AliasOutput, timestamp time.Time) {
 	c.stateMsgPipe.In() <- &messages.StateMsg{
 		ChainOutput: chainOutput,
 		Timestamp:   timestamp,
@@ -147,7 +147,7 @@ func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn
 	c.log.Debugf("handleOffLedgerRequestMsg message added to mempool and broadcasted: reqID: %s", msg.Req.ID().Base58())
 }
 
-func (c *chainObj) isRequestValid(req *request.OffLedger) bool {
+func (c *chainObj) isRequestValid(req *iscp.OffLedgerRequestData) bool {
 	return req.ChainID().Equals(c.ID()) && req.VerifySignature()
 }
 

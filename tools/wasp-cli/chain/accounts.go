@@ -1,18 +1,13 @@
 package chain
 
 import (
-	"fmt"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/spf13/cobra"
-
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/spf13/cobra"
 )
 
 var listAccountsCmd = &cobra.Command{
@@ -23,7 +18,7 @@ var listAccountsCmd = &cobra.Command{
 		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewAccounts.Name, nil)
 		log.Check(err)
 
-		log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID().Base58())
+		log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID().String())
 
 		header := []string{"agentid"}
 		rows := make([][]string, len(ret))
@@ -43,28 +38,29 @@ var balanceCmd = &cobra.Command{
 	Short: "Show balance of on-chain account",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		agentID, err := iscp.NewAgentIDFromString(args[0])
-		log.Check(err)
+		panic("TODO implement")
+		// agentID, err := iscp.NewAgentIDFromString(args[0])
+		// log.Check(err)
 
-		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewBalance.Name,
-			dict.Dict{
-				accounts.ParamAgentID: agentID.Bytes(),
-			})
-		log.Check(err)
+		// ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewBalance.Name,
+		// 	dict.Dict{
+		// 		accounts.ParamAgentID: agentID.Bytes(),
+		// 	})
+		// log.Check(err)
 
-		header := []string{"color", "amount"}
-		rows := make([][]string, len(ret))
-		i := 0
-		for k, v := range ret {
-			color, _, err := ledgerstate.ColorFromBytes([]byte(k))
-			log.Check(err)
-			bal, err := codec.DecodeUint64(v)
-			log.Check(err)
+		// header := []string{"color", "amount"}
+		// rows := make([][]string, len(ret))
+		// i := 0
+		// for k, v := range ret {
+		// 	color, _, err := iotago.ColorFromBytes([]byte(k))
+		// 	log.Check(err)
+		// 	bal, err := codec.DecodeUint64(v)
+		// 	log.Check(err)
 
-			rows[i] = []string{color.String(), fmt.Sprintf("%d", bal)}
-			i++
-		}
-		log.PrintTable(header, rows)
+		// 	rows[i] = []string{color.String(), fmt.Sprintf("%d", bal)}
+		// 	i++
+		// }
+		// log.PrintTable(header, rows)
 	},
 }
 
@@ -73,7 +69,7 @@ var depositCmd = &cobra.Command{
 	Short: "Deposit funds into sender's on-chain account",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
+		util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
 			return SCClient(accounts.Contract.Hname()).PostRequest(
 				accounts.FuncDeposit.Name,
 				chainclient.PostRequestParams{

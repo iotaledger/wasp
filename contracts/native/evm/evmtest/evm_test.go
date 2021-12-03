@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmflavors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/solo/solobench"
@@ -170,7 +169,7 @@ func TestOwner(t *testing.T) {
 		_, err = evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
 				WithIotas(100000),
-			evmChain.soloChain.OriginatorKeyPair,
+			evmChain.soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
 
@@ -224,7 +223,7 @@ func TestGasPerIotas(t *testing.T) {
 		require.Equal(t, evm.DefaultGasPerIota, evmChain.getGasPerIotas())
 
 		// current owner is able to set a new gasPerIotas
-		err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: evmChain.soloChain.OriginatorKeyPair})
+		err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: evmChain.soloChain.OriginatorPrivateKey})
 		require.NoError(t, err)
 		require.Equal(t, newGasPerIota, evmChain.getGasPerIotas())
 
@@ -251,8 +250,8 @@ func TestGasLimit(t *testing.T) {
 		// send again with same gas limit but not enough iotas
 		_, err = storage.store(123, ethCallOptions{gasLimit: gas, iota: iotaCallOptions{transfer: (gas+1)/gasPerIotas - 1}})
 		// TODO: gas is currently not being charged
-		//require.Error(t, err)
-		//require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.Error())
+		// require.Error(t, err)
+		// require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.Error())
 		require.NoError(t, err)
 
 		// send again with gas limit not enough for transaction

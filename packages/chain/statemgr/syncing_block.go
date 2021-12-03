@@ -6,8 +6,8 @@ package statemgr
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
@@ -134,7 +134,7 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	return true, candidate
 }
 
-func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) bool {
+func (syncsT *syncingBlocks) approveBlockCandidates(output *iotago.AliasOutput) bool {
 	if output == nil {
 		syncsT.log.Debugf("approveBlockCandidates failed, provided output is nil")
 		return false

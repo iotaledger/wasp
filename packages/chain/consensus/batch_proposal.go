@@ -7,9 +7,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/marshalutil"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
@@ -19,7 +19,7 @@ import (
 
 type BatchProposal struct {
 	ValidatorIndex          uint16
-	StateOutputID           ledgerstate.OutputID
+	StateOutputID           iotago.OutputID
 	RequestIDs              []iscp.RequestID
 	RequestHashes           [][32]byte
 	Timestamp               time.Time
@@ -50,7 +50,8 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	ret.StateOutputID, err = ledgerstate.OutputIDFromMarshalUtil(mu)
+	panic("TODO implement equivalent of IDFromMarshalUtil for iota.go")
+	ret.StateOutputID, err = iotago.OutputIDFromMarshalUtil(mu)
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
@@ -189,7 +190,7 @@ func (c *consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 	}, nil
 }
 
-const keyLen = ledgerstate.OutputIDLength + 32
+const keyLen = iotago.OutputIDLength + 32
 
 // calcIntersection a simple algorithm to calculate acceptable intersection. It simply takes all requests
 // seen by 1/3+1 node. The assumptions is there can be at max 1/3 of bizantine nodes, so if something is reported

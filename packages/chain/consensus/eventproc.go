@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-func (c *consensus) EnqueueStateTransitionMsg(virtualState state.VirtualStateAccess, stateOutput *ledgerstate.AliasOutput, stateTimestamp time.Time) {
+func (c *consensus) EnqueueStateTransitionMsg(virtualState state.VirtualStateAccess, stateOutput *iotago.AliasOutput, stateTimestamp time.Time) {
 	c.eventStateTransitionMsgPipe.In() <- &messages.StateTransitionMsg{
 		State:          virtualState,
 		StateOutput:    stateOutput,
@@ -52,7 +52,7 @@ func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn)
 	c.takeAction()
 }
 
-func (c *consensus) EnqueueInclusionsStateMsg(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
+func (c *consensus) EnqueueInclusionsStateMsg(txID iotago.TransactionID, inclusionState iotago.InclusionState) {
 	c.eventInclusionStateMsgPipe.In() <- &messages.InclusionStateMsg{
 		TxID:  txID,
 		State: inclusionState,

@@ -1,17 +1,16 @@
 package wasmsolo
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 // SoloConvertor converts ISCP data types to WasmLib data types
 type SoloConvertor struct{}
 
-func (cvt SoloConvertor) ScAddress(address ledgerstate.Address) wasmlib.ScAddress {
+func (cvt SoloConvertor) ScAddress(address iotago.Address) wasmlib.ScAddress {
 	return wasmlib.NewScAddressFromBytes(address.Bytes())
 }
 
@@ -21,10 +20,6 @@ func (cvt SoloConvertor) ScAgentID(agentID *iscp.AgentID) wasmlib.ScAgentID {
 
 func (cvt SoloConvertor) ScChainID(chainID *iscp.ChainID) wasmlib.ScChainID {
 	return wasmlib.NewScChainIDFromBytes(chainID.Bytes())
-}
-
-func (cvt SoloConvertor) ScColor(color colored.Color) wasmlib.ScColor {
-	return wasmlib.NewScColorFromBytes(color.Bytes())
 }
 
 func (cvt SoloConvertor) ScHash(hash hashing.HashValue) wasmlib.ScHash {

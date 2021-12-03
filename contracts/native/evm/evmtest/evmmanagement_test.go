@@ -48,14 +48,14 @@ func TestRequestGasFees(t *testing.T) {
 		_, err = soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, managerAgentID).
 				WithIotas(1),
-			soloChain.OriginatorKeyPair,
+			soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
 
 		// claim ownership
 		_, err = soloChain.PostRequestSync(
 			solo.NewCallParams(evmChainMgmtContract.Name, mgmtFuncClaimOwnership.Name).WithIotas(1),
-			soloChain.OriginatorKeyPair,
+			soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
 	})

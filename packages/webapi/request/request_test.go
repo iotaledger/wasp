@@ -11,10 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	util "github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
@@ -82,7 +79,7 @@ func hasRequestBeenProcessedMocked(ret bool) hasRequestBeenProcessedFn {
 func newMockedAPI(t *testing.T) *offLedgerReqAPI {
 	return &offLedgerReqAPI{
 		getChain:                createMockedGetChain(t),
-		getAccountBalance:       getAccountBalanceMocked,
+		getAccountAssets:        getAccountBalanceMocked,
 		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(false),
 		requestsCache:           expiringcache.New(10 * time.Second),
 	}

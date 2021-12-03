@@ -8,15 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
@@ -42,12 +39,12 @@ type SoloContext struct {
 	creator     *SoloAgent
 	Err         error
 	Hprog       hashing.HashValue
-	keyPair     *ed25519.KeyPair
+	privateKey  *ed25519.PrivateKey
 	isRequest   bool
 	mint        uint64
 	offLedger   bool
 	scName      string
-	Tx          *ledgerstate.Transaction
+	Tx          *iotago.Transaction
 	wc          *wasmproc.WasmContext
 	wasmHostOld wasmlib.ScHost
 }
@@ -97,15 +94,6 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	init ...*wasmlib.ScInitFunc) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
 
-	var keyPair *ed25519.KeyPair
-	if creator != nil {
-		keyPair = creator.Pair
-	}
-	ctx.upload(keyPair)
-	if ctx.Err != nil {
-		return ctx
-	}
-
 	var params []interface{}
 	if len(init) != 0 {
 		params = init[0].Params()
@@ -118,7 +106,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	//if *GoWasmEdge && wasmproc.GoWasmVM == nil {
 	//	wasmproc.GoWasmVM = wasmhost.NewWasmEdgeVM
 	//}
-	ctx.Err = ctx.Chain.DeployContract(keyPair, ctx.scName, ctx.Hprog, params...)
+	ctx.Err = ctx.Chain.DeployContract(&creator.PrivateKey, ctx.scName, ctx.Hprog, params...)
 	if *GoDebug {
 		// just in case deploy failed we don't want to leave this around
 		wasmproc.GoWasmVM = nil
@@ -144,15 +132,11 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	ctx.Chain.Env.WithNativeContract(proc)
 	ctx.Hprog = proc.Contract.ProgramHash
 
-	var keyPair *ed25519.KeyPair
-	if creator != nil {
-		keyPair = creator.Pair
-	}
 	var params []interface{}
 	if len(init) != 0 {
 		params = init[0].Params()
 	}
-	ctx.Err = ctx.Chain.DeployContract(keyPair, scName, ctx.Hprog, params...)
+	ctx.Err = ctx.Chain.DeployContract(&creator.PrivateKey, scName, ctx.Hprog, params...)
 	if ctx.Err != nil {
 		return ctx
 	}
@@ -190,10 +174,10 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 // Account returns a SoloAgent for the smart contract associated with ctx
 func (ctx *SoloContext) Account() *SoloAgent {
 	return &SoloAgent{
-		Env:     ctx.Chain.Env,
-		Pair:    nil,
-		address: ctx.Chain.ChainID.AsAddress(),
-		hname:   iscp.Hn(ctx.scName),
+		Env:        ctx.Chain.Env,
+		PrivateKey: nil,
+		address:    ctx.Chain.ChainID.AsAddress(),
+		hname:      iscp.Hn(ctx.scName),
 	}
 }
 
@@ -210,19 +194,20 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 // The optional color parameter can be used to retrieve the balance for the specific color.
 // When color is omitted, wasmlib.IOTA is assumed.
 func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmlib.ScColor) int64 {
-	account := iscp.NewAgentID(agent.address, agent.hname)
-	balances := ctx.Chain.GetAccountBalance(account)
-	switch len(color) {
-	case 0:
-		return int64(balances.Get(colored.IOTA))
-	case 1:
-		col, err := colored.ColorFromBytes(color[0].Bytes())
-		require.NoError(ctx.Chain.Env.T, err)
-		return int64(balances.Get(col))
-	default:
-		require.Fail(ctx.Chain.Env.T, "too many color arguments")
-		return 0
-	}
+	panic("TODO implement - scColor needs to go")
+	// account := iscp.NewAgentID(agent.address, agent.hname)
+	// balances := ctx.Chain.GetAccountBalance(account)
+	// switch len(color) {
+	// case 0:
+	// 	return int64(balances.Get(colored.IOTA))
+	// case 1:
+	// 	col, err := colored.ColorFromBytes(color[0].Bytes())
+	// 	require.NoError(ctx.Chain.Env.T, err)
+	// 	return int64(balances.Get(col))
+	// default:
+	// 	require.Fail(ctx.Chain.Env.T, "too many color arguments")
+	// 	return 0
+	// }
 }
 
 func (ctx *SoloContext) ChainID() wasmlib.ScChainID {
@@ -282,19 +267,20 @@ func (ctx *SoloContext) InitViewCallContext() {
 
 // Minted returns the color and amount of newly minted tokens
 func (ctx *SoloContext) Minted() (wasmlib.ScColor, uint64) {
-	t := ctx.Chain.Env.T
-	t.Logf("minting request tx: %s", ctx.Tx.ID().Base58())
-	mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(ctx.Tx))
-	require.Len(t, mintedAmounts, 1)
-	var mintedColor wasmlib.ScColor
-	var mintedAmount uint64
-	for c := range mintedAmounts {
-		mintedColor = ctx.Convertor.ScColor(c)
-		mintedAmount = mintedAmounts[c]
-		break
-	}
-	t.Logf("Minted: amount = %d color = %s", mintedAmount, mintedColor.String())
-	return mintedColor, mintedAmount
+	panic("TODO implement")
+	// t := ctx.Chain.Env.T
+	// t.Logf("minting request tx: %s", ctx.Tx.ID().Base58())
+	// mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(ctx.Tx))
+	// require.Len(t, mintedAmounts, 1)
+	// var mintedColor wasmlib.ScColor
+	// var mintedAmount uint64
+	// for c := range mintedAmounts {
+	// 	mintedColor = ctx.Convertor.ScColor(c)
+	// 	mintedAmount = mintedAmounts[c]
+	// 	break
+	// }
+	// t.Logf("Minted: amount = %d color = %s", mintedAmount, mintedColor.String())
+	// return mintedColor, mintedAmount
 }
 
 // NewSoloAgent creates a new SoloAgent with solo.Saldo tokens in its address
@@ -305,19 +291,19 @@ func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
 // OffLedger tells SoloContext to Post() the next request off-ledger
 func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncCallContext {
 	ctx.offLedger = true
-	ctx.keyPair = agent.Pair
+	ctx.privateKey = &agent.PrivateKey
 	return ctx
 }
 
 // Originator returns a SoloAgent representing the chain originator
 func (ctx *SoloContext) Originator() *SoloAgent {
 	c := ctx.Chain
-	return &SoloAgent{Env: c.Env, Pair: c.OriginatorKeyPair, address: c.OriginatorAddress}
+	return &SoloAgent{Env: c.Env, PrivateKey: c.OriginatorPrivateKey.PrivateKey[:], address: c.OriginatorAddress}
 }
 
 // Sign is used to force a different agent for signing a Post() request
 func (ctx *SoloContext) Sign(agent *SoloAgent, mint ...uint64) wasmlib.ScFuncCallContext {
-	ctx.keyPair = agent.Pair
+	ctx.privateKey = &agent.PrivateKey
 	if len(mint) != 0 {
 		ctx.mint = mint[0]
 	}
@@ -335,45 +321,46 @@ func (ctx *SoloContext) Transfer() wasmlib.ScTransfers {
 	return wasmlib.NewScTransfers()
 }
 
-// TODO can we make upload work through an off-ledger request instead?
-// that way we can get rid of all the extra token code when checking balances
+// TODO can this be deleted? uploads are already using offledger requests
+// // TODO can we make upload work through an off-ledger request instead?
+// // that way we can get rid of all the extra token code when checking balances
 
-func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
-	if *GoDebug {
-		ctx.Hprog, ctx.Err = ctx.Chain.UploadWasm(keyPair, []byte("go:"+ctx.scName))
-		return
-	}
+// func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
+// 	if *GoDebug {
+// 		ctx.Hprog, ctx.Err = ctx.Chain.UploadWasm(keyPair, []byte("go:"+ctx.scName))
+// 		return
+// 	}
 
-	// start with file in test folder
-	wasmFile := ctx.scName + "_bg.wasm"
+// 	// start with file in test folder
+// 	wasmFile := ctx.scName + "_bg.wasm"
 
-	// try (newer?) Rust Wasm file first
-	rsFile := "../pkg/" + wasmFile
-	exists, _ := util.ExistsFilePath(rsFile)
-	if exists {
-		wasmFile = rsFile
-	}
+// 	// try (newer?) Rust Wasm file first
+// 	rsFile := "../pkg/" + wasmFile
+// 	exists, _ := util.ExistsFilePath(rsFile)
+// 	if exists {
+// 		wasmFile = rsFile
+// 	}
 
-	// try Go Wasm file?
-	if !exists || *GoWasm {
-		goFile := "../go/pkg/" + ctx.scName + "_go.wasm"
-		exists, _ = util.ExistsFilePath(goFile)
-		if exists {
-			wasmFile = goFile
-		}
-	}
+// 	// try Go Wasm file?
+// 	if !exists || *GoWasm {
+// 		goFile := "../go/pkg/" + ctx.scName + "_go.wasm"
+// 		exists, _ = util.ExistsFilePath(goFile)
+// 		if exists {
+// 			wasmFile = goFile
+// 		}
+// 	}
 
-	// try TypeScript Wasm file?
-	if !exists || *TsWasm {
-		tsFile := "../ts/pkg/" + ctx.scName + "_ts.wasm"
-		exists, _ = util.ExistsFilePath(tsFile)
-		if exists {
-			wasmFile = tsFile
-		}
-	}
+// 	// try TypeScript Wasm file?
+// 	if !exists || *TsWasm {
+// 		tsFile := "../ts/pkg/" + ctx.scName + "_ts.wasm"
+// 		exists, _ = util.ExistsFilePath(tsFile)
+// 		if exists {
+// 			wasmFile = tsFile
+// 		}
+// 	}
 
-	ctx.Hprog, ctx.Err = ctx.Chain.UploadWasmFromFile(keyPair, wasmFile)
-}
+// 	ctx.Hprog, ctx.Err = ctx.Chain.UploadWasmFromFile(keyPair, wasmFile)
+// }
 
 // WaitForPendingRequests waits for expectedRequests pending requests to be processed.
 // a negative value indicates the absolute amount of requests

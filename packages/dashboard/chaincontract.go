@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -105,7 +104,7 @@ type ChainContractTemplateParams struct {
 	ContractRecord *root.ContractRecord
 	OwnerFee       uint64
 	ValidatorFee   uint64
-	FeeColor       colored.Color
+	FeeColor       []byte
 	Log            []string
 	RootInfo       RootInfo
 }

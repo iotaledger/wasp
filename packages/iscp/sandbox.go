@@ -6,8 +6,6 @@ package iscp
 import (
 	"math/big"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -129,11 +127,11 @@ type Base58 interface {
 
 type ED25519 interface {
 	ValidSignature(data []byte, pubKey []byte, signature []byte) bool
-	AddressFromPublicKey(pubKey []byte) (ledgerstate.Address, error)
+	AddressFromPublicKey(pubKey []byte) (iotago.Address, error)
 }
 
 type BLS interface {
 	ValidSignature(data []byte, pubKey []byte, signature []byte) bool
-	AddressFromPublicKey(pubKey []byte) (ledgerstate.Address, error)
+	AddressFromPublicKey(pubKey []byte) (iotago.Address, error)
 	AggregateBLSSignatures(pubKeysBin [][]byte, sigsBin [][]byte) ([]byte, []byte, error)
 }

@@ -1,17 +1,15 @@
 package testchain
 
-import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-)
+import iotago "github.com/iotaledger/iota.go/v3"
 
 type MockedNodeConn struct {
 	id                              string
-	onPullBacklog                   func(addr *ledgerstate.AliasAddress)
-	onPullState                     func(addr *ledgerstate.AliasAddress)
-	onPullConfirmedTransaction      func(addr ledgerstate.Address, txid ledgerstate.TransactionID)
-	onPullTransactionInclusionState func(addr ledgerstate.Address, txid ledgerstate.TransactionID)
-	onPullConfirmedOutput           func(addr ledgerstate.Address, outputID ledgerstate.OutputID)
-	onPostTransaction               func(tx *ledgerstate.Transaction)
+	onPullBacklog                   func(addr *iotago.AliasAddress)
+	onPullState                     func(addr *iotago.AliasAddress)
+	onPullConfirmedTransaction      func(addr iotago.Address, txid iotago.TransactionID)
+	onPullTransactionInclusionState func(addr iotago.Address, txid iotago.TransactionID)
+	onPullConfirmedOutput           func(addr iotago.Address, outputID iotago.OutputID)
+	onPostTransaction               func(tx *iotago.Transaction)
 }
 
 func NewMockedNodeConnection(id string) *MockedNodeConn {
@@ -22,50 +20,50 @@ func (m *MockedNodeConn) ID() string {
 	return m.id
 }
 
-func (m *MockedNodeConn) PullBacklog(addr *ledgerstate.AliasAddress) {
+func (m *MockedNodeConn) PullBacklog(addr *iotago.AliasAddress) {
 	m.onPullBacklog(addr)
 }
 
-func (m *MockedNodeConn) PullState(addr *ledgerstate.AliasAddress) {
+func (m *MockedNodeConn) PullState(addr *iotago.AliasAddress) {
 	m.onPullState(addr)
 }
 
-func (m *MockedNodeConn) PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
+func (m *MockedNodeConn) PullConfirmedTransaction(addr iotago.Address, txid iotago.TransactionID) {
 	m.onPullConfirmedTransaction(addr, txid)
 }
 
-func (m *MockedNodeConn) PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
+func (m *MockedNodeConn) PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID) {
 	m.onPullTransactionInclusionState(addr, txid)
 }
 
-func (m *MockedNodeConn) PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
+func (m *MockedNodeConn) PullConfirmedOutput(addr iotago.Address, outputID iotago.OutputID) {
 	m.onPullConfirmedOutput(addr, outputID)
 }
 
-func (m *MockedNodeConn) PostTransaction(tx *ledgerstate.Transaction) {
+func (m *MockedNodeConn) PostTransaction(tx *iotago.Transaction) {
 	m.onPostTransaction(tx)
 }
 
-func (m *MockedNodeConn) OnPullBacklog(f func(addr *ledgerstate.AliasAddress)) {
+func (m *MockedNodeConn) OnPullBacklog(f func(addr *iotago.AliasAddress)) {
 	m.onPullBacklog = f
 }
 
-func (m *MockedNodeConn) OnPullState(f func(addr *ledgerstate.AliasAddress)) {
+func (m *MockedNodeConn) OnPullState(f func(addr *iotago.AliasAddress)) {
 	m.onPullState = f
 }
 
-func (m *MockedNodeConn) OnPullConfirmedTransaction(f func(addr ledgerstate.Address, txid ledgerstate.TransactionID)) {
+func (m *MockedNodeConn) OnPullConfirmedTransaction(f func(addr iotago.Address, txid iotago.TransactionID)) {
 	m.onPullConfirmedTransaction = f
 }
 
-func (m *MockedNodeConn) OnPullTransactionInclusionState(f func(addr ledgerstate.Address, txid ledgerstate.TransactionID)) {
+func (m *MockedNodeConn) OnPullTransactionInclusionState(f func(addr iotago.Address, txid iotago.TransactionID)) {
 	m.onPullTransactionInclusionState = f
 }
 
-func (m *MockedNodeConn) OnPullConfirmedOutput(f func(addr ledgerstate.Address, outputID ledgerstate.OutputID)) {
+func (m *MockedNodeConn) OnPullConfirmedOutput(f func(addr iotago.Address, outputID iotago.OutputID)) {
 	m.onPullConfirmedOutput = f
 }
 
-func (m *MockedNodeConn) OnPostTransaction(f func(tx *ledgerstate.Transaction)) {
+func (m *MockedNodeConn) OnPostTransaction(f func(tx *iotago.Transaction)) {
 	m.onPostTransaction = f
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -120,7 +119,7 @@ func (d *Dashboard) fetchAccounts(chainID *iscp.ChainID) ([]*iscp.AgentID, error
 	return ret, nil
 }
 
-func (d *Dashboard) fetchTotalAssets(chainID *iscp.ChainID) (colored.Balances, error) {
+func (d *Dashboard) fetchTotalAssets(chainID *iscp.ChainID) (*iscp.Assets, error) {
 	bal, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.FuncViewTotalAssets.Name, nil)
 	if err != nil {
 		return nil, err
@@ -150,7 +149,7 @@ type ChainTemplateParams struct {
 	LatestBlock *LatestBlock
 	RootInfo    RootInfo
 	Accounts    []*iscp.AgentID
-	TotalAssets colored.Balances
+	TotalAssets *iscp.Assets
 	Blobs       map[hashing.HashValue]uint32
 	Committee   *chain.CommitteeInfo
 }

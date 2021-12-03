@@ -38,7 +38,7 @@ type MockedEnv struct {
 	Log               *logger.Logger
 	Ledger            *utxodb.UtxoDB
 	OriginatorKeyPair *ed25519.KeyPair
-	OriginatorAddress ledgerstate.Address
+	OriginatorAddress iotago.Address
 	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
@@ -171,7 +171,7 @@ func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *messa
 	}
 }
 
-func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, outputID ledgerstate.OutputID) ledgerstate.Output {
+func (env *MockedEnv) PullConfirmedOutputFromLedger(addr iotago.Address, outputID ledgerstate.OutputID) ledgerstate.Output {
 	env.Log.Debugf("MockedEnv.PullConfirmedOutputFromLedger for address %v output %v", addr.Base58, iscp.OID(outputID))
 	tx, foundTx := env.Ledger.GetTransaction(outputID.TransactionID())
 	require.True(env.T, foundTx)
@@ -252,7 +252,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		log.Debugf("MockedNode.OnPullState call EventStateMsg: chain output %s", iscp.OID(response.ChainOutput.ID()))
 		go ret.StateManager.EnqueueStateMsg(response)
 	})
-	ret.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
+	ret.NodeConn.OnPullConfirmedOutput(func(addr iotago.Address, outputID ledgerstate.OutputID) {
 		log.Debugf("MockedNode.OnPullConfirmedOutput %v", iscp.OID(outputID))
 		response := env.PullConfirmedOutputFromLedger(addr, outputID)
 		log.Debugf("MockedNode.OnPullConfirmedOutput call EventOutputMsg")

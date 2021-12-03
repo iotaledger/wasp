@@ -5,13 +5,11 @@ package iscpcontract
 
 import (
 	_ "embed"
-	"fmt"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
@@ -41,29 +39,33 @@ var (
 
 // ISCPAddress maps to the equally-named struct in iscp.sol
 type ISCPAddress struct {
+	// TODO this can be represented as a an []byte array, no need for the 32+1 thing
 	TypeID [1]byte
 	Digest [32]byte
 }
 
 func ChainIDToISCPAddress(chainID *iscp.ChainID) (ret ISCPAddress) {
-	ret.TypeID[0] = byte(chainID.AliasAddress.Type())
-	copy(ret.Digest[:], chainID.AliasAddress.Digest())
-	return ret
+	panic("TODO implement")
+
+	// ret.TypeID[0] = byte(chainID.AliasAddress.Type())
+	// copy(ret.Digest[:], chainID.AliasAddress.Digest())
+	// return ret
 }
 
 func ChainIDFromISCPAddress(a ISCPAddress) *iscp.ChainID {
-	if a.TypeID[0] != byte(ledgerstate.AliasAddressType) {
-		panic(fmt.Sprintf("expected type id %d, got %d", ledgerstate.AliasAddressType, a.TypeID[0]))
-	}
-	var addressBytes []byte
-	addressBytes = append(addressBytes, a.TypeID[0])
-	addressBytes = append(addressBytes, a.Digest[:]...)
-	chainID, err := iscp.ChainIDFromBytes(addressBytes)
-	if err != nil {
-		// should not happen
-		panic(err.Error())
-	}
-	return chainID
+	panic("TODO implement")
+	// if a.TypeID[0] != byte(ledgerstate.AliasAddressType) {
+	// 	panic(fmt.Sprintf("expected type id %d, got %d", ledgerstate.AliasAddressType, a.TypeID[0]))
+	// }
+	// var addressBytes []byte
+	// addressBytes = append(addressBytes, a.TypeID[0])
+	// addressBytes = append(addressBytes, a.Digest[:]...)
+	// chainID, err := iscp.ChainIDFromBytes(addressBytes)
+	// if err != nil {
+	// 	// should not happen
+	// 	panic(err.Error())
+	// }
+	// return chainID
 }
 
 // DeployOnGenesis sets up the initial state of the ISCP EVM contract

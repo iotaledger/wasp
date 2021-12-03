@@ -4,13 +4,13 @@
 package chain
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmchain"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/evm/evmcli"
@@ -54,11 +54,11 @@ func initEVMDeploy(evmCmd *cobra.Command) {
 
 			if blockTime > 0 {
 				log.Printf("Setting block time to %ds...\n", blockTime)
-				util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
+				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
 					return SCClient(deployParams.EVMFlavor().Hname()).PostRequest(
 						evm.FuncSetBlockTime.Name,
 						chainclient.PostRequestParams{
-							Transfer: colored.NewBalancesForIotas(1),
+							Transfer: iscp.NewAssets(1, nil),
 							Args: dict.Dict{
 								evm.FieldBlockTime: codec.EncodeUint32(blockTime),
 							},

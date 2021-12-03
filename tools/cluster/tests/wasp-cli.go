@@ -12,7 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
@@ -113,10 +112,10 @@ func (w *WaspCLITest) CommitteeConfig() (string, string) {
 	return "--committee=" + strings.Join(committee, ","), fmt.Sprintf("--quorum=%d", quorum)
 }
 
-func (w *WaspCLITest) Address() ledgerstate.Address {
+func (w *WaspCLITest) Address() iotago.Address {
 	out := w.Run("address")
 	s := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
-	addr, err := ledgerstate.AddressFromBase58EncodedString(s)
+	addr, err := iotago.AddressFromBase58EncodedString(s)
 	require.NoError(w.T, err)
 	return addr
 }

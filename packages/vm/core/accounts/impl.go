@@ -152,7 +152,7 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	amount := par.MustGetUint64(ParamWithdrawAmount, 0)
 
 	// default is harvest specified amount of iotas
-	assetID := par.MustGetBytes(ParamWithdrawAssetID, iscp.IotaTokenID)
+	assetID := par.MustGetBytes(ParamWithdrawAssetID, iscp.IotaAssetID)
 
 	sourceAccount := commonaccount.Get(ctx.ChainID())
 	balance, ok := GetAccountAssets(state, sourceAccount)

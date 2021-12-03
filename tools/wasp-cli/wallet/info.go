@@ -1,8 +1,8 @@
 package wallet
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -40,31 +40,28 @@ var balanceCmd = &cobra.Command{
 		if log.VerboseFlag {
 			total = printOutputsByOutputID(outs)
 		} else {
-			total = printOutputsByColor(outs)
+			total = printOutputsByAsset(outs)
 		}
 		log.Printf("    ------\n")
 		log.Printf("    Total: %d\n", total)
 	},
 }
 
-func printOutputsByColor(outs []ledgerstate.Output) uint64 {
-	byColor, total := colored.OutputBalancesByColor(outs)
-	for col, val := range byColor {
-		log.Printf("    %s: %d\n", col.String(), val)
-	}
-	return total
+func printOutputsByAsset(outs []iotago.Output) uint64 {
+	panic("TODO implement")
+	// byColor, total := colored.OutputBalancesByColor(outs)
+	// for col, val := range byColor {
+	// 	log.Printf("    %s: %d\n", col.String(), val)
+	// }
+	// return total
 }
 
-func printOutputsByOutputID(outs []ledgerstate.Output) uint64 {
+func printOutputsByOutputID(outs []iotago.Output) uint64 {
 	var total uint64
-	for _, out := range outs {
-		log.Printf("    output ID %s:\n", out.ID())
-		balances := colored.BalancesFromL1Balances(out.Balances())
-		balances.ForEachSorted(func(color colored.Color, balance uint64) bool {
-			log.Printf("      %s: %d\n", color.String(), balance)
-			total += balance
-			return true
-		})
+	for i, out := range outs {
+		log.Printf("    output index %d:\n", i)
+		assets := iscp.AssetsFromOutput(out)
+		log.Printf("%s\n", assets.String())
 	}
 	return total
 }

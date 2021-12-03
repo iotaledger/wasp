@@ -54,7 +54,7 @@ const (
 	// fees
 	VarDefaultValidatorFee  = "dv"
 	VarValidatorFee         = "vf"
-	VarFeeColor             = "f"
+	VarFeeAssetID           = "f"
 	VarContractFeesRegistry = "fr"
 
 	// chain info

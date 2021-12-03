@@ -14,7 +14,7 @@ import (
 	"io"
 	"math/rand"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 )
@@ -22,7 +22,7 @@ import (
 // PeeringID is relates peers in different nodes for a particular
 // communication group. E.g. PeeringID identifies a committee in
 // the consensus, etc.
-type PeeringID [ledgerstate.AddressLength]byte
+type PeeringID [iotago.Ed25519AddressBytesLength]byte
 
 func RandomPeeringID(seed ...[]byte) PeeringID {
 	var pid PeeringID
@@ -35,14 +35,14 @@ func (pid *PeeringID) String() string {
 }
 
 func (pid *PeeringID) Read(r io.Reader) error {
-	if n, err := r.Read(pid[:]); err != nil || n != ledgerstate.AddressLength {
+	if n, err := r.Read(pid[:]); err != nil || n != iotago.Ed25519AddressBytesLength {
 		return xerrors.Errorf("error while parsing PeeringID (err=%v)", err)
 	}
 	return nil
 }
 
 func (pid *PeeringID) Write(w io.Writer) error {
-	if n, err := w.Write(pid[:]); err != nil || n != ledgerstate.AddressLength {
+	if n, err := w.Write(pid[:]); err != nil || n != iotago.Ed25519AddressBytesLength {
 		return xerrors.Errorf("error while serializing PeeringID (err=%v)", err)
 	}
 	return nil

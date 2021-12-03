@@ -5,19 +5,18 @@ import (
 	"testing"
 
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/stretchr/testify/require"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/stretchr/testify/require"
 )
 
 type MockedVMRunner struct {
 	stateTransition *MockedStateTransition
 	nextState       state.VirtualStateAccess
-	tx              *ledgerstate.TransactionEssence
+	tx              *iotago.TransactionEssence
 	log             *logger.Logger
 	t               *testing.T
 }
@@ -28,7 +27,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 		log:             log,
 		t:               t,
 	}
-	ret.stateTransition.OnVMResult(func(vs state.VirtualStateAccess, tx *ledgerstate.TransactionEssence) {
+	ret.stateTransition.OnVMResult(func(vs state.VirtualStateAccess, tx *iotago.TransactionEssence) {
 		ret.nextState = vs
 		ret.tx = tx
 	})

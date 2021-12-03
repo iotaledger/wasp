@@ -7,7 +7,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
@@ -35,7 +34,7 @@ type VMContext struct {
 	blockOutputCount     uint8
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
 	// fee related
-	feeColor     colored.Color
+	feeAssetID   []byte
 	ownerFee     uint64
 	validatorFee uint64
 	// events related
@@ -116,7 +115,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),
 	}
-	nativeTokenBalanceLoader := func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
+	nativeTokenBalanceLoader := func(id iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
 		return ret.loadNativeTokensOnChain(id)
 	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(task.AnchorOutput, task.AnchorOutputID, task.AnchorOutput.Amount, nativeTokenBalanceLoader)

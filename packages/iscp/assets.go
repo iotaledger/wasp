@@ -18,7 +18,7 @@ type Assets struct {
 	Tokens iotago.NativeTokens
 }
 
-var IotaTokenID = []byte{}
+var IotaAssetID = []byte{}
 
 func NewEmptyAssets() *Assets {
 	return &Assets{
@@ -37,7 +37,7 @@ func NewAssetsFromDict(d dict.Dict) (*Assets, error) {
 	ret := NewEmptyAssets()
 	for key, val := range d {
 		if IsIota([]byte(key)) {
-			ret.Iotas = new(big.Int).SetBytes(d.MustGet(kv.Key(IotaTokenID))).Uint64()
+			ret.Iotas = new(big.Int).SetBytes(d.MustGet(kv.Key(IotaAssetID))).Uint64()
 			continue
 		}
 		token := &iotago.NativeToken{
@@ -49,10 +49,26 @@ func NewAssetsFromDict(d dict.Dict) (*Assets, error) {
 	return ret, nil
 }
 
+func AssetsFromOutput(iotago.Output) *Assets {
+	panic("TODO implement")
+}
+
 func TokenIDFromAssetID(assetID []byte) [iotago.NativeTokenIDLength]byte {
 	var tokenID [iotago.NativeTokenIDLength]byte
 	copy(tokenID[:], assetID)
 	return tokenID
+}
+
+func (a *Assets) AmountOf(assetID []byte) *big.Int {
+	if IsIota(assetID) {
+		return new(big.Int).SetUint64(a.Iotas)
+	}
+	for _, t := range a.Tokens {
+		if bytes.Equal(t.ID[:], assetID) {
+			return t.Amount
+		}
+	}
+	return big.NewInt(0)
 }
 
 func (a *Assets) String() string {
@@ -98,6 +114,10 @@ func (a *Assets) Add(b *Assets) *Assets {
 	return a
 }
 
+func (a *Assets) IsEmpty() bool {
+	return a.Iotas == 0 && len(a.Tokens) == 0
+}
+
 func (a *Assets) AddToken(tokenID iotago.NativeTokenID, amount *big.Int) *Assets {
 	b := NewAssets(0, iotago.NativeTokens{
 		&iotago.NativeToken{
@@ -108,6 +128,17 @@ func (a *Assets) AddToken(tokenID iotago.NativeTokenID, amount *big.Int) *Assets
 	return a.Add(b)
 }
 
+func (a *Assets) AddAsset(assetID []byte, amount *big.Int) *Assets {
+	switch len(assetID) {
+	case iotago.NativeTokenIDLength:
+		return a.AddToken(TokenIDFromAssetID(assetID), amount)
+	// TODO implement add NFTs
+	case len(IotaAssetID):
+		return a.AddIotas(amount.Uint64())
+	}
+	return a
+}
+
 func (a *Assets) AddIotas(amount uint64) *Assets {
 	a.Iotas += amount
 	return a
@@ -115,7 +146,7 @@ func (a *Assets) AddIotas(amount uint64) *Assets {
 
 func (a *Assets) ToDict() dict.Dict {
 	ret := dict.New()
-	ret.Set(kv.Key(IotaTokenID), new(big.Int).SetUint64(a.Iotas).Bytes())
+	ret.Set(kv.Key(IotaAssetID), new(big.Int).SetUint64(a.Iotas).Bytes())
 	for _, token := range a.Tokens {
 		ret.Set(kv.Key(token.ID[:]), token.Amount.Bytes())
 	}
@@ -134,7 +165,7 @@ func nativeTokensFromSet(set iotago.NativeTokensSet) iotago.NativeTokens {
 
 // IsIota return whether a given tokenID represents native Iotas
 func IsIota(tokenID []byte) bool {
-	return bytes.Equal(tokenID, IotaTokenID)
+	return bytes.Equal(tokenID, IotaAssetID)
 }
 
 var NativeAssetsSerializationArrayRules = iotago.NativeTokenArrayRules()
@@ -151,6 +182,7 @@ func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.WriteBytes(tokenBytes)
 }
 
+// TODO this could be refactored to use `AmountOf`
 // ToMap creates respective map by summing up repetitive token IDs
 func FindNativeTokenBalance(nts iotago.NativeTokens, id *iotago.NativeTokenID) *big.Int {
 	for _, nt := range nts {

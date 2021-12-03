@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -66,10 +66,10 @@ func (sm *stateManager) pullStateIfNeeded() {
 	nowis := time.Now()
 	if nowis.After(sm.pullStateRetryTime) {
 		chainAliasAddress := sm.chain.ID().AsAliasAddress()
-		sm.nodeConn.PullState(chainAliasAddress)
+		sm.nodeConn.PullState(&chainAliasAddress)
 		sm.pullStateRetryTime = nowis.Add(sm.timers.PullStateRetry)
 		sm.log.Debugf("pullState: pulling state for address %v. Next pull in: %v",
-			chainAliasAddress.Base58(), sm.pullStateRetryTime.Sub(nowis))
+			chainAliasAddress.Bech32(iscp.Bech32Prefix), sm.pullStateRetryTime.Sub(nowis))
 	} else {
 		if sm.stateOutput == nil {
 			sm.log.Debugf("pullState not needed: retry in %v", sm.pullStateRetryTime.Sub(nowis))
@@ -80,12 +80,12 @@ func (sm *stateManager) pullStateIfNeeded() {
 	}
 }
 
-func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualStateAccess, approvingOutput ledgerstate.OutputID) bool {
+func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualStateAccess, approvingOutput iotago.OutputID) bool {
 	sm.log.Debugw("addStateCandidateFromConsensus: adding state candidate",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
 		"hash", nextState.StateCommitment(),
-		"output", iscp.OID(approvingOutput),
+		"output", approvingOutput.UTXOInput().ID(),
 	)
 
 	block, err := nextState.ExtractBlock()
@@ -128,7 +128,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	if sm.addBlockAndCheckStateOutput(block, nil) {
 		// ask for approving output
 		chainAddress := sm.chain.ID().AsAddress()
-		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v for chain %v", iscp.OID(block.ApprovingOutputID()), chainAddress.Base58())
+		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v for chain %v", iscp.OID(block.ApprovingOutputID()), chainAddress.Bech32(iscp.Bech32Prefix))
 		sm.nodeConn.PullConfirmedOutput(chainAddress, block.ApprovingOutputID())
 	}
 	return true

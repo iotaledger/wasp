@@ -4,51 +4,57 @@
 package wasmsolo
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"math/big"
+
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
-	"github.com/stretchr/testify/require"
 )
 
 type SoloAgent struct {
-	Env     *solo.Solo
-	Pair    *ed25519.KeyPair
-	address ledgerstate.Address
-	hname   iscp.Hname
+	Env        *solo.Solo
+	PrivateKey ed25519.PrivateKey
+	address    iotago.Address
+	hname      iscp.Hname
 }
 
 func NewSoloAgent(env *solo.Solo) *SoloAgent {
 	agent := &SoloAgent{Env: env}
-	agent.Pair, agent.address = agent.Env.NewKeyPairWithFunds()
+	seed := tpkg.RandEd25519Seed()
+	agent.PrivateKey = ed25519.NewKeyFromSeed(seed[:])
+	addr := iotago.Ed25519AddressFromPubKey(agent.PrivateKey.Public().(ed25519.PublicKey))
+	agent.address = &addr
 	return agent
 }
 
 func (a *SoloAgent) ScAddress() wasmlib.ScAddress {
-	return wasmlib.NewScAddressFromBytes(a.address.Bytes())
+	return wasmlib.NewScAddressFromBytes(iscp.BytesFromAddress(a.address))
 }
 
 func (a *SoloAgent) ScAgentID() wasmlib.ScAgentID {
 	return wasmlib.NewScAgentID(a.ScAddress(), wasmlib.ScHname(a.hname))
 }
 
-func (a *SoloAgent) Balance(color ...wasmlib.ScColor) int64 {
-	switch len(color) {
-	case 0:
-		return int64(a.Env.GetAddressBalance(a.address, colored.IOTA))
-	case 1:
-		col, err := colored.ColorFromBytes(color[0].Bytes())
-		require.NoError(a.Env.T, err)
-		return int64(a.Env.GetAddressBalance(a.address, col))
-	default:
-		require.Fail(a.Env.T, "too many color arguments")
-		return 0
-	}
+func (a *SoloAgent) Balance(color ...wasmlib.ScColor) *big.Int {
+	panic("TODO implement")
+	// switch len(color) {
+	// case 0:
+	// 	return int64(a.Env.GetAddressBalance(a.address, colored.IOTA))
+	// case 1:
+	// 	col, err := colored.ColorFromBytes(color[0].Bytes())
+	// 	require.NoError(a.Env.T, err)
+	// 	return int64(a.Env.GetAddressBalance(a.address, col))
+	// default:
+	// 	require.Fail(a.Env.T, "too many color arguments")
+	// 	return 0
+	// }
 }
 
 func (a *SoloAgent) Mint(amount int64) (wasmlib.ScColor, error) {
-	color, err := a.Env.MintTokens(a.Pair, uint64(amount))
-	return wasmlib.NewScColorFromBytes(color.Bytes()), err
+	panic("TODO implement")
+	// color, err := a.Env.MintTokens(a.Pair, uint64(amount))
+	// return wasmlib.NewScColorFromBytes(color.Bytes()), err
 }

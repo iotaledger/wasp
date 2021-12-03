@@ -186,7 +186,7 @@ func TestBigBlob(t *testing.T) {
 	bigblobSize := governance.DefaultMaxBlobSize + 100
 	blobBin := make([]byte, bigblobSize)
 
-	_, err := ch.UploadWasm(ch.OriginatorKeyPair, blobBin)
+	_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
 	require.Error(t, err)
 
 	// update max blob size to allow for bigger blobs_
@@ -200,7 +200,7 @@ func TestBigBlob(t *testing.T) {
 	require.NoError(t, err)
 
 	// blob upload must now succeed
-	_, err = ch.UploadWasm(ch.OriginatorKeyPair, blobBin)
+	_, err = ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
 	require.NoError(t, err)
 }
 

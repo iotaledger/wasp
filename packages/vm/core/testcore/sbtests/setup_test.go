@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -28,7 +27,7 @@ func setupChain(t *testing.T, keyPairOriginator *ed25519.KeyPair) (*solo.Solo, *
 	return env, chain
 }
 
-func setupDeployer(t *testing.T, chain *solo.Chain) (*ed25519.KeyPair, ledgerstate.Address, *iscp.AgentID) {
+func setupDeployer(t *testing.T, chain *solo.Chain) (*ed25519.KeyPair, iotago.Address, *iscp.AgentID) {
 	user, userAddr := chain.Env.NewKeyPairWithFunds()
 	chain.Env.AssertAddressIotas(userAddr, solo.Saldo)
 

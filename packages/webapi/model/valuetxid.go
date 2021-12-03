@@ -3,13 +3,13 @@ package model
 import (
 	"encoding/json"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 // ValueTxID is the base58 representation of a transaction ID
 type ValueTxID string
 
-func NewValueTxID(id *ledgerstate.TransactionID) ValueTxID {
+func NewValueTxID(id *iotago.TransactionID) ValueTxID {
 	return ValueTxID(id.String())
 }
 
@@ -18,19 +18,21 @@ func (id ValueTxID) MarshalJSON() ([]byte, error) {
 }
 
 func (id *ValueTxID) UnmarshalJSON(b []byte) error {
-	var s string
-	if err := json.Unmarshal(b, &s); err != nil {
-		return err
-	}
-	_, err := ledgerstate.TransactionIDFromBase58(s)
-	*id = ValueTxID(s)
-	return err
+	panic("TODO implement")
+	// var s string
+	// if err := json.Unmarshal(b, &s); err != nil {
+	// 	return err
+	// }
+	// _, err := iotago.TransactionIDFromBase58(s)
+	// *id = ValueTxID(s)
+	// return err
 }
 
-func (id ValueTxID) ID() ledgerstate.TransactionID {
-	r, err := ledgerstate.TransactionIDFromBase58(string(id))
-	if err != nil {
-		panic(err)
-	}
-	return r
+func (id ValueTxID) ID() iotago.TransactionID {
+	panic("TODO implement")
+	// r, err := iotago.TransactionIDFromBase58(string(id))
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// return r
 }

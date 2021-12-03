@@ -124,6 +124,10 @@ func (o ScChainID) String() string {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+func init() {
+	panic("TODO implement assetIDs (native tokens and NFTs) in wasm, deprecate colors")
+}
+
 type ScColor struct {
 	id [32]byte
 }
