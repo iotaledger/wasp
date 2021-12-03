@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -65,8 +64,5 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 		state.Set(governance.VarFeeColor, codec.EncodeColor(feeColor))
 	}
 
-	collections.NewMap(state, governance.VarAccessNodeCandidates).Erase()
-	collections.NewMap(state, governance.VarAccessNodes).Erase()
-	collections.NewArray16(state, governance.VarValidatorNodes).MustErase()
 	return nil, nil
 }
