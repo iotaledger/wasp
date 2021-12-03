@@ -143,7 +143,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
 	if txb.outputsAreFull() {
 		panic(ErrOutputLimitExceeded)
 	}
-	assets := assetsFromOutput(o)
+	assets := AssetsFromOutput(o)
 	txb.subDeltaIotasFromAnchor(assets.Iotas)
 	bi := new(big.Int)
 	for _, nt := range assets.Tokens {
@@ -159,7 +159,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
 // Consumed only internal UTXOs with changed token balances. The rest is left untouched
 func (txb *AnchorTransactionBuilder) inputs() iotago.Inputs {
 	ret := make(iotago.Inputs, 0, len(txb.consumed)+len(txb.balanceNativeTokens))
-	ret = append(ret, &txb.anchorOutputID)
+	ret = append(ret, txb.anchorOutputID)
 	for i := range txb.consumed {
 		ret = append(ret, &txb.consumed[i].Unwrap().UTXO().Metadata().UTXOInput)
 	}
@@ -381,7 +381,7 @@ func stringNativeTokenID(id *iotago.NativeTokenID) string {
 
 func (txb *AnchorTransactionBuilder) String() string {
 	ret := ""
-	ret += fmt.Sprintf("%s\n", stringUTXOInput(&txb.anchorOutputID))
+	ret += fmt.Sprintf("%s\n", stringUTXOInput(txb.anchorOutputID))
 	ret += fmt.Sprintf("initial IOTA balance: %d\n", txb.anchorOutput.Amount)
 	ret += fmt.Sprintf("current IOTA balance: %d\n", txb.currentBalanceIotasOnAnchor)
 	ret += fmt.Sprintf("Native tokens (%d):\n", len(txb.balanceNativeTokens))
@@ -439,47 +439,63 @@ func (txb *AnchorTransactionBuilder) vByteCostOfNativeTokenBalance() uint64 {
 	return dustAmountForInternalAccountUTXO
 }
 
-// ExtendedOutputFromPostData creates extended output object from the PostRequestData.
+// ExtendedOutputFromPostData creates extended output object from parameters.
 // It automatically adjusts amount of iotas required for the dust deposit
-func ExtendedOutputFromPostData(
-	targetAddress, senderAddress iotago.Address,
-	senderContract iscp.Hname,
+func ExtendedOutputFromPostData(senderAddress iotago.Address, senderContract iscp.Hname, par iscp.RequestParameters) *iotago.ExtendedOutput {
+	ret, _ := NewExtendedOutput(
+		par.Target,
+		par.Assets,
+		senderAddress,
+		&iscp.RequestMetadata{
+			SenderContract: senderContract,
+			TargetContract: par.Metadata.TargetContract,
+			EntryPoint:     par.Metadata.EntryPoint,
+			Params:         par.Metadata.Params,
+			Transfer:       par.Metadata.Transfer,
+			GasBudget:      par.Metadata.GasBudget,
+		},
+		par.Options,
+	)
+	return ret
+}
+
+// NewExtendedOutput creates new ExtendedOutput from input parameters.
+// Adjusts dust deposit if needed and returns flag if adjusted
+func NewExtendedOutput(
+	targetAddress iotago.Address,
 	assets *iscp.Assets,
-	sendMetadata *iscp.SendMetadata,
-	options ...*iscp.SendOptions) *iotago.ExtendedOutput {
-	// --
-
-	reqMetadata := &iscp.RequestMetadata{
-		SenderContract: senderContract,
-		TargetContract: sendMetadata.TargetContract,
-		EntryPoint:     sendMetadata.EntryPoint,
-		Params:         sendMetadata.Params,
-		Transfer:       sendMetadata.Transfer,
-		GasBudget:      sendMetadata.GasBudget,
-	}
-
+	senderAddress iotago.Address,
+	metadata *iscp.RequestMetadata,
+	options *iscp.SendOptions) (*iotago.ExtendedOutput, bool) {
 	ret := &iotago.ExtendedOutput{
 		Address:      targetAddress,
 		Amount:       assets.Iotas,
 		NativeTokens: assets.Tokens,
-		Blocks: iotago.FeatureBlocks{
-			&iotago.SenderFeatureBlock{
-				Address: senderAddress,
-			},
-			&iotago.MetadataFeatureBlock{
-				Data: reqMetadata.Bytes(),
-			},
-			// TODO feature blocks as per SendOptions
-		},
+		Blocks:       iotago.FeatureBlocks{},
 	}
+	if senderAddress != nil {
+		ret.Blocks = append(ret.Blocks, &iotago.SenderFeatureBlock{
+			Address: senderAddress,
+		})
+	}
+	if metadata != nil {
+		ret.Blocks = append(ret.Blocks, &iotago.MetadataFeatureBlock{
+			Data: metadata.Bytes(),
+		})
+	}
+	// TODO other FeatureBlocks as per options
+
+	// Adjust to minimum dust deposit
+	dustDepositAdjusted := false
 	dustDeposit := ret.VByteCost(parameters.RentStructure(), nil)
 	if dustDeposit < ret.Amount {
 		ret.Amount = dustDeposit
+		dustDepositAdjusted = true
 	}
-	return ret
+	return ret, dustDepositAdjusted
 }
 
-func assetsFromOutput(o iotago.Output) *iscp.Assets {
+func AssetsFromOutput(o iotago.Output) *iscp.Assets {
 	switch o := o.(type) {
 	case *iotago.ExtendedOutput:
 		return &iscp.Assets{
@@ -487,6 +503,6 @@ func assetsFromOutput(o iotago.Output) *iscp.Assets {
 			Tokens: o.NativeTokens,
 		}
 	default:
-		panic(xerrors.Errorf("assetsFromOutput: not supported output type: %T", o))
+		panic(xerrors.Errorf("AssetsFromOutput: not supported output type: %T", o))
 	}
 }

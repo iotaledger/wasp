@@ -102,8 +102,8 @@ func (s *sandbox) Request() iscp.Request {
 	return s.vmctx.Request()
 }
 
-func (s *sandbox) Send(target iotago.Address, assets *iscp.Assets, metadata *iscp.SendMetadata, options ...*iscp.SendOptions) {
-	s.vmctx.Send(target, assets, metadata, options...)
+func (s *sandbox) Send(par iscp.RequestParameters) bool {
+	return s.vmctx.Send(par)
 }
 
 func (s *sandbox) State() kv.KVStore {

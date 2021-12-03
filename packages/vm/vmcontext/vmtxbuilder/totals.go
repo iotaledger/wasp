@@ -78,7 +78,7 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	})
 
 	for _, o := range txb.postedOutputs {
-		assets := assetsFromOutput(o)
+		assets := AssetsFromOutput(o)
 		ret.TotalIotasOnChain += assets.Iotas
 		for _, nt := range assets.Tokens {
 			s, ok := ret.TokenBalances[nt.ID]
