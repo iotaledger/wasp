@@ -15,7 +15,7 @@ func TestBasic(t *testing.T) {
 	id, err := genTx.ID()
 	require.NoError(t, err)
 	require.EqualValues(t, *id, u.GenesisTransactionID())
-	require.EqualValues(t, u.Supply(), u.GetAddressBalance(u.GenesisAddress()))
+	require.EqualValues(t, u.Supply(), u.GetAddressBalanceIotas(u.GenesisAddress()))
 
 	require.Same(t, genTx, u.MustGetTransaction(u.GenesisTransactionID()))
 
@@ -29,8 +29,8 @@ func TestRequestFunds(t *testing.T) {
 	addr := tpkg.RandEd25519Address()
 	tx, err := u.RequestFunds(addr)
 	require.NoError(t, err)
-	require.EqualValues(t, u.Supply()-RequestFundsAmount, u.GetAddressBalance(u.GenesisAddress()))
-	require.EqualValues(t, RequestFundsAmount, u.GetAddressBalance(addr))
+	require.EqualValues(t, u.Supply()-RequestFundsAmount, u.GetAddressBalanceIotas(u.GenesisAddress()))
+	require.EqualValues(t, RequestFundsAmount, u.GetAddressBalanceIotas(addr))
 
 	txID, err := tx.ID()
 	require.NoError(t, err)
@@ -73,7 +73,7 @@ func TestDoubleSpend(t *testing.T) {
 			TransactionOutputIndex: 0,
 		}}).
 		AddOutput(&iotago.ExtendedOutput{Address: addr2, Amount: RequestFundsAmount}).
-		Build(u.deSeriParas(), key1Signer)
+		Build(u.deSeriParams(), key1Signer)
 	require.NoError(t, err)
 	err = u.AddTransaction(spend2)
 	require.NoError(t, err)
@@ -84,7 +84,7 @@ func TestDoubleSpend(t *testing.T) {
 			TransactionOutputIndex: 0,
 		}}).
 		AddOutput(&iotago.ExtendedOutput{Address: addr3, Amount: RequestFundsAmount}).
-		Build(u.deSeriParas(), key1Signer)
+		Build(u.deSeriParams(), key1Signer)
 	require.NoError(t, err)
 	err = u.AddTransaction(spend3)
 	require.Error(t, err)

@@ -1,8 +1,11 @@
 package utxodb
 
 import (
+	"encoding/binary"
 	"fmt"
 	"sync"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -32,6 +35,7 @@ type UnixSeconds uint64
 type UtxoDB struct {
 	mutex                sync.RWMutex
 	supply               uint64
+	seed                 [ed25519.SeedSize]byte
 	rentStructure        *iotago.RentStructure
 	milestones           []milestone
 	milestoneIndexByTxID map[iotago.TransactionID]uint32
@@ -52,13 +56,19 @@ type InitParams struct {
 	timestamp     UnixSeconds
 	supply        uint64
 	rentStructure *iotago.RentStructure
+	seed          [ed25519.SeedSize]byte
 }
 
-func DefaultInitParams() *InitParams {
+func DefaultInitParams(seed ...[]byte) *InitParams {
+	var seedBytes [ed25519.SeedSize]byte
+	if len(seed) > 0 {
+		copy(seedBytes[:], seed[0])
+	}
 	return &InitParams{
 		timestamp:     0,
 		supply:        DefaultIOTASupply,
 		rentStructure: &iotago.RentStructure{},
+		seed:          seedBytes,
 	}
 }
 
@@ -99,6 +109,7 @@ func New(params ...*InitParams) *UtxoDB {
 	}
 	u := &UtxoDB{
 		supply:               p.supply,
+		seed:                 p.seed,
 		rentStructure:        p.rentStructure,
 		milestoneIndexByTxID: make(map[iotago.TransactionID]uint32),
 		utxo:                 make(map[iotago.OutputID]*iotago.UTXOInput),
@@ -107,7 +118,7 @@ func New(params ...*InitParams) *UtxoDB {
 	return u
 }
 
-func (u *UtxoDB) deSeriParas() *iotago.DeSerializationParameters {
+func (u *UtxoDB) deSeriParams() *iotago.DeSerializationParameters {
 	return &iotago.DeSerializationParameters{RentStructure: u.rentStructure}
 }
 
@@ -115,7 +126,7 @@ func (u *UtxoDB) genesisInit(timestamp UnixSeconds) {
 	genesisTx, err := iotago.NewTransactionBuilder().
 		AddInput(&iotago.ToBeSignedUTXOInput{Address: &genesisAddress, Input: &iotago.UTXOInput{}}).
 		AddOutput(&iotago.ExtendedOutput{Address: &genesisAddress, Amount: DefaultIOTASupply}).
-		Build(u.deSeriParas(), genesisSigner)
+		Build(u.deSeriParams(), genesisSigner)
 	if err != nil {
 		panic(err)
 	}
@@ -192,11 +203,21 @@ func (u *UtxoDB) mustRequestFundsTx(target iotago.Address) *iotago.Transaction {
 		AddInput(&iotago.ToBeSignedUTXOInput{Address: &genesisAddress, Input: utxo}).
 		AddOutput(&iotago.ExtendedOutput{Address: target, Amount: RequestFundsAmount}).
 		AddOutput(&iotago.ExtendedOutput{Address: &genesisAddress, Amount: out.Amount - RequestFundsAmount}).
-		Build(u.deSeriParas(), genesisSigner)
+		Build(u.deSeriParams(), genesisSigner)
 	if err != nil {
 		panic(err)
 	}
 	return tx
+}
+
+// NewKeyPairByIndex deterministic private key
+func (u *UtxoDB) NewKeyPairByIndex(index uint64) (ed25519.PrivateKey, *iotago.Ed25519Address) {
+	var tmp8 [8]byte
+	binary.LittleEndian.PutUint64(tmp8[:], index)
+	h := hashing.HashData(u.seed[:], tmp8[:])
+	privKey := ed25519.NewKeyFromSeed(h[:])
+	addr := iotago.Ed25519AddressFromPubKey(privKey.Public().(ed25519.PublicKey))
+	return privKey, &addr
 }
 
 // RequestFunds sends RequestFundsAmount IOTA tokens from the genesis address to the given address.
@@ -258,7 +279,7 @@ func (u *UtxoDB) getTransactionInputs(tx *iotago.Transaction) (iotago.OutputSet,
 
 func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 	// serialize for syntactic check
-	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, u.deSeriParas()); err != nil {
+	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, u.deSeriParams()); err != nil {
 		return err
 	}
 
@@ -335,41 +356,34 @@ func (u *UtxoDB) GetTransactionMilestoneInfo(txID iotago.TransactionID) (Milesto
 	return MilestoneInfo{Index: idx, Timestamp: u.milestones[idx].timestamp}, true
 }
 
-// GetUnspentOutputs returns all unspent outputs locked by the address.
-func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) iotago.Outputs {
+// GetUnspentOutputs returns all unspent outputs locked by the address with its ids
+func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) (iotago.Outputs, []*iotago.UTXOInput) {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
 	return u.getUnspentOutputs(addr)
 }
 
-// GetUnspentOutputsAsInputs returns all unspent outputs locked by the address, as spendable inputs
-func (u *UtxoDB) GetUnspentOutputsAsInputs(addr iotago.Address) []*iotago.UTXOInput {
-	u.mutex.RLock()
-	defer u.mutex.RUnlock()
-
-	return u.getUTXOInputs(addr)
-}
-
-func (u *UtxoDB) getUnspentOutputs(addr iotago.Address) iotago.Outputs {
+func (u *UtxoDB) getUnspentOutputs(addr iotago.Address) (iotago.Outputs, []*iotago.UTXOInput) {
 	ret := iotago.Outputs{}
-	for _, input := range u.getUTXOInputs(addr) {
+	ids := u.getUTXOInputs(addr)
+	for _, input := range ids {
 		out := u.getOutput(input.ID())
 		if out == nil {
 			panic("inconsistency: unspent output not found")
 		}
 		ret = append(ret, out)
 	}
-	return ret
+	return ret, ids
 }
 
-// GetAddressBalance returns the total amount of iotas owned by the address
-func (u *UtxoDB) GetAddressBalance(addr iotago.Address) uint64 {
+// GetAddressBalanceIotas returns the total amount of iotas owned by the address
+func (u *UtxoDB) GetAddressBalanceIotas(addr iotago.Address) uint64 {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
 	ret := uint64(0)
-	outputs := u.getUnspentOutputs(addr)
+	outputs, _ := u.getUnspentOutputs(addr)
 	for _, out := range outputs {
 		ret += out.Deposit()
 	}
@@ -381,7 +395,7 @@ func (u *UtxoDB) GetAliasOutputs(addr iotago.Address) []*iotago.AliasOutput {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
-	outs := u.getUnspentOutputs(addr)
+	outs, _ := u.getUnspentOutputs(addr)
 	ret := make([]*iotago.AliasOutput, 0)
 	for _, out := range outs {
 		if o, ok := out.(*iotago.AliasOutput); ok {

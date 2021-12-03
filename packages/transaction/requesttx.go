@@ -3,21 +3,20 @@ package transaction
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/parameters"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-
-	"github.com/iotaledger/hive.go/crypto/ed25519"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
 type NewRequestTransactionParams struct {
-	SenderKeyPair    *ed25519.KeyPair
+	SenderPrivateKey ed25519.PrivateKey
 	UnspentOutputs   []iotago.Output
 	UnspentOutputIDs []*iotago.UTXOInput
 	Requests         []*iscp.RequestParameters
+	DeSeriParams     *iotago.DeSerializationParameters
 }
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
@@ -27,14 +26,14 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	sumIotasOut := uint64(0)
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
 
-	var senderAddress iotago.Address // TODO get address from par.SenderKeyPair.PublicKey.
+	senderAddress := iotago.Ed25519AddressFromPubKey(par.SenderPrivateKey.Public().(ed25519.PublicKey))
 
 	// create outputs, sum totals needed
 	for _, req := range par.Requests {
 		out, _ := vmtxbuilder.NewExtendedOutput(
 			req.Target,
 			req.Assets,
-			senderAddress,
+			&senderAddress,
 			&iscp.RequestMetadata{
 				SenderContract: 0,
 				TargetContract: req.Metadata.TargetContract,
@@ -56,91 +55,142 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			sumTokensOut[nt.ID] = s
 		}
 	}
-	sumIotasIn := uint64(0)
-	sumTokensIn := make(map[iotago.NativeTokenID]*big.Int)
+	inputs, remainder, err := computeInputsAndRemainderFull(sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.DeSeriParams)
+	if err != nil {
+		return nil, err
+	}
+	if remainder.Amount > 0 {
+		outputs = append(outputs, remainder)
+	}
 
-	var remIotas uint64
-	var remTokens map[iotago.NativeTokenID]*big.Int
-	var enough bool
-	var inputs iotago.Inputs
-	for i, inp := range par.UnspentOutputs {
+	txb := iotago.NewTransactionBuilder()
+	for _, inp := range inputs {
+		txb.AddInput(&iotago.ToBeSignedUTXOInput{
+			Address: &senderAddress,
+			Input:   inp,
+		})
+	}
+	for _, out := range outputs {
+		txb.AddOutput(out)
+	}
+	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&senderAddress, par.SenderPrivateKey))
+	return txb.Build(par.DeSeriParams, signer)
+}
+
+// computeInputsAndRemainderFull computes inputs and reminder for given outputs balances.
+// Takes into account minimum dust deposit requirements
+// The inputs are consumed one by one in the order provided in the parameters.
+// Consumes only what is needed to cover output balances
+func computeInputsAndRemainderFull(
+	iotasOut uint64,
+	tokensOut map[iotago.NativeTokenID]*big.Int,
+	allUnspentOutputs []iotago.Output,
+	allInputs []*iotago.UTXOInput,
+	deSeriParams *iotago.DeSerializationParameters,
+) ([]*iotago.UTXOInput, *iotago.ExtendedOutput, error) {
+	iotasIn := uint64(0)
+	tokensIn := make(map[iotago.NativeTokenID]*big.Int)
+
+	var remainder *iotago.ExtendedOutput
+	var inputs []*iotago.UTXOInput
+
+	for i, inp := range allUnspentOutputs {
 		a := vmtxbuilder.AssetsFromOutput(inp)
-		sumIotasIn += a.Iotas
+		iotasIn += a.Iotas
 		for _, nt := range a.Tokens {
-			s, ok := sumTokensIn[nt.ID]
+			s, ok := tokensIn[nt.ID]
 			if !ok {
 				s = new(big.Int)
 			}
 			s.Add(s, nt.Amount)
-			sumTokensIn[nt.ID] = s
+			tokensIn[nt.ID] = s
 		}
-		// calculate reminders
-		remIotas, remTokens, enough = calcReminders(sumIotasIn, sumIotasOut, sumTokensIn, sumTokensOut)
-		if enough {
-			for _, input := range par.UnspentOutputIDs[:i] {
-				inputs = append(inputs, input)
-			}
+		// calculate reminder. It will return != nil if input balances is enough, otherwise nil
+		remainder = computeReminderOutput(iotasIn, iotasOut, tokensIn, tokensOut, deSeriParams)
+		if remainder != nil {
+			inputs = allInputs[:i+1]
 			break
 		}
 	}
-	if !enough {
-		return nil, accounts.ErrNotEnoughFunds
+	if remainder == nil {
+		// not enough inputs to cover outputs
+		return nil, nil, accounts.ErrNotEnoughFunds
 	}
-	// enough funds, create reminder output if needed
-	if remIotas > 0 {
-		a := &iscp.Assets{
-			Iotas:  remIotas,
-			Tokens: iotago.NativeTokens{},
-		}
-		for id, b := range remTokens {
-			a.Tokens = append(a.Tokens, &iotago.NativeToken{
-				ID:     id,
-				Amount: b,
-			})
-		}
-		reminderOutput := &iotago.ExtendedOutput{
-			Address:      senderAddress,
-			Amount:       remIotas,
-			NativeTokens: a.Tokens,
-			Blocks:       nil,
-		}
-		outputs = append(outputs, reminderOutput)
-	}
-	essence := iotago.TransactionEssence{
-		Inputs:  inputs,
-		Outputs: outputs,
-		Payload: nil,
-	}
-	// TODO sign the transaction essence and create unlock blocks
-	// essence.Sign()
+	return inputs, remainder, nil
 }
 
-func calcReminders(inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int) (uint64, map[iotago.NativeTokenID]*big.Int, bool) {
+// computeReminderOutput calculates reminders for iotas and native tokens, returns skeleton reminder output
+// which only contains assets filled in.
+// - inIotas and inTokens is what is available in inputs
+// - outIotas, outTokens is what is in outputs, except the reminder output itself with its dust deposit
+// Returns nil if inputs are not enough (taking into account dust deposit requirements)
+// If return not nil but Amount == 0, ite means reminder is a perfect match between inputs and outputs, remainder not needed
+func computeReminderOutput(inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, deSeriParams *iotago.DeSerializationParameters) *iotago.ExtendedOutput {
 	if inIotas < outIotas {
-		return 0, nil, false
+		return nil
 	}
-	retIotas := outIotas - inIotas
-	retTokens := make(map[iotago.NativeTokenID]*big.Int)
+	// collect all token ids
+	tokenIDs := make(map[iotago.NativeTokenID]bool)
+	for id := range inTokens {
+		tokenIDs[id] = true
+	}
+	for id := range outTokens {
+		tokenIDs[id] = true
+	}
+	remIotas := outIotas - inIotas
+	remTokens := make(map[iotago.NativeTokenID]*big.Int)
 
-	for id, bOut := range outTokens {
-		bIn, ok := inTokens[id]
-		if !ok {
-			return 0, nil, false
+	// calc reminders by outputs
+	for id := range tokenIDs {
+		bIn, okIn := inTokens[id]
+		bOut, okOut := outTokens[id]
+		if !okIn {
+			return nil
 		}
-		if bIn.Cmp(bOut) < 0 {
-			return 0, nil, false
-		}
-		s := new(big.Int).Sub(bIn, bOut)
-		if !util.IsZeroBigInt(bIn) {
-			retTokens[id] = s
+		switch {
+		case okIn && okOut:
+			// there are tokens in inputs and outputs. Check if it is enough
+			if bIn.Cmp(bOut) < 0 {
+				// not enough
+				return nil
+			}
+			// bIn >= bOut
+			s := new(big.Int).Sub(bIn, bOut)
+			if !util.IsZeroBigInt(bIn) {
+				remTokens[id] = s
+			}
+		case !okIn && okOut:
+			// there's output but no input. Not enough
+			return nil
+		case okIn && !okOut:
+			// native token is here by accident. All goes to reminder
+			remTokens[id] = new(big.Int).Set(bIn)
+			if util.IsZeroBigInt(bIn) {
+				panic("bad input")
+			}
+		default:
+			panic("inconsistency")
 		}
 	}
-	if len(retTokens) > 0 && retIotas < calcDustDepositByNativeTokenBalances(retTokens) {
-		return 0, nil, false
+	ret := &iotago.ExtendedOutput{
+		Address:      nil,
+		Amount:       remIotas,
+		NativeTokens: iotago.NativeTokens{},
+		Blocks:       nil,
 	}
-	return retIotas, retTokens, true
-}
-
-func calcDustDepositByNativeTokenBalances(tokens map[iotago.NativeTokenID]*big.Int) uint64 {
-	return parameters.DeSerializationParameters().MinDustDeposit // TODO take into account number of native tokens
+	if remIotas == 0 && len(remTokens) == 0 {
+		// no need for remainder
+		return ret
+	}
+	for id, b := range remTokens {
+		ret.NativeTokens = append(ret.NativeTokens, &iotago.NativeToken{
+			ID:     id,
+			Amount: b,
+		})
+	}
+	if len(remTokens) > 0 && remIotas < ret.VByteCost(deSeriParams.RentStructure, nil) {
+		// iotas does not cover minimum dust requirements
+		return nil
+	}
+	return ret
 }
