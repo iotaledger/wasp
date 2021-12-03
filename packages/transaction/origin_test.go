@@ -33,7 +33,7 @@ func TestCreateOrigin(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	t.Logf("New chain alias: %s", chainID.String())
+	t.Logf("New chain ID: %s", chainID.String())
 
 	err = u.AddTransaction(tx)
 	require.NoError(t, err)

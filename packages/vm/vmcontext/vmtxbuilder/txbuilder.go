@@ -443,7 +443,7 @@ func (txb *AnchorTransactionBuilder) vByteCostOfNativeTokenBalance() uint64 {
 // It automatically adjusts amount of iotas required for the dust deposit
 func ExtendedOutputFromPostData(senderAddress iotago.Address, senderContract iscp.Hname, par iscp.RequestParameters) *iotago.ExtendedOutput {
 	ret, _ := NewExtendedOutput(
-		par.Target,
+		par.TargetAddress,
 		par.Assets,
 		senderAddress,
 		&iscp.RequestMetadata{

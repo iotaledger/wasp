@@ -79,8 +79,8 @@ type Sandbox interface {
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
 type RequestParameters struct {
-	// Target is the target address. It may represent another chain or L1 address
-	Target iotago.Address
+	// TargetAddress is the target address. It may represent another chain or L1 address
+	TargetAddress iotago.Address
 	// Assets attached to the output. It expected to contain iotas at least the amount required for dust deposit
 	// It depends on the context how it is handled when iotas are not enough for dust deposit
 	Assets *Assets

@@ -1,8 +1,6 @@
 package transaction
 
 import (
-	"fmt"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -45,8 +43,10 @@ func NewChainOriginTransaction(
 	}
 	txb.AddOutput(aliasOutput)
 
-	inputs, remainder, err := computeInputsAndRemainder(
+	inputs, remainderOutput, err := computeInputsAndRemainder(
+		&walletAddr,
 		aliasOutput.Amount,
+		nil,
 		allUnspentOutputs,
 		allInputs,
 		deSeriParams,
@@ -54,14 +54,11 @@ func NewChainOriginTransaction(
 	if err != nil {
 		return nil, nil, err
 	}
+	if remainderOutput != nil {
+		txb.AddOutput(remainderOutput)
+	}
 	for _, input := range inputs {
 		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: &walletAddr, Input: input})
-	}
-	if remainder > 0 {
-		txb.AddOutput(&iotago.ExtendedOutput{
-			Address: &walletAddr,
-			Amount:  remainder,
-		})
 	}
 
 	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, key))
@@ -71,31 +68,6 @@ func NewChainOriginTransaction(
 	}
 	chainID := iscp.NewChainID(aliasOutput.AliasID)
 	return tx, &chainID, nil
-}
-
-func computeInputsAndRemainder(
-	amount uint64,
-	allUnspentOutputs []iotago.Output,
-	allInputs []*iotago.UTXOInput,
-	deSeriParams *iotago.DeSerializationParameters,
-) ([]*iotago.UTXOInput, uint64, error) {
-	remainderDustDeposit := (&iotago.ExtendedOutput{}).VByteCost(deSeriParams.RentStructure, nil)
-	var inputs []*iotago.UTXOInput
-	consumed := uint64(0)
-	for i, out := range allUnspentOutputs {
-		consumed += out.Deposit()
-		inputs = append(inputs, allInputs[i])
-		if consumed == amount {
-			return inputs, 0, nil
-		}
-		if consumed > amount {
-			remainder := amount - consumed
-			if remainder >= remainderDustDeposit {
-				return inputs, remainder, nil
-			}
-		}
-	}
-	return nil, 0, fmt.Errorf("insufficient funds")
 }
 
 // NewRootInitRequestTransaction is a first request to be sent to the uninitialized
@@ -137,7 +109,7 @@ func NewRootInitRequestTransaction(
 	requestOutput.Amount = requestOutput.VByteCost(deSeriParams.RentStructure, nil)
 	txb.AddOutput(requestOutput)
 
-	inputs, remainder, err := computeInputsAndRemainder(
+	inputs, remainder, err := computeInputsAndRemainderOld(
 		requestOutput.Amount,
 		allUnspentOutputs,
 		allInputs,

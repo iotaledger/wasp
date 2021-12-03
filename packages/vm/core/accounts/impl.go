@@ -113,18 +113,29 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	}
 	// will be sending back to default entry point
 	a := assert.NewAssert(ctx.Log())
-	// bring balances to the current account (owner's account). It is needed for subsequent Send call
+	// the balances included in the transfer (if any) are already in the common account
+	// bring all remaining caller's balances to the current account (owner's account).
+	// It is needed for subsequent Send call
 	a.Require(MoveBetweenAccounts(state, ctx.Caller(), commonaccount.Get(ctx.ChainID()), tokensToWithdraw),
 		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
-
-	// add incoming tokens (after fees) to the balances to be withdrawn. Otherwise they would end up in the common account
+	// add incoming tokens (after fees) to the balances to be withdrawn.
+	// Otherwise, they would end up in the common account
 	tokensToWithdraw.Add(ctx.IncomingTransfer())
+	// Now all caller's assets are in the common account
+	// TODO: by default should be withdrawn all tokens and account shpoild eb closed
+	//  Introduce "ParamEnsureMinimum = N iotas" which leaves at least N iotas in the account
 	// Send call assumes tokens are in the current account
 	sendMetadata := &iscp.SendMetadata{
 		TargetContract: ctx.Caller().Hname(),
+		// other metadata parameters are not important
 	}
 	a.Require(
-		ctx.Send(ctx.Caller().Address(), tokensToWithdraw, sendMetadata),
+		ctx.Send(iscp.RequestParameters{
+			TargetAddress: ctx.Caller().Address(),
+			Assets:        tokensToWithdraw,
+			Metadata:      sendMetadata,
+			Options:       nil,
+		}),
 		"accounts.withdraw.inconsistency: failed sending tokens ",
 	)
 
