@@ -1,6 +1,7 @@
 package codec
 
 import (
+	iotago "github.com/iotaledger/iota.go/v3"
 	"golang.org/x/xerrors"
 )
 

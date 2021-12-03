@@ -159,7 +159,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
 // Consumed only internal UTXOs with changed token balances. The rest is left untouched
 func (txb *AnchorTransactionBuilder) inputs() iotago.Inputs {
 	ret := make(iotago.Inputs, 0, len(txb.consumed)+len(txb.balanceNativeTokens))
-	ret = append(ret, &txb.anchorOutputID)
+	ret = append(ret, txb.anchorOutputID)
 	for i := range txb.consumed {
 		ret = append(ret, &txb.consumed[i].Unwrap().UTXO().Metadata().UTXOInput)
 	}
@@ -381,7 +381,7 @@ func stringNativeTokenID(id *iotago.NativeTokenID) string {
 
 func (txb *AnchorTransactionBuilder) String() string {
 	ret := ""
-	ret += fmt.Sprintf("%s\n", stringUTXOInput(&txb.anchorOutputID))
+	ret += fmt.Sprintf("%s\n", stringUTXOInput(txb.anchorOutputID))
 	ret += fmt.Sprintf("initial IOTA balance: %d\n", txb.anchorOutput.Amount)
 	ret += fmt.Sprintf("current IOTA balance: %d\n", txb.currentBalanceIotasOnAnchor)
 	ret += fmt.Sprintf("Native tokens (%d):\n", len(txb.balanceNativeTokens))
