@@ -37,9 +37,11 @@ func AddEndpoints(
 ) {
 	initLogger()
 
+	isWhitelistEnabled := !parameters.GetBool(parameters.WebAPIAdminWhitelistDisabled)
+
 	echoGroup := adm.EchoGroup()
 
-	if !parameters.GetBool(parameters.WebAPIAdminWhitelistDisabled) {
+	if isWhitelistEnabled {
 		echoGroup.Use(protected(adminWhitelist))
 	}
 

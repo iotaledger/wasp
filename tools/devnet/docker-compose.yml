@@ -24,13 +24,16 @@ services:
   devnet_goshimmer:
     restart: always
     container_name: devnet_goshimmer
-    image: iotaledger/goshimmer:feat-document-devnet
+    #https://github.com/lmoe/goshimmer
+    image: lukasmoe/goshimmer:wasp-testnet-additions
     stop_grace_period: 1m
     networks:
       - wasp-devnet
     command: >
       --config=/tmp/config.json
       --database.directory=/tmp/devnetdb
+      --mana.snapshotResetTime=true
+      --node.seed=base58:3YX6e7AL28hHihZewKdq6CMkEYVsTJBLgRiprUNiNq5E
       --messageLayer.snapshot.file=/tmp/snapshot.bin
       --messageLayer.snapshot.genesisNode=
       --messageLayer.startSynced=true
