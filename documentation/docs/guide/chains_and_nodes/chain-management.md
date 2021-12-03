@@ -1,6 +1,5 @@
 ---
 keywords:
-- ISCP
 - Smart Contracts
 - Chain
 - Management

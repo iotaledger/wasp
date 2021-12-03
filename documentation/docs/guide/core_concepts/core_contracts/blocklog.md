@@ -12,7 +12,7 @@ keywords:
 --- 
 # The `blocklog` Contract
 
-The `blocklog` contract is one of the [core contracts](overview.md) on each ISCP chain.
+The `blocklog` contract is one of the [core contracts](overview.md) on each IOTA Smart Contracts chain.
 
 The function of the `blocklog` contract is to keep track of the blocks of
 requests that were processed by the chain.

@@ -1,6 +1,5 @@
 ---
 keywords:
-- ISCP
 - Smart Contracts
 - Chain
 - Set up
@@ -94,9 +93,9 @@ After you have requested the funds, you can deposit funds to a chain by running:
 wasp-cli chain deposit IOTA:10000
 ```
 
-### Deploy the ISCP Chain
+### Deploy the IOTA Smart Contracts Chain
 
-You can deploy your ISCP chain by running:
+You can deploy your IOTA Smart Contracts chain by running:
 
 ```shell
 wasp-cli chain deploy --committee=0,1,2,3 --quorum=3 --chain=mychain --description="My chain"

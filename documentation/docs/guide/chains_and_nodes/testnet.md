@@ -1,6 +1,5 @@
 ---
 keywords:
-- ISCP
 - Smart Contracts
 - TestNet
 description: A public testnet for developers to try out smart contracts 
