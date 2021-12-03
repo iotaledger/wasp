@@ -68,11 +68,11 @@ func addChainStatsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Prov
 
 	s := &chainStatsService{chainsProvider}
 
-	adm.GET(routes.GetChainsStats(), s.handleGetChainsStats).
+	adm.GET(routes.GetChainsMetrics(), s.handleGetChainsStats).
 		SetSummary("Get cummulative chains state statistics").
 		AddResponse(http.StatusOK, "Chains Stats", example, nil)
 
-	adm.GET(routes.GetChainStats(":chainID"), s.handleGetChainStats).
+	adm.GET(routes.GetChainMetrics(":chainID"), s.handleGetChainStats).
 		SetSummary("Get chain state statistics for the given chain ID").
 		AddParamPath("", "chainID", "ChainID (base58)").
 		AddResponse(http.StatusOK, "Chain Stats", chainExample, nil)

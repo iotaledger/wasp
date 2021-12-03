@@ -55,11 +55,11 @@ func GetCommitteeRecord(addr string) string {
 	return "/adm/committeerecord/" + addr
 }
 
-func GetChainsStats() string {
+func GetChainsMetrics() string {
 	return "/adm/chain/metrics"
 }
 
-func GetChainStats(chainID string) string {
+func GetChainMetrics(chainID string) string {
 	return "/adm/chain/" + chainID + "/metrics"
 }
 
