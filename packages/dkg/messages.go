@@ -15,7 +15,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
@@ -442,7 +441,7 @@ func (m *initiatorDoneMsg) IsResponse() bool {
 //
 type initiatorPubShareMsg struct {
 	step          byte
-	sharedAddress ledgerstate.Address
+	sharedAddress iotago.Address
 	sharedPublic  kyber.Point
 	publicShare   kyber.Point
 	signature     []byte
@@ -485,11 +484,11 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 		return err
 	}
 	var sharedAddressBin []byte
-	var sharedAddress ledgerstate.Address
+	var sharedAddress iotago.Address
 	if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if sharedAddress, _, err = ledgerstate.AddressFromBytes(sharedAddressBin); err != nil {
+	if sharedAddress, _, err = iotago.AddressFromBytes(sharedAddressBin); err != nil {
 		return err
 	}
 	m.sharedAddress = sharedAddress

@@ -3,7 +3,6 @@ package registry
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
@@ -17,34 +16,35 @@ type ChainRecord struct {
 }
 
 func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
-	ret := &ChainRecord{}
-	aliasAddr, err := ledgerstate.AliasAddressFromMarshalUtil(mu)
-	if err != nil {
-		return nil, err
-	}
-	ret.ChainID = iscp.NewChainID(aliasAddr)
+	panic("TODO implement")
+	// ret := &ChainRecord{}
+	// aliasAddr, err := ledgerstate.AliasAddressFromMarshalUtil(mu)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// ret.ChainID = iscp.NewChainID(aliasAddr)
 
-	ret.Active, err = mu.ReadBool()
-	if err != nil {
-		return nil, err
-	}
-	numPeers, err := mu.ReadUint16()
-	if err != nil {
-		return nil, err
-	}
-	ret.Peers = make([]string, numPeers)
-	for i := uint16(0); i < numPeers; i++ {
-		strSize, err := mu.ReadUint16()
-		if err != nil {
-			return nil, err
-		}
-		d, err := mu.ReadBytes(int(strSize))
-		if err != nil {
-			return nil, err
-		}
-		ret.Peers[i] = string(d)
-	}
-	return ret, nil
+	// ret.Active, err = mu.ReadBool()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// numPeers, err := mu.ReadUint16()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// ret.Peers = make([]string, numPeers)
+	// for i := uint16(0); i < numPeers; i++ {
+	// 	strSize, err := mu.ReadUint16()
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	d, err := mu.ReadBytes(int(strSize))
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	ret.Peers[i] = string(d)
+	// }
+	// return ret, nil
 }
 
 // CommitteeRecordFromBytes

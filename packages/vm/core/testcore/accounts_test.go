@@ -7,16 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -97,14 +94,14 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	t.Logf("origintor/owner: %s", chain.OriginatorAgentID.String())
 
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(1)
-	_, err = chain.PostRequestSync(req, chain.OriginatorKeyPair)
+	_, err = chain.PostRequestSync(req, chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 	chain.AssertTotalIotas(2)
 	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(2)
 
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncHarvest.Name).WithIotas(1)
-	_, err = chain.PostRequestSync(req, chain.OriginatorKeyPair)
+	_, err = chain.PostRequestSync(req, chain.OriginatorPrivateKey)
 
 	require.NoError(t, err)
 	chain.AssertTotalIotas(3)
@@ -172,7 +169,7 @@ func TestAccountsDepositToCommon(t *testing.T) {
 	chain.AssertCommonAccountIotas(43)
 }
 
-func getAccountNonce(t *testing.T, chain *solo.Chain, address ledgerstate.Address) uint64 {
+func getAccountNonce(t *testing.T, chain *solo.Chain, address iotago.Address) uint64 {
 	ret, err := chain.CallView(accounts.Contract.Name, accounts.FuncGetAccountNonce.Name,
 		accounts.ParamAgentID, iscp.NewAgentID(address, 0),
 	)

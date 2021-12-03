@@ -4,9 +4,10 @@
 package solo
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"math/big"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -16,12 +17,12 @@ import (
 )
 
 // AssertAddressBalance asserts the UTXODB address balance of specific color in the address
-func (env *Solo) AssertAddressBalance(addr ledgerstate.Address, col colored.Color, expected uint64) {
-	require.EqualValues(env.T, int(expected), int(env.GetAddressBalance(addr, col)))
+func (env *Solo) AssertAddressBalance(addr iotago.Address, assetID []byte, expected *big.Int) {
+	require.Zero(env.T, expected.Cmp(env.GetAddressBalance(addr, assetID)))
 }
 
-func (env *Solo) AssertAddressIotas(addr ledgerstate.Address, expected uint64) {
-	env.AssertAddressBalance(addr, colored.IOTA, expected)
+func (env *Solo) AssertAddressIotas(addr iotago.Address, expected *big.Int) {
+	env.AssertAddressBalance(addr, iscp.IotaAssetID, expected)
 }
 
 // CheckChain checks fundamental integrity of the chain
@@ -45,41 +46,35 @@ func (ch *Chain) CheckChain() {
 func (ch *Chain) CheckAccountLedger() {
 	total := ch.GetTotalAssets()
 	accs := ch.GetAccounts()
-	sum := colored.NewBalances()
+	sum := iscp.NewEmptyAssets()
 	for i := range accs {
 		acc := accs[i]
-		bals := ch.GetAccountBalance(acc)
-		bals.ForEachRandomly(func(col colored.Color, bal uint64) bool {
-			sum.Add(col, bal)
-			return true
-		})
+		sum.Add(ch.GetAccountBalance(acc))
 	}
 	require.True(ch.Env.T, total.Equals(sum))
 	coreacc := iscp.NewAgentID(ch.ChainID.AsAddress(), root.Contract.Hname())
-	require.Zero(ch.Env.T, len(ch.GetAccountBalance(coreacc)))
+	require.True(ch.Env.T, ch.GetAccountBalance(coreacc).IsEmpty())
 	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), blob.Contract.Hname())
-	require.Zero(ch.Env.T, len(ch.GetAccountBalance(coreacc)))
+	require.True(ch.Env.T, ch.GetAccountBalance(coreacc).IsEmpty())
 	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), accounts.Contract.Hname())
-	require.Zero(ch.Env.T, len(ch.GetAccountBalance(coreacc)))
-	require.Zero(ch.Env.T, len(ch.GetAccountBalance(coreacc)))
+	require.True(ch.Env.T, ch.GetAccountBalance(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.GetAccountBalance(coreacc).IsEmpty())
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertAccountBalance(agentID *iscp.AgentID, col colored.Color, bal uint64) {
+func (ch *Chain) AssertAccountBalance(agentID *iscp.AgentID, assetID []byte, bal *big.Int) {
 	bals := ch.GetAccountBalance(agentID)
-	b := bals.Get(col)
-	require.EqualValues(ch.Env.T, int(bal), int(b))
+	require.Zero(ch.Env.T, bal.Cmp(bals.AmountOf(assetID)))
 }
 
 func (ch *Chain) AssertIotas(agentID *iscp.AgentID, bal uint64) {
-	ch.AssertAccountBalance(agentID, colored.IOTA, bal)
+	require.Equal(ch.Env.T, bal, ch.GetAccountBalance(agentID).Iotas)
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertOwnersBalance(col colored.Color, bal uint64) {
+func (ch *Chain) AssertOwnersBalance(assetID []byte, bal *big.Int) {
 	bals := ch.GetCommonAccountBalance()
-	b := bals.Get(col)
-	require.EqualValues(ch.Env.T, int(bal), int(b))
+	require.Zero(ch.Env.T, bal.Cmp(bals.AmountOf(assetID)))
 }
 
 func (ch *Chain) AssertCommonAccountIotas(bal uint64) {
@@ -87,10 +82,9 @@ func (ch *Chain) AssertCommonAccountIotas(bal uint64) {
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertTotalAssets(col colored.Color, bal uint64) {
+func (ch *Chain) AssertTotalAssets(assetID []byte, bal *big.Int) {
 	bals := ch.GetTotalAssets()
-	b := bals.Get(col)
-	require.EqualValues(ch.Env.T, int(bal), int(b))
+	require.Zero(ch.Env.T, bal.Cmp(bals.AmountOf(assetID)))
 }
 
 func (ch *Chain) AssertTotalIotas(bal uint64) {
@@ -100,7 +94,7 @@ func (ch *Chain) AssertTotalIotas(bal uint64) {
 
 func (ch *Chain) CheckControlAddresses() {
 	rec := ch.GetControlAddresses()
-	require.True(ch.Env.T, rec.StateAddress.Equals(ch.StateControllerAddress))
-	require.True(ch.Env.T, rec.GoverningAddress.Equals(ch.StateControllerAddress))
+	require.True(ch.Env.T, rec.StateAddress.Equal(ch.StateControllerAddress))
+	require.True(ch.Env.T, rec.GoverningAddress.Equal(ch.StateControllerAddress))
 	require.EqualValues(ch.Env.T, 0, rec.SinceBlockIndex)
 }

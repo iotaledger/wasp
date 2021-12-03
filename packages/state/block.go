@@ -6,15 +6,14 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/kv/buffered"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"golang.org/x/xerrors"
 )
 
 type blockImpl struct {
-	stateOutputID ledgerstate.OutputID
+	stateOutputID iotago.OutputID
 	stateUpdate   *stateUpdateImpl
 	blockIndex    uint32 // not persistent
 }
@@ -67,7 +66,7 @@ func (b *blockImpl) String() string {
 	return ret
 }
 
-func (b *blockImpl) ApprovingOutputID() ledgerstate.OutputID {
+func (b *blockImpl) ApprovingOutputID() iotago.OutputID {
 	return b.stateOutputID
 }
 
@@ -93,7 +92,7 @@ func (b *blockImpl) PreviousStateHash() hashing.HashValue {
 	return ph
 }
 
-func (b *blockImpl) SetApprovingOutputID(oid ledgerstate.OutputID) {
+func (b *blockImpl) SetApprovingOutputID(oid iotago.OutputID) {
 	b.stateOutputID = oid
 }
 

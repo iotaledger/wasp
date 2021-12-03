@@ -5,7 +5,6 @@ package chainimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 )
 
 // DismissChainMsg sent by component to the chain core in case of major setback
@@ -14,7 +13,7 @@ type DismissChainMsg struct {
 }
 
 type OffLedgerRequestMsg struct {
-	Req         *request.OffLedger
+	Req         *iscp.OffLedgerRequestData
 	SenderNetID string
 }
 

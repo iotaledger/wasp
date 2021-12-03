@@ -7,11 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/consensus"
@@ -28,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/txstream"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -105,7 +105,7 @@ func NewChain(
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chainID.String())
 
-	chainLog := log.Named(chainID.Base58()[:6] + ".")
+	chainLog := log.Named(chainID.Bech32(iscp.Bech32Prefix)[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), chainLog, chainMetrics),
@@ -275,12 +275,12 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 	go func() {
 		for _, msg := range evts {
 			c.log.Debugf("publishNewBlockEvents: '%s'", msg)
-			publisher.Publish("vmmsg", c.chainID.Base58(), msg)
+			publisher.Publish("vmmsg", c.chainID.Bech32(iscp.Bech32Prefix), msg)
 		}
 	}()
 }
 
-func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput, currentCmt chain.Committee) error {
+func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iotago.AliasOutput, currentCmt chain.Committee) error {
 	if currentCmt.Address().Equals(anchorOutput.GetStateAddress()) {
 		// nothing changed. no rotation
 		return nil
@@ -295,7 +295,7 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput
 	}
 	// rotation needed
 	// close current in any case
-	c.log.Infof("CLOSING COMMITTEE for %s", currentCmt.Address().Base58())
+	c.log.Infof("CLOSING COMMITTEE for %s", currentCmt.Address().Bech32(iscp.Bech32Prefix))
 
 	currentCmt.Close()
 	c.consensus.Close()
@@ -310,7 +310,7 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput
 	return nil
 }
 
-func (c *chainObj) createCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput) error {
+func (c *chainObj) createCommitteeIfNeeded(anchorOutput *iotago.AliasOutput) error {
 	// check if I am in the committee
 	rec, err := c.getOwnCommitteeRecord(anchorOutput.GetStateAddress())
 	if err != nil {
@@ -325,7 +325,7 @@ func (c *chainObj) createCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput
 	return nil
 }
 
-func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*registry.CommitteeRecord, error) {
+func (c *chainObj) getOwnCommitteeRecord(addr iotago.Address) (*registry.CommitteeRecord, error) {
 	rec, err := c.committeeRegistry.GetCommitteeRecord(addr)
 	if err != nil {
 		return nil, xerrors.Errorf("createCommitteeIfNeeded: reading committee record: %v", err)
@@ -355,14 +355,14 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 	if err != nil {
 		c.setCommittee(nil)
 		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
-			cmtRec.Address.Base58(), err)
+			cmtRec.Address.Bech32(iscp.Bech32Prefix), err)
 	}
 	cmtPeerGroup.Attach(peering.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
 	c.log.Debugf("creating new consensus object...")
 	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
 	c.setCommittee(cmt)
 
-	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", cmtRec.Address.Base58())
+	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", cmtRec.Address.Bech32(iscp.Bech32Prefix))
 	return nil
 }
 

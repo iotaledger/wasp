@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -13,7 +13,7 @@ const incCounterSCName = "inccounter1"
 
 var incCounterSCHname = iscp.Hn(incCounterSCName)
 
-func (e *chainEnv) deployIncCounterSC(counter *cluster.MessageCounter) *ledgerstate.Transaction {
+func (e *chainEnv) deployIncCounterSC(counter *cluster.MessageCounter) *iotago.Transaction {
 	description := "testing contract deployment with inccounter" //nolint:goconst
 	programHash := inccounter.Contract.ProgramHash
 

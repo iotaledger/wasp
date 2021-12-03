@@ -8,7 +8,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
@@ -408,21 +407,20 @@ func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
 	return WriteBytes16(w, bin)
 }
 
-func ReadOutputID(r io.Reader, oid *ledgerstate.OutputID) error {
+func ReadOutputID(r io.Reader, oid *iotago.OutputID) error {
 	n, err := r.Read(oid[:])
 	if err != nil {
 		return err
 	}
-	if n != ledgerstate.OutputIDLength {
+	if n != iotago.OutputIDLength {
 		return fmt.Errorf("error while reading output ID: read %v bytes, expected %v bytes",
-			n, ledgerstate.OutputIDLength)
+			n, iotago.OutputIDLength)
 	}
 	return nil
 }
 
 func ReadTransactionID(r io.Reader, txid *iotago.TransactionID) error {
 	n, err := r.Read(txid[:])
-
 	if err != nil {
 		return err
 	}

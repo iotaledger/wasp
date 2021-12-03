@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
@@ -36,9 +35,9 @@ func TestTutorial2(t *testing.T) {
 	env := solo.New(t, false, false, seed)
 	_, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 	t.Logf("address of the userWallet is: %s", userAddress.Base58())
-	numIotas := env.GetAddressBalance(userAddress, colored.IOTA) // how many iotas the address contains
+	numIotas := env.GetAddressBalance(userAddress, iscp.IotaTokenID) // how many iotas the address contains
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressBalance(userAddress, iscp.IotaTokenID, solo.Saldo)
 }
 
 func TestTutorial3(t *testing.T) {

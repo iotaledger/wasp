@@ -118,7 +118,7 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 	}
 	opt := opts[0]
 	if opt.wallet == nil {
-		opt.wallet = e.soloChain.OriginatorKeyPair
+		opt.wallet = e.soloChain.OriginatorPrivateKey
 	}
 	if opt.transfer == 0 {
 		opt.transfer = 1
@@ -321,7 +321,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 		opt.sender = e.creator
 	}
 	if opt.iota.wallet == nil {
-		opt.iota.wallet = e.chain.soloChain.OriginatorKeyPair
+		opt.iota.wallet = e.chain.soloChain.OriginatorPrivateKey
 	}
 	if opt.gasLimit == 0 {
 		opt.gasLimit = e.chain.estimateGas(e.callMsg(ethereum.CallMsg{

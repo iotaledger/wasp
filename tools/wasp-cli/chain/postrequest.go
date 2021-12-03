@@ -1,14 +1,13 @@
 package chain
 
 import (
+	"math/big"
 	"strconv"
 	"strings"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
@@ -33,11 +32,11 @@ func postRequestCmd() *cobra.Command {
 			scClient := SCClient(iscp.Hn(args[0]))
 
 			if offLedger {
-				util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.OffLedger, error) {
+				util.WithOffLedgerRequest(GetCurrentChainID(), func() (*iscp.OffLedgerRequestData, error) {
 					return scClient.PostOffLedgerRequest(fname, params)
 				})
 			} else {
-				util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
+				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
 					return scClient.PostRequest(fname, params)
 				})
 			}
@@ -54,26 +53,30 @@ func postRequestCmd() *cobra.Command {
 	return cmd
 }
 
-func colorFromString(s string) colored.Color {
-	if s == colored.IOTA.String() {
-		return colored.IOTA
-	}
-	c, err := colored.ColorFromBase58EncodedString(s)
-	log.Check(err)
-	return c
+func assetIDFromString(s string) []byte {
+	panic("TODO implement")
+	// if s == colored.IOTA.String() {
+	// 	return colored.IOTA
+	// }
+	// c, err := colored.ColorFromBase58EncodedString(s)
+	// log.Check(err)
+	// return c
 }
 
-func parseColoredBalances(args []string) colored.Balances {
-	cb := colored.NewBalances()
+func parseColoredBalances(args []string) *iscp.Assets {
+	assets := iscp.NewEmptyAssets()
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {
 			log.Fatalf("colored balances syntax: <color>:<amount>,<color:amount>... -- Example: IOTA:100")
 		}
-		col := colorFromString(parts[0])
+		assetID := assetIDFromString(parts[0])
+
+		panic("TODO amount needs to support uint256")
 		amount, err := strconv.Atoi(parts[1])
 		log.Check(err)
-		cb.Set(col, uint64(amount))
+
+		assets.AddAsset(assetID, big.NewInt(int64(amount)))
 	}
-	return cb
+	return assets
 }

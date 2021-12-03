@@ -1,9 +1,9 @@
 package wallet
 
 import (
-	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/mr-tron/base58"
@@ -16,7 +16,7 @@ type WalletConfig struct {
 }
 
 type Wallet struct {
-	seed *seed.Seed
+	seed util.Seed
 }
 
 var initCmd = &cobra.Command{
@@ -24,7 +24,7 @@ var initCmd = &cobra.Command{
 	Short: "Initialize a new wallet",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		seed := base58.Encode(seed.NewSeed().Bytes())
+		seed := base58.Encode(util.NewSeed()[:])
 		viper.Set("wallet.seed", seed)
 		log.Check(viper.WriteConfig())
 
@@ -43,15 +43,17 @@ func Load() *Wallet {
 	}
 	seedBytes, err := base58.Decode(seedb58)
 	log.Check(err)
-	return &Wallet{seed.NewSeed(seedBytes)}
+	return &Wallet{util.NewSeed(seedBytes)}
 }
 
 var addressIndex int
 
-func (w *Wallet) KeyPair() *ed25519.KeyPair {
-	return w.seed.KeyPair(uint64(addressIndex))
+func (w *Wallet) PrivateKey() *ed25519.PrivateKey {
+	key := ed25519.NewKeyFromSeed(w.seed[:])
+	return &key
 }
 
-func (w *Wallet) Address() ledgerstate.Address {
-	return w.seed.Address(uint64(addressIndex)).Address()
+func (w *Wallet) Address() iotago.Address {
+	addr := iotago.Ed25519AddressFromPubKey(w.PrivateKey().Public().(ed25519.PublicKey))
+	return &addr
 }

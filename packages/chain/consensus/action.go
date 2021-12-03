@@ -9,20 +9,17 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/identity"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"golang.org/x/xerrors"
 )
 
 // takeAction triggers actions whenever relevant
@@ -130,7 +127,7 @@ func (c *consensus) runVMIfNeeded() {
 	for _, req := range reqs {
 		_, isOnLedgerReq := req.(*request.OnLedger)
 		if isOnLedgerReq {
-			if onLedgerCount >= ledgerstate.MaxInputCount-2 { // 125 (126 limit -1 for the previous state utxo)
+			if onLedgerCount >= iotago.MaxInputsCount-2 { // 125 (126 limit -1 for the previous state utxo)
 				// do not include more on-ledger requests that number of tx inputs allowed-1 ("-1" for chain input)
 				continue
 			}
@@ -563,62 +560,63 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 }
 
 func (c *consensus) processInclusionState(msg *messages.InclusionStateMsg) {
-	if !c.workflow.transactionFinalized {
-		c.log.Debugf("processInclusionState: transaction finalized -> skipping.")
-		return
-	}
-	if msg.TxID != c.finalTx.ID() {
-		c.log.Debugf("processInclusionState: current transaction id %v does not match the received one %v -> skipping.",
-			c.finalTx.ID().Base58(), msg.TxID.Base58())
-		return
-	}
-	switch msg.State {
-	case ledgerstate.Pending:
-		c.workflow.transactionSeen = true
-		c.log.Debugf("processInclusionState: transaction id %v is pending.", c.finalTx.ID().Base58())
-	case ledgerstate.Confirmed:
-		c.workflow.transactionSeen = true
-		c.workflow.inProgress = false
-		c.refreshConsensusInfo()
-		c.log.Debugf("processInclusionState: transaction id %s is confirmed; workflow finished", msg.TxID.Base58())
-	case ledgerstate.Rejected:
-		c.workflow.transactionSeen = true
-		c.log.Infof("processInclusionState: transaction id %s is rejected; restarting consensus.", msg.TxID.Base58())
-		c.resetWorkflow()
-	}
-}
+	panic("TODO implement")
+	// 	if !c.workflow.transactionFinalized {
+	// 		c.log.Debugf("processInclusionState: transaction finalized -> skipping.")
+	// 		return
+	// 	}
+	// 	if msg.TxID != c.finalTx.ID() {
+	// 		c.log.Debugf("processInclusionState: current transaction id %v does not match the received one %v -> skipping.",
+	// 			c.finalTx.ID().Base58(), msg.TxID.Base58())
+	// 		return
+	// 	}
+	// 	switch msg.State {
+	// 	case ledgerstate.Pending:
+	// 		c.workflow.transactionSeen = true
+	// 		c.log.Debugf("processInclusionState: transaction id %v is pending.", c.finalTx.ID().Base58())
+	// 	case ledgerstate.Confirmed:
+	// 		c.workflow.transactionSeen = true
+	// 		c.workflow.inProgress = false
+	// 		c.refreshConsensusInfo()
+	// 		c.log.Debugf("processInclusionState: transaction id %s is confirmed; workflow finished", msg.TxID.Base58())
+	// 	case ledgerstate.Rejected:
+	// 		c.workflow.transactionSeen = true
+	// 		c.log.Infof("processInclusionState: transaction id %s is rejected; restarting consensus.", msg.TxID.Base58())
+	// 		c.resetWorkflow()
+	// 	}
+	// }
 
-func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, *ledgerstate.AliasOutput, error) {
-	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, c.resultTxEssence.Bytes())
-	if err != nil {
-		return nil, nil, xerrors.Errorf("finalizeTransaction RecoverFullSignature fail: %w", err)
-	}
-	sigUnlockBlock := ledgerstate.NewSignatureUnlockBlock(ledgerstate.NewBLSSignature(*signatureWithPK))
+	// func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, *ledgerstate.AliasOutput, error) {
+	// 	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, c.resultTxEssence.Bytes())
+	// 	if err != nil {
+	// 		return nil, nil, xerrors.Errorf("finalizeTransaction RecoverFullSignature fail: %w", err)
+	// 	}
+	// 	sigUnlockBlock := ledgerstate.NewSignatureUnlockBlock(ledgerstate.NewBLSSignature(*signatureWithPK))
 
-	// check consistency ---------------- check if chain inputs were consumed
-	chainInput := ledgerstate.NewUTXOInput(c.stateOutput.ID())
-	indexChainInput := -1
-	for i, inp := range c.resultTxEssence.Inputs() {
-		if inp.Compare(chainInput) == 0 {
-			indexChainInput = i
-			break
-		}
-	}
-	c.assert.Require(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", iscp.OID(c.stateOutput.ID())))
-	// check consistency ---------------- end
+	// 	// check consistency ---------------- check if chain inputs were consumed
+	// 	chainInput := ledgerstate.NewUTXOInput(c.stateOutput.ID())
+	// 	indexChainInput := -1
+	// 	for i, inp := range c.resultTxEssence.Inputs() {
+	// 		if inp.Compare(chainInput) == 0 {
+	// 			indexChainInput = i
+	// 			break
+	// 		}
+	// 	}
+	// 	c.assert.Require(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", iscp.OID(c.stateOutput.ID())))
+	// 	// check consistency ---------------- end
 
-	blocks := make([]ledgerstate.UnlockBlock, len(c.resultTxEssence.Inputs()))
-	for i := range c.resultTxEssence.Inputs() {
-		if i == indexChainInput {
-			blocks[i] = sigUnlockBlock
-		} else {
-			blocks[i] = ledgerstate.NewAliasUnlockBlock(uint16(indexChainInput))
-		}
-	}
-	tx := ledgerstate.NewTransaction(c.resultTxEssence, blocks)
-	chained := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress())
-	c.log.Debugf("finalizeTransaction: transaction %v finalized; approving output ID: %v", tx.ID().Base58(), iscp.OID(chained.ID()))
-	return tx, chained, nil
+	// 	blocks := make([]ledgerstate.UnlockBlock, len(c.resultTxEssence.Inputs()))
+	// 	for i := range c.resultTxEssence.Inputs() {
+	// 		if i == indexChainInput {
+	// 			blocks[i] = sigUnlockBlock
+	// 		} else {
+	// 			blocks[i] = ledgerstate.NewAliasUnlockBlock(uint16(indexChainInput))
+	// 		}
+	// 	}
+	// 	tx := ledgerstate.NewTransaction(c.resultTxEssence, blocks)
+	// 	chained := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress())
+	// 	c.log.Debugf("finalizeTransaction: transaction %v finalized; approving output ID: %v", tx.ID().Base58(), iscp.OID(chained.ID()))
+	// 	return tx, chained, nil
 }
 
 func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
@@ -715,8 +713,8 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	c.log.Debugf("processVMResult signed: essence hash: %s", essenceHash.String())
 }
 
-func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledgerstate.TransactionEssence {
-	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Base58())
+func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotago.TransactionEssence {
+	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(iscp.Bech32Prefix))
 
 	// TODO access and consensus pledge
 	essence, err := rotate.MakeRotateStateControllerTransaction(

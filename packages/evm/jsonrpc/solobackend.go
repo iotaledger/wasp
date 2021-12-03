@@ -4,8 +4,8 @@
 package jsonrpc
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 )
@@ -13,31 +13,31 @@ import (
 type SoloBackend struct {
 	Env    *solo.Solo
 	Chain  *solo.Chain
-	signer *ed25519.KeyPair
+	pvtKey *ed25519.PrivateKey
 }
 
 var _ ChainBackend = &SoloBackend{}
 
-func NewSoloBackend(env *solo.Solo, chain *solo.Chain, signer *ed25519.KeyPair) *SoloBackend {
+func NewSoloBackend(env *solo.Solo, chain *solo.Chain, signer *ed25519.PrivateKey) *SoloBackend {
 	return &SoloBackend{env, chain, signer}
 }
 
-func (s *SoloBackend) Signer() *ed25519.KeyPair {
-	return s.signer
+func (s *SoloBackend) Signer() *ed25519.PrivateKey {
+	return s.pvtKey
 }
 
-func (s *SoloBackend) PostOnLedgerRequest(scName, funName string, transfer colored.Balances, args dict.Dict) error {
+func (s *SoloBackend) PostOnLedgerRequest(scName, funName string, transfer *iscp.Assets, args dict.Dict) error {
 	_, err := s.Chain.PostRequestSync(
 		solo.NewCallParamsFromDic(scName, funName, args).WithTransfers(transfer),
-		s.signer,
+		s.pvtKey,
 	)
 	return err
 }
 
-func (s *SoloBackend) PostOffLedgerRequest(scName, funName string, transfer colored.Balances, args dict.Dict) error {
+func (s *SoloBackend) PostOffLedgerRequest(scName, funName string, transfer *iscp.Assets, args dict.Dict) error {
 	_, err := s.Chain.PostRequestOffLedger(
 		solo.NewCallParamsFromDic(scName, funName, args).WithTransfers(transfer),
-		s.signer,
+		s.pvtKey,
 	)
 	return err
 }

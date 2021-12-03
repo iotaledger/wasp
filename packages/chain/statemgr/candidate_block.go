@@ -4,7 +4,7 @@
 package statemgr
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -58,7 +58,7 @@ func (cT *candidateBlock) isApproved() bool {
 	return cT.approved
 }
 
-func (cT *candidateBlock) approveIfRightOutput(output *ledgerstate.AliasOutput) {
+func (cT *candidateBlock) approveIfRightOutput(output *iotago.AliasOutput) {
 	if cT.block.BlockIndex() == output.GetStateIndex() {
 		outputID := output.ID()
 		finalHash, err := hashing.HashValueFromBytes(output.GetStateData())
@@ -91,6 +91,6 @@ func (cT *candidateBlock) getNextState(currentState state.VirtualStateAccess) (s
 	return currentState, err
 }
 
-func (cT *candidateBlock) getApprovingOutputID() ledgerstate.OutputID {
+func (cT *candidateBlock) getApprovingOutputID() iotago.OutputID {
 	return cT.block.ApprovingOutputID()
 }

@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -30,10 +30,10 @@ type stateManager struct {
 	nodeConn               chain.NodeConnection
 	pullStateRetryTime     time.Time
 	solidState             state.VirtualStateAccess
-	stateOutput            *ledgerstate.AliasOutput
+	stateOutput            *iotago.AliasOutput
 	stateOutputTimestamp   time.Time
 	currentSyncData        atomic.Value
-	notifiedAnchorOutputID ledgerstate.OutputID
+	notifiedAnchorOutputID iotago.OutputID
 	syncingBlocks          *syncingBlocks
 	timers                 StateManagerTimers
 	log                    *logger.Logger
@@ -67,7 +67,7 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		timers = NewStateManagerTimers()
 	}
 	ret := &stateManager{
-		ready:                      ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
+		ready:                      ready.New(fmt.Sprintf("state manager %s", c.ID().String()[:6]+"..")),
 		store:                      store,
 		chain:                      c,
 		nodeConn:                   nodeconn,
@@ -203,7 +203,7 @@ func (sm *stateManager) recvLoop() {
 			}
 		case msg, ok := <-eventOutputMsgCh:
 			if ok {
-				sm.handleOutputMsg(msg.(ledgerstate.Output))
+				sm.handleOutputMsg(msg.(iotago.Output))
 			} else {
 				eventOutputMsgCh = nil
 			}

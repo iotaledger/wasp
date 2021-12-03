@@ -2,9 +2,9 @@ package nodeconnimpl
 
 import (
 	"github.com/iotaledger/hive.go/logger"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/txstream"
 )
 
 type NodeConnImplementation struct {
@@ -19,37 +19,37 @@ func New(nodeConnClient *txstream.Client, log *logger.Logger) *NodeConnImplement
 	}
 }
 
-func (n *NodeConnImplementation) PullBacklog(addr *ledgerstate.AliasAddress) {
-	n.log.Debugf("NodeConnImplementation::PullBacklog(addr=%s)...", addr.Base58())
+func (n *NodeConnImplementation) PullBacklog(addr *iotago.AliasAddress) {
+	n.log.Debugf("NodeConnImplementation::PullBacklog(addr=%s)...", addr.Bech32(iscp.Bech32Prefix))
 	n.client.RequestBacklog(addr)
-	n.log.Debugf("NodeConnImplementation::PullBacklog(addr=%s)... Done", addr.Base58())
+	n.log.Debugf("NodeConnImplementation::PullBacklog(addr=%s)... Done", addr.Bech32(iscp.Bech32Prefix))
 }
 
-func (n *NodeConnImplementation) PullState(addr *ledgerstate.AliasAddress) {
-	n.log.Debugf("NodeConnImplementation::PullState(addr=%s)...", addr.Base58())
+func (n *NodeConnImplementation) PullState(addr *iotago.AliasAddress) {
+	n.log.Debugf("NodeConnImplementation::PullState(addr=%s)...", addr.Bech32(iscp.Bech32Prefix))
 	n.client.RequestUnspentAliasOutput(addr)
-	n.log.Debugf("NodeConnImplementation::PullState(addr=%s)... Done", addr.Base58())
+	n.log.Debugf("NodeConnImplementation::PullState(addr=%s)... Done", addr.Bech32(iscp.Bech32Prefix))
 }
 
-func (n *NodeConnImplementation) PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
-	n.log.Debugf("NodeConnImplementation::PullConfirmedTransaction(addr=%s)...", addr.Base58())
+func (n *NodeConnImplementation) PullConfirmedTransaction(addr iotago.Address, txid iotago.TransactionID) {
+	n.log.Debugf("NodeConnImplementation::PullConfirmedTransaction(addr=%s)...", addr.Bech32(iscp.Bech32Prefix))
 	n.client.RequestConfirmedTransaction(addr, txid)
-	n.log.Debugf("NodeConnImplementation::PullConfirmedTransaction(addr=%s)... Done", addr.Base58())
+	n.log.Debugf("NodeConnImplementation::PullConfirmedTransaction(addr=%s)... Done", addr.Bech32(iscp.Bech32Prefix))
 }
 
-func (n *NodeConnImplementation) PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
-	n.log.Debugf("NodeConnImplementation::PullTransactionInclusionState(addr=%s)...", addr.Base58())
+func (n *NodeConnImplementation) PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID) {
+	n.log.Debugf("NodeConnImplementation::PullTransactionInclusionState(addr=%s)...", addr.Bech32(iscp.Bech32Prefix))
 	n.client.RequestTxInclusionState(addr, txid)
-	n.log.Debugf("NodeConnImplementation::PullTransactionInclusionState(addr=%s)... Done", addr.Base58())
+	n.log.Debugf("NodeConnImplementation::PullTransactionInclusionState(addr=%s)... Done", addr.Bech32(iscp.Bech32Prefix))
 }
 
-func (n *NodeConnImplementation) PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
-	n.log.Debugf("NodeConnImplementation::PullConfirmedOutput(addr=%s)...", addr.Base58())
+func (n *NodeConnImplementation) PullConfirmedOutput(addr iotago.Address, outputID iotago.OutputID) {
+	n.log.Debugf("NodeConnImplementation::PullConfirmedOutput(addr=%s)...", addr.Bech32(iscp.Bech32Prefix))
 	n.client.RequestConfirmedOutput(addr, outputID)
-	n.log.Debugf("NodeConnImplementation::PullConfirmedOutput(addr=%s)... Done", addr.Base58())
+	n.log.Debugf("NodeConnImplementation::PullConfirmedOutput(addr=%s)... Done", addr.Bech32(iscp.Bech32Prefix))
 }
 
-func (n *NodeConnImplementation) PostTransaction(tx *ledgerstate.Transaction) {
+func (n *NodeConnImplementation) PostTransaction(tx *iotago.Transaction) {
 	n.log.Debugf("NodeConnImplementation::PostTransaction(tx, id=%s)...", tx.ID())
 	n.client.PostTransaction(tx)
 	n.log.Debugf("NodeConnImplementation::PostTransaction(tx, id=%s)... Done", tx.ID())

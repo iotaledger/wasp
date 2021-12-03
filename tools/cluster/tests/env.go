@@ -7,15 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +25,7 @@ var (
 
 	wallet      = initSeed()
 	scOwner     = wallet.KeyPair(0)
-	scOwnerAddr = ledgerstate.NewED25519Address(scOwner.PublicKey)
+	scOwnerAddr = iotago.NewED25519Address(scOwner.PublicKey)
 )
 
 type env struct {
@@ -54,8 +53,8 @@ type contractWithMessageCounterEnv struct {
 	counter *cluster.MessageCounter
 }
 
-func initSeed() *seed.Seed {
-	return seed.NewSeed()
+func initSeed() util.Seed {
+	return util.NewSeed()
 }
 
 // TODO detached example code
@@ -111,13 +110,13 @@ func (e *chainEnv) createNewClient() *scclient.SCClient {
 	return client
 }
 
-func (e *chainEnv) getOrCreateAddress() (*ed25519.KeyPair, *ledgerstate.ED25519Address) {
+func (e *chainEnv) getOrCreateAddress() (*ed25519.KeyPair, *iotago.ED25519Address) {
 	const minTokenAmountBeforeRequestingNewFunds uint64 = 100
 
 	randomAddress := rand.NewSource(time.Now().UnixNano())
 
 	keyPair := wallet.KeyPair(e.addressIndex)
-	myAddress := ledgerstate.NewED25519Address(keyPair.PublicKey)
+	myAddress := iotago.NewED25519Address(keyPair.PublicKey)
 
 	funds, err := e.clu.GoshimmerClient().BalanceIOTA(myAddress)
 
@@ -130,7 +129,7 @@ func (e *chainEnv) getOrCreateAddress() (*ed25519.KeyPair, *ledgerstate.ED25519A
 		e.t.Logf("Generating new address: %v", e.addressIndex)
 
 		keyPair = wallet.KeyPair(e.addressIndex)
-		myAddress = ledgerstate.NewED25519Address(keyPair.PublicKey)
+		myAddress = iotago.NewED25519Address(keyPair.PublicKey)
 
 		e.requestFunds(myAddress, "myAddress")
 		e.t.Logf("Funds: %v, addressIndex: %v", funds, e.addressIndex)
@@ -140,15 +139,12 @@ func (e *chainEnv) getOrCreateAddress() (*ed25519.KeyPair, *ledgerstate.ED25519A
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint iscp.Hname, tokens int, params map[string]interface{}) {
-	transfer := colored.NewBalances()
-	if tokens != 0 {
-		transfer = colored.NewBalancesForIotas(uint64(tokens))
-	}
+	transfer := iscp.NewAssets(uint64(tokens), nil)
 	e.postRequestFull(contract, entryPoint, transfer, params)
 }
 
-func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint iscp.Hname, transfer colored.Balances, params map[string]interface{}) {
-	b := colored.NewBalances()
+func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint iscp.Hname, transfer *iscp.Assets, params map[string]interface{}) {
+	b := iscp.NewEmptyAssets()
 	if transfer != nil {
 		b = transfer
 	}

@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -106,8 +105,8 @@ func (s *dkSharesService) handleDKSharesPost(c echo.Context) error {
 func (s *dkSharesService) handleDKSharesGet(c echo.Context) error {
 	var err error
 	var dkShare *tcrypto.DKShare
-	var sharedAddress ledgerstate.Address
-	if sharedAddress, err = ledgerstate.AddressFromBase58EncodedString(c.Param("sharedAddress")); err != nil {
+	var sharedAddress iotago.Address
+	if sharedAddress, err = iotago.AddressFromBase58EncodedString(c.Param("sharedAddress")); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 	if dkShare, err = s.registry().LoadDKShare(sharedAddress); err != nil {

@@ -4,10 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
@@ -16,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/txstream"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"golang.org/x/xerrors"
 )
@@ -33,7 +33,7 @@ type ChainProvider func(chainID *iscp.ChainID) chain.Chain
 type Chains struct {
 	mutex                            sync.RWMutex
 	log                              *logger.Logger
-	allChains                        map[[ledgerstate.AddressLength]byte]chain.Chain
+	allChains                        map[[iotago.Ed25519AddressBytesLength]byte]chain.Chain
 	nodeConn                         *txstream.Client
 	processorConfig                  *processors.Config
 	offledgerBroadcastUpToNPeers     int
@@ -54,7 +54,7 @@ func New(
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
-		allChains:                        make(map[[ledgerstate.AddressLength]byte]chain.Chain),
+		allChains:                        make(map[[iotago.Ed25519AddressBytesLength]byte]chain.Chain),
 		processorConfig:                  processorConfig,
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
@@ -72,7 +72,7 @@ func (c *Chains) Dismiss() {
 	for _, ch := range c.allChains {
 		ch.Dismiss("shutdown")
 	}
-	c.allChains = make(map[[ledgerstate.AddressLength]byte]chain.Chain)
+	c.allChains = make(map[[iotago.Ed25519AddressBytesLength]byte]chain.Chain)
 }
 
 func (c *Chains) Attach(nodeConn *txstream.Client) {

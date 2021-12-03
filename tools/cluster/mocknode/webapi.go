@@ -3,17 +3,12 @@ package mocknode
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/jsonmodels"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"golang.org/x/xerrors"
 )
 
 func (m *MockNode) startWebAPI(bindAddress string) error {
@@ -64,73 +59,77 @@ func (m *MockNode) addEndpoints(e *echo.Echo) {
 }
 
 func (m *MockNode) unspentOutputsHandler(c echo.Context) error {
-	address, err := ledgerstate.AddressFromBase58EncodedString(c.Param("address"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
-	}
+	panic("TODO implement")
+	// address, err := iotago.AddressFromBase58EncodedString(c.Param("address"))
+	// if err != nil {
+	// 	return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
+	// }
 
-	var outputs []ledgerstate.Output
-	m.Ledger.GetUnspentOutputs(address, func(output ledgerstate.Output) {
-		outputs = append(outputs, output.Clone())
-	})
+	// var outputs []iotago.Output
+	// m.Ledger.GetUnspentOutputs(address, func(output iotago.Output) {
+	// 	outputs = append(outputs, output.Clone())
+	// })
 
-	return c.JSON(http.StatusOK, jsonmodels.NewGetAddressResponse(address, outputs))
+	// return c.JSON(http.StatusOK, jsonmodels.NewGetAddressResponse(address, outputs))
 }
 
 func (m *MockNode) getTransactionInclusionStateHandler(c echo.Context) error {
-	txID, err := ledgerstate.TransactionIDFromBase58(c.Param("transactionID"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
-	}
+	panic("TODO implement")
+	// txID, err := iotago.TransactionIDFromBase58(c.Param("transactionID"))
+	// if err != nil {
+	// 	return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
+	// }
 
-	found := m.Ledger.GetConfirmedTransaction(txID, func(tx *ledgerstate.Transaction) {})
-	if !found {
-		return c.JSON(http.StatusNotFound, jsonmodels.NewErrorResponse(xerrors.Errorf("failed to load Transaction with %s", txID)))
-	}
-	return c.JSON(http.StatusOK, &jsonmodels.TransactionInclusionState{
-		TransactionID: txID.Base58(),
-		Pending:       false,
-		Confirmed:     true,
-		Rejected:      false,
-		Conflicting:   false,
-	})
+	// found := m.Ledger.GetConfirmedTransaction(txID, func(tx *iotago.Transaction) {})
+	// if !found {
+	// 	return c.JSON(http.StatusNotFound, jsonmodels.NewErrorResponse(xerrors.Errorf("failed to load Transaction with %s", txID)))
+	// }
+	// return c.JSON(http.StatusOK, &jsonmodels.TransactionInclusionState{
+	// 	TransactionID: txID.Base58(),
+	// 	Pending:       false,
+	// 	Confirmed:     true,
+	// 	Rejected:      false,
+	// 	Conflicting:   false,
+	// })
 }
 
 func (m *MockNode) sendTransactionHandler(c echo.Context) error {
-	var request jsonmodels.PostTransactionRequest
-	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
-	}
+	panic("TODO implement")
+	// var request jsonmodels.PostTransactionRequest
+	// if err := c.Bind(&request); err != nil {
+	// 	return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
+	// }
 
-	// parse tx
-	tx, _, err := ledgerstate.TransactionFromBytes(request.TransactionBytes)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
-	}
+	// // parse tx
+	// tx, _, err := iotago.TransactionFromBytes(request.TransactionBytes)
+	// if err != nil {
+	// 	return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
+	// }
 
-	err = m.Ledger.PostTransaction(tx)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
-	}
+	// err = m.Ledger.PostTransaction(tx)
+	// if err != nil {
+	// 	return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
+	// }
 
-	return c.JSON(http.StatusOK, &jsonmodels.PostTransactionResponse{TransactionID: tx.ID().Base58()})
+	// return c.JSON(http.StatusOK, &jsonmodels.PostTransactionResponse{TransactionID: tx.ID().Base58()})
 }
 
 func (m *MockNode) requestFundsHandler(c echo.Context) error {
-	var request jsonmodels.FaucetRequest
-	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: err.Error()})
-	}
+	panic("TODO implement")
+	// var request jsonmodels.FaucetRequest
+	// if err := c.Bind(&request); err != nil {
+	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: err.Error()})
+	// }
 
-	addr, err := ledgerstate.AddressFromBase58EncodedString(request.Address)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: fmt.Sprintf("invalid address (%s): %s", request.Address, err.Error())})
-	}
+	// addr, err := iotago.AddressFromBase58EncodedString(request.Address)
+	// if err != nil {
+	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: fmt.Sprintf("invalid address (%s): %s", request.Address, err.Error())})
+	// }
 
-	err = m.Ledger.RequestFunds(addr)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: fmt.Sprintf("ledger.RequestFunds: %s", err.Error())})
-	}
+	// err = m.Ledger.RequestFunds(addr)
+	// if err != nil {
+	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: fmt.Sprintf("ledger.RequestFunds: %s", err.Error())})
+	// }
 
-	return c.JSON(http.StatusOK, jsonmodels.FaucetResponse{ID: tangle.EmptyMessageID.String()})
+	// return c.JSON(http.StatusOK, jsonmodels.FaucetResponse{ID: tangle.EmptyMessageID.String()})
 }

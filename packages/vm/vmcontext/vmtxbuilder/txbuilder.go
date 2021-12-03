@@ -34,7 +34,7 @@ type AnchorTransactionBuilder struct {
 	// anchorOutput output of the chain
 	anchorOutput *iotago.AliasOutput
 	// anchorOutputID is the ID of the anchor output
-	anchorOutputID iotago.UTXOInput
+	anchorOutputID *iotago.UTXOInput
 	// already consumed outputs, specified by entire RequestData. It is needed for checking validity
 	consumed []iscp.RequestData
 	// balance of iotas is kept in the anchor output. Does not include iotas which are on other outputs
@@ -81,7 +81,7 @@ func (n *nativeTokenBalance) requiresInput() bool {
 }
 
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
-func NewAnchorTransactionBuilder(anchorOutput *iotago.AliasOutput, anchorOutputID iotago.UTXOInput, balanceIotasOnAnchor uint64, tokenBalanceLoader tokenBalanceLoader) *AnchorTransactionBuilder {
+func NewAnchorTransactionBuilder(anchorOutput *iotago.AliasOutput, anchorOutputID *iotago.UTXOInput, balanceIotasOnAnchor uint64, tokenBalanceLoader tokenBalanceLoader) *AnchorTransactionBuilder {
 	return &AnchorTransactionBuilder{
 		loadNativeTokensOnChain:     tokenBalanceLoader,
 		anchorOutput:                anchorOutput,

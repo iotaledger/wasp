@@ -3,7 +3,6 @@ package client
 import (
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -16,7 +15,7 @@ func (c *WaspClient) PutCommitteeRecord(rec *registry.CommitteeRecord) error {
 }
 
 // GetCommitteeRecord fetches a Record by address
-func (c *WaspClient) GetCommitteeRecord(addr ledgerstate.Address) (*registry.CommitteeRecord, error) {
+func (c *WaspClient) GetCommitteeRecord(addr iotago.Address) (*registry.CommitteeRecord, error) {
 	res := &model.CommitteeRecord{}
 	if err := c.do(http.MethodGet, routes.GetCommitteeRecord(addr.Base58()), nil, res); err != nil {
 		return nil, err

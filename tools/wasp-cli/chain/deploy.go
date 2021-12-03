@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
@@ -38,20 +39,20 @@ func deployCmd() *cobra.Command {
 			}
 
 			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
-				Node:                  config.GoshimmerClient(),
+				Layer1Client:          config.GoshimmerClient(),
 				AllAPIHosts:           config.CommitteeAPI(peers),
 				AllPeeringHosts:       config.CommitteePeering(peers),
 				CommitteeAPIHosts:     config.CommitteeAPI(committee),
 				CommitteePeeringHosts: config.CommitteePeering(committee),
 				N:                     uint16(len(committee)),
 				T:                     uint16(quorum),
-				OriginatorKeyPair:     wallet.Load().KeyPair(),
+				OriginatorPrivateKey:  wallet.Load().KeyPair(),
 				Description:           description,
 				Textout:               os.Stdout,
 			})
 			log.Check(err)
 
-			AddChainAlias(alias, chainid.Base58())
+			AddChainAlias(alias, chainid.Bech32(iscp.Bech32Prefix))
 		},
 	}
 

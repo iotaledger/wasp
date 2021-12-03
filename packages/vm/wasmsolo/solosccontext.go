@@ -4,11 +4,12 @@
 package wasmsolo
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"math/big"
+
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -166,23 +167,14 @@ func (o *SoloScContext) getParams(paramsID int32) dict.Dict {
 	return params
 }
 
-func (o *SoloScContext) getTransfer(transferID int32) colored.Balances {
+func (o *SoloScContext) getTransfer(transferID int32) *iscp.Assets {
 	if transferID == 0 {
-		return colored.NewBalances()
+		return iscp.NewEmptyAssets()
 	}
-	transfer := colored.NewBalances()
+	transfer := iscp.NewEmptyAssets()
 	transferDict := o.ctx.wc.FindObject(transferID).(*wasmproc.ScDict).KvStore()
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
-		color, err := codec.DecodeColor([]byte(key))
-		if err != nil {
-			o.Panicf(err.Error())
-		}
-		amount, err := codec.DecodeUint64(value)
-		if err != nil {
-			o.Panicf(err.Error())
-		}
-		o.Tracef("  XFER %d '%s'", amount, color.String())
-		transfer[color] = amount
+		iscp.NewEmptyAssets().AddAsset([]byte(key), new(big.Int).SetBytes(value))
 		return true
 	})
 	return transfer
@@ -208,16 +200,17 @@ func (o *SoloScContext) postSync(contract, function iscp.Hname, paramsID, transf
 		req.WithTransfers(transfer)
 	}
 	if ctx.mint > 0 {
-		mintAddress := ledgerstate.NewED25519Address(ctx.keyPair.PublicKey)
+		pubkey := (ctx.privateKey.Public().(ed25519.PublicKey))
+		mintAddress := iotago.Ed25519AddressFromPubKey(pubkey)
 		req.WithMint(mintAddress, ctx.mint)
 	}
 	_ = wasmhost.Connect(ctx.wasmHostOld)
 	var res dict.Dict
 	if ctx.offLedger {
 		ctx.offLedger = false
-		res, ctx.Err = ctx.Chain.PostRequestOffLedger(req, ctx.keyPair)
+		res, ctx.Err = ctx.Chain.PostRequestOffLedger(req, ctx.privateKey)
 	} else if !ctx.isRequest {
-		ctx.Tx, res, ctx.Err = ctx.Chain.PostRequestSyncTx(req, ctx.keyPair)
+		ctx.Tx, res, ctx.Err = ctx.Chain.PostRequestSyncTx(req, ctx.privateKey)
 	} else {
 		ctx.isRequest = false
 		ctx.Tx, _, ctx.Err = ctx.Chain.RequestFromParamsToLedger(req, nil)

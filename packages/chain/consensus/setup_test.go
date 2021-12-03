@@ -49,9 +49,9 @@ type MockedEnv struct {
 	Quorum            uint16
 	Log               *logger.Logger
 	Ledger            *utxodb.UtxoDB
-	StateAddress      ledgerstate.Address
+	StateAddress      iotago.Address
 	OriginatorKeyPair *ed25519.KeyPair
-	OriginatorAddress ledgerstate.Address
+	OriginatorAddress iotago.Address
 	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
@@ -195,7 +195,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 			ret.Log.Infof("transaction already in the ledger: %s", tx.ID().Base58())
 		}
 	})
-	ret.NodeConn.OnPullTransactionInclusionState(func(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
+	ret.NodeConn.OnPullTransactionInclusionState(func(addr iotago.Address, txid ledgerstate.TransactionID) {
 		if _, already := env.Ledger.GetTransaction(txid); already {
 			go ret.Consensus.EnqueueInclusionsStateMsg(txid, ledgerstate.Confirmed)
 		}

@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -73,7 +72,7 @@ func (s *committeeRecordService) handlePutCommitteeRecord(c echo.Context) error 
 }
 
 func (s *committeeRecordService) handleGetCommitteeRecord(c echo.Context) error {
-	address, err := ledgerstate.AddressFromBase58EncodedString(c.Param("address"))
+	address, err := iotago.AddressFromBase58EncodedString(c.Param("address"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}

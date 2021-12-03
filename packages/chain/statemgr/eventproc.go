@@ -4,7 +4,7 @@
 package statemgr
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -77,15 +77,15 @@ func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
 	}
 }
 
-func (sm *stateManager) EnqueueOutputMsg(msg ledgerstate.Output) {
+func (sm *stateManager) EnqueueOutputMsg(msg iotago.Output) {
 	sm.eventOutputMsgPipe.In() <- msg
 }
 
-func (sm *stateManager) handleOutputMsg(msg ledgerstate.Output) {
+func (sm *stateManager) handleOutputMsg(msg iotago.Output) {
 	sm.log.Debugf("EventOutputMsg received: %s", iscp.OID(msg.ID()))
-	chainOutput, ok := msg.(*ledgerstate.AliasOutput)
+	chainOutput, ok := msg.(*iotago.AliasOutput)
 	if !ok {
-		sm.log.Debugf("EventOutputMsg ignored: output is of type %t, expecting *ledgerstate.AliasOutput", msg)
+		sm.log.Debugf("EventOutputMsg ignored: output is of type %t, expecting *iotago.AliasOutput", msg)
 		return
 	}
 	if sm.outputPulled(chainOutput) {
@@ -115,7 +115,7 @@ func (sm *stateManager) handleStateMsg(msg *messages.StateMsg) {
 	}
 }
 
-func (sm *stateManager) EnqueueStateCandidateMsg(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+func (sm *stateManager) EnqueueStateCandidateMsg(virtualState state.VirtualStateAccess, outputID iotago.OutputID) {
 	sm.eventStateCandidateMsgPipe.In() <- &messages.StateCandidateMsg{
 		State:             virtualState,
 		ApprovingOutputID: outputID,

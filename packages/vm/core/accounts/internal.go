@@ -62,7 +62,7 @@ func creditToAccount(state kv.KVStore, account *collections.Map, transfer *iscp.
 	}
 	defer touchAccount(state, account)
 
-	creditAsset(account, iscp.IotaTokenID, new(big.Int).SetUint64(transfer.Iotas))
+	creditAsset(account, iscp.IotaAssetID, new(big.Int).SetUint64(transfer.Iotas))
 	for _, token := range transfer.Tokens {
 		creditAsset(account, token.ID[:], token.Amount)
 	}
@@ -101,7 +101,7 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, assets *iscp.A
 	defer touchAccount(state, account)
 
 	// assert there is enough balance in the account
-	if !hasEnoughBalance(account.ImmutableMap, iscp.IotaTokenID, new(big.Int).SetUint64(assets.Iotas)) {
+	if !hasEnoughBalance(account.ImmutableMap, iscp.IotaAssetID, new(big.Int).SetUint64(assets.Iotas)) {
 		return false
 	}
 	for _, token := range assets.Tokens {
@@ -111,7 +111,7 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, assets *iscp.A
 	}
 
 	// debit from the account
-	debitAsset(account, iscp.IotaTokenID, new(big.Int).SetUint64(assets.Iotas))
+	debitAsset(account, iscp.IotaAssetID, new(big.Int).SetUint64(assets.Iotas))
 	for _, token := range assets.Tokens {
 		debitAsset(account, token.ID[:], token.Amount)
 
@@ -190,7 +190,7 @@ func touchAccount(state kv.KVStore, account *collections.Map) {
 // GetIotaBalance return iota balance. 0 mean it does not exist
 func GetIotaBalance(state kv.KVStoreReader, agentID *iscp.AgentID) uint64 {
 	acc := getAccountR(state, agentID)
-	return getAccountAssetBalance(acc, iscp.IotaTokenID).Uint64()
+	return getAccountAssetBalance(acc, iscp.IotaAssetID).Uint64()
 }
 
 // GetTokenBalance returns balance or nil if it does not exist

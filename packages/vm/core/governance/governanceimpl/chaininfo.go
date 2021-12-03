@@ -18,7 +18,7 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret.Set(governance.VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(governance.VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))
 	ret.Set(governance.VarDescription, codec.EncodeString(info.Description))
-	ret.Set(governance.VarFeeColor, codec.EncodeColor(info.FeeColor))
+	ret.Set(governance.VarFeeAssetID, info.FeeAssetID)
 	ret.Set(governance.VarDefaultOwnerFee, codec.EncodeInt64(info.DefaultOwnerFee))
 	ret.Set(governance.VarDefaultValidatorFee, codec.EncodeInt64(info.DefaultValidatorFee))
 	ret.Set(governance.VarMaxBlobSize, codec.EncodeUint32(info.MaxBlobSize))

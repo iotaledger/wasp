@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
@@ -114,11 +113,11 @@ func (r *Impl) SaveChainRecord(rec *ChainRecord) error {
 
 // region CommitteeRegistryProvider  ///////////////////////////////////////////////////////////
 
-func dbKeyCommitteeRecord(addr ledgerstate.Address) []byte {
+func dbKeyCommitteeRecord(addr iotago.Address) []byte {
 	return dbkeys.MakeKey(dbkeys.ObjectTypeCommitteeRecord, addr.Bytes())
 }
 
-func (r *Impl) GetCommitteeRecord(addr ledgerstate.Address) (*CommitteeRecord, error) {
+func (r *Impl) GetCommitteeRecord(addr iotago.Address) (*CommitteeRecord, error) {
 	data, err := r.store.Get(dbKeyCommitteeRecord(addr))
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
@@ -153,7 +152,7 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
-func (r *Impl) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error) {
+func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (*tcrypto.DKShare, error) {
 	data, err := r.store.Get(dbKeyForDKShare(sharedAddress))
 	if err != nil {
 		return nil, err
@@ -161,7 +160,7 @@ func (r *Impl) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare,
 	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultSuite())
 }
 
-func dbKeyForDKShare(sharedAddress ledgerstate.Address) []byte {
+func dbKeyForDKShare(sharedAddress iotago.Address) []byte {
 	return dbkeys.MakeKey(dbkeys.ObjectTypeDistributedKeyData, sharedAddress.Bytes())
 }
 

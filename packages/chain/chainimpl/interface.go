@@ -6,14 +6,13 @@ package chainimpl
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
@@ -84,7 +83,7 @@ func (c *chainObj) Dismiss(reason string) {
 		c.timerTickMsgPipe.Close()
 	})
 
-	publisher.Publish("dismissed_chain", c.chainID.Base58())
+	publisher.Publish("dismissed_chain", c.chainID.String())
 	c.log.Debug("Chain dismissed")
 }
 
@@ -92,7 +91,7 @@ func (c *chainObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
-func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateAccess, outputID iotago.OutputID) {
 	c.stateMgr.EnqueueStateCandidateMsg(virtualState, outputID)
 }
 
@@ -105,7 +104,7 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 	return true
 }
 
-func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
+func (c *chainObj) broadcastOffLedgerRequest(req *iscp.OffLedgerRequestData) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
 	msg := &messages.OffLedgerRequestMsg{
 		ChainID: c.chainID,
@@ -165,7 +164,7 @@ func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerID st
 	c.chainPeers.SendMsgByNetID(peerID, peering.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
 }
 
-func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
+func (c *chainObj) ReceiveTransaction(tx *iotago.Transaction) {
 	c.log.Debugf("ReceiveTransaction: %s", tx.ID().Base58())
 	reqs, err := request.OnLedgerFromTransaction(tx, c.chainID.AsAddress())
 	if err != nil {
@@ -180,19 +179,19 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	}
 }
 
-func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
+func (c *chainObj) ReceiveState(stateOutput *iotago.AliasOutput, timestamp time.Time) {
 	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
 		stateOutput.GetStateIndex(), iscp.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
 	c.EnqueueLedgerState(stateOutput, timestamp)
 }
 
-func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
+func (c *chainObj) ReceiveInclusionState(txID iotago.TransactionID, inclusionState iotago.InclusionState) {
 	if c.consensus != nil {
 		c.consensus.EnqueueInclusionsStateMsg(txID, inclusionState) // TODO special entry point
 	}
 }
 
-func (c *chainObj) ReceiveOutput(output ledgerstate.Output) {
+func (c *chainObj) ReceiveOutput(output iotago.Output) {
 	c.stateMgr.EnqueueOutputMsg(output)
 }
 

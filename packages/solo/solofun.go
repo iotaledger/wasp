@@ -1,15 +1,12 @@
 package solo
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 )
 
 func (env *Solo) NewSeedFromIndex(index int) *ed25519.Seed {
@@ -27,7 +24,7 @@ func (env *Solo) NewSeedFromIndex(index int) *ed25519.Seed {
 // and requests some tokens from the UTXODB faucet.
 // The amount of tokens is equal to solo.Saldo (=1000000) iotas
 // Returns signature scheme interface and public key in binary form
-func (env *Solo) NewKeyPairWithFunds(seed ...*ed25519.Seed) (*ed25519.KeyPair, ledgerstate.Address) {
+func (env *Solo) NewKeyPairWithFunds(seed ...*ed25519.Seed) (*ed25519.KeyPair, iotago.Address) {
 	keyPair, addr := env.NewKeyPair(seed...)
 
 	env.ledgerMutex.Lock()
@@ -42,43 +39,44 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*ed25519.Seed) (*ed25519.KeyPair, l
 
 // NewSignatureSchemeAndPubKey generates new ed25519 signature scheme
 // Returns signature scheme interface and public key in binary form
-func (env *Solo) NewKeyPair(seedOpt ...*ed25519.Seed) (*ed25519.KeyPair, ledgerstate.Address) {
+func (env *Solo) NewKeyPair(seedOpt ...*ed25519.Seed) (*ed25519.KeyPair, iotago.Address) {
 	return testkey.GenKeyAddr(seedOpt...)
 }
 
 // MintTokens mints specified amount of new colored tokens in the given wallet (signature scheme)
 // Returns the color of minted tokens: the hash of the transaction
-func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (colored.Color, error) {
-	env.ledgerMutex.Lock()
-	defer env.ledgerMutex.Unlock()
+func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (iotago.NativeTokenID, error) {
+	panic("not implemented")
+	// env.ledgerMutex.Lock()
+	// defer env.ledgerMutex.Unlock()
 
-	addr := ledgerstate.NewED25519Address(wallet.PublicKey)
-	allOuts := env.utxoDB.GetAddressOutputs(addr)
+	// addr := ledgerstate.NewED25519Address(wallet.PublicKey)
+	// allOuts := env.utxoDB.GetAddressOutputs(addr)
 
-	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(env.LogicalTime())
-	if amount < DustThresholdIotas {
-		return colored.Color{}, xerrors.New("can't mint number of tokens below dust threshold")
-	}
-	if err := txb.AddMintingOutputConsume(addr, amount); err != nil {
-		return colored.Color{}, err
-	}
-	if err := txb.AddRemainderOutputIfNeeded(addr, nil, true); err != nil {
-		return colored.Color{}, err
-	}
-	tx, err := txb.BuildWithED25519(wallet)
-	if err != nil {
-		return colored.Color{}, err
-	}
-	if err := env.AddToLedger(tx); err != nil {
-		return colored.Color{}, nil
-	}
-	m := utxoutil.GetMintedAmounts(tx)
-	require.EqualValues(env.T, 1, len(m))
+	// txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(env.LogicalTime())
+	// if amount < DustThresholdIotas {
+	// 	return colored.Color{}, xerrors.New("can't mint number of tokens below dust threshold")
+	// }
+	// if err := txb.AddMintingOutputConsume(addr, amount); err != nil {
+	// 	return colored.Color{}, err
+	// }
+	// if err := txb.AddRemainderOutputIfNeeded(addr, nil, true); err != nil {
+	// 	return colored.Color{}, err
+	// }
+	// tx, err := txb.BuildWithED25519(wallet)
+	// if err != nil {
+	// 	return colored.Color{}, err
+	// }
+	// if err := env.AddToLedger(tx); err != nil {
+	// 	return colored.Color{}, nil
+	// }
+	// m := utxoutil.GetMintedAmounts(tx)
+	// require.EqualValues(env.T, 1, len(m))
 
-	var ret colored.Color
-	for col := range m {
-		ret = colored.ColorFromL1Color(col)
-		break
-	}
-	return ret, nil
+	// var ret colored.Color
+	// for col := range m {
+	// 	ret = colored.ColorFromL1Color(col)
+	// 	break
+	// }
+	// return ret, nil
 }

@@ -4,12 +4,11 @@ import (
 	"net"
 	"time"
 
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
-
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/txstream"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/plugins/peering"
 )

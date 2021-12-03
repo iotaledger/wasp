@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/database"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
@@ -20,10 +18,10 @@ type ChainKVStoreProvider func(chainID *iscp.ChainID) kvstore.KVStore
 
 type DBManager struct {
 	log           *logger.Logger
-	registryDB    database.DB
+	registryDB    DB
 	registryStore kvstore.KVStore
-	databases     map[[ledgerstate.AddressLength]byte]database.DB
-	stores        map[[ledgerstate.AddressLength]byte]kvstore.KVStore
+	databases     map[[iotago.Ed25519AddressBytesLength]byte]DB
+	stores        map[[iotago.Ed25519AddressBytesLength]byte]kvstore.KVStore
 	mutex         sync.RWMutex
 	inMemory      bool
 }
@@ -31,8 +29,8 @@ type DBManager struct {
 func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
 	dbm := DBManager{
 		log:       log,
-		databases: make(map[[ledgerstate.AddressLength]byte]database.DB),
-		stores:    make(map[[ledgerstate.AddressLength]byte]kvstore.KVStore),
+		databases: make(map[[iotago.Ed25519AddressBytesLength]byte]DB),
+		stores:    make(map[[iotago.Ed25519AddressBytesLength]byte]kvstore.KVStore),
 		mutex:     sync.RWMutex{},
 		inMemory:  inMemory,
 	}
@@ -49,7 +47,7 @@ func getChainBase58(chainID *iscp.ChainID) string {
 	return "CHAIN_REGISTRY"
 }
 
-func (m *DBManager) createDB(chainID *iscp.ChainID) database.DB {
+func (m *DBManager) createDB(chainID *iscp.ChainID) DB {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -57,7 +55,7 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) database.DB {
 
 	if m.inMemory {
 		m.log.Infof("creating new in-memory database for: %s.", chainIDBase58)
-		db, err := database.NewMemDB()
+		db, err := NewMemDB()
 		if err != nil {
 			m.log.Fatal(err)
 		}
@@ -81,7 +79,7 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) database.DB {
 		m.log.Infof("using existing database for: %s.", chainIDBase58)
 	}
 
-	db, err := database.NewDB(instanceDir)
+	db, err := NewDB(instanceDir)
 	if err != nil {
 		m.log.Fatal(err)
 	}
@@ -124,7 +122,7 @@ func (m *DBManager) RunGC(shutdownSignal <-chan struct{}) {
 	}
 }
 
-func (m *DBManager) gc(db database.DB, shutdownSignal <-chan struct{}) {
+func (m *DBManager) gc(db DB, shutdownSignal <-chan struct{}) {
 	if !db.RequiresGC() {
 		return
 	}

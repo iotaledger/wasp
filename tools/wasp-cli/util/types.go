@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -20,9 +19,10 @@ import (
 func ValueFromString(vtype, s string) []byte {
 	switch vtype {
 	case "address":
-		addr, err := ledgerstate.AddressFromBase58EncodedString(s)
-		log.Check(err)
-		return addr.Bytes()
+		panic("TODO implement")
+		// addr, err := ledgerstate.AddressFromBase58EncodedString(s)
+		// log.Check(err)
+		// return addr.Bytes()
 	case "agentid":
 		agentid, err := iscp.NewAgentIDFromString(s)
 		log.Check(err)
@@ -39,10 +39,6 @@ func ValueFromString(vtype, s string) []byte {
 		chainid, err := iscp.ChainIDFromString(s)
 		log.Check(err)
 		return chainid.Bytes()
-	case "color":
-		col, err := ledgerstate.ColorFromBase58EncodedString(s)
-		log.Check(err)
-		return col.Bytes()
 	case "file":
 		return ReadFile(s)
 	case "hash":
@@ -120,10 +116,6 @@ func ValueToString(vtype string, v []byte) string {
 		cid, err := codec.DecodeChainID(v)
 		log.Check(err)
 		return cid.String()
-	case "color":
-		col, err := codec.DecodeColor(v)
-		log.Check(err)
-		return col.String()
 	case "hash":
 		hash, err := codec.DecodeHashValue(v)
 		log.Check(err)

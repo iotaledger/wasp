@@ -14,6 +14,9 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// TODO make this configurable
+const Bech32Prefix = iotago.PrefixMainnet
+
 // AgentID represents address on the ledger with optional hname
 // If address is and alias address and hname is != 0 the agent id is interpreted as
 // ad contract id

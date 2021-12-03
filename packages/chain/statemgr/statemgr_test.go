@@ -220,7 +220,7 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 
 	const targetBlockIndex = 10
 	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
-	node.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
+	node.NodeConn.OnPullConfirmedOutput(func(addr iotago.Address, outputID ledgerstate.OutputID) {
 	})
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node, targetBlockIndex)
 

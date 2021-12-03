@@ -7,7 +7,6 @@ import (
 	"crypto/rand"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
@@ -22,7 +21,7 @@ import (
 
 type committee struct {
 	isReady        *atomic.Bool
-	address        ledgerstate.Address
+	address        iotago.Address
 	peerConfig     registry.PeerNetworkConfigProvider
 	validatorNodes peering.GroupProvider
 	acsRunner      chain.AsynchronousCommonSubsetRunner
@@ -100,7 +99,7 @@ func New(
 	return ret, ret.validatorNodes, nil
 }
 
-func (c *committee) Address() ledgerstate.Address {
+func (c *committee) Address() iotago.Address {
 	return c.address
 }
 

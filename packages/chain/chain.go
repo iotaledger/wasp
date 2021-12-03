@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -23,7 +23,7 @@ import (
 type ChainCore interface {
 	ID() *iscp.ChainID
 	GetCommitteeInfo() *CommitteeInfo
-	StateCandidateToStateManager(state.VirtualStateAccess, ledgerstate.OutputID)
+	StateCandidateToStateManager(state.VirtualStateAccess, iotago.OutputID)
 	Events() ChainEvents
 	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
@@ -32,7 +32,7 @@ type ChainCore interface {
 
 	// Most of these methods are made public for mocking in tests
 	EnqueueDismissChain(reason string) // This one should really be public
-	EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, timestamp time.Time)
+	Enqueueiotago(chainOutput *iotago.AliasOutput, timestamp time.Time)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 	EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn)
 	EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn)
@@ -42,10 +42,10 @@ type ChainCore interface {
 
 // ChainEntry interface to access chain from the chain registry side
 type ChainEntry interface {
-	ReceiveTransaction(*ledgerstate.Transaction)
-	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
-	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
-	ReceiveOutput(output ledgerstate.Output)
+	ReceiveTransaction(*iotago.Transaction)
+	ReceiveInclusionState(iotago.TransactionID, iotago.InclusionState)
+	ReceiveState(stateOutput *iotago.AliasOutput, timestamp time.Time)
+	ReceiveOutput(output iotago.Output)
 
 	Dismiss(reason string)
 	IsDismissed() bool
@@ -70,7 +70,7 @@ type Chain interface {
 
 // Committee is ordered (indexed 0..size-1) list of peers which run the consensus
 type Committee interface {
-	Address() ledgerstate.Address
+	Address() iotago.Address
 	Size() uint16
 	Quorum() uint16
 	OwnPeerIndex() uint16
@@ -86,12 +86,12 @@ type Committee interface {
 }
 
 type NodeConnection interface {
-	PullBacklog(addr *ledgerstate.AliasAddress)
-	PullState(addr *ledgerstate.AliasAddress)
-	PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID)
-	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
-	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
-	PostTransaction(tx *ledgerstate.Transaction)
+	PullBacklog(addr *iotago.AliasAddress)
+	PullState(addr *iotago.AliasAddress)
+	PullConfirmedTransaction(addr iotago.Address, txid iotago.TransactionID)
+	PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID)
+	PullConfirmedOutput(addr iotago.Address, outputID iotago.OutputID)
+	PostTransaction(tx *iotago.Transaction)
 }
 
 type StateManager interface {
@@ -99,18 +99,18 @@ type StateManager interface {
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
 	EnqueueStateMsg(msg *messages.StateMsg)
-	EnqueueOutputMsg(msg ledgerstate.Output)
-	EnqueueStateCandidateMsg(state.VirtualStateAccess, ledgerstate.OutputID)
+	EnqueueOutputMsg(msg iotago.Output)
+	EnqueueStateCandidateMsg(state.VirtualStateAccess, iotago.OutputID)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
 	Close()
 }
 
 type Consensus interface {
-	EnqueueStateTransitionMsg(state.VirtualStateAccess, *ledgerstate.AliasOutput, time.Time)
+	EnqueueStateTransitionMsg(state.VirtualStateAccess, *iotago.AliasOutput, time.Time)
 	EnqueueSignedResultMsg(*messages.SignedResultMsgIn)
 	EnqueueSignedResultAckMsg(*messages.SignedResultAckMsgIn)
-	EnqueueInclusionsStateMsg(ledgerstate.TransactionID, ledgerstate.InclusionState)
+	EnqueueInclusionsStateMsg(iotago.TransactionID, iotago.InclusionState)
 	EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
 	EnqueueVMResultMsg(msg *messages.VMResultMsg)
 	EnqueueTimerMsg(messages.TimerTick)
@@ -154,7 +154,7 @@ type SyncInfo struct {
 	SyncedStateHash       hashing.HashValue
 	SyncedStateTimestamp  time.Time
 	StateOutputBlockIndex uint32
-	StateOutputID         ledgerstate.OutputID
+	StateOutputID         iotago.OutputID
 	StateOutputHash       hashing.HashValue
 	StateOutputTimestamp  time.Time
 }
@@ -171,7 +171,7 @@ type ReadyListRecord struct {
 }
 
 type CommitteeInfo struct {
-	Address       ledgerstate.Address
+	Address       iotago.Address
 	Size          uint16
 	Quorum        uint16
 	QuorumIsAlive bool
@@ -187,7 +187,7 @@ type PeerStatus struct {
 
 type ChainTransitionEventData struct {
 	VirtualState    state.VirtualStateAccess
-	ChainOutput     *ledgerstate.AliasOutput
+	ChainOutput     *iotago.AliasOutput
 	OutputTimestamp time.Time
 }
 

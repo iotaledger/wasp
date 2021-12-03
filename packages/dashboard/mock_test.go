@@ -22,7 +22,7 @@ import (
 // waspServicesMock is a mock implementation of the WaspServices interface
 type waspServicesMock struct {
 	solo   *solo.Solo
-	chains map[[ledgerstate.AddressLength]byte]*solo.Chain
+	chains map[[iotago.AddressLength]byte]*solo.Chain
 }
 
 func (w *waspServicesMock) ConfigDump() map[string]interface{} {
@@ -143,7 +143,7 @@ func initDashboardTest(t *testing.T) *dashboardTestEnv {
 	s := solo.New(t, false, true)
 	w := &waspServicesMock{
 		solo:   s,
-		chains: make(map[[ledgerstate.AddressLength]byte]*solo.Chain),
+		chains: make(map[[iotago.AddressLength]byte]*solo.Chain),
 	}
 	d := Init(e, w, testlogger.NewLogger(t))
 	return &dashboardTestEnv{
