@@ -81,12 +81,12 @@ func TestTxBuilderBasic(t *testing.T) {
 	}
 	anchorID := tpkg.RandUTXOInput()
 	tokenID := testiotago.RandNativeTokenID()
-	balanceLoader := func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
-		return nil, iotago.UTXOInput{}
+	balanceLoader := func(id iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+		return nil, &iotago.UTXOInput{}
 	}
 	t.Run("1", func(t *testing.T) {
-		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
-			return nil, iotago.UTXOInput{}
+		txb := NewAnchorTransactionBuilder(anchor, anchorID, anchor.Amount, func(id iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+			return nil, nil
 		})
 		totals, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
@@ -107,8 +107,8 @@ func TestTxBuilderBasic(t *testing.T) {
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 	t.Run("2", func(t *testing.T) {
-		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
-			return nil, iotago.UTXOInput{}
+		txb := NewAnchorTransactionBuilder(anchor, anchorID, anchor.Amount, func(id iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+			return nil, nil
 		})
 		txb.addDeltaIotasToAnchor(42)
 		_, _, isBalanced := txb.Totals()
@@ -121,7 +121,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		//t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 	t.Run("3", func(t *testing.T) {
-		txb := NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
+		txb := NewAnchorTransactionBuilder(anchor, anchorID, anchor.Amount, balanceLoader)
 		_, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
 		consumeUTXO(t, txb, 10, tokenID, 10)
@@ -170,18 +170,18 @@ func TestTxBuilderConsistency(t *testing.T) {
 	var nativeTokenIDs []iotago.NativeTokenID
 	var utxoInputsNativeTokens []iotago.UTXOInput
 	// all token accounts initially are empty
-	balanceLoader := func(_ iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
-		return nil, iotago.UTXOInput{}
+	balanceLoader := func(_ iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+		return nil, &iotago.UTXOInput{}
 	}
 
 	initialBalance := new(big.Int)
-	balanceLoaderWithInitialBalance := func(id iotago.NativeTokenID) (*big.Int, iotago.UTXOInput) {
+	balanceLoaderWithInitialBalance := func(id iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
 		for _, id1 := range nativeTokenIDs {
 			if id == id1 {
-				return new(big.Int).Set(initialBalance), iotago.UTXOInput{}
+				return new(big.Int).Set(initialBalance), &iotago.UTXOInput{}
 			}
 		}
-		return nil, iotago.UTXOInput{}
+		return nil, &iotago.UTXOInput{}
 	}
 
 	var txb *AnchorTransactionBuilder
@@ -190,7 +190,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	var numTokenIDs int
 
 	initTest := func() {
-		txb = NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
+		txb = NewAnchorTransactionBuilder(anchor, anchorID, anchor.Amount, balanceLoader)
 		amounts = make(map[int]uint64)
 
 		nativeTokenIDs = make([]iotago.NativeTokenID, 0)
@@ -215,7 +215,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		}
 	}
 	runCreateBuilderAndConsumeRandomly := func(numRun int, amount uint64) {
-		txb = NewAnchorTransactionBuilder(anchor, *anchorID, anchor.Amount, balanceLoader)
+		txb = NewAnchorTransactionBuilder(anchor, anchorID, anchor.Amount, balanceLoader)
 		amounts = make(map[int]uint64)
 
 		for i := 0; i < numRun; i++ {
