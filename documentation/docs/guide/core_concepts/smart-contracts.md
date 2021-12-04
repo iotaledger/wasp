@@ -1,6 +1,5 @@
 ---
 keywords:
-- ISCP
 - Smart Contracts
 - blockchain
 - parallel
@@ -24,4 +23,4 @@ Smart contracts are used for all kinds of purposes. A recurring reason to use a 
 
 On a public blockchain, anyone willing to pay the fees for deploying a smart contract can deploy one. Once your smart contract has been deployed to the chain you no longer have the option to change it, and you can be assured that your smart contract application will be there as long as that blockchain exists. Smart contracts can communicate with one another, and you can invoke programmed public functions on a smart contract to trigger actions on a smart contract, or address the state of a smart contract.
 
-Because smart contracts do not run on a single computer, but on many validators, a network of smart contracts can only process so many smart contracts at once, even if the software has been written optimally. This means smart contracts are expensive to execute, and do not scale well on a single blockchain, often resulting in congested networks and expensive fees for executing functions on smart contracts. **By allowing many blockchains executing smart contracts to run in parallel**, and communicate with one another, the **ISCP will solve this scalability problem.**
+Because smart contracts do not run on a single computer, but on many validators, a network of smart contracts can only process so many smart contracts at once, even if the software has been written optimally. This means smart contracts are expensive to execute, and do not scale well on a single blockchain, often resulting in congested networks and expensive fees for executing functions on smart contracts. **By allowing many blockchains executing smart contracts to run in parallel**, and communicate with one another, **IOTA Smart Contracts will solve this scalability problem.**

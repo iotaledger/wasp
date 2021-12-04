@@ -2,7 +2,7 @@
 description: There currently are 6 core smart contracts that are always deployed on each  chain, root, _default, accounts, blob, blocklog, and governance.
 image: /img/logo/WASP_logo_dark.png
 keywords:
-- ISCP
+- Smart Contracts
 - core
 - initialization
 - request handling

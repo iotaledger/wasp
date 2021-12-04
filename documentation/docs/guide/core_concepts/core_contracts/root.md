@@ -13,7 +13,7 @@ keywords:
 --- 
 # The `root` Contract
 
-The `root` contract is one of the [core contracts](overview.md) on each ISCP
+The `root` contract is one of the [core contracts](overview.md) on each IOTA Smart Contracts
 chain.
 
 The `root` contract provides the following functions:

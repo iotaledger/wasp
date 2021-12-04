@@ -2,7 +2,7 @@
 
 ## Motivation
 
-The _off-ledger requests_ (aka _L2 requests_) are ISCP requests sent to the smart contract directly
+The _off-ledger requests_ (aka _L2 requests_) are IOTA Smart Contracts requests sent to the smart contract directly
 through the Wasp node, a validator node or access node of the chain. In contrast, _on-ledger requests_ (aka _L1 requests_)
 are sent to the smart contract by wrapping the request into the IOTA value transaction and confirming it on the Tangle.
 
@@ -25,12 +25,12 @@ The above is valid for both _off-ledger_ and _on-ledger_ requests. It means curr
 against request replay.
 
 However, the problem is with potentially huge logs in the state (in the _blocklog_).  
-The ISCP design is aiming at high TPS (settled requests per second) to be processed by the ISCP chains, mostly by using mechanism of _off-ledger_ requests.
+The IOTA Smart Contracts design is aiming at high TPS (settled requests per second) to be processed by the IOTA Smart Contracts chains, mostly by using mechanism of _off-ledger_ requests.
 
 Let's assume we have 1000 TPS (requests per second). Each request generates a record 50+ bytes long in the `blocklog`.
 This gives us 50+ kB/s = 180+ MB/hour = 4.3+ GB/day. This isn't sustainable in the long run.
 
-It means ISCP chain state will have to be equipped with the mechanism of periodical pruning, i.e. deleting non-critical and obsolete information from the state.
+It means IOTA Smart Contracts chain state will have to be equipped with the mechanism of periodical pruning, i.e. deleting non-critical and obsolete information from the state.
 
 _(In short, the pruning of the state involves extracting witnesses/proofs of existence of the past state
 and then deleting that part from the state. Witnesses may be stored independently of the chain, while the chain will contain
@@ -50,7 +50,7 @@ e.g. timestamp. Once `nonce` is part of the essence of the request and is hashed
 
 The approach would allow an early check by calling a view and checking the `blocklog`. It could be used to prevent spamming/DDoS attacks.
 
-The problem, however, is that with the ISCP consensus, we cannot guarantee the requests will be included in the block in
+The problem, however, is that with the IOTA Smart Contracts consensus, we cannot guarantee the requests will be included in the block in
 the order in which they arrived. Actually, the order is intentionally random.  
 For example, if a client sends 5 requests at once, with correct sequence of nonces `1, 2, 3, 4, 5`, the requests may be
 picked and processed in two separate batches `1,2,5` and `3,4`.

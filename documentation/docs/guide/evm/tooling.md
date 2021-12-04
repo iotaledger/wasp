@@ -9,18 +9,18 @@ keywords:
 - hardhat
 - metamask
 - JSON-RPC
-description: Existing EVM tooling is compatible and can be used directly with an ISCP chain running EVM.  You can configure hardhat, metamask, remix, Ether.js and Web3.js among others.
+description: Existing EVM tooling is compatible and can be used directly with an IOTA Smart Contracts chain running EVM. You can configure hardhat, metamask, remix, Ether.js and Web3.js among others.
 image: /img/logo/WASP_logo_dark.png
 ---
 # EVM Tooling
 
-EVM on ISCP has been integrated in a way that the existing EVM tooling is compatible, and can be used directly with an ISCP chain running EVM as long as a couple of things are taken into account.
+EVM on IOTA Smart Contracts has been integrated in a way that the existing EVM tooling is compatible, and can be used directly with an IOTA Smart Contracts chain running EVM as long as a couple of things are taken into account.
 
 ## Tooling Considerations
 
  1. Please make sure you use the correct JSON-RPC endpoint URL in your tooling for your chain. If you run locally this will simply be `localhost:8545`.
  2. Please make sure you use the right `Chain ID` as configured while starting the JSON-RPC service. If you did not explicitly define this while starting the service, the default Chain ID will be `1074`. 
- 3. Fees are being handled on the ISCP chain level, not EVM level. Because of this, you can simply use a gas price of 0 on EVM level at this point in time.
+ 3. Fees are being handled on the IOTA Smart Contracts chain level, not EVM level. Because of this, you can simply use a gas price of 0 on EVM level at this point in time.
 
 :::caution
 
@@ -30,7 +30,7 @@ Re-using an existing Chain ID is not recommended and can be a security risk. For
 
 ## Wasp-cli
 
-The Wasp CLI has some very basic functionalities to manage an EVM chain. Given the compatibility with existing tooling, only the basics are covered to get started with ISCP and EVM. You can currently either run a JSON-RPC server, or deploy the EVM Chain itself on an ISCP chain. To see the available options and configuration parameters simply run:
+The Wasp CLI has some very basic functionalities to manage an EVM chain. Given the compatibility with existing tooling, only the basics are covered to get started with IOTA Smart Contracts and EVM. You can currently either run a JSON-RPC server, or deploy the EVM Chain itself on an IOTA Smart Contracts chain. To see the available options and configuration parameters simply run:
 
 ```bash
 wasp-cli chain evm
@@ -54,7 +54,7 @@ If you also want to use the [Remix IDE](https://remix.ethereum.org/) to deploy a
 
 ## Hardhat
 
-[Hardhat](https://hardhat.org/) is a commandline toolbox that allows you to deploy, test, verify, and interact with Solidity smart contracts on an EVM chain. EVM chains running on ISCP are compatible with Hardhat; simply make sure you add the correct network parameters to your `hardhat.config.js`, for example:
+[Hardhat](https://hardhat.org/) is a commandline toolbox that allows you to deploy, test, verify, and interact with Solidity smart contracts on an EVM chain. EVM chains running on IOTA Smart Contracts are compatible with Hardhat; simply make sure you add the correct network parameters to your `hardhat.config.js`, for example:
 
 ```javascript=
 networks: {
@@ -69,14 +69,14 @@ networks: {
 
 :::caution
 
-Currently, there is no validation service available for EVM/Solidity smart contracts on ISCP, which is often offered through block explorer API's.
+Currently, there is no validation service available for EVM/Solidity smart contracts on IOTA Smart Contracts, which is often offered through block explorer API's.
 
 :::
 
 
 ## Ethers.js/Web3.js
 
-As long as you input the right configuration parameters for the JSON-RPC endpoint to talk to, [Ethers.js](https://docs.ethers.io/) and [Web3.js](https://web3js.readthedocs.io/) are also compatible with EVM chains on ISCP. Alternatively you can let both interact through MetaMask instead so that it uses the network as configured in MetaMask. For more information on this, read their documentation.
+As long as you input the right configuration parameters for the JSON-RPC endpoint to talk to, [Ethers.js](https://docs.ethers.io/) and [Web3.js](https://web3js.readthedocs.io/) are also compatible with EVM chains on IOTA Smart Contracts. Alternatively you can let both interact through MetaMask instead so that it uses the network as configured in MetaMask. For more information on this, read their documentation.
 
 ## Other Tooling
 

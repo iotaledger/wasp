@@ -1,6 +1,5 @@
 ---
 keywords:
-- ISCP
 - state
 - transitions
 - Balances
@@ -54,7 +53,7 @@ The UTXO ledger guarantees that at every moment there is *exactly one* such outp
 
 The state output is controlled (i.e. can be unlocked/consumed) by the entity running the chain.
 
-With the anchoring mechanism the UTXO ledger supports the ISCP chain the following ways:
+With the anchoring mechanism the UTXO ledger supports the IOTA Smart Contracts chain the following ways:
 
 - Guarantees global consensus on the state of the chain
 - Makes the state immutable and tamper-proof

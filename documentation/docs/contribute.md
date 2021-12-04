@@ -1,13 +1,12 @@
 ---
 keywords:
-- ISCP
 - Smart Contracts
 - Contribute
 - Pull Request
 - Linting
 - Go-lang
 - golangci-lint
-description:  How to contribute to ISCP. Creating a PR, setting up golangci-lint.  
+description:  How to contribute to IOTA Smart Contracts. Creating a PR, setting up golangci-lint.  
 image: /img/logo/WASP_logo_dark.png
 ---
 

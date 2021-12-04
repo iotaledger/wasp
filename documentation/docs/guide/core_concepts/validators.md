@@ -1,6 +1,5 @@
 ---
 keywords:
-- ISCP
 - Validators
 - consensus
 - state update

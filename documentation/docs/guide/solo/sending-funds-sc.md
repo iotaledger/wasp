@@ -11,7 +11,7 @@ keywords:
 - withdrawIota
 - transfer_to_address
 ---
-# Sending Tokens From ISCP to the Tangle
+# Sending Tokens From IOTA Smart Contracts to the Tangle
 
 The programmer of the `example` smart contract implemented the entry point
 `withdrawIota`. What it is for? The answer is: if not for this method, any tokens sent to the

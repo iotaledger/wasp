@@ -9,24 +9,24 @@ keywords:
 - metamask
 - JSON
 - RPC
-description: Create, fund and deploy a new EVM Chain using ISCP.
+description: Create, fund and deploy a new EVM Chain using IOTA Smart Contracts.
 image: /img/logo/WASP_logo_dark.png
 ---
 # Creating an EVM Chain
 
-EVM chains run inside ISCP chains. So in order to start an EVM chain, you will first need to follow the steps to [start an ISCP chain](../chains_and_nodes/setting-up-a-chain.md), or use an existing ISCP chain to start the EVM chain on.
+EVM chains run inside IOTA Smart Contracts chains. So in order to start an EVM chain, you will first need to follow the steps to [start an IOTA Smart Contracts chain](../chains_and_nodes/setting-up-a-chain.md), or use an existing IOTA Smart Contracts chain to start the EVM chain on.
 
 :::warning
 
-**An ISCP chain can only contain 1 EVM chain contract**. If your ISCP chain already has an EVM chain contract, you should use that chain contract instead of creating a new one.
+**An IOTA Smart Contracts chain can only contain 1 EVM chain contract**. If your IOTA Smart Contracts chain already has an EVM chain contract, you should use that chain contract instead of creating a new one.
 
 :::
 
-## 1. Create the ISCP Chain
+## 1. Create the IOTA Smart Contracts Chain
 
-If you don't have an ISCP chain, you should create one. To do so, follow the instructions [on setting up a chain](../chains_and_nodes/setting-up-a-chain.md).
+If you don't have an IOTA Smart Contracts chain, you should create one. To do so, follow the instructions [on setting up a chain](../chains_and_nodes/setting-up-a-chain.md).
 
-## 2. Fund Your Account on Your ISCP Chain
+## 2. Fund Your Account on Your IOTA Smart Contracts Chain
 
 In order to deploy the EVM chain contract, you need to have some IOTA locked on your newly created chain to fund that action. To do this, run:
 

@@ -1,6 +1,5 @@
 ---
 keywords:
-- ISCP
 - Publisher 
 - Nanomsg
 - Messages
