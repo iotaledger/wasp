@@ -28,9 +28,15 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 
 	// create outputs, sum totals needed
 	for _, req := range par.Requests {
+		assets := req.Assets
+		if assets == nil {
+			// if assets not specified, the minimum dust deposit will be adjusted by vmtxbuilder.NewExtendedOutput
+			assets = &iscp.Assets{Iotas: 1}
+		}
+		// will adjust to minimum dust deposit
 		out, _ := vmtxbuilder.NewExtendedOutput(
 			req.TargetAddress,
-			req.Assets,
+			assets,
 			&senderAddress,
 			&iscp.RequestMetadata{
 				SenderContract: 0,
@@ -44,7 +50,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		)
 		outputs = append(outputs, out)
 		sumIotasOut += out.Amount
-		for _, nt := range req.Assets.Tokens {
+		for _, nt := range out.NativeTokens {
 			s, ok := sumTokensOut[nt.ID]
 			if !ok {
 				s = new(big.Int)

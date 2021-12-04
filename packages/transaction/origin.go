@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
@@ -86,56 +87,88 @@ func NewRootInitRequestTransaction(
 	allInputs []*iotago.UTXOInput,
 	deSeriParams *iotago.DeSerializationParameters,
 ) (*iotago.Transaction, error) {
-	walletAddr := iotago.Ed25519AddressFromPubKey(key.Public().(ed25519.PublicKey))
 
-	args := dict.Dict{
-		governance.ParamChainID:     codec.EncodeChainID(chainID),
-		governance.ParamDescription: codec.EncodeString(description),
-	}
-
-	metadata := &iscp.RequestMetadata{
-		TargetContract: iscp.Hn("root"),
-		EntryPoint:     iscp.EntryPointInit,
-		Params:         args,
-	}
-
-	txb := iotago.NewTransactionBuilder()
-
-	requestOutput := &iotago.ExtendedOutput{
-		Address: chainID.AsAddress(),
-		Amount:  0,
-		Blocks: []iotago.FeatureBlock{
-			&iotago.MetadataFeatureBlock{
-				Data: metadata.Bytes(),
+	tx, err := NewRequestTransaction(NewRequestTransactionParams{
+		SenderPrivateKey: key,
+		UnspentOutputs:   allUnspentOutputs,
+		UnspentOutputIDs: allInputs,
+		Requests: []*iscp.RequestParameters{{
+			TargetAddress: chainID.AsAddress(),
+			Metadata: &iscp.SendMetadata{
+				TargetContract: root.Contract.Hname(),
+				EntryPoint:     iscp.EntryPointInit,
+				GasBudget:      0, // TODO. Probably we need minimum fixed budget for core contract calls. 0 for init call
+				Params: dict.Dict{
+					governance.ParamDescription: codec.EncodeString(description),
+				},
 			},
-		},
-	}
-	requestOutput.Amount = requestOutput.VByteCost(deSeriParams.RentStructure, nil)
-	txb.AddOutput(requestOutput)
-
-	inputs, remainder, err := computeInputsAndRemainderOld(
-		requestOutput.Amount,
-		allUnspentOutputs,
-		allInputs,
-		deSeriParams,
-	)
-	if err != nil {
-		return nil, err
-	}
-	for _, input := range inputs {
-		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: &walletAddr, Input: input})
-	}
-	if remainder > 0 {
-		txb.AddOutput(&iotago.ExtendedOutput{
-			Address: &walletAddr,
-			Amount:  remainder,
-		})
-	}
-
-	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, key))
-	tx, err := txb.Build(deSeriParams, signer)
+		}},
+		DeSeriParams: deSeriParams,
+	})
 	if err != nil {
 		return nil, err
 	}
 	return tx, nil
 }
+
+//func NewRootInitRequestTransactionOld(
+//	key ed25519.PrivateKey,
+//	chainID *iscp.ChainID,
+//	description string,
+//	allUnspentOutputs []iotago.Output,
+//	allInputs []*iotago.UTXOInput,
+//	deSeriParams *iotago.DeSerializationParameters,
+//) (*iotago.Transaction, error) {
+//	walletAddr := iotago.Ed25519AddressFromPubKey(key.Public().(ed25519.PublicKey))
+//
+//	args := dict.Dict{
+//		governance.ParamChainID:     codec.EncodeChainID(chainID),
+//		governance.ParamDescription: codec.EncodeString(description),
+//	}
+//
+//	metadata := &iscp.RequestMetadata{
+//		TargetContract: iscp.Hn("root"),
+//		EntryPoint:     iscp.EntryPointInit,
+//		Params:         args,
+//	}
+//
+//	txb := iotago.NewTransactionBuilder()
+//
+//	requestOutput := &iotago.ExtendedOutput{
+//		Address: chainID.AsAddress(),
+//		Amount:  0,
+//		Blocks: []iotago.FeatureBlock{
+//			&iotago.MetadataFeatureBlock{
+//				Data: metadata.Bytes(),
+//			},
+//		},
+//	}
+//	requestOutput.Amount = requestOutput.VByteCost(deSeriParams.RentStructure, nil)
+//	txb.AddOutput(requestOutput)
+//
+//	inputs, remainder, err := computeInputsAndRemainderOld(
+//		requestOutput.Amount,
+//		allUnspentOutputs,
+//		allInputs,
+//		deSeriParams,
+//	)
+//	if err != nil {
+//		return nil, err
+//	}
+//	for _, input := range inputs {
+//		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: &walletAddr, Input: input})
+//	}
+//	if remainder > 0 {
+//		txb.AddOutput(&iotago.ExtendedOutput{
+//			Address: &walletAddr,
+//			Amount:  remainder,
+//		})
+//	}
+//
+//	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, key))
+//	tx, err := txb.Build(deSeriParams, signer)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return tx, nil
+//}

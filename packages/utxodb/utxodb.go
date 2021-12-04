@@ -421,6 +421,7 @@ func (u *UtxoDB) mustGetTransaction(txID iotago.TransactionID) *iotago.Transacti
 	return tx
 }
 
+// TODO getOutputAddress replace with getOutputAddresses(out iotago.Output) []iotago.Address
 func getOutputAddress(out iotago.Output) iotago.Address {
 	switch out := out.(type) {
 	case iotago.TransIndepIdentOutput:

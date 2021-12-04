@@ -487,9 +487,9 @@ func NewExtendedOutput(
 
 	// Adjust to minimum dust deposit
 	dustDepositAdjusted := false
-	dustDeposit := ret.VByteCost(parameters.RentStructure(), nil)
-	if dustDeposit < ret.Amount {
-		ret.Amount = dustDeposit
+	neededDustDeposit := ret.VByteCost(parameters.RentStructure(), nil)
+	if ret.Amount < neededDustDeposit {
+		ret.Amount = neededDustDeposit
 		dustDepositAdjusted = true
 	}
 	return ret, dustDepositAdjusted
