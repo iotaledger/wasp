@@ -24,7 +24,7 @@ func TestVirtualStateBasic(t *testing.T) {
 	})
 	t.Run("create new2", func(t *testing.T) {
 		db := mapdb.NewMapDB()
-		chainID := iscp.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
+		chainID := iscp.ChainIDFromAliasID(ledgerstate.NewAliasAddress([]byte("dummy")))
 		vs1 := newVirtualState(db, chainID)
 		require.Panics(t, func() {
 			vs1.BlockIndex()
@@ -283,7 +283,7 @@ func TestStateWithDB(t *testing.T) {
 }
 
 func TestVariableStateBasic(t *testing.T) {
-	chainID := iscp.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
+	chainID := iscp.ChainIDFromAliasID(ledgerstate.NewAliasAddress([]byte("dummy")))
 	vs1, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 	require.NoError(t, err)
 	h1 := vs1.StateCommitment()

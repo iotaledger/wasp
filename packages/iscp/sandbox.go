@@ -74,7 +74,7 @@ type Sandbox interface {
 	// BlockContext Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// StateAnchor properties of the anchor output
-	StateAnchor() StateAnchor
+	StateAnchor() *StateAnchor
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
@@ -95,13 +95,15 @@ type Gas interface {
 	Budget() uint64
 }
 
-// properties of the anchor output/transaction in the current context
-type StateAnchor interface {
-	StateController() iotago.Address
-	GovernanceController() iotago.Address
-	StateIndex() uint32
-	OutputID() iotago.UTXOInput
-	StateData() StateData
+// StateAnchor contains properties of the anchor output/transaction in the current context
+type StateAnchor struct {
+	IsOrigin             bool
+	StateController      iotago.Address
+	GovernanceController iotago.Address
+	StateIndex           uint32
+	OutputID             iotago.UTXOInput
+	StateData            StateData
+	Deposit              uint64
 }
 
 type SendOptions struct { // TODO

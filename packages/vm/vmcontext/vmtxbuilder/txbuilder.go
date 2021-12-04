@@ -24,7 +24,7 @@ var (
 
 // tokenBalanceLoader externally supplied function which loads balance of the native token from the state
 // it returns nil if balance exists. If balance exist, it also returns output ID which holds the balance for the token_id
-type tokenBalanceLoader func(iotago.NativeTokenID) (*big.Int, iotago.UTXOInput)
+type tokenBalanceLoader func(iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput)
 
 // AnchorTransactionBuilder represents structure which handles all the data needed to eventually
 // build an essence of the anchor transaction
@@ -324,7 +324,7 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id iotago.NativeTo
 		panic(ErrOutputLimitExceeded)
 	}
 	b := &nativeTokenBalance{
-		input:              input,
+		input:              *input,
 		initial:            balance,
 		balance:            new(big.Int),
 		dustDepositCharged: balance != nil,

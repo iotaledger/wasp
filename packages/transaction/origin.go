@@ -66,7 +66,11 @@ func NewChainOriginTransaction(
 	if err != nil {
 		return nil, nil, err
 	}
-	chainID := iscp.NewChainID(aliasOutput.AliasID)
+	txid, err := tx.ID()
+	if err != nil {
+		return nil, nil, err
+	}
+	chainID := iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(*txid, 0)))
 	return tx, &chainID, nil
 }
 

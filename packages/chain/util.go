@@ -56,7 +56,7 @@ func PublishStateTransition(chainID *iscp.ChainID, stateOutput *iotago.AliasOutp
 
 func PublishGovernanceTransition(stateOutput *iotago.AliasOutput) {
 	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
-	chainID := iscp.NewChainID(stateOutput.GetAliasAddress())
+	chainID := iscp.ChainIDFromAliasID(stateOutput.GetAliasAddress())
 
 	publisher.Publish("rotate",
 		chainID.Base58(),

@@ -118,8 +118,8 @@ func (s *sandbox) BlockContext(construct func(ctx iscp.Sandbox) interface{}, onC
 	return s.vmctx.BlockContext(s, construct, onClose)
 }
 
-func (s *sandbox) StateAnchor() iscp.StateAnchor {
-	return s.vmctx
+func (s *sandbox) StateAnchor() *iscp.StateAnchor {
+	return s.vmctx.StateAnchor()
 }
 
 func (s *sandbox) Gas() iscp.Gas {
