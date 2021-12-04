@@ -341,7 +341,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		numTokenIDs = 5
 
 		initTest()
-		runConsume(runTimesInputs, testAmount+1)
+		runConsume(runTimesInputs, testAmount+100)
 
 		err := util.CatchPanicReturnError(func() {
 			runPostRequest(runTimesOutputs, testAmount)

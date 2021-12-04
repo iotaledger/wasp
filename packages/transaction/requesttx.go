@@ -18,7 +18,7 @@ type NewRequestTransactionParams struct {
 }
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
-// To avoid empty transfer it defaults to 1 iota
+// Empty assets in the request data defaults to 1 iota, which later is adjusted to the dust minimum
 func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction, error) {
 	outputs := iotago.Outputs{}
 	sumIotasOut := uint64(0)

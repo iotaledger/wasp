@@ -6,9 +6,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/state"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
-
 	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
 
 	"github.com/iotaledger/wasp/packages/utxodb"
@@ -53,11 +50,10 @@ func TestCreateOrigin(t *testing.T) {
 
 	t.Logf("New chain ID: %s", chainID.String())
 
-	anchor, err := GetAnchorFromTransaction(tx, nil)
+	anchor, err := GetAnchorFromTransaction(tx)
 	require.NoError(t, err)
 	require.True(t, anchor.IsOrigin)
-	chainID1 := iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(anchor.OutputID.ID()))
-	require.EqualValues(t, *chainID, chainID1)
+	require.EqualValues(t, *chainID, anchor.ChainID)
 	require.EqualValues(t, 0, anchor.StateIndex)
 	require.True(t, stateAddr.Equal(anchor.StateController))
 	require.True(t, stateAddr.Equal(anchor.GovernanceController))
@@ -68,17 +64,7 @@ func TestCreateOrigin(t *testing.T) {
 	require.EqualValues(t, 1, len(outs))
 	require.EqualValues(t, 1, len(ids))
 
-	anchor, err = GetAnchorFromTransaction(tx, chainID)
-	require.NoError(t, err)
-	require.True(t, anchor.IsOrigin)
-	chainID1 = iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(anchor.OutputID.ID()))
-	require.EqualValues(t, *chainID, chainID1)
-	require.EqualValues(t, 0, anchor.StateIndex)
-	require.True(t, stateAddr.Equal(anchor.StateController))
-	require.True(t, stateAddr.Equal(anchor.GovernanceController))
-	require.True(t, bytes.Equal(state.OriginStateHash().Bytes(), anchor.StateData.Bytes()))
-
-	out := u.GetOutput(anchor.OutputID.ID())
+	out := u.GetOutput(anchor.OutputID)
 	require.NotNil(t, out)
 }
 

@@ -75,7 +75,8 @@ func NewChainOriginTransaction(
 	return tx, &chainID, nil
 }
 
-// NewRootInitRequestTransaction is a first request to be sent to the uninitialized
+// NewRootInitRequestTransaction is a transaction with one request output.
+// It is the first request to be sent to the uninitialized
 // chain. At this moment it is only able to process this specific request.
 // The request contains the minimum data needed to bootstrap the chain.
 // The signer must be the same that created the origin transaction.
@@ -87,7 +88,7 @@ func NewRootInitRequestTransaction(
 	allInputs []*iotago.UTXOInput,
 	deSeriParams *iotago.DeSerializationParameters,
 ) (*iotago.Transaction, error) {
-
+	//
 	tx, err := NewRequestTransaction(NewRequestTransactionParams{
 		SenderPrivateKey: key,
 		UnspentOutputs:   allUnspentOutputs,

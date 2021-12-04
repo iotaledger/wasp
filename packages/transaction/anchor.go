@@ -6,88 +6,42 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func GetAnchorFromTransaction(tx *iotago.Transaction, chainID *iscp.ChainID) (*iscp.StateAnchor, error) {
-	var anchorOutput *iotago.AliasOutput
-	var idx uint16
+var (
+	ErrNoAliasOutputAtIndex0 = xerrors.New("origin AliasOutput not found at index 0")
 
-	if chainID == nil {
-		return getOriginAnchor(tx)
-	}
-	aliasID := chainID.AsAliasID()
-	for i, out := range tx.Essence.Outputs {
-		if a, ok := out.(*iotago.AliasOutput); ok {
-			if a.AliasID == *aliasID {
-				anchorOutput = a
-				idx = uint16(i)
-				break
-			}
-		}
-	}
-	if anchorOutput == nil {
-		ret, err := getOriginAnchor(tx)
-		if err != nil {
-			return nil, xerrors.Errorf("alias id wasn't found in transaction: %s", chainID.String())
-		}
-		return ret, nil
-	}
-	sd, err := iscp.StateDataFromBytes(anchorOutput.StateMetadata)
-	if err != nil {
-		return nil, err
+	nilAliasID iotago.AliasID
+)
+
+// GetAnchorFromTransaction analyzes the output at index 0 and extracts anchor information
+// Otherwise error
+func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, error) {
+	anchorOutput, ok := tx.Essence.Outputs[0].(*iotago.AliasOutput)
+	if !ok {
+		return nil, ErrNoAliasOutputAtIndex0
 	}
 	txid, err := tx.ID()
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("GetAnchorFromTransaction: %w", err)
 	}
-	return &iscp.StateAnchor{
-		Output:               anchorOutput,
-		IsOrigin:             false,
-		StateController:      anchorOutput.StateController,
-		GovernanceController: anchorOutput.GovernanceController,
-		StateIndex:           anchorOutput.StateIndex,
-		OutputID: iotago.UTXOInput{
-			TransactionID:          *txid,
-			TransactionOutputIndex: idx,
-		},
-		StateData: sd,
-		Deposit:   anchorOutput.Amount,
-	}, nil
-}
+	aliasID := anchorOutput.AliasID
+	isOrigin := false
 
-func getOriginAnchor(tx *iotago.Transaction) (*iscp.StateAnchor, error) {
-	txid, err := tx.ID()
-	if err != nil {
-		return nil, err
-	}
-	var anchorOutput *iotago.AliasOutput
-	var nilAliasID iotago.AliasID
-	var idx uint16
-	for i, out := range tx.Essence.Outputs {
-		if a, ok := out.(*iotago.AliasOutput); ok {
-			if a.AliasID == nilAliasID {
-				idx = uint16(i)
-				anchorOutput = a
-				break
-			}
-		}
-	}
-	if anchorOutput == nil {
-		return nil, xerrors.New("origin AliasOutput not found")
+	if aliasID == nilAliasID {
+		isOrigin = true
+		aliasID = iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(*txid, 0))
 	}
 	sd, err := iscp.StateDataFromBytes(anchorOutput.StateMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return &iscp.StateAnchor{
-		Output:               anchorOutput,
-		IsOrigin:             true,
+		IsOrigin:             isOrigin,
+		OutputID:             iotago.OutputIDFromTransactionIDAndIndex(*txid, 0),
+		ChainID:              iscp.ChainIDFromAliasID(aliasID),
 		StateController:      anchorOutput.StateController,
 		GovernanceController: anchorOutput.GovernanceController,
 		StateIndex:           anchorOutput.StateIndex,
-		OutputID: iotago.UTXOInput{
-			TransactionID:          *txid,
-			TransactionOutputIndex: idx,
-		},
-		StateData: sd,
-		Deposit:   anchorOutput.Amount,
+		StateData:            sd,
+		Deposit:              anchorOutput.Amount,
 	}, nil
 }

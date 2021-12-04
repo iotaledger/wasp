@@ -72,12 +72,14 @@ func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 	if err != nil {
 		panic(xerrors.Errorf("StateAnchor: %w", err))
 	}
+	var nilAliasID iotago.AliasID
 	return &iscp.StateAnchor{
-		Output:               vmctx.task.AnchorOutput,
+		ChainID:              *vmctx.ChainID(),
+		IsOrigin:             vmctx.task.AnchorOutput.AliasID == nilAliasID,
 		StateController:      vmctx.task.AnchorOutput.StateController,
 		GovernanceController: vmctx.task.AnchorOutput.GovernanceController,
 		StateIndex:           vmctx.task.AnchorOutput.StateIndex,
-		OutputID:             vmctx.task.AnchorOutputID,
+		OutputID:             vmctx.task.AnchorOutputID.ID(),
 		StateData:            sd,
 		Deposit:              vmctx.task.AnchorOutput.Amount,
 	}
