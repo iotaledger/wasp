@@ -51,10 +51,6 @@ func TestCreateOrigin(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, *txid, *txidBack)
 
-	outs, ids := u.GetUnspentOutputs(chainID.AsAddress())
-	require.EqualValues(t, 1, len(outs))
-	require.EqualValues(t, 1, len(ids))
-
 	t.Logf("New chain ID: %s", chainID.String())
 
 	anchor, err := GetAnchorFromTransaction(tx, nil)
@@ -66,6 +62,11 @@ func TestCreateOrigin(t *testing.T) {
 	require.True(t, stateAddr.Equal(anchor.StateController))
 	require.True(t, stateAddr.Equal(anchor.GovernanceController))
 	require.True(t, bytes.Equal(state.OriginStateHash().Bytes(), anchor.StateData.Bytes()))
+
+	// only one output is expected in the ledger under the address of chainID
+	outs, ids := u.GetUnspentOutputs(chainID.AsAddress())
+	require.EqualValues(t, 1, len(outs))
+	require.EqualValues(t, 1, len(ids))
 
 	anchor, err = GetAnchorFromTransaction(tx, chainID)
 	require.NoError(t, err)
