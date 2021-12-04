@@ -341,7 +341,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		numTokenIDs = 5
 
 		initTest()
-		runConsume(runTimesInputs, testAmount+100)
+		runConsume(runTimesInputs, testAmount+1000)
 
 		err := util.CatchPanicReturnError(func() {
 			runPostRequest(runTimesOutputs, testAmount)
@@ -364,7 +364,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		numTokenIDs = 5
 
 		initTest()
-		runConsume(runTimesInputs, testAmount+1)
+		runConsume(runTimesInputs, testAmount+1000)
 
 		err := util.CatchPanicReturnError(func() {
 			runPostRequestRandomly(runTimesOutputs, testAmount)
@@ -387,7 +387,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		numTokenIDs = 5
 
 		initTest()
-		runConsume(runTimesInputs, testAmount+1)
+		runConsume(runTimesInputs, testAmount+1000)
 
 		err := util.CatchPanicReturnError(func() {
 			runPostRequestRandomly(runTimesOutputs, testAmount)
@@ -404,9 +404,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		initTest()
 		for _, id := range nativeTokenIDs {
-			consumeUTXO(t, txb, 200, id, 10)
+			consumeUTXO(t, txb, 2000, id, 10)
 		}
-		expectedIotas := initialTotalIotas + numTokenIDs*(200-int(txb.vByteCostOfNativeTokenBalance()))
+		expectedIotas := initialTotalIotas + numTokenIDs*(2000-int(txb.vByteCostOfNativeTokenBalance()))
 		require.EqualValues(t, int(expectedIotas), int(txb.currentBalanceIotasOnAnchor))
 
 		for i := 0; i < runTimes; i++ {
