@@ -65,6 +65,7 @@ func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 		panic(xerrors.Errorf("StateAnchor: %w", err))
 	}
 	return &iscp.StateAnchor{
+		Output:               vmctx.task.AnchorOutput,
 		StateController:      vmctx.task.AnchorOutput.StateController,
 		GovernanceController: vmctx.task.AnchorOutput.GovernanceController,
 		StateIndex:           vmctx.task.AnchorOutput.StateIndex,

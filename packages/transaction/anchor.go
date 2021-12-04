@@ -39,6 +39,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction, chainID *iscp.ChainID) (*i
 		return nil, err
 	}
 	return &iscp.StateAnchor{
+		Output:               anchorOutput,
 		IsOrigin:             false,
 		StateController:      anchorOutput.StateController,
 		GovernanceController: anchorOutput.GovernanceController,
@@ -77,6 +78,7 @@ func getOriginAnchor(tx *iotago.Transaction) (*iscp.StateAnchor, error) {
 		return nil, err
 	}
 	return &iscp.StateAnchor{
+		Output:               anchorOutput,
 		IsOrigin:             true,
 		StateController:      anchorOutput.StateController,
 		GovernanceController: anchorOutput.GovernanceController,

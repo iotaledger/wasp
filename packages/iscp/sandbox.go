@@ -97,6 +97,7 @@ type Gas interface {
 
 // StateAnchor contains properties of the anchor output/transaction in the current context
 type StateAnchor struct {
+	Output               *iotago.AliasOutput
 	IsOrigin             bool
 	StateController      iotago.Address
 	GovernanceController iotago.Address
