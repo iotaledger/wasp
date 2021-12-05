@@ -1,14 +1,88 @@
 package transaction
 
 import (
-	"fmt"
 	"math/big"
+
+	"github.com/iotaledger/wasp/packages/iscp"
+	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
+
+var (
+	ErrNoAliasOutputAtIndex0 = xerrors.New("origin AliasOutput not found at index 0")
+
+	nilAliasID iotago.AliasID
+)
+
+type OutputFilter func(output iotago.Output) bool
+
+// FilterOutputIndices returns a slice of indices of those outputs which satisfy all predicates
+// Uses same underlying arrays slices
+func FilterOutputIndices(outputs []iotago.Output, ids []*iotago.UTXOInput, filters ...OutputFilter) ([]iotago.Output, []*iotago.UTXOInput) {
+	if len(outputs) != len(ids) {
+		panic("FilterOutputIndices: number of outputs must be equal to the number of IDs")
+	}
+	ret := outputs[:0]
+	retIDs := ids[:0]
+
+	for i, out := range outputs {
+		satisfyAll := true
+		for _, f := range filters {
+			if !f(out) {
+				satisfyAll = false
+				break
+			}
+		}
+		if satisfyAll {
+			ret = append(ret, out)
+			retIDs = append(retIDs, ids[i])
+		}
+	}
+	return ret, retIDs
+}
+
+func FilterType(t iotago.OutputType) OutputFilter {
+	return func(out iotago.Output) bool {
+		return out.Type() == t
+	}
+}
+
+// GetAnchorFromTransaction analyzes the output at index 0 and extracts anchor information. Otherwise error
+func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, error) {
+	anchorOutput, ok := tx.Essence.Outputs[0].(*iotago.AliasOutput)
+	if !ok {
+		return nil, ErrNoAliasOutputAtIndex0
+	}
+	txid, err := tx.ID()
+	if err != nil {
+		return nil, xerrors.Errorf("GetAnchorFromTransaction: %w", err)
+	}
+	aliasID := anchorOutput.AliasID
+	isOrigin := false
+
+	if aliasID == nilAliasID {
+		isOrigin = true
+		aliasID = iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(*txid, 0))
+	}
+	sd, err := iscp.StateDataFromBytes(anchorOutput.StateMetadata)
+	if err != nil {
+		return nil, err
+	}
+	return &iscp.StateAnchor{
+		IsOrigin:             isOrigin,
+		OutputID:             iotago.OutputIDFromTransactionIDAndIndex(*txid, 0),
+		ChainID:              iscp.ChainIDFromAliasID(aliasID),
+		StateController:      anchorOutput.StateController,
+		GovernanceController: anchorOutput.GovernanceController,
+		StateIndex:           anchorOutput.StateIndex,
+		StateData:            sd,
+		Deposit:              anchorOutput.Amount,
+	}, nil
+}
 
 // computeInputsAndRemainder computes inputs and reminder for given outputs balances.
 // Takes into account minimum dust deposit requirements
@@ -129,44 +203,33 @@ func computeReminderOutput(senderAddress iotago.Address, inIotas, outIotas uint6
 	return ret
 }
 
-func computeInputsAndRemainderOld(
-	amount uint64,
-	allUnspentOutputs []iotago.Output,
-	allInputs []*iotago.UTXOInput,
-	deSeriParams *iotago.DeSerializationParameters,
-) ([]*iotago.UTXOInput, uint64, error) {
-	remainderDustDeposit := (&iotago.ExtendedOutput{}).VByteCost(deSeriParams.RentStructure, nil)
-	var inputs []*iotago.UTXOInput
-	consumed := uint64(0)
-	for i, out := range allUnspentOutputs {
-		consumed += out.Deposit()
-		inputs = append(inputs, allInputs[i])
-		if consumed == amount {
-			return inputs, 0, nil
-		}
-		if consumed > amount {
-			remainder := amount - consumed
-			if remainder >= remainderDustDeposit {
-				return inputs, remainder, nil
-			}
-		}
-	}
-	return nil, 0, fmt.Errorf("insufficient funds")
-}
-
+//func computeInputsAndRemainderOld(
+//	amount uint64,
+//	allUnspentOutputs []iotago.Output,
+//	allInputs []*iotago.UTXOInput,
+//	deSeriParams *iotago.DeSerializationParameters,
+//) ([]*iotago.UTXOInput, uint64, error) {
+//	remainderDustDeposit := (&iotago.ExtendedOutput{}).VByteCost(deSeriParams.RentStructure, nil)
+//	var inputs []*iotago.UTXOInput
+//	consumed := uint64(0)
+//	for i, out := range allUnspentOutputs {
+//		consumed += out.Deposit()
+//		inputs = append(inputs, allInputs[i])
+//		if consumed == amount {
+//			return inputs, 0, nil
+//		}
+//		if consumed > amount {
+//			remainder := amount - consumed
+//			if remainder >= remainderDustDeposit {
+//				return inputs, remainder, nil
+//			}
+//		}
+//	}
+//	return nil, 0, fmt.Errorf("insufficient funds")
+//}
+//
 //// GetAliasOutput return output or nil if not found
 //func GetAliasOutput(tx *ledgerstate.Transaction, aliasAddr ledgerstate.Address) *ledgerstate.AliasOutput {
 //	return GetAliasOutputFromEssence(tx.Essence(), aliasAddr)
 //}
 //
-//func GetAliasOutputFromEssence(essence *ledgerstate.TransactionEssence, aliasAddr ledgerstate.Address) *ledgerstate.AliasOutput {
-//	for _, o := range essence.Outputs() {
-//		if out, ok := o.(*ledgerstate.AliasOutput); ok {
-//			out1 := out.UpdateMintingColor().(*ledgerstate.AliasOutput)
-//			if out1.GetAliasAddress().Equals(aliasAddr) {
-//				return out1
-//			}
-//		}
-//	}
-//	return nil
-//}

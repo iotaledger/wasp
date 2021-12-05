@@ -19,6 +19,8 @@ type NewRequestTransactionParams struct {
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
 // Empty assets in the request data defaults to 1 iota, which later is adjusted to the dust minimum
+// Assumes all UnspentOutputs and corresponding UnspentOutputIDs can be used as inputs, i.e. are
+// unlockable for the sender address
 func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction, error) {
 	outputs := iotago.Outputs{}
 	sumIotasOut := uint64(0)
