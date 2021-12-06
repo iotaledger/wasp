@@ -5,11 +5,11 @@ package wasmsolo
 
 import (
 	"flag"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -39,7 +39,7 @@ type SoloContext struct {
 	creator     *SoloAgent
 	Err         error
 	Hprog       hashing.HashValue
-	privateKey  *ed25519.PrivateKey
+	keyPair     *cryptolib.KeyPair
 	isRequest   bool
 	mint        uint64
 	offLedger   bool
@@ -106,7 +106,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	//if *GoWasmEdge && wasmproc.GoWasmVM == nil {
 	//	wasmproc.GoWasmVM = wasmhost.NewWasmEdgeVM
 	//}
-	ctx.Err = ctx.Chain.DeployContract(&creator.PrivateKey, ctx.scName, ctx.Hprog, params...)
+	ctx.Err = ctx.Chain.DeployContract(&creator.KeyPair, ctx.scName, ctx.Hprog, params...)
 	if *GoDebug {
 		// just in case deploy failed we don't want to leave this around
 		wasmproc.GoWasmVM = nil
@@ -136,7 +136,7 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	if len(init) != 0 {
 		params = init[0].Params()
 	}
-	ctx.Err = ctx.Chain.DeployContract(&creator.PrivateKey, scName, ctx.Hprog, params...)
+	ctx.Err = ctx.Chain.DeployContract(&creator.KeyPair, scName, ctx.Hprog, params...)
 	if ctx.Err != nil {
 		return ctx
 	}
@@ -168,16 +168,16 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 	if soloEnv == nil {
 		soloEnv = solo.New(t, SoloDebug, SoloStackTracing)
 	}
-	return soloEnv.NewChain(nil, chainName)
+	return soloEnv.NewChain(cryptolib.KeyPair{}, chainName)
 }
 
 // Account returns a SoloAgent for the smart contract associated with ctx
 func (ctx *SoloContext) Account() *SoloAgent {
 	return &SoloAgent{
-		Env:        ctx.Chain.Env,
-		PrivateKey: nil,
-		address:    ctx.Chain.ChainID.AsAddress(),
-		hname:      iscp.Hn(ctx.scName),
+		Env:     ctx.Chain.Env,
+		KeyPair: cryptolib.KeyPair{},
+		address: ctx.Chain.ChainID.AsAddress(),
+		hname:   iscp.Hn(ctx.scName),
 	}
 }
 
@@ -291,19 +291,19 @@ func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
 // OffLedger tells SoloContext to Post() the next request off-ledger
 func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncCallContext {
 	ctx.offLedger = true
-	ctx.privateKey = &agent.PrivateKey
+	ctx.keyPair = &agent.KeyPair
 	return ctx
 }
 
 // Originator returns a SoloAgent representing the chain originator
 func (ctx *SoloContext) Originator() *SoloAgent {
 	c := ctx.Chain
-	return &SoloAgent{Env: c.Env, PrivateKey: c.OriginatorPrivateKey.PrivateKey[:], address: c.OriginatorAddress}
+	return &SoloAgent{Env: c.Env, KeyPair: c.OriginatorKeyPair, address: c.OriginatorAddress}
 }
 
 // Sign is used to force a different agent for signing a Post() request
 func (ctx *SoloContext) Sign(agent *SoloAgent, mint ...uint64) wasmlib.ScFuncCallContext {
-	ctx.privateKey = &agent.PrivateKey
+	ctx.keyPair = &agent.KeyPair
 	if len(mint) != 0 {
 		ctx.mint = mint[0]
 	}
@@ -325,7 +325,7 @@ func (ctx *SoloContext) Transfer() wasmlib.ScTransfers {
 // // TODO can we make upload work through an off-ledger request instead?
 // // that way we can get rid of all the extra token code when checking balances
 
-// func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
+// func (ctx *SoloContext) upload(keyPair *cryptolib.KeyPair) {
 // 	if *GoDebug {
 // 		ctx.Hprog, ctx.Err = ctx.Chain.UploadWasm(keyPair, []byte("go:"+ctx.scName))
 // 		return

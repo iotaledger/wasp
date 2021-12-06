@@ -1,15 +1,16 @@
 package sbtests
 
 import (
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCounter(t *testing.T) { run2(t, testCounter) }
@@ -87,7 +88,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).WithIotas(1)
 
 	repeats := []int{300, 100, 100, 100, 200, 100, 100}
-	users := make([]*ed25519.KeyPair, len(repeats))
+	users := make([]*cryptolib.KeyPair, len(repeats))
 	userAddr := make([]iotago.Address, len(repeats))
 	sum := 0
 	for _, i := range repeats {

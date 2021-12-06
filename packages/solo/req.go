@@ -7,8 +7,8 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -78,7 +78,7 @@ func (r *CallParams) WithMint(targetAddress iotago.Address, amount uint64) *Call
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters
-func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *ed25519.KeyPair) *iscp.OffLedgerRequestData {
+func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) *iscp.OffLedgerRequestData {
 	ret := request.NewOffLedger(chainID, r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
 	ret.Sign(keyPair)
 	return ret
@@ -113,7 +113,7 @@ func toMap(params []interface{}) map[string]interface{} {
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on the same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.KeyPair) (*iotago.Transaction, iscp.RequestID, error) {
+func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, iscp.RequestID, error) {
 	panic("TODO implement")
 	// if len(req.transfer) == 0 {
 	// 	return nil, iscp.RequestID{}, xerrors.New("transfer can't be empty")
@@ -179,12 +179,12 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 // Unlike the real Wasp environment, the 'solo' environment makes PostRequestSync a synchronous call.
 // It makes it possible step-by-step debug of the smart contract logic.
 // The call should be used only from the main thread (goroutine)
-func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
+func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, error) {
 	_, ret, err := ch.PostRequestSyncTx(req, keyPair)
 	return ret, err
 }
 
-func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
+func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
 	if keyPair == nil {
@@ -198,7 +198,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 	return res, ch.mustGetErrorFromReceipt(r.ID())
 }
 
-func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*iotago.Transaction, dict.Dict, error) {
+func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
 	tx, reqid, err := ch.RequestFromParamsToLedger(req, keyPair)

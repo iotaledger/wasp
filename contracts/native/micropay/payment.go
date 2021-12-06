@@ -3,6 +3,7 @@ package micropay
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"io"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -85,7 +86,7 @@ func (p *Payment) Read(r io.Reader) error {
 	if p.SignatureShort, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if len(p.SignatureShort) != ed25519.SignatureSize {
+	if len(p.SignatureShort) != cryptolib.SignatureSize {
 		return fmt.Errorf("wrong public key bytes")
 	}
 	return nil

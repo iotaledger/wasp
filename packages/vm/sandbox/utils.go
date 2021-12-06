@@ -3,7 +3,7 @@ package sandbox
 import (
 	"github.com/iotaledger/hive.go/crypto/bls"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/gas"
@@ -77,20 +77,20 @@ func (u utilImpl) Hname(name string) iscp.Hname {
 
 func (u utilImpl) ValidSignature(data []byte, pubKey []byte, signature []byte) bool {
 	u.gas.Burn(gas.UtilsED25519ValidSignature)
-	pk, _, err := ed25519.PublicKeyFromBytes(pubKey)
+	pk, err := cryptolib.PublicKeyFromBytes(pubKey)
 	if err != nil {
 		return false
 	}
-	sig, _, err := ed25519.SignatureFromBytes(signature)
+	sig, _, err := cryptolib.SignatureFromBytes(signature)
 	if err != nil {
 		return false
 	}
-	return pk.VerifySignature(data, sig)
+	return cryptolib.Verify(pk, data, sig[:])
 }
 
 func (u utilImpl) AddressFromPublicKey(pubKey []byte) (iotago.Address, error) {
 	u.gas.Burn(gas.UtilsED25519AddressFromPublicKey)
-	addr := iotago.Ed25519AddressFromPubKey(pubKey)
+	addr := cryptolib.Ed25519AddressFromPubKey(pubKey)
 	return &addr, nil
 }
 

@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"os"
 	"testing"
 	"time"
@@ -18,7 +19,7 @@ import (
 )
 
 var (
-	testOwner = wallet.KeyPair(1)
+	testOwner = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress = ledgerstate.NewED25519Address(testOwner.PublicKey)
 )
 

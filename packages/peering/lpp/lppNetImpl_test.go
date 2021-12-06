@@ -4,10 +4,10 @@
 package lpp_test
 
 import (
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/lpp"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -24,10 +24,10 @@ func TestLPPPeeringImpl(t *testing.T) {
 	netIDs := []string{"localhost:9027", "localhost:9028", "localhost:9029"}
 	nodes := make([]peering.NetworkProvider, len(netIDs))
 
-	keys := make([]ed25519.KeyPair, len(netIDs))
+	keys := make([]cryptolib.KeyPair, len(netIDs))
 	tnms := make([]peering.TrustedNetworkManager, len(netIDs))
 	for i := range keys {
-		keys[i] = ed25519.GenerateKeyPair()
+		keys[i] = cryptolib.NewKeyPair()
 		tnms[i] = testutil.NewTrustedNetworkManager()
 	}
 	for _, tnm := range tnms {

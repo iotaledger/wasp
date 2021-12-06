@@ -1,30 +1,32 @@
 package solo
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
 )
 
-func (env *Solo) NewSeedFromIndex(index int) *ed25519.Seed {
+func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
 	var seedBytes []byte
 	if env.seed == nil {
 		seedBytes = make([]byte, 32)
 	} else {
-		seedBytes = env.seed.Bytes()
+		seedBytes = env.seed[:]
 	}
 	seedBytes = hashing.HashData(seedBytes, util.Int32To4Bytes(int32(index))).Bytes()
-	return ed25519.NewSeed(seedBytes)
+	seed := cryptolib.SeedFromByteArray(seedBytes)
+
+	return &seed
 }
 
 // NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme
 // and requests some tokens from the UTXODB faucet.
 // The amount of tokens is equal to solo.Saldo (=1000000) iotas
 // Returns signature scheme interface and public key in binary form
-func (env *Solo) NewKeyPairWithFunds(seed ...*ed25519.Seed) (*ed25519.KeyPair, iotago.Address) {
+func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPair, iotago.Address) {
 	keyPair, addr := env.NewKeyPair(seed...)
 
 	env.ledgerMutex.Lock()
@@ -39,13 +41,13 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*ed25519.Seed) (*ed25519.KeyPair, i
 
 // NewSignatureSchemeAndPubKey generates new ed25519 signature scheme
 // Returns signature scheme interface and public key in binary form
-func (env *Solo) NewKeyPair(seedOpt ...*ed25519.Seed) (*ed25519.KeyPair, iotago.Address) {
+func (env *Solo) NewKeyPair(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, iotago.Address) {
 	return testkey.GenKeyAddr(seedOpt...)
 }
 
 // MintTokens mints specified amount of new colored tokens in the given wallet (signature scheme)
 // Returns the color of minted tokens: the hash of the transaction
-func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (iotago.NativeTokenID, error) {
+func (env *Solo) MintTokens(wallet *cryptolib.KeyPair, amount uint64) (iotago.NativeTokenID, error) {
 	panic("not implemented")
 	// env.ledgerMutex.Lock()
 	// defer env.ledgerMutex.Unlock()
