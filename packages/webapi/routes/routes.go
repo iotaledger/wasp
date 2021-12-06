@@ -55,12 +55,12 @@ func GetCommitteeRecord(addr string) string {
 	return "/adm/committeerecord/" + addr
 }
 
-func GetChainsMetrics() string {
-	return "/adm/chain/metrics"
+func GetChainsNodeConnectionMetrics() string {
+	return "/adm/chain/nodeconn/metrics"
 }
 
-func GetChainMetrics(chainID string) string {
-	return "/adm/chain/" + chainID + "/metrics"
+func GetChainNodeConnectionMetrics(chainID string) string {
+	return "/adm/chain/" + chainID + "/nodeconn/metrics"
 }
 
 func GetCommitteeForChain(chainID string) string {
