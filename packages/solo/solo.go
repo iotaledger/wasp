@@ -4,12 +4,13 @@
 package solo
 
 import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"math/big"
 	"math/rand"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"

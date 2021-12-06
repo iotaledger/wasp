@@ -5,10 +5,18 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"golang.org/x/xerrors"
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
-	return (*iscp.ChainID)(&vmctx.task.AnchorOutput.AliasID)
+	var ret iscp.ChainID
+	if vmctx.task.AnchorOutput.StateIndex == 0 {
+		// origin
+		ret = iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID.ID()))
+	} else {
+		ret = iscp.ChainIDFromAliasID(vmctx.task.AnchorOutput.AliasID)
+	}
+	return &ret
 }
 
 func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
@@ -59,29 +67,20 @@ func (vmctx *VMContext) IncomingTransfer() *iscp.Assets {
 	return vmctx.getCallContext().transfer
 }
 
-var _ iscp.StateAnchor = &VMContext{}
-
-func (vmctx *VMContext) StateController() iotago.Address {
-	return vmctx.task.AnchorOutput.StateController
-}
-
-func (vmctx *VMContext) GovernanceController() iotago.Address {
-	return vmctx.task.AnchorOutput.GovernanceController
-}
-
-func (vmctx *VMContext) StateIndex() uint32 {
-	return vmctx.task.AnchorOutput.StateIndex
-}
-
-func (vmctx *VMContext) OutputID() iotago.UTXOInput {
-	return vmctx.task.AnchorOutputID
-}
-
-func (vmctx *VMContext) StateData() (ret iscp.StateData) {
-	var err error
-	ret, err = iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
+func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
+	sd, err := iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
 	if err != nil {
-		panic(err)
+		panic(xerrors.Errorf("StateAnchor: %w", err))
 	}
-	return
+	var nilAliasID iotago.AliasID
+	return &iscp.StateAnchor{
+		ChainID:              *vmctx.ChainID(),
+		IsOrigin:             vmctx.task.AnchorOutput.AliasID == nilAliasID,
+		StateController:      vmctx.task.AnchorOutput.StateController,
+		GovernanceController: vmctx.task.AnchorOutput.GovernanceController,
+		StateIndex:           vmctx.task.AnchorOutput.StateIndex,
+		OutputID:             vmctx.task.AnchorOutputID.ID(),
+		StateData:            sd,
+		Deposit:              vmctx.task.AnchorOutput.Amount,
+	}
 }

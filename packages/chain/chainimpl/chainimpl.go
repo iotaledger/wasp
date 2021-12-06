@@ -215,7 +215,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String(), c.mempoolLastCleanedIndex)
 		// normal state update:
 		c.stateReader.SetBaseline()
-		chainID := iscp.NewChainID(msg.ChainOutput.GetAliasAddress())
+		chainID := iscp.ChainIDFromAliasID(msg.ChainOutput.GetAliasAddress())
 		var reqids []iscp.RequestID
 		for i := c.mempoolLastCleanedIndex + 1; i <= msg.VirtualState.BlockIndex(); i++ {
 			c.log.Debugf("processChainTransition state %d: cleaning state %d", stateIndex, i)

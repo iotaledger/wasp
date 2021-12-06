@@ -7,6 +7,8 @@ import (
 	"crypto/rand"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
@@ -197,7 +199,7 @@ func (c *committee) waitReady(waitReady bool) {
 }
 
 func checkValidatorNodeIDs(cfg registry.PeerNetworkConfigProvider, n, ownIndex uint16, validatorNetIDs []string) error {
-	if !util.AllDifferentStrings(validatorNetIDs) {
+	if !util.AllDifferentStrings(validatorNetIDs...) {
 		return xerrors.Errorf("checkValidatorNodeIDs: list of validators nodes contains duplicates: %+v", validatorNetIDs)
 	}
 	if len(validatorNetIDs) != int(n) {

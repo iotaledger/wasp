@@ -6,6 +6,9 @@ import (
 	"io"
 	"time"
 
+	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/wasp/packages/iscp"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -60,7 +63,7 @@ func (b *blockImpl) Bytes() []byte {
 func (b *blockImpl) String() string {
 	ret := ""
 	ret += fmt.Sprintf("Block: state index: %d\n", b.BlockIndex())
-	ret += fmt.Sprintf("state txid: %s\n", b.ApprovingOutputID().String())
+	ret += fmt.Sprintf("state txid: %s\n", iscp.OID(*b.ApprovingOutputID().UTXOInput()))
 	ret += fmt.Sprintf("timestamp: %v\n", b.Timestamp())
 	ret += fmt.Sprintf("state update: %s\n", (*b.stateUpdate).String())
 	return ret
@@ -109,7 +112,11 @@ func (b *blockImpl) Write(w io.Writer) error {
 	if err := b.writeEssence(w); err != nil {
 		return err
 	}
-	if _, err := w.Write(b.stateOutputID.Bytes()); err != nil {
+	data, err := b.stateOutputID.UTXOInput().Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		return err
+	}
+	if _, err = w.Write(data); err != nil {
 		return err
 	}
 	return nil
