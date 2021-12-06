@@ -4,11 +4,12 @@
 package solo
 
 import (
-	"math/big"
 	"math/rand"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/parameters"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -67,6 +68,7 @@ type Solo struct {
 	publisherWG      sync.WaitGroup
 	publisherEnabled atomic.Bool
 	processorConfig  *processors.Config
+	deSeriParams     *iotago.DeSerializationParameters
 }
 
 // Chain represents state of individual chain.
@@ -150,17 +152,20 @@ func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...util.Seed) *Sol
 	require.NoError(t, err)
 
 	initialTime := time.Unix(1, 0)
+	initParams := utxodb.InitParams{}
+	initParams.WithTimestamp(utxodb.UnixSeconds(initialTime.Unix())).WithRentStructure(parameters.DeSerializationParameters().RentStructure)
 	ret := &Solo{
 		T:               t,
 		logger:          log,
 		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
-		utxoDB:          utxodb.NewWithTimestamp(initialTime),
+		utxoDB:          utxodb.New(&initParams),
 		seed:            seed,
 		logicalTime:     initialTime,
 		timeStep:        DefaultTimeStep,
-		chains:          make(map[[33]byte]*Chain),
+		chains:          make(map[iscp.ChainID]*Chain),
 		vmRunner:        runvm.NewVMRunner(),
 		processorConfig: processorConfig,
+		deSeriParams:    parameters.DeSerializationParameters(),
 	}
 	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime.Format(timeLayout))
 	return ret
@@ -210,7 +215,7 @@ func (env *Solo) NewChain(chainOriginator ed25519.PrivateKey, name string, valid
 			chainOriginator = util.SubSeed(env.seed, 1)
 			originatorAddr = util.AddreessFromKey(chainOriginator)
 		}
-		_, err := env.utxoDB.RequestFunds(originatorAddr, env.LogicalTime())
+		_, err := env.utxoDB.RequestFunds(originatorAddr)
 		require.NoError(env.T, err)
 	} else {
 		originatorAddr = util.AddreessFromKey(chainOriginator)
@@ -221,14 +226,24 @@ func (env *Solo) NewChain(chainOriginator ed25519.PrivateKey, name string, valid
 		feeTarget = validatorFeeTarget[0]
 	}
 
-	bals := iscp.NewAssets(100, nil)
-
-	inputs := env.utxoDB.GetAddressOutputs(originatorAddr)
-	originTx, chainID, err := transaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, env.LogicalTime(), inputs...)
+	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
+	originTx, chainID, err := transaction.NewChainOriginTransaction(
+		chainOriginator,
+		stateAddr,
+		stateAddr,
+		0, // will be adjusted to min dust deposit
+		outs,
+		ids,
+		env.deSeriParams,
+	)
 	require.NoError(env.T, err)
+
+	anchor, err := transaction.GetAnchorFromTransaction(originTx)
+	require.NoError(env.T, err)
+
 	err = env.utxoDB.AddTransaction(originTx)
 	require.NoError(env.T, err)
-	env.AssertAddressBalance(originatorAddr, iscp.IotaAssetID, big.NewInt(Saldo-100))
+	env.AssertAddressIotas(originatorAddr, Saldo-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateAddr.Bech32(iscp.Bech32Prefix))
@@ -279,12 +294,14 @@ func (env *Solo) NewChain(chainOriginator ed25519.PrivateKey, name string, valid
 		}()
 	}))
 
-	initTx, err := transaction.NewRootInitRequestTransactionOld(
+	outs, ids = env.utxoDB.GetUnspentOutputs(originatorAddr)
+	initTx, err := transaction.NewRootInitRequestTransaction(
 		ret.OriginatorPrivateKey,
 		chainID,
 		"'solo' testing chain",
-		env.LogicalTime(),
-		env.utxoDB.GetAddressOutputs(ret.OriginatorAddress)...,
+		outs,
+		ids,
+		env.deSeriParams,
 	)
 	require.NoError(env.T, err)
 	require.NotNil(env.T, initTx)
@@ -293,7 +310,7 @@ func (env *Solo) NewChain(chainOriginator ed25519.PrivateKey, name string, valid
 	require.NoError(env.T, err)
 
 	env.glbMutex.Lock()
-	env.chains[chainID.Array()] = ret
+	env.chains[*chainID] = ret
 	env.glbMutex.Unlock()
 
 	go ret.batchLoop()
@@ -328,7 +345,14 @@ func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID *iscp.ChainID)
 	return ret, nil
 }
 
-func (env *Solo) requestsByChain(tx *iotago.Transaction) map[[33]byte][]iscp.Request {
+func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp.Request {
+	for _, out := range tx.Essence.Outputs {
+		if out.Type() != iotago.OutputExtended {
+			continue
+		}
+		odata, err := iscp.OnLedgerFromUTXO(nil, out)
+		require.NoError(env.T, err)
+	}
 	panic("TODO implement")
 	// sender, err := utxoutil.GetSingleSender(tx)
 	// require.NoError(env.T, err)
