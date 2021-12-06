@@ -140,8 +140,8 @@ func TestAccessNodes(t *testing.T) {
 	_, err = chain.PostRequestSync(
 		solo.NewCallParamsFromDic(
 			governance.Contract.Name,
-			governance.FuncCandidateNode.Name,
-			governance.CandidateNodeRequest{
+			governance.FuncAddCandidateNode.Name,
+			governance.AddCandidateNodeRequest{
 				Candidate:    true,
 				ForCommittee: false,
 				NodePubKey:   node1KP.PublicKey.Bytes(),

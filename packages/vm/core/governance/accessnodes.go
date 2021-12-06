@@ -112,7 +112,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 //
 // CandidateNodeRequest
 //
-type CandidateNodeRequest struct {
+type AddCandidateNodeRequest struct {
 	Candidate    bool
 	ForCommittee bool
 	NodePubKey   []byte
@@ -120,13 +120,13 @@ type CandidateNodeRequest struct {
 	AccessAPI    string
 }
 
-func (req CandidateNodeRequest) AsDict() dict.Dict {
+func (req AddCandidateNodeRequest) AsDict() dict.Dict {
 	d := dict.New()
-	d.Set(ParamCandidateNodeCandidate, codec.EncodeBool(req.Candidate))
-	d.Set(ParamCandidateNodeForCommittee, codec.EncodeBool(req.ForCommittee))
-	d.Set(ParamCandidateNodePubKey, req.NodePubKey)
-	d.Set(ParamCandidateNodeCertificate, req.Certificate)
-	d.Set(ParamCandidateNodeAccessAPI, codec.EncodeString(req.AccessAPI))
+	d.Set(ParamAddCandidateNodeCandidate, codec.EncodeBool(req.Candidate))
+	d.Set(ParamAddCandidateNodeForCommittee, codec.EncodeBool(req.ForCommittee))
+	d.Set(ParamAddCandidateNodePubKey, req.NodePubKey)
+	d.Set(ParamAddCandidateNodeCertificate, req.Certificate)
+	d.Set(ParamAddCandidateNodeAccessAPI, codec.EncodeString(req.AccessAPI))
 	return d
 }
 

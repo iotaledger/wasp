@@ -45,7 +45,7 @@ func getChainNodesFuncHandler(ctx iscp.SandboxView) (dict.Dict, error) {
 
 // SC Command Function handler.
 //
-//	candidateNode(
+//	addCandidateNode(
 //		candidate:		bool = true		// true, if we are adding the node as a candidate to access nodes.
 //		forCommittee:	bool = false	// true, if we also want the node to become a validator.
 //		nodePubKey:		[]byte			// Public key of the node.
@@ -53,22 +53,22 @@ func getChainNodesFuncHandler(ctx iscp.SandboxView) (dict.Dict, error) {
 //      accessAPI:		string = ""		// Optional: API URL for the access node.
 //	) => ()
 //
-// It is possible that after executing `candidateNode(false, false, ...)` a node will stay
+// It is possible that after executing `addCandidateNode(false, false, ...)` a node will stay
 // in the list of validators, and will be absent in the candidate or an access node set.
 // The node is removed from the list of access nodes immediately, but the validator rotation
 // must be initiated by the chain owner explicitly.
 //
-func candidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
+func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	paramCandidate := params.MustGetBool(governance.ParamCandidateNodeCandidate, true)
+	paramCandidate := params.MustGetBool(governance.ParamAddCandidateNodeCandidate, true)
 
 	ani := governance.AccessNodeInfo{
-		NodePubKey:    params.MustGetBytes(governance.ParamCandidateNodePubKey),
+		NodePubKey:    params.MustGetBytes(governance.ParamAddCandidateNodePubKey),
 		ValidatorAddr: ctx.Request().SenderAddress().Bytes(), // Not from params, to have it validated.
-		Certificate:   params.MustGetBytes(governance.ParamCandidateNodeCertificate),
-		ForCommittee:  params.MustGetBool(governance.ParamCandidateNodeForCommittee, false),
-		AccessAPI:     params.MustGetString(governance.ParamCandidateNodeAccessAPI, ""),
+		Certificate:   params.MustGetBytes(governance.ParamAddCandidateNodeCertificate),
+		ForCommittee:  params.MustGetBool(governance.ParamAddCandidateNodeForCommittee, false),
+		AccessAPI:     params.MustGetString(governance.ParamAddCandidateNodeAccessAPI, ""),
 	}
 	a.Require(ani.ValidateCert(ctx), "certificate invalid")
 

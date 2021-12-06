@@ -43,7 +43,7 @@ var (
 
 	// access nodes
 	FuncGetChainNodes     = coreutil.ViewFunc("getChainNodes")
-	FuncCandidateNode     = coreutil.Func("candidateNode")
+	FuncAddCandidateNode  = coreutil.Func("addCandidateNode")
 	FuncChangeAccessNodes = coreutil.Func("changeAccessNodes")
 )
 
@@ -104,12 +104,12 @@ const (
 	ParamGetChainNodesAccessNodeCandidates = "c"
 	ParamGetChainNodesAccessNodes          = "a"
 
-	// access nodes: candidateNode
-	ParamCandidateNodeCandidate    = "c"
-	ParamCandidateNodeForCommittee = "fc"
-	ParamCandidateNodePubKey       = "pk"
-	ParamCandidateNodeCertificate  = "cr"
-	ParamCandidateNodeAccessAPI    = "a"
+	// access nodes: addCandidateNode
+	ParamAddCandidateNodeCandidate    = "c"
+	ParamAddCandidateNodeForCommittee = "fc"
+	ParamAddCandidateNodePubKey       = "pk"
+	ParamAddCandidateNodeCertificate  = "cr"
+	ParamAddCandidateNodeAccessAPI    = "a"
 
 	// access nodes: changeAccessNodes
 	ParamChangeAccessNodesActions = "a"
