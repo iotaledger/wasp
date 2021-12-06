@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
 
@@ -196,7 +197,7 @@ func TestBasic2Accounts(t *testing.T) {
 	}
 	chEnv.checkLedger()
 
-	myWallet := wallet.KeyPair(3)
+	myWallet := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(3))
 	myWalletAddr := ledgerstate.NewED25519Address(myWallet.PublicKey)
 
 	e.requestFunds(myWalletAddr, "myWalletAddress")

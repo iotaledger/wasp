@@ -23,12 +23,12 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"io"
 	"net"
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -65,7 +65,7 @@ type netImpl struct {
 	peers       map[libp2ppeer.ID]*peer // By remotePeer.ID()
 	peersLock   *sync.RWMutex
 	recvEvents  *events.Event // Used to publish events to all attached clients.
-	nodeKeyPair *ed25519.KeyPair
+	nodeKeyPair *cryptolib.KeyPair
 	trusted     peering.TrustedNetworkManager
 	log         *logger.Logger
 }
@@ -80,11 +80,11 @@ var (
 func NewNetworkProvider(
 	myNetID string,
 	port int,
-	nodeKeyPair *ed25519.KeyPair,
+	nodeKeyPair *cryptolib.KeyPair,
 	trusted peering.TrustedNetworkManager,
 	log *logger.Logger,
 ) (peering.NetworkProvider, peering.TrustedNetworkManager, error) {
-	privKey, err := crypto.UnmarshalEd25519PrivateKey(nodeKeyPair.PrivateKey.Bytes())
+	privKey, err := crypto.UnmarshalEd25519PrivateKey(nodeKeyPair.PrivateKey)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("unable to convert the private key: %w", err)
 	}
@@ -185,7 +185,7 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 }
 
 func (n *netImpl) lppTrustedPeerID(trustedPeer *peering.TrustedPeer) (libp2ppeer.ID, crypto.PubKey, error) {
-	lppPeerPub, err := crypto.UnmarshalEd25519PublicKey(trustedPeer.PubKey.Bytes())
+	lppPeerPub, err := crypto.UnmarshalEd25519PublicKey(trustedPeer.PubKey)
 	if err != nil {
 		return libp2ppeer.ID(""), nil, xerrors.Errorf("failed to convert pub key: %w", err)
 	}
@@ -379,12 +379,12 @@ func (n *netImpl) PeerByNetID(peerNetID string) (peering.PeerSender, error) {
 
 // PeerByPubKey implements peering.NetworkProvider.
 // NOTE: For now, only known nodes can be looked up by PubKey.
-func (n *netImpl) PeerByPubKey(peerPub *ed25519.PublicKey) (peering.PeerSender, error) {
+func (n *netImpl) PeerByPubKey(peerPub *cryptolib.PublicKey) (peering.PeerSender, error) {
 	n.peersLock.RLock()
 	defer n.peersLock.RUnlock()
 	for i := range n.peers {
 		pk := n.peers[i].PubKey()
-		if pk != nil && *pk == *peerPub { // Compared as binaries.
+		if pk != nil && peerPub.Equal(pk) { // Compared as binaries.
 			return n.PeerByNetID(n.peers[i].NetID())
 		}
 	}
@@ -408,7 +408,7 @@ func (n *netImpl) NetID() string {
 }
 
 // PubKey implements peering.PeerSender for the Self() node.
-func (n *netImpl) PubKey() *ed25519.PublicKey {
+func (n *netImpl) PubKey() *cryptolib.PublicKey {
 	return &n.nodeKeyPair.PublicKey
 }
 
@@ -441,13 +441,13 @@ func (n *netImpl) Close() {
 }
 
 // IsTrustedPeer implements the peering.TrustedNetworkManager interface.
-func (n *netImpl) IsTrustedPeer(pubKey ed25519.PublicKey) error {
+func (n *netImpl) IsTrustedPeer(pubKey cryptolib.PublicKey) error {
 	return n.trusted.IsTrustedPeer(pubKey)
 }
 
 // TrustPeer implements the peering.TrustedNetworkManager interface.
 // It delegates everything to other implementation and updates the connections accordingly.
-func (n *netImpl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.TrustedPeer, error) {
+func (n *netImpl) TrustPeer(pubKey cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
 	trustedPeer, err := n.trusted.TrustPeer(pubKey, netID)
 	if err != nil {
 		return trustedPeer, err
@@ -457,11 +457,11 @@ func (n *netImpl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.Tr
 
 // DistrustPeer implements the peering.TrustedNetworkManager interface.
 // It delegates everything to other implementation and updates the connections accordingly.
-func (n *netImpl) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, error) {
+func (n *netImpl) DistrustPeer(pubKey cryptolib.PublicKey) (*peering.TrustedPeer, error) {
 	n.peersLock.Lock()
 	for _, peer := range n.peers {
 		peerPubKey := peer.remotePubKey
-		if peerPubKey != nil && *peerPubKey == pubKey {
+		if peerPubKey != nil && pubKey.Equal(peerPubKey) {
 			peer.trust(false)
 		}
 	}

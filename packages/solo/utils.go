@@ -1,13 +1,13 @@
 package solo
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 // GrantDeployPermission gives permission to the specified agentID to deploy SCs into the chain
-func (ch *Chain) GrantDeployPermission(keyPair *ed25519.KeyPair, deployerAgentID *iscp.AgentID) error {
+func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID *iscp.AgentID) error {
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
@@ -18,7 +18,7 @@ func (ch *Chain) GrantDeployPermission(keyPair *ed25519.KeyPair, deployerAgentID
 }
 
 // RevokeDeployPermission removes permission of the specified agentID to deploy SCs into the chain
-func (ch *Chain) RevokeDeployPermission(keyPair *ed25519.KeyPair, deployerAgentID *iscp.AgentID) error {
+func (ch *Chain) RevokeDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID *iscp.AgentID) error {
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}

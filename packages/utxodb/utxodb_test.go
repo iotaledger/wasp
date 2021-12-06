@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,9 +53,10 @@ func TestAddTransactionFail(t *testing.T) {
 }
 
 func TestDoubleSpend(t *testing.T) {
-	key1 := tpkg.RandEd25519PrivateKey()
-	addr1 := iotago.Ed25519AddressFromPubKey(key1.Public().(ed25519.PublicKey))
-	key1Signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&addr1, key1))
+	keyPair1 := cryptolib.NewKeyPair()
+
+	addr1 := cryptolib.Ed25519AddressFromPubKey(keyPair1.PublicKey)
+	key1Signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&addr1, keyPair1.PrivateKey))
 
 	addr2 := tpkg.RandEd25519Address()
 	addr3 := tpkg.RandEd25519Address()

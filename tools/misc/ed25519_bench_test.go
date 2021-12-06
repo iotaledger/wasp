@@ -1,29 +1,28 @@
 package misc
 
 import (
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"strconv"
 	"testing"
-
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 )
 
 func BenchmarkED25519Sign(b *testing.B) {
-	_, privateKey, _ := ed25519.GenerateKey()
+	keyPair := cryptolib.NewKeyPair()
 	for i := 0; i < b.N; i++ {
 		d := []byte("DataToSign" + strconv.Itoa(i))
-		_ = privateKey.Sign(d)
+		_, _ = keyPair.PrivateKey.Sign(nil, d, nil)
 	}
 	//
 	//assert.True(t, publicKey.VerifySignature(data, sig))
 }
 
 func BenchmarkED25519SignVerify(b *testing.B) {
-	publicKey, privateKey, _ := ed25519.GenerateKey()
+	keyPair := cryptolib.NewKeyPair()
 
 	for i := 0; i < b.N; i++ {
 		d := []byte("DataToSign" + strconv.Itoa(i))
-		sig := privateKey.Sign(d)
-		if !publicKey.VerifySignature(d, sig) {
+		sig, _ := keyPair.PrivateKey.Sign(nil, d, nil)
+		if !keyPair.Verify(d, sig) {
 			panic("very bad")
 		}
 	}

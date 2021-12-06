@@ -3,13 +3,12 @@ package utxodb
 import (
 	"encoding/binary"
 	"fmt"
-	"sync"
-
 	"github.com/iotaledger/wasp/packages/hashing"
+	"sync"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 const (
@@ -22,9 +21,9 @@ const (
 )
 
 var (
-	genesisKey     = ed25519.NewKeyFromSeed([]byte("3.141592653589793238462643383279"))
-	genesisAddress = iotago.Ed25519AddressFromPubKey(genesisKey.Public().(ed25519.PublicKey))
-	genesisSigner  = iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&genesisAddress, genesisKey))
+	genesisKeyPair = cryptolib.NewKeyPairFromSeed(cryptolib.SeedFromByteArray([]byte("3.141592653589793238462643383279")))
+	genesisAddress = cryptolib.Ed25519AddressFromPubKey(genesisKeyPair.PublicKey)
+	genesisSigner  = iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&genesisAddress, genesisKeyPair.PrivateKey))
 )
 
 type UnixSeconds uint64
@@ -35,7 +34,7 @@ type UnixSeconds uint64
 type UtxoDB struct {
 	mutex                sync.RWMutex
 	supply               uint64
-	seed                 [ed25519.SeedSize]byte
+	seed                 [cryptolib.SeedSize]byte
 	rentStructure        *iotago.RentStructure
 	milestones           []milestone
 	milestoneIndexByTxID map[iotago.TransactionID]uint32
@@ -56,11 +55,11 @@ type InitParams struct {
 	timestamp     UnixSeconds
 	supply        uint64
 	rentStructure *iotago.RentStructure
-	seed          [ed25519.SeedSize]byte
+	seed          [cryptolib.SeedSize]byte
 }
 
 func DefaultInitParams(seed ...[]byte) *InitParams {
-	var seedBytes [ed25519.SeedSize]byte
+	var seedBytes [cryptolib.SeedSize]byte
 	if len(seed) > 0 {
 		copy(seedBytes[:], seed[0])
 	}
@@ -182,9 +181,9 @@ func (u *UtxoDB) GenesisTransactionID() iotago.TransactionID {
 	return *txID
 }
 
-// GenesisKey returns the private key of the creator of genesis.
-func (u *UtxoDB) GenesisKey() *ed25519.PrivateKey {
-	return &genesisKey
+// GenesisPrivateKey returns the private key of the creator of genesis.
+func (u *UtxoDB) GenesisPrivateKey() *cryptolib.PrivateKey {
+	return &genesisKeyPair.PrivateKey
 }
 
 // GenesisAddress returns the genesis address.
@@ -211,13 +210,13 @@ func (u *UtxoDB) mustRequestFundsTx(target iotago.Address) *iotago.Transaction {
 }
 
 // NewKeyPairByIndex deterministic private key
-func (u *UtxoDB) NewKeyPairByIndex(index uint64) (ed25519.PrivateKey, *iotago.Ed25519Address) {
+func (u *UtxoDB) NewKeyPairByIndex(index uint64) (cryptolib.KeyPair, *iotago.Ed25519Address) {
 	var tmp8 [8]byte
 	binary.LittleEndian.PutUint64(tmp8[:], index)
 	h := hashing.HashData(u.seed[:], tmp8[:])
-	privKey := ed25519.NewKeyFromSeed(h[:])
-	addr := iotago.Ed25519AddressFromPubKey(privKey.Public().(ed25519.PublicKey))
-	return privKey, &addr
+	keyPair := cryptolib.NewKeyPairFromSeed(cryptolib.Seed(h))
+	addr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
+	return keyPair, &addr
 }
 
 // RequestFunds sends RequestFundsAmount IOTA tokens from the genesis address to the given address.

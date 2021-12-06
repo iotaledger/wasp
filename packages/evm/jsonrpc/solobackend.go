@@ -4,7 +4,7 @@
 package jsonrpc
 
 import (
-	"github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -13,16 +13,16 @@ import (
 type SoloBackend struct {
 	Env    *solo.Solo
 	Chain  *solo.Chain
-	pvtKey *ed25519.PrivateKey
+	pvtKey *cryptolib.KeyPair
 }
 
 var _ ChainBackend = &SoloBackend{}
 
-func NewSoloBackend(env *solo.Solo, chain *solo.Chain, signer *ed25519.PrivateKey) *SoloBackend {
+func NewSoloBackend(env *solo.Solo, chain *solo.Chain, signer *cryptolib.KeyPair) *SoloBackend {
 	return &SoloBackend{env, chain, signer}
 }
 
-func (s *SoloBackend) Signer() *ed25519.PrivateKey {
+func (s *SoloBackend) Signer() *cryptolib.KeyPair {
 	return s.pvtKey
 }
 

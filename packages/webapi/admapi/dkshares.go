@@ -8,10 +8,8 @@ package admapi
 import (
 	"encoding/base64"
 	"fmt"
-	"net/http"
-	"time"
-
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -21,6 +19,8 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
+	"net/http"
+	"time"
 )
 
 func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, nodeProvider dkg.NodeProvider) {
@@ -69,11 +69,11 @@ func (s *dkSharesService) handleDKSharesPost(c echo.Context) error {
 		return httperrors.BadRequest("Inconsistent PeerNetIDs and PeerPubKeys.")
 	}
 
-	var peerPubKeys []ed25519.PublicKey
+	var peerPubKeys []cryptolib.PublicKey
 	if req.PeerPubKeys != nil {
-		peerPubKeys = make([]ed25519.PublicKey, len(req.PeerPubKeys))
+		peerPubKeys = make([]cryptolib.PublicKey, len(req.PeerPubKeys))
 		for i := range req.PeerPubKeys {
-			if peerPubKeys[i], err = ed25519.PublicKeyFromString(req.PeerPubKeys[i]); err != nil {
+			if peerPubKeys[i], err = cryptolib.PublicKeyFromString(req.PeerPubKeys[i]); err != nil {
 				return httperrors.BadRequest(fmt.Sprintf("Invalid PeerPubKeys[%v]=%v", i, req.PeerPubKeys[i]))
 			}
 		}

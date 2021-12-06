@@ -3,10 +3,10 @@ package cluster
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/client/scclient"
@@ -69,7 +69,7 @@ func (ch *Chain) OriginatorID() *iscp.AgentID {
 	return ret
 }
 
-func (ch *Chain) OriginatorKeyPair() *ed25519.KeyPair {
+func (ch *Chain) OriginatorKeyPair() *cryptolib.KeyPair {
 	return ch.OriginatorSeed.KeyPair(0)
 }
 
@@ -77,7 +77,7 @@ func (ch *Chain) OriginatorClient() *chainclient.Client {
 	return ch.Client(ch.OriginatorKeyPair())
 }
 
-func (ch *Chain) Client(sigScheme *ed25519.KeyPair, nodeIndex ...int) *chainclient.Client {
+func (ch *Chain) Client(sigScheme *cryptolib.KeyPair, nodeIndex ...int) *chainclient.Client {
 	idx := 0
 	if len(nodeIndex) == 1 {
 		idx = nodeIndex[0]
@@ -90,7 +90,7 @@ func (ch *Chain) Client(sigScheme *ed25519.KeyPair, nodeIndex ...int) *chainclie
 	)
 }
 
-func (ch *Chain) SCClient(contractHname iscp.Hname, sigScheme *ed25519.KeyPair, nodeIndex ...int) *scclient.SCClient {
+func (ch *Chain) SCClient(contractHname iscp.Hname, sigScheme *cryptolib.KeyPair, nodeIndex ...int) *scclient.SCClient {
 	return scclient.New(ch.Client(sigScheme, nodeIndex...), contractHname)
 }
 

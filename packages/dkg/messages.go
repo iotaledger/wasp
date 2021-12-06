@@ -12,10 +12,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"io"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
@@ -183,8 +184,8 @@ type initiatorInitMsg struct {
 	dkgRef       string // Some unique string to identify duplicate initialization.
 	peeringID    peering.PeeringID
 	peerNetIDs   []string
-	peerPubs     []ed25519.PublicKey
-	initiatorPub ed25519.PublicKey
+	peerPubs     []cryptolib.PublicKey
+	initiatorPub cryptolib.PublicKey
 	threshold    uint16
 	timeout      time.Duration
 	roundRetry   time.Duration
@@ -266,13 +267,13 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 	if err = util.ReadUint16(r, &arrLen); err != nil {
 		return err
 	}
-	m.peerPubs = make([]ed25519.PublicKey, arrLen)
+	m.peerPubs = make([]cryptolib.PublicKey, arrLen)
 	for i := range m.peerPubs {
 		var peerPubBytes []byte
 		if peerPubBytes, err = util.ReadBytes16(r); err != nil {
 			return err
 		}
-		if m.peerPubs[i], _, err = ed25519.PublicKeyFromBytes(peerPubBytes); err != nil {
+		if m.peerPubs[i], err = cryptolib.PublicKeyFromBytes(peerPubBytes); err != nil {
 			return err
 		}
 	}
@@ -280,7 +281,7 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 	if initiatorPubBytes, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if m.initiatorPub, _, err = ed25519.PublicKeyFromBytes(initiatorPubBytes); err != nil {
+	if m.initiatorPub, err = cryptolib.PublicKeyFromBytes(initiatorPubBytes); err != nil {
 		return err
 	}
 	if err = util.ReadUint16(r, &m.threshold); err != nil {
