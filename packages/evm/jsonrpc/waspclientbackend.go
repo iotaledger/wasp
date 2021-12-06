@@ -6,8 +6,8 @@ package jsonrpc
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -24,7 +24,7 @@ func NewWaspClientBackend(chainClient *chainclient.Client) *WaspClientBackend {
 	}
 }
 
-func (w *WaspClientBackend) Signer() *ed25519.KeyPair {
+func (w *WaspClientBackend) Signer() *cryptolib.KeyPair {
 	return w.ChainClient.KeyPair
 }
 

@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -15,7 +16,7 @@ import (
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
 // returns the transaction and newly minted chain ID
 func NewChainOriginTransaction(
-	key ed25519.PrivateKey,
+	keyPair cryptolib.KeyPair,
 	stateControllerAddress iotago.Address,
 	governanceControllerAddress iotago.Address,
 	deposit uint64,
@@ -27,7 +28,7 @@ func NewChainOriginTransaction(
 		panic("mismatched lengths of outputs and inputs slices")
 	}
 
-	walletAddr := iotago.Ed25519AddressFromPubKey(key.Public().(ed25519.PublicKey))
+	walletAddr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
 
 	txb := iotago.NewTransactionBuilder()
 
@@ -64,7 +65,7 @@ func NewChainOriginTransaction(
 		})
 	}
 
-	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, key))
+	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, keyPair.PrivateKey))
 	tx, err := txb.Build(deSeriParams, signer)
 	if err != nil {
 		return nil, nil, err
@@ -103,14 +104,14 @@ func computeInputsAndRemainder(
 // The request contains the minimum data needed to bootstrap the chain.
 // The signer must be the same that created the origin transaction.
 func NewRootInitRequestTransaction(
-	key ed25519.PrivateKey,
+	keyPair cryptolib.KeyPair,
 	chainID *iscp.ChainID,
 	description string,
 	allUnspentOutputs []iotago.Output,
 	allInputs []*iotago.UTXOInput,
 	deSeriParams *iotago.DeSerializationParameters,
 ) (*iotago.Transaction, error) {
-	walletAddr := iotago.Ed25519AddressFromPubKey(key.Public().(ed25519.PublicKey))
+	walletAddr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
 
 	args := dict.Dict{
 		governance.ParamChainID:     codec.EncodeChainID(chainID),
@@ -156,7 +157,7 @@ func NewRootInitRequestTransaction(
 		})
 	}
 
-	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, key))
+	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, keyPair.PrivateKey))
 	tx, err := txb.Build(deSeriParams, signer)
 	if err != nil {
 		return nil, err

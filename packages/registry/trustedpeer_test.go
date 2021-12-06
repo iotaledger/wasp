@@ -3,8 +3,9 @@ package registry
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
@@ -18,8 +19,8 @@ func TestTrustedPeer(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, 0, len(tpList))
 
-	keyPair1 := ed25519.GenerateKeyPair()
-	keyPair2 := ed25519.GenerateKeyPair()
+	keyPair1 := cryptolib.NewKeyPair()
+	keyPair2 := cryptolib.NewKeyPair()
 	_, err = reg.TrustPeer(keyPair1.PublicKey, "host1:2001")
 	require.Nil(t, err)
 	_, err = reg.TrustPeer(keyPair2.PublicKey, "host2a:2002")

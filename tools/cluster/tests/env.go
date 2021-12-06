@@ -2,19 +2,18 @@ package tests
 
 import (
 	"flag"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"math/rand"
 	"os"
 	"testing"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
@@ -24,7 +23,7 @@ var (
 	useWasp = flag.Bool("wasp", false, "use Wasp built-in instead of Rust")
 
 	wallet      = initSeed()
-	scOwner     = wallet.KeyPair(0)
+	scOwner     = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(0))
 	scOwnerAddr = iotago.NewED25519Address(scOwner.PublicKey)
 )
 
@@ -53,8 +52,8 @@ type contractWithMessageCounterEnv struct {
 	counter *cluster.MessageCounter
 }
 
-func initSeed() util.Seed {
-	return util.NewSeed()
+func initSeed() cryptolib.Seed {
+	return cryptolib.NewSeed()
 }
 
 // TODO detached example code
@@ -110,12 +109,12 @@ func (e *chainEnv) createNewClient() *scclient.SCClient {
 	return client
 }
 
-func (e *chainEnv) getOrCreateAddress() (*ed25519.KeyPair, *iotago.ED25519Address) {
+func (e *chainEnv) getOrCreateAddress() (*cryptolib.KeyPair, *iotago.ED25519Address) {
 	const minTokenAmountBeforeRequestingNewFunds uint64 = 100
 
 	randomAddress := rand.NewSource(time.Now().UnixNano())
 
-	keyPair := wallet.KeyPair(e.addressIndex)
+	keyPair := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(e.addressIndex))
 	myAddress := iotago.NewED25519Address(keyPair.PublicKey)
 
 	funds, err := e.clu.GoshimmerClient().BalanceIOTA(myAddress)
@@ -128,14 +127,14 @@ func (e *chainEnv) getOrCreateAddress() (*ed25519.KeyPair, *iotago.ED25519Addres
 		e.addressIndex = rand.New(randomAddress).Uint64()
 		e.t.Logf("Generating new address: %v", e.addressIndex)
 
-		keyPair = wallet.KeyPair(e.addressIndex)
+		keyPair = cryptolib.NewKeyPairFromSeed(wallet.SubSeed(e.addressIndex))
 		myAddress = iotago.NewED25519Address(keyPair.PublicKey)
 
 		e.requestFunds(myAddress, "myAddress")
 		e.t.Logf("Funds: %v, addressIndex: %v", funds, e.addressIndex)
 	}
 
-	return keyPair, myAddress
+	return &keyPair, myAddress
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint iscp.Hname, tokens int, params map[string]interface{}) {

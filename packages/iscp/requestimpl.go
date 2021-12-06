@@ -8,7 +8,8 @@ import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/mr-tron/base58"
@@ -44,7 +45,7 @@ type OffLedgerRequestData struct {
 	contract       Hname
 	entryPoint     Hname
 	params         dict.Dict
-	publicKey      ed25519.PublicKey
+	publicKey      cryptolib.PublicKey
 	sender         *iotago.Ed25519Address
 	signature      []byte
 	nonce          uint64
@@ -197,9 +198,9 @@ func (r *OffLedgerRequestData) Hash() [32]byte {
 }
 
 // Sign signs essence
-func (r *OffLedgerRequestData) Sign(key ed25519.PrivateKey) {
-	r.publicKey = key.Public().(ed25519.PublicKey)
-	r.signature = ed25519.Sign(key, r.essenceBytes())
+func (r *OffLedgerRequestData) Sign(key cryptolib.KeyPair) {
+	r.publicKey = key.PublicKey
+	r.signature, _ = key.PrivateKey.Sign(nil, r.essenceBytes(), nil)
 }
 
 // Assets is attached assets to the UTXO. Nil for off-ledger
@@ -231,7 +232,7 @@ func (r *OffLedgerRequestData) WithTokens(tokens iotago.NativeTokens) *OffLedger
 
 // VerifySignature verifies essence signature
 func (r *OffLedgerRequestData) VerifySignature() bool {
-	return ed25519.Verify(r.publicKey, r.essenceBytes(), r.signature)
+	return cryptolib.Verify(r.publicKey, r.essenceBytes(), r.signature)
 }
 
 // ID returns request id for this request
@@ -263,7 +264,7 @@ func (r *OffLedgerRequestData) SenderAccount() *AgentID {
 
 func (r *OffLedgerRequestData) SenderAddress() iotago.Address {
 	if r.sender == nil {
-		addr := iotago.Ed25519AddressFromPubKey(r.publicKey)
+		addr := cryptolib.Ed25519AddressFromPubKey(r.publicKey)
 		r.sender = &addr
 	}
 	return r.sender

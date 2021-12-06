@@ -2,17 +2,17 @@ package testkey
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-func GenKeyAddr(seedOpt ...util.Seed) (*ed25519.PrivateKey, iotago.Address) {
-	var key ed25519.PrivateKey
+func GenKeyAddr(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, iotago.Address) {
+	var keyPair cryptolib.KeyPair
 	if len(seedOpt) > 0 {
-		key = ed25519.NewKeyFromSeed(seedOpt[0][:])
+		keyPair = cryptolib.NewKeyPairFromSeed(*seedOpt[0])
 	} else {
-		key = util.NewPrivateKey()
+		keyPair = cryptolib.NewKeyPair()
 	}
-	addr := iotago.Ed25519AddressFromPubKey(key.Public().(ed25519.PublicKey))
-	return &key, &addr
+	addr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
+	return &keyPair, &addr
 }

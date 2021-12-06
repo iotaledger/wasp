@@ -7,25 +7,25 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
-	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 type SoloAgent struct {
-	Env        *solo.Solo
-	PrivateKey ed25519.PrivateKey
-	address    iotago.Address
-	hname      iscp.Hname
+	Env     *solo.Solo
+	KeyPair cryptolib.KeyPair
+	address iotago.Address
+	hname   iscp.Hname
 }
 
 func NewSoloAgent(env *solo.Solo) *SoloAgent {
 	agent := &SoloAgent{Env: env}
-	seed := tpkg.RandEd25519Seed()
-	agent.PrivateKey = ed25519.NewKeyFromSeed(seed[:])
-	addr := iotago.Ed25519AddressFromPubKey(agent.PrivateKey.Public().(ed25519.PublicKey))
+	seed := cryptolib.NewSeed()
+	agent.KeyPair = cryptolib.NewKeyPairFromSeed(seed)
+	addr := cryptolib.Ed25519AddressFromPubKey(agent.KeyPair.PublicKey)
 	agent.address = &addr
 	return agent
 }

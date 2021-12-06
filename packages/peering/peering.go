@@ -11,11 +11,12 @@
 package peering
 
 import (
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"golang.org/x/xerrors"
 )
 
@@ -41,7 +42,7 @@ type NetworkProvider interface {
 	PeerGroup(peeringID PeeringID, peerAddrs []string) (GroupProvider, error)
 	PeerDomain(peeringID PeeringID, peerAddrs []string) (PeerDomainProvider, error)
 	PeerByNetID(peerNetID string) (PeerSender, error)
-	PeerByPubKey(peerPub *ed25519.PublicKey) (PeerSender, error)
+	PeerByPubKey(peerPub *cryptolib.PublicKey) (PeerSender, error)
 	PeerStatus() []PeerStatusProvider
 	Attach(peeringID *PeeringID, receiver byte, callback func(recv *PeerMessageIn)) interface{}
 	Detach(attachID interface{})
@@ -53,9 +54,9 @@ type NetworkProvider interface {
 // struct, that implements the NetworkProvider. These implementations should interact,
 // e.g. when we distrust some peer, all the connections to it should be cut immediately.
 type TrustedNetworkManager interface {
-	IsTrustedPeer(pubKey ed25519.PublicKey) error
-	TrustPeer(pubKey ed25519.PublicKey, netID string) (*TrustedPeer, error)
-	DistrustPeer(pubKey ed25519.PublicKey) (*TrustedPeer, error)
+	IsTrustedPeer(pubKey cryptolib.PublicKey) error
+	TrustPeer(pubKey cryptolib.PublicKey, netID string) (*TrustedPeer, error)
+	DistrustPeer(pubKey cryptolib.PublicKey) (*TrustedPeer, error)
 	TrustedPeers() ([]*TrustedPeer, error)
 }
 
@@ -109,7 +110,7 @@ type PeerSender interface {
 	// authenticated, therefore it can return nil, if pub
 	// key is not known yet. You can call await before calling
 	// this function to ensure the public key is already resolved.
-	PubKey() *ed25519.PublicKey
+	PubKey() *cryptolib.PublicKey
 
 	// SendMsg works in an asynchronous way, and therefore the
 	// errors are not returned here.
@@ -135,7 +136,7 @@ type PeerSender interface {
 // by the same object.
 type PeerStatusProvider interface {
 	NetID() string
-	PubKey() *ed25519.PublicKey
+	PubKey() *cryptolib.PublicKey
 	IsAlive() bool
 	NumUsers() int
 }

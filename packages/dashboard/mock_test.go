@@ -5,11 +5,12 @@ package dashboard
 
 import (
 	"fmt"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/chain"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -57,11 +58,11 @@ func (w *waspServicesMock) PeeringStats() (*PeeringStats, error) {
 		TrustedPeers: []TrustedPeer{
 			{
 				NetID:  "127.0.0.1:4000",
-				PubKey: [32]byte{},
+				PubKey: cryptolib.PublicKey{},
 			},
 			{
 				NetID:  "127.0.0.1:4001",
-				PubKey: [32]byte{},
+				PubKey: cryptolib.PublicKey{},
 			},
 		},
 	}, nil
@@ -103,8 +104,11 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
+
+	address := cryptolib.Ed25519AddressFromPubKey(cryptolib.PublicKey{})
+
 	return &chain.CommitteeInfo{
-		Address:       ledgerstate.NewED25519Address(ed25519.PublicKey{}),
+		Address:       &address,
 		Size:          2,
 		Quorum:        1,
 		QuorumIsAlive: true,
@@ -133,7 +137,7 @@ type dashboardTestEnv struct {
 }
 
 func (e *dashboardTestEnv) newChain() *solo.Chain {
-	ch := e.solo.NewChain(nil, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
+	ch := e.solo.NewChain(cryptolib.KeyPair{}, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
 	e.wasp.chains[ch.ChainID.Array()] = ch
 	return ch
 }

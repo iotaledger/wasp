@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
 
@@ -94,11 +95,11 @@ func TestPost1Request(t *testing.T) {
 	contractID := e.deployInccounter42(42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
-	testOwner := wallet.KeyPair(1)
+	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	e.requestFunds(myAddress, "myAddress")
 
-	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
+	myClient := e.chain.SCClient(contractID.Hname(), &testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
@@ -115,11 +116,11 @@ func TestPost3Recursive(t *testing.T) {
 	contractID := e.deployInccounter42(42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
-	testOwner := wallet.KeyPair(1)
+	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	e.requestFunds(myAddress, "myAddress")
 
-	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
+	myClient := e.chain.SCClient(contractID.Hname(), &testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
 		Transfer: colored.NewBalancesForIotas(1),
@@ -144,12 +145,12 @@ func TestPost5Requests(t *testing.T) {
 	contractID := e.deployInccounter42(42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
-	testOwner := wallet.KeyPair(1)
+	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	myAgentID := iscp.NewAgentID(myAddress, 0)
 	e.requestFunds(myAddress, "myAddress")
 
-	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
+	myClient := e.chain.SCClient(contractID.Hname(), &testOwner)
 
 	for i := 0; i < 5; i++ {
 		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
@@ -175,12 +176,12 @@ func TestPost5AsyncRequests(t *testing.T) {
 	contractID := e.deployInccounter42(42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
-	testOwner := wallet.KeyPair(1)
+	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	myAgentID := iscp.NewAgentID(myAddress, 0)
 	e.requestFunds(myAddress, "myAddress")
 
-	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
+	myClient := e.chain.SCClient(contractID.Hname(), &testOwner)
 
 	tx := [5]*ledgerstate.Transaction{}
 	var err error

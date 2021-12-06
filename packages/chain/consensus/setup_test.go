@@ -5,6 +5,8 @@ package consensus
 
 import (
 	"fmt"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"io"
 	"math/rand"
 	"sync"
@@ -14,7 +16,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
@@ -22,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -50,7 +52,7 @@ type MockedEnv struct {
 	Log               *logger.Logger
 	Ledger            *utxodb.UtxoDB
 	StateAddress      iotago.Address
-	OriginatorKeyPair *ed25519.KeyPair
+	OriginatorKeyPair *cryptolib.KeyPair
 	OriginatorAddress iotago.Address
 	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider

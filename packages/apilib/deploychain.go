@@ -9,9 +9,11 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
+
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/client/multiclient"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
@@ -28,7 +30,7 @@ type CreateChainParams struct {
 	CommitteePeeringHosts []string
 	N                     uint16
 	T                     uint16
-	OriginatorPrivateKey  *ed25519.PrivateKey
+	OriginatorKeyPair     *cryptolib.KeyPair
 	Description           string
 	Textout               io.Writer
 	Prefix                string
@@ -65,14 +67,14 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 	if par.Textout != nil {
 		textout = par.Textout
 	}
-	originatorAddr := iotago.Ed25519AddressFromPubKey(par.OriginatorPrivateKey.Public().(ed25519.PublicKey))
+	originatorAddr := cryptolib.Ed25519AddressFromPubKey(par.OriginatorKeyPair.PublicKey)
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "creating new chain. Owner address: %s. State controller: %s, N = %d, T = %d\n",
 		originatorAddr.Bech32(iscp.Bech32Prefix), stateControllerAddr.Bech32(iscp.Bech32Prefix), par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	chainID, initRequestTx, err := CreateChainOrigin(par.Layer1Client, par.OriginatorPrivateKey, stateControllerAddr, par.Description)
+	chainID, initRequestTx, err := CreateChainOrigin(par.Layer1Client, par.OriginatorKeyPair, stateControllerAddr, par.Description)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
@@ -110,9 +112,9 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 }
 
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
-func CreateChainOrigin(Layer1Client interface{}, originator *ed25519.PrivateKey, stateController iotago.Address, dscr string) (*iscp.ChainID, *iotago.Transaction, error) {
+func CreateChainOrigin(Layer1Client interface{}, originator *cryptolib.KeyPair, stateController iotago.Address, dscr string) (*iscp.ChainID, *iotago.Transaction, error) {
 	panic("TODO implement")
-	// originatorAddr := iotago.Ed25519AddressFromPubKey(originator.Public().(ed25519.PublicKey))
+	// originatorAddr := cryptolib.Ed25519AddressFromPubKey(originator.Public().(ed25519.PublicKey))
 	// // ----------- request owner address' outputs from the ledger
 	// allOuts, err := Layer1Client.GetConfirmedOutputs(originatorAddr)
 	// if err != nil {

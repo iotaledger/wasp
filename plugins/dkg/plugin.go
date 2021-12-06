@@ -4,9 +4,9 @@
 package dkg
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	hive_node "github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	dkg_pkg "github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
@@ -25,7 +25,7 @@ func Init() *hive_node.Plugin {
 		registry := registry.DefaultRegistry()
 		peeringProvider := peering.DefaultNetworkProvider()
 		var err error
-		var nodeIdentity *ed25519.KeyPair
+		var nodeIdentity *cryptolib.KeyPair
 		if nodeIdentity, err = registry.GetNodeIdentity(); err != nil {
 			panic("cannot get the node key")
 		}

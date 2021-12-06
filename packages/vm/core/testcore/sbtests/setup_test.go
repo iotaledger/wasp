@@ -2,9 +2,11 @@ package sbtests
 
 import (
 	"fmt"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
@@ -20,14 +22,14 @@ const (
 	WasmFileTestcore = "sbtestsc/testcore_bg.wasm"
 )
 
-func setupChain(t *testing.T, keyPairOriginator *ed25519.KeyPair) (*solo.Solo, *solo.Chain) {
+func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
 	core.PrintWellKnownHnames()
 	env := solo.New(t, DEBUG, false).WithNativeContract(sbtestsc.Processor)
 	chain := env.NewChain(keyPairOriginator, "ch1")
 	return env, chain
 }
 
-func setupDeployer(t *testing.T, chain *solo.Chain) (*ed25519.KeyPair, iotago.Address, *iscp.AgentID) {
+func setupDeployer(t *testing.T, chain *solo.Chain) (*cryptolib.KeyPair, iotago.Address, *iscp.AgentID) {
 	user, userAddr := chain.Env.NewKeyPairWithFunds()
 	chain.Env.AssertAddressIotas(userAddr, solo.Saldo)
 
@@ -51,7 +53,7 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	}
 }
 
-func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, runWasm bool) (*iscp.AgentID, uint64) {
+func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) (*iscp.AgentID, uint64) {
 	var err error
 	var extraToken uint64
 	if runWasm {

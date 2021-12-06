@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
 
@@ -10,8 +11,8 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
@@ -36,7 +37,7 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 	return ret, vs
 }
 
-func getRequestsOnLedger(t *testing.T, amount int) ([]*request.OnLedger, *ed25519.KeyPair) {
+func getRequestsOnLedger(t *testing.T, amount int) ([]*request.OnLedger, *cryptolib.KeyPair) {
 	utxo := utxodb.New()
 	keyPair, addr := utxo.NewKeyPairByIndex(0)
 	_, err := utxo.RequestFunds(addr)

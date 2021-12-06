@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"math/big"
 	"math/rand"
 	"strings"
@@ -13,9 +14,9 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -58,7 +59,7 @@ type Solo struct {
 	logger      *logger.Logger
 	dbmanager   *dbmanager.DBManager
 	utxoDB      *utxodb.UtxoDB
-	seed        util.Seed
+	seed        *cryptolib.Seed
 	glbMutex    sync.RWMutex
 	ledgerMutex sync.RWMutex
 	clockMutex  sync.RWMutex
@@ -81,14 +82,14 @@ type Chain struct {
 	// Name is the name of the chain
 	Name string
 
-	// StateControllerPrivateKey signature scheme of the chain address, the one used to control funds owned by the chain.
+	// StateControllerKeyPair signature scheme of the chain address, the one used to control funds owned by the chain.
 	// In Solo it is Ed25519 signature scheme (in full Wasp environment is is a BLS address)
-	StateControllerPrivateKey ed25519.PrivateKey
-	StateControllerAddress    iotago.Address
+	StateControllerKeyPair cryptolib.KeyPair
+	StateControllerAddress iotago.Address
 
 	// OriginatorPrivateKey the signature scheme used to create the chain (origin transaction).
 	// It is a default signature scheme in many of 'solo' calls which require private key.
-	OriginatorPrivateKey ed25519.PrivateKey
+	OriginatorKeyPair cryptolib.KeyPair
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
 	ChainID *iscp.ChainID
@@ -125,7 +126,7 @@ type Chain struct {
 //
 // 'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
 // 'printStackTrace' controls printing stack trace in case of errors
-func New(t TestContext, debug, printStackTrace bool, seedOpt ...util.Seed) *Solo {
+func New(t TestContext, debug, printStackTrace bool, seedOpt ...cryptolib.Seed) *Solo {
 	log := testlogger.NewNamedLogger(t.Name(), timeLayout)
 	if !debug {
 		log = testlogger.WithLevel(log, zapcore.InfoLevel, printStackTrace)
@@ -137,11 +138,11 @@ func New(t TestContext, debug, printStackTrace bool, seedOpt ...util.Seed) *Solo
 //
 // If solo is used for unit testing, 't' should be the *testing.T instance;
 // otherwise it can be either nil or an instance created with NewTestContext.
-func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...util.Seed) *Solo {
+func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...cryptolib.Seed) *Solo {
 	if t == nil {
 		t = NewTestContext("solo")
 	}
-	var seed util.Seed
+	var seed cryptolib.Seed
 	if len(seedOpt) > 0 {
 		seed = seedOpt[0]
 	}
@@ -158,7 +159,7 @@ func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...util.Seed) *Sol
 		logger:          log,
 		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
 		utxoDB:          utxodb.NewWithTimestamp(initialTime),
-		seed:            seed,
+		seed:            &seed,
 		logicalTime:     initialTime,
 		timeStep:        DefaultTimeStep,
 		chains:          make(map[[33]byte]*Chain),
@@ -194,23 +195,23 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //    '_default', 'blocklog', 'blob', 'accounts' and 'eventlog',
 // Upon return, the chain is fully functional to process requests
 //nolint:funlen
-func (env *Solo) NewChain(chainOriginator ed25519.PrivateKey, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
+func (env *Solo) NewChain(chainOriginator cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
-	var stateController ed25519.PrivateKey
+	var stateController cryptolib.KeyPair
 	if env.seed == nil {
-		stateController = util.NewPrivateKey() // chain address will be ED25519, not BLS
+		stateController = cryptolib.NewKeyPair() // chain address will be ED25519, not BLS
 	} else {
-		stateController = ed25519.NewKeyFromSeed(util.SubSeed(env.seed, 2))
+		stateController = cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(2))
 	}
 	stateAddr := util.AddreessFromKey(stateController)
 
 	var originatorAddr iotago.Address
-	if chainOriginator == nil {
+	if chainOriginator.PrivateKey == nil {
 		if env.seed == nil {
-			chainOriginator = util.NewPrivateKey()
+			chainOriginator = cryptolib.NewKeyPair()
 			originatorAddr = util.AddreessFromKey(chainOriginator)
 		} else {
-			chainOriginator = util.SubSeed(env.seed, 1)
+			chainOriginator = cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(1))
 			originatorAddr = util.AddreessFromKey(chainOriginator)
 		}
 		_, err := env.utxoDB.RequestFunds(originatorAddr, env.LogicalTime())
@@ -251,20 +252,20 @@ func (env *Solo) NewChain(chainOriginator ed25519.PrivateKey, name string, valid
 	srdr := state.NewOptimisticStateReader(store, glbSync)
 
 	ret := &Chain{
-		Env:                       env,
-		Name:                      name,
-		ChainID:                   chainID,
-		StateControllerPrivateKey: stateController,
-		StateControllerAddress:    stateAddr,
-		OriginatorPrivateKey:      chainOriginator,
-		OriginatorAddress:         originatorAddr,
-		OriginatorAgentID:         originatorAgentID,
-		ValidatorFeeTarget:        feeTarget,
-		State:                     vs,
-		StateReader:               srdr,
-		GlobalSync:                glbSync,
-		proc:                      processors.MustNew(env.processorConfig),
-		Log:                       chainlog,
+		Env:                    env,
+		Name:                   name,
+		ChainID:                chainID,
+		StateControllerKeyPair: stateController,
+		StateControllerAddress: stateAddr,
+		OriginatorKeyPair:      chainOriginator,
+		OriginatorAddress:      originatorAddr,
+		OriginatorAgentID:      originatorAgentID,
+		ValidatorFeeTarget:     feeTarget,
+		State:                  vs,
+		StateReader:            srdr,
+		GlobalSync:             glbSync,
+		proc:                   processors.MustNew(env.processorConfig),
+		Log:                    chainlog,
 	}
 	ret.mempool = mempool.New(ret.StateReader, chainlog, metrics.DefaultChainMetrics())
 	require.NoError(env.T, err)
@@ -283,7 +284,7 @@ func (env *Solo) NewChain(chainOriginator ed25519.PrivateKey, name string, valid
 	}))
 
 	initTx, err := transaction.NewRootInitRequestTransaction(
-		ret.OriginatorPrivateKey,
+		ret.OriginatorKeyPair,
 		chainID,
 		"'solo' testing chain",
 		env.LogicalTime(),

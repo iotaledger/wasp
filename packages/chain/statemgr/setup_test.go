@@ -4,6 +4,8 @@
 package statemgr
 
 import (
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"io"
 	"sync"
 	"testing"
@@ -14,12 +16,12 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -37,7 +39,7 @@ type MockedEnv struct {
 	T                 *testing.T
 	Log               *logger.Logger
 	Ledger            *utxodb.UtxoDB
-	OriginatorKeyPair *ed25519.KeyPair
+	OriginatorKeyPair *cryptolib.KeyPair
 	OriginatorAddress iotago.Address
 	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider

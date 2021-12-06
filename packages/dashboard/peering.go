@@ -5,9 +5,10 @@ package dashboard
 
 import (
 	_ "embed"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"net/http"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/labstack/echo/v4"
 )
 
@@ -56,5 +57,5 @@ type Peer struct {
 
 type TrustedPeer struct {
 	NetID  string
-	PubKey ed25519.PublicKey
+	PubKey cryptolib.PublicKey
 }

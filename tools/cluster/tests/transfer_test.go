@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
 
@@ -21,7 +22,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	chEnv := newChainEnv(t, e.clu, chain)
 
-	testOwner := wallet.KeyPair(1)
+	testOwner := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 
 	e.requestFunds(myAddress, "myAddress")

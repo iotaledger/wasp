@@ -2,6 +2,8 @@ package tests
 
 import (
 	"fmt"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
 
@@ -281,11 +283,11 @@ func TestRotation(t *testing.T) {
 	require.True(t, e.waitStateController(0, addr1, 5*time.Second))
 	require.True(t, e.waitStateController(9, addr1, 5*time.Second))
 
-	keyPair := wallet.KeyPair(1)
+	keyPair := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	e.requestFunds(myAddress, "myAddress")
 
-	myClient := chain.SCClient(incCounterSCHname, keyPair)
+	myClient := chain.SCClient(incCounterSCHname, &keyPair)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
@@ -400,11 +402,11 @@ func TestRotationMany(t *testing.T) {
 	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	addrIndex := 0
-	keyPair := wallet.KeyPair(1)
+	keyPair := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(1))
 	myAddress := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	e.requestFunds(myAddress, "myAddress")
 
-	myClient := chain.SCClient(incCounterSCHname, keyPair)
+	myClient := chain.SCClient(incCounterSCHname, &keyPair)
 
 	for i := 0; i < numRotations; i++ {
 		require.True(t, e.waitStateController(0, addrs[addrIndex], waitTimeout))

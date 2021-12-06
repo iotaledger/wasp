@@ -8,12 +8,13 @@ package dkg
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/mr-tron/base58"
@@ -44,7 +45,7 @@ type proc struct {
 	dkShare      *tcrypto.DKShare  // This will be generated as a result of this procedure.
 	node         *Node             // DKG node we are running in.
 	nodeIndex    uint16            // Index of this node.
-	initiatorPub ed25519.PublicKey
+	initiatorPub cryptolib.PublicKey
 	threshold    uint16
 	roundRetry   time.Duration                    // Retry period for the Peer <-> Peer communication.
 	netGroup     peering.GroupProvider            // A group for which the distributed key is generated.
@@ -71,7 +72,7 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		kyberPeerPubs := make([]kyber.Point, len(msg.peerPubs))
 		for i := range kyberPeerPubs {
 			kyberPeerPubs[i] = node.edSuite.Point()
-			if err := kyberPeerPubs[i].UnmarshalBinary(msg.peerPubs[i].Bytes()); err != nil {
+			if err := kyberPeerPubs[i].UnmarshalBinary(msg.peerPubs[i]); err != nil {
 				return nil, err
 			}
 		}

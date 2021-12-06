@@ -6,8 +6,8 @@ package wasmsolo
 import (
 	"math/big"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -200,17 +200,17 @@ func (o *SoloScContext) postSync(contract, function iscp.Hname, paramsID, transf
 		req.WithTransfers(transfer)
 	}
 	if ctx.mint > 0 {
-		pubkey := (ctx.privateKey.Public().(ed25519.PublicKey))
-		mintAddress := iotago.Ed25519AddressFromPubKey(pubkey)
-		req.WithMint(mintAddress, ctx.mint)
+		pubkey := ctx.keyPair.PublicKey
+		mintAddress := cryptolib.Ed25519AddressFromPubKey(pubkey)
+		req.WithMint(&mintAddress, ctx.mint)
 	}
 	_ = wasmhost.Connect(ctx.wasmHostOld)
 	var res dict.Dict
 	if ctx.offLedger {
 		ctx.offLedger = false
-		res, ctx.Err = ctx.Chain.PostRequestOffLedger(req, ctx.privateKey)
+		res, ctx.Err = ctx.Chain.PostRequestOffLedger(req, ctx.keyPair)
 	} else if !ctx.isRequest {
-		ctx.Tx, res, ctx.Err = ctx.Chain.PostRequestSyncTx(req, ctx.privateKey)
+		ctx.Tx, res, ctx.Err = ctx.Chain.PostRequestSyncTx(req, ctx.keyPair)
 	} else {
 		ctx.isRequest = false
 		ctx.Tx, _, ctx.Err = ctx.Chain.RequestFromParamsToLedger(req, nil)

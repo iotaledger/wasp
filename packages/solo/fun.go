@@ -10,8 +10,10 @@ import (
 	"os"
 	"sort"
 
-	 "github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+
 	iotago "github.com/iotaledger/iota.go/v3"
+	_ "github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -98,9 +100,9 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 // Takes request token and necessary fees from the 'sigScheme' address (or OriginatorAddress if nil).
 //
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
-func (ch *Chain) UploadBlob(key *ed25519.PrivateKey, params ...interface{}) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
 	if keyPair == nil {
-		keyPair = ch.OriginatorPrivateKey
+		keyPair = &ch.OriginatorKeyPair
 	}
 
 	expectedHash := blob.MustGetBlobHash(parseParams(params))
@@ -113,7 +115,7 @@ func (ch *Chain) UploadBlob(key *ed25519.PrivateKey, params ...interface{}) (ret
 	require.EqualValues(ch.Env.T, feeColor, iscp.IotaAssetID)
 	totalFee := ownerFee + validatorFee
 	if totalFee == 0 {
-		bal := ch.GetAccountBalance(iscp.NewAgentID(ledgerstate.NewED25519Address(keyPair.PublicKey), 0))
+		bal := ch.GetAccountBalance(iscp.NewAgentID(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey), 0))
 		if bal.Get(feeColor) == 0 {
 			totalFee = 1 // off-ledger request requires at least 1 token in the balance
 		}
@@ -154,7 +156,7 @@ func (ch *Chain) UploadBlob(key *ed25519.PrivateKey, params ...interface{}) (ret
 //
 // The blob for the Wasm binary used fixed field names which are statically known by the
 // 'root' smart contract which is responsible for the deployment of contracts on the chain
-func (ch *Chain) UploadWasm(key *ed25519.PrivateKey, binaryCode []byte) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadWasm(keyPair *cryptolib.KeyPair, binaryCode []byte) (ret hashing.HashValue, err error) {
 	return ch.UploadBlob(keyPair,
 		blob.VarFieldVMType, vmtypes.WasmTime,
 		blob.VarFieldProgramBinary, binaryCode,
@@ -162,7 +164,7 @@ func (ch *Chain) UploadWasm(key *ed25519.PrivateKey, binaryCode []byte) (ret has
 }
 
 // UploadWasmFromFile is a syntactic sugar to upload file content as blob data to the chain
-func (ch *Chain) UploadWasmFromFile(key *ed25519.PrivateKey, fileName string) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadWasmFromFile(keyPair *cryptolib.KeyPair, fileName string) (ret hashing.HashValue, err error) {
 	var binary []byte
 	binary, err = os.ReadFile(fileName)
 	if err != nil {
@@ -200,7 +202,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 //   - it is and ID of  the blob stored on the chain in the format of Wasm binary
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
 //     smart contract must be made available with the call examples.AddProcessor
-func (ch *Chain) DeployContract(key *ed25519.PrivateKey, name string, programHash hashing.HashValue, params ...interface{}) error {
+func (ch *Chain) DeployContract(keyPair *cryptolib.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
 	par := codec.MakeDict(map[string]interface{}{
 		root.ParamProgramHash: programHash,
 		root.ParamName:        name,
@@ -215,7 +217,7 @@ func (ch *Chain) DeployContract(key *ed25519.PrivateKey, name string, programHas
 
 // DeployWasmContract is syntactic sugar for uploading Wasm binary from file and
 // deploying the smart contract in one call
-func (ch *Chain) DeployWasmContract(key *ed25519.PrivateKey, name, fname string, params ...interface{}) error {
+func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname string, params ...interface{}) error {
 	hprog, err := ch.UploadWasmFromFile(keyPair, fname)
 	if err != nil {
 		return err
@@ -338,25 +340,25 @@ func (ch *Chain) GetTotalIotas() uint64 {
 //  - chain owner part of the fee (number of tokens)
 //  - validator part of the fee (number of tokens)
 // Total fee is sum of owner fee and validator fee
-func (ch *Cha	// TODO implementin) GetFeeInfo(contractName string) ([]byte, uint64, uint64) {
-	panic("not implemented")
-	// hname := iscp.Hn(contractName)
-	// ret, err := ch.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, governance.ParamHname, hname)
-	// require.NoError(ch.Env.T, err)
-	// require.NotEqualValues(ch.Env.T, 0, len(ret))
+//func (ch *Cha	// TODO implementin) GetFeeInfo(contractName string) ([]byte, uint64, uint64) {
+//panic("not implemented")
+// hname := iscp.Hn(contractName)
+// ret, err := ch.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, governance.ParamHname, hname)
+// require.NoError(ch.Env.T, err)
+// require.NotEqualValues(ch.Env.T, 0, len(ret))
 
-	// feeColor, err := codec.DecodeColor(ret.MustGet(governance.ParamFeeColor))
-	// require.NoError(ch.Env.T, err)
-	// require.NotNil(ch.Env.T, feeColor)
+// feeColor, err := codec.DecodeColor(ret.MustGet(governance.ParamFeeColor))
+// require.NoError(ch.Env.T, err)
+// require.NotNil(ch.Env.T, feeColor)
 
-	// validatorFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamValidatorFee))
-	// require.NoError(ch.Env.T, err)
+// validatorFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamValidatorFee))
+// require.NoError(ch.Env.T, err)
 
-	// ownerFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamOwnerFee))
-	// require.NoError(ch.Env.T, err)
+// ownerFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamOwnerFee))
+// require.NoError(ch.Env.T, err)
 
-	// return feeColor, ownerFee, validatorFee
-}
+// return feeColor, ownerFee, validatorFee
+//}
 
 func eventsFromViewResult(t TestContext, viewResult dict.Dict) []string {
 	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
@@ -546,7 +548,7 @@ func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 }
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) AddAllowedStateController(addr iotago.Address,key *ed25519.PrivateKey) error {
+func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
 	).WithIotas(1)
@@ -555,7 +557,7 @@ func (ch *Chain) AddAllowedStateController(addr iotago.Address,key *ed25519.Priv
 }
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) RemoveAllowedStateController(addr iotago.Address,key *ed25519.PrivateKey) error {
+func (ch *Chain) RemoveAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
 	).WithIotas(1)
@@ -583,7 +585,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
 // Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair,key *ed25519.PrivateKey) error {
+func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).WithIotas(1)
@@ -595,7 +597,7 @@ func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyP
 	return err
 }
 
-func (ch *Chain) postRequestSyncTxSpecial(req *CallParams,key *ed25519.PrivateKey) error {
+func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.KeyPair) error {
 	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
 		return err

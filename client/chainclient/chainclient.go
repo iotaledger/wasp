@@ -1,9 +1,9 @@
 package chainclient
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -15,8 +15,9 @@ type Client struct {
 	Layer1Client interface{} // TODO implement
 	WaspClient   *client.WaspClient
 	ChainID      *iscp.ChainID
-	KeyPair      *ed25519.KeyPair
-	nonces       map[ed25519.PublicKey]uint64
+	KeyPair      *cryptolib.KeyPair
+	// TODO(crypto-lib): Same as the other map?
+	nonces map[cryptolib.PublicKey]uint64
 }
 
 // New creates a new chainclient.Client
@@ -24,14 +25,15 @@ func New(
 	layer1Client interface{},
 	waspClient *client.WaspClient,
 	chainID *iscp.ChainID,
-	keyPair *ed25519.KeyPair,
+	keyPair *cryptolib.KeyPair,
 ) *Client {
 	return &Client{
 		Layer1Client: layer1Client,
 		WaspClient:   waspClient,
 		ChainID:      chainID,
 		KeyPair:      keyPair,
-		nonces:       make(map[ed25519.PublicKey]uint64),
+		// TODO(crypto-lib): Same as the other map?
+		nonces: make(map[cryptolib.PublicKey]uint64),
 	}
 }
 

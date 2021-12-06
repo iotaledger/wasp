@@ -5,6 +5,7 @@ package evmtest
 
 import (
 	"crypto/ecdsa"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"math/big"
 	"strings"
 	"testing"
@@ -15,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscpcontract"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight/iscptest"
@@ -71,7 +71,7 @@ type loopContractInstance struct {
 }
 
 type iotaCallOptions struct {
-	wallet   *ed25519.KeyPair
+	wallet   *cryptolib.KeyPair
 	transfer uint64
 }
 
@@ -118,7 +118,7 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 	}
 	opt := opts[0]
 	if opt.wallet == nil {
-		opt.wallet = e.soloChain.OriginatorPrivateKey
+		opt.wallet = &e.soloChain.OriginatorKeyPair
 	}
 	if opt.transfer == 0 {
 		opt.transfer = 1
@@ -321,7 +321,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 		opt.sender = e.creator
 	}
 	if opt.iota.wallet == nil {
-		opt.iota.wallet = e.chain.soloChain.OriginatorPrivateKey
+		opt.iota.wallet = &e.chain.soloChain.OriginatorKeyPair
 	}
 	if opt.gasLimit == 0 {
 		opt.gasLimit = e.chain.estimateGas(e.callMsg(ethereum.CallMsg{
