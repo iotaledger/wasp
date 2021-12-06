@@ -19,7 +19,7 @@ import (
 )
 
 type mempool struct {
-	inBuffer                map[iscp.RequestID]iscp.Request
+	inBuffer                map[iscp.RequestID]iscp.RequestData
 	inMutex                 sync.RWMutex
 	poolMutex               sync.RWMutex
 	inBufCounter            int
@@ -35,7 +35,7 @@ type mempool struct {
 }
 
 type requestRef struct {
-	req          iscp.Request
+	req          iscp.RequestData
 	whenReceived time.Time
 }
 
@@ -46,9 +46,9 @@ const (
 
 var _ chain.Mempool = &mempool{}
 
-func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) chain.Mempool {
+func New(stateReader state.OptimisticStateReader, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) chain.Mempool {
 	ret := &mempool{
-		inBuffer:       make(map[iscp.RequestID]iscp.Request),
+		inBuffer:       make(map[iscp.RequestID]iscp.RequestData),
 		stateReader:    stateReader,
 		pool:           make(map[iscp.RequestID]*requestRef),
 		chStop:         make(chan struct{}),
@@ -64,7 +64,7 @@ func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, 
 	return ret
 }
 
-func (m *mempool) addToInBuffer(req iscp.Request) bool {
+func (m *mempool) addToInBuffer(req iscp.RequestData) bool {
 	// just check if it is already in the pool
 	if m.HasRequest(req.ID()) {
 		return false
@@ -87,7 +87,7 @@ func (m *mempool) removeFromInBuffer(req iscp.Request) {
 }
 
 // fills up the buffer with requests from the in-buffer
-func (m *mempool) takeInBuffer(buf []iscp.Request) []iscp.Request {
+func (m *mempool) takeInBuffer(buf []iscp.RequestData) []iscp.RequestData {
 	buf = buf[:0]
 	m.inMutex.RLock()
 	defer m.inMutex.RUnlock()
@@ -100,7 +100,7 @@ func (m *mempool) takeInBuffer(buf []iscp.Request) []iscp.Request {
 
 // addToPool adds request to the pool. It may fail
 // returns true if it must be removed from the input buffer
-func (m *mempool) addToPool(req iscp.Request) bool {
+func (m *mempool) addToPool(req iscp.RequestData) bool {
 	reqid := req.ID()
 
 	// checking in the state if request is processed. Reading may fail
@@ -138,7 +138,7 @@ func (m *mempool) addToPool(req iscp.Request) bool {
 	return true
 }
 
-func (m *mempool) countRequestInMetrics(req iscp.Request) {
+func (m *mempool) countRequestInMetrics(req iscp.RequestData) {
 	// TODO refactor, this should be part of metrics logic.
 	if req.IsOffLedger() {
 		m.mempoolMetrics.CountOffLedgerRequestIn()
@@ -148,7 +148,7 @@ func (m *mempool) countRequestInMetrics(req iscp.Request) {
 }
 
 // ReceiveRequests places requests into the inBuffer. InBuffer is unordered and non-deterministic
-func (m *mempool) ReceiveRequests(reqs ...iscp.Request) {
+func (m *mempool) ReceiveRequests(reqs ...iscp.RequestData) {
 	for _, req := range reqs {
 		m.countRequestInMetrics(req)
 		m.addToInBuffer(req)
@@ -156,7 +156,7 @@ func (m *mempool) ReceiveRequests(reqs ...iscp.Request) {
 }
 
 // ReceiveRequest receives a single request and returns whether that request has been added to the in-buffer
-func (m *mempool) ReceiveRequest(req iscp.Request) bool {
+func (m *mempool) ReceiveRequest(req iscp.RequestData) bool {
 	m.countRequestInMetrics(req)
 	return m.addToInBuffer(req)
 }
@@ -182,7 +182,7 @@ func (m *mempool) RemoveRequests(reqs ...iscp.RequestID) {
 
 const traceInOut = false
 
-func (m *mempool) traceIn(req iscp.Request) {
+func (m *mempool) traceIn(req iscp.RequestData) {
 	rotateStr := ""
 	if rotate.IsRotateStateControllerRequest(req) {
 		rotateStr = "(rotate) "
@@ -191,15 +191,22 @@ func (m *mempool) traceIn(req iscp.Request) {
 	if traceInOut {
 		logFn = m.log.Infof
 	}
-	tl := time.Time{}
+	var untilTime time.Time
+	var untilMilestone uint32
+
 	if !req.IsOffLedger() {
-		tl = req.(*request.OnLedger).TimeLock()
+		td := req.Unwrap().UTXO().Features().TimeLock()
+		if td != nil {
+			untilTime = td.Time
+			untilMilestone = td.MilestoneIndex
+		}
 	}
 
-	if tl.IsZero() {
-		logFn("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
+	if !untilTime.IsZero() || untilMilestone > 0 {
+		logFn("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v until milestone %d",
+			rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(untilTime), untilMilestone)
 	} else {
-		logFn("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
+		logFn("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 	}
 }
 
@@ -413,7 +420,7 @@ func (m *mempool) Close() {
 
 // the loop validates and moves request from inBuffer to the pool
 func (m *mempool) moveToPoolLoop() {
-	buf := make([]iscp.Request, 0, 100)
+	buf := make([]iscp.RequestData, 0, 100)
 	for {
 		select {
 		case <-m.chStop:

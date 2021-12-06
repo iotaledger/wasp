@@ -45,8 +45,6 @@ const DefaultTimeStep = 1 * time.Millisecond
 // which is therefore the amount returned by NewPrivateKeyWithFunds() and such
 const (
 	Saldo              = utxodb.RequestFundsAmount
-	DustThresholdIotas = uint64(1)
-	ChainDustThreshold = uint64(100)
 	MaxRequestsInBlock = 100
 	timeLayout         = "04:05.000000000"
 )
@@ -54,19 +52,18 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T           TestContext
-	logger      *logger.Logger
-	dbmanager   *dbmanager.DBManager
-	utxoDB      *utxodb.UtxoDB
-	seed        util.Seed
-	glbMutex    sync.RWMutex
-	ledgerMutex sync.RWMutex
-	clockMutex  sync.RWMutex
-	logicalTime time.Time
-	timeStep    time.Duration
-	chains      map[[33]byte]*Chain
-	vmRunner    vm.VMRunner
-	// publisher wait group
+	T                TestContext
+	logger           *logger.Logger
+	dbmanager        *dbmanager.DBManager
+	utxoDB           *utxodb.UtxoDB
+	seed             util.Seed
+	glbMutex         sync.RWMutex
+	ledgerMutex      sync.RWMutex
+	clockMutex       sync.RWMutex
+	logicalTime      time.Time
+	timeStep         time.Duration
+	chains           map[iscp.ChainID]*Chain
+	vmRunner         vm.VMRunner
 	publisherWG      sync.WaitGroup
 	publisherEnabled atomic.Bool
 	processorConfig  *processors.Config
@@ -81,44 +78,44 @@ type Chain struct {
 	// Name is the name of the chain
 	Name string
 
-	// StateControllerPrivateKey signature scheme of the chain address, the one used to control funds owned by the chain.
-	// In Solo it is Ed25519 signature scheme (in full Wasp environment is is a BLS address)
+	// StateControllerPrivateKey the one used to control funds owned by the chain.
+	// In Solo it is Ed25519 signature scheme (in full Wasp environment it is a BLS address)
 	StateControllerPrivateKey ed25519.PrivateKey
 	StateControllerAddress    iotago.Address
 
-	// OriginatorPrivateKey the signature scheme used to create the chain (origin transaction).
-	// It is a default signature scheme in many of 'solo' calls which require private key.
-	OriginatorPrivateKey ed25519.PrivateKey
-
-	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
+	// ChainID is the ID of the chain
 	ChainID *iscp.ChainID
 
-	// OriginatorAddress is the alias for OriginatorPrivateKey address
-	OriginatorAddress iotago.Address
-
+	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
+	// It is a default key pair in many of Solo calls which require private key.
+	OriginatorPrivateKey ed25519.PrivateKey
+	OriginatorAddress    iotago.Address
 	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
 	OriginatorAgentID *iscp.AgentID
 
-	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default is its equal to OriginatorAddress
+	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
 	ValidatorFeeTarget *iscp.AgentID
 
-	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
-	State       state.VirtualStateAccess
-	GlobalSync  coreutil.ChainStateSync
+	// State ia an interface to access virtual state of the chain: a buffered collection of key/value pairs
+	State state.VirtualStateAccess
+	// GlobalSync represents global atomic flag for the optimistic state reader. In Solo it has no function
+	GlobalSync coreutil.ChainStateSync
+	// StateReader is the read only access to the state
 	StateReader state.OptimisticStateReader
 
 	// Log is the named logger of the chain
 	Log *logger.Logger
 
-	// processor cache
+	// global processor cache
 	proc *processors.Cache
 
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
-	mempool    chain.Mempool
+	// mempool of the chain is used in Solo to mimic a real node
+	mempool chain.Mempool
 }
 
-// New creates an instance of the `solo` environment.
+// New creates an instance of the Solo environment.
 //
 // If solo is used for unit testing, 't' should be the *testing.T instance;
 // otherwise it can be either nil or an instance created with NewTestContext.
