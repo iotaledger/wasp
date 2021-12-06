@@ -6,7 +6,7 @@
 //
 // State of the SC (the ChainNodes part):
 //
-//    VarAccessNodeCandidates: 	map[pubKey] => AccessNodeInfo    // A set of Access Node Info.
+//    VarAccessNodeCandidates:  map[pubKey] => AccessNodeInfo    // A set of Access Node Info.
 //    VarAccessNodes:           map[pubKey] => byte[0]           // A set of nodes.
 //    VarValidatorNodes:        pubKey[]                         // An ordered list of nodes.
 //
@@ -17,16 +17,15 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 // SC Query Function handler.
 //
-//	getChainNodes() => (
-//		accessNodeCandidates :: map(pubKey => AccessNodeInfo),
-//		accessNodes		     :: map(pubKey => ())
-//	)
+//  getChainNodes() => (
+//      accessNodeCandidates :: map(pubKey => AccessNodeInfo),
+//      accessNodes          :: map(pubKey => ())
+//  )
 //
 func getChainNodesFuncHandler(ctx iscp.SandboxView) (dict.Dict, error) {
 	res := dict.New()
@@ -44,43 +43,47 @@ func getChainNodesFuncHandler(ctx iscp.SandboxView) (dict.Dict, error) {
 }
 
 // SC Command Function handler.
+// Can only be invoked by the access node owner (verified via the Certificate field).
 //
-//	addCandidateNode(
-//		candidate:		bool = true		// true, if we are adding the node as a candidate to access nodes.
-//		forCommittee:	bool = false	// true, if we also want the node to become a validator.
-//		nodePubKey:		[]byte			// Public key of the node.
-//		certificate:	[]byte			// Signature by the node over its publicKey||validatorAddress.
-//      accessAPI:		string = ""		// Optional: API URL for the access node.
-//	) => ()
+//  addCandidateNode(
+//      accessNodeInfo{NodePubKey, Certificate, ForCommittee, AccessAPI}
+//  ) => ()
 //
-// It is possible that after executing `addCandidateNode(false, false, ...)` a node will stay
+func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	ani := governance.NewAccessNodeInfoFromAddCandidateNodeParams(ctx)
+	a.Require(ani.ValidateCertificate(ctx), "certificate invalid")
+
+	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
+	accessNodeCandidates.MustSetAt(ani.NodePubKey, ani.Bytes())
+
+	return nil, nil
+}
+
+// SC Command Function handler.
+// Can only be invoked by the access node owner (verified via the Certificate field).
+//
+//  revokeAccessNode(
+//      accessNodeInfo{NodePubKey, Certificate}
+//  ) => ()
+//
+// It is possible that after executing `revokeAccessNode(...)` a node will stay
 // in the list of validators, and will be absent in the candidate or an access node set.
 // The node is removed from the list of access nodes immediately, but the validator rotation
 // must be initiated by the chain owner explicitly.
 //
-func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
+func revokeAccessNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	paramCandidate := params.MustGetBool(governance.ParamAddCandidateNodeCandidate, true)
 
-	ani := governance.AccessNodeInfo{
-		NodePubKey:    params.MustGetBytes(governance.ParamAddCandidateNodePubKey),
-		ValidatorAddr: ctx.Request().SenderAddress().Bytes(), // Not from params, to have it validated.
-		Certificate:   params.MustGetBytes(governance.ParamAddCandidateNodeCertificate),
-		ForCommittee:  params.MustGetBool(governance.ParamAddCandidateNodeForCommittee, false),
-		AccessAPI:     params.MustGetString(governance.ParamAddCandidateNodeAccessAPI, ""),
-	}
-	a.Require(ani.ValidateCert(ctx), "certificate invalid")
+	ani := governance.NewAccessNodeInfoFromRevokeAccessNodeParams(ctx)
+	a.Require(ani.ValidateCertificate(ctx), "certificate invalid")
 
-	if paramCandidate {
-		accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
-		accessNodeCandidates.MustSetAt(ani.NodePubKey, ani.Bytes())
-	} else {
-		accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
-		accessNodeCandidates.MustDelAt(ani.NodePubKey)
-		accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
-		accessNodes.MustDelAt(ani.NodePubKey)
-	}
+	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
+	accessNodeCandidates.MustDelAt(ani.NodePubKey)
+	accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
+	accessNodes.MustDelAt(ani.NodePubKey)
+
 	return nil, nil
 }
 
@@ -88,7 +91,7 @@ func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 // Can only be invoked by the chain owner.
 //
 //  changeAccessNodes(
-//    actions: map(pubKey => ChangeAccessNodeAction)
+//      actions: map(pubKey => ChangeAccessNodeAction)
 //  ) => ()
 //
 func changeAccessNodesFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {

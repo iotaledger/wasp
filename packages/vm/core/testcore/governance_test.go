@@ -1,7 +1,6 @@
 package testcore
 
 import (
-	"bytes"
 	"strings"
 	"testing"
 
@@ -134,20 +133,15 @@ func TestAccessNodes(t *testing.T) {
 
 	//
 	// Add a single access node candidate.
-	certData := bytes.Buffer{}
-	certData.Write(node1KP.PublicKey.Bytes())
-	certData.Write(node1OwnerAddr.Bytes())
 	_, err = chain.PostRequestSync(
 		solo.NewCallParamsFromDic(
 			governance.Contract.Name,
 			governance.FuncAddCandidateNode.Name,
-			governance.AddCandidateNodeRequest{
-				Candidate:    true,
-				ForCommittee: false,
+			(&governance.AccessNodeInfo{
 				NodePubKey:   node1KP.PublicKey.Bytes(),
-				Certificate:  node1KP.PrivateKey.Sign(certData.Bytes()).Bytes(),
+				ForCommittee: false,
 				AccessAPI:    "http://my-api/url",
-			}.AsDict(),
+			}).AddCertificate(node1KP.PrivateKey, node1OwnerAddr).ToAddCandidateNodeParams(),
 		).WithIotas(1),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)
@@ -170,7 +164,7 @@ func TestAccessNodes(t *testing.T) {
 		solo.NewCallParamsFromDic(
 			governance.Contract.Name,
 			governance.FuncChangeAccessNodes.Name,
-			governance.NewChangeAccessNodesRequest().Accept(node1KP.PublicKey[:]).AsDict(),
+			governance.NewChangeAccessNodesRequest().Accept(node1KP.PublicKey).AsDict(),
 		).WithIotas(1),
 		chainKP,
 	)
@@ -186,4 +180,28 @@ func TestAccessNodes(t *testing.T) {
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
 	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].AccessAPI)
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodes))
+
+	//
+	// Revoke the access node (by the node owner).
+	_, err = chain.PostRequestSync(
+		solo.NewCallParamsFromDic(
+			governance.Contract.Name,
+			governance.FuncRevokeAccessNode.Name,
+			(&governance.AccessNodeInfo{
+				NodePubKey: node1KP.PublicKey.Bytes(),
+			}).AddCertificate(node1KP.PrivateKey, node1OwnerAddr).ToAddCandidateNodeParams(),
+		).WithIotas(1),
+		node1OwnerKP, // Sender should match data used to create the Cert field value.
+	)
+	require.NoError(t, err)
+
+	res, err = chain.CallView(
+		governance.Contract.Name,
+		governance.FuncGetChainNodes.Name,
+		governance.GetChainNodesRequest{}.AsDict(),
+	)
+	require.NoError(t, err)
+	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
+	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
+	require.Empty(t, getChainNodesResponse.AccessNodes)
 }

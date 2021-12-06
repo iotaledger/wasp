@@ -5,12 +5,14 @@ package governance
 
 import (
 	"bytes"
-	"crypto/ed25519"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -61,7 +63,53 @@ func (a *AccessNodeInfo) Bytes() []byte {
 	return w.Bytes()
 }
 
-func (a *AccessNodeInfo) ValidateCert(ctx iscp.Sandbox) bool {
+func NewAccessNodeInfoFromAddCandidateNodeParams(ctx iscp.Sandbox) *AccessNodeInfo {
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	ani := AccessNodeInfo{
+		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
+		ValidatorAddr: ctx.Request().SenderAddress().Bytes(), // Not from params, to have it validated.
+		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
+		ForCommittee:  params.MustGetBool(ParamAccessNodeInfoForCommittee, false),
+		AccessAPI:     params.MustGetString(ParamAccessNodeInfoAccessAPI, ""),
+	}
+	return &ani
+}
+
+func (a *AccessNodeInfo) ToAddCandidateNodeParams() dict.Dict {
+	d := dict.New()
+	d.Set(ParamAccessNodeInfoForCommittee, codec.EncodeBool(a.ForCommittee))
+	d.Set(ParamAccessNodeInfoPubKey, a.NodePubKey)
+	d.Set(ParamAccessNodeInfoCertificate, a.Certificate)
+	d.Set(ParamAccessNodeInfoAccessAPI, codec.EncodeString(a.AccessAPI))
+	return d
+}
+
+func NewAccessNodeInfoFromRevokeAccessNodeParams(ctx iscp.Sandbox) *AccessNodeInfo {
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	ani := AccessNodeInfo{
+		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
+		ValidatorAddr: ctx.Request().SenderAddress().Bytes(), // Not from params, to have it validated.
+		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
+	}
+	return &ani
+}
+
+func (a *AccessNodeInfo) ToRevokeAccessNodeParams() dict.Dict {
+	d := dict.New()
+	d.Set(ParamAccessNodeInfoPubKey, a.NodePubKey)
+	d.Set(ParamAccessNodeInfoCertificate, a.Certificate)
+	return d
+}
+
+func (a *AccessNodeInfo) AddCertificate(nodePrivKey ed25519.PrivateKey, ownerAddress ledgerstate.Address) *AccessNodeInfo {
+	certData := bytes.Buffer{}
+	certData.Write(a.NodePubKey)
+	certData.Write(ownerAddress.Bytes())
+	a.Certificate = nodePrivKey.Sign(certData.Bytes()).Bytes()
+	return a
+}
+
+func (a *AccessNodeInfo) ValidateCertificate(ctx iscp.Sandbox) bool {
 	signedData := bytes.Buffer{}
 	signedData.Write(a.NodePubKey)
 	signedData.Write(a.ValidatorAddr)
@@ -102,32 +150,15 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 	})
 
 	an := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodes)
-	an.MustIterate(func(pubKey, value []byte) bool {
-		res.AccessNodes = append(res.AccessNodes, ed25519.PublicKey(pubKey))
+	an.MustIterate(func(pubKeyBin, value []byte) bool {
+		pubKey, _, err := ed25519.PublicKeyFromBytes(pubKeyBin)
+		if err != nil {
+			panic(xerrors.Errorf("failed to decode pub key: %v", err))
+		}
+		res.AccessNodes = append(res.AccessNodes, pubKey)
 		return true
 	})
 	return &res
-}
-
-//
-// CandidateNodeRequest
-//
-type AddCandidateNodeRequest struct {
-	Candidate    bool
-	ForCommittee bool
-	NodePubKey   []byte
-	Certificate  []byte
-	AccessAPI    string
-}
-
-func (req AddCandidateNodeRequest) AsDict() dict.Dict {
-	d := dict.New()
-	d.Set(ParamAddCandidateNodeCandidate, codec.EncodeBool(req.Candidate))
-	d.Set(ParamAddCandidateNodeForCommittee, codec.EncodeBool(req.ForCommittee))
-	d.Set(ParamAddCandidateNodePubKey, req.NodePubKey)
-	d.Set(ParamAddCandidateNodeCertificate, req.Certificate)
-	d.Set(ParamAddCandidateNodeAccessAPI, codec.EncodeString(req.AccessAPI))
-	return d
 }
 
 //
@@ -143,27 +174,27 @@ const (
 )
 
 type ChangeAccessNodesRequest struct {
-	actions map[string]ChangeAccessNodeAction
+	actions map[ed25519.PublicKey]ChangeAccessNodeAction
 }
 
 func NewChangeAccessNodesRequest() *ChangeAccessNodesRequest {
 	return &ChangeAccessNodesRequest{
-		actions: make(map[string]ChangeAccessNodeAction),
+		actions: make(map[ed25519.PublicKey]ChangeAccessNodeAction),
 	}
 }
 
 func (req *ChangeAccessNodesRequest) Remove(pubKey ed25519.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[string(pubKey)] = ChangeAccessNodeActionRemove
+	req.actions[pubKey] = ChangeAccessNodeActionRemove
 	return req
 }
 
 func (req *ChangeAccessNodesRequest) Accept(pubKey ed25519.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[string(pubKey)] = ChangeAccessNodeActionAccept
+	req.actions[pubKey] = ChangeAccessNodeActionAccept
 	return req
 }
 
 func (req *ChangeAccessNodesRequest) Drop(pubKey ed25519.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[string(pubKey)] = ChangeAccessNodeActionDrop
+	req.actions[pubKey] = ChangeAccessNodeActionDrop
 	return req
 }
 
@@ -171,7 +202,7 @@ func (req *ChangeAccessNodesRequest) AsDict() dict.Dict {
 	d := dict.New()
 	actionsMap := collections.NewMap(d, ParamChangeAccessNodesActions)
 	for pubKey, action := range req.actions {
-		actionsMap.MustSetAt([]byte(pubKey), []byte{byte(action)})
+		actionsMap.MustSetAt(pubKey.Bytes(), []byte{byte(action)})
 	}
 	return d
 }

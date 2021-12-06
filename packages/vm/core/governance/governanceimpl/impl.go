@@ -36,6 +36,7 @@ var Processor = governance.Contract.Processor(initialize,
 	// access nodes.
 	governance.FuncGetChainNodes.WithHandler(getChainNodesFuncHandler),
 	governance.FuncAddCandidateNode.WithHandler(addCandidateNodeFuncHandler),
+	governance.FuncRevokeAccessNode.WithHandler(revokeAccessNodeFuncHandler),
 	governance.FuncChangeAccessNodes.WithHandler(changeAccessNodesFuncHandler),
 )
 
