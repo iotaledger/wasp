@@ -22,7 +22,7 @@ func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
 	// if err != nil {
 	// 	return nil, err
 	// }
-	// ret.ChainID = iscp.NewChainID(aliasAddr)
+	// ret.ChainID = iscp.ChainIDFromAliasID(aliasAddr)
 
 	// ret.Active, err = mu.ReadBool()
 	// if err != nil {

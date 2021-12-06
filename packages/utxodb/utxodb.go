@@ -421,12 +421,19 @@ func (u *UtxoDB) mustGetTransaction(txID iotago.TransactionID) *iotago.Transacti
 	return tx
 }
 
-func getOutputAddress(out iotago.Output) iotago.Address {
+func getOutputAddress(out iotago.Output, id *iotago.UTXOInput) iotago.Address {
 	switch out := out.(type) {
 	case iotago.TransIndepIdentOutput:
 		return out.Ident()
 	case iotago.TransDepIdentOutput:
-		return out.Chain().ToAddress()
+		// FIXME this is temporary patch of the bug in the iota.go AliasOutput.Chain() method
+		aliasID := out.Chain().(iotago.AliasID)
+		var nilAliasID iotago.AliasID
+		if aliasID == nilAliasID {
+			aliasID = iotago.AliasIDFromOutputID(id.ID())
+		}
+		return aliasID.ToAddress()
+		// -- end FIXME
 	default:
 		panic("unknown ident output type")
 	}
@@ -436,7 +443,7 @@ func (u *UtxoDB) getUTXOInputs(addr iotago.Address) []*iotago.UTXOInput {
 	var ret []*iotago.UTXOInput
 	for _, input := range u.utxo {
 		out := u.getOutput(input.ID())
-		if getOutputAddress(out).Equal(addr) {
+		if getOutputAddress(out, input).Equal(addr) {
 			ret = append(ret, input)
 		}
 	}

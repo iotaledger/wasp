@@ -282,7 +282,7 @@ func (env *Solo) NewChain(chainOriginator ed25519.PrivateKey, name string, valid
 		}()
 	}))
 
-	initTx, err := transaction.NewRootInitRequestTransaction(
+	initTx, err := transaction.NewRootInitRequestTransactionOld(
 		ret.OriginatorPrivateKey,
 		chainID,
 		"'solo' testing chain",

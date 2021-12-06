@@ -4,6 +4,7 @@ package governance
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // constants
@@ -72,18 +73,36 @@ const (
 	ParamAllowedStateControllerAddresses = "a"
 
 	// chain owner
-	ParamChainOwner = "oi"
-	ParamOwnerFee   = "of"
+	ParamChainOwner = "g"
+	ParamOwnerFee   = "f"
 
 	// fees
-	ParamFeeColor     = "fc"
-	ParamValidatorFee = "vf"
-	ParamHname        = "hn"
+	ParamFeeColor     = "c"
+	ParamValidatorFee = "v"
+	ParamHname        = "h"
 
 	// chain info
-	ParamChainID             = "ci"
-	ParamDescription         = "ds"
-	ParamMaxBlobSize         = "bs"
-	ParamMaxEventSize        = "es"
-	ParamMaxEventsPerRequest = "ne"
+	ParamChainID             = "i"
+	ParamDescription         = "d"
+	ParamMaxBlobSize         = "b"
+	ParamMaxEventSize        = "e"
+	ParamMaxEventsPerRequest = "n"
 )
+
+func init() {
+	if !util.AllDifferentStrings(
+		ParamStateControllerAddress,
+		ParamAllowedStateControllerAddresses,
+		ParamChainOwner,
+		ParamOwnerFee,
+		ParamFeeColor,
+		ParamValidatorFee,
+		ParamHname,
+		ParamChainID,
+		ParamDescription,
+		ParamMaxBlobSize,
+		ParamMaxEventSize,
+		ParamMaxEventsPerRequest) {
+		panic("wrong constant in governance/interface.go")
+	}
+}

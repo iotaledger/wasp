@@ -11,7 +11,7 @@ func StringInList(s string, lst []string) bool {
 	return false
 }
 
-func AllDifferentStrings(lst []string) bool {
+func AllDifferentStrings(lst ...string) bool {
 	for i := range lst {
 		for j := range lst {
 			if i >= j {

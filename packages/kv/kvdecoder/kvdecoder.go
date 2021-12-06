@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"golang.org/x/xerrors"
-
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"golang.org/x/xerrors"
 )
 
 type Decoder struct {

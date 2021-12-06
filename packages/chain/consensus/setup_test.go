@@ -141,7 +141,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	ret.InitStateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = iscp.NewChainID(ret.InitStateOutput.GetAliasAddress())
+	ret.ChainID = iscp.ChainIDFromAliasID(ret.InitStateOutput.GetAliasAddress())
 
 	return ret, originTx
 }

@@ -25,7 +25,7 @@ func NewStaticPeerNetworkConfigProvider(ownNetID string, peeringPort int, neighb
 	if err := CheckMyNetID(ownNetID, peeringPort); err != nil {
 		return nil, xerrors.Errorf("NewStaticPeerNetworkConfigProvider: %w", err)
 	}
-	if !util.AllDifferentStrings(neighbors) {
+	if !util.AllDifferentStrings(neighbors...) {
 		return nil, xerrors.Errorf("NewStaticPeerNetworkConfigProvider: neighbors must all be different")
 	}
 	neigh := make([]string, 0, len(neighbors))

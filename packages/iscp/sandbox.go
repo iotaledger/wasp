@@ -74,13 +74,13 @@ type Sandbox interface {
 	// BlockContext Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// StateAnchor properties of the anchor output
-	StateAnchor() StateAnchor
+	StateAnchor() *StateAnchor
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
 type RequestParameters struct {
-	// Target is the target address. It may represent another chain or L1 address
-	Target iotago.Address
+	// TargetAddress is the target address. It may represent another chain or L1 address
+	TargetAddress iotago.Address
 	// Assets attached to the output. It expected to contain iotas at least the amount required for dust deposit
 	// It depends on the context how it is handled when iotas are not enough for dust deposit
 	Assets *Assets
@@ -95,13 +95,16 @@ type Gas interface {
 	Budget() uint64
 }
 
-// properties of the anchor output/transaction in the current context
-type StateAnchor interface {
-	StateController() iotago.Address
-	GovernanceController() iotago.Address
-	StateIndex() uint32
-	OutputID() iotago.UTXOInput
-	StateData() StateData
+// StateAnchor contains properties of the anchor output/transaction in the current context
+type StateAnchor struct {
+	ChainID              ChainID
+	OutputID             iotago.OutputID
+	IsOrigin             bool
+	StateController      iotago.Address
+	GovernanceController iotago.Address
+	StateIndex           uint32
+	StateData            StateData
+	Deposit              uint64
 }
 
 type SendOptions struct { // TODO

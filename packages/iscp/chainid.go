@@ -17,8 +17,8 @@ const ChainIDLength = iotago.AliasIDLength
 // It is wrapped AliasAddress, an address without a private key behind
 type ChainID iotago.AliasID
 
-// NewChainID creates new chain ID from alias address
-func NewChainID(addr iotago.AliasID) ChainID {
+// ChainIDFromAliasID creates new chain ID from alias address
+func ChainIDFromAliasID(addr iotago.AliasID) ChainID {
 	return ChainID(addr)
 }
 
