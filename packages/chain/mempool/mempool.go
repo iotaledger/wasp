@@ -34,6 +34,8 @@ type mempool struct {
 	mempoolMetrics          metrics.MempoolMetrics
 }
 
+var _ chain.Mempool = &mempool{}
+
 type requestRef struct {
 	req          iscp.RequestData
 	whenReceived time.Time
@@ -43,8 +45,6 @@ const (
 	defaultSolidificationLoopDelay = 200 * time.Millisecond
 	moveToPoolLoopDelay            = 20 * time.Millisecond
 )
-
-var _ chain.Mempool = &mempool{}
 
 func New(stateReader state.OptimisticStateReader, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) chain.Mempool {
 	ret := &mempool{
@@ -241,19 +241,19 @@ func isRequestReady(ref *requestRef, nowis time.Time) (isReady, shouldBeRemoved 
 // Note that later status of request may change due to the time change and time constraints
 // If there's at least one committee rotation request in the mempool, the ReadyNow returns
 // batch with only one request, the oldest committee rotation request
-func (m *mempool) ReadyNow(now ...time.Time) []iscp.Request {
+func (m *mempool) ReadyNow(now ...time.Time) []iscp.RequestData {
 	m.poolMutex.RLock()
 
 	nowis := time.Now()
 	if len(now) > 0 {
 		nowis = now[0]
 	}
-	var oldestRotate iscp.Request
+	var oldestRotate iscp.RequestData
 	var oldestRotateTime time.Time
 
 	toRemove := []iscp.RequestID{}
 
-	ret := make([]iscp.Request, 0, len(m.pool))
+	ret := make([]iscp.RequestData, 0, len(m.pool))
 	for _, ref := range m.pool {
 		rdy, shouldBeRemoved := isRequestReady(ref, nowis)
 		if shouldBeRemoved {
@@ -289,7 +289,7 @@ func (m *mempool) ReadyNow(now ...time.Time) []iscp.Request {
 	go m.RemoveRequests(toRemove...)
 
 	if oldestRotate != nil {
-		return []iscp.Request{oldestRotate}
+		return []iscp.RequestData{oldestRotate}
 	}
 	return ret
 }
@@ -299,8 +299,8 @@ func (m *mempool) ReadyNow(now ...time.Time) []iscp.Request {
 // - (a list of processable requests), true if the list can be deterministically calculated
 // Note that (a list of processable requests) can be empty if none satisfies nowis time constraint (timelock, fallback)
 // For requests which are known and solidified, the result is deterministic
-func (m *mempool) ReadyFromIDs(nowis time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool) {
-	requests := make([]iscp.Request, 0, len(reqIDs))
+func (m *mempool) ReadyFromIDs(nowis time.Time, reqIDs ...iscp.RequestID) ([]iscp.RequestData, []int, bool) {
+	requests := make([]iscp.RequestData, 0, len(reqIDs))
 	missingRequestIndexes := []int{}
 	toRemove := []iscp.RequestID{}
 	m.poolMutex.RLock()
@@ -335,7 +335,7 @@ func (m *mempool) HasRequest(id iscp.RequestID) bool {
 	return ok
 }
 
-func (m *mempool) GetRequest(id iscp.RequestID) iscp.Request {
+func (m *mempool) GetRequest(id iscp.RequestID) iscp.RequestData {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 

@@ -90,8 +90,7 @@ func (u utilImpl) ValidSignature(data []byte, pubKey []byte, signature []byte) b
 
 func (u utilImpl) AddressFromPublicKey(pubKey []byte) (iotago.Address, error) {
 	u.gas.Burn(gas.UtilsED25519AddressFromPublicKey)
-	addr := cryptolib.Ed25519AddressFromPubKey(pubKey)
-	return &addr, nil
+	return cryptolib.Ed25519AddressFromPubKey(pubKey), nil
 }
 
 // iscp.BLS interface

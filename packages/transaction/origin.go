@@ -45,7 +45,7 @@ func NewChainOriginTransaction(
 	txb.AddOutput(aliasOutput)
 
 	inputs, remainderOutput, err := computeInputsAndRemainder(
-		&walletAddr,
+		walletAddr,
 		aliasOutput.Amount,
 		nil,
 		allUnspentOutputs,
@@ -59,10 +59,10 @@ func NewChainOriginTransaction(
 		txb.AddOutput(remainderOutput)
 	}
 	for _, input := range inputs {
-		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: &walletAddr, Input: input})
+		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: walletAddr, Input: input})
 	}
 
-	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, keyPair.PrivateKey))
+	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(walletAddr, keyPair.PrivateKey))
 	tx, err := txb.Build(deSeriParams, signer)
 	if err != nil {
 		return nil, nil, err

@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (dict.Dict, error) {
+func (ch *Chain) runRequestsSync(reqs []iscp.RequestData, trace string) (dict.Dict, error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
@@ -22,7 +22,7 @@ func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (dict.Dict, 
 	return ch.runRequestsNolock(reqs, trace)
 }
 
-func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict, error) {
+func (ch *Chain) runRequestsNolock(reqs []iscp.RequestData, trace string) (dict.Dict, error) {
 	panic("TODO implement")
 	// ch.Log.Debugf("runRequestsSync ('%s')", trace)
 
