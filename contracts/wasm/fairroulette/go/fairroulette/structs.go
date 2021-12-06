@@ -51,6 +51,10 @@ type MutableBet struct {
 	keyID wasmlib.Key32
 }
 
+func (o MutableBet) Delete() {
+	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+}
+
 func (o MutableBet) Exists() bool {
 	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
 }

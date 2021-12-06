@@ -27,7 +27,7 @@ function approve(state: sc.MutableErc721State, owner: wasmlib.ScAgentID, approve
 
 // checks if caller is owner, or one of its delegated operators
 function canOperate(state: sc.MutableErc721State, caller: wasmlib.ScAgentID, owner: wasmlib.ScAgentID): boolean {
-    if (caller == owner) {
+    if (caller.equals(owner)) {
         return true;
     }
 
@@ -42,7 +42,7 @@ function canTransfer(state: sc.MutableErc721State, caller: wasmlib.ScAgentID, ow
     }
 
     let controller = state.approvedAccounts().getAgentID(tokenID);
-    return controller.value() == caller;
+    return controller.value().equals(caller);
 }
 
 // common code for safeTransferFrom and transferFrom
@@ -54,7 +54,7 @@ function transfer(ctx: wasmlib.ScFuncContext, state: sc.MutableErc721State, from
     ctx.require(canTransfer(state, ctx.caller(), owner, tokenID),
         "not owner, operator, or approved");
 
-    ctx.require(owner == from, "from is not owner");
+    ctx.require(owner.equals(from), "from is not owner");
     //TODO: ctx.require(to == <check-if-is-a-valid-address> , "invalid 'to' agentid");
 
     let nftCountFrom = state.balances().getUint64(from);
@@ -82,7 +82,7 @@ export function funcApprove(ctx: wasmlib.ScFuncContext, f: sc.ApproveContext): v
     let owner = tokenOwner.value();
     ctx.require(canOperate(f.state, ctx.caller(), owner), "not owner or operator");
     let approved = f.params.approved().value();
-    ctx.require(owner != approved, "approved equals owner");
+    ctx.require(!owner.equals(approved), "approved equals owner");
     approve(f.state, owner, approved, tokenID);
 }
 
@@ -90,8 +90,8 @@ export function funcApprove(ctx: wasmlib.ScFuncContext, f: sc.ApproveContext): v
 export function funcBurn(ctx: wasmlib.ScFuncContext, f: sc.BurnContext): void {
     let tokenID = f.params.tokenID().value();
     let owner = f.state.owners().getAgentID(tokenID).value();
-    ctx.require(owner != ZERO, "tokenID does not exist");
-    ctx.require(ctx.caller() == owner, "caller is not owner");
+    ctx.require(!owner.equals(ZERO), "tokenID does not exist");
+    ctx.require(ctx.caller().equals(owner), "caller is not owner");
 
     approve(f.state, owner, ZERO, tokenID);
 
@@ -147,7 +147,7 @@ export function funcSafeTransferFrom(ctx: wasmlib.ScFuncContext, f: sc.SafeTrans
 export function funcSetApprovalForAll(ctx: wasmlib.ScFuncContext, f: sc.SetApprovalForAllContext): void {
     let owner = ctx.caller();
     let operator = f.params.operator().value();
-    ctx.require(owner != operator, "owner equals operator");
+    ctx.require(!owner.equals(operator), "owner equals operator");
 
     let approval = f.params.approval().value();
     let approvalsByCaller = f.state.approvedOperators().getOperators(owner);
@@ -179,7 +179,7 @@ export function viewBalanceOf(ctx: wasmlib.ScViewContext, f: sc.BalanceOfContext
 export function viewGetApproved(ctx: wasmlib.ScViewContext, f: sc.GetApprovedContext): void {
     let tokenID = f.params.tokenID().value();
     let approved = f.state.approvedAccounts().getAgentID(tokenID).value();
-    if (approved != ZERO) {
+    if (!approved.equals(ZERO)) {
         f.results.approved().setValue(approved);
     }
 }

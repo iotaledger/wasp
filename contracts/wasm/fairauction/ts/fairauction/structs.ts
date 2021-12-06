@@ -82,6 +82,10 @@ export class MutableAuction {
         this.keyID = keyID;
     }
 
+    delete(): void {
+        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+    }
+
     exists(): boolean {
         return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
     }
@@ -144,6 +148,10 @@ export class MutableBid {
     constructor(objID: i32, keyID: wasmlib.Key32) {
         this.objID = objID;
         this.keyID = keyID;
+    }
+
+    delete(): void {
+        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
     }
 
     exists(): boolean {
