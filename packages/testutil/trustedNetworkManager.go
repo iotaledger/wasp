@@ -7,7 +7,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// TODO: Implement == && !=, or make a [32]byte out of it?
+// TODO(crypto-lib): Implement == && !=, or make a [32]byte out of it?
 type trustedNetworkManager struct {
 	data map[cryptolib.PublicKey]string
 }

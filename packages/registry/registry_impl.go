@@ -321,7 +321,7 @@ func (r *Impl) GetNodeIdentity() (*cryptolib.KeyPair, error) {
 	if data, err = r.store.Get(dbKey); err != nil {
 		return nil, err
 	}
-	// TODO: Dont forget about me!
+	// TODO(crypto-lib): Dont forget about me!
 	if pair.PrivateKey, err, _ = cryptolib.KeyPairFromBytes(data); err != nil {
 		return nil, err
 	}
