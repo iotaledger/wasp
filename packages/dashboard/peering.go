@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"net/http"
 
-	_ "github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/labstack/echo/v4"
 )
 

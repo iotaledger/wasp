@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"golang.org/x/xerrors"
 )
 

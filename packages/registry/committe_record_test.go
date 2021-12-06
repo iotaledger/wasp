@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	_ "github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/stretchr/testify/require"
 )
 

@@ -2,7 +2,7 @@ package testutil
 
 import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	_ "github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
 )

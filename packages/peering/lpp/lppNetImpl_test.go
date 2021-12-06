@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/lpp"
 	"github.com/iotaledger/wasp/packages/testutil"

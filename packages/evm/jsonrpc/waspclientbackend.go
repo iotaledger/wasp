@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	_ "github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )

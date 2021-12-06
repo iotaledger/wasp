@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	_ "github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 type Seed *[cryptolib.SeedSize]byte

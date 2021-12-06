@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	_ "github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -104,8 +104,8 @@ func (n *Node) GenerateDistributedKey(
 	peerPubs []cryptolib.PublicKey,
 	threshold uint16,
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
-	stepRetry time.Duration, // Retry for Initiator -> Peer communication.
-	timeout time.Duration, // Timeout for the entire procedure.
+	stepRetry time.Duration,  // Retry for Initiator -> Peer communication.
+	timeout time.Duration,    // Timeout for the entire procedure.
 ) (*tcrypto.DKShare, error) {
 	n.log.Infof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().NetID(), peerNetIDs)
 	var err error

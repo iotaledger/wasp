@@ -6,7 +6,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	_ "github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 )
