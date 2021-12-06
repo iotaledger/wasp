@@ -6,7 +6,6 @@ package dashboard
 import (
 	"fmt"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/chain"

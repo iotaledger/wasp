@@ -10,8 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"

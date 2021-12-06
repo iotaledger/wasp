@@ -10,8 +10,6 @@ import (
 	"os"
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"

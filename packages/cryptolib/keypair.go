@@ -71,7 +71,15 @@ func PublicKeyFromBytes(publicKeyBytes []byte) (PublicKey, error) {
 		return nil, fmt.Errorf("bytes too short")
 	}
 
-	return PublicKey(publicKeyBytes), nil
+	return publicKeyBytes, nil
+}
+
+func PrivateKeyFromBytes(privateKeyBytes []byte) (PrivateKey, error) {
+	if len(privateKeyBytes) < ed25519.PrivateKeySize {
+		return nil, fmt.Errorf("bytes too short")
+	}
+
+	return privateKeyBytes, nil
 }
 
 func Verify(publicKey PublicKey, message, sig []byte) bool {

@@ -13,7 +13,6 @@ package peering
 import (
 	"bytes"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
 )
 

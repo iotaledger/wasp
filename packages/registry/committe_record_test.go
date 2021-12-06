@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"

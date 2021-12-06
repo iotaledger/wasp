@@ -12,7 +12,6 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -321,8 +320,7 @@ func (r *Impl) GetNodeIdentity() (*cryptolib.KeyPair, error) {
 	if data, err = r.store.Get(dbKey); err != nil {
 		return nil, err
 	}
-	// TODO(crypto-lib): Dont forget about me!
-	if pair.PrivateKey, err, _ = cryptolib.KeyPairFromBytes(data); err != nil {
+	if pair.PrivateKey, err = cryptolib.PrivateKeyFromBytes(data); err != nil {
 		return nil, err
 	}
 	pair.PublicKey = pair.PublicKey

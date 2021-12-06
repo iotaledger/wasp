@@ -3,10 +3,8 @@ package utxodb
 import (
 	"encoding/binary"
 	"fmt"
-	"sync"
-
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"sync"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"

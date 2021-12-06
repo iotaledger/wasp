@@ -16,8 +16,7 @@ type Client struct {
 	WaspClient   *client.WaspClient
 	ChainID      *iscp.ChainID
 	KeyPair      *cryptolib.KeyPair
-	// TODO(crypto-lib): Same as the other map?
-	nonces map[cryptolib.PublicKey]uint64
+	nonces       map[cryptolib.PublicKey]uint64
 }
 
 // New creates a new chainclient.Client
@@ -32,8 +31,7 @@ func New(
 		WaspClient:   waspClient,
 		ChainID:      chainID,
 		KeyPair:      keyPair,
-		// TODO(crypto-lib): Same as the other map?
-		nonces: make(map[cryptolib.PublicKey]uint64),
+		nonces:       make(map[cryptolib.PublicKey]uint64),
 	}
 }
 

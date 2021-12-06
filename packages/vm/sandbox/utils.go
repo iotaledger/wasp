@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/hive.go/crypto/bls"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/gas"
@@ -82,7 +81,6 @@ func (u utilImpl) ValidSignature(data []byte, pubKey []byte, signature []byte) b
 	if err != nil {
 		return false
 	}
-	// TODO(crypto-lib): How to proceed here?
 	sig, _, err := cryptolib.SignatureFromBytes(signature)
 	if err != nil {
 		return false

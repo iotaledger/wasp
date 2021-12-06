@@ -1,7 +1,6 @@
 package mempool
 
 import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
 

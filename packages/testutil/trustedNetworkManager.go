@@ -2,12 +2,10 @@ package testutil
 
 import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
 )
 
-// TODO(crypto-lib): Implement == && !=, or make a [32]byte out of it?
 type trustedNetworkManager struct {
 	data map[cryptolib.PublicKey]string
 }

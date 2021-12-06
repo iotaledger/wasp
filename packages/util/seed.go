@@ -1,12 +1,9 @@
 package util
 
 import (
-	"math/rand"
-
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"math/rand"
 )
 
 type Seed *[cryptolib.SeedSize]byte

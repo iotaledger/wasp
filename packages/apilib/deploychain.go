@@ -5,12 +5,6 @@ package apilib
 
 import (
 	"fmt"
-	"io"
-	"math/rand"
-	"time"
-
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -18,6 +12,9 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+	"io"
+	"math/rand"
+	"time"
 )
 
 // TODO DeployChain on peering domain, not on committee

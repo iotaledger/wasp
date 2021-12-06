@@ -4,7 +4,6 @@
 package admapi
 
 import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/mr-tron/base58"
 	"net/http"
 

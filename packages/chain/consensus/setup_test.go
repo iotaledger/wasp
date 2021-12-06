@@ -6,7 +6,6 @@ package consensus
 import (
 	"fmt"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"io"
 	"math/rand"
 	"sync"

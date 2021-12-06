@@ -11,7 +11,6 @@
 package peering
 
 import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"strconv"
 	"strings"
 	"time"
