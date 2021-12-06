@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/metrics"
 	"github.com/iotaledger/wasp/tools/wasp-cli/peering"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 	"github.com/spf13/cobra"
@@ -35,6 +36,7 @@ func init() {
 	chain.Init(rootCmd)
 	decode.Init(rootCmd)
 	peering.Init(rootCmd)
+	metrics.Init(rootCmd)
 }
 
 func main() {
