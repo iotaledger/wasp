@@ -82,7 +82,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, error)
 	}, nil
 }
 
-// computeInputsAndRemainder computes inputs and reminder for given outputs balances.
+// computeInputsAndRemainder computes inputs and remainder for given outputs balances.
 // Takes into account minimum dust deposit requirements
 // The inputs are consumed one by one in the order provided in the parameters.
 // Consumes only what is needed to cover output balances
@@ -111,7 +111,7 @@ func computeInputsAndRemainder(
 			s.Add(s, nt.Amount)
 			tokensIn[nt.ID] = s
 		}
-		// calculate reminder. It will return != nil if input balances is enough, otherwise nil
+		// calculate remainder. It will return != nil if input balances is enough, otherwise nil
 		remainder = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, deSeriParams)
 		if remainder != nil {
 			inputs = allInputs[:i+1]
@@ -125,12 +125,12 @@ func computeInputsAndRemainder(
 	return inputs, remainder, nil
 }
 
-// computeRemainderOutput calculates reminders for iotas and native tokens, returns skeleton reminder output
+// computeRemainderOutput calculates remainders for iotas and native tokens, returns skeleton remainder output
 // which only contains assets filled in.
 // - inIotas and inTokens is what is available in inputs
-// - outIotas, outTokens is what is in outputs, except the reminder output itself with its dust deposit
+// - outIotas, outTokens is what is in outputs, except the remainder output itself with its dust deposit
 // Returns nil if inputs are not enough (taking into account dust deposit requirements)
-// If return not nil but Amount == 0, ite means reminder is a perfect match between inputs and outputs, remainder not needed
+// If return not nil but Amount == 0, ite means remainder is a perfect match between inputs and outputs, remainder not needed
 func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, deSeriParams *iotago.DeSerializationParameters) *iotago.ExtendedOutput {
 	if inIotas < outIotas {
 		return nil
@@ -146,7 +146,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 	remIotas := inIotas - outIotas
 	remTokens := make(map[iotago.NativeTokenID]*big.Int)
 
-	// calc reminders by outputs
+	// calc remainders by outputs
 	for id := range tokenIDs {
 		bIn, okIn := inTokens[id]
 		bOut, okOut := outTokens[id]
@@ -169,7 +169,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			// there's output but no input. Not enough
 			return nil
 		case okIn && !okOut:
-			// native token is here by accident. All goes to reminder
+			// native token is here by accident. All goes to remainder
 			remTokens[id] = new(big.Int).Set(bIn)
 			if util.IsZeroBigInt(bIn) {
 				panic("bad input")
