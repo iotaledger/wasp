@@ -10,7 +10,7 @@ type Mempool interface {
 	ReceiveRequests(reqs ...iscp.RequestData)
 	ReceiveRequest(req iscp.RequestData) bool
 	RemoveRequests(reqs ...iscp.RequestID)
-	ReadyNow(currentTime ...time.Time) []iscp.Request
+	ReadyNow(currentTime ...time.Time) []iscp.RequestData
 	ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool)
 	HasRequest(id iscp.RequestID) bool
 	GetRequest(id iscp.RequestID) iscp.Request

@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	iotago "github.com/iotaledger/iota.go/v3"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -122,38 +123,41 @@ func (vmctx *VMContext) checkReasonTimeLock() error {
 // checkReasonExpiry checking expiry conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonExpiry() error {
-	expiry, senderAddr := vmctx.req.Unwrap().UTXO().Features().Expiry()
+	expiry, _ := vmctx.req.Unwrap().UTXO().Features().Expiry()
+
 	if expiry == nil {
 		return nil
 	}
 
-	// TODO maybe iota.go has a function check(output/ expiry time data, own time assumptions) --> true/false
-	// To check is output is unlockable based on time assumptions
-	// Better reuse logic
-
+	// Validate time window
 	windowFrom := vmctx.finalStateTimestamp.Add(-ExpiryUnlockSafetyWindowDuration)
 	windowTo := vmctx.finalStateTimestamp.Add(ExpiryUnlockSafetyWindowDuration)
+
 	if expiry.Time.After(windowFrom) && expiry.Time.Before(windowTo) {
 		return xerrors.Errorf("can't be consumed in the expire safety window close to v", expiry.Time)
 	}
+
+	// Validate milestone window
 	milestoneFrom := vmctx.task.TimeAssumption.MilestoneIndex - ExpiryUnlockSafetyWindowMilestone
 	milestoneTo := vmctx.task.TimeAssumption.MilestoneIndex + ExpiryUnlockSafetyWindowMilestone
+
 	if milestoneFrom <= expiry.MilestoneIndex && expiry.MilestoneIndex <= milestoneTo {
 		return xerrors.Errorf("can't be consumed in the expire safety window between milestones #%d and #%d",
 			milestoneFrom, milestoneTo)
 	}
-	// it is not in the safety window, so it can be consumed either by the chain or by the somebody else
-	if vmctx.finalStateTimestamp.After(expiry.Time) {
-		if senderAddr.Equal(vmctx.task.AnchorOutput.AliasID.ToAddress()) {
-			// this chain is a sender
-			// the request came back after expiration
-			// TODO ignoring temporary. Must be processed as returned request by consuming it back
-			return xerrors.Errorf("came back expired after %v. Ignore for now", expiry.Time)
-		} else {
-			// somebody else is a sender
-			return xerrors.Errorf("expired after %v", expiry.Time)
-		}
+
+	// General unlock validation
+	output, _ := vmctx.req.Unwrap().UTXO().Output().(iotago.TransIndepIdentOutput)
+
+	unlockable := output.UnlockableBy(vmctx.task.AnchorOutput.AliasID.ToAddress(), &iotago.ExternalUnlockParameters{
+		ConfUnix:    uint64(vmctx.finalStateTimestamp.Unix()),
+		ConfMsIndex: vmctx.task.TimeAssumption.MilestoneIndex,
+	})
+
+	if !unlockable {
+		return xerrors.Errorf("can't be consumed", expiry.Time)
 	}
+
 	return nil
 }
 

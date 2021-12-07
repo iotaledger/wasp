@@ -6,6 +6,8 @@ package mempool
 
 import (
 	"bytes"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain"
 	"sync"
 	"time"
 
@@ -220,6 +222,26 @@ func (m *mempool) traceOut(reqid iscp.RequestID) {
 // don't process any request which deadline will expire within 10 minutes
 const FallbackDeadlineMinAllowedInterval = time.Minute * 10
 
+func isUnlockable(ref *requestRef, currentTime time.Time) bool {
+	r := ref.req.(*iscp.OnLedgerRequestData)
+	expiry, _ := r.Expiry()
+
+	windowFrom := currentTime.Add(-FallbackDeadlineMinAllowedInterval)
+	windowTo := currentTime.Add(FallbackDeadlineMinAllowedInterval)
+
+	if expiry.Time.After(windowFrom) && expiry.Time.Before(windowTo) {
+		return false
+	}
+
+	output, _ := ref.req.Unwrap().UTXO().Output().(iotago.TransIndepIdentOutput)
+
+	unlockable := output.UnlockableBy(ref.req.SenderAddress(), &iotago.ExternalUnlockParameters{
+		ConfUnix: uint64(currentTime.Unix()),
+	})
+
+	return unlockable
+}
+
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
 func isRequestReady(ref *requestRef, currentTime time.Time) (isReady, shouldBeRemoved bool) {
 	if ref.req.IsOffLedger() {
@@ -233,12 +255,8 @@ func isRequestReady(ref *requestRef, currentTime time.Time) (isReady, shouldBeRe
 		return false, true
 	}
 
-	// fallback options
-	expiry, expiryAddress := r.Expiry()
-	if expiryAddress != nil {
-		if !expiry.Time.After(currentTime.Add(FallbackDeadlineMinAllowedInterval)) {
-			return false, true
-		}
+	if !isUnlockable(ref, currentTime) {
+		return false, true
 	}
 
 	// time lock
@@ -307,16 +325,8 @@ func (m *mempool) ReadyNow(currentTime ...time.Time) []iscp.RequestData {
 // - (a list of processable requests), true if the list can be deterministically calculated
 // Note that (a list of processable requests) can be empty if none satisfies currentTime time constraint (timelock, fallback)
 // For requests which are known and solidified, the result is deterministic
-<<<<<<< HEAD
 func (m *mempool) ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool) {
 	requests := make([]iscp.Request, 0, len(reqIDs))
-||||||| merged common ancestors
-func (m *mempool) ReadyFromIDs(nowis time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool) {
-	requests := make([]iscp.Request, 0, len(reqIDs))
-=======
-func (m *mempool) ReadyFromIDs(nowis time.Time, reqIDs ...iscp.RequestID) ([]iscp.RequestData, []int, bool) {
-	requests := make([]iscp.RequestData, 0, len(reqIDs))
->>>>>>> stardust-vm
 	missingRequestIndexes := []int{}
 	toRemove := []iscp.RequestID{}
 	m.poolMutex.RLock()
@@ -351,7 +361,7 @@ func (m *mempool) HasRequest(id iscp.RequestID) bool {
 	return ok
 }
 
-func (m *mempool) GetRequest(id iscp.RequestID) iscp.RequestData {
+func (m *mempool) GetRequest(id iscp.RequestID) iscp.Request {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
@@ -409,11 +419,11 @@ func (m *mempool) WaitInBufferEmpty(timeout ...time.Duration) bool {
 }
 
 // Stats collects mempool stats
-func (m *mempool) Info() MempoolInfo {
+func (m *mempool) Info() chain.MempoolInfo {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
-	ret := MempoolInfo{
+	ret := chain.MempoolInfo{
 		InPoolCounter:  m.inPoolCounter,
 		OutPoolCounter: m.outPoolCounter,
 		InBufCounter:   m.inBufCounter,
