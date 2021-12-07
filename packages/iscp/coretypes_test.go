@@ -15,8 +15,8 @@ import (
 
 // 	t.Logf("random AgentID = %s", aid.String())
 
-// 	kp := ed25519.GenerateKeyPair()
-// 	addr := iotago.Ed25519AddressFromPubKey(kp.PublicKey)
+// 	kp := cryptolib.NewKeyPair()
+// 	addr := cryptolib.Ed25519AddressFromPubKey(kp.PublicKey)
 
 // 	hname := Hn("dummy")
 // 	aid = NewAgentID(addr, hname)

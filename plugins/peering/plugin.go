@@ -4,10 +4,10 @@
 package peering
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	peering_lpp "github.com/iotaledger/wasp/packages/peering/lpp"
@@ -29,7 +29,7 @@ func Init() *node.Plugin {
 	configure := func(_ *node.Plugin) {
 		log = logger.NewLogger(pluginName)
 		var err error
-		var nodeKeyPair *ed25519.KeyPair
+		var nodeKeyPair *cryptolib.KeyPair
 		if nodeKeyPair, err = registry.DefaultRegistry().GetNodeIdentity(); err != nil {
 			panic(err)
 		}

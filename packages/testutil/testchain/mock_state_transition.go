@@ -1,10 +1,10 @@
 package testchain
 
 import (
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
@@ -12,12 +12,12 @@ import (
 
 type MockedStateTransition struct {
 	t           *testing.T
-	chainKey    *ed25519.KeyPair
+	chainKey    *cryptolib.KeyPair
 	onNextState func(virtualState state.VirtualStateAccess, tx *iotago.Transaction)
 	onVMResult  func(virtualState state.VirtualStateAccess, tx *iotago.TransactionEssence)
 }
 
-func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedStateTransition {
+func NewMockedStateTransition(t *testing.T, chainKey *cryptolib.KeyPair) *MockedStateTransition {
 	return &MockedStateTransition{
 		t:        t,
 		chainKey: chainKey,

@@ -2,6 +2,7 @@ package tests
 
 import (
 	"crypto/rand"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
 
@@ -19,11 +20,11 @@ import (
 )
 
 func (e *chainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnNodes ...int) *chainclient.Client {
-	userWallet := wallet.KeyPair(seedN)
+	userWallet := cryptolib.NewKeyPairFromSeed(wallet.SubSeed(seedN))
 	userAddress := ledgerstate.NewED25519Address(userWallet.PublicKey)
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
-	chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(waspnode), e.chain.ChainID, userWallet)
+	chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(waspnode), e.chain.ChainID, &userWallet)
 
 	// deposit funds before sending the off-ledger requestargs
 	e.requestFunds(userAddress, "userWallet")

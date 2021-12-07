@@ -4,7 +4,8 @@
 package registry
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
@@ -12,8 +13,8 @@ import (
 type Provider func() *Impl
 
 type NodeIdentityProvider interface {
-	GetNodeIdentity() (*ed25519.KeyPair, error)
-	GetNodePublicKey() (*ed25519.PublicKey, error)
+	GetNodeIdentity() (*cryptolib.KeyPair, error)
+	GetNodePublicKey() (*cryptolib.PublicKey, error)
 }
 
 // PeerNetworkConfigProvider access to node and chain configuration: a list of netIDs of potential peers

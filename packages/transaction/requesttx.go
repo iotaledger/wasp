@@ -4,13 +4,13 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
 type NewRequestTransactionParams struct {
-	SenderPrivateKey ed25519.PrivateKey
+	SenderKeyPair    cryptolib.KeyPair
 	UnspentOutputs   []iotago.Output
 	UnspentOutputIDs []*iotago.UTXOInput
 	Requests         []*iscp.RequestParameters
@@ -26,7 +26,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	sumIotasOut := uint64(0)
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
 
-	senderAddress := iotago.Ed25519AddressFromPubKey(par.SenderPrivateKey.Public().(ed25519.PublicKey))
+	senderAddress := cryptolib.Ed25519AddressFromPubKey(par.SenderKeyPair.PublicKey)
 
 	// create outputs, sum totals needed
 	for _, req := range par.Requests {
@@ -79,6 +79,6 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	for _, out := range outputs {
 		txb.AddOutput(out)
 	}
-	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&senderAddress, par.SenderPrivateKey))
+	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&senderAddress, par.SenderKeyPair.PrivateKey))
 	return txb.Build(par.DeSeriParams, signer)
 }

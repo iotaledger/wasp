@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -27,7 +27,7 @@ type NodeProvider func() *Node
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity     *ed25519.KeyPair                 // Keys of the current node.
+	identity     *cryptolib.KeyPair               // Keys of the current node.
 	secKey       kyber.Scalar                     // Derived from the identity.
 	pubKey       kyber.Point                      // Derived from the identity.
 	blsSuite     Suite                            // Cryptography to use for the Pairing based operations.
@@ -44,13 +44,13 @@ type Node struct {
 // Init creates new node, that can participate in the DKG procedure.
 // The node then can run several DKG procedures.
 func NewNode(
-	identity *ed25519.KeyPair,
+	identity *cryptolib.KeyPair,
 	netProvider peering.NetworkProvider,
 	reg registry.DKShareRegistryProvider,
 	log *logger.Logger,
 ) (*Node, error) {
 	kyberEdDSSA := eddsa.EdDSA{}
-	if err := kyberEdDSSA.UnmarshalBinary(identity.PrivateKey.Bytes()); err != nil {
+	if err := kyberEdDSSA.UnmarshalBinary(identity.PrivateKey); err != nil {
 		return nil, err
 	}
 	n := Node{
@@ -100,7 +100,7 @@ func (n *Node) Close() {
 //nolint:funlen,gocritic
 func (n *Node) GenerateDistributedKey(
 	peerNetIDs []string,
-	peerPubs []ed25519.PublicKey,
+	peerPubs []cryptolib.PublicKey,
 	threshold uint16,
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
 	stepRetry time.Duration, // Retry for Initiator -> Peer communication.
@@ -136,7 +136,7 @@ func (n *Node) GenerateDistributedKey(
 	gTimeout := timeout
 	if peerPubs == nil {
 		// Take the public keys from the peering network, if they were not specified.
-		peerPubs = make([]ed25519.PublicKey, peerCount)
+		peerPubs = make([]cryptolib.PublicKey, peerCount)
 		for i, n := range netGroup.AllNodes() {
 			if err = n.Await(timeout); err != nil {
 				return nil, err
@@ -213,7 +213,7 @@ func (n *Node) GenerateDistributedKey(
 	sharedPublic := pubShareResponses[0].sharedPublic
 	publicShares := make([]kyber.Point, peerCount)
 	for i := range pubShareResponses {
-		if !sharedAddress.Equals(pubShareResponses[i].sharedAddress) {
+		if !sharedAddress.Equal(pubShareResponses[i].sharedAddress) {
 			return nil, fmt.Errorf("nodes generated different addresses")
 		}
 		if !sharedPublic.Equal(pubShareResponses[i].sharedPublic) {

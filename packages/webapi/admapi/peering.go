@@ -4,9 +4,10 @@
 package admapi
 
 import (
+	"github.com/mr-tron/base58"
 	"net/http"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -69,7 +70,7 @@ func addPeeringEndpoints(adm echoswagger.ApiGroup, network peering.NetworkProvid
 func handlePeeringSelfGet(c echo.Context) error {
 	network := c.Get("net").(peering.NetworkProvider)
 	resp := model.PeeringTrustedNode{
-		PubKey: network.Self().PubKey().String(),
+		PubKey: base58.Encode(*network.Self().PubKey()),
 		NetID:  network.Self().NetID(),
 	}
 	return c.JSON(http.StatusOK, resp)
@@ -83,7 +84,7 @@ func handlePeeringGetStatus(c echo.Context) error {
 
 	for k, v := range peeringStatus {
 		peers[k] = model.PeeringNodeStatus{
-			PubKey:   v.PubKey().String(),
+			PubKey:   base58.Encode(*v.PubKey()),
 			NetID:    v.NetID(),
 			IsAlive:  v.IsAlive(),
 			NumUsers: v.NumUsers(),
@@ -120,7 +121,7 @@ func handlePeeringTrustedPut(c echo.Context) error {
 	if req.PubKey != pubKeyStr {
 		return httperrors.BadRequest("Pub keys do not match.")
 	}
-	pubKey, err := ed25519.PublicKeyFromString(req.PubKey)
+	pubKey, err := cryptolib.PublicKeyFromString(req.PubKey)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -138,7 +139,7 @@ func handlePeeringTrustedPost(c echo.Context) error {
 	if err = c.Bind(&req); err != nil {
 		return httperrors.BadRequest("Invalid request body.")
 	}
-	pubKey, err := ed25519.PublicKeyFromString(req.PubKey)
+	pubKey, err := cryptolib.PublicKeyFromString(req.PubKey)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -153,7 +154,7 @@ func handlePeeringTrustedGet(c echo.Context) error {
 	var err error
 	tnm := c.Get("tnm").(peering.TrustedNetworkManager)
 	pubKeyStr := c.Param("pubKey")
-	pubKey, err := ed25519.PublicKeyFromString(pubKeyStr)
+	pubKey, err := cryptolib.PublicKeyFromString(pubKeyStr)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -162,7 +163,7 @@ func handlePeeringTrustedGet(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	for _, tp := range tps {
-		if tp.PubKey == pubKey {
+		if tp.PubKey.Equal(pubKey) {
 			return c.JSON(http.StatusOK, model.NewPeeringTrustedNode(tp))
 		}
 	}
@@ -173,7 +174,7 @@ func handlePeeringTrustedDelete(c echo.Context) error {
 	var err error
 	tnm := c.Get("tnm").(peering.TrustedNetworkManager)
 	pubKeyStr := c.Param("pubKey")
-	pubKey, err := ed25519.PublicKeyFromString(pubKeyStr)
+	pubKey, err := cryptolib.PublicKeyFromString(pubKeyStr)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}

@@ -6,10 +6,11 @@ package registry
 import (
 	"errors"
 	"fmt"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
@@ -170,7 +171,7 @@ func dbKeyForDKShare(sharedAddress iotago.Address) []byte {
 // region TrustedNetworkManager ////////////////////////////////////////////////////
 
 // IsTrustedPeer implements TrustedNetworkManager interface.
-func (r *Impl) IsTrustedPeer(pubKey ed25519.PublicKey) error {
+func (r *Impl) IsTrustedPeer(pubKey cryptolib.PublicKey) error {
 	tp := &peering.TrustedPeer{PubKey: pubKey}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
@@ -181,7 +182,7 @@ func (r *Impl) IsTrustedPeer(pubKey ed25519.PublicKey) error {
 }
 
 // TrustPeer implements TrustedNetworkManager interface.
-func (r *Impl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.TrustedPeer, error) {
+func (r *Impl) TrustPeer(pubKey cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
 	tp := &peering.TrustedPeer{PubKey: pubKey, NetID: netID}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
@@ -200,7 +201,7 @@ func (r *Impl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.Trust
 
 // DistrustPeer implements TrustedNetworkManager interface.
 // Get is kind of optional, so we ignore errors related to it.
-func (r *Impl) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, error) {
+func (r *Impl) DistrustPeer(pubKey cryptolib.PublicKey) (*peering.TrustedPeer, error) {
 	tp := &peering.TrustedPeer{PubKey: pubKey}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
@@ -301,16 +302,16 @@ func (r *Impl) HasBlob(h hashing.HashValue) (bool, error) {
 // region NodeIdentity //////////////////////////////////////////
 
 // GetNodeIdentity implements NodeIdentityProvider.
-func (r *Impl) GetNodeIdentity() (*ed25519.KeyPair, error) {
+func (r *Impl) GetNodeIdentity() (*cryptolib.KeyPair, error) {
 	var err error
-	var pair ed25519.KeyPair
+	var pair cryptolib.KeyPair
 	dbKey := dbKeyForNodeIdentity()
 	var exists bool
 	var data []byte
 	exists, _ = r.store.Has(dbKey)
 	if !exists {
-		pair = ed25519.GenerateKeyPair()
-		data = pair.PrivateKey.Bytes()
+		pair = cryptolib.NewKeyPair()
+		data = pair.PrivateKey
 		if err := r.store.Set(dbKey, data); err != nil {
 			return nil, err
 		}
@@ -320,17 +321,17 @@ func (r *Impl) GetNodeIdentity() (*ed25519.KeyPair, error) {
 	if data, err = r.store.Get(dbKey); err != nil {
 		return nil, err
 	}
-	if pair.PrivateKey, err, _ = ed25519.PrivateKeyFromBytes(data); err != nil {
+	if pair.PrivateKey, err = cryptolib.PrivateKeyFromBytes(data); err != nil {
 		return nil, err
 	}
-	pair.PublicKey = pair.PrivateKey.Public()
+	pair.PublicKey = pair.PublicKey
 	return &pair, nil
 }
 
 // GetNodePublicKey implements NodeIdentityProvider.
-func (r *Impl) GetNodePublicKey() (*ed25519.PublicKey, error) {
+func (r *Impl) GetNodePublicKey() (*cryptolib.PublicKey, error) {
 	var err error
-	var pair *ed25519.KeyPair
+	var pair *cryptolib.KeyPair
 	if pair, err = r.GetNodeIdentity(); err != nil {
 		return nil, err
 	}

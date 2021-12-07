@@ -3,6 +3,7 @@ package cluster
 import (
 	"bufio"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"io"
 	"math/rand"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
@@ -46,7 +46,7 @@ func New(name string, config *ClusterConfig) *Cluster {
 	}
 }
 
-func (clu *Cluster) NewKeyPairWithFunds() (*ed25519.KeyPair, iotago.Address, error) {
+func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, iotago.Address, error) {
 	key, addr := testkey.GenKeyAddr()
 	err := clu.GoshimmerClient().RequestFunds(addr)
 	return key, addr, err
