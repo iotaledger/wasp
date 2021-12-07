@@ -75,6 +75,10 @@ type MutableAuction struct {
 	keyID wasmlib.Key32
 }
 
+func (o MutableAuction) Delete() {
+	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+}
+
 func (o MutableAuction) Exists() bool {
 	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
 }
@@ -127,6 +131,10 @@ func (o ImmutableBid) Value() *Bid {
 type MutableBid struct {
 	objID int32
 	keyID wasmlib.Key32
+}
+
+func (o MutableBid) Delete() {
+	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
 }
 
 func (o MutableBid) Exists() bool {

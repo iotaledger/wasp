@@ -33,7 +33,7 @@ state:
 funcs:
   approve:
     params:
-      approved: AgentID // target account
+      approved: AgentID? // target account, clear approval when not present
       tokenID: Hash // token ID
   burn:
     params:

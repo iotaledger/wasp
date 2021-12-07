@@ -39,7 +39,6 @@ function funcApproveThunk(ctx: wasmlib.ScFuncContext): void {
 	let f = new sc.ApproveContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-	ctx.require(f.params.approved().exists(), "missing mandatory approved");
 	ctx.require(f.params.tokenID().exists(), "missing mandatory tokenID");
 	sc.funcApprove(ctx, f);
 	ctx.log("erc721.funcApprove ok");

@@ -71,7 +71,6 @@ fn func_approve_thunk(ctx: &ScFuncContext) {
 			id: OBJ_ID_STATE,
 		},
 	};
-	ctx.require(f.params.approved().exists(), "missing mandatory approved");
 	ctx.require(f.params.token_id().exists(), "missing mandatory tokenID");
 	func_approve(ctx, &f);
 	ctx.log("erc721.funcApprove ok");

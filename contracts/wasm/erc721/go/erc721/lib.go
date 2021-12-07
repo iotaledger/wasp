@@ -47,7 +47,6 @@ func funcApproveThunk(ctx wasmlib.ScFuncContext) {
 			id: wasmlib.OBJ_ID_STATE,
 		},
 	}
-	ctx.Require(f.Params.Approved().Exists(), "missing mandatory approved")
 	ctx.Require(f.Params.TokenID().Exists(), "missing mandatory tokenID")
 	funcApprove(ctx, f)
 	ctx.Log("erc721.funcApprove ok")
