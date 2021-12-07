@@ -83,14 +83,14 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.doSyncActionIfNeeded: too many blocks to catch up: %v", sm.stateOutput.GetStateIndex()-startSyncFromIndex+1))
 			return
 		}
-		nowis := time.Now()
-		if nowis.After(requestBlockRetryTime) {
+		currentTime := time.Now()
+		if currentTime.After(requestBlockRetryTime) {
 			// have to pull
 			sm.log.Debugf("doSyncAction: requesting block index %v from %v random peers", i, numberOfNodesToRequestBlockFromConst)
 			getBlockMsg := &messages.GetBlockMsg{BlockIndex: i}
 			sm.chainPeers.SendPeerMsgToRandomPeers(numberOfNodesToRequestBlockFromConst, peering.PeerMessageReceiverStateManager, peerMsgTypeGetBlock, util.MustBytes(getBlockMsg))
 			sm.syncingBlocks.startSyncingIfNeeded(i)
-			sm.syncingBlocks.setRequestBlockRetryTime(i, nowis.Add(sm.timers.GetBlockRetry))
+			sm.syncingBlocks.setRequestBlockRetryTime(i, currentTime.Add(sm.timers.GetBlockRetry))
 			if blockCandidatesCount == 0 {
 				return
 			}
