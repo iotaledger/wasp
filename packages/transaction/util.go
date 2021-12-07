@@ -3,19 +3,17 @@ package transaction
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-	"golang.org/x/xerrors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
+	"golang.org/x/xerrors"
 )
 
 var (
 	ErrNoAliasOutputAtIndex0 = xerrors.New("origin AliasOutput not found at index 0")
-
-	nilAliasID iotago.AliasID
+	nilAliasID               iotago.AliasID
 )
 
 type OutputFilter func(output iotago.Output) bool
