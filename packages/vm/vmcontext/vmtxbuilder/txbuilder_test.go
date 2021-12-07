@@ -10,6 +10,8 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
@@ -553,5 +555,41 @@ func TestTxBuilderConsistency(t *testing.T) {
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
+	})
+}
+
+func TestDustDeposit(t *testing.T) {
+	reqMetadata := iscp.RequestMetadata{
+		SenderContract: 0,
+		TargetContract: 0,
+		EntryPoint:     0,
+		Params:         dict.New(),
+		Transfer:       iscp.NewEmptyAssets(),
+		GasBudget:      0,
+	}
+
+	t.Run("adjusts the output amount to the correct bytecost when needed", func(t *testing.T) {
+		assets := iscp.NewEmptyAssets()
+		out, wasAdjusted := NewExtendedOutput(
+			&iotago.Ed25519Address{},
+			assets,
+			&iotago.Ed25519Address{1, 2, 3},
+			&reqMetadata,
+			nil,
+		)
+		require.True(t, wasAdjusted)
+		require.Equal(t, out.Amount, out.VByteCost(parameters.RentStructure(), nil))
+	})
+	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
+		assets := iscp.NewAssets(10000, nil)
+		out, wasAdjusted := NewExtendedOutput(
+			&iotago.Ed25519Address{},
+			assets,
+			&iotago.Ed25519Address{1, 2, 3},
+			&reqMetadata,
+			nil,
+		)
+		require.False(t, wasAdjusted)
+		require.GreaterOrEqual(t, out.Amount, out.VByteCost(parameters.RentStructure(), nil))
 	})
 }
