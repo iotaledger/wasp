@@ -360,7 +360,7 @@ func (m *mempool) HasRequest(id iscp.RequestID) bool {
 	return ok
 }
 
-func (m *mempool) GetRequest(id iscp.RequestID) iscp.Request {
+func (m *mempool) GetRequest(id iscp.RequestID) iscp.RequestData {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
