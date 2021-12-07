@@ -63,7 +63,7 @@ func (b *blockImpl) Bytes() []byte {
 func (b *blockImpl) String() string {
 	ret := ""
 	ret += fmt.Sprintf("Block: state index: %d\n", b.BlockIndex())
-	ret += fmt.Sprintf("state txid: %s\n", iscp.OID(*b.ApprovingOutputID().UTXOInput()))
+	ret += fmt.Sprintf("state txid: %s\n", iscp.OID(b.ApprovingOutputID().UTXOInput()))
 	ret += fmt.Sprintf("timestamp: %v\n", b.Timestamp())
 	ret += fmt.Sprintf("state update: %s\n", (*b.stateUpdate).String())
 	return ret
