@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/database/registrykvstore"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -20,8 +21,8 @@ type DBManager struct {
 	log           *logger.Logger
 	registryDB    DB
 	registryStore kvstore.KVStore
-	databases     map[[iotago.Ed25519AddressBytesLength]byte]DB
-	stores        map[[iotago.Ed25519AddressBytesLength]byte]kvstore.KVStore
+	databases     map[*iotago.AliasID]DB
+	stores        map[*iotago.AliasID]kvstore.KVStore
 	mutex         sync.RWMutex
 	inMemory      bool
 }
@@ -29,8 +30,8 @@ type DBManager struct {
 func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
 	dbm := DBManager{
 		log:       log,
-		databases: make(map[[iotago.Ed25519AddressBytesLength]byte]DB),
-		stores:    make(map[[iotago.Ed25519AddressBytesLength]byte]kvstore.KVStore),
+		databases: make(map[*iotago.AliasID]DB),
+		stores:    make(map[*iotago.AliasID]kvstore.KVStore),
 		mutex:     sync.RWMutex{},
 		inMemory:  inMemory,
 	}
@@ -42,7 +43,7 @@ func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
 
 func getChainBase58(chainID *iscp.ChainID) string {
 	if chainID != nil {
-		return chainID.Base58()
+		return chainID.Bech32(iscp.Bech32Prefix)
 	}
 	return "CHAIN_REGISTRY"
 }
@@ -99,13 +100,13 @@ func (m *DBManager) GetOrCreateKVStore(chainID *iscp.ChainID) kvstore.KVStore {
 	// create a new database / store
 	db := m.createDB(chainID)
 	store = db.NewStore()
-	m.databases[chainID.Array()] = db
-	m.stores[chainID.Array()] = db.NewStore()
+	m.databases[chainID.AsAliasID()] = db
+	m.stores[chainID.AsAliasID()] = db.NewStore()
 	return store
 }
 
 func (m *DBManager) GetKVStore(chainID *iscp.ChainID) kvstore.KVStore {
-	return m.stores[chainID.Array()]
+	return m.stores[chainID.AsAliasID()]
 }
 
 func (m *DBManager) Close() {
@@ -132,5 +133,5 @@ func (m *DBManager) gc(db DB, shutdownSignal <-chan struct{}) {
 		if err := db.GC(); err != nil {
 			m.log.Warnf("Garbage collection failed: %s", err)
 		}
-	}, gcTimeInterval, shutdownSignal)
+	}, gcTimeInterval)
 }
