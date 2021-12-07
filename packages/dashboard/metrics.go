@@ -31,34 +31,11 @@ func (d *Dashboard) initMetrics(e *echo.Echo, r renderer) Tab {
 }
 
 func (d *Dashboard) handleMetrics(c echo.Context) error {
-	/*chains, err := d.fetchChains()
-	if err != nil {
-		return err
-	}*/
 	return c.Render(http.StatusOK, c.Path(), &MetricsTemplateParams{
 		BaseTemplateParams: d.BaseParams(c),
-		// Chains:             chains,
 	})
 }
 
-/*func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
-	crs, err := d.wasp.GetChainRecords()
-	if err != nil {
-		return nil, err
-	}
-	r := make([]*ChainOverview, len(crs))
-	for i, cr := range crs {
-		info, err := d.fetchRootInfo(cr.ChainID)
-		r[i] = &ChainOverview{
-			ChainRecord: cr,
-			RootInfo:    info,
-			Error:       err,
-		}
-	}
-	return r, nil
-}*/
-
 type MetricsTemplateParams struct {
 	BaseTemplateParams
-	Chains []*ChainOverview
 }
