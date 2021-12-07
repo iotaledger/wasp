@@ -1,6 +1,7 @@
 package cryptolib
 
 import (
+	"crypto"
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -10,8 +11,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type PrivateKey = ed25519.PrivateKey
-type PublicKey = ed25519.PublicKey
+type (
+	PrivateKey = ed25519.PrivateKey
+	PublicKey  = ed25519.PublicKey
+)
 
 type KeyPair struct {
 	PrivateKey PrivateKey
@@ -27,7 +30,7 @@ func (k *KeyPair) Verify(message, sig []byte) bool {
 }
 
 func (k *KeyPair) Sign(message []byte) ([]byte, error) {
-	return k.PrivateKey.Sign(nil, message, nil)
+	return k.PrivateKey.Sign(nil, message, crypto.Hash(0))
 }
 
 func NewKeyPairFromSeed(seed Seed) KeyPair {

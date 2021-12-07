@@ -3,6 +3,7 @@ package cryptolib
 import (
 	"encoding/binary"
 	"fmt"
+
 	"github.com/iotaledger/iota.go/v3/tpkg"
 
 	"github.com/iotaledger/hive.go/byteutils"
@@ -10,8 +11,10 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
-const SeedSize = ed25519.SeedSize
-const SignatureSize = ed25519.SignatureSize
+const (
+	SeedSize      = ed25519.SeedSize
+	SignatureSize = ed25519.SignatureSize
+)
 
 type Seed [SeedSize]byte
 
@@ -34,6 +37,7 @@ func SeedFromByteArray(seedData []byte) Seed {
 
 	return seed
 }
+
 func NewSeed() Seed {
 	return tpkg.RandEd25519Seed()
 }

@@ -43,18 +43,16 @@ func NewDKShare(
 	//var err error
 	//
 	// Derive the ChainID.
-	//var pubBytes []byte
-	//if pubBytes, err = sharedPublic.MarshalBinary(); err != nil {
-	//	return nil, err
-	//}
-	// TODO bls has been removed from IOTAGO, should this be moved to ed25519?
-	//sharedAddress := iotago.BLSAddressFromPubKey(bls.PublicKeyFromBytes(pubBytes))
-	var sharedAddress iotago.Address // TODO not correct
-
+	pubBytes, err := sharedPublic.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	// TODO this used to be BLS, is it okay to just replace with a normal ed25519 address?
+	sharedAddress := iotago.Ed25519AddressFromPubKey(pubBytes)
 	//
 	// Construct the DKShare.
 	dkShare := DKShare{
-		Address:       sharedAddress,
+		Address:       &sharedAddress,
 		Index:         &index,
 		N:             n,
 		T:             t,
