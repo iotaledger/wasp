@@ -60,10 +60,7 @@ type VMContext struct {
 	// gas already burned
 	gasBurned uint64
 	// gas policy
-	gasFeeTokenNotIota      bool                 // if token used to pay for gas is native token, not iotas
-	gasFeeTokenID           iotago.NativeTokenID // specify tokenID used to pay for gas
-	gasPolicyFixedBudget    bool
-	gasPolicyGasPerGasToken uint64 // gas/iotas
+	gasPolicy *governance.GasFeePolicy
 }
 
 type callContext struct {

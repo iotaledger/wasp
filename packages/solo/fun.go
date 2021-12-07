@@ -93,23 +93,40 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 	return ret, true
 }
 
+func (ch *Chain) GetGasFeePolicy() *governance.GasFeePolicy {
+	return &governance.GasFeePolicy{GasPerGasToken: 1}
+}
+
 // UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
-// data to the chain. It returns hash of the blob, the unique identified of it.
-// Takes request token and necessary fees from the 'sigScheme' address (or OriginatorAddress if nil).
-//
+// data to the chain. It returns hash of the blob, the unique identifier of it.
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
 func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
 	if keyPair == nil {
 		keyPair = &ch.OriginatorKeyPair
 	}
 
-	expectedHash := blob.MustGetBlobHash(parseParams(params))
+	blobAsADict := parseParams(params)
+	expectedHash := blob.MustGetBlobHash(blobAsADict)
 	if _, ok := ch.GetBlobInfo(expectedHash); ok {
 		// blob exists, return hash of existing
 		return expectedHash, nil
 	}
 
-	// TODO send gas budget
+	gasNeeded := governance.GasForBlob(blobAsADict)
+	gasFeePolicy := ch.GetGasFeePolicy()
+	require.EqualValues(ch.Env.T, nil, gasFeePolicy.GasFeeTokenID)
+
+	totalFee := gasNeeded / gasFeePolicy.GasPerGasToken
+	if totalFee > 0 {
+		_, err = ch.PostRequestSync(
+			NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+				WithGasBudget(gasNeeded+100).WithIotas(totalFee+1000),
+			keyPair,
+		)
+		if err != nil {
+			return
+		}
+	}
 
 	res, err := ch.PostRequestOffLedger(
 		NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...),
@@ -553,7 +570,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 		return nil
 	}
 	ret := make([]iotago.Address, 0)
-	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedStateControllerAddresses)
+	arr := collections.NewArray16ReadOnly(res, string(governance.ParamAllowedStateControllerAddresses))
 	for i := uint16(0); i < arr.MustLen(); i++ {
 		a, err := codec.DecodeAddress(arr.MustGetAt(i))
 		require.NoError(ch.Env.T, err)

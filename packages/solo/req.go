@@ -6,8 +6,9 @@ package solo
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain/mempool"
+
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -60,6 +61,14 @@ func (r *CallParams) WithTransfer(assets *iscp.Assets) *CallParams {
 	return r.WithTransfers(assets)
 }
 
+func (r *CallParams) WithAssets(assets iscp.Assets) *CallParams {
+	panic("not implemented")
+}
+
+func (r *CallParams) WithGasBudget(gasBudget uint64) *CallParams {
+	panic("not implemented")
+}
+
 // WithTransfers complement CallParams structure with the assets
 func (r *CallParams) WithTransfers(transfer *iscp.Assets) *CallParams {
 	r.transfer = transfer
@@ -79,8 +88,8 @@ func (r *CallParams) WithMint(targetAddress iotago.Address, amount uint64) *Call
 
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) *iscp.OffLedgerRequestData {
-	ret := request.NewOffLedger(chainID, r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
-	ret.Sign(keyPair)
+	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.args, 0)
+	ret.Sign(*keyPair)
 	return ret
 }
 
@@ -188,10 +197,10 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	defer ch.logRequestLastBlock()
 
 	if keyPair == nil {
-		keyPair = ch.OriginatorPrivateKey
+		keyPair = &ch.OriginatorPrivateKey
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
-	res, err := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
+	res, err := ch.runRequestsSync([]iscp.RequestData{r}, "off-ledger")
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +210,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
-	tx, reqid, err := ch.RequestFromParamsToLedger(req, keyPair)
+	tx, reqid, err := ch.RequestFromParamsToLedger(req, *keyPair)
 	if err != nil {
 		return tx, nil, err
 	}
@@ -253,7 +262,7 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true
-func (ch *Chain) WaitUntil(p func(chain.MempoolInfo) bool, maxWait ...time.Duration) bool {
+func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Duration) bool {
 	maxw := 10 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
@@ -276,12 +285,12 @@ func (ch *Chain) WaitUntil(p func(chain.MempoolInfo) bool, maxWait ...time.Durat
 // WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
 // requests in the mempool of the chain both become equal to the specified number
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
-	return ch.WaitUntil(func(mstats chain.MempoolInfo) bool {
+	return ch.WaitUntil(func(mstats mempool.MempoolInfo) bool {
 		return mstats.InBufCounter == numReq && mstats.OutPoolCounter == numReq
 	}, maxWait...)
 }
 
 // MempoolInfo returns stats about the chain mempool
-func (ch *Chain) MempoolInfo() chain.MempoolInfo {
+func (ch *Chain) MempoolInfo() mempool.MempoolInfo {
 	return ch.mempool.Info()
 }
