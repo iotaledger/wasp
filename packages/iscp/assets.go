@@ -49,6 +49,18 @@ func NewAssetsFromDict(d dict.Dict) (*Assets, error) {
 	return ret, nil
 }
 
+func NewAssetsFromNativeTokenSum(iotas uint64, tokens iotago.NativeTokenSum) *Assets {
+	ret := NewEmptyAssets()
+	ret.Iotas = iotas
+	for id, val := range tokens {
+		ret.Tokens = append(ret.Tokens, &iotago.NativeToken{
+			ID:     id,
+			Amount: val,
+		})
+	}
+	return ret
+}
+
 func AssetsFromOutput(iotago.Output) *Assets {
 	panic("TODO implement")
 }

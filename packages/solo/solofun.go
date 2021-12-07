@@ -10,15 +10,7 @@ import (
 )
 
 func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
-	var seedBytes []byte
-	if env.seed == nil {
-		seedBytes = make([]byte, 32)
-	} else {
-		seedBytes = env.seed[:]
-	}
-	seedBytes = hashing.HashData(seedBytes, util.Int32To4Bytes(int32(index))).Bytes()
-	seed := cryptolib.SeedFromByteArray(seedBytes)
-
+	seed := cryptolib.SeedFromByteArray(hashing.HashData(env.seed[:], util.Int32To4Bytes(int32(index))).Bytes())
 	return &seed
 }
 
@@ -32,9 +24,9 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 	env.ledgerMutex.Lock()
 	defer env.ledgerMutex.Unlock()
 
-	_, err := env.utxoDB.RequestFunds(addr, env.LogicalTime())
+	_, err := env.utxoDB.RequestFunds(addr)
 	require.NoError(env.T, err)
-	env.AssertAddressBalance(addr, colored.IOTA, Saldo)
+	env.AssertAddressIotas(addr, Saldo)
 
 	return keyPair, addr
 }

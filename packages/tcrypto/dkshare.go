@@ -40,11 +40,11 @@ func NewDKShare(
 	publicShares []kyber.Point,
 	privateShare kyber.Scalar,
 ) (*DKShare, error) {
-	var err error
+	//var err error
 	//
 	// Derive the ChainID.
-	var pubBytes []byte
-	if pubBytes, err = sharedPublic.MarshalBinary(); err != nil {
+	pubBytes, err := sharedPublic.MarshalBinary()
+	if err != nil {
 		return nil, err
 	}
 	// TODO this used to be BLS, is it okay to just replace with a normal ed25519 address?

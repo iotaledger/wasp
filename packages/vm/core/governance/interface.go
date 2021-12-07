@@ -7,7 +7,7 @@ package governance
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 // constants
@@ -84,52 +84,35 @@ const (
 const (
 	// state controller
 	ParamStateControllerAddress          = coreutil.ParamStateControllerAddress
-	ParamAllowedStateControllerAddresses = "a"
+	ParamAllowedStateControllerAddresses = kv.Key('a' + iota)
 
 	// chain owner
-	ParamChainOwner = "g"
-	ParamOwnerFee   = "f"
+	ParamChainOwner
+	ParamOwnerFee
 
 	// fees
-	ParamFeeColor     = "c"
-	ParamValidatorFee = "v"
-	ParamHname        = "h"
+	ParamFeeColor
+	ParamValidatorFee
+	ParamHname
 
 	// chain info
-	ParamChainID             = "i"
-	ParamDescription         = "d"
-	ParamMaxBlobSize         = "b"
-	ParamMaxEventSize        = "e"
-	ParamMaxEventsPerRequest = "n"
+	ParamChainID
+	ParamDescription
+	ParamMaxBlobSize
+	ParamMaxEventSize
+	ParamMaxEventsPerRequest
 
-	// access nodes: getChainNodes
-	ParamGetChainNodesAccessNodeCandidates = "c"
-	ParamGetChainNodesAccessNodes          = "a"
+	ParamGetChainNodesAccessNodeCandidates
+	ParamGetChainNodesAccessNodes
 
 	// access nodes: addCandidateNode
-	ParamAccessNodeInfoForCommittee = "f"
-	ParamAccessNodeInfoPubKey       = "p"
-	ParamAccessNodeInfoCertificate  = "c"
-	ParamAccessNodeInfoAccessAPI    = "a"
+	ParamAccessNodeInfoForCommittee
+	ParamAccessNodeInfoPubKey
+	ParamAccessNodeInfoCertificate
+	ParamAccessNodeInfoAccessAPI
 
 	// access nodes: changeAccessNodes
-	ParamChangeAccessNodesActions = "a"
+	ParamChangeAccessNodesActions
 )
 
-func init() {
-	if !util.AllDifferentStrings(
-		ParamStateControllerAddress,
-		ParamAllowedStateControllerAddresses,
-		ParamChainOwner,
-		ParamOwnerFee,
-		ParamFeeColor,
-		ParamValidatorFee,
-		ParamHname,
-		ParamChainID,
-		ParamDescription,
-		ParamMaxBlobSize,
-		ParamMaxEventSize,
-		ParamMaxEventsPerRequest) {
-		panic("wrong constant in governance/interface.go")
-	}
-}
+func init() {}

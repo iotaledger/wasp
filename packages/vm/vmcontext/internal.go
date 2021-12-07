@@ -41,6 +41,13 @@ func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.Age
 	accounts.MustMoveBetweenAccounts(vmctx.State(), fromAgentID, toAgentID, transfer)
 }
 
+func (vmctx *VMContext) getGasFeePolicy() *governance.GasFeePolicy {
+	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	return governance.GetGasFeePolicy(vmctx.State())
+}
+
 func (vmctx *VMContext) totalAssets() *iscp.Assets {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()

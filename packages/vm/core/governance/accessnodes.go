@@ -66,6 +66,7 @@ func (a *AccessNodeInfo) Bytes() []byte {
 
 func NewAccessNodeInfoFromAddCandidateNodeParams(ctx iscp.Sandbox) *AccessNodeInfo {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
+
 	ani := AccessNodeInfo{
 		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
 		ValidatorAddr: iscp.BytesFromAddress(ctx.Request().SenderAddress()), // Not from params, to have it validated.
@@ -144,7 +145,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 		AccessNodes:          make([]ed25519.PublicKey, 0),
 	}
 
-	ac := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodeCandidates)
+	ac := collections.NewMapReadOnly(d, string(ParamGetChainNodesAccessNodeCandidates))
 	ac.MustIterate(func(pubKey, value []byte) bool {
 		ani, err := NewAccessNodeInfoFromBytes(pubKey, value)
 		if err != nil {
@@ -154,7 +155,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 		return true
 	})
 
-	an := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodes)
+	an := collections.NewMapReadOnly(d, string(ParamGetChainNodesAccessNodes))
 	an.MustIterate(func(pubKeyBin, value []byte) bool {
 		res.AccessNodes = append(res.AccessNodes, pubKeyBin)
 		return true
@@ -209,7 +210,7 @@ func (req *ChangeAccessNodesRequest) Drop(pubKey ed25519.PublicKey) *ChangeAcces
 
 func (req *ChangeAccessNodesRequest) AsDict() dict.Dict {
 	d := dict.New()
-	actionsMap := collections.NewMap(d, ParamChangeAccessNodesActions)
+	actionsMap := collections.NewMap(d, string(ParamChangeAccessNodesActions))
 	for pubKey, action := range req.actions {
 		actionsMap.MustSetAt(pubKey[:], []byte{byte(action)})
 	}
