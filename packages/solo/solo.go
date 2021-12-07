@@ -4,6 +4,8 @@
 package solo
 
 import (
+	"crypto/ed25519"
+	"math/big"
 	"math/rand"
 	"strings"
 	"sync"
@@ -86,7 +88,6 @@ type Chain struct {
 	OriginatorKeyPair cryptolib.KeyPair
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
-	// ChainID is the ID of the chain
 	ChainID *iscp.ChainID
 
 	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).

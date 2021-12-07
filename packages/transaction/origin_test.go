@@ -68,7 +68,7 @@ func TestCreateOrigin(t *testing.T) {
 	require.NotNil(t, out)
 }
 
-func TestInitChain(t *testing.T) {
+func TestInitChainTx(t *testing.T) {
 	u := utxodb.New()
 	user, addr := u.NewKeyPairByIndex(1)
 	_, err := u.RequestFunds(addr)
