@@ -70,6 +70,7 @@ func Init(server *echo.Echo, waspServices WaspServices, log *logger.Logger) *Das
 		d.configInit(server, r),
 		d.peeringInit(server, r),
 		d.chainsInit(server, r),
+		d.metricsInit(server, r),
 	}
 
 	d.webSocketInit(server)
