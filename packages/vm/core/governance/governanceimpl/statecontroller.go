@@ -6,8 +6,6 @@ package governanceimpl
 import (
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/wasp/packages/kv/codec"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -32,7 +30,7 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 	// check is address is allowed
 	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	a.Require(amap.MustHasAt(codec.EncodeAddress(newStateControllerAddr)), "rotateStateController: address is not allowed as next state address: %s",
-		newStateControllerAddr.Bech32(iotago.PrefixTestnet))
+		newStateControllerAddr.Bech32(iscp.Bech32Prefix))
 
 	if !newStateControllerAddr.Equal(ctx.StateAnchor().StateController) {
 		// rotate request to another address has been issued. State update will be taken over by VM and will have no effect
@@ -53,7 +51,7 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 		// state controller address recorded in the blocklog is different from the new one
 		// It means rotation happened
 		ctx.Event(fmt.Sprintf("rotate %s %s",
-			newStateControllerAddr.Bech32(iotago.PrefixTestnet), storedStateController.Bech32(iotago.PrefixTestnet)))
+			newStateControllerAddr.Bech32(iscp.Bech32Prefix), storedStateController.Bech32(iscp.Bech32Prefix)))
 		return nil, nil
 	}
 	// no need to rotate because address does not change
