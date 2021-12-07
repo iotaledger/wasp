@@ -12,10 +12,10 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/xerrors"
 )
@@ -127,6 +127,10 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 }
 
 func (w *waspServicesMock) GetChainNodeConnectionMetrics(*iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
+	panic("Not implemented")
+}
+
+func (w *waspServicesMock) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error) {
 	panic("Not implemented")
 }
 

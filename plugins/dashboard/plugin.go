@@ -118,6 +118,11 @@ func (w *waspServices) GetChainNodeConnectionMetrics(chainID *iscp.ChainID) (nod
 	return ch.GetNodeConnectionMetrics(), nil
 }
 
+func (w *waspServices) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error) {
+	chs := chains.AllChains()
+	return chs.GetNodeConnectionMetrics(), nil
+}
+
 func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error) {
 	ch := chains.AllChains().Get(chainID)
 	if ch == nil {

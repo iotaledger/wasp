@@ -47,6 +47,7 @@ type WaspServices interface {
 	GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.CommitteeInfo, error)
 	CallView(chainID *iscp.ChainID, scName, fname string, params dict.Dict) (dict.Dict, error)
 	GetChainNodeConnectionMetrics(*iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error)
+	GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error)
 }
 
 type Dashboard struct {

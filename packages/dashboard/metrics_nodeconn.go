@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/labstack/echo/v4"
 )
 
@@ -21,7 +22,7 @@ func metricsNodeconnBreadcrumb(e *echo.Echo) Tab {
 func (d *Dashboard) initMetricsNodeconn(e *echo.Echo, r renderer) {
 	route := e.GET("/metrics/nodeconn", d.handleMetricsNodeconn)
 	route.Name = "metricsNodeconn"
-	r[route.Path] = d.makeTemplate(e, tplMetricsNodeconn)
+	r[route.Path] = d.makeTemplate(e, tplMetricsNodeconnMessages, tplMetricsNodeconn)
 }
 
 func (d *Dashboard) handleMetricsNodeconn(c echo.Context) error {
@@ -29,14 +30,20 @@ func (d *Dashboard) handleMetricsNodeconn(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	metrics, err := d.wasp.GetNodeConnectionMetrics()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
 	tab := metricsNodeconnBreadcrumb(c.Echo())
 	return c.Render(http.StatusOK, c.Path(), &MetricsNodeconnTemplateParams{
 		BaseTemplateParams: d.BaseParams(c, tab),
 		Chains:             chains,
+		Metrics:            metrics,
 	})
 }
 
 type MetricsNodeconnTemplateParams struct {
 	BaseTemplateParams
-	Chains []*ChainOverview
+	Chains  []*ChainOverview
+	Metrics nodeconnmetrics.NodeConnectionMetrics
 }
