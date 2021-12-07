@@ -6,6 +6,10 @@ package governanceimpl
 import (
 	"fmt"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+
+	"github.com/iotaledger/wasp/packages/kv/codec"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -27,13 +31,14 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 	newStateControllerAddr := par.MustGetAddress(governance.ParamStateControllerAddress)
 	// check is address is allowed
 	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	a.Require(amap.MustHasAt(newStateControllerAddr.Bytes()), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr.Base58())
+	a.Require(amap.MustHasAt(codec.EncodeAddress(newStateControllerAddr)), "rotateStateController: address is not allowed as next state address: %s",
+		newStateControllerAddr.Bech32(iotago.PrefixTestnet))
 
-	if !newStateControllerAddr.Equals(ctx.StateAnchor().StateController()) {
+	if !newStateControllerAddr.Equal(ctx.StateAnchor().StateController) {
 		// rotate request to another address has been issued. State update will be taken over by VM and will have no effect
 		// By setting StateVarRotateToAddress we signal the VM this special situation
 		// StateVarRotateToAddress value should never persist in the state
-		ctx.State().Set(governance.StateVarRotateToAddress, newStateControllerAddr.Bytes())
+		ctx.State().Set(governance.StateVarRotateToAddress, codec.EncodeAddress(newStateControllerAddr))
 		return nil, nil
 	}
 	// here the new state controller address from the request equals to the state controller address in the anchor output
@@ -44,10 +49,11 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.RequireNoError(err)
 	par = kvdecoder.New(addrs, ctx.Log())
 	storedStateController := par.MustGetAddress(blocklog.ParamStateControllerAddress)
-	if !storedStateController.Equals(newStateControllerAddr) {
+	if !storedStateController.Equal(newStateControllerAddr) {
 		// state controller address recorded in the blocklog is different from the new one
 		// It means rotation happened
-		ctx.Event(fmt.Sprintf("rotate %s %s", newStateControllerAddr.Base58(), storedStateController.Base58()))
+		ctx.Event(fmt.Sprintf("rotate %s %s",
+			newStateControllerAddr.Bech32(iotago.PrefixTestnet), storedStateController.Bech32(iotago.PrefixTestnet)))
 		return nil, nil
 	}
 	// no need to rotate because address does not change
@@ -60,7 +66,7 @@ func addAllowedStateControllerAddress(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	addr := par.MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	amap.MustSetAt(addr.Bytes(), []byte{0xFF})
+	amap.MustSetAt(codec.EncodeAddress(addr), []byte{0xFF})
 	return nil, nil
 }
 
@@ -70,7 +76,7 @@ func removeAllowedStateControllerAddress(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	addr := par.MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	amap.MustDelAt(addr.Bytes())
+	amap.MustDelAt(codec.EncodeAddress(addr))
 	return nil, nil
 }
 
