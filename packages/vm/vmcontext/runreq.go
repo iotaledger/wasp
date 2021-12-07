@@ -172,7 +172,7 @@ func (vmctx *VMContext) callFromRequest() {
 	vmctx.Debugf("callFromRequest: %s", vmctx.req.ID().String())
 
 	// calling only non view entry points. Calling the view will trigger error and fallback
-	entryPoint := vmctx.req.Target().EntryPoint
+	entryPoint := vmctx.req.CallTarget().EntryPoint
 	targetContract := vmctx.contractRecord.Hname()
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
 		targetContract,
@@ -264,7 +264,7 @@ func (vmctx *VMContext) loadGasPolicy() {
 
 func (vmctx *VMContext) locateTargetContract() {
 	// find target contract
-	targetContract := vmctx.req.Target().Contract
+	targetContract := vmctx.req.CallTarget().Contract
 	var ok bool
 	vmctx.contractRecord, ok = vmctx.findContractByHname(targetContract)
 	if !ok {
@@ -289,6 +289,6 @@ func (vmctx *VMContext) loadChainConfig() {
 }
 
 func (vmctx *VMContext) isInitChainRequest() bool {
-	target := vmctx.req.Target()
+	target := vmctx.req.CallTarget()
 	return target.Contract == root.Contract.Hname() && target.EntryPoint == iscp.EntryPointInit
 }
