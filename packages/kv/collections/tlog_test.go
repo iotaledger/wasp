@@ -22,37 +22,37 @@ func TestTlogBasic(t *testing.T) {
 	d5 := []byte("datum5")
 	d6 := []byte("datum6")
 
-	nowis := time.Now().UnixNano()
-	nowisNext1 := nowis + 100
-	nowisNext2 := nowis + 10000
+	currentTime := time.Now().UnixNano()
+	currentTimeNext1 := currentTime + 100
+	currentTimeNext2 := currentTime + 10000
 
-	tl.MustAppend(nowis, d1)
+	tl.MustAppend(currentTime, d1)
 	assert.EqualValues(t, 1, tl.MustLen())
 
-	tl.MustAppend(nowis, d2)
+	tl.MustAppend(currentTime, d2)
 	assert.EqualValues(t, 2, tl.MustLen())
 
-	tl.MustAppend(nowisNext1, d3)
+	tl.MustAppend(currentTimeNext1, d3)
 	assert.EqualValues(t, 3, tl.MustLen())
 
 	assert.Panics(t, func() {
-		tl.MustAppend(nowis, d4)
+		tl.MustAppend(currentTime, d4)
 	})
 	assert.EqualValues(t, 3, tl.MustLen())
 
-	tl.MustAppend(nowisNext1, d4)
+	tl.MustAppend(currentTimeNext1, d4)
 	assert.EqualValues(t, 4, tl.MustLen())
 
-	tl.MustAppend(nowisNext1, d5)
+	tl.MustAppend(currentTimeNext1, d5)
 	assert.EqualValues(t, 5, tl.MustLen())
 
-	tl.MustAppend(nowisNext2, d6)
+	tl.MustAppend(currentTimeNext2, d6)
 	assert.EqualValues(t, 6, tl.MustLen())
 
-	assert.EqualValues(t, nowis, tl.MustEarliest())
-	assert.EqualValues(t, nowisNext2, tl.MustLatest())
+	assert.EqualValues(t, currentTime, tl.MustEarliest())
+	assert.EqualValues(t, currentTimeNext2, tl.MustLatest())
 
-	tl.MustAppend(nowisNext2, nil)
+	tl.MustAppend(currentTimeNext2, nil)
 	assert.EqualValues(t, 7, tl.MustLen())
 }
 
@@ -69,14 +69,14 @@ func initLog(t *testing.T, tl *TimestampedLog) {
 		data[i] = util.Uint32To4Bytes(uint32(rand.Int31()))
 	}
 	timeStart := time.Now().UnixNano()
-	nowis := timeStart
+	currentTime := timeStart
 
 	var latest int64
 	for i, d := range data {
-		tl.MustAppend(nowis, d)
-		latest = nowis
+		tl.MustAppend(currentTime, d)
+		latest = currentTime
 		if (i+1)%changeTsEvery == 0 {
-			nowis += step
+			currentTime += step
 		}
 	}
 	assert.EqualValues(t, timeStart, tl.MustEarliest())

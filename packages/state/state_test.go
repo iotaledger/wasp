@@ -126,8 +126,8 @@ func TestStateWithDB(t *testing.T) {
 		vs1, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
 
-		nowis := time.Now()
-		su := NewStateUpdateWithBlocklogValues(1, nowis, hashing.NilHash)
+		currentTime := time.Now()
+		su := NewStateUpdateWithBlocklogValues(1, currentTime, hashing.NilHash)
 		su.Mutations().Set("key", []byte("value"))
 		block1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -135,12 +135,12 @@ func TestStateWithDB(t *testing.T) {
 		err = vs1.ApplyBlock(block1)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, vs1.BlockIndex())
-		require.True(t, nowis.Equal(vs1.Timestamp()))
+		require.True(t, currentTime.Equal(vs1.Timestamp()))
 
 		err = vs1.Commit(block1)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, vs1.BlockIndex())
-		require.True(t, nowis.Equal(vs1.Timestamp()))
+		require.True(t, currentTime.Equal(vs1.Timestamp()))
 
 		vs2, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
@@ -238,8 +238,8 @@ func TestStateWithDB(t *testing.T) {
 		vs1, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
 
-		nowis := time.Now()
-		su := NewStateUpdateWithBlocklogValues(1, nowis, hashing.NilHash)
+		currentTime := time.Now()
+		su := NewStateUpdateWithBlocklogValues(1, currentTime, hashing.NilHash)
 		su.Mutations().Set("key", []byte("value"))
 		block1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
@@ -247,12 +247,12 @@ func TestStateWithDB(t *testing.T) {
 		err = vs1.ApplyBlock(block1)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, vs1.BlockIndex())
-		require.True(t, nowis.Equal(vs1.Timestamp()))
+		require.True(t, currentTime.Equal(vs1.Timestamp()))
 
 		err = vs1.Commit()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, vs1.BlockIndex())
-		require.True(t, nowis.Equal(vs1.Timestamp()))
+		require.True(t, currentTime.Equal(vs1.Timestamp()))
 
 		vs2, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
@@ -325,8 +325,8 @@ func TestStateCommitmentAssociativity(t *testing.T) {
 
 	// vsNode1 index 1 vsNode2 index 0
 
-	nowis := time.Now()
-	su := NewStateUpdateWithBlocklogValues(1, nowis, hashing.NilHash)
+	currentTime := time.Now()
+	su := NewStateUpdateWithBlocklogValues(1, currentTime, hashing.NilHash)
 	su.Mutations().Set("key", []byte("value"))
 	block1, err := newBlock(su.Mutations())
 	require.NoError(t, err)
@@ -334,20 +334,20 @@ func TestStateCommitmentAssociativity(t *testing.T) {
 	err = vsNode1.ApplyBlock(block1)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, vsNode1.BlockIndex())
-	require.True(t, nowis.Equal(vsNode1.Timestamp()))
+	require.True(t, currentTime.Equal(vsNode1.Timestamp()))
 	sc1Node1BeforeCommit := vsNode1.StateCommitment()
 
 	err = vsNode1.Commit(block1)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, vsNode1.BlockIndex())
-	require.True(t, nowis.Equal(vsNode1.Timestamp()))
+	require.True(t, currentTime.Equal(vsNode1.Timestamp()))
 	sc1Node1AfterCommit := vsNode1.StateCommitment()
 	require.Equal(t, sc1Node1BeforeCommit, sc1Node1AfterCommit)
 
 	// vsNode1 index 2 vsNode2 index 0
 
-	nowis = time.Now()
-	su = NewStateUpdateWithBlocklogValues(2, nowis, vsNode1.PreviousStateHash())
+	currentTime = time.Now()
+	su = NewStateUpdateWithBlocklogValues(2, currentTime, vsNode1.PreviousStateHash())
 	su.Mutations().Set("otherKey", []byte("otherValue"))
 	block2, err := newBlock(su.Mutations())
 	require.NoError(t, err)
@@ -355,7 +355,7 @@ func TestStateCommitmentAssociativity(t *testing.T) {
 	err = vsNode1.ApplyBlock(block2)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, vsNode1.BlockIndex())
-	require.True(t, nowis.Equal(vsNode1.Timestamp()))
+	require.True(t, currentTime.Equal(vsNode1.Timestamp()))
 	sc2Node1BeforeCommit := vsNode1.StateCommitment()
 
 	// vsNode1 index 2 vsNode2 index 2
@@ -365,14 +365,14 @@ func TestStateCommitmentAssociativity(t *testing.T) {
 	err = vsNode2.ApplyBlock(block2)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, vsNode2.BlockIndex())
-	require.True(t, nowis.Equal(vsNode2.Timestamp()))
+	require.True(t, currentTime.Equal(vsNode2.Timestamp()))
 	sc2Node2BeforeCommit := vsNode2.StateCommitment()
 	require.Equal(t, sc2Node1BeforeCommit, sc2Node2BeforeCommit)
 
 	err = vsNode1.Commit(block2)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, vsNode1.BlockIndex())
-	require.True(t, nowis.Equal(vsNode1.Timestamp()))
+	require.True(t, currentTime.Equal(vsNode1.Timestamp()))
 	sc2Node1AfterCommit := vsNode1.StateCommitment()
 	require.Equal(t, sc2Node1BeforeCommit, sc2Node1AfterCommit)
 	require.Equal(t, sc2Node1AfterCommit, sc2Node2BeforeCommit)
@@ -382,7 +382,7 @@ func TestStateCommitmentAssociativity(t *testing.T) {
 	err = vsNode2.Commit(block2)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, vsNode2.BlockIndex())
-	require.True(t, nowis.Equal(vsNode2.Timestamp()))
+	require.True(t, currentTime.Equal(vsNode2.Timestamp()))
 	sc2Node2AfterCommit := vsNode2.StateCommitment()
 	require.Equal(t, sc2Node2BeforeCommit, sc2Node2AfterCommit)
 	require.Equal(t, sc2Node1AfterCommit, sc2Node2AfterCommit)

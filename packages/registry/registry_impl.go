@@ -6,6 +6,7 @@ package registry
 import (
 	"errors"
 	"fmt"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"time"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -267,10 +268,10 @@ func (r *Impl) PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, er
 	if err != nil {
 		return hashing.NilHash, err
 	}
-	nowis := time.Now()
-	cleanAfter := nowis.Add(BlobCacheDefaultTTL).UnixNano()
+	currentTime := time.Now()
+	cleanAfter := currentTime.Add(BlobCacheDefaultTTL).UnixNano()
 	if len(ttl) > 0 {
-		cleanAfter = nowis.Add(ttl[0]).UnixNano()
+		cleanAfter = currentTime.Add(ttl[0]).UnixNano()
 	}
 	if cleanAfter > 0 {
 		err = r.store.Set(dbKeyForBlobTTL(h), codec.EncodeInt64(cleanAfter))

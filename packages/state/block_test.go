@@ -26,13 +26,13 @@ func TestBlockBasic(t *testing.T) {
 		require.EqualValues(t, hashing.NilHash, b1.PreviousStateHash())
 	})
 	t.Run("with timestamp", func(t *testing.T) {
-		nowis := time.Now()
+		currentTime := time.Now()
 		ph := hashing.HashStrings("dummy-dummy")
-		su := NewStateUpdateWithBlocklogValues(42, nowis, ph)
+		su := NewStateUpdateWithBlocklogValues(42, currentTime, ph)
 		b1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
-		require.True(t, nowis.Equal(b1.Timestamp()))
+		require.True(t, currentTime.Equal(b1.Timestamp()))
 		require.EqualValues(t, ph, b1.PreviousStateHash())
 	})
 }
