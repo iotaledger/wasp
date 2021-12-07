@@ -21,11 +21,6 @@ const BASE_URI: &str = "my/special/base/uri/";
 
 ///////////////////////////  HELPER FUNCTIONS  ////////////////////////////
 
-fn approve(state: MutableErc721State, owner: &ScAgentID, approved: &ScAgentID, token_id: &ScHash) {
-    state.approved_accounts().get_agent_id(token_id).set_value(approved);
-    Erc721Events {}.approval(approved, owner, token_id);
-}
-
 // checks if caller is owner, or one of its delegated operators
 fn can_operate(state: MutableErc721State, caller: &ScAgentID, owner: &ScAgentID) -> bool {
     if *caller == *owner {
@@ -66,25 +61,46 @@ fn transfer(ctx: &ScFuncContext, state: MutableErc721State, from: &ScAgentID, to
 
     token_owner.set_value(to);
 
-    //TODO should probably clear this entry, but for now just set to zero
-    approve(state, &owner, &ScAgentID::ZERO, token_id);
 
-    Erc721Events {}.transfer(from, to, token_id);
+    let events = Erc721Events {};
+    // remove approval if it exists
+    let current_approved = state.approved_accounts().get_agent_id(&token_id);
+    if current_approved.exists() {
+        current_approved.delete();
+        events.approval(&ScAgentID::ZERO, &owner, &token_id);
+    }
+
+    events.transfer(from, to, token_id);
 }
 
 ///////////////////////////  SC FUNCS  ////////////////////////////
 
 // Gives permission to to to transfer tokenID token to another account.
-// The approval is cleared when the token is transferred.
+// The approval is cleared when optional approval account is omitted.
+// The approval will be cleared when the token is transferred.
 pub fn func_approve(ctx: &ScFuncContext, f: &ApproveContext) {
     let token_id = f.params.token_id().value();
     let token_owner = f.state.owners().get_agent_id(&token_id);
     ctx.require(token_owner.exists(), "tokenID does not exist");
     let owner = token_owner.value();
     ctx.require(can_operate(f.state, &ctx.caller(), &owner), "not owner or operator");
-    let approved = f.params.approved().value();
-    ctx.require(owner != approved, "approved equals owner");
-    approve(f.state, &owner, &approved, &token_id);
+
+    let approved = f.params.approved();
+    if !approved.exists() {
+        // remove approval if it exists
+        let current_approved = f.state.approved_accounts().get_agent_id(&token_id);
+        if current_approved.exists() {
+            current_approved.delete();
+            f.events.approval(&ScAgentID::ZERO, &owner, &token_id);
+        }
+        return;
+    }
+
+    let account = approved.value();
+    ctx.require(owner != account, "approved equals owner");
+
+    f.state.approved_accounts().get_agent_id(&token_id).set_value(&account);
+    f.events.approval(&account, &owner, &token_id);
 }
 
 // Destroys tokenID. The approval is cleared when the token is burned.
@@ -94,13 +110,17 @@ pub fn func_burn(ctx: &ScFuncContext, f: &BurnContext) {
     ctx.require(owner != ScAgentID::ZERO, "tokenID does not exist");
     ctx.require(ctx.caller() == owner, "caller is not owner");
 
-    approve(f.state, &owner, &ScAgentID::ZERO, &token_id);
+    // remove approval if it exists
+    let current_approved = f.state.approved_accounts().get_agent_id(&token_id);
+    if current_approved.exists() {
+        current_approved.delete();
+        f.events.approval(&ScAgentID::ZERO, &owner, &token_id);
+    }
 
     let balance = f.state.balances().get_uint64(&owner);
     balance.set_value(balance.value() - 1);
-    //TODO clear this instead of setting to zero
-    f.state.owners().get_agent_id(&token_id).set_value(&ScAgentID::ZERO);
 
+    f.state.owners().get_agent_id(&token_id).delete();
     f.events.transfer(&owner, &ScAgentID::ZERO, &token_id);
 }
 
@@ -151,8 +171,8 @@ pub fn func_set_approval_for_all(ctx: &ScFuncContext, f: &SetApprovalForAllConte
     ctx.require(owner != operator, "owner equals operator");
 
     let approval = f.params.approval().value();
-    let approvals_by_caller = f.state.approved_operators().get_operators(&owner);
-    approvals_by_caller.get_bool(&operator).set_value(approval);
+    let operators_for_caller = f.state.approved_operators().get_operators(&owner);
+    operators_for_caller.get_bool(&operator).set_value(approval);
 
     f.events.approval_for_all(approval, &operator, &owner);
 }
@@ -170,18 +190,18 @@ pub fn func_transfer_from(ctx: &ScFuncContext, f: &TransferFromContext) {
 // Returns the number of tokens in owner's account if the owner exists.
 pub fn view_balance_of(_ctx: &ScViewContext, f: &BalanceOfContext) {
     let owner = f.params.owner().value();
-    let nft_count = f.state.balances().get_uint64(&owner);
-    if nft_count.exists() {
-        f.results.amount().set_value(nft_count.value());
+    let balance = f.state.balances().get_uint64(&owner);
+    if balance.exists() {
+        f.results.amount().set_value(balance.value());
     }
 }
 
 // Returns the approved account for tokenID token if there is one.
 pub fn view_get_approved(_ctx: &ScViewContext, f: &GetApprovedContext) {
     let token_id = f.params.token_id().value();
-    let approved = f.state.approved_accounts().get_agent_id(&token_id).value();
-    if approved != ScAgentID::ZERO {
-        f.results.approved().set_value(&approved);
+    let approved = f.state.approved_accounts().get_agent_id(&token_id);
+    if approved.exists() {
+        f.results.approved().set_value(&approved.value());
     }
 }
 

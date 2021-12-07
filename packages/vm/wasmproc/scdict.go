@@ -115,13 +115,11 @@ func (o *ScDict) CallFunc(keyID int32, params []byte) []byte {
 }
 
 func (o *ScDict) DelKey(keyID, typeID int32) {
-	if keyID == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
-		o.Panicf("DelKey: cannot delete array.length")
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
+		o.Panicf("DelKey: cannot delete array")
 	}
-	if o.typeID == (wasmhost.OBJTYPE_ARRAY | wasmhost.OBJTYPE_MAP) {
-		// TODO only delete map from array of map when it is empty?
-		// return uint32(keyID) <= uint32(len(o.objects))
-		o.Panicf("DelKey: delete map from array of map")
+	if o.typeID == wasmhost.OBJTYPE_MAP {
+		o.Panicf("DelKey: cannot delete map")
 	}
 	o.kvStore.Del(o.key(keyID, typeID))
 }
