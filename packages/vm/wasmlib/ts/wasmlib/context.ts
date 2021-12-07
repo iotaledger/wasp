@@ -272,11 +272,6 @@ export class ScFuncContext extends ScBaseContext implements ScViewCallContext, S
         return ROOT.getMap(keys.KEY_RETURN).immutable();
     }
 
-    // shorthand to synchronously call a smart contract function of the current contract
-    callSelf(hfunction: ScHname, params: ScMutableMap | null, transfers: ScTransfers | null): ScImmutableMap {
-        return this.call(this.contract(), hfunction, params, transfers);
-    }
-
     // retrieve the agent id of the caller of the smart contract
     caller(): ScAgentID {
         return ROOT.getAgentID(keys.KEY_CALLER).value();
@@ -320,11 +315,6 @@ export class ScFuncContext extends ScBaseContext implements ScViewCallContext, S
         encode.int32(transfer.transfers.mapID());
         encode.int32(delay);
         ROOT.getBytes(keys.KEY_POST).setValue(encode.data());
-    }
-
-    // shorthand to asynchronously call a smart contract function of the current contract
-    postSelf(hfunction: ScHname, params: ScMutableMap | null, transfer: ScTransfers, delay: i32): void {
-        this.post(this.chainID(), this.contract(), hfunction, params, transfer, delay);
     }
 
     // generates a random value from 0 to max (exclusive max) using a deterministic RNG
@@ -376,11 +366,6 @@ export class ScViewContext extends ScBaseContext implements ScViewCallContext {
         encode.int32(0);
         ROOT.getBytes(keys.KEY_CALL).setValue(encode.data());
         return ROOT.getMap(keys.KEY_RETURN).immutable();
-    }
-
-    // shorthand to synchronously call a smart contract view of the current contract
-    callSelf(hfunction: ScHname, params: ScMutableMap | null): ScImmutableMap {
-        return this.call(this.contract(), hfunction, params);
     }
 
     // access immutable state storage on the host

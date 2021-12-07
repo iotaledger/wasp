@@ -19,4 +19,4 @@ The multi-chain nature of ISCP makes it a more complex implementation of smart c
 ![ISCP multichain architecture](../../../static/img/multichain.png)
 
 The comprehensive overview of architectural design decisions of IOTA Smart Contracts can be found in the
-[whitepaper](https://github.com/iotaledger/wasp/raw/master/documentation/ISC_WP_Nov_10_2021.pdf).
+[whitepaper](https://github.com/iotaledger/wasp/raw/develop/documentation/ISC_WP_Nov_10_2021.pdf).

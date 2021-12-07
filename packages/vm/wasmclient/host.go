@@ -73,8 +73,14 @@ func (w *WasmVMHost) CallFunc(objID, keyID int32, params []byte) []byte {
 	return result
 }
 
+func (w *WasmVMHost) DelKey(objID, keyID, typeID int32) {
+	// size -1 means delete
+	// this removes the need for a separate hostDelete function
+	hostSetBytes(objID, keyID, typeID, nil, -1)
+}
+
 func (w *WasmVMHost) Exists(objID, keyID, typeID int32) bool {
-	// negative length (-1) means only test for existence
+	// size -1 means only test for existence
 	// returned size -1 indicates keyID not found (or error)
 	// this removes the need for a separate hostExists function
 	return hostGetBytes(objID, keyID, typeID, nil, -1) >= 0

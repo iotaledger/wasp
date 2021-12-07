@@ -33,7 +33,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		assets := req.Assets
 		if assets == nil {
 			// if assets not specified, the minimum dust deposit will be adjusted by vmtxbuilder.NewExtendedOutput
-			assets = &iscp.Assets{Iotas: 1}
+			assets = &iscp.Assets{}
 		}
 		// will adjust to minimum dust deposit
 		out, _ := vmtxbuilder.NewExtendedOutput(

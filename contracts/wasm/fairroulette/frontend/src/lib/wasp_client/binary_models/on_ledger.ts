@@ -42,6 +42,7 @@ export class OnLedger {
     buffer.writeUInt32LE(req.arguments.length || 0);
 
     if (req.arguments) {
+      req.arguments.sort((lhs,rhs)=> lhs.key.localeCompare(rhs.key));
       for (const arg of req.arguments) {
         const keyBuffer = Buffer.from(arg.key);
 
