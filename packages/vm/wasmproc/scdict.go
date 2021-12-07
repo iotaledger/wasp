@@ -114,6 +114,16 @@ func (o *ScDict) CallFunc(keyID int32, params []byte) []byte {
 	return nil
 }
 
+func (o *ScDict) DelKey(keyID, typeID int32) {
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
+		o.Panicf("DelKey: cannot delete array")
+	}
+	if o.typeID == wasmhost.OBJTYPE_MAP {
+		o.Panicf("DelKey: cannot delete map")
+	}
+	o.kvStore.Del(o.key(keyID, typeID))
+}
+
 func (o *ScDict) Exists(keyID, typeID int32) bool {
 	if keyID == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return true

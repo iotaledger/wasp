@@ -164,9 +164,13 @@ func (m *ImmutableMap) Len() (uint32, error) {
 	return util.MustUint32From4Bytes(v), nil
 }
 
+// Erase the map.
+// TODO: Improve by using DelPrefix method in KVStore.
 func (m *Map) Erase() {
-	// TODO needs DelPrefix method in KVStore
-	panic("implement me")
+	m.MustIterateKeys(func(elemKey []byte) bool {
+		m.MustDelAt(elemKey)
+		return true
+	})
 }
 
 // Iterate non-deterministic

@@ -206,6 +206,13 @@ func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) 
 
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
+
+	// delete key ?
+	if size < 0 {
+		host.DelKey(objID, keyID, typeID)
+		return
+	}
+
 	bytes := vm.impl.VMGetBytes(stringRef, size)
 	host.SetBytes(objID, keyID, typeID, bytes)
 }
