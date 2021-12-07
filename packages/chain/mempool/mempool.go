@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -34,7 +33,7 @@ type mempool struct {
 	mempoolMetrics          metrics.MempoolMetrics
 }
 
-var _ chain.Mempool = &mempool{}
+var _ Mempool = &mempool{}
 
 type requestRef struct {
 	req          iscp.RequestData
@@ -46,7 +45,7 @@ const (
 	moveToPoolLoopDelay            = 20 * time.Millisecond
 )
 
-func New(stateReader state.OptimisticStateReader, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) chain.Mempool {
+func New(stateReader state.OptimisticStateReader, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) Mempool {
 	ret := &mempool{
 		inBuffer:       make(map[iscp.RequestID]iscp.RequestData),
 		stateReader:    stateReader,
@@ -393,11 +392,11 @@ func (m *mempool) WaitInBufferEmpty(timeout ...time.Duration) bool {
 }
 
 // Stats collects mempool stats
-func (m *mempool) Info() chain.MempoolInfo {
+func (m *mempool) Info() MempoolInfo {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
-	ret := chain.MempoolInfo{
+	ret := MempoolInfo{
 		InPoolCounter:  m.inPoolCounter,
 		OutPoolCounter: m.outPoolCounter,
 		InBufCounter:   m.inBufCounter,

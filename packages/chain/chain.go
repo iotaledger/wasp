@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain/mempool"
+
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -120,32 +122,9 @@ type Consensus interface {
 	ShouldReceiveMissingRequest(req iscp.Request) bool
 }
 
-type Mempool interface {
-	ReceiveRequests(reqs ...iscp.RequestData)
-	ReceiveRequest(req iscp.RequestData) bool
-	RemoveRequests(reqs ...iscp.RequestID)
-	ReadyNow(nowis ...time.Time) []iscp.RequestData
-	ReadyFromIDs(nowis time.Time, reqIDs ...iscp.RequestID) ([]iscp.RequestData, []int, bool)
-	HasRequest(id iscp.RequestID) bool
-	GetRequest(id iscp.RequestID) iscp.RequestData
-	Info() MempoolInfo
-	WaitRequestInPool(reqid iscp.RequestID, timeout ...time.Duration) bool // for testing
-	WaitInBufferEmpty(timeout ...time.Duration) bool                       // for testing
-	Close()
-}
-
 type AsynchronousCommonSubsetRunner interface {
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
 	Close()
-}
-
-type MempoolInfo struct {
-	TotalPool      int
-	ReadyCounter   int
-	InBufCounter   int
-	OutBufCounter  int
-	InPoolCounter  int
-	OutPoolCounter int
 }
 
 type SyncInfo struct {
@@ -161,7 +140,7 @@ type SyncInfo struct {
 
 type ConsensusInfo struct {
 	StateIndex uint32
-	Mempool    MempoolInfo
+	Mempool    mempool.MempoolInfo
 	TimerTick  int
 }
 
