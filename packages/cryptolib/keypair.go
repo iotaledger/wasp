@@ -53,8 +53,9 @@ func NewKeyPair() KeyPair {
 	return key
 }
 
-func Ed25519AddressFromPubKey(key PublicKey) iotago.Ed25519Address {
-	return iotago.Ed25519AddressFromPubKey(key)
+func Ed25519AddressFromPubKey(key PublicKey) *iotago.Ed25519Address {
+	ret := iotago.Ed25519AddressFromPubKey(key)
+	return &ret
 }
 
 func PublicKeyFromString(s string) (publicKey PublicKey, err error) {
@@ -89,3 +90,9 @@ func Verify(publicKey PublicKey, message, sig []byte) bool {
 func Sign(privateKey PrivateKey, message []byte) []byte {
 	return ed25519.Sign(privateKey, message)
 }
+
+//
+//func AddressFromKeyPair(keyPair KeyPair) iotago.Address {
+//	addr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
+//	return &addr
+//}

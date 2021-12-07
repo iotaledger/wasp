@@ -263,17 +263,20 @@ func (r *OffLedgerRequestData) SenderAccount() *AgentID {
 
 func (r *OffLedgerRequestData) SenderAddress() iotago.Address {
 	if r.sender == nil {
-		addr := cryptolib.Ed25519AddressFromPubKey(r.publicKey)
-		r.sender = &addr
+		r.sender = cryptolib.Ed25519AddressFromPubKey(r.publicKey)
 	}
 	return r.sender
 }
 
-func (r *OffLedgerRequestData) Target() RequestTarget {
-	return RequestTarget{
+func (r *OffLedgerRequestData) CallTarget() CallTarget {
+	return CallTarget{
 		Contract:   r.contract,
 		EntryPoint: r.entryPoint,
 	}
+}
+
+func (r *OffLedgerRequestData) TargetAddress() iotago.Address {
+	return r.chainID.AsAddress()
 }
 
 func (r *OffLedgerRequestData) Timestamp() time.Time {
@@ -406,10 +409,19 @@ func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
 	return senderBlock.Address
 }
 
-func (r *OnLedgerRequestData) Target() RequestTarget {
-	return RequestTarget{
+func (r *OnLedgerRequestData) CallTarget() CallTarget {
+	return CallTarget{
 		Contract:   r.requestMetadata.TargetContract,
 		EntryPoint: r.requestMetadata.EntryPoint,
+	}
+}
+
+func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
+	switch out := r.output.(type) {
+	case *iotago.ExtendedOutput:
+		return out.Address
+	default:
+		panic("OnLedgerRequestData:TargetAddress implement me")
 	}
 }
 

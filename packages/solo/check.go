@@ -21,8 +21,9 @@ func (env *Solo) AssertAddressBalance(addr iotago.Address, assetID []byte, expec
 	require.Zero(env.T, expected.Cmp(env.GetAddressBalance(addr, assetID)))
 }
 
-func (env *Solo) AssertAddressIotas(addr iotago.Address, expected *big.Int) {
-	env.AssertAddressBalance(addr, iscp.IotaAssetID, expected)
+func (env *Solo) AssertAddressIotas(addr iotago.Address, expected uint64) {
+	expectedBig := big.NewInt(int64(expected))
+	env.AssertAddressBalance(addr, iscp.IotaAssetID, expectedBig)
 }
 
 // CheckChain checks fundamental integrity of the chain

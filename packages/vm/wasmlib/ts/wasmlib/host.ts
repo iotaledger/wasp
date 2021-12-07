@@ -87,7 +87,14 @@ export function callFunc(objID: i32, keyID: Key32, params: u8[]): u8[] {
 // Removes all its sub-objects as well.
 export function clear(objID: i32): void {
     // special key "length" is used with integer value zero
-    setBytes(objID, keys.KEY_LENGTH, TYPE_INT32, Convert.fromI32(0))
+    setBytes(objID, keys.KEY_LENGTH, TYPE_INT32, Convert.fromI32(0));
+}
+
+// Delete the value with the specified key and type from the specified container object.
+export function delKey(objID: i32, keyID: Key32, typeID: i32): void {
+    // size -1 means delete
+    // this removes the need for a separate hostDelete function
+    hostSetBytes(objID, keyID.keyID, typeID, 0, -1);
 }
 
 // Check if the specified container object contains a value with the specified key and type.
@@ -161,12 +168,12 @@ export function getObjectID(objID: i32, keyID: Key32, typeID: i32): i32 {
 
 // Direct logging of informational text to host log
 export function log(text: string): void {
-    setBytes(1, keys.KEY_LOG, TYPE_STRING, Convert.fromString(text))
+    setBytes(1, keys.KEY_LOG, TYPE_STRING, Convert.fromString(text));
 }
 
 // Direct logging of error to host log, followed by panicking out of the Wasm code
 export function panic(text: string): void {
-    setBytes(1, keys.KEY_PANIC, TYPE_STRING, Convert.fromString(text))
+    setBytes(1, keys.KEY_PANIC, TYPE_STRING, Convert.fromString(text));
 }
 
 // Store the provided value bytes of specified type in the specified container object
@@ -178,5 +185,5 @@ export function setBytes(objID: i32, keyID: Key32, typeID: i32, value: u8[]): vo
 
 // Direct logging of debug trace text to host log
 export function trace(text: string): void {
-    setBytes(1, keys.KEY_TRACE, TYPE_STRING, Convert.fromString(text))
+    setBytes(1, keys.KEY_TRACE, TYPE_STRING, Convert.fromString(text));
 }

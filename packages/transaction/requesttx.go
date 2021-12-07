@@ -33,13 +33,13 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		assets := req.Assets
 		if assets == nil {
 			// if assets not specified, the minimum dust deposit will be adjusted by vmtxbuilder.NewExtendedOutput
-			assets = &iscp.Assets{Iotas: 1}
+			assets = &iscp.Assets{}
 		}
 		// will adjust to minimum dust deposit
 		out, _ := vmtxbuilder.NewExtendedOutput(
 			req.TargetAddress,
 			assets,
-			&senderAddress,
+			senderAddress,
 			&iscp.RequestMetadata{
 				SenderContract: 0,
 				TargetContract: req.Metadata.TargetContract,
@@ -61,7 +61,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			sumTokensOut[nt.ID] = s
 		}
 	}
-	inputs, remainder, err := computeInputsAndRemainder(&senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.DeSeriParams)
+	inputs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.DeSeriParams)
 	if err != nil {
 		return nil, err
 	}
@@ -72,13 +72,13 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	txb := iotago.NewTransactionBuilder()
 	for _, inp := range inputs {
 		txb.AddInput(&iotago.ToBeSignedUTXOInput{
-			Address: &senderAddress,
+			Address: senderAddress,
 			Input:   inp,
 		})
 	}
 	for _, out := range outputs {
 		txb.AddOutput(out)
 	}
-	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&senderAddress, par.SenderKeyPair.PrivateKey))
+	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(senderAddress, par.SenderKeyPair.PrivateKey))
 	return txb.Build(par.DeSeriParams, signer)
 }

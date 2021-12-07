@@ -490,7 +490,10 @@ func NewExtendedOutput(
 			Data: metadata.Bytes(),
 		})
 	}
-	// TODO other FeatureBlocks as per options
+
+	if options != nil {
+		panic(" send options FeatureBlocks not implemented yet")
+	}
 
 	// Adjust to minimum dust deposit
 	dustDepositAdjusted := false

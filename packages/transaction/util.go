@@ -3,19 +3,17 @@ package transaction
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-	"golang.org/x/xerrors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
+	"golang.org/x/xerrors"
 )
 
 var (
 	ErrNoAliasOutputAtIndex0 = xerrors.New("origin AliasOutput not found at index 0")
-
-	nilAliasID iotago.AliasID
+	nilAliasID               iotago.AliasID
 )
 
 type OutputFilter func(output iotago.Output) bool
@@ -114,7 +112,7 @@ func computeInputsAndRemainder(
 			tokensIn[nt.ID] = s
 		}
 		// calculate reminder. It will return != nil if input balances is enough, otherwise nil
-		remainder = computeReminderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, deSeriParams)
+		remainder = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, deSeriParams)
 		if remainder != nil {
 			inputs = allInputs[:i+1]
 			break
@@ -127,13 +125,13 @@ func computeInputsAndRemainder(
 	return inputs, remainder, nil
 }
 
-// computeReminderOutput calculates reminders for iotas and native tokens, returns skeleton reminder output
+// computeRemainderOutput calculates reminders for iotas and native tokens, returns skeleton reminder output
 // which only contains assets filled in.
 // - inIotas and inTokens is what is available in inputs
 // - outIotas, outTokens is what is in outputs, except the reminder output itself with its dust deposit
 // Returns nil if inputs are not enough (taking into account dust deposit requirements)
 // If return not nil but Amount == 0, ite means reminder is a perfect match between inputs and outputs, remainder not needed
-func computeReminderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, deSeriParams *iotago.DeSerializationParameters) *iotago.ExtendedOutput {
+func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, deSeriParams *iotago.DeSerializationParameters) *iotago.ExtendedOutput {
 	if inIotas < outIotas {
 		return nil
 	}
