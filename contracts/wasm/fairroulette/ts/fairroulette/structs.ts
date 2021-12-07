@@ -58,6 +58,10 @@ export class MutableBet {
         this.keyID = keyID;
     }
 
+    delete(): void {
+        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+    }
+
     exists(): boolean {
         return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
     }

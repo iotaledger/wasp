@@ -21,6 +21,10 @@ func NewScMutableAddress(objID int32, keyID Key32) ScMutableAddress {
 	return ScMutableAddress{objID: objID, keyID: keyID}
 }
 
+func (o ScMutableAddress) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_ADDRESS)
+}
+
 func (o ScMutableAddress) Exists() bool {
 	return Exists(o.objID, o.keyID, TYPE_ADDRESS)
 }
@@ -70,6 +74,10 @@ func NewScMutableAgentID(objID int32, keyID Key32) ScMutableAgentID {
 	return ScMutableAgentID{objID: objID, keyID: keyID}
 }
 
+func (o ScMutableAgentID) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_AGENT_ID)
+}
+
 func (o ScMutableAgentID) Exists() bool {
 	return Exists(o.objID, o.keyID, TYPE_AGENT_ID)
 }
@@ -117,6 +125,10 @@ type ScMutableBool struct {
 
 func NewScMutableBool(objID int32, keyID Key32) ScMutableBool {
 	return ScMutableBool{objID: objID, keyID: keyID}
+}
+
+func (o ScMutableBool) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_BOOL)
 }
 
 func (o ScMutableBool) Exists() bool {
@@ -176,6 +188,10 @@ func NewScMutableBytes(objID int32, keyID Key32) ScMutableBytes {
 	return ScMutableBytes{objID: objID, keyID: keyID}
 }
 
+func (o ScMutableBytes) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_BYTES)
+}
+
 func (o ScMutableBytes) Exists() bool {
 	return Exists(o.objID, o.keyID, TYPE_BYTES)
 }
@@ -223,6 +239,10 @@ type ScMutableChainID struct {
 
 func NewScMutableChainID(objID int32, keyID Key32) ScMutableChainID {
 	return ScMutableChainID{objID: objID, keyID: keyID}
+}
+
+func (o ScMutableChainID) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_CHAIN_ID)
 }
 
 func (o ScMutableChainID) Exists() bool {
@@ -274,6 +294,10 @@ func NewScMutableColor(objID int32, keyID Key32) ScMutableColor {
 	return ScMutableColor{objID: objID, keyID: keyID}
 }
 
+func (o ScMutableColor) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_COLOR)
+}
+
 func (o ScMutableColor) Exists() bool {
 	return Exists(o.objID, o.keyID, TYPE_COLOR)
 }
@@ -321,6 +345,10 @@ type ScMutableHash struct {
 
 func NewScMutableHash(objID int32, keyID Key32) ScMutableHash {
 	return ScMutableHash{objID: objID, keyID: keyID}
+}
+
+func (o ScMutableHash) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_HASH)
 }
 
 func (o ScMutableHash) Exists() bool {
@@ -372,6 +400,10 @@ func NewScMutableHname(objID int32, keyID Key32) ScMutableHname {
 	return ScMutableHname{objID: objID, keyID: keyID}
 }
 
+func (o ScMutableHname) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_HNAME)
+}
+
 func (o ScMutableHname) Exists() bool {
 	return Exists(o.objID, o.keyID, TYPE_HNAME)
 }
@@ -419,6 +451,10 @@ type ScMutableInt8 struct {
 
 func NewScMutableInt8(objID int32, keyID Key32) ScMutableInt8 {
 	return ScMutableInt8{objID: objID, keyID: keyID}
+}
+
+func (o ScMutableInt8) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_INT8)
 }
 
 func (o ScMutableInt8) Exists() bool {
@@ -473,6 +509,10 @@ func NewScMutableInt16(objID int32, keyID Key32) ScMutableInt16 {
 	return ScMutableInt16{objID: objID, keyID: keyID}
 }
 
+func (o ScMutableInt16) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_INT16)
+}
+
 func (o ScMutableInt16) Exists() bool {
 	return Exists(o.objID, o.keyID, TYPE_INT16)
 }
@@ -525,6 +565,10 @@ func NewScMutableInt32(objID int32, keyID Key32) ScMutableInt32 {
 	return ScMutableInt32{objID: objID, keyID: keyID}
 }
 
+func (o ScMutableInt32) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_INT32)
+}
+
 func (o ScMutableInt32) Exists() bool {
 	return Exists(o.objID, o.keyID, TYPE_INT32)
 }
@@ -575,6 +619,10 @@ type ScMutableInt64 struct {
 
 func NewScMutableInt64(objID int32, keyID Key32) ScMutableInt64 {
 	return ScMutableInt64{objID: objID, keyID: keyID}
+}
+
+func (o ScMutableInt64) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_INT64)
 }
 
 func (o ScMutableInt64) Exists() bool {
@@ -851,6 +899,10 @@ func NewScMutableRequestID(objID int32, keyID Key32) ScMutableRequestID {
 	return ScMutableRequestID{objID: objID, keyID: keyID}
 }
 
+func (o ScMutableRequestID) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_REQUEST_ID)
+}
+
 func (o ScMutableRequestID) Exists() bool {
 	return Exists(o.objID, o.keyID, TYPE_REQUEST_ID)
 }
@@ -898,6 +950,10 @@ type ScMutableString struct {
 
 func NewScMutableString(objID int32, keyID Key32) ScMutableString {
 	return ScMutableString{objID: objID, keyID: keyID}
+}
+
+func (o ScMutableString) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_STRING)
 }
 
 func (o ScMutableString) Exists() bool {
@@ -953,6 +1009,10 @@ func NewScMutableUint8(objID int32, keyID Key32) ScMutableUint8 {
 	return ScMutableUint8{objID: objID, keyID: keyID}
 }
 
+func (o ScMutableUint8) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_INT8)
+}
+
 func (o ScMutableUint8) Exists() bool {
 	return Exists(o.objID, o.keyID, TYPE_INT8)
 }
@@ -1003,6 +1063,10 @@ type ScMutableUint16 struct {
 
 func NewScMutableUint16(objID int32, keyID Key32) ScMutableUint16 {
 	return ScMutableUint16{objID: objID, keyID: keyID}
+}
+
+func (o ScMutableUint16) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_INT16)
 }
 
 func (o ScMutableUint16) Exists() bool {
@@ -1057,6 +1121,10 @@ func NewScMutableUint32(objID int32, keyID Key32) ScMutableUint32 {
 	return ScMutableUint32{objID: objID, keyID: keyID}
 }
 
+func (o ScMutableUint32) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_INT32)
+}
+
 func (o ScMutableUint32) Exists() bool {
 	return Exists(o.objID, o.keyID, TYPE_INT32)
 }
@@ -1107,6 +1175,10 @@ type ScMutableUint64 struct {
 
 func NewScMutableUint64(objID int32, keyID Key32) ScMutableUint64 {
 	return ScMutableUint64{objID: objID, keyID: keyID}
+}
+
+func (o ScMutableUint64) Delete() {
+	DelKey(o.objID, o.keyID, TYPE_INT64)
 }
 
 func (o ScMutableUint64) Exists() bool {

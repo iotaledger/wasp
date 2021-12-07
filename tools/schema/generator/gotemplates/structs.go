@@ -50,6 +50,7 @@ type $mut$StrName struct {
 	objID int32
 	keyID wasmlib.Key32
 }
+$#if mut structMethodDelete
 
 func (o $mut$StrName) Exists() bool {
 	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
@@ -58,6 +59,13 @@ $#if mut structMethodSetValue
 
 func (o $mut$StrName) Value() *$StrName {
 	return New$StrName$+FromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+}
+`,
+	// *******************************
+	"structMethodDelete": `
+
+func (o $mut$StrName) Delete() {
+	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
 }
 `,
 	// *******************************
