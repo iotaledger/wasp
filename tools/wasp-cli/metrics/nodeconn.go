@@ -60,7 +60,7 @@ func makeMessagesMetricsTableRow(name string, isIn bool, ncmm *model.NodeConnect
 		res[1] = "OUT"
 	}
 	res[2] = fmt.Sprintf("%v", ncmm.Total)
-	res[3] = fmt.Sprintf("%v", ncmm.LastEvent)
+	res[3] = ncmm.LastEvent.String()
 	res[4] = ncmm.LastMessage
 	if len(res[4]) > maxMessageLen {
 		res[4] = res[4][:maxMessageLen]
