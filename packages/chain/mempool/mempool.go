@@ -7,7 +7,6 @@ package mempool
 import (
 	"bytes"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain"
 	"sync"
 	"time"
 
@@ -419,11 +418,11 @@ func (m *mempool) WaitInBufferEmpty(timeout ...time.Duration) bool {
 }
 
 // Stats collects mempool stats
-func (m *mempool) Info() chain.MempoolInfo {
+func (m *mempool) Info() MempoolInfo {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
-	ret := chain.MempoolInfo{
+	ret := MempoolInfo{
 		InPoolCounter:  m.inPoolCounter,
 		OutPoolCounter: m.outPoolCounter,
 		InBufCounter:   m.inBufCounter,
