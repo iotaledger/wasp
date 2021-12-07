@@ -17,14 +17,16 @@ func Encode(v interface{}) []byte { //nolint:funlen
 		return EncodeBool(vt)
 	case int: // default to int64
 		return EncodeInt64(int64(vt))
-	case byte:
-		return EncodeInt64(int64(vt))
+	case int8:
+		return EncodeInt8(vt)
 	case int16:
 		return EncodeInt16(vt)
 	case int32:
 		return EncodeInt32(vt)
 	case int64:
 		return EncodeInt64(vt)
+	case uint8:
+		return EncodeUint8(vt)
 	case uint16:
 		return EncodeUint16(vt)
 	case uint32:
