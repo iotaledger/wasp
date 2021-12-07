@@ -191,20 +191,20 @@ func (m *mempool) traceIn(req iscp.RequestData) {
 	if traceInOut {
 		logFn = m.log.Infof
 	}
-	var untilTime time.Time
-	var untilMilestone uint32
+	var timeLockTime time.Time
+	var timeLockMilestone uint32
 
 	if !req.IsOffLedger() {
 		td := req.Unwrap().UTXO().Features().TimeLock()
 		if td != nil {
-			untilTime = td.Time
-			untilMilestone = td.MilestoneIndex
+			timeLockTime = td.Time
+			timeLockMilestone = td.MilestoneIndex
 		}
 	}
 
-	if !untilTime.IsZero() || untilMilestone > 0 {
+	if !timeLockTime.IsZero() || timeLockMilestone > 0 {
 		logFn("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v until milestone %d",
-			rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(untilTime), untilMilestone)
+			rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(timeLockTime), timeLockMilestone)
 	} else {
 		logFn("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 	}

@@ -122,7 +122,7 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	// Otherwise, they would end up in the common account
 	tokensToWithdraw.Add(ctx.IncomingTransfer())
 	// Now all caller's assets are in the common account
-	// TODO: by default should be withdrawn all tokens and account shpoild eb closed
+	// TODO: by default should be withdrawn all tokens and account should be closed
 	//  Introduce "ParamEnsureMinimum = N iotas" which leaves at least N iotas in the account
 	// Send call assumes tokens are in the current account
 	sendMetadata := &iscp.SendMetadata{
