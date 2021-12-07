@@ -121,11 +121,11 @@ type Consensus interface {
 }
 
 type Mempool interface {
-	ReceiveRequests(reqs ...iscp.Request)
-	ReceiveRequest(req iscp.Request) bool
+	ReceiveRequests(reqs ...iscp.RequestData)
+	ReceiveRequest(req iscp.RequestData) bool
 	RemoveRequests(reqs ...iscp.RequestID)
-	ReadyNow(nowis ...time.Time) []iscp.Request
-	ReadyFromIDs(nowis time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool)
+	ReadyNow(currentTime ...time.Time) []iscp.Request
+	ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool)
 	HasRequest(id iscp.RequestID) bool
 	GetRequest(id iscp.RequestID) iscp.Request
 	Info() MempoolInfo
