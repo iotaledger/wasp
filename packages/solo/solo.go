@@ -4,8 +4,6 @@
 package solo
 
 import (
-	"crypto/ed25519"
-	"math/big"
 	"math/rand"
 	"strings"
 	"sync"
@@ -14,7 +12,6 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
@@ -117,7 +114,7 @@ type Chain struct {
 	runVMMutex sync.Mutex
 
 	// mempool of the chain is used in Solo to mimic a real node
-	mempool chain.Mempool
+	mempool mempool.Mempool
 }
 
 // New creates an instance of the Solo environment.

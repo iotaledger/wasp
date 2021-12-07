@@ -55,8 +55,8 @@ type AsynchronousCommonSubsetMsg struct {
 
 // InclusionStateMsg txstream plugin sends inclusions state of the transaction to ConsensusOld
 type InclusionStateMsg struct {
-	TxID  iotago.TransactionID
-	State iotago.InclusionState
+	TxID iotago.TransactionID
+	// State iotago.InclusionState // TODO: does this make sense with hornet?
 }
 
 // StateMsg txstream plugin sends the only existing AliasOutput in the chain's address to StateManager

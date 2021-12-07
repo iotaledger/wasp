@@ -40,15 +40,17 @@ func NewDKShare(
 	publicShares []kyber.Point,
 	privateShare kyber.Scalar,
 ) (*DKShare, error) {
-	var err error
+	//var err error
 	//
 	// Derive the ChainID.
-	var pubBytes []byte
-	if pubBytes, err = sharedPublic.MarshalBinary(); err != nil {
-		return nil, err
-	}
+	//var pubBytes []byte
+	//if pubBytes, err = sharedPublic.MarshalBinary(); err != nil {
+	//	return nil, err
+	//}
 	// TODO bls has been removed from IOTAGO, should this be moved to ed25519?
-	sharedAddress := iotago.BLSAddressFromPubKey(bls.PublicKeyFromBytes(pubBytes))
+	//sharedAddress := iotago.BLSAddressFromPubKey(bls.PublicKeyFromBytes(pubBytes))
+	var sharedAddress iotago.Address // TODO not correct
+
 	//
 	// Construct the DKShare.
 	dkShare := DKShare{

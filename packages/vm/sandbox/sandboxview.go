@@ -4,6 +4,9 @@
 package sandbox
 
 import (
+	"math/big"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -12,6 +15,14 @@ import (
 
 type sandboxView struct {
 	vmctx *vmcontext.VMContext
+}
+
+func (s sandboxView) Assets() *iscp.Assets {
+	panic("implement me")
+}
+
+func (s sandboxView) Timestamp() int64 {
+	panic("implement me")
 }
 
 var _ iscp.SandboxView = sandboxView{}
@@ -26,9 +37,12 @@ func (s sandboxView) AccountID() *iscp.AgentID {
 	return s.vmctx.AccountID()
 }
 
-func (s sandboxView) Balances() *iscp.Assets {
-	panic("not implemented")
-	//return s.vmctx.GetMyBalances()
+func (s sandboxView) BalanceIotas() uint64 {
+	panic("implement me")
+}
+
+func (s sandboxView) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
+	panic("implement me")
 }
 
 func (s sandboxView) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) (dict.Dict, error) {
