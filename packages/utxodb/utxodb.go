@@ -3,9 +3,11 @@ package utxodb
 import (
 	"encoding/binary"
 	"fmt"
+	"math/big"
 	"sync"
 
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -388,6 +390,33 @@ func (u *UtxoDB) GetAddressBalanceIotas(addr iotago.Address) uint64 {
 		ret += out.Deposit()
 	}
 	return ret
+}
+
+// GetAddressBalances returns the total amount of iotas and tokens owned by the address
+func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.Assets {
+	u.mutex.RLock()
+	defer u.mutex.RUnlock()
+
+	iotas := uint64(0)
+	tokens := iotago.NativeTokenSum{}
+	outputs, _ := u.getUnspentOutputs(addr)
+	for _, out := range outputs {
+		iotas += out.Deposit()
+		if out, ok := out.(iotago.NativeTokenOutput); ok {
+			tset, err := out.NativeTokenSet().Set()
+			if err != nil {
+				panic(err)
+			}
+			for _, token := range tset {
+				val := tokens[token.ID]
+				if val == nil {
+					val = new(big.Int)
+				}
+				tokens[token.ID] = new(big.Int).Add(val, token.Amount)
+			}
+		}
+	}
+	return iscp.NewAssetsFromNativeTokenSum(iotas, tokens)
 }
 
 // GetAliasOutputs collects all outputs of type iotago.AliasOutput for the transaction.

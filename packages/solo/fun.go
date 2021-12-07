@@ -36,7 +36,7 @@ func (ch *Chain) String() string {
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
 	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.StateCommitment().String())
-	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GetGenesisAddress())
+	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
 	return buf.String()
 }
 
@@ -109,25 +109,7 @@ func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (
 		return expectedHash, nil
 	}
 
-	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, iscp.IotaAssetID)
-	totalFee := ownerFee + validatorFee
-	if totalFee == 0 {
-		bal := ch.GetAccountBalance(iscp.NewAgentID(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey), 0))
-		if bal.Get(feeColor) == 0 {
-			totalFee = 1 // off-ledger request requires at least 1 token in the balance
-		}
-	}
-	if totalFee > 0 {
-		_, err = ch.PostRequestSync(
-			NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-				WithTransfer(feeColor, totalFee),
-			keyPair,
-		)
-		if err != nil {
-			return
-		}
-	}
+	// TODO send gas budget
 
 	res, err := ch.PostRequestOffLedger(
 		NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...),
@@ -254,7 +236,7 @@ func (env *Solo) GetAddressBalance(addr iotago.Address, assetID []byte) *big.Int
 
 // GetAddressBalances returns all assets of the address contained in the UTXODB ledger
 func (env *Solo) GetAddressBalances(addr iotago.Address) *iscp.Assets {
-	return *iscp.AssetsFromL1Map(env.utxoDB.GetAddressBalances(addr))
+	return env.utxoDB.GetAddressBalances(addr)
 }
 
 // GetAccounts returns all accounts on the chain with non-zero balances
@@ -583,7 +565,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
 // Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
+func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).WithIotas(1)
@@ -595,7 +577,7 @@ func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyP
 	return err
 }
 
-func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.KeyPair) error {
+func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair cryptolib.KeyPair) error {
 	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
 		return err
