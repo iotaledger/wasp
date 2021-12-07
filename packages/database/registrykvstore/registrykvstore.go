@@ -5,6 +5,8 @@ import "github.com/iotaledger/hive.go/kvstore"
 // registrykvstore is just a wrapper to any kv store that flushes the changes to disk immediately (Sets or Dels)
 // this is to prevent that the registry database is corrupted if the node is not shutdown gracefully
 
+var _ kvstore.KVStore = &RegistryKVStore{}
+
 type RegistryKVStore struct {
 	store kvstore.KVStore
 }
@@ -25,11 +27,17 @@ func (s *RegistryKVStore) Shutdown() {
 	s.store.Shutdown()
 }
 
-func (s *RegistryKVStore) Iterate(prefix kvstore.KeyPrefix, consumerFunc kvstore.IteratorKeyValueConsumerFunc) error {
+func (s *RegistryKVStore) Iterate(prefix kvstore.KeyPrefix, consumerFunc kvstore.IteratorKeyValueConsumerFunc, direction ...kvstore.IterDirection) error {
+	if len(direction) > 0 && direction[0] != kvstore.IterDirectionForward {
+		panic("RegistryKVStore.Iterate: only forward iteration is implemented")
+	}
 	return s.store.Iterate(prefix, consumerFunc)
 }
 
-func (s *RegistryKVStore) IterateKeys(prefix kvstore.KeyPrefix, consumerFunc kvstore.IteratorKeyConsumerFunc) error {
+func (s *RegistryKVStore) IterateKeys(prefix kvstore.KeyPrefix, consumerFunc kvstore.IteratorKeyConsumerFunc, direction ...kvstore.IterDirection) error {
+	if len(direction) > 0 && direction[0] != kvstore.IterDirectionForward {
+		panic("RegistryKVStore.IterateKeys: only forward iteration is implemented")
+	}
 	return s.store.IterateKeys(prefix, consumerFunc)
 }
 

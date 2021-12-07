@@ -24,6 +24,11 @@ impl ScMutableAddress {
         ScMutableAddress { obj_id, key_id }
     }
 
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_ADDRESS);
+    }
+
     // check if value exists in host container
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_ADDRESS)
@@ -88,6 +93,11 @@ impl ScMutableAgentID {
         ScMutableAgentID { obj_id, key_id }
     }
 
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_AGENT_ID)
+    }
+
     // check if value exists in host container
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_AGENT_ID)
@@ -150,6 +160,11 @@ pub struct ScMutableBool {
 impl ScMutableBool {
     pub fn new(obj_id: i32, key_id: Key32) -> ScMutableBool {
         ScMutableBool { obj_id, key_id }
+    }
+
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_BOOL)
     }
 
     // check if value exists in host container
@@ -218,6 +233,11 @@ impl ScMutableBytes {
         ScMutableBytes { obj_id, key_id }
     }
 
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_BYTES)
+    }
+
     // check if value exists in host container
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_BYTES)
@@ -280,6 +300,11 @@ pub struct ScMutableChainID {
 impl ScMutableChainID {
     pub fn new(obj_id: i32, key_id: Key32) -> ScMutableChainID {
         ScMutableChainID { obj_id, key_id }
+    }
+
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_CHAIN_ID)
     }
 
     // check if value exists in host container
@@ -346,6 +371,11 @@ impl ScMutableColor {
         ScMutableColor { obj_id, key_id }
     }
 
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_COLOR)
+    }
+
     // check if value exists in host container
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_COLOR)
@@ -408,6 +438,11 @@ pub struct ScMutableHash {
 impl ScMutableHash {
     pub fn new(obj_id: i32, key_id: Key32) -> ScMutableHash {
         ScMutableHash { obj_id, key_id }
+    }
+
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_HASH)
     }
 
     // check if value exists in host container
@@ -474,6 +509,11 @@ impl ScMutableHname {
         ScMutableHname { obj_id, key_id }
     }
 
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_HNAME)
+    }
+
     // check if value exists in host container
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_HNAME)
@@ -536,6 +576,11 @@ pub struct ScMutableInt8 {
 impl ScMutableInt8 {
     pub fn new(obj_id: i32, key_id: Key32) -> ScMutableInt8 {
         ScMutableInt8 { obj_id, key_id }
+    }
+
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_INT8)
     }
 
     // check if value exists in host container
@@ -604,6 +649,11 @@ impl ScMutableInt16 {
         ScMutableInt16 { obj_id, key_id }
     }
 
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_INT16)
+    }
+
     // check if value exists in host container
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_INT16)
@@ -669,6 +719,11 @@ impl ScMutableInt32 {
         ScMutableInt32 { obj_id, key_id }
     }
 
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_INT32)
+    }
+
     // check if value exists in host container
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_INT32)
@@ -732,6 +787,11 @@ pub struct ScMutableInt64 {
 impl ScMutableInt64 {
     pub fn new(obj_id: i32, key_id: Key32) -> ScMutableInt64 {
         ScMutableInt64 { obj_id, key_id }
+    }
+
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_INT64)
     }
 
     // check if value exists in host container
@@ -1074,6 +1134,11 @@ impl ScMutableRequestID {
         ScMutableRequestID { obj_id, key_id }
     }
 
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_REQUEST_ID)
+    }
+
     // check if value exists in host container
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_REQUEST_ID)
@@ -1136,6 +1201,11 @@ pub struct ScMutableString {
 impl ScMutableString {
     pub fn new(obj_id: i32, key_id: Key32) -> ScMutableString {
         ScMutableString { obj_id, key_id }
+    }
+
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_STRING)
     }
 
     // check if value exists in host container
@@ -1201,6 +1271,11 @@ pub struct ScMutableUint8 {
 impl ScMutableUint8 {
     pub fn new(obj_id: i32, key_id: Key32) -> ScMutableUint8 {
         ScMutableUint8 { obj_id, key_id }
+    }
+
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_INT8)
     }
 
     // check if value exists in host container
@@ -1269,6 +1344,11 @@ impl ScMutableUint16 {
         ScMutableUint16 { obj_id, key_id }
     }
 
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_INT16)
+    }
+
     // check if value exists in host container
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_INT16)
@@ -1334,6 +1414,11 @@ impl ScMutableUint32 {
         ScMutableUint32 { obj_id, key_id }
     }
 
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_INT32)
+    }
+
     // check if value exists in host container
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_INT32)
@@ -1397,6 +1482,11 @@ pub struct ScMutableUint64 {
 impl ScMutableUint64 {
     pub fn new(obj_id: i32, key_id: Key32) -> ScMutableUint64 {
         ScMutableUint64 { obj_id, key_id }
+    }
+
+    // delete value from host container
+    pub fn delete(&self)  {
+        del_key(self.obj_id, self.key_id, TYPE_INT64)
     }
 
     // check if value exists in host container

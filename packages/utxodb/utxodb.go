@@ -3,8 +3,9 @@ package utxodb
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"sync"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -23,7 +24,7 @@ const (
 var (
 	genesisKeyPair = cryptolib.NewKeyPairFromSeed(cryptolib.SeedFromByteArray([]byte("3.141592653589793238462643383279")))
 	genesisAddress = cryptolib.Ed25519AddressFromPubKey(genesisKeyPair.PublicKey)
-	genesisSigner  = iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&genesisAddress, genesisKeyPair.PrivateKey))
+	genesisSigner  = iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(genesisAddress, genesisKeyPair.PrivateKey))
 )
 
 type UnixSeconds uint64
@@ -123,8 +124,8 @@ func (u *UtxoDB) deSeriParams() *iotago.DeSerializationParameters {
 
 func (u *UtxoDB) genesisInit(timestamp UnixSeconds) {
 	genesisTx, err := iotago.NewTransactionBuilder().
-		AddInput(&iotago.ToBeSignedUTXOInput{Address: &genesisAddress, Input: &iotago.UTXOInput{}}).
-		AddOutput(&iotago.ExtendedOutput{Address: &genesisAddress, Amount: DefaultIOTASupply}).
+		AddInput(&iotago.ToBeSignedUTXOInput{Address: genesisAddress, Input: &iotago.UTXOInput{}}).
+		AddOutput(&iotago.ExtendedOutput{Address: genesisAddress, Amount: DefaultIOTASupply}).
 		Build(u.deSeriParams(), genesisSigner)
 	if err != nil {
 		panic(err)
@@ -188,20 +189,20 @@ func (u *UtxoDB) GenesisPrivateKey() *cryptolib.PrivateKey {
 
 // GenesisAddress returns the genesis address.
 func (u *UtxoDB) GenesisAddress() iotago.Address {
-	return &genesisAddress
+	return genesisAddress
 }
 
 func (u *UtxoDB) mustRequestFundsTx(target iotago.Address) *iotago.Transaction {
-	unspent := u.getUTXOInputs(&genesisAddress)
+	unspent := u.getUTXOInputs(genesisAddress)
 	if len(unspent) != 1 {
 		panic("number of genesis outputs must be 1")
 	}
 	utxo := unspent[0]
 	out := u.getOutput(utxo.ID()).(*iotago.ExtendedOutput)
 	tx, err := iotago.NewTransactionBuilder().
-		AddInput(&iotago.ToBeSignedUTXOInput{Address: &genesisAddress, Input: utxo}).
+		AddInput(&iotago.ToBeSignedUTXOInput{Address: genesisAddress, Input: utxo}).
 		AddOutput(&iotago.ExtendedOutput{Address: target, Amount: RequestFundsAmount}).
-		AddOutput(&iotago.ExtendedOutput{Address: &genesisAddress, Amount: out.Amount - RequestFundsAmount}).
+		AddOutput(&iotago.ExtendedOutput{Address: genesisAddress, Amount: out.Amount - RequestFundsAmount}).
 		Build(u.deSeriParams(), genesisSigner)
 	if err != nil {
 		panic(err)
@@ -216,7 +217,7 @@ func (u *UtxoDB) NewKeyPairByIndex(index uint64) (cryptolib.KeyPair, *iotago.Ed2
 	h := hashing.HashData(u.seed[:], tmp8[:])
 	keyPair := cryptolib.NewKeyPairFromSeed(cryptolib.Seed(h))
 	addr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
-	return keyPair, &addr
+	return keyPair, addr
 }
 
 // RequestFunds sends RequestFundsAmount IOTA tokens from the genesis address to the given address.
