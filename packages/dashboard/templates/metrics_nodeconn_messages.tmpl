@@ -1,8 +1,5 @@
-{{define "title"}}Kažkas{{end}}
-
-{{define "body"}}
-<div class="card fluid">
-	<h2 class="section">Messages</h2>
+{{define "metricsNodeconnMessages"}}
+	{{ $metrics := (index . 0) }}
 	<table>
 		<thead>
 			<tr>
@@ -17,60 +14,68 @@
 			<tr>
 				<td>Pull state</td>
 				<td>OUT</td>
-				<td>{{ ((.Metrics.GetOutPullState).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever ((.Metrics.GetOutPullState).GetLastEvent)) }}</td>
-				<td>{{ ((.Metrics.GetOutPullState).GetLastMessage) }}</td>
+				<td>{{ (($metrics.GetOutPullState).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullState).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetOutPullState).GetLastMessage) }}</td>
 			</tr>
 			<tr>
 				<td>Pull tx inclusion state</td>
 				<td>OUT</td>
-				<td>{{ ((.Metrics.GetOutPullTransactionInclusionState).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever ((.Metrics.GetOutPullTransactionInclusionState).GetLastEvent)) }}</td>
-				<td>{{ ((.Metrics.GetOutPullTransactionInclusionState).GetLastMessage) }}</td>
+				<td>{{ (($metrics.GetOutPullTransactionInclusionState).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullTransactionInclusionState).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetOutPullTransactionInclusionState).GetLastMessage) }}</td>
 			</tr>
 			<tr>
 				<td>Pull confirmed output</td>
 				<td>OUT</td>
-				<td>{{ ((.Metrics.GetOutPullConfirmedOutput).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever ((.Metrics.GetOutPullConfirmedOutput).GetLastEvent)) }}</td>
-				<td>{{ ((.Metrics.GetOutPullConfirmedOutput).GetLastMessage) }}</td>
+				<td>{{ (($metrics.GetOutPullConfirmedOutput).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullConfirmedOutput).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetOutPullConfirmedOutput).GetLastMessage) }}</td>
 			</tr>
 			<tr>
 				<td>Post transaction</td>
 				<td>OUT</td>
-				<td>{{ ((.Metrics.GetOutPostTransaction).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever ((.Metrics.GetOutPostTransaction).GetLastEvent)) }}</td>
-				<td>{{ ((.Metrics.GetOutPostTransaction).GetLastMessage) }}</td>
+				<td>{{ (($metrics.GetOutPostTransaction).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPostTransaction).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetOutPostTransaction).GetLastMessage) }}</td>
 			</tr>
 			<tr>
 				<td>Transaction</td>
 				<td>IN</td>
-				<td>{{ ((.Metrics.GetInTransaction).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever ((.Metrics.GetInTransaction).GetLastEvent)) }}</td>
-				<td>{{ ((.Metrics.GetInTransaction).GetLastMessage) }}</td>
+				<td>{{ (($metrics.GetInTransaction).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInTransaction).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetInTransaction).GetLastMessage) }}</td>
 			</tr>
 			<tr>
 				<td>Inclusion state</td>
 				<td>IN</td>
-				<td>{{ ((.Metrics.GetInInclusionState).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever ((.Metrics.GetInInclusionState).GetLastEvent)) }}</td>
-				<td>{{ ((.Metrics.GetInInclusionState).GetLastMessage) }}</td>
+				<td>{{ (($metrics.GetInInclusionState).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInInclusionState).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetInInclusionState).GetLastMessage) }}</td>
 			</tr>
 			<tr>
 				<td>Output</td>
 				<td>IN</td>
-				<td>{{ ((.Metrics.GetInOutput).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever ((.Metrics.GetInOutput).GetLastEvent)) }}</td>
-				<td>{{ ((.Metrics.GetInOutput).GetLastMessage) }}</td>
+				<td>{{ (($metrics.GetInOutput).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInOutput).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetInOutput).GetLastMessage) }}</td>
 			</tr>
 			<tr>
 				<td>Unspent alias output</td>
 				<td>IN</td>
-				<td>{{ ((.Metrics.GetInUnspentAliasOutput).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever ((.Metrics.GetInUnspentAliasOutput).GetLastEvent)) }}</td>
-				<td>{{ ((.Metrics.GetInUnspentAliasOutput).GetLastMessage) }}</td>
+				<td>{{ (($metrics.GetInUnspentAliasOutput).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInUnspentAliasOutput).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetInUnspentAliasOutput).GetLastMessage) }}</td>
 			</tr>
 		</tbody>
 	</table>
+{{end}}
+
+{{define "title"}}Kažkas{{end}}
+
+{{define "body"}}
+<div class="card fluid">
+	<h2 class="section">Messages</h2>
+	{{template "metricsNodeconnMessages" (args .Metrics)}}
 </div>
 {{end}}
