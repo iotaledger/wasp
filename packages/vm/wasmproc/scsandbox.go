@@ -8,6 +8,10 @@ type ScSandboxObject struct {
 	ScDict
 }
 
+func (o *ScSandboxObject) DelKey(keyID, typeID int32) {
+	o.Panicf("DelKey: cannot delete predefined key")
+}
+
 func (o *ScSandboxObject) GetBytes(keyID, typeID int32) []byte {
 	if keyID == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return o.ScDict.GetBytes(keyID, typeID)

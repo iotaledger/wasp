@@ -57,6 +57,10 @@ pub struct MutableBet {
 }
 
 impl MutableBet {
+    pub fn delete(&self) {
+        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+    }
+
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_BYTES)
     }

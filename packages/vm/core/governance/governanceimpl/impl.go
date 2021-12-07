@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package governanceimpl
 
 import (
@@ -28,6 +31,12 @@ var Processor = governance.Contract.Processor(initialize,
 	governance.FuncGetChainInfo.WithHandler(getChainInfo),
 	governance.FuncSetChainInfo.WithHandler(setChainInfo),
 	governance.FuncGetMaxBlobSize.WithHandler(getMaxBlobSize),
+
+	// access nodes.
+	governance.FuncGetChainNodes.WithHandler(getChainNodesFuncHandler),
+	governance.FuncAddCandidateNode.WithHandler(addCandidateNodeFuncHandler),
+	governance.FuncRevokeAccessNode.WithHandler(revokeAccessNodeFuncHandler),
+	governance.FuncChangeAccessNodes.WithHandler(changeAccessNodesFuncHandler),
 )
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -54,5 +63,6 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	if feeAssetIDSet {
 		state.Set(governance.VarFeeAssetID, feeAssetID)
 	}
+
 	return nil, nil
 }

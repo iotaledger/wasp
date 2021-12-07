@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package governanceimpl
 
 import (
@@ -56,9 +59,9 @@ func getFeeInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	feeColor, ownerFee, validatorFee := governance.GetFeeInfo(ctx, hname)
+	feeAssetID, ownerFee, validatorFee := governance.GetFeeInfo(ctx, hname)
 	ret := dict.New()
-	ret.Set(governance.ParamFeeColor, codec.EncodeColor(feeColor))
+	ret.Set(governance.ParamFeeColor, feeAssetID)
 	ret.Set(governance.ParamOwnerFee, codec.EncodeUint64(ownerFee))
 	ret.Set(governance.ParamValidatorFee, codec.EncodeUint64(validatorFee))
 	return ret, nil
