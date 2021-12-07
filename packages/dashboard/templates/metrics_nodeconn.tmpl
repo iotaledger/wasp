@@ -6,7 +6,7 @@
 	<ul>
 		{{range $_, $c := .Chains}}
 			{{ $id := $c.ChainRecord.ChainID.Base58 }}
-			<li><a href="{{ uri "chain" $id }}"><code>{{ $id }}</code></a></li>
+			<li><a href="{{ uri "metricsNodeconnMessages" $id }}"><code>{{ $id }}</code></a></li>
 		{{end}}
 	</ul>
 </div>

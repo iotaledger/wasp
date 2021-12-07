@@ -13,6 +13,7 @@ var tplMetrics string
 func (d *Dashboard) metricsInit(e *echo.Echo, r renderer) Tab {
 	ret := d.initMetrics(e, r)
 	d.initMetricsNodeconn(e, r)
+	d.initMetricsNodeconnMessages(e, r)
 	return ret
 }
 

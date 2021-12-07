@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/xerrors"
 )
@@ -123,6 +124,10 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 			},
 		},
 	}, nil
+}
+
+func (w *waspServicesMock) GetChainNodeConnectionMetrics(*iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
+	panic("Not implemented")
 }
 
 type dashboardTestEnv struct {
