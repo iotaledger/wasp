@@ -325,8 +325,8 @@ func (m *mempool) ReadyNow(currentTime ...time.Time) []iscp.RequestData {
 // - (a list of processable requests), true if the list can be deterministically calculated
 // Note that (a list of processable requests) can be empty if none satisfies currentTime time constraint (timelock, fallback)
 // For requests which are known and solidified, the result is deterministic
-func (m *mempool) ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool) {
-	requests := make([]iscp.Request, 0, len(reqIDs))
+func (m *mempool) ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.RequestData, []int, bool) {
+	requests := make([]iscp.RequestData, 0, len(reqIDs))
 	missingRequestIndexes := []int{}
 	toRemove := []iscp.RequestID{}
 	m.poolMutex.RLock()

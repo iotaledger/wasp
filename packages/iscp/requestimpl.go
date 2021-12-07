@@ -2,6 +2,7 @@ package iscp
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/mr-tron/base58"
 )
 
 func RequestDataFromBytes(data []byte) (RequestData, error) {
@@ -566,8 +566,9 @@ func RequestIDFromBase58(b58 string) (ret RequestID, err error) {
 	return
 }
 
-func (rid RequestID) OutputID() iotago.UTXOInput {
-	return iotago.UTXOInput(rid)
+func (rid RequestID) OutputID() *iotago.UTXOInput {
+	r := iotago.UTXOInput(rid)
+	return &r
 }
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {
@@ -594,13 +595,13 @@ func (rid RequestID) String() string {
 }
 
 func (rid RequestID) Short() string {
-	// txid := rid.OutputID().TransactionID().Base58() TODO
-	// return fmt.Sprintf("[%d]%s", rid.OutputID().TransactionOutputIndex, txid[:6]+"..")
-	return ""
+	oid := rid.OutputID()
+	txid := hex.EncodeToString(oid.TransactionID[:])
+	return fmt.Sprintf("[%d]%s", oid.TransactionOutputIndex, txid[:6]+"..")
 }
 
-func OID(o iotago.UTXOInput) string {
-	return fmt.Sprintf("[%d]%s", o.TransactionOutputIndex, base58.Encode(o.TransactionID[:])) // TODO change to hex
+func OID(o *iotago.UTXOInput) string {
+	return fmt.Sprintf("[%d]%s", o.TransactionOutputIndex, hex.EncodeToString(o.TransactionID[:]))
 }
 
 func ShortRequestIDs(ids []RequestID) []string {

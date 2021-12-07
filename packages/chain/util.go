@@ -11,30 +11,30 @@ import (
 )
 
 // LogStateTransition also used in testing
-func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, log *logger.Logger) {
-	if msg.ChainOutput.GetStateIndex() > 0 {
+func LogStateTransition(stateOutputID iotago.OutputID, msg *ChainTransitionEventData, reqids []iscp.RequestID, log *logger.Logger) {
+	if msg.ChainOutput.StateIndex > 0 {
 		log.Infof("STATE TRANSITION TO #%d. requests: %d, chain output: %s",
-			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(msg.ChainOutput.ID()))
+			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(stateOutputID.UTXOInput()))
 		log.Debugf("STATE TRANSITION. State hash: %s",
 			msg.VirtualState.StateCommitment().String())
 	} else {
-		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(msg.ChainOutput.ID()))
+		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(stateOutputID.UTXOInput()))
 		log.Debugf("ORIGIN STATE SAVED. state hash: %s",
 			msg.VirtualState.StateCommitment().String())
 	}
 }
 
 // LogGovernanceTransition
-func LogGovernanceTransition(msg *ChainTransitionEventData, log *logger.Logger) {
-	stateHash, _ := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
+func LogGovernanceTransition(stateOutputID iotago.OutputID, msg *ChainTransitionEventData, log *logger.Logger) {
+	stateHash, _ := hashing.HashValueFromBytes(msg.ChainOutput.StateMetadata)
 	log.Infof("GOVERNANCE TRANSITION state index #%d, anchor output: %s, state hash: %s",
-		msg.VirtualState.BlockIndex(), iscp.OID(msg.ChainOutput.ID()), stateHash.String())
+		msg.VirtualState.BlockIndex(), iscp.OID(stateOutputID.UTXOInput()), stateHash.String())
 }
 
 func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []iscp.RequestID) {
 	for _, reqid := range reqids {
 		publisher.Publish("request_out",
-			chainID.Base58(),
+			chainID.String(),
 			reqid.String(),
 			strconv.Itoa(int(stateIndex)),
 			strconv.Itoa(len(reqids)),
@@ -42,26 +42,26 @@ func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []i
 	}
 }
 
-func PublishStateTransition(chainID *iscp.ChainID, stateOutput *iotago.AliasOutput, reqIDsLength int) {
-	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
+func PublishStateTransition(chainID *iscp.ChainID, stateOutputID iotago.OutputID, stateOutput *iotago.AliasOutput, reqIDsLength int) {
+	stateHash, _ := hashing.HashValueFromBytes(stateOutput.StateMetadata)
 
 	publisher.Publish("state",
-		chainID.Base58(),
-		strconv.Itoa(int(stateOutput.GetStateIndex())),
+		chainID.String(),
+		strconv.Itoa(int(stateOutput.StateIndex)),
 		strconv.Itoa(reqIDsLength),
-		iscp.OID(stateOutput.ID()),
+		iscp.OID(stateOutputID.UTXOInput()),
 		stateHash.String(),
 	)
 }
 
-func PublishGovernanceTransition(stateOutput *iotago.AliasOutput) {
-	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
-	chainID := iscp.ChainIDFromAliasID(stateOutput.GetAliasAddress())
+func PublishGovernanceTransition(stateOutputID iotago.OutputID, stateOutput *iotago.AliasOutput) {
+	stateHash, _ := hashing.HashValueFromBytes(stateOutput.StateMetadata)
+	chainID := iscp.ChainIDFromAliasID(stateOutput.AliasID)
 
 	publisher.Publish("rotate",
-		chainID.Base58(),
-		strconv.Itoa(int(stateOutput.GetStateIndex())),
-		iscp.OID(stateOutput.ID()),
+		chainID.String(),
+		strconv.Itoa(int(stateOutput.StateIndex)),
+		iscp.OID(stateOutputID.UTXOInput()),
 		stateHash.String(),
 	)
 }

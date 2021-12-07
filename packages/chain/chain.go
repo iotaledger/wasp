@@ -45,7 +45,7 @@ type ChainCore interface {
 // ChainEntry interface to access chain from the chain registry side
 type ChainEntry interface {
 	ReceiveTransaction(*iotago.Transaction)
-	ReceiveInclusionState(iotago.TransactionID, iotago.InclusionState)
+	// ReceiveInclusionState(iotago.TransactionID, iotago.InclusionState) // TODO: does this make sense with hornet?
 	ReceiveState(stateOutput *iotago.AliasOutput, timestamp time.Time)
 	ReceiveOutput(output iotago.Output)
 
@@ -112,7 +112,7 @@ type Consensus interface {
 	EnqueueStateTransitionMsg(state.VirtualStateAccess, *iotago.AliasOutput, time.Time)
 	EnqueueSignedResultMsg(*messages.SignedResultMsgIn)
 	EnqueueSignedResultAckMsg(*messages.SignedResultAckMsgIn)
-	EnqueueInclusionsStateMsg(iotago.TransactionID, iotago.InclusionState)
+	// EnqueueInclusionsStateMsg(iotago.TransactionID, iotago.InclusionState) // TODO does this make sense with hornet?
 	EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
 	EnqueueVMResultMsg(msg *messages.VMResultMsg)
 	EnqueueTimerMsg(messages.TimerTick)
