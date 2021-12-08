@@ -55,7 +55,7 @@ func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) (*root.Con
 	return root.FindContract(vmctx.State(), contractHname)
 }
 
-func (vmctx *VMContext) getChainInfo() governance.ChainInfo {
+func (vmctx *VMContext) getChainInfo() *governance.ChainInfo {
 	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
@@ -133,11 +133,12 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
-	if vmctx.requestEventIndex > vmctx.maxEventsPerReq {
+
+	if vmctx.requestEventIndex > vmctx.chainInfo.MaxEventsPerReq {
 		vmctx.Panicf("too many events issued for contract: %s, request index: %d", contract.String(), vmctx.requestIndex)
 	}
 
-	if len([]byte(msg)) > int(vmctx.maxEventSize) {
+	if len([]byte(msg)) > int(vmctx.chainInfo.MaxEventSize) {
 		vmctx.Panicf("event too large: %s, request index: %d", contract.String(), vmctx.requestIndex)
 	}
 

@@ -107,7 +107,6 @@ func (vmctx *VMContext) creditAssetsToChain() {
 }
 
 func (vmctx *VMContext) prepareGasBudget() {
-	vmctx.loadGasPolicy()
 	vmctx.calculateAffordableGasBudget()
 	vmctx.gasSetBudget(vmctx.gasBudgetAffordable)
 }
@@ -189,16 +188,37 @@ func (vmctx *VMContext) chargeGasFee() {
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.Request().SenderAddress() == nil")
 	}
-	tokensToMove := vmctx.GasBurned() / vmctx.gasPolicyGasPerGasToken
-	transferToValidator := &iscp.Assets{}
-	if vmctx.gasFeeTokenNotIota {
-		transferToValidator.Tokens = iotago.NativeTokens{{vmctx.gasFeeTokenID, new(big.Int).SetUint64(tokensToMove)}}
+	tokensToCharge := vmctx.GasBurned() / vmctx.chainInfo.GasFeePolicy.GasPerGasToken
+	validatorPercentage := vmctx.chainInfo.GasFeePolicy.ValidatorFeeShare
+	if validatorPercentage > 100 {
+		validatorPercentage = 100
+	}
+	var sendToValidator uint64
+	// safe arithmetics
+	if tokensToCharge >= 100 {
+		sendToValidator = (tokensToCharge / 100) * uint64(validatorPercentage)
 	} else {
-		transferToValidator.Iotas = tokensToMove
+		sendToValidator = (tokensToCharge * uint64(validatorPercentage)) / 100
+	}
+	sendToOwner := tokensToCharge - sendToValidator
+
+	transferToValidator := &iscp.Assets{}
+	transferToOwner := &iscp.Assets{}
+	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
+		transferToValidator.Tokens = iotago.NativeTokens{
+			{*vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, big.NewInt(int64(sendToValidator))},
+		}
+		transferToOwner.Tokens = iotago.NativeTokens{
+			{*vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, big.NewInt(int64(sendToOwner))},
+		}
+	} else {
+		transferToValidator.Iotas = sendToValidator
+		transferToOwner.Iotas = sendToOwner
 	}
 	sender := vmctx.req.SenderAccount()
-	// TODO split validator/chain owner
+
 	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.chainOwnerID, transferToOwner)
 }
 
 // calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget
@@ -210,12 +230,13 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 		panic("inconsistency: vmctx.req.SenderAddress() == nil")
 	}
 	tokensAvailable := uint64(0)
-	if vmctx.gasFeeTokenNotIota {
-		tokensAvailableBig := vmctx.GetTokenBalance(vmctx.req.SenderAccount(), &vmctx.gasFeeTokenID)
+	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
+		// to pay for gas chain is configured to use some native token, not IOTA
+		tokensAvailableBig := vmctx.GetTokenBalance(vmctx.req.SenderAccount(), vmctx.chainInfo.GasFeePolicy.GasFeeTokenID)
 		if tokensAvailableBig != nil {
 			// safely subtract the transfer from the sender to the target
 			if transfer := vmctx.req.Transfer(); transfer != nil {
-				if transferTokens := iscp.FindNativeTokenBalance(transfer.Tokens, &vmctx.gasFeeTokenID); transferTokens != nil {
+				if transferTokens := iscp.FindNativeTokenBalance(transfer.Tokens, vmctx.chainInfo.GasFeePolicy.GasFeeTokenID); transferTokens != nil {
 					if tokensAvailableBig.Cmp(transferTokens) < 0 {
 						tokensAvailableBig.SetUint64(0)
 					} else {
@@ -230,6 +251,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 			}
 		}
 	} else {
+		// Iotas are used to pay the gas fee
 		tokensAvailable = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
 		// safely subtract the transfer from the sender to the target
 		if transfer := vmctx.req.Transfer(); transfer != nil {
@@ -240,8 +262,8 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 			}
 		}
 	}
-	if tokensAvailable < math.MaxUint64/vmctx.gasPolicyGasPerGasToken {
-		vmctx.gasBudgetAffordable = tokensAvailable * vmctx.gasPolicyGasPerGasToken
+	if tokensAvailable < math.MaxUint64/vmctx.chainInfo.GasFeePolicy.GasPerGasToken {
+		vmctx.gasBudgetAffordable = tokensAvailable * vmctx.chainInfo.GasFeePolicy.GasPerGasToken
 	} else {
 		vmctx.gasBudgetAffordable = math.MaxUint64
 	}
@@ -252,14 +274,6 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	if vmctx.gasBudget > vmctx.gasBudgetAffordable {
 		vmctx.gasBudget = vmctx.gasBudgetAffordable
 	}
-}
-
-func (vmctx *VMContext) loadGasPolicy() {
-	// TODO load from governance contract
-	vmctx.gasFeeTokenNotIota = false
-	vmctx.gasFeeTokenID = iotago.NativeTokenID{}
-	vmctx.gasPolicyFixedBudget = false
-	vmctx.gasPolicyGasPerGasToken = 100
 }
 
 func (vmctx *VMContext) locateTargetContract() {
@@ -279,13 +293,11 @@ func (vmctx *VMContext) locateTargetContract() {
 func (vmctx *VMContext) loadChainConfig() {
 	if vmctx.isInitChainRequest() {
 		vmctx.chainOwnerID = vmctx.req.SenderAccount()
+		vmctx.chainInfo = nil
 		return
 	}
-	cfg := vmctx.getChainInfo()
-	vmctx.chainOwnerID = cfg.ChainOwnerID
-	vmctx.maxEventSize = cfg.MaxEventSize
-	vmctx.maxEventsPerReq = cfg.MaxEventsPerReq
-	//vmctx.feeColor, vmctx.ownerFee, vmctx.validatorFee = vmctx.getFeeInfo()  // TODO fee policy
+	vmctx.chainInfo = vmctx.getChainInfo()
+	vmctx.chainOwnerID = vmctx.chainInfo.ChainOwnerID
 }
 
 func (vmctx *VMContext) isInitChainRequest() bool {

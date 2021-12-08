@@ -21,9 +21,7 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret.Set(governance.VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(governance.VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))
 	ret.Set(governance.VarDescription, codec.EncodeString(info.Description))
-	ret.Set(governance.VarFeeAssetID, info.FeeAssetID)
-	ret.Set(governance.VarDefaultOwnerFee, codec.EncodeInt64(info.DefaultOwnerFee))
-	ret.Set(governance.VarDefaultValidatorFee, codec.EncodeInt64(info.DefaultValidatorFee))
+	ret.Set(governance.VarGasFeePolicyBytes, info.GasFeePolicy.Bytes())
 	ret.Set(governance.VarMaxBlobSize, codec.EncodeUint32(info.MaxBlobSize))
 	ret.Set(governance.VarMaxEventSize, codec.EncodeUint16(info.MaxEventSize))
 	ret.Set(governance.VarMaxEventsPerReq, codec.EncodeUint16(info.MaxEventsPerReq))
@@ -36,11 +34,10 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 // - ParamMaxBlobSize         - uint32 maximum size of a blob to be saved in the blob contract.
 // - ParamMaxEventSize        - uint16 maximum size of a single event.
 // - ParamMaxEventsPerRequest - uint16 maximum number of events per request.
-// - ParamOwnerFee            - int64 non-negative value of the owner fee.
-// - ParamValidatorFee        - int64 non-negative value of the contract fee.
+// Does not set gas fee policy!
 func setChainInfo(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	a.Require(governance.CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "governance.setContractFee: not authorized")
+	a.RequireChainOwner(ctx, "governance.setContractFee: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 
@@ -70,20 +67,6 @@ func setChainInfo(ctx iscp.Sandbox) (dict.Dict, error) {
 		}
 		ctx.State().Set(governance.VarMaxEventsPerReq, codec.Encode(maxEventsPerReq))
 		ctx.Event(fmt.Sprintf("[updated chain config] max eventsPerRequest: %d", maxEventsPerReq))
-	}
-
-	// default owner fee
-	ownerFee := params.MustGetInt64(governance.ParamOwnerFee, -1)
-	if ownerFee >= 0 {
-		ctx.State().Set(governance.VarDefaultOwnerFee, codec.EncodeInt64(ownerFee))
-		ctx.Event(fmt.Sprintf("[updated chain config] default owner fee: %d", ownerFee))
-	}
-
-	// default validator fee
-	validatorFee := params.MustGetInt64(governance.ParamValidatorFee, -1)
-	if validatorFee >= 0 {
-		ctx.State().Set(governance.VarDefaultValidatorFee, codec.EncodeInt64(validatorFee))
-		ctx.Event(fmt.Sprintf("[updated chain config] default validator fee: %d", validatorFee))
 	}
 	return nil, nil
 }

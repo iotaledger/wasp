@@ -7,7 +7,7 @@ package governance
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 // constants
@@ -34,8 +34,8 @@ var (
 	FuncGetChainOwner          = coreutil.ViewFunc("getChainOwner")
 
 	// fees
-	FuncSetContractFee = coreutil.Func("setContractFee")
-	FuncGetFeeInfo     = coreutil.ViewFunc("getFeeInfo")
+	FuncSetFeePolicy = coreutil.Func("setFeePolicy")
+	FuncGetFeePolicy = coreutil.ViewFunc("getFeePolicy")
 
 	// chain info
 	FuncSetChainInfo   = coreutil.Func("setChainInfo")
@@ -58,14 +58,9 @@ const (
 	// chain owner
 	VarChainOwnerID          = "o"
 	VarChainOwnerIDDelegated = "n"
-	VarDefaultOwnerFee       = "do"
-	VarOwnerFee              = "of"
 
 	// fees
-	VarDefaultValidatorFee  = "dv"
-	VarValidatorFee         = "vf"
-	VarFeeAssetID           = "f"
-	VarContractFeesRegistry = "fr"
+	VarGasFeePolicyBytes = "g"
 
 	// chain info
 	VarChainID         = "c"
@@ -77,59 +72,37 @@ const (
 	// access nodes
 	VarAccessNodes          = "an"
 	VarAccessNodeCandidates = "ac"
-	VarValidatorNodes       = "vn"
 )
 
 // params
 const (
 	// state controller
 	ParamStateControllerAddress          = coreutil.ParamStateControllerAddress
-	ParamAllowedStateControllerAddresses = "a"
+	ParamAllowedStateControllerAddresses = kv.Key('a' + iota)
 
 	// chain owner
-	ParamChainOwner = "g"
-	ParamOwnerFee   = "f"
+	ParamChainOwner
+	ParamOwnerFee
 
 	// fees
-	ParamFeeColor     = "c"
-	ParamValidatorFee = "v"
-	ParamHname        = "h"
+	ParamFeePolicyBytes
 
 	// chain info
-	ParamChainID             = "ci"
-	ParamDescription         = "ds"
-	ParamMaxBlobSize         = "bs"
-	ParamMaxEventSize        = "es"
-	ParamMaxEventsPerRequest = "ne"
+	ParamChainID
+	ParamDescription
+	ParamMaxBlobSize
+	ParamMaxEventSize
+	ParamMaxEventsPerRequest
 
-	// access nodes: getChainNodes
-	ParamGetChainNodesAccessNodeCandidates = "c"
-	ParamGetChainNodesAccessNodes          = "a"
+	ParamGetChainNodesAccessNodeCandidates
+	ParamGetChainNodesAccessNodes
 
 	// access nodes: addCandidateNode
-	ParamAccessNodeInfoForCommittee = "f"
-	ParamAccessNodeInfoPubKey       = "p"
-	ParamAccessNodeInfoCertificate  = "c"
-	ParamAccessNodeInfoAccessAPI    = "a"
+	ParamAccessNodeInfoForCommittee
+	ParamAccessNodeInfoPubKey
+	ParamAccessNodeInfoCertificate
+	ParamAccessNodeInfoAccessAPI
 
 	// access nodes: changeAccessNodes
-	ParamChangeAccessNodesActions = "a"
+	ParamChangeAccessNodesActions
 )
-
-func init() {
-	if !util.AllDifferentStrings(
-		ParamStateControllerAddress,
-		ParamAllowedStateControllerAddresses,
-		ParamChainOwner,
-		ParamOwnerFee,
-		ParamFeeColor,
-		ParamValidatorFee,
-		ParamHname,
-		ParamChainID,
-		ParamDescription,
-		ParamMaxBlobSize,
-		ParamMaxEventSize,
-		ParamMaxEventsPerRequest) {
-		panic("wrong constant in governance/interface.go")
-	}
-}

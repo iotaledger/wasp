@@ -24,8 +24,8 @@ var Processor = governance.Contract.Processor(initialize,
 	governance.FuncGetChainOwner.WithHandler(getChainOwner),
 
 	// fees
-	governance.FuncSetContractFee.WithHandler(setContractFee),
-	governance.FuncGetFeeInfo.WithHandler(getFeeInfo),
+	governance.FuncSetFeePolicy.WithHandler(setFeePolicy),
+	governance.FuncGetFeePolicy.WithHandler(getFeePolicy),
 
 	// chain info
 	governance.FuncGetChainInfo.WithHandler(getChainInfo),
@@ -49,8 +49,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	chainID := params.MustGetChainID(governance.ParamChainID)
 	chainDescription := params.MustGetString(governance.ParamDescription, "N/A")
-	feeAssetID := params.MustGetBytes(governance.ParamFeeColor, iscp.IotaAssetID)
-	feeAssetIDSet := iscp.IsIota(feeAssetID)
+	feePolicyBytes := params.MustGetBytes(governance.ParamFeePolicyBytes, governance.DefaultGasFeePolicy().Bytes())
 
 	state.Set(governance.VarChainID, codec.EncodeChainID(chainID))
 	state.Set(governance.VarChainOwnerID, params.MustGetAgentID(governance.ParamChainOwner).Bytes())
@@ -60,9 +59,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	state.Set(governance.VarMaxEventSize, codec.Encode(governance.DefaultMaxEventSize))
 	state.Set(governance.VarMaxEventsPerReq, codec.Encode(governance.DefaultMaxEventsPerRequest))
 
-	if feeAssetIDSet {
-		state.Set(governance.VarFeeAssetID, feeAssetID)
-	}
+	state.Set(governance.VarGasFeePolicyBytes, feePolicyBytes)
 
 	return nil, nil
 }

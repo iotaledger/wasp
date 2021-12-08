@@ -33,14 +33,8 @@ type VMContext struct {
 	blockContextCloseSeq []iscp.Hname
 	blockOutputCount     uint8
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
-	// fee related
-	feeAssetID   []byte
-	ownerFee     uint64
-	validatorFee uint64
-	// events related
-	maxEventSize    uint16
-	maxEventsPerReq uint16
 	// ---- request context
+	chainInfo          *governance.ChainInfo
 	req                iscp.RequestData
 	requestIndex       uint16
 	requestEventIndex  uint16
@@ -59,11 +53,6 @@ type VMContext struct {
 	gasBudget uint64
 	// gas already burned
 	gasBurned uint64
-	// gas policy
-	gasFeeTokenNotIota      bool                 // if token used to pay for gas is native token, not iotas
-	gasFeeTokenID           iotago.NativeTokenID // specify tokenID used to pay for gas
-	gasPolicyFixedBudget    bool
-	gasPolicyGasPerGasToken uint64 // gas/iotas
 }
 
 type callContext struct {

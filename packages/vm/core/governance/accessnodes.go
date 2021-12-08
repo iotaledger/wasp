@@ -6,7 +6,8 @@ package governance
 import (
 	"bytes"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -67,7 +68,7 @@ func NewAccessNodeInfoFromAddCandidateNodeParams(ctx iscp.Sandbox) *AccessNodeIn
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	ani := AccessNodeInfo{
 		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
-		ValidatorAddr: ctx.Request().SenderAddress().Bytes(), // Not from params, to have it validated.
+		ValidatorAddr: codec.EncodeAddress(ctx.Request().SenderAddress()), // Not from params, to have it validated.
 		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
 		ForCommittee:  params.MustGetBool(ParamAccessNodeInfoForCommittee, false),
 		AccessAPI:     params.MustGetString(ParamAccessNodeInfoAccessAPI, ""),
@@ -88,7 +89,7 @@ func NewAccessNodeInfoFromRevokeAccessNodeParams(ctx iscp.Sandbox) *AccessNodeIn
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	ani := AccessNodeInfo{
 		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
-		ValidatorAddr: ctx.Request().SenderAddress().Bytes(), // Not from params, to have it validated.
+		ValidatorAddr: codec.EncodeAddress(ctx.Request().SenderAddress()), // Not from params, to have it validated.
 		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
 	}
 	return &ani
@@ -101,10 +102,10 @@ func (a *AccessNodeInfo) ToRevokeAccessNodeParams() dict.Dict {
 	return d
 }
 
-func (a *AccessNodeInfo) AddCertificate(nodePrivKey ed25519.PrivateKey, ownerAddress ledgerstate.Address) *AccessNodeInfo {
+func (a *AccessNodeInfo) AddCertificate(nodePrivKey ed25519.PrivateKey, ownerAddress iotago.Address) *AccessNodeInfo {
 	certData := bytes.Buffer{}
 	certData.Write(a.NodePubKey)
-	certData.Write(ownerAddress.Bytes())
+	certData.Write(codec.EncodeAddress(ownerAddress))
 	a.Certificate = nodePrivKey.Sign(certData.Bytes()).Bytes()
 	return a
 }
@@ -139,7 +140,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 		AccessNodes:          make([]ed25519.PublicKey, 0),
 	}
 
-	ac := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodeCandidates)
+	ac := collections.NewMapReadOnly(d, string(ParamGetChainNodesAccessNodeCandidates))
 	ac.MustIterate(func(pubKey, value []byte) bool {
 		ani, err := NewAccessNodeInfoFromBytes(pubKey, value)
 		if err != nil {
@@ -149,7 +150,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 		return true
 	})
 
-	an := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodes)
+	an := collections.NewMapReadOnly(d, string(ParamGetChainNodesAccessNodes))
 	an.MustIterate(func(pubKeyBin, value []byte) bool {
 		pubKey, _, err := ed25519.PublicKeyFromBytes(pubKeyBin)
 		if err != nil {
@@ -200,7 +201,7 @@ func (req *ChangeAccessNodesRequest) Drop(pubKey ed25519.PublicKey) *ChangeAcces
 
 func (req *ChangeAccessNodesRequest) AsDict() dict.Dict {
 	d := dict.New()
-	actionsMap := collections.NewMap(d, ParamChangeAccessNodesActions)
+	actionsMap := collections.NewMap(d, string(ParamChangeAccessNodesActions))
 	for pubKey, action := range req.actions {
 		actionsMap.MustSetAt(pubKey.Bytes(), []byte{byte(action)})
 	}
