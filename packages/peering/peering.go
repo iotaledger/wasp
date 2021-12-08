@@ -92,6 +92,7 @@ type GroupProvider interface {
 type PeerDomainProvider interface {
 	ReshufflePeers(seedBytes ...[]byte)
 	GetRandomPeers(upToNumPeers int) []string
+	UpdatePeers(newPeerPubKeys []*ed25519.PublicKey)
 	Attach(receiver byte, callback func(recv *PeerMessageIn)) interface{}
 	Detach(attachID interface{})
 	SendMsgByNetID(netID string, msgReceiver byte, msgType byte, msgData []byte)

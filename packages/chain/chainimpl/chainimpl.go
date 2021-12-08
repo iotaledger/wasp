@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
@@ -31,7 +32,9 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
 )
@@ -39,11 +42,12 @@ import (
 const maxMsgBuffer = 1000
 
 var (
-	_ chain.Chain         = &chainObj{}
-	_ chain.ChainCore     = &chainObj{}
-	_ chain.ChainEntry    = &chainObj{}
-	_ chain.ChainRequests = &chainObj{}
-	_ chain.ChainEvents   = &chainObj{}
+	_ chain.Chain                = &chainObj{}
+	_ chain.ChainCore            = &chainObj{}
+	_ chain.ChainEntry           = &chainObj{}
+	_ chain.ChainRequests        = &chainObj{}
+	_ chain.ChainEvents          = &chainObj{}
+	_ map[ed25519.PublicKey]bool // We rely on value comparison on the pubkeys, just assert that here.
 )
 
 type chainObj struct {
@@ -93,7 +97,7 @@ func NewChain(
 	chainID *iscp.ChainID,
 	log *logger.Logger,
 	txstreamClient *txstream.Client,
-	peerNetConfig registry.PeerNetworkConfigProvider,
+	peerNetConfig registry.PeerNetworkConfigProvider, // TODO: Remove it.
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
 	dksProvider registry.DKShareRegistryProvider,
@@ -248,6 +252,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		chain.LogStateTransition(msg, reqids, c.log)
 
 		c.mempoolLastCleanedIndex = stateIndex
+		c.updateChainNodes()
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
 			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String())
@@ -260,6 +265,46 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		c.consensus.EnqueueStateTransitionMsg(msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
 	}
 	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.StateCommitment().String())
+}
+
+func (c *chainObj) updateChainNodes() {
+	stateIndex := c.consensus.GetStatusSnapshot().StateIndex
+	govAccessNodes := make([]ed25519.PublicKey, 0)
+	if stateIndex > 0 {
+		res, err := viewcontext.NewFromChain(c).CallView(
+			governance.Contract.Hname(),
+			governance.FuncGetChainNodes.Hname(),
+			governance.GetChainNodesRequest{}.AsDict(),
+		)
+		if err != nil {
+			c.log.Panicf("unable to read the governance contract state: %v", err)
+		}
+		govAccessNodes = governance.NewGetChainNodesResponseFromDict(res).AccessNodes
+	}
+
+	//
+	// Collect the new set of access nodes in the communication domain.
+	// They include the committee nodes as well as the explicitly set access nodes.
+	newMembers := make(map[ed25519.PublicKey]bool)
+	newMembers[*c.netProvider.Self().PubKey()] = true
+	cmt := c.getCommittee()
+	if cmt != nil {
+		for _, cm := range cmt.MemberPubKeys() {
+			newMembers[*cm] = true
+		}
+	}
+	for _, newAccessNode := range govAccessNodes {
+		newMembers[newAccessNode] = true
+	}
+
+	//
+	// Pass it to the underlying domain to make a graceful update.
+	newMemberList := make([]*ed25519.PublicKey, 0)
+	for pubKey := range newMembers {
+		pubKeyCopy := pubKey
+		newMemberList = append(newMemberList, &pubKeyCopy)
+	}
+	c.chainPeers.UpdatePeers(newMemberList)
 }
 
 func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
@@ -386,4 +431,5 @@ func (c *chainObj) setCommittee(cmt chain.Committee) {
 			cmt:   cmt,
 		})
 	}
+	c.updateChainNodes()
 }

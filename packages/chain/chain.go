@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -83,6 +84,7 @@ type Committee interface {
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
 	GetOtherValidatorsPeerIDs() []string
 	GetRandomValidators(upToN int) []string
+	MemberPubKeys() []*ed25519.PublicKey
 }
 
 type NodeConnection interface {

@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package domain
 
 import (
@@ -5,6 +8,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
@@ -92,31 +96,51 @@ func (d *DomainImpl) GetRandomPeers(upToNumPeers int) []string {
 	return ret
 }
 
-func (d *DomainImpl) AddPeer(netID string) error {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-
-	if _, ok := d.nodes[netID]; ok {
-		return nil
+func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
+	changed := false
+	//
+	// Add new peers.
+	for _, newPeerPubKey := range newPeerPubKeys {
+		found := false
+		for _, existingPeer := range d.nodes {
+			if *existingPeer.PubKey() == *newPeerPubKey {
+				found = true
+				break
+			}
+		}
+		if !found {
+			newPeerSender, err := d.netProvider.PeerByPubKey(newPeerPubKey)
+			if err != nil {
+				// TODO: Maybe more control should be needed here. Distinguish the mandatory and the optional nodes?
+				d.log.Warnf("Peer with pubKey=%v not found, will be ignored for now, reason: %v", newPeerPubKey.String(), err)
+			} else {
+				changed = true
+				d.nodes[newPeerSender.NetID()] = newPeerSender
+				d.log.Infof("Domain peer added, pubKey=%v, netID=%v", newPeerSender.PubKey().String(), newPeerSender.NetID())
+			}
+		}
 	}
-	if netID == d.netProvider.Self().NetID() {
-		return nil
+	//
+	// Remove peers that are not needed anymore.
+	for _, oldPeer := range d.nodes {
+		found := false
+		for _, newPeerPubKey := range newPeerPubKeys {
+			if *oldPeer.PubKey() == *newPeerPubKey {
+				found = true
+				break
+			}
+		}
+		if !found && (*oldPeer.PubKey() != *d.netProvider.Self().PubKey()) {
+			changed = true
+			delete(d.nodes, oldPeer.NetID())
+			d.log.Infof("Domain peer removed, pubKey=%v, netID=%v", oldPeer.PubKey().String(), oldPeer.NetID())
+		}
 	}
-	peer, err := d.netProvider.PeerByNetID(netID)
-	if err != nil {
-		return err
+	if changed {
+		d.reshufflePeers()
 	}
-	d.nodes[netID] = peer
-	d.reshufflePeers()
-
-	return nil
-}
-
-func (d *DomainImpl) RemovePeer(netID string) {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-	delete(d.nodes, netID)
-	d.reshufflePeers()
 }
 
 func (d *DomainImpl) ReshufflePeers(seedBytes ...[]byte) {

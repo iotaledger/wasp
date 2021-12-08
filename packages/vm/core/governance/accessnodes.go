@@ -45,6 +45,26 @@ func NewAccessNodeInfoFromBytes(pubKey, value []byte) (*AccessNodeInfo, error) {
 	return &a, nil
 }
 
+func NewAccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessNodeInfo, error) {
+	res := make([]*AccessNodeInfo, 0)
+	var accErr error
+	err := infoMap.Iterate(func(elemKey, value []byte) bool {
+		var a *AccessNodeInfo
+		if a, accErr = NewAccessNodeInfoFromBytes(elemKey, value); accErr != nil {
+			return false
+		}
+		res = append(res, a)
+		return true
+	})
+	if accErr != nil {
+		return nil, xerrors.Errorf("failed to iterate over AccessNodeInfo list: %v", accErr)
+	}
+	if err != nil {
+		return nil, xerrors.Errorf("failed to iterate over AccessNodeInfo list: %v", err)
+	}
+	return res, nil
+}
+
 func (a *AccessNodeInfo) Bytes() []byte {
 	w := bytes.Buffer{}
 	// NodePubKey stored as a map key.

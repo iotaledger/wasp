@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
@@ -171,6 +172,14 @@ func (c *committee) PeerStatus() []*chain.PeerStatus {
 			status.Connected = peer.IsAlive()
 		}
 		ret = append(ret, status)
+	}
+	return ret
+}
+
+func (c *committee) MemberPubKeys() []*ed25519.PublicKey {
+	ret := make([]*ed25519.PublicKey, 0)
+	for _, peer := range c.validatorNodes.AllNodes() {
+		ret = append(ret, peer.PubKey())
 	}
 	return ret
 }
