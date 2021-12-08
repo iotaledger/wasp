@@ -18,7 +18,7 @@ import (
 func delegateChainOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
 	a := assert.NewAssert(ctx.Log())
-	a.Require(governance.CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "governance.delegateChainOwnership: not authorized")
+	a.RequireChainOwner(ctx, "governance.delegateChainOwnership: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	newOwnerID := params.MustGetAgentID(governance.ParamChainOwner)
