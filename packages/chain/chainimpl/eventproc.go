@@ -101,7 +101,7 @@ func (c *chainObj) EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, time
 // handleLedgerState processes the only chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
 func (c *chainObj) handleLedgerState(msg *messages.StateMsg) {
-	c.log.Debugf("handleLedgerState message received, stateIndex: %d, stateAddr: %s, state transition: %v, timestamp: ",
+	c.log.Debugf("handleLedgerState message received, stateIndex: %d, stateAddr: %s, state transition: %v, timestamp: %v",
 		msg.ChainOutput.GetStateIndex(), msg.ChainOutput.GetStateAddress().Base58(), !msg.ChainOutput.GetIsGovernanceUpdated(), msg.Timestamp)
 	sh, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
 	if err != nil {

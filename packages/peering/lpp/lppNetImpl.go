@@ -381,13 +381,15 @@ func (n *netImpl) PeerByNetID(peerNetID string) (peering.PeerSender, error) {
 // NOTE: For now, only known nodes can be looked up by PubKey.
 func (n *netImpl) PeerByPubKey(peerPub *ed25519.PublicKey) (peering.PeerSender, error) {
 	n.peersLock.RLock()
-	defer n.peersLock.RUnlock()
 	for i := range n.peers {
 		pk := n.peers[i].PubKey()
 		if pk != nil && *pk == *peerPub { // Compared as binaries.
-			return n.PeerByNetID(n.peers[i].NetID())
+			peerPubKey := n.peers[i].NetID()
+			n.peersLock.RUnlock()
+			return n.PeerByNetID(peerPubKey)
 		}
 	}
+	n.peersLock.RUnlock()
 	return nil, errors.New("known peer not found by pubKey")
 }
 

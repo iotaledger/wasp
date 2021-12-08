@@ -150,7 +150,7 @@ func NewChain(
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
 
 	var err error
-	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), peerNetConfig.Neighbors())
+	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), []string{netProvider.Self().NetID()}) // TODO: PubKey.
 	if err != nil {
 		log.Errorf("NewChain: %v", err)
 		return nil
@@ -268,8 +268,12 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 }
 
 func (c *chainObj) updateChainNodes() {
+	c.log.Infof("XXX: updateChainNodes...")
+	defer c.log.Infof("XXX: updateChainNodes... Done")
 	stateIndex := c.consensus.GetStatusSnapshot().StateIndex
+	c.log.Infof("XXX: updateChainNodes... 1")
 	govAccessNodes := make([]ed25519.PublicKey, 0)
+	c.log.Infof("XXX: updateChainNodes... 2")
 	if stateIndex > 0 {
 		res, err := viewcontext.NewFromChain(c).CallView(
 			governance.Contract.Hname(),
@@ -281,6 +285,7 @@ func (c *chainObj) updateChainNodes() {
 		}
 		govAccessNodes = governance.NewGetChainNodesResponseFromDict(res).AccessNodes
 	}
+	c.log.Infof("XXX: updateChainNodes... 3")
 
 	//
 	// Collect the new set of access nodes in the communication domain.
@@ -289,13 +294,14 @@ func (c *chainObj) updateChainNodes() {
 	newMembers[*c.netProvider.Self().PubKey()] = true
 	cmt := c.getCommittee()
 	if cmt != nil {
-		for _, cm := range cmt.MemberPubKeys() {
+		for _, cm := range cmt.DKShare().NodePubKeys {
 			newMembers[*cm] = true
 		}
 	}
 	for _, newAccessNode := range govAccessNodes {
 		newMembers[newAccessNode] = true
 	}
+	c.log.Infof("XXX: updateChainNodes... 4")
 
 	//
 	// Pass it to the underlying domain to make a graceful update.
@@ -304,6 +310,7 @@ func (c *chainObj) updateChainNodes() {
 		pubKeyCopy := pubKey
 		newMemberList = append(newMemberList, &pubKeyCopy)
 	}
+	c.log.Infof("XXX: updateChainNodes... 5")
 	c.chainPeers.UpdatePeers(newMemberList)
 }
 
@@ -384,7 +391,7 @@ func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*registry.Co
 	}
 	// just in case check if I am among committee nodes
 	// should not happen
-	if !util.StringInList(c.peerNetworkConfig.OwnNetID(), rec.Nodes) {
+	if !util.StringInList(c.peerNetworkConfig.OwnNetID(), rec.Nodes) { // TODO: KP: XXX: ...
 		return nil, xerrors.Errorf("createCommitteeIfNeeded: I am not among nodes of the committee record. Inconsistency")
 	}
 	return rec, nil

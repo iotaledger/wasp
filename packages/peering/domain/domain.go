@@ -98,13 +98,17 @@ func (d *DomainImpl) GetRandomPeers(upToNumPeers int) []string {
 
 func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
 	d.mutex.RLock()
-	defer d.mutex.RUnlock()
+	nodes := make(map[string]peering.PeerSender)
+	for k, v := range d.nodes {
+		nodes[k] = v
+	}
+	d.mutex.RUnlock()
 	changed := false
 	//
 	// Add new peers.
 	for _, newPeerPubKey := range newPeerPubKeys {
 		found := false
-		for _, existingPeer := range d.nodes {
+		for _, existingPeer := range nodes {
 			if *existingPeer.PubKey() == *newPeerPubKey {
 				found = true
 				break
@@ -117,14 +121,14 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
 				d.log.Warnf("Peer with pubKey=%v not found, will be ignored for now, reason: %v", newPeerPubKey.String(), err)
 			} else {
 				changed = true
-				d.nodes[newPeerSender.NetID()] = newPeerSender
+				nodes[newPeerSender.NetID()] = newPeerSender
 				d.log.Infof("Domain peer added, pubKey=%v, netID=%v", newPeerSender.PubKey().String(), newPeerSender.NetID())
 			}
 		}
 	}
 	//
 	// Remove peers that are not needed anymore.
-	for _, oldPeer := range d.nodes {
+	for _, oldPeer := range nodes {
 		found := false
 		for _, newPeerPubKey := range newPeerPubKeys {
 			if *oldPeer.PubKey() == *newPeerPubKey {
@@ -134,12 +138,15 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
 		}
 		if !found && (*oldPeer.PubKey() != *d.netProvider.Self().PubKey()) {
 			changed = true
-			delete(d.nodes, oldPeer.NetID())
+			delete(nodes, oldPeer.NetID())
 			d.log.Infof("Domain peer removed, pubKey=%v, netID=%v", oldPeer.PubKey().String(), oldPeer.NetID())
 		}
 	}
 	if changed {
-		d.reshufflePeers()
+		d.mutex.Lock()
+		d.nodes = nodes
+		d.permutation = util.NewPermutation16(uint16(len(nodes)), nil)
+		d.mutex.Unlock()
 	}
 }
 
