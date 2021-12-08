@@ -56,6 +56,14 @@ func formatTimestamp(ts interface{}) string {
 	return t.UTC().Format(time.RFC3339)
 }
 
+func formatTimestampOrNever(t time.Time) string {
+	bla := time.Time{}
+	if t == bla {
+		return "NEVER"
+	}
+	return formatTimestamp(t)
+}
+
 func exploreAddressURL(baseURL string) func(address ledgerstate.Address) string {
 	return func(address ledgerstate.Address) string {
 		return baseURL + "/" + address.Base58()

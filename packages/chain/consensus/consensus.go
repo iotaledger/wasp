@@ -29,7 +29,7 @@ type consensus struct {
 	committee                        chain.Committee
 	committeePeerGroup               peering.GroupProvider
 	mempool                          chain.Mempool
-	nodeConn                         chain.NodeConnection
+	nodeConn                         chain.ChainNodeConnection
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
 	stateOutput                      *ledgerstate.AliasOutput
@@ -66,6 +66,7 @@ type consensus struct {
 	missingRequestsFromBatch         map[iscp.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
 	pullMissingRequestsFromCommittee bool
+	receivePeerMessagesAttachID      interface{}
 	consensusMetrics                 metrics.ConsensusMetrics
 }
 
@@ -90,7 +91,7 @@ const (
 	maxMsgBuffer = 1000
 )
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, peerGroup peering.GroupProvider, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) chain.Consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, peerGroup peering.GroupProvider, nodeConn chain.ChainNodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) chain.Consensus {
 	var timers ConsensusTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -120,7 +121,10 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
 	}
-	ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
+	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
+	ret.nodeConn.AttachToInclusionStateReceived(func(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
+		ret.EnqueueInclusionsStateMsg(txID, inclusionState)
+	})
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret
@@ -158,6 +162,9 @@ func (c *consensus) IsReady() bool {
 }
 
 func (c *consensus) Close() {
+	c.nodeConn.DetachFromInclusionStateReceived()
+	c.committeePeerGroup.Detach(c.receivePeerMessagesAttachID)
+
 	c.eventStateTransitionMsgPipe.Close()
 	c.eventSignedResultMsgPipe.Close()
 	c.eventSignedResultAckMsgPipe.Close()

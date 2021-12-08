@@ -47,6 +47,7 @@ func AddEndpoints(
 
 	addShutdownEndpoint(adm, shutdown)
 	addChainRecordEndpoints(adm, registryProvider)
+	addChainStatsEndpoints(adm, chainsProvider)
 	addCommitteeRecordEndpoints(adm, registryProvider, chainsProvider)
 	addChainEndpoints(adm, registryProvider, chainsProvider, metrics)
 	addDKSharesEndpoints(adm, registryProvider, nodeProvider)

@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/labstack/echo/v4"
@@ -45,6 +46,8 @@ type WaspServices interface {
 	GetChainRecord(chainID *iscp.ChainID) (*registry.ChainRecord, error)
 	GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.CommitteeInfo, error)
 	CallView(chainID *iscp.ChainID, scName, fname string, params dict.Dict) (dict.Dict, error)
+	GetChainNodeConnectionMetrics(*iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error)
+	GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error)
 }
 
 type Dashboard struct {
@@ -70,6 +73,7 @@ func Init(server *echo.Echo, waspServices WaspServices, log *logger.Logger) *Das
 		d.configInit(server, r),
 		d.peeringInit(server, r),
 		d.chainsInit(server, r),
+		d.metricsInit(server, r),
 	}
 
 	d.webSocketInit(server)
@@ -93,19 +97,20 @@ func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateP
 
 func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Template {
 	t := template.New("").Funcs(template.FuncMap{
-		"formatTimestamp":   formatTimestamp,
-		"exploreAddressUrl": exploreAddressURL(d.wasp.ExploreAddressBaseURL()),
-		"args":              args,
-		"hashref":           hashref,
-		"colorref":          colorref,
-		"trim":              trim,
-		"incUint32":         incUint32,
-		"decUint32":         decUint32,
-		"bytesToString":     bytesToString,
-		"keyToString":       keyToString,
-		"base58":            base58.Encode,
-		"replace":           strings.Replace,
-		"uri":               func(s string, p ...interface{}) string { return e.Reverse(s, p...) },
+		"formatTimestamp":        formatTimestamp,
+		"formatTimestampOrNever": formatTimestampOrNever,
+		"exploreAddressUrl":      exploreAddressURL(d.wasp.ExploreAddressBaseURL()),
+		"args":                   args,
+		"hashref":                hashref,
+		"colorref":               colorref,
+		"trim":                   trim,
+		"incUint32":              incUint32,
+		"decUint32":              decUint32,
+		"bytesToString":          bytesToString,
+		"keyToString":            keyToString,
+		"base58":                 base58.Encode,
+		"replace":                strings.Replace,
+		"uri":                    func(s string, p ...interface{}) string { return e.Reverse(s, p...) },
 	})
 	t = template.Must(t.Parse(tplBase))
 	for _, part := range parts {

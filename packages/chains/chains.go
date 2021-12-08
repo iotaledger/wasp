@@ -5,14 +5,13 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
-	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -34,7 +33,7 @@ type Chains struct {
 	mutex                            sync.RWMutex
 	log                              *logger.Logger
 	allChains                        map[[ledgerstate.AddressLength]byte]chain.Chain
-	nodeConn                         *txstream.Client
+	nodeConn                         chain.NodeConnection
 	processorConfig                  *processors.Config
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
@@ -75,15 +74,11 @@ func (c *Chains) Dismiss() {
 	c.allChains = make(map[[ledgerstate.AddressLength]byte]chain.Chain)
 }
 
-func (c *Chains) Attach(nodeConn *txstream.Client) {
+func (c *Chains) SetNodeConn(nodeConn chain.NodeConnection) {
 	if c.nodeConn != nil {
-		c.log.Panicf("Chains: already attached")
+		c.log.Panicf("Chains: node conn already set")
 	}
 	c.nodeConn = nodeConn
-	c.nodeConn.Events.TransactionReceived.Attach(events.NewClosure(c.dispatchTransactionMsg))
-	c.nodeConn.Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchInclusionStateMsg))
-	c.nodeConn.Events.OutputReceived.Attach(events.NewClosure(c.dispatchOutputMsg))
-	c.nodeConn.Events.UnspentAliasOutputReceived.Attach(events.NewClosure(c.dispatchUnspentAliasOutputMsg))
 }
 
 func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics *metrics.Metrics) error {
@@ -195,4 +190,8 @@ func (c *Chains) Get(chainID *iscp.ChainID, includeDeactivated ...bool) chain.Ch
 		return nil
 	}
 	return ret
+}
+
+func (c *Chains) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
+	return c.nodeConn.GetMetrics()
 }

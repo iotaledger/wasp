@@ -1,0 +1,81 @@
+{{define "metricsNodeconnMessages"}}
+	{{ $metrics := (index . 0) }}
+	<table>
+		<thead>
+			<tr>
+				<th>Message name</th>
+				<th></th>
+				<th>Total</th>
+				<th>Last time</th>
+				<th>Last message</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>Pull state</td>
+				<td>OUT</td>
+				<td>{{ (($metrics.GetOutPullState).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullState).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetOutPullState).GetLastMessage) }}</td>
+			</tr>
+			<tr>
+				<td>Pull tx inclusion state</td>
+				<td>OUT</td>
+				<td>{{ (($metrics.GetOutPullTransactionInclusionState).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullTransactionInclusionState).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetOutPullTransactionInclusionState).GetLastMessage) }}</td>
+			</tr>
+			<tr>
+				<td>Pull confirmed output</td>
+				<td>OUT</td>
+				<td>{{ (($metrics.GetOutPullConfirmedOutput).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullConfirmedOutput).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetOutPullConfirmedOutput).GetLastMessage) }}</td>
+			</tr>
+			<tr>
+				<td>Post transaction</td>
+				<td>OUT</td>
+				<td>{{ (($metrics.GetOutPostTransaction).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPostTransaction).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetOutPostTransaction).GetLastMessage) }}</td>
+			</tr>
+			<tr>
+				<td>Transaction</td>
+				<td>IN</td>
+				<td>{{ (($metrics.GetInTransaction).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInTransaction).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetInTransaction).GetLastMessage) }}</td>
+			</tr>
+			<tr>
+				<td>Inclusion state</td>
+				<td>IN</td>
+				<td>{{ (($metrics.GetInInclusionState).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInInclusionState).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetInInclusionState).GetLastMessage) }}</td>
+			</tr>
+			<tr>
+				<td>Output</td>
+				<td>IN</td>
+				<td>{{ (($metrics.GetInOutput).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInOutput).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetInOutput).GetLastMessage) }}</td>
+			</tr>
+			<tr>
+				<td>Unspent alias output</td>
+				<td>IN</td>
+				<td>{{ (($metrics.GetInUnspentAliasOutput).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInUnspentAliasOutput).GetLastEvent)) }}</td>
+				<td>{{ (($metrics.GetInUnspentAliasOutput).GetLastMessage) }}</td>
+			</tr>
+		</tbody>
+	</table>
+{{end}}
+
+{{define "title"}}Kažkas{{end}}
+
+{{define "body"}}
+<div class="card fluid">
+	<h2 class="section">Messages</h2>
+	{{template "metricsNodeconnMessages" (args .Metrics)}}
+</div>
+{{end}}

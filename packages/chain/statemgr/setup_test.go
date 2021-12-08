@@ -155,9 +155,9 @@ func (env *MockedEnv) PostTransactionToLedger(tx *ledgerstate.Transaction) {
 	env.Log.Infof("MockedEnv.PostTransactionToLedger: posted transaction to ledger: %s", tx.ID().Base58())
 }
 
-func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *messages.StateMsg {
-	env.Log.Debugf("MockedEnv.PullStateFromLedger request received for address %v", addr.Base58)
-	outputs := env.Ledger.GetAddressOutputs(addr)
+func (env *MockedEnv) PullStateFromLedger() *messages.StateMsg {
+	env.Log.Debugf("MockedEnv.PullStateFromLedger request received")
+	outputs := env.Ledger.GetAddressOutputs(env.ChainID.AsAliasAddress())
 	require.EqualValues(env.T, 1, len(outputs))
 	outTx, ok := env.Ledger.GetTransaction(outputs[0].ID().TransactionID())
 	require.True(env.T, ok)
@@ -171,8 +171,8 @@ func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *messa
 	}
 }
 
-func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, outputID ledgerstate.OutputID) ledgerstate.Output {
-	env.Log.Debugf("MockedEnv.PullConfirmedOutputFromLedger for address %v output %v", addr.Base58, iscp.OID(outputID))
+func (env *MockedEnv) PullConfirmedOutputFromLedger(outputID ledgerstate.OutputID) ledgerstate.Output {
+	env.Log.Debugf("MockedEnv.PullConfirmedOutputFromLedger for output %v", iscp.OID(outputID))
 	tx, foundTx := env.Ledger.GetTransaction(outputID.TransactionID())
 	require.True(env.T, foundTx)
 	outputIndex := outputID.OutputIndex()
@@ -246,15 +246,15 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		log.Debugf("MockedNode.OnPostTransaction: transaction %v posted", tx.ID().Base58())
 		env.PostTransactionToLedger(tx)
 	})
-	ret.NodeConn.OnPullState(func(addr *ledgerstate.AliasAddress) {
-		log.Debugf("MockedNode.OnPullState request received for address %v", addr.Base58)
-		response := env.PullStateFromLedger(addr)
+	ret.NodeConn.OnPullState(func() {
+		log.Debugf("MockedNode.OnPullState request received")
+		response := env.PullStateFromLedger()
 		log.Debugf("MockedNode.OnPullState call EventStateMsg: chain output %s", iscp.OID(response.ChainOutput.ID()))
 		go ret.StateManager.EnqueueStateMsg(response)
 	})
-	ret.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
+	ret.NodeConn.OnPullConfirmedOutput(func(outputID ledgerstate.OutputID) {
 		log.Debugf("MockedNode.OnPullConfirmedOutput %v", iscp.OID(outputID))
-		response := env.PullConfirmedOutputFromLedger(addr, outputID)
+		response := env.PullConfirmedOutputFromLedger(outputID)
 		log.Debugf("MockedNode.OnPullConfirmedOutput call EventOutputMsg")
 		go ret.StateManager.EnqueueOutputMsg(response)
 	})
