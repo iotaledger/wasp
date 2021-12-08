@@ -47,6 +47,12 @@ func TestApprove(t *testing.T) {
 	approved = getApproved(t, ctx, tokenID)
 	require.NotNil(t, approved)
 	require.EqualValues(t, *approved, friend1.ScAgentID())
+
+	approve(ctx, owner, nil, tokenID)
+	require.NoError(t, ctx.Err)
+
+	approved = getApproved(t, ctx, tokenID)
+	require.Nil(t, approved)
 }
 
 func TestApproveAll(t *testing.T) {
@@ -151,7 +157,9 @@ func setup(t *testing.T) *wasmsolo.SoloContext {
 
 func approve(ctx *wasmsolo.SoloContext, owner, approved *wasmsolo.SoloAgent, tokenID wasmlib.ScHash) {
 	f := erc721.ScFuncs.Approve(ctx.Sign(owner))
-	f.Params.Approved().SetValue(approved.ScAgentID())
+	if approved != nil {
+		f.Params.Approved().SetValue(approved.ScAgentID())
+	}
 	f.Params.TokenID().SetValue(tokenID)
 	f.Func.TransferIotas(1).Post()
 }

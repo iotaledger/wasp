@@ -20,11 +20,6 @@ const ZERO = new wasmlib.ScAgentID()
 
 ///////////////////////////  HELPER FUNCTIONS  ////////////////////////////
 
-function approve(state: sc.MutableErc721State, owner: wasmlib.ScAgentID, approved: wasmlib.ScAgentID, tokenID: wasmlib.ScHash): void {
-    state.approvedAccounts().getAgentID(tokenID).setValue(approved);
-    new sc.Erc721Events().approval(approved, owner, tokenID);
-}
-
 // checks if caller is owner, or one of its delegated operators
 function canOperate(state: sc.MutableErc721State, caller: wasmlib.ScAgentID, owner: wasmlib.ScAgentID): boolean {
     if (caller.equals(owner)) {
@@ -57,33 +52,53 @@ function transfer(ctx: wasmlib.ScFuncContext, state: sc.MutableErc721State, from
     ctx.require(owner.equals(from), "from is not owner");
     //TODO: ctx.require(to == <check-if-is-a-valid-address> , "invalid 'to' agentid");
 
-    let nftCountFrom = state.balances().getUint64(from);
-    let nftCountTo = state.balances().getUint64(to);
+    let balanceFrom = state.balances().getUint64(from);
+    let balanceTo = state.balances().getUint64(to);
 
-    nftCountFrom.setValue(nftCountFrom.value() - 1);
-    nftCountTo.setValue(nftCountTo.value() + 1);
+    balanceFrom.setValue(balanceFrom.value() - 1);
+    balanceTo.setValue(balanceTo.value() + 1);
 
     tokenOwner.setValue(to);
 
-    //TODO should probably clear this entry, but for now just set to zero
-    approve(state, owner, ZERO, tokenID);
+    let events = new sc.Erc721Events();
+    // remove approval if it exists
+    let currentApproved = state.approvedAccounts().getAgentID(tokenID);
+    if (currentApproved.exists()) {
+        currentApproved.delete();
+        events.approval(ZERO, owner, tokenID);
+    }
 
-    new sc.Erc721Events().transfer(from, to, tokenID);
+    events.transfer(from, to, tokenID);
 }
 
 ///////////////////////////  SC FUNCS  ////////////////////////////
 
 // Gives permission to to to transfer tokenID token to another account.
-// The approval is cleared when the token is transferred.
+// The approval is cleared when optional approval account is omitted.
+// The approval will be cleared when the token is transferred.
 export function funcApprove(ctx: wasmlib.ScFuncContext, f: sc.ApproveContext): void {
     let tokenID = f.params.tokenID().value();
     let tokenOwner = f.state.owners().getAgentID(tokenID);
     ctx.require(tokenOwner.exists(), "tokenID does not exist");
     let owner = tokenOwner.value();
     ctx.require(canOperate(f.state, ctx.caller(), owner), "not owner or operator");
-    let approved = f.params.approved().value();
-    ctx.require(!owner.equals(approved), "approved equals owner");
-    approve(f.state, owner, approved, tokenID);
+
+    let approved = f.params.approved();
+    if (!approved.exists()) {
+        // remove approval if it exists
+        let currentApproved = f.state.approvedAccounts().getAgentID(tokenID);
+        if (currentApproved.exists()) {
+            currentApproved.delete();
+            f.events.approval(ZERO, owner, tokenID);
+        }
+        return;
+    }
+
+    let account = approved.value();
+    ctx.require(!owner.equals(account), "approved account equals owner");
+
+    f.state.approvedAccounts().getAgentID(tokenID).setValue(account);
+    f.events.approval(account, owner, tokenID);
 }
 
 // Destroys tokenID. The approval is cleared when the token is burned.
@@ -93,13 +108,17 @@ export function funcBurn(ctx: wasmlib.ScFuncContext, f: sc.BurnContext): void {
     ctx.require(!owner.equals(ZERO), "tokenID does not exist");
     ctx.require(ctx.caller().equals(owner), "caller is not owner");
 
-    approve(f.state, owner, ZERO, tokenID);
+    // remove approval if it exists
+    let currentApproved = f.state.approvedAccounts().getAgentID(tokenID);
+    if (currentApproved.exists()) {
+        currentApproved.delete();
+        f.events.approval(ZERO, owner, tokenID);
+    }
 
     let balance = f.state.balances().getUint64(owner);
     balance.setValue(balance.value() - 1);
-    //TODO clear this instead of setting to zero
-    f.state.owners().getAgentID(tokenID).setValue(ZERO);
 
+    f.state.owners().getAgentID(tokenID).delete();
     f.events.transfer(owner, ZERO, tokenID);
 }
 
@@ -126,9 +145,9 @@ export function funcMint(ctx: wasmlib.ScFuncContext, f: sc.MintContext): void {
     balance.setValue(balance.value() + 1);
 
     f.events.transfer(ZERO, owner, tokenID);
-    if (!owner.isAddress()) {
-        //TODO interpret to as SC address and call its onERC721Received() function
-    }
+    // if (!owner.isAddress()) {
+    //     //TODO interpret to as SC address and call its onERC721Received() function
+    // }
 }
 
 // Safely transfers tokenID token from from to to, checking first that contract
@@ -138,9 +157,9 @@ export function funcSafeTransferFrom(ctx: wasmlib.ScFuncContext, f: sc.SafeTrans
     let to = f.params.to().value();
     let tokenID = f.params.tokenID().value();
     transfer(ctx, f.state, from, to, tokenID);
-    if (!to.isAddress()) {
-        //TODO interpret to as SC address and call its onERC721Received() function
-    }
+    // if (!to.isAddress()) {
+    //     //TODO interpret to as SC address and call its onERC721Received() function
+    // }
 }
 
 // Approve or remove operator as an operator for the caller.
@@ -169,18 +188,18 @@ export function funcTransferFrom(ctx: wasmlib.ScFuncContext, f: sc.TransferFromC
 // Returns the number of tokens in owner's account if the owner exists.
 export function viewBalanceOf(ctx: wasmlib.ScViewContext, f: sc.BalanceOfContext): void {
     let owner = f.params.owner().value();
-    let nftCount = f.state.balances().getUint64(owner);
-    if (nftCount.exists()) {
-        f.results.amount().setValue(nftCount.value());
+    let balance = f.state.balances().getUint64(owner);
+    if (balance.exists()) {
+        f.results.amount().setValue(balance.value());
     }
 }
 
 // Returns the approved account for tokenID token if there is one.
 export function viewGetApproved(ctx: wasmlib.ScViewContext, f: sc.GetApprovedContext): void {
     let tokenID = f.params.tokenID().value();
-    let approved = f.state.approvedAccounts().getAgentID(tokenID).value();
-    if (!approved.equals(ZERO)) {
-        f.results.approved().setValue(approved);
+    let approved = f.state.approvedAccounts().getAgentID(tokenID);
+    if (approved.exists()) {
+        f.results.approved().setValue(approved.value());
     }
 }
 
