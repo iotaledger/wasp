@@ -58,6 +58,11 @@ func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
 	accessNodeCandidates.MustSetAt(ani.NodePubKey, ani.Bytes())
 
+	if ctx.ChainOwnerID().Address().Equals(ctx.Request().SenderAddress()) {
+		accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
+		accessNodes.MustSetAt(ani.NodePubKey, make([]byte, 0))
+	}
+
 	return nil, nil
 }
 
