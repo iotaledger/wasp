@@ -522,6 +522,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *p
 			make([]kyber.Point, 0),        // PublicCommits
 			[]kyber.Point{keyPair.Public}, // PublicShares
 			keyPair.Private,               // PrivateShare
+			p.nodePubKeys(),               // NodePubKeys
 		)
 		if err != nil {
 			return nil, err
@@ -570,6 +571,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *p
 			distKeyShare.Commits,      // PublicCommits
 			publicShares,              // PublicShares
 			distKeyShare.PriShare().V, // PrivateShare
+			p.nodePubKeys(),           // NodePubKeys
 		)
 		if err != nil {
 			return nil, err
@@ -642,6 +644,16 @@ func (p *proc) makeInitiatorPubShareMsg(step byte) (*initiatorPubShareMsg, error
 		publicShare:   p.dkShare.PublicShares[*p.dkShare.Index],
 		signature:     signature,
 	}, nil
+}
+
+func (p *proc) nodePubKeys() []*ed25519.PublicKey {
+	allNodes := p.netGroup.AllNodes()
+	nodeCount := len(allNodes)
+	pubKeys := make([]*ed25519.PublicKey, nodeCount)
+	for i := 0; i < nodeCount; i++ {
+		pubKeys[i] = allNodes[uint16(i)].PubKey()
+	}
+	return pubKeys
 }
 
 type procStep struct {

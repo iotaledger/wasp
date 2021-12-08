@@ -116,7 +116,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	log.Infof("running DKG and setting up mocked network..")
 	nodeIDs, identities := testpeers.SetupKeys(n)
 	ret.NodeIDs = nodeIDs
-	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeIDs, tcrypto.DefaultSuite())
+	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, identities, tcrypto.DefaultSuite())
 	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)

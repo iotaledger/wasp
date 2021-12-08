@@ -51,7 +51,7 @@ func testBasic(t *testing.T, peerCount, threshold uint16, allRandom bool) {
 	)
 	t.Logf("Network created.")
 
-	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerIdentities, tcrypto.DefaultSuite())
 	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
 	for i := range dkShares {
 		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
@@ -100,7 +100,7 @@ func TestRandomized(t *testing.T) {
 	networkProviders, networkCloser := testpeers.SetupNet(peerNetIDs, peerIdentities, netBehavior, netLogger)
 	t.Logf("Network created.")
 
-	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerIdentities, tcrypto.DefaultSuite())
 	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
 	for i := range dkShares {
 		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
@@ -195,7 +195,7 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16, inputLen int) {
 	)
 	t.Logf("Network created.")
 
-	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerIdentities, tcrypto.DefaultSuite())
 	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
 	for i := range dkShares {
 		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
@@ -264,7 +264,7 @@ func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16, inputLen in
 		logs[i] = testlogger.WithLevel(log.Named(fmt.Sprintf("CSC[%02d]", i)), logger.LevelInfo, false)
 	}
 
-	dkAddress, dkShares := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	dkAddress, dkShares := testpeers.SetupDkgPregenerated(t, threshold, peerIdentities, tcrypto.DefaultSuite())
 	acsCoords := make([]*CommonSubsetCoordinator, peerCount)
 	for i := range acsCoords {
 		group, err := networkProviders[i].PeerGroup(peeringID, peerNetIDs)
