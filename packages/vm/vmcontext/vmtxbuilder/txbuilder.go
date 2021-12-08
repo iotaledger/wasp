@@ -166,7 +166,7 @@ func (txb *AnchorTransactionBuilder) inputs() iotago.Inputs {
 	ret := make(iotago.Inputs, 0, len(txb.consumed)+len(txb.balanceNativeTokens))
 	ret = append(ret, txb.anchorOutputID)
 	for i := range txb.consumed {
-		ret = append(ret, &txb.consumed[i].Unwrap().UTXO().Metadata().UTXOInput)
+		ret = append(ret, txb.consumed[i].ID().OutputID())
 	}
 	// sort to avoid non-determinism of the map iteration
 	tokenIDs := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))

@@ -34,7 +34,7 @@ func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestData, error
 		return req, nil
 	}
 	// on-ledger
-	return OnledgerRequestFromMarshalUtil(mu)
+	return OnLedgerRequestFromMarshalUtil(mu)
 }
 
 // region OffLedgerRequestData  ////////////////////////////////////////////////////////////////////////////
@@ -304,15 +304,15 @@ func (r *OffLedgerRequestData) String() string {
 // region OnLedger ///////////////////////////////////////////////////////////////////
 
 type OnLedgerRequestData struct {
-	UTXOMetaData
-	output iotago.Output
+	inputID iotago.UTXOInput
+	output  iotago.Output
 
 	// featureBlocksCache and requestMetadata originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
 	featureBlocksCache iotago.FeatureBlocksSet
 	requestMetadata    *RequestMetadata
 }
 
-func OnLedgerFromUTXO(data *UTXOMetaData, o iotago.Output) (*OnLedgerRequestData, error) {
+func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestData, error) {
 	var fbSet iotago.FeatureBlocksSet
 	var reqMetadata *RequestMetadata
 	var err error
@@ -332,14 +332,14 @@ func OnLedgerFromUTXO(data *UTXOMetaData, o iotago.Output) (*OnLedgerRequestData
 
 	return &OnLedgerRequestData{
 		output:             o,
-		UTXOMetaData:       *data,
+		inputID:            *id,
 		featureBlocksCache: fbSet,
 		requestMetadata:    reqMetadata,
 	}, nil
 }
 
-func OnledgerRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OnLedgerRequestData, error) {
-	utxoMetadata, err := NewUTXOMetadataFromMarshalUtil(mu)
+func OnLedgerRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OnLedgerRequestData, error) {
+	utxoID, err := UTXOInputFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +360,7 @@ func OnledgerRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OnLedgerReque
 	if err != nil {
 		return nil, err
 	}
-	return OnLedgerFromUTXO(utxoMetadata, output)
+	return OnLedgerFromUTXO(output, utxoID)
 }
 
 func (r *OnLedgerRequestData) Bytes() []byte {
@@ -374,20 +374,16 @@ func (r *OnLedgerRequestData) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	if err != nil {
 		return
 	}
-	mu.WriteBytes(r.UTXOMetaData.Bytes())
+	UTXOInputToMarshalUtil(&r.inputID, mu)
 	mu.WriteUint16(uint16(len(outputBytes)))
 	mu.WriteBytes(outputBytes)
-}
-
-func (r *OnLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
-	panic("not implemented") // TODO
 }
 
 // implements Request interface
 var _ Request = &OnLedgerRequestData{}
 
 func (r *OnLedgerRequestData) ID() RequestID {
-	return r.UTXOMetaData.RequestID()
+	return RequestID(r.inputID)
 }
 
 func (r *OnLedgerRequestData) Params() dict.Dict {
@@ -476,12 +472,12 @@ func (r *OnLedgerRequestData) UTXO() unwrapUTXO {
 // implements unwrapUTXO interface
 var _ unwrapUTXO = &OnLedgerRequestData{}
 
-func (r *OnLedgerRequestData) Output() iotago.Output {
-	return r.output
+func (r *OnLedgerRequestData) UTXOInput() iotago.UTXOInput {
+	return r.inputID
 }
 
-func (r *OnLedgerRequestData) Metadata() *UTXOMetaData {
-	return &r.UTXOMetaData
+func (r *OnLedgerRequestData) Output() iotago.Output {
+	return r.output
 }
 
 // implements Features interface
@@ -677,7 +673,7 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 	if p.GasBudget, err = mu.ReadUint64(); err != nil {
 		return err
 	}
-	if err := (p.Params).ReadFromMarshalUtil(mu); err != nil {
+	if p.Params, err = dict.FromMarshalUtil(mu); err != nil {
 		return err
 	}
 	if transferPresent, err := mu.ReadBool(); err != nil {

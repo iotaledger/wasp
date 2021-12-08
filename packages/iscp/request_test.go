@@ -41,7 +41,7 @@ func TestOnledgerRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	serialized := req.Bytes()
-	req2, err := OnledgerRequestFromMarshalUtil(marshalutil.New(serialized))
+	req2, err := OnLedgerRequestFromMarshalUtil(marshalutil.New(serialized))
 	require.NoError(t, err)
 	require.True(t, req2.SenderAccount().Equals(NewAgentID(sender, requestMetadata.SenderContract)))
 	require.True(t, req2.CallTarget().Equals(NewCallTarget(requestMetadata.TargetContract, requestMetadata.EntryPoint)))

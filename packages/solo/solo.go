@@ -79,10 +79,6 @@ type Chain struct {
 	StateControllerKeyPair cryptolib.KeyPair
 	StateControllerAddress iotago.Address
 
-	// OriginatorPrivateKey the signature scheme used to create the chain (origin transaction).
-	// It is a default signature scheme in many of 'solo' calls which require private key.
-	OriginatorKeyPair cryptolib.KeyPair
-
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
 	ChainID *iscp.ChainID
 
@@ -258,7 +254,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 		ChainID:                chainID,
 		StateControllerKeyPair: stateController,
 		StateControllerAddress: stateAddr,
-		OriginatorKeyPair:      *chainOriginator,
+		OriginatorPrivateKey:   *chainOriginator,
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     feeTarget,
@@ -338,13 +334,19 @@ func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID *iscp.ChainID)
 // requestsByChain parses the transaction and extracts those outputs which are interpreted as a request to a chain
 func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp.RequestData {
 	ret := make(map[iscp.ChainID][]iscp.RequestData)
-	for _, out := range tx.Essence.Outputs {
+	txid, err := tx.ID()
+	require.NoError(env.T, err)
+
+	for i, out := range tx.Essence.Outputs {
 		if out.Type() != iotago.OutputExtended {
 			// only ExtendedOutputs are interpreted right now TODO nfts and other
 			continue
 		}
 		// wrap output into the iscp.RequestData
-		odata, err := iscp.OnLedgerFromUTXO(nil, out)
+		odata, err := iscp.OnLedgerFromUTXO(out, &iotago.UTXOInput{
+			TransactionID:          *txid,
+			TransactionOutputIndex: uint16(i),
+		})
 		require.NoError(env.T, err)
 
 		addr := odata.TargetAddress()
@@ -408,27 +410,21 @@ func (ch *Chain) collateBatch() []iscp.RequestData {
 	// emulating variable sized blocks
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
-	ret := make([]iscp.RequestData, 0)
 	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch
 	}
-	ready = ready[:batchSize]
-	panic("TODO implement")
-	// for _, req := range ready {
-	// 	// using logical clock
-	// 	if onLegderRequest, ok := req.(*iscp.OnLedgerRequestData); ok {
-	// 		if onLegderRequest.TimeLock().Before(ch.Env.LogicalTime()) {
-	// 			if !onLegderRequest.TimeLock().IsZero() {
-	// 				ch.Log.Infof("unlocked time-locked request %s", req.ID())
-	// 			}
-	// 			ret = append(ret, req)
-	// 		}
-	// 	} else {
-	// 		ret = append(ret, req)
-	// 	}
-	// }
+	ret := make([]iscp.RequestData, 0)
+	for _, req := range ready[:batchSize] {
+		if !req.IsOffLedger() {
+			timeData := req.Unwrap().UTXO().Features().TimeLock()
+			if timeData != nil && timeData.Time.After(ch.Env.LogicalTime()) {
+				continue
+			}
+		}
+		ret = append(ret, req)
+	}
 	return ret
 }
 
