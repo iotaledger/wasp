@@ -188,7 +188,9 @@ func (vmctx *VMContext) chargeGasFee() {
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.Request().SenderAddress() == nil")
 	}
+	// total fees to charge
 	tokensToCharge := vmctx.GasBurned() / vmctx.chainInfo.GasFeePolicy.GasPerGasToken
+	// split gas fees between validator and governor, according to policy
 	validatorPercentage := vmctx.chainInfo.GasFeePolicy.ValidatorFeeShare
 	if validatorPercentage > 100 {
 		validatorPercentage = 100
