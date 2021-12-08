@@ -27,13 +27,13 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 	newStateControllerAddr := par.MustGetAddress(governance.ParamStateControllerAddress)
 	// check is address is allowed
 	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	a.Require(amap.MustHasAt(newStateControllerAddr.Bytes()), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr.Base58())
+	a.Require(amap.MustHasAt(iscp.BytesFromAddress(newStateControllerAddr)), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr.Bech32(iscp.Bech32Prefix))
 
-	if !newStateControllerAddr.Equals(ctx.StateAnchor().StateController()) {
+	if !newStateControllerAddr.Equal(ctx.StateAnchor().StateController) {
 		// rotate request to another address has been issued. State update will be taken over by VM and will have no effect
 		// By setting StateVarRotateToAddress we signal the VM this special situation
 		// StateVarRotateToAddress value should never persist in the state
-		ctx.State().Set(governance.StateVarRotateToAddress, newStateControllerAddr.Bytes())
+		ctx.State().Set(governance.StateVarRotateToAddress, iscp.BytesFromAddress(newStateControllerAddr))
 		return nil, nil
 	}
 	// here the new state controller address from the request equals to the state controller address in the anchor output
@@ -44,10 +44,10 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.RequireNoError(err)
 	par = kvdecoder.New(addrs, ctx.Log())
 	storedStateController := par.MustGetAddress(blocklog.ParamStateControllerAddress)
-	if !storedStateController.Equals(newStateControllerAddr) {
+	if !storedStateController.Equal(newStateControllerAddr) {
 		// state controller address recorded in the blocklog is different from the new one
 		// It means rotation happened
-		ctx.Event(fmt.Sprintf("rotate %s %s", newStateControllerAddr.Base58(), storedStateController.Base58()))
+		ctx.Event(fmt.Sprintf("rotate %s %s", newStateControllerAddr.Bech32(iscp.Bech32Prefix), storedStateController.Bech32(iscp.Bech32Prefix)))
 		return nil, nil
 	}
 	// no need to rotate because address does not change
@@ -60,7 +60,7 @@ func addAllowedStateControllerAddress(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	addr := par.MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	amap.MustSetAt(addr.Bytes(), []byte{0xFF})
+	amap.MustSetAt(iscp.BytesFromAddress(addr), []byte{0xFF})
 	return nil, nil
 }
 
@@ -70,7 +70,7 @@ func removeAllowedStateControllerAddress(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	addr := par.MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	amap.MustDelAt(addr.Bytes())
+	amap.MustDelAt(iscp.BytesFromAddress(addr))
 	return nil, nil
 }
 
@@ -80,7 +80,7 @@ func getAllowedStateControllerAddresses(ctx iscp.SandboxView) (dict.Dict, error)
 		return nil, nil
 	}
 	ret := dict.New()
-	retArr := collections.NewArray16(ret, governance.ParamAllowedStateControllerAddresses)
+	retArr := collections.NewArray16(ret, string(governance.ParamAllowedStateControllerAddresses))
 	amap.MustIterateKeys(func(elemKey []byte) bool {
 		retArr.MustPush(elemKey)
 		return true

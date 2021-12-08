@@ -29,8 +29,8 @@ import (
 //
 func getChainNodesFuncHandler(ctx iscp.SandboxView) (dict.Dict, error) {
 	res := dict.New()
-	ac := collections.NewMap(res, governance.ParamGetChainNodesAccessNodeCandidates)
-	an := collections.NewMap(res, governance.ParamGetChainNodesAccessNodes)
+	ac := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodeCandidates))
+	an := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodes))
 	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
 		ac.MustSetAt(key, value)
 		return true
@@ -100,7 +100,7 @@ func changeAccessNodesFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
 	accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
-	paramNodeActions := collections.NewMapReadOnly(ctx.Params(), governance.ParamChangeAccessNodesActions)
+	paramNodeActions := collections.NewMapReadOnly(ctx.Params(), string(governance.ParamChangeAccessNodesActions))
 	paramNodeActions.MustIterate(func(pubKey, actionBin []byte) bool {
 		a.Require(len(actionBin) == 1, "action should be a single byte")
 		switch governance.ChangeAccessNodeAction(actionBin[0]) {

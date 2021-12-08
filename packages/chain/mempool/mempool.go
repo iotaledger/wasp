@@ -6,6 +6,7 @@ package mempool
 
 import (
 	"bytes"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"sync"
 	"time"
 
@@ -123,14 +124,14 @@ func (m *mempool) addToPool(req iscp.RequestData) bool {
 	}
 
 	// put the request to the pool
-	nowis := time.Now()
+	currentTime := time.Now()
 	m.inPoolCounter++
 
 	m.traceIn(req)
 
 	m.pool[reqid] = &requestRef{
 		req:          req,
-		whenReceived: nowis,
+		whenReceived: currentTime,
 	}
 
 	// return true to remove from the in-buffer
@@ -190,20 +191,20 @@ func (m *mempool) traceIn(req iscp.RequestData) {
 	if traceInOut {
 		logFn = m.log.Infof
 	}
-	var untilTime time.Time
-	var untilMilestone uint32
+	var timeLockTime time.Time
+	var timeLockMilestone uint32
 
 	if !req.IsOffLedger() {
 		td := req.Unwrap().UTXO().Features().TimeLock()
 		if td != nil {
-			untilTime = td.Time
-			untilMilestone = td.MilestoneIndex
+			timeLockTime = td.Time
+			timeLockMilestone = td.MilestoneIndex
 		}
 	}
 
-	if !untilTime.IsZero() || untilMilestone > 0 {
+	if !timeLockTime.IsZero() || timeLockMilestone > 0 {
 		logFn("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v until milestone %d",
-			rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(untilTime), untilMilestone)
+			rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(timeLockTime), timeLockMilestone)
 	} else {
 		logFn("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 	}
@@ -220,32 +221,57 @@ func (m *mempool) traceOut(reqid iscp.RequestID) {
 // don't process any request which deadline will expire within 10 minutes
 const FallbackDeadlineMinAllowedInterval = time.Minute * 10
 
+func isUnlockable(ref *requestRef, currentTime time.Time) bool {
+	r := ref.req.(*iscp.OnLedgerRequestData)
+	expiry, _ := r.Expiry()
+
+	windowFrom := currentTime.Add(-FallbackDeadlineMinAllowedInterval)
+	windowTo := currentTime.Add(FallbackDeadlineMinAllowedInterval)
+
+	if expiry.Time.After(windowFrom) && expiry.Time.Before(windowTo) {
+		return false
+	}
+
+	output, _ := ref.req.Unwrap().UTXO().Output().(iotago.TransIndepIdentOutput)
+
+	unlockable := output.UnlockableBy(ref.req.SenderAddress(), &iotago.ExternalUnlockParameters{
+		ConfUnix: uint64(currentTime.Unix()),
+	})
+
+	return unlockable
+}
+
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
-func isRequestReady(ref *requestRef, nowis time.Time) (isReady, shouldBeRemoved bool) {
+func isRequestReady(ref *requestRef, currentTime time.Time) (isReady, shouldBeRemoved bool) {
 	if ref.req.IsOffLedger() {
 		return true, false
 	}
-	r := ref.req.(*request.OnLedger)
-	// fallback options
-	if r.FallbackAddress() != nil {
-		if !r.FallbackDeadline().After(nowis.Add(FallbackDeadlineMinAllowedInterval)) {
-			return false, true
-		}
+
+	r := ref.req.(*iscp.OnLedgerRequestData)
+
+	// Skip anything with return amounts in this version.
+	if _, ok := r.UTXO().Features().ReturnAmount(); ok {
+		return false, true
 	}
+
+	if !isUnlockable(ref, currentTime) {
+		return false, true
+	}
+
 	// time lock
-	return r.TimeLock().IsZero() || r.TimeLock().Before(nowis), false
+	return r.TimeLock().Time.IsZero() || r.TimeLock().Time.Before(currentTime), false
 }
 
 // ReadyNow returns preliminary batch of requests for consensus.
 // Note that later status of request may change due to the time change and time constraints
 // If there's at least one committee rotation request in the mempool, the ReadyNow returns
 // batch with only one request, the oldest committee rotation request
-func (m *mempool) ReadyNow(now ...time.Time) []iscp.RequestData {
+func (m *mempool) ReadyNow(currentTime ...time.Time) []iscp.RequestData {
 	m.poolMutex.RLock()
 
-	nowis := time.Now()
-	if len(now) > 0 {
-		nowis = now[0]
+	timeToValidate := time.Now()
+	if len(currentTime) > 0 {
+		timeToValidate = currentTime[0]
 	}
 	var oldestRotate iscp.RequestData
 	var oldestRotateTime time.Time
@@ -254,7 +280,7 @@ func (m *mempool) ReadyNow(now ...time.Time) []iscp.RequestData {
 
 	ret := make([]iscp.RequestData, 0, len(m.pool))
 	for _, ref := range m.pool {
-		rdy, shouldBeRemoved := isRequestReady(ref, nowis)
+		rdy, shouldBeRemoved := isRequestReady(ref, timeToValidate)
 		if shouldBeRemoved {
 			toRemove = append(toRemove, ref.req.ID())
 			continue
@@ -296,9 +322,9 @@ func (m *mempool) ReadyNow(now ...time.Time) []iscp.RequestData {
 // ReadyFromIDs if successful, function returns a deterministic list of requests for running on the VM
 // - (a list of missing requests), false if some requests not arrived to the mempool yet. For retry later
 // - (a list of processable requests), true if the list can be deterministically calculated
-// Note that (a list of processable requests) can be empty if none satisfies nowis time constraint (timelock, fallback)
+// Note that (a list of processable requests) can be empty if none satisfies currentTime time constraint (timelock, fallback)
 // For requests which are known and solidified, the result is deterministic
-func (m *mempool) ReadyFromIDs(nowis time.Time, reqIDs ...iscp.RequestID) ([]iscp.RequestData, []int, bool) {
+func (m *mempool) ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.RequestData, []int, bool) {
 	requests := make([]iscp.RequestData, 0, len(reqIDs))
 	missingRequestIndexes := []int{}
 	toRemove := []iscp.RequestID{}
@@ -309,7 +335,7 @@ func (m *mempool) ReadyFromIDs(nowis time.Time, reqIDs ...iscp.RequestID) ([]isc
 			missingRequestIndexes = append(missingRequestIndexes, i)
 			continue
 		}
-		rdy, shouldBeRemoved := isRequestReady(reqref, nowis)
+		rdy, shouldBeRemoved := isRequestReady(reqref, currentTime)
 		if rdy {
 			requests = append(requests, reqref.req)
 			continue
@@ -348,10 +374,10 @@ const waitRequestInPoolTimeoutDefault = 2 * time.Second
 
 // WaitRequestInPool waits until the request appears in the pool but no longer than timeout
 func (m *mempool) WaitRequestInPool(reqid iscp.RequestID, timeout ...time.Duration) bool {
-	nowis := time.Now()
-	deadline := nowis.Add(waitRequestInPoolTimeoutDefault)
+	currentTime := time.Now()
+	deadline := currentTime.Add(waitRequestInPoolTimeoutDefault)
 	if len(timeout) > 0 {
-		deadline = nowis.Add(timeout[0])
+		deadline = currentTime.Add(timeout[0])
 	}
 	for {
 		if m.HasRequest(reqid) {
@@ -375,10 +401,10 @@ const waitInBufferEmptyTimeoutDefault = 5 * time.Second
 // WaitAllRequestsIn waits until in buffer becomes empty. Used in synchronous situations when the caller
 // want to be sure all requests were fed into the pool. May create nondeterminism when used from goroutines
 func (m *mempool) WaitInBufferEmpty(timeout ...time.Duration) bool {
-	nowis := time.Now()
-	deadline := nowis.Add(waitInBufferEmptyTimeoutDefault)
+	currentTime := time.Now()
+	deadline := currentTime.Add(waitInBufferEmptyTimeoutDefault)
 	if len(timeout) > 0 {
-		deadline = nowis.Add(timeout[0])
+		deadline = currentTime.Add(timeout[0])
 	}
 	for {
 		if m.inBufferLen() == 0 {
@@ -403,9 +429,9 @@ func (m *mempool) Info() MempoolInfo {
 		OutBufCounter:  m.outBufCounter,
 		TotalPool:      len(m.pool),
 	}
-	nowis := time.Now()
+	currentTime := time.Now()
 	for _, ref := range m.pool {
-		rdy, _ := isRequestReady(ref, nowis)
+		rdy, _ := isRequestReady(ref, currentTime)
 		if rdy {
 			ret.ReadyCounter++
 		}

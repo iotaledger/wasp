@@ -36,7 +36,7 @@ func (ch *Chain) String() string {
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
 	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.StateCommitment().String())
-	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GetGenesisAddress())
+	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
 	return buf.String()
 }
 
@@ -93,35 +93,34 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 	return ret, true
 }
 
+func (ch *Chain) GetGasFeePolicy() *governance.GasFeePolicy {
+	return &governance.GasFeePolicy{GasPerGasToken: 1}
+}
+
 // UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
-// data to the chain. It returns hash of the blob, the unique identified of it.
-// Takes request token and necessary fees from the 'sigScheme' address (or OriginatorAddress if nil).
-//
+// data to the chain. It returns hash of the blob, the unique identifier of it.
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
 func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
 	if keyPair == nil {
 		keyPair = &ch.OriginatorKeyPair
 	}
 
-	expectedHash := blob.MustGetBlobHash(parseParams(params))
+	blobAsADict := parseParams(params)
+	expectedHash := blob.MustGetBlobHash(blobAsADict)
 	if _, ok := ch.GetBlobInfo(expectedHash); ok {
 		// blob exists, return hash of existing
 		return expectedHash, nil
 	}
 
-	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, iscp.IotaAssetID)
-	totalFee := ownerFee + validatorFee
-	if totalFee == 0 {
-		bal := ch.GetAccountBalance(iscp.NewAgentID(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey), 0))
-		if bal.Get(feeColor) == 0 {
-			totalFee = 1 // off-ledger request requires at least 1 token in the balance
-		}
-	}
+	gasNeeded := governance.GasForBlob(blobAsADict)
+	gasFeePolicy := ch.GetGasFeePolicy()
+	require.EqualValues(ch.Env.T, nil, gasFeePolicy.GasFeeTokenID)
+
+	totalFee := gasNeeded / gasFeePolicy.GasPerGasToken
 	if totalFee > 0 {
 		_, err = ch.PostRequestSync(
 			NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-				WithTransfer(feeColor, totalFee),
+				WithGasBudget(gasNeeded+100).WithIotas(totalFee+1000),
 			keyPair,
 		)
 		if err != nil {
@@ -254,7 +253,7 @@ func (env *Solo) GetAddressBalance(addr iotago.Address, assetID []byte) *big.Int
 
 // GetAddressBalances returns all assets of the address contained in the UTXODB ledger
 func (env *Solo) GetAddressBalances(addr iotago.Address) *iscp.Assets {
-	return *iscp.AssetsFromL1Map(env.utxoDB.GetAddressBalances(addr))
+	return env.utxoDB.GetAddressBalances(addr)
 }
 
 // GetAccounts returns all accounts on the chain with non-zero balances
@@ -571,7 +570,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 		return nil
 	}
 	ret := make([]iotago.Address, 0)
-	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedStateControllerAddresses)
+	arr := collections.NewArray16ReadOnly(res, string(governance.ParamAllowedStateControllerAddresses))
 	for i := uint16(0); i < arr.MustLen(); i++ {
 		a, err := codec.DecodeAddress(arr.MustGetAt(i))
 		require.NoError(ch.Env.T, err)
@@ -583,7 +582,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
 // Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
+func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).WithIotas(1)
@@ -595,7 +594,7 @@ func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyP
 	return err
 }
 
-func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.KeyPair) error {
+func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair cryptolib.KeyPair) error {
 	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
 		return err

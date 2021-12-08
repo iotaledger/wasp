@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
@@ -86,7 +85,6 @@ type Chain struct {
 	OriginatorKeyPair cryptolib.KeyPair
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
-	// ChainID is the ID of the chain
 	ChainID *iscp.ChainID
 
 	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
@@ -116,7 +114,7 @@ type Chain struct {
 	runVMMutex sync.Mutex
 
 	// mempool of the chain is used in Solo to mimic a real node
-	mempool chain.Mempool
+	mempool mempool.Mempool
 }
 
 // New creates an instance of the Solo environment.

@@ -3,12 +3,11 @@ package iscp
 import (
 	"bytes"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/hashing"
+	"golang.org/x/xerrors"
 )
 
-// StateData represent parsed data stored as a metadata in the anchor output
+// StateData represents the parsed data stored as a metadata in the anchor output
 type StateData struct {
 	Commitment hashing.HashValue
 }
