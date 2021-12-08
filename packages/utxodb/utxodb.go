@@ -120,6 +120,10 @@ func New(params ...*InitParams) *UtxoDB {
 	return u
 }
 
+func (u *UtxoDB) Seed() []byte {
+	return u.seed[:]
+}
+
 func (u *UtxoDB) deSeriParams() *iotago.DeSerializationParameters {
 	return &iotago.DeSerializationParameters{RentStructure: u.rentStructure}
 }

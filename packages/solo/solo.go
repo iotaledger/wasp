@@ -52,7 +52,6 @@ type Solo struct {
 	logger           *logger.Logger
 	dbmanager        *dbmanager.DBManager
 	utxoDB           *utxodb.UtxoDB
-	seed             cryptolib.Seed
 	glbMutex         sync.RWMutex
 	ledgerMutex      sync.RWMutex
 	clockMutex       sync.RWMutex
@@ -152,7 +151,7 @@ func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...cryptolib.Seed)
 	//require.NoError(t, err)
 
 	initialTime := time.Unix(1, 0)
-	initParams := utxodb.DefaultInitParams().
+	initParams := utxodb.DefaultInitParams(seed[:]).
 		WithTimestamp(utxodb.UnixSeconds(initialTime.Unix())).
 		WithRentStructure(parameters.DeSerializationParameters().RentStructure)
 	ret := &Solo{
@@ -160,7 +159,6 @@ func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...cryptolib.Seed)
 		logger:          log,
 		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
 		utxoDB:          utxodb.New(initParams),
-		seed:            seed,
 		logicalTime:     initialTime,
 		timeStep:        DefaultTimeStep,
 		chains:          make(map[iscp.ChainID]*Chain),
@@ -200,15 +198,13 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
-	var stateController cryptolib.KeyPair
-	stateController = cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(2))
-	stateAddr := cryptolib.Ed25519AddressFromPubKey(stateController.PublicKey)
+	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2) // cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(2))
 
 	var originatorAddr iotago.Address
+	var origKeyPair cryptolib.KeyPair
 	if chainOriginator == nil {
-		origKeyPair := cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(1))
+		origKeyPair, originatorAddr = env.utxoDB.NewKeyPairByIndex(1) // cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(1))
 		chainOriginator = &origKeyPair
-		originatorAddr = cryptolib.Ed25519AddressFromPubKey(chainOriginator.PublicKey)
 		_, err := env.utxoDB.RequestFunds(originatorAddr)
 		require.NoError(env.T, err)
 	} else {

@@ -10,7 +10,7 @@ import (
 )
 
 func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
-	seed := cryptolib.SeedFromByteArray(hashing.HashData(env.seed[:], util.Int32To4Bytes(int32(index))).Bytes())
+	seed := cryptolib.SeedFromByteArray(hashing.HashData(env.utxoDB.Seed(), util.Int32To4Bytes(int32(index))).Bytes())
 	return &seed
 }
 
