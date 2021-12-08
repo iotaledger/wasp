@@ -48,10 +48,8 @@ func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualStateAcc
 
 func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, Block) {
 	ret := newVirtualState(db, chainID)
-	originBlock, err := ret.applyOriginBlock()
-	if err != nil {
-		panic(err)
-	}
+	originBlock := newOriginBlock()
+	ret.applyBlockNoCheck(originBlock)
 	_, _ = ret.ExtractBlock() // clear the update log
 	return ret, originBlock
 }
@@ -129,29 +127,22 @@ func (vs *virtualStateAccess) PreviousStateHash() hashing.HashValue {
 }
 
 // ApplyBlock applies a block of state updates. Checks consistency of the block and previous state. Updates state hash
+// It is not suitible for applying origin block to empty virtual state. This is done in `newZeroVirtualState`
 func (vs *virtualStateAccess) ApplyBlock(b Block) error {
-	return vs.applyAnyBlock(b, false)
-}
-
-func (vs *virtualStateAccess) applyOriginBlock() (Block, error) {
-	originBlock := newOriginBlock()
-	return originBlock, vs.applyAnyBlock(originBlock, true)
-}
-
-func (vs *virtualStateAccess) applyAnyBlock(b Block, empty bool) error {
-	if empty && b.BlockIndex() != 0 {
-		return xerrors.Errorf("ApplyBlock: b state index #%d can't be applied to the empty state", b.BlockIndex())
-	}
-	if !empty && vs.BlockIndex()+1 != b.BlockIndex() {
+	if vs.BlockIndex()+1 != b.BlockIndex() {
 		return xerrors.Errorf("ApplyBlock: b state index #%d can't be applied to the state with index #%d",
 			b.BlockIndex(), vs.BlockIndex())
 	}
-	if !empty && vs.Timestamp().After(b.Timestamp()) {
+	if vs.Timestamp().After(b.Timestamp()) {
 		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
+	vs.applyBlockNoCheck(b)
+	return nil
+}
+
+func (vs *virtualStateAccess) applyBlockNoCheck(b Block) {
 	vs.ApplyStateUpdates(b.(*blockImpl).stateUpdate)
 	vs.appliedBlockHashes = append(vs.appliedBlockHashes, hashing.HashData(b.EssenceBytes()))
-	return nil
 }
 
 // ApplyStateUpdates applies one state update. Doesn't change the state hash: it can be changed by Apply block
