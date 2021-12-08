@@ -1,6 +1,7 @@
 package hashing
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"hash"
@@ -27,11 +28,15 @@ func (h HashValue) Bytes() []byte {
 }
 
 func (h HashValue) String() string {
-	return h.Base58()
+	return h.Hex()
 }
 
 func (h HashValue) Base58() string {
 	return base58.Encode(h[:])
+}
+
+func (h HashValue) Hex() string {
+	return hex.EncodeToString(h[:])
 }
 
 func (h *HashValue) MarshalJSON() ([]byte, error) {

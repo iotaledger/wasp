@@ -152,13 +152,14 @@ func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...cryptolib.Seed)
 	//require.NoError(t, err)
 
 	initialTime := time.Unix(1, 0)
-	initParams := utxodb.InitParams{}
-	initParams.WithTimestamp(utxodb.UnixSeconds(initialTime.Unix())).WithRentStructure(parameters.DeSerializationParameters().RentStructure)
+	initParams := utxodb.DefaultInitParams().
+		WithTimestamp(utxodb.UnixSeconds(initialTime.Unix())).
+		WithRentStructure(parameters.DeSerializationParameters().RentStructure)
 	ret := &Solo{
 		T:               t,
 		logger:          log,
 		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
-		utxoDB:          utxodb.New(&initParams),
+		utxoDB:          utxodb.New(initParams),
 		seed:            seed,
 		logicalTime:     initialTime,
 		timeStep:        DefaultTimeStep,
@@ -246,7 +247,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 	chainlog := env.logger.Named(name)
 	store := env.dbmanager.GetOrCreateKVStore(chainID)
 	vs, err := state.CreateOriginState(store, chainID)
-	env.logger.Infof("     chain '%s'. origin state hash: %s", chainID.String(), vs.StateCommitment().String())
+	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), vs.StateCommitment().String())
 
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())
