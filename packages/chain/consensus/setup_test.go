@@ -203,10 +203,6 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	mempoolMetrics := metrics.DefaultChainMetrics()
 	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
 
-	cfg := &consensusTestConfigProvider{
-		ownNetID:  nodeID,
-		neighbors: env.NodeIDs,
-	}
 	//
 	// Pass the ACS mock, if it was set in env.MockedACS.
 	acs := make([]chain.AsynchronousCommonSubsetRunner, 0, 1)
@@ -221,7 +217,6 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 		cmtRec,
 		env.ChainID,
 		env.NetworkProviders[nodeIndex],
-		cfg,
 		env.DKSRegistries[nodeIndex],
 		log,
 		acs...,
@@ -443,28 +438,4 @@ func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
 			}(n, req)
 		}
 	}
-}
-
-// TODO: should this object be obtained from peering.NetworkProvider?
-// Or should registry.PeerNetworkConfigProvider methods methods be part of
-// peering.NetworkProvider interface
-type consensusTestConfigProvider struct {
-	ownNetID  string
-	neighbors []string
-}
-
-func (p *consensusTestConfigProvider) OwnNetID() string {
-	return p.ownNetID
-}
-
-func (p *consensusTestConfigProvider) PeeringPort() int {
-	return 0 // Anything
-}
-
-func (p *consensusTestConfigProvider) Neighbors() []string {
-	return p.neighbors
-}
-
-func (p *consensusTestConfigProvider) String() string {
-	return fmt.Sprintf("consensusTestConfigProvider( ownNetID: %s, neighbors: %+v )", p.OwnNetID(), p.Neighbors())
 }

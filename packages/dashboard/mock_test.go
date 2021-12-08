@@ -112,13 +112,11 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 			{
 				Index:     0,
 				PeeringID: "0",
-				IsSelf:    true,
 				Connected: true,
 			},
 			{
 				Index:     1,
 				PeeringID: "1",
-				IsSelf:    false,
 				Connected: true,
 			},
 		},

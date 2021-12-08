@@ -28,14 +28,6 @@ type NodeIdentityProvider interface {
 	GetNodePublicKey() (*ed25519.PublicKey, error)
 }
 
-// PeerNetworkConfigProvider access to node and chain configuration: a list of netIDs of potential peers
-type PeerNetworkConfigProvider interface { // TODO: KP: Remove or redesign.
-	OwnNetID() string
-	PeeringPort() int
-	Neighbors() []string
-	String() string
-}
-
 // DKShareRegistryProvider stands for a partial registry interface, needed for this package.
 // It should be implemented by registry.impl
 type DKShareRegistryProvider interface {

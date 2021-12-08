@@ -29,7 +29,6 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -65,7 +64,6 @@ type chainObj struct {
 	log                              *logger.Logger
 	nodeConn                         chain.NodeConnection
 	db                               kvstore.KVStore
-	peerNetworkConfig                registry.PeerNetworkConfigProvider
 	netProvider                      peering.NetworkProvider
 	dksProvider                      registry.DKShareRegistryProvider
 	committeeRegistry                registry.CommitteeRegistryProvider
@@ -97,7 +95,6 @@ func NewChain(
 	chainID *iscp.ChainID,
 	log *logger.Logger,
 	txstreamClient *txstream.Client,
-	peerNetConfig registry.PeerNetworkConfigProvider, // TODO: Remove it.
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
 	dksProvider registry.DKShareRegistryProvider,
@@ -122,7 +119,6 @@ func NewChain(
 		db:                db,
 		chainStateSync:    chainStateSync,
 		stateReader:       state.NewOptimisticStateReader(db, chainStateSync),
-		peerNetworkConfig: peerNetConfig,
 		netProvider:       netProvider,
 		dksProvider:       dksProvider,
 		committeeRegistry: committeeRegistry,
@@ -268,24 +264,24 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 }
 
 func (c *chainObj) updateChainNodes() {
-	c.log.Infof("XXX: updateChainNodes...")
-	defer c.log.Infof("XXX: updateChainNodes... Done")
-	stateIndex := c.consensus.GetStatusSnapshot().StateIndex
-	c.log.Infof("XXX: updateChainNodes... 1")
 	govAccessNodes := make([]ed25519.PublicKey, 0)
-	c.log.Infof("XXX: updateChainNodes... 2")
-	if stateIndex > 0 {
-		res, err := viewcontext.NewFromChain(c).CallView(
-			governance.Contract.Hname(),
-			governance.FuncGetChainNodes.Hname(),
-			governance.GetChainNodesRequest{}.AsDict(),
-		)
-		if err != nil {
-			c.log.Panicf("unable to read the governance contract state: %v", err)
+	if c.consensus != nil {
+		statusSnapshot := c.consensus.GetStatusSnapshot()
+		if statusSnapshot != nil {
+			stateIndex := c.consensus.GetStatusSnapshot().StateIndex
+			if stateIndex > 0 {
+				res, err := viewcontext.NewFromChain(c).CallView(
+					governance.Contract.Hname(),
+					governance.FuncGetChainNodes.Hname(),
+					governance.GetChainNodesRequest{}.AsDict(),
+				)
+				if err != nil {
+					c.log.Panicf("unable to read the governance contract state: %v", err)
+				}
+				govAccessNodes = governance.NewGetChainNodesResponseFromDict(res).AccessNodes
+			}
 		}
-		govAccessNodes = governance.NewGetChainNodesResponseFromDict(res).AccessNodes
 	}
-	c.log.Infof("XXX: updateChainNodes... 3")
 
 	//
 	// Collect the new set of access nodes in the communication domain.
@@ -301,7 +297,6 @@ func (c *chainObj) updateChainNodes() {
 	for _, newAccessNode := range govAccessNodes {
 		newMembers[newAccessNode] = true
 	}
-	c.log.Infof("XXX: updateChainNodes... 4")
 
 	//
 	// Pass it to the underlying domain to make a graceful update.
@@ -310,7 +305,6 @@ func (c *chainObj) updateChainNodes() {
 		pubKeyCopy := pubKey
 		newMemberList = append(newMemberList, &pubKeyCopy)
 	}
-	c.log.Infof("XXX: updateChainNodes... 5")
 	c.chainPeers.UpdatePeers(newMemberList)
 }
 
@@ -389,9 +383,22 @@ func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*registry.Co
 		// committee record wasn't found in th registry, I am not the part of the committee
 		return nil, nil
 	}
+	//
 	// just in case check if I am among committee nodes
 	// should not happen
-	if !util.StringInList(c.peerNetworkConfig.OwnNetID(), rec.Nodes) { // TODO: KP: XXX: ...
+	selfPubKey := c.netProvider.Self().PubKey()
+	cmtDKShare, err := c.dksProvider.LoadDKShare(addr)
+	if err != nil {
+		return nil, err
+	}
+	found := false
+	for i := range cmtDKShare.NodePubKeys {
+		if *cmtDKShare.NodePubKeys[i] == *selfPubKey {
+			found = true
+			break
+		}
+	}
+	if !found {
 		return nil, xerrors.Errorf("createCommitteeIfNeeded: I am not among nodes of the committee record. Inconsistency")
 	}
 	return rec, nil
@@ -403,7 +410,6 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 		cmtRec,
 		c.chainID,
 		c.netProvider,
-		c.peerNetworkConfig,
 		c.dksProvider,
 		c.log,
 	)

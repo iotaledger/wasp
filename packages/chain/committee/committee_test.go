@@ -4,7 +4,6 @@
 package committee
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -26,16 +25,11 @@ func TestCommitteeBasic(t *testing.T) {
 	nodes, netCloser := testpeers.SetupNet(netIDs, identities, testutil.NewPeeringNetReliable(log), log)
 	net0 := nodes[0]
 
-	cfg0 := &committeeimplTestConfigProvider{
-		ownNetID:  netIDs[0],
-		neighbors: netIDs,
-	}
-
 	cmtRec := &registry.CommitteeRecord{
 		Address: stateAddr,
 		Nodes:   netIDs,
 	}
-	c, _, err := New(cmtRec, nil, net0, cfg0, dksRegistries[0], log)
+	c, _, err := New(cmtRec, nil, net0, dksRegistries[0], log)
 	require.NoError(t, err)
 	require.True(t, c.Address().Equals(stateAddr))
 	require.EqualValues(t, 4, c.Size())
@@ -46,30 +40,4 @@ func TestCommitteeBasic(t *testing.T) {
 	c.Close()
 	require.False(t, c.IsReady())
 	require.NoError(t, netCloser.Close())
-}
-
-var _ registry.PeerNetworkConfigProvider = &committeeimplTestConfigProvider{}
-
-// TODO: should this object be obtained from peering.NetworkProvider?
-// Or should registry.PeerNetworkConfigProvider methods methods be part of
-// peering.NetworkProvider interface
-type committeeimplTestConfigProvider struct {
-	ownNetID  string
-	neighbors []string
-}
-
-func (p *committeeimplTestConfigProvider) OwnNetID() string {
-	return p.ownNetID
-}
-
-func (p *committeeimplTestConfigProvider) PeeringPort() int {
-	return 0 // Anything
-}
-
-func (p *committeeimplTestConfigProvider) Neighbors() []string {
-	return p.neighbors
-}
-
-func (p *committeeimplTestConfigProvider) String() string {
-	return fmt.Sprintf("committeeimplPeerConfig( ownNetID: %s, neighbors: %+v )", p.OwnNetID(), p.Neighbors())
 }

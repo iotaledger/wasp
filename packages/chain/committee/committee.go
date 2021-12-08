@@ -23,7 +23,6 @@ import (
 type committee struct {
 	isReady        *atomic.Bool
 	address        ledgerstate.Address
-	peerConfig     registry.PeerNetworkConfigProvider
 	validatorNodes peering.GroupProvider
 	acsRunner      chain.AsynchronousCommonSubsetRunner
 	size           uint16
@@ -41,7 +40,6 @@ func New(
 	cmtRec *registry.CommitteeRecord,
 	chainID *iscp.ChainID,
 	netProvider peering.NetworkProvider,
-	peerConfig registry.PeerNetworkConfigProvider,
 	dksProvider registry.DKShareRegistryProvider,
 	log *logger.Logger,
 	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
@@ -53,9 +51,6 @@ func New(
 	}
 	if dkshare.Index == nil {
 		return nil, nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: %w", cmtRec.Address.Base58(), err)
-	}
-	if err := checkValidatorNodeIDs(peerConfig, dkshare.N, *dkshare.Index, cmtRec.Nodes); err != nil {
-		return nil, nil, xerrors.Errorf("NewCommittee: %w", err)
 	}
 	// peerGroupID is calculated by XORing chainID and stateAddr.
 	// It allows to use same statAddr for different chains
@@ -76,7 +71,6 @@ func New(
 		isReady:        atomic.NewBool(false),
 		address:        cmtRec.Address,
 		validatorNodes: peers,
-		peerConfig:     peerConfig,
 		size:           dkshare.N,
 		quorum:         dkshare.T,
 		ownIndex:       *dkshare.Index,
@@ -158,17 +152,10 @@ func (c *committee) QuorumIsAlive(quorum ...uint16) bool {
 func (c *committee) PeerStatus() []*chain.PeerStatus {
 	ret := make([]*chain.PeerStatus, 0)
 	for i, peer := range c.validatorNodes.AllNodes() {
-		isSelf := peer == nil || peer.NetID() == c.peerConfig.OwnNetID()
 		status := &chain.PeerStatus{
-			Index:  int(i),
-			IsSelf: isSelf,
-		}
-		if isSelf {
-			status.PeeringID = c.peerConfig.OwnNetID()
-			status.Connected = true
-		} else {
-			status.PeeringID = peer.NetID()
-			status.Connected = peer.IsAlive()
+			Index:     int(i),
+			PeeringID: peer.NetID(),
+			Connected: peer.IsAlive(),
 		}
 		ret = append(ret, status)
 	}
@@ -195,29 +182,6 @@ func (c *committee) waitReady(waitReady bool) {
 	c.log.Infof("committee started for address %s", c.dkshare.Address.Base58())
 	c.log.Debugf("peer status: %s", c.PeerStatus())
 	c.isReady.Store(true)
-}
-
-func checkValidatorNodeIDs(cfg registry.PeerNetworkConfigProvider, n, ownIndex uint16, validatorNetIDs []string) error {
-	if !util.AllDifferentStrings(validatorNetIDs) {
-		return xerrors.Errorf("checkValidatorNodeIDs: list of validators nodes contains duplicates: %+v", validatorNetIDs)
-	}
-	if len(validatorNetIDs) != int(n) {
-		return xerrors.Errorf("checkValidatorNodeIDs: number of validator nodes must be equal to the N parameter of the committee")
-	}
-	if ownIndex >= n {
-		return xerrors.New("checkValidatorNodeIDs: wrong own validator index")
-	}
-	if validatorNetIDs[ownIndex] != cfg.OwnNetID() {
-		return xerrors.New("checkValidatorNodeIDs: own netID is expected at own validator index")
-	}
-	// check if all validator node IDs are among known validatorNodes
-	allPeers := []string{cfg.OwnNetID()}
-	allPeers = append(allPeers, cfg.Neighbors()...)
-	if !util.IsSubset(validatorNetIDs, allPeers) {
-		return xerrors.Errorf("not all validator nodes are among known neighbors: all peers: %+v, committee: %+v",
-			allPeers, validatorNetIDs)
-	}
-	return nil
 }
 
 func (c *committee) GetOtherValidatorsPeerIDs() []string {

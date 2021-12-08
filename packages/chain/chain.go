@@ -181,7 +181,6 @@ type CommitteeInfo struct {
 type PeerStatus struct {
 	Index     int
 	PeeringID string
-	IsSelf    bool
 	Connected bool
 }
 
