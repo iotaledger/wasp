@@ -248,7 +248,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("consistency check 1", func(t *testing.T) {
 		const runTimes = 5
 		const testAmount = 10
-		numTokenIDs = 5
+		numTokenIDs = 4
 
 		initTest()
 		runConsume(runTimes, testAmount)
@@ -267,7 +267,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("consistency check 2", func(t *testing.T) {
 		const runTimes = 100
 		const testAmount = 10
-		numTokenIDs = 5
+		numTokenIDs = 4
 
 		initTest()
 		runConsume(runTimes, testAmount)
@@ -286,7 +286,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("consistency check 3", func(t *testing.T) {
 		const runTimes = 100
 		const testAmount = 10
-		numTokenIDs = 5
+		numTokenIDs = 4
 
 		initTest()
 		runCreateBuilderAndConsumeRandomly(runTimes, testAmount)
@@ -305,7 +305,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("consistency check 4", func(t *testing.T) {
 		const runTimes = 100
 		const testAmount = 10
-		numTokenIDs = 10
+		numTokenIDs = 4
 
 		initTest()
 		err := util.CatchPanicReturnError(func() {

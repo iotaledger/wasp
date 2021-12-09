@@ -31,6 +31,8 @@ type tokenBalanceLoader func(iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput)
 // AnchorTransactionBuilder represents structure which handles all the data needed to eventually
 // build an essence of the anchor transaction
 type AnchorTransactionBuilder struct {
+	// number of iotas can't go below this
+	minDustDepositOnAnchor uint64
 	// cache for dust deposit constant for one internal output
 	dustAmountForInternalAccountUTXO uint64
 	// on-chain balance loader for native tokens
@@ -86,7 +88,12 @@ func (n *nativeTokenBalance) requiresInput() bool {
 
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
 func NewAnchorTransactionBuilder(anchorOutput *iotago.AliasOutput, anchorOutputID *iotago.UTXOInput, balanceIotasOnAnchor uint64, tokenBalanceLoader tokenBalanceLoader) *AnchorTransactionBuilder {
+	minDustDepositOnAnchor := anchorOutput.VByteCost(parameters.RentStructure(), nil)
+	if balanceIotasOnAnchor < minDustDepositOnAnchor {
+		panic("internal inconsistency: balanceIotasOnAnchor < minDustDepositOnAnchor")
+	}
 	return &AnchorTransactionBuilder{
+		minDustDepositOnAnchor:      minDustDepositOnAnchor,
 		loadNativeTokensOnChain:     tokenBalanceLoader,
 		anchorOutput:                anchorOutput,
 		anchorOutputID:              anchorOutputID,
@@ -117,6 +124,12 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 	}
 	ret.postedOutputs = append(ret.postedOutputs, txb.postedOutputs...)
 	return ret
+}
+
+// TotalAvailableIotas returns number of on-chain iotas.
+// It does not include minimum dust deposit needed for anchor output and other internal UTXOs
+func (txb *AnchorTransactionBuilder) TotalAvailableIotas() uint64 {
+	return txb.currentBalanceIotasOnAnchor - txb.minDustDepositOnAnchor
 }
 
 // Consume adds an input to the transaction.
@@ -307,8 +320,11 @@ func (txb *AnchorTransactionBuilder) subDeltaIotasFromTotal(delta uint64) {
 	if delta == 0 {
 		return
 	}
+	if txb.currentBalanceIotasOnAnchor < txb.minDustDepositOnAnchor {
+		panic("internal inconsistency with dust handling")
+	}
 	// safe arithmetics
-	if delta > txb.currentBalanceIotasOnAnchor {
+	if delta > txb.currentBalanceIotasOnAnchor-txb.minDustDepositOnAnchor {
 		panic(ErrNotEnoughIotaBalance)
 	}
 	txb.currentBalanceIotasOnAnchor -= delta
