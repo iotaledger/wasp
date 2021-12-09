@@ -93,8 +93,8 @@ func (s *sandboxview) Contract() iscp.Hname {
 }
 
 func (s *sandboxview) ContractCreator() *iscp.AgentID {
-	contractRecord, found := root.FindContract(contractStateSubpartition(s.vctx.stateReader.KVStoreReader(), root.Contract.Hname()), s.contractHname)
-	assert.NewAssert(s.Log()).Require(found, "failed to find contract %s", s.contractHname)
+	contractRecord := root.FindContract(contractStateSubpartition(s.vctx.stateReader.KVStoreReader(), root.Contract.Hname()), s.contractHname)
+	assert.NewAssert(s.Log()).Require(contractRecord != nil, "failed to find contract %s", s.contractHname)
 	return contractRecord.Creator
 }
 

@@ -24,8 +24,8 @@ func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
 }
 
 func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
-	rec, ok := vmctx.findContractByHname(vmctx.CurrentContractHname())
-	if !ok {
+	rec := vmctx.findContractByHname(vmctx.CurrentContractHname())
+	if rec == nil {
 		panic("can't find current contract")
 	}
 	return rec.Creator

@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -54,7 +53,6 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	contractRegistry := collections.NewMap(state, root.VarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
 
-	mustStoreContract(ctx, _default.Contract, a)
 	mustStoreContract(ctx, root.Contract, a)
 	mustStoreAndInitCoreContract(ctx, blob.Contract, a)
 	mustStoreAndInitCoreContract(ctx, accounts.Contract, a)
@@ -129,14 +127,13 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	rec, found := root.FindContract(ctx.State(), hname)
+	rec := root.FindContract(ctx.State(), hname)
 	ret := dict.New()
-	ret.Set(root.ParamContractRecData, rec.Bytes())
-	var foundByte [1]byte
+	found := rec != nil
+	ret.Set(root.ParamContractFound, codec.EncodeBool(found))
 	if found {
-		foundByte[0] = 0xFF
+		ret.Set(root.ParamContractRecData, rec.Bytes())
 	}
-	ret.Set(root.ParamContractFound, foundByte[:])
 	return ret, nil
 }
 

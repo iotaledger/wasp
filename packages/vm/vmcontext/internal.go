@@ -48,7 +48,7 @@ func (vmctx *VMContext) totalAssets() *iscp.Assets {
 	return accounts.GetTotalAssets(vmctx.State())
 }
 
-func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) (*root.ContractRecord, bool) {
+func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) *root.ContractRecord {
 	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
