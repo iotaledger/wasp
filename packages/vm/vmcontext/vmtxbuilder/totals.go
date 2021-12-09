@@ -36,8 +36,8 @@ func (txb *AnchorTransactionBuilder) sumNativeTokens(totals *TransactionTotals, 
 func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	ret := &TransactionTotals{
 		TokenBalances:           make(map[iotago.NativeTokenID]*big.Int),
-		TotalIotasOnChain:       txb.anchorOutput.Amount,
-		TotalIotasInDustDeposit: 0,
+		TotalIotasOnChain:       txb.TotalAvailableIotas(),
+		TotalIotasInDustDeposit: txb.minDustDepositOnAnchor,
 	}
 	// sum over native tokens which require inputs
 	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {

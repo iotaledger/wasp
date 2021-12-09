@@ -385,7 +385,7 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id iotago.Native
 		// There's a need for additional dust deposit on the respective UTXO, so delta for the anchor is negative
 		b.dustDepositCharged = true
 		dd := txb.vByteCostOfNativeTokenBalance()
-		if dd >= txb.currentBalanceIotasOnAnchor {
+		if dd >= txb.TotalAvailableIotas() {
 			panic(ErrNotEnoughFundsForInternalDustDeposit)
 		}
 		txb.subDeltaIotasFromTotal(dd)
