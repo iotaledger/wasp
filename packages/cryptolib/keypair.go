@@ -3,6 +3,7 @@ package cryptolib
 import (
 	crypto "crypto/ed25519"
 	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/mr-tron/base58"
@@ -19,6 +20,8 @@ type KeyPair struct {
 	PublicKey  PublicKey
 }
 
+type AddressSigner KeyPair
+
 func (k *KeyPair) Valid() bool {
 	return len(k.PrivateKey) > 0
 }
@@ -29,6 +32,22 @@ func (k *KeyPair) Verify(message, sig []byte) bool {
 
 func (k *KeyPair) Sign(message []byte) ([]byte, error) {
 	return k.PrivateKey.Sign(nil, message, nil)
+}
+
+func (k *KeyPair) AsAddressSigner() iotago.AddressSigner {
+	return AddressSigner(*k)
+}
+
+func (a AddressSigner) Sign(addr iotago.Address, msg []byte) (signature iotago.Signature, err error) {
+	kp := KeyPair(a)
+	if !addr.Equal(Ed25519AddressFromPubKey(kp.PublicKey)) {
+		return nil, fmt.Errorf("can't sign message for given Ed25519 address")
+	}
+	b, err := kp.Sign(msg)
+	ed25519Sig := &iotago.Ed25519Signature{}
+	copy(ed25519Sig.Signature[:], b)
+	copy(ed25519Sig.PublicKey[:], kp.PublicKey)
+	return ed25519Sig, nil
 }
 
 func NewKeyPairFromSeed(seed Seed) KeyPair {
