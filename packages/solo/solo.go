@@ -34,9 +34,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// DefaultTimeStep is a default step for the logical clock for each PostRequestSync call.
-const DefaultTimeStep = 1 * time.Millisecond
-
 // Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewPrivateKeyWithFunds() and such
 const (
@@ -54,9 +51,6 @@ type Solo struct {
 	utxoDB           *utxodb.UtxoDB
 	glbMutex         sync.RWMutex
 	ledgerMutex      sync.RWMutex
-	clockMutex       sync.RWMutex
-	logicalTime      time.Time
-	timeStep         time.Duration
 	chains           map[iscp.ChainID]*Chain
 	vmRunner         vm.VMRunner
 	publisherWG      sync.WaitGroup
@@ -146,23 +140,21 @@ func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...cryptolib.Seed)
 	//})
 	//require.NoError(t, err)
 
-	initialTime := time.Unix(1, 0)
 	initParams := utxodb.DefaultInitParams(seed[:]).
-		WithTimestamp(utxodb.UnixSeconds(initialTime.Unix())).
 		WithRentStructure(parameters.DeSerializationParameters().RentStructure)
 	ret := &Solo{
 		T:               t,
 		logger:          log,
 		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
 		utxoDB:          utxodb.New(initParams),
-		logicalTime:     initialTime,
-		timeStep:        DefaultTimeStep,
 		chains:          make(map[iscp.ChainID]*Chain),
 		vmRunner:        runvm.NewVMRunner(),
 		processorConfig: processorConfig,
 		deSeriParams:    parameters.DeSerializationParameters(),
 	}
-	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime.Format(timeLayout))
+	globalTime := ret.utxoDB.GlobalTime()
+	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v, milestone index: #%d",
+		globalTime.Time.Format(timeLayout), ret.utxoDB.TimeStep(), globalTime.MilestoneIndex)
 	return ret
 }
 
@@ -397,11 +389,12 @@ func (env *Solo) WaitPublisher() {
 	env.publisherWG.Wait()
 }
 
-func (ch *Chain) GetChainOutput() *iotago.AliasOutput {
-	outs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
+func (ch *Chain) GetAnchorOutput() (*iotago.AliasOutput, *iotago.UTXOInput) {
+	outs, ids := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(ch.Env.T, 1, len(outs))
+	require.EqualValues(ch.Env.T, 1, len(ids))
 
-	return outs[0]
+	return outs[0], ids[0]
 }
 
 // collateBatch selects requests which are not time locked
@@ -410,7 +403,8 @@ func (ch *Chain) collateBatch() []iscp.RequestData {
 	// emulating variable sized blocks
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
-	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
+	timeAssumption := ch.Env.GlobalTime()
+	ready := ch.mempool.ReadyNow(timeAssumption.Time)
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch
@@ -419,7 +413,7 @@ func (ch *Chain) collateBatch() []iscp.RequestData {
 	for _, req := range ready[:batchSize] {
 		if !req.IsOffLedger() {
 			timeData := req.Unwrap().UTXO().Features().TimeLock()
-			if timeData != nil && timeData.Time.After(ch.Env.LogicalTime()) {
+			if timeData != nil && timeData.Time.After(timeAssumption.Time) {
 				continue
 			}
 		}

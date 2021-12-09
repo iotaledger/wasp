@@ -8,8 +8,11 @@ import (
 	"strings"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/stretchr/testify/require"
 )
 
 func (ch *Chain) runRequestsSync(reqs []iscp.RequestData, trace string) (dict.Dict, error) {
@@ -23,70 +26,70 @@ func (ch *Chain) runRequestsSync(reqs []iscp.RequestData, trace string) (dict.Di
 }
 
 func (ch *Chain) runRequestsNolock(reqs []iscp.RequestData, trace string) (dict.Dict, error) {
-	panic("TODO implement")
-	// ch.Log.Debugf("runRequestsSync ('%s')", trace)
+	ch.Log.Debugf("runRequestsNolock ('%s')", trace)
 
-	// task := &vm.VMTask{
-	// 	Processors:         ch.proc,
-	// 	AnchorOutput:       ch.GetChainOutput(),
-	// 	Requests:           reqs,
-	// 	Timestamp:          ch.Env.LogicalTime(),
-	// 	VirtualStateAccess: ch.State.Copy(),
-	// 	Entropy:            hashing.RandomHash(nil),
-	// 	ValidatorFeeTarget: ch.ValidatorFeeTarget,
-	// 	Log:                ch.Log,
-	// }
-	// var err error
-	// var callRes dict.Dict
-	// var callErr error
-	// // state baseline always valid in Solo
-	// task.SolidStateBaseline = ch.GlobalSync.GetSolidIndexBaseline()
-	// task.OnFinish = func(callResult dict.Dict, callError error, err error) {
-	// 	require.NoError(ch.Env.T, err)
-	// 	callRes = callResult
-	// 	callErr = callError
-	// }
+	anchorOutput, anchorOutputID := ch.GetAnchorOutput()
+	task := &vm.VMTask{
+		Processors:         ch.proc,
+		AnchorOutput:       anchorOutput,
+		AnchorOutputID:     *anchorOutputID,
+		Requests:           reqs,
+		TimeAssumption:     ch.Env.GlobalTime(),
+		VirtualStateAccess: ch.State.Copy(),
+		Entropy:            hashing.RandomHash(nil),
+		ValidatorFeeTarget: ch.ValidatorFeeTarget,
+		Log:                ch.Log,
+	}
+	//var err error
+	var callRes dict.Dict
+	var callErr error
+	// state baseline always valid in Solo
+	task.SolidStateBaseline = ch.GlobalSync.GetSolidIndexBaseline()
+	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
+		require.NoError(ch.Env.T, err)
+		callRes = callResult
+		callErr = callError
+	}
 
-	// ch.Env.vmRunner.Run(task)
+	ch.Env.vmRunner.Run(task)
 
-	// ch.Env.AdvanceClockBy(time.Duration(len(task.Requests)+1) * time.Nanosecond)
+	//var essence *iotago.TransactionEssence
 
-	// var essence *iotago.TransactionEssence
-
-	// if task.RotationAddress == nil {
-	// 	essence = task.ResultTransactionEssence
-	// } else {
-	// 	essence, err = rotate.MakeRotateStateControllerTransaction(
-	// 		task.RotationAddress,
-	// 		task.AnchorOutput,
-	// 		task.Timestamp.Add(2*time.Nanosecond),
-	// 		identity.ID{},
-	// 		identity.ID{},
-	// 	)
-	// 	require.NoError(ch.Env.T, err)
-	// }
-
-	// inputs, err := ch.Env.utxoDB.CollectUnspentOutputsFromInputs(essence)
-	// require.NoError(ch.Env.T, err)
-	// unlockBlocks, err := utxoutil.UnlockInputsWithED25519KeyPairs(inputs, essence, ch.StateControllerPrivateKey)
-	// require.NoError(ch.Env.T, err)
-
-	// tx := iotago.NewTransaction(essence, unlockBlocks)
-	// err = ch.Env.AddToLedger(tx)
-	// require.NoError(ch.Env.T, err)
-
-	// stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
-	// require.NoError(ch.Env.T, err)
-
-	// if task.RotationAddress == nil {
-	// 	// normal state transition
-	// 	ch.State = task.VirtualStateAccess
-	// 	ch.settleStateTransition(tx, stateOutput, iscp.TakeRequestIDs(reqs[0:task.ProcessedRequestsCount]...))
-	// } else {
-	// 	ch.Log.Infof("ROTATED STATE CONTROLLER to %s", stateOutput.GetStateAddress().Base58())
-	// }
-
-	// return callRes, callErr
+	//if task.RotationAddress == nil {
+	//	essence = task.ResultTransactionEssence
+	//} else {
+	// TODO
+	//essence, err = rotate.MakeRotateStateControllerTransaction(
+	//	task.RotationAddress,
+	//	task.AnchorOutput,
+	//	task.Timestamp.Add(2*time.Nanosecond),
+	//	identity.ID{},
+	//	identity.ID{},
+	//)
+	//require.NoError(ch.Env.T, err)
+	//}
+	return nil, nil
+	//inputs, err := ch.Env.utxoDB.CollectUnspentOutputsFromInputs(essence)
+	//require.NoError(ch.Env.T, err)
+	//unlockBlocks, err := utxoutil.UnlockInputsWithED25519KeyPairs(inputs, essence, ch.StateControllerPrivateKey)
+	//require.NoError(ch.Env.T, err)
+	//
+	//tx := iotago.NewTransaction(essence, unlockBlocks)
+	//err = ch.Env.AddToLedger(tx)
+	//require.NoError(ch.Env.T, err)
+	//
+	//stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
+	//require.NoError(ch.Env.T, err)
+	//
+	//if task.RotationAddress == nil {
+	//	// normal state transition
+	//	ch.State = task.VirtualStateAccess
+	//	ch.settleStateTransition(tx, stateOutput, iscp.TakeRequestIDs(reqs[0:task.ProcessedRequestsCount]...))
+	//} else {
+	//	ch.Log.Infof("ROTATED STATE CONTROLLER to %s", stateOutput.GetStateAddress().Base58())
+	//}
+	//
+	//return callRes, callErr
 }
 
 func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, stateOutput *iotago.AliasOutput, reqids []iscp.RequestID) {

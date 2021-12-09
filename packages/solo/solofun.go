@@ -47,7 +47,7 @@ func (env *Solo) MintTokens(wallet *cryptolib.KeyPair, amount uint64) (iotago.Na
 	// addr := ledgerstate.NewED25519Address(wallet.PublicKey)
 	// allOuts := env.utxoDB.GetAddressOutputs(addr)
 
-	// txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(env.LogicalTime())
+	// txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(env.GlobalTime())
 	// if amount < DustThresholdIotas {
 	// 	return colored.Color{}, xerrors.New("can't mint number of tokens below dust threshold")
 	// }

@@ -1,11 +1,11 @@
 package cryptolib
 
 import (
-	"crypto"
 	"fmt"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
+
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
@@ -29,8 +29,8 @@ func (k *KeyPair) Verify(message, sig []byte) bool {
 	return Verify(k.PublicKey, message, sig)
 }
 
-func (k *KeyPair) Sign(message []byte) ([]byte, error) {
-	return k.PrivateKey.Sign(nil, message, crypto.Hash(0))
+func (k *KeyPair) Sign(message []byte) ed25519.Signature {
+	return k.PrivateKey.Sign(message)
 }
 
 func NewKeyPairFromSeed(seed Seed) KeyPair {

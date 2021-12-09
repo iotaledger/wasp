@@ -5,11 +5,8 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/state"
-
 	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
-
 	"github.com/iotaledger/wasp/packages/utxodb"
-
 	"github.com/stretchr/testify/require"
 )
 
