@@ -11,19 +11,11 @@ keywords:
 - configure
 - arguments
 ---
-# Docker
+# Docker (Standalone)
 
-This page describes the configuration of the Wasp node in combination with Docker. If you followed the instructions in [Running a Node](running-a-node.md), you can skip to [Configuring wasp-cli](wasp-cli.md).
+This page describes the configuration of a single Wasp node in combination with Docker. If you followed the instructions in [Running a Node](running-a-node.md), you can skip to [Configuring wasp-cli](wasp-cli.md).
 
 ## Introduction
-
-The Dockerfile is separated into several stages which effectively splits Wasp into four small pieces:
-
-* Testing
-    * Unit testing
-    * Integration testing
-* Wasp CLI
-* Wasp Node
 
 ## Running a Wasp Node
 
@@ -35,7 +27,7 @@ cd wasp
 docker build -t wasp-node .
 ```
 
-The build process will copy the docker_config.json file into the image, which will use it when the node gets started. 
+The build process will copy the docker_config.json file into the image, which will be used when the node gets started. 
 
 By default, the build process will use `-tags rocksdb,builtin_static` as a build argument. This argument can be modified with `--build-arg BUILD_TAGS=<tags>`.
 
