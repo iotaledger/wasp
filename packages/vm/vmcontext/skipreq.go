@@ -23,6 +23,15 @@ const (
 
 // earlyCheckReasonToSkip checks if request must be ignored without even modifying the state
 func (vmctx *VMContext) earlyCheckReasonToSkip() error {
+	if vmctx.isInitChainRequest() {
+		if vmctx.task.AnchorOutput.StateIndex == 0 {
+			// nothing to check if it is an init request in the beginning
+			return nil
+		}
+		// skip if it is repeating init request
+		return xerrors.New("repeating init chain request")
+	}
+
 	var err error
 	if vmctx.req.IsOffLedger() {
 		err = vmctx.checkReasonToSkipOffLedger()
