@@ -67,8 +67,8 @@ func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dic
 
 func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dict) (dict.Dict, error) {
 	var err error
-	contractRecord, found := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Contract.Hname()), contractHname)
-	if !found {
+	contractRecord := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Contract.Hname()), contractHname)
+	if contractRecord == nil {
 		return nil, xerrors.Errorf("contract not found %s", contractHname)
 	}
 	proc, err := v.processors.GetOrCreateProcessor(contractRecord, func(programHash hashing.HashValue) (string, []byte, error) {

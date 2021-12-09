@@ -7,9 +7,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -17,6 +14,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
@@ -35,7 +34,6 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 		return err
 	}
 	vmctx.loadChainConfig()
-	vmctx.locateTargetContract()
 
 	// at this point state update is empty
 	// so far there were no panics except optimistic reader
@@ -54,7 +52,6 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 		// run the contract program
 		vmctx.callTheContract()
 	}, vmtxbuilder.ErrInputLimitExceeded, vmtxbuilder.ErrOutputLimitExceeded, vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
-
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
@@ -172,13 +169,17 @@ func (vmctx *VMContext) callFromRequest() {
 
 	// calling only non view entry points. Calling the view will trigger error and fallback
 	entryPoint := vmctx.req.CallTarget().EntryPoint
-	targetContract := vmctx.contractRecord.Hname()
+	targetContract := vmctx.targetContract()
+	if targetContract == nil {
+		// TODO must charge minimum gas here
+		panic("target contract Not Found")
+	}
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
-		targetContract,
+		targetContract.Hname(),
 		entryPoint,
 		vmctx.req.Params(),
 		vmctx.req.Transfer(),
-		vmctx.contractRecord.ProgramHash,
+		targetContract.ProgramHash,
 	)
 }
 
@@ -208,10 +209,10 @@ func (vmctx *VMContext) chargeGasFee() {
 	transferToOwner := &iscp.Assets{}
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		transferToValidator.Tokens = iotago.NativeTokens{
-			{*vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, big.NewInt(int64(sendToValidator))},
+			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
 		}
 		transferToOwner.Tokens = iotago.NativeTokens{
-			{*vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, big.NewInt(int64(sendToOwner))},
+			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToOwner))},
 		}
 	} else {
 		transferToValidator.Iotas = sendToValidator
@@ -278,17 +279,14 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	}
 }
 
-func (vmctx *VMContext) locateTargetContract() {
+func (vmctx *VMContext) targetContract() *root.ContractRecord {
 	// find target contract
 	targetContract := vmctx.req.CallTarget().Contract
-	var ok bool
-	vmctx.contractRecord, ok = vmctx.findContractByHname(targetContract)
-	if !ok {
+	ret := vmctx.findContractByHname(targetContract)
+	if ret == nil {
 		vmctx.Warnf("contract not found: %s", targetContract)
 	}
-	if vmctx.contractRecord.Hname() == 0 {
-		vmctx.Warnf("default contract will be called")
-	}
+	return ret
 }
 
 // loadChainConfig only makes sense if chain is already deployed

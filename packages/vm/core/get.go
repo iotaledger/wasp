@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -18,7 +17,6 @@ import (
 )
 
 var AllCoreContractsByHash = map[hashing.HashValue]*coreutil.ContractProcessor{
-	_default.Contract.ProgramHash:   _default.Processor,
 	root.Contract.ProgramHash:       rootimpl.Processor,
 	accounts.Contract.ProgramHash:   accounts.Processor,
 	blob.Contract.ProgramHash:       blob.Processor,
