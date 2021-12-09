@@ -34,9 +34,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// DefaultTimeStep is a default step for the logical clock for each PostRequestSync call.
-const DefaultTimeStep = 1 * time.Millisecond
-
 // Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewPrivateKeyWithFunds() and such
 const (
@@ -52,12 +49,8 @@ type Solo struct {
 	logger           *logger.Logger
 	dbmanager        *dbmanager.DBManager
 	utxoDB           *utxodb.UtxoDB
-	seed             cryptolib.Seed
 	glbMutex         sync.RWMutex
 	ledgerMutex      sync.RWMutex
-	clockMutex       sync.RWMutex
-	logicalTime      time.Time
-	timeStep         time.Duration
 	chains           map[iscp.ChainID]*Chain
 	vmRunner         vm.VMRunner
 	publisherWG      sync.WaitGroup
@@ -79,10 +72,6 @@ type Chain struct {
 	// In Solo it is Ed25519 signature scheme (in full Wasp environment is is a BLS address)
 	StateControllerKeyPair cryptolib.KeyPair
 	StateControllerAddress iotago.Address
-
-	// OriginatorPrivateKey the signature scheme used to create the chain (origin transaction).
-	// It is a default signature scheme in many of 'solo' calls which require private key.
-	OriginatorKeyPair cryptolib.KeyPair
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
 	ChainID *iscp.ChainID
@@ -151,23 +140,21 @@ func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...cryptolib.Seed)
 	//})
 	//require.NoError(t, err)
 
-	initialTime := time.Unix(1, 0)
-	initParams := utxodb.InitParams{}
-	initParams.WithTimestamp(utxodb.UnixSeconds(initialTime.Unix())).WithRentStructure(parameters.DeSerializationParameters().RentStructure)
+	initParams := utxodb.DefaultInitParams(seed[:]).
+		WithRentStructure(parameters.DeSerializationParameters().RentStructure)
 	ret := &Solo{
 		T:               t,
 		logger:          log,
 		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
-		utxoDB:          utxodb.New(&initParams),
-		seed:            seed,
-		logicalTime:     initialTime,
-		timeStep:        DefaultTimeStep,
+		utxoDB:          utxodb.New(initParams),
 		chains:          make(map[iscp.ChainID]*Chain),
 		vmRunner:        runvm.NewVMRunner(),
 		processorConfig: processorConfig,
 		deSeriParams:    parameters.DeSerializationParameters(),
 	}
-	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime.Format(timeLayout))
+	globalTime := ret.utxoDB.GlobalTime()
+	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v, milestone index: #%d",
+		globalTime.Time.Format(timeLayout), ret.utxoDB.TimeStep(), globalTime.MilestoneIndex)
 	return ret
 }
 
@@ -199,15 +186,13 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
-	var stateController cryptolib.KeyPair
-	stateController = cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(2))
-	stateAddr := cryptolib.Ed25519AddressFromPubKey(stateController.PublicKey)
+	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2) // cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(2))
 
 	var originatorAddr iotago.Address
+	var origKeyPair cryptolib.KeyPair
 	if chainOriginator == nil {
-		origKeyPair := cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(1))
+		origKeyPair, originatorAddr = env.utxoDB.NewKeyPairByIndex(1) // cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(1))
 		chainOriginator = &origKeyPair
-		originatorAddr = cryptolib.Ed25519AddressFromPubKey(chainOriginator.PublicKey)
 		_, err := env.utxoDB.RequestFunds(originatorAddr)
 		require.NoError(env.T, err)
 	} else {
@@ -246,7 +231,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 	chainlog := env.logger.Named(name)
 	store := env.dbmanager.GetOrCreateKVStore(chainID)
 	vs, err := state.CreateOriginState(store, chainID)
-	env.logger.Infof("     chain '%s'. origin state hash: %s", chainID.String(), vs.StateCommitment().String())
+	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), vs.StateCommitment().String())
 
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())
@@ -261,7 +246,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 		ChainID:                chainID,
 		StateControllerKeyPair: stateController,
 		StateControllerAddress: stateAddr,
-		OriginatorKeyPair:      *chainOriginator,
+		OriginatorPrivateKey:   *chainOriginator,
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     feeTarget,
@@ -341,13 +326,19 @@ func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID *iscp.ChainID)
 // requestsByChain parses the transaction and extracts those outputs which are interpreted as a request to a chain
 func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp.RequestData {
 	ret := make(map[iscp.ChainID][]iscp.RequestData)
-	for _, out := range tx.Essence.Outputs {
+	txid, err := tx.ID()
+	require.NoError(env.T, err)
+
+	for i, out := range tx.Essence.Outputs {
 		if out.Type() != iotago.OutputExtended {
 			// only ExtendedOutputs are interpreted right now TODO nfts and other
 			continue
 		}
 		// wrap output into the iscp.RequestData
-		odata, err := iscp.OnLedgerFromUTXO(nil, out)
+		odata, err := iscp.OnLedgerFromUTXO(out, &iotago.UTXOInput{
+			TransactionID:          *txid,
+			TransactionOutputIndex: uint16(i),
+		})
 		require.NoError(env.T, err)
 
 		addr := odata.TargetAddress()
@@ -398,11 +389,12 @@ func (env *Solo) WaitPublisher() {
 	env.publisherWG.Wait()
 }
 
-func (ch *Chain) GetChainOutput() *iotago.AliasOutput {
-	outs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
+func (ch *Chain) GetAnchorOutput() (*iotago.AliasOutput, *iotago.UTXOInput) {
+	outs, ids := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(ch.Env.T, 1, len(outs))
+	require.EqualValues(ch.Env.T, 1, len(ids))
 
-	return outs[0]
+	return outs[0], ids[0]
 }
 
 // collateBatch selects requests which are not time locked
@@ -411,27 +403,22 @@ func (ch *Chain) collateBatch() []iscp.RequestData {
 	// emulating variable sized blocks
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
-	ret := make([]iscp.RequestData, 0)
-	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
+	timeAssumption := ch.Env.GlobalTime()
+	ready := ch.mempool.ReadyNow(timeAssumption.Time)
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch
 	}
-	ready = ready[:batchSize]
-	panic("TODO implement")
-	// for _, req := range ready {
-	// 	// using logical clock
-	// 	if onLegderRequest, ok := req.(*iscp.OnLedgerRequestData); ok {
-	// 		if onLegderRequest.TimeLock().Before(ch.Env.LogicalTime()) {
-	// 			if !onLegderRequest.TimeLock().IsZero() {
-	// 				ch.Log.Infof("unlocked time-locked request %s", req.ID())
-	// 			}
-	// 			ret = append(ret, req)
-	// 		}
-	// 	} else {
-	// 		ret = append(ret, req)
-	// 	}
-	// }
+	ret := make([]iscp.RequestData, 0)
+	for _, req := range ready[:batchSize] {
+		if !req.IsOffLedger() {
+			timeData := req.Unwrap().UTXO().Features().TimeLock()
+			if timeData != nil && timeData.Time.After(timeAssumption.Time) {
+				continue
+			}
+		}
+		ret = append(ret, req)
+	}
 	return ret
 }
 

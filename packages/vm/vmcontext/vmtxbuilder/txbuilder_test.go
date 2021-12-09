@@ -31,7 +31,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, iotas uint64, id i
 		NativeTokens: iotago.NativeTokens{depositNativeToken},
 		Blocks:       nil,
 	}
-	reqData, err := iscp.OnLedgerFromUTXO(&iscp.UTXOMetaData{}, out)
+	reqData, err := iscp.OnLedgerFromUTXO(out, &iotago.UTXOInput{})
 	require.NoError(t, err)
 	txb.Consume(reqData)
 	_, _, isBalanced := txb.Totals()

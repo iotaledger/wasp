@@ -1,19 +1,17 @@
 package cryptolib
 
 import (
-	"crypto"
+	crypto "crypto/ed25519"
 	"fmt"
-
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/ed25519"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 )
 
 type (
-	PrivateKey = ed25519.PrivateKey
-	PublicKey  = ed25519.PublicKey
+	PrivateKey = crypto.PrivateKey
+	PublicKey  = crypto.PublicKey
 )
 
 type KeyPair struct {
@@ -30,13 +28,13 @@ func (k *KeyPair) Verify(message, sig []byte) bool {
 }
 
 func (k *KeyPair) Sign(message []byte) ([]byte, error) {
-	return k.PrivateKey.Sign(nil, message, crypto.Hash(0))
+	return k.PrivateKey.Sign(nil, message, nil)
 }
 
 func NewKeyPairFromSeed(seed Seed) KeyPair {
 	var seedByte [SeedSize]byte = seed
 
-	privateKey := ed25519.NewKeyFromSeed(seedByte[:])
+	privateKey := crypto.NewKeyFromSeed(seedByte[:])
 
 	return NewKeyPairFromPrivateKey(privateKey)
 }
@@ -71,7 +69,7 @@ func PublicKeyFromString(s string) (publicKey PublicKey, err error) {
 }
 
 func PublicKeyFromBytes(publicKeyBytes []byte) (PublicKey, error) {
-	if len(publicKeyBytes) < ed25519.PublicKeySize {
+	if len(publicKeyBytes) < crypto.PublicKeySize {
 		return nil, fmt.Errorf("bytes too short")
 	}
 
@@ -79,7 +77,7 @@ func PublicKeyFromBytes(publicKeyBytes []byte) (PublicKey, error) {
 }
 
 func PrivateKeyFromBytes(privateKeyBytes []byte) (PrivateKey, error) {
-	if len(privateKeyBytes) < ed25519.PrivateKeySize {
+	if len(privateKeyBytes) < crypto.PrivateKeySize {
 		return nil, fmt.Errorf("bytes too short")
 	}
 
@@ -87,11 +85,11 @@ func PrivateKeyFromBytes(privateKeyBytes []byte) (PrivateKey, error) {
 }
 
 func Verify(publicKey PublicKey, message, sig []byte) bool {
-	return ed25519.Verify(publicKey, message, sig)
+	return crypto.Verify(publicKey, message, sig)
 }
 
 func Sign(privateKey PrivateKey, message []byte) []byte {
-	return ed25519.Sign(privateKey, message)
+	return crypto.Sign(privateKey, message)
 }
 
 //

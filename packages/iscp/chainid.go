@@ -4,6 +4,8 @@
 package iscp
 
 import (
+	"encoding/hex"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -20,15 +22,6 @@ type ChainID iotago.AliasID
 // ChainIDFromAliasID creates new chain ID from alias address
 func ChainIDFromAliasID(addr iotago.AliasID) ChainID {
 	return ChainID(addr)
-}
-
-// ChainIDFromAddress creates a chainIDD from alias address. Returns and error if not an alias address type
-// Deprecated:
-func ChainIDFromAddress(addr iotago.Address) (*ChainID, error) {
-	if addr.Type() != iotago.AddressAlias {
-		return &ChainID{}, xerrors.New("chain id must be an alias address")
-	}
-	return &ChainID{}, nil
 }
 
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.
@@ -85,13 +78,9 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 	return chid == chid1
 }
 
-func (chid *ChainID) Bech32(prefix iotago.NetworkPrefix) string {
-	return chid.AsAddress().Bech32(prefix)
-}
-
-// String human readable form (base58 encoding)
+// String human readable form (hex encoding)
 func (chid *ChainID) String() string {
-	return "$/" + chid.Bech32(Bech32Prefix)
+	return "$/" + hex.EncodeToString(chid[:])
 }
 
 func (chid *ChainID) AsAddress() iotago.Address {

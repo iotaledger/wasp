@@ -102,7 +102,7 @@ func (ch *Chain) GetGasFeePolicy() *governance.GasFeePolicy {
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
 func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
 	if keyPair == nil {
-		keyPair = &ch.OriginatorKeyPair
+		keyPair = &ch.OriginatorPrivateKey
 	}
 
 	blobAsADict := parseParams(params)

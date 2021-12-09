@@ -34,8 +34,8 @@ var (
 	FuncGetChainOwner          = coreutil.ViewFunc("getChainOwner")
 
 	// fees
-	FuncSetContractFee = coreutil.Func("setContractFee")
-	FuncGetFeeInfo     = coreutil.ViewFunc("getFeeInfo")
+	FuncSetFeePolicy = coreutil.Func("setFeePolicy")
+	FuncGetFeePolicy = coreutil.ViewFunc("getFeePolicy")
 
 	// chain info
 	FuncSetChainInfo   = coreutil.Func("setChainInfo")
@@ -58,14 +58,9 @@ const (
 	// chain owner
 	VarChainOwnerID          = "o"
 	VarChainOwnerIDDelegated = "n"
-	VarDefaultOwnerFee       = "do"
-	VarOwnerFee              = "of"
 
 	// fees
-	VarDefaultValidatorFee  = "dv"
-	VarValidatorFee         = "vf"
-	VarFeeAssetID           = "f"
-	VarContractFeesRegistry = "fr"
+	VarGasFeePolicyBytes = "g"
 
 	// chain info
 	VarChainID         = "c"
@@ -77,7 +72,6 @@ const (
 	// access nodes
 	VarAccessNodes          = "an"
 	VarAccessNodeCandidates = "ac"
-	VarValidatorNodes       = "vn"
 )
 
 // params
@@ -91,9 +85,7 @@ const (
 	ParamOwnerFee
 
 	// fees
-	ParamFeeColor
-	ParamValidatorFee
-	ParamHname
+	ParamFeePolicyBytes
 
 	// chain info
 	ParamChainID
@@ -114,5 +106,3 @@ const (
 	// access nodes: changeAccessNodes
 	ParamChangeAccessNodesActions
 )
-
-func init() {}

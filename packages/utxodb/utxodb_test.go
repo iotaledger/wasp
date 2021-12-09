@@ -2,6 +2,7 @@ package utxodb
 
 import (
 	"testing"
+	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -11,17 +12,17 @@ import (
 
 func TestBasic(t *testing.T) {
 	u := New()
-	genTx := u.GenesisTransaction()
-	id, err := genTx.ID()
-	require.NoError(t, err)
-	require.EqualValues(t, *id, u.GenesisTransactionID())
 	require.EqualValues(t, u.Supply(), u.GetAddressBalanceIotas(u.GenesisAddress()))
+	gtime := u.GlobalTime()
+	require.EqualValues(t, 1, gtime.MilestoneIndex)
+	expectedTime := time.Unix(1, 0).Add(1 * time.Millisecond)
+	require.EqualValues(t, expectedTime, gtime.Time)
 
-	require.Same(t, genTx, u.MustGetTransaction(u.GenesisTransactionID()))
-
-	m, ok := u.GetTransactionMilestoneInfo(u.GenesisTransactionID())
-	require.True(t, ok)
-	require.Equal(t, MilestoneInfo{Index: 0, Timestamp: 0}, m)
+	u.AdvanceClockBy(10*time.Second, 3)
+	gtime1 := u.GlobalTime()
+	require.EqualValues(t, 4, gtime1.MilestoneIndex)
+	expectedTime = gtime.Time.Add(10 * time.Second)
+	require.EqualValues(t, expectedTime, gtime1.Time)
 }
 
 func TestRequestFunds(t *testing.T) {
@@ -36,9 +37,10 @@ func TestRequestFunds(t *testing.T) {
 	require.NoError(t, err)
 	require.Same(t, tx, u.MustGetTransaction(*txID))
 
-	m, ok := u.GetTransactionMilestoneInfo(*txID)
-	require.True(t, ok)
-	require.Equal(t, MilestoneInfo{Index: 1, Timestamp: 1}, m)
+	gtime := u.GlobalTime()
+	require.EqualValues(t, 2, gtime.MilestoneIndex)
+	expectedTime := time.Unix(1, 0).Add(2 * time.Millisecond)
+	require.EqualValues(t, expectedTime, gtime.Time)
 }
 
 func TestAddTransactionFail(t *testing.T) {
@@ -56,20 +58,20 @@ func TestDoubleSpend(t *testing.T) {
 	keyPair1 := cryptolib.NewKeyPair()
 
 	addr1 := cryptolib.Ed25519AddressFromPubKey(keyPair1.PublicKey)
-	key1Signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&addr1, keyPair1.PrivateKey))
+	key1Signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(addr1, keyPair1.PrivateKey))
 
 	addr2 := tpkg.RandEd25519Address()
 	addr3 := tpkg.RandEd25519Address()
 
 	u := New()
 
-	tx1, err := u.RequestFunds(&addr1)
+	tx1, err := u.RequestFunds(addr1)
 	require.NoError(t, err)
 	tx1ID, err := tx1.ID()
 	require.NoError(t, err)
 
 	spend2, err := iotago.NewTransactionBuilder().
-		AddInput(&iotago.ToBeSignedUTXOInput{Address: &addr1, Input: &iotago.UTXOInput{
+		AddInput(&iotago.ToBeSignedUTXOInput{Address: addr1, Input: &iotago.UTXOInput{
 			TransactionID:          *tx1ID,
 			TransactionOutputIndex: 0,
 		}}).
@@ -80,7 +82,7 @@ func TestDoubleSpend(t *testing.T) {
 	require.NoError(t, err)
 
 	spend3, err := iotago.NewTransactionBuilder().
-		AddInput(&iotago.ToBeSignedUTXOInput{Address: &addr1, Input: &iotago.UTXOInput{
+		AddInput(&iotago.ToBeSignedUTXOInput{Address: addr1, Input: &iotago.UTXOInput{
 			TransactionID:          *tx1ID,
 			TransactionOutputIndex: 0,
 		}}).

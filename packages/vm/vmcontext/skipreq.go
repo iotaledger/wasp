@@ -1,8 +1,9 @@
 package vmcontext
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
 	"time"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -14,10 +15,6 @@ const (
 	// OffLedgerNonceStrictOrderTolerance how many steps back the nonce is considered too old
 	// within this limit order of nonces is not checked
 	OffLedgerNonceStrictOrderTolerance = 10000
-
-	// OnLedgerTooOldMilestonesBack how many milestones back confirmed UTXO we consider too old
-	OnLedgerTooOldMilestonesBack = 10
-
 	// ExpiryUnlockSafetyWindowDuration creates safety window around time assumption,
 	// the UTXO won't be consumed to avoid race conditions
 	ExpiryUnlockSafetyWindowDuration  = 1 * time.Minute
@@ -97,10 +94,6 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 	}
 	if err := vmctx.checkReasonRequestProcessed(); err != nil {
 		return err
-	}
-	// if the output was not consumed during last OnLedgerTooOldMilestonesBack milestones, skip it
-	if vmctx.req.Unwrap().UTXO().Metadata().MilestoneIndex < vmctx.task.TimeAssumption.MilestoneIndex-OnLedgerTooOldMilestonesBack {
-		return xerrors.Errorf("more than %d milestones back", OnLedgerTooOldMilestonesBack)
 	}
 	return nil
 }

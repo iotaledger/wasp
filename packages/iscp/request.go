@@ -10,45 +10,23 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-// UTXOMetaData is coming together with UTXO from L1
-// It is a part of each implementation of RequestData
-type UTXOMetaData struct {
-	UTXOInput          iotago.UTXOInput
-	MilestoneIndex     uint32
-	MilestoneTimestamp time.Time
-}
-
-func NewUTXOMetadataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*UTXOMetaData, error) {
-	m := &UTXOMetaData{
-		UTXOInput: iotago.UTXOInput{},
-	}
+func UTXOInputFromMarshalUtil(mu *marshalutil.MarshalUtil) (*iotago.UTXOInput, error) {
+	ret := &iotago.UTXOInput{}
 	txIDBytes, err := mu.ReadBytes(iotago.TransactionIDLength)
-	copy(m.UTXOInput.TransactionID[:], txIDBytes[:iotago.TransactionIDLength])
 	if err != nil {
 		return nil, err
 	}
-	m.UTXOInput.TransactionOutputIndex, err = mu.ReadUint16()
+	copy(ret.TransactionID[:], txIDBytes[:iotago.TransactionIDLength])
+	ret.TransactionOutputIndex, err = mu.ReadUint16()
 	if err != nil {
 		return nil, err
 	}
-	m.MilestoneIndex, err = mu.ReadUint32()
-	if err != nil {
-		return nil, err
-	}
-	m.MilestoneTimestamp, err = mu.ReadTime()
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
+	return ret, nil
 }
 
-func (m *UTXOMetaData) Bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteBytes(m.UTXOInput.TransactionID[:])
-	mu.WriteUint16(m.UTXOInput.TransactionOutputIndex)
-	mu.WriteUint32(m.MilestoneIndex)
-	mu.WriteTime(m.MilestoneTimestamp)
-	return mu.Bytes()
+func UTXOInputToMarshalUtil(id *iotago.UTXOInput, mu *marshalutil.MarshalUtil) {
+	mu.WriteBytes(id.TransactionID[:]).
+		WriteUint16(id.TransactionOutputIndex)
 }
 
 // RequestData wraps any data which can be potentially be interpreted as a request
@@ -96,7 +74,7 @@ type unwrap interface {
 
 type unwrapUTXO interface {
 	Output() iotago.Output
-	Metadata() *UTXOMetaData
+	UTXOInput() iotago.UTXOInput
 	Features() Features
 }
 
@@ -111,8 +89,4 @@ func TakeRequestIDs(reqs ...Request) []RequestID {
 		ret[i] = reqs[i].ID()
 	}
 	return ret
-}
-
-func (txm *UTXOMetaData) RequestID() RequestID {
-	return RequestID(txm.UTXOInput)
 }

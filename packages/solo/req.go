@@ -146,7 +146,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair cryptolib.Ke
 	// mdataBack := request.MetadataFromBytes(mdata)
 	// require.True(ch.Env.T, mdataBack.ParsedOk())
 
-	// txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())
+	// txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.GlobalTime())
 	// var err error
 	// err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, colored.ToL1Map(req.transfer))
 	// require.NoError(ch.Env.T, err)

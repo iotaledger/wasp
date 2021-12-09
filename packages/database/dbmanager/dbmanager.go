@@ -41,9 +41,9 @@ func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
 	return &dbm
 }
 
-func getChainBase58(chainID *iscp.ChainID) string {
+func getChainString(chainID *iscp.ChainID) string {
 	if chainID != nil {
-		return chainID.Bech32(iscp.Bech32Prefix)
+		return chainID.String()
 	}
 	return "CHAIN_REGISTRY"
 }
@@ -52,10 +52,10 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) DB {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	chainIDBase58 := getChainBase58(chainID)
+	chainIDStr := getChainString(chainID)
 
 	if m.inMemory {
-		m.log.Infof("creating new in-memory database for: %s.", chainIDBase58)
+		m.log.Infof("creating new in-memory database for: %s", chainIDStr)
 		db, err := NewMemDB()
 		if err != nil {
 			m.log.Fatal(err)
@@ -73,11 +73,11 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) DB {
 		}
 	}
 
-	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainIDBase58)
+	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainIDStr)
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
-		m.log.Infof("creating new database for: %s.", chainIDBase58)
+		m.log.Infof("creating new database for: %s.", chainIDStr)
 	} else {
-		m.log.Infof("using existing database for: %s.", chainIDBase58)
+		m.log.Infof("using existing database for: %s.", chainIDStr)
 	}
 
 	db, err := NewDB(instanceDir)
