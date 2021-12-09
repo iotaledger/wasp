@@ -221,11 +221,6 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Using Docker (Preconfigured)',
-                    id: 'guide/chains_and_nodes/docker_preconfigured',
-                },
-                {
-                    type: 'doc',
                     label: 'Configuring wasp-cli',
                     id: 'guide/chains_and_nodes/wasp-cli',
                 },
@@ -434,6 +429,17 @@ module.exports = {
                     type: 'doc',
                     label: 'Fair Roulette',
                     id: 'guide/example_projects/fair_roulette',
+                },
+            ]
+        },
+        {
+            type: 'category',
+            label: 'Development tools',
+            items: [
+                {
+                    type: 'doc',
+                    label: 'Preconfigured Development Docker setup',
+                    id: 'guide/development_tools/docker_preconfigured',
                 },
             ]
         },

@@ -12,7 +12,7 @@ keywords:
 - arguments
 - GoShimmer
 ---
-# Docker (Preconfigured)
+# Preconfigured Development Docker setup
 
 This page describes the usage of the preconfigured developer Docker setup. 
 
