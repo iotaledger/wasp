@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/stretchr/testify/require"
 )
 
 func (ch *Chain) runRequestsSync(reqs []iscp.RequestData, trace string) (dict.Dict, error) {
@@ -29,7 +28,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.RequestData, trace string) (dict.
 	ch.Log.Debugf("runRequestsNolock ('%s')", trace)
 
 	anchorOutput, anchorOutputID := ch.GetAnchorOutput()
-	task := &vm.VMTask{
+	_ = &vm.VMTask{
 		Processors:         ch.proc,
 		AnchorOutput:       anchorOutput,
 		AnchorOutputID:     *anchorOutputID,
@@ -40,35 +39,34 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.RequestData, trace string) (dict.
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log,
 	}
+	return nil, nil
 	//var err error
-	var callRes dict.Dict
-	var callErr error
-	// state baseline always valid in Solo
-	task.SolidStateBaseline = ch.GlobalSync.GetSolidIndexBaseline()
-	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
-		require.NoError(ch.Env.T, err)
-		callRes = callResult
-		callErr = callError
-	}
-
-	ch.Env.vmRunner.Run(task)
-
+	//var callRes dict.Dict
+	//var callErr error
+	//// state baseline always valid in Solo
+	//task.SolidStateBaseline = ch.GlobalSync.GetSolidIndexBaseline()
+	//task.OnFinish = func(callResult dict.Dict, callError error, err error) {
+	//	require.NoError(ch.Env.T, err)
+	//	callRes = callResult
+	//	callErr = callError
+	//}
+	//
+	//ch.Env.vmRunner.Run(task)
+	//
 	//var essence *iotago.TransactionEssence
-
+	//
 	//if task.RotationAddress == nil {
 	//	essence = task.ResultTransactionEssence
 	//} else {
-	// TODO
-	//essence, err = rotate.MakeRotateStateControllerTransaction(
-	//	task.RotationAddress,
-	//	task.AnchorOutput,
-	//	task.Timestamp.Add(2*time.Nanosecond),
-	//	identity.ID{},
-	//	identity.ID{},
-	//)
-	//require.NoError(ch.Env.T, err)
+	//	//essence, err = rotate.MakeRotateStateControllerTransaction(
+	//	//	task.RotationAddress,
+	//	//	task.AnchorOutput,
+	//	//	task.Timestamp.Add(2*time.Nanosecond),
+	//	//	identity.ID{},
+	//	//	identity.ID{},
+	//	//)
+	//	//require.NoError(ch.Env.T, err)
 	//}
-	return nil, nil
 	//inputs, err := ch.Env.utxoDB.CollectUnspentOutputsFromInputs(essence)
 	//require.NoError(ch.Env.T, err)
 	//unlockBlocks, err := utxoutil.UnlockInputsWithED25519KeyPairs(inputs, essence, ch.StateControllerPrivateKey)
