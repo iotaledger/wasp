@@ -47,7 +47,7 @@ func TestCreateOrigin(t *testing.T) {
 
 	t.Logf("New chain ID: %s", chainID.String())
 
-	anchor, err := GetAnchorFromTransaction(tx)
+	anchor, _, err := GetAnchorFromTransaction(tx)
 	require.NoError(t, err)
 	require.True(t, anchor.IsOrigin)
 	require.EqualValues(t, *chainID, anchor.ChainID)

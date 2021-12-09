@@ -4,14 +4,18 @@
 package solo
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
 )
@@ -90,53 +94,48 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.RequestData, trace string) (dict.
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(ch.Env.T, err)
 
-	// TODO: call settleStateTransition
-	/*
-		stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
+	if task.RotationAddress == nil {
+		// normal state transition
+		ch.State = task.VirtualStateAccess
+		ch.settleStateTransition(tx, iscp.TakeRequestIDs(reqs[0:task.ProcessedRequestsCount]...))
+	} else {
+		anchor, _, err := transaction.GetAnchorFromTransaction(tx)
 		require.NoError(ch.Env.T, err)
 
-		if task.RotationAddress == nil {
-			// normal state transition
-			ch.State = task.VirtualStateAccess
-			ch.settleStateTransition(tx, stateOutput, iscp.TakeRequestIDs(reqs[0:task.ProcessedRequestsCount]...))
-		} else {
-			ch.Log.Infof("ROTATED STATE CONTROLLER to %s", stateOutput.GetStateAddress().Base58())
-		}
-	*/
+		ch.Log.Infof("ROTATED STATE CONTROLLER to %s", anchor.StateController)
+	}
 
 	return callRes, callErr
 }
 
-func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, stateOutput *iotago.AliasOutput, reqids []iscp.RequestID) {
-	panic("TODO implement")
-	// stateOutput, err := utxoutil.GetSingleChainedAliasOutput(stateTx)
-	// require.NoError(ch.Env.T, err)
+func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []iscp.RequestID) {
+	anchor, stateOutput, err := transaction.GetAnchorFromTransaction(stateTx)
+	require.NoError(ch.Env.T, err)
 
-	// // saving block just to check consistency. Otherwise, saved blocks are not used in Solo
-	// block, err := ch.State.ExtractBlock()
-	// require.NoError(ch.Env.T, err)
-	// require.NotNil(ch.Env.T, block)
-	// block.SetApprovingOutputID(stateOutput.ID())
+	// saving block just to check consistency. Otherwise, saved blocks are not used in Solo
+	block, err := ch.State.ExtractBlock()
+	require.NoError(ch.Env.T, err)
+	require.NotNil(ch.Env.T, block)
+	block.SetApprovingOutputID(anchor.OutputID)
 
-	// err = ch.State.Commit(block)
-	// require.NoError(ch.Env.T, err)
+	err = ch.State.Commit(block)
+	require.NoError(ch.Env.T, err)
 
-	// blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(ch.ChainID), ch.State.BlockIndex())
-	// require.NoError(ch.Env.T, err)
-	// require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
-	// require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
+	blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(ch.ChainID), ch.State.BlockIndex())
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
+	require.EqualValues(ch.Env.T, anchor.OutputID, blockBack.ApprovingOutputID())
 
-	// chain.PublishStateTransition(ch.ChainID, stateOutput, len(reqids))
-	// chain.PublishRequestsSettled(ch.ChainID, stateOutput.GetStateIndex(), reqids)
+	chain.PublishStateTransition(ch.ChainID, anchor.OutputID, stateOutput, len(reqids))
+	chain.PublishRequestsSettled(ch.ChainID, anchor.StateIndex, reqids)
 
-	// ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
-	// 	ch.State.BlockIndex(), len(reqids), len(stateTx.Essence().Outputs()))
-	// ch.Log.Debugf("Batch processed: %s", batchShortStr(reqids))
+	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
+		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence.Outputs))
+	ch.Log.Debugf("Batch processed: %s", batchShortStr(reqids))
 
-	// ch.mempool.RemoveRequests(reqids...)
+	ch.mempool.RemoveRequests(reqids...)
 
-	// go ch.Env.EnqueueRequests(stateTx)
-	// ch.Env.ClockStep()
+	go ch.Env.EnqueueRequests(stateTx)
 }
 
 func batchShortStr(reqIds []iscp.RequestID) string {

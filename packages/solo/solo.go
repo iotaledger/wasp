@@ -216,7 +216,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 	)
 	require.NoError(env.T, err)
 
-	anchor, err := transaction.GetAnchorFromTransaction(originTx)
+	anchor, _, err := transaction.GetAnchorFromTransaction(originTx)
 	require.NoError(env.T, err)
 
 	err = env.utxoDB.AddTransaction(originTx)

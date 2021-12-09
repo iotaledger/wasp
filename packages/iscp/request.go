@@ -83,7 +83,7 @@ type ReturnAmountOptions interface {
 	Amount() uint64
 }
 
-func TakeRequestIDs(reqs ...Request) []RequestID {
+func TakeRequestIDs(reqs ...RequestData) []RequestID {
 	ret := make([]RequestID, len(reqs))
 	for i := range reqs {
 		ret[i] = reqs[i].ID()
