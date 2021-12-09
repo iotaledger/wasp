@@ -216,8 +216,13 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Using Docker',
-                    id: 'guide/chains_and_nodes/docker',
+                    label: 'Using Docker (Standalone)',
+                    id: 'guide/chains_and_nodes/docker_standalone',
+                },
+                {
+                    type: 'doc',
+                    label: 'Using Docker (Preconfigured)',
+                    id: 'guide/chains_and_nodes/docker_preconfigured',
                 },
                 {
                     type: 'doc',
