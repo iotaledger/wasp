@@ -53,7 +53,7 @@ func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) *root.Cont
 	defer vmctx.popCallContext()
 
 	if vmctx.isInitChainRequest() {
-		return root.NewContractRecord(root.Contract, &iscp.NilAgentID), true
+		return root.NewContractRecord(root.Contract, &iscp.NilAgentID)
 	}
 	return root.FindContract(vmctx.State(), contractHname)
 }

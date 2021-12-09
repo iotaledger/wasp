@@ -50,14 +50,14 @@ func FilterType(t iotago.OutputType) OutputFilter {
 }
 
 // GetAnchorFromTransaction analyzes the output at index 0 and extracts anchor information. Otherwise error
-func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, error) {
+func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, *iotago.AliasOutput, error) {
 	anchorOutput, ok := tx.Essence.Outputs[0].(*iotago.AliasOutput)
 	if !ok {
-		return nil, ErrNoAliasOutputAtIndex0
+		return nil, nil, ErrNoAliasOutputAtIndex0
 	}
 	txid, err := tx.ID()
 	if err != nil {
-		return nil, xerrors.Errorf("GetAnchorFromTransaction: %w", err)
+		return nil, anchorOutput, xerrors.Errorf("GetAnchorFromTransaction: %w", err)
 	}
 	aliasID := anchorOutput.AliasID
 	isOrigin := false
@@ -68,7 +68,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, error)
 	}
 	sd, err := iscp.StateDataFromBytes(anchorOutput.StateMetadata)
 	if err != nil {
-		return nil, err
+		return nil, anchorOutput, err
 	}
 	return &iscp.StateAnchor{
 		IsOrigin:             isOrigin,
@@ -79,7 +79,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, error)
 		StateIndex:           anchorOutput.StateIndex,
 		StateData:            sd,
 		Deposit:              anchorOutput.Amount,
-	}, nil
+	}, anchorOutput, nil
 }
 
 // computeInputsAndRemainder computes inputs and remainder for given outputs balances.
