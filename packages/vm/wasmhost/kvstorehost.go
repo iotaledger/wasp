@@ -4,8 +4,10 @@
 package wasmhost
 
 import (
+	"encoding/binary"
 	"fmt"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/mr-tron/base58"
 )
@@ -15,23 +17,25 @@ import (
 //nolint:revive
 const (
 	OBJTYPE_ARRAY    int32 = 0x20
-	OBJTYPE_ARRAY16  int32 = 0x30
-	OBJTYPE_CALL     int32 = 0x40
-	OBJTYPE_TYPEMASK int32 = 0x0f
+	OBJTYPE_ARRAY16  int32 = 0x60
+	OBJTYPE_CALL     int32 = 0x80
+	OBJTYPE_TYPEMASK int32 = 0x1f
 
 	OBJTYPE_ADDRESS    int32 = 1
 	OBJTYPE_AGENT_ID   int32 = 2
-	OBJTYPE_BYTES      int32 = 3
-	OBJTYPE_CHAIN_ID   int32 = 4
-	OBJTYPE_COLOR      int32 = 5
-	OBJTYPE_HASH       int32 = 6
-	OBJTYPE_HNAME      int32 = 7
-	OBJTYPE_INT16      int32 = 8
-	OBJTYPE_INT32      int32 = 9
-	OBJTYPE_INT64      int32 = 10
-	OBJTYPE_MAP        int32 = 11
-	OBJTYPE_REQUEST_ID int32 = 12
-	OBJTYPE_STRING     int32 = 13
+	OBJTYPE_BOOL       int32 = 3
+	OBJTYPE_BYTES      int32 = 4
+	OBJTYPE_CHAIN_ID   int32 = 5
+	OBJTYPE_COLOR      int32 = 6
+	OBJTYPE_HASH       int32 = 7
+	OBJTYPE_HNAME      int32 = 8
+	OBJTYPE_INT8       int32 = 9
+	OBJTYPE_INT16      int32 = 10
+	OBJTYPE_INT32      int32 = 11
+	OBJTYPE_INT64      int32 = 12
+	OBJTYPE_MAP        int32 = 13
+	OBJTYPE_REQUEST_ID int32 = 14
+	OBJTYPE_STRING     int32 = 15
 
 	OBJID_NULL    int32 = 0
 	OBJID_ROOT    int32 = 1
@@ -44,8 +48,11 @@ const (
 // this allows us to display better readable tracing information
 const KeyFromBytes int32 = 0x4000
 
+var TypeSizes = [...]int{0, 33, 37, 1, 0, 33, 32, 32, 4, 1, 2, 4, 8, 0, 34, 0}
+
 type HostObject interface {
 	CallFunc(keyID int32, params []byte) []byte
+	DelKey(keyID, typeID int32)
 	Exists(keyID, typeID int32) bool
 	GetBytes(keyID, typeID int32) []byte
 	GetObjectID(keyID, typeID int32) int32
@@ -74,13 +81,17 @@ func (h *KvStoreHost) CallFunc(objID, keyID int32, params []byte) []byte {
 	return h.FindObject(objID).CallFunc(keyID, params)
 }
 
+func (h *KvStoreHost) DelKey(objID, keyID, typeID int32) {
+	h.FindObject(objID).DelKey(keyID, typeID)
+}
+
 func (h *KvStoreHost) Exists(objID, keyID, typeID int32) bool {
 	return h.FindObject(objID).Exists(keyID, typeID)
 }
 
 func (h *KvStoreHost) FindObject(objID int32) HostObject {
 	if objID < 0 || objID >= int32(len(h.objIDToObj)) {
-		panic("FindObject: invalid objID")
+		h.Panicf("FindObject: invalid objID")
 	}
 	return h.objIDToObj[objID]
 }
@@ -93,22 +104,28 @@ func (h *KvStoreHost) GetBytes(objID, keyID, typeID int32) []byte {
 	}
 	bytes := obj.GetBytes(keyID, typeID)
 	switch typeID {
+	case OBJTYPE_INT8:
+		val8, err := codec.DecodeInt8(bytes, 0)
+		if err != nil {
+			h.Panicf("GetBytes: invalid int8")
+		}
+		h.Tracef("GetBytes o%d k%d = %db", objID, keyID, val8)
 	case OBJTYPE_INT16:
 		val16, err := codec.DecodeInt16(bytes, 0)
 		if err != nil {
-			panic("GetBytes: invalid int16")
+			h.Panicf("GetBytes: invalid int16")
 		}
 		h.Tracef("GetBytes o%d k%d = %ds", objID, keyID, val16)
 	case OBJTYPE_INT32:
 		val32, err := codec.DecodeInt32(bytes, 0)
 		if err != nil {
-			panic("GetBytes: invalid int32")
+			h.Panicf("GetBytes: invalid int32")
 		}
 		h.Tracef("GetBytes o%d k%d = %di", objID, keyID, val32)
 	case OBJTYPE_INT64:
 		val64, err := codec.DecodeInt64(bytes, 0)
 		if err != nil {
-			panic("GetBytes: invalid int64")
+			h.Panicf("GetBytes: invalid int64")
 		}
 		h.Tracef("GetBytes o%d k%d = %dl", objID, keyID, val64)
 	case OBJTYPE_STRING:
@@ -213,25 +230,37 @@ func (h *KvStoreHost) GetObjectID(objID, keyID, typeID int32) int32 {
 	return subID
 }
 
+func (h *KvStoreHost) Panicf(format string, args ...interface{}) {
+	err := fmt.Errorf(format, args...)
+	h.Tracef(err.Error())
+	panic(err)
+}
+
 func (h *KvStoreHost) SetBytes(objID, keyID, typeID int32, bytes []byte) {
 	h.FindObject(objID).SetBytes(keyID, typeID, bytes)
 	switch typeID {
+	case OBJTYPE_INT8:
+		val8, err := codec.DecodeInt8(bytes, 0)
+		if err != nil {
+			h.Panicf("SetBytes: invalid int8")
+		}
+		h.Tracef("SetBytes o%d k%d v=%db", objID, keyID, val8)
 	case OBJTYPE_INT16:
 		val16, err := codec.DecodeInt16(bytes, 0)
 		if err != nil {
-			panic("SetBytes: invalid int16")
+			h.Panicf("SetBytes: invalid int16")
 		}
 		h.Tracef("SetBytes o%d k%d v=%ds", objID, keyID, val16)
 	case OBJTYPE_INT32:
 		val32, err := codec.DecodeInt32(bytes, 0)
 		if err != nil {
-			panic("SetBytes: invalid int32")
+			h.Panicf("SetBytes: invalid int32")
 		}
 		h.Tracef("SetBytes o%d k%d v=%di", objID, keyID, val32)
 	case OBJTYPE_INT64:
 		val64, err := codec.DecodeInt64(bytes, 0)
 		if err != nil {
-			panic("SetBytes: invalid int64")
+			h.Panicf("SetBytes: invalid int64")
 		}
 		h.Tracef("SetBytes o%d k%d v=%dl", objID, keyID, val64)
 	case OBJTYPE_STRING:
@@ -260,4 +289,33 @@ func (h *KvStoreHost) TrackObject(obj HostObject) int32 {
 	objID := int32(len(h.objIDToObj))
 	h.objIDToObj = append(h.objIDToObj, obj)
 	return objID
+}
+
+func (h *KvStoreHost) TypeCheck(typeID int32, bytes []byte) {
+	typeSize := TypeSizes[typeID]
+	if typeSize != 0 && typeSize != len(bytes) {
+		h.Panicf("TypeCheck: invalid type size")
+	}
+	switch typeID {
+	case OBJTYPE_ADDRESS:
+		// address bytes must start with valid address type
+		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
+			h.Panicf("TypeCheck: invalid address type")
+		}
+	case OBJTYPE_AGENT_ID:
+		// address bytes in agent id must start with valid address type
+		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
+			h.Panicf("TypeCheck: invalid agent id address type")
+		}
+	case OBJTYPE_CHAIN_ID:
+		// chain id must be alias address
+		if ledgerstate.AddressType(bytes[0]) != ledgerstate.AliasAddressType {
+			h.Panicf("TypeCheck: invalid chain id address type")
+		}
+	case OBJTYPE_REQUEST_ID:
+		outputIndex := binary.LittleEndian.Uint16(bytes[ledgerstate.TransactionIDLength:])
+		if outputIndex > ledgerstate.MaxOutputCount {
+			h.Panicf("TypeCheck: invalid request id output index")
+		}
+	}
 }

@@ -5,25 +5,27 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export const IdxParamCounter    = 0;
 export const IdxParamDelay      = 1;
 export const IdxParamDummy      = 2;
 export const IdxParamNumRepeats = 3;
-export const IdxResultCounter   = 4;
+
+export const IdxResultCounter = 4;
+
 export const IdxStateCounter    = 5;
 export const IdxStateNumRepeats = 6;
 
 export let keyMap: string[] = [
-    sc.ParamCounter,
-    sc.ParamDelay,
-    sc.ParamDummy,
-    sc.ParamNumRepeats,
-    sc.ResultCounter,
-    sc.StateCounter,
-    sc.StateNumRepeats,
+	sc.ParamCounter,
+	sc.ParamDelay,
+	sc.ParamDummy,
+	sc.ParamNumRepeats,
+	sc.ResultCounter,
+	sc.StateCounter,
+	sc.StateNumRepeats,
 ];
 
 export let idxMap: wasmlib.Key32[] = new Array(keyMap.length);

@@ -5,47 +5,46 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class DepositCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDeposit);
-    params: sc.MutableDepositParams = new sc.MutableDepositParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDeposit);
+	params: sc.MutableDepositParams = new sc.MutableDepositParams();
 }
 
 export class HarvestCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncHarvest);
-    params: sc.MutableHarvestParams = new sc.MutableHarvestParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncHarvest);
+	params: sc.MutableHarvestParams = new sc.MutableHarvestParams();
 }
 
 export class WithdrawCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncWithdraw);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncWithdraw);
 }
 
 export class AccountsCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewAccounts);
-    results: sc.ImmutableAccountsResults = new sc.ImmutableAccountsResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewAccounts);
+	results: sc.ImmutableAccountsResults = new sc.ImmutableAccountsResults();
 }
 
 export class BalanceCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBalance);
-    params: sc.MutableBalanceParams = new sc.MutableBalanceParams();
-    results: sc.ImmutableBalanceResults = new sc.ImmutableBalanceResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBalance);
+	params: sc.MutableBalanceParams = new sc.MutableBalanceParams();
+	results: sc.ImmutableBalanceResults = new sc.ImmutableBalanceResults();
 }
 
 export class GetAccountNonceCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetAccountNonce);
-    params: sc.MutableGetAccountNonceParams = new sc.MutableGetAccountNonceParams();
-    results: sc.ImmutableGetAccountNonceResults = new sc.ImmutableGetAccountNonceResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetAccountNonce);
+	params: sc.MutableGetAccountNonceParams = new sc.MutableGetAccountNonceParams();
+	results: sc.ImmutableGetAccountNonceResults = new sc.ImmutableGetAccountNonceResults();
 }
 
 export class TotalAssetsCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTotalAssets);
-    results: sc.ImmutableTotalAssetsResults = new sc.ImmutableTotalAssetsResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTotalAssets);
+	results: sc.ImmutableTotalAssetsResults = new sc.ImmutableTotalAssetsResults();
 }
 
 export class ScFuncs {
-
     static deposit(ctx: wasmlib.ScFuncCallContext): DepositCall {
         let f = new DepositCall();
         f.func.setPtrs(f.params, null);
@@ -59,8 +58,7 @@ export class ScFuncs {
     }
 
     static withdraw(ctx: wasmlib.ScFuncCallContext): WithdrawCall {
-        let f = new WithdrawCall();
-        return f;
+        return new WithdrawCall();
     }
 
     static accounts(ctx: wasmlib.ScViewCallContext): AccountsCall {

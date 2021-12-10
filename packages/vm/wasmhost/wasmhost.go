@@ -57,21 +57,20 @@ func (host *WasmHost) FunctionFromCode(code uint32) string {
 	return host.codeToFunc[code]
 }
 
+func (host *WasmHost) Instantiate() error {
+	return host.vm.Instantiate()
+}
+
 func (host *WasmHost) IsView(function string) bool {
 	return (host.funcToIndex[function] & 0x8000) != 0
 }
 
 func (host *WasmHost) LoadWasm(wasmData []byte) error {
-	err := host.vm.LoadWasm(wasmData)
-	if err != nil {
-		return err
-	}
-	err = host.RunFunction("on_load")
-	if err != nil {
-		return err
-	}
-	host.vm.SaveMemory()
-	return nil
+	return host.vm.LoadWasm(wasmData)
+}
+
+func (host *WasmHost) NewInstance() WasmVM {
+	return host.vm.NewInstance()
 }
 
 func (host *WasmHost) RunFunction(functionName string, args ...interface{}) (err error) {

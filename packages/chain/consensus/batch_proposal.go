@@ -145,7 +145,7 @@ func (b *BatchProposal) EnsureTimestampConsistent(requests []iscp.Request, state
 // Timestamp is calculated by taking maximal proposed timestamp excluding F highest proposals.
 //
 // TODO final version of pledges and fee destination
-func (c *Consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatchParams, error) {
+func (c *consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatchParams, error) {
 	var retTS time.Time
 
 	ts := make([]time.Time, len(props))

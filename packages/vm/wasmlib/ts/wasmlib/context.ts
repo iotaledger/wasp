@@ -7,7 +7,7 @@ import {BytesDecoder, BytesEncoder} from "./bytes";
 import {Convert} from "./convert";
 import {ScFuncCallContext, ScViewCallContext} from "./contract";
 import {ScAddress, ScAgentID, ScChainID, ScColor, ScHash, ScHname, ScRequestID} from "./hashtypes";
-import {log, OBJ_ID_ROOT, panic} from "./host";
+import {log, OBJ_ID_ROOT, OBJ_ID_STATE, panic} from "./host";
 import {ScImmutableColorArray, ScImmutableMap} from "./immutable";
 import * as keys from "./keys";
 import {ScMutableMap} from "./mutable";
@@ -163,13 +163,6 @@ export class ScUtility {
         let result = this.utility.callFunc(keys.KEY_HNAME, Convert.fromString(name));
         return ScHname.fromBytes(result);
     }
-
-    // generates a random value from 0 to max (exclusive max) using a deterministic RNG
-    random(max: i64): i64 {
-        let result = this.utility.callFunc(keys.KEY_RANDOM, []);
-        let rnd = Convert.toI64(result);
-        return (rnd as u64 % max as u64) as i64;
-    }
 }
 
 // wrapper function for simplified internal access to base58 encoding
@@ -279,11 +272,6 @@ export class ScFuncContext extends ScBaseContext implements ScViewCallContext, S
         return ROOT.getMap(keys.KEY_RETURN).immutable();
     }
 
-    // shorthand to synchronously call a smart contract function of the current contract
-    callSelf(hfunction: ScHname, params: ScMutableMap | null, transfers: ScTransfers | null): ScImmutableMap {
-        return this.call(this.contract(), hfunction, params, transfers);
-    }
-
     // retrieve the agent id of the caller of the smart contract
     caller(): ScAgentID {
         return ROOT.getAgentID(keys.KEY_CALLER).value();
@@ -329,9 +317,16 @@ export class ScFuncContext extends ScBaseContext implements ScViewCallContext, S
         ROOT.getBytes(keys.KEY_POST).setValue(encode.data());
     }
 
-    // shorthand to asynchronously call a smart contract function of the current contract
-    postSelf(hfunction: ScHname, params: ScMutableMap | null, transfer: ScTransfers, delay: i32): void {
-        this.post(this.chainID(), this.contract(), hfunction, params, transfer, delay);
+    // generates a random value from 0 to max (exclusive max) using a deterministic RNG
+    random(max: i64): i64 {
+        let state = new ScMutableMap(OBJ_ID_STATE);
+        let rnd = state.getBytes(keys.KEY_RANDOM);
+        let seed = rnd.value();
+        if (seed.length == 0) {
+            seed = ROOT.getBytes(keys.KEY_RANDOM).value();
+        }
+        rnd.setValue(this.utility().hashSha3(seed).toBytes());
+        return (Convert.toI64(seed.slice(0, 8)) as u64 % max as u64) as i64;
     }
 
     // retrieve the request id of this transaction
@@ -371,11 +366,6 @@ export class ScViewContext extends ScBaseContext implements ScViewCallContext {
         encode.int32(0);
         ROOT.getBytes(keys.KEY_CALL).setValue(encode.data());
         return ROOT.getMap(keys.KEY_RETURN).immutable();
-    }
-
-    // shorthand to synchronously call a smart contract view of the current contract
-    callSelf(hfunction: ScHname, params: ScMutableMap | null): ScImmutableMap {
-        return this.call(this.contract(), hfunction, params);
     }
 
     // access immutable state storage on the host

@@ -59,6 +59,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "erc721"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen-test",
+ "wasmlib",
+ "wee_alloc",
+]
+
+[[package]]
 name = "fairauction"
 version = "0.1.0"
 dependencies = [
@@ -181,6 +191,16 @@ dependencies = [
 
 [[package]]
 name = "testwasmlib"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen-test",
+ "wasmlib",
+ "wee_alloc",
+]
+
+[[package]]
+name = "timestamp"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",

@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export function on_call(index: i32): void {
@@ -14,13 +14,13 @@ export function on_call(index: i32): void {
 
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncApprove, funcApproveThunk);
-    exports.addFunc(sc.FuncInit, funcInitThunk);
-    exports.addFunc(sc.FuncTransfer, funcTransferThunk);
+    exports.addFunc(sc.FuncApprove,      funcApproveThunk);
+    exports.addFunc(sc.FuncInit,         funcInitThunk);
+    exports.addFunc(sc.FuncTransfer,     funcTransferThunk);
     exports.addFunc(sc.FuncTransferFrom, funcTransferFromThunk);
-    exports.addView(sc.ViewAllowance, viewAllowanceThunk);
-    exports.addView(sc.ViewBalanceOf, viewBalanceOfThunk);
-    exports.addView(sc.ViewTotalSupply, viewTotalSupplyThunk);
+    exports.addView(sc.ViewAllowance,    viewAllowanceThunk);
+    exports.addView(sc.ViewBalanceOf,    viewBalanceOfThunk);
+    exports.addView(sc.ViewTotalSupply,  viewTotalSupplyThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
@@ -28,78 +28,78 @@ export function on_load(): void {
 }
 
 function funcApproveThunk(ctx: wasmlib.ScFuncContext): void {
-    ctx.log("erc20.funcApprove");
-    let f = new sc.ApproveContext();
+	ctx.log("erc20.funcApprove");
+	let f = new sc.ApproveContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    ctx.require(f.params.amount().exists(), "missing mandatory amount")
-    ctx.require(f.params.delegation().exists(), "missing mandatory delegation")
-    sc.funcApprove(ctx, f);
-    ctx.log("erc20.funcApprove ok");
+	ctx.require(f.params.amount().exists(), "missing mandatory amount");
+	ctx.require(f.params.delegation().exists(), "missing mandatory delegation");
+	sc.funcApprove(ctx, f);
+	ctx.log("erc20.funcApprove ok");
 }
 
 function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
-    ctx.log("erc20.funcInit");
-    let f = new sc.InitContext();
+	ctx.log("erc20.funcInit");
+	let f = new sc.InitContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    ctx.require(f.params.creator().exists(), "missing mandatory creator")
-    ctx.require(f.params.supply().exists(), "missing mandatory supply")
-    sc.funcInit(ctx, f);
-    ctx.log("erc20.funcInit ok");
+	ctx.require(f.params.creator().exists(), "missing mandatory creator");
+	ctx.require(f.params.supply().exists(), "missing mandatory supply");
+	sc.funcInit(ctx, f);
+	ctx.log("erc20.funcInit ok");
 }
 
 function funcTransferThunk(ctx: wasmlib.ScFuncContext): void {
-    ctx.log("erc20.funcTransfer");
-    let f = new sc.TransferContext();
+	ctx.log("erc20.funcTransfer");
+	let f = new sc.TransferContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    ctx.require(f.params.account().exists(), "missing mandatory account")
-    ctx.require(f.params.amount().exists(), "missing mandatory amount")
-    sc.funcTransfer(ctx, f);
-    ctx.log("erc20.funcTransfer ok");
+	ctx.require(f.params.account().exists(), "missing mandatory account");
+	ctx.require(f.params.amount().exists(), "missing mandatory amount");
+	sc.funcTransfer(ctx, f);
+	ctx.log("erc20.funcTransfer ok");
 }
 
 function funcTransferFromThunk(ctx: wasmlib.ScFuncContext): void {
-    ctx.log("erc20.funcTransferFrom");
-    let f = new sc.TransferFromContext();
+	ctx.log("erc20.funcTransferFrom");
+	let f = new sc.TransferFromContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    ctx.require(f.params.account().exists(), "missing mandatory account")
-    ctx.require(f.params.amount().exists(), "missing mandatory amount")
-    ctx.require(f.params.recipient().exists(), "missing mandatory recipient")
-    sc.funcTransferFrom(ctx, f);
-    ctx.log("erc20.funcTransferFrom ok");
+	ctx.require(f.params.account().exists(), "missing mandatory account");
+	ctx.require(f.params.amount().exists(), "missing mandatory amount");
+	ctx.require(f.params.recipient().exists(), "missing mandatory recipient");
+	sc.funcTransferFrom(ctx, f);
+	ctx.log("erc20.funcTransferFrom ok");
 }
 
 function viewAllowanceThunk(ctx: wasmlib.ScViewContext): void {
-    ctx.log("erc20.viewAllowance");
-    let f = new sc.AllowanceContext();
+	ctx.log("erc20.viewAllowance");
+	let f = new sc.AllowanceContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    ctx.require(f.params.account().exists(), "missing mandatory account")
-    ctx.require(f.params.delegation().exists(), "missing mandatory delegation")
-    sc.viewAllowance(ctx, f);
-    ctx.log("erc20.viewAllowance ok");
+	ctx.require(f.params.account().exists(), "missing mandatory account");
+	ctx.require(f.params.delegation().exists(), "missing mandatory delegation");
+	sc.viewAllowance(ctx, f);
+	ctx.log("erc20.viewAllowance ok");
 }
 
 function viewBalanceOfThunk(ctx: wasmlib.ScViewContext): void {
-    ctx.log("erc20.viewBalanceOf");
-    let f = new sc.BalanceOfContext();
+	ctx.log("erc20.viewBalanceOf");
+	let f = new sc.BalanceOfContext();
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    ctx.require(f.params.account().exists(), "missing mandatory account")
-    sc.viewBalanceOf(ctx, f);
-    ctx.log("erc20.viewBalanceOf ok");
+	ctx.require(f.params.account().exists(), "missing mandatory account");
+	sc.viewBalanceOf(ctx, f);
+	ctx.log("erc20.viewBalanceOf ok");
 }
 
 function viewTotalSupplyThunk(ctx: wasmlib.ScViewContext): void {
-    ctx.log("erc20.viewTotalSupply");
-    let f = new sc.TotalSupplyContext();
+	ctx.log("erc20.viewTotalSupply");
+	let f = new sc.TotalSupplyContext();
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-    sc.viewTotalSupply(ctx, f);
-    ctx.log("erc20.viewTotalSupply ok");
+	sc.viewTotalSupply(ctx, f);
+	ctx.log("erc20.viewTotalSupply ok");
 }

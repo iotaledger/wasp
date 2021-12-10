@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 
 export const ScName        = "accounts";
 export const ScDescription = "Core chain account ledger contract";
@@ -16,6 +16,8 @@ export const ParamWithdrawAmount = "m";
 export const ParamWithdrawColor  = "c";
 
 export const ResultAccountNonce = "n";
+export const ResultAgents       = "this";
+export const ResultBalances     = "this";
 
 export const FuncDeposit         = "deposit";
 export const FuncHarvest         = "harvest";

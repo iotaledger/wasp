@@ -10,22 +10,25 @@ package inccounter
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
-	ScName  = "inccounter"
-	HScName = wasmlib.ScHname(0xaf2438e9)
+	ScName        = "inccounter"
+	ScDescription = ""
+	HScName       = wasmlib.ScHname(0xaf2438e9)
 )
 
 const (
-	ParamCounter    = wasmlib.Key("counter")
-	ParamDelay      = wasmlib.Key("delay")
-	ParamDummy      = wasmlib.Key("dummy")
-	ParamNumRepeats = wasmlib.Key("numRepeats")
+	ParamCounter    = "counter"
+	ParamDelay      = "delay"
+	ParamDummy      = "dummy"
+	ParamNumRepeats = "numRepeats"
 )
 
-const ResultCounter = wasmlib.Key("counter")
+const (
+	ResultCounter = "counter"
+)
 
 const (
-	StateCounter    = wasmlib.Key("counter")
-	StateNumRepeats = wasmlib.Key("numRepeats")
+	StateCounter    = "counter"
+	StateNumRepeats = "numRepeats"
 )
 
 const (

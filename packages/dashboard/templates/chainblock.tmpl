@@ -12,31 +12,37 @@
 
 	<div class="card fluid">
 		<h3 class="section">Requests</h3>
-		<dl>
-			<dt>#Total</dt><dd>{{ .Block.TotalRequests }}</dd>
-			<dt>#Successful</dt><dd>{{ .Block.NumSuccessfulRequests }}</dd>
-			<dt>#Off-ledger</dt><dd>{{ .Block.NumOffLedgerRequests }}</dd>
-		</dl>
-		<table>
-		<thead>
-			<tr>
-				<th>Index</th>
-				<th>ID</th>
-				<th>Off-ledger?</th>
-				<th>Error</th>
-			</tr>
-		</thead>
-		<tbody>
 		{{range $i, $r := .Receipts}}
-			<tr>
-				<td>{{$i}}</td>
-				<td><code>{{$r.Request.ID.Base58}}</code></td>
-				<td>{{ if $r.Request.IsOffLedger -}} yes {{- else -}} no {{- end }}</td>
-				<td><code>{{ $r.Error }}</code></td>
-			</tr>
+			{{ $req := $r.Request }}
+			<div class="section">
+			<h4>Request #{{$i}}</h4>
+			<dl>
+				<dt>ID</dt><dd><code>{{ $req.ID.Base58 }}</code></dd>
+				<dt>Type</dt><dd>{{ if $req.IsOffLedger -}} off-ledger {{- else -}} on-ledger {{- end }}</dd>
+				<dt>Fee prepaid</dt><dd>{{ if $req.IsFeePrepaid -}} yes {{- else -}} no {{- end }}</dd>
+				{{ if $r.Error }}
+					<dt>Error</dt><dd><code>{{ $r.Error }}</code></dd>
+				{{ end }}
+				<dt>Sender</dt><dd>{{template "agentid" (args $chainid $req.SenderAccount)}}</dd>
+				<dt>Contract Hname</dt><dd><code>{{$req.Target.Contract}}</code></dd>
+				<dt>Entry point</dt><dd><code>{{$req.Target.EntryPoint}}</code></dd>
+				{{ if not $req.IsOffLedger }}
+					<dt>Transaction timestamp</dt><dd><code>{{ formatTimestamp $req.Timestamp }}</code></dd>
+				{{ end }}
+			</dl>
+			<h5>Arguments</h5>
+			{{if gt (len $req.Args) 0}}
+				<dl>
+					{{range $k, $v := $req.Args}}
+						<dt><code>{{ $k | keyToString | trim 30 }}</code></dt>
+						<dd><pre style="white-space: pre-wrap">{{ $v | bytesToString | trim 100 }}</pre></dd>
+					{{end}}
+				</dl>
+			{{else}}
+				<p>(empty)</p>
+			{{end}}
+			</div>
 		{{end}}
-		</tbody>
-		</table>
 	</div>
 
 	<div class="card fluid">

@@ -16,12 +16,16 @@ const (
 )
 
 const (
-	ParamAgentID        = wasmlib.Key("a")
-	ParamWithdrawAmount = wasmlib.Key("m")
-	ParamWithdrawColor  = wasmlib.Key("c")
+	ParamAgentID        = "a"
+	ParamWithdrawAmount = "m"
+	ParamWithdrawColor  = "c"
 )
 
-const ResultAccountNonce = wasmlib.Key("n")
+const (
+	ResultAccountNonce = "n"
+	ResultAgents       = "this"
+	ResultBalances     = "this"
+)
 
 const (
 	FuncDeposit         = "deposit"

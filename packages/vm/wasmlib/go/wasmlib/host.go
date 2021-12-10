@@ -9,22 +9,25 @@ import "encoding/binary"
 const (
 	// all TYPE_* values should exactly match the counterpart OBJTYPE_* values on the host!
 	TYPE_ARRAY   int32 = 0x20
-	TYPE_ARRAY16 int32 = 0x30
-	TYPE_CALL    int32 = 0x40
+	TYPE_ARRAY16 int32 = 0x60
+	TYPE_CALL    int32 = 0x80
+	TYPE_MASK    int32 = 0x1f
 
 	TYPE_ADDRESS    int32 = 1
 	TYPE_AGENT_ID   int32 = 2
-	TYPE_BYTES      int32 = 3
-	TYPE_CHAIN_ID   int32 = 4
-	TYPE_COLOR      int32 = 5
-	TYPE_HASH       int32 = 6
-	TYPE_HNAME      int32 = 7
-	TYPE_INT16      int32 = 8
-	TYPE_INT32      int32 = 9
-	TYPE_INT64      int32 = 10
-	TYPE_MAP        int32 = 11
-	TYPE_REQUEST_ID int32 = 12
-	TYPE_STRING     int32 = 13
+	TYPE_BOOL       int32 = 3
+	TYPE_BYTES      int32 = 4
+	TYPE_CHAIN_ID   int32 = 5
+	TYPE_COLOR      int32 = 6
+	TYPE_HASH       int32 = 7
+	TYPE_HNAME      int32 = 8
+	TYPE_INT8       int32 = 9
+	TYPE_INT16      int32 = 10
+	TYPE_INT32      int32 = 11
+	TYPE_INT64      int32 = 12
+	TYPE_MAP        int32 = 13
+	TYPE_REQUEST_ID int32 = 14
+	TYPE_STRING     int32 = 15
 
 	OBJ_ID_NULL    int32 = 0
 	OBJ_ID_ROOT    int32 = 1
@@ -33,7 +36,7 @@ const (
 	OBJ_ID_RESULTS int32 = 4
 )
 
-var TypeSizes = [...]uint8{0, 33, 37, 0, 33, 32, 32, 4, 2, 4, 8, 0, 34, 0}
+var TypeSizes = [...]uint8{0, 33, 37, 1, 0, 33, 32, 32, 4, 1, 2, 4, 8, 0, 34, 0}
 
 type (
 	ScFuncContextFunction func(ScFuncContext)
@@ -43,6 +46,7 @@ type (
 		AddFunc(f ScFuncContextFunction) []ScFuncContextFunction
 		AddView(v ScViewContextFunction) []ScViewContextFunction
 		CallFunc(objID, keyID int32, params []byte) []byte
+		DelKey(objID, keyID, typeID int32)
 		Exists(objID, keyID, typeID int32) bool
 		GetBytes(objID, keyID, typeID int32) []byte
 		GetKeyIDFromBytes(bytes []byte) int32
@@ -78,6 +82,10 @@ func Clear(objID int32) {
 	SetBytes(objID, KeyLength, TYPE_INT32, zero[:])
 }
 
+func DelKey(objID int32, keyID Key32, typeID int32) {
+	host.DelKey(objID, int32(keyID), typeID)
+}
+
 func Exists(objID int32, keyID Key32, typeID int32) bool {
 	return host.Exists(objID, int32(keyID), typeID)
 }
@@ -96,6 +104,12 @@ func GetKeyIDFromBytes(bytes []byte) Key32 {
 
 func GetKeyIDFromString(key string) Key32 {
 	return Key32(host.GetKeyIDFromString(key))
+}
+
+func GetKeyIDFromUint64(value uint64, nrOfBytes int) Key32 {
+	bytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bytes, value)
+	return GetKeyIDFromBytes(bytes[:nrOfBytes])
 }
 
 func GetLength(objID int32) int32 {

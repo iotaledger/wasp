@@ -17,6 +17,9 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	if f.Params.AgentID().Exists() {
 		ctx.Require(f.Params.AgentID().Value() == ctx.AccountID(), "mismatch: AgentID")
 	}
+	if f.Params.Bool().Exists() {
+		ctx.Require(f.Params.Bool().Value(), "mismatch: Bool")
+	}
 	if f.Params.Bytes().Exists() {
 		byteData := []byte("these are bytes")
 		ctx.Require(bytes.Equal(f.Params.Bytes().Value(), byteData), "mismatch: Bytes")
@@ -35,14 +38,17 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	if f.Params.Hname().Exists() {
 		ctx.Require(f.Params.Hname().Value() == ctx.AccountID().Hname(), "mismatch: Hname")
 	}
+	if f.Params.Int8().Exists() {
+		ctx.Require(f.Params.Int8().Value() == -123, "mismatch: Int8")
+	}
 	if f.Params.Int16().Exists() {
-		ctx.Require(f.Params.Int16().Value() == 12345, "mismatch: Int16")
+		ctx.Require(f.Params.Int16().Value() == -12345, "mismatch: Int16")
 	}
 	if f.Params.Int32().Exists() {
-		ctx.Require(f.Params.Int32().Value() == 1234567890, "mismatch: Int32")
+		ctx.Require(f.Params.Int32().Value() == -1234567890, "mismatch: Int32")
 	}
 	if f.Params.Int64().Exists() {
-		ctx.Require(f.Params.Int64().Value() == 1234567890123456789, "mismatch: Int64")
+		ctx.Require(f.Params.Int64().Value() == -1234567890123456789, "mismatch: Int64")
 	}
 	if f.Params.RequestID().Exists() {
 		requestID := wasmlib.NewScRequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
@@ -50,6 +56,18 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	}
 	if f.Params.String().Exists() {
 		ctx.Require(f.Params.String().Value() == "this is a string", "mismatch: String")
+	}
+	if f.Params.Uint8().Exists() {
+		ctx.Require(f.Params.Uint8().Value() == 123, "mismatch: Uint8")
+	}
+	if f.Params.Uint16().Exists() {
+		ctx.Require(f.Params.Uint16().Value() == 12345, "mismatch: Uint16")
+	}
+	if f.Params.Uint32().Exists() {
+		ctx.Require(f.Params.Uint32().Value() == 1234567890, "mismatch: Uint32")
+	}
+	if f.Params.Uint64().Exists() {
+		ctx.Require(f.Params.Uint64().Value() == 1234567890123456789, "mismatch: Uint64")
 	}
 }
 
@@ -106,4 +124,12 @@ func viewArrayValue(ctx wasmlib.ScViewContext, f *ArrayValueContext) {
 
 func viewIotaBalance(ctx wasmlib.ScViewContext, f *IotaBalanceContext) {
 	f.Results.Iotas().SetValue(ctx.Balances().Balance(wasmlib.IOTA))
+}
+
+func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
+	f.State.Random().SetValue(ctx.Random(1000))
+}
+
+func viewGetRandom(ctx wasmlib.ScViewContext, f *GetRandomContext) {
+	f.Results.Random().SetValue(f.State.Random().Value())
 }

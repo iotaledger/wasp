@@ -4,14 +4,19 @@
 package chain
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmchain"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/evm/evmcli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
 )
 
@@ -38,11 +43,30 @@ func initEVMDeploy(evmCmd *cobra.Command) {
 		Use:   "deploy",
 		Short: "Deploy the evmchain/evmlight contract (i.e. create a new EVM chain)",
 		Run: func(cmd *cobra.Command, args []string) {
+			blockTime := deployParams.BlockTime()
+			blockKeepAmount := deployParams.BlockKeepAmount()
 			deployContract(deployParams.Name(), deployParams.Description(), deployParams.EVMFlavor().ProgramHash, dict.Dict{
-				evm.FieldChainID:      codec.EncodeUint16(uint16(deployParams.ChainID)),
-				evm.FieldGenesisAlloc: evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(nil)),
+				evm.FieldChainID:         codec.EncodeUint16(uint16(deployParams.ChainID)),
+				evm.FieldGenesisAlloc:    evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(nil)),
+				evm.FieldGasLimit:        codec.EncodeUint64(deployParams.GasLimit),
+				evm.FieldBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
 			})
 			log.Printf("%s contract successfully deployed.\n", deployParams.Name())
+
+			if blockTime > 0 {
+				log.Printf("Setting block time to %ds...\n", blockTime)
+				util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
+					return SCClient(deployParams.EVMFlavor().Hname()).PostRequest(
+						evm.FuncSetBlockTime.Name,
+						chainclient.PostRequestParams{
+							Transfer: colored.NewBalancesForIotas(1),
+							Args: requestargs.New().AddEncodeSimple(
+								evm.FieldBlockTime, codec.EncodeUint32(blockTime),
+							),
+						},
+					)
+				})
+			}
 		},
 	}
 	evmCmd.AddCommand(evmDeployCmd)

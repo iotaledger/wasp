@@ -27,11 +27,13 @@ func OnLoad() {
 }
 
 type ForcePayoutContext struct {
-	State MutableFairRouletteState
+	Events FairRouletteEvents
+	State  MutableFairRouletteState
 }
 
 func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcForcePayout")
+
 	// only SC creator can restart the round forcefully
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
@@ -45,11 +47,13 @@ func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ForceResetContext struct {
-	State MutableFairRouletteState
+	Events FairRouletteEvents
+	State  MutableFairRouletteState
 }
 
 func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcForceReset")
+
 	// only SC creator can restart the round forcefully
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
@@ -63,11 +67,13 @@ func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type PayWinnersContext struct {
-	State MutableFairRouletteState
+	Events FairRouletteEvents
+	State  MutableFairRouletteState
 }
 
 func funcPayWinnersThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcPayWinners")
+
 	// only SC itself can invoke this function
 	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
@@ -81,6 +87,7 @@ func funcPayWinnersThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type PlaceBetContext struct {
+	Events FairRouletteEvents
 	Params ImmutablePlaceBetParams
 	State  MutableFairRouletteState
 }
@@ -101,12 +108,14 @@ func funcPlaceBetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type PlayPeriodContext struct {
+	Events FairRouletteEvents
 	Params ImmutablePlayPeriodParams
 	State  MutableFairRouletteState
 }
 
 func funcPlayPeriodThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcPlayPeriod")
+
 	// only SC creator can update the play period
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 

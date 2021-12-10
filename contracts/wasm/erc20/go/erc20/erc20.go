@@ -17,11 +17,12 @@ import (
 func funcApprove(ctx wasmlib.ScFuncContext, f *ApproveContext) {
 	delegation := f.Params.Delegation().Value()
 	amount := f.Params.Amount().Value()
-	ctx.Require(amount > 0, "erc20.approve.fail: wrong 'amount' parameter")
+	ctx.Require(amount >= 0, "erc20.approve.fail: wrong 'amount' parameter")
 
 	// all allowances are in the map under the name of he owner
 	allowances := f.State.AllAllowances().GetAllowancesForAgent(ctx.Caller())
 	allowances.GetInt64(delegation).SetValue(amount)
+	f.Events.Approval(amount, ctx.Caller(), delegation)
 }
 
 // on_init is a constructor entry point. It initializes the smart contract with the
@@ -46,55 +47,62 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 }
 
 // transfer moves tokens from caller's account to target account
+// This function emits the Transfer event.
 // Input:
 // - PARAM_ACCOUNT: agentID
 // - PARAM_AMOUNT: i64
 func funcTransfer(ctx wasmlib.ScFuncContext, f *TransferContext) {
 	amount := f.Params.Amount().Value()
-	ctx.Require(amount > 0, "erc20.transfer.fail: wrong 'amount' parameter")
+	ctx.Require(amount >= 0, "erc20.transfer.fail: wrong 'amount' parameter")
 
 	balances := f.State.Balances()
-	sourceBalance := balances.GetInt64(ctx.Caller())
+	sourceAgent := ctx.Caller()
+	sourceBalance := balances.GetInt64(sourceAgent)
 	ctx.Require(sourceBalance.Value() >= amount, "erc20.transfer.fail: not enough funds")
 
-	targetAddr := f.Params.Account().Value()
-	targetBalance := balances.GetInt64(targetAddr)
+	targetAgent := f.Params.Account().Value()
+	targetBalance := balances.GetInt64(targetAgent)
 	result := targetBalance.Value() + amount
-	ctx.Require(result > 0, "erc20.transfer.fail: overflow")
+	ctx.Require(result >= 0, "erc20.transfer.fail: overflow")
 
 	sourceBalance.SetValue(sourceBalance.Value() - amount)
 	targetBalance.SetValue(targetBalance.Value() + amount)
+
+	f.Events.Transfer(amount, sourceAgent, targetAgent)
 }
 
 // Moves the amount of tokens from sender to recipient using the allowance mechanism.
-// Amount is then deducted from the caller’s allowance. This function emits the Transfer event.
+// Amount is then deducted from the caller’s allowance.
+// This function emits the Transfer event.
 // Input:
 // - PARAM_ACCOUNT: agentID   the spender
 // - PARAM_RECIPIENT: agentID   the target
 // - PARAM_AMOUNT: i64
 func funcTransferFrom(ctx wasmlib.ScFuncContext, f *TransferFromContext) {
 	// validate parameters
-	account := f.Params.Account().Value()
-	recipient := f.Params.Recipient().Value()
 	amount := f.Params.Amount().Value()
-	ctx.Require(amount > 0, "erc20.transfer_from.fail: wrong 'amount' parameter")
+	ctx.Require(amount >= 0, "erc20.transfer_from.fail: wrong 'amount' parameter")
 
 	// allowances are in the map under the name of the account
-	allowances := f.State.AllAllowances().GetAllowancesForAgent(account)
-	allowance := allowances.GetInt64(recipient)
+	sourceAgent := f.Params.Account().Value()
+	allowances := f.State.AllAllowances().GetAllowancesForAgent(sourceAgent)
+	allowance := allowances.GetInt64(ctx.Caller())
 	ctx.Require(allowance.Value() >= amount, "erc20.transfer_from.fail: not enough allowance")
 
 	balances := f.State.Balances()
-	sourceBalance := balances.GetInt64(account)
+	sourceBalance := balances.GetInt64(sourceAgent)
 	ctx.Require(sourceBalance.Value() >= amount, "erc20.transfer_from.fail: not enough funds")
 
-	recipientBalance := balances.GetInt64(recipient)
-	result := recipientBalance.Value() + amount
-	ctx.Require(result > 0, "erc20.transfer_from.fail: overflow")
+	targetAgent := f.Params.Recipient().Value()
+	targetBalance := balances.GetInt64(targetAgent)
+	result := targetBalance.Value() + amount
+	ctx.Require(result >= 0, "erc20.transfer_from.fail: overflow")
 
 	sourceBalance.SetValue(sourceBalance.Value() - amount)
-	recipientBalance.SetValue(recipientBalance.Value() + amount)
+	targetBalance.SetValue(targetBalance.Value() + amount)
 	allowance.SetValue(allowance.Value() - amount)
+
+	f.Events.Transfer(amount, sourceAgent, targetAgent)
 }
 
 // the view returns max number of tokens the owner PARAM_ACCOUNT of the account

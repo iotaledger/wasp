@@ -9,22 +9,25 @@ use crate::keys::*;
 
 // all type id values should exactly match their counterpart values on the host!
 pub const TYPE_ARRAY: i32 = 0x20;
-pub const TYPE_ARRAY16: i32 = 0x30;
-pub const TYPE_CALL: i32 = 0x40;
+pub const TYPE_ARRAY16: i32 = 0x60;
+pub const TYPE_CALL: i32 = 0x80;
+pub const TYPE_MASK: i32 = 0x1f;
 
 pub const TYPE_ADDRESS: i32 = 1;
 pub const TYPE_AGENT_ID: i32 = 2;
-pub const TYPE_BYTES: i32 = 3;
-pub const TYPE_CHAIN_ID: i32 = 4;
-pub const TYPE_COLOR: i32 = 5;
-pub const TYPE_HASH: i32 = 6;
-pub const TYPE_HNAME: i32 = 7;
-pub const TYPE_INT16: i32 = 8;
-pub const TYPE_INT32: i32 = 9;
-pub const TYPE_INT64: i32 = 10;
-pub const TYPE_MAP: i32 = 11;
-pub const TYPE_REQUEST_ID: i32 = 12;
-pub const TYPE_STRING: i32 = 13;
+pub const TYPE_BOOL: i32 = 3;
+pub const TYPE_BYTES: i32 = 4;
+pub const TYPE_CHAIN_ID: i32 = 5;
+pub const TYPE_COLOR: i32 = 6;
+pub const TYPE_HASH: i32 = 7;
+pub const TYPE_HNAME: i32 = 8;
+pub const TYPE_INT8: i32 = 9;
+pub const TYPE_INT16: i32 = 10;
+pub const TYPE_INT32: i32 = 11;
+pub const TYPE_INT64: i32 = 12;
+pub const TYPE_MAP: i32 = 13;
+pub const TYPE_REQUEST_ID: i32 = 14;
+pub const TYPE_STRING: i32 = 15;
 
 pub const OBJ_ID_NULL: i32 = 0;
 pub const OBJ_ID_ROOT: i32 = 1;
@@ -33,7 +36,7 @@ pub const OBJ_ID_PARAMS: i32 = 3;
 pub const OBJ_ID_RESULTS: i32 = 4;
 
 // size in bytes of predefined types, indexed by the TYPE_* consts
-const TYPE_SIZES: &[u8] = &[0, 33, 37, 0, 33, 32, 32, 4, 2, 4, 8, 0, 34, 0];
+const TYPE_SIZES: &[u8] = &[0, 33, 37, 1, 0, 33, 32, 32, 4, 1, 2, 4, 8, 0, 34, 0];
 
 // These 4 external functions are funneling the entire WasmLib functionality
 // to their counterparts on the host.
@@ -42,12 +45,12 @@ extern {
     // Copy the value data bytes of type <type_id> stored in the host container object <obj_id>,
     // under key <key_id>, into the pre-allocated <buffer> which can hold len bytes.
     // Returns the actual length of the value data bytes on the host.
-    pub fn hostGetBytes(obj_id: i32, key_id: i32, type_id: i32, buffer: *const u8, len: i32) -> i32;
+    pub fn hostGetBytes(obj_id: i32, key_id: i32, type_id: i32, buffer: *const u8, size: i32) -> i32;
 
     // Retrieve the key id associated with the <key> data bytes of length <len>.
     // A negative length indicates a bytes key, positive indicates a string key
     // We discern between the two for better readable logging purposes
-    pub fn hostGetKeyID(key: *const u8, len: i32) -> i32;
+    pub fn hostGetKeyID(key: *const u8, size: i32) -> i32;
 
     // Retrieve the id of the container sub-object of type <type_id> stored in
     // the host container object <obj_id>, under key <key_id>.
@@ -55,7 +58,7 @@ extern {
 
     // copy the <len> value data bytes of type <type_id> from the <buffer>
     // into the host container object <obj_id>, under key <key_id>.
-    pub fn hostSetBytes(obj_id: i32, key_id: i32, type_id: i32, buffer: *const u8, len: i32);
+    pub fn hostSetBytes(obj_id: i32, key_id: i32, type_id: i32, buffer: *const u8, size: i32);
 }
 
 pub fn call_func(obj_id: i32, key_id: Key32, params: &[u8]) -> Vec<u8> {
@@ -90,10 +93,19 @@ pub fn clear(obj_id: i32) {
     set_bytes(obj_id, KEY_LENGTH, TYPE_INT32, &0_i32.to_le_bytes())
 }
 
+// Delete the value with the specified key and type from the specified container object.
+pub fn del_key(obj_id: i32, key_id: Key32, type_id: i32) {
+    unsafe {
+        // size -1 means delete
+        // this removes the need for a separate hostDelete function
+        hostSetBytes(obj_id, key_id.0, type_id, std::ptr::null_mut(), -1);
+    }
+}
+
 // Check if the specified container object contains a value with the specified key and type.
 pub fn exists(obj_id: i32, key_id: Key32, type_id: i32) -> bool {
     unsafe {
-        // negative length (-1) means only test for existence
+        // size -1 means only test for existence
         // returned size -1 indicates keyID not found (or error)
         // this removes the need for a separate hostExists function
         hostGetBytes(obj_id, key_id.0, type_id, std::ptr::null_mut(), -1) >= 0
@@ -117,7 +129,7 @@ pub fn get_bytes(obj_id: i32, key_id: Key32, type_id: i32) -> Vec<u8> {
             }
         }
 
-        // allocate a sufficient length byte array in Wasm memory
+        // allocate a sufficiently sized byte array in Wasm memory
         // and let the host copy the actual data bytes into this Wasm byte array
         let mut result = vec![0_u8; size as usize];
         hostGetBytes(obj_id, key_id.0, type_id, result.as_mut_ptr(), size);
@@ -141,6 +153,12 @@ pub fn get_key_id_from_string(key: &str) -> Key32 {
         // non-negative size indicates this is a string key
         Key32(hostGetKeyID(bytes.as_ptr(), bytes.len() as i32))
     }
+}
+
+// Retrieve the key id that the host has associated with the specified integer key
+pub fn get_key_id_from_uint64(key: u64, nr_of_bytes: usize) -> Key32 {
+    let bytes = key.to_le_bytes();
+    get_key_id_from_bytes(&bytes[..nr_of_bytes])
 }
 
 // Retrieve the length of an array container object on the host

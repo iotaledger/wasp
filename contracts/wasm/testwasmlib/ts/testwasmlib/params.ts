@@ -5,273 +5,305 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableArrayClearParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
-    }
+		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
 }
 
 export class MutableArrayClearParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
-    }
+		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
 }
 
 export class ImmutableArrayCreateParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
-    }
+		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
 }
 
 export class MutableArrayCreateParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
-    }
+		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
 }
 
 export class ImmutableArraySetParams extends wasmlib.ScMapID {
-
     index(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
+	}
 
     name(): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
-    }
+		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
 
     value(): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamValue]);
-    }
+		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamValue]);
+	}
 }
 
 export class MutableArraySetParams extends wasmlib.ScMapID {
-
     index(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
+	}
 
     name(): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
-    }
+		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
 
     value(): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamValue]);
-    }
+		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamValue]);
+	}
 }
 
 export class MapStringToImmutableBytes {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
     }
 
     getBytes(key: string): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScImmutableBytes(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 
 export class ImmutableParamTypesParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScImmutableAddress {
-        return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
-    }
+		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+	}
 
     agentID(): wasmlib.ScImmutableAgentID {
-        return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAgentID]);
-    }
+		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAgentID]);
+	}
+
+    bool(): wasmlib.ScImmutableBool {
+		return new wasmlib.ScImmutableBool(this.mapID, sc.idxMap[sc.IdxParamBool]);
+	}
 
     bytes(): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.mapID, sc.idxMap[sc.IdxParamBytes]);
-    }
+		return new wasmlib.ScImmutableBytes(this.mapID, sc.idxMap[sc.IdxParamBytes]);
+	}
 
     chainID(): wasmlib.ScImmutableChainID {
-        return new wasmlib.ScImmutableChainID(this.mapID, sc.idxMap[sc.IdxParamChainID]);
-    }
+		return new wasmlib.ScImmutableChainID(this.mapID, sc.idxMap[sc.IdxParamChainID]);
+	}
 
     color(): wasmlib.ScImmutableColor {
-        return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
-    }
+		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+	}
 
     hash(): wasmlib.ScImmutableHash {
-        return new wasmlib.ScImmutableHash(this.mapID, sc.idxMap[sc.IdxParamHash]);
-    }
+		return new wasmlib.ScImmutableHash(this.mapID, sc.idxMap[sc.IdxParamHash]);
+	}
 
     hname(): wasmlib.ScImmutableHname {
-        return new wasmlib.ScImmutableHname(this.mapID, sc.idxMap[sc.IdxParamHname]);
-    }
+		return new wasmlib.ScImmutableHname(this.mapID, sc.idxMap[sc.IdxParamHname]);
+	}
 
     int16(): wasmlib.ScImmutableInt16 {
-        return new wasmlib.ScImmutableInt16(this.mapID, sc.idxMap[sc.IdxParamInt16]);
-    }
+		return new wasmlib.ScImmutableInt16(this.mapID, sc.idxMap[sc.IdxParamInt16]);
+	}
 
     int32(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamInt32]);
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamInt32]);
+	}
 
     int64(): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamInt64]);
-    }
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamInt64]);
+	}
+
+    int8(): wasmlib.ScImmutableInt8 {
+		return new wasmlib.ScImmutableInt8(this.mapID, sc.idxMap[sc.IdxParamInt8]);
+	}
 
     param(): sc.MapStringToImmutableBytes {
-        return new sc.MapStringToImmutableBytes(this.mapID);
-    }
+		return new sc.MapStringToImmutableBytes(this.mapID);
+	}
 
     requestID(): wasmlib.ScImmutableRequestID {
-        return new wasmlib.ScImmutableRequestID(this.mapID, sc.idxMap[sc.IdxParamRequestID]);
-    }
+		return new wasmlib.ScImmutableRequestID(this.mapID, sc.idxMap[sc.IdxParamRequestID]);
+	}
 
     string(): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamString]);
-    }
+		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamString]);
+	}
+
+    uint16(): wasmlib.ScImmutableUint16 {
+		return new wasmlib.ScImmutableUint16(this.mapID, sc.idxMap[sc.IdxParamUint16]);
+	}
+
+    uint32(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, sc.idxMap[sc.IdxParamUint32]);
+	}
+
+    uint64(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, sc.idxMap[sc.IdxParamUint64]);
+	}
+
+    uint8(): wasmlib.ScImmutableUint8 {
+		return new wasmlib.ScImmutableUint8(this.mapID, sc.idxMap[sc.IdxParamUint8]);
+	}
 }
 
 export class MapStringToMutableBytes {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
     }
 
     clear(): void {
-        wasmlib.clear(this.objID)
+        wasmlib.clear(this.objID);
     }
 
     getBytes(key: string): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScMutableBytes(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 
 export class MutableParamTypesParams extends wasmlib.ScMapID {
-
     address(): wasmlib.ScMutableAddress {
-        return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
-    }
+		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+	}
 
     agentID(): wasmlib.ScMutableAgentID {
-        return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAgentID]);
-    }
+		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAgentID]);
+	}
+
+    bool(): wasmlib.ScMutableBool {
+		return new wasmlib.ScMutableBool(this.mapID, sc.idxMap[sc.IdxParamBool]);
+	}
 
     bytes(): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.mapID, sc.idxMap[sc.IdxParamBytes]);
-    }
+		return new wasmlib.ScMutableBytes(this.mapID, sc.idxMap[sc.IdxParamBytes]);
+	}
 
     chainID(): wasmlib.ScMutableChainID {
-        return new wasmlib.ScMutableChainID(this.mapID, sc.idxMap[sc.IdxParamChainID]);
-    }
+		return new wasmlib.ScMutableChainID(this.mapID, sc.idxMap[sc.IdxParamChainID]);
+	}
 
     color(): wasmlib.ScMutableColor {
-        return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
-    }
+		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+	}
 
     hash(): wasmlib.ScMutableHash {
-        return new wasmlib.ScMutableHash(this.mapID, sc.idxMap[sc.IdxParamHash]);
-    }
+		return new wasmlib.ScMutableHash(this.mapID, sc.idxMap[sc.IdxParamHash]);
+	}
 
     hname(): wasmlib.ScMutableHname {
-        return new wasmlib.ScMutableHname(this.mapID, sc.idxMap[sc.IdxParamHname]);
-    }
+		return new wasmlib.ScMutableHname(this.mapID, sc.idxMap[sc.IdxParamHname]);
+	}
 
     int16(): wasmlib.ScMutableInt16 {
-        return new wasmlib.ScMutableInt16(this.mapID, sc.idxMap[sc.IdxParamInt16]);
-    }
+		return new wasmlib.ScMutableInt16(this.mapID, sc.idxMap[sc.IdxParamInt16]);
+	}
 
     int32(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamInt32]);
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamInt32]);
+	}
 
     int64(): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamInt64]);
-    }
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamInt64]);
+	}
+
+    int8(): wasmlib.ScMutableInt8 {
+		return new wasmlib.ScMutableInt8(this.mapID, sc.idxMap[sc.IdxParamInt8]);
+	}
 
     param(): sc.MapStringToMutableBytes {
-        return new sc.MapStringToMutableBytes(this.mapID);
-    }
+		return new sc.MapStringToMutableBytes(this.mapID);
+	}
 
     requestID(): wasmlib.ScMutableRequestID {
-        return new wasmlib.ScMutableRequestID(this.mapID, sc.idxMap[sc.IdxParamRequestID]);
-    }
+		return new wasmlib.ScMutableRequestID(this.mapID, sc.idxMap[sc.IdxParamRequestID]);
+	}
 
     string(): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamString]);
-    }
+		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamString]);
+	}
+
+    uint16(): wasmlib.ScMutableUint16 {
+		return new wasmlib.ScMutableUint16(this.mapID, sc.idxMap[sc.IdxParamUint16]);
+	}
+
+    uint32(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, sc.idxMap[sc.IdxParamUint32]);
+	}
+
+    uint64(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, sc.idxMap[sc.IdxParamUint64]);
+	}
+
+    uint8(): wasmlib.ScMutableUint8 {
+		return new wasmlib.ScMutableUint8(this.mapID, sc.idxMap[sc.IdxParamUint8]);
+	}
 }
 
 export class ImmutableArrayLengthParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
-    }
+		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
 }
 
 export class MutableArrayLengthParams extends wasmlib.ScMapID {
-
     name(): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
-    }
+		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
 }
 
 export class ImmutableArrayValueParams extends wasmlib.ScMapID {
-
     index(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
+	}
 
     name(): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
-    }
+		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
 }
 
 export class MutableArrayValueParams extends wasmlib.ScMapID {
-
     index(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamIndex]);
+	}
 
     name(): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
-    }
+		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
 }
 
 export class ImmutableBlockRecordParams extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
+	}
 
     recordIndex(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamRecordIndex]);
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamRecordIndex]);
+	}
 }
 
 export class MutableBlockRecordParams extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
+	}
 
     recordIndex(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamRecordIndex]);
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamRecordIndex]);
+	}
 }
 
 export class ImmutableBlockRecordsParams extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
-    }
+		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
+	}
 }
 
 export class MutableBlockRecordsParams extends wasmlib.ScMapID {
-
     blockIndex(): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
-    }
+		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamBlockIndex]);
+	}
 }

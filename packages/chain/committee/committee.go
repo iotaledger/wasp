@@ -5,7 +5,6 @@ package committee
 
 import (
 	"crypto/rand"
-	"fmt"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -27,14 +26,14 @@ type committee struct {
 	peerConfig     registry.PeerNetworkConfigProvider
 	validatorNodes peering.GroupProvider
 	acsRunner      chain.AsynchronousCommonSubsetRunner
-	peeringID      peering.PeeringID
 	size           uint16
 	quorum         uint16
 	ownIndex       uint16
 	dkshare        *tcrypto.DKShare
-	attachID       interface{}
 	log            *logger.Logger
 }
+
+var _ chain.Committee = &committee{}
 
 const waitReady = false
 
@@ -46,23 +45,18 @@ func New(
 	dksProvider registry.DKShareRegistryProvider,
 	log *logger.Logger,
 	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
-) (chain.Committee, error) {
+) (chain.Committee, peering.GroupProvider, error) {
 	// load DKShare from the registry
 	dkshare, err := dksProvider.LoadDKShare(cmtRec.Address)
 	if err != nil {
-		return nil, xerrors.Errorf("NewCommittee: failed loading DKShare for address %s: %w", cmtRec.Address.Base58(), err)
+		return nil, nil, xerrors.Errorf("NewCommittee: failed loading DKShare for address %s: %w", cmtRec.Address.Base58(), err)
 	}
 	if dkshare.Index == nil {
-		return nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: %w", cmtRec.Address.Base58(), err)
+		return nil, nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: %w", cmtRec.Address.Base58(), err)
 	}
 	if err := checkValidatorNodeIDs(peerConfig, dkshare.N, *dkshare.Index, cmtRec.Nodes); err != nil {
-		return nil, xerrors.Errorf("NewCommittee: %w", err)
+		return nil, nil, xerrors.Errorf("NewCommittee: %w", err)
 	}
-	var peers peering.GroupProvider
-	if peers, err = netProvider.PeerGroup(cmtRec.Nodes); err != nil {
-		return nil, xerrors.Errorf("NewCommittee: failed to create peer group for committee: %+v: %w", cmtRec.Nodes, err)
-	}
-	log.Debugf("NewCommittee: peer group: %+v", cmtRec.Nodes)
 	// peerGroupID is calculated by XORing chainID and stateAddr.
 	// It allows to use same statAddr for different chains
 	peerGroupID := cmtRec.Address.Array()
@@ -73,11 +67,15 @@ func New(
 	for i := range peerGroupID {
 		peerGroupID[i] ^= chainArr[i]
 	}
+	var peers peering.GroupProvider
+	if peers, err = netProvider.PeerGroup(peerGroupID, cmtRec.Nodes); err != nil {
+		return nil, nil, xerrors.Errorf("NewCommittee: failed to create peer group for committee: %+v: %w", cmtRec.Nodes, err)
+	}
+	log.Debugf("NewCommittee: peer group: %+v", cmtRec.Nodes)
 	ret := &committee{
 		isReady:        atomic.NewBool(false),
 		address:        cmtRec.Address,
 		validatorNodes: peers,
-		peeringID:      peerGroupID,
 		peerConfig:     peerConfig,
 		size:           dkshare.N,
 		quorum:         dkshare.T,
@@ -89,18 +87,17 @@ func New(
 		ret.acsRunner = acsRunner[0]
 	} else {
 		// That's the default implementation of the ACS.
-		// We use it, of the mocked variant was not passed.
+		// We use it, if the mocked variant was not passed.
 		ret.acsRunner = commonsubset.NewCommonSubsetCoordinator(
-			peerGroupID,
 			netProvider,
-			peers,
+			ret.validatorNodes,
 			dkshare,
 			log,
 		)
 	}
 	go ret.waitReady(waitReady)
 
-	return ret, nil
+	return ret, ret.validatorNodes, nil
 }
 
 func (c *committee) Address() ledgerstate.Address {
@@ -125,30 +122,6 @@ func (c *committee) OwnPeerIndex() uint16 {
 
 func (c *committee) DKShare() *tcrypto.DKShare {
 	return c.dkshare
-}
-
-func (c *committee) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
-	if peer, ok := c.validatorNodes.OtherNodes()[targetPeerIndex]; ok {
-		peer.SendMsg(&peering.PeerMessage{
-			PeeringID:   c.peeringID,
-			SenderIndex: c.ownIndex,
-			MsgType:     msgType,
-			MsgData:     msgData,
-		})
-		return nil
-	}
-	return fmt.Errorf("SendMsg: wrong peer index")
-}
-
-func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64, except ...uint16) {
-	msg := &peering.PeerMessage{
-		PeeringID:   c.peeringID,
-		SenderIndex: c.ownIndex,
-		Timestamp:   ts,
-		MsgType:     msgType,
-		MsgData:     msgData,
-	}
-	c.validatorNodes.Broadcast(msg, false, except...)
 }
 
 func (c *committee) IsAlivePeer(peerIndex uint16) bool {
@@ -202,21 +175,9 @@ func (c *committee) PeerStatus() []*chain.PeerStatus {
 	return ret
 }
 
-func (c *committee) Attach(ch chain.ChainCore) {
-	c.attachID = c.validatorNodes.Attach(&c.peeringID, func(recv *peering.RecvEvent) {
-		if c.acsRunner != nil && c.acsRunner.TryHandleMessage(recv) {
-			return
-		}
-		ch.ReceiveMessage(recv.Msg)
-	})
-}
-
 func (c *committee) Close() {
 	c.acsRunner.Close()
 	c.isReady.Store(false)
-	if c.attachID != nil {
-		c.validatorNodes.Detach(c.attachID)
-	}
 	c.validatorNodes.Close()
 }
 

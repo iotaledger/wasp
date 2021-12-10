@@ -471,7 +471,6 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 	InitGenesis(evm.DefaultChainID, db, genesisAlloc, evm.GasLimitDefault, 0)
 
 	emu := NewEVMEmulator(db)
-	defer emu.Close()
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(b, err)
@@ -520,6 +519,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 func benchmarkEVMEmulator(b *testing.B, k int) {
 	// setup: deploy the storage contract and prepare N transactions to send
 	emu, txs, db := initBenchmark(b)
+	defer emu.Close()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

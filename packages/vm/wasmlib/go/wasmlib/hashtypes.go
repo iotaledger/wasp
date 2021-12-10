@@ -5,7 +5,6 @@ package wasmlib
 
 import (
 	"encoding/binary"
-	"strconv"
 )
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -35,7 +34,7 @@ func (o ScAddress) Bytes() []byte {
 }
 
 func (o ScAddress) KeyID() Key32 {
-	return GetKeyIDFromBytes(o.Bytes())
+	return GetKeyIDFromBytes(o.id[:])
 }
 
 func (o ScAddress) String() string {
@@ -79,7 +78,7 @@ func (o ScAgentID) Hname() ScHname {
 }
 
 func (o ScAgentID) KeyID() Key32 {
-	return GetKeyIDFromBytes(o.Bytes())
+	return GetKeyIDFromBytes(o.id[:])
 }
 
 func (o ScAgentID) IsAddress() bool {
@@ -116,7 +115,7 @@ func (o ScChainID) Bytes() []byte {
 }
 
 func (o ScChainID) KeyID() Key32 {
-	return GetKeyIDFromBytes(o.Bytes())
+	return GetKeyIDFromBytes(o.id[:])
 }
 
 func (o ScChainID) String() string {
@@ -160,7 +159,7 @@ func (o ScColor) Bytes() []byte {
 }
 
 func (o ScColor) KeyID() Key32 {
-	return GetKeyIDFromBytes(o.Bytes())
+	return GetKeyIDFromBytes(o.id[:])
 }
 
 func (o ScColor) String() string {
@@ -187,7 +186,7 @@ func (o ScHash) Bytes() []byte {
 }
 
 func (o ScHash) KeyID() Key32 {
-	return GetKeyIDFromBytes(o.Bytes())
+	return GetKeyIDFromBytes(o.id[:])
 }
 
 func (o ScHash) String() string {
@@ -217,7 +216,14 @@ func (hn ScHname) KeyID() Key32 {
 }
 
 func (hn ScHname) String() string {
-	return strconv.FormatInt(int64(hn), 10)
+	const hex = "0123456789abcdef"
+	res := make([]byte, 8)
+	val := hn
+	for i := 0; i < 8; i++ {
+		res[7-i] = hex[val&0x0f]
+		val >>= 4
+	}
+	return string(res)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -240,7 +246,7 @@ func (o ScRequestID) Bytes() []byte {
 }
 
 func (o ScRequestID) KeyID() Key32 {
-	return GetKeyIDFromBytes(o.Bytes())
+	return GetKeyIDFromBytes(o.id[:])
 }
 
 func (o ScRequestID) String() string {

@@ -10,19 +10,20 @@ package tokenregistry
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
-	ScName  = "tokenregistry"
-	HScName = wasmlib.ScHname(0xe1ba0c78)
+	ScName        = "tokenregistry"
+	ScDescription = ""
+	HScName       = wasmlib.ScHname(0xe1ba0c78)
 )
 
 const (
-	ParamColor       = wasmlib.Key("color")
-	ParamDescription = wasmlib.Key("description")
-	ParamUserDefined = wasmlib.Key("userDefined")
+	ParamColor       = "color"
+	ParamDescription = "description"
+	ParamUserDefined = "userDefined"
 )
 
 const (
-	StateColorList = wasmlib.Key("colorList")
-	StateRegistry  = wasmlib.Key("registry")
+	StateColorList = "colorList"
+	StateRegistry  = "registry"
 )
 
 const (

@@ -17,17 +17,19 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/tools/schema/generator"
+	"github.com/iotaledger/wasp/tools/schema/model"
 	"gopkg.in/yaml.v2"
 )
 
 var (
-	flagCore  = flag.Bool("core", false, "generate core contract interface")
-	flagForce = flag.Bool("force", false, "force code generation")
-	flagGo    = flag.Bool("go", false, "generate Go code")
-	flagInit  = flag.String("init", "", "generate new schema file for smart contract named <string>")
-	flagRust  = flag.Bool("rust", false, "generate Rust code")
-	flagTs    = flag.Bool("ts", false, "generate TypScript code")
-	flagType  = flag.String("type", "yaml", "type of schema file that will be generated. Values(yaml,json)")
+	flagCore   = flag.Bool("core", false, "generate core contract interface")
+	flagClient = flag.Bool("client", false, "generate client side contract interface")
+	flagForce  = flag.Bool("force", false, "force code generation")
+	flagGo     = flag.Bool("go", false, "generate Go code")
+	flagInit   = flag.String("init", "", "generate new schema file for smart contract named <string>")
+	flagRust   = flag.Bool("rust", false, "generate Rust code")
+	flagTs     = flag.Bool("ts", false, "generate TypScript code")
+	flagType   = flag.String("type", "yaml", "type of schema file that will be generated. Values(yaml,json)")
 )
 
 func init() {
@@ -113,25 +115,33 @@ func generateSchema(file *os.File) error {
 		s.SchemaTime = time.Now()
 	}
 
-	if *flagTs {
-		g := generator.NewTypeScriptGenerator()
-		err = g.Generate(s)
+	if *flagClient {
+		g := generator.NewClientGenerator(s)
+		err = g.Generate()
 		if err != nil {
 			return err
 		}
 	}
 
 	if *flagGo {
-		g := generator.NewGoGenerator()
-		err = g.Generate(s)
+		g := generator.NewGoGenerator(s)
+		err = g.Generate()
 		if err != nil {
 			return err
 		}
 	}
 
 	if *flagRust {
-		g := generator.NewRustGenerator()
-		err = g.Generate(s)
+		g := generator.NewRustGenerator(s)
+		err = g.Generate()
+		if err != nil {
+			return err
+		}
+	}
+
+	if *flagTs {
+		g := generator.NewTypeScriptGenerator(s)
+		err = g.Generate()
 		if err != nil {
 			return err
 		}
@@ -140,6 +150,7 @@ func generateSchema(file *os.File) error {
 }
 
 func generateSchemaNew() error {
+	// TODO make sure name is valid: no path characters
 	name := *flagInit
 	fmt.Println("initializing " + name)
 
@@ -153,29 +164,30 @@ func generateSchemaNew() error {
 		return err
 	}
 
-	schemaDef := &generator.SchemaDef{}
+	schemaDef := &model.SchemaDef{}
 	schemaDef.Name = name
 	schemaDef.Description = name + " description"
-	schemaDef.Structs = make(generator.StringMapMap)
-	schemaDef.Typedefs = make(generator.StringMap)
-	schemaDef.State = make(generator.StringMap)
+	schemaDef.Structs = make(model.StringMapMap)
+	schemaDef.Events = make(model.StringMapMap)
+	schemaDef.Typedefs = make(model.StringMap)
+	schemaDef.State = make(model.StringMap)
 	schemaDef.State["owner"] = "AgentID // current owner of this smart contract"
-	schemaDef.Funcs = make(generator.FuncDefMap)
-	schemaDef.Views = make(generator.FuncDefMap)
+	schemaDef.Funcs = make(model.FuncDefMap)
+	schemaDef.Views = make(model.FuncDefMap)
 
-	funcInit := &generator.FuncDef{}
-	funcInit.Params = make(generator.StringMap)
+	funcInit := &model.FuncDef{}
+	funcInit.Params = make(model.StringMap)
 	funcInit.Params["owner"] = "AgentID? // optional owner of this smart contract"
 	schemaDef.Funcs["init"] = funcInit
 
-	funcSetOwner := &generator.FuncDef{}
+	funcSetOwner := &model.FuncDef{}
 	funcSetOwner.Access = "owner // current owner of this smart contract"
-	funcSetOwner.Params = make(generator.StringMap)
+	funcSetOwner.Params = make(model.StringMap)
 	funcSetOwner.Params["owner"] = "AgentID // new owner of this smart contract"
 	schemaDef.Funcs["setOwner"] = funcSetOwner
 
-	viewGetOwner := &generator.FuncDef{}
-	viewGetOwner.Results = make(generator.StringMap)
+	viewGetOwner := &model.FuncDef{}
+	viewGetOwner.Results = make(model.StringMap)
 	viewGetOwner.Results["owner"] = "AgentID // current owner of this smart contract"
 	schemaDef.Views["getOwner"] = viewGetOwner
 	switch *flagType {
@@ -187,9 +199,9 @@ func generateSchemaNew() error {
 	return errors.New("invalid schema type: " + *flagType)
 }
 
-func loadSchema(file *os.File) (s *generator.Schema, err error) {
+func loadSchema(file *os.File) (s *model.Schema, err error) {
 	fmt.Println("loading " + file.Name())
-	schemaDef := &generator.SchemaDef{}
+	schemaDef := &model.SchemaDef{}
 	switch filepath.Ext(file.Name()) {
 	case ".json":
 		err = json.NewDecoder(file).Decode(schemaDef)
@@ -209,7 +221,7 @@ func loadSchema(file *os.File) (s *generator.Schema, err error) {
 		return nil, err
 	}
 
-	s = generator.NewSchema()
+	s = model.NewSchema()
 	err = s.Compile(schemaDef)
 	if err != nil {
 		return nil, err
@@ -217,7 +229,7 @@ func loadSchema(file *os.File) (s *generator.Schema, err error) {
 	return s, nil
 }
 
-func WriteJSONSchema(schemaDef *generator.SchemaDef) error {
+func WriteJSONSchema(schemaDef *model.SchemaDef) error {
 	file, err := os.Create("schema.json")
 	if err != nil {
 		return err
@@ -239,7 +251,7 @@ func WriteJSONSchema(schemaDef *generator.SchemaDef) error {
 	return err
 }
 
-func WriteYAMLSchema(schemaDef *generator.SchemaDef) error {
+func WriteYAMLSchema(schemaDef *model.SchemaDef) error {
 	file, err := os.Create("schema.yaml")
 	if err != nil {
 		return err

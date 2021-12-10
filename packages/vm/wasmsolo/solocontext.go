@@ -30,9 +30,10 @@ const (
 )
 
 var (
-	GoDebug = flag.Bool("godebug", false, "debug go smart contract code")
-	GoWasm  = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
-	TsWasm  = flag.Bool("tswasm", false, "prefer typescript wasm smart contract code")
+	GoDebug    = flag.Bool("godebug", false, "debug go smart contract code")
+	GoWasm     = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
+	GoWasmEdge = flag.Bool("gowasmedge", false, "use WasmEdge instead of WasmTime")
+	TsWasm     = flag.Bool("tswasm", false, "prefer typescript wasm smart contract code")
 )
 
 type SoloContext struct {
@@ -52,9 +53,23 @@ type SoloContext struct {
 }
 
 var (
+	//_ iscp.Gas                  = &SoloContext{}
 	_ wasmlib.ScFuncCallContext = &SoloContext{}
 	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
+
+func (ctx *SoloContext) Burn(i int64) {
+	// ignore gas for now
+}
+
+func (ctx *SoloContext) Budget() int64 {
+	// ignore gas for now
+	return 0
+}
+
+func (ctx *SoloContext) SetBudget(i int64) {
+	// ignore gas for now
+}
 
 // NewSoloContext can be used to create a SoloContext associated with a smart contract
 // with minimal information and will verify successful creation before returning ctx.
@@ -96,8 +111,13 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 		params = init[0].Params()
 	}
 	if *GoDebug {
-		wasmproc.GoWasmVM = wasmhost.NewWasmGoVM(ctx.scName, onLoad)
+		wasmproc.GoWasmVM = func() wasmhost.WasmVM {
+			return wasmhost.NewWasmGoVM(ctx.scName, onLoad)
+		}
 	}
+	//if *GoWasmEdge && wasmproc.GoWasmVM == nil {
+	//	wasmproc.GoWasmVM = wasmhost.NewWasmEdgeVM
+	//}
 	ctx.Err = ctx.Chain.DeployContract(keyPair, ctx.scName, ctx.Hprog, params...)
 	if *GoDebug {
 		// just in case deploy failed we don't want to leave this around
@@ -150,6 +170,10 @@ func soloContext(t *testing.T, chain *solo.Chain, scName string, creator *SoloAg
 
 // StartChain starts a new chain named chainName.
 func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
+	if SoloDebug {
+		// avoid pesky timeouts during debugging
+		wasmhost.DisableWasmTimeout = true
+	}
 	wasmhost.HostTracing = SoloHostTracing
 	// wasmhost.HostTracingAll = SoloHostTracing
 
@@ -320,27 +344,31 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 		return
 	}
 
+	// start with file in test folder
 	wasmFile := ctx.scName + "_bg.wasm"
 
-	// try Rust first
-	exists, _ := util.ExistsFilePath("../pkg/" + wasmFile)
+	// try (newer?) Rust Wasm file first
+	rsFile := "../pkg/" + wasmFile
+	exists, _ := util.ExistsFilePath(rsFile)
 	if exists {
-		wasmFile = "../pkg/" + wasmFile
+		wasmFile = rsFile
 	}
 
-	if *GoWasm {
-		wasmFile = ctx.scName + "_go.wasm"
-		exists, _ = util.ExistsFilePath("../go/pkg/" + wasmFile)
+	// try Go Wasm file?
+	if !exists || *GoWasm {
+		goFile := "../go/pkg/" + ctx.scName + "_go.wasm"
+		exists, _ = util.ExistsFilePath(goFile)
 		if exists {
-			wasmFile = "../go/pkg/" + wasmFile
+			wasmFile = goFile
 		}
 	}
 
-	if *TsWasm {
-		wasmFile = ctx.scName + "_ts.wasm"
-		exists, _ = util.ExistsFilePath("../ts/pkg/" + wasmFile)
+	// try TypeScript Wasm file?
+	if !exists || *TsWasm {
+		tsFile := "../ts/pkg/" + ctx.scName + "_ts.wasm"
+		exists, _ = util.ExistsFilePath(tsFile)
 		if exists {
-			wasmFile = "../ts/pkg/" + wasmFile
+			wasmFile = tsFile
 		}
 	}
 

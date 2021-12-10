@@ -16,7 +16,7 @@ use crate::keys::*;
 use crate::structs::*;
 
 pub struct ArrayOfImmutableColor {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl ArrayOfImmutableColor {
@@ -30,7 +30,7 @@ impl ArrayOfImmutableColor {
 }
 
 pub struct MapColorToImmutableToken {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapColorToImmutableToken {
@@ -46,18 +46,18 @@ pub struct ImmutableTokenRegistryState {
 
 impl ImmutableTokenRegistryState {
     pub fn color_list(&self) -> ArrayOfImmutableColor {
-        let arr_id = get_object_id(self.id, idx_map(IDX_STATE_COLOR_LIST), TYPE_ARRAY | TYPE_COLOR);
-        ArrayOfImmutableColor { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_COLOR_LIST), TYPE_ARRAY | TYPE_COLOR);
+		ArrayOfImmutableColor { obj_id: arr_id }
+	}
 
     pub fn registry(&self) -> MapColorToImmutableToken {
-        let map_id = get_object_id(self.id, idx_map(IDX_STATE_REGISTRY), TYPE_MAP);
-        MapColorToImmutableToken { obj_id: map_id }
-    }
+		let map_id = get_object_id(self.id, idx_map(IDX_STATE_REGISTRY), TYPE_MAP);
+		MapColorToImmutableToken { obj_id: map_id }
+	}
 }
 
 pub struct ArrayOfMutableColor {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl ArrayOfMutableColor {
@@ -75,12 +75,12 @@ impl ArrayOfMutableColor {
 }
 
 pub struct MapColorToMutableToken {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapColorToMutableToken {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_token(&self, key: &ScColor) -> MutableToken {
@@ -95,12 +95,12 @@ pub struct MutableTokenRegistryState {
 
 impl MutableTokenRegistryState {
     pub fn color_list(&self) -> ArrayOfMutableColor {
-        let arr_id = get_object_id(self.id, idx_map(IDX_STATE_COLOR_LIST), TYPE_ARRAY | TYPE_COLOR);
-        ArrayOfMutableColor { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_COLOR_LIST), TYPE_ARRAY | TYPE_COLOR);
+		ArrayOfMutableColor { obj_id: arr_id }
+	}
 
     pub fn registry(&self) -> MapColorToMutableToken {
-        let map_id = get_object_id(self.id, idx_map(IDX_STATE_REGISTRY), TYPE_MAP);
-        MapColorToMutableToken { obj_id: map_id }
-    }
+		let map_id = get_object_id(self.id, idx_map(IDX_STATE_REGISTRY), TYPE_MAP);
+		MapColorToMutableToken { obj_id: map_id }
+	}
 }

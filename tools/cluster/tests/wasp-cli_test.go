@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/hex"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -178,24 +179,37 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	require.Equal(t, "Block index: 2", out[0])
 
 	out = w.Run("chain", "request", reqID)
-	t.Logf("%+v", out)
+	found = false
 	for _, line := range out {
-		if strings.Contains(line, "Error:") {
-			t.Fail()
+		if strings.Contains(line, "Error: (empty)") {
+			found = true
+			break
 		}
 	}
+	require.True(t, found)
 
 	// try an unsuccessful request (missing params)
-	out = w.Run("chain", "post-request", "root", "deployContract")
+	out = w.Run("chain", "post-request", "root", "deployContract", "string", "foo", "string", "bar")
 	reqID = findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
 	out = w.Run("chain", "request", reqID)
+
 	found = false
 	for _, line := range out {
 		if strings.Contains(line, "Error: ") {
 			found = true
 			require.Regexp(t, `cannot decode`, line)
+			break
+		}
+	}
+	require.True(t, found)
+
+	found = false
+	for _, line := range out {
+		if strings.Contains(line, "foo") {
+			found = true
+			require.Contains(t, line, hex.EncodeToString([]byte("bar")))
 			break
 		}
 	}
@@ -294,4 +308,49 @@ func TestWaspCLIBalance(t *testing.T) {
 	require.Equal(t, 2, len(bals))
 	require.EqualValues(t, utxodb.RequestFundsAmount-1000, bals["IOTA"])
 	require.EqualValues(t, 1000, bals[mintedColor])
+}
+
+func TestWaspCLIRejoinChain(t *testing.T) {
+	w := newWaspCLITest(t)
+
+	w.Run("init")
+	w.Run("request-funds")
+
+	alias := "chain1"
+
+	committee, quorum := w.CommitteeConfig()
+
+	// test chain deploy command
+	w.Run("chain", "deploy", "--chain="+alias, committee, quorum)
+
+	// test chain info command
+	out := w.Run("chain", "info")
+	chainID := regexp.MustCompile(`(?m)Chain ID:\s+([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
+	require.NotEmpty(t, chainID)
+	t.Logf("Chain ID: %s", chainID)
+
+	// test chain list command
+	out = w.Run("chain", "list")
+	require.Contains(t, out[0], "Total 1 chain(s)")
+	require.Contains(t, out[4], chainID)
+
+	// deactivate chain and check that the chain was deactivated
+	w.Run("chain", "deactivate")
+	out = w.Run("chain", "list")
+	require.Contains(t, out[0], "Total 1 chain(s)")
+	require.Contains(t, out[4], chainID)
+
+	chOut := strings.Fields(out[4])
+	active, _ := strconv.ParseBool(chOut[1])
+	require.False(t, active)
+
+	// activate chain and check that it was activated
+	w.Run("chain", "activate")
+	out = w.Run("chain", "list")
+	require.Contains(t, out[0], "Total 1 chain(s)")
+	require.Contains(t, out[4], chainID)
+
+	chOut = strings.Fields(out[4])
+	active, _ = strconv.ParseBool(chOut[1])
+	require.True(t, active)
 }

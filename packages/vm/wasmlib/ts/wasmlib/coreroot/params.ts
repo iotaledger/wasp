@@ -5,77 +5,69 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableDeployContractParams extends wasmlib.ScMapID {
-
     description(): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamDescription));
-    }
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamDescription));
+	}
 
     name(): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
-    }
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
+	}
 
     programHash(): wasmlib.ScImmutableHash {
-        return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamProgramHash));
-    }
+		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamProgramHash));
+	}
 }
 
 export class MutableDeployContractParams extends wasmlib.ScMapID {
-
     description(): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamDescription));
-    }
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamDescription));
+	}
 
     name(): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
-    }
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
+	}
 
     programHash(): wasmlib.ScMutableHash {
-        return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamProgramHash));
-    }
+		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamProgramHash));
+	}
 }
 
 export class ImmutableGrantDeployPermissionParams extends wasmlib.ScMapID {
-
     deployer(): wasmlib.ScImmutableAgentID {
-        return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDeployer));
-    }
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDeployer));
+	}
 }
 
 export class MutableGrantDeployPermissionParams extends wasmlib.ScMapID {
-
     deployer(): wasmlib.ScMutableAgentID {
-        return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDeployer));
-    }
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDeployer));
+	}
 }
 
 export class ImmutableRevokeDeployPermissionParams extends wasmlib.ScMapID {
-
     deployer(): wasmlib.ScImmutableAgentID {
-        return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDeployer));
-    }
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDeployer));
+	}
 }
 
 export class MutableRevokeDeployPermissionParams extends wasmlib.ScMapID {
-
     deployer(): wasmlib.ScMutableAgentID {
-        return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDeployer));
-    }
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDeployer));
+	}
 }
 
 export class ImmutableFindContractParams extends wasmlib.ScMapID {
-
     hname(): wasmlib.ScImmutableHname {
-        return new wasmlib.ScImmutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
-    }
+		return new wasmlib.ScImmutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
+	}
 }
 
 export class MutableFindContractParams extends wasmlib.ScMapID {
-
     hname(): wasmlib.ScMutableHname {
-        return new wasmlib.ScMutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
-    }
+		return new wasmlib.ScMutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
+	}
 }

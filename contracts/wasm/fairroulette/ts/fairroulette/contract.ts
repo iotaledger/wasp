@@ -5,108 +5,109 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ForcePayoutCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncForcePayout);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncForcePayout);
 }
 
 export class ForcePayoutContext {
-    state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
+	events:  sc.FairRouletteEvents = new sc.FairRouletteEvents();
+	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }
 
 export class ForceResetCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncForceReset);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncForceReset);
 }
 
 export class ForceResetContext {
-    state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
+	events:  sc.FairRouletteEvents = new sc.FairRouletteEvents();
+	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }
 
 export class PayWinnersCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPayWinners);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPayWinners);
 }
 
 export class PayWinnersContext {
-    state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
+	events:  sc.FairRouletteEvents = new sc.FairRouletteEvents();
+	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }
 
 export class PlaceBetCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPlaceBet);
-    params: sc.MutablePlaceBetParams = new sc.MutablePlaceBetParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPlaceBet);
+	params: sc.MutablePlaceBetParams = new sc.MutablePlaceBetParams();
 }
 
 export class PlaceBetContext {
-    params: sc.ImmutablePlaceBetParams = new sc.ImmutablePlaceBetParams();
-    state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
+	events:  sc.FairRouletteEvents = new sc.FairRouletteEvents();
+	params: sc.ImmutablePlaceBetParams = new sc.ImmutablePlaceBetParams();
+	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }
 
 export class PlayPeriodCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPlayPeriod);
-    params: sc.MutablePlayPeriodParams = new sc.MutablePlayPeriodParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncPlayPeriod);
+	params: sc.MutablePlayPeriodParams = new sc.MutablePlayPeriodParams();
 }
 
 export class PlayPeriodContext {
-    params: sc.ImmutablePlayPeriodParams = new sc.ImmutablePlayPeriodParams();
-    state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
+	events:  sc.FairRouletteEvents = new sc.FairRouletteEvents();
+	params: sc.ImmutablePlayPeriodParams = new sc.ImmutablePlayPeriodParams();
+	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }
 
 export class LastWinningNumberCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewLastWinningNumber);
-    results: sc.ImmutableLastWinningNumberResults = new sc.ImmutableLastWinningNumberResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewLastWinningNumber);
+	results: sc.ImmutableLastWinningNumberResults = new sc.ImmutableLastWinningNumberResults();
 }
 
 export class LastWinningNumberContext {
-    results: sc.MutableLastWinningNumberResults = new sc.MutableLastWinningNumberResults();
-    state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
+	results: sc.MutableLastWinningNumberResults = new sc.MutableLastWinningNumberResults();
+	state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
 }
 
 export class RoundNumberCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewRoundNumber);
-    results: sc.ImmutableRoundNumberResults = new sc.ImmutableRoundNumberResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewRoundNumber);
+	results: sc.ImmutableRoundNumberResults = new sc.ImmutableRoundNumberResults();
 }
 
 export class RoundNumberContext {
-    results: sc.MutableRoundNumberResults = new sc.MutableRoundNumberResults();
-    state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
+	results: sc.MutableRoundNumberResults = new sc.MutableRoundNumberResults();
+	state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
 }
 
 export class RoundStartedAtCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewRoundStartedAt);
-    results: sc.ImmutableRoundStartedAtResults = new sc.ImmutableRoundStartedAtResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewRoundStartedAt);
+	results: sc.ImmutableRoundStartedAtResults = new sc.ImmutableRoundStartedAtResults();
 }
 
 export class RoundStartedAtContext {
-    results: sc.MutableRoundStartedAtResults = new sc.MutableRoundStartedAtResults();
-    state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
+	results: sc.MutableRoundStartedAtResults = new sc.MutableRoundStartedAtResults();
+	state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
 }
 
 export class RoundStatusCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewRoundStatus);
-    results: sc.ImmutableRoundStatusResults = new sc.ImmutableRoundStatusResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewRoundStatus);
+	results: sc.ImmutableRoundStatusResults = new sc.ImmutableRoundStatusResults();
 }
 
 export class RoundStatusContext {
-    results: sc.MutableRoundStatusResults = new sc.MutableRoundStatusResults();
-    state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
+	results: sc.MutableRoundStatusResults = new sc.MutableRoundStatusResults();
+	state: sc.ImmutableFairRouletteState = new sc.ImmutableFairRouletteState();
 }
 
 export class ScFuncs {
-
     static forcePayout(ctx: wasmlib.ScFuncCallContext): ForcePayoutCall {
-        let f = new ForcePayoutCall();
-        return f;
+        return new ForcePayoutCall();
     }
 
     static forceReset(ctx: wasmlib.ScFuncCallContext): ForceResetCall {
-        let f = new ForceResetCall();
-        return f;
+        return new ForceResetCall();
     }
 
     static payWinners(ctx: wasmlib.ScFuncCallContext): PayWinnersCall {
-        let f = new PayWinnersCall();
-        return f;
+        return new PayWinnersCall();
     }
 
     static placeBet(ctx: wasmlib.ScFuncCallContext): PlaceBetCall {

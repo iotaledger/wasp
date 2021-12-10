@@ -5,57 +5,77 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export const IdxParamAddress     = 0;
 export const IdxParamAgentID     = 1;
 export const IdxParamBlockIndex  = 2;
-export const IdxParamBytes       = 3;
-export const IdxParamChainID     = 4;
-export const IdxParamColor       = 5;
-export const IdxParamHash        = 6;
-export const IdxParamHname       = 7;
-export const IdxParamIndex       = 8;
-export const IdxParamInt16       = 9;
-export const IdxParamInt32       = 10;
-export const IdxParamInt64       = 11;
-export const IdxParamName        = 12;
-export const IdxParamRecordIndex = 13;
-export const IdxParamRequestID   = 14;
-export const IdxParamString      = 15;
-export const IdxParamValue       = 16;
-export const IdxResultCount      = 17;
-export const IdxResultIotas      = 18;
-export const IdxResultLength     = 19;
-export const IdxResultRecord     = 20;
-export const IdxResultValue      = 21;
-export const IdxStateArrays      = 22;
+export const IdxParamBool        = 3;
+export const IdxParamBytes       = 4;
+export const IdxParamChainID     = 5;
+export const IdxParamColor       = 6;
+export const IdxParamHash        = 7;
+export const IdxParamHname       = 8;
+export const IdxParamIndex       = 9;
+export const IdxParamInt16       = 10;
+export const IdxParamInt32       = 11;
+export const IdxParamInt64       = 12;
+export const IdxParamInt8        = 13;
+export const IdxParamName        = 14;
+export const IdxParamParam       = 15;
+export const IdxParamRecordIndex = 16;
+export const IdxParamRequestID   = 17;
+export const IdxParamString      = 18;
+export const IdxParamUint16      = 19;
+export const IdxParamUint32      = 20;
+export const IdxParamUint64      = 21;
+export const IdxParamUint8       = 22;
+export const IdxParamValue       = 23;
+
+export const IdxResultCount  = 24;
+export const IdxResultIotas  = 25;
+export const IdxResultLength = 26;
+export const IdxResultRandom = 27;
+export const IdxResultRecord = 28;
+export const IdxResultValue  = 29;
+
+export const IdxStateArrays = 30;
+export const IdxStateRandom = 31;
 
 export let keyMap: string[] = [
-    sc.ParamAddress,
-    sc.ParamAgentID,
-    sc.ParamBlockIndex,
-    sc.ParamBytes,
-    sc.ParamChainID,
-    sc.ParamColor,
-    sc.ParamHash,
-    sc.ParamHname,
-    sc.ParamIndex,
-    sc.ParamInt16,
-    sc.ParamInt32,
-    sc.ParamInt64,
-    sc.ParamName,
-    sc.ParamRecordIndex,
-    sc.ParamRequestID,
-    sc.ParamString,
-    sc.ParamValue,
-    sc.ResultCount,
-    sc.ResultIotas,
-    sc.ResultLength,
-    sc.ResultRecord,
-    sc.ResultValue,
-    sc.StateArrays,
+	sc.ParamAddress,
+	sc.ParamAgentID,
+	sc.ParamBlockIndex,
+	sc.ParamBool,
+	sc.ParamBytes,
+	sc.ParamChainID,
+	sc.ParamColor,
+	sc.ParamHash,
+	sc.ParamHname,
+	sc.ParamIndex,
+	sc.ParamInt16,
+	sc.ParamInt32,
+	sc.ParamInt64,
+	sc.ParamInt8,
+	sc.ParamName,
+	sc.ParamParam,
+	sc.ParamRecordIndex,
+	sc.ParamRequestID,
+	sc.ParamString,
+	sc.ParamUint16,
+	sc.ParamUint32,
+	sc.ParamUint64,
+	sc.ParamUint8,
+	sc.ParamValue,
+	sc.ResultCount,
+	sc.ResultIotas,
+	sc.ResultLength,
+	sc.ResultRandom,
+	sc.ResultRecord,
+	sc.ResultValue,
+	sc.StateArrays,
+	sc.StateRandom,
 ];
 
 export let idxMap: wasmlib.Key32[] = new Array(keyMap.length);

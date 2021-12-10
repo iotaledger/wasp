@@ -25,6 +25,7 @@ func OnLoad() {
 }
 
 type ApproveContext struct {
+	Events Erc20Events
 	Params ImmutableApproveParams
 	State  MutableErc20State
 }
@@ -46,6 +47,7 @@ func funcApproveThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type InitContext struct {
+	Events Erc20Events
 	Params ImmutableInitParams
 	State  MutableErc20State
 }
@@ -67,6 +69,7 @@ func funcInitThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type TransferContext struct {
+	Events Erc20Events
 	Params ImmutableTransferParams
 	State  MutableErc20State
 }
@@ -88,6 +91,7 @@ func funcTransferThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type TransferFromContext struct {
+	Events Erc20Events
 	Params ImmutableTransferFromParams
 	State  MutableErc20State
 }

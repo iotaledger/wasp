@@ -241,9 +241,14 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
 //     smart contract must be made available with the call examples.AddProcessor
 func (ch *Chain) DeployContract(keyPair *ed25519.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
-	par := []interface{}{root.ParamProgramHash, programHash, root.ParamName, name}
-	par = append(par, params...)
-	req := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par...).WithIotas(1)
+	par := codec.MakeDict(map[string]interface{}{
+		root.ParamProgramHash: programHash,
+		root.ParamName:        name,
+	})
+	for k, v := range parseParams(params) {
+		par[k] = v
+	}
+	req := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).WithIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }

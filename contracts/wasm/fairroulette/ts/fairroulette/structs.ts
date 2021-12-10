@@ -5,12 +5,12 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 
 export class Bet {
-    amount: i64 = 0;
-    better: wasmlib.ScAgentID = new wasmlib.ScAgentID();
-    number: i64 = 0;
+    amount : i64 = 0; 
+    better : wasmlib.ScAgentID = new wasmlib.ScAgentID(); 
+    number : i64 = 0; 
 
     static fromBytes(bytes: u8[]): Bet {
         let decode = new wasmlib.BytesDecoder(bytes);
@@ -24,9 +24,9 @@ export class Bet {
 
     bytes(): u8[] {
         return new wasmlib.BytesEncoder().
-            int64(this.amount).
-            agentID(this.better).
-            int64(this.number).
+		    int64(this.amount).
+		    agentID(this.better).
+		    int64(this.number).
             data();
     }
 }
@@ -45,7 +45,7 @@ export class ImmutableBet {
     }
 
     value(): Bet {
-        return Bet.fromBytes(wasmlib.getBytes(this.objID, this.keyID,wasmlib. TYPE_BYTES));
+        return Bet.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
     }
 }
 
@@ -58,6 +58,10 @@ export class MutableBet {
         this.keyID = keyID;
     }
 
+    delete(): void {
+        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+    }
+
     exists(): boolean {
         return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
     }
@@ -67,6 +71,6 @@ export class MutableBet {
     }
 
     value(): Bet {
-        return Bet.fromBytes(wasmlib.getBytes(this.objID, this.keyID,wasmlib. TYPE_BYTES));
+        return Bet.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
     }
 }

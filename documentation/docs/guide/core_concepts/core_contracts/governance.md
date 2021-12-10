@@ -40,7 +40,7 @@ Adds an address to the list of identities that constitute the state controller, 
 
 ### removeAllowedStateControllerAddress
 
-Removes an address to the list of identities that constitute the state controller, this change will only become effective once `rotateStateController` is called
+Removes an address from the list of identities that constitute the state controller, this change will only become effective once `rotateStateController` is called
 
 ### delegateChainOwnership
 

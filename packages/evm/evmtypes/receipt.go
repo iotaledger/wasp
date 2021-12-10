@@ -37,6 +37,7 @@ func EncodeReceiptFull(r *types.Receipt) []byte {
 	m.WriteBytes(r.BlockHash.Bytes())
 	writeBytes(m, r.BlockNumber.Bytes())
 	m.WriteBytes(r.ContractAddress.Bytes())
+	m.WriteUint64(r.GasUsed)
 	return m.Bytes()
 }
 
@@ -73,7 +74,9 @@ func DecodeReceiptFull(receiptBytes []byte) (*types.Receipt, error) {
 	}
 	r.ContractAddress.SetBytes(b)
 
-	r.GasUsed = r.CumulativeGasUsed
+	if r.GasUsed, err = m.ReadUint64(); err != nil {
+		return nil, err
+	}
 
 	return r, nil
 }

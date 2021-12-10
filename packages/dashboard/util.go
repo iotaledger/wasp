@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 func args(args ...interface{}) []interface{} {
@@ -39,6 +40,10 @@ func decUint32(n uint32) uint32 {
 	return n - 1
 }
 
+func keyToString(k kv.Key) string {
+	return string(k)
+}
+
 func bytesToString(b []byte) string {
 	return string(b)
 }
@@ -49,6 +54,14 @@ func formatTimestamp(ts interface{}) string {
 		t = time.Unix(0, ts.(int64))
 	}
 	return t.UTC().Format(time.RFC3339)
+}
+
+func formatTimestampOrNever(t time.Time) string {
+	bla := time.Time{}
+	if t == bla {
+		return "NEVER"
+	}
+	return formatTimestamp(t)
 }
 
 func exploreAddressURL(baseURL string) func(address ledgerstate.Address) string {

@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class MapAgentIDToImmutableAllowancesForAgent {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -22,31 +22,30 @@ export class MapAgentIDToImmutableAllowancesForAgent {
 }
 
 export class ImmutableErc20State extends wasmlib.ScMapID {
-
     allAllowances(): sc.MapAgentIDToImmutableAllowancesForAgent {
-        let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateAllAllowances], wasmlib.TYPE_MAP);
-        return new sc.MapAgentIDToImmutableAllowancesForAgent(mapID);
-    }
+		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateAllAllowances], wasmlib.TYPE_MAP);
+		return new sc.MapAgentIDToImmutableAllowancesForAgent(mapID);
+	}
 
     balances(): sc.MapAgentIDToImmutableInt64 {
-        let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBalances], wasmlib.TYPE_MAP);
-        return new sc.MapAgentIDToImmutableInt64(mapID);
-    }
+		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBalances], wasmlib.TYPE_MAP);
+		return new sc.MapAgentIDToImmutableInt64(mapID);
+	}
 
     supply(): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateSupply]);
-    }
+		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateSupply]);
+	}
 }
 
 export class MapAgentIDToMutableAllowancesForAgent {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
     }
 
     clear(): void {
-        wasmlib.clear(this.objID)
+        wasmlib.clear(this.objID);
     }
 
     getAllowancesForAgent(key: wasmlib.ScAgentID): sc.MutableAllowancesForAgent {
@@ -56,18 +55,17 @@ export class MapAgentIDToMutableAllowancesForAgent {
 }
 
 export class MutableErc20State extends wasmlib.ScMapID {
-
     allAllowances(): sc.MapAgentIDToMutableAllowancesForAgent {
-        let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateAllAllowances], wasmlib.TYPE_MAP);
-        return new sc.MapAgentIDToMutableAllowancesForAgent(mapID);
-    }
+		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateAllAllowances], wasmlib.TYPE_MAP);
+		return new sc.MapAgentIDToMutableAllowancesForAgent(mapID);
+	}
 
     balances(): sc.MapAgentIDToMutableInt64 {
-        let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBalances], wasmlib.TYPE_MAP);
-        return new sc.MapAgentIDToMutableInt64(mapID);
-    }
+		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBalances], wasmlib.TYPE_MAP);
+		return new sc.MapAgentIDToMutableInt64(mapID);
+	}
 
     supply(): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateSupply]);
-    }
+		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateSupply]);
+	}
 }

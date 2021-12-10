@@ -39,11 +39,18 @@ func (a Assert) RequireNoError(err error, str ...string) {
 }
 
 func (a Assert) RequireChainOwner(ctx iscp.Sandbox, name ...string) {
-	if !ctx.ChainOwnerID().Equals(ctx.Caller()) {
-		if len(name) > 0 {
-			a.log.Panicf(a.prefix+"unauthorized access: %s", name[0])
-		} else {
-			a.log.Panicf(a.prefix + "unauthorized access")
+	a.RequireCaller(ctx, []*iscp.AgentID{ctx.ChainOwnerID()}, name...)
+}
+
+func (a Assert) RequireCaller(ctx iscp.Sandbox, allowed []*iscp.AgentID, name ...string) {
+	for _, agentID := range allowed {
+		if ctx.Caller().Equals(agentID) {
+			return
 		}
+	}
+	if len(name) > 0 {
+		a.log.Panicf(a.prefix+"%s: unauthorized access", name[0])
+	} else {
+		a.log.Panicf(a.prefix + "unauthorized access")
 	}
 }

@@ -4,7 +4,6 @@
 package statemgr
 
 import (
-	"bytes"
 	"io"
 	"sync"
 	"testing"
@@ -56,12 +55,17 @@ type MockedNode struct {
 	store           kvstore.KVStore
 	NodeConn        *testchain.MockedNodeConn
 	ChainCore       *testchain.MockedChainCore
+	ChainPeers      peering.PeerDomainProvider
 	stateSync       coreutil.ChainStateSync
 	Peers           peering.PeerDomainProvider
 	StateManager    chain.StateManager
 	StateTransition *testchain.MockedStateTransition
 	Log             *logger.Logger
 }
+
+type MockedStateManagerMetrics struct{}
+
+func (c *MockedStateManagerMetrics) RecordBlockSize(_ uint32, _ float64) {}
 
 func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
 	level := zapcore.InfoLevel
@@ -127,7 +131,7 @@ func (env *MockedEnv) pushStateToNodesIfSet(tx *ledgerstate.Transaction) {
 	require.NoError(env.T, err)
 
 	for _, node := range env.Nodes {
-		go node.StateManager.EventStateMsg(&messages.StateMsg{
+		go node.StateManager.EnqueueStateMsg(&messages.StateMsg{
 			ChainOutput: stateOutput,
 			Timestamp:   tx.Essence().Timestamp(),
 		})
@@ -151,9 +155,9 @@ func (env *MockedEnv) PostTransactionToLedger(tx *ledgerstate.Transaction) {
 	env.Log.Infof("MockedEnv.PostTransactionToLedger: posted transaction to ledger: %s", tx.ID().Base58())
 }
 
-func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *messages.StateMsg {
-	env.Log.Debugf("MockedEnv.PullStateFromLedger request received for address %v", addr.Base58)
-	outputs := env.Ledger.GetAddressOutputs(addr)
+func (env *MockedEnv) PullStateFromLedger() *messages.StateMsg {
+	env.Log.Debugf("MockedEnv.PullStateFromLedger request received")
+	outputs := env.Ledger.GetAddressOutputs(env.ChainID.AsAliasAddress())
 	require.EqualValues(env.T, 1, len(outputs))
 	outTx, ok := env.Ledger.GetTransaction(outputs[0].ID().TransactionID())
 	require.True(env.T, ok)
@@ -167,8 +171,8 @@ func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *messa
 	}
 }
 
-func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, outputID ledgerstate.OutputID) ledgerstate.Output {
-	env.Log.Debugf("MockedEnv.PullConfirmedOutputFromLedger for address %v output %v", addr.Base58, iscp.OID(outputID))
+func (env *MockedEnv) PullConfirmedOutputFromLedger(outputID ledgerstate.OutputID) ledgerstate.Output {
+	env.Log.Debugf("MockedEnv.PullConfirmedOutputFromLedger for output %v", iscp.OID(outputID))
 	tx, foundTx := env.Ledger.GetTransaction(outputID.TransactionID())
 	require.True(env.T, foundTx)
 	outputIndex := outputID.OutputIndex()
@@ -183,76 +187,76 @@ func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, ou
 func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *MockedNode {
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
-	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.NodeIDs)
+	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.ChainID.Array(), env.NodeIDs)
 	require.NoError(env.T, err)
 	ret := &MockedNode{
-		NetID:     nodeID,
-		Env:       env,
-		NodeConn:  testchain.NewMockedNodeConnection("Node_" + nodeID),
-		store:     mapdb.NewMapDB(),
-		stateSync: coreutil.NewChainStateSync(),
-		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, log),
-		Peers:     peers,
-		Log:       log,
+		NetID:      nodeID,
+		Env:        env,
+		NodeConn:   testchain.NewMockedNodeConnection("Node_" + nodeID),
+		store:      mapdb.NewMapDB(),
+		stateSync:  coreutil.NewChainStateSync(),
+		ChainCore:  testchain.NewMockedChainCore(env.T, env.ChainID, log),
+		ChainPeers: peers,
+		Peers:      peers,
+		Log:        log,
 	}
+
+	stateMgrMetrics := new(MockedStateManagerMetrics)
 	ret.ChainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
 		return ret.stateSync
 	})
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
 		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
 	})
-	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, timers)
+	ret.ChainPeers.Attach(peering.PeerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
+		log.Debugf("State manager recvEvent from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
+		switch peerMsg.MsgType {
+		case peerMsgTypeGetBlock:
+			msg, err := messages.NewGetBlockMsg(peerMsg.MsgData)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			ret.StateManager.EnqueueGetBlockMsg(&messages.GetBlockMsgIn{
+				GetBlockMsg: *msg,
+				SenderNetID: peerMsg.SenderNetID,
+			})
+		case peerMsgTypeBlock:
+			msg, err := messages.NewBlockMsg(peerMsg.MsgData)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			ret.StateManager.EnqueueBlockMsg(&messages.BlockMsgIn{
+				BlockMsg:    *msg,
+				SenderNetID: peerMsg.SenderNetID,
+			})
+		}
+	})
+	ret.StateManager = New(ret.store, ret.ChainCore, ret.ChainPeers, ret.NodeConn, stateMgrMetrics, timers)
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
-		go ret.StateManager.EventStateCandidateMsg(&messages.StateCandidateMsg{State: vstate})
+		stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
+		require.NoError(env.T, err)
+		go ret.StateManager.EnqueueStateCandidateMsg(vstate, stateOutput.ID())
 		go ret.NodeConn.PostTransaction(tx)
 	})
 	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
 		log.Debugf("MockedNode.OnPostTransaction: transaction %v posted", tx.ID().Base58())
 		env.PostTransactionToLedger(tx)
 	})
-	ret.NodeConn.OnPullState(func(addr *ledgerstate.AliasAddress) {
-		log.Debugf("MockedNode.OnPullState request received for address %v", addr.Base58)
-		response := env.PullStateFromLedger(addr)
+	ret.NodeConn.OnPullState(func() {
+		log.Debugf("MockedNode.OnPullState request received")
+		response := env.PullStateFromLedger()
 		log.Debugf("MockedNode.OnPullState call EventStateMsg: chain output %s", iscp.OID(response.ChainOutput.ID()))
-		go ret.StateManager.EventStateMsg(response)
+		go ret.StateManager.EnqueueStateMsg(response)
 	})
-	ret.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
+	ret.NodeConn.OnPullConfirmedOutput(func(outputID ledgerstate.OutputID) {
 		log.Debugf("MockedNode.OnPullConfirmedOutput %v", iscp.OID(outputID))
-		response := env.PullConfirmedOutputFromLedger(addr, outputID)
+		response := env.PullConfirmedOutputFromLedger(outputID)
 		log.Debugf("MockedNode.OnPullConfirmedOutput call EventOutputMsg")
-		go ret.StateManager.EventOutputMsg(response)
-	})
-	var peeringID peering.PeeringID = env.ChainID.Array()
-	peers.Attach(&peeringID, func(recvEvent *peering.RecvEvent) {
-		log.Debugf("MockedChain recvEvent from %v of type %v", recvEvent.From.NetID(), recvEvent.Msg.MsgType)
-		rdr := bytes.NewReader(recvEvent.Msg.MsgData)
-
-		switch recvEvent.Msg.MsgType {
-		case messages.MsgGetBlock:
-			msgt := &messages.GetBlockMsg{}
-			if err := msgt.Read(rdr); err != nil {
-				log.Error(err)
-				return
-			}
-
-			msgt.SenderNetID = recvEvent.Msg.SenderNetID
-			ret.StateManager.EventGetBlockMsg(msgt)
-
-		case messages.MsgBlock:
-			msgt := &messages.BlockMsg{}
-			if err := msgt.Read(rdr); err != nil {
-				log.Error(err)
-				return
-			}
-
-			msgt.SenderNetID = recvEvent.Msg.SenderNetID
-			ret.StateManager.EventBlockMsg(msgt)
-
-		default:
-			log.Errorf("MockedChain recvEvent: wrong msg type")
-		}
+		go ret.StateManager.EnqueueOutputMsg(response)
 	})
 
 	return ret
@@ -263,7 +267,7 @@ func (node *MockedNode) StartTimer() {
 		node.StateManager.Ready().MustWait()
 		counter := 0
 		for {
-			node.StateManager.EventTimerMsg(messages.TimerTick(counter))
+			node.StateManager.EnqueueTimerMsg(messages.TimerTick(counter))
 			counter++
 			time.Sleep(50 * time.Millisecond)
 		}

@@ -25,9 +25,9 @@ func dividendDivide(ctx *wasmsolo.SoloContext, amount int64) {
 	divide.Func.TransferIotas(amount).Post()
 }
 
-func dividendGetFactor(ctx *wasmsolo.SoloContext, member3 *wasmsolo.SoloAgent) int64 {
+func dividendGetFactor(ctx *wasmsolo.SoloContext, member *wasmsolo.SoloAgent) int64 {
 	getFactor := dividend.ScFuncs.GetFactor(ctx)
-	getFactor.Params.Address().SetValue(member3.ScAddress())
+	getFactor.Params.Address().SetValue(member.ScAddress())
 	getFactor.Func.Call()
 	value := getFactor.Results.Factor().Value()
 	return value

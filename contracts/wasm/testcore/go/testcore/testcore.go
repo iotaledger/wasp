@@ -40,9 +40,9 @@ func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
 	counter.SetValue(counter.Value() + 1)
 
 	params := wasmlib.NewScMutableMap()
-	params.GetInt64(ParamIntValue).SetValue(paramIn)
+	params.GetInt64(wasmlib.Key(ParamIntValue)).SetValue(paramIn)
 	ret := ctx.Call(hnameContract, hnameEP, params, nil)
-	retVal := ret.GetInt64(ResultIntValue).Value()
+	retVal := ret.GetInt64(wasmlib.Key(ResultIntValue)).Value()
 	f.Results.IntValue().SetValue(retVal)
 }
 

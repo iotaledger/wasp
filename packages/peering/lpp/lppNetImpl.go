@@ -70,6 +70,11 @@ type netImpl struct {
 	log         *logger.Logger
 }
 
+var (
+	_ peering.NetworkProvider = &netImpl{}
+	_ peering.PeerSender      = &netImpl{}
+)
+
 // NewNetworkProvider is a constructor for the TCP based
 // peering network implementation.
 func NewNetworkProvider(
@@ -208,19 +213,12 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 		n.log.Warnf("Failed to read incoming payload from %v, reason=%v", remotePeer.remoteNetID, err)
 		return
 	}
-	peerMsg, err := peering.NewPeerMessageFromBytes(payload, nil) // Do not use the signatures, we have TLS.
+	peerMsg, err := peering.NewPeerMessageNetFromBytes(payload) // Do not use the signatures, we have TLS.
 	if err != nil {
 		n.log.Warnf("Error while decoding a message, reason=%v", err)
 		return
 	}
-	remotePeer.noteReceived()
-	peerMsg.SenderNetID = remotePeer.NetID()
-	remotePeer.RecvMsg(
-		&peering.RecvEvent{
-			From: remotePeer,
-			Msg:  peerMsg,
-		},
-	)
+	remotePeer.RecvMsg(peerMsg)
 }
 
 func (n *netImpl) lppHeartbeatProtocolHandler(stream network.Stream) {
@@ -296,8 +294,8 @@ func (n *netImpl) delPeer(peer *peer) {
 
 // A handler suitable for events.NewEvent().
 func (n *netImpl) eventHandler(handler interface{}, params ...interface{}) {
-	callback := handler.(func(_ *peering.RecvEvent))
-	recvEvent := params[0].(*peering.RecvEvent)
+	callback := handler.(func(_ *peering.PeerMessageIn))
+	recvEvent := params[0].(*peering.PeerMessageIn)
 	callback(recvEvent)
 }
 
@@ -321,7 +319,7 @@ func (n *netImpl) Self() peering.PeerSender {
 }
 
 // Group creates peering.GroupProvider.
-func (n *netImpl) PeerGroup(peerNetIDs []string) (peering.GroupProvider, error) {
+func (n *netImpl) PeerGroup(peeringID peering.PeeringID, peerNetIDs []string) (peering.GroupProvider, error) {
 	var err error
 	groupPeers := make([]peering.PeerSender, len(peerNetIDs))
 	for i := range peerNetIDs {
@@ -329,11 +327,11 @@ func (n *netImpl) PeerGroup(peerNetIDs []string) (peering.GroupProvider, error) 
 			return nil, err
 		}
 	}
-	return group.NewPeeringGroupProvider(n, groupPeers, n.log)
+	return group.NewPeeringGroupProvider(n, peeringID, groupPeers, n.log)
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (n *netImpl) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+func (n *netImpl) PeerDomain(peeringID peering.PeeringID, peerNetIDs []string) (peering.PeerDomainProvider, error) {
 	peers := make([]peering.PeerSender, 0, len(peerNetIDs))
 	for _, nid := range peerNetIDs {
 		if nid == n.Self().NetID() {
@@ -345,13 +343,22 @@ func (n *netImpl) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, e
 		}
 		peers = append(peers, p)
 	}
-	return domain.NewPeerDomain(n, peers, n.log), nil
+	return domain.NewPeerDomain(n, peeringID, peers, n.log), nil
+}
+
+func (n *netImpl) SendMsgByNetID(netID string, msg *peering.PeerMessageData) {
+	peer, err := n.PeerByNetID(netID)
+	if err != nil {
+		n.log.Warnf("SendMsgByNetID: NetID %v is not in the network", netID)
+		return
+	}
+	peer.SendMsg(msg)
 }
 
 // Attach implements peering.NetworkProvider.
-func (n *netImpl) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
-	closure := events.NewClosure(func(recv *peering.RecvEvent) {
-		if peeringID == nil || *peeringID == recv.Msg.PeeringID {
+func (n *netImpl) Attach(peeringID *peering.PeeringID, receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {
+	closure := events.NewClosure(func(recv *peering.PeerMessageIn) {
+		if *peeringID == recv.PeeringID && receiver == recv.MsgReceiver {
 			callback(recv)
 		}
 	})
@@ -361,12 +368,8 @@ func (n *netImpl) Attach(peeringID *peering.PeeringID, callback func(recv *peeri
 
 // Detach implements peering.NetworkProvider.
 func (n *netImpl) Detach(attachID interface{}) {
-	switch closure := attachID.(type) {
-	case *events.Closure:
-		n.recvEvents.Detach(closure)
-	default:
-		panic("invalid_attach_id")
-	}
+	closure := attachID.(*events.Closure)
+	n.recvEvents.Detach(closure)
 }
 
 // PeerByNetID implements peering.NetworkProvider.
@@ -410,16 +413,16 @@ func (n *netImpl) PubKey() *ed25519.PublicKey {
 }
 
 // SendMsg implements peering.PeerSender for the Self() node.
-func (n *netImpl) SendMsg(msg *peering.PeerMessage) {
+func (n *netImpl) SendMsg(msg *peering.PeerMessageData) {
 	// Don't go via the network, if sending a message to self.
-	n.triggerRecvEvents(&peering.RecvEvent{
-		From: n.Self(),
-		Msg:  msg,
-	})
+	n.triggerRecvEvents(n.Self().NetID(), &peering.PeerMessageNet{PeerMessageData: *msg})
 }
 
-func (n *netImpl) triggerRecvEvents(msg interface{}) {
-	n.recvEvents.Trigger(msg)
+func (n *netImpl) triggerRecvEvents(from string, msg *peering.PeerMessageNet) {
+	n.recvEvents.Trigger(&peering.PeerMessageIn{
+		PeerMessageData: msg.PeerMessageData,
+		SenderNetID:     from,
+	})
 }
 
 // IsAlive implements peering.PeerSender for the Self() node.

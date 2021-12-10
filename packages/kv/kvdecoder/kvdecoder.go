@@ -110,6 +110,17 @@ func (p *Decoder) MustGetUint64(key kv.Key, def ...uint64) uint64 {
 	return ret
 }
 
+func (p *Decoder) GetBool(key kv.Key, def ...bool) (bool, error) {
+	v, err := codec.DecodeBool(p.kv.MustGet(key), def...)
+	return v, p.wrapError(key, err)
+}
+
+func (p *Decoder) MustGetBool(key kv.Key, def ...bool) bool {
+	ret, err := p.GetBool(key, def...)
+	p.check(err)
+	return ret
+}
+
 func (p *Decoder) GetTime(key kv.Key, def ...time.Time) (time.Time, error) {
 	v, err := codec.DecodeTime(p.kv.MustGet(key), def...)
 	return v, p.wrapError(key, err)

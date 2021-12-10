@@ -1,0 +1,22 @@
+package chainimpl
+
+import (
+	"testing"
+
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/stretchr/testify/require"
+)
+
+func TestValidateOffledger(t *testing.T) {
+	c := &chainObj{
+		chainID: iscp.RandomChainID(),
+	}
+	req := testutil.DummyOffledgerRequest(c.chainID)
+	require.True(t, c.isRequestValid(req))
+	req.WithNonce(999) // signature must be invalid after request content changes
+	require.False(t, c.isRequestValid(req))
+
+	wrongChainReq := testutil.DummyOffledgerRequest(iscp.RandomChainID())
+	require.False(t, c.isRequestValid(wrongChainReq))
+}

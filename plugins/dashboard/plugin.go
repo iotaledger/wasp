@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	registry_pkg "github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util/auth"
@@ -107,6 +108,19 @@ func (w *waspServices) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.Comm
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
 	}
 	return ch.GetCommitteeInfo(), nil
+}
+
+func (w *waspServices) GetChainNodeConnectionMetrics(chainID *iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
+	ch := chains.AllChains().Get(chainID)
+	if ch == nil {
+		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
+	}
+	return ch.GetNodeConnectionMetrics(), nil
+}
+
+func (w *waspServices) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error) {
+	chs := chains.AllChains()
+	return chs.GetNodeConnectionMetrics(), nil
 }
 
 func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error) {

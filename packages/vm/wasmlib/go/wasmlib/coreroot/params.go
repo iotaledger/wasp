@@ -14,15 +14,15 @@ type ImmutableDeployContractParams struct {
 }
 
 func (s ImmutableDeployContractParams) Description() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, ParamDescription.KeyID())
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamDescription))
 }
 
 func (s ImmutableDeployContractParams) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, ParamName.KeyID())
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamName))
 }
 
 func (s ImmutableDeployContractParams) ProgramHash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, ParamProgramHash.KeyID())
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamProgramHash))
 }
 
 type MutableDeployContractParams struct {
@@ -30,15 +30,15 @@ type MutableDeployContractParams struct {
 }
 
 func (s MutableDeployContractParams) Description() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, ParamDescription.KeyID())
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamDescription))
 }
 
 func (s MutableDeployContractParams) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, ParamName.KeyID())
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamName))
 }
 
 func (s MutableDeployContractParams) ProgramHash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, ParamProgramHash.KeyID())
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamProgramHash))
 }
 
 type ImmutableGrantDeployPermissionParams struct {
@@ -46,7 +46,7 @@ type ImmutableGrantDeployPermissionParams struct {
 }
 
 func (s ImmutableGrantDeployPermissionParams) Deployer() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, ParamDeployer.KeyID())
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamDeployer))
 }
 
 type MutableGrantDeployPermissionParams struct {
@@ -54,7 +54,7 @@ type MutableGrantDeployPermissionParams struct {
 }
 
 func (s MutableGrantDeployPermissionParams) Deployer() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, ParamDeployer.KeyID())
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamDeployer))
 }
 
 type ImmutableRevokeDeployPermissionParams struct {
@@ -62,7 +62,7 @@ type ImmutableRevokeDeployPermissionParams struct {
 }
 
 func (s ImmutableRevokeDeployPermissionParams) Deployer() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, ParamDeployer.KeyID())
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamDeployer))
 }
 
 type MutableRevokeDeployPermissionParams struct {
@@ -70,7 +70,7 @@ type MutableRevokeDeployPermissionParams struct {
 }
 
 func (s MutableRevokeDeployPermissionParams) Deployer() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, ParamDeployer.KeyID())
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamDeployer))
 }
 
 type ImmutableFindContractParams struct {
@@ -78,7 +78,7 @@ type ImmutableFindContractParams struct {
 }
 
 func (s ImmutableFindContractParams) Hname() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, ParamHname.KeyID())
+	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamHname))
 }
 
 type MutableFindContractParams struct {
@@ -86,5 +86,5 @@ type MutableFindContractParams struct {
 }
 
 func (s MutableFindContractParams) Hname() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, ParamHname.KeyID())
+	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamHname))
 }

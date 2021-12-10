@@ -5,17 +5,11 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/vm/core"
-	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSpawn(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		// TODO need to save globals for TypeScript Wasm for this to succeed
-		if *wasmsolo.TsWasm {
-			t.SkipNow()
-		}
-
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.Spawn(ctx)

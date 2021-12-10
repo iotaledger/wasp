@@ -13,6 +13,7 @@ use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
+use crate::typedefs::*;
 
 #[derive(Clone, Copy)]
 pub struct ImmutableArrayLengthResults {
@@ -21,8 +22,8 @@ pub struct ImmutableArrayLengthResults {
 
 impl ImmutableArrayLengthResults {
     pub fn length(&self) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_LENGTH))
-    }
+		ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_LENGTH))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -32,8 +33,8 @@ pub struct MutableArrayLengthResults {
 
 impl MutableArrayLengthResults {
     pub fn length(&self) -> ScMutableInt32 {
-        ScMutableInt32::new(self.id, idx_map(IDX_RESULT_LENGTH))
-    }
+		ScMutableInt32::new(self.id, idx_map(IDX_RESULT_LENGTH))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -43,8 +44,8 @@ pub struct ImmutableArrayValueResults {
 
 impl ImmutableArrayValueResults {
     pub fn value(&self) -> ScImmutableString {
-        ScImmutableString::new(self.id, idx_map(IDX_RESULT_VALUE))
-    }
+		ScImmutableString::new(self.id, idx_map(IDX_RESULT_VALUE))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -54,8 +55,8 @@ pub struct MutableArrayValueResults {
 
 impl MutableArrayValueResults {
     pub fn value(&self) -> ScMutableString {
-        ScMutableString::new(self.id, idx_map(IDX_RESULT_VALUE))
-    }
+		ScMutableString::new(self.id, idx_map(IDX_RESULT_VALUE))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -65,8 +66,8 @@ pub struct ImmutableBlockRecordResults {
 
 impl ImmutableBlockRecordResults {
     pub fn record(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.id, idx_map(IDX_RESULT_RECORD))
-    }
+		ScImmutableBytes::new(self.id, idx_map(IDX_RESULT_RECORD))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -76,8 +77,8 @@ pub struct MutableBlockRecordResults {
 
 impl MutableBlockRecordResults {
     pub fn record(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.id, idx_map(IDX_RESULT_RECORD))
-    }
+		ScMutableBytes::new(self.id, idx_map(IDX_RESULT_RECORD))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -87,8 +88,8 @@ pub struct ImmutableBlockRecordsResults {
 
 impl ImmutableBlockRecordsResults {
     pub fn count(&self) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_COUNT))
-    }
+		ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_COUNT))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -98,8 +99,30 @@ pub struct MutableBlockRecordsResults {
 
 impl MutableBlockRecordsResults {
     pub fn count(&self) -> ScMutableInt32 {
-        ScMutableInt32::new(self.id, idx_map(IDX_RESULT_COUNT))
-    }
+		ScMutableInt32::new(self.id, idx_map(IDX_RESULT_COUNT))
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct ImmutableGetRandomResults {
+    pub(crate) id: i32,
+}
+
+impl ImmutableGetRandomResults {
+    pub fn random(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_RANDOM))
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableGetRandomResults {
+    pub(crate) id: i32,
+}
+
+impl MutableGetRandomResults {
+    pub fn random(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_RANDOM))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -109,8 +132,8 @@ pub struct ImmutableIotaBalanceResults {
 
 impl ImmutableIotaBalanceResults {
     pub fn iotas(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_IOTAS))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_IOTAS))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -120,6 +143,6 @@ pub struct MutableIotaBalanceResults {
 
 impl MutableIotaBalanceResults {
     pub fn iotas(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_IOTAS))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_IOTAS))
+	}
 }

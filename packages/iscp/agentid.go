@@ -71,10 +71,7 @@ func NewAgentIDFromBase58EncodedString(s string) (*AgentID, error) {
 
 // NewAgentIDFromString parses the human-readable string representation
 func NewAgentIDFromString(s string) (*AgentID, error) {
-	if len(s) < 2 {
-		return nil, xerrors.New("NewAgentIDFromString: invalid length")
-	}
-	if s[:2] != "A/" {
+	if !strings.HasPrefix(s, "A/") {
 		return nil, xerrors.New("NewAgentIDFromString: wrong prefix")
 	}
 	parts := strings.Split(s[2:], "::")

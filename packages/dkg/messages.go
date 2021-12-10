@@ -11,6 +11,7 @@ package dkg
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"time"
 
@@ -56,6 +57,8 @@ const (
 	// in a special way to avoid infinite message loops.
 	rabinEcho byte = peering.FirstUserMsgCode + 44
 )
+
+var initPeeringID peering.PeeringID
 
 // Checks if that's a Initiator -> PeerNode message.
 func isDkgInitNodeMsg(msgType byte) bool { //nolint:unused,deadcode
@@ -111,12 +114,11 @@ type msgByteCoder interface {
 	Read(io.Reader) error
 }
 
-func makePeerMessage(peeringID peering.PeeringID, step byte, msg msgByteCoder) *peering.PeerMessage {
+func makePeerMessage(peeringID peering.PeeringID, receiver, step byte, msg msgByteCoder) *peering.PeerMessageData {
 	msg.SetStep(step)
-	return &peering.PeerMessage{
+	return &peering.PeerMessageData{
 		PeeringID:   peeringID,
-		SenderIndex: 0, // This is resolved on the receiving side.
-		Timestamp:   0, // We do not use it in the DKG.
+		MsgReceiver: receiver,
 		MsgType:     msg.MsgType(),
 		MsgData:     util.MustBytes(msg),
 	}
@@ -134,7 +136,7 @@ type initiatorMsg interface {
 	IsResponse() bool
 }
 
-func readInitiatorMsg(peerMessage *peering.PeerMessage, blsSuite kyber.Group) (bool, initiatorMsg, error) {
+func readInitiatorMsg(peerMessage *peering.PeerMessageData, blsSuite kyber.Group) (bool, initiatorMsg, error) {
 	switch peerMessage.MsgType {
 	case initiatorInitMsgType:
 		msg := initiatorInitMsg{}
@@ -180,12 +182,18 @@ func readInitiatorMsg(peerMessage *peering.PeerMessage, blsSuite kyber.Group) (b
 type initiatorInitMsg struct {
 	step         byte
 	dkgRef       string // Some unique string to identify duplicate initialization.
+	peeringID    peering.PeeringID
 	peerNetIDs   []string
 	peerPubs     []ed25519.PublicKey
 	initiatorPub ed25519.PublicKey
 	threshold    uint16
 	timeout      time.Duration
 	roundRetry   time.Duration
+}
+
+type initiatorInitMsgIn struct {
+	initiatorInitMsg
+	SenderNetID string
 }
 
 func (m *initiatorInitMsg) MsgType() byte {
@@ -207,6 +215,9 @@ func (m *initiatorInitMsg) Write(w io.Writer) error {
 		return err
 	}
 	if err = util.WriteString16(w, m.dkgRef); err != nil {
+		return err
+	}
+	if _, err = w.Write(m.peeringID[:]); err != nil {
 		return err
 	}
 	if err = util.WriteStrings16(w, m.peerNetIDs); err != nil {
@@ -235,11 +246,19 @@ func (m *initiatorInitMsg) Write(w io.Writer) error {
 //nolint:gocritic
 func (m *initiatorInitMsg) Read(r io.Reader) error {
 	var err error
+	var n int
 	if m.step, err = util.ReadByte(r); err != nil {
 		return err
 	}
 	if m.dkgRef, err = util.ReadString16(r); err != nil {
 		return err
+	}
+	if n, err = r.Read(m.peeringID[:]); err != nil {
+		return err
+	}
+	if n != ledgerstate.AddressLength {
+		return fmt.Errorf("error while reading peering ID: read %v bytes, expected %v bytes",
+			n, ledgerstate.AddressLength)
 	}
 	if m.peerNetIDs, err = util.ReadStrings16(r); err != nil {
 		return err

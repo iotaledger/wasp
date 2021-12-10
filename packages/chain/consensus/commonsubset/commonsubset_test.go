@@ -1,17 +1,17 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package commonsubset_test
+package commonsubset
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -59,20 +59,13 @@ func testBasic(t *testing.T, peerCount, threshold uint16, allRandom bool) {
 		dkShares[i] = dkShare
 	}
 
-	acsPeers := make([]*commonsubset.CommonSubset, peerCount)
-	for i := range acsPeers {
-		ii := i // Use a local copy in the callback.
-		networkProviders[ii].Attach(&peeringID, func(recv *peering.RecvEvent) {
-			if acsPeers[ii] != nil {
-				require.True(t, acsPeers[ii].TryHandleMessage(recv))
-			}
-		})
-	}
+	acsPeers := make([]*CommonSubset, peerCount)
 	for a := range acsPeers {
-		group, err := networkProviders[a].PeerGroup(peerNetIDs)
+		group, err := networkProviders[a].PeerGroup(peeringID, peerNetIDs)
 		require.Nil(t, err)
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
-		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, dkShares[a], allRandom, nil, acsLog)
+		acsPeers[a], err = NewCommonSubset(0, 0, group, dkShares[a], allRandom, nil, acsLog)
+		group.Attach(peering.PeerMessageReceiverCommonSubset, makeReceiveCommitteePeerMessagesFun(acsPeers[a], log))
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")
@@ -115,20 +108,13 @@ func TestRandomized(t *testing.T) {
 		dkShares[i] = dkShare
 	}
 
-	acsPeers := make([]*commonsubset.CommonSubset, peerCount)
-	for i := range acsPeers {
-		ii := i // Use a local copy in the callback.
-		networkProviders[ii].Attach(&peeringID, func(recv *peering.RecvEvent) {
-			if acsPeers[ii] != nil {
-				require.True(t, acsPeers[ii].TryHandleMessage(recv))
-			}
-		})
-	}
+	acsPeers := make([]*CommonSubset, peerCount)
 	for a := range acsPeers {
-		group, err := networkProviders[a].PeerGroup(peerNetIDs)
+		group, err := networkProviders[a].PeerGroup(peeringID, peerNetIDs)
 		require.Nil(t, err)
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
-		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, dkShares[a], true, nil, acsLog)
+		acsPeers[a], err = NewCommonSubset(0, 0, group, dkShares[a], true, nil, acsLog)
+		group.Attach(peering.PeerMessageReceiverCommonSubset, makeReceiveCommitteePeerMessagesFun(acsPeers[a], log))
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")
@@ -176,13 +162,28 @@ func TestRandomized(t *testing.T) {
 	require.NoError(t, networkCloser.Close())
 }
 
-func TestCoordinator(t *testing.T) {
-	t.Run("N=1/T=1", func(tt *testing.T) { testCoordinator(tt, 1, 1) })
-	t.Run("N=4/T=3", func(tt *testing.T) { testCoordinator(tt, 4, 3) })
-	t.Run("N=10/T=7", func(tt *testing.T) { testCoordinator(tt, 10, 7) })
+func makeReceiveCommitteePeerMessagesFun(peer *CommonSubset, log *logger.Logger) func(peerMsg *peering.PeerMessageGroupIn) {
+	return func(peerMsg *peering.PeerMessageGroupIn) {
+		if peerMsg.MsgType != peerMsgTypeBatch {
+			panic(fmt.Errorf("Wrong type of committee message: %v", peerMsg.MsgType))
+		}
+		mb, err := newMsgBatch(peerMsg.MsgData)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		peer.HandleMsgBatch(mb)
+	}
 }
 
-func testCoordinator(t *testing.T, peerCount, threshold uint16) {
+func TestCoordinator(t *testing.T) {
+	t.Run("N=1/T=1/P=1E2", func(tt *testing.T) { testCoordinator(tt, 1, 1, 100) })
+	t.Run("N=4/T=3/P=1E2", func(tt *testing.T) { testCoordinator(tt, 4, 3, 100) })
+	t.Run("N=10/T=7/P=1E2", func(tt *testing.T) { testCoordinator(tt, 10, 7, 100) })
+	t.Run("N=10/T=7/P=1E5", func(tt *testing.T) { testCoordinator(tt, 10, 7, 100000) })
+}
+
+func testCoordinator(t *testing.T, peerCount, threshold uint16, inputLen int) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	peeringID := peering.RandomPeeringID()
@@ -202,18 +203,12 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16) {
 		dkShares[i] = dkShare
 	}
 
-	acsCoords := make([]*commonsubset.CommonSubsetCoordinator, peerCount)
+	acsCoords := make([]*CommonSubsetCoordinator, peerCount)
 	for i := range acsCoords {
-		ii := i // Use a local copy in the callback.
-		group, err := networkProviders[i].PeerGroup(peerNetIDs)
+		group, err := networkProviders[i].PeerGroup(peeringID, peerNetIDs)
 		require.Nil(t, err)
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("CSC[%02d]", i)), logger.LevelInfo, false)
-		acsCoords[i] = commonsubset.NewCommonSubsetCoordinator(peeringID, networkProviders[i], group, dkShares[i], acsLog)
-		networkProviders[ii].Attach(&peeringID, func(recv *peering.RecvEvent) {
-			if acsCoords[ii] != nil {
-				require.True(t, acsCoords[ii].TryHandleMessage(recv))
-			}
-		})
+		acsCoords[i] = NewCommonSubsetCoordinator(networkProviders[i], group, dkShares[i], acsLog)
 	}
 	t.Logf("ACS Nodes created.")
 
@@ -223,7 +218,8 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16) {
 	resultsWG.Add(int(peerCount))
 	for i := range acsCoords {
 		ii := i
-		input := []byte(peerNetIDs[i])
+		input := make([]byte, inputLen)
+		_, _ = rand.Read(input)
 		acsCoords[i].RunACSConsensus(input, sessionID, 1, func(sid uint64, res [][]byte) {
 			results[ii] = res
 			resultsWG.Done()
@@ -244,12 +240,13 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16) {
 }
 
 func TestRandomizedWithCC(t *testing.T) {
-	t.Run("N=1/T=1", func(tt *testing.T) { testRandomizedWithCC(tt, 1, 1) })
-	t.Run("N=4/T=3", func(tt *testing.T) { testRandomizedWithCC(tt, 4, 3) })
-	t.Run("N=10/T=7", func(tt *testing.T) { testRandomizedWithCC(tt, 10, 7) })
+	t.Run("N=1/T=1/P=1E2", func(tt *testing.T) { testRandomizedWithCC(tt, 1, 1, 100) })
+	t.Run("N=4/T=3/P=1E2", func(tt *testing.T) { testRandomizedWithCC(tt, 4, 3, 100) })
+	t.Run("N=10/T=7/P=1E2", func(tt *testing.T) { testRandomizedWithCC(tt, 10, 7, 100) })
+	t.Run("N=10/T=7/P=1E5", func(tt *testing.T) { testRandomizedWithCC(tt, 10, 7, 100000) })
 }
 
-func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16) {
+func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16, inputLen int) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	peeringID := peering.RandomPeeringID()
@@ -268,19 +265,13 @@ func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16) {
 	}
 
 	dkAddress, dkShares := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
-	acsCoords := make([]*commonsubset.CommonSubsetCoordinator, peerCount)
+	acsCoords := make([]*CommonSubsetCoordinator, peerCount)
 	for i := range acsCoords {
-		ii := i // Use a local copy in the callback.
-		group, err := networkProviders[i].PeerGroup(peerNetIDs)
+		group, err := networkProviders[i].PeerGroup(peeringID, peerNetIDs)
 		require.Nil(t, err)
 		dkShare, err := dkShares[i].LoadDKShare(dkAddress)
 		require.Nil(t, err)
-		acsCoords[i] = commonsubset.NewCommonSubsetCoordinator(peeringID, networkProviders[i], group, dkShare, logs[i])
-		networkProviders[ii].Attach(&peeringID, func(recv *peering.RecvEvent) {
-			if acsCoords[ii] != nil {
-				acsCoords[ii].TryHandleMessage(recv)
-			}
-		})
+		acsCoords[i] = NewCommonSubsetCoordinator(networkProviders[i], group, dkShare, logs[i])
 	}
 	t.Logf("ACS Nodes created.")
 
@@ -290,7 +281,8 @@ func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16) {
 	resultsWG.Add(int(peerCount))
 	for i := range acsCoords {
 		ii := i
-		input := []byte(peerNetIDs[i])
+		input := make([]byte, inputLen)
+		_, _ = rand.Read(input)
 		acsCoords[i].RunACSConsensus(input, sessionID, 1, func(sid uint64, res [][]byte) {
 			results[ii] = res
 			resultsWG.Done()

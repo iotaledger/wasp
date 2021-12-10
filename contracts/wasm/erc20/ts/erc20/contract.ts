@@ -5,85 +5,88 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ApproveCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncApprove);
-    params: sc.MutableApproveParams = new sc.MutableApproveParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncApprove);
+	params: sc.MutableApproveParams = new sc.MutableApproveParams();
 }
 
 export class ApproveContext {
-    params: sc.ImmutableApproveParams = new sc.ImmutableApproveParams();
-    state: sc.MutableErc20State = new sc.MutableErc20State();
+	events:  sc.Erc20Events = new sc.Erc20Events();
+	params: sc.ImmutableApproveParams = new sc.ImmutableApproveParams();
+	state: sc.MutableErc20State = new sc.MutableErc20State();
 }
 
 export class InitCall {
-    func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
-    params: sc.MutableInitParams = new sc.MutableInitParams();
+	func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
+	params: sc.MutableInitParams = new sc.MutableInitParams();
 }
 
 export class InitContext {
-    params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
-    state: sc.MutableErc20State = new sc.MutableErc20State();
+	events:  sc.Erc20Events = new sc.Erc20Events();
+	params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
+	state: sc.MutableErc20State = new sc.MutableErc20State();
 }
 
 export class TransferCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTransfer);
-    params: sc.MutableTransferParams = new sc.MutableTransferParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTransfer);
+	params: sc.MutableTransferParams = new sc.MutableTransferParams();
 }
 
 export class TransferContext {
-    params: sc.ImmutableTransferParams = new sc.ImmutableTransferParams();
-    state: sc.MutableErc20State = new sc.MutableErc20State();
+	events:  sc.Erc20Events = new sc.Erc20Events();
+	params: sc.ImmutableTransferParams = new sc.ImmutableTransferParams();
+	state: sc.MutableErc20State = new sc.MutableErc20State();
 }
 
 export class TransferFromCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTransferFrom);
-    params: sc.MutableTransferFromParams = new sc.MutableTransferFromParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTransferFrom);
+	params: sc.MutableTransferFromParams = new sc.MutableTransferFromParams();
 }
 
 export class TransferFromContext {
-    params: sc.ImmutableTransferFromParams = new sc.ImmutableTransferFromParams();
-    state: sc.MutableErc20State = new sc.MutableErc20State();
+	events:  sc.Erc20Events = new sc.Erc20Events();
+	params: sc.ImmutableTransferFromParams = new sc.ImmutableTransferFromParams();
+	state: sc.MutableErc20State = new sc.MutableErc20State();
 }
 
 export class AllowanceCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewAllowance);
-    params: sc.MutableAllowanceParams = new sc.MutableAllowanceParams();
-    results: sc.ImmutableAllowanceResults = new sc.ImmutableAllowanceResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewAllowance);
+	params: sc.MutableAllowanceParams = new sc.MutableAllowanceParams();
+	results: sc.ImmutableAllowanceResults = new sc.ImmutableAllowanceResults();
 }
 
 export class AllowanceContext {
-    params: sc.ImmutableAllowanceParams = new sc.ImmutableAllowanceParams();
-    results: sc.MutableAllowanceResults = new sc.MutableAllowanceResults();
-    state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
+	params: sc.ImmutableAllowanceParams = new sc.ImmutableAllowanceParams();
+	results: sc.MutableAllowanceResults = new sc.MutableAllowanceResults();
+	state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
 }
 
 export class BalanceOfCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBalanceOf);
-    params: sc.MutableBalanceOfParams = new sc.MutableBalanceOfParams();
-    results: sc.ImmutableBalanceOfResults = new sc.ImmutableBalanceOfResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewBalanceOf);
+	params: sc.MutableBalanceOfParams = new sc.MutableBalanceOfParams();
+	results: sc.ImmutableBalanceOfResults = new sc.ImmutableBalanceOfResults();
 }
 
 export class BalanceOfContext {
-    params: sc.ImmutableBalanceOfParams = new sc.ImmutableBalanceOfParams();
-    results: sc.MutableBalanceOfResults = new sc.MutableBalanceOfResults();
-    state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
+	params: sc.ImmutableBalanceOfParams = new sc.ImmutableBalanceOfParams();
+	results: sc.MutableBalanceOfResults = new sc.MutableBalanceOfResults();
+	state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
 }
 
 export class TotalSupplyCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTotalSupply);
-    results: sc.ImmutableTotalSupplyResults = new sc.ImmutableTotalSupplyResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewTotalSupply);
+	results: sc.ImmutableTotalSupplyResults = new sc.ImmutableTotalSupplyResults();
 }
 
 export class TotalSupplyContext {
-    results: sc.MutableTotalSupplyResults = new sc.MutableTotalSupplyResults();
-    state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
+	results: sc.MutableTotalSupplyResults = new sc.MutableTotalSupplyResults();
+	state: sc.ImmutableErc20State = new sc.ImmutableErc20State();
 }
 
 export class ScFuncs {
-
     static approve(ctx: wasmlib.ScFuncCallContext): ApproveCall {
         let f = new ApproveCall();
         f.func.setPtrs(f.params, null);

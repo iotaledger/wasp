@@ -10,9 +10,10 @@ package donatewithfeedback
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
-	IdxParamAmount         = 0
-	IdxParamFeedback       = 1
-	IdxParamNr             = 2
+	IdxParamAmount   = 0
+	IdxParamFeedback = 1
+	IdxParamNr       = 2
+
 	IdxResultAmount        = 3
 	IdxResultCount         = 4
 	IdxResultDonator       = 5
@@ -21,9 +22,10 @@ const (
 	IdxResultMaxDonation   = 8
 	IdxResultTimestamp     = 9
 	IdxResultTotalDonation = 10
-	IdxStateLog            = 11
-	IdxStateMaxDonation    = 12
-	IdxStateTotalDonation  = 13
+
+	IdxStateLog           = 11
+	IdxStateMaxDonation   = 12
+	IdxStateTotalDonation = 13
 )
 
 const keyMapLen = 14

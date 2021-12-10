@@ -5,11 +5,24 @@ package wasmhost
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"time"
 )
 
-const defaultTimeout = 5 * time.Second
+const (
+	defaultTimeout      = 5 * time.Second
+	FuncAbort           = "abort"
+	FuncFdWrite         = "fd_write"
+	FuncHostGetBytes    = "hostGetBytes"
+	FuncHostGetKeyID    = "hostGetKeyID"
+	FuncHostGetObjectID = "hostGetObjectID"
+	FuncHostSetBytes    = "hostSetBytes"
+	ModuleEnv           = "env"
+	ModuleWasi1         = "wasi_unstable"
+	ModuleWasi2         = "wasi_snapshot_preview1"
+	ModuleWasmLib       = "WasmLib"
+)
 
 var (
 	// DisableWasmTimeout can be used to disable the annoying timeout during debugging
@@ -26,44 +39,48 @@ var (
 )
 
 type WasmVM interface {
+	Instantiate() error
 	Interrupt()
 	LinkHost(impl WasmVM, host *WasmHost) error
 	LoadWasm(wasmData []byte) error
+	NewInstance() WasmVM
 	RunFunction(functionName string, args ...interface{}) error
 	RunScFunction(index int32) error
-	SaveMemory()
 	UnsafeMemory() []byte
 	VMGetBytes(offset int32, size int32) []byte
+	VMGetSize() int32
 	VMSetBytes(offset int32, size int32, bytes []byte) int32
 }
 
 type WasmVMBase struct {
 	impl           WasmVM
 	host           *WasmHost
-	memoryCopy     []byte
-	memoryDirty    bool
-	memoryNonZero  int
+	panicErr       error
 	result         []byte
 	resultKeyID    int32
 	timeoutStarted bool
 }
 
-func (vm *WasmVMBase) EnvAbort(errMsg, fileName, line, col int32) {
-	ptr := vm.impl.UnsafeMemory()
-
-	// null-terminated UTF-16 error message
-	str1 := make([]byte, 0)
-	for i := errMsg; ptr[i] != 0; i += 2 {
-		str1 = append(str1, ptr[i])
+// catchPanicMessage is used in every host function to catch any panic.
+// It will save the first panic it encounters in the WasmVMBase so that
+// the caller of the Wasm function can retrieve the correct error.
+// This is a workaround to WasmTime saving the *last* panic instead of
+// the first, thereby reporting the wrong panic error sometimes
+func (vm *WasmVMBase) catchPanicMessage() {
+	panicMsg := recover()
+	if panicMsg == nil {
+		return
 	}
-
-	// null-terminated UTF-16 file name
-	str2 := make([]byte, 0)
-	for i := fileName; ptr[i] != 0; i += 2 {
-		str2 = append(str2, ptr[i])
+	if vm.panicErr == nil {
+		switch msg := panicMsg.(type) {
+		case error:
+			vm.panicErr = msg
+		default:
+			vm.panicErr = fmt.Errorf("%v", msg)
+		}
 	}
-
-	panic(fmt.Sprintf("AssemblyScript panic: %s (%s %d:%d)", string(str1), string(str2), line, col))
+	// rethrow and let nature run its course...
+	panic(panicMsg)
 }
 
 //nolint:unparam
@@ -71,19 +88,50 @@ func (vm *WasmVMBase) getKvStore(id int32) *KvStoreHost {
 	return vm.host.getKvStore(id)
 }
 
-func (vm *WasmVMBase) HostFdWrite(fd, iovs, size, written int32) int32 {
+func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
+	// crude implementation assumes texts to only use ASCII part of UTF-16
+
+	defer vm.catchPanicMessage()
+
+	// null-terminated UTF-16 error message
+	str1 := make([]byte, 0)
+	ptr := vm.impl.VMGetBytes(errMsg, 2)
+	for i := errMsg; ptr[0] != 0; i += 2 {
+		str1 = append(str1, ptr[0])
+		ptr = vm.impl.VMGetBytes(i, 2)
+	}
+
+	// null-terminated UTF-16 file name
+	str2 := make([]byte, 0)
+	ptr = vm.impl.VMGetBytes(fileName, 2)
+	for i := fileName; ptr[0] != 0; i += 2 {
+		str2 = append(str2, ptr[0])
+		ptr = vm.impl.VMGetBytes(i, 2)
+	}
+
+	panic(fmt.Sprintf("AssemblyScript panic: %s (%s %d:%d)", string(str1), string(str2), line, col))
+}
+
+func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
+	defer vm.catchPanicMessage()
+
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostFdWrite(...)")
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
-	ptr := vm.impl.UnsafeMemory()
-	txt := binary.LittleEndian.Uint32(ptr[iovs : iovs+4])
-	siz := binary.LittleEndian.Uint32(ptr[iovs+4 : iovs+8])
-	fmt.Print(string(ptr[txt : txt+siz]))
-	binary.LittleEndian.PutUint32(ptr[written:written+4], siz)
-	return int32(siz)
+	ptr := vm.impl.VMGetBytes(iovs, 8)
+	text := int32(binary.LittleEndian.Uint32(ptr[0:4]))
+	size := int32(binary.LittleEndian.Uint32(ptr[4:8]))
+	msg := vm.impl.VMGetBytes(text, size)
+	fmt.Print(string(msg))
+	ptr = make([]byte, 4)
+	binary.LittleEndian.PutUint32(ptr, uint32(size))
+	vm.impl.VMSetBytes(written, size, ptr)
+	return size
 }
 
 func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) int32 {
+	defer vm.catchPanicMessage()
+
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
 
@@ -130,6 +178,8 @@ func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) 
 }
 
 func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
+	defer vm.catchPanicMessage()
+
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostGetKeyID(r%d,s%d)", keyRef, size)
 	// non-negative size means original key was a string
@@ -144,16 +194,31 @@ func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
 }
 
 func (vm *WasmVMBase) HostGetObjectID(objID, keyID, typeID int32) int32 {
+	defer vm.catchPanicMessage()
+
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostGetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
 	return host.GetObjectID(objID, keyID, typeID)
 }
 
 func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) {
+	defer vm.catchPanicMessage()
+
 	host := vm.getKvStore(0)
 	host.TraceAllf("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
+
+	// delete key ?
+	if size < 0 {
+		host.DelKey(objID, keyID, typeID)
+		return
+	}
+
 	bytes := vm.impl.VMGetBytes(stringRef, size)
 	host.SetBytes(objID, keyID, typeID, bytes)
+}
+
+func (vm *WasmVMBase) Instantiate() error {
+	return errors.New("cannot be cloned")
 }
 
 func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
@@ -167,28 +232,28 @@ func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 	return nil
 }
 
-func (vm *WasmVMBase) PreCall() []byte {
-	ptr := vm.impl.UnsafeMemory()
-	frame := make([]byte, len(ptr))
-	copy(frame, ptr)
-	if vm.memoryDirty {
-		// clear memory and restore initialized data range
-		copy(ptr, make([]byte, len(ptr)))
-		copy(ptr[vm.memoryNonZero:], vm.memoryCopy)
-	}
-	vm.memoryDirty = true
-	return frame
-}
-
-func (vm *WasmVMBase) PostCall(frame []byte) {
-	ptr := vm.impl.UnsafeMemory()
-	copy(ptr, frame)
-}
-
 func (vm *WasmVMBase) Run(runner func() error) (err error) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+		// could be the wrong panic message due to a WasmTime bug, so we always
+		// rethrow our intercepted first panic instead of WasmTime's last panic
+		if vm.panicErr != nil {
+			panic(vm.panicErr)
+		}
+		panic(r)
+	}()
+
 	if vm.timeoutStarted {
 		// no need to wrap nested calls in timeout code
-		return runner()
+		err = runner()
+		if vm.panicErr != nil {
+			err = vm.panicErr
+			vm.panicErr = nil
+		}
+		return err
 	}
 
 	timeout := defaultTimeout
@@ -215,35 +280,11 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 	err = runner()
 	done <- true
 	vm.timeoutStarted = false
+	if vm.panicErr != nil {
+		err = vm.panicErr
+		vm.panicErr = nil
+	}
 	return err
-}
-
-func (vm *WasmVMBase) SaveMemory() {
-	// find initialized data range in memory
-	ptr := vm.impl.UnsafeMemory()
-	if ptr == nil {
-		// this vm implementation does not communicate via mem pool
-		return
-	}
-	firstNonZero := -1
-	lastNonZero := 0
-	for i, b := range ptr {
-		if b != 0 {
-			if firstNonZero < 0 {
-				firstNonZero = i
-			}
-			lastNonZero = i
-		}
-	}
-
-	// save copy of initialized data range
-	vm.memoryNonZero = len(ptr)
-	if firstNonZero >= 0 {
-		vm.memoryNonZero = firstNonZero
-		size := lastNonZero + 1 - firstNonZero
-		vm.memoryCopy = make([]byte, size)
-		copy(vm.memoryCopy, ptr[vm.memoryNonZero:])
-	}
 }
 
 func (vm *WasmVMBase) VMGetBytes(offset, size int32) []byte {
@@ -251,6 +292,11 @@ func (vm *WasmVMBase) VMGetBytes(offset, size int32) []byte {
 	bytes := make([]byte, size)
 	copy(bytes, ptr[offset:offset+size])
 	return bytes
+}
+
+func (vm *WasmVMBase) VMGetSize() int32 {
+	ptr := vm.impl.UnsafeMemory()
+	return int32(len(ptr))
 }
 
 func (vm *WasmVMBase) VMSetBytes(offset, size int32, bytes []byte) int32 {

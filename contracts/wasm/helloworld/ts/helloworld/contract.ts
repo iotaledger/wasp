@@ -5,32 +5,30 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class HelloWorldCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncHelloWorld);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncHelloWorld);
 }
 
 export class HelloWorldContext {
-    state: sc.MutableHelloWorldState = new sc.MutableHelloWorldState();
+	state: sc.MutableHelloWorldState = new sc.MutableHelloWorldState();
 }
 
 export class GetHelloWorldCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetHelloWorld);
-    results: sc.ImmutableGetHelloWorldResults = new sc.ImmutableGetHelloWorldResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetHelloWorld);
+	results: sc.ImmutableGetHelloWorldResults = new sc.ImmutableGetHelloWorldResults();
 }
 
 export class GetHelloWorldContext {
-    results: sc.MutableGetHelloWorldResults = new sc.MutableGetHelloWorldResults();
-    state: sc.ImmutableHelloWorldState = new sc.ImmutableHelloWorldState();
+	results: sc.MutableGetHelloWorldResults = new sc.MutableGetHelloWorldResults();
+	state: sc.ImmutableHelloWorldState = new sc.ImmutableHelloWorldState();
 }
 
 export class ScFuncs {
-
     static helloWorld(ctx: wasmlib.ScFuncCallContext): HelloWorldCall {
-        let f = new HelloWorldCall();
-        return f;
+        return new HelloWorldCall();
     }
 
     static getHelloWorld(ctx: wasmlib.ScViewCallContext): GetHelloWorldCall {

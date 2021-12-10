@@ -11,6 +11,9 @@ export class BytesDecoder {
 
     // constructs a decoder
     constructor(data: u8[]) {
+        if (data.length == 0) {
+            panic("cannot decode empty byte array, use exist()");
+        }
         this.buf = data;
     }
 
@@ -24,10 +27,15 @@ export class BytesDecoder {
         return ScAgentID.fromBytes(this.bytes());
     }
 
+    // decodes a bool from the byte buffer
+    bool(): boolean {
+        return this.uint8() != 0;
+    }
+
     // decodes the next substring of bytes from the byte buffer
     bytes(): u8[] {
-        let size = this.int32();
-        if (this.buf.length < size) {
+        let size = this.uint32();
+        if (u32(this.buf.length) < size) {
             panic("insufficient bytes");
         }
         let value = this.buf.slice(0, size);
@@ -53,6 +61,11 @@ export class BytesDecoder {
     // decodes an ScHname from the byte buffer
     hname(): ScHname {
         return ScHname.fromBytes(this.bytes());
+    }
+
+    // decodes an int8 from the byte buffer
+    int8(): i8 {
+        return this.uint8() as i8;
     }
 
     // decodes an int16 from the byte buffer
@@ -115,6 +128,29 @@ export class BytesDecoder {
         return Convert.toString(this.bytes());
     }
 
+    // decodes an uint8 from the byte buffer
+    uint8(): u8 {
+        return this.buf.shift();
+    }
+
+    // decodes an uint16 from the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    uint16(): u16 {
+        return this.int16() as u16;
+    }
+
+    // decodes an uint32 from the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    uint32(): u32 {
+        return this.int32() as u32;
+    }
+
+    // decodes an uint64 from the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    uint64(): u64 {
+        return this.int64() as u64;
+    }
+
     close(): void {
         if (this.buf.length != 0) {
             panic("extra bytes");
@@ -135,19 +171,22 @@ export class BytesEncoder {
 
     // encodes an ScAddress into the byte buffer
     address(value: ScAddress): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // encodes an ScAgentID into the byte buffer
     agentID(value: ScAgentID): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
+    }
+
+    // encodes a bool into the byte buffer
+    bool(val: boolean): BytesEncoder {
+         return this.int8(val ? 1 : 0);
     }
 
     // encodes a substring of bytes into the byte buffer
     bytes(value: u8[]): BytesEncoder {
-        this.int32(value.length);
+        this.uint32(value.length);
         for (let i = 0; i < value.length; i++) {
             this.buf.push(value[i]);
         }
@@ -156,14 +195,12 @@ export class BytesEncoder {
 
     // encodes an ScChainID into the byte buffer
     chainID(value: ScChainID): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // encodes an ScColor into the byte buffer
     color(value: ScColor): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // retrieve the encoded byte buffer
@@ -173,14 +210,17 @@ export class BytesEncoder {
 
     // encodes an ScHash into the byte buffer
     hash(value: ScHash): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // encodes an ScHname into the byte buffer
     hname(value: ScHname): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
+    }
+
+    // encodes an int8 into the byte buffer
+    int8(val: i8): BytesEncoder {
+        return this.uint8(val as u8);
     }
 
     // encodes an int16 into the byte buffer
@@ -218,13 +258,35 @@ export class BytesEncoder {
 
     // encodes an ScRequestID into the byte buffer
     requestID(value: ScRequestID): BytesEncoder {
-        this.bytes(value.toBytes());
-        return this;
+        return this.bytes(value.toBytes());
     }
 
     // encodes an UTF-8 text string into the byte buffer
     string(value: string): BytesEncoder {
-        this.bytes(Convert.fromString(value));
+        return this.bytes(Convert.fromString(value));
+    }
+
+    // encodes an uint8 into the byte buffer
+    uint8(val: u8): BytesEncoder {
+        this.buf.push(val);
         return this;
+    }
+
+    // encodes an uint16 into the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    uint16(val: u16): BytesEncoder {
+        return this.int16(val as i16);
+    }
+
+    // encodes an uint32 into the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    uint32(val: u32): BytesEncoder {
+        return this.int32(val as i32);
+    }
+
+    // encodes an uint64 into the byte buffer
+    // note that these are encoded using leb128 encoding to conserve space
+    uint64(val: u64): BytesEncoder {
+        return this.int64(val as i64);
     }
 }

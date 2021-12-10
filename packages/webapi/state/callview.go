@@ -31,6 +31,14 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	s := &callViewService{allChains}
 
+	server.POST(routes.CallView(":chainID", ":contractHname", ":fname"), s.handleCallView).
+		SetSummary("Call a view function on a contract").
+		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "contractHname", "Contract Hname").
+		AddParamPath("getInfo", "fname", "Function name").
+		AddParamBody(dictExample, "params", "Parameters", false).
+		AddResponse(http.StatusOK, "Result", dictExample, nil)
+
 	server.GET(routes.CallView(":chainID", ":contractHname", ":fname"), s.handleCallView).
 		SetSummary("Call a view function on a contract").
 		AddParamPath("", "chainID", "ChainID (base58-encoded)").

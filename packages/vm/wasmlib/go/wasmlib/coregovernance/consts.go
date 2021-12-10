@@ -16,30 +16,30 @@ const (
 )
 
 const (
-	ParamChainOwner             = wasmlib.Key("oi")
-	ParamFeeColor               = wasmlib.Key("fc")
-	ParamHname                  = wasmlib.Key("hn")
-	ParamMaxBlobSize            = wasmlib.Key("bs")
-	ParamMaxEventSize           = wasmlib.Key("es")
-	ParamMaxEventsPerReq        = wasmlib.Key("ne")
-	ParamOwnerFee               = wasmlib.Key("of")
-	ParamStateControllerAddress = wasmlib.Key("S")
-	ParamValidatorFee           = wasmlib.Key("vf")
+	ParamChainOwner             = "oi"
+	ParamFeeColor               = "fc"
+	ParamHname                  = "hn"
+	ParamMaxBlobSize            = "bs"
+	ParamMaxEventSize           = "es"
+	ParamMaxEventsPerReq        = "ne"
+	ParamOwnerFee               = "of"
+	ParamStateControllerAddress = "S"
+	ParamValidatorFee           = "vf"
 )
 
 const (
-	ResultAllowedStateControllerAddresses = wasmlib.Key("a")
-	ResultChainID                         = wasmlib.Key("c")
-	ResultChainOwnerID                    = wasmlib.Key("o")
-	ResultDefaultOwnerFee                 = wasmlib.Key("do")
-	ResultDefaultValidatorFee             = wasmlib.Key("dv")
-	ResultDescription                     = wasmlib.Key("d")
-	ResultFeeColor                        = wasmlib.Key("f")
-	ResultMaxBlobSize                     = wasmlib.Key("mb")
-	ResultMaxEventSize                    = wasmlib.Key("me")
-	ResultMaxEventsPerReq                 = wasmlib.Key("mr")
-	ResultOwnerFee                        = wasmlib.Key("of")
-	ResultValidatorFee                    = wasmlib.Key("vf")
+	ResultAllowedStateControllerAddresses = "a"
+	ResultChainID                         = "c"
+	ResultChainOwnerID                    = "o"
+	ResultDefaultOwnerFee                 = "do"
+	ResultDefaultValidatorFee             = "dv"
+	ResultDescription                     = "d"
+	ResultFeeColor                        = "f"
+	ResultMaxBlobSize                     = "mb"
+	ResultMaxEventSize                    = "me"
+	ResultMaxEventsPerReq                 = "mr"
+	ResultOwnerFee                        = "of"
+	ResultValidatorFee                    = "vf"
 )
 
 const (

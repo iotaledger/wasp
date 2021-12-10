@@ -48,5 +48,6 @@ The rest of the consensus algorithm is built on top of the ACS. Each node suppli
 It is ensured that all honest nodes have the same input for the VM. After running the selected batch, the VM results are then collectively signed using the threshold signature. The signed transaction can be published by any node at this point. In order to minimize the load on the IOTA network, the nodes calculate a delay for posting the transaction to the network based on a deterministic permutation of the nodes relative to the local perception of time.
 
 :::note
-A more in-depth explanation of the topics described in this page can be found on the [architecture document](https://github.com/iotaledger/wasp/raw/master/documentation/ISCP%20architecture%20description%20v3.pdf)
+The comprehensive overview of architectural design decisions of IOTA Smart Contracts can be found in the
+[whitepaper](https://github.com/iotaledger/wasp/raw/master/documentation/ISC_WP_Nov_10_2021.pdf).  
 :::

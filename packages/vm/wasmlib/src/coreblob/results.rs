@@ -19,8 +19,8 @@ pub struct ImmutableStoreBlobResults {
 
 impl ImmutableStoreBlobResults {
     pub fn hash(&self) -> ScImmutableHash {
-        ScImmutableHash::new(self.id, RESULT_HASH.get_key_id())
-    }
+		ScImmutableHash::new(self.id, RESULT_HASH.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -30,8 +30,8 @@ pub struct MutableStoreBlobResults {
 
 impl MutableStoreBlobResults {
     pub fn hash(&self) -> ScMutableHash {
-        ScMutableHash::new(self.id, RESULT_HASH.get_key_id())
-    }
+		ScMutableHash::new(self.id, RESULT_HASH.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -41,8 +41,8 @@ pub struct ImmutableGetBlobFieldResults {
 
 impl ImmutableGetBlobFieldResults {
     pub fn bytes(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.id, RESULT_BYTES.get_key_id())
-    }
+		ScImmutableBytes::new(self.id, RESULT_BYTES.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -52,12 +52,12 @@ pub struct MutableGetBlobFieldResults {
 
 impl MutableGetBlobFieldResults {
     pub fn bytes(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.id, RESULT_BYTES.get_key_id())
-    }
+		ScMutableBytes::new(self.id, RESULT_BYTES.get_key_id())
+	}
 }
 
 pub struct MapStringToImmutableInt32 {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapStringToImmutableInt32 {
@@ -73,17 +73,17 @@ pub struct ImmutableGetBlobInfoResults {
 
 impl ImmutableGetBlobInfoResults {
     pub fn blob_sizes(&self) -> MapStringToImmutableInt32 {
-        MapStringToImmutableInt32 { obj_id: self.id }
-    }
+		MapStringToImmutableInt32 { obj_id: self.id }
+	}
 }
 
 pub struct MapStringToMutableInt32 {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapStringToMutableInt32 {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_int32(&self, key: &str) -> ScMutableInt32 {
@@ -98,12 +98,12 @@ pub struct MutableGetBlobInfoResults {
 
 impl MutableGetBlobInfoResults {
     pub fn blob_sizes(&self) -> MapStringToMutableInt32 {
-        MapStringToMutableInt32 { obj_id: self.id }
-    }
+		MapStringToMutableInt32 { obj_id: self.id }
+	}
 }
 
 pub struct MapHashToImmutableInt32 {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapHashToImmutableInt32 {
@@ -119,17 +119,17 @@ pub struct ImmutableListBlobsResults {
 
 impl ImmutableListBlobsResults {
     pub fn blob_sizes(&self) -> MapHashToImmutableInt32 {
-        MapHashToImmutableInt32 { obj_id: self.id }
-    }
+		MapHashToImmutableInt32 { obj_id: self.id }
+	}
 }
 
 pub struct MapHashToMutableInt32 {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapHashToMutableInt32 {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_int32(&self, key: &ScHash) -> ScMutableInt32 {
@@ -144,6 +144,6 @@ pub struct MutableListBlobsResults {
 
 impl MutableListBlobsResults {
     pub fn blob_sizes(&self) -> MapHashToMutableInt32 {
-        MapHashToMutableInt32 { obj_id: self.id }
-    }
+		MapHashToMutableInt32 { obj_id: self.id }
+	}
 }

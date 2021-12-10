@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -15,67 +16,160 @@ import (
 	"github.com/mr-tron/base58"
 )
 
+//nolint:funlen
 func ValueFromString(vtype, s string) []byte {
 	switch vtype {
-	case "uint64":
-		n, err := strconv.Atoi(s)
+	case "address":
+		addr, err := ledgerstate.AddressFromBase58EncodedString(s)
 		log.Check(err)
-		return codec.EncodeUint64(uint64(n))
-	case "uint32":
-		n, err := strconv.Atoi(s)
-		log.Check(err)
-		return codec.EncodeUint32(uint32(n))
-	case "int32":
-		n, err := strconv.Atoi(s) //nolint:gosec // potential int32 overflow
-		log.Check(err)
-		return codec.EncodeInt32(int32(n))
-	case "int", "int64":
-		n, err := strconv.Atoi(s)
-		log.Check(err)
-		return codec.EncodeInt64(int64(n))
-	case "color":
-		col, err := ledgerstate.ColorFromBase58EncodedString(s)
-		log.Check(err)
-		return col.Bytes()
+		return addr.Bytes()
 	case "agentid":
 		agentid, err := iscp.NewAgentIDFromString(s)
 		log.Check(err)
 		return agentid.Bytes()
-	case "file":
-		return ReadFile(s)
-	case "string":
-		return []byte(s)
+	case "bool":
+		b, err := strconv.ParseBool(s)
+		log.Check(err)
+		return codec.EncodeBool(b)
 	case "bytes", "base58":
 		b, err := base58.Decode(s)
 		log.Check(err)
 		return b
+	case "chainid":
+		chainid, err := iscp.ChainIDFromString(s)
+		log.Check(err)
+		return chainid.Bytes()
+	case "color":
+		col, err := ledgerstate.ColorFromBase58EncodedString(s)
+		log.Check(err)
+		return col.Bytes()
+	case "file":
+		return ReadFile(s)
+	case "hash":
+		hash, err := hashing.HashValueFromBase58(s)
+		log.Check(err)
+		return hash.Bytes()
+	case "hname":
+		hn, err := iscp.HnameFromString(s)
+		log.Check(err)
+		return hn.Bytes()
+	case "int8":
+		n, err := strconv.ParseInt(s, 10, 8)
+		log.Check(err)
+		return codec.EncodeInt8(int8(n))
+	case "int16":
+		n, err := strconv.ParseInt(s, 10, 16)
+		log.Check(err)
+		return codec.EncodeInt16(int16(n))
+	case "int32":
+		n, err := strconv.ParseInt(s, 10, 32)
+		log.Check(err)
+		return codec.EncodeInt32(int32(n))
+	case "int64", "int":
+		n, err := strconv.ParseInt(s, 10, 64)
+		log.Check(err)
+		return codec.EncodeInt64(n)
+	case "requestid":
+		rid, err := iscp.RequestIDFromString(s)
+		log.Check(err)
+		return rid.Bytes()
+	case "string":
+		return []byte(s)
+	case "uint8":
+		n, err := strconv.ParseUint(s, 10, 8)
+		log.Check(err)
+		return codec.EncodeUint8(uint8(n))
+	case "uint16":
+		n, err := strconv.ParseUint(s, 10, 16)
+		log.Check(err)
+		return codec.EncodeUint16(uint16(n))
+	case "uint32":
+		n, err := strconv.ParseUint(s, 10, 32)
+		log.Check(err)
+		return codec.EncodeUint32(uint32(n))
+	case "uint64":
+		n, err := strconv.ParseUint(s, 10, 64)
+		log.Check(err)
+		return codec.EncodeUint64(n)
 	}
 	log.Fatalf("ValueFromString: No handler for type %s", vtype)
 	return nil
 }
 
+//nolint:funlen
 func ValueToString(vtype string, v []byte) string {
 	switch vtype {
-	case "color":
-		col, err := codec.DecodeColor(v)
+	case "address":
+		addr, err := codec.DecodeAddress(v)
 		log.Check(err)
-		return col.String()
+		return addr.Base58()
 	case "agentid":
 		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)
 		return aid.String()
+	case "bool":
+		b, err := codec.DecodeBool(v)
+		log.Check(err)
+		if b {
+			return "true"
+		}
+		return "false"
+	case "bytes", "base58":
+		return base58.Encode(v)
+	case "chainid":
+		cid, err := codec.DecodeChainID(v)
+		log.Check(err)
+		return cid.String()
+	case "color":
+		col, err := codec.DecodeColor(v)
+		log.Check(err)
+		return col.String()
+	case "hash":
+		hash, err := codec.DecodeHashValue(v)
+		log.Check(err)
+		return hash.String()
+	case "hname":
+		hn, err := codec.DecodeHname(v)
+		log.Check(err)
+		return hn.String()
+	case "int8":
+		n, err := codec.DecodeInt8(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
+	case "int16":
+		n, err := codec.DecodeInt16(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
+	case "int32":
+		n, err := codec.DecodeInt32(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
+	case "int64", "int":
+		n, err := codec.DecodeInt64(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
+	case "requestid":
+		rid, err := codec.DecodeRequestID(v)
+		log.Check(err)
+		return rid.String()
+	case "string":
+		return fmt.Sprintf("%q", string(v))
+	case "uint8":
+		n, err := codec.DecodeUint8(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
+	case "uint16":
+		n, err := codec.DecodeUint16(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
+	case "uint32":
+		n, err := codec.DecodeUint32(v)
+		log.Check(err)
+		return fmt.Sprintf("%d", n)
 	case "uint64":
 		n, err := codec.DecodeUint64(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
-	case "int", "int64":
-		n, err := codec.DecodeInt64(v)
-		log.Check(err)
-		return fmt.Sprintf("%d", n)
-	case "string":
-		return fmt.Sprintf("%q", string(v))
-	case "bytes", "base58":
-		return base58.Encode(v)
 	}
 	log.Fatalf("ValueToString: No handler for type %s", vtype)
 	return ""

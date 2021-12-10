@@ -5,10 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 
-export const ScName  = "fairroulette";
-export const HScName = new wasmlib.ScHname(0xdf79d138);
+export const ScName        = "fairroulette";
+export const ScDescription = "";
+export const HScName       = new wasmlib.ScHname(0xdf79d138);
 
 export const ParamNumber     = "number";
 export const ParamPlayPeriod = "playPeriod";

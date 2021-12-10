@@ -77,11 +77,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     // of serializing the bet struct into a bytes representation.
     bets.getBet(betNr).setValue(bet);
 
-    ctx.event("fairroulette.bet.placed " +
-        bet.better.address().toString() + " " +
-        bet.amount.toString() + " " +
-        bet.number.toString()
-    );
+    f.events.bet(bet.better.address(), bet.amount, bet.number);
 
     // Was this the first bet of this round?
     if (betNr == 0) {
@@ -104,15 +100,12 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
             let timestamp = (ctx.timestamp() / NANO_TIME_DIVIDER) as i32;
             f.state.roundStartedAt().setValue(timestamp);
 
-            ctx.event("fairroulette.round.state " +
-                f.state.roundStatus().toString() + " " +
-                timestamp.toString()
-            );
+            f.events.start();
 
             let roundNumber = f.state.roundNumber();
             roundNumber.setValue(roundNumber.value() + 1);
 
-            ctx.event("fairroulette.round.number " + roundNumber.toString());
+            f.events.round(roundNumber.value());
 
             // And now for our next trick we post a delayed request to ourselves on the Tangle.
             // We are requesting to call the 'payWinners' function, but delay it for the playPeriod
@@ -136,7 +129,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
     // generator will use the next 8 bytes from the hash as its random Int64 number and once
     // it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
     // Here we determine the winning number for this round in the range of 1 thru MAX_NUMBER.
-    let winningNumber: i64 = ctx.utility().random(MAX_NUMBER - 1) + 1;
+    let winningNumber: i64 = ctx.random(MAX_NUMBER - 1) + 1;
 
     // Save the last winning number in state storage under 'lastWinningNumber' so that there
     // is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
@@ -181,7 +174,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
     // so that the 'bets' array becomes available for when the next betting round ends.
     bets.clear();
 
-    ctx.event("fairroulette.round.winningNumber " + winningNumber.toString());
+    f.events.winner(winningNumber);
 
     // Did we have any winners at all?
     if (winners.length == 0) {
@@ -224,10 +217,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
         }
 
         // Announce who got sent what as event.
-        ctx.event("fairroulette.payout " +
-            bet.better.address().toString() + " " +
-            payout.toString()
-        );
+        f.events.payout(bet.better.address(), payout);
     }
 
     // This is where we transfer the remainder after payout to the creator of the smart contract.
@@ -243,7 +233,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
 
     // Set round status to 0, send out event to notify that the round has ended
     f.state.roundStatus().setValue(0);
-    ctx.event("fairroulette.round.state " + f.state.roundStatus().toString());
+    f.events.stop();
 }
 
 export function funcForceReset(ctx: wasmlib.ScFuncContext, f: sc.ForceResetContext): void {
@@ -256,7 +246,7 @@ export function funcForceReset(ctx: wasmlib.ScFuncContext, f: sc.ForceResetConte
 
     // Set round status to 0, send out event to notify that the round has ended
     f.state.roundStatus().setValue(0);
-    ctx.event("fairroulette.round.state +" + f.state.roundStatus().toString());
+    f.events.stop();
 }
 
 // 'playPeriod' can be used by the contract creator to set the length of a betting round

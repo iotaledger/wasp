@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
@@ -31,12 +29,12 @@ mod dividend;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_DIVIDE, func_divide_thunk);
-    exports.add_func(FUNC_INIT, func_init_thunk);
-    exports.add_func(FUNC_MEMBER, func_member_thunk);
-    exports.add_func(FUNC_SET_OWNER, func_set_owner_thunk);
+    exports.add_func(FUNC_DIVIDE,     func_divide_thunk);
+    exports.add_func(FUNC_INIT,       func_init_thunk);
+    exports.add_func(FUNC_MEMBER,     func_member_thunk);
+    exports.add_func(FUNC_SET_OWNER,  func_set_owner_thunk);
     exports.add_view(VIEW_GET_FACTOR, view_get_factor_thunk);
-    exports.add_view(VIEW_GET_OWNER, view_get_owner_thunk);
+    exports.add_view(VIEW_GET_OWNER,  view_get_owner_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {
@@ -46,131 +44,131 @@ fn on_load() {
 }
 
 pub struct DivideContext {
-    state: MutableDividendState,
+	state: MutableDividendState,
 }
 
 fn func_divide_thunk(ctx: &ScFuncContext) {
-    ctx.log("dividend.funcDivide");
-    let f = DivideContext {
-        state: MutableDividendState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    func_divide(ctx, &f);
-    ctx.log("dividend.funcDivide ok");
+	ctx.log("dividend.funcDivide");
+	let f = DivideContext {
+		state: MutableDividendState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	func_divide(ctx, &f);
+	ctx.log("dividend.funcDivide ok");
 }
 
 pub struct InitContext {
-    params: ImmutableInitParams,
-    state:  MutableDividendState,
+	params: ImmutableInitParams,
+	state: MutableDividendState,
 }
 
 fn func_init_thunk(ctx: &ScFuncContext) {
-    ctx.log("dividend.funcInit");
-    let f = InitContext {
-        params: ImmutableInitParams {
-            id: OBJ_ID_PARAMS,
-        },
-        state: MutableDividendState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    func_init(ctx, &f);
-    ctx.log("dividend.funcInit ok");
+	ctx.log("dividend.funcInit");
+	let f = InitContext {
+		params: ImmutableInitParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: MutableDividendState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	func_init(ctx, &f);
+	ctx.log("dividend.funcInit ok");
 }
 
 pub struct MemberContext {
-    params: ImmutableMemberParams,
-    state:  MutableDividendState,
+	params: ImmutableMemberParams,
+	state: MutableDividendState,
 }
 
 fn func_member_thunk(ctx: &ScFuncContext) {
-    ctx.log("dividend.funcMember");
-    // only defined owner of contract can add members
-    let access = ctx.state().get_agent_id("owner");
-    ctx.require(access.exists(), "access not set: owner");
-    ctx.require(ctx.caller() == access.value(), "no permission");
+	ctx.log("dividend.funcMember");
 
-    let f = MemberContext {
-        params: ImmutableMemberParams {
-            id: OBJ_ID_PARAMS,
-        },
-        state: MutableDividendState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    ctx.require(f.params.address().exists(), "missing mandatory address");
-    ctx.require(f.params.factor().exists(), "missing mandatory factor");
-    func_member(ctx, &f);
-    ctx.log("dividend.funcMember ok");
+	// only defined owner of contract can add members
+	let access = ctx.state().get_agent_id("owner");
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller() == access.value(), "no permission");
+
+	let f = MemberContext {
+		params: ImmutableMemberParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: MutableDividendState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.address().exists(), "missing mandatory address");
+	ctx.require(f.params.factor().exists(), "missing mandatory factor");
+	func_member(ctx, &f);
+	ctx.log("dividend.funcMember ok");
 }
 
 pub struct SetOwnerContext {
-    params: ImmutableSetOwnerParams,
-    state:  MutableDividendState,
+	params: ImmutableSetOwnerParams,
+	state: MutableDividendState,
 }
 
 fn func_set_owner_thunk(ctx: &ScFuncContext) {
-    ctx.log("dividend.funcSetOwner");
-    // only defined owner of contract can change owner
-    let access = ctx.state().get_agent_id("owner");
-    ctx.require(access.exists(), "access not set: owner");
-    ctx.require(ctx.caller() == access.value(), "no permission");
+	ctx.log("dividend.funcSetOwner");
 
-    let f = SetOwnerContext {
-        params: ImmutableSetOwnerParams {
-            id: OBJ_ID_PARAMS,
-        },
-        state: MutableDividendState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    ctx.require(f.params.owner().exists(), "missing mandatory owner");
-    func_set_owner(ctx, &f);
-    ctx.log("dividend.funcSetOwner ok");
+	// only defined owner of contract can change owner
+	let access = ctx.state().get_agent_id("owner");
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller() == access.value(), "no permission");
+
+	let f = SetOwnerContext {
+		params: ImmutableSetOwnerParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: MutableDividendState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.owner().exists(), "missing mandatory owner");
+	func_set_owner(ctx, &f);
+	ctx.log("dividend.funcSetOwner ok");
 }
 
 pub struct GetFactorContext {
-    params:  ImmutableGetFactorParams,
-    results: MutableGetFactorResults,
-    state:   ImmutableDividendState,
+	params: ImmutableGetFactorParams,
+	results: MutableGetFactorResults,
+	state: ImmutableDividendState,
 }
 
 fn view_get_factor_thunk(ctx: &ScViewContext) {
-    ctx.log("dividend.viewGetFactor");
-    let f = GetFactorContext {
-        params: ImmutableGetFactorParams {
-            id: OBJ_ID_PARAMS,
-        },
-        results: MutableGetFactorResults {
-            id: OBJ_ID_RESULTS,
-        },
-        state: ImmutableDividendState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    ctx.require(f.params.address().exists(), "missing mandatory address");
-    view_get_factor(ctx, &f);
-    ctx.log("dividend.viewGetFactor ok");
+	ctx.log("dividend.viewGetFactor");
+	let f = GetFactorContext {
+		params: ImmutableGetFactorParams {
+			id: OBJ_ID_PARAMS,
+		},
+		results: MutableGetFactorResults {
+			id: OBJ_ID_RESULTS,
+		},
+		state: ImmutableDividendState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.address().exists(), "missing mandatory address");
+	view_get_factor(ctx, &f);
+	ctx.log("dividend.viewGetFactor ok");
 }
 
 pub struct GetOwnerContext {
-    results: MutableGetOwnerResults,
-    state:   ImmutableDividendState,
+	results: MutableGetOwnerResults,
+	state: ImmutableDividendState,
 }
 
 fn view_get_owner_thunk(ctx: &ScViewContext) {
-    ctx.log("dividend.viewGetOwner");
-    let f = GetOwnerContext {
-        results: MutableGetOwnerResults {
-            id: OBJ_ID_RESULTS,
-        },
-        state: ImmutableDividendState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    view_get_owner(ctx, &f);
-    ctx.log("dividend.viewGetOwner ok");
+	ctx.log("dividend.viewGetOwner");
+	let f = GetOwnerContext {
+		results: MutableGetOwnerResults {
+			id: OBJ_ID_RESULTS,
+		},
+		state: ImmutableDividendState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	view_get_owner(ctx, &f);
+	ctx.log("dividend.viewGetOwner ok");
 }
-
-// @formatter:on

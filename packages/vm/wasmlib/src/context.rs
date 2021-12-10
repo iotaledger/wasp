@@ -14,7 +14,7 @@ use crate::keys::*;
 use crate::mutable::*;
 
 // all access to the objects in host's object tree starts here
-pub(crate) static ROOT: ScMutableMap = ScMutableMap { obj_id: 1 };
+pub(crate) static ROOT: ScMutableMap = ScMutableMap { obj_id: OBJ_ID_ROOT };
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -163,13 +163,6 @@ impl ScUtility {
         let result = self.utility.call_func(KEY_HNAME, value.as_bytes());
         ScHname::from_bytes(&result)
     }
-
-    // generates a random value from 0 to max (exclusive max) using a deterministic RNG
-    pub fn random(&self, max: i64) -> i64 {
-        let result = self.utility.call_func(KEY_RANDOM, &vec![0_u8; 0]);
-        let rnd = i64::from_le_bytes(result.try_into().expect("invalid i64 length"));
-        (rnd as u64 % max as u64) as i64
-    }
 }
 
 // wrapper function for simplified internal access to base58 encoding
@@ -281,8 +274,8 @@ impl ScFuncContext {
     // passing the provided parameters and token transfers to it
     pub fn call(&self, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>) -> ScImmutableMap {
         let mut encode = BytesEncoder::new();
-        encode.hname(&hcontract);
-        encode.hname(&hfunction);
+        encode.hname(hcontract);
+        encode.hname(hfunction);
         if let Some(params) = params {
             encode.int32(params.map_id());
         } else {
@@ -295,11 +288,6 @@ impl ScFuncContext {
         }
         ROOT.get_bytes(&KEY_CALL).set_value(&encode.data());
         ROOT.get_map(&KEY_RETURN).immutable()
-    }
-
-    // shorthand to synchronously call a smart contract function of the current contract
-    pub fn call_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfers: Option<ScTransfers>) -> ScImmutableMap {
-        self.call(self.contract(), hfunction, params, transfers)
     }
 
     // retrieve the agent id of the caller of the smart contract
@@ -343,9 +331,9 @@ impl ScFuncContext {
     pub fn post(&self, chain_id: &ScChainID, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: ScTransfers, delay: i32) {
         let mut encode = BytesEncoder::new();
         encode.chain_id(chain_id);
-        encode.hname(&hcontract);
-        encode.hname(&hfunction);
-        if let Some(params) = &params {
+        encode.hname(hcontract);
+        encode.hname(hfunction);
+        if let Some(params) = params {
             encode.int32(params.map_id());
         } else {
             encode.int32(0);
@@ -355,9 +343,18 @@ impl ScFuncContext {
         ROOT.get_bytes(&KEY_POST).set_value(&encode.data());
     }
 
-    // shorthand to asynchronously call a smart contract function of the current contract
-    pub fn post_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfer: ScTransfers, delay: i32) {
-        self.post(&self.chain_id(), self.contract(), hfunction, params, transfer, delay);
+    // generates a random value from 0 to max (exclusive max) using a deterministic RNG
+    pub fn random(&self, max: i64) -> i64 {
+        let state = ScMutableMap { obj_id: OBJ_ID_STATE };
+        let rnd = state.get_bytes(&KEY_RANDOM);
+        let mut seed = rnd.value();
+        if seed.is_empty() {
+            // get initial entropy from sandbox
+            seed = ROOT.get_bytes(&KEY_RANDOM).value();
+        }
+        rnd.set_value(&self.utility().hash_sha3(&seed).to_bytes());
+        let rnd = i64::from_le_bytes(seed[0..8].try_into().expect("invalid i64 length"));
+        (rnd as u64 % max as u64) as i64
     }
 
     // retrieve the request id of this transaction
@@ -399,8 +396,8 @@ impl ScViewContext {
     // passing the provided parameters to it
     pub fn call(&self, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
         let mut encode = BytesEncoder::new();
-        encode.hname(&hcontract);
-        encode.hname(&hfunction);
+        encode.hname(hcontract);
+        encode.hname(hfunction);
         if let Some(params) = params {
             encode.int32(params.map_id());
         } else {
@@ -409,11 +406,6 @@ impl ScViewContext {
         encode.int32(0);
         ROOT.get_bytes(&KEY_CALL).set_value(&encode.data());
         ROOT.get_map(&KEY_RETURN).immutable()
-    }
-
-    // shorthand to synchronously call a smart contract view of the current contract
-    pub fn call_self(&self, hfunction: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
-        self.call(self.contract(), hfunction, params)
     }
 
     // access immutable state storage on the host

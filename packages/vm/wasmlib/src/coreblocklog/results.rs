@@ -19,16 +19,16 @@ pub struct ImmutableControlAddressesResults {
 
 impl ImmutableControlAddressesResults {
     pub fn block_index(&self) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
-    }
+		ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+	}
 
     pub fn governing_address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.id, RESULT_GOVERNING_ADDRESS.get_key_id())
-    }
+		ScImmutableAddress::new(self.id, RESULT_GOVERNING_ADDRESS.get_key_id())
+	}
 
     pub fn state_controller_address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.id, RESULT_STATE_CONTROLLER_ADDRESS.get_key_id())
-    }
+		ScImmutableAddress::new(self.id, RESULT_STATE_CONTROLLER_ADDRESS.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -38,16 +38,16 @@ pub struct MutableControlAddressesResults {
 
 impl MutableControlAddressesResults {
     pub fn block_index(&self) -> ScMutableInt32 {
-        ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
-    }
+		ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+	}
 
     pub fn governing_address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.id, RESULT_GOVERNING_ADDRESS.get_key_id())
-    }
+		ScMutableAddress::new(self.id, RESULT_GOVERNING_ADDRESS.get_key_id())
+	}
 
     pub fn state_controller_address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.id, RESULT_STATE_CONTROLLER_ADDRESS.get_key_id())
-    }
+		ScMutableAddress::new(self.id, RESULT_STATE_CONTROLLER_ADDRESS.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -57,8 +57,8 @@ pub struct ImmutableGetBlockInfoResults {
 
 impl ImmutableGetBlockInfoResults {
     pub fn block_info(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
-    }
+		ScImmutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -68,12 +68,12 @@ pub struct MutableGetBlockInfoResults {
 
 impl MutableGetBlockInfoResults {
     pub fn block_info(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
-    }
+		ScMutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
+	}
 }
 
 pub struct ArrayOfImmutableBytes {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl ArrayOfImmutableBytes {
@@ -93,13 +93,13 @@ pub struct ImmutableGetEventsForBlockResults {
 
 impl ImmutableGetEventsForBlockResults {
     pub fn event(&self) -> ArrayOfImmutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-        ArrayOfImmutableBytes { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
+		ArrayOfImmutableBytes { obj_id: arr_id }
+	}
 }
 
 pub struct ArrayOfMutableBytes {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl ArrayOfMutableBytes {
@@ -123,9 +123,9 @@ pub struct MutableGetEventsForBlockResults {
 
 impl MutableGetEventsForBlockResults {
     pub fn event(&self) -> ArrayOfMutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-        ArrayOfMutableBytes { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
+		ArrayOfMutableBytes { obj_id: arr_id }
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -135,9 +135,9 @@ pub struct ImmutableGetEventsForContractResults {
 
 impl ImmutableGetEventsForContractResults {
     pub fn event(&self) -> ArrayOfImmutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-        ArrayOfImmutableBytes { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
+		ArrayOfImmutableBytes { obj_id: arr_id }
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -147,9 +147,9 @@ pub struct MutableGetEventsForContractResults {
 
 impl MutableGetEventsForContractResults {
     pub fn event(&self) -> ArrayOfMutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-        ArrayOfMutableBytes { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
+		ArrayOfMutableBytes { obj_id: arr_id }
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -159,9 +159,9 @@ pub struct ImmutableGetEventsForRequestResults {
 
 impl ImmutableGetEventsForRequestResults {
     pub fn event(&self) -> ArrayOfImmutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-        ArrayOfImmutableBytes { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
+		ArrayOfImmutableBytes { obj_id: arr_id }
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -171,9 +171,9 @@ pub struct MutableGetEventsForRequestResults {
 
 impl MutableGetEventsForRequestResults {
     pub fn event(&self) -> ArrayOfMutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-        ArrayOfMutableBytes { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
+		ArrayOfMutableBytes { obj_id: arr_id }
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -183,12 +183,12 @@ pub struct ImmutableGetLatestBlockInfoResults {
 
 impl ImmutableGetLatestBlockInfoResults {
     pub fn block_index(&self) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
-    }
+		ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+	}
 
     pub fn block_info(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
-    }
+		ScImmutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -198,16 +198,16 @@ pub struct MutableGetLatestBlockInfoResults {
 
 impl MutableGetLatestBlockInfoResults {
     pub fn block_index(&self) -> ScMutableInt32 {
-        ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
-    }
+		ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+	}
 
     pub fn block_info(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
-    }
+		ScMutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
+	}
 }
 
 pub struct ArrayOfImmutableRequestID {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl ArrayOfImmutableRequestID {
@@ -227,13 +227,13 @@ pub struct ImmutableGetRequestIDsForBlockResults {
 
 impl ImmutableGetRequestIDsForBlockResults {
     pub fn request_id(&self) -> ArrayOfImmutableRequestID {
-        let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY16 | TYPE_REQUEST_ID);
-        ArrayOfImmutableRequestID { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY16 | TYPE_REQUEST_ID);
+		ArrayOfImmutableRequestID { obj_id: arr_id }
+	}
 }
 
 pub struct ArrayOfMutableRequestID {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl ArrayOfMutableRequestID {
@@ -257,9 +257,9 @@ pub struct MutableGetRequestIDsForBlockResults {
 
 impl MutableGetRequestIDsForBlockResults {
     pub fn request_id(&self) -> ArrayOfMutableRequestID {
-        let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY16 | TYPE_REQUEST_ID);
-        ArrayOfMutableRequestID { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY16 | TYPE_REQUEST_ID);
+		ArrayOfMutableRequestID { obj_id: arr_id }
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -269,16 +269,16 @@ pub struct ImmutableGetRequestReceiptResults {
 
 impl ImmutableGetRequestReceiptResults {
     pub fn block_index(&self) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
-    }
+		ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+	}
 
     pub fn request_index(&self) -> ScImmutableInt16 {
-        ScImmutableInt16::new(self.id, RESULT_REQUEST_INDEX.get_key_id())
-    }
+		ScImmutableInt16::new(self.id, RESULT_REQUEST_INDEX.get_key_id())
+	}
 
     pub fn request_record(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.id, RESULT_REQUEST_RECORD.get_key_id())
-    }
+		ScImmutableBytes::new(self.id, RESULT_REQUEST_RECORD.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -288,16 +288,16 @@ pub struct MutableGetRequestReceiptResults {
 
 impl MutableGetRequestReceiptResults {
     pub fn block_index(&self) -> ScMutableInt32 {
-        ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
-    }
+		ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+	}
 
     pub fn request_index(&self) -> ScMutableInt16 {
-        ScMutableInt16::new(self.id, RESULT_REQUEST_INDEX.get_key_id())
-    }
+		ScMutableInt16::new(self.id, RESULT_REQUEST_INDEX.get_key_id())
+	}
 
     pub fn request_record(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.id, RESULT_REQUEST_RECORD.get_key_id())
-    }
+		ScMutableBytes::new(self.id, RESULT_REQUEST_RECORD.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -307,9 +307,9 @@ pub struct ImmutableGetRequestReceiptsForBlockResults {
 
 impl ImmutableGetRequestReceiptsForBlockResults {
     pub fn request_record(&self) -> ArrayOfImmutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-        ArrayOfImmutableBytes { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
+		ArrayOfImmutableBytes { obj_id: arr_id }
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -319,9 +319,9 @@ pub struct MutableGetRequestReceiptsForBlockResults {
 
 impl MutableGetRequestReceiptsForBlockResults {
     pub fn request_record(&self) -> ArrayOfMutableBytes {
-        let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-        ArrayOfMutableBytes { obj_id: arr_id }
-    }
+		let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
+		ArrayOfMutableBytes { obj_id: arr_id }
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -331,8 +331,8 @@ pub struct ImmutableIsRequestProcessedResults {
 
 impl ImmutableIsRequestProcessedResults {
     pub fn request_processed(&self) -> ScImmutableString {
-        ScImmutableString::new(self.id, RESULT_REQUEST_PROCESSED.get_key_id())
-    }
+		ScImmutableString::new(self.id, RESULT_REQUEST_PROCESSED.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -342,6 +342,6 @@ pub struct MutableIsRequestProcessedResults {
 
 impl MutableIsRequestProcessedResults {
     pub fn request_processed(&self) -> ScMutableString {
-        ScMutableString::new(self.id, RESULT_REQUEST_PROCESSED.get_key_id())
-    }
+		ScMutableString::new(self.id, RESULT_REQUEST_PROCESSED.get_key_id())
+	}
 }

@@ -13,8 +13,9 @@ const (
 	IdxParamColor       = 0
 	IdxParamDescription = 1
 	IdxParamUserDefined = 2
-	IdxStateColorList   = 3
-	IdxStateRegistry    = 4
+
+	IdxStateColorList = 3
+	IdxStateRegistry  = 4
 )
 
 const keyMapLen = 5

@@ -13,6 +13,7 @@ use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
+use crate::typedefs::*;
 
 #[derive(Clone, Copy)]
 pub struct ImmutableApproveParams {
@@ -21,12 +22,12 @@ pub struct ImmutableApproveParams {
 
 impl ImmutableApproveParams {
     pub fn amount(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+	}
 
     pub fn delegation(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -36,12 +37,12 @@ pub struct MutableApproveParams {
 
 impl MutableApproveParams {
     pub fn amount(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+	}
 
     pub fn delegation(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -51,12 +52,12 @@ pub struct ImmutableInitParams {
 
 impl ImmutableInitParams {
     pub fn creator(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CREATOR))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CREATOR))
+	}
 
     pub fn supply(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_SUPPLY))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_SUPPLY))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -66,12 +67,12 @@ pub struct MutableInitParams {
 
 impl MutableInitParams {
     pub fn creator(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CREATOR))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CREATOR))
+	}
 
     pub fn supply(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_SUPPLY))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_SUPPLY))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -81,12 +82,12 @@ pub struct ImmutableTransferParams {
 
 impl ImmutableTransferParams {
     pub fn account(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+	}
 
     pub fn amount(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -96,12 +97,12 @@ pub struct MutableTransferParams {
 
 impl MutableTransferParams {
     pub fn account(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+	}
 
     pub fn amount(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -111,16 +112,16 @@ pub struct ImmutableTransferFromParams {
 
 impl ImmutableTransferFromParams {
     pub fn account(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+	}
 
     pub fn amount(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+	}
 
     pub fn recipient(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_RECIPIENT))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_RECIPIENT))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -130,16 +131,16 @@ pub struct MutableTransferFromParams {
 
 impl MutableTransferFromParams {
     pub fn account(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+	}
 
     pub fn amount(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+	}
 
     pub fn recipient(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_RECIPIENT))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_RECIPIENT))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -149,12 +150,12 @@ pub struct ImmutableAllowanceParams {
 
 impl ImmutableAllowanceParams {
     pub fn account(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+	}
 
     pub fn delegation(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -164,12 +165,12 @@ pub struct MutableAllowanceParams {
 
 impl MutableAllowanceParams {
     pub fn account(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+	}
 
     pub fn delegation(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -179,8 +180,8 @@ pub struct ImmutableBalanceOfParams {
 
 impl ImmutableBalanceOfParams {
     pub fn account(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -190,6 +191,6 @@ pub struct MutableBalanceOfParams {
 
 impl MutableBalanceOfParams {
     pub fn account(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+	}
 }

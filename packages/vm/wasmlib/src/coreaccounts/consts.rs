@@ -5,36 +5,34 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-// @formatter:off
-
 #![allow(dead_code)]
 
 use crate::*;
 
-pub const SC_NAME:        &str = "accounts";
-pub const SC_DESCRIPTION: &str = "Core chain account ledger contract";
-pub const HSC_NAME:       ScHname = ScHname(0x3c4b5e02);
+pub const SC_NAME        : &str = "accounts";
+pub const SC_DESCRIPTION : &str = "Core chain account ledger contract";
+pub const HSC_NAME       : ScHname = ScHname(0x3c4b5e02);
 
-pub(crate) const PARAM_AGENT_ID:        &str = "a";
-pub(crate) const PARAM_WITHDRAW_AMOUNT: &str = "m";
-pub(crate) const PARAM_WITHDRAW_COLOR:  &str = "c";
+pub(crate) const PARAM_AGENT_ID        : &str = "a";
+pub(crate) const PARAM_WITHDRAW_AMOUNT : &str = "m";
+pub(crate) const PARAM_WITHDRAW_COLOR  : &str = "c";
 
-pub(crate) const RESULT_ACCOUNT_NONCE: &str = "n";
+pub(crate) const RESULT_ACCOUNT_NONCE : &str = "n";
+pub(crate) const RESULT_AGENTS        : &str = "this";
+pub(crate) const RESULT_BALANCES      : &str = "this";
 
-pub(crate) const FUNC_DEPOSIT:           &str = "deposit";
-pub(crate) const FUNC_HARVEST:           &str = "harvest";
-pub(crate) const FUNC_WITHDRAW:          &str = "withdraw";
-pub(crate) const VIEW_ACCOUNTS:          &str = "accounts";
-pub(crate) const VIEW_BALANCE:           &str = "balance";
-pub(crate) const VIEW_GET_ACCOUNT_NONCE: &str = "getAccountNonce";
-pub(crate) const VIEW_TOTAL_ASSETS:      &str = "totalAssets";
+pub(crate) const FUNC_DEPOSIT           : &str = "deposit";
+pub(crate) const FUNC_HARVEST           : &str = "harvest";
+pub(crate) const FUNC_WITHDRAW          : &str = "withdraw";
+pub(crate) const VIEW_ACCOUNTS          : &str = "accounts";
+pub(crate) const VIEW_BALANCE           : &str = "balance";
+pub(crate) const VIEW_GET_ACCOUNT_NONCE : &str = "getAccountNonce";
+pub(crate) const VIEW_TOTAL_ASSETS      : &str = "totalAssets";
 
-pub(crate) const HFUNC_DEPOSIT:           ScHname = ScHname(0xbdc9102d);
-pub(crate) const HFUNC_HARVEST:           ScHname = ScHname(0x7b40efbd);
-pub(crate) const HFUNC_WITHDRAW:          ScHname = ScHname(0x9dcc0f41);
-pub(crate) const HVIEW_ACCOUNTS:          ScHname = ScHname(0x3c4b5e02);
-pub(crate) const HVIEW_BALANCE:           ScHname = ScHname(0x84168cb4);
-pub(crate) const HVIEW_GET_ACCOUNT_NONCE: ScHname = ScHname(0x529d7df9);
-pub(crate) const HVIEW_TOTAL_ASSETS:      ScHname = ScHname(0xfab0f8d2);
-
-// @formatter:on
+pub(crate) const HFUNC_DEPOSIT           : ScHname = ScHname(0xbdc9102d);
+pub(crate) const HFUNC_HARVEST           : ScHname = ScHname(0x7b40efbd);
+pub(crate) const HFUNC_WITHDRAW          : ScHname = ScHname(0x9dcc0f41);
+pub(crate) const HVIEW_ACCOUNTS          : ScHname = ScHname(0x3c4b5e02);
+pub(crate) const HVIEW_BALANCE           : ScHname = ScHname(0x84168cb4);
+pub(crate) const HVIEW_GET_ACCOUNT_NONCE : ScHname = ScHname(0x529d7df9);
+pub(crate) const HVIEW_TOTAL_ASSETS      : ScHname = ScHname(0xfab0f8d2);

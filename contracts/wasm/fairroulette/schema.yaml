@@ -1,5 +1,19 @@
 name: FairRoulette
 description: ""
+events:
+  bet:
+    address: Address // address of better
+    amount: Int64 // amount of iotas to bet
+    number: Int64 // number to bet on
+  payout:
+    address: Address // address of winner
+    amount: Int64 // amount of iotas won
+  round:
+    number: Int64 // current betting round number
+  start:
+  stop:
+  winner:
+    number: Int64 // the winning number
 structs:
   Bet:
     amount: Int64

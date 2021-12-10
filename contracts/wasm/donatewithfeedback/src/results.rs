@@ -22,24 +22,24 @@ pub struct ImmutableDonationResults {
 
 impl ImmutableDonationResults {
     pub fn amount(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+	}
 
     pub fn donator(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_DONATOR))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_DONATOR))
+	}
 
     pub fn error(&self) -> ScImmutableString {
-        ScImmutableString::new(self.id, idx_map(IDX_RESULT_ERROR))
-    }
+		ScImmutableString::new(self.id, idx_map(IDX_RESULT_ERROR))
+	}
 
     pub fn feedback(&self) -> ScImmutableString {
-        ScImmutableString::new(self.id, idx_map(IDX_RESULT_FEEDBACK))
-    }
+		ScImmutableString::new(self.id, idx_map(IDX_RESULT_FEEDBACK))
+	}
 
     pub fn timestamp(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_TIMESTAMP))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_TIMESTAMP))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -49,24 +49,24 @@ pub struct MutableDonationResults {
 
 impl MutableDonationResults {
     pub fn amount(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+	}
 
     pub fn donator(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_DONATOR))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_DONATOR))
+	}
 
     pub fn error(&self) -> ScMutableString {
-        ScMutableString::new(self.id, idx_map(IDX_RESULT_ERROR))
-    }
+		ScMutableString::new(self.id, idx_map(IDX_RESULT_ERROR))
+	}
 
     pub fn feedback(&self) -> ScMutableString {
-        ScMutableString::new(self.id, idx_map(IDX_RESULT_FEEDBACK))
-    }
+		ScMutableString::new(self.id, idx_map(IDX_RESULT_FEEDBACK))
+	}
 
     pub fn timestamp(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_TIMESTAMP))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_TIMESTAMP))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -76,16 +76,16 @@ pub struct ImmutableDonationInfoResults {
 
 impl ImmutableDonationInfoResults {
     pub fn count(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_COUNT))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_COUNT))
+	}
 
     pub fn max_donation(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_MAX_DONATION))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_MAX_DONATION))
+	}
 
     pub fn total_donation(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_TOTAL_DONATION))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_TOTAL_DONATION))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -95,14 +95,14 @@ pub struct MutableDonationInfoResults {
 
 impl MutableDonationInfoResults {
     pub fn count(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_COUNT))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_COUNT))
+	}
 
     pub fn max_donation(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_MAX_DONATION))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_MAX_DONATION))
+	}
 
     pub fn total_donation(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_TOTAL_DONATION))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_TOTAL_DONATION))
+	}
 }

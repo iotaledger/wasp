@@ -141,7 +141,7 @@ func (pndT *PeeringNetDynamic) recvLoop(inCh, outCh chan *peeringMsg, closeCh ch
 				if len(nextHandlers) > 0 {
 					nextHandlers[0].handleSendMessage(recv, dstNetID, nextHandlers[1:], callHandlersAndSendFun, pndT.log)
 				} else {
-					pndT.log.Debugf("Network delivers message %v -%v-> %v", recv.from.netID, recv.msg.MsgType, dstNetID)
+					pndT.log.Debugf("Network delivers message %v -%v-> %v", recv.from, recv.msg.MsgType, dstNetID)
 					safeSendPeeringMsg(outCh, recv, pndT.log)
 				}
 			}
@@ -170,7 +170,7 @@ func (lcT *peeringNetDynamicHandlerLosingChannel) handleSendMessage(
 	log *logger.Logger,
 ) {
 	if rand.Intn(100) > lcT.probability {
-		log.Debugf("Network dropped message %v -%v-> %v", msg.from.netID, msg.msg.MsgType, dstNetID)
+		log.Debugf("Network dropped message %v -%v-> %v", msg.from, msg.msg.MsgType, dstNetID)
 		return
 	}
 	callHandlersAndSendFun(nextHandlers)
@@ -191,7 +191,7 @@ func (rcT *peeringNetDynamicHandlerRepeatingChannel) handleSendMessage(
 	if rand.Intn(100) < rcT.probability%100 {
 		numRepeat++
 	}
-	log.Debugf("Network repeated message %v -%v-> %v %v times", msg.from.netID, msg.msg.MsgType, dstNetID, numRepeat)
+	log.Debugf("Network repeated message %v -%v-> %v %v times", msg.from, msg.msg.MsgType, dstNetID, numRepeat)
 	for i := 0; i < numRepeat; i++ {
 		callHandlersAndSendFun(nextHandlers)
 	}
@@ -219,7 +219,7 @@ func (dcT *peeringNetDynamicHandlerDelayingChannel) handleSendMessage(
 			} else {
 				delay = time.Duration(fromMS) * time.Millisecond
 			}
-			log.Debugf("Network delayed message %v -%v-> %v for %v", msg.from.netID, msg.msg.MsgType, dstNetID, delay)
+			log.Debugf("Network delayed message %v -%v-> %v for %v", msg.from, msg.msg.MsgType, dstNetID, delay)
 			<-time.After(delay)
 		}
 		callHandlersAndSendFun(nextHandlers)
@@ -238,11 +238,11 @@ func (pdT *peeringNetDynamicHandlerPeerDisconnected) handleSendMessage(
 	log *logger.Logger,
 ) {
 	if dstNetID == pdT.peerName {
-		log.Debugf("Network dropped message %v -%v-> %v, because destination is disconnected", msg.from.netID, msg.msg.MsgType, dstNetID)
+		log.Debugf("Network dropped message %v -%v-> %v, because destination is disconnected", msg.from, msg.msg.MsgType, dstNetID)
 		return
 	}
-	if msg.from.netID == pdT.peerName {
-		log.Debugf("Network dropped message %v -%v-> %v, because source is disconnected", msg.from.netID, msg.msg.MsgType, dstNetID)
+	if msg.from == pdT.peerName {
+		log.Debugf("Network dropped message %v -%v-> %v, because source is disconnected", msg.from, msg.msg.MsgType, dstNetID)
 		return
 	}
 	callHandlersAndSendFun(nextHandlers)

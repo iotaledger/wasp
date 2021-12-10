@@ -1,11 +1,13 @@
 package log
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
 	"text/tabwriter"
 
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/spf13/cobra"
 )
 
@@ -72,4 +74,42 @@ func makeSeparator(header []string) []string {
 		ret[i] = strings.Repeat("-", len(s))
 	}
 	return ret
+}
+
+type TreeItem struct {
+	K string
+	V interface{}
+}
+
+func PrintTree(node interface{}, tab, tabwidth int) {
+	indent := strings.Repeat(" ", tab)
+	switch node := node.(type) {
+	case []TreeItem:
+		for _, item := range node {
+			fmt.Printf("%s%s: ", indent, item.K)
+			if s, ok := item.V.(string); ok {
+				fmt.Printf("%s\n", s)
+			} else {
+				fmt.Print("\n")
+				PrintTree(item.V, tab+tabwidth, tabwidth)
+			}
+		}
+	case dict.Dict:
+		if len(node) == 0 {
+			fmt.Printf("%s(empty)", indent)
+			return
+		}
+		tree := make([]TreeItem, 0, len(node))
+		for k, v := range node {
+			tree = append(tree, TreeItem{
+				K: fmt.Sprintf("%q", string(k)),
+				V: fmt.Sprintf("0x%s", hex.EncodeToString(v)),
+			})
+		}
+		PrintTree(tree, tab, tabwidth)
+	case string:
+		fmt.Printf("%s%s\n", indent, node)
+	default:
+		panic(fmt.Sprintf("no handler of value of type %T", node))
+	}
 }

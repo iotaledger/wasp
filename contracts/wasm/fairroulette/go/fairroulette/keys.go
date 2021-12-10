@@ -10,18 +10,20 @@ package fairroulette
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
-	IdxParamNumber             = 0
-	IdxParamPlayPeriod         = 1
+	IdxParamNumber     = 0
+	IdxParamPlayPeriod = 1
+
 	IdxResultLastWinningNumber = 2
 	IdxResultRoundNumber       = 3
 	IdxResultRoundStartedAt    = 4
 	IdxResultRoundStatus       = 5
-	IdxStateBets               = 6
-	IdxStateLastWinningNumber  = 7
-	IdxStatePlayPeriod         = 8
-	IdxStateRoundNumber        = 9
-	IdxStateRoundStartedAt     = 10
-	IdxStateRoundStatus        = 11
+
+	IdxStateBets              = 6
+	IdxStateLastWinningNumber = 7
+	IdxStatePlayPeriod        = 8
+	IdxStateRoundNumber       = 9
+	IdxStateRoundStartedAt    = 10
+	IdxStateRoundStatus       = 11
 )
 
 const keyMapLen = 12

@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ArrayOfImmutableColor {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -25,7 +25,7 @@ export class ArrayOfImmutableColor {
 }
 
 export class MapColorToImmutableToken {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -37,20 +37,19 @@ export class MapColorToImmutableToken {
 }
 
 export class ImmutableTokenRegistryState extends wasmlib.ScMapID {
-
     colorList(): sc.ArrayOfImmutableColor {
-        let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateColorList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_COLOR);
-        return new sc.ArrayOfImmutableColor(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateColorList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_COLOR);
+		return new sc.ArrayOfImmutableColor(arrID);
+	}
 
     registry(): sc.MapColorToImmutableToken {
-        let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateRegistry], wasmlib.TYPE_MAP);
-        return new sc.MapColorToImmutableToken(mapID);
-    }
+		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateRegistry], wasmlib.TYPE_MAP);
+		return new sc.MapColorToImmutableToken(mapID);
+	}
 }
 
 export class ArrayOfMutableColor {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
@@ -70,14 +69,14 @@ export class ArrayOfMutableColor {
 }
 
 export class MapColorToMutableToken {
-    objID: i32;
+	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
     }
 
     clear(): void {
-        wasmlib.clear(this.objID)
+        wasmlib.clear(this.objID);
     }
 
     getToken(key: wasmlib.ScColor): sc.MutableToken {
@@ -86,14 +85,13 @@ export class MapColorToMutableToken {
 }
 
 export class MutableTokenRegistryState extends wasmlib.ScMapID {
-
     colorList(): sc.ArrayOfMutableColor {
-        let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateColorList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_COLOR);
-        return new sc.ArrayOfMutableColor(arrID)
-    }
+		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateColorList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_COLOR);
+		return new sc.ArrayOfMutableColor(arrID);
+	}
 
     registry(): sc.MapColorToMutableToken {
-        let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateRegistry], wasmlib.TYPE_MAP);
-        return new sc.MapColorToMutableToken(mapID);
-    }
+		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateRegistry], wasmlib.TYPE_MAP);
+		return new sc.MapColorToMutableToken(mapID);
+	}
 }

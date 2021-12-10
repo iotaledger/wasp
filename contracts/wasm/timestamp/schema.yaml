@@ -1,0 +1,12 @@
+name: timestamp
+description: Extremely simple timestamp server
+structs: {}
+typedefs: {}
+state:
+  timestamp: Int64 // last official timestamp generated
+funcs:
+  now:
+views:
+  getTimestamp:
+    results:
+      timestamp: Int64 // last official timestamp generated

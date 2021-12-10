@@ -50,11 +50,11 @@ type ImmutableGetBlobFieldParams struct {
 }
 
 func (s ImmutableGetBlobFieldParams) Field() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, ParamField.KeyID())
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamField))
 }
 
 func (s ImmutableGetBlobFieldParams) Hash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, ParamHash.KeyID())
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamHash))
 }
 
 type MutableGetBlobFieldParams struct {
@@ -62,11 +62,11 @@ type MutableGetBlobFieldParams struct {
 }
 
 func (s MutableGetBlobFieldParams) Field() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, ParamField.KeyID())
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamField))
 }
 
 func (s MutableGetBlobFieldParams) Hash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, ParamHash.KeyID())
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamHash))
 }
 
 type ImmutableGetBlobInfoParams struct {
@@ -74,7 +74,7 @@ type ImmutableGetBlobInfoParams struct {
 }
 
 func (s ImmutableGetBlobInfoParams) Hash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, ParamHash.KeyID())
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamHash))
 }
 
 type MutableGetBlobInfoParams struct {
@@ -82,5 +82,5 @@ type MutableGetBlobInfoParams struct {
 }
 
 func (s MutableGetBlobInfoParams) Hash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, ParamHash.KeyID())
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamHash))
 }

@@ -18,34 +18,41 @@ type WasmProcessor struct {
 	currentContextID int32
 	instanceLock     sync.Mutex
 	log              *logger.Logger
+	mainProcessor    *WasmProcessor
 	nextContextID    int32
 	scContext        *WasmContext
+	wasmVM           func() wasmhost.WasmVM
 }
 
 var _ iscp.VMProcessor = &WasmProcessor{}
 
-var GoWasmVM wasmhost.WasmVM
+var GoWasmVM func() wasmhost.WasmVM
 
 // GetProcessor creates a new Wasm VM processor.
-func GetProcessor(binaryCode []byte, log *logger.Logger) (iscp.VMProcessor, error) {
-	vm := GoWasmVM
-	GoWasmVM = nil
-	if vm == nil {
-		vm = wasmhost.NewWasmTimeVM()
+func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error) {
+	proc := &WasmProcessor{log: log, contexts: make(map[int32]*WasmContext), wasmVM: wasmhost.NewWasmTimeVM}
+	proc.Init()
+
+	// By default we will use WasmTimeVM, but this can be overruled by setting GoWasmVm
+	// This setting will also be propagated to all the sub-processors of this processor
+	if GoWasmVM != nil {
+		proc.wasmVM = GoWasmVM
+		GoWasmVM = nil
 	}
 
-	proc := &WasmProcessor{log: log, contexts: make(map[int32]*WasmContext)}
-	err := proc.InitVM(vm, proc)
+	// Run setup on main processor, because we will be sharing stuff with the sub-processors
+	err := proc.InitVM(proc.wasmVM(), proc)
 	if err != nil {
 		return nil, err
 	}
 
-	proc.Init()
-	// TODO decide if we want be able to examine state directly from tests
-	// proc.SetExport(0x8fff, ViewCopyAllState)
 	proc.scContext = NewWasmContext("", proc)
 	wasmhost.Connect(proc.scContext)
-	err = proc.LoadWasm(binaryCode)
+	err = proc.LoadWasm(wasmBytes)
+	if err != nil {
+		return nil, err
+	}
+	err = proc.RunFunction("on_load")
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +75,38 @@ func (proc *WasmProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
 	return proc.wasmContext(FuncDefault)
 }
 
+func (proc *WasmProcessor) GetKvStore(id int32) *wasmhost.KvStoreHost {
+	if id == 0 {
+		id = proc.currentContextID
+	}
+
+	if id == 0 {
+		return &proc.scContext.KvStoreHost
+	}
+
+	mainProcessor := proc
+	if proc.mainProcessor != nil {
+		mainProcessor = proc.mainProcessor
+	}
+	mainProcessor.contextLock.Lock()
+	defer mainProcessor.contextLock.Unlock()
+
+	return &mainProcessor.contexts[id].KvStoreHost
+}
+
+func (proc *WasmProcessor) KillContext(id int32) {
+	proc.contextLock.Lock()
+	defer proc.contextLock.Unlock()
+	delete(proc.contexts, id)
+}
+
 func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
-	wc := NewWasmContext(function, proc)
+	processor := proc
+	vmInstance := proc.NewInstance()
+	if vmInstance != nil {
+		processor = proc.getSubProcessor(vmInstance)
+	}
+	wc := NewWasmContext(function, processor)
 
 	proc.contextLock.Lock()
 	defer proc.contextLock.Unlock()
@@ -80,24 +117,25 @@ func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
 	return wc
 }
 
-func (proc *WasmProcessor) GetKvStore(id int32) *wasmhost.KvStoreHost {
-	if id == 0 {
-		id = proc.currentContextID
+func (proc *WasmProcessor) getSubProcessor(vmInstance wasmhost.WasmVM) *WasmProcessor {
+	processor := &WasmProcessor{log: proc.log, mainProcessor: proc, wasmVM: proc.wasmVM}
+	processor.Init()
+	err := processor.InitVM(vmInstance, processor)
+	if err != nil {
+		panic("Cannot clone processor: " + err.Error())
 	}
 
-	if id == 0 {
-		return &proc.scContext.KvStoreHost
+	processor.scContext = NewWasmContext("", processor)
+	wasmhost.Connect(processor.scContext)
+	err = processor.Instantiate()
+	if err != nil {
+		panic("Cannot instantiate: " + err.Error())
 	}
 
-	proc.contextLock.Lock()
-	defer proc.contextLock.Unlock()
-
-	return &proc.contexts[id].KvStoreHost
-}
-
-func (proc *WasmProcessor) KillContext(id int32) {
-	proc.contextLock.Lock()
-	defer proc.contextLock.Unlock()
-
-	delete(proc.contexts, id)
+	// TODO reuse on_load data from main processor
+	err = processor.RunFunction("on_load")
+	if err != nil {
+		panic("Cannot run on_load: " + err.Error())
+	}
+	return processor
 }

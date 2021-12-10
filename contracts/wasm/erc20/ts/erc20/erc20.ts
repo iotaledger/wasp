@@ -14,11 +14,12 @@ import * as sc from "./index";
 export function funcApprove(ctx: wasmlib.ScFuncContext, f: sc.ApproveContext): void {
     let delegation = f.params.delegation().value();
     let amount = f.params.amount().value();
-    ctx.require(amount > 0, "erc20.approve.fail: wrong 'amount' parameter");
+    ctx.require(amount >= 0, "erc20.approve.fail: wrong 'amount' parameter");
 
     // all allowances are in the map under the name of he owner
     let allowances = f.state.allAllowances().getAllowancesForAgent(ctx.caller());
     allowances.getInt64(delegation).setValue(amount);
+    f.events.approval(amount, ctx.caller(), delegation)
 }
 
 // onInit is a constructor entry point. It initializes the smart contract with the
@@ -43,55 +44,62 @@ export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
 }
 
 // transfer moves tokens from caller's account to target account
+// This function emits the Transfer event.
 // Input:
 // - PARAM_ACCOUNT: agentID
 // - PARAM_AMOUNT: i64
 export function funcTransfer(ctx: wasmlib.ScFuncContext, f: sc.TransferContext): void {
     let amount = f.params.amount().value();
-    ctx.require(amount > 0, "erc20.transfer.fail: wrong 'amount' parameter");
+    ctx.require(amount >= 0, "erc20.transfer.fail: wrong 'amount' parameter");
 
     let balances = f.state.balances();
-    let sourceBalance = balances.getInt64(ctx.caller());
+    let sourceAgent = ctx.caller();
+    let sourceBalance = balances.getInt64(sourceAgent);
     ctx.require(sourceBalance.value() >= amount, "erc20.transfer.fail: not enough funds");
 
-    let targetAddr = f.params.account().value();
-    let targetBalance = balances.getInt64(targetAddr);
+    let targetAgent = f.params.account().value();
+    let targetBalance = balances.getInt64(targetAgent);
     let result = targetBalance.value() + amount;
-    ctx.require(result > 0, "erc20.transfer.fail: overflow");
+    ctx.require(result >= 0, "erc20.transfer.fail: overflow");
 
     sourceBalance.setValue(sourceBalance.value() - amount);
     targetBalance.setValue(targetBalance.value() + amount);
+
+    f.events.transfer(amount, sourceAgent, targetAgent)
 }
 
 // Moves the amount of tokens from sender to recipient using the allowance mechanism.
-// Amount is then deducted from the caller’s allowance. This function emits the Transfer event.
+// Amount is then deducted from the caller’s allowance.
+// This function emits the Transfer event.
 // Input:
 // - PARAM_ACCOUNT: agentID   the spender
 // - PARAM_RECIPIENT: agentID   the target
 // - PARAM_AMOUNT: i64
 export function funcTransferFrom(ctx: wasmlib.ScFuncContext, f: sc.TransferFromContext): void {
     // validate parameters
-    let account = f.params.account().value();
-    let recipient = f.params.recipient().value();
     let amount = f.params.amount().value();
-    ctx.require(amount > 0, "erc20.transferFrom.fail: wrong 'amount' parameter");
+    ctx.require(amount >= 0, "erc20.transferFrom.fail: wrong 'amount' parameter");
 
     // allowances are in the map under the name of the account
-    let allowances = f.state.allAllowances().getAllowancesForAgent(account);
-    let allowance = allowances.getInt64(recipient);
+    let sourceAgent = f.params.account().value();
+    let allowances = f.state.allAllowances().getAllowancesForAgent(sourceAgent);
+    let allowance = allowances.getInt64(ctx.caller());
     ctx.require(allowance.value() >= amount, "erc20.transferFrom.fail: not enough allowance");
 
     let balances = f.state.balances();
-    let sourceBalance = balances.getInt64(account);
+    let sourceBalance = balances.getInt64(sourceAgent);
     ctx.require(sourceBalance.value() >= amount, "erc20.transferFrom.fail: not enough funds");
 
-    let recipientBalance = balances.getInt64(recipient);
+    let targetAgent = f.params.recipient().value();
+    let recipientBalance = balances.getInt64(targetAgent);
     let result = recipientBalance.value() + amount;
-    ctx.require(result > 0, "erc20.transferFrom.fail: overflow");
+    ctx.require(result >= 0, "erc20.transferFrom.fail: overflow");
 
     sourceBalance.setValue(sourceBalance.value() - amount);
     recipientBalance.setValue(recipientBalance.value() + amount);
     allowance.setValue(allowance.value() - amount);
+
+    f.events.transfer(amount, sourceAgent, targetAgent)
 }
 
 // the view returns max number of tokens the owner PARAM_ACCOUNT of the account

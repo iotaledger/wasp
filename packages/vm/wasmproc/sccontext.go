@@ -35,6 +35,7 @@ var typeIds = map[int32]int32{
 	wasmhost.KeyPanic:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyParams:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyPost:            wasmhost.OBJTYPE_BYTES,
+	wasmhost.KeyRandom:          wasmhost.OBJTYPE_BYTES,
 	wasmhost.KeyRequestID:       wasmhost.OBJTYPE_REQUEST_ID,
 	wasmhost.KeyResults:         wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyReturn:          wasmhost.OBJTYPE_MAP,
@@ -70,7 +71,7 @@ func (o *ScContext) Exists(keyID, typeID int32) bool {
 
 func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
 	if o.wc == nil {
-		o.Panic("missing context")
+		o.Panicf("missing context")
 	}
 	ctx := o.wc.ctx
 	if ctx == nil {
@@ -89,6 +90,8 @@ func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
 		return ctx.Contract().Bytes()
 	case wasmhost.KeyContractCreator:
 		return ctx.ContractCreator().Bytes()
+	case wasmhost.KeyRandom:
+		return ctx.GetEntropy().Bytes()
 	case wasmhost.KeyRequestID:
 		return ctx.Request().ID().Bytes()
 	case wasmhost.KeyTimestamp:
@@ -102,7 +105,7 @@ func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
 func (o *ScContext) getBytesForView(keyID, typeID int32) []byte {
 	ctx := o.wc.ctxView
 	if ctx == nil {
-		o.Panic("missing context")
+		o.Panicf("missing context")
 	}
 	switch keyID {
 	case wasmhost.KeyAccountID:
@@ -140,7 +143,7 @@ func (o *ScContext) GetObjectID(keyID, typeID int32) int32 {
 		wasmhost.KeyReturn:    func() WaspObject { return NewScDict(o.host, dict.New()) },
 		wasmhost.KeyState:     func() WaspObject { return NewScDict(o.host, o.wc.state()) },
 		wasmhost.KeyTransfers: func() WaspObject { return NewScTransfers(o.wc) },
-		wasmhost.KeyUtility:   func() WaspObject { return NewScUtility(o.wc) },
+		wasmhost.KeyUtility:   func() WaspObject { return NewScUtility(o.wc, nil) },
 	})
 }
 
@@ -173,11 +176,11 @@ func (o *ScContext) processCall(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
 	contract, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	function, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	params := o.getParams(decode.Int32())
 	transfer := o.getTransfer(decode.Int32())
@@ -185,7 +188,7 @@ func (o *ScContext) processCall(bytes []byte) {
 	o.Tracef("CALL c'%s' f'%s'", contract.String(), function.String())
 	results, err := o.processCallUnlocked(contract, function, params, transfer)
 	if err != nil {
-		o.Panic("failed to invoke call: %v", err)
+		o.Panicf("failed to invoke call: %v", err)
 	}
 	resultsID := o.GetObjectID(wasmhost.KeyReturn, wasmhost.OBJTYPE_MAP)
 	o.host.FindObject(resultsID).(*ScDict).kvStore = results
@@ -205,7 +208,7 @@ func (o *ScContext) processDeploy(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
 	programHash, err := hashing.HashValueFromBytes(decode.Bytes())
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	name := string(decode.Bytes())
 	description := string(decode.Bytes())
@@ -213,7 +216,7 @@ func (o *ScContext) processDeploy(bytes []byte) {
 	o.Tracef("DEPLOY c'%s' f'%s'", name, description)
 	err = o.processDeployUnlocked(programHash, name, description, params)
 	if err != nil {
-		o.Panic("failed to deploy: %v", err)
+		o.Panicf("failed to deploy: %v", err)
 	}
 }
 
@@ -228,21 +231,21 @@ func (o *ScContext) processPost(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
 	chainID, err := iscp.ChainIDFromBytes(decode.Bytes())
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	contract, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	function, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	o.Tracef("POST c'%s' f'%s'", contract.String(), function.String())
 	params := o.getParams(decode.Int32())
 	transferID := decode.Int32()
 	if transferID == 0 {
-		o.Panic("transfer is required for post")
+		o.Panicf("transfer is required for post")
 	}
 	transfer := o.getTransfer(transferID)
 	metadata := &iscp.SendMetadata{
@@ -253,13 +256,13 @@ func (o *ScContext) processPost(bytes []byte) {
 	delay := decode.Int32()
 	if delay == 0 {
 		if !o.wc.ctx.Send(chainID.AsAddress(), transfer, metadata) {
-			o.Panic("failed to send to %s", chainID.AsAddress().String())
+			o.Panicf("failed to send to %s", chainID.AsAddress().String())
 		}
 		return
 	}
 
 	if delay < 0 {
-		o.Panic("invalid delay: %d", delay)
+		o.Panicf("invalid delay: %d", delay)
 	}
 
 	timeLock := time.Unix(0, o.wc.ctx.GetTimestamp())
@@ -268,7 +271,7 @@ func (o *ScContext) processPost(bytes []byte) {
 		TimeLock: uint32(timeLock.Unix()),
 	}
 	if !o.wc.ctx.Send(chainID.AsAddress(), transfer, metadata, options) {
-		o.Panic("failed to send to %s", chainID.AsAddress().String())
+		o.Panicf("failed to send to %s", chainID.AsAddress().String())
 	}
 }
 
@@ -293,11 +296,11 @@ func (o *ScContext) getTransfer(transferID int32) colored.Balances {
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
 		col, err := codec.DecodeColor([]byte(key))
 		if err != nil {
-			o.Panic(err.Error())
+			o.Panicf(err.Error())
 		}
 		amount, err := codec.DecodeUint64(value)
 		if err != nil {
-			o.Panic(err.Error())
+			o.Panicf(err.Error())
 		}
 		o.Tracef("  XFER %d '%s'", amount, col.String())
 		transfer.Set(col, amount)

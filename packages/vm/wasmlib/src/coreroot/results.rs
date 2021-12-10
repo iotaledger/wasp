@@ -19,12 +19,12 @@ pub struct ImmutableFindContractResults {
 
 impl ImmutableFindContractResults {
     pub fn contract_found(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.id, RESULT_CONTRACT_FOUND.get_key_id())
-    }
+		ScImmutableBytes::new(self.id, RESULT_CONTRACT_FOUND.get_key_id())
+	}
 
     pub fn contract_rec_data(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.id, RESULT_CONTRACT_REC_DATA.get_key_id())
-    }
+		ScImmutableBytes::new(self.id, RESULT_CONTRACT_REC_DATA.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -34,20 +34,20 @@ pub struct MutableFindContractResults {
 
 impl MutableFindContractResults {
     pub fn contract_found(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.id, RESULT_CONTRACT_FOUND.get_key_id())
-    }
+		ScMutableBytes::new(self.id, RESULT_CONTRACT_FOUND.get_key_id())
+	}
 
     pub fn contract_rec_data(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.id, RESULT_CONTRACT_REC_DATA.get_key_id())
-    }
+		ScMutableBytes::new(self.id, RESULT_CONTRACT_REC_DATA.get_key_id())
+	}
 }
 
 pub struct MapHnameToImmutableBytes {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapHnameToImmutableBytes {
-    pub fn get_bytes(&self, key: &ScHname) -> ScImmutableBytes {
+    pub fn get_bytes(&self, key: ScHname) -> ScImmutableBytes {
         ScImmutableBytes::new(self.obj_id, key.get_key_id())
     }
 }
@@ -59,21 +59,21 @@ pub struct ImmutableGetContractRecordsResults {
 
 impl ImmutableGetContractRecordsResults {
     pub fn contract_registry(&self) -> MapHnameToImmutableBytes {
-        let map_id = get_object_id(self.id, RESULT_CONTRACT_REGISTRY.get_key_id(), TYPE_MAP);
-        MapHnameToImmutableBytes { obj_id: map_id }
-    }
+		let map_id = get_object_id(self.id, RESULT_CONTRACT_REGISTRY.get_key_id(), TYPE_MAP);
+		MapHnameToImmutableBytes { obj_id: map_id }
+	}
 }
 
 pub struct MapHnameToMutableBytes {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapHnameToMutableBytes {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
-    pub fn get_bytes(&self, key: &ScHname) -> ScMutableBytes {
+    pub fn get_bytes(&self, key: ScHname) -> ScMutableBytes {
         ScMutableBytes::new(self.obj_id, key.get_key_id())
     }
 }
@@ -85,7 +85,7 @@ pub struct MutableGetContractRecordsResults {
 
 impl MutableGetContractRecordsResults {
     pub fn contract_registry(&self) -> MapHnameToMutableBytes {
-        let map_id = get_object_id(self.id, RESULT_CONTRACT_REGISTRY.get_key_id(), TYPE_MAP);
-        MapHnameToMutableBytes { obj_id: map_id }
-    }
+		let map_id = get_object_id(self.id, RESULT_CONTRACT_REGISTRY.get_key_id(), TYPE_MAP);
+		MapHnameToMutableBytes { obj_id: map_id }
+	}
 }

@@ -5,74 +5,72 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib"
+import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class DivideCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDivide);
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDivide);
 }
 
 export class DivideContext {
-    state: sc.MutableDividendState = new sc.MutableDividendState();
+	state: sc.MutableDividendState = new sc.MutableDividendState();
 }
 
 export class InitCall {
-    func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
-    params: sc.MutableInitParams = new sc.MutableInitParams();
+	func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
+	params: sc.MutableInitParams = new sc.MutableInitParams();
 }
 
 export class InitContext {
-    params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
-    state: sc.MutableDividendState = new sc.MutableDividendState();
+	params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
+	state: sc.MutableDividendState = new sc.MutableDividendState();
 }
 
 export class MemberCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncMember);
-    params: sc.MutableMemberParams = new sc.MutableMemberParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncMember);
+	params: sc.MutableMemberParams = new sc.MutableMemberParams();
 }
 
 export class MemberContext {
-    params: sc.ImmutableMemberParams = new sc.ImmutableMemberParams();
-    state: sc.MutableDividendState = new sc.MutableDividendState();
+	params: sc.ImmutableMemberParams = new sc.ImmutableMemberParams();
+	state: sc.MutableDividendState = new sc.MutableDividendState();
 }
 
 export class SetOwnerCall {
-    func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetOwner);
-    params: sc.MutableSetOwnerParams = new sc.MutableSetOwnerParams();
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncSetOwner);
+	params: sc.MutableSetOwnerParams = new sc.MutableSetOwnerParams();
 }
 
 export class SetOwnerContext {
-    params: sc.ImmutableSetOwnerParams = new sc.ImmutableSetOwnerParams();
-    state: sc.MutableDividendState = new sc.MutableDividendState();
+	params: sc.ImmutableSetOwnerParams = new sc.ImmutableSetOwnerParams();
+	state: sc.MutableDividendState = new sc.MutableDividendState();
 }
 
 export class GetFactorCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetFactor);
-    params: sc.MutableGetFactorParams = new sc.MutableGetFactorParams();
-    results: sc.ImmutableGetFactorResults = new sc.ImmutableGetFactorResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetFactor);
+	params: sc.MutableGetFactorParams = new sc.MutableGetFactorParams();
+	results: sc.ImmutableGetFactorResults = new sc.ImmutableGetFactorResults();
 }
 
 export class GetFactorContext {
-    params: sc.ImmutableGetFactorParams = new sc.ImmutableGetFactorParams();
-    results: sc.MutableGetFactorResults = new sc.MutableGetFactorResults();
-    state: sc.ImmutableDividendState = new sc.ImmutableDividendState();
+	params: sc.ImmutableGetFactorParams = new sc.ImmutableGetFactorParams();
+	results: sc.MutableGetFactorResults = new sc.MutableGetFactorResults();
+	state: sc.ImmutableDividendState = new sc.ImmutableDividendState();
 }
 
 export class GetOwnerCall {
-    func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetOwner);
-    results: sc.ImmutableGetOwnerResults = new sc.ImmutableGetOwnerResults();
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetOwner);
+	results: sc.ImmutableGetOwnerResults = new sc.ImmutableGetOwnerResults();
 }
 
 export class GetOwnerContext {
-    results: sc.MutableGetOwnerResults = new sc.MutableGetOwnerResults();
-    state: sc.ImmutableDividendState = new sc.ImmutableDividendState();
+	results: sc.MutableGetOwnerResults = new sc.MutableGetOwnerResults();
+	state: sc.ImmutableDividendState = new sc.ImmutableDividendState();
 }
 
 export class ScFuncs {
-
     static divide(ctx: wasmlib.ScFuncCallContext): DivideCall {
-        let f = new DivideCall();
-        return f;
+        return new DivideCall();
     }
 
     static init(ctx: wasmlib.ScFuncCallContext): InitCall {

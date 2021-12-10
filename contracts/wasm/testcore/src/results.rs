@@ -21,8 +21,8 @@ pub struct ImmutableCallOnChainResults {
 
 impl ImmutableCallOnChainResults {
     pub fn int_value(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -32,8 +32,8 @@ pub struct MutableCallOnChainResults {
 
 impl MutableCallOnChainResults {
     pub fn int_value(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -43,12 +43,12 @@ pub struct ImmutableGetMintedSupplyResults {
 
 impl ImmutableGetMintedSupplyResults {
     pub fn minted_color(&self) -> ScImmutableColor {
-        ScImmutableColor::new(self.id, idx_map(IDX_RESULT_MINTED_COLOR))
-    }
+		ScImmutableColor::new(self.id, idx_map(IDX_RESULT_MINTED_COLOR))
+	}
 
     pub fn minted_supply(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_MINTED_SUPPLY))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_MINTED_SUPPLY))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -58,12 +58,12 @@ pub struct MutableGetMintedSupplyResults {
 
 impl MutableGetMintedSupplyResults {
     pub fn minted_color(&self) -> ScMutableColor {
-        ScMutableColor::new(self.id, idx_map(IDX_RESULT_MINTED_COLOR))
-    }
+		ScMutableColor::new(self.id, idx_map(IDX_RESULT_MINTED_COLOR))
+	}
 
     pub fn minted_supply(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_MINTED_SUPPLY))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_MINTED_SUPPLY))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -73,8 +73,8 @@ pub struct ImmutableRunRecursionResults {
 
 impl ImmutableRunRecursionResults {
     pub fn int_value(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -84,8 +84,8 @@ pub struct MutableRunRecursionResults {
 
 impl MutableRunRecursionResults {
     pub fn int_value(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -95,8 +95,8 @@ pub struct ImmutableTestChainOwnerIDFullResults {
 
 impl ImmutableTestChainOwnerIDFullResults {
     pub fn chain_owner_id(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -106,8 +106,8 @@ pub struct MutableTestChainOwnerIDFullResults {
 
 impl MutableTestChainOwnerIDFullResults {
     pub fn chain_owner_id(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -117,8 +117,8 @@ pub struct ImmutableFibonacciResults {
 
 impl ImmutableFibonacciResults {
     pub fn int_value(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -128,8 +128,8 @@ pub struct MutableFibonacciResults {
 
 impl MutableFibonacciResults {
     pub fn int_value(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -139,8 +139,8 @@ pub struct ImmutableGetCounterResults {
 
 impl ImmutableGetCounterResults {
     pub fn counter(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -150,12 +150,12 @@ pub struct MutableGetCounterResults {
 
 impl MutableGetCounterResults {
     pub fn counter(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
+	}
 }
 
 pub struct MapStringToImmutableInt64 {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapStringToImmutableInt64 {
@@ -171,17 +171,17 @@ pub struct ImmutableGetIntResults {
 
 impl ImmutableGetIntResults {
     pub fn values(&self) -> MapStringToImmutableInt64 {
-        MapStringToImmutableInt64 { obj_id: self.id }
-    }
+		MapStringToImmutableInt64 { obj_id: self.id }
+	}
 }
 
 pub struct MapStringToMutableInt64 {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapStringToMutableInt64 {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_int64(&self, key: &str) -> ScMutableInt64 {
@@ -196,12 +196,12 @@ pub struct MutableGetIntResults {
 
 impl MutableGetIntResults {
     pub fn values(&self) -> MapStringToMutableInt64 {
-        MapStringToMutableInt64 { obj_id: self.id }
-    }
+		MapStringToMutableInt64 { obj_id: self.id }
+	}
 }
 
 pub struct MapStringToImmutableString {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapStringToImmutableString {
@@ -217,17 +217,17 @@ pub struct ImmutableGetStringValueResults {
 
 impl ImmutableGetStringValueResults {
     pub fn vars(&self) -> MapStringToImmutableString {
-        MapStringToImmutableString { obj_id: self.id }
-    }
+		MapStringToImmutableString { obj_id: self.id }
+	}
 }
 
 pub struct MapStringToMutableString {
-    pub(crate) obj_id: i32,
+	pub(crate) obj_id: i32,
 }
 
 impl MapStringToMutableString {
     pub fn clear(&self) {
-        clear(self.obj_id)
+        clear(self.obj_id);
     }
 
     pub fn get_string(&self, key: &str) -> ScMutableString {
@@ -242,8 +242,8 @@ pub struct MutableGetStringValueResults {
 
 impl MutableGetStringValueResults {
     pub fn vars(&self) -> MapStringToMutableString {
-        MapStringToMutableString { obj_id: self.id }
-    }
+		MapStringToMutableString { obj_id: self.id }
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -253,8 +253,8 @@ pub struct ImmutableTestChainOwnerIDViewResults {
 
 impl ImmutableTestChainOwnerIDViewResults {
     pub fn chain_owner_id(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
-    }
+		ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -264,8 +264,8 @@ pub struct MutableTestChainOwnerIDViewResults {
 
 impl MutableTestChainOwnerIDViewResults {
     pub fn chain_owner_id(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
-    }
+		ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -275,8 +275,8 @@ pub struct ImmutableTestSandboxCallResults {
 
 impl ImmutableTestSandboxCallResults {
     pub fn sandbox_call(&self) -> ScImmutableString {
-        ScImmutableString::new(self.id, idx_map(IDX_RESULT_SANDBOX_CALL))
-    }
+		ScImmutableString::new(self.id, idx_map(IDX_RESULT_SANDBOX_CALL))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -286,6 +286,6 @@ pub struct MutableTestSandboxCallResults {
 
 impl MutableTestSandboxCallResults {
     pub fn sandbox_call(&self) -> ScMutableString {
-        ScMutableString::new(self.id, idx_map(IDX_RESULT_SANDBOX_CALL))
-    }
+		ScMutableString::new(self.id, idx_map(IDX_RESULT_SANDBOX_CALL))
+	}
 }

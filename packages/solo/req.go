@@ -101,8 +101,8 @@ func (r *CallParams) WithMint(targetAddress ledgerstate.Address, amount uint64) 
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters
-func (r *CallParams) NewRequestOffLedger(keyPair *ed25519.KeyPair) *request.OffLedger {
-	ret := request.NewOffLedger(r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
+func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *ed25519.KeyPair) *request.OffLedger {
+	ret := request.NewOffLedger(chainID, r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
 	ret.Sign(keyPair)
 	return ret
 }
@@ -212,7 +212,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 	if keyPair == nil {
 		keyPair = ch.OriginatorKeyPair
 	}
-	r := req.NewRequestOffLedger(keyPair)
+	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res, err := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
 	if err != nil {
 		return nil, err
@@ -278,10 +278,9 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 	return vctx.CallView(iscp.Hn(scName), iscp.Hn(funName), p)
 }
 
-// WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
-// requests in the mempool of the chain both become equal to the specified number
-func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
-	maxw := 5 * time.Second
+// WaitUntil waits until the condition specified by the given predicate yields true
+func (ch *Chain) WaitUntil(p func(chain.MempoolInfo) bool, maxWait ...time.Duration) bool {
+	maxw := 10 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
 		maxw = maxWait[0]
@@ -289,16 +288,23 @@ func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bo
 	deadline = time.Now().Add(maxw)
 	for {
 		mstats := ch.mempool.Info()
-		if mstats.InBufCounter == numReq && mstats.OutPoolCounter == numReq {
+		if p(mstats) {
 			return true
 		}
 		if time.Now().After(deadline) {
-			ch.Log.Errorf("WaitForRequestsThrough. failed waiting max %v for %d requests through . Current IN: %d, OUT: %d",
-				maxw, numReq, mstats.InBufCounter, mstats.OutPoolCounter)
+			ch.Log.Errorf("WaitUntil failed waiting max %v", maxw)
 			return false
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+// WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
+// requests in the mempool of the chain both become equal to the specified number
+func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
+	return ch.WaitUntil(func(mstats chain.MempoolInfo) bool {
+		return mstats.InBufCounter == numReq && mstats.OutPoolCounter == numReq
+	}, maxWait...)
 }
 
 // MempoolInfo returns stats about the chain mempool

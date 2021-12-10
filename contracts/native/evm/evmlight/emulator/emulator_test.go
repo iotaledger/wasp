@@ -52,6 +52,7 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 
 	receipt, err := emu.SendTransaction(tx)
 	require.NoError(t, err)
+	emu.MintBlock()
 
 	return receipt
 }
@@ -73,7 +74,7 @@ func TestBlockchain(t *testing.T) {
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	// some assertions
@@ -81,7 +82,7 @@ func TestBlockchain(t *testing.T) {
 		require.EqualValues(t, evm.GasLimitDefault, emu.BlockchainDB().GetGasLimit())
 		require.EqualValues(t, evm.DefaultChainID, emu.BlockchainDB().GetChainID())
 
-		genesis := emu.BlockchainDB().GetBlockByNumber(common.Big0)
+		genesis := emu.BlockchainDB().GetBlockByNumber(0)
 		require.NotNil(t, genesis)
 
 		// the genesis block has block number 0
@@ -117,13 +118,13 @@ func TestBlockchain(t *testing.T) {
 	{
 		receipt := sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
 
-		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber().Uint64())
+		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber())
 		block := emu.BlockchainDB().GetCurrentBlock()
 		require.EqualValues(t, 1, block.Header().Number.Uint64())
 		require.EqualValues(t, evm.GasLimitDefault, block.Header().GasLimit)
 		require.EqualValues(t, receipt.Bloom, block.Bloom())
 		require.EqualValues(t, receipt.GasUsed, block.GasUsed())
-		require.EqualValues(t, emu.BlockchainDB().GetBlockByNumber(common.Big0).Hash(), block.ParentHash())
+		require.EqualValues(t, emu.BlockchainDB().GetBlockByNumber(0).Hash(), block.ParentHash())
 	}
 
 	{
@@ -152,7 +153,7 @@ func TestBlockchainPersistence(t *testing.T) {
 	transferAmount := big.NewInt(1000)
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.GasLimitDefault, 0, genesisAlloc)
 
 	// do a transfer using one instance of EVMEmulator
 	func() {
@@ -200,12 +201,13 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 
 	receipt, err := emu.SendTransaction(tx)
 	require.NoError(t, err)
+	emu.MintBlock()
 
 	contractAddress := crypto.CreateAddress(creatorAddress, nonce)
 
 	// assertions
 	{
-		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber().Uint64())
+		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber())
 
 		// verify contract address
 		{
@@ -253,7 +255,7 @@ func TestStorageContract(t *testing.T) {
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
@@ -284,13 +286,13 @@ func TestStorageContract(t *testing.T) {
 		require.EqualValues(t, 42, v)
 
 		// no state change
-		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber().Uint64())
+		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber())
 	}
 
 	// send tx that calls `store(43)`
 	{
 		callFn(faucet, "store", uint32(43))
-		require.EqualValues(t, 2, emu.BlockchainDB().GetNumber().Uint64())
+		require.EqualValues(t, 2, emu.BlockchainDB().GetNumber())
 	}
 
 	// call `retrieve` view again, get 43
@@ -311,7 +313,7 @@ func TestStorageContract(t *testing.T) {
 		require.EqualValues(t, 43, v)
 
 		// no state change
-		require.EqualValues(t, 2, emu.BlockchainDB().GetNumber().Uint64())
+		require.EqualValues(t, 2, emu.BlockchainDB().GetNumber())
 	}
 }
 
@@ -327,7 +329,7 @@ func TestERC20Contract(t *testing.T) {
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
@@ -418,7 +420,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.GasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.GasLimitDefault, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, &iscpBackend{})
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
@@ -457,25 +459,47 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 	return emu, txs, db
 }
 
-// BenchmarkEVMEmulator is a benchmark for the EVMEmulator that sends N EVM transactions.
+// benchmarkEVMEmulator is a benchmark for the EVMEmulator that sends N EVM transactions
+// calling `storage.store()`, committing a block every k transactions.
 //
 // run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
 //
 // To generate mem and cpu profiles, add -cpuprofile=cpu.out -memprofile=mem.out
 // Then: go tool pprof -http :8080 {cpu,mem}.out
-func BenchmarkEVMEmulator(b *testing.B) {
+func benchmarkEVMEmulator(b *testing.B, k int) {
 	// setup: deploy the storage contract and prepare N transactions to send
 	emu, txs, db := initBenchmark(b)
 
+	var chunks [][]*types.Transaction
+	var chunk []*types.Transaction
+	for _, tx := range txs {
+		chunk = append(chunk, tx)
+		if len(chunk) == k {
+			chunks = append(chunks, chunk)
+			chunk = nil
+		}
+	}
+	if len(chunk) > 0 {
+		chunks = append(chunks, chunk)
+	}
+
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		receipt, err := emu.SendTransaction(txs[i])
-		require.NoError(b, err)
-		require.Equal(b, types.ReceiptStatusSuccessful, receipt.Status)
+	for _, chunk := range chunks {
+		for _, tx := range chunk {
+			receipt, err := emu.SendTransaction(tx)
+			require.NoError(b, err)
+			require.Equal(b, types.ReceiptStatusSuccessful, receipt.Status)
+		}
+		emu.MintBlock()
 	}
 
 	b.ReportMetric(dbSize(db)/float64(b.N), "db:bytes/op")
 }
+
+func BenchmarkEVMEmulator1(b *testing.B)   { benchmarkEVMEmulator(b, 1) }
+func BenchmarkEVMEmulator10(b *testing.B)  { benchmarkEVMEmulator(b, 10) }
+func BenchmarkEVMEmulator50(b *testing.B)  { benchmarkEVMEmulator(b, 50) }
+func BenchmarkEVMEmulator100(b *testing.B) { benchmarkEVMEmulator(b, 100) }
 
 func dbSize(db kv.KVStore) float64 {
 	r := float64(0)

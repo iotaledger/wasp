@@ -25,7 +25,7 @@ const DEFAULT_PLAY_PERIOD: i32 = 60;
 const ENABLE_SELF_POST: bool = true;
 
 // The number to divide nano seconds to seconds.
-const NANO_TIME_DIVIDER: i64 = 1000000000;
+const NANO_TIME_DIVIDER: i64 = 1_000_000_000;
 
 // 'placeBet' is used by betters to place a bet on a number from 1 to MAX_NUMBER. The first
 // incoming bet triggers a betting round of configurable duration. After the playing period
@@ -81,12 +81,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
     // of serializing the bet struct into a bytes representation.
     bets.get_bet(bet_nr).set_value(&bet);
 
-    ctx.event(&format!(
-        "fairroulette.bet.placed {0} {1} {2}",
-        &bet.better.address().to_string(),
-        bet.amount,
-        bet.number
-    ));
+    f.events.bet(&bet.better.address(), bet.amount, bet.number);
 
     // Was this the first bet of this round?
     if bet_nr == 0 {
@@ -109,19 +104,12 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
             let timestamp = (ctx.timestamp() / NANO_TIME_DIVIDER) as i32;
             f.state.round_started_at().set_value(timestamp);
 
-            ctx.event(&format!(
-                "fairroulette.round.state {0} {1}",
-                f.state.round_status().value(),
-                timestamp
-            ));
+            f.events.start();
 
             let round_number = f.state.round_number();
             round_number.set_value(round_number.value() + 1);
 
-            ctx.event(&format!(
-                "fairroulette.round.number {0}",
-                round_number.value()
-            ));
+            f.events.round(round_number.value());
 
             // And now for our next trick we post a delayed request to ourselves on the Tangle.
             // We are requesting to call the 'payWinners' function, but delay it for the play_period
@@ -145,7 +133,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     // generator will use the next 8 bytes from the hash as its random Int64 number and once
     // it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
     // Here we determine the winning number for this round in the range of 1 thru MAX_NUMBER.
-    let winning_number: i64 = ctx.utility().random(MAX_NUMBER - 1) + 1;
+    let winning_number: i64 = ctx.random(MAX_NUMBER - 1) + 1;
 
     // Save the last winning number in state storage under 'lastWinningNumber' so that there
     // is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
@@ -190,10 +178,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     // so that the 'bets' array becomes available for when the next betting round ends.
     bets.clear();
 
-    ctx.event(&format!(
-        "fairroulette.round.winning_number {}",
-        winning_number
-    ));
+    f.events.winner(winning_number);
 
     // Did we have any winners at all?
     if winners.is_empty() {
@@ -236,11 +221,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
         }
 
         // Announce who got sent what as event.
-        ctx.event(&format!(
-            "fairroulette.payout {} {}",
-            &bet.better.address().to_string(),
-            payout
-        ));
+        f.events.payout(&bet.better.address(), payout);
     }
 
     // This is where we transfer the remainder after payout to the creator of the smart contract.
@@ -256,26 +237,20 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
 
     // Set round status to 0, send out event to notify that the round has ended
     f.state.round_status().set_value(0);
-    ctx.event(&format!(
-        "fairroulette.round.state {0}",
-        f.state.round_status().value()
-    ));
+    f.events.stop();
 }
 
-pub fn func_force_reset(ctx: &ScFuncContext, f: &ForceResetContext) {
-   
+pub fn func_force_reset(_ctx: &ScFuncContext, f: &ForceResetContext) {
+
     // Get the 'bets' array in state storage.
     let bets: ArrayOfMutableBet = f.state.bets();
-    
+
     // Clear all bets.
     bets.clear();
-    
+
     // Set round status to 0, send out event to notify that the round has ended
     f.state.round_status().set_value(0);
-    ctx.event(&format!(
-        "fairroulette.round.state {0}",
-        f.state.round_status().value()
-    ));
+    f.events.stop();
 }
 
 // 'playPeriod' can be used by the contract creator to set the length of a betting round

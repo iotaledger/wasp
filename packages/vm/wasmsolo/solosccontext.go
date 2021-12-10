@@ -51,7 +51,7 @@ func (o *SoloScContext) GetObjectID(keyID, typeID int32) int32 {
 		wasmhost.KeyReturn:  func() wasmproc.WaspObject { return wasmproc.NewScDict(&host.KvStoreHost, dict.New()) },
 		// wasmhost.KeyState:     func() wasmproc.WaspObject { return wasmproc.NewScDict(o.host, o.vm.state()) },
 		// wasmhost.KeyTransfers: func() wasmproc.WaspObject { return wasmproc.NewScTransfers(o.vm) },
-		wasmhost.KeyUtility: func() wasmproc.WaspObject { return wasmproc.NewScUtility(nil) },
+		wasmhost.KeyUtility: func() wasmproc.WaspObject { return wasmproc.NewScUtility(nil, o.ctx) },
 	})
 }
 
@@ -74,11 +74,11 @@ func (o *SoloScContext) processCall(bytes []byte) {
 	decode := wasmproc.NewBytesDecoder(bytes)
 	contract, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	function, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	paramsID := decode.Int32()
 	transferID := decode.Int32()
@@ -90,7 +90,7 @@ func (o *SoloScContext) processCall(bytes []byte) {
 	ctx := o.ctx
 	funcName := ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
-		o.Panic("unknown function")
+		o.Panicf("unknown function")
 	}
 	o.Tracef("CALL %s.%s", ctx.scName, funcName)
 	params := o.getParams(paramsID)
@@ -99,7 +99,7 @@ func (o *SoloScContext) processCall(bytes []byte) {
 	_ = wasmhost.Connect(ctx.wc)
 	ctx.Err = err
 	if err != nil {
-		// o.Panic("failed to invoke call: " + err.Error())
+		// o.Panicf("failed to invoke call: " + err.Error())
 		return
 	}
 	returnID := o.GetObjectID(wasmhost.KeyReturn, wasmhost.OBJTYPE_MAP)
@@ -110,18 +110,18 @@ func (o *SoloScContext) processPost(bytes []byte) {
 	decode := wasmproc.NewBytesDecoder(bytes)
 	chainID, err := iscp.ChainIDFromBytes(decode.Bytes())
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	if !chainID.Equals(o.ctx.Chain.ChainID) {
-		o.Panic("invalid chainID")
+		o.Panicf("invalid chainID")
 	}
 	contract, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	function, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
-		o.Panic(err.Error())
+		o.Panicf(err.Error())
 	}
 	paramsID := decode.Int32()
 	transferID := decode.Int32()
@@ -135,13 +135,13 @@ func (o *SoloScContext) processPost(bytes []byte) {
 	//delay := decode.Int32()
 	//if delay == 0 {
 	//	if !o.vm.ctx.Send(chainID.AsAddress(), transfer, metadata) {
-	//		o.Panic("failed to send to %s", chainID.AsAddress().String())
+	//		o.Panicf("failed to send to %s", chainID.AsAddress().String())
 	//	}
 	//	return
 	//}
 	//
 	//if delay < -1 {
-	//	o.Panic("invalid delay: %d", delay)
+	//	o.Panicf("invalid delay: %d", delay)
 	//}
 	//
 	//timeLock := time.Unix(0, o.vm.ctx.GetTimestamp())
@@ -150,7 +150,7 @@ func (o *SoloScContext) processPost(bytes []byte) {
 	//	TimeLock: uint32(timeLock.Unix()),
 	//}
 	//if !o.vm.ctx.Send(chainID.AsAddress(), transfer, metadata, options) {
-	//	o.Panic("failed to send to %s", chainID.AsAddress().String())
+	//	o.Panicf("failed to send to %s", chainID.AsAddress().String())
 	//}
 }
 
@@ -175,11 +175,11 @@ func (o *SoloScContext) getTransfer(transferID int32) colored.Balances {
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
 		color, err := codec.DecodeColor([]byte(key))
 		if err != nil {
-			o.Panic(err.Error())
+			o.Panicf(err.Error())
 		}
 		amount, err := codec.DecodeUint64(value)
 		if err != nil {
-			o.Panic(err.Error())
+			o.Panicf(err.Error())
 		}
 		o.Tracef("  XFER %d '%s'", amount, color.String())
 		transfer[color] = amount
@@ -190,15 +190,15 @@ func (o *SoloScContext) getTransfer(transferID int32) colored.Balances {
 
 func (o *SoloScContext) postSync(contract, function iscp.Hname, paramsID, transferID, delay int32) {
 	if delay != 0 {
-		o.Panic("unsupported nonzero delay for SoloContext")
+		o.Panicf("unsupported nonzero delay for SoloContext")
 	}
 	ctx := o.ctx
 	if contract != iscp.Hn(ctx.scName) {
-		o.Panic("invalid contract")
+		o.Panicf("invalid contract")
 	}
 	funcName := ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
-		o.Panic("unknown function")
+		o.Panicf("unknown function")
 	}
 	o.Tracef("POST %s.%s", ctx.scName, funcName)
 	params := o.getParams(paramsID)

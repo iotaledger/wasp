@@ -13,6 +13,10 @@ func (key Key) KeyID() Key32 {
 	return GetKeyIDFromString(string(key))
 }
 
+func KeyID(key string) Key32 {
+	return Key(key).KeyID()
+}
+
 type Key32 int32
 
 func (key Key32) KeyID() Key32 {

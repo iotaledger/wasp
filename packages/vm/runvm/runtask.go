@@ -55,7 +55,7 @@ func runTask(task *vm.VMTask) {
 			numOffLedger++
 		} else {
 			if numOnLedger == vmcontext.MaxBlockInputCount {
-				break // max number of inputs to be included in state transition reached, do not process more on-ledger requests
+				continue // max number of inputs to be included in state transition reached, do not process more on-ledger requests
 			}
 			numOnLedger++
 		}

@@ -15,10 +15,12 @@ func OnLoad() {
 	exports.AddFunc(FuncArrayCreate, funcArrayCreateThunk)
 	exports.AddFunc(FuncArraySet, funcArraySetThunk)
 	exports.AddFunc(FuncParamTypes, funcParamTypesThunk)
+	exports.AddFunc(FuncRandom, funcRandomThunk)
 	exports.AddView(ViewArrayLength, viewArrayLengthThunk)
 	exports.AddView(ViewArrayValue, viewArrayValueThunk)
 	exports.AddView(ViewBlockRecord, viewBlockRecordThunk)
 	exports.AddView(ViewBlockRecords, viewBlockRecordsThunk)
+	exports.AddView(ViewGetRandom, viewGetRandomThunk)
 	exports.AddView(ViewIotaBalance, viewIotaBalanceThunk)
 
 	for i, key := range keyMap {
@@ -105,6 +107,21 @@ func funcParamTypesThunk(ctx wasmlib.ScFuncContext) {
 	}
 	funcParamTypes(ctx, f)
 	ctx.Log("testwasmlib.funcParamTypes ok")
+}
+
+type RandomContext struct {
+	State MutableTestWasmLibState
+}
+
+func funcRandomThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcRandom")
+	f := &RandomContext{
+		State: MutableTestWasmLibState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	funcRandom(ctx, f)
+	ctx.Log("testwasmlib.funcRandom ok")
 }
 
 type ArrayLengthContext struct {
@@ -203,6 +220,25 @@ func viewBlockRecordsThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.BlockIndex().Exists(), "missing mandatory blockIndex")
 	viewBlockRecords(ctx, f)
 	ctx.Log("testwasmlib.viewBlockRecords ok")
+}
+
+type GetRandomContext struct {
+	Results MutableGetRandomResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewGetRandomThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewGetRandom")
+	f := &GetRandomContext{
+		Results: MutableGetRandomResults{
+			id: wasmlib.OBJ_ID_RESULTS,
+		},
+		State: ImmutableTestWasmLibState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	viewGetRandom(ctx, f)
+	ctx.Log("testwasmlib.viewGetRandom ok")
 }
 
 type IotaBalanceContext struct {

@@ -64,6 +64,7 @@ type MemberContext struct {
 
 func funcMemberThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("dividend.funcMember")
+
 	// only defined owner of contract can add members
 	access := ctx.State().GetAgentID(wasmlib.Key("owner"))
 	ctx.Require(access.Exists(), "access not set: owner")
@@ -90,6 +91,7 @@ type SetOwnerContext struct {
 
 func funcSetOwnerThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("dividend.funcSetOwner")
+
 	// only defined owner of contract can change owner
 	access := ctx.State().GetAgentID(wasmlib.Key("owner"))
 	ctx.Require(access.Exists(), "access not set: owner")

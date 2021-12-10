@@ -216,8 +216,8 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Using Docker',
-                    id: 'misc/docker',
+                    label: 'Using Docker (Standalone)',
+                    id: 'guide/chains_and_nodes/docker_standalone',
                 },
                 {
                     type: 'doc',
@@ -299,6 +299,11 @@ module.exports = {
                             type: 'doc',
                             label: 'Smart Contract State',
                             id: 'guide/schema/state',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Triggering Events',
+                            id: 'guide/schema/events',
                         },
                         {
                             type: 'doc',
@@ -424,6 +429,17 @@ module.exports = {
                     type: 'doc',
                     label: 'Fair Roulette',
                     id: 'guide/example_projects/fair_roulette',
+                },
+            ]
+        },
+        {
+            type: 'category',
+            label: 'Development tools',
+            items: [
+                {
+                    type: 'doc',
+                    label: 'Preconfigured Development Docker setup',
+                    id: 'guide/development_tools/docker_preconfigured',
                 },
             ]
         },

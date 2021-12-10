@@ -6,12 +6,14 @@ members = [
     "dividend",
     "donatewithfeedback",
     "erc20",
+    "erc721",
     "fairauction",
     "fairroulette",
     "helloworld",
     "inccounter",
     "testcore",
     "testwasmlib",
+    "timestamp",
     "tokenregistry",
 ]
 

@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	_ "github.com/iotaledger/wasp/packages/chain/chainimpl"
+	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/chains"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -47,10 +48,10 @@ func run(_ *node.Plugin) {
 		database.GetOrCreateKVStore,
 	)
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		allChains.Attach(nodeconn.NodeConnection())
 		if parameters.GetBool(parameters.MetricsEnabled) {
 			allMetrics = metrics.AllMetrics()
 		}
+		allChains.SetNodeConn(nodeconnimpl.NewNodeConnection(nodeconn.NodeConnection(), allMetrics.GetNodeConnectionMetrics(), log))
 		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry, allMetrics); err != nil {
 			log.Errorf("failed to read chain activation records from registry: %v", err)
 			return

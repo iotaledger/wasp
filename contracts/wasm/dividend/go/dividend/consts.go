@@ -16,21 +16,21 @@ const (
 )
 
 const (
-	ParamAddress = wasmlib.Key("address")
-	ParamFactor  = wasmlib.Key("factor")
-	ParamOwner   = wasmlib.Key("owner")
+	ParamAddress = "address"
+	ParamFactor  = "factor"
+	ParamOwner   = "owner"
 )
 
 const (
-	ResultFactor = wasmlib.Key("factor")
-	ResultOwner  = wasmlib.Key("owner")
+	ResultFactor = "factor"
+	ResultOwner  = "owner"
 )
 
 const (
-	StateMemberList  = wasmlib.Key("memberList")
-	StateMembers     = wasmlib.Key("members")
-	StateOwner       = wasmlib.Key("owner")
-	StateTotalFactor = wasmlib.Key("totalFactor")
+	StateMemberList  = "memberList"
+	StateMembers     = "members"
+	StateOwner       = "owner"
+	StateTotalFactor = "totalFactor"
 )
 
 const (

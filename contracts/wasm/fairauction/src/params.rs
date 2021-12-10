@@ -13,6 +13,8 @@ use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
+use crate::structs::*;
+use crate::typedefs::*;
 
 #[derive(Clone, Copy)]
 pub struct ImmutableFinalizeAuctionParams {
@@ -21,8 +23,8 @@ pub struct ImmutableFinalizeAuctionParams {
 
 impl ImmutableFinalizeAuctionParams {
     pub fn color(&self) -> ScImmutableColor {
-        ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
-    }
+		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -32,8 +34,8 @@ pub struct MutableFinalizeAuctionParams {
 
 impl MutableFinalizeAuctionParams {
     pub fn color(&self) -> ScMutableColor {
-        ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
-    }
+		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -43,8 +45,8 @@ pub struct ImmutablePlaceBidParams {
 
 impl ImmutablePlaceBidParams {
     pub fn color(&self) -> ScImmutableColor {
-        ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
-    }
+		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -54,8 +56,8 @@ pub struct MutablePlaceBidParams {
 
 impl MutablePlaceBidParams {
     pub fn color(&self) -> ScMutableColor {
-        ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
-    }
+		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -65,8 +67,8 @@ pub struct ImmutableSetOwnerMarginParams {
 
 impl ImmutableSetOwnerMarginParams {
     pub fn owner_margin(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_OWNER_MARGIN))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_OWNER_MARGIN))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -76,8 +78,8 @@ pub struct MutableSetOwnerMarginParams {
 
 impl MutableSetOwnerMarginParams {
     pub fn owner_margin(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_OWNER_MARGIN))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_OWNER_MARGIN))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -87,20 +89,20 @@ pub struct ImmutableStartAuctionParams {
 
 impl ImmutableStartAuctionParams {
     pub fn color(&self) -> ScImmutableColor {
-        ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
-    }
+		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+	}
 
     pub fn description(&self) -> ScImmutableString {
-        ScImmutableString::new(self.id, idx_map(IDX_PARAM_DESCRIPTION))
-    }
+		ScImmutableString::new(self.id, idx_map(IDX_PARAM_DESCRIPTION))
+	}
 
     pub fn duration(&self) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_DURATION))
-    }
+		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_DURATION))
+	}
 
     pub fn minimum_bid(&self) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_MINIMUM_BID))
-    }
+		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_MINIMUM_BID))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -110,20 +112,20 @@ pub struct MutableStartAuctionParams {
 
 impl MutableStartAuctionParams {
     pub fn color(&self) -> ScMutableColor {
-        ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
-    }
+		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+	}
 
     pub fn description(&self) -> ScMutableString {
-        ScMutableString::new(self.id, idx_map(IDX_PARAM_DESCRIPTION))
-    }
+		ScMutableString::new(self.id, idx_map(IDX_PARAM_DESCRIPTION))
+	}
 
     pub fn duration(&self) -> ScMutableInt32 {
-        ScMutableInt32::new(self.id, idx_map(IDX_PARAM_DURATION))
-    }
+		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_DURATION))
+	}
 
     pub fn minimum_bid(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_MINIMUM_BID))
-    }
+		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_MINIMUM_BID))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -133,8 +135,8 @@ pub struct ImmutableGetInfoParams {
 
 impl ImmutableGetInfoParams {
     pub fn color(&self) -> ScImmutableColor {
-        ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
-    }
+		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -144,6 +146,6 @@ pub struct MutableGetInfoParams {
 
 impl MutableGetInfoParams {
     pub fn color(&self) -> ScMutableColor {
-        ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
-    }
+		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+	}
 }

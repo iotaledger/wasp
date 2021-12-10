@@ -4,8 +4,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/stretchr/testify/require"
 )
 
@@ -105,4 +107,101 @@ func TestRotate(t *testing.T) {
 
 		require.True(t, chain.WaitForRequestsThrough(4))
 	})
+}
+
+func TestAccessNodes(t *testing.T) {
+	env := solo.New(t, true, true)
+	node1KP, _ := env.NewKeyPairWithFunds()
+	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds()
+	chainKP, _ := env.NewKeyPairWithFunds()
+	chain := env.NewChain(chainKP, "chain1")
+	defer chain.Log.Sync()
+	var res dict.Dict
+	var err error
+
+	//
+	// Initially the state is empty.
+	res, err = chain.CallView(
+		governance.Contract.Name,
+		governance.FuncGetChainNodes.Name,
+		governance.GetChainNodesRequest{}.AsDict(),
+	)
+	require.NoError(t, err)
+	getChainNodesResponse := governance.NewGetChainNodesResponseFromDict(res)
+	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
+	require.Empty(t, getChainNodesResponse.AccessNodes)
+
+	//
+	// Add a single access node candidate.
+	_, err = chain.PostRequestSync(
+		solo.NewCallParamsFromDic(
+			governance.Contract.Name,
+			governance.FuncAddCandidateNode.Name,
+			(&governance.AccessNodeInfo{
+				NodePubKey:   node1KP.PublicKey.Bytes(),
+				ForCommittee: false,
+				AccessAPI:    "http://my-api/url",
+			}).AddCertificate(node1KP.PrivateKey, node1OwnerAddr).ToAddCandidateNodeParams(),
+		).WithIotas(1),
+		node1OwnerKP, // Sender should match data used to create the Cert field value.
+	)
+	require.NoError(t, err)
+
+	res, err = chain.CallView(
+		governance.Contract.Name,
+		governance.FuncGetChainNodes.Name,
+		governance.GetChainNodesRequest{}.AsDict(),
+	)
+	require.NoError(t, err)
+	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
+	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
+	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].AccessAPI)
+	require.Empty(t, getChainNodesResponse.AccessNodes)
+
+	//
+	// Accept the node as an access node.
+	_, err = chain.PostRequestSync(
+		solo.NewCallParamsFromDic(
+			governance.Contract.Name,
+			governance.FuncChangeAccessNodes.Name,
+			governance.NewChangeAccessNodesRequest().Accept(node1KP.PublicKey).AsDict(),
+		).WithIotas(1),
+		chainKP,
+	)
+	require.NoError(t, err)
+
+	res, err = chain.CallView(
+		governance.Contract.Name,
+		governance.FuncGetChainNodes.Name,
+		governance.GetChainNodesRequest{}.AsDict(),
+	)
+	require.NoError(t, err)
+	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
+	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
+	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].AccessAPI)
+	require.Equal(t, 1, len(getChainNodesResponse.AccessNodes))
+
+	//
+	// Revoke the access node (by the node owner).
+	_, err = chain.PostRequestSync(
+		solo.NewCallParamsFromDic(
+			governance.Contract.Name,
+			governance.FuncRevokeAccessNode.Name,
+			(&governance.AccessNodeInfo{
+				NodePubKey: node1KP.PublicKey.Bytes(),
+			}).AddCertificate(node1KP.PrivateKey, node1OwnerAddr).ToAddCandidateNodeParams(),
+		).WithIotas(1),
+		node1OwnerKP, // Sender should match data used to create the Cert field value.
+	)
+	require.NoError(t, err)
+
+	res, err = chain.CallView(
+		governance.Contract.Name,
+		governance.FuncGetChainNodes.Name,
+		governance.GetChainNodesRequest{}.AsDict(),
+	)
+	require.NoError(t, err)
+	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
+	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
+	require.Empty(t, getChainNodesResponse.AccessNodes)
 }
