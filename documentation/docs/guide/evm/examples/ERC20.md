@@ -1,7 +1,6 @@
 ---
 title: ERC20 Example
 keywords:
-- ISCP
 - IOTA
 - Smart Contracts
 - EVM
@@ -45,7 +44,7 @@ You can change the token name `ExampleERC20Token` and the token symbol `EET`.
 
 ## 2. Compile
 
-Go to the second tab and compile your smart Contract with the "Compile ERC20.sol" button.
+Go to the second tab and compile your smart contract with the "Compile ERC20.sol" button.
 
 [![Compile ERC20.sol](./images/compile.png)](./images/compile.png)
 

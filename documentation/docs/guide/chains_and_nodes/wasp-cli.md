@@ -1,6 +1,5 @@
 ---
 keywords:
-- ISCP
 - Wasp-cli
 - Configuration
 - Goshimmer

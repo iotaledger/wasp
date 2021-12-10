@@ -43,7 +43,7 @@ is going on here.
 
 The diagram above depicts the generic process of posting an `on-ledger` request to the smart
 contract. The same picture is valid for the _Solo_ environment and for any other
-requester which sends an `on-ledger` request to the smart contract, for example, the ISCP
+requester which sends an `on-ledger` request to the smart contract, for example, the IOTA Smart Contracts
 wallet or another chain.
 
 Posting the request always consists of the steps below. Note that in Solo all 7
@@ -53,7 +53,7 @@ steps are carried out by the single call to `PostRequestSync`.
    and moves tokens. Each request transaction is a value transaction, it always
    moves at least one token. Therefore, each request transaction must be signed
    by the private key of the owner of the tokens: the requester. That securely
-   identifies each requester in ISCP. In Solo, the transaction is signed by the
+   identifies each requester in IOTA Smart Contracts. In Solo, the transaction is signed by the
    private key provided in the second parameter of the `PostRequestSync`
    call (see below).
 2. Posting the request transaction to the Tangle and confirming it. In _Solo_ it

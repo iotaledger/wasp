@@ -17,7 +17,7 @@ keywords:
 
 # The `governance` Contract
 
-The `governance` contract is one of the [core contracts](overview.md) on each ISCP
+The `governance` contract is one of the [core contracts](overview.md) on each IOTA Smart Contracts
 chain.
 
 The `governance` contract provides the following functionalities:
