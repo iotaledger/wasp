@@ -110,7 +110,6 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
 		&task.AnchorOutputID,
-		task.AnchorOutput.Amount,
 		nativeTokenBalanceLoader,
 	)
 	return ret
