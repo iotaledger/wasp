@@ -38,8 +38,8 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		// will adjust to minimum dust deposit
 		out, _ := vmtxbuilder.MakeExtendedOutput(
 			req.TargetAddress,
-			assets,
 			senderAddress,
+			assets,
 			&iscp.RequestMetadata{
 				SenderContract: 0,
 				TargetContract: req.Metadata.TargetContract,
