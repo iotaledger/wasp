@@ -131,10 +131,13 @@ func (s chainStateWrapper) Set(name kv.Key, value []byte) {
 	s.vmctx.currentStateUpdate.Mutations().Set(name, value)
 }
 
-func (vmctx *VMContext) State() kv.KVStore {
+func (vmctx *VMContext) State(burnGas ...kv.BurnGasFn) kv.KVStore {
 	vmctx.task.SolidStateBaseline.MustValidate()
-
-	return subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
+	store := subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
+	if len(burnGas) > 0 {
+		return kv.WithGas(store, burnGas[0])
+	}
+	return store
 }
 
 func (s chainStateWrapper) MustGet(key kv.Key) []byte {
