@@ -426,8 +426,7 @@ func getOutputAddress(out iotago.Output, id *iotago.UTXOInput) iotago.Address {
 	case iotago.TransDepIdentOutput:
 		// FIXME this is temporary patch of the bug in the iota.go AliasOutput.Chain() method
 		aliasID := out.Chain().(iotago.AliasID)
-		var nilAliasID iotago.AliasID
-		if aliasID == nilAliasID {
+		if aliasID.Empty() {
 			aliasID = iotago.AliasIDFromOutputID(id.ID())
 		}
 		return aliasID.ToAddress()

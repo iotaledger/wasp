@@ -30,25 +30,26 @@ func (k *KeyPair) Verify(message, sig []byte) bool {
 	return Verify(k.PublicKey, message, sig)
 }
 
-func (k *KeyPair) Sign(message []byte) ([]byte, error) {
-	return k.PrivateKey.Sign(nil, message, nil)
-}
-
 func (k *KeyPair) AsAddressSigner() iotago.AddressSigner {
-	return AddressSigner(*k)
+	addrKeys := iotago.NewAddressKeysForEd25519Address(Ed25519AddressFromPubKey(k.PublicKey), k.PrivateKey)
+	return iotago.NewInMemoryAddressSigner(addrKeys)
 }
 
-func (a AddressSigner) Sign(addr iotago.Address, msg []byte) (signature iotago.Signature, err error) {
-	kp := KeyPair(a)
-	if !addr.Equal(Ed25519AddressFromPubKey(kp.PublicKey)) {
-		return nil, fmt.Errorf("can't sign message for given Ed25519 address")
-	}
-	b, err := kp.Sign(msg)
-	ed25519Sig := &iotago.Ed25519Signature{}
-	copy(ed25519Sig.Signature[:], b)
-	copy(ed25519Sig.PublicKey[:], kp.PublicKey)
-	return ed25519Sig, nil
-}
+//func (k *KeyPair) Sign(message []byte) ([]byte, error) {
+//	return k.PrivateKey.Sign(nil, message, nil) // FIXME this is wrong
+//}
+//
+//func (a AddressSigner) Sign(addr iotago.Address, msg []byte) (signature iotago.Signature, err error) {
+//	kp := KeyPair(a)
+//	if !addr.Equal(Ed25519AddressFromPubKey(kp.PublicKey)) {
+//		return nil, fmt.Errorf("can't sign message for given Ed25519 address")
+//	}
+//	b, err := kp.Sign(msg)
+//	ed25519Sig := &iotago.Ed25519Signature{}
+//	copy(ed25519Sig.Signature[:], b)
+//	copy(ed25519Sig.PublicKey[:], kp.PublicKey)
+//	return ed25519Sig, nil
+//}
 
 func NewKeyPairFromSeed(seed Seed) KeyPair {
 	var seedByte [SeedSize]byte = seed
