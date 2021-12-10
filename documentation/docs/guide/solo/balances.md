@@ -17,7 +17,7 @@ keywords:
 The example code can be found in the [Wasp repository](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples).
 
 :::
-Each chain in _ISCP_ is a separate ledger, different from the UTXO ledger.
+Each chain in the _IOTA Smart Contracts_ is a separate ledger, different from the UTXO ledger.
 Multiple chains add another dimension on top of the UTXO Ledger. Smart contracts
 can exchange assets between themselves on the same chain and also between different chains, as well as with
 addresses on the UTXO Ledger. We will skip explaining the whole picture for the time
@@ -32,7 +32,7 @@ Ledger, the private key is represented by the address (the hash of the public
 key). That address holds balances of colored tokens. Those tokens are
 _controlled_ by the private key.
 
-In ISCP we extend the concept of _address_ with the concept of `account`. An
+In IOTA Smart Contracts, we extend the concept of _address_ with the concept of `account`. An
 `account` contains colored tokens just like an `address`. The `account` is
 located on some chain, and it is controlled by the same private key as the
 associated address. So, an address can control tokens on the UTXO Ledger
