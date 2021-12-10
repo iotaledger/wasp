@@ -47,7 +47,7 @@ $#emit structMethods
 `,
 	// *******************************
 	"structEncode": `
-		encode.$fld_type($ref$+self.$fld_name);
+		encode.$fld_type($fldRef$+self.$fld_name);
 `,
 	// *******************************
 	"structMethods": `
@@ -58,6 +58,7 @@ pub struct $mut$StrName {
 }
 
 impl $mut$StrName {
+$#if mut structMethodDelete
     pub fn exists(&self) -> bool {
         exists(self.obj_id, self.key_id, TYPE_BYTES)
     }
@@ -67,6 +68,13 @@ $#if mut structMethodSetValue
         $StrName::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
     }
 }
+`,
+	// *******************************
+	"structMethodDelete": `
+    pub fn delete(&self) {
+        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+    }
+
 `,
 	// *******************************
 	"structMethodSetValue": `

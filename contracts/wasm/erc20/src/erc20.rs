@@ -15,11 +15,12 @@ use crate::*;
 pub fn func_approve(ctx: &ScFuncContext, f: &ApproveContext) {
     let delegation = f.params.delegation().value();
     let amount = f.params.amount().value();
-    ctx.require(amount > 0, "erc20.approve.fail: wrong 'amount' parameter");
+    ctx.require(amount >= 0, "erc20.approve.fail: wrong 'amount' parameter");
 
     // all allowances are in the map under the name of he owner
     let allowances = f.state.all_allowances().get_allowances_for_agent(&ctx.caller());
     allowances.get_int64(&delegation).set_value(amount);
+    f.events.approval(amount, &ctx.caller(), &delegation);
 }
 
 // on_init is a constructor entry point. It initializes the smart contract with the
@@ -50,7 +51,7 @@ pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
 // - PARAM_AMOUNT: i64
 pub fn func_transfer(ctx: &ScFuncContext, f: &TransferContext) {
     let amount = f.params.amount().value();
-    ctx.require(amount > 0, "erc20.transfer.fail: wrong 'amount' parameter");
+    ctx.require(amount >= 0, "erc20.transfer.fail: wrong 'amount' parameter");
 
     let balances = f.state.balances();
     let source_agent = ctx.caller();
@@ -60,7 +61,7 @@ pub fn func_transfer(ctx: &ScFuncContext, f: &TransferContext) {
     let target_agent = f.params.account().value();
     let target_balance = balances.get_int64(&target_agent);
     let result = target_balance.value() + amount;
-    ctx.require(result > 0, "erc20.transfer.fail: overflow");
+    ctx.require(result >= 0, "erc20.transfer.fail: overflow");
 
     source_balance.set_value(source_balance.value() - amount);
     target_balance.set_value(target_balance.value() + amount);
@@ -78,7 +79,7 @@ pub fn func_transfer(ctx: &ScFuncContext, f: &TransferContext) {
 pub fn func_transfer_from(ctx: &ScFuncContext, f: &TransferFromContext) {
     // validate parameters
     let amount = f.params.amount().value();
-    ctx.require(amount > 0, "erc20.transfer_from.fail: wrong 'amount' parameter");
+    ctx.require(amount >= 0, "erc20.transfer_from.fail: wrong 'amount' parameter");
 
     // allowances are in the map under the name of the account
     let source_agent = f.params.account().value();
@@ -93,7 +94,7 @@ pub fn func_transfer_from(ctx: &ScFuncContext, f: &TransferFromContext) {
     let target_agent = f.params.recipient().value();
     let target_balance = balances.get_int64(&target_agent);
     let result = target_balance.value() + amount;
-    ctx.require(result > 0, "erc20.transfer_from.fail: overflow");
+    ctx.require(result >= 0, "erc20.transfer_from.fail: overflow");
 
     source_balance.set_value(source_balance.value() - amount);
     target_balance.set_value(target_balance.value() + amount);

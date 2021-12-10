@@ -22,9 +22,10 @@ const (
 	DatabaseDir      = "database.directory"
 	DatabaseInMemory = "database.inMemory"
 
-	WebAPIBindAddress    = "webapi.bindAddress"
-	WebAPIAdminWhitelist = "webapi.adminWhitelist"
-	WebAPIAuth           = "webapi.auth"
+	WebAPIBindAddress            = "webapi.bindAddress"
+	WebAPIAdminWhitelist         = "webapi.adminWhitelist"
+	WebAPIAdminWhitelistDisabled = "webapi.adminWhitelistDisabled"
+	WebAPIAuth                   = "webapi.auth"
 
 	DashboardBindAddress       = "dashboard.bindAddress"
 	DashboardExploreAddressURL = "dashboard.exploreAddressUrl"
@@ -70,6 +71,7 @@ func Init() *configuration.Configuration {
 	flag.String(WebAPIBindAddress, "127.0.0.1:8080", "the bind address for the web API")
 	flag.StringSlice(WebAPIAdminWhitelist, []string{}, "IP whitelist for /adm wndpoints")
 	flag.StringToString(WebAPIAuth, nil, "authentication scheme for web API")
+	flag.Bool(WebAPIAdminWhitelistDisabled, false, "Disables IP whitelisting and allows requests from _any_ IP")
 
 	flag.String(DashboardBindAddress, "127.0.0.1:7000", "the bind address for the node dashboard")
 	flag.String(DashboardExploreAddressURL, "", "URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address]")

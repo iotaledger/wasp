@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -79,20 +80,15 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			i, requestBlockRetryTime, blockCandidatesCount, approvedBlockCandidatesCount)
 		// TODO: temporary if. We need to find a solution to synchronize over large gaps. Making state snapshots may help.
 		if i > startSyncFromIndex+maxBlocksToCommitConst {
-			go sm.chain.ReceiveMessage(messages.DismissChainMsg{
-				Reason: fmt.Sprintf("StateManager.doSyncActionIfNeeded: too many blocks to catch up: %v", sm.stateOutput.GetStateIndex()-startSyncFromIndex+1),
-			},
-			)
+			sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.doSyncActionIfNeeded: too many blocks to catch up: %v", sm.stateOutput.GetStateIndex()-startSyncFromIndex+1))
 			return
 		}
 		nowis := time.Now()
 		if nowis.After(requestBlockRetryTime) {
 			// have to pull
 			sm.log.Debugf("doSyncAction: requesting block index %v from %v random peers", i, numberOfNodesToRequestBlockFromConst)
-			data := util.MustBytes(&messages.GetBlockMsg{
-				BlockIndex: i,
-			})
-			sm.peers.SendMsgToRandomPeersSimple(numberOfNodesToRequestBlockFromConst, messages.MsgGetBlock, data)
+			getBlockMsg := &messages.GetBlockMsg{BlockIndex: i}
+			sm.chainPeers.SendPeerMsgToRandomPeers(numberOfNodesToRequestBlockFromConst, peering.PeerMessageReceiverStateManager, peerMsgTypeGetBlock, util.MustBytes(getBlockMsg))
 			sm.syncingBlocks.startSyncingIfNeeded(i)
 			sm.syncingBlocks.setRequestBlockRetryTime(i, nowis.Add(sm.timers.GetBlockRetry))
 			if blockCandidatesCount == 0 {
@@ -180,6 +176,9 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	// - any view call will return 'state invalidated message'
 	sm.chain.GlobalStateSync().InvalidateSolidIndex()
 	err := tentativeState.Commit(blocks...)
+	for _, block := range blocks {
+		sm.stateManagerMetrics.RecordBlockSize(block.BlockIndex(), float64(len(block.Bytes())))
+	}
 	sm.chain.GlobalStateSync().SetSolidIndex(tentativeState.BlockIndex())
 
 	if err != nil {

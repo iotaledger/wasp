@@ -53,9 +53,23 @@ type SoloContext struct {
 }
 
 var (
+	//_ iscp.Gas                  = &SoloContext{}
 	_ wasmlib.ScFuncCallContext = &SoloContext{}
 	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
+
+func (ctx *SoloContext) Burn(i int64) {
+	// ignore gas for now
+}
+
+func (ctx *SoloContext) Budget() int64 {
+	// ignore gas for now
+	return 0
+}
+
+func (ctx *SoloContext) SetBudget(i int64) {
+	// ignore gas for now
+}
 
 // NewSoloContext can be used to create a SoloContext associated with a smart contract
 // with minimal information and will verify successful creation before returning ctx.
@@ -330,27 +344,31 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 		return
 	}
 
+	// start with file in test folder
 	wasmFile := ctx.scName + "_bg.wasm"
 
-	// try Rust first
-	exists, _ := util.ExistsFilePath("../pkg/" + wasmFile)
+	// try (newer?) Rust Wasm file first
+	rsFile := "../pkg/" + wasmFile
+	exists, _ := util.ExistsFilePath(rsFile)
 	if exists {
-		wasmFile = "../pkg/" + wasmFile
+		wasmFile = rsFile
 	}
 
-	if *GoWasm {
-		wasmFile = ctx.scName + "_go.wasm"
-		exists, _ = util.ExistsFilePath("../go/pkg/" + wasmFile)
+	// try Go Wasm file?
+	if !exists || *GoWasm {
+		goFile := "../go/pkg/" + ctx.scName + "_go.wasm"
+		exists, _ = util.ExistsFilePath(goFile)
 		if exists {
-			wasmFile = "../go/pkg/" + wasmFile
+			wasmFile = goFile
 		}
 	}
 
-	if *TsWasm {
-		wasmFile = ctx.scName + "_ts.wasm"
-		exists, _ = util.ExistsFilePath("../ts/pkg/" + wasmFile)
+	// try TypeScript Wasm file?
+	if !exists || *TsWasm {
+		tsFile := "../ts/pkg/" + ctx.scName + "_ts.wasm"
+		exists, _ = util.ExistsFilePath(tsFile)
 		if exists {
-			wasmFile = "../ts/pkg/" + wasmFile
+			wasmFile = tsFile
 		}
 	}
 

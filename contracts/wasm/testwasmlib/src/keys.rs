@@ -14,38 +14,45 @@ use crate::*;
 pub(crate) const IDX_PARAM_ADDRESS      : usize = 0;
 pub(crate) const IDX_PARAM_AGENT_ID     : usize = 1;
 pub(crate) const IDX_PARAM_BLOCK_INDEX  : usize = 2;
-pub(crate) const IDX_PARAM_BYTES        : usize = 3;
-pub(crate) const IDX_PARAM_CHAIN_ID     : usize = 4;
-pub(crate) const IDX_PARAM_COLOR        : usize = 5;
-pub(crate) const IDX_PARAM_HASH         : usize = 6;
-pub(crate) const IDX_PARAM_HNAME        : usize = 7;
-pub(crate) const IDX_PARAM_INDEX        : usize = 8;
-pub(crate) const IDX_PARAM_INT16        : usize = 9;
-pub(crate) const IDX_PARAM_INT32        : usize = 10;
-pub(crate) const IDX_PARAM_INT64        : usize = 11;
-pub(crate) const IDX_PARAM_NAME         : usize = 12;
-pub(crate) const IDX_PARAM_PARAM        : usize = 13;
-pub(crate) const IDX_PARAM_RECORD_INDEX : usize = 14;
-pub(crate) const IDX_PARAM_REQUEST_ID   : usize = 15;
-pub(crate) const IDX_PARAM_STRING       : usize = 16;
-pub(crate) const IDX_PARAM_VALUE        : usize = 17;
+pub(crate) const IDX_PARAM_BOOL         : usize = 3;
+pub(crate) const IDX_PARAM_BYTES        : usize = 4;
+pub(crate) const IDX_PARAM_CHAIN_ID     : usize = 5;
+pub(crate) const IDX_PARAM_COLOR        : usize = 6;
+pub(crate) const IDX_PARAM_HASH         : usize = 7;
+pub(crate) const IDX_PARAM_HNAME        : usize = 8;
+pub(crate) const IDX_PARAM_INDEX        : usize = 9;
+pub(crate) const IDX_PARAM_INT16        : usize = 10;
+pub(crate) const IDX_PARAM_INT32        : usize = 11;
+pub(crate) const IDX_PARAM_INT64        : usize = 12;
+pub(crate) const IDX_PARAM_INT8         : usize = 13;
+pub(crate) const IDX_PARAM_NAME         : usize = 14;
+pub(crate) const IDX_PARAM_PARAM        : usize = 15;
+pub(crate) const IDX_PARAM_RECORD_INDEX : usize = 16;
+pub(crate) const IDX_PARAM_REQUEST_ID   : usize = 17;
+pub(crate) const IDX_PARAM_STRING       : usize = 18;
+pub(crate) const IDX_PARAM_UINT16       : usize = 19;
+pub(crate) const IDX_PARAM_UINT32       : usize = 20;
+pub(crate) const IDX_PARAM_UINT64       : usize = 21;
+pub(crate) const IDX_PARAM_UINT8        : usize = 22;
+pub(crate) const IDX_PARAM_VALUE        : usize = 23;
 
-pub(crate) const IDX_RESULT_COUNT  : usize = 18;
-pub(crate) const IDX_RESULT_IOTAS  : usize = 19;
-pub(crate) const IDX_RESULT_LENGTH : usize = 20;
-pub(crate) const IDX_RESULT_RANDOM : usize = 21;
-pub(crate) const IDX_RESULT_RECORD : usize = 22;
-pub(crate) const IDX_RESULT_VALUE  : usize = 23;
+pub(crate) const IDX_RESULT_COUNT  : usize = 24;
+pub(crate) const IDX_RESULT_IOTAS  : usize = 25;
+pub(crate) const IDX_RESULT_LENGTH : usize = 26;
+pub(crate) const IDX_RESULT_RANDOM : usize = 27;
+pub(crate) const IDX_RESULT_RECORD : usize = 28;
+pub(crate) const IDX_RESULT_VALUE  : usize = 29;
 
-pub(crate) const IDX_STATE_ARRAYS : usize = 24;
-pub(crate) const IDX_STATE_RANDOM : usize = 25;
+pub(crate) const IDX_STATE_ARRAYS : usize = 30;
+pub(crate) const IDX_STATE_RANDOM : usize = 31;
 
-pub const KEY_MAP_LEN: usize = 26;
+pub const KEY_MAP_LEN: usize = 32;
 
 pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
 	PARAM_ADDRESS,
 	PARAM_AGENT_ID,
 	PARAM_BLOCK_INDEX,
+	PARAM_BOOL,
 	PARAM_BYTES,
 	PARAM_CHAIN_ID,
 	PARAM_COLOR,
@@ -55,11 +62,16 @@ pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
 	PARAM_INT16,
 	PARAM_INT32,
 	PARAM_INT64,
+	PARAM_INT8,
 	PARAM_NAME,
 	PARAM_PARAM,
 	PARAM_RECORD_INDEX,
 	PARAM_REQUEST_ID,
 	PARAM_STRING,
+	PARAM_UINT16,
+	PARAM_UINT32,
+	PARAM_UINT64,
+	PARAM_UINT8,
 	PARAM_VALUE,
 	RESULT_COUNT,
 	RESULT_IOTAS,

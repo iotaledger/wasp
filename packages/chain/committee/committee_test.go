@@ -35,7 +35,7 @@ func TestCommitteeBasic(t *testing.T) {
 		Address: stateAddr,
 		Nodes:   netIDs,
 	}
-	c, err := New(cmtRec, nil, net0, cfg0, dksRegistries[0], log)
+	c, _, err := New(cmtRec, nil, net0, cfg0, dksRegistries[0], log)
 	require.NoError(t, err)
 	require.True(t, c.Address().Equals(stateAddr))
 	require.EqualValues(t, 4, c.Size())

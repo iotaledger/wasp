@@ -26,6 +26,11 @@ export class EventEncoder {
         return this.string(value.toString());
     }
 
+    // encodes a Bool into the byte buffer
+    bool(value: bool): EventEncoder {
+        return this.uint8(value ? 1 : 0);
+    }
+
     // encodes a substring of bytes into the byte buffer
     bytes(value: u8[]): EventEncoder {
         return this.string(base58Encode(value));
@@ -56,20 +61,22 @@ export class EventEncoder {
         return this.string(value.toString());
     }
 
-    // encodes an int16 into the byte buffer
-    // note that these are encoded using leb128 encoding to conserve space
+    // encodes an Int8 into the byte buffer
+    int8(value: i8): EventEncoder {
+        return this.string(value.toString());
+    }
+
+    // encodes an Int16 into the byte buffer
     int16(value: i16): EventEncoder {
         return this.string(value.toString());
     }
 
-    // encodes an int32 into the byte buffer
-    // note that these are encoded using leb128 encoding to conserve space
+    // encodes an Int32 into the byte buffer
     int32(value: i32): EventEncoder {
         return this.string(value.toString());
     }
 
-    // encodes an int64 into the byte buffer
-    // note that these are encoded using leb128 encoding to conserve space
+    // encodes an Int64 into the byte buffer
     int64(value: i64): EventEncoder {
         return this.string(value.toString());
     }
@@ -84,5 +91,25 @@ export class EventEncoder {
         //TODO encode potential vertical bars that are present in the value string
         this.event += "|" + value;
         return this;
+    }
+
+    // encodes an Uint8 into the byte buffer
+    uint8(value: u8): EventEncoder {
+        return this.string(value.toString());
+    }
+
+    // encodes an Uint16 into the byte buffer
+    uint16(value: u16): EventEncoder {
+        return this.string(value.toString());
+    }
+
+    // encodes an Uint32 into the byte buffer
+    uint32(value: u32): EventEncoder {
+        return this.string(value.toString());
+    }
+
+    // encodes an Uint64 into the byte buffer
+    uint64(value: u64): EventEncoder {
+        return this.string(value.toString());
     }
 }

@@ -17,7 +17,7 @@ keywords:
 # Running a Node
 
 In the following section, you can find information on how to use Wasp by cloning the repository and building the application.
-If you prefer, you can also configure a node [using a docker image](docker.md) (official images will be provided in the future).
+If you prefer, you can also configure a node [using a docker image (standalone)](docker_standalone.md) or [docker (preconfigured)](docker_preconfigured.md) (official images will be provided in the future).
 
 ## Requirements
 
@@ -189,7 +189,7 @@ Grafana provides a dashboard to visualize system metrics. It can use the prometh
 
 ## Goshimmer Provider
 
-For the Wasp node to communicate with the L1 (Tangle/Goshimmer Network), it needs access to a Goshimmer node with the TXStream plugin enabled. You can use any publicly available node, or [set up your own node](https://wiki.iota.org/goshimmer/tutorials/setup/).
+For the Wasp node to communicate with the L1 (Tangle/Goshimmer Network), it needs access to a Goshimmer node with the TXStream plugin enabled. You can use any [publicly available node](https://wiki.iota.org/wasp/guide/chains_and_nodes/testnet), or [set up your own node](https://wiki.iota.org/goshimmer/tutorials/setup/).
 
 :::info note
 

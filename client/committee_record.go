@@ -27,7 +27,7 @@ func (c *WaspClient) GetCommitteeRecord(addr ledgerstate.Address) (*registry.Com
 // GetCommitteeForChain fetches the CommitteeRecord that manages the given chain
 func (c *WaspClient) GetCommitteeForChain(chainID *iscp.ChainID) (*registry.CommitteeRecord, error) {
 	res := &model.CommitteeRecord{}
-	if err := c.do(http.MethodGet, routes.GetCommitteeForChain(chainID.Base58()), nil, res); err != nil {
+	if err := c.do(http.MethodGet, routes.GetCommitteeForChain(chainID.Base58())+"?includeDeactivated=true", nil, res); err != nil {
 		return nil, err
 	}
 	return res.Record(), nil

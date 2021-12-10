@@ -40,7 +40,7 @@ export class MapStringToImmutableInt32 {
     }
 
     getInt32(key: string): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScImmutableInt32(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 
@@ -62,7 +62,7 @@ export class MapStringToMutableInt32 {
     }
 
     getInt32(key: string): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScMutableInt32(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 

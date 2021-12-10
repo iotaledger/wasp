@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -22,7 +21,7 @@ type (
 type WaspObject interface {
 	wasmhost.HostObject
 	InitObj(id int32, keyID int32, owner *ScDict)
-	Panic(format string, args ...interface{})
+	Panicf(format string, args ...interface{})
 	FindOrMakeObjectID(keyID int32, factory ObjFactory) int32
 	NestedKey() string
 	Suffix(keyID int32) string
@@ -30,10 +29,10 @@ type WaspObject interface {
 
 func GetArrayObjectID(arrayObj WaspObject, index, typeID int32, factory ObjFactory) int32 {
 	if !arrayObj.Exists(index, typeID) {
-		arrayObj.Panic("GetArrayObjectID: invalid index")
+		arrayObj.Panicf("GetArrayObjectID: invalid index")
 	}
 	if typeID != arrayObj.GetTypeID(index) {
-		arrayObj.Panic("GetArrayObjectID: invalid type")
+		arrayObj.Panicf("GetArrayObjectID: invalid type")
 	}
 	return arrayObj.FindOrMakeObjectID(index, factory)
 }
@@ -41,10 +40,10 @@ func GetArrayObjectID(arrayObj WaspObject, index, typeID int32, factory ObjFacto
 func GetMapObjectID(mapObj WaspObject, keyID, typeID int32, factories ObjFactories) int32 {
 	factory, ok := factories[keyID]
 	if !ok {
-		mapObj.Panic("GetMapObjectID: invalid key")
+		mapObj.Panicf("GetMapObjectID: invalid key")
 	}
 	if typeID != mapObj.GetTypeID(keyID) {
-		mapObj.Panic("GetMapObjectID: invalid type")
+		mapObj.Panicf("GetMapObjectID: invalid type")
 	}
 	return mapObj.FindOrMakeObjectID(keyID, factory)
 }
@@ -68,8 +67,6 @@ type ScDict struct {
 // TODO iterate over maps
 
 var _ WaspObject = &ScDict{}
-
-var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 2, 4, 8, 0, 34, 0}
 
 func NewScDict(host *wasmhost.KvStoreHost, kvStore kv.KVStore) *ScDict {
 	return &ScDict{host: host, kvStore: kvStore}
@@ -104,7 +101,7 @@ func (o *ScDict) InitObj(id, keyID int32, owner *ScDict) {
 	if (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 && o.kvStore != nil {
 		err := o.getArrayLength()
 		if err != nil {
-			o.Panic("InitObj: %v", err)
+			o.Panicf("InitObj: %v", err)
 		}
 	}
 	o.Tracef("InitObj %s", o.name)
@@ -113,8 +110,18 @@ func (o *ScDict) InitObj(id, keyID int32, owner *ScDict) {
 }
 
 func (o *ScDict) CallFunc(keyID int32, params []byte) []byte {
-	o.Panic("CallFunc: invalid call")
+	o.Panicf("CallFunc: invalid call")
 	return nil
+}
+
+func (o *ScDict) DelKey(keyID, typeID int32) {
+	if (typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
+		o.Panicf("DelKey: cannot delete array")
+	}
+	if typeID == wasmhost.OBJTYPE_MAP {
+		o.Panicf("DelKey: cannot delete map")
+	}
+	o.kvStore.Del(o.key(keyID, typeID))
 }
 
 func (o *ScDict) Exists(keyID, typeID int32) bool {
@@ -166,14 +173,14 @@ func (o *ScDict) GetBytes(keyID, typeID int32) []byte {
 		return codec.EncodeInt32(o.length)
 	}
 	bytes := o.kvStore.MustGet(o.key(keyID, typeID))
-	o.typeCheck(typeID, bytes)
+	o.host.TypeCheck(typeID, bytes)
 	return bytes
 }
 
 func (o *ScDict) GetObjectID(keyID, typeID int32) int32 {
 	o.validate(keyID, typeID)
 	if (typeID&wasmhost.OBJTYPE_ARRAY) == 0 && typeID != wasmhost.OBJTYPE_MAP {
-		o.Panic("GetObjectID: invalid type")
+		o.Panicf("GetObjectID: invalid type")
 	}
 	return GetMapObjectID(o, keyID, typeID, ObjFactories{
 		keyID: func() WaspObject { return &ScDict{} },
@@ -193,7 +200,7 @@ func (o *ScDict) GetTypeID(keyID int32) int32 {
 }
 
 func (o *ScDict) InvalidKey(keyID int32) {
-	o.Panic("invalid key: %d", keyID)
+	o.Panicf("invalid key: %d", keyID)
 }
 
 func (o *ScDict) key(keyID, typeID int32) kv.Key {
@@ -221,11 +228,8 @@ func (o *ScDict) Owner() WaspObject {
 	return o.host.FindObject(o.ownerID).(WaspObject)
 }
 
-//nolint:goprintffuncname
-func (o *ScDict) Panic(format string, args ...interface{}) {
-	err := o.name + "." + fmt.Sprintf(format, args...)
-	o.Tracef(err)
-	panic(err)
+func (o *ScDict) Panicf(format string, args ...interface{}) {
+	o.host.Panicf(o.name+"."+format, args...)
 }
 
 func (o *ScDict) SetBytes(keyID, typeID int32, bytes []byte) {
@@ -244,7 +248,7 @@ func (o *ScDict) SetBytes(keyID, typeID int32, bytes []byte) {
 	}
 
 	key := o.key(keyID, typeID)
-	o.typeCheck(typeID, bytes)
+	o.host.TypeCheck(typeID, bytes)
 	o.kvStore.Set(key, bytes)
 }
 
@@ -268,38 +272,9 @@ func (o *ScDict) Tracef(format string, a ...interface{}) {
 	o.host.Tracef(format, a...)
 }
 
-func (o *ScDict) typeCheck(typeID int32, bytes []byte) {
-	typeSize := typeSizes[typeID]
-	if typeSize != 0 && typeSize != len(bytes) {
-		o.Panic("typeCheck: invalid type size")
-	}
-	switch typeID {
-	case wasmhost.OBJTYPE_ADDRESS:
-		// address bytes must start with valid address type
-		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
-			o.Panic("typeCheck: invalid address type")
-		}
-	case wasmhost.OBJTYPE_AGENT_ID:
-		// address bytes in agent id must start with valid address type
-		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
-			o.Panic("typeCheck: invalid agent id address type")
-		}
-	case wasmhost.OBJTYPE_CHAIN_ID:
-		// chain id must be alias address
-		if ledgerstate.AddressType(bytes[0]) != ledgerstate.AliasAddressType {
-			o.Panic("typeCheck: invalid chain id address type")
-		}
-	case wasmhost.OBJTYPE_REQUEST_ID:
-		outputIndex := binary.LittleEndian.Uint16(bytes[ledgerstate.TransactionIDLength:])
-		if outputIndex > ledgerstate.MaxOutputCount {
-			o.Panic("typeCheck: invalid request id output index")
-		}
-	}
-}
-
 func (o *ScDict) validate(keyID, typeID int32) {
 	if o.kvStore == nil {
-		o.Panic("validate: Missing kvstore")
+		o.Panicf("validate: Missing kvstore")
 	}
 	if typeID == -1 {
 		return
@@ -315,10 +290,10 @@ func (o *ScDict) validate(keyID, typeID int32) {
 			case wasmhost.OBJTYPE_COLOR:
 			case wasmhost.OBJTYPE_HASH:
 			default:
-				o.Panic("validate: Invalid byte type")
+				o.Panicf("validate: Invalid byte type")
 			}
 		} else if arrayTypeID != typeID {
-			o.Panic("validate: Invalid type")
+			o.Panicf("validate: Invalid type")
 		}
 		if keyID == o.length {
 			switch o.kvStore.(type) {
@@ -332,7 +307,7 @@ func (o *ScDict) validate(keyID, typeID int32) {
 			}
 		}
 		if keyID < 0 || keyID >= o.length {
-			o.Panic("validate: Invalid index")
+			o.Panicf("validate: Invalid index")
 		}
 		return
 	}
@@ -344,7 +319,7 @@ func (o *ScDict) validate(keyID, typeID int32) {
 		return
 	}
 	if fieldType != typeID {
-		o.Panic("validate: Invalid access")
+		o.Panicf("validate: Invalid access")
 	}
 }
 

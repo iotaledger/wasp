@@ -5,6 +5,35 @@ import (
 	"golang.org/x/xerrors"
 )
 
+func DecodeInt8(b []byte, def ...int8) (int8, error) {
+	if b == nil {
+		if len(def) == 0 {
+			return 0, xerrors.Errorf("cannot decode nil bytes")
+		}
+		return def[0], nil
+	}
+	r, err := util.Uint8From1Bytes(b)
+	return int8(r), err
+}
+
+func EncodeInt8(value int8) []byte {
+	return util.Uint8To1Bytes(uint8(value))
+}
+
+func DecodeUint8(b []byte, def ...uint8) (uint8, error) {
+	if b == nil {
+		if len(def) == 0 {
+			return 0, xerrors.Errorf("cannot decode nil bytes")
+		}
+		return def[0], nil
+	}
+	return util.Uint8From1Bytes(b)
+}
+
+func EncodeUint8(value uint8) []byte {
+	return util.Uint8To1Bytes(value)
+}
+
 func DecodeInt16(b []byte, def ...int16) (int16, error) {
 	if b == nil {
 		if len(def) == 0 {

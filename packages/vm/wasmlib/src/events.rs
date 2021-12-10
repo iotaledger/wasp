@@ -29,6 +29,11 @@ impl EventEncoder {
         self.string(&value.to_string())
     }
 
+    // encodes a Bool as 0/1 into the byte buffer
+    pub fn bool(&mut self, value: bool) -> &EventEncoder {
+        self.uint8(value as u8)
+    }
+
     // encodes a substring of bytes into the byte buffer
     pub fn bytes(&mut self, value: &[u8]) -> &EventEncoder {
         self.string(&base58_encode(value))
@@ -55,24 +60,26 @@ impl EventEncoder {
     }
 
     // encodes an ScHname into the byte buffer
-    pub fn hname(&mut self, value: &ScHname) -> &EventEncoder {
+    pub fn hname(&mut self, value: ScHname) -> &EventEncoder {
         self.string(&value.to_string())
     }
 
-    // encodes an int16 into the byte buffer
-    // note that these are encoded using leb128 encoding to conserve space
+    // encodes an Int8 into the byte buffer
+    pub fn int8(&mut self, value: i8) -> &EventEncoder {
+        self.string(&value.to_string())
+    }
+
+    // encodes an Int16 into the byte buffer
     pub fn int16(&mut self, value: i16) -> &EventEncoder {
         self.string(&value.to_string())
     }
 
-    // encodes an int32 into the byte buffer
-    // note that these are encoded using leb128 encoding to conserve space
+    // encodes an Int32 into the byte buffer
     pub fn int32(&mut self, value: i32) -> &EventEncoder {
         self.string(&value.to_string())
     }
 
-    // encodes an int64 into the byte buffer
-    // note that these are encoded using leb128 encoding to conserve space
+    // encodes an Int64 into the byte buffer
     pub fn int64(&mut self, value: i64) -> &EventEncoder {
         self.string(&value.to_string())
     }
@@ -86,5 +93,25 @@ impl EventEncoder {
     pub fn string(&mut self, value: &str) -> &EventEncoder {
         self.event += &("|".to_owned() + value);
         self
+    }
+
+    // encodes an Uint8 into the byte buffer
+    pub fn uint8(&mut self, value: u8) -> &EventEncoder {
+        self.string(&value.to_string())
+    }
+
+    // encodes an Uint16 into the byte buffer
+    pub fn uint16(&mut self, value: u16) -> &EventEncoder {
+        self.string(&value.to_string())
+    }
+
+    // encodes an Uint32 into the byte buffer
+    pub fn uint32(&mut self, value: u32) -> &EventEncoder {
+        self.string(&value.to_string())
+    }
+
+    // encodes an Uint64 into the byte buffer
+    pub fn uint64(&mut self, value: u64) -> &EventEncoder {
+        self.string(&value.to_string())
     }
 }

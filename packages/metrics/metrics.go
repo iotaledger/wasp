@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/prometheus/client_golang/prometheus"
@@ -24,6 +25,10 @@ type Metrics struct {
 	requestAckMessages      *prometheus.CounterVec
 	requestProcessingTime   *prometheus.GaugeVec
 	vmRunTime               *prometheus.GaugeVec
+	vmRunCounter            *prometheus.CounterVec
+	blocksPerChain          *prometheus.CounterVec
+	blockSizes              *prometheus.GaugeVec
+	nodeconnMetrics         nodeconnmetrics.NodeConnectionMetrics
 }
 
 func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) ChainMetrics {
@@ -38,7 +43,10 @@ func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) ChainMetrics {
 }
 
 func New(log *logger.Logger) *Metrics {
-	return &Metrics{log: log}
+	return &Metrics{
+		log:             log,
+		nodeconnMetrics: nodeconnmetrics.New(log),
+	}
 }
 
 var once sync.Once
@@ -69,6 +77,7 @@ func (m *Metrics) Stop() error {
 }
 
 func (m *Metrics) registerMetrics() {
+	m.nodeconnMetrics.RegisterMetrics()
 	m.log.Info("Registering mempool metrics to prometheus")
 	m.offLedgerRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "wasp_off_ledger_request_counter",
@@ -111,4 +120,29 @@ func (m *Metrics) registerMetrics() {
 		Help: "Time it takes to run the vm",
 	}, []string{"chain"})
 	prometheus.MustRegister(m.vmRunTime)
+
+	m.vmRunCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "wasp_vm_run_counter",
+		Help: "Time it takes to run the vm",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.vmRunCounter)
+
+	m.blocksPerChain = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "wasp_block_counter",
+		Help: "Number of blocks per chain",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.blocksPerChain)
+
+	m.blockSizes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "wasp_block_size",
+		Help: "Block sizes",
+	}, []string{"block_index", "chain"})
+	prometheus.MustRegister(m.blockSizes)
+}
+
+func (m *Metrics) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
+	if m == nil {
+		return nodeconnmetrics.NewEmptyNodeConnectionMetrics()
+	}
+	return m.nodeconnMetrics
 }

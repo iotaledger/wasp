@@ -34,7 +34,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen-test",
- "wasmlib 0.1.0",
+ "wasmlib",
  "wee_alloc",
 ]
 
@@ -44,7 +44,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen-test",
- "wasmlib 0.1.0",
+ "wasmlib",
  "wee_alloc",
 ]
 
@@ -54,7 +54,17 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen-test",
- "wasmlib 0.1.0",
+ "wasmlib",
+ "wee_alloc",
+]
+
+[[package]]
+name = "erc721"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen-test",
+ "wasmlib",
  "wee_alloc",
 ]
 
@@ -64,7 +74,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen-test",
- "wasmlib 0.1.0",
+ "wasmlib",
  "wee_alloc",
 ]
 
@@ -74,7 +84,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen-test",
- "wasmlib 0.1.0",
+ "wasmlib",
  "wee_alloc",
 ]
 
@@ -84,7 +94,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen-test",
- "wasmlib 0.1.0",
+ "wasmlib",
  "wee_alloc",
 ]
 
@@ -94,7 +104,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen-test",
- "wasmlib 0.1.0",
+ "wasmlib",
  "wee_alloc",
 ]
 
@@ -175,7 +185,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen-test",
- "wasmlib 0.1.0",
+ "wasmlib",
  "wee_alloc",
 ]
 
@@ -185,7 +195,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen-test",
- "wasmlib 0.1.0",
+ "wasmlib",
  "wee_alloc",
 ]
 
@@ -195,7 +205,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen-test",
- "wasmlib 0.1.0 (git+https://github.com/iotaledger/wasp?branch=develop)",
+ "wasmlib",
  "wee_alloc",
 ]
 
@@ -205,7 +215,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen-test",
- "wasmlib 0.1.0",
+ "wasmlib",
  "wee_alloc",
 ]
 
@@ -308,15 +318,6 @@ dependencies = [
 [[package]]
 name = "wasmlib"
 version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "wasmlib"
-version = "0.1.0"
-source = "git+https://github.com/iotaledger/wasp?branch=develop#5a3a452307070ea2895e7c4da2f05989c662aad1"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",

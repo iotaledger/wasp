@@ -5,14 +5,13 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
-	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -34,7 +33,7 @@ type Chains struct {
 	mutex                            sync.RWMutex
 	log                              *logger.Logger
 	allChains                        map[[ledgerstate.AddressLength]byte]chain.Chain
-	nodeConn                         *txstream.Client
+	nodeConn                         chain.NodeConnection
 	processorConfig                  *processors.Config
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
@@ -75,15 +74,11 @@ func (c *Chains) Dismiss() {
 	c.allChains = make(map[[ledgerstate.AddressLength]byte]chain.Chain)
 }
 
-func (c *Chains) Attach(nodeConn *txstream.Client) {
+func (c *Chains) SetNodeConn(nodeConn chain.NodeConnection) {
 	if c.nodeConn != nil {
-		c.log.Panicf("Chains: already attached")
+		c.log.Panicf("Chains: node conn already set")
 	}
 	c.nodeConn = nodeConn
-	c.nodeConn.Events.TransactionReceived.Attach(events.NewClosure(c.dispatchTransactionMsg))
-	c.nodeConn.Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchInclusionStateMsg))
-	c.nodeConn.Events.OutputReceived.Attach(events.NewClosure(c.dispatchOutputMsg))
-	c.nodeConn.Events.UnspentAliasOutputReceived.Attach(events.NewClosure(c.dispatchUnspentAliasOutputMsg))
 }
 
 func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics *metrics.Metrics) error {
@@ -120,8 +115,8 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		return xerrors.Errorf("cannot activate chain for deactivated chain record")
 	}
 	chainArr := chr.ChainID.Array()
-	_, ok := c.allChains[chainArr]
-	if ok {
+	ret, ok := c.allChains[chainArr]
+	if ok && !ret.IsDismissed() {
 		c.log.Debugf("chain is already active: %s", chr.ChainID.String())
 		return nil
 	}
@@ -181,16 +176,22 @@ func (c *Chains) Deactivate(chr *registry.ChainRecord) error {
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID *iscp.ChainID) chain.Chain {
+func (c *Chains) Get(chainID *iscp.ChainID, includeDeactivated ...bool) chain.Chain {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
 	addrArr := chainID.Array()
 	ret, ok := c.allChains[addrArr]
+
+	if len(includeDeactivated) > 0 && includeDeactivated[0] {
+		return ret
+	}
 	if ok && ret.IsDismissed() {
-		delete(c.allChains, addrArr)
-		c.nodeConn.Unsubscribe(chainID.AliasAddress)
 		return nil
 	}
 	return ret
+}
+
+func (c *Chains) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
+	return c.nodeConn.GetMetrics()
 }

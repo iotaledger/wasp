@@ -9,6 +9,14 @@ import * as wasmlib from "wasmlib";
 
 export class Erc20Events {
 
+	approval(amount: i64, owner: wasmlib.ScAgentID, spender: wasmlib.ScAgentID): void {
+		new wasmlib.EventEncoder("erc20.approval").
+		int64(amount).
+		agentID(owner).
+		agentID(spender).
+		emit();
+	}
+
 	transfer(amount: i64, from: wasmlib.ScAgentID, to: wasmlib.ScAgentID): void {
 		new wasmlib.EventEncoder("erc20.transfer").
 		int64(amount).

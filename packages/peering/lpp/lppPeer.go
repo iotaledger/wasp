@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	libp2ppeer "github.com/libp2p/go-libp2p-core/peer"
@@ -20,6 +19,7 @@ const (
 	inactiveDeadline = 1 * time.Minute
 	inactivePingTime = 30 * time.Second
 	maxPeerMsgBuffer = 10000
+	traceMessages    = false
 )
 
 type peer struct {
@@ -37,20 +37,12 @@ type peer struct {
 	log          *logger.Logger
 }
 
+var _ peering.PeerSender = &peer{}
+
 func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteLppID libp2ppeer.ID, n *netImpl) *peer {
 	log := n.log.Named("peer:" + remoteNetID)
 	messagePriorityFun := func(msg interface{}) bool {
-		peerMsg, ok := msg.(*peering.PeerMessage)
-		if ok {
-			switch peerMsg.MsgType {
-			case messages.MsgGetBlock,
-				messages.MsgBlock,
-				messages.MsgSignedResult,
-				messages.MsgSignedResultAck:
-				return true
-			default:
-			}
-		}
+		// TODO: decide if prioritetisation is needed and implement it then.
 		return false
 	}
 	p := &peer{
@@ -123,43 +115,44 @@ func (p *peer) PubKey() *ed25519.PublicKey {
 // SendMsg implements peering.PeerSender interface for the remote peers.
 // The send operation is performed asynchronously.
 // The async sending helped to cope with sporadic deadlocks.
-func (p *peer) SendMsg(msg *peering.PeerMessage) {
+func (p *peer) SendMsg(msg *peering.PeerMessageData) {
 	//
 	p.accessLock.RLock()
+	msgNet := &peering.PeerMessageNet{PeerMessageData: *msg}
 	if !p.trusted {
 		p.log.Infof("Dropping outgoing message, because it was meant to send to a distrusted peer.")
 		p.accessLock.RUnlock()
 		return
 	}
 	p.accessLock.RUnlock()
-	p.sendPipe.In() <- msg
+	p.sendPipe.In() <- msgNet
 }
 
-func (p *peer) RecvMsg(msg *peering.PeerMessage) {
+func (p *peer) RecvMsg(msg *peering.PeerMessageNet) {
+	if traceMessages {
+		p.log.Debugf("Peer message received from peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
+			p.NetID(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
+	}
 	p.noteReceived()
-	msg.SenderNetID = p.NetID()
 	p.recvPipe.In() <- msg
 }
 
 func (p *peer) sendLoop() {
 	for msg := range p.sendPipe.Out() {
-		p.sendMsgDirect(msg.(*peering.PeerMessage))
+		p.sendMsgDirect(msg.(*peering.PeerMessageNet))
 	}
 }
 
 func (p *peer) recvLoop() {
 	for msg := range p.recvPipe.Out() {
-		peerMsg, ok := msg.(*peering.PeerMessage)
+		peerMsg, ok := msg.(*peering.PeerMessageNet)
 		if ok {
-			p.net.triggerRecvEvents(&peering.RecvEvent{
-				From: p,
-				Msg:  peerMsg,
-			})
+			p.net.triggerRecvEvents(p.NetID(), peerMsg)
 		}
 	}
 }
 
-func (p *peer) sendMsgDirect(msg *peering.PeerMessage) {
+func (p *peer) sendMsgDirect(msg *peering.PeerMessageNet) {
 	stream, err := p.net.lppHost.NewStream(p.net.ctx, p.remoteLppID, lppProtocolPeering)
 	if err != nil {
 		p.log.Warnf("Failed to send outgoing message, unable to allocate stream, reason=%v", err)
@@ -179,6 +172,17 @@ func (p *peer) sendMsgDirect(msg *peering.PeerMessage) {
 	p.accessLock.Lock()
 	p.lastMsgSent = time.Now()
 	p.accessLock.Unlock()
+	if traceMessages {
+		p.log.Debugf("Peer message sent to peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
+			p.NetID(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
+	}
+}
+
+func firstBytes(maxCount int, array []byte) []byte {
+	if len(array) <= maxCount {
+		return array
+	}
+	return array[:maxCount]
 }
 
 // IsAlive implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.

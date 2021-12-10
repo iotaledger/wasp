@@ -2,17 +2,19 @@ package testchain
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
 type MockedNodeConn struct {
 	id                              string
-	onPullBacklog                   func(addr *ledgerstate.AliasAddress)
-	onPullState                     func(addr *ledgerstate.AliasAddress)
-	onPullConfirmedTransaction      func(addr ledgerstate.Address, txid ledgerstate.TransactionID)
-	onPullTransactionInclusionState func(addr ledgerstate.Address, txid ledgerstate.TransactionID)
-	onPullConfirmedOutput           func(addr ledgerstate.Address, outputID ledgerstate.OutputID)
+	onPullState                     func()
+	onPullTransactionInclusionState func(txid ledgerstate.TransactionID)
+	onPullConfirmedOutput           func(outputID ledgerstate.OutputID)
 	onPostTransaction               func(tx *ledgerstate.Transaction)
 }
+
+var _ chain.ChainNodeConnection = &MockedNodeConn{}
 
 func NewMockedNodeConnection(id string) *MockedNodeConn {
 	return &MockedNodeConn{id: id}
@@ -22,50 +24,52 @@ func (m *MockedNodeConn) ID() string {
 	return m.id
 }
 
-func (m *MockedNodeConn) PullBacklog(addr *ledgerstate.AliasAddress) {
-	m.onPullBacklog(addr)
+func (m *MockedNodeConn) PullState() {
+	m.onPullState()
 }
 
-func (m *MockedNodeConn) PullState(addr *ledgerstate.AliasAddress) {
-	m.onPullState(addr)
+func (m *MockedNodeConn) PullTransactionInclusionState(txid ledgerstate.TransactionID) {
+	m.onPullTransactionInclusionState(txid)
 }
 
-func (m *MockedNodeConn) PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
-	m.onPullConfirmedTransaction(addr, txid)
-}
-
-func (m *MockedNodeConn) PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
-	m.onPullTransactionInclusionState(addr, txid)
-}
-
-func (m *MockedNodeConn) PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
-	m.onPullConfirmedOutput(addr, outputID)
+func (m *MockedNodeConn) PullConfirmedOutput(outputID ledgerstate.OutputID) {
+	m.onPullConfirmedOutput(outputID)
 }
 
 func (m *MockedNodeConn) PostTransaction(tx *ledgerstate.Transaction) {
 	m.onPostTransaction(tx)
 }
 
-func (m *MockedNodeConn) OnPullBacklog(f func(addr *ledgerstate.AliasAddress)) {
-	m.onPullBacklog = f
-}
-
-func (m *MockedNodeConn) OnPullState(f func(addr *ledgerstate.AliasAddress)) {
+func (m *MockedNodeConn) OnPullState(f func()) {
 	m.onPullState = f
 }
 
-func (m *MockedNodeConn) OnPullConfirmedTransaction(f func(addr ledgerstate.Address, txid ledgerstate.TransactionID)) {
-	m.onPullConfirmedTransaction = f
-}
-
-func (m *MockedNodeConn) OnPullTransactionInclusionState(f func(addr ledgerstate.Address, txid ledgerstate.TransactionID)) {
+func (m *MockedNodeConn) OnPullTransactionInclusionState(f func(txid ledgerstate.TransactionID)) {
 	m.onPullTransactionInclusionState = f
 }
 
-func (m *MockedNodeConn) OnPullConfirmedOutput(f func(addr ledgerstate.Address, outputID ledgerstate.OutputID)) {
+func (m *MockedNodeConn) OnPullConfirmedOutput(f func(outputID ledgerstate.OutputID)) {
 	m.onPullConfirmedOutput = f
 }
 
 func (m *MockedNodeConn) OnPostTransaction(f func(tx *ledgerstate.Transaction)) {
 	m.onPostTransaction = f
+}
+
+func (m *MockedNodeConn) AttachToTransactionReceived(chain.NodeConnectionHandleTransactionFun) {}
+func (m *MockedNodeConn) AttachToInclusionStateReceived(chain.NodeConnectionHandleInclusionStateFun) {
+}
+func (m *MockedNodeConn) AttachToOutputReceived(chain.NodeConnectionHandleOutputFun) {}
+func (m *MockedNodeConn) AttachToUnspentAliasOutputReceived(chain.NodeConnectionHandleUnspentAliasOutputFun) {
+}
+
+func (m *MockedNodeConn) DetachFromTransactionReceived()        {}
+func (m *MockedNodeConn) DetachFromInclusionStateReceived()     {}
+func (m *MockedNodeConn) DetachFromOutputReceived()             {}
+func (m *MockedNodeConn) DetachFromUnspentAliasOutputReceived() {}
+
+func (m *MockedNodeConn) Close() {}
+
+func (m *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
+	return nodeconnmetrics.NewEmptyNodeConnectionMessagesMetrics()
 }

@@ -50,18 +50,18 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 		}
 		col, err := codec.DecodeColor([]byte(key))
 		if err != nil {
-			o.Panic(err.Error())
+			o.Panicf(err.Error())
 		}
 		amount, err := codec.DecodeUint64(value)
 		if err != nil {
-			o.Panic(err.Error())
+			o.Panicf(err.Error())
 		}
 		o.Tracef("TRANSFER #%d c'%s' a'%s'", value, col.String(), o.address.Base58())
 		transfer.Set(col, amount)
 		return true
 	})
 	if !o.wc.ctx.Send(o.address, transfer, nil) {
-		o.Panic("failed to send to %s", o.address.Base58())
+		o.Panicf("failed to send to %s", o.address.Base58())
 	}
 }
 
@@ -71,12 +71,12 @@ func (o *ScTransferInfo) SetBytes(keyID, typeID int32, bytes []byte) {
 		var err error
 		o.address, _, err = ledgerstate.AddressFromBytes(bytes)
 		if err != nil {
-			o.Panic("SetBytes: invalid address: " + err.Error())
+			o.Panicf("SetBytes: invalid address: " + err.Error())
 		}
 	case wasmhost.KeyBalances:
 		balanceMapID, err := codec.DecodeInt32(bytes, 0)
 		if err != nil {
-			o.Panic("SetBytes: invalid balance map id: " + err.Error())
+			o.Panicf("SetBytes: invalid balance map id: " + err.Error())
 		}
 		o.Invoke(balanceMapID)
 	default:

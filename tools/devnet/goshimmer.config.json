@@ -1,0 +1,87 @@
+{
+    "analysis": {
+      "client": {
+        "serverAddress": "devnet_goshimmer:1888"
+      },
+      "server": {
+        "bindAddress": "0.0.0.0:1888"
+      },
+      "dashboard": {
+        "bindAddress": "0.0.0.0:9000",
+        "dev": false
+      }
+    },
+    "prometheus": {
+      "bindAddress": "0.0.0.0:9312",
+      "processMetrics": true
+    },
+    "manualpeering": {
+        "knownPeers": []
+    },
+    "autopeering": {
+        "enabled": false,
+        "enableGossipIntegration": false,
+        "port": 14626
+    },
+    "dashboard": {
+      "bindAddress": "0.0.0.0:8081",
+      "dev": false,
+      "basic_auth": {
+        "enabled": false,
+        "username": "goshimmer",
+        "password": "goshimmer"
+      }
+    },
+    "database": {
+      "directory": "/tmp/devnetdb"
+    },
+    "logger": {
+      "level": "info",
+      "disableCaller": false,
+      "disableStacktrace": false,
+      "encoding": "console",
+      "outputPaths": [
+        "stdout"
+      ],
+      "disableEvents": true
+    },
+    "metrics":{
+      "manaUpdateInterval": 5,
+      "local": false,
+      "global": true
+    },
+    "network": {
+      "bindAddress": "0.0.0.0",
+      "externalAddress": "auto"
+    },
+    "messageLayer" : {
+      "startSynced": true,
+      "snapshot": {
+        "genesisNode": "",
+        "file": "/tmp/snapshot.bin"
+      }
+    },
+    "node": {
+      "disablePlugins": ["portcheck"],
+      "enablePlugins": ["analysis-server","snapshot","analysis-dashboard","prometheus","txstream","webapi tools endpoint","faucet","activity","spammer"]
+    },
+    "pow": {
+      "difficulty": 2,
+      "numThreads": 1,
+      "timeout": "10s",
+      "parentsRefreshInterval": "300ms"
+    },
+    "webapi": {
+      "basic_auth": {
+        "enabled": false,
+        "username": "goshimmer",
+        "password": "goshimmer"
+      },
+      "bindAddress": "0.0.0.0:8080"
+    },
+    "faucet": {
+      "powDifficulty": 12,
+      "seed": "7R1itJx5hVuo9w9hjg5cwKFmek4HMSoBDgJZN8hKGxih"
+    }
+  }
+  

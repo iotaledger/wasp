@@ -57,8 +57,8 @@ impl ScView {
 
     fn call_with_transfer(&self, transfer_id: i32) {
         let mut encode = BytesEncoder::new();
-        encode.hname(&self.h_contract);
-        encode.hname(&self.h_function);
+        encode.hname(self.h_contract);
+        encode.hname(self.h_function);
         encode.int32(self.id(self.params_id));
         encode.int32(transfer_id);
         ROOT.get_bytes(&KEY_CALL).set_value(&encode.data());
@@ -163,8 +163,8 @@ impl ScFunc {
     pub fn post_to_chain(&self, chain_id: ScChainID) {
         let mut encode = BytesEncoder::new();
         encode.chain_id(&chain_id);
-        encode.hname(&self.view.h_contract);
-        encode.hname(&self.view.h_function);
+        encode.hname(self.view.h_contract);
+        encode.hname(self.view.h_function);
         encode.int32(self.view.id(self.view.params_id));
         encode.int32(self.transfer_id);
         encode.int32(self.delay);

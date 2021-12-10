@@ -68,7 +68,7 @@ export class MapStringToImmutableBytes {
     }
 
     getBytes(key: string): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScImmutableBytes(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 
@@ -79,6 +79,10 @@ export class ImmutableParamTypesParams extends wasmlib.ScMapID {
 
     agentID(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAgentID]);
+	}
+
+    bool(): wasmlib.ScImmutableBool {
+		return new wasmlib.ScImmutableBool(this.mapID, sc.idxMap[sc.IdxParamBool]);
 	}
 
     bytes(): wasmlib.ScImmutableBytes {
@@ -113,6 +117,10 @@ export class ImmutableParamTypesParams extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamInt64]);
 	}
 
+    int8(): wasmlib.ScImmutableInt8 {
+		return new wasmlib.ScImmutableInt8(this.mapID, sc.idxMap[sc.IdxParamInt8]);
+	}
+
     param(): sc.MapStringToImmutableBytes {
 		return new sc.MapStringToImmutableBytes(this.mapID);
 	}
@@ -123,6 +131,22 @@ export class ImmutableParamTypesParams extends wasmlib.ScMapID {
 
     string(): wasmlib.ScImmutableString {
 		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamString]);
+	}
+
+    uint16(): wasmlib.ScImmutableUint16 {
+		return new wasmlib.ScImmutableUint16(this.mapID, sc.idxMap[sc.IdxParamUint16]);
+	}
+
+    uint32(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, sc.idxMap[sc.IdxParamUint32]);
+	}
+
+    uint64(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, sc.idxMap[sc.IdxParamUint64]);
+	}
+
+    uint8(): wasmlib.ScImmutableUint8 {
+		return new wasmlib.ScImmutableUint8(this.mapID, sc.idxMap[sc.IdxParamUint8]);
 	}
 }
 
@@ -138,7 +162,7 @@ export class MapStringToMutableBytes {
     }
 
     getBytes(key: string): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.objID, wasmlib.Key32.fromString(key).getKeyID());
+        return new wasmlib.ScMutableBytes(this.objID, wasmlib.Key32.fromString(key));
     }
 }
 
@@ -149,6 +173,10 @@ export class MutableParamTypesParams extends wasmlib.ScMapID {
 
     agentID(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAgentID]);
+	}
+
+    bool(): wasmlib.ScMutableBool {
+		return new wasmlib.ScMutableBool(this.mapID, sc.idxMap[sc.IdxParamBool]);
 	}
 
     bytes(): wasmlib.ScMutableBytes {
@@ -183,6 +211,10 @@ export class MutableParamTypesParams extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamInt64]);
 	}
 
+    int8(): wasmlib.ScMutableInt8 {
+		return new wasmlib.ScMutableInt8(this.mapID, sc.idxMap[sc.IdxParamInt8]);
+	}
+
     param(): sc.MapStringToMutableBytes {
 		return new sc.MapStringToMutableBytes(this.mapID);
 	}
@@ -193,6 +225,22 @@ export class MutableParamTypesParams extends wasmlib.ScMapID {
 
     string(): wasmlib.ScMutableString {
 		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamString]);
+	}
+
+    uint16(): wasmlib.ScMutableUint16 {
+		return new wasmlib.ScMutableUint16(this.mapID, sc.idxMap[sc.IdxParamUint16]);
+	}
+
+    uint32(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, sc.idxMap[sc.IdxParamUint32]);
+	}
+
+    uint64(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, sc.idxMap[sc.IdxParamUint64]);
+	}
+
+    uint8(): wasmlib.ScMutableUint8 {
+		return new wasmlib.ScMutableUint8(this.mapID, sc.idxMap[sc.IdxParamUint8]);
 	}
 }
 

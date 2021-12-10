@@ -121,6 +121,10 @@ impl ImmutableParamTypesParams {
 		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
 	}
 
+    pub fn bool(&self) -> ScImmutableBool {
+		ScImmutableBool::new(self.id, idx_map(IDX_PARAM_BOOL))
+	}
+
     pub fn bytes(&self) -> ScImmutableBytes {
 		ScImmutableBytes::new(self.id, idx_map(IDX_PARAM_BYTES))
 	}
@@ -153,6 +157,10 @@ impl ImmutableParamTypesParams {
 		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT64))
 	}
 
+    pub fn int8(&self) -> ScImmutableInt8 {
+		ScImmutableInt8::new(self.id, idx_map(IDX_PARAM_INT8))
+	}
+
     pub fn param(&self) -> MapStringToImmutableBytes {
 		MapStringToImmutableBytes { obj_id: self.id }
 	}
@@ -163,6 +171,22 @@ impl ImmutableParamTypesParams {
 
     pub fn string(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, idx_map(IDX_PARAM_STRING))
+	}
+
+    pub fn uint16(&self) -> ScImmutableUint16 {
+		ScImmutableUint16::new(self.id, idx_map(IDX_PARAM_UINT16))
+	}
+
+    pub fn uint32(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, idx_map(IDX_PARAM_UINT32))
+	}
+
+    pub fn uint64(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, idx_map(IDX_PARAM_UINT64))
+	}
+
+    pub fn uint8(&self) -> ScImmutableUint8 {
+		ScImmutableUint8::new(self.id, idx_map(IDX_PARAM_UINT8))
 	}
 }
 
@@ -192,6 +216,10 @@ impl MutableParamTypesParams {
 
     pub fn agent_id(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+	}
+
+    pub fn bool(&self) -> ScMutableBool {
+		ScMutableBool::new(self.id, idx_map(IDX_PARAM_BOOL))
 	}
 
     pub fn bytes(&self) -> ScMutableBytes {
@@ -226,6 +254,10 @@ impl MutableParamTypesParams {
 		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT64))
 	}
 
+    pub fn int8(&self) -> ScMutableInt8 {
+		ScMutableInt8::new(self.id, idx_map(IDX_PARAM_INT8))
+	}
+
     pub fn param(&self) -> MapStringToMutableBytes {
 		MapStringToMutableBytes { obj_id: self.id }
 	}
@@ -236,6 +268,22 @@ impl MutableParamTypesParams {
 
     pub fn string(&self) -> ScMutableString {
 		ScMutableString::new(self.id, idx_map(IDX_PARAM_STRING))
+	}
+
+    pub fn uint16(&self) -> ScMutableUint16 {
+		ScMutableUint16::new(self.id, idx_map(IDX_PARAM_UINT16))
+	}
+
+    pub fn uint32(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, idx_map(IDX_PARAM_UINT32))
+	}
+
+    pub fn uint64(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, idx_map(IDX_PARAM_UINT64))
+	}
+
+    pub fn uint8(&self) -> ScMutableUint8 {
+		ScMutableUint8::new(self.id, idx_map(IDX_PARAM_UINT8))
 	}
 }
 

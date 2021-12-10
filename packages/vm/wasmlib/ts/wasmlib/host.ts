@@ -10,22 +10,25 @@ import * as keys from "./keys";
 import {Convert} from "./convert";
 
 export const TYPE_ARRAY: i32 = 0x20;
-export const TYPE_ARRAY16: i32 = 0x30;
-export const TYPE_CALL: i32 = 0x40;
+export const TYPE_ARRAY16: i32 = 0x60;
+export const TYPE_CALL: i32 = 0x80;
+export const TYPE_MASK: i32 = 0x1f;
 
 export const TYPE_ADDRESS: i32 = 1;
 export const TYPE_AGENT_ID: i32 = 2;
-export const TYPE_BYTES: i32 = 3;
-export const TYPE_CHAIN_ID: i32 = 4;
-export const TYPE_COLOR: i32 = 5;
-export const TYPE_HASH: i32 = 6;
-export const TYPE_HNAME: i32 = 7;
-export const TYPE_INT16: i32 = 8;
-export const TYPE_INT32: i32 = 9;
-export const TYPE_INT64: i32 = 10;
-export const TYPE_MAP: i32 = 11;
-export const TYPE_REQUEST_ID: i32 = 12;
-export const TYPE_STRING: i32 = 13;
+export const TYPE_BOOL: i32 = 3;
+export const TYPE_BYTES: i32 = 4;
+export const TYPE_CHAIN_ID: i32 = 5;
+export const TYPE_COLOR: i32 = 6;
+export const TYPE_HASH: i32 = 7;
+export const TYPE_HNAME: i32 = 8;
+export const TYPE_INT8: i32 = 9;
+export const TYPE_INT16: i32 = 10;
+export const TYPE_INT32: i32 = 11;
+export const TYPE_INT64: i32 = 12;
+export const TYPE_MAP: i32 = 13;
+export const TYPE_REQUEST_ID: i32 = 14;
+export const TYPE_STRING: i32 = 15;
 
 export const OBJ_ID_NULL: i32 = 0;
 export const OBJ_ID_ROOT: i32 = 1;
@@ -34,7 +37,7 @@ export const OBJ_ID_PARAMS: i32 = 3;
 export const OBJ_ID_RESULTS: i32 = 4;
 
 // size in bytes of predefined types, indexed by the TYPE_* consts
-const TYPE_SIZES: u8[] = [0, 33, 37, 0, 33, 32, 32, 4, 2, 4, 8, 0, 34, 0];
+const TYPE_SIZES: u8[] = [0, 33, 37, 1, 0, 33, 32, 32, 4, 1, 2, 4, 8, 0, 34, 0];
 
 
 // These 4 external functions are funneling the entire WasmLib functionality
@@ -84,7 +87,14 @@ export function callFunc(objID: i32, keyID: Key32, params: u8[]): u8[] {
 // Removes all its sub-objects as well.
 export function clear(objID: i32): void {
     // special key "length" is used with integer value zero
-    setBytes(objID, keys.KEY_LENGTH, TYPE_INT32, Convert.fromI32(0))
+    setBytes(objID, keys.KEY_LENGTH, TYPE_INT32, Convert.fromI32(0));
+}
+
+// Delete the value with the specified key and type from the specified container object.
+export function delKey(objID: i32, keyID: Key32, typeID: i32): void {
+    // size -1 means delete
+    // this removes the need for a separate hostDelete function
+    hostSetBytes(objID, keyID.keyID, typeID, 0, -1);
 }
 
 // Check if the specified container object contains a value with the specified key and type.
@@ -138,6 +148,12 @@ export function getKeyIDFromString(key: string): Key32 {
     return getKeyID(bytes, bytes.length);
 }
 
+// Retrieve the key id that the host has associated with the specified integer key
+export function getKeyIDFromUint64(key: u64, nrOfBytes: usize): Key32 {
+    // negative size indicates this is a bytes key
+    return getKeyID(Convert.fromI64(key as i64), -nrOfBytes - 1);
+}
+
 // Retrieve the length of an array container object on the host
 export function getLength(objID: i32): i32 {
     // special integer key "length" is used
@@ -152,12 +168,12 @@ export function getObjectID(objID: i32, keyID: Key32, typeID: i32): i32 {
 
 // Direct logging of informational text to host log
 export function log(text: string): void {
-    setBytes(1, keys.KEY_LOG, TYPE_STRING, Convert.fromString(text))
+    setBytes(1, keys.KEY_LOG, TYPE_STRING, Convert.fromString(text));
 }
 
 // Direct logging of error to host log, followed by panicking out of the Wasm code
 export function panic(text: string): void {
-    setBytes(1, keys.KEY_PANIC, TYPE_STRING, Convert.fromString(text))
+    setBytes(1, keys.KEY_PANIC, TYPE_STRING, Convert.fromString(text));
 }
 
 // Store the provided value bytes of specified type in the specified container object
@@ -169,5 +185,5 @@ export function setBytes(objID: i32, keyID: Key32, typeID: i32, value: u8[]): vo
 
 // Direct logging of debug trace text to host log
 export function trace(text: string): void {
-    setBytes(1, keys.KEY_TRACE, TYPE_STRING, Convert.fromString(text))
+    setBytes(1, keys.KEY_TRACE, TYPE_STRING, Convert.fromString(text));
 }

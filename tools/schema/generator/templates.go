@@ -1,6 +1,8 @@
 package generator
 
-var commonTemplates = map[string]string{
+import "github.com/iotaledger/wasp/tools/schema/model"
+
+var commonTemplates = model.StringMap{
 	// *******************************
 	"else": `
 `,

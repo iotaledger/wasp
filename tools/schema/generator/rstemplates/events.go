@@ -26,7 +26,7 @@ $#if event eventParams eventParamNone
 `,
 	// *******************************
 	"eventParam": `
-$#set params $params, $fld_name: $ref$fldLangType
+$#set params $params, $fld_name: $fldRef$fldParamLangType
 `,
 	// *******************************
 	"eventParamNone": `
@@ -40,6 +40,6 @@ $#each event eventEmit
 `,
 	// *******************************
 	"eventEmit": `
-		encoder.$fld_type($ref$fld_name);
+		encoder.$fld_type($fldRef$fld_name);
 `,
 }

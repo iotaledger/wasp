@@ -156,19 +156,22 @@ func TestLeb128(t *testing.T) {
 }
 
 func TestLoop(t *testing.T) {
-	if *wasmsolo.GoDebug || *wasmsolo.GoWasmEdge || wasmhost.DisableWasmTimeout {
-		// no timeout possible with WasmGoVM because goroutines cannot be killed
+	if *wasmsolo.GoDebug || *wasmsolo.GoWasmEdge {
+		// no timeout possible because goroutines cannot be killed
 		// or because there is no way to interrupt the Wasm code
 		t.SkipNow()
 	}
 
 	ctx := setupTest(t)
 
+	save := wasmhost.DisableWasmTimeout
+	wasmhost.DisableWasmTimeout = false
 	wasmhost.WasmTimeout = 1 * time.Second
 	endlessLoop := inccounter.ScFuncs.EndlessLoop(ctx)
 	endlessLoop.Func.TransferIotas(1).Post()
 	require.Error(t, ctx.Err)
 	require.Contains(t, ctx.Err.Error(), "interrupt")
+	wasmhost.DisableWasmTimeout = save
 
 	inccounter.ScFuncs.Increment(ctx).Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)

@@ -87,6 +87,8 @@ func (m *MockMempoolMetrics) CountRequestOut() {
 func (m *MockMempoolMetrics) RecordRequestProcessingTime(reqID iscp.RequestID, elapse time.Duration) {
 }
 
+func (m *MockMempoolMetrics) CountBlocksPerChain() {}
+
 // Test if mempool is created
 func TestMempool(t *testing.T) {
 	log := testlogger.NewLogger(t)
@@ -446,7 +448,7 @@ func TestFallbackOptions(t *testing.T) {
 	// request with the invalid deadline should have been removed from the mempool
 	time.Sleep(500 * time.Millisecond) // just to let the `RemoveRequests` go routine get the pool mutex before we look into it
 	require.Nil(t, pool.GetRequest(requests[2].ID()))
-	require.Len(t, pool.pool, 2)
+	require.Len(t, pool.(*mempool).pool, 2)
 }
 
 // Test if ReadyFromIDs function correctly handle non-existing or removed IDs

@@ -18,5 +18,5 @@ The multi-chain nature of IOTA Smart Contracts makes it a more complex implement
 
 ![ISCP multichain architecture](../../../static/img/multichain.png)
 
-The comprehensive overview of architectural design decisions of IOTA Smart Contracts can be found in the
+The comprehensive overview of architectural design decisions of IOTA Smart Contracts can be found in the 
 [whitepaper](https://files.iota.org/papers/ISC_WP_Nov_10_2021.pdf).

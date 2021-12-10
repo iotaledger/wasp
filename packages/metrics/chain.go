@@ -1,21 +1,23 @@
 package metrics
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// type StateManagerMetrics interface {
-// }
-//
+type StateManagerMetrics interface {
+	RecordBlockSize(blockIndex uint32, size float64)
+}
 
 type ChainMetrics interface {
 	CountMessages()
 	CountRequestAckMessages()
 	MempoolMetrics
 	ConsensusMetrics
+	StateManagerMetrics
 }
 
 type MempoolMetrics interface {
@@ -23,10 +25,12 @@ type MempoolMetrics interface {
 	CountOnLedgerRequestIn()
 	CountRequestOut()
 	RecordRequestProcessingTime(iscp.RequestID, time.Duration)
+	CountBlocksPerChain()
 }
 
 type ConsensusMetrics interface {
 	RecordVMRunTime(time.Duration)
+	CountVMRuns()
 }
 
 type chainMetricsObj struct {
@@ -67,6 +71,18 @@ func (c *chainMetricsObj) RecordVMRunTime(elapse time.Duration) {
 	c.metrics.vmRunTime.With(prometheus.Labels{"chain": c.chainID.String()}).Set(elapse.Seconds())
 }
 
+func (c *chainMetricsObj) CountVMRuns() {
+	c.metrics.vmRunCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+}
+
+func (c *chainMetricsObj) CountBlocksPerChain() {
+	c.metrics.blocksPerChain.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+}
+
+func (c *chainMetricsObj) RecordBlockSize(blockIndex uint32, blockSize float64) {
+	c.metrics.blockSizes.With(prometheus.Labels{"chain": c.chainID.String(), "block_index": fmt.Sprintf("%d", blockIndex)}).Set(blockSize)
+}
+
 type defaultChainMetrics struct{}
 
 func DefaultChainMetrics() ChainMetrics {
@@ -86,3 +102,9 @@ func (m *defaultChainMetrics) CountRequestAckMessages() {}
 func (m *defaultChainMetrics) RecordRequestProcessingTime(_ iscp.RequestID, _ time.Duration) {}
 
 func (m *defaultChainMetrics) RecordVMRunTime(_ time.Duration) {}
+
+func (m *defaultChainMetrics) CountVMRuns() {}
+
+func (m *defaultChainMetrics) CountBlocksPerChain() {}
+
+func (m *defaultChainMetrics) RecordBlockSize(_ uint32, _ float64) {}
