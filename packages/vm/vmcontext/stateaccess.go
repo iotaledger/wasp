@@ -131,10 +131,15 @@ func (s chainStateWrapper) Set(name kv.Key, value []byte) {
 	s.vmctx.currentStateUpdate.Mutations().Set(name, value)
 }
 
-func (vmctx *VMContext) State() kv.KVStore {
+func (vmctx *VMContext) State(burnGas ...subrealm.BurnGasFn) kv.KVStore {
 	vmctx.task.SolidStateBaseline.MustValidate()
-
-	return subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
+	var burnGasFn subrealm.BurnGasFn
+	if len(burnGas) > 0 {
+		burnGasFn = burnGas[0]
+	} else {
+		burnGasFn = func(uint64) {} // use empty gas burner function if no gas burn is defined
+	}
+	return subrealm.New(burnGasFn, vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 }
 
 func (s chainStateWrapper) MustGet(key kv.Key) []byte {
