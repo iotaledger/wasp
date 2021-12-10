@@ -13,14 +13,14 @@ import (
 
 // Cache stores all initialized VMProcessor instances used by a single chain
 type Cache struct {
-	*sync.Mutex
+	mutex      *sync.Mutex
 	Config     *Config
 	processors map[hashing.HashValue]iscp.VMProcessor
 }
 
 func MustNew(config *Config) *Cache {
 	ret := &Cache{
-		Mutex:      &sync.Mutex{},
+		mutex:      &sync.Mutex{},
 		Config:     config,
 		processors: make(map[hashing.HashValue]iscp.VMProcessor),
 	}
@@ -34,8 +34,8 @@ func MustNew(config *Config) *Cache {
 
 // NewProcessor deploys new processor in the cache
 func (cps *Cache) NewProcessor(programHash hashing.HashValue, programCode []byte, vmtype string) error {
-	cps.Lock()
-	defer cps.Unlock()
+	cps.mutex.Lock()
+	defer cps.mutex.Unlock()
 
 	return cps.newProcessor(programHash, programCode, vmtype)
 }
@@ -80,8 +80,8 @@ func (cps *Cache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(
 }
 
 func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (iscp.VMProcessor, error) {
-	cps.Lock()
-	defer cps.Unlock()
+	cps.mutex.Lock()
+	defer cps.mutex.Unlock()
 
 	if proc, ok := cps.processors[progHash]; ok {
 		return proc, nil
@@ -101,7 +101,7 @@ func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, 
 
 // RemoveProcessor deletes processor from cache
 func (cps *Cache) RemoveProcessor(h hashing.HashValue) {
-	cps.Lock()
-	defer cps.Unlock()
+	cps.mutex.Lock()
+	defer cps.mutex.Unlock()
 	delete(cps.processors, h)
 }

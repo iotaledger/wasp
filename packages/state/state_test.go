@@ -55,13 +55,11 @@ func TestOriginHashes(t *testing.T) {
 		require.EqualValues(t, calcOriginStateHash(), z.StateCommitment())
 	})
 	t.Run("origin state construct", func(t *testing.T) {
-		origBlock := newOriginBlock()
+		emptyState := newVirtualState(mapdb.NewMapDB(), nil)
+		origBlock, err := emptyState.applyOriginBlock()
 		require.EqualValues(t, 0, origBlock.BlockIndex())
 		require.True(t, origBlock.Timestamp().IsZero())
 		require.EqualValues(t, hashing.NilHash, origBlock.PreviousStateHash())
-
-		emptyState := newVirtualState(mapdb.NewMapDB(), nil)
-		err := emptyState.ApplyBlock(origBlock)
 		require.NoError(t, err)
 		require.EqualValues(t, emptyState.StateCommitment(), calcOriginStateHash())
 		require.EqualValues(t, hashing.NilHash, emptyState.PreviousStateHash())
@@ -166,6 +164,70 @@ func TestStateWithDB(t *testing.T) {
 
 		require.EqualValues(t, vs1.StateCommitment(), vs2.StateCommitment())
 	})
+	t.Run("apply block after loading", func(t *testing.T) {
+		store := mapdb.NewMapDB()
+		chainID := iscp.RandomChainID([]byte("1"))
+		_, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.False(t, exists)
+
+		vsOrig, err := CreateOriginState(store, chainID)
+		require.NoError(t, err)
+
+		time1 := time.Now()
+		su := NewStateUpdateWithBlocklogValues(1, time1, hashing.NilHash)
+		su.Mutations().Set("key", []byte("value"))
+		block1, err := newBlock(su.Mutations())
+		require.NoError(t, err)
+
+		err = vsOrig.ApplyBlock(block1)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, vsOrig.BlockIndex())
+		require.True(t, time1.Equal(vsOrig.Timestamp()))
+
+		time2 := time.Now()
+		su = NewStateUpdateWithBlocklogValues(2, time2, vsOrig.PreviousStateHash())
+		su.Mutations().Set("other_key", []byte("other_value"))
+		block2, err := newBlock(su.Mutations())
+		require.NoError(t, err)
+
+		err = vsOrig.ApplyBlock(block2)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, vsOrig.BlockIndex())
+		require.True(t, time2.Equal(vsOrig.Timestamp()))
+
+		err = vsOrig.Commit(block1, block2)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, vsOrig.BlockIndex())
+		require.True(t, time2.Equal(vsOrig.Timestamp()))
+
+		vsLoaded, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.True(t, exists)
+
+		require.EqualValues(t, vsOrig.StateCommitment(), vsLoaded.StateCommitment())
+		require.EqualValues(t, vsOrig.BlockIndex(), vsLoaded.BlockIndex())
+		require.EqualValues(t, vsOrig.Timestamp(), vsLoaded.Timestamp())
+		require.EqualValues(t, 2, vsLoaded.BlockIndex())
+
+		time3 := time.Now()
+		su = NewStateUpdateWithBlocklogValues(3, time3, vsLoaded.PreviousStateHash())
+		su.Mutations().Set("more_keys", []byte("more_values"))
+		block3, err := newBlock(su.Mutations())
+		require.NoError(t, err)
+
+		err = vsOrig.ApplyBlock(block3)
+		require.NoError(t, err)
+		require.EqualValues(t, 3, vsOrig.BlockIndex())
+		require.True(t, time3.Equal(vsOrig.Timestamp()))
+
+		err = vsLoaded.ApplyBlock(block3)
+		require.NoError(t, err)
+		require.EqualValues(t, 3, vsLoaded.BlockIndex())
+		require.True(t, time3.Equal(vsLoaded.Timestamp()))
+
+		require.EqualValues(t, vsOrig.StateCommitment(), vsLoaded.StateCommitment())
+	})
 	t.Run("state reader", func(t *testing.T) {
 		store := mapdb.NewMapDB()
 		chainID := iscp.RandomChainID([]byte("1"))
@@ -216,7 +278,7 @@ func TestStateWithDB(t *testing.T) {
 		glb.InvalidateSolidIndex()
 		_, err = rdr.Hash()
 		require.Error(t, err)
-		require.EqualValues(t, err, coreutil.ErrStateHasBeenInvalidated)
+		require.EqualValues(t, err, coreutil.ErrorStateInvalidated)
 	})
 }
 
@@ -358,19 +420,19 @@ func TestVirtualStateMustOptimistic1(t *testing.T) {
 	require.EqualValues(t, 0, vsOpt.BlockIndex())
 
 	glb.InvalidateSolidIndex()
-	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_ = vsOpt.StateCommitment()
 	})
-	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_ = vsOpt.BlockIndex()
 	})
-	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_, _ = vsOpt.ExtractBlock()
 	})
-	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_ = vsOpt.PreviousStateHash()
 	})
-	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+	require.PanicsWithValue(t, coreutil.ErrorStateInvalidated, func() {
 		_ = vsOpt.KVStore()
 	})
 }

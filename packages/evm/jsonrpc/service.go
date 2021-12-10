@@ -32,7 +32,7 @@ func NewEthService(evmChain *EVMChain, accounts *AccountManager) *EthService {
 }
 
 func (e *EthService) ProtocolVersion() hexutil.Uint {
-	return hexutil.Uint(eth.ETH65)
+	return hexutil.Uint(eth.ETH66)
 }
 
 func (e *EthService) GetTransactionCount(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
@@ -130,7 +130,11 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]inter
 	if r == nil {
 		return nil, nil
 	}
-	return RPCMarshalReceipt(r), nil
+	tx, _, _, _, err := e.evmChain.TransactionByHash(txHash) // nolint:dogsled
+	if err != nil {
+		return nil, err
+	}
+	return RPCMarshalReceipt(r, tx), nil
 }
 
 func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, error) {
@@ -170,19 +174,19 @@ func (e *EthService) GetBlockTransactionCountByNumber(blockNumber rpc.BlockNumbe
 }
 
 func (e *EthService) GetUncleCountByBlockHash(blockHash common.Hash) hexutil.Uint {
-	return hexutil.Uint(0) // no uncles are ever generated in evmchain contract
+	return hexutil.Uint(0) // no uncles are ever generated
 }
 
 func (e *EthService) GetUncleCountByBlockNumber(blockNumber rpc.BlockNumber) hexutil.Uint {
-	return hexutil.Uint(0) // no uncles are ever generated in evmchain contract
+	return hexutil.Uint(0) // no uncles are ever generated
 }
 
 func (e *EthService) GetUncleByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) map[string]interface{} {
-	return nil // no uncles are ever generated in evmchain contract
+	return nil // no uncles are ever generated
 }
 
 func (e *EthService) GetUncleByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) map[string]interface{} {
-	return nil // no uncles are ever generated in evmchain contract
+	return nil // no uncles are ever generated
 }
 
 func (e *EthService) Accounts() []common.Address {

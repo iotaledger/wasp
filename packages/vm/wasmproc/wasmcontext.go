@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 const (
@@ -49,11 +49,11 @@ func NewWasmContext(function string, proc *WasmProcessor) *WasmContext {
 	return wc
 }
 
-func (wc *WasmContext) AddFunc(f func(ctx wasmlib.ScFuncContext)) []func(ctx wasmlib.ScFuncContext) {
+func (wc *WasmContext) AddFunc(f wasmlib.ScFuncContextFunction) []wasmlib.ScFuncContextFunction {
 	return wc.host.AddFunc(f)
 }
 
-func (wc *WasmContext) AddView(v func(ctx wasmlib.ScViewContext)) []func(ctx wasmlib.ScViewContext) {
+func (wc *WasmContext) AddView(v wasmlib.ScViewContextFunction) []wasmlib.ScViewContextFunction {
 	return wc.host.AddView(v)
 }
 
@@ -62,9 +62,9 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 		panic("Context id is zero")
 	}
 
-	wcSaved := wasmlib.ConnectHost(wc)
+	wcSaved := wasmhost.Connect(wc)
 	defer func() {
-		wasmlib.ConnectHost(wcSaved)
+		wasmhost.Connect(wcSaved)
 		// clean up context after use
 		wc.proc.KillContext(wc.id)
 	}()
@@ -106,7 +106,7 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 		wc.log().Infof("VM call %s(): error %v", wc.function, err)
 		return nil, err
 	}
-	resultsID := wc.GetObjectID(wasmlib.OBJ_ID_ROOT, wasmhost.KeyResults, wasmhost.OBJTYPE_MAP)
+	resultsID := wc.GetObjectID(wasmhost.OBJID_ROOT, wasmhost.KeyResults, wasmhost.OBJTYPE_MAP)
 	results := wc.FindObject(resultsID).(*ScDict).kvStore.(dict.Dict)
 	return results, nil
 }

@@ -15,7 +15,6 @@ use wasmlib::*;
 
 use crate::consts::*;
 use crate::params::*;
-use crate::results::*;
 
 pub struct MintSupplyCall {
     pub func:   ScFunc,

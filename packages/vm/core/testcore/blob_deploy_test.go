@@ -120,14 +120,14 @@ func TestDeployGrant(t *testing.T) {
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.NoError(t, err)
 
-	_, _, contacts := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contacts))
+	_, _, contracts := chain.GetInfo()
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
 
 	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
 	require.NoError(t, err)
 
-	_, _, contacts = chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(contacts))
+	_, _, contracts = chain.GetInfo()
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(contracts))
 }
 
 func TestRevokeDeploy(t *testing.T) {
@@ -145,8 +145,8 @@ func TestRevokeDeploy(t *testing.T) {
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.NoError(t, err)
 
-	_, _, contacts := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contacts))
+	_, _, contracts := chain.GetInfo()
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
 
 	req = solo.NewCallParams(root.Contract.Name, root.FuncRevokeDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
@@ -157,8 +157,8 @@ func TestRevokeDeploy(t *testing.T) {
 	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
 	require.Error(t, err)
 
-	_, _, contacts = chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contacts))
+	_, _, contracts = chain.GetInfo()
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
 }
 
 func TestDeployGrantFail(t *testing.T) {

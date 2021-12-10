@@ -2,8 +2,8 @@ package tests
 
 import (
 	"flag"
-	"io/ioutil"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -77,7 +77,7 @@ func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map
 	}
 
 	if !*useWasp {
-		wasm, err := ioutil.ReadFile(wasmPath)
+		wasm, err := os.ReadFile(wasmPath)
 		require.NoError(e.t, err)
 		chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, e.chain.OriginatorKeyPair())
 

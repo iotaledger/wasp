@@ -12,8 +12,6 @@
 use wasmlib::*;
 use wasmlib::host::*;
 
-pub type ImmutableAllowancesForAgent = MapAgentIDToImmutableInt64;
-
 pub struct MapAgentIDToImmutableInt64 {
     pub(crate) obj_id: i32,
 }
@@ -24,7 +22,7 @@ impl MapAgentIDToImmutableInt64 {
     }
 }
 
-pub type MutableAllowancesForAgent = MapAgentIDToMutableInt64;
+pub type ImmutableAllowancesForAgent = MapAgentIDToImmutableInt64;
 
 pub struct MapAgentIDToMutableInt64 {
     pub(crate) obj_id: i32,
@@ -39,5 +37,7 @@ impl MapAgentIDToMutableInt64 {
         ScMutableInt64::new(self.obj_id, key.get_key_id())
     }
 }
+
+pub type MutableAllowancesForAgent = MapAgentIDToMutableInt64;
 
 // @formatter:on

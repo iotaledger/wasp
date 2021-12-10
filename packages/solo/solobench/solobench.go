@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type Func func(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams, keyPair *ed25519.KeyPair)
+
 // RunBenchmarkSync processes requests synchronously, producing 1 block per request
 func RunBenchmarkSync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams, keyPair *ed25519.KeyPair) {
 	b.ResetTimer()

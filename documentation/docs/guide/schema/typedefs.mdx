@@ -15,18 +15,18 @@ import TabItem from "@theme/TabItem"
 # Type Definitions
 
 Since we allow nesting of [container types](../wasm_vm/proxies.mdx#container-proxies), it
-is a difficult to create proper
-declarations for such nested types. Especially because you can only indicate either a single type,
-or an array of single type, or a map of single type in a field definition.
+is a difficult to create proper declarations for such nested types. Especially because you
+can only indicate either a single type, or an array of single type, or a map of single
+type in a field definition.
 
 There is a simple solution to this problem. You can add a `typedefs` section to the
 schema definition file, where you can define a single type name for a container type. That
 way you can easily create containers that contain such container types. The schema tool
 will automatically generate the in-between proxy types necessary to make this work.
 
-To keep it at the `betting` smart contract from [the previous section](structs.mdx), imagine you want to keep
-track of all betting rounds. Since a betting round contains an array of all bets in a
-round, if it weren't for typedefs you could not define it easily.
+To keep it at the `betting` smart contract from [the previous section](structs.mdx),
+imagine you want to keep track of all betting rounds. Since a betting round contains an
+array of all bets in a round, if it weren't for typedefs you could not define it easily.
 
 Instead, now you add the following to your schema definition file:
 
@@ -63,7 +63,7 @@ state:
 </TabItem>
 </Tabs>
 
-The schema tool will generate the following proxies in `typedefs.rs`:
+The schema tool will generate the following proxies in `typedefs.xx`:
 
 <Tabs defaultValue="go"
 	values={[
@@ -81,33 +81,33 @@ import "github.com/iotaledger/wasp/packages/vm/wasmlib"
 type ImmutableBettingRound = ArrayOfImmutableBet
 
 type ArrayOfImmutableBet struct {
-	objID int32
+    objID int32
 }
 
 func (a ArrayOfImmutableBet) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+    return wasmlib.GetLength(a.objID)
 }
 
 func (a ArrayOfImmutableBet) GetBet(index int32) ImmutableBet {
-	return ImmutableBet{objID: a.objID, keyID: wasmlib.Key32(index)}
+    return ImmutableBet{objID: a.objID, keyID: wasmlib.Key32(index)}
 }
 
 type MutableBettingRound = ArrayOfMutableBet
 
 type ArrayOfMutableBet struct {
-	objID int32
+    objID int32
 }
 
 func (a ArrayOfMutableBet) Clear() {
-	wasmlib.Clear(a.objID)
+    wasmlib.Clear(a.objID)
 }
 
 func (a ArrayOfMutableBet) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+    return wasmlib.GetLength(a.objID)
 }
 
 func (a ArrayOfMutableBet) GetBet(index int32) MutableBet {
-	return MutableBet{objID: a.objID, keyID: wasmlib.Key32(index)}
+    return MutableBet{objID: a.objID, keyID: wasmlib.Key32(index)}
 }
 ```
 
@@ -158,17 +158,69 @@ impl ArrayOfMutableBet {
 ```
 
 </TabItem>
+<TabItem value="ts">
+
+```ts
+import * as wasmlib from "../wasmlib"
+import * as sc from "./index";
+
+export class ImmutableBettingRound extends ArrayOfImmutableBet {
+};
+
+export class ArrayOfImmutableBet {
+    objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    length(): i32 {
+        return wasmlib.getLength(this.objID);
+    }
+
+    getBet(index: i32): sc.ImmutableBet {
+        return new sc.ImmutableBet(this.objID, new wasmlib.Key32(index));
+    }
+}
+
+export class MutableBettingRound extends ArrayOfMutableBet {
+};
+
+export class ArrayOfMutableBet {
+    objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    clear(): void {
+        wasmlib.clear(this.objID);
+    }
+
+    length(): i32 {
+        return wasmlib.getLength(this.objID);
+    }
+
+    getBet(index: i32): sc.MutableBet {
+        return new sc.MutableBet(this.objID, new wasmlib.Key32(index));
+    }
+}
+```
+
+</TabItem>
 </Tabs>
 
 Note how ImmutableBettingRound and MutableBettingRound type aliases are created for the
 types ArrayOfImmutableBet and ArrayOfMutableBet. These are subsequently used in the state
-definition in `state.rs`:
+definition in `state.xx`:
 
 <Tabs defaultValue="go"
-	values={[
-		{label: 'Go', value: 'go'},
-		{label: 'Rust', value: 'rust'},
-	]}>
+      groupId="language"
+      values={[
+          {label: 'Go', value: 'go'},
+          {label: 'Rust', value: 'rust'},
+          {label: 'TypeScript', value: 'ts'},
+      ]}>
 
 <TabItem value="go">
 
@@ -192,6 +244,11 @@ func (a ArrayOfImmutableBettingRound) GetBettingRound(index int32) ImmutableBett
 
 type ImmutableBettingState struct {
     id int32
+}
+
+func (s ImmutableBettingState) Bets() ArrayOfImmutableBet {
+    arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
+    return ArrayOfImmutableBet{objID: arrID}
 }
 
 func (s ImmutableBettingState) Owner() wasmlib.ScImmutableAgentID {
@@ -224,6 +281,11 @@ type MutableBettingState struct {
     id int32
 }
 
+func (s MutableBettingState) Bets() ArrayOfMutableBet {
+    arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
+    return ArrayOfMutableBet{objID: arrID}
+}
+
 func (s MutableBettingState) Owner() wasmlib.ScMutableAgentID {
     return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxStateOwner])
 }
@@ -243,7 +305,7 @@ use wasmlib::host::*;
 
 use crate::*;
 use crate::keys::*;
-use crate::subtypes::*;
+use crate::typedefs::*;
 use crate::types::*;
 
 pub struct ArrayOfImmutableBettingRound {
@@ -267,6 +329,11 @@ pub struct ImmutableBettingState {
 }
 
 impl ImmutableBettingState {
+    pub fn bets(&self) -> ArrayOfImmutableBet {
+        let arr_id = get_object_id(self.id, idx_map(IDX_STATE_BETS), TYPE_ARRAY | TYPE_BYTES);
+        ArrayOfImmutableBet { obj_id: arr_id }
+    }
+
     pub fn owner(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.id, idx_map(IDX_STATE_OWNER))
     }
@@ -302,6 +369,11 @@ pub struct MutableBettingState {
 }
 
 impl MutableBettingState {
+    pub fn bets(&self) -> ArrayOfMutableBet {
+        let arr_id = get_object_id(self.id, idx_map(IDX_STATE_BETS), TYPE_ARRAY | TYPE_BYTES);
+        ArrayOfMutableBet { obj_id: arr_id }
+    }
+
     pub fn owner(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.id, idx_map(IDX_STATE_OWNER))
     }
@@ -314,10 +386,90 @@ impl MutableBettingState {
 ```
 
 </TabItem>
+<TabItem value="ts">
+
+```ts
+import * as wasmlib from "../wasmlib"
+import * as sc from "./index";
+
+export class ArrayOfImmutableBettingRound {
+    objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    length(): i32 {
+        return wasmlib.getLength(this.objID);
+    }
+
+    getBettingRound(index: i32): sc.ImmutableBettingRound {
+        let subID = wasmlib.getObjectID(this.objID, new wasmlib.Key32(index), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
+        return new sc.ImmutableBettingRound(subID);
+    }
+}
+
+export class ImmutableBettingState extends wasmlib.ScMapID {
+    bets(): sc.ArrayOfImmutableBet {
+        let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
+        return new sc.ArrayOfImmutableBet(arrID)
+    }
+
+    owner(): wasmlib.ScImmutableAgentID {
+        return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxStateOwner]);
+    }
+
+    rounds(): sc.ArrayOfImmutableBettingRound {
+        let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateRounds], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
+        return new sc.ArrayOfImmutableBettingRound(arrID)
+    }
+}
+
+export class ArrayOfMutableBettingRound {
+    objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    clear(): void {
+        wasmlib.clear(this.objID);
+    }
+
+    length(): i32 {
+        return wasmlib.getLength(this.objID);
+    }
+
+    getBettingRound(index: i32): sc.MutableBettingRound {
+        let subID = wasmlib.getObjectID(this.objID, new wasmlib.Key32(index), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
+        return new sc.MutableBettingRound(subID);
+    }
+}
+
+export class MutableBettingState extends wasmlib.ScMapID {
+    bets(): sc.ArrayOfMutableBet {
+        let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
+        return new sc.ArrayOfMutableBet(arrID)
+    }
+
+    owner(): wasmlib.ScMutableAgentID {
+        return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxStateOwner]);
+    }
+
+    rounds(): sc.ArrayOfMutableBettingRound {
+        let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateRounds], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
+        return new sc.ArrayOfMutableBettingRound(arrID)
+    }
+}
+```
+
+</TabItem>
 </Tabs>
 
-Notice how the rounds() member function returns a proxy to an array of BettingRound. Which
-in turn is an array of Bet. So, the desired result has been achieved. And every access step
-along the way only allows you to take the path laid out which is checked at compile-time.
+Notice how the rounds() member function returns a proxy to an array of BettingRound.
+Which in turn is an array of Bet. So, the desired result has been achieved. And every
+access step along the way only allows you to take the path laid out which is checked at
+compile-time.
 
-In the next section we will explore how the schema tool generates a proxy interface for mutable [states](state.mdx).
+In the next section we will explore how the schema tool generates a proxy interface for
+mutable [states](state.mdx).

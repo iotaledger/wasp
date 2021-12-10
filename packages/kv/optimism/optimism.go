@@ -15,7 +15,7 @@ import (
 // The user of the OptimisticKVStoreReader announces it starts reading the state with SetBaseline. Then the user reads
 // the state with Get's. If sequense of Get's is finished without error, it means state wasn't invalidated from
 // the baseline until the last read.
-// If returned error is ErrStateHasBeenInvalidated ir means state was invalidated since SetBaseline.
+// If returned error is ErrorStateInvalidated ir means state was invalidated since SetBaseline.
 // In this case read can be repeated. Any other error is a database error
 type OptimisticKVStoreReader struct {
 	kvstore  kv.KVStoreReader
@@ -45,80 +45,80 @@ func (o *OptimisticKVStoreReader) IsStateValid() bool {
 
 func (o *OptimisticKVStoreReader) Get(key kv.Key) ([]byte, error) {
 	if !o.baseline.IsValid() {
-		return nil, coreutil.ErrStateHasBeenInvalidated
+		return nil, coreutil.ErrorStateInvalidated
 	}
 	ret, err := o.kvstore.Get(key)
 	if err != nil {
 		return nil, err
 	}
 	if !o.baseline.IsValid() {
-		return nil, coreutil.ErrStateHasBeenInvalidated
+		return nil, coreutil.ErrorStateInvalidated
 	}
 	return ret, nil
 }
 
 func (o *OptimisticKVStoreReader) Has(key kv.Key) (bool, error) {
 	if !o.baseline.IsValid() {
-		return false, coreutil.ErrStateHasBeenInvalidated
+		return false, coreutil.ErrorStateInvalidated
 	}
 	ret, err := o.kvstore.Has(key)
 	if err != nil {
 		return false, err
 	}
 	if !o.baseline.IsValid() {
-		return false, coreutil.ErrStateHasBeenInvalidated
+		return false, coreutil.ErrorStateInvalidated
 	}
 	return ret, nil
 }
 
 func (o *OptimisticKVStoreReader) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
 	if !o.baseline.IsValid() {
-		return coreutil.ErrStateHasBeenInvalidated
+		return coreutil.ErrorStateInvalidated
 	}
 	if err := o.kvstore.Iterate(prefix, f); err != nil {
 		return err
 	}
 	if !o.baseline.IsValid() {
-		return coreutil.ErrStateHasBeenInvalidated
+		return coreutil.ErrorStateInvalidated
 	}
 	return nil
 }
 
 func (o *OptimisticKVStoreReader) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	if !o.baseline.IsValid() {
-		return coreutil.ErrStateHasBeenInvalidated
+		return coreutil.ErrorStateInvalidated
 	}
 	if err := o.kvstore.IterateKeys(prefix, f); err != nil {
 		return err
 	}
 	if !o.baseline.IsValid() {
-		return coreutil.ErrStateHasBeenInvalidated
+		return coreutil.ErrorStateInvalidated
 	}
 	return nil
 }
 
 func (o *OptimisticKVStoreReader) IterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
 	if !o.baseline.IsValid() {
-		return coreutil.ErrStateHasBeenInvalidated
+		return coreutil.ErrorStateInvalidated
 	}
 	if err := o.kvstore.IterateSorted(prefix, f); err != nil {
 		return err
 	}
 	if !o.baseline.IsValid() {
-		return coreutil.ErrStateHasBeenInvalidated
+		return coreutil.ErrorStateInvalidated
 	}
 	return nil
 }
 
 func (o *OptimisticKVStoreReader) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
 	if !o.baseline.IsValid() {
-		return coreutil.ErrStateHasBeenInvalidated
+		return coreutil.ErrorStateInvalidated
 	}
 	if err := o.kvstore.IterateKeysSorted(prefix, f); err != nil {
 		return err
 	}
 	if !o.baseline.IsValid() {
-		return coreutil.ErrStateHasBeenInvalidated
+		return coreutil.ErrorStateInvalidated
 	}
 	return nil
 }
@@ -167,10 +167,10 @@ func (o *OptimisticKVStoreReader) MustIterateKeysSorted(prefix kv.Key, f func(ke
 
 const (
 	defaultRetryDelay   = 300 * time.Millisecond
-	defaultRetryTimeout = 2 * time.Second
+	defaultRetryTimeout = 5 * time.Second
 )
 
-// RetryOnStateInvalidated repeats function while it returns ErrStateHasBeenInvalidated
+// RetryOnStateInvalidated repeats function while it returns ErrorStateInvalidated
 // Optional parameters:
 //  - timeouts[0] - overall timeout
 //  - timeouts[1] - repeat delay
@@ -186,7 +186,7 @@ func RetryOnStateInvalidated(fun func() error, timeouts ...time.Duration) error 
 	}
 
 	var err error
-	for err = fun(); errors.Is(err, coreutil.ErrStateHasBeenInvalidated); err = fun() {
+	for err = fun(); errors.Is(err, coreutil.ErrorStateInvalidated); err = fun() {
 		time.Sleep(retryDelay)
 		if time.Now().After(timeoutAfter) {
 			return xerrors.Errorf("optimistic read retry timeout. Last error: %w", err)

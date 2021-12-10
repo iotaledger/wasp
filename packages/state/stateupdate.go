@@ -126,7 +126,7 @@ func (su *stateUpdateImpl) String() string {
 	if err != nil {
 		ts = fmt.Sprintf("(%v)", err)
 	} else if ok {
-		ts = fmt.Sprintf("%v", t)
+		ts = t.String()
 	}
 	bi := none
 	idx, ok, err := su.stateIndexMutation()

@@ -104,7 +104,7 @@ and other related interfaces.
 
  Significant part of the VM logic is implemented as _core smart contracts_. The core smart contracts also expose  
  core logic of each ISCP chain to outside users: the core smart contracts can be called by requests just like any other  
- smart contact.
+ smart contract.
 
  The implementation of core smart contracts is hardcoded into the Wasp. Implementations of all core contract as well  
  as their unit tests can be found in [wasp/packages/vm/code](./core).
@@ -152,7 +152,7 @@ with the Wasp, are represented by `wasm` binaries. Other VM types may take diffe
 executable code.
 
 To deploy a `wasmtime` smart contract on the chain, first we need to upload the corresponding `wasm` binary.  
-All `wasm` binaries (as well as any other files of data) are kept in the registry handled by the `blob` core contact.  
+All `wasm` binaries (as well as any other files of data) are kept in the registry handled by the `blob` core contract.  
 To upload a `wasm` binary to the chain one must send a request to the `blob`. Each blob on the chain is referenced by  
 its hash.
 
@@ -255,7 +255,7 @@ The goal is to be able to run EVM smart contracts on ISCP chains. The EVM should
 the ISCP VM Abstraction.  
 The EVM would be implemented as a processor and it will be able to access key/value store of the state through `State()`  
 interface of the `Sandbox()`. It essentially means the whole EVM chain would be implemented as a state of one
-ISCP smart contact.  
+ISCP smart contract.  
 This way EVM would run in an isolated environment and Solidity code won't be able to access and manipulate
 native IOTA assets, hence Virtual Ethereum. To open EVM to access all spectrum of ISCP functions
 would be the next step.

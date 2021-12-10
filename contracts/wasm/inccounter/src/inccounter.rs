@@ -8,13 +8,6 @@ use crate::contract::*;
 
 static mut LOCAL_STATE_MUST_INCREMENT: bool = false;
 
-pub fn func_init(_ctx: &ScFuncContext, f: &InitContext) {
-    if f.params.counter().exists() {
-        let counter = f.params.counter().value();
-        f.state.counter().set_value(counter);
-    }
-}
-
 pub fn func_call_increment(ctx: &ScFuncContext, f: &CallIncrementContext) {
     let counter = f.state.counter();
     let value = counter.value();
@@ -40,6 +33,19 @@ pub fn func_endless_loop(_ctx: &ScFuncContext, _f: &EndlessLoopContext) {
 pub fn func_increment(_ctx: &ScFuncContext, f: &IncrementContext) {
     let counter = f.state.counter();
     counter.set_value(counter.value() + 1);
+}
+
+pub fn func_increment_with_delay(ctx: &ScFuncContext, f: &IncrementWithDelayContext) {
+    let delay = f.params.delay().value();
+    let inc = ScFuncs::call_increment(ctx);
+    inc.func.delay(delay).transfer_iotas(1).post();
+}
+
+pub fn func_init(_ctx: &ScFuncContext, f: &InitContext) {
+    if f.params.counter().exists() {
+        let counter = f.params.counter().value();
+        f.state.counter().set_value(counter);
+    }
 }
 
 pub fn func_local_state_internal_call(ctx: &ScFuncContext, f: &LocalStateInternalCallContext) {
@@ -167,10 +173,4 @@ fn when_must_increment_state(ctx: &ScFuncContext, state: &MutableIncCounterState
     }
     let counter = state.counter();
     counter.set_value(counter.value() + 1);
-}
-
-pub fn func_increment_with_delay(ctx: &ScFuncContext, f: &IncrementWithDelayContext) {
-    let delay = f.params.delay().value();
-    let inc = inccounter::ScFuncs::call_increment(ctx);
-    inc.func.delay(delay).transfer_iotas(1).post();
 }

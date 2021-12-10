@@ -13,6 +13,7 @@ import (
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/auth"
+	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/plugins/chains"
@@ -47,7 +48,7 @@ func configure(*node.Plugin) {
 	Server = echoswagger.New(echo.New(), "/doc", &echoswagger.Info{
 		Title:       "Wasp API",
 		Description: "REST API for the IOTA Wasp node",
-		Version:     "0.1",
+		Version:     wasp.Version,
 	})
 
 	Server.Echo().HideBanner = true

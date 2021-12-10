@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/contracts/wasm/inccounter"
+	"github.com/iotaledger/wasp/contracts/wasm/inccounter/go/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
@@ -108,6 +108,11 @@ func TestIncrementLocalStateInternalCall(t *testing.T) {
 }
 
 func TestIncrementLocalStateSandboxCall(t *testing.T) {
+	// TODO need to save globals for TypeScript Wasm for this to succeed
+	if *wasmsolo.TsWasm {
+		t.SkipNow()
+	}
+
 	ctx := setupTest(t)
 
 	localStateSandboxCall := inccounter.ScFuncs.LocalStateSandboxCall(ctx)
@@ -126,6 +131,11 @@ func TestIncrementLocalStateSandboxCall(t *testing.T) {
 }
 
 func TestIncrementLocalStatePost(t *testing.T) {
+	// TODO need to save globals for TypeScript Wasm for this to succeed
+	if *wasmsolo.TsWasm {
+		t.SkipNow()
+	}
+
 	ctx := setupTest(t)
 
 	localStatePost := inccounter.ScFuncs.LocalStatePost(ctx)
@@ -146,7 +156,9 @@ func TestIncrementLocalStatePost(t *testing.T) {
 }
 
 func TestLeb128(t *testing.T) {
+	wasmhost.DisableWasmTimeout = true
 	ctx := setupTest(t)
+	wasmhost.DisableWasmTimeout = false
 
 	testLeb128 := inccounter.ScFuncs.TestLeb128(ctx)
 	testLeb128.Func.TransferIotas(1).Post()

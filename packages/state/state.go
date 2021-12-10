@@ -27,7 +27,6 @@ import (
 type virtualStateAccess struct {
 	chainID            *iscp.ChainID
 	db                 kvstore.KVStore
-	empty              bool
 	kvs                *buffered.BufferedKVStoreAccess
 	committedHash      hashing.HashValue
 	appliedBlockHashes []hashing.HashValue
@@ -39,7 +38,6 @@ func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualStateAcc
 	ret := &virtualStateAccess{
 		db:                 db,
 		kvs:                buffered.NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(sub)),
-		empty:              true,
 		appliedBlockHashes: make([]hashing.HashValue, 0),
 	}
 	if chainID != nil {
@@ -50,8 +48,8 @@ func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualStateAcc
 
 func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, Block) {
 	ret := newVirtualState(db, chainID)
-	originBlock := newOriginBlock()
-	if err := ret.ApplyBlock(originBlock); err != nil {
+	originBlock, err := ret.applyOriginBlock()
+	if err != nil {
 		panic(err)
 	}
 	_, _ = ret.ExtractBlock() // clear the update log
@@ -77,7 +75,6 @@ func (vs *virtualStateAccess) Copy() VirtualStateAccess {
 		db:                 vs.db,
 		committedHash:      vs.committedHash,
 		appliedBlockHashes: make([]hashing.HashValue, len(vs.appliedBlockHashes)),
-		empty:              vs.empty,
 		kvs:                vs.kvs.Copy(),
 	}
 	copy(ret.appliedBlockHashes, vs.appliedBlockHashes)
@@ -133,19 +130,27 @@ func (vs *virtualStateAccess) PreviousStateHash() hashing.HashValue {
 
 // ApplyBlock applies a block of state updates. Checks consistency of the block and previous state. Updates state hash
 func (vs *virtualStateAccess) ApplyBlock(b Block) error {
-	if vs.empty && b.BlockIndex() != 0 {
+	return vs.applyAnyBlock(b, false)
+}
+
+func (vs *virtualStateAccess) applyOriginBlock() (Block, error) {
+	originBlock := newOriginBlock()
+	return originBlock, vs.applyAnyBlock(originBlock, true)
+}
+
+func (vs *virtualStateAccess) applyAnyBlock(b Block, empty bool) error {
+	if empty && b.BlockIndex() != 0 {
 		return xerrors.Errorf("ApplyBlock: b state index #%d can't be applied to the empty state", b.BlockIndex())
 	}
-	if !vs.empty && vs.BlockIndex()+1 != b.BlockIndex() {
+	if !empty && vs.BlockIndex()+1 != b.BlockIndex() {
 		return xerrors.Errorf("ApplyBlock: b state index #%d can't be applied to the state with index #%d",
 			b.BlockIndex(), vs.BlockIndex())
 	}
-	if !vs.empty && vs.Timestamp().After(b.Timestamp()) {
+	if !empty && vs.Timestamp().After(b.Timestamp()) {
 		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
 	vs.ApplyStateUpdates(b.(*blockImpl).stateUpdate)
 	vs.appliedBlockHashes = append(vs.appliedBlockHashes, hashing.HashData(b.EssenceBytes()))
-	vs.empty = false
 	return nil
 }
 
@@ -230,7 +235,7 @@ func (r *OptimisticStateReaderImpl) Timestamp() (time.Time, error) {
 
 func (r *OptimisticStateReaderImpl) Hash() (hashing.HashValue, error) {
 	if !r.chainState.IsStateValid() {
-		return [32]byte{}, coreutil.ErrStateHasBeenInvalidated
+		return [32]byte{}, coreutil.ErrorStateInvalidated
 	}
 	hashBIn, err := r.db.Get(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash))
 	if err != nil {
@@ -241,7 +246,7 @@ func (r *OptimisticStateReaderImpl) Hash() (hashing.HashValue, error) {
 		return [32]byte{}, err
 	}
 	if !r.chainState.IsStateValid() {
-		return [32]byte{}, coreutil.ErrStateHasBeenInvalidated
+		return [32]byte{}, coreutil.ErrorStateInvalidated
 	}
 	return ret, nil
 }
@@ -260,7 +265,7 @@ func (r *OptimisticStateReaderImpl) SetBaseline() {
 
 // MustOptimisticVirtualState is a virtual state wrapper with global state baseline
 // Once baseline is invalidated globally any subsequent access to the mustOptimisticVirtualStateAccess
-// will lead to panic(coreutil.ErrStateHasBeenInvalidated)
+// will lead to panic(coreutil.ErrorStateInvalidated)
 type mustOptimisticVirtualStateAccess struct {
 	state    VirtualStateAccess
 	baseline coreutil.StateBaseline

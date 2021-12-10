@@ -39,14 +39,14 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 	_ = vm.WasmVMBase.LinkHost(impl, host)
 
 	err := vm.linker.DefineFunc("WasmLib", "hostGetBytes",
-		func(objID int32, keyID int32, typeID int32, stringRef int32, size int32) int32 {
+		func(objID, keyID, typeID, stringRef, size int32) int32 {
 			return vm.HostGetBytes(objID, keyID, typeID, stringRef, size)
 		})
 	if err != nil {
 		return err
 	}
 	err = vm.linker.DefineFunc("WasmLib", "hostGetKeyID",
-		func(keyRef int32, size int32) int32 {
+		func(keyRef, size int32) int32 {
 			return vm.HostGetKeyID(keyRef, size)
 		})
 	if err != nil {
@@ -60,15 +60,24 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 		return err
 	}
 	err = vm.linker.DefineFunc("WasmLib", "hostSetBytes",
-		func(objID int32, keyID int32, typeID int32, stringRef int32, size int32) {
+		func(objID, keyID, typeID, stringRef, size int32) {
 			vm.HostSetBytes(objID, keyID, typeID, stringRef, size)
 		})
 	if err != nil {
 		return err
 	}
 
+	// AssemblyScript Wasm versions uses this one to write panic message to console
+	err = vm.linker.DefineFunc("env", "abort",
+		func(p1, p2, p3, p4 int32) {
+			vm.EnvAbort(p1, p2, p3, p4)
+		})
+	if err != nil {
+		return err
+	}
+
 	// TinyGo Wasm versions uses this one to write panic message to console
-	fdWrite := func(fd int32, iovs int32, size int32, written int32) int32 {
+	fdWrite := func(fd, iovs, size, written int32) int32 {
 		return vm.HostFdWrite(fd, iovs, size, written)
 	}
 	err = vm.linker.DefineFunc("wasi_unstable", "fd_write", fdWrite)

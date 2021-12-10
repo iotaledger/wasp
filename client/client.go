@@ -5,13 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/webapi/model"
+	"golang.org/x/xerrors"
 )
 
 // WaspClient allows to make requests to the Wasp web API.
@@ -32,7 +30,7 @@ func NewWaspClient(baseURL string, httpClient ...http.Client) *WaspClient {
 }
 
 func processResponse(res *http.Response, decodeTo interface{}) error {
-	resBody, err := ioutil.ReadAll(res.Body)
+	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return xerrors.Errorf("unable to read response body: %w", err)
 	}

@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/testcore"
+	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/corecontracts/coreaccounts"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/corecontracts/coregovernance"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/corecontracts/coreroot"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	coreaccounts2 "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreaccounts"
+	coregovernance2 "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coregovernance"
+	coreroot2 "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreroot"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -50,29 +50,40 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 
 	saveGoDebug := *wasmsolo.GoDebug
 	saveGoWasm := *wasmsolo.GoWasm
+	saveTsWasm := *wasmsolo.TsWasm
+	*wasmsolo.GoDebug = false
+	*wasmsolo.GoWasm = false
+	*wasmsolo.TsWasm = false
 
 	exists, _ := util.ExistsFilePath("../pkg/testcore_bg.wasm")
 	if exists {
-		*wasmsolo.GoDebug = false
-		*wasmsolo.GoWasm = false
 		wasmlib.ConnectHost(nil)
 		t.Run(fmt.Sprintf("run RUST version of %s", t.Name()), func(t *testing.T) {
 			test(t, true)
 		})
 	}
 
-	exists, _ = util.ExistsFilePath("../wasmmain/pkg/testcore_go.wasm")
+	exists, _ = util.ExistsFilePath("../go/pkg/testcore_go.wasm")
 	if exists {
-		*wasmsolo.GoDebug = false
 		*wasmsolo.GoWasm = true
 		wasmlib.ConnectHost(nil)
 		t.Run(fmt.Sprintf("run GO version of %s", t.Name()), func(t *testing.T) {
 			test(t, true)
 		})
+		*wasmsolo.GoWasm = false
+	}
+
+	exists, _ = util.ExistsFilePath("../ts/pkg/testcore_ts.wasm")
+	if exists {
+		*wasmsolo.TsWasm = true
+		wasmlib.ConnectHost(nil)
+		t.Run(fmt.Sprintf("run TS version of %s", t.Name()), func(t *testing.T) {
+			test(t, true)
+		})
+		*wasmsolo.TsWasm = false
 	}
 
 	*wasmsolo.GoDebug = true
-	*wasmsolo.GoWasm = false
 	wasmlib.ConnectHost(nil)
 	t.Run(fmt.Sprintf("run GOVM version of %s", t.Name()), func(t *testing.T) {
 		test(t, true)
@@ -80,6 +91,7 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 
 	*wasmsolo.GoDebug = saveGoDebug
 	*wasmsolo.GoWasm = saveGoWasm
+	*wasmsolo.TsWasm = saveTsWasm
 }
 
 func TestDeployTestCore(t *testing.T) {
@@ -119,8 +131,8 @@ func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64)
 }
 
 func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.SoloAgent, amount int64) {
-	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
-	f := coreaccounts.ScFuncs.Deposit(ctxAcc.Sign(user))
+	ctxAcc := ctx.SoloContextForCore(t, coreaccounts2.ScName, coreaccounts2.OnLoad)
+	f := coreaccounts2.ScFuncs.Deposit(ctxAcc.Sign(user))
 	if target != nil {
 		f.Params.AgentID().SetValue(target.ScAgentID())
 	}
@@ -129,16 +141,16 @@ func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.Sol
 }
 
 func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.SoloAgent) {
-	ctxRoot := ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnLoad)
-	f := coreroot.ScFuncs.GrantDeployPermission(ctxRoot)
+	ctxRoot := ctx.SoloContextForCore(t, coreroot2.ScName, coreroot2.OnLoad)
+	f := coreroot2.ScFuncs.GrantDeployPermission(ctxRoot)
 	f.Params.Deployer().SetValue(deployer.ScAgentID())
 	f.Func.TransferIotas(1).Post()
 	require.NoError(t, ctxRoot.Err)
 }
 
 func setOwnerFee(t *testing.T, ctx *wasmsolo.SoloContext, amount int64) {
-	ctxGov := ctx.SoloContextForCore(t, coregovernance.ScName, coregovernance.OnLoad)
-	f := coregovernance.ScFuncs.SetContractFee(ctxGov)
+	ctxGov := ctx.SoloContextForCore(t, coregovernance2.ScName, coregovernance2.OnLoad)
+	f := coregovernance2.ScFuncs.SetContractFee(ctxGov)
 	f.Params.Hname().SetValue(testcore.HScName)
 	f.Params.OwnerFee().SetValue(amount)
 	f.Func.TransferIotas(1).Post()
@@ -146,8 +158,8 @@ func setOwnerFee(t *testing.T, ctx *wasmsolo.SoloContext, amount int64) {
 }
 
 func withdraw(t *testing.T, ctx *wasmsolo.SoloContext, user *wasmsolo.SoloAgent) {
-	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
-	f := coreaccounts.ScFuncs.Withdraw(ctxAcc.Sign(user))
+	ctxAcc := ctx.SoloContextForCore(t, coreaccounts2.ScName, coreaccounts2.OnLoad)
+	f := coreaccounts2.ScFuncs.Withdraw(ctxAcc.Sign(user))
 	f.Func.TransferIotas(1).Post()
 	require.NoError(t, ctxAcc.Err)
 }

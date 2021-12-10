@@ -2,7 +2,6 @@
 description:  How to run a Wasp node in using Docker. Build the image, configure it, run it. 
 image: /img/logo/WASP_logo_dark.png
 keywords:
-- ISCP
 - Smart Contracts
 - Running a node
 - docker

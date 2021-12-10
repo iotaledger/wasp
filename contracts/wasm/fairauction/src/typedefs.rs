@@ -12,9 +12,7 @@
 use wasmlib::*;
 use wasmlib::host::*;
 
-use crate::types::*;
-
-pub type ImmutableBidderList = ArrayOfImmutableAgentID;
+use crate::structs::*;
 
 pub struct ArrayOfImmutableAgentID {
     pub(crate) obj_id: i32,
@@ -30,7 +28,7 @@ impl ArrayOfImmutableAgentID {
     }
 }
 
-pub type MutableBidderList = ArrayOfMutableAgentID;
+pub type ImmutableBidderList = ArrayOfImmutableAgentID;
 
 pub struct ArrayOfMutableAgentID {
     pub(crate) obj_id: i32,
@@ -50,7 +48,7 @@ impl ArrayOfMutableAgentID {
     }
 }
 
-pub type ImmutableBids = MapAgentIDToImmutableBid;
+pub type MutableBidderList = ArrayOfMutableAgentID;
 
 pub struct MapAgentIDToImmutableBid {
     pub(crate) obj_id: i32,
@@ -62,7 +60,7 @@ impl MapAgentIDToImmutableBid {
     }
 }
 
-pub type MutableBids = MapAgentIDToMutableBid;
+pub type ImmutableBids = MapAgentIDToImmutableBid;
 
 pub struct MapAgentIDToMutableBid {
     pub(crate) obj_id: i32,
@@ -77,5 +75,7 @@ impl MapAgentIDToMutableBid {
         MutableBid { obj_id: self.obj_id, key_id: key.get_key_id() }
     }
 }
+
+pub type MutableBids = MapAgentIDToMutableBid;
 
 // @formatter:on

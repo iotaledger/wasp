@@ -15,14 +15,16 @@ In computer programming, a thunk is a function used to inject a calculation into
 function. Thunks are used to insert operations at the beginning or end of the other
 function to adapt it to changing requirements. If you remember from
 the [function call context](../wasm_vm/context.mdx) section, the `on_load` function and
-skeleton
-function signatures looked like this:
+skeleton function signatures looked like this:
 
 <Tabs defaultValue="go"
-    values={[
-        {label: 'Go', value: 'go'},
-        {label: 'Rust', value: 'rust'},
-    ]}>
+      groupId="language"
+      values={[
+          {label: 'Go', value: 'go'},
+          {label: 'Rust', value: 'rust'},
+          {label: 'TypeScript', value: 'ts'},
+      ]}>
+    
 <TabItem value="go">
 
 ```go
@@ -67,6 +69,28 @@ fn view_get_owner(ctx: &ScViewContext) {}
 ```
 
 </TabItem>
+<TabItem value="ts">
+
+```ts
+export function on_load() {
+    let exports = new ScExports();
+    exports.addFunc("divide", funcDivide);
+    exports.addFunc("init", funcInit);
+    exports.addFunc("member", funcMember);
+    exports.addFunc("setOwner", funcSetOwner);
+    exports.addView("getFactor", viewGetFactor);
+    exports.addView("getOwner", viewGetOwner);
+}
+
+function funcDivide(ctx: ScFuncContext) {}
+function funcInit(ctx: ScFuncContext) {}
+function funcMember(ctx: ScFuncContext) {}
+function funcSetOwner(ctx: ScFuncContext) {}
+function viewGetFactor(ctx: ScViewContext) {}
+function viewGetOwner(ctx: ScViewContext) {}
+```
+
+</TabItem>
 </Tabs>
 
 Now that the schema tool introduces a bunch of automatically generated features, that is
@@ -75,10 +99,13 @@ features, before calling the function implementations that are maintained by the
 Here is the new `on_load` function for the `dividend` contract:
 
 <Tabs defaultValue="go"
-    values={[
-        {label: 'Go', value: 'go'},
-        {label: 'Rust', value: 'rust'},
-    ]}>
+      groupId="language"
+      values={[
+          {label: 'Go', value: 'go'},
+          {label: 'Rust', value: 'rust'},
+          {label: 'TypeScript', value: 'ts'},
+      ]}>
+
 <TabItem value="go">
 
 ```go
@@ -119,6 +146,25 @@ fn on_load() {
 ```
 
 </TabItem>
+<TabItem value="ts">
+
+```ts
+export function on_load(): void {
+    let exports = new wasmlib.ScExports();
+    exports.addFunc(sc.FuncDivide, funcDivideThunk);
+    exports.addFunc(sc.FuncInit, funcInitThunk);
+    exports.addFunc(sc.FuncMember, funcMemberThunk);
+    exports.addFunc(sc.FuncSetOwner, funcSetOwnerThunk);
+    exports.addView(sc.ViewGetFactor, viewGetFactorThunk);
+    exports.addView(sc.ViewGetOwner, viewGetOwnerThunk);
+
+    for (let i = 0; i < sc.keyMap.length; i++) {
+        sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
+    }
+}
+```
+
+</TabItem>
 </Tabs>
 
 As you can see, instead of calling the user functions directly, we now call thunk versions
@@ -128,13 +174,16 @@ instead of having to negotiate these IDs each time we need them. The rest of the
 code will use those indexes whenever a known key is used.
 
 Here is an example of a thunk function for the `setOwner` contract function. You can
-examine the other thunks that all follow the same pattern in the generated `lib.rs`:
+examine the other thunks that all follow the same pattern in the generated `lib.xx`:
 
 <Tabs defaultValue="go"
-    values={[
-        {label: 'Go', value: 'go'},
-        {label: 'Rust', value: 'rust'},
-    ]}>
+      groupId="language"
+      values={[
+          {label: 'Go', value: 'go'},
+          {label: 'Rust', value: 'rust'},
+          {label: 'TypeScript', value: 'ts'},
+      ]}>
+
 <TabItem value="go">
 
 ```go
@@ -152,7 +201,7 @@ func funcSetOwnerThunk(ctx wasmlib.ScFuncContext) {
 
     f := &SetOwnerContext{
         Params: ImmutableSetOwnerParams{
-           id: wasmlib.OBJ_ID_PARAMS,
+            id: wasmlib.OBJ_ID_PARAMS,
         },
         State: MutableDividendState{
             id: wasmlib.OBJ_ID_STATE,
@@ -195,6 +244,31 @@ fn func_set_owner_thunk(ctx: &ScFuncContext) {
 ```
 
 </TabItem>
+<TabItem value="ts">
+
+```ts
+export class SetOwnerContext {
+    params: sc.ImmutableSetOwnerParams = new sc.ImmutableSetOwnerParams();
+    state: sc.MutableDividendState = new sc.MutableDividendState();
+}
+
+function funcSetOwnerThunk(ctx: wasmlib.ScFuncContext): void {
+    ctx.log("dividend.funcSetOwner");
+    // only defined owner of contract can change owner
+    let access = ctx.state().getAgentID(wasmlib.Key32.fromString("owner"));
+    ctx.require(access.exists(), "access not set: owner");
+    ctx.require(ctx.caller().equals(access.value()), "no permission");
+
+    let f = new sc.SetOwnerContext();
+    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+    ctx.require(f.params.owner().exists(), "missing mandatory owner")
+    sc.funcSetOwner(ctx, f);
+    ctx.log("dividend.funcSetOwner ok");
+}
+```
+
+</TabItem>
 </Tabs>
 
 First, the thunk logs the contract and function name to show the call has started. Then it
@@ -207,18 +281,18 @@ the contract can call this function.
 Next, we set up a strongly typed function-specific context structure. First, we add the
 function-specific immutable `params` interface structure, which is only present when the
 function can have parameters. Then we add the contract-specific `state` interface
-structure. In this case it is mutable because setOwner is a [Func](funcs.mdx). For [Views](views.mdx) this will be
-an immutable state interface. Finally, we add the function-specific mutable `results`
-interface structure, which is only present when the function returns results. Obviously,
-this is not the case for this setOwner function.
+structure. In this case it is mutable because setOwner is a [Func](funcs.mdx). For
+[Views](views.mdx) this will be an immutable state interface. Finally, we add the
+function-specific mutable `results` interface structure, which is only present when the
+function returns results. Obviously, this is not the case for this setOwner function.
 
 Now we get to the point where we can use the function-specific `params` interface to check
 for mandatory parameters. Each mandatory parameter is required to exist, or else we will
 panic out of the function with an error message.
 
-With the automated checks and setup completed, we now call the function implementation that
-is maintained by the user. After the user function has completed, we log that the contract
-function has completed successfully. Remember that any error within the user function will
-cause a panic, so this logging will never happen in that case.
+With the automated checks and setup completed, we now call the function implementation
+that is maintained by the user. After the user function has completed, we log that the
+contract function has completed successfully. Remember that any error within the user
+function will cause a panic, so this logging will never happen in that case.
 
 In the next section we will look at the specifics of [view functions](views.mdx).

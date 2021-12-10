@@ -7,7 +7,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 type WasmGoVM struct {
@@ -20,6 +20,10 @@ var _ WasmVM = &WasmGoVM{}
 
 func NewWasmGoVM(scName string, onLoad func()) *WasmGoVM {
 	return &WasmGoVM{scName: scName, onLoad: onLoad}
+}
+
+func Connect(h wasmlib.ScHost) wasmlib.ScHost {
+	return wasmlib.ConnectHost(h)
 }
 
 func (vm *WasmGoVM) Interrupt() {

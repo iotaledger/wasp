@@ -4,7 +4,7 @@
 use wasmlib::*;
 
 use crate::*;
-use crate::types::*;
+use crate::structs::*;
 
 pub fn func_mint_supply(ctx: &ScFuncContext, f: &MintSupplyContext) {
     let minted = ctx.minted();

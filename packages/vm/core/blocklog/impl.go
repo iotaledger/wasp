@@ -176,10 +176,17 @@ func viewGetEventsForRequest(ctx iscp.SandboxView) (dict.Dict, error) {
 
 // viewGetEventsForBlock returns a list of events for a given block.
 // params:
-// ParamBlockIndex - index of the block
+// ParamBlockIndex - index of the block (defaults to latest block)
 func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
-	blockIndex := params.MustGetUint32(ParamBlockIndex)
+
+	var blockIndex uint32
+	if ctx.Params().MustHas(ParamBlockIndex) {
+		blockIndex = params.MustGetUint32(ParamBlockIndex)
+	} else {
+		registry := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry)
+		blockIndex = registry.MustLen() - 1
+	}
 
 	if blockIndex == 0 {
 		// block 0 is an empty state

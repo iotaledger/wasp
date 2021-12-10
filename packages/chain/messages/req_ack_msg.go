@@ -6,7 +6,6 @@ package messages
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"golang.org/x/xerrors"
@@ -36,7 +35,7 @@ func (msg *RequestAcKMsg) Bytes() []byte {
 }
 
 func (msg *RequestAcKMsg) read(r io.Reader) error {
-	b, err := ioutil.ReadAll(r)
+	b, err := io.ReadAll(r)
 	if err != nil {
 		return xerrors.Errorf("failed to read requestIDs: %w", err)
 	}

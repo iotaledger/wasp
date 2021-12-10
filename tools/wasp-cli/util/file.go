@@ -1,13 +1,13 @@
 package util
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 func ReadFile(fname string) []byte {
-	b, err := ioutil.ReadFile(fname)
+	b, err := os.ReadFile(fname)
 	log.Check(err)
 	return b
 }

@@ -5,7 +5,7 @@
 
 package wasmclient
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 //go:wasm-module WasmLib
 //export hostGetBytes
@@ -26,21 +26,21 @@ func hostSetBytes(objID, keyID, typeID int32, value *byte, size int32)
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type WasmVMHost struct{
-	funcs []func(ctx wasmlib.ScFuncContext)
-	views []func(ctx wasmlib.ScViewContext)
+	funcs []wasmlib.ScFuncContextFunction
+	views []wasmlib.ScViewContextFunction
 }
 
 // implements wasmlib.ScHost interface
 var _ wasmlib.ScHost = &WasmVMHost{}
 
-func (w *WasmVMHost) AddFunc(f func(ctx wasmlib.ScFuncContext)) []func(ctx wasmlib.ScFuncContext) {
+func (w *WasmVMHost) AddFunc(f wasmlib.ScFuncContextFunction) []wasmlib.ScFuncContextFunction {
 	if f != nil {
 		w.funcs = append(w.funcs, f)
 	}
 	return w.funcs
 }
 
-func (w *WasmVMHost) AddView(v func(ctx wasmlib.ScViewContext)) []func(ctx wasmlib.ScViewContext) {
+func (w *WasmVMHost) AddView(v wasmlib.ScViewContextFunction) []wasmlib.ScViewContextFunction {
 	if v != nil {
 		w.views = append(w.views, v)
 	}

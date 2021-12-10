@@ -16,10 +16,10 @@ import TabItem from "@theme/TabItem"
 
 # Example Tests
 
-In the previous sections we showed you how you can [call()](call.mdx) or [post()](post.mdx) function requests. We also
-created a few wrapper functions to simplify calling these functions even further. Now we
-will look at how to use the SoloContext to create full-blown tests for the
-`dividend` example smart contract.
+In the previous sections we showed you how you can [call()](call.mdx) or
+[post()](post.mdx) function requests. We also created a few wrapper functions to simplify
+calling these functions even further. Now we will look at how to use the SoloContext to
+create full-blown tests for the `dividend` example smart contract.
 
 Let's start with a simple test. We are going to use the `member` function to add a valid
 new member/factor combination to the member group.
@@ -97,12 +97,12 @@ func TestAddMemberFailMissingFactor(t \*testing.T) {
 </TabItem>
 </Tabs>
 
-Each test has to set up the chain/contract/context from scratch. We will often
-use a specific setupTest() function to do all setup work that is shared by many tests.
+Each test has to set up the chain/contract/context from scratch. We will often use a
+specific setupTest() function to do all setup work that is shared by many tests.
 
-We cannot use the `dividendMember` wrapper function in these two tests
-because of the missing required function parameters. So we have copy/pasted the code, and
-removed the Params initialization we wanted to be missing.
+We cannot use the `dividendMember` wrapper function in these two tests because of the
+missing required function parameters. So we have copy/pasted the code, and removed the
+Params initialization we wanted to be missing.
 
 Now let's see a more complex example:
 
@@ -143,9 +143,9 @@ inside the `dividendMember()` function.
 
 Next we transfer 99 iotas as part of `thePost()` request to the `divide` function. We
 subsequently check that no error has occurred. Finally, we expect the balance of member1
-address to have increased by the total of 100 tokens that were stored in the
-`dividend` smart contract account, as 100/100th of the tokens should have been sent to
-member1. And the contract account should end up empty.
+address to have increased by the total of 100 tokens that were stored in the `dividend`
+smart contract account, as 100/100th of the tokens should have been sent to member1.
+And the contract account should end up empty.
 
 Now let's skip to the most complex test of all:
 
@@ -235,15 +235,15 @@ this:
 </TabItem>
 </Tabs>
 
-After the final `divide` call, we ended up with the exact amounts to disperse,
-so no remainder iotas were left in the contract account.
+After the final `divide` call, we ended up with the exact amounts to disperse, so no
+remainder iotas were left in the contract account.
 
-Each divide is cumulative to the balances of the members. We have
-highlighted this by indicating the separate increases after every `divide` call.
+Each divide is cumulative to the balances of the members. We have highlighted this by
+indicating the separate increases after every `divide` call.
 
-Finally, we will show how to test [Views](views.mdx) and/or [Funcs](funcs.mdx) that return a result.
-Since solo executes [post()](post.mdx) requests synchronously, it is possible to have a Func return a result and
-test for certain result values.
+Finally, we will show how to test [Views](views.mdx) and/or [Funcs](funcs.mdx) that return
+a result. Since solo executes [post()](post.mdx) requests synchronously, it is possible to
+have a Func return a result and test for certain result values.
 
 <Tabs defaultValue="go"
       values={[
@@ -290,5 +290,5 @@ func TestGetFactor(t *testing.T) {
 Here we first set up the same 3 dispersion factors, and then we retrieve the dispersion
 factors for each member in reverse order and verify its value.
 
-In the [next section](timelock.mdx) we will describe a few more helper member functions of the
-SoloContext.
+In the [next section](timelock.mdx) we will describe a few more helper member functions
+of the SoloContext.

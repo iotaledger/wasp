@@ -26,6 +26,7 @@ type peer struct {
 	remoteLppID  libp2ppeer.ID
 	accessLock   *sync.RWMutex
 	sendCh       *channels.InfiniteChannel
+	recvCh       *channels.InfiniteChannel
 	lastMsgSent  time.Time
 	lastMsgRecv  time.Time
 	numUsers     int
@@ -42,6 +43,7 @@ func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteLppID li
 		remoteLppID:  remoteLppID,
 		accessLock:   &sync.RWMutex{},
 		sendCh:       channels.NewInfiniteChannel(),
+		recvCh:       channels.NewInfiniteChannel(),
 		lastMsgSent:  time.Time{},
 		lastMsgRecv:  time.Time{},
 		numUsers:     0,
@@ -50,6 +52,7 @@ func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteLppID li
 		log:          log,
 	}
 	go p.sendLoop()
+	go p.recvLoop()
 	return p
 }
 
@@ -82,6 +85,7 @@ func (p *peer) maintenanceCheck() {
 	if numUsers == 0 && !trusted && lastMsgOld {
 		p.net.delPeer(p)
 		p.sendCh.Close()
+		p.recvCh.Close()
 	}
 }
 
@@ -115,9 +119,19 @@ func (p *peer) SendMsg(msg *peering.PeerMessage) {
 	p.sendCh.In() <- msg
 }
 
+func (p *peer) RecvMsg(msg *peering.RecvEvent) {
+	p.recvCh.In() <- msg
+}
+
 func (p *peer) sendLoop() {
 	for msg := range p.sendCh.Out() {
 		p.sendMsgDirect(msg.(*peering.PeerMessage))
+	}
+}
+
+func (p *peer) recvLoop() {
+	for msg := range p.recvCh.Out() {
+		p.net.triggerRecvEvents(msg)
 	}
 }
 

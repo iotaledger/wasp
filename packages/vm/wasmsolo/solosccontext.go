@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
 )
 
@@ -95,15 +94,15 @@ func (o *SoloScContext) processCall(bytes []byte) {
 	}
 	o.Tracef("CALL %s.%s", ctx.scName, funcName)
 	params := o.getParams(paramsID)
-	_ = wasmlib.ConnectHost(ctx.wasmHostOld)
+	_ = wasmhost.Connect(ctx.wasmHostOld)
 	res, err := ctx.Chain.CallView(ctx.scName, funcName, params)
-	_ = wasmlib.ConnectHost(ctx.wc)
+	_ = wasmhost.Connect(ctx.wc)
 	ctx.Err = err
 	if err != nil {
 		// o.Panic("failed to invoke call: " + err.Error())
 		return
 	}
-	returnID := o.GetObjectID(int32(wasmlib.KeyReturn), wasmlib.TYPE_MAP)
+	returnID := o.GetObjectID(wasmhost.KeyReturn, wasmhost.OBJTYPE_MAP)
 	ctx.wc.FindObject(returnID).(*wasmproc.ScDict).SetKvStore(res)
 }
 
@@ -212,7 +211,7 @@ func (o *SoloScContext) postSync(contract, function iscp.Hname, paramsID, transf
 		mintAddress := ledgerstate.NewED25519Address(ctx.keyPair.PublicKey)
 		req.WithMint(mintAddress, ctx.mint)
 	}
-	_ = wasmlib.ConnectHost(ctx.wasmHostOld)
+	_ = wasmhost.Connect(ctx.wasmHostOld)
 	var res dict.Dict
 	if ctx.offLedger {
 		ctx.offLedger = false
@@ -226,10 +225,10 @@ func (o *SoloScContext) postSync(contract, function iscp.Hname, paramsID, transf
 			ctx.Chain.Env.EnqueueRequests(ctx.Tx)
 		}
 	}
-	_ = wasmlib.ConnectHost(ctx.wc)
+	_ = wasmhost.Connect(ctx.wc)
 	if ctx.Err != nil {
 		return
 	}
-	returnID := o.GetObjectID(int32(wasmlib.KeyReturn), wasmlib.TYPE_MAP)
+	returnID := o.GetObjectID(wasmhost.KeyReturn, wasmhost.OBJTYPE_MAP)
 	ctx.wc.FindObject(returnID).(*wasmproc.ScDict).SetKvStore(res)
 }

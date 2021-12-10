@@ -2,7 +2,7 @@ package tests
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -121,7 +121,7 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 	fileNames := []string{"blob_test.go", "deploy_test.go", "inccounter_test.go", "account_test.go"}
 	blobs := make([][]byte, len(fileNames))
 	for i := range fileNames {
-		blobs[i], err = ioutil.ReadFile(fileNames[i])
+		blobs[i], err = os.ReadFile(fileNames[i])
 		require.NoError(t, err)
 	}
 	blobFieldValues := make(map[string]interface{})

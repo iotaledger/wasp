@@ -13,19 +13,19 @@ import TabItem from "@theme/TabItem"
 
 # Structured Data Types
 
-The [schema tool](usage.mdx) allows you to define your own structured data types that are composed of
-the predefined WasmLib value data types. The tool will generate a struct with named fields
-according to the definition in the schema definition file, and also generate code to
-serialize and deserialize the structure to a byte array, so that it can be saved as a
-single unit of data, for example in state storage.
+The [schema tool](usage.mdx) allows you to define your own structured data types that are
+composed of the predefined WasmLib value data types. The tool will generate a struct with
+named fields according to the definition in the schema definition file, and also generate
+code to serialize and deserialize the structure to a byte array, so that it can be saved
+as a single unit of data, for example in state storage.
 
-You can use structs directly as a type in state storage definitions and the schema
-tool will automatically generate the proxy code to access it properly.
+You can use structs directly as a type in state storage definitions and the schema tool
+will automatically generate the proxy code to access it properly.
 
 For example, let's say you are creating a `betting` smart contract. Then you would want to
-store information for each bet. The Bet structure could consist of the bet amount and time
-, the number of the item that was bet on, and the agent ID of the one who placed
-the bet. And you would keep track of all bets in state storage in an array of Bet structs.
+store information for each bet. The Bet structure could consist of the bet amount and
+time, the number of the item that was bet on, and the agent ID of the one who placed the
+bet. And you would keep track of all bets in state storage in an array of Bet structs.
 To do so, you would insert the following into the schema definition file:
 
 <Tabs defaultValue="yaml"
@@ -70,15 +70,16 @@ state:
 </TabItem>
 </Tabs>
 
-The schema tool will generate `types.rs` which contains the following code for the Bet
+The schema tool will generate `types.xx` which contains the following code for the Bet
 struct:
 
 <Tabs defaultValue="go"
+      groupId="language"
       values={[
           {label: 'Go', value: 'go'},
           {label: 'Rust', value: 'rust'},
-      ]}
-      groupId="language">
+          {label: 'TypeScript', value: 'ts'},
+      ]}>
 
 <TabItem value="go">
 
@@ -88,60 +89,60 @@ package betting
 import "github.com/iotaledger/wasp/packages/vm/wasmlib"
 
 type Bet struct {
-	Amount int64             // bet amount
-	Better wasmlib.ScAgentID // Who placed this bet
-	Number int32             // number of item we bet on
-	Time   int64             // timestamp of this bet
+    Amount int64             // bet amount
+    Better wasmlib.ScAgentID // Who placed this bet
+    Number int32             // number of item we bet on
+    Time   int64             // timestamp of this bet
 }
 
 func NewBetFromBytes(bytes []byte) *Bet {
-	decode := wasmlib.NewBytesDecoder(bytes)
-	data := &Bet{}
-	data.Amount = decode.Int64()
-	data.Better = decode.AgentID()
-	data.Number = decode.Int32()
-	data.Time = decode.Int64()
-	decode.Close()
-	return data
+    decode := wasmlib.NewBytesDecoder(bytes)
+    data := &Bet{}
+    data.Amount = decode.Int64()
+    data.Better = decode.AgentID()
+    data.Number = decode.Int32()
+    data.Time = decode.Int64()
+    decode.Close()
+    return data
 }
 
 func (o *Bet) Bytes() []byte {
-	return wasmlib.NewBytesEncoder().
-		Int64(o.Amount).
-		AgentID(o.Better).
-		Int32(o.Number).
-		Int64(o.Time).
-		Data()
+    return wasmlib.NewBytesEncoder().
+        Int64(o.Amount).
+        AgentID(o.Better).
+        Int32(o.Number).
+        Int64(o.Time).
+        Data()
 }
 
 type ImmutableBet struct {
-	objID int32
-	keyID wasmlib.Key32
+    objID int32
+    keyID wasmlib.Key32
 }
 
 func (o ImmutableBet) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+    return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
 }
 
 func (o ImmutableBet) Value() *Bet {
-	return NewBetFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+    return NewBetFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
 }
 
 type MutableBet struct {
-	objID int32
-	keyID wasmlib.Key32
+    objID int32
+    keyID wasmlib.Key32
 }
 
 func (o MutableBet) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+    return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
 }
 
 func (o MutableBet) SetValue(value *Bet) {
-	wasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())
+    wasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())
 }
 
 func (o MutableBet) Value() *Bet {
-	return NewBetFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+    return NewBetFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
 }
 ```
 
@@ -216,19 +217,94 @@ impl MutableBet {
 ```
 
 </TabItem>
+<TabItem value="ts">
+
+```ts
+import * as wasmlib from "../wasmlib"
+
+export class Bet {
+    amount: i64 = 0;          // bet amount
+    better: wasmlib.ScAgentID = new wasmlib.ScAgentID(); // Who placed this bet
+    number: i32 = 0;          // number of item we bet on
+    time  : i64 = 0;          // timestamp of this bet
+
+    static fromBytes(bytes: u8[]): Bet {
+        let decode = new wasmlib.BytesDecoder(bytes);
+        let data = new Bet();
+        data.amount = decode.int64();
+        data.better = decode.agentID();
+        data.number = decode.int32();
+        data.time = decode.int64();
+        decode.close();
+        return data;
+    }
+
+    bytes(): u8[] {
+        return new wasmlib.BytesEncoder().
+            int64(this.amount).
+            agentID(this.better).
+            int32(this.number).
+            int64(this.time).
+            data();
+    }
+}
+
+export class ImmutableBet {
+    objID: i32;
+    keyID: wasmlib.Key32;
+
+    constructor(objID: i32, keyID: wasmlib.Key32) {
+        this.objID = objID;
+        this.keyID = keyID;
+    }
+
+    exists(): boolean {
+        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+    }
+
+    value(): Bet {
+        return Bet.fromBytes(wasmlib.getBytes(this.objID, this.keyID,wasmlib. TYPE_BYTES));
+    }
+}
+
+export class MutableBet {
+    objID: i32;
+    keyID: wasmlib.Key32;
+
+    constructor(objID: i32, keyID: wasmlib.Key32) {
+        this.objID = objID;
+        this.keyID = keyID;
+    }
+
+    exists(): boolean {
+        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+    }
+
+    setValue(value: Bet): void {
+        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());
+    }
+
+    value(): Bet {
+        return Bet.fromBytes(wasmlib.getBytes(this.objID, this.keyID,wasmlib. TYPE_BYTES));
+    }
+}
+```
+
+</TabItem>
 </Tabs>
 
-Notice how the generated ImmutableBet and MutableBet proxies use the from_bytes() and
-to_bytes() (de)serialization code to automatically transform byte arrays into Bet structs.
+Notice how the generated ImmutableBet and MutableBet proxies use the fromBytes() and
+toBytes() (de)serialization code to automatically transform byte arrays into Bet structs.
 
-The generated code in `state.rs` that implements the state interface is shown here:
+The generated code in `state.xx` that implements the state interface is shown here:
 
 <Tabs defaultValue="go"
+      groupId="language"
       values={[
           {label: 'Go', value: 'go'},
           {label: 'Rust', value: 'rust'},
-      ]}
-      groupId="language">
+          {label: 'TypeScript', value: 'ts'},
+      ]}>
 
 <TabItem value="go">
 
@@ -238,57 +314,57 @@ package betting
 import "github.com/iotaledger/wasp/packages/vm/wasmlib"
 
 type ArrayOfImmutableBet struct {
-	objID int32
+    objID int32
 }
 
 func (a ArrayOfImmutableBet) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+    return wasmlib.GetLength(a.objID)
 }
 
 func (a ArrayOfImmutableBet) GetBet(index int32) ImmutableBet {
-	return ImmutableBet{objID: a.objID, keyID: wasmlib.Key32(index)}
+    return ImmutableBet{objID: a.objID, keyID: wasmlib.Key32(index)}
 }
 
 type ImmutableBettingState struct {
-	id int32
+    id int32
 }
 
 func (s ImmutableBettingState) Bets() ArrayOfImmutableBet {
-	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
-	return ArrayOfImmutableBet{objID: arrID}
+    arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
+    return ArrayOfImmutableBet{objID: arrID}
 }
 
 func (s ImmutableBettingState) Owner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxStateOwner])
+    return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxStateOwner])
 }
 
 type ArrayOfMutableBet struct {
-	objID int32
+    objID int32
 }
 
 func (a ArrayOfMutableBet) Clear() {
-	wasmlib.Clear(a.objID)
+    wasmlib.Clear(a.objID)
 }
 
 func (a ArrayOfMutableBet) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+    return wasmlib.GetLength(a.objID)
 }
 
 func (a ArrayOfMutableBet) GetBet(index int32) MutableBet {
-	return MutableBet{objID: a.objID, keyID: wasmlib.Key32(index)}
+    return MutableBet{objID: a.objID, keyID: wasmlib.Key32(index)}
 }
 
 type MutableBettingState struct {
-	id int32
+    id int32
 }
 
 func (s MutableBettingState) Bets() ArrayOfMutableBet {
-	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
-	return ArrayOfMutableBet{objID: arrID}
+    arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
+    return ArrayOfMutableBet{objID: arrID}
 }
 
 func (s MutableBettingState) Owner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxStateOwner])
+    return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxStateOwner])
 }
 ```
 
@@ -369,9 +445,76 @@ impl MutableBettingState {
 ```
 
 </TabItem>
+<TabItem value="ts">
+
+```ts
+import * as wasmlib from "../wasmlib"
+import * as sc from "./index";
+
+export class ArrayOfImmutableBet {
+    objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    length(): i32 {
+        return wasmlib.getLength(this.objID);
+    }
+
+    getBet(index: i32): sc.ImmutableBet {
+        return new sc.ImmutableBet(this.objID, new wasmlib.Key32(index));
+    }
+}
+
+export class ImmutableBettingState extends wasmlib.ScMapID {
+    bets(): sc.ArrayOfImmutableBet {
+        let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
+        return new sc.ArrayOfImmutableBet(arrID)
+    }
+
+    owner(): wasmlib.ScImmutableAgentID {
+        return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxStateOwner]);
+    }
+}
+
+export class ArrayOfMutableBet {
+    objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    clear(): void {
+        wasmlib.clear(this.objID);
+    }
+
+    length(): i32 {
+        return wasmlib.getLength(this.objID);
+    }
+
+    getBet(index: i32): sc.MutableBet {
+        return new sc.MutableBet(this.objID, new wasmlib.Key32(index));
+    }
+}
+
+export class MutableBettingState extends wasmlib.ScMapID {
+    bets(): sc.ArrayOfMutableBet {
+        let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
+        return new sc.ArrayOfMutableBet(arrID)
+    }
+
+    owner(): wasmlib.ScMutableAgentID {
+        return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxStateOwner]);
+    }
+}
+```
+
+</TabItem>
 </Tabs>
 
 The end result is an ImmutableBettingState and MutableBettingState structure that can
 directly interface to the state of the betting contract.
 
-In the next section we will look at how to make even more [complex type definitions](typedefs.mdx).
+In the next section we will look at how to make even more
+    [complex type definitions](typedefs.mdx).

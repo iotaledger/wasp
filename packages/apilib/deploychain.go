@@ -6,7 +6,6 @@ package apilib
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"time"
 
@@ -64,7 +63,7 @@ func DeployChainWithDKG(par CreateChainParams) (*iscp.ChainID, ledgerstate.Addre
 
 func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address) (*iscp.ChainID, error) {
 	var err error
-	textout := ioutil.Discard
+	textout := io.Discard
 	if par.Textout != nil {
 		textout = par.Textout
 	}

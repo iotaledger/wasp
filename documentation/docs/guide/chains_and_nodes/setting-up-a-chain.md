@@ -1,6 +1,5 @@
 ---
 keywords:
-- ISCP
 - Smart Contracts
 - Chain
 - Set up
@@ -94,9 +93,9 @@ After you have requested the funds, you can deposit funds to a chain by running:
 wasp-cli chain deposit IOTA:10000
 ```
 
-### Deploy the ISCP Chain
+### Deploy the IOTA Smart Contracts Chain
 
-You can deploy your ISCP chain by running:
+You can deploy your IOTA Smart Contracts chain by running:
 
 ```shell
 wasp-cli chain deploy --committee=0,1,2,3 --quorum=3 --chain=mychain --description="My chain"
@@ -112,6 +111,10 @@ The `--quorum` flag indicates the minimum amount of nodes required to form a con
 
 You can check that the chain was properly deployed in the Wasp node dashboard
 (e.g. `127.0.0.1:7000`). Note that the chain was deployed with some [core contracts](../core_concepts/core_contracts/overview.md).
+
+## Video Tutorial
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/3mLpV_neB6I" title="Setting up Wasp Chain" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ### Deploying a Wasm Contract
 
@@ -173,6 +176,11 @@ Example response:
 ```log
 counter: 1
 ```
+
+
+## Video Tutorial
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Yaev4Cu1GW0" title="Deploy a Wasm Contract" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ### Troubleshooting
 

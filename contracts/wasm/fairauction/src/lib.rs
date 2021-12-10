@@ -8,7 +8,6 @@
 // @formatter:off
 
 #![allow(dead_code)]
-
 #![allow(unused_imports)]
 
 use fairauction::*;
@@ -27,8 +26,8 @@ mod keys;
 mod params;
 mod results;
 mod state;
+mod structs;
 mod typedefs;
-mod types;
 mod fairauction;
 
 #[no_mangle]

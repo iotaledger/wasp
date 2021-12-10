@@ -9,9 +9,9 @@ import (
 )
 
 func CallView(ch chain.ChainCore, contractHname, viewHname iscp.Hname, params dict.Dict) (dict.Dict, error) {
-	vctx := viewcontext.NewFromChain(ch)
 	var ret dict.Dict
 	err := optimism.RetryOnStateInvalidated(func() error {
+		vctx := viewcontext.NewFromChain(ch)
 		var err error
 		ret, err = vctx.CallView(contractHname, viewHname, params)
 		return err

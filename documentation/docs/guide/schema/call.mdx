@@ -16,39 +16,41 @@ import TabItem from "@theme/TabItem"
 
 Synchronous function calls between smart contracts act very similar to how normal function
 calls work in any programming language, but with a slight twist. With normal function
-calls you share all the memory that you can access with every function that you call.
-However, when calling a smart contract function you can only access the memory assigned to
-that specific smart contract. Remember, each smart contract runs in its own sandbox
-environment. Therefore, the only way to share data between smart contracts that call each
-other is through function parameters and return values.
+calls you share all the global memory that you can access with every function that you
+call. However, when calling a smart contract function you can only access the memory
+assigned to that specific smart contract. Remember, each smart contract runs in its own
+sandbox environment. Therefore, the only way to share data between smart contracts that
+call each other is through function parameters and return values.
 
 Synchronous calls can only be made between contracts that are running on the same contract
-chain. The ISCP host knows about all the contracts it is running on a chain, and therefore
+chain. The IOTA Smart Contracts host knows about all the contracts it is running on a chain, and therefore
 is able to dispatch the call to the correct contract function. The function descriptor is
 used to specify the call parameters (if any) through its `params` proxy, and to invoke the
 function through its `func` interface.
 
-In addition, when the function that is called is not a [View](views.mdx), it is possible to pass tokens
-to the function call through this interface. Note that the only way to call a function and
-properly pass tokens to it _within the same contract_ is through the function descriptor.
-Otherwise, the incoming() function will not register any incoming tokens.
+In addition, when the function that is called is not a [View](views.mdx), it is possible
+to pass tokens to the function call through this interface. Note that the only way to call
+a function and properly pass tokens to it _within the same chain_ is through the function
+descriptor. Otherwise, the incoming() function will not register any incoming tokens.
 
-When the call is made, the calling function will be paused and wait for the called function
-to complete. After completion, it may access the returned values (if any) through
+When the call is made, the calling function will be paused and wait for the called
+function to complete. After completion, it may access the returned values (if any) through
 the [`results` proxy](results.mdx) of the function descriptor.
 
-When calling a function from a View function, it is only possible to call other View functions. The
-ScFuncs interface enforces this at compile-time through the ISCP function context that
-needs to be passed to the member function that creates the function descriptor.
+When calling a function from a View function, it is only possible to call other View
+functions. The ScFuncs interface enforces this at compile-time through the IOTA Smart Contracts function
+context that needs to be passed to the function that creates the function descriptor.
 
 Here's how a smart contract would tell a `dividend` contract on the same chain to divide
 the 1000 tokens it passes to the function:
 
 <Tabs defaultValue="go"
-    values={[
-        {label: 'Go', value: 'go'},
-        {label: 'Rust', value: 'rust'},
-    ]}>
+      groupId="language"
+      values={[
+          {label: 'Go', value: 'go'},
+          {label: 'Rust', value: 'rust'},
+          {label: 'TypeScript', value: 'ts'},
+      ]}>
 
 <TabItem value="go">
 
@@ -66,15 +68,25 @@ f.func.transfer_iotas(1000).call();
 ```
 
 </TabItem>
+<TabItem value="ts">
+
+```ts
+let f = dividend.ScFuncs.divide(ctx);
+f.func.transferIotas(1000).call();
+```
+
+</TabItem>
 </Tabs>
 
 And here is how a smart contract would ask a `dividend` contract on the same chain to
 return the dispersion factor for a specific address:
 
 <Tabs defaultValue="go"
+      groupId="language"
       values={[
           {label: 'Go', value: 'go'},
           {label: 'Rust', value: 'rust'},
+          {label: 'TypeScript', value: 'ts'},
       ]}>
 
 <TabItem value="go">
@@ -91,7 +103,17 @@ factor := f.Results.Factor().Value()
 
 ```rust
 let f = dividend::ScFuncs::get_factor(ctx);
-f.params.address().set_value( & address);
+f.params.address().set_value(&address);
+f.func.call();
+let factor = f.results.factor().value();
+```
+
+</TabItem>
+<TabItem value="ts">
+
+```ts
+let f = dividend.ScFuncs.getFactor(ctx);
+f.params.address().setValue(address);
 f.func.call();
 let factor = f.results.factor().value();
 ```
@@ -105,16 +127,18 @@ let factor = f.results.factor().value();
 4. Use the `results` proxy in the function descriptor to retrieve any results we are
 interested in.
 
-The function descriptors assume that the function to be called is associated
-with the default Hname of the contract, in this case ScHname::new("dividend"). If you
-deployed the contract that contains the function you want to call under a different name,
-then you would have to provide its associated Hname to the `func` member through the
-of_contract() member function like this:
+The function descriptors assume that the function to be called is associated with the
+default Hname of the contract, in this case ScHname::new("dividend"). If you deployed the
+contract that contains the function you want to call under a different name, then you
+would have to provide its associated Hname to the `func` member through the of_contract()
+member function like this:
 
 <Tabs defaultValue="go"
+      groupId="language"
       values={[
           {label: 'Go', value: 'go'},
           {label: 'Rust', value: 'rust'},
+          {label: 'TypeScript', value: 'ts'},
       ]}>
 
 <TabItem value="go">
@@ -129,9 +153,18 @@ f.Func.OfContract(altContract).TransferIotas(1000).Call()
 <TabItem value="rust">
 
 ```rust
-let altContract = ScHname::new("alternateName");
+let alt_contract = ScHname::new("alternateName");
 let f = dividend::ScFuncs::divide(ctx);
-f.func.of_contract(altContract).transfer_iotas(1000).call();
+f.func.of_contract(alt_contract).transfer_iotas(1000).call();
+```
+
+</TabItem>
+<TabItem value="ts">
+
+```ts
+let altContract = ScHname.fromString("alternateName");
+let f = dividend.ScFuncs.divide(ctx);
+f.func.ofContract(altContract).transferIotas(1000).call();
 ```
 
 </TabItem>

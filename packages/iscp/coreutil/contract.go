@@ -166,7 +166,7 @@ func fallbackHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	if ctx.IncomingTransfer() != nil {
 		transferStr = ctx.IncomingTransfer().String()
 	}
-	ctx.Log().Debugf("default full entry point handler invoked for contact %s from caller %s\nTransfer: %s",
+	ctx.Log().Debugf("default full entry point handler invoked for contract %s from caller %s\nTransfer: %s",
 		ctx.Contract(), ctx.Caller(), transferStr)
 	return nil, nil
 }

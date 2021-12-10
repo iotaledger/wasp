@@ -13,7 +13,7 @@
   const REPOSITORIES: { label: string; link: string }[] = [
     {
       label: 'Fair Roulette',
-      link: 'https://github.com/iotaledger/wasp/tree/roulette_poc/contracts/wasm/fairroulette',
+      link: 'https://github.com/iotaledger/wasp/tree/master/contracts/wasm/fairroulette',
     },
     {
       label: 'Wasp',
@@ -46,6 +46,11 @@
     {
       label: 'Demo Wiki',
       href: 'https://wiki.iota.org/wasp/guide/example_projects/fair_roulette',
+      target: '_blank',
+    },
+    {
+      label: 'White Paper',
+      href: 'https://files.iota.org/papers/ISC_WP_Nov_10_2021.pdf',
       target: '_blank',
     },
   ];

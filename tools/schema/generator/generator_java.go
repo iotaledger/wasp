@@ -156,8 +156,7 @@ func (s *Schema) GenerateJavaFuncsNew(scFileName string) error {
 	defer file.Close()
 
 	// write file header
-	fmt.Fprintln(file, copyright(false))
-	fmt.Fprintln(file, copyright(true))
+	// fmt.Fprintln(file, copyright(false))
 	fmt.Fprintf(file, "package org.iota.wasp.contracts.%s;\n\n", s.Name)
 	fmt.Fprintf(file, "import org.iota.wasp.contracts.%s.lib.*;\n", s.Name)
 	fmt.Fprintf(file, "import org.iota.wasp.wasmlib.context.*;\n")
@@ -188,7 +187,7 @@ func (s *Schema) GenerateJavaLib() error {
 	defer file.Close()
 
 	// write file header
-	fmt.Fprintln(file, copyright(true))
+	// fmt.Fprintln(file, copyright(true))
 	fmt.Fprintf(file, "package org.iota.wasp.contracts.%s.lib;\n\n", s.Name)
 	fmt.Fprintf(file, "import de.mirkosertic.bytecoder.api.*;\n")
 	fmt.Fprintf(file, "import org.iota.wasp.contracts.%s.*;\n", s.Name)
@@ -234,7 +233,7 @@ func (s *Schema) GenerateJavaConsts() error {
 	defer file.Close()
 
 	// write file header
-	fmt.Fprintln(file, copyright(true))
+	// fmt.Fprintln(file, copyright(true))
 	fmt.Fprintf(file, "package org.iota.wasp.contracts.%s.lib;\n\n", s.Name)
 	fmt.Fprintf(file, "import org.iota.wasp.wasmlib.hashtypes.*;\n")
 	fmt.Fprintf(file, "import org.iota.wasp.wasmlib.keys.*;\n")
@@ -288,7 +287,7 @@ func (s *Schema) GenerateJavaThunk(file, params *os.File, f *Func) {
 	funcName := capitalize(f.FuncName)
 	funcKind := capitalize(f.FuncName[:4])
 
-	fmt.Fprintln(params, copyright(true))
+	// fmt.Fprintln(params, copyright(true))
 	fmt.Fprintf(params, "package org.iota.wasp.contracts.%s.lib;\n", s.Name)
 	if len(f.Params) != 0 {
 		fmt.Fprintf(params, "\nimport org.iota.wasp.wasmlib.immutable.*;\n")
@@ -363,14 +362,14 @@ func (s *Schema) GenerateJavaTypes() error {
 		return nil
 	}
 
-	err := os.MkdirAll("types", 0o755)
+	err := os.MkdirAll("structs", 0o755)
 	if err != nil {
 		return err
 	}
 
 	// write structs
 	for _, typeDef := range s.Structs {
-		err = typeDef.GenerateJavaType(s.Name)
+		err = s.GenerateJavaType(typeDef)
 		if err != nil {
 			return err
 		}
@@ -379,29 +378,62 @@ func (s *Schema) GenerateJavaTypes() error {
 	return nil
 }
 
-func (s *Schema) GenerateJavaWasmMain() error {
-	file, err := os.Create("wasmmain/" + s.Name + ".go")
+func (s *Schema) GenerateJavaType(td *Struct) error {
+	file, err := os.Create("structs/" + td.Name + ".java")
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	importname := ModuleName + strings.Replace(ModuleCwd[len(ModulePath):], "\\", "/", -1)
+	// calculate padding
+	nameLen, typeLen := calculatePadding(td.Fields, javaTypes, false)
+
 	// write file header
-	fmt.Fprintln(file, copyright(true))
-	fmt.Fprint(file, "// +build wasm\n\n")
-	fmt.Fprint(file, "package main\n\n")
-	fmt.Fprint(file, importWasmClient)
-	fmt.Fprintf(file, "import \"%s\"\n\n", importname)
+	// fmt.Fprint(file, copyright(true))
+	fmt.Fprintf(file, "\npackage org.iota.wasp.contracts.%s.structs;\n\n", s.Name)
+	fmt.Fprint(file, "import org.iota.wasp.wasmlib.bytes.*;\n")
+	fmt.Fprint(file, "import org.iota.wasp.wasmlib.hashtypes.*;\n\n")
 
-	fmt.Fprintf(file, "func main() {\n")
-	fmt.Fprintf(file, "}\n\n")
+	fmt.Fprintf(file, "public class %s {\n", td.Name)
 
-	fmt.Fprintf(file, "//export on_load\n")
-	fmt.Fprintf(file, "func OnLoad() {\n")
-	fmt.Fprintf(file, "    wasmclient.ConnectWasmHost()\n")
-	fmt.Fprintf(file, "    %s.OnLoad()\n", s.Name)
+	// write struct layout
+	if len(td.Fields) > 1 {
+		fmt.Fprint(file, "    // @formatter:off\n")
+	}
+	for _, field := range td.Fields {
+		fldName := capitalize(field.Name) + ";"
+		fldType := pad(javaTypes[field.Type], typeLen)
+		if field.Comment != "" {
+			fldName = pad(fldName, nameLen+1)
+		}
+		fmt.Fprintf(file, "    public %s %s%s\n", fldType, fldName, field.Comment)
+	}
+	if len(td.Fields) > 1 {
+		fmt.Fprint(file, "    // @formatter:on\n")
+	}
+
+	// write default constructor
+	fmt.Fprintf(file, "\n    public %s() {\n    }\n", td.Name)
+
+	// write constructor from byte array
+	fmt.Fprintf(file, "\n    public %s(byte[] bytes) {\n", td.Name)
+	fmt.Fprintf(file, "        BytesDecoder decode = new BytesDecoder(bytes);\n")
+	for _, field := range td.Fields {
+		name := capitalize(field.Name)
+		fmt.Fprintf(file, "        %s = decode.%s();\n", name, field.Type)
+	}
+	fmt.Fprintf(file, "        decode.Close();\n")
+	fmt.Fprintf(file, "    }\n")
+
+	// write conversion to byte array
+	fmt.Fprintf(file, "\n    public byte[] toBytes() {\n")
+	fmt.Fprintf(file, "        return new BytesEncoder().\n")
+	for _, field := range td.Fields {
+		name := capitalize(field.Name)
+		fmt.Fprintf(file, "                %s(%s).\n", field.Type, name)
+	}
+	fmt.Fprintf(file, "                Data();\n    }\n")
+
 	fmt.Fprintf(file, "}\n")
-
 	return nil
 }

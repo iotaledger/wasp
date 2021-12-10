@@ -51,6 +51,7 @@ func Init(
 		webapiutil.GetAccountBalance,
 		webapiutil.HasRequestBeenProcessed,
 		time.Duration(parameters.GetInt(parameters.OffledgerAPICacheTTL))*time.Second,
+		log,
 	)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")

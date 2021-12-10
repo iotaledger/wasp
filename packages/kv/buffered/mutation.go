@@ -122,6 +122,9 @@ func (ms *Mutations) Get(k kv.Key) ([]byte, bool) {
 }
 
 func (ms *Mutations) Set(k kv.Key, v []byte) {
+	if v == nil {
+		panic("cannot Set(key, nil), use Del() to remove a key/value")
+	}
 	delete(ms.Dels, k)
 	ms.Sets[k] = v
 	ms.modified = true

@@ -1,12 +1,11 @@
 ---
 keywords:
-- ISCP
 - data types
 - WasmLib
 - array
 - proxies
 - map
-description: The WasmLib provides direct support for the basic value data types that are found in all programming languages, and WasmLib version of ISCP-specific value data types.
+description: The WasmLib provides direct support for the basic value data types that are found in all programming languages, and WasmLib version of IOTA Smart Contracts-specific value data types.
 image: /img/logo/WASP_logo_dark.png
 ---
 # WasmLib Data Types
@@ -22,22 +21,22 @@ direct support for the following value data types:
 - `Bytes` - An arbitrary-length byte array.
 - `String` - An UTF-8 encoded string value.
 
-## ISCP-specific Value Data Types
+## IOTA Smart Contracts-specific Value Data Types
 
 - `Address` - A 33-byte Tangle address.
-- `AgentID` - A 37-byte ISCP Agent ID.
-- `ChainID` - A 33-byte ISCP Chain ID.
+- `AgentID` - A 37-byte IOTA Smart Contracts Agent ID.
+- `ChainID` - A 33-byte IOTA Smart Contracts Chain ID.
 - `Color` - A 32-byte token color ID.
-- `ContractID` - A 37-byte ISCP smart contract ID.
+- `ContractID` - A 37-byte IOTA Smart Contracts smart contract ID.
 - `Hash` - A 32-byte hash value.
 - `Hname` - A 4-byte unsigned integer hash value derived from a name string.
 - `RequestID` - A 34-byte transaction request ID.
 
 The first group consists of the basic value data types that are found in all programming
-languages, whereas the second group consists of WasmLib versions of ISCP-specific value
+languages, whereas the second group consists of WasmLib versions of IOTA Smart Contracts-specific value
 data types. More detailed explanations about their specific uses can be found in the
-[ISCP documentation](https://github.com/iotaledger/wasp/blob/develop/documentation/docs/misc/coretypes.md)
-. WasmLib provides its own implementations for each of the ISCP value data types. They can
+[IOTA Smart Contracts documentation](https://github.com/iotaledger/wasp/blob/develop/documentation/docs/misc/coretypes.md)
+. WasmLib provides its own implementations for each of the IOTA Smart Contracts value data types. They can
 all be serialized into and deserialized from a byte array. Each value data type can also
 be used as a key in key/value maps.
 
@@ -52,8 +51,8 @@ in two flavors that reflect this, and makes sure the data can only be used as in
 rule is that from an immutable container proxy you can only derive immutable container and
 value proxies. The referenced data can never be changed through immutable proxies.
 Separating these constraints for types into separate proxy types allows the use of
-compile-time type-checking to enforce these constraints.  To guard against client code that tries to bypass
-them, the ISCP sandbox will also check these constraints at runtime on the host.
+compile-time type-checking to enforce these constraints. To guard against client code that tries to bypass
+them, the IOTA Smart Contracts sandbox will also check these constraints at runtime on the host.
 
 ## Full Matrix of WasmLib Types (excluding array proxies)
 

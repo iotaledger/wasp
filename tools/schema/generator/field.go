@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/vm/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 var (

@@ -15,27 +15,29 @@ import TabItem from "@theme/TabItem"
 
 # Testing Smart Contracts
 
-Testing of smart contracts happens in the [Solo testing environment](../solo/what-is-solo.md). This enables
-synchronous, deterministic testing of smart contract functionalities without the overhead of
+Testing of smart contracts happens in the
+[Solo testing environment](../solo/what-is-solo.md). This enables synchronous,
+deterministic testing of smart contract functionalities without the overhead of
 having to start nodes, set up a committee, and send transactions over the Tangle. Instead,
 you can use Go's built-in test environment in combination with Solo to deploy chains and
 smart contracts and simulate transactions.
 
-Solo directly interacts with the ISCP code, and uses all the data types that are
-[defined in the ISCP code](https://github.com/iotaledger/wasp/blob/develop/documentation/docs/misc/coretypes.md)
-directly. Because they run in a sandboxed environment our Wasm smart contracts cannot access these types directly.
-Therefore, WasmLib implements its [own versions](../wasm_vm/types.mdx) of these data types, and the VM layer acts as a data type
-translator between both systems.
+Solo directly interacts with the IOTA Smart Contracts code, and uses all the data types that are
+[defined in the IOTA Smart Contracts code](https://github.com/iotaledger/wasp/blob/develop/documentation/docs/misc/coretypes.md)
+directly. Because they run in a sandboxed environment our Wasm smart contracts cannot
+access these types directly. Therefore, WasmLib implements its
+[own versions](../wasm_vm/types.mdx) of these data types, and the VM layer acts as a data
+type translator between both systems.
 
 The impact of this type transformation used to be that to be able to write tests in the
-solo environment the user also needed to know about the ISCP-specific data types and type
+solo environment the user also needed to know about the IOTA Smart Contracts-specific data types and type
 conversion functions, and exactly how to properly pass such data in and out of smart
 contract function calls. This burdened the user with an unnecessary increased learning
 curve.
 
 With the introduction of the schema tool, we were able to remove this impedance mismatch
 and allow the users to test smart contract functionality in terms of the WasmLib data types
-and functions that they are already familiar with. To that end, we introduced a new ISCP
+and functions that they are already familiar with. To that end, we introduced a new IOTA Smart Contracts
 function context that specifically works with the Solo testing environment. We aimed to
 simplify the testing of smart contracts as much as possible, keeping the full Solo
 interface hidden as much as possible, but available when necessary.
@@ -43,10 +45,10 @@ interface hidden as much as possible, but available when necessary.
 The only concession we still have to make is to the language used. Because Solo only works
 in the Go language environment, we have to use the Go language version of the interface
 code that the schema tool generates when testing our smart contracts. Because WasmLib
-programming for Rust and Go are practically identical, we feel that this is not unsurmountable.
-They only differ where language idiosyncrasies force differences in syntax or naming
-conventions. This hurdle used to be a lot bigger, when direct programming of Solo
-had to be used, and type conversions had to be done manually. Now we get to use
+programming for Rust, TypeScript, and Go are practically identical, we feel that this is
+not unsurmountable. They only differ where language idiosyncrasies force differences in
+syntax or naming conventions. This hurdle used to be a lot bigger, when direct programming
+of Solo had to be used, and type conversions had to be done manually. Now we get to use
 the generated compile-time type-checked interface to our smart contract functions that we
 are already familiar with.
 
@@ -116,9 +118,9 @@ parameters through the `Params` proxy, and then either post the function request
 the function. Any results returned are extracted through the `Results` proxy, and returned
 by the wrapper.
 
-As you can see there is literally no difference in the way the function interface is used
-with the ISCP function context in WasmLib and with the SoloContext. This makes for
-seamless testing of smart contracts.
+There is hardly difference in the way the function interface is used with the IOTA Smart Contracts
+function context in WasmLib and with the SoloContext. This makes for seamless testing of
+smart contracts.
 
-In the [next section](examples.mdx) we will go deeper into how the helper member functions of the
-SoloContext are used to simplify tests.
+In the [next section](examples.mdx) we will go deeper into how the helper member functions
+of the SoloContext are used to simplify tests.

@@ -34,7 +34,7 @@ func (c *WaspClient) CallView(chainID *iscp.ChainID, hContract iscp.Hname, funct
 			return res, err
 		case strings.Contains(err.Error(), "virtual state has been invalidated"):
 			if time.Now().After(deadline) {
-				return nil, coreutil.ErrStateHasBeenInvalidated
+				return nil, coreutil.ErrorStateInvalidated
 			}
 			time.Sleep(retryTimeoutOnOptimisticReadFail)
 		default:

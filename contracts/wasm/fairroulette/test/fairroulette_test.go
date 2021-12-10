@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/contracts/wasm/fairroulette"
+	"github.com/iotaledger/wasp/contracts/wasm/fairroulette/go/fairroulette"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )

@@ -4,7 +4,7 @@
 use wasmlib::*;
 
 use crate::*;
-use crate::types::*;
+use crate::structs::*;
 
 pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
     let mut donation = Donation {

@@ -2,7 +2,6 @@
 description:  How to run a node. Requirements, configuration parameters, dashboard configuration and tests.
 image: /img/logo/WASP_logo_dark.png
 keywords:
-- ISCP
 - Smart Contracts
 - Running a node
 - Go-lang
@@ -240,4 +239,4 @@ wasp --webapi.adminWhitelist=127.0.0.1,YOUR_IP
 
 ## Video Tutorial
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/al-88Ncw2bg" title="Running a Wasp Node" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/G889YQDeYPo" title="Wasp Node Setup" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
