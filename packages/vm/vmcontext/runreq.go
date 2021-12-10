@@ -69,14 +69,19 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		// off ledger requests does not bring any deposit
 		return
 	}
+	if vmctx.isInitChainRequest() {
+		// first time we have to add all iotas which comes with anchor less dust deposit to the common account
+		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
+			Iotas: vmctx.txbuilder.TotalAvailableIotas(),
+		})
+	}
 	// consume output into the transaction builder
-	// adjustmentOfTheCommonAccount is due to the dust in the internal UTXOs
-	adjustmentOfTheCommonAccount := vmctx.txbuilder.Consume(vmctx.req)
+	// dustAdjustmentOfTheCommonAccount is due to the dust in the internal UTXOs
+	dustAdjustmentOfTheCommonAccount := vmctx.txbuilder.Consume(vmctx.req)
 	_, _, isBalanced := vmctx.txbuilder.Totals()
 	if !isBalanced {
 		panic("internal inconsistency: transaction builder is not balanced")
 	}
-
 	// update the state, the account ledger
 	// NOTE: sender account will be CommonAccount if sender address is not available
 	vmctx.creditToAccount(vmctx.req.SenderAccount(), vmctx.req.Assets())
@@ -85,14 +90,14 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// If common account does not contain enough funds for internal dust, it panics with
 	// vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit and the request will be skipped
 	switch {
-	case adjustmentOfTheCommonAccount > 0:
+	case dustAdjustmentOfTheCommonAccount > 0:
 		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-			Iotas: uint64(adjustmentOfTheCommonAccount),
+			Iotas: uint64(dustAdjustmentOfTheCommonAccount),
 		})
-	case adjustmentOfTheCommonAccount < 0:
+	case dustAdjustmentOfTheCommonAccount < 0:
 		err := util.CatchPanicReturnError(func() {
 			vmctx.debitFromAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-				Iotas: uint64(-adjustmentOfTheCommonAccount),
+				Iotas: uint64(-dustAdjustmentOfTheCommonAccount),
 			})
 		}, accounts.ErrNotEnoughFunds)
 		if err != nil {
@@ -104,6 +109,9 @@ func (vmctx *VMContext) creditAssetsToChain() {
 }
 
 func (vmctx *VMContext) prepareGasBudget() {
+	if vmctx.isInitChainRequest() {
+		return
+	}
 	vmctx.calculateAffordableGasBudget()
 	vmctx.gasSetBudget(vmctx.gasBudgetAffordable)
 }
@@ -188,6 +196,10 @@ func (vmctx *VMContext) callFromRequest() {
 func (vmctx *VMContext) chargeGasFee() {
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.Request().SenderAddress() == nil")
+	}
+	if vmctx.isInitChainRequest() {
+		// do not charge gas fees if init request
+		return
 	}
 	// total fees to charge
 	tokensToCharge := vmctx.GasBurned() / vmctx.chainInfo.GasFeePolicy.GasPerGasToken

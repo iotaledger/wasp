@@ -56,14 +56,14 @@ func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asset
 }
 
 // creditToAccount internal
-func creditToAccount(state kv.KVStore, account *collections.Map, transfer *iscp.Assets) {
-	if transfer == nil {
+func creditToAccount(state kv.KVStore, account *collections.Map, assets *iscp.Assets) {
+	if assets == nil || (assets.Iotas == 0 && len(assets.Tokens) == 0) {
 		return
 	}
 	defer touchAccount(state, account)
 
-	creditAsset(account, iscp.IotaAssetID, new(big.Int).SetUint64(transfer.Iotas))
-	for _, token := range transfer.Tokens {
+	creditAsset(account, iscp.IotaAssetID, new(big.Int).SetUint64(assets.Iotas))
+	for _, token := range assets.Tokens {
 		creditAsset(account, token.ID[:], token.Amount)
 	}
 }
@@ -95,7 +95,7 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 
 // debitFromAccount internal
 func debitFromAccount(state kv.KVStore, account *collections.Map, assets *iscp.Assets, isTotalAssetsAccount bool) bool {
-	if assets == nil {
+	if assets == nil || (assets.Iotas == 0 && len(assets.Tokens) == 0) {
 		return true
 	}
 	defer touchAccount(state, account)

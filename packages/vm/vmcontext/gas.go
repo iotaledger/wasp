@@ -8,6 +8,9 @@ func (vmctx *VMContext) gasSetBudget(gasBudget uint64) {
 }
 
 func (vmctx *VMContext) GasBurn(gas uint64) {
+	if vmctx.isInitChainRequest() {
+		return
+	}
 	vmctx.gasBurned += gas
 	if vmctx.gasBurned > vmctx.gasBudget {
 		panic(coreutil.ErrorGasBudgetExceeded)

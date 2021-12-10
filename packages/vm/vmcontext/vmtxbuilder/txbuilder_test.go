@@ -92,7 +92,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		})
 		totals, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
-		require.EqualValues(t, 1000, totals.TotalIotasOnChain)
+		require.EqualValues(t, 1000-anchor.VByteCost(parameters.RentStructure(), nil), totals.TotalIotasOnChain)
 		require.EqualValues(t, 0, len(totals.TokenBalances))
 
 		require.EqualValues(t, 1, txb.numInputs())
@@ -114,13 +114,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		})
 		txb.addDeltaIotasToTotal(42)
 		_, _, isBalanced := txb.Totals()
-		require.False(t, isBalanced)
-		//
-		//essence := txb.BuildTransactionEssence(&iscp.StateData{})
-		//
-		//essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
-		//require.NoError(t, err)
-		//t.Logf("essence bytes len = %d", len(essenceBytes))
+		require.True(t, isBalanced)
 	})
 	t.Run("3", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, anchorID, anchor.Amount, balanceLoader)
@@ -248,7 +242,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("consistency check 1", func(t *testing.T) {
 		const runTimes = 5
 		const testAmount = 10
-		numTokenIDs = 5
+		numTokenIDs = 4
 
 		initTest()
 		runConsume(runTimes, testAmount)
@@ -267,7 +261,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("consistency check 2", func(t *testing.T) {
 		const runTimes = 100
 		const testAmount = 10
-		numTokenIDs = 5
+		numTokenIDs = 4
 
 		initTest()
 		runConsume(runTimes, testAmount)
@@ -286,7 +280,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("consistency check 3", func(t *testing.T) {
 		const runTimes = 100
 		const testAmount = 10
-		numTokenIDs = 5
+		numTokenIDs = 4
 
 		initTest()
 		runCreateBuilderAndConsumeRandomly(runTimes, testAmount)
@@ -305,7 +299,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("consistency check 4", func(t *testing.T) {
 		const runTimes = 100
 		const testAmount = 10
-		numTokenIDs = 10
+		numTokenIDs = 6
 
 		initTest()
 		err := util.CatchPanicReturnError(func() {
@@ -320,7 +314,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("exceed inputs", func(t *testing.T) {
 		const runTimes = 150
 		const testAmount = 10
-		numTokenIDs = 5
+		numTokenIDs = 4
 
 		initTest()
 		err := util.CatchPanicReturnError(func() {
@@ -382,20 +376,17 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
-	t.Run("overflow 2", func(t *testing.T) {
+	t.Run("not enough for dust", func(t *testing.T) {
 		const runTimesInputs = 10
-		const runTimesOutputs = 10
 		const testAmount = 10
 		numTokenIDs = 5
 
 		initTest()
-		runConsume(runTimesInputs, testAmount)
-
 		err := util.CatchPanicReturnError(func() {
-			runPostRequestRandomly(runTimesOutputs, testAmount)
-		}, ErrNotEnoughIotaBalance)
+			runConsume(runTimesInputs, testAmount)
+		}, ErrNotEnoughFundsForInternalDustDeposit)
 
-		require.Error(t, err, ErrNotEnoughIotaBalance)
+		require.Error(t, err, ErrNotEnoughFundsForInternalDustDeposit)
 
 		_, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)

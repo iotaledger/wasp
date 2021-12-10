@@ -72,6 +72,13 @@ func AddressFromMarshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error)
 
 func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
 	var err error
+	isNil, err := mu.ReadBool()
+	if err != nil {
+		return nil, err
+	}
+	if isNil {
+		return &NilAgentID, nil
+	}
 	ret := &AgentID{}
 	if ret.a, err = AddressFromMarshalUtil(mu); err != nil {
 		return nil, err
@@ -84,14 +91,6 @@ func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
 
 func AgentIDFromBytes(data []byte) (*AgentID, error) {
 	return AgentIDFromMarshalUtil(marshalutil.New(data))
-}
-
-func NewAgentIDFromBase58EncodedString(s string) (*AgentID, error) {
-	data, err := base58.Decode(s)
-	if err != nil {
-		return nil, err
-	}
-	return AgentIDFromBytes(data)
 }
 
 // NewAgentIDFromString parses the human-readable string representation
@@ -133,20 +132,24 @@ func (a *AgentID) Hname() Hname {
 }
 
 func (a *AgentID) Bytes() []byte {
-	if a.a == nil {
-		panic("AgentID.Bytes: address == nil")
+	mu := marshalutil.New()
+	mu.WriteBool(a.IsNil())
+	if a.IsNil() {
+		return mu.Bytes()
 	}
 	addressBytes, err := a.a.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		return nil
 	}
-	mu := marshalutil.New()
 	mu.WriteBytes(addressBytes)
 	mu.Write(a.h)
 	return mu.Bytes()
 }
 
 func (a *AgentID) Equals(a1 *AgentID) bool {
+	if a.IsNil() || a1.IsNil() {
+		return a.IsNil() && a1.IsNil()
+	}
 	if !a.a.Equal(a1.a) {
 		return false
 	}
@@ -158,6 +161,9 @@ func (a *AgentID) Equals(a1 *AgentID) bool {
 
 // String human readable string
 func (a *AgentID) String() string {
+	if a.IsNil() {
+		return "A/0::0"
+	}
 	return "A/" + a.a.String() + "::" + a.h.String()
 }
 
@@ -166,5 +172,5 @@ func (a *AgentID) Base58() string {
 }
 
 func (a *AgentID) IsNil() bool {
-	return a.Equals(&NilAgentID)
+	return a.a == nil && a.h == 0
 }
