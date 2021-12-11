@@ -122,22 +122,20 @@ func TestCreateOrigin(t *testing.T) {
 		createOrigin()
 		createInitChainTx()
 
-		chainUTXOID := &iotago.UTXOInput{
-			TransactionID:          *originTxID,
-			TransactionOutputIndex: 0,
-		}
-		initRequestID := &iotago.UTXOInput{
-			TransactionID:          *initTxID,
-			TransactionOutputIndex: 0,
-		}
 		txb := iotago.NewTransactionBuilder()
 		txb.AddInput(&iotago.ToBeSignedUTXOInput{
 			Address: stateAddr,
-			Input:   chainUTXOID,
+			Input: &iotago.UTXOInput{
+				TransactionID:          *originTxID,
+				TransactionOutputIndex: 0,
+			},
 		})
 		txb.AddInput(&iotago.ToBeSignedUTXOInput{
 			Address: stateAddr,
-			Input:   initRequestID,
+			Input: &iotago.UTXOInput{
+				TransactionID:          *initTxID,
+				TransactionOutputIndex: 0,
+			},
 		})
 		chainUTXO := originTx.Essence.Outputs[0].(*iotago.AliasOutput)
 		initRequestUTXO := txInit.Essence.Outputs[0]
