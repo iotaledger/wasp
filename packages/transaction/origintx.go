@@ -35,6 +35,11 @@ func NewChainOriginTransaction(
 		StateController:      stateControllerAddress,
 		GovernanceController: governanceControllerAddress,
 		StateMetadata:        state.OriginStateHash().Bytes(),
+		Blocks: iotago.FeatureBlocks{
+			&iotago.SenderFeatureBlock{
+				Address: walletAddr,
+			},
+		},
 	}
 	{
 		aliasDustDeposit := aliasOutput.VByteCost(deSeriParams.RentStructure, nil)

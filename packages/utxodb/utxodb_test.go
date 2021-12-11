@@ -50,7 +50,7 @@ func TestAddTransactionFail(t *testing.T) {
 	tx, err := u.RequestFunds(addr)
 	require.NoError(t, err)
 
-	err = u.AddTransaction(tx)
+	err = u.AddToLedger(tx)
 	require.Error(t, err)
 }
 
@@ -78,7 +78,7 @@ func TestDoubleSpend(t *testing.T) {
 		AddOutput(&iotago.ExtendedOutput{Address: addr2, Amount: RequestFundsAmount}).
 		Build(u.deSeriParams(), key1Signer)
 	require.NoError(t, err)
-	err = u.AddTransaction(spend2)
+	err = u.AddToLedger(spend2)
 	require.NoError(t, err)
 
 	spend3, err := iotago.NewTransactionBuilder().
@@ -89,7 +89,7 @@ func TestDoubleSpend(t *testing.T) {
 		AddOutput(&iotago.ExtendedOutput{Address: addr3, Amount: RequestFundsAmount}).
 		Build(u.deSeriParams(), key1Signer)
 	require.NoError(t, err)
-	err = u.AddTransaction(spend3)
+	err = u.AddToLedger(spend3)
 	require.Error(t, err)
 }
 

@@ -219,7 +219,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 	anchor, _, err := transaction.GetAnchorFromTransaction(originTx)
 	require.NoError(env.T, err)
 
-	err = env.utxoDB.AddTransaction(originTx)
+	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
 	env.AssertAddressIotas(originatorAddr, Saldo-anchor.Deposit)
 
@@ -284,7 +284,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 	require.NoError(env.T, err)
 	require.NotNil(env.T, initTx)
 
-	err = env.utxoDB.AddTransaction(initTx)
+	err = env.utxoDB.AddToLedger(initTx)
 	require.NoError(env.T, err)
 
 	env.glbMutex.Lock()
@@ -307,7 +307,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 // AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is
 // invalid or double spend
 func (env *Solo) AddToLedger(tx *iotago.Transaction) error {
-	return env.utxoDB.AddTransaction(tx)
+	return env.utxoDB.AddToLedger(tx)
 }
 
 // RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
