@@ -220,7 +220,7 @@ func (u *UtxoDB) NewKeyPairByIndex(index uint64) (cryptolib.KeyPair, *iotago.Ed2
 // RequestFunds sends RequestFundsAmount IOTA tokens from the genesis address to the given address.
 func (u *UtxoDB) RequestFunds(target iotago.Address) (*iotago.Transaction, error) {
 	tx := u.mustRequestFundsTx(target)
-	return tx, u.AddTransaction(tx)
+	return tx, u.AddToLedger(tx)
 }
 
 // Supply returns supply of the instance.
@@ -297,8 +297,8 @@ func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 	return nil
 }
 
-// AddTransaction adds a transaction to UtxoDB, ensuring consistency of the UtxoDB ledger.
-func (u *UtxoDB) AddTransaction(tx *iotago.Transaction) error {
+// AddToLedger adds a transaction to UtxoDB, ensuring consistency of the UtxoDB ledger.
+func (u *UtxoDB) AddToLedger(tx *iotago.Transaction) error {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
@@ -424,14 +424,11 @@ func getOutputAddress(out iotago.Output, id *iotago.UTXOInput) iotago.Address {
 	case iotago.TransIndepIdentOutput:
 		return out.Ident()
 	case iotago.TransDepIdentOutput:
-		// FIXME this is temporary patch of the bug in the iota.go AliasOutput.Chain() method
 		aliasID := out.Chain().(iotago.AliasID)
-		var nilAliasID iotago.AliasID
-		if aliasID == nilAliasID {
+		if aliasID.Empty() {
 			aliasID = iotago.AliasIDFromOutputID(id.ID())
 		}
 		return aliasID.ToAddress()
-		// -- end FIXME
 	default:
 		panic("unknown ident output type")
 	}

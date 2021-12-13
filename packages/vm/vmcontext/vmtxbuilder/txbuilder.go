@@ -237,10 +237,14 @@ func (txb *AnchorTransactionBuilder) SortedListOfTokenIDsForOutputs() []iotago.N
 func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.Outputs {
 	ret := make(iotago.Outputs, 0, 1+len(txb.balanceNativeTokens)+len(txb.postedOutputs))
 	// creating the anchor output
+	aliasID := txb.anchorOutput.AliasID
+	if aliasID.Empty() {
+		aliasID = iotago.AliasIDFromOutputID(txb.anchorOutputID.ID())
+	}
 	anchorOutput := &iotago.AliasOutput{
 		Amount:               txb.totalIotasOnChain + txb.dustDepositOnAnchor,
 		NativeTokens:         nil, // anchorOutput output does not contain native tokens
-		AliasID:              txb.anchorOutput.AliasID,
+		AliasID:              aliasID,
 		StateController:      txb.anchorOutput.StateController,
 		GovernanceController: txb.anchorOutput.GovernanceController,
 		StateIndex:           txb.anchorOutput.StateIndex + 1,
