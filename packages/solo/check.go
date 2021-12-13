@@ -93,7 +93,7 @@ func (ch *Chain) AssertTotalIotas(bal uint64) {
 	require.EqualValues(ch.Env.T, int(bal), int(iotas))
 }
 
-func (ch *Chain) CheckControlAddresses() {
+func (ch *Chain) AssertControlAddresses() {
 	rec := ch.GetControlAddresses()
 	require.True(ch.Env.T, rec.StateAddress.Equal(ch.StateControllerAddress))
 	require.True(ch.Env.T, rec.GoverningAddress.Equal(ch.StateControllerAddress))

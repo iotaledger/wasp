@@ -29,6 +29,8 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 	vmctx.requestEventIndex = 0
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.callStack = vmctx.callStack[:0]
+	// we need empty state update for the optimistic reader not to panic
+	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
 
 	if err := vmctx.earlyCheckReasonToSkip(); err != nil {
 		return err
@@ -37,10 +39,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 
 	// at this point state update is empty
 	// so far there were no panics except optimistic reader
-	// No prepare state update (buffer) for mutations and panics
-
 	txsnapshot := vmctx.createTxBuilderSnapshot()
-	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
 
 	// catches error which is not the request or contract fault
 	// If it occurs, the request is just skipped
@@ -70,7 +69,6 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		return
 	}
 	if vmctx.isInitChainRequest() {
-		// first time we have to add all iotas which comes with anchor less dust deposit to the common account
 		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
 			Iotas: vmctx.txbuilder.TotalAvailableIotas(),
 		})

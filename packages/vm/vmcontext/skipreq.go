@@ -23,13 +23,20 @@ const (
 
 // earlyCheckReasonToSkip checks if request must be ignored without even modifying the state
 func (vmctx *VMContext) earlyCheckReasonToSkip() error {
-	if vmctx.isInitChainRequest() {
-		if vmctx.task.AnchorOutput.StateIndex == 0 {
-			// nothing to check if it is an init request in the beginning
-			return nil
+	if vmctx.task.AnchorOutput.StateIndex == 0 {
+		if !vmctx.isInitChainRequest() {
+			return xerrors.New("in the origin state only 'chain init' request is allowed")
 		}
-		// skip if it is repeating init request
-		return xerrors.New("repeating init chain request")
+		if len(vmctx.task.AnchorOutput.NativeTokens) > 0 {
+			return xerrors.New("can't init chain with native assets on the origin alias output")
+		}
+	} else {
+		if vmctx.isInitChainRequest() {
+			return xerrors.New("repeating init chain request")
+		}
+		if len(vmctx.task.AnchorOutput.NativeTokens) > 0 {
+			panic("inconsistency: native assets on the anchor output")
+		}
 	}
 
 	var err error

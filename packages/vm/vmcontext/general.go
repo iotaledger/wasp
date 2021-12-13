@@ -92,5 +92,6 @@ func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 		OutputID:             vmctx.task.AnchorOutputID.ID(),
 		StateData:            sd,
 		Deposit:              vmctx.task.AnchorOutput.Amount,
+		NativeTokens:         vmctx.task.AnchorOutput.NativeTokens,
 	}
 }

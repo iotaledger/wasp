@@ -106,6 +106,7 @@ type StateAnchor struct {
 	StateIndex           uint32
 	StateData            StateData
 	Deposit              uint64
+	NativeTokens         iotago.NativeTokens
 }
 
 type SendOptions struct { // TODO

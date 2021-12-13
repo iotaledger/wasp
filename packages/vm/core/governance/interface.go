@@ -82,7 +82,6 @@ const (
 
 	// chain owner
 	ParamChainOwner
-	ParamOwnerFee
 
 	// fees
 	ParamFeePolicyBytes

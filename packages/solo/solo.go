@@ -106,50 +106,62 @@ type Chain struct {
 	mempool mempool.Mempool
 }
 
-// New creates an instance of the Solo environment.
-//
-// If solo is used for unit testing, 't' should be the *testing.T instance;
-// otherwise it can be either nil or an instance created with NewTestContext.
-//
-// 'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
-// 'printStackTrace' controls printing stack trace in case of errors
-func New(t TestContext, debug, printStackTrace bool, seedOpt ...cryptolib.Seed) *Solo {
-	log := testlogger.NewNamedLogger(t.Name(), timeLayout)
-	if !debug {
-		log = testlogger.WithLevel(log, zapcore.InfoLevel, printStackTrace)
-	}
-	return NewWithLogger(t, log, seedOpt...)
+type InitOptions struct {
+	Debug           bool
+	PrintStackTrace bool
+	Seed            cryptolib.Seed
+	DeSeriParams    *iotago.DeSerializationParameters
+	Log             *logger.Logger
 }
 
-// New creates an instance of the Solo environment with the given logger
+func defaultInitOptions() *InitOptions {
+	return &InitOptions{
+		Debug:           false,
+		PrintStackTrace: false,
+		Seed:            cryptolib.Seed{},
+		DeSeriParams:    parameters.DeSerializationParameters(),
+	}
+}
+
+// New creates an instance of the Solo environment
 // If solo is used for unit testing, 't' should be the *testing.T instance;
 // otherwise it can be either nil or an instance created with NewTestContext.
-func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...cryptolib.Seed) *Solo {
+// If solo is used for unit testing, 't' should be the *testing.T instance;
+// otherwise it can be either nil or an instance created with NewTestContext.
+func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	if t == nil {
 		t = NewTestContext("solo")
 	}
-	var seed cryptolib.Seed
-	if len(seedOpt) > 0 {
-		seed = seedOpt[0]
+	opt := defaultInitOptions()
+	if len(initOptions) > 0 {
+		opt = initOptions[0]
+	}
+	if opt.Log == nil {
+		opt.Log = testlogger.NewNamedLogger(t.Name(), timeLayout)
+	}
+	if !opt.Debug {
+		opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
+	}
+	if opt.DeSeriParams == nil {
+		opt.DeSeriParams = parameters.DeSerializationParameters()
 	}
 
-	processorConfig := processors.NewConfig()
 	// disable wasmtime vm for now
 	//err := processorConfig.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (iscp.VMProcessor, error) {
 	//	return wasmproc.GetProcessor(binary, log)
 	//})
 	//require.NoError(t, err)
 
-	initParams := utxodb.DefaultInitParams(seed[:]).
+	initParams := utxodb.DefaultInitParams(opt.Seed[:]).
 		WithRentStructure(parameters.DeSerializationParameters().RentStructure)
 	ret := &Solo{
 		T:               t,
-		logger:          log,
-		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
+		logger:          opt.Log,
+		dbmanager:       dbmanager.NewDBManager(opt.Log.Named("db"), true),
 		utxoDB:          utxodb.New(initParams),
 		chains:          make(map[iscp.ChainID]*Chain),
 		vmRunner:        runvm.NewVMRunner(),
-		processorConfig: processorConfig,
+		processorConfig: processors.NewConfig(),
 		deSeriParams:    parameters.DeSerializationParameters(),
 	}
 	globalTime := ret.utxoDB.GlobalTime()
