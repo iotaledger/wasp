@@ -145,6 +145,7 @@ func (vmctx *VMContext) callTheContract() {
 		vmctx.currentStateUpdate = snapMutations
 	}
 	vmctx.chargeGasFee()
+	vmctx.logRequestToBlockLog(vmctx.lastError)
 }
 
 func checkVMPluginPanic() error {
@@ -195,7 +196,7 @@ func (vmctx *VMContext) callFromRequest() {
 // It should always be enough because gas budget is set affordable
 func (vmctx *VMContext) chargeGasFee() {
 	if vmctx.req.SenderAddress() == nil {
-		panic("inconsistency: vmctx.req.Request().SenderAddress() == nil")
+		panic("inconsistency: vmctx.req.RequestData().SenderAddress() == nil")
 	}
 	if vmctx.isInitChainRequest() {
 		// do not charge gas fees if init request

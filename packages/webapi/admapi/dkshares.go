@@ -8,6 +8,9 @@ package admapi
 import (
 	"encoding/base64"
 	"fmt"
+	"net/http"
+	"time"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -19,8 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
-	"net/http"
-	"time"
 )
 
 func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, nodeProvider dkg.NodeProvider) {
@@ -42,7 +43,7 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 	s := &dkSharesService{registryProvider, nodeProvider}
 
 	adm.POST(routes.DKSharesPost(), s.handleDKSharesPost).
-		AddParamBody(requestExample, "DKSharesPostRequest", "Request parameters", true).
+		AddParamBody(requestExample, "DKSharesPostRequest", "RequestData parameters", true).
 		AddResponse(http.StatusOK, "DK shares info", infoExample, nil).
 		SetSummary("Generate a new distributed key")
 

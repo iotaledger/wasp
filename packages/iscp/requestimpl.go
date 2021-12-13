@@ -1,7 +1,6 @@
 package iscp
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -351,8 +350,11 @@ func OnLedgerRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OnLedgerReque
 	if err != nil {
 		return nil, err
 	}
-	outputType := binary.LittleEndian.Uint32(outputBytes)
-	output, err := iotago.OutputSelector(outputType)
+	outputType, err := mu.ReadByte()
+	if err != nil {
+		return nil, err
+	}
+	output, err := iotago.OutputSelector(uint32(outputType))
 	if err != nil {
 		return nil, err
 	}
@@ -365,6 +367,7 @@ func OnLedgerRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OnLedgerReque
 
 func (r *OnLedgerRequestData) Bytes() []byte {
 	mu := marshalutil.New()
+	mu.WriteBool(false)
 	r.writeToMarshalUtil(mu)
 	return mu.Bytes()
 }
@@ -377,6 +380,7 @@ func (r *OnLedgerRequestData) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	UTXOInputToMarshalUtil(&r.inputID, mu)
 	mu.WriteUint16(uint16(len(outputBytes)))
 	mu.WriteBytes(outputBytes)
+	mu.WriteByte(byte(r.output.Type()))
 }
 
 // implements Request interface

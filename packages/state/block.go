@@ -6,7 +6,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/wasp/packages/iscp"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -112,11 +111,7 @@ func (b *blockImpl) Write(w io.Writer) error {
 	if err := b.writeEssence(w); err != nil {
 		return err
 	}
-	data, err := b.stateOutputID.UTXOInput().Serialize(serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		return err
-	}
-	if _, err = w.Write(data); err != nil {
+	if _, err := w.Write(iscp.EncodeOutputID(b.stateOutputID)); err != nil {
 		return err
 	}
 	return nil
@@ -130,7 +125,8 @@ func (b *blockImpl) Read(r io.Reader) error {
 	if err := b.readEssence(r); err != nil {
 		return err
 	}
-	if _, err := r.Read(b.stateOutputID[:]); err != nil {
+
+	if n, err := r.Read(b.stateOutputID[:]); err != nil || n != len(b.stateOutputID) {
 		return err
 	}
 	return nil

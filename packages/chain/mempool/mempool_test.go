@@ -234,7 +234,7 @@ func TestProcessedRequest(t *testing.T) {
 
 	// artificially put request log record into the state
 	rec := &blocklog.RequestReceipt{
-		Request: requests[0],
+		RequestData: requests[0],
 	}
 	blocklogPartition := subrealm.New(wrt, kv.Key(blocklog.Contract.Hname().Bytes()))
 	err := blocklog.SaveRequestLogRecord(blocklogPartition, rec, [6]byte{})
@@ -503,12 +503,12 @@ func TestReadyFromIDs(t *testing.T) {
 		requests[0].ID(),
 		requests[1].ID(),
 		requests[2].ID(),
-		requests[3].ID(), // Request was removed from mempool
+		requests[3].ID(), // RequestData was removed from mempool
 	)
 	require.False(t, result)
 	require.EqualValues(t, missingIndexes, []int{3})
 	_, missingIndexes, result = pool.ReadyFromIDs(time.Now(),
-		requests[5].ID(), // Request hasn't been received by mempool
+		requests[5].ID(), // RequestData hasn't been received by mempool
 		requests[4].ID(),
 		requests[2].ID(),
 	)
