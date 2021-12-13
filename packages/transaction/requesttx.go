@@ -68,17 +68,17 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	if remainder.Amount > 0 {
 		outputs = append(outputs, remainder)
 	}
+	essence := &iotago.TransactionEssence{
+		Inputs:  inputs,
+		Outputs: outputs,
+	}
+	sigs, err := essence.Sign(iotago.NewAddressKeysForEd25519Address(senderAddress, par.SenderKeyPair.PrivateKey))
+	if err != nil {
+		return nil, err
+	}
 
-	txb := iotago.NewTransactionBuilder()
-	for _, inp := range inputs {
-		txb.AddInput(&iotago.ToBeSignedUTXOInput{
-			Address: senderAddress,
-			Input:   inp,
-		})
-	}
-	for _, out := range outputs {
-		txb.AddOutput(out)
-	}
-	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(senderAddress, par.SenderKeyPair.PrivateKey))
-	return txb.Build(par.DeSeriParams, signer)
+	return &iotago.Transaction{
+		Essence:      essence,
+		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputs), sigs[0]),
+	}, nil
 }

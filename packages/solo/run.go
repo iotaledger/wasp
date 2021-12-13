@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -73,23 +72,16 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.RequestData, trace string) (dict.
 		//)
 		//require.NoError(ch.Env.T, err)
 	}
-
-	txb := iotago.NewTransactionBuilder()
-	for _, input := range essence.Inputs {
-		txb.AddInput(&iotago.ToBeSignedUTXOInput{
-			Address: ch.StateControllerAddress,
-			Input:   input.(*iotago.UTXOInput),
-		})
-	}
-	for _, out := range essence.Outputs {
-		txb.AddOutput(out)
-	}
-
-	tx, err := txb.Build(
-		parameters.DeSerializationParameters(),
-		ch.StateControllerKeyPair.AsAddressSigner(),
-	)
+	sigs, err := essence.Sign(iotago.AddressKeys{
+		Address: ch.StateControllerAddress,
+		Keys:    ch.StateControllerKeyPair.PrivateKey,
+	})
 	require.NoError(ch.Env.T, err)
+
+	tx := &iotago.Transaction{
+		Essence:      essence,
+		UnlockBlocks: transaction.MakeSignatureAndAliasUnlockBlocks(len(essence.Inputs), sigs[0]),
+	}
 
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(ch.Env.T, err)

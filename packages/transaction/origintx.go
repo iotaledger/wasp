@@ -28,8 +28,6 @@ func NewChainOriginTransaction(
 
 	walletAddr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
 
-	txb := iotago.NewTransactionBuilder()
-
 	aliasOutput := &iotago.AliasOutput{
 		Amount:               deposit,
 		StateController:      stateControllerAddress,
@@ -47,8 +45,6 @@ func NewChainOriginTransaction(
 			aliasOutput.Amount = aliasDustDeposit
 		}
 	}
-	txb.AddOutput(aliasOutput)
-
 	inputs, remainderOutput, err := computeInputsAndRemainder(
 		walletAddr,
 		aliasOutput.Amount,
@@ -60,17 +56,21 @@ func NewChainOriginTransaction(
 	if err != nil {
 		return nil, nil, err
 	}
+	outputs := iotago.Outputs{aliasOutput}
 	if remainderOutput != nil {
-		txb.AddOutput(remainderOutput)
+		outputs = append(outputs, remainderOutput)
 	}
-	for _, input := range inputs {
-		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: walletAddr, Input: input})
+	essence := &iotago.TransactionEssence{
+		Inputs:  inputs,
+		Outputs: outputs,
 	}
-
-	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(walletAddr, keyPair.PrivateKey))
-	tx, err := txb.Build(deSeriParams, signer)
+	sigs, err := essence.Sign(iotago.NewAddressKeysForEd25519Address(walletAddr, keyPair.PrivateKey))
 	if err != nil {
 		return nil, nil, err
+	}
+	tx := &iotago.Transaction{
+		Essence:      essence,
+		UnlockBlocks: MakeSignatureAndReferenceUnlockBlocks(len(inputs), sigs[0]),
 	}
 	txid, err := tx.ID()
 	if err != nil {
@@ -116,65 +116,3 @@ func NewRootInitRequestTransaction(
 	}
 	return tx, nil
 }
-
-//func NewRootInitRequestTransactionOld(
-//	key ed25519.PrivateKey,
-//	chainID *iscp.ChainID,
-//	description string,
-//	allUnspentOutputs []iotago.Output,
-//	allInputs []*iotago.UTXOInput,
-//	deSeriParams *iotago.DeSerializationParameters,
-//) (*iotago.Transaction, error) {
-//	walletAddr := iotago.Ed25519AddressFromPubKey(key.Public().(ed25519.PublicKey))
-//
-//	args := dict.Dict{
-//		governance.ParamChainID:     codec.EncodeChainID(chainID),
-//		governance.ParamDescription: codec.EncodeString(description),
-//	}
-//
-//	metadata := &iscp.RequestMetadata{
-//		TargetContract: iscp.Hn("root"),
-//		EntryPoint:     iscp.EntryPointInit,
-//		Params:         args,
-//	}
-//
-//	txb := iotago.NewTransactionBuilder()
-//
-//	requestOutput := &iotago.ExtendedOutput{
-//		Address: chainID.AsAddress(),
-//		Amount:  0,
-//		Blocks: []iotago.FeatureBlock{
-//			&iotago.MetadataFeatureBlock{
-//				Data: metadata.Bytes(),
-//			},
-//		},
-//	}
-//	requestOutput.Amount = requestOutput.VByteCost(deSeriParams.RentStructure, nil)
-//	txb.AddOutput(requestOutput)
-//
-//	inputs, remainder, err := computeInputsAndRemainderOld(
-//		requestOutput.Amount,
-//		allUnspentOutputs,
-//		allInputs,
-//		deSeriParams,
-//	)
-//	if err != nil {
-//		return nil, err
-//	}
-//	for _, input := range inputs {
-//		txb.AddInput(&iotago.ToBeSignedUTXOInput{Address: &walletAddr, Input: input})
-//	}
-//	if remainder > 0 {
-//		txb.AddOutput(&iotago.ExtendedOutput{
-//			Address: &walletAddr,
-//			Amount:  remainder,
-//		})
-//	}
-//
-//	signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(&walletAddr, key))
-//	tx, err := txb.Build(deSeriParams, signer)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return tx, nil
-//}

@@ -252,7 +252,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 		FoundryCounter:       txb.anchorOutput.FoundryCounter, // TODO should come from minting logic
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
-				Address: txb.anchorOutput.AliasID.ToAddress(), // TODO not needed? But why not?
+				Address: aliasID.ToAddress(),
 			},
 		},
 	}

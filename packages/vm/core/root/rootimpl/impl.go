@@ -49,6 +49,8 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	a.Require(state.MustGet(root.VarStateInitialized) == nil, "root.initialize.fail: already initialized")
 	a.Require(ctx.Caller().Hname() == 0, "root.init.fail: chain deployer can't be another smart contract")
+	creator := ctx.StateAnchor().Sender
+	a.Require(creator != nil && creator.Equal(ctx.Caller().Address()), "only creator of the origin can send the 'init' request")
 
 	contractRegistry := collections.NewMap(state, root.VarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
@@ -59,7 +61,8 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	mustStoreAndInitCoreContract(ctx, blocklog.Contract, a)
 	govParams := ctx.Params().Clone()
 	govParams.Set(governance.ParamChainID, codec.EncodeChainID(ctx.ChainID()))
-	govParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes()) // chain owner is whoever sends init request
+	// chain owner is whoever creates origin and sends the 'init' request
+	govParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes())
 	mustStoreAndInitCoreContract(ctx, governance.Contract, a, govParams)
 
 	state.Set(root.VarDeployPermissionsEnabled, codec.EncodeBool(true))

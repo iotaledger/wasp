@@ -98,6 +98,7 @@ type Gas interface {
 // StateAnchor contains properties of the anchor output/transaction in the current context
 type StateAnchor struct {
 	ChainID              ChainID
+	Sender               iotago.Address
 	OutputID             iotago.OutputID
 	IsOrigin             bool
 	StateController      iotago.Address
