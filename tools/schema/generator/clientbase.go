@@ -1,27 +1,17 @@
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
 package generator
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/wasp/tools/schema/generator/clienttemplates"
 	"github.com/iotaledger/wasp/tools/schema/model"
 )
 
-type ClientGenerator struct {
+type ClientBase struct {
 	GenBase
 }
 
-func NewClientGenerator(s *model.Schema) *ClientGenerator {
-	g := &ClientGenerator{}
-	g.init(s, clienttemplates.TypeDependent, clienttemplates.Templates)
-	return g
-}
-
-func (g *ClientGenerator) Generate() error {
+func (g *ClientBase) Generate() error {
 	g.folder = g.rootFolder + "/"
 	err := os.MkdirAll(g.folder, 0o755)
 	if err != nil {
@@ -37,12 +27,8 @@ func (g *ClientGenerator) Generate() error {
 	return g.generateCode()
 }
 
-func (g *ClientGenerator) generateCode() error {
+func (g *ClientBase) generateCode() error {
 	err := g.createSourceFile("events", len(g.s.Events) != 0)
-	if err != nil {
-		return err
-	}
-	err = g.createSourceFile("app", len(g.s.Events) != 0)
 	if err != nil {
 		return err
 	}
@@ -50,5 +36,16 @@ func (g *ClientGenerator) generateCode() error {
 	if err != nil {
 		return err
 	}
-	return nil
+	return g.generateFuncs(g.appendEvents)
+}
+
+func (g *ClientBase) appendEvents(existing model.StringMap) {
+	for _, g.currentEvent = range g.s.Events {
+		name := g.s.ContractName + capitalize(g.currentEvent.Name)
+		if existing[name] == "" {
+			g.log("currentEvent: " + g.currentEvent.Name)
+			g.setMultiKeyValues("evtName", g.currentEvent.Name)
+			g.emit("funcSignature")
+		}
+	}
 }

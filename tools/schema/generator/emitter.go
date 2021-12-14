@@ -279,6 +279,8 @@ func (g *GenBase) emitIf(line string) {
 		condition = g.keys["kind"] == KeyFunc
 	case KeyInit:
 		condition = g.currentFunc.Name == KeyInit
+	case KeyMandatory:
+		condition = !g.currentField.Optional
 	case KeyMap:
 		condition = g.currentField.MapKey != ""
 	case KeyMut:

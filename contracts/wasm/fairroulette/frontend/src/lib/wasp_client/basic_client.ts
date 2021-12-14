@@ -77,7 +77,11 @@ export class BasicClient {
   public async callView(chainId: string, contractHName: string, entryPoint: string): Promise<CallViewResponse> {
     const url = `chain/${chainId}/contract/${contractHName}/callview/${entryPoint}`;
 
-    const result = await this.sendRequestExt<unknown, CallViewResponse>(this.configuration.WaspAPIUrl, 'get', url);
+    const result = await this.sendRequestExt<unknown, CallViewResponse>(
+        this.configuration.WaspAPIUrl,
+        'get',
+        url
+    );
 
     return result.body;
   }

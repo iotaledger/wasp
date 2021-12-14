@@ -65,18 +65,18 @@ views:
     params:
       owner: AgentID // account owner
     results:
-      amount: Uint64 //amount of tokens (owner)
+      amount: Uint64? // amount of tokens owned by owner
   getApproved:
     params:
       tokenID: Hash
     results:
-      approved: AgentID
+      approved: AgentID?
   isApprovedForAll:
     params:
       owner: AgentID
       operator: AgentID
     results:
-      approval: Bool
+      approval: Bool?
   name:
     results:
       name: String
@@ -84,7 +84,7 @@ views:
     params:
       tokenID: Hash
     results:
-      owner: AgentID
+      owner: AgentID?
   symbol:
     results:
       symbol: String
@@ -92,4 +92,4 @@ views:
     params:
       tokenID: Hash
     results:
-      tokenURI: String
+      tokenURI: String?

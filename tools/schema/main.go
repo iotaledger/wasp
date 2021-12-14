@@ -115,19 +115,18 @@ func generateSchema(file *os.File) error {
 		s.SchemaTime = time.Now()
 	}
 
-	if *flagClient {
-		g := generator.NewClientGenerator(s)
-		err = g.Generate()
-		if err != nil {
-			return err
-		}
-	}
-
 	if *flagGo {
 		g := generator.NewGoGenerator(s)
 		err = g.Generate()
 		if err != nil {
 			return err
+		}
+		if *flagClient {
+			cg := generator.NewGoClientGenerator(s)
+			err = cg.Generate()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -144,6 +143,13 @@ func generateSchema(file *os.File) error {
 		err = g.Generate()
 		if err != nil {
 			return err
+		}
+		if *flagClient {
+			cg := generator.NewTsClientGenerator(s)
+			err = cg.Generate()
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
