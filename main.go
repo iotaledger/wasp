@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/parameters"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/plugins/accounts"
 	"github.com/iotaledger/wasp/plugins/banner"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/cli"
@@ -30,6 +31,7 @@ func main() {
 	registry.InitFlags()
 
 	plugins := node.Plugins(
+		accounts.Init(params),
 		banner.Init(),
 		config.Init(params),
 		logger.Init(params),

@@ -12,6 +12,8 @@ import (
 var all *configuration.Configuration
 
 const (
+	AccountsList = "accounts"
+
 	LoggerLevel             = "logger.level"
 	LoggerDisableCaller     = "logger.disableCaller"
 	LoggerDisableStacktrace = "logger.disableStacktrace"
@@ -118,6 +120,10 @@ func GetInt(name string) int {
 
 func GetStringToString(name string) map[string]string {
 	return all.StringMap(name)
+}
+
+func GetStruct(path string, object interface{}) error {
+	return all.Unmarshal(path, object)
 }
 
 func Dump() map[string]interface{} {

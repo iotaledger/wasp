@@ -10,14 +10,18 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
+	"github.com/iotaledger/wasp/packages/jwt_auth"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 var log *logger.Logger
+var jwtAuth *jwt_auth.JWTAuth
 
 func initLogger() {
 	log = logger.NewLogger("webapi/adm")
@@ -35,8 +39,14 @@ func AddEndpoints(
 	metrics *metricspkg.Metrics,
 ) {
 	initLogger()
+	//jwtAuth, jwtSkipper, jwtAllow := initJWT(network)
 
-	adm.EchoGroup().Use(protected(adminWhitelist))
+	//adm.EchoGroup().Use(jwtAuth.Middleware(jwtSkipper, jwtAllow))
+	//adm.EchoGroup().Use(protected(adminWhitelist))
+
+	config := auth.AuthConfiguration{}
+	parameters.GetStruct(parameters.WebAPIAuth, &config)
+	auth.AddAuthenticationWebAPI(adm, config)
 
 	addShutdownEndpoint(adm, shutdown)
 	addChainRecordEndpoints(adm, registryProvider)

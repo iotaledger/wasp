@@ -14,7 +14,7 @@ import (
 var tplConfig string
 
 func (d *Dashboard) configInit(e *echo.Echo, r renderer) Tab {
-	route := e.GET("/", d.handleConfig)
+	route := e.GET("/config", d.handleConfig)
 	route.Name = "config"
 
 	r[route.Path] = d.makeTemplate(e, tplConfig)
@@ -27,6 +27,7 @@ func (d *Dashboard) configInit(e *echo.Echo, r renderer) Tab {
 }
 
 func (d *Dashboard) handleConfig(c echo.Context) error {
+
 	return c.Render(http.StatusOK, c.Path(), &ConfigTemplateParams{
 		BaseTemplateParams: d.BaseParams(c),
 		Configuration:      d.wasp.ConfigDump(),

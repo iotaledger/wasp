@@ -33,10 +33,8 @@ const PluginName = "Dashboard"
 
 var (
 	Server = echo.New()
-
-	log *logger.Logger
-
-	d *dashboard.Dashboard
+	log    *logger.Logger
+	d      *dashboard.Dashboard
 )
 
 func Init() *node.Plugin {
@@ -141,7 +139,10 @@ func configure(*node.Plugin) {
 		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
 	}))
 	Server.Use(middleware.Recover())
-	auth.AddAuthentication(Server, parameters.GetStringToString(parameters.DashboardAuth))
+
+	config := auth.AuthConfiguration{}
+	parameters.GetStruct(parameters.DashboardAuth, &config)
+	auth.AddAuthenticationDashboard(Server, config)
 
 	d = dashboard.Init(Server, &waspServices{}, log)
 }

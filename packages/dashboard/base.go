@@ -67,6 +67,7 @@ func Init(server *echo.Echo, waspServices WaspServices, log *logger.Logger) *Das
 	d.errorInit(server, r)
 
 	d.navPages = []Tab{
+		d.loginInit(server, r),
 		d.configInit(server, r),
 		d.peeringInit(server, r),
 		d.chainsInit(server, r),

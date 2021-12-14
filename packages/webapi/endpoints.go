@@ -55,6 +55,7 @@ func Init(
 	)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")
+	
 	admapi.AddEndpoints(
 		adm,
 		adminWhitelist,
