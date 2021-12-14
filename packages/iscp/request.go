@@ -11,22 +11,19 @@ import (
 )
 
 func UTXOInputFromMarshalUtil(mu *marshalutil.MarshalUtil) (*iotago.UTXOInput, error) {
-	ret := &iotago.UTXOInput{}
-	txIDBytes, err := mu.ReadBytes(iotago.TransactionIDLength)
+	data, err := mu.ReadBytes(iotago.OutputIDLength)
 	if err != nil {
 		return nil, err
 	}
-	copy(ret.TransactionID[:], txIDBytes[:iotago.TransactionIDLength])
-	ret.TransactionOutputIndex, err = mu.ReadUint16()
+	id, err := DecodeOutputID(data)
 	if err != nil {
 		return nil, err
 	}
-	return ret, nil
+	return id.UTXOInput(), nil
 }
 
 func UTXOInputToMarshalUtil(id *iotago.UTXOInput, mu *marshalutil.MarshalUtil) {
-	mu.WriteBytes(id.TransactionID[:]).
-		WriteUint16(id.TransactionOutputIndex)
+	mu.WriteBytes(EncodeOutputID(id.ID()))
 }
 
 // RequestData wraps any data which can be potentially be interpreted as a request

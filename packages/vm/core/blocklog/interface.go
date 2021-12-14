@@ -270,21 +270,21 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
-	Request iscp.RequestData
-	Error   string
+	RequestData iscp.RequestData
+	Error       string
 	// not persistent
 	BlockIndex   uint32
 	RequestIndex uint16
 }
 
 func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
-	return RequestReceiptFromMarshalutil(marshalutil.New(data))
+	return RequestReceiptFromMarshalUtil(marshalutil.New(data))
 }
 
-func RequestReceiptFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
+func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
 	ret := &RequestReceipt{}
 	var err error
-	if ret.Request, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
+	if ret.RequestData, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	var size uint16
@@ -302,7 +302,7 @@ func RequestReceiptFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
 
-	mu.WriteBytes(r.Request.Bytes()).
+	mu.WriteBytes(r.RequestData.Bytes()).
 		WriteUint16(uint16(len(r.Error))).
 		WriteBytes([]byte(r.Error))
 	return mu.Bytes()
@@ -316,17 +316,17 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 
 func (r *RequestReceipt) String() string {
 	if len(r.Error) > 0 {
-		return fmt.Sprintf("%s\n Error: '%s'", r.Request.String(), r.Error)
+		return fmt.Sprintf("%s\n Error: '%s'", r.RequestData.String(), r.Error)
 	}
-	return r.Request.String()
+	return r.RequestData.String()
 }
 
 func (r *RequestReceipt) Short() string {
 	prefix := "tx"
-	if r.Request.IsOffLedger() {
+	if r.RequestData.IsOffLedger() {
 		prefix = "api"
 	}
-	ret := fmt.Sprintf("%s/%s", prefix, r.Request.ID())
+	ret := fmt.Sprintf("%s/%s", prefix, r.RequestData.ID())
 	if len(r.Error) > 0 {
 		ret += ": '" + r.Error + "'"
 	}

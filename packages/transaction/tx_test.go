@@ -2,12 +2,15 @@ package transaction
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"testing"
+	"time"
+
+	"github.com/iotaledger/iota.go/v3/tpkg"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
 	"github.com/iotaledger/wasp/packages/utxodb"
@@ -17,11 +20,11 @@ import (
 func TestCreateOrigin(t *testing.T) {
 	var u *utxodb.UtxoDB
 	var originTx, txInit *iotago.Transaction
-	var user, stateControllerKeyPair cryptolib.KeyPair
+	var user cryptolib.KeyPair
 	var userAddr, stateAddr *iotago.Ed25519Address
 	var err error
 	var chainID *iscp.ChainID
-	var originTxID, initTxID *iotago.TransactionID
+	var originTxID *iotago.TransactionID
 
 	initTest := func() {
 		u = utxodb.New()
@@ -29,7 +32,7 @@ func TestCreateOrigin(t *testing.T) {
 		_, err := u.RequestFunds(userAddr)
 		require.NoError(t, err)
 
-		stateControllerKeyPair, stateAddr = u.NewKeyPairByIndex(2)
+		_, stateAddr = u.NewKeyPairByIndex(2)
 
 		require.EqualValues(t, utxodb.RequestFundsAmount, u.GetAddressBalanceIotas(userAddr))
 		require.EqualValues(t, 0, u.GetAddressBalanceIotas(stateAddr))
@@ -74,7 +77,6 @@ func TestCreateOrigin(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		initTxID, err = txInit.ID()
 		err = u.AddToLedger(txInit)
 		require.NoError(t, err)
 	}
@@ -116,50 +118,60 @@ func TestCreateOrigin(t *testing.T) {
 		require.EqualValues(t, 2, len(allOutputs))
 		require.EqualValues(t, 2, len(ids))
 	})
-	t.Run("state transition 0->1", func(t *testing.T) {
-		// typical use case in ISC VM: alias consumes ExtendedOutput as request
-		initTest()
-		createOrigin()
-		createInitChainTx()
+}
 
-		txb := iotago.NewTransactionBuilder()
-		txb.AddInput(&iotago.ToBeSignedUTXOInput{
-			Address: stateAddr,
-			Input: &iotago.UTXOInput{
-				TransactionID:          *originTxID,
-				TransactionOutputIndex: 0,
-			},
-		})
-		txb.AddInput(&iotago.ToBeSignedUTXOInput{
-			Address: stateAddr,
-			Input: &iotago.UTXOInput{
-				TransactionID:          *initTxID,
-				TransactionOutputIndex: 0,
-			},
-		})
-		chainUTXO := originTx.Essence.Outputs[0].(*iotago.AliasOutput)
-		initRequestUTXO := txInit.Essence.Outputs[0]
-		out := &iotago.AliasOutput{
-			Amount:               chainUTXO.Deposit() + initRequestUTXO.Deposit(),
-			NativeTokens:         nil,
-			AliasID:              iotago.AliasID(*chainID),
-			StateController:      chainUTXO.StateController,
-			GovernanceController: chainUTXO.GovernanceController,
-			StateIndex:           1,
-			StateMetadata:        nil,
-			FoundryCounter:       0,
-			Blocks: iotago.FeatureBlocks{
-				&iotago.SenderFeatureBlock{
-					Address: chainID.AsAddress(),
-				},
-			},
-		}
-		txb.AddOutput(out)
-		signer := iotago.NewInMemoryAddressSigner(iotago.NewAddressKeysForEd25519Address(stateAddr, stateControllerKeyPair.PrivateKey))
-		txNext, err := txb.Build(testdeserparams.DeSerializationParameters(), signer)
-		require.NoError(t, err)
+func TestConsumeRequest(t *testing.T) {
+	stateController := tpkg.RandEd25519PrivateKey()
+	stateControllerAddr := iotago.Ed25519AddressFromPubKey(stateController.Public().(ed25519.PublicKey))
+	addrKeys := iotago.AddressKeys{Address: &stateControllerAddr, Keys: stateController}
 
-		err = u.AddToLedger(txNext)
-		require.NoError(t, err)
-	})
+	aliasOut1 := &iotago.AliasOutput{
+		Amount:               1337,
+		AliasID:              tpkg.RandAliasAddress().AliasID(),
+		StateController:      &stateControllerAddr,
+		GovernanceController: &stateControllerAddr,
+		StateIndex:           1,
+	}
+	aliasOut1Inp := tpkg.RandUTXOInput()
+
+	req := &iotago.ExtendedOutput{
+		Amount:  1337,
+		Address: aliasOut1.AliasID.ToAddress(),
+	}
+	reqInp := tpkg.RandUTXOInput()
+
+	aliasOut2 := &iotago.AliasOutput{
+		Amount:               1337 * 2,
+		AliasID:              aliasOut1.AliasID,
+		StateController:      &stateControllerAddr,
+		GovernanceController: &stateControllerAddr,
+		StateIndex:           2,
+	}
+	essence := &iotago.TransactionEssence{
+		Inputs:  iotago.Inputs{aliasOut1Inp, reqInp},
+		Outputs: iotago.Outputs{aliasOut2},
+	}
+	sigs, err := essence.Sign(addrKeys)
+	require.NoError(t, err)
+
+	tx := &iotago.Transaction{
+		Essence: essence,
+		UnlockBlocks: iotago.UnlockBlocks{
+			&iotago.SignatureUnlockBlock{Signature: sigs[0]},
+			&iotago.AliasUnlockBlock{Reference: 0},
+		},
+	}
+	semValCtx := &iotago.SemanticValidationContext{
+		ExtParas: &iotago.ExternalUnlockParameters{
+			ConfMsIndex: 1,
+			ConfUnix:    uint64(time.Now().Unix()),
+		},
+	}
+	outset := iotago.OutputSet{
+		aliasOut1Inp.ID(): aliasOut1,
+		reqInp.ID():       req,
+	}
+
+	err = tx.SemanticallyValidate(semValCtx, outset)
+	require.NoError(t, err)
 }

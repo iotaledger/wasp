@@ -71,10 +71,6 @@ func (proc *WasmProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntry
 	return proc.wasmContext(function), true
 }
 
-func (proc *WasmProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
-	return proc.wasmContext(FuncDefault)
-}
-
 func (proc *WasmProcessor) GetKvStore(id int32) *wasmhost.KvStoreHost {
 	if id == 0 {
 		id = proc.currentContextID

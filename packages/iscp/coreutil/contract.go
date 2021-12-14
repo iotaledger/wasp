@@ -36,8 +36,6 @@ func (i *ContractInfo) Processor(init Handler, eps ...ProcessorEntryPoint) *Cont
 		init = defaultInitFunc
 	}
 	handlers := map[iscp.Hname]ProcessorEntryPoint{
-		// under hname == 0 always resides default handler:
-		0: FuncFallback.WithHandler(fallbackHandler),
 		// constructor:
 		iscp.EntryPointInit: FuncDefaultInitializer.WithHandler(init),
 	}
@@ -161,16 +159,6 @@ func defaultInitFunc(ctx iscp.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func fallbackHandler(ctx iscp.Sandbox) (dict.Dict, error) {
-	transferStr := "(empty)"
-	if ctx.IncomingTransfer() != nil {
-		transferStr = ctx.IncomingTransfer().String()
-	}
-	ctx.Log().Debugf("default full entry point handler invoked for contract %s from caller %s\nTransfer: %s",
-		ctx.Contract(), ctx.Caller(), transferStr)
-	return nil, nil
-}
-
 type ContractProcessor struct {
 	Contract *ContractInfo
 	Handlers map[iscp.Hname]ProcessorEntryPoint
@@ -182,10 +170,6 @@ func (p *ContractProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntr
 		return nil, false
 	}
 	return f, true
-}
-
-func (p *ContractProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
-	return p.Handlers[0]
 }
 
 func (p *ContractProcessor) GetDescription() string {

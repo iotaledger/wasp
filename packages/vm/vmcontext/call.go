@@ -1,9 +1,6 @@
 package vmcontext
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -11,7 +8,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var ErrContractNotFound = errors.New("contract not found")
+var (
+	ErrContractNotFound          = xerrors.New("contract not found")
+	ErrEntryPointNotFound        = xerrors.New("entry point not found")
+	ErrInitEntryPointCantBeAView = xerrors.New("'init' entry point can't be a view")
+	ErrCallInitNotFromRoot       = xerrors.New("attempt to call `init` not from the root contract")
+)
 
 func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, transfer *iscp.Assets) (dict.Dict, error) {
 	vmctx.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
@@ -29,12 +31,12 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		ep = proc.GetDefaultEntryPoint()
+		return nil, ErrEntryPointNotFound
 	}
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
 		if epCode == iscp.EntryPointInit {
-			return nil, fmt.Errorf("'init' entry point can't be a view")
+			return nil, ErrInitEntryPointCantBeAView
 		}
 		// passing nil as transfer: calling the view should not have effect on chain ledger
 		if err := vmctx.pushCallContextAndMoveAssets(targetContract, params, nil); err != nil {
@@ -52,7 +54,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	// prevent calling 'init' not from root contract or not while initializing root
 	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
-			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
+			return nil, ErrCallInitNotFromRoot
 		}
 	}
 	return ep.Call(NewSandbox(vmctx))
@@ -65,7 +67,7 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hna
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		ep = proc.GetDefaultEntryPoint()
+		return nil, ErrEntryPointNotFound
 	}
 	if ep.IsView() {
 		return nil, xerrors.New("non-view entry point expected")

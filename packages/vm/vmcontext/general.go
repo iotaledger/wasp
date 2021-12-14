@@ -73,8 +73,18 @@ func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 		panic(xerrors.Errorf("StateAnchor: %w", err))
 	}
 	var nilAliasID iotago.AliasID
+	blockset, err := vmctx.task.AnchorOutput.FeatureBlocks().Set()
+	if err != nil {
+		panic(xerrors.Errorf("StateAnchor: %w", err))
+	}
+	senderBlock := blockset.SenderFeatureBlock()
+	var sender iotago.Address
+	if senderBlock != nil {
+		sender = senderBlock.Address
+	}
 	return &iscp.StateAnchor{
 		ChainID:              *vmctx.ChainID(),
+		Sender:               sender,
 		IsOrigin:             vmctx.task.AnchorOutput.AliasID == nilAliasID,
 		StateController:      vmctx.task.AnchorOutput.StateController,
 		GovernanceController: vmctx.task.AnchorOutput.GovernanceController,
@@ -82,5 +92,6 @@ func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 		OutputID:             vmctx.task.AnchorOutputID.ID(),
 		StateData:            sd,
 		Deposit:              vmctx.task.AnchorOutput.Amount,
+		NativeTokens:         vmctx.task.AnchorOutput.NativeTokens,
 	}
 }

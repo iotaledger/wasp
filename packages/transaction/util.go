@@ -93,12 +93,12 @@ func computeInputsAndRemainder(
 	allUnspentOutputs []iotago.Output,
 	allInputs []*iotago.UTXOInput,
 	deSeriParams *iotago.DeSerializationParameters,
-) ([]*iotago.UTXOInput, *iotago.ExtendedOutput, error) {
+) (iotago.Inputs, *iotago.ExtendedOutput, error) {
 	iotasIn := uint64(0)
 	tokensIn := make(map[iotago.NativeTokenID]*big.Int)
 
 	var remainder *iotago.ExtendedOutput
-	var inputs []*iotago.UTXOInput
+	var inputs iotago.Inputs
 
 	for i, inp := range allUnspentOutputs {
 		a := vmtxbuilder.AssetsFromOutput(inp)
@@ -114,7 +114,10 @@ func computeInputsAndRemainder(
 		// calculate remainder. It will return != nil if input balances is enough, otherwise nil
 		remainder = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, deSeriParams)
 		if remainder != nil {
-			inputs = allInputs[:i+1]
+			inputs = make(iotago.Inputs, i+1)
+			for j := range inputs {
+				inputs[j] = allInputs[j]
+			}
 			break
 		}
 	}
@@ -201,33 +204,26 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 	return ret
 }
 
-//func computeInputsAndRemainderOld(
-//	amount uint64,
-//	allUnspentOutputs []iotago.Output,
-//	allInputs []*iotago.UTXOInput,
-//	deSeriParams *iotago.DeSerializationParameters,
-//) ([]*iotago.UTXOInput, uint64, error) {
-//	remainderDustDeposit := (&iotago.ExtendedOutput{}).VByteCost(deSeriParams.RentStructure, nil)
-//	var inputs []*iotago.UTXOInput
-//	consumed := uint64(0)
-//	for i, out := range allUnspentOutputs {
-//		consumed += out.Deposit()
-//		inputs = append(inputs, allInputs[i])
-//		if consumed == amount {
-//			return inputs, 0, nil
-//		}
-//		if consumed > amount {
-//			remainder := amount - consumed
-//			if remainder >= remainderDustDeposit {
-//				return inputs, remainder, nil
-//			}
-//		}
-//	}
-//	return nil, 0, fmt.Errorf("insufficient funds")
-//}
-//
-//// GetAliasOutput return output or nil if not found
-//func GetAliasOutput(tx *ledgerstate.Transaction, aliasAddr ledgerstate.Address) *ledgerstate.AliasOutput {
-//	return GetAliasOutputFromEssence(tx.Essence(), aliasAddr)
-//}
-//
+func MakeSignatureAndReferenceUnlockBlocks(totalInputs int, sig iotago.Signature) iotago.UnlockBlocks {
+	ret := make(iotago.UnlockBlocks, totalInputs)
+	for i := range ret {
+		if i == 0 {
+			ret[0] = &iotago.SignatureUnlockBlock{Signature: sig}
+			continue
+		}
+		ret[i] = &iotago.ReferenceUnlockBlock{Reference: 0}
+	}
+	return ret
+}
+
+func MakeSignatureAndAliasUnlockBlocks(totalInputs int, sig iotago.Signature) iotago.UnlockBlocks {
+	ret := make(iotago.UnlockBlocks, totalInputs)
+	for i := range ret {
+		if i == 0 {
+			ret[0] = &iotago.SignatureUnlockBlock{Signature: sig}
+			continue
+		}
+		ret[i] = &iotago.AliasUnlockBlock{Reference: 0}
+	}
+	return ret
+}

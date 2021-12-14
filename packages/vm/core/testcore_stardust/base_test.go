@@ -12,20 +12,20 @@ import (
 
 func Test1(t *testing.T) {
 	core.PrintWellKnownHnames()
-	env := solo.New(t, false, false)
+	env := solo.New(t)
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 	defer chain.Log.Sync()
 	chain.AssertControlAddresses()
-	chain.AssertTotalIotas(1)
-	chain.AssertCommonAccountIotas(1)
+	chain.AssertTotalIotas(212)
+	chain.AssertCommonAccountIotas(0)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-1)
 	env.WaitPublisher()
 	chain.AssertControlAddresses()
 }
 
 func TestNoContractPost(t *testing.T) {
-	env := solo.New(t, true, false)
+	env := solo.New(t)
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 
@@ -38,7 +38,7 @@ func TestNoContractPost(t *testing.T) {
 }
 
 func TestNoContractView(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t)
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 	chain.AssertControlAddresses()
@@ -50,7 +50,7 @@ func TestNoContractView(t *testing.T) {
 }
 
 func TestNoEPPost(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t)
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 	chain.AssertControlAddresses()
@@ -63,7 +63,7 @@ func TestNoEPPost(t *testing.T) {
 }
 
 func TestNoEPView(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t)
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 	chain.AssertControlAddresses()
@@ -75,12 +75,11 @@ func TestNoEPView(t *testing.T) {
 }
 
 func TestOkCall(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t)
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
-		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name)
 	req.WithIotas(2)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -90,13 +89,12 @@ func TestOkCall(t *testing.T) {
 }
 
 func TestNoTokens(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t)
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 	chain.AssertControlAddresses()
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
-		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name)
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 	chain.AssertControlAddresses()

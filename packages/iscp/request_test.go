@@ -3,7 +3,6 @@ package iscp
 import (
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -11,10 +10,6 @@ import (
 )
 
 func TestOnledgerRequest(t *testing.T) {
-	metadata := &UTXOMetaData{
-		MilestoneIndex:     1,
-		MilestoneTimestamp: time.Now(),
-	}
 	sender, _ := iotago.ParseEd25519AddressFromHexString("0152fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649")
 	requestMetadata := &RequestMetadata{
 		SenderContract: Hn("sender_contract"),
@@ -37,7 +32,7 @@ func TestOnledgerRequest(t *testing.T) {
 			&iotago.SenderFeatureBlock{Address: sender},
 		},
 	}
-	req, err := OnLedgerFromUTXO(metadata, output)
+	req, err := OnLedgerFromUTXO(output, &iotago.UTXOInput{})
 	require.NoError(t, err)
 
 	serialized := req.Bytes()

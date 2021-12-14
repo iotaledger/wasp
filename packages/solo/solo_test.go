@@ -1,8 +1,21 @@
 package solo
 
-import "testing"
+import (
+	"testing"
 
-func TestSoloBasic(t *testing.T) {
-	env := New(t, false, false)
+	"github.com/iotaledger/wasp/packages/vm/core"
+)
+
+func TestSoloBasic1(t *testing.T) {
+	core.PrintWellKnownHnames()
+	env := New(t)
+	_ = env.NewChain(nil, "ch1")
+}
+
+func TestSoloBasic2(t *testing.T) {
+	core.PrintWellKnownHnames()
+	env := New(t, &InitOptions{
+		Debug: true,
+	})
 	_ = env.NewChain(nil, "ch1")
 }

@@ -98,6 +98,7 @@ type Gas interface {
 // StateAnchor contains properties of the anchor output/transaction in the current context
 type StateAnchor struct {
 	ChainID              ChainID
+	Sender               iotago.Address
 	OutputID             iotago.OutputID
 	IsOrigin             bool
 	StateController      iotago.Address
@@ -105,6 +106,7 @@ type StateAnchor struct {
 	StateIndex           uint32
 	StateData            StateData
 	Deposit              uint64
+	NativeTokens         iotago.NativeTokens
 }
 
 type SendOptions struct { // TODO
