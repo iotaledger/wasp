@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -40,8 +42,12 @@ func NewAssetsFromDict(d dict.Dict) (*Assets, error) {
 			ret.Iotas = new(big.Int).SetBytes(d.MustGet(kv.Key(IotaAssetID))).Uint64()
 			continue
 		}
+		id, err := NativeTokenIDFromBytes([]byte(key))
+		if err != nil {
+			return nil, xerrors.Errorf("NewAssetsFromDict: %w", err)
+		}
 		token := &iotago.NativeToken{
-			ID:     TokenIDFromAssetID([]byte(key)),
+			ID:     id,
 			Amount: new(big.Int).SetBytes(val),
 		}
 		ret.Tokens = append(ret.Tokens, token)
@@ -65,10 +71,21 @@ func AssetsFromOutput(iotago.Output) *Assets {
 	panic("TODO implement")
 }
 
-func TokenIDFromAssetID(assetID []byte) [iotago.NativeTokenIDLength]byte {
-	var tokenID [iotago.NativeTokenIDLength]byte
-	copy(tokenID[:], assetID)
-	return tokenID
+func NativeTokenIDFromBytes(data []byte) (iotago.NativeTokenID, error) {
+	if len(data) != iotago.NativeTokenIDLength {
+		return iotago.NativeTokenID{}, xerrors.New("NativeTokenIDFromBytes: wrong data length")
+	}
+	var tokenID iotago.NativeTokenID
+	copy(tokenID[:], data)
+	return tokenID, nil
+}
+
+func MustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
+	ret, err := NativeTokenIDFromBytes(data)
+	if err != nil {
+		panic(xerrors.Errorf("MustNativeTokenIDFromBytes: %w", err))
+	}
+	return ret
 }
 
 func (a *Assets) AmountOf(assetID []byte) *big.Int {
@@ -84,7 +101,7 @@ func (a *Assets) AmountOf(assetID []byte) *big.Int {
 }
 
 func (a *Assets) String() string {
-	panic("not implemented")
+	return fmt.Sprintf("Assets: iotas: %d tokens len: %d", a.Iotas, len(a.Tokens))
 }
 
 func (a *Assets) Bytes() []byte {
@@ -140,16 +157,16 @@ func (a *Assets) AddToken(tokenID iotago.NativeTokenID, amount *big.Int) *Assets
 	return a.Add(b)
 }
 
-func (a *Assets) AddAsset(assetID []byte, amount *big.Int) *Assets {
-	switch len(assetID) {
-	case iotago.NativeTokenIDLength:
-		return a.AddToken(TokenIDFromAssetID(assetID), amount)
-	// TODO implement add NFTs
-	case len(IotaAssetID):
-		return a.AddIotas(amount.Uint64())
-	}
-	return a
-}
+//func (a *Assets) AddAsset(assetID []byte, amount *big.Int) *Assets {
+//	switch len(assetID) {
+//	case iotago.NativeTokenIDLength:
+//		return a.AddToken(NativeTokenIDFromBytes(assetID), amount)
+//	// TODO implement add NFTs
+//	case len(IotaAssetID):
+//		return a.AddIotas(amount.Uint64())
+//	}
+//	return a
+//}
 
 func (a *Assets) AddIotas(amount uint64) *Assets {
 	a.Iotas += amount

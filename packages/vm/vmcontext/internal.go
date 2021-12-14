@@ -76,7 +76,7 @@ func (vmctx *VMContext) GetTokenBalance(agentID *iscp.AgentID, tokenID *iotago.N
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return accounts.GetTokenBalance(vmctx.State(), agentID, tokenID)
+	return accounts.GetNativeTokenBalance(vmctx.State(), agentID, tokenID)
 }
 
 func (vmctx *VMContext) GetTokenBalanceTotal(tokenID *iotago.NativeTokenID) *big.Int {
@@ -158,7 +158,7 @@ func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	accounts.RecordMaxAssumedNonce(
+	accounts.SaveMaxAssumedNonce(
 		vmctx.State(),
 		vmctx.req.SenderAddress(),
 		vmctx.req.Unwrap().OffLedger().Nonce(),
