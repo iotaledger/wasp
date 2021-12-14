@@ -43,7 +43,7 @@ $#each event eventInterfaceField
 `,
 	// *******************************
 	"eventHandler": `
-		'$package.$evtName': (index) => {
+		'$package.$evtName': (index : number) => {
 			const evt: Event$EvtName = {
 				timestamp: Number(message[++index]),
 $#each event eventHandlerField
