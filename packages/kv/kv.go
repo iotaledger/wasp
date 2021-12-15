@@ -1,6 +1,12 @@
 package kv
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+
+	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
+)
 
 // Since map cannot have []byte as key, to avoid unnecessary conversions
 // between string and []byte, we use string as key data type, but it does
@@ -111,6 +117,31 @@ func MustIterateKeysSorted(kvs KVStoreReader, prefix Key, f func(key Key) bool) 
 	if err != nil {
 		panic(err)
 	}
+}
+
+func Concat(fragments ...interface{}) []byte {
+	var buf bytes.Buffer
+	for _, v := range fragments {
+		switch v := v.(type) {
+		case string:
+			buf.WriteString(v)
+		case []byte:
+			buf.Write(v)
+		case byte:
+			buf.WriteByte(v)
+		case uint16:
+			buf.Write(util.Uint16To2Bytes(v))
+		case uint32:
+			buf.Write(util.Uint32To4Bytes(v))
+		case uint64:
+			buf.Write(util.Uint64To8Bytes(v))
+		case interface{ Bytes() []byte }:
+			buf.Write(v.Bytes())
+		default:
+			panic(xerrors.Errorf("Concat: unknown key fragment type %T", v))
+		}
+	}
+	return buf.Bytes()
 }
 
 const nilprefix = ""

@@ -4,21 +4,15 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/kv/codec"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
-)
-
-const (
-	// map with all accounts listed
-	varAccountsMap = "A"
-	// map with on-chain totals listed
-	varTotalAssetsMap = "T"
 )
 
 var (
@@ -30,37 +24,58 @@ var (
 // - nil key is balance of iotas uint64 8 bytes little-endian
 // - iotago.NativeTokenID key is a big.Int balance of the native token
 func getAccount(state kv.KVStore, agentID *iscp.AgentID) *collections.Map {
-	return collections.NewMap(state, string(agentID.Bytes()))
+	return collections.NewMap(state, string(kv.Concat(prefixAccount, agentID.Bytes())))
 }
 
 func getAccountR(state kv.KVStoreReader, agentID *iscp.AgentID) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, string(agentID.Bytes()))
+	return collections.NewMapReadOnly(state, string(kv.Concat(prefixAccount, agentID.Bytes())))
 }
 
 // getTotalAssetsAccount is an account with totals by token type
 func getTotalAssetsAccount(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, varTotalAssetsMap)
+	return collections.NewMap(state, prefixTotalAssetsAccount)
 }
 
 func getTotalAssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, varTotalAssetsMap)
+	return collections.NewMapReadOnly(state, prefixTotalAssetsAccount)
 }
 
 // getAccountsMap is a map which contains all non-empty accounts
 func getAccountsMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, varAccountsMap)
+	return collections.NewMap(state, prefixAllAccounts)
 }
 
 func getAccountsMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, varAccountsMap)
+	return collections.NewMapReadOnly(state, prefixAllAccounts)
+}
+
+func nonceKey(addr iotago.Address) kv.Key {
+	return kv.Key(kv.Concat(prefixMaxAssumedNonceKey, iscp.BytesFromAddress(addr)))
+}
+
+// GetMaxAssumedNonce is maintained for each L1 address with the purpose of replay protection of off-ledger requests
+func GetMaxAssumedNonce(state kv.KVStoreReader, address iotago.Address) uint64 {
+	nonce, err := codec.DecodeUint64(state.MustGet(nonceKey(address)), 0)
+	if err != nil {
+		panic(xerrors.Errorf("GetMaxAssumedNonce: %w", err))
+	}
+	return nonce
+}
+
+func SaveMaxAssumedNonce(state kv.KVStore, address iotago.Address, nonce uint64) {
+	next := GetMaxAssumedNonce(state, address) + 1
+	if nonce > next {
+		next = nonce
+	}
+	state.Set(nonceKey(address), codec.EncodeUint64(next))
 }
 
 // touchAccount ensures that only non-empty accounts are kept in the accounts map
 func touchAccount(state kv.KVStore, account *collections.Map) {
-	if account.Name() == varTotalAssetsMap {
+	if account.Name() == prefixTotalAssetsAccount {
 		return
 	}
-	agentid := []byte(account.Name())
+	agentid := []byte(account.Name())[1:] // skip the prefix
 	accounts := getAccountsMap(state)
 	if account.MustLen() == 0 {
 		accounts.MustDelAt(agentid)
@@ -111,13 +126,13 @@ func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asset
 		return
 	}
 	account := getAccount(state, agentID)
-	defer touchAccount(state, account)
 
 	checkLedger(state, "CreditToAccount IN")
 	defer checkLedger(state, "CreditToAccount OUT")
 
 	creditToAccount(account, assets)
 	creditToAccount(getTotalAssetsAccount(state), assets)
+	touchAccount(state, account)
 }
 
 // creditToAccount adds assets to the internal account map
@@ -141,7 +156,6 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 		return
 	}
 	account := getAccount(state, agentID)
-	defer touchAccount(state, account)
 
 	checkLedger(state, "DebitFromAccount IN")
 	defer checkLedger(state, "DebitFromAccount OUT")
@@ -152,6 +166,7 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 	if !debitFromAccount(getTotalAssetsAccount(state), assets) {
 		panic("debitFromAccount: inconsistent ledger state")
 	}
+	touchAccount(state, account)
 }
 
 // debitFromAccount debits assets from the internal accounts map
@@ -174,7 +189,7 @@ func debitFromAccount(account *collections.Map, assets *iscp.Assets) bool {
 		}
 	}
 	for id, m := range tokenMutations {
-		m.balance.Add(m.balance, m.delta)
+		m.balance.Sub(m.balance, m.delta)
 		if util.IsZeroBigInt(m.balance) {
 			account.MustDelAt(id[:])
 		} else {
@@ -194,10 +209,15 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 		return true
 	}
 	// total assets doesn't change
-	if !debitFromAccount(getAccount(state, fromAgentID), transfer) {
+	fromAccount := getAccount(state, fromAgentID)
+	toAccount := getAccount(state, toAgentID)
+	if !debitFromAccount(fromAccount, transfer) {
 		return false
 	}
-	creditToAccount(getAccount(state, toAgentID), transfer)
+	creditToAccount(toAccount, transfer)
+
+	touchAccount(state, fromAccount)
+	touchAccount(state, toAccount)
 	return true
 }
 
@@ -205,14 +225,6 @@ func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.Agen
 	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, assets) {
 		panic(ErrNotEnoughFunds)
 	}
-}
-
-func getAccountAssetBalance(account *collections.ImmutableMap, assetID []byte) *big.Int {
-	v := account.MustGetAt(assetID)
-	if v == nil {
-		return big.NewInt(0)
-	}
-	return new(big.Int).SetBytes(account.MustGetAt(assetID))
 }
 
 // GetIotaBalance return iota balance. 0 means it does not exist
@@ -281,7 +293,7 @@ func getAccountAssets(account *collections.ImmutableMap) *iscp.Assets {
 	ret := iscp.NewEmptyAssets()
 	account.MustIterate(func(idBytes []byte, val []byte) bool {
 		if len(idBytes) == 0 {
-			ret.Iotas = new(big.Int).SetBytes(val).Uint64()
+			ret.Iotas = util.MustUint64From8Bytes(val)
 			return true
 		}
 		token := iotago.NativeToken{
@@ -339,29 +351,6 @@ func getAccountBalanceDict(account *collections.ImmutableMap) dict.Dict {
 // DecodeBalances TODO move to iscp package
 func DecodeBalances(balances dict.Dict) (*iscp.Assets, error) {
 	return iscp.NewAssetsFromDict(balances)
-}
-
-// MaxAssumedNonce is maintained for each L1 address with the purpose of replay protection of off-ledger requests
-
-const prefixMaxAssumedNonceKey = "nonce_"
-
-func GetMaxAssumedNonce(state kv.KVStoreReader, address iotago.Address) uint64 {
-	nonce, err := codec.DecodeUint64(
-		state.MustGet(prefixMaxAssumedNonceKey+kv.Key(iscp.BytesFromAddress(address))),
-		0,
-	)
-	if err != nil {
-		panic(xerrors.Errorf("GetMaxAssumedNonce: %w", err))
-	}
-	return nonce
-}
-
-func SaveMaxAssumedNonce(state kv.KVStore, address iotago.Address, nonce uint64) {
-	next := GetMaxAssumedNonce(state, address) + 1
-	if nonce > next {
-		next = nonce
-	}
-	state.Set(prefixMaxAssumedNonceKey+kv.Key(iscp.BytesFromAddress(address)), codec.EncodeUint64(next))
 }
 
 //

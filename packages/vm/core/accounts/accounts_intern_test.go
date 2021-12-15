@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/kv"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -38,7 +40,7 @@ func TestCreditDebit1(t *testing.T) {
 
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
 
-	agentID1 := iscp.NewRandomAgentID()
+	agentID1 := iscp.KnownAgentID(1, 2)
 	transfer := iscp.NewAssets(42, nil).AddToken(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedgerT(t, state, "cp1")
@@ -252,4 +254,50 @@ func TestCreditDebit7(t *testing.T) {
 
 	total = checkLedgerT(t, state, "cp1")
 	require.True(t, transfer.Equals(total))
+}
+
+func TestMoveAll(t *testing.T) {
+	state := dict.New()
+	agentID1 := iscp.NewRandomAgentID()
+	agentID2 := iscp.NewRandomAgentID()
+
+	transfer := iscp.NewAssets(42, nil).AddToken(dummyAssetID, big.NewInt(2))
+	CreditToAccount(state, agentID1, transfer)
+	require.EqualValues(t, 1, getAccountsMapR(state).MustLen())
+	accs := getAccountsIntern(state)
+	require.EqualValues(t, 1, len(accs))
+	_, ok := accs[kv.Key(agentID1.Bytes())]
+	require.True(t, ok)
+
+	MoveBetweenAccounts(state, agentID1, agentID2, transfer)
+	require.EqualValues(t, 1, getAccountsMapR(state).MustLen())
+	accs = getAccountsIntern(state)
+	require.EqualValues(t, 1, len(accs))
+	_, ok = accs[kv.Key(agentID2.Bytes())]
+	require.True(t, ok)
+}
+
+func TestDebitAll(t *testing.T) {
+	state := dict.New()
+	agentID1 := iscp.NewRandomAgentID()
+
+	transfer := iscp.NewAssets(42, nil).AddToken(dummyAssetID, big.NewInt(2))
+	CreditToAccount(state, agentID1, transfer)
+	require.EqualValues(t, 1, getAccountsMapR(state).MustLen())
+	accs := getAccountsIntern(state)
+	require.EqualValues(t, 1, len(accs))
+	_, ok := accs[kv.Key(agentID1.Bytes())]
+	require.True(t, ok)
+
+	DebitFromAccount(state, agentID1, transfer)
+	require.EqualValues(t, 0, getAccountsMapR(state).MustLen())
+	accs = getAccountsIntern(state)
+	require.EqualValues(t, 0, len(accs))
+	require.True(t, ok)
+
+	assets := GetAssets(state, agentID1)
+	require.True(t, assets.IsEmpty())
+
+	assets = GetTotalAssets(state)
+	require.True(t, assets.IsEmpty())
 }
