@@ -55,7 +55,7 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 
 	// send 1 tx will 1_000_000 iotas which should result in too mant outputs, so the request must fail
 	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-	initialBalance := env.GetAddressBalance(address, colored.IOTA)
+	initialBalance := env.L1NativeTokenBalance(address, colored.IOTA)
 
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(manyOutputsContract.Name, funcSplitFunds.Name).WithIotas(1000000),
@@ -64,7 +64,7 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "exceeded max number of allowed outputs")
 
-	finalBalance := env.GetAddressBalance(address, colored.IOTA)
+	finalBalance := env.L1NativeTokenBalance(address, colored.IOTA)
 	require.Equal(t, finalBalance, initialBalance)
 }
 
@@ -78,7 +78,7 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 	require.NoError(t, err)
 
 	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-	initialBalance := env.GetAddressBalance(address, colored.IOTA)
+	initialBalance := env.L1NativeTokenBalance(address, colored.IOTA)
 
 	// send 500 tx with 1000 iotas each. all should be processed successfully, but must be split into different blocks (async post)
 	nReqs := 500
@@ -123,7 +123,7 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 		require.LessOrEqual(t, blockInfo.TotalRequests, uint16(vmcontext.MaxBlockOutputCount))
 	}
 
-	finalBalance := env.GetAddressBalance(address, colored.IOTA)
+	finalBalance := env.L1NativeTokenBalance(address, colored.IOTA)
 
 	// check balance matches the expected
 	require.Equal(t, initialBalance, finalBalance) // all iotas should have been sent back

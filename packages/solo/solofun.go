@@ -26,7 +26,7 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 
 	_, err := env.utxoDB.RequestFunds(addr)
 	require.NoError(env.T, err)
-	env.AssertAddressIotas(addr, Saldo)
+	env.AssertL1AddressIotas(addr, Saldo)
 
 	return keyPair, addr
 }

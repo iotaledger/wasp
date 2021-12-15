@@ -21,13 +21,13 @@ func TestMintOk(t *testing.T) {
 	color1, err := env.MintTokens(wallet, 1000)
 	require.NoError(t, err)
 	env.AssertAddressIotas(walletAddr, solo.Saldo-1000)
-	env.AssertAddressBalance(walletAddr, color1, 1000)
+	env.AssertAddressNativeTokenBalance(walletAddr, color1, 1000)
 
 	color2, err := env.MintTokens(wallet, 100)
 	require.NoError(t, err)
-	env.AssertAddressBalance(walletAddr, colored.IOTA, solo.Saldo-1000-100)
-	env.AssertAddressBalance(walletAddr, color1, 1000)
-	env.AssertAddressBalance(walletAddr, color2, 100)
+	env.AssertAddressNativeTokenBalance(walletAddr, colored.IOTA, solo.Saldo-1000-100)
+	env.AssertAddressNativeTokenBalance(walletAddr, color1, 1000)
+	env.AssertAddressNativeTokenBalance(walletAddr, color2, 100)
 }
 
 func TestMintFail(t *testing.T) {
@@ -37,17 +37,17 @@ func TestMintFail(t *testing.T) {
 	chain.CheckChain()
 
 	wallet, walletAddr := env.NewKeyPairWithFunds()
-	env.AssertAddressBalance(walletAddr, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(walletAddr, colored.IOTA, solo.Saldo)
 
 	color1, err := env.MintTokens(wallet, 1000)
 	require.NoError(t, err)
-	env.AssertAddressBalance(walletAddr, colored.IOTA, solo.Saldo-1000)
-	env.AssertAddressBalance(walletAddr, color1, 1000)
+	env.AssertAddressNativeTokenBalance(walletAddr, colored.IOTA, solo.Saldo-1000)
+	env.AssertAddressNativeTokenBalance(walletAddr, color1, 1000)
 
 	_, err = env.MintTokens(wallet, solo.Saldo-500)
 	require.Error(t, err)
-	env.AssertAddressBalance(walletAddr, colored.IOTA, solo.Saldo-1000)
-	env.AssertAddressBalance(walletAddr, color1, 1000)
+	env.AssertAddressNativeTokenBalance(walletAddr, colored.IOTA, solo.Saldo-1000)
+	env.AssertAddressNativeTokenBalance(walletAddr, color1, 1000)
 }
 
 //func TestDestroyColoredOk1(t *testing.T) {
@@ -57,17 +57,17 @@ func TestMintFail(t *testing.T) {
 //	chain.CheckChain()
 //
 //	wallet := env.NewKeyPairWithFunds()
-//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
 //
 //	color1, err := env.MintTokens(wallet, 1000)
 //	require.NoError(t, err)
-//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
-//	env.AssertAddressBalance(wallet.Address(), color1, 1000)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), color1, 1000)
 //
 //	err = env.DestroyColoredTokens(wallet, color1, 100)
 //	require.NoError(t, err)
-//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000+100)
-//	env.AssertAddressBalance(wallet.Address(), color1, 1000-100)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000+100)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), color1, 1000-100)
 //}
 //
 //func TestDestroyColoredOk2(t *testing.T) {
@@ -77,17 +77,17 @@ func TestMintFail(t *testing.T) {
 //	chain.CheckChain()
 //
 //	wallet := env.NewKeyPairWithFunds()
-//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
 //
 //	color1, err := env.MintTokens(wallet, 1000)
 //	require.NoError(t, err)
-//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
-//	env.AssertAddressBalance(wallet.Address(), color1, 1000)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), color1, 1000)
 //
 //	err = env.DestroyColoredTokens(wallet, color1, 1000)
 //	require.NoError(t, err)
-//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
-//	env.AssertAddressBalance(wallet.Address(), color1, 0)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), color1, 0)
 //}
 //
 //func TestDestroyColoredFail(t *testing.T) {
@@ -97,15 +97,15 @@ func TestMintFail(t *testing.T) {
 //	chain.CheckChain()
 //
 //	wallet := env.NewKeyPairWithFunds()
-//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
 //
 //	color1, err := env.MintTokens(wallet, 1000)
 //	require.NoError(t, err)
-//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
-//	env.AssertAddressBalance(wallet.Address(), color1, 1000)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), color1, 1000)
 //
 //	err = env.DestroyColoredTokens(wallet, color1, 1100)
 //	require.Error(t, err)
-//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
-//	env.AssertAddressBalance(wallet.Address(), color1, 1000)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
+//	env.AssertAddressNativeTokenBalance(wallet.Address(), color1, 1000)
 //}

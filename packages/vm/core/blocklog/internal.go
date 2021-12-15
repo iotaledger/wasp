@@ -355,7 +355,7 @@ func getNativeTokensUTXOLookupMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, KeyPrefixNativeTokenOutputLookupMap)
 }
 
-func getNativeTokensUTXOLookupMapR(state kv.KVStore) *collections.ImmutableMap {
+func getNativeTokensUTXOLookupMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, KeyPrefixNativeTokenOutputLookupMap)
 }
 

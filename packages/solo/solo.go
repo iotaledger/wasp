@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"math/big"
 	"math/rand"
 	"strings"
 	"sync"
@@ -198,7 +199,7 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
-	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2) // cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(2))
+	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
 
 	var originatorAddr iotago.Address
 	var origKeyPair cryptolib.KeyPair
@@ -233,7 +234,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 
 	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
-	env.AssertAddressIotas(originatorAddr, Saldo-anchor.Deposit)
+	env.AssertL1AddressIotas(originatorAddr, Saldo-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateAddr.Bech32(iscp.Bech32Prefix))
@@ -470,4 +471,23 @@ func (ch *Chain) collateAndRunBatch() bool {
 func (ch *Chain) BacklogLen() int {
 	mstats := ch.mempool.Info()
 	return mstats.InBufCounter - mstats.OutPoolCounter
+}
+
+// L1NativeTokenBalance returns number of native tokens contained in the given address on the UTXODB ledger
+func (env *Solo) L1NativeTokenBalance(addr iotago.Address, tokenID *iotago.NativeTokenID) *big.Int {
+	assets := env.L1AddressBalances(addr)
+	return assets.AmountNativeToken(tokenID)
+}
+
+func (env *Solo) L1IotaBalance(addr iotago.Address) uint64 {
+	return env.utxoDB.GetAddressBalances(addr).Iotas
+}
+
+// L1AddressBalances returns all assets of the address contained in the UTXODB ledger
+func (env *Solo) L1AddressBalances(addr iotago.Address) *iscp.Assets {
+	return env.utxoDB.GetAddressBalances(addr)
+}
+
+func (env *Solo) L1Ledger() *utxodb.UtxoDB {
+	return env.utxoDB
 }

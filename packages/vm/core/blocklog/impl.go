@@ -4,6 +4,8 @@ import (
 	"math"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -24,6 +26,7 @@ var Processor = Contract.Processor(initialize,
 	FuncGetEventsForRequest.WithHandler(viewGetEventsForRequest),
 	FuncGetEventsForBlock.WithHandler(viewGetEventsForBlock),
 	FuncGetEventsForContract.WithHandler(viewGetEventsForContract),
+	FuncGetNativeTokensIDs.WithHandler(viewGetNativeTokenIDs),
 )
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -233,5 +236,15 @@ func viewGetEventsForContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	for _, event := range events {
 		arr.MustPush([]byte(event))
 	}
+	return ret, nil
+}
+
+func viewGetNativeTokenIDs(ctx iscp.SandboxView) (dict.Dict, error) {
+	mapping := getNativeTokensUTXOLookupMapR(ctx.State())
+	ret := dict.New()
+	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
+		ret.Set(kv.Key(elemKey), []byte{0xFF})
+		return true
+	})
 	return ret, nil
 }

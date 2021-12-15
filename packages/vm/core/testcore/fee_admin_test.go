@@ -267,7 +267,7 @@ func TestFeeNotEnough(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(101)
-	chain.AssertIotas(validatorFeeTargetAgentID, 99)
+	chain.AssertL2AccountIotas(validatorFeeTargetAgentID, 99)
 }
 
 func TestFeeOwnerDontNeed(t *testing.T) {

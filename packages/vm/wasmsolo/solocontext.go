@@ -5,9 +5,10 @@ package wasmsolo
 
 import (
 	"flag"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -196,7 +197,7 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmlib.ScColor) int64 {
 	panic("TODO implement - scColor needs to go")
 	// account := iscp.NewAgentID(agent.address, agent.hname)
-	// balances := ctx.Chain.GetAccountBalance(account)
+	// balances := ctx.Chain.L2AccountBalances(account)
 	// switch len(color) {
 	// case 0:
 	// 	return int64(balances.Get(colored.IOTA))

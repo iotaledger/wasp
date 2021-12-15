@@ -161,14 +161,17 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 	if err != nil {
 		panic(err)
 	}
+	dustAnchor, dustNativeToken := vmctx.txbuilder.DustDeposits()
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:            vmctx.virtualState.BlockIndex(),
-		Timestamp:             vmctx.virtualState.Timestamp(),
-		TotalRequests:         numRequests,
-		NumSuccessfulRequests: numSuccess,
-		NumOffLedgerRequests:  numOffLedger,
-		PreviousStateHash:     prevStateData.Commitment,
-		AnchorTransactionID:   iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		BlockIndex:               vmctx.virtualState.BlockIndex(),
+		Timestamp:                vmctx.virtualState.Timestamp(),
+		TotalRequests:            numRequests,
+		NumSuccessfulRequests:    numSuccess,
+		NumOffLedgerRequests:     numOffLedger,
+		PreviousStateHash:        prevStateData.Commitment,
+		AnchorTransactionID:      iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		DustDepositAnchor:        dustAnchor,
+		DustDepositNativeTokenID: dustNativeToken,
 	}
 
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)

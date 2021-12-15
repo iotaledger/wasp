@@ -88,12 +88,9 @@ func MustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
 	return ret
 }
 
-func (a *Assets) AmountOf(assetID []byte) *big.Int {
-	if IsIota(assetID) {
-		return new(big.Int).SetUint64(a.Iotas)
-	}
+func (a *Assets) AmountNativeToken(tokenID *iotago.NativeTokenID) *big.Int {
 	for _, t := range a.Tokens {
-		if bytes.Equal(t.ID[:], assetID) {
+		if t.ID == *tokenID {
 			return t.Amount
 		}
 	}
@@ -211,7 +208,7 @@ func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.WriteBytes(tokenBytes)
 }
 
-// TODO this could be refactored to use `AmountOf`
+// TODO this could be refactored to use `AmountNativeToken`
 // ToMap creates respective map by summing up repetitive token IDs
 func FindNativeTokenBalance(nts iotago.NativeTokens, id *iotago.NativeTokenID) *big.Int {
 	for _, nt := range nts {

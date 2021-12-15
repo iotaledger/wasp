@@ -44,11 +44,11 @@ func (ch *Chain) String() string {
 func (ch *Chain) DumpAccounts() string {
 	_, chainOwnerID, _ := ch.GetInfo()
 	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID.String(), chainOwnerID.String())
-	acc := ch.GetAccounts()
+	acc := ch.L2Accounts()
 	for i := range acc {
 		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
-		bals := ch.GetAccountBalance(aid)
+		bals := ch.L2AccountBalances(aid)
 		ret += fmt.Sprintf("%s\n", bals.String())
 	}
 	return ret
@@ -244,20 +244,8 @@ func (ch *Chain) GetInfo() (*iscp.ChainID, *iscp.AgentID, map[iscp.Hname]*root.C
 	return chainID, chainOwnerID, contracts
 }
 
-// GetAddressBalance returns number of tokens of given color contained in the given address
-// on the UTXODB ledger
-func (env *Solo) GetAddressBalance(addr iotago.Address, assetID []byte) *big.Int {
-	bals := env.GetAddressBalances(addr)
-	return bals.AmountOf(assetID)
-}
-
-// GetAddressBalances returns all assets of the address contained in the UTXODB ledger
-func (env *Solo) GetAddressBalances(addr iotago.Address) *iscp.Assets {
-	return env.utxoDB.GetAddressBalances(addr)
-}
-
-// GetAccounts returns all accounts on the chain with non-zero balances
-func (ch *Chain) GetAccounts() []*iscp.AgentID {
+// L2Accounts returns all accounts on the chain with non-zero balances
+func (ch *Chain) L2Accounts() []*iscp.AgentID {
 	d, err := ch.CallView(accounts.Contract.Name, accounts.FuncViewAccounts.Name)
 	require.NoError(ch.Env.T, err)
 	keys := d.KeysSorted()
@@ -280,17 +268,17 @@ func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *iscp.Assets {
 	return ret
 }
 
-func (ch *Chain) GetOnChainLedger() map[string]*iscp.Assets {
-	accs := ch.GetAccounts()
+func (ch *Chain) L2Ledger() map[string]*iscp.Assets {
+	accs := ch.L2Accounts()
 	ret := make(map[string]*iscp.Assets)
 	for i := range accs {
-		ret[accs[i].String()] = ch.GetAccountBalance(accs[i])
+		ret[accs[i].String()] = ch.L2AccountBalances(accs[i])
 	}
 	return ret
 }
 
-func (ch *Chain) GetOnChainLedgerString() string {
-	l := ch.GetOnChainLedger()
+func (ch *Chain) L2LedgerString() string {
+	l := ch.L2Ledger()
 	keys := make([]string, 0, len(l))
 	for aid := range l {
 		keys = append(keys, aid)
@@ -304,20 +292,31 @@ func (ch *Chain) GetOnChainLedgerString() string {
 	return ret
 }
 
-// GetAccountBalance return all assets contained in the on-chain
-// account controlled by the 'agentID'
-func (ch *Chain) GetAccountBalance(agentID *iscp.AgentID) *iscp.Assets {
+// L2AccountBalances return all assets contained in the on-chain account controlled by the 'agentID'
+func (ch *Chain) L2AccountBalances(agentID *iscp.AgentID) *iscp.Assets {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
 	)
 }
 
-func (ch *Chain) GetCommonAccountBalance() *iscp.Assets {
-	return ch.GetAccountBalance(ch.CommonAccount())
+func (ch *Chain) L2AccountIotas(agentID *iscp.AgentID) uint64 {
+	return ch.L2AccountBalances(agentID).Iotas
 }
 
-func (ch *Chain) GetCommonAccountIotas() uint64 {
-	return ch.GetAccountBalance(ch.CommonAccount()).Iotas
+func (ch *Chain) L2AccountNativeTokens(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+	return ch.L2AccountBalances(agentID).AmountNativeToken(tokenID)
+}
+
+func (ch *Chain) L2CommonAccountBalances() *iscp.Assets {
+	return ch.L2AccountBalances(ch.CommonAccount())
+}
+
+func (ch *Chain) L2CommonAccountIotas() uint64 {
+	return ch.L2AccountBalances(ch.CommonAccount()).Iotas
+}
+
+func (ch *Chain) L2CommonAccountNativeTokens(tokenID *iotago.NativeTokenID) *big.Int {
+	return ch.L2AccountBalances(ch.CommonAccount()).AmountNativeToken(tokenID)
 }
 
 // GetTotalAssets return total sum of assets contained in the on-chain accounts
@@ -330,6 +329,31 @@ func (ch *Chain) GetTotalAssets() *iscp.Assets {
 // GetTotalIotas return total sum of iotas
 func (ch *Chain) GetTotalIotas() uint64 {
 	return ch.GetTotalAssets().Iotas
+}
+
+func mustNativeTokenIDFromBytes(data []byte) *iotago.NativeTokenID {
+	if len(data) != iotago.NativeTokenIDLength {
+		panic("len(data) != iotago.NativeTokenIDLength")
+	}
+	ret := new(iotago.NativeTokenID)
+	copy(ret[:], data)
+	return ret
+}
+
+func (ch *Chain) GetOnChainTokenIDs() []*iotago.NativeTokenID {
+	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetNativeTokensIDs.Name)
+	require.NoError(ch.Env.T, err)
+	ret := make([]*iotago.NativeTokenID, 0, len(res))
+	for k := range res {
+		ret = append(ret, mustNativeTokenIDFromBytes([]byte(k)))
+	}
+	return ret
+}
+
+func (ch *Chain) GetTotalOnChainDustDeposit() uint64 {
+	bi := ch.GetLatestBlockInfo()
+	numNativeTokens := uint64(len(ch.GetOnChainTokenIDs()))
+	return bi.DustDepositAnchor + bi.DustDepositNativeTokenID*numNativeTokens
 }
 
 // GetFeeInfo returns the fee info for the specific chain and smart contract

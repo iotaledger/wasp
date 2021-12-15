@@ -49,18 +49,18 @@ func TestAccountsBase1(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertIotas(chain.OriginatorAgentID, 0)
-	chain.AssertIotas(newOwnerAgentID, 0)
-	chain.AssertIotas(chain.ContractAgentID(root.Contract.Name), 0)
+	chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
+	chain.AssertL2AccountIotas(newOwnerAgentID, 0)
+	chain.AssertL2AccountIotas(chain.ContractAgentID(root.Contract.Name), 0)
 	chain.CheckAccountLedger()
 
 	req = solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
-	chain.AssertIotas(chain.OriginatorAgentID, 0)
-	chain.AssertIotas(newOwnerAgentID, 0)
-	chain.AssertIotas(chain.ContractAgentID(root.Contract.Name), 0)
+	chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
+	chain.AssertL2AccountIotas(newOwnerAgentID, 0)
+	chain.AssertL2AccountIotas(chain.ContractAgentID(root.Contract.Name), 0)
 	chain.CheckAccountLedger()
 	chain.AssertTotalIotas(3)
 	chain.AssertCommonAccountIotas(3)
@@ -77,14 +77,14 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	_, err := chain.PostRequestSync(req.WithIotas(42), newOwner)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(newOwnerAgentID, colored.IOTA, 42)
+	chain.AssertL2AccountNativeToken(newOwnerAgentID, colored.IOTA, 42)
 
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 	chain.CheckAccountLedger()
-	chain.AssertAccountBalance(newOwnerAgentID, colored.IOTA, 0)
-	env.AssertAddressBalance(newOwnerAddr, colored.IOTA, solo.Saldo)
+	chain.AssertL2AccountNativeToken(newOwnerAgentID, colored.IOTA, 0)
+	env.AssertAddressNativeTokenBalance(newOwnerAddr, colored.IOTA, solo.Saldo)
 	chain.AssertTotalIotas(1)
 	chain.AssertCommonAccountIotas(1)
 
@@ -97,7 +97,7 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	_, err = chain.PostRequestSync(req, chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 	chain.AssertTotalIotas(2)
-	chain.AssertIotas(chain.OriginatorAgentID, 0)
+	chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(2)
 
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncHarvest.Name).WithIotas(1)
@@ -105,7 +105,7 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 
 	require.NoError(t, err)
 	chain.AssertTotalIotas(3)
-	chain.AssertIotas(chain.OriginatorAgentID, 3)
+	chain.AssertL2AccountIotas(chain.OriginatorAgentID, 3)
 	chain.AssertCommonAccountIotas(0)
 }
 

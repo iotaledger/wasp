@@ -473,6 +473,10 @@ func calcVByteCostOfNativeTokenBalance() uint64 {
 	return o.Amount
 }
 
+func (txb *AnchorTransactionBuilder) DustDeposits() (uint64, uint64) {
+	return txb.dustDepositOnAnchor, txb.dustDepositOnInternalTokenAccountOutput
+}
+
 // ExtendedOutputFromPostData creates extended output object from parameters.
 // It automatically adjusts amount of iotas required for the dust deposit
 func ExtendedOutputFromPostData(senderAddress iotago.Address, senderContract iscp.Hname, par iscp.RequestParameters) *iotago.ExtendedOutput {

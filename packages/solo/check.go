@@ -16,14 +16,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// AssertAddressBalance asserts the UTXODB address balance of specific color in the address
-func (env *Solo) AssertAddressBalance(addr iotago.Address, assetID []byte, expected *big.Int) {
-	require.Zero(env.T, expected.Cmp(env.GetAddressBalance(addr, assetID)))
+func (ch *Chain) AssertL2AccountNativeToken(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID, bal *big.Int) {
+	bals := ch.L2AccountBalances(agentID)
+	require.True(ch.Env.T, bal.Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
-func (env *Solo) AssertAddressIotas(addr iotago.Address, expected uint64) {
-	expectedBig := big.NewInt(int64(expected))
-	env.AssertAddressBalance(addr, iscp.IotaAssetID, expectedBig)
+func (ch *Chain) AssertL2AccountIotas(agentID *iscp.AgentID, bal uint64) {
+	require.Equal(ch.Env.T, bal, ch.L2AccountBalances(agentID).Iotas)
 }
 
 // CheckChain checks fundamental integrity of the chain
@@ -46,46 +45,25 @@ func (ch *Chain) CheckChain() {
 // Sum of all accounts must be equal to total assets
 func (ch *Chain) CheckAccountLedger() {
 	total := ch.GetTotalAssets()
-	accs := ch.GetAccounts()
+	accs := ch.L2Accounts()
 	sum := iscp.NewEmptyAssets()
 	for i := range accs {
 		acc := accs[i]
-		sum.Add(ch.GetAccountBalance(acc))
+		sum.Add(ch.L2AccountBalances(acc))
 	}
 	require.True(ch.Env.T, total.Equals(sum))
 	coreacc := iscp.NewAgentID(ch.ChainID.AsAddress(), root.Contract.Hname())
-	require.True(ch.Env.T, ch.GetAccountBalance(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2AccountBalances(coreacc).IsEmpty())
 	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), blob.Contract.Hname())
-	require.True(ch.Env.T, ch.GetAccountBalance(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2AccountBalances(coreacc).IsEmpty())
 	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), accounts.Contract.Hname())
-	require.True(ch.Env.T, ch.GetAccountBalance(coreacc).IsEmpty())
-	require.True(ch.Env.T, ch.GetAccountBalance(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2AccountBalances(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2AccountBalances(coreacc).IsEmpty())
 }
 
-// AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertAccountBalance(agentID *iscp.AgentID, assetID []byte, bal *big.Int) {
-	bals := ch.GetAccountBalance(agentID)
-	require.Zero(ch.Env.T, bal.Cmp(bals.AmountOf(assetID)))
-}
-
-func (ch *Chain) AssertIotas(agentID *iscp.AgentID, bal uint64) {
-	require.Equal(ch.Env.T, bal, ch.GetAccountBalance(agentID).Iotas)
-}
-
-// AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertOwnersBalance(assetID []byte, bal *big.Int) {
-	bals := ch.GetCommonAccountBalance()
-	require.Zero(ch.Env.T, bal.Cmp(bals.AmountOf(assetID)))
-}
-
-func (ch *Chain) AssertCommonAccountIotas(bal uint64) {
-	require.EqualValues(ch.Env.T, int(bal), int(ch.GetCommonAccountIotas()))
-}
-
-// AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertTotalAssets(assetID []byte, bal *big.Int) {
+func (ch *Chain) AssertTotalNativeTokens(tokenID *iotago.NativeTokenID, bal *big.Int) {
 	bals := ch.GetTotalAssets()
-	require.Zero(ch.Env.T, bal.Cmp(bals.AmountOf(assetID)))
+	require.True(ch.Env.T, bal.Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
 func (ch *Chain) AssertTotalIotas(bal uint64) {
@@ -98,4 +76,8 @@ func (ch *Chain) AssertControlAddresses() {
 	require.True(ch.Env.T, rec.StateAddress.Equal(ch.StateControllerAddress))
 	require.True(ch.Env.T, rec.GoverningAddress.Equal(ch.StateControllerAddress))
 	require.EqualValues(ch.Env.T, 0, rec.SinceBlockIndex)
+}
+
+func (env *Solo) AssertL1AddressIotas(addr iotago.Address, expected uint64) {
+	require.EqualValues(env.T, int(expected), int(env.L1IotaBalance(addr)))
 }

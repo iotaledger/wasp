@@ -14,14 +14,23 @@ func Test1(t *testing.T) {
 	core.PrintWellKnownHnames()
 	env := solo.New(t)
 	env.EnablePublisher(true)
+	genesisAddr := env.L1Ledger().GenesisAddress()
+	assets := env.L1AddressBalances(genesisAddr)
+	require.EqualValues(t, env.L1Ledger().Supply(), assets.Iotas)
+
 	chain := env.NewChain(nil, "chain1")
 	defer chain.Log.Sync()
 	chain.AssertControlAddresses()
 	chain.AssertTotalIotas(212)
-	chain.AssertCommonAccountIotas(0)
-	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-1)
-	env.WaitPublisher()
-	chain.AssertControlAddresses()
+	t.Logf("originator address iotas: %d (spent %d)",
+		env.L1IotaBalance(chain.OriginatorAddress), solo.Saldo-env.L1IotaBalance(chain.OriginatorAddress))
+
+	nativeTokenIDs := chain.GetOnChainTokenIDs()
+	require.EqualValues(t, 0, len(nativeTokenIDs))
+
+	totalDustDeposit := chain.GetTotalOnChainDustDeposit()
+	t.Logf("total on chain dust deposit: %d", totalDustDeposit)
+	env.AssertL1AddressIotas(chain.OriginatorAddress, solo.Saldo-totalDustDeposit)
 }
 
 func TestNoContractPost(t *testing.T) {

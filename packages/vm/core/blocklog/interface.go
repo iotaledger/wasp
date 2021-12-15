@@ -41,6 +41,7 @@ var (
 	FuncGetEventsForRequest        = coreutil.ViewFunc("getEventsForRequest")
 	FuncGetEventsForBlock          = coreutil.ViewFunc("getEventsForBlock")
 	FuncGetEventsForContract       = coreutil.ViewFunc("getEventsForContract")
+	FuncGetNativeTokensIDs         = coreutil.ViewFunc("getNativeTokenIDs")
 )
 
 const (
@@ -62,13 +63,15 @@ const (
 // region BlockInfo //////////////////////////////////////////////////////////////
 
 type BlockInfo struct {
-	BlockIndex            uint32 // not persistent. Set from key
-	Timestamp             time.Time
-	TotalRequests         uint16
-	NumSuccessfulRequests uint16
-	NumOffLedgerRequests  uint16
-	PreviousStateHash     hashing.HashValue
-	AnchorTransactionID   iotago.TransactionID
+	BlockIndex               uint32 // not persistent. Set from key
+	Timestamp                time.Time
+	TotalRequests            uint16
+	NumSuccessfulRequests    uint16
+	NumOffLedgerRequests     uint16
+	PreviousStateHash        hashing.HashValue
+	AnchorTransactionID      iotago.TransactionID
+	DustDepositAnchor        uint64
+	DustDepositNativeTokenID uint64
 }
 
 func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
@@ -120,6 +123,12 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if _, err := w.Write(bi.PreviousStateHash.Bytes()); err != nil {
 		return err
 	}
+	if err := util.WriteUint64(w, bi.DustDepositAnchor); err != nil {
+		return err
+	}
+	if err := util.WriteUint64(w, bi.DustDepositNativeTokenID); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -140,6 +149,12 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 		return err
 	}
 	if err := util.ReadHashValue(r, &bi.PreviousStateHash); err != nil { // nolint:nolint
+		return err
+	}
+	if err := util.ReadUint64(r, &bi.DustDepositAnchor); err != nil {
+		return err
+	}
+	if err := util.ReadUint64(r, &bi.DustDepositNativeTokenID); err != nil {
 		return err
 	}
 	return nil

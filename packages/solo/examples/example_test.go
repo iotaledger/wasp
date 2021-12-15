@@ -29,16 +29,16 @@ func TestExample2(t *testing.T) {
 	env := solo.New(t, false, false)
 	_, userAddress := env.NewKeyPair()
 	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
-	numIotas := env.GetAddressBalance(userAddress, colored.IOTA)
+	numIotas := env.L1NativeTokenBalance(userAddress, colored.IOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, colored.IOTA, 0)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, 0)
 }
 
 func TestExample3(t *testing.T) {
 	env := solo.New(t, false, false)
 	_, userAddress := env.NewKeyPairWithFunds()
 	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
-	numIotas := env.GetAddressBalance(userAddress, colored.IOTA)
+	numIotas := env.L1NativeTokenBalance(userAddress, colored.IOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
 }

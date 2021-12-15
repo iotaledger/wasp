@@ -23,16 +23,16 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		owner, ownerAddr := env.NewKeyPairWithFunds()
 		ownerAgentID := iscp.NewAgentID(ownerAddr, 0)
 
-		chain.AssertIotas(ownerAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(ownerAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		// NOTE: NO deposit into owner account
 		//req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit)
 		//_, err := chain.PostRequestSync(req.WithIotas(10), owner)
 		//require.NoError(t, err)
 
-		chain.AssertIotas(ownerAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(ownerAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp",
@@ -42,8 +42,8 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, strings.Contains(err.Error(), "unverified account"))
 
-		chain.AssertIotas(ownerAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(ownerAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 	})
 }
 
@@ -55,16 +55,16 @@ func TestOffLedgerNoFeeNoTransfer(t *testing.T) {
 		owner, ownerAddr := env.NewKeyPairWithFunds()
 		ownerAgentID := iscp.NewAgentID(ownerAddr, 0)
 
-		chain.AssertIotas(ownerAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(ownerAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		// deposit into owner account
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 		_, err := chain.PostRequestSync(req.WithIotas(10), owner)
 		require.NoError(t, err)
 
-		chain.AssertIotas(ownerAgentID, 10)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(ownerAgentID, 10)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp",
@@ -74,8 +74,8 @@ func TestOffLedgerNoFeeNoTransfer(t *testing.T) {
 		_, err = chain.PostRequestOffLedger(req, owner)
 		require.NoError(t, err)
 
-		chain.AssertIotas(ownerAgentID, 10)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(ownerAgentID, 10)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		ret, err := chain.CallView(ScName, sbtestsc.FuncGetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp")
@@ -99,24 +99,24 @@ func TestOffLedgerFeesEnough(t *testing.T) {
 		_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 		_, err = chain.PostRequestSync(req.WithIotas(10), user)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 10)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 10)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
 		_, err = chain.PostRequestOffLedger(req.WithIotas(10), user)
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
 		chain.AssertCommonAccountIotas(4 + extraToken + 10)
@@ -135,15 +135,15 @@ func TestOffLedgerFeesNotEnough(t *testing.T) {
 		_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 		_, err = chain.PostRequestSync(req.WithIotas(9), user)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 9)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 9)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
 		_, err = chain.PostRequestOffLedger(req.WithIotas(10), user)
@@ -151,9 +151,9 @@ func TestOffLedgerFeesNotEnough(t *testing.T) {
 		require.Contains(t, err.Error(), "not enough fees")
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 		env.AssertAddressIotas(userAddr, solo.Saldo-9)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
 		chain.AssertCommonAccountIotas(4 + extraToken + 9)
@@ -172,24 +172,24 @@ func TestOffLedgerFeesExtra(t *testing.T) {
 		_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 		_, err = chain.PostRequestSync(req.WithIotas(11), user)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 11)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 11)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
 		_, err = chain.PostRequestOffLedger(req.WithIotas(10), user)
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 1)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
+		chain.AssertL2AccountIotas(userAgentID, 1)
+		chain.AssertL2AccountIotas(cAID, 1)
 		env.AssertAddressIotas(userAddr, solo.Saldo-11)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
 		chain.AssertCommonAccountIotas(4 + extraToken + 10)
@@ -208,24 +208,24 @@ func TestOffLedgerTransferWithFeesEnough(t *testing.T) {
 		_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 		_, err = chain.PostRequestSync(req.WithIotas(10+42), user)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 10+42)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 10+42)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
 		_, err = chain.PostRequestOffLedger(req.WithIotas(10+42), user)
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1+42)
+		chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10-42)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
 		chain.AssertCommonAccountIotas(4 + extraToken + 10)
@@ -244,24 +244,24 @@ func TestOffLedgerTransferWithFeesNotEnough(t *testing.T) {
 		_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 		_, err = chain.PostRequestSync(req.WithIotas(10+41), user)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 10+41)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 10+41)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
 		_, err = chain.PostRequestOffLedger(req.WithIotas(10+42), user)
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1+41)
+		chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1+41)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10-41)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
 		chain.AssertCommonAccountIotas(4 + extraToken + 10)
@@ -280,24 +280,24 @@ func TestOffLedgerTransferWithFeesExtra(t *testing.T) {
 		_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 		_, err = chain.PostRequestSync(req.WithIotas(10+43), user)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 10+43)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 10+43)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
 		_, err = chain.PostRequestOffLedger(req.WithIotas(10+42), user)
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 1)
-		chain.AssertIotas(cAID, 1+42)
+		chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
+		chain.AssertL2AccountIotas(userAgentID, 1)
+		chain.AssertL2AccountIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10-43)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
 		chain.AssertCommonAccountIotas(4 + extraToken + 10)
@@ -310,24 +310,24 @@ func TestOffLedgerTransferEnough(t *testing.T) {
 		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
 		user, userAddr, userAgentID := setupDeployer(t, chain)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 		_, err := chain.PostRequestSync(req.WithIotas(42), user)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 42)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 42)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
 		_, err = chain.PostRequestOffLedger(req.WithIotas(42), user)
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1+42)
+		chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-42)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 		chain.AssertCommonAccountIotas(3 + extraToken)
@@ -340,24 +340,24 @@ func TestOffLedgerTransferNotEnough(t *testing.T) {
 		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
 		user, userAddr, userAgentID := setupDeployer(t, chain)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 		_, err := chain.PostRequestSync(req.WithIotas(41), user)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 41)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 41)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
 		_, err = chain.PostRequestOffLedger(req.WithIotas(42), user)
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1+41)
+		chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1+41)
 		env.AssertAddressIotas(userAddr, solo.Saldo-41)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 		chain.AssertCommonAccountIotas(3 + extraToken)
@@ -370,24 +370,24 @@ func TestOffLedgerTransferExtra(t *testing.T) {
 		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
 		user, userAddr, userAgentID := setupDeployer(t, chain)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 0)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 		_, err := chain.PostRequestSync(req.WithIotas(43), user)
 		require.NoError(t, err)
 
-		chain.AssertIotas(userAgentID, 43)
-		chain.AssertIotas(cAID, 1)
+		chain.AssertL2AccountIotas(userAgentID, 43)
+		chain.AssertL2AccountIotas(cAID, 1)
 
 		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
 		_, err = chain.PostRequestOffLedger(req.WithIotas(42), user)
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 1)
-		chain.AssertIotas(cAID, 1+42)
+		chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
+		chain.AssertL2AccountIotas(userAgentID, 1)
+		chain.AssertL2AccountIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-43)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 		chain.AssertCommonAccountIotas(3 + extraToken)

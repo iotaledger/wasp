@@ -53,7 +53,7 @@ func TestOpenChannelFail(t *testing.T) {
 	require.Error(t, err)
 
 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
-	chain.AssertIotas(cAgentID, 0)
+	chain.AssertL2AccountIotas(cAgentID, 0)
 	env.AssertAddressIotas(payerAddr, solo.Saldo)
 }
 
@@ -81,7 +81,7 @@ func TestOpenChannelOk(t *testing.T) {
 	require.NoError(t, err)
 
 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
-	chain.AssertIotas(cAgentID, 600+1)
+	chain.AssertL2AccountIotas(cAgentID, 600+1)
 	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
 }
 
@@ -111,13 +111,13 @@ func TestOpenChannelTwice(t *testing.T) {
 	require.NoError(t, err)
 
 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
-	chain.AssertIotas(cAgentID, 600+1)
+	chain.AssertL2AccountIotas(cAgentID, 600+1)
 	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
 
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	chain.AssertIotas(cAgentID, 600+600+1)
+	chain.AssertL2AccountIotas(cAgentID, 600+600+1)
 	env.AssertAddressIotas(payerAddr, solo.Saldo-600-600-1)
 
 	ret, err := chain.CallView("micropay", FuncGetChannelInfo.Name,
@@ -161,7 +161,7 @@ func TestRevokeWarrant(t *testing.T) {
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	chain.AssertIotas(cAgentID, 600+1)
+	chain.AssertL2AccountIotas(cAgentID, 600+1)
 	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
 
 	ret, err := chain.CallView("micropay", FuncGetChannelInfo.Name,
@@ -237,7 +237,7 @@ func TestPayment(t *testing.T) {
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	chain.AssertIotas(cAgentID, 600+1)
+	chain.AssertL2AccountIotas(cAgentID, 600+1)
 	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
 
 	res, err := chain.CallView("micropay", FuncGetChannelInfo.Name,
