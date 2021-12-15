@@ -8,7 +8,7 @@ labels = { "team" = "iscp" }
 
 variable "chainid" {
     type = string
-    default = "jiCuv7Z4bYqAU8baSyCJP6HAxw8wC1YUYi722GibYPWW"
+    default = "oBrnaPHdo2J6bV4oebfbExCoLtbSrU6fRwaHLtAo4akh"
 }
 
 variable "wallet_seed" {

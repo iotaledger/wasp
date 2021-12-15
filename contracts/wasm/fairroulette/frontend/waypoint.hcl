@@ -18,7 +18,7 @@ variable "goshimmer_url" {
 
 variable "chainid" {
     type = string
-    default = "be1j1GwB971eEAVfDmNFUtUfQ7rHEEF43Mz7yTP2bdkH"
+    default = "mjNp2do4hTL5pnW5Fo8z6ncoSCB3543MEwTgGuVy9tsS"
 }
 
 variable "adminWhitelist" {
