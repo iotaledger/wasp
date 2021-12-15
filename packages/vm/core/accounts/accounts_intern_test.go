@@ -31,10 +31,7 @@ func checkLedgerT(t *testing.T, state dict.Dict, cp string) *iscp.Assets {
 	return total
 }
 
-var curTest = ""
-
 func TestCreditDebit1(t *testing.T) {
-	curTest = "TestCreditDebit1"
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
 
@@ -68,7 +65,6 @@ func TestCreditDebit1(t *testing.T) {
 }
 
 func TestCreditDebit2(t *testing.T) {
-	curTest = "TestCreditDebit2"
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
@@ -96,7 +92,6 @@ func TestCreditDebit2(t *testing.T) {
 }
 
 func TestCreditDebit3(t *testing.T) {
-	curTest = "TestCreditDebit3"
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
@@ -124,7 +119,6 @@ func TestCreditDebit3(t *testing.T) {
 }
 
 func TestCreditDebit4(t *testing.T) {
-	curTest = "TestCreditDebit4"
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
@@ -167,7 +161,6 @@ func TestCreditDebit4(t *testing.T) {
 }
 
 func TestCreditDebit5(t *testing.T) {
-	curTest = "TestCreditDebit5"
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
@@ -207,7 +200,6 @@ func TestCreditDebit5(t *testing.T) {
 }
 
 func TestCreditDebit6(t *testing.T) {
-	curTest = "TestCreditDebit6"
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
@@ -236,7 +228,6 @@ func TestCreditDebit6(t *testing.T) {
 }
 
 func TestCreditDebit7(t *testing.T) {
-	curTest = "TestCreditDebit7"
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
