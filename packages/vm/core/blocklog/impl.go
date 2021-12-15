@@ -55,7 +55,7 @@ func viewGetBlockInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 }
 
 func viewGetLatestBlockInfo(ctx iscp.SandboxView) (dict.Dict, error) {
-	registry := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry)
+	registry := collections.NewArray32ReadOnly(ctx.State(), KeyPrefixBlockRegistry)
 	regLen := registry.MustLen()
 	if regLen == 0 {
 		return nil, xerrors.New("blocklog::viewGetLatestBlockInfo: empty log")
@@ -142,7 +142,7 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 
 func viewControlAddresses(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	registry := collections.NewArray32ReadOnly(ctx.State(), StateVarControlAddresses)
+	registry := collections.NewArray32ReadOnly(ctx.State(), KeyPrefixControlAddresses)
 	l := registry.MustLen()
 	a.Require(l > 0, "inconsistency: unknown control addresses")
 	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
@@ -185,7 +185,7 @@ func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	if ctx.Params().MustHas(ParamBlockIndex) {
 		blockIndex = params.MustGetUint32(ParamBlockIndex)
 	} else {
-		registry := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry)
+		registry := collections.NewArray32ReadOnly(ctx.State(), KeyPrefixBlockRegistry)
 		blockIndex = registry.MustLen() - 1
 	}
 

@@ -29,9 +29,18 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 	vmctx.requestEventIndex = 0
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.callStack = vmctx.callStack[:0]
-	// we need empty state update for the optimistic reader not to panic
-	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
 
+	if !vmctx.anchorIDUpdated {
+		// in the beginning of each block we are saving anchor ID of the current state in the next block
+		if vmctx.task.AnchorOutput.StateIndex > 0 {
+			vmctx.currentStateUpdate = state.NewStateUpdate()
+			vmctx.updateLatestAnchorID()
+			vmctx.virtualState.ApplyStateUpdates()
+		}
+		vmctx.anchorIDUpdated = true
+	}
+
+	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
 	if err := vmctx.earlyCheckReasonToSkip(); err != nil {
 		return err
 	}
@@ -246,7 +255,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	tokensAvailable := uint64(0)
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		// to pay for gas chain is configured to use some native token, not IOTA
-		tokensAvailableBig := vmctx.GetTokenBalance(vmctx.req.SenderAccount(), vmctx.chainInfo.GasFeePolicy.GasFeeTokenID)
+		tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), vmctx.chainInfo.GasFeePolicy.GasFeeTokenID)
 		if tokensAvailableBig != nil {
 			// safely subtract the transfer from the sender to the target
 			if transfer := vmctx.req.Transfer(); transfer != nil {

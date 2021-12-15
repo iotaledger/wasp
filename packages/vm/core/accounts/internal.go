@@ -244,15 +244,15 @@ func getIotaBalance(account *collections.ImmutableMap) uint64 {
 }
 
 // GetNativeTokenBalance returns balance or nil if it does not exist
-func GetNativeTokenBalance(state kv.KVStoreReader, agentID *iscp.AgentID, tokenID iotago.NativeTokenID) *big.Int {
+func GetNativeTokenBalance(state kv.KVStoreReader, agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
 	return getNativeTokenBalance(getAccountR(state, agentID), tokenID)
 }
 
-func GetNativeTokenBalanceTotal(state kv.KVStoreReader, tokenID iotago.NativeTokenID) *big.Int {
+func GetNativeTokenBalanceTotal(state kv.KVStoreReader, tokenID *iotago.NativeTokenID) *big.Int {
 	return getNativeTokenBalance(getTotalAssetsAccountR(state), tokenID)
 }
 
-func getNativeTokenBalance(account *collections.ImmutableMap, tokenID iotago.NativeTokenID) *big.Int {
+func getNativeTokenBalance(account *collections.ImmutableMap, tokenID *iotago.NativeTokenID) *big.Int {
 	ret := big.NewInt(0)
 	if v := account.MustGetAt(tokenID[:]); v != nil {
 		return ret.SetBytes(v)
@@ -352,32 +352,3 @@ func getAccountBalanceDict(account *collections.ImmutableMap) dict.Dict {
 func DecodeBalances(balances dict.Dict) (*iscp.Assets, error) {
 	return iscp.NewAssetsFromDict(balances)
 }
-
-//
-//func SetAssetsUtxoIndices(state kv.KVStore, stateIndex uint32, tokenUtxoIndices []iotago.NativeTokenID) {
-//	mapping := getUtxoMapping(state)
-//	for index, assetID := range tokenUtxoIndices {
-//		entry := codec.EncodeUint16(uint16(index))
-//		entry = append(entry, codec.EncodeUint32(stateIndex)...)
-//		mapping.MustSetAt(assetID[:], entry)
-//	}
-//}
-//
-//func GetUtxoForAsset(state kv.KVStore, id iotago.NativeTokenID) (stateIndex uint32, outputIndex uint16, err error) {
-//	mapping := getUtxoMapping(state)
-//	entry := mapping.MustGetAt(id[:])
-//	outputIndex, err = codec.DecodeUint16(entry[:2])
-//	if err != nil {
-//		return 0, 0, err
-//	}
-//	stateIndex, err = codec.DecodeUint32(entry[2:])
-//	if err != nil {
-//		return 0, 0, err
-//	}
-//	return stateIndex, outputIndex, nil
-//}
-//
-//func removeUTXOMapping(state kv.KVStore, id iotago.NativeTokenID) {
-//	mapping := getUtxoMapping(state)
-//	mapping.DelAt(id[:]) //nolint:errcheck // No need to check this error
-//}

@@ -13,6 +13,13 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
+func (vmctx *VMContext) updateLatestAnchorID() {
+	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	blocklog.SetAnchorTransactionIDOfLatestBlock(vmctx.State(), vmctx.task.AnchorOutputID.TransactionID)
+}
+
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
 func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, assets *iscp.Assets) {
@@ -72,18 +79,18 @@ func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
 	return accounts.GetIotaBalance(vmctx.State(), agentID)
 }
 
-func (vmctx *VMContext) GetTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+func (vmctx *VMContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	return accounts.GetNativeTokenBalance(vmctx.State(), agentID, tokenID)
 }
 
-func (vmctx *VMContext) GetTokenBalanceTotal(tokenID *iotago.NativeTokenID) *big.Int {
+func (vmctx *VMContext) GetNativeTokenBalanceTotal(tokenID *iotago.NativeTokenID) *big.Int {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return accounts.GetTokenBalanceTotal(vmctx.State(), tokenID)
+	return accounts.GetNativeTokenBalanceTotal(vmctx.State(), tokenID)
 }
 
 func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {

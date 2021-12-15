@@ -26,7 +26,7 @@ var (
 
 // tokenBalanceLoader externally supplied function which loads balance of the native token from the state
 // it returns nil if balance exists. If balance exist, it also returns output ID which holds the balance for the token_id
-type tokenBalanceLoader func(iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput)
+type tokenBalanceLoader func(*iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput)
 
 // AnchorTransactionBuilder represents structure which handles all the data needed to eventually
 // build an essence of the anchor transaction
@@ -162,7 +162,7 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.RequestData) int64 {
 	// then we add all arriving native tokens to corresponding internal outputs
 	deltaIotasDustDepositAdjustment := int64(0)
 	for _, nt := range inp.Assets().Tokens {
-		deltaIotasDustDepositAdjustment += txb.addNativeTokenBalanceDelta(nt.ID, nt.Amount)
+		deltaIotasDustDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
 	}
 	return deltaIotasDustDepositAdjustment
 }
@@ -177,7 +177,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
 	bi := new(big.Int)
 	for _, nt := range assets.Tokens {
 		bi.Neg(nt.Amount)
-		txb.addNativeTokenBalanceDelta(nt.ID, bi)
+		txb.addNativeTokenBalanceDelta(&nt.ID, bi)
 	}
 	txb.postedOutputs = append(txb.postedOutputs, o)
 }
@@ -213,24 +213,28 @@ func (txb *AnchorTransactionBuilder) inputs() iotago.Inputs {
 	return ret
 }
 
-// SortedListOfTokenIDsForOutputs is needed in order to know the exact index in the transaction of each
+// TokenIDsToBeUpdated is needed in order to know the exact index in the transaction of each
 // internal output for each token ID before it is stored into the state and state commitment is calculated
-// In the and `blocklog` and `accounts` contract each internal account is tracked by:
-// - knowing anchor transactionID for each block index (in `blocklog`)
-// - knowing block number of the anchor transaction where the last UTXO was produced for the tokenID (in `accounts`)
-// - knowing the index of the output in the anchor transaction (in `accounts`). This is calculated from SortedListOfTokenIDsForOutputs()
-func (txb *AnchorTransactionBuilder) SortedListOfTokenIDsForOutputs() []iotago.NativeTokenID {
-	ret := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
+// In the `blocklog` contract each internal account is tracked by:
+// - knowing anchor transactionID for each block index
+// - knowing block number of the anchor transaction where the last UTXO was produced for the tokenID
+// - knowing the index of the output in the anchor transaction (in `accounts`). This is calculated from TokenIDsToBeUpdated()
+// In addition function returns token IDs which has to be removed from the list
+func (txb *AnchorTransactionBuilder) TokenIDsToBeUpdated() ([]iotago.NativeTokenID, []iotago.NativeTokenID) {
+	toBeUpdated := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
+	toBeRemoved := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
 	for id, nt := range txb.balanceNativeTokens {
-		if !nt.producesOutput() {
-			continue
+		if nt.producesOutput() {
+			toBeUpdated = append(toBeUpdated, id)
+		} else {
+			toBeRemoved = append(toBeRemoved, id)
 		}
-		ret = append(ret, id)
 	}
-	sort.Slice(ret, func(i, j int) bool {
-		return bytes.Compare(ret[i][:], ret[j][:]) < 0
+	// sorting those with outputs
+	sort.Slice(toBeUpdated, func(i, j int) bool {
+		return bytes.Compare(toBeUpdated[i][:], toBeUpdated[j][:]) < 0
 	})
-	return ret
+	return toBeUpdated, toBeRemoved
 }
 
 // outputs generates outputs for the transaction essence
@@ -259,7 +263,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 	ret = append(ret, anchorOutput)
 
 	// creating outputs for updated internal accounts
-	tokenIdsToBeUpdated := txb.SortedListOfTokenIDsForOutputs()
+	tokenIdsToBeUpdated, _ := txb.TokenIDsToBeUpdated()
 
 	for _, id := range tokenIdsToBeUpdated {
 		// create one output for each token ID of internal account
@@ -346,8 +350,8 @@ func (txb *AnchorTransactionBuilder) subDeltaIotasFromTotal(delta uint64) {
 // ensureNativeTokenBalance makes sure that cached balance information is in the builder
 // if not, it asks for the initial balance by calling the loader function
 // Panics if the call results to exceeded limits
-func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id iotago.NativeTokenID) *nativeTokenBalance {
-	if b, ok := txb.balanceNativeTokens[id]; ok {
+func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id *iotago.NativeTokenID) *nativeTokenBalance {
+	if b, ok := txb.balanceNativeTokens[*id]; ok {
 		return b
 	}
 	balance, input := txb.loadNativeTokensOnChain(id) // balance will be nil if no such token id accounted yet
@@ -366,7 +370,7 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id iotago.NativeTo
 	if balance != nil {
 		b.balance.Set(balance)
 	}
-	txb.balanceNativeTokens[id] = b
+	txb.balanceNativeTokens[*id] = b
 	return b
 }
 
@@ -374,7 +378,7 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id iotago.NativeTo
 // The call may result in adding new token ID to the ledger or disappearing one
 // This impacts dust amount locked in the internal UTXOs which keep respective balances
 // Returns delta of required dust deposit
-func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id iotago.NativeTokenID, delta *big.Int) int64 {
+func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.NativeTokenID, delta *big.Int) int64 {
 	if util.IsZeroBigInt(delta) {
 		return 0
 	}

@@ -85,7 +85,7 @@ func TestCreditDebit2(t *testing.T) {
 	expected = iscp.NewAssets(42, nil)
 	require.True(t, expected.Equals(total))
 
-	require.True(t, util.IsZeroBigInt(GetNativeTokenBalance(state, agentID1, transfer.Tokens[0].ID)))
+	require.True(t, util.IsZeroBigInt(GetNativeTokenBalance(state, agentID1, &transfer.Tokens[0].ID)))
 	bal1, ok := GetAccountAssets(state, agentID1)
 	require.True(t, ok)
 	require.True(t, total.Equals(bal1))

@@ -21,13 +21,13 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log contract")
 
 const (
-	// state variables
-	StateVarBlockRegistry             = "b"
-	StateVarControlAddresses          = "c"
-	StateVarRequestLookupIndex        = "l"
-	StateVarRequestReceipts           = "r"
-	StateVarRequestEvents             = "e"
-	StateVarSmartContractEventsLookup = "e"
+	KeyPrefixBlockRegistry = string('a' + iota)
+	KeyPrefixControlAddresses
+	KeyPrefixRequestLookupIndex
+	KeyPrefixRequestReceipts
+	KeyPrefixRequestEvents
+	KeyPrefixSmartContractEventsLookup
+	KeyPrefixNativeTokenOutputLookupMap
 )
 
 var (
