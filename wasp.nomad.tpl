@@ -1,5 +1,5 @@
 variable "wasp_config" {
-	default = <<EOH
+  default = <<EOH
 {
 	"database": {
 		"directory": "{{ env "NOMAD_TASK_DIR" }}/waspdb"
@@ -21,7 +21,7 @@ variable "wasp_config" {
 	},
 	"node": {
 		"disablePlugins": [],
-		"enablePlugins": [metrics]
+		"enablePlugins": ["metrics"]
 	},
 	"webapi": {
 		"bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_api" }}",
@@ -54,207 +54,231 @@ EOH
 }
 
 job "iscp-evm" {
-	datacenters = ["hcloud"]
+  datacenters = ["hcloud"]
 
-	update {
-		max_parallel      = 1
-		health_check      = "checks"
-		min_healthy_time  = "1s"
-		healthy_deadline  = "30s"
-		progress_deadline = "5m"
-		auto_revert       = true
-		auto_promote      = true
-		canary            = 1
-		stagger           = "15s"
-	}
+  update {
+    max_parallel      = 1
+    health_check      = "task_states"
+    min_healthy_time  = "1s"
+    healthy_deadline  = "30s"
+    progress_deadline = "5m"
+    auto_revert       = true
+    auto_promote      = true
+    canary            = 1
+    stagger           = "15s"
+  }
 
-	group "node" {
-		ephemeral_disk {
-			migrate = true
-			sticky = true
-		}
+  group "node" {
+    ephemeral_disk {
+      migrate = true
+      sticky  = true
+    }
 
-		count = 5
+    count = 5
 
-		network {
-			mode = "host"
+    network {
+      mode = "host"
 
-			port "dashboard" {
-				host_network = "private"
-			}
-			port "api" {
-				host_network = "private"
-			}
-			port "nanomsg" {
-				host_network = "private"
-			}
-			port "peering" {
-				host_network = "private"
-			}
-			port "metrics" {
-				host_network = "private"
-			}
-		}
+      port "dashboard" {
+        host_network = "private"
+      }
+      port "api" {
+        host_network = "private"
+      }
+      port "nanomsg" {
+        host_network = "private"
+      }
+      port "peering" {
+        host_network = "private"
+      }
+      port "metrics" {
+        host_network = "private"
+      }
+    }
 
-		task "wasp" {
-			driver = "docker"
+    task "wasp" {
+      driver = "docker"
 
-			config {
-				network_mode = "host"
-				image = "${artifact.image}:${artifact.tag}"
-				command = "wasp"
-				entrypoint = [""]
-				args = [
-					"-c=/local/config.json",
-				]
-				ports = [
-					"dashboard",
-					"api",
-					"nanomsg",
-					"peering",
-					"metrics",
-				]
+      config {
+        network_mode = "host"
+        image        = "${artifact.image}:${artifact.tag}"
+        entrypoint   = ["wasp", "-c", "/local/config.json"]
+        ports = [
+          "dashboard",
+          "api",
+          "nanomsg",
+          "peering",
+          "metrics",
+        ]
 
-				auth {
-					username = "${auth.username}"
-					password = "${auth.password}"
-					server_address = "${auth.server_address}"
-				}
-			}
+        labels = {
+          "co.elastic.metrics/raw" = "[{\"metricsets\":[\"collector\"],\"module\":\"prometheus\",\"period\":\"10s\",\"metrics_path\":\"/metrics\",\"hosts\":[\"$${NOMAD_ADDR_metrics}\"]}]"
+          "wasp"                   = "node"
+        }
 
-			service {
-				tags = ["wasp", "api"]
-				port  = "api"
-				check {
-					type     = "http"
-					port     = "api"
-					path     = "info"
-					interval = "5s"
-					timeout  = "2s"
-				}
-			}
-			service {
-				tags = ["wasp", "dashboard"]
-				port  = "dashboard"
-			}
-			service {
-				tags = ["wasp", "nanomsg"]
-				port  = "nanomsg"
-			}
-			service {
-				tags = ["wasp", "peering"]
-				port  = "peering"
-			}
-			service {
-				tags = ["wasp", "metrics"]
-				port  = "metrics"
-			}
+        logging {
+          type = "gelf"
+          config {
+            gelf-address          = "tcp://elastic-logstash-beats-logstash.service.consul:12201"
+            tag                   = "wasp"
+            labels                = "wasp"
+          }
+        }
 
-			template {
-				data = var.wasp_config
-				destination = "/local/config.json"
-				perms = "777"
-			}
+        auth {
+          username       = "${auth.username}"
+          password       = "${auth.password}"
+          server_address = "${auth.server_address}"
+        }
+      }
 
-			resources {
-				memory = 512
-				cpu = 1024
-			}
-		}
-	}
+      service {
+        tags = ["wasp", "api"]
+        port = "api"
+        check {
+          type     = "http"
+          port     = "api"
+          path     = "info"
+          interval = "5s"
+          timeout  = "2s"
+        }
+      }
+      service {
+        tags = ["wasp", "dashboard"]
+        port = "dashboard"
+      }
+      service {
+        tags = ["wasp", "nanomsg"]
+        port = "nanomsg"
+      }
+      service {
+        tags = ["wasp", "peering"]
+        port = "peering"
+      }
+      service {
+        tags = ["wasp", "metrics"]
+        port = "metrics"
+      }
 
-	group "access" {
-		ephemeral_disk {
-			migrate = true
-			sticky = true
-		}
+      template {
+        data        = var.wasp_config
+        destination = "/local/config.json"
+        perms       = "777"
+      }
 
-		count = 3
+      resources {
+        memory = 3000
+        cpu    = 2000
+      }
+    }
+  }
 
-		network {
-			mode = "host"
+  group "access" {
+    ephemeral_disk {
+      migrate = true
+      sticky  = true
+    }
 
-			port "dashboard" {
-				host_network = "private"
-			}
-			port "api" {
-				host_network = "private"
-			}
-			port "nanomsg" {
-				host_network = "private"
-			}
-			port "peering" {
-				host_network = "private"
-			}
-			port "metrics" {
-				host_network = "private"
-			}
-		}
+    count = 3
 
-		task "wasp" {
-			driver = "docker"
+    network {
+      mode = "host"
 
-			config {
-				network_mode = "host"
-				image = "${artifact.image}:${artifact.tag}"
-				command = "wasp"
-				entrypoint = [""]
-				args = [
-					"-c=/local/config.json",
-				]
-				ports = [
-					"dashboard",
-					"api",
-					"nanomsg",
-					"peering",
-					"metrics",
-				]
+      port "dashboard" {
+        host_network = "private"
+      }
+      port "api" {
+        host_network = "private"
+      }
+      port "nanomsg" {
+        host_network = "private"
+      }
+      port "peering" {
+        host_network = "private"
+      }
+      port "metrics" {
+        host_network = "private"
+      }
+    }
 
-				auth {
-					username = "${auth.username}"
-					password = "${auth.password}"
-					server_address = "${auth.server_address}"
-				}
-			}
+    task "wasp" {
+      driver = "docker"
 
-			service {
-				tags = ["wasp", "api"]
-				port  = "api"
-				check {
-					type     = "http"
-					port     = "api"
-					path     = "info"
-					interval = "5s"
-					timeout  = "2s"
-				}
-			}
-			service {
-				tags = ["wasp", "dashboard"]
-				port  = "dashboard"
-			}
-			service {
-				tags = ["wasp", "nanomsg"]
-				port  = "nanomsg"
-			}
-			service {
-				tags = ["wasp", "peering"]
-				port  = "peering"
-			}
-			service {
-				tags = ["wasp", "metrics"]
-				port  = "metrics"
-			}
+      config {
+        network_mode = "host"
+        image        = "${artifact.image}:${artifact.tag}"
+        command      = "wasp"
+        entrypoint   = [""]
+        args = [
+          "-c=/local/config.json",
+        ]
+        ports = [
+          "dashboard",
+          "api",
+          "nanomsg",
+          "peering",
+          "metrics",
+        ]
 
-			template {
-				data = var.wasp_config
-				destination = "/local/config.json"
-				perms = "777"
-			}
+        labels = {
+          "co.elastic.metrics/raw" = "[{\"metricsets\":[\"collector\"],\"module\":\"prometheus\",\"period\":\"10s\",\"metrics_path\":\"/metrics\",\"hosts\":[\"$${NOMAD_ADDR_metrics}\"]}]"
+          "wasp"                   = "access"
+        }
 
-			resources {
-				memory = 512
-				cpu = 1024
-			}
-		}
-	}
+        logging {
+          type = "gelf"
+          config {
+            gelf-address          = "tcp://elastic-logstash-beats-logstash.service.consul:12201"
+            tag                   = "wasp"
+            labels                = "wasp"
+          }
+        }
+
+        auth {
+          username       = "${auth.username}"
+          password       = "${auth.password}"
+          server_address = "${auth.server_address}"
+        }
+      }
+
+      service {
+        tags = ["wasp", "api"]
+        port = "api"
+        check {
+          type     = "http"
+          port     = "api"
+          path     = "info"
+          interval = "5s"
+          timeout  = "2s"
+        }
+      }
+      service {
+        tags = ["wasp", "dashboard"]
+        port = "dashboard"
+      }
+      service {
+        tags = ["wasp", "nanomsg"]
+        port = "nanomsg"
+      }
+      service {
+        tags = ["wasp", "peering"]
+        port = "peering"
+      }
+      service {
+        tags = ["wasp", "metrics"]
+        port = "metrics"
+      }
+
+      template {
+        data        = var.wasp_config
+        destination = "/local/config.json"
+        perms       = "777"
+      }
+
+      resources {
+        memory = 3000
+        cpu    = 2000
+      }
+    }
+  }
 }
