@@ -49,6 +49,8 @@ type AnchorTransactionBuilder struct {
 	balanceNativeTokens map[iotago.NativeTokenID]*nativeTokenBalance
 	// requests posted by smart contracts
 	postedOutputs []iotago.Output
+	// structure to calculate byte costs
+	rentStructure *iotago.RentStructure
 }
 
 // nativeTokenBalance represents on-chain account of the specific native token
@@ -86,7 +88,12 @@ func (n *nativeTokenBalance) requiresInput() bool {
 }
 
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
-func NewAnchorTransactionBuilder(anchorOutput *iotago.AliasOutput, anchorOutputID *iotago.UTXOInput, tokenBalanceLoader tokenBalanceLoader) *AnchorTransactionBuilder {
+func NewAnchorTransactionBuilder(
+	anchorOutput *iotago.AliasOutput,
+	anchorOutputID *iotago.UTXOInput,
+	tokenBalanceLoader tokenBalanceLoader,
+	rentStructure *iotago.RentStructure,
+) *AnchorTransactionBuilder {
 	anchorDustDeposit := anchorOutput.VByteCost(parameters.RentStructure(), nil)
 	if anchorOutput.Amount < anchorDustDeposit {
 		panic("internal inconsistency")
@@ -96,11 +103,12 @@ func NewAnchorTransactionBuilder(anchorOutput *iotago.AliasOutput, anchorOutputI
 		anchorOutputID:                          anchorOutputID,
 		totalIotasOnChain:                       anchorOutput.Amount - anchorDustDeposit,
 		dustDepositOnAnchor:                     anchorDustDeposit,
-		dustDepositOnInternalTokenAccountOutput: calcVByteCostOfNativeTokenBalance(),
+		dustDepositOnInternalTokenAccountOutput: calcVByteCostOfNativeTokenBalance(rentStructure),
 		loadNativeTokensOnChain:                 tokenBalanceLoader,
 		consumed:                                make([]iscp.RequestData, 0, iotago.MaxInputsCount-1),
 		balanceNativeTokens:                     make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:                           make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
+		rentStructure:                           rentStructure,
 	}
 }
 
@@ -116,6 +124,7 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 		consumed:                                make([]iscp.RequestData, 0),
 		balanceNativeTokens:                     make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:                           make([]iotago.Output, 0),
+		rentStructure:                           txb.rentStructure,
 	}
 
 	ret.consumed = append(ret.consumed, txb.consumed...)
@@ -453,7 +462,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.Sta
 
 // calcVByteCostOfNativeTokenBalance return byte cost for the internal UTXO used to keep on chain native tokens.
 // We assume that size of the UTXO will always be a constant
-func calcVByteCostOfNativeTokenBalance() uint64 {
+func calcVByteCostOfNativeTokenBalance(rentStructure *iotago.RentStructure) uint64 {
 	// a fake output with one native token in the balance
 	// the MakeExtendedOutput will adjust the dust deposit
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
@@ -469,6 +478,7 @@ func calcVByteCostOfNativeTokenBalance() uint64 {
 		},
 		nil,
 		nil,
+		rentStructure,
 	)
 	return o.Amount
 }
@@ -479,7 +489,12 @@ func (txb *AnchorTransactionBuilder) DustDeposits() (uint64, uint64) {
 
 // ExtendedOutputFromPostData creates extended output object from parameters.
 // It automatically adjusts amount of iotas required for the dust deposit
-func ExtendedOutputFromPostData(senderAddress iotago.Address, senderContract iscp.Hname, par iscp.RequestParameters) *iotago.ExtendedOutput {
+func ExtendedOutputFromPostData(
+	senderAddress iotago.Address,
+	senderContract iscp.Hname,
+	par iscp.RequestParameters,
+	rentStructure *iotago.RentStructure,
+) *iotago.ExtendedOutput {
 	ret, _ := MakeExtendedOutput(
 		par.TargetAddress,
 		senderAddress,
@@ -493,6 +508,7 @@ func ExtendedOutputFromPostData(senderAddress iotago.Address, senderContract isc
 			GasBudget:      par.Metadata.GasBudget,
 		},
 		par.Options,
+		rentStructure,
 	)
 	return ret
 }
@@ -504,7 +520,9 @@ func MakeExtendedOutput(
 	senderAddress iotago.Address,
 	assets *iscp.Assets,
 	metadata *iscp.RequestMetadata,
-	options *iscp.SendOptions) (*iotago.ExtendedOutput, bool) {
+	options *iscp.SendOptions,
+	rentStructure *iotago.RentStructure,
+) (*iotago.ExtendedOutput, bool) {
 	if assets == nil {
 		assets = &iscp.Assets{}
 	}
@@ -531,7 +549,7 @@ func MakeExtendedOutput(
 
 	// Adjust to minimum dust deposit
 	dustDepositAdjusted := false
-	neededDustDeposit := ret.VByteCost(parameters.RentStructure(), nil)
+	neededDustDeposit := ret.VByteCost(rentStructure, nil)
 	if ret.Amount < neededDustDeposit {
 		ret.Amount = neededDustDeposit
 		dustDepositAdjusted = true

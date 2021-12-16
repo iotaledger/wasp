@@ -350,10 +350,22 @@ func (ch *Chain) GetOnChainTokenIDs() []*iotago.NativeTokenID {
 	return ret
 }
 
-func (ch *Chain) GetTotalOnChainDustDeposit() uint64 {
+type DustInfo struct {
+	DustDepositAnchor        uint64
+	DustDepositNativeTokenID uint64
+	NumNativeTokens          int
+}
+
+func (d *DustInfo) Total() uint64 {
+	return d.DustDepositAnchor + d.DustDepositNativeTokenID*uint64(d.NumNativeTokens)
+}
+func (ch *Chain) GetTotalOnChainDustDeposit() *DustInfo {
 	bi := ch.GetLatestBlockInfo()
-	numNativeTokens := uint64(len(ch.GetOnChainTokenIDs()))
-	return bi.DustDepositAnchor + bi.DustDepositNativeTokenID*numNativeTokens
+	return &DustInfo{
+		DustDepositAnchor:        bi.DustDepositAnchor,
+		DustDepositNativeTokenID: bi.DustDepositNativeTokenID,
+		NumNativeTokens:          len(ch.GetOnChainTokenIDs()),
+	}
 }
 
 // GetFeeInfo returns the fee info for the specific chain and smart contract

@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
+
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -19,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -57,7 +58,6 @@ type Solo struct {
 	publisherWG      sync.WaitGroup
 	publisherEnabled atomic.Bool
 	processorConfig  *processors.Config
-	deSeriParams     *iotago.DeSerializationParameters
 }
 
 // Chain represents state of individual chain.
@@ -111,7 +111,7 @@ type InitOptions struct {
 	Debug           bool
 	PrintStackTrace bool
 	Seed            cryptolib.Seed
-	DeSeriParams    *iotago.DeSerializationParameters
+	RentStructure   *iotago.RentStructure
 	Log             *logger.Logger
 }
 
@@ -120,7 +120,7 @@ func defaultInitOptions() *InitOptions {
 		Debug:           false,
 		PrintStackTrace: false,
 		Seed:            cryptolib.Seed{},
-		DeSeriParams:    parameters.DeSerializationParameters(),
+		RentStructure:   testdeserparams.RentStructure(),
 	}
 }
 
@@ -143,8 +143,8 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	if !opt.Debug {
 		opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
 	}
-	if opt.DeSeriParams == nil {
-		opt.DeSeriParams = parameters.DeSerializationParameters()
+	if opt.RentStructure == nil {
+		opt.RentStructure = testdeserparams.RentStructure()
 	}
 
 	// disable wasmtime vm for now
@@ -153,8 +153,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	//})
 	//require.NoError(t, err)
 
-	initParams := utxodb.DefaultInitParams(opt.Seed[:]).
-		WithRentStructure(parameters.DeSerializationParameters().RentStructure)
+	initParams := utxodb.DefaultInitParams(opt.Seed[:]).WithRentStructure(opt.RentStructure)
 	ret := &Solo{
 		T:               t,
 		logger:          opt.Log,
@@ -163,7 +162,6 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		chains:          make(map[iscp.ChainID]*Chain),
 		vmRunner:        runvm.NewVMRunner(),
 		processorConfig: processors.NewConfig(),
-		deSeriParams:    parameters.DeSerializationParameters(),
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v, milestone index: #%d",
@@ -225,7 +223,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 		0, // will be adjusted to min dust deposit
 		outs,
 		ids,
-		env.deSeriParams,
+		env.utxoDB.RentStructure(),
 	)
 	require.NoError(env.T, err)
 
@@ -292,7 +290,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 		"'solo' testing chain",
 		outs,
 		ids,
-		env.deSeriParams,
+		env.utxoDB.RentStructure(),
 	)
 	require.NoError(env.T, err)
 	require.NotNil(env.T, initTx)

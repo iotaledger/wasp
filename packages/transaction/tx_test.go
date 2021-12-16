@@ -47,7 +47,7 @@ func TestCreateOrigin(t *testing.T) {
 			0,
 			allOutputs,
 			ids,
-			testdeserparams.DeSerializationParameters(),
+			testdeserparams.RentStructure(),
 		)
 		require.NoError(t, err)
 
@@ -73,7 +73,7 @@ func TestCreateOrigin(t *testing.T) {
 			"test chain",
 			allOutputs,
 			ids,
-			testdeserparams.DeSerializationParameters(),
+			testdeserparams.RentStructure(),
 		)
 		require.NoError(t, err)
 

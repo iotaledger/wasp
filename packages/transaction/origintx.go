@@ -20,7 +20,7 @@ func NewChainOriginTransaction(
 	deposit uint64,
 	allUnspentOutputs []iotago.Output,
 	allInputs []*iotago.UTXOInput,
-	deSeriParams *iotago.DeSerializationParameters,
+	rentStructure *iotago.RentStructure,
 ) (*iotago.Transaction, *iscp.ChainID, error) {
 	if len(allUnspentOutputs) != len(allInputs) {
 		panic("mismatched lengths of outputs and inputs slices")
@@ -40,7 +40,7 @@ func NewChainOriginTransaction(
 		},
 	}
 	{
-		aliasDustDeposit := aliasOutput.VByteCost(deSeriParams.RentStructure, nil)
+		aliasDustDeposit := aliasOutput.VByteCost(rentStructure, nil)
 		if aliasOutput.Amount < aliasDustDeposit {
 			aliasOutput.Amount = aliasDustDeposit
 		}
@@ -51,7 +51,7 @@ func NewChainOriginTransaction(
 		nil,
 		allUnspentOutputs,
 		allInputs,
-		deSeriParams,
+		rentStructure,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -91,7 +91,7 @@ func NewRootInitRequestTransaction(
 	description string,
 	allUnspentOutputs []iotago.Output,
 	allInputs []*iotago.UTXOInput,
-	deSeriParams *iotago.DeSerializationParameters,
+	rentStructure *iotago.RentStructure,
 ) (*iotago.Transaction, error) {
 	//
 	tx, err := NewRequestTransaction(NewRequestTransactionParams{
@@ -109,7 +109,7 @@ func NewRootInitRequestTransaction(
 				},
 			},
 		}},
-		DeSeriParams: deSeriParams,
+		RentStructure: rentStructure,
 	})
 	if err != nil {
 		return nil, err

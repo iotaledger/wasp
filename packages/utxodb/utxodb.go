@@ -114,6 +114,10 @@ func (u *UtxoDB) Seed() []byte {
 	return u.seed[:]
 }
 
+func (u *UtxoDB) RentStructure() *iotago.RentStructure {
+	return u.rentStructure
+}
+
 func (u *UtxoDB) deSeriParams() *iotago.DeSerializationParameters {
 	return &iotago.DeSerializationParameters{RentStructure: u.rentStructure}
 }
@@ -386,7 +390,7 @@ func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.Assets {
 	return iscp.NewAssetsFromNativeTokenSum(iotas, tokens)
 }
 
-// GetAliasOutputs collects all outputs of type iotago.AliasOutput for the transaction.
+// GetAliasOutputs collects all outputs of type iotago.AliasOutput for the address
 func (u *UtxoDB) GetAliasOutputs(addr iotago.Address) ([]*iotago.AliasOutput, []*iotago.UTXOInput) {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()

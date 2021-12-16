@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
+
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -38,6 +40,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 		assets,
 		nil,
 		nil,
+		testdeserparams.DeSerializationParameters().RentStructure,
 	)
 	if len(addIotasToDustMinimum) > 0 {
 		out.Amount += addIotasToDustMinimum[0]
@@ -69,6 +72,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 			Metadata:      &iscp.SendMetadata{},
 			Options:       nil,
 		},
+		testdeserparams.DeSerializationParameters().RentStructure,
 	)
 	txb.AddOutput(exout)
 	_, _, isBalanced := txb.Totals()
@@ -106,7 +110,9 @@ func TestTxBuilderBasic(t *testing.T) {
 	t.Run("1", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
 			return nil, nil
-		})
+		},
+			testdeserparams.DeSerializationParameters().RentStructure,
+		)
 		totals, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
 		require.EqualValues(t, 1000-anchor.VByteCost(parameters.RentStructure(), nil), totals.TotalIotasOnChain)
@@ -128,14 +134,18 @@ func TestTxBuilderBasic(t *testing.T) {
 	t.Run("2", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
 			return nil, nil
-		})
+		},
+			testdeserparams.DeSerializationParameters().RentStructure,
+		)
 		txb.addDeltaIotasToTotal(42)
 		require.EqualValues(t, int(initialTotalIotas-txb.dustDepositOnAnchor+42), int(txb.totalIotasOnChain))
 		_, _, isBalanced := txb.Totals()
 		require.False(t, isBalanced)
 	})
 	t.Run("3", func(t *testing.T) {
-		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader)
+		txb := NewAnchorTransactionBuilder(
+			anchor, anchorID, balanceLoader, testdeserparams.DeSerializationParameters().RentStructure,
+		)
 		_, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
 		deposit := consumeUTXO(t, txb, tokenID, 0)
@@ -159,7 +169,9 @@ func TestTxBuilderBasic(t *testing.T) {
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 	t.Run("4", func(t *testing.T) {
-		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader)
+		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader,
+			testdeserparams.DeSerializationParameters().RentStructure,
+		)
 		_, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
 		deposit := consumeUTXO(t, txb, tokenID, 10)
@@ -230,7 +242,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 	var numTokenIDs int
 
 	initTest := func() {
-		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader)
+		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader,
+			testdeserparams.DeSerializationParameters().RentStructure,
+		)
 		amounts = make(map[int]uint64)
 
 		nativeTokenIDs = make([]iotago.NativeTokenID, 0)
@@ -265,7 +279,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.EqualValues(t, int(expectedDust), sumOUT.TotalIotasInDustDeposit)
 	}
 	runCreateBuilderAndConsumeRandomly := func(numRun int, amount uint64) {
-		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader)
+		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader,
+			testdeserparams.DeSerializationParameters().RentStructure,
+		)
 		amounts = make(map[int]uint64)
 
 		deposit := uint64(0)
@@ -602,6 +618,7 @@ func TestDustDeposit(t *testing.T) {
 			assets,
 			&reqMetadata,
 			nil,
+			testdeserparams.DeSerializationParameters().RentStructure,
 		)
 		require.True(t, wasAdjusted)
 		require.Equal(t, out.Amount, out.VByteCost(parameters.RentStructure(), nil))
@@ -614,6 +631,7 @@ func TestDustDeposit(t *testing.T) {
 			assets,
 			&reqMetadata,
 			nil,
+			testdeserparams.DeSerializationParameters().RentStructure,
 		)
 		require.False(t, wasAdjusted)
 		require.GreaterOrEqual(t, out.Amount, out.VByteCost(parameters.RentStructure(), nil))

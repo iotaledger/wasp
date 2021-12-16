@@ -111,6 +111,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		task.AnchorOutput,
 		&task.AnchorOutputID,
 		nativeTokenBalanceLoader,
+		task.RentStructure,
 	)
 
 	return ret

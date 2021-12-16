@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test1(t *testing.T) {
+func TestLedgerConsistency(t *testing.T) {
 	env := solo.New(t)
 	env.EnablePublisher(true)
 	genesisAddr := env.L1Ledger().GenesisAddress()
@@ -27,12 +27,21 @@ func Test1(t *testing.T) {
 	nativeTokenIDs := chain.GetOnChainTokenIDs()
 	require.EqualValues(t, 0, len(nativeTokenIDs))
 
-	totalDustDeposit := chain.GetTotalOnChainDustDeposit()
+	dustInfo := chain.GetTotalOnChainDustDeposit()
 	totalIotasOnChain := chain.L2TotalIotas()
-	totalSpent := totalDustDeposit + totalIotasOnChain
+	totalSpent := dustInfo.Total() + totalIotasOnChain
 	t.Logf("total on chain: dust deposit: %d, total iotas: %d, total sent: %d",
-		totalDustDeposit, totalIotasOnChain, totalSpent)
+		dustInfo, totalIotasOnChain, totalSpent)
 	env.AssertL1AddressIotas(chain.OriginatorAddress, solo.Saldo-totalSpent)
+
+	outs, ids := env.L1Ledger().GetAliasOutputs(chain.ChainID.AsAddress())
+	require.EqualValues(t, 1, len(outs))
+	require.EqualValues(t, 1, len(ids))
+
+	totalAssets := chain.L2TotalAssets()
+	require.EqualValues(t, 0, len(totalAssets.Tokens))
+	require.EqualValues(t, int(totalAssets.Iotas), int(outs[0].Amount+dustInfo.Total()))
+
 }
 
 func TestNoContractPost(t *testing.T) {

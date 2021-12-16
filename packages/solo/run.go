@@ -43,6 +43,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.RequestData, trace string) (dict.
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log,
+		RentStructure:      ch.Env.utxoDB.RentStructure(),
 	}
 	var err error
 	var callRes dict.Dict
