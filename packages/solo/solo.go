@@ -191,10 +191,15 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //  - backlog processing threads (goroutines) are started
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
-//    '_default', 'blocklog', 'blob', 'accounts' and 'eventlog',
 // Upon return, the chain is fully functional to process requests
 //nolint:funlen
 func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
+	ret, _, _ := env.NewChainExt(chainOriginator, name, validatorFeeTarget...)
+	return ret
+}
+
+// NewChainExt returns also origin and init transactions. Used for core testing
+func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
@@ -312,7 +317,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 	ret.logRequestLastBlock()
 
 	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
-	return ret
+	return ret, originTx, initTx
 }
 
 // AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is
@@ -488,4 +493,8 @@ func (env *Solo) L1AddressBalances(addr iotago.Address) *iscp.Assets {
 
 func (env *Solo) L1Ledger() *utxodb.UtxoDB {
 	return env.utxoDB
+}
+
+func (env *Solo) RentStructure() *iotago.RentStructure {
+	return env.utxoDB.RentStructure()
 }

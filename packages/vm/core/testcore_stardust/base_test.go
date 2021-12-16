@@ -3,24 +3,25 @@ package testcore
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/transaction"
+
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
-func TestLedgerConsistency(t *testing.T) {
+func TestLedgerBaseConsistency(t *testing.T) {
 	env := solo.New(t)
 	env.EnablePublisher(true)
 	genesisAddr := env.L1Ledger().GenesisAddress()
 	assets := env.L1AddressBalances(genesisAddr)
 	require.EqualValues(t, env.L1Ledger().Supply(), assets.Iotas)
 
-	chain := env.NewChain(nil, "chain1")
+	chain, originTx, initTx := env.NewChainExt(nil, "chain1")
 	defer chain.Log.Sync()
 	env.WaitPublisher()
 	chain.AssertControlAddresses()
-	chain.AssertTotalIotas(212)
 	t.Logf("originator address iotas: %d (spent %d)",
 		env.L1IotaBalance(chain.OriginatorAddress), solo.Saldo-env.L1IotaBalance(chain.OriginatorAddress))
 
@@ -34,14 +35,18 @@ func TestLedgerConsistency(t *testing.T) {
 		dustInfo, totalIotasOnChain, totalSpent)
 	env.AssertL1AddressIotas(chain.OriginatorAddress, solo.Saldo-totalSpent)
 
+	vb1 := transaction.GetVByteCosts(originTx, env.RentStructure())
+	vb2 := transaction.GetVByteCosts(initTx, env.RentStructure())
+	require.EqualValues(t, int(totalSpent), int(vb1[0]+vb2[0]))
+
 	outs, ids := env.L1Ledger().GetAliasOutputs(chain.ChainID.AsAddress())
 	require.EqualValues(t, 1, len(outs))
 	require.EqualValues(t, 1, len(ids))
 
 	totalAssets := chain.L2TotalAssets()
 	require.EqualValues(t, 0, len(totalAssets.Tokens))
-	require.EqualValues(t, int(totalAssets.Iotas), int(outs[0].Amount+dustInfo.Total()))
-
+	require.EqualValues(t, int(totalSpent), int(outs[0].Amount+dustInfo.Total()-vb1[0]))
+	chain.AssertTotalIotas(totalSpent - vb1[0])
 }
 
 func TestNoContractPost(t *testing.T) {

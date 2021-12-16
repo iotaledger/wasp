@@ -228,7 +228,7 @@ func MakeSignatureAndAliasUnlockBlocks(totalInputs int, sig iotago.Signature) io
 	return ret
 }
 
-func GetDustDeposits(tx *iotago.Transaction, rentStructure *iotago.RentStructure) []uint64 {
+func GetVByteCosts(tx *iotago.Transaction, rentStructure *iotago.RentStructure) []uint64 {
 	ret := make([]uint64, len(tx.Essence.Outputs))
 	for i, out := range tx.Essence.Outputs {
 		ret[i] = out.VByteCost(rentStructure, nil)
