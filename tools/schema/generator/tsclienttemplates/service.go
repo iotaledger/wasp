@@ -11,10 +11,12 @@ $#each params constArg
 $#each results constRes
 $#each func funcStruct
 
+///////////////////////////// $PkgName$+Service /////////////////////////////
+
 export class $PkgName$+Service extends client.Service {
 
-	constructor(client: client.ServiceClient, chainId: string) {
-		super(client, chainId, "$hscName", events.eventHandlers);
+	constructor(cl: client.ServiceClient, chainID: string) {
+		super(cl, chainID, "$hscName", events.eventHandlers);
 	}
 $#each func serviceFunction
 }
@@ -30,7 +32,9 @@ const Res$FldName = "$fldAlias";
 	// *******************************
 	"funcStruct": `
 
-export class $FuncName$Kind {
+///////////////////////////// $funcName /////////////////////////////
+
+export class $FuncName$Kind extends client.FuncObject {
 $#if param funcArgsMember
 $#each param funcArgSetter
 $#if func funcPost viewCall
@@ -51,22 +55,21 @@ $#if result resultStruct
 	// *******************************
 	"funcPost": `
 	
-	post(): void {
+	public async post(): Promise<void> {
 $#each param mandatoryCheck
-$#set exec Post
+$#set exec this.svc.postRequest
 $#if param execWithArgs execNoArgs
-	//TODO Do$exec
+		$exec;
 	}
 `,
 	// *******************************
 	"viewCall": `
 
-	call(): $FuncName$+Results {
+	public async call(): Promise<$FuncName$+Results> {
 $#each param mandatoryCheck
-$#set exec Call
+$#set exec this.svc.callView
 $#if param execWithArgs execNoArgs
-    	//TODO Do$exec instead of new client.Results()
-		return new $FuncName$+Results(new client.Results());
+		return new $FuncName$+Results($exec);
 	}
 `,
 	// *******************************
@@ -75,19 +78,16 @@ $#if param execWithArgs execNoArgs
 `,
 	// *******************************
 	"execWithArgs": `
-$#set exec $exec(this.args)
+$#set exec $exec("$funcName", this.args)
 `,
 	// *******************************
 	"execNoArgs": `
-$#set exec $exec(null)
+$#set exec $exec("$funcName", null)
 `,
 	// *******************************
 	"resultStruct": `
 
-export class $FuncName$+Results {
-	res: client.Results;
-
-	constructor(res: client.Results) { this.res = res; }
+export class $FuncName$+Results extends client.ViewResults {
 $#each result callResultGetter
 }
 `,
@@ -121,7 +121,7 @@ $#if mandatory else callResultOptional
 	"serviceFunction": `
 
 	public $funcName(): $FuncName$Kind {
-    	return new $FuncName$Kind();
+    	return new $FuncName$Kind(this);
 	}
 `,
 }

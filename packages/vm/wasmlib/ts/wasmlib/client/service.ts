@@ -10,15 +10,31 @@ export type ServiceClient = wasp.BasicClient;
 
 export type EventHandlers = { [key: string]: (message: string[]) => void };
 
+export class FuncObject {
+    svc: Service;
+
+    constructor(svc: Service) {
+        this.svc = svc;
+    }
+}
+
+export class ViewResults {
+    res: client.Results;
+
+    constructor(res: client.Results) {
+        this.res = res;
+    }
+}
+
 export class Service {
     private client: ServiceClient;
     private walletService: wasp.WalletService;
     private webSocket: WebSocket;
     private eventHandlers: EventHandlers;
     public chainId: string;
-    public scHname: string;
+    public scHname: client.Hname;
 
-    constructor(client: ServiceClient, chainId: string, scHname: string, eventHandlers: EventHandlers) {
+    constructor(client: ServiceClient, chainId: string, scHname: client.Hname, eventHandlers: EventHandlers) {
         this.client = client;
         this.chainId = chainId;
         this.scHname = scHname;
@@ -37,25 +53,23 @@ export class Service {
     }
 
     private handleIncomingMessage(message: MessageEvent<string>): void {
-        const msg = message.data.toString().split('|');
-        if (msg.length == 0) {
+        // expect vmmsg <chain ID> <contract hname> contract.event|parameters
+        const msg = message.data.toString().split(' ');
+        if (msg.length != 4 || msg[0] != 'vmmsg') {
             return;
         }
-        const topics = msg[0].split(' ');
-        if (msg[0] != 'vmmsg') {
-            return;
-        }
-        const topic = msg[3];
-        if (typeof this.eventHandlers[topic] != 'undefined') {
+        const topics = msg[3].split('|');
+        const topic = topics[0];
+        if (this.eventHandlers[topic] != undefined) {
             this.eventHandlers[topic](msg.slice(1));
         }
     }
 
     // calls a view
-    public async callView(viewName: string, args: client.Arguments): Promise<ParameterResult> {
+    public async callView(viewName: string, args: client.Arguments): Promise<client.Results> {
         const response = await this.client.callView(
             this.chainId,
-            this.scHname.toString(),
+            this.scHname.toString(16),
             viewName,
             args,
         );
@@ -72,7 +86,7 @@ export class Service {
     }
 
     // posts off-tangle request
-    public async postRequest(hFunc: client.Hname, args: client.Arguments): Promise<void> {
+    public async postRequest(funcName: string, args: client.Arguments): Promise<void> {
         let request: IOffLedger = {
             requestType: 1,
             noonce: BigInt(performance.now() + performance.timeOrigin * 10000000),

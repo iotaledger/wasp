@@ -16,13 +16,15 @@ $#each results constRes
 )
 $#each func funcStruct
 
+///////////////////////////// $PkgName$+Service /////////////////////////////
+
 type $PkgName$+Service struct {
 	client.Service
 }
 
-func New$PkgName$+Service(client client.ServiceClient, chainId string) *$PkgName$+Service {
+func New$PkgName$+Service(cl client.ServiceClient, chainID string) *$PkgName$+Service {
 	s := &$PkgName$+Service{}
-	s.Service.Init(client, chainId, "$hscName", EventHandlers)
+	s.Service.Init(cl, chainID, "$hscName", EventHandlers)
 	return s
 }
 $#each func serviceFunction
@@ -38,7 +40,10 @@ $#each func serviceFunction
 	// *******************************
 	"funcStruct": `
 
+///////////////////////////// $funcName /////////////////////////////
+
 type $FuncName$Kind struct {
+	svc *client.Service
 $#if param funcArgsMember
 }
 $#each param funcArgSetter
@@ -60,9 +65,9 @@ func (f $FuncName$Kind) $FldName(v $fldLangType) {
 
 func (f $FuncName$Kind) Post() {
 $#each param mandatoryCheck
-$#set exec Post
+$#set exec f.svc.PostRequest
 $#if param execWithArgs execNoArgs
-	//TODO Do$exec
+	$exec
 }
 `,
 	// *******************************
@@ -70,10 +75,9 @@ $#if param execWithArgs execNoArgs
 
 func (f $FuncName$Kind) Call() $FuncName$+Results {
 $#each param mandatoryCheck
-$#set exec Call
+$#set exec f.svc.CallView
 $#if param execWithArgs execNoArgs
-    //TODO Do$exec instead of client.NewResults()
-	return $FuncName$+Results { res: client.NewResults() }
+	return $FuncName$+Results { res: $exec }
 }
 $#if result resultStruct
 `,
@@ -83,11 +87,11 @@ $#if result resultStruct
 `,
 	// *******************************
 	"execWithArgs": `
-$#set exec $exec(f.args)
+$#set exec $exec("$funcName", &f.args)
 `,
 	// *******************************
 	"execNoArgs": `
-$#set exec $exec(nil)
+$#set exec $exec("$funcName", nil)
 `,
 	// *******************************
 	"resultStruct": `
@@ -126,7 +130,7 @@ func (r $FuncName$+Results) $FldName$+Exists() bool {
 	"serviceFunction": `
 
 func (s *$PkgName$+Service) $FuncName() $FuncName$Kind {
-	return $FuncName$Kind{}
+	return $FuncName$Kind{ svc: &s.Service }
 }
 `,
 }

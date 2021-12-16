@@ -10,14 +10,14 @@ type Response map[string][]byte
 
 type Service struct{}
 
-func (s *Service) Init(client ServiceClient, chainId string, scHname string, eventHandlers map[string]func([]string)) {
+func (s *Service) Init(cl ServiceClient, chainID, scHname string, eventHandlers map[string]func([]string)) {
 }
 
-func (s *Service) CallView(viewName string, args map[string][]byte) Response {
-	return nil
+func (s *Service) CallView(viewName string, args *Arguments) Results {
+	return Results{}
 }
 
-func (s *Service) PostRequest(hFuncName string, args map[string][]byte) {
+func (s *Service) PostRequest(funcName string, args *Arguments) {
 }
 
 /////////////////////////////////////////////////////////////////
