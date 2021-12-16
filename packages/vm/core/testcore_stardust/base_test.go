@@ -217,67 +217,36 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	})
 }
 
-func TestNoContractView(t *testing.T) {
-	env := solo.New(t)
-	env.EnablePublisher(true)
-	chain := env.NewChain(nil, "chain1")
-	chain.AssertControlAddresses()
+func TestNoTargetView(t *testing.T) {
+	t.Run("no contract view", func(t *testing.T) {
+		env := solo.New(t)
+		env.EnablePublisher(true)
+		chain := env.NewChain(nil, "chain1")
+		chain.AssertControlAddresses()
 
-	_, err := chain.CallView("dummyContract", "dummyEP")
-	require.Error(t, err)
-	env.WaitPublisher()
-	chain.AssertControlAddresses()
-}
+		_, err := chain.CallView("dummyContract", "dummyEP")
+		require.Error(t, err)
+		env.WaitPublisher()
+	})
+	t.Run("no EP view", func(t *testing.T) {
+		env := solo.New(t)
+		env.EnablePublisher(true)
+		chain := env.NewChain(nil, "chain1")
+		chain.AssertControlAddresses()
 
-func TestNoEPPost(t *testing.T) {
-	env := solo.New(t)
-	env.EnablePublisher(true)
-	chain := env.NewChain(nil, "chain1")
-	chain.AssertControlAddresses()
-
-	req := solo.NewCallParams(root.Contract.Name, "dummyEP")
-	_, err := chain.PostRequestSync(req.WithIotas(2), nil)
-	require.NoError(t, err)
-	env.WaitPublisher()
-	chain.AssertControlAddresses()
-}
-
-func TestNoEPView(t *testing.T) {
-	env := solo.New(t)
-	env.EnablePublisher(true)
-	chain := env.NewChain(nil, "chain1")
-	chain.AssertControlAddresses()
-
-	_, err := chain.CallView(root.Contract.Name, "dummyEP")
-	require.Error(t, err)
-	env.WaitPublisher()
-	chain.AssertControlAddresses()
+		_, err := chain.CallView(root.Contract.Name, "dummyEP")
+		require.Error(t, err)
+		env.WaitPublisher()
+	})
 }
 
 func TestOkCall(t *testing.T) {
 	env := solo.New(t)
 	env.EnablePublisher(true)
-	chain := env.NewChain(nil, "chain1")
+	ch := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name)
-	req.WithIotas(2)
-	_, err := chain.PostRequestSync(req, nil)
+	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
-	chain.AssertControlAddresses()
 	env.WaitPublisher()
-	chain.AssertControlAddresses()
-}
-
-func TestNoTokens(t *testing.T) {
-	env := solo.New(t)
-	env.EnablePublisher(true)
-	chain := env.NewChain(nil, "chain1")
-	chain.AssertControlAddresses()
-
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name)
-	_, err := chain.PostRequestSync(req, nil)
-	require.Error(t, err)
-	chain.AssertControlAddresses()
-	env.WaitPublisher()
-	chain.AssertControlAddresses()
 }
