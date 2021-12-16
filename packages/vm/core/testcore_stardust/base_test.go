@@ -4,14 +4,12 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
 func Test1(t *testing.T) {
-	core.PrintWellKnownHnames()
 	env := solo.New(t)
 	env.EnablePublisher(true)
 	genesisAddr := env.L1Ledger().GenesisAddress()
@@ -20,6 +18,7 @@ func Test1(t *testing.T) {
 
 	chain := env.NewChain(nil, "chain1")
 	defer chain.Log.Sync()
+	env.WaitPublisher()
 	chain.AssertControlAddresses()
 	chain.AssertTotalIotas(212)
 	t.Logf("originator address iotas: %d (spent %d)",
@@ -29,8 +28,11 @@ func Test1(t *testing.T) {
 	require.EqualValues(t, 0, len(nativeTokenIDs))
 
 	totalDustDeposit := chain.GetTotalOnChainDustDeposit()
-	t.Logf("total on chain dust deposit: %d", totalDustDeposit)
-	env.AssertL1AddressIotas(chain.OriginatorAddress, solo.Saldo-totalDustDeposit)
+	totalIotasOnChain := chain.L2TotalIotas()
+	totalSpent := totalDustDeposit + totalIotasOnChain
+	t.Logf("total on chain: dust deposit: %d, total iotas: %d, total sent: %d",
+		totalDustDeposit, totalIotasOnChain, totalSpent)
+	env.AssertL1AddressIotas(chain.OriginatorAddress, solo.Saldo-totalSpent)
 }
 
 func TestNoContractPost(t *testing.T) {

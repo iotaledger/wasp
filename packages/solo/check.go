@@ -44,7 +44,7 @@ func (ch *Chain) CheckChain() {
 // CheckAccountLedger check integrity of the on-chain ledger.
 // Sum of all accounts must be equal to total assets
 func (ch *Chain) CheckAccountLedger() {
-	total := ch.GetTotalAssets()
+	total := ch.L2TotalAssets()
 	accs := ch.L2Accounts()
 	sum := iscp.NewEmptyAssets()
 	for i := range accs {
@@ -62,12 +62,12 @@ func (ch *Chain) CheckAccountLedger() {
 }
 
 func (ch *Chain) AssertTotalNativeTokens(tokenID *iotago.NativeTokenID, bal *big.Int) {
-	bals := ch.GetTotalAssets()
+	bals := ch.L2TotalAssets()
 	require.True(ch.Env.T, bal.Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
 func (ch *Chain) AssertTotalIotas(bal uint64) {
-	iotas := ch.GetTotalIotas()
+	iotas := ch.L2TotalIotas()
 	require.EqualValues(ch.Env.T, int(bal), int(iotas))
 }
 

@@ -319,16 +319,16 @@ func (ch *Chain) L2CommonAccountNativeTokens(tokenID *iotago.NativeTokenID) *big
 	return ch.L2AccountBalances(ch.CommonAccount()).AmountNativeToken(tokenID)
 }
 
-// GetTotalAssets return total sum of assets contained in the on-chain accounts
-func (ch *Chain) GetTotalAssets() *iscp.Assets {
+// L2TotalAssets return total sum of assets contained in the on-chain accounts
+func (ch *Chain) L2TotalAssets() *iscp.Assets {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewTotalAssets.Name),
 	)
 }
 
-// GetTotalIotas return total sum of iotas
-func (ch *Chain) GetTotalIotas() uint64 {
-	return ch.GetTotalAssets().Iotas
+// L2TotalIotas return total sum of iotas
+func (ch *Chain) L2TotalIotas() uint64 {
+	return ch.L2TotalAssets().Iotas
 }
 
 func mustNativeTokenIDFromBytes(data []byte) *iotago.NativeTokenID {
