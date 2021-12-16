@@ -141,7 +141,7 @@ func (a *Assets) Add(b *Assets) *Assets {
 }
 
 func (a *Assets) IsEmpty() bool {
-	return a.Iotas == 0 && len(a.Tokens) == 0
+	return a == nil || a.Iotas == 0 && len(a.Tokens) == 0
 }
 
 func (a *Assets) AddToken(tokenID iotago.NativeTokenID, amount *big.Int) *Assets {

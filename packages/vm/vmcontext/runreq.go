@@ -7,6 +7,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/gas"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -19,6 +21,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
+)
+
+var (
+	ErrTargetContractNotFound = xerrors.New("target contract not found")
 )
 
 // RunTheRequest processes each iscp.RequestData in the batch
@@ -135,7 +141,7 @@ func (vmctx *VMContext) callTheContract() {
 	vmctx.lastError = nil
 	func() {
 		defer func() {
-			vmctx.lastError = checkVMPluginPanic()
+			vmctx.lastError = checkVMPluginPanic(recover())
 			if vmctx.lastError == nil {
 				return
 			}
@@ -155,8 +161,7 @@ func (vmctx *VMContext) callTheContract() {
 	vmctx.logRequestToBlockLog(vmctx.lastError)
 }
 
-func checkVMPluginPanic() error {
-	r := recover()
+func checkVMPluginPanic(r interface{}) error {
 	if r == nil {
 		return nil
 	}
@@ -187,8 +192,8 @@ func (vmctx *VMContext) callFromRequest() {
 	entryPoint := vmctx.req.CallTarget().EntryPoint
 	targetContract := vmctx.targetContract()
 	if targetContract == nil {
-		// TODO must charge minimum gas here
-		panic("target contract Not Found")
+		vmctx.GasBurn(gas.NotFoundTarget)
+		panic(xerrors.Errorf("%w: target contract: '%s'", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract.String()))
 	}
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
 		targetContract.Hname(),
@@ -241,7 +246,7 @@ func (vmctx *VMContext) chargeGasFee() {
 	sender := vmctx.req.SenderAccount()
 
 	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.chainOwnerID, transferToOwner)
+	vmctx.mustMoveBetweenAccounts(sender, commonaccount.Get(vmctx.ChainID()), transferToOwner)
 }
 
 // calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget

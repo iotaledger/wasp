@@ -192,13 +192,13 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 // Upon return, the chain is fully functional to process requests
-//nolint:funlen
 func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
 	ret, _, _ := env.NewChainExt(chainOriginator, name, validatorFeeTarget...)
 	return ret
 }
 
 // NewChainExt returns also origin and init transactions. Used for core testing
+// nolint:funlen
 func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 

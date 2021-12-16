@@ -6,6 +6,8 @@ package solo
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/transaction"
+
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -19,14 +21,15 @@ import (
 )
 
 type CallParams struct {
-	targetName  string
-	target      iscp.Hname
-	epName      string
-	entryPoint  iscp.Hname
-	transfer    *iscp.Assets
-	mintAmount  uint64
-	mintAddress iotago.Address
-	args        dict.Dict
+	targetName string
+	target     iscp.Hname
+	epName     string
+	entryPoint iscp.Hname
+	assets     *iscp.Assets // ignored off-ledger
+	transfer   *iscp.Assets
+	gasBudget  uint64
+	nonce      uint64 // ignored for on-ledger
+	params     dict.Dict
 }
 
 func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
@@ -36,9 +39,9 @@ func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
 		epName:     funName,
 		entryPoint: iscp.Hn(funName),
 	}
-	ret.args = dict.New()
+	ret.params = dict.New()
 	for k, v := range par {
-		ret.args.Set(k, v)
+		ret.params.Set(k, v)
 	}
 	return ret
 }
@@ -55,23 +58,23 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
 }
 
-// WithTransfer is a shorthand for the most often used case where only
-// a single color is transferred by WithTransfers
-func (r *CallParams) WithTransfer(assets *iscp.Assets) *CallParams {
-	return r.WithTransfers(assets)
+func (r *CallParams) WithTransfer(transfer *iscp.Assets) *CallParams {
+	r.transfer = transfer
+	return r
 }
 
-func (r *CallParams) WithAssets(assets iscp.Assets) *CallParams {
-	panic("not implemented")
+func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
+	r.assets = assets
+	return r
 }
 
 func (r *CallParams) WithGasBudget(gasBudget uint64) *CallParams {
-	panic("not implemented")
+	r.gasBudget = gasBudget
+	return r
 }
 
-// WithTransfers complement CallParams structure with the assets
-func (r *CallParams) WithTransfers(transfer *iscp.Assets) *CallParams {
-	r.transfer = transfer
+func (r *CallParams) WithNonce(nonce uint64) *CallParams {
+	r.nonce = nonce
 	return r
 }
 
@@ -79,16 +82,9 @@ func (r *CallParams) WithIotas(amount uint64) *CallParams {
 	return r.WithTransfer(iscp.NewAssets(amount, nil))
 }
 
-// WithMint adds additional mint proof
-func (r *CallParams) WithMint(targetAddress iotago.Address, amount uint64) *CallParams {
-	r.mintAddress = targetAddress
-	r.mintAmount = amount
-	return r
-}
-
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) *iscp.OffLedgerRequestData {
-	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.args, 0)
+	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, 0)
 	ret.Sign(*keyPair)
 	return ret
 }
@@ -122,55 +118,42 @@ func toMap(params []interface{}) map[string]interface{} {
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on the same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair cryptolib.KeyPair) (*iotago.Transaction, iscp.RequestID, error) {
-	panic("TODO implement")
-	// if len(req.transfer) == 0 {
-	// 	return nil, iscp.RequestID{}, xerrors.New("transfer can't be empty")
-	// }
+func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, iscp.RequestID, error) {
+	ch.Env.ledgerMutex.Lock()
+	defer ch.Env.ledgerMutex.Unlock()
 
-	// ch.Env.ledgerMutex.Lock()
-	// defer ch.Env.ledgerMutex.Unlock()
+	if keyPair == nil {
+		keyPair = &ch.OriginatorPrivateKey
+	}
+	addr := iotago.Ed25519AddressFromPubKey(keyPair.PublicKey)
+	allOuts, ids := ch.Env.utxoDB.GetUnspentOutputs(&addr)
 
-	// if keyPair == nil {
-	// 	keyPair = ch.OriginatorPrivateKey
-	// }
-	// addr := iotago.NewED25519Address(keyPair.PublicKey)
-	// allOuts := ch.Env.utxoDB.GetAddressOutputs(addr)
+	tx, err := transaction.NewRequestTransaction(transaction.NewRequestTransactionParams{
+		SenderKeyPair:    *keyPair,
+		UnspentOutputs:   allOuts,
+		UnspentOutputIDs: ids,
+		Requests: []*iscp.RequestParameters{{
+			TargetAddress: ch.ChainID.AsAddress(),
+			Assets:        req.assets,
+			Metadata: &iscp.SendMetadata{
+				TargetContract: req.target,
+				EntryPoint:     req.entryPoint,
+				Params:         req.params,
+				Transfer:       req.transfer,
+				GasBudget:      req.gasBudget,
+			},
+			Options: nil,
+		}},
+		RentStructure: ch.Env.utxoDB.RentStructure(),
+	})
+	require.NoError(ch.Env.T, err)
 
-	// metadata := request.NewMetadata().
-	// 	WithTarget(req.target).
-	// 	WithEntryPoint(req.entryPoint).
-	// 	WithArgs(req.args)
+	err = ch.Env.AddToLedger(tx)
+	require.NoError(ch.Env.T, err)
+	txid, err := tx.ID()
+	require.NoError(ch.Env.T, err)
 
-	// mdata := metadata.Bytes()
-	// mdataBack := request.MetadataFromBytes(mdata)
-	// require.True(ch.Env.T, mdataBack.ParsedOk())
-
-	// txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.GlobalTime())
-	// var err error
-	// err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, colored.ToL1Map(req.transfer))
-	// require.NoError(ch.Env.T, err)
-	// if req.mintAmount > 0 {
-	// 	err = txb.AddMintingOutputConsume(req.mintAddress, req.mintAmount)
-	// 	require.NoError(ch.Env.T, err)
-	// }
-
-	// err = txb.AddRemainderOutputIfNeeded(addr, nil, true)
-	// require.NoError(ch.Env.T, err)
-
-	// tx, err := txb.BuildWithED25519(keyPair)
-	// require.NoError(ch.Env.T, err)
-
-	// err = ch.Env.AddToLedger(tx)
-	// require.NoError(ch.Env.T, err)
-
-	// for _, out := range tx.Essence().Outputs() {
-	// 	if out.Address().Equals(ch.ChainID.AsAddress()) {
-	// 		return tx, iscp.RequestID(out.ID()), nil
-	// 	}
-	// }
-	// ch.Log.Panicf("solo::inconsistency: can't find output in tx")
-	// return nil, iscp.RequestID{}, nil
+	return tx, iscp.NewRequestID(*txid, 0), nil
 }
 
 // PostRequestSync posts a request synchronously  sent by the test program to the smart contract on the same or another chain:
@@ -210,7 +193,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
-	tx, reqid, err := ch.RequestFromParamsToLedger(req, *keyPair)
+	tx, reqid, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
 		return tx, nil, err
 	}
@@ -241,7 +224,7 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 	defer ch.runVMMutex.Unlock()
 
 	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
-	return vctx.CallView(req.target, req.entryPoint, req.args)
+	return vctx.CallView(req.target, req.entryPoint, req.params)
 }
 
 // CallView calls the view entry point of the smart contract.

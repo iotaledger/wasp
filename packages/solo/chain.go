@@ -359,7 +359,7 @@ type DustInfo struct {
 func (d *DustInfo) Total() uint64 {
 	return d.DustDepositAnchor + d.DustDepositNativeTokenID*uint64(d.NumNativeTokens)
 }
-func (ch *Chain) GetTotalOnChainDustDeposit() *DustInfo {
+func (ch *Chain) GetDustInfo() *DustInfo {
 	bi := ch.GetLatestBlockInfo()
 	return &DustInfo{
 		DustDepositAnchor:        bi.DustDepositAnchor,
@@ -631,7 +631,7 @@ func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyP
 }
 
 func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair cryptolib.KeyPair) error {
-	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
+	tx, _, err := ch.RequestFromParamsToLedger(req, &keyPair)
 	if err != nil {
 		return err
 	}

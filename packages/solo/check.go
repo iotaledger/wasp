@@ -22,7 +22,7 @@ func (ch *Chain) AssertL2AccountNativeToken(agentID *iscp.AgentID, tokenID *iota
 }
 
 func (ch *Chain) AssertL2AccountIotas(agentID *iscp.AgentID, bal uint64) {
-	require.Equal(ch.Env.T, bal, ch.L2AccountBalances(agentID).Iotas)
+	require.Equal(ch.Env.T, int(bal), int(ch.L2AccountBalances(agentID).Iotas))
 }
 
 // CheckChain checks fundamental integrity of the chain

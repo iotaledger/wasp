@@ -39,8 +39,9 @@ func ReadTheState(length int) uint64 { return 10 + uint64(length/10) } // 2 + 0.
 func LogEvent(msg string) uint64     { return 10 + uint64(len([]byte(msg)))*LogByte }
 
 const (
-	CallContract  = uint64(100)
-	SendL1Request = uint64(1000)
+	CallContract   = uint64(100)
+	NotFoundTarget = uint64(100)
+	SendL1Request  = uint64(1000)
 )
 
 // Constant initial cas cost to call Core Contracts entrypoints
