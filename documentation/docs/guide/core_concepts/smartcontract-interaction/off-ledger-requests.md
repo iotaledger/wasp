@@ -1,6 +1,6 @@
 ---
 keywords:
-- ISCP
+- Smart Contracts
 - requests
 - off-ledger
 - node

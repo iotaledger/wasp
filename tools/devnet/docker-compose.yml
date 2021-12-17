@@ -17,10 +17,10 @@ services:
       - "7000/tcp" # Wasp Dashboard
       - "9090/tcp" # Wasp WebAPI
     ports:
-      - "127.0.0.1:4000:4000/tcp" # Peering
-      - "127.0.0.1:5550:5550/tcp" # Nano MSG
-      - "127.0.0.1:7000:7000/tcp" # Wasp Dashboard
-      - "127.0.0.1:9090:9090/tcp" # Wasp WebAPI
+      - "${HOST:-127.0.0.1}:4000:4000/tcp" # Peering
+      - "${HOST:-127.0.0.1}:5550:5550/tcp" # Nano MSG
+      - "${HOST:-127.0.0.1}:7000:7000/tcp" # Wasp Dashboard
+      - "${HOST:-127.0.0.1}:9090:9090/tcp" # Wasp WebAPI
   devnet_goshimmer:
     restart: always
     container_name: devnet_goshimmer
@@ -42,11 +42,11 @@ services:
       - ./goshimmer.config.json:/tmp/config.json:ro
       - ./snapshot.bin:/tmp/snapshot.bin:ro
     ports:
-      - "127.0.0.1:5000:5000/tcp" # TX Stream
-      - "127.0.0.1:8080:8080/tcp" # GoShimmer API
-      - "127.0.0.1:8081:8081/tcp" # GoShimmer Dashboard
-      - "127.0.0.1:9000:9000/tcp" # Analysis Dashboard
-      - "127.0.0.1:9312:9312/tcp" # Prometheus
+      - "${HOST:-127.0.0.1}:5000:5000/tcp" # TX Stream
+      - "${HOST:-127.0.0.1}:8080:8080/tcp" # GoShimmer API
+      - "${HOST:-127.0.0.1}:8081:8081/tcp" # GoShimmer Dashboard
+      - "${HOST:-127.0.0.1}:9000:9000/tcp" # Analysis Dashboard
+      - "${HOST:-127.0.0.1}:9312:9312/tcp" # Prometheus
     expose:
       - "1888/tcp" # Analysis Server (within Docker network)
       - "5000/tcp" # TXStream

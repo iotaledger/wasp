@@ -1,17 +1,16 @@
 ---
 keywords:
-- ISCP
 - Smart Contracts
 - on-chain account
 - Ownership
 - Accounts Contract
-description: ISCP chains keeps a ledger of on-chain account balances.  ON-chain accounts are identified by an AgentID.
+description: IOTA Smart Contracts chains keeps a ledger of on-chain account balances.  ON-chain accounts are identified by an AgentID.
 image: /img/tutorial/accounts.png
 ---
 
 # How Accounts Work
 
-ISCP provides secure, trustless transfers of digitized assets:
+IOTA Smart Contracts provide secure, trustless transfers of digitized assets:
 
 - Between smart contracts on the same or different chains
 - Between smart contracts and L1 addresses on the UTXO Ledger
@@ -21,7 +20,7 @@ transfers of assets between addresses on the ledger. The tokens contained in the
 address can be moved to another address by providing a valid signature using the
 private key which controls the source address.
 
-In ISCP, the smart contracts which reside on chains are also owners of their
+In IOTA Smart Contracts, the smart contracts which reside on chains are also owners of their
 tokens. Each smart contract can receive tokens that are transferred to it and
 can send tokens it controls to any other owner, be it another smart
 contract, or an ordinary L1 address on the UTXO Ledger.
@@ -29,7 +28,7 @@ contract, or an ordinary L1 address on the UTXO Ledger.
 There are 2 types of entities that can control tokens:
 
 * L1 addresses on the UTXO Ledger
-* Smart contracts on ISCP chains
+* Smart contracts on IOTA Smart Contracts chains
 
 There are 3 different types of trustless token transfers possible between those
 entities. Each type involves a different mechanism of transfer:
@@ -44,16 +43,16 @@ To make the system homogenous, we introduce the following two concepts:
   owning entity.
 * `On-chain account`: Represents the unit of ownership on the chain.
 
-Each ISCP chain keeps a ledger of on-chain account balances
+Each IOTA Smart Contracts chain keeps a ledger of on-chain account balances
 
 ## Account Ownership
 
 ### Smart Contract ID
 
 Unlike with blockchain systems like Ethereum, we cannot simply represent the
-smart contract by a blockchain address: ISCP can have many blockchains. 
-Each chain in ISCP is identified by its _chain ID_. A chain can
-contain many smart contracts on it. So, in ISCP each contract is identified by
+smart contract by a blockchain address: IOTA Smart Contracts can have many blockchains. 
+Each chain in IOTA Smart Contracts is identified by its _chain ID_. A chain can
+contain many smart contracts on it. So, in IOTA Smart Contracts, each contract is identified by
 an identifier that consists of the chain ID, and the _hname_ of the smart
 contract. In human-readable form, the smart _contract ID_ looks like this:
 
