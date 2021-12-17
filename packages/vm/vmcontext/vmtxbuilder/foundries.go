@@ -1,8 +1,12 @@
 package vmtxbuilder
 
 import (
+	"encoding/binary"
 	"math/big"
 	"sort"
+
+	"github.com/iotaledger/hive.go/serializer/v2"
+	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/util"
 
@@ -38,6 +42,40 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		out:          f,
 	}
 	return f.SerialNumber
+}
+
+func serNumFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {
+	slice := tokenID[iotago.AliasAddressSerializedBytesSize : iotago.AliasAddressSerializedBytesSize+serializer.UInt32ByteSize]
+	return binary.LittleEndian.Uint32(slice)
+}
+
+// ModifyNativeTokenSupply inflates the supply is delta > 0, shrinks if delta < 0
+func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) {
+	serNum := serNumFromNativeTokenID(tokenID)
+	nt, ok := txb.invokedFoundries[serNum]
+	if !ok {
+		foundryOutput, inp := txb.loadFoundry(serNum)
+		if foundryOutput == nil {
+			panic(ErrFoundryDoesNotExist)
+		}
+		nt = &foundryInvoked{
+			serialNumber: foundryOutput.SerialNumber,
+			input:        *inp,
+			in:           foundryOutput,
+			out:          cloneFoundry(foundryOutput),
+		}
+	}
+	if *tokenID != nt.in.MustNativeTokenID() {
+		panic(xerrors.Errorf("%w: requested token ID: %s, foundry token id: %s",
+			ErrCantModifySupplyOfTheToken, tokenID.String(), nt.in.MustNativeTokenID().String()))
+	}
+	newSupply := big.NewInt(0).Add(nt.out.CirculatingSupply, delta)
+	if newSupply.Cmp(big.NewInt(0)) < 0 || newSupply.Cmp(nt.out.MaximumSupply) > 0 {
+		panic(ErrNativeTokenSupplyOutOffBounds)
+	}
+	txb.addNativeTokenBalanceDelta(tokenID, delta)
+	nt.out.CirculatingSupply = newSupply
+	txb.invokedFoundries[serNum] = nt
 }
 
 func (txb *AnchorTransactionBuilder) nextFoundrySerialNumber() uint32 {

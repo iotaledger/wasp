@@ -45,3 +45,8 @@ func (vmctx *VMContext) findNativeTokenUTXOInput(id *iotago.NativeTokenID) *iota
 
 	return blocklog.GetUTXOIDForAsset(vmctx.State(), id)
 }
+
+func (vmctx *VMContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
+	// TODO
+	return nil, nil
+}

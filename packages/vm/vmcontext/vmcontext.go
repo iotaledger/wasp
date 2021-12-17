@@ -107,10 +107,14 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
 		return ret.loadNativeTokensOnChain(id)
 	}
+	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
+		return ret.loadFoundry(serNum)
+	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
 		&task.AnchorOutputID,
 		nativeTokenBalanceLoader,
+		foundryLoader,
 		task.RentStructure,
 	)
 

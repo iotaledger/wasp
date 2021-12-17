@@ -22,11 +22,18 @@ var (
 	ErrOverflow                             = xerrors.New("overflow")
 	ErrNotEnoughIotaBalance                 = xerrors.New("not enough iota balance")
 	ErrNotEnoughNativeAssetBalance          = xerrors.New("not enough native assets balance")
+	ErrFoundryDoesNotExist                  = xerrors.New("foundry does not exist")
+	ErrCantModifySupplyOfTheToken           = xerrors.New("supply of the token is not controlled by the chain")
+	ErrNativeTokenSupplyOutOffBounds        = xerrors.New("token supply is out oif bounds")
 )
 
 // tokenBalanceLoader externally supplied function which loads balance of the native token from the state
-// it returns nil if balance exists. If balance exist, it also returns output ID which holds the balance for the token_id
+// it returns nil if balance does not exist. If balance exist, it also returns output ID which holds the balance for the token_id
 type tokenBalanceLoader func(*iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput)
+
+// foundryLoader externally supplied function which returns foundry output and id by its serial number
+// Should return nil if foundry does not exist
+type foundryLoader func(uint32) (*iotago.FoundryOutput, *iotago.UTXOInput)
 
 // AnchorTransactionBuilder represents structure which handles all the data needed to eventually
 // build an essence of the anchor transaction
@@ -43,8 +50,10 @@ type AnchorTransactionBuilder struct {
 	dustDepositOnAnchor uint64
 	// cached dust deposit constant for one internal output
 	dustDepositOnInternalTokenOutput uint64
-	// on-chain balance loader for native tokens
+	// balance loader for native tokens
 	loadNativeTokensOnChain tokenBalanceLoader
+	// foundry loader
+	loadFoundry foundryLoader
 	// balances of native tokens touched during the batch run
 	balanceNativeTokens map[iotago.NativeTokenID]*nativeTokenBalance
 	// requests posted by smart contracts
@@ -101,6 +110,7 @@ func NewAnchorTransactionBuilder(
 	anchorOutput *iotago.AliasOutput,
 	anchorOutputID *iotago.UTXOInput,
 	tokenBalanceLoader tokenBalanceLoader,
+	foundryLoader foundryLoader,
 	rentStructure *iotago.RentStructure,
 ) *AnchorTransactionBuilder {
 	anchorDustDeposit := anchorOutput.VByteCost(parameters.RentStructure(), nil)
@@ -114,6 +124,7 @@ func NewAnchorTransactionBuilder(
 		dustDepositOnAnchor:              anchorDustDeposit,
 		dustDepositOnInternalTokenOutput: calcVByteCostOfNativeTokenBalance(rentStructure),
 		loadNativeTokensOnChain:          tokenBalanceLoader,
+		loadFoundry:                      foundryLoader,
 		consumed:                         make([]iscp.RequestData, 0, iotago.MaxInputsCount-1),
 		balanceNativeTokens:              make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:                    make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
@@ -131,6 +142,7 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 		dustDepositOnAnchor:              txb.dustDepositOnAnchor,
 		dustDepositOnInternalTokenOutput: txb.dustDepositOnInternalTokenOutput,
 		loadNativeTokensOnChain:          txb.loadNativeTokensOnChain,
+		loadFoundry:                      txb.loadFoundry,
 		consumed:                         make([]iscp.RequestData, 0, cap(txb.consumed)),
 		balanceNativeTokens:              make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:                    make([]iotago.Output, 0, cap(txb.postedOutputs)),

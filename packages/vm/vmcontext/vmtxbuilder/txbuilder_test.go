@@ -111,6 +111,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
 			return nil, nil
 		},
+			nil,
 			testdeserparams.DeSerializationParameters().RentStructure,
 		)
 		totals, _, isBalanced := txb.Totals()
@@ -135,6 +136,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
 			return nil, nil
 		},
+			nil,
 			testdeserparams.DeSerializationParameters().RentStructure,
 		)
 		txb.addDeltaIotasToTotal(42)
@@ -144,7 +146,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	})
 	t.Run("3", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(
-			anchor, anchorID, balanceLoader, testdeserparams.DeSerializationParameters().RentStructure,
+			anchor, anchorID, balanceLoader, nil, testdeserparams.DeSerializationParameters().RentStructure,
 		)
 		_, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
@@ -169,7 +171,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 	t.Run("4", func(t *testing.T) {
-		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader,
+		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil,
 			testdeserparams.DeSerializationParameters().RentStructure,
 		)
 		_, _, isBalanced := txb.Totals()
@@ -242,7 +244,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	var numTokenIDs int
 
 	initTest := func() {
-		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader,
+		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil,
 			testdeserparams.DeSerializationParameters().RentStructure,
 		)
 		amounts = make(map[int]uint64)
@@ -279,7 +281,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.EqualValues(t, int(expectedDust), sumOUT.TotalIotasInDustDeposit)
 	}
 	runCreateBuilderAndConsumeRandomly := func(numRun int, amount uint64) {
-		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader,
+		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil,
 			testdeserparams.DeSerializationParameters().RentStructure,
 		)
 		amounts = make(map[int]uint64)
@@ -671,7 +673,7 @@ func TestFoundries(t *testing.T) {
 	var numTokenIDs int
 
 	initTest := func() {
-		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader,
+		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil,
 			testdeserparams.DeSerializationParameters().RentStructure,
 		)
 
