@@ -4,10 +4,12 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/iotaledger/wasp/packages/util"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
-func (txb *AnchorTransactionBuilder) createNewFoundry(
+func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	scheme iotago.TokenScheme,
 	tag iotago.TokenTag,
 	maxSupply *big.Int,
@@ -24,8 +26,12 @@ func (txb *AnchorTransactionBuilder) createNewFoundry(
 		Blocks:            nil,
 	}
 	f.Amount = f.VByteCost(txb.rentStructure, nil)
-	txb.subDeltaIotasFromTotal(f.Amount)
-
+	err := util.CatchPanicReturnError(func() {
+		txb.subDeltaIotasFromTotal(f.Amount)
+	}, ErrNotEnoughIotaBalance)
+	if err != nil {
+		panic(ErrNotEnoughFundsForInternalDustDeposit)
+	}
 	txb.invokedFoundries[f.SerialNumber] = &foundryInvoked{
 		serialNumber: f.SerialNumber,
 		in:           nil,

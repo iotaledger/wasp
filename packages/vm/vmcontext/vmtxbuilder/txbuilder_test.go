@@ -637,3 +637,83 @@ func TestDustDeposit(t *testing.T) {
 		require.GreaterOrEqual(t, out.Amount, out.VByteCost(parameters.RentStructure(), nil))
 	})
 }
+
+func TestFoundries(t *testing.T) {
+	const initialTotalIotas = 1000
+	addr := tpkg.RandEd25519Address()
+	stateMetadata := hashing.HashStrings("test")
+	aliasID := rndAliasID()
+	anchor := &iotago.AliasOutput{
+		Amount:               initialTotalIotas,
+		NativeTokens:         nil,
+		AliasID:              aliasID,
+		StateController:      addr,
+		GovernanceController: addr,
+		StateIndex:           0,
+		StateMetadata:        stateMetadata[:],
+		FoundryCounter:       0,
+		Blocks: iotago.FeatureBlocks{
+			&iotago.SenderFeatureBlock{
+				Address: aliasID.ToAddress(),
+			},
+		},
+	}
+	anchorID := tpkg.RandUTXOInput()
+
+	var nativeTokenIDs []iotago.NativeTokenID
+	var utxoInputsNativeTokens []iotago.UTXOInput
+	// all token accounts initially are empty
+	balanceLoader := func(_ *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+		return nil, &iotago.UTXOInput{}
+	}
+	var txb *AnchorTransactionBuilder
+
+	var numTokenIDs int
+
+	initTest := func() {
+		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader,
+			testdeserparams.DeSerializationParameters().RentStructure,
+		)
+
+		nativeTokenIDs = make([]iotago.NativeTokenID, 0)
+		utxoInputsNativeTokens = make([]iotago.UTXOInput, 0)
+
+		for i := 0; i < numTokenIDs; i++ {
+			nativeTokenIDs = append(nativeTokenIDs, testiotago.RandNativeTokenID())
+			utxoInputsNativeTokens = append(utxoInputsNativeTokens, testiotago.RandUTXOInput())
+		}
+	}
+	createNFoundries := func(n int) {
+		for i := 0; i < n; i++ {
+			serNum := txb.CreateNewFoundry(&iotago.SimpleTokenScheme{}, iotago.TokenTag{}, big.NewInt(10_000_000))
+			require.EqualValues(t, i, int(serNum))
+
+			tin, tout, balanced := txb.Totals()
+			require.True(t, balanced)
+			t.Logf("%d. total iotas IN: %d, total iotas OUT: %d", i, tin.TotalIotasOnChain, tout.TotalIotasOnChain)
+			t.Logf("%d. dust deposit IN: %d, dust deposit OUT: %d", i, tin.TotalIotasInDustDeposit, tout.TotalIotasInDustDeposit)
+			t.Logf("%d. num foundries: %d", i, txb.nextFoundrySerialNumber())
+		}
+
+	}
+	t.Run("create foundry ok", func(t *testing.T) {
+		initTest()
+		createNFoundries(4)
+		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
+		require.NoError(t, err)
+		t.Logf("essence bytes len = %d", len(essenceBytes))
+	})
+	t.Run("create foundry not enough", func(t *testing.T) {
+		initTest()
+		err := util.CatchPanicReturnError(func() {
+			createNFoundries(5)
+		}, ErrNotEnoughFundsForInternalDustDeposit)
+		require.Error(t, err, ErrNotEnoughFundsForInternalDustDeposit)
+
+		essence := txb.BuildTransactionEssence(&iscp.StateData{})
+		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
+		require.NoError(t, err)
+		t.Logf("essence bytes len = %d", len(essenceBytes))
+	})
+}
