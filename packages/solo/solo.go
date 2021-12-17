@@ -4,10 +4,13 @@
 package solo
 
 import (
+	"math/big"
 	"math/rand"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -18,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -56,7 +58,6 @@ type Solo struct {
 	publisherWG      sync.WaitGroup
 	publisherEnabled atomic.Bool
 	processorConfig  *processors.Config
-	deSeriParams     *iotago.DeSerializationParameters
 }
 
 // Chain represents state of individual chain.
@@ -110,7 +111,7 @@ type InitOptions struct {
 	Debug           bool
 	PrintStackTrace bool
 	Seed            cryptolib.Seed
-	DeSeriParams    *iotago.DeSerializationParameters
+	RentStructure   *iotago.RentStructure
 	Log             *logger.Logger
 }
 
@@ -119,7 +120,7 @@ func defaultInitOptions() *InitOptions {
 		Debug:           false,
 		PrintStackTrace: false,
 		Seed:            cryptolib.Seed{},
-		DeSeriParams:    parameters.DeSerializationParameters(),
+		RentStructure:   testdeserparams.RentStructure(),
 	}
 }
 
@@ -142,8 +143,8 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	if !opt.Debug {
 		opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
 	}
-	if opt.DeSeriParams == nil {
-		opt.DeSeriParams = parameters.DeSerializationParameters()
+	if opt.RentStructure == nil {
+		opt.RentStructure = testdeserparams.RentStructure()
 	}
 
 	// disable wasmtime vm for now
@@ -152,8 +153,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	//})
 	//require.NoError(t, err)
 
-	initParams := utxodb.DefaultInitParams(opt.Seed[:]).
-		WithRentStructure(parameters.DeSerializationParameters().RentStructure)
+	initParams := utxodb.DefaultInitParams(opt.Seed[:]).WithRentStructure(opt.RentStructure)
 	ret := &Solo{
 		T:               t,
 		logger:          opt.Log,
@@ -162,7 +162,6 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		chains:          make(map[iscp.ChainID]*Chain),
 		vmRunner:        runvm.NewVMRunner(),
 		processorConfig: processors.NewConfig(),
-		deSeriParams:    parameters.DeSerializationParameters(),
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v, milestone index: #%d",
@@ -192,13 +191,18 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //  - backlog processing threads (goroutines) are started
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
-//    '_default', 'blocklog', 'blob', 'accounts' and 'eventlog',
 // Upon return, the chain is fully functional to process requests
-//nolint:funlen
 func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
+	ret, _, _ := env.NewChainExt(chainOriginator, name, validatorFeeTarget...)
+	return ret
+}
+
+// NewChainExt returns also origin and init transactions. Used for core testing
+// nolint:funlen
+func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
-	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2) // cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(2))
+	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
 
 	var originatorAddr iotago.Address
 	var origKeyPair cryptolib.KeyPair
@@ -224,7 +228,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 		0, // will be adjusted to min dust deposit
 		outs,
 		ids,
-		env.deSeriParams,
+		env.utxoDB.RentStructure(),
 	)
 	require.NoError(env.T, err)
 
@@ -233,7 +237,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 
 	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
-	env.AssertAddressIotas(originatorAddr, Saldo-anchor.Deposit)
+	env.AssertL1AddressIotas(originatorAddr, Saldo-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateAddr.Bech32(iscp.Bech32Prefix))
@@ -291,7 +295,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 		"'solo' testing chain",
 		outs,
 		ids,
-		env.deSeriParams,
+		env.utxoDB.RentStructure(),
 	)
 	require.NoError(env.T, err)
 	require.NotNil(env.T, initTx)
@@ -313,7 +317,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, valid
 	ret.logRequestLastBlock()
 
 	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
-	return ret
+	return ret, originTx, initTx
 }
 
 // AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is
@@ -470,4 +474,27 @@ func (ch *Chain) collateAndRunBatch() bool {
 func (ch *Chain) BacklogLen() int {
 	mstats := ch.mempool.Info()
 	return mstats.InBufCounter - mstats.OutPoolCounter
+}
+
+// L1NativeTokenBalance returns number of native tokens contained in the given address on the UTXODB ledger
+func (env *Solo) L1NativeTokenBalance(addr iotago.Address, tokenID *iotago.NativeTokenID) *big.Int {
+	assets := env.L1AddressBalances(addr)
+	return assets.AmountNativeToken(tokenID)
+}
+
+func (env *Solo) L1IotaBalance(addr iotago.Address) uint64 {
+	return env.utxoDB.GetAddressBalances(addr).Iotas
+}
+
+// L1AddressBalances returns all assets of the address contained in the UTXODB ledger
+func (env *Solo) L1AddressBalances(addr iotago.Address) *iscp.Assets {
+	return env.utxoDB.GetAddressBalances(addr)
+}
+
+func (env *Solo) L1Ledger() *utxodb.UtxoDB {
+	return env.utxoDB
+}
+
+func (env *Solo) RentStructure() *iotago.RentStructure {
+	return env.utxoDB.RentStructure()
 }

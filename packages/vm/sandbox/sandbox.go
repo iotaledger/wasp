@@ -39,7 +39,7 @@ func (s *sandbox) BalanceIotas() uint64 {
 
 func (s *sandbox) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
 	s.Burn(gas.GetContractContext)
-	return s.vmctx.GetTokenBalance(s.vmctx.AccountID(), id)
+	return s.vmctx.GetNativeTokenBalance(s.vmctx.AccountID(), id)
 }
 
 func (s *sandbox) Assets() *iscp.Assets {

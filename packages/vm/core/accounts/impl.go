@@ -76,7 +76,7 @@ func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
 	if ctx.IncomingTransfer() == nil {
 		return nil, nil
 	}
-	mustCheckLedger(ctx.State(), "accounts.sendTo.begin")
+	checkLedger(ctx.State(), "accounts.sendTo.begin")
 
 	caller := ctx.Caller()
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -86,7 +86,7 @@ func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.sendTo.success: target: %s\n%s",
 		targetAccount, ctx.IncomingTransfer().String())
 
-	mustCheckLedger(ctx.State(), "accounts.sendTo.exit")
+	checkLedger(ctx.State(), "accounts.sendTo.exit")
 	return nil, nil
 }
 
@@ -99,13 +99,13 @@ func sendIncomingTo(ctx iscp.Sandbox, targetAccount *iscp.AgentID) {
 // withdraw sends caller's funds to the caller
 func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
-	mustCheckLedger(state, "accounts.withdraw.begin")
+	checkLedger(state, "accounts.withdraw.begin")
 
 	if ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) {
 		// if the caller is on the same chain, do nothing
 		return nil, nil
 	}
-	// TODO maybe we need to deduct gas fees from tokensToWithdraw? - to check
+	// TODO maybe we need to deduct gas fees balance tokensToWithdraw? - to check
 	tokensToWithdraw, ok := GetAccountAssets(state, ctx.Caller())
 	if !ok {
 		// empty balance, nothing to withdraw
@@ -141,11 +141,11 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", tokensToWithdraw.String())
 
-	mustCheckLedger(state, "accounts.withdraw.exit")
+	checkLedger(state, "accounts.withdraw.exit")
 	return nil, nil
 }
 
-// owner of the chain moves all tokens from the common account to its own account
+// owner of the chain moves all tokens balance the common account to its own account
 // Params:
 //   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
 //   ParamWithdrawAssetID assetID to withdraw if amount is specified. Defaults to Iota
@@ -154,8 +154,8 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.RequireChainOwner(ctx, "harvest")
 
 	state := ctx.State()
-	mustCheckLedger(state, "accounts.harvest.begin")
-	defer mustCheckLedger(state, "accounts.harvest.exit")
+	checkLedger(state, "accounts.harvest.begin")
+	defer checkLedger(state, "accounts.harvest.exit")
 
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	// if ParamWithdrawAmount > 0, take it as exact amount to withdraw
@@ -181,7 +181,7 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 		}
 	} else {
 		token := &iotago.NativeToken{
-			ID: iscp.TokenIDFromAssetID(assetID),
+			ID: iscp.MustNativeTokenIDFromBytes(assetID),
 		}
 		if amount > 0 {
 			token.Amount = new(big.Int).SetUint64(amount)

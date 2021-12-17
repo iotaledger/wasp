@@ -92,7 +92,7 @@ func computeInputsAndRemainder(
 	tokensOut map[iotago.NativeTokenID]*big.Int,
 	allUnspentOutputs []iotago.Output,
 	allInputs []*iotago.UTXOInput,
-	deSeriParams *iotago.DeSerializationParameters,
+	rentStructure *iotago.RentStructure,
 ) (iotago.Inputs, *iotago.ExtendedOutput, error) {
 	iotasIn := uint64(0)
 	tokensIn := make(map[iotago.NativeTokenID]*big.Int)
@@ -112,7 +112,7 @@ func computeInputsAndRemainder(
 			tokensIn[nt.ID] = s
 		}
 		// calculate remainder. It will return != nil if input balances is enough, otherwise nil
-		remainder = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, deSeriParams)
+		remainder = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, rentStructure)
 		if remainder != nil {
 			inputs = make(iotago.Inputs, i+1)
 			for j := range inputs {
@@ -134,7 +134,7 @@ func computeInputsAndRemainder(
 // - outIotas, outTokens is what is in outputs, except the remainder output itself with its dust deposit
 // Returns nil if inputs are not enough (taking into account dust deposit requirements)
 // If return not nil but Amount == 0, ite means remainder is a perfect match between inputs and outputs, remainder not needed
-func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, deSeriParams *iotago.DeSerializationParameters) *iotago.ExtendedOutput {
+func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, rentStructure *iotago.RentStructure) *iotago.ExtendedOutput {
 	if inIotas < outIotas {
 		return nil
 	}
@@ -197,7 +197,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			Amount: b,
 		})
 	}
-	if len(remTokens) > 0 && remIotas < ret.VByteCost(deSeriParams.RentStructure, nil) {
+	if len(remTokens) > 0 && remIotas < ret.VByteCost(rentStructure, nil) {
 		// iotas does not cover minimum dust requirements
 		return nil
 	}
@@ -224,6 +224,14 @@ func MakeSignatureAndAliasUnlockBlocks(totalInputs int, sig iotago.Signature) io
 			continue
 		}
 		ret[i] = &iotago.AliasUnlockBlock{Reference: 0}
+	}
+	return ret
+}
+
+func GetVByteCosts(tx *iotago.Transaction, rentStructure *iotago.RentStructure) []uint64 {
+	ret := make([]uint64, len(tx.Essence.Outputs))
+	for i, out := range tx.Essence.Outputs {
+		ret[i] = out.VByteCost(rentStructure, nil)
 	}
 	return ret
 }

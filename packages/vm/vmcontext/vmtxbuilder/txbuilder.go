@@ -26,7 +26,7 @@ var (
 
 // tokenBalanceLoader externally supplied function which loads balance of the native token from the state
 // it returns nil if balance exists. If balance exist, it also returns output ID which holds the balance for the token_id
-type tokenBalanceLoader func(iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput)
+type tokenBalanceLoader func(*iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput)
 
 // AnchorTransactionBuilder represents structure which handles all the data needed to eventually
 // build an essence of the anchor transaction
@@ -49,6 +49,8 @@ type AnchorTransactionBuilder struct {
 	balanceNativeTokens map[iotago.NativeTokenID]*nativeTokenBalance
 	// requests posted by smart contracts
 	postedOutputs []iotago.Output
+	// structure to calculate byte costs
+	rentStructure *iotago.RentStructure
 }
 
 // nativeTokenBalance represents on-chain account of the specific native token
@@ -86,7 +88,12 @@ func (n *nativeTokenBalance) requiresInput() bool {
 }
 
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
-func NewAnchorTransactionBuilder(anchorOutput *iotago.AliasOutput, anchorOutputID *iotago.UTXOInput, tokenBalanceLoader tokenBalanceLoader) *AnchorTransactionBuilder {
+func NewAnchorTransactionBuilder(
+	anchorOutput *iotago.AliasOutput,
+	anchorOutputID *iotago.UTXOInput,
+	tokenBalanceLoader tokenBalanceLoader,
+	rentStructure *iotago.RentStructure,
+) *AnchorTransactionBuilder {
 	anchorDustDeposit := anchorOutput.VByteCost(parameters.RentStructure(), nil)
 	if anchorOutput.Amount < anchorDustDeposit {
 		panic("internal inconsistency")
@@ -96,11 +103,12 @@ func NewAnchorTransactionBuilder(anchorOutput *iotago.AliasOutput, anchorOutputI
 		anchorOutputID:                          anchorOutputID,
 		totalIotasOnChain:                       anchorOutput.Amount - anchorDustDeposit,
 		dustDepositOnAnchor:                     anchorDustDeposit,
-		dustDepositOnInternalTokenAccountOutput: calcVByteCostOfNativeTokenBalance(),
+		dustDepositOnInternalTokenAccountOutput: calcVByteCostOfNativeTokenBalance(rentStructure),
 		loadNativeTokensOnChain:                 tokenBalanceLoader,
 		consumed:                                make([]iscp.RequestData, 0, iotago.MaxInputsCount-1),
 		balanceNativeTokens:                     make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:                           make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
+		rentStructure:                           rentStructure,
 	}
 }
 
@@ -116,6 +124,7 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 		consumed:                                make([]iscp.RequestData, 0),
 		balanceNativeTokens:                     make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:                           make([]iotago.Output, 0),
+		rentStructure:                           txb.rentStructure,
 	}
 
 	ret.consumed = append(ret.consumed, txb.consumed...)
@@ -162,7 +171,7 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.RequestData) int64 {
 	// then we add all arriving native tokens to corresponding internal outputs
 	deltaIotasDustDepositAdjustment := int64(0)
 	for _, nt := range inp.Assets().Tokens {
-		deltaIotasDustDepositAdjustment += txb.addNativeTokenBalanceDelta(nt.ID, nt.Amount)
+		deltaIotasDustDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
 	}
 	return deltaIotasDustDepositAdjustment
 }
@@ -177,7 +186,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
 	bi := new(big.Int)
 	for _, nt := range assets.Tokens {
 		bi.Neg(nt.Amount)
-		txb.addNativeTokenBalanceDelta(nt.ID, bi)
+		txb.addNativeTokenBalanceDelta(&nt.ID, bi)
 	}
 	txb.postedOutputs = append(txb.postedOutputs, o)
 }
@@ -213,24 +222,28 @@ func (txb *AnchorTransactionBuilder) inputs() iotago.Inputs {
 	return ret
 }
 
-// SortedListOfTokenIDsForOutputs is needed in order to know the exact index in the transaction of each
+// TokenIDsToBeUpdated is needed in order to know the exact index in the transaction of each
 // internal output for each token ID before it is stored into the state and state commitment is calculated
-// In the and `blocklog` and `accounts` contract each internal account is tracked by:
-// - knowing anchor transactionID for each block index (in `blocklog`)
-// - knowing block number of the anchor transaction where the last UTXO was produced for the tokenID (in `accounts`)
-// - knowing the index of the output in the anchor transaction (in `accounts`). This is calculated from SortedListOfTokenIDsForOutputs()
-func (txb *AnchorTransactionBuilder) SortedListOfTokenIDsForOutputs() []iotago.NativeTokenID {
-	ret := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
+// In the `blocklog` contract each internal account is tracked by:
+// - knowing anchor transactionID for each block index
+// - knowing block number of the anchor transaction where the last UTXO was produced for the tokenID
+// - knowing the index of the output in the anchor transaction (in `accounts`). This is calculated from TokenIDsToBeUpdated()
+// In addition function returns token IDs which has to be removed from the list
+func (txb *AnchorTransactionBuilder) TokenIDsToBeUpdated() ([]iotago.NativeTokenID, []iotago.NativeTokenID) {
+	toBeUpdated := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
+	toBeRemoved := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
 	for id, nt := range txb.balanceNativeTokens {
-		if !nt.producesOutput() {
-			continue
+		if nt.producesOutput() {
+			toBeUpdated = append(toBeUpdated, id)
+		} else {
+			toBeRemoved = append(toBeRemoved, id)
 		}
-		ret = append(ret, id)
 	}
-	sort.Slice(ret, func(i, j int) bool {
-		return bytes.Compare(ret[i][:], ret[j][:]) < 0
+	// sorting those with outputs
+	sort.Slice(toBeUpdated, func(i, j int) bool {
+		return bytes.Compare(toBeUpdated[i][:], toBeUpdated[j][:]) < 0
 	})
-	return ret
+	return toBeUpdated, toBeRemoved
 }
 
 // outputs generates outputs for the transaction essence
@@ -259,7 +272,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 	ret = append(ret, anchorOutput)
 
 	// creating outputs for updated internal accounts
-	tokenIdsToBeUpdated := txb.SortedListOfTokenIDsForOutputs()
+	tokenIdsToBeUpdated, _ := txb.TokenIDsToBeUpdated()
 
 	for _, id := range tokenIdsToBeUpdated {
 		// create one output for each token ID of internal account
@@ -346,8 +359,8 @@ func (txb *AnchorTransactionBuilder) subDeltaIotasFromTotal(delta uint64) {
 // ensureNativeTokenBalance makes sure that cached balance information is in the builder
 // if not, it asks for the initial balance by calling the loader function
 // Panics if the call results to exceeded limits
-func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id iotago.NativeTokenID) *nativeTokenBalance {
-	if b, ok := txb.balanceNativeTokens[id]; ok {
+func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id *iotago.NativeTokenID) *nativeTokenBalance {
+	if b, ok := txb.balanceNativeTokens[*id]; ok {
 		return b
 	}
 	balance, input := txb.loadNativeTokensOnChain(id) // balance will be nil if no such token id accounted yet
@@ -366,7 +379,7 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id iotago.NativeTo
 	if balance != nil {
 		b.balance.Set(balance)
 	}
-	txb.balanceNativeTokens[id] = b
+	txb.balanceNativeTokens[*id] = b
 	return b
 }
 
@@ -374,7 +387,7 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id iotago.NativeTo
 // The call may result in adding new token ID to the ledger or disappearing one
 // This impacts dust amount locked in the internal UTXOs which keep respective balances
 // Returns delta of required dust deposit
-func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id iotago.NativeTokenID, delta *big.Int) int64 {
+func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.NativeTokenID, delta *big.Int) int64 {
 	if util.IsZeroBigInt(delta) {
 		return 0
 	}
@@ -449,7 +462,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.Sta
 
 // calcVByteCostOfNativeTokenBalance return byte cost for the internal UTXO used to keep on chain native tokens.
 // We assume that size of the UTXO will always be a constant
-func calcVByteCostOfNativeTokenBalance() uint64 {
+func calcVByteCostOfNativeTokenBalance(rentStructure *iotago.RentStructure) uint64 {
 	// a fake output with one native token in the balance
 	// the MakeExtendedOutput will adjust the dust deposit
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
@@ -465,13 +478,23 @@ func calcVByteCostOfNativeTokenBalance() uint64 {
 		},
 		nil,
 		nil,
+		rentStructure,
 	)
 	return o.Amount
 }
 
+func (txb *AnchorTransactionBuilder) DustDeposits() (uint64, uint64) {
+	return txb.dustDepositOnAnchor, txb.dustDepositOnInternalTokenAccountOutput
+}
+
 // ExtendedOutputFromPostData creates extended output object from parameters.
 // It automatically adjusts amount of iotas required for the dust deposit
-func ExtendedOutputFromPostData(senderAddress iotago.Address, senderContract iscp.Hname, par iscp.RequestParameters) *iotago.ExtendedOutput {
+func ExtendedOutputFromPostData(
+	senderAddress iotago.Address,
+	senderContract iscp.Hname,
+	par iscp.RequestParameters,
+	rentStructure *iotago.RentStructure,
+) *iotago.ExtendedOutput {
 	ret, _ := MakeExtendedOutput(
 		par.TargetAddress,
 		senderAddress,
@@ -485,6 +508,7 @@ func ExtendedOutputFromPostData(senderAddress iotago.Address, senderContract isc
 			GasBudget:      par.Metadata.GasBudget,
 		},
 		par.Options,
+		rentStructure,
 	)
 	return ret
 }
@@ -496,7 +520,9 @@ func MakeExtendedOutput(
 	senderAddress iotago.Address,
 	assets *iscp.Assets,
 	metadata *iscp.RequestMetadata,
-	options *iscp.SendOptions) (*iotago.ExtendedOutput, bool) {
+	options *iscp.SendOptions,
+	rentStructure *iotago.RentStructure,
+) (*iotago.ExtendedOutput, bool) {
 	if assets == nil {
 		assets = &iscp.Assets{}
 	}
@@ -523,7 +549,7 @@ func MakeExtendedOutput(
 
 	// Adjust to minimum dust deposit
 	dustDepositAdjusted := false
-	neededDustDeposit := ret.VByteCost(parameters.RentStructure(), nil)
+	neededDustDeposit := ret.VByteCost(rentStructure, nil)
 	if ret.Amount < neededDustDeposit {
 		ret.Amount = neededDustDeposit
 		dustDepositAdjusted = true

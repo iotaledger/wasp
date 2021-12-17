@@ -29,13 +29,13 @@ func test2Chains(t *testing.T, w bool) {
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
-	chain1.AssertIotas(contractAgentID1, 1)
-	chain1.AssertIotas(contractAgentID2, 0)
+	chain1.AssertL2AccountIotas(contractAgentID1, 1)
+	chain1.AssertL2AccountIotas(contractAgentID2, 0)
 	chain1.AssertCommonAccountIotas(2 + extraToken1)
 	chain1.AssertTotalIotas(3 + extraToken1)
 
-	chain2.AssertIotas(contractAgentID1, 0)
-	chain2.AssertIotas(contractAgentID2, 1)
+	chain2.AssertL2AccountIotas(contractAgentID1, 0)
+	chain2.AssertL2AccountIotas(contractAgentID2, 1)
 	chain2.AssertCommonAccountIotas(2 + extraToken2)
 	chain2.AssertTotalIotas(3 + extraToken2)
 
@@ -46,15 +46,15 @@ func test2Chains(t *testing.T, w bool) {
 
 	env.AssertAddressIotas(userAddress, solo.Saldo-42)
 
-	chain1.AssertIotas(userAgentID, 0)
-	chain1.AssertIotas(contractAgentID1, 1)
-	chain1.AssertIotas(contractAgentID2, 42)
+	chain1.AssertL2AccountIotas(userAgentID, 0)
+	chain1.AssertL2AccountIotas(contractAgentID1, 1)
+	chain1.AssertL2AccountIotas(contractAgentID2, 42)
 	chain1.AssertCommonAccountIotas(2 + extraToken1)
 	chain1.AssertTotalIotas(45 + extraToken1)
 
-	chain2.AssertIotas(userAgentID, 0)
-	chain2.AssertIotas(contractAgentID1, 0)
-	chain2.AssertIotas(contractAgentID2, 1)
+	chain2.AssertL2AccountIotas(userAgentID, 0)
+	chain2.AssertL2AccountIotas(contractAgentID1, 0)
+	chain2.AssertL2AccountIotas(contractAgentID2, 1)
 	chain2.AssertCommonAccountIotas(2 + extraToken2)
 	chain2.AssertTotalIotas(3 + extraToken2)
 
@@ -73,15 +73,15 @@ func test2Chains(t *testing.T, w bool) {
 
 	env.AssertAddressIotas(userAddress, solo.Saldo-42-1)
 
-	chain1.AssertIotas(userAgentID, 0)
-	chain1.AssertIotas(contractAgentID1, 1)
-	chain1.AssertIotas(contractAgentID2, 0)
+	chain1.AssertL2AccountIotas(userAgentID, 0)
+	chain1.AssertL2AccountIotas(contractAgentID1, 1)
+	chain1.AssertL2AccountIotas(contractAgentID2, 0)
 	chain1.AssertCommonAccountIotas(2 + extraToken1)
 	chain1.AssertTotalIotas(3 + extraToken1)
 
-	chain2.AssertIotas(userAgentID, 0)
-	chain2.AssertIotas(contractAgentID1, 0)
-	chain2.AssertIotas(contractAgentID2, 44)
+	chain2.AssertL2AccountIotas(userAgentID, 0)
+	chain2.AssertL2AccountIotas(contractAgentID1, 0)
+	chain2.AssertL2AccountIotas(contractAgentID2, 44)
 	chain2.AssertCommonAccountIotas(2 + extraToken2)
 	chain2.AssertTotalIotas(46 + extraToken2)
 }

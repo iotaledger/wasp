@@ -4,6 +4,8 @@ import (
 	"math"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -24,6 +26,7 @@ var Processor = Contract.Processor(initialize,
 	FuncGetEventsForRequest.WithHandler(viewGetEventsForRequest),
 	FuncGetEventsForBlock.WithHandler(viewGetEventsForBlock),
 	FuncGetEventsForContract.WithHandler(viewGetEventsForContract),
+	FuncGetNativeTokensIDs.WithHandler(viewGetNativeTokenIDs),
 )
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -55,7 +58,7 @@ func viewGetBlockInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 }
 
 func viewGetLatestBlockInfo(ctx iscp.SandboxView) (dict.Dict, error) {
-	registry := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry)
+	registry := collections.NewArray32ReadOnly(ctx.State(), KeyPrefixBlockRegistry)
 	regLen := registry.MustLen()
 	if regLen == 0 {
 		return nil, xerrors.New("blocklog::viewGetLatestBlockInfo: empty log")
@@ -142,7 +145,7 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 
 func viewControlAddresses(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	registry := collections.NewArray32ReadOnly(ctx.State(), StateVarControlAddresses)
+	registry := collections.NewArray32ReadOnly(ctx.State(), KeyPrefixControlAddresses)
 	l := registry.MustLen()
 	a.Require(l > 0, "inconsistency: unknown control addresses")
 	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
@@ -185,7 +188,7 @@ func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	if ctx.Params().MustHas(ParamBlockIndex) {
 		blockIndex = params.MustGetUint32(ParamBlockIndex)
 	} else {
-		registry := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry)
+		registry := collections.NewArray32ReadOnly(ctx.State(), KeyPrefixBlockRegistry)
 		blockIndex = registry.MustLen() - 1
 	}
 
@@ -233,5 +236,15 @@ func viewGetEventsForContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	for _, event := range events {
 		arr.MustPush([]byte(event))
 	}
+	return ret, nil
+}
+
+func viewGetNativeTokenIDs(ctx iscp.SandboxView) (dict.Dict, error) {
+	mapping := getNativeTokensUTXOLookupMapR(ctx.State())
+	ret := dict.New()
+	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
+		ret.Set(kv.Key(elemKey), []byte{0xFF})
+		return true
+	})
 	return ret, nil
 }

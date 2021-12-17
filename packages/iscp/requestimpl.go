@@ -1,9 +1,12 @@
 package iscp
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -541,13 +544,24 @@ const RequestIDDigestLen = 6
 type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
 func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
-	return RequestID{}
+	return RequestID(iotago.UTXOInput{
+		TransactionID:          txid,
+		TransactionOutputIndex: index,
+	})
 }
 
-// TODO
 func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
-	// ret, err := ledgerstate.OutputIDFromMarshalUtil(mu)
-	return RequestID{}, nil
+	var ret RequestID
+	txidData, err := mu.ReadBytes(iotago.TransactionIDLength)
+	if err != nil {
+		return RequestID{}, err
+	}
+	ret.TransactionOutputIndex, err = mu.ReadUint16()
+	if err != nil {
+		return RequestID{}, err
+	}
+	copy(ret.TransactionID[:], txidData)
+	return ret, nil
 }
 
 func RequestIDFromBytes(data []byte) (RequestID, error) {
@@ -586,8 +600,10 @@ func (rid RequestID) Base58() string {
 }
 
 func (rid RequestID) Bytes() []byte {
-	// TODO
-	return nil
+	var buf bytes.Buffer
+	buf.Write(rid.TransactionID[:])
+	buf.Write(util.Uint16To2Bytes(rid.TransactionOutputIndex))
+	return buf.Bytes()
 }
 
 func (rid RequestID) String() string {

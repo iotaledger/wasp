@@ -14,7 +14,7 @@ type NewRequestTransactionParams struct {
 	UnspentOutputs   []iotago.Output
 	UnspentOutputIDs []*iotago.UTXOInput
 	Requests         []*iscp.RequestParameters
-	DeSeriParams     *iotago.DeSerializationParameters
+	RentStructure    *iotago.RentStructure
 }
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
@@ -49,6 +49,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 				GasBudget:      req.Metadata.GasBudget,
 			},
 			req.Options,
+			par.RentStructure,
 		)
 		outputs = append(outputs, out)
 		sumIotasOut += out.Amount
@@ -61,7 +62,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			sumTokensOut[nt.ID] = s
 		}
 	}
-	inputs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.DeSeriParams)
+	inputs, remainder, err := computeInputsAndRemainder(senderAddress, sumIotasOut, sumTokensOut, par.UnspentOutputs, par.UnspentOutputIDs, par.RentStructure)
 	if err != nil {
 		return nil, err
 	}

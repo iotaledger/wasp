@@ -123,6 +123,14 @@ func NewRandomAgentID() *AgentID {
 	return NewAgentID(raddr.AsAddress(), Hn("testName"))
 }
 
+func KnownAgentID(b byte, h uint32) *AgentID {
+	var aliasID iotago.AliasID
+	for i := range aliasID {
+		aliasID[i] = b
+	}
+	return NewAgentID(aliasID.ToAddress(), Hname(h))
+}
+
 func (a *AgentID) Address() iotago.Address {
 	return a.a
 }

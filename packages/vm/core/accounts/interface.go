@@ -19,6 +19,15 @@ var (
 )
 
 const (
+	// prefix for a name of a particular account
+	prefixAccount = string(byte(iota) + 'A')
+	// map with all accounts listed
+	prefixAllAccounts
+	// map of account with all on-chain totals listed
+	prefixTotalAssetsAccount
+	// prefix for the nonce entry
+	prefixMaxAssumedNonceKey
+
 	ParamAgentID         = "a"
 	ParamWithdrawAssetID = "c"
 	ParamWithdrawAmount  = "m"

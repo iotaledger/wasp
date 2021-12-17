@@ -7,6 +7,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/gas"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -21,6 +23,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var (
+	ErrTargetContractNotFound = xerrors.New("target contract not found")
+)
+
 // RunTheRequest processes each iscp.RequestData in the batch
 func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16) error {
 	// prepare context for the request
@@ -29,9 +35,18 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 	vmctx.requestEventIndex = 0
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.callStack = vmctx.callStack[:0]
-	// we need empty state update for the optimistic reader not to panic
-	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
 
+	if !vmctx.anchorIDUpdated {
+		// in the beginning of each block we are saving anchor ID of the current state in the next block
+		if vmctx.task.AnchorOutput.StateIndex > 0 {
+			vmctx.currentStateUpdate = state.NewStateUpdate()
+			vmctx.updateLatestAnchorID()
+			vmctx.virtualState.ApplyStateUpdates()
+		}
+		vmctx.anchorIDUpdated = true
+	}
+
+	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
 	if err := vmctx.earlyCheckReasonToSkip(); err != nil {
 		return err
 	}
@@ -126,7 +141,7 @@ func (vmctx *VMContext) callTheContract() {
 	vmctx.lastError = nil
 	func() {
 		defer func() {
-			vmctx.lastError = checkVMPluginPanic()
+			vmctx.lastError = checkVMPluginPanic(recover())
 			if vmctx.lastError == nil {
 				return
 			}
@@ -146,8 +161,7 @@ func (vmctx *VMContext) callTheContract() {
 	vmctx.logRequestToBlockLog(vmctx.lastError)
 }
 
-func checkVMPluginPanic() error {
-	r := recover()
+func checkVMPluginPanic(r interface{}) error {
 	if r == nil {
 		return nil
 	}
@@ -178,8 +192,8 @@ func (vmctx *VMContext) callFromRequest() {
 	entryPoint := vmctx.req.CallTarget().EntryPoint
 	targetContract := vmctx.targetContract()
 	if targetContract == nil {
-		// TODO must charge minimum gas here
-		panic("target contract Not Found")
+		vmctx.GasBurn(gas.NotFoundTarget)
+		panic(xerrors.Errorf("%w: target contract: '%s'", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract.String()))
 	}
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
 		targetContract.Hname(),
@@ -232,7 +246,7 @@ func (vmctx *VMContext) chargeGasFee() {
 	sender := vmctx.req.SenderAccount()
 
 	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.chainOwnerID, transferToOwner)
+	vmctx.mustMoveBetweenAccounts(sender, commonaccount.Get(vmctx.ChainID()), transferToOwner)
 }
 
 // calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget
@@ -246,7 +260,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	tokensAvailable := uint64(0)
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		// to pay for gas chain is configured to use some native token, not IOTA
-		tokensAvailableBig := vmctx.GetTokenBalance(vmctx.req.SenderAccount(), vmctx.chainInfo.GasFeePolicy.GasFeeTokenID)
+		tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), vmctx.chainInfo.GasFeePolicy.GasFeeTokenID)
 		if tokensAvailableBig != nil {
 			// safely subtract the transfer from the sender to the target
 			if transfer := vmctx.req.Transfer(); transfer != nil {

@@ -1,11 +1,12 @@
 package sbtests
 
 import (
+	"testing"
+	"time"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -70,10 +71,10 @@ func testConcurrency(t *testing.T, w bool) {
 	if w {
 		extraIota = 1
 	}
-	chain.AssertIotas(chain.OriginatorAgentID, 0)
+	chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(extraIota + 2)
 	agentID := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
-	chain.AssertIotas(agentID, uint64(sum)+1)
+	chain.AssertL2AccountIotas(agentID, uint64(sum)+1)
 }
 
 func TestConcurrency2(t *testing.T) { run2(t, testConcurrency2) }
@@ -115,15 +116,15 @@ func testConcurrency2(t *testing.T, w bool) {
 	require.EqualValues(t, sum, res)
 
 	for i := range users {
-		chain.AssertIotas(iscp.NewAgentID(userAddr[i], 0), 0)
+		chain.AssertL2AccountIotas(iscp.NewAgentID(userAddr[i], 0), 0)
 		chain.Env.AssertAddressIotas(userAddr[i], solo.Saldo-uint64(repeats[i]))
 	}
 	extraIota := uint64(0)
 	if w {
 		extraIota = 1
 	}
-	chain.AssertIotas(chain.OriginatorAgentID, 0)
+	chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(extraIota + 2)
 	agentID := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
-	chain.AssertIotas(agentID, uint64(sum)+1)
+	chain.AssertL2AccountIotas(agentID, uint64(sum)+1)
 }

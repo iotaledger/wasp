@@ -25,6 +25,7 @@ type VMTask struct {
 	Processors               *processors.Cache
 	AnchorOutput             *iotago.AliasOutput
 	AnchorOutputID           iotago.UTXOInput
+	RentStructure            *iotago.RentStructure
 	VirtualStateAccess       state.VirtualStateAccess
 	SolidStateBaseline       coreutil.StateBaseline
 	Requests                 []iscp.RequestData

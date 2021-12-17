@@ -165,7 +165,6 @@ func (m *ImmutableMap) Len() (uint32, error) {
 }
 
 // Erase the map.
-// TODO: Improve by using DelPrefix method in KVStore.
 func (m *Map) Erase() {
 	m.MustIterateKeys(func(elemKey []byte) bool {
 		m.MustDelAt(elemKey)
@@ -178,7 +177,6 @@ func (m *ImmutableMap) Iterate(f func(elemKey []byte, value []byte) bool) error 
 	prefix := m.getElemKey(nil)
 	return m.kvr.Iterate(prefix, func(key kv.Key, value []byte) bool {
 		return f([]byte(key)[len(prefix):], value)
-		// return f([]byte(key), value)
 	})
 }
 

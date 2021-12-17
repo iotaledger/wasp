@@ -16,6 +16,7 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) bool {
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,
+		vmctx.task.RentStructure,
 	)
 	// debit the assets from the on-chain account
 	// It panics with accounts.ErrNotEnoughFunds if sender's account balances are exceeded

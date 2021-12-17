@@ -3,6 +3,7 @@ package vmcontext
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/gas"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"golang.org/x/xerrors"
@@ -10,7 +11,7 @@ import (
 
 var (
 	ErrContractNotFound          = xerrors.New("contract not found")
-	ErrEntryPointNotFound        = xerrors.New("entry point not found")
+	ErrTargetEntryPointNotFound  = xerrors.New("entry point not found")
 	ErrInitEntryPointCantBeAView = xerrors.New("'init' entry point can't be a view")
 	ErrCallInitNotFromRoot       = xerrors.New("attempt to call `init` not from the root contract")
 )
@@ -31,7 +32,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, ErrEntryPointNotFound
+		return nil, ErrTargetEntryPointNotFound
 	}
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
@@ -67,7 +68,9 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hna
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, ErrEntryPointNotFound
+		vmctx.GasBurn(gas.NotFoundTarget)
+		panic(xerrors.Errorf("%w: target contract: '%s', entry point: %s",
+			ErrTargetEntryPointNotFound, vmctx.req.CallTarget().Contract.String(), epCode.String()))
 	}
 	if ep.IsView() {
 		return nil, xerrors.New("non-view entry point expected")

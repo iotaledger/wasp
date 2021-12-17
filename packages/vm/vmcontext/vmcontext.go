@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -32,6 +31,7 @@ type VMContext struct {
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
 	blockOutputCount     uint8
+	anchorIDUpdated      bool
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
 	// ---- request context
 	chainInfo          *governance.ChainInfo
@@ -104,14 +104,16 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),
 	}
-	nativeTokenBalanceLoader := func(id iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
 		return ret.loadNativeTokensOnChain(id)
 	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
 		&task.AnchorOutputID,
 		nativeTokenBalanceLoader,
+		task.RentStructure,
 	)
+
 	return ret
 }
 
@@ -160,16 +162,18 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 	if err != nil {
 		panic(err)
 	}
+	dustAnchor, dustNativeToken := vmctx.txbuilder.DustDeposits()
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:            vmctx.virtualState.BlockIndex(),
-		Timestamp:             vmctx.virtualState.Timestamp(),
-		TotalRequests:         numRequests,
-		NumSuccessfulRequests: numSuccess,
-		NumOffLedgerRequests:  numOffLedger,
-		PreviousStateHash:     prevStateData.Commitment,
+		BlockIndex:               vmctx.virtualState.BlockIndex(),
+		Timestamp:                vmctx.virtualState.Timestamp(),
+		TotalRequests:            numRequests,
+		NumSuccessfulRequests:    numSuccess,
+		NumOffLedgerRequests:     numOffLedger,
+		PreviousStateHash:        prevStateData.Commitment,
+		AnchorTransactionID:      iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		DustDepositAnchor:        dustAnchor,
+		DustDepositNativeTokenID: dustNativeToken,
 	}
-
-	blocklog.SetAnchorTransactionIDOfLatestBlock(vmctx.State(), vmctx.task.AnchorOutputID.TransactionID)
 
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
 	if idx != blockInfo.BlockIndex {
@@ -202,10 +206,25 @@ func (vmctx *VMContext) closeBlockContexts() {
 }
 
 func (vmctx *VMContext) saveTokenIDInternalIndices() {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
+	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	tokenUtxoIndices := vmctx.txbuilder.SortedListOfTokenIDsForOutputs()
-	stateIndex := vmctx.task.AnchorOutput.StateIndex + 1 // UTXOs for the native tokens will be produced together with the next block (state update)
-	accounts.SetAssetsUtxoIndices(vmctx.State(), stateIndex, tokenUtxoIndices)
+	tokenIDsToBeUpdated, tokenIDsToBeRemoved := vmctx.txbuilder.TokenIDsToBeUpdated()
+
+	updateCmds := make([]*blocklog.NativeTokenUTXOUpdateCmd, 0, len(tokenIDsToBeUpdated)+len(tokenIDsToBeRemoved))
+	for i, id := range tokenIDsToBeUpdated {
+		updateCmds = append(updateCmds, &blocklog.NativeTokenUTXOUpdateCmd{
+			Add:         true,
+			ID:          id,
+			OutputIndex: uint16(i + 1),
+		})
+	}
+	for _, id := range tokenIDsToBeRemoved {
+		updateCmds = append(updateCmds, &blocklog.NativeTokenUTXOUpdateCmd{
+			Add: false,
+			ID:  id,
+		})
+
+	}
+	blocklog.UpdateNativeAssetsUTXOIndices(vmctx.State(), vmctx.task.AnchorOutput.StateIndex+1, updateCmds)
 }

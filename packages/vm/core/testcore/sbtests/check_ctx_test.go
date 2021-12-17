@@ -77,7 +77,7 @@ func testMintedSupplyOk(t *testing.T, w bool) {
 		extraIota = 1
 	}
 	chain.Env.AssertAddressIotas(userAddress, solo.Saldo-3-extraIota-newSupply)
-	chain.Env.AssertAddressBalance(userAddress, col, newSupply)
+	chain.Env.AssertAddressNativeTokenBalance(userAddress, col, newSupply)
 
 	colorBack, err := codec.DecodeColor(ret.MustGet(sbtestsc.VarMintedColor))
 	require.NoError(t, err)

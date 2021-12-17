@@ -41,11 +41,11 @@ func (a *SoloAgent) Balance(color ...wasmlib.ScColor) *big.Int {
 	panic("TODO implement")
 	// switch len(color) {
 	// case 0:
-	// 	return int64(a.Env.GetAddressBalance(a.address, colored.IOTA))
+	// 	return int64(a.Env.L1NativeTokenBalance(a.address, colored.IOTA))
 	// case 1:
 	// 	col, err := colored.ColorFromBytes(color[0].Bytes())
 	// 	require.NoError(a.Env.T, err)
-	// 	return int64(a.Env.GetAddressBalance(a.address, col))
+	// 	return int64(a.Env.L1NativeTokenBalance(a.address, col))
 	// default:
 	// 	require.Fail(a.Env.T, "too many color arguments")
 	// 	return 0
