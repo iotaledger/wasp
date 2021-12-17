@@ -33,7 +33,7 @@ func (txb *AnchorTransactionBuilder) sumNativeTokens(totals *TransactionTotals, 
 		s.Add(s, value)
 		totals.TokenBalances[id] = s
 		// sum up dust deposit in inputs of internal UTXOs
-		totals.TotalIotasInDustDeposit += txb.dustDepositOnInternalTokenAccountOutput
+		totals.TotalIotasInDustDeposit += txb.dustDepositOnInternalTokenOutput
 	}
 }
 
@@ -64,6 +64,11 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 			ret.TokenBalances[nt.ID] = s
 		}
 	}
+	for _, f := range txb.invokedFoundries {
+		if f.requiresInput() {
+			ret.TotalIotasInDustDeposit += f.in.Amount
+		}
+	}
 	return ret
 }
 
@@ -83,7 +88,11 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 		}
 		return nil
 	})
-
+	for _, f := range txb.invokedFoundries {
+		if f.producesOutput() {
+			ret.TotalIotasInDustDeposit += f.out.Amount
+		}
+	}
 	for _, o := range txb.postedOutputs {
 		assets := AssetsFromOutput(o)
 		ret.TotalIotasOnChain += assets.Iotas
