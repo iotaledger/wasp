@@ -1,7 +1,13 @@
 package testcore
 
 import (
+	"errors"
 	"testing"
+
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 
@@ -249,4 +255,52 @@ func TestOkCall(t *testing.T) {
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	env.WaitPublisher()
+}
+
+func TestRepeatInit(t *testing.T) {
+	t.Run("root", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+		req := solo.NewCallParams(root.Contract.Name, "init")
+		_, err := ch.PostRequestSync(req, nil)
+		require.Error(t, err)
+		errors.Is(err, vmcontext.ErrRepeatingInitCall)
+		ch.CheckAccountLedger()
+	})
+	t.Run("accounts", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+		req := solo.NewCallParams(accounts.Contract.Name, "init")
+		_, err := ch.PostRequestSync(req, nil)
+		require.Error(t, err)
+		errors.Is(err, vmcontext.ErrRepeatingInitCall)
+		ch.CheckAccountLedger()
+	})
+	t.Run("blocklog", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+		req := solo.NewCallParams(blocklog.Contract.Name, "init")
+		_, err := ch.PostRequestSync(req, nil)
+		require.Error(t, err)
+		errors.Is(err, vmcontext.ErrRepeatingInitCall)
+		ch.CheckAccountLedger()
+	})
+	t.Run("blob", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+		req := solo.NewCallParams(blob.Contract.Name, "init")
+		_, err := ch.PostRequestSync(req, nil)
+		require.Error(t, err)
+		errors.Is(err, vmcontext.ErrRepeatingInitCall)
+		ch.CheckAccountLedger()
+	})
+	t.Run("governance", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+		req := solo.NewCallParams(governance.Contract.Name, "init")
+		_, err := ch.PostRequestSync(req, nil)
+		require.Error(t, err)
+		errors.Is(err, vmcontext.ErrRepeatingInitCall)
+		ch.CheckAccountLedger()
+	})
 }

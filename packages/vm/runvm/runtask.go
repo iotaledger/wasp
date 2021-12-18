@@ -41,7 +41,7 @@ func runTask(task *vm.VMTask) {
 	// main loop over the batch of requests
 	for _, req := range task.Requests {
 		if skipReason := vmctx.RunTheRequest(req, uint16(reqIndexInTheBlock)); skipReason != nil {
-			// some request are just ignored (deterministically)
+			// some requests are just ignored (deterministically)
 			task.Log.Warnf("request skipped (ignored) by the VM: %s, reason: %v",
 				req.ID().String(), skipReason)
 			continue
@@ -65,6 +65,11 @@ func runTask(task *vm.VMTask) {
 
 	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		task.ProcessedRequestsCount, numSuccess, numOffLedger)
+
+	if task.ProcessedRequestsCount == 0 {
+		// empty result. Abandon without closing
+		task.OnFinish(nil, nil, nil)
+	}
 
 	blockIndex, stateCommitment, timestamp, rotationAddr := vmctx.CloseVMContext(
 		task.ProcessedRequestsCount, numSuccess, numOffLedger)

@@ -7,6 +7,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv/dict"
+
 	"github.com/iotaledger/wasp/packages/iscp/gas"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -21,10 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
-)
-
-var (
-	ErrTargetContractNotFound = xerrors.New("target contract not found")
 )
 
 // RunTheRequest processes each iscp.RequestData in the batch
@@ -141,15 +139,16 @@ func (vmctx *VMContext) callTheContract() {
 	vmctx.lastError = nil
 	func() {
 		defer func() {
-			vmctx.lastError = checkVMPluginPanic(recover())
-			if vmctx.lastError == nil {
+			panicErr := checkVMPluginPanic(recover())
+			if panicErr == nil {
 				return
 			}
+			vmctx.lastError = panicErr
 			vmctx.lastResult = nil
 			vmctx.Debugf("%v", vmctx.lastError)
 			vmctx.Debugf(string(debug.Stack()))
 		}()
-		vmctx.callFromRequest()
+		vmctx.lastResult, vmctx.lastError = vmctx.callFromRequest()
 	}()
 	if vmctx.lastError != nil {
 		// panic happened during VM plugin call
@@ -185,7 +184,7 @@ func checkVMPluginPanic(r interface{}) error {
 }
 
 // callFromRequest is the call itself. Assumes sc exists
-func (vmctx *VMContext) callFromRequest() {
+func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 	vmctx.Debugf("callFromRequest: %s", vmctx.req.ID().String())
 
 	// calling only non view entry points. Calling the view will trigger error and fallback
@@ -195,7 +194,7 @@ func (vmctx *VMContext) callFromRequest() {
 		vmctx.GasBurn(gas.NotFoundTarget)
 		panic(xerrors.Errorf("%w: target contract: '%s'", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract.String()))
 	}
-	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
+	return vmctx.callNonViewByProgramHash(
 		targetContract.Hname(),
 		entryPoint,
 		vmctx.req.Params(),

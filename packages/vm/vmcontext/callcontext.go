@@ -7,7 +7,7 @@ import (
 )
 
 // pushCallContextAndMoveAssets moves funds from the caller to the target before pushing new context to the stack
-func (vmctx *VMContext) pushCallContextAndMoveAssets(contract iscp.Hname, params dict.Dict, transfer *iscp.Assets) error {
+func (vmctx *VMContext) pushCallContextAndMoveAssets(contract iscp.Hname, params dict.Dict, transfer *iscp.Assets) {
 	if transfer != nil && commonaccount.IsCoreHname(contract) {
 		// if target contract is one of core contracts, transfer is ignored
 		transfer = nil
@@ -24,7 +24,6 @@ func (vmctx *VMContext) pushCallContextAndMoveAssets(contract iscp.Hname, params
 		vmctx.mustMoveBetweenAccounts(sourceAccount, targetAccount, transfer)
 	}
 	vmctx.pushCallContext(contract, params, transfer)
-	return nil
 }
 
 const traceStack = false

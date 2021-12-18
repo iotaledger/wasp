@@ -1,8 +1,11 @@
 package accounts
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/big"
+
+	"github.com/iotaledger/hive.go/serializer/v2"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 
@@ -16,8 +19,10 @@ import (
 )
 
 var (
-	ErrNotEnoughFunds = xerrors.New("not enough funds")
-	ErrBadAmount      = xerrors.New("bad native asset amount")
+	ErrNotEnoughFunds               = xerrors.New("not enough funds")
+	ErrBadAmount                    = xerrors.New("bad native asset amount")
+	ErrRepeatingFoundrySerialNumber = xerrors.New("repeating serial number of the foundry")
+	ErrFoundryNotFound              = xerrors.New("foundry not found")
 )
 
 // getAccount each account is a map with the name of its controlling agentID.
@@ -51,6 +56,14 @@ func getAccountsMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 
 func nonceKey(addr iotago.Address) kv.Key {
 	return kv.Key(kv.Concat(prefixMaxAssumedNonceKey, iscp.BytesFromAddress(addr)))
+}
+
+func getAccountFoundries(state kv.KVStore, agentID *iscp.AgentID) *collections.Map {
+	return collections.NewMap(state, string(kv.Concat(prefixAccountFoundries, agentID.Bytes())))
+}
+
+func getAccountFoundriesR(state kv.KVStoreReader, agentID *iscp.AgentID) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, string(kv.Concat(prefixAccountFoundries, agentID.Bytes())))
 }
 
 // GetMaxAssumedNonce is maintained for each L1 address with the purpose of replay protection of off-ledger requests
@@ -346,6 +359,48 @@ func checkLedger(state kv.KVStore, checkpoint string) {
 
 func getAccountBalanceDict(account *collections.ImmutableMap) dict.Dict {
 	return getAccountAssets(account).ToDict()
+}
+
+// foundries
+
+// AddFoundry ads new foundry to the foundries controlled by the account
+func AddFoundry(state kv.KVStore, agentID *iscp.AgentID, serNum uint32) {
+	addFoundry(getAccountFoundries(state, agentID), serNum)
+}
+
+func addFoundry(account *collections.Map, serNum uint32) {
+	key := util.Uint32To4Bytes(serNum)
+	if account.MustHasAt(key) {
+		panic(ErrRepeatingFoundrySerialNumber)
+	}
+	account.MustSetAt(key, []byte{0xFF})
+}
+
+func DeleteFoundry(state kv.KVStore, agentID *iscp.AgentID, serNum uint32) {
+	deleteFoundry(getAccountFoundries(state, agentID), serNum)
+}
+
+func deleteFoundry(account *collections.Map, serNum uint32) {
+	key := util.Uint32To4Bytes(serNum)
+	if !account.MustHasAt(key) {
+		panic(ErrFoundryNotFound)
+	}
+	account.MustDelAt(key)
+}
+
+func MoveFoundry(state kv.KVStore, agentIDFrom, agentIDTo *iscp.AgentID, serNum uint32) {
+	deleteFoundry(getAccountFoundries(state, agentIDFrom), serNum)
+	addFoundry(getAccountFoundries(state, agentIDTo), serNum)
+}
+
+func HasFoundry(state kv.KVStoreReader, agentID *iscp.AgentID, serNum uint32) bool {
+	key := util.Uint32To4Bytes(serNum)
+	return getAccountFoundriesR(state, agentID).MustHasAt(key)
+}
+
+func SerialNumFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {
+	slice := tokenID[iotago.AliasAddressSerializedBytesSize : iotago.AliasAddressSerializedBytesSize+serializer.UInt32ByteSize]
+	return binary.LittleEndian.Uint32(slice)
 }
 
 // DecodeBalances TODO move to iscp package

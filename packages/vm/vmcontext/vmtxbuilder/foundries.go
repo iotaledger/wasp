@@ -1,11 +1,11 @@
 package vmtxbuilder
 
 import (
-	"encoding/binary"
 	"math/big"
 	"sort"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/util"
@@ -44,14 +44,9 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	return f.SerialNumber
 }
 
-func serNumFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {
-	slice := tokenID[iotago.AliasAddressSerializedBytesSize : iotago.AliasAddressSerializedBytesSize+serializer.UInt32ByteSize]
-	return binary.LittleEndian.Uint32(slice)
-}
-
 // ModifyNativeTokenSupply inflates the supply is delta > 0, shrinks if delta < 0
 func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) {
-	serNum := serNumFromNativeTokenID(tokenID)
+	serNum := accounts.SerialNumFromNativeTokenID(tokenID)
 	nt, ok := txb.invokedFoundries[serNum]
 	if !ok {
 		// load foundry output from the state

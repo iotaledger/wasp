@@ -155,3 +155,23 @@ func (s *sandbox) Burn(gas uint64) {
 func (s *sandbox) Budget() uint64 {
 	return s.vmctx.GasBudgetLeft()
 }
+
+func (s *sandbox) Foundries() iscp.Foundries {
+	return s
+}
+
+func (s *sandbox) CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) iotago.NativeTokenID {
+	return s.vmctx.CreateNewFoundry(scheme, tag, maxSupply)
+}
+
+func (s *sandbox) Destroy(id iotago.NativeTokenID) {
+	s.vmctx.DestroyFoundry(id)
+}
+
+func (s *sandbox) Supply(id iotago.NativeTokenID) (*big.Int, *big.Int) {
+	return s.vmctx.Supply(id)
+}
+
+func (s *sandbox) ModifySupply(id iotago.NativeTokenID, delta *big.Int) {
+	s.vmctx.ModifySupply(id, delta)
+}

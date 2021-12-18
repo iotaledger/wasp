@@ -20,6 +20,8 @@ var (
 const (
 	// prefix for a name of a particular account
 	prefixAccount = string(byte(iota) + 'A')
+	// prefix for all foundries owned by the account
+	prefixAccountFoundries
 	// map with all accounts listed
 	prefixAllAccounts
 	// map of account with all on-chain totals listed

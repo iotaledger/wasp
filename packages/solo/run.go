@@ -58,6 +58,10 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.RequestData, trace string) (dict.
 
 	ch.Env.vmRunner.Run(task)
 
+	if task.ProcessedRequestsCount == 0 {
+		// TODO gracefully process empty blocks in Solo
+		ch.Log.Panicf("EMPTY BLOCKS not supported by Solo")
+	}
 	var essence *iotago.TransactionEssence
 
 	if task.RotationAddress == nil {

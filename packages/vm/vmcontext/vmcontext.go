@@ -116,7 +116,6 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		foundryLoader,
 		task.RentStructure,
 	)
-
 	return ret
 }
 
