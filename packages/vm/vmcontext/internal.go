@@ -14,10 +14,9 @@ import (
 )
 
 func (vmctx *VMContext) updateLatestAnchorID() {
-	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	blocklog.SetAnchorTransactionIDOfLatestBlock(vmctx.State(), vmctx.task.AnchorOutputID.TransactionID)
+	vmctx.callCore(blocklog.Contract, func() {
+		blocklog.SetAnchorTransactionIDOfLatestBlock(vmctx.State(), vmctx.task.AnchorOutputID.TransactionID)
+	})
 }
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
@@ -26,81 +25,85 @@ func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, assets *iscp.Asse
 	if len(vmctx.callStack) > 0 {
 		panic("creditToAccount must be called only from request")
 	}
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
-	defer vmctx.popCallContext()
-
-	accounts.CreditToAccount(vmctx.State(), agentID, assets)
+	vmctx.callCore(accounts.Contract, func() {
+		accounts.CreditToAccount(vmctx.State(), agentID, assets)
+	})
 }
 
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
 func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *iscp.Assets) {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	accounts.DebitFromAccount(vmctx.State(), agentID, transfer)
+	vmctx.callCore(accounts.Contract, func() {
+		accounts.DebitFromAccount(vmctx.State(), agentID, transfer)
+	})
 }
 
 func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer *iscp.Assets) {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
-	defer vmctx.popCallContext()
-
-	accounts.MustMoveBetweenAccounts(vmctx.State(), fromAgentID, toAgentID, transfer)
+	vmctx.callCore(accounts.Contract, func() {
+		accounts.MustMoveBetweenAccounts(vmctx.State(), fromAgentID, toAgentID, transfer)
+	})
 }
 
 func (vmctx *VMContext) totalAssets() *iscp.Assets {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	return accounts.GetTotalAssets(vmctx.State())
+	var ret *iscp.Assets
+	vmctx.callCore(accounts.Contract, func() {
+		ret = accounts.GetTotalAssets(vmctx.State())
+	})
+	return ret
 }
 
 func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) *root.ContractRecord {
-	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
 	if contractHname == root.Contract.Hname() && vmctx.isInitChainRequest() {
 		return root.NewContractRecord(root.Contract, &iscp.NilAgentID)
 	}
-	return root.FindContract(vmctx.State(), contractHname)
+
+	var ret *root.ContractRecord
+	vmctx.callCore(root.Contract, func() {
+		ret = root.FindContract(vmctx.State(), contractHname)
+	})
+	return ret
 }
 
 func (vmctx *VMContext) getChainInfo() *governance.ChainInfo {
-	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	return governance.MustGetChainInfo(vmctx.State())
+	var ret *governance.ChainInfo
+	vmctx.callCore(governance.Contract, func() {
+		ret = governance.MustGetChainInfo(vmctx.State())
+	})
+	return ret
 }
 
 func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	return accounts.GetIotaBalance(vmctx.State(), agentID)
+	var ret uint64
+	vmctx.callCore(accounts.Contract, func() {
+		ret = accounts.GetIotaBalance(vmctx.State(), agentID)
+	})
+	return ret
 }
 
 func (vmctx *VMContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	return accounts.GetNativeTokenBalance(vmctx.State(), agentID, tokenID)
+	var ret *big.Int
+	vmctx.callCore(accounts.Contract, func() {
+		ret = accounts.GetNativeTokenBalance(vmctx.State(), agentID, tokenID)
+	})
+	return ret
 }
 
 func (vmctx *VMContext) GetNativeTokenBalanceTotal(tokenID *iotago.NativeTokenID) *big.Int {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	return accounts.GetNativeTokenBalanceTotal(vmctx.State(), tokenID)
+	var ret *big.Int
+	vmctx.callCore(accounts.Contract, func() {
+		ret = accounts.GetNativeTokenBalanceTotal(vmctx.State(), tokenID)
+	})
+	return ret
 }
 
 func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	ret := accounts.GetAssets(vmctx.State(), agentID)
-	if ret == nil {
-		ret = &iscp.Assets{}
-	}
+	var ret *iscp.Assets
+	vmctx.callCore(accounts.Contract, func() {
+		ret = accounts.GetAssets(vmctx.State(), agentID)
+		if ret == nil {
+			ret = &iscp.Assets{}
+		}
+	})
 	return ret
 }
 

@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
@@ -63,4 +64,11 @@ func (vmctx *VMContext) getCallContext() *callContext {
 		panic("getCallContext: stack is empty")
 	}
 	return vmctx.callStack[len(vmctx.callStack)-1]
+}
+
+func (vmctx *VMContext) callCore(c *coreutil.ContractInfo, f func()) {
+	vmctx.pushCallContext(c.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	f()
 }
