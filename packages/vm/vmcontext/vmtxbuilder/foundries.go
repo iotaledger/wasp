@@ -107,6 +107,27 @@ func (txb *AnchorTransactionBuilder) foundriesSorted() []*foundryInvoked {
 	return ret
 }
 
+func (txb *AnchorTransactionBuilder) FoundriesToBeUpdated() ([]uint32, []uint32) {
+	toBeUpdated := make([]uint32, 0, len(txb.invokedFoundries))
+	toBeRemoved := make([]uint32, 0, len(txb.invokedFoundries))
+	for _, f := range txb.foundriesSorted() {
+		if f.producesOutput() {
+			toBeUpdated = append(toBeUpdated, f.serialNumber)
+		} else if f.requiresInput() {
+			toBeRemoved = append(toBeRemoved, f.serialNumber)
+		}
+	}
+	return toBeUpdated, toBeRemoved
+}
+
+func (txb *AnchorTransactionBuilder) FoundryOutputsBySerNums(serNums []uint32) map[uint32]*iotago.FoundryOutput {
+	ret := make(map[uint32]*iotago.FoundryOutput)
+	for _, sn := range serNums {
+		ret[sn] = txb.invokedFoundries[sn].out
+	}
+	return ret
+}
+
 func (f *foundryInvoked) clone() *foundryInvoked {
 	return &foundryInvoked{
 		in:  cloneFoundry(f.in),

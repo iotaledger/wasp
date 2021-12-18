@@ -29,8 +29,8 @@ const (
 	prefixRequestReceipts
 	prefixRequestEvents
 	prefixSmartContractEventsLookup
-	prefixNativeTokenOutputLookupMap
-	prefixFoundries
+	prefixNativeTokenOutputMap
+	prefixFoundryOutputRecords
 )
 
 var (
@@ -403,15 +403,17 @@ func (ca *ControlAddresses) String() string {
 
 // endregion /////////////////////////////////////////////////////////////
 
-// region foundryRec //////////////////////////////////////////////////////
+// region outputRec //////////////////////////////////////////////////////
 
-type foundryRec struct {
-	Output      *iotago.FoundryOutput
+// outputRec the record stored entire internal output with the info how to restore its UTXOInput
+// This record is used to store internal ExtendedOutput with native tokens and Foundries
+type outputRec struct {
+	Output      iotago.Output
 	BlockIndex  uint32
 	OutputIndex uint16
 }
 
-func (f *foundryRec) Bytes() []byte {
+func (f *outputRec) Bytes() []byte {
 	data, err := f.Output.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		panic(err)
@@ -419,30 +421,39 @@ func (f *foundryRec) Bytes() []byte {
 	return marshalutil.New().
 		WriteUint32(f.BlockIndex).
 		WriteUint16(f.OutputIndex).
+		WriteByte(byte(f.Output.Type())).
 		WriteUint16(uint16(len(data))).
 		WriteBytes(data).
 		Bytes()
 }
 
-func FoundryFromBytes(data []byte) (*foundryRec, error) {
-	return FoundryFromMarshalUtil(marshalutil.New(data))
+func outputRecFromBytes(data []byte) (*outputRec, error) {
+	return outputRecFromMarshalUtil(marshalutil.New(data))
 }
 
-func MustFoundryFromBytes(data []byte) *foundryRec {
-	ret, err := FoundryFromBytes(data)
+func mustOutputRecFromBytes(data []byte) *outputRec {
+	ret, err := outputRecFromBytes(data)
 	if err != nil {
 		panic(err)
 	}
 	return ret
 }
 
-func FoundryFromMarshalUtil(mu *marshalutil.MarshalUtil) (*foundryRec, error) {
-	ret := &foundryRec{}
+func outputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*outputRec, error) {
+	ret := &outputRec{}
 	var err error
 	if ret.BlockIndex, err = mu.ReadUint32(); err != nil {
 		return nil, err
 	}
 	if ret.OutputIndex, err = mu.ReadUint16(); err != nil {
+		return nil, err
+	}
+	t, err := mu.ReadByte()
+	if err != nil {
+		return nil, err
+	}
+	ret.Output, err = iotago.OutputSelector(uint32(t))
+	if err != nil {
 		return nil, err
 	}
 	var size uint16
@@ -453,7 +464,6 @@ func FoundryFromMarshalUtil(mu *marshalutil.MarshalUtil) (*foundryRec, error) {
 	if data, err = mu.ReadBytes(int(size)); err != nil {
 		return nil, err
 	}
-	ret.Output = &iotago.FoundryOutput{}
 	if _, err = ret.Output.Deserialize(data, serializer.DeSeriModeNoValidation, nil); err != nil {
 		return nil, err
 	}

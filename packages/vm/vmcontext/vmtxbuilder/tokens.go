@@ -1,7 +1,9 @@
 package vmtxbuilder
 
 import (
+	"bytes"
 	"math/big"
+	"sort"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util"
@@ -103,4 +105,39 @@ func newInternalTokenOutput(aliasID iotago.AliasID, nativeTokenID iotago.NativeT
 			},
 		},
 	}
+}
+
+func (txb *AnchorTransactionBuilder) nativeTokenOutputsSorted() []*nativeTokenBalance {
+	ret := make([]*nativeTokenBalance, 0, len(txb.balanceNativeTokens))
+	for _, f := range txb.balanceNativeTokens {
+		if !f.requiresInput() && !f.producesOutput() {
+			continue
+		}
+		ret = append(ret, f)
+	}
+	sort.Slice(ret, func(i, j int) bool {
+		return bytes.Compare(ret[i].tokenID[:], ret[j].tokenID[:]) < 0
+	})
+	return ret
+}
+
+func (txb *AnchorTransactionBuilder) NativeTokenRecordsToBeUpdated() ([]iotago.NativeTokenID, []iotago.NativeTokenID) {
+	toBeUpdated := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
+	toBeRemoved := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
+	for _, nt := range txb.nativeTokenOutputsSorted() {
+		if nt.producesOutput() {
+			toBeUpdated = append(toBeUpdated, nt.tokenID)
+		} else if nt.requiresInput() {
+			toBeRemoved = append(toBeRemoved, nt.tokenID)
+		}
+	}
+	return toBeUpdated, toBeRemoved
+}
+
+func (txb *AnchorTransactionBuilder) NativeTokenOutputsByTokenIDs(ids []iotago.NativeTokenID) map[iotago.NativeTokenID]*iotago.ExtendedOutput {
+	ret := make(map[iotago.NativeTokenID]*iotago.ExtendedOutput)
+	for _, id := range ids {
+		ret[id] = txb.balanceNativeTokens[id].out
+	}
+	return ret
 }

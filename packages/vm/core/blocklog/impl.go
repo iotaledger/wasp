@@ -240,7 +240,7 @@ func viewGetEventsForContract(ctx iscp.SandboxView) (dict.Dict, error) {
 }
 
 func viewGetNativeTokenIDs(ctx iscp.SandboxView) (dict.Dict, error) {
-	mapping := getNativeTokensUTXOLookupMapR(ctx.State())
+	mapping := getNativeTokenOutputMapR(ctx.State())
 	ret := dict.New()
 	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
 		ret.Set(kv.Key(elemKey), []byte{0xFF})

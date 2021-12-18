@@ -1,11 +1,9 @@
 package vmtxbuilder
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 	"math/big"
-	"sort"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
@@ -186,30 +184,25 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
 }
 
 // inputs generate a deterministic list of inputs for the transaction essence
-// The explicitly consumed inputs hold fixed indices.
-// The consumed UTXO of internal accounts are sorted by tokenID for determinism
-// Consumed only internal UTXOs with changed token balances. The rest is left untouched
+// - index 0 is always alias output
+// - then goes consumed external ExtendedOutput UTXOs, the requests, in the order of processing
+// - then goes inputs of native token UTXOs, sorted by token id
+// - then goes inputs of foundries sorted by serial number
 func (txb *AnchorTransactionBuilder) inputs() iotago.Inputs {
-	ret := make(iotago.Inputs, 0, len(txb.consumed)+len(txb.balanceNativeTokens))
+	ret := make(iotago.Inputs, 0, len(txb.consumed)+len(txb.balanceNativeTokens)+len(txb.invokedFoundries))
+	// alias output
 	ret = append(ret, txb.anchorOutputID)
+	// consumed on-ledger requests
 	for i := range txb.consumed {
 		ret = append(ret, txb.consumed[i].ID().OutputID())
 	}
-	// sort to avoid non-determinism of the map iteration
-	tokenIDs := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
-	for id := range txb.balanceNativeTokens {
-		tokenIDs = append(tokenIDs, id)
-	}
-	sort.Slice(tokenIDs, func(i, j int) bool {
-		return bytes.Compare(tokenIDs[i][:], tokenIDs[j][:]) < 0
-	})
-	for _, id := range tokenIDs {
-		nt := txb.balanceNativeTokens[id]
-		if !nt.requiresInput() {
-			continue
+	// internal native token outputs
+	for _, nt := range txb.nativeTokenOutputsSorted() {
+		if nt.requiresInput() {
+			ret = append(ret, &nt.input)
 		}
-		ret = append(ret, &nt.input)
 	}
+	// foundries
 	for _, f := range txb.foundriesSorted() {
 		if f.requiresInput() {
 			ret = append(ret, &f.input)
@@ -219,51 +212,6 @@ func (txb *AnchorTransactionBuilder) inputs() iotago.Inputs {
 		panic("AnchorTransactionBuilder.inputs: internal inconsistency")
 	}
 	return ret
-}
-
-// TokenIDsToBeUpdated is needed in order to know the exact index in the transaction of each
-// internal output for each token ID before it is stored into the state and state commitment is calculated
-// In the `blocklog` contract each internal account is tracked by:
-// - knowing anchor transactionID for each block index
-// - knowing block number of the anchor transaction where the last UTXO was produced for the tokenID
-// - knowing the index of the output in the anchor transaction (in `accounts`). This is calculated from TokenIDsToBeUpdated()
-// In addition function returns token IDs which has to be removed from the list
-func (txb *AnchorTransactionBuilder) TokenIDsToBeUpdated() ([]iotago.NativeTokenID, []iotago.NativeTokenID) {
-	toBeUpdated := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
-	toBeRemoved := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
-	for id, nt := range txb.balanceNativeTokens {
-		if nt.producesOutput() {
-			toBeUpdated = append(toBeUpdated, id)
-		} else {
-			if nt.requiresInput() {
-				toBeRemoved = append(toBeRemoved, id)
-			}
-		}
-	}
-	// sorting those with outputs
-	sort.Slice(toBeUpdated, func(i, j int) bool {
-		return bytes.Compare(toBeUpdated[i][:], toBeUpdated[j][:]) < 0
-	})
-	return toBeUpdated, toBeRemoved
-}
-
-func (txb *AnchorTransactionBuilder) FoundriesToBeUpdated() ([]uint32, []uint32) {
-	toBeUpdated := make([]uint32, 0, len(txb.invokedFoundries))
-	toBeRemoved := make([]uint32, 0, len(txb.invokedFoundries))
-	for serNum, f := range txb.invokedFoundries {
-		if f.producesOutput() {
-			toBeUpdated = append(toBeUpdated, serNum)
-		} else {
-			if f.requiresInput() {
-				toBeRemoved = append(toBeRemoved, serNum)
-			}
-		}
-	}
-	// sorting by foundry ser num
-	sort.Slice(toBeUpdated, func(i, j int) bool {
-		return toBeUpdated[i] < toBeUpdated[j]
-	})
-	return toBeUpdated, toBeRemoved
 }
 
 // outputs generates outputs for the transaction essence
@@ -293,16 +241,15 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 	ret = append(ret, anchorOutput)
 
 	// creating outputs for updated internal accounts
-	tokenIdsToBeUpdated, _ := txb.TokenIDsToBeUpdated()
-
-	for _, id := range tokenIdsToBeUpdated {
+	nativeTokensToBeUpdated, _ := txb.NativeTokenRecordsToBeUpdated()
+	for _, id := range nativeTokensToBeUpdated {
 		// create one output for each token ID of internal account
 		ret = append(ret, txb.balanceNativeTokens[id].out)
 	}
-	for _, f := range txb.foundriesSorted() {
-		if f.producesOutput() {
-			ret = append(ret, f.out)
-		}
+	// creating outputs for updated foundries
+	foundriesToBeUpdated, _ := txb.FoundriesToBeUpdated()
+	for _, serNum := range foundriesToBeUpdated {
+		ret = append(ret, txb.invokedFoundries[serNum].out)
 	}
 	// creating outputs for posted on-ledger requests
 	ret = append(ret, txb.postedOutputs...)

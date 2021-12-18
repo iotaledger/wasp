@@ -1,7 +1,6 @@
 package vmcontext
 
 import (
-	"math/big"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -104,8 +103,8 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),
 	}
-	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
-		return ret.loadNativeTokensOnChain(id)
+	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
+		return ret.loadNativeTokenOutput(id)
 	}
 	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
 		return ret.loadFoundry(serNum)
@@ -131,7 +130,7 @@ func (vmctx *VMContext) GetResult() (dict.Dict, error) {
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, iotago.Address) {
 	rotationAddr := vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
-	vmctx.saveTokenIDInternalIndices()
+	vmctx.saveInternalUTXOs()
 
 	blockIndex := vmctx.virtualState.BlockIndex()
 	stateCommitment := vmctx.virtualState.StateCommitment()
@@ -209,26 +208,34 @@ func (vmctx *VMContext) closeBlockContexts() {
 	vmctx.currentStateUpdate = nil
 }
 
-func (vmctx *VMContext) saveTokenIDInternalIndices() {
+func (vmctx *VMContext) saveInternalUTXOs() {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	tokenIDsToBeUpdated, tokenIDsToBeRemoved := vmctx.txbuilder.TokenIDsToBeUpdated()
+	nativeTokenIDs, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
+	nativeTokensOutputsToBeUpdated := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDs)
 
-	updateCmds := make([]*blocklog.NativeTokenUTXOUpdateCmd, 0, len(tokenIDsToBeUpdated)+len(tokenIDsToBeRemoved))
-	for i, id := range tokenIDsToBeUpdated {
-		updateCmds = append(updateCmds, &blocklog.NativeTokenUTXOUpdateCmd{
-			Add:         true,
-			ID:          id,
-			OutputIndex: uint16(i + 1),
-		})
-	}
-	for _, id := range tokenIDsToBeRemoved {
-		updateCmds = append(updateCmds, &blocklog.NativeTokenUTXOUpdateCmd{
-			Add: false,
-			ID:  id,
-		})
+	foundryIDs, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
+	foundrySNToBeUpdated := vmctx.txbuilder.FoundryOutputsBySerNums(foundryIDs)
 
+	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
+	outputIndex := uint16(1)
+	stat := vmctx.State()
+
+	// update native token outputs
+	for _, out := range nativeTokensOutputsToBeUpdated {
+		blocklog.SaveNativeTokenOutput(stat, out, blockIndex, outputIndex)
+		outputIndex++
 	}
-	blocklog.UpdateNativeAssetsUTXOIndices(vmctx.State(), vmctx.task.AnchorOutput.StateIndex+1, updateCmds)
+	for _, id := range nativeTokensToBeRemoved {
+		blocklog.DeleteNativeTokenOutput(stat, &id)
+	}
+	// update foundry UTXOs
+	for _, out := range foundrySNToBeUpdated {
+		blocklog.SaveFoundryOutput(stat, out, blockIndex, outputIndex)
+		outputIndex++
+	}
+	for _, sn := range foundriesToBeRemoved {
+		blocklog.DeleteFoundryOutput(stat, sn)
+	}
 }
