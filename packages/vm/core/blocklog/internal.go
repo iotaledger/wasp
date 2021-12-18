@@ -19,7 +19,7 @@ import (
 
 // SaveNextBlockInfo appends block info and returns its index
 func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
-	registry := collections.NewArray32(partition, KeyPrefixBlockRegistry)
+	registry := collections.NewArray32(partition, prefixBlockRegistry)
 	registry.MustPush(blockInfo.Bytes())
 	ret := registry.MustLen() - 1
 	return ret
@@ -27,7 +27,7 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 
 // SetAnchorTransactionIDOfLatestBlock is called before producing the next block to save anchor tx id of the previous one
 func SetAnchorTransactionIDOfLatestBlock(partition kv.KVStore, transactionId iotago.TransactionID) {
-	registry := collections.NewArray32(partition, KeyPrefixBlockRegistry)
+	registry := collections.NewArray32(partition, prefixBlockRegistry)
 	lastBlockIndex := registry.MustLen() - 1
 	blockInfoBuffer := registry.MustGetAt(lastBlockIndex)
 	blockInfo, _ := BlockInfoFromBytes(lastBlockIndex, blockInfoBuffer)
@@ -38,7 +38,7 @@ func SetAnchorTransactionIDOfLatestBlock(partition kv.KVStore, transactionId iot
 }
 
 func GetAnchorTransactionIDByBlockIndex(partition kv.KVStore, blockIndex uint32) iotago.TransactionID {
-	registry := collections.NewArray32(partition, KeyPrefixBlockRegistry)
+	registry := collections.NewArray32(partition, prefixBlockRegistry)
 	blockInfoBuffer := registry.MustGetAt(blockIndex)
 	blockInfo, err := BlockInfoFromBytes(blockIndex, blockInfoBuffer)
 	if err != nil {
@@ -51,7 +51,7 @@ func GetAnchorTransactionIDByBlockIndex(partition kv.KVStore, blockIndex uint32)
 // SaveControlAddressesIfNecessary saves new information about state address in the blocklog partition
 // If state address does not change, it does nothing
 func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governingAddress iotago.Address, blockIndex uint32) {
-	registry := collections.NewArray32(partition, KeyPrefixControlAddresses)
+	registry := collections.NewArray32(partition, prefixControlAddresses)
 	l := registry.MustLen()
 	if l != 0 {
 		addrs, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
@@ -73,7 +73,7 @@ func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governi
 // SaveRequestLogRecord appends request record to the record log and creates records for fast lookup
 func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key RequestLookupKey) error {
 	// save lookup record for fast lookup
-	lookupTable := collections.NewMap(partition, KeyPrefixRequestLookupIndex)
+	lookupTable := collections.NewMap(partition, prefixRequestLookupIndex)
 	digest := rec.RequestData.ID().LookupDigest()
 	var lst RequestLookupKeyList
 	digestExists, err := lookupTable.HasAt(digest[:])
@@ -105,7 +105,7 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key Request
 	}
 	// save the record. Key is a LookupKey
 	data := rec.Bytes()
-	if err = collections.NewMap(partition, KeyPrefixRequestReceipts).SetAt(key.Bytes(), data); err != nil {
+	if err = collections.NewMap(partition, prefixRequestReceipts).SetAt(key.Bytes(), data); err != nil {
 		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 	}
 	return nil
@@ -113,10 +113,10 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key Request
 
 func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract iscp.Hname) error {
 	text := fmt.Sprintf("%s: %s", contract.String(), msg)
-	if err := collections.NewMap(partition, KeyPrefixRequestEvents).SetAt(key.Bytes(), []byte(text)); err != nil {
+	if err := collections.NewMap(partition, prefixRequestEvents).SetAt(key.Bytes(), []byte(text)); err != nil {
 		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 	}
-	scLut := collections.NewMap(partition, KeyPrefixSmartContractEventsLookup)
+	scLut := collections.NewMap(partition, prefixSmartContractEventsLookup)
 	entries, err := scLut.GetAt(contract.Bytes())
 	if err != nil {
 		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
@@ -130,7 +130,7 @@ func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract is
 }
 
 func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.RequestID) (RequestLookupKeyList, error) {
-	lookupTable := collections.NewMapReadOnly(partition, KeyPrefixRequestLookupIndex)
+	lookupTable := collections.NewMapReadOnly(partition, prefixRequestLookupIndex)
 	digest := reqID.LookupDigest()
 	seen, err := lookupTable.HasAt(digest[:])
 	if err != nil {
@@ -150,7 +150,7 @@ func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.Reque
 
 // RequestLookupKeyList contains multiple references for record entries with colliding digests, this function returns the correct record for the given requestID
 func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList RequestLookupKeyList, reqID *iscp.RequestID) (*RequestReceipt, error) {
-	records := collections.NewMapReadOnly(partition, KeyPrefixRequestReceipts)
+	records := collections.NewMapReadOnly(partition, prefixRequestReceipts)
 	for _, lookupKey := range keyList {
 		recBytes, err := records.GetAt(lookupKey.Bytes())
 		if err != nil {
@@ -193,7 +193,7 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID *iscp.RequestID)
 	}
 	ret := []string{}
 	eventIndex := uint16(0)
-	events := collections.NewMapReadOnly(partition, KeyPrefixRequestEvents)
+	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
 	for {
 		key := NewEventLookupKey(record.BlockIndex, record.RequestIndex, eventIndex)
 		msg, err := events.GetAt(key.Bytes())
@@ -209,13 +209,13 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID *iscp.RequestID)
 }
 
 func getSmartContractEventsInternal(partition kv.KVStoreReader, contract iscp.Hname, fromBlock, toBlock uint32) ([]string, error) {
-	scLut := collections.NewMapReadOnly(partition, KeyPrefixSmartContractEventsLookup)
+	scLut := collections.NewMapReadOnly(partition, prefixSmartContractEventsLookup)
 	ret := []string{}
 	entries, err := scLut.GetAt(contract.Bytes())
 	if err != nil {
 		return nil, err
 	}
-	events := collections.NewMapReadOnly(partition, KeyPrefixRequestEvents)
+	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
 	keysBuf := bytes.NewBuffer(entries)
 	for {
 		key, err := EventLookupKeyFromBytes(keysBuf)
@@ -246,7 +246,7 @@ func GetBlockEventsInternal(partition kv.KVStoreReader, blockIndex uint32) ([]st
 		return nil, err
 	}
 	ret := make([]string, 0)
-	events := collections.NewMapReadOnly(partition, KeyPrefixRequestEvents)
+	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
 	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
 		eventIndex := uint16(0)
 		for {
@@ -300,7 +300,7 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 }
 
 func getBlockInfoDataInternal(partition kv.KVStoreReader, blockIndex uint32) ([]byte, bool, error) {
-	data, err := collections.NewArray32ReadOnly(partition, KeyPrefixBlockRegistry).GetAt(blockIndex)
+	data, err := collections.NewArray32ReadOnly(partition, prefixBlockRegistry).GetAt(blockIndex)
 	return data, err == nil, err
 }
 
@@ -321,7 +321,7 @@ func mustGetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) *BlockInfo 
 
 func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, requestIndex uint16) ([]byte, bool) {
 	lookupKey := NewRequestLookupKey(blockIndex, requestIndex)
-	lookupTable := collections.NewMapReadOnly(partition, KeyPrefixRequestReceipts)
+	lookupTable := collections.NewMapReadOnly(partition, prefixRequestReceipts)
 	recBin := lookupTable.MustGetAt(lookupKey[:])
 	if recBin == nil {
 		return nil, false
@@ -331,7 +331,7 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 
 func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID) ([]byte, uint32, uint16, bool) {
 	lookupDigest := reqID.LookupDigest()
-	lookupTable := collections.NewMapReadOnly(ctx.State(), KeyPrefixRequestLookupIndex)
+	lookupTable := collections.NewMapReadOnly(ctx.State(), prefixRequestLookupIndex)
 	lookupKeyListBin := lookupTable.MustGetAt(lookupDigest[:])
 	if lookupKeyListBin == nil {
 		return nil, 0, 0, false
@@ -352,11 +352,11 @@ func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID)
 }
 
 func getNativeTokensUTXOLookupMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, KeyPrefixNativeTokenOutputLookupMap)
+	return collections.NewMap(state, prefixNativeTokenOutputLookupMap)
 }
 
 func getNativeTokensUTXOLookupMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, KeyPrefixNativeTokenOutputLookupMap)
+	return collections.NewMapReadOnly(state, prefixNativeTokenOutputLookupMap)
 }
 
 // handling internal UTXOs of NativeAssets
@@ -400,8 +400,42 @@ func GetUTXOIDForAsset(state kv.KVStore, id *iotago.NativeTokenID) *iotago.UTXOI
 		return nil
 	}
 	stateIndex, outputIndex := mustDecodeNativeTokenLookupInfo(data)
+	return getUTXOID(state, stateIndex, outputIndex)
+}
+
+func getUTXOID(state kv.KVStoreReader, stateIndex uint32, outputIndex uint16) *iotago.UTXOInput {
 	return &iotago.UTXOInput{
 		TransactionID:          mustGetBlockInfo(state, stateIndex).AnchorTransactionID,
 		TransactionOutputIndex: outputIndex,
 	}
+}
+
+// Foundries
+
+// getAccountsMap is a map which contains all foundries owned by the chain
+func getFoundriesMap(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, prefixFoundries)
+}
+
+func getFoundriesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, prefixFoundries)
+}
+
+// SaveFoundry map serialNumber -> foundryRec
+func SaveFoundry(state kv.KVStore, foundry *foundryRec) {
+	getFoundriesMap(state).MustSetAt(util.Uint32To4Bytes(foundry.Output.SerialNumber), foundry.Bytes())
+}
+
+func GetFoundry(state kv.KVStoreReader, serialNumber uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
+	data := getFoundriesMapR(state).MustGetAt(util.Uint32To4Bytes(serialNumber))
+	if data == nil {
+		return nil, nil
+	}
+	foundry := MustFoundryFromBytes(data)
+
+	inp := getUTXOID(state, foundry.BlockIndex, foundry.OutputIndex)
+	if inp == nil {
+		return nil, nil
+	}
+	return foundry.Output, inp
 }

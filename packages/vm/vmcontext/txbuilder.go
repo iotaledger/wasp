@@ -47,6 +47,8 @@ func (vmctx *VMContext) findNativeTokenUTXOInput(id *iotago.NativeTokenID) *iota
 }
 
 func (vmctx *VMContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
-	// TODO
-	return nil, nil
+	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	return blocklog.GetFoundry(vmctx.State(), serNum)
 }

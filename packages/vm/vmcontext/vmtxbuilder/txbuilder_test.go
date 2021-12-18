@@ -104,11 +104,11 @@ func TestTxBuilderBasic(t *testing.T) {
 	}
 	anchorID := tpkg.RandUTXOInput()
 	tokenID := testiotago.RandNativeTokenID()
-	balanceLoader := func(_ *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+	balanceLoader := func(_ *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
 		return nil, &iotago.UTXOInput{}
 	}
 	t.Run("1", func(t *testing.T) {
-		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
 			return nil, nil
 		},
 			nil,
@@ -133,7 +133,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 	t.Run("2", func(t *testing.T) {
-		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
 			return nil, nil
 		},
 			nil,
@@ -224,15 +224,17 @@ func TestTxBuilderConsistency(t *testing.T) {
 	var nativeTokenIDs []iotago.NativeTokenID
 	var utxoInputsNativeTokens []iotago.UTXOInput
 	// all token accounts initially are empty
-	balanceLoader := func(_ *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+	balanceLoader := func(_ *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
 		return nil, &iotago.UTXOInput{}
 	}
 
 	initialBalance := new(big.Int)
-	balanceLoaderWithInitialBalance := func(id *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+	balanceLoaderWithInitialBalance := func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
 		for _, id1 := range nativeTokenIDs {
 			if *id == id1 {
-				return new(big.Int).Set(initialBalance), &iotago.UTXOInput{}
+				ret := newInternalTokenOutput(aliasID, *id)
+				ret.NativeTokens[0].Amount = new(big.Int).Set(initialBalance)
+				return ret, &iotago.UTXOInput{}
 			}
 		}
 		return nil, &iotago.UTXOInput{}
@@ -505,7 +507,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.True(t, isBalanced)
 		require.True(t, totals.BalancedWith(totalsClone))
 	})
-	t.Run("initial balance 1", func(t *testing.T) {
+	t.Run("in balance 1", func(t *testing.T) {
 		numTokenIDs = 5
 
 		initialBalance.SetUint64(100)
@@ -532,7 +534,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
-	t.Run("initial balance 2", func(t *testing.T) {
+	t.Run("in balance 2", func(t *testing.T) {
 		numTokenIDs = 5
 
 		initialBalance.SetUint64(100)
@@ -564,7 +566,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
-	t.Run("initial balance 3", func(t *testing.T) {
+	t.Run("in balance 3", func(t *testing.T) {
 		numTokenIDs = 5
 
 		initialBalance.SetUint64(100)
@@ -665,7 +667,7 @@ func TestFoundries(t *testing.T) {
 	var nativeTokenIDs []iotago.NativeTokenID
 	var utxoInputsNativeTokens []iotago.UTXOInput
 	// all token accounts initially are empty
-	balanceLoader := func(_ *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
+	balanceLoader := func(_ *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
 		return nil, &iotago.UTXOInput{}
 	}
 	var txb *AnchorTransactionBuilder
@@ -717,5 +719,55 @@ func TestFoundries(t *testing.T) {
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		t.Logf("essence bytes len = %d", len(essenceBytes))
+	})
+}
+
+func TestSerDe(t *testing.T) {
+	t.Run("serde ExtendedOutput", func(t *testing.T) {
+		reqMetadata := iscp.RequestMetadata{
+			SenderContract: 0,
+			TargetContract: 0,
+			EntryPoint:     0,
+			Params:         dict.New(),
+			Transfer:       iscp.NewEmptyAssets(),
+			GasBudget:      0,
+		}
+		assets := iscp.NewEmptyAssets()
+		out, _ := MakeExtendedOutput(
+			&iotago.Ed25519Address{},
+			&iotago.Ed25519Address{1, 2, 3},
+			assets,
+			&reqMetadata,
+			nil,
+			testdeserparams.DeSerializationParameters().RentStructure,
+		)
+		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
+		require.NoError(t, err)
+		outBack := &iotago.ExtendedOutput{}
+		_, err = outBack.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
+		require.NoError(t, err)
+		require.True(t, out.Address.Equal(outBack.Address))
+		require.EqualValues(t, out.Amount, outBack.Amount)
+		require.EqualValues(t, 0, len(outBack.NativeTokens))
+		require.True(t, outBack.Blocks.Equal(out.Blocks))
+	})
+	t.Run("serde FoundryOutput", func(t *testing.T) {
+		out := &iotago.FoundryOutput{
+			Address:           tpkg.RandAliasAddress(),
+			Amount:            1337,
+			NativeTokens:      nil,
+			SerialNumber:      5,
+			TokenTag:          iotago.TokenTag{},
+			CirculatingSupply: big.NewInt(200),
+			MaximumSupply:     big.NewInt(2000),
+			TokenScheme:       &iotago.SimpleTokenScheme{},
+			Blocks:            nil,
+		}
+		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
+		require.NoError(t, err)
+		outBack := &iotago.FoundryOutput{}
+		_, err = outBack.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
+		require.NoError(t, err)
+		require.True(t, identicalFoundries(out, outBack))
 	})
 }

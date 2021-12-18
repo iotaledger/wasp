@@ -54,6 +54,7 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	serNum := serNumFromNativeTokenID(tokenID)
 	nt, ok := txb.invokedFoundries[serNum]
 	if !ok {
+		// load foundry output from the state
 		foundryOutput, inp := txb.loadFoundry(serNum)
 		if foundryOutput == nil {
 			panic(ErrFoundryDoesNotExist)
@@ -65,15 +66,19 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 			out:          cloneFoundry(foundryOutput),
 		}
 	}
+	// check if the loaded foundry matches the tokenID
 	if *tokenID != nt.in.MustNativeTokenID() {
 		panic(xerrors.Errorf("%w: requested token ID: %s, foundry token id: %s",
 			ErrCantModifySupplyOfTheToken, tokenID.String(), nt.in.MustNativeTokenID().String()))
 	}
+	// check the supply bounds
 	newSupply := big.NewInt(0).Add(nt.out.CirculatingSupply, delta)
 	if newSupply.Cmp(big.NewInt(0)) < 0 || newSupply.Cmp(nt.out.MaximumSupply) > 0 {
 		panic(ErrNativeTokenSupplyOutOffBounds)
 	}
+	// accrue/adjust this token balance in the internal outputs
 	txb.addNativeTokenBalanceDelta(tokenID, delta)
+	// update the supply and foundry record in the builder
 	nt.out.CirculatingSupply = newSupply
 	txb.invokedFoundries[serNum] = nt
 }
@@ -156,38 +161,28 @@ func cloneFoundry(f *iotago.FoundryOutput) *iotago.FoundryOutput {
 
 // identicalFoundries assumes use case and does consistency checks
 func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
-	if f1 == f2 {
+	switch {
+	case f1 == f2:
 		return true
-	}
-	if f1 == nil || f2 == nil {
+	case f1 == nil || f2 == nil:
 		return false
-	}
-	if f1.SerialNumber != f2.SerialNumber {
+	case f1.SerialNumber != f2.SerialNumber:
 		return false
-	}
-	if f1.CirculatingSupply.Cmp(f2.CirculatingSupply) != 0 {
+	case f1.CirculatingSupply.Cmp(f2.CirculatingSupply) != 0:
 		return false
-	}
-	// consistency check
-	if f1.Amount != f2.Amount {
+	case f1.Amount != f2.Amount:
 		panic("identicalFoundries: inconsistency, amount is assumed immutable")
-	}
-	if len(f1.NativeTokens) > 0 || len(f2.NativeTokens) > 0 {
+	case len(f1.NativeTokens) > 0 || len(f2.NativeTokens) > 0:
 		panic("identicalFoundries: inconsistency, foundry is not expected not contain native tokens")
-	}
-	if f1.MaximumSupply.Cmp(f2.MaximumSupply) != 0 {
+	case f1.MaximumSupply.Cmp(f2.MaximumSupply) != 0:
 		panic("identicalFoundries: inconsistency, maximum supply is immutable")
-	}
-	if !f1.Address.Equal(f2.Address) {
+	case !f1.Address.Equal(f2.Address):
 		panic("identicalFoundries: inconsistency, addresses must always be equal")
-	}
-	if f1.TokenScheme != f2.TokenScheme {
+	case f1.TokenScheme != f2.TokenScheme:
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token schemes must be equal")
-	}
-	if f1.TokenTag != f2.TokenTag {
+	case f1.TokenTag != f2.TokenTag:
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token tags must be equal")
-	}
-	if f1.Blocks != nil || f2.Blocks != nil {
+	case f1.Blocks != nil || f2.Blocks != nil:
 		panic("identicalFoundries: inconsistency, feat blocks are not expected in the foundry")
 	}
 	return true

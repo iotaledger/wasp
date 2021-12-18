@@ -1,7 +1,6 @@
 package accounts
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
@@ -25,7 +24,7 @@ const (
 	prefixAllAccounts
 	// map of account with all on-chain totals listed
 	prefixTotalAssetsAccount
-	// prefix for the nonce entry
+	// prefix for the map of nonces
 	prefixMaxAssumedNonceKey
 
 	ParamAgentID         = "a"
@@ -33,5 +32,3 @@ const (
 	ParamWithdrawAmount  = "m"
 	ParamAccountNonce    = "n"
 )
-
-var CommonAccount = &iscp.NilAgentID

@@ -47,7 +47,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	// sum over native tokens which require inputs
 	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
 		if ntb.requiresInput() {
-			return ntb.initial
+			return ntb.in.NativeTokens[0].Amount
 		}
 		return nil
 	})
@@ -84,7 +84,7 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	// sum over native tokens which produce outputs
 	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
 		if ntb.producesOutput() {
-			return ntb.balance
+			return ntb.getOutValue()
 		}
 		return nil
 	})
@@ -136,10 +136,10 @@ func (txb *AnchorTransactionBuilder) InternalNativeTokenBalances() (map[iotago.N
 
 	for id, ntb := range txb.balanceNativeTokens {
 		if ntb.requiresInput() {
-			before[id] = ntb.initial
+			before[id] = ntb.in.NativeTokens[0].Amount
 		}
 		if ntb.producesOutput() {
-			after[id] = ntb.balance
+			after[id] = ntb.getOutValue()
 		}
 	}
 	return before, after

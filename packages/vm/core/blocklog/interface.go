@@ -9,6 +9,8 @@ import (
 	"math"
 	"time"
 
+	"github.com/iotaledger/hive.go/serializer/v2"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/hive.go/marshalutil"
@@ -21,13 +23,14 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log contract")
 
 const (
-	KeyPrefixBlockRegistry = string('a' + iota)
-	KeyPrefixControlAddresses
-	KeyPrefixRequestLookupIndex
-	KeyPrefixRequestReceipts
-	KeyPrefixRequestEvents
-	KeyPrefixSmartContractEventsLookup
-	KeyPrefixNativeTokenOutputLookupMap
+	prefixBlockRegistry = string('a' + iota)
+	prefixControlAddresses
+	prefixRequestLookupIndex
+	prefixRequestReceipts
+	prefixRequestEvents
+	prefixSmartContractEventsLookup
+	prefixNativeTokenOutputLookupMap
+	prefixFoundries
 )
 
 var (
@@ -399,3 +402,62 @@ func (ca *ControlAddresses) String() string {
 }
 
 // endregion /////////////////////////////////////////////////////////////
+
+// region foundryRec //////////////////////////////////////////////////////
+
+type foundryRec struct {
+	Output      *iotago.FoundryOutput
+	BlockIndex  uint32
+	OutputIndex uint16
+}
+
+func (f *foundryRec) Bytes() []byte {
+	data, err := f.Output.Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		panic(err)
+	}
+	return marshalutil.New().
+		WriteUint32(f.BlockIndex).
+		WriteUint16(f.OutputIndex).
+		WriteUint16(uint16(len(data))).
+		WriteBytes(data).
+		Bytes()
+}
+
+func FoundryFromBytes(data []byte) (*foundryRec, error) {
+	return FoundryFromMarshalUtil(marshalutil.New(data))
+}
+
+func MustFoundryFromBytes(data []byte) *foundryRec {
+	ret, err := FoundryFromBytes(data)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func FoundryFromMarshalUtil(mu *marshalutil.MarshalUtil) (*foundryRec, error) {
+	ret := &foundryRec{}
+	var err error
+	if ret.BlockIndex, err = mu.ReadUint32(); err != nil {
+		return nil, err
+	}
+	if ret.OutputIndex, err = mu.ReadUint16(); err != nil {
+		return nil, err
+	}
+	var size uint16
+	if size, err = mu.ReadUint16(); err != nil {
+		return nil, err
+	}
+	var data []byte
+	if data, err = mu.ReadBytes(int(size)); err != nil {
+		return nil, err
+	}
+	ret.Output = &iotago.FoundryOutput{}
+	if _, err = ret.Output.Deserialize(data, serializer.DeSeriModeNoValidation, nil); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+// endregion /////////////////////////////////////////////////////////
