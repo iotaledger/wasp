@@ -240,7 +240,9 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.Require(tokenMaxSupply.Cmp(big.NewInt(0)) > 0, "maximum supply must be positive")
 	a.Require(tokenMaxSupply.Cmp(abi.MaxUint256) <= 0, "too big maximum supply")
 
+	// create UTXO
 	sn := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply)
+	// add to the ownership list of the account
 	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
 
 	ret := dict.New()
@@ -252,17 +254,21 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 	panic("not implemented")
 }
 
+// foundryModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller
 func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamsFoundrySN)
 	delta := par.MustGetBigInt(ParamsSupplyDelta)
 
+	// check if foundry is controlled by the caller
+	a.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+
 	out, _, _ := GetFoundryOutput(ctx.State(), sn)
 	tokenID, err := out.NativeTokenID()
 	a.RequireNoError(err, "internal")
 
-	// create UTXO
+	// transit foundry UTXO
 	ctx.Foundries().ModifySupply(sn, delta)
 
 	// accrue delta tokens on the caller's account
@@ -273,10 +279,9 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 			}},
 		})
 	} else {
-		deltaAdjust := big.NewInt(0).Neg(delta)
 		DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
 			Tokens: iotago.NativeTokens{{
-				ID: tokenID, Amount: deltaAdjust,
+				ID: tokenID, Amount: new(big.Int).Neg(delta),
 			}},
 		})
 	}
