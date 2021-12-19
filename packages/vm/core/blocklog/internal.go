@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/util"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -351,95 +349,9 @@ func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID)
 	return nil, 0, 0, false
 }
 
-func getUTXOID(state kv.KVStoreReader, stateIndex uint32, outputIndex uint16) *iotago.UTXOInput {
+func GetUTXOInput(state kv.KVStoreReader, stateIndex uint32, outputIndex uint16) *iotago.UTXOInput {
 	return &iotago.UTXOInput{
 		TransactionID:          mustGetBlockInfo(state, stateIndex).AnchorTransactionID,
 		TransactionOutputIndex: outputIndex,
 	}
-}
-
-// Foundries
-
-// getAccountsMap is a map which contains all foundries owned by the chain
-func getFoundriesMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, prefixFoundryOutputRecords)
-}
-
-func getFoundriesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, prefixFoundryOutputRecords)
-}
-
-// SaveFoundry map serialNumber -> foundryRec
-func SaveFoundryOutput(state kv.KVStore, foundry *iotago.FoundryOutput, blockIndex uint32, outputIndex uint16) {
-	foundryRec := outputRec{
-		Output:      foundry,
-		BlockIndex:  blockIndex,
-		OutputIndex: outputIndex,
-	}
-	getFoundriesMap(state).MustSetAt(util.Uint32To4Bytes(foundry.SerialNumber), foundryRec.Bytes())
-}
-
-func DeleteFoundryOutput(state kv.KVStore, serNum uint32) {
-	getFoundriesMap(state).MustDelAt(util.Uint32To4Bytes(serNum))
-}
-
-func GetFoundryOutput(state kv.KVStoreReader, serialNumber uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
-	data := getFoundriesMapR(state).MustGetAt(util.Uint32To4Bytes(serialNumber))
-	if data == nil {
-		return nil, nil
-	}
-	foundryRec := mustOutputRecFromBytes(data)
-	foundry, ok := foundryRec.Output.(*iotago.FoundryOutput)
-	if !ok {
-		panic(xerrors.New("internal inconsistency: FoundryOutput expected"))
-	}
-
-	inp := getUTXOID(state, foundryRec.BlockIndex, foundryRec.OutputIndex)
-	if inp == nil {
-		return nil, nil
-	}
-	return foundry, inp
-}
-
-// internal NativeToken outputs
-
-// getAccountsMap is a map which contains all foundries owned by the chain
-func getNativeTokenOutputMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, prefixNativeTokenOutputMap)
-}
-
-func getNativeTokenOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, prefixNativeTokenOutputMap)
-}
-
-// SaveNativeTokenOutput map tokenID -> foundryRec
-func SaveNativeTokenOutput(state kv.KVStore, out *iotago.ExtendedOutput, blockIndex uint32, outputIndex uint16) {
-	tokenRec := outputRec{
-		Output:      out,
-		BlockIndex:  blockIndex,
-		OutputIndex: outputIndex,
-	}
-	getFoundriesMap(state).MustSetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
-}
-
-func DeleteNativeTokenOutput(state kv.KVStore, tokenID *iotago.NativeTokenID) {
-	getNativeTokenOutputMap(state).MustDelAt(tokenID[:])
-}
-
-func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
-	data := getNativeTokenOutputMapR(state).MustGetAt(tokenID[:])
-	if data == nil {
-		return nil, nil
-	}
-	tokenRec := mustOutputRecFromBytes(data)
-	out, ok := tokenRec.Output.(*iotago.ExtendedOutput)
-	if !ok {
-		panic(xerrors.New("internal inconsistency: ExtendedOutput expected"))
-	}
-
-	inp := getUTXOID(state, tokenRec.BlockIndex, tokenRec.OutputIndex)
-	if inp == nil {
-		return nil, nil
-	}
-	return out, inp
 }

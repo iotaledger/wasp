@@ -3,6 +3,9 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -208,9 +211,6 @@ func (vmctx *VMContext) closeBlockContexts() {
 }
 
 func (vmctx *VMContext) saveInternalUTXOs() {
-	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
 	nativeTokenIDs, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
 	nativeTokensOutputsToBeUpdated := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDs)
 
@@ -219,22 +219,23 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 
 	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
 	outputIndex := uint16(1)
-	stat := vmctx.State()
 
-	// update native token outputs
-	for _, out := range nativeTokensOutputsToBeUpdated {
-		blocklog.SaveNativeTokenOutput(stat, out, blockIndex, outputIndex)
-		outputIndex++
-	}
-	for _, id := range nativeTokensToBeRemoved {
-		blocklog.DeleteNativeTokenOutput(stat, &id)
-	}
-	// update foundry UTXOs
-	for _, out := range foundrySNToBeUpdated {
-		blocklog.SaveFoundryOutput(stat, out, blockIndex, outputIndex)
-		outputIndex++
-	}
-	for _, sn := range foundriesToBeRemoved {
-		blocklog.DeleteFoundryOutput(stat, sn)
-	}
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		// update native token outputs
+		for _, out := range nativeTokensOutputsToBeUpdated {
+			accounts.SaveNativeTokenOutput(s, out, blockIndex, outputIndex)
+			outputIndex++
+		}
+		for _, id := range nativeTokensToBeRemoved {
+			accounts.DeleteNativeTokenOutput(s, &id)
+		}
+		// update foundry UTXOs
+		for _, out := range foundrySNToBeUpdated {
+			accounts.SaveFoundryOutput(s, out, blockIndex, outputIndex)
+			outputIndex++
+		}
+		for _, sn := range foundriesToBeRemoved {
+			accounts.DeleteFoundryOutput(s, sn)
+		}
+	})
 }

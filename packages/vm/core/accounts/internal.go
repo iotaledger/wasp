@@ -1,10 +1,10 @@
 package accounts
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math/big"
 
+	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -361,10 +361,115 @@ func getAccountBalanceDict(account *collections.ImmutableMap) dict.Dict {
 	return getAccountAssets(account).ToDict()
 }
 
-// foundries
+// region outputRec ///////////////////////////////
 
-// AddFoundry ads new foundry to the foundries controlled by the account
-func AddFoundry(state kv.KVStore, agentID *iscp.AgentID, serNum uint32) {
+// outputRec the record stored entire internal output with the info how to restore its UTXOInput
+// This record is used to store internal ExtendedOutput with native tokens and Foundries
+type outputRec struct {
+	Output      iotago.Output
+	BlockIndex  uint32
+	OutputIndex uint16
+}
+
+func (f *outputRec) Bytes() []byte {
+	data, err := f.Output.Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		panic(err)
+	}
+	return marshalutil.New().
+		WriteUint32(f.BlockIndex).
+		WriteUint16(f.OutputIndex).
+		WriteByte(byte(f.Output.Type())).
+		WriteUint16(uint16(len(data))).
+		WriteBytes(data).
+		Bytes()
+}
+
+func outputRecFromBytes(data []byte) (*outputRec, error) {
+	return outputRecFromMarshalUtil(marshalutil.New(data))
+}
+
+func mustOutputRecFromBytes(data []byte) *outputRec {
+	ret, err := outputRecFromBytes(data)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func outputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*outputRec, error) {
+	ret := &outputRec{}
+	var err error
+	if ret.BlockIndex, err = mu.ReadUint32(); err != nil {
+		return nil, err
+	}
+	if ret.OutputIndex, err = mu.ReadUint16(); err != nil {
+		return nil, err
+	}
+	t, err := mu.ReadByte()
+	if err != nil {
+		return nil, err
+	}
+	ret.Output, err = iotago.OutputSelector(uint32(t))
+	if err != nil {
+		return nil, err
+	}
+	var size uint16
+	if size, err = mu.ReadUint16(); err != nil {
+		return nil, err
+	}
+	var data []byte
+	if data, err = mu.ReadBytes(int(size)); err != nil {
+		return nil, err
+	}
+	if _, err = ret.Output.Deserialize(data, serializer.DeSeriModeNoValidation, nil); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+// endregion ////////////////////////////////////////////
+
+// region Foundry outputs ////////////////////////////////////////
+
+// getAccountsMap is a map which contains all foundries owned by the chain
+func getFoundriesMap(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, prefixFoundryOutputRecords)
+}
+
+func getFoundriesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, prefixFoundryOutputRecords)
+}
+
+func SaveFoundryOutput(state kv.KVStore, foundry *iotago.FoundryOutput, blockIndex uint32, outputIndex uint16) {
+	foundryRec := outputRec{
+		Output:      foundry,
+		BlockIndex:  blockIndex,
+		OutputIndex: outputIndex,
+	}
+	getFoundriesMap(state).MustSetAt(util.Uint32To4Bytes(foundry.SerialNumber), foundryRec.Bytes())
+}
+
+func DeleteFoundryOutput(state kv.KVStore, serNum uint32) {
+	getFoundriesMap(state).MustDelAt(util.Uint32To4Bytes(serNum))
+}
+
+func GetFoundryOutput(state kv.KVStoreReader, serialNumber uint32) (*iotago.FoundryOutput, uint32, uint16) {
+	data := getFoundriesMapR(state).MustGetAt(util.Uint32To4Bytes(serialNumber))
+	if data == nil {
+		return nil, 0, 0
+	}
+	foundryRec := mustOutputRecFromBytes(data)
+	foundry, ok := foundryRec.Output.(*iotago.FoundryOutput)
+	if !ok {
+		panic(xerrors.New("internal inconsistency: FoundryOutput expected"))
+	}
+
+	return foundry, foundryRec.BlockIndex, foundryRec.OutputIndex
+}
+
+// AddFoundryToAccount ads new foundry to the foundries controlled by the account
+func AddFoundryToAccount(state kv.KVStore, agentID *iscp.AgentID, serNum uint32) {
 	addFoundry(getAccountFoundries(state, agentID), serNum)
 }
 
@@ -376,7 +481,7 @@ func addFoundry(account *collections.Map, serNum uint32) {
 	account.MustSetAt(key, []byte{0xFF})
 }
 
-func DeleteFoundry(state kv.KVStore, agentID *iscp.AgentID, serNum uint32) {
+func DeleteFoundryFromAccount(state kv.KVStore, agentID *iscp.AgentID, serNum uint32) {
 	deleteFoundry(getAccountFoundries(state, agentID), serNum)
 }
 
@@ -388,7 +493,7 @@ func deleteFoundry(account *collections.Map, serNum uint32) {
 	account.MustDelAt(key)
 }
 
-func MoveFoundry(state kv.KVStore, agentIDFrom, agentIDTo *iscp.AgentID, serNum uint32) {
+func MoveFoundryBetweenAccounts(state kv.KVStore, agentIDFrom, agentIDTo *iscp.AgentID, serNum uint32) {
 	deleteFoundry(getAccountFoundries(state, agentIDFrom), serNum)
 	addFoundry(getAccountFoundries(state, agentIDTo), serNum)
 }
@@ -398,12 +503,44 @@ func HasFoundry(state kv.KVStoreReader, agentID *iscp.AgentID, serNum uint32) bo
 	return getAccountFoundriesR(state, agentID).MustHasAt(key)
 }
 
-func SerialNumFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {
-	slice := tokenID[iotago.AliasAddressSerializedBytesSize : iotago.AliasAddressSerializedBytesSize+serializer.UInt32ByteSize]
-	return binary.LittleEndian.Uint32(slice)
+// endregion ///////////////////////////////////////////////////////////////////
+
+// region NativeToken outputs /////////////////////////////////
+
+// getAccountsMap is a map which contains all foundries owned by the chain
+func getNativeTokenOutputMap(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, prefixNativeTokenOutputMap)
 }
 
-// DecodeBalances TODO move to iscp package
-func DecodeBalances(balances dict.Dict) (*iscp.Assets, error) {
-	return iscp.NewAssetsFromDict(balances)
+func getNativeTokenOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, prefixNativeTokenOutputMap)
 }
+
+// SaveNativeTokenOutput map tokenID -> foundryRec
+func SaveNativeTokenOutput(state kv.KVStore, out *iotago.ExtendedOutput, blockIndex uint32, outputIndex uint16) {
+	tokenRec := outputRec{
+		Output:      out,
+		BlockIndex:  blockIndex,
+		OutputIndex: outputIndex,
+	}
+	getFoundriesMap(state).MustSetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
+}
+
+func DeleteNativeTokenOutput(state kv.KVStore, tokenID *iotago.NativeTokenID) {
+	getNativeTokenOutputMap(state).MustDelAt(tokenID[:])
+}
+
+func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID) (*iotago.ExtendedOutput, uint32, uint16) {
+	data := getNativeTokenOutputMapR(state).MustGetAt(tokenID[:])
+	if data == nil {
+		return nil, 0, 0
+	}
+	tokenRec := mustOutputRecFromBytes(data)
+	out, ok := tokenRec.Output.(*iotago.ExtendedOutput)
+	if !ok {
+		panic(xerrors.New("internal inconsistency: ExtendedOutput expected"))
+	}
+	return out, tokenRec.BlockIndex, tokenRec.OutputIndex
+}
+
+// endregion //////////////////////////////////////////

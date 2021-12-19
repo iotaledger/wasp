@@ -3,6 +3,7 @@ package vmcontext
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
@@ -66,9 +67,9 @@ func (vmctx *VMContext) getCallContext() *callContext {
 	return vmctx.callStack[len(vmctx.callStack)-1]
 }
 
-func (vmctx *VMContext) callCore(c *coreutil.ContractInfo, f func()) {
+func (vmctx *VMContext) callCore(c *coreutil.ContractInfo, f func(s kv.KVStore)) {
 	vmctx.pushCallContext(c.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	f()
+	f(vmctx.State())
 }

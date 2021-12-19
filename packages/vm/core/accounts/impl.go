@@ -3,6 +3,8 @@ package accounts
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/kv"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -21,6 +23,7 @@ var Processor = Contract.Processor(initialize,
 	FuncWithdraw.WithHandler(withdraw),
 	FuncHarvest.WithHandler(harvest),
 	FuncGetAccountNonce.WithHandler(getAccountNonce),
+	FuncGetNativeTokensIDs.WithHandler(viewGetNativeTokenIDs),
 )
 
 // initialize the init call
@@ -204,5 +207,15 @@ func getAccountNonce(ctx iscp.SandboxView) (dict.Dict, error) {
 	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
 	ret := dict.New()
 	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
+	return ret, nil
+}
+
+func viewGetNativeTokenIDs(ctx iscp.SandboxView) (dict.Dict, error) {
+	mapping := getNativeTokenOutputMapR(ctx.State())
+	ret := dict.New()
+	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
+		ret.Set(kv.Key(elemKey), []byte{0xFF})
+		return true
+	})
 	return ret, nil
 }
