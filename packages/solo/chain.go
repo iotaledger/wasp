@@ -40,7 +40,7 @@ func (ch *Chain) String() string {
 	return buf.String()
 }
 
-// DumpAccounts dumps all account balances into the human readable string
+// DumpAccounts dumps all account balances into the human-readable string
 func (ch *Chain) DumpAccounts() string {
 	_, chainOwnerID, _ := ch.GetInfo()
 	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID.String(), chainOwnerID.String())

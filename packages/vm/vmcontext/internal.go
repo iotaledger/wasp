@@ -170,12 +170,11 @@ func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 
 // updateOffLedgerRequestMaxAssumedNonce updates stored nonce for off ledger requests
 func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	accounts.SaveMaxAssumedNonce(
-		vmctx.State(),
-		vmctx.req.SenderAddress(),
-		vmctx.req.Unwrap().OffLedger().Nonce(),
-	)
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		accounts.SaveMaxAssumedNonce(
+			s,
+			vmctx.req.SenderAddress(),
+			vmctx.req.Unwrap().OffLedger().Nonce(),
+		)
+	})
 }

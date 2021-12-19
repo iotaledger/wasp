@@ -141,11 +141,11 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	return blockIndex, stateCommitment, timestamp, rotationAddr
 }
 
-func (vmctx *VMContext) checkRotationAddress() iotago.Address {
-	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	return governance.GetRotationAddress(vmctx.State())
+func (vmctx *VMContext) checkRotationAddress() (ret iotago.Address) {
+	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
+		ret = governance.GetRotationAddress(s)
+	})
+	return
 }
 
 // mustSaveBlockInfo is in the blocklog partition context
@@ -160,9 +160,6 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 		return rotationAddress
 	}
 	// block info will be stored into the separate state update
-	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
 	prevStateData, err := iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
 	if err != nil {
 		panic(err)
@@ -179,20 +176,23 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 		DustDepositAnchor:        dustAnchor,
 		DustDepositNativeTokenID: dustNativeToken,
 	}
-
-	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
-	if idx != blockInfo.BlockIndex {
-		panic("CloseVMContext: inconsistent block index")
-	}
 	if vmctx.virtualState.PreviousStateHash() != blockInfo.PreviousStateHash {
 		panic("CloseVMContext: inconsistent previous state hash")
 	}
-	blocklog.SaveControlAddressesIfNecessary(
-		vmctx.State(),
-		vmctx.task.AnchorOutput.StateController,
-		vmctx.task.AnchorOutput.GovernanceController,
-		vmctx.task.AnchorOutput.StateIndex,
-	)
+
+	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
+		idx := blocklog.SaveNextBlockInfo(s, blockInfo)
+		if idx != blockInfo.BlockIndex {
+			panic("CloseVMContext: inconsistent block index")
+		}
+		blocklog.SaveControlAddressesIfNecessary(
+			s,
+			vmctx.task.AnchorOutput.StateController,
+			vmctx.task.AnchorOutput.GovernanceController,
+			vmctx.task.AnchorOutput.StateIndex,
+		)
+	})
+
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil // invalidate
 

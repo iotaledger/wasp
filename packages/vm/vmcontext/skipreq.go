@@ -3,6 +3,8 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -44,11 +46,12 @@ func (vmctx *VMContext) earlyCheckReasonToSkip() error {
 
 // checkReasonRequestProcessed checks if request ID is already in the blocklog
 func (vmctx *VMContext) checkReasonRequestProcessed() error {
-	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
 	reqid := vmctx.req.ID()
-	if blocklog.MustIsRequestProcessed(vmctx.State(), &reqid) {
+	var isProcessed bool
+	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
+		isProcessed = blocklog.MustIsRequestProcessed(vmctx.State(), &reqid)
+	})
+	if isProcessed {
 		return xerrors.New("already processed")
 	}
 	return nil
@@ -60,21 +63,25 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	if err := vmctx.checkReasonRequestProcessed(); err != nil {
 		return err
 	}
-	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
+	var unverified bool
+	var maxAssumed uint64
 
-	// check the account. It must exist
-	// TODO optimize: check the account balances and fetch nonce in one call
-	// off-ledger account must exist, i.e. it should have non zero balance on the chain
-	if _, exists := accounts.GetAccountAssets(vmctx.State(), vmctx.req.SenderAccount()); !exists {
-		// TODO check minimum balance. Require some minimum balance
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		// check the account. It must exist
+		// TODO optimize: check the account balances and fetch nonce in one call
+		// off-ledger account must exist, i.e. it should have non zero balance on the chain
+		if _, exists := accounts.GetAccountAssets(vmctx.State(), vmctx.req.SenderAccount()); !exists {
+			// TODO check minimum balance. Require some minimum balance
+			unverified = true
+			return
+		}
+		// this is a replay protection measure for off-ledger requests assuming in the batch order of requests is random.
+		// It is checking if nonce is not too old. See replay-off-ledger.md
+		maxAssumed = accounts.GetMaxAssumedNonce(vmctx.State(), vmctx.req.SenderAddress())
+	})
+	if unverified {
 		return xerrors.Errorf("unverified account for off-ledger request: %s", vmctx.req.SenderAccount())
 	}
-
-	// this is a replay protection measure for off-ledger requests assuming in the batch order of requests is random.
-	// It is checking if nonce is not too old. See replay-off-ledger.md
-	maxAssumed := accounts.GetMaxAssumedNonce(vmctx.State(), vmctx.req.SenderAddress())
-
 	nonce := vmctx.req.Unwrap().OffLedger().Nonce()
 	vmctx.Debugf("vmctx.validateRequest - nonce check - maxAssumed: %d, tolerance: %d, request nonce: %d ",
 		maxAssumed, OffLedgerNonceStrictOrderTolerance, nonce)
