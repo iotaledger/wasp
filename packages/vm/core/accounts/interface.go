@@ -13,15 +13,19 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain account ledger contract")
 
 var (
-	FuncViewBalance        = coreutil.ViewFunc("balance")
-	FuncViewTotalAssets    = coreutil.ViewFunc("totalAssets")
-	FuncViewAccounts       = coreutil.ViewFunc("accounts")
-	FuncDeposit            = coreutil.Func("deposit")
-	FuncSendTo             = coreutil.Func("sendTo")
-	FuncWithdraw           = coreutil.Func("withdraw")
-	FuncHarvest            = coreutil.Func("harvest")
-	FuncGetAccountNonce    = coreutil.ViewFunc("getAccountNonce")
-	FuncGetNativeTokensIDs = coreutil.ViewFunc("getNativeTokenIDs")
+	FuncViewBalance              = coreutil.ViewFunc("balance")
+	FuncViewTotalAssets          = coreutil.ViewFunc("totalAssets")
+	FuncViewAccounts             = coreutil.ViewFunc("accounts")
+	FuncDeposit                  = coreutil.Func("deposit")
+	FuncSendTo                   = coreutil.Func("sendTo")
+	FuncWithdraw                 = coreutil.Func("withdraw")
+	FuncHarvest                  = coreutil.Func("harvest")
+	FuncGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
+	FuncGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDs")
+	FuncFoundryCreateNew         = coreutil.Func("foundryCreateNew")
+	FuncFoundryDestroy           = coreutil.Func("foundryDestroy")
+	FuncFoundryOutput            = coreutil.ViewFunc("foundryOutput")
+	FuncFoundryModifySupply      = coreutil.Func("foundryModifySupply")
 )
 
 const (
@@ -44,6 +48,13 @@ const (
 	ParamWithdrawAssetID = "c"
 	ParamWithdrawAmount  = "m"
 	ParamAccountNonce    = "n"
+
+	ParamsFoundrySN        = "s"
+	ParamsFoundryOutputBin = "b"
+	ParamsTokenScheme      = "t"
+	ParamsTokenTag         = "g"
+	ParamsMaxSupply        = "p"
+	ParamsSupplyDelta      = "d"
 )
 
 func SerialNumFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {

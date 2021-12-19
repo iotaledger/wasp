@@ -3,6 +3,10 @@ package accounts
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/wasp/packages/util"
+
 	"github.com/iotaledger/wasp/packages/kv"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -23,7 +27,11 @@ var Processor = Contract.Processor(initialize,
 	FuncWithdraw.WithHandler(withdraw),
 	FuncHarvest.WithHandler(harvest),
 	FuncGetAccountNonce.WithHandler(getAccountNonce),
-	FuncGetNativeTokensIDs.WithHandler(viewGetNativeTokenIDs),
+	FuncGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
+	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
+	FuncFoundryDestroy.WithHandler(foundryDestroy),
+	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
+	FuncFoundryOutput.WithHandler(foundryOutput),
 )
 
 // initialize the init call
@@ -210,12 +218,82 @@ func getAccountNonce(ctx iscp.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func viewGetNativeTokenIDs(ctx iscp.SandboxView) (dict.Dict, error) {
+// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chian
+func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) (dict.Dict, error) {
 	mapping := getNativeTokenOutputMapR(ctx.State())
 	ret := dict.New()
 	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
 		ret.Set(kv.Key(elemKey), []byte{0xFF})
 		return true
 	})
+	return ret, nil
+}
+
+func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
+	ctx.Log().Debugf("accounts.foundryCreateNew")
+	a := assert.NewAssert(ctx.Log())
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+
+	tokenScheme := par.MustGetTokenScheme(ParamsTokenScheme, &iotago.SimpleTokenScheme{})
+	tokenTag := par.MustGetTokenTag(ParamsTokenTag)
+	tokenMaxSupply := par.MustGetBigInt(ParamsMaxSupply)
+	a.Require(tokenMaxSupply.Cmp(big.NewInt(0)) > 0, "maximum supply must be positive")
+	a.Require(tokenMaxSupply.Cmp(abi.MaxUint256) <= 0, "too big maximum supply")
+
+	sn := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply)
+	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
+
+	ret := dict.New()
+	ret.Set(ParamsFoundrySN, util.Uint32To4Bytes(sn))
+	return ret, nil
+}
+
+func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
+	panic("not implemented")
+}
+
+func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	sn := par.MustGetUint32(ParamsFoundrySN)
+	delta := par.MustGetBigInt(ParamsSupplyDelta)
+
+	out, _, _ := GetFoundryOutput(ctx.State(), sn)
+	tokenID, err := out.NativeTokenID()
+	a.RequireNoError(err, "internal")
+
+	// create UTXO
+	ctx.Foundries().ModifySupply(sn, delta)
+
+	// accrue delta tokens on the caller's account
+	if delta.Cmp(big.NewInt(0)) >= 0 {
+		CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
+			Tokens: iotago.NativeTokens{{
+				ID: tokenID, Amount: delta,
+			}},
+		})
+	} else {
+		deltaAdjust := big.NewInt(0).Neg(delta)
+		DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
+			Tokens: iotago.NativeTokens{{
+				ID: tokenID, Amount: deltaAdjust,
+			}},
+		})
+	}
+	return nil, nil
+}
+
+// foundryOutput takes serial number and returns corresponding foundry output in serialized form
+func foundryOutput(ctx iscp.SandboxView) (dict.Dict, error) {
+	ctx.Log().Debugf("accounts.foundryOutput")
+	a := assert.NewAssert(ctx.Log())
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+
+	sn := par.MustGetUint32(ParamsFoundrySN)
+	out, _, _ := GetFoundryOutput(ctx.State(), sn)
+	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
+	a.RequireNoError(err, "internal: error while serializing foundry output")
+	ret := dict.New()
+	ret.Set(ParamsFoundryOutputBin, outBin)
 	return ret, nil
 }

@@ -160,18 +160,18 @@ func (s *sandbox) Foundries() iscp.Foundries {
 	return s
 }
 
-func (s *sandbox) CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) iotago.NativeTokenID {
+func (s *sandbox) CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) uint32 {
 	return s.vmctx.CreateNewFoundry(scheme, tag, maxSupply)
 }
 
-func (s *sandbox) Destroy(id iotago.NativeTokenID) {
-	s.vmctx.DestroyFoundry(id)
+func (s *sandbox) Destroy(sn uint32) {
+	s.vmctx.DestroyFoundry(sn)
 }
 
-func (s *sandbox) Supply(id iotago.NativeTokenID) (*big.Int, *big.Int) {
-	return s.vmctx.Supply(id)
+func (s *sandbox) GetOutput(sn uint32) *iotago.FoundryOutput {
+	return s.vmctx.GetOutput(sn)
 }
 
-func (s *sandbox) ModifySupply(id iotago.NativeTokenID, delta *big.Int) {
-	s.vmctx.ModifySupply(id, delta)
+func (s *sandbox) ModifySupply(sn uint32, delta *big.Int) {
+	s.vmctx.ModifySupply(sn, delta)
 }

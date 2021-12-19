@@ -148,8 +148,7 @@ func (vmctx *VMContext) checkRotationAddress() (ret iotago.Address) {
 	return
 }
 
-// mustSaveBlockInfo is in the blocklog partition context
-// returns rotation address if this block is a rotation block
+// mustSaveBlockInfo is in the blocklog partition context. Returns rotation address if this block is a rotation block
 func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) iotago.Address {
 	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 

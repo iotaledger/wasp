@@ -2,7 +2,10 @@ package kvdecoder
 
 import (
 	"fmt"
+	"math/big"
 	"time"
+
+	"github.com/iotaledger/hive.go/serializer/v2"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -221,6 +224,68 @@ func (p *Decoder) GetBytes(key kv.Key, def ...[]byte) ([]byte, error) {
 
 func (p *Decoder) MustGetBytes(key kv.Key, def ...[]byte) []byte {
 	ret, err := p.GetBytes(key, def...)
+	p.check(err)
+	return ret
+}
+
+func (p *Decoder) GetTokenScheme(key kv.Key, def ...iotago.TokenScheme) (iotago.TokenScheme, error) {
+	v := p.kv.MustGet(key)
+	if len(v) > 1 {
+		ts, err := iotago.TokenSchemeSelector(uint32(v[0]))
+		if err != nil {
+			return nil, err
+		}
+		_, err = ts.Deserialize(v[1:], serializer.DeSeriModeNoValidation, nil)
+		if err != nil {
+			return nil, err
+		}
+		return ts, nil
+	}
+	if len(def) == 0 {
+		return nil, fmt.Errorf("GetTokenScheme: mandatory parameter '%s' does not exist", key)
+	}
+	return def[0], nil
+}
+
+func (p *Decoder) MustGetTokenScheme(key kv.Key, def ...iotago.TokenScheme) iotago.TokenScheme {
+	ret, err := p.GetTokenScheme(key, def...)
+	p.check(err)
+	return ret
+}
+
+func (p *Decoder) GetTokenTag(key kv.Key, def ...iotago.TokenTag) (iotago.TokenTag, error) {
+	v := p.kv.MustGet(key)
+	if len(v) != iotago.TokenTagLength {
+		if len(def) == 0 {
+			return iotago.TokenTag{}, fmt.Errorf("GetTokenTag: mandatory parameter '%s' is malformed or does not exist", key)
+		} else {
+			return def[0], nil
+		}
+	}
+	var ret iotago.TokenTag
+	copy(ret[:], v)
+	return ret, nil
+}
+
+func (p *Decoder) MustGetTokenTag(key kv.Key, def ...iotago.TokenTag) iotago.TokenTag {
+	ret, err := p.GetTokenTag(key, def...)
+	p.check(err)
+	return ret
+}
+
+func (p *Decoder) GetBigInt(key kv.Key, def ...*big.Int) (*big.Int, error) {
+	v := p.kv.MustGet(key)
+	if v == nil {
+		if len(def) != 0 {
+			return def[0], nil
+		}
+		return nil, fmt.Errorf("GetTokenTag: mandatory parameter '%s' does not exist", key)
+	}
+	return new(big.Int).SetBytes(v), nil
+}
+
+func (p *Decoder) MustGetBigInt(key kv.Key, def ...*big.Int) *big.Int {
+	ret, err := p.GetBigInt(key, def...)
 	p.check(err)
 	return ret
 }
