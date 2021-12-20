@@ -26,6 +26,8 @@ var (
 	FuncFoundryDestroy           = coreutil.Func("foundryDestroy")
 	FuncFoundryOutput            = coreutil.ViewFunc("foundryOutput")
 	FuncFoundryModifySupply      = coreutil.Func("foundryModifySupply")
+	// TODO implement grant/claim protocol of moving ownership of the foundry
+	//  Including ownership of the foundry by the common account/chain owner
 )
 
 const (
@@ -39,9 +41,9 @@ const (
 	prefixMaxAssumedNonceKey
 	// prefix for all foundries owned by the account
 	prefixAccountFoundries
-	// prefixNativeTokenOutputMap
+	// prefixNativeTokenOutputMap a map of accounts -> foundries
 	prefixNativeTokenOutputMap
-	// prefixFoundryOutputRecords
+	// prefixFoundryOutputRecords a map with all foundry outputs
 	prefixFoundryOutputRecords
 
 	ParamAgentID         = "a"

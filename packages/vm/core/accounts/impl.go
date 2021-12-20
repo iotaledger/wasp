@@ -250,8 +250,22 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	return ret, nil
 }
 
+// foundryDestroy destroys foundry if that is possible
 func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
-	panic("not implemented")
+	ctx.Log().Debugf("accounts.foundryDestroy")
+	a := assert.NewAssert(ctx.Log())
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	sn := par.MustGetUint32(ParamsFoundrySN)
+	// check if foundry is controlled by the caller
+	a.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+
+	out, _, _ := GetFoundryOutput(ctx.State(), sn)
+	a.Require(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
+
+	ctx.Foundries().Destroy(sn)
+	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
+	DeleteFoundryOutput(ctx.State(), sn)
+	return nil, nil
 }
 
 // foundryModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller

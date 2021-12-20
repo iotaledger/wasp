@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/iscp/assert"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 
@@ -441,6 +443,7 @@ func getFoundriesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, prefixFoundryOutputRecords)
 }
 
+// SaveFoundryOutput stores foundry output into the map pf all foundry outputs
 func SaveFoundryOutput(state kv.KVStore, foundry *iotago.FoundryOutput, blockIndex uint32, outputIndex uint16) {
 	foundryRec := outputRec{
 		Output:      foundry,
@@ -450,12 +453,14 @@ func SaveFoundryOutput(state kv.KVStore, foundry *iotago.FoundryOutput, blockInd
 	getFoundriesMap(state).MustSetAt(util.Uint32To4Bytes(foundry.SerialNumber), foundryRec.Bytes())
 }
 
-func DeleteFoundryOutput(state kv.KVStore, serNum uint32) {
-	getFoundriesMap(state).MustDelAt(util.Uint32To4Bytes(serNum))
+// DeleteFoundryOutput deletes foundry output from the map of all foundries
+func DeleteFoundryOutput(state kv.KVStore, sn uint32) {
+	getFoundriesMap(state).MustDelAt(util.Uint32To4Bytes(sn))
 }
 
-func GetFoundryOutput(state kv.KVStoreReader, serialNumber uint32) (*iotago.FoundryOutput, uint32, uint16) {
-	data := getFoundriesMapR(state).MustGetAt(util.Uint32To4Bytes(serialNumber))
+// GetFoundryOutput returns foundry output, its block number and output index
+func GetFoundryOutput(state kv.KVStoreReader, sn uint32) (*iotago.FoundryOutput, uint32, uint16) {
+	data := getFoundriesMapR(state).MustGetAt(util.Uint32To4Bytes(sn))
 	if data == nil {
 		return nil, 0, 0
 	}
@@ -469,11 +474,12 @@ func GetFoundryOutput(state kv.KVStoreReader, serialNumber uint32) (*iotago.Foun
 }
 
 // AddFoundryToAccount ads new foundry to the foundries controlled by the account
-func AddFoundryToAccount(state kv.KVStore, agentID *iscp.AgentID, serNum uint32) {
-	addFoundry(getAccountFoundries(state, agentID), serNum)
+func AddFoundryToAccount(state kv.KVStore, agentID *iscp.AgentID, sn uint32) {
+	assert.NewAssert(nil, "check foundry exists")
+	addFoundryToAccount(getAccountFoundries(state, agentID), sn)
 }
 
-func addFoundry(account *collections.Map, sn uint32) {
+func addFoundryToAccount(account *collections.Map, sn uint32) {
 	key := util.Uint32To4Bytes(sn)
 	if account.MustHasAt(key) {
 		panic(ErrRepeatingFoundrySerialNumber)
@@ -481,26 +487,26 @@ func addFoundry(account *collections.Map, sn uint32) {
 	account.MustSetAt(key, []byte{0xFF})
 }
 
-func DeleteFoundryFromAccount(state kv.KVStore, agentID *iscp.AgentID, serNum uint32) {
-	deleteFoundry(getAccountFoundries(state, agentID), serNum)
-}
-
-func deleteFoundry(account *collections.Map, serNum uint32) {
-	key := util.Uint32To4Bytes(serNum)
-	if !account.MustHasAt(key) {
+func deleteFoundryFromAccount(account *collections.Map, sn uint32) {
+	key := util.Uint32To4Bytes(sn)
+	if !hasFoundry(account.Immutable(), sn) {
 		panic(ErrFoundryNotFound)
 	}
 	account.MustDelAt(key)
 }
 
-func MoveFoundryBetweenAccounts(state kv.KVStore, agentIDFrom, agentIDTo *iscp.AgentID, serNum uint32) {
-	deleteFoundry(getAccountFoundries(state, agentIDFrom), serNum)
-	addFoundry(getAccountFoundries(state, agentIDTo), serNum)
+// MoveFoundryBetweenAccounts changes ownership of the foundry
+func MoveFoundryBetweenAccounts(state kv.KVStore, agentIDFrom, agentIDTo *iscp.AgentID, sn uint32) {
+	deleteFoundryFromAccount(getAccountFoundries(state, agentIDFrom), sn)
+	addFoundryToAccount(getAccountFoundries(state, agentIDTo), sn)
 }
 
-func HasFoundry(state kv.KVStoreReader, agentID *iscp.AgentID, serNum uint32) bool {
-	key := util.Uint32To4Bytes(serNum)
-	return getAccountFoundriesR(state, agentID).MustHasAt(key)
+// HasFoundry checks if specific account owns the foundry
+func HasFoundry(state kv.KVStoreReader, agentID *iscp.AgentID, sn uint32) bool {
+	return hasFoundry(getAccountFoundriesR(state, agentID), sn)
+}
+func hasFoundry(account *collections.ImmutableMap, sn uint32) bool {
+	return account.MustHasAt(util.Uint32To4Bytes(sn))
 }
 
 // endregion ///////////////////////////////////////////////////////////////////
