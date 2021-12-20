@@ -127,7 +127,8 @@ func (s *sandbox) Send(par iscp.RequestParameters) bool {
 }
 
 func (s *sandbox) State() kv.KVStore {
-	return s.vmctx.State(s.Burn)
+	return s.vmctx.State()
+	//return s.vmctx.State(s.Burn)
 }
 
 func (s *sandbox) Utils() iscp.Utils {

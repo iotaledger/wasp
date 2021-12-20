@@ -6,9 +6,10 @@ package mempool
 
 import (
 	"bytes"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"sync"
 	"time"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -218,13 +219,16 @@ func (m *mempool) traceOut(reqid iscp.RequestID) {
 	}
 }
 
-// don't process any request which deadline will expire within 10 minutes
-const FallbackDeadlineMinAllowedInterval = time.Minute * 10
+// don't process any request which deadline will expire within 1 minute
+const FallbackDeadlineMinAllowedInterval = time.Minute * 1
 
 func isUnlockable(ref *requestRef, currentTime time.Time) bool {
 	r := ref.req.(*iscp.OnLedgerRequestData)
 	expiry, _ := r.Expiry()
 
+	if expiry == nil {
+		return true
+	}
 	windowFrom := currentTime.Add(-FallbackDeadlineMinAllowedInterval)
 	windowTo := currentTime.Add(FallbackDeadlineMinAllowedInterval)
 
@@ -242,7 +246,8 @@ func isUnlockable(ref *requestRef, currentTime time.Time) bool {
 }
 
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
-func isRequestReady(ref *requestRef, currentTime time.Time) (isReady, shouldBeRemoved bool) {
+// return isReady, shouldBeRemoved
+func isRequestReady(ref *requestRef, currentTime time.Time) (bool, bool) {
 	if ref.req.IsOffLedger() {
 		return true, false
 	}
@@ -255,11 +260,14 @@ func isRequestReady(ref *requestRef, currentTime time.Time) (isReady, shouldBeRe
 	}
 
 	if !isUnlockable(ref, currentTime) {
-		return false, true
+		return false, false
 	}
-
 	// time lock
-	return r.TimeLock().Time.IsZero() || r.TimeLock().Time.Before(currentTime), false
+	timeData := r.TimeLock()
+	if timeData == nil {
+		return true, false
+	}
+	return timeData.Time.IsZero() || timeData.Time.Before(currentTime), false
 }
 
 // ReadyNow returns preliminary batch of requests for consensus.

@@ -473,8 +473,8 @@ func AddFoundryToAccount(state kv.KVStore, agentID *iscp.AgentID, serNum uint32)
 	addFoundry(getAccountFoundries(state, agentID), serNum)
 }
 
-func addFoundry(account *collections.Map, serNum uint32) {
-	key := util.Uint32To4Bytes(serNum)
+func addFoundry(account *collections.Map, sn uint32) {
+	key := util.Uint32To4Bytes(sn)
 	if account.MustHasAt(key) {
 		panic(ErrRepeatingFoundrySerialNumber)
 	}

@@ -130,9 +130,11 @@ func (vmctx *VMContext) GetResult() (dict.Dict, error) {
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, iotago.Address) {
-	rotationAddr := vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
+	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
+	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
 	vmctx.saveInternalUTXOs()
+	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 
 	blockIndex := vmctx.virtualState.BlockIndex()
 	stateCommitment := vmctx.virtualState.StateCommitment()
@@ -148,10 +150,8 @@ func (vmctx *VMContext) checkRotationAddress() (ret iotago.Address) {
 	return
 }
 
-// mustSaveBlockInfo is in the blocklog partition context. Returns rotation address if this block is a rotation block
-func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) iotago.Address {
-	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
-
+// saveBlockInfo is in the blocklog partition context. Returns rotation address if this block is a rotation block
+func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint16) iotago.Address {
 	if rotationAddress := vmctx.checkRotationAddress(); rotationAddress != nil {
 		// block was marked fake by the governance contract because it is a committee rotation.
 		// There was only on request in the block
@@ -191,22 +191,16 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 			vmctx.task.AnchorOutput.StateIndex,
 		)
 	})
-
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
-	vmctx.currentStateUpdate = nil // invalidate
-
 	return nil
 }
 
 // closeBlockContexts closing block contexts in deterministic FIFO sequence
 func (vmctx *VMContext) closeBlockContexts() {
-	vmctx.currentStateUpdate = state.NewStateUpdate()
 	for _, hname := range vmctx.blockContextCloseSeq {
 		b := vmctx.blockContext[hname]
 		b.onClose(b.obj)
 	}
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
-	vmctx.currentStateUpdate = nil
 }
 
 func (vmctx *VMContext) saveInternalUTXOs() {

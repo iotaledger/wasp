@@ -255,15 +255,10 @@ func (p *Decoder) MustGetTokenScheme(key kv.Key, def ...iotago.TokenScheme) iota
 
 func (p *Decoder) GetTokenTag(key kv.Key, def ...iotago.TokenTag) (iotago.TokenTag, error) {
 	v := p.kv.MustGet(key)
-	if len(v) != iotago.TokenTagLength {
-		if len(def) == 0 {
-			return iotago.TokenTag{}, fmt.Errorf("GetTokenTag: mandatory parameter '%s' is malformed or does not exist", key)
-		} else {
-			return def[0], nil
-		}
+	ret, err := codec.DecodeTokenTag(v, def...)
+	if err != nil {
+		return iotago.TokenTag{}, err
 	}
-	var ret iotago.TokenTag
-	copy(ret[:], v)
 	return ret, nil
 }
 
