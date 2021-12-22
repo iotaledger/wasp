@@ -17,3 +17,22 @@ func NewTsClientGenerator(s *model.Schema) *TsClientGenerator {
 	g.init(s, tsclienttemplates.TypeDependent, tsclienttemplates.Templates)
 	return g
 }
+
+func (g *TsClientGenerator) Generate() error {
+	err := g.ClientBase.Generate()
+	if err != nil {
+		return err
+	}
+
+	// now generate language-specific files
+
+	err = g.createSourceFile("index", true)
+	if err != nil {
+		return err
+	}
+
+	tsconfig := "tsconfig.json"
+	return g.createFile(g.folder+tsconfig, false, func() {
+		g.emit(tsconfig)
+	})
+}

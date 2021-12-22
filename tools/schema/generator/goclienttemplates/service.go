@@ -64,7 +64,7 @@ func (f $FuncName$Kind) $FldName(v $fldLangType) {
 	"funcPost": `
 
 func (f $FuncName$Kind) Post() {
-$#each param mandatoryCheck
+$#each mandatory mandatoryCheck
 $#set exec f.svc.PostRequest
 $#if param execWithArgs execNoArgs
 	$exec
@@ -74,7 +74,7 @@ $#if param execWithArgs execNoArgs
 	"viewCall": `
 
 func (f $FuncName$Kind) Call() $FuncName$+Results {
-$#each param mandatoryCheck
+$#each mandatory mandatoryCheck
 $#set exec f.svc.CallView
 $#if param execWithArgs execNoArgs
 	return $FuncName$+Results { res: $exec }

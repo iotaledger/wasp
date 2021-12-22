@@ -10,10 +10,11 @@ var config = map[string]string{
 }
 
 var Templates = []map[string]string{
-	config,
+	config, // always first one
 	common,
-	funcsTs,
 	eventsTs,
+	funcsTs,
+	indexTs,
 	serviceTs,
 }
 
@@ -80,6 +81,17 @@ var TypeDependent = model.StringMapMap{
 
 var common = map[string]string{
 	// *******************************
-	"tmp": `
-tmp`,
+	"tsconfig.json": `
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "lib": ["es2020"],
+    "target": "es2020",
+    "sourceMap": true
+  },
+  "exclude": [
+    "node_modules"
+  ],
+}
+`,
 }

@@ -208,7 +208,8 @@ func (g *GenBase) emitEachFunc(funcs []*model.Func, template string) {
 func (g *GenBase) emitEachMandatoryField(template string) {
 	mandatoryFields := make([]*model.Field, 0)
 	for _, g.currentField = range g.currentFunc.Params {
-		if !g.currentField.Optional {
+		fld := g.currentField
+		if !fld.Optional && fld.TypeID != 0 && !fld.Array && fld.MapKey == "" {
 			mandatoryFields = append(mandatoryFields, g.currentField)
 		}
 	}

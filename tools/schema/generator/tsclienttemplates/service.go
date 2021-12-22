@@ -56,7 +56,7 @@ $#if result resultStruct
 	"funcPost": `
 	
 	public async post(): Promise<void> {
-$#each param mandatoryCheck
+$#each mandatory mandatoryCheck
 $#set exec this.svc.postRequest
 $#if param execWithArgs execNoArgs
 		$exec;
@@ -66,7 +66,7 @@ $#if param execWithArgs execNoArgs
 	"viewCall": `
 
 	public async call(): Promise<$FuncName$+Results> {
-$#each param mandatoryCheck
+$#each mandatory mandatoryCheck
 $#set exec this.svc.callView
 $#if param execWithArgs execNoArgs
 		return new $FuncName$+Results($exec);

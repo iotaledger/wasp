@@ -48,7 +48,7 @@ func (s $TypeName) $FldName() Map$fldMapKey$+To$mut$FldType {
 }
 `,
 	// *******************************
-	"proxyMapOther": `55544444.0
+	"proxyMapOther": `
 
 func (s $TypeName) $FldName() Map$fldMapKey$+To$mut$FldType {
 	mapID := wasmlib.GetObjectID(s.id, $varID, wasmlib.TYPE_MAP)

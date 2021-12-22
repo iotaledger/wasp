@@ -10,10 +10,9 @@ var config = map[string]string{
 }
 
 var Templates = []map[string]string{
-	config,
-	common,
-	funcsGo,
+	config, // always first one
 	eventsGo,
+	funcsGo,
 	serviceGo,
 }
 
@@ -156,10 +155,4 @@ var TypeDependent = model.StringMapMap{
 		"Uint32":    "readUInt32LE(0)",
 		"Uint64":    "readBigUInt64LE(0)",
 	},
-}
-
-var common = map[string]string{
-	// *******************************
-	"tmp": `
-tmp`,
 }
