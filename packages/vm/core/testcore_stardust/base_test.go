@@ -1,7 +1,6 @@
 package testcore
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -257,7 +256,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(root.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		errors.Is(err, vmcontext.ErrRepeatingInitCall)
+		require.Contains(t, err.Error(), "already initialized")
 		ch.CheckAccountLedger()
 	})
 	t.Run("accounts", func(t *testing.T) {
@@ -266,7 +265,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(accounts.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		errors.Is(err, vmcontext.ErrRepeatingInitCall)
+		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
 		ch.CheckAccountLedger()
 	})
 	t.Run("blocklog", func(t *testing.T) {
@@ -275,7 +274,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(blocklog.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		errors.Is(err, vmcontext.ErrRepeatingInitCall)
+		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
 		ch.CheckAccountLedger()
 	})
 	t.Run("blob", func(t *testing.T) {
@@ -284,7 +283,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(blob.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		errors.Is(err, vmcontext.ErrRepeatingInitCall)
+		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
 		ch.CheckAccountLedger()
 	})
 	t.Run("governance", func(t *testing.T) {
@@ -293,7 +292,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(governance.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		errors.Is(err, vmcontext.ErrRepeatingInitCall)
+		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
 		ch.CheckAccountLedger()
 	})
 }

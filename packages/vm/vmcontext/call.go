@@ -75,10 +75,8 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hna
 	defer vmctx.popCallContext()
 
 	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
-		if !vmctx.callerIsRoot() {
-			panic(ErrRepeatingInitCall)
-		}
+	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() && !vmctx.callerIsRoot() {
+		panic(ErrRepeatingInitCall)
 	}
 	return ep.Call(NewSandbox(vmctx))
 }
