@@ -15,9 +15,10 @@ type VMRunner struct{}
 
 func (r VMRunner) Run(task *vm.VMTask) {
 	// optimistic read panic catcher for the whole VM task
-	err := util.CatchPanicReturnError(func() {
-		runTask(task)
-	}, coreutil.ErrorStateInvalidated)
+	err := util.CatchPanicReturnError(
+		func() { runTask(task) },
+		coreutil.ErrorStateInvalidated,
+	)
 	if err != nil {
 		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
 	}
@@ -35,7 +36,6 @@ func runTask(task *vm.VMTask) {
 	var lastErr error
 
 	var numOffLedger, numSuccess uint16
-	var numOnLedger uint8
 	reqIndexInTheBlock := 0
 
 	// main loop over the batch of requests
@@ -49,8 +49,6 @@ func runTask(task *vm.VMTask) {
 		reqIndexInTheBlock++
 		if req.IsOffLedger() {
 			numOffLedger++
-		} else {
-			numOnLedger++
 		}
 		// get the last result from the call to the entry point. It is used by Solo only
 		lastResult, lastErr = vmctx.GetResult()

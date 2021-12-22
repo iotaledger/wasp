@@ -33,6 +33,8 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.RequestData, trace string) (dict.
 	ch.Log.Debugf("runRequestsNolock ('%s')", trace)
 
 	anchorOutput, anchorOutputID := ch.GetAnchorOutput()
+	var callRes dict.Dict
+	var callErr error
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		AnchorOutput:       anchorOutput,
@@ -44,16 +46,13 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.RequestData, trace string) (dict.
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log,
 		RentStructure:      ch.Env.utxoDB.RentStructure(),
-	}
-	var err error
-	var callRes dict.Dict
-	var callErr error
-	// state baseline always valid in Solo
-	task.SolidStateBaseline = ch.GlobalSync.GetSolidIndexBaseline()
-	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
-		require.NoError(ch.Env.T, err)
-		callRes = callResult
-		callErr = callError
+		// state baseline is always valid in Solo
+		SolidStateBaseline: ch.GlobalSync.GetSolidIndexBaseline(),
+		OnFinish: func(callResult dict.Dict, callError error, err error) {
+			require.NoError(ch.Env.T, err)
+			callRes = callResult
+			callErr = callError
+		},
 	}
 
 	ch.Env.vmRunner.Run(task)

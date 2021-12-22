@@ -56,14 +56,19 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 
 	// catches error which is not the request or contract fault
 	// If it occurs, the request is just skipped
-	err := util.CatchPanicReturnError(func() {
-		// transfer all attached assets to the sender's account
-		vmctx.creditAssetsToChain()
-		// load gas and fee policy, calculate and set gas budget
-		vmctx.prepareGasBudget()
-		// run the contract program
-		vmctx.callTheContract()
-	}, vmtxbuilder.ErrInputLimitExceeded, vmtxbuilder.ErrOutputLimitExceeded, vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
+	err := util.CatchPanicReturnError(
+		func() {
+			// transfer all attached assets to the sender's account
+			vmctx.creditAssetsToChain()
+			// load gas and fee policy, calculate and set gas budget
+			vmctx.prepareGasBudget()
+			// run the contract program
+			vmctx.callTheContract()
+		},
+		vmtxbuilder.ErrInputLimitExceeded,
+		vmtxbuilder.ErrOutputLimitExceeded,
+		vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit,
+	)
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
