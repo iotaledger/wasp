@@ -33,7 +33,6 @@ type VMContext struct {
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
 	blockOutputCount     uint8
-	anchorIDUpdated      bool
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
 	// ---- request context
 	chainInfo          *governance.ChainInfo
@@ -119,6 +118,15 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		foundryLoader,
 		task.RentStructure,
 	)
+
+	// at the beginning of each block we save the anchor ID of the current state
+	if task.AnchorOutput.StateIndex > 0 {
+		ret.currentStateUpdate = state.NewStateUpdate()
+		ret.updateLatestAnchorID()
+		ret.virtualState.ApplyStateUpdates(ret.currentStateUpdate)
+		ret.currentStateUpdate = nil
+	}
+
 	return ret
 }
 
