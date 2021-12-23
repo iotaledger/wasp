@@ -235,7 +235,7 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	tokenScheme := par.MustGetTokenScheme(ParamsTokenScheme, &iotago.SimpleTokenScheme{})
-	tokenTag := par.MustGetTokenTag(ParamsTokenTag)
+	tokenTag := par.MustGetTokenTag(ParamsTokenTag, iotago.TokenTag{})
 	tokenMaxSupply := par.MustGetBigInt(ParamsMaxSupply)
 	a.Require(tokenMaxSupply.Cmp(big.NewInt(0)) > 0, "maximum supply must be positive")
 	a.Require(tokenMaxSupply.Cmp(abi.MaxUint256) <= 0, "too big maximum supply")

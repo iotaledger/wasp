@@ -79,6 +79,10 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 }
 
 func (txb *AnchorTransactionBuilder) nextFoundrySerialNumber() uint32 {
+	return txb.nextFoundryCounter() + 1
+}
+
+func (txb *AnchorTransactionBuilder) nextFoundryCounter() uint32 {
 	numNew := uint32(0)
 	for _, f := range txb.invokedFoundries {
 		if f.isNewCreated() {

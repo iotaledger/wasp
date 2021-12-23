@@ -222,7 +222,6 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 	if aliasID.Empty() {
 		aliasID = iotago.AliasIDFromOutputID(txb.anchorOutputID.ID())
 	}
-	foundryCounter := txb.nextFoundrySerialNumber()
 	anchorOutput := &iotago.AliasOutput{
 		Amount:               txb.totalIotasOnChain + txb.dustDepositOnAnchor,
 		NativeTokens:         nil, // anchor output does not contain native tokens
@@ -231,7 +230,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 		GovernanceController: txb.anchorOutput.GovernanceController,
 		StateIndex:           txb.anchorOutput.StateIndex + 1,
 		StateMetadata:        stateData.Bytes(),
-		FoundryCounter:       foundryCounter,
+		FoundryCounter:       txb.nextFoundryCounter(),
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
 				Address: aliasID.ToAddress(),

@@ -39,7 +39,8 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 		if vmctx.task.AnchorOutput.StateIndex > 0 {
 			vmctx.currentStateUpdate = state.NewStateUpdate()
 			vmctx.updateLatestAnchorID()
-			vmctx.virtualState.ApplyStateUpdates()
+			vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+			vmctx.currentStateUpdate = nil
 		}
 		vmctx.anchorIDUpdated = true
 	}

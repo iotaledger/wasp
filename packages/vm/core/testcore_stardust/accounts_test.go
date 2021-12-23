@@ -4,9 +4,6 @@ import (
 	"math/big"
 	"testing"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -23,7 +20,6 @@ func TestCreateFoundry(t *testing.T) {
 	_ = iscp.NewAgentID(senderAddr, 0)
 
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
-		accounts.ParamsTokenTag, codec.EncodeTokenTag(iotago.TokenTag{}),
 		accounts.ParamsMaxSupply, big.NewInt(10).Bytes(),
 	)
 	_, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
