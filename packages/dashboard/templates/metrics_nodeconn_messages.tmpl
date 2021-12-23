@@ -16,62 +16,62 @@
 				<td>OUT</td>
 				<td>{{ (($metrics.GetOutPullState).GetMessageTotal) }}</td>
 				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullState).GetLastEvent)) }}</td>
-				<td>{{ (($metrics.GetOutPullState).GetLastMessage) }}</td>
+				{{ template "longStringCell" (($metrics.GetOutPullState).GetLastMessage)}}
 			</tr>
 			<tr>
 				<td>Pull tx inclusion state</td>
 				<td>OUT</td>
 				<td>{{ (($metrics.GetOutPullTransactionInclusionState).GetMessageTotal) }}</td>
 				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullTransactionInclusionState).GetLastEvent)) }}</td>
-				<td>{{ (($metrics.GetOutPullTransactionInclusionState).GetLastMessage) }}</td>
+				{{ template "longStringCell" (($metrics.GetOutPullTransactionInclusionState).GetLastMessage)}}
 			</tr>
 			<tr>
 				<td>Pull confirmed output</td>
 				<td>OUT</td>
 				<td>{{ (($metrics.GetOutPullConfirmedOutput).GetMessageTotal) }}</td>
 				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullConfirmedOutput).GetLastEvent)) }}</td>
-				<td>{{ (($metrics.GetOutPullConfirmedOutput).GetLastMessage) }}</td>
+				{{ template "longStringCell" (($metrics.GetOutPullConfirmedOutput).GetLastMessage)}}
 			</tr>
 			<tr>
 				<td>Post transaction</td>
 				<td>OUT</td>
 				<td>{{ (($metrics.GetOutPostTransaction).GetMessageTotal) }}</td>
 				<td>{{ (formatTimestampOrNever (($metrics.GetOutPostTransaction).GetLastEvent)) }}</td>
-				<td>{{ (($metrics.GetOutPostTransaction).GetLastMessage) }}</td>
+				{{ template "longStringCell" (($metrics.GetOutPostTransaction).GetLastMessage)}}
 			</tr>
 			<tr>
 				<td>Transaction</td>
 				<td>IN</td>
 				<td>{{ (($metrics.GetInTransaction).GetMessageTotal) }}</td>
 				<td>{{ (formatTimestampOrNever (($metrics.GetInTransaction).GetLastEvent)) }}</td>
-				<td>{{ (($metrics.GetInTransaction).GetLastMessage) }}</td>
+				{{ template "longStringCell" (($metrics.GetInTransaction).GetLastMessage)}}
 			</tr>
 			<tr>
 				<td>Inclusion state</td>
 				<td>IN</td>
 				<td>{{ (($metrics.GetInInclusionState).GetMessageTotal) }}</td>
 				<td>{{ (formatTimestampOrNever (($metrics.GetInInclusionState).GetLastEvent)) }}</td>
-				<td>{{ (($metrics.GetInInclusionState).GetLastMessage) }}</td>
+				{{ template "longStringCell" (($metrics.GetInInclusionState).GetLastMessage)}}
 			</tr>
 			<tr>
 				<td>Output</td>
 				<td>IN</td>
 				<td>{{ (($metrics.GetInOutput).GetMessageTotal) }}</td>
 				<td>{{ (formatTimestampOrNever (($metrics.GetInOutput).GetLastEvent)) }}</td>
-				<td>{{ (($metrics.GetInOutput).GetLastMessage) }}</td>
+				{{ template "longStringCell" (($metrics.GetInOutput).GetLastMessage)}}
 			</tr>
 			<tr>
 				<td>Unspent alias output</td>
 				<td>IN</td>
 				<td>{{ (($metrics.GetInUnspentAliasOutput).GetMessageTotal) }}</td>
 				<td>{{ (formatTimestampOrNever (($metrics.GetInUnspentAliasOutput).GetLastEvent)) }}</td>
-				<td>{{ (($metrics.GetInUnspentAliasOutput).GetLastMessage) }}</td>
+				{{ template "longStringCell" (($metrics.GetInUnspentAliasOutput).GetLastMessage)}}
 			</tr>
 		</tbody>
 	</table>
 {{end}}
 
-{{define "title"}}Kažkas{{end}}
+{{define "title"}}Connection to L1 metrics{{end}}
 
 {{define "body"}}
 <div class="card fluid">

@@ -39,6 +39,11 @@
 	</a>
 {{end}}
 
+{{define "longStringCell"}}
+	{{ $longString := anythingToString . }}
+	<td title="{{$longString}}">{{ trim 100 (replace $longString "\n" "" -1) }}</td>
+{{end}}
+
 {{define "base"}}
 	<!doctype html>
 	<html lang="en">

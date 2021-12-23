@@ -48,6 +48,13 @@ func bytesToString(b []byte) string {
 	return string(b)
 }
 
+func anythingToString(i interface{}) string {
+	if i == nil {
+		return ""
+	}
+	return fmt.Sprintf("%v", i)
+}
+
 func formatTimestamp(ts interface{}) string {
 	t, ok := ts.(time.Time)
 	if !ok {
