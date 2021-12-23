@@ -2,6 +2,7 @@ package client
 
 import (
 	"sort"
+	"strconv"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
@@ -26,6 +27,10 @@ func (a Arguments) setBase58(key, val string, typeID int32) {
 		panic("invalid byte size")
 	}
 	a.set(key, bytes)
+}
+
+func (a Arguments) IndexedKey(key string, index int) string {
+	return key + "." + strconv.Itoa(index)
 }
 
 func (a Arguments) Mandatory(key string) {

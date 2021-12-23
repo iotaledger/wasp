@@ -24,7 +24,11 @@ export class Arguments {
 		this.set(key, bytes);
 	}
 
-	mandatory(key:string): void {
+	indexedKey(key: string, index: client.Int32): string {
+		return key + "." + index.toString();
+	}
+
+	mandatory(key: string): void {
 		if (!this.args.has(key)) {
 			client.panic("missing mandatory " + key)
 		}

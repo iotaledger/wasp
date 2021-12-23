@@ -47,9 +47,23 @@ $#if result resultStruct
 `,
 	// *******************************
 	"funcArgSetter": `
+$#if array funcArgSetterArray funcArgSetterBasic
+`,
+	// *******************************
+	"funcArgSetterBasic": `
 	
 	$fldName(v: $fldLangType): void {
 		this.args.set$FldType(Arg$FldName, v);
+	}
+`,
+	// *******************************
+	"funcArgSetterArray": `
+	
+	$fldName(a: $fldLangType[]): void {
+		for (let i = 0; i < a.length; i++) {
+			this.args.set$FldType(this.args.indexedKey(Arg$FldName, i), a[i]);
+		}
+		this.args.setInt32(Arg$FldName, a.length);
 	}
 `,
 	// *******************************

@@ -55,9 +55,23 @@ $#if func funcPost viewCall
 `,
 	// *******************************
 	"funcArgSetter": `
+$#if array funcArgSetterArray funcArgSetterBasic
+`,
+	// *******************************
+	"funcArgSetterBasic": `
 
 func (f $FuncName$Kind) $FldName(v $fldLangType) {
 	f.args.Set$FldType(Arg$FldName, v)
+}
+`,
+	// *******************************
+	"funcArgSetterArray": `
+
+func (f $FuncName$Kind) $FldName(a []$fldLangType) {
+	for i, v := range a {
+		f.args.Set$FldType(f.args.IndexedKey(Arg$FldName, i), v)
+	}
+	f.args.SetInt32(Arg$FldName, int32(len(a)))
 }
 `,
 	// *******************************
