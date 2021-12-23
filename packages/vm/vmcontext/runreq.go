@@ -7,6 +7,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv/dict"
+
 	"github.com/iotaledger/wasp/packages/iscp/gas"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -23,10 +25,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var (
-	ErrTargetContractNotFound = xerrors.New("target contract not found")
-)
-
 // RunTheRequest processes each iscp.RequestData in the batch
 func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16) error {
 	// prepare context for the request
@@ -41,7 +39,8 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 		if vmctx.task.AnchorOutput.StateIndex > 0 {
 			vmctx.currentStateUpdate = state.NewStateUpdate()
 			vmctx.updateLatestAnchorID()
-			vmctx.virtualState.ApplyStateUpdates()
+			vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+			vmctx.currentStateUpdate = nil
 		}
 		vmctx.anchorIDUpdated = true
 	}
@@ -58,14 +57,19 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 
 	// catches error which is not the request or contract fault
 	// If it occurs, the request is just skipped
-	err := util.CatchPanicReturnError(func() {
-		// transfer all attached assets to the sender's account
-		vmctx.creditAssetsToChain()
-		// load gas and fee policy, calculate and set gas budget
-		vmctx.prepareGasBudget()
-		// run the contract program
-		vmctx.callTheContract()
-	}, vmtxbuilder.ErrInputLimitExceeded, vmtxbuilder.ErrOutputLimitExceeded, vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
+	err := util.CatchPanicReturnError(
+		func() {
+			// transfer all attached assets to the sender's account
+			vmctx.creditAssetsToChain()
+			// load gas and fee policy, calculate and set gas budget
+			vmctx.prepareGasBudget()
+			// run the contract program
+			vmctx.callTheContract()
+		},
+		vmtxbuilder.ErrInputLimitExceeded,
+		vmtxbuilder.ErrOutputLimitExceeded,
+		vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit,
+	)
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
@@ -141,15 +145,16 @@ func (vmctx *VMContext) callTheContract() {
 	vmctx.lastError = nil
 	func() {
 		defer func() {
-			vmctx.lastError = checkVMPluginPanic(recover())
-			if vmctx.lastError == nil {
+			panicErr := checkVMPluginPanic(recover())
+			if panicErr == nil {
 				return
 			}
+			vmctx.lastError = panicErr
 			vmctx.lastResult = nil
 			vmctx.Debugf("%v", vmctx.lastError)
 			vmctx.Debugf(string(debug.Stack()))
 		}()
-		vmctx.callFromRequest()
+		vmctx.lastResult, vmctx.lastError = vmctx.callFromRequest()
 	}()
 	if vmctx.lastError != nil {
 		// panic happened during VM plugin call
@@ -181,11 +186,11 @@ func checkVMPluginPanic(r interface{}) error {
 			panic(err)
 		}
 	}
-	return xerrors.Errorf("exception: %w", r)
+	return xerrors.Errorf("exception: '%v'", r)
 }
 
 // callFromRequest is the call itself. Assumes sc exists
-func (vmctx *VMContext) callFromRequest() {
+func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 	vmctx.Debugf("callFromRequest: %s", vmctx.req.ID().String())
 
 	// calling only non view entry points. Calling the view will trigger error and fallback
@@ -195,7 +200,7 @@ func (vmctx *VMContext) callFromRequest() {
 		vmctx.GasBurn(gas.NotFoundTarget)
 		panic(xerrors.Errorf("%w: target contract: '%s'", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract.String()))
 	}
-	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
+	return vmctx.callNonViewByProgramHash(
 		targetContract.Hname(),
 		entryPoint,
 		vmctx.req.Params(),

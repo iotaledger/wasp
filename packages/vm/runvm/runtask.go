@@ -15,9 +15,10 @@ type VMRunner struct{}
 
 func (r VMRunner) Run(task *vm.VMTask) {
 	// optimistic read panic catcher for the whole VM task
-	err := util.CatchPanicReturnError(func() {
-		runTask(task)
-	}, coreutil.ErrorStateInvalidated)
+	err := util.CatchPanicReturnError(
+		func() { runTask(task) },
+		coreutil.ErrorStateInvalidated,
+	)
 	if err != nil {
 		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
 	}
@@ -35,13 +36,12 @@ func runTask(task *vm.VMTask) {
 	var lastErr error
 
 	var numOffLedger, numSuccess uint16
-	var numOnLedger uint8
 	reqIndexInTheBlock := 0
 
 	// main loop over the batch of requests
 	for _, req := range task.Requests {
 		if skipReason := vmctx.RunTheRequest(req, uint16(reqIndexInTheBlock)); skipReason != nil {
-			// some request are just ignored (deterministically)
+			// some requests are just ignored (deterministically)
 			task.Log.Warnf("request skipped (ignored) by the VM: %s, reason: %v",
 				req.ID().String(), skipReason)
 			continue
@@ -49,8 +49,6 @@ func runTask(task *vm.VMTask) {
 		reqIndexInTheBlock++
 		if req.IsOffLedger() {
 			numOffLedger++
-		} else {
-			numOnLedger++
 		}
 		// get the last result from the call to the entry point. It is used by Solo only
 		lastResult, lastErr = vmctx.GetResult()
@@ -65,6 +63,11 @@ func runTask(task *vm.VMTask) {
 
 	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		task.ProcessedRequestsCount, numSuccess, numOffLedger)
+
+	if task.ProcessedRequestsCount == 0 {
+		// empty result. Abandon without closing
+		task.OnFinish(nil, nil, nil)
+	}
 
 	blockIndex, stateCommitment, timestamp, rotationAddr := vmctx.CloseVMContext(
 		task.ProcessedRequestsCount, numSuccess, numOffLedger)

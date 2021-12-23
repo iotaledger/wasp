@@ -131,14 +131,20 @@ func (s chainStateWrapper) Set(name kv.Key, value []byte) {
 	s.vmctx.currentStateUpdate.Mutations().Set(name, value)
 }
 
-func (vmctx *VMContext) State(burnGas ...kv.BurnGasFn) kv.KVStore {
+func (vmctx *VMContext) State() kv.KVStore {
 	vmctx.task.SolidStateBaseline.MustValidate()
-	store := subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
-	if len(burnGas) > 0 {
-		return kv.WithGas(store, burnGas[0])
-	}
-	return store
+	return subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 }
+
+// Disabled because of recursive calls
+//func (vmctx *VMContext) State(burnGas ...kv.BurnGasFn) kv.KVStore {
+//	vmctx.task.SolidStateBaseline.MustValidate()
+//	store := subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
+//	if len(burnGas) > 0 {
+//		return kv.WithGas(store, burnGas[0])
+//	}
+//	return store
+//}
 
 func (s chainStateWrapper) MustGet(key kv.Key) []byte {
 	return kv.MustGet(s, key)

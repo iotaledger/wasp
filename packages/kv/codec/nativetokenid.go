@@ -6,7 +6,7 @@ import (
 )
 
 func DecodeNativeTokenID(b []byte, def ...iotago.NativeTokenID) (iotago.NativeTokenID, error) {
-	if len(b) == iotago.NativeTokenIDLength {
+	if len(b) != iotago.NativeTokenIDLength {
 		if len(def) == 0 {
 			return iotago.NativeTokenID{}, xerrors.Errorf("wrong data length")
 		}

@@ -46,6 +46,20 @@ type Balance interface {
 	Assets() *Assets
 }
 
+// Foundries are identified by serial number in the Sandbox
+// Only used internally by the VM
+// TODO foundry metadata
+type Foundries interface {
+	// CreateNew creates a new foundry controlled by the caller
+	CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) uint32
+	// Destroy existing foundry, if this is possible
+	Destroy(uint32)
+	// GetOutput returns the output
+	GetOutput(uint32) *iotago.FoundryOutput
+	// ModifySupply inflates of shrinks supply
+	ModifySupply(serNum uint32, delta *big.Int)
+}
+
 // Sandbox is an interface given to the processor to access the VMContext
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
@@ -75,6 +89,7 @@ type Sandbox interface {
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
+	Foundries() Foundries
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters

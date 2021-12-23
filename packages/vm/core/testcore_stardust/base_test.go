@@ -4,17 +4,15 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-
 	"github.com/iotaledger/wasp/packages/iscp/gas"
-
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
-	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/wasp/packages/transaction"
-
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -89,7 +87,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		req := solo.NewCallParams("dummyContract", "dummyEP")
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
-		require.True(t, xerrors.Is(err, vmcontext.ErrTargetContractNotFound))
+		require.Contains(t, err.Error(), vmcontext.ErrTargetContractNotFound.Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -124,7 +122,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		req := solo.NewCallParams("dummyContract", "dummyEP")
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
-		require.True(t, xerrors.Is(err, vmcontext.ErrTargetContractNotFound))
+		require.Contains(t, err.Error(), vmcontext.ErrTargetContractNotFound.Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -159,7 +157,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP")
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
-		require.True(t, xerrors.Is(err, vmcontext.ErrTargetEntryPointNotFound))
+		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -194,7 +192,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP")
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
-		require.True(t, xerrors.Is(err, vmcontext.ErrTargetEntryPointNotFound))
+		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -249,4 +247,52 @@ func TestOkCall(t *testing.T) {
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	env.WaitPublisher()
+}
+
+func TestRepeatInit(t *testing.T) {
+	t.Run("root", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+		req := solo.NewCallParams(root.Contract.Name, "init")
+		_, err := ch.PostRequestSync(req, nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "already initialized")
+		ch.CheckAccountLedger()
+	})
+	t.Run("accounts", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+		req := solo.NewCallParams(accounts.Contract.Name, "init")
+		_, err := ch.PostRequestSync(req, nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
+		ch.CheckAccountLedger()
+	})
+	t.Run("blocklog", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+		req := solo.NewCallParams(blocklog.Contract.Name, "init")
+		_, err := ch.PostRequestSync(req, nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
+		ch.CheckAccountLedger()
+	})
+	t.Run("blob", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+		req := solo.NewCallParams(blob.Contract.Name, "init")
+		_, err := ch.PostRequestSync(req, nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
+		ch.CheckAccountLedger()
+	})
+	t.Run("governance", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+		req := solo.NewCallParams(governance.Contract.Name, "init")
+		_, err := ch.PostRequestSync(req, nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
+		ch.CheckAccountLedger()
+	})
 }

@@ -21,13 +21,12 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log contract")
 
 const (
-	KeyPrefixBlockRegistry = string('a' + iota)
-	KeyPrefixControlAddresses
-	KeyPrefixRequestLookupIndex
-	KeyPrefixRequestReceipts
-	KeyPrefixRequestEvents
-	KeyPrefixSmartContractEventsLookup
-	KeyPrefixNativeTokenOutputLookupMap
+	prefixBlockRegistry = string('a' + iota)
+	prefixControlAddresses
+	prefixRequestLookupIndex
+	prefixRequestReceipts
+	prefixRequestEvents
+	prefixSmartContractEventsLookup
 )
 
 var (
@@ -41,7 +40,6 @@ var (
 	FuncGetEventsForRequest        = coreutil.ViewFunc("getEventsForRequest")
 	FuncGetEventsForBlock          = coreutil.ViewFunc("getEventsForBlock")
 	FuncGetEventsForContract       = coreutil.ViewFunc("getEventsForContract")
-	FuncGetNativeTokensIDs         = coreutil.ViewFunc("getNativeTokenIDs")
 )
 
 const (

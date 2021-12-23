@@ -40,7 +40,7 @@ func (ch *Chain) String() string {
 	return buf.String()
 }
 
-// DumpAccounts dumps all account balances into the human readable string
+// DumpAccounts dumps all account balances into the human-readable string
 func (ch *Chain) DumpAccounts() string {
 	_, chainOwnerID, _ := ch.GetInfo()
 	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID.String(), chainOwnerID.String())
@@ -341,7 +341,7 @@ func mustNativeTokenIDFromBytes(data []byte) *iotago.NativeTokenID {
 }
 
 func (ch *Chain) GetOnChainTokenIDs() []*iotago.NativeTokenID {
-	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetNativeTokensIDs.Name)
+	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncGetNativeTokenIDRegistry.Name)
 	require.NoError(ch.Env.T, err)
 	ret := make([]*iotago.NativeTokenID, 0, len(res))
 	for k := range res {

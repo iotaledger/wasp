@@ -127,7 +127,8 @@ func (s *sandbox) Send(par iscp.RequestParameters) bool {
 }
 
 func (s *sandbox) State() kv.KVStore {
-	return s.vmctx.State(s.Burn)
+	return s.vmctx.State()
+	//return s.vmctx.State(s.Burn)
 }
 
 func (s *sandbox) Utils() iscp.Utils {
@@ -154,4 +155,24 @@ func (s *sandbox) Burn(gas uint64) {
 
 func (s *sandbox) Budget() uint64 {
 	return s.vmctx.GasBudgetLeft()
+}
+
+func (s *sandbox) Foundries() iscp.Foundries {
+	return s
+}
+
+func (s *sandbox) CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) uint32 {
+	return s.vmctx.CreateNewFoundry(scheme, tag, maxSupply)
+}
+
+func (s *sandbox) Destroy(sn uint32) {
+	s.vmctx.DestroyFoundry(sn)
+}
+
+func (s *sandbox) GetOutput(sn uint32) *iotago.FoundryOutput {
+	return s.vmctx.GetOutput(sn)
+}
+
+func (s *sandbox) ModifySupply(sn uint32, delta *big.Int) {
+	s.vmctx.ModifySupply(sn, delta)
 }

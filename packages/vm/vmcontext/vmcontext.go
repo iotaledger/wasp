@@ -1,8 +1,10 @@
 package vmcontext
 
 import (
-	"math/big"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -104,16 +106,19 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),
 	}
-	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*big.Int, *iotago.UTXOInput) {
-		return ret.loadNativeTokensOnChain(id)
+	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
+		return ret.loadNativeTokenOutput(id)
+	}
+	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
+		return ret.loadFoundry(serNum)
 	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
 		&task.AnchorOutputID,
 		nativeTokenBalanceLoader,
+		foundryLoader,
 		task.RentStructure,
 	)
-
 	return ret
 }
 
@@ -125,9 +130,11 @@ func (vmctx *VMContext) GetResult() (dict.Dict, error) {
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, iotago.Address) {
-	rotationAddr := vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
+	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
+	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
-	vmctx.saveTokenIDInternalIndices()
+	vmctx.saveInternalUTXOs()
+	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 
 	blockIndex := vmctx.virtualState.BlockIndex()
 	stateCommitment := vmctx.virtualState.StateCommitment()
@@ -136,18 +143,15 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	return blockIndex, stateCommitment, timestamp, rotationAddr
 }
 
-func (vmctx *VMContext) checkRotationAddress() iotago.Address {
-	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	return governance.GetRotationAddress(vmctx.State())
+func (vmctx *VMContext) checkRotationAddress() (ret iotago.Address) {
+	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
+		ret = governance.GetRotationAddress(s)
+	})
+	return
 }
 
-// mustSaveBlockInfo is in the blocklog partition context
-// returns rotation address if this block is a rotation block
-func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) iotago.Address {
-	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
-
+// saveBlockInfo is in the blocklog partition context. Returns rotation address if this block is a rotation block
+func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint16) iotago.Address {
 	if rotationAddress := vmctx.checkRotationAddress(); rotationAddress != nil {
 		// block was marked fake by the governance contract because it is a committee rotation.
 		// There was only on request in the block
@@ -155,9 +159,6 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 		return rotationAddress
 	}
 	// block info will be stored into the separate state update
-	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
 	prevStateData, err := iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
 	if err != nil {
 		panic(err)
@@ -174,57 +175,60 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 		DustDepositAnchor:        dustAnchor,
 		DustDepositNativeTokenID: dustNativeToken,
 	}
-
-	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
-	if idx != blockInfo.BlockIndex {
-		panic("CloseVMContext: inconsistent block index")
-	}
 	if vmctx.virtualState.PreviousStateHash() != blockInfo.PreviousStateHash {
 		panic("CloseVMContext: inconsistent previous state hash")
 	}
-	blocklog.SaveControlAddressesIfNecessary(
-		vmctx.State(),
-		vmctx.task.AnchorOutput.StateController,
-		vmctx.task.AnchorOutput.GovernanceController,
-		vmctx.task.AnchorOutput.StateIndex,
-	)
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
-	vmctx.currentStateUpdate = nil // invalidate
 
+	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
+		idx := blocklog.SaveNextBlockInfo(s, blockInfo)
+		if idx != blockInfo.BlockIndex {
+			panic("CloseVMContext: inconsistent block index")
+		}
+		blocklog.SaveControlAddressesIfNecessary(
+			s,
+			vmctx.task.AnchorOutput.StateController,
+			vmctx.task.AnchorOutput.GovernanceController,
+			vmctx.task.AnchorOutput.StateIndex,
+		)
+	})
 	return nil
 }
 
 // closeBlockContexts closing block contexts in deterministic FIFO sequence
 func (vmctx *VMContext) closeBlockContexts() {
-	vmctx.currentStateUpdate = state.NewStateUpdate()
 	for _, hname := range vmctx.blockContextCloseSeq {
 		b := vmctx.blockContext[hname]
 		b.onClose(b.obj)
 	}
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
-	vmctx.currentStateUpdate = nil
 }
 
-func (vmctx *VMContext) saveTokenIDInternalIndices() {
-	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
-	defer vmctx.popCallContext()
+func (vmctx *VMContext) saveInternalUTXOs() {
+	nativeTokenIDs, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
+	nativeTokensOutputsToBeUpdated := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDs)
 
-	tokenIDsToBeUpdated, tokenIDsToBeRemoved := vmctx.txbuilder.TokenIDsToBeUpdated()
+	foundryIDs, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
+	foundrySNToBeUpdated := vmctx.txbuilder.FoundryOutputsBySerNums(foundryIDs)
 
-	updateCmds := make([]*blocklog.NativeTokenUTXOUpdateCmd, 0, len(tokenIDsToBeUpdated)+len(tokenIDsToBeRemoved))
-	for i, id := range tokenIDsToBeUpdated {
-		updateCmds = append(updateCmds, &blocklog.NativeTokenUTXOUpdateCmd{
-			Add:         true,
-			ID:          id,
-			OutputIndex: uint16(i + 1),
-		})
-	}
-	for _, id := range tokenIDsToBeRemoved {
-		updateCmds = append(updateCmds, &blocklog.NativeTokenUTXOUpdateCmd{
-			Add: false,
-			ID:  id,
-		})
+	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
+	outputIndex := uint16(1)
 
-	}
-	blocklog.UpdateNativeAssetsUTXOIndices(vmctx.State(), vmctx.task.AnchorOutput.StateIndex+1, updateCmds)
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		// update native token outputs
+		for _, out := range nativeTokensOutputsToBeUpdated {
+			accounts.SaveNativeTokenOutput(s, out, blockIndex, outputIndex)
+			outputIndex++
+		}
+		for _, id := range nativeTokensToBeRemoved {
+			accounts.DeleteNativeTokenOutput(s, &id)
+		}
+		// update foundry UTXOs
+		for _, out := range foundrySNToBeUpdated {
+			accounts.SaveFoundryOutput(s, out, blockIndex, outputIndex)
+			outputIndex++
+		}
+		for _, sn := range foundriesToBeRemoved {
+			accounts.DeleteFoundryOutput(s, sn)
+		}
+	})
 }
