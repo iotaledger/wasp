@@ -108,6 +108,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"decUint32":              decUint32,
 		"bytesToString":          bytesToString,
 		"keyToString":            keyToString,
+		"anythingToString":       anythingToString,
 		"base58":                 base58.Encode,
 		"replace":                strings.Replace,
 		"uri":                    func(s string, p ...interface{}) string { return e.Reverse(s, p...) },
