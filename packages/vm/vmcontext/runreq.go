@@ -34,18 +34,9 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.callStack = vmctx.callStack[:0]
 
-	if !vmctx.anchorIDUpdated {
-		// in the beginning of each block we are saving anchor ID of the current state in the next block
-		if vmctx.task.AnchorOutput.StateIndex > 0 {
-			vmctx.currentStateUpdate = state.NewStateUpdate()
-			vmctx.updateLatestAnchorID()
-			vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
-			vmctx.currentStateUpdate = nil
-		}
-		vmctx.anchorIDUpdated = true
-	}
-
 	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
+	defer func() { vmctx.currentStateUpdate = nil }()
+
 	if err := vmctx.earlyCheckReasonToSkip(); err != nil {
 		return err
 	}
@@ -73,11 +64,9 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
-		vmctx.currentStateUpdate = nil
 		return err
 	}
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
-	vmctx.currentStateUpdate = nil
 	return nil
 }
 

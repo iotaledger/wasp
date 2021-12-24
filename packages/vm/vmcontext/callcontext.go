@@ -30,26 +30,29 @@ func (vmctx *VMContext) pushCallContextAndMoveAssets(contract iscp.Hname, params
 
 const traceStack = false
 
+func (vmctx *VMContext) getCaller() *iscp.AgentID {
+	if len(vmctx.callStack) > 0 {
+		return vmctx.MyAgentID()
+	}
+	if vmctx.req == nil {
+		// core call (e.g. saving the anchor ID)
+		return vmctx.chainOwnerID
+	}
+	// request context
+	return vmctx.req.SenderAccount()
+}
+
 func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, transfer *iscp.Assets) {
-	if traceStack {
-		vmctx.Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
-	}
-	var caller *iscp.AgentID
-	if len(vmctx.callStack) == 0 {
-		// request context
-		caller = vmctx.req.SenderAccount()
-	} else {
-		caller = vmctx.MyAgentID()
-	}
-	if traceStack {
-		vmctx.Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
-	}
-	vmctx.callStack = append(vmctx.callStack, &callContext{
-		caller:   caller,
+	ctx := &callContext{
+		caller:   vmctx.getCaller(),
 		contract: contract,
 		params:   params.Clone(),
 		transfer: transfer,
-	})
+	}
+	if traceStack {
+		vmctx.Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), ctx.caller)
+	}
+	vmctx.callStack = append(vmctx.callStack, ctx)
 }
 
 func (vmctx *VMContext) popCallContext() {
