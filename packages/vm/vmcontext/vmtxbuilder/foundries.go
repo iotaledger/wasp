@@ -67,7 +67,7 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 			serialNumber: foundryOutput.SerialNumber,
 			input:        *inp,
 			in:           foundryOutput,
-			out:          cloneFoundry(foundryOutput),
+			out:          cloneFoundryOutput(foundryOutput),
 		}
 	}
 	// check if the loaded foundry matches the tokenID
@@ -128,7 +128,7 @@ func (txb *AnchorTransactionBuilder) FoundriesToBeUpdated() ([]uint32, []uint32)
 	return toBeUpdated, toBeRemoved
 }
 
-func (txb *AnchorTransactionBuilder) FoundryOutputsBySerNums(serNums []uint32) map[uint32]*iotago.FoundryOutput {
+func (txb *AnchorTransactionBuilder) FoundryOutputsBySN(serNums []uint32) map[uint32]*iotago.FoundryOutput {
 	ret := make(map[uint32]*iotago.FoundryOutput)
 	for _, sn := range serNums {
 		ret[sn] = txb.invokedFoundries[sn].out
@@ -138,8 +138,8 @@ func (txb *AnchorTransactionBuilder) FoundryOutputsBySerNums(serNums []uint32) m
 
 func (f *foundryInvoked) clone() *foundryInvoked {
 	return &foundryInvoked{
-		in:  cloneFoundry(f.in),
-		out: cloneFoundry(f.out),
+		in:  cloneFoundryOutput(f.in),
+		out: cloneFoundryOutput(f.out),
 	}
 }
 
@@ -167,7 +167,7 @@ func (f *foundryInvoked) producesOutput() bool {
 	return true
 }
 
-func cloneFoundry(f *iotago.FoundryOutput) *iotago.FoundryOutput {
+func cloneFoundryOutput(f *iotago.FoundryOutput) *iotago.FoundryOutput {
 	if f == nil {
 		return nil
 	}
@@ -177,13 +177,13 @@ func cloneFoundry(f *iotago.FoundryOutput) *iotago.FoundryOutput {
 		NativeTokens:      f.NativeTokens.Clone(),
 		SerialNumber:      f.SerialNumber,
 		TokenTag:          f.TokenTag,
-		CirculatingSupply: f.CirculatingSupply,
-		MaximumSupply:     f.MaximumSupply,
+		CirculatingSupply: new(big.Int).Set(f.CirculatingSupply),
+		MaximumSupply:     new(big.Int).Set(f.MaximumSupply),
 		TokenScheme:       f.TokenScheme,
 		Blocks:            nil,
 	}
 	if !identicalFoundries(f, ret) {
-		panic("cloneFoundry: very bad")
+		panic("cloneFoundryOutput: very bad")
 	}
 	return ret
 }

@@ -228,20 +228,20 @@ func TestTxBuilderConsistency(t *testing.T) {
 		return nil, &iotago.UTXOInput{}
 	}
 
+	var txb *AnchorTransactionBuilder
+	var amounts map[int]uint64
+
 	initialBalance := new(big.Int)
 	balanceLoaderWithInitialBalance := func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
 		for _, id1 := range nativeTokenIDs {
 			if *id == id1 {
-				ret := newInternalTokenOutput(aliasID, *id)
+				ret := txb.newInternalTokenOutput(aliasID, *id)
 				ret.NativeTokens[0].Amount = new(big.Int).Set(initialBalance)
 				return ret, &iotago.UTXOInput{}
 			}
 		}
 		return nil, &iotago.UTXOInput{}
 	}
-
-	var txb *AnchorTransactionBuilder
-	var amounts map[int]uint64
 
 	var numTokenIDs int
 
@@ -690,7 +690,7 @@ func TestFoundries(t *testing.T) {
 	createNFoundries := func(n int) {
 		for i := 0; i < n; i++ {
 			serNum := txb.CreateNewFoundry(&iotago.SimpleTokenScheme{}, iotago.TokenTag{}, big.NewInt(10_000_000))
-			require.EqualValues(t, i, int(serNum))
+			require.EqualValues(t, i+1, int(serNum))
 
 			tin, tout, balanced := txb.Totals()
 			require.True(t, balanced)

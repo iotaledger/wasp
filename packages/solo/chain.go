@@ -352,22 +352,26 @@ func (ch *Chain) GetOnChainTokenIDs() []*iotago.NativeTokenID {
 	return ret
 }
 
-func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, error) {
+func (ch *Chain) GetFoundryOutput(sn uint32) (*iotago.FoundryOutput, error) {
 	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncFoundryOutput.Name,
 		accounts.ParamFoundrySN, sn,
 	)
 	if err != nil {
-		return iotago.NativeTokenID{}, err
+		return nil, err
 	}
 	outBin := res.MustGet(accounts.ParamFoundryOutputBin)
-	out := iotago.FoundryOutput{}
+	out := &iotago.FoundryOutput{}
 	_, err = out.Deserialize(outBin, serializer.DeSeriModeNoValidation, nil)
 	require.NoError(ch.Env.T, err)
+	return out, nil
+}
 
-	ret, err := out.NativeTokenID()
-	require.NoError(ch.Env.T, err)
-
-	return ret, nil
+func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, error) {
+	o, err := ch.GetFoundryOutput(sn)
+	if err != nil {
+		return iotago.NativeTokenID{}, err
+	}
+	return o.MustNativeTokenID(), nil
 }
 
 type DustInfo struct {

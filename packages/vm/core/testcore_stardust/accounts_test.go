@@ -66,10 +66,19 @@ func TestCreateFoundry(t *testing.T) {
 
 		return err, retSN, tokenID
 	}
-	mint := func(sn uint32, amount *big.Int) error {
+	mintTokens := func(sn uint32, amount *big.Int) error {
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
 			accounts.ParamFoundrySN, sn,
 			accounts.ParamSupplyDeltaAbs, amount,
+		)
+		_, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
+		return err
+	}
+	destroyTokens := func(sn uint32, amount *big.Int) error {
+		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
+			accounts.ParamFoundrySN, sn,
+			accounts.ParamSupplyDeltaAbs, amount,
+			accounts.ParamDestroyTokens, true,
 		)
 		_, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		return err
@@ -114,39 +123,117 @@ func TestCreateFoundry(t *testing.T) {
 	})
 	// TODO cover all parameter options
 
-	t.Run("max supply 10, mint 5", func(t *testing.T) {
+	t.Run("max supply 10, mintTokens 5", func(t *testing.T) {
 		initTest()
 		err, sn, tokenID := createFoundry(t, nil, nil, big.NewInt(10))
 		require.EqualValues(t, 1, sn)
 		require.NoError(t, err)
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 
-		err = mint(sn, big.NewInt(5))
+		err = mintTokens(sn, big.NewInt(5))
 		require.NoError(t, err)
 
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(5))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(5))
 	})
-	t.Run("max supply 1, mint 1", func(t *testing.T) {
+	t.Run("max supply 1, mintTokens 1", func(t *testing.T) {
 		initTest()
 		err, sn, tokenID := createFoundry(t, nil, nil, big.NewInt(1))
 		require.EqualValues(t, 1, sn)
 		require.NoError(t, err)
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 
-		err = mint(sn, big.NewInt(1))
+		err = mintTokens(sn, big.NewInt(1))
 		require.NoError(t, err)
 
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(1))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1))
 	})
 
-	t.Run("max supply 1, mint 2", func(t *testing.T) {
+	t.Run("max supply 1, mintTokens 2", func(t *testing.T) {
 		initTest()
 		err, sn, tokenID := createFoundry(t, nil, nil, big.NewInt(1))
 		require.EqualValues(t, 1, sn)
 		require.NoError(t, err)
 
-		err = mint(sn, big.NewInt(2))
+		err = mintTokens(sn, big.NewInt(2))
 		require.True(t, errors.Is(err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds))
 
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+	})
+	t.Run("max supply 1000, mintTokens 500_500_1", func(t *testing.T) {
+		initTest()
+		err, sn, tokenID := createFoundry(t, nil, nil, big.NewInt(1000))
+		require.EqualValues(t, 1, sn)
+		require.NoError(t, err)
+
+		err = mintTokens(sn, big.NewInt(500))
+		require.NoError(t, err)
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(500))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(500))
+
+		err = mintTokens(sn, big.NewInt(500))
+		require.NoError(t, err)
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(1000))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1000))
+
+		err = mintTokens(sn, big.NewInt(1))
+		require.True(t, errors.Is(err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds))
+
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(1000))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1000))
+	})
+	t.Run("max supply MaxUint256, mintTokens MaxUint256_1", func(t *testing.T) {
+		initTest()
+		err, sn, tokenID := createFoundry(t, nil, nil, abi.MaxUint256)
+		require.EqualValues(t, 1, sn)
+		require.NoError(t, err)
+
+		err = mintTokens(sn, abi.MaxUint256)
+		require.NoError(t, err)
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, abi.MaxUint256)
+
+		err = mintTokens(sn, big.NewInt(1))
+		require.True(t, errors.Is(err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds))
+
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, abi.MaxUint256)
+		ch.AssertL2TotalNativeTokens(&tokenID, abi.MaxUint256)
+	})
+	t.Run("max supply 100, destroy fail", func(t *testing.T) {
+		initTest()
+		err, sn, tokenID := createFoundry(t, nil, nil, abi.MaxUint256)
+		require.EqualValues(t, 1, sn)
+		require.NoError(t, err)
+
+		err = destroyTokens(sn, big.NewInt(1))
+		require.True(t, errors.Is(err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds))
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+	})
+	t.Run("max supply 100, mint_20, destroy_10", func(t *testing.T) {
+		initTest()
+		err, sn, tokenID := createFoundry(t, nil, nil, big.NewInt(100))
+		require.EqualValues(t, 1, sn)
+		require.NoError(t, err)
+
+		out, err := ch.GetFoundryOutput(1)
+		require.NoError(t, err)
+		require.EqualValues(t, out.MustNativeTokenID(), tokenID)
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+
+		err = mintTokens(sn, big.NewInt(20))
+		require.NoError(t, err)
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(20))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(20))
+
+		err = destroyTokens(sn, big.NewInt(10))
+		require.NoError(t, err)
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(10))
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(10))
 	})
 
 }

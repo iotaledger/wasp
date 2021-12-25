@@ -24,7 +24,7 @@ func TestInit(t *testing.T) {
 	chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(1)
 	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-1)
-	chain.AssertTotalIotas(1)
+	chain.AssertL2TotalIotas(1)
 	chain.AssertCommonAccountIotas(1)
 
 	checkFees(chain, blob.Contract.Name, 0, 0)
@@ -44,7 +44,7 @@ func TestBase(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 5, 0)
@@ -63,7 +63,7 @@ func TestFeeIsEnough1(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 1, 0)
@@ -76,7 +76,7 @@ func TestFeeIsEnough1(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2 + 1)
-	chain.AssertTotalIotas(2 + 1)
+	chain.AssertL2TotalIotas(2 + 1)
 	chain.AssertL2AccountNativeToken(chain.OriginatorAgentID, colored.IOTA, 0)
 	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-1)
 }
@@ -94,7 +94,7 @@ func TestFeeIsEnough2(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 10, 0)
@@ -107,7 +107,7 @@ func TestFeeIsEnough2(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2 + 10)
-	chain.AssertTotalIotas(2 + 10)
+	chain.AssertL2TotalIotas(2 + 10)
 	chain.AssertL2AccountNativeToken(chain.OriginatorAgentID, colored.IOTA, 0)
 	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-10)
 }
@@ -124,7 +124,7 @@ func TestFeesNoNeed(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 10, 0)
@@ -135,7 +135,7 @@ func TestFeesNoNeed(t *testing.T) {
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2 + 7)
-	chain.AssertTotalIotas(2 + 7)
+	chain.AssertL2TotalIotas(2 + 7)
 	chain.AssertL2AccountNativeToken(chain.OriginatorAgentID, colored.IOTA, 0)
 	env.AssertAddressNativeTokenBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-7)
 }
@@ -157,7 +157,7 @@ func TestFeesNotEnough(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 10, 0)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	env.AssertAddressIotas(userAddr, solo.Saldo)
 
@@ -167,7 +167,7 @@ func TestFeesNotEnough(t *testing.T) {
 	require.Error(t, err)
 
 	chain.AssertCommonAccountIotas(2 + 7)
-	chain.AssertTotalIotas(2 + 7)
+	chain.AssertL2TotalIotas(2 + 7)
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	env.AssertAddressIotas(userAddr, solo.Saldo-7)
 }

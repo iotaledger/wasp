@@ -60,7 +60,7 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 43)
 	chain.AssertCommonAccountIotas(3 + extraToken)
-	chain.AssertTotalIotas(46 + extraToken)
+	chain.AssertL2TotalIotas(46 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo-42)
 
@@ -76,7 +76,7 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 0)
 	chain.AssertCommonAccountIotas(3 + extraToken)
-	chain.AssertTotalIotas(3 + extraToken)
+	chain.AssertL2TotalIotas(3 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo+2)
 }
@@ -92,7 +92,7 @@ func testDoPanicUser(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
-	chain.AssertTotalIotas(4 + extraToken)
+	chain.AssertL2TotalIotas(4 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -105,7 +105,7 @@ func testDoPanicUser(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
-	chain.AssertTotalIotas(4 + extraToken)
+	chain.AssertL2TotalIotas(4 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 }
@@ -121,7 +121,7 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
-	chain.AssertTotalIotas(4 + extraToken)
+	chain.AssertL2TotalIotas(4 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -134,7 +134,7 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
-	chain.AssertTotalIotas(4 + extraToken)
+	chain.AssertL2TotalIotas(4 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -146,7 +146,7 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(4 + extraToken)
-	chain.AssertTotalIotas(5 + extraToken)
+	chain.AssertL2TotalIotas(5 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo-1)
 }
@@ -162,7 +162,7 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
-	chain.AssertTotalIotas(4 + extraToken)
+	chain.AssertL2TotalIotas(4 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -176,7 +176,7 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(4 + extraToken)
-	chain.AssertTotalIotas(5 + extraToken)
+	chain.AssertL2TotalIotas(5 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-1-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -189,7 +189,7 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(14 + extraToken)
-	chain.AssertTotalIotas(15 + extraToken)
+	chain.AssertL2TotalIotas(15 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-1-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo-10)
 }
@@ -205,7 +205,7 @@ func testRequestToView(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
-	chain.AssertTotalIotas(4 + extraToken)
+	chain.AssertL2TotalIotas(4 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -219,7 +219,7 @@ func testRequestToView(t *testing.T, w bool) {
 	chain.AssertL2AccountIotas(userAgentID, 0)
 	chain.AssertL2AccountIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
-	chain.AssertTotalIotas(4 + extraToken)
+	chain.AssertL2TotalIotas(4 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 }

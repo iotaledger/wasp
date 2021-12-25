@@ -32,12 +32,12 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.AssertL2AccountIotas(contractAgentID1, 1)
 	chain1.AssertL2AccountIotas(contractAgentID2, 0)
 	chain1.AssertCommonAccountIotas(2 + extraToken1)
-	chain1.AssertTotalIotas(3 + extraToken1)
+	chain1.AssertL2TotalIotas(3 + extraToken1)
 
 	chain2.AssertL2AccountIotas(contractAgentID1, 0)
 	chain2.AssertL2AccountIotas(contractAgentID2, 1)
 	chain2.AssertCommonAccountIotas(2 + extraToken2)
-	chain2.AssertTotalIotas(3 + extraToken2)
+	chain2.AssertL2TotalIotas(3 + extraToken2)
 
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name,
 		accounts.ParamAgentID, contractAgentID2)
@@ -50,13 +50,13 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.AssertL2AccountIotas(contractAgentID1, 1)
 	chain1.AssertL2AccountIotas(contractAgentID2, 42)
 	chain1.AssertCommonAccountIotas(2 + extraToken1)
-	chain1.AssertTotalIotas(45 + extraToken1)
+	chain1.AssertL2TotalIotas(45 + extraToken1)
 
 	chain2.AssertL2AccountIotas(userAgentID, 0)
 	chain2.AssertL2AccountIotas(contractAgentID1, 0)
 	chain2.AssertL2AccountIotas(contractAgentID2, 1)
 	chain2.AssertCommonAccountIotas(2 + extraToken2)
-	chain2.AssertTotalIotas(3 + extraToken2)
+	chain2.AssertL2TotalIotas(3 + extraToken2)
 
 	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawToChain.Name,
 		sbtestsc.ParamChainID, chain1.ChainID)
@@ -77,11 +77,11 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.AssertL2AccountIotas(contractAgentID1, 1)
 	chain1.AssertL2AccountIotas(contractAgentID2, 0)
 	chain1.AssertCommonAccountIotas(2 + extraToken1)
-	chain1.AssertTotalIotas(3 + extraToken1)
+	chain1.AssertL2TotalIotas(3 + extraToken1)
 
 	chain2.AssertL2AccountIotas(userAgentID, 0)
 	chain2.AssertL2AccountIotas(contractAgentID1, 0)
 	chain2.AssertL2AccountIotas(contractAgentID2, 44)
 	chain2.AssertCommonAccountIotas(2 + extraToken2)
-	chain2.AssertTotalIotas(46 + extraToken2)
+	chain2.AssertL2TotalIotas(46 + extraToken2)
 }

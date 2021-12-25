@@ -31,7 +31,7 @@ func TestFeeBasic(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
 	chain.AssertCommonAccountIotas(1)
-	chain.AssertTotalIotas(1)
+	chain.AssertL2TotalIotas(1)
 }
 
 func TestSetDefaultFeeNotAuthorized(t *testing.T) {
@@ -49,7 +49,7 @@ func TestSetDefaultFeeNotAuthorized(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
 	chain.AssertCommonAccountIotas(1)
-	chain.AssertTotalIotas(1)
+	chain.AssertL2TotalIotas(1)
 }
 
 func TestSetContractFeeNotAuthorized(t *testing.T) {
@@ -67,7 +67,7 @@ func TestSetContractFeeNotAuthorized(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
 	chain.AssertCommonAccountIotas(1)
-	chain.AssertTotalIotas(1)
+	chain.AssertL2TotalIotas(1)
 }
 
 func TestSetDefaultOwnerFeeOk(t *testing.T) {
@@ -84,7 +84,7 @@ func TestSetDefaultOwnerFeeOk(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 1000, 0)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 }
 
 func TestSetDefaultValidatorFeeOk(t *testing.T) {
@@ -101,7 +101,7 @@ func TestSetDefaultValidatorFeeOk(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 499)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 }
 
 func TestSetDefaultFeeOk(t *testing.T) {
@@ -119,7 +119,7 @@ func TestSetDefaultFeeOk(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 1000, 499)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 }
 
 func TestSetDefaultFeeFailNegative1(t *testing.T) {
@@ -135,7 +135,7 @@ func TestSetDefaultFeeFailNegative1(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 }
 
 func TestSetDefaultFeeFailNegative2(t *testing.T) {
@@ -151,7 +151,7 @@ func TestSetDefaultFeeFailNegative2(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 }
 
 func TestSetContractValidatorFeeOk(t *testing.T) {
@@ -170,7 +170,7 @@ func TestSetContractValidatorFeeOk(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 1000)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 }
 
 func TestSetContractOwnerFeeOk(t *testing.T) {
@@ -189,7 +189,7 @@ func TestSetContractOwnerFeeOk(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 }
 
 func TestSetContractFeeWithDefault(t *testing.T) {
@@ -231,7 +231,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 499, 1000)
 
 	chain.AssertCommonAccountIotas(4)
-	chain.AssertTotalIotas(4)
+	chain.AssertL2TotalIotas(4)
 }
 
 func TestFeeNotEnough(t *testing.T) {
@@ -252,7 +252,7 @@ func TestFeeNotEnough(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(2)
+	chain.AssertL2TotalIotas(2)
 
 	user, _ := env.NewKeyPairWithFunds()
 	req = solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
@@ -266,7 +266,7 @@ func TestFeeNotEnough(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
 	chain.AssertCommonAccountIotas(2)
-	chain.AssertTotalIotas(101)
+	chain.AssertL2TotalIotas(101)
 	chain.AssertL2AccountIotas(validatorFeeTargetAgentID, 99)
 }
 
@@ -296,7 +296,7 @@ func TestFeeOwnerDontNeed(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 1000, 0)
 
 	chain.AssertCommonAccountIotas(101)
-	chain.AssertTotalIotas(101)
+	chain.AssertL2TotalIotas(101)
 }
 
 func TestRevertContractFeeToZero(t *testing.T) {
@@ -326,5 +326,5 @@ func TestRevertContractFeeToZero(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
 	chain.AssertCommonAccountIotas(3)
-	chain.AssertTotalIotas(3)
+	chain.AssertL2TotalIotas(3)
 }

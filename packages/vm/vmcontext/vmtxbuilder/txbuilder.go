@@ -369,7 +369,8 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 	nt := txb.ensureNativeTokenBalance(id)
 	tmp := new(big.Int).Add(nt.getOutValue(), delta)
 	if tmp.Sign() < 0 {
-		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %w", ErrNotEnoughNativeAssetBalance))
+		panic(xerrors.Errorf("addNativeTokenBalanceDelta (id: %s, delta: %d): %w",
+			id, delta, ErrNotEnoughNativeAssetBalance))
 	}
 	if tmp.Cmp(abi.MaxUint256) > 0 {
 		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %w", ErrOverflow))

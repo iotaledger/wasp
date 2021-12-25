@@ -537,6 +537,11 @@ func (f *nativeTokenOutputRec) Bytes() []byte {
 	return mu.Bytes()
 }
 
+func (f *nativeTokenOutputRec) String() string {
+	return fmt.Sprintf("Native Token Account: iotas: %d, amount: %d, block: %d, outIdx: %d",
+		f.DustIotas, f.Amount, f.BlockIndex, f.OutputIndex)
+}
+
 func nativeTokenOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*nativeTokenOutputRec, error) {
 	ret := &nativeTokenOutputRec{}
 	var err error
@@ -582,7 +587,7 @@ func SaveNativeTokenOutput(state kv.KVStore, out *iotago.ExtendedOutput, blockIn
 		BlockIndex:  blockIndex,
 		OutputIndex: outputIndex,
 	}
-	getFoundriesMap(state).MustSetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
+	getNativeTokenOutputMap(state).MustSetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
 }
 
 func DeleteNativeTokenOutput(state kv.KVStore, tokenID *iotago.NativeTokenID) {

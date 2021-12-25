@@ -270,13 +270,13 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 // Params:
 // - ParamFoundrySN serial number of the foundry
 // - ParamSupplyDeltaAbs absolute delta of the supply as big.Int
-// - ParamDestroySupply true if destroy supply, false (default) if mint new supply
+// - ParamDestroyTokens true if destroy supply, false (default) if mint new supply
 func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamFoundrySN)
 	delta := par.MustGetBigInt(ParamSupplyDeltaAbs)
-	destroy := par.MustGetBool(ParamDestroySupply, false)
+	destroy := par.MustGetBool(ParamDestroyTokens, false)
 	if destroy {
 		delta.Neg(delta)
 	}
@@ -294,7 +294,8 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	if delta.Cmp(big.NewInt(0)) >= 0 {
 		CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
 			Tokens: iotago.NativeTokens{{
-				ID: tokenID, Amount: delta,
+				ID:     tokenID,
+				Amount: delta,
 			}},
 		})
 	} else {
