@@ -15,12 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-func (vmctx *VMContext) updateLatestAnchorID() {
-	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		blocklog.SetAnchorTransactionIDOfLatestBlock(s, vmctx.task.AnchorOutputID.TransactionID)
-	})
-}
-
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
 func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, assets *iscp.Assets) {
