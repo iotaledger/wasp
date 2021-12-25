@@ -4,16 +4,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/iscp/assert"
-
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/hive.go/serializer/v2"
-
-	"github.com/iotaledger/wasp/packages/kv/codec"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -363,44 +359,33 @@ func getAccountBalanceDict(account *collections.ImmutableMap) dict.Dict {
 	return getAccountAssets(account).ToDict()
 }
 
-// region outputRec ///////////////////////////////
+// region Foundry outputs ////////////////////////////////////////
 
-// outputRec the record stored entire internal output with the info how to restore its UTXOInput
-// This record is used to store internal ExtendedOutput with native tokens and Foundries
-type outputRec struct {
-	Output      iotago.Output
-	BlockIndex  uint32
-	OutputIndex uint16
+// foundryOutputRec contains information to reconstruct output
+type foundryOutputRec struct {
+	Amount            uint64 // always dust deposit
+	TokenTag          iotago.TokenTag
+	TokenScheme       iotago.TokenScheme
+	MaximumSupply     *big.Int
+	CirculatingSupply *big.Int
+	BlockIndex        uint32
+	OutputIndex       uint16
 }
 
-func (f *outputRec) Bytes() []byte {
-	data, err := f.Output.Serialize(serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		panic(err)
-	}
-	return marshalutil.New().
-		WriteUint32(f.BlockIndex).
+func (f *foundryOutputRec) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.WriteUint32(f.BlockIndex).
 		WriteUint16(f.OutputIndex).
-		WriteByte(byte(f.Output.Type())).
-		WriteUint16(uint16(len(data))).
-		WriteBytes(data).
-		Bytes()
+		WriteUint64(f.Amount)
+	util.WriteBytes8ToMarshalUtil(codec.EncodeTokenTag(f.TokenTag), mu)
+	util.WriteBytes8ToMarshalUtil(codec.EncodeTokenScheme(f.TokenScheme), mu)
+	util.WriteBytes8ToMarshalUtil(f.MaximumSupply.Bytes(), mu)
+	util.WriteBytes8ToMarshalUtil(f.CirculatingSupply.Bytes(), mu)
+	return mu.Bytes()
 }
 
-func outputRecFromBytes(data []byte) (*outputRec, error) {
-	return outputRecFromMarshalUtil(marshalutil.New(data))
-}
-
-func mustOutputRecFromBytes(data []byte) *outputRec {
-	ret, err := outputRecFromBytes(data)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func outputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*outputRec, error) {
-	ret := &outputRec{}
+func foundryOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*foundryOutputRec, error) {
+	ret := &foundryOutputRec{}
 	var err error
 	if ret.BlockIndex, err = mu.ReadUint32(); err != nil {
 		return nil, err
@@ -408,31 +393,44 @@ func outputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*outputRec, error) {
 	if ret.OutputIndex, err = mu.ReadUint16(); err != nil {
 		return nil, err
 	}
-	t, err := mu.ReadByte()
+	if ret.Amount, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	tagBin, err := util.ReadBytes8FromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
-	ret.Output, err = iotago.OutputSelector(uint32(t))
+	if ret.TokenTag, err = codec.DecodeTokenTag(tagBin); err != nil {
+		return nil, err
+	}
+	schemeBin, err := util.ReadBytes8FromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
-	var size uint16
-	if size, err = mu.ReadUint16(); err != nil {
+	if ret.TokenScheme, err = codec.DecodeTokenScheme(schemeBin); err != nil {
 		return nil, err
 	}
-	var data []byte
-	if data, err = mu.ReadBytes(int(size)); err != nil {
+	bigIntBin, err := util.ReadBytes8FromMarshalUtil(mu)
+	if err != nil {
 		return nil, err
 	}
-	if _, err = ret.Output.Deserialize(data, serializer.DeSeriModeNoValidation, nil); err != nil {
+	ret.MaximumSupply = big.NewInt(0).SetBytes(bigIntBin)
+
+	bigIntBin, err = util.ReadBytes8FromMarshalUtil(mu)
+	if err != nil {
 		return nil, err
 	}
+	ret.CirculatingSupply = big.NewInt(0).SetBytes(bigIntBin)
 	return ret, nil
 }
 
-// endregion ////////////////////////////////////////////
-
-// region Foundry outputs ////////////////////////////////////////
+func mustFoundryOutputRecFromBytes(data []byte) *foundryOutputRec {
+	ret, err := foundryOutputRecFromMarshalUtil(marshalutil.New(data))
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
 
 // getAccountsMap is a map which contains all foundries owned by the chain
 func getFoundriesMap(state kv.KVStore) *collections.Map {
@@ -443,14 +441,18 @@ func getFoundriesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, prefixFoundryOutputRecords)
 }
 
-// SaveFoundryOutput stores foundry output into the map pf all foundry outputs
-func SaveFoundryOutput(state kv.KVStore, foundry *iotago.FoundryOutput, blockIndex uint32, outputIndex uint16) {
-	foundryRec := outputRec{
-		Output:      foundry,
-		BlockIndex:  blockIndex,
-		OutputIndex: outputIndex,
+// SaveFoundryOutput stores foundry output into the map of all foundry outputs (compressed form)
+func SaveFoundryOutput(state kv.KVStore, f *iotago.FoundryOutput, blockIndex uint32, outputIndex uint16) {
+	foundryRec := foundryOutputRec{
+		Amount:            f.Amount,
+		TokenTag:          f.TokenTag,
+		TokenScheme:       f.TokenScheme,
+		MaximumSupply:     f.MaximumSupply,
+		CirculatingSupply: f.CirculatingSupply,
+		BlockIndex:        blockIndex,
+		OutputIndex:       outputIndex,
 	}
-	getFoundriesMap(state).MustSetAt(util.Uint32To4Bytes(foundry.SerialNumber), foundryRec.Bytes())
+	getFoundriesMap(state).MustSetAt(util.Uint32To4Bytes(f.SerialNumber), foundryRec.Bytes())
 }
 
 // DeleteFoundryOutput deletes foundry output from the map of all foundries
@@ -459,18 +461,24 @@ func DeleteFoundryOutput(state kv.KVStore, sn uint32) {
 }
 
 // GetFoundryOutput returns foundry output, its block number and output index
-func GetFoundryOutput(state kv.KVStoreReader, sn uint32) (*iotago.FoundryOutput, uint32, uint16) {
+func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) (*iotago.FoundryOutput, uint32, uint16) {
 	data := getFoundriesMapR(state).MustGetAt(util.Uint32To4Bytes(sn))
 	if data == nil {
 		return nil, 0, 0
 	}
-	foundryRec := mustOutputRecFromBytes(data)
-	foundry, ok := foundryRec.Output.(*iotago.FoundryOutput)
-	if !ok {
-		panic(xerrors.New("internal inconsistency: FoundryOutput expected"))
+	rec := mustFoundryOutputRecFromBytes(data)
+	ret := &iotago.FoundryOutput{
+		Address:           chainID.AsAddress(),
+		Amount:            rec.Amount,
+		NativeTokens:      nil,
+		SerialNumber:      sn,
+		TokenScheme:       rec.TokenScheme,
+		TokenTag:          rec.TokenTag,
+		CirculatingSupply: rec.CirculatingSupply,
+		MaximumSupply:     rec.MaximumSupply,
+		Blocks:            nil,
 	}
-
-	return foundry, foundryRec.BlockIndex, foundryRec.OutputIndex
+	return ret, rec.BlockIndex, rec.OutputIndex
 }
 
 // AddFoundryToAccount ads new foundry to the foundries controlled by the account
@@ -513,6 +521,50 @@ func hasFoundry(account *collections.ImmutableMap, sn uint32) bool {
 
 // region NativeToken outputs /////////////////////////////////
 
+type nativeTokenOutputRec struct {
+	DustIotas   uint64 // always dust deposit
+	Amount      *big.Int
+	BlockIndex  uint32
+	OutputIndex uint16
+}
+
+func (f *nativeTokenOutputRec) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.WriteUint32(f.BlockIndex).
+		WriteUint16(f.OutputIndex).
+		WriteUint64(f.DustIotas)
+	util.WriteBytes8ToMarshalUtil(codec.EncodeBigIntAbs(f.Amount), mu)
+	return mu.Bytes()
+}
+
+func nativeTokenOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*nativeTokenOutputRec, error) {
+	ret := &nativeTokenOutputRec{}
+	var err error
+	if ret.BlockIndex, err = mu.ReadUint32(); err != nil {
+		return nil, err
+	}
+	if ret.OutputIndex, err = mu.ReadUint16(); err != nil {
+		return nil, err
+	}
+	if ret.DustIotas, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	bigIntBin, err := util.ReadBytes8FromMarshalUtil(mu)
+	if err != nil {
+		return nil, err
+	}
+	ret.Amount = big.NewInt(0).SetBytes(bigIntBin)
+	return ret, nil
+}
+
+func mustNativeTokenOutputRecFromBytes(data []byte) *nativeTokenOutputRec {
+	ret, err := nativeTokenOutputRecFromMarshalUtil(marshalutil.New(data))
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 // getAccountsMap is a map which contains all foundries owned by the chain
 func getNativeTokenOutputMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, prefixNativeTokenOutputMap)
@@ -524,8 +576,9 @@ func getNativeTokenOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap 
 
 // SaveNativeTokenOutput map tokenID -> foundryRec
 func SaveNativeTokenOutput(state kv.KVStore, out *iotago.ExtendedOutput, blockIndex uint32, outputIndex uint16) {
-	tokenRec := outputRec{
-		Output:      out,
+	tokenRec := nativeTokenOutputRec{
+		DustIotas:   out.Amount,
+		Amount:      out.NativeTokens[0].Amount,
 		BlockIndex:  blockIndex,
 		OutputIndex: outputIndex,
 	}
@@ -536,17 +589,25 @@ func DeleteNativeTokenOutput(state kv.KVStore, tokenID *iotago.NativeTokenID) {
 	getNativeTokenOutputMap(state).MustDelAt(tokenID[:])
 }
 
-func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID) (*iotago.ExtendedOutput, uint32, uint16) {
+func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID, chainID *iscp.ChainID) (*iotago.ExtendedOutput, uint32, uint16) {
 	data := getNativeTokenOutputMapR(state).MustGetAt(tokenID[:])
 	if data == nil {
 		return nil, 0, 0
 	}
-	tokenRec := mustOutputRecFromBytes(data)
-	out, ok := tokenRec.Output.(*iotago.ExtendedOutput)
-	if !ok {
-		panic(xerrors.New("internal inconsistency: ExtendedOutput expected"))
+	tokenRec := mustNativeTokenOutputRecFromBytes(data)
+	ret := &iotago.ExtendedOutput{
+		Address: chainID.AsAddress(),
+		Amount:  tokenRec.DustIotas,
+		NativeTokens: iotago.NativeTokens{{
+			*tokenID, tokenRec.Amount,
+		}},
+		Blocks: iotago.FeatureBlocks{
+			&iotago.SenderFeatureBlock{
+				Address: chainID.AsAddress(),
+			},
+		},
 	}
-	return out, tokenRec.BlockIndex, tokenRec.OutputIndex
+	return ret, tokenRec.BlockIndex, tokenRec.OutputIndex
 }
 
 // endregion //////////////////////////////////////////

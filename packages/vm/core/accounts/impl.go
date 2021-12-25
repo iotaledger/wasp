@@ -257,7 +257,7 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 	// check if foundry is controlled by the caller
 	a.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
-	out, _, _ := GetFoundryOutput(ctx.State(), sn)
+	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	a.Require(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
 
 	ctx.Foundries().Destroy(sn)
@@ -283,7 +283,7 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	// check if foundry is controlled by the caller
 	a.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
-	out, _, _ := GetFoundryOutput(ctx.State(), sn)
+	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	tokenID, err := out.NativeTokenID()
 	a.RequireNoError(err, "internal")
 
@@ -314,7 +314,7 @@ func foundryOutput(ctx iscp.SandboxView) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	sn := par.MustGetUint32(ParamsFoundrySN)
-	out, _, _ := GetFoundryOutput(ctx.State(), sn)
+	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 	a.RequireNoError(err, "internal: error while serializing foundry output")
 	ret := dict.New()

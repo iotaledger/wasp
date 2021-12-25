@@ -8,6 +8,8 @@ import (
 	"math"
 	"time"
 
+	"github.com/iotaledger/hive.go/marshalutil"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
@@ -430,4 +432,23 @@ func ReadTransactionID(r io.Reader, txid *iotago.TransactionID) error {
 			n, iotago.TransactionIDLength)
 	}
 	return nil
+}
+
+func WriteBytes8ToMarshalUtil(data []byte, mu *marshalutil.MarshalUtil) {
+	if len(data) > 256 {
+		panic("WriteBytes8ToMarshalUtil: len(data) > 256")
+	}
+	mu.WriteUint8(uint8(len(data))).WriteBytes(data)
+}
+
+func ReadBytes8FromMarshalUtil(mu *marshalutil.MarshalUtil) ([]byte, error) {
+	l, err := mu.ReadUint8()
+	if err != nil {
+		return nil, err
+	}
+	ret, err := mu.ReadBytes(int(l))
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
