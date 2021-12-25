@@ -5,12 +5,13 @@ import "github.com/iotaledger/wasp/tools/schema/model"
 var config = map[string]string{
 	"language":   "Go Client",
 	"extension":  ".go",
-	"rootFolder": "client/go",
+	"rootFolder": "go",
 	"funcRegexp": `^func On(\w+).+$`,
 }
 
 var Templates = []map[string]string{
 	config, // always first one
+	common,
 	eventsGo,
 	funcsGo,
 	serviceGo,
@@ -18,19 +19,19 @@ var Templates = []map[string]string{
 
 var TypeDependent = model.StringMapMap{
 	"fldLangType": {
-		"Address":   "client.Address",
-		"AgentID":   "client.AgentID",
+		"Address":   "wasmclient.Address",
+		"AgentID":   "wasmclient.AgentID",
 		"Bool":      "bool",
 		"Bytes":     "[]byte",
-		"ChainID":   "client.ChainID",
-		"Color":     "client.Color",
-		"Hash":      "client.Hash",
-		"Hname":     "string",
+		"ChainID":   "wasmclient.ChainID",
+		"Color":     "wasmclient.Color",
+		"Hash":      "wasmclient.Hash",
+		"Hname":     "wasmclient.Hname",
 		"Int8":      "int8",
 		"Int16":     "int16",
 		"Int32":     "int32",
 		"Int64":     "int64",
-		"RequestID": "client.RequestID",
+		"RequestID": "wasmclient.RequestID",
 		"String":    "string",
 		"Uint8":     "uint8",
 		"Uint16":    "uint16",
@@ -59,19 +60,19 @@ var TypeDependent = model.StringMapMap{
 		"":          "wasmlib.TYPE_BYTES",
 	},
 	"argEncode": {
-		"Address":   "client.Base58Decode",
-		"AgentID":   "client.Base58Decode",
+		"Address":   "wasmclient.Base58Decode",
+		"AgentID":   "wasmclient.Base58Decode",
 		"Bool":      "codec.EncodeBool",
 		"Bytes":     "[]byte",
-		"ChainID":   "client.Base58Decode",
-		"Color":     "client.Base58Decode",
-		"Hash":      "client.Base58Decode",
-		"Hname":     "client.Base58Decode",
+		"ChainID":   "wasmclient.Base58Decode",
+		"Color":     "wasmclient.Base58Decode",
+		"Hash":      "wasmclient.Base58Decode",
+		"Hname":     "wasmclient.Base58Decode",
 		"Int8":      "codec.EncodeInt8",
 		"Int16":     "codec.EncodeInt16",
 		"Int32":     "codec.EncodeInt32",
 		"Int64":     "codec.EncodeInt64",
-		"RequestID": "client.Base58Decode",
+		"RequestID": "wasmclient.Base58Decode",
 		"String":    "codec.EncodeString",
 		"Uint8":     "codec.EncodeUint8",
 		"Uint16":    "codec.EncodeUint16",
@@ -79,19 +80,19 @@ var TypeDependent = model.StringMapMap{
 		"Uint64":    "codec.EncodeUint64",
 	},
 	"argDecode": {
-		"Address":   "client.Base58Encode",
-		"AgentID":   "client.Base58Encode",
+		"Address":   "wasmclient.Base58Encode",
+		"AgentID":   "wasmclient.Base58Encode",
 		"Bool":      "codec.DecodeBool",
 		"Bytes":     "[]byte",
-		"ChainID":   "client.Base58Encode",
-		"Color":     "client.Base58Encode",
-		"Hash":      "client.Base58Encode",
-		"Hname":     "client.Base58Encode",
+		"ChainID":   "wasmclient.Base58Encode",
+		"Color":     "wasmclient.Base58Encode",
+		"Hash":      "wasmclient.Base58Encode",
+		"Hname":     "wasmclient.Base58Encode",
 		"Int8":      "codec.DecodeInt8",
 		"Int16":     "codec.DecodeInt16",
 		"Int32":     "codec.DecodeInt32",
 		"Int64":     "codec.DecodeInt64",
-		"RequestID": "client.Base58Encode",
+		"RequestID": "wasmclient.Base58Encode",
 		"String":    "codec.DecodeString",
 		"Uint8":     "codec.DecodeUint8",
 		"Uint16":    "codec.DecodeUint16",
@@ -155,4 +156,13 @@ var TypeDependent = model.StringMapMap{
 		"Uint32":    "readUInt32LE(0)",
 		"Uint64":    "readBigUInt64LE(0)",
 	},
+}
+
+var common = map[string]string{
+	// *******************************
+	"clientHeader": `
+package $package$+client
+
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
+`,
 }

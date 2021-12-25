@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
@@ -305,4 +306,8 @@ func TestMultiRandom(t *testing.T) {
 	for _, number := range numbers {
 		fmt.Printf("Random value: %d\n", number)
 	}
+}
+
+func TestClient(t *testing.T) {
+	_ = wasmclient.ServiceClient{}
 }

@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasp from "../../../../../../contracts/wasm/fairroulette/frontend/src/lib/wasp_client";
-import {Colors, IOffLedger, OffLedger} from "../../../../../../contracts/wasm/fairroulette/frontend/src/lib/wasp_client";
+import * as wasp from "../../../../../contracts/wasm/fairroulette/frontend/src/lib/wasp_client";
+import {Colors, IOffLedger, OffLedger} from "../../../../../contracts/wasm/fairroulette/frontend/src/lib/wasp_client";
 import config from './config.dev';
 import * as client from "./index"
 

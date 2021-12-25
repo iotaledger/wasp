@@ -128,3 +128,7 @@ export function funcRandom(ctx: wasmlib.ScFuncContext, f: sc.RandomContext): voi
 export function viewGetRandom(ctx: wasmlib.ScViewContext, f: sc.GetRandomContext): void {
     f.results.random().setValue(f.state.random().value());
 }
+
+export function funcTriggerEvent(ctx: wasmlib.ScFuncContext, f: sc.TriggerEventContext): void {
+    f.events.test(f.params.address().value(), f.params.name().value());
+}

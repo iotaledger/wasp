@@ -288,6 +288,36 @@ impl MutableParamTypesParams {
 }
 
 #[derive(Clone, Copy)]
+pub struct ImmutableTriggerEventParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableTriggerEventParams {
+    pub fn address(&self) -> ScImmutableAddress {
+		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+	}
+
+    pub fn name(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableTriggerEventParams {
+    pub(crate) id: i32,
+}
+
+impl MutableTriggerEventParams {
+    pub fn address(&self) -> ScMutableAddress {
+		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+	}
+
+    pub fn name(&self) -> ScMutableString {
+		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+	}
+}
+
+#[derive(Clone, Copy)]
 pub struct ImmutableArrayLengthParams {
     pub(crate) id: i32,
 }

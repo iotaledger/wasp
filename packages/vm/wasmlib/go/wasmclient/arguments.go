@@ -1,24 +1,24 @@
-package client
+package wasmclient
 
 import (
-	"sort"
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 // The Arguments struct is used to gather all arguments for a smart
 // contract function call and encode it into a deterministic byte array
 type Arguments struct {
-	args map[string][]byte
+	args dict.Dict
 }
 
 func (a Arguments) set(key string, val []byte) {
 	if a.args == nil {
-		a.args = make(map[string][]byte)
+		a.args = make(dict.Dict)
 	}
-	a.args[key] = val
+	a.args[kv.Key(key)] = val
 }
 
 func (a Arguments) setBase58(key, val string, typeID int32) {
@@ -35,14 +35,14 @@ func (a Arguments) IndexedKey(key string, index int) string {
 
 func (a Arguments) Mandatory(key string) {
 	if a.args != nil {
-		if _, ok := a.args[key]; ok {
+		if _, ok := a.args[kv.Key(key)]; ok {
 			return
 		}
 	}
 	panic("missing mandatory " + key)
 }
 
-func (a Arguments) SetAddress(key string, val AgentID) {
+func (a Arguments) SetAddress(key string, val Address) {
 	a.setBase58(key, string(val), wasmlib.TYPE_ADDRESS)
 }
 
@@ -72,6 +72,10 @@ func (a Arguments) SetChainID(key string, val ChainID) {
 
 func (a Arguments) SetHash(key string, val Hash) {
 	a.setBase58(key, string(val), wasmlib.TYPE_HASH)
+}
+
+func (a Arguments) SetHname(key string, val Hname) {
+	a.SetUint32(key, uint32(val))
 }
 
 func (a Arguments) SetInt8(key string, val int8) {
@@ -121,32 +125,4 @@ func (a Arguments) setUint64(key string, val uint64, size int) {
 		val >>= 8
 	}
 	a.set(key, bytes)
-}
-
-// Encode returns a byte array that encodes the Arguments as follows:
-// Sort all keys in ascending order (very important, because this data
-// will be part of the data that will be signed, so the order needs to
-// be 100% deterministic). Then emit a 2-byte argument count.
-// Next for each argument emit a 2-byte key length, the key prepended
-// with a minus sign, a 4-byte value length, and then the value bytes.
-func (a Arguments) Encode() []byte {
-	keys := make([]string, 0, len(a.args))
-	total := 2
-	for k, v := range a.args {
-		keys = append(keys, k)
-		total += 2 + 1 + len(k) + 4 + len(v)
-	}
-	sort.Strings(keys)
-
-	buf := make([]byte, 0, total)
-	buf = append(buf, codec.EncodeUint16(uint16(len(keys)))...)
-	for _, k := range keys {
-		buf = append(buf, codec.EncodeUint16(uint16(len(k)+1))...)
-		buf = append(buf, '-')
-		buf = append(buf, []byte(k)...)
-		v := a.args[k]
-		buf = append(buf, codec.EncodeUint32(uint32(len(v)))...)
-		buf = append(buf, v...)
-	}
-	return buf
 }

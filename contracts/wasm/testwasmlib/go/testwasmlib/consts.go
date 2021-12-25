@@ -62,6 +62,7 @@ const (
 	FuncArraySet     = "arraySet"
 	FuncParamTypes   = "paramTypes"
 	FuncRandom       = "random"
+	FuncTriggerEvent = "triggerEvent"
 	ViewArrayLength  = "arrayLength"
 	ViewArrayValue   = "arrayValue"
 	ViewBlockRecord  = "blockRecord"
@@ -76,6 +77,7 @@ const (
 	HFuncArraySet     = wasmlib.ScHname(0x2c4150b3)
 	HFuncParamTypes   = wasmlib.ScHname(0x6921c4cd)
 	HFuncRandom       = wasmlib.ScHname(0xe86c97ca)
+	HFuncTriggerEvent = wasmlib.ScHname(0xd5438ac6)
 	HViewArrayLength  = wasmlib.ScHname(0x3a831021)
 	HViewArrayValue   = wasmlib.ScHname(0x662dbd81)
 	HViewBlockRecord  = wasmlib.ScHname(0xad13b2f8)

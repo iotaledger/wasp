@@ -33,6 +33,11 @@ type RandomCall struct {
 	Func *wasmlib.ScFunc
 }
 
+type TriggerEventCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableTriggerEventParams
+}
+
 type ArrayLengthCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableArrayLengthParams
@@ -97,6 +102,12 @@ func (sc Funcs) ParamTypes(ctx wasmlib.ScFuncCallContext) *ParamTypesCall {
 
 func (sc Funcs) Random(ctx wasmlib.ScFuncCallContext) *RandomCall {
 	return &RandomCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRandom)}
+}
+
+func (sc Funcs) TriggerEvent(ctx wasmlib.ScFuncCallContext) *TriggerEventCall {
+	f := &TriggerEventCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTriggerEvent)}
+	f.Func.SetPtrs(&f.Params.id, nil)
+	return f
 }
 
 func (sc Funcs) ArrayLength(ctx wasmlib.ScViewCallContext) *ArrayLengthCall {

@@ -19,6 +19,7 @@ export function on_load(): void {
     exports.addFunc(sc.FuncArraySet,     funcArraySetThunk);
     exports.addFunc(sc.FuncParamTypes,   funcParamTypesThunk);
     exports.addFunc(sc.FuncRandom,       funcRandomThunk);
+    exports.addFunc(sc.FuncTriggerEvent, funcTriggerEventThunk);
     exports.addView(sc.ViewArrayLength,  viewArrayLengthThunk);
     exports.addView(sc.ViewArrayValue,   viewArrayValueThunk);
     exports.addView(sc.ViewBlockRecord,  viewBlockRecordThunk);
@@ -78,6 +79,17 @@ function funcRandomThunk(ctx: wasmlib.ScFuncContext): void {
     f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcRandom(ctx, f);
 	ctx.log("testwasmlib.funcRandom ok");
+}
+
+function funcTriggerEventThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcTriggerEvent");
+	let f = new sc.TriggerEventContext();
+    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	ctx.require(f.params.address().exists(), "missing mandatory address");
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	sc.funcTriggerEvent(ctx, f);
+	ctx.log("testwasmlib.funcTriggerEvent ok");
 }
 
 function viewArrayLengthThunk(ctx: wasmlib.ScViewContext): void {

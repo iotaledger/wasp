@@ -244,6 +244,26 @@ export class MutableParamTypesParams extends wasmlib.ScMapID {
 	}
 }
 
+export class ImmutableTriggerEventParams extends wasmlib.ScMapID {
+    address(): wasmlib.ScImmutableAddress {
+		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+	}
+
+    name(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
+}
+
+export class MutableTriggerEventParams extends wasmlib.ScMapID {
+    address(): wasmlib.ScMutableAddress {
+		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+	}
+
+    name(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamName]);
+	}
+}
+
 export class ImmutableArrayLengthParams extends wasmlib.ScMapID {
     name(): wasmlib.ScImmutableString {
 		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamName]);

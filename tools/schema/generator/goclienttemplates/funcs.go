@@ -3,11 +3,7 @@ package goclienttemplates
 var funcsGo = map[string]string{
 	// *******************************
 	"funcs.go": `
-package $package
-
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/client"
-)
+$#emit clientHeader
 $#each events funcSignature
 `,
 	// *******************************

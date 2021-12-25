@@ -14,6 +14,7 @@ export class ArrayClearCall {
 }
 
 export class ArrayClearContext {
+	events:  sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
 	params: sc.ImmutableArrayClearParams = new sc.ImmutableArrayClearParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
@@ -24,6 +25,7 @@ export class ArrayCreateCall {
 }
 
 export class ArrayCreateContext {
+	events:  sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
 	params: sc.ImmutableArrayCreateParams = new sc.ImmutableArrayCreateParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
@@ -34,6 +36,7 @@ export class ArraySetCall {
 }
 
 export class ArraySetContext {
+	events:  sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
 	params: sc.ImmutableArraySetParams = new sc.ImmutableArraySetParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
@@ -44,6 +47,7 @@ export class ParamTypesCall {
 }
 
 export class ParamTypesContext {
+	events:  sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
 	params: sc.ImmutableParamTypesParams = new sc.ImmutableParamTypesParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
@@ -53,6 +57,18 @@ export class RandomCall {
 }
 
 export class RandomContext {
+	events:  sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+}
+
+export class TriggerEventCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTriggerEvent);
+	params: sc.MutableTriggerEventParams = new sc.MutableTriggerEventParams();
+}
+
+export class TriggerEventContext {
+	events:  sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
+	params: sc.ImmutableTriggerEventParams = new sc.ImmutableTriggerEventParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
@@ -151,6 +167,12 @@ export class ScFuncs {
 
     static random(ctx: wasmlib.ScFuncCallContext): RandomCall {
         return new RandomCall();
+    }
+
+    static triggerEvent(ctx: wasmlib.ScFuncCallContext): TriggerEventCall {
+        let f = new TriggerEventCall();
+        f.func.setPtrs(f.params, null);
+        return f;
     }
 
     static arrayLength(ctx: wasmlib.ScViewCallContext): ArrayLengthCall {

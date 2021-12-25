@@ -3,11 +3,7 @@ package goclienttemplates
 var serviceGo = map[string]string{
 	// *******************************
 	"service.go": `
-package $package
-
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/client"
-)
+$#emit clientHeader
 
 const (
 $#each params constArg
@@ -19,12 +15,12 @@ $#each func funcStruct
 ///////////////////////////// $PkgName$+Service /////////////////////////////
 
 type $PkgName$+Service struct {
-	client.Service
+	wasmclient.Service
 }
 
-func New$PkgName$+Service(cl client.ServiceClient, chainID string) *$PkgName$+Service {
+func New$PkgName$+Service(cl *wasmclient.ServiceClient, chainID string) *$PkgName$+Service {
 	s := &$PkgName$+Service{}
-	s.Service.Init(cl, chainID, "$hscName", EventHandlers)
+	s.Service.Init(cl, chainID, 0x$hscName, EventHandlers)
 	return s
 }
 $#each func serviceFunction
@@ -43,7 +39,7 @@ $#each func serviceFunction
 ///////////////////////////// $funcName /////////////////////////////
 
 type $FuncName$Kind struct {
-	svc *client.Service
+	svc *wasmclient.Service
 $#if param funcArgsMember
 }
 $#each param funcArgSetter
@@ -51,7 +47,7 @@ $#if func funcPost viewCall
 `,
 	// *******************************
 	"funcArgsMember": `
-	args client.Arguments
+	args wasmclient.Arguments
 `,
 	// *******************************
 	"funcArgSetter": `
@@ -77,11 +73,10 @@ func (f $FuncName$Kind) $FldName(a []$fldLangType) {
 	// *******************************
 	"funcPost": `
 
-func (f $FuncName$Kind) Post() {
+func (f $FuncName$Kind) Post(transfer ...map[string]uint64) wasmclient.Request {
 $#each mandatory mandatoryCheck
-$#set exec f.svc.PostRequest
 $#if param execWithArgs execNoArgs
-	$exec
+	return f.svc.PostRequest(0x$funcHname, $args, transfer...)
 }
 `,
 	// *******************************
@@ -89,9 +84,8 @@ $#if param execWithArgs execNoArgs
 
 func (f $FuncName$Kind) Call() $FuncName$+Results {
 $#each mandatory mandatoryCheck
-$#set exec f.svc.CallView
 $#if param execWithArgs execNoArgs
-	return $FuncName$+Results { res: $exec }
+	return $FuncName$+Results { res: f.svc.CallView("$funcName", $args) }
 }
 $#if result resultStruct
 `,
@@ -101,17 +95,17 @@ $#if result resultStruct
 `,
 	// *******************************
 	"execWithArgs": `
-$#set exec $exec("$funcName", &f.args)
+$#set args &f.args
 `,
 	// *******************************
 	"execNoArgs": `
-$#set exec $exec("$funcName", nil)
+$#set args nil
 `,
 	// *******************************
 	"resultStruct": `
 
 type $FuncName$+Results struct {
-	res client.Results
+	res wasmclient.Results
 }
 $#each result callResultGetter
 `,

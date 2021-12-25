@@ -3,10 +3,10 @@ package tsclienttemplates
 var eventsTs = map[string]string{
 	// *******************************
 	"events.ts": `
-import * as client from "wasmlib/client"
+import * as wasmclient from "wasmlib/wasmclient"
 import * as app from "./$package"
 
-export const eventHandlers: client.EventHandlers = {
+export const eventHandlers: wasmclient.EventHandlers = {
 $#each events eventHandler
 };
 $#each events eventClass
@@ -18,7 +18,7 @@ $#each events eventClass
 	// *******************************
 	"eventClass": `
 
-export class Event$EvtName extends client.Event {
+export class Event$EvtName extends wasmclient.Event {
 $#each event eventClassField
 }
 
@@ -30,7 +30,7 @@ $#each event eventHandlerField
 `,
 	// *******************************
 	"eventClassField": `
-  	public $fldName: client.$FldType;
+  	public $fldName: wasmclient.$FldType;
 `,
 	// *******************************
 	"eventHandlerField": `

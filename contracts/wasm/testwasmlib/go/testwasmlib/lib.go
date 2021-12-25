@@ -16,6 +16,7 @@ func OnLoad() {
 	exports.AddFunc(FuncArraySet, funcArraySetThunk)
 	exports.AddFunc(FuncParamTypes, funcParamTypesThunk)
 	exports.AddFunc(FuncRandom, funcRandomThunk)
+	exports.AddFunc(FuncTriggerEvent, funcTriggerEventThunk)
 	exports.AddView(ViewArrayLength, viewArrayLengthThunk)
 	exports.AddView(ViewArrayValue, viewArrayValueThunk)
 	exports.AddView(ViewBlockRecord, viewBlockRecordThunk)
@@ -29,6 +30,7 @@ func OnLoad() {
 }
 
 type ArrayClearContext struct {
+	Events TestWasmLibEvents
 	Params ImmutableArrayClearParams
 	State  MutableTestWasmLibState
 }
@@ -49,6 +51,7 @@ func funcArrayClearThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArrayCreateContext struct {
+	Events TestWasmLibEvents
 	Params ImmutableArrayCreateParams
 	State  MutableTestWasmLibState
 }
@@ -69,6 +72,7 @@ func funcArrayCreateThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ArraySetContext struct {
+	Events TestWasmLibEvents
 	Params ImmutableArraySetParams
 	State  MutableTestWasmLibState
 }
@@ -91,6 +95,7 @@ func funcArraySetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type ParamTypesContext struct {
+	Events TestWasmLibEvents
 	Params ImmutableParamTypesParams
 	State  MutableTestWasmLibState
 }
@@ -110,7 +115,8 @@ func funcParamTypesThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type RandomContext struct {
-	State MutableTestWasmLibState
+	Events TestWasmLibEvents
+	State  MutableTestWasmLibState
 }
 
 func funcRandomThunk(ctx wasmlib.ScFuncContext) {
@@ -122,6 +128,28 @@ func funcRandomThunk(ctx wasmlib.ScFuncContext) {
 	}
 	funcRandom(ctx, f)
 	ctx.Log("testwasmlib.funcRandom ok")
+}
+
+type TriggerEventContext struct {
+	Events TestWasmLibEvents
+	Params ImmutableTriggerEventParams
+	State  MutableTestWasmLibState
+}
+
+func funcTriggerEventThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcTriggerEvent")
+	f := &TriggerEventContext{
+		Params: ImmutableTriggerEventParams{
+			id: wasmlib.OBJ_ID_PARAMS,
+		},
+		State: MutableTestWasmLibState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
+	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
+	funcTriggerEvent(ctx, f)
+	ctx.Log("testwasmlib.funcTriggerEvent ok")
 }
 
 type ArrayLengthContext struct {

@@ -128,3 +128,7 @@ pub fn func_random(ctx: &ScFuncContext, f: &RandomContext) {
 pub fn view_get_random(_ctx: &ScViewContext, f: &GetRandomContext) {
     f.results.random().set_value(f.state.random().value());
 }
+
+pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {
+    f.events.test(&f.params.address().value(), &f.params.name().value());
+}

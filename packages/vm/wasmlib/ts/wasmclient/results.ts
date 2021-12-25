@@ -1,6 +1,6 @@
 // The Results struct is used to gather all arguments for a smart
 // contract function call and encode it into a deterministic byte array
-import * as wasmlib from "../index";
+import * as wasmlib from "../wasmlib";
 import * as client from "./index";
 import {Base58} from "./crypto";
 import {Buffer} from "./buffer";

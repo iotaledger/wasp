@@ -253,6 +253,30 @@ func (s MutableParamTypesParams) Uint8() wasmlib.ScMutableUint8 {
 	return wasmlib.NewScMutableUint8(s.id, idxMap[IdxParamUint8])
 }
 
+type ImmutableTriggerEventParams struct {
+	id int32
+}
+
+func (s ImmutableTriggerEventParams) Address() wasmlib.ScImmutableAddress {
+	return wasmlib.NewScImmutableAddress(s.id, idxMap[IdxParamAddress])
+}
+
+func (s ImmutableTriggerEventParams) Name() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamName])
+}
+
+type MutableTriggerEventParams struct {
+	id int32
+}
+
+func (s MutableTriggerEventParams) Address() wasmlib.ScMutableAddress {
+	return wasmlib.NewScMutableAddress(s.id, idxMap[IdxParamAddress])
+}
+
+func (s MutableTriggerEventParams) Name() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamName])
+}
+
 type ImmutableArrayLengthParams struct {
 	id int32
 }

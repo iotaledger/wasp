@@ -12,7 +12,7 @@ type ClientBase struct {
 }
 
 func (g *ClientBase) Generate() error {
-	g.folder = g.rootFolder + "/"
+	g.folder = g.rootFolder + "/" + g.s.PackageName + "client/"
 	err := os.MkdirAll(g.folder, 0o755)
 	if err != nil {
 		return err
@@ -28,11 +28,11 @@ func (g *ClientBase) Generate() error {
 }
 
 func (g *ClientBase) generateCode() error {
-	err := g.createSourceFile("events", len(g.s.Events) != 0)
+	err := g.createSourceFile("events", true)
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("service", len(g.s.Events) != 0)
+	err = g.createSourceFile("service", true)
 	if err != nil {
 		return err
 	}

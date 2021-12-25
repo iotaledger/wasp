@@ -39,6 +39,11 @@ pub struct RandomCall {
 	pub func: ScFunc,
 }
 
+pub struct TriggerEventCall {
+	pub func: ScFunc,
+	pub params: MutableTriggerEventParams,
+}
+
 pub struct ArrayLengthCall {
 	pub func: ScView,
 	pub params: MutableArrayLengthParams,
@@ -117,6 +122,15 @@ impl ScFuncs {
         RandomCall {
             func: ScFunc::new(HSC_NAME, HFUNC_RANDOM),
         }
+    }
+
+    pub fn trigger_event(_ctx: & dyn ScFuncCallContext) -> TriggerEventCall {
+        let mut f = TriggerEventCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_TRIGGER_EVENT),
+            params: MutableTriggerEventParams { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        f
     }
 
     pub fn array_length(_ctx: & dyn ScViewCallContext) -> ArrayLengthCall {

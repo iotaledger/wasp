@@ -3,11 +3,7 @@ package goclienttemplates
 var eventsGo = map[string]string{
 	// *******************************
 	"events.go": `
-package $package
-
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/client"
-)
+$#emit clientHeader
 
 var EventHandlers = map[string]func([]string) {
 $#each events eventHandler
@@ -22,7 +18,7 @@ $#each events eventClass
 	"eventClass": `
 
 type Event$EvtName struct {
-	client.Event
+	wasmclient.Event
 $#each event eventClassField
 }
 

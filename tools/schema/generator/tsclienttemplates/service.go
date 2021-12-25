@@ -3,7 +3,7 @@ package tsclienttemplates
 var serviceTs = map[string]string{
 	// *******************************
 	"service.ts": `
-import * as client from "wasmlib/client"
+import * as wasmclient from "wasmlib/wasmclient"
 import * as events from "./events"
 
 $#each params constArg
@@ -13,9 +13,9 @@ $#each func funcStruct
 
 ///////////////////////////// $PkgName$+Service /////////////////////////////
 
-export class $PkgName$+Service extends client.Service {
+export class $PkgName$+Service extends wasmclient.Service {
 
-	constructor(cl: client.ServiceClient, chainID: string) {
+	constructor(cl: wasmclient.ServiceClient, chainID: string) {
 		super(cl, chainID, "$hscName", events.eventHandlers);
 	}
 $#each func serviceFunction
@@ -34,7 +34,7 @@ const Res$FldName = "$fldAlias";
 
 ///////////////////////////// $funcName /////////////////////////////
 
-export class $FuncName$Kind extends client.FuncObject {
+export class $FuncName$Kind extends wasmclient.FuncObject {
 $#if param funcArgsMember
 $#each param funcArgSetter
 $#if func funcPost viewCall
@@ -43,7 +43,7 @@ $#if result resultStruct
 `,
 	// *******************************
 	"funcArgsMember": `
-	args: client.Arguments = new client.Arguments();
+	args: wasmclient.Arguments = new wasmclient.Arguments();
 `,
 	// *******************************
 	"funcArgSetter": `
@@ -101,7 +101,7 @@ $#set exec $exec("$funcName", null)
 	// *******************************
 	"resultStruct": `
 
-export class $FuncName$+Results extends client.ViewResults {
+export class $FuncName$+Results extends wasmclient.ViewResults {
 $#each result callResultGetter
 }
 `,
@@ -129,7 +129,7 @@ $#if mandatory else callResultOptional
 `,
 	// *******************************
 	"serviceResult": `
-	$fldName: client.$FldType;
+	$fldName: wasmclient.$FldType;
 `,
 	// *******************************
 	"serviceFunction": `

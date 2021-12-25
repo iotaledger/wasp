@@ -1,5 +1,9 @@
 name: TestWasmLib
 description: Exercise all aspects of WasmLib
+events:
+  test:
+    name: String
+    address: Address
 structs: {}
 typedefs:
   StringArray: String[]
@@ -40,6 +44,10 @@ funcs:
       uint32: Uint32?
       uint64: Uint64?
   random:
+  triggerEvent:
+    params:
+      name: String
+      address: Address
 views:
   arrayLength:
     params:

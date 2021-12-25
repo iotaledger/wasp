@@ -1,27 +1,30 @@
-package client
+package wasmclient
 
 import (
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 // The Results struct is used to gather all arguments for a smart
 // contract function call and encode it into a deterministic byte array
 type Results struct {
-	res map[string][]byte
+	err error
+	res dict.Dict
 }
 
-func NewResults() Results {
-	return Results{}
+func (r Results) Error() error {
+	return r.err
 }
 
 func (r Results) Exists(key string) bool {
-	_, ok := r.res[key]
+	_, ok := r.res[kv.Key(key)]
 	return ok
 }
 
 func (r Results) get(key string, typeID int32) []byte {
 	size := wasmlib.TypeSizes[typeID]
-	bytes, ok := r.res[key]
+	bytes, ok := r.res[kv.Key(key)]
 	if ok {
 		if size != 0 && len(bytes) != int(size) {
 			panic("invalid type size")

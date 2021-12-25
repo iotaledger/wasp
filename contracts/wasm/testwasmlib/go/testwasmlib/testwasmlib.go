@@ -133,3 +133,7 @@ func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
 func viewGetRandom(ctx wasmlib.ScViewContext, f *GetRandomContext) {
 	f.Results.Random().SetValue(f.State.Random().Value())
 }
+
+func funcTriggerEvent(ctx wasmlib.ScFuncContext, f *TriggerEventContext) {
+	f.Events.Test(f.Params.Address().Value(), f.Params.Name().Value())
+}
