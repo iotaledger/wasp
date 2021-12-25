@@ -341,16 +341,18 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id *iotago.NativeT
 	}
 	var out *iotago.ExtendedOutput
 	if in == nil {
-		out = newInternalTokenOutput(txb.anchorOutput.AliasID, *id)
+		out = txb.newInternalTokenOutput(txb.anchorOutput.AliasID, *id)
 	} else {
 		out = cloneInternalExtendedOutput(in)
 	}
 	b := &nativeTokenBalance{
 		tokenID:            out.NativeTokens[0].ID,
-		input:              *input,
 		in:                 in,
 		out:                out,
 		dustDepositCharged: in != nil,
+	}
+	if input != nil {
+		b.input = *input
 	}
 	txb.balanceNativeTokens[*id] = b
 	return b

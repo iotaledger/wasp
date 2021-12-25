@@ -2,6 +2,7 @@ package codec
 
 import (
 	"fmt"
+	"math/big"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -31,6 +32,8 @@ func Encode(v interface{}) []byte {
 		return EncodeUint64(vt)
 	case string:
 		return EncodeString(vt)
+	case *big.Int:
+		return EncodeBigIntAbs(vt)
 	case []byte:
 		return vt
 	case *hashing.HashValue:

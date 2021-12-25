@@ -234,9 +234,9 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 
-	tokenScheme := par.MustGetTokenScheme(ParamsTokenScheme, &iotago.SimpleTokenScheme{})
-	tokenTag := par.MustGetTokenTag(ParamsTokenTag, iotago.TokenTag{})
-	tokenMaxSupply := par.MustGetBigInt(ParamsMaxSupply)
+	tokenScheme := par.MustGetTokenScheme(ParamTokenScheme, &iotago.SimpleTokenScheme{})
+	tokenTag := par.MustGetTokenTag(ParamTokenTag, iotago.TokenTag{})
+	tokenMaxSupply := par.MustGetBigInt(ParamMaxSupply)
 
 	// create UTXO
 	sn := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply)
@@ -244,7 +244,7 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
 
 	ret := dict.New()
-	ret.Set(ParamsFoundrySN, util.Uint32To4Bytes(sn))
+	ret.Set(ParamFoundrySN, util.Uint32To4Bytes(sn))
 	return ret, nil
 }
 
@@ -253,7 +253,7 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.foundryDestroy")
 	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	sn := par.MustGetUint32(ParamsFoundrySN)
+	sn := par.MustGetUint32(ParamFoundrySN)
 	// check if foundry is controlled by the caller
 	a.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
@@ -268,15 +268,15 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 
 // foundryModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller
 // Params:
-// - ParamsFoundrySN serial number of the foundry
-// - ParamsSupplyDeltaAbs absolute delta of the supply as big.Int
-// - ParamsDestroySupply true if destroy supply, false (default) if mint new supply
+// - ParamFoundrySN serial number of the foundry
+// - ParamSupplyDeltaAbs absolute delta of the supply as big.Int
+// - ParamDestroySupply true if destroy supply, false (default) if mint new supply
 func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	sn := par.MustGetUint32(ParamsFoundrySN)
-	delta := par.MustGetBigInt(ParamsSupplyDeltaAbs)
-	destroy := par.MustGetBool(ParamsDestroySupply, false)
+	sn := par.MustGetUint32(ParamFoundrySN)
+	delta := par.MustGetBigInt(ParamSupplyDeltaAbs)
+	destroy := par.MustGetBool(ParamDestroySupply, false)
 	if destroy {
 		delta.Neg(delta)
 	}
@@ -313,11 +313,11 @@ func foundryOutput(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 
-	sn := par.MustGetUint32(ParamsFoundrySN)
+	sn := par.MustGetUint32(ParamFoundrySN)
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 	a.RequireNoError(err, "internal: error while serializing foundry output")
 	ret := dict.New()
-	ret.Set(ParamsFoundryOutputBin, outBin)
+	ret.Set(ParamFoundryOutputBin, outBin)
 	return ret, nil
 }

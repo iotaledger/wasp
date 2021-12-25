@@ -3,6 +3,9 @@ package vmcontext
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
@@ -15,9 +18,15 @@ func (vmctx *VMContext) DestroyFoundry(sn uint32) {
 }
 
 func (vmctx *VMContext) GetOutput(sn uint32) *iotago.FoundryOutput {
-	panic("implement me")
+	ret, _, _ := accounts.GetFoundryOutput(vmctx.State(), sn, vmctx.ChainID())
+	return ret
 }
 
 func (vmctx *VMContext) ModifySupply(sn uint32, delta *big.Int) {
-	panic("implement me")
+	out := vmctx.GetOutput(sn)
+	tokenID, err := out.NativeTokenID()
+	if err != nil {
+		panic(xerrors.Errorf("internal: %w", err))
+	}
+	vmctx.txbuilder.ModifyNativeTokenSupply(&tokenID, delta)
 }

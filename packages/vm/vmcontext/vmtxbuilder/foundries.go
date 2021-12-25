@@ -55,11 +55,11 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 
 // ModifyNativeTokenSupply inflates the supply is delta > 0, shrinks if delta < 0
 func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) {
-	serNum := accounts.SerialNumFromNativeTokenID(tokenID)
-	nt, ok := txb.invokedFoundries[serNum]
+	sn := accounts.SerialNumFromNativeTokenID(tokenID)
+	nt, ok := txb.invokedFoundries[sn]
 	if !ok {
 		// load foundry output from the state
-		foundryOutput, inp := txb.loadFoundry(serNum)
+		foundryOutput, inp := txb.loadFoundry(sn)
 		if foundryOutput == nil {
 			panic(ErrFoundryDoesNotExist)
 		}
@@ -84,7 +84,7 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	txb.addNativeTokenBalanceDelta(tokenID, delta)
 	// update the supply and foundry record in the builder
 	nt.out.CirculatingSupply = newSupply
-	txb.invokedFoundries[serNum] = nt
+	txb.invokedFoundries[sn] = nt
 }
 
 func (txb *AnchorTransactionBuilder) nextFoundrySerialNumber() uint32 {

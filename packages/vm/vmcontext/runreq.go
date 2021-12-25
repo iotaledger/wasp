@@ -164,6 +164,8 @@ func checkVMPluginPanic(r interface{}) error {
 	switch err := r.(type) {
 	case *kv.DBError:
 		panic(err)
+	case string:
+		r = errors.New(err)
 	case error:
 		if errors.Is(err, coreutil.ErrorStateInvalidated) {
 			panic(err)
