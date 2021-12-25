@@ -175,7 +175,7 @@ func checkVMPluginPanic(r interface{}) error {
 			panic(err)
 		}
 	}
-	return xerrors.Errorf("exception: '%v'", r)
+	return xerrors.Errorf("exception: '%w'", r)
 }
 
 // callFromRequest is the call itself. Assumes sc exists

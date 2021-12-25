@@ -3,18 +3,15 @@ package accounts
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/iotaledger/hive.go/serializer/v2"
-	"github.com/iotaledger/wasp/packages/util"
-
-	"github.com/iotaledger/wasp/packages/kv"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
 
@@ -229,16 +226,17 @@ func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
+// Params:
+// - token scheme
+// - token tag
+// - max supply big integer
 func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
-	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	tokenScheme := par.MustGetTokenScheme(ParamsTokenScheme, &iotago.SimpleTokenScheme{})
 	tokenTag := par.MustGetTokenTag(ParamsTokenTag, iotago.TokenTag{})
 	tokenMaxSupply := par.MustGetBigInt(ParamsMaxSupply)
-	a.Require(tokenMaxSupply.Cmp(big.NewInt(0)) > 0, "maximum supply must be positive")
-	a.Require(tokenMaxSupply.Cmp(abi.MaxUint256) <= 0, "too big maximum supply")
 
 	// create UTXO
 	sn := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply)
@@ -269,12 +267,19 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 // foundryModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller
+// Params:
+// - ParamsFoundrySN serial number of the foundry
+// - ParamsSupplyDeltaAbs absolute delta of the supply as big.Int
+// - ParamsDestroySupply true if destroy supply, false (default) if mint new supply
 func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamsFoundrySN)
-	delta := par.MustGetBigInt(ParamsSupplyDelta)
-
+	delta := par.MustGetBigInt(ParamsSupplyDeltaAbs)
+	destroy := par.MustGetBool(ParamsDestroySupply, false)
+	if destroy {
+		delta.Neg(delta)
+	}
 	// check if foundry is controlled by the caller
 	a.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 

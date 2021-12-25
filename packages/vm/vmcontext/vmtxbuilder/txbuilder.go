@@ -22,9 +22,11 @@ var (
 	ErrOverflow                             = xerrors.New("overflow")
 	ErrNotEnoughIotaBalance                 = xerrors.New("not enough iota balance")
 	ErrNotEnoughNativeAssetBalance          = xerrors.New("not enough native assets balance")
+	ErrCreateFoundryMaxSupplyMustBePositive = xerrors.New("max supply must be positive")
+	ErrCreateFoundryMaxSupplyTooBig         = xerrors.New("max supply is too big")
 	ErrFoundryDoesNotExist                  = xerrors.New("foundry does not exist")
 	ErrCantModifySupplyOfTheToken           = xerrors.New("supply of the token is not controlled by the chain")
-	ErrNativeTokenSupplyOutOffBounds        = xerrors.New("token supply is out oif bounds")
+	ErrNativeTokenSupplyOutOffBounds        = xerrors.New("token supply is out of bounds")
 )
 
 // tokenOutputLoader externally supplied function which loads stored output from the state

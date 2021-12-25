@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 
 	"golang.org/x/xerrors"
@@ -18,6 +20,13 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	tag iotago.TokenTag,
 	maxSupply *big.Int,
 ) uint32 {
+	if maxSupply.Cmp(big.NewInt(0)) <= 0 {
+		panic(ErrCreateFoundryMaxSupplyMustBePositive)
+	}
+	if maxSupply.Cmp(abi.MaxUint256) > 0 {
+		panic(ErrCreateFoundryMaxSupplyTooBig)
+	}
+
 	f := &iotago.FoundryOutput{
 		Address:           txb.anchorOutput.AliasID.ToAddress(),
 		Amount:            0,

@@ -56,7 +56,8 @@ const (
 	ParamsTokenScheme      = "t"
 	ParamsTokenTag         = "g"
 	ParamsMaxSupply        = "p"
-	ParamsSupplyDelta      = "d"
+	ParamsSupplyDeltaAbs   = "d"
+	ParamsDestroySupply    = "y"
 )
 
 func SerialNumFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {
