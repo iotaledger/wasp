@@ -85,6 +85,8 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	// update the supply and foundry record in the builder
 	nt.out.CirculatingSupply = newSupply
 	txb.invokedFoundries[sn] = nt
+
+	txb.MustBalanced("ModifyNativeTokenSupply: OUT")
 }
 
 func (txb *AnchorTransactionBuilder) nextFoundrySerialNumber() uint32 {

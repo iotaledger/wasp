@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/iotaledger/iota.go/v3/tpkg"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -24,7 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-func TestCreateFoundry(t *testing.T) {
+func TestFoundries(t *testing.T) {
 	var env *solo.Solo
 	var ch *solo.Chain
 	var senderKeyPair *cryptolib.KeyPair
@@ -235,5 +237,53 @@ func TestCreateFoundry(t *testing.T) {
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(10))
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(10))
 	})
+	t.Run("max supply 1000000, mint_1000000, destroy_1000000", func(t *testing.T) {
+		initTest()
+		err, sn, tokenID := createFoundry(t, nil, nil, big.NewInt(1000000))
+		require.EqualValues(t, 1, sn)
+		require.NoError(t, err)
 
+		out, err := ch.GetFoundryOutput(1)
+		require.NoError(t, err)
+		require.EqualValues(t, out.MustNativeTokenID(), tokenID)
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+
+		err = mintTokens(sn, big.NewInt(1000000))
+		require.NoError(t, err)
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(1000000))
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1000000))
+		out, err = ch.GetFoundryOutput(1)
+		require.NoError(t, err)
+		require.True(t, big.NewInt(1000000).Cmp(out.CirculatingSupply) == 0)
+
+		err = destroyTokens(sn, big.NewInt(1000000))
+		require.NoError(t, err)
+		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		out, err = ch.GetFoundryOutput(1)
+		require.NoError(t, err)
+		require.True(t, big.NewInt(0).Cmp(out.CirculatingSupply) == 0)
+	})
+}
+
+// TestFoundryValidation reveals bug in iota.go
+func TestFoundryValidation(t *testing.T) {
+	tokenID := tpkg.RandNativeToken().ID
+	inSums := iotago.NativeTokenSum{
+		tokenID: big.NewInt(1000000),
+	}
+	circSupplyChange := big.NewInt(-1000000)
+
+	outSumsBad := iotago.NativeTokenSum{}
+	outSumsGood := iotago.NativeTokenSum{tokenID: big.NewInt(0)}
+
+	t.Run("fail", func(t *testing.T) {
+		err := iotago.NativeTokenSumBalancedWithDiff(tokenID, inSums, outSumsBad, circSupplyChange)
+		require.NoError(t, err)
+	})
+	t.Run("pass", func(t *testing.T) {
+		err := iotago.NativeTokenSumBalancedWithDiff(tokenID, inSums, outSumsGood, circSupplyChange)
+		require.NoError(t, err)
+	})
 }

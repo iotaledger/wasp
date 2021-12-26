@@ -249,8 +249,8 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 	}
 	// creating outputs for updated foundries
 	foundriesToBeUpdated, _ := txb.FoundriesToBeUpdated()
-	for _, serNum := range foundriesToBeUpdated {
-		ret = append(ret, txb.invokedFoundries[serNum].out)
+	for _, sn := range foundriesToBeUpdated {
+		ret = append(ret, txb.invokedFoundries[sn].out)
 	}
 	// creating outputs for posted on-ledger requests
 	ret = append(ret, txb.postedOutputs...)
@@ -429,6 +429,7 @@ func (txb *AnchorTransactionBuilder) String() string {
 }
 
 func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) *iotago.TransactionEssence {
+	txb.MustBalanced("BuildTransactionEssence IN")
 	return &iotago.TransactionEssence{
 		Inputs:  txb.inputs(),
 		Outputs: txb.outputs(stateData),
