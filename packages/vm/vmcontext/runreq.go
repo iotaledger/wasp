@@ -60,6 +60,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 		vmtxbuilder.ErrInputLimitExceeded,
 		vmtxbuilder.ErrOutputLimitExceeded,
 		vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit,
+		vmtxbuilder.ErrNumberOfNativeTokensLimitExceeded,
 	)
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
@@ -174,6 +175,9 @@ func checkVMPluginPanic(r interface{}) error {
 			panic(err)
 		}
 		if errors.Is(err, vmtxbuilder.ErrInputLimitExceeded) {
+			panic(err)
+		}
+		if errors.Is(err, vmtxbuilder.ErrNumberOfNativeTokensLimitExceeded) {
 			panic(err)
 		}
 	}
