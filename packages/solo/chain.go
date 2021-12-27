@@ -116,7 +116,7 @@ func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (
 
 	gasNeeded := governance.GasForBlob(blobAsADict)
 	gasFeePolicy := ch.GetGasFeePolicy()
-	require.EqualValues(ch.Env.T, nil, gasFeePolicy.GasFeeTokenID)
+	require.Nil(ch.Env.T, gasFeePolicy.GasFeeTokenID)
 
 	totalFee := gasNeeded / gasFeePolicy.GasPerGasToken
 	if totalFee > 0 {
