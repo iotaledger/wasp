@@ -153,8 +153,11 @@ func (txb *AnchorTransactionBuilder) TotalAvailableIotas() uint64 {
 // NOTE: if call panics with ErrNotEnoughFundsForInternalDustDeposit, the state of the builder becomes inconsistent
 // It means, in the caller context it should be rolled back altogether
 func (txb *AnchorTransactionBuilder) Consume(inp iscp.RequestData) int64 {
+	if DebugTxBuilder {
+		txb.MustBalanced("txbuilder.Consume IN")
+	}
 	if inp.IsOffLedger() {
-		panic(xerrors.New("Consume: must be UTXO"))
+		panic(xerrors.New("txbuilder.Consume: must be UTXO"))
 	}
 	if txb.InputsAreFull() {
 		panic(ErrInputLimitExceeded)
@@ -165,11 +168,14 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.RequestData) int64 {
 	txb.consumed = append(txb.consumed, inp)
 
 	// first we add all iotas arrived with the output to anchor balance
-	txb.addDeltaIotasToTotal(inp.Unwrap().UTXO().Output().Deposit())
+	txb.addDeltaIotasToTotal(inp.AsOnLedger().Output().Deposit())
 	// then we add all arriving native tokens to corresponding internal outputs
 	deltaIotasDustDepositAdjustment := int64(0)
 	for _, nt := range inp.Assets().Tokens {
 		deltaIotasDustDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
+	}
+	if DebugTxBuilder {
+		txb.MustBalanced("txbuilder.Consume OUT")
 	}
 	return deltaIotasDustDepositAdjustment
 }
@@ -266,7 +272,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 
 // numInputs number of inputs in the future transaction
 func (txb *AnchorTransactionBuilder) numInputs() int {
-	ret := len(txb.consumed) + 1 // + 1 for anchor UTXO
+	ret := len(txb.consumed) + 1 // + 1 for anchor AsUTXO
 	for _, v := range txb.balanceNativeTokens {
 		if v.requiresInput() {
 			ret++
@@ -408,7 +414,7 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 		return int64(txb.dustDepositOnInternalTokenOutput)
 	case !nt.dustDepositCharged && nt.producesOutput():
 		// this is a new token in the on-chain ledger
-		// There's a need for additional dust deposit on the respective UTXO, so delta for the anchor is negative
+		// There's a need for additional dust deposit on the respective AsUTXO, so delta for the anchor is negative
 		nt.dustDepositCharged = true
 		if txb.dustDepositOnInternalTokenOutput > txb.totalIotasOnChain {
 			panic(ErrNotEnoughFundsForInternalDustDeposit)
@@ -462,8 +468,8 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.Sta
 
 // cache for the dust amount constant
 
-// calcVByteCostOfNativeTokenBalance return byte cost for the internal UTXO used to keep on chain native tokens.
-// We assume that size of the UTXO will always be a constant
+// calcVByteCostOfNativeTokenBalance return byte cost for the internal AsUTXO used to keep on chain native tokens.
+// We assume that size of the AsUTXO will always be a constant
 func calcVByteCostOfNativeTokenBalance(rentStructure *iotago.RentStructure) uint64 {
 	// a fake output with one native token in the balance
 	// the MakeExtendedOutput will adjust the dust deposit

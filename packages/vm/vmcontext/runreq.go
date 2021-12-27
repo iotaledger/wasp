@@ -85,10 +85,6 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// consume output into the transaction builder
 	// dustAdjustmentOfTheCommonAccount is due to the dust in the internal UTXOs
 	dustAdjustmentOfTheCommonAccount := vmctx.txbuilder.Consume(vmctx.req)
-	_, _, isBalanced := vmctx.txbuilder.Totals()
-	if !isBalanced {
-		panic("internal inconsistency: transaction builder is not balanced")
-	}
 	// update the state, the account ledger
 	// NOTE: sender account will be CommonAccount if sender address is not available
 	vmctx.creditToAccount(vmctx.req.SenderAccount(), vmctx.req.Assets())

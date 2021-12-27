@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-// Assets is used as assets in the UTXO and as tokens in transfer
+// Assets is used as assets in the AsUTXO and as tokens in transfer
 type Assets struct {
 	Iotas  uint64
 	Tokens iotago.NativeTokens

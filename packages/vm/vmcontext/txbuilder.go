@@ -36,7 +36,7 @@ func (vmctx *VMContext) loadNativeTokenOutput(id *iotago.NativeTokenID) (*iotago
 		return nil, nil
 	}
 	if retInp = vmctx.getUTXOInput(blockIndex, outputIndex); retOut == nil {
-		panic(xerrors.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
+		panic(xerrors.Errorf("internal: can't find AsUTXO input for block index %d, output index %d", blockIndex, outputIndex))
 	}
 	return retOut, retInp
 }
@@ -54,7 +54,7 @@ func (vmctx *VMContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, *iota
 		return nil, nil
 	}
 	if retInp = vmctx.getUTXOInput(blockIndex, outputIndex); retOut == nil {
-		panic(xerrors.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
+		panic(xerrors.Errorf("internal: can't find AsUTXO input for block index %d, output index %d", blockIndex, outputIndex))
 	}
 	return retOut, retInp
 }

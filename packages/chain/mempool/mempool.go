@@ -196,7 +196,7 @@ func (m *mempool) traceIn(req iscp.RequestData) {
 	var timeLockMilestone uint32
 
 	if !req.IsOffLedger() {
-		td := req.Unwrap().UTXO().Features().TimeLock()
+		td := req.AsOnLedger().Features().TimeLock()
 		if td != nil {
 			timeLockTime = td.Time
 			timeLockMilestone = td.MilestoneIndex
@@ -236,7 +236,7 @@ func isUnlockable(ref *requestRef, currentTime time.Time) bool {
 		return false
 	}
 
-	output, _ := ref.req.Unwrap().UTXO().Output().(iotago.TransIndepIdentOutput)
+	output, _ := ref.req.AsOnLedger().Output().(iotago.TransIndepIdentOutput)
 
 	unlockable := output.UnlockableBy(ref.req.SenderAddress(), &iotago.ExternalUnlockParameters{
 		ConfUnix: uint64(currentTime.Unix()),
@@ -255,7 +255,7 @@ func isRequestReady(ref *requestRef, currentTime time.Time) (bool, bool) {
 	r := ref.req.(*iscp.OnLedgerRequestData)
 
 	// Skip anything with return amounts in this version.
-	if _, ok := r.UTXO().Features().ReturnAmount(); ok {
+	if _, ok := r.AsOnLedger().Features().ReturnAmount(); ok {
 		return false, true
 	}
 

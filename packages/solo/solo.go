@@ -357,18 +357,15 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp
 		})
 		require.NoError(env.T, err)
 
-		if odata.SenderAddress() == nil {
-			continue
-		}
-		if odata.CallTarget() == nil {
-			continue
-		}
 		addr := odata.TargetAddress()
 		if addr.Type() != iotago.AddressAlias {
 			continue
 		}
-
 		chainID := iscp.ChainIDFromAliasID(addr.(*iotago.AliasAddress).AliasID())
+
+		if odata.AsOnLedger().IsInternalUTXO(&chainID) {
+			continue
+		}
 		lst, ok := ret[chainID]
 		if !ok {
 			lst = make([]iscp.RequestData, 0)
@@ -435,7 +432,7 @@ func (ch *Chain) collateBatch() []iscp.RequestData {
 	ret := make([]iscp.RequestData, 0)
 	for _, req := range ready[:batchSize] {
 		if !req.IsOffLedger() {
-			timeData := req.Unwrap().UTXO().Features().TimeLock()
+			timeData := req.AsOnLedger().Features().TimeLock()
 			if timeData != nil && timeData.Time.After(timeAssumption.Time) {
 				continue
 			}

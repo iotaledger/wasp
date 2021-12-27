@@ -238,7 +238,7 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	tokenTag := par.MustGetTokenTag(ParamTokenTag, iotago.TokenTag{})
 	tokenMaxSupply := par.MustGetBigInt(ParamMaxSupply)
 
-	// create UTXO
+	// create AsUTXO
 	sn := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply)
 	// add to the ownership list of the account
 	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
@@ -287,7 +287,7 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	tokenID, err := out.NativeTokenID()
 	a.RequireNoError(err, "internal")
 
-	// transit foundry UTXO
+	// transit foundry AsUTXO
 	ctx.Foundries().ModifySupply(sn, delta)
 
 	// accrue delta tokens on the caller's account

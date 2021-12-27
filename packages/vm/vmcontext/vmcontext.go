@@ -22,7 +22,7 @@ import (
 
 // VMContext represents state of the chain during one run of the VM while processing
 // a batch of requests. VMContext object mutates with each request in the bathc.
-// The VMContext is created from immutable vm.VMTask object and UTXO state of the
+// The VMContext is created from immutable vm.VMTask object and AsUTXO state of the
 // chain address contained in the statetxbuilder.Builder
 type VMContext struct {
 	task *vm.VMTask

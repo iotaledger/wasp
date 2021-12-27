@@ -168,7 +168,7 @@ func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
 		accounts.SaveMaxAssumedNonce(
 			s,
 			vmctx.req.SenderAddress(),
-			vmctx.req.Unwrap().OffLedger().Nonce(),
+			vmctx.req.AsOffLedger().Nonce(),
 		)
 	})
 }

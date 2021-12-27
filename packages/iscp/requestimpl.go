@@ -72,14 +72,10 @@ func (r *OffLedgerRequestData) IsOffLedger() bool {
 	return true
 }
 
-func (r *OffLedgerRequestData) Unwrap() unwrap {
-	return r
-}
-
 // implements unwrap interface
-var _ unwrap = &OffLedgerRequestData{}
+var _ AsOffLedger = &OffLedgerRequestData{}
 
-func (r *OffLedgerRequestData) OffLedger() *OffLedgerRequestData {
+func (r *OffLedgerRequestData) AsOffLedger() AsOffLedger {
 	return r
 }
 
@@ -87,7 +83,7 @@ func (r *OffLedgerRequestData) ChainID() *ChainID {
 	return r.chainID
 }
 
-func (r *OffLedgerRequestData) UTXO() unwrapUTXO {
+func (r *OffLedgerRequestData) AsOnLedger() AsOnLedger {
 	panic("not an UTXO RequestData")
 }
 
@@ -244,7 +240,7 @@ func (r *OffLedgerRequestData) ID() (requestID RequestID) {
 	return NewRequestID(iotago.TransactionID(hashing.HashData(r.Bytes())), 0)
 }
 
-// Order number used for replay protection
+// Nonce incremental nonce used for replay protection
 func (r *OffLedgerRequestData) Nonce() uint64 {
 	return r.nonce
 }
@@ -259,8 +255,7 @@ func (r *OffLedgerRequestData) Params() dict.Dict {
 }
 
 func (r *OffLedgerRequestData) SenderAccount() *AgentID {
-	// TODO return iscp.NewAgentID(r.SenderAddress(), 0)
-	return nil
+	return NewAgentID(r.SenderAddress(), 0)
 }
 
 func (r *OffLedgerRequestData) SenderAddress() iotago.Address {
@@ -270,8 +265,8 @@ func (r *OffLedgerRequestData) SenderAddress() iotago.Address {
 	return r.sender
 }
 
-func (r *OffLedgerRequestData) CallTarget() *CallTarget {
-	return &CallTarget{
+func (r *OffLedgerRequestData) CallTarget() CallTarget {
+	return CallTarget{
 		Contract:   r.contract,
 		EntryPoint: r.entryPoint,
 	}
@@ -412,11 +407,11 @@ func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
 	return senderBlock.Address
 }
 
-func (r *OnLedgerRequestData) CallTarget() *CallTarget {
+func (r *OnLedgerRequestData) CallTarget() CallTarget {
 	if r.requestMetadata == nil {
-		return nil
+		return CallTarget{}
 	}
-	return &CallTarget{
+	return CallTarget{
 		Contract:   r.requestMetadata.TargetContract,
 		EntryPoint: r.requestMetadata.EntryPoint,
 	}
@@ -426,6 +421,10 @@ func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 	switch out := r.output.(type) {
 	case *iotago.ExtendedOutput:
 		return out.Address
+	case *iotago.FoundryOutput:
+		return out.Address
+	case *iotago.AliasOutput:
+		return out.AliasID.ToAddress()
 	default:
 		panic("OnLedgerRequestData:TargetAddress implement me")
 	}
@@ -455,10 +454,6 @@ func (r *OnLedgerRequestData) IsOffLedger() bool {
 	return false
 }
 
-func (r *OnLedgerRequestData) Unwrap() unwrap {
-	return r
-}
-
 func (r *OnLedgerRequestData) Features() Features {
 	return r
 }
@@ -468,19 +463,16 @@ func (r *OnLedgerRequestData) String() string {
 	panic("implement me")
 }
 
-// implements unwrap interface
-var _ unwrap = &OnLedgerRequestData{}
-
-func (r *OnLedgerRequestData) OffLedger() *OffLedgerRequestData {
+func (r *OnLedgerRequestData) AsOffLedger() AsOffLedger {
 	panic("not an off-ledger RequestData")
 }
 
-func (r *OnLedgerRequestData) UTXO() unwrapUTXO {
+func (r *OnLedgerRequestData) AsOnLedger() AsOnLedger {
 	return r
 }
 
-// implements unwrapUTXO interface
-var _ unwrapUTXO = &OnLedgerRequestData{}
+// implements AsUTXO interface
+var _ AsOnLedger = &OnLedgerRequestData{}
 
 func (r *OnLedgerRequestData) UTXOInput() iotago.UTXOInput {
 	return r.inputID
@@ -488,6 +480,23 @@ func (r *OnLedgerRequestData) UTXOInput() iotago.UTXOInput {
 
 func (r *OnLedgerRequestData) Output() iotago.Output {
 	return r.output
+}
+
+// IsInternalUTXO if true the output cannot be interpreted as a request
+func (r *OnLedgerRequestData) IsInternalUTXO(chinID *ChainID) bool {
+	if r.output.Type() == iotago.OutputFoundry {
+		return true
+	}
+	if r.SenderAddress() == nil {
+		return false
+	}
+	if !r.SenderAddress().Equal(chinID.AsAddress()) {
+		return false
+	}
+	if r.requestMetadata != nil {
+		return false
+	}
+	return true
 }
 
 // implements Features interface
