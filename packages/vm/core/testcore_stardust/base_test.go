@@ -1,10 +1,14 @@
 package testcore
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
+	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
+
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/gas"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -87,7 +91,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		req := solo.NewCallParams("dummyContract", "dummyEP")
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
-		require.Contains(t, err.Error(), vmcontext.ErrTargetContractNotFound.Error())
+		require.True(t, errors.Is(err, vmcontext.ErrTargetContractNotFound))
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -295,4 +299,35 @@ func TestRepeatInit(t *testing.T) {
 		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
 		ch.CheckAccountLedger()
 	})
+}
+
+func TestDeployNativeContract(t *testing.T) {
+	env := solo.New(t).WithNativeContract(sbtestsc.Processor)
+
+	env.EnablePublisher(true)
+	ch := env.NewChain(nil, "chain1")
+
+	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
+	//senderAgentID := iscp.NewAgentID(senderAddr, 0)
+
+	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
+		root.ParamDeployer, iscp.NewAgentID(senderAddr, 0))
+	_, err := ch.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	err = ch.DeployContract(senderKeyPair, "sctest", sbtestsc.Contract.ProgramHash)
+	require.NoError(t, err)
+	//
+	//req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name)
+	//_, err := ch.PostRequestSync(req, nil)
+	env.WaitPublisher()
+}
+
+func TestFeeBasic(t *testing.T) {
+	env := solo.New(t)
+	chain := env.NewChain(nil, "chain1")
+	feePolicy := chain.GetGasFeePolicy()
+	require.Nil(t, feePolicy.GasFeeTokenID)
+	require.Nil(t, feePolicy.FixedGasBudget)
+	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
 }

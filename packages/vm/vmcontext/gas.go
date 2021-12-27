@@ -1,6 +1,9 @@
 package vmcontext
 
-import "github.com/iotaledger/wasp/packages/iscp/coreutil"
+import (
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"golang.org/x/xerrors"
+)
 
 func (vmctx *VMContext) gasSetBudget(gasBudget uint64) {
 	vmctx.gasBudget = gasBudget
@@ -13,7 +16,7 @@ func (vmctx *VMContext) GasBurn(gas uint64) {
 	}
 	vmctx.gasBurned += gas
 	if vmctx.gasBurned > vmctx.gasBudget {
-		panic(coreutil.ErrorGasBudgetExceeded)
+		panic(xerrors.Errorf("%w: gas budget %d", coreutil.ErrorGasBudgetExceeded, vmctx.gasBudget))
 	}
 }
 

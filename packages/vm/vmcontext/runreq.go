@@ -7,9 +7,9 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 
-	"github.com/iotaledger/wasp/packages/iscp/gas"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -200,51 +200,6 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 	)
 }
 
-// chargeGasFee takes burned tokens from the sender's account
-// It should always be enough because gas budget is set affordable
-func (vmctx *VMContext) chargeGasFee() {
-	if vmctx.req.SenderAddress() == nil {
-		panic("inconsistency: vmctx.req.RequestData().SenderAddress() == nil")
-	}
-	if vmctx.isInitChainRequest() {
-		// do not charge gas fees if init request
-		return
-	}
-	// total fees to charge
-	tokensToCharge := vmctx.GasBurned() / vmctx.chainInfo.GasFeePolicy.GasPerGasToken
-	// split gas fees between validator and governor, according to policy
-	validatorPercentage := vmctx.chainInfo.GasFeePolicy.ValidatorFeeShare
-	if validatorPercentage > 100 {
-		validatorPercentage = 100
-	}
-	var sendToValidator uint64
-	// safe arithmetics
-	if tokensToCharge >= 100 {
-		sendToValidator = (tokensToCharge / 100) * uint64(validatorPercentage)
-	} else {
-		sendToValidator = (tokensToCharge * uint64(validatorPercentage)) / 100
-	}
-	sendToOwner := tokensToCharge - sendToValidator
-
-	transferToValidator := &iscp.Assets{}
-	transferToOwner := &iscp.Assets{}
-	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
-		transferToValidator.Tokens = iotago.NativeTokens{
-			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
-		}
-		transferToOwner.Tokens = iotago.NativeTokens{
-			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToOwner))},
-		}
-	} else {
-		transferToValidator.Iotas = sendToValidator
-		transferToOwner.Iotas = sendToOwner
-	}
-	sender := vmctx.req.SenderAccount()
-
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
-	vmctx.mustMoveBetweenAccounts(sender, commonaccount.Get(vmctx.ChainID()), transferToOwner)
-}
-
 // calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget
 // Affordable gas budget is calculated from gas budget provided in the request by the user and taking into account
 // how many tokens the sender has in its account.
@@ -255,12 +210,13 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	}
 	tokensAvailable := uint64(0)
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
+		tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
 		// to pay for gas chain is configured to use some native token, not IOTA
-		tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), vmctx.chainInfo.GasFeePolicy.GasFeeTokenID)
+		tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), tokenID)
 		if tokensAvailableBig != nil {
 			// safely subtract the transfer from the sender to the target
 			if transfer := vmctx.req.Transfer(); transfer != nil {
-				if transferTokens := iscp.FindNativeTokenBalance(transfer.Tokens, vmctx.chainInfo.GasFeePolicy.GasFeeTokenID); transferTokens != nil {
+				if transferTokens := iscp.FindNativeTokenBalance(transfer.Tokens, tokenID); transferTokens != nil {
 					if tokensAvailableBig.Cmp(transferTokens) < 0 {
 						tokensAvailableBig.SetUint64(0)
 					} else {
@@ -286,18 +242,55 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 			}
 		}
 	}
-	if tokensAvailable < math.MaxUint64/vmctx.chainInfo.GasFeePolicy.GasPerGasToken {
-		vmctx.gasBudgetAffordable = tokensAvailable * vmctx.chainInfo.GasFeePolicy.GasPerGasToken
-	} else {
+	vmctx.gasMaxTokensAvailableForGasFee = tokensAvailable
+	if tokensAvailable < vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit {
+		// it will not proceed but will charge at least the minimum
+		panic(ErrNotEnoughTokensFor1GasNominalUnit)
+	}
+	if vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit == 0 {
 		vmctx.gasBudgetAffordable = math.MaxUint64
+	} else {
+		nominalUnitsOfGas := tokensAvailable / vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit
+		if nominalUnitsOfGas > math.MaxUint64/vmctx.chainInfo.GasFeePolicy.GasNominalUnit {
+			vmctx.gasBudgetAffordable = math.MaxUint64
+		} else {
+			vmctx.gasBudgetAffordable = nominalUnitsOfGas * vmctx.chainInfo.GasFeePolicy.GasNominalUnit
+		}
 	}
-
-	// TODO introduce minimum balance on account ?
 	vmctx.gasBudgetFromRequest = vmctx.req.GasBudget()
-	vmctx.gasBudget = vmctx.gasBudgetFromRequest
-	if vmctx.gasBudget > vmctx.gasBudgetAffordable {
-		vmctx.gasBudget = vmctx.gasBudgetAffordable
+	vmctx.gasBudget = util.MinUint64(vmctx.gasBudgetFromRequest, vmctx.gasBudgetAffordable)
+}
+
+// chargeGasFee takes burned tokens from the sender's account
+// It should always be enough because gas budget is set affordable
+func (vmctx *VMContext) chargeGasFee() {
+	if vmctx.req.SenderAddress() == nil {
+		panic("inconsistency: vmctx.req.RequestData().SenderAddress() == nil")
 	}
+	if vmctx.isInitChainRequest() {
+		// do not charge gas fees if init request
+		return
+	}
+	// total fees to charge
+	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), vmctx.gasMaxTokensAvailableForGasFee)
+
+	transferToValidator := &iscp.Assets{}
+	transferToOwner := &iscp.Assets{}
+	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
+		transferToValidator.Tokens = iotago.NativeTokens{
+			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
+		}
+		transferToOwner.Tokens = iotago.NativeTokens{
+			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToOwner))},
+		}
+	} else {
+		transferToValidator.Iotas = sendToValidator
+		transferToOwner.Iotas = sendToOwner
+	}
+	sender := vmctx.req.SenderAccount()
+
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
+	vmctx.mustMoveBetweenAccounts(sender, commonaccount.Get(vmctx.ChainID()), transferToOwner)
 }
 
 func (vmctx *VMContext) targetContract() *root.ContractRecord {

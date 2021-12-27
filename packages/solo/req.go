@@ -79,7 +79,7 @@ func (r *CallParams) WithNonce(nonce uint64) *CallParams {
 }
 
 func (r *CallParams) WithIotas(amount uint64) *CallParams {
-	return r.WithTransfer(iscp.NewAssets(amount, nil))
+	return r.WithAssets(iscp.NewAssets(amount, nil))
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters

@@ -3,6 +3,8 @@ package testcore
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
+
 	"github.com/iotaledger/wasp/packages/vm/core/testcore"
 
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -54,7 +56,8 @@ func TestBlockInfo(t *testing.T) {
 }
 
 func TestBlockInfoLatestSeveral(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t).WithNativeContract(sbtestsc.Processor)
+
 	chain := env.NewChain(nil, "chain1")
 	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)

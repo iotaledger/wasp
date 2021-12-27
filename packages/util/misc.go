@@ -47,3 +47,10 @@ func IsZeroBigInt(bi *big.Int) bool {
 	// see https://stackoverflow.com/questions/64257065/is-there-another-way-of-testing-if-a-big-int-is-0
 	return len(bi.Bits()) == 0
 }
+
+func MinUint64(a, b uint64) uint64 {
+	if a < b {
+		return a
+	}
+	return b
+}

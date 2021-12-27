@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // GetRotationAddress tries to read the state of 'governance' and extract rotation address
@@ -40,4 +41,9 @@ func MustGetChainInfo(state kv.KVStoreReader) *ChainInfo {
 func MustGetChainOwnerID(state kv.KVStoreReader) *iscp.AgentID {
 	d := kvdecoder.New(state)
 	return d.MustGetAgentID(VarChainOwnerID)
+}
+
+// GetGasFeePolicy returns gas policy from the state
+func GetGasFeePolicy(state kv.KVStoreReader) *gas.GasFeePolicy {
+	return gas.MustGasFeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
 }

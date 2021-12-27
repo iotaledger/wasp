@@ -42,9 +42,11 @@ const (
 	CallContract   = uint64(100)
 	NotFoundTarget = uint64(100)
 	SendL1Request  = uint64(1000)
+
+	MinGasPerBlob = uint64(1000)
 )
 
-// Constant initial cas cost to call Core Contracts entrypoints
+// Constant initial cas cost to call Core Contracts entry points
 const (
 	CoreRootDeployContract    = uint64(5000)
 	CoreRootChangePermissions = uint64(50)   // grant/revoke/require permissions

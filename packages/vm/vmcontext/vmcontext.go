@@ -50,6 +50,8 @@ type VMContext struct {
 	gasBudgetFromRequest uint64
 	// max gas budget capped by the number of tokens in the sender's account
 	gasBudgetAffordable uint64
+	// max tokens available for gas fee
+	gasMaxTokensAvailableForGasFee uint64
 	// final gas budget set for the run
 	gasBudget uint64
 	// gas already burned

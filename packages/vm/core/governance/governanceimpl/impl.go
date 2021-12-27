@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 var Processor = governance.Contract.Processor(initialize,
@@ -49,7 +50,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	chainID := params.MustGetChainID(governance.ParamChainID)
 	chainDescription := params.MustGetString(governance.ParamDescription, "N/A")
-	feePolicyBytes := params.MustGetBytes(governance.ParamFeePolicyBytes, governance.DefaultGasFeePolicy().Bytes())
+	feePolicyBytes := params.MustGetBytes(governance.ParamFeePolicyBytes, gas.DefaultGasFeePolicy().Bytes())
 
 	state.Set(governance.VarChainID, codec.EncodeChainID(chainID))
 	state.Set(governance.VarChainOwnerID, params.MustGetAgentID(governance.ParamChainOwner).Bytes())

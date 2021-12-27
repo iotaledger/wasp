@@ -10,6 +10,8 @@ import (
 	"os"
 	"sort"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
 	"github.com/iotaledger/hive.go/serializer/v2"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -95,8 +97,13 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 	return ret, true
 }
 
-func (ch *Chain) GetGasFeePolicy() *governance.GasFeePolicy {
-	return &governance.GasFeePolicy{GasPerGasToken: 1}
+func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
+	res, err := ch.CallView(governance.Contract.Name, governance.FuncGetFeePolicy.Name)
+	require.NoError(ch.Env.T, err)
+	fpBin := res.MustGet(governance.ParamFeePolicyBytes)
+	feePolicy, err := gas.GasFeePolicyFromBytes(fpBin)
+	require.NoError(ch.Env.T, err)
+	return feePolicy
 }
 
 // UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
@@ -114,20 +121,18 @@ func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (
 		return expectedHash, nil
 	}
 
-	gasNeeded := governance.GasForBlob(blobAsADict)
 	gasFeePolicy := ch.GetGasFeePolicy()
 	require.Nil(ch.Env.T, gasFeePolicy.GasFeeTokenID)
+	gasEstimate := blob.GasForBlob(blobAsADict) + gasFeePolicy.GasNominalUnit
 
-	totalFee := gasNeeded / gasFeePolicy.GasPerGasToken
-	if totalFee > 0 {
-		_, err = ch.PostRequestSync(
-			NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-				WithGasBudget(gasNeeded+100).WithIotas(totalFee+1000),
-			keyPair,
-		)
-		if err != nil {
-			return
-		}
+	f1, f2 := gasFeePolicy.FeeFromGas(gasEstimate)
+	_, err = ch.PostRequestSync(
+		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			WithGasBudget(gasEstimate).WithIotas(f1+f2),
+		keyPair,
+	)
+	if err != nil {
+		return
 	}
 
 	res, err := ch.PostRequestOffLedger(
@@ -209,7 +214,12 @@ func (ch *Chain) DeployContract(keyPair *cryptolib.KeyPair, name string, program
 	for k, v := range parseParams(params) {
 		par[k] = v
 	}
-	req := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).WithIotas(1)
+	gasPolicy := ch.GetGasFeePolicy()
+	budgetEstimate := root.GasToDeploy(programHash) + gasPolicy.GasPricePerNominalUnit
+	f1, f2 := gasPolicy.FeeFromGas(budgetEstimate)
+	req := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
+		WithGasBudget(budgetEstimate).
+		WithIotas(f1 + f2)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
