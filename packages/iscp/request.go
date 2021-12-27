@@ -54,8 +54,8 @@ type Request interface {
 	SenderAccount() *AgentID // returns CommonAccount if sender address is not available
 	SenderAddress() iotago.Address
 	CallTarget() CallTarget
-	TargetAddress() iotago.Address // TODO implement properly. Targte depends on time assumptions and AsUTXO type
-	Assets() *Assets               // attached assets for the AsUTXO request, nil for off-ledger. All goes to sender
+	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type
+	Assets() *Assets               // attached assets for the UTXO request, nil for off-ledger. All goes to sender
 	Transfer() *Assets             // transfer of assets to the smart contract. Debited from sender account
 	GasBudget() uint64
 }

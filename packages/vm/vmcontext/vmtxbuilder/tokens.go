@@ -19,7 +19,7 @@ func (n *nativeTokenBalance) clone() *nativeTokenBalance {
 	}
 }
 
-// producesOutput if value update produces AsUTXO of the corresponding total native token balance
+// producesOutput if value update produces UTXO of the corresponding total native token balance
 func (n *nativeTokenBalance) producesOutput() bool {
 	if n.identicalInOut() {
 		// value didn't change

@@ -18,8 +18,8 @@
 // 'solo' shares the same code of Virtual Machine with the Wasp node. This guarantees that smart contract programs
 // can later be deployed on chains which are run by the network of Wasp nodes without any modifications.
 //
-// The 'solo' environment uses in-memory AsUTXO ledger to validate and store transactions. The UTXODB
-// mocks Goshimmer AsUTXO ledger, it uses same value transaction structure, colored tokens, signature
+// The 'solo' environment uses in-memory UTXO ledger to validate and store transactions. The UTXODB
+// mocks Goshimmer UTXO ledger, it uses same value transaction structure, colored tokens, signature
 // schemes as well as transaction and signature validation as in Value Tangle of Goshimmer (Pollen release).
 // The only difference with the Value Tangle is that UTXODB provides full synchronicity of ledger updates.
 //

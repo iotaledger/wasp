@@ -272,7 +272,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 
 // numInputs number of inputs in the future transaction
 func (txb *AnchorTransactionBuilder) numInputs() int {
-	ret := len(txb.consumed) + 1 // + 1 for anchor AsUTXO
+	ret := len(txb.consumed) + 1 // + 1 for anchor UTXO
 	for _, v := range txb.balanceNativeTokens {
 		if v.requiresInput() {
 			ret++
@@ -414,7 +414,7 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 		return int64(txb.dustDepositOnInternalTokenOutput)
 	case !nt.dustDepositCharged && nt.producesOutput():
 		// this is a new token in the on-chain ledger
-		// There's a need for additional dust deposit on the respective AsUTXO, so delta for the anchor is negative
+		// There's a need for additional dust deposit on the respective UTXO, so delta for the anchor is negative
 		nt.dustDepositCharged = true
 		if txb.dustDepositOnInternalTokenOutput > txb.totalIotasOnChain {
 			panic(ErrNotEnoughFundsForInternalDustDeposit)
@@ -468,8 +468,8 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.Sta
 
 // cache for the dust amount constant
 
-// calcVByteCostOfNativeTokenBalance return byte cost for the internal AsUTXO used to keep on chain native tokens.
-// We assume that size of the AsUTXO will always be a constant
+// calcVByteCostOfNativeTokenBalance return byte cost for the internal UTXO used to keep on chain native tokens.
+// We assume that size of the UTXO will always be a constant
 func calcVByteCostOfNativeTokenBalance(rentStructure *iotago.RentStructure) uint64 {
 	// a fake output with one native token in the balance
 	// the MakeExtendedOutput will adjust the dust deposit

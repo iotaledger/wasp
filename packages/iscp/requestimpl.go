@@ -471,7 +471,7 @@ func (r *OnLedgerRequestData) AsOnLedger() AsOnLedger {
 	return r
 }
 
-// implements AsUTXO interface
+// implements AsOnLedger interface
 var _ AsOnLedger = &OnLedgerRequestData{}
 
 func (r *OnLedgerRequestData) UTXOInput() iotago.UTXOInput {

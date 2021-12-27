@@ -18,7 +18,7 @@ const (
 	// within this limit order of nonces is not checked
 	OffLedgerNonceStrictOrderTolerance = 10000
 	// ExpiryUnlockSafetyWindowDuration creates safety window around time assumption,
-	// the AsUTXO won't be consumed to avoid race conditions
+	// the UTXO won't be consumed to avoid race conditions
 	ExpiryUnlockSafetyWindowDuration  = 1 * time.Minute
 	ExpiryUnlockSafetyWindowMilestone = 3
 )
@@ -95,7 +95,7 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	return nil
 }
 
-// checkReasonToSkipOnLedger check reasons to skip AsUTXO request
+// checkReasonToSkipOnLedger check reasons to skip UTXO request
 func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 	if err := vmctx.checkInternalOutput(); err != nil {
 		return err
@@ -127,7 +127,7 @@ func (vmctx *VMContext) checkInternalOutput() error {
 }
 
 // checkReasonTimeLock checking timelock conditions based on time assumptions.
-// VM must ensure that the AsUTXO can be unlocked
+// VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonTimeLock() error {
 	lock := vmctx.req.AsOnLedger().Features().TimeLock()
 	if lock != nil {
@@ -142,7 +142,7 @@ func (vmctx *VMContext) checkReasonTimeLock() error {
 }
 
 // checkReasonExpiry checking expiry conditions based on time assumptions.
-// VM must ensure that the AsUTXO can be unlocked
+// VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonExpiry() error {
 	expiry, _ := vmctx.req.AsOnLedger().Features().Expiry()
 
