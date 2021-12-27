@@ -10,6 +10,8 @@ import (
 	"os"
 	"sort"
 
+	"github.com/iotaledger/hive.go/serializer/v2"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -350,6 +352,28 @@ func (ch *Chain) GetOnChainTokenIDs() []*iotago.NativeTokenID {
 	return ret
 }
 
+func (ch *Chain) GetFoundryOutput(sn uint32) (*iotago.FoundryOutput, error) {
+	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncFoundryOutput.Name,
+		accounts.ParamFoundrySN, sn,
+	)
+	if err != nil {
+		return nil, err
+	}
+	outBin := res.MustGet(accounts.ParamFoundryOutputBin)
+	out := &iotago.FoundryOutput{}
+	_, err = out.Deserialize(outBin, serializer.DeSeriModeNoValidation, nil)
+	require.NoError(ch.Env.T, err)
+	return out, nil
+}
+
+func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, error) {
+	o, err := ch.GetFoundryOutput(sn)
+	if err != nil {
+		return iotago.NativeTokenID{}, err
+	}
+	return o.MustNativeTokenID(), nil
+}
+
 type DustInfo struct {
 	DustDepositAnchor        uint64
 	DustDepositNativeTokenID uint64
@@ -359,6 +383,7 @@ type DustInfo struct {
 func (d *DustInfo) Total() uint64 {
 	return d.DustDepositAnchor + d.DustDepositNativeTokenID*uint64(d.NumNativeTokens)
 }
+
 func (ch *Chain) GetDustInfo() *DustInfo {
 	bi := ch.GetLatestBlockInfo()
 	return &DustInfo{

@@ -1,6 +1,8 @@
 package codec
 
 import (
+	"math/big"
+
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -119,4 +121,22 @@ func DecodeUint64(b []byte, def ...uint64) (uint64, error) {
 
 func EncodeUint64(value uint64) []byte {
 	return util.Uint64To8Bytes(value)
+}
+
+func DecodeBigIntAbs(b []byte, def ...*big.Int) (*big.Int, error) {
+	if b == nil {
+		if len(def) == 0 {
+			return nil, xerrors.Errorf("cannot decode nil bytes")
+		}
+		return def[0], nil
+	}
+	ret := big.NewInt(0).SetBytes(b)
+	return ret, nil
+}
+
+func EncodeBigIntAbs(value *big.Int) []byte {
+	if value == nil {
+		value = big.NewInt(0)
+	}
+	return value.Bytes()
 }

@@ -18,13 +18,16 @@ import (
 var (
 	ErrInputLimitExceeded                   = xerrors.Errorf("exceeded maximum number of inputs in transaction. iotago.MaxInputsCount = %d", iotago.MaxInputsCount)
 	ErrOutputLimitExceeded                  = xerrors.Errorf("exceeded maximum number of outputs in transaction. iotago.MaxOutputsCount = %d", iotago.MaxOutputsCount)
+	ErrNumberOfNativeTokensLimitExceeded    = xerrors.Errorf("exceeded maximum number of different native tokens in transaction. iotago.MaxNativeTokensCount = %d", iotago.MaxNativeTokensCount)
 	ErrNotEnoughFundsForInternalDustDeposit = xerrors.New("not enough funds for internal dust deposit")
 	ErrOverflow                             = xerrors.New("overflow")
 	ErrNotEnoughIotaBalance                 = xerrors.New("not enough iota balance")
 	ErrNotEnoughNativeAssetBalance          = xerrors.New("not enough native assets balance")
+	ErrCreateFoundryMaxSupplyMustBePositive = xerrors.New("max supply must be positive")
+	ErrCreateFoundryMaxSupplyTooBig         = xerrors.New("max supply is too big")
 	ErrFoundryDoesNotExist                  = xerrors.New("foundry does not exist")
 	ErrCantModifySupplyOfTheToken           = xerrors.New("supply of the token is not controlled by the chain")
-	ErrNativeTokenSupplyOutOffBounds        = xerrors.New("token supply is out oif bounds")
+	ErrNativeTokenSupplyOutOffBounds        = xerrors.New("token supply is out of bounds")
 )
 
 // tokenOutputLoader externally supplied function which loads stored output from the state
@@ -156,6 +159,9 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.RequestData) int64 {
 	if txb.InputsAreFull() {
 		panic(ErrInputLimitExceeded)
 	}
+	if txb.numNativeTokensExceeded() {
+		panic(ErrNumberOfNativeTokensLimitExceeded)
+	}
 	txb.consumed = append(txb.consumed, inp)
 
 	// first we add all iotas arrived with the output to anchor balance
@@ -172,6 +178,9 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.RequestData) int64 {
 func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
 	if txb.outputsAreFull() {
 		panic(ErrOutputLimitExceeded)
+	}
+	if txb.numNativeTokensExceeded() {
+		panic(ErrNumberOfNativeTokensLimitExceeded)
 	}
 	assets := AssetsFromOutput(o)
 	txb.subDeltaIotasFromTotal(assets.Iotas)
@@ -247,8 +256,8 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 	}
 	// creating outputs for updated foundries
 	foundriesToBeUpdated, _ := txb.FoundriesToBeUpdated()
-	for _, serNum := range foundriesToBeUpdated {
-		ret = append(ret, txb.invokedFoundries[serNum].out)
+	for _, sn := range foundriesToBeUpdated {
+		ret = append(ret, txb.invokedFoundries[sn].out)
 	}
 	// creating outputs for posted on-ledger requests
 	ret = append(ret, txb.postedOutputs...)
@@ -298,6 +307,19 @@ func (txb *AnchorTransactionBuilder) outputsAreFull() bool {
 	return txb.numOutputs() >= iotago.MaxOutputsCount
 }
 
+func (txb *AnchorTransactionBuilder) numNativeTokensExceeded() bool {
+	num := 0
+	for _, nt := range txb.balanceNativeTokens {
+		if nt.requiresInput() || nt.producesOutput() {
+			num++
+		}
+		if num > iotago.MaxNativeTokensCount {
+			return true
+		}
+	}
+	return false
+}
+
 // addDeltaIotasToTotal increases number of on-chain main account iotas by delta
 func (txb *AnchorTransactionBuilder) addDeltaIotasToTotal(delta uint64) {
 	if delta == 0 {
@@ -337,18 +359,23 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id *iotago.NativeT
 	if in != nil && txb.outputsAreFull() {
 		panic(ErrOutputLimitExceeded)
 	}
+	if txb.numNativeTokensExceeded() {
+		panic(ErrNumberOfNativeTokensLimitExceeded)
+	}
 	var out *iotago.ExtendedOutput
 	if in == nil {
-		out = newInternalTokenOutput(txb.anchorOutput.AliasID, *id)
+		out = txb.newInternalTokenOutput(txb.anchorOutput.AliasID, *id)
 	} else {
 		out = cloneInternalExtendedOutput(in)
 	}
 	b := &nativeTokenBalance{
 		tokenID:            out.NativeTokens[0].ID,
-		input:              *input,
 		in:                 in,
 		out:                out,
 		dustDepositCharged: in != nil,
+	}
+	if input != nil {
+		b.input = *input
 	}
 	txb.balanceNativeTokens[*id] = b
 	return b
@@ -365,7 +392,8 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 	nt := txb.ensureNativeTokenBalance(id)
 	tmp := new(big.Int).Add(nt.getOutValue(), delta)
 	if tmp.Sign() < 0 {
-		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %w", ErrNotEnoughNativeAssetBalance))
+		panic(xerrors.Errorf("addNativeTokenBalanceDelta (id: %s, delta: %d): %w",
+			id, delta, ErrNotEnoughNativeAssetBalance))
 	}
 	if tmp.Cmp(abi.MaxUint256) > 0 {
 		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %w", ErrOverflow))
@@ -424,6 +452,7 @@ func (txb *AnchorTransactionBuilder) String() string {
 }
 
 func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.StateData) *iotago.TransactionEssence {
+	txb.MustBalanced("BuildTransactionEssence IN")
 	return &iotago.TransactionEssence{
 		Inputs:  txb.inputs(),
 		Outputs: txb.outputs(stateData),

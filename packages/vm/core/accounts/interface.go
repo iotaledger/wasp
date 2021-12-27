@@ -51,12 +51,13 @@ const (
 	ParamWithdrawAmount  = "m"
 	ParamAccountNonce    = "n"
 
-	ParamsFoundrySN        = "s"
-	ParamsFoundryOutputBin = "b"
-	ParamsTokenScheme      = "t"
-	ParamsTokenTag         = "g"
-	ParamsMaxSupply        = "p"
-	ParamsSupplyDelta      = "d"
+	ParamFoundrySN        = "s"
+	ParamFoundryOutputBin = "b"
+	ParamTokenScheme      = "t"
+	ParamTokenTag         = "g"
+	ParamMaxSupply        = "p"
+	ParamSupplyDeltaAbs   = "d"
+	ParamDestroyTokens    = "y"
 )
 
 func SerialNumFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {

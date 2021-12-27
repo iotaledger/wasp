@@ -116,7 +116,7 @@ func chainAccountBalances(ctx *wasmsolo.SoloContext, w bool, chain, total uint64
 		total++
 	}
 	ctx.Chain.AssertCommonAccountIotas(chain)
-	ctx.Chain.AssertTotalIotas(total)
+	ctx.Chain.AssertL2TotalIotas(total)
 }
 
 func requireOriginatorBalance(ctx *wasmsolo.SoloContext, w bool, expected int) {

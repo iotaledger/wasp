@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 
 	"golang.org/x/xerrors"
@@ -18,6 +20,13 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	tag iotago.TokenTag,
 	maxSupply *big.Int,
 ) uint32 {
+	if maxSupply.Cmp(big.NewInt(0)) <= 0 {
+		panic(ErrCreateFoundryMaxSupplyMustBePositive)
+	}
+	if maxSupply.Cmp(abi.MaxUint256) > 0 {
+		panic(ErrCreateFoundryMaxSupplyTooBig)
+	}
+
 	f := &iotago.FoundryOutput{
 		Address:           txb.anchorOutput.AliasID.ToAddress(),
 		Amount:            0,
@@ -46,11 +55,11 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 
 // ModifyNativeTokenSupply inflates the supply is delta > 0, shrinks if delta < 0
 func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) {
-	serNum := accounts.SerialNumFromNativeTokenID(tokenID)
-	nt, ok := txb.invokedFoundries[serNum]
+	sn := accounts.SerialNumFromNativeTokenID(tokenID)
+	nt, ok := txb.invokedFoundries[sn]
 	if !ok {
 		// load foundry output from the state
-		foundryOutput, inp := txb.loadFoundry(serNum)
+		foundryOutput, inp := txb.loadFoundry(sn)
 		if foundryOutput == nil {
 			panic(ErrFoundryDoesNotExist)
 		}
@@ -58,7 +67,7 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 			serialNumber: foundryOutput.SerialNumber,
 			input:        *inp,
 			in:           foundryOutput,
-			out:          cloneFoundry(foundryOutput),
+			out:          cloneFoundryOutput(foundryOutput),
 		}
 	}
 	// check if the loaded foundry matches the tokenID
@@ -75,7 +84,9 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	txb.addNativeTokenBalanceDelta(tokenID, delta)
 	// update the supply and foundry record in the builder
 	nt.out.CirculatingSupply = newSupply
-	txb.invokedFoundries[serNum] = nt
+	txb.invokedFoundries[sn] = nt
+
+	txb.MustBalanced("ModifyNativeTokenSupply: OUT")
 }
 
 func (txb *AnchorTransactionBuilder) nextFoundrySerialNumber() uint32 {
@@ -119,7 +130,7 @@ func (txb *AnchorTransactionBuilder) FoundriesToBeUpdated() ([]uint32, []uint32)
 	return toBeUpdated, toBeRemoved
 }
 
-func (txb *AnchorTransactionBuilder) FoundryOutputsBySerNums(serNums []uint32) map[uint32]*iotago.FoundryOutput {
+func (txb *AnchorTransactionBuilder) FoundryOutputsBySN(serNums []uint32) map[uint32]*iotago.FoundryOutput {
 	ret := make(map[uint32]*iotago.FoundryOutput)
 	for _, sn := range serNums {
 		ret[sn] = txb.invokedFoundries[sn].out
@@ -129,8 +140,8 @@ func (txb *AnchorTransactionBuilder) FoundryOutputsBySerNums(serNums []uint32) m
 
 func (f *foundryInvoked) clone() *foundryInvoked {
 	return &foundryInvoked{
-		in:  cloneFoundry(f.in),
-		out: cloneFoundry(f.out),
+		in:  cloneFoundryOutput(f.in),
+		out: cloneFoundryOutput(f.out),
 	}
 }
 
@@ -158,7 +169,7 @@ func (f *foundryInvoked) producesOutput() bool {
 	return true
 }
 
-func cloneFoundry(f *iotago.FoundryOutput) *iotago.FoundryOutput {
+func cloneFoundryOutput(f *iotago.FoundryOutput) *iotago.FoundryOutput {
 	if f == nil {
 		return nil
 	}
@@ -168,13 +179,13 @@ func cloneFoundry(f *iotago.FoundryOutput) *iotago.FoundryOutput {
 		NativeTokens:      f.NativeTokens.Clone(),
 		SerialNumber:      f.SerialNumber,
 		TokenTag:          f.TokenTag,
-		CirculatingSupply: f.CirculatingSupply,
-		MaximumSupply:     f.MaximumSupply,
+		CirculatingSupply: new(big.Int).Set(f.CirculatingSupply),
+		MaximumSupply:     new(big.Int).Set(f.MaximumSupply),
 		TokenScheme:       f.TokenScheme,
 		Blocks:            nil,
 	}
 	if !identicalFoundries(f, ret) {
-		panic("cloneFoundry: very bad")
+		panic("cloneFoundryOutput: very bad")
 	}
 	return ret
 }

@@ -30,7 +30,7 @@ func (vmctx *VMContext) loadNativeTokenOutput(id *iotago.NativeTokenID) (*iotago
 	var outputIndex uint16
 
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		retOut, blockIndex, outputIndex = accounts.GetNativeTokenOutput(s, id)
+		retOut, blockIndex, outputIndex = accounts.GetNativeTokenOutput(s, id, vmctx.ChainID())
 	})
 	if retOut == nil {
 		return nil, nil
@@ -48,7 +48,7 @@ func (vmctx *VMContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, *iota
 	var outputIndex uint16
 
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		retOut, blockIndex, outputIndex = accounts.GetFoundryOutput(s, serNum)
+		retOut, blockIndex, outputIndex = accounts.GetFoundryOutput(s, serNum, vmctx.ChainID())
 	})
 	if retOut == nil {
 		return nil, nil

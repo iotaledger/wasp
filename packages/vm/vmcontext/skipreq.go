@@ -36,12 +36,22 @@ func (vmctx *VMContext) earlyCheckReasonToSkip() error {
 	}
 
 	var err error
+	if err = vmctx.checkReasonNoCallTarget(); err != nil {
+		return err
+	}
 	if vmctx.req.IsOffLedger() {
 		err = vmctx.checkReasonToSkipOffLedger()
 	} else {
 		err = vmctx.checkReasonToSkipOnLedger()
 	}
 	return err
+}
+
+func (vmctx *VMContext) checkReasonNoCallTarget() error {
+	if vmctx.req.CallTarget() == nil {
+		return xerrors.New("call target not specified")
+	}
+	return nil
 }
 
 // checkReasonRequestProcessed checks if request ID is already in the blocklog

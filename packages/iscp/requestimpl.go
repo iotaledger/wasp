@@ -270,8 +270,8 @@ func (r *OffLedgerRequestData) SenderAddress() iotago.Address {
 	return r.sender
 }
 
-func (r *OffLedgerRequestData) CallTarget() CallTarget {
-	return CallTarget{
+func (r *OffLedgerRequestData) CallTarget() *CallTarget {
+	return &CallTarget{
 		Contract:   r.contract,
 		EntryPoint: r.entryPoint,
 	}
@@ -398,7 +398,7 @@ func (r *OnLedgerRequestData) Params() dict.Dict {
 }
 
 func (r *OnLedgerRequestData) SenderAccount() *AgentID {
-	if r.SenderAddress() == nil {
+	if r.SenderAddress() == nil || r.requestMetadata == nil {
 		return &NilAgentID
 	}
 	return NewAgentID(r.SenderAddress(), r.requestMetadata.SenderContract)
@@ -412,8 +412,11 @@ func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
 	return senderBlock.Address
 }
 
-func (r *OnLedgerRequestData) CallTarget() CallTarget {
-	return CallTarget{
+func (r *OnLedgerRequestData) CallTarget() *CallTarget {
+	if r.requestMetadata == nil {
+		return nil
+	}
+	return &CallTarget{
 		Contract:   r.requestMetadata.TargetContract,
 		EntryPoint: r.requestMetadata.EntryPoint,
 	}

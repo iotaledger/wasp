@@ -276,7 +276,7 @@ func (p *Decoder) GetBigInt(key kv.Key, def ...*big.Int) (*big.Int, error) {
 		}
 		return nil, fmt.Errorf("GetTokenTag: mandatory parameter '%s' does not exist", key)
 	}
-	return new(big.Int).SetBytes(v), nil
+	return codec.DecodeBigIntAbs(v)
 }
 
 func (p *Decoder) MustGetBigInt(key kv.Key, def ...*big.Int) *big.Int {

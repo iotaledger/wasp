@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
@@ -14,6 +16,8 @@ type TransactionTotals struct {
 	TotalIotasInDustDeposit uint64
 	// balances of native tokens (in all inputs/outputs)
 	TokenBalances map[iotago.NativeTokenID]*big.Int
+	// token supplies in foundries
+	TokenCirculatingSupplies map[iotago.NativeTokenID]*big.Int
 	// sent out iotas
 	SentOutIotas uint64
 	// Sent out native tokens
@@ -40,9 +44,10 @@ func (txb *AnchorTransactionBuilder) sumNativeTokens(totals *TransactionTotals, 
 // sumInputs sums up all assets in inputs
 func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	ret := &TransactionTotals{
-		TokenBalances:           make(map[iotago.NativeTokenID]*big.Int),
-		TotalIotasOnChain:       txb.anchorOutput.Deposit() - txb.dustDepositOnAnchor,
-		TotalIotasInDustDeposit: txb.dustDepositOnAnchor,
+		TokenBalances:            make(map[iotago.NativeTokenID]*big.Int),
+		TokenCirculatingSupplies: make(map[iotago.NativeTokenID]*big.Int),
+		TotalIotasOnChain:        txb.anchorOutput.Deposit() - txb.dustDepositOnAnchor,
+		TotalIotasInDustDeposit:  txb.dustDepositOnAnchor,
 	}
 	// sum over native tokens which require inputs
 	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
@@ -67,6 +72,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	for _, f := range txb.invokedFoundries {
 		if f.requiresInput() {
 			ret.TotalIotasInDustDeposit += f.in.Amount
+			ret.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).Set(f.in.CirculatingSupply)
 		}
 	}
 	return ret
@@ -75,11 +81,12 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 // sumOutputs sums all balances in outputs
 func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	ret := &TransactionTotals{
-		TokenBalances:           make(map[iotago.NativeTokenID]*big.Int),
-		TotalIotasOnChain:       txb.totalIotasOnChain,
-		TotalIotasInDustDeposit: txb.dustDepositOnAnchor,
-		SentOutIotas:            0,
-		SentOutTokenBalances:    make(map[iotago.NativeTokenID]*big.Int),
+		TokenBalances:            make(map[iotago.NativeTokenID]*big.Int),
+		TokenCirculatingSupplies: make(map[iotago.NativeTokenID]*big.Int),
+		TotalIotasOnChain:        txb.totalIotasOnChain,
+		TotalIotasInDustDeposit:  txb.dustDepositOnAnchor,
+		SentOutIotas:             0,
+		SentOutTokenBalances:     make(map[iotago.NativeTokenID]*big.Int),
 	}
 	// sum over native tokens which produce outputs
 	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
@@ -91,6 +98,9 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	for _, f := range txb.invokedFoundries {
 		if f.producesOutput() {
 			ret.TotalIotasInDustDeposit += f.out.Amount
+			id := f.out.MustNativeTokenID()
+			ret.TokenCirculatingSupplies[id] = big.NewInt(0)
+			ret.TokenCirculatingSupplies[id].Set(f.out.CirculatingSupply)
 		}
 	}
 	for _, o := range txb.postedOutputs {
@@ -122,10 +132,6 @@ func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionT
 	totalsIN := txb.sumInputs()
 	totalsOUT := txb.sumOutputs()
 	balanced := totalsIN.BalancedWith(totalsOUT)
-	if !balanced {
-		fmt.Println("")
-	}
-
 	return totalsIN, totalsOUT, balanced
 }
 
@@ -149,17 +155,54 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) bool {
 	if t.TotalIotasOnChain+t.TotalIotasInDustDeposit != another.TotalIotasOnChain+another.TotalIotasInDustDeposit {
 		return false
 	}
-	if len(t.TokenBalances) != len(another.TokenBalances) {
-		return false
+	tokenIDs := make(map[iotago.NativeTokenID]bool)
+	for id := range t.TokenCirculatingSupplies {
+		tokenIDs[id] = true
 	}
-	for id, bT := range t.TokenBalances {
-		bAnother, ok := another.TokenBalances[id]
+	for id := range another.TokenCirculatingSupplies {
+		tokenIDs[id] = true
+	}
+	for id := range t.TokenBalances {
+		tokenIDs[id] = true
+	}
+	tokenSupplyDeltas := make(map[iotago.NativeTokenID]*big.Int)
+	for id := range tokenIDs {
+		inSupply, ok := t.TokenCirculatingSupplies[id]
 		if !ok {
-			return false
+			inSupply = big.NewInt(0)
 		}
-		if bT.Cmp(bAnother) != 0 {
+		outSupply, ok := another.TokenCirculatingSupplies[id]
+		if !ok {
+			outSupply = big.NewInt(0)
+		}
+		tokenSupplyDeltas[id] = big.NewInt(0).Sub(outSupply, inSupply)
+	}
+	for id, delta := range tokenSupplyDeltas {
+		begin, ok := t.TokenBalances[id]
+		if !ok {
+			begin = big.NewInt(0)
+		}
+		end, ok := another.TokenBalances[id]
+		if !ok {
+			end = big.NewInt(0)
+		}
+		begin.Add(begin, delta)
+		if begin.Cmp(end) != 0 {
 			return false
 		}
 	}
 	return true
+}
+
+var DebugTxBuilder = func() bool { return true }() // trick linter
+
+func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
+	if DebugTxBuilder {
+		ins, outs, balanced := txb.Totals()
+		if !balanced {
+			fmt.Printf("================= MustBalanced [%s] \ninTotals: %v\noutTotals: %v\n", checkpoint, ins, outs)
+			panic(xerrors.Errorf("internal: tx builder is not balanced [%s]", checkpoint))
+		}
+	}
+
 }

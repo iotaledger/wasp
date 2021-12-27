@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/iotaledger/hive.go/marshalutil"
+
 	"github.com/iotaledger/wasp/packages/kv"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -291,4 +293,27 @@ func TestDebitAll(t *testing.T) {
 
 	assets = GetTotalAssets(state)
 	require.True(t, assets.IsEmpty())
+}
+
+func TestFoundryOutputRec(t *testing.T) {
+	o := foundryOutputRec{
+		Amount:            300,
+		TokenTag:          iotago.TokenTag{},
+		TokenScheme:       &iotago.SimpleTokenScheme{},
+		MaximumSupply:     big.NewInt(1000),
+		CirculatingSupply: big.NewInt(20),
+		BlockIndex:        3,
+		OutputIndex:       2,
+	}
+	oBin := o.Bytes()
+	o1, err := foundryOutputRecFromMarshalUtil(marshalutil.New(oBin))
+	require.NoError(t, err)
+	require.EqualValues(t, o.Amount, o1.Amount)
+	require.EqualValues(t, o.TokenTag, o1.TokenTag)
+	_, ok := o1.TokenScheme.(*iotago.SimpleTokenScheme)
+	require.True(t, ok)
+	require.True(t, o.MaximumSupply.Cmp(o1.MaximumSupply) == 0)
+	require.True(t, o.CirculatingSupply.Cmp(o1.CirculatingSupply) == 0)
+	require.EqualValues(t, o.BlockIndex, o1.BlockIndex)
+	require.EqualValues(t, o.OutputIndex, o1.OutputIndex)
 }

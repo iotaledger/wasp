@@ -60,6 +60,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 		vmtxbuilder.ErrInputLimitExceeded,
 		vmtxbuilder.ErrOutputLimitExceeded,
 		vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit,
+		vmtxbuilder.ErrNumberOfNativeTokensLimitExceeded,
 	)
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
@@ -164,6 +165,8 @@ func checkVMPluginPanic(r interface{}) error {
 	switch err := r.(type) {
 	case *kv.DBError:
 		panic(err)
+	case string:
+		r = errors.New(err)
 	case error:
 		if errors.Is(err, coreutil.ErrorStateInvalidated) {
 			panic(err)
@@ -174,8 +177,11 @@ func checkVMPluginPanic(r interface{}) error {
 		if errors.Is(err, vmtxbuilder.ErrInputLimitExceeded) {
 			panic(err)
 		}
+		if errors.Is(err, vmtxbuilder.ErrNumberOfNativeTokensLimitExceeded) {
+			panic(err)
+		}
 	}
-	return xerrors.Errorf("exception: '%v'", r)
+	return xerrors.Errorf("exception: '%w'", r)
 }
 
 // callFromRequest is the call itself. Assumes sc exists

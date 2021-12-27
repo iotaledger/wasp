@@ -15,6 +15,9 @@ import (
 // IsRotateStateControllerRequest determines if request may be a committee rotation request
 func IsRotateStateControllerRequest(req iscp.Request) bool {
 	target := req.CallTarget()
+	if target == nil {
+		return false
+	}
 	return target.Contract == coreutil.CoreContractGovernanceHname && target.EntryPoint == coreutil.CoreEPRotateStateControllerHname
 }
 

@@ -119,10 +119,12 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		task.RentStructure,
 	)
 
-	// at the beginning of each block we save the anchor ID of the current state
+	// at the beginning of each block we save the anchor tx ID of the current state
 	if task.AnchorOutput.StateIndex > 0 {
 		ret.currentStateUpdate = state.NewStateUpdate()
-		ret.updateLatestAnchorID()
+		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
+			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID)
+		})
 		ret.virtualState.ApplyStateUpdates(ret.currentStateUpdate)
 		ret.currentStateUpdate = nil
 	}
@@ -216,7 +218,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 	nativeTokensOutputsToBeUpdated := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDs)
 
 	foundryIDs, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
-	foundrySNToBeUpdated := vmctx.txbuilder.FoundryOutputsBySerNums(foundryIDs)
+	foundrySNToBeUpdated := vmctx.txbuilder.FoundryOutputsBySN(foundryIDs)
 
 	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
 	outputIndex := uint16(1)

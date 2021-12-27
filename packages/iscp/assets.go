@@ -98,7 +98,11 @@ func (a *Assets) AmountNativeToken(tokenID *iotago.NativeTokenID) *big.Int {
 }
 
 func (a *Assets) String() string {
-	return fmt.Sprintf("Assets: iotas: %d tokens len: %d", a.Iotas, len(a.Tokens))
+	ret := fmt.Sprintf("Assets: iotas: %d tokens : %d\n", a.Iotas, len(a.Tokens))
+	for _, nt := range a.Tokens {
+		ret += fmt.Sprintf("       %s: %d\n", nt.ID.String(), nt.Amount)
+	}
+	return ret
 }
 
 func (a *Assets) Bytes() []byte {

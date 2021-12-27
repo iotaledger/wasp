@@ -346,7 +346,7 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp
 	require.NoError(env.T, err)
 
 	for i, out := range tx.Essence.Outputs {
-		if out.Type() != iotago.OutputExtended {
+		if _, ok := out.(*iotago.ExtendedOutput); !ok {
 			// only ExtendedOutputs are interpreted right now TODO nfts and other
 			continue
 		}
@@ -357,10 +357,17 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp
 		})
 		require.NoError(env.T, err)
 
+		if odata.SenderAddress() == nil {
+			continue
+		}
+		if odata.CallTarget() == nil {
+			continue
+		}
 		addr := odata.TargetAddress()
 		if addr.Type() != iotago.AddressAlias {
 			continue
 		}
+
 		chainID := iscp.ChainIDFromAliasID(addr.(*iotago.AliasAddress).AliasID())
 		lst, ok := ret[chainID]
 		if !ok {

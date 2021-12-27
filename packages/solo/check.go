@@ -61,12 +61,12 @@ func (ch *Chain) CheckAccountLedger() {
 	require.True(ch.Env.T, ch.L2AccountBalances(coreacc).IsEmpty())
 }
 
-func (ch *Chain) AssertTotalNativeTokens(tokenID *iotago.NativeTokenID, bal *big.Int) {
+func (ch *Chain) AssertL2TotalNativeTokens(tokenID *iotago.NativeTokenID, bal *big.Int) {
 	bals := ch.L2TotalAssets()
 	require.True(ch.Env.T, bal.Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
-func (ch *Chain) AssertTotalIotas(bal uint64) {
+func (ch *Chain) AssertL2TotalIotas(bal uint64) {
 	iotas := ch.L2TotalIotas()
 	require.EqualValues(ch.Env.T, int(bal), int(iotas))
 }

@@ -63,7 +63,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	// what spent all goes to the alias output
 	require.EqualValues(t, int(totalSpent), int(aliasOutputs[0].Amount))
 	// total iotas on L2 must be equal to alias output iotas - dust deposit
-	ch.AssertTotalIotas(aliasOutputs[0].Amount - vByteCostOrigin)
+	ch.AssertL2TotalIotas(aliasOutputs[0].Amount - vByteCostOrigin)
 
 	// all dust deposit of the init request goes to the sender account
 	ch.AssertL2AccountIotas(ch.OriginatorAgentID, vByteCostInit)
