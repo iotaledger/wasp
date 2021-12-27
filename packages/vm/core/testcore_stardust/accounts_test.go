@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/util"
+
 	"github.com/iotaledger/iota.go/v3/tpkg"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -257,7 +259,7 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, big.NewInt(1000000).Cmp(out.CirculatingSupply) == 0)
 
-		err = destroyTokens(sn, big.NewInt(1000000))
+		err = destroyTokens(sn, big.NewInt(1000000)) // <<<<<<<< fails TODO
 		require.NoError(t, err)
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
@@ -265,9 +267,57 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, big.NewInt(0).Cmp(out.CirculatingSupply) == 0)
 	})
+	t.Run("10 foundries", func(t *testing.T) {
+		initTest()
+
+		for sn := uint32(1); sn <= 10; sn++ {
+			var tag iotago.TokenTag
+			copy(tag[:], util.Uint32To4Bytes(sn))
+			err, snBack, tokenID := createFoundry(t, nil, &tag, big.NewInt(int64(sn+1)))
+			require.EqualValues(t, int(sn), int(snBack))
+			require.NoError(t, err)
+			ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+			ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+		}
+		// mint max supply from each
+		for sn := uint32(1); sn <= 10; sn++ {
+			err := mintTokens(sn, big.NewInt(int64(sn+1)))
+			require.NoError(t, err)
+
+			out, err := ch.GetFoundryOutput(sn)
+			require.NoError(t, err)
+
+			require.EqualValues(t, sn, out.SerialNumber)
+			require.True(t, out.MaximumSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
+			require.True(t, out.CirculatingSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
+			tokenID := out.MustNativeTokenID()
+
+			ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(int64(sn+1)))
+			ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(int64(sn+1)))
+		}
+		// destroy 1 token of each tokenID
+		for sn := uint32(1); sn <= 10; sn++ {
+			err := destroyTokens(sn, big.NewInt(1))
+			require.NoError(t, err)
+		}
+		// check balances
+		for sn := uint32(1); sn <= 10; sn++ {
+			out, err := ch.GetFoundryOutput(sn)
+			require.NoError(t, err)
+
+			require.EqualValues(t, sn, out.SerialNumber)
+			require.True(t, out.MaximumSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
+			require.True(t, out.CirculatingSupply.Cmp(big.NewInt(int64(sn))) == 0)
+			tokenID := out.MustNativeTokenID()
+
+			ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(int64(sn)))
+			ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(int64(sn)))
+		}
+	})
+
 }
 
-// TestFoundryValidation reveals bug in iota.go
+// TestFoundryValidation reveals bug in iota.go. Validation fails when whole supply is destroyed
 func TestFoundryValidation(t *testing.T) {
 	tokenID := tpkg.RandNativeToken().ID
 	inSums := iotago.NativeTokenSum{
