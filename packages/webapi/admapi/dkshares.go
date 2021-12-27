@@ -26,7 +26,6 @@ import (
 
 func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, nodeProvider dkg.NodeProvider) {
 	requestExample := model.DKSharesPostRequest{
-		PeerNetIDs:  []string{"wasp1:4000", "wasp2:4000", "wasp3:4000", "wasp4:4000"},
 		PeerPubKeys: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		Threshold:   3,
 		TimeoutMS:   10000,
@@ -36,11 +35,12 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 		Address:      addr1.Base58(),
 		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),
 		PubKeyShares: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
+		PeerPubKeys:  []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		Threshold:    3,
 		PeerIndex:    nil,
 	}
 
-	s := &dkSharesService{registryProvider, nodeProvider}
+	s := &dkSharesService{registry: registryProvider, dkgNode: nodeProvider}
 
 	adm.POST(routes.DKSharesPost(), s.handleDKSharesPost).
 		AddParamBody(requestExample, "DKSharesPostRequest", "Request parameters", true).
@@ -66,23 +66,24 @@ func (s *dkSharesService) handleDKSharesPost(c echo.Context) error {
 		return httperrors.BadRequest("Invalid request body.")
 	}
 
-	if req.PeerPubKeys != nil && len(req.PeerNetIDs) != len(req.PeerPubKeys) {
-		return httperrors.BadRequest("Inconsistent PeerNetIDs and PeerPubKeys.")
+	if req.PeerPubKeys == nil || len(req.PeerPubKeys) < 1 {
+		return httperrors.BadRequest("PeerPubKeys are mandatory")
 	}
 
-	var peerPubKeys []ed25519.PublicKey
+	var peerPubKeys []*ed25519.PublicKey
 	if req.PeerPubKeys != nil {
-		peerPubKeys = make([]ed25519.PublicKey, len(req.PeerPubKeys))
+		peerPubKeys = make([]*ed25519.PublicKey, len(req.PeerPubKeys))
 		for i := range req.PeerPubKeys {
-			if peerPubKeys[i], err = ed25519.PublicKeyFromString(req.PeerPubKeys[i]); err != nil {
+			peerPubKey, err := ed25519.PublicKeyFromString(req.PeerPubKeys[i])
+			if err != nil {
 				return httperrors.BadRequest(fmt.Sprintf("Invalid PeerPubKeys[%v]=%v", i, req.PeerPubKeys[i]))
 			}
+			peerPubKeys[i] = &peerPubKey
 		}
 	}
 
 	var dkShare *tcrypto.DKShare
 	dkShare, err = s.dkgNode().GenerateDistributedKey(
-		req.PeerNetIDs,
 		peerPubKeys,
 		req.Threshold,
 		1*time.Second,
@@ -138,10 +139,16 @@ func makeDKSharesInfo(dkShare *tcrypto.DKShare) (*model.DKSharesInfo, error) {
 		pubKeyShares[i] = base64.StdEncoding.EncodeToString(b)
 	}
 
+	peerPubKeys := make([]string, len(dkShare.NodePubKeys))
+	for i := range dkShare.NodePubKeys {
+		peerPubKeys[i] = base64.StdEncoding.EncodeToString(dkShare.NodePubKeys[i].Bytes())
+	}
+
 	return &model.DKSharesInfo{
 		Address:      dkShare.Address.Base58(),
 		SharedPubKey: sharedPubKey,
 		PubKeyShares: pubKeyShares,
+		PeerPubKeys:  peerPubKeys,
 		Threshold:    dkShare.T,
 		PeerIndex:    dkShare.Index,
 	}, nil

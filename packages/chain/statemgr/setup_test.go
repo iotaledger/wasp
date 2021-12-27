@@ -39,18 +39,18 @@ type MockedEnv struct {
 	Ledger            *utxodb.UtxoDB
 	OriginatorKeyPair *ed25519.KeyPair
 	OriginatorAddress ledgerstate.Address
-	NodeIDs           []string
+	NodePubKeys       []*ed25519.PublicKey
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	NetworkCloser     io.Closer
 	ChainID           *iscp.ChainID
 	mutex             sync.Mutex
-	Nodes             map[string]*MockedNode
+	Nodes             map[ed25519.PublicKey]*MockedNode
 	push              bool
 }
 
 type MockedNode struct {
-	NetID           string
+	PubKey          *ed25519.PublicKey
 	Env             *MockedEnv
 	store           kvstore.KVStore
 	NodeConn        *testchain.MockedNodeConn
@@ -79,7 +79,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 		Ledger:            utxodb.New(),
 		OriginatorKeyPair: nil,
 		OriginatorAddress: nil,
-		Nodes:             make(map[string]*MockedNode),
+		Nodes:             make(map[ed25519.PublicKey]*MockedNode),
 	}
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err := ret.Ledger.RequestFunds(ret.OriginatorAddress)
@@ -107,9 +107,9 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
-	nodeIDs, identities := testpeers.SetupKeys(uint16(nodeCount))
-	ret.NodeIDs = nodeIDs
-	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
+	nodeIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
+	ret.NodePubKeys = testpeers.PublicKeys(nodeIdentities)
+	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
 	return ret, originTx
 }
@@ -185,14 +185,15 @@ func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, ou
 }
 
 func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *MockedNode {
-	nodeID := env.NodeIDs[nodeIndex]
-	log := env.Log.Named(nodeID)
-	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.ChainID.Array(), env.NodeIDs)
+	nodePubKey := env.NodePubKeys[nodeIndex]
+	nodePubKeyStr := nodePubKey.String()[0:10]
+	log := env.Log.Named(nodePubKeyStr)
+	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.ChainID.Array(), env.NodePubKeys)
 	require.NoError(env.T, err)
 	ret := &MockedNode{
-		NetID:      nodeID,
+		PubKey:     nodePubKey,
 		Env:        env,
-		NodeConn:   testchain.NewMockedNodeConnection("Node_" + nodeID),
+		NodeConn:   testchain.NewMockedNodeConnection("Node_" + nodePubKeyStr),
 		store:      mapdb.NewMapDB(),
 		stateSync:  coreutil.NewChainStateSync(),
 		ChainCore:  testchain.NewMockedChainCore(env.T, env.ChainID, log),
@@ -209,7 +210,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
 	})
 	ret.ChainPeers.Attach(peering.PeerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
-		log.Debugf("State manager recvEvent from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
+		log.Debugf("State manager recvEvent from %v of type %v", peerMsg.SenderPubKey.String(), peerMsg.MsgType)
 		switch peerMsg.MsgType {
 		case peerMsgTypeGetBlock:
 			msg, err := messages.NewGetBlockMsg(peerMsg.MsgData)
@@ -218,8 +219,8 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 				return
 			}
 			ret.StateManager.EnqueueGetBlockMsg(&messages.GetBlockMsgIn{
-				GetBlockMsg: *msg,
-				SenderNetID: peerMsg.SenderNetID,
+				GetBlockMsg:  *msg,
+				SenderPubKey: peerMsg.SenderPubKey,
 			})
 		case peerMsgTypeBlock:
 			msg, err := messages.NewBlockMsg(peerMsg.MsgData)
@@ -228,8 +229,8 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 				return
 			}
 			ret.StateManager.EnqueueBlockMsg(&messages.BlockMsgIn{
-				BlockMsg:    *msg,
-				SenderNetID: peerMsg.SenderNetID,
+				BlockMsg:     *msg,
+				SenderPubKey: peerMsg.SenderPubKey,
 			})
 		}
 	})
@@ -310,14 +311,14 @@ func (env *MockedEnv) AddNode(node *MockedNode) {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
 
-	if _, ok := env.Nodes[node.NetID]; ok {
-		env.Log.Panicf("AddNode: duplicate node index %s", node.NetID)
+	if _, ok := env.Nodes[*node.PubKey]; ok {
+		env.Log.Panicf("AddNode: duplicate node index %s", node.PubKey.String())
 	}
-	env.Nodes[node.NetID] = node
+	env.Nodes[*node.PubKey] = node
 }
 
 func (env *MockedEnv) RemoveNode(node *MockedNode) {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
-	delete(env.Nodes, node.NetID)
+	delete(env.Nodes, *node.PubKey)
 }

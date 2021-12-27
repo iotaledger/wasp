@@ -35,11 +35,6 @@ type DKShareRegistryProvider interface {
 	LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error)
 }
 
-type CommitteeRegistryProvider interface {
-	GetCommitteeRecord(addr ledgerstate.Address) (*CommitteeRecord, error)
-	SaveCommitteeRecord(rec *CommitteeRecord) error
-}
-
 // ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
 type ChainRecordRegistryProvider interface {
 	GetChainRecordByChainID(chainID *iscp.ChainID) (*ChainRecord, error)

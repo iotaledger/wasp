@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -24,12 +23,10 @@ func TestCommitteeBasic(t *testing.T) {
 	stateAddr, dksRegistries := testpeers.SetupDkgPregenerated(t, uint16((len(netIDs)*2)/3+1), identities, suite)
 	nodes, netCloser := testpeers.SetupNet(netIDs, identities, testutil.NewPeeringNetReliable(log), log)
 	net0 := nodes[0]
+	dks0, err := dksRegistries[0].LoadDKShare(stateAddr)
+	require.NoError(t, err)
 
-	cmtRec := &registry.CommitteeRecord{
-		Address: stateAddr,
-		Nodes:   netIDs,
-	}
-	c, _, err := New(cmtRec, nil, net0, dksRegistries[0], log)
+	c, _, err := New(dks0, nil, net0, log)
 	require.NoError(t, err)
 	require.True(t, c.Address().Equals(stateAddr))
 	require.EqualValues(t, 4, c.Size())

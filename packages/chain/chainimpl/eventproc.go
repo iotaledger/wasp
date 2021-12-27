@@ -130,8 +130,8 @@ func (c *chainObj) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgI
 }
 
 func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
-	c.log.Debugf("handleOffLedgerRequestMsg message received from peer %v, reqID: %s", msg.SenderNetID, msg.Req.ID().Base58())
-	c.sendRequestAcknowledgementMsg(msg.Req.ID(), msg.SenderNetID)
+	c.log.Debugf("handleOffLedgerRequestMsg message received from peer %v, reqID: %s", msg.SenderPubKey.String(), msg.Req.ID().Base58())
+	c.sendRequestAcknowledgementMsg(msg.Req.ID(), msg.SenderPubKey)
 
 	if !c.isRequestValid(msg.Req) {
 		// this means some node broadcasted an invalid request (bad chainID or signature)
@@ -157,10 +157,10 @@ func (c *chainObj) EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn) {
 }
 
 func (c *chainObj) handleRequestAckPeerMsg(msg *messages.RequestAckMsgIn) {
-	c.log.Debugf("handleRequestAckPeerMsg message received from peer %v, reqID: %s", msg.SenderNetID, msg.ReqID.Base58())
+	c.log.Debugf("handleRequestAckPeerMsg message received from peer %v, reqID: %s", msg.SenderPubKey.String(), msg.ReqID.Base58())
 	c.offLedgerReqsAcksMutex.Lock()
 	defer c.offLedgerReqsAcksMutex.Unlock()
-	c.offLedgerReqsAcks[*msg.ReqID] = append(c.offLedgerReqsAcks[*msg.ReqID], msg.SenderNetID)
+	c.offLedgerReqsAcks[*msg.ReqID] = append(c.offLedgerReqsAcks[*msg.ReqID], msg.SenderPubKey)
 	c.chainMetrics.CountRequestAckMessages()
 	c.log.Debugf("handleRequestAckPeerMsg comleted: reqID: %s", msg.ReqID.Base58())
 }
@@ -171,7 +171,7 @@ func (c *chainObj) EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMs
 }
 
 func (c *chainObj) handleMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn) {
-	c.log.Debugf("handleMissingRequestIDsMsg message received from peer %v, number of reqIDs: %v", msg.SenderNetID, len(msg.IDs))
+	c.log.Debugf("handleMissingRequestIDsMsg message received from peer %v, number of reqIDs: %v", msg.SenderPubKey.String(), len(msg.IDs))
 	if !c.pullMissingRequestsFromCommittee {
 		c.log.Warnf("handleMissingRequestIDsMsg ignored: pull from committee disabled")
 		return
@@ -180,8 +180,8 @@ func (c *chainObj) handleMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsg
 		c.log.Debugf("handleMissingRequestIDsMsg: finding reqID %s...", reqID.Base58())
 		if req := c.mempool.GetRequest(reqID); req != nil {
 			resultMsg := &messages.MissingRequestMsg{Request: req}
-			c.chainPeers.SendMsgByNetID(msg.SenderNetID, peering.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequest, resultMsg.Bytes())
-			c.log.Warnf("handleMissingRequestIDsMsg: reqID %s sent to %v.", reqID.Base58(), msg.SenderNetID)
+			c.chainPeers.SendMsgByPubKey(msg.SenderPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequest, resultMsg.Bytes())
+			c.log.Warnf("handleMissingRequestIDsMsg: reqID %s sent to %v.", reqID.Base58(), msg.SenderPubKey.String())
 		} else {
 			c.log.Warnf("handleMissingRequestIDsMsg: reqID %s not found.", reqID.Base58())
 		}

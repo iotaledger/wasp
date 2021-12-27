@@ -35,6 +35,10 @@ func DeactivateChain(chainID string) string {
 	return "/adm/chain/" + chainID + "/deactivate"
 }
 
+func GetChainInfo(chainID string) string {
+	return "/adm/chain/" + chainID + "/info"
+}
+
 func ListChainRecords() string {
 	return "/adm/chainrecords"
 }
@@ -45,18 +49,6 @@ func PutChainRecord() string {
 
 func GetChainRecord(chainID string) string {
 	return "/adm/chainrecord/" + chainID
-}
-
-func PutCommitteeRecord() string {
-	return "/adm/committeerecord"
-}
-
-func GetCommitteeRecord(addr string) string {
-	return "/adm/committeerecord/" + addr
-}
-
-func GetCommitteeForChain(chainID string) string {
-	return "/adm/chain/" + chainID + "/committeerecord"
 }
 
 func DKSharesPost() string {

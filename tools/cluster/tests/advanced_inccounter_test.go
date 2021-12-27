@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package tests
 
 import (
@@ -37,7 +40,7 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 
 	t.Logf("generated state address: %s", addr.Base58())
 
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr) // TODO: XXX: KP: AllNodes is used?
 	require.NoError(t, err)
 	t.Logf("deployed chainID: %s", chain.ChainID.Base58())
 

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -22,11 +23,14 @@ func TestPeeringNetDynamicReliable(t *testing.T) {
 		}
 		doneCh <- true
 	}()
-	someNode := peeringNode{netID: "src"}
+	// peerNetI, peerIdentities := testpeers.SetupKeys(2)
+	srcPeerIdentity := ed25519.GenerateKeyPair()
+	dstPeerIdentity := ed25519.GenerateKeyPair()
+	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
-	behavior.AddLink(inCh, outCh, "dst")
+	behavior.AddLink(inCh, outCh, &dstPeerIdentity.PublicKey)
 	for i := 0; i < 10; i++ {
 		sendMessage(&someNode, inCh)
 	}
@@ -42,14 +46,16 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	someNode := peeringNode{netID: "src"}
+	srcPeerIdentity := ed25519.GenerateKeyPair()
+	dstPeerIdentity := ed25519.GenerateKeyPair()
+	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).
 		WithLosingChannel(nil, 50).
 		WithRepeatingChannel(nil, 50).
 		WithDelayingChannel(nil, 50*time.Millisecond, 100*time.Millisecond)
-	behavior.AddLink(inCh, outCh, "dst")
+	behavior.AddLink(inCh, outCh, &dstPeerIdentity.PublicKey)
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
@@ -77,11 +83,13 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	someNode := peeringNode{netID: "src"}
+	srcPeerIdentity := ed25519.GenerateKeyPair()
+	dstPeerIdentity := ed25519.GenerateKeyPair()
+	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
-	behavior.AddLink(inCh, outCh, "dst")
+	behavior.AddLink(inCh, outCh, &dstPeerIdentity.PublicKey)
 	for i := 0; i < 100; i++ {
 		sendMessage(&someNode, inCh)
 	}
@@ -140,11 +148,13 @@ func TestPeeringNetDynamicLosingChannel(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	someNode := peeringNode{netID: "src"}
+	srcPeerIdentity := ed25519.GenerateKeyPair()
+	dstPeerIdentity := ed25519.GenerateKeyPair()
+	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithLosingChannel(nil, 50)
-	behavior.AddLink(inCh, outCh, "dst")
+	behavior.AddLink(inCh, outCh, &dstPeerIdentity.PublicKey)
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
@@ -163,11 +173,13 @@ func TestPeeringNetDynamicRepeatingChannel(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	someNode := peeringNode{netID: "src"}
+	srcPeerIdentity := ed25519.GenerateKeyPair()
+	dstPeerIdentity := ed25519.GenerateKeyPair()
+	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithRepeatingChannel(nil, 150)
-	behavior.AddLink(inCh, outCh, "dst")
+	behavior.AddLink(inCh, outCh, &dstPeerIdentity.PublicKey)
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
@@ -186,11 +198,13 @@ func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	someNode := peeringNode{netID: "src"}
+	srcPeerIdentity := ed25519.GenerateKeyPair()
+	dstPeerIdentity := ed25519.GenerateKeyPair()
+	someNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithDelayingChannel(nil, 25*time.Millisecond, 75*time.Millisecond)
-	behavior.AddLink(inCh, outCh, "dst")
+	behavior.AddLink(inCh, outCh, &dstPeerIdentity.PublicKey)
 	for i := 0; i < 100; i++ {
 		sendMessage(&someNode, inCh)
 	}
@@ -213,13 +227,16 @@ func TestPeeringNetDynamicPeerDisconnected(t *testing.T) {
 	durationsD := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
 	go testRecvLoop(outChD, &durationsD, stopCh)
-	connectedNode := peeringNode{netID: "src"}
-	disconnectedNode := peeringNode{netID: "disconnected"}
+	srcPeerIdentity := ed25519.GenerateKeyPair()
+	dstPeerIdentity := ed25519.GenerateKeyPair()
+	disPeerIdentity := ed25519.GenerateKeyPair()
+	connectedNode := peeringNode{netID: "src", identity: &srcPeerIdentity}
+	disconnectedNode := peeringNode{netID: "disconnected", identity: &disPeerIdentity}
 	//
 	// Run the test.
-	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithPeerDisconnected(nil, "disconnected")
-	behavior.AddLink(inCh, outCh, "dst")
-	behavior.AddLink(inChD, outChD, "disconnected")
+	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithPeerDisconnected(nil, &disPeerIdentity.PublicKey)
+	behavior.AddLink(inCh, outCh, &dstPeerIdentity.PublicKey)
+	behavior.AddLink(inChD, outChD, &disPeerIdentity.PublicKey)
 	for i := 0; i < 100; i++ {
 		sendMessage(&connectedNode, inCh)    // Will be received
 		sendMessage(&connectedNode, inChD)   // Won't be received - destination is disconnected
@@ -256,7 +273,7 @@ func averageDuration(durations []time.Duration) int64 {
 
 func sendMessage(from *peeringNode, inCh chan *peeringMsg) {
 	inCh <- &peeringMsg{
-		from:      from.netID,
+		from:      &from.identity.PublicKey,
 		timestamp: time.Now().UnixNano(),
 	}
 }

@@ -1,10 +1,16 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package chain
 
 import (
+	"strconv"
+
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -15,17 +21,41 @@ var infoCmd = &cobra.Command{
 	Short: "Show information about the chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		chain, err := config.WaspClient().GetChainRecord(GetCurrentChainID())
+		chainInfo, err := config.WaspClient().GetChainInfo(GetCurrentChainID())
 		log.Check(err)
 
-		committee, err := config.WaspClient().GetCommitteeForChain(chain.ChainID)
-		log.Check(err)
+		printNodesRowHdr := []string{"PubKey", "NetID", "Alive", "Committee", "Access", "AccessAPI"}
+		printNodesRowFmt := func(n *model.ChainNodeStatus) []string {
+			return []string{
+				n.Node.PubKey,
+				n.Node.NetID,
+				strconv.FormatBool(n.Node.IsAlive),
+				strconv.FormatBool(n.ForCommittee),
+				strconv.FormatBool(n.ForAccess),
+				n.AccessAPI,
+			}
+		}
+		printNodes := func(label string, nodes []*model.ChainNodeStatus) {
+			if nodes == nil {
+				log.Printf("%s: N/A\n", label)
+			}
+			log.Printf("%s: %v\n", label, len(nodes))
+			rows := make([][]string, 0)
+			for _, n := range nodes {
+				rows = append(rows, printNodesRowFmt(n))
+			}
+			log.PrintTable(printNodesRowHdr, rows)
+		}
 
-		log.Printf("Chain ID: %s\n", chain.ChainID.Base58())
-		log.Printf("Committee nodes: %+v\n", committee.Nodes)
-		log.Printf("Active: %v\n", chain.Active)
+		log.Printf("Chain ID: %s\n", chainInfo.ChainID)
+		log.Printf("Active: %v\n", chainInfo.Active)
 
-		if chain.Active {
+		if chainInfo.Active {
+			log.Printf("State address: %v\n", chainInfo.StateAddress)
+			printNodes("Committee nodes", chainInfo.CommitteeNodes)
+			printNodes("Access nodes", chainInfo.AccessNodes)
+			printNodes("Candidate nodes", chainInfo.CandidateNodes)
+
 			info, err := SCClient(governance.Contract.Hname()).CallView(governance.FuncGetChainInfo.Name, nil)
 			log.Check(err)
 

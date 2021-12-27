@@ -5,7 +5,6 @@ package domain
 
 import (
 	"crypto/rand"
-	"sort"
 	"sync"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -16,9 +15,9 @@ import (
 
 type DomainImpl struct {
 	netProvider peering.NetworkProvider
-	nodes       map[string]peering.PeerSender
+	nodes       map[ed25519.PublicKey]peering.PeerSender
 	permutation *util.Permutation16
-	netIDs      []string
+	permPubKeys []*ed25519.PublicKey
 	peeringID   peering.PeeringID
 	attachIDs   []interface{}
 	log         *logger.Logger
@@ -31,42 +30,28 @@ var _ peering.PeerDomainProvider = &DomainImpl{}
 func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.PeeringID, initialNodes []peering.PeerSender, log *logger.Logger) *DomainImpl {
 	ret := &DomainImpl{
 		netProvider: netProvider,
-		nodes:       make(map[string]peering.PeerSender),
+		nodes:       make(map[ed25519.PublicKey]peering.PeerSender),
 		permutation: util.NewPermutation16(uint16(len(initialNodes)), nil),
-		netIDs:      make([]string, 0, len(initialNodes)),
+		permPubKeys: make([]*ed25519.PublicKey, len(initialNodes)),
 		peeringID:   peeringID,
 		attachIDs:   make([]interface{}, 0),
 		log:         log,
 		mutex:       &sync.RWMutex{},
 	}
-	for _, sender := range initialNodes {
-		ret.nodes[sender.NetID()] = sender
+	for i, sender := range initialNodes {
+		ret.nodes[*sender.PubKey()] = sender
+		ret.permPubKeys[i] = sender.PubKey()
 	}
 	ret.reshufflePeers()
 	return ret
 }
 
-func NewPeerDomainByNetIDs(netProvider peering.NetworkProvider, peeringID peering.PeeringID, peerNetIDs []string, log *logger.Logger) (*DomainImpl, error) {
-	peers := make([]peering.PeerSender, 0, len(peerNetIDs))
-	for _, nid := range peerNetIDs {
-		if nid == netProvider.Self().NetID() {
-			continue
-		}
-		peer, err := netProvider.PeerByNetID(nid)
-		if err != nil {
-			return nil, err
-		}
-		peers = append(peers, peer)
-	}
-	return NewPeerDomain(netProvider, peeringID, peers, log), nil
-}
-
-func (d *DomainImpl) SendMsgByNetID(netID string, msgReceiver, msgType byte, msgData []byte) {
+func (d *DomainImpl) SendMsgByPubKey(pubKey *ed25519.PublicKey, msgReceiver, msgType byte, msgData []byte) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
-	peer, ok := d.nodes[netID]
+	peer, ok := d.nodes[*pubKey]
 	if !ok {
-		d.log.Warnf("SendMsgByNetID: NetID %v is not in the domain", netID)
+		d.log.Warnf("SendMsgByPubKey: PubKey %v is not in the domain", pubKey.String())
 		return
 	}
 	peer.SendMsg(&peering.PeerMessageData{
@@ -78,27 +63,27 @@ func (d *DomainImpl) SendMsgByNetID(netID string, msgReceiver, msgType byte, msg
 }
 
 func (d *DomainImpl) SendPeerMsgToRandomPeers(upToNumPeers int, msgReceiver, msgType byte, msgData []byte) {
-	for _, netID := range d.GetRandomPeers(upToNumPeers) {
-		d.SendMsgByNetID(netID, msgReceiver, msgType, msgData)
+	for _, pubKey := range d.GetRandomPeers(upToNumPeers) {
+		d.SendMsgByPubKey(pubKey, msgReceiver, msgType, msgData)
 	}
 }
 
-func (d *DomainImpl) GetRandomPeers(upToNumPeers int) []string {
+func (d *DomainImpl) GetRandomPeers(upToNumPeers int) []*ed25519.PublicKey {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
-	if upToNumPeers > len(d.netIDs) {
-		upToNumPeers = len(d.netIDs)
+	if upToNumPeers > len(d.permPubKeys) {
+		upToNumPeers = len(d.permPubKeys)
 	}
-	ret := make([]string, upToNumPeers)
+	ret := make([]*ed25519.PublicKey, upToNumPeers)
 	for i := range ret {
-		ret[i] = d.netIDs[d.permutation.Next()]
+		ret[i] = d.permPubKeys[d.permutation.Next()]
 	}
 	return ret
 }
 
 func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
 	d.mutex.RLock()
-	nodes := make(map[string]peering.PeerSender)
+	nodes := make(map[ed25519.PublicKey]peering.PeerSender)
 	for k, v := range d.nodes {
 		nodes[k] = v
 	}
@@ -121,7 +106,7 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
 				d.log.Warnf("Peer with pubKey=%v not found, will be ignored for now, reason: %v", newPeerPubKey.String(), err)
 			} else {
 				changed = true
-				nodes[newPeerSender.NetID()] = newPeerSender
+				nodes[*newPeerSender.PubKey()] = newPeerSender
 				d.log.Infof("Domain peer added, pubKey=%v, netID=%v", newPeerSender.PubKey().String(), newPeerSender.NetID())
 			}
 		}
@@ -138,7 +123,7 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
 		}
 		if !found && (*oldPeer.PubKey() != *d.netProvider.Self().PubKey()) {
 			changed = true
-			delete(nodes, oldPeer.NetID())
+			delete(nodes, *oldPeer.PubKey())
 			d.log.Infof("Domain peer removed, pubKey=%v, netID=%v", oldPeer.PubKey().String(), oldPeer.NetID())
 		}
 	}
@@ -157,11 +142,11 @@ func (d *DomainImpl) ReshufflePeers(seedBytes ...[]byte) {
 }
 
 func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
-	d.netIDs = make([]string, 0, len(d.nodes))
-	for netID := range d.nodes {
-		d.netIDs = append(d.netIDs, netID)
+	d.permPubKeys = make([]*ed25519.PublicKey, 0, len(d.nodes))
+	for pubKey := range d.nodes {
+		peerPubKey := pubKey
+		d.permPubKeys = append(d.permPubKeys, &peerPubKey)
 	}
-	sort.Strings(d.netIDs)
 	var seedB []byte
 	if len(seedBytes) == 0 {
 		var b [8]byte
@@ -175,21 +160,29 @@ func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
 
 func (d *DomainImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {
 	attachID := d.netProvider.Attach(&d.peeringID, receiver, func(recv *peering.PeerMessageIn) {
-		if recv.SenderNetID == d.netProvider.Self().NetID() {
+		if *recv.SenderPubKey == *d.netProvider.Self().PubKey() {
 			d.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: message from self.",
-				recv.MsgReceiver, recv.MsgType, recv.SenderNetID)
+				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String())
 			return
 		}
-		_, ok := d.nodes[recv.SenderNetID]
+		_, ok := d.nodes[*recv.SenderPubKey]
 		if !ok {
 			d.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: it does not belong to the peer domain.",
-				recv.MsgReceiver, recv.MsgType, recv.SenderNetID)
+				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String())
 			return
 		}
 		callback(recv)
 	})
 	d.attachIDs = append(d.attachIDs, attachID)
 	return attachID
+}
+
+func (d *DomainImpl) PeerStatus() []peering.PeerStatusProvider {
+	res := make([]peering.PeerStatusProvider, 0)
+	for _, v := range d.nodes {
+		res = append(res, v.Status())
+	}
+	return res
 }
 
 func (d *DomainImpl) Detach(attachID interface{}) {

@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package domain_test
 
 import (
@@ -18,6 +21,7 @@ func TestDomainProvider(t *testing.T) {
 	nodeCount := 3
 	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
+	nodePubKeys := testpeers.PublicKeys(nodeIdentities)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}
@@ -44,12 +48,12 @@ func TestDomainProvider(t *testing.T) {
 	//
 	// Create a group on one of nodes.
 	var d peering.PeerDomainProvider
-	d, err := nodes[1].PeerDomain(peeringID, netIDs)
+	d, err := nodes[1].PeerDomain(peeringID, nodePubKeys)
 	require.Nil(t, err)
 	require.NotNil(t, d)
 
-	d.SendMsgByNetID(netIDs[0], receiver, 125, []byte{})
-	d.SendMsgByNetID(netIDs[2], receiver, 125, []byte{})
+	d.SendMsgByPubKey(nodePubKeys[0], receiver, 125, []byte{})
+	d.SendMsgByPubKey(nodePubKeys[2], receiver, 125, []byte{})
 	<-doneCh0
 	<-doneCh2
 	//
@@ -65,17 +69,18 @@ func TestRandom(t *testing.T) {
 	nodeCount := 5
 	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
+	nodePubKeys := testpeers.PublicKeys(nodeIdentities)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}
 	peeringID := peering.RandomPeeringID()
 
 	// Create a group on 2 of nodes.
-	d1, err := nodes[1].PeerDomain(peeringID, netIDs)
+	d1, err := nodes[1].PeerDomain(peeringID, nodePubKeys)
 	require.NoError(t, err)
 	require.NotNil(t, d1)
 
-	d2, err := nodes[2].PeerDomain(peeringID, netIDs)
+	d2, err := nodes[2].PeerDomain(peeringID, nodePubKeys)
 	require.NoError(t, err)
 	require.NotNil(t, d1)
 
@@ -88,10 +93,10 @@ func TestRandom(t *testing.T) {
 		ii := i
 		nodes[i].Attach(&peeringID, receiver, func(recv *peering.PeerMessageIn) {
 			t.Logf("%d received", ii)
-			if netIDs[1] == recv.SenderNetID {
+			if nodePubKeys[1] == recv.SenderPubKey {
 				r1++
 			}
-			if netIDs[2] == recv.SenderNetID {
+			if nodePubKeys[2] == recv.SenderPubKey {
 				r2++
 			}
 			wg.Done()
@@ -102,11 +107,11 @@ func TestRandom(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		wg.Add(sendTo * 2)
 		t.Log("----------------------------------")
-		for _, netID := range d1.GetRandomPeers(sendTo) {
-			d1.SendMsgByNetID(netID, receiver, 125, []byte{})
+		for _, pubKey := range d1.GetRandomPeers(sendTo) {
+			d1.SendMsgByPubKey(pubKey, receiver, 125, []byte{})
 		}
-		for _, netID := range d2.GetRandomPeers(sendTo) {
-			d2.SendMsgByNetID(netID, receiver, 125, []byte{})
+		for _, pubKey := range d2.GetRandomPeers(sendTo) {
+			d2.SendMsgByPubKey(pubKey, receiver, 125, []byte{})
 		}
 		wg.Wait()
 	}

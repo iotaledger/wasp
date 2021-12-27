@@ -32,10 +32,10 @@ func SetupKeys(peerCount uint16) ([]string, []*ed25519.KeyPair) {
 	return peerNetIDs, peerIdentities
 }
 
-func PublicKeys(peerIdentities []*ed25519.KeyPair) []ed25519.PublicKey {
-	pubKeys := make([]ed25519.PublicKey, len(peerIdentities))
+func PublicKeys(peerIdentities []*ed25519.KeyPair) []*ed25519.PublicKey {
+	pubKeys := make([]*ed25519.PublicKey, len(peerIdentities))
 	for i := range pubKeys {
-		pubKeys[i] = peerIdentities[i].PublicKey
+		pubKeys[i] = &peerIdentities[i].PublicKey
 	}
 	return pubKeys
 }
@@ -66,7 +66,6 @@ func SetupDkg(
 	//
 	// Initiate the key generation from some client node.
 	dkShare, err := dkgNodes[0].GenerateDistributedKey(
-		peerNetIDs,
 		PublicKeys(peerIdentities),
 		threshold,
 		100*time.Second,

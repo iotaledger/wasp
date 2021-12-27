@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -20,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -97,9 +99,9 @@ func (c *chainObj) StateCandidateToStateManager(virtualState state.VirtualStateA
 	c.stateMgr.EnqueueStateCandidateMsg(virtualState, outputID)
 }
 
-func shouldSendToPeer(peerID string, ackPeers []string) bool {
+func shouldSendToPeer(peerPubKey *ed25519.PublicKey, ackPeers []*ed25519.PublicKey) bool {
 	for _, p := range ackPeers {
-		if p == peerID {
+		if *p == *peerPubKey {
 			return false
 		}
 	}
@@ -113,18 +115,18 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 		Req:     req,
 	}
 	committee := c.getCommittee()
-	getPeerIDs := c.chainPeers.GetRandomPeers
+	getPeerPubKeys := c.chainPeers.GetRandomPeers
 
 	if committee != nil {
-		getPeerIDs = committee.GetRandomValidators
+		getPeerPubKeys = committee.GetRandomValidators
 	}
 
-	sendMessage := func(ackPeers []string) {
-		peerIDs := getPeerIDs(c.offledgerBroadcastUpToNPeers)
-		for _, peerID := range peerIDs {
-			if shouldSendToPeer(peerID, ackPeers) {
-				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID().Base58(), peerID)
-				c.chainPeers.SendMsgByNetID(peerID, peering.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
+	sendMessage := func(ackPeers []*ed25519.PublicKey) {
+		peerPubKeys := getPeerPubKeys(c.offledgerBroadcastUpToNPeers)
+		for _, peerPubKey := range peerPubKeys {
+			if shouldSendToPeer(peerPubKey, ackPeers) {
+				c.log.Debugf("sending offledger request ID: reqID: %s, peerPubKey: %s", req.ID().Base58(), peerPubKey.String())
+				c.chainPeers.SendMsgByPubKey(peerPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
 			}
 		}
 	}
@@ -157,13 +159,13 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	}()
 }
 
-func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerID string) {
-	c.log.Debugf("sendRequestAcknowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerID)
-	if peerID == "" {
+func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerPubKey *ed25519.PublicKey) {
+	if peerPubKey == nil {
 		return
 	}
+	c.log.Debugf("sendRequestAcknowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerPubKey.String())
 	msg := &messages.RequestAckMsg{ReqID: &reqID}
-	c.chainPeers.SendMsgByNetID(peerID, peering.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
+	c.chainPeers.SendMsgByPubKey(peerPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
 }
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
@@ -241,6 +243,14 @@ func (c *chainObj) Events() chain.ChainEvents {
 // GetStateReader returns a new copy of the optimistic state reader, with own baseline
 func (c *chainObj) GetStateReader() state.OptimisticStateReader {
 	return state.NewOptimisticStateReader(c.db, c.chainStateSync)
+}
+
+func (c *chainObj) GetChainNodes() []peering.PeerStatusProvider {
+	return c.chainPeers.PeerStatus()
+}
+
+func (c *chainObj) GetCandidateNodes() []*governance.AccessNodeInfo {
+	return c.candidateNodes
 }
 
 func (c *chainObj) Log() *logger.Logger {

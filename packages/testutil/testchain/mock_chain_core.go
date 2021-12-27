@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package testchain
 
 import (
@@ -15,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 )
@@ -222,4 +226,12 @@ func (m *MockedChainCore) OnMissingRequest(fun func(msg *messages.MissingRequest
 
 func (m *MockedChainCore) OnTimerTick(fun func(tick int)) {
 	m.onTimerTick = fun
+}
+
+func (m *MockedChainCore) GetChainNodes() []peering.PeerStatusProvider {
+	panic("not implemented MockedChainCore::GetChainNodes")
+}
+
+func (m *MockedChainCore) GetCandidateNodes() []*governance.AccessNodeInfo {
+	panic("not implemented MockedChainCore::GetCandidateNodes")
 }

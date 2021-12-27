@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -66,13 +67,13 @@ type chainObj struct {
 	db                               kvstore.KVStore
 	netProvider                      peering.NetworkProvider
 	dksProvider                      registry.DKShareRegistryProvider
-	committeeRegistry                registry.CommitteeRegistryProvider
 	blobProvider                     registry.BlobCache
 	eventRequestProcessed            *events.Event
 	eventChainTransition             *events.Event
 	chainPeers                       peering.PeerDomainProvider
+	candidateNodes                   []*governance.AccessNodeInfo
 	offLedgerReqsAcksMutex           sync.RWMutex
-	offLedgerReqsAcks                map[iscp.RequestID][]string
+	offLedgerReqsAcks                map[iscp.RequestID][]*ed25519.PublicKey
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
@@ -98,7 +99,6 @@ func NewChain(
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
 	dksProvider registry.DKShareRegistryProvider,
-	committeeRegistry registry.CommitteeRegistryProvider,
 	blobProvider registry.BlobCache,
 	processorConfig *processors.Config,
 	offledgerBroadcastUpToNPeers int,
@@ -111,25 +111,25 @@ func NewChain(
 	chainLog := log.Named(chainID.Base58()[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
-		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
-		procset:           processors.MustNew(processorConfig),
-		chainID:           chainID,
-		log:               chainLog,
-		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
-		db:                db,
-		chainStateSync:    chainStateSync,
-		stateReader:       state.NewOptimisticStateReader(db, chainStateSync),
-		netProvider:       netProvider,
-		dksProvider:       dksProvider,
-		committeeRegistry: committeeRegistry,
-		blobProvider:      blobProvider,
+		mempool:        mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
+		procset:        processors.MustNew(processorConfig),
+		chainID:        chainID,
+		log:            chainLog,
+		nodeConn:       nodeconnimpl.New(txstreamClient, chainLog),
+		db:             db,
+		chainStateSync: chainStateSync,
+		stateReader:    state.NewOptimisticStateReader(db, chainStateSync),
+		netProvider:    netProvider,
+		dksProvider:    dksProvider,
+		blobProvider:   blobProvider,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ iscp.RequestID))(params[0].(iscp.RequestID))
 		}),
 		eventChainTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
-		offLedgerReqsAcks:                make(map[iscp.RequestID][]string),
+		candidateNodes:                   make([]*governance.AccessNodeInfo, 0),
+		offLedgerReqsAcks:                make(map[iscp.RequestID][]*ed25519.PublicKey),
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
@@ -146,7 +146,7 @@ func NewChain(
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
 
 	var err error
-	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), []string{netProvider.Self().NetID()}) // TODO: PubKey.
+	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), []*ed25519.PublicKey{netProvider.Self().PubKey()})
 	if err != nil {
 		log.Errorf("NewChain: %v", err)
 		return nil
@@ -170,7 +170,7 @@ func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGrou
 	}
 	c.EnqueueMissingRequestIDsMsg(&messages.MissingRequestIDsMsgIn{
 		MissingRequestIDsMsg: *msg,
-		SenderNetID:          peerMsg.SenderNetID,
+		SenderPubKey:         peerMsg.SenderPubKey,
 	})
 }
 
@@ -184,7 +184,7 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 		}
 		c.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
 			OffLedgerRequestMsg: *msg,
-			SenderNetID:         peerMsg.SenderNetID,
+			SenderPubKey:        peerMsg.SenderPubKey,
 		})
 	case chain.PeerMsgTypeRequestAck:
 		msg, err := messages.NewRequestAckMsg(peerMsg.MsgData)
@@ -194,7 +194,7 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 		}
 		c.EnqueueRequestAckMsg(&messages.RequestAckMsgIn{
 			RequestAckMsg: *msg,
-			SenderNetID:   peerMsg.SenderNetID,
+			SenderPubKey:  peerMsg.SenderPubKey,
 		})
 	case chain.PeerMsgTypeMissingRequest:
 		msg, err := messages.NewMissingRequestMsg(peerMsg.MsgData)
@@ -265,6 +265,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 
 func (c *chainObj) updateChainNodes() {
 	govAccessNodes := make([]ed25519.PublicKey, 0)
+	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
 	if c.consensus != nil {
 		statusSnapshot := c.consensus.GetStatusSnapshot()
 		if statusSnapshot != nil {
@@ -278,7 +279,9 @@ func (c *chainObj) updateChainNodes() {
 				if err != nil {
 					c.log.Panicf("unable to read the governance contract state: %v", err)
 				}
-				govAccessNodes = governance.NewGetChainNodesResponseFromDict(res).AccessNodes
+				govResponse := governance.NewGetChainNodesResponseFromDict(res)
+				govAccessNodes = govResponse.AccessNodes
+				govCandidateNodes = govResponse.AccessNodeCandidates
 			}
 		}
 	}
@@ -306,6 +309,10 @@ func (c *chainObj) updateChainNodes() {
 		newMemberList = append(newMemberList, &pubKeyCopy)
 	}
 	c.chainPeers.UpdatePeers(newMemberList)
+
+	//
+	// Remember the candidate nodes as well (as a cache).
+	c.candidateNodes = govCandidateNodes
 }
 
 func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
@@ -338,7 +345,7 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput
 	if !anchorOutput.GetIsGovernanceUpdated() {
 		return xerrors.Errorf("rotateCommitteeIfNeeded: inconsistency. Governance transition expected... New output: %s", anchorOutput.String())
 	}
-	rec, err := c.getOwnCommitteeRecord(anchorOutput.GetStateAddress())
+	dkShare, err := c.getChainDKShare(anchorOutput.GetStateAddress())
 	if err != nil {
 		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
 	}
@@ -350,9 +357,9 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput
 	c.consensus.Close()
 	c.setCommittee(nil)
 	c.consensus = nil
-	if rec != nil {
+	if dkShare != nil {
 		// create new if committee record is available
-		if err = c.createNewCommitteeAndConsensus(rec); err != nil {
+		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
 			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
 		}
 	}
@@ -361,28 +368,20 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput
 
 func (c *chainObj) createCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput) error {
 	// check if I am in the committee
-	rec, err := c.getOwnCommitteeRecord(anchorOutput.GetStateAddress())
+	dkShare, err := c.getChainDKShare(anchorOutput.GetStateAddress())
 	if err != nil {
 		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
 	}
-	if rec != nil {
+	if dkShare != nil {
 		// create if record is present
-		if err = c.createNewCommitteeAndConsensus(rec); err != nil {
+		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
 			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
 		}
 	}
 	return nil
 }
 
-func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*registry.CommitteeRecord, error) {
-	rec, err := c.committeeRegistry.GetCommitteeRecord(addr)
-	if err != nil {
-		return nil, xerrors.Errorf("createCommitteeIfNeeded: reading committee record: %v", err)
-	}
-	if rec == nil {
-		// committee record wasn't found in th registry, I am not the part of the committee
-		return nil, nil
-	}
+func (c *chainObj) getChainDKShare(addr ledgerstate.Address) (*tcrypto.DKShare, error) {
 	//
 	// just in case check if I am among committee nodes
 	// should not happen
@@ -401,29 +400,28 @@ func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*registry.Co
 	if !found {
 		return nil, xerrors.Errorf("createCommitteeIfNeeded: I am not among nodes of the committee record. Inconsistency")
 	}
-	return rec, nil
+	return cmtDKShare, nil
 }
 
-func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeRecord) error {
+func (c *chainObj) createNewCommitteeAndConsensus(dkShare *tcrypto.DKShare) error {
 	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
 	cmt, cmtPeerGroup, err := committee.New(
-		cmtRec,
+		dkShare,
 		c.chainID,
 		c.netProvider,
-		c.dksProvider,
 		c.log,
 	)
 	if err != nil {
 		c.setCommittee(nil)
 		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
-			cmtRec.Address.Base58(), err)
+			dkShare.Address.Base58(), err)
 	}
 	cmtPeerGroup.Attach(peering.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
 	c.log.Debugf("creating new consensus object...")
 	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
 	c.setCommittee(cmt)
 
-	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", cmtRec.Address.Base58())
+	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", dkShare.Address.Base58())
 	return nil
 }
 

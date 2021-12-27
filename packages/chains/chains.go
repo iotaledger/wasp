@@ -139,7 +139,6 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		c.networkProvider,
 		defaultRegistry,
 		defaultRegistry,
-		defaultRegistry,
 		c.processorConfig,
 		c.offledgerBroadcastUpToNPeers,
 		c.offledgerBroadcastInterval,

@@ -16,38 +16,28 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
 // TODO DeployChain on peering domain, not on committee
 
 type CreateChainParams struct {
-	Node                  *goshimmer.Client
-	AllAPIHosts           []string
-	AllPeeringHosts       []string
-	CommitteeAPIHosts     []string
-	CommitteePeeringHosts []string
-	N                     uint16
-	T                     uint16
-	OriginatorKeyPair     *ed25519.KeyPair
-	Description           string
-	Textout               io.Writer
-	Prefix                string
+	Node              *goshimmer.Client
+	CommitteeAPIHosts []string
+	CommitteePubKeys  []string
+	N                 uint16
+	T                 uint16
+	OriginatorKeyPair *ed25519.KeyPair
+	Description       string
+	Textout           io.Writer
+	Prefix            string
 }
 
 // DeployChainWithDKG performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
 func DeployChainWithDKG(par CreateChainParams) (*iscp.ChainID, ledgerstate.Address, error) {
-	if len(par.AllPeeringHosts) > 0 {
-		// all committee nodes most also be among allPeers
-		if !util.IsSubset(par.CommitteePeeringHosts, par.AllPeeringHosts) {
-			return nil, nil, xerrors.Errorf("DeployChainWithDKG: committee nodes must all be among peers")
-		}
-	}
-
 	dkgInitiatorIndex := uint16(rand.Intn(len(par.CommitteeAPIHosts)))
-	stateControllerAddr, err := RunDKG(par.CommitteeAPIHosts, par.CommitteePeeringHosts, par.T, dkgInitiatorIndex)
+	stateControllerAddr, err := RunDKG(par.CommitteeAPIHosts, par.CommitteePubKeys, par.T, dkgInitiatorIndex)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -83,7 +73,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", initRequestTx.ID().Base58())
 	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 
-	err = ActivateChainOnAccessNodes(par.AllAPIHosts, chainID)
+	err = ActivateChainOnAccessNodes(par.CommitteeAPIHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.Base58(), err)

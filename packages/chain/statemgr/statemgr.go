@@ -99,8 +99,8 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 			return
 		}
 		sm.EnqueueGetBlockMsg(&messages.GetBlockMsgIn{
-			GetBlockMsg: *msg,
-			SenderNetID: peerMsg.SenderNetID,
+			GetBlockMsg:  *msg,
+			SenderPubKey: peerMsg.SenderPubKey,
 		})
 	case peerMsgTypeBlock:
 		msg, err := messages.NewBlockMsg(peerMsg.MsgData)
@@ -109,8 +109,8 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 			return
 		}
 		sm.EnqueueBlockMsg(&messages.BlockMsgIn{
-			BlockMsg:    *msg,
-			SenderNetID: peerMsg.SenderNetID,
+			BlockMsg:     *msg,
+			SenderPubKey: peerMsg.SenderPubKey,
 		})
 	default:
 		sm.log.Warnf("Wrong type of state manager message: %v, ignoring it", peerMsg.MsgType)

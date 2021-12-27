@@ -11,6 +11,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/require"
@@ -267,7 +268,7 @@ func TestNodeDisconnected(t *testing.T) {
 
 	// Single node gets disconnected until state 6
 	handlerName := "DisconnectedPeer"
-	env.NetworkBehaviour.WithPeerDisconnected(&handlerName, disconnectedNode.NetID)
+	env.NetworkBehaviour.WithPeerDisconnected(&handlerName, disconnectedNode.PubKey)
 	const targetBlockIndex2 = 6
 	connectedNodes[0].OnStateTransitionMakeNewStateTransition(targetBlockIndex2)
 	connectedNodes[0].MakeNewStateTransition()
@@ -286,7 +287,7 @@ func TestNodeDisconnected(t *testing.T) {
 	waitSyncBlockIndexAndCheck(10*time.Second, t, disconnectedNode, targetBlockIndex3)
 
 	// Node, producing transitions, gets disconnected until state 12
-	env.NetworkBehaviour.WithPeerDisconnected(&handlerName, disconnectedNode.NetID)
+	env.NetworkBehaviour.WithPeerDisconnected(&handlerName, disconnectedNode.PubKey)
 	const targetBlockIndex4 = 12
 	connectedNodes[0].OnStateTransitionDoNothing()
 	disconnectedNode.OnStateTransitionMakeNewStateTransition(targetBlockIndex4)
@@ -337,16 +338,17 @@ func TestCruelWorld(t *testing.T) {
 		env.AddNode(nodes[i])
 	}
 
-	var disconnectedNodes []string
+	var disconnectedNodes []*ed25519.PublicKey
 	var mutex sync.Mutex
 	go func() { // Connection cutter
 		for {
 			time.Sleep(randFromIntervalFun(1000, 3000) * time.Millisecond)
 			mutex.Lock()
-			nodeName := nodes[rand.Intn(numberOfPeers)].NetID
-			env.NetworkBehaviour.WithPeerDisconnected(&nodeName, nodeName)
-			env.Log.Debugf("Connection to node %v lost", nodeName)
-			disconnectedNodes = append(disconnectedNodes, nodeName)
+			nodePubkey := nodes[rand.Intn(numberOfPeers)].PubKey
+			handlerID := nodePubkey.String()
+			env.NetworkBehaviour.WithPeerDisconnected(&handlerID, nodePubkey)
+			env.Log.Debugf("Connection to node %v lost", nodePubkey.String())
+			disconnectedNodes = append(disconnectedNodes, nodePubkey)
 			mutex.Unlock()
 		}
 	}()
@@ -356,9 +358,9 @@ func TestCruelWorld(t *testing.T) {
 			time.Sleep(randFromIntervalFun(500, 2000) * time.Millisecond)
 			mutex.Lock()
 			if len(disconnectedNodes) > 0 {
-				env.NetworkBehaviour.RemoveHandler(disconnectedNodes[0])
+				env.NetworkBehaviour.RemoveHandler(disconnectedNodes[0].String())
 				env.Log.Debugf("Connection to node %v restored", disconnectedNodes[0])
-				disconnectedNodes[0] = ""
+				disconnectedNodes[0] = nil
 				disconnectedNodes = disconnectedNodes[1:]
 			}
 		}

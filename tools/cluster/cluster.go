@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package cluster
 
 import (
@@ -102,10 +105,18 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 		threshold = (uint16(len(committeeNodes))*2)/3 + 1
 	}
 	apiHosts := clu.Config.APIHosts(committeeNodes)
-	peeringHosts := clu.Config.PeeringHosts(committeeNodes)
+
+	peerPubKeys := make([]string, 0)
+	for _, i := range committeeNodes {
+		peeringNodeInfo, err := clu.WaspClient(i).GetPeeringSelf()
+		if err != nil {
+			return nil, err
+		}
+		peerPubKeys = append(peerPubKeys, peeringNodeInfo.PubKey)
+	}
 
 	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
-	return apilib.RunDKG(apiHosts, peeringHosts, threshold, dkgInitiatorIndex, timeout...)
+	return apilib.RunDKG(apiHosts, peerPubKeys, threshold, dkgInitiatorIndex, timeout...)
 }
 
 func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
@@ -139,18 +150,25 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
 
+	committeePubKeys := make([]string, 0)
+	for _, i := range chain.CommitteeNodes {
+		peeringNode, err := clu.WaspClient(i).GetPeeringSelf()
+		if err != nil {
+			return nil, err
+		}
+		committeePubKeys = append(committeePubKeys, peeringNode.PubKey)
+	}
+
 	chainid, err := apilib.DeployChain(apilib.CreateChainParams{
-		Node:                  clu.GoshimmerClient(),
-		AllAPIHosts:           chain.AllAPIHosts(),
-		AllPeeringHosts:       chain.AllPeeringHosts(),
-		CommitteeAPIHosts:     chain.CommitteeAPIHosts(),
-		CommitteePeeringHosts: chain.CommitteePeeringHosts(),
-		N:                     uint16(len(committeeNodes)),
-		T:                     quorum,
-		OriginatorKeyPair:     chain.OriginatorKeyPair(),
-		Description:           description,
-		Textout:               os.Stdout,
-		Prefix:                "[cluster] ",
+		Node:              clu.GoshimmerClient(),
+		CommitteeAPIHosts: chain.CommitteeAPIHosts(),
+		CommitteePubKeys:  committeePubKeys,
+		N:                 uint16(len(committeeNodes)),
+		T:                 quorum,
+		OriginatorKeyPair: chain.OriginatorKeyPair(),
+		Description:       description,
+		Textout:           os.Stdout,
+		Prefix:            "[cluster] ",
 	}, stateAddr)
 	if err != nil {
 		return nil, xerrors.Errorf("DeployChain: %w", err)
