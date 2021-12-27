@@ -2,6 +2,7 @@ package iscp
 
 import (
 	"bytes"
+	"crypto"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -197,7 +198,7 @@ func (r *OffLedgerRequestData) Hash() [32]byte {
 // Sign signs essence
 func (r *OffLedgerRequestData) Sign(key cryptolib.KeyPair) {
 	r.publicKey = key.PublicKey
-	r.signature, _ = key.PrivateKey.Sign(nil, r.essenceBytes(), nil)
+	r.signature, _ = key.PrivateKey.Sign(nil, r.essenceBytes(), crypto.BLAKE2b_256)
 }
 
 // Assets is attached assets to the UTXO. Nil for off-ledger

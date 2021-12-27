@@ -56,7 +56,7 @@ func incCounter(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	val := state.MustGetInt64(VarCounter, 0)
 	ctx.Log().Infof("incCounter: increasing counter value %d by %d, anchor index: #%d",
-		val, inc, ctx.StateAnchor().StateIndex())
+		val, inc, ctx.StateAnchor().StateIndex)
 	tra := "(empty)"
 	if ctx.IncomingTransfer() != nil {
 		tra = ctx.IncomingTransfer().String()
@@ -78,16 +78,17 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
 	ctx.Event(fmt.Sprintf("incCounterAndRepeatOnce: counter = %d", val+1))
-	if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewAssets(1, nil), &iscp.SendMetadata{
-		TargetContract: ctx.Contract(),
-		EntryPoint:     FuncIncCounter.Hname(),
-	}, iscp.SendOptions{
-		TimeLock: 5,
-	}) {
-		return nil, fmt.Errorf("incCounterAndRepeatOnce: not enough funds")
-	}
-	ctx.Log().Debugf("incCounterAndRepeatOnce: PostRequestToSelfWithDelay RequestInc 5 sec")
-	return nil, nil
+	panic("refactor me")
+	//if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewAssets(1, nil), &iscp.SendMetadata{
+	//	TargetContract: ctx.Contract(),
+	//	EntryPoint:     FuncIncCounter.Hname(),
+	//}, iscp.SendOptions{
+	//	TimeLock: 5,
+	//}) {
+	//	return nil, fmt.Errorf("incCounterAndRepeatOnce: not enough funds")
+	//}
+	//ctx.Log().Debugf("incCounterAndRepeatOnce: PostRequestToSelfWithDelay RequestInc 5 sec")
+	//return nil, nil
 }
 
 func incCounterAndRepeatMany(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -122,17 +123,18 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	state.Set(VarNumRepeats, codec.EncodeInt64(numRepeats-1))
 
-	if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewAssets(1, nil), &iscp.SendMetadata{
-		TargetContract: ctx.Contract(),
-		EntryPoint:     FuncIncAndRepeatMany.Hname(),
-	}, iscp.SendOptions{
-		TimeLock: 1 * 60,
-	}) {
-		ctx.Log().Debugf("incCounterAndRepeatMany. remaining repeats = %d", numRepeats-1)
-	} else {
-		ctx.Log().Debugf("incCounterAndRepeatMany FAILED. remaining repeats = %d", numRepeats-1)
-	}
-	return nil, nil
+	panic("refactor me")
+	//if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewAssets(1, nil), &iscp.SendMetadata{
+	//	TargetContract: ctx.Contract(),
+	//	EntryPoint:     FuncIncAndRepeatMany.Hname(),
+	//}, iscp.SendOptions{
+	//	TimeLock: 1 * 60,
+	//}) {
+	//	ctx.Log().Debugf("incCounterAndRepeatMany. remaining repeats = %d", numRepeats-1)
+	//} else {
+	//	ctx.Log().Debugf("incCounterAndRepeatMany FAILED. remaining repeats = %d", numRepeats-1)
+	//}
+	//return nil, nil
 }
 
 // spawn deploys new contract and calls it
