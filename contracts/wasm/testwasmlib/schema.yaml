@@ -1,27 +1,50 @@
 name: TestWasmLib
-description: Exercise all aspects of WasmLib
+description: Exercise several aspects of WasmLib
+
+# ##################################
 events:
+# ##################################
   test:
     name: String
     address: Address
-structs: {}
+
+# ##################################
+structs:
+# ##################################
+# Location:
+#   x: Int32
+#   y: Int32
+
+# ##################################
 typedefs:
+# ##################################
   StringArray: String[]
+# Longitude: map[Int32]Location
+
+# ##################################
 state:
+# ##################################
   arrays: map[String]StringArray
   random: Int64
+# latLong: map[Int32]Longitude
+
+# ##################################
 funcs:
+# ##################################
   arrayClear:
     params:
       name: String
+
   arrayCreate:
     params:
       name: String
+
   arraySet:
     params:
       index: Int32
       name: String
       value: String
+
   paramTypes:
     params:
       address: Address?
@@ -43,37 +66,46 @@ funcs:
       uint16: Uint16?
       uint32: Uint32?
       uint64: Uint64?
+
   random:
   triggerEvent:
     params:
       name: String
       address: Address
+
+# ##################################
 views:
+# ##################################
   arrayLength:
     params:
       name: String
     results:
       length: Int32
+
   arrayValue:
     params:
       index: Int32
       name: String
     results:
       value: String
+
   blockRecord:
     params:
       blockIndex: Int32
       recordIndex: Int32
     results:
       record: Bytes
+
   blockRecords:
     params:
       blockIndex: Int32
     results:
       count: Int32
+
   iotaBalance:
     results:
       iotas: Int64
+
   getRandom:
     results:
       random: Int64

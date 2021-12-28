@@ -18,10 +18,10 @@ type $PkgName$+Service struct {
 	wasmclient.Service
 }
 
-func New$PkgName$+Service(cl *wasmclient.ServiceClient, chainID string) *$PkgName$+Service {
+func New$PkgName$+Service(cl *wasmclient.ServiceClient, chainID string) (*$PkgName$+Service, error) {
 	s := &$PkgName$+Service{}
-	s.Service.Init(cl, chainID, 0x$hscName, EventHandlers)
-	return s
+	err := s.Service.Init(cl, chainID, 0x$hscName, EventHandlers)
+	return s, err
 }
 $#each func serviceFunction
 `,

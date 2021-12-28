@@ -5,4 +5,6 @@ export * from "./arguments";
 export * from "./event";
 export * from "./results";
 export * from "./service";
+export * from "./serviceclient";
+export * from "./transfer";
 export * from "./types";

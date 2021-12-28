@@ -1,6 +1,10 @@
 import nacl from 'tweetnacl';
 import { Buffer } from '../buffer';
-import type { IKeyPair } from '../models';
+
+export interface IKeyPair {
+  publicKey: Buffer;
+  secretKey: Buffer;
+}
 
 /**
  * Class to help with ED25519 Signature scheme.

@@ -11,7 +11,7 @@ import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
 	ScName        = "testwasmlib"
-	ScDescription = "Exercise all aspects of WasmLib"
+	ScDescription = "Exercise several aspects of WasmLib"
 	HScName       = wasmlib.ScHname(0x89703a45)
 )
 

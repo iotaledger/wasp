@@ -10,7 +10,7 @@
 use wasmlib::*;
 
 pub const SC_NAME        : &str = "testwasmlib";
-pub const SC_DESCRIPTION : &str = "Exercise all aspects of WasmLib";
+pub const SC_DESCRIPTION : &str = "Exercise several aspects of WasmLib";
 pub const HSC_NAME       : ScHname = ScHname(0x89703a45);
 
 pub const PARAM_ADDRESS      : &str = "address";

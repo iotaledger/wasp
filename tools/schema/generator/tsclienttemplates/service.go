@@ -3,7 +3,7 @@ package tsclienttemplates
 var serviceTs = map[string]string{
 	// *******************************
 	"service.ts": `
-import * as wasmclient from "wasmlib/wasmclient"
+import * as wasmclient from "wasmclient"
 import * as events from "./events"
 
 $#each params constArg

@@ -1,13 +1,13 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as client from "./index"
+import * as wasmclient from "./index"
 import {Base58} from "./crypto";
 
 export class Event {
-    private index: client.Int32;
+    private index: wasmclient.Int32;
     private message: string[];
-    public readonly timestamp: client.Int32;
+    public readonly timestamp: wasmclient.Int32;
 
     constructor(message: string[]) {
         this.message = message;
@@ -19,55 +19,55 @@ export class Event {
         return this.message[this.index++];
     }
 
-    nextAddress(): client.Address {
+    nextAddress(): wasmclient.Address {
         return this.next();
     }
 
-    nextAgentID(): client.AgentID {
+    nextAgentID(): wasmclient.AgentID {
         return this.next();
     }
 
-    nextBool(): client.Bool {
+    nextBool(): wasmclient.Bool {
         return this.next() != "0";
     }
 
-    nextBytes(): client.Bytes {
+    nextBytes(): wasmclient.Bytes {
         return Base58.decode(this.next());
     }
 
-    nextChainID(): client.ChainID {
+    nextChainID(): wasmclient.ChainID {
         return this.next();
     }
 
-    nextColor(): client.Color {
+    nextColor(): wasmclient.Color {
         return this.next();
     }
 
-    nextHash(): client.Hash {
+    nextHash(): wasmclient.Hash {
         return this.next();
     }
 
-    nextHname(): client.Hname {
+    nextHname(): wasmclient.Hname {
         return Number(this.next());
     }
 
-    nextInt8(): client.Int8 {
+    nextInt8(): wasmclient.Int8 {
         return Number(this.next());
     }
 
-    nextInt16(): client.Int16 {
+    nextInt16(): wasmclient.Int16 {
         return Number(this.next());
     }
 
-    nextInt32(): client.Int32 {
+    nextInt32(): wasmclient.Int32 {
         return Number(this.next());
     }
 
-    nextInt64(): client.Int64 {
+    nextInt64(): wasmclient.Int64 {
         return BigInt(this.next());
     }
 
-    nextRequestID(): client.RequestID {
+    nextRequestID(): wasmclient.RequestID {
         return this.next();
     }
 
@@ -75,19 +75,19 @@ export class Event {
         return this.next();
     }
 
-    nextUint8(): client.Uint8 {
+    nextUint8(): wasmclient.Uint8 {
         return Number(this.next());
     }
 
-    nextUint16(): client.Uint16 {
+    nextUint16(): wasmclient.Uint16 {
         return Number(this.next());
     }
 
-    nextUint32(): client.Uint32 {
+    nextUint32(): wasmclient.Uint32 {
         return Number(this.next());
     }
 
-    nextUint64(): client.Uint64 {
+    nextUint64(): wasmclient.Uint64 {
         return BigInt(this.next());
     }
 }

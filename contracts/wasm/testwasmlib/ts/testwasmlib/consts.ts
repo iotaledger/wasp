@@ -8,7 +8,7 @@
 import * as wasmlib from "wasmlib";
 
 export const ScName        = "testwasmlib";
-export const ScDescription = "Exercise all aspects of WasmLib";
+export const ScDescription = "Exercise several aspects of WasmLib";
 export const HScName       = new wasmlib.ScHname(0x89703a45);
 
 export const ParamAddress     = "address";

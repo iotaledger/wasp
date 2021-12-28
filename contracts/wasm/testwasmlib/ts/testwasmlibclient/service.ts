@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmclient from "wasmlib/wasmclient"
+import * as wasmclient from "wasmclient"
 import * as events from "./events"
 
 const ArgAddress = "address";

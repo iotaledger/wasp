@@ -1,12 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+import * as wasmclient from "./index"
 import * as wasp from "../../../../../contracts/wasm/fairroulette/frontend/src/lib/wasp_client";
-import {Colors, IOffLedger, OffLedger} from "../../../../../contracts/wasm/fairroulette/frontend/src/lib/wasp_client";
 import config from './config.dev';
-import * as client from "./index"
-
-export type ServiceClient = wasp.BasicClient;
+import {Base58, ED25519, IKeyPair} from "./crypto";
+import {Buffer} from "./buffer";
 
 export type EventHandlers = { [key: string]: (message: string[]) => void };
 
@@ -19,22 +18,23 @@ export class FuncObject {
 }
 
 export class ViewResults {
-    res: client.Results;
+    res: wasmclient.Results;
 
-    constructor(res: client.Results) {
+    constructor(res: wasmclient.Results) {
         this.res = res;
     }
 }
 
 export class Service {
-    private client: ServiceClient;
+    private client: wasmclient.ServiceClient;
     private walletService: wasp.WalletService;
     private webSocket: WebSocket;
     private eventHandlers: EventHandlers;
+    private keyPair: IKeyPair;
     public chainId: string;
-    public scHname: client.Hname;
+    public scHname: wasmclient.Hname;
 
-    constructor(client: ServiceClient, chainId: string, scHname: client.Hname, eventHandlers: EventHandlers) {
+    constructor(client: ServiceClient, chainId: string, scHname: wasmclient.Hname, eventHandlers: EventHandlers) {
         this.client = client;
         this.chainId = chainId;
         this.scHname = scHname;
@@ -66,7 +66,7 @@ export class Service {
     }
 
     // calls a view
-    public async callView(viewName: string, args: client.Arguments): Promise<client.Results> {
+    public async callView(viewName: string, args: wasmclient.Arguments): Promise<wasmclient.Results> {
         const response = await this.client.callView(
             this.chainId,
             this.scHname.toString(16),
@@ -77,8 +77,8 @@ export class Service {
         const resultMap: ParameterResult = {};
         if (response.Items) {
             for (let item of response.Items) {
-                const key = wasp.Buffer.from(item.Key, "base64").toString();
-                const value = wasp.Buffer.from(item.Value, "base64");
+                const key = Buffer.from(item.Key, "base64").toString();
+                const value = Buffer.from(item.Value, "base64");
                 resultMap[key] = value;
             }
         }
@@ -86,19 +86,25 @@ export class Service {
     }
 
     // posts off-tangle request
-    public async postRequest(funcName: string, args: client.Arguments): Promise<void> {
-        let request: IOffLedger = {
-            requestType: 1,
-            noonce: BigInt(performance.now() + performance.timeOrigin * 10000000),
-            contract: this.scHname,
-            entrypoint: hFunc,
-            arguments: [{key: '-number', value: betNumber}],
-            balances: [{balance: take, color: Colors.IOTA_COLOR_BYTES}],
-        };
+    public async postRequest(hFuncName: wasmclient.Int32, args: wasmclient.Arguments, transfer?: wasmclient.Transfer): Promise<void> {
+        if (!transfer) {
+            transfer = new wasmclient.Transfer();
+        }
 
-        request = OffLedger.Sign(request, keyPair);
+        // get request essence ready for signing
+        let essence = Base58.decode(this.chainId);
+        essence.writeUInt32LE(this.scHname, essence.length);
+        essence.writeUInt32LE(hFuncName, essence.length);
+        essence = Buffer.concat([essence, args.encode(), this.keyPair.publicKey]);
+        essence.writeBigUInt64LE(BigInt(performance.now()), essence.length);
+        essence = Buffer.concat([essence, transfer.encode()]);
+
+        let buf = Buffer.alloc(0);
+        const requestTypeOffledger = 1;
+        buf.writeUInt8(requestTypeOffledger, 0);
+        buf = Buffer.concat([buf, essence, ED25519.privateSign(this.keyPair, essence)]);
 
         await this.client.sendOffLedgerRequest(this.chainId, request);
-        await this.client.sendExecutionRequest(this.chainId, OffLedger.GetRequestId(request));
+        await this.client.sendExecutionRequest(this.chainId, wasp.OffLedger.GetRequestId(request));
     }
 }

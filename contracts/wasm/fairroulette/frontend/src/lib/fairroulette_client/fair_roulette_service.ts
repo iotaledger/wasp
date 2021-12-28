@@ -122,7 +122,7 @@ export class FairRouletteService {
       balances: [{ balance: take, color: Colors.IOTA_COLOR_BYTES }],
       contract: HName.HashAsNumber(this.scName),
       entrypoint: HName.HashAsNumber(this.scPlaceBet),
-      noonce: BigInt(performance.now() + performance.timeOrigin * 10000000),
+      nonce: BigInt(performance.now() + performance.timeOrigin * 10000000),
     };
 
     betRequest = OffLedger.Sign(betRequest, keyPair);

@@ -367,10 +367,10 @@ type TestWasmLibService struct {
 	wasmclient.Service
 }
 
-func NewTestWasmLibService(cl *wasmclient.ServiceClient, chainID string) *TestWasmLibService {
+func NewTestWasmLibService(cl *wasmclient.ServiceClient, chainID string) (*TestWasmLibService, error) {
 	s := &TestWasmLibService{}
-	s.Service.Init(cl, chainID, 0x89703a45, EventHandlers)
-	return s
+	err := s.Service.Init(cl, chainID, 0x89703a45, EventHandlers)
+	return s, err
 }
 
 func (s *TestWasmLibService) ArrayClear() ArrayClearFunc {
