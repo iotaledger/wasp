@@ -13,6 +13,8 @@
 package governanceimpl
 
 import (
+	"encoding/base64"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -54,13 +56,16 @@ func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	ani := governance.NewAccessNodeInfoFromAddCandidateNodeParams(ctx)
 	a.Require(ani.ValidateCertificate(ctx), "certificate invalid")
+	pubKeyStr := base64.StdEncoding.EncodeToString(ani.NodePubKey)
 
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
 	accessNodeCandidates.MustSetAt(ani.NodePubKey, ani.Bytes())
+	ctx.Log().Infof("Governance::AddCandidateNode: accessNodeCandidate added, pubKey=%s", pubKeyStr)
 
 	if ctx.ChainOwnerID().Address().Equals(ctx.Request().SenderAddress()) {
 		accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
 		accessNodes.MustSetAt(ani.NodePubKey, make([]byte, 0))
+		ctx.Log().Infof("Governance::AddCandidateNode: accessNode added, pubKey=%s", pubKeyStr)
 	}
 
 	return nil, nil

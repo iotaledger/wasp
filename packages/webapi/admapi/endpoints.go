@@ -39,6 +39,7 @@ func AddEndpoints(
 	adm.EchoGroup().Use(protected(adminWhitelist))
 
 	addShutdownEndpoint(adm, shutdown)
+	addNodeOwnerEndpoints(adm, registryProvider)
 	addChainRecordEndpoints(adm, registryProvider)
 	addChainEndpoints(adm, registryProvider, chainsProvider, network, metrics)
 	addDKSharesEndpoints(adm, registryProvider, nodeProvider)

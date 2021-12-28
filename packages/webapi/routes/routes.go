@@ -87,6 +87,10 @@ func PeeringTrustedDelete(pubKey string) string {
 	return PeeringTrustedGet(pubKey)
 }
 
+func AdmNodeOwnerCertificate() string {
+	return "/adm/node/owner/certificate"
+}
+
 func Shutdown() string {
 	return "/adm/shutdown"
 }
