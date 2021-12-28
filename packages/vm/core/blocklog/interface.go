@@ -70,6 +70,8 @@ type BlockInfo struct {
 	AnchorTransactionID      iotago.TransactionID
 	DustDepositAnchor        uint64
 	DustDepositNativeTokenID uint64
+	GasBurned                uint64
+	GasFeeCharged            uint64
 }
 
 func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
@@ -127,6 +129,12 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if err := util.WriteUint64(w, bi.DustDepositNativeTokenID); err != nil {
 		return err
 	}
+	if err := util.WriteUint64(w, bi.GasBurned); err != nil {
+		return err
+	}
+	if err := util.WriteUint64(w, bi.GasFeeCharged); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -153,6 +161,12 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 		return err
 	}
 	if err := util.ReadUint64(r, &bi.DustDepositNativeTokenID); err != nil {
+		return err
+	}
+	if err := util.ReadUint64(r, &bi.GasBurned); err != nil {
+		return err
+	}
+	if err := util.ReadUint64(r, &bi.GasFeeCharged); err != nil {
 		return err
 	}
 	return nil

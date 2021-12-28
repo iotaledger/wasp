@@ -187,6 +187,8 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		AnchorTransactionID:      iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
 		DustDepositAnchor:        dustAnchor,
 		DustDepositNativeTokenID: dustNativeToken,
+		GasBurned:                vmctx.gasBurnedTotal,
+		GasFeeCharged:            vmctx.gasFeeChargedTotal,
 	}
 	if vmctx.virtualState.PreviousStateHash() != blockInfo.PreviousStateHash {
 		panic("CloseVMContext: inconsistent previous state hash")
