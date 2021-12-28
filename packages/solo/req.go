@@ -84,7 +84,9 @@ func (r *CallParams) WithIotas(amount uint64) *CallParams {
 
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) *iscp.OffLedgerRequestData {
-	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, 0)
+	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
+		WithTransfer(r.transfer).
+		WithGasBudget(r.gasBudget)
 	ret.Sign(*keyPair)
 	return ret
 }

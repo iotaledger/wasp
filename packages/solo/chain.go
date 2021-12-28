@@ -123,12 +123,13 @@ func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (
 
 	gasFeePolicy := ch.GetGasFeePolicy()
 	require.Nil(ch.Env.T, gasFeePolicy.GasFeeTokenID)
-	gasEstimate := blob.GasForBlob(blobAsADict) + gasFeePolicy.GasNominalUnit
+	gasEstimate := blob.GasForBlob(blobAsADict) + gasFeePolicy.GasNominalUnit*10
 
 	f1, f2 := gasFeePolicy.FeeFromGas(gasEstimate)
 	_, err = ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			WithGasBudget(gasEstimate).WithIotas(f1+f2),
+			WithIotas(f1+f2).
+			WithGasBudget(gasFeePolicy.GasNominalUnit),
 		keyPair,
 	)
 	if err != nil {
@@ -136,7 +137,8 @@ func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (
 	}
 
 	res, err := ch.PostRequestOffLedger(
-		NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...),
+		NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
+			WithGasBudget(gasEstimate),
 		keyPair,
 	)
 	if err != nil {
@@ -275,7 +277,7 @@ func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *iscp.Assets {
 	if d.IsEmpty() {
 		return iscp.NewEmptyAssets()
 	}
-	ret, err := iscp.NewAssetsFromDict(d)
+	ret, err := iscp.AssetsFromDict(d)
 	require.NoError(ch.Env.T, err)
 	return ret
 }

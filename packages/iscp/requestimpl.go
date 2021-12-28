@@ -17,12 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func RequestDataFromBytes(data []byte) (RequestData, error) {
-	mu := marshalutil.New(data)
-
-	return RequestDataFromMarshalUtil(mu)
-}
-
 // RequestDataFromMarshalUtil read RequestData from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
 func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestData, error) {
 	isOffLedger, err := mu.ReadBool()
@@ -30,30 +24,38 @@ func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestData, error
 		return nil, err
 	}
 	if isOffLedger {
-		req := &OffLedgerRequestData{}
-		if err := req.readFromMarshalUtil(mu); err != nil {
-			return nil, err
-		}
-		return req, nil
+		return OffLedgerRequestDataFromMarshalUtil(mu)
 	}
 	// on-ledger
 	return OnLedgerRequestFromMarshalUtil(mu)
 }
 
+func RequestDataToMarshalUtil(req RequestData, mu *marshalutil.MarshalUtil) {
+	switch req := req.(type) {
+	case *OnLedgerRequestData:
+		mu.WriteBool(false)
+		req.writeToMarshalUtil(mu)
+	case *OffLedgerRequestData:
+		mu.WriteBool(true)
+		req.writeToMarshalUtil(mu)
+	default:
+		panic("RequestDataToMarshalUtil: very bad")
+	}
+}
+
 // region OffLedgerRequestData  ////////////////////////////////////////////////////////////////////////////
 
 type OffLedgerRequestData struct {
-	chainID        *ChainID
-	contract       Hname
-	entryPoint     Hname
-	params         dict.Dict
-	publicKey      cryptolib.PublicKey
-	sender         *iotago.Ed25519Address
-	signature      []byte
-	nonce          uint64
-	transferIotas  uint64
-	transferTokens iotago.NativeTokens
-	gasBudget      uint64
+	chainID    *ChainID
+	contract   Hname
+	entryPoint Hname
+	params     dict.Dict
+	publicKey  cryptolib.PublicKey
+	sender     *iotago.Ed25519Address
+	signature  []byte
+	nonce      uint64
+	transfer   *Assets
+	gasBudget  uint64
 }
 
 func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) *OffLedgerRequestData {
@@ -108,14 +110,21 @@ var _ Request = &OffLedgerRequestData{}
 
 func (r *OffLedgerRequestData) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteBool(true)
-	r.writeToMarshalUtil(mu)
+	RequestDataToMarshalUtil(r, mu)
 	return mu.Bytes()
+}
+
+func OffLedgerRequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OffLedgerRequestData, error) {
+	ret := &OffLedgerRequestData{}
+	if err := ret.readFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func (r *OffLedgerRequestData) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	r.writeEssenceToMarshalUtil(mu)
-	mu.WriteUint8(uint8(len(r.signature)))
+	mu.WriteUint16(uint16(len(r.signature)))
 	mu.WriteBytes(r.signature)
 }
 
@@ -123,7 +132,7 @@ func (r *OffLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) 
 	if err := r.readEssenceFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	sigLength, err := mu.ReadUint8()
+	sigLength, err := mu.ReadUint16()
 	if err != nil {
 		return err
 	}
@@ -145,11 +154,14 @@ func (r *OffLedgerRequestData) writeEssenceToMarshalUtil(mu *marshalutil.Marshal
 		Write(r.contract).
 		Write(r.entryPoint).
 		Write(r.params).
+		WriteUint8(uint8(len(r.publicKey))).
 		WriteBytes(r.publicKey).
 		WriteUint64(r.nonce).
-		WriteUint64(r.gasBudget).
-		WriteUint64(r.transferIotas)
-	// TODO write native Tokens
+		WriteUint64(r.gasBudget)
+	mu.WriteBool(r.transfer != nil)
+	if r.transfer != nil {
+		r.transfer.WriteToMarshalUtil(mu)
+	}
 }
 
 func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
@@ -163,30 +175,33 @@ func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 	if err := r.entryPoint.ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	_, err = dict.FromMarshalUtil(mu)
+	r.params, err = dict.FromMarshalUtil(mu)
 	if err != nil {
 		return err
 	}
-	r.params = dict.New()
-	pk, err := mu.ReadBytes(len(r.publicKey))
+	pkLen, err := mu.ReadUint8()
 	if err != nil {
 		return err
 	}
-	copy(r.publicKey[:], pk)
+	if r.publicKey, err = mu.ReadBytes(int(pkLen)); err != nil {
+		return err
+	}
 	if r.nonce, err = mu.ReadUint64(); err != nil {
 		return err
 	}
 	if r.gasBudget, err = mu.ReadUint64(); err != nil {
 		return err
 	}
-	if r.transferIotas, err = mu.ReadUint64(); err != nil {
+	var transferNotNil bool
+	if transferNotNil, err = mu.ReadBool(); err != nil {
 		return err
 	}
-
-	// TODO read native Tokens
-	//if r.transferTokens, err = colored.BalancesFromMarshalUtil(mu); err != nil {
-	//	return err
-	//}
+	r.transfer = nil
+	if transferNotNil {
+		if r.transfer, err = AssetsFromMarshalUtil(mu); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -206,9 +221,9 @@ func (r *OffLedgerRequestData) Assets() *Assets {
 	return nil
 }
 
-// Transfer transfer of assets from the sender's account to the target smart contract. Nil mean no Transfer
+// Transfer of assets from the sender's account to the target smart contract. Nil mean no Transfer
 func (r *OffLedgerRequestData) Transfer() *Assets {
-	return NewAssets(r.transferIotas, r.transferTokens)
+	return r.transfer
 }
 
 func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequestData {
@@ -216,15 +231,8 @@ func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequest
 	return r
 }
 
-// Tokens sets the transfers passed to the request
-func (r *OffLedgerRequestData) WithIotas(transferIotas uint64) *OffLedgerRequestData {
-	r.transferIotas = transferIotas
-	return r
-}
-
-// Tokens sets the transfers passed to the request
-func (r *OffLedgerRequestData) WithTokens(tokens iotago.NativeTokens) *OffLedgerRequestData {
-	r.transferTokens = tokens // TODO clone
+func (r *OffLedgerRequestData) WithTransfer(transfer *Assets) *OffLedgerRequestData {
+	r.transfer = transfer.Clone()
 	return r
 }
 
@@ -366,8 +374,7 @@ func OnLedgerRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OnLedgerReque
 
 func (r *OnLedgerRequestData) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteBool(false)
-	r.writeToMarshalUtil(mu)
+	RequestDataToMarshalUtil(r, mu)
 	return mu.Bytes()
 }
 
@@ -711,7 +718,7 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 	}
 	if transferPresent, err := mu.ReadBool(); err != nil {
 		if transferPresent {
-			if p.Transfer, err = NewAssetsFromMarshalUtil(mu); err != nil {
+			if p.Transfer, err = AssetsFromMarshalUtil(mu); err != nil {
 				return err
 			}
 		}

@@ -55,31 +55,25 @@ func TestBlockInfo(t *testing.T) {
 	t.Logf("%s", bi.String())
 }
 
-func TestBlockInfoLatestSeveral(t *testing.T) {
+func TestBlockInfoLatestWithRequest(t *testing.T) {
 	env := solo.New(t).WithNativeContract(sbtestsc.Processor)
 
 	chain := env.NewChain(nil, "chain1")
-	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
-	require.NoError(t, err)
-
-	err = chain.DeployContract(nil, "testCore", hwasm)
+	_, err := chain.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)
 
 	bi := chain.GetLatestBlockInfo()
 	require.NotNil(t, bi)
-	require.EqualValues(t, 4, bi.BlockIndex)
+	require.EqualValues(t, 3, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
-	require.EqualValues(t, 0, bi.NumOffLedgerRequests)
+	require.EqualValues(t, 1, bi.NumOffLedgerRequests)
 }
 
 func TestBlockInfoSeveral(t *testing.T) {
 	env := solo.New(t)
 	chain := env.NewChain(nil, "chain1")
-	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
-	require.NoError(t, err)
-
-	err = chain.DeployContract(nil, "testCore", hwasm)
+	_, err := chain.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)
 
 	bi := chain.GetLatestBlockInfo()

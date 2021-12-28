@@ -279,12 +279,15 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 
 // endregion ///////////////////////////////////////////////////////////
 
-// region RequestLogReqcord /////////////////////////////////////////////////////
+// region RequestReceipt /////////////////////////////////////////////////////
 
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
-	RequestData iscp.RequestData
-	Error       string
+	RequestData   iscp.RequestData // TODO request may be big (blobs). Do we want to store it all?
+	Error         string
+	GasBudget     uint64
+	GasBurned     uint64
+	GasFeeCharged uint64
 	// not persistent
 	BlockIndex   uint32
 	RequestIndex uint16
@@ -297,9 +300,6 @@ func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
 func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
 	ret := &RequestReceipt{}
 	var err error
-	if ret.RequestData, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
 	var size uint16
 	if size, err = mu.ReadUint16(); err != nil {
 		return nil, err
@@ -309,15 +309,29 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 		return nil, err
 	}
 	ret.Error = string(strBytes)
+	if ret.GasBudget, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if ret.GasBurned, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if ret.GasFeeCharged, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if ret.RequestData, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
 func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
-
-	mu.WriteBytes(r.RequestData.Bytes()).
-		WriteUint16(uint16(len(r.Error))).
-		WriteBytes([]byte(r.Error))
+	mu.WriteUint16(uint16(len(r.Error))).
+		WriteBytes([]byte(r.Error)).
+		WriteUint64(r.GasBudget).
+		WriteUint64(r.GasBurned).
+		WriteUint64(r.GasFeeCharged)
+	iscp.RequestDataToMarshalUtil(r.RequestData, mu)
 	return mu.Bytes()
 }
 

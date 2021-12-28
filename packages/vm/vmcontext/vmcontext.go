@@ -34,6 +34,9 @@ type VMContext struct {
 	blockContextCloseSeq []iscp.Hname
 	blockOutputCount     uint8
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
+	gasBurnedTotal       uint64
+	gasFeeChargedTotal   uint64
+
 	// ---- request context
 	chainInfo          *governance.ChainInfo
 	req                iscp.RequestData
@@ -46,16 +49,14 @@ type VMContext struct {
 	lastResult         dict.Dict
 	callStack          []*callContext
 	// --- gas related
-	// gas from the request
-	gasBudgetFromRequest uint64
-	// max gas budget capped by the number of tokens in the sender's account
-	gasBudgetAffordable uint64
 	// max tokens available for gas fee
 	gasMaxTokensAvailableForGasFee uint64
 	// final gas budget set for the run
 	gasBudget uint64
 	// gas already burned
 	gasBurned uint64
+	// tokens charged
+	gasFeeCharged uint64
 }
 
 type callContext struct {

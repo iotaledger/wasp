@@ -88,7 +88,8 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		originatorsL1IotasBefore := env.L1IotaBalance(ch.OriginatorAddress)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
-		req := solo.NewCallParams("dummyContract", "dummyEP")
+		req := solo.NewCallParams("dummyContract", "dummyEP").
+			WithGasBudget(1000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
 		require.True(t, errors.Is(err, vmcontext.ErrTargetContractNotFound))
@@ -123,7 +124,8 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		env.AssertL1AddressIotas(senderAddr, solo.Saldo)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
-		req := solo.NewCallParams("dummyContract", "dummyEP")
+		req := solo.NewCallParams("dummyContract", "dummyEP").
+			WithGasBudget(1000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetContractNotFound.Error())
@@ -158,7 +160,8 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		originatorsL1IotasBefore := env.L1IotaBalance(ch.OriginatorAddress)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
-		req := solo.NewCallParams(root.Contract.Name, "dummyEP")
+		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
+			WithGasBudget(1000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
@@ -193,7 +196,8 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		env.AssertL1AddressIotas(senderAddr, solo.Saldo)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
-		req := solo.NewCallParams(root.Contract.Name, "dummyEP")
+		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
+			WithGasBudget(1000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
@@ -247,7 +251,8 @@ func TestOkCall(t *testing.T) {
 	env.EnablePublisher(true)
 	ch := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
+		WithGasBudget(1000)
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	env.WaitPublisher()
@@ -311,7 +316,8 @@ func TestDeployNativeContract(t *testing.T) {
 	//senderAgentID := iscp.NewAgentID(senderAddr, 0)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
-		root.ParamDeployer, iscp.NewAgentID(senderAddr, 0))
+		root.ParamDeployer, iscp.NewAgentID(senderAddr, 0)).
+		WithGasBudget(1000)
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 

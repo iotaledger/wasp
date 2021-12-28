@@ -2,7 +2,7 @@ package gas
 
 // Gas burned per 1 stored byte
 const (
-	StoreByte = uint64(2)
+	StoreByte = uint64(1)
 	LogByte   = uint64(1) // logging (issuing events) can be cheaper than state storage, as it can be pruned without breaking things
 )
 

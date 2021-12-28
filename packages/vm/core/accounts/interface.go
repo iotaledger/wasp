@@ -67,5 +67,5 @@ func SerialNumFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {
 
 // DecodeBalances TODO move to iscp package
 func DecodeBalances(balances dict.Dict) (*iscp.Assets, error) {
-	return iscp.NewAssetsFromDict(balances)
+	return iscp.AssetsFromDict(balances)
 }

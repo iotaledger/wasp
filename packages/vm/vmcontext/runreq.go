@@ -33,6 +33,9 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 	vmctx.requestEventIndex = 0
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.callStack = vmctx.callStack[:0]
+	vmctx.gasBudget = 0
+	vmctx.gasBurned = 0
+	vmctx.gasFeeCharged = 0
 
 	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
 	defer func() { vmctx.currentStateUpdate = nil }()
@@ -116,7 +119,7 @@ func (vmctx *VMContext) prepareGasBudget() {
 		return
 	}
 	vmctx.calculateAffordableGasBudget()
-	vmctx.gasSetBudget(vmctx.gasBudgetAffordable)
+	vmctx.gasSetBudget(vmctx.gasBudget)
 }
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
@@ -247,18 +250,18 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 		// it will not proceed but will charge at least the minimum
 		panic(ErrNotEnoughTokensFor1GasNominalUnit)
 	}
+	var gasBudgetAffordable uint64
 	if vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit == 0 {
-		vmctx.gasBudgetAffordable = math.MaxUint64
+		gasBudgetAffordable = math.MaxUint64
 	} else {
 		nominalUnitsOfGas := tokensAvailable / vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit
 		if nominalUnitsOfGas > math.MaxUint64/vmctx.chainInfo.GasFeePolicy.GasNominalUnit {
-			vmctx.gasBudgetAffordable = math.MaxUint64
+			gasBudgetAffordable = math.MaxUint64
 		} else {
-			vmctx.gasBudgetAffordable = nominalUnitsOfGas * vmctx.chainInfo.GasFeePolicy.GasNominalUnit
+			gasBudgetAffordable = nominalUnitsOfGas * vmctx.chainInfo.GasFeePolicy.GasNominalUnit
 		}
 	}
-	vmctx.gasBudgetFromRequest = vmctx.req.GasBudget()
-	vmctx.gasBudget = util.MinUint64(vmctx.gasBudgetFromRequest, vmctx.gasBudgetAffordable)
+	vmctx.gasBudget = util.MinUint64(vmctx.req.GasBudget(), gasBudgetAffordable)
 }
 
 // chargeGasFee takes burned tokens from the sender's account
@@ -273,6 +276,11 @@ func (vmctx *VMContext) chargeGasFee() {
 	}
 	// total fees to charge
 	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), vmctx.gasMaxTokensAvailableForGasFee)
+	vmctx.gasFeeCharged = sendToOwner + sendToValidator
+
+	// calc totals
+	vmctx.gasBurnedTotal += vmctx.gasBurned
+	vmctx.gasFeeChargedTotal += vmctx.gasFeeCharged
 
 	transferToValidator := &iscp.Assets{}
 	transferToOwner := &iscp.Assets{}
