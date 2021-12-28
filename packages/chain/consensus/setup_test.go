@@ -185,8 +185,8 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 			ret.Log.Infof("stored transaction to the ledger: %s", tx.ID().Base58())
 			for _, node := range env.Nodes {
 				go func(n *mockedNode) {
-					ret.mutex.Lock()
-					defer ret.mutex.Unlock()
+					n.mutex.Lock()
+					defer n.mutex.Unlock()
 					n.StateOutput = stateOutput
 					n.checkStateApproval()
 				}(node)
@@ -195,7 +195,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 			ret.Log.Infof("transaction already in the ledger: %s", tx.ID().Base58())
 		}
 	})
-	ret.NodeConn.OnPullTransactionInclusionState(func(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
+	ret.NodeConn.OnPullTransactionInclusionState(func(txid ledgerstate.TransactionID) {
 		if _, already := env.Ledger.GetTransaction(txid); already {
 			go ret.Consensus.EnqueueInclusionsStateMsg(txid, ledgerstate.Confirmed)
 		}

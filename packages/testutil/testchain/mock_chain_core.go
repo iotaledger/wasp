@@ -15,12 +15,10 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"go.uber.org/atomic"
 )
 
 type MockedChainCore struct {
@@ -153,20 +151,12 @@ func (m *MockedChainCore) EnqueueTimerTick(tick int) {
 	m.onTimerTick(tick)
 }
 
-func (m *MockedChainCore) Events() chain.ChainEvents {
-	return m
-}
-
 func (m *MockedChainCore) Processors() *processors.Cache {
 	return m.processors
 }
 
-func (m *MockedChainCore) RequestProcessed() *events.Event {
-	return m.eventRequestProcessed
-}
-
-func (m *MockedChainCore) ChainTransition() *events.Event {
-	return m.eventStateTransition
+func (m *MockedChainCore) TriggerChainTransition(data *chain.ChainTransitionEventData) {
+	m.eventStateTransition.Trigger(data)
 }
 
 func (m *MockedChainCore) OnStateTransition(f func(data *chain.ChainTransitionEventData)) {
@@ -183,13 +173,6 @@ func (m *MockedChainCore) OnGetStateReader(f func() state.OptimisticStateReader)
 
 func (m *MockedChainCore) OnGlobalStateSync(f func() coreutil.ChainStateSync) {
 	m.onGlobalStateSync = f
-}
-
-func (m *MockedChainCore) GlobalSolidIndex() *atomic.Uint32 {
-	return nil
-}
-
-func (m *MockedChainCore) ReceiveOffLedgerRequest(_ *request.OffLedger, _ string) {
 }
 
 func (m *MockedChainCore) OnSendPeerMsg(fun func(netID string, msgReceiver byte, msgType byte, msgData []byte)) {

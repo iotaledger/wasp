@@ -221,8 +221,7 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 
 	const targetBlockIndex = 10
 	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
-	node.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
-	})
+	node.NodeConn.OnPullConfirmedOutput(func(outputID ledgerstate.OutputID) {})
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node, targetBlockIndex)
 
 	node1 := env.NewMockedNode(1, NewStateManagerTimers())

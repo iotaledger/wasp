@@ -34,6 +34,10 @@ func (h InitHost) CallFunc(objID, keyID int32, params []byte) []byte {
 	return nil
 }
 
+func (h InitHost) DelKey(objID, keyID, typeID int32) {
+	Panic("InitHost::DelKey")
+}
+
 func (h InitHost) Exists(objID, keyID, typeID int32) bool {
 	if objID == int32(KeyParams) {
 		_, exists := h.params[keyID]

@@ -12,6 +12,14 @@ import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 type Erc20Events struct{}
 
+func (e Erc20Events) Approval(amount int64, owner wasmlib.ScAgentID, spender wasmlib.ScAgentID) {
+	wasmlib.NewEventEncoder("erc20.approval").
+		Int64(amount).
+		AgentID(owner).
+		AgentID(spender).
+		Emit()
+}
+
 func (e Erc20Events) Transfer(amount int64, from wasmlib.ScAgentID, to wasmlib.ScAgentID) {
 	wasmlib.NewEventEncoder("erc20.transfer").
 		Int64(amount).

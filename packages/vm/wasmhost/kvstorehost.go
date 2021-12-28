@@ -52,6 +52,7 @@ var TypeSizes = [...]int{0, 33, 37, 1, 0, 33, 32, 32, 4, 1, 2, 4, 8, 0, 34, 0}
 
 type HostObject interface {
 	CallFunc(keyID int32, params []byte) []byte
+	DelKey(keyID, typeID int32)
 	Exists(keyID, typeID int32) bool
 	GetBytes(keyID, typeID int32) []byte
 	GetObjectID(keyID, typeID int32) int32
@@ -78,6 +79,10 @@ func (h *KvStoreHost) Init(scKeys *KvStoreHost) {
 
 func (h *KvStoreHost) CallFunc(objID, keyID int32, params []byte) []byte {
 	return h.FindObject(objID).CallFunc(keyID, params)
+}
+
+func (h *KvStoreHost) DelKey(objID, keyID, typeID int32) {
+	h.FindObject(objID).DelKey(keyID, typeID)
 }
 
 func (h *KvStoreHost) Exists(objID, keyID, typeID int32) bool {

@@ -50,7 +50,7 @@ const WaspConfig = `
   },
   "peering":{
     "port": {{.PeeringPort}},
-    "netid": "127.0.0.1:{{.PeeringPort}}",
+    "netid": "127.0.0.1:{{.PeeringPort}}"
   },
   "nodeconn": {
     "address": "{{.TxStreamHost}}:{{.TxStreamPort}}"

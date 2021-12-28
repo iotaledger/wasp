@@ -7,15 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/committee"
-	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
@@ -29,14 +25,12 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"go.uber.org/atomic"
-	"golang.org/x/xerrors"
 )
 
 const maxMsgBuffer = 1000
@@ -46,45 +40,48 @@ var (
 	_ chain.ChainCore            = &chainObj{}
 	_ chain.ChainEntry           = &chainObj{}
 	_ chain.ChainRequests        = &chainObj{}
-	_ chain.ChainEvents          = &chainObj{}
+	_ chain.ChainMetrics         = &chainObj{}
 	_ map[ed25519.PublicKey]bool // We rely on value comparison on the pubkeys, just assert that here.
 )
 
 type chainObj struct {
-	committee                        atomic.Value
-	mempool                          chain.Mempool
-	mempoolLastCleanedIndex          uint32
-	dismissed                        atomic.Bool
-	dismissOnce                      sync.Once
-	chainID                          *iscp.ChainID
-	chainStateSync                   coreutil.ChainStateSync
-	stateReader                      state.OptimisticStateReader
-	procset                          *processors.Cache
-	stateMgr                         chain.StateManager
-	consensus                        chain.Consensus
-	log                              *logger.Logger
-	nodeConn                         chain.NodeConnection
-	db                               kvstore.KVStore
-	netProvider                      peering.NetworkProvider
-	dksProvider                      registry.DKShareRegistryProvider
-	blobProvider                     registry.BlobCache
-	eventRequestProcessed            *events.Event
-	eventChainTransition             *events.Event
-	chainPeers                       peering.PeerDomainProvider
-	candidateNodes                   []*governance.AccessNodeInfo
-	offLedgerReqsAcksMutex           sync.RWMutex
-	offLedgerReqsAcks                map[iscp.RequestID][]*ed25519.PublicKey
-	offledgerBroadcastUpToNPeers     int
-	offledgerBroadcastInterval       time.Duration
-	pullMissingRequestsFromCommittee bool
-	chainMetrics                     metrics.ChainMetrics
-	dismissChainMsgPipe              pipe.Pipe
-	stateMsgPipe                     pipe.Pipe
-	offLedgerRequestPeerMsgPipe      pipe.Pipe
-	requestAckPeerMsgPipe            pipe.Pipe
-	missingRequestIDsPeerMsgPipe     pipe.Pipe
-	missingRequestPeerMsgPipe        pipe.Pipe
-	timerTickMsgPipe                 pipe.Pipe
+	committee                          atomic.Value
+	mempool                            chain.Mempool
+	mempoolLastCleanedIndex            uint32
+	dismissed                          atomic.Bool
+	dismissOnce                        sync.Once
+	chainID                            *iscp.ChainID
+	chainStateSync                     coreutil.ChainStateSync
+	stateReader                        state.OptimisticStateReader
+	procset                            *processors.Cache
+	stateMgr                           chain.StateManager
+	consensus                          chain.Consensus
+	log                                *logger.Logger
+	nodeConn                           chain.ChainNodeConnection
+	db                                 kvstore.KVStore
+	netProvider                        peering.NetworkProvider
+	dksProvider                        registry.DKShareRegistryProvider
+	blobProvider                       registry.BlobCache
+	eventRequestProcessed              *events.Event
+	eventChainTransition               *events.Event
+	eventChainTransitionClosure        *events.Closure
+	receiveChainPeerMessagesAttachID   interface{}
+	detachFromCommitteePeerMessagesFun func()
+	chainPeers                         peering.PeerDomainProvider
+	candidateNodes                     []*governance.AccessNodeInfo
+	offLedgerReqsAcksMutex             sync.RWMutex
+	offLedgerReqsAcks                  map[iscp.RequestID][]*ed25519.PublicKey
+	offledgerBroadcastUpToNPeers       int
+	offledgerBroadcastInterval         time.Duration
+	pullMissingRequestsFromCommittee   bool
+	chainMetrics                       metrics.ChainMetrics
+	dismissChainMsgPipe                pipe.Pipe
+	stateMsgPipe                       pipe.Pipe
+	offLedgerRequestPeerMsgPipe        pipe.Pipe
+	requestAckPeerMsgPipe              pipe.Pipe
+	missingRequestIDsPeerMsgPipe       pipe.Pipe
+	missingRequestPeerMsgPipe          pipe.Pipe
+	timerTickMsgPipe                   pipe.Pipe
 }
 
 type committeeStruct struct {
@@ -95,7 +92,7 @@ type committeeStruct struct {
 func NewChain(
 	chainID *iscp.ChainID,
 	log *logger.Logger,
-	txstreamClient *txstream.Client,
+	nc chain.NodeConnection,
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
 	dksProvider registry.DKShareRegistryProvider,
@@ -115,7 +112,7 @@ func NewChain(
 		procset:        processors.MustNew(processorConfig),
 		chainID:        chainID,
 		log:            chainLog,
-		nodeConn:       nodeconnimpl.New(txstreamClient, chainLog),
+		nodeConn:       nodeconnimpl.NewChainNodeConnection(chainID, nc, chainLog),
 		db:             db,
 		chainStateSync: chainStateSync,
 		stateReader:    state.NewOptimisticStateReader(db, chainStateSync),
@@ -143,7 +140,6 @@ func NewChain(
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
 	}
 	ret.committee.Store(&committeeStruct{})
-	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
 
 	var err error
 	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), []*ed25519.PublicKey{netProvider.Self().PubKey()})
@@ -152,10 +148,27 @@ func NewChain(
 		return nil
 	}
 	ret.stateMgr = statemgr.New(db, ret, ret.chainPeers, ret.nodeConn, chainMetrics)
-	ret.chainPeers.Attach(peering.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
+
+	ret.eventChainTransitionClosure = events.NewClosure(ret.processChainTransition)
+	ret.eventChainTransition.Attach(ret.eventChainTransitionClosure)
+	ret.nodeConn.AttachToTransactionReceived(ret.ReceiveTransaction)
+	ret.nodeConn.AttachToUnspentAliasOutputReceived(ret.ReceiveState)
+	ret.receiveChainPeerMessagesAttachID = ret.chainPeers.Attach(peering.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
 	go ret.recvLoop()
 	ret.startTimer()
 	return ret
+}
+
+func (c *chainObj) startTimer() {
+	go func() {
+		c.stateMgr.Ready().MustWait()
+		tick := 0
+		for !c.IsDismissed() {
+			c.EnqueueTimerTick(tick)
+			tick++
+			time.Sleep(chain.TimerTickPeriod)
+		}
+	}()
 }
 
 func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGroupIn) {
@@ -334,95 +347,6 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 			publisher.Publish("vmmsg", c.chainID.Base58(), msg)
 		}
 	}()
-}
-
-func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput, currentCmt chain.Committee) error {
-	if currentCmt.Address().Equals(anchorOutput.GetStateAddress()) {
-		// nothing changed. no rotation
-		return nil
-	}
-	// address changed
-	if !anchorOutput.GetIsGovernanceUpdated() {
-		return xerrors.Errorf("rotateCommitteeIfNeeded: inconsistency. Governance transition expected... New output: %s", anchorOutput.String())
-	}
-	dkShare, err := c.getChainDKShare(anchorOutput.GetStateAddress())
-	if err != nil {
-		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
-	}
-	// rotation needed
-	// close current in any case
-	c.log.Infof("CLOSING COMMITTEE for %s", currentCmt.Address().Base58())
-
-	currentCmt.Close()
-	c.consensus.Close()
-	c.setCommittee(nil)
-	c.consensus = nil
-	if dkShare != nil {
-		// create new if committee record is available
-		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
-			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
-		}
-	}
-	return nil
-}
-
-func (c *chainObj) createCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput) error {
-	// check if I am in the committee
-	dkShare, err := c.getChainDKShare(anchorOutput.GetStateAddress())
-	if err != nil {
-		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
-	}
-	if dkShare != nil {
-		// create if record is present
-		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
-			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
-		}
-	}
-	return nil
-}
-
-func (c *chainObj) getChainDKShare(addr ledgerstate.Address) (*tcrypto.DKShare, error) {
-	//
-	// just in case check if I am among committee nodes
-	// should not happen
-	selfPubKey := c.netProvider.Self().PubKey()
-	cmtDKShare, err := c.dksProvider.LoadDKShare(addr)
-	if err != nil {
-		return nil, err
-	}
-	found := false
-	for i := range cmtDKShare.NodePubKeys {
-		if *cmtDKShare.NodePubKeys[i] == *selfPubKey {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return nil, xerrors.Errorf("createCommitteeIfNeeded: I am not among nodes of the committee record. Inconsistency")
-	}
-	return cmtDKShare, nil
-}
-
-func (c *chainObj) createNewCommitteeAndConsensus(dkShare *tcrypto.DKShare) error {
-	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
-	cmt, cmtPeerGroup, err := committee.New(
-		dkShare,
-		c.chainID,
-		c.netProvider,
-		c.log,
-	)
-	if err != nil {
-		c.setCommittee(nil)
-		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
-			dkShare.Address.Base58(), err)
-	}
-	cmtPeerGroup.Attach(peering.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
-	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
-	c.setCommittee(cmt)
-
-	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", dkShare.Address.Base58())
-	return nil
 }
 
 func (c *chainObj) getCommittee() chain.Committee {

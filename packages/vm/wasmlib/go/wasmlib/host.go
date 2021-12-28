@@ -46,6 +46,7 @@ type (
 		AddFunc(f ScFuncContextFunction) []ScFuncContextFunction
 		AddView(v ScViewContextFunction) []ScViewContextFunction
 		CallFunc(objID, keyID int32, params []byte) []byte
+		DelKey(objID, keyID, typeID int32)
 		Exists(objID, keyID, typeID int32) bool
 		GetBytes(objID, keyID, typeID int32) []byte
 		GetKeyIDFromBytes(bytes []byte) int32
@@ -79,6 +80,10 @@ func CallFunc(objID int32, keyID Key32, params []byte) []byte {
 func Clear(objID int32) {
 	var zero [4]byte
 	SetBytes(objID, KeyLength, TYPE_INT32, zero[:])
+}
+
+func DelKey(objID int32, keyID Key32, typeID int32) {
+	host.DelKey(objID, int32(keyID), typeID)
 }
 
 func Exists(objID int32, keyID Key32, typeID int32) bool {

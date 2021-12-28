@@ -51,6 +51,14 @@ func GetChainRecord(chainID string) string {
 	return "/adm/chainrecord/" + chainID
 }
 
+func GetChainsNodeConnectionMetrics() string {
+	return "/adm/chain/nodeconn/metrics"
+}
+
+func GetChainNodeConnectionMetrics(chainID string) string {
+	return "/adm/chain/" + chainID + "/nodeconn/metrics"
+}
+
 func DKSharesPost() string {
 	return "/adm/dks"
 }

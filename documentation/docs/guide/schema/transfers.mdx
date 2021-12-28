@@ -8,7 +8,7 @@ keywords:
 - incoming
 - tokens
 - incoming
-description: There are two methods in the ISCP function context that deal with token balances. The balances() method can be used to determine the current total balance per token color. The incoming() method can be used to determine the amounts of incoming tokens per token color that were sent with the request to call the smart contract function.
+description: There are two methods in the IOTA Smart Contracts function context that deal with token balances. The balances() method can be used to determine the current total balance per token color. The incoming() method can be used to determine the amounts of incoming tokens per token color that were sent with the request to call the smart contract function.
 image: /img/logo/WASP_logo_dark.png
 ---
 import Tabs from "@theme/Tabs"
@@ -16,7 +16,7 @@ import TabItem from "@theme/TabItem"
 
 # Token Transfers
 
-There are two methods in the ISCP function context that deal with token balances. The
+There are two methods in the IOTA Smart Contracts function context that deal with token balances. The
 first one is the `balances()` method, which can be used to determine the current total
 balance per token color that is governed by the smart contract. The second one is the
 `incoming()` method, which can be used to determine the amounts of incoming tokens per
@@ -29,7 +29,7 @@ smart contract's account. But, if any error occurs which causes the function to 
 these incoming() tokens will be returned to where they came from, and it will be as if
 they were never sent to the smart contract.
 
-There is also a `transfer_to_address()` method in the ISCP function context that can
+There is also a `transfer_to_address()` method in the IOTA Smart Contracts function context that can
 transfer tokens from the smart contract account to any Tangle address. The tokens to be
 transferred are provided to the method through a special `ScTransfers` map proxy. We will
 be using the transfer_to_address() method in the dividend example to disperse the incoming

@@ -23,20 +23,21 @@ import (
 )
 
 type stateManager struct {
-	ready                  *ready.Ready
-	store                  kvstore.KVStore
-	chain                  chain.ChainCore
-	chainPeers             peering.PeerDomainProvider
-	nodeConn               chain.NodeConnection
-	pullStateRetryTime     time.Time
-	solidState             state.VirtualStateAccess
-	stateOutput            *ledgerstate.AliasOutput
-	stateOutputTimestamp   time.Time
-	currentSyncData        atomic.Value
-	notifiedAnchorOutputID ledgerstate.OutputID
-	syncingBlocks          *syncingBlocks
-	timers                 StateManagerTimers
-	log                    *logger.Logger
+	ready                       *ready.Ready
+	store                       kvstore.KVStore
+	chain                       chain.ChainCore
+	chainPeers                  peering.PeerDomainProvider
+	nodeConn                    chain.ChainNodeConnection
+	pullStateRetryTime          time.Time
+	solidState                  state.VirtualStateAccess
+	stateOutput                 *ledgerstate.AliasOutput
+	stateOutputTimestamp        time.Time
+	currentSyncData             atomic.Value
+	notifiedAnchorOutputID      ledgerstate.OutputID
+	syncingBlocks               *syncingBlocks
+	receivePeerMessagesAttachID interface{}
+	timers                      StateManagerTimers
+	log                         *logger.Logger
 
 	// Channels for accepting external events.
 	eventGetBlockMsgPipe       pipe.Pipe
@@ -59,7 +60,7 @@ const (
 	peerMsgTypeBlock
 )
 
-func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, stateManagerMetrics metrics.StateManagerMetrics, timersOpt ...StateManagerTimers) chain.StateManager {
+func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.ChainNodeConnection, stateManagerMetrics metrics.StateManagerMetrics, timersOpt ...StateManagerTimers) chain.StateManager {
 	var timers StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -84,7 +85,8 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		eventTimerMsgPipe:          pipe.NewLimitInfinitePipe(1),
 		stateManagerMetrics:        stateManagerMetrics,
 	}
-	ret.chainPeers.Attach(peering.PeerMessageReceiverStateManager, ret.receiveChainPeerMessages)
+	ret.receivePeerMessagesAttachID = ret.chainPeers.Attach(peering.PeerMessageReceiverStateManager, ret.receiveChainPeerMessages)
+	ret.nodeConn.AttachToOutputReceived(ret.EnqueueOutputMsg)
 	go ret.initLoadState()
 
 	return ret
@@ -118,6 +120,9 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 }
 
 func (sm *stateManager) Close() {
+	sm.nodeConn.DetachFromOutputReceived()
+	sm.chainPeers.Detach(sm.receivePeerMessagesAttachID)
+
 	sm.eventGetBlockMsgPipe.Close()
 	sm.eventBlockMsgPipe.Close()
 	sm.eventStateOutputMsgPipe.Close()
