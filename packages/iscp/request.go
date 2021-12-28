@@ -89,3 +89,41 @@ func TakeRequestIDs(reqs ...RequestData) []RequestID {
 	}
 	return ret
 }
+
+// RequestsInTransaction parses the transaction and extracts those outputs which are interpreted as a request to a chain
+func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]RequestData, error) {
+	txid, err := tx.ID()
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make(map[ChainID][]RequestData)
+	for i, out := range tx.Essence.Outputs {
+		if _, ok := out.(*iotago.ExtendedOutput); !ok {
+			// only ExtendedOutputs are interpreted right now TODO nfts and other
+			continue
+		}
+		// wrap output into the iscp.RequestData
+		odata, err := OnLedgerFromUTXO(out, &iotago.UTXOInput{
+			TransactionID:          *txid,
+			TransactionOutputIndex: uint16(i),
+		})
+		if err != nil {
+			return nil, err // TODO: maybe log the error and keep processing?
+		}
+
+		addr := odata.TargetAddress()
+		if addr.Type() != iotago.AddressAlias {
+			continue
+		}
+
+		chainID := ChainIDFromAliasID(addr.(*iotago.AliasAddress).AliasID())
+
+		if odata.IsInternalUTXO(&chainID) {
+			continue
+		}
+
+		ret[chainID] = append(ret[chainID], odata)
+	}
+	return ret, nil
+}

@@ -34,7 +34,7 @@ func AddChainAlias(chainAlias, id string) {
 }
 
 func GetCurrentChainID() *iscp.ChainID {
-	chid, err := iscp.ChainIDFromBase58(viper.GetString("chains." + GetChainAlias()))
+	chid, err := iscp.ChainIDFromHex(viper.GetString("chains." + GetChainAlias()))
 	log.Check(err)
 	return chid
 }

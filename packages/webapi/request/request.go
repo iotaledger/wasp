@@ -125,7 +125,7 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 }
 
 func parseParams(c echo.Context) (chainID *iscp.ChainID, req *iscp.OffLedgerRequestData, err error) {
-	chainID, err = iscp.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err = iscp.ChainIDFromHex(c.Param("chainID"))
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}

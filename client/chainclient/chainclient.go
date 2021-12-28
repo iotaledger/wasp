@@ -16,7 +16,7 @@ type Client struct {
 	WaspClient   *client.WaspClient
 	ChainID      *iscp.ChainID
 	KeyPair      *cryptolib.KeyPair
-	nonces       map[cryptolib.PublicKey]uint64
+	nonces       map[[cryptolib.PublicKeySize]byte]uint64
 }
 
 // New creates a new chainclient.Client
@@ -31,7 +31,7 @@ func New(
 		WaspClient:   waspClient,
 		ChainID:      chainID,
 		KeyPair:      keyPair,
-		nonces:       make(map[cryptolib.PublicKey]uint64),
+		nonces:       make(map[[cryptolib.PublicKeySize]byte]uint64),
 	}
 }
 

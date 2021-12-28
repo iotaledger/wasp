@@ -341,38 +341,8 @@ func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID *iscp.ChainID)
 
 // requestsByChain parses the transaction and extracts those outputs which are interpreted as a request to a chain
 func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp.RequestData {
-	ret := make(map[iscp.ChainID][]iscp.RequestData)
-	txid, err := tx.ID()
+	ret, err := iscp.RequestsInTransaction(tx)
 	require.NoError(env.T, err)
-
-	for i, out := range tx.Essence.Outputs {
-		if _, ok := out.(*iotago.ExtendedOutput); !ok {
-			// only ExtendedOutputs are interpreted right now TODO nfts and other
-			continue
-		}
-		// wrap output into the iscp.RequestData
-		odata, err := iscp.OnLedgerFromUTXO(out, &iotago.UTXOInput{
-			TransactionID:          *txid,
-			TransactionOutputIndex: uint16(i),
-		})
-		require.NoError(env.T, err)
-
-		addr := odata.TargetAddress()
-		if addr.Type() != iotago.AddressAlias {
-			continue
-		}
-		chainID := iscp.ChainIDFromAliasID(addr.(*iotago.AliasAddress).AliasID())
-
-		if odata.AsOnLedger().IsInternalUTXO(&chainID) {
-			continue
-		}
-		lst, ok := ret[chainID]
-		if !ok {
-			lst = make([]iscp.RequestData, 0)
-		}
-		lst = append(lst, odata)
-		ret[chainID] = lst
-	}
 	return ret
 }
 

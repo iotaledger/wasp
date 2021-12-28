@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 )
 
@@ -28,15 +27,14 @@ func ChainIDFromAliasID(addr iotago.AliasID) ChainID {
 func ChainIDFromBytes(data []byte) (*ChainID, error) {
 	var ret ChainID
 	if len(ret) != len(data) {
-		return &ChainID{}, xerrors.New("ChainIDFromBase58: wrong data length")
+		return &ChainID{}, xerrors.New("cannot decode ChainID: wrong data length")
 	}
 	copy(ret[:], data)
 	return &ret, nil
 }
 
-// ChainIDFromBase58 constructor decodes base58 string to the ChainID
-func ChainIDFromBase58(b58 string) (*ChainID, error) {
-	bin, err := base58.Decode(b58)
+func ChainIDFromHex(s string) (*ChainID, error) {
+	bin, err := hex.DecodeString(s)
 	if err != nil {
 		return &ChainID{}, err
 	}
@@ -80,7 +78,11 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 
 // String human readable form (hex encoding)
 func (chid *ChainID) String() string {
-	return "$/" + hex.EncodeToString(chid[:])
+	return "$/" + chid.Hex()
+}
+
+func (chid *ChainID) Hex() string {
+	return hex.EncodeToString(chid[:])
 }
 
 func (chid *ChainID) AsAddress() iotago.Address {

@@ -67,7 +67,7 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 }
 
 func (s *chainRecordService) handleGetChainRecord(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromHex(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
