@@ -4,6 +4,7 @@
 package chainimpl
 
 import (
+	"errors"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -16,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"golang.org/x/xerrors"
 )
@@ -140,7 +142,10 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput
 	}
 	dkShare, err := c.getChainDKShare(anchorOutput.GetStateAddress())
 	if err != nil {
-		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
+		if errors.Is(err, registry.ErrDKShareNotFound) {
+			return nil
+		}
+		return xerrors.Errorf("rotateCommitteeIfNeeded: unable to load dkShare: %w", err)
 	}
 	// rotation needed
 	// close current in any case
@@ -163,12 +168,15 @@ func (c *chainObj) createCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput
 	// check if I am in the committee
 	dkShare, err := c.getChainDKShare(anchorOutput.GetStateAddress())
 	if err != nil {
-		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
+		if errors.Is(err, registry.ErrDKShareNotFound) {
+			return nil
+		}
+		return xerrors.Errorf("createCommitteeIfNeeded: unable to load dkShare: %w", err)
 	}
 	if dkShare != nil {
 		// create if record is present
 		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
-			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
+			return xerrors.Errorf("createCommitteeIfNeeded: creating committee and consensus: %w", err)
 		}
 	}
 	return nil

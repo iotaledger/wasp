@@ -133,6 +133,9 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 func (r *Impl) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error) {
 	data, err := r.store.Get(dbKeyForDKShare(sharedAddress))
 	if err != nil {
+		if err.Error() == "key not found" {
+			return nil, ErrDKShareNotFound
+		}
 		return nil, err
 	}
 	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultSuite())

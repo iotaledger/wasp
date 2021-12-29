@@ -4,6 +4,7 @@
 package registry
 
 import (
+	"errors"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -34,6 +35,8 @@ type DKShareRegistryProvider interface {
 	SaveDKShare(dkShare *tcrypto.DKShare) error
 	LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error)
 }
+
+var ErrDKShareNotFound = errors.New("dkShare not found")
 
 // ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
 type ChainRecordRegistryProvider interface {
