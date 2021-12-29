@@ -10,7 +10,7 @@ import (
 type ChainID string
 
 func NewChainID(chainID *iscp.ChainID) ChainID {
-	return ChainID(chainID.Base58())
+	return ChainID(chainID.Hex())
 }
 
 func (ch ChainID) MarshalJSON() ([]byte, error) {
@@ -22,13 +22,13 @@ func (ch *ChainID) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
-	_, err := iscp.ChainIDFromBase58(s)
+	_, err := iscp.ChainIDFromHex(s)
 	*ch = ChainID(s)
 	return err
 }
 
 func (ch ChainID) ChainID() *iscp.ChainID {
-	chainID, err := iscp.ChainIDFromBase58(string(ch))
+	chainID, err := iscp.ChainIDFromHex(string(ch))
 	if err != nil {
 		panic(err)
 	}

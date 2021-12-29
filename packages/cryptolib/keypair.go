@@ -15,6 +15,11 @@ type (
 	PublicKey  = crypto.PublicKey
 )
 
+const (
+	PublicKeySize  = crypto.PublicKeySize
+	PrivateKeySize = crypto.PrivateKeySize
+)
+
 type KeyPair struct {
 	PrivateKey PrivateKey
 	PublicKey  PublicKey
@@ -89,7 +94,7 @@ func PublicKeyFromString(s string) (publicKey PublicKey, err error) {
 }
 
 func PublicKeyFromBytes(publicKeyBytes []byte) (PublicKey, error) {
-	if len(publicKeyBytes) < crypto.PublicKeySize {
+	if len(publicKeyBytes) < PublicKeySize {
 		return nil, fmt.Errorf("bytes too short")
 	}
 
@@ -97,7 +102,7 @@ func PublicKeyFromBytes(publicKeyBytes []byte) (PublicKey, error) {
 }
 
 func PrivateKeyFromBytes(privateKeyBytes []byte) (PrivateKey, error) {
-	if len(privateKeyBytes) < crypto.PrivateKeySize {
+	if len(privateKeyBytes) < PrivateKeySize {
 		return nil, fmt.Errorf("bytes too short")
 	}
 
@@ -111,9 +116,3 @@ func Verify(publicKey PublicKey, message, sig []byte) bool {
 func Sign(privateKey PrivateKey, message []byte) []byte {
 	return crypto.Sign(privateKey, message)
 }
-
-//
-//func AddressFromKeyPair(keyPair KeyPair) iotago.Address {
-//	addr := cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey)
-//	return &addr
-//}

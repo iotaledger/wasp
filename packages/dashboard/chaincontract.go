@@ -24,7 +24,7 @@ func (d *Dashboard) initChainContract(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChainContract(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromHex(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}

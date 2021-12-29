@@ -98,7 +98,7 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 }
 
 func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, iscp.RequestID, error) {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromHex(c.Param("chainID"))
 	if err != nil {
 		return nil, iscp.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}

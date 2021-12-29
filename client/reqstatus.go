@@ -35,11 +35,14 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by the node
 func (c *WaspClient) WaitUntilAllRequestsProcessed(chainID *iscp.ChainID, tx *iotago.Transaction, timeout time.Duration) error {
-	panic("TODO implement")
-	// for _, reqID := range iscp.RequestsInTransaction(chainID, tx) {
-	// 	if err := c.WaitUntilRequestProcessed(chainID, reqID, timeout); err != nil {
-	// 		return err
-	// 	}
-	// }
-	// return nil
+	reqs, err := iscp.RequestsInTransaction(tx)
+	if err != nil {
+		return err
+	}
+	for _, req := range reqs[*chainID] {
+		if err := c.WaitUntilRequestProcessed(chainID, req.ID(), timeout); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -1,6 +1,7 @@
 package multiclient
 
 import (
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 )

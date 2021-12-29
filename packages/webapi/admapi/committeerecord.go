@@ -87,7 +87,7 @@ func (s *committeeRecordService) handleGetCommitteeRecord(c echo.Context) error 
 }
 
 func (s *committeeRecordService) handleGetCommitteeForChain(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromHex(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
