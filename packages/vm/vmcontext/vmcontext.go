@@ -247,3 +247,11 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 		}
 	})
 }
+
+func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder() {
+	var totalAssets *iscp.Assets
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		totalAssets = accounts.GetTotalAssets(s)
+	})
+	vmctx.txbuilder.AssertConsistentWithL2Totals(totalAssets)
+}

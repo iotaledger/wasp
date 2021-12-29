@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/iscp"
+
 	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -158,6 +160,40 @@ func (txb *AnchorTransactionBuilder) InternalNativeTokenBalances() (map[iotago.N
 	return before, after
 }
 
+var DebugTxBuilder = func() bool { return true }() // trick linter
+
+func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
+	if DebugTxBuilder {
+		ins, outs, balanced := txb.Totals()
+		if !balanced {
+			fmt.Printf("================= MustBalanced [%s] \ninTotals: %v\noutTotals: %v\n", checkpoint, ins, outs)
+			panic(xerrors.Errorf("internal: tx builder is not balanced [%s]", checkpoint))
+		}
+	}
+
+}
+
+func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp.Assets) {
+	_, outTotal, balanced := txb.Totals()
+	if !balanced {
+		panic(ErrFatalTxBuilderNotBalanced)
+	}
+	if outTotal.TotalIotasOnChain != l2Totals.Iotas {
+		panic(xerrors.Errorf("iotas L1 (%d) != iotas L2 (%d): %w",
+			outTotal.TotalIotasOnChain, l2Totals.Iotas, ErrInconsistentL2LedgerWithL1TxBuilder))
+	}
+	if len(outTotal.TokenBalances) != len(l2Totals.Tokens) {
+		panic(ErrInconsistentL2LedgerWithL1TxBuilder)
+	}
+	for _, nt := range l2Totals.Tokens {
+		b1, ok := outTotal.TokenBalances[nt.ID]
+		if !ok || nt.Amount.Cmp(b1) != 0 {
+			panic(xerrors.Errorf("token %s L1 (%d) != iotas L2 (%d): %w",
+				nt.ID.String(), outTotal.TotalIotasOnChain, l2Totals.Iotas, ErrInconsistentL2LedgerWithL1TxBuilder))
+		}
+	}
+}
+
 func (t *TransactionTotals) BalancedWith(another *TransactionTotals) bool {
 	if t.TotalIotasOnChain+t.TotalIotasInDustDeposit != another.TotalIotasOnChain+another.TotalIotasInDustDeposit {
 		return false
@@ -199,17 +235,4 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) bool {
 		}
 	}
 	return true
-}
-
-var DebugTxBuilder = func() bool { return true }() // trick linter
-
-func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
-	if DebugTxBuilder {
-		ins, outs, balanced := txb.Totals()
-		if !balanced {
-			fmt.Printf("================= MustBalanced [%s] \ninTotals: %v\noutTotals: %v\n", checkpoint, ins, outs)
-			panic(xerrors.Errorf("internal: tx builder is not balanced [%s]", checkpoint))
-		}
-	}
-
 }

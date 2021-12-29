@@ -334,6 +334,5 @@ func TestFeeBasic(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	feePolicy := chain.GetGasFeePolicy()
 	require.Nil(t, feePolicy.GasFeeTokenID)
-	require.Nil(t, feePolicy.FixedGasBudget)
 	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
 }

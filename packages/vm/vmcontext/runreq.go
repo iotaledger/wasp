@@ -71,6 +71,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 		return err
 	}
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.assertConsistentL2WithL1TxBuilder()
 	return nil
 }
 
@@ -111,7 +112,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		}
 	}
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
-	// TODO check if total assets are consistent with the state
+	vmctx.assertConsistentL2WithL1TxBuilder()
 }
 
 func (vmctx *VMContext) prepareGasBudget() {

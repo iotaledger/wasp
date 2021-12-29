@@ -9,7 +9,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -28,6 +27,8 @@ var (
 	ErrFoundryDoesNotExist                  = xerrors.New("foundry does not exist")
 	ErrCantModifySupplyOfTheToken           = xerrors.New("supply of the token is not controlled by the chain")
 	ErrNativeTokenSupplyOutOffBounds        = xerrors.New("token supply is out of bounds")
+	ErrFatalTxBuilderNotBalanced            = xerrors.New("fatal: tx builder is not balanced")
+	ErrInconsistentL2LedgerWithL1TxBuilder  = xerrors.New("fatal: L2 ledger is not consistent with the L1 tx builder")
 )
 
 // tokenOutputLoader externally supplied function which loads stored output from the state
@@ -91,7 +92,7 @@ func NewAnchorTransactionBuilder(
 	foundryLoader foundryLoader,
 	rentStructure *iotago.RentStructure,
 ) *AnchorTransactionBuilder {
-	anchorDustDeposit := anchorOutput.VByteCost(parameters.RentStructure(), nil)
+	anchorDustDeposit := anchorOutput.VByteCost(rentStructure, nil)
 	if anchorOutput.Amount < anchorDustDeposit {
 		panic("internal inconsistency")
 	}
