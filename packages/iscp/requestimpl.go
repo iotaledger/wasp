@@ -467,8 +467,7 @@ func (r *OnLedgerRequestData) Features() Features {
 }
 
 func (r *OnLedgerRequestData) String() string {
-	// TODO
-	panic("implement me")
+	return fmt.Sprintf("(not impl) ID: %s", r.ID()) // TODO
 }
 
 func (r *OnLedgerRequestData) AsOffLedger() AsOffLedger {

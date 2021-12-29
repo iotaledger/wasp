@@ -491,7 +491,7 @@ func calcVByteCostOfNativeTokenBalance(rentStructure *iotago.RentStructure) uint
 	return o.Amount
 }
 
-func (txb *AnchorTransactionBuilder) DustDeposits() (uint64, uint64) {
+func (txb *AnchorTransactionBuilder) DustDepositConstants() (uint64, uint64) {
 	return txb.dustDepositOnAnchor, txb.dustDepositOnInternalTokenOutput
 }
 

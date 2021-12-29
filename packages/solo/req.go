@@ -209,7 +209,7 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 }
 
 func (ch *Chain) mustGetErrorFromReceipt(reqid iscp.RequestID) error {
-	rec, _, _, ok := ch.GetRequestReceipt(reqid)
+	rec, ok := ch.GetRequestReceipt(reqid)
 	require.True(ch.Env.T, ok)
 	var err error
 	if len(rec.Error) > 0 {

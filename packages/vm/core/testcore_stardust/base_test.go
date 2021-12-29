@@ -41,12 +41,12 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	require.EqualValues(t, 0, len(nativeTokenIDs))
 
 	// query dust parameters of the latest block
-	dustInfo := ch.GetDustInfo()
+	totalIotasInfo := ch.GetTotalIotaInfo()
 	totalIotasOnChain := ch.L2TotalIotas()
 	// all goes to dust and to total iotas on chain
-	totalSpent := dustInfo.Total() + totalIotasOnChain
-	t.Logf("total on chain: dust deposit: %d, total iotas: %d, total sent: %d",
-		dustInfo, totalIotasOnChain, totalSpent)
+	totalSpent := totalIotasInfo.TotalDustDeposit + totalIotasInfo.TotalIotasInContracts
+	t.Logf("total on chain: dust deposit: %d, total iotas on chain: %d, total spent: %d",
+		totalIotasInfo.TotalDustDeposit, totalIotasOnChain, totalSpent)
 	// what has left on L1 address
 	env.AssertL1AddressIotas(ch.OriginatorAddress, solo.Saldo-totalSpent)
 

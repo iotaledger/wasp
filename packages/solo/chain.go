@@ -10,6 +10,8 @@ import (
 	"os"
 	"sort"
 
+	"github.com/iotaledger/wasp/packages/kv"
+
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -109,6 +111,8 @@ func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
 // UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
 // data to the chain. It returns hash of the blob, the unique identifier of it.
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
+// Estimates needed gas fee and uploads iotas to the sender's account before uploading blob.
+// So, it takes 2 requests for each call
 func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
 	if keyPair == nil {
 		keyPair = &ch.OriginatorPrivateKey
@@ -157,6 +161,17 @@ func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (
 	return ret, err
 }
 
+// UploadBlobFromFile uploads blob from file data in the specified blob field plus optional other fields
+func (ch *Chain) UploadBlobFromFile(keyPair *cryptolib.KeyPair, fileName string, fieldName string, params ...interface{}) (hashing.HashValue, error) {
+	fileBinary, err := os.ReadFile(fileName)
+	if err != nil {
+		return hashing.HashValue{}, err
+	}
+	par := parseParams(params)
+	par.Set(kv.Key(fieldName), fileBinary)
+	return ch.UploadBlob(keyPair, par)
+}
+
 // UploadWasm is a syntactic sugar of the UploadBlob used to upload Wasm binary to the chain.
 //  parameter 'binaryCode' is the binary of Wasm smart contract program
 //
@@ -170,11 +185,11 @@ func (ch *Chain) UploadWasm(keyPair *cryptolib.KeyPair, binaryCode []byte) (ret 
 }
 
 // UploadWasmFromFile is a syntactic sugar to upload file content as blob data to the chain
-func (ch *Chain) UploadWasmFromFile(keyPair *cryptolib.KeyPair, fileName string) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadWasmFromFile(keyPair *cryptolib.KeyPair, fileName string) (hashing.HashValue, error) {
 	var binary []byte
-	binary, err = os.ReadFile(fileName)
+	binary, err := os.ReadFile(fileName)
 	if err != nil {
-		return
+		return hashing.HashValue{}, err
 	}
 	return ch.UploadWasm(keyPair, binary)
 }
@@ -387,21 +402,21 @@ func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, e
 }
 
 type DustInfo struct {
-	DustDepositAnchor        uint64
-	DustDepositNativeTokenID uint64
-	NumNativeTokens          int
+	TotalIotasInContracts uint64
+	TotalDustDeposit      uint64
+	NumNativeTokens       int
 }
 
 func (d *DustInfo) Total() uint64 {
-	return d.DustDepositAnchor + d.DustDepositNativeTokenID*uint64(d.NumNativeTokens)
+	return d.TotalIotasInContracts + d.TotalDustDeposit*uint64(d.NumNativeTokens)
 }
 
-func (ch *Chain) GetDustInfo() *DustInfo {
+func (ch *Chain) GetTotalIotaInfo() *DustInfo {
 	bi := ch.GetLatestBlockInfo()
 	return &DustInfo{
-		DustDepositAnchor:        bi.DustDepositAnchor,
-		DustDepositNativeTokenID: bi.DustDepositNativeTokenID,
-		NumNativeTokens:          len(ch.GetOnChainTokenIDs()),
+		TotalIotasInContracts: bi.TotalIotasInContracts,
+		TotalDustDeposit:      bi.TotalDustDeposit,
+		NumNativeTokens:       len(ch.GetOnChainTokenIDs()),
 	}
 }
 
@@ -523,21 +538,21 @@ func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
 }
 
 // GetRequestReceipt gets the log records for a particular request, the block index and request index in the block
-func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, uint32, uint16, bool) {
+func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, bool) {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestReceipt.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log)
 	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord)
 	if err != nil || binRec == nil {
-		return nil, 0, 0, false
+		return nil, false
 	}
 	ret1, err := blocklog.RequestReceiptFromBytes(binRec)
 	require.NoError(ch.Env.T, err)
-	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
-	requestIndex := resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
+	ret1.BlockIndex = resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
+	ret1.RequestIndex = resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
 
-	return ret1, blockIndex, requestIndex, true
+	return ret1, true
 }
 
 // GetRequestReceiptsForBlock returns all request log records for a particular block
