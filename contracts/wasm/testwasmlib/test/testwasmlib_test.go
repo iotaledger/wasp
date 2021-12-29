@@ -6,12 +6,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
+	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibclient"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
+	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
 )
 
@@ -309,5 +312,31 @@ func TestMultiRandom(t *testing.T) {
 }
 
 func TestClient(t *testing.T) {
-	_ = wasmclient.ServiceClient{}
+	seedBytes, err := base58.Decode("6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv")
+	require.NoError(t, err)
+	mySeed := seed.NewSeed(seedBytes)
+	keyPair := mySeed.KeyPair(0)
+	ed25519Address := ledgerstate.NewED25519Address(keyPair.PublicKey)
+	address := wasmclient.Address(base58.Encode(ed25519Address.Bytes()))
+
+	cl := wasmclient.DefaultServiceClient()
+	svc, err := testwasmlibclient.NewTestWasmLibService(cl, "qjA8Ybw4WijnmGUqDtNcPhAxFymjQKepNyyfp5BUGsWP")
+	require.NoError(t, err)
+	svc.SignRequests(keyPair)
+
+	f := svc.TriggerEvent()
+	f.Name("Lala")
+	f.Address(address)
+	req := f.Post()
+	require.NoError(t, req.Error())
+	err = svc.WaitRequest(req)
+	require.NoError(t, err)
+
+	f = svc.TriggerEvent()
+	f.Name("Trala")
+	f.Address(address)
+	req = f.Post()
+	require.NoError(t, req.Error())
+	err = svc.WaitRequest(req)
+	require.NoError(t, err)
 }

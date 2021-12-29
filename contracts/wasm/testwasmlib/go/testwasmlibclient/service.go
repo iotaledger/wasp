@@ -46,318 +46,318 @@ const (
 ///////////////////////////// arrayClear /////////////////////////////
 
 type ArrayClearFunc struct {
-	svc  *wasmclient.Service
+	wasmclient.ClientFunc
 	args wasmclient.Arguments
 }
 
-func (f ArrayClearFunc) Name(v string) {
+func (f *ArrayClearFunc) Name(v string) {
 	f.args.SetString(ArgName, v)
 }
 
-func (f ArrayClearFunc) Post(transfer ...map[string]uint64) wasmclient.Request {
+func (f *ArrayClearFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgName)
-	return f.svc.PostRequest(0x88021821, &f.args, transfer...)
+	return f.ClientFunc.Post(0x88021821, &f.args)
 }
 
 ///////////////////////////// arrayCreate /////////////////////////////
 
 type ArrayCreateFunc struct {
-	svc  *wasmclient.Service
+	wasmclient.ClientFunc
 	args wasmclient.Arguments
 }
 
-func (f ArrayCreateFunc) Name(v string) {
+func (f *ArrayCreateFunc) Name(v string) {
 	f.args.SetString(ArgName, v)
 }
 
-func (f ArrayCreateFunc) Post(transfer ...map[string]uint64) wasmclient.Request {
+func (f *ArrayCreateFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgName)
-	return f.svc.PostRequest(0x1ed5b23b, &f.args, transfer...)
+	return f.ClientFunc.Post(0x1ed5b23b, &f.args)
 }
 
 ///////////////////////////// arraySet /////////////////////////////
 
 type ArraySetFunc struct {
-	svc  *wasmclient.Service
+	wasmclient.ClientFunc
 	args wasmclient.Arguments
 }
 
-func (f ArraySetFunc) Index(v int32) {
+func (f *ArraySetFunc) Index(v int32) {
 	f.args.SetInt32(ArgIndex, v)
 }
 
-func (f ArraySetFunc) Name(v string) {
+func (f *ArraySetFunc) Name(v string) {
 	f.args.SetString(ArgName, v)
 }
 
-func (f ArraySetFunc) Value(v string) {
+func (f *ArraySetFunc) Value(v string) {
 	f.args.SetString(ArgValue, v)
 }
 
-func (f ArraySetFunc) Post(transfer ...map[string]uint64) wasmclient.Request {
+func (f *ArraySetFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgIndex)
 	f.args.Mandatory(ArgName)
 	f.args.Mandatory(ArgValue)
-	return f.svc.PostRequest(0x2c4150b3, &f.args, transfer...)
+	return f.ClientFunc.Post(0x2c4150b3, &f.args)
 }
 
 ///////////////////////////// paramTypes /////////////////////////////
 
 type ParamTypesFunc struct {
-	svc  *wasmclient.Service
+	wasmclient.ClientFunc
 	args wasmclient.Arguments
 }
 
-func (f ParamTypesFunc) Address(v wasmclient.Address) {
+func (f *ParamTypesFunc) Address(v wasmclient.Address) {
 	f.args.SetAddress(ArgAddress, v)
 }
 
-func (f ParamTypesFunc) AgentID(v wasmclient.AgentID) {
+func (f *ParamTypesFunc) AgentID(v wasmclient.AgentID) {
 	f.args.SetAgentID(ArgAgentID, v)
 }
 
-func (f ParamTypesFunc) Bool(v bool) {
+func (f *ParamTypesFunc) Bool(v bool) {
 	f.args.SetBool(ArgBool, v)
 }
 
-func (f ParamTypesFunc) Bytes(v []byte) {
+func (f *ParamTypesFunc) Bytes(v []byte) {
 	f.args.SetBytes(ArgBytes, v)
 }
 
-func (f ParamTypesFunc) ChainID(v wasmclient.ChainID) {
+func (f *ParamTypesFunc) ChainID(v wasmclient.ChainID) {
 	f.args.SetChainID(ArgChainID, v)
 }
 
-func (f ParamTypesFunc) Color(v wasmclient.Color) {
+func (f *ParamTypesFunc) Color(v wasmclient.Color) {
 	f.args.SetColor(ArgColor, v)
 }
 
-func (f ParamTypesFunc) Hash(v wasmclient.Hash) {
+func (f *ParamTypesFunc) Hash(v wasmclient.Hash) {
 	f.args.SetHash(ArgHash, v)
 }
 
-func (f ParamTypesFunc) Hname(v wasmclient.Hname) {
+func (f *ParamTypesFunc) Hname(v wasmclient.Hname) {
 	f.args.SetHname(ArgHname, v)
 }
 
-func (f ParamTypesFunc) Int16(v int16) {
+func (f *ParamTypesFunc) Int16(v int16) {
 	f.args.SetInt16(ArgInt16, v)
 }
 
-func (f ParamTypesFunc) Int32(v int32) {
+func (f *ParamTypesFunc) Int32(v int32) {
 	f.args.SetInt32(ArgInt32, v)
 }
 
-func (f ParamTypesFunc) Int64(v int64) {
+func (f *ParamTypesFunc) Int64(v int64) {
 	f.args.SetInt64(ArgInt64, v)
 }
 
-func (f ParamTypesFunc) Int8(v int8) {
+func (f *ParamTypesFunc) Int8(v int8) {
 	f.args.SetInt8(ArgInt8, v)
 }
 
-func (f ParamTypesFunc) Param(v []byte) {
+func (f *ParamTypesFunc) Param(v []byte) {
 	f.args.SetBytes(ArgParam, v)
 }
 
-func (f ParamTypesFunc) RequestID(v wasmclient.RequestID) {
+func (f *ParamTypesFunc) RequestID(v wasmclient.RequestID) {
 	f.args.SetRequestID(ArgRequestID, v)
 }
 
-func (f ParamTypesFunc) String(v string) {
+func (f *ParamTypesFunc) String(v string) {
 	f.args.SetString(ArgString, v)
 }
 
-func (f ParamTypesFunc) Uint16(v uint16) {
+func (f *ParamTypesFunc) Uint16(v uint16) {
 	f.args.SetUint16(ArgUint16, v)
 }
 
-func (f ParamTypesFunc) Uint32(v uint32) {
+func (f *ParamTypesFunc) Uint32(v uint32) {
 	f.args.SetUint32(ArgUint32, v)
 }
 
-func (f ParamTypesFunc) Uint64(v uint64) {
+func (f *ParamTypesFunc) Uint64(v uint64) {
 	f.args.SetUint64(ArgUint64, v)
 }
 
-func (f ParamTypesFunc) Uint8(v uint8) {
+func (f *ParamTypesFunc) Uint8(v uint8) {
 	f.args.SetUint8(ArgUint8, v)
 }
 
-func (f ParamTypesFunc) Post(transfer ...map[string]uint64) wasmclient.Request {
-	return f.svc.PostRequest(0x6921c4cd, &f.args, transfer...)
+func (f *ParamTypesFunc) Post() wasmclient.Request {
+	return f.ClientFunc.Post(0x6921c4cd, &f.args)
 }
 
 ///////////////////////////// random /////////////////////////////
 
 type RandomFunc struct {
-	svc *wasmclient.Service
+	wasmclient.ClientFunc
 }
 
-func (f RandomFunc) Post(transfer ...map[string]uint64) wasmclient.Request {
-	return f.svc.PostRequest(0xe86c97ca, nil, transfer...)
+func (f *RandomFunc) Post() wasmclient.Request {
+	return f.ClientFunc.Post(0xe86c97ca, nil)
 }
 
 ///////////////////////////// triggerEvent /////////////////////////////
 
 type TriggerEventFunc struct {
-	svc  *wasmclient.Service
+	wasmclient.ClientFunc
 	args wasmclient.Arguments
 }
 
-func (f TriggerEventFunc) Address(v wasmclient.Address) {
+func (f *TriggerEventFunc) Address(v wasmclient.Address) {
 	f.args.SetAddress(ArgAddress, v)
 }
 
-func (f TriggerEventFunc) Name(v string) {
+func (f *TriggerEventFunc) Name(v string) {
 	f.args.SetString(ArgName, v)
 }
 
-func (f TriggerEventFunc) Post(transfer ...map[string]uint64) wasmclient.Request {
+func (f *TriggerEventFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgAddress)
 	f.args.Mandatory(ArgName)
-	return f.svc.PostRequest(0xd5438ac6, &f.args, transfer...)
+	return f.ClientFunc.Post(0xd5438ac6, &f.args)
 }
 
 ///////////////////////////// arrayLength /////////////////////////////
 
 type ArrayLengthView struct {
-	svc  *wasmclient.Service
+	wasmclient.ClientView
 	args wasmclient.Arguments
 }
 
-func (f ArrayLengthView) Name(v string) {
+func (f *ArrayLengthView) Name(v string) {
 	f.args.SetString(ArgName, v)
 }
 
-func (f ArrayLengthView) Call() ArrayLengthResults {
+func (f *ArrayLengthView) Call() ArrayLengthResults {
 	f.args.Mandatory(ArgName)
-	return ArrayLengthResults{res: f.svc.CallView("arrayLength", &f.args)}
+	return ArrayLengthResults{res: f.ClientView.Call("arrayLength", &f.args)}
 }
 
 type ArrayLengthResults struct {
 	res wasmclient.Results
 }
 
-func (r ArrayLengthResults) Length() int32 {
+func (r *ArrayLengthResults) Length() int32 {
 	return r.res.GetInt32(ResLength)
 }
 
 ///////////////////////////// arrayValue /////////////////////////////
 
 type ArrayValueView struct {
-	svc  *wasmclient.Service
+	wasmclient.ClientView
 	args wasmclient.Arguments
 }
 
-func (f ArrayValueView) Index(v int32) {
+func (f *ArrayValueView) Index(v int32) {
 	f.args.SetInt32(ArgIndex, v)
 }
 
-func (f ArrayValueView) Name(v string) {
+func (f *ArrayValueView) Name(v string) {
 	f.args.SetString(ArgName, v)
 }
 
-func (f ArrayValueView) Call() ArrayValueResults {
+func (f *ArrayValueView) Call() ArrayValueResults {
 	f.args.Mandatory(ArgIndex)
 	f.args.Mandatory(ArgName)
-	return ArrayValueResults{res: f.svc.CallView("arrayValue", &f.args)}
+	return ArrayValueResults{res: f.ClientView.Call("arrayValue", &f.args)}
 }
 
 type ArrayValueResults struct {
 	res wasmclient.Results
 }
 
-func (r ArrayValueResults) Value() string {
+func (r *ArrayValueResults) Value() string {
 	return r.res.GetString(ResValue)
 }
 
 ///////////////////////////// blockRecord /////////////////////////////
 
 type BlockRecordView struct {
-	svc  *wasmclient.Service
+	wasmclient.ClientView
 	args wasmclient.Arguments
 }
 
-func (f BlockRecordView) BlockIndex(v int32) {
+func (f *BlockRecordView) BlockIndex(v int32) {
 	f.args.SetInt32(ArgBlockIndex, v)
 }
 
-func (f BlockRecordView) RecordIndex(v int32) {
+func (f *BlockRecordView) RecordIndex(v int32) {
 	f.args.SetInt32(ArgRecordIndex, v)
 }
 
-func (f BlockRecordView) Call() BlockRecordResults {
+func (f *BlockRecordView) Call() BlockRecordResults {
 	f.args.Mandatory(ArgBlockIndex)
 	f.args.Mandatory(ArgRecordIndex)
-	return BlockRecordResults{res: f.svc.CallView("blockRecord", &f.args)}
+	return BlockRecordResults{res: f.ClientView.Call("blockRecord", &f.args)}
 }
 
 type BlockRecordResults struct {
 	res wasmclient.Results
 }
 
-func (r BlockRecordResults) Record() []byte {
+func (r *BlockRecordResults) Record() []byte {
 	return r.res.GetBytes(ResRecord)
 }
 
 ///////////////////////////// blockRecords /////////////////////////////
 
 type BlockRecordsView struct {
-	svc  *wasmclient.Service
+	wasmclient.ClientView
 	args wasmclient.Arguments
 }
 
-func (f BlockRecordsView) BlockIndex(v int32) {
+func (f *BlockRecordsView) BlockIndex(v int32) {
 	f.args.SetInt32(ArgBlockIndex, v)
 }
 
-func (f BlockRecordsView) Call() BlockRecordsResults {
+func (f *BlockRecordsView) Call() BlockRecordsResults {
 	f.args.Mandatory(ArgBlockIndex)
-	return BlockRecordsResults{res: f.svc.CallView("blockRecords", &f.args)}
+	return BlockRecordsResults{res: f.ClientView.Call("blockRecords", &f.args)}
 }
 
 type BlockRecordsResults struct {
 	res wasmclient.Results
 }
 
-func (r BlockRecordsResults) Count() int32 {
+func (r *BlockRecordsResults) Count() int32 {
 	return r.res.GetInt32(ResCount)
 }
 
 ///////////////////////////// getRandom /////////////////////////////
 
 type GetRandomView struct {
-	svc *wasmclient.Service
+	wasmclient.ClientView
 }
 
-func (f GetRandomView) Call() GetRandomResults {
-	return GetRandomResults{res: f.svc.CallView("getRandom", nil)}
+func (f *GetRandomView) Call() GetRandomResults {
+	return GetRandomResults{res: f.ClientView.Call("getRandom", nil)}
 }
 
 type GetRandomResults struct {
 	res wasmclient.Results
 }
 
-func (r GetRandomResults) Random() int64 {
+func (r *GetRandomResults) Random() int64 {
 	return r.res.GetInt64(ResRandom)
 }
 
 ///////////////////////////// iotaBalance /////////////////////////////
 
 type IotaBalanceView struct {
-	svc *wasmclient.Service
+	wasmclient.ClientView
 }
 
-func (f IotaBalanceView) Call() IotaBalanceResults {
-	return IotaBalanceResults{res: f.svc.CallView("iotaBalance", nil)}
+func (f *IotaBalanceView) Call() IotaBalanceResults {
+	return IotaBalanceResults{res: f.ClientView.Call("iotaBalance", nil)}
 }
 
 type IotaBalanceResults struct {
 	res wasmclient.Results
 }
 
-func (r IotaBalanceResults) Iotas() int64 {
+func (r *IotaBalanceResults) Iotas() int64 {
 	return r.res.GetInt64(ResIotas)
 }
 
@@ -374,49 +374,49 @@ func NewTestWasmLibService(cl *wasmclient.ServiceClient, chainID string) (*TestW
 }
 
 func (s *TestWasmLibService) ArrayClear() ArrayClearFunc {
-	return ArrayClearFunc{svc: &s.Service}
+	return ArrayClearFunc{ClientFunc: s.AsClientFunc()}
 }
 
 func (s *TestWasmLibService) ArrayCreate() ArrayCreateFunc {
-	return ArrayCreateFunc{svc: &s.Service}
+	return ArrayCreateFunc{ClientFunc: s.AsClientFunc()}
 }
 
 func (s *TestWasmLibService) ArraySet() ArraySetFunc {
-	return ArraySetFunc{svc: &s.Service}
+	return ArraySetFunc{ClientFunc: s.AsClientFunc()}
 }
 
 func (s *TestWasmLibService) ParamTypes() ParamTypesFunc {
-	return ParamTypesFunc{svc: &s.Service}
+	return ParamTypesFunc{ClientFunc: s.AsClientFunc()}
 }
 
 func (s *TestWasmLibService) Random() RandomFunc {
-	return RandomFunc{svc: &s.Service}
+	return RandomFunc{ClientFunc: s.AsClientFunc()}
 }
 
 func (s *TestWasmLibService) TriggerEvent() TriggerEventFunc {
-	return TriggerEventFunc{svc: &s.Service}
+	return TriggerEventFunc{ClientFunc: s.AsClientFunc()}
 }
 
 func (s *TestWasmLibService) ArrayLength() ArrayLengthView {
-	return ArrayLengthView{svc: &s.Service}
+	return ArrayLengthView{ClientView: s.AsClientView()}
 }
 
 func (s *TestWasmLibService) ArrayValue() ArrayValueView {
-	return ArrayValueView{svc: &s.Service}
+	return ArrayValueView{ClientView: s.AsClientView()}
 }
 
 func (s *TestWasmLibService) BlockRecord() BlockRecordView {
-	return BlockRecordView{svc: &s.Service}
+	return BlockRecordView{ClientView: s.AsClientView()}
 }
 
 func (s *TestWasmLibService) BlockRecords() BlockRecordsView {
-	return BlockRecordsView{svc: &s.Service}
+	return BlockRecordsView{ClientView: s.AsClientView()}
 }
 
 func (s *TestWasmLibService) GetRandom() GetRandomView {
-	return GetRandomView{svc: &s.Service}
+	return GetRandomView{ClientView: s.AsClientView()}
 }
 
 func (s *TestWasmLibService) IotaBalance() IotaBalanceView {
-	return IotaBalanceView{svc: &s.Service}
+	return IotaBalanceView{ClientView: s.AsClientView()}
 }

@@ -39,7 +39,7 @@ $#each func serviceFunction
 ///////////////////////////// $funcName /////////////////////////////
 
 type $FuncName$Kind struct {
-	svc *wasmclient.Service
+	wasmclient.Client$Kind
 $#if param funcArgsMember
 }
 $#each param funcArgSetter
@@ -56,14 +56,14 @@ $#if array funcArgSetterArray funcArgSetterBasic
 	// *******************************
 	"funcArgSetterBasic": `
 
-func (f $FuncName$Kind) $FldName(v $fldLangType) {
+func (f *$FuncName$Kind) $FldName(v $fldLangType) {
 	f.args.Set$FldType(Arg$FldName, v)
 }
 `,
 	// *******************************
 	"funcArgSetterArray": `
 
-func (f $FuncName$Kind) $FldName(a []$fldLangType) {
+func (f *$FuncName$Kind) $FldName(a []$fldLangType) {
 	for i, v := range a {
 		f.args.Set$FldType(f.args.IndexedKey(Arg$FldName, i), v)
 	}
@@ -73,19 +73,19 @@ func (f $FuncName$Kind) $FldName(a []$fldLangType) {
 	// *******************************
 	"funcPost": `
 
-func (f $FuncName$Kind) Post(transfer ...map[string]uint64) wasmclient.Request {
+func (f *$FuncName$Kind) Post() wasmclient.Request {
 $#each mandatory mandatoryCheck
 $#if param execWithArgs execNoArgs
-	return f.svc.PostRequest(0x$funcHname, $args, transfer...)
+	return f.ClientFunc.Post(0x$funcHname, $args)
 }
 `,
 	// *******************************
 	"viewCall": `
 
-func (f $FuncName$Kind) Call() $FuncName$+Results {
+func (f *$FuncName$Kind) Call() $FuncName$+Results {
 $#each mandatory mandatoryCheck
 $#if param execWithArgs execNoArgs
-	return $FuncName$+Results { res: f.svc.CallView("$funcName", $args) }
+	return $FuncName$+Results { res: f.ClientView.Call("$funcName", $args) }
 }
 $#if result resultStruct
 `,
@@ -113,14 +113,14 @@ $#each result callResultGetter
 	"callResultGetter": `
 $#if mandatory else callResultOptional
 
-func (r $FuncName$+Results) $FldName() $fldLangType {
+func (r *$FuncName$+Results) $FldName() $fldLangType {
 	return r.res.Get$FldType(Res$FldName)
 }
 `,
 	// *******************************
 	"callResultOptional": `
 
-func (r $FuncName$+Results) $FldName$+Exists() bool {
+func (r *$FuncName$+Results) $FldName$+Exists() bool {
 	return r.res.Exists(Res$FldName)
 }
 `,
@@ -138,7 +138,7 @@ func (r $FuncName$+Results) $FldName$+Exists() bool {
 	"serviceFunction": `
 
 func (s *$PkgName$+Service) $FuncName() $FuncName$Kind {
-	return $FuncName$Kind{ svc: &s.Service }
+	return $FuncName$Kind{ Client$Kind: s.AsClient$Kind() }
 }
 `,
 }

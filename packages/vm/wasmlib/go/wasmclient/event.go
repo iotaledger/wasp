@@ -5,11 +5,13 @@ import (
 )
 
 type Event struct {
-	message []string
+	message   []string
+	Timestamp uint32
 }
 
 func (e *Event) Init(message []string) {
 	e.message = message
+	e.Timestamp = e.NextUint32()
 }
 
 func (e *Event) next() string {
