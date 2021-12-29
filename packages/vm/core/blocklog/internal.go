@@ -68,15 +68,15 @@ func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governi
 	registry.MustPush(rec.Bytes())
 }
 
-// SaveRequestLogRecord appends request record to the record log and creates records for fast lookup
-func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key RequestLookupKey) error {
+// SaveRequestReceipt appends request record to the record log and creates records for fast lookup
+func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLookupKey) error {
 	// save lookup record for fast lookup
 	lookupTable := collections.NewMap(partition, prefixRequestLookupIndex)
 	digest := rec.RequestData.ID().LookupDigest()
 	var lst RequestLookupKeyList
 	digestExists, err := lookupTable.HasAt(digest[:])
 	if err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
 	if !digestExists {
 		// new digest, most common
@@ -85,26 +85,26 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key Request
 		// existing digest (should happen not often)
 		bin, err := lookupTable.GetAt(digest[:])
 		if err != nil {
-			return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+			return xerrors.Errorf("SaveRequestReceipt: %w", err)
 		}
 		if lst, err = RequestLookupKeyListFromBytes(bin); err != nil {
-			return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+			return xerrors.Errorf("SaveRequestReceipt: %w", err)
 		}
 	}
 	for i := range lst {
 		if lst[i] == key {
 			// already in list. Not normal
-			return xerrors.New("SaveRequestLogRecord: inconsistency: duplicate lookup key")
+			return xerrors.New("SaveRequestReceipt: inconsistency: duplicate lookup key")
 		}
 	}
 	lst = append(lst, key)
 	if err := lookupTable.SetAt(digest[:], lst.Bytes()); err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
 	// save the record. Key is a LookupKey
 	data := rec.Bytes()
 	if err = collections.NewMap(partition, prefixRequestReceipts).SetAt(key.Bytes(), data); err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
 	return nil
 }
@@ -112,17 +112,17 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key Request
 func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract iscp.Hname) error {
 	text := fmt.Sprintf("%s: %s", contract.String(), msg)
 	if err := collections.NewMap(partition, prefixRequestEvents).SetAt(key.Bytes(), []byte(text)); err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
 	scLut := collections.NewMap(partition, prefixSmartContractEventsLookup)
 	entries, err := scLut.GetAt(contract.Bytes())
 	if err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
 	entries = append(entries, key.Bytes()...)
 	err = scLut.SetAt(contract.Bytes(), entries)
 	if err != nil {
-		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+		return xerrors.Errorf("SaveRequestReceipt: %w", err)
 	}
 	return nil
 }

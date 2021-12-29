@@ -29,8 +29,10 @@ func UTXOInputToMarshalUtil(id *iotago.UTXOInput, mu *marshalutil.MarshalUtil) {
 // RequestData wraps any data which can be potentially be interpreted as a request
 type RequestData interface {
 	Request
+
 	IsOffLedger() bool
-	Unwrap() unwrap
+	AsOffLedger() AsOffLedger
+	AsOnLedger() AsOnLedger
 
 	Bytes() []byte
 	String() string
@@ -49,10 +51,10 @@ type NFT struct {
 type Request interface {
 	ID() RequestID
 	Params() dict.Dict
-	SenderAccount() *AgentID // returns CommonAccount if sender address is ot available
+	SenderAccount() *AgentID // returns CommonAccount if sender address is not available
 	SenderAddress() iotago.Address
-	CallTarget() *CallTarget
-	TargetAddress() iotago.Address // TODO implement properly. Targte depends on time assumptions and UTXO type
+	CallTarget() CallTarget
+	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type
 	Assets() *Assets               // attached assets for the UTXO request, nil for off-ledger. All goes to sender
 	Transfer() *Assets             // transfer of assets to the smart contract. Debited from sender account
 	GasBudget() uint64
@@ -64,13 +66,13 @@ type Features interface {
 	ReturnAmount() (uint64, bool)
 }
 
-type unwrap interface {
-	OffLedger() *OffLedgerRequestData
-	UTXO() unwrapUTXO
+type AsOffLedger interface {
+	Nonce() uint64
 }
 
-type unwrapUTXO interface {
+type AsOnLedger interface {
 	Output() iotago.Output
+	IsInternalUTXO(*ChainID) bool
 	UTXOInput() iotago.UTXOInput
 	Features() Features
 }

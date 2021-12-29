@@ -79,12 +79,14 @@ func (r *CallParams) WithNonce(nonce uint64) *CallParams {
 }
 
 func (r *CallParams) WithIotas(amount uint64) *CallParams {
-	return r.WithTransfer(iscp.NewAssets(amount, nil))
+	return r.WithAssets(iscp.NewAssets(amount, nil))
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) *iscp.OffLedgerRequestData {
-	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, 0)
+	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
+		WithTransfer(r.transfer).
+		WithGasBudget(r.gasBudget)
 	ret.Sign(*keyPair)
 	return ret
 }
@@ -207,7 +209,7 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 }
 
 func (ch *Chain) mustGetErrorFromReceipt(reqid iscp.RequestID) error {
-	rec, _, _, ok := ch.GetRequestReceipt(reqid)
+	rec, ok := ch.GetRequestReceipt(reqid)
 	require.True(ch.Env.T, ok)
 	var err error
 	if len(rec.Error) > 0 {

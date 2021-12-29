@@ -3,7 +3,7 @@ package blob
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp/gas"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"

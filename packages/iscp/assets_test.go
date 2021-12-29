@@ -31,7 +31,7 @@ func TestMarshalling(t *testing.T) {
 
 	assets := NewAssets(1, tokens)
 	bytes := assets.Bytes()
-	assets2, err := NewAssetsFromMarshalUtil(marshalutil.New(bytes))
+	assets2, err := AssetsFromMarshalUtil(marshalutil.New(bytes))
 	require.NoError(t, err)
 	require.Equal(t, assets.Iotas, assets2.Iotas)
 	require.Equal(t, len(assets.Tokens), len(assets2.Tokens))

@@ -10,6 +10,7 @@
 // When txbuilder is unable to maintain consistent state, it panics. The following panic code are possible:
 // - ErrInputLimitExceeded when maximum number of inputs in the transaction is exceeded
 // - ErrOutputLimitExceeded when maximum number of outputs in the transaction is exceeded
+// - ErrNumberOfNativeTokensLimitExceeded when number of total different tokenIDs is exceeded
 // - ErrNotEnoughFundsForInternalDustDeposit when total number of iotas available is not enough for dust deposit of the new internal output
 // - ErrNotEnoughIotaBalance attempt to debit more iotas than possible
 // - ErrNotEnoughNativeAssetBalance attempt to debit more native tokens than possible

@@ -387,7 +387,7 @@ func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.Assets {
 			}
 		}
 	}
-	return iscp.NewAssetsFromNativeTokenSum(iotas, tokens)
+	return iscp.AssetsFromNativeTokenSum(iotas, tokens)
 }
 
 // GetAliasOutputs collects all outputs of type iotago.AliasOutput for the address

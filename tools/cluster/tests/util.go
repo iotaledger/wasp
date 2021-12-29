@@ -134,7 +134,7 @@ func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]*iscp.Assets {
 			},
 		)
 		require.NoError(e.t, err)
-		ret[agentID], err = iscp.NewAssetsFromDict(r)
+		ret[agentID], err = iscp.AssetsFromDict(r)
 		require.NoError(e.t, err)
 	}
 	return ret
@@ -145,7 +145,7 @@ func (e *chainEnv) getTotalBalance() *iscp.Assets {
 		e.chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewTotalAssets.Name, nil,
 	)
 	require.NoError(e.t, err)
-	ret, err := iscp.NewAssetsFromDict(r)
+	ret, err := iscp.AssetsFromDict(r)
 	require.NoError(e.t, err)
 	return ret
 }

@@ -36,22 +36,12 @@ func (vmctx *VMContext) earlyCheckReasonToSkip() error {
 	}
 
 	var err error
-	if err = vmctx.checkReasonNoCallTarget(); err != nil {
-		return err
-	}
 	if vmctx.req.IsOffLedger() {
 		err = vmctx.checkReasonToSkipOffLedger()
 	} else {
 		err = vmctx.checkReasonToSkipOnLedger()
 	}
 	return err
-}
-
-func (vmctx *VMContext) checkReasonNoCallTarget() error {
-	if vmctx.req.CallTarget() == nil {
-		return xerrors.New("call target not specified")
-	}
-	return nil
 }
 
 // checkReasonRequestProcessed checks if request ID is already in the blocklog
@@ -92,7 +82,7 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	if unverified {
 		return xerrors.Errorf("unverified account for off-ledger request: %s", vmctx.req.SenderAccount())
 	}
-	nonce := vmctx.req.Unwrap().OffLedger().Nonce()
+	nonce := vmctx.req.AsOffLedger().Nonce()
 	vmctx.Debugf("vmctx.validateRequest - nonce check - maxAssumed: %d, tolerance: %d, request nonce: %d ",
 		maxAssumed, OffLedgerNonceStrictOrderTolerance, nonce)
 
@@ -107,6 +97,9 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 
 // checkReasonToSkipOnLedger check reasons to skip UTXO request
 func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
+	if err := vmctx.checkInternalOutput(); err != nil {
+		return err
+	}
 	if err := vmctx.checkReasonReturnAmount(); err != nil {
 		return err
 	}
@@ -125,10 +118,18 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 	return nil
 }
 
+func (vmctx *VMContext) checkInternalOutput() error {
+	// internal outputs are used for internal accounting of assets inside the chain. They are not interpreted as requests
+	if vmctx.req.AsOnLedger().IsInternalUTXO(vmctx.ChainID()) {
+		return xerrors.New("it is an internal output")
+	}
+	return nil
+}
+
 // checkReasonTimeLock checking timelock conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonTimeLock() error {
-	lock := vmctx.req.Unwrap().UTXO().Features().TimeLock()
+	lock := vmctx.req.AsOnLedger().Features().TimeLock()
 	if lock != nil {
 		if lock.Time.Before(vmctx.finalStateTimestamp) {
 			return xerrors.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
@@ -143,7 +144,7 @@ func (vmctx *VMContext) checkReasonTimeLock() error {
 // checkReasonExpiry checking expiry conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonExpiry() error {
-	expiry, _ := vmctx.req.Unwrap().UTXO().Features().Expiry()
+	expiry, _ := vmctx.req.AsOnLedger().Features().Expiry()
 
 	if expiry == nil {
 		return nil
@@ -167,7 +168,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	}
 
 	// General unlock validation
-	output, _ := vmctx.req.Unwrap().UTXO().Output().(iotago.TransIndepIdentOutput)
+	output, _ := vmctx.req.AsOnLedger().Output().(iotago.TransIndepIdentOutput)
 
 	unlockable := output.UnlockableBy(vmctx.task.AnchorOutput.AliasID.ToAddress(), &iotago.ExternalUnlockParameters{
 		ConfUnix:    uint64(vmctx.finalStateTimestamp.Unix()),
@@ -183,7 +184,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 
 // checkReasonReturnAmount skipping anything with return amounts in this version. There's no risk to lose funds
 func (vmctx *VMContext) checkReasonReturnAmount() error {
-	if _, ok := vmctx.req.Unwrap().UTXO().Features().ReturnAmount(); ok {
+	if _, ok := vmctx.req.AsOnLedger().Features().ReturnAmount(); ok {
 		return xerrors.Errorf("return amount feature not supported in this version")
 	}
 	return nil

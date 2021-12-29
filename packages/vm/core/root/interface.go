@@ -3,6 +3,9 @@ package root
 import (
 	"errors"
 
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
@@ -40,3 +43,7 @@ var (
 	FuncFindContract             = coreutil.ViewFunc("findContract")
 	FuncGetContractRecords       = coreutil.ViewFunc("getContractRecords")
 )
+
+func GasToDeploy(programHash hashing.HashValue) uint64 {
+	return gas.CoreRootDeployContract
+}

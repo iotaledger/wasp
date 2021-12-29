@@ -1,6 +1,8 @@
 package kv
 
-import "github.com/iotaledger/wasp/packages/iscp/gas"
+import (
+	"github.com/iotaledger/wasp/packages/vm/gas"
+)
 
 type BurnGasFn = func(gas uint64)
 

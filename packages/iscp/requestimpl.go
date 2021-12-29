@@ -2,6 +2,7 @@ package iscp
 
 import (
 	"bytes"
+	"crypto"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -16,12 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func RequestDataFromBytes(data []byte) (RequestData, error) {
-	mu := marshalutil.New(data)
-
-	return RequestDataFromMarshalUtil(mu)
-}
-
 // RequestDataFromMarshalUtil read RequestData from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
 func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestData, error) {
 	isOffLedger, err := mu.ReadBool()
@@ -29,30 +24,38 @@ func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestData, error
 		return nil, err
 	}
 	if isOffLedger {
-		req := &OffLedgerRequestData{}
-		if err := req.readFromMarshalUtil(mu); err != nil {
-			return nil, err
-		}
-		return req, nil
+		return OffLedgerRequestDataFromMarshalUtil(mu)
 	}
 	// on-ledger
 	return OnLedgerRequestFromMarshalUtil(mu)
 }
 
+func RequestDataToMarshalUtil(req RequestData, mu *marshalutil.MarshalUtil) {
+	switch req := req.(type) {
+	case *OnLedgerRequestData:
+		mu.WriteBool(false)
+		req.writeToMarshalUtil(mu)
+	case *OffLedgerRequestData:
+		mu.WriteBool(true)
+		req.writeToMarshalUtil(mu)
+	default:
+		panic("RequestDataToMarshalUtil: very bad")
+	}
+}
+
 // region OffLedgerRequestData  ////////////////////////////////////////////////////////////////////////////
 
 type OffLedgerRequestData struct {
-	chainID        *ChainID
-	contract       Hname
-	entryPoint     Hname
-	params         dict.Dict
-	publicKey      cryptolib.PublicKey
-	sender         *iotago.Ed25519Address
-	signature      []byte
-	nonce          uint64
-	transferIotas  uint64
-	transferTokens iotago.NativeTokens
-	gasBudget      uint64
+	chainID    *ChainID
+	contract   Hname
+	entryPoint Hname
+	params     dict.Dict
+	publicKey  cryptolib.PublicKey
+	sender     *iotago.Ed25519Address
+	signature  []byte
+	nonce      uint64
+	transfer   *Assets
+	gasBudget  uint64
 }
 
 func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) *OffLedgerRequestData {
@@ -72,14 +75,10 @@ func (r *OffLedgerRequestData) IsOffLedger() bool {
 	return true
 }
 
-func (r *OffLedgerRequestData) Unwrap() unwrap {
-	return r
-}
-
 // implements unwrap interface
-var _ unwrap = &OffLedgerRequestData{}
+var _ AsOffLedger = &OffLedgerRequestData{}
 
-func (r *OffLedgerRequestData) OffLedger() *OffLedgerRequestData {
+func (r *OffLedgerRequestData) AsOffLedger() AsOffLedger {
 	return r
 }
 
@@ -87,7 +86,7 @@ func (r *OffLedgerRequestData) ChainID() *ChainID {
 	return r.chainID
 }
 
-func (r *OffLedgerRequestData) UTXO() unwrapUTXO {
+func (r *OffLedgerRequestData) AsOnLedger() AsOnLedger {
 	panic("not an UTXO RequestData")
 }
 
@@ -111,14 +110,21 @@ var _ Request = &OffLedgerRequestData{}
 
 func (r *OffLedgerRequestData) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteBool(true)
-	r.writeToMarshalUtil(mu)
+	RequestDataToMarshalUtil(r, mu)
 	return mu.Bytes()
+}
+
+func OffLedgerRequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OffLedgerRequestData, error) {
+	ret := &OffLedgerRequestData{}
+	if err := ret.readFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func (r *OffLedgerRequestData) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	r.writeEssenceToMarshalUtil(mu)
-	mu.WriteUint8(uint8(len(r.signature)))
+	mu.WriteUint16(uint16(len(r.signature)))
 	mu.WriteBytes(r.signature)
 }
 
@@ -126,7 +132,7 @@ func (r *OffLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) 
 	if err := r.readEssenceFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	sigLength, err := mu.ReadUint8()
+	sigLength, err := mu.ReadUint16()
 	if err != nil {
 		return err
 	}
@@ -148,11 +154,14 @@ func (r *OffLedgerRequestData) writeEssenceToMarshalUtil(mu *marshalutil.Marshal
 		Write(r.contract).
 		Write(r.entryPoint).
 		Write(r.params).
+		WriteUint8(uint8(len(r.publicKey))).
 		WriteBytes(r.publicKey).
 		WriteUint64(r.nonce).
-		WriteUint64(r.gasBudget).
-		WriteUint64(r.transferIotas)
-	// TODO write native Tokens
+		WriteUint64(r.gasBudget)
+	mu.WriteBool(r.transfer != nil)
+	if r.transfer != nil {
+		r.transfer.WriteToMarshalUtil(mu)
+	}
 }
 
 func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
@@ -166,30 +175,33 @@ func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 	if err := r.entryPoint.ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	_, err = dict.FromMarshalUtil(mu)
+	r.params, err = dict.FromMarshalUtil(mu)
 	if err != nil {
 		return err
 	}
-	r.params = dict.New()
-	pk, err := mu.ReadBytes(len(r.publicKey))
+	pkLen, err := mu.ReadUint8()
 	if err != nil {
 		return err
 	}
-	copy(r.publicKey[:], pk)
+	if r.publicKey, err = mu.ReadBytes(int(pkLen)); err != nil {
+		return err
+	}
 	if r.nonce, err = mu.ReadUint64(); err != nil {
 		return err
 	}
 	if r.gasBudget, err = mu.ReadUint64(); err != nil {
 		return err
 	}
-	if r.transferIotas, err = mu.ReadUint64(); err != nil {
+	var transferNotNil bool
+	if transferNotNil, err = mu.ReadBool(); err != nil {
 		return err
 	}
-
-	// TODO read native Tokens
-	//if r.transferTokens, err = colored.BalancesFromMarshalUtil(mu); err != nil {
-	//	return err
-	//}
+	r.transfer = nil
+	if transferNotNil {
+		if r.transfer, err = AssetsFromMarshalUtil(mu); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -201,7 +213,7 @@ func (r *OffLedgerRequestData) Hash() [32]byte {
 // Sign signs essence
 func (r *OffLedgerRequestData) Sign(key cryptolib.KeyPair) {
 	r.publicKey = key.PublicKey
-	r.signature, _ = key.PrivateKey.Sign(nil, r.essenceBytes(), nil)
+	r.signature, _ = key.PrivateKey.Sign(nil, r.essenceBytes(), crypto.BLAKE2b_256)
 }
 
 // Assets is attached assets to the UTXO. Nil for off-ledger
@@ -209,9 +221,9 @@ func (r *OffLedgerRequestData) Assets() *Assets {
 	return nil
 }
 
-// Transfer transfer of assets from the sender's account to the target smart contract. Nil mean no Transfer
+// Transfer of assets from the sender's account to the target smart contract. Nil mean no Transfer
 func (r *OffLedgerRequestData) Transfer() *Assets {
-	return NewAssets(r.transferIotas, r.transferTokens)
+	return r.transfer
 }
 
 func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequestData {
@@ -219,15 +231,8 @@ func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequest
 	return r
 }
 
-// Tokens sets the transfers passed to the request
-func (r *OffLedgerRequestData) WithIotas(transferIotas uint64) *OffLedgerRequestData {
-	r.transferIotas = transferIotas
-	return r
-}
-
-// Tokens sets the transfers passed to the request
-func (r *OffLedgerRequestData) WithTokens(tokens iotago.NativeTokens) *OffLedgerRequestData {
-	r.transferTokens = tokens // TODO clone
+func (r *OffLedgerRequestData) WithTransfer(transfer *Assets) *OffLedgerRequestData {
+	r.transfer = transfer.Clone()
 	return r
 }
 
@@ -244,7 +249,7 @@ func (r *OffLedgerRequestData) ID() (requestID RequestID) {
 	return NewRequestID(iotago.TransactionID(hashing.HashData(r.Bytes())), 0)
 }
 
-// Order number used for replay protection
+// Nonce incremental nonce used for replay protection
 func (r *OffLedgerRequestData) Nonce() uint64 {
 	return r.nonce
 }
@@ -259,8 +264,7 @@ func (r *OffLedgerRequestData) Params() dict.Dict {
 }
 
 func (r *OffLedgerRequestData) SenderAccount() *AgentID {
-	// TODO return iscp.NewAgentID(r.SenderAddress(), 0)
-	return nil
+	return NewAgentID(r.SenderAddress(), 0)
 }
 
 func (r *OffLedgerRequestData) SenderAddress() iotago.Address {
@@ -270,8 +274,8 @@ func (r *OffLedgerRequestData) SenderAddress() iotago.Address {
 	return r.sender
 }
 
-func (r *OffLedgerRequestData) CallTarget() *CallTarget {
-	return &CallTarget{
+func (r *OffLedgerRequestData) CallTarget() CallTarget {
+	return CallTarget{
 		Contract:   r.contract,
 		EntryPoint: r.entryPoint,
 	}
@@ -370,8 +374,7 @@ func OnLedgerRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OnLedgerReque
 
 func (r *OnLedgerRequestData) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteBool(false)
-	r.writeToMarshalUtil(mu)
+	RequestDataToMarshalUtil(r, mu)
 	return mu.Bytes()
 }
 
@@ -412,11 +415,11 @@ func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
 	return senderBlock.Address
 }
 
-func (r *OnLedgerRequestData) CallTarget() *CallTarget {
+func (r *OnLedgerRequestData) CallTarget() CallTarget {
 	if r.requestMetadata == nil {
-		return nil
+		return CallTarget{}
 	}
-	return &CallTarget{
+	return CallTarget{
 		Contract:   r.requestMetadata.TargetContract,
 		EntryPoint: r.requestMetadata.EntryPoint,
 	}
@@ -426,6 +429,10 @@ func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 	switch out := r.output.(type) {
 	case *iotago.ExtendedOutput:
 		return out.Address
+	case *iotago.FoundryOutput:
+		return out.Address
+	case *iotago.AliasOutput:
+		return out.AliasID.ToAddress()
 	default:
 		panic("OnLedgerRequestData:TargetAddress implement me")
 	}
@@ -455,32 +462,24 @@ func (r *OnLedgerRequestData) IsOffLedger() bool {
 	return false
 }
 
-func (r *OnLedgerRequestData) Unwrap() unwrap {
-	return r
-}
-
 func (r *OnLedgerRequestData) Features() Features {
 	return r
 }
 
 func (r *OnLedgerRequestData) String() string {
-	// TODO
-	panic("implement me")
+	return fmt.Sprintf("(not impl) ID: %s", r.ID()) // TODO
 }
 
-// implements unwrap interface
-var _ unwrap = &OnLedgerRequestData{}
-
-func (r *OnLedgerRequestData) OffLedger() *OffLedgerRequestData {
+func (r *OnLedgerRequestData) AsOffLedger() AsOffLedger {
 	panic("not an off-ledger RequestData")
 }
 
-func (r *OnLedgerRequestData) UTXO() unwrapUTXO {
+func (r *OnLedgerRequestData) AsOnLedger() AsOnLedger {
 	return r
 }
 
-// implements unwrapUTXO interface
-var _ unwrapUTXO = &OnLedgerRequestData{}
+// implements AsOnLedger interface
+var _ AsOnLedger = &OnLedgerRequestData{}
 
 func (r *OnLedgerRequestData) UTXOInput() iotago.UTXOInput {
 	return r.inputID
@@ -488,6 +487,23 @@ func (r *OnLedgerRequestData) UTXOInput() iotago.UTXOInput {
 
 func (r *OnLedgerRequestData) Output() iotago.Output {
 	return r.output
+}
+
+// IsInternalUTXO if true the output cannot be interpreted as a request
+func (r *OnLedgerRequestData) IsInternalUTXO(chinID *ChainID) bool {
+	if r.output.Type() == iotago.OutputFoundry {
+		return true
+	}
+	if r.SenderAddress() == nil {
+		return false
+	}
+	if !r.SenderAddress().Equal(chinID.AsAddress()) {
+		return false
+	}
+	if r.requestMetadata != nil {
+		return false
+	}
+	return true
 }
 
 // implements Features interface
@@ -701,7 +717,7 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 	}
 	if transferPresent, err := mu.ReadBool(); err != nil {
 		if transferPresent {
-			if p.Transfer, err = NewAssetsFromMarshalUtil(mu); err != nil {
+			if p.Transfer, err = AssetsFromMarshalUtil(mu); err != nil {
 				return err
 			}
 		}

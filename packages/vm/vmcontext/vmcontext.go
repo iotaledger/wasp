@@ -34,6 +34,9 @@ type VMContext struct {
 	blockContextCloseSeq []iscp.Hname
 	blockOutputCount     uint8
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
+	gasBurnedTotal       uint64
+	gasFeeChargedTotal   uint64
+
 	// ---- request context
 	chainInfo          *governance.ChainInfo
 	req                iscp.RequestData
@@ -46,14 +49,14 @@ type VMContext struct {
 	lastResult         dict.Dict
 	callStack          []*callContext
 	// --- gas related
-	// gas from the request
-	gasBudgetFromRequest uint64
-	// max gas budget capped by the number of tokens in the sender's account
-	gasBudgetAffordable uint64
+	// max tokens available for gas fee
+	gasMaxTokensAvailableForGasFee uint64
 	// final gas budget set for the run
 	gasBudget uint64
 	// gas already burned
 	gasBurned uint64
+	// tokens charged
+	gasFeeCharged uint64
 }
 
 type callContext struct {
@@ -173,17 +176,19 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	if err != nil {
 		panic(err)
 	}
-	dustAnchor, dustNativeToken := vmctx.txbuilder.DustDeposits()
+	totalIotasInContracts, totalDustOnChain := vmctx.txbuilder.TotalIotasInOutputs()
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:               vmctx.virtualState.BlockIndex(),
-		Timestamp:                vmctx.virtualState.Timestamp(),
-		TotalRequests:            numRequests,
-		NumSuccessfulRequests:    numSuccess,
-		NumOffLedgerRequests:     numOffLedger,
-		PreviousStateHash:        prevStateData.Commitment,
-		AnchorTransactionID:      iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
-		DustDepositAnchor:        dustAnchor,
-		DustDepositNativeTokenID: dustNativeToken,
+		BlockIndex:            vmctx.virtualState.BlockIndex(),
+		Timestamp:             vmctx.virtualState.Timestamp(),
+		TotalRequests:         numRequests,
+		NumSuccessfulRequests: numSuccess,
+		NumOffLedgerRequests:  numOffLedger,
+		PreviousStateHash:     prevStateData.Commitment,
+		AnchorTransactionID:   iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		TotalIotasInContracts: totalIotasInContracts,
+		TotalDustDeposit:      totalDustOnChain,
+		GasBurned:             vmctx.gasBurnedTotal,
+		GasFeeCharged:         vmctx.gasFeeChargedTotal,
 	}
 	if vmctx.virtualState.PreviousStateHash() != blockInfo.PreviousStateHash {
 		panic("CloseVMContext: inconsistent previous state hash")

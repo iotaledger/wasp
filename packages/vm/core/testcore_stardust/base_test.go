@@ -1,10 +1,14 @@
 package testcore
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
+	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
+
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/gas"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -37,12 +41,12 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	require.EqualValues(t, 0, len(nativeTokenIDs))
 
 	// query dust parameters of the latest block
-	dustInfo := ch.GetDustInfo()
+	totalIotasInfo := ch.GetTotalIotaInfo()
 	totalIotasOnChain := ch.L2TotalIotas()
 	// all goes to dust and to total iotas on chain
-	totalSpent := dustInfo.Total() + totalIotasOnChain
-	t.Logf("total on chain: dust deposit: %d, total iotas: %d, total sent: %d",
-		dustInfo, totalIotasOnChain, totalSpent)
+	totalSpent := totalIotasInfo.TotalDustDeposit + totalIotasInfo.TotalIotasInContracts
+	t.Logf("total on chain: dust deposit: %d, total iotas on chain: %d, total spent: %d",
+		totalIotasInfo.TotalDustDeposit, totalIotasOnChain, totalSpent)
 	// what has left on L1 address
 	env.AssertL1AddressIotas(ch.OriginatorAddress, solo.Saldo-totalSpent)
 
@@ -84,10 +88,11 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		originatorsL1IotasBefore := env.L1IotaBalance(ch.OriginatorAddress)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
-		req := solo.NewCallParams("dummyContract", "dummyEP")
+		req := solo.NewCallParams("dummyContract", "dummyEP").
+			WithGasBudget(1000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
-		require.Contains(t, err.Error(), vmcontext.ErrTargetContractNotFound.Error())
+		require.True(t, errors.Is(err, vmcontext.ErrTargetContractNotFound))
 
 		totalIotasAfter := ch.L2TotalIotas()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -119,7 +124,8 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		env.AssertL1AddressIotas(senderAddr, solo.Saldo)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
-		req := solo.NewCallParams("dummyContract", "dummyEP")
+		req := solo.NewCallParams("dummyContract", "dummyEP").
+			WithGasBudget(1000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetContractNotFound.Error())
@@ -154,7 +160,8 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		originatorsL1IotasBefore := env.L1IotaBalance(ch.OriginatorAddress)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
-		req := solo.NewCallParams(root.Contract.Name, "dummyEP")
+		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
+			WithGasBudget(1000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
@@ -189,7 +196,8 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		env.AssertL1AddressIotas(senderAddr, solo.Saldo)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
-		req := solo.NewCallParams(root.Contract.Name, "dummyEP")
+		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
+			WithGasBudget(1000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
@@ -243,7 +251,8 @@ func TestOkCall(t *testing.T) {
 	env.EnablePublisher(true)
 	ch := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
+		WithGasBudget(1000)
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	env.WaitPublisher()
@@ -295,4 +304,36 @@ func TestRepeatInit(t *testing.T) {
 		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
 		ch.CheckAccountLedger()
 	})
+}
+
+func TestDeployNativeContract(t *testing.T) {
+	env := solo.New(t).WithNativeContract(sbtestsc.Processor)
+
+	env.EnablePublisher(true)
+	ch := env.NewChain(nil, "chain1")
+
+	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
+	//senderAgentID := iscp.NewAgentID(senderAddr, 0)
+
+	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
+		root.ParamDeployer, iscp.NewAgentID(senderAddr, 0)).
+		WithGasBudget(1000)
+	_, err := ch.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	err = ch.DeployContract(senderKeyPair, "sctest", sbtestsc.Contract.ProgramHash)
+	require.NoError(t, err)
+	//
+	//req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name)
+	//_, err := ch.PostRequestSync(req, nil)
+	env.WaitPublisher()
+}
+
+func TestFeeBasic(t *testing.T) {
+	env := solo.New(t)
+	chain := env.NewChain(nil, "chain1")
+	feePolicy := chain.GetGasFeePolicy()
+	require.Nil(t, feePolicy.GasFeeTokenID)
+	require.Nil(t, feePolicy.FixedGasBudget)
+	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
 }

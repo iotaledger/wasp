@@ -2,7 +2,7 @@ package gas
 
 // Gas burned per 1 stored byte
 const (
-	StoreByte = uint64(2)
+	StoreByte = uint64(1)
 	LogByte   = uint64(1) // logging (issuing events) can be cheaper than state storage, as it can be pruned without breaking things
 )
 
@@ -42,9 +42,11 @@ const (
 	CallContract   = uint64(100)
 	NotFoundTarget = uint64(100)
 	SendL1Request  = uint64(1000)
+
+	MinGasPerBlob = uint64(1000)
 )
 
-// Constant initial cas cost to call Core Contracts entrypoints
+// Constant initial cas cost to call Core Contracts entry points
 const (
 	CoreRootDeployContract    = uint64(5000)
 	CoreRootChangePermissions = uint64(50)   // grant/revoke/require permissions

@@ -153,8 +153,11 @@ func (txb *AnchorTransactionBuilder) TotalAvailableIotas() uint64 {
 // NOTE: if call panics with ErrNotEnoughFundsForInternalDustDeposit, the state of the builder becomes inconsistent
 // It means, in the caller context it should be rolled back altogether
 func (txb *AnchorTransactionBuilder) Consume(inp iscp.RequestData) int64 {
+	if DebugTxBuilder {
+		txb.MustBalanced("txbuilder.Consume IN")
+	}
 	if inp.IsOffLedger() {
-		panic(xerrors.New("Consume: must be UTXO"))
+		panic(xerrors.New("txbuilder.Consume: must be UTXO"))
 	}
 	if txb.InputsAreFull() {
 		panic(ErrInputLimitExceeded)
@@ -165,11 +168,14 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.RequestData) int64 {
 	txb.consumed = append(txb.consumed, inp)
 
 	// first we add all iotas arrived with the output to anchor balance
-	txb.addDeltaIotasToTotal(inp.Unwrap().UTXO().Output().Deposit())
+	txb.addDeltaIotasToTotal(inp.AsOnLedger().Output().Deposit())
 	// then we add all arriving native tokens to corresponding internal outputs
 	deltaIotasDustDepositAdjustment := int64(0)
 	for _, nt := range inp.Assets().Tokens {
 		deltaIotasDustDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
+	}
+	if DebugTxBuilder {
+		txb.MustBalanced("txbuilder.Consume OUT")
 	}
 	return deltaIotasDustDepositAdjustment
 }
@@ -485,7 +491,7 @@ func calcVByteCostOfNativeTokenBalance(rentStructure *iotago.RentStructure) uint
 	return o.Amount
 }
 
-func (txb *AnchorTransactionBuilder) DustDeposits() (uint64, uint64) {
+func (txb *AnchorTransactionBuilder) DustDepositConstants() (uint64, uint64) {
 	return txb.dustDepositOnAnchor, txb.dustDepositOnInternalTokenOutput
 }
 

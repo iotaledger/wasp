@@ -135,6 +135,13 @@ func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionT
 	return totalsIN, totalsOUT, balanced
 }
 
+// TotalIotasInOutputs returns a) total iotas owned by SCs and b) total iotas locked as dust deposit
+func (txb *AnchorTransactionBuilder) TotalIotasInOutputs() (uint64, uint64) {
+	totals := txb.sumOutputs()
+	return totals.TotalIotasOnChain, totals.TotalIotasInDustDeposit
+
+}
+
 // InternalNativeTokenBalances returns internally maintained balances of native tokens in inputs and
 func (txb *AnchorTransactionBuilder) InternalNativeTokenBalances() (map[iotago.NativeTokenID]*big.Int, map[iotago.NativeTokenID]*big.Int) {
 	before := make(map[iotago.NativeTokenID]*big.Int)

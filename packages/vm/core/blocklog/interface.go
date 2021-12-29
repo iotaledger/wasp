@@ -4,6 +4,7 @@ package blocklog
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"math"
@@ -61,15 +62,17 @@ const (
 // region BlockInfo //////////////////////////////////////////////////////////////
 
 type BlockInfo struct {
-	BlockIndex               uint32 // not persistent. Set from key
-	Timestamp                time.Time
-	TotalRequests            uint16
-	NumSuccessfulRequests    uint16
-	NumOffLedgerRequests     uint16
-	PreviousStateHash        hashing.HashValue
-	AnchorTransactionID      iotago.TransactionID
-	DustDepositAnchor        uint64
-	DustDepositNativeTokenID uint64
+	BlockIndex            uint32 // not persistent. Set from key
+	Timestamp             time.Time
+	TotalRequests         uint16
+	NumSuccessfulRequests uint16
+	NumOffLedgerRequests  uint16
+	PreviousStateHash     hashing.HashValue
+	AnchorTransactionID   iotago.TransactionID
+	TotalIotasInContracts uint64
+	TotalDustDeposit      uint64
+	GasBurned             uint64
+	GasFeeCharged         uint64
 }
 
 func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
@@ -95,10 +98,16 @@ func (bi *BlockInfo) Bytes() []byte {
 
 func (bi *BlockInfo) String() string {
 	ret := fmt.Sprintf("Block index: %d\n", bi.BlockIndex)
-	ret += fmt.Sprintf("OutputTimestamp: %v\n", bi.Timestamp)
+	ret += fmt.Sprintf("Timestamp: %d\n", bi.Timestamp.UnixNano())
 	ret += fmt.Sprintf("Total requests: %d\n", bi.TotalRequests)
-	ret += fmt.Sprintf("Number of succesfull requests: %d\n", bi.NumSuccessfulRequests)
-	ret += fmt.Sprintf("Number of off-ledger requests: %d\n", bi.NumOffLedgerRequests)
+	ret += fmt.Sprintf("off-ledger requests: %d\n", bi.NumOffLedgerRequests)
+	ret += fmt.Sprintf("Succesfull requests: %d\n", bi.NumSuccessfulRequests)
+	ret += fmt.Sprintf("Prev state hash: %s\n", bi.PreviousStateHash.String())
+	ret += fmt.Sprintf("Anchor tx ID: %s\n", hex.EncodeToString(bi.AnchorTransactionID[:]))
+	ret += fmt.Sprintf("Total iotas in contracts: %d\n", bi.TotalIotasInContracts)
+	ret += fmt.Sprintf("Total iotas locked in dust deposit: %d\n", bi.TotalDustDeposit)
+	ret += fmt.Sprintf("Gas burned: %d\n", bi.GasBurned)
+	ret += fmt.Sprintf("Gas fee charged: %d\n", bi.GasFeeCharged)
 	return ret
 }
 
@@ -121,10 +130,16 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if _, err := w.Write(bi.PreviousStateHash.Bytes()); err != nil {
 		return err
 	}
-	if err := util.WriteUint64(w, bi.DustDepositAnchor); err != nil {
+	if err := util.WriteUint64(w, bi.TotalIotasInContracts); err != nil {
 		return err
 	}
-	if err := util.WriteUint64(w, bi.DustDepositNativeTokenID); err != nil {
+	if err := util.WriteUint64(w, bi.TotalDustDeposit); err != nil {
+		return err
+	}
+	if err := util.WriteUint64(w, bi.GasBurned); err != nil {
+		return err
+	}
+	if err := util.WriteUint64(w, bi.GasFeeCharged); err != nil {
 		return err
 	}
 	return nil
@@ -149,10 +164,16 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := util.ReadHashValue(r, &bi.PreviousStateHash); err != nil { // nolint:nolint
 		return err
 	}
-	if err := util.ReadUint64(r, &bi.DustDepositAnchor); err != nil {
+	if err := util.ReadUint64(r, &bi.TotalIotasInContracts); err != nil {
 		return err
 	}
-	if err := util.ReadUint64(r, &bi.DustDepositNativeTokenID); err != nil {
+	if err := util.ReadUint64(r, &bi.TotalDustDeposit); err != nil {
+		return err
+	}
+	if err := util.ReadUint64(r, &bi.GasBurned); err != nil {
+		return err
+	}
+	if err := util.ReadUint64(r, &bi.GasFeeCharged); err != nil {
 		return err
 	}
 	return nil
@@ -279,12 +300,15 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 
 // endregion ///////////////////////////////////////////////////////////
 
-// region RequestLogReqcord /////////////////////////////////////////////////////
+// region RequestReceipt /////////////////////////////////////////////////////
 
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
-	RequestData iscp.RequestData
-	Error       string
+	RequestData   iscp.RequestData // TODO request may be big (blobs). Do we want to store it all?
+	Error         string
+	GasBudget     uint64
+	GasBurned     uint64
+	GasFeeCharged uint64
 	// not persistent
 	BlockIndex   uint32
 	RequestIndex uint16
@@ -297,9 +321,6 @@ func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
 func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
 	ret := &RequestReceipt{}
 	var err error
-	if ret.RequestData, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
 	var size uint16
 	if size, err = mu.ReadUint16(); err != nil {
 		return nil, err
@@ -309,15 +330,29 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 		return nil, err
 	}
 	ret.Error = string(strBytes)
+	if ret.GasBudget, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if ret.GasBurned, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if ret.GasFeeCharged, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if ret.RequestData, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
 func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
-
-	mu.WriteBytes(r.RequestData.Bytes()).
-		WriteUint16(uint16(len(r.Error))).
-		WriteBytes([]byte(r.Error))
+	mu.WriteUint16(uint16(len(r.Error))).
+		WriteBytes([]byte(r.Error)).
+		WriteUint64(r.GasBudget).
+		WriteUint64(r.GasBurned).
+		WriteUint64(r.GasFeeCharged)
+	iscp.RequestDataToMarshalUtil(r.RequestData, mu)
 	return mu.Bytes()
 }
 
@@ -328,10 +363,12 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 }
 
 func (r *RequestReceipt) String() string {
-	if len(r.Error) > 0 {
-		return fmt.Sprintf("%s\n Error: '%s'", r.RequestData.String(), r.Error)
-	}
-	return r.RequestData.String()
+	ret := fmt.Sprintf("ID: %s\n", r.RequestData.ID().String())
+	ret += fmt.Sprintf("Err: '%s'\n", r.Error)
+	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
+	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
+	ret += fmt.Sprintf("Request data: %s\n", r.RequestData.String())
+	return ret
 }
 
 func (r *RequestReceipt) Short() string {

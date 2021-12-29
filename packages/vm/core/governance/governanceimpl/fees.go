@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // setFeePolicy sets the global fee policy for the chain in serialized form
@@ -20,7 +21,7 @@ func setFeePolicy(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	data := params.MustGetBytes(governance.ParamFeePolicyBytes)
-	_, err := governance.GasFeePolicyFromBytes(data)
+	_, err := gas.GasFeePolicyFromBytes(data)
 	a.RequireNoError(err)
 
 	ctx.State().Set(governance.VarGasFeePolicyBytes, data)
