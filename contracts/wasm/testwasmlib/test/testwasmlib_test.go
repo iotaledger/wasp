@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibclient"
@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
-	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
 )
 
@@ -312,31 +311,45 @@ func TestMultiRandom(t *testing.T) {
 }
 
 func TestClient(t *testing.T) {
-	seedBytes, err := base58.Decode("6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv")
-	require.NoError(t, err)
-	mySeed := seed.NewSeed(seedBytes)
-	keyPair := mySeed.KeyPair(0)
-	ed25519Address := ledgerstate.NewED25519Address(keyPair.PublicKey)
-	address := wasmclient.Address(base58.Encode(ed25519Address.Bytes()))
+	// hardcoded seed and chain ID, taken from wasp-cli.json
+	// note that normally the chain has already been set up and
+	// the contract has already been deployed in some way
+	const mySeed = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
+	require.True(t, wasmclient.SeedIsValid(mySeed))
+	const myChainID = "qjA8Ybw4WijnmGUqDtNcPhAxFymjQKepNyyfp5BUGsWP"
+	require.True(t, wasmclient.ChainIsValid(myChainID))
 
-	cl := wasmclient.DefaultServiceClient()
-	svc, err := testwasmlibclient.NewTestWasmLibService(cl, "qjA8Ybw4WijnmGUqDtNcPhAxFymjQKepNyyfp5BUGsWP")
-	require.NoError(t, err)
-	svc.SignRequests(keyPair)
+	// we're testing against wasp-cluster, so defaults will do
+	svcClient := wasmclient.DefaultServiceClient()
 
+	// create the service for the testwasmlib smart contract
+	svc, err := testwasmlibclient.NewTestWasmLibService(svcClient, myChainID)
+	require.NoError(t, err)
+
+	// we'll use the first address in the seed to sign requests
+	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, 0))
+
+	// get new triggerEvent interface, pass params, and post the request
 	f := svc.TriggerEvent()
 	f.Name("Lala")
-	f.Address(address)
-	req := f.Post()
-	require.NoError(t, req.Error())
-	err = svc.WaitRequest(req)
-	require.NoError(t, err)
+	f.Address(wasmclient.SeedToAddress(mySeed, 0))
+	req1 := f.Post()
+	require.NoError(t, req1.Error())
 
+	// get new triggerEvent interface, pass params, and post the request
 	f = svc.TriggerEvent()
 	f.Name("Trala")
-	f.Address(address)
-	req = f.Post()
-	require.NoError(t, req.Error())
-	err = svc.WaitRequest(req)
+	f.Address(wasmclient.SeedToAddress(mySeed, 1))
+	req2 := f.Post()
+	require.NoError(t, req2.Error())
+
+	// just for fun wait in reverse order
+	err = svc.WaitRequest(req2)
 	require.NoError(t, err)
+
+	err = svc.WaitRequest(req1)
+	require.NoError(t, err)
+
+	// give event handlers some time to complete
+	time.Sleep(4 * time.Second)
 }

@@ -73,7 +73,7 @@ func (s *Service) WaitRequest(req Request) error {
 }
 
 func (s *Service) startEventHandlers(ep string, handlers map[string]func([]string)) error {
-	chMsg := make(chan []string)
+	chMsg := make(chan []string, 20)
 	chDone := make(chan bool)
 	err := subscribe.Subscribe(ep, chMsg, chDone, true, "")
 	if err != nil {
