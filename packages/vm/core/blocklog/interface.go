@@ -62,17 +62,17 @@ const (
 // region BlockInfo //////////////////////////////////////////////////////////////
 
 type BlockInfo struct {
-	BlockIndex            uint32 // not persistent. Set from key
-	Timestamp             time.Time
-	TotalRequests         uint16
-	NumSuccessfulRequests uint16
-	NumOffLedgerRequests  uint16
-	PreviousStateHash     hashing.HashValue
-	AnchorTransactionID   iotago.TransactionID
-	TotalIotasInContracts uint64
-	TotalDustDeposit      uint64
-	GasBurned             uint64
-	GasFeeCharged         uint64
+	BlockIndex             uint32 // not persistent. Set from key
+	Timestamp              time.Time
+	TotalRequests          uint16
+	NumSuccessfulRequests  uint16
+	NumOffLedgerRequests   uint16
+	PreviousStateHash      hashing.HashValue
+	AnchorTransactionID    iotago.TransactionID
+	TotalIotasInL2Accounts uint64
+	TotalDustDeposit       uint64
+	GasBurned              uint64
+	GasFeeCharged          uint64
 }
 
 func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
@@ -104,7 +104,7 @@ func (bi *BlockInfo) String() string {
 	ret += fmt.Sprintf("Succesfull requests: %d\n", bi.NumSuccessfulRequests)
 	ret += fmt.Sprintf("Prev state hash: %s\n", bi.PreviousStateHash.String())
 	ret += fmt.Sprintf("Anchor tx ID: %s\n", hex.EncodeToString(bi.AnchorTransactionID[:]))
-	ret += fmt.Sprintf("Total iotas in contracts: %d\n", bi.TotalIotasInContracts)
+	ret += fmt.Sprintf("Total iotas in contracts: %d\n", bi.TotalIotasInL2Accounts)
 	ret += fmt.Sprintf("Total iotas locked in dust deposit: %d\n", bi.TotalDustDeposit)
 	ret += fmt.Sprintf("Gas burned: %d\n", bi.GasBurned)
 	ret += fmt.Sprintf("Gas fee charged: %d\n", bi.GasFeeCharged)
@@ -130,7 +130,7 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if _, err := w.Write(bi.PreviousStateHash.Bytes()); err != nil {
 		return err
 	}
-	if err := util.WriteUint64(w, bi.TotalIotasInContracts); err != nil {
+	if err := util.WriteUint64(w, bi.TotalIotasInL2Accounts); err != nil {
 		return err
 	}
 	if err := util.WriteUint64(w, bi.TotalDustDeposit); err != nil {
@@ -164,7 +164,7 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := util.ReadHashValue(r, &bi.PreviousStateHash); err != nil { // nolint:nolint
 		return err
 	}
-	if err := util.ReadUint64(r, &bi.TotalIotasInContracts); err != nil {
+	if err := util.ReadUint64(r, &bi.TotalIotasInL2Accounts); err != nil {
 		return err
 	}
 	if err := util.ReadUint64(r, &bi.TotalDustDeposit); err != nil {
