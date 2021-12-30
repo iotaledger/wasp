@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
-
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -51,14 +49,16 @@ func TestBlockInfo(t *testing.T) {
 }
 
 func TestBlockInfoLatestWithRequest(t *testing.T) {
-	env := solo.New(t).WithNativeContract(sbtestsc.Processor)
+	env := solo.New(t)
 
 	chain := env.NewChain(nil, "chain1")
+	bi := chain.GetLatestBlockInfo()
+	t.Logf("after chain deployment:\n%s", bi.String())
 	// uploading one blob
 	_, err := chain.UploadBlob(nil, "field", "dummy blob data")
 	require.NoError(t, err)
 
-	bi := chain.GetLatestBlockInfo()
+	bi = chain.GetLatestBlockInfo()
 	require.NotNil(t, bi)
 	require.EqualValues(t, 3, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)

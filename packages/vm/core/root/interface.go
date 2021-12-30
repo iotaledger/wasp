@@ -1,8 +1,6 @@
 package root
 
 import (
-	"errors"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
@@ -10,28 +8,29 @@ import (
 )
 
 var (
-	Contract            = coreutil.NewContract(coreutil.CoreContractRoot, "Root Contract")
-	ErrContractNotFound = errors.New("smart contract not found")
+	Contract = coreutil.NewContract(coreutil.CoreContractRoot, "Root Contract")
 )
 
 // state variables
 const (
-	VarContractRegistry         = "r"
-	VarDeployPermissionsEnabled = "a"
-	VarDeployPermissions        = "p"
-	VarStateInitialized         = "i"
+	StateVarContractRegistry         = "r"
+	StateVarDeployPermissionsEnabled = "a"
+	StateVarDeployPermissions        = "p"
+	StateVarStateInitialized         = "i"
+	StateVarDustDepositAssumptions   = "d"
 )
 
 // param variables
 const (
-	ParamDeployer                 = "dp"
-	ParamHname                    = "hn"
-	ParamName                     = "nm"
-	ParamProgramHash              = "ph"
-	ParamContractRecData          = "dt"
-	ParamContractFound            = "cf"
-	ParamDescription              = "ds"
-	ParamDeployPermissionsEnabled = "de"
+	ParamDeployer                  = "dp"
+	ParamHname                     = "hn"
+	ParamName                      = "nm"
+	ParamProgramHash               = "ph"
+	ParamContractRecData           = "dt"
+	ParamContractFound             = "cf"
+	ParamDescription               = "ds"
+	ParamDeployPermissionsEnabled  = "de"
+	ParamDustDepositAssumptionsBin = "db"
 )
 
 // function names

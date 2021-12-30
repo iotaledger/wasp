@@ -12,8 +12,6 @@ import (
 type GasFeePolicy struct {
 	// GasFeeTokenID contains iotago.NativeTokenID used to pay for gas, or nil if iotas are used for gas fee
 	GasFeeTokenID *iotago.NativeTokenID
-	// FixedGasBudget != nil if assume each call has a fixed budget
-	FixedGasBudget *uint64
 	// GasNominalUnit price is specified per how many gas units
 	GasNominalUnit uint64
 	// GasPricePer1000Units how many gas tokens you pay for 1000 gas
@@ -59,7 +57,6 @@ func (p *GasFeePolicy) FeeFromGas(g uint64, availableTokens ...uint64) (uint64, 
 func DefaultGasFeePolicy() *GasFeePolicy {
 	return &GasFeePolicy{
 		GasFeeTokenID:          nil, // default is iotas
-		FixedGasBudget:         nil, // default is dynamic gas budget
 		GasNominalUnit:         100, // gas is burned in 100-s and not less than 100
 		GasPricePerNominalUnit: 100, // default is 1 gas == 1 iota
 		ValidatorFeeShare:      0,   // by default all goes to the governor
@@ -77,7 +74,7 @@ func MustGasFeePolicyFromBytes(data []byte) *GasFeePolicy {
 func GasFeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 	ret := &GasFeePolicy{}
 	mu := marshalutil.New(data)
-	var gasNativeToken, fixedGasBudget bool
+	var gasNativeToken bool
 	var err error
 	if gasNativeToken, err = mu.ReadBool(); err != nil {
 		return nil, err
@@ -89,16 +86,6 @@ func GasFeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 		}
 		ret.GasFeeTokenID = &iotago.NativeTokenID{}
 		copy(ret.GasFeeTokenID[:], b)
-	}
-	if fixedGasBudget, err = mu.ReadBool(); err != nil {
-		return nil, err
-	}
-	if fixedGasBudget {
-		budget, err := mu.ReadUint64()
-		if err != nil {
-			return nil, err
-		}
-		ret.FixedGasBudget = &budget
 	}
 	if ret.GasNominalUnit, err = mu.ReadUint64(); err != nil {
 		return nil, err
@@ -117,10 +104,6 @@ func (g *GasFeePolicy) Bytes() []byte {
 	mu.WriteBool(g.GasFeeTokenID != nil)
 	if g.GasFeeTokenID != nil {
 		mu.WriteBytes(g.GasFeeTokenID[:])
-	}
-	mu.WriteBool(g.FixedGasBudget != nil)
-	if g.FixedGasBudget != nil {
-		mu.WriteUint64(*g.FixedGasBudget)
 	}
 	mu.WriteUint64(g.GasNominalUnit)
 	mu.WriteUint64(g.GasPricePerNominalUnit)

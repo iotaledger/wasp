@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
@@ -40,7 +41,7 @@ func NewChainOriginTransaction(
 		},
 	}
 	{
-		aliasDustDeposit := aliasOutput.VByteCost(rentStructure, nil)
+		aliasDustDeposit := vmtxbuilder.NewDepositEstimate(rentStructure).AnchorOutput
 		if aliasOutput.Amount < aliasDustDeposit {
 			aliasOutput.Amount = aliasDustDeposit
 		}
@@ -105,7 +106,8 @@ func NewRootInitRequestTransaction(
 				EntryPoint:     iscp.EntryPointInit,
 				GasBudget:      0, // TODO. Probably we need minimum fixed budget for core contract calls. 0 for init call
 				Params: dict.Dict{
-					governance.ParamDescription: codec.EncodeString(description),
+					root.ParamDustDepositAssumptionsBin: vmtxbuilder.NewDepositEstimate(rentStructure).Bytes(),
+					governance.ParamDescription:         codec.EncodeString(description),
 				},
 			},
 		}},

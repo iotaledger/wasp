@@ -1,8 +1,9 @@
 package vmtxbuilder
 
 import (
-	"fmt"
 	"math/big"
+
+	"github.com/iotaledger/wasp/packages/iscp"
 
 	"golang.org/x/xerrors"
 
@@ -37,7 +38,7 @@ func (txb *AnchorTransactionBuilder) sumNativeTokens(totals *TransactionTotals, 
 		s.Add(s, value)
 		totals.TokenBalances[id] = s
 		// sum up dust deposit in inputs of internal UTXOs
-		totals.TotalIotasInDustDeposit += txb.dustDepositOnInternalTokenOutput
+		totals.TotalIotasInDustDeposit += txb.dustDepositAssumption.NativeTokenOutput
 	}
 }
 
@@ -46,8 +47,8 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	ret := &TransactionTotals{
 		TokenBalances:            make(map[iotago.NativeTokenID]*big.Int),
 		TokenCirculatingSupplies: make(map[iotago.NativeTokenID]*big.Int),
-		TotalIotasOnChain:        txb.anchorOutput.Deposit() - txb.dustDepositOnAnchor,
-		TotalIotasInDustDeposit:  txb.dustDepositOnAnchor,
+		TotalIotasOnChain:        txb.anchorOutput.Deposit() - txb.dustDepositAssumption.AnchorOutput,
+		TotalIotasInDustDeposit:  txb.dustDepositAssumption.AnchorOutput,
 	}
 	// sum over native tokens which require inputs
 	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
@@ -83,8 +84,8 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	ret := &TransactionTotals{
 		TokenBalances:            make(map[iotago.NativeTokenID]*big.Int),
 		TokenCirculatingSupplies: make(map[iotago.NativeTokenID]*big.Int),
-		TotalIotasOnChain:        txb.totalIotasOnChain,
-		TotalIotasInDustDeposit:  txb.dustDepositOnAnchor,
+		TotalIotasOnChain:        txb.totalIotasInContracts,
+		TotalIotasInDustDeposit:  txb.dustDepositAssumption.AnchorOutput,
 		SentOutIotas:             0,
 		SentOutTokenBalances:     make(map[iotago.NativeTokenID]*big.Int),
 	}
@@ -158,6 +159,40 @@ func (txb *AnchorTransactionBuilder) InternalNativeTokenBalances() (map[iotago.N
 	return before, after
 }
 
+var DebugTxBuilder = func() bool { return true }() // trick linter
+
+func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
+	if DebugTxBuilder {
+		_, _, balanced := txb.Totals()
+		if !balanced {
+			//fmt.Printf("================= MustBalanced [%s] \ninTotals: %v\noutTotals: %v\n", checkpoint, ins, outs)
+			panic(xerrors.Errorf("internal: tx builder is not balanced [%s]", checkpoint))
+		}
+	}
+}
+
+func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp.Assets, checkpoint string) {
+	_, outTotal, balanced := txb.Totals()
+	if !balanced {
+		panic(ErrFatalTxBuilderNotBalanced)
+	}
+	if outTotal.TotalIotasOnChain != l2Totals.Iotas {
+		panic(xerrors.Errorf("'%s': iotas L1 (%d) != iotas L2 (%d): %w",
+			checkpoint, outTotal.TotalIotasOnChain, l2Totals.Iotas, ErrInconsistentL2LedgerWithL1TxBuilder))
+	}
+	for _, nt := range l2Totals.Tokens {
+		b1, ok := outTotal.TokenBalances[nt.ID]
+		if !ok {
+			// checking only those which are in the tx builder
+			continue
+		}
+		if nt.Amount.Cmp(b1) != 0 {
+			panic(xerrors.Errorf("token %s L1 (%d) != iotas L2 (%d): %w",
+				nt.ID.String(), outTotal.TotalIotasOnChain, l2Totals.Iotas, ErrInconsistentL2LedgerWithL1TxBuilder))
+		}
+	}
+}
+
 func (t *TransactionTotals) BalancedWith(another *TransactionTotals) bool {
 	if t.TotalIotasOnChain+t.TotalIotasInDustDeposit != another.TotalIotasOnChain+another.TotalIotasInDustDeposit {
 		return false
@@ -199,17 +234,4 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) bool {
 		}
 	}
 	return true
-}
-
-var DebugTxBuilder = func() bool { return true }() // trick linter
-
-func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
-	if DebugTxBuilder {
-		ins, outs, balanced := txb.Totals()
-		if !balanced {
-			fmt.Printf("================= MustBalanced [%s] \ninTotals: %v\noutTotals: %v\n", checkpoint, ins, outs)
-			panic(xerrors.Errorf("internal: tx builder is not balanced [%s]", checkpoint))
-		}
-	}
-
 }

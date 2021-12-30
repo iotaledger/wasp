@@ -19,7 +19,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	scheme iotago.TokenScheme,
 	tag iotago.TokenTag,
 	maxSupply *big.Int,
-) uint32 {
+) (uint32, uint64) {
 	if maxSupply.Cmp(big.NewInt(0)) <= 0 {
 		panic(ErrCreateFoundryMaxSupplyMustBePositive)
 	}
@@ -50,11 +50,12 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		in:           nil,
 		out:          f,
 	}
-	return f.SerialNumber
+	return f.SerialNumber, f.Amount
 }
 
 // ModifyNativeTokenSupply inflates the supply is delta > 0, shrinks if delta < 0
-func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) {
+// returns adjustment of the dust deposit.
+func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) int64 {
 	sn := accounts.SerialNumFromNativeTokenID(tokenID)
 	nt, ok := txb.invokedFoundries[sn]
 	if !ok {
@@ -81,12 +82,14 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 		panic(ErrNativeTokenSupplyOutOffBounds)
 	}
 	// accrue/adjust this token balance in the internal outputs
-	txb.addNativeTokenBalanceDelta(tokenID, delta)
+	adjustment := txb.addNativeTokenBalanceDelta(tokenID, delta)
 	// update the supply and foundry record in the builder
 	nt.out.CirculatingSupply = newSupply
 	txb.invokedFoundries[sn] = nt
 
+	adjustment += int64(nt.in.Amount) - int64(nt.out.Amount)
 	txb.MustBalanced("ModifyNativeTokenSupply: OUT")
+	return adjustment
 }
 
 func (txb *AnchorTransactionBuilder) nextFoundrySerialNumber() uint32 {

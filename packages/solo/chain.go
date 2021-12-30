@@ -268,7 +268,7 @@ func (ch *Chain) GetInfo() (*iscp.ChainID, *iscp.AgentID, map[iscp.Hname]*root.C
 	res, err = ch.CallView(root.Contract.Name, root.FuncGetContractRecords.Name)
 	require.NoError(ch.Env.T, err)
 
-	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(res, root.VarContractRegistry))
+	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(res, root.StateVarContractRegistry))
 	require.NoError(ch.Env.T, err)
 	return chainID, chainOwnerID, contracts
 }

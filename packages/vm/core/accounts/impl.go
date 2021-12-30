@@ -239,7 +239,11 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	tokenMaxSupply := par.MustGetBigInt(ParamMaxSupply)
 
 	// create UTXO
-	sn := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply)
+	sn, dustConsumed := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply)
+	// dust deposit is taken from the callers account
+	DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
+		Iotas: dustConsumed,
+	})
 	// add to the ownership list of the account
 	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
 
@@ -288,17 +292,28 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.RequireNoError(err, "internal")
 
 	// transit foundry UTXO
-	ctx.Foundries().ModifySupply(sn, delta)
-
+	dustAdjustment := ctx.Foundries().ModifySupply(sn, delta)
+	// adjust iotas due to the change in dust deposit
+	switch {
+	case dustAdjustment > 0:
+		CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
+			Iotas: uint64(dustAdjustment),
+		})
+	case dustAdjustment < 0:
+		DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
+			Iotas: uint64(-dustAdjustment),
+		})
+	}
 	// accrue delta tokens on the caller's account
-	if delta.Cmp(big.NewInt(0)) >= 0 {
+	switch {
+	case delta.Cmp(big.NewInt(0)) > 0:
 		CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
 			Tokens: iotago.NativeTokens{{
 				ID:     tokenID,
 				Amount: delta,
 			}},
 		})
-	} else {
+	case delta.Cmp(big.NewInt(0)) < 0:
 		DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
 			Tokens: iotago.NativeTokens{{
 				ID: tokenID, Amount: new(big.Int).Neg(delta),

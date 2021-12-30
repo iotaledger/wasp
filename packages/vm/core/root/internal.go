@@ -1,6 +1,7 @@
 package root
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -13,7 +14,7 @@ import (
 // It is not directly exposed to the sandbox
 // If contract is not found by the given hname, nil is returned
 func FindContract(state kv.KVStoreReader, hname iscp.Hname) *ContractRecord {
-	contractRegistry := collections.NewMapReadOnly(state, VarContractRegistry)
+	contractRegistry := collections.NewMapReadOnly(state, StateVarContractRegistry)
 	retBin := contractRegistry.MustGetAt(hname.Bytes())
 	if retBin != nil {
 		ret, err := ContractRecordFromBytes(retBin)
@@ -49,4 +50,13 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc
 		return true
 	})
 	return ret, err
+}
+
+func GetDustAssumptions(state kv.KVStoreReader) *vmtxbuilder.InternalDustDepositAssumption {
+	bin := state.MustGet(StateVarDustDepositAssumptions)
+	ret, err := vmtxbuilder.InternalDustDepositAssumptionFromBytes(bin)
+	if err != nil {
+		panic(xerrors.Errorf("GetDustAssumptions: internal: %v", err))
+	}
+	return ret
 }

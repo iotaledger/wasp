@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
+
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
@@ -29,7 +31,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	require.EqualValues(t, env.L1Ledger().Supply(), assets.Iotas)
 
 	// create chain
-	ch, originTx, initTx := env.NewChainExt(nil, "chain1")
+	ch, _, initTx := env.NewChainExt(nil, "chain1")
 	defer ch.Log.Sync()
 	env.WaitPublisher()
 	ch.AssertControlAddresses()
@@ -51,10 +53,10 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	env.AssertL1AddressIotas(ch.OriginatorAddress, solo.Saldo-totalSpent)
 
 	// let's analise dust deposit on origin and init transactions
-	vByteCostOrigin := transaction.GetVByteCosts(originTx, env.RentStructure())[0]
 	vByteCostInit := transaction.GetVByteCosts(initTx, env.RentStructure())[0]
+	dustCosts := vmtxbuilder.NewDepositEstimate(env.RentStructure())
 	// what we spent is only for dust deposits for those 2 transactions
-	require.EqualValues(t, int(totalSpent), int(vByteCostOrigin+vByteCostInit))
+	require.EqualValues(t, int(totalSpent), int(dustCosts.AnchorOutput+vByteCostInit))
 
 	// check if there's a single alias output on chain's address
 	aliasOutputs, _ := env.L1Ledger().GetAliasOutputs(ch.ChainID.AsAddress())
@@ -67,7 +69,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	// what spent all goes to the alias output
 	require.EqualValues(t, int(totalSpent), int(aliasOutputs[0].Amount))
 	// total iotas on L2 must be equal to alias output iotas - dust deposit
-	ch.AssertL2TotalIotas(aliasOutputs[0].Amount - vByteCostOrigin)
+	ch.AssertL2TotalIotas(aliasOutputs[0].Amount - dustCosts.AnchorOutput)
 
 	// all dust deposit of the init request goes to the sender account
 	ch.AssertL2AccountIotas(ch.OriginatorAgentID, vByteCostInit)
@@ -334,6 +336,5 @@ func TestFeeBasic(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	feePolicy := chain.GetGasFeePolicy()
 	require.Nil(t, feePolicy.GasFeeTokenID)
-	require.Nil(t, feePolicy.FixedGasBudget)
 	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
 }
