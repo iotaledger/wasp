@@ -3,8 +3,9 @@ package cluster
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -239,7 +240,7 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.Contra
 	if err != nil {
 		return nil, err
 	}
-	return root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+	return root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.StateVarContractRegistry))
 }
 
 func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int) (int64, error) {

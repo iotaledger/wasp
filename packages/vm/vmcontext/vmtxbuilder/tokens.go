@@ -94,7 +94,7 @@ func cloneInternalExtendedOutput(o *iotago.ExtendedOutput) *iotago.ExtendedOutpu
 func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.AliasID, nativeTokenID iotago.NativeTokenID) *iotago.ExtendedOutput {
 	return &iotago.ExtendedOutput{
 		Address: aliasID.ToAddress(),
-		Amount:  txb.dustDepositOnInternalTokenOutput,
+		Amount:  txb.dustDepositAssumption.NativeTokenOutput,
 		NativeTokens: iotago.NativeTokens{{
 			ID:     nativeTokenID,
 			Amount: big.NewInt(0),

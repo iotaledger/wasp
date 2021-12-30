@@ -54,7 +54,7 @@ func (d *Dashboard) fetchRootInfo(chainID *iscp.ChainID) (ret RootInfo, err erro
 	if err != nil {
 		return
 	}
-	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.VarContractRegistry))
+	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
 	if err != nil {
 		return
 	}

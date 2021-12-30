@@ -14,7 +14,7 @@ var listContractsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		records, err := SCClient(root.Contract.Hname()).CallView(root.FuncGetContractRecords.Name, nil)
 		log.Check(err)
-		contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.VarContractRegistry))
+		contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.StateVarContractRegistry))
 		log.Check(err)
 
 		log.Printf("Total %d contracts in chain %s\n", len(contracts), GetCurrentChainID())

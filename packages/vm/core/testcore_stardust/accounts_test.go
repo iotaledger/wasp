@@ -57,7 +57,8 @@ func TestFoundries(t *testing.T) {
 			par.Set(accounts.ParamMaxSupply, codec.EncodeBigIntAbs(maxSupply))
 		}
 		req := solo.NewCallParamsFromDic(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
-			WithGasBudget(1000)
+			WithGasBudget(1000).
+			WithIotas(1000)
 		_, res, err := ch.PostRequestSyncTx(req, senderKeyPair)
 
 		retSN := uint32(0)

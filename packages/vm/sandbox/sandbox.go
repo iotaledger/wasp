@@ -162,18 +162,18 @@ func (s *sandbox) Foundries() iscp.Foundries {
 	return s
 }
 
-func (s *sandbox) CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) uint32 {
+func (s *sandbox) CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) (uint32, uint64) {
 	return s.vmctx.CreateNewFoundry(scheme, tag, maxSupply)
 }
 
-func (s *sandbox) Destroy(sn uint32) {
-	s.vmctx.DestroyFoundry(sn)
+func (s *sandbox) Destroy(sn uint32) int64 {
+	return s.vmctx.DestroyFoundry(sn)
 }
 
 func (s *sandbox) GetOutput(sn uint32) *iotago.FoundryOutput {
 	return s.vmctx.GetOutput(sn)
 }
 
-func (s *sandbox) ModifySupply(sn uint32, delta *big.Int) {
-	s.vmctx.ModifySupply(sn, delta)
+func (s *sandbox) ModifySupply(sn uint32, delta *big.Int) int64 {
+	return s.vmctx.ModifySupply(sn, delta)
 }

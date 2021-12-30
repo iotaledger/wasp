@@ -22,7 +22,7 @@ import (
 
 func (e *chainEnv) checkCoreContracts() {
 	for i := range e.chain.CommitteeNodes {
-		b, err := e.chain.GetStateVariable(root.Contract.Hname(), root.VarStateInitialized, i)
+		b, err := e.chain.GetStateVariable(root.Contract.Hname(), root.StateVarStateInitialized, i)
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, []byte{0xFF}, b)
 
@@ -46,7 +46,7 @@ func (e *chainEnv) checkCoreContracts() {
 			CallView(root.FuncGetContractRecords.Name, nil)
 		require.NoError(e.t, err)
 
-		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.VarContractRegistry))
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.StateVarContractRegistry))
 		require.NoError(e.t, err)
 		for _, rec := range core.AllCoreContractsByHash {
 			cr := contractRegistry[rec.Contract.Hname()]

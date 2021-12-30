@@ -71,19 +71,21 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 		return err
 	}
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
-	vmctx.assertConsistentL2WithL1TxBuilder()
+	vmctx.assertConsistentL2WithL1TxBuilder("end RunTheRequest")
 	return nil
 }
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
 func (vmctx *VMContext) creditAssetsToChain() {
+	vmctx.assertConsistentL2WithL1TxBuilder("begin creditAssetsToChain")
+
 	if vmctx.req.IsOffLedger() {
 		// off ledger requests does not bring any deposit
 		return
 	}
-	if vmctx.isInitChainRequest() {
+	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
 		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-			Iotas: vmctx.txbuilder.TotalAvailableIotas(),
+			Iotas: vmctx.txbuilder.TotalIotasInContracts(),
 		})
 	}
 	// consume output into the transaction builder
@@ -112,7 +114,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		}
 	}
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
-	vmctx.assertConsistentL2WithL1TxBuilder()
+	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
 }
 
 func (vmctx *VMContext) prepareGasBudget() {

@@ -47,17 +47,17 @@ type Balance interface {
 }
 
 // Foundries are identified by serial number in the Sandbox
-// Only used internally by the VM
+// Only used internally by the VM core contracts
 // TODO foundry metadata
 type Foundries interface {
 	// CreateNew creates a new foundry controlled by the caller
-	CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) uint32
+	CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) (uint32, uint64)
 	// Destroy existing foundry, if this is possible
-	Destroy(uint32)
+	Destroy(uint32) int64
 	// GetOutput returns the output
 	GetOutput(uint32) *iotago.FoundryOutput
 	// ModifySupply inflates of shrinks supply
-	ModifySupply(serNum uint32, delta *big.Int)
+	ModifySupply(serNum uint32, delta *big.Int) int64
 }
 
 // Sandbox is an interface given to the processor to access the VMContext

@@ -29,14 +29,14 @@ func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a 
 
 func mustStoreContractRecord(ctx iscp.Sandbox, rec *root.ContractRecord, a assert.Assert) {
 	hname := rec.Hname()
-	contractRegistry := collections.NewMap(ctx.State(), root.VarContractRegistry)
+	contractRegistry := collections.NewMap(ctx.State(), root.StateVarContractRegistry)
 	a.Require(!contractRegistry.MustHasAt(hname.Bytes()), "contract '%s'/%s already exist", rec.Name, hname.String())
 	contractRegistry.MustSetAt(hname.Bytes(), rec.Bytes())
 }
 
 // isAuthorizedToDeploy checks if caller is authorized to deploy smart contract
 func isAuthorizedToDeploy(ctx iscp.Sandbox) bool {
-	permissionsEnabled, err := codec.DecodeBool(ctx.State().MustGet(root.VarDeployPermissionsEnabled))
+	permissionsEnabled, err := codec.DecodeBool(ctx.State().MustGet(root.StateVarDeployPermissionsEnabled))
 	if err != nil {
 		return false
 	}
@@ -54,7 +54,7 @@ func isAuthorizedToDeploy(ctx iscp.Sandbox) bool {
 		return true
 	}
 
-	return collections.NewMap(ctx.State(), root.VarDeployPermissions).MustHasAt(caller.Bytes())
+	return collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustHasAt(caller.Bytes())
 }
 
 func isChainOwner(a assert.Assert, ctx iscp.Sandbox) bool {

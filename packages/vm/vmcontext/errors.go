@@ -7,4 +7,5 @@ var (
 	ErrRepeatingInitCall                 = xerrors.New("repeating init call")
 	ErrNonViewExpected                   = xerrors.New("non-view entry point expected")
 	ErrNotEnoughTokensFor1GasNominalUnit = xerrors.New("not enough tokens for one nominal gas unit")
+	ErrInconsistentDustAssumptions       = xerrors.New("dust deposit requirements are not consistent with the chain assumptions")
 )

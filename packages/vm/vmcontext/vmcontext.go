@@ -108,6 +108,35 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),
 	}
+
+	// at the beginning of each block
+	var dustAssumptions *vmtxbuilder.InternalDustDepositAssumption
+
+	if task.AnchorOutput.StateIndex > 0 {
+		ret.currentStateUpdate = state.NewStateUpdate()
+
+		// load and validate chain's dust assumptions about internal outputs. They must not get bigger!
+		ret.callCore(root.Contract, func(s kv.KVStore) {
+			dustAssumptions = root.GetDustAssumptions(s)
+		})
+		currentDustDepositValues := vmtxbuilder.NewDepositEstimate(task.RentStructure)
+		if currentDustDepositValues.AnchorOutput > dustAssumptions.AnchorOutput ||
+			currentDustDepositValues.NativeTokenOutput > dustAssumptions.NativeTokenOutput {
+			panic(ErrInconsistentDustAssumptions)
+		}
+
+		// save the anchor tx ID of the current state
+		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
+			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID)
+		})
+
+		ret.virtualState.ApplyStateUpdates(ret.currentStateUpdate)
+		ret.currentStateUpdate = nil
+	} else {
+		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
+		dustAssumptions = vmtxbuilder.NewDepositEstimate(task.RentStructure)
+	}
+
 	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
 		return ret.loadNativeTokenOutput(id)
 	}
@@ -119,18 +148,9 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		&task.AnchorOutputID,
 		nativeTokenBalanceLoader,
 		foundryLoader,
+		*dustAssumptions,
 		task.RentStructure,
 	)
-
-	// at the beginning of each block we save the anchor tx ID of the current state
-	if task.AnchorOutput.StateIndex > 0 {
-		ret.currentStateUpdate = state.NewStateUpdate()
-		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.SetAnchorTransactionIDOfLatestBlock(s, ret.task.AnchorOutputID.TransactionID)
-		})
-		ret.virtualState.ApplyStateUpdates(ret.currentStateUpdate)
-		ret.currentStateUpdate = nil
-	}
 
 	return ret
 }
@@ -195,10 +215,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	}
 
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		idx := blocklog.SaveNextBlockInfo(s, blockInfo)
-		if idx != blockInfo.BlockIndex {
-			panic("CloseVMContext: inconsistent block index")
-		}
+		blocklog.SaveNextBlockInfo(s, blockInfo)
 		blocklog.SaveControlAddressesIfNecessary(
 			s,
 			vmctx.task.AnchorOutput.StateController,
@@ -248,10 +265,10 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 	})
 }
 
-func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder() {
+func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
 	var totalAssets *iscp.Assets
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		totalAssets = accounts.GetTotalAssets(s)
 	})
-	vmctx.txbuilder.AssertConsistentWithL2Totals(totalAssets)
+	vmctx.txbuilder.AssertConsistentWithL2Totals(totalAssets, checkpoint)
 }

@@ -9,6 +9,8 @@ package rootimpl
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -39,21 +41,25 @@ var Processor = root.Contract.Processor(initialize,
 // - deploys other core contracts: 'accounts', 'blob', 'blocklog' by creating records in the registry and calling constructors
 // Input:
 // - ParamChainID iscp.ChainID. ID of the chain. Cannot be changed
-// - ParamChainColor ledgerstate.Color
 // - ParamDescription string defaults to "N/A"
-// - ParamFeeColor ledgerstate.Color fee color code. Defaults to IOTA color. It cannot be changed
+// - ParamDustDepositAssumptionsBin encoded assumptions about minimum dust deposit for internal outputs
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.begin")
 	state := ctx.State()
 	a := assert.NewAssert(ctx.Log())
 
-	a.Require(state.MustGet(root.VarStateInitialized) == nil, "root.initialize.fail: already initialized")
+	a.Require(state.MustGet(root.StateVarStateInitialized) == nil, "root.initialize.fail: already initialized")
 	a.Require(ctx.Caller().Hname() == 0, "root.init.fail: chain deployer can't be another smart contract")
 	creator := ctx.StateAnchor().Sender
 	a.Require(creator != nil && creator.Equal(ctx.Caller().Address()), "only creator of the origin can send the 'init' request")
 
-	contractRegistry := collections.NewMap(state, root.VarContractRegistry)
+	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
+
+	dustAssumptionsBin, err := ctx.Params().Get(root.ParamDustDepositAssumptionsBin)
+	a.RequireNoError(err)
+	_, err = vmtxbuilder.InternalDustDepositAssumptionFromBytes(dustAssumptionsBin)
+	a.Require(err == nil, "cannot initialize chain: 'dust deposit assumptions' parameter not specified or wrong")
 
 	mustStoreContract(ctx, root.Contract, a)
 	mustStoreAndInitCoreContract(ctx, blob.Contract, a)
@@ -65,8 +71,9 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	govParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes())
 	mustStoreAndInitCoreContract(ctx, governance.Contract, a, govParams)
 
-	state.Set(root.VarDeployPermissionsEnabled, codec.EncodeBool(true))
-	state.Set(root.VarStateInitialized, []byte{0xFF})
+	state.Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(true))
+	state.Set(root.StateVarDustDepositAssumptions, dustAssumptionsBin)
+	state.Set(root.StateVarStateInitialized, []byte{0xFF})
 
 	ctx.Log().Debugf("root.initialize.success")
 	return nil, nil
@@ -150,7 +157,7 @@ func grantDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	deployer := params.MustGetAgentID(root.ParamDeployer)
 
-	collections.NewMap(ctx.State(), root.VarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
+	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
 	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer))
 	return nil, nil
 }
@@ -165,16 +172,16 @@ func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	deployer := params.MustGetAgentID(root.ParamDeployer)
 
-	collections.NewMap(ctx.State(), root.VarDeployPermissions).MustDelAt(deployer.Bytes())
+	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustDelAt(deployer.Bytes())
 	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
 	return nil, nil
 }
 
 func getContractRecords(ctx iscp.SandboxView) (dict.Dict, error) {
-	src := collections.NewMapReadOnly(ctx.State(), root.VarContractRegistry)
+	src := collections.NewMapReadOnly(ctx.State(), root.StateVarContractRegistry)
 
 	ret := dict.New()
-	dst := collections.NewMap(ret, root.VarContractRegistry)
+	dst := collections.NewMap(ret, root.StateVarContractRegistry)
 	src.MustIterate(func(elemKey []byte, value []byte) bool {
 		dst.MustSetAt(elemKey, value)
 		return true
@@ -189,6 +196,6 @@ func requireDeployPermissions(ctx iscp.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	a.Require(ctx.Params().MustHas(root.ParamDeployPermissionsEnabled), "root.revokeDeployPermissions: ParamDeployPermissionsEnabled missing")
 	permissionsEnabled := params.MustGetBool(root.ParamDeployPermissionsEnabled)
-	ctx.State().Set(root.VarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
+	ctx.State().Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
 	return nil, nil
 }
