@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/mr-tron/base58"
 )
@@ -42,9 +43,12 @@ func (s *Service) AsClientView() ClientView {
 	return ClientView{svc: s}
 }
 
-func (s *Service) CallView(viewName string, args *Arguments) (ret Results) {
-	ret.res, ret.err = s.waspClient.CallView(s.chainID, s.scHname, viewName, args.args)
-	return ret
+func (s *Service) CallView(viewName string, args *Arguments) (dict.Dict, error) {
+	arg := dict.Dict(nil)
+	if args != nil {
+		arg = args.args
+	}
+	return s.waspClient.CallView(s.chainID, s.scHname, viewName, arg)
 }
 
 func (s *Service) PostRequest(funcHname uint32, args *Arguments, transfer map[string]uint64, keyPair *ed25519.KeyPair) Request {
@@ -52,7 +56,10 @@ func (s *Service) PostRequest(funcHname uint32, args *Arguments, transfer map[st
 	if err != nil {
 		return Request{err: err}
 	}
-	reqArgs := requestargs.New().AddEncodeSimpleMany(args.args)
+	reqArgs := requestargs.New()
+	if args != nil {
+		reqArgs.AddEncodeSimpleMany(args.args)
+	}
 	req := request.NewOffLedger(s.chainID, s.scHname, iscp.Hname(funcHname), reqArgs)
 	req.WithTransfer(bal)
 	req.Sign(keyPair)

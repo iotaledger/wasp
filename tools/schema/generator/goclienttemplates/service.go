@@ -85,7 +85,8 @@ $#if param execWithArgs execNoArgs
 func (f *$FuncName$Kind) Call() $FuncName$+Results {
 $#each mandatory mandatoryCheck
 $#if param execWithArgs execNoArgs
-	return $FuncName$+Results { res: f.ClientView.Call("$funcName", $args) }
+	f.ClientView.Call("$funcName", $args)
+	return $FuncName$+Results { res: f.Results() }
 }
 $#if result resultStruct
 `,

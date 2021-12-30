@@ -232,7 +232,8 @@ func (f *ArrayLengthView) Name(v string) {
 
 func (f *ArrayLengthView) Call() ArrayLengthResults {
 	f.args.Mandatory(ArgName)
-	return ArrayLengthResults{res: f.ClientView.Call("arrayLength", &f.args)}
+	f.ClientView.Call("arrayLength", &f.args)
+	return ArrayLengthResults{res: f.Results()}
 }
 
 type ArrayLengthResults struct {
@@ -261,7 +262,8 @@ func (f *ArrayValueView) Name(v string) {
 func (f *ArrayValueView) Call() ArrayValueResults {
 	f.args.Mandatory(ArgIndex)
 	f.args.Mandatory(ArgName)
-	return ArrayValueResults{res: f.ClientView.Call("arrayValue", &f.args)}
+	f.ClientView.Call("arrayValue", &f.args)
+	return ArrayValueResults{res: f.Results()}
 }
 
 type ArrayValueResults struct {
@@ -290,7 +292,8 @@ func (f *BlockRecordView) RecordIndex(v int32) {
 func (f *BlockRecordView) Call() BlockRecordResults {
 	f.args.Mandatory(ArgBlockIndex)
 	f.args.Mandatory(ArgRecordIndex)
-	return BlockRecordResults{res: f.ClientView.Call("blockRecord", &f.args)}
+	f.ClientView.Call("blockRecord", &f.args)
+	return BlockRecordResults{res: f.Results()}
 }
 
 type BlockRecordResults struct {
@@ -314,7 +317,8 @@ func (f *BlockRecordsView) BlockIndex(v int32) {
 
 func (f *BlockRecordsView) Call() BlockRecordsResults {
 	f.args.Mandatory(ArgBlockIndex)
-	return BlockRecordsResults{res: f.ClientView.Call("blockRecords", &f.args)}
+	f.ClientView.Call("blockRecords", &f.args)
+	return BlockRecordsResults{res: f.Results()}
 }
 
 type BlockRecordsResults struct {
@@ -332,7 +336,8 @@ type GetRandomView struct {
 }
 
 func (f *GetRandomView) Call() GetRandomResults {
-	return GetRandomResults{res: f.ClientView.Call("getRandom", nil)}
+	f.ClientView.Call("getRandom", nil)
+	return GetRandomResults{res: f.Results()}
 }
 
 type GetRandomResults struct {
@@ -350,7 +355,8 @@ type IotaBalanceView struct {
 }
 
 func (f *IotaBalanceView) Call() IotaBalanceResults {
-	return IotaBalanceResults{res: f.ClientView.Call("iotaBalance", nil)}
+	f.ClientView.Call("iotaBalance", nil)
+	return IotaBalanceResults{res: f.Results()}
 }
 
 type IotaBalanceResults struct {

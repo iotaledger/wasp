@@ -9,12 +9,7 @@ import (
 // The Results struct is used to gather all arguments for a smart
 // contract function call and encode it into a deterministic byte array
 type Results struct {
-	err error
 	res dict.Dict
-}
-
-func (r Results) Error() error {
-	return r.err
 }
 
 func (r Results) Exists(key string) bool {

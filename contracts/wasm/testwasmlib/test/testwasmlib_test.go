@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
@@ -310,13 +309,17 @@ func TestMultiRandom(t *testing.T) {
 	}
 }
 
-func TestClient(t *testing.T) {
-	// hardcoded seed and chain ID, taken from wasp-cli.json
-	// note that normally the chain has already been set up and
-	// the contract has already been deployed in some way
-	const mySeed = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
+// hardcoded seed and chain ID, taken from wasp-cli.json
+// note that normally the chain has already been set up and
+// the contract has already been deployed in some way, so
+// these values are usually available from elsewhere
+const (
+	mySeed    = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
+	myChainID = "qjA8Ybw4WijnmGUqDtNcPhAxFymjQKepNyyfp5BUGsWP"
+)
+
+func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {
 	require.True(t, wasmclient.SeedIsValid(mySeed))
-	const myChainID = "qjA8Ybw4WijnmGUqDtNcPhAxFymjQKepNyyfp5BUGsWP"
 	require.True(t, wasmclient.ChainIsValid(myChainID))
 
 	// we're testing against wasp-cluster, so defaults will do
@@ -328,6 +331,11 @@ func TestClient(t *testing.T) {
 
 	// we'll use the first address in the seed to sign requests
 	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, 0))
+	return svc
+}
+
+func TestClientEvents(t *testing.T) {
+	svc := setupClient(t)
 
 	// get new triggerEvent interface, pass params, and post the request
 	f := svc.TriggerEvent()
@@ -336,6 +344,9 @@ func TestClient(t *testing.T) {
 	req1 := f.Post()
 	require.NoError(t, req1.Error())
 
+	// err := svc.WaitRequest(req1)
+	// require.NoError(t, err)
+
 	// get new triggerEvent interface, pass params, and post the request
 	f = svc.TriggerEvent()
 	f.Name("Trala")
@@ -343,13 +354,25 @@ func TestClient(t *testing.T) {
 	req2 := f.Post()
 	require.NoError(t, req2.Error())
 
-	// just for fun wait in reverse order
-	err = svc.WaitRequest(req2)
+	err := svc.WaitRequest(req2)
+	require.NoError(t, err)
+}
+
+func TestClientRandom(t *testing.T) {
+	svc := setupClient(t)
+
+	// generate new random value
+	f := svc.Random()
+	req := f.Post()
+	require.NoError(t, req.Error())
+
+	err := svc.WaitRequest(req)
 	require.NoError(t, err)
 
-	err = svc.WaitRequest(req1)
-	require.NoError(t, err)
-
-	// give event handlers some time to complete
-	time.Sleep(4 * time.Second)
+	// get current random value
+	v := svc.GetRandom()
+	res := v.Call()
+	require.NoError(t, v.Error())
+	require.GreaterOrEqual(t, res.Random(), int64(0))
+	fmt.Println("Random: ", res.Random())
 }
