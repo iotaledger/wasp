@@ -348,16 +348,16 @@ func (ch *Chain) L2CommonAccountNativeTokens(tokenID *iotago.NativeTokenID) *big
 	return ch.L2AccountBalances(ch.CommonAccount()).AmountNativeToken(tokenID)
 }
 
-// L2TotalAssets return total sum of assets contained in the on-chain accounts
-func (ch *Chain) L2TotalAssets() *iscp.Assets {
+// L2TotalAssetsInAccounts return total sum of assets contained in the on-chain accounts
+func (ch *Chain) L2TotalAssetsInAccounts() *iscp.Assets {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewTotalAssets.Name),
 	)
 }
 
-// L2TotalIotas return total sum of iotas
-func (ch *Chain) L2TotalIotas() uint64 {
-	return ch.L2TotalAssets().Iotas
+// L2TotalIotasInAccounts return total sum of iotas
+func (ch *Chain) L2TotalIotasInAccounts() uint64 {
+	return ch.L2TotalAssetsInAccounts().Iotas
 }
 
 func mustNativeTokenIDFromBytes(data []byte) *iotago.NativeTokenID {
@@ -402,21 +402,21 @@ func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, e
 }
 
 type DustInfo struct {
-	TotalIotasInContracts uint64
-	TotalDustDeposit      uint64
-	NumNativeTokens       int
+	TotalIotasInL2Accounts uint64
+	TotalDustDeposit       uint64
+	NumNativeTokens        int
 }
 
 func (d *DustInfo) Total() uint64 {
-	return d.TotalIotasInContracts + d.TotalDustDeposit*uint64(d.NumNativeTokens)
+	return d.TotalIotasInL2Accounts + d.TotalDustDeposit*uint64(d.NumNativeTokens)
 }
 
 func (ch *Chain) GetTotalIotaInfo() *DustInfo {
 	bi := ch.GetLatestBlockInfo()
 	return &DustInfo{
-		TotalIotasInContracts: bi.TotalIotasInContracts,
-		TotalDustDeposit:      bi.TotalDustDeposit,
-		NumNativeTokens:       len(ch.GetOnChainTokenIDs()),
+		TotalIotasInL2Accounts: bi.TotalIotasInL2Accounts,
+		TotalDustDeposit:       bi.TotalDustDeposit,
+		NumNativeTokens:        len(ch.GetOnChainTokenIDs()),
 	}
 }
 

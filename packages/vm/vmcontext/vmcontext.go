@@ -198,17 +198,17 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	}
 	totalIotasInContracts, totalDustOnChain := vmctx.txbuilder.TotalIotasInOutputs()
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:            vmctx.virtualState.BlockIndex(),
-		Timestamp:             vmctx.virtualState.Timestamp(),
-		TotalRequests:         numRequests,
-		NumSuccessfulRequests: numSuccess,
-		NumOffLedgerRequests:  numOffLedger,
-		PreviousStateHash:     prevStateData.Commitment,
-		AnchorTransactionID:   iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
-		TotalIotasInContracts: totalIotasInContracts,
-		TotalDustDeposit:      totalDustOnChain,
-		GasBurned:             vmctx.gasBurnedTotal,
-		GasFeeCharged:         vmctx.gasFeeChargedTotal,
+		BlockIndex:             vmctx.virtualState.BlockIndex(),
+		Timestamp:              vmctx.virtualState.Timestamp(),
+		TotalRequests:          numRequests,
+		NumSuccessfulRequests:  numSuccess,
+		NumOffLedgerRequests:   numOffLedger,
+		PreviousStateHash:      prevStateData.Commitment,
+		AnchorTransactionID:    iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		TotalIotasInL2Accounts: totalIotasInContracts,
+		TotalDustDeposit:       totalDustOnChain,
+		GasBurned:              vmctx.gasBurnedTotal,
+		GasFeeCharged:          vmctx.gasFeeChargedTotal,
 	}
 	if vmctx.virtualState.PreviousStateHash() != blockInfo.PreviousStateHash {
 		panic("CloseVMContext: inconsistent previous state hash")

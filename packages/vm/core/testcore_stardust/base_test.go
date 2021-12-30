@@ -44,9 +44,9 @@ func TestLedgerBaseConsistency(t *testing.T) {
 
 	// query dust parameters of the latest block
 	totalIotasInfo := ch.GetTotalIotaInfo()
-	totalIotasOnChain := ch.L2TotalIotas()
+	totalIotasOnChain := ch.L2TotalIotasInAccounts()
 	// all goes to dust and to total iotas on chain
-	totalSpent := totalIotasInfo.TotalDustDeposit + totalIotasInfo.TotalIotasInContracts
+	totalSpent := totalIotasInfo.TotalDustDeposit + totalIotasInfo.TotalIotasInL2Accounts
 	t.Logf("total on chain: dust deposit: %d, total iotas on chain: %d, total spent: %d",
 		totalIotasInfo.TotalDustDeposit, totalIotasOnChain, totalSpent)
 	// what has left on L1 address
@@ -63,7 +63,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	require.EqualValues(t, 1, len(aliasOutputs))
 
 	// check total on chain assets
-	totalAssets := ch.L2TotalAssets()
+	totalAssets := ch.L2TotalAssetsInAccounts()
 	// no native tokens expected
 	require.EqualValues(t, 0, len(totalAssets.Tokens))
 	// what spent all goes to the alias output
@@ -85,7 +85,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		ch := env.NewChain(nil, "chain1")
 		defer ch.Log.Sync()
 
-		totalIotasBefore := ch.L2TotalIotas()
+		totalIotasBefore := ch.L2TotalIotasInAccounts()
 		originatorsL2IotasBefore := ch.L2AccountIotas(ch.OriginatorAgentID)
 		originatorsL1IotasBefore := env.L1IotaBalance(ch.OriginatorAddress)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
@@ -96,7 +96,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// expecting specific error
 		require.True(t, errors.Is(err, vmcontext.ErrTargetContractNotFound))
 
-		totalIotasAfter := ch.L2TotalIotas()
+		totalIotasAfter := ch.L2TotalIotasInAccounts()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
@@ -120,7 +120,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := iscp.NewAgentID(senderAddr, 0)
 
-		totalIotasBefore := ch.L2TotalIotas()
+		totalIotasBefore := ch.L2TotalIotasInAccounts()
 		originatorsL2IotasBefore := ch.L2AccountIotas(ch.OriginatorAgentID)
 		originatorsL1IotasBefore := env.L1IotaBalance(ch.OriginatorAddress)
 		env.AssertL1AddressIotas(senderAddr, solo.Saldo)
@@ -132,7 +132,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetContractNotFound.Error())
 
-		totalIotasAfter := ch.L2TotalIotas()
+		totalIotasAfter := ch.L2TotalIotasInAccounts()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
@@ -157,7 +157,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		ch := env.NewChain(nil, "chain1")
 		defer ch.Log.Sync()
 
-		totalIotasBefore := ch.L2TotalIotas()
+		totalIotasBefore := ch.L2TotalIotasInAccounts()
 		originatorsL2IotasBefore := ch.L2AccountIotas(ch.OriginatorAgentID)
 		originatorsL1IotasBefore := env.L1IotaBalance(ch.OriginatorAddress)
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
@@ -168,7 +168,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
 
-		totalIotasAfter := ch.L2TotalIotas()
+		totalIotasAfter := ch.L2TotalIotasInAccounts()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
@@ -192,7 +192,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := iscp.NewAgentID(senderAddr, 0)
 
-		totalIotasBefore := ch.L2TotalIotas()
+		totalIotasBefore := ch.L2TotalIotasInAccounts()
 		originatorsL2IotasBefore := ch.L2AccountIotas(ch.OriginatorAgentID)
 		originatorsL1IotasBefore := env.L1IotaBalance(ch.OriginatorAddress)
 		env.AssertL1AddressIotas(senderAddr, solo.Saldo)
@@ -204,7 +204,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
 
-		totalIotasAfter := ch.L2TotalIotas()
+		totalIotasAfter := ch.L2TotalIotasInAccounts()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]

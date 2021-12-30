@@ -85,7 +85,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	}
 	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
 		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-			Iotas: vmctx.txbuilder.TotalIotasInContracts(),
+			Iotas: vmctx.txbuilder.TotalIotasInL2Accounts(),
 		})
 	}
 	// consume output into the transaction builder
