@@ -46,7 +46,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	totalIotasInfo := ch.GetTotalIotaInfo()
 	totalIotasOnChain := ch.L2TotalIotas()
 	// all goes to dust and to total iotas on chain
-	totalSpent := totalIotasInfo.TotalDustDeposit + totalIotasInfo.TotalIotasInContracts
+	totalSpent := totalIotasInfo.TotalDustDeposit + totalIotasInfo.TotalIotasInL2Accounts
 	t.Logf("total on chain: dust deposit: %d, total iotas on chain: %d, total spent: %d",
 		totalIotasInfo.TotalDustDeposit, totalIotasOnChain, totalSpent)
 	// what has left on L1 address

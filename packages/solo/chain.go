@@ -402,21 +402,21 @@ func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, e
 }
 
 type DustInfo struct {
-	TotalIotasInContracts uint64
-	TotalDustDeposit      uint64
-	NumNativeTokens       int
+	TotalIotasInL2Accounts uint64
+	TotalDustDeposit       uint64
+	NumNativeTokens        int
 }
 
 func (d *DustInfo) Total() uint64 {
-	return d.TotalIotasInContracts + d.TotalDustDeposit*uint64(d.NumNativeTokens)
+	return d.TotalIotasInL2Accounts + d.TotalDustDeposit*uint64(d.NumNativeTokens)
 }
 
 func (ch *Chain) GetTotalIotaInfo() *DustInfo {
 	bi := ch.GetLatestBlockInfo()
 	return &DustInfo{
-		TotalIotasInContracts: bi.TotalIotasInContracts,
-		TotalDustDeposit:      bi.TotalDustDeposit,
-		NumNativeTokens:       len(ch.GetOnChainTokenIDs()),
+		TotalIotasInL2Accounts: bi.TotalIotasInContracts,
+		TotalDustDeposit:       bi.TotalDustDeposit,
+		NumNativeTokens:        len(ch.GetOnChainTokenIDs()),
 	}
 }
 

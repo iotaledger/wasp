@@ -117,8 +117,8 @@ func TestTxBuilderBasic(t *testing.T) {
 		)
 		totals, _, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
-		require.EqualValues(t, 1000-txb.dustDepositAssumption.AnchorOutput, totals.TotalIotasOnChain)
-		require.EqualValues(t, 0, len(totals.TokenBalances))
+		require.EqualValues(t, 1000-txb.dustDepositAssumption.AnchorOutput, totals.TotalIotasInL2Accounts)
+		require.EqualValues(t, 0, len(totals.NativeTokenBalances))
 
 		require.EqualValues(t, 1, txb.numInputs())
 		require.EqualValues(t, 1, txb.numOutputs())
@@ -142,7 +142,7 @@ func TestTxBuilderBasic(t *testing.T) {
 			testdeserparams.RentStructure(),
 		)
 		txb.addDeltaIotasToTotal(42)
-		require.EqualValues(t, int(initialTotalIotas-txb.dustDepositAssumption.AnchorOutput+42), int(txb.totalIotasInContracts))
+		require.EqualValues(t, int(initialTotalIotas-txb.dustDepositAssumption.AnchorOutput+42), int(txb.totalIotasInL2Accounts))
 		_, _, isBalanced := txb.Totals()
 		require.False(t, isBalanced)
 	})
@@ -165,8 +165,8 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, txb.dustDepositAssumption.AnchorOutput, totalsOut.TotalIotasInDustDeposit)
 
 		expectedIotas := initialTotalIotas - txb.dustDepositAssumption.AnchorOutput + deposit
-		require.EqualValues(t, expectedIotas, int(totalsOut.TotalIotasOnChain))
-		require.EqualValues(t, 0, len(totalsOut.TokenBalances))
+		require.EqualValues(t, expectedIotas, int(totalsOut.TotalIotasInL2Accounts))
+		require.EqualValues(t, 0, len(totalsOut.NativeTokenBalances))
 
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 
@@ -192,9 +192,9 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, int(txb.dustDepositAssumption.AnchorOutput+txb.dustDepositAssumption.NativeTokenOutput), int(totalsOut.TotalIotasInDustDeposit))
 
 		expectedIotas := initialTotalIotas + deposit - txb.dustDepositAssumption.AnchorOutput - txb.dustDepositAssumption.NativeTokenOutput
-		require.EqualValues(t, int(expectedIotas), int(totalsOut.TotalIotasOnChain))
-		require.EqualValues(t, 1, len(totalsOut.TokenBalances))
-		require.True(t, totalsOut.TokenBalances[tokenID].Cmp(new(big.Int).SetUint64(10)) == 0)
+		require.EqualValues(t, int(expectedIotas), int(totalsOut.TotalIotasInL2Accounts))
+		require.EqualValues(t, 1, len(totalsOut.NativeTokenBalances))
+		require.True(t, totalsOut.NativeTokenBalances[tokenID].Cmp(new(big.Int).SetUint64(10)) == 0)
 
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 
@@ -308,9 +308,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.True(t, isBalanced)
 
 		expectedIotas := initialTotalIotas - int(txb.dustDepositAssumption.AnchorOutput) + int(deposit)
-		require.EqualValues(t, expectedIotas, int(sumIN.TotalIotasOnChain))
+		require.EqualValues(t, expectedIotas, int(sumIN.TotalIotasInL2Accounts))
 		expectedIotas -= len(amounts) * int(txb.dustDepositAssumption.NativeTokenOutput)
-		require.EqualValues(t, expectedIotas, int(sumOUT.TotalIotasOnChain))
+		require.EqualValues(t, expectedIotas, int(sumOUT.TotalIotasInL2Accounts))
 	}
 
 	runPostRequest := func(n int, amount uint64) uint64 {
@@ -526,7 +526,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		totalIn, totalOut, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
-		require.EqualValues(t, initialTotalIotas-txb.dustDepositAssumption.AnchorOutput, int(totalOut.TotalIotasOnChain))
+		require.EqualValues(t, initialTotalIotas-txb.dustDepositAssumption.AnchorOutput, int(totalOut.TotalIotasInL2Accounts))
 		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput+txb.dustDepositAssumption.AnchorOutput), int(totalIn.TotalIotasInDustDeposit))
 		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput+txb.dustDepositAssumption.AnchorOutput), int(totalOut.TotalIotasInDustDeposit))
 		beforeTokens, afterTokens := txb.InternalNativeTokenBalances()
@@ -555,7 +555,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.True(t, isBalanced)
 		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput+txb.dustDepositAssumption.AnchorOutput), int(totalIn.TotalIotasInDustDeposit))
 		require.EqualValues(t, int(sentOut), totalOut.SentOutIotas)
-		require.EqualValues(t, int(initialTotalIotas-txb.dustDepositAssumption.AnchorOutput-sentOut+txb.dustDepositAssumption.NativeTokenOutput), int(txb.totalIotasInContracts))
+		require.EqualValues(t, int(initialTotalIotas-txb.dustDepositAssumption.AnchorOutput-sentOut+txb.dustDepositAssumption.NativeTokenOutput), int(txb.totalIotasInL2Accounts))
 		require.EqualValues(t, txb.dustDepositAssumption.AnchorOutput, int(totalOut.TotalIotasInDustDeposit))
 		beforeTokens, afterTokens := txb.InternalNativeTokenBalances()
 
@@ -588,7 +588,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		totalIn, totalOut, isBalanced := txb.Totals()
 		require.True(t, isBalanced)
 		expectedIotas := initialTotalIotas - int(txb.dustDepositAssumption.AnchorOutput) + int(txb.dustDepositAssumption.NativeTokenOutput)*len(nativeTokenIDs)
-		require.EqualValues(t, expectedIotas, int(totalOut.TotalIotasOnChain))
+		require.EqualValues(t, expectedIotas, int(totalOut.TotalIotasInL2Accounts))
 		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput)*len(nativeTokenIDs)+int(txb.dustDepositAssumption.AnchorOutput), int(totalIn.TotalIotasInDustDeposit))
 		require.EqualValues(t, txb.dustDepositAssumption.AnchorOutput, int(totalOut.TotalIotasInDustDeposit))
 		beforeTokens, afterTokens := txb.InternalNativeTokenBalances()
@@ -710,7 +710,7 @@ func TestFoundries(t *testing.T) {
 
 			tin, tout, balanced := txb.Totals()
 			require.True(t, balanced)
-			t.Logf("%d. total iotas IN: %d, total iotas OUT: %d", i, tin.TotalIotasOnChain, tout.TotalIotasOnChain)
+			t.Logf("%d. total iotas IN: %d, total iotas OUT: %d", i, tin.TotalIotasInL2Accounts, tout.TotalIotasInL2Accounts)
 			t.Logf("%d. dust deposit IN: %d, dust deposit OUT: %d", i, tin.TotalIotasInDustDeposit, tout.TotalIotasInDustDeposit)
 			t.Logf("%d. num foundries: %d", i, txb.nextFoundrySerialNumber())
 		}
