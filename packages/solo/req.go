@@ -234,7 +234,7 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 // 'paramValue') where 'paramName' is a string and 'paramValue' must be of type
 // accepted by the 'codec' package
 func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
-	ch.Log.Infof("callView: %s::%s", scName, funName)
+	ch.Log.Debugf("callView: %s::%s", scName, funName)
 
 	p := parseParams(params)
 

@@ -2,30 +2,23 @@ package testcore
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util"
-
-	"github.com/iotaledger/iota.go/v3/tpkg"
-
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
-
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
-
-	"github.com/stretchr/testify/require"
-
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFoundries(t *testing.T) {
@@ -338,4 +331,71 @@ func TestFoundryValidation(t *testing.T) {
 		err := iotago.NativeTokenSumBalancedWithDiff(tokenID, inSums, outSumsGood, circSupplyChange)
 		require.NoError(t, err)
 	})
+}
+
+func TestAccountBalances(t *testing.T) {
+	env := solo.New(t)
+
+	chainOwner, chainOwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
+	chainOwnerAgentID := iscp.NewAgentID(chainOwnerAddr, 0)
+
+	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
+	senderAgentID := iscp.NewAgentID(senderAddr, 0)
+
+	l1Iotas := func(addr iotago.Address) uint64 { return env.L1AddressBalances(addr).Iotas }
+	totalIotas := l1Iotas(chainOwnerAddr) + l1Iotas(senderAddr)
+
+	chain := env.NewChain(chainOwner, "chain1")
+
+	l2Iotas := func(agentID *iscp.AgentID) uint64 { return chain.L2AccountIotas(agentID) }
+	totalGasFeeCharged := uint64(0)
+
+	checkBalance := func(numReqs int) {
+		require.EqualValues(t,
+			totalIotas,
+			l1Iotas(chainOwnerAddr)+l1Iotas(senderAddr)+l1Iotas(chain.ChainID.AsAddress()),
+		)
+
+		anchor, _ := chain.GetAnchorOutput()
+		require.EqualValues(t, l1Iotas(chain.ChainID.AsAddress()), anchor.Deposit())
+
+		require.LessOrEqual(t, len(chain.L2Accounts()), 3)
+
+		bi := chain.GetLatestBlockInfo()
+
+		require.EqualValues(t,
+			anchor.Deposit(),
+			bi.TotalIotasInL2Accounts+bi.TotalDustDeposit,
+		)
+
+		require.EqualValues(t,
+			bi.TotalIotasInL2Accounts,
+			l2Iotas(chainOwnerAgentID)+l2Iotas(senderAgentID)+l2Iotas(chain.CommonAccount()),
+		)
+
+		require.Equal(t, numReqs == 0, bi.GasFeeCharged == 0)
+		totalGasFeeCharged += bi.GasFeeCharged
+		require.EqualValues(t,
+			l2Iotas(chain.CommonAccount()),
+			totalGasFeeCharged,
+		)
+
+		require.EqualValues(t,
+			solo.Saldo+totalGasFeeCharged-bi.TotalDustDeposit,
+			l1Iotas(chainOwnerAddr)+l2Iotas(chainOwnerAgentID)+l2Iotas(chain.CommonAccount()),
+		)
+		require.EqualValues(t,
+			solo.Saldo-totalGasFeeCharged,
+			l1Iotas(senderAddr)+l2Iotas(senderAgentID),
+		)
+	}
+
+	checkBalance(0)
+
+	for i := 0; i < 5; i++ {
+		_, err := chain.UploadBlob(sender, "field", fmt.Sprintf("dummy blob data #%d", i))
+		require.NoError(t, err)
+
+		checkBalance(i + 1)
+	}
 }
