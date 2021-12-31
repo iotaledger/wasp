@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -21,6 +23,7 @@ var (
 	ErrBadAmount                    = xerrors.New("bad native asset amount")
 	ErrRepeatingFoundrySerialNumber = xerrors.New("repeating serial number of the foundry")
 	ErrFoundryNotFound              = xerrors.New("foundry not found")
+	ErrOverflow                     = xerrors.New("overflow in token arithmetics")
 )
 
 // getAccount each account is a map with the name of its controlling agentID.
@@ -149,12 +152,23 @@ func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asset
 // creditToAccount adds assets to the internal account map
 func creditToAccount(account *collections.Map, assets *iscp.Assets) {
 	iotasBalance, iotasAdd, tokenMutations := loadAccountMutations(account, assets)
+	// safe arithmetics
+	if iotasAdd > iotago.TokenSupply || iotasBalance > iotago.TokenSupply-iotasAdd {
+		panic(ErrOverflow)
+	}
 	if iotasAdd > 0 {
 		account.MustSetAt(nil, util.Uint64To8Bytes(iotasBalance+iotasAdd))
 	}
 	for assetID, m := range tokenMutations {
 		if util.IsZeroBigInt(m.delta) {
 			continue
+		}
+		// safe arithmetics
+		if m.delta.Cmp(big.NewInt(0)) < 0 {
+			panic(ErrBadAmount)
+		}
+		if m.balance.Cmp(new(big.Int).Sub(abi.MaxUint256, m.delta)) > 0 {
+			panic(ErrOverflow)
 		}
 		m.balance.Add(m.balance, m.delta)
 		account.MustSetAt(assetID[:], m.balance.Bytes())
