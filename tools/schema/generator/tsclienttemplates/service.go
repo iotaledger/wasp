@@ -16,7 +16,7 @@ $#each func funcStruct
 export class $PkgName$+Service extends wasmclient.Service {
 
 	constructor(cl: wasmclient.ServiceClient, chainID: string) {
-		super(cl, chainID, "$hscName", events.eventHandlers);
+		super(cl, chainID, 0x$hscName, events.eventHandlers);
 	}
 $#each func serviceFunction
 }
@@ -34,7 +34,7 @@ const Res$FldName = "$fldAlias";
 
 ///////////////////////////// $funcName /////////////////////////////
 
-export class $FuncName$Kind extends wasmclient.FuncObject {
+export class $FuncName$Kind extends wasmclient.Client$Kind {
 $#if param funcArgsMember
 $#each param funcArgSetter
 $#if func funcPost viewCall
@@ -69,21 +69,20 @@ $#if array funcArgSetterArray funcArgSetterBasic
 	// *******************************
 	"funcPost": `
 	
-	public async post(): Promise<void> {
+	public post(): wasmclient.RequestID {
 $#each mandatory mandatoryCheck
-$#set exec this.svc.postRequest
 $#if param execWithArgs execNoArgs
-		$exec;
+		return super.post(0x$hFuncName, $args);
 	}
 `,
 	// *******************************
 	"viewCall": `
 
-	public async call(): Promise<$FuncName$+Results> {
+	public call(): $FuncName$+Results {
 $#each mandatory mandatoryCheck
-$#set exec this.svc.callView
 $#if param execWithArgs execNoArgs
-		return new $FuncName$+Results($exec);
+		super.call("$funcName", $args);
+		return new $FuncName$+Results(this.results());
 	}
 `,
 	// *******************************
@@ -92,11 +91,11 @@ $#if param execWithArgs execNoArgs
 `,
 	// *******************************
 	"execWithArgs": `
-$#set exec $exec("$funcName", this.args)
+$#set args this.args
 `,
 	// *******************************
 	"execNoArgs": `
-$#set exec $exec("$funcName", null)
+$#set args null
 `,
 	// *******************************
 	"resultStruct": `

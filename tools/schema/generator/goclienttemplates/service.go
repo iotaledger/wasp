@@ -76,7 +76,7 @@ func (f *$FuncName$Kind) $FldName(a []$fldLangType) {
 func (f *$FuncName$Kind) Post() wasmclient.Request {
 $#each mandatory mandatoryCheck
 $#if param execWithArgs execNoArgs
-	return f.ClientFunc.Post(0x$funcHname, $args)
+	return f.ClientFunc.Post(0x$hFuncName, $args)
 }
 `,
 	// *******************************

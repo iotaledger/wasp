@@ -42,37 +42,37 @@ const ResValue = "value";
 
 ///////////////////////////// arrayClear /////////////////////////////
 
-export class ArrayClearFunc extends wasmclient.FuncObject {
+export class ArrayClearFunc extends wasmclient.ClientFunc {
 	args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	name(v: string): void {
 		this.args.setString(ArgName, v);
 	}
 	
-	public async post(): Promise<void> {
+	public post(): wasmclient.RequestID {
 		this.args.mandatory(ArgName);
-		this.svc.postRequest("arrayClear", this.args);
+		return super.post(0x88021821, this.args);
 	}
 }
 
 ///////////////////////////// arrayCreate /////////////////////////////
 
-export class ArrayCreateFunc extends wasmclient.FuncObject {
+export class ArrayCreateFunc extends wasmclient.ClientFunc {
 	args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	name(v: string): void {
 		this.args.setString(ArgName, v);
 	}
 	
-	public async post(): Promise<void> {
+	public post(): wasmclient.RequestID {
 		this.args.mandatory(ArgName);
-		this.svc.postRequest("arrayCreate", this.args);
+		return super.post(0x1ed5b23b, this.args);
 	}
 }
 
 ///////////////////////////// arraySet /////////////////////////////
 
-export class ArraySetFunc extends wasmclient.FuncObject {
+export class ArraySetFunc extends wasmclient.ClientFunc {
 	args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	index(v: wasmclient.Int32): void {
@@ -87,17 +87,17 @@ export class ArraySetFunc extends wasmclient.FuncObject {
 		this.args.setString(ArgValue, v);
 	}
 	
-	public async post(): Promise<void> {
+	public post(): wasmclient.RequestID {
 		this.args.mandatory(ArgIndex);
 		this.args.mandatory(ArgName);
 		this.args.mandatory(ArgValue);
-		this.svc.postRequest("arraySet", this.args);
+		return super.post(0x2c4150b3, this.args);
 	}
 }
 
 ///////////////////////////// paramTypes /////////////////////////////
 
-export class ParamTypesFunc extends wasmclient.FuncObject {
+export class ParamTypesFunc extends wasmclient.ClientFunc {
 	args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	address(v: wasmclient.Address): void {
@@ -176,23 +176,23 @@ export class ParamTypesFunc extends wasmclient.FuncObject {
 		this.args.setUint8(ArgUint8, v);
 	}
 	
-	public async post(): Promise<void> {
-		this.svc.postRequest("paramTypes", this.args);
+	public post(): wasmclient.RequestID {
+		return super.post(0x6921c4cd, this.args);
 	}
 }
 
 ///////////////////////////// random /////////////////////////////
 
-export class RandomFunc extends wasmclient.FuncObject {
+export class RandomFunc extends wasmclient.ClientFunc {
 	
-	public async post(): Promise<void> {
-		this.svc.postRequest("random", null);
+	public post(): wasmclient.RequestID {
+		return super.post(0xe86c97ca, null);
 	}
 }
 
 ///////////////////////////// triggerEvent /////////////////////////////
 
-export class TriggerEventFunc extends wasmclient.FuncObject {
+export class TriggerEventFunc extends wasmclient.ClientFunc {
 	args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	address(v: wasmclient.Address): void {
@@ -203,25 +203,26 @@ export class TriggerEventFunc extends wasmclient.FuncObject {
 		this.args.setString(ArgName, v);
 	}
 	
-	public async post(): Promise<void> {
+	public post(): wasmclient.RequestID {
 		this.args.mandatory(ArgAddress);
 		this.args.mandatory(ArgName);
-		this.svc.postRequest("triggerEvent", this.args);
+		return super.post(0xd5438ac6, this.args);
 	}
 }
 
 ///////////////////////////// arrayLength /////////////////////////////
 
-export class ArrayLengthView extends wasmclient.FuncObject {
+export class ArrayLengthView extends wasmclient.ClientView {
 	args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	name(v: string): void {
 		this.args.setString(ArgName, v);
 	}
 
-	public async call(): Promise<ArrayLengthResults> {
+	public call(): ArrayLengthResults {
 		this.args.mandatory(ArgName);
-		return new ArrayLengthResults(this.svc.callView("arrayLength", this.args));
+		super.call("arrayLength", this.args);
+		return new ArrayLengthResults(this.results());
 	}
 }
 
@@ -234,7 +235,7 @@ export class ArrayLengthResults extends wasmclient.ViewResults {
 
 ///////////////////////////// arrayValue /////////////////////////////
 
-export class ArrayValueView extends wasmclient.FuncObject {
+export class ArrayValueView extends wasmclient.ClientView {
 	args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	index(v: wasmclient.Int32): void {
@@ -245,10 +246,11 @@ export class ArrayValueView extends wasmclient.FuncObject {
 		this.args.setString(ArgName, v);
 	}
 
-	public async call(): Promise<ArrayValueResults> {
+	public call(): ArrayValueResults {
 		this.args.mandatory(ArgIndex);
 		this.args.mandatory(ArgName);
-		return new ArrayValueResults(this.svc.callView("arrayValue", this.args));
+		super.call("arrayValue", this.args);
+		return new ArrayValueResults(this.results());
 	}
 }
 
@@ -261,7 +263,7 @@ export class ArrayValueResults extends wasmclient.ViewResults {
 
 ///////////////////////////// blockRecord /////////////////////////////
 
-export class BlockRecordView extends wasmclient.FuncObject {
+export class BlockRecordView extends wasmclient.ClientView {
 	args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	blockIndex(v: wasmclient.Int32): void {
@@ -272,10 +274,11 @@ export class BlockRecordView extends wasmclient.FuncObject {
 		this.args.setInt32(ArgRecordIndex, v);
 	}
 
-	public async call(): Promise<BlockRecordResults> {
+	public call(): BlockRecordResults {
 		this.args.mandatory(ArgBlockIndex);
 		this.args.mandatory(ArgRecordIndex);
-		return new BlockRecordResults(this.svc.callView("blockRecord", this.args));
+		super.call("blockRecord", this.args);
+		return new BlockRecordResults(this.results());
 	}
 }
 
@@ -288,16 +291,17 @@ export class BlockRecordResults extends wasmclient.ViewResults {
 
 ///////////////////////////// blockRecords /////////////////////////////
 
-export class BlockRecordsView extends wasmclient.FuncObject {
+export class BlockRecordsView extends wasmclient.ClientView {
 	args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	blockIndex(v: wasmclient.Int32): void {
 		this.args.setInt32(ArgBlockIndex, v);
 	}
 
-	public async call(): Promise<BlockRecordsResults> {
+	public call(): BlockRecordsResults {
 		this.args.mandatory(ArgBlockIndex);
-		return new BlockRecordsResults(this.svc.callView("blockRecords", this.args));
+		super.call("blockRecords", this.args);
+		return new BlockRecordsResults(this.results());
 	}
 }
 
@@ -310,10 +314,11 @@ export class BlockRecordsResults extends wasmclient.ViewResults {
 
 ///////////////////////////// getRandom /////////////////////////////
 
-export class GetRandomView extends wasmclient.FuncObject {
+export class GetRandomView extends wasmclient.ClientView {
 
-	public async call(): Promise<GetRandomResults> {
-		return new GetRandomResults(this.svc.callView("getRandom", null));
+	public call(): GetRandomResults {
+		super.call("getRandom", null);
+		return new GetRandomResults(this.results());
 	}
 }
 
@@ -326,10 +331,11 @@ export class GetRandomResults extends wasmclient.ViewResults {
 
 ///////////////////////////// iotaBalance /////////////////////////////
 
-export class IotaBalanceView extends wasmclient.FuncObject {
+export class IotaBalanceView extends wasmclient.ClientView {
 
-	public async call(): Promise<IotaBalanceResults> {
-		return new IotaBalanceResults(this.svc.callView("iotaBalance", null));
+	public call(): IotaBalanceResults {
+		super.call("iotaBalance", null);
+		return new IotaBalanceResults(this.results());
 	}
 }
 
@@ -345,7 +351,7 @@ export class IotaBalanceResults extends wasmclient.ViewResults {
 export class TestWasmLibService extends wasmclient.Service {
 
 	constructor(cl: wasmclient.ServiceClient, chainID: string) {
-		super(cl, chainID, "89703a45", events.eventHandlers);
+		super(cl, chainID, 0x89703a45, events.eventHandlers);
 	}
 
 	public arrayClear(): ArrayClearFunc {

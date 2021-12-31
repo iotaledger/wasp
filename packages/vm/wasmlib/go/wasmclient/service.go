@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmclient
 
 import (
@@ -15,8 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/mr-tron/base58"
 )
-
-type Response map[string][]byte
 
 type Service struct {
 	chainID    *iscp.ChainID
@@ -51,7 +52,7 @@ func (s *Service) CallView(viewName string, args *Arguments) (dict.Dict, error) 
 	return s.waspClient.CallView(s.chainID, s.scHname, viewName, arg)
 }
 
-func (s *Service) PostRequest(funcHname uint32, args *Arguments, transfer map[string]uint64, keyPair *ed25519.KeyPair) Request {
+func (s *Service) PostRequest(hFuncName uint32, args *Arguments, transfer *Transfer, keyPair *ed25519.KeyPair) Request {
 	bal, err := makeBalances(transfer)
 	if err != nil {
 		return Request{err: err}
@@ -60,7 +61,7 @@ func (s *Service) PostRequest(funcHname uint32, args *Arguments, transfer map[st
 	if args != nil {
 		reqArgs.AddEncodeSimpleMany(args.args)
 	}
-	req := request.NewOffLedger(s.chainID, s.scHname, iscp.Hname(funcHname), reqArgs)
+	req := request.NewOffLedger(s.chainID, s.scHname, iscp.Hname(hFuncName), reqArgs)
 	req.WithTransfer(bal)
 	req.Sign(keyPair)
 	err = s.waspClient.PostOffLedgerRequest(s.chainID, req)
@@ -79,10 +80,10 @@ func (s *Service) WaitRequest(req Request) error {
 	return s.waspClient.WaitUntilRequestProcessed(s.chainID, *req.id, 1*time.Minute)
 }
 
-func (s *Service) startEventHandlers(ep string, handlers map[string]func([]string)) error {
+func (s *Service) startEventHandlers(eventPort string, handlers map[string]func([]string)) error {
 	chMsg := make(chan []string, 20)
 	chDone := make(chan bool)
-	err := subscribe.Subscribe(ep, chMsg, chDone, true, "")
+	err := subscribe.Subscribe(eventPort, chMsg, chDone, true, "")
 	if err != nil {
 		return err
 	}
@@ -118,18 +119,16 @@ func Base58Encode(b []byte) string {
 	return base58.Encode(b)
 }
 
-func makeBalances(transfer map[string]uint64) (colored.Balances, error) {
+func makeBalances(transfer *Transfer) (colored.Balances, error) {
 	cb := colored.NewBalances()
-	for color, amount := range transfer {
-		if color == colored.IOTA.String() {
-			cb.Set(colored.IOTA, amount)
-			continue
+	if transfer != nil {
+		for color, amount := range transfer.xfer {
+			c, err := colored.ColorFromBase58EncodedString(color)
+			if err != nil {
+				return nil, err
+			}
+			cb.Set(c, amount)
 		}
-		c, err := colored.ColorFromBase58EncodedString(color)
-		if err != nil {
-			return nil, err
-		}
-		cb.Set(c, amount)
 	}
 	return cb, nil
 }

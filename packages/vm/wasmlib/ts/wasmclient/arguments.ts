@@ -60,11 +60,15 @@ export class Arguments {
 	setChainID(key: string, val: wasmclient.ChainID): void {
 		this.setBase58(key, val, wasmlib.TYPE_CHAIN_ID);
 	}
-	
+
 	setHash(key: string, val: wasmclient.Hash): void {
 		this.setBase58(key, val, wasmlib.TYPE_HASH);
 	}
-	
+
+	setHname(key: string, val: wasmclient.Hname): void {
+		this.setUint32(key, val);
+	}
+
 	setInt8(key: string, val: wasmclient.Int8): void {
 		let bytes = Buffer.alloc(1);
 		bytes.writeInt8(val, 0);

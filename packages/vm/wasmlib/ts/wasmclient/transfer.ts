@@ -9,17 +9,19 @@ export class Transfer {
     private xfer = new Map<Buffer, wasmclient.Uint64>();
 
     static iotas(amount: wasmclient.Uint64): Transfer {
-        const iotaColorBase58 = "11111111111111111111111111111111";
-        return Transfer.tokens(iotaColorBase58, amount);
+        return Transfer.tokens("IOTA", amount);
     }
 
     static tokens(color: string, amount: wasmclient.Uint64): Transfer {
-        let transfers = new Transfer();
-        transfers.set(color, amount);
-        return transfers;
+        let transfer = new Transfer();
+        transfer.set(color, amount);
+        return transfer;
     }
 
     set(color: string, amount: wasmclient.Uint64) {
+        if (color == "IOTA") {
+            color = "11111111111111111111111111111111"
+        }
         this.xfer.set(Base58.decode(color), amount);
     }
 
@@ -31,7 +33,7 @@ export class Transfer {
     // and then the 8-byte amount.
     encode(): wasmclient.Bytes {
         let keys = new Array<Buffer>();
-        for (const [key,val] of this.xfer) {
+        for (const [key, val] of this.xfer) {
             // filter out zero transfers
             if (val != BigInt(0)) {
                 keys.push(key);
