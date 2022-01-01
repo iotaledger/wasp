@@ -143,8 +143,3 @@ func (s *sandboxview) gasBudgetLeft() uint64 {
 	}
 	return s.gasBudget - s.gasBurned
 }
-
-func (s *sandboxview) gasSetBudget(gasBudget uint64) {
-	s.gasBudget = gasBudget
-	s.gasBurned = 0
-}
