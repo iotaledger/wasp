@@ -4,6 +4,27 @@
 import * as wasmclient from "./index"
 import {Buffer} from "./buffer";
 
+const headers: { [id: string]: string } = {
+    "Content-Type": "application/json",
+};
+
+interface IResponse {
+    error?: string;
+}
+
+interface IExtendedResponse<U> {
+    body: U;
+    response: Response;
+}
+
+interface ICallViewResponse extends IResponse {
+    Items: [{ Key: string; Value: string }];
+}
+
+interface IOffLedgerRequest {
+    Request: string;
+}
+
 export class WaspClient {
     private waspAPI: string;
 
@@ -11,35 +32,41 @@ export class WaspClient {
         this.waspAPI = "http://" + waspAPI;
     }
 
-    public async sendOffLedgerRequest(chainId: string, offLedgerRequest: Buffer): Promise<void> {
-        const request = { Request: offLedgerRequest.toString('base64') };
-        await this.sendRequestExt<IOffLedgerRequest, null>(
-            this.waspAPI,
-            'post',
-            `request/${chainId}`,
+    //TODO args
+    public async callView(chainID: string, contractHName: string, entryPoint: string, args: wasmclient.Arguments): Promise<wasmclient.Results> {
+        const result = await this.sendRequest<unknown, ICallViewResponse>(
+            "get",
+            "/chain/" + chainID + "/contract/ " + contractHName + "/callview/" + entryPoint,
+            );
+        const res = new wasmclient.Results();
+        if (result.body.Items) {
+            for (let item of result.body.Items) {
+                const key = Buffer.from(item.Key, "base64").toString();
+                const value = Buffer.from(item.Value, "base64");
+                res.res.set(key, value);
+            }
+        }
+        return res;
+    }
+
+    public async postOffLedgerRequest(chainID: string, offLedgerRequest: Buffer): Promise<void> {
+        const request = {Request: offLedgerRequest.toString("base64")};
+        await this.sendRequest<IOffLedgerRequest, null>(
+            "post",
+            "/request/" + chainID,
             request,
         );
     }
 
-    public async sendExecutionRequest(chainId: string, offLedgerRequestId: string): Promise<void> {
-        await this.sendRequestExt<IOffLedgerRequest, null>(
-            this.waspAPI,
-            'get',
-            `chain/${chainId}/request/${offLedgerRequestId}/wait`,
+    public async waitRequest(chainID: string, reqID: wasmclient.RequestID): Promise<void> {
+        await this.sendRequest<unknown, null>(
+            "get",
+            "/chain/" + chainID + "/request/" + reqID + "/wait",
         );
     }
 
-    public async callView(chainId: string, contractHName: string, entryPoint: string, args: wasmclient.Arguments): Promise<CallViewResponse> {
-        const url = `chain/${chainId}/contract/${contractHName}/callview/${entryPoint}`;
-
-        const result = await this.sendRequestExt<unknown, CallViewResponse>(this.waspAPI, 'get', url);
-
-        return result.body;
-    }
-
-    private async sendRequestExt<T, U extends IResponse>(
-        url: string,
-        verb: 'put' | 'post' | 'get' | 'delete',
+    private async sendRequest<T, U extends IResponse>(
+        verb: "put" | "post" | "get" | "delete",
         path: string,
         request?: T | undefined,
     ): Promise<IExtendedResponse<U>> {
@@ -47,17 +74,14 @@ export class WaspClient {
         let fetchResponse: Response;
 
         try {
-            const headers: { [id: string]: string } = {
-                'Content-Type': 'application/json',
-            };
-
-            if (verb == 'get' || verb == 'delete') {
-                fetchResponse = await fetch(`${url}/${path}`, {
+            const url = this.waspAPI + path;
+            if (verb == "get" || verb == "delete") {
+                fetchResponse = await fetch(url, {
                     method: verb,
                     headers,
                 });
-            } else if (verb == 'post' || verb == 'put') {
-                fetchResponse = await fetch(`${url}/${path}`, {
+            } else if (verb == "post" || verb == "put") {
+                fetchResponse = await fetch(url, {
                     method: verb,
                     headers,
                     body: JSON.stringify(request),
@@ -65,7 +89,7 @@ export class WaspClient {
             }
 
             if (!fetchResponse) {
-                throw new Error('No data was returned from the API');
+                throw new Error("No data was returned from the API");
             }
 
             try {
@@ -73,7 +97,7 @@ export class WaspClient {
             } catch (err) {
                 if (!fetchResponse.ok) {
                     const text = await fetchResponse.text();
-                    throw new Error(err.message + '   ---   ' + text);
+                    throw new Error(err.message + "   ---   " + text);
                 }
             }
         } catch (err) {
@@ -82,6 +106,6 @@ export class WaspClient {
             );
         }
 
-        return { body: response, response: fetchResponse };
+        return {body: response, response: fetchResponse};
     }
 }

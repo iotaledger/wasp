@@ -16,24 +16,24 @@ export class ClientFunc {
     // Sends a request to the smart contract service
     // You can wait for the request to complete by using the returned RequestID
     // as parameter to Service.waitRequest()
-    post(hFuncName: wasmclient.Hname, args: wasmclient.Arguments | null): wasmclient.RequestID {
+    public async post(hFuncName: wasmclient.Hname, args: wasmclient.Arguments | null): Promise<wasmclient.RequestID> {
         if (args == null) {
             args = new wasmclient.Arguments();
         }
         if (this.keyPair == null) {
             this.keyPair = this.svc.keyPair;
         }
-        return this.svc.postRequest(hFuncName, args, this.xfer, this.keyPair);
+        return await this.svc.postRequest(hFuncName, args, this.xfer, this.keyPair);
     }
 
     // Optionally overrides the default keypair from the service
-    sign(keyPair: IKeyPair): void {
+    public sign(keyPair: IKeyPair): void {
         this.keyPair = keyPair;
     }
 
     // Optionally indicates which tokens to transfer as part of the request
     // The tokens are presumed to be available in the signing account on the chain
-    transfer(xfer: wasmclient.Transfer): void {
+   public transfer(xfer: wasmclient.Transfer): void {
         this.xfer = xfer;
     }
 }

@@ -2,19 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmclient from "./index"
-import {Base58, ED25519, IKeyPair} from "./crypto";
+import {Base58, ED25519, IKeyPair, Hash} from "./crypto";
 import {Buffer} from "./buffer";
-import {blake2b} from 'blakejs';
 
 export type EventHandlers = { [key: string]: (message: string[]) => void };
-
-export class ViewResults {
-    res: wasmclient.Results;
-
-    constructor(res: wasmclient.Results) {
-        this.res = res;
-    }
-}
 
 export class Service {
     private waspClient: wasmclient.WaspClient;
@@ -32,28 +23,16 @@ export class Service {
         this.startEventHandlers(client.eventPort, eventHandlers);
     }
 
-    // calls a view
-    public callView(viewName: string, args: wasmclient.Arguments): wasmclient.Results {
-        const response = this.waspClient.callView(
+    public async callView(viewName: string, args: wasmclient.Arguments): Promise<wasmclient.Results> {
+        return await this.waspClient.callView(
             this.chainId,
             this.scHname.toString(16),
             viewName,
             args,
         );
-
-        const res = new wasmclient.Results();
-        if (response.Items) {
-            for (let item of response.Items) {
-                const key = Buffer.from(item.Key, "base64").toString();
-                const value = Buffer.from(item.Value, "base64");
-                res.res.set(key, value);
-            }
-        }
-        return res;
     }
 
-    // posts off-tangle request
-    public postRequest(hFuncName: wasmclient.Int32, args: wasmclient.Arguments, transfer: wasmclient.Transfer, keyPair: IKeyPair): wasmclient.RequestID {
+    public async postRequest(hFuncName: wasmclient.Int32, args: wasmclient.Arguments, transfer: wasmclient.Transfer, keyPair: IKeyPair): Promise<wasmclient.RequestID> {
         // get request essence ready for signing
         let essence = Base58.decode(this.chainId);
         essence.writeUInt32LE(this.scHname, essence.length);
@@ -66,15 +45,15 @@ export class Service {
         const requestTypeOffledger = 1;
         buf.writeUInt8(requestTypeOffledger, 0);
         buf = Buffer.concat([buf, essence, ED25519.privateSign(keyPair, essence)]);
-        const hash = blake2b(buf, undefined, 32);
+        const hash = Hash.from(buf);
         const requestID = Buffer.concat([hash, Buffer.alloc(2)]);
 
-        this.waspClient.sendOffLedgerRequest(this.chainId, buf);
+        await this.waspClient.postOffLedgerRequest(this.chainId, buf);
         return Base58.encode(requestID);
     }
 
-    public waitRequest(req: wasmclient.RequestID): void {
-        this.waspClient.sendExecutionRequest(this.chainId, req);
+    public async waitRequest(reqID: wasmclient.RequestID): Promise<void> {
+        await this.waspClient.waitRequest(this.chainId, reqID);
     }
 
     private startEventHandlers(eventPort: string, eventHandlers: EventHandlers) {

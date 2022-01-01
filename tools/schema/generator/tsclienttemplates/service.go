@@ -69,20 +69,19 @@ $#if array funcArgSetterArray funcArgSetterBasic
 	// *******************************
 	"funcPost": `
 	
-	public post(): wasmclient.RequestID {
+	public async post(): Promise<wasmclient.RequestID> {
 $#each mandatory mandatoryCheck
 $#if param execWithArgs execNoArgs
-		return super.post(0x$hFuncName, $args);
+		return await super.post(0x$hFuncName, $args);
 	}
 `,
 	// *******************************
 	"viewCall": `
 
-	public call(): $FuncName$+Results {
+	public async call(): Promise<$FuncName$+Results> {
 $#each mandatory mandatoryCheck
 $#if param execWithArgs execNoArgs
-		super.call("$funcName", $args);
-		return new $FuncName$+Results(this.results());
+		return new $FuncName$+Results(await this.callView("$funcName", $args));
 	}
 `,
 	// *******************************

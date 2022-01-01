@@ -5,6 +5,14 @@ import * as wasmlib from "../wasmlib";
 import {Base58} from "./crypto";
 import {Buffer} from "./buffer";
 
+export class ViewResults {
+    res: wasmclient.Results;
+
+    constructor(res: wasmclient.Results) {
+        this.res = res;
+    }
+}
+
 export class Results {
     res = new Map<string, wasmclient.Bytes>();
 

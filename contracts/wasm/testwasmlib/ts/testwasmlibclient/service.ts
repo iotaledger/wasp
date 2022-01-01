@@ -49,9 +49,9 @@ export class ArrayClearFunc extends wasmclient.ClientFunc {
 		this.args.setString(ArgName, v);
 	}
 	
-	public post(): wasmclient.RequestID {
+	public async post(): Promise<wasmclient.RequestID> {
 		this.args.mandatory(ArgName);
-		return super.post(0x88021821, this.args);
+		return await super.post(0x88021821, this.args);
 	}
 }
 
@@ -64,9 +64,9 @@ export class ArrayCreateFunc extends wasmclient.ClientFunc {
 		this.args.setString(ArgName, v);
 	}
 	
-	public post(): wasmclient.RequestID {
+	public async post(): Promise<wasmclient.RequestID> {
 		this.args.mandatory(ArgName);
-		return super.post(0x1ed5b23b, this.args);
+		return await super.post(0x1ed5b23b, this.args);
 	}
 }
 
@@ -87,11 +87,11 @@ export class ArraySetFunc extends wasmclient.ClientFunc {
 		this.args.setString(ArgValue, v);
 	}
 	
-	public post(): wasmclient.RequestID {
+	public async post(): Promise<wasmclient.RequestID> {
 		this.args.mandatory(ArgIndex);
 		this.args.mandatory(ArgName);
 		this.args.mandatory(ArgValue);
-		return super.post(0x2c4150b3, this.args);
+		return await super.post(0x2c4150b3, this.args);
 	}
 }
 
@@ -176,8 +176,8 @@ export class ParamTypesFunc extends wasmclient.ClientFunc {
 		this.args.setUint8(ArgUint8, v);
 	}
 	
-	public post(): wasmclient.RequestID {
-		return super.post(0x6921c4cd, this.args);
+	public async post(): Promise<wasmclient.RequestID> {
+		return await super.post(0x6921c4cd, this.args);
 	}
 }
 
@@ -185,8 +185,8 @@ export class ParamTypesFunc extends wasmclient.ClientFunc {
 
 export class RandomFunc extends wasmclient.ClientFunc {
 	
-	public post(): wasmclient.RequestID {
-		return super.post(0xe86c97ca, null);
+	public async post(): Promise<wasmclient.RequestID> {
+		return await super.post(0xe86c97ca, null);
 	}
 }
 
@@ -203,10 +203,10 @@ export class TriggerEventFunc extends wasmclient.ClientFunc {
 		this.args.setString(ArgName, v);
 	}
 	
-	public post(): wasmclient.RequestID {
+	public async post(): Promise<wasmclient.RequestID> {
 		this.args.mandatory(ArgAddress);
 		this.args.mandatory(ArgName);
-		return super.post(0xd5438ac6, this.args);
+		return await super.post(0xd5438ac6, this.args);
 	}
 }
 
@@ -219,10 +219,9 @@ export class ArrayLengthView extends wasmclient.ClientView {
 		this.args.setString(ArgName, v);
 	}
 
-	public call(): ArrayLengthResults {
+	public async call(): Promise<ArrayLengthResults> {
 		this.args.mandatory(ArgName);
-		super.call("arrayLength", this.args);
-		return new ArrayLengthResults(this.results());
+		return new ArrayLengthResults(await this.callView("arrayLength", this.args));
 	}
 }
 
@@ -246,11 +245,10 @@ export class ArrayValueView extends wasmclient.ClientView {
 		this.args.setString(ArgName, v);
 	}
 
-	public call(): ArrayValueResults {
+	public async call(): Promise<ArrayValueResults> {
 		this.args.mandatory(ArgIndex);
 		this.args.mandatory(ArgName);
-		super.call("arrayValue", this.args);
-		return new ArrayValueResults(this.results());
+		return new ArrayValueResults(await this.callView("arrayValue", this.args));
 	}
 }
 
@@ -274,11 +272,10 @@ export class BlockRecordView extends wasmclient.ClientView {
 		this.args.setInt32(ArgRecordIndex, v);
 	}
 
-	public call(): BlockRecordResults {
+	public async call(): Promise<BlockRecordResults> {
 		this.args.mandatory(ArgBlockIndex);
 		this.args.mandatory(ArgRecordIndex);
-		super.call("blockRecord", this.args);
-		return new BlockRecordResults(this.results());
+		return new BlockRecordResults(await this.callView("blockRecord", this.args));
 	}
 }
 
@@ -298,10 +295,9 @@ export class BlockRecordsView extends wasmclient.ClientView {
 		this.args.setInt32(ArgBlockIndex, v);
 	}
 
-	public call(): BlockRecordsResults {
+	public async call(): Promise<BlockRecordsResults> {
 		this.args.mandatory(ArgBlockIndex);
-		super.call("blockRecords", this.args);
-		return new BlockRecordsResults(this.results());
+		return new BlockRecordsResults(await this.callView("blockRecords", this.args));
 	}
 }
 
@@ -316,9 +312,8 @@ export class BlockRecordsResults extends wasmclient.ViewResults {
 
 export class GetRandomView extends wasmclient.ClientView {
 
-	public call(): GetRandomResults {
-		super.call("getRandom", null);
-		return new GetRandomResults(this.results());
+	public async call(): Promise<GetRandomResults> {
+		return new GetRandomResults(await this.callView("getRandom", null));
 	}
 }
 
@@ -333,9 +328,8 @@ export class GetRandomResults extends wasmclient.ViewResults {
 
 export class IotaBalanceView extends wasmclient.ClientView {
 
-	public call(): IotaBalanceResults {
-		super.call("iotaBalance", null);
-		return new IotaBalanceResults(this.results());
+	public async call(): Promise<IotaBalanceResults> {
+		return new IotaBalanceResults(await this.callView("iotaBalance", null));
 	}
 }
 

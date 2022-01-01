@@ -5,20 +5,15 @@ import * as wasmclient from "./index"
 
 export class ClientView {
     private svc: wasmclient.Service;
-    private res: wasmclient.Results;
 
     constructor(svc: wasmclient.Service) {
         this.svc = svc;
     }
 
-    call(viewName: string, args: wasmclient.Arguments | null): void {
+    protected async callView(viewName: string, args: wasmclient.Arguments | null): Promise<wasmclient.Results> {
         if (args == null) {
             args = new wasmclient.Arguments();
         }
-        this.res = this.svc.callView(viewName, args);
-    }
-
-    results(): wasmclient.Results {
-        return this.res;
+        return await this.svc.callView(viewName, args);
     }
 }

@@ -1,0 +1,14 @@
+{
+  "name": "wasmclient",
+  "description": "WasmClient, client interface library for ISCP Wasm VM",
+  "version": "1.0.0",
+  "author": "Eric Hop",
+  "dependencies": {},
+  "devDependencies": {
+    "base64-js": "^1.5.1",
+    "blakejs": "^1.1.1",
+    "nanoevents": "^6.0.0",
+    "tslib": "^2.0.0",
+    "tweetnacl": "^1.0.3"
+  }
+}
