@@ -40,10 +40,10 @@ func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID *iscp.Age
 	})
 }
 
-func (vmctx *VMContext) totalAssets() *iscp.Assets {
+func (vmctx *VMContext) totalL2Assets() *iscp.Assets {
 	var ret *iscp.Assets
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetTotalAssets(s)
+		ret = accounts.GetTotalL2Assets(s)
 	})
 	return ret
 }

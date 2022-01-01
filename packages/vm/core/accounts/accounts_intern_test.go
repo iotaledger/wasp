@@ -25,7 +25,7 @@ func TestBasic(t *testing.T) {
 var dummyAssetID = [iotago.NativeTokenIDLength]byte{1, 2, 3}
 
 func checkLedgerT(t *testing.T, state dict.Dict, cp string) *iscp.Assets {
-	total := GetTotalAssets(state)
+	total := GetTotalL2Assets(state)
 	// t.Logf("checkpoint '%s.%s':\n%s", curTest, cp, total.String())
 	require.NotPanics(t, func() {
 		checkLedger(state, cp)
@@ -291,7 +291,7 @@ func TestDebitAll(t *testing.T) {
 	assets := GetAssets(state, agentID1)
 	require.True(t, assets.IsEmpty())
 
-	assets = GetTotalAssets(state)
+	assets = GetTotalL2Assets(state)
 	require.True(t, assets.IsEmpty())
 }
 

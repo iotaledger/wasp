@@ -266,9 +266,9 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 }
 
 func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
-	var totalAssets *iscp.Assets
+	var totalL2Assets *iscp.Assets
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		totalAssets = accounts.GetTotalAssets(s)
+		totalL2Assets = accounts.GetTotalL2Assets(s)
 	})
-	vmctx.txbuilder.AssertConsistentWithL2Totals(totalAssets, checkpoint)
+	vmctx.txbuilder.AssertConsistentWithL2Totals(totalL2Assets, checkpoint)
 }

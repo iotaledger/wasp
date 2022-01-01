@@ -36,13 +36,13 @@ func getAccountR(state kv.KVStoreReader, agentID *iscp.AgentID) *collections.Imm
 	return collections.NewMapReadOnly(state, string(kv.Concat(prefixAccount, agentID.Bytes())))
 }
 
-// getTotalAssetsAccount is an account with totals by token type
-func getTotalAssetsAccount(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, prefixTotalAssetsAccount)
+// getTotalL2AssetsAccount is an account with totals by token type
+func getTotalL2AssetsAccount(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, prefixTotalL2AssetsAccount)
 }
 
-func getTotalAssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, prefixTotalAssetsAccount)
+func getTotalL2AssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, prefixTotalL2AssetsAccount)
 }
 
 // getAccountsMap is a map which contains all non-empty accounts
@@ -85,7 +85,7 @@ func SaveMaxAssumedNonce(state kv.KVStore, address iotago.Address, nonce uint64)
 
 // touchAccount ensures that only non-empty accounts are kept in the accounts map
 func touchAccount(state kv.KVStore, account *collections.Map) {
-	if account.Name() == prefixTotalAssetsAccount {
+	if account.Name() == prefixTotalL2AssetsAccount {
 		return
 	}
 	agentid := []byte(account.Name())[1:] // skip the prefix
@@ -144,7 +144,7 @@ func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asset
 	defer checkLedger(state, "CreditToAccount OUT")
 
 	creditToAccount(account, assets)
-	creditToAccount(getTotalAssetsAccount(state), assets)
+	creditToAccount(getTotalL2AssetsAccount(state), assets)
 	touchAccount(state, account)
 }
 
@@ -187,7 +187,7 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 	if !debitFromAccount(account, assets) {
 		panic(ErrNotEnoughFunds)
 	}
-	if !debitFromAccount(getTotalAssetsAccount(state), assets) {
+	if !debitFromAccount(getTotalL2AssetsAccount(state), assets) {
 		panic("debitFromAccount: inconsistent ledger state")
 	}
 	touchAccount(state, account)
@@ -256,10 +256,6 @@ func GetIotaBalance(state kv.KVStoreReader, agentID *iscp.AgentID) uint64 {
 	return getIotaBalance(getAccountR(state, agentID))
 }
 
-func GetIotaBalanceTotal(state kv.KVStoreReader) uint64 {
-	return getIotaBalance(getTotalAssetsAccountR(state))
-}
-
 func getIotaBalance(account *collections.ImmutableMap) uint64 {
 	if v := account.MustGetAt(nil); v != nil {
 		return util.MustUint64From8Bytes(v)
@@ -273,7 +269,7 @@ func GetNativeTokenBalance(state kv.KVStoreReader, agentID *iscp.AgentID, tokenI
 }
 
 func GetNativeTokenBalanceTotal(state kv.KVStoreReader, tokenID *iotago.NativeTokenID) *big.Int {
-	return getNativeTokenBalance(getTotalAssetsAccountR(state), tokenID)
+	return getNativeTokenBalance(getTotalL2AssetsAccountR(state), tokenID)
 }
 
 func getNativeTokenBalance(account *collections.ImmutableMap, tokenID *iotago.NativeTokenID) *big.Int {
@@ -339,18 +335,18 @@ func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) (*iscp.Asse
 	return getAccountAssets(account), true
 }
 
-func GetTotalAssets(state kv.KVStoreReader) *iscp.Assets {
-	return getAccountAssets(getTotalAssetsAccountR(state))
+func GetTotalL2Assets(state kv.KVStoreReader) *iscp.Assets {
+	return getAccountAssets(getTotalL2AssetsAccountR(state))
 }
 
-// calcTotalAssets traverses the ledger and sums up all assets
-func calcTotalAssets(state kv.KVStoreReader) *iscp.Assets {
+// calcL2TotalAssets traverses the ledger and sums up all assets
+func calcL2TotalAssets(state kv.KVStoreReader) *iscp.Assets {
 	ret := iscp.NewEmptyAssets()
 
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
 		agentID, err := iscp.AgentIDFromBytes(key)
 		if err != nil {
-			panic(xerrors.Errorf("calcTotalAssets: %w", err))
+			panic(xerrors.Errorf("calcL2TotalAssets: %w", err))
 		}
 		accBalances := getAccountAssets(getAccountR(state, agentID))
 		ret.Add(accBalances)
@@ -360,8 +356,8 @@ func calcTotalAssets(state kv.KVStoreReader) *iscp.Assets {
 }
 
 func checkLedger(state kv.KVStore, checkpoint string) {
-	a := GetTotalAssets(state)
-	c := calcTotalAssets(state)
+	a := GetTotalL2Assets(state)
+	c := calcL2TotalAssets(state)
 	if !a.Equals(c) {
 		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'\n total assets: %s\ncalc total: %s\n",
 			checkpoint, a.String(), c.String()))

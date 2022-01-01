@@ -53,7 +53,7 @@ func viewBalance(ctx iscp.SandboxView) (dict.Dict, error) {
 // viewTotalAssets returns total colored balances controlled by the chain
 func viewTotalAssets(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(getTotalAssetsAccountR(ctx.State())), nil
+	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.State())), nil
 }
 
 // viewAccounts returns list of all accounts as keys of the ImmutableCodec

@@ -36,7 +36,7 @@ const (
 	// map with all accounts listed
 	prefixAllAccounts
 	// map of account with all on-chain totals listed
-	prefixTotalAssetsAccount
+	prefixTotalL2AssetsAccount
 	// prefix for the map of nonces
 	prefixMaxAssumedNonceKey
 	// prefix for all foundries owned by the account
