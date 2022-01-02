@@ -29,7 +29,10 @@ export class WaspClient {
     private waspAPI: string;
 
     constructor(waspAPI: string) {
-        this.waspAPI = "http://" + waspAPI;
+        if(waspAPI.startsWith("https://") || waspAPI.startsWith("http://"))
+            this.waspAPI = waspAPI;
+        else
+            this.waspAPI = "http://" + waspAPI;
     }
 
     public async callView(chainID: string, contractHName: string, entryPoint: string, args: Buffer): Promise<wasmclient.Results> {
@@ -41,7 +44,7 @@ export class WaspClient {
         );
         const res = new wasmclient.Results();
         if (result.body.Items) {
-            for (let item of result.body.Items) {
+            for (const item of result.body.Items) {
                 const key = Buffer.from(item.Key, "base64").toString();
                 const value = Buffer.from(item.Value, "base64");
                 res.res.set(key, value);

@@ -15,7 +15,7 @@ export class Arguments {
 	}
 	
 	private setBase58(key: string, val: string, typeID: wasmclient.Int32): void {
-		let bytes = Base58.decode(val);
+		const bytes = Base58.decode(val);
 		if (bytes.length != wasmclient.TYPE_SIZES[typeID]) {
 			wasmclient.panic("invalid byte size");
 		}
@@ -41,7 +41,7 @@ export class Arguments {
 	}
 	
 	setBool(key: string, val: boolean): void {
-		let bytes = Buffer.alloc(1);
+		const bytes = Buffer.alloc(1);
 		if (val) {
 			bytes.writeUInt8(1, 0);
 		}
@@ -69,25 +69,25 @@ export class Arguments {
 	}
 
 	setInt8(key: string, val: wasmclient.Int8): void {
-		let bytes = Buffer.alloc(1);
+		const bytes = Buffer.alloc(1);
 		bytes.writeInt8(val, 0);
 		this.set(key, bytes);
 	}
 	
 	setInt16(key: string, val: wasmclient.Int16): void {
-		let bytes = Buffer.alloc(2);
+		const bytes = Buffer.alloc(2);
 		bytes.writeInt16LE(val, 0);
 		this.set(key, bytes);
 	}
 
 	setInt32(key: string, val: wasmclient.Int32): void {
-		let bytes = Buffer.alloc(4);
+		const bytes = Buffer.alloc(4);
 		bytes.writeInt32LE(val, 0);
 		this.set(key, bytes);
 	}
 	
 	setInt64(key: string, val: wasmclient.Int64): void {
-		let bytes = Buffer.alloc(8);
+		const bytes = Buffer.alloc(8);
 		bytes.writeBigInt64LE(val, 0);
 		this.set(key, bytes);
 	}
@@ -101,25 +101,25 @@ export class Arguments {
 	}
 	
 	setUint8(key: string, val: wasmclient.Uint8): void {
-		let bytes = Buffer.alloc(1);
+		const bytes = Buffer.alloc(1);
 		bytes.writeUInt8(val, 0);
 		this.set(key, bytes);
 	}
 	
 	setUint16(key: string, val: wasmclient.Uint16): void {
-		let bytes = Buffer.alloc(2);
+		const bytes = Buffer.alloc(2);
 		bytes.writeUInt16LE(val, 0);
 		this.set(key, bytes);
 	}
 	
 	setUint32(key: string, val: wasmclient.Uint32): void {
-		let bytes = Buffer.alloc(4);
+		const bytes = Buffer.alloc(4);
 		bytes.writeUInt32LE(val, 0);
 		this.set(key, bytes);
 	}
 	
 	setUint64(key: string, val: wasmclient.Uint64): void {
-		let bytes = Buffer.alloc(8);
+		const bytes = Buffer.alloc(8);
 		bytes.writeBigUInt64LE(val, 0);
 		this.set(key, bytes);
 	}
@@ -131,7 +131,7 @@ export class Arguments {
 	// Next for each argument emit the 2-byte key length, the key prepended
 	// with the minus sign, the 4-byte value length, and then the value bytes.
 	encode(): wasmclient.Bytes {
-		let keys = new Array<string>();
+		const keys = new Array<string>();
 		for (const key of this.args.keys()) {
 			keys.push(key);
 		}
@@ -140,10 +140,10 @@ export class Arguments {
 		let buf = Buffer.alloc(0);
 		buf.writeUInt32LE(keys.length, 0);
 		for (const key of keys) {
-			let keyBuf = Buffer.from("-" + key);
+			const keyBuf = Buffer.from("-" + key);
 			buf.writeUInt16LE(keyBuf.length, buf.length);
 			buf = Buffer.concat([buf, keyBuf]);
-			let valBuf = this.args.get(key);
+			const valBuf = this.args.get(key);
 			buf.writeUInt32LE(valBuf.length, buf.length);
 			buf = Buffer.concat([buf, valBuf]);
 		}
