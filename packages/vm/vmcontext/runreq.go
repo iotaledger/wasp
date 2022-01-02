@@ -34,6 +34,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.RequestData, requestIndex uint16)
 	vmctx.gasBudget = 0
 	vmctx.gasBurned = 0
 	vmctx.gasFeeCharged = 0
+	vmctx.gasBurnEnable(false)
 
 	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
 	defer func() { vmctx.currentStateUpdate = nil }()
@@ -121,6 +122,7 @@ func (vmctx *VMContext) prepareGasBudget() {
 	}
 	vmctx.calculateAffordableGasBudget()
 	vmctx.gasSetBudget(vmctx.gasBudget)
+	vmctx.gasBurnEnable(true)
 }
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
@@ -268,6 +270,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 // chargeGasFee takes burned tokens from the sender's account
 // It should always be enough because gas budget is set affordable
 func (vmctx *VMContext) chargeGasFee() {
+	vmctx.gasBurnEnable(false)
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.RequestData().SenderAddress() == nil")
 	}

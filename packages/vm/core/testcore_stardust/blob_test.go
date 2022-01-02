@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
-
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,6 +29,12 @@ func TestUploadBlob(t *testing.T) {
 	t.Run("from file", func(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain(nil, "chain1")
+
+		// get more iotas for originator
+		originatorBalance := env.L1AddressBalances(ch.OriginatorAddress).Iotas
+		_, err := env.L1Ledger().GetFundsFromFaucet(ch.OriginatorAddress)
+		require.NoError(t, err)
+		env.AssertL1AddressIotas(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
 
 		h, err := ch.UploadBlobFromFile(nil, fileName, "file")
 		require.NoError(t, err)

@@ -29,12 +29,12 @@ func TestCreateOrigin(t *testing.T) {
 	initTest := func() {
 		u = utxodb.New()
 		user, userAddr = u.NewKeyPairByIndex(1)
-		_, err := u.RequestFunds(userAddr)
+		_, err := u.GetFundsFromFaucet(userAddr)
 		require.NoError(t, err)
 
 		_, stateAddr = u.NewKeyPairByIndex(2)
 
-		require.EqualValues(t, utxodb.RequestFundsAmount, u.GetAddressBalanceIotas(userAddr))
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount, u.GetAddressBalanceIotas(userAddr))
 		require.EqualValues(t, 0, u.GetAddressBalanceIotas(stateAddr))
 	}
 	createOrigin := func() {
@@ -112,7 +112,7 @@ func TestCreateOrigin(t *testing.T) {
 
 		t.Logf("chainIotas: %d initIotas: %d", chainIotas, initIotas)
 
-		require.EqualValues(t, utxodb.RequestFundsAmount-chainIotas-initIotas, int(u.GetAddressBalanceIotas(userAddr)))
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount-chainIotas-initIotas, int(u.GetAddressBalanceIotas(userAddr)))
 		require.EqualValues(t, 0, u.GetAddressBalanceIotas(stateAddr))
 		allOutputs, ids := u.GetUnspentOutputs(chainID.AsAddress())
 		require.EqualValues(t, 2, len(allOutputs))

@@ -22,8 +22,8 @@ const (
 
 	Mi = 1_000_000
 
-	// RequestFundsAmount is how many iotas are returned from the faucet.
-	RequestFundsAmount = 1 * Mi
+	// FundsFromFaucetAmount is how many iotas are returned from the faucet.
+	FundsFromFaucetAmount = 1 * Mi
 )
 
 var (
@@ -193,7 +193,7 @@ func (u *UtxoDB) GenesisAddress() iotago.Address {
 	return genesisAddress
 }
 
-func (u *UtxoDB) mustRequestFundsTx(target iotago.Address) *iotago.Transaction {
+func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address) *iotago.Transaction {
 	unspent := u.getUTXOInputs(genesisAddress)
 	if len(unspent) != 1 {
 		panic("number of genesis outputs must be 1")
@@ -202,8 +202,8 @@ func (u *UtxoDB) mustRequestFundsTx(target iotago.Address) *iotago.Transaction {
 	out := u.getOutput(utxo.ID()).(*iotago.ExtendedOutput)
 	tx, err := iotago.NewTransactionBuilder().
 		AddInput(&iotago.ToBeSignedUTXOInput{Address: genesisAddress, Input: utxo}).
-		AddOutput(&iotago.ExtendedOutput{Address: target, Amount: RequestFundsAmount}).
-		AddOutput(&iotago.ExtendedOutput{Address: genesisAddress, Amount: out.Amount - RequestFundsAmount}).
+		AddOutput(&iotago.ExtendedOutput{Address: target, Amount: FundsFromFaucetAmount}).
+		AddOutput(&iotago.ExtendedOutput{Address: genesisAddress, Amount: out.Amount - FundsFromFaucetAmount}).
 		Build(u.deSeriParams(), genesisSigner)
 	if err != nil {
 		panic(err)
@@ -221,9 +221,9 @@ func (u *UtxoDB) NewKeyPairByIndex(index uint64) (cryptolib.KeyPair, *iotago.Ed2
 	return keyPair, addr
 }
 
-// RequestFunds sends RequestFundsAmount IOTA tokens from the genesis address to the given address.
-func (u *UtxoDB) RequestFunds(target iotago.Address) (*iotago.Transaction, error) {
-	tx := u.mustRequestFundsTx(target)
+// GetFundsFromFaucet sends FundsFromFaucetAmount IOTA tokens from the genesis address to the given address.
+func (u *UtxoDB) GetFundsFromFaucet(target iotago.Address) (*iotago.Transaction, error) {
+	tx := u.mustGetFundsFromFaucetTx(target)
 	return tx, u.AddToLedger(tx)
 }
 

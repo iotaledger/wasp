@@ -3,6 +3,8 @@ package vmcontext
 import (
 	"sort"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
@@ -129,6 +131,8 @@ func (s chainStateWrapper) Set(name kv.Key, value []byte) {
 	s.vmctx.task.SolidStateBaseline.MustValidate()
 
 	s.vmctx.currentStateUpdate.Mutations().Set(name, value)
+	// only burning gas when storing bytes to the state
+	s.vmctx.GasBurn(gas.StoreBytes(len(name) + len(value)))
 }
 
 func (vmctx *VMContext) State() kv.KVStore {

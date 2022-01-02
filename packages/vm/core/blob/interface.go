@@ -33,6 +33,7 @@ func GasForBlob(blob dict.Dict) uint64 {
 	for k, v := range blob {
 		g += uint64(len(k)) + uint64(len(v))
 	}
+	g = gas.StoreBytes(int(g))
 	if g < gas.MinGasPerBlob {
 		g = gas.MinGasPerBlob
 	}

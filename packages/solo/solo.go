@@ -39,7 +39,7 @@ import (
 // Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewPrivateKeyWithFunds() and such
 const (
-	Saldo              = utxodb.RequestFundsAmount
+	Saldo              = utxodb.FundsFromFaucetAmount
 	MaxRequestsInBlock = 100
 	timeLayout         = "04:05.000000000"
 )
@@ -209,7 +209,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, name string, va
 	if chainOriginator == nil {
 		origKeyPair, originatorAddr = env.utxoDB.NewKeyPairByIndex(1) // cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(1))
 		chainOriginator = &origKeyPair
-		_, err := env.utxoDB.RequestFunds(originatorAddr)
+		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
 	} else {
 		originatorAddr = cryptolib.Ed25519AddressFromPubKey(chainOriginator.PublicKey)

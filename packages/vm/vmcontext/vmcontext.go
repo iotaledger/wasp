@@ -53,6 +53,8 @@ type VMContext struct {
 	gasMaxTokensAvailableForGasFee uint64
 	// final gas budget set for the run
 	gasBudget uint64
+	// is gas bur enabled
+	gasBurnEnabled bool
 	// gas already burned
 	gasBurned uint64
 	// tokens charged
@@ -163,6 +165,7 @@ func (vmctx *VMContext) GetResult() (dict.Dict, error) {
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, iotago.Address) {
+	vmctx.gasBurnEnable(false)
 	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()

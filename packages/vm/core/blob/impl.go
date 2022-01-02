@@ -3,8 +3,6 @@ package blob
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -60,11 +58,6 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 		totalSize += size
 		totalSizeWithKeys += size + uint32(len(k))
 	}
-
-	// TODO this code is experimental. Alternative approach would be burning gas directly in the state access interface
-	//  Set and Del mutation would burn net difference between size of the current key+value and the new one
-	//  Burning storage gas can be negative, which means we are saving the space and therefore adding to the available budget
-	ctx.Gas().Burn(gas.StoreByte * uint64(totalSizeWithKeys))
 
 	ret := dict.New()
 	ret.Set(ParamHash, codec.EncodeHashValue(blobHash))

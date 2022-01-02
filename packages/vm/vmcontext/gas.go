@@ -5,13 +5,17 @@ import (
 	"golang.org/x/xerrors"
 )
 
+func (vmctx *VMContext) gasBurnEnable(enable bool) {
+	vmctx.gasBurnEnabled = enable
+}
+
 func (vmctx *VMContext) gasSetBudget(gasBudget uint64) {
 	vmctx.gasBudget = gasBudget
 	vmctx.gasBurned = 0
 }
 
 func (vmctx *VMContext) GasBurn(gas uint64) {
-	if vmctx.isInitChainRequest() {
+	if !vmctx.gasBurnEnabled {
 		return
 	}
 	vmctx.gasBurned += gas

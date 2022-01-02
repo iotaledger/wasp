@@ -28,10 +28,10 @@ func TestBasic(t *testing.T) {
 func TestRequestFunds(t *testing.T) {
 	u := New()
 	addr := tpkg.RandEd25519Address()
-	tx, err := u.RequestFunds(addr)
+	tx, err := u.GetFundsFromFaucet(addr)
 	require.NoError(t, err)
-	require.EqualValues(t, u.Supply()-RequestFundsAmount, u.GetAddressBalanceIotas(u.GenesisAddress()))
-	require.EqualValues(t, RequestFundsAmount, u.GetAddressBalanceIotas(addr))
+	require.EqualValues(t, u.Supply()-FundsFromFaucetAmount, u.GetAddressBalanceIotas(u.GenesisAddress()))
+	require.EqualValues(t, FundsFromFaucetAmount, u.GetAddressBalanceIotas(addr))
 
 	txID, err := tx.ID()
 	require.NoError(t, err)
@@ -47,7 +47,7 @@ func TestAddTransactionFail(t *testing.T) {
 	u := New()
 
 	addr := tpkg.RandEd25519Address()
-	tx, err := u.RequestFunds(addr)
+	tx, err := u.GetFundsFromFaucet(addr)
 	require.NoError(t, err)
 
 	err = u.AddToLedger(tx)
@@ -65,7 +65,7 @@ func TestDoubleSpend(t *testing.T) {
 
 	u := New()
 
-	tx1, err := u.RequestFunds(addr1)
+	tx1, err := u.GetFundsFromFaucet(addr1)
 	require.NoError(t, err)
 	tx1ID, err := tx1.ID()
 	require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestDoubleSpend(t *testing.T) {
 			TransactionID:          *tx1ID,
 			TransactionOutputIndex: 0,
 		}}).
-		AddOutput(&iotago.ExtendedOutput{Address: addr2, Amount: RequestFundsAmount}).
+		AddOutput(&iotago.ExtendedOutput{Address: addr2, Amount: FundsFromFaucetAmount}).
 		Build(u.deSeriParams(), key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend2)
@@ -86,7 +86,7 @@ func TestDoubleSpend(t *testing.T) {
 			TransactionID:          *tx1ID,
 			TransactionOutputIndex: 0,
 		}}).
-		AddOutput(&iotago.ExtendedOutput{Address: addr3, Amount: RequestFundsAmount}).
+		AddOutput(&iotago.ExtendedOutput{Address: addr3, Amount: FundsFromFaucetAmount}).
 		Build(u.deSeriParams(), key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend3)
@@ -96,7 +96,7 @@ func TestDoubleSpend(t *testing.T) {
 func TestGetOutput(t *testing.T) {
 	u := New()
 	addr := tpkg.RandEd25519Address()
-	tx, err := u.RequestFunds(addr)
+	tx, err := u.GetFundsFromFaucet(addr)
 	require.NoError(t, err)
 
 	txID, err := tx.ID()
@@ -104,11 +104,11 @@ func TestGetOutput(t *testing.T) {
 
 	outid0 := iotago.OutputIDFromTransactionIDAndIndex(*txID, 0)
 	out0 := u.GetOutput(outid0)
-	require.EqualValues(t, RequestFundsAmount, out0.Deposit())
+	require.EqualValues(t, FundsFromFaucetAmount, out0.Deposit())
 
 	outid1 := iotago.OutputIDFromTransactionIDAndIndex(*txID, 1)
 	out1 := u.GetOutput(outid1)
-	require.EqualValues(t, u.Supply()-RequestFundsAmount, out1.Deposit())
+	require.EqualValues(t, u.Supply()-FundsFromFaucetAmount, out1.Deposit())
 
 	outidFail := iotago.OutputIDFromTransactionIDAndIndex(*txID, 5)
 	require.Nil(t, u.GetOutput(outidFail))

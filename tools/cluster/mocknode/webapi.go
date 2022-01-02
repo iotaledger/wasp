@@ -126,9 +126,9 @@ func (m *MockNode) requestFundsHandler(c echo.Context) error {
 	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: fmt.Sprintf("invalid address (%s): %s", request.Address, err.Error())})
 	// }
 
-	// err = m.Ledger.RequestFunds(addr)
+	// err = m.Ledger.GetFundsFromFaucet(addr)
 	// if err != nil {
-	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: fmt.Sprintf("ledger.RequestFunds: %s", err.Error())})
+	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: fmt.Sprintf("ledger.GetFundsFromFaucet: %s", err.Error())})
 	// }
 
 	// return c.JSON(http.StatusOK, jsonmodels.FaucetResponse{ID: tangle.EmptyMessageID.String()})
