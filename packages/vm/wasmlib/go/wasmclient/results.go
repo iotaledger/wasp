@@ -6,7 +6,6 @@ package wasmclient
 import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 // The Results struct is used to gather all arguments for a smart
@@ -21,7 +20,7 @@ func (r Results) Exists(key string) bool {
 }
 
 func (r Results) get(key string, typeID int32) []byte {
-	size := wasmlib.TypeSizes[typeID]
+	size := TypeSizes[typeID]
 	bytes, ok := r.res[kv.Key(key)]
 	if ok {
 		if size != 0 && len(bytes) != int(size) {
@@ -38,75 +37,75 @@ func (r Results) getBase58(key string, typeID int32) string {
 }
 
 func (r Results) GetAddress(key string) Address {
-	return Address(r.getBase58(key, wasmlib.TYPE_ADDRESS))
+	return Address(r.getBase58(key, TYPE_ADDRESS))
 }
 
 func (r Results) GetAgentID(key string) AgentID {
-	return AgentID(r.getBase58(key, wasmlib.TYPE_AGENT_ID))
+	return AgentID(r.getBase58(key, TYPE_AGENT_ID))
 }
 
 func (r Results) GetBytes(key string) []byte {
-	return r.get(key, wasmlib.TYPE_BYTES)
+	return r.get(key, TYPE_BYTES)
 }
 
 func (r Results) GetBool(key string) bool {
-	return r.get(key, wasmlib.TYPE_BOOL)[0] != 0
+	return r.get(key, TYPE_BOOL)[0] != 0
 }
 
 func (r Results) GetChainID(key string) ChainID {
-	return ChainID(r.getBase58(key, wasmlib.TYPE_CHAIN_ID))
+	return ChainID(r.getBase58(key, TYPE_CHAIN_ID))
 }
 
 func (r Results) GetColor(key string) Color {
-	return Color(r.getBase58(key, wasmlib.TYPE_COLOR))
+	return Color(r.getBase58(key, TYPE_COLOR))
 }
 
 func (r Results) GetHash(key string) Hash {
-	return Hash(r.getBase58(key, wasmlib.TYPE_HASH))
+	return Hash(r.getBase58(key, TYPE_HASH))
 }
 
 func (r Results) GetHname(key string) Hname {
-	return Hname(r.getUint64(key, wasmlib.TYPE_HNAME))
+	return Hname(r.getUint64(key, TYPE_HNAME))
 }
 
 func (r Results) GetInt8(key string) int8 {
-	return int8(r.get(key, wasmlib.TYPE_INT8)[0])
+	return int8(r.get(key, TYPE_INT8)[0])
 }
 
 func (r Results) GetInt16(key string) int16 {
-	return int16(r.getUint64(key, wasmlib.TYPE_INT16))
+	return int16(r.getUint64(key, TYPE_INT16))
 }
 
 func (r Results) GetInt32(key string) int32 {
-	return int32(r.getUint64(key, wasmlib.TYPE_INT32))
+	return int32(r.getUint64(key, TYPE_INT32))
 }
 
 func (r Results) GetInt64(key string) int64 {
-	return int64(r.getUint64(key, wasmlib.TYPE_INT64))
+	return int64(r.getUint64(key, TYPE_INT64))
 }
 
 func (r Results) GetRequestID(key string) RequestID {
-	return RequestID(r.getBase58(key, wasmlib.TYPE_REQUEST_ID))
+	return RequestID(r.getBase58(key, TYPE_REQUEST_ID))
 }
 
 func (r Results) GetString(key string) string {
-	return string(r.get(key, wasmlib.TYPE_STRING))
+	return string(r.get(key, TYPE_STRING))
 }
 
 func (r Results) GetUint8(key string) uint8 {
-	return r.get(key, wasmlib.TYPE_INT8)[0]
+	return r.get(key, TYPE_INT8)[0]
 }
 
 func (r Results) GetUint16(key string) uint16 {
-	return uint16(r.getUint64(key, wasmlib.TYPE_INT16))
+	return uint16(r.getUint64(key, TYPE_INT16))
 }
 
 func (r Results) GetUint32(key string) uint32 {
-	return uint32(r.getUint64(key, wasmlib.TYPE_INT32))
+	return uint32(r.getUint64(key, TYPE_INT32))
 }
 
 func (r Results) GetUint64(key string) uint64 {
-	return r.getUint64(key, wasmlib.TYPE_INT64)
+	return r.getUint64(key, TYPE_INT64)
 }
 
 func (r Results) getUint64(key string, typeID int32) uint64 {

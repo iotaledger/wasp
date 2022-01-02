@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 // The Arguments struct is used to gather all arguments for a smart
@@ -26,7 +25,7 @@ func (a *Arguments) set(key string, val []byte) {
 
 func (a *Arguments) setBase58(key, val string, typeID int32) {
 	bytes := Base58Decode(val)
-	if len(bytes) != int(wasmlib.TypeSizes[typeID]) {
+	if len(bytes) != int(TypeSizes[typeID]) {
 		panic("invalid byte size")
 	}
 	a.set(key, bytes)
@@ -46,11 +45,11 @@ func (a *Arguments) Mandatory(key string) {
 }
 
 func (a *Arguments) SetAddress(key string, val Address) {
-	a.setBase58(key, string(val), wasmlib.TYPE_ADDRESS)
+	a.setBase58(key, string(val), TYPE_ADDRESS)
 }
 
 func (a *Arguments) SetAgentID(key string, val AgentID) {
-	a.setBase58(key, string(val), wasmlib.TYPE_AGENT_ID)
+	a.setBase58(key, string(val), TYPE_AGENT_ID)
 }
 
 func (a *Arguments) SetBool(key string, val bool) {
@@ -66,15 +65,15 @@ func (a *Arguments) SetBytes(key string, val []byte) {
 }
 
 func (a *Arguments) SetColor(key string, val Color) {
-	a.setBase58(key, string(val), wasmlib.TYPE_COLOR)
+	a.setBase58(key, string(val), TYPE_COLOR)
 }
 
 func (a *Arguments) SetChainID(key string, val ChainID) {
-	a.setBase58(key, string(val), wasmlib.TYPE_CHAIN_ID)
+	a.setBase58(key, string(val), TYPE_CHAIN_ID)
 }
 
 func (a *Arguments) SetHash(key string, val Hash) {
-	a.setBase58(key, string(val), wasmlib.TYPE_HASH)
+	a.setBase58(key, string(val), TYPE_HASH)
 }
 
 func (a *Arguments) SetHname(key string, val Hname) {
@@ -98,7 +97,7 @@ func (a *Arguments) SetInt64(key string, val int64) {
 }
 
 func (a *Arguments) SetRequestID(key string, val RequestID) {
-	a.setBase58(key, string(val), wasmlib.TYPE_REQUEST_ID)
+	a.setBase58(key, string(val), TYPE_REQUEST_ID)
 }
 
 func (a *Arguments) SetString(key, val string) {

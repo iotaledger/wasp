@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmclient from "./index"
-import * as wasmlib from "../wasmlib"
 import {Base58} from "./crypto";
 import {Buffer} from "./buffer";
 
@@ -17,7 +16,7 @@ export class Arguments {
 	
 	private setBase58(key: string, val: string, typeID: wasmclient.Int32): void {
 		let bytes = Base58.decode(val);
-		if (bytes.length != wasmlib.TYPE_SIZES[typeID]) {
+		if (bytes.length != wasmclient.TYPE_SIZES[typeID]) {
 			wasmclient.panic("invalid byte size");
 		}
 		this.set(key, bytes);
@@ -34,11 +33,11 @@ export class Arguments {
 	}
 
 	setAddress(key: string, val: wasmclient.AgentID): void {
-		this.setBase58(key, val, wasmlib.TYPE_ADDRESS);
+		this.setBase58(key, val, wasmclient.TYPE_ADDRESS);
 	}
 	
 	setAgentID(key: string, val: wasmclient.AgentID): void {
-		this.setBase58(key, val, wasmlib.TYPE_AGENT_ID);
+		this.setBase58(key, val, wasmclient.TYPE_AGENT_ID);
 	}
 	
 	setBool(key: string, val: boolean): void {
@@ -54,15 +53,15 @@ export class Arguments {
 	}
 	
 	setColor(key: string, val: wasmclient.Color): void {
-		this.setBase58(key, val, wasmlib.TYPE_COLOR);
+		this.setBase58(key, val, wasmclient.TYPE_COLOR);
 	}
 	
 	setChainID(key: string, val: wasmclient.ChainID): void {
-		this.setBase58(key, val, wasmlib.TYPE_CHAIN_ID);
+		this.setBase58(key, val, wasmclient.TYPE_CHAIN_ID);
 	}
 
 	setHash(key: string, val: wasmclient.Hash): void {
-		this.setBase58(key, val, wasmlib.TYPE_HASH);
+		this.setBase58(key, val, wasmclient.TYPE_HASH);
 	}
 
 	setHname(key: string, val: wasmclient.Hname): void {
@@ -94,7 +93,7 @@ export class Arguments {
 	}
 	
 	setRequestID(key: string, val: wasmclient.RequestID): void {
-		this.setBase58(key, val, wasmlib.TYPE_REQUEST_ID);
+		this.setBase58(key, val, wasmclient.TYPE_REQUEST_ID);
 	}
 	
 	setString(key: string, val: string): void {
