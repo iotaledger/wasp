@@ -125,12 +125,12 @@ export class Arguments {
 		this.set(key, bytes);
 	}
 
-	// Encode returns a byte array that encodes the Transfer as follows:
+	// Encode returns a byte array that encodes the Arguments as follows:
 	// Sort all keys in ascending order (very important, because this data
 	// will be part of the data that will be signed, so the order needs to
 	// be 100% deterministic). Then emit the 4-byte argument count.
 	// Next for each argument emit the 2-byte key length, the key prepended
-	// with this minus sign, the 4-byte value length, and then the value bytes.
+	// with the minus sign, the 4-byte value length, and then the value bytes.
 	encode(): wasmclient.Bytes {
 		let keys = new Array<string>();
 		for (const key of this.args.keys()) {

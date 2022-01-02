@@ -315,7 +315,7 @@ func TestMultiRandom(t *testing.T) {
 // these values are usually available from elsewhere
 const (
 	mySeed    = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
-	myChainID = "qjA8Ybw4WijnmGUqDtNcPhAxFymjQKepNyyfp5BUGsWP"
+	myChainID = "jn52vSuUUYY22T1mV2ny14EADYBu3ofyewLRSsVRnjpz"
 )
 
 func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {
@@ -375,4 +375,42 @@ func TestClientRandom(t *testing.T) {
 	require.NoError(t, v.Error())
 	require.GreaterOrEqual(t, res.Random(), int64(0))
 	fmt.Println("Random: ", res.Random())
+}
+
+func TestClientArray(t *testing.T) {
+	svc := setupClient(t)
+
+	v := svc.ArrayLength()
+	v.Name("Bands")
+	res := v.Call()
+	require.NoError(t, v.Error())
+	require.EqualValues(t, 0, res.Length())
+
+	f := svc.ArraySet()
+	f.Name("Bands")
+	f.Index(0)
+	f.Value("Dire Straits")
+	req := f.Post()
+	require.NoError(t, req.Error())
+	err := svc.WaitRequest(req)
+	require.NoError(t, err)
+
+	v = svc.ArrayLength()
+	v.Name("Bands")
+	res = v.Call()
+	require.NoError(t, v.Error())
+	require.EqualValues(t, 1, res.Length())
+
+	c := svc.ArrayClear()
+	c.Name("Bands")
+	req = c.Post()
+	require.NoError(t, req.Error())
+	err = svc.WaitRequest(req)
+	require.NoError(t, err)
+
+	v = svc.ArrayLength()
+	v.Name("Bands")
+	res = v.Call()
+	require.NoError(t, v.Error())
+	require.EqualValues(t, 0, res.Length())
 }

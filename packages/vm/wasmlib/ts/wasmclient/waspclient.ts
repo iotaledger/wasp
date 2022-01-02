@@ -32,12 +32,13 @@ export class WaspClient {
         this.waspAPI = "http://" + waspAPI;
     }
 
-    //TODO args
-    public async callView(chainID: string, contractHName: string, entryPoint: string, args: wasmclient.Arguments): Promise<wasmclient.Results> {
+    public async callView(chainID: string, contractHName: string, entryPoint: string, args: Buffer): Promise<wasmclient.Results> {
+        const request = {Request: args.toString("base64")};
         const result = await this.sendRequest<unknown, ICallViewResponse>(
             "get",
             "/chain/" + chainID + "/contract/ " + contractHName + "/callview/" + entryPoint,
-            );
+            request
+        );
         const res = new wasmclient.Results();
         if (result.body.Items) {
             for (let item of result.body.Items) {
@@ -49,7 +50,7 @@ export class WaspClient {
         return res;
     }
 
-    public async postOffLedgerRequest(chainID: string, offLedgerRequest: Buffer): Promise<void> {
+    public async postRequest(chainID: string, offLedgerRequest: Buffer): Promise<void> {
         const request = {Request: offLedgerRequest.toString("base64")};
         await this.sendRequest<IOffLedgerRequest, null>(
             "post",
@@ -75,18 +76,11 @@ export class WaspClient {
 
         try {
             const url = this.waspAPI + path;
-            if (verb == "get" || verb == "delete") {
-                fetchResponse = await fetch(url, {
-                    method: verb,
-                    headers,
-                });
-            } else if (verb == "post" || verb == "put") {
-                fetchResponse = await fetch(url, {
-                    method: verb,
-                    headers,
-                    body: JSON.stringify(request),
-                });
-            }
+            fetchResponse = await fetch(url, {
+                method: verb,
+                headers,
+                body: JSON.stringify(request),
+            });
 
             if (!fetchResponse) {
                 throw new Error("No data was returned from the API");
@@ -101,9 +95,7 @@ export class WaspClient {
                 }
             }
         } catch (err) {
-            throw new Error(
-                `The application is not able to complete the request, due to the following error:\n\n${err.message}`,
-            );
+            throw new Error("sendRequest: " + err.message);
         }
 
         return {body: response, response: fetchResponse};

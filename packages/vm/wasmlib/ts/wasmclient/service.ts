@@ -28,7 +28,7 @@ export class Service {
             this.chainId,
             this.scHname.toString(16),
             viewName,
-            args,
+            args.encode(),
         );
     }
 
@@ -48,7 +48,7 @@ export class Service {
         const hash = Hash.from(buf);
         const requestID = Buffer.concat([hash, Buffer.alloc(2)]);
 
-        await this.waspClient.postOffLedgerRequest(this.chainId, buf);
+        await this.waspClient.postRequest(this.chainId, buf);
         return Base58.encode(requestID);
     }
 

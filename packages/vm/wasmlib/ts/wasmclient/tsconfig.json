@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "lib": ["es2020", "dom"],
+    "lib": ["es2020", "esnext", "dom"],
     "target": "es2020",
-    "sourceMap": true
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true
   },
+  "preferBuiltins": true,
   "exclude": [
     "node_modules"
   ],

@@ -45,11 +45,10 @@ func (s *Service) AsClientView() ClientView {
 }
 
 func (s *Service) CallView(viewName string, args *Arguments) (dict.Dict, error) {
-	arg := dict.Dict(nil)
-	if args != nil {
-		arg = args.args
+	if args == nil {
+		args = &Arguments{}
 	}
-	return s.waspClient.CallView(s.chainID, s.scHname, viewName, arg)
+	return s.waspClient.CallView(s.chainID, s.scHname, viewName, args.args)
 }
 
 func (s *Service) PostRequest(hFuncName uint32, args *Arguments, transfer *Transfer, keyPair *ed25519.KeyPair) Request {
