@@ -9,11 +9,11 @@ export type EventHandlers = { [key: string]: (message: string[]) => void };
 
 export class Service {
     private serviceClient: wasmclient.ServiceClient;
-    private webSocket: WebSocket;
-    public keyPair: IKeyPair;
-    private eventHandlers: EventHandlers;
+    private webSocket: WebSocket | null = null;
+    public keyPair: IKeyPair | null = null;
+    private eventHandlers: EventHandlers | null = null;
     public scHname: wasmclient.Hname;
-    private waspWebSocketUrl: string;
+    private waspWebSocketUrl: string = "";
 
     constructor(client: wasmclient.ServiceClient, scHname: wasmclient.Hname, eventHandlers: EventHandlers) {
         this.serviceClient = client;
@@ -80,7 +80,7 @@ export class Service {
         }
         const topics = msg[3].split('|');
         const topic = topics[0];
-        if (this.eventHandlers[topic] != undefined) {
+        if (this.eventHandlers && this.eventHandlers[topic] != undefined) {
             this.eventHandlers[topic](msg.slice(1));
         }
     }

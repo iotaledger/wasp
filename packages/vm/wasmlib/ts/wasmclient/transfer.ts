@@ -45,7 +45,9 @@ export class Transfer {
         buf.writeUInt32LE(keys.length, 0);
         for (const key of keys) {
             buf = Buffer.concat([buf, key]);
-            buf.writeBigUInt64LE(this.xfer.get(key), buf.length);
+            const value = this.xfer.get(key);
+            if(value === undefined || value === null) continue;
+            buf.writeBigUInt64LE(value, buf.length);
         }
         return buf;
     }

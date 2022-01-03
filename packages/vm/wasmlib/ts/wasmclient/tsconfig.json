@@ -1,12 +1,19 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "strict": true,
     "lib": ["es2020", "esnext", "dom"],
     "target": "es2020",
+    "module": "esnext",
     "sourceMap": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
   },
   "preferBuiltins": true,
+  "include": ["./**/*.ts"],
   "exclude": [
     "node_modules"
   ],
