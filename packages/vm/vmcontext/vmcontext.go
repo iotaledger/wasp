@@ -20,6 +20,11 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var (
+	NewSandbox     func(vmctx *VMContext) iscp.Sandbox
+	NewSandboxView func(vmctx *VMContext) iscp.SandboxView
+)
+
 // VMContext represents state of the chain during one run of the VM while processing
 // a batch of requests. VMContext object mutates with each request in the bathc.
 // The VMContext is created from immutable vm.VMTask object and UTXO state of the

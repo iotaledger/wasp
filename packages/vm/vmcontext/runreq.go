@@ -83,6 +83,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		return
 	}
 	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
+		// in the very first call we take all iotas in excess of dust deposit and accrue them to the common account
 		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
 			Iotas: vmctx.txbuilder.TotalIotasInL2Accounts(),
 		})
@@ -127,7 +128,6 @@ func (vmctx *VMContext) prepareGasBudget() {
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
 func (vmctx *VMContext) callTheContract() {
-	// TODO
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
@@ -149,13 +149,14 @@ func (vmctx *VMContext) callTheContract() {
 		vmctx.lastResult, vmctx.lastError = vmctx.callFromRequest()
 	}()
 	if vmctx.lastError != nil {
-		// panic happened during VM plugin call
-		// restore the state
+		// panic happened during VM plugin call. Restore the state
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		vmctx.currentStateUpdate = snapMutations
 	}
+	// charge gas fee no matter what
 	vmctx.chargeGasFee()
-	vmctx.logRequestToBlockLog(vmctx.lastError)
+	// write receipt no matter what
+	vmctx.writeReceiptToBlockLog(vmctx.lastError)
 }
 
 func checkVMPluginPanic(r interface{}) error {

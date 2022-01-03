@@ -61,11 +61,12 @@ func viewAccounts(ctx iscp.SandboxView) (dict.Dict, error) {
 	return getAccountsIntern(ctx.State()), nil
 }
 
-// deposit is a generic function to deposit funds to the sender's chain account
+// deposit is a function to deposit funds to the sender's chain account
+// normally 'transfer' == nil, otherwise it is a mistake
 func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.deposit -- %s", ctx.IncomingTransfer())
-	// No need to do anything here because funds are already credited to the users account
-	// just send back anything that might have been included in "transfer" by mistake
+	ctx.Log().Debugf("accounts.deposit")
+	// No need to do anything here because funds are already credited to the sender's account
+	// just send back anything that might have been included in 'transfer' by mistake
 	if ctx.IncomingTransfer() == nil {
 		return nil, nil
 	}
@@ -73,11 +74,11 @@ func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// sendTo moves transfer to the specified account on the chain. Can be send as request or can be called
-// If the target account is a core contract on the same chain
+// sendTo moves transfer to the specified account on the chain. Can be sent as a request
+// or can be called
 // Params:
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
-//   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
+//   in case ParamAgentID == ctx.Caller() and it is an on-chain call, it means NOP
 func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.sendTo.begin -- %s", ctx.IncomingTransfer())
 
@@ -99,7 +100,6 @@ func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func sendIncomingTo(ctx iscp.Sandbox, targetAccount *iscp.AgentID) {
-	// funds currently are in the common account (because call is to 'accounts'), they must be moved to the target
 	ok := MoveBetweenAccounts(ctx.State(), commonaccount.Get(ctx.ChainID()), targetAccount, ctx.IncomingTransfer())
 	assert.NewAssert(ctx.Log()).Require(ok, "internal error: failed to send funds to %s", targetAccount.String())
 }

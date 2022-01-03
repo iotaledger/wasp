@@ -125,7 +125,7 @@ func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
 	return blocklog.NewEventLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex, vmctx.requestEventIndex)
 }
 
-func (vmctx *VMContext) logRequestToBlockLog(errProvided error) {
+func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) {
 	errStr := ""
 	if errProvided != nil {
 		errStr = errProvided.Error()
@@ -142,7 +142,7 @@ func (vmctx *VMContext) logRequestToBlockLog(errProvided error) {
 
 	})
 	if err != nil {
-		vmctx.Panicf("logRequestToBlockLog: %v", err)
+		vmctx.Panicf("writeReceiptToBlockLog: %v", err)
 	}
 }
 

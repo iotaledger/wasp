@@ -40,12 +40,12 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 			return nil, ErrInitEntryPointCantBeAView
 		}
 		// passing nil as transfer: calling the view should not have effect on chain ledger
-		vmctx.pushCallContextAndMoveAssets(targetContract, params, nil)
+		vmctx.pushCallContextWithMoveAssets(targetContract, params, nil)
 		defer vmctx.popCallContext()
 
 		return ep.Call(NewSandboxView(vmctx))
 	}
-	vmctx.pushCallContextAndMoveAssets(targetContract, params, transfer)
+	vmctx.pushCallContextWithMoveAssets(targetContract, params, transfer)
 	defer vmctx.popCallContext()
 
 	// prevent calling 'init' not from root contract or not while initializing root
@@ -71,7 +71,7 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hna
 	if ep.IsView() {
 		panic(ErrNonViewExpected)
 	}
-	vmctx.pushCallContextAndMoveAssets(targetContract, params, transfer)
+	vmctx.pushCallContextWithMoveAssets(targetContract, params, transfer)
 	defer vmctx.popCallContext()
 
 	// prevent calling 'init' not from root contract or not while initializing root
