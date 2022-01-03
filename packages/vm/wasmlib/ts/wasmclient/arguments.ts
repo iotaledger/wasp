@@ -143,7 +143,10 @@ export class Arguments {
 			const keyBuf = Buffer.from("-" + key);
 			buf.writeUInt16LE(keyBuf.length, buf.length);
 			buf = Buffer.concat([buf, keyBuf]);
+			
 			const valBuf = this.args.get(key);
+			if(!valBuf) continue;
+
 			buf.writeUInt32LE(valBuf.length, buf.length);
 			buf = Buffer.concat([buf, valBuf]);
 		}

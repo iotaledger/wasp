@@ -38,12 +38,13 @@ export class WaspClient {
     public async callView(chainID: string, contractHName: string, entryPoint: string, args: Buffer): Promise<wasmclient.Results> {
         const request = {Request: args.toString("base64")};
         const result = await this.sendRequest<unknown, ICallViewResponse>(
-            "get",
-            "/chain/" + chainID + "/contract/ " + contractHName + "/callview/" + entryPoint,
+            "post",
+            `/chain/${chainID}/contract/${contractHName}/callview/${entryPoint}`,
             request
         );
         const res = new wasmclient.Results();
-        if (result.body.Items) {
+
+        if (result?.body !== null && result.body.Items) {
             for (const item of result.body.Items) {
                 const key = Buffer.from(item.Key, "base64").toString();
                 const value = Buffer.from(item.Value, "base64");
@@ -57,7 +58,7 @@ export class WaspClient {
         const request = {Request: offLedgerRequest.toString("base64")};
         await this.sendRequest<IOffLedgerRequest, null>(
             "post",
-            "/request/" + chainID,
+            `/request/${chainID}`,
             request,
         );
     }
@@ -65,16 +66,16 @@ export class WaspClient {
     public async waitRequest(chainID: string, reqID: wasmclient.RequestID): Promise<void> {
         await this.sendRequest<unknown, null>(
             "get",
-            "/chain/" + chainID + "/request/" + reqID + "/wait",
+            `/chain/${chainID}/request/${reqID}/wait`,
         );
     }
 
-    private async sendRequest<T, U extends IResponse>(
+    private async sendRequest<T, U extends IResponse | null>(
         verb: "put" | "post" | "get" | "delete",
         path: string,
         request?: T | undefined,
-    ): Promise<IExtendedResponse<U>> {
-        let response: U;
+    ): Promise<IExtendedResponse<U | null>> {
+        let response: U | null = null;
         let fetchResponse: Response;
 
         try {
@@ -92,13 +93,15 @@ export class WaspClient {
             try {
                 response = await fetchResponse.json();
             } catch (err) {
+                const error = err as Error;
                 if (!fetchResponse.ok) {
                     const text = await fetchResponse.text();
-                    throw new Error(err.message + "   ---   " + text);
+                    throw new Error(error.message + "   ---   " + text);
                 }
             }
         } catch (err) {
-            throw new Error("sendRequest: " + err.message);
+            const error = err as Error;
+            throw new Error("sendRequest: " + error.message);
         }
 
         return {body: response, response: fetchResponse};

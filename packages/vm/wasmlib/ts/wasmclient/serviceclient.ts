@@ -9,6 +9,7 @@ export class ServiceClient {
     configuration: Configuration;
 
     constructor(configuration: Configuration) {
+        this.configuration = configuration;
         this.waspClient = new wasmclient.WaspClient(configuration.waspApiUrl);
     }
 

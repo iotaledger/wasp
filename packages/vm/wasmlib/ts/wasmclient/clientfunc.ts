@@ -6,7 +6,7 @@ import {IKeyPair} from "./crypto";
 
 export class ClientFunc {
     protected svc: wasmclient.Service;
-    private keyPair: IKeyPair;
+    private keyPair: IKeyPair | null = null;
     private xfer: wasmclient.Transfer = new wasmclient.Transfer();
 
     constructor(svc: wasmclient.Service) {
@@ -17,12 +17,14 @@ export class ClientFunc {
     // You can wait for the request to complete by using the returned RequestID
     // as parameter to Service.waitRequest()
     public async post(hFuncName: wasmclient.Hname, args: wasmclient.Arguments | null): Promise<wasmclient.RequestID> {
-        if (args == null) {
+        if (!args)
             args = new wasmclient.Arguments();
-        }
-        if (this.keyPair == null) {
+        
+        if (!this.keyPair)
             this.keyPair = this.svc.keyPair;
-        }
+        
+        if (!this.keyPair) throw new Error("Key pair not defined");
+
         return await this.svc.postRequest(hFuncName, args, this.xfer, this.keyPair);
     }
 

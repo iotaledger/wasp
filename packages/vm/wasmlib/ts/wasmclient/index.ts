@@ -11,3 +11,4 @@ export * from "./serviceclient";
 export * from "./transfer";
 export * from "./types";
 export * from "./waspclient";
+export * from "./configuration";
