@@ -61,6 +61,9 @@ export class Service {
             this.waspWebSocketUrl = this.serviceClient.configuration.waspWebSocketUrl;
         else
             this.waspWebSocketUrl = "ws://" + this.serviceClient.configuration.waspWebSocketUrl;
+
+        this.waspWebSocketUrl = this.waspWebSocketUrl.replace("%chainId", this.serviceClient.configuration.chainId);
+
         this.connectWebSocket();
     }
 
