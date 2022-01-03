@@ -39,7 +39,7 @@ export class WaspClient {
         const request = {Request: args.toString("base64")};
         const result = await this.sendRequest<unknown, ICallViewResponse>(
             "get",
-            "/chain/" + chainID + "/contract/ " + contractHName + "/callview/" + entryPoint,
+            `/chain/${chainID}/contract/${contractHName}/callview/${entryPoint}`,
             request
         );
         const res = new wasmclient.Results();
@@ -58,7 +58,7 @@ export class WaspClient {
         const request = {Request: offLedgerRequest.toString("base64")};
         await this.sendRequest<IOffLedgerRequest, null>(
             "post",
-            "/request/" + chainID,
+            `/request/${chainID}`,
             request,
         );
     }
@@ -66,7 +66,7 @@ export class WaspClient {
     public async waitRequest(chainID: string, reqID: wasmclient.RequestID): Promise<void> {
         await this.sendRequest<unknown, null>(
             "get",
-            "/chain/" + chainID + "/request/" + reqID + "/wait",
+            `/chain/${chainID}/request/${reqID}/wait`,
         );
     }
 
