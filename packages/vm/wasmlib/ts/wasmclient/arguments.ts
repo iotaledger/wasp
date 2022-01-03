@@ -137,18 +137,19 @@ export class Arguments {
 		}
 		keys.sort((lhs, rhs) => lhs.localeCompare(rhs));
 
-		let buf = Buffer.alloc(0);
+		let buf = Buffer.alloc(4);
 		buf.writeUInt32LE(keys.length, 0);
 		for (const key of keys) {
 			const keyBuf = Buffer.from("-" + key);
-			buf.writeUInt16LE(keyBuf.length, buf.length);
-			buf = Buffer.concat([buf, keyBuf]);
-			
+			const keyLen = Buffer.alloc(2);
+			keyLen.writeUInt16LE(keyBuf.length, 0);
 			const valBuf = this.args.get(key);
-			if(!valBuf) continue;
-
-			buf.writeUInt32LE(valBuf.length, buf.length);
-			buf = Buffer.concat([buf, valBuf]);
+			if (!valBuf) {
+				throw new Error("Arguments.encode: missing value");
+			}
+			const valLen = Buffer.alloc(4);
+			valLen.writeUInt32LE(valBuf.length, 0);
+			buf = Buffer.concat([buf, keyLen, keyBuf, valLen, valBuf]);
 		}
 		return buf;
 	}
