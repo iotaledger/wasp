@@ -3,7 +3,7 @@ package tsclienttemplates
 var serviceTs = map[string]string{
 	// *******************************
 	"service.ts": `
-import * as wasmclient from "wasmclient"
+import * as wasmclient from "./wasmclient"
 import * as events from "./events"
 
 $#each params constArg
@@ -15,8 +15,8 @@ $#each func funcStruct
 
 export class $PkgName$+Service extends wasmclient.Service {
 
-	constructor(cl: wasmclient.ServiceClient, chainID: string) {
-		super(cl, chainID, 0x$hscName, events.eventHandlers);
+	constructor(cl: wasmclient.ServiceClient) {
+		super(cl, 0x$hscName, events.eventHandlers);
 	}
 $#each func serviceFunction
 }
@@ -133,7 +133,7 @@ $#if mandatory else callResultOptional
 	"serviceFunction": `
 
 	public $funcName(): $FuncName$Kind {
-    	return new $FuncName$Kind(this);
+		return new $FuncName$Kind(this);
 	}
 `,
 }

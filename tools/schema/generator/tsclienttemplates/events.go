@@ -3,7 +3,7 @@ package tsclienttemplates
 var eventsTs = map[string]string{
 	// *******************************
 	"events.ts": `
-import * as wasmclient from "wasmclient"
+import * as wasmclient from "./wasmclient"
 import * as app from "./$package"
 
 export const eventHandlers: wasmclient.EventHandlers = {
@@ -23,14 +23,14 @@ $#each event eventClassField
 }
 
 function on$PkgName$EvtName$+Thunk(message: string[]) {
-	let e = new Event$EvtName(message);
+	const e = new Event$EvtName(message);
 $#each event eventHandlerField
 	app.on$PkgName$EvtName(e);
 }
 `,
 	// *******************************
 	"eventClassField": `
-  	public $fldName: wasmclient.$FldType;
+	public $fldName: wasmclient.$FldType | undefined;
 `,
 	// *******************************
 	"eventHandlerField": `

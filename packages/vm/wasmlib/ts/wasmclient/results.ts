@@ -20,8 +20,8 @@ export class Results {
     }
 
     private get(key: string, typeID: wasmclient.Int32): wasmclient.Bytes {
-        let size = wasmclient.TYPE_SIZES[typeID];
-        let bytes = this.res.get(key);
+        const size = wasmclient.TYPE_SIZES[typeID];
+        const bytes = this.res.get(key);
         if (bytes !== undefined) {
             if (size != 0 && bytes.length != size) {
                 wasmclient.panic("invalid type size");

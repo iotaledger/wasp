@@ -13,7 +13,7 @@ export class Transfer {
     }
 
     static tokens(color: string, amount: wasmclient.Uint64): Transfer {
-        let transfer = new Transfer();
+        const transfer = new Transfer();
         transfer.set(color, amount);
         return transfer;
     }
@@ -32,7 +32,7 @@ export class Transfer {
     // transfer count. Next for each color emit the 32-byte color value,
     // and then the 8-byte amount.
     encode(): wasmclient.Bytes {
-        let keys = new Array<Buffer>();
+        const keys = new Array<Buffer>();
         for (const [key, val] of this.xfer) {
             // filter out zero transfers
             if (val != BigInt(0)) {

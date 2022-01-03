@@ -8,24 +8,22 @@ import {Buffer} from "./buffer";
 export type EventHandlers = { [key: string]: (message: string[]) => void };
 
 export class Service {
-    private waspClient: wasmclient.WaspClient;
+    private serviceClient: wasmclient.ServiceClient;
     private webSocket: WebSocket;
-    private webSocketUrl: string;
     public keyPair: IKeyPair;
     private eventHandlers: EventHandlers;
-    public chainId: string;
     public scHname: wasmclient.Hname;
+    private waspWebSocketUrl: string;
 
-    constructor(client: wasmclient.ServiceClient, chainId: string, scHname: wasmclient.Hname, eventHandlers: EventHandlers) {
-        this.waspClient = client.waspClient;
-        this.chainId = chainId;
+    constructor(client: wasmclient.ServiceClient, scHname: wasmclient.Hname, eventHandlers: EventHandlers) {
+        this.serviceClient = client;
         this.scHname = scHname;
-        this.startEventHandlers(client.eventPort, eventHandlers);
+        this.configureWebSocketsEventHandlers(eventHandlers);
     }
 
     public async callView(viewName: string, args: wasmclient.Arguments): Promise<wasmclient.Results> {
-        return await this.waspClient.callView(
-            this.chainId,
+        return await this.serviceClient.waspClient.callView(
+            this.serviceClient.configuration.chainId,
             this.scHname.toString(16),
             viewName,
             args.encode(),
@@ -34,7 +32,7 @@ export class Service {
 
     public async postRequest(hFuncName: wasmclient.Int32, args: wasmclient.Arguments, transfer: wasmclient.Transfer, keyPair: IKeyPair): Promise<wasmclient.RequestID> {
         // get request essence ready for signing
-        let essence = Base58.decode(this.chainId);
+        let essence = Base58.decode(this.serviceClient.configuration.chainId);
         essence.writeUInt32LE(this.scHname, essence.length);
         essence.writeUInt32LE(hFuncName, essence.length);
         essence = Buffer.concat([essence, args.encode(), keyPair.publicKey]);
@@ -48,24 +46,28 @@ export class Service {
         const hash = Hash.from(buf);
         const requestID = Buffer.concat([hash, Buffer.alloc(2)]);
 
-        await this.waspClient.postRequest(this.chainId, buf);
+        await this.serviceClient.waspClient.postRequest(this.serviceClient.configuration.chainId, buf);
         return Base58.encode(requestID);
     }
 
     public async waitRequest(reqID: wasmclient.RequestID): Promise<void> {
-        await this.waspClient.waitRequest(this.chainId, reqID);
+        await this.serviceClient.waspClient.waitRequest(this.serviceClient.configuration.chainId, reqID);
     }
 
-    private startEventHandlers(eventPort: string, eventHandlers: EventHandlers) {
-        this.webSocketUrl = "ws://" + eventPort + "/chain/" + this.chainId + "/ws";
+    private configureWebSocketsEventHandlers(eventHandlers: EventHandlers) {
         this.eventHandlers = eventHandlers
+
+        if(this.serviceClient.configuration.waspWebSocketUrl.startsWith("wss://") || this.serviceClient.configuration.waspWebSocketUrl.startsWith("ws://"))
+            this.waspWebSocketUrl = this.serviceClient.configuration.waspWebSocketUrl;
+        else
+            this.waspWebSocketUrl = "ws://" + this.serviceClient.configuration.waspWebSocketUrl;
         this.connectWebSocket();
     }
 
     private connectWebSocket(): void {
         // eslint-disable-next-line no-console
-        console.log(`Connecting to Websocket => ${this.webSocketUrl}`);
-        this.webSocket = new WebSocket(this.webSocketUrl);
+        console.log(`Connecting to Websocket => ${this.waspWebSocketUrl}`);
+        this.webSocket = new WebSocket(this.waspWebSocketUrl);
         this.webSocket.addEventListener('message', (x) => this.handleIncomingMessage(x));
         this.webSocket.addEventListener('close', () => setTimeout(this.connectWebSocket.bind(this), 1000));
     }
