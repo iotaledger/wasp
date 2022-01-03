@@ -168,8 +168,8 @@ func (s *sandbox) Foundries() iscp.Foundries {
 	return s
 }
 
-func (s *sandbox) CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) (uint32, uint64) {
-	return s.vmctx.CreateNewFoundry(scheme, tag, maxSupply)
+func (s *sandbox) CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64) {
+	return s.vmctx.CreateNewFoundry(scheme, tag, maxSupply, metadata)
 }
 
 func (s *sandbox) Destroy(sn uint32) int64 {

@@ -377,6 +377,7 @@ type foundryOutputRec struct {
 	TokenScheme       iotago.TokenScheme
 	MaximumSupply     *big.Int
 	CirculatingSupply *big.Int
+	Metadata          []byte
 	BlockIndex        uint32
 	OutputIndex       uint16
 }
@@ -390,6 +391,8 @@ func (f *foundryOutputRec) Bytes() []byte {
 	util.WriteBytes8ToMarshalUtil(codec.EncodeTokenScheme(f.TokenScheme), mu)
 	util.WriteBytes8ToMarshalUtil(f.MaximumSupply.Bytes(), mu)
 	util.WriteBytes8ToMarshalUtil(f.CirculatingSupply.Bytes(), mu)
+	util.WriteBytes16ToMarshalUtil(f.Metadata, mu)
+
 	return mu.Bytes()
 }
 
@@ -430,6 +433,9 @@ func foundryOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*foundryOutpu
 		return nil, err
 	}
 	ret.CirculatingSupply = big.NewInt(0).SetBytes(bigIntBin)
+	if ret.Metadata, err = util.ReadBytes16FromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 

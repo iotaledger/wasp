@@ -95,7 +95,7 @@ type Sandbox interface {
 // TODO foundry metadata
 type Foundries interface {
 	// CreateNew creates a new foundry controlled by the caller
-	CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) (uint32, uint64)
+	CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64)
 	// Destroy existing foundry, if this is possible
 	Destroy(uint32) int64
 	// GetOutput returns the output

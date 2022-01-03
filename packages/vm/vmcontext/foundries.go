@@ -9,8 +9,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
-func (vmctx *VMContext) CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) (uint32, uint64) {
-	return vmctx.txbuilder.CreateNewFoundry(scheme, tag, maxSupply)
+func (vmctx *VMContext) CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64) {
+	return vmctx.txbuilder.CreateNewFoundry(scheme, tag, maxSupply, metadata)
 }
 
 func (vmctx *VMContext) DestroyFoundry(sn uint32) int64 {

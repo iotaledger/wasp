@@ -16,6 +16,7 @@ var (
 	ErrCallInitNotFromRoot       = xerrors.New("attempt to call `init` not from the root contract")
 )
 
+// Call implements logic of the call between contracts on-chain
 func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, transfer *iscp.Assets) (dict.Dict, error) {
 	vmctx.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
 	rec := vmctx.findContractByHname(targetContract)

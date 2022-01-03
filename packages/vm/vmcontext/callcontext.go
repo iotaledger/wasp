@@ -15,7 +15,7 @@ func (vmctx *VMContext) pushCallContextWithMoveAssets(targetContract iscp.Hname,
 		// this makes it impossible to send funds to 'common account' with ordinary smart contract call
 		// transfer will end up either in the non-core target account or in the sender's account
 		transfer = nil
-		vmctx.Debugf("transfer ignored for core targetContract")
+		vmctx.Debugf("transfer ignored for core target contract")
 	}
 	if transfer != nil {
 		targetAccount := iscp.NewAgentID(vmctx.ChainID().AsAddress(), targetContract)

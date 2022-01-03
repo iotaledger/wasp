@@ -32,19 +32,15 @@ var Processor = Contract.Processor(nil,
 )
 
 // deposit is a function to deposit funds to the sender's chain account
-// normally 'transfer' == nil, otherwise it is a mistake
+// For the core contract as a target 'transfer' == nil
 func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.deposit")
 	// No need to do anything here because funds are already credited to the sender's account
 	// just send back anything that might have been included in 'transfer' by mistake
-	if ctx.IncomingTransfer() == nil {
-		return nil, nil
-	}
-	sendIncomingTo(ctx, ctx.Caller())
 	return nil, nil
 }
 
-// sendTo moves transfer to the specified account on the chain. Can be sent as a request
+// sendTo moves transfer from the to the specified account on the chain. Can be sent as a request
 // or can be called
 // Params:
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
@@ -233,7 +229,7 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	tokenMaxSupply := par.MustGetBigInt(ParamMaxSupply)
 
 	// create UTXO
-	sn, dustConsumed := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply)
+	sn, dustConsumed := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply, nil)
 	// dust deposit is taken from the callers account
 	DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
 		Iotas: dustConsumed,
