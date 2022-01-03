@@ -344,55 +344,55 @@ export class IotaBalanceResults extends wasmclient.ViewResults {
 
 export class TestWasmLibService extends wasmclient.Service {
 
-	constructor(cl: wasmclient.ServiceClient, chainID: string) {
-		super(cl, chainID, 0x89703a45, events.eventHandlers);
+	constructor(cl: wasmclient.ServiceClient) {
+		super(cl, 0x89703a45, events.eventHandlers);
 	}
 
 	public arrayClear(): ArrayClearFunc {
-    	return new ArrayClearFunc(this);
+		return new ArrayClearFunc(this);
 	}
 
 	public arrayCreate(): ArrayCreateFunc {
-    	return new ArrayCreateFunc(this);
+		return new ArrayCreateFunc(this);
 	}
 
 	public arraySet(): ArraySetFunc {
-    	return new ArraySetFunc(this);
+		return new ArraySetFunc(this);
 	}
 
 	public paramTypes(): ParamTypesFunc {
-    	return new ParamTypesFunc(this);
+		return new ParamTypesFunc(this);
 	}
 
 	public random(): RandomFunc {
-    	return new RandomFunc(this);
+		return new RandomFunc(this);
 	}
 
 	public triggerEvent(): TriggerEventFunc {
-    	return new TriggerEventFunc(this);
+		return new TriggerEventFunc(this);
 	}
 
 	public arrayLength(): ArrayLengthView {
-    	return new ArrayLengthView(this);
+		return new ArrayLengthView(this);
 	}
 
 	public arrayValue(): ArrayValueView {
-    	return new ArrayValueView(this);
+		return new ArrayValueView(this);
 	}
 
 	public blockRecord(): BlockRecordView {
-    	return new BlockRecordView(this);
+		return new BlockRecordView(this);
 	}
 
 	public blockRecords(): BlockRecordsView {
-    	return new BlockRecordsView(this);
+		return new BlockRecordsView(this);
 	}
 
 	public getRandom(): GetRandomView {
-    	return new GetRandomView(this);
+		return new GetRandomView(this);
 	}
 
 	public iotaBalance(): IotaBalanceView {
-    	return new IotaBalanceView(this);
+		return new IotaBalanceView(this);
 	}
 }

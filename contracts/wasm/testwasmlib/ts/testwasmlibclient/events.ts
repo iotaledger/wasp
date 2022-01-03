@@ -9,17 +9,16 @@ import * as wasmclient from "wasmclient"
 import * as app from "./testwasmlib"
 
 export const eventHandlers: wasmclient.EventHandlers = {
-	"testwasmlib.test": onTestWasmLibTestThunk,
+	"testwasmlib.test": msg => app.onTestWasmLibTest(new EventTest(msg)),
 };
 
 export class EventTest extends wasmclient.Event {
-  	public address: wasmclient.Address;
-  	public name: wasmclient.String;
-}
-
-function onTestWasmLibTestThunk(message: string[]) {
-	let e = new EventTest(message);
-	e.address = e.nextAddress();
-	e.name = e.nextString();
-	app.onTestWasmLibTest(e);
+	public readonly address: wasmclient.Address;
+	public readonly name: wasmclient.String;
+	
+	public constructor(msg: string[]) {
+		super(msg)
+		this.address = this.nextAddress();
+		this.name = this.nextString();
+	}
 }
