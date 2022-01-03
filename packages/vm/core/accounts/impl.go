@@ -16,9 +16,6 @@ import (
 )
 
 var Processor = Contract.Processor(initialize,
-	FuncViewBalance.WithHandler(viewBalance),
-	FuncViewTotalAssets.WithHandler(viewTotalAssets),
-	FuncViewAccounts.WithHandler(viewAccounts),
 	FuncDeposit.WithHandler(deposit),
 	FuncSendTo.WithHandler(sendTo),
 	FuncWithdraw.WithHandler(withdraw),
@@ -29,36 +26,16 @@ var Processor = Contract.Processor(initialize,
 	FuncFoundryDestroy.WithHandler(foundryDestroy),
 	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
 	FuncFoundryOutput.WithHandler(foundryOutput),
+	FuncViewBalance.WithHandler(viewBalance),
+	FuncViewTotalAssets.WithHandler(viewTotalAssets),
+	FuncViewAccounts.WithHandler(viewAccounts),
 )
 
 // initialize the init call
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
+
 	ctx.Log().Debugf("accounts.initialize.success hname = %s", Contract.Hname().String())
 	return nil, nil
-}
-
-// viewBalance returns colored balances of the account belonging to the AgentID
-// Params:
-// - ParamAgentID
-func viewBalance(ctx iscp.SandboxView) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.viewBalance")
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	aid, err := params.GetAgentID(ParamAgentID)
-	if err != nil {
-		return nil, err
-	}
-	return getAccountBalanceDict(getAccountR(ctx.State(), aid)), nil
-}
-
-// viewTotalAssets returns total colored balances controlled by the chain
-func viewTotalAssets(ctx iscp.SandboxView) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.State())), nil
-}
-
-// viewAccounts returns list of all accounts as keys of the ImmutableCodec
-func viewAccounts(ctx iscp.SandboxView) (dict.Dict, error) {
-	return getAccountsIntern(ctx.State()), nil
 }
 
 // deposit is a function to deposit funds to the sender's chain account
@@ -204,6 +181,30 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.Require(MoveBetweenAccounts(state, sourceAccount, ctx.Caller(), tokensToSend),
 		"accounts.harvest.inconsistency. failed to move tokens to owner's account")
 	return nil, nil
+}
+
+// viewBalance returns colored balances of the account belonging to the AgentID
+// Params:
+// - ParamAgentID
+func viewBalance(ctx iscp.SandboxView) (dict.Dict, error) {
+	ctx.Log().Debugf("accounts.viewBalance")
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	aid, err := params.GetAgentID(ParamAgentID)
+	if err != nil {
+		return nil, err
+	}
+	return getAccountBalanceDict(getAccountR(ctx.State(), aid)), nil
+}
+
+// viewTotalAssets returns total colored balances controlled by the chain
+func viewTotalAssets(ctx iscp.SandboxView) (dict.Dict, error) {
+	ctx.Log().Debugf("accounts.viewTotalAssets")
+	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.State())), nil
+}
+
+// viewAccounts returns list of all accounts as keys of the ImmutableCodec
+func viewAccounts(ctx iscp.SandboxView) (dict.Dict, error) {
+	return getAccountsIntern(ctx.State()), nil
 }
 
 func getAccountNonce(ctx iscp.SandboxView) (dict.Dict, error) {

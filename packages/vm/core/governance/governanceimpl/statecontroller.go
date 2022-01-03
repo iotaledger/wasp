@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -21,13 +20,12 @@ import (
 // If it is successful VM takes over and replaces resulting transaction with
 // governance transition. The state of the chain remains unchanged
 func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.RequireChainOwner(ctx, "rotateStateController")
+	ctx.RequireCallerIsChainOwner("rotateStateController")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	newStateControllerAddr := par.MustGetAddress(governance.ParamStateControllerAddress)
 	// check is address is allowed
 	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	a.Require(amap.MustHasAt(iscp.BytesFromAddress(newStateControllerAddr)), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr.Bech32(iscp.Bech32Prefix))
+	ctx.Require(amap.MustHasAt(iscp.BytesFromAddress(newStateControllerAddr)), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr.Bech32(iscp.Bech32Prefix))
 
 	if !newStateControllerAddr.Equal(ctx.StateAnchor().StateController) {
 		// rotate request to another address has been issued. State update will be taken over by VM and will have no effect
@@ -41,7 +39,7 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 	// - either there's no need to rotate
 	// - or it just has been rotated. In case of the second situation we emit a 'rotate' event
 	addrs, err := ctx.Call(coreutil.CoreContractBlocklogHname, blocklog.FuncControlAddresses.Hname(), nil, nil)
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 	par = kvdecoder.New(addrs, ctx.Log())
 	storedStateController := par.MustGetAddress(blocklog.ParamStateControllerAddress)
 	if !storedStateController.Equal(newStateControllerAddr) {
@@ -55,8 +53,7 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func addAllowedStateControllerAddress(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.RequireChainOwner(ctx, "addAllowedStateControllerAddress")
+	ctx.RequireCallerIsChainOwner("addAllowedStateControllerAddress")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	addr := par.MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
@@ -65,8 +62,7 @@ func addAllowedStateControllerAddress(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func removeAllowedStateControllerAddress(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.RequireChainOwner(ctx, "removeAllowedStateControllerAddress")
+	ctx.RequireCallerIsChainOwner("removeAllowedStateControllerAddress")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	addr := par.MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)

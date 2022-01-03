@@ -12,12 +12,12 @@ type Assert struct {
 	prefix string
 }
 
-func NewAssert(log iscp.LogInterface, name ...string) Assert {
+func NewAssert(log iscp.LogInterface, name ...string) *Assert {
 	p := "assertion failed: "
 	if len(name) > 0 {
 		p = fmt.Sprintf("assertion failed (%s): ", name[0])
 	}
-	return Assert{
+	return &Assert{
 		log:    log,
 		prefix: p,
 	}
@@ -39,14 +39,12 @@ func (a Assert) RequireNoError(err error, str ...string) {
 }
 
 func (a Assert) RequireChainOwner(ctx iscp.Sandbox, name ...string) {
-	a.RequireCaller(ctx, []*iscp.AgentID{ctx.ChainOwnerID()}, name...)
+	a.RequireCaller(ctx, ctx.ChainOwnerID(), name...)
 }
 
-func (a Assert) RequireCaller(ctx iscp.Sandbox, allowed []*iscp.AgentID, name ...string) {
-	for _, agentID := range allowed {
-		if ctx.Caller().Equals(agentID) {
-			return
-		}
+func (a Assert) RequireCaller(ctx iscp.Sandbox, agentID *iscp.AgentID, name ...string) {
+	if ctx.Caller().Equals(agentID) {
+		return
 	}
 	if len(name) > 0 {
 		a.log.Panicf(a.prefix+"%s: unauthorized access", name[0])

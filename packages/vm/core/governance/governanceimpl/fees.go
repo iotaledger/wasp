@@ -5,7 +5,6 @@ package governanceimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -16,13 +15,12 @@ import (
 // Input:
 // - governance.ParamFeePolicyBytes must contain bytes of the policy record
 func setFeePolicy(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.RequireChainOwner(ctx, "governance.setFeePolicy: not authorized")
+	ctx.RequireCallerIsChainOwner("governance.setFeePolicy: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	data := params.MustGetBytes(governance.ParamFeePolicyBytes)
 	_, err := gas.GasFeePolicyFromBytes(data)
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 
 	ctx.State().Set(governance.VarGasFeePolicyBytes, data)
 	return nil, nil

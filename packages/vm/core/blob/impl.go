@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -35,7 +34,7 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 	blobHash, kSorted, values := mustGetBlobHash(params)
 
 	directory := GetDirectory(state)
-	assert.NewAssert(ctx.Log()).Require(!directory.MustHasAt(blobHash[:]),
+	ctx.Require(!directory.MustHasAt(blobHash[:]),
 		"blob.storeBlob.fail: blob with hash %s already exist", blobHash.String())
 
 	// get a record by blob hash
@@ -72,8 +71,7 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 func getBlobInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.getBlobInfo.begin")
 
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	blobHash := params.MustGetHashValue(ParamHash)
+	blobHash := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetHashValue(ParamHash)
 
 	blbSizes := GetBlobSizesR(ctx.State(), blobHash)
 	ret := dict.New()

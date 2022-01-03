@@ -14,7 +14,6 @@ package governanceimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -50,10 +49,8 @@ func getChainNodesFuncHandler(ctx iscp.SandboxView) (dict.Dict, error) {
 //  ) => ()
 //
 func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-
 	ani := governance.NewAccessNodeInfoFromAddCandidateNodeParams(ctx)
-	a.Require(ani.ValidateCertificate(ctx), "certificate invalid")
+	ctx.Require(ani.ValidateCertificate(ctx), "certificate invalid")
 
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
 	accessNodeCandidates.MustSetAt(ani.NodePubKey, ani.Bytes())
@@ -74,10 +71,8 @@ func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 // must be initiated by the chain owner explicitly.
 //
 func revokeAccessNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-
 	ani := governance.NewAccessNodeInfoFromRevokeAccessNodeParams(ctx)
-	a.Require(ani.ValidateCertificate(ctx), "certificate invalid")
+	ctx.Require(ani.ValidateCertificate(ctx), "certificate invalid")
 
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
 	accessNodeCandidates.MustDelAt(ani.NodePubKey)
@@ -95,14 +90,13 @@ func revokeAccessNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 //  ) => ()
 //
 func changeAccessNodesFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.RequireCaller(ctx, []*iscp.AgentID{ctx.ChainOwnerID()})
+	ctx.RequireCallerIsChainOwner()
 
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
 	accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
 	paramNodeActions := collections.NewMapReadOnly(ctx.Params(), string(governance.ParamChangeAccessNodesActions))
 	paramNodeActions.MustIterate(func(pubKey, actionBin []byte) bool {
-		a.Require(len(actionBin) == 1, "action should be a single byte")
+		ctx.Require(len(actionBin) == 1, "action should be a single byte")
 		switch governance.ChangeAccessNodeAction(actionBin[0]) {
 		case governance.ChangeAccessNodeActionRemove:
 			accessNodes.MustDelAt(pubKey)
@@ -112,7 +106,7 @@ func changeAccessNodesFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 			accessNodes.MustDelAt(pubKey)
 			accessNodeCandidates.MustDelAt(pubKey)
 		default:
-			a.Require(false, "unexpected action")
+			ctx.Require(false, "unexpected action")
 		}
 		return true
 	})

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -33,8 +32,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,
 	})
-	a := assert.NewAssert(ctx.Log())
-	a.Require(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
+	ctx.Require(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
 	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Contract.Hname().String())
 	return nil, nil
 }
@@ -70,9 +68,8 @@ func viewGetLatestBlockInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 func viewIsRequestProcessed(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	requestID := params.MustGetRequestID(ParamRequestID)
-	a := assert.NewAssert(ctx.Log())
 	seen, err := isRequestProcessedInternal(ctx.State(), &requestID)
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 	ret := dict.New()
 	if seen {
 		ret.Set(ParamRequestProcessed, codec.EncodeString("+"))
@@ -96,7 +93,6 @@ func viewGetRequestReceipt(ctx iscp.SandboxView) (dict.Dict, error) {
 
 func viewGetRequestIDsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
-	a := assert.NewAssert(ctx.Log())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
 
 	if blockIndex == 0 {
@@ -105,14 +101,14 @@ func viewGetRequestIDsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	}
 
 	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
-	a.RequireNoError(err)
-	a.Require(found, "not found")
+	ctx.RequireNoError(err)
+	ctx.Require(found, "not found")
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestID)
 	for _, d := range dataArr {
 		rec, err := RequestReceiptFromBytes(d)
-		a.RequireNoError(err)
+		ctx.RequireNoError(err)
 		arr.MustPush(rec.RequestData.ID().Bytes())
 	}
 	return ret, nil
@@ -120,7 +116,6 @@ func viewGetRequestIDsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 
 func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
-	a := assert.NewAssert(ctx.Log())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
 
 	if blockIndex == 0 {
@@ -129,8 +124,8 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	}
 
 	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
-	a.RequireNoError(err)
-	a.Require(found, "not found")
+	ctx.RequireNoError(err)
+	ctx.Require(found, "not found")
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestRecord)
@@ -141,12 +136,11 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 }
 
 func viewControlAddresses(ctx iscp.SandboxView) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
 	registry := collections.NewArray32ReadOnly(ctx.State(), prefixControlAddresses)
 	l := registry.MustLen()
-	a.Require(l > 0, "inconsistency: unknown control addresses")
+	ctx.Require(l > 0, "inconsistency: unknown control addresses")
 	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 	ret := dict.New()
 
 	ret.Set(ParamStateControllerAddress, iscp.BytesFromAddress(rec.StateAddress))
