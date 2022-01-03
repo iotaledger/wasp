@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmclient from "./wasmclient"
+import * as wasmclient from "wasmclient"
 import * as app from "./testwasmlib"
 
 export const eventHandlers: wasmclient.EventHandlers = {
