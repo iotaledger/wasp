@@ -13,7 +13,7 @@ $#each events eventClass
 `,
 	// *******************************
 	"eventHandler": `
-	"$package.$evtName": msg => app.on$PkgName$EvtName(new Event$EvtName(msg)),
+	"$package.$evtName": (msg: string[]) => app.on$PkgName$EvtName(new Event$EvtName(msg)),
 `,
 	// *******************************
 	"eventClass": `

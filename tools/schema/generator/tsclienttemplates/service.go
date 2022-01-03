@@ -15,7 +15,7 @@ $#each func funcStruct
 
 export class $PkgName$+Service extends wasmclient.Service {
 
-	constructor(cl: wasmclient.ServiceClient) {
+	public constructor(cl: wasmclient.ServiceClient) {
 		super(cl, 0x$hscName, events.eventHandlers);
 	}
 $#each func serviceFunction
@@ -43,7 +43,7 @@ $#if result resultStruct
 `,
 	// *******************************
 	"funcArgsMember": `
-	args: wasmclient.Arguments = new wasmclient.Arguments();
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
 `,
 	// *******************************
 	"funcArgSetter": `
@@ -52,14 +52,14 @@ $#if array funcArgSetterArray funcArgSetterBasic
 	// *******************************
 	"funcArgSetterBasic": `
 	
-	$fldName(v: $fldLangType): void {
+	public $fldName(v: $fldLangType): void {
 		this.args.set$FldType(Arg$FldName, v);
 	}
 `,
 	// *******************************
 	"funcArgSetterArray": `
 	
-	$fldName(a: $fldLangType[]): void {
+	public $fldName(a: $fldLangType[]): void {
 		for (let i = 0; i < a.length; i++) {
 			this.args.set$FldType(this.args.indexedKey(Arg$FldName, i), a[i]);
 		}
@@ -117,17 +117,6 @@ $#if mandatory else callResultOptional
 	$fldName$+Exists(): boolean {
 		return this.res.exists(Res$FldName)
 	}
-`,
-	// *******************************
-	"serviceResultExtract": `
-		let $fldName = result["$fldName"];
-		if ($fldName) {
-			this.$fldName = $fldName.$resConvert;
-		}
-`,
-	// *******************************
-	"serviceResult": `
-	$fldName: wasmclient.$FldType;
 `,
 	// *******************************
 	"serviceFunction": `

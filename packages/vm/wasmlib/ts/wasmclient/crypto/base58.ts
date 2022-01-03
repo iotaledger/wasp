@@ -61,24 +61,20 @@ export class Base58 {
       return Buffer.from('');
     }
     Base58.buildMap();
-    let i = 0;
-    let j;
-    let c;
-    let carry;
     const bytes = [0];
-    i = 0;
+    let i = 0;
     while (i < encoded.length) {
-      c = encoded[i];
+      let c = encoded[i];
       if (!(c in Base58.ALPHABET_MAP)) {
         throw new Error(`Character '${c}' is not in the Base58 alphabet.`);
       }
-      j = 0;
+      let j = 0;
       while (j < bytes.length) {
         bytes[j] *= 58;
         j++;
       }
       bytes[0] += Base58.ALPHABET_MAP[c];
-      carry = 0;
+      let carry = 0;
       j = 0;
       while (j < bytes.length) {
         bytes[j] += carry;

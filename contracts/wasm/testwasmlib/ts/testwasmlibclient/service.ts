@@ -43,9 +43,9 @@ const ResValue = "value";
 ///////////////////////////// arrayClear /////////////////////////////
 
 export class ArrayClearFunc extends wasmclient.ClientFunc {
-	args: wasmclient.Arguments = new wasmclient.Arguments();
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	name(v: string): void {
+	public name(v: string): void {
 		this.args.setString(ArgName, v);
 	}
 	
@@ -58,9 +58,9 @@ export class ArrayClearFunc extends wasmclient.ClientFunc {
 ///////////////////////////// arrayCreate /////////////////////////////
 
 export class ArrayCreateFunc extends wasmclient.ClientFunc {
-	args: wasmclient.Arguments = new wasmclient.Arguments();
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	name(v: string): void {
+	public name(v: string): void {
 		this.args.setString(ArgName, v);
 	}
 	
@@ -73,17 +73,17 @@ export class ArrayCreateFunc extends wasmclient.ClientFunc {
 ///////////////////////////// arraySet /////////////////////////////
 
 export class ArraySetFunc extends wasmclient.ClientFunc {
-	args: wasmclient.Arguments = new wasmclient.Arguments();
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	index(v: wasmclient.Int32): void {
+	public index(v: wasmclient.Int32): void {
 		this.args.setInt32(ArgIndex, v);
 	}
 	
-	name(v: string): void {
+	public name(v: string): void {
 		this.args.setString(ArgName, v);
 	}
 	
-	value(v: string): void {
+	public value(v: string): void {
 		this.args.setString(ArgValue, v);
 	}
 	
@@ -98,81 +98,81 @@ export class ArraySetFunc extends wasmclient.ClientFunc {
 ///////////////////////////// paramTypes /////////////////////////////
 
 export class ParamTypesFunc extends wasmclient.ClientFunc {
-	args: wasmclient.Arguments = new wasmclient.Arguments();
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	address(v: wasmclient.Address): void {
+	public address(v: wasmclient.Address): void {
 		this.args.setAddress(ArgAddress, v);
 	}
 	
-	agentID(v: wasmclient.AgentID): void {
+	public agentID(v: wasmclient.AgentID): void {
 		this.args.setAgentID(ArgAgentID, v);
 	}
 	
-	bool(v: boolean): void {
+	public bool(v: boolean): void {
 		this.args.setBool(ArgBool, v);
 	}
 	
-	bytes(v: wasmclient.Bytes): void {
+	public bytes(v: wasmclient.Bytes): void {
 		this.args.setBytes(ArgBytes, v);
 	}
 	
-	chainID(v: wasmclient.ChainID): void {
+	public chainID(v: wasmclient.ChainID): void {
 		this.args.setChainID(ArgChainID, v);
 	}
 	
-	color(v: wasmclient.Color): void {
+	public color(v: wasmclient.Color): void {
 		this.args.setColor(ArgColor, v);
 	}
 	
-	hash(v: wasmclient.Hash): void {
+	public hash(v: wasmclient.Hash): void {
 		this.args.setHash(ArgHash, v);
 	}
 	
-	hname(v: wasmclient.Hname): void {
+	public hname(v: wasmclient.Hname): void {
 		this.args.setHname(ArgHname, v);
 	}
 	
-	int16(v: wasmclient.Int16): void {
+	public int16(v: wasmclient.Int16): void {
 		this.args.setInt16(ArgInt16, v);
 	}
 	
-	int32(v: wasmclient.Int32): void {
+	public int32(v: wasmclient.Int32): void {
 		this.args.setInt32(ArgInt32, v);
 	}
 	
-	int64(v: wasmclient.Int64): void {
+	public int64(v: wasmclient.Int64): void {
 		this.args.setInt64(ArgInt64, v);
 	}
 	
-	int8(v: wasmclient.Int8): void {
+	public int8(v: wasmclient.Int8): void {
 		this.args.setInt8(ArgInt8, v);
 	}
 	
-	param(v: wasmclient.Bytes): void {
+	public param(v: wasmclient.Bytes): void {
 		this.args.setBytes(ArgParam, v);
 	}
 	
-	requestID(v: wasmclient.RequestID): void {
+	public requestID(v: wasmclient.RequestID): void {
 		this.args.setRequestID(ArgRequestID, v);
 	}
 	
-	string(v: string): void {
+	public string(v: string): void {
 		this.args.setString(ArgString, v);
 	}
 	
-	uint16(v: wasmclient.Uint16): void {
+	public uint16(v: wasmclient.Uint16): void {
 		this.args.setUint16(ArgUint16, v);
 	}
 	
-	uint32(v: wasmclient.Uint32): void {
+	public uint32(v: wasmclient.Uint32): void {
 		this.args.setUint32(ArgUint32, v);
 	}
 	
-	uint64(v: wasmclient.Uint64): void {
+	public uint64(v: wasmclient.Uint64): void {
 		this.args.setUint64(ArgUint64, v);
 	}
 	
-	uint8(v: wasmclient.Uint8): void {
+	public uint8(v: wasmclient.Uint8): void {
 		this.args.setUint8(ArgUint8, v);
 	}
 	
@@ -193,13 +193,13 @@ export class RandomFunc extends wasmclient.ClientFunc {
 ///////////////////////////// triggerEvent /////////////////////////////
 
 export class TriggerEventFunc extends wasmclient.ClientFunc {
-	args: wasmclient.Arguments = new wasmclient.Arguments();
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	address(v: wasmclient.Address): void {
+	public address(v: wasmclient.Address): void {
 		this.args.setAddress(ArgAddress, v);
 	}
 	
-	name(v: string): void {
+	public name(v: string): void {
 		this.args.setString(ArgName, v);
 	}
 	
@@ -213,9 +213,9 @@ export class TriggerEventFunc extends wasmclient.ClientFunc {
 ///////////////////////////// arrayLength /////////////////////////////
 
 export class ArrayLengthView extends wasmclient.ClientView {
-	args: wasmclient.Arguments = new wasmclient.Arguments();
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	name(v: string): void {
+	public name(v: string): void {
 		this.args.setString(ArgName, v);
 	}
 
@@ -235,13 +235,13 @@ export class ArrayLengthResults extends wasmclient.ViewResults {
 ///////////////////////////// arrayValue /////////////////////////////
 
 export class ArrayValueView extends wasmclient.ClientView {
-	args: wasmclient.Arguments = new wasmclient.Arguments();
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	index(v: wasmclient.Int32): void {
+	public index(v: wasmclient.Int32): void {
 		this.args.setInt32(ArgIndex, v);
 	}
 	
-	name(v: string): void {
+	public name(v: string): void {
 		this.args.setString(ArgName, v);
 	}
 
@@ -262,13 +262,13 @@ export class ArrayValueResults extends wasmclient.ViewResults {
 ///////////////////////////// blockRecord /////////////////////////////
 
 export class BlockRecordView extends wasmclient.ClientView {
-	args: wasmclient.Arguments = new wasmclient.Arguments();
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	blockIndex(v: wasmclient.Int32): void {
+	public blockIndex(v: wasmclient.Int32): void {
 		this.args.setInt32(ArgBlockIndex, v);
 	}
 	
-	recordIndex(v: wasmclient.Int32): void {
+	public recordIndex(v: wasmclient.Int32): void {
 		this.args.setInt32(ArgRecordIndex, v);
 	}
 
@@ -289,9 +289,9 @@ export class BlockRecordResults extends wasmclient.ViewResults {
 ///////////////////////////// blockRecords /////////////////////////////
 
 export class BlockRecordsView extends wasmclient.ClientView {
-	args: wasmclient.Arguments = new wasmclient.Arguments();
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	blockIndex(v: wasmclient.Int32): void {
+	public blockIndex(v: wasmclient.Int32): void {
 		this.args.setInt32(ArgBlockIndex, v);
 	}
 
@@ -344,7 +344,7 @@ export class IotaBalanceResults extends wasmclient.ViewResults {
 
 export class TestWasmLibService extends wasmclient.Service {
 
-	constructor(cl: wasmclient.ServiceClient) {
+	public constructor(cl: wasmclient.ServiceClient) {
 		super(cl, 0x89703a45, events.eventHandlers);
 	}
 

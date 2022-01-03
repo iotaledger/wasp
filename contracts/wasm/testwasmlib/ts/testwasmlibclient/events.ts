@@ -9,7 +9,7 @@ import * as wasmclient from "wasmclient"
 import * as app from "./testwasmlib"
 
 export const eventHandlers: wasmclient.EventHandlers = {
-	"testwasmlib.test": msg => app.onTestWasmLibTest(new EventTest(msg)),
+	"testwasmlib.test": (msg: string[]) => app.onTestWasmLibTest(new EventTest(msg)),
 };
 
 export class EventTest extends wasmclient.Event {

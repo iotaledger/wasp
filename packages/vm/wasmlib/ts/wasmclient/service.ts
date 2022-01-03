@@ -37,7 +37,7 @@ export class Service {
         hNames.writeUInt32LE(this.scHname, 0);
         hNames.writeUInt32LE(hFuncName, 4);
         const nonce = Buffer.alloc(8)
-        nonce.writeBigUInt64LE(BigInt(performance.now()), 0);
+        nonce.writeBigUInt64LE(BigInt(Math.trunc(performance.now())), 0);
         essence = Buffer.concat([essence, hNames, args.encode(), keyPair.publicKey, nonce, transfer.encode()]);
 
         let buf = Buffer.alloc(1);
