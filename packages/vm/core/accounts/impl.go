@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
 
-var Processor = Contract.Processor(initialize,
+var Processor = Contract.Processor(nil,
 	FuncDeposit.WithHandler(deposit),
 	FuncSendTo.WithHandler(sendTo),
 	FuncWithdraw.WithHandler(withdraw),
@@ -30,13 +30,6 @@ var Processor = Contract.Processor(initialize,
 	FuncViewTotalAssets.WithHandler(viewTotalAssets),
 	FuncViewAccounts.WithHandler(viewAccounts),
 )
-
-// initialize the init call
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
-
-	ctx.Log().Debugf("accounts.initialize.success hname = %s", Contract.Hname().String())
-	return nil, nil
-}
 
 // deposit is a function to deposit funds to the sender's chain account
 // normally 'transfer' == nil, otherwise it is a mistake
