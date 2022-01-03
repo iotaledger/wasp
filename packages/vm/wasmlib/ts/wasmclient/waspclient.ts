@@ -38,7 +38,7 @@ export class WaspClient {
     public async callView(chainID: string, contractHName: string, entryPoint: string, args: Buffer): Promise<wasmclient.Results> {
         const request = {Request: args.toString("base64")};
         const result = await this.sendRequest<unknown, ICallViewResponse>(
-            "get",
+            "post",
             `/chain/${chainID}/contract/${contractHName}/callview/${entryPoint}`,
             request
         );
