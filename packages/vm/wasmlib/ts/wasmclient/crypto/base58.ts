@@ -64,7 +64,7 @@ export class Base58 {
     const bytes = [0];
     let i = 0;
     while (i < encoded.length) {
-      let c = encoded[i];
+      const c = encoded[i];
       if (!(c in Base58.ALPHABET_MAP)) {
         throw new Error(`Character '${c}' is not in the Base58 alphabet.`);
       }
