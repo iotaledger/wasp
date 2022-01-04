@@ -3,10 +3,7 @@ package blob
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -14,17 +11,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-var Processor = Contract.Processor(initialize,
+var Processor = Contract.Processor(nil,
 	FuncStoreBlob.WithHandler(storeBlob),
 	FuncGetBlobInfo.WithHandler(getBlobInfo),
 	FuncGetBlobField.WithHandler(getBlobField),
 	FuncListBlobs.WithHandler(listBlobs),
 )
-
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("blob.initialize.success hname = %s", Contract.Hname().String())
-	return nil, nil
-}
 
 // storeBlob treats parameters as names of fields and field values
 // it stores it in the state in deterministic binary representation
@@ -37,7 +29,7 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 	blobHash, kSorted, values := mustGetBlobHash(params)
 
 	directory := GetDirectory(state)
-	assert.NewAssert(ctx.Log()).Require(!directory.MustHasAt(blobHash[:]),
+	ctx.Require(!directory.MustHasAt(blobHash[:]),
 		"blob.storeBlob.fail: blob with hash %s already exist", blobHash.String())
 
 	// get a record by blob hash
@@ -61,11 +53,6 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 		totalSizeWithKeys += size + uint32(len(k))
 	}
 
-	// TODO this code is experimental. Alternative approach would be burning gas directly in the state access interface
-	//  Set and Del mutation would burn net difference between size of the current key+value and the new one
-	//  Burning storage gas can be negative, which means we are saving the space and therefore adding to the available budget
-	ctx.Gas().Burn(gas.StoreByte * uint64(totalSizeWithKeys))
-
 	ret := dict.New()
 	ret.Set(ParamHash, codec.EncodeHashValue(blobHash))
 
@@ -79,8 +66,7 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 func getBlobInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.getBlobInfo.begin")
 
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	blobHash := params.MustGetHashValue(ParamHash)
+	blobHash := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetHashValue(ParamHash)
 
 	blbSizes := GetBlobSizesR(ctx.State(), blobHash)
 	ret := dict.New()

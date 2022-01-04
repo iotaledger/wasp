@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -36,8 +35,7 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 // - ParamMaxEventsPerRequest - uint16 maximum number of events per request.
 // Does not set gas fee policy!
 func setChainInfo(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.RequireChainOwner(ctx, "governance.setContractFee: not authorized")
+	ctx.RequireCallerIsChainOwner("governance.setContractFee: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 

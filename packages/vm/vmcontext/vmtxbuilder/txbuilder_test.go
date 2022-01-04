@@ -705,7 +705,7 @@ func TestFoundries(t *testing.T) {
 	}
 	createNFoundries := func(n int) {
 		for i := 0; i < n; i++ {
-			sn, _ := txb.CreateNewFoundry(&iotago.SimpleTokenScheme{}, iotago.TokenTag{}, big.NewInt(10_000_000))
+			sn, _ := txb.CreateNewFoundry(&iotago.SimpleTokenScheme{}, iotago.TokenTag{}, big.NewInt(10_000_000), nil)
 			require.EqualValues(t, i+1, int(sn))
 
 			tin, tout, balanced := txb.Totals()

@@ -23,6 +23,7 @@ type sandboxview struct {
 	params        dict.Dict
 	state         kv.KVStoreReader
 	vctx          *Viewcontext
+	assert        *assert.Assert
 	// gas related
 	gasBudget uint64
 	gasBurned uint64
@@ -38,6 +39,7 @@ func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dic
 		contractHname: contractHname,
 		params:        params,
 		state:         contractStateSubpartition(vctx.stateReader.KVStoreReader(), contractHname),
+		assert:        assert.NewAssert(vctx),
 	}
 }
 
@@ -142,4 +144,12 @@ func (s *sandboxview) gasBudgetLeft() uint64 {
 		return 0
 	}
 	return s.gasBudget - s.gasBurned
+}
+
+func (s *sandboxview) Require(cond bool, format string, args ...interface{}) {
+	s.assert.Require(cond, format, args...)
+}
+
+func (s *sandboxview) RequireNoError(err error, str ...string) {
+	s.assert.RequireNoError(err, str...)
 }

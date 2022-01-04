@@ -8,15 +8,17 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
 
-// pushCallContextAndMoveAssets moves funds from the caller to the target before pushing new context to the stack
-func (vmctx *VMContext) pushCallContextAndMoveAssets(contract iscp.Hname, params dict.Dict, transfer *iscp.Assets) {
-	if transfer != nil && commonaccount.IsCoreHname(contract) {
+// pushCallContextWithMoveAssets moves funds from the caller to the non-core target before pushing new context to the stack
+func (vmctx *VMContext) pushCallContextWithMoveAssets(targetContract iscp.Hname, params dict.Dict, transfer *iscp.Assets) {
+	if transfer != nil && commonaccount.IsCoreHname(targetContract) {
 		// if target contract is one of core contracts, transfer is ignored
+		// this makes it impossible to send funds to 'common account' with ordinary smart contract call
+		// transfer will end up either in the non-core target account or in the sender's account
 		transfer = nil
-		vmctx.Debugf("transfer ignored for core contract")
+		vmctx.Debugf("transfer ignored for core target contract")
 	}
 	if transfer != nil {
-		targetAccount := iscp.NewAgentID(vmctx.ChainID().AsAddress(), contract)
+		targetAccount := iscp.NewAgentID(vmctx.ChainID().AsAddress(), targetContract)
 		var sourceAccount *iscp.AgentID
 		if len(vmctx.callStack) == 0 {
 			sourceAccount = vmctx.req.SenderAccount()
@@ -25,7 +27,7 @@ func (vmctx *VMContext) pushCallContextAndMoveAssets(contract iscp.Hname, params
 		}
 		vmctx.mustMoveBetweenAccounts(sourceAccount, targetAccount, transfer)
 	}
-	vmctx.pushCallContext(contract, params, transfer)
+	vmctx.pushCallContext(targetContract, params, transfer)
 }
 
 const traceStack = false

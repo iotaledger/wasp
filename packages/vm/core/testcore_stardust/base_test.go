@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/utxodb"
+
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -317,10 +319,17 @@ func TestDeployNativeContract(t *testing.T) {
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 	//senderAgentID := iscp.NewAgentID(senderAddr, 0)
 
+	// get more iotas for originator
+	originatorBalance := env.L1AddressBalances(ch.OriginatorAddress).Iotas
+	_, err := env.L1Ledger().GetFundsFromFaucet(ch.OriginatorAddress)
+	require.NoError(t, err)
+	env.AssertL1AddressIotas(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
+
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(senderAddr, 0)).
+		WithIotas(1000).
 		WithGasBudget(1000)
-	_, err := ch.PostRequestSync(req, nil)
+	_, err = ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	err = ch.DeployContract(senderKeyPair, "sctest", sbtestsc.Contract.ProgramHash)

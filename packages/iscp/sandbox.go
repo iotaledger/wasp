@@ -14,6 +14,7 @@ import (
 
 // SandboxBase is the common interface of Sandbox and SandboxView
 type SandboxBase interface {
+	Helpers
 	Balance
 	// AccountID returns the agentID of the current contract
 	AccountID() *AgentID
@@ -37,6 +38,16 @@ type SandboxBase interface {
 	Gas() Gas
 }
 
+type Helpers interface {
+	Require(cond bool, format string, args ...interface{})
+	RequireNoError(err error, str ...string)
+}
+
+type Authorize interface {
+	RequireCaller(agentID *AgentID, str ...string)
+	RequireCallerIsChainOwner(str ...string)
+}
+
 type Balance interface {
 	// BalanceIotas returns number of iotas in the balance of the smart contract
 	BalanceIotas() uint64
@@ -46,24 +57,11 @@ type Balance interface {
 	Assets() *Assets
 }
 
-// Foundries are identified by serial number in the Sandbox
-// Only used internally by the VM core contracts
-// TODO foundry metadata
-type Foundries interface {
-	// CreateNew creates a new foundry controlled by the caller
-	CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) (uint32, uint64)
-	// Destroy existing foundry, if this is possible
-	Destroy(uint32) int64
-	// GetOutput returns the output
-	GetOutput(uint32) *iotago.FoundryOutput
-	// ModifySupply inflates of shrinks supply
-	ModifySupply(serNum uint32, delta *big.Int) int64
-}
-
 // Sandbox is an interface given to the processor to access the VMContext
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
 	SandboxBase
+	Authorize
 
 	// State k/v store of the current call (in the context of the smart contract)
 	State() kv.KVStore
@@ -90,6 +88,20 @@ type Sandbox interface {
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
 	Foundries() Foundries
+}
+
+// Foundries are identified by serial number in the Sandbox
+// Only used internally by the VM core contracts
+// TODO foundry metadata
+type Foundries interface {
+	// CreateNew creates a new foundry controlled by the caller
+	CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64)
+	// Destroy existing foundry, if this is possible
+	Destroy(uint32) int64
+	// GetOutput returns the output
+	GetOutput(uint32) *iotago.FoundryOutput
+	// ModifySupply inflates of shrinks supply
+	ModifySupply(serNum uint32, delta *big.Int) int64
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters

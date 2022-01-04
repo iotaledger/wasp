@@ -5,7 +5,6 @@ package governanceimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -17,8 +16,7 @@ import (
 // Two step process allow/change is in order to avoid mistakes
 func delegateChainOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
-	a := assert.NewAssert(ctx.Log())
-	a.RequireChainOwner(ctx, "governance.delegateChainOwnership: not authorized")
+	ctx.RequireCallerIsChainOwner("governance.delegateChainOwnership: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	newOwnerID := params.MustGetAgentID(governance.ParamChainOwner)
@@ -33,14 +31,13 @@ func delegateChainOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 func claimChainOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
 	state := ctx.State()
-	a := assert.NewAssert(ctx.Log())
 
 	stateDecoder := kvdecoder.New(state, ctx.Log())
 	currentOwner := stateDecoder.MustGetAgentID(governance.VarChainOwnerID)
 	nextOwner := stateDecoder.MustGetAgentID(governance.VarChainOwnerIDDelegated, currentOwner)
 
-	a.Require(!nextOwner.Equals(currentOwner), "governance.claimChainOwnership: not delegated to another chain owner")
-	a.Require(nextOwner.Equals(ctx.Caller()), "governance.claimChainOwnership: not authorized")
+	ctx.Require(!nextOwner.Equals(currentOwner), "governance.claimChainOwnership: not delegated to another chain owner")
+	ctx.Require(nextOwner.Equals(ctx.Caller()), "governance.claimChainOwnership: not authorized")
 
 	state.Set(governance.VarChainOwnerID, codec.EncodeAgentID(nextOwner))
 	state.Del(governance.VarChainOwnerIDDelegated)

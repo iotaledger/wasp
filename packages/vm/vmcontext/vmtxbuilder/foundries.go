@@ -19,6 +19,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	scheme iotago.TokenScheme,
 	tag iotago.TokenTag,
 	maxSupply *big.Int,
+	metadata []byte,
 ) (uint32, uint64) {
 	if maxSupply.Cmp(big.NewInt(0)) <= 0 {
 		panic(ErrCreateFoundryMaxSupplyMustBePositive)
@@ -37,6 +38,11 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		MaximumSupply:     maxSupply,
 		TokenScheme:       scheme,
 		Blocks:            nil,
+	}
+	if len(metadata) > 0 {
+		f.Blocks = iotago.FeatureBlocks{&iotago.MetadataFeatureBlock{
+			Data: metadata,
+		}}
 	}
 	f.Amount = f.VByteCost(txb.rentStructure, nil)
 	err := util.CatchPanicReturnError(func() {

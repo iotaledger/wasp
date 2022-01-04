@@ -452,3 +452,22 @@ func ReadBytes8FromMarshalUtil(mu *marshalutil.MarshalUtil) ([]byte, error) {
 	}
 	return ret, nil
 }
+
+func WriteBytes16ToMarshalUtil(data []byte, mu *marshalutil.MarshalUtil) {
+	if len(data) > math.MaxUint16 {
+		panic("WriteBytes16ToMarshalUtil: len(data) > math.MaxUint16")
+	}
+	mu.WriteUint16(uint16(len(data))).WriteBytes(data)
+}
+
+func ReadBytes16FromMarshalUtil(mu *marshalutil.MarshalUtil) ([]byte, error) {
+	l, err := mu.ReadUint16()
+	if err != nil {
+		return nil, err
+	}
+	ret, err := mu.ReadBytes(int(l))
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}

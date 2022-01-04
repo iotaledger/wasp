@@ -24,7 +24,7 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 	env.ledgerMutex.Lock()
 	defer env.ledgerMutex.Unlock()
 
-	_, err := env.utxoDB.RequestFunds(addr)
+	_, err := env.utxoDB.GetFundsFromFaucet(addr)
 	require.NoError(env.T, err)
 	env.AssertL1AddressIotas(addr, Saldo)
 

@@ -9,10 +9,7 @@ package rootimpl
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
-
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -22,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
 var Processor = root.Contract.Processor(initialize,
@@ -46,30 +44,29 @@ var Processor = root.Contract.Processor(initialize,
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.begin")
 	state := ctx.State()
-	a := assert.NewAssert(ctx.Log())
 
-	a.Require(state.MustGet(root.StateVarStateInitialized) == nil, "root.initialize.fail: already initialized")
-	a.Require(ctx.Caller().Hname() == 0, "root.init.fail: chain deployer can't be another smart contract")
+	ctx.Require(state.MustGet(root.StateVarStateInitialized) == nil, "root.initialize.fail: already initialized")
+	ctx.Require(ctx.Caller().Hname() == 0, "root.init.fail: chain deployer can't be another smart contract")
 	creator := ctx.StateAnchor().Sender
-	a.Require(creator != nil && creator.Equal(ctx.Caller().Address()), "only creator of the origin can send the 'init' request")
+	ctx.Require(creator != nil && creator.Equal(ctx.Caller().Address()), "only creator of the origin can send the 'init' request")
 
 	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
-	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
+	ctx.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
 
 	dustAssumptionsBin, err := ctx.Params().Get(root.ParamDustDepositAssumptionsBin)
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 	_, err = vmtxbuilder.InternalDustDepositAssumptionFromBytes(dustAssumptionsBin)
-	a.Require(err == nil, "cannot initialize chain: 'dust deposit assumptions' parameter not specified or wrong")
+	ctx.RequireNoError(err, "cannot initialize chain: 'dust deposit assumptions' parameter not specified or wrong")
 
-	mustStoreContract(ctx, root.Contract, a)
-	mustStoreAndInitCoreContract(ctx, blob.Contract, a)
-	mustStoreAndInitCoreContract(ctx, accounts.Contract, a)
-	mustStoreAndInitCoreContract(ctx, blocklog.Contract, a)
+	mustStoreContract(ctx, root.Contract)
+	mustStoreAndInitCoreContract(ctx, blob.Contract)
+	mustStoreAndInitCoreContract(ctx, accounts.Contract)
+	mustStoreAndInitCoreContract(ctx, blocklog.Contract)
 	govParams := ctx.Params().Clone()
 	govParams.Set(governance.ParamChainID, codec.EncodeChainID(ctx.ChainID()))
 	// chain owner is whoever creates origin and sends the 'init' request
 	govParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes())
-	mustStoreAndInitCoreContract(ctx, governance.Contract, a, govParams)
+	mustStoreAndInitCoreContract(ctx, governance.Contract, govParams)
 
 	state.Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(true))
 	state.Set(root.StateVarDustDepositAssumptions, dustAssumptionsBin)
@@ -89,16 +86,14 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamDescription string is an arbitrary string. Defaults to "N/A"
 func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.deployContract.begin")
-	if !isAuthorizedToDeploy(ctx) {
-		return nil, fmt.Errorf("root.deployContract: deploy not permitted for: %s", ctx.Caller())
-	}
+	ctx.Require(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller())
+
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := assert.NewAssert(ctx.Log())
 
 	progHash := params.MustGetHashValue(root.ParamProgramHash)
 	description := params.MustGetString(root.ParamDescription, "N/A")
 	name := params.MustGetString(root.ParamName)
-	a.Require(name != "", "wrong name")
+	ctx.Require(name != "", "wrong name")
 
 	// pass to init function all params not consumed so far
 	initParams := dict.New()
@@ -109,7 +104,7 @@ func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 	}
 	// call to load VM from binary to check if it loads successfully
 	err := ctx.DeployContract(progHash, "", "", nil)
-	a.Require(err == nil, "root.deployContract.fail 1: %v", err)
+	ctx.Require(err == nil, "root.deployContract.fail 1: %v", err)
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor
 	mustStoreContractRecord(ctx, &root.ContractRecord{
@@ -117,9 +112,9 @@ func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 		Description: description,
 		Name:        name,
 		Creator:     ctx.Caller(),
-	}, a)
+	})
 	_, err = ctx.Call(iscp.Hn(name), iscp.EntryPointInit, initParams, nil)
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
 		name, iscp.Hn(name), progHash.String(), description))
@@ -132,8 +127,7 @@ func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 // Output:
 // - ParamData
 func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
-	params := kvdecoder.New(ctx.Params())
-	hname, err := params.GetHname(root.ParamHname)
+	hname, err := kvdecoder.New(ctx.Params()).GetHname(root.ParamHname)
 	if err != nil {
 		return nil, err
 	}
@@ -151,11 +145,9 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 // Input:
 //  - ParamDeployer iscp.AgentID
 func grantDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.Require(isChainOwner(a, ctx), "root.grantDeployPermissions: not authorized")
+	ctx.RequireCallerIsChainOwner("root.grantDeployPermissions: not authorized")
 
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	deployer := params.MustGetAgentID(root.ParamDeployer)
+	deployer := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(root.ParamDeployer)
 
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
 	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer))
@@ -166,11 +158,9 @@ func grantDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 // Input:
 //  - ParamDeployer iscp.AgentID
 func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.Require(isChainOwner(a, ctx), "root.revokeDeployPermissions: not authorized")
+	ctx.RequireCallerIsChainOwner("root.revokeDeployPermissions: not authorized")
 
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	deployer := params.MustGetAgentID(root.ParamDeployer)
+	deployer := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(root.ParamDeployer)
 
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustDelAt(deployer.Bytes())
 	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
@@ -191,11 +181,8 @@ func getContractRecords(ctx iscp.SandboxView) (dict.Dict, error) {
 }
 
 func requireDeployPermissions(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.Require(isChainOwner(a, ctx), "root.revokeDeployPermissions: not authorized")
-	params := kvdecoder.New(ctx.Params())
-	a.Require(ctx.Params().MustHas(root.ParamDeployPermissionsEnabled), "root.revokeDeployPermissions: ParamDeployPermissionsEnabled missing")
-	permissionsEnabled := params.MustGetBool(root.ParamDeployPermissionsEnabled)
+	ctx.RequireCallerIsChainOwner("root.revokeDeployPermissions: not authorized")
+	permissionsEnabled := kvdecoder.New(ctx.Params()).MustGetBool(root.ParamDeployPermissionsEnabled)
 	ctx.State().Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
 	return nil, nil
 }

@@ -20,12 +20,12 @@ type Decoder struct {
 	log iscp.LogInterface
 }
 
-func New(kvReader kv.KVStoreReader, log ...iscp.LogInterface) Decoder {
+func New(kvReader kv.KVStoreReader, log ...iscp.LogInterface) *Decoder {
 	var l iscp.LogInterface
 	if len(log) > 0 {
 		l = log[0]
 	}
-	return Decoder{kvReader, l}
+	return &Decoder{kvReader, l}
 }
 
 func (p *Decoder) check(err error) {

@@ -6,6 +6,8 @@ package sandbox
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/iscp/assert"
+
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -17,14 +19,18 @@ import (
 )
 
 type sandbox struct {
-	vmctx *vmcontext.VMContext
+	vmctx  *vmcontext.VMContext
+	assert *assert.Assert
 }
 
 var _ iscp.Sandbox = &sandbox{}
 
 func init() {
 	vmcontext.NewSandbox = func(vmctx *vmcontext.VMContext) iscp.Sandbox {
-		return &sandbox{vmctx: vmctx}
+		return &sandbox{
+			vmctx:  vmctx,
+			assert: assert.NewAssert(vmctx),
+		}
 	}
 }
 
@@ -162,8 +168,8 @@ func (s *sandbox) Foundries() iscp.Foundries {
 	return s
 }
 
-func (s *sandbox) CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int) (uint32, uint64) {
-	return s.vmctx.CreateNewFoundry(scheme, tag, maxSupply)
+func (s *sandbox) CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64) {
+	return s.vmctx.CreateNewFoundry(scheme, tag, maxSupply, metadata)
 }
 
 func (s *sandbox) Destroy(sn uint32) int64 {
@@ -176,4 +182,29 @@ func (s *sandbox) GetOutput(sn uint32) *iotago.FoundryOutput {
 
 func (s *sandbox) ModifySupply(sn uint32, delta *big.Int) int64 {
 	return s.vmctx.ModifySupply(sn, delta)
+}
+
+// helper methods
+
+func (s *sandbox) Require(cond bool, format string, args ...interface{}) {
+	s.assert.Require(cond, format, args...)
+}
+
+func (s *sandbox) RequireNoError(err error, str ...string) {
+	s.assert.RequireNoError(err, str...)
+}
+
+func (s *sandbox) RequireCaller(agentID *iscp.AgentID, str ...string) {
+	if s.Caller().Equals(agentID) {
+		return
+	}
+	if len(str) > 0 {
+		s.Log().Panicf("'%s': unauthorized access", str[0])
+	} else {
+		s.Log().Panicf("unauthorized access")
+	}
+}
+
+func (s *sandbox) RequireCallerIsChainOwner(str ...string) {
+	s.RequireCaller(s.ChainOwnerID())
 }

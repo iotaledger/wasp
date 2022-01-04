@@ -15,10 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
 
-var Processor = Contract.Processor(initialize,
-	FuncViewBalance.WithHandler(viewBalance),
-	FuncViewTotalAssets.WithHandler(viewTotalAssets),
-	FuncViewAccounts.WithHandler(viewAccounts),
+var Processor = Contract.Processor(nil,
 	FuncDeposit.WithHandler(deposit),
 	FuncSendTo.WithHandler(sendTo),
 	FuncWithdraw.WithHandler(withdraw),
@@ -29,55 +26,25 @@ var Processor = Contract.Processor(initialize,
 	FuncFoundryDestroy.WithHandler(foundryDestroy),
 	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
 	FuncFoundryOutput.WithHandler(foundryOutput),
+	FuncViewBalance.WithHandler(viewBalance),
+	FuncViewTotalAssets.WithHandler(viewTotalAssets),
+	FuncViewAccounts.WithHandler(viewAccounts),
 )
 
-// initialize the init call
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.initialize.success hname = %s", Contract.Hname().String())
-	return nil, nil
-}
-
-// viewBalance returns colored balances of the account belonging to the AgentID
-// Params:
-// - ParamAgentID
-func viewBalance(ctx iscp.SandboxView) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.viewBalance")
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	aid, err := params.GetAgentID(ParamAgentID)
-	if err != nil {
-		return nil, err
-	}
-	return getAccountBalanceDict(getAccountR(ctx.State(), aid)), nil
-}
-
-// viewTotalAssets returns total colored balances controlled by the chain
-func viewTotalAssets(ctx iscp.SandboxView) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.State())), nil
-}
-
-// viewAccounts returns list of all accounts as keys of the ImmutableCodec
-func viewAccounts(ctx iscp.SandboxView) (dict.Dict, error) {
-	return getAccountsIntern(ctx.State()), nil
-}
-
-// deposit is a generic function to deposit funds to the sender's chain account
+// deposit is a function to deposit funds to the sender's chain account
+// For the core contract as a target 'transfer' == nil
 func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.deposit -- %s", ctx.IncomingTransfer())
-	// No need to do anything here because funds are already credited to the users account
-	// just send back anything that might have been included in "transfer" by mistake
-	if ctx.IncomingTransfer() == nil {
-		return nil, nil
-	}
-	sendIncomingTo(ctx, ctx.Caller())
+	ctx.Log().Debugf("accounts.deposit")
+	// No need to do anything here because funds are already credited to the sender's account
+	// just send back anything that might have been included in 'transfer' by mistake
 	return nil, nil
 }
 
-// sendTo moves transfer to the specified account on the chain. Can be send as request or can be called
-// If the target account is a core contract on the same chain
+// sendTo moves transfer from the to the specified account on the chain. Can be sent as a request
+// or can be called
 // Params:
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
-//   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
+//   in case ParamAgentID == ctx.Caller() and it is an on-chain call, it means NOP
 func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.sendTo.begin -- %s", ctx.IncomingTransfer())
 
@@ -99,7 +66,6 @@ func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func sendIncomingTo(ctx iscp.Sandbox, targetAccount *iscp.AgentID) {
-	// funds currently are in the common account (because call is to 'accounts'), they must be moved to the target
 	ok := MoveBetweenAccounts(ctx.State(), commonaccount.Get(ctx.ChainID()), targetAccount, ctx.IncomingTransfer())
 	assert.NewAssert(ctx.Log()).Require(ok, "internal error: failed to send funds to %s", targetAccount.String())
 }
@@ -206,6 +172,30 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
+// viewBalance returns colored balances of the account belonging to the AgentID
+// Params:
+// - ParamAgentID
+func viewBalance(ctx iscp.SandboxView) (dict.Dict, error) {
+	ctx.Log().Debugf("accounts.viewBalance")
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	aid, err := params.GetAgentID(ParamAgentID)
+	if err != nil {
+		return nil, err
+	}
+	return getAccountBalanceDict(getAccountR(ctx.State(), aid)), nil
+}
+
+// viewTotalAssets returns total colored balances controlled by the chain
+func viewTotalAssets(ctx iscp.SandboxView) (dict.Dict, error) {
+	ctx.Log().Debugf("accounts.viewTotalAssets")
+	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.State())), nil
+}
+
+// viewAccounts returns list of all accounts as keys of the ImmutableCodec
+func viewAccounts(ctx iscp.SandboxView) (dict.Dict, error) {
+	return getAccountsIntern(ctx.State()), nil
+}
+
 func getAccountNonce(ctx iscp.SandboxView) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	account := par.MustGetAgentID(ParamAgentID)
@@ -239,7 +229,7 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	tokenMaxSupply := par.MustGetBigInt(ParamMaxSupply)
 
 	// create UTXO
-	sn, dustConsumed := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply)
+	sn, dustConsumed := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply, nil)
 	// dust deposit is taken from the callers account
 	DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
 		Iotas: dustConsumed,
