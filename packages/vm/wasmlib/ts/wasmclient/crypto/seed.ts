@@ -77,7 +77,7 @@ export class Seed {
 
         const buffer = Buffer.alloc(Seed.SEED_SIZE + 1);
         buffer[0] = ED25519.VERSION;
-        digest.copy(buffer, 1);
+        Buffer.from(digest).copy(buffer, 1);
 
         return Base58.encode(buffer);
     }
