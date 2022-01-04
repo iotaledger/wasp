@@ -1,7 +1,7 @@
-import {Base58} from './base58';
-import {Buffer} from '../buffer';
-import {ED25519, IKeyPair} from './ed25519';
-import {Hash} from "./hash";
+import { Base58 } from './base58';
+import { Buffer } from '../buffer';
+import { ED25519, IKeyPair } from './ed25519';
+import { Hash } from './hash';
 
 export class Seed {
     /**
@@ -32,7 +32,9 @@ export class Seed {
         const indexBytes = Buffer.alloc(8);
         indexBytes.writeBigUInt64LE(BigInt(index), 0);
         const subseed = Buffer.alloc(this.SEED_SIZE);
-        Seed.xorBytes(seed, Hash.from(indexBytes), subseed);
+        const hashOfPaddedBuffer = Hash.from(indexBytes);
+
+        Seed.xorBytes(seed, Buffer.from(hashOfPaddedBuffer), subseed);
         return subseed;
     }
 
