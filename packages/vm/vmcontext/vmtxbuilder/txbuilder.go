@@ -480,7 +480,7 @@ func ExtendedOutputFromPostData(
 			TargetContract: par.Metadata.TargetContract,
 			EntryPoint:     par.Metadata.EntryPoint,
 			Params:         par.Metadata.Params,
-			Transfer:       par.Metadata.Transfer,
+			Allowance:      par.Metadata.Transfer,
 			GasBudget:      par.Metadata.GasBudget,
 		},
 		par.Options,

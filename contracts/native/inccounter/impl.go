@@ -58,8 +58,8 @@ func incCounter(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof("incCounter: increasing counter value %d by %d, anchor index: #%d",
 		val, inc, ctx.StateAnchor().StateIndex)
 	tra := "(empty)"
-	if ctx.IncomingTransfer() != nil {
-		tra = ctx.IncomingTransfer().String()
+	if ctx.Allowance() != nil {
+		tra = ctx.Allowance().String()
 	}
 	ctx.Log().Infof("incCounter: incoming transfer: %s", tra)
 	ctx.State().Set(VarCounter, codec.EncodeInt64(val+inc))

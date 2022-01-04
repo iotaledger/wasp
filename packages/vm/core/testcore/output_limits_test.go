@@ -30,7 +30,7 @@ var (
 			a := assert.NewAssert(ctx.Log())
 			par := kvdecoder.New(ctx.Params())
 			shouldEmitEvent := par.MustGetInt16(paramShouldEmitEvent, 0) == 1
-			iotas := ctx.IncomingTransfer()[colored.IOTA]
+			iotas := ctx.Allowance()[colored.IOTA]
 			for i := uint64(0); i < iotas; i += 1000 {
 				ret := ctx.Send(
 					ctx.Caller().Address(),

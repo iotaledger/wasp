@@ -1,9 +1,14 @@
 package vmcontext
 
 import (
+	"math/big"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"golang.org/x/xerrors"
 )
@@ -35,6 +40,10 @@ func (vmctx *VMContext) CurrentContractHname() iscp.Hname {
 	return vmctx.getCallContext().contract
 }
 
+func (vmctx *VMContext) Params() dict.Dict {
+	return vmctx.getCallContext().params
+}
+
 func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
 	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 }
@@ -63,8 +72,42 @@ func (vmctx *VMContext) AccountID() *iscp.AgentID {
 	return iscp.NewAgentID(vmctx.task.AnchorOutput.AliasID.ToAddress(), hname)
 }
 
-func (vmctx *VMContext) IncomingTransfer() *iscp.Assets {
-	return vmctx.getCallContext().transfer
+func (vmctx *VMContext) Allowance() *iscp.Assets {
+	return vmctx.getCallContext().allowance
+}
+
+func (vmctx *VMContext) TakeAllowance(assets ...*iscp.Assets) {
+	// getCaller() is the caller of the contract with AccountID()
+	// AccountID() is the current contract id
+	if len(assets) == 0 {
+		// take all Allowance()
+		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+			accounts.MoveBetweenAccounts(s, vmctx.getCaller(), vmctx.AccountID(), vmctx.Allowance())
+		})
+		return
+	}
+	// check if assets fits the budget set by Allowance()
+	allowed := vmctx.Allowance()
+	if allowed.Iotas < assets[0].Iotas {
+		panic(accounts.ErrNotEnoughFunds)
+	}
+	allowedTokens, err := allowed.Tokens.Set()
+	if err != nil {
+		panic(err)
+	}
+	big0 := big.NewInt(0)
+	for _, requiredTokens := range assets[0].Tokens {
+		if requiredTokens.Amount.Cmp(big0) <= 0 {
+			panic(ErrWrongParamsInSandboxCall)
+		}
+		allowedAmount, ok := allowedTokens[requiredTokens.ID]
+		if !ok || allowedAmount.Amount.Cmp(requiredTokens.Amount) < 0 {
+			panic(accounts.ErrNotEnoughFunds)
+		}
+	}
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		accounts.MoveBetweenAccounts(s, vmctx.getCaller(), vmctx.AccountID(), assets[0])
+	})
 }
 
 func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {

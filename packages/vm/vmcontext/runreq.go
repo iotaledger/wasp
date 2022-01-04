@@ -198,12 +198,13 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 		vmctx.GasBurn(gas.NotFoundTarget)
 		panic(xerrors.Errorf("%w: target contract: '%s'", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract.String()))
 	}
-	return vmctx.callNonViewByProgramHash(
+	return vmctx.callByProgramHash(
 		targetContract.Hname(),
 		entryPoint,
 		vmctx.req.Params(),
-		vmctx.req.Transfer(),
+		vmctx.req.Allowance(),
 		targetContract.ProgramHash,
+		true,
 	)
 }
 
@@ -222,7 +223,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 		tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), tokenID)
 		if tokensAvailableBig != nil {
 			// safely subtract the transfer from the sender to the target
-			if transfer := vmctx.req.Transfer(); transfer != nil {
+			if transfer := vmctx.req.Allowance(); transfer != nil {
 				if transferTokens := iscp.FindNativeTokenBalance(transfer.Tokens, tokenID); transferTokens != nil {
 					if tokensAvailableBig.Cmp(transferTokens) < 0 {
 						tokensAvailableBig.SetUint64(0)
@@ -241,7 +242,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 		// Iotas are used to pay the gas fee
 		tokensAvailable = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
 		// safely subtract the transfer from the sender to the target
-		if transfer := vmctx.req.Transfer(); transfer != nil {
+		if transfer := vmctx.req.Allowance(); transfer != nil {
 			if tokensAvailable < transfer.Iotas {
 				tokensAvailable = 0
 			} else {

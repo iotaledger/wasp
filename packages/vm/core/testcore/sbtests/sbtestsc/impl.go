@@ -103,10 +103,10 @@ func testCallPanicViewEPFromView(ctx iscp.SandboxView) (dict.Dict, error) {
 }
 
 func doNothing(ctx iscp.Sandbox) (dict.Dict, error) {
-	if len(ctx.IncomingTransfer()) == 0 {
+	if len(ctx.Allowance()) == 0 {
 		ctx.Log().Infof(MsgDoNothing)
 	} else {
-		ctx.Log().Infof(MsgDoNothing+" with transfer\n%s", ctx.IncomingTransfer().String())
+		ctx.Log().Infof(MsgDoNothing+" with transfer\n%s", ctx.Allowance().String())
 	}
 	return nil, nil
 }

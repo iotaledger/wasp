@@ -38,7 +38,7 @@ func TestSerializeRequestData(t *testing.T) {
 			SenderContract: iscp.Hn("sender_contract"),
 			TargetContract: iscp.Hn("target_contract"),
 			EntryPoint:     iscp.Hn("entrypoint"),
-			Transfer:       &iscp.Assets{Iotas: 1},
+			Allowance:      &iscp.Assets{Iotas: 1},
 			GasBudget:      1000,
 		}
 		outputOn := &iotago.ExtendedOutput{

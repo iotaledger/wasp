@@ -10,74 +10,54 @@ import (
 )
 
 var (
-	ErrContractNotFound          = xerrors.New("contract not found")
-	ErrTargetEntryPointNotFound  = xerrors.New("entry point not found")
-	ErrInitEntryPointCantBeAView = xerrors.New("'init' entry point can't be a view")
-	ErrCallInitNotFromRoot       = xerrors.New("attempt to call `init` not from the root contract")
+	ErrContractNotFound         = xerrors.New("contract not found")
+	ErrTargetEntryPointNotFound = xerrors.New("entry point not found")
+	ErrEntryPointCantBeAView    = xerrors.New("'init' entry point can't be a view")
+	ErrCallInitNotFromRoot      = xerrors.New("attempt to call `init` not from the root contract")
 )
 
 // Call implements logic of the call between contracts on-chain
-func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, transfer *iscp.Assets) (dict.Dict, error) {
+func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets) (dict.Dict, error) {
 	vmctx.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
-	rec := vmctx.findContractByHname(targetContract)
-	if rec == nil {
-		return nil, ErrContractNotFound
+	if rec := vmctx.findContractByHname(targetContract); rec != nil {
+		return vmctx.callByProgramHash(targetContract, epCode, params, allowance, rec.ProgramHash, false)
 	}
-	return vmctx.callByProgramHash(targetContract, epCode, params, transfer, rec.ProgramHash)
+	vmctx.GasBurn(gas.NotFoundTarget)
+	panic(xerrors.Errorf("%w: target contract: '%s'", ErrContractNotFound, targetContract))
 }
 
-func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer *iscp.Assets, progHash hashing.HashValue) (dict.Dict, error) {
+func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets, progHash hashing.HashValue, mustNonView bool) (dict.Dict, error) {
 	proc, err := vmctx.task.Processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
 	if err != nil {
 		return nil, err
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, ErrTargetEntryPointNotFound
-	}
-	// distinguishing between two types of entry points. Passing different types of sandboxes
-	if ep.IsView() {
-		if epCode == iscp.EntryPointInit {
-			return nil, ErrInitEntryPointCantBeAView
+		if !ok {
+			vmctx.GasBurn(gas.NotFoundTarget)
+			panic(xerrors.Errorf("%w: target contract: '%s', entry point: %s",
+				ErrTargetEntryPointNotFound, targetContract, epCode))
 		}
-		// passing nil as transfer: calling the view should not have effect on chain ledger
-		vmctx.pushCallContextWithMoveAssets(targetContract, params, nil)
-		defer vmctx.popCallContext()
-
-		return ep.Call(NewSandboxView(vmctx))
 	}
-	vmctx.pushCallContextWithMoveAssets(targetContract, params, transfer)
+
+	vmctx.pushCallContext(targetContract, params, allowance)
 	defer vmctx.popCallContext()
 
+	// distinguishing between two types of entry points. Passing different types of sandboxes
+	if ep.IsView() {
+		if mustNonView || epCode == iscp.EntryPointInit {
+			panic(xerrors.Errorf("%w: target contract: '%s', entry point: %s",
+				ErrEntryPointCantBeAView, vmctx.req.CallTarget().Contract, epCode))
+		}
+		return ep.Call(NewSandboxView(vmctx))
+	}
+	// no view
 	// prevent calling 'init' not from root contract or not while initializing root
 	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
-			return nil, ErrCallInitNotFromRoot
+			panic(xerrors.Errorf("%w: target contract: '%s', entry point: %s",
+				ErrRepeatingInitCall, vmctx.req.CallTarget().Contract, epCode))
 		}
-	}
-	return ep.Call(NewSandbox(vmctx))
-}
-
-func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer *iscp.Assets, progHash hashing.HashValue) (dict.Dict, error) {
-	proc, err := vmctx.task.Processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
-	if err != nil {
-		return nil, err
-	}
-	ep, ok := proc.GetEntryPoint(epCode)
-	if !ok {
-		vmctx.GasBurn(gas.NotFoundTarget)
-		panic(xerrors.Errorf("%w: target contract: '%s', entry point: %s",
-			ErrTargetEntryPointNotFound, vmctx.req.CallTarget().Contract.String(), epCode.String()))
-	}
-	if ep.IsView() {
-		panic(ErrNonViewExpected)
-	}
-	vmctx.pushCallContextWithMoveAssets(targetContract, params, transfer)
-	defer vmctx.popCallContext()
-
-	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() && !vmctx.callerIsRoot() {
-		panic(ErrRepeatingInitCall)
 	}
 	return ep.Call(NewSandbox(vmctx))
 }
@@ -88,8 +68,4 @@ func (vmctx *VMContext) callerIsRoot() bool {
 		return false
 	}
 	return caller.Hname() == root.Contract.Hname()
-}
-
-func (vmctx *VMContext) Params() dict.Dict {
-	return vmctx.getCallContext().params
 }

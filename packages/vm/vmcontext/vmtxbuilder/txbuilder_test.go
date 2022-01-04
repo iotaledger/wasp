@@ -617,7 +617,7 @@ func TestDustDeposit(t *testing.T) {
 		TargetContract: 0,
 		EntryPoint:     0,
 		Params:         dict.New(),
-		Transfer:       iscp.NewEmptyAssets(),
+		Allowance:      iscp.NewEmptyAssets(),
 		GasBudget:      0,
 	}
 	t.Run("calc dust assumptions", func(t *testing.T) {
@@ -745,7 +745,7 @@ func TestSerDe(t *testing.T) {
 			TargetContract: 0,
 			EntryPoint:     0,
 			Params:         dict.New(),
-			Transfer:       iscp.NewEmptyAssets(),
+			Allowance:      iscp.NewEmptyAssets(),
 			GasBudget:      0,
 		}
 		assets := iscp.NewEmptyAssets()

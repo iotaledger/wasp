@@ -278,7 +278,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(accounts.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
+		require.True(t, errors.Is(err, vmcontext.ErrRepeatingInitCall))
 		ch.CheckAccountLedger()
 	})
 	t.Run("blocklog", func(t *testing.T) {
@@ -287,7 +287,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(blocklog.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
+		require.True(t, errors.Is(err, vmcontext.ErrRepeatingInitCall))
 		ch.CheckAccountLedger()
 	})
 	t.Run("blob", func(t *testing.T) {
@@ -296,7 +296,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(blob.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
+		require.True(t, errors.Is(err, vmcontext.ErrRepeatingInitCall))
 		ch.CheckAccountLedger()
 	})
 	t.Run("governance", func(t *testing.T) {
@@ -305,7 +305,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(governance.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), vmcontext.ErrRepeatingInitCall.Error())
+		require.True(t, errors.Is(err, vmcontext.ErrRepeatingInitCall))
 		ch.CheckAccountLedger()
 	})
 }

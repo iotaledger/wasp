@@ -54,7 +54,7 @@ type OffLedgerRequestData struct {
 	sender     *iotago.Ed25519Address
 	signature  []byte
 	nonce      uint64
-	transfer   *Assets
+	allowance  *Assets
 	gasBudget  uint64
 }
 
@@ -158,9 +158,9 @@ func (r *OffLedgerRequestData) writeEssenceToMarshalUtil(mu *marshalutil.Marshal
 		WriteBytes(r.publicKey).
 		WriteUint64(r.nonce).
 		WriteUint64(r.gasBudget)
-	mu.WriteBool(r.transfer != nil)
-	if r.transfer != nil {
-		r.transfer.WriteToMarshalUtil(mu)
+	mu.WriteBool(r.allowance != nil)
+	if r.allowance != nil {
+		r.allowance.WriteToMarshalUtil(mu)
 	}
 }
 
@@ -196,9 +196,9 @@ func (r *OffLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 	if transferNotNil, err = mu.ReadBool(); err != nil {
 		return err
 	}
-	r.transfer = nil
+	r.allowance = nil
 	if transferNotNil {
-		if r.transfer, err = AssetsFromMarshalUtil(mu); err != nil {
+		if r.allowance, err = AssetsFromMarshalUtil(mu); err != nil {
 			return err
 		}
 	}
@@ -222,8 +222,8 @@ func (r *OffLedgerRequestData) Assets() *Assets {
 }
 
 // Transfer of assets from the sender's account to the target smart contract. Nil mean no Transfer
-func (r *OffLedgerRequestData) Transfer() *Assets {
-	return r.transfer
+func (r *OffLedgerRequestData) Allowance() *Assets {
+	return r.allowance
 }
 
 func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequestData {
@@ -232,7 +232,7 @@ func (r *OffLedgerRequestData) WithGasBudget(gasBudget uint64) *OffLedgerRequest
 }
 
 func (r *OffLedgerRequestData) WithTransfer(transfer *Assets) *OffLedgerRequestData {
-	r.transfer = transfer.Clone()
+	r.allowance = transfer.Clone()
 	return r
 }
 
@@ -438,8 +438,8 @@ func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 	}
 }
 
-func (r *OnLedgerRequestData) Transfer() *Assets {
-	return r.requestMetadata.Transfer
+func (r *OnLedgerRequestData) Allowance() *Assets {
+	return r.requestMetadata.Allowance
 }
 
 func (r *OnLedgerRequestData) Assets() *Assets {
@@ -659,8 +659,8 @@ type RequestMetadata struct {
 	EntryPoint Hname
 	// request arguments
 	Params dict.Dict
-	// Transfer intended to the target contract. Always taken from the sender's account. Nil mean no Transfer
-	Transfer *Assets
+	// Allowance intended to the target contract to take. Nil means zero allowance
+	Allowance *Assets
 	// gas budget
 	GasBudget uint64
 }
@@ -692,9 +692,9 @@ func (p *RequestMetadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 		Write(p.EntryPoint).
 		WriteUint64(p.GasBudget)
 	p.Params.WriteToMarshalUtil(mu)
-	mu.WriteBool(p.Transfer != nil)
-	if p.Transfer != nil {
-		p.Transfer.WriteToMarshalUtil(mu)
+	mu.WriteBool(p.Allowance != nil)
+	if p.Allowance != nil {
+		p.Allowance.WriteToMarshalUtil(mu)
 	}
 }
 
@@ -717,7 +717,7 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 	}
 	if transferPresent, err := mu.ReadBool(); err != nil {
 		if transferPresent {
-			if p.Transfer, err = AssetsFromMarshalUtil(mu); err != nil {
+			if p.Allowance, err = AssetsFromMarshalUtil(mu); err != nil {
 				return err
 			}
 		}

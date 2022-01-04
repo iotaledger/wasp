@@ -80,8 +80,13 @@ type Sandbox interface {
 	Event(msg string)
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
-	// IncomingTransfer return colored balances transferred by the call. They are already accounted into the Balances()
-	IncomingTransfer() *Assets
+	// Allowance specifies max budget of assets the smart contract can take
+	// from the caller with TakeFromCaller. Nil means no allowance (zero budget)
+	Allowance() *Assets
+	// TakeAllowance takes assets from the Callers account to own account, not more than in CallerAllowance.
+	// No parameter means take all allowance.
+	TakeAllowance(assets ...*Assets)
+	// Send sends a on-ledger request
 	Send(metadata RequestParameters) bool
 	// BlockContext Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}

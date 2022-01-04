@@ -59,7 +59,7 @@ func addWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	// 	fmt.Sprintf("unknown public key for address %s", payerAddr))
 
 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
-	// addWarrant := ctx.IncomingTransfer().Iotas
+	// addWarrant := ctx.Allowance().Iotas
 	// a.Require(addWarrant >= MinimumWarrantIotas, fmt.Sprintf("warrant must be larger than %d iotas", MinimumWarrantIotas))
 
 	// warrant, revoke, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
@@ -70,7 +70,7 @@ func addWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	// // all non-iota token accrue on-chain to the caller
 	// // TODO refactor
-	// sendBack := ctx.IncomingTransfer().Clone()
+	// sendBack := ctx.Allowance().Clone()
 	// sendBack.Set(colored.IOTA, 0)
 
 	// if len(sendBack) > 0 {

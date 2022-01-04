@@ -46,9 +46,9 @@ func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
 //   in case ParamAgentID == ctx.Caller() and it is an on-chain call, it means NOP
 func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.sendTo.begin -- %s", ctx.IncomingTransfer())
+	ctx.Log().Debugf("accounts.sendTo.begin -- %s", ctx.Allowance())
 
-	if ctx.IncomingTransfer() == nil {
+	if ctx.Allowance() == nil {
 		return nil, nil
 	}
 	checkLedger(ctx.State(), "accounts.sendTo.begin")
@@ -59,14 +59,14 @@ func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	sendIncomingTo(ctx, targetAccount)
 	ctx.Log().Debugf("accounts.sendTo.success: target: %s\n%s",
-		targetAccount, ctx.IncomingTransfer().String())
+		targetAccount, ctx.Allowance().String())
 
 	checkLedger(ctx.State(), "accounts.sendTo.exit")
 	return nil, nil
 }
 
 func sendIncomingTo(ctx iscp.Sandbox, targetAccount *iscp.AgentID) {
-	ok := MoveBetweenAccounts(ctx.State(), commonaccount.Get(ctx.ChainID()), targetAccount, ctx.IncomingTransfer())
+	ok := MoveBetweenAccounts(ctx.State(), commonaccount.Get(ctx.ChainID()), targetAccount, ctx.Allowance())
 	assert.NewAssert(ctx.Log()).Require(ok, "internal error: failed to send funds to %s", targetAccount.String())
 }
 
@@ -94,7 +94,7 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
 	// add incoming tokens (after fees) to the balances to be withdrawn.
 	// Otherwise, they would end up in the common account
-	tokensToWithdraw.Add(ctx.IncomingTransfer())
+	tokensToWithdraw.Add(ctx.Allowance())
 	// Now all caller's assets are in the common account
 	// TODO: by default should be withdrawn all tokens and account should be closed
 	//  Introduce "ParamEnsureMinimum = N iotas" which leaves at least N iotas in the account
