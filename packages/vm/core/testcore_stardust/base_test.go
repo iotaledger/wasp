@@ -327,7 +327,7 @@ func TestDeployNativeContract(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(senderAddr, 0)).
-		WithIotas(1000).
+		AddIotas(1000).
 		WithGasBudget(1000)
 	_, err = ch.PostRequestSync(req, nil)
 	require.NoError(t, err)

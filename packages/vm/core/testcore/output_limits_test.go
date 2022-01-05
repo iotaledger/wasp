@@ -58,7 +58,7 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 	initialBalance := env.L1NativeTokenBalance(address, colored.IOTA)
 
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(manyOutputsContract.Name, funcSplitFunds.Name).WithIotas(1000000),
+		solo.NewCallParams(manyOutputsContract.Name, funcSplitFunds.Name).AddIotas(1000000),
 		wallet,
 	)
 	require.Error(t, err)
@@ -87,7 +87,7 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 		req := solo.NewCallParams(
 			manyOutputsContract.Name, funcSplitFunds.Name,
 			paramShouldEmitEvent, uint16(1),
-		).WithIotas(1000)
+		).AddIotas(1000)
 		txs[i], _, err = ch.RequestFromParamsToLedger(req, wallet)
 		require.NoError(t, err)
 	}

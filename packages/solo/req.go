@@ -63,9 +63,23 @@ func (r *CallParams) WithTransfer(transfer *iscp.Assets) *CallParams {
 	return r
 }
 
-func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
-	r.assets = assets
+func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
+	if r.assets == nil {
+		r.assets = assets.Clone()
+	} else {
+		r.assets.Add(assets)
+	}
 	return r
+}
+
+func (r *CallParams) AddIotas(amount uint64) *CallParams {
+	return r.AddAssets(iscp.NewAssets(amount, nil))
+}
+
+func (r *CallParams) AddNativeTokens(tokens ...*iotago.NativeToken) *CallParams {
+	return r.AddAssets(&iscp.Assets{
+		Tokens: tokens,
+	})
 }
 
 func (r *CallParams) WithGasBudget(gasBudget uint64) *CallParams {
@@ -76,10 +90,6 @@ func (r *CallParams) WithGasBudget(gasBudget uint64) *CallParams {
 func (r *CallParams) WithNonce(nonce uint64) *CallParams {
 	r.nonce = nonce
 	return r
-}
-
-func (r *CallParams) WithIotas(amount uint64) *CallParams {
-	return r.WithAssets(iscp.NewAssets(amount, nil))
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters

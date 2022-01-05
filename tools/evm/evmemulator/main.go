@@ -92,7 +92,7 @@ func start(cmd *cobra.Command, args []string) {
 		_, err := chain.PostRequestSync(
 			solo.NewCallParams(deployParams.Name(), evm.FuncSetBlockTime.Name,
 				evm.FieldBlockTime, blockTime,
-			).WithIotas(1),
+			).AddIotas(1),
 			chain.OriginatorPrivateKey,
 		)
 		log.Check(err)

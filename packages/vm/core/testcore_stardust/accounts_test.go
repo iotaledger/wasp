@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -51,7 +52,7 @@ func TestFoundries(t *testing.T) {
 		}
 		req := solo.NewCallParamsFromDic(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
 			WithGasBudget(1000).
-			WithIotas(1000)
+			AddIotas(1000)
 		_, res, err := ch.PostRequestSyncTx(req, senderKeyPair)
 
 		retSN := uint32(0)
@@ -397,5 +398,72 @@ func TestAccountBalances(t *testing.T) {
 		require.NoError(t, err)
 
 		checkBalance(i + 1)
+	}
+}
+
+type testValues struct {
+	env                *solo.Solo
+	chainOwner, sender *cryptolib.KeyPair
+	senderAddr         iotago.Address
+	senderAgentID      *iscp.AgentID
+	ch                 *solo.Chain
+	req                *solo.CallParams
+}
+
+func initTest(t *testing.T) *testValues {
+	ret := &testValues{}
+	ret.env = solo.New(t)
+
+	ret.chainOwner, _ = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(10))
+	//chainOwnerAgentID := iscp.NewAgentID(chainOwnerAddr, 0)
+
+	ret.sender, ret.senderAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(11))
+	ret.senderAgentID = iscp.NewAgentID(ret.senderAddr, 0)
+
+	ret.ch = ret.env.NewChain(ret.chainOwner, "chain1")
+	ret.req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
+	return ret
+}
+
+func TestDepositIotas(t *testing.T) {
+	for i := 0; i < 5; i++ {
+		t.Run("iotas #"+strconv.Itoa(i), func(t *testing.T) {
+			v := initTest(t)
+			expected := uint64(i * 50)
+			v.req = v.req.AddIotas(expected)
+			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.sender)
+			require.NoError(t, err)
+
+			byteCost := tx.Essence.Outputs[0].VByteCost(v.env.RentStructure(), nil)
+			t.Logf("byteCost = %d", byteCost)
+			if expected < byteCost {
+				expected = byteCost
+			}
+			v.ch.AssertL2AccountIotas(v.senderAgentID, expected)
+		})
+	}
+}
+
+func TestDepositNativeTokens(t *testing.T) {
+	for i := 0; i < 5; i++ {
+		t.Run("iotas+nt #"+strconv.Itoa(i), func(t *testing.T) {
+			v := initTest(t)
+			_, err := v.env.L1Ledger().GetFundsFromFaucet(v.senderAddr)
+			require.NoError(t, err)
+
+			expected := uint64(i * 50)
+			v.req = v.req.AddIotas(expected)
+			rndTokens := tpkg.RandSortNativeTokens(i)
+			v.req = v.req.AddNativeTokens(rndTokens...)
+			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.sender)
+			require.NoError(t, err)
+
+			byteCost := tx.Essence.Outputs[0].VByteCost(v.env.RentStructure(), nil)
+			t.Logf("byteCost = %d", byteCost)
+			if expected < byteCost {
+				expected = byteCost
+			}
+			v.ch.AssertL2AccountIotas(v.senderAgentID, expected)
+		})
 	}
 }

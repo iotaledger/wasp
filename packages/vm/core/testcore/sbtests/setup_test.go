@@ -2,8 +2,9 @@ package sbtests
 
 import (
 	"fmt"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"testing"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -34,7 +35,7 @@ func setupDeployer(t *testing.T, chain *solo.Chain) (*cryptolib.KeyPair, iotago.
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(userAddr, 0))
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 	return user, userAddr, iscp.NewAgentID(userAddr, 0)
 }
@@ -66,7 +67,7 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair
 
 	deployed := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-	_, err = chain.PostRequestSync(req.WithIotas(1), user)
+	_, err = chain.PostRequestSync(req.AddIotas(1), user)
 	require.NoError(t, err)
 	t.Logf("deployed test_sandbox'%s': %s", ScName, HScName)
 	return deployed, extraToken

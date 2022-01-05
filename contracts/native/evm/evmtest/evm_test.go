@@ -156,7 +156,7 @@ func TestOwner(t *testing.T) {
 		user1AgentID := iscp.NewAgentID(user1Address, 0)
 		_, err := evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
-				WithIotas(100000),
+				AddIotas(100000),
 			user1Wallet,
 		)
 		require.Error(t, err)
@@ -168,7 +168,7 @@ func TestOwner(t *testing.T) {
 		// current owner is able to set a new "next owner"
 		_, err = evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
-				WithIotas(100000),
+				AddIotas(100000),
 			evmChain.soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
@@ -182,7 +182,7 @@ func TestOwner(t *testing.T) {
 
 		_, err = evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncClaimOwnership.Name).
-				WithIotas(100000),
+				AddIotas(100000),
 			user2Wallet,
 		)
 		require.Error(t, err)
@@ -194,7 +194,7 @@ func TestOwner(t *testing.T) {
 		// claim ownership successfully
 		_, err = evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncClaimOwnership.Name).
-				WithIotas(100000),
+				AddIotas(100000),
 			user1Wallet,
 		)
 		require.NoError(t, err)
@@ -331,7 +331,7 @@ func TestPrePaidFees(t *testing.T) {
 		// deposit funds
 		initialBalance := evmChain.solo.L1NativeTokenBalance(iotaAddress, colored.IOTA)
 		_, err := evmChain.soloChain.PostRequestSync(
-			solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(initialBalance),
+			solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).AddIotas(initialBalance),
 			iotaWallet,
 		)
 		require.NoError(t, err)

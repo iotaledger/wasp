@@ -40,7 +40,7 @@ func TestBase(t *testing.T) {
 		governance.ParamHname, blob.Contract.Hname(),
 		governance.ParamOwnerFee, 5,
 	)
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
@@ -59,7 +59,7 @@ func TestFeeIsEnough1(t *testing.T) {
 		governance.ParamHname, blob.Contract.Hname(),
 		governance.ParamOwnerFee, 1,
 	)
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
@@ -90,7 +90,7 @@ func TestFeeIsEnough2(t *testing.T) {
 		governance.ParamHname, blob.Contract.Hname(),
 		governance.ParamOwnerFee, 10,
 	)
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
@@ -120,7 +120,7 @@ func TestFeesNoNeed(t *testing.T) {
 		governance.ParamHname, blob.Contract.Hname(),
 		governance.ParamOwnerFee, 10,
 	)
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
@@ -130,7 +130,7 @@ func TestFeesNoNeed(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 10, 0)
 
 	req = solo.NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, "par1", []byte("data1"))
-	req.WithIotas(7)
+	req.AddIotas(7)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -151,7 +151,7 @@ func TestFeesNotEnough(t *testing.T) {
 		governance.ParamHname, blob.Contract.Hname(),
 		governance.ParamOwnerFee, 10,
 	)
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
 
 	checkFees(chain, blob.Contract.Name, 10, 0)
@@ -162,7 +162,7 @@ func TestFeesNotEnough(t *testing.T) {
 	env.AssertAddressIotas(userAddr, solo.Saldo)
 
 	req = solo.NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, "par1", []byte("data1"))
-	req.WithIotas(7)
+	req.AddIotas(7)
 	_, err = chain.PostRequestSync(req, user)
 	require.Error(t, err)
 
