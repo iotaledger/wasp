@@ -107,10 +107,10 @@ func TestRandom(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		wg.Add(sendTo * 2)
 		t.Log("----------------------------------")
-		for _, pubKey := range d1.GetRandomPeers(sendTo) {
+		for _, pubKey := range d1.GetRandomOtherPeers(sendTo) {
 			d1.SendMsgByPubKey(pubKey, receiver, 125, []byte{})
 		}
-		for _, pubKey := range d2.GetRandomPeers(sendTo) {
+		for _, pubKey := range d2.GetRandomOtherPeers(sendTo) {
 			d2.SendMsgByPubKey(pubKey, receiver, 125, []byte{})
 		}
 		wg.Wait()

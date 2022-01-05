@@ -275,7 +275,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 		Req:     req,
 	}
 	cmt := c.getCommittee()
-	getPeerPubKeys := c.chainPeers.GetRandomPeers
+	getPeerPubKeys := c.chainPeers.GetRandomOtherPeers
 
 	if cmt != nil {
 		getPeerPubKeys = cmt.GetRandomValidators

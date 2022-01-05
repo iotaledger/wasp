@@ -156,20 +156,24 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	env, _ := NewMockedEnv(2, t, true)
 	env.SetPushStateToNodesOption(true)
 
-	node := env.NewMockedNode(0, NewStateManagerTimers())
-	node.StateManager.Ready().MustWait()
-	node.StartTimer()
-
-	env.AddNode(node)
+	node0 := env.NewMockedNode(0, NewStateManagerTimers())
+	node0.StateManager.Ready().MustWait()
+	node0.StartTimer()
+	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey})
+	env.AddNode(node0)
+	env.Log.Infof("TestManyStateTransitionsSeveralNodes: node0.PubKey=%v", node0.PubKey.String())
 
 	const targetBlockIndex = 10
-	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
-	waitSyncBlockIndexAndCheck(10*time.Second, t, node, targetBlockIndex)
+	node0.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
+	waitSyncBlockIndexAndCheck(10*time.Second, t, node0, targetBlockIndex)
 
 	node1 := env.NewMockedNode(1, NewStateManagerTimers())
 	node1.StateManager.Ready().MustWait()
 	node1.StartTimer()
+	node1.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
+	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
 	env.AddNode(node1)
+	env.Log.Infof("TestManyStateTransitionsSeveralNodes: node1.PubKey=%v", node1.PubKey.String())
 
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node1, targetBlockIndex)
 }
@@ -179,15 +183,19 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 	env, _ := NewMockedEnv(numberOfCatchingPeers+1, t, true)
 	env.SetPushStateToNodesOption(true)
 
-	node := env.NewMockedNode(0, NewStateManagerTimers())
-	node.StateManager.Ready().MustWait()
-	node.StartTimer()
+	allPubKeys := make([]*ed25519.PublicKey, 0)
 
-	env.AddNode(node)
+	node0 := env.NewMockedNode(0, NewStateManagerTimers())
+	node0.StateManager.Ready().MustWait()
+	node0.StartTimer()
+	allPubKeys = append(allPubKeys, node0.PubKey)
+
+	env.AddNode(node0)
+	node0.StateManager.SetChainPeers(allPubKeys)
 
 	const targetBlockIndex = 5
-	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
-	waitSyncBlockIndexAndCheck(10*time.Second, t, node, targetBlockIndex)
+	node0.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
+	waitSyncBlockIndexAndCheck(10*time.Second, t, node0, targetBlockIndex)
 
 	catchingNodes := make([]*MockedNode, numberOfCatchingPeers)
 	for i := 0; i < numberOfCatchingPeers; i++ {
@@ -195,8 +203,11 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 		timers.GetBlockRetry = 200 * time.Millisecond
 		catchingNodes[i] = env.NewMockedNode(i+1, timers)
 		catchingNodes[i].StateManager.Ready().MustWait()
+		allPubKeys = append(allPubKeys, catchingNodes[i].PubKey)
 	}
+	node0.StateManager.SetChainPeers(allPubKeys)
 	for i := 0; i < numberOfCatchingPeers; i++ {
+		catchingNodes[i].StateManager.SetChainPeers(allPubKeys)
 		catchingNodes[i].StartTimer()
 	}
 	for i := 0; i < numberOfCatchingPeers; i++ {
@@ -213,20 +224,22 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 	env, _ := NewMockedEnv(2, t, true)
 	env.SetPushStateToNodesOption(true)
 
-	node := env.NewMockedNode(0, NewStateManagerTimers())
-	node.StateManager.Ready().MustWait()
-	node.StartTimer()
-
-	env.AddNode(node)
+	node0 := env.NewMockedNode(0, NewStateManagerTimers())
+	node0.StateManager.Ready().MustWait()
+	node0.StartTimer()
+	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey})
+	env.AddNode(node0)
 
 	const targetBlockIndex = 10
-	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
-	node.NodeConn.OnPullConfirmedOutput(func(outputID ledgerstate.OutputID) {})
-	waitSyncBlockIndexAndCheck(10*time.Second, t, node, targetBlockIndex)
+	node0.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
+	node0.NodeConn.OnPullConfirmedOutput(func(outputID ledgerstate.OutputID) {})
+	waitSyncBlockIndexAndCheck(10*time.Second, t, node0, targetBlockIndex)
 
 	node1 := env.NewMockedNode(1, NewStateManagerTimers())
 	node1.StateManager.Ready().MustWait()
 	node1.StartTimer()
+	node1.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
+	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
 	env.AddNode(node1)
 
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node1, targetBlockIndex)
@@ -334,6 +347,7 @@ func TestCruelWorld(t *testing.T) {
 		nodes[i] = env.NewMockedNode(i, timers)
 		nodes[i].StateManager.Ready().MustWait()
 		nodes[i].StartTimer()
+		nodes[i].StateManager.SetChainPeers(env.NodePubKeys)
 		env.AddNode(nodes[i])
 	}
 

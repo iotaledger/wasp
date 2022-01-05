@@ -190,6 +190,8 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 	log := env.Log.Named(nodePubKeyStr)
 	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.ChainID.Array(), env.NodePubKeys)
 	require.NoError(env.T, err)
+	stateMgrDomain, err := NewDomainWithFallback(env.ChainID.Array(), env.NetworkProviders[nodeIndex], log)
+	require.NoError(env.T, err)
 	ret := &MockedNode{
 		PubKey:     nodePubKey,
 		Env:        env,
@@ -234,7 +236,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 			})
 		}
 	})
-	ret.StateManager = New(ret.store, ret.ChainCore, ret.ChainPeers, ret.NodeConn, stateMgrMetrics, timers)
+	ret.StateManager = New(ret.store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, timers)
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())

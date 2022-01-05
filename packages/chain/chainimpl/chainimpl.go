@@ -142,12 +142,19 @@ func NewChain(
 	ret.committee.Store(&committeeStruct{})
 
 	var err error
-	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), []*ed25519.PublicKey{netProvider.Self().PubKey()})
+	chainPeerNodes := []*ed25519.PublicKey{netProvider.Self().PubKey()}
+	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), chainPeerNodes)
 	if err != nil {
-		log.Errorf("NewChain: %v", err)
+		log.Errorf("NewChain: unable to create chainPeers domain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(db, ret, ret.chainPeers, ret.nodeConn, chainMetrics)
+	stateMgrDomain, err := statemgr.NewDomainWithFallback(chainID.Array(), netProvider, log.Named("sm"))
+	if err != nil {
+		log.Errorf("NewChain: unable to create stateMgr.fallbackPeers domain: %v", err)
+		return nil
+	}
+	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics)
+	ret.stateMgr.SetChainPeers(chainPeerNodes)
 
 	ret.eventChainTransitionClosure = events.NewClosure(ret.processChainTransition)
 	ret.eventChainTransition.Attach(ret.eventChainTransitionClosure)
@@ -322,6 +329,7 @@ func (c *chainObj) updateChainNodes() {
 		newMemberList = append(newMemberList, &pubKeyCopy)
 	}
 	c.chainPeers.UpdatePeers(newMemberList)
+	c.stateMgr.SetChainPeers(newMemberList)
 
 	//
 	// Remember the candidate nodes as well (as a cache).

@@ -90,12 +90,11 @@ type GroupProvider interface {
 // All peers in the domain shares same peeringID. Each peer within domain is identified via its netID
 type PeerDomainProvider interface {
 	ReshufflePeers(seedBytes ...[]byte)
-	GetRandomPeers(upToNumPeers int) []*ed25519.PublicKey
+	GetRandomOtherPeers(upToNumPeers int) []*ed25519.PublicKey
 	UpdatePeers(newPeerPubKeys []*ed25519.PublicKey)
 	Attach(receiver byte, callback func(recv *PeerMessageIn)) interface{}
 	Detach(attachID interface{})
 	SendMsgByPubKey(pubKey *ed25519.PublicKey, msgReceiver byte, msgType byte, msgData []byte)
-	SendPeerMsgToRandomPeers(upToNumPeers int, msgReceiver byte, msgType byte, msgData []byte)
 	PeerStatus() []PeerStatusProvider
 	Close()
 }

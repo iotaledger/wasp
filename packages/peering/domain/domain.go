@@ -31,16 +31,15 @@ func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.Peerin
 	ret := &DomainImpl{
 		netProvider: netProvider,
 		nodes:       make(map[ed25519.PublicKey]peering.PeerSender),
-		permutation: util.NewPermutation16(uint16(len(initialNodes)), nil),
-		permPubKeys: make([]*ed25519.PublicKey, len(initialNodes)),
+		permutation: nil, // Will be set in ret.reshufflePeers().
+		permPubKeys: nil, // Will be set in ret.reshufflePeers().
 		peeringID:   peeringID,
 		attachIDs:   make([]interface{}, 0),
 		log:         log,
 		mutex:       &sync.RWMutex{},
 	}
-	for i, sender := range initialNodes {
+	for _, sender := range initialNodes {
 		ret.nodes[*sender.PubKey()] = sender
-		ret.permPubKeys[i] = sender.PubKey()
 	}
 	ret.reshufflePeers()
 	return ret
@@ -62,13 +61,7 @@ func (d *DomainImpl) SendMsgByPubKey(pubKey *ed25519.PublicKey, msgReceiver, msg
 	})
 }
 
-func (d *DomainImpl) SendPeerMsgToRandomPeers(upToNumPeers int, msgReceiver, msgType byte, msgData []byte) {
-	for _, pubKey := range d.GetRandomPeers(upToNumPeers) {
-		d.SendMsgByPubKey(pubKey, msgReceiver, msgType, msgData)
-	}
-}
-
-func (d *DomainImpl) GetRandomPeers(upToNumPeers int) []*ed25519.PublicKey {
+func (d *DomainImpl) GetRandomOtherPeers(upToNumPeers int) []*ed25519.PublicKey {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
 	if upToNumPeers > len(d.permPubKeys) {
@@ -130,7 +123,7 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
 	if changed {
 		d.mutex.Lock()
 		d.nodes = nodes
-		d.permutation = util.NewPermutation16(uint16(len(nodes)), nil)
+		d.reshufflePeers()
 		d.mutex.Unlock()
 	}
 }
@@ -145,7 +138,9 @@ func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
 	d.permPubKeys = make([]*ed25519.PublicKey, 0, len(d.nodes))
 	for pubKey := range d.nodes {
 		peerPubKey := pubKey
-		d.permPubKeys = append(d.permPubKeys, &peerPubKey)
+		if peerPubKey != *d.netProvider.Self().PubKey() { // Do not include self to the permutation.
+			d.permPubKeys = append(d.permPubKeys, &peerPubKey)
+		}
 	}
 	var seedB []byte
 	if len(seedBytes) == 0 {
@@ -155,7 +150,7 @@ func (d *DomainImpl) reshufflePeers(seedBytes ...[]byte) {
 	} else {
 		seedB = seedBytes[0]
 	}
-	d.permutation.Shuffle(seedB)
+	d.permutation = util.NewPermutation16(uint16(len(d.permPubKeys)), seedB)
 }
 
 func (d *DomainImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {

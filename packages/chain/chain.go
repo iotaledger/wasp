@@ -148,6 +148,7 @@ type StateManager interface {
 	EnqueueStateCandidateMsg(state.VirtualStateAccess, ledgerstate.OutputID)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
+	SetChainPeers(peers []*ed25519.PublicKey)
 	Close()
 }
 

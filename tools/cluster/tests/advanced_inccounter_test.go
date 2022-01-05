@@ -122,9 +122,13 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), 40*time.Second)
+	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), 40*time.Second, "a required number of testAccessNodesOnLedger requests")
 
-	e.printBlocks(numRequests + 3)
+	e.printBlocks(
+		numRequests + // The actual IncCounter requests.
+			3 + // Initial State + IncCounter SC Deploy + ???
+			(clusterSize - numValidatorNodes), // Access node applications.
+	)
 }
 
 func TestAccessNodesOffLedger(t *testing.T) {
@@ -215,7 +219,11 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), to, "requests counted")
 
-	e.printBlocks(numRequests + 4)
+	e.printBlocks(
+		numRequests + // The actual IncCounter requests.
+			4 + // ???
+			(clusterSize - numValidatorNodes), // Access nodes applications.
+	)
 }
 
 // extreme test
@@ -248,7 +256,11 @@ func TestAccessNodesMany(t *testing.T) {
 		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.clu.Config.AllNodes(), 60*time.Second, logMsg)
 		requestsCount *= requestsCountProgression
 	}
-	e.printBlocks(posted + 3)
+	e.printBlocks(
+		posted + // The actual SC requests.
+			3 + // ???
+			(clusterSize - numValidatorNodes), // GOV: Access Node Applications.
+	)
 }
 
 // cluster of 10 access nodes and two overlapping committees
