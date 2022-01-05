@@ -12,4 +12,3 @@ export * from "./transfer";
 export * from "./types";
 export * from "./waspclient";
 export * from "./configuration";
-export * from "./colors";
