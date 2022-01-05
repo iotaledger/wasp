@@ -79,15 +79,16 @@ type Sandbox interface {
 	// Event publishes "vmmsg" message through Publisher on nanomsg. It also logs locally, but it is not the same thing
 	Event(msg string)
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
-	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
+	GetEntropy() hashing.HashValue
 	// Allowance specifies max budget of assets the smart contract can take
-	// from the caller with TakeFromCaller. Nil means no allowance (zero budget)
+	// from the caller with TransferAllowedFunds. Nil means no allowance (zero budget)
 	Allowance() *Assets
-	// TakeAllowance takes assets from the Callers account to own account, not more than in CallerAllowance.
-	// No parameter means take all allowance.
-	TakeAllowance(assets ...*Assets)
+	// TransferAllowedFunds moves assets from the caller's account to specified account within the budget set by Allowance.
+	// Skipping 'assets' means transfer all Allowance().
+	// The call fails if target account does not exist
+	TransferAllowedFunds(target *AgentID, assets ...*Assets)
 	// Send sends a on-ledger request
-	Send(metadata RequestParameters) bool
+	Send(metadata RequestParameters)
 	// BlockContext Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// StateAnchor properties of the anchor output
@@ -113,7 +114,8 @@ type Foundries interface {
 type RequestParameters struct {
 	// TargetAddress is the target address. It may represent another chain or L1 address
 	TargetAddress iotago.Address
-	// Assets attached to the output. It expected to contain iotas at least the amount required for dust deposit
+	// Assets attached to the output, always taken from the caller's account.
+	// It expected to contain iotas at least the amount required for dust deposit
 	// It depends on the context how it is handled when iotas are not enough for dust deposit
 	Assets *Assets
 	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address

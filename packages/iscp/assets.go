@@ -175,6 +175,46 @@ func (a *Assets) Equals(b *Assets) bool {
 	return true
 }
 
+// FitsTheBudget checks if:
+// - 'a' has all non-negative values. Negative values is error
+// - 'a' all values are <= of corresponding values of 'b'. It means, we can debit 'a' from 'b' without overrun of funds
+func (a *Assets) FitsTheBudget(budget *Assets) (bool, error) {
+	if a == budget {
+		return true, nil
+	}
+	if a.IsEmpty() {
+		return true, nil
+	}
+	if budget.IsEmpty() {
+		return false, nil
+	}
+	if a.Iotas > budget.Iotas {
+		return false, nil
+	}
+	allowedSet, err := budget.Tokens.Set()
+	if err != nil {
+		return false, err
+	}
+	big0 := big.NewInt(0)
+	for _, aNT := range a.Tokens {
+		if aNT.Amount.Cmp(big0) <= 0 {
+			return false, xerrors.New("non positive token balance in assets")
+		}
+		allowedAmount, ok := allowedSet[aNT.ID]
+		if !ok || aNT.Amount.Cmp(allowedAmount.Amount) > 0 {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func (a *Assets) MustFitsTheBudget(budget *Assets) bool {
+	ret, err := a.FitsTheBudget(budget)
+	if err != nil {
+		panic(xerrors.Errorf("MustFitsTheBudget: %w", err))
+	}
+	return ret
+}
 func (a *Assets) Add(b *Assets) *Assets {
 	a.Iotas += b.Iotas
 	resultTokens := a.Tokens.MustSet()

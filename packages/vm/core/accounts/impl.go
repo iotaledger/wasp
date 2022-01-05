@@ -17,7 +17,7 @@ import (
 
 var Processor = Contract.Processor(nil,
 	FuncDeposit.WithHandler(deposit),
-	FuncSendTo.WithHandler(sendTo),
+	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
 	FuncHarvest.WithHandler(harvest),
 	FuncGetAccountNonce.WithHandler(getAccountNonce),
@@ -31,46 +31,30 @@ var Processor = Contract.Processor(nil,
 	FuncViewAccounts.WithHandler(viewAccounts),
 )
 
-// deposit is a function to deposit funds to the sender's chain account
-// For the core contract as a target 'transfer' == nil
+// deposit is a function to deposit attached assets to the sender's chain account
+// It does nothing because assets are already on the sender's account
+// Allowance is ignored
 func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.deposit")
-	// No need to do anything here because funds are already credited to the sender's account
-	// just send back anything that might have been included in 'transfer' by mistake
 	return nil, nil
 }
 
-// sendTo moves transfer from the to the specified account on the chain. Can be sent as a request
-// or can be called
+// transferAllowanceTo moves whole allowance from the caller to the specified account on the chain.
+// Can be sent as a request (sender is the caller) or can be called
 // Params:
-// - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
-//   in case ParamAgentID == ctx.Caller() and it is an on-chain call, it means NOP
-func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.sendTo.begin -- %s", ctx.Allowance())
+// - ParamAgentID. mandatory
+func transferAllowanceTo(ctx iscp.Sandbox) (dict.Dict, error) {
+	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.Allowance())
 
-	if ctx.Allowance() == nil {
-		return nil, nil
-	}
-	checkLedger(ctx.State(), "accounts.sendTo.begin")
-
-	caller := ctx.Caller()
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAccount := params.MustGetAgentID(ParamAgentID, caller)
-
-	sendIncomingTo(ctx, targetAccount)
-	ctx.Log().Debugf("accounts.sendTo.success: target: %s\n%s",
-		targetAccount, ctx.Allowance().String())
-
-	checkLedger(ctx.State(), "accounts.sendTo.exit")
+	targetAccount := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(ParamAgentID)
+	ctx.TransferAllowedFunds(targetAccount)
+	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.Allowance())
 	return nil, nil
 }
 
-func sendIncomingTo(ctx iscp.Sandbox, targetAccount *iscp.AgentID) {
-	ok := MoveBetweenAccounts(ctx.State(), commonaccount.Get(ctx.ChainID()), targetAccount, ctx.Allowance())
-	assert.NewAssert(ctx.Log()).Require(ok, "internal error: failed to send funds to %s", targetAccount.String())
-}
-
-// withdraw sends caller's funds to the caller
+// withdraw sends caller's funds to the caller on-ledger (cross chain)
+// The caller explicitly specify the funds to withdraw via the allowance in the request
+// Btw: the whole code of entry point is generic, i.e. not specific to the accounts TODO use this feature
 func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	checkLedger(state, "accounts.withdraw.begin")
@@ -79,47 +63,22 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 		// if the caller is on the same chain, do nothing
 		return nil, nil
 	}
-	// TODO maybe we need to deduct gas fees balance tokensToWithdraw? - to check
-	tokensToWithdraw, ok := GetAccountAssets(state, ctx.Caller())
-	if !ok {
-		// empty balance, nothing to withdraw
-		return nil, nil
-	}
-	// will be sending back to default entry point
-	a := assert.NewAssert(ctx.Log())
-	// the balances included in the transfer (if any) are already in the common account
-	// bring all remaining caller's balances to the current account (owner's account).
-	// It is needed for subsequent Send call
-	a.Require(MoveBetweenAccounts(state, ctx.Caller(), commonaccount.Get(ctx.ChainID()), tokensToWithdraw),
-		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
-	// add incoming tokens (after fees) to the balances to be withdrawn.
-	// Otherwise, they would end up in the common account
-	tokensToWithdraw.Add(ctx.Allowance())
-	// Now all caller's assets are in the common account
-	// TODO: by default should be withdrawn all tokens and account should be closed
-	//  Introduce "ParamEnsureMinimum = N iotas" which leaves at least N iotas in the account
-	// Send call assumes tokens are in the current account
-	sendMetadata := &iscp.SendMetadata{
-		TargetContract: ctx.Caller().Hname(),
-		// other metadata parameters are not important
-	}
-	a.Require(
-		ctx.Send(iscp.RequestParameters{
-			TargetAddress: ctx.Caller().Address(),
-			Assets:        tokensToWithdraw,
-			Metadata:      sendMetadata,
-			Options:       nil,
-		}),
-		"accounts.withdraw.inconsistency: failed sending tokens ",
-	)
+	// move all allowed funds to the account of the current contract context
+	ctx.TransferAllowedFunds(ctx.AccountID())
 
-	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", tokensToWithdraw.String())
-
-	checkLedger(state, "accounts.withdraw.exit")
+	ctx.Send(iscp.RequestParameters{
+		TargetAddress: ctx.Caller().Address(),
+		Assets:        ctx.Allowance(),
+		Metadata: &iscp.SendMetadata{
+			TargetContract: ctx.Caller().Hname(),
+			// other metadata parameters are not important for withdrawal
+		},
+	})
+	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.Allowance().String())
 	return nil, nil
 }
 
-// owner of the chain moves all tokens balance the common account to its own account
+// TODO refactor owner of the chain moves all tokens balance the common account to its own account
 // Params:
 //   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
 //   ParamWithdrawAssetID assetID to withdraw if amount is specified. Defaults to Iota

@@ -471,7 +471,7 @@ func ExtendedOutputFromPostData(
 	par iscp.RequestParameters,
 	rentStructure *iotago.RentStructure,
 ) *iotago.ExtendedOutput {
-	ret, _ := MakeExtendedOutput(
+	ret := MakeExtendedOutput(
 		par.TargetAddress,
 		senderAddress,
 		par.Assets,
@@ -498,7 +498,7 @@ func MakeExtendedOutput(
 	metadata *iscp.RequestMetadata,
 	options *iscp.SendOptions,
 	rentStructure *iotago.RentStructure,
-) (*iotago.ExtendedOutput, bool) {
+) *iotago.ExtendedOutput {
 	if assets == nil {
 		assets = &iscp.Assets{}
 	}
@@ -524,13 +524,11 @@ func MakeExtendedOutput(
 	}
 
 	// Adjust to minimum dust deposit
-	dustDepositAdjusted := false
 	neededDustDeposit := ret.VByteCost(rentStructure, nil)
 	if ret.Amount < neededDustDeposit {
 		ret.Amount = neededDustDeposit
-		dustDepositAdjusted = true
 	}
-	return ret, dustDepositAdjusted
+	return ret
 }
 
 func AssetsFromOutput(o iotago.Output) *iscp.Assets {

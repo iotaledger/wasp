@@ -1,8 +1,6 @@
 package vmcontext
 
 import (
-	"math/big"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -10,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"golang.org/x/xerrors"
 )
 
@@ -76,37 +75,61 @@ func (vmctx *VMContext) Allowance() *iscp.Assets {
 	return vmctx.getCallContext().allowance
 }
 
-func (vmctx *VMContext) TakeAllowance(assets ...*iscp.Assets) {
-	// getCaller() is the caller of the contract with AccountID()
-	// AccountID() is the current contract id
+func (vmctx *VMContext) isOnChainAccount(agentID *iscp.AgentID) bool {
+	if agentID.IsNil() {
+		return false
+	}
+	return agentID.Address().Equal(vmctx.ChainID().AsAddress())
+}
+
+func (vmctx *VMContext) isCoreAccount(agentID *iscp.AgentID) bool {
+	return vmctx.isOnChainAccount(agentID) && commonaccount.IsCoreHname(agentID.Hname())
+}
+
+// targetAccountExists check if there's an account with non-zero balance,
+// or it is an existing smart contract
+func (vmctx *VMContext) targetAccountExists(agentID *iscp.AgentID) bool {
+	accountExists := false
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		accountExists = accounts.AccountExists(s, agentID)
+	})
+	if accountExists {
+		return true
+	}
+	// it may be a smart contract with 0 balance
+	if !vmctx.isOnChainAccount(agentID) {
+		return false
+	}
+	vmctx.callCore(root.Contract, func(s kv.KVStore) {
+		accountExists = root.ContractExists(s, agentID.Hname())
+	})
+	return accountExists
+}
+
+// TransferAllowedFunds transfers funds withing the budget set by the Allowance() to the existing target account on chain
+func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) {
+	if vmctx.isCoreAccount(target) {
+		// if the target is one of core contracts, assume target is the common account
+		target = commonaccount.Get(vmctx.ChainID())
+	} else {
+		// check if target exists
+		if !vmctx.targetAccountExists(target) {
+			panic(ErrTransferTargetAccountDoesNotExists)
+		}
+	}
+
+	var assetsToMove *iscp.Assets
 	if len(assets) == 0 {
-		// take all Allowance()
-		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-			accounts.MoveBetweenAccounts(s, vmctx.getCaller(), vmctx.AccountID(), vmctx.Allowance())
-		})
-		return
+		assetsToMove = vmctx.Allowance()
+	} else {
+		assetsToMove = assets[0]
 	}
-	// check if assets fits the budget set by Allowance()
-	allowed := vmctx.Allowance()
-	if allowed.Iotas < assets[0].Iotas {
-		panic(accounts.ErrNotEnoughFunds)
-	}
-	allowedTokens, err := allowed.Tokens.Set()
-	if err != nil {
-		panic(err)
-	}
-	big0 := big.NewInt(0)
-	for _, requiredTokens := range assets[0].Tokens {
-		if requiredTokens.Amount.Cmp(big0) <= 0 {
-			panic(ErrWrongParamsInSandboxCall)
-		}
-		allowedAmount, ok := allowedTokens[requiredTokens.ID]
-		if !ok || allowedAmount.Amount.Cmp(requiredTokens.Amount) < 0 {
-			panic(accounts.ErrNotEnoughFunds)
-		}
+	// checks if the desired transfer fits the budget set by allowance
+	if !assetsToMove.MustFitsTheBudget(vmctx.Allowance()) {
+		panic(accounts.ErrNotEnoughAllowance)
 	}
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.MoveBetweenAccounts(s, vmctx.getCaller(), vmctx.AccountID(), assets[0])
+		accounts.MoveBetweenAccounts(s, vmctx.getCaller(), target, assetsToMove)
 	})
 }
 

@@ -19,6 +19,7 @@ import (
 
 var (
 	ErrNotEnoughFunds               = xerrors.New("not enough funds")
+	ErrNotEnoughAllowance           = xerrors.New("not enough allowance")
 	ErrBadAmount                    = xerrors.New("bad native asset amount")
 	ErrRepeatingFoundrySerialNumber = xerrors.New("repeating serial number of the foundry")
 	ErrFoundryNotFound              = xerrors.New("foundry not found")
@@ -64,6 +65,10 @@ func getAccountFoundries(state kv.KVStore, agentID *iscp.AgentID) *collections.M
 
 func getAccountFoundriesR(state kv.KVStoreReader, agentID *iscp.AgentID) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, string(kv.Concat(prefixAccountFoundries, agentID.Bytes())))
+}
+
+func AccountExists(state kv.KVStoreReader, agentID *iscp.AgentID) bool {
+	return getAccountR(state, agentID).MustLen() > 0
 }
 
 // GetMaxAssumedNonce is maintained for each L1 address with the purpose of replay protection of off-ledger requests

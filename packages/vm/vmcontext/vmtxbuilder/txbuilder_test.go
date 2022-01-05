@@ -34,7 +34,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 			Tokens: iotago.NativeTokens{{id, big.NewInt(int64(amountNative))}},
 		}
 	}
-	out, _ := MakeExtendedOutput(
+	out := MakeExtendedOutput(
 		txb.anchorOutput.AliasID.ToAddress(),
 		nil,
 		assets,
@@ -631,7 +631,7 @@ func TestDustDeposit(t *testing.T) {
 	})
 	t.Run("adjusts the output amount to the correct bytecost when needed", func(t *testing.T) {
 		assets := iscp.NewEmptyAssets()
-		out, wasAdjusted := MakeExtendedOutput(
+		out := MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
@@ -639,12 +639,11 @@ func TestDustDeposit(t *testing.T) {
 			nil,
 			testdeserparams.RentStructure(),
 		)
-		require.True(t, wasAdjusted)
 		require.Equal(t, out.Amount, out.VByteCost(parameters.RentStructure(), nil))
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
 		assets := iscp.NewAssets(10000, nil)
-		out, wasAdjusted := MakeExtendedOutput(
+		out := MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
@@ -652,7 +651,6 @@ func TestDustDeposit(t *testing.T) {
 			nil,
 			testdeserparams.RentStructure(),
 		)
-		require.False(t, wasAdjusted)
 		require.GreaterOrEqual(t, out.Amount, out.VByteCost(parameters.RentStructure(), nil))
 	})
 }
@@ -749,7 +747,7 @@ func TestSerDe(t *testing.T) {
 			GasBudget:      0,
 		}
 		assets := iscp.NewEmptyAssets()
-		out, _ := MakeExtendedOutput(
+		out := MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,

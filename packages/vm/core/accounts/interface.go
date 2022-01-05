@@ -17,7 +17,7 @@ var (
 	FuncViewTotalAssets          = coreutil.ViewFunc("totalAssets")
 	FuncViewAccounts             = coreutil.ViewFunc("accounts")
 	FuncDeposit                  = coreutil.Func("deposit")
-	FuncSendTo                   = coreutil.Func("sendTo")
+	FuncTransferAllowanceTo      = coreutil.Func("transferAllowanceTo")
 	FuncWithdraw                 = coreutil.Func("withdraw")
 	FuncHarvest                  = coreutil.Func("harvest")
 	FuncGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")

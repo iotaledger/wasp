@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -28,7 +27,7 @@ func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, pa
 
 func mustStoreContractRecord(ctx iscp.Sandbox, rec *root.ContractRecord) {
 	hname := rec.Hname()
-	contractRegistry := collections.NewMap(ctx.State(), root.StateVarContractRegistry)
+	contractRegistry := root.GetContractRegistry(ctx.State())
 	ctx.Require(!contractRegistry.MustHasAt(hname.Bytes()), "contract '%s'/%s already exist", rec.Name, hname.String())
 	contractRegistry.MustSetAt(hname.Bytes(), rec.Bytes())
 }
@@ -54,12 +53,4 @@ func isAuthorizedToDeploy(ctx iscp.Sandbox) bool {
 	}
 
 	return collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustHasAt(caller.Bytes())
-}
-
-func isChainOwner(ctx iscp.Sandbox) bool {
-	ret, err := ctx.Call(governance.Contract.Hname(), governance.FuncGetChainOwner.Hname(), nil, nil)
-	ctx.RequireNoError(err)
-	owner, err := codec.DecodeAgentID(ret.MustGet(governance.ParamChainOwner))
-	ctx.RequireNoError(err)
-	return owner.Equals(ctx.Caller())
 }

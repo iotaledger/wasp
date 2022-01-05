@@ -168,7 +168,7 @@ func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func getContractRecords(ctx iscp.SandboxView) (dict.Dict, error) {
-	src := collections.NewMapReadOnly(ctx.State(), root.StateVarContractRegistry)
+	src := root.GetContractRegistryR(ctx.State())
 
 	ret := dict.New()
 	dst := collections.NewMap(ret, root.StateVarContractRegistry)

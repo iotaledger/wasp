@@ -69,7 +69,7 @@ func aliasOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 
 func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
-	o, _ := MakeExtendedOutput(
+	o := MakeExtendedOutput(
 		&addr,
 		&addr,
 		&iscp.Assets{

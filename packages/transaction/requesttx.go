@@ -36,7 +36,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			assets = &iscp.Assets{}
 		}
 		// will adjust to minimum dust deposit
-		out, _ := vmtxbuilder.MakeExtendedOutput(
+		out := vmtxbuilder.MakeExtendedOutput(
 			req.TargetAddress,
 			senderAddress,
 			assets,

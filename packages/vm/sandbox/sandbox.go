@@ -113,8 +113,8 @@ func (s *sandbox) Allowance() *iscp.Assets {
 	return s.vmctx.Allowance()
 }
 
-func (s *sandbox) TakeAllowance(assets ...*iscp.Assets) {
-	s.vmctx.TakeAllowance(assets...)
+func (s *sandbox) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) {
+	s.vmctx.TransferAllowedFunds(target, assets...)
 }
 
 func (s *sandbox) Log() iscp.LogInterface {
@@ -132,9 +132,9 @@ func (s *sandbox) Request() iscp.Request {
 	return s.vmctx.Request()
 }
 
-func (s *sandbox) Send(par iscp.RequestParameters) bool {
+func (s *sandbox) Send(par iscp.RequestParameters) {
 	s.Burn(gas.SendL1Request)
-	return s.vmctx.Send(par)
+	s.vmctx.Send(par)
 }
 
 func (s *sandbox) State() kv.KVStore {

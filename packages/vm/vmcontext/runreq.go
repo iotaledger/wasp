@@ -204,7 +204,6 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 		vmctx.req.Params(),
 		vmctx.req.Allowance(),
 		targetContract.ProgramHash,
-		true,
 	)
 }
 
