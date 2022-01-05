@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"golang.org/x/xerrors"
 )
 
 // Assets is used as assets in the UTXO and as tokens in transfer
