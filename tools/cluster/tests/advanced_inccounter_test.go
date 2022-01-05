@@ -282,6 +282,11 @@ func TestRotation(t *testing.T) {
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt1, 3, addr1)
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID.Base58())
+	for _, i := range cmt1 {
+		// Add the first committee as access nodes as well,
+		// because they will be such after the committee rotation.
+		require.NoError(t, clu.AddAccessNode(i, chain))
+	}
 
 	description := "inccounter testing contract"
 	programHash := inccounter.Contract.ProgramHash
@@ -388,6 +393,11 @@ func TestRotationMany(t *testing.T) {
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt[0], quorum[0], addrs[0])
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID.Base58())
+	for _, i := range cmt[0] {
+		// Add the first committee as access nodes as well,
+		// because they will be such after the committee rotation.
+		require.NoError(t, clu.AddAccessNode(i, chain))
+	}
 
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair())
 

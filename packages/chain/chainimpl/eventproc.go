@@ -142,10 +142,9 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput
 	}
 	dkShare, err := c.getChainDKShare(anchorOutput.GetStateAddress())
 	if err != nil {
-		if errors.Is(err, registry.ErrDKShareNotFound) {
-			return nil
+		if !errors.Is(err, registry.ErrDKShareNotFound) {
+			return xerrors.Errorf("rotateCommitteeIfNeeded: unable to load dkShare: %w", err)
 		}
-		return xerrors.Errorf("rotateCommitteeIfNeeded: unable to load dkShare: %w", err)
 	}
 	// rotation needed
 	// close current in any case
