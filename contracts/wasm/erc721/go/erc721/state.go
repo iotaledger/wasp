@@ -107,6 +107,10 @@ type MutableErc721State struct {
 	id int32
 }
 
+func (s MutableErc721State) AsImmutable() ImmutableErc721State {
+	return ImmutableErc721State(s)
+}
+
 func (s MutableErc721State) ApprovedAccounts() MapHashToMutableAgentID {
 	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateApprovedAccounts], wasmlib.TYPE_MAP)
 	return MapHashToMutableAgentID{objID: mapID}

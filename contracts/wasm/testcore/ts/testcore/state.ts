@@ -32,6 +32,12 @@ export class ImmutableTestCoreState extends wasmlib.ScMapID {
 }
 
 export class MutableTestCoreState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableTestCoreState {
+		const imm = new sc.ImmutableTestCoreState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     counter(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateCounter]);
 	}

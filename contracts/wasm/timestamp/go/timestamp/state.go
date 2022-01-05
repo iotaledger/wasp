@@ -21,6 +21,10 @@ type MutabletimestampState struct {
 	id int32
 }
 
+func (s MutabletimestampState) AsImmutable() ImmutabletimestampState {
+	return ImmutabletimestampState(s)
+}
+
 func (s MutabletimestampState) Timestamp() wasmlib.ScMutableInt64 {
 	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateTimestamp])
 }

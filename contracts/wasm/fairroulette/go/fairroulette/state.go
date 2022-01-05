@@ -70,6 +70,10 @@ type MutableFairRouletteState struct {
 	id int32
 }
 
+func (s MutableFairRouletteState) AsImmutable() ImmutableFairRouletteState {
+	return ImmutableFairRouletteState(s)
+}
+
 func (s MutableFairRouletteState) Bets() ArrayOfMutableBet {
 	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
 	return ArrayOfMutableBet{objID: arrID}

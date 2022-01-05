@@ -58,6 +58,10 @@ type MutableDonateWithFeedbackState struct {
 	id int32
 }
 
+func (s MutableDonateWithFeedbackState) AsImmutable() ImmutableDonateWithFeedbackState {
+	return ImmutableDonateWithFeedbackState(s)
+}
+
 func (s MutableDonateWithFeedbackState) Log() ArrayOfMutableDonation {
 	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateLog], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
 	return ArrayOfMutableDonation{objID: arrID}

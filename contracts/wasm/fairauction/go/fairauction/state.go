@@ -100,6 +100,10 @@ type MutableFairAuctionState struct {
 	id int32
 }
 
+func (s MutableFairAuctionState) AsImmutable() ImmutableFairAuctionState {
+	return ImmutableFairAuctionState(s)
+}
+
 func (s MutableFairAuctionState) Auctions() MapColorToMutableAuction {
 	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateAuctions], wasmlib.TYPE_MAP)
 	return MapColorToMutableAuction{objID: mapID}

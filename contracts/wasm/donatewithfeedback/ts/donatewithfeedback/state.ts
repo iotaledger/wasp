@@ -60,6 +60,12 @@ export class ArrayOfMutableDonation {
 }
 
 export class MutableDonateWithFeedbackState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableDonateWithFeedbackState {
+		const imm = new sc.ImmutableDonateWithFeedbackState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     log(): sc.ArrayOfMutableDonation {
 		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateLog], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
 		return new sc.ArrayOfMutableDonation(arrID);

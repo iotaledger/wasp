@@ -83,6 +83,10 @@ type MutableDividendState struct {
 	id int32
 }
 
+func (s MutableDividendState) AsImmutable() ImmutableDividendState {
+	return ImmutableDividendState(s)
+}
+
 func (s MutableDividendState) MemberList() ArrayOfMutableAddress {
 	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateMemberList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS)
 	return ArrayOfMutableAddress{objID: arrID}

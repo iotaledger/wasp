@@ -50,6 +50,12 @@ export class MapStringToMutableStringArray {
 }
 
 export class MutableTestWasmLibState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableTestWasmLibState {
+		const imm = new sc.ImmutableTestWasmLibState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     arrays(): sc.MapStringToMutableStringArray {
 		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateArrays], wasmlib.TYPE_MAP);
 		return new sc.MapStringToMutableStringArray(mapID);

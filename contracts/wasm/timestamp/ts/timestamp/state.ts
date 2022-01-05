@@ -15,6 +15,12 @@ export class ImmutabletimestampState extends wasmlib.ScMapID {
 }
 
 export class MutabletimestampState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutabletimestampState {
+		const imm = new sc.ImmutabletimestampState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     timestamp(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateTimestamp]);
 	}

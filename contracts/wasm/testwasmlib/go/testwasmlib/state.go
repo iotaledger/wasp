@@ -48,6 +48,10 @@ type MutableTestWasmLibState struct {
 	id int32
 }
 
+func (s MutableTestWasmLibState) AsImmutable() ImmutableTestWasmLibState {
+	return ImmutableTestWasmLibState(s)
+}
+
 func (s MutableTestWasmLibState) Arrays() MapStringToMutableStringArray {
 	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateArrays], wasmlib.TYPE_MAP)
 	return MapStringToMutableStringArray{objID: mapID}

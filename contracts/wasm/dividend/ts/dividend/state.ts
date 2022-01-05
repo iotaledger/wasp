@@ -93,6 +93,12 @@ export class MapAddressToMutableInt64 {
 }
 
 export class MutableDividendState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableDividendState {
+		const imm = new sc.ImmutableDividendState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     memberList(): sc.ArrayOfMutableAddress {
 		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateMemberList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS);
 		return new sc.ArrayOfMutableAddress(arrID);

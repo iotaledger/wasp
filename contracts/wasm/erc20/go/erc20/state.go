@@ -53,6 +53,10 @@ type MutableErc20State struct {
 	id int32
 }
 
+func (s MutableErc20State) AsImmutable() ImmutableErc20State {
+	return ImmutableErc20State(s)
+}
+
 func (s MutableErc20State) AllAllowances() MapAgentIDToMutableAllowancesForAgent {
 	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateAllAllowances], wasmlib.TYPE_MAP)
 	return MapAgentIDToMutableAllowancesForAgent{objID: mapID}

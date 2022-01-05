@@ -38,6 +38,10 @@ type MutableTestCoreState struct {
 	id int32
 }
 
+func (s MutableTestCoreState) AsImmutable() ImmutableTestCoreState {
+	return ImmutableTestCoreState(s)
+}
+
 func (s MutableTestCoreState) Counter() wasmlib.ScMutableInt64 {
 	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateCounter])
 }

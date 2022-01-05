@@ -19,6 +19,12 @@ export class ImmutableIncCounterState extends wasmlib.ScMapID {
 }
 
 export class MutableIncCounterState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableIncCounterState {
+		const imm = new sc.ImmutableIncCounterState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     counter(): wasmlib.ScMutableInt64 {
 		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateCounter]);
 	}

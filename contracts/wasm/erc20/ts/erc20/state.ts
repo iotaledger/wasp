@@ -55,6 +55,12 @@ export class MapAgentIDToMutableAllowancesForAgent {
 }
 
 export class MutableErc20State extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableErc20State {
+		const imm = new sc.ImmutableErc20State();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     allAllowances(): sc.MapAgentIDToMutableAllowancesForAgent {
 		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateAllAllowances], wasmlib.TYPE_MAP);
 		return new sc.MapAgentIDToMutableAllowancesForAgent(mapID);

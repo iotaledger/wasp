@@ -31,6 +31,10 @@ pub struct MutabletimestampState {
 }
 
 impl MutabletimestampState {
+    pub fn as_immutable(&self) -> ImmutabletimestampState {
+		ImmutabletimestampState { id: self.id }
+	}
+
     pub fn timestamp(&self) -> ScMutableInt64 {
 		ScMutableInt64::new(self.id, idx_map(IDX_STATE_TIMESTAMP))
 	}

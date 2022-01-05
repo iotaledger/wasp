@@ -125,6 +125,12 @@ export class MapAgentIDToMutableUint64 {
 }
 
 export class MutableErc721State extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableErc721State {
+		const imm = new sc.ImmutableErc721State();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     approvedAccounts(): sc.MapHashToMutableAgentID {
 		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateApprovedAccounts], wasmlib.TYPE_MAP);
 		return new sc.MapHashToMutableAgentID(mapID);

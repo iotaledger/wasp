@@ -87,6 +87,10 @@ pub struct MutableFairRouletteState {
 }
 
 impl MutableFairRouletteState {
+    pub fn as_immutable(&self) -> ImmutableFairRouletteState {
+		ImmutableFairRouletteState { id: self.id }
+	}
+
     pub fn bets(&self) -> ArrayOfMutableBet {
 		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_BETS), TYPE_ARRAY | TYPE_BYTES);
 		ArrayOfMutableBet { obj_id: arr_id }

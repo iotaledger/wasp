@@ -75,6 +75,10 @@ type MutableTokenRegistryState struct {
 	id int32
 }
 
+func (s MutableTokenRegistryState) AsImmutable() ImmutableTokenRegistryState {
+	return ImmutableTokenRegistryState(s)
+}
+
 func (s MutableTokenRegistryState) ColorList() ArrayOfMutableColor {
 	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateColorList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_COLOR)
 	return ArrayOfMutableColor{objID: arrID}

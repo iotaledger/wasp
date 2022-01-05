@@ -118,6 +118,12 @@ export class MapColorToMutableBids {
 }
 
 export class MutableFairAuctionState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableFairAuctionState {
+		const imm = new sc.ImmutableFairAuctionState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     auctions(): sc.MapColorToMutableAuction {
 		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateAuctions], wasmlib.TYPE_MAP);
 		return new sc.MapColorToMutableAuction(mapID);

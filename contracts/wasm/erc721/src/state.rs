@@ -136,6 +136,10 @@ pub struct MutableErc721State {
 }
 
 impl MutableErc721State {
+    pub fn as_immutable(&self) -> ImmutableErc721State {
+		ImmutableErc721State { id: self.id }
+	}
+
     pub fn approved_accounts(&self) -> MapHashToMutableAgentID {
 		let map_id = get_object_id(self.id, idx_map(IDX_STATE_APPROVED_ACCOUNTS), TYPE_MAP);
 		MapHashToMutableAgentID { obj_id: map_id }

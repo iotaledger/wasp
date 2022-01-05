@@ -130,6 +130,10 @@ pub struct MutableFairAuctionState {
 }
 
 impl MutableFairAuctionState {
+    pub fn as_immutable(&self) -> ImmutableFairAuctionState {
+		ImmutableFairAuctionState { id: self.id }
+	}
+
     pub fn auctions(&self) -> MapColorToMutableAuction {
 		let map_id = get_object_id(self.id, idx_map(IDX_STATE_AUCTIONS), TYPE_MAP);
 		MapColorToMutableAuction { obj_id: map_id }

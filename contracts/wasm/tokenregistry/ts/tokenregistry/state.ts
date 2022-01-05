@@ -85,6 +85,12 @@ export class MapColorToMutableToken {
 }
 
 export class MutableTokenRegistryState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableTokenRegistryState {
+		const imm = new sc.ImmutableTokenRegistryState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     colorList(): sc.ArrayOfMutableColor {
 		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateColorList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_COLOR);
 		return new sc.ArrayOfMutableColor(arrID);

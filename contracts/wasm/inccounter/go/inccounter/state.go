@@ -25,6 +25,10 @@ type MutableIncCounterState struct {
 	id int32
 }
 
+func (s MutableIncCounterState) AsImmutable() ImmutableIncCounterState {
+	return ImmutableIncCounterState(s)
+}
+
 func (s MutableIncCounterState) Counter() wasmlib.ScMutableInt64 {
 	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateCounter])
 }
