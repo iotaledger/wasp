@@ -15,6 +15,7 @@ use crate::*;
 use crate::keys::*;
 use crate::typedefs::*;
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToImmutableAllowancesForAgent {
 	pub(crate) obj_id: i32,
 }
@@ -47,6 +48,7 @@ impl ImmutableErc20State {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToMutableAllowancesForAgent {
 	pub(crate) obj_id: i32,
 }

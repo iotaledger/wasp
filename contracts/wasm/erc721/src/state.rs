@@ -15,6 +15,7 @@ use crate::*;
 use crate::keys::*;
 use crate::typedefs::*;
 
+#[derive(Clone, Copy)]
 pub struct MapHashToImmutableAgentID {
 	pub(crate) obj_id: i32,
 }
@@ -25,6 +26,7 @@ impl MapHashToImmutableAgentID {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToImmutableOperators {
 	pub(crate) obj_id: i32,
 }
@@ -36,6 +38,7 @@ impl MapAgentIDToImmutableOperators {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToImmutableUint64 {
 	pub(crate) obj_id: i32,
 }
@@ -81,6 +84,7 @@ impl ImmutableErc721State {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapHashToMutableAgentID {
 	pub(crate) obj_id: i32,
 }
@@ -95,6 +99,7 @@ impl MapHashToMutableAgentID {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToMutableOperators {
 	pub(crate) obj_id: i32,
 }
@@ -110,6 +115,7 @@ impl MapAgentIDToMutableOperators {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToMutableUint64 {
 	pub(crate) obj_id: i32,
 }

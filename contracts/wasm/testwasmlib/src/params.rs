@@ -97,6 +97,7 @@ impl MutableArraySetParams {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToImmutableBytes {
 	pub(crate) obj_id: i32,
 }
@@ -190,6 +191,7 @@ impl ImmutableParamTypesParams {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToMutableBytes {
 	pub(crate) obj_id: i32,
 }

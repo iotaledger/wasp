@@ -12,6 +12,7 @@ use crate::*;
 use crate::coregovernance::*;
 use crate::host::*;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableBytes {
 	pub(crate) obj_id: i32,
 }
@@ -38,6 +39,7 @@ impl ImmutableGetAllowedStateControllerAddressesResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableBytes {
 	pub(crate) obj_id: i32,
 }

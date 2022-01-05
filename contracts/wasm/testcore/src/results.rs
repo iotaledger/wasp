@@ -154,6 +154,7 @@ impl MutableGetCounterResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToImmutableInt64 {
 	pub(crate) obj_id: i32,
 }
@@ -175,6 +176,7 @@ impl ImmutableGetIntResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToMutableInt64 {
 	pub(crate) obj_id: i32,
 }
@@ -200,6 +202,7 @@ impl MutableGetIntResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToImmutableString {
 	pub(crate) obj_id: i32,
 }
@@ -221,6 +224,7 @@ impl ImmutableGetStringValueResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToMutableString {
 	pub(crate) obj_id: i32,
 }

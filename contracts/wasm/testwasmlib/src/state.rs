@@ -15,6 +15,7 @@ use crate::*;
 use crate::keys::*;
 use crate::typedefs::*;
 
+#[derive(Clone, Copy)]
 pub struct MapStringToImmutableStringArray {
 	pub(crate) obj_id: i32,
 }
@@ -42,6 +43,7 @@ impl ImmutableTestWasmLibState {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToMutableStringArray {
 	pub(crate) obj_id: i32,
 }

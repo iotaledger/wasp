@@ -32,7 +32,8 @@ export class Service {
 
     public async postRequest(hFuncName: wasmclient.Int32, args: wasmclient.Arguments, transfer: wasmclient.Transfer, keyPair: IKeyPair): Promise<wasmclient.RequestID> {
         // get request essence ready for signing
-        let essence = Base58.decode(this.serviceClient.configuration.chainId);
+        const chainID = this.serviceClient.configuration.chainId;
+        let essence = Base58.decode(chainID);
         const hNames = Buffer.alloc(8)
         hNames.writeUInt32LE(this.scHname, 0);
         hNames.writeUInt32LE(hFuncName, 4);
@@ -47,7 +48,26 @@ export class Service {
         const hash = Hash.from(buf);
         const requestID = Buffer.concat([hash, Buffer.alloc(2)]);
 
-        await this.serviceClient.waspClient.postRequest(this.serviceClient.configuration.chainId, buf);
+        await this.serviceClient.waspClient.postRequest(chainID, buf);
+        return Base58.encode(requestID);
+    }
+
+    public async postOnLedgerRequest(hFuncName: wasmclient.Int32, args: wasmclient.Arguments, transfer: wasmclient.Transfer, keyPair: IKeyPair): Promise<wasmclient.RequestID> {
+        // get request essence ready for signing
+        const config = this.serviceClient.configuration;
+        let essence = Buffer.alloc(13)
+        essence.writeUInt32LE(this.scHname, 4);
+        essence.writeUInt32LE(hFuncName, 8);
+        essence = Buffer.concat([essence, args.encode()]);
+
+        let buf = Buffer.alloc(1);
+        const requestTypeOffledger = 1;
+        buf.writeUInt8(requestTypeOffledger, 0);
+        buf = Buffer.concat([buf, essence, ED25519.privateSign(keyPair, essence)]);
+        const hash = Hash.from(buf);
+        const requestID = Buffer.concat([hash, Buffer.alloc(2)]);
+
+        await this.serviceClient.waspClient.postOnLedgerRequest(config.chainId, buf);
         return Base58.encode(requestID);
     }
 

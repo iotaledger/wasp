@@ -14,6 +14,7 @@ use wasmlib::host::*;
 use crate::*;
 use crate::keys::*;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableAddress {
 	pub(crate) obj_id: i32,
 }
@@ -28,6 +29,7 @@ impl ArrayOfImmutableAddress {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAddressToImmutableInt64 {
 	pub(crate) obj_id: i32,
 }
@@ -63,6 +65,7 @@ impl ImmutableDividendState {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableAddress {
 	pub(crate) obj_id: i32,
 }
@@ -81,6 +84,7 @@ impl ArrayOfMutableAddress {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAddressToMutableInt64 {
 	pub(crate) obj_id: i32,
 }

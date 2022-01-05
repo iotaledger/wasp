@@ -8,9 +8,9 @@ export class ServiceClient {
     waspClient: wasmclient.WaspClient;
     configuration: Configuration;
 
-    constructor(configuration: Configuration) {
-        this.configuration = configuration;
-        this.waspClient = new wasmclient.WaspClient(configuration.waspApiUrl);
+    constructor(config: Configuration) {
+        this.configuration = config;
+        this.waspClient = new wasmclient.WaspClient(config.waspApiUrl, config.goShimmerApiUrl);
     }
 
     static default(): ServiceClient {
@@ -19,7 +19,7 @@ export class ServiceClient {
             seed: null,
             waspWebSocketUrl: "ws://127.0.0.1:9090",
             waspApiUrl: "127.0.0.1:9090",
-            goShimmerApiUrl: ""
+            goShimmerApiUrl: "127.0.0.1:8080"
         };
         return new ServiceClient(new Configuration(defaultConfiguration)); // "127.0.0.1:5550");
     }

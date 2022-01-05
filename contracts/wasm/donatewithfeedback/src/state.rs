@@ -15,6 +15,7 @@ use crate::*;
 use crate::keys::*;
 use crate::structs::*;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableDonation {
 	pub(crate) obj_id: i32,
 }
@@ -49,6 +50,7 @@ impl ImmutableDonateWithFeedbackState {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableDonation {
 	pub(crate) obj_id: i32,
 }

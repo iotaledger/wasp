@@ -15,6 +15,7 @@ use crate::*;
 use crate::keys::*;
 use crate::structs::*;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableColor {
 	pub(crate) obj_id: i32,
 }
@@ -29,6 +30,7 @@ impl ArrayOfImmutableColor {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapColorToImmutableToken {
 	pub(crate) obj_id: i32,
 }
@@ -56,6 +58,7 @@ impl ImmutableTokenRegistryState {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableColor {
 	pub(crate) obj_id: i32,
 }
@@ -74,6 +77,7 @@ impl ArrayOfMutableColor {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapColorToMutableToken {
 	pub(crate) obj_id: i32,
 }

@@ -15,6 +15,7 @@ use crate::*;
 use crate::keys::*;
 use crate::structs::*;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableBet {
 	pub(crate) obj_id: i32,
 }
@@ -61,6 +62,7 @@ impl ImmutableFairRouletteState {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableBet {
 	pub(crate) obj_id: i32,
 }
