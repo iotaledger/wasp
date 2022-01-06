@@ -34,21 +34,21 @@ type ImmutableDividendState struct {
 }
 
 func (s ImmutableDividendState) MemberList() ArrayOfImmutableAddress {
-	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateMemberList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateMemberList), wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS)
 	return ArrayOfImmutableAddress{objID: arrID}
 }
 
 func (s ImmutableDividendState) Members() MapAddressToImmutableInt64 {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateMembers], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateMembers), wasmlib.TYPE_MAP)
 	return MapAddressToImmutableInt64{objID: mapID}
 }
 
 func (s ImmutableDividendState) Owner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxStateOwner])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(StateOwner))
 }
 
 func (s ImmutableDividendState) TotalFactor() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateTotalFactor])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateTotalFactor))
 }
 
 type ArrayOfMutableAddress struct {
@@ -88,19 +88,19 @@ func (s MutableDividendState) AsImmutable() ImmutableDividendState {
 }
 
 func (s MutableDividendState) MemberList() ArrayOfMutableAddress {
-	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateMemberList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateMemberList), wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS)
 	return ArrayOfMutableAddress{objID: arrID}
 }
 
 func (s MutableDividendState) Members() MapAddressToMutableInt64 {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateMembers], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateMembers), wasmlib.TYPE_MAP)
 	return MapAddressToMutableInt64{objID: mapID}
 }
 
 func (s MutableDividendState) Owner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxStateOwner])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(StateOwner))
 }
 
 func (s MutableDividendState) TotalFactor() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateTotalFactor])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateTotalFactor))
 }

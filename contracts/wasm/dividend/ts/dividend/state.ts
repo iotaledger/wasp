@@ -38,21 +38,21 @@ export class MapAddressToImmutableInt64 {
 
 export class ImmutableDividendState extends wasmlib.ScMapID {
     memberList(): sc.ArrayOfImmutableAddress {
-		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateMemberList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS);
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateMemberList), wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS);
 		return new sc.ArrayOfImmutableAddress(arrID);
 	}
 
     members(): sc.MapAddressToImmutableInt64 {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateMembers], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateMembers), wasmlib.TYPE_MAP);
 		return new sc.MapAddressToImmutableInt64(mapID);
 	}
 
     owner(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxStateOwner]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.StateOwner));
 	}
 
     totalFactor(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateTotalFactor]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalFactor));
 	}
 }
 
@@ -100,20 +100,20 @@ export class MutableDividendState extends wasmlib.ScMapID {
 	}
 
     memberList(): sc.ArrayOfMutableAddress {
-		let arrID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateMemberList], wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS);
+		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateMemberList), wasmlib.TYPE_ARRAY|wasmlib.TYPE_ADDRESS);
 		return new sc.ArrayOfMutableAddress(arrID);
 	}
 
     members(): sc.MapAddressToMutableInt64 {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateMembers], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateMembers), wasmlib.TYPE_MAP);
 		return new sc.MapAddressToMutableInt64(mapID);
 	}
 
     owner(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxStateOwner]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.StateOwner));
 	}
 
     totalFactor(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateTotalFactor]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalFactor));
 	}
 }

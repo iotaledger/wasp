@@ -48,22 +48,22 @@ export class MapColorToImmutableBids {
 
 export class ImmutableFairAuctionState extends wasmlib.ScMapID {
     auctions(): sc.MapColorToImmutableAuction {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateAuctions], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateAuctions), wasmlib.TYPE_MAP);
 		return new sc.MapColorToImmutableAuction(mapID);
 	}
 
     bidderList(): sc.MapColorToImmutableBidderList {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBidderList], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBidderList), wasmlib.TYPE_MAP);
 		return new sc.MapColorToImmutableBidderList(mapID);
 	}
 
     bids(): sc.MapColorToImmutableBids {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBids], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBids), wasmlib.TYPE_MAP);
 		return new sc.MapColorToImmutableBids(mapID);
 	}
 
     ownerMargin(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateOwnerMargin]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateOwnerMargin));
 	}
 }
 
@@ -125,21 +125,21 @@ export class MutableFairAuctionState extends wasmlib.ScMapID {
 	}
 
     auctions(): sc.MapColorToMutableAuction {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateAuctions], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateAuctions), wasmlib.TYPE_MAP);
 		return new sc.MapColorToMutableAuction(mapID);
 	}
 
     bidderList(): sc.MapColorToMutableBidderList {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBidderList], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBidderList), wasmlib.TYPE_MAP);
 		return new sc.MapColorToMutableBidderList(mapID);
 	}
 
     bids(): sc.MapColorToMutableBids {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBids], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBids), wasmlib.TYPE_MAP);
 		return new sc.MapColorToMutableBids(mapID);
 	}
 
     ownerMargin(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateOwnerMargin]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateOwnerMargin));
 	}
 }

@@ -47,21 +47,21 @@ pub struct ImmutableDividendState {
 
 impl ImmutableDividendState {
     pub fn member_list(&self) -> ArrayOfImmutableAddress {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_MEMBER_LIST), TYPE_ARRAY | TYPE_ADDRESS);
+		let arr_id = get_object_id(self.id, STATE_MEMBER_LIST.get_key_id(), TYPE_ARRAY | TYPE_ADDRESS);
 		ArrayOfImmutableAddress { obj_id: arr_id }
 	}
 
     pub fn members(&self) -> MapAddressToImmutableInt64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_MEMBERS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_MEMBERS.get_key_id(), TYPE_MAP);
 		MapAddressToImmutableInt64 { obj_id: map_id }
 	}
 
     pub fn owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_STATE_OWNER))
+		ScImmutableAgentID::new(self.id, STATE_OWNER.get_key_id())
 	}
 
     pub fn total_factor(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_TOTAL_FACTOR))
+		ScImmutableInt64::new(self.id, STATE_TOTAL_FACTOR.get_key_id())
 	}
 }
 
@@ -110,20 +110,20 @@ impl MutableDividendState {
 	}
 
     pub fn member_list(&self) -> ArrayOfMutableAddress {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_MEMBER_LIST), TYPE_ARRAY | TYPE_ADDRESS);
+		let arr_id = get_object_id(self.id, STATE_MEMBER_LIST.get_key_id(), TYPE_ARRAY | TYPE_ADDRESS);
 		ArrayOfMutableAddress { obj_id: arr_id }
 	}
 
     pub fn members(&self) -> MapAddressToMutableInt64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_MEMBERS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_MEMBERS.get_key_id(), TYPE_MAP);
 		MapAddressToMutableInt64 { obj_id: map_id }
 	}
 
     pub fn owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_STATE_OWNER))
+		ScMutableAgentID::new(self.id, STATE_OWNER.get_key_id())
 	}
 
     pub fn total_factor(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_TOTAL_FACTOR))
+		ScMutableInt64::new(self.id, STATE_TOTAL_FACTOR.get_key_id())
 	}
 }

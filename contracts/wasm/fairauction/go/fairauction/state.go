@@ -40,22 +40,22 @@ type ImmutableFairAuctionState struct {
 }
 
 func (s ImmutableFairAuctionState) Auctions() MapColorToImmutableAuction {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateAuctions], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateAuctions), wasmlib.TYPE_MAP)
 	return MapColorToImmutableAuction{objID: mapID}
 }
 
 func (s ImmutableFairAuctionState) BidderList() MapColorToImmutableBidderList {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBidderList], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBidderList), wasmlib.TYPE_MAP)
 	return MapColorToImmutableBidderList{objID: mapID}
 }
 
 func (s ImmutableFairAuctionState) Bids() MapColorToImmutableBids {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBids], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBids), wasmlib.TYPE_MAP)
 	return MapColorToImmutableBids{objID: mapID}
 }
 
 func (s ImmutableFairAuctionState) OwnerMargin() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateOwnerMargin])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateOwnerMargin))
 }
 
 type MapColorToMutableAuction struct {
@@ -105,20 +105,20 @@ func (s MutableFairAuctionState) AsImmutable() ImmutableFairAuctionState {
 }
 
 func (s MutableFairAuctionState) Auctions() MapColorToMutableAuction {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateAuctions], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateAuctions), wasmlib.TYPE_MAP)
 	return MapColorToMutableAuction{objID: mapID}
 }
 
 func (s MutableFairAuctionState) BidderList() MapColorToMutableBidderList {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBidderList], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBidderList), wasmlib.TYPE_MAP)
 	return MapColorToMutableBidderList{objID: mapID}
 }
 
 func (s MutableFairAuctionState) Bids() MapColorToMutableBids {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBids], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBids), wasmlib.TYPE_MAP)
 	return MapColorToMutableBids{objID: mapID}
 }
 
 func (s MutableFairAuctionState) OwnerMargin() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateOwnerMargin])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateOwnerMargin))
 }

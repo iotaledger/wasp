@@ -10,9 +10,14 @@ $#if map typedefProxyMap
 	"proxyMethods": `
 $#if separator newline
 $#set separator $true
-$#set varID idx_map(IDX_$Kind$FLD_NAME)
+$#set varID $Kind$FLD_NAME.get_key_id()
+$#if init setInitVarID
 $#if core setCoreVarID
 $#if array proxyArray proxyMethods2
+`,
+	// *******************************
+	"setInitVarID": `
+$#set varID idx_map(IDX_$Kind$FLD_NAME)
 `,
 	// *******************************
 	"proxyMethods2": `

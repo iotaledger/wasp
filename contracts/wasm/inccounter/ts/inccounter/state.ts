@@ -10,11 +10,11 @@ import * as sc from "./index";
 
 export class ImmutableIncCounterState extends wasmlib.ScMapID {
     counter(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateCounter]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateCounter));
 	}
 
     numRepeats(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateNumRepeats]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateNumRepeats));
 	}
 }
 
@@ -26,10 +26,10 @@ export class MutableIncCounterState extends wasmlib.ScMapID {
 	}
 
     counter(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateCounter]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateCounter));
 	}
 
     numRepeats(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateNumRepeats]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateNumRepeats));
 	}
 }

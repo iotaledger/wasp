@@ -58,22 +58,22 @@ pub struct ImmutableFairAuctionState {
 
 impl ImmutableFairAuctionState {
     pub fn auctions(&self) -> MapColorToImmutableAuction {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_AUCTIONS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_AUCTIONS.get_key_id(), TYPE_MAP);
 		MapColorToImmutableAuction { obj_id: map_id }
 	}
 
     pub fn bidder_list(&self) -> MapColorToImmutableBidderList {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_BIDDER_LIST), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_BIDDER_LIST.get_key_id(), TYPE_MAP);
 		MapColorToImmutableBidderList { obj_id: map_id }
 	}
 
     pub fn bids(&self) -> MapColorToImmutableBids {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_BIDS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_BIDS.get_key_id(), TYPE_MAP);
 		MapColorToImmutableBids { obj_id: map_id }
 	}
 
     pub fn owner_margin(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_OWNER_MARGIN))
+		ScImmutableInt64::new(self.id, STATE_OWNER_MARGIN.get_key_id())
 	}
 }
 
@@ -135,21 +135,21 @@ impl MutableFairAuctionState {
 	}
 
     pub fn auctions(&self) -> MapColorToMutableAuction {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_AUCTIONS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_AUCTIONS.get_key_id(), TYPE_MAP);
 		MapColorToMutableAuction { obj_id: map_id }
 	}
 
     pub fn bidder_list(&self) -> MapColorToMutableBidderList {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_BIDDER_LIST), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_BIDDER_LIST.get_key_id(), TYPE_MAP);
 		MapColorToMutableBidderList { obj_id: map_id }
 	}
 
     pub fn bids(&self) -> MapColorToMutableBids {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_BIDS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_BIDS.get_key_id(), TYPE_MAP);
 		MapColorToMutableBids { obj_id: map_id }
 	}
 
     pub fn owner_margin(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_OWNER_MARGIN))
+		ScMutableInt64::new(self.id, STATE_OWNER_MARGIN.get_key_id())
 	}
 }

@@ -21,7 +21,7 @@ pub struct ImmutableCallOnChainResults {
 
 impl ImmutableCallOnChainResults {
     pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+		ScImmutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
 	}
 }
 
@@ -32,7 +32,7 @@ pub struct MutableCallOnChainResults {
 
 impl MutableCallOnChainResults {
     pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+		ScMutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
 	}
 }
 
@@ -43,11 +43,11 @@ pub struct ImmutableGetMintedSupplyResults {
 
 impl ImmutableGetMintedSupplyResults {
     pub fn minted_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.id, idx_map(IDX_RESULT_MINTED_COLOR))
+		ScImmutableColor::new(self.id, RESULT_MINTED_COLOR.get_key_id())
 	}
 
     pub fn minted_supply(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_MINTED_SUPPLY))
+		ScImmutableInt64::new(self.id, RESULT_MINTED_SUPPLY.get_key_id())
 	}
 }
 
@@ -58,11 +58,11 @@ pub struct MutableGetMintedSupplyResults {
 
 impl MutableGetMintedSupplyResults {
     pub fn minted_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.id, idx_map(IDX_RESULT_MINTED_COLOR))
+		ScMutableColor::new(self.id, RESULT_MINTED_COLOR.get_key_id())
 	}
 
     pub fn minted_supply(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_MINTED_SUPPLY))
+		ScMutableInt64::new(self.id, RESULT_MINTED_SUPPLY.get_key_id())
 	}
 }
 
@@ -73,7 +73,7 @@ pub struct ImmutableRunRecursionResults {
 
 impl ImmutableRunRecursionResults {
     pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+		ScImmutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
 	}
 }
 
@@ -84,7 +84,7 @@ pub struct MutableRunRecursionResults {
 
 impl MutableRunRecursionResults {
     pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+		ScMutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
 	}
 }
 
@@ -95,7 +95,7 @@ pub struct ImmutableTestChainOwnerIDFullResults {
 
 impl ImmutableTestChainOwnerIDFullResults {
     pub fn chain_owner_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
+		ScImmutableAgentID::new(self.id, RESULT_CHAIN_OWNER_ID.get_key_id())
 	}
 }
 
@@ -106,7 +106,7 @@ pub struct MutableTestChainOwnerIDFullResults {
 
 impl MutableTestChainOwnerIDFullResults {
     pub fn chain_owner_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
+		ScMutableAgentID::new(self.id, RESULT_CHAIN_OWNER_ID.get_key_id())
 	}
 }
 
@@ -117,7 +117,7 @@ pub struct ImmutableFibonacciResults {
 
 impl ImmutableFibonacciResults {
     pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+		ScImmutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
 	}
 }
 
@@ -128,7 +128,7 @@ pub struct MutableFibonacciResults {
 
 impl MutableFibonacciResults {
     pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_INT_VALUE))
+		ScMutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
 	}
 }
 
@@ -139,7 +139,7 @@ pub struct ImmutableGetCounterResults {
 
 impl ImmutableGetCounterResults {
     pub fn counter(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
+		ScImmutableInt64::new(self.id, RESULT_COUNTER.get_key_id())
 	}
 }
 
@@ -150,7 +150,7 @@ pub struct MutableGetCounterResults {
 
 impl MutableGetCounterResults {
     pub fn counter(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_COUNTER))
+		ScMutableInt64::new(self.id, RESULT_COUNTER.get_key_id())
 	}
 }
 
@@ -257,7 +257,7 @@ pub struct ImmutableTestChainOwnerIDViewResults {
 
 impl ImmutableTestChainOwnerIDViewResults {
     pub fn chain_owner_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
+		ScImmutableAgentID::new(self.id, RESULT_CHAIN_OWNER_ID.get_key_id())
 	}
 }
 
@@ -268,7 +268,7 @@ pub struct MutableTestChainOwnerIDViewResults {
 
 impl MutableTestChainOwnerIDViewResults {
     pub fn chain_owner_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_CHAIN_OWNER_ID))
+		ScMutableAgentID::new(self.id, RESULT_CHAIN_OWNER_ID.get_key_id())
 	}
 }
 
@@ -279,7 +279,7 @@ pub struct ImmutableTestSandboxCallResults {
 
 impl ImmutableTestSandboxCallResults {
     pub fn sandbox_call(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_RESULT_SANDBOX_CALL))
+		ScImmutableString::new(self.id, RESULT_SANDBOX_CALL.get_key_id())
 	}
 }
 
@@ -290,6 +290,6 @@ pub struct MutableTestSandboxCallResults {
 
 impl MutableTestSandboxCallResults {
     pub fn sandbox_call(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_RESULT_SANDBOX_CALL))
+		ScMutableString::new(self.id, RESULT_SANDBOX_CALL.get_key_id())
 	}
 }

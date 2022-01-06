@@ -14,24 +14,24 @@ type ImmutableTestCoreState struct {
 }
 
 func (s ImmutableTestCoreState) Counter() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateCounter])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateCounter))
 }
 
 func (s ImmutableTestCoreState) HnameEP() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, idxMap[IdxStateHnameEP])
+	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(StateHnameEP))
 }
 
 func (s ImmutableTestCoreState) Ints() MapStringToImmutableInt64 {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateInts], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateInts), wasmlib.TYPE_MAP)
 	return MapStringToImmutableInt64{objID: mapID}
 }
 
 func (s ImmutableTestCoreState) MintedColor() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxStateMintedColor])
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(StateMintedColor))
 }
 
 func (s ImmutableTestCoreState) MintedSupply() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateMintedSupply])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateMintedSupply))
 }
 
 type MutableTestCoreState struct {
@@ -43,22 +43,22 @@ func (s MutableTestCoreState) AsImmutable() ImmutableTestCoreState {
 }
 
 func (s MutableTestCoreState) Counter() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateCounter])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateCounter))
 }
 
 func (s MutableTestCoreState) HnameEP() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, idxMap[IdxStateHnameEP])
+	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(StateHnameEP))
 }
 
 func (s MutableTestCoreState) Ints() MapStringToMutableInt64 {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateInts], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateInts), wasmlib.TYPE_MAP)
 	return MapStringToMutableInt64{objID: mapID}
 }
 
 func (s MutableTestCoreState) MintedColor() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxStateMintedColor])
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(StateMintedColor))
 }
 
 func (s MutableTestCoreState) MintedSupply() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateMintedSupply])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateMintedSupply))
 }

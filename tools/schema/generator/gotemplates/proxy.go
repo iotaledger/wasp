@@ -8,9 +8,14 @@ $#if map typedefProxyMap
 `,
 	// *******************************
 	"proxyMethods": `
-$#set varID idxMap[Idx$Kind$FldName]
+$#set varID wasmlib.KeyID($Kind$FldName)
+$#if init setInitVarID
 $#if core setCoreVarID
 $#if array proxyArray proxyMethods2
+`,
+	// *******************************
+	"setInitVarID": `
+$#set varID idxMap[Idx$Kind$FldName]
 `,
 	// *******************************
 	"proxyMethods2": `

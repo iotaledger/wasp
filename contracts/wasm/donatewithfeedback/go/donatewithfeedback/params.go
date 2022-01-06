@@ -14,7 +14,7 @@ type ImmutableDonateParams struct {
 }
 
 func (s ImmutableDonateParams) Feedback() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamFeedback])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamFeedback))
 }
 
 type MutableDonateParams struct {
@@ -22,7 +22,7 @@ type MutableDonateParams struct {
 }
 
 func (s MutableDonateParams) Feedback() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamFeedback])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamFeedback))
 }
 
 type ImmutableWithdrawParams struct {
@@ -30,7 +30,7 @@ type ImmutableWithdrawParams struct {
 }
 
 func (s ImmutableWithdrawParams) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamAmount])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamAmount))
 }
 
 type MutableWithdrawParams struct {
@@ -38,7 +38,7 @@ type MutableWithdrawParams struct {
 }
 
 func (s MutableWithdrawParams) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamAmount])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamAmount))
 }
 
 type ImmutableDonationParams struct {
@@ -46,7 +46,7 @@ type ImmutableDonationParams struct {
 }
 
 func (s ImmutableDonationParams) Nr() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamNr])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamNr))
 }
 
 type MutableDonationParams struct {
@@ -54,5 +54,5 @@ type MutableDonationParams struct {
 }
 
 func (s MutableDonationParams) Nr() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamNr])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamNr))
 }

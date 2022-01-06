@@ -26,28 +26,28 @@ type ImmutableFairRouletteState struct {
 }
 
 func (s ImmutableFairRouletteState) Bets() ArrayOfImmutableBet {
-	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBets), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
 	return ArrayOfImmutableBet{objID: arrID}
 }
 
 func (s ImmutableFairRouletteState) LastWinningNumber() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateLastWinningNumber])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateLastWinningNumber))
 }
 
 func (s ImmutableFairRouletteState) PlayPeriod() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxStatePlayPeriod])
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(StatePlayPeriod))
 }
 
 func (s ImmutableFairRouletteState) RoundNumber() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateRoundNumber])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateRoundNumber))
 }
 
 func (s ImmutableFairRouletteState) RoundStartedAt() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxStateRoundStartedAt])
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(StateRoundStartedAt))
 }
 
 func (s ImmutableFairRouletteState) RoundStatus() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, idxMap[IdxStateRoundStatus])
+	return wasmlib.NewScImmutableInt16(s.id, wasmlib.KeyID(StateRoundStatus))
 }
 
 type ArrayOfMutableBet struct {
@@ -75,26 +75,26 @@ func (s MutableFairRouletteState) AsImmutable() ImmutableFairRouletteState {
 }
 
 func (s MutableFairRouletteState) Bets() ArrayOfMutableBet {
-	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
+	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBets), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
 	return ArrayOfMutableBet{objID: arrID}
 }
 
 func (s MutableFairRouletteState) LastWinningNumber() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateLastWinningNumber])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateLastWinningNumber))
 }
 
 func (s MutableFairRouletteState) PlayPeriod() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxStatePlayPeriod])
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(StatePlayPeriod))
 }
 
 func (s MutableFairRouletteState) RoundNumber() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateRoundNumber])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateRoundNumber))
 }
 
 func (s MutableFairRouletteState) RoundStartedAt() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxStateRoundStartedAt])
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(StateRoundStartedAt))
 }
 
 func (s MutableFairRouletteState) RoundStatus() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, idxMap[IdxStateRoundStatus])
+	return wasmlib.NewScMutableInt16(s.id, wasmlib.KeyID(StateRoundStatus))
 }
