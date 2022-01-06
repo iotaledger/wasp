@@ -64,11 +64,19 @@ export class ImmutableMintParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScImmutableHash {
 		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
+
+    tokenURI(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenURI));
+	}
 }
 
 export class MutableMintParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScMutableHash {
 		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
+	}
+
+    tokenURI(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenURI));
 	}
 }
 

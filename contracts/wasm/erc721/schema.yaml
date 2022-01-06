@@ -30,6 +30,7 @@ state:
   approvedAccounts: map[Hash]AgentID // approved token controller agents
   balances: map[AgentID]Uint64 // number of tokens held by owners
   approvedOperators: map[AgentID]Operators // approved operators per owner
+  tokenURIs: map[Hash]String // token uri per token id
 funcs:
   approve:
     params:
@@ -45,6 +46,7 @@ funcs:
   mint:
     params:
       tokenID: Hash // New token id
+      tokenURI: String? // Optional token URI that overrides default
   safeTransferFrom:
     params:
       from: AgentID // from account

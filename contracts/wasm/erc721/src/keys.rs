@@ -11,33 +11,35 @@ use wasmlib::*;
 
 use crate::*;
 
-pub(crate) const IDX_PARAM_APPROVAL : usize = 0;
-pub(crate) const IDX_PARAM_APPROVED : usize = 1;
-pub(crate) const IDX_PARAM_DATA     : usize = 2;
-pub(crate) const IDX_PARAM_FROM     : usize = 3;
-pub(crate) const IDX_PARAM_NAME     : usize = 4;
-pub(crate) const IDX_PARAM_OPERATOR : usize = 5;
-pub(crate) const IDX_PARAM_OWNER    : usize = 6;
-pub(crate) const IDX_PARAM_SYMBOL   : usize = 7;
-pub(crate) const IDX_PARAM_TO       : usize = 8;
-pub(crate) const IDX_PARAM_TOKEN_ID : usize = 9;
+pub(crate) const IDX_PARAM_APPROVAL  : usize = 0;
+pub(crate) const IDX_PARAM_APPROVED  : usize = 1;
+pub(crate) const IDX_PARAM_DATA      : usize = 2;
+pub(crate) const IDX_PARAM_FROM      : usize = 3;
+pub(crate) const IDX_PARAM_NAME      : usize = 4;
+pub(crate) const IDX_PARAM_OPERATOR  : usize = 5;
+pub(crate) const IDX_PARAM_OWNER     : usize = 6;
+pub(crate) const IDX_PARAM_SYMBOL    : usize = 7;
+pub(crate) const IDX_PARAM_TO        : usize = 8;
+pub(crate) const IDX_PARAM_TOKEN_ID  : usize = 9;
+pub(crate) const IDX_PARAM_TOKEN_URI : usize = 10;
 
-pub(crate) const IDX_RESULT_AMOUNT    : usize = 10;
-pub(crate) const IDX_RESULT_APPROVAL  : usize = 11;
-pub(crate) const IDX_RESULT_APPROVED  : usize = 12;
-pub(crate) const IDX_RESULT_NAME      : usize = 13;
-pub(crate) const IDX_RESULT_OWNER     : usize = 14;
-pub(crate) const IDX_RESULT_SYMBOL    : usize = 15;
-pub(crate) const IDX_RESULT_TOKEN_URI : usize = 16;
+pub(crate) const IDX_RESULT_AMOUNT    : usize = 11;
+pub(crate) const IDX_RESULT_APPROVAL  : usize = 12;
+pub(crate) const IDX_RESULT_APPROVED  : usize = 13;
+pub(crate) const IDX_RESULT_NAME      : usize = 14;
+pub(crate) const IDX_RESULT_OWNER     : usize = 15;
+pub(crate) const IDX_RESULT_SYMBOL    : usize = 16;
+pub(crate) const IDX_RESULT_TOKEN_URI : usize = 17;
 
-pub(crate) const IDX_STATE_APPROVED_ACCOUNTS  : usize = 17;
-pub(crate) const IDX_STATE_APPROVED_OPERATORS : usize = 18;
-pub(crate) const IDX_STATE_BALANCES           : usize = 19;
-pub(crate) const IDX_STATE_NAME               : usize = 20;
-pub(crate) const IDX_STATE_OWNERS             : usize = 21;
-pub(crate) const IDX_STATE_SYMBOL             : usize = 22;
+pub(crate) const IDX_STATE_APPROVED_ACCOUNTS  : usize = 18;
+pub(crate) const IDX_STATE_APPROVED_OPERATORS : usize = 19;
+pub(crate) const IDX_STATE_BALANCES           : usize = 20;
+pub(crate) const IDX_STATE_NAME               : usize = 21;
+pub(crate) const IDX_STATE_OWNERS             : usize = 22;
+pub(crate) const IDX_STATE_SYMBOL             : usize = 23;
+pub(crate) const IDX_STATE_TOKEN_UR_IS        : usize = 24;
 
-pub const KEY_MAP_LEN: usize = 23;
+pub const KEY_MAP_LEN: usize = 25;
 
 pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
 	PARAM_APPROVAL,
@@ -50,6 +52,7 @@ pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
 	PARAM_SYMBOL,
 	PARAM_TO,
 	PARAM_TOKEN_ID,
+	PARAM_TOKEN_URI,
 	RESULT_AMOUNT,
 	RESULT_APPROVAL,
 	RESULT_APPROVED,
@@ -63,6 +66,7 @@ pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
 	STATE_NAME,
 	STATE_OWNERS,
 	STATE_SYMBOL,
+	STATE_TOKEN_UR_IS,
 ];
 
 pub static mut IDX_MAP: [Key32; KEY_MAP_LEN] = [Key32(0); KEY_MAP_LEN];

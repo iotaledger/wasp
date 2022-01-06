@@ -50,6 +50,17 @@ impl MapAgentIDToImmutableUint64 {
 }
 
 #[derive(Clone, Copy)]
+pub struct MapHashToImmutableString {
+	pub(crate) obj_id: i32,
+}
+
+impl MapHashToImmutableString {
+    pub fn get_string(&self, key: &ScHash) -> ScImmutableString {
+        ScImmutableString::new(self.obj_id, key.get_key_id())
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct ImmutableErc721State {
     pub(crate) id: i32,
 }
@@ -81,6 +92,11 @@ impl ImmutableErc721State {
 
     pub fn symbol(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, STATE_SYMBOL.get_key_id())
+	}
+
+    pub fn token_ur_is(&self) -> MapHashToImmutableString {
+		let map_id = get_object_id(self.id, STATE_TOKEN_UR_IS.get_key_id(), TYPE_MAP);
+		MapHashToImmutableString { obj_id: map_id }
 	}
 }
 
@@ -131,6 +147,21 @@ impl MapAgentIDToMutableUint64 {
 }
 
 #[derive(Clone, Copy)]
+pub struct MapHashToMutableString {
+	pub(crate) obj_id: i32,
+}
+
+impl MapHashToMutableString {
+    pub fn clear(&self) {
+        clear(self.obj_id);
+    }
+
+    pub fn get_string(&self, key: &ScHash) -> ScMutableString {
+        ScMutableString::new(self.obj_id, key.get_key_id())
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct MutableErc721State {
     pub(crate) id: i32,
 }
@@ -166,5 +197,10 @@ impl MutableErc721State {
 
     pub fn symbol(&self) -> ScMutableString {
 		ScMutableString::new(self.id, STATE_SYMBOL.get_key_id())
+	}
+
+    pub fn token_ur_is(&self) -> MapHashToMutableString {
+		let map_id = get_object_id(self.id, STATE_TOKEN_UR_IS.get_key_id(), TYPE_MAP);
+		MapHashToMutableString { obj_id: map_id }
 	}
 }

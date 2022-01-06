@@ -45,6 +45,18 @@ export class MapAgentIDToImmutableUint64 {
     }
 }
 
+export class MapHashToImmutableString {
+	objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    getString(key: wasmlib.ScHash): wasmlib.ScImmutableString {
+        return new wasmlib.ScImmutableString(this.objID, key.getKeyID());
+    }
+}
+
 export class ImmutableErc721State extends wasmlib.ScMapID {
     approvedAccounts(): sc.MapHashToImmutableAgentID {
 		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateApprovedAccounts), wasmlib.TYPE_MAP);
@@ -72,6 +84,11 @@ export class ImmutableErc721State extends wasmlib.ScMapID {
 
     symbol(): wasmlib.ScImmutableString {
 		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.StateSymbol));
+	}
+
+    tokenURIs(): sc.MapHashToImmutableString {
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateTokenURIs), wasmlib.TYPE_MAP);
+		return new sc.MapHashToImmutableString(mapID);
 	}
 }
 
@@ -124,6 +141,22 @@ export class MapAgentIDToMutableUint64 {
     }
 }
 
+export class MapHashToMutableString {
+	objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    clear(): void {
+        wasmlib.clear(this.objID);
+    }
+
+    getString(key: wasmlib.ScHash): wasmlib.ScMutableString {
+        return new wasmlib.ScMutableString(this.objID, key.getKeyID());
+    }
+}
+
 export class MutableErc721State extends wasmlib.ScMapID {
     asImmutable(): sc.ImmutableErc721State {
 		const imm = new sc.ImmutableErc721State();
@@ -157,5 +190,10 @@ export class MutableErc721State extends wasmlib.ScMapID {
 
     symbol(): wasmlib.ScMutableString {
 		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.StateSymbol));
+	}
+
+    tokenURIs(): sc.MapHashToMutableString {
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateTokenURIs), wasmlib.TYPE_MAP);
+		return new sc.MapHashToMutableString(mapID);
 	}
 }

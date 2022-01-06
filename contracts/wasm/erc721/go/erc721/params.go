@@ -81,12 +81,20 @@ func (s ImmutableMintParams) TokenID() wasmlib.ScImmutableHash {
 	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
+func (s ImmutableMintParams) TokenURI() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamTokenURI))
+}
+
 type MutableMintParams struct {
 	id int32
 }
 
 func (s MutableMintParams) TokenID() wasmlib.ScMutableHash {
 	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamTokenID))
+}
+
+func (s MutableMintParams) TokenURI() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamTokenURI))
 }
 
 type ImmutableSafeTransferFromParams struct {

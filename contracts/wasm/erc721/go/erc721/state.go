@@ -34,6 +34,14 @@ func (m MapAgentIDToImmutableUint64) GetUint64(key wasmlib.ScAgentID) wasmlib.Sc
 	return wasmlib.NewScImmutableUint64(m.objID, key.KeyID())
 }
 
+type MapHashToImmutableString struct {
+	objID int32
+}
+
+func (m MapHashToImmutableString) GetString(key wasmlib.ScHash) wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(m.objID, key.KeyID())
+}
+
 type ImmutableErc721State struct {
 	id int32
 }
@@ -64,6 +72,11 @@ func (s ImmutableErc721State) Owners() MapHashToImmutableAgentID {
 
 func (s ImmutableErc721State) Symbol() wasmlib.ScImmutableString {
 	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(StateSymbol))
+}
+
+func (s ImmutableErc721State) TokenURIs() MapHashToImmutableString {
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateTokenURIs), wasmlib.TYPE_MAP)
+	return MapHashToImmutableString{objID: mapID}
 }
 
 type MapHashToMutableAgentID struct {
@@ -103,6 +116,18 @@ func (m MapAgentIDToMutableUint64) GetUint64(key wasmlib.ScAgentID) wasmlib.ScMu
 	return wasmlib.NewScMutableUint64(m.objID, key.KeyID())
 }
 
+type MapHashToMutableString struct {
+	objID int32
+}
+
+func (m MapHashToMutableString) Clear() {
+	wasmlib.Clear(m.objID)
+}
+
+func (m MapHashToMutableString) GetString(key wasmlib.ScHash) wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(m.objID, key.KeyID())
+}
+
 type MutableErc721State struct {
 	id int32
 }
@@ -137,4 +162,9 @@ func (s MutableErc721State) Owners() MapHashToMutableAgentID {
 
 func (s MutableErc721State) Symbol() wasmlib.ScMutableString {
 	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(StateSymbol))
+}
+
+func (s MutableErc721State) TokenURIs() MapHashToMutableString {
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateTokenURIs), wasmlib.TYPE_MAP)
+	return MapHashToMutableString{objID: mapID}
 }

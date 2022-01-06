@@ -106,6 +106,10 @@ impl ImmutableMintParams {
     pub fn token_id(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
+
+    pub fn token_uri(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, PARAM_TOKEN_URI.get_key_id())
+	}
 }
 
 #[derive(Clone, Copy)]
@@ -116,6 +120,10 @@ pub struct MutableMintParams {
 impl MutableMintParams {
     pub fn token_id(&self) -> ScMutableHash {
 		ScMutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
+	}
+
+    pub fn token_uri(&self) -> ScMutableString {
+		ScMutableString::new(self.id, PARAM_TOKEN_URI.get_key_id())
 	}
 }
 

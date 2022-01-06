@@ -26,6 +26,7 @@ const (
 	ParamSymbol   = "s"
 	ParamTo       = "to"
 	ParamTokenID  = "tokenID"
+	ParamTokenURI = "tokenURI"
 )
 
 const (
@@ -45,6 +46,7 @@ const (
 	StateName              = "name"
 	StateOwners            = "owners"
 	StateSymbol            = "symbol"
+	StateTokenURIs         = "tokenURIs"
 )
 
 const (
