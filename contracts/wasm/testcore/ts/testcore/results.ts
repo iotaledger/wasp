@@ -10,81 +10,81 @@ import * as sc from "./index";
 
 export class ImmutableCallOnChainResults extends wasmlib.ScMapID {
     intValue(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultIntValue));
 	}
 }
 
 export class MutableCallOnChainResults extends wasmlib.ScMapID {
     intValue(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultIntValue));
 	}
 }
 
 export class ImmutableGetMintedSupplyResults extends wasmlib.ScMapID {
     mintedColor(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxResultMintedColor]);
+		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ResultMintedColor));
 	}
 
     mintedSupply(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultMintedSupply]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultMintedSupply));
 	}
 }
 
 export class MutableGetMintedSupplyResults extends wasmlib.ScMapID {
     mintedColor(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxResultMintedColor]);
+		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ResultMintedColor));
 	}
 
     mintedSupply(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultMintedSupply]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultMintedSupply));
 	}
 }
 
 export class ImmutableRunRecursionResults extends wasmlib.ScMapID {
     intValue(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultIntValue));
 	}
 }
 
 export class MutableRunRecursionResults extends wasmlib.ScMapID {
     intValue(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultIntValue));
 	}
 }
 
 export class ImmutableTestChainOwnerIDFullResults extends wasmlib.ScMapID {
     chainOwnerID(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxResultChainOwnerID]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultChainOwnerID));
 	}
 }
 
 export class MutableTestChainOwnerIDFullResults extends wasmlib.ScMapID {
     chainOwnerID(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxResultChainOwnerID]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultChainOwnerID));
 	}
 }
 
 export class ImmutableFibonacciResults extends wasmlib.ScMapID {
     intValue(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultIntValue));
 	}
 }
 
 export class MutableFibonacciResults extends wasmlib.ScMapID {
     intValue(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultIntValue]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultIntValue));
 	}
 }
 
 export class ImmutableGetCounterResults extends wasmlib.ScMapID {
     counter(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultCounter]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultCounter));
 	}
 }
 
 export class MutableGetCounterResults extends wasmlib.ScMapID {
     counter(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultCounter]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultCounter));
 	}
 }
 
@@ -170,24 +170,24 @@ export class MutableGetStringValueResults extends wasmlib.ScMapID {
 
 export class ImmutableTestChainOwnerIDViewResults extends wasmlib.ScMapID {
     chainOwnerID(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxResultChainOwnerID]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultChainOwnerID));
 	}
 }
 
 export class MutableTestChainOwnerIDViewResults extends wasmlib.ScMapID {
     chainOwnerID(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxResultChainOwnerID]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultChainOwnerID));
 	}
 }
 
 export class ImmutableTestSandboxCallResults extends wasmlib.ScMapID {
     sandboxCall(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxResultSandboxCall]);
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultSandboxCall));
 	}
 }
 
 export class MutableTestSandboxCallResults extends wasmlib.ScMapID {
     sandboxCall(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxResultSandboxCall]);
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultSandboxCall));
 	}
 }

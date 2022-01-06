@@ -14,51 +14,51 @@ type ImmutableGetInfoResults struct {
 }
 
 func (s ImmutableGetInfoResults) Bidders() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxResultBidders])
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultBidders))
 }
 
 func (s ImmutableGetInfoResults) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxResultColor])
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ResultColor))
 }
 
 func (s ImmutableGetInfoResults) Creator() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxResultCreator])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultCreator))
 }
 
 func (s ImmutableGetInfoResults) Deposit() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultDeposit])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultDeposit))
 }
 
 func (s ImmutableGetInfoResults) Description() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxResultDescription])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultDescription))
 }
 
 func (s ImmutableGetInfoResults) Duration() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxResultDuration])
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultDuration))
 }
 
 func (s ImmutableGetInfoResults) HighestBid() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultHighestBid])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultHighestBid))
 }
 
 func (s ImmutableGetInfoResults) HighestBidder() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxResultHighestBidder])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultHighestBidder))
 }
 
 func (s ImmutableGetInfoResults) MinimumBid() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultMinimumBid])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultMinimumBid))
 }
 
 func (s ImmutableGetInfoResults) NumTokens() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultNumTokens])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultNumTokens))
 }
 
 func (s ImmutableGetInfoResults) OwnerMargin() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultOwnerMargin])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultOwnerMargin))
 }
 
 func (s ImmutableGetInfoResults) WhenStarted() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultWhenStarted])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultWhenStarted))
 }
 
 type MutableGetInfoResults struct {
@@ -66,49 +66,49 @@ type MutableGetInfoResults struct {
 }
 
 func (s MutableGetInfoResults) Bidders() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxResultBidders])
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultBidders))
 }
 
 func (s MutableGetInfoResults) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxResultColor])
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ResultColor))
 }
 
 func (s MutableGetInfoResults) Creator() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxResultCreator])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultCreator))
 }
 
 func (s MutableGetInfoResults) Deposit() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultDeposit])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultDeposit))
 }
 
 func (s MutableGetInfoResults) Description() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxResultDescription])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultDescription))
 }
 
 func (s MutableGetInfoResults) Duration() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxResultDuration])
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultDuration))
 }
 
 func (s MutableGetInfoResults) HighestBid() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultHighestBid])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultHighestBid))
 }
 
 func (s MutableGetInfoResults) HighestBidder() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxResultHighestBidder])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultHighestBidder))
 }
 
 func (s MutableGetInfoResults) MinimumBid() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultMinimumBid])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultMinimumBid))
 }
 
 func (s MutableGetInfoResults) NumTokens() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultNumTokens])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultNumTokens))
 }
 
 func (s MutableGetInfoResults) OwnerMargin() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultOwnerMargin])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultOwnerMargin))
 }
 
 func (s MutableGetInfoResults) WhenStarted() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultWhenStarted])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultWhenStarted))
 }

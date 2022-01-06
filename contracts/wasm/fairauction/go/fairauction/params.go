@@ -14,7 +14,7 @@ type ImmutableFinalizeAuctionParams struct {
 }
 
 func (s ImmutableFinalizeAuctionParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 type MutableFinalizeAuctionParams struct {
@@ -22,7 +22,7 @@ type MutableFinalizeAuctionParams struct {
 }
 
 func (s MutableFinalizeAuctionParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 type ImmutablePlaceBidParams struct {
@@ -30,7 +30,7 @@ type ImmutablePlaceBidParams struct {
 }
 
 func (s ImmutablePlaceBidParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 type MutablePlaceBidParams struct {
@@ -38,7 +38,7 @@ type MutablePlaceBidParams struct {
 }
 
 func (s MutablePlaceBidParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 type ImmutableSetOwnerMarginParams struct {
@@ -46,7 +46,7 @@ type ImmutableSetOwnerMarginParams struct {
 }
 
 func (s ImmutableSetOwnerMarginParams) OwnerMargin() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamOwnerMargin])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamOwnerMargin))
 }
 
 type MutableSetOwnerMarginParams struct {
@@ -54,7 +54,7 @@ type MutableSetOwnerMarginParams struct {
 }
 
 func (s MutableSetOwnerMarginParams) OwnerMargin() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamOwnerMargin])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamOwnerMargin))
 }
 
 type ImmutableStartAuctionParams struct {
@@ -62,19 +62,19 @@ type ImmutableStartAuctionParams struct {
 }
 
 func (s ImmutableStartAuctionParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 func (s ImmutableStartAuctionParams) Description() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamDescription])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamDescription))
 }
 
 func (s ImmutableStartAuctionParams) Duration() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxParamDuration])
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamDuration))
 }
 
 func (s ImmutableStartAuctionParams) MinimumBid() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamMinimumBid])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamMinimumBid))
 }
 
 type MutableStartAuctionParams struct {
@@ -82,19 +82,19 @@ type MutableStartAuctionParams struct {
 }
 
 func (s MutableStartAuctionParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 func (s MutableStartAuctionParams) Description() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamDescription])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamDescription))
 }
 
 func (s MutableStartAuctionParams) Duration() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxParamDuration])
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamDuration))
 }
 
 func (s MutableStartAuctionParams) MinimumBid() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamMinimumBid])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamMinimumBid))
 }
 
 type ImmutableGetInfoParams struct {
@@ -102,7 +102,7 @@ type ImmutableGetInfoParams struct {
 }
 
 func (s ImmutableGetInfoParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 type MutableGetInfoParams struct {
@@ -110,5 +110,5 @@ type MutableGetInfoParams struct {
 }
 
 func (s MutableGetInfoParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamColor))
 }

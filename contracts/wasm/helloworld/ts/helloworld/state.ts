@@ -12,4 +12,9 @@ export class ImmutableHelloWorldState extends wasmlib.ScMapID {
 }
 
 export class MutableHelloWorldState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableHelloWorldState {
+		const imm = new sc.ImmutableHelloWorldState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
 }

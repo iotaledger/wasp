@@ -56,6 +56,7 @@ impl MutableGetBlobFieldResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToImmutableInt32 {
 	pub(crate) obj_id: i32,
 }
@@ -77,6 +78,7 @@ impl ImmutableGetBlobInfoResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToMutableInt32 {
 	pub(crate) obj_id: i32,
 }
@@ -102,6 +104,7 @@ impl MutableGetBlobInfoResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapHashToImmutableInt32 {
 	pub(crate) obj_id: i32,
 }
@@ -123,6 +126,7 @@ impl ImmutableListBlobsResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapHashToMutableInt32 {
 	pub(crate) obj_id: i32,
 }

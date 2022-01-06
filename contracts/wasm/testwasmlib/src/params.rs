@@ -22,7 +22,7 @@ pub struct ImmutableArrayClearParams {
 
 impl ImmutableArrayClearParams {
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 }
 
@@ -33,7 +33,7 @@ pub struct MutableArrayClearParams {
 
 impl MutableArrayClearParams {
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 }
 
@@ -44,7 +44,7 @@ pub struct ImmutableArrayCreateParams {
 
 impl ImmutableArrayCreateParams {
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 }
 
@@ -55,7 +55,7 @@ pub struct MutableArrayCreateParams {
 
 impl MutableArrayCreateParams {
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 }
 
@@ -66,15 +66,15 @@ pub struct ImmutableArraySetParams {
 
 impl ImmutableArraySetParams {
     pub fn index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_INDEX))
+		ScImmutableInt32::new(self.id, PARAM_INDEX.get_key_id())
 	}
 
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 
     pub fn value(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_VALUE))
+		ScImmutableString::new(self.id, PARAM_VALUE.get_key_id())
 	}
 }
 
@@ -85,18 +85,19 @@ pub struct MutableArraySetParams {
 
 impl MutableArraySetParams {
     pub fn index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_INDEX))
+		ScMutableInt32::new(self.id, PARAM_INDEX.get_key_id())
 	}
 
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 
     pub fn value(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_VALUE))
+		ScMutableString::new(self.id, PARAM_VALUE.get_key_id())
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToImmutableBytes {
 	pub(crate) obj_id: i32,
 }
@@ -114,51 +115,51 @@ pub struct ImmutableParamTypesParams {
 
 impl ImmutableParamTypesParams {
     pub fn address(&self) -> ScImmutableAddress {
-		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+		ScImmutableAddress::new(self.id, PARAM_ADDRESS.get_key_id())
 	}
 
     pub fn agent_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+		ScImmutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
 	}
 
     pub fn bool(&self) -> ScImmutableBool {
-		ScImmutableBool::new(self.id, idx_map(IDX_PARAM_BOOL))
+		ScImmutableBool::new(self.id, PARAM_BOOL.get_key_id())
 	}
 
     pub fn bytes(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.id, idx_map(IDX_PARAM_BYTES))
+		ScImmutableBytes::new(self.id, PARAM_BYTES.get_key_id())
 	}
 
     pub fn chain_id(&self) -> ScImmutableChainID {
-		ScImmutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScImmutableChainID::new(self.id, PARAM_CHAIN_ID.get_key_id())
 	}
 
     pub fn color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+		ScImmutableColor::new(self.id, PARAM_COLOR.get_key_id())
 	}
 
     pub fn hash(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_HASH))
+		ScImmutableHash::new(self.id, PARAM_HASH.get_key_id())
 	}
 
     pub fn hname(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, idx_map(IDX_PARAM_HNAME))
+		ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
 	}
 
     pub fn int16(&self) -> ScImmutableInt16 {
-		ScImmutableInt16::new(self.id, idx_map(IDX_PARAM_INT16))
+		ScImmutableInt16::new(self.id, PARAM_INT16.get_key_id())
 	}
 
     pub fn int32(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_INT32))
+		ScImmutableInt32::new(self.id, PARAM_INT32.get_key_id())
 	}
 
     pub fn int64(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_INT64))
+		ScImmutableInt64::new(self.id, PARAM_INT64.get_key_id())
 	}
 
     pub fn int8(&self) -> ScImmutableInt8 {
-		ScImmutableInt8::new(self.id, idx_map(IDX_PARAM_INT8))
+		ScImmutableInt8::new(self.id, PARAM_INT8.get_key_id())
 	}
 
     pub fn param(&self) -> MapStringToImmutableBytes {
@@ -166,30 +167,31 @@ impl ImmutableParamTypesParams {
 	}
 
     pub fn request_id(&self) -> ScImmutableRequestID {
-		ScImmutableRequestID::new(self.id, idx_map(IDX_PARAM_REQUEST_ID))
+		ScImmutableRequestID::new(self.id, PARAM_REQUEST_ID.get_key_id())
 	}
 
     pub fn string(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_STRING))
+		ScImmutableString::new(self.id, PARAM_STRING.get_key_id())
 	}
 
     pub fn uint16(&self) -> ScImmutableUint16 {
-		ScImmutableUint16::new(self.id, idx_map(IDX_PARAM_UINT16))
+		ScImmutableUint16::new(self.id, PARAM_UINT16.get_key_id())
 	}
 
     pub fn uint32(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, idx_map(IDX_PARAM_UINT32))
+		ScImmutableUint32::new(self.id, PARAM_UINT32.get_key_id())
 	}
 
     pub fn uint64(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.id, idx_map(IDX_PARAM_UINT64))
+		ScImmutableUint64::new(self.id, PARAM_UINT64.get_key_id())
 	}
 
     pub fn uint8(&self) -> ScImmutableUint8 {
-		ScImmutableUint8::new(self.id, idx_map(IDX_PARAM_UINT8))
+		ScImmutableUint8::new(self.id, PARAM_UINT8.get_key_id())
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToMutableBytes {
 	pub(crate) obj_id: i32,
 }
@@ -211,51 +213,51 @@ pub struct MutableParamTypesParams {
 
 impl MutableParamTypesParams {
     pub fn address(&self) -> ScMutableAddress {
-		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+		ScMutableAddress::new(self.id, PARAM_ADDRESS.get_key_id())
 	}
 
     pub fn agent_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+		ScMutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
 	}
 
     pub fn bool(&self) -> ScMutableBool {
-		ScMutableBool::new(self.id, idx_map(IDX_PARAM_BOOL))
+		ScMutableBool::new(self.id, PARAM_BOOL.get_key_id())
 	}
 
     pub fn bytes(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.id, idx_map(IDX_PARAM_BYTES))
+		ScMutableBytes::new(self.id, PARAM_BYTES.get_key_id())
 	}
 
     pub fn chain_id(&self) -> ScMutableChainID {
-		ScMutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+		ScMutableChainID::new(self.id, PARAM_CHAIN_ID.get_key_id())
 	}
 
     pub fn color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.id, idx_map(IDX_PARAM_COLOR))
+		ScMutableColor::new(self.id, PARAM_COLOR.get_key_id())
 	}
 
     pub fn hash(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_HASH))
+		ScMutableHash::new(self.id, PARAM_HASH.get_key_id())
 	}
 
     pub fn hname(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, idx_map(IDX_PARAM_HNAME))
+		ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
 	}
 
     pub fn int16(&self) -> ScMutableInt16 {
-		ScMutableInt16::new(self.id, idx_map(IDX_PARAM_INT16))
+		ScMutableInt16::new(self.id, PARAM_INT16.get_key_id())
 	}
 
     pub fn int32(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_INT32))
+		ScMutableInt32::new(self.id, PARAM_INT32.get_key_id())
 	}
 
     pub fn int64(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_INT64))
+		ScMutableInt64::new(self.id, PARAM_INT64.get_key_id())
 	}
 
     pub fn int8(&self) -> ScMutableInt8 {
-		ScMutableInt8::new(self.id, idx_map(IDX_PARAM_INT8))
+		ScMutableInt8::new(self.id, PARAM_INT8.get_key_id())
 	}
 
     pub fn param(&self) -> MapStringToMutableBytes {
@@ -263,27 +265,27 @@ impl MutableParamTypesParams {
 	}
 
     pub fn request_id(&self) -> ScMutableRequestID {
-		ScMutableRequestID::new(self.id, idx_map(IDX_PARAM_REQUEST_ID))
+		ScMutableRequestID::new(self.id, PARAM_REQUEST_ID.get_key_id())
 	}
 
     pub fn string(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_STRING))
+		ScMutableString::new(self.id, PARAM_STRING.get_key_id())
 	}
 
     pub fn uint16(&self) -> ScMutableUint16 {
-		ScMutableUint16::new(self.id, idx_map(IDX_PARAM_UINT16))
+		ScMutableUint16::new(self.id, PARAM_UINT16.get_key_id())
 	}
 
     pub fn uint32(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, idx_map(IDX_PARAM_UINT32))
+		ScMutableUint32::new(self.id, PARAM_UINT32.get_key_id())
 	}
 
     pub fn uint64(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.id, idx_map(IDX_PARAM_UINT64))
+		ScMutableUint64::new(self.id, PARAM_UINT64.get_key_id())
 	}
 
     pub fn uint8(&self) -> ScMutableUint8 {
-		ScMutableUint8::new(self.id, idx_map(IDX_PARAM_UINT8))
+		ScMutableUint8::new(self.id, PARAM_UINT8.get_key_id())
 	}
 }
 
@@ -294,11 +296,11 @@ pub struct ImmutableTriggerEventParams {
 
 impl ImmutableTriggerEventParams {
     pub fn address(&self) -> ScImmutableAddress {
-		ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+		ScImmutableAddress::new(self.id, PARAM_ADDRESS.get_key_id())
 	}
 
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 }
 
@@ -309,11 +311,11 @@ pub struct MutableTriggerEventParams {
 
 impl MutableTriggerEventParams {
     pub fn address(&self) -> ScMutableAddress {
-		ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+		ScMutableAddress::new(self.id, PARAM_ADDRESS.get_key_id())
 	}
 
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 }
 
@@ -324,7 +326,7 @@ pub struct ImmutableArrayLengthParams {
 
 impl ImmutableArrayLengthParams {
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 }
 
@@ -335,7 +337,7 @@ pub struct MutableArrayLengthParams {
 
 impl MutableArrayLengthParams {
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 }
 
@@ -346,11 +348,11 @@ pub struct ImmutableArrayValueParams {
 
 impl ImmutableArrayValueParams {
     pub fn index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_INDEX))
+		ScImmutableInt32::new(self.id, PARAM_INDEX.get_key_id())
 	}
 
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 }
 
@@ -361,11 +363,11 @@ pub struct MutableArrayValueParams {
 
 impl MutableArrayValueParams {
     pub fn index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_INDEX))
+		ScMutableInt32::new(self.id, PARAM_INDEX.get_key_id())
 	}
 
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 }
 
@@ -376,11 +378,11 @@ pub struct ImmutableBlockRecordParams {
 
 impl ImmutableBlockRecordParams {
     pub fn block_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_BLOCK_INDEX))
+		ScImmutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 
     pub fn record_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_RECORD_INDEX))
+		ScImmutableInt32::new(self.id, PARAM_RECORD_INDEX.get_key_id())
 	}
 }
 
@@ -391,11 +393,11 @@ pub struct MutableBlockRecordParams {
 
 impl MutableBlockRecordParams {
     pub fn block_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_BLOCK_INDEX))
+		ScMutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 
     pub fn record_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_RECORD_INDEX))
+		ScMutableInt32::new(self.id, PARAM_RECORD_INDEX.get_key_id())
 	}
 }
 
@@ -406,7 +408,7 @@ pub struct ImmutableBlockRecordsParams {
 
 impl ImmutableBlockRecordsParams {
     pub fn block_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_BLOCK_INDEX))
+		ScImmutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }
 
@@ -417,6 +419,6 @@ pub struct MutableBlockRecordsParams {
 
 impl MutableBlockRecordsParams {
     pub fn block_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_PARAM_BLOCK_INDEX))
+		ScMutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }

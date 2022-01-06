@@ -11,6 +11,7 @@ use wasmlib::*;
 use wasmlib::host::*;
 use crate::structs::*;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableAgentID {
 	pub(crate) obj_id: i32,
 }
@@ -27,6 +28,7 @@ impl ArrayOfImmutableAgentID {
 
 pub type ImmutableBidderList = ArrayOfImmutableAgentID;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableAgentID {
 	pub(crate) obj_id: i32,
 }
@@ -47,6 +49,7 @@ impl ArrayOfMutableAgentID {
 
 pub type MutableBidderList = ArrayOfMutableAgentID;
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToImmutableBid {
 	pub(crate) obj_id: i32,
 }
@@ -59,6 +62,7 @@ impl MapAgentIDToImmutableBid {
 
 pub type ImmutableBids = MapAgentIDToImmutableBid;
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToMutableBid {
 	pub(crate) obj_id: i32,
 }

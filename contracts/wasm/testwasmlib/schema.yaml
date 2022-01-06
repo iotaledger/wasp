@@ -68,6 +68,7 @@ funcs:
       uint64: Uint64?
 
   random:
+
   triggerEvent:
     params:
       name: String

@@ -10,6 +10,7 @@
 use wasmlib::*;
 use wasmlib::host::*;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableString {
 	pub(crate) obj_id: i32,
 }
@@ -26,6 +27,7 @@ impl ArrayOfImmutableString {
 
 pub type ImmutableStringArray = ArrayOfImmutableString;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableString {
 	pub(crate) obj_id: i32,
 }

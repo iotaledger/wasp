@@ -23,12 +23,12 @@ export class MapStringToImmutableStringArray {
 
 export class ImmutableTestWasmLibState extends wasmlib.ScMapID {
     arrays(): sc.MapStringToImmutableStringArray {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateArrays], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateArrays), wasmlib.TYPE_MAP);
 		return new sc.MapStringToImmutableStringArray(mapID);
 	}
 
     random(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateRandom]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateRandom));
 	}
 }
 
@@ -50,12 +50,18 @@ export class MapStringToMutableStringArray {
 }
 
 export class MutableTestWasmLibState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableTestWasmLibState {
+		const imm = new sc.ImmutableTestWasmLibState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     arrays(): sc.MapStringToMutableStringArray {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateArrays], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateArrays), wasmlib.TYPE_MAP);
 		return new sc.MapStringToMutableStringArray(mapID);
 	}
 
     random(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateRandom]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateRandom));
 	}
 }

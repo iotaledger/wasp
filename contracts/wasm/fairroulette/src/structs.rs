@@ -11,6 +11,7 @@
 use wasmlib::*;
 use wasmlib::host::*;
 
+#[derive(Clone)]
 pub struct Bet {
     pub amount : i64, 
     pub better : ScAgentID, 
@@ -36,6 +37,7 @@ impl Bet {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct ImmutableBet {
     pub(crate) obj_id: i32,
     pub(crate) key_id: Key32,
@@ -51,6 +53,7 @@ impl ImmutableBet {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MutableBet {
     pub(crate) obj_id: i32,
     pub(crate) key_id: Key32,
