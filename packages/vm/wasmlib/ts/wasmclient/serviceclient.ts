@@ -1,25 +1,29 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasmclient from "./index"
-import {Configuration, IConfiguration} from "./configuration"
+import * as wasmclient from "./index";
+import { Configuration, IConfiguration } from "./configuration";
+import { AccountsService } from "./core_services/accounts_service";
 
 export class ServiceClient {
     waspClient: wasmclient.WaspClient;
+    goShimmerClient: wasmclient.GoShimmerClient;
     configuration: Configuration;
 
-    constructor(config: Configuration) {
-        this.configuration = config;
-        this.waspClient = new wasmclient.WaspClient(config.waspApiUrl, config.goShimmerApiUrl);
+    constructor(configuration: Configuration) {
+        this.configuration = configuration;
+        this.waspClient = new wasmclient.WaspClient(configuration.waspApiUrl);
+        const accountsService = new AccountsService(this);
+        this.goShimmerClient = new wasmclient.GoShimmerClient(configuration, accountsService);
     }
 
     static default(): ServiceClient {
         //TODO use TCP instead of websocket for event listener?
-        const defaultConfiguration : IConfiguration = {
+        const defaultConfiguration: IConfiguration = {
             seed: null,
             waspWebSocketUrl: "ws://127.0.0.1:9090",
             waspApiUrl: "127.0.0.1:9090",
-            goShimmerApiUrl: "127.0.0.1:8080"
+            goShimmerApiUrl: "",
         };
         return new ServiceClient(new Configuration(defaultConfiguration)); // "127.0.0.1:5550");
     }

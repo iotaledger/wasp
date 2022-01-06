@@ -4,6 +4,7 @@
 import * as wasmclient from "./index"
 import {Base58} from "./crypto";
 import {Buffer} from "./buffer";
+import { Colors } from "./colors";
 
 export class Transfer {
     private xfer = new Map<string, wasmclient.Uint64>();
@@ -23,6 +24,12 @@ export class Transfer {
             color = "11111111111111111111111111111111"
         }
         this.xfer.set(color, amount);
+    }
+
+    get(color: string): wasmclient.Uint64 {
+        if (color == Colors.IOTA_COLOR) color = Colors.IOTA_COLOR_STRING;
+        const amount = this.xfer.get(color) ?? 0n;
+        return amount;
     }
 
     // Encode returns a byte array that encodes the Transfer as follows:
