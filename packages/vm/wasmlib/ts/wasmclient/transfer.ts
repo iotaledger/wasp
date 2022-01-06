@@ -6,7 +6,7 @@ import {Base58} from "./crypto";
 import {Buffer} from "./buffer";
 
 export class Transfer {
-    private xfer = new Map<Buffer, wasmclient.Uint64>();
+    private xfer = new Map<string, wasmclient.Uint64>();
 
     static iotas(amount: wasmclient.Uint64): Transfer {
         return Transfer.tokens("IOTA", amount);
@@ -22,7 +22,7 @@ export class Transfer {
         if (color == "IOTA") {
             color = "11111111111111111111111111111111"
         }
-        this.xfer.set(Base58.decode(color), amount);
+        this.xfer.set(color, amount);
     }
 
     // Encode returns a byte array that encodes the Transfer as follows:
@@ -32,25 +32,26 @@ export class Transfer {
     // transfer count. Next for each color emit the 32-byte color value,
     // and then the 8-byte amount.
     encode(): wasmclient.Bytes {
-        const keys = new Array<Buffer>();
+        const keys = new Array<string>();
         for (const [key, val] of this.xfer) {
             // filter out zero transfers
             if (val != BigInt(0)) {
                 keys.push(key);
             }
         }
-        keys.sort((lhs, rhs) => lhs.compare(rhs));
+        keys.sort((lhs, rhs) => lhs.localeCompare(rhs));
 
         let buf = Buffer.alloc(4);
         buf.writeUInt32LE(keys.length, 0);
         for (const key of keys) {
             const val = this.xfer.get(key);
             if (!val) {
-                throw new Error("Transfer.encode: missing amount");
+                throw new Error("Transfer.encode: missing amount?");
             }
+            const keyBuf = Base58.decode(key);
             const valBuf = Buffer.alloc(8);
             valBuf.writeBigUInt64LE(val, 0);
-            buf = Buffer.concat([buf, key, valBuf]);
+            buf = Buffer.concat([buf, keyBuf, valBuf]);
         }
         return buf;
     }
