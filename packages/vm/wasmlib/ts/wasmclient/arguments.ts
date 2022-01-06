@@ -10,6 +10,11 @@ import {Buffer} from "./buffer";
 export class Arguments {
 	private args = new Map<string, wasmclient.Bytes>();
 
+	get(key: string): wasmclient.Bytes {
+        const bytes = this.args.get(key);
+        return bytes ?? Buffer.alloc(0);
+    }
+
 	private set(key: string, val: wasmclient.Bytes): void {
 		this.args.set(key, val);
 	}
@@ -96,6 +101,11 @@ export class Arguments {
 		this.setBase58(key, val, wasmclient.TYPE_REQUEST_ID);
 	}
 	
+	getString(key: string): string {
+        const bytes = this.get(key);
+        return bytes.toString();
+    }
+
 	setString(key: string, val: string): void {
 		this.set(key, Buffer.from(val));
 	}
