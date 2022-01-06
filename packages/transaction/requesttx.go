@@ -66,7 +66,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	if err != nil {
 		return nil, err
 	}
-	if remainder.Amount > 0 {
+	if remainder != nil {
 		outputs = append(outputs, remainder)
 	}
 	essence := &iotago.TransactionEssence{

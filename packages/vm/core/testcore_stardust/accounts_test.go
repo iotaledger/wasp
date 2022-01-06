@@ -426,16 +426,20 @@ func initTest(t *testing.T) *testValues {
 }
 
 func TestDepositIotas(t *testing.T) {
-	for i := 0; i < 5; i++ {
-		t.Run("iotas #"+strconv.Itoa(i), func(t *testing.T) {
+	// the test check how request transaction construction functions adjust iotas to the minimum needed for the
+	// dust deposit. If byte cost is 185, anything below that fill be topped up to 185, above that no adjustment is needed
+	for _, addIotas := range []uint64{0, 50, 150, 200, 1000} {
+		t.Run("add iotas "+strconv.Itoa(int(addIotas)), func(t *testing.T) {
 			v := initTest(t)
-			expected := uint64(i * 50)
-			v.req = v.req.AddIotas(expected)
+			v.req = v.req.AddIotas(addIotas)
 			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.sender)
 			require.NoError(t, err)
 
 			byteCost := tx.Essence.Outputs[0].VByteCost(v.env.RentStructure(), nil)
 			t.Logf("byteCost = %d", byteCost)
+
+			// here we calculate what is expected
+			expected := addIotas
 			if expected < byteCost {
 				expected = byteCost
 			}
@@ -445,25 +449,36 @@ func TestDepositIotas(t *testing.T) {
 }
 
 func TestDepositNativeTokens(t *testing.T) {
-	for i := 0; i < 5; i++ {
-		t.Run("iotas+nt #"+strconv.Itoa(i), func(t *testing.T) {
-			v := initTest(t)
-			_, err := v.env.L1Ledger().GetFundsFromFaucet(v.senderAddr)
-			require.NoError(t, err)
-
-			expected := uint64(i * 50)
-			v.req = v.req.AddIotas(expected)
-			rndTokens := tpkg.RandSortNativeTokens(i)
-			v.req = v.req.AddNativeTokens(rndTokens...)
-			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.sender)
-			require.NoError(t, err)
-
-			byteCost := tx.Essence.Outputs[0].VByteCost(v.env.RentStructure(), nil)
-			t.Logf("byteCost = %d", byteCost)
-			if expected < byteCost {
-				expected = byteCost
-			}
-			v.ch.AssertL2AccountIotas(v.senderAgentID, expected)
-		})
-	}
+	t.Run("deposit 1 native token", func(t *testing.T) {
+		v := initTest(t)
+		v.env.AssertL1AddressIotas(v.senderAddr, solo.Saldo)
+		rndTokens := tpkg.RandSortNativeTokens(1)
+		v.req = v.req.AddNativeTokens(rndTokens...)
+		_, _, err := v.ch.PostRequestSyncTx(v.req, v.sender)
+		require.NoError(t, err)
+	})
+	//t.Run("add many native tokens", func(t *testing.T) {
+	//	for _, genTokens := range []int{1, 5, 10}  {
+	//		t.Run("iotas+nt "+strconv.Itoa(genTokens), func(t *testing.T) {
+	//			v := initTest(t)
+	//			_, err := v.env.L1Ledger().GetFundsFromFaucet(v.senderAddr)
+	//			require.NoError(t, err)
+	//
+	//			expected := uint64(i * 50)
+	//			v.req = v.req.AddIotas(expected)
+	//			rndTokens := tpkg.RandSortNativeTokens(i)
+	//			v.req = v.req.AddNativeTokens(rndTokens...)
+	//			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.sender)
+	//			require.NoError(t, err)
+	//
+	//			byteCost := tx.Essence.Outputs[0].VByteCost(v.env.RentStructure(), nil)
+	//			t.Logf("byteCost = %d", byteCost)
+	//			if expected < byteCost {
+	//				expected = byteCost
+	//			}
+	//			v.ch.AssertL2AccountIotas(v.senderAgentID, expected)
+	//		})
+	//	}
+	//
+	//})
 }
