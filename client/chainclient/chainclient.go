@@ -58,7 +58,7 @@ func (c *Client) Post1Request(
 	// 		ChainID:    c.ChainID,
 	// 		Contract:   contractHname,
 	// 		EntryPoint: entryPoint,
-	// 		Transfer:   par.Transfer,
+	// 		Allowance:   par.Allowance,
 	// 		Args:       par.Args,
 	// 	}},
 	// })
@@ -79,7 +79,7 @@ func (c *Client) PostOffLedgerRequest(
 	// 	c.nonces[c.KeyPair.PublicKey]++
 	// 	par.Nonce = c.nonces[c.KeyPair.PublicKey]
 	// }
-	// offledgerReq := request.NewOffLedger(c.ChainID, contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
+	// offledgerReq := request.NewOffLedger(c.ChainID, contractHname, entrypoint, par.Args).AddAllowance(par.Allowance)
 	// offledgerReq.WithNonce(par.Nonce)
 	// offledgerReq.Sign(c.KeyPair)
 	// return offledgerReq, c.WaspClient.PostOffLedgerRequest(c.ChainID, offledgerReq)
@@ -111,13 +111,13 @@ func (par *PostRequestParams) WithTransferEncoded(colval ...interface{}) *PostRe
 	// if len(colval)%2 != 0 {
 	// 	panic("WithTransferEncode: len(params) % 2 != 0")
 	// }
-	// par.Transfer = colored.NewBalances()
+	// par.Allowance = colored.NewBalances()
 	// for i := 0; i < len(colval)/2; i++ {
 	// 	key, ok := colval[2*i].(colored.Color)
 	// 	if !ok {
 	// 		panic("toMap: color.Color expected")
 	// 	}
-	// 	par.Transfer.Set(key, encodeIntToUint64(colval[2*i+1]))
+	// 	par.Allowance.Set(key, encodeIntToUint64(colval[2*i+1]))
 	// }
 	// return par
 }

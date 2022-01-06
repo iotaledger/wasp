@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -98,21 +97,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// adjust the common account with the dust consumed or returned by internal UTXOs
 	// If common account does not contain enough funds for internal dust, it panics with
 	// vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit and the request will be skipped
-	switch {
-	case dustAdjustmentOfTheCommonAccount > 0:
-		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-			Iotas: uint64(dustAdjustmentOfTheCommonAccount),
-		})
-	case dustAdjustmentOfTheCommonAccount < 0:
-		err := util.CatchPanicReturnError(func() {
-			vmctx.debitFromAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-				Iotas: uint64(-dustAdjustmentOfTheCommonAccount),
-			})
-		}, accounts.ErrNotEnoughFunds)
-		if err != nil {
-			panic(vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
-		}
-	}
+	vmctx.adjustL2IotasIfNeeded(dustAdjustmentOfTheCommonAccount)
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
 	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
 }
@@ -184,7 +169,7 @@ func checkVMPluginPanic(r interface{}) error {
 			panic(err)
 		}
 	}
-	return xerrors.Errorf("exception: '%w'", r)
+	return xerrors.Errorf("%v", r)
 }
 
 // callFromRequest is the call itself. Assumes sc exists
@@ -196,7 +181,7 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 	targetContract := vmctx.targetContract()
 	if targetContract == nil {
 		vmctx.GasBurn(gas.NotFoundTarget)
-		panic(xerrors.Errorf("%w: target contract: '%s'", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract.String()))
+		panic(xerrors.Errorf("%v: target = %s", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract))
 	}
 	return vmctx.callByProgramHash(
 		targetContract.Hname(),

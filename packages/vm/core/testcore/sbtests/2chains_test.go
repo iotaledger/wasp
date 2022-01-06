@@ -41,7 +41,7 @@ func test2Chains(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name,
 		accounts.ParamAgentID, contractAgentID2)
-	_, err := chain1.PostRequestSync(req.AddIotas(42), userWallet)
+	_, err := chain1.PostRequestSync(req.AddAssetsIotas(42), userWallet)
 	require.NoError(t, err)
 
 	env.AssertAddressIotas(userAddress, solo.Saldo-42)
@@ -61,7 +61,7 @@ func test2Chains(t *testing.T, w bool) {
 	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawToChain.Name,
 		sbtestsc.ParamChainID, chain1.ChainID)
 
-	_, err = chain2.PostRequestSync(req.AddIotas(1), userWallet)
+	_, err = chain2.PostRequestSync(req.AddAssetsIotas(1), userWallet)
 	require.NoError(t, err)
 
 	extra := 0

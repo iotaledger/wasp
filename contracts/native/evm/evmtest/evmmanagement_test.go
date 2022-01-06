@@ -47,14 +47,14 @@ func TestRequestGasFees(t *testing.T) {
 		managerAgentID := iscp.NewAgentID(soloChain.ChainID.AsAddress(), iscp.Hn(evmChainMgmtContract.Name))
 		_, err = soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, managerAgentID).
-				AddIotas(1),
+				AddAssetsIotas(1),
 			soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
 
 		// claim ownership
 		_, err = soloChain.PostRequestSync(
-			solo.NewCallParams(evmChainMgmtContract.Name, mgmtFuncClaimOwnership.Name).AddIotas(1),
+			solo.NewCallParams(evmChainMgmtContract.Name, mgmtFuncClaimOwnership.Name).AddAssetsIotas(1),
 			soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)

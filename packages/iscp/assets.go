@@ -66,8 +66,23 @@ func AssetsFromNativeTokenSum(iotas uint64, tokens iotago.NativeTokenSum) *Asset
 	return ret
 }
 
-func AssetsFromOutput(iotago.Output) *Assets {
-	panic("TODO implement")
+func AssetsFromOutput(o iotago.Output) *Assets {
+	switch o := o.(type) {
+	case *iotago.ExtendedOutput:
+		return AssetsFromExtendedOutput(o)
+	default:
+		panic(fmt.Sprintf("AssetsFromOutput not implemented for %T", o))
+	}
+}
+
+func AssetsFromExtendedOutput(o *iotago.ExtendedOutput) *Assets {
+	ret := &Assets{
+		Iotas: o.Amount,
+	}
+	if len(o.NativeTokens) > 0 {
+		ret.Tokens = o.NativeTokens.Clone()
+	}
+	return ret
 }
 
 func NativeTokenIDFromBytes(data []byte) (iotago.NativeTokenID, error) {
@@ -159,6 +174,12 @@ func AssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
 }
 
 func (a *Assets) Equals(b *Assets) bool {
+	if a == b {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
 	if a.Iotas != b.Iotas {
 		return false
 	}
@@ -214,6 +235,7 @@ func (a *Assets) MustFitsTheBudget(budget *Assets) bool {
 	}
 	return ret
 }
+
 func (a *Assets) Add(b *Assets) *Assets {
 	a.Iotas += b.Iotas
 	resultTokens := a.Tokens.MustSet()
@@ -235,7 +257,12 @@ func (a *Assets) IsEmpty() bool {
 	return a == nil || a.Iotas == 0 && len(a.Tokens) == 0
 }
 
-func (a *Assets) AddToken(tokenID iotago.NativeTokenID, amount *big.Int) *Assets {
+func (a *Assets) AddIotas(amount uint64) *Assets {
+	a.Iotas += amount
+	return a
+}
+
+func (a *Assets) AddNativeTokens(tokenID iotago.NativeTokenID, amount *big.Int) *Assets {
 	b := NewAssets(0, iotago.NativeTokens{
 		&iotago.NativeToken{
 			ID:     tokenID,
@@ -243,22 +270,6 @@ func (a *Assets) AddToken(tokenID iotago.NativeTokenID, amount *big.Int) *Assets
 		},
 	})
 	return a.Add(b)
-}
-
-//func (a *Assets) AddAsset(assetID []byte, amount *big.Int) *Assets {
-//	switch len(assetID) {
-//	case iotago.NativeTokenIDLength:
-//		return a.AddToken(NativeTokenIDFromBytes(assetID), amount)
-//	// TODO implement add NFTs
-//	case len(IotaAssetID):
-//		return a.AddIotas(amount.Uint64())
-//	}
-//	return a
-//}
-
-func (a *Assets) AddIotas(amount uint64) *Assets {
-	a.Iotas += amount
-	return a
 }
 
 func (a *Assets) ToDict() dict.Dict {

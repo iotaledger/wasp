@@ -27,7 +27,7 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 		sbtestsc.ParamCaller, userAgentID,
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
 		sbtestsc.ParamContractCreator, userAgentID)
-	_, err := chain.PostRequestSync(req.AddIotas(1), user)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), user)
 	require.NoError(t, err)
 }
 

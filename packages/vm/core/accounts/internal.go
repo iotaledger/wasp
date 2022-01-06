@@ -184,7 +184,7 @@ func creditToAccount(account *collections.Map, assets *iscp.Assets) {
 
 // DebitFromAccount takes out assets balance the on chain ledger. If not enough it panics
 func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Assets) {
-	if assets == nil || (assets.Iotas == 0 && len(assets.Tokens) == 0) {
+	if assets.IsEmpty() {
 		return
 	}
 	account := getAccount(state, agentID)

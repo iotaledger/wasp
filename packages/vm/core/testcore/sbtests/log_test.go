@@ -25,7 +25,7 @@ package sbtests
 // 	for i := 1; i < 6; i++ {
 // 		req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
 // 			sbtestsc.VarCounter, i)
-// 		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+// 		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 // 		require.NoError(t, err)
 // 	}
 
@@ -49,7 +49,7 @@ package sbtests
 // 	for i := 1; i < 6; i++ {
 // 		req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
 // 			sbtestsc.VarCounter, i)
-// 		_, err = chain.PostRequestSync(req.AddIotas(1), nil)
+// 		_, err = chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 // 		require.NoError(t, err)
 // 	}
 
@@ -71,7 +71,7 @@ package sbtests
 // 	setupTestSandboxSC(t, chain, nil, w)
 
 // 	req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogEventData.Name)
-// 	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+// 	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 // 	require.NoError(t, err)
 
 // 	res, err := chain.CallView(eventlog.Contract.Name, eventlog.FuncGetRecords.Name,
@@ -101,7 +101,7 @@ package sbtests
 // 		req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogEventData.Name,
 // 			sbtestsc.VarCounter, count)
 // 		count++
-// 		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+// 		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 // 		require.NoError(t, err)
 // 	}
 // 	// generic
@@ -109,7 +109,7 @@ package sbtests
 // 		req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
 // 			sbtestsc.VarCounter, count)
 // 		count++
-// 		_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+// 		_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 // 		require.NoError(t, err)
 // 	}
 // 	res, err := chain.CallView(eventlog.Contract.Name, eventlog.FuncGetRecords.Name,
@@ -146,7 +146,7 @@ package sbtests
 
 // 	req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
 // 		sbtestsc.VarCounter, solo.Saldo)
-// 	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+// 	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 // 	require.NoError(t, err)
 
 // 	res, err := chain.CallView(eventlog.Contract.Name, eventlog.FuncGetNumRecords.Name,
@@ -185,7 +185,7 @@ package sbtests
 // 	setupTestSandboxSC(t, chain, nil, w)
 
 // 	req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogDeploy.Name)
-// 	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+// 	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 // 	require.NoError(t, err)
 
 // 	// This call should return only one record which should be the type of TRDeploy
@@ -220,12 +220,12 @@ package sbtests
 // 	setupTestSandboxSC(t, chain, nil, w)
 
 // 	req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogEventData.Name)
-// 	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+// 	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 // 	require.NoError(t, err)
 
 // 	req = solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
 // 		sbtestsc.VarCounter, 33333)
-// 	_, err = chain.PostRequestSync(req.AddIotas(1), nil)
+// 	_, err = chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 // 	require.NoError(t, err)
 
 // 	/////Should return 4 logs records/////

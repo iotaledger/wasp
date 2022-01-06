@@ -48,7 +48,7 @@ func TestTutorial3(t *testing.T) {
 	require.NoError(t, err)
 
 	// call contract to store string
-	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").AddIotas(1)
+	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -69,7 +69,7 @@ func TestTutorial4(t *testing.T) {
 	require.NoError(t, err)
 
 	// call contract incorrectly (omit 'paramString')
-	req := solo.NewCallParams("example1", "storeString").AddIotas(1)
+	req := solo.NewCallParams("example1", "storeString").AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
@@ -92,7 +92,7 @@ func TestTutorial5(t *testing.T) {
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
 
 	// send 42 iotas from wallet to own account on-chain, controlled by the same wallet
-	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).AddIotas(42)
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).AddAssetsIotas(42)
 	_, err := chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
@@ -102,7 +102,7 @@ func TestTutorial5(t *testing.T) {
 	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 42)
 
 	// withdraw all iotas back to the sender
-	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).AddIotas(1)
+	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
@@ -127,7 +127,7 @@ func TestTutorial6(t *testing.T) {
 	chain.AssertL2AccountNativeToken(contractAgentID, colored.IOTA, 0) // empty on-chain
 	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 0)     // empty on-chain
 
-	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").AddIotas(42)
+	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").AddAssetsIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
@@ -154,7 +154,7 @@ func TestTutorial7(t *testing.T) {
 	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 0)     // empty
 
 	// missing parameter, request will panic
-	req := solo.NewCallParams("example1", "storeString").AddIotas(42)
+	req := solo.NewCallParams("example1", "storeString").AddAssetsIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.Error(t, err)
 
@@ -181,7 +181,7 @@ func TestTutorial8(t *testing.T) {
 
 	// the chain owner (default) send a request to the root contract to grant right to deploy
 	// contract on the chain to the use
-	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name, root.ParamDeployer, userAgentID).AddIotas(1)
+	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name, root.ParamDeployer, userAgentID).AddAssetsIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -205,7 +205,7 @@ func TestTutorial8(t *testing.T) {
 	// It also takes 1 iota for the request token
 	// Result is 42 iotas moved to the smart contract's account
 	req = solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").
-		AddIotas(42)
+		AddAssetsIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
@@ -217,7 +217,7 @@ func TestTutorial8(t *testing.T) {
 	// Out of 42 iotas 41 iota is coming back to the user's address, 1 iotas
 	// is accrued to the user on chain
 	req = solo.NewCallParams("example1", "withdrawIota")
-	req.AddIotas(1)
+	req.AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 

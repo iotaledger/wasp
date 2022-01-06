@@ -15,7 +15,7 @@ func TestSpawn(t *testing.T) {
 	_, _ = setupTestSandboxSC(t, chain, nil, false)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSpawn.Name)
-	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 
 	ret, err := chain.CallView(ScName+"_spawned", sbtestsc.FuncGetCounter.Name)

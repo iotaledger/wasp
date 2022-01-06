@@ -81,3 +81,7 @@ func (ch *Chain) AssertControlAddresses() {
 func (env *Solo) AssertL1AddressIotas(addr iotago.Address, expected uint64) {
 	require.EqualValues(env.T, int(expected), int(env.L1IotaBalance(addr)))
 }
+
+func (env *Solo) AssertL1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID, expected *big.Int) {
+	require.True(env.T, env.L1NativeTokenBalance(addr, tokenID).Cmp(expected) == 0)
+}

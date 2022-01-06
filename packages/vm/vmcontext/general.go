@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"golang.org/x/xerrors"
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
@@ -128,20 +127,21 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, assets ...*is
 	if !assetsToMove.MustFitsTheBudget(vmctx.Allowance()) {
 		panic(accounts.ErrNotEnoughAllowance)
 	}
+	caller := vmctx.Caller() // have to take it here because callCore changes that
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.MoveBetweenAccounts(s, vmctx.getCaller(), target, assetsToMove)
+		accounts.MoveBetweenAccounts(s, caller, target, assetsToMove)
 	})
 }
 
 func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 	sd, err := iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
 	if err != nil {
-		panic(xerrors.Errorf("StateAnchor: %w", err))
+		panic(err)
 	}
 	var nilAliasID iotago.AliasID
 	blockset, err := vmctx.task.AnchorOutput.FeatureBlocks().Set()
 	if err != nil {
-		panic(xerrors.Errorf("StateAnchor: %w", err))
+		panic(err)
 	}
 	senderBlock := blockset.SenderFeatureBlock()
 	var sender iotago.Address

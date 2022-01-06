@@ -17,7 +17,7 @@ func testGetSet(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
 		sbtestsc.ParamIntParamName, "ppp",
 		sbtestsc.ParamIntParamValue, 314)
-	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetInt.Name,
@@ -38,7 +38,7 @@ func testCallRecursive(t *testing.T, w bool) {
 		sbtestsc.ParamIntParamValue, 31,
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncRunRecursion.Hname())
-	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
@@ -81,7 +81,7 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 		sbtestsc.ParamIntParamValue, n,
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname())
-	ret, err := chain.PostRequestSync(req.AddIotas(1), nil)
+	ret, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))
 	require.NoError(t, err)

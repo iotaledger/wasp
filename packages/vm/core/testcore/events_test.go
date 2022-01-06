@@ -60,7 +60,7 @@ func TestManyEvents(t *testing.T) {
 
 	// post a request that issues too many events (nEvents)
 	tx, _, err := ch.PostRequestSyncTx(
-		solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name).AddIotas(1),
+		solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name).AddAssetsIotas(1),
 		nil,
 	)
 	require.Error(t, err) // error expected (too many events)
@@ -74,14 +74,14 @@ func TestManyEvents(t *testing.T) {
 		solo.NewCallParams(
 			governance.Contract.Name, governance.FuncSetChainInfo.Name,
 			governance.ParamMaxEventsPerRequest, uint16(nEvents),
-		).AddIotas(1),
+		).AddAssetsIotas(1),
 		nil,
 	)
 	require.NoError(t, err)
 
 	// check events are now saved
 	tx, _, err = ch.PostRequestSyncTx(
-		solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name).AddIotas(1),
+		solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name).AddAssetsIotas(1),
 		nil,
 	)
 	require.NoError(t, err)
@@ -96,7 +96,7 @@ func TestEventTooLarge(t *testing.T) {
 
 	// post a request that issues an event too large
 	tx, _, err := ch.PostRequestSyncTx(
-		solo.NewCallParams(manyEventsContract.Name, funcBigEvent.Name).AddIotas(1),
+		solo.NewCallParams(manyEventsContract.Name, funcBigEvent.Name).AddAssetsIotas(1),
 		nil,
 	)
 	require.Error(t, err) // error expected (event too large)
@@ -110,14 +110,14 @@ func TestEventTooLarge(t *testing.T) {
 		solo.NewCallParams(
 			governance.Contract.Name, governance.FuncSetChainInfo.Name,
 			governance.ParamMaxEventSize, uint16(bigEventSize),
-		).AddIotas(1),
+		).AddAssetsIotas(1),
 		nil,
 	)
 	require.NoError(t, err)
 
 	// check event is now saved
 	tx, _, err = ch.PostRequestSyncTx(
-		solo.NewCallParams(manyEventsContract.Name, funcBigEvent.Name).AddIotas(1),
+		solo.NewCallParams(manyEventsContract.Name, funcBigEvent.Name).AddAssetsIotas(1),
 		nil,
 	)
 	require.NoError(t, err)

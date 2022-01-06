@@ -1,9 +1,10 @@
 package tests
 
 import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -48,7 +49,7 @@ func TestMissingRequests(t *testing.T) {
 	require.NoError(t, err)
 
 	// send off-ledger request to all nodes except #3
-	req := request.NewOffLedger(chainID, incCounterSCHname, inccounter.FuncIncCounter.Hname(), dict.Dict{}) //.WithTransfer(par.Tokens)
+	req := request.NewOffLedger(chainID, incCounterSCHname, inccounter.FuncIncCounter.Hname(), dict.Dict{}) //.AddAllowance(par.Tokens)
 	req.Sign(userWallet)
 
 	err = clu.WaspClient(0).PostOffLedgerRequest(chainID, req)

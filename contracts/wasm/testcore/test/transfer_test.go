@@ -199,7 +199,7 @@ func TestRequestToView(t *testing.T) {
 		// sending request to the view entry point should
 		// return an error and invoke fallback for tokens
 		req := solo.NewCallParams(testcore.ScName, testcore.ViewJustView)
-		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddIotas(42), user.PrivateKey)
+		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddAssetsIotas(42), user.PrivateKey)
 		require.Error(t, ctx.Err)
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())

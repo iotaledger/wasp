@@ -26,7 +26,7 @@ type CallParams struct {
 	epName     string
 	entryPoint iscp.Hname
 	assets     *iscp.Assets // ignored off-ledger
-	transfer   *iscp.Assets
+	allowance  *iscp.Assets
 	gasBudget  uint64
 	nonce      uint64 // ignored for on-ledger
 	params     dict.Dict
@@ -58,9 +58,23 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
 }
 
-func (r *CallParams) WithTransfer(transfer *iscp.Assets) *CallParams {
-	r.transfer = transfer
+func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
+	if r.allowance == nil {
+		r.allowance = allowance.Clone()
+	} else {
+		r.allowance.Add(allowance)
+	}
 	return r
+}
+
+func (r *CallParams) AddIotaAllowance(amount uint64) *CallParams {
+	return r.AddAllowance(iscp.NewAssets(amount, nil))
+}
+
+func (r *CallParams) AddNativeTokensAllowance(tokens ...*iotago.NativeToken) *CallParams {
+	return r.AddAllowance(&iscp.Assets{
+		Tokens: tokens,
+	})
 }
 
 func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
@@ -72,11 +86,11 @@ func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
 	return r
 }
 
-func (r *CallParams) AddIotas(amount uint64) *CallParams {
+func (r *CallParams) AddAssetsIotas(amount uint64) *CallParams {
 	return r.AddAssets(iscp.NewAssets(amount, nil))
 }
 
-func (r *CallParams) AddNativeTokens(tokens ...*iotago.NativeToken) *CallParams {
+func (r *CallParams) AddAssetsNativeTokens(tokens ...*iotago.NativeToken) *CallParams {
 	return r.AddAssets(&iscp.Assets{
 		Tokens: tokens,
 	})
@@ -95,7 +109,7 @@ func (r *CallParams) WithNonce(nonce uint64) *CallParams {
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) *iscp.OffLedgerRequestData {
 	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
-		WithTransfer(r.transfer).
+		WithTransfer(r.allowance).
 		WithGasBudget(r.gasBudget)
 	ret.Sign(*keyPair)
 	return ret
@@ -151,7 +165,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 				TargetContract: req.target,
 				EntryPoint:     req.entryPoint,
 				Params:         req.params,
-				Transfer:       req.transfer,
+				Allowance:      req.allowance,
 				GasBudget:      req.gasBudget,
 			},
 			Options: nil,
@@ -229,7 +243,7 @@ func (ch *Chain) mustGetErrorFromReceipt(reqid iscp.RequestID) error {
 }
 
 // callViewFull calls the view entry point of the smart contract
-// with params wrapped into the CallParams object. The transfer part, fs any, is ignored
+// with params wrapped into the CallParams object. The allowance part, fs any, is ignored
 //nolint:unused
 func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 	ch.runVMMutex.Lock()

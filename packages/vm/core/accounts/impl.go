@@ -59,6 +59,8 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	checkLedger(state, "accounts.withdraw.begin")
 
+	ctx.Require(!ctx.Allowance().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
+
 	if ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) {
 		// if the caller is on the same chain, do nothing
 		return nil, nil

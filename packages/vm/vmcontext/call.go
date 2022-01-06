@@ -18,7 +18,7 @@ func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict
 		return vmctx.callByProgramHash(targetContract, epCode, params, allowance, rec.ProgramHash)
 	}
 	vmctx.GasBurn(gas.NotFoundTarget)
-	panic(xerrors.Errorf("%w: target contract: '%s'", ErrContractNotFound, targetContract))
+	panic(xerrors.Errorf("%v: contract='%s'", ErrContractNotFound, targetContract))
 }
 
 func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets, progHash hashing.HashValue) (dict.Dict, error) {
@@ -29,7 +29,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
 		vmctx.GasBurn(gas.NotFoundTarget)
-		panic(xerrors.Errorf("%w: target contract: '%s', entry point: %s",
+		panic(xerrors.Errorf("%v: target=(%s, %s)",
 			ErrTargetEntryPointNotFound, targetContract, epCode))
 	}
 
@@ -39,7 +39,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
 		if epCode == iscp.EntryPointInit {
-			panic(xerrors.Errorf("%w: target contract: '%s', entry point: %s",
+			panic(xerrors.Errorf("'%v': target=(%s, %s)",
 				ErrEntryPointCantBeAView, vmctx.req.CallTarget().Contract, epCode))
 		}
 		return ep.Call(NewSandboxView(vmctx))
@@ -48,7 +48,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	// prevent calling 'init' not from root contract or not while initializing root
 	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
-			panic(xerrors.Errorf("%w: target contract: '%s', entry point: %s",
+			panic(xerrors.Errorf("%v: target=(%s, %s)",
 				ErrRepeatingInitCall, vmctx.req.CallTarget().Contract, epCode))
 		}
 	}
@@ -67,7 +67,7 @@ const traceStack = false
 
 func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, allowance *iscp.Assets) {
 	ctx := &callContext{
-		caller:    vmctx.getCaller(),
+		caller:    vmctx.getToBeCaller(),
 		contract:  contract,
 		params:    params.Clone(),
 		allowance: allowance,
@@ -86,7 +86,7 @@ func (vmctx *VMContext) popCallContext() {
 	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]
 }
 
-func (vmctx *VMContext) getCaller() *iscp.AgentID {
+func (vmctx *VMContext) getToBeCaller() *iscp.AgentID {
 	if len(vmctx.callStack) > 0 {
 		return vmctx.MyAgentID()
 	}

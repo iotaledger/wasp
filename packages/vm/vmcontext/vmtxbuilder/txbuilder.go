@@ -178,7 +178,8 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.RequestData) int64 {
 }
 
 // AddOutput adds an information about posted request. It will produce output
-func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
+// Return adjustment needed for the L2 ledger
+func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	if txb.outputsAreFull() {
 		panic(ErrOutputLimitExceeded)
 	}
@@ -188,11 +189,13 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
 	assets := AssetsFromOutput(o)
 	txb.subDeltaIotasFromTotal(assets.Iotas)
 	bi := new(big.Int)
+	iotaAdjustmentL2 := int64(0)
 	for _, nt := range assets.Tokens {
 		bi.Neg(nt.Amount)
-		txb.addNativeTokenBalanceDelta(&nt.ID, bi)
+		iotaAdjustmentL2 += txb.addNativeTokenBalanceDelta(&nt.ID, bi)
 	}
 	txb.postedOutputs = append(txb.postedOutputs, o)
+	return iotaAdjustmentL2
 }
 
 // inputs generate a deterministic list of inputs for the transaction essence
@@ -480,7 +483,7 @@ func ExtendedOutputFromPostData(
 			TargetContract: par.Metadata.TargetContract,
 			EntryPoint:     par.Metadata.EntryPoint,
 			Params:         par.Metadata.Params,
-			Allowance:      par.Metadata.Transfer,
+			Allowance:      par.Metadata.Allowance,
 			GasBudget:      par.Metadata.GasBudget,
 		},
 		par.Options,
@@ -539,6 +542,6 @@ func AssetsFromOutput(o iotago.Output) *iscp.Assets {
 			Tokens: o.NativeTokens,
 		}
 	default:
-		panic(xerrors.Errorf("AssetsFromOutput: not supported output type: %T", o))
+		panic(xerrors.Errorf("AssetsFromExtendedOutput: not supported output type: %T", o))
 	}
 }

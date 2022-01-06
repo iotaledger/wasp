@@ -128,7 +128,7 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 }
 
 func (e *evmChainInstance) buildSoloRequest(funName string, transfer uint64, params ...interface{}) *solo.CallParams {
-	return solo.NewCallParams(e.evmFlavor.Name, funName, params...).AddIotas(transfer)
+	return solo.NewCallParams(e.evmFlavor.Name, funName, params...).AddAssetsIotas(transfer)
 }
 
 func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
@@ -275,7 +275,7 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	// deposit gas fee
 	_, err = e.soloChain.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			AddIotas(gas/e.getGasPerIotas()),
+			AddAssetsIotas(gas/e.getGasPerIotas()),
 		nil,
 	)
 	require.NoError(e.t, err)

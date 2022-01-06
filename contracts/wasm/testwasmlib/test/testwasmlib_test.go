@@ -155,7 +155,7 @@ func TestInvalidTypeParams(t *testing.T) {
 			t.Run("InvalidType "+string(param)+" "+strconv.Itoa(index), func(t *testing.T) {
 				req := solo.NewCallParams(testwasmlib.ScName, testwasmlib.FuncParamTypes,
 					string(param), value,
-				).AddIotas(1)
+				).AddAssetsIotas(1)
 				_, err := ctx.Chain.PostRequestSync(req, nil)
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "invalid ")

@@ -101,7 +101,7 @@ func TestRotate(t *testing.T) {
 		ca := chain.GetControlAddresses()
 		require.EqualValues(t, ca.StateAddress.Base58(), newAddr.Base58())
 
-		req := solo.NewCallParams("dummy", "dummy").AddIotas(1)
+		req := solo.NewCallParams("dummy", "dummy").AddAssetsIotas(1)
 		_, err = chain.PostRequestSync(req, nil)
 		require.NoError(t, err)
 
@@ -142,7 +142,7 @@ func TestAccessNodes(t *testing.T) {
 				ForCommittee: false,
 				AccessAPI:    "http://my-api/url",
 			}).AddCertificate(node1KP.PrivateKey, node1OwnerAddr).ToAddCandidateNodeParams(),
-		).AddIotas(1),
+		).AddAssetsIotas(1),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)
 	require.NoError(t, err)
@@ -165,7 +165,7 @@ func TestAccessNodes(t *testing.T) {
 			governance.Contract.Name,
 			governance.FuncChangeAccessNodes.Name,
 			governance.NewChangeAccessNodesRequest().Accept(node1KP.PublicKey).AsDict(),
-		).AddIotas(1),
+		).AddAssetsIotas(1),
 		chainKP,
 	)
 	require.NoError(t, err)
@@ -190,7 +190,7 @@ func TestAccessNodes(t *testing.T) {
 			(&governance.AccessNodeInfo{
 				NodePubKey: node1KP.PublicKey.Bytes(),
 			}).AddCertificate(node1KP.PrivateKey, node1OwnerAddr).ToAddCandidateNodeParams(),
-		).AddIotas(1),
+		).AddAssetsIotas(1),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)
 	require.NoError(t, err)

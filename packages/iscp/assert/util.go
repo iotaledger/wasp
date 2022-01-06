@@ -8,18 +8,12 @@ import (
 )
 
 type Assert struct {
-	log    iscp.LogInterface
-	prefix string
+	log iscp.LogInterface
 }
 
 func NewAssert(log iscp.LogInterface, name ...string) *Assert {
-	p := "assertion failed: "
-	if len(name) > 0 {
-		p = fmt.Sprintf("assertion failed (%s): ", name[0])
-	}
 	return &Assert{
-		log:    log,
-		prefix: p,
+		log: log,
 	}
 }
 
@@ -29,13 +23,13 @@ func (a Assert) Require(cond bool, format string, args ...interface{}) {
 		return
 	}
 	if a.log == nil {
-		panic(fmt.Sprintf(a.prefix+format, args...))
+		panic(fmt.Sprintf(format, args...))
 	}
-	a.log.Panicf(a.prefix+format, args...)
+	a.log.Panicf(format, args...)
 }
 
 func (a Assert) RequireNoError(err error, str ...string) {
-	a.Require(err == nil, fmt.Sprintf(a.prefix+"%s %v", strings.Join(str, " "), err))
+	a.Require(err == nil, fmt.Sprintf("%s %v", strings.Join(str, " "), err))
 }
 
 func (a Assert) RequireChainOwner(ctx iscp.Sandbox, name ...string) {
@@ -47,8 +41,8 @@ func (a Assert) RequireCaller(ctx iscp.Sandbox, agentID *iscp.AgentID, name ...s
 		return
 	}
 	if len(name) > 0 {
-		a.log.Panicf(a.prefix+"%s: unauthorized access", name[0])
+		a.log.Panicf("%s: unauthorized access", name[0])
 	} else {
-		a.log.Panicf(a.prefix + "unauthorized access")
+		a.log.Panicf("unauthorized access")
 	}
 }

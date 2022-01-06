@@ -151,7 +151,7 @@ type SendMetadata struct {
 	TargetContract Hname
 	EntryPoint     Hname
 	Params         dict.Dict
-	Transfer       *Assets
+	Allowance      *Assets
 	GasBudget      uint64
 }
 

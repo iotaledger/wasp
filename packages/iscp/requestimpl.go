@@ -221,7 +221,7 @@ func (r *OffLedgerRequestData) Assets() *Assets {
 	return nil
 }
 
-// Transfer of assets from the sender's account to the target smart contract. Nil mean no Transfer
+// Allowance of assets from the sender's account to the target smart contract. Nil mean no Allowance
 func (r *OffLedgerRequestData) Allowance() *Assets {
 	return r.allowance
 }
@@ -692,8 +692,8 @@ func (p *RequestMetadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 		Write(p.EntryPoint).
 		WriteUint64(p.GasBudget)
 	p.Params.WriteToMarshalUtil(mu)
-	mu.WriteBool(p.Allowance != nil)
-	if p.Allowance != nil {
+	mu.WriteBool(!p.Allowance.IsEmpty())
+	if !p.Allowance.IsEmpty() {
 		p.Allowance.WriteToMarshalUtil(mu)
 	}
 }
@@ -715,11 +715,13 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 	if p.Params, err = dict.FromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if transferPresent, err := mu.ReadBool(); err != nil {
-		if transferPresent {
-			if p.Allowance, err = AssetsFromMarshalUtil(mu); err != nil {
-				return err
-			}
+	allowanceNotEmpty, err := mu.ReadBool()
+	if err != nil {
+		return err
+	}
+	if allowanceNotEmpty {
+		if p.Allowance, err = AssetsFromMarshalUtil(mu); err != nil {
+			return err
 		}
 	}
 	return nil

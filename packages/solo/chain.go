@@ -132,7 +132,7 @@ func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (
 	f1, f2 := gasFeePolicy.FeeFromGas(gasEstimate)
 	_, err = ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			AddIotas(f1+f2).
+			AddAssetsIotas(f1+f2).
 			WithGasBudget(gasFeePolicy.GasNominalUnit),
 		keyPair,
 	)
@@ -236,7 +236,7 @@ func (ch *Chain) DeployContract(keyPair *cryptolib.KeyPair, name string, program
 	f1, f2 := gasPolicy.FeeFromGas(budgetEstimate)
 	req := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
 		WithGasBudget(budgetEstimate).
-		AddIotas(f1 + f2)
+		AddAssetsIotas(f1 + f2)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -636,7 +636,7 @@ func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
-	).AddIotas(1)
+	).AddAssetsIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -645,7 +645,7 @@ func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptol
 func (ch *Chain) RemoveAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
-	).AddIotas(1)
+	).AddAssetsIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -673,7 +673,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
-	).AddIotas(1)
+	).AddAssetsIotas(1)
 	err := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
 	if err == nil {
 		ch.StateControllerAddress = newStateAddr

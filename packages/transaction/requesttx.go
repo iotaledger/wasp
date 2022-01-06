@@ -45,7 +45,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 				TargetContract: req.Metadata.TargetContract,
 				EntryPoint:     req.Metadata.EntryPoint,
 				Params:         req.Metadata.Params,
-				Allowance:      req.Metadata.Transfer,
+				Allowance:      req.Metadata.Allowance,
 				GasBudget:      req.Metadata.GasBudget,
 			},
 			req.Options,

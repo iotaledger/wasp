@@ -11,5 +11,7 @@ var (
 	ErrRepeatingInitCall                  = xerrors.New("repeating init call")
 	ErrNotEnoughTokensFor1GasNominalUnit  = xerrors.New("not enough tokens for one nominal gas unit")
 	ErrInconsistentDustAssumptions        = xerrors.New("dust deposit requirements are not consistent with the chain assumptions")
-	ErrNotEnoughIotasForDustDeposit       = xerrors.New("not enough iotas for dust deposit")
+	ErrAssetsCantBeEmptyInSend            = xerrors.New("assets can't be empty in Send")
+	ErrTooManyEvents                      = xerrors.New("too many events issued for contract")
+	ErrTooLargeEvent                      = xerrors.New("event data is too large")
 )

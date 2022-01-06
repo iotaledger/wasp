@@ -14,7 +14,7 @@ func (vmctx *VMContext) CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.T
 }
 
 func (vmctx *VMContext) DestroyFoundry(sn uint32) int64 {
-	panic("implement me")
+	panic("DestroyFoundry: implement me")
 }
 
 func (vmctx *VMContext) GetOutput(sn uint32) *iotago.FoundryOutput {
@@ -26,7 +26,7 @@ func (vmctx *VMContext) ModifySupply(sn uint32, delta *big.Int) int64 {
 	out := vmctx.GetOutput(sn)
 	tokenID, err := out.NativeTokenID()
 	if err != nil {
-		panic(xerrors.Errorf("internal: %w", err))
+		panic(xerrors.Errorf("internal: %v", err))
 	}
 	return vmctx.txbuilder.ModifyNativeTokenSupply(&tokenID, delta)
 }

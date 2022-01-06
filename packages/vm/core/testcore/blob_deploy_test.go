@@ -115,7 +115,7 @@ func TestDeployGrant(t *testing.T) {
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
@@ -140,7 +140,7 @@ func TestRevokeDeploy(t *testing.T) {
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
@@ -151,7 +151,7 @@ func TestRevokeDeploy(t *testing.T) {
 
 	req = solo.NewCallParams(root.Contract.Name, root.FuncRevokeDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
-	).AddIotas(1)
+	).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -171,7 +171,7 @@ func TestDeployGrantFail(t *testing.T) {
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
 	)
-	_, err := chain.PostRequestSync(req.AddIotas(1), user1)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), user1)
 	require.Error(t, err)
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
@@ -194,7 +194,7 @@ func TestBigBlob(t *testing.T) {
 		solo.NewCallParams(
 			governance.Contract.Name, governance.FuncSetChainInfo.Name,
 			governance.ParamMaxBlobSize, bigblobSize,
-		).AddIotas(1),
+		).AddAssetsIotas(1),
 		nil,
 	)
 	require.NoError(t, err)
@@ -218,7 +218,7 @@ func TestOpenDeploymentToAnyone(t *testing.T) {
 	req := solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
 		root.ParamDeployPermissionsEnabled, codec.EncodeBool(false),
 	)
-	_, err = chain.PostRequestSync(req.AddIotas(1), nil)
+	_, err = chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 
 	// deploy should now succeed
@@ -229,7 +229,7 @@ func TestOpenDeploymentToAnyone(t *testing.T) {
 	req = solo.NewCallParams(root.Contract.Name, root.FuncRequireDeployPermissions.Name,
 		root.ParamDeployPermissionsEnabled, codec.EncodeBool(true),
 	)
-	_, err = chain.PostRequestSync(req.AddIotas(1), nil)
+	_, err = chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 
 	// deployment should fail after "open deployment" is disabled

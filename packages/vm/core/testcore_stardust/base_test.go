@@ -1,8 +1,9 @@
 package testcore
 
 import (
-	"errors"
 	"testing"
+
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 
 	"github.com/iotaledger/wasp/packages/utxodb"
 
@@ -96,7 +97,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(1000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
-		require.True(t, errors.Is(err, vmcontext.ErrTargetContractNotFound))
+		testmisc.RequireErrorToBe(t, err, vmcontext.ErrTargetContractNotFound)
 
 		totalIotasAfter := ch.L2TotalIotasInAccounts()
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
@@ -269,7 +270,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(root.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "already initialized")
+		testmisc.RequireErrorToBe(t, err, "already initialized")
 		ch.CheckAccountLedger()
 	})
 	t.Run("accounts", func(t *testing.T) {
@@ -278,7 +279,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(accounts.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		require.True(t, errors.Is(err, vmcontext.ErrRepeatingInitCall))
+		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 	t.Run("blocklog", func(t *testing.T) {
@@ -287,7 +288,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(blocklog.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		require.True(t, errors.Is(err, vmcontext.ErrRepeatingInitCall))
+		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 	t.Run("blob", func(t *testing.T) {
@@ -296,7 +297,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(blob.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		require.True(t, errors.Is(err, vmcontext.ErrRepeatingInitCall))
+		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 	t.Run("governance", func(t *testing.T) {
@@ -305,7 +306,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(governance.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		require.True(t, errors.Is(err, vmcontext.ErrRepeatingInitCall))
+		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 }
@@ -327,7 +328,7 @@ func TestDeployNativeContract(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(senderAddr, 0)).
-		AddIotas(1000).
+		AddAssetsIotas(1000).
 		WithGasBudget(1000)
 	_, err = ch.PostRequestSync(req, nil)
 	require.NoError(t, err)

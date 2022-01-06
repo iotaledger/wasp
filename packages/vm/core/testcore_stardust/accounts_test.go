@@ -1,11 +1,12 @@
 package testcore
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
 	"testing"
+
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -52,7 +53,7 @@ func TestFoundries(t *testing.T) {
 		}
 		req := solo.NewCallParamsFromDic(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
 			WithGasBudget(1000).
-			AddIotas(1000)
+			AddAssetsIotas(1000)
 		_, res, err := ch.PostRequestSyncTx(req, senderKeyPair)
 
 		retSN := uint32(0)
@@ -99,7 +100,7 @@ func TestFoundries(t *testing.T) {
 	t.Run("supply 0", func(t *testing.T) {
 		initTest()
 		err, _, _ := createFoundry(t, nil, nil, big.NewInt(0))
-		require.True(t, errors.Is(err, vmtxbuilder.ErrCreateFoundryMaxSupplyMustBePositive))
+		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrCreateFoundryMaxSupplyMustBePositive)
 	})
 	t.Run("supply negative", func(t *testing.T) {
 		initTest()
@@ -119,7 +120,7 @@ func TestFoundries(t *testing.T) {
 		maxSupply := big.NewInt(0).Set(abi.MaxUint256)
 		maxSupply.Add(maxSupply, big.NewInt(1))
 		err, _, _ := createFoundry(t, nil, nil, maxSupply)
-		require.True(t, errors.Is(err, vmtxbuilder.ErrCreateFoundryMaxSupplyTooBig))
+		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrCreateFoundryMaxSupplyTooBig)
 	})
 	// TODO cover all parameter options
 
@@ -159,7 +160,7 @@ func TestFoundries(t *testing.T) {
 		require.EqualValues(t, 1, sn)
 
 		err = mintTokens(sn, big.NewInt(2))
-		require.True(t, errors.Is(err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds))
+		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds)
 
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
@@ -181,7 +182,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1000))
 
 		err = mintTokens(sn, big.NewInt(1))
-		require.True(t, errors.Is(err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds))
+		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds)
 
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(1000))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1000))
@@ -197,7 +198,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, abi.MaxUint256)
 
 		err = mintTokens(sn, big.NewInt(1))
-		require.True(t, errors.Is(err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds))
+		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds)
 
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, abi.MaxUint256)
 		ch.AssertL2TotalNativeTokens(&tokenID, abi.MaxUint256)
@@ -209,7 +210,7 @@ func TestFoundries(t *testing.T) {
 		require.EqualValues(t, 1, sn)
 
 		err = destroyTokens(sn, big.NewInt(1))
-		require.True(t, errors.Is(err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds))
+		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds)
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 	})
@@ -425,13 +426,59 @@ func initTest(t *testing.T) *testValues {
 	return ret
 }
 
+func (v *testValues) createOnChainFoundryForSender(sch *iotago.TokenScheme, tag *iotago.TokenTag, maxSupply *big.Int) (error, uint32, iotago.NativeTokenID) {
+	par := dict.New()
+	if sch != nil {
+		par.Set(accounts.ParamTokenScheme, codec.EncodeTokenScheme(*sch))
+	}
+	if tag != nil {
+		par.Set(accounts.ParamTokenTag, codec.EncodeTokenTag(*tag))
+	}
+	if maxSupply != nil {
+		par.Set(accounts.ParamMaxSupply, codec.EncodeBigIntAbs(maxSupply))
+	}
+	req := solo.NewCallParamsFromDic(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
+		WithGasBudget(1000).
+		AddAssetsIotas(1000)
+	_, res, err := v.ch.PostRequestSyncTx(req, v.sender)
+
+	retSN := uint32(0)
+	var tokenID iotago.NativeTokenID
+	if err == nil {
+		resDeco := kvdecoder.New(res)
+		retSN = resDeco.MustGetUint32(accounts.ParamFoundrySN)
+		tokenID, err = v.ch.GetNativeTokenIDByFoundrySN(retSN)
+	}
+	return err, retSN, tokenID
+}
+func (v *testValues) mintTokensForSender(sn uint32, amount *big.Int) error {
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
+		accounts.ParamFoundrySN, sn,
+		accounts.ParamSupplyDeltaAbs, amount,
+	).WithGasBudget(1000)
+	_, _, err := v.ch.PostRequestSyncTx(req, v.sender)
+	return err
+}
+func (v *testValues) createFoundryAndMint(sch *iotago.TokenScheme, tag *iotago.TokenTag, maxSupply, amount *big.Int) (uint32, *iotago.NativeTokenID) {
+	err, sn, tokenID := v.createOnChainFoundryForSender(sch, tag, maxSupply)
+	require.NoError(v.env.T, err)
+	// mint some tokens for the sender
+	err = v.mintTokensForSender(sn, amount)
+	require.NoError(v.env.T, err)
+	// check the balance of the sender
+	v.ch.AssertL2AccountNativeToken(v.senderAgentID, &tokenID, amount)
+	require.True(v.env.T, v.ch.L2AccountIotas(v.senderAgentID) > 100) // must be some coming from dust deposits
+	v.env.T.Logf("sender has on-chain: %d", v.ch.L2AccountIotas(v.senderAgentID))
+	return sn, &tokenID
+}
+
 func TestDepositIotas(t *testing.T) {
 	// the test check how request transaction construction functions adjust iotas to the minimum needed for the
 	// dust deposit. If byte cost is 185, anything below that fill be topped up to 185, above that no adjustment is needed
 	for _, addIotas := range []uint64{0, 50, 150, 200, 1000} {
 		t.Run("add iotas "+strconv.Itoa(int(addIotas)), func(t *testing.T) {
 			v := initTest(t)
-			v.req = v.req.AddIotas(addIotas)
+			v.req = v.req.AddAssetsIotas(addIotas)
 			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.sender)
 			require.NoError(t, err)
 
@@ -448,14 +495,49 @@ func TestDepositIotas(t *testing.T) {
 	}
 }
 
-func TestDepositNativeTokens(t *testing.T) {
-	t.Run("deposit 1 native token", func(t *testing.T) {
+func TestWithdrawDepositNativeTokens(t *testing.T) {
+	t.Run("withdraw with empty", func(t *testing.T) {
 		v := initTest(t)
-		v.env.AssertL1AddressIotas(v.senderAddr, solo.Saldo)
-		rndTokens := tpkg.RandSortNativeTokens(1)
-		v.req = v.req.AddNativeTokens(rndTokens...)
-		_, _, err := v.ch.PostRequestSyncTx(v.req, v.sender)
+		v.createFoundryAndMint(nil, nil, big.NewInt(1_000_000), big.NewInt(100))
+		// withdraw all tokens to L1
+		req := solo.NewCallParams("accounts", "withdraw").
+			AddAssetsIotas(1000).
+			WithGasBudget(2000)
+		_, err := v.ch.PostRequestSync(req, v.sender)
+		testmisc.RequireErrorToBe(t, err, "can't be empty")
+	})
+	t.Run("withdraw not enough for dust", func(t *testing.T) {
+		v := initTest(t)
+		_, tokenID := v.createFoundryAndMint(nil, nil, big.NewInt(1_000_000), big.NewInt(100))
+		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
+		req := solo.NewCallParams("accounts", "withdraw").
+			AddAssetsIotas(2000).
+			WithGasBudget(2000).
+			AddNativeTokensAllowance(&iotago.NativeToken{
+				ID:     *tokenID,
+				Amount: big.NewInt(100),
+			})
+		_, err := v.ch.PostRequestSync(req, v.sender)
+		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughIotasForDustDeposit)
+	})
+	t.Run("withdraw almost all", func(t *testing.T) {
+		v := initTest(t)
+		v.createFoundryAndMint(nil, nil, big.NewInt(1_000_000), big.NewInt(100))
+		allSenderAssets := v.ch.L2AccountBalances(v.senderAgentID)
+		t.Logf("sender L1 iotas: %d", v.env.L1IotaBalance(v.senderAddr))
+
+		// we want withdraw as much iotas as possible, all not possible due to gas
+		allSenderAssets.AddIotas(300)
+		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
+		req := solo.NewCallParams("accounts", "withdraw").
+			AddAssetsIotas(2000).
+			WithGasBudget(2000).
+			AddAllowance(allSenderAssets)
+		_, err := v.ch.PostRequestSync(req, v.sender)
 		require.NoError(t, err)
+		t.Logf("sender on L2 has: %s", v.ch.L2AccountBalances(v.senderAgentID))
+		t.Logf("sender on L1 has: %s", v.env.L1AddressBalances(v.senderAddr))
+		t.Logf("L2 common account has: %s", v.ch.L2CommonAccountBalances())
 	})
 	//t.Run("add many native tokens", func(t *testing.T) {
 	//	for _, genTokens := range []int{1, 5, 10}  {
@@ -465,9 +547,9 @@ func TestDepositNativeTokens(t *testing.T) {
 	//			require.NoError(t, err)
 	//
 	//			expected := uint64(i * 50)
-	//			v.req = v.req.AddIotas(expected)
+	//			v.req = v.req.AddAssetsIotas(expected)
 	//			rndTokens := tpkg.RandSortNativeTokens(i)
-	//			v.req = v.req.AddNativeTokens(rndTokens...)
+	//			v.req = v.req.AddAssetsNativeTokens(rndTokens...)
 	//			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.sender)
 	//			require.NoError(t, err)
 	//

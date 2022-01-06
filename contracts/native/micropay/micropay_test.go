@@ -31,7 +31,7 @@ func TestSubmitPk(t *testing.T) {
 
 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 		ParamPublicKey, pubKey,
-	).AddIotas(1)
+	).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 }
@@ -48,7 +48,7 @@ func TestOpenChannelFail(t *testing.T) {
 	_, providerAddr := env.NewKeyPairWithFunds()
 	env.AssertAddressIotas(providerAddr, solo.Saldo)
 
-	req := solo.NewCallParams("micropay", FuncAddWarrant.Name, ParamServiceAddress, providerAddr).AddIotas(600)
+	req := solo.NewCallParams("micropay", FuncAddWarrant.Name, ParamServiceAddress, providerAddr).AddAssetsIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
 	require.Error(t, err)
 
@@ -69,14 +69,14 @@ func TestOpenChannelOk(t *testing.T) {
 
 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 		ParamPublicKey, payerPubKey,
-	).AddIotas(1)
+	).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
 	_, providerAddr := env.NewKeyPairWithFunds()
 	env.AssertAddressIotas(providerAddr, solo.Saldo)
 
-	req = solo.NewCallParams("micropay", FuncAddWarrant.Name, ParamServiceAddress, providerAddr).AddIotas(600)
+	req = solo.NewCallParams("micropay", FuncAddWarrant.Name, ParamServiceAddress, providerAddr).AddAssetsIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
@@ -97,7 +97,7 @@ func TestOpenChannelTwice(t *testing.T) {
 
 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 		ParamPublicKey, payerPubKey,
-	).AddIotas(1)
+	).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
@@ -106,7 +106,7 @@ func TestOpenChannelTwice(t *testing.T) {
 
 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name,
 		ParamServiceAddress, providerAddr).
-		AddIotas(600)
+		AddAssetsIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
@@ -146,7 +146,7 @@ func TestRevokeWarrant(t *testing.T) {
 
 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 		ParamPublicKey, payerPubKey,
-	).AddIotas(1)
+	).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
@@ -157,7 +157,7 @@ func TestRevokeWarrant(t *testing.T) {
 
 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name,
 		ParamServiceAddress, providerAddr).
-		AddIotas(600)
+		AddAssetsIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
@@ -177,7 +177,7 @@ func TestRevokeWarrant(t *testing.T) {
 
 	req = solo.NewCallParams("micropay", FuncRevokeWarrant.Name,
 		ParamServiceAddress, providerAddr,
-	).AddIotas(1)
+	).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
@@ -222,7 +222,7 @@ func TestPayment(t *testing.T) {
 
 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 		ParamPublicKey, payerPubKey,
-	).AddIotas(1)
+	).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
@@ -233,7 +233,7 @@ func TestPayment(t *testing.T) {
 
 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name,
 		ParamServiceAddress, providerAddr).
-		AddIotas(600)
+		AddAssetsIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
@@ -260,7 +260,7 @@ func TestPayment(t *testing.T) {
 	arr := collections.NewArray16(par, ParamPayments)
 	_ = arr.Push(pay1)
 	_ = arr.Push(pay2)
-	req = solo.NewCallParamsFromDic("micropay", FuncSettle.Name, par).AddIotas(1)
+	req = solo.NewCallParamsFromDic("micropay", FuncSettle.Name, par).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, provider)
 	require.NoError(t, err)
 

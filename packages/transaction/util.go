@@ -200,8 +200,9 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			Amount: b,
 		})
 	}
-	if ret.Amount < ret.VByteCost(rentStructure, nil) {
-		return nil, accounts.ErrNotEnoughIotasForDustDeposit
+	bc := ret.VByteCost(rentStructure, nil)
+	if ret.Amount < bc {
+		return nil, xerrors.Errorf("%v: needed at least %d", accounts.ErrNotEnoughIotasForDustDeposit, bc)
 	}
 	return ret, nil
 }

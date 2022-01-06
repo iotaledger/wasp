@@ -16,7 +16,7 @@ func testDoNothing(t *testing.T, w bool) {
 	env, chain := setupChain(t, nil)
 	cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-	_, err := chain.PostRequestSync(req.AddIotas(42), nil)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(42), nil)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -32,7 +32,7 @@ func testDoNothingUser(t *testing.T, w bool) {
 	cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
 	user, userAddr, userAgentID := setupDeployer(t, chain)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-	_, err := chain.PostRequestSync(req.AddIotas(42), user)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(42), user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -52,7 +52,7 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	t.Logf("contract agentID: %s", cAID)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-	_, err := chain.PostRequestSync(req.AddIotas(42), user)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(42), user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
@@ -68,7 +68,7 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	req = solo.NewCallParams(ScName, sbtestsc.FuncSendToAddress.Name,
 		sbtestsc.ParamAddress, userAddress,
 	)
-	_, err = chain.PostRequestSync(req.AddIotas(1), nil)
+	_, err = chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
@@ -97,7 +97,7 @@ func testDoPanicUser(t *testing.T, w bool) {
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name)
-	_, err := chain.PostRequestSync(req.AddIotas(42), user)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(42), user)
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
@@ -126,7 +126,7 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name)
-	_, err := chain.PostRequestSync(req.AddIotas(42), user)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(42), user)
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
@@ -139,7 +139,7 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name)
-	_, err = chain.PostRequestSync(req.AddIotas(1), user)
+	_, err = chain.PostRequestSync(req.AddAssetsIotas(1), user)
 	require.NoError(t, err)
 
 	chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
@@ -169,7 +169,7 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 		governance.ParamHname, cAID.Hname(),
 		governance.ParamOwnerFee, 10)
-	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 
 	chain.AssertL2AccountIotas(chain.OriginatorAgentID, 0)
@@ -181,7 +181,7 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
 	req = solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name)
-	_, err = chain.PostRequestSync(req.AddIotas(42), user)
+	_, err = chain.PostRequestSync(req.AddAssetsIotas(42), user)
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
@@ -211,7 +211,7 @@ func testRequestToView(t *testing.T, w bool) {
 
 	// sending request to the view entry point should return an error and invoke fallback for tokens
 	req := solo.NewCallParams(ScName, sbtestsc.FuncJustView.Name)
-	_, err := chain.PostRequestSync(req.AddIotas(42), user)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(42), user)
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
