@@ -88,8 +88,8 @@ func TestCreditDebit2(t *testing.T) {
 	require.True(t, expected.Equals(total))
 
 	require.True(t, util.IsZeroBigInt(GetNativeTokenBalance(state, agentID1, &transfer.Tokens[0].ID)))
-	bal1, ok := GetAccountAssets(state, agentID1)
-	require.True(t, ok)
+	bal1 := GetAccountAssets(state, agentID1)
+	require.False(t, bal1.IsEmpty())
 	require.True(t, total.Equals(bal1))
 }
 
@@ -151,13 +151,13 @@ func TestCreditDebit4(t *testing.T) {
 	expected = iscp.NewAssets(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	require.True(t, expected.Equals(total))
 
-	bm1, ok := GetAccountAssets(state, agentID1)
-	require.True(t, ok)
+	bm1 := GetAccountAssets(state, agentID1)
+	require.False(t, bm1.IsEmpty())
 	expected = iscp.NewAssets(22, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	require.True(t, expected.Equals(bm1))
 
-	bm2, ok := GetAccountAssets(state, agentID2)
-	require.True(t, ok)
+	bm2 := GetAccountAssets(state, agentID2)
+	require.False(t, bm2.IsEmpty())
 	expected = iscp.NewAssets(20, nil)
 	require.True(t, expected.Equals(bm2))
 }
@@ -193,12 +193,12 @@ func TestCreditDebit5(t *testing.T) {
 	expected = iscp.NewAssets(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	require.True(t, expected.Equals(total))
 
-	bm1, ok := GetAccountAssets(state, agentID1)
-	require.True(t, ok)
+	bm1 := GetAccountAssets(state, agentID1)
+	require.False(t, bm1.IsEmpty())
 	require.True(t, expected.Equals(bm1))
 
-	_, ok = GetAccountAssets(state, agentID2)
-	require.False(t, ok)
+	bm2 := GetAccountAssets(state, agentID2)
+	require.True(t, bm2.IsEmpty())
 }
 
 func TestCreditDebit6(t *testing.T) {
@@ -221,11 +221,11 @@ func TestCreditDebit6(t *testing.T) {
 	keys := getAccountsIntern(state).Keys()
 	require.EqualValues(t, 1, len(keys))
 
-	_, ok = GetAccountAssets(state, agentID1)
-	require.False(t, ok)
+	bal := GetAccountAssets(state, agentID1)
+	require.True(t, bal.IsEmpty())
 
-	bal2, ok := GetAccountAssets(state, agentID2)
-	require.True(t, ok)
+	bal2 := GetAccountAssets(state, agentID2)
+	require.False(t, bal2.IsEmpty())
 	require.True(t, total.Equals(bal2))
 }
 

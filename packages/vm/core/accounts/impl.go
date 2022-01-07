@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -82,54 +81,29 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 
 // TODO refactor owner of the chain moves all tokens balance the common account to its own account
 // Params:
-//   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
-//   ParamWithdrawAssetID assetID to withdraw if amount is specified. Defaults to Iota
+//   ParamForceMinimumIotas specify how may iotas should be left on the common account
+//   but not less that MinimumIotasOnCommonAccount constant
 func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.RequireChainOwner(ctx, "harvest")
+	ctx.RequireCallerIsChainOwner("harvest")
 
 	state := ctx.State()
 	checkLedger(state, "accounts.harvest.begin")
 	defer checkLedger(state, "accounts.harvest.exit")
 
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	// if ParamWithdrawAmount > 0, take it as exact amount to withdraw
-	// otherwise assume harvest all
-	amount := par.MustGetUint64(ParamWithdrawAmount, 0)
-
-	// default is harvest specified amount of iotas
-	assetID := par.MustGetBytes(ParamWithdrawAssetID, iscp.IotaAssetID)
-
+	// if ParamWithdrawAmount > 0, take it as exact amount to withdraw, otherwise assume harvest all
+	bottomIotas := par.MustGetUint64(ParamForceMinimumIotas, MinimumIotasOnCommonAccount)
 	sourceAccount := commonaccount.Get(ctx.ChainID())
-	balance, ok := GetAccountAssets(state, sourceAccount)
-	if !ok {
-		// empty balance, nothing to withdraw
+	toWithdraw := GetAccountAssets(state, sourceAccount)
+	if toWithdraw.IsEmpty() {
+		// empty toWithdraw, nothing to withdraw. Can't be
 		return nil, nil
 	}
-
-	tokensToSend := iscp.NewEmptyAssets()
-	if iscp.IsIota(assetID) {
-		if amount > 0 {
-			tokensToSend.Iotas = amount
-		} else {
-			tokensToSend.Iotas = balance.Iotas
-		}
-	} else {
-		token := &iotago.NativeToken{
-			ID: iscp.MustNativeTokenIDFromBytes(assetID),
-		}
-		if amount > 0 {
-			token.Amount = new(big.Int).SetUint64(amount)
-		} else {
-			tokenset, err := balance.Tokens.Set()
-			a.RequireNoError(err)
-			token.Amount = tokenset[token.ID].Amount
-		}
-		tokensToSend.Tokens = append(tokensToSend.Tokens, token)
+	if toWithdraw.Iotas > bottomIotas {
+		toWithdraw.Iotas = toWithdraw.Iotas - bottomIotas
 	}
-
-	a.Require(MoveBetweenAccounts(state, sourceAccount, ctx.Caller(), tokensToSend),
-		"accounts.harvest.inconsistency. failed to move tokens to owner's account")
+	ctx.Require(MoveBetweenAccounts(state, sourceAccount, ctx.Caller(), toWithdraw),
+		"accounts.harvest: failed to move tokens to owner's account")
 	return nil, nil
 }
 

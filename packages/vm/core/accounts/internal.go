@@ -344,12 +344,12 @@ func getAccountAssets(account *collections.ImmutableMap) *iscp.Assets {
 }
 
 // GetAccountAssets returns all assets belonging to the agentID on the state
-func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) (*iscp.Assets, bool) {
+func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Assets {
 	account := getAccountR(state, agentID)
 	if account.MustLen() == 0 {
-		return nil, false
+		return iscp.NewEmptyAssets()
 	}
-	return getAccountAssets(account), true
+	return getAccountAssets(account)
 }
 
 func GetTotalL2Assets(state kv.KVStoreReader) *iscp.Assets {

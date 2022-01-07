@@ -31,6 +31,9 @@ var (
 )
 
 const (
+	// MinimumIotasOnCommonAccount can't harvest the minimum
+	MinimumIotasOnCommonAccount = 3000
+
 	// prefix for a name of a particular account
 	prefixAccount = string(byte(iota) + 'A')
 	// map with all accounts listed
@@ -46,10 +49,9 @@ const (
 	// prefixFoundryOutputRecords a map with all foundry outputs
 	prefixFoundryOutputRecords
 
-	ParamAgentID         = "a"
-	ParamWithdrawAssetID = "c"
-	ParamWithdrawAmount  = "m"
-	ParamAccountNonce    = "n"
+	ParamAgentID           = "a"
+	ParamAccountNonce      = "n"
+	ParamForceMinimumIotas = "f"
 
 	ParamFoundrySN        = "s"
 	ParamFoundryOutputBin = "b"

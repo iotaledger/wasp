@@ -253,7 +253,7 @@ func (ch *Chain) DestroyTokens(foundry, amount interface{}, user *cryptolib.KeyP
 		accounts.ParamFoundrySN, toFoundrySN(foundry),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
 		accounts.ParamDestroyTokens, true,
-	).WithGasBudget(DestroyTokensGasBudgetIotas).AddNativeTokensAllowance()
+	).WithGasBudget(DestroyTokensGasBudgetIotas)
 
 	if user == nil {
 		user = &ch.OriginatorPrivateKey
