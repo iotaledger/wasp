@@ -2,7 +2,7 @@ package sbtestsc
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
-	assert2 "github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -60,7 +60,7 @@ func runRecursion(ctx iscp.Sandbox) (dict.Dict, error) {
 
 func getFibonacci(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := assert2.NewAssert(ctx.Log())
+	a := assert.NewAssert(ctx.Log())
 
 	callInt := params.MustGetInt64(ParamIntParamValue)
 	ctx.Log().Infof("fibonacci( %d )", callInt)
