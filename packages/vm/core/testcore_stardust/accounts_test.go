@@ -57,14 +57,14 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("supply negative", func(t *testing.T) {
 		initTest()
-		sn, _, err := ch.NewFoundryParams().WithMaxSupply(big.NewInt(-1)).CreateFoundry()
+		sn, _, err := ch.NewFoundryParams(-1).CreateFoundry()
 		// encoding will ignore sign
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 	})
 	t.Run("supply max possible", func(t *testing.T) {
 		initTest()
-		sn, _, err := ch.NewFoundryParams().WithMaxSupply(abi.MaxUint256).CreateFoundry()
+		sn, _, err := ch.NewFoundryParams(abi.MaxUint256).CreateFoundry()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 	})
@@ -72,7 +72,7 @@ func TestFoundries(t *testing.T) {
 		initTest()
 		maxSupply := big.NewInt(0).Set(abi.MaxUint256)
 		maxSupply.Add(maxSupply, big.NewInt(1))
-		_, _, err := ch.NewFoundryParams().WithMaxSupply(maxSupply).CreateFoundry()
+		_, _, err := ch.NewFoundryParams(maxSupply).CreateFoundry()
 		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrCreateFoundryMaxSupplyTooBig)
 	})
 	// TODO cover all parameter options
@@ -150,8 +150,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("max supply MaxUint256, mintTokens MaxUint256_1", func(t *testing.T) {
 		initTest()
-		sn, tokenID, err := ch.NewFoundryParams().
-			WithMaxSupply(abi.MaxUint256).
+		sn, tokenID, err := ch.NewFoundryParams(abi.MaxUint256).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -162,22 +161,21 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, abi.MaxUint256)
 
 		err = ch.MintTokens(sn, big.NewInt(1), senderKeyPair)
-		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds)
+		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrOverflow)
 
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, abi.MaxUint256)
 		ch.AssertL2TotalNativeTokens(&tokenID, abi.MaxUint256)
 	})
 	t.Run("max supply 100, destroy fail", func(t *testing.T) {
 		initTest()
-		sn, tokenID, err := ch.NewFoundryParams().
-			WithMaxSupply(abi.MaxUint256).
+		sn, tokenID, err := ch.NewFoundryParams(abi.MaxUint256).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 
 		err = ch.DestroyTokens(sn, big.NewInt(1), senderKeyPair)
-		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds)
+		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 	})
@@ -400,9 +398,8 @@ func initTest(t *testing.T) *testParams {
 	return ret
 }
 
-func (v *testParams) createFoundryAndMint(sch iotago.TokenScheme, tag *iotago.TokenTag, maxSupply, amount *big.Int) (uint32, *iotago.NativeTokenID) {
-	sn, tokenID, err := v.ch.NewFoundryParams().
-		WithMaxSupply(maxSupply).
+func (v *testParams) createFoundryAndMint(sch iotago.TokenScheme, tag *iotago.TokenTag, maxSupply, amount interface{}) (uint32, *iotago.NativeTokenID) {
+	sn, tokenID, err := v.ch.NewFoundryParams(maxSupply).
 		WithTokenScheme(sch).
 		WithTag(tag).
 		WithUser(v.user).
@@ -485,6 +482,61 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		t.Logf("user on L1 has: %s", v.env.L1AddressBalances(v.userAddr))
 		t.Logf("L2 common account has: %s", v.ch.L2CommonAccountBalances())
 	})
+	t.Run("mint withdraw destroy fail", func(t *testing.T) {
+		v := initTest(t)
+		sn, tokenID := v.createFoundryAndMint(nil, nil, big.NewInt(1000), big.NewInt(100))
+		allSenderAssets := v.ch.L2AccountBalances(v.userAgentID)
+		t.Logf("user L1 iotas: %d", v.env.L1IotaBalance(v.userAddr))
+
+		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
+		req := solo.NewCallParams("accounts", "withdraw").
+			AddAssetsIotas(2000).
+			WithGasBudget(2000).
+			AddAllowance(allSenderAssets)
+		_, err := v.ch.PostRequestSync(req, v.user)
+		require.NoError(t, err)
+		t.Logf("user on L2 has: %s", v.ch.L2AccountBalances(v.userAgentID))
+		t.Logf("user on L1 has: %s", v.env.L1AddressBalances(v.userAddr))
+		t.Logf("L2 common account has: %s", v.ch.L2CommonAccountBalances())
+		v.env.AssertL1NativeTokens(v.userAddr, tokenID, big.NewInt(100))
+
+		// should fail because those tokens are not on the user's on chain account
+		err = v.ch.DestroyTokens(sn, big.NewInt(50), v.user)
+		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
+		v.env.AssertL1NativeTokens(v.userAddr, tokenID, big.NewInt(100))
+	})
+	t.Run("mint withdraw destroy success", func(t *testing.T) {
+		v := initTest(t)
+		sn, tokenID := v.createFoundryAndMint(nil, nil, big.NewInt(1000), big.NewInt(100))
+		allSenderAssets := v.ch.L2AccountBalances(v.userAgentID)
+		t.Logf("user L1 iotas: %d", v.env.L1IotaBalance(v.userAddr))
+
+		v.env.AssertL1NativeTokens(v.userAddr, tokenID, big.NewInt(0))
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 100)
+
+		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
+		req := solo.NewCallParams("accounts", "withdraw").
+			AddAssetsIotas(2000).
+			WithGasBudget(2000).
+			AddAllowance(allSenderAssets)
+		_, err := v.ch.PostRequestSync(req, v.user)
+		require.NoError(t, err)
+		t.Logf("user on L2 has: %s", v.ch.L2AccountBalances(v.userAgentID))
+		t.Logf("user on L1 has: %s", v.env.L1AddressBalances(v.userAddr))
+		t.Logf("L2 common account has: %s", v.ch.L2CommonAccountBalances())
+		v.env.AssertL1NativeTokens(v.userAddr, tokenID, big.NewInt(100))
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 0)
+
+		err = v.ch.DepositAssets(iscp.NewEmptyAssets().AddNativeTokens(*tokenID, 50), v.user)
+		v.env.AssertL1NativeTokens(v.userAddr, tokenID, 50)
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 50)
+		v.ch.AssertL2TotalNativeTokens(tokenID, 50)
+
+		err = v.ch.DestroyTokens(sn, 50, v.user)
+		require.NoError(t, err)
+		v.env.AssertL1NativeTokens(v.userAddr, tokenID, big.NewInt(100))
+	})
+
 	//t.Run("add many native tokens", func(t *testing.T) {
 	//	for _, genTokens := range []int{1, 5, 10}  {
 	//		t.Run("iotas+nt "+strconv.Itoa(genTokens), func(t *testing.T) {

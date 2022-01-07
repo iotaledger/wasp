@@ -4,10 +4,9 @@
 package solo
 
 import (
-	"math/big"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -16,9 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (ch *Chain) AssertL2AccountNativeToken(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID, bal *big.Int) {
+func (ch *Chain) AssertL2AccountNativeToken(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID, bal interface{}) {
 	bals := ch.L2AccountBalances(agentID)
-	require.True(ch.Env.T, bal.Cmp(bals.AmountNativeToken(tokenID)) == 0)
+	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
 func (ch *Chain) AssertL2AccountIotas(agentID *iscp.AgentID, bal uint64) {
@@ -61,9 +60,9 @@ func (ch *Chain) CheckAccountLedger() {
 	require.True(ch.Env.T, ch.L2AccountBalances(coreacc).IsEmpty())
 }
 
-func (ch *Chain) AssertL2TotalNativeTokens(tokenID *iotago.NativeTokenID, bal *big.Int) {
+func (ch *Chain) AssertL2TotalNativeTokens(tokenID *iotago.NativeTokenID, bal interface{}) {
 	bals := ch.L2TotalAssetsInAccounts()
-	require.True(ch.Env.T, bal.Cmp(bals.AmountNativeToken(tokenID)) == 0)
+	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
 func (ch *Chain) AssertL2TotalIotas(bal uint64) {
@@ -82,6 +81,6 @@ func (env *Solo) AssertL1AddressIotas(addr iotago.Address, expected uint64) {
 	require.EqualValues(env.T, int(expected), int(env.L1IotaBalance(addr)))
 }
 
-func (env *Solo) AssertL1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID, expected *big.Int) {
-	require.True(env.T, env.L1NativeTokenBalance(addr, tokenID).Cmp(expected) == 0)
+func (env *Solo) AssertL1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID, expected interface{}) {
+	require.True(env.T, env.L1NativeTokenBalance(addr, tokenID).Cmp(util.ToBigInt(expected)) == 0)
 }

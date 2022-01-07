@@ -206,14 +206,13 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 // foundryDestroy destroys foundry if that is possible
 func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.foundryDestroy")
-	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamFoundrySN)
 	// check if foundry is controlled by the caller
-	a.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	ctx.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
-	a.Require(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
+	ctx.Require(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
 
 	ctx.Foundries().Destroy(sn)
 	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
@@ -227,7 +226,6 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamSupplyDeltaAbs absolute delta of the supply as big.Int
 // - ParamDestroyTokens true if destroy supply, false (default) if mint new supply
 func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamFoundrySN)
 	delta := par.MustGetBigInt(ParamSupplyDeltaAbs)
@@ -236,26 +234,13 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 		delta.Neg(delta)
 	}
 	// check if foundry is controlled by the caller
-	a.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	ctx.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	tokenID, err := out.NativeTokenID()
-	a.RequireNoError(err, "internal")
+	ctx.RequireNoError(err, "internal")
 
-	// transit foundry UTXO
-	dustAdjustment := ctx.Foundries().ModifySupply(sn, delta)
-	// adjust iotas due to the change in dust deposit
-	switch {
-	case dustAdjustment > 0:
-		CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-			Iotas: uint64(dustAdjustment),
-		})
-	case dustAdjustment < 0:
-		DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-			Iotas: uint64(-dustAdjustment),
-		})
-	}
-	// accrue delta tokens on the caller's account
+	// accrue change on the caller's account
 	switch {
 	case delta.Cmp(big.NewInt(0)) > 0:
 		CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
@@ -271,19 +256,31 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 			}},
 		})
 	}
+	// transit foundry UTXO
+	dustAdjustment := ctx.Foundries().ModifySupply(sn, delta)
+	// adjust iotas due to the possible change in dust deposit
+	switch {
+	case dustAdjustment > 0:
+		CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
+			Iotas: uint64(dustAdjustment),
+		})
+	case dustAdjustment < 0:
+		DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
+			Iotas: uint64(-dustAdjustment),
+		})
+	}
 	return nil, nil
 }
 
 // foundryOutput takes serial number and returns corresponding foundry output in serialized form
 func foundryOutput(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.foundryOutput")
-	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	sn := par.MustGetUint32(ParamFoundrySN)
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
-	a.RequireNoError(err, "internal: error while serializing foundry output")
+	ctx.RequireNoError(err, "internal: error while serializing foundry output")
 	ret := dict.New()
 	ret.Set(ParamFoundryOutputBin, outBin)
 	return ret, nil

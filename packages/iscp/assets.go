@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/util"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -262,11 +264,11 @@ func (a *Assets) AddIotas(amount uint64) *Assets {
 	return a
 }
 
-func (a *Assets) AddNativeTokens(tokenID iotago.NativeTokenID, amount *big.Int) *Assets {
+func (a *Assets) AddNativeTokens(tokenID iotago.NativeTokenID, amount interface{}) *Assets {
 	b := NewAssets(0, iotago.NativeTokens{
 		&iotago.NativeToken{
 			ID:     tokenID,
-			Amount: amount,
+			Amount: util.ToBigInt(amount),
 		},
 	})
 	return a.Add(b)
