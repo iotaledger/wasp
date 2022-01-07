@@ -39,24 +39,26 @@ export class Service {
         args: wasmclient.Arguments,
         transfer: wasmclient.Transfer,
         keyPair: IKeyPair,
-        offLedger: boolean
+        onLedger: boolean
     ): Promise<string> {
         const chainId = this.serviceClient.configuration.chainId;
-        if (offLedger) {
+        if (! onLedger) {
+            // requested off-ledger request
             const requestID = await this.serviceClient.waspClient.postOffLedgerRequest(chainId, this.scHname, hFuncName, args, transfer, keyPair);
             return requestID;
-        } else {
-            const payload: IOnLedger = {
-                contract: this.scHname,
-                entrypoint: hFuncName,
-                //TODO: map args
-                //arguments : args
-            };
-            const transferAmount = transfer.get(Colors.IOTA_COLOR);
-            const transactionID = await this.serviceClient.goShimmerClient.postOnLedgerRequest(chainId, payload, transferAmount, keyPair);
-            if (!transactionID) throw new Error("No transaction id");
-            return transactionID;
         }
+
+        // requested on-ledger request
+        const payload: IOnLedger = {
+            contract: this.scHname,
+            entrypoint: hFuncName,
+            //TODO: map args
+            //arguments : args
+        };
+        const transferAmount = transfer.get(Colors.IOTA_COLOR);
+        const transactionID = await this.serviceClient.goShimmerClient.postOnLedgerRequest(chainId, payload, transferAmount, keyPair);
+        if (!transactionID) throw new Error("No transaction id");
+        return transactionID;
     }
 
     // overrides default contract name

@@ -55,7 +55,7 @@ func (s *Service) CallView(viewName string, args *Arguments) (dict.Dict, error) 
 	return s.waspClient.CallView(s.chainID, s.scHname, viewName, args.args)
 }
 
-func (s *Service) PostRequest(hFuncName uint32, args *Arguments, transfer *Transfer, keyPair *ed25519.KeyPair) Request {
+func (s *Service) PostRequest(hFuncName uint32, args *Arguments, transfer *Transfer, keyPair *ed25519.KeyPair, onLedger bool) Request {
 	bal, err := makeBalances(transfer)
 	if err != nil {
 		return Request{err: err}
@@ -64,6 +64,11 @@ func (s *Service) PostRequest(hFuncName uint32, args *Arguments, transfer *Trans
 	if args != nil {
 		reqArgs.AddEncodeSimpleMany(args.args)
 	}
+
+	if onLedger {
+		return s.postRequestOnLedger(hFuncName, reqArgs, bal, keyPair)
+	}
+
 	req := request.NewOffLedger(s.chainID, s.scHname, iscp.Hname(hFuncName), reqArgs)
 	req.WithTransfer(bal)
 	req.Sign(keyPair)
@@ -73,6 +78,11 @@ func (s *Service) PostRequest(hFuncName uint32, args *Arguments, transfer *Trans
 	}
 	id := req.ID()
 	return Request{id: &id}
+}
+
+func (s *Service) postRequestOnLedger(hFuncName uint32, args requestargs.RequestArgs, bal colored.Balances, pair *ed25519.KeyPair) Request {
+	// TODO implement
+	return Request{}
 }
 
 // overrides default contract name

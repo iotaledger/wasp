@@ -6,9 +6,15 @@ package wasmclient
 import "github.com/iotaledger/hive.go/crypto/ed25519"
 
 type ClientFunc struct {
-	svc     *Service
-	keyPair *ed25519.KeyPair
-	xfer    *Transfer
+	svc      *Service
+	keyPair  *ed25519.KeyPair
+	onLedger bool
+	xfer     *Transfer
+}
+
+// OnLedgerRequest can override the default off-ledger to on-ledger posting
+func (f *ClientFunc) OnLedgerRequest(onLedger bool) {
+	f.onLedger = onLedger
 }
 
 // Post sends a request to the smart contract service
@@ -19,7 +25,7 @@ func (f *ClientFunc) Post(hFuncName uint32, args *Arguments) Request {
 	if keyPair == nil {
 		keyPair = f.svc.keyPair
 	}
-	return f.svc.PostRequest(hFuncName, args, f.xfer, keyPair)
+	return f.svc.PostRequest(hFuncName, args, f.xfer, keyPair, f.onLedger)
 }
 
 // Sign optionally overrides the default keypair from the service

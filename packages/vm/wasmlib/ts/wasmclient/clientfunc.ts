@@ -7,23 +7,30 @@ import { IKeyPair } from "./crypto";
 export class ClientFunc {
     protected svc: wasmclient.Service;
     private keyPair: IKeyPair | null = null;
+    private onLedger: boolean = false;
     private xfer: wasmclient.Transfer = new wasmclient.Transfer();
 
     constructor(svc: wasmclient.Service) {
         this.svc = svc;
     }
 
+
+    // onLedger can override the default off-ledger to on-ledger posting
+    public onLedgerRequest(onLedger: boolean): void {
+        this.onLedger = onLedger;
+    }
+
     // Sends a request to the smart contract service
     // You can wait for the request to complete by using the returned RequestID
     // as parameter to Service.waitRequest()
-    public async post(hFuncName: wasmclient.Hname, args: wasmclient.Arguments | null, offLedger: boolean = true): Promise<wasmclient.RequestID> {
+    public async post(hFuncName: wasmclient.Hname, args: wasmclient.Arguments | null): Promise<wasmclient.RequestID> {
         if (!args) args = new wasmclient.Arguments();
 
         if (!this.keyPair) this.keyPair = this.svc.keyPair;
 
         if (!this.keyPair) throw new Error("Key pair not defined");
 
-        return await this.svc.postRequest(hFuncName, args, this.xfer, this.keyPair, offLedger);
+        return await this.svc.postRequest(hFuncName, args, this.xfer, this.keyPair, this.onLedger);
     }
 
     // Optionally overrides the default keypair from the service
