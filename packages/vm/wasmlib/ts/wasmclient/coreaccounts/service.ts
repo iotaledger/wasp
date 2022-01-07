@@ -137,7 +137,7 @@ export class TotalAssetsResults extends wasmclient.ViewResults {
 export class CoreAccountsService extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
-		super(cl, 0x3c4b5e02, null);
+		super(cl, 0x3c4b5e02, new Map());
 	}
 
 	public deposit(): DepositFunc {

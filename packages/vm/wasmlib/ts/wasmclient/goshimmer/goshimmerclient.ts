@@ -16,8 +16,8 @@ import { IOnLedger, OnLedgerHelper } from "./models/on_ledger";
 import { ISendTransactionRequest, ISendTransactionResponse, ITransaction, Transaction } from "./models/transaction";
 import { Wallet } from "./wallet/wallet";
 import { Colors } from "../colors";
-import { Configuration, Transfer } from "..";
-import { AccountsService } from "../core_services/accounts_service";
+import { AgentID, Configuration, Transfer } from "..";
+import { CoreAccountsService } from "../coreaccounts/service";
 
 interface GoShimmerClientConfiguration {
     APIUrl: string;
@@ -25,12 +25,12 @@ interface GoShimmerClientConfiguration {
 }
 
 export class GoShimmerClient {
-    private accountsService: AccountsService;
+    private coreAccountsService: CoreAccountsService;
     private readonly goShimmerConfiguration: GoShimmerClientConfiguration;
     private readonly powManager: PoWWorkerManager = new PoWWorkerManager();
 
-    constructor(configuration : Configuration, accountsService: AccountsService) {
-        this.accountsService = accountsService;
+    constructor(configuration : Configuration, coreAccountsService: CoreAccountsService) {
+        this.coreAccountsService = coreAccountsService;
         this.goShimmerConfiguration = { APIUrl: configuration.goShimmerApiUrl, SeedUnsafe: configuration.seed };
     }
 
@@ -171,9 +171,9 @@ export class GoShimmerClient {
         );
     }
 
-    public async depositToAccountInChain(keypair: IKeyPair, destinationAddress: string, amount: bigint) {
-        const depositfunc = this.accountsService.deposit();
-        depositfunc.address(destinationAddress);
+    public async depositIOTAToAccountInChain(keypair: IKeyPair, destinationAgentID: AgentID, amount: bigint) {
+        const depositfunc = this.coreAccountsService.deposit();
+        depositfunc.agentID(destinationAgentID);
         depositfunc.transfer(Transfer.iotas(amount));
         depositfunc.sign(keypair);
         depositfunc.post();
