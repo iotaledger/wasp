@@ -74,7 +74,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	// total iotas on L2 must be equal to alias output iotas - dust deposit
 	ch.AssertL2TotalIotas(aliasOutputs[0].Amount - dustCosts.AnchorOutput)
 
-	// all dust deposit of the init request goes to the sender account
+	// all dust deposit of the init request goes to the user account
 	ch.AssertL2AccountIotas(ch.OriginatorAgentID, vByteCostInit)
 	// common account is empty
 	require.EqualValues(t, 0, ch.L2CommonAccountIotas())
@@ -82,7 +82,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 
 // TestNoTargetPostOnLedger test what happens when sending requests to non-existent contract or entry point
 func TestNoTargetPostOnLedger(t *testing.T) {
-	t.Run("no contract,originator==sender", func(t *testing.T) {
+	t.Run("no contract,originator==user", func(t *testing.T) {
 		env := solo.New(t)
 		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
@@ -106,15 +106,15 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
-		// sender on L1 is charged with dust deposit
+		// user on L1 is charged with dust deposit
 		env.AssertL1AddressIotas(ch.OriginatorAddress, originatorsL1IotasBefore-reqDustDeposit)
-		// originator (sender) is charged with gas fee on L2
+		// originator (user) is charged with gas fee on L2
 		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-gas.NotFoundTarget)
 		// all gas fee goes to the common account
 		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
 		env.WaitPublisher()
 	})
-	t.Run("no contract,originator!=sender", func(t *testing.T) {
+	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t)
 		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
@@ -144,17 +144,17 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
 		// originator on L1 does not change
 		env.AssertL1AddressIotas(ch.OriginatorAddress, originatorsL1IotasBefore)
-		// sender on L1 is charged with dust deposit
+		// user on L1 is charged with dust deposit
 		env.AssertL1AddressIotas(senderAddr, solo.Saldo-reqDustDeposit)
 		// originator account does not change
 		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore)
-		// sender is charged with gas fee on L2
+		// user is charged with gas fee on L2
 		ch.AssertL2AccountIotas(senderAgentID, reqDustDeposit-gas.NotFoundTarget)
 		// all gas fee goes to the common account
 		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
 		env.WaitPublisher()
 	})
-	t.Run("no EP,originator==sender", func(t *testing.T) {
+	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t)
 		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
@@ -178,15 +178,15 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
-		// sender on L1 is charged with dust deposit
+		// user on L1 is charged with dust deposit
 		env.AssertL1AddressIotas(ch.OriginatorAddress, originatorsL1IotasBefore-reqDustDeposit)
-		// originator (sender) is charged with gas fee on L2
+		// originator (user) is charged with gas fee on L2
 		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-gas.NotFoundTarget)
 		// all gas fee goes to the common account
 		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
 		env.WaitPublisher()
 	})
-	t.Run("no EP,originator!=sender", func(t *testing.T) {
+	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t)
 		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
@@ -216,11 +216,11 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
 		// originator on L1 does not change
 		env.AssertL1AddressIotas(ch.OriginatorAddress, originatorsL1IotasBefore)
-		// sender on L1 is charged with dust deposit
+		// user on L1 is charged with dust deposit
 		env.AssertL1AddressIotas(senderAddr, solo.Saldo-reqDustDeposit)
 		// originator account does not change
 		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore)
-		// sender is charged with gas fee on L2
+		// user is charged with gas fee on L2
 		ch.AssertL2AccountIotas(senderAgentID, reqDustDeposit-gas.NotFoundTarget)
 		// all gas fee goes to the common account
 		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
@@ -318,7 +318,7 @@ func TestDeployNativeContract(t *testing.T) {
 	ch := env.NewChain(nil, "chain1")
 
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-	//senderAgentID := iscp.NewAgentID(senderAddr, 0)
+	//userAgentID := iscp.NewAgentID(userAddr, 0)
 
 	// get more iotas for originator
 	originatorBalance := env.L1AddressBalances(ch.OriginatorAddress).Iotas

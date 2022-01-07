@@ -420,31 +420,6 @@ func (ch *Chain) GetTotalIotaInfo() *DustInfo {
 	}
 }
 
-// GetFeeInfo returns the fee info for the specific chain and smart contract
-//  - color of the fee tokens in the chain
-//  - chain owner part of the fee (number of tokens)
-//  - validator part of the fee (number of tokens)
-// Total fee is sum of owner fee and validator fee
-//func (ch *Cha	// TODO implementin) GetFeeInfo(contractName string) ([]byte, uint64, uint64) {
-//panic("not implemented")
-// hname := iscp.Hn(contractName)
-// ret, err := ch.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, governance.ParamHname, hname)
-// require.NoError(ch.Env.T, err)
-// require.NotEqualValues(ch.Env.T, 0, len(ret))
-
-// feeColor, err := codec.DecodeColor(ret.MustGet(governance.ParamFeeColor))
-// require.NoError(ch.Env.T, err)
-// require.NotNil(ch.Env.T, feeColor)
-
-// validatorFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamValidatorFee))
-// require.NoError(ch.Env.T, err)
-
-// ownerFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamOwnerFee))
-// require.NoError(ch.Env.T, err)
-
-// return feeColor, ownerFee, validatorFee
-//}
-
 func eventsFromViewResult(t TestContext, viewResult dict.Dict) []string {
 	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
 	ret := make([]string, recs.MustLen())

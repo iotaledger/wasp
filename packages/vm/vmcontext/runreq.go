@@ -194,13 +194,14 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 
 // calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget
 // Affordable gas budget is calculated from gas budget provided in the request by the user and taking into account
-// how many tokens the sender has in its account.
+// how many tokens the sender has in its account and how many are allowed for the target.
 // Safe arithmetics is used
 func (vmctx *VMContext) calculateAffordableGasBudget() {
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.SenderAddress() == nil")
 	}
-	tokensAvailable := uint64(0)
+	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
+	tokensGuaranteed := uint64(0)
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
 		// to pay for gas chain is configured to use some native token, not IOTA
@@ -217,25 +218,25 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 				}
 			}
 			if tokensAvailableBig.IsUint64() {
-				tokensAvailable = tokensAvailableBig.Uint64()
+				tokensGuaranteed = tokensAvailableBig.Uint64()
 			} else {
-				tokensAvailable = math.MaxUint64
+				tokensGuaranteed = math.MaxUint64
 			}
 		}
 	} else {
 		// Iotas are used to pay the gas fee
-		tokensAvailable = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
+		tokensGuaranteed = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
 		// safely subtract the transfer from the sender to the target
 		if transfer := vmctx.req.Allowance(); transfer != nil {
-			if tokensAvailable < transfer.Iotas {
-				tokensAvailable = 0
+			if tokensGuaranteed < transfer.Iotas {
+				tokensGuaranteed = 0
 			} else {
-				tokensAvailable -= transfer.Iotas
+				tokensGuaranteed -= transfer.Iotas
 			}
 		}
 	}
-	vmctx.gasMaxTokensAvailableForGasFee = tokensAvailable
-	if tokensAvailable < vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit {
+	vmctx.gasMaxTokensAvailableForGasFee = tokensGuaranteed
+	if tokensGuaranteed < vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit {
 		// it will not proceed but will charge at least the minimum
 		panic(ErrNotEnoughTokensFor1GasNominalUnit)
 	}
@@ -243,7 +244,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	if vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit == 0 {
 		gasBudgetAffordable = math.MaxUint64
 	} else {
-		nominalUnitsOfGas := tokensAvailable / vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit
+		nominalUnitsOfGas := tokensGuaranteed / vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit
 		if nominalUnitsOfGas > math.MaxUint64/vmctx.chainInfo.GasFeePolicy.GasNominalUnit {
 			gasBudgetAffordable = math.MaxUint64
 		} else {
