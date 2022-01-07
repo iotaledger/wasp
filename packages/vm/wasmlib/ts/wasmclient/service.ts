@@ -2,11 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmclient from "./index";
-import { IKeyPair } from "./crypto";
-import { IOnLedger } from "./goshimmer/models/on_ledger";
-import { Colors } from "./colors";
-import { Buffer } from './buffer';
-import { Hash } from './crypto';
+import {Hash, IKeyPair} from "./crypto";
+import {IOnLedger} from "./goshimmer/models/on_ledger";
+import {Colors} from "./colors";
+import {Buffer} from './buffer';
 
 export type EventHandlers = Map<string, (message: string[]) => void>;
 
@@ -18,10 +17,12 @@ export class Service {
     public scHname: wasmclient.Hname;
     private waspWebSocketUrl: string = "";
 
-    constructor(client: wasmclient.ServiceClient, scHname: wasmclient.Hname, eventHandlers: EventHandlers) {
+    constructor(client: wasmclient.ServiceClient, scHname: wasmclient.Hname, eventHandlers: EventHandlers | null) {
         this.serviceClient = client;
         this.scHname = scHname;
-        this.configureWebSocketsEventHandlers(eventHandlers);
+        if (eventHandlers != null) {
+            this.configureWebSocketsEventHandlers(eventHandlers);
+        }
     }
 
     public async callView(viewName: string, args: wasmclient.Arguments): Promise<wasmclient.Results> {
