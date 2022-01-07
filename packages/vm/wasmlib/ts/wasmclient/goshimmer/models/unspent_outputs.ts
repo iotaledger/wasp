@@ -1,4 +1,5 @@
 import type { IResponse } from '../../api_common/response_models';
+import { ColorCollection } from '../../colors';
 
 export interface IUnspentOutputsRequest {
     addresses: string[];
@@ -32,8 +33,6 @@ export interface IUnspentOutputAddress {
     type: string;
     base58: string;
 }
-
-export type ColorCollection = { [key: string]: bigint };
 
 export interface IUnspentOutputMap {
     address: string;
