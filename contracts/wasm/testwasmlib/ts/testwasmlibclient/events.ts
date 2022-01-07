@@ -8,9 +8,9 @@
 import * as wasmclient from "wasmclient"
 import * as app from "./testwasmlib"
 
-export const eventHandlers: wasmclient.EventHandlers = {
-	"testwasmlib.test": (msg: string[]) => app.onTestWasmLibTest(new EventTest(msg)),
-};
+export const eventHandlers: wasmclient.EventHandlers = new Map([
+	["testwasmlib.test", (msg: string[]) => app.onTestWasmLibTest(new EventTest(msg))],
+]);
 
 export class EventTest extends wasmclient.Event {
 	public readonly address: wasmclient.Address;

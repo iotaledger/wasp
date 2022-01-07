@@ -6,14 +6,14 @@ var eventsTs = map[string]string{
 $#emit importWasmLib
 import * as app from "./$package"
 
-export const eventHandlers: wasmclient.EventHandlers = {
+export const eventHandlers: wasmclient.EventHandlers = new Map([
 $#each events eventHandler
-};
+]);
 $#each events eventClass
 `,
 	// *******************************
 	"eventHandler": `
-	"$package.$evtName": (msg: string[]) => app.on$PkgName$EvtName(new Event$EvtName(msg)),
+	["$package.$evtName", (msg: string[]) => app.on$PkgName$EvtName(new Event$EvtName(msg))],
 `,
 	// *******************************
 	"eventClass": `
