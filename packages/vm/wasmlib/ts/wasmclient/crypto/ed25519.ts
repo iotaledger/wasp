@@ -1,9 +1,32 @@
 import nacl from 'tweetnacl';
 import { Buffer } from '../buffer';
+import { Base58 } from "./base58";
+import { Hash } from "./hash";
+import { Seed } from "./seed";
 
 export interface IKeyPair {
   publicKey: Buffer;
   secretKey: Buffer;
+}
+
+/**
+ * Calculates the address for public key
+ * @param keyPair The key pair used to calculate the address
+ * @returns The generated address.
+ */
+ export function getAddress(keyPair: IKeyPair): string {
+  const publicKeyBuffer = Buffer.from(keyPair.publicKey);
+  return getAddressFromPublicKeyBuffer(publicKeyBuffer);
+}
+
+export function getAddressFromPublicKeyBuffer(publicKeyBuffer: Buffer): string {
+  const digest = Hash.from(publicKeyBuffer);
+
+  const buffer = Buffer.alloc(Seed.SEED_SIZE + 1);
+  buffer[0] = ED25519.VERSION;
+  Buffer.from(digest).copy(buffer, 1);
+
+  return Base58.encode(buffer);
 }
 
 /**

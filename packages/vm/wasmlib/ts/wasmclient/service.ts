@@ -46,7 +46,6 @@ export class Service {
             const requestID = await this.serviceClient.waspClient.postOffLedgerRequest(chainId, this.scHname, hFuncName, args, transfer, keyPair);
             return requestID;
         } else {
-            const address = args.getString("address");
             const payload: IOnLedger = {
                 contract: this.scHname,
                 entrypoint: hFuncName,
@@ -54,7 +53,7 @@ export class Service {
                 //arguments : args
             };
             const transferAmount = transfer.get(Colors.IOTA_COLOR);
-            const transactionID = await this.serviceClient.goShimmerClient.sendOnLedgerRequest(address, chainId, payload, transferAmount, keyPair);
+            const transactionID = await this.serviceClient.goShimmerClient.postOnLedgerRequest(chainId, payload, transferAmount, keyPair);
             if (!transactionID) throw new Error("No transaction id");
             return transactionID;
         }
