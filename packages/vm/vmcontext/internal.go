@@ -179,22 +179,12 @@ func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
 
 // adjustL2IotasIfNeeded adjust L2 ledger for iotas if the L1 changed because of dust deposit changes
 func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64) {
-	switch {
-	case adjustment == 0:
-		// no need for adjustment
-		return
-	case adjustment > 0:
-		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-			Iotas: uint64(adjustment),
+	err := util.CatchPanicReturnError(func() {
+		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+			accounts.AdjustAccountIotas(s, commonaccount.Get(vmctx.ChainID()), adjustment)
 		})
-	case adjustment < 0:
-		err := util.CatchPanicReturnError(func() {
-			vmctx.debitFromAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-				Iotas: uint64(-adjustment),
-			})
-		}, accounts.ErrNotEnoughFunds)
-		if err != nil {
-			panic(vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
-		}
+	}, accounts.ErrNotEnoughFunds)
+	if err != nil {
+		panic(vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
 	}
 }

@@ -229,10 +229,10 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamFoundrySN)
 	delta := par.MustGetBigInt(ParamSupplyDeltaAbs)
-	destroy := par.MustGetBool(ParamDestroyTokens, false)
-	if destroy {
-		delta.Neg(delta)
+	if delta.Cmp(big.NewInt(0)) == 0 {
+		return nil, nil
 	}
+	destroy := par.MustGetBool(ParamDestroyTokens, false)
 	// check if foundry is controlled by the caller
 	ctx.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
@@ -241,34 +241,18 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.RequireNoError(err, "internal")
 
 	// accrue change on the caller's account
-	switch {
-	case delta.Cmp(big.NewInt(0)) > 0:
-		CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-			Tokens: iotago.NativeTokens{{
-				ID:     tokenID,
-				Amount: delta,
-			}},
-		})
-	case delta.Cmp(big.NewInt(0)) < 0:
-		DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-			Tokens: iotago.NativeTokens{{
-				ID: tokenID, Amount: new(big.Int).Neg(delta),
-			}},
-		})
+	// update L2 ledger and transit foundry UTXO
+	var dustAdjustment int64
+	if deltaAssets := iscp.NewEmptyAssets().AddNativeTokens(tokenID, delta); destroy {
+		DebitFromAccount(ctx.State(), ctx.Caller(), deltaAssets)
+		dustAdjustment = ctx.Foundries().ModifySupply(sn, delta.Neg(delta))
+	} else {
+		CreditToAccount(ctx.State(), ctx.Caller(), deltaAssets)
+		dustAdjustment = ctx.Foundries().ModifySupply(sn, delta)
 	}
-	// transit foundry UTXO
-	dustAdjustment := ctx.Foundries().ModifySupply(sn, delta)
-	// adjust iotas due to the possible change in dust deposit
-	switch {
-	case dustAdjustment > 0:
-		CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-			Iotas: uint64(dustAdjustment),
-		})
-	case dustAdjustment < 0:
-		DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-			Iotas: uint64(-dustAdjustment),
-		})
-	}
+
+	// adjust iotas on L2 due to the possible change in dust deposit
+	AdjustAccountIotas(ctx.State(), commonaccount.Get(ctx.ChainID()), dustAdjustment)
 	return nil, nil
 }
 

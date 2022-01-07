@@ -87,6 +87,10 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 
+		err = ch.SendToL2AccountIotas(1000, ch.CommonAccount(), senderKeyPair)
+		require.EqualValues(t, 1, sn)
+		t.Logf("common account iotas = %d before mint", ch.L2CommonAccountIotas())
+
 		err = ch.MintTokens(sn, big.NewInt(5), senderKeyPair)
 		require.NoError(t, err)
 
@@ -103,7 +107,8 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 
-		err = ch.MintTokens(sn, big.NewInt(1), senderKeyPair)
+		err = ch.SendToL2AccountIotas(1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.MintTokens(sn, 1, senderKeyPair)
 		require.NoError(t, err)
 
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(1))
@@ -118,7 +123,7 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 
-		err = ch.MintTokens(sn, big.NewInt(2), senderKeyPair)
+		err = ch.MintTokens(sn, 2, senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds)
 
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
@@ -132,21 +137,22 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 
-		err = ch.MintTokens(sn, big.NewInt(500), senderKeyPair)
+		err = ch.SendToL2AccountIotas(1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.MintTokens(sn, 500, senderKeyPair)
 		require.NoError(t, err)
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(500))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(500))
 
-		err = ch.MintTokens(sn, big.NewInt(500), senderKeyPair)
+		err = ch.MintTokens(sn, 500, senderKeyPair)
 		require.NoError(t, err)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(1000))
-		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1000))
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 1000)
+		ch.AssertL2TotalNativeTokens(&tokenID, 1000)
 
-		err = ch.MintTokens(sn, big.NewInt(1), senderKeyPair)
+		err = ch.MintTokens(sn, 1, senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds)
 
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(1000))
-		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1000))
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 1000)
+		ch.AssertL2TotalNativeTokens(&tokenID, 1000)
 	})
 	t.Run("max supply MaxUint256, mintTokens MaxUint256_1", func(t *testing.T) {
 		initTest()
@@ -156,11 +162,12 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 
+		err = ch.SendToL2AccountIotas(1000, ch.CommonAccount(), senderKeyPair)
 		err = ch.MintTokens(sn, abi.MaxUint256, senderKeyPair)
 		require.NoError(t, err)
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, abi.MaxUint256)
 
-		err = ch.MintTokens(sn, big.NewInt(1), senderKeyPair)
+		err = ch.MintTokens(sn, 1, senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrOverflow)
 
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, abi.MaxUint256)
@@ -193,15 +200,16 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 
-		err = ch.MintTokens(sn, big.NewInt(20), senderKeyPair)
+		err = ch.SendToL2AccountIotas(1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.MintTokens(sn, 20, senderKeyPair)
 		require.NoError(t, err)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(20))
-		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(20))
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 20)
+		ch.AssertL2TotalNativeTokens(&tokenID, 20)
 
-		err = ch.DestroyTokens(sn, big.NewInt(10), senderKeyPair)
+		err = ch.DestroyTokens(sn, 10, senderKeyPair)
 		require.NoError(t, err)
-		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(10))
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(10))
+		ch.AssertL2TotalNativeTokens(&tokenID, 10)
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 10)
 	})
 	t.Run("max supply 1000000, mint_1000000, destroy_1000000", func(t *testing.T) {
 		initTest()
@@ -214,10 +222,11 @@ func TestFoundries(t *testing.T) {
 		out, err := ch.GetFoundryOutput(1)
 		require.NoError(t, err)
 		require.EqualValues(t, out.MustNativeTokenID(), tokenID)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
-		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 0)
+		ch.AssertL2TotalNativeTokens(&tokenID, 0)
 
-		err = ch.MintTokens(sn, big.NewInt(1_000_000), senderKeyPair)
+		err = ch.SendToL2AccountIotas(1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.MintTokens(sn, 1_000_000, senderKeyPair)
 		require.NoError(t, err)
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(1_000_000))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1_000_000))
@@ -250,7 +259,7 @@ func TestFoundries(t *testing.T) {
 		}
 		// mint max supply from each
 		for sn := uint32(1); sn <= 10; sn++ {
-			err := ch.MintTokens(sn, big.NewInt(int64(sn+1)), senderKeyPair)
+			err := ch.MintTokens(sn, sn+1, senderKeyPair)
 			require.NoError(t, err)
 
 			out, err := ch.GetFoundryOutput(sn)
@@ -406,6 +415,8 @@ func (v *testParams) createFoundryAndMint(sch iotago.TokenScheme, tag *iotago.To
 		CreateFoundry()
 	require.NoError(v.env.T, err)
 	// mint some tokens for the user
+	err = v.ch.SendToL2AccountIotas(1000, v.ch.CommonAccount(), v.user)
+	require.NoError(v.env.T, err)
 	err = v.ch.MintTokens(sn, amount, v.user)
 	require.NoError(v.env.T, err)
 	// check the balance of the user
@@ -441,7 +452,7 @@ func TestDepositIotas(t *testing.T) {
 func TestWithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("withdraw with empty", func(t *testing.T) {
 		v := initTest(t)
-		v.createFoundryAndMint(nil, nil, big.NewInt(1_000_000), big.NewInt(100))
+		v.createFoundryAndMint(nil, nil, 1_000_000, 100)
 		// withdraw all tokens to L1
 		req := solo.NewCallParams("accounts", "withdraw").
 			AddAssetsIotas(1000).

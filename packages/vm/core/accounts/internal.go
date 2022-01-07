@@ -259,6 +259,15 @@ func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.Agen
 	}
 }
 
+func AdjustAccountIotas(state kv.KVStore, agentID *iscp.AgentID, adjustment int64) {
+	switch {
+	case adjustment > 0:
+		CreditToAccount(state, agentID, iscp.NewAssets(uint64(adjustment), nil))
+	case adjustment < 0:
+		DebitFromAccount(state, agentID, iscp.NewAssets(uint64(-adjustment), nil))
+	}
+}
+
 // GetIotaBalance return iota balance. 0 means it does not exist
 func GetIotaBalance(state kv.KVStoreReader, agentID *iscp.AgentID) uint64 {
 	return getIotaBalance(getAccountR(state, agentID))

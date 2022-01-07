@@ -157,9 +157,10 @@ type foundryParams struct {
 
 // CreateFoundryGasBudgetIotas always takes 1000 iotas as gas budget and assets for the call
 const (
-	CreateFoundryGasBudgetIotas = 1000
-	MintTokensGasBudgetIotas    = 1000
-	DestroyTokensGasBudgetIotas = 1000
+	CreateFoundryGasBudgetIotas   = 1000
+	MintTokensGasBudgetIotas      = 1000
+	DestroyTokensGasBudgetIotas   = 1000
+	SendToL2AccountGasBudgetIotas = 1000
 )
 
 func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {
@@ -266,4 +267,23 @@ func (ch *Chain) DepositAssets(assets *iscp.Assets, user *cryptolib.KeyPair) err
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).AddAssets(assets)
 	_, err := ch.PostRequestSync(req, user)
 	return err
+}
+
+func (ch *Chain) SendToL2Account(assets *iscp.Assets, target *iscp.AgentID, user *cryptolib.KeyPair) error {
+	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
+		accounts.ParamAgentID, target)
+
+	req.AddAssets(assets).AddAssetsIotas(SendToL2AccountGasBudgetIotas).
+		AddAllowance(assets).
+		WithGasBudget(SendToL2AccountGasBudgetIotas)
+	_, err := ch.PostRequestSync(req, user)
+	return err
+}
+
+func (ch *Chain) SendToL2AccountIotas(iotas uint64, target *iscp.AgentID, user *cryptolib.KeyPair) error {
+	return ch.SendToL2Account(iscp.NewAssets(iotas, nil), target, user)
+}
+
+func (ch *Chain) SendToL2AccountNativeTokens(id iotago.NativeTokenID, target *iscp.AgentID, amount interface{}, user *cryptolib.KeyPair) error {
+	return ch.SendToL2Account(iscp.NewEmptyAssets().AddNativeTokens(id, amount), target, user)
 }
