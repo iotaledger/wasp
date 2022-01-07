@@ -10,7 +10,7 @@ export interface IKeyPair {
 }
 
 /**
- * Calculates the address for public key
+ * Calculates the address for key pair
  * @param keyPair The key pair used to calculate the address
  * @returns The generated address.
  */
