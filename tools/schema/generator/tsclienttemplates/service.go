@@ -25,7 +25,7 @@ $#each func serviceFunction
 `,
 	// *******************************
 	"noEventHandlers": `
-$#set eventHandlers null
+$#set eventHandlers new Map()
 `,
 	// *******************************
 	"constArg": `

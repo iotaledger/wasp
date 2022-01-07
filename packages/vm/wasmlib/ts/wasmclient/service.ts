@@ -17,10 +17,10 @@ export class Service {
     public scHname: wasmclient.Hname;
     private waspWebSocketUrl: string = "";
 
-    constructor(client: wasmclient.ServiceClient, scHname: wasmclient.Hname, eventHandlers: EventHandlers | null) {
+    constructor(client: wasmclient.ServiceClient, scHname: wasmclient.Hname, eventHandlers: EventHandlers) {
         this.serviceClient = client;
         this.scHname = scHname;
-        if (eventHandlers != null) {
+        if (eventHandlers.size != 0) {
             this.configureWebSocketsEventHandlers(eventHandlers);
         }
     }
