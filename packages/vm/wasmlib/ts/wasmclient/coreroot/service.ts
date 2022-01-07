@@ -118,7 +118,7 @@ export class GetContractRecordsResults extends wasmclient.ViewResults {
 export class CoreRootService extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
-		super(cl, 0xcebf5908, null);
+		super(cl, 0xcebf5908, new Map());
 	}
 
 	public deployContract(): DeployContractFunc {

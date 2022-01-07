@@ -106,7 +106,7 @@ export class ListBlobsResults extends wasmclient.ViewResults {
 export class CoreBlobService extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
-		super(cl, 0xfd91bc63, null);
+		super(cl, 0xfd91bc63, new Map());
 	}
 
 	public storeBlob(): StoreBlobFunc {
