@@ -33,7 +33,11 @@ func (s *Service) Init(svcClient *ServiceClient, chainID string, scHname uint32,
 	if err != nil {
 		return err
 	}
-	return s.startEventHandlers(svcClient.eventPort, eventHandlers)
+	if len(eventHandlers) != 0 {
+		// TODO allow user to specify event handlers for core contracts?
+		return s.startEventHandlers(svcClient.eventPort, eventHandlers)
+	}
+	return nil
 }
 
 func (s *Service) AsClientFunc() ClientFunc {
@@ -69,6 +73,11 @@ func (s *Service) PostRequest(hFuncName uint32, args *Arguments, transfer *Trans
 	}
 	id := req.ID()
 	return Request{id: &id}
+}
+
+// overrides default contract name
+func (s *Service) ServiceContractName(contractName string) {
+	s.scHname = iscp.Hn(contractName)
 }
 
 func (s *Service) SignRequests(keyPair *ed25519.KeyPair) {

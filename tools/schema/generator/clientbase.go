@@ -13,11 +13,14 @@ type ClientBase struct {
 
 func (g *ClientBase) Generate() error {
 	g.folder = g.rootFolder + "/" + g.s.PackageName + "client/"
+	if g.s.CoreContracts {
+		g.folder = g.rootFolder + "/wasmclient/" + g.s.PackageName + "/"
+	}
 	err := os.MkdirAll(g.folder, 0o755)
 	if err != nil {
 		return err
 	}
-	info, err := os.Stat(g.folder + "events" + g.extension)
+	info, err := os.Stat(g.folder + "service" + g.extension)
 	if err == nil && info.ModTime().After(g.s.SchemaTime) {
 		fmt.Printf("skipping %s code generation\n", g.language)
 		return nil
@@ -28,7 +31,7 @@ func (g *ClientBase) Generate() error {
 }
 
 func (g *ClientBase) generateCode() error {
-	err := g.createSourceFile("events", true)
+	err := g.createSourceFile("events", !g.s.CoreContracts)
 	if err != nil {
 		return err
 	}
@@ -36,7 +39,10 @@ func (g *ClientBase) generateCode() error {
 	if err != nil {
 		return err
 	}
-	return g.generateFuncs(g.appendEvents)
+	if !g.s.CoreContracts {
+		return g.generateFuncs(g.appendEvents)
+	}
+	return nil
 }
 
 func (g *ClientBase) appendEvents(existing model.StringMap) {

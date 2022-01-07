@@ -3,8 +3,8 @@ package tsclienttemplates
 var funcsTs = map[string]string{
 	// *******************************
 	"funcs.ts": `
-import * as events from "./events"
-import * as service from "./service"
+$#emit importEvents
+$#emit importService
 $#each events funcSignature
 `,
 	// *******************************

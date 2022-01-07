@@ -3,8 +3,8 @@ package tsclienttemplates
 var serviceTs = map[string]string{
 	// *******************************
 	"service.ts": `
-import * as wasmclient from "wasmclient"
-import * as events from "./events"
+$#emit importWasmLib
+$#if core else importEvents
 
 $#each params constArg
 
@@ -16,10 +16,16 @@ $#each func funcStruct
 export class $PkgName$+Service extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
-		super(cl, 0x$hscName, events.eventHandlers);
+$#set eventHandlers events.eventHandlers
+$#if core noEventHandlers
+		super(cl, 0x$hscName, $eventHandlers);
 	}
 $#each func serviceFunction
 }
+`,
+	// *******************************
+	"noEventHandlers": `
+$#set eventHandlers null
 `,
 	// *******************************
 	"constArg": `

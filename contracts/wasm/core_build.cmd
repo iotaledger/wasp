@@ -1,6 +1,6 @@
 @echo off
 cd ..\..\packages\vm\wasmlib
-schema -core -go -rust -ts -force
+schema -core -go -rust -ts -client -force
 del /s /q d:\work\node_modules\wasmlib\*.* >nul:
 del /s /q d:\work\node_modules\wasmclient\*.* >nul:
 xcopy /s /q d:\Work\go\github.com\iotaledger\wasp\packages\vm\wasmlib\ts\wasmclient d:\work\node_modules\wasmclient

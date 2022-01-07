@@ -5,6 +5,8 @@ import * as wasmclient from "./index";
 import { IKeyPair } from "./crypto";
 import { IOnLedger } from "./goshimmer/models/on_ledger";
 import { Colors } from "./colors";
+import { Buffer } from './buffer';
+import { Hash } from './crypto';
 
 export type EventHandlers = Map<string, (message: string[]) => void>;
 
@@ -55,6 +57,11 @@ export class Service {
             if (!transactionID) throw new Error("No transaction id");
             return transactionID;
         }
+    }
+
+    // overrides default contract name
+    public serviceContractName(contractName: string): void {
+        this.scHname = Hash.from(Buffer.from(contractName)).readUInt32LE(0)
     }
 
     public async waitRequest(reqID: wasmclient.RequestID): Promise<void> {

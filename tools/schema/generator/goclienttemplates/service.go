@@ -20,10 +20,16 @@ type $PkgName$+Service struct {
 
 func New$PkgName$+Service(cl *wasmclient.ServiceClient, chainID string) (*$PkgName$+Service, error) {
 	s := &$PkgName$+Service{}
-	err := s.Service.Init(cl, chainID, 0x$hscName, EventHandlers)
+$#set eventHandlers EventHandlers
+$#if core noEventHandlers
+	err := s.Service.Init(cl, chainID, 0x$hscName, $eventHandlers)
 	return s, err
 }
 $#each func serviceFunction
+`,
+	// *******************************
+	"noEventHandlers": `
+$#set eventHandlers nil
 `,
 	// *******************************
 	"constArg": `
@@ -86,7 +92,7 @@ func (f *$FuncName$Kind) Call() $FuncName$+Results {
 $#each mandatory mandatoryCheck
 $#if param execWithArgs execNoArgs
 	f.ClientView.Call("$funcName", $args)
-	return $FuncName$+Results { res: f.Results() }
+	return $FuncName$+Results{res: f.Results()}
 }
 $#if result resultStruct
 `,
@@ -139,7 +145,7 @@ func (r *$FuncName$+Results) $FldName$+Exists() bool {
 	"serviceFunction": `
 
 func (s *$PkgName$+Service) $FuncName() $FuncName$Kind {
-	return $FuncName$Kind{ Client$Kind: s.AsClient$Kind() }
+	return $FuncName$Kind{Client$Kind: s.AsClient$Kind()}
 }
 `,
 }

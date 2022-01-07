@@ -94,4 +94,16 @@ var common = map[string]string{
   ],
 }
 `,
+	// *******************************
+	"importEvents": `
+import * as events from "./events"
+`,
+	// *******************************
+	"importService": `
+import * as service from "./service"
+`,
+	// *******************************
+	"importWasmLib": `
+import * as wasmclient from "wasmclient"
+`,
 }

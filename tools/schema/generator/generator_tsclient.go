@@ -23,6 +23,9 @@ func (g *TsClientGenerator) Generate() error {
 	if err != nil {
 		return err
 	}
+	if g.s.CoreContracts {
+		return nil
+	}
 
 	// now generate language-specific files
 

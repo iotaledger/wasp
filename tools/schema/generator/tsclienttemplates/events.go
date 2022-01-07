@@ -3,7 +3,7 @@ package tsclienttemplates
 var eventsTs = map[string]string{
 	// *******************************
 	"events.ts": `
-import * as wasmclient from "wasmclient"
+$#emit importWasmLib
 import * as app from "./$package"
 
 export const eventHandlers: wasmclient.EventHandlers = {
