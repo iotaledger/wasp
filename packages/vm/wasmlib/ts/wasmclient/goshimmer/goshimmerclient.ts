@@ -177,6 +177,7 @@ export class GoShimmerClient {
         //depositfunc.agentID(destinationAgentID);
         depositfunc.transfer(Transfer.iotas(amount));
         depositfunc.sign(keypair);
+        depositfunc.onLedgerRequest(true);
         await depositfunc.post();
     }
 }
