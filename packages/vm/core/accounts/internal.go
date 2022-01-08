@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -648,3 +649,12 @@ func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID,
 }
 
 // endregion //////////////////////////////////////////
+
+func GetDustAssumptions(state kv.KVStoreReader) *transaction.DustDepositAssumption {
+	bin := state.MustGet(kv.Key(stateVarMinimumDustDepositAssumptionsBin))
+	ret, err := transaction.DustDepositAssumptionFromBytes(bin)
+	if err != nil {
+		panic(xerrors.Errorf("GetDustAssumptions: internal: %v", err))
+	}
+	return ret
+}

@@ -1,12 +1,10 @@
 package root
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"golang.org/x/xerrors"
 )
 
 func GetContractRegistry(state kv.KVStore) *collections.Map {
@@ -62,13 +60,4 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc
 		return true
 	})
 	return ret, err
-}
-
-func GetDustAssumptions(state kv.KVStoreReader) *vmtxbuilder.InternalDustDepositAssumption {
-	bin := state.MustGet(StateVarDustDepositAssumptions)
-	ret, err := vmtxbuilder.InternalDustDepositAssumptionFromBytes(bin)
-	if err != nil {
-		panic(xerrors.Errorf("GetDustAssumptions: internal: %v", err))
-	}
-	return ret
 }

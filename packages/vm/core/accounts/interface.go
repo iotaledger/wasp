@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"golang.org/x/xerrors"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain account ledger contract")
@@ -48,19 +49,23 @@ const (
 	prefixNativeTokenOutputMap
 	// prefixFoundryOutputRecords a map with all foundry outputs
 	prefixFoundryOutputRecords
+	//
+	stateVarMinimumDustDepositAssumptionsBin
 
-	ParamAgentID           = "a"
-	ParamAccountNonce      = "n"
-	ParamForceMinimumIotas = "f"
-
-	ParamFoundrySN        = "s"
-	ParamFoundryOutputBin = "b"
-	ParamTokenScheme      = "t"
-	ParamTokenTag         = "g"
-	ParamMaxSupply        = "p"
-	ParamSupplyDeltaAbs   = "d"
-	ParamDestroyTokens    = "y"
+	ParamAgentID                   = "a"
+	ParamAccountNonce              = "n"
+	ParamForceMinimumIotas         = "f"
+	ParamFoundrySN                 = "s"
+	ParamFoundryOutputBin          = "b"
+	ParamTokenScheme               = "t"
+	ParamTokenTag                  = "g"
+	ParamMaxSupply                 = "p"
+	ParamSupplyDeltaAbs            = "d"
+	ParamDestroyTokens             = "y"
+	ParamDustDepositAssumptionsBin = "u"
 )
+
+var ErrDustDepositAssumptionsWrong = xerrors.New("'dust deposit assumptions' parameter not specified or wrong")
 
 // FIXME hackery. Replace with proper function
 func FoundrySNFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {

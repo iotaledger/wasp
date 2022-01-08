@@ -78,20 +78,14 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	vmctx.assertConsistentL2WithL1TxBuilder("begin creditAssetsToChain")
 
 	if vmctx.req.IsOffLedger() {
-		// off ledger requests does not bring any deposit
+		// off ledger request does not bring any deposit
 		return
 	}
-	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
-		// in the very first call we take all iotas in excess of dust deposit and accrue them to the common account
-		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-			Iotas: vmctx.txbuilder.TotalIotasInL2Accounts(),
-		})
-	}
-	// consume output into the transaction builder
-	// dustAdjustmentOfTheCommonAccount is due to the dust in the internal UTXOs
+	// Consume the output. Adjustment in L2 is needed because of the dust in the internal UTXOs
 	dustAdjustmentOfTheCommonAccount := vmctx.txbuilder.Consume(vmctx.req)
 	// update the state, the account ledger
 	// NOTE: sender account will be CommonAccount if sender address is not available
+	// It means any random sends to the chain end up in the common account
 	vmctx.creditToAccount(vmctx.req.SenderAccount(), vmctx.req.Assets())
 
 	// adjust the common account with the dust consumed or returned by internal UTXOs

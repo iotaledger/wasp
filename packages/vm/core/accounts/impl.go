@@ -10,11 +10,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
 
-var Processor = Contract.Processor(nil,
+var Processor = Contract.Processor(initialize,
 	FuncDeposit.WithHandler(deposit),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
@@ -29,6 +30,22 @@ var Processor = Contract.Processor(nil,
 	FuncViewTotalAssets.WithHandler(viewTotalAssets),
 	FuncViewAccounts.WithHandler(viewAccounts),
 )
+
+func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
+	// validating and storing dust deposit assumption constants
+	iotasOnAnchor := ctx.StateAnchor().Deposit
+	dustAssumptionsBin := ctx.Params().MustGet(ParamDustDepositAssumptionsBin)
+	dustDepositAssumptions, err := transaction.DustDepositAssumptionFromBytes(dustAssumptionsBin)
+	// checking if assumptions are consistent
+	ctx.Require(err == nil && iotasOnAnchor >= dustDepositAssumptions.AnchorOutput,
+		"accounts.initialize.fail: %v", ErrDustDepositAssumptionsWrong)
+	ctx.State().Set(kv.Key(stateVarMinimumDustDepositAssumptionsBin), dustAssumptionsBin)
+
+	// initial load with iotas from origin anchor output exceeding minimum dust deposit assumption
+	initialLoadIotas := iscp.NewAssets(iotasOnAnchor-dustDepositAssumptions.AnchorOutput, nil)
+	CreditToAccount(ctx.State(), commonaccount.Get(ctx.ChainID()), initialLoadIotas)
+	return nil, nil
+}
 
 // deposit is a function to deposit attached assets to the sender's chain account
 // It does nothing because assets are already on the sender's account

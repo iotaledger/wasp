@@ -6,8 +6,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 )
 
@@ -105,7 +103,7 @@ func computeInputsAndRemainder(
 	var inputCount int
 	for _, inp := range allUnspentOutputs {
 		inputCount++
-		a := vmtxbuilder.AssetsFromOutput(inp)
+		a := AssetsFromOutput(inp)
 		iotasIn += a.Iotas
 		for _, nt := range a.Tokens {
 			s, ok := tokensIn[nt.ID]
@@ -139,7 +137,7 @@ func computeInputsAndRemainder(
 // If return (nil, nil) it means remainder is a perfect match between inputs and outputs, remainder not needed
 func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, rentStructure *iotago.RentStructure) (*iotago.ExtendedOutput, error) {
 	if inIotas < outIotas {
-		return nil, accounts.ErrNotEnoughIotas
+		return nil, ErrNotEnoughIotas
 	}
 	// collect all token ids
 	tokenIDs := make(map[iotago.NativeTokenID]bool)
@@ -157,14 +155,14 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 		bIn, okIn := inTokens[id]
 		bOut, okOut := outTokens[id]
 		if !okIn {
-			return nil, accounts.ErrNotEnoughNativeTokens
+			return nil, ErrNotEnoughNativeTokens
 		}
 		switch {
 		case okIn && okOut:
 			// there are tokens in inputs and outputs. Check if it is enough
 			if bIn.Cmp(bOut) < 0 {
 				// not enough
-				return nil, accounts.ErrNotEnoughNativeTokens
+				return nil, ErrNotEnoughNativeTokens
 			}
 			// bIn >= bOut
 			s := new(big.Int).Sub(bIn, bOut)
@@ -173,7 +171,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			}
 		case !okIn && okOut:
 			// there's output but no input. Not enough
-			return nil, accounts.ErrNotEnoughNativeTokens
+			return nil, ErrNotEnoughNativeTokens
 		case okIn && !okOut:
 			// native token is here by accident. All goes to remainder
 			remTokens[id] = new(big.Int).Set(bIn)
@@ -202,7 +200,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 	}
 	bc := ret.VByteCost(rentStructure, nil)
 	if ret.Amount < bc {
-		return nil, xerrors.Errorf("%v: needed at least %d", accounts.ErrNotEnoughIotasForDustDeposit, bc)
+		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughIotasForDustDeposit, bc)
 	}
 	return ret, nil
 }

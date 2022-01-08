@@ -2,8 +2,8 @@ package vmcontext
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 )
 
@@ -13,7 +13,7 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 		panic(ErrAssetsCantBeEmptyInSend)
 	}
 	// create extended output with adjusted dust deposit
-	out := vmtxbuilder.ExtendedOutputFromPostData(
+	out := transaction.ExtendedOutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,

@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
 var Processor = root.Contract.Processor(initialize,
@@ -56,31 +55,32 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 			creator != nil &&
 			creator.Equal(ctx.Caller().Address()) &&
 			contractRegistry.MustLen() == 0
-
 	ctx.Require(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
 
 	assetsOnStateAnchor := iscp.NewAssets(stateAnchor.Deposit, nil)
 	ctx.Require(len(assetsOnStateAnchor.Tokens) == 0, "root.initialize.fail: native tokens in origin output are not allowed")
 
-	dustAssumptionsBin, err := ctx.Params().Get(root.ParamDustDepositAssumptionsBin)
-	ctx.RequireNoError(err)
-	dustDepositAssumptions, err := vmtxbuilder.InternalDustDepositAssumptionFromBytes(dustAssumptionsBin)
-	ctx.Require(err == nil && assetsOnStateAnchor.Iotas >= dustDepositAssumptions.AnchorOutput,
-		"root.initialize.fail: %v", root.ErrDustDepositAssumptionsWrong)
+	extParams := ctx.Params().Clone()
 
+	// store 'root' into the registry
 	mustStoreContract(ctx, root.Contract)
+	// store 'blob' into the registry and run init
 	mustStoreAndInitCoreContract(ctx, blob.Contract, nil)
-	mustStoreAndInitCoreContract(ctx, accounts.Contract, nil)
+	// store 'accounts' into the registry  and run init
+	// passing dust assumptions
+	extParams.Set(accounts.ParamDustDepositAssumptionsBin, ctx.Params().MustGet(root.ParamDustDepositAssumptionsBin))
+	mustStoreAndInitCoreContract(ctx, accounts.Contract, extParams)
+	// store 'blocklog' into the registry and run init
 	mustStoreAndInitCoreContract(ctx, blocklog.Contract, nil)
 
-	govParams := ctx.Params().Clone()
-	govParams.Set(governance.ParamChainID, codec.EncodeChainID(ctx.ChainID()))
+	// store 'governance' into the registry and run init
+	// passing init parameters
+	extParams.Set(governance.ParamChainID, codec.EncodeChainID(ctx.ChainID()))
 	// chain owner is whoever creates origin and sends the 'init' request
-	govParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes())
-	mustStoreAndInitCoreContract(ctx, governance.Contract, govParams)
+	extParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes())
+	mustStoreAndInitCoreContract(ctx, governance.Contract, extParams)
 
 	state.Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(true))
-	state.Set(root.StateVarDustDepositAssumptions, dustAssumptionsBin)
 	state.Set(root.StateVarStateInitialized, []byte{0xFF})
 
 	ctx.Log().Debugf("root.initialize.success")

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/iscp"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"golang.org/x/xerrors"
@@ -46,4 +48,24 @@ func (vmctx *VMContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 		panic(xerrors.Errorf("internal: %v", err))
 	}
 	return vmctx.txbuilder.ModifyNativeTokenSupply(&tokenID, delta)
+}
+
+// TODO move BlockContext to Privileged sub-interface.
+//   do we need ctx as parameter?
+func (vmctx *VMContext) BlockContext(ctx iscp.Sandbox, construct func(ctx iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
+	hname := vmctx.CurrentContractHname()
+	if bctx, alreadyExists := vmctx.blockContext[hname]; alreadyExists {
+		return bctx.obj
+	}
+	if onClose == nil {
+		onClose = func(interface{}) {}
+	}
+	ret := &blockContext{
+		obj:     construct(ctx),
+		onClose: onClose,
+	}
+	vmctx.blockContext[hname] = ret
+	// storing sequence to have deterministic order of closing
+	vmctx.blockContextCloseSeq = append(vmctx.blockContextCloseSeq, hname)
+	return ret.obj
 }

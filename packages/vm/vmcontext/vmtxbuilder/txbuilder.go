@@ -6,9 +6,9 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -51,7 +51,7 @@ type AnchorTransactionBuilder struct {
 	// iotas which are on-chain. It does not include dust deposits on anchor and on internal outputs
 	totalIotasInL2Accounts uint64
 	// minimum dust deposit assumption for internal outputs. It is used as constants. Assumed real dust cost never grows
-	dustDepositAssumption InternalDustDepositAssumption
+	dustDepositAssumption transaction.DustDepositAssumption
 	// balance loader for native tokens
 	loadTokenOutput tokenOutputLoader
 	// foundry loader
@@ -88,7 +88,7 @@ func NewAnchorTransactionBuilder(
 	anchorOutputID *iotago.UTXOInput,
 	tokenBalanceLoader tokenOutputLoader,
 	foundryLoader foundryLoader,
-	dustDepositAssumptions InternalDustDepositAssumption,
+	dustDepositAssumptions transaction.DustDepositAssumption,
 	rentStructure *iotago.RentStructure,
 ) *AnchorTransactionBuilder {
 	if anchorOutput.Amount < dustDepositAssumptions.AnchorOutput {
@@ -186,7 +186,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	if txb.numNativeTokensExceeded() {
 		panic(ErrNumberOfNativeTokensLimitExceeded)
 	}
-	assets := AssetsFromOutput(o)
+	assets := transaction.AssetsFromOutput(o)
 	txb.subDeltaIotasFromTotal(assets.Iotas)
 	bi := new(big.Int)
 	iotaAdjustmentL2 := int64(0)
@@ -465,85 +465,5 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.Sta
 		Inputs:  txb.inputs(),
 		Outputs: txb.outputs(stateData),
 		Payload: nil,
-	}
-}
-
-// ExtendedOutputFromPostData creates extended output object from parameters.
-// It automatically adjusts amount of iotas required for the dust deposit
-func ExtendedOutputFromPostData(
-	senderAddress iotago.Address,
-	senderContract iscp.Hname,
-	par iscp.RequestParameters,
-	rentStructure *iotago.RentStructure,
-) *iotago.ExtendedOutput {
-	ret := MakeExtendedOutput(
-		par.TargetAddress,
-		senderAddress,
-		par.Assets,
-		&iscp.RequestMetadata{
-			SenderContract: senderContract,
-			TargetContract: par.Metadata.TargetContract,
-			EntryPoint:     par.Metadata.EntryPoint,
-			Params:         par.Metadata.Params,
-			Allowance:      par.Metadata.Allowance,
-			GasBudget:      par.Metadata.GasBudget,
-		},
-		par.Options,
-		rentStructure,
-	)
-	return ret
-}
-
-// MakeExtendedOutput creates new ExtendedOutput from input parameters.
-// Adjusts dust deposit if needed and returns flag if adjusted
-func MakeExtendedOutput(
-	targetAddress iotago.Address,
-	senderAddress iotago.Address,
-	assets *iscp.Assets,
-	metadata *iscp.RequestMetadata,
-	options *iscp.SendOptions,
-	rentStructure *iotago.RentStructure,
-) *iotago.ExtendedOutput {
-	if assets == nil {
-		assets = &iscp.Assets{}
-	}
-	ret := &iotago.ExtendedOutput{
-		Address:      targetAddress,
-		Amount:       assets.Iotas,
-		NativeTokens: assets.Tokens,
-		Blocks:       iotago.FeatureBlocks{},
-	}
-	if senderAddress != nil {
-		ret.Blocks = append(ret.Blocks, &iotago.SenderFeatureBlock{
-			Address: senderAddress,
-		})
-	}
-	if metadata != nil {
-		ret.Blocks = append(ret.Blocks, &iotago.MetadataFeatureBlock{
-			Data: metadata.Bytes(),
-		})
-	}
-
-	if options != nil {
-		panic(" send options FeatureBlocks not implemented yet")
-	}
-
-	// Adjust to minimum dust deposit
-	neededDustDeposit := ret.VByteCost(rentStructure, nil)
-	if ret.Amount < neededDustDeposit {
-		ret.Amount = neededDustDeposit
-	}
-	return ret
-}
-
-func AssetsFromOutput(o iotago.Output) *iscp.Assets {
-	switch o := o.(type) {
-	case *iotago.ExtendedOutput:
-		return &iscp.Assets{
-			Iotas:  o.Amount,
-			Tokens: o.NativeTokens,
-		}
-	default:
-		panic(xerrors.Errorf("AssetsFromExtendedOutput: not supported output type: %T", o))
 	}
 }

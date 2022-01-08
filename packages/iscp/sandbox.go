@@ -98,12 +98,13 @@ type Sandbox interface {
 	Privileged() Privileged
 }
 
-// Privileged is an sub-interface for core contracts. Should not be called by VM plugins
+// Privileged is a sub-interface for core contracts. Should not be called by VM plugins
 type Privileged interface {
 	TryLoadContract(programHash hashing.HashValue) error
 	CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64)
 	DestroyFoundry(uint32) int64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
+	//BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters

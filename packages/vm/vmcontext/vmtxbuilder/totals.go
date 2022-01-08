@@ -6,6 +6,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"golang.org/x/xerrors"
 )
 
@@ -104,7 +105,7 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 		}
 	}
 	for _, o := range txb.postedOutputs {
-		assets := AssetsFromOutput(o)
+		assets := transaction.AssetsFromOutput(o)
 		for _, nt := range assets.Tokens {
 			ret.SentOutIotas += assets.Iotas
 			s, ok := ret.SentOutTokenBalances[nt.ID]

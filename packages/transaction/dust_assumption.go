@@ -1,4 +1,4 @@
-package vmtxbuilder
+package transaction
 
 import (
 	"fmt"
@@ -11,15 +11,15 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-type InternalDustDepositAssumption struct {
+type DustDepositAssumption struct {
 	AnchorOutput      uint64
 	NativeTokenOutput uint64
 }
 
-func InternalDustDepositAssumptionFromBytes(data []byte) (*InternalDustDepositAssumption, error) {
+func DustDepositAssumptionFromBytes(data []byte) (*DustDepositAssumption, error) {
 	mu := marshalutil.New(data)
 	var err error
-	ret := &InternalDustDepositAssumption{}
+	ret := &DustDepositAssumption{}
 	if ret.AnchorOutput, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
@@ -29,20 +29,20 @@ func InternalDustDepositAssumptionFromBytes(data []byte) (*InternalDustDepositAs
 	return ret, nil
 }
 
-func (d *InternalDustDepositAssumption) Bytes() []byte {
+func (d *DustDepositAssumption) Bytes() []byte {
 	return marshalutil.New().
 		WriteUint64(d.AnchorOutput).
 		WriteUint64(d.NativeTokenOutput).
 		Bytes()
 }
 
-func (d *InternalDustDepositAssumption) String() string {
+func (d *DustDepositAssumption) String() string {
 	return fmt.Sprintf("InternalDustDepositEstimate: anchor UTXO = %d, nativetokenUTXO = %d",
 		d.AnchorOutput, d.NativeTokenOutput)
 }
 
-func NewDepositEstimate(rent *iotago.RentStructure) *InternalDustDepositAssumption {
-	return &InternalDustDepositAssumption{
+func NewDepositEstimate(rent *iotago.RentStructure) *DustDepositAssumption {
+	return &DustDepositAssumption{
 		AnchorOutput:      aliasOutputDustDeposit(rent) + 50,
 		NativeTokenOutput: nativeTokenOutputDustDeposit(rent) + 50,
 	}

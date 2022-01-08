@@ -2,10 +2,9 @@ package root
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
 var (
@@ -18,7 +17,6 @@ const (
 	StateVarDeployPermissionsEnabled = "a"
 	StateVarDeployPermissions        = "p"
 	StateVarStateInitialized         = "i"
-	StateVarDustDepositAssumptions   = "d"
 )
 
 // param variables
@@ -45,8 +43,7 @@ var (
 )
 
 var (
-	ErrChainInitConditionsFailed   = xerrors.New("root.init can't be called in this state")
-	ErrDustDepositAssumptionsWrong = xerrors.New("'dust deposit assumptions' parameter not specified or wrong")
+	ErrChainInitConditionsFailed = xerrors.New("root.init can't be called in this state")
 )
 
 func GasToDeploy(programHash hashing.HashValue) uint64 {

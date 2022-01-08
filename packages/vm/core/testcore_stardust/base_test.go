@@ -3,27 +3,35 @@ package testcore
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-
-	"github.com/iotaledger/wasp/packages/utxodb"
-
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
-
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
-	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
-
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
+
+func TestInitLoad(t *testing.T) {
+	env := solo.New(t)
+	env.EnablePublisher(true)
+	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
+	env.AssertL1AddressIotas(userAddr, solo.Saldo)
+	ch, _, _ := env.NewChainExt(user, 10_000, "chain1")
+	_ = ch.Log.Sync()
+
+	dustCosts := transaction.NewDepositEstimate(env.RentStructure())
+	assets := ch.L2CommonAccountBalances()
+	require.EqualValues(t, 10_000-dustCosts.AnchorOutput, assets.Iotas)
+	require.EqualValues(t, 0, len(assets.Tokens))
+}
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
@@ -34,7 +42,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	require.EqualValues(t, env.L1Ledger().Supply(), assets.Iotas)
 
 	// create chain
-	ch, _, initTx := env.NewChainExt(nil, "chain1")
+	ch, _, initTx := env.NewChainExt(nil, 0, "chain1")
 	defer ch.Log.Sync()
 	env.WaitPublisher()
 	ch.AssertControlAddresses()
@@ -57,7 +65,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 
 	// let's analise dust deposit on origin and init transactions
 	vByteCostInit := transaction.GetVByteCosts(initTx, env.RentStructure())[0]
-	dustCosts := vmtxbuilder.NewDepositEstimate(env.RentStructure())
+	dustCosts := transaction.NewDepositEstimate(env.RentStructure())
 	// what we spent is only for dust deposits for those 2 transactions
 	require.EqualValues(t, int(totalSpent), int(dustCosts.AnchorOutput+vByteCostInit))
 
