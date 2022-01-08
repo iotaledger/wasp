@@ -6,6 +6,8 @@ package solo
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/util"
+
 	"github.com/iotaledger/wasp/packages/transaction"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -71,9 +73,18 @@ func (r *CallParams) AddIotaAllowance(amount uint64) *CallParams {
 	return r.AddAllowance(iscp.NewAssets(amount, nil))
 }
 
-func (r *CallParams) AddNativeTokensAllowance(tokens ...*iotago.NativeToken) *CallParams {
+func (r *CallParams) AddNativeTokensAllowanceVect(tokens ...*iotago.NativeToken) *CallParams {
 	return r.AddAllowance(&iscp.Assets{
 		Tokens: tokens,
+	})
+}
+
+func (r *CallParams) AddNativeTokensAllowance(id *iotago.NativeTokenID, amount interface{}) *CallParams {
+	return r.AddAllowance(&iscp.Assets{
+		Tokens: iotago.NativeTokens{&iotago.NativeToken{
+			ID:     *id,
+			Amount: util.ToBigInt(amount),
+		}},
 	})
 }
 
@@ -90,9 +101,18 @@ func (r *CallParams) AddAssetsIotas(amount uint64) *CallParams {
 	return r.AddAssets(iscp.NewAssets(amount, nil))
 }
 
-func (r *CallParams) AddAssetsNativeTokens(tokens ...*iotago.NativeToken) *CallParams {
+func (r *CallParams) AddAssetsNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
 	return r.AddAssets(&iscp.Assets{
 		Tokens: tokens,
+	})
+}
+
+func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount interface{}) *CallParams {
+	return r.AddAssets(&iscp.Assets{
+		Tokens: iotago.NativeTokens{&iotago.NativeToken{
+			ID:     *tokenID,
+			Amount: util.ToBigInt(amount),
+		}},
 	})
 }
 

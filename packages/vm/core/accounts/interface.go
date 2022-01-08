@@ -62,7 +62,8 @@ const (
 	ParamDestroyTokens    = "y"
 )
 
-func SerialNumFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {
+// FIXME hackery. Replace with proper function
+func FoundrySNFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {
 	slice := tokenID[iotago.AliasAddressSerializedBytesSize : iotago.AliasAddressSerializedBytesSize+serializer.UInt32ByteSize]
 	return binary.LittleEndian.Uint32(slice)
 }

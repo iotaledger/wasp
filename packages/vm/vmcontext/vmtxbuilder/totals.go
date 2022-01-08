@@ -1,6 +1,7 @@
 package vmtxbuilder
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -157,8 +158,9 @@ func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
 	if DebugTxBuilder {
 		_, _, balanced := txb.Totals()
 		if !balanced {
-			//fmt.Printf("================= MustBalanced [%s] \ninTotals: %v\noutTotals: %v\n", checkpoint, ins, outs)
-			panic(xerrors.Errorf("internal: tx builder is not balanced [%s]", checkpoint))
+			ins, outs, _ := txb.Totals()
+			fmt.Printf("================= MustBalanced [%s] \ninTotals: %v\noutTotals: %v\n", checkpoint, ins, outs)
+			panic(xerrors.Errorf("internal: %v [%s]", ErrFatalTxBuilderNotBalanced, checkpoint))
 		}
 	}
 }

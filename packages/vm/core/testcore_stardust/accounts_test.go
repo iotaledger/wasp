@@ -181,7 +181,7 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 
-		err = ch.DestroyTokens(sn, big.NewInt(1), senderKeyPair)
+		err = ch.DestroyTokensOnL2(sn, big.NewInt(1), senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
@@ -206,7 +206,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 20)
 		ch.AssertL2TotalNativeTokens(&tokenID, 20)
 
-		err = ch.DestroyTokens(sn, 10, senderKeyPair)
+		err = ch.DestroyTokensOnL2(sn, 10, senderKeyPair)
 		require.NoError(t, err)
 		ch.AssertL2TotalNativeTokens(&tokenID, 10)
 		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 10)
@@ -276,7 +276,7 @@ func TestFoundries(t *testing.T) {
 		}
 		// destroy 1 token of each tokenID
 		for sn := uint32(1); sn <= 10; sn++ {
-			err := ch.DestroyTokens(sn, big.NewInt(1), senderKeyPair)
+			err := ch.DestroyTokensOnL2(sn, big.NewInt(1), senderKeyPair)
 			require.NoError(t, err)
 		}
 		// check balances
@@ -391,6 +391,8 @@ type testParams struct {
 	userAgentID *iscp.AgentID
 	ch          *solo.Chain
 	req         *solo.CallParams
+	sn          uint32
+	tokenID     *iotago.NativeTokenID
 }
 
 func initTest(t *testing.T) *testParams {
@@ -398,8 +400,6 @@ func initTest(t *testing.T) *testParams {
 	ret.env = solo.New(t)
 
 	ret.chainOwner, _ = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(10))
-	//chainOwnerAgentID := iscp.NewAgentID(chainOwnerAddr, 0)
-
 	ret.user, ret.userAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(11))
 	ret.userAgentID = iscp.NewAgentID(ret.userAddr, 0)
 
@@ -423,7 +423,6 @@ func (v *testParams) createFoundryAndMint(sch iotago.TokenScheme, tag *iotago.To
 	// check the balance of the user
 	v.ch.AssertL2AccountNativeToken(v.userAgentID, &tokenID, amount)
 	require.True(v.env.T, v.ch.L2AccountIotas(v.userAgentID) > 100) // must be some coming from dust deposits
-	v.env.T.Logf("user has on-chain: %d", v.ch.L2AccountIotas(v.userAgentID))
 	return sn, &tokenID
 }
 
@@ -450,135 +449,156 @@ func TestDepositIotas(t *testing.T) {
 	}
 }
 
+// initWithdrawTest creates foundry with 1_000_000 of max supply and mint 100 tokens to user's account
+func initWithdrawTest(t *testing.T) *testParams {
+	v := initTest(t)
+	v.sn, v.tokenID = v.createFoundryAndMint(nil, nil, 1_000_000, 100)
+	v.req = solo.NewCallParams("accounts", "withdraw").
+		AddAssetsIotas(1000).
+		WithGasBudget(2000)
+	v.printBalances("BEGIN")
+	return v
+}
+
+func (v *testParams) printBalances(prefix string) {
+	v.env.T.Logf("%s: user L1 iotas: %d", prefix, v.env.L1IotaBalance(v.userAddr))
+	v.env.T.Logf("%s: user L1 tokens: %s : %d", prefix, v.tokenID, v.env.L1NativeTokenBalance(v.userAddr, v.tokenID))
+	v.env.T.Logf("%s: user L2: %s", prefix, v.ch.L2AccountBalances(v.userAgentID))
+	v.env.T.Logf("%s: common account L2: %s", prefix, v.ch.L2CommonAccountBalances())
+}
+
 func TestWithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("withdraw with empty", func(t *testing.T) {
-		v := initTest(t)
-		v.createFoundryAndMint(nil, nil, 1_000_000, 100)
-		// withdraw all tokens to L1
-		req := solo.NewCallParams("accounts", "withdraw").
-			AddAssetsIotas(1000).
-			WithGasBudget(2000)
-		_, err := v.ch.PostRequestSync(req, v.user)
+		v := initWithdrawTest(t)
+		_, err := v.ch.PostRequestSync(v.req, v.user)
 		testmisc.RequireErrorToBe(t, err, "can't be empty")
 	})
 	t.Run("withdraw not enough for dust", func(t *testing.T) {
-		v := initTest(t)
-		_, tokenID := v.createFoundryAndMint(nil, nil, big.NewInt(1_000_000), big.NewInt(100))
-		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
-		req := solo.NewCallParams("accounts", "withdraw").
-			AddAssetsIotas(2000).
-			WithGasBudget(2000).
-			AddNativeTokensAllowance(&iotago.NativeToken{
-				ID:     *tokenID,
-				Amount: big.NewInt(100),
-			})
-		_, err := v.ch.PostRequestSync(req, v.user)
+		v := initWithdrawTest(t)
+		v.req.AddNativeTokensAllowanceVect(&iotago.NativeToken{
+			ID:     *v.tokenID,
+			Amount: big.NewInt(100),
+		})
+		_, err := v.ch.PostRequestSync(v.req, v.user)
 		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughIotasForDustDeposit)
 	})
 	t.Run("withdraw almost all", func(t *testing.T) {
-		v := initTest(t)
-		v.createFoundryAndMint(nil, nil, big.NewInt(1_000_000), big.NewInt(100))
-		allSenderAssets := v.ch.L2AccountBalances(v.userAgentID)
-		t.Logf("user L1 iotas: %d", v.env.L1IotaBalance(v.userAddr))
-
-		// we want withdraw as much iotas as possible, however, all is not possible due to gas
-		allSenderAssets.AddIotas(300)
+		v := initWithdrawTest(t)
+		// we want to withdraw as much iotas as possible, however, all is not possible due to gas
+		allSenderAssets := v.ch.L2AccountBalances(v.userAgentID).AddIotas(300)
 		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
-		req := solo.NewCallParams("accounts", "withdraw").
-			AddAssetsIotas(2000).
-			WithGasBudget(2000).
-			AddAllowance(allSenderAssets)
-		_, err := v.ch.PostRequestSync(req, v.user)
+		v.req.AddAllowance(allSenderAssets)
+		v.req.AddAssetsIotas(1000)
+		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
-		t.Logf("user on L2 has: %s", v.ch.L2AccountBalances(v.userAgentID))
-		t.Logf("user on L1 has: %s", v.env.L1AddressBalances(v.userAddr))
-		t.Logf("L2 common account has: %s", v.ch.L2CommonAccountBalances())
+		v.printBalances("END")
 	})
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
-		v := initTest(t)
-		sn, tokenID := v.createFoundryAndMint(nil, nil, big.NewInt(1000), big.NewInt(100))
+		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2AccountBalances(v.userAgentID)
-		t.Logf("user L1 iotas: %d", v.env.L1IotaBalance(v.userAddr))
-
-		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
-		req := solo.NewCallParams("accounts", "withdraw").
-			AddAssetsIotas(2000).
-			WithGasBudget(2000).
-			AddAllowance(allSenderAssets)
-		_, err := v.ch.PostRequestSync(req, v.user)
+		v.req.AddAllowance(allSenderAssets)
+		v.req.AddAssetsIotas(1000)
+		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
-		t.Logf("user on L2 has: %s", v.ch.L2AccountBalances(v.userAgentID))
-		t.Logf("user on L1 has: %s", v.env.L1AddressBalances(v.userAddr))
-		t.Logf("L2 common account has: %s", v.ch.L2CommonAccountBalances())
-		v.env.AssertL1NativeTokens(v.userAddr, tokenID, big.NewInt(100))
+
+		v.printBalances("AFTER MINT")
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
 
 		// should fail because those tokens are not on the user's on chain account
-		err = v.ch.DestroyTokens(sn, big.NewInt(50), v.user)
+		err = v.ch.DestroyTokensOnL2(v.sn, big.NewInt(50), v.user)
 		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
-		v.env.AssertL1NativeTokens(v.userAddr, tokenID, big.NewInt(100))
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, big.NewInt(100))
+		v.printBalances("AFTER DESTROY")
 	})
-	t.Run("mint withdraw destroy success", func(t *testing.T) {
-		v := initTest(t)
-		sn, tokenID := v.createFoundryAndMint(nil, nil, big.NewInt(1000), big.NewInt(100))
+	t.Run("mint withdraw destroy success 1", func(t *testing.T) {
+		v := initWithdrawTest(t)
+
 		allSenderAssets := v.ch.L2AccountBalances(v.userAgentID)
-		t.Logf("user L1 iotas: %d", v.env.L1IotaBalance(v.userAddr))
-
-		v.env.AssertL1NativeTokens(v.userAddr, tokenID, big.NewInt(0))
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 100)
-
-		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
-		req := solo.NewCallParams("accounts", "withdraw").
-			AddAssetsIotas(2000).
-			WithGasBudget(2000).
-			AddAllowance(allSenderAssets)
-		_, err := v.ch.PostRequestSync(req, v.user)
+		v.req.AddAllowance(allSenderAssets)
+		v.req.AddAssetsIotas(1000)
+		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
-		t.Logf("user on L2 has: %s", v.ch.L2AccountBalances(v.userAgentID))
-		t.Logf("user on L1 has: %s", v.env.L1AddressBalances(v.userAddr))
-		t.Logf("L2 common account has: %s", v.ch.L2CommonAccountBalances())
-		v.env.AssertL1NativeTokens(v.userAddr, tokenID, big.NewInt(100))
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 0)
+		v.printBalances("AFTER MINT")
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
 
-		err = v.ch.DepositAssets(iscp.NewEmptyAssets().AddNativeTokens(*tokenID, 50), v.user)
-		v.env.AssertL1NativeTokens(v.userAddr, tokenID, 50)
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 50)
-		v.ch.AssertL2TotalNativeTokens(tokenID, 50)
+		err = v.ch.DepositAssets(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 50)
+		v.ch.AssertL2TotalNativeTokens(v.tokenID, 50)
+		v.printBalances("AFTER DEPOSIT")
 
-		err = v.ch.DestroyTokens(sn, 49, v.user)
+		err = v.ch.DestroyTokensOnL2(v.sn, 49, v.user)
 		require.NoError(t, err)
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 1)
-		v.env.AssertL1NativeTokens(v.userAddr, tokenID, 50)
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 1)
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
+		v.printBalances("AFTER DESTROY")
 	})
-	t.Run("mint withdraw destroy fail bug iotago", func(t *testing.T) {
-		v := initTest(t)
-		sn, tokenID := v.createFoundryAndMint(nil, nil, big.NewInt(1000), big.NewInt(100))
+	t.Run("BUG unwrap use case", func(t *testing.T) {
+		t.SkipNow()
+
+		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2AccountBalances(v.userAgentID)
-		t.Logf("user L1 iotas: %d", v.env.L1IotaBalance(v.userAddr))
-
-		v.env.AssertL1NativeTokens(v.userAddr, tokenID, big.NewInt(0))
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 100)
-
-		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
-		req := solo.NewCallParams("accounts", "withdraw").
-			AddAssetsIotas(2000).
-			WithGasBudget(2000).
-			AddAllowance(allSenderAssets)
-		_, err := v.ch.PostRequestSync(req, v.user)
+		v.req.AddAllowance(allSenderAssets)
+		v.req.AddAssetsIotas(1000)
+		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
-		t.Logf("user on L2 has: %s", v.ch.L2AccountBalances(v.userAgentID))
-		t.Logf("user on L1 has: %s", v.env.L1AddressBalances(v.userAddr))
-		t.Logf("L2 common account has: %s", v.ch.L2CommonAccountBalances())
-		v.env.AssertL1NativeTokens(v.userAddr, tokenID, big.NewInt(100))
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 0)
+		v.printBalances("AFTER MINT")
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
 
-		err = v.ch.DepositAssets(iscp.NewEmptyAssets().AddNativeTokens(*tokenID, 50), v.user)
-		v.env.AssertL1NativeTokens(v.userAddr, tokenID, 50)
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 50)
-		v.ch.AssertL2TotalNativeTokens(tokenID, 50)
+		err = v.ch.DepositAssets(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 1), v.user)
+		require.NoError(t, err)
+		v.printBalances("AFTER DEPOSIT 1")
 
-		sn = sn
+		// without deposit
+		err = v.ch.DestroyTokensOnL1(v.tokenID, 49, v.user)
+		require.NoError(t, err)
+		v.printBalances("AFTER DESTROY")
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 1)
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
+	})
+	t.Run("BUG unwrap use case", func(t *testing.T) {
+		t.SkipNow()
+
+		v := initWithdrawTest(t)
+		allSenderAssets := v.ch.L2AccountBalances(v.userAgentID)
+		v.req.AddAllowance(allSenderAssets)
+		v.req.AddAssetsIotas(1000)
+		_, err := v.ch.PostRequestSync(v.req, v.user)
+		require.NoError(t, err)
+		v.printBalances("AFTER MINT")
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
+
+		// without deposit
+		err = v.ch.DestroyTokensOnL1(v.tokenID, 49, v.user)
+		require.NoError(t, err)
+		v.printBalances("AFTER DESTROY")
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 1)
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
+	})
+	t.Run("BUG mint withdraw destroy fail bug iotago", func(t *testing.T) {
+		t.SkipNow()
+
+		v := initWithdrawTest(t)
+		allSenderAssets := v.ch.L2AccountBalances(v.userAgentID)
+		v.req.AddAllowance(allSenderAssets)
+		v.req.AddAssetsIotas(1000)
+		_, err := v.ch.PostRequestSync(v.req, v.user)
+		require.NoError(t, err)
+
+		v.printBalances("AFTER MINT")
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
+
+		err = v.ch.DepositAssets(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 50)
+		v.ch.AssertL2TotalNativeTokens(v.tokenID, 50)
+		v.printBalances("AFTER DEPOSIT")
 		// FIXME bug when destroying native tokens and outputs do not contain native tokens
-		//err = v.ch.DestroyTokens(sn, 50, v.user)
+		//err = v.ch.DestroyTokensOnL2(sn, 50, v.user)
 		//require.NoError(t, err)
 		//v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 0)
 		//v.env.AssertL1NativeTokens(v.userAddr, tokenID, 50)

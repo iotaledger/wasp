@@ -398,14 +398,16 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 	nt := txb.ensureNativeTokenBalance(id)
 	tmp := new(big.Int).Add(nt.getOutValue(), delta)
 	if tmp.Sign() < 0 {
-		panic(xerrors.Errorf("addNativeTokenBalanceDelta (id: %s, delta: %d): %w",
+		panic(xerrors.Errorf("addNativeTokenBalanceDelta (id: %s, delta: %d): %v",
 			id, delta, ErrNotEnoughNativeAssetBalance))
 	}
 	if tmp.Cmp(abi.MaxUint256) > 0 {
-		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %w", ErrOverflow))
+		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %v", ErrOverflow))
 	}
 	nt.setOutValue(tmp)
 	switch {
+	case nt.identicalInOut():
+		return 0
 	case nt.dustDepositCharged && !nt.producesOutput():
 		// this is an old token in the on-chain ledger. Now it disappears and dust deposit
 		// is released and delta of anchor is positive

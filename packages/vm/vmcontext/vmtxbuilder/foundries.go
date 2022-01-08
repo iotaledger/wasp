@@ -62,7 +62,8 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 // ModifyNativeTokenSupply inflates the supply is delta > 0, shrinks if delta < 0
 // returns adjustment of the dust deposit.
 func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) int64 {
-	sn := accounts.SerialNumFromNativeTokenID(tokenID)
+	txb.MustBalanced("ModifyNativeTokenSupply: IN")
+	sn := accounts.FoundrySNFromNativeTokenID(tokenID)
 	nt, ok := txb.invokedFoundries[sn]
 	if !ok {
 		// load foundry output from the state
@@ -79,7 +80,7 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	}
 	// check if the loaded foundry matches the tokenID
 	if *tokenID != nt.in.MustNativeTokenID() {
-		panic(xerrors.Errorf("%w: requested token ID: %s, foundry token id: %s",
+		panic(xerrors.Errorf("%v: requested token ID: %s, foundry token id: %s",
 			ErrCantModifySupplyOfTheToken, tokenID.String(), nt.in.MustNativeTokenID().String()))
 	}
 	// check the supply bounds

@@ -1,7 +1,6 @@
 package solo
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math/big"
 	"sort"
@@ -216,19 +215,14 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	return retSN, tokenID, err
 }
 
-// TODO FIXME !!!! hackery. Replace with proper function from iotago
-func foundrySNFromNativeTokenID(id *iotago.NativeTokenID) uint32 {
-	return binary.LittleEndian.Uint32(id[20 : 20+4])
-}
-
 func toFoundrySN(foundry interface{}) uint32 {
 	switch f := foundry.(type) {
 	case uint32:
 		return f
 	case *iotago.NativeTokenID:
-		return foundrySNFromNativeTokenID(f)
+		return accounts.FoundrySNFromNativeTokenID(f)
 	case iotago.NativeTokenID:
-		return foundrySNFromNativeTokenID(&f)
+		return accounts.FoundrySNFromNativeTokenID(&f)
 	}
 	panic(fmt.Sprintf("toFoundrySN: type %T not supported", foundry))
 }
@@ -247,14 +241,30 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 	return err
 }
 
-// DestroyTokens destroys tokens (identified by foundry SN) on user's on-chain account
-func (ch *Chain) DestroyTokens(foundry, amount interface{}, user *cryptolib.KeyPair) error {
+// DestroyTokensOnL2 destroys tokens (identified by foundry SN) on user's on-chain account
+func (ch *Chain) DestroyTokensOnL2(foundryOrTokenID, amount interface{}, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
-		accounts.ParamFoundrySN, toFoundrySN(foundry),
+		accounts.ParamFoundrySN, toFoundrySN(foundryOrTokenID),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
 		accounts.ParamDestroyTokens, true,
 	).WithGasBudget(DestroyTokensGasBudgetIotas)
 
+	if user == nil {
+		user = &ch.OriginatorPrivateKey
+	}
+	_, err := ch.PostRequestSync(req, user)
+	return err
+}
+
+// DestroyTokensOnL1 sends tokens as assets and destroys in the same transaction
+func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interface{}, user *cryptolib.KeyPair) error {
+	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
+		accounts.ParamFoundrySN, toFoundrySN(tokenID),
+		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
+		accounts.ParamDestroyTokens, true,
+	).WithGasBudget(DestroyTokensGasBudgetIotas).AddAssetsIotas(1000)
+	req.AddAssetsNativeTokens(tokenID, amount)
+	req.AddNativeTokensAllowance(tokenID, amount)
 	if user == nil {
 		user = &ch.OriginatorPrivateKey
 	}
