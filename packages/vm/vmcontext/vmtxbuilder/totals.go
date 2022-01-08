@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-
-	"golang.org/x/xerrors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"golang.org/x/xerrors"
 )
 
 type TransactionTotals struct {
