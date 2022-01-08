@@ -3,6 +3,7 @@ package root
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
@@ -41,6 +42,11 @@ var (
 	FuncRequireDeployPermissions = coreutil.Func("requireDeployPermissions")
 	FuncFindContract             = coreutil.ViewFunc("findContract")
 	FuncGetContractRecords       = coreutil.ViewFunc("getContractRecords")
+)
+
+var (
+	ErrChainInitConditionsFailed   = xerrors.New("root.init can't be called in this state")
+	ErrDustDepositAssumptionsWrong = xerrors.New("'dust deposit assumptions' parameter not specified or wrong")
 )
 
 func GasToDeploy(programHash hashing.HashValue) uint64 {

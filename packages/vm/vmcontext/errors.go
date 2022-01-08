@@ -14,4 +14,5 @@ var (
 	ErrAssetsCantBeEmptyInSend            = xerrors.New("assets can't be empty in Send")
 	ErrTooManyEvents                      = xerrors.New("too many events issued for contract")
 	ErrTooLargeEvent                      = xerrors.New("event data is too large")
+	ErrPriviledgedCallFailed              = xerrors.New("priviledged call failed")
 )

@@ -43,25 +43,36 @@ var Processor = root.Contract.Processor(initialize,
 // - ParamDustDepositAssumptionsBin encoded assumptions about minimum dust deposit for internal outputs
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.begin")
+
 	state := ctx.State()
-
-	ctx.Require(state.MustGet(root.StateVarStateInitialized) == nil, "root.initialize.fail: already initialized")
-	ctx.Require(ctx.Caller().Hname() == 0, "root.init.fail: chain deployer can't be another smart contract")
-	creator := ctx.StateAnchor().Sender
-	ctx.Require(creator != nil && creator.Equal(ctx.Caller().Address()), "only creator of the origin can send the 'init' request")
-
+	stateAnchor := ctx.StateAnchor()
 	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
-	ctx.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
+	creator := stateAnchor.Sender
+
+	initConditionsCorrect :=
+		stateAnchor.IsOrigin &&
+			state.MustGet(root.StateVarStateInitialized) == nil &&
+			ctx.Caller().Hname() == 0 &&
+			creator != nil &&
+			creator.Equal(ctx.Caller().Address()) &&
+			contractRegistry.MustLen() == 0
+
+	ctx.Require(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
+
+	assetsOnStateAnchor := iscp.NewAssets(stateAnchor.Deposit, nil)
+	ctx.Require(len(assetsOnStateAnchor.Tokens) == 0, "root.initialize.fail: native tokens in origin output are not allowed")
 
 	dustAssumptionsBin, err := ctx.Params().Get(root.ParamDustDepositAssumptionsBin)
 	ctx.RequireNoError(err)
-	_, err = vmtxbuilder.InternalDustDepositAssumptionFromBytes(dustAssumptionsBin)
-	ctx.RequireNoError(err, "cannot initialize chain: 'dust deposit assumptions' parameter not specified or wrong")
+	dustDepositAssumptions, err := vmtxbuilder.InternalDustDepositAssumptionFromBytes(dustAssumptionsBin)
+	ctx.Require(err == nil && assetsOnStateAnchor.Iotas >= dustDepositAssumptions.AnchorOutput,
+		"root.initialize.fail: %v", root.ErrDustDepositAssumptionsWrong)
 
 	mustStoreContract(ctx, root.Contract)
-	mustStoreAndInitCoreContract(ctx, blob.Contract)
-	mustStoreAndInitCoreContract(ctx, accounts.Contract)
-	mustStoreAndInitCoreContract(ctx, blocklog.Contract)
+	mustStoreAndInitCoreContract(ctx, blob.Contract, nil)
+	mustStoreAndInitCoreContract(ctx, accounts.Contract, nil)
+	mustStoreAndInitCoreContract(ctx, blocklog.Contract, nil)
+
 	govParams := ctx.Params().Clone()
 	govParams.Set(governance.ParamChainID, codec.EncodeChainID(ctx.ChainID()))
 	// chain owner is whoever creates origin and sends the 'init' request
@@ -103,7 +114,7 @@ func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 		}
 	}
 	// call to load VM from binary to check if it loads successfully
-	err := ctx.DeployContract(progHash, "", "", nil)
+	err := ctx.Privileged().TryLoadContract(progHash)
 	ctx.Require(err == nil, "root.deployContract.fail 1: %v", err)
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor

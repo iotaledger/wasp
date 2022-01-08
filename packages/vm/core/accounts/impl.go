@@ -164,7 +164,7 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	tokenMaxSupply := par.MustGetBigInt(ParamMaxSupply)
 
 	// create UTXO
-	sn, dustConsumed := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply, nil)
+	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, tokenTag, tokenMaxSupply, nil)
 	// dust deposit is taken from the callers account
 	DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
 		Iotas: dustConsumed,
@@ -188,7 +188,7 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	ctx.Require(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
 
-	ctx.Foundries().Destroy(sn)
+	ctx.Privileged().DestroyFoundry(sn)
 	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
 	DeleteFoundryOutput(ctx.State(), sn)
 	return nil, nil
@@ -219,10 +219,10 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	var dustAdjustment int64
 	if deltaAssets := iscp.NewEmptyAssets().AddNativeTokens(tokenID, delta); destroy {
 		DebitFromAccount(ctx.State(), ctx.Caller(), deltaAssets)
-		dustAdjustment = ctx.Foundries().ModifySupply(sn, delta.Neg(delta))
+		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
 	} else {
 		CreditToAccount(ctx.State(), ctx.Caller(), deltaAssets)
-		dustAdjustment = ctx.Foundries().ModifySupply(sn, delta)
+		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta)
 	}
 
 	// adjust iotas on L2 due to the possible change in dust deposit

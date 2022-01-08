@@ -270,7 +270,7 @@ func TestRepeatInit(t *testing.T) {
 		req := solo.NewCallParams(root.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, "already initialized")
+		testmisc.RequireErrorToBe(t, err, root.ErrChainInitConditionsFailed)
 		ch.CheckAccountLedger()
 	})
 	t.Run("accounts", func(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
@@ -160,4 +161,18 @@ func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 		Deposit:              vmctx.task.AnchorOutput.Amount,
 		NativeTokens:         vmctx.task.AnchorOutput.NativeTokens,
 	}
+}
+
+// DeployContract deploys contract by its program hash with the name and description specific to the instance
+func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) error {
+	vmctx.Debugf("vmcontext.DeployContract: %s, name: %s, dscr: '%s'", programHash.String(), name, description)
+
+	// calling root contract from another contract to install contract
+	// adding parameters specific to deployment
+	par := initParams.Clone()
+	par.Set(root.ParamProgramHash, codec.EncodeHashValue(programHash))
+	par.Set(root.ParamName, codec.EncodeString(name))
+	par.Set(root.ParamDescription, codec.EncodeString(description))
+	_, err := vmctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
+	return err
 }

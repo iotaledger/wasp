@@ -167,26 +167,6 @@ func (s *sandbox) Budget() uint64 {
 	return s.vmctx.GasBudgetLeft()
 }
 
-func (s *sandbox) Foundries() iscp.Foundries {
-	return s
-}
-
-func (s *sandbox) CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64) {
-	return s.vmctx.CreateNewFoundry(scheme, tag, maxSupply, metadata)
-}
-
-func (s *sandbox) Destroy(sn uint32) int64 {
-	return s.vmctx.DestroyFoundry(sn)
-}
-
-func (s *sandbox) GetOutput(sn uint32) *iotago.FoundryOutput {
-	return s.vmctx.GetOutput(sn)
-}
-
-func (s *sandbox) ModifySupply(sn uint32, delta *big.Int) int64 {
-	return s.vmctx.ModifySupply(sn, delta)
-}
-
 // helper methods
 
 func (s *sandbox) Require(cond bool, format string, args ...interface{}) {
@@ -210,4 +190,12 @@ func (s *sandbox) RequireCaller(agentID *iscp.AgentID, str ...string) {
 
 func (s *sandbox) RequireCallerIsChainOwner(str ...string) {
 	s.RequireCaller(s.ChainOwnerID())
+}
+
+func (s *sandbox) Privileged() iscp.Privileged {
+	return s.vmctx
+}
+
+func (s *sandbox) TryLoadContract(programHash hashing.HashValue) error {
+	return s.vmctx.TryLoadContract(programHash)
 }
