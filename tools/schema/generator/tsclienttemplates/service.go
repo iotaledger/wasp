@@ -111,6 +111,21 @@ $#each result callResultGetter
 `,
 	// *******************************
 	"callResultGetter": `
+$#if map callResultGetterMap callResultGetterBasic
+`,
+	// *******************************
+	"callResultGetterMap": `
+
+	$fldName(): Map<$fldLangType, $fldKeyLangType> {
+		let res = new Map();
+		this.res.forEach((key, val) => {
+			res.set(key, this.res.get$FldType(val));
+		});
+		return res;
+	}
+`,
+	// *******************************
+	"callResultGetterBasic": `
 $#if mandatory else callResultOptional
 
 	$fldName(): $fldLangType {

@@ -80,8 +80,12 @@ export class GetBlobInfoView extends wasmclient.ClientView {
 
 export class GetBlobInfoResults extends wasmclient.ViewResults {
 
-	blobSizes(): wasmclient.Int32 {
-		return this.res.getInt32(ResBlobSizes);
+	blobSizes(): Map<wasmclient.Int32, string> {
+		let res = new Map();
+		this.res.forEach((key, val) => {
+			res.set(key, this.res.getInt32(val));
+		});
+		return res;
 	}
 }
 
@@ -96,8 +100,12 @@ export class ListBlobsView extends wasmclient.ClientView {
 
 export class ListBlobsResults extends wasmclient.ViewResults {
 
-	blobSizes(): wasmclient.Int32 {
-		return this.res.getInt32(ResBlobSizes);
+	blobSizes(): Map<wasmclient.Int32, wasmclient.Hash> {
+		let res = new Map();
+		this.res.forEach((key, val) => {
+			res.set(key, this.res.getInt32(val));
+		});
+		return res;
 	}
 }
 

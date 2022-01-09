@@ -35,9 +35,11 @@ export class WaspClient {
 
         if (result?.body !== null && result.body.Items) {
             for (const item of result.body.Items) {
-                const key = Buffer.from(item.Key, "base64").toString();
-                const value = Buffer.from(item.Value, "base64");
-                res.res.set(key, value);
+                const key = Buffer.from(item.Key, "base64");
+                const val = Buffer.from(item.Value, "base64");
+                const stringKey = key.toString()
+                res.res.set(stringKey, val);
+                res.keys.set(stringKey, key);
             }
         }
         return res;

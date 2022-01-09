@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:unconvert
 package coreblobclient
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
@@ -85,8 +86,12 @@ type GetBlobInfoResults struct {
 	res wasmclient.Results
 }
 
-func (r *GetBlobInfoResults) BlobSizes() int32 {
-	return r.res.GetInt32(ResBlobSizes)
+func (r *GetBlobInfoResults) BlobSizes() map[string]int32 {
+	res := make(map[string]int32)
+	r.res.ForEach(func(key string, val string) {
+		res[string(key)] = r.res.GetInt32(val)
+	})
+	return res
 }
 
 ///////////////////////////// listBlobs /////////////////////////////
@@ -104,8 +109,12 @@ type ListBlobsResults struct {
 	res wasmclient.Results
 }
 
-func (r *ListBlobsResults) BlobSizes() int32 {
-	return r.res.GetInt32(ResBlobSizes)
+func (r *ListBlobsResults) BlobSizes() map[wasmclient.Hash]int32 {
+	res := make(map[wasmclient.Hash]int32)
+	r.res.ForEach(func(key string, val string) {
+		res[wasmclient.Hash(key)] = r.res.GetInt32(val)
+	})
+	return res
 }
 
 ///////////////////////////// CoreBlobService /////////////////////////////

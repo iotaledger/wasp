@@ -19,6 +19,13 @@ func (r Results) Exists(key string) bool {
 	return ok
 }
 
+func (r Results) ForEach(pair func(key string, val string)) {
+	r.res.ForEach(func(key kv.Key, value []byte) bool {
+		pair(Base58Encode([]byte(key)), string(key))
+		return true
+	})
+}
+
 func (r Results) get(key string, typeID int32) []byte {
 	size := TypeSizes[typeID]
 	bytes, ok := r.res[kv.Key(key)]

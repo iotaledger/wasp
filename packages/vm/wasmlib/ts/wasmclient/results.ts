@@ -14,9 +14,16 @@ export class ViewResults {
 
 export class Results {
     res = new Map<string, wasmclient.Bytes>();
+    keys = new Map<string, wasmclient.Bytes>();
 
     exists(key: string): wasmclient.Bool {
         return this.res.has(key);
+    }
+
+    forEach(callbackfn: (base58Key: string, valueKey: string) => void): void {
+        this.keys.forEach((val, key, map) => {
+            callbackfn(Base58.encode(val), key);
+        })
     }
 
     private get(key: string, typeID: wasmclient.Int32): wasmclient.Bytes {
@@ -65,7 +72,7 @@ export class Results {
     }
 
     getHname(key: string): wasmclient.Hname {
-		return this.get(key, wasmclient.TYPE_HNAME).readUInt32LE(0);
+        return this.get(key, wasmclient.TYPE_HNAME).readUInt32LE(0);
     }
 
     getInt8(key: string): wasmclient.Int8 {
@@ -108,5 +115,5 @@ export class Results {
         return this.get(key, wasmclient.TYPE_INT64).readBigUInt64LE(0);
     }
 
-	// TODO Decode() from view call response into map
+    // TODO Decode() from view call response into map
 }

@@ -67,8 +67,12 @@ export class AccountsView extends wasmclient.ClientView {
 
 export class AccountsResults extends wasmclient.ViewResults {
 
-	agents(): wasmclient.Bytes {
-		return this.res.getBytes(ResAgents);
+	agents(): Map<wasmclient.Bytes, wasmclient.AgentID> {
+		let res = new Map();
+		this.res.forEach((key, val) => {
+			res.set(key, this.res.getBytes(val));
+		});
+		return res;
 	}
 }
 
@@ -89,8 +93,12 @@ export class BalanceView extends wasmclient.ClientView {
 
 export class BalanceResults extends wasmclient.ViewResults {
 
-	balances(): wasmclient.Int64 {
-		return this.res.getInt64(ResBalances);
+	balances(): Map<wasmclient.Int64, wasmclient.Color> {
+		let res = new Map();
+		this.res.forEach((key, val) => {
+			res.set(key, this.res.getInt64(val));
+		});
+		return res;
 	}
 }
 
@@ -127,8 +135,12 @@ export class TotalAssetsView extends wasmclient.ClientView {
 
 export class TotalAssetsResults extends wasmclient.ViewResults {
 
-	balances(): wasmclient.Int64 {
-		return this.res.getInt64(ResBalances);
+	balances(): Map<wasmclient.Int64, wasmclient.Color> {
+		let res = new Map();
+		this.res.forEach((key, val) => {
+			res.set(key, this.res.getInt64(val));
+		});
+		return res;
 	}
 }
 

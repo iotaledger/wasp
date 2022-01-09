@@ -118,6 +118,21 @@ $#each result callResultGetter
 `,
 	// *******************************
 	"callResultGetter": `
+$#if map callResultGetterMap callResultGetterBasic
+`,
+	// *******************************
+	"callResultGetterMap": `
+
+func (r *$FuncName$+Results) $FldName() map[$fldKeyLangType]$fldLangType {
+    res := make(map[$fldKeyLangType]$fldLangType)
+    r.res.ForEach(func(key string, val string) {
+        res[$fldKeyLangType(key)] = r.res.Get$FldType(val)
+    })
+	return res
+}
+`,
+	// *******************************
+	"callResultGetterBasic": `
 $#if mandatory else callResultOptional
 
 func (r *$FuncName$+Results) $FldName() $fldLangType {

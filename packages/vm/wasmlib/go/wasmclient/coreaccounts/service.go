@@ -78,8 +78,12 @@ type AccountsResults struct {
 	res wasmclient.Results
 }
 
-func (r *AccountsResults) Agents() []byte {
-	return r.res.GetBytes(ResAgents)
+func (r *AccountsResults) Agents() map[wasmclient.AgentID][]byte {
+	res := make(map[wasmclient.AgentID][]byte)
+	r.res.ForEach(func(key string, val string) {
+		res[wasmclient.AgentID(key)] = r.res.GetBytes(val)
+	})
+	return res
 }
 
 ///////////////////////////// balance /////////////////////////////
@@ -103,8 +107,12 @@ type BalanceResults struct {
 	res wasmclient.Results
 }
 
-func (r *BalanceResults) Balances() int64 {
-	return r.res.GetInt64(ResBalances)
+func (r *BalanceResults) Balances() map[wasmclient.Color]int64 {
+	res := make(map[wasmclient.Color]int64)
+	r.res.ForEach(func(key string, val string) {
+		res[wasmclient.Color(key)] = r.res.GetInt64(val)
+	})
+	return res
 }
 
 ///////////////////////////// getAccountNonce /////////////////////////////
@@ -147,8 +155,12 @@ type TotalAssetsResults struct {
 	res wasmclient.Results
 }
 
-func (r *TotalAssetsResults) Balances() int64 {
-	return r.res.GetInt64(ResBalances)
+func (r *TotalAssetsResults) Balances() map[wasmclient.Color]int64 {
+	res := make(map[wasmclient.Color]int64)
+	r.res.ForEach(func(key string, val string) {
+		res[wasmclient.Color(key)] = r.res.GetInt64(val)
+	})
+	return res
 }
 
 ///////////////////////////// CoreAccountsService /////////////////////////////

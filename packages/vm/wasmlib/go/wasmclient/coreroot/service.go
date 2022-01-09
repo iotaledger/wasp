@@ -10,14 +10,14 @@ package corerootclient
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
 
 const (
-	ArgDeployer    = "dp"
+	ArgDeployer = "dp"
 	ArgDescription = "ds"
-	ArgHname       = "hn"
-	ArgName        = "nm"
+	ArgHname = "hn"
+	ArgName = "nm"
 	ArgProgramHash = "ph"
 
-	ResContractFound    = "cf"
-	ResContractRecData  = "dt"
+	ResContractFound = "cf"
+	ResContractRecData = "dt"
 	ResContractRegistry = "r"
 )
 
@@ -122,8 +122,12 @@ type GetContractRecordsResults struct {
 	res wasmclient.Results
 }
 
-func (r *GetContractRecordsResults) ContractRegistry() []byte {
-	return r.res.GetBytes(ResContractRegistry)
+func (r *GetContractRecordsResults) ContractRegistry() map[wasmclient.Hname][]byte {
+    res := make(map[wasmclient.Hname][]byte)
+    r.res.ForEach(func(key string, val string) {
+        res[wasmclient.Hname(key)] = r.res.GetBytes(val)
+    })
+	return res
 }
 
 ///////////////////////////// CoreRootService /////////////////////////////
