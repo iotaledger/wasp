@@ -63,7 +63,7 @@ func ChainIDFromISCPAddress(a ISCPAddress) *iscp.ChainID {
 	// chainID, err := iscp.ChainIDFromBytes(addressBytes)
 	// if err != nil {
 	// 	// should not happen
-	// 	panic(err.Error())
+	// 	panic(err.ErrorStr())
 	// }
 	// return chainID
 }

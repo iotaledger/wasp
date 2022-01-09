@@ -33,7 +33,7 @@ import (
 //	chain := env.NewChain(nil, "chain1")
 //	req := solo.NewCallParams(accounts.Contract.Name, "init")
 //	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
-//	require.Error(t, err)
+//	require.ErrorStr(t, err)
 //	chain.CheckAccountLedger()
 //	chain.AssertL2TotalIotas(1)
 //	chain.AssertCommonAccountIotas(1)

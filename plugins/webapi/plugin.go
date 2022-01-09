@@ -100,7 +100,7 @@ func adminWhitelist() []net.IP {
 func run(_ *node.Plugin) {
 	log.Infof("Starting %s ...", PluginName)
 	if err := daemon.BackgroundWorker("WebAPI Server", worker, parameters.PriorityWebAPI); err != nil {
-		log.Errorf("Error starting as daemon: %s", err)
+		log.Errorf("ErrorStr starting as daemon: %s", err)
 	}
 }
 
@@ -113,7 +113,7 @@ func worker(shutdownSignal <-chan struct{}) {
 		log.Infof("%s started, bind-address=%s", PluginName, bindAddr)
 		if err := server.Start(bindAddr); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
-				log.Errorf("Error serving: %s", err)
+				log.Errorf("ErrorStr serving: %s", err)
 			}
 		}
 	}()
@@ -129,6 +129,6 @@ func worker(shutdownSignal <-chan struct{}) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-		log.Errorf("Error stopping: %s", err)
+		log.Errorf("ErrorStr stopping: %s", err)
 	}
 }

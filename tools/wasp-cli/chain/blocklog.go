@@ -93,8 +93,8 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 	}
 
 	errMsg := "(empty)"
-	if receipt.Error != "" {
-		errMsg = fmt.Sprintf("%q", receipt.Error)
+	if receipt.ErrorStr != "" {
+		errMsg = fmt.Sprintf("%q", receipt.ErrorStr)
 	}
 
 	tree := []log.TreeItem{
@@ -105,7 +105,7 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 		{K: "Entry point", V: req.CallTarget().EntryPoint.String()},
 		{K: "Timestamp", V: timestamp},
 		{K: "Arguments", V: argsTree},
-		{K: "Error", V: errMsg},
+		{K: "ErrorStr", V: errMsg},
 	}
 	if len(index) > 0 {
 		log.Printf("RequestData #%d (%s):\n", index[0], req.ID().Base58())

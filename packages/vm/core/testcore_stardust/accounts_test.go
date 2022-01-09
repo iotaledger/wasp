@@ -619,9 +619,9 @@ func TestTransferAndHarvest(t *testing.T) {
 	// initializes it all and prepares withdraw request, dows not post it
 	v := initWithdrawTest(t, 10_1000)
 	dustCosts := transaction.NewDepositEstimate(v.env.RentStructure())
-	assets := v.ch.L2CommonAccountAssets()
-	require.True(t, assets.Iotas+dustCosts.AnchorOutput > 10_000)
-	require.EqualValues(t, 0, len(assets.Tokens))
+	commonAssets := v.ch.L2CommonAccountAssets()
+	require.True(t, commonAssets.Iotas+dustCosts.AnchorOutput > 10_000)
+	require.EqualValues(t, 0, len(commonAssets.Tokens))
 
 	v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 100)
 
@@ -635,11 +635,18 @@ func TestTransferAndHarvest(t *testing.T) {
 
 	v.req = solo.NewCallParams("accounts", "harvest").
 		WithGasBudget(1000)
-	_, err = v.ch.PostRequestSync(v.req, v.chainOwner)
+	receipt, _, err := v.ch.PostRequestSyncReceipt(v.req, v.chainOwner)
 	require.NoError(t, err)
+
+	t.Logf("receipt from the 'harvest' tx: %s", receipt)
 
 	// now we have 0 tokens on common account
 	v.ch.AssertL2AccountNativeToken(v.ch.CommonAccount(), v.tokenID, 0)
 	// 50 native tokens for chain on L2
 	v.ch.AssertL2AccountNativeToken(v.chainOwnerAgentID, v.tokenID, 50)
+
+	commonAssets = v.ch.L2CommonAccountAssets()
+	// in the common account should have left minimum plus gas fee from the last request
+	require.EqualValues(t, accounts.MinimumIotasOnCommonAccount+receipt.GasFeeCharged, commonAssets.Iotas)
+	require.EqualValues(t, 0, len(commonAssets.Tokens))
 }

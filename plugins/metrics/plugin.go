@@ -47,10 +47,10 @@ func run(_ *node.Plugin) {
 		log.Infof("Stopping %s ...", PluginName)
 		defer log.Infof("Stopping %s ... done", PluginName)
 		if err := allMetrics.Stop(); err != nil {
-			log.Errorf("Error stopping: %s", err)
+			log.Errorf("ErrorStr stopping: %s", err)
 		}
 	}, parameters.PriorityMetrics); err != nil {
-		log.Warnf("Error starting as daemon: %s", err)
+		log.Warnf("ErrorStr starting as daemon: %s", err)
 	}
 }
 

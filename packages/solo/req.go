@@ -6,6 +6,8 @@ package solo
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+
 	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -233,33 +235,47 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	if err != nil {
 		return nil, err
 	}
-	return res, ch.mustGetErrorFromReceipt(r.ID())
+	rec, ok := ch.GetRequestReceipt(r.ID())
+	if !ok {
+		return nil, xerrors.Errorf("can't get receipt for %s", r.ID())
+	}
+	return res, rec.Error()
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
+	tx, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
+	if err != nil {
+		return tx, res, err
+	}
+	return tx, res, receipt.Error()
+}
+
+func (ch *Chain) PostRequestSyncReceipt(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
+	_, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
+	if err != nil {
+		return nil, res, err
+	}
+	return receipt, res, receipt.Error()
+}
+
+func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
 	tx, reqid, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
-		return tx, nil, err
+		return tx, nil, nil, err
 	}
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
 	res, err := ch.runRequestsSync(reqs, "post")
 	if err != nil {
-		return tx, nil, err
+		return tx, nil, nil, err
 	}
-	return tx, res, ch.mustGetErrorFromReceipt(reqid)
-}
-
-func (ch *Chain) mustGetErrorFromReceipt(reqid iscp.RequestID) error {
-	rec, ok := ch.GetRequestReceipt(reqid)
-	require.True(ch.Env.T, ok)
-	var err error
-	if len(rec.Error) > 0 {
-		err = xerrors.New(rec.Error)
+	receipt, ok := ch.GetRequestReceipt(reqid)
+	if !ok {
+		return tx, nil, res, xerrors.Errorf("can't get request for %s", reqid)
 	}
-	return err
+	return tx, receipt, res, nil
 }
 
 // callViewFull calls the view entry point of the smart contract

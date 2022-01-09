@@ -10,6 +10,8 @@ import (
 	"math"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/hive.go/marshalutil"
@@ -305,7 +307,7 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
 	RequestData   iscp.RequestData // TODO request may be big (blobs). Do we want to store it all?
-	Error         string
+	ErrorStr      string
 	GasBudget     uint64
 	GasBurned     uint64
 	GasFeeCharged uint64
@@ -329,7 +331,7 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	if err != nil {
 		return nil, err
 	}
-	ret.Error = string(strBytes)
+	ret.ErrorStr = string(strBytes)
 	if ret.GasBudget, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
@@ -347,8 +349,8 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 
 func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteUint16(uint16(len(r.Error))).
-		WriteBytes([]byte(r.Error)).
+	mu.WriteUint16(uint16(len(r.ErrorStr))).
+		WriteBytes([]byte(r.ErrorStr)).
 		WriteUint64(r.GasBudget).
 		WriteUint64(r.GasBurned).
 		WriteUint64(r.GasFeeCharged)
@@ -364,7 +366,7 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 
 func (r *RequestReceipt) String() string {
 	ret := fmt.Sprintf("ID: %s\n", r.RequestData.ID().String())
-	ret += fmt.Sprintf("Err: '%s'\n", r.Error)
+	ret += fmt.Sprintf("Err: '%s'\n", r.ErrorStr)
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
 	ret += fmt.Sprintf("Request data: %s\n", r.RequestData.String())
@@ -377,10 +379,17 @@ func (r *RequestReceipt) Short() string {
 		prefix = "api"
 	}
 	ret := fmt.Sprintf("%s/%s", prefix, r.RequestData.ID())
-	if len(r.Error) > 0 {
-		ret += ": '" + r.Error + "'"
+	if len(r.ErrorStr) > 0 {
+		ret += ": '" + r.ErrorStr + "'"
 	}
 	return ret
+}
+
+func (r *RequestReceipt) Error() error {
+	if len(r.ErrorStr) == 0 {
+		return nil
+	}
+	return xerrors.New(r.ErrorStr)
 }
 
 // endregion  /////////////////////////////////////////////////////////////

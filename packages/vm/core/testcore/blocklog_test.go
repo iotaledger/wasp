@@ -126,7 +126,7 @@ func TestRequestLogRecord(t *testing.T) {
 	a := reqs[0].Bytes()
 	b := receipt.RequestData.Bytes()
 	require.Equal(t, a, b)
-	require.EqualValues(t, 0, len(receipt.Error))
+	require.EqualValues(t, 0, len(receipt.ErrorStr))
 	require.EqualValues(t, 2, blockIndex)
 	require.EqualValues(t, 0, requestIndex)
 }

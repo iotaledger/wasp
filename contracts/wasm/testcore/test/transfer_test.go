@@ -194,7 +194,7 @@ func TestRequestToView(t *testing.T) {
 		// SoloContext disallows Sign()/Post() to a view
 		// f := testcore.ScFuncs.JustView(ctx.Sign(user))
 		// f.Func.TransferIotas(42).Post()
-		// require.Error(t, ctx.Err)
+		// require.ErrorStr(t, ctx.Err)
 
 		// sending request to the view entry point should
 		// return an error and invoke fallback for tokens

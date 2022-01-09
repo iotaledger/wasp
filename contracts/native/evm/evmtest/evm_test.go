@@ -135,7 +135,7 @@ func TestGasCharged(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 123, storage.retrieve())
 		// TODO:
-		// require.Contains(t, err.Error(), "transferred tokens (1) not enough")
+		// require.Contains(t, err.ErrorStr(), "transferred tokens (1) not enough")
 		// require.EqualValues(t, 999, storage.retrieve())
 
 		// verify user on-chain account still has the same balance (no refund happened)
@@ -250,8 +250,8 @@ func TestGasLimit(t *testing.T) {
 		// send again with same gas limit but not enough iotas
 		_, err = storage.store(123, ethCallOptions{gasLimit: gas, iota: iotaCallOptions{transfer: (gas+1)/gasPerIotas - 1}})
 		// TODO: gas is currently not being charged
-		// require.Error(t, err)
-		// require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.Error())
+		// require.ErrorStr(t, err)
+		// require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.ErrorStr())
 		require.NoError(t, err)
 
 		// send again with gas limit not enough for transaction

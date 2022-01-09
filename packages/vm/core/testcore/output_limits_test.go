@@ -111,7 +111,7 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 
 		rec, _, _, ok := ch.GetRequestReceipt(reqID)
 		require.True(ch.Env.T, ok)
-		require.Len(t, rec.Error, 0)
+		require.Len(t, rec.ErrorStr, 0)
 	}
 
 	lastBlock := ch.GetLatestBlockInfo()

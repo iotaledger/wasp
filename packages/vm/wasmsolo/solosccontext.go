@@ -99,7 +99,7 @@ func (o *SoloScContext) processCall(bytes []byte) {
 	_ = wasmhost.Connect(ctx.wc)
 	ctx.Err = err
 	if err != nil {
-		// o.Panicf("failed to invoke call: " + err.Error())
+		// o.Panicf("failed to invoke call: " + err.ErrorStr())
 		return
 	}
 	returnID := o.GetObjectID(wasmhost.KeyReturn, wasmhost.OBJTYPE_MAP)

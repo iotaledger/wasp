@@ -85,7 +85,7 @@ func TestDeployContractOnly(t *testing.T) {
 	{
 		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(tx.ID(), 0))
 		require.NoError(t, err)
-		require.Empty(t, rec.Error)
+		require.Empty(t, rec.ErrorStr)
 	}
 }
 

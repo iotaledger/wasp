@@ -52,7 +52,7 @@ $#each func coreExportFunc
 `,
 	// *******************************
 	"coreExportFunc": `
-	exports.Add$Kind($Kind$FuncName, wasmlib.$Kind$+Error)
+	exports.Add$Kind($Kind$FuncName, wasmlib.$Kind$+ErrorStr)
 `,
 	// *******************************
 	"setPtrs": `
