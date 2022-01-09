@@ -16,7 +16,7 @@ import { IOnLedger, OnLedgerHelper } from "./models/on_ledger";
 import { ISendTransactionRequest, ISendTransactionResponse, ITransaction, Transaction } from "./models/transaction";
 import { Wallet } from "./wallet/wallet";
 import { Colors } from "../colors";
-import { Configuration, Transfer } from "..";
+import { AgentID, Configuration, Transfer } from "..";
 import { CoreAccountsService } from "../coreaccounts/service";
 
 interface GoShimmerClientConfiguration {
@@ -171,10 +171,9 @@ export class GoShimmerClient {
         );
     }
 
-    public async depositIOTAToAccountInChain(keypair: IKeyPair, amount: bigint) {
+    public async depositIOTAToAccountInChain(keypair: IKeyPair, destinationAgentID: AgentID, amount: bigint) {
         const depositfunc = this.coreAccountsService.deposit();
-        // TODO: add support for depositing into accounts other than the caller's
-        //depositfunc.agentID(destinationAgentID);
+        depositfunc.agentID(destinationAgentID);
         depositfunc.transfer(Transfer.iotas(amount));
         depositfunc.sign(keypair);
         depositfunc.onLedgerRequest(true);
