@@ -67,7 +67,7 @@ export class AccountsView extends wasmclient.ClientView {
 
 export class AccountsResults extends wasmclient.ViewResults {
 
-	agents(): Map<wasmclient.Bytes, wasmclient.AgentID> {
+	agents(): Map<wasmclient.AgentID, wasmclient.Bytes> {
 		let res = new Map();
 		this.res.forEach((key, val) => {
 			res.set(key, this.res.getBytes(val));
@@ -93,7 +93,7 @@ export class BalanceView extends wasmclient.ClientView {
 
 export class BalanceResults extends wasmclient.ViewResults {
 
-	balances(): Map<wasmclient.Int64, wasmclient.Color> {
+	balances(): Map<wasmclient.Color, wasmclient.Int64> {
 		let res = new Map();
 		this.res.forEach((key, val) => {
 			res.set(key, this.res.getInt64(val));
@@ -135,7 +135,7 @@ export class TotalAssetsView extends wasmclient.ClientView {
 
 export class TotalAssetsResults extends wasmclient.ViewResults {
 
-	balances(): Map<wasmclient.Int64, wasmclient.Color> {
+	balances(): Map<wasmclient.Color, wasmclient.Int64> {
 		let res = new Map();
 		this.res.forEach((key, val) => {
 			res.set(key, this.res.getInt64(val));

@@ -5,7 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:unconvert
 package coreblobclient
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"

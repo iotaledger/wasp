@@ -108,7 +108,7 @@ export class GetContractRecordsView extends wasmclient.ClientView {
 
 export class GetContractRecordsResults extends wasmclient.ViewResults {
 
-	contractRegistry(): Map<wasmclient.Bytes, wasmclient.Hname> {
+	contractRegistry(): Map<wasmclient.Hname, wasmclient.Bytes> {
 		let res = new Map();
 		this.res.forEach((key, val) => {
 			res.set(key, this.res.getBytes(val));
