@@ -216,7 +216,7 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 	}
 	peerMsg, err := peering.NewPeerMessageNetFromBytes(payload) // Do not use the signatures, we have TLS.
 	if err != nil {
-		n.log.Warnf("ErrorStr while decoding a message, reason=%v", err)
+		n.log.Warnf("error while decoding a message, reason=%v", err)
 		return
 	}
 	remotePeer.RecvMsg(peerMsg)

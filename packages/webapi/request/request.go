@@ -134,15 +134,15 @@ func parseParams(c echo.Context) (chainID *iscp.ChainID, req *iscp.OffLedgerRequ
 	if strings.Contains(strings.ToLower(contentType), "json") {
 		r := new(model.OffLedgerRequestBody)
 		if err = c.Bind(r); err != nil {
-			return nil, nil, httperrors.BadRequest("ErrorStr parsing request from payload")
+			return nil, nil, httperrors.BadRequest("error parsing request from payload")
 		}
 		rGeneric, err := iscp.RequestDataFromMarshalUtil(marshalutil.New(r.Request.Bytes()))
 		if err != nil {
-			return nil, nil, httperrors.BadRequest(fmt.Sprintf("ErrorStr constructing off-ledger request from base64 string: %q", r.Request))
+			return nil, nil, httperrors.BadRequest(fmt.Sprintf("error constructing off-ledger request from base64 string: %q", r.Request))
 		}
 		var ok bool
 		if req, ok = rGeneric.(*iscp.OffLedgerRequestData); !ok {
-			return nil, nil, httperrors.BadRequest("ErrorStr parsing request: off-ledger request is expected")
+			return nil, nil, httperrors.BadRequest("error parsing request: off-ledger request is expected")
 		}
 		return chainID, req, err
 	}
@@ -150,15 +150,15 @@ func parseParams(c echo.Context) (chainID *iscp.ChainID, req *iscp.OffLedgerRequ
 	// binary format
 	reqBytes, err := io.ReadAll(c.Request().Body)
 	if err != nil {
-		return nil, nil, httperrors.BadRequest("ErrorStr parsing request from payload")
+		return nil, nil, httperrors.BadRequest("error parsing request from payload")
 	}
 	rGeneric, err := iscp.RequestDataFromMarshalUtil(marshalutil.New(reqBytes))
 	if err != nil {
-		return nil, nil, httperrors.BadRequest("ErrorStr parsing request from payload")
+		return nil, nil, httperrors.BadRequest("error parsing request from payload")
 	}
 	req, ok := rGeneric.(*iscp.OffLedgerRequestData)
 	if !ok {
-		return nil, nil, httperrors.BadRequest("ErrorStr parsing request: off-ledger request expected")
+		return nil, nil, httperrors.BadRequest("error parsing request: off-ledger request expected")
 	}
 	return chainID, req, err
 }

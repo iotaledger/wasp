@@ -295,11 +295,11 @@ func (o *ScContext) getTransfer(transferID int32) *iscp.Assets {
 		panic("TODO implement")
 		// col, err := codec.DecodeColor([]byte(key))
 		// if err != nil {
-		// 	o.Panicf(err.ErrorStr())
+		// 	o.Panicf(err.Error())
 		// }
 		// amount, err := codec.DecodeUint64(value)
 		// if err != nil {
-		// 	o.Panicf(err.ErrorStr())
+		// 	o.Panicf(err.Error())
 		// }
 		// o.Tracef("  XFER %d '%s'", amount, col.String())
 		// transfer.Set(col, amount)

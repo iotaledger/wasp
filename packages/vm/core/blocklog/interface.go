@@ -379,7 +379,7 @@ func (r *RequestReceipt) Short() string {
 		prefix = "api"
 	}
 	ret := fmt.Sprintf("%s/%s", prefix, r.RequestData.ID())
-	if len(r.ErrorStr) > 0 {
+	if r.Error() != nil {
 		ret += ": '" + r.ErrorStr + "'"
 	}
 	return ret

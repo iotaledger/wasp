@@ -250,7 +250,7 @@ func TestGasLimit(t *testing.T) {
 		// send again with same gas limit but not enough iotas
 		_, err = storage.store(123, ethCallOptions{gasLimit: gas, iota: iotaCallOptions{transfer: (gas+1)/gasPerIotas - 1}})
 		// TODO: gas is currently not being charged
-		// require.ErrorStr(t, err)
+		// require.Error(t, err)
 		// require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.ErrorStr())
 		require.NoError(t, err)
 

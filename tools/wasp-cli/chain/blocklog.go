@@ -93,7 +93,7 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 	}
 
 	errMsg := "(empty)"
-	if receipt.ErrorStr != "" {
+	if receipt.Error() != nil {
 		errMsg = fmt.Sprintf("%q", receipt.ErrorStr)
 	}
 
@@ -105,7 +105,7 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 		{K: "Entry point", V: req.CallTarget().EntryPoint.String()},
 		{K: "Timestamp", V: timestamp},
 		{K: "Arguments", V: argsTree},
-		{K: "ErrorStr", V: errMsg},
+		{K: "Error", V: errMsg},
 	}
 	if len(index) > 0 {
 		log.Printf("RequestData #%d (%s):\n", index[0], req.ID().Base58())
