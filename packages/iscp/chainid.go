@@ -73,7 +73,13 @@ func (chid *ChainID) Bytes() []byte {
 
 // Equals for using
 func (chid *ChainID) Equals(chid1 *ChainID) bool {
-	return chid == chid1
+	if chid == chid1 {
+		return true
+	}
+	if chid == nil || chid1 == nil {
+		return false
+	}
+	return *chid == *chid1
 }
 
 // String human readable form (hex encoding)

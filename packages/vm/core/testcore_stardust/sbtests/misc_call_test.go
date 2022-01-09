@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,8 +26,9 @@ func testChainOwnerIDFull(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncChainOwnerIDFull.Name)
-	ret, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncChainOwnerIDFull.Name).
+		WithGasBudget(1000)
+	ret, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	c := ret.MustGet(sbtestsc.ParamChainOwnerID)

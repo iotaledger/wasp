@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 )
 
 type CallParams struct {
@@ -225,6 +224,11 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (d
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, error) {
+	receipt, res, _ := ch.PostRequestOffLedgerReceipt(req, keyPair)
+	return res, receipt.Error()
+}
+
+func (ch *Chain) PostRequestOffLedgerReceipt(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
 	if keyPair == nil {
@@ -232,14 +236,8 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res, err := ch.runRequestsSync([]iscp.RequestData{r}, "off-ledger")
-	if err != nil {
-		return nil, err
-	}
-	rec, ok := ch.GetRequestReceipt(r.ID())
-	if !ok {
-		return nil, xerrors.Errorf("can't get receipt for %s", r.ID())
-	}
-	return res, rec.Error()
+	rec, _ := ch.GetRequestReceipt(r.ID())
+	return rec, res, err
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
@@ -253,7 +251,7 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 func (ch *Chain) PostRequestSyncReceipt(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
 	_, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
 	if err != nil {
-		return nil, res, err
+		return receipt, res, err
 	}
 	return receipt, res, receipt.Error()
 }
@@ -268,14 +266,8 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
 	res, err := ch.runRequestsSync(reqs, "post")
-	if err != nil {
-		return tx, nil, nil, err
-	}
-	receipt, ok := ch.GetRequestReceipt(reqid)
-	if !ok {
-		return tx, nil, res, xerrors.Errorf("can't get request for %s", reqid)
-	}
-	return tx, receipt, res, nil
+	receipt, _ := ch.GetRequestReceipt(reqid)
+	return tx, receipt, res, err
 }
 
 // callViewFull calls the view entry point of the smart contract

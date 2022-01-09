@@ -61,7 +61,6 @@ var (
 	FuncSandboxCall            = coreutil.ViewFunc("testSandboxCall")
 	FuncCheckContextFromFullEP = coreutil.Func("checkContextFromFullEP")
 	FuncCheckContextFromViewEP = coreutil.ViewFunc("checkContextFromViewEP")
-	FuncGetMintedSupply        = coreutil.Func("getMintedSupply")
 
 	FuncPanicFullEP             = coreutil.Func("testPanicFullEP")
 	FuncPanicViewEP             = coreutil.ViewFunc("testPanicViewEP")

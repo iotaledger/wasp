@@ -279,6 +279,11 @@ func (ch *Chain) DepositAssets(assets *iscp.Assets, user *cryptolib.KeyPair) err
 	return err
 }
 
+// DepositIotas deposits assets on user's on-chain account
+func (ch *Chain) DepositIotas(amount uint64, user *cryptolib.KeyPair) error {
+	return ch.DepositAssets(iscp.NewAssets(amount, nil), user)
+}
+
 // SendFromL1ToL2Account sends assets from L1 address to the target account on L2
 func (ch *Chain) SendFromL1ToL2Account(assets *iscp.Assets, target *iscp.AgentID, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
