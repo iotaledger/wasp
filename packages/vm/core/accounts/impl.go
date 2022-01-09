@@ -101,7 +101,7 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 //   ParamForceMinimumIotas specify how may iotas should be left on the common account
 //   but not less that MinimumIotasOnCommonAccount constant
 func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.RequireCallerIsChainOwner("harvest")
+	ctx.RequireCallerIsChainOwner("accounts.harvest")
 
 	state := ctx.State()
 	checkLedger(state, "accounts.harvest.begin")
@@ -110,17 +110,16 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	// if ParamWithdrawAmount > 0, take it as exact amount to withdraw, otherwise assume harvest all
 	bottomIotas := par.MustGetUint64(ParamForceMinimumIotas, MinimumIotasOnCommonAccount)
-	sourceAccount := commonaccount.Get(ctx.ChainID())
-	toWithdraw := GetAccountAssets(state, sourceAccount)
+	commonAccount := commonaccount.Get(ctx.ChainID())
+	toWithdraw := GetAccountAssets(state, commonAccount)
 	if toWithdraw.IsEmpty() {
 		// empty toWithdraw, nothing to withdraw. Can't be
 		return nil, nil
 	}
 	if toWithdraw.Iotas > bottomIotas {
-		toWithdraw.Iotas = toWithdraw.Iotas - bottomIotas
+		toWithdraw.Iotas -= bottomIotas
 	}
-	ctx.Require(MoveBetweenAccounts(state, sourceAccount, ctx.Caller(), toWithdraw),
-		"accounts.harvest: failed to move tokens to owner's account")
+	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw)
 	return nil, nil
 }
 

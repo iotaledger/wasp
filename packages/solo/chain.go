@@ -48,7 +48,7 @@ func (ch *Chain) DumpAccounts() string {
 	for i := range acc {
 		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
-		bals := ch.L2AccountBalances(aid)
+		bals := ch.L2AccountAssets(aid)
 		ret += fmt.Sprintf("%s\n", bals.String())
 	}
 	return ret

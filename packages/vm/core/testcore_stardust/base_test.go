@@ -28,7 +28,7 @@ func TestInitLoad(t *testing.T) {
 	_ = ch.Log.Sync()
 
 	dustCosts := transaction.NewDepositEstimate(env.RentStructure())
-	assets := ch.L2CommonAccountBalances()
+	assets := ch.L2CommonAccountAssets()
 	require.EqualValues(t, 10_000-dustCosts.AnchorOutput, assets.Iotas)
 	require.EqualValues(t, 0, len(assets.Tokens))
 }

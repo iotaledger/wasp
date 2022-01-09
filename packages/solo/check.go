@@ -16,12 +16,12 @@ import (
 )
 
 func (ch *Chain) AssertL2AccountNativeToken(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID, bal interface{}) {
-	bals := ch.L2AccountBalances(agentID)
+	bals := ch.L2AccountAssets(agentID)
 	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
 func (ch *Chain) AssertL2AccountIotas(agentID *iscp.AgentID, bal uint64) {
-	require.Equal(ch.Env.T, int(bal), int(ch.L2AccountBalances(agentID).Iotas))
+	require.Equal(ch.Env.T, int(bal), int(ch.L2AccountAssets(agentID).Iotas))
 }
 
 // CheckChain checks fundamental integrity of the chain
@@ -48,16 +48,16 @@ func (ch *Chain) CheckAccountLedger() {
 	sum := iscp.NewEmptyAssets()
 	for i := range accs {
 		acc := accs[i]
-		sum.Add(ch.L2AccountBalances(acc))
+		sum.Add(ch.L2AccountAssets(acc))
 	}
 	require.True(ch.Env.T, total.Equals(sum))
 	coreacc := iscp.NewAgentID(ch.ChainID.AsAddress(), root.Contract.Hname())
-	require.True(ch.Env.T, ch.L2AccountBalances(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2AccountAssets(coreacc).IsEmpty())
 	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), blob.Contract.Hname())
-	require.True(ch.Env.T, ch.L2AccountBalances(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2AccountAssets(coreacc).IsEmpty())
 	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), accounts.Contract.Hname())
-	require.True(ch.Env.T, ch.L2AccountBalances(coreacc).IsEmpty())
-	require.True(ch.Env.T, ch.L2AccountBalances(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2AccountAssets(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2AccountAssets(coreacc).IsEmpty())
 }
 
 func (ch *Chain) AssertL2TotalNativeTokens(tokenID *iotago.NativeTokenID, bal interface{}) {

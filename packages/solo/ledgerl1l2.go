@@ -46,7 +46,7 @@ func (ch *Chain) L2Ledger() map[string]*iscp.Assets {
 	accs := ch.L2Accounts()
 	ret := make(map[string]*iscp.Assets)
 	for i := range accs {
-		ret[accs[i].String()] = ch.L2AccountBalances(accs[i])
+		ret[accs[i].String()] = ch.L2AccountAssets(accs[i])
 	}
 	return ret
 }
@@ -66,31 +66,31 @@ func (ch *Chain) L2LedgerString() string {
 	return ret
 }
 
-// L2AccountBalances return all assets contained in the on-chain account controlled by the 'agentID'
-func (ch *Chain) L2AccountBalances(agentID *iscp.AgentID) *iscp.Assets {
+// L2AccountAssets return all assets contained in the on-chain account controlled by the 'agentID'
+func (ch *Chain) L2AccountAssets(agentID *iscp.AgentID) *iscp.Assets {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
 	)
 }
 
 func (ch *Chain) L2AccountIotas(agentID *iscp.AgentID) uint64 {
-	return ch.L2AccountBalances(agentID).Iotas
+	return ch.L2AccountAssets(agentID).Iotas
 }
 
 func (ch *Chain) L2AccountNativeTokens(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
-	return ch.L2AccountBalances(agentID).AmountNativeToken(tokenID)
+	return ch.L2AccountAssets(agentID).AmountNativeToken(tokenID)
 }
 
-func (ch *Chain) L2CommonAccountBalances() *iscp.Assets {
-	return ch.L2AccountBalances(ch.CommonAccount())
+func (ch *Chain) L2CommonAccountAssets() *iscp.Assets {
+	return ch.L2AccountAssets(ch.CommonAccount())
 }
 
 func (ch *Chain) L2CommonAccountIotas() uint64 {
-	return ch.L2AccountBalances(ch.CommonAccount()).Iotas
+	return ch.L2AccountAssets(ch.CommonAccount()).Iotas
 }
 
 func (ch *Chain) L2CommonAccountNativeTokens(tokenID *iotago.NativeTokenID) *big.Int {
-	return ch.L2AccountBalances(ch.CommonAccount()).AmountNativeToken(tokenID)
+	return ch.L2AccountAssets(ch.CommonAccount()).AmountNativeToken(tokenID)
 }
 
 // L2TotalAssetsInAccounts return total sum of assets contained in the on-chain accounts
@@ -279,21 +279,43 @@ func (ch *Chain) DepositAssets(assets *iscp.Assets, user *cryptolib.KeyPair) err
 	return err
 }
 
-func (ch *Chain) SendToL2Account(assets *iscp.Assets, target *iscp.AgentID, user *cryptolib.KeyPair) error {
+// SendFromL1ToL2Account sends assets from L1 address to the target account on L2
+func (ch *Chain) SendFromL1ToL2Account(assets *iscp.Assets, target *iscp.AgentID, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, target)
 
-	req.AddAssets(assets).AddAssetsIotas(SendToL2AccountGasBudgetIotas).
+	req.AddAssets(assets).
+		AddAssetsIotas(SendToL2AccountGasBudgetIotas).
 		AddAllowance(assets).
 		WithGasBudget(SendToL2AccountGasBudgetIotas)
 	_, err := ch.PostRequestSync(req, user)
 	return err
 }
 
-func (ch *Chain) SendToL2AccountIotas(iotas uint64, target *iscp.AgentID, user *cryptolib.KeyPair) error {
-	return ch.SendToL2Account(iscp.NewAssets(iotas, nil), target, user)
+func (ch *Chain) SendFromL1ToL2AccountIotas(iotas uint64, target *iscp.AgentID, user *cryptolib.KeyPair) error {
+	return ch.SendFromL1ToL2Account(iscp.NewAssets(iotas, nil), target, user)
 }
 
-func (ch *Chain) SendToL2AccountNativeTokens(id iotago.NativeTokenID, target *iscp.AgentID, amount interface{}, user *cryptolib.KeyPair) error {
-	return ch.SendToL2Account(iscp.NewEmptyAssets().AddNativeTokens(id, amount), target, user)
+func (ch *Chain) SendFromL1ToL2AccountNativeTokens(id iotago.NativeTokenID, target *iscp.AgentID, amount interface{}, user *cryptolib.KeyPair) error {
+	return ch.SendFromL1ToL2Account(iscp.NewEmptyAssets().AddNativeTokens(id, amount), target, user)
+}
+
+// SendFromL2ToL2Account moves assets on L2 from user's account to the target
+func (ch *Chain) SendFromL2ToL2Account(transfer *iscp.Assets, target *iscp.AgentID, user *cryptolib.KeyPair) error {
+	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
+		accounts.ParamAgentID, target)
+
+	req.AddAssetsIotas(SendToL2AccountGasBudgetIotas).
+		AddAllowance(transfer).
+		WithGasBudget(SendToL2AccountGasBudgetIotas)
+	_, err := ch.PostRequestSync(req, user)
+	return err
+}
+
+func (ch *Chain) SendFromL2ToL2AccountIotas(iotas uint64, target *iscp.AgentID, user *cryptolib.KeyPair) error {
+	return ch.SendFromL2ToL2Account(iscp.NewAssets(iotas, nil), target, user)
+}
+
+func (ch *Chain) SendFromL2ToL2AccountNativeTokens(id iotago.NativeTokenID, target *iscp.AgentID, amount interface{}, user *cryptolib.KeyPair) error {
+	return ch.SendFromL2ToL2Account(iscp.NewEmptyAssets().AddNativeTokens(id, amount), target, user)
 }
