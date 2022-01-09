@@ -103,7 +103,7 @@ export class Service {
         const topic = topics[0];
         if (this.eventHandlers && this.eventHandlers.has(topic)) {
             const eventHandler = this.eventHandlers.get(topic)!;
-            const eventHandlerMsg = msg.slice(1);
+            const eventHandlerMsg = topics.slice(1);
             eventHandler(eventHandlerMsg);
         }
     }
