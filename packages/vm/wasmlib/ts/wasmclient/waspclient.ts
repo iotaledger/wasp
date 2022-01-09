@@ -15,6 +15,10 @@ interface IOffLedgerRequest {
     Request: string;
 }
 
+interface Items {
+    Items: [{ Key: string; Value: string }];
+}
+
 export class WaspClient {
     private waspAPI: string;
 
@@ -23,13 +27,12 @@ export class WaspClient {
         else this.waspAPI = "http://" + waspAPI;
     }
 
-    public async callView(chainID: string, contractHName: string, entryPoint: string, args: Buffer): Promise<wasmclient.Results> {
-        const request = { Request: args.toString("base64") };
+    public async callView(chainID: string, contractHName: string, entryPoint: string, args: Items): Promise<wasmclient.Results> {
         const result = await requestSender.sendRequestExt<unknown, ICallViewResponse>(
             this.waspAPI,
             "post",
             `/chain/${chainID}/contract/${contractHName}/callview/${entryPoint}`,
-            request
+            args
         );
         const res = new wasmclient.Results();
 

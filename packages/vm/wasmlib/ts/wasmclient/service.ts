@@ -30,7 +30,7 @@ export class Service {
             this.serviceClient.configuration.chainId,
             this.scHname.toString(16),
             viewName,
-            args.encode()
+            args.encodeCall()
         );
     }
 

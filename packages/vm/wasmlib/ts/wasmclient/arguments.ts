@@ -163,4 +163,25 @@ export class Arguments {
 		}
 		return buf;
 	}
+
+// {"Items":[{"Key":"YQ==","Value":"AHDllHMJmeQf4m2jKzi+S+sLkLlpZuSJy5lpIvaJ8JN2AAAAAA=="}]}
+
+	encodeCall(): wasmclient.Items {
+		const keys = new Array<string>();
+		for (const key of this.args.keys()) {
+			keys.push(key);
+		}
+		keys.sort((lhs, rhs) => lhs.localeCompare(rhs));
+
+		let items = new wasmclient.Items()
+		for (const key of keys) {
+			const keyBuf = Buffer.from("-" + key);
+			const valBuf = this.args.get(key);
+			if (!valBuf) {
+				throw new Error("Arguments.encodeCall: missing value");
+			}
+			items.Items.push({ keyBuf.toString("base64"), valBuf.toString("base64") })
+		}
+		return items;
+	}
 }
