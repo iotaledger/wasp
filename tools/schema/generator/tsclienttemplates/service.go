@@ -117,7 +117,7 @@ $#if map callResultGetterMap callResultGetterBasic
 	"callResultGetterMap": `
 
 	$fldName(): Map<$fldKeyLangType, $fldLangType> {
-		let res = new Map();
+		const res = new Map();
 		this.res.forEach((key, val) => {
 			res.set(key, this.res.get$FldType(val));
 		});

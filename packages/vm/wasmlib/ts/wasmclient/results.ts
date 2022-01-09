@@ -21,7 +21,7 @@ export class Results {
     }
 
     forEach(callbackfn: (base58Key: string, valueKey: string) => void): void {
-        this.keys.forEach((val, key, map) => {
+        this.keys.forEach((val, key) => {
             callbackfn(Base58.encode(val), key);
         })
     }
