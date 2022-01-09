@@ -23,6 +23,8 @@ export async function sendRequestExt<T, U extends IResponse | null>(
     let fetchResponse: Response;
 
     try {
+        if(!path.startsWith("/"))
+            path = "/" + path;        
         const url = `${apiUrl}/${path}`;
         fetchResponse = await fetch(url, {
             method: verb,
