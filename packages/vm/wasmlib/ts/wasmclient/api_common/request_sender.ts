@@ -37,7 +37,8 @@ export async function sendRequestExt<T, U extends IResponse | null>(
         }
 
         try {
-            const response = await fetchResponse.json();
+            const response = await fetchResponse.text()
+                            .then((data)=> data ? JSON.parse(data) : {});
             return { body: response, response: fetchResponse };
         } catch (err) {
             const error = err as Error;
