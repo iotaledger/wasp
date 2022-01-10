@@ -81,7 +81,7 @@ export class GetBlobInfoView extends wasmclient.ClientView {
 export class GetBlobInfoResults extends wasmclient.ViewResults {
 
 	blobSizes(): Map<string, wasmclient.Int32> {
-		let res = new Map();
+		const res = new Map();
 		this.res.forEach((key, val) => {
 			res.set(key, this.res.getInt32(val));
 		});
@@ -101,7 +101,7 @@ export class ListBlobsView extends wasmclient.ClientView {
 export class ListBlobsResults extends wasmclient.ViewResults {
 
 	blobSizes(): Map<wasmclient.Hash, wasmclient.Int32> {
-		let res = new Map();
+		const res = new Map();
 		this.res.forEach((key, val) => {
 			res.set(key, this.res.getInt32(val));
 		});

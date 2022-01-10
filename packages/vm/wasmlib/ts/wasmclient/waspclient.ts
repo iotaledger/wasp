@@ -15,8 +15,18 @@ interface IOffLedgerRequest {
     Request: string;
 }
 
-interface Items {
-    Items: [{ Key: string; Value: string }];
+export class Item {
+    Key: string;
+    Value: string;
+
+    constructor(key: string, value: string) {
+        this.Key = key;
+        this.Value = value;
+    }
+}
+
+export class Items {
+    Items = new Array<Item>();
 }
 
 export class WaspClient {
