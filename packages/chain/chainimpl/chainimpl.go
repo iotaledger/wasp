@@ -268,7 +268,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		chain.LogStateTransition(msg, reqids, c.log)
 
 		c.mempoolLastCleanedIndex = stateIndex
-		c.updateChainNodes()
+		c.updateChainNodes(stateIndex)
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
 			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String())
@@ -283,27 +283,22 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.StateCommitment().String())
 }
 
-func (c *chainObj) updateChainNodes() {
+func (c *chainObj) updateChainNodes(stateIndex uint32) {
+	c.log.Debugf("updateChainNodes, stateIndex=%v", stateIndex)
 	govAccessNodes := make([]ed25519.PublicKey, 0)
 	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
-	if c.consensus != nil {
-		statusSnapshot := c.consensus.GetStatusSnapshot()
-		if statusSnapshot != nil {
-			stateIndex := c.consensus.GetStatusSnapshot().StateIndex
-			if stateIndex > 0 {
-				res, err := viewcontext.NewFromChain(c).CallView(
-					governance.Contract.Hname(),
-					governance.FuncGetChainNodes.Hname(),
-					governance.GetChainNodesRequest{}.AsDict(),
-				)
-				if err != nil {
-					c.log.Panicf("unable to read the governance contract state: %v", err)
-				}
-				govResponse := governance.NewGetChainNodesResponseFromDict(res)
-				govAccessNodes = govResponse.AccessNodes
-				govCandidateNodes = govResponse.AccessNodeCandidates
-			}
+	if stateIndex > 0 {
+		res, err := viewcontext.NewFromChain(c).CallView(
+			governance.Contract.Hname(),
+			governance.FuncGetChainNodes.Hname(),
+			governance.GetChainNodesRequest{}.AsDict(),
+		)
+		if err != nil {
+			c.log.Panicf("unable to read the governance contract state: %v", err)
 		}
+		govResponse := governance.NewGetChainNodesResponseFromDict(res)
+		govAccessNodes = govResponse.AccessNodes
+		govCandidateNodes = govResponse.AccessNodeCandidates
 	}
 
 	//
@@ -374,5 +369,7 @@ func (c *chainObj) setCommittee(cmt chain.Committee) {
 			cmt:   cmt,
 		})
 	}
-	c.updateChainNodes()
+	if stateIndex, err := c.stateReader.BlockIndex(); err != nil {
+		c.updateChainNodes(stateIndex)
+	}
 }

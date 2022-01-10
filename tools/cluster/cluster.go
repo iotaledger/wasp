@@ -186,16 +186,6 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	//
 	// Register all non-committee nodes as access nodes.
 	for _, a := range allPeers {
-		inCommittee := false
-		for _, c := range committeeNodes {
-			if c == a {
-				inCommittee = true
-				break
-			}
-		}
-		if inCommittee {
-			continue
-		}
 		if err := clu.AddAccessNode(a, chain); err != nil {
 			return nil, err
 		}
@@ -634,7 +624,7 @@ func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 			assertionOk = false
 			isOk = "FAIL"
 		}
-		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col, act, expect[col], isOk)
+		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col.String(), act, expect[col], isOk)
 	}
 	lst = lst[:0]
 	for col := range actual {

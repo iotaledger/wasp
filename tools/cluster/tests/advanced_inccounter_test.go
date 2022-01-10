@@ -127,7 +127,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 	e.printBlocks(
 		numRequests + // The actual IncCounter requests.
 			3 + // Initial State + IncCounter SC Deploy + ???
-			(clusterSize - numValidatorNodes), // Access node applications.
+			clusterSize, // Access node applications.
 	)
 }
 
@@ -222,7 +222,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	e.printBlocks(
 		numRequests + // The actual IncCounter requests.
 			4 + // ???
-			(clusterSize - numValidatorNodes), // Access nodes applications.
+			clusterSize, // Access nodes applications.
 	)
 }
 
@@ -259,7 +259,7 @@ func TestAccessNodesMany(t *testing.T) {
 	e.printBlocks(
 		posted + // The actual SC requests.
 			3 + // ???
-			(clusterSize - numValidatorNodes), // GOV: Access Node Applications.
+			clusterSize, // GOV: Access Node Applications.
 	)
 }
 
@@ -282,11 +282,6 @@ func TestRotation(t *testing.T) {
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt1, 3, addr1)
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID.Base58())
-	for _, i := range cmt1 {
-		// Add the first committee as access nodes as well,
-		// because they will be such after the committee rotation.
-		require.NoError(t, clu.AddAccessNode(i, chain))
-	}
 
 	description := "inccounter testing contract"
 	programHash := inccounter.Contract.ProgramHash
@@ -393,11 +388,6 @@ func TestRotationMany(t *testing.T) {
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt[0], quorum[0], addrs[0])
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID.Base58())
-	for _, i := range cmt[0] {
-		// Add the first committee as access nodes as well,
-		// because they will be such after the committee rotation.
-		require.NoError(t, clu.AddAccessNode(i, chain))
-	}
 
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair())
 
