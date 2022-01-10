@@ -40,7 +40,7 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 
 	t.Logf("generated state address: %s", addr.Base58())
 
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr) // TODO: XXX: KP: AllNodes is used?
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
 	require.NoError(t, err)
 	t.Logf("deployed chainID: %s", chain.ChainID.Base58())
 

@@ -75,12 +75,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	// not synced
 	startSyncFromIndex := sm.solidState.BlockIndex() + 1
 	sm.log.Debugf("doSyncAction: trying to sync state from index %v to %v", startSyncFromIndex, sm.stateOutput.GetStateIndex())
-	if !sm.domain.HaveMainPeers() {
-		//
-		//
-		// TODO: XXX: KP: Other conditions...
-		//
-		//
+	if !sm.domain.HaveMainPeers() || sm.syncingBlocks.blockPollFallbackNeeded() {
 		sm.domain.SetFallbackMode(true)
 	}
 	for i := startSyncFromIndex; i <= sm.stateOutput.GetStateIndex(); i++ {
@@ -101,6 +96,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			getBlockMsg := &messages.GetBlockMsg{BlockIndex: i}
 			for _, p := range sm.domain.GetRandomOtherPeers(numberOfNodesToRequestBlockFromConst) {
 				sm.domain.SendMsgByPubKey(p, peering.PeerMessageReceiverStateManager, peerMsgTypeGetBlock, util.MustBytes(getBlockMsg))
+				sm.syncingBlocks.blocksPulled()
 				sm.log.Debugf("doSyncAction: requesting block index %v,from %v", i, p.String())
 			}
 			sm.syncingBlocks.startSyncingIfNeeded(i)

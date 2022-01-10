@@ -55,6 +55,7 @@ func (sm *stateManager) EnqueueBlockMsg(msg *messages.BlockMsgIn) {
 }
 
 func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
+	sm.syncingBlocks.blockReceived()
 	sm.log.Debugw("handleBlockMsg: ",
 		"sender", msg.SenderPubKey.String(),
 	)
