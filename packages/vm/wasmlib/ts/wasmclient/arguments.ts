@@ -164,11 +164,10 @@ export class Arguments {
         return buf;
     }
 
-    // {"Items":[{"Key":"YQ==","Value":"AHDllHMJmeQf4m2jKzi+S+sLkLlpZuSJy5lpIvaJ8JN2AAAAAA=="}]}
     encodeCall(): wasmclient.Items {
         let items = new wasmclient.Items()
         for (const [key, val] of this.args) {
-            const k = Buffer.from("-" + key).toString("base64");
+            const k = Buffer.from(key).toString("base64");
             const v = val.toString("base64");
             items.Items.push(new wasmclient.Item(k, v))
         }
