@@ -256,7 +256,10 @@ func (c *consensus) broadcastSignedResultIfNeeded() {
 		c.log.Debugf("broadcastSignedResult not needed: vm result is not signed")
 		return
 	}
-	if len(c.resultSigAck) >= int(c.committee.Size()-1) {
+	acksReceived := len(c.resultSigAck)
+	acksNeeded := int(c.committee.Size() - 1)
+	if acksReceived >= acksNeeded {
+		c.log.Debugf("broadcastSignedResult not needed: acks received from %v peers, only %v needed", acksReceived, acksNeeded)
 		return
 	}
 	if time.Now().After(c.delaySendingSignedResult) {
@@ -564,7 +567,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 
 func (c *consensus) processInclusionState(msg *messages.InclusionStateMsg) {
 	if !c.workflow.transactionFinalized {
-		c.log.Debugf("processInclusionState: transaction finalized -> skipping.")
+		c.log.Debugf("processInclusionState: transaction not finalized -> skipping.")
 		return
 	}
 	if msg.TxID != c.finalTx.ID() {
@@ -770,15 +773,29 @@ func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 
 func (c *consensus) receiveSignedResultAck(msg *messages.SignedResultAckMsgIn) {
 	own := c.resultSignatures[c.committee.OwnPeerIndex()]
-	if own == nil || msg.EssenceHash != own.EssenceHash || msg.ChainInputID != own.ChainInputID {
+	if own == nil {
+		c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because own signature is nil", msg.SenderIndex)
 		return
 	}
+	if msg.EssenceHash != own.EssenceHash {
+		c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because essence hash in ack %v is different than own signature essence hash %v",
+			msg.SenderIndex, msg.EssenceHash.String(), own.EssenceHash.String())
+		return
+	}
+	if msg.ChainInputID != own.ChainInputID {
+		c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because chain input id in ack %v is different than own chain input id %v",
+			msg.SenderIndex, iscp.OID(msg.ChainInputID), iscp.OID(own.ChainInputID))
+		return
+	}
+
 	for _, i := range c.resultSigAck {
 		if i == msg.SenderIndex {
+			c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because it has already been received", msg.SenderIndex)
 			return
 		}
 	}
 	c.resultSigAck = append(c.resultSigAck, msg.SenderIndex)
+	c.log.Debugf("receiveSignedResultAck: ack from %v accepted; acks from nodes %v have already been received", msg.SenderIndex, c.resultSigAck)
 }
 
 // TODO mutex inside is not good
