@@ -6,18 +6,18 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
 
-var Processor = Contract.Processor(nil,
+var Processor = Contract.Processor(initialize,
 	FuncDeposit.WithHandler(deposit),
-	FuncSendTo.WithHandler(sendTo),
+	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
 	FuncHarvest.WithHandler(harvest),
 	FuncGetAccountNonce.WithHandler(getAccountNonce),
@@ -31,144 +31,95 @@ var Processor = Contract.Processor(nil,
 	FuncViewAccounts.WithHandler(viewAccounts),
 )
 
-// deposit is a function to deposit funds to the sender's chain account
-// For the core contract as a target 'transfer' == nil
+func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
+	// validating and storing dust deposit assumption constants
+	iotasOnAnchor := ctx.StateAnchor().Deposit
+	dustAssumptionsBin := ctx.Params().MustGet(ParamDustDepositAssumptionsBin)
+	dustDepositAssumptions, err := transaction.DustDepositAssumptionFromBytes(dustAssumptionsBin)
+	// checking if assumptions are consistent
+	ctx.Require(err == nil && iotasOnAnchor >= dustDepositAssumptions.AnchorOutput,
+		"accounts.initialize.fail: %v", ErrDustDepositAssumptionsWrong)
+	ctx.State().Set(kv.Key(stateVarMinimumDustDepositAssumptionsBin), dustAssumptionsBin)
+
+	// initial load with iotas from origin anchor output exceeding minimum dust deposit assumption
+	initialLoadIotas := iscp.NewAssets(iotasOnAnchor-dustDepositAssumptions.AnchorOutput, nil)
+	CreditToAccount(ctx.State(), commonaccount.Get(ctx.ChainID()), initialLoadIotas)
+	return nil, nil
+}
+
+// deposit is a function to deposit attached assets to the sender's chain account
+// It does nothing because assets are already on the sender's account
+// Allowance is ignored
 func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.deposit")
-	// No need to do anything here because funds are already credited to the sender's account
-	// just send back anything that might have been included in 'transfer' by mistake
 	return nil, nil
 }
 
-// sendTo moves transfer from the to the specified account on the chain. Can be sent as a request
-// or can be called
+// transferAllowanceTo moves whole allowance from the caller to the specified account on the chain.
+// Can be sent as a request (sender is the caller) or can be called
 // Params:
-// - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
-//   in case ParamAgentID == ctx.Caller() and it is an on-chain call, it means NOP
-func sendTo(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.sendTo.begin -- %s", ctx.IncomingTransfer())
+// - ParamAgentID. mandatory
+func transferAllowanceTo(ctx iscp.Sandbox) (dict.Dict, error) {
+	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.Allowance())
 
-	if ctx.IncomingTransfer() == nil {
-		return nil, nil
-	}
-	checkLedger(ctx.State(), "accounts.sendTo.begin")
-
-	caller := ctx.Caller()
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAccount := params.MustGetAgentID(ParamAgentID, caller)
-
-	sendIncomingTo(ctx, targetAccount)
-	ctx.Log().Debugf("accounts.sendTo.success: target: %s\n%s",
-		targetAccount, ctx.IncomingTransfer().String())
-
-	checkLedger(ctx.State(), "accounts.sendTo.exit")
+	targetAccount := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(ParamAgentID)
+	ctx.TransferAllowedFunds(targetAccount)
+	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.Allowance())
 	return nil, nil
 }
 
-func sendIncomingTo(ctx iscp.Sandbox, targetAccount *iscp.AgentID) {
-	ok := MoveBetweenAccounts(ctx.State(), commonaccount.Get(ctx.ChainID()), targetAccount, ctx.IncomingTransfer())
-	assert.NewAssert(ctx.Log()).Require(ok, "internal error: failed to send funds to %s", targetAccount.String())
-}
-
-// withdraw sends caller's funds to the caller
+// withdraw sends caller's funds to the caller on-ledger (cross chain)
+// The caller explicitly specify the funds to withdraw via the allowance in the request
+// Btw: the whole code of entry point is generic, i.e. not specific to the accounts TODO use this feature
 func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	checkLedger(state, "accounts.withdraw.begin")
+
+	ctx.Require(!ctx.Allowance().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
 
 	if ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) {
 		// if the caller is on the same chain, do nothing
 		return nil, nil
 	}
-	// TODO maybe we need to deduct gas fees balance tokensToWithdraw? - to check
-	tokensToWithdraw, ok := GetAccountAssets(state, ctx.Caller())
-	if !ok {
-		// empty balance, nothing to withdraw
-		return nil, nil
-	}
-	// will be sending back to default entry point
-	a := assert.NewAssert(ctx.Log())
-	// the balances included in the transfer (if any) are already in the common account
-	// bring all remaining caller's balances to the current account (owner's account).
-	// It is needed for subsequent Send call
-	a.Require(MoveBetweenAccounts(state, ctx.Caller(), commonaccount.Get(ctx.ChainID()), tokensToWithdraw),
-		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
-	// add incoming tokens (after fees) to the balances to be withdrawn.
-	// Otherwise, they would end up in the common account
-	tokensToWithdraw.Add(ctx.IncomingTransfer())
-	// Now all caller's assets are in the common account
-	// TODO: by default should be withdrawn all tokens and account should be closed
-	//  Introduce "ParamEnsureMinimum = N iotas" which leaves at least N iotas in the account
-	// Send call assumes tokens are in the current account
-	sendMetadata := &iscp.SendMetadata{
-		TargetContract: ctx.Caller().Hname(),
-		// other metadata parameters are not important
-	}
-	a.Require(
-		ctx.Send(iscp.RequestParameters{
-			TargetAddress: ctx.Caller().Address(),
-			Assets:        tokensToWithdraw,
-			Metadata:      sendMetadata,
-			Options:       nil,
-		}),
-		"accounts.withdraw.inconsistency: failed sending tokens ",
-	)
+	// move all allowed funds to the account of the current contract context
+	ctx.TransferAllowedFunds(ctx.AccountID())
 
-	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", tokensToWithdraw.String())
-
-	checkLedger(state, "accounts.withdraw.exit")
+	ctx.Send(iscp.RequestParameters{
+		TargetAddress: ctx.Caller().Address(),
+		Assets:        ctx.Allowance(),
+		Metadata: &iscp.SendMetadata{
+			TargetContract: ctx.Caller().Hname(),
+			// other metadata parameters are not important for withdrawal
+		},
+	})
+	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.Allowance().String())
 	return nil, nil
 }
 
-// owner of the chain moves all tokens balance the common account to its own account
+// TODO refactor owner of the chain moves all tokens balance the common account to its own account
 // Params:
-//   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
-//   ParamWithdrawAssetID assetID to withdraw if amount is specified. Defaults to Iota
+//   ParamForceMinimumIotas specify how may iotas should be left on the common account
+//   but not less that MinimumIotasOnCommonAccount constant
 func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.RequireChainOwner(ctx, "harvest")
+	ctx.RequireCallerIsChainOwner("accounts.harvest")
 
 	state := ctx.State()
 	checkLedger(state, "accounts.harvest.begin")
 	defer checkLedger(state, "accounts.harvest.exit")
 
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	// if ParamWithdrawAmount > 0, take it as exact amount to withdraw
-	// otherwise assume harvest all
-	amount := par.MustGetUint64(ParamWithdrawAmount, 0)
-
-	// default is harvest specified amount of iotas
-	assetID := par.MustGetBytes(ParamWithdrawAssetID, iscp.IotaAssetID)
-
-	sourceAccount := commonaccount.Get(ctx.ChainID())
-	balance, ok := GetAccountAssets(state, sourceAccount)
-	if !ok {
-		// empty balance, nothing to withdraw
+	// if ParamWithdrawAmount > 0, take it as exact amount to withdraw, otherwise assume harvest all
+	bottomIotas := par.MustGetUint64(ParamForceMinimumIotas, MinimumIotasOnCommonAccount)
+	commonAccount := commonaccount.Get(ctx.ChainID())
+	toWithdraw := GetAccountAssets(state, commonAccount)
+	if toWithdraw.IsEmpty() {
+		// empty toWithdraw, nothing to withdraw. Can't be
 		return nil, nil
 	}
-
-	tokensToSend := iscp.NewEmptyAssets()
-	if iscp.IsIota(assetID) {
-		if amount > 0 {
-			tokensToSend.Iotas = amount
-		} else {
-			tokensToSend.Iotas = balance.Iotas
-		}
-	} else {
-		token := &iotago.NativeToken{
-			ID: iscp.MustNativeTokenIDFromBytes(assetID),
-		}
-		if amount > 0 {
-			token.Amount = new(big.Int).SetUint64(amount)
-		} else {
-			tokenset, err := balance.Tokens.Set()
-			a.RequireNoError(err)
-			token.Amount = tokenset[token.ID].Amount
-		}
-		tokensToSend.Tokens = append(tokensToSend.Tokens, token)
+	if toWithdraw.Iotas > bottomIotas {
+		toWithdraw.Iotas -= bottomIotas
 	}
-
-	a.Require(MoveBetweenAccounts(state, sourceAccount, ctx.Caller(), tokensToSend),
-		"accounts.harvest.inconsistency. failed to move tokens to owner's account")
+	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw)
 	return nil, nil
 }
 
@@ -229,7 +180,7 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 	tokenMaxSupply := par.MustGetBigInt(ParamMaxSupply)
 
 	// create UTXO
-	sn, dustConsumed := ctx.Foundries().CreateNew(tokenScheme, tokenTag, tokenMaxSupply, nil)
+	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, tokenTag, tokenMaxSupply, nil)
 	// dust deposit is taken from the callers account
 	DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
 		Iotas: dustConsumed,
@@ -245,16 +196,15 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 // foundryDestroy destroys foundry if that is possible
 func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.foundryDestroy")
-	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamFoundrySN)
 	// check if foundry is controlled by the caller
-	a.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	ctx.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
-	a.Require(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
+	ctx.Require(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
 
-	ctx.Foundries().Destroy(sn)
+	ctx.Privileged().DestroyFoundry(sn)
 	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
 	DeleteFoundryOutput(ctx.State(), sn)
 	return nil, nil
@@ -266,63 +216,45 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamSupplyDeltaAbs absolute delta of the supply as big.Int
 // - ParamDestroyTokens true if destroy supply, false (default) if mint new supply
 func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamFoundrySN)
 	delta := par.MustGetBigInt(ParamSupplyDeltaAbs)
-	destroy := par.MustGetBool(ParamDestroyTokens, false)
-	if destroy {
-		delta.Neg(delta)
+	if delta.Cmp(big.NewInt(0)) == 0 {
+		return nil, nil
 	}
+	destroy := par.MustGetBool(ParamDestroyTokens, false)
 	// check if foundry is controlled by the caller
-	a.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	ctx.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	tokenID, err := out.NativeTokenID()
-	a.RequireNoError(err, "internal")
+	ctx.RequireNoError(err, "internal")
 
-	// transit foundry UTXO
-	dustAdjustment := ctx.Foundries().ModifySupply(sn, delta)
-	// adjust iotas due to the change in dust deposit
-	switch {
-	case dustAdjustment > 0:
-		CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-			Iotas: uint64(dustAdjustment),
-		})
-	case dustAdjustment < 0:
-		DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-			Iotas: uint64(-dustAdjustment),
-		})
+	// accrue change on the caller's account
+	// update L2 ledger and transit foundry UTXO
+	var dustAdjustment int64
+	if deltaAssets := iscp.NewEmptyAssets().AddNativeTokens(tokenID, delta); destroy {
+		DebitFromAccount(ctx.State(), ctx.Caller(), deltaAssets)
+		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
+	} else {
+		CreditToAccount(ctx.State(), ctx.Caller(), deltaAssets)
+		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta)
 	}
-	// accrue delta tokens on the caller's account
-	switch {
-	case delta.Cmp(big.NewInt(0)) > 0:
-		CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-			Tokens: iotago.NativeTokens{{
-				ID:     tokenID,
-				Amount: delta,
-			}},
-		})
-	case delta.Cmp(big.NewInt(0)) < 0:
-		DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-			Tokens: iotago.NativeTokens{{
-				ID: tokenID, Amount: new(big.Int).Neg(delta),
-			}},
-		})
-	}
+
+	// adjust iotas on L2 due to the possible change in dust deposit
+	AdjustAccountIotas(ctx.State(), commonaccount.Get(ctx.ChainID()), dustAdjustment)
 	return nil, nil
 }
 
 // foundryOutput takes serial number and returns corresponding foundry output in serialized form
 func foundryOutput(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.foundryOutput")
-	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	sn := par.MustGetUint32(ParamFoundrySN)
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
-	a.RequireNoError(err, "internal: error while serializing foundry output")
+	ctx.RequireNoError(err, "internal: error while serializing foundry output")
 	ret := dict.New()
 	ret.Set(ParamFoundryOutputBin, outBin)
 	return ret, nil

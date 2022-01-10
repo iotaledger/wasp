@@ -24,7 +24,7 @@ type SandboxBase interface {
 	ChainID() *ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
 	ChainOwnerID() *AgentID
-	// Contract returns the Hname of the contract in the current chain
+	// Contract returns the Hname of the current contract in the context
 	Contract() Hname
 	// ContractCreator returns the agentID that deployed the contract
 	ContractCreator() *AgentID
@@ -34,7 +34,7 @@ type SandboxBase interface {
 	Log() LogInterface
 	// Utils provides access to common necessary functionality
 	Utils() Utils
-	// Gas returns interface for gas related functions
+	// Gas returns sub-interface for gas related functions
 	Gas() Gas
 }
 
@@ -71,44 +71,48 @@ type Sandbox interface {
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and
 	// target contract's accounts (if enough). If the entry point is view, 'transfer' has no effect
-	Call(target, entryPoint Hname, params dict.Dict, transfer *Assets) (dict.Dict, error)
+	Call(target, entryPoint Hname, params dict.Dict, allowance *Assets) (dict.Dict, error)
 	// Caller is the agentID of the caller.
 	Caller() *AgentID
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error
-	// Event publishes "vmmsg" message through Publisher on nanomsg. It also logs locally, but it is not the same thing
+	// Event emits an event
 	Event(msg string)
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
-	GetEntropy() hashing.HashValue // 32 bytes of deterministic and unpredictably random data
-	// IncomingTransfer return colored balances transferred by the call. They are already accounted into the Balances()
-	IncomingTransfer() *Assets
-	Send(metadata RequestParameters) bool
+	GetEntropy() hashing.HashValue
+	// Allowance specifies max budget of assets the smart contract can take
+	// from the caller with TransferAllowedFunds. Nil means no allowance (zero budget)
+	Allowance() *Assets
+	// TransferAllowedFunds moves assets from the caller's account to specified account within the budget set by Allowance.
+	// Skipping 'assets' means transfer all Allowance().
+	// The call fails if target account does not exist
+	TransferAllowedFunds(target *AgentID, assets ...*Assets)
+	// Send sends a on-ledger request
+	Send(metadata RequestParameters)
 	// BlockContext Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
-	Foundries() Foundries
+
+	// Privileged is a sub-interface of the sandbox which should not be called by VM plugins
+	Privileged() Privileged
 }
 
-// Foundries are identified by serial number in the Sandbox
-// Only used internally by the VM core contracts
-// TODO foundry metadata
-type Foundries interface {
-	// CreateNew creates a new foundry controlled by the caller
-	CreateNew(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64)
-	// Destroy existing foundry, if this is possible
-	Destroy(uint32) int64
-	// GetOutput returns the output
-	GetOutput(uint32) *iotago.FoundryOutput
-	// ModifySupply inflates of shrinks supply
-	ModifySupply(serNum uint32, delta *big.Int) int64
+// Privileged is a sub-interface for core contracts. Should not be called by VM plugins
+type Privileged interface {
+	TryLoadContract(programHash hashing.HashValue) error
+	CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64)
+	DestroyFoundry(uint32) int64
+	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
+	//BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
 type RequestParameters struct {
 	// TargetAddress is the target address. It may represent another chain or L1 address
 	TargetAddress iotago.Address
-	// Assets attached to the output. It expected to contain iotas at least the amount required for dust deposit
+	// Assets attached to the output, always taken from the caller's account.
+	// It expected to contain iotas at least the amount required for dust deposit
 	// It depends on the context how it is handled when iotas are not enough for dust deposit
 	Assets *Assets
 	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address
@@ -144,7 +148,7 @@ type SendMetadata struct {
 	TargetContract Hname
 	EntryPoint     Hname
 	Params         dict.Dict
-	Transfer       *Assets
+	Allowance      *Assets
 	GasBudget      uint64
 }
 

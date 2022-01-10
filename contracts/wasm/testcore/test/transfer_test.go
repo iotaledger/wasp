@@ -194,12 +194,12 @@ func TestRequestToView(t *testing.T) {
 		// SoloContext disallows Sign()/Post() to a view
 		// f := testcore.ScFuncs.JustView(ctx.Sign(user))
 		// f.Func.TransferIotas(42).Post()
-		// require.Error(t, ctx.Err)
+		// require.ErrorStr(t, ctx.Err)
 
 		// sending request to the view entry point should
 		// return an error and invoke fallback for tokens
 		req := solo.NewCallParams(testcore.ScName, testcore.ViewJustView)
-		_, ctx.Err = ctx.Chain.PostRequestSync(req.WithIotas(42), user.PrivateKey)
+		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddAssetsIotas(42), user.PrivateKey)
 		require.Error(t, ctx.Err)
 
 		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())

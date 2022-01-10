@@ -135,7 +135,7 @@ func TestGasCharged(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 123, storage.retrieve())
 		// TODO:
-		// require.Contains(t, err.Error(), "transferred tokens (1) not enough")
+		// require.Contains(t, err.ErrorStr(), "transferred tokens (1) not enough")
 		// require.EqualValues(t, 999, storage.retrieve())
 
 		// verify user on-chain account still has the same balance (no refund happened)
@@ -156,7 +156,7 @@ func TestOwner(t *testing.T) {
 		user1AgentID := iscp.NewAgentID(user1Address, 0)
 		_, err := evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
-				WithIotas(100000),
+				AddAssetsIotas(100000),
 			user1Wallet,
 		)
 		require.Error(t, err)
@@ -168,7 +168,7 @@ func TestOwner(t *testing.T) {
 		// current owner is able to set a new "next owner"
 		_, err = evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
-				WithIotas(100000),
+				AddAssetsIotas(100000),
 			evmChain.soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
@@ -182,7 +182,7 @@ func TestOwner(t *testing.T) {
 
 		_, err = evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncClaimOwnership.Name).
-				WithIotas(100000),
+				AddAssetsIotas(100000),
 			user2Wallet,
 		)
 		require.Error(t, err)
@@ -194,7 +194,7 @@ func TestOwner(t *testing.T) {
 		// claim ownership successfully
 		_, err = evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncClaimOwnership.Name).
-				WithIotas(100000),
+				AddAssetsIotas(100000),
 			user1Wallet,
 		)
 		require.NoError(t, err)
@@ -251,7 +251,7 @@ func TestGasLimit(t *testing.T) {
 		_, err = storage.store(123, ethCallOptions{gasLimit: gas, iota: iotaCallOptions{transfer: (gas+1)/gasPerIotas - 1}})
 		// TODO: gas is currently not being charged
 		// require.Error(t, err)
-		// require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.Error())
+		// require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.ErrorStr())
 		require.NoError(t, err)
 
 		// send again with gas limit not enough for transaction
@@ -331,7 +331,7 @@ func TestPrePaidFees(t *testing.T) {
 		// deposit funds
 		initialBalance := evmChain.solo.L1NativeTokenBalance(iotaAddress, colored.IOTA)
 		_, err := evmChain.soloChain.PostRequestSync(
-			solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(initialBalance),
+			solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).AddAssetsIotas(initialBalance),
 			iotaWallet,
 		)
 		require.NoError(t, err)

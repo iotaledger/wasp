@@ -55,7 +55,7 @@ func TestIncDefaultParam(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncCounter.Name).WithIotas(1)
+	req := solo.NewCallParams(incName, FuncIncCounter.Name).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkCounter(chain, 18)
@@ -70,7 +70,7 @@ func TestIncParam(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncCounter.Name, VarCounter, 3).WithIotas(1)
+	req := solo.NewCallParams(incName, FuncIncCounter.Name, VarCounter, 3).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkCounter(chain, 20)
@@ -86,7 +86,7 @@ func TestIncWith1Post(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter5s.Name).WithIotas(1)
+	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter5s.Name).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -111,7 +111,7 @@ func TestSpawn(t *testing.T) {
 	req := solo.NewCallParams(incName, FuncSpawn.Name,
 		VarName, nameNew,
 		VarDescription, dscrNew,
-	).WithIotas(1)
+	).AddAssetsIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -133,7 +133,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: prepare N requests that call FuncIncCounter
 	reqs := make([]*solo.CallParams, b.N)
 	for i := 0; i < b.N; i++ {
-		reqs[i] = solo.NewCallParams(incName, FuncIncCounter.Name).WithIotas(1)
+		reqs[i] = solo.NewCallParams(incName, FuncIncCounter.Name).AddAssetsIotas(1)
 	}
 
 	return chain, reqs

@@ -105,7 +105,7 @@ func TestMintFail(t *testing.T) {
 //	env.AssertAddressNativeTokenBalance(wallet.Address(), color1, 1000)
 //
 //	err = env.DestroyColoredTokens(wallet, color1, 1100)
-//	require.Error(t, err)
+//	require.ErrorStr(t, err)
 //	env.AssertAddressNativeTokenBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
 //	env.AssertAddressNativeTokenBalance(wallet.Address(), color1, 1000)
 //}

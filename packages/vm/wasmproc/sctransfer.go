@@ -60,12 +60,12 @@ func (o *ScTransferInfo) SetBytes(keyID, typeID int32, bytes []byte) {
 	// 	var err error
 	// 	o.address, _, err = iotago.AddressFromBytes(bytes)
 	// 	if err != nil {
-	// 		o.Panicf("SetBytes: invalid address: " + err.Error())
+	// 		o.Panicf("SetBytes: invalid address: " + err.ErrorStr())
 	// 	}
 	// case wasmhost.KeyBalances:
 	// 	balanceMapID, err := codec.DecodeInt32(bytes, 0)
 	// 	if err != nil {
-	// 		o.Panicf("SetBytes: invalid balance map id: " + err.Error())
+	// 		o.Panicf("SetBytes: invalid balance map id: " + err.ErrorStr())
 	// 	}
 	// 	o.Invoke(balanceMapID)
 	// default:

@@ -2,10 +2,11 @@ package tests
 
 import (
 	"fmt"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
+
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -441,7 +442,7 @@ func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.R
 	succ := waitTrue(timeout, func() bool {
 		rec, err := callGetRequestRecord(t, chain, nodeIndex, reqid)
 		if err == nil && rec != nil {
-			ret = rec.Error
+			ret = rec.ErrorStr
 			return true
 		}
 		return false

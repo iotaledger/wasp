@@ -1,13 +1,13 @@
 package vmtxbuilder
 
 import (
+	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-
-	"golang.org/x/xerrors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"golang.org/x/xerrors"
 )
 
 type TransactionTotals struct {
@@ -105,18 +105,10 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 		}
 	}
 	for _, o := range txb.postedOutputs {
-		assets := AssetsFromOutput(o)
-		ret.TotalIotasInL2Accounts += assets.Iotas
+		assets := transaction.AssetsFromOutput(o)
 		for _, nt := range assets.Tokens {
-			s, ok := ret.NativeTokenBalances[nt.ID]
-			if !ok {
-				s = new(big.Int)
-			}
-			s.Add(s, nt.Amount)
-			ret.NativeTokenBalances[nt.ID] = s
-
 			ret.SentOutIotas += assets.Iotas
-			s, ok = ret.SentOutTokenBalances[nt.ID]
+			s, ok := ret.SentOutTokenBalances[nt.ID]
 			if !ok {
 				s = new(big.Int)
 			}
@@ -165,8 +157,9 @@ func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
 	if DebugTxBuilder {
 		_, _, balanced := txb.Totals()
 		if !balanced {
-			//fmt.Printf("================= MustBalanced [%s] \ninTotals: %v\noutTotals: %v\n", checkpoint, ins, outs)
-			panic(xerrors.Errorf("internal: tx builder is not balanced [%s]", checkpoint))
+			ins, outs, _ := txb.Totals()
+			fmt.Printf("================= MustBalanced [%s] \ninTotals: %v\noutTotals: %v\n", checkpoint, ins, outs)
+			panic(xerrors.Errorf("internal: %v [%s]", ErrFatalTxBuilderNotBalanced, checkpoint))
 		}
 	}
 }
@@ -194,7 +187,9 @@ func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp
 }
 
 func (t *TransactionTotals) BalancedWith(another *TransactionTotals) bool {
-	if t.TotalIotasInL2Accounts+t.TotalIotasInDustDeposit != another.TotalIotasInL2Accounts+another.TotalIotasInDustDeposit {
+	tIn := t.TotalIotasInL2Accounts + t.TotalIotasInDustDeposit
+	tOut := another.TotalIotasInL2Accounts + another.TotalIotasInDustDeposit + another.SentOutIotas
+	if tIn != tOut {
 		return false
 	}
 	tokenIDs := make(map[iotago.NativeTokenID]bool)
@@ -207,6 +202,10 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) bool {
 	for id := range t.NativeTokenBalances {
 		tokenIDs[id] = true
 	}
+	for id := range t.SentOutTokenBalances {
+		tokenIDs[id] = true
+	}
+
 	tokenSupplyDeltas := make(map[iotago.NativeTokenID]*big.Int)
 	for id := range tokenIDs {
 		inSupply, ok := t.TokenCirculatingSupplies[id]
@@ -228,6 +227,12 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) bool {
 		if !ok {
 			end = big.NewInt(0)
 		}
+		sent, ok := another.SentOutTokenBalances[id]
+		if !ok {
+			sent = big.NewInt(0)
+		}
+		end.Add(end, sent)
+
 		begin.Add(begin, delta)
 		if begin.Cmp(end) != 0 {
 			return false

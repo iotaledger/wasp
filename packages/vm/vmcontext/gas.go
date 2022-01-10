@@ -20,7 +20,8 @@ func (vmctx *VMContext) GasBurn(gas uint64) {
 	}
 	vmctx.gasBurned += gas
 	if vmctx.gasBurned > vmctx.gasBudget {
-		panic(xerrors.Errorf("%w: burned total: %d, budget %d", coreutil.ErrorGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudget))
+		panic(xerrors.Errorf("%v: burned (budget)= %d (%d)",
+			coreutil.ErrorGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudget))
 	}
 }
 

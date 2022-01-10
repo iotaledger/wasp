@@ -2,39 +2,50 @@ package sbtests
 
 import (
 	"fmt"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"testing"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	DEBUG           = func() bool { return false }()
+	FORCE_SKIP_WASM = func() bool { return true }()
+)
+
 const (
-	DEBUG            = false
 	ScName           = "testcore"
 	HScName          = iscp.Hname(0x370d33ad)
 	WasmFileTestcore = "sbtestsc/testcore_bg.wasm"
 )
 
+func init() {
+	if iscp.Hn(ScName) != HScName {
+		panic("iscp.Hn(ScName) != HScName")
+	}
+}
 func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
 	core.PrintWellKnownHnames()
-	env := solo.New(t, DEBUG, false).WithNativeContract(sbtestsc.Processor)
-	chain := env.NewChain(keyPairOriginator, "ch1")
+	env := solo.New(t, &solo.InitOptions{Debug: DEBUG}).WithNativeContract(sbtestsc.Processor)
+	chain, _, _ := env.NewChainExt(keyPairOriginator, 10_000, "ch1")
+	err := chain.SendFromL1ToL2AccountIotas(solo.Saldo/2, chain.OriginatorAgentID, &chain.OriginatorPrivateKey)
+	require.NoError(t, err)
 	return env, chain
 }
 
 func setupDeployer(t *testing.T, chain *solo.Chain) (*cryptolib.KeyPair, iotago.Address, *iscp.AgentID) {
 	user, userAddr := chain.Env.NewKeyPairWithFunds()
-	chain.Env.AssertAddressIotas(userAddr, solo.Saldo)
+	chain.Env.AssertL1AddressIotas(userAddr, solo.Saldo)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
-		root.ParamDeployer, iscp.NewAgentID(userAddr, 0))
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+		root.ParamDeployer, iscp.NewAgentID(userAddr, 0)).WithGasBudget(1_000)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 	return user, userAddr, iscp.NewAgentID(userAddr, 0)
 }
@@ -43,7 +54,7 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	t.Run(fmt.Sprintf("run CORE version of %s", t.Name()), func(t *testing.T) {
 		test(t, false)
 	})
-	if len(skipWasm) == 0 || !skipWasm[0] {
+	if !FORCE_SKIP_WASM && (len(skipWasm) == 0 || !skipWasm[0]) {
 		t.Run(fmt.Sprintf("run Wasm version of %s", t.Name()), func(t *testing.T) {
 			test(t, true)
 		})
@@ -55,7 +66,7 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) (*iscp.AgentID, uint64) {
 	var err error
 	var extraToken uint64
-	if runWasm {
+	if !FORCE_SKIP_WASM && runWasm {
 		err = chain.DeployWasmContract(user, ScName, WasmFileTestcore)
 		extraToken = 1
 	} else {
@@ -66,7 +77,7 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair
 
 	deployed := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-	_, err = chain.PostRequestSync(req.WithIotas(1), user)
+	_, err = chain.PostRequestSync(req.AddAssetsIotas(1), user)
 	require.NoError(t, err)
 	t.Logf("deployed test_sandbox'%s': %s", ScName, HScName)
 	return deployed, extraToken

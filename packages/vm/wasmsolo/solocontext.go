@@ -197,7 +197,7 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmlib.ScColor) int64 {
 	panic("TODO implement - scColor needs to go")
 	// account := iscp.NewAgentID(agent.address, agent.hname)
-	// balances := ctx.Chain.L2AccountBalances(account)
+	// balances := ctx.Chain.L2AccountAssets(account)
 	// switch len(color) {
 	// case 0:
 	// 	return int64(balances.Get(colored.IOTA))

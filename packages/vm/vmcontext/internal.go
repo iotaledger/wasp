@@ -3,6 +3,10 @@ package vmcontext
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
+
 	"github.com/iotaledger/wasp/packages/kv"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -18,9 +22,6 @@ import (
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
 func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, assets *iscp.Assets) {
-	if len(vmctx.callStack) > 0 {
-		panic("creditToAccount must be called only from request")
-	}
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.CreditToAccount(s, agentID, assets)
 	})
@@ -134,7 +135,7 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) {
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 		err = blocklog.SaveRequestReceipt(vmctx.State(), &blocklog.RequestReceipt{
 			RequestData:   vmctx.req,
-			Error:         errStr,
+			ErrorStr:      errStr,
 			GasBudget:     vmctx.gasBudget,
 			GasBurned:     vmctx.gasBurned,
 			GasFeeCharged: vmctx.gasFeeCharged,
@@ -142,16 +143,16 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) {
 
 	})
 	if err != nil {
-		vmctx.Panicf("writeReceiptToBlockLog: %v", err)
+		panic(err)
 	}
 }
 
 func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 	if vmctx.requestEventIndex > vmctx.chainInfo.MaxEventsPerReq {
-		vmctx.Panicf("too many events issued for contract: %s, request index: %d", contract.String(), vmctx.requestIndex)
+		panic(ErrTooManyEvents)
 	}
 	if len([]byte(msg)) > int(vmctx.chainInfo.MaxEventSize) {
-		vmctx.Panicf("event too large: %s, request index: %d", contract.String(), vmctx.requestIndex)
+		panic(ErrTooLargeEvent)
 	}
 	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
 
@@ -160,7 +161,7 @@ func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 		err = blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
 	})
 	if err != nil {
-		vmctx.Panicf("MustSaveEvent: %v", err)
+		panic(err)
 	}
 	vmctx.requestEventIndex++
 }
@@ -174,4 +175,16 @@ func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
 			vmctx.req.AsOffLedger().Nonce(),
 		)
 	})
+}
+
+// adjustL2IotasIfNeeded adjust L2 ledger for iotas if the L1 changed because of dust deposit changes
+func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64) {
+	err := util.CatchPanicReturnError(func() {
+		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+			accounts.AdjustAccountIotas(s, commonaccount.Get(vmctx.ChainID()), adjustment)
+		})
+	}, accounts.ErrNotEnoughFunds)
+	if err != nil {
+		panic(vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
+	}
 }

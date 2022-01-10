@@ -47,7 +47,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 }
 
 // transfer moves tokens from caller's account to target account
-// This function emits the Transfer event.
+// This function emits the Allowance event.
 // Input:
 // - PARAM_ACCOUNT: agentID
 // - PARAM_AMOUNT: i64
@@ -73,7 +73,7 @@ func funcTransfer(ctx wasmlib.ScFuncContext, f *TransferContext) {
 
 // Moves the amount of tokens from sender to recipient using the allowance mechanism.
 // Amount is then deducted from the caller’s allowance.
-// This function emits the Transfer event.
+// This function emits the Allowance event.
 // Input:
 // - PARAM_ACCOUNT: agentID   the spender
 // - PARAM_RECIPIENT: agentID   the target

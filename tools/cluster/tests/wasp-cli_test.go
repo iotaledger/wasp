@@ -181,7 +181,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	out = w.Run("chain", "request", reqID)
 	found = false
 	for _, line := range out {
-		if strings.Contains(line, "Error: (empty)") {
+		if strings.Contains(line, "error: (empty)") {
 			found = true
 			break
 		}
@@ -197,7 +197,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 
 	found = false
 	for _, line := range out {
-		if strings.Contains(line, "Error: ") {
+		if strings.Contains(line, "error: ") {
 			found = true
 			require.Regexp(t, `cannot decode`, line)
 			break

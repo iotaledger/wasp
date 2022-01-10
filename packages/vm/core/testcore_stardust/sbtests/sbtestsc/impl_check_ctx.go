@@ -11,14 +11,13 @@ import (
 
 func testCheckContextFromFullEP(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := assert.NewAssert(ctx.Log())
 
-	a.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
-	a.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
-	a.Require(par.MustGetAgentID(ParamCaller).Equals(ctx.Caller()), "fail: caller")
+	ctx.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
+	ctx.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
+	ctx.Require(par.MustGetAgentID(ParamCaller).Equals(ctx.Caller()), "fail: caller")
 	myAgentID := iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
-	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
-	a.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
+	ctx.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
+	ctx.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
 	return nil, nil
 }
 

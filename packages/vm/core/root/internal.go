@@ -1,20 +1,26 @@
 package root
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"golang.org/x/xerrors"
 )
+
+func GetContractRegistry(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, StateVarContractRegistry)
+}
+
+func GetContractRegistryR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, StateVarContractRegistry)
+}
 
 // FindContract is an internal utility function which finds a contract in the KVStore
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not directly exposed to the sandbox
 // If contract is not found by the given hname, nil is returned
 func FindContract(state kv.KVStoreReader, hname iscp.Hname) *ContractRecord {
-	contractRegistry := collections.NewMapReadOnly(state, StateVarContractRegistry)
+	contractRegistry := GetContractRegistryR(state)
 	retBin := contractRegistry.MustGetAt(hname.Bytes())
 	if retBin != nil {
 		ret, err := ContractRecordFromBytes(retBin)
@@ -28,6 +34,10 @@ func FindContract(state kv.KVStoreReader, hname iscp.Hname) *ContractRecord {
 		return NewContractRecord(Contract, &iscp.NilAgentID)
 	}
 	return nil
+}
+
+func ContractExists(state kv.KVStoreReader, hname iscp.Hname) bool {
+	return GetContractRegistryR(state).MustHasAt(hname.Bytes())
 }
 
 // DecodeContractRegistry encodes the whole contract registry from the map into a Go map.
@@ -50,13 +60,4 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc
 		return true
 	})
 	return ret, err
-}
-
-func GetDustAssumptions(state kv.KVStoreReader) *vmtxbuilder.InternalDustDepositAssumption {
-	bin := state.MustGet(StateVarDustDepositAssumptions)
-	ret, err := vmtxbuilder.InternalDustDepositAssumptionFromBytes(bin)
-	if err != nil {
-		panic(xerrors.Errorf("GetDustAssumptions: internal: %v", err))
-	}
-	return ret
 }

@@ -130,7 +130,7 @@ func TestRequestReceipt(t *testing.T) {
 	a := reqs[0].Bytes()
 	b := receipt.RequestData.Bytes()
 	require.Equal(t, a, b)
-	require.EqualValues(t, 0, len(receipt.Error))
+	require.NoError(t, receipt.Error())
 	require.EqualValues(t, 2, receipt.BlockIndex)
 	require.EqualValues(t, 0, receipt.RequestIndex)
 	t.Logf("%s", receipt.String())

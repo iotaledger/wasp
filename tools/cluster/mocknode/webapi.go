@@ -97,18 +97,18 @@ func (m *MockNode) sendTransactionHandler(c echo.Context) error {
 	panic("TODO implement")
 	// var request jsonmodels.PostTransactionRequest
 	// if err := c.Bind(&request); err != nil {
-	// 	return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
+	// 	return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{ErrorStr: err.ErrorStr()})
 	// }
 
 	// // parse tx
 	// tx, _, err := iotago.TransactionFromBytes(request.TransactionBytes)
 	// if err != nil {
-	// 	return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
+	// 	return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{ErrorStr: err.ErrorStr()})
 	// }
 
 	// err = m.Ledger.PostTransaction(tx)
 	// if err != nil {
-	// 	return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
+	// 	return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{ErrorStr: err.ErrorStr()})
 	// }
 
 	// return c.JSON(http.StatusOK, &jsonmodels.PostTransactionResponse{TransactionID: tx.ID().Base58()})
@@ -118,17 +118,17 @@ func (m *MockNode) requestFundsHandler(c echo.Context) error {
 	panic("TODO implement")
 	// var request jsonmodels.FaucetRequest
 	// if err := c.Bind(&request); err != nil {
-	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: err.Error()})
+	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{ErrorStr: err.ErrorStr()})
 	// }
 
 	// addr, err := iotago.AddressFromBase58EncodedString(request.Address)
 	// if err != nil {
-	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: fmt.Sprintf("invalid address (%s): %s", request.Address, err.Error())})
+	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{ErrorStr: fmt.Sprintf("invalid address (%s): %s", request.Address, err.ErrorStr())})
 	// }
 
 	// err = m.Ledger.GetFundsFromFaucet(addr)
 	// if err != nil {
-	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: fmt.Sprintf("ledger.GetFundsFromFaucet: %s", err.Error())})
+	// 	return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{ErrorStr: fmt.Sprintf("ledger.GetFundsFromFaucet: %s", err.ErrorStr())})
 	// }
 
 	// return c.JSON(http.StatusOK, jsonmodels.FaucetResponse{ID: tangle.EmptyMessageID.String()})

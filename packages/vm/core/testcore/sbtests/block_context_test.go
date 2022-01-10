@@ -13,7 +13,7 @@ func TestBasicBlockContext1(t *testing.T) {
 	_, _ = setupTestSandboxSC(t, chain, nil, false)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncTestBlockContext1.Name)
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 }
 
@@ -22,7 +22,7 @@ func TestBasicBlockContext2(t *testing.T) {
 	_, _ = setupTestSandboxSC(t, chain, nil, false)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncTestBlockContext2.Name)
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 
 	res, err := chain.CallView(ScName, sbtestsc.FuncGetStringValue.Name,

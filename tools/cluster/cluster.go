@@ -3,7 +3,6 @@ package cluster
 import (
 	"bufio"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"io"
 	"math/rand"
 	"net/http"
@@ -13,6 +12,8 @@ import (
 	"strconv"
 	"text/template"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
@@ -404,7 +405,7 @@ func (clu *Cluster) waitForAPIReady(initOk chan<- bool, nodeIndex int) {
 			<-ticker.C
 			rsp, err := http.Get(infoEndpointURL) //nolint:gosec,noctx
 			if err != nil {
-				fmt.Printf("Error Polling node %d API ready status: %v\n", nodeIndex, err)
+				fmt.Printf("error polling node %d API ready status: %v\n", nodeIndex, err)
 				continue
 			}
 			fmt.Printf("Polling node %d API ready status: %s %s\n", nodeIndex, infoEndpointURL, rsp.Status)

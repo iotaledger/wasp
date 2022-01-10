@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,8 +16,9 @@ func testGetSet(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
 		sbtestsc.ParamIntParamName, "ppp",
-		sbtestsc.ParamIntParamValue, 314)
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+		sbtestsc.ParamIntParamValue, 314).
+		WithGasBudget(1000)
+	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetInt.Name,
@@ -34,11 +35,14 @@ func testCallRecursive(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
+	t.Logf("originator iotas: %d", chain.L2AccountIotas(chain.OriginatorAgentID))
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamIntParamValue, 31,
 		sbtestsc.ParamHnameContract, HScName,
-		sbtestsc.ParamHnameEP, sbtestsc.FuncRunRecursion.Hname())
-	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
+		sbtestsc.ParamHnameEP, sbtestsc.FuncRunRecursion.Hname()).
+		WithGasBudget(1_000_000)
+	receipt, _, err := chain.PostRequestSyncReceipt(req, nil)
+	t.Logf("receipt: %s", receipt)
 	require.NoError(t, err)
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
@@ -80,8 +84,9 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamIntParamValue, n,
 		sbtestsc.ParamHnameContract, HScName,
-		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname())
-	ret, err := chain.PostRequestSync(req.WithIotas(1), nil)
+		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname()).
+		WithGasBudget(1000)
+	ret, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))
 	require.NoError(t, err)

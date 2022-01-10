@@ -23,11 +23,12 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"io"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -215,7 +216,7 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 	}
 	peerMsg, err := peering.NewPeerMessageNetFromBytes(payload) // Do not use the signatures, we have TLS.
 	if err != nil {
-		n.log.Warnf("Error while decoding a message, reason=%v", err)
+		n.log.Warnf("error while decoding a message, reason=%v", err)
 		return
 	}
 	remotePeer.RecvMsg(peerMsg)

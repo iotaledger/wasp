@@ -17,7 +17,7 @@ func NewScBalances(wc *WasmContext, keyID int32) *ScDict {
 	// 	if wc.ctx == nil {
 	// 		o.Panicf("no incoming() on views")
 	// 	}
-	// 	return loadBalances(o, wc.ctx.IncomingTransfer())
+	// 	return loadBalances(o, wc.ctx.Allowance())
 	// case wasmhost.KeyMinted:
 	// 	if wc.ctx == nil {
 	// 		o.Panicf("no minted() on views")

@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -79,40 +78,20 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	vmctx.assertConsistentL2WithL1TxBuilder("begin creditAssetsToChain")
 
 	if vmctx.req.IsOffLedger() {
-		// off ledger requests does not bring any deposit
+		// off ledger request does not bring any deposit
 		return
 	}
-	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
-		// in the very first call we take all iotas in excess of dust deposit and accrue them to the common account
-		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-			Iotas: vmctx.txbuilder.TotalIotasInL2Accounts(),
-		})
-	}
-	// consume output into the transaction builder
-	// dustAdjustmentOfTheCommonAccount is due to the dust in the internal UTXOs
+	// Consume the output. Adjustment in L2 is needed because of the dust in the internal UTXOs
 	dustAdjustmentOfTheCommonAccount := vmctx.txbuilder.Consume(vmctx.req)
 	// update the state, the account ledger
 	// NOTE: sender account will be CommonAccount if sender address is not available
+	// It means any random sends to the chain end up in the common account
 	vmctx.creditToAccount(vmctx.req.SenderAccount(), vmctx.req.Assets())
 
 	// adjust the common account with the dust consumed or returned by internal UTXOs
 	// If common account does not contain enough funds for internal dust, it panics with
 	// vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit and the request will be skipped
-	switch {
-	case dustAdjustmentOfTheCommonAccount > 0:
-		vmctx.creditToAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-			Iotas: uint64(dustAdjustmentOfTheCommonAccount),
-		})
-	case dustAdjustmentOfTheCommonAccount < 0:
-		err := util.CatchPanicReturnError(func() {
-			vmctx.debitFromAccount(commonaccount.Get(vmctx.ChainID()), &iscp.Assets{
-				Iotas: uint64(-dustAdjustmentOfTheCommonAccount),
-			})
-		}, accounts.ErrNotEnoughFunds)
-		if err != nil {
-			panic(vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
-		}
-	}
+	vmctx.adjustL2IotasIfNeeded(dustAdjustmentOfTheCommonAccount)
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
 	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
 }
@@ -184,7 +163,7 @@ func checkVMPluginPanic(r interface{}) error {
 			panic(err)
 		}
 	}
-	return xerrors.Errorf("exception: '%w'", r)
+	return xerrors.Errorf("%v", r)
 }
 
 // callFromRequest is the call itself. Assumes sc exists
@@ -196,33 +175,34 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 	targetContract := vmctx.targetContract()
 	if targetContract == nil {
 		vmctx.GasBurn(gas.NotFoundTarget)
-		panic(xerrors.Errorf("%w: target contract: '%s'", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract.String()))
+		panic(xerrors.Errorf("%v: target = %s", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract))
 	}
-	return vmctx.callNonViewByProgramHash(
+	return vmctx.callByProgramHash(
 		targetContract.Hname(),
 		entryPoint,
 		vmctx.req.Params(),
-		vmctx.req.Transfer(),
+		vmctx.req.Allowance(),
 		targetContract.ProgramHash,
 	)
 }
 
 // calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget
 // Affordable gas budget is calculated from gas budget provided in the request by the user and taking into account
-// how many tokens the sender has in its account.
+// how many tokens the sender has in its account and how many are allowed for the target.
 // Safe arithmetics is used
 func (vmctx *VMContext) calculateAffordableGasBudget() {
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.SenderAddress() == nil")
 	}
-	tokensAvailable := uint64(0)
+	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
+	tokensGuaranteed := uint64(0)
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
 		// to pay for gas chain is configured to use some native token, not IOTA
 		tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), tokenID)
 		if tokensAvailableBig != nil {
 			// safely subtract the transfer from the sender to the target
-			if transfer := vmctx.req.Transfer(); transfer != nil {
+			if transfer := vmctx.req.Allowance(); transfer != nil {
 				if transferTokens := iscp.FindNativeTokenBalance(transfer.Tokens, tokenID); transferTokens != nil {
 					if tokensAvailableBig.Cmp(transferTokens) < 0 {
 						tokensAvailableBig.SetUint64(0)
@@ -232,25 +212,25 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 				}
 			}
 			if tokensAvailableBig.IsUint64() {
-				tokensAvailable = tokensAvailableBig.Uint64()
+				tokensGuaranteed = tokensAvailableBig.Uint64()
 			} else {
-				tokensAvailable = math.MaxUint64
+				tokensGuaranteed = math.MaxUint64
 			}
 		}
 	} else {
 		// Iotas are used to pay the gas fee
-		tokensAvailable = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
+		tokensGuaranteed = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
 		// safely subtract the transfer from the sender to the target
-		if transfer := vmctx.req.Transfer(); transfer != nil {
-			if tokensAvailable < transfer.Iotas {
-				tokensAvailable = 0
+		if transfer := vmctx.req.Allowance(); transfer != nil {
+			if tokensGuaranteed < transfer.Iotas {
+				tokensGuaranteed = 0
 			} else {
-				tokensAvailable -= transfer.Iotas
+				tokensGuaranteed -= transfer.Iotas
 			}
 		}
 	}
-	vmctx.gasMaxTokensAvailableForGasFee = tokensAvailable
-	if tokensAvailable < vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit {
+	vmctx.gasMaxTokensAvailableForGasFee = tokensGuaranteed
+	if tokensGuaranteed < vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit {
 		// it will not proceed but will charge at least the minimum
 		panic(ErrNotEnoughTokensFor1GasNominalUnit)
 	}
@@ -258,7 +238,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	if vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit == 0 {
 		gasBudgetAffordable = math.MaxUint64
 	} else {
-		nominalUnitsOfGas := tokensAvailable / vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit
+		nominalUnitsOfGas := tokensGuaranteed / vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit
 		if nominalUnitsOfGas > math.MaxUint64/vmctx.chainInfo.GasFeePolicy.GasNominalUnit {
 			gasBudgetAffordable = math.MaxUint64
 		} else {

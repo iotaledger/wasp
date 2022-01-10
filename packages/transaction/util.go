@@ -6,8 +6,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 )
 
@@ -86,6 +84,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, *iotag
 // Takes into account minimum dust deposit requirements
 // The inputs are consumed one by one in the order provided in the parameters.
 // Consumes only what is needed to cover output balances
+// Returned reminder is nil if not needed
 func computeInputsAndRemainder(
 	senderAddress iotago.Address,
 	iotasOut uint64,
@@ -100,8 +99,11 @@ func computeInputsAndRemainder(
 	var remainder *iotago.ExtendedOutput
 	var inputs iotago.Inputs
 
-	for i, inp := range allUnspentOutputs {
-		a := vmtxbuilder.AssetsFromOutput(inp)
+	var errLast error
+	var inputCount int
+	for _, inp := range allUnspentOutputs {
+		inputCount++
+		a := AssetsFromOutput(inp)
 		iotasIn += a.Iotas
 		for _, nt := range a.Tokens {
 			s, ok := tokensIn[nt.ID]
@@ -111,19 +113,18 @@ func computeInputsAndRemainder(
 			s.Add(s, nt.Amount)
 			tokensIn[nt.ID] = s
 		}
-		// calculate remainder. It will return != nil if input balances is enough, otherwise nil
-		remainder = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, rentStructure)
-		if remainder != nil {
-			inputs = make(iotago.Inputs, i+1)
-			for j := range inputs {
-				inputs[j] = allInputs[j]
-			}
+		// calculate remainder. It will return  err != nil if inputs not enough.
+		remainder, errLast = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut, rentStructure)
+		if errLast == nil {
 			break
 		}
 	}
-	if remainder == nil {
-		// not enough inputs to cover outputs
-		return nil, nil, accounts.ErrNotEnoughFunds
+	if errLast != nil {
+		return nil, nil, errLast
+	}
+	inputs = make(iotago.Inputs, inputCount)
+	for j := range inputs {
+		inputs[j] = allInputs[j]
 	}
 	return inputs, remainder, nil
 }
@@ -132,11 +133,11 @@ func computeInputsAndRemainder(
 // which only contains assets filled in.
 // - inIotas and inTokens is what is available in inputs
 // - outIotas, outTokens is what is in outputs, except the remainder output itself with its dust deposit
-// Returns nil if inputs are not enough (taking into account dust deposit requirements)
-// If return not nil but Amount == 0, ite means remainder is a perfect match between inputs and outputs, remainder not needed
-func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, rentStructure *iotago.RentStructure) *iotago.ExtendedOutput {
+// Returns (nil, error) if inputs are not enough (taking into account dust deposit requirements)
+// If return (nil, nil) it means remainder is a perfect match between inputs and outputs, remainder not needed
+func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int, rentStructure *iotago.RentStructure) (*iotago.ExtendedOutput, error) {
 	if inIotas < outIotas {
-		return nil
+		return nil, ErrNotEnoughIotas
 	}
 	// collect all token ids
 	tokenIDs := make(map[iotago.NativeTokenID]bool)
@@ -154,14 +155,14 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 		bIn, okIn := inTokens[id]
 		bOut, okOut := outTokens[id]
 		if !okIn {
-			return nil
+			return nil, ErrNotEnoughNativeTokens
 		}
 		switch {
 		case okIn && okOut:
 			// there are tokens in inputs and outputs. Check if it is enough
 			if bIn.Cmp(bOut) < 0 {
 				// not enough
-				return nil
+				return nil, ErrNotEnoughNativeTokens
 			}
 			// bIn >= bOut
 			s := new(big.Int).Sub(bIn, bOut)
@@ -170,7 +171,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			}
 		case !okIn && okOut:
 			// there's output but no input. Not enough
-			return nil
+			return nil, ErrNotEnoughNativeTokens
 		case okIn && !okOut:
 			// native token is here by accident. All goes to remainder
 			remTokens[id] = new(big.Int).Set(bIn)
@@ -181,15 +182,15 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			panic("inconsistency")
 		}
 	}
+	if remIotas == 0 && len(remTokens) == 0 {
+		// no need for remainder
+		return nil, nil
+	}
 	ret := &iotago.ExtendedOutput{
 		Address:      senderAddress,
 		Amount:       remIotas,
 		NativeTokens: iotago.NativeTokens{},
 		Blocks:       nil,
-	}
-	if remIotas == 0 && len(remTokens) == 0 {
-		// no need for remainder
-		return ret
 	}
 	for id, b := range remTokens {
 		ret.NativeTokens = append(ret.NativeTokens, &iotago.NativeToken{
@@ -197,11 +198,11 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			Amount: b,
 		})
 	}
-	if len(remTokens) > 0 && remIotas < ret.VByteCost(rentStructure, nil) {
-		// iotas does not cover minimum dust requirements
-		return nil
+	bc := ret.VByteCost(rentStructure, nil)
+	if ret.Amount < bc {
+		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughIotasForDustDeposit, bc)
 	}
-	return ret
+	return ret, nil
 }
 
 func MakeSignatureAndReferenceUnlockBlocks(totalInputs int, sig iotago.Signature) iotago.UnlockBlocks {

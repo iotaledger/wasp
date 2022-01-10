@@ -86,7 +86,7 @@ func TestConcurrency(t *testing.T) {
 		f.Func.TransferIotas(1)
 
 		req := solo.NewCallParams(testcore.ScName, testcore.FuncIncCounter).
-			WithIotas(1)
+			AddAssetsIotas(1)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
 		if wasmsolo.SoloDebug {
@@ -132,7 +132,7 @@ func TestConcurrency2(t *testing.T) {
 		f.Func.TransferIotas(1)
 
 		req := solo.NewCallParams(testcore.ScName, testcore.FuncIncCounter).
-			WithIotas(1)
+			AddAssetsIotas(1)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
 		if wasmsolo.SoloDebug {

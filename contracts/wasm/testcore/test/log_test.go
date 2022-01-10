@@ -25,7 +25,7 @@ package test
 // 	for i := 1; i < 6; i++ {
 // 		req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
 // 			sbtestsc.VarCounter, i,
-// 		).WithIotas(1)
+// 		).AddAssetsIotas(1)
 // 		_, err := chain.PostRequestSync(req, nil)
 // 		require.NoError(t, err)
 // 	}
@@ -51,7 +51,7 @@ package test
 // 		req := solo.NewCallParams(ScName,
 // 			sbtestsc.FuncEventLogGenericData.Name,
 // 			sbtestsc.VarCounter, i,
-// 		).WithIotas(1)
+// 		).AddAssetsIotas(1)
 // 		_, err = chain.PostRequestSync(req, nil)
 // 		require.NoError(t, err)
 // 	}
@@ -75,7 +75,7 @@ package test
 
 // 	req := solo.NewCallParams(ScName,
 // 		sbtestsc.FuncEventLogEventData.Name,
-// 	).WithIotas(1)
+// 	).AddAssetsIotas(1)
 // 	_, err := chain.PostRequestSync(req, nil)
 // 	require.NoError(t, err)
 
@@ -106,7 +106,7 @@ package test
 // 		req := solo.NewCallParams(ScName,
 // 			sbtestsc.FuncEventLogEventData.Name,
 // 			sbtestsc.VarCounter, count,
-// 		).WithIotas(1)
+// 		).AddAssetsIotas(1)
 // 		count++
 // 		_, err := chain.PostRequestSync(req, nil)
 // 		require.NoError(t, err)
@@ -116,7 +116,7 @@ package test
 // 		req := solo.NewCallParams(ScName,
 // 			sbtestsc.FuncEventLogGenericData.Name,
 // 			sbtestsc.VarCounter, count,
-// 		).WithIotas(1)
+// 		).AddAssetsIotas(1)
 // 		count++
 // 		_, err := chain.PostRequestSync(req, nil)
 // 		require.NoError(t, err)
@@ -156,7 +156,7 @@ package test
 // 	req := solo.NewCallParams(ScName,
 // 		sbtestsc.FuncEventLogGenericData.Name,
 // 		sbtestsc.VarCounter, solo.Saldo,
-// 	).WithIotas(1)
+// 	).AddAssetsIotas(1)
 // 	_, err := chain.PostRequestSync(req, nil)
 // 	require.NoError(t, err)
 
@@ -197,7 +197,7 @@ package test
 
 // 	req := solo.NewCallParams(ScName,
 // 		sbtestsc.FuncEventLogDeploy.Name,
-// 	).WithIotas(1)
+// 	).AddAssetsIotas(1)
 // 	_, err := chain.PostRequestSync(req, nil)
 // 	require.NoError(t, err)
 
@@ -234,14 +234,14 @@ package test
 
 // 	req := solo.NewCallParams(ScName,
 // 		sbtestsc.FuncEventLogEventData.Name,
-// 	).WithIotas(1)
+// 	).AddAssetsIotas(1)
 // 	_, err := chain.PostRequestSync(req, nil)
 // 	require.NoError(t, err)
 
 // 	req = solo.NewCallParams(ScName,
 // 		sbtestsc.FuncEventLogGenericData.Name,
 // 		sbtestsc.VarCounter, 33333,
-// 	).WithIotas(1)
+// 	).AddAssetsIotas(1)
 // 	_, err = chain.PostRequestSync(req, nil)
 // 	require.NoError(t, err)
 

@@ -6,21 +6,14 @@ package solo
 import (
 	"bytes"
 	"fmt"
-	"math/big"
 	"os"
-	"sort"
-
-	"github.com/iotaledger/wasp/packages/kv"
-
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
-	"github.com/iotaledger/hive.go/serializer/v2"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -31,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
 )
@@ -54,7 +48,7 @@ func (ch *Chain) DumpAccounts() string {
 	for i := range acc {
 		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
-		bals := ch.L2AccountBalances(aid)
+		bals := ch.L2AccountAssets(aid)
 		ret += fmt.Sprintf("%s\n", bals.String())
 	}
 	return ret
@@ -132,7 +126,7 @@ func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (
 	f1, f2 := gasFeePolicy.FeeFromGas(gasEstimate)
 	_, err = ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			WithIotas(f1+f2).
+			AddAssetsIotas(f1+f2).
 			WithGasBudget(gasFeePolicy.GasNominalUnit),
 		keyPair,
 	)
@@ -236,7 +230,7 @@ func (ch *Chain) DeployContract(keyPair *cryptolib.KeyPair, name string, program
 	f1, f2 := gasPolicy.FeeFromGas(budgetEstimate)
 	req := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
 		WithGasBudget(budgetEstimate).
-		WithIotas(f1 + f2)
+		AddAssetsIotas(f1 + f2)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -273,134 +267,6 @@ func (ch *Chain) GetInfo() (*iscp.ChainID, *iscp.AgentID, map[iscp.Hname]*root.C
 	return chainID, chainOwnerID, contracts
 }
 
-// L2Accounts returns all accounts on the chain with non-zero balances
-func (ch *Chain) L2Accounts() []*iscp.AgentID {
-	d, err := ch.CallView(accounts.Contract.Name, accounts.FuncViewAccounts.Name)
-	require.NoError(ch.Env.T, err)
-	keys := d.KeysSorted()
-	ret := make([]*iscp.AgentID, 0, len(keys)-1)
-	for _, key := range keys {
-		aid, err := codec.DecodeAgentID([]byte(key))
-		require.NoError(ch.Env.T, err)
-		ret = append(ret, aid)
-	}
-	return ret
-}
-
-func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *iscp.Assets {
-	require.NoError(ch.Env.T, err)
-	if d.IsEmpty() {
-		return iscp.NewEmptyAssets()
-	}
-	ret, err := iscp.AssetsFromDict(d)
-	require.NoError(ch.Env.T, err)
-	return ret
-}
-
-func (ch *Chain) L2Ledger() map[string]*iscp.Assets {
-	accs := ch.L2Accounts()
-	ret := make(map[string]*iscp.Assets)
-	for i := range accs {
-		ret[accs[i].String()] = ch.L2AccountBalances(accs[i])
-	}
-	return ret
-}
-
-func (ch *Chain) L2LedgerString() string {
-	l := ch.L2Ledger()
-	keys := make([]string, 0, len(l))
-	for aid := range l {
-		keys = append(keys, aid)
-	}
-	sort.Strings(keys)
-	ret := ""
-	for _, aid := range keys {
-		ret += aid + "\n"
-		ret += "        " + l[aid].String() + "\n"
-	}
-	return ret
-}
-
-// L2AccountBalances return all assets contained in the on-chain account controlled by the 'agentID'
-func (ch *Chain) L2AccountBalances(agentID *iscp.AgentID) *iscp.Assets {
-	return ch.parseAccountBalance(
-		ch.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
-	)
-}
-
-func (ch *Chain) L2AccountIotas(agentID *iscp.AgentID) uint64 {
-	return ch.L2AccountBalances(agentID).Iotas
-}
-
-func (ch *Chain) L2AccountNativeTokens(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
-	return ch.L2AccountBalances(agentID).AmountNativeToken(tokenID)
-}
-
-func (ch *Chain) L2CommonAccountBalances() *iscp.Assets {
-	return ch.L2AccountBalances(ch.CommonAccount())
-}
-
-func (ch *Chain) L2CommonAccountIotas() uint64 {
-	return ch.L2AccountBalances(ch.CommonAccount()).Iotas
-}
-
-func (ch *Chain) L2CommonAccountNativeTokens(tokenID *iotago.NativeTokenID) *big.Int {
-	return ch.L2AccountBalances(ch.CommonAccount()).AmountNativeToken(tokenID)
-}
-
-// L2TotalAssetsInAccounts return total sum of assets contained in the on-chain accounts
-func (ch *Chain) L2TotalAssetsInAccounts() *iscp.Assets {
-	return ch.parseAccountBalance(
-		ch.CallView(accounts.Contract.Name, accounts.FuncViewTotalAssets.Name),
-	)
-}
-
-// L2TotalIotasInAccounts return total sum of iotas
-func (ch *Chain) L2TotalIotasInAccounts() uint64 {
-	return ch.L2TotalAssetsInAccounts().Iotas
-}
-
-func mustNativeTokenIDFromBytes(data []byte) *iotago.NativeTokenID {
-	if len(data) != iotago.NativeTokenIDLength {
-		panic("len(data) != iotago.NativeTokenIDLength")
-	}
-	ret := new(iotago.NativeTokenID)
-	copy(ret[:], data)
-	return ret
-}
-
-func (ch *Chain) GetOnChainTokenIDs() []*iotago.NativeTokenID {
-	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncGetNativeTokenIDRegistry.Name)
-	require.NoError(ch.Env.T, err)
-	ret := make([]*iotago.NativeTokenID, 0, len(res))
-	for k := range res {
-		ret = append(ret, mustNativeTokenIDFromBytes([]byte(k)))
-	}
-	return ret
-}
-
-func (ch *Chain) GetFoundryOutput(sn uint32) (*iotago.FoundryOutput, error) {
-	res, err := ch.CallView(accounts.Contract.Name, accounts.FuncFoundryOutput.Name,
-		accounts.ParamFoundrySN, sn,
-	)
-	if err != nil {
-		return nil, err
-	}
-	outBin := res.MustGet(accounts.ParamFoundryOutputBin)
-	out := &iotago.FoundryOutput{}
-	_, err = out.Deserialize(outBin, serializer.DeSeriModeNoValidation, nil)
-	require.NoError(ch.Env.T, err)
-	return out, nil
-}
-
-func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, error) {
-	o, err := ch.GetFoundryOutput(sn)
-	if err != nil {
-		return iotago.NativeTokenID{}, err
-	}
-	return o.MustNativeTokenID(), nil
-}
-
 type DustInfo struct {
 	TotalIotasInL2Accounts uint64
 	TotalDustDeposit       uint64
@@ -419,31 +285,6 @@ func (ch *Chain) GetTotalIotaInfo() *DustInfo {
 		NumNativeTokens:        len(ch.GetOnChainTokenIDs()),
 	}
 }
-
-// GetFeeInfo returns the fee info for the specific chain and smart contract
-//  - color of the fee tokens in the chain
-//  - chain owner part of the fee (number of tokens)
-//  - validator part of the fee (number of tokens)
-// Total fee is sum of owner fee and validator fee
-//func (ch *Cha	// TODO implementin) GetFeeInfo(contractName string) ([]byte, uint64, uint64) {
-//panic("not implemented")
-// hname := iscp.Hn(contractName)
-// ret, err := ch.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, governance.ParamHname, hname)
-// require.NoError(ch.Env.T, err)
-// require.NotEqualValues(ch.Env.T, 0, len(ret))
-
-// feeColor, err := codec.DecodeColor(ret.MustGet(governance.ParamFeeColor))
-// require.NoError(ch.Env.T, err)
-// require.NotNil(ch.Env.T, feeColor)
-
-// validatorFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamValidatorFee))
-// require.NoError(ch.Env.T, err)
-
-// ownerFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamOwnerFee))
-// require.NoError(ch.Env.T, err)
-
-// return feeColor, ownerFee, validatorFee
-//}
 
 func eventsFromViewResult(t TestContext, viewResult dict.Dict) []string {
 	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
@@ -636,7 +477,7 @@ func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
-	).WithIotas(1)
+	).AddAssetsIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -645,7 +486,7 @@ func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptol
 func (ch *Chain) RemoveAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
-	).WithIotas(1)
+	).AddAssetsIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -673,7 +514,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
-	).WithIotas(1)
+	).AddAssetsIotas(1)
 	err := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
 	if err == nil {
 		ch.StateControllerAddress = newStateAddr

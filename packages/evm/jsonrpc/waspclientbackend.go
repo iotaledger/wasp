@@ -31,7 +31,7 @@ func (w *WaspClientBackend) Signer() *cryptolib.KeyPair {
 func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer *iscp.Assets, args dict.Dict) error {
 	panic("TODO implement")
 	// tx, err := w.ChainClient.Post1Request(iscp.Hn(scName), iscp.Hn(funName), chainclient.PostRequestParams{
-	// 	Transfer: transfer,
+	// 	Allowance: transfer,
 	// 	Args:     args,
 	// })
 	// if err != nil {

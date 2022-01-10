@@ -10,8 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
-
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -23,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil/testdeserparams"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
@@ -193,13 +192,13 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 // Upon return, the chain is fully functional to process requests
 func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
-	ret, _, _ := env.NewChainExt(chainOriginator, name, validatorFeeTarget...)
+	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, validatorFeeTarget...)
 	return ret
 }
 
 // NewChainExt returns also origin and init transactions. Used for core testing
 // nolint:funlen
-func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) (*Chain, *iotago.Transaction, *iotago.Transaction) {
+func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, validatorFeeTarget ...*iscp.AgentID) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
@@ -225,7 +224,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, name string, va
 		*chainOriginator,
 		stateAddr,
 		stateAddr,
-		0, // will be adjusted to min dust deposit
+		initIotas, // will be adjusted to min dust deposit
 		outs,
 		ids,
 		env.utxoDB.RentStructure(),

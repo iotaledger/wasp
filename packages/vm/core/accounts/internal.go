@@ -13,12 +13,17 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
 var (
 	ErrNotEnoughFunds               = xerrors.New("not enough funds")
+	ErrNotEnoughIotas               = xerrors.New("not enough iotas")
+	ErrNotEnoughIotasForDustDeposit = xerrors.New("not enough iotas for dust deposit")
+	ErrNotEnoughNativeTokens        = xerrors.New("not enough native tokens")
+	ErrNotEnoughAllowance           = xerrors.New("not enough allowance")
 	ErrBadAmount                    = xerrors.New("bad native asset amount")
 	ErrRepeatingFoundrySerialNumber = xerrors.New("repeating serial number of the foundry")
 	ErrFoundryNotFound              = xerrors.New("foundry not found")
@@ -64,6 +69,10 @@ func getAccountFoundries(state kv.KVStore, agentID *iscp.AgentID) *collections.M
 
 func getAccountFoundriesR(state kv.KVStoreReader, agentID *iscp.AgentID) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, string(kv.Concat(prefixAccountFoundries, agentID.Bytes())))
+}
+
+func AccountExists(state kv.KVStoreReader, agentID *iscp.AgentID) bool {
+	return getAccountR(state, agentID).MustLen() > 0
 }
 
 // GetMaxAssumedNonce is maintained for each L1 address with the purpose of replay protection of off-ledger requests
@@ -176,7 +185,7 @@ func creditToAccount(account *collections.Map, assets *iscp.Assets) {
 
 // DebitFromAccount takes out assets balance the on chain ledger. If not enough it panics
 func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Assets) {
-	if assets == nil || (assets.Iotas == 0 && len(assets.Tokens) == 0) {
+	if assets.IsEmpty() {
 		return
 	}
 	account := getAccount(state, agentID)
@@ -248,6 +257,15 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, assets *iscp.Assets) {
 	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, assets) {
 		panic(ErrNotEnoughFunds)
+	}
+}
+
+func AdjustAccountIotas(state kv.KVStore, agentID *iscp.AgentID, adjustment int64) {
+	switch {
+	case adjustment > 0:
+		CreditToAccount(state, agentID, iscp.NewAssets(uint64(adjustment), nil))
+	case adjustment < 0:
+		DebitFromAccount(state, agentID, iscp.NewAssets(uint64(-adjustment), nil))
 	}
 }
 
@@ -327,12 +345,12 @@ func getAccountAssets(account *collections.ImmutableMap) *iscp.Assets {
 }
 
 // GetAccountAssets returns all assets belonging to the agentID on the state
-func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) (*iscp.Assets, bool) {
+func GetAccountAssets(state kv.KVStoreReader, agentID *iscp.AgentID) *iscp.Assets {
 	account := getAccountR(state, agentID)
 	if account.MustLen() == 0 {
-		return nil, false
+		return iscp.NewEmptyAssets()
 	}
-	return getAccountAssets(account), true
+	return getAccountAssets(account)
 }
 
 func GetTotalL2Assets(state kv.KVStoreReader) *iscp.Assets {
@@ -631,3 +649,12 @@ func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID,
 }
 
 // endregion //////////////////////////////////////////
+
+func GetDustAssumptions(state kv.KVStoreReader) *transaction.DustDepositAssumption {
+	bin := state.MustGet(kv.Key(stateVarMinimumDustDepositAssumptionsBin))
+	ret, err := transaction.DustDepositAssumptionFromBytes(bin)
+	if err != nil {
+		panic(xerrors.Errorf("GetDustAssumptions: internal: %v", err))
+	}
+	return ret
+}

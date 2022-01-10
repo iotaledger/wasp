@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"golang.org/x/xerrors"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain account ledger contract")
@@ -17,7 +18,7 @@ var (
 	FuncViewTotalAssets          = coreutil.ViewFunc("totalAssets")
 	FuncViewAccounts             = coreutil.ViewFunc("accounts")
 	FuncDeposit                  = coreutil.Func("deposit")
-	FuncSendTo                   = coreutil.Func("sendTo")
+	FuncTransferAllowanceTo      = coreutil.Func("transferAllowanceTo")
 	FuncWithdraw                 = coreutil.Func("withdraw")
 	FuncHarvest                  = coreutil.Func("harvest")
 	FuncGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
@@ -31,6 +32,9 @@ var (
 )
 
 const (
+	// MinimumIotasOnCommonAccount can't harvest the minimum
+	MinimumIotasOnCommonAccount = 3000
+
 	// prefix for a name of a particular account
 	prefixAccount = string(byte(iota) + 'A')
 	// map with all accounts listed
@@ -45,22 +49,26 @@ const (
 	prefixNativeTokenOutputMap
 	// prefixFoundryOutputRecords a map with all foundry outputs
 	prefixFoundryOutputRecords
+	//
+	stateVarMinimumDustDepositAssumptionsBin
 
-	ParamAgentID         = "a"
-	ParamWithdrawAssetID = "c"
-	ParamWithdrawAmount  = "m"
-	ParamAccountNonce    = "n"
-
-	ParamFoundrySN        = "s"
-	ParamFoundryOutputBin = "b"
-	ParamTokenScheme      = "t"
-	ParamTokenTag         = "g"
-	ParamMaxSupply        = "p"
-	ParamSupplyDeltaAbs   = "d"
-	ParamDestroyTokens    = "y"
+	ParamAgentID                   = "a"
+	ParamAccountNonce              = "n"
+	ParamForceMinimumIotas         = "f"
+	ParamFoundrySN                 = "s"
+	ParamFoundryOutputBin          = "b"
+	ParamTokenScheme               = "t"
+	ParamTokenTag                  = "g"
+	ParamMaxSupply                 = "p"
+	ParamSupplyDeltaAbs            = "d"
+	ParamDestroyTokens             = "y"
+	ParamDustDepositAssumptionsBin = "u"
 )
 
-func SerialNumFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {
+var ErrDustDepositAssumptionsWrong = xerrors.New("'dust deposit assumptions' parameter not specified or wrong")
+
+// FIXME hackery. Replace with proper function
+func FoundrySNFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {
 	slice := tokenID[iotago.AliasAddressSerializedBytesSize : iotago.AliasAddressSerializedBytesSize+serializer.UInt32ByteSize]
 	return binary.LittleEndian.Uint32(slice)
 }

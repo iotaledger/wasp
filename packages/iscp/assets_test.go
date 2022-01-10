@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/iotaledger/iota.go/v3/tpkg"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/stretchr/testify/require"
@@ -38,4 +40,120 @@ func TestMarshalling(t *testing.T) {
 	for i := range tokens {
 		require.Equal(t, assets.Tokens[i], assets2.Tokens[i])
 	}
+}
+
+func TestAssets_FitsAllowance(t *testing.T) {
+	var a *Assets
+	var allowance *Assets
+	require.True(t, a.MustFitsTheBudget(allowance))
+
+	allowance = &Assets{Iotas: 1}
+	require.True(t, a.MustFitsTheBudget(allowance))
+	require.False(t, allowance.MustFitsTheBudget(a))
+
+	a = &Assets{Iotas: 1}
+	require.True(t, a.MustFitsTheBudget(allowance))
+	a = &Assets{Iotas: 2}
+	require.False(t, a.MustFitsTheBudget(allowance))
+	tokenID1 := tpkg.RandNativeToken().ID
+	tokenID2 := tpkg.RandNativeToken().ID
+
+	a = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+		},
+	}
+	allowance = a
+	require.True(t, a.MustFitsTheBudget(allowance))
+
+	a = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+		},
+	}
+	allowance = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+			{ID: tokenID2, Amount: big.NewInt(1)},
+		},
+	}
+	require.True(t, a.MustFitsTheBudget(allowance))
+	require.False(t, allowance.MustFitsTheBudget(a))
+
+	a = &Assets{
+		Iotas: 2,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+		},
+	}
+	allowance = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+			{ID: tokenID2, Amount: big.NewInt(1)},
+		},
+	}
+	require.False(t, a.MustFitsTheBudget(allowance))
+
+	a = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+		},
+	}
+	allowance = &Assets{
+		Iotas: 10,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID2, Amount: big.NewInt(1)},
+		},
+	}
+
+	require.False(t, a.MustFitsTheBudget(allowance))
+	a = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+		},
+	}
+	allowance = &Assets{
+		Iotas: 10,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(1)},
+		},
+	}
+	require.False(t, a.MustFitsTheBudget(allowance))
+
+	a = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+		},
+	}
+	allowance = &Assets{
+		Iotas: 10,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(1)},
+			{ID: tokenID1, Amount: big.NewInt(10)},
+		},
+	}
+	_, err := a.FitsTheBudget(allowance)
+	require.Error(t, err)
+
+	a = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(0)},
+		},
+	}
+	allowance = &Assets{
+		Iotas: 10,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(1)},
+		},
+	}
+	_, err = a.FitsTheBudget(allowance)
+	require.Error(t, err)
 }

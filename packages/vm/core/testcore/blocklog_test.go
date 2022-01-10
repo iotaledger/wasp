@@ -95,7 +95,7 @@ func TestRequestIsProcessed(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
-		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).WithIotas(1)
+		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).AddAssetsIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
@@ -111,7 +111,7 @@ func TestRequestLogRecord(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
-		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).WithIotas(1)
+		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).AddAssetsIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
@@ -126,7 +126,7 @@ func TestRequestLogRecord(t *testing.T) {
 	a := reqs[0].Bytes()
 	b := receipt.RequestData.Bytes()
 	require.Equal(t, a, b)
-	require.EqualValues(t, 0, len(receipt.Error))
+	require.EqualValues(t, 0, len(receipt.ErrorStr))
 	require.EqualValues(t, 2, blockIndex)
 	require.EqualValues(t, 0, requestIndex)
 }
@@ -136,7 +136,7 @@ func TestRequestLogRecordsForBlocks(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
-		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).WithIotas(1)
+		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).AddAssetsIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
@@ -156,7 +156,7 @@ func TestRequestIDsForBlocks(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
-		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).WithIotas(1)
+		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).AddAssetsIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
@@ -175,7 +175,7 @@ func TestRequestIDsForBlocks(t *testing.T) {
 
 func incrementSCCounter(t *testing.T, chain *solo.Chain) iscp.RequestID {
 	tx, _, err := chain.PostRequestSyncTx(
-		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).WithIotas(1),
+		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).AddAssetsIotas(1),
 		nil,
 	)
 	require.NoError(t, err)

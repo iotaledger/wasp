@@ -70,7 +70,8 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 		// check the account. It must exist
 		// TODO optimize: check the account balances and fetch nonce in one call
 		// off-ledger account must exist, i.e. it should have non zero balance on the chain
-		if _, exists := accounts.GetAccountAssets(vmctx.State(), vmctx.req.SenderAccount()); !exists {
+
+		if b := accounts.GetAccountAssets(vmctx.State(), vmctx.req.SenderAccount()); b.IsEmpty() {
 			// TODO check minimum balance. Require some minimum balance
 			unverified = true
 			return

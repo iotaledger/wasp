@@ -18,7 +18,7 @@ func incrementSCCounter(t *testing.T, chain *solo.Chain) iscp.RequestID {
 	tx, _, err := chain.PostRequestSyncTx(
 		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).
 			WithGasBudget(500).
-			WithIotas(1000),
+			AddAssetsIotas(1000),
 		nil,
 	)
 	require.NoError(t, err)

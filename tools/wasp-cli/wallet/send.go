@@ -6,7 +6,7 @@ import (
 
 var sendFundsCmd = &cobra.Command{
 	Use:   "send-funds <target-address> <color> <amount>",
-	Short: "Transfer tokens",
+	Short: "Allowance tokens",
 	Args:  cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		panic("TODO implement")

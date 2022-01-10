@@ -6,6 +6,10 @@ package solo
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+
+	"github.com/iotaledger/wasp/packages/util"
+
 	"github.com/iotaledger/wasp/packages/transaction"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -17,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 )
 
 type CallParams struct {
@@ -26,7 +29,7 @@ type CallParams struct {
 	epName     string
 	entryPoint iscp.Hname
 	assets     *iscp.Assets // ignored off-ledger
-	transfer   *iscp.Assets
+	allowance  *iscp.Assets
 	gasBudget  uint64
 	nonce      uint64 // ignored for on-ledger
 	params     dict.Dict
@@ -58,14 +61,60 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
 }
 
-func (r *CallParams) WithTransfer(transfer *iscp.Assets) *CallParams {
-	r.transfer = transfer
+func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
+	if r.allowance == nil {
+		r.allowance = allowance.Clone()
+	} else {
+		r.allowance.Add(allowance)
+	}
 	return r
 }
 
-func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
-	r.assets = assets
+func (r *CallParams) AddIotaAllowance(amount uint64) *CallParams {
+	return r.AddAllowance(iscp.NewAssets(amount, nil))
+}
+
+func (r *CallParams) AddNativeTokensAllowanceVect(tokens ...*iotago.NativeToken) *CallParams {
+	return r.AddAllowance(&iscp.Assets{
+		Tokens: tokens,
+	})
+}
+
+func (r *CallParams) AddNativeTokensAllowance(id *iotago.NativeTokenID, amount interface{}) *CallParams {
+	return r.AddAllowance(&iscp.Assets{
+		Tokens: iotago.NativeTokens{&iotago.NativeToken{
+			ID:     *id,
+			Amount: util.ToBigInt(amount),
+		}},
+	})
+}
+
+func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
+	if r.assets == nil {
+		r.assets = assets.Clone()
+	} else {
+		r.assets.Add(assets)
+	}
 	return r
+}
+
+func (r *CallParams) AddAssetsIotas(amount uint64) *CallParams {
+	return r.AddAssets(iscp.NewAssets(amount, nil))
+}
+
+func (r *CallParams) AddAssetsNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
+	return r.AddAssets(&iscp.Assets{
+		Tokens: tokens,
+	})
+}
+
+func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount interface{}) *CallParams {
+	return r.AddAssets(&iscp.Assets{
+		Tokens: iotago.NativeTokens{&iotago.NativeToken{
+			ID:     *tokenID,
+			Amount: util.ToBigInt(amount),
+		}},
+	})
 }
 
 func (r *CallParams) WithGasBudget(gasBudget uint64) *CallParams {
@@ -78,14 +127,10 @@ func (r *CallParams) WithNonce(nonce uint64) *CallParams {
 	return r
 }
 
-func (r *CallParams) WithIotas(amount uint64) *CallParams {
-	return r.WithAssets(iscp.NewAssets(amount, nil))
-}
-
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) *iscp.OffLedgerRequestData {
 	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
-		WithTransfer(r.transfer).
+		WithTransfer(r.allowance).
 		WithGasBudget(r.gasBudget)
 	ret.Sign(*keyPair)
 	return ret
@@ -141,7 +186,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 				TargetContract: req.target,
 				EntryPoint:     req.entryPoint,
 				Params:         req.params,
-				Transfer:       req.transfer,
+				Allowance:      req.allowance,
 				GasBudget:      req.gasBudget,
 			},
 			Options: nil,
@@ -179,6 +224,11 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (d
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, error) {
+	receipt, res, _ := ch.PostRequestOffLedgerReceipt(req, keyPair)
+	return res, receipt.Error()
+}
+
+func (ch *Chain) PostRequestOffLedgerReceipt(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
 	if keyPair == nil {
@@ -186,40 +236,42 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res, err := ch.runRequestsSync([]iscp.RequestData{r}, "off-ledger")
-	if err != nil {
-		return nil, err
-	}
-	return res, ch.mustGetErrorFromReceipt(r.ID())
+	rec, _ := ch.GetRequestReceipt(r.ID())
+	return rec, res, err
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
+	tx, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
+	if err != nil {
+		return tx, res, err
+	}
+	return tx, res, receipt.Error()
+}
+
+func (ch *Chain) PostRequestSyncReceipt(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
+	_, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
+	if err != nil {
+		return receipt, res, err
+	}
+	return receipt, res, receipt.Error()
+}
+
+func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
 	tx, reqid, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
-		return tx, nil, err
+		return tx, nil, nil, err
 	}
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
 	res, err := ch.runRequestsSync(reqs, "post")
-	if err != nil {
-		return tx, nil, err
-	}
-	return tx, res, ch.mustGetErrorFromReceipt(reqid)
-}
-
-func (ch *Chain) mustGetErrorFromReceipt(reqid iscp.RequestID) error {
-	rec, ok := ch.GetRequestReceipt(reqid)
-	require.True(ch.Env.T, ok)
-	var err error
-	if len(rec.Error) > 0 {
-		err = xerrors.New(rec.Error)
-	}
-	return err
+	receipt, _ := ch.GetRequestReceipt(reqid)
+	return tx, receipt, res, err
 }
 
 // callViewFull calls the view entry point of the smart contract
-// with params wrapped into the CallParams object. The transfer part, fs any, is ignored
+// with params wrapped into the CallParams object. The allowance part, fs any, is ignored
 //nolint:unused
 func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 	ch.runVMMutex.Lock()

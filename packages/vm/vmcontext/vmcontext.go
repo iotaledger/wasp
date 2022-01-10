@@ -3,6 +3,8 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/transaction"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 
@@ -67,10 +69,10 @@ type VMContext struct {
 }
 
 type callContext struct {
-	caller   *iscp.AgentID // calling agent
-	contract iscp.Hname    // called contract
-	params   dict.Dict     // params passed
-	transfer *iscp.Assets  // transfer passed
+	caller    *iscp.AgentID // calling agent
+	contract  iscp.Hname    // called contract
+	params    dict.Dict     // params passed
+	allowance *iscp.Assets  // allowance passed
 }
 
 type blockContext struct {
@@ -117,16 +119,16 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	}
 
 	// at the beginning of each block
-	var dustAssumptions *vmtxbuilder.InternalDustDepositAssumption
+	var dustAssumptions *transaction.DustDepositAssumption
 
 	if task.AnchorOutput.StateIndex > 0 {
 		ret.currentStateUpdate = state.NewStateUpdate()
 
 		// load and validate chain's dust assumptions about internal outputs. They must not get bigger!
-		ret.callCore(root.Contract, func(s kv.KVStore) {
-			dustAssumptions = root.GetDustAssumptions(s)
+		ret.callCore(accounts.Contract, func(s kv.KVStore) {
+			dustAssumptions = accounts.GetDustAssumptions(s)
 		})
-		currentDustDepositValues := vmtxbuilder.NewDepositEstimate(task.RentStructure)
+		currentDustDepositValues := transaction.NewDepositEstimate(task.RentStructure)
 		if currentDustDepositValues.AnchorOutput > dustAssumptions.AnchorOutput ||
 			currentDustDepositValues.NativeTokenOutput > dustAssumptions.NativeTokenOutput {
 			panic(ErrInconsistentDustAssumptions)
@@ -141,7 +143,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.currentStateUpdate = nil
 	} else {
 		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
-		dustAssumptions = vmtxbuilder.NewDepositEstimate(task.RentStructure)
+		dustAssumptions = transaction.NewDepositEstimate(task.RentStructure)
 	}
 
 	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
@@ -274,6 +276,9 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 }
 
 func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
+	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
+		return
+	}
 	var totalL2Assets *iscp.Assets
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		totalL2Assets = accounts.GetTotalL2Assets(s)

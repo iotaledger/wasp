@@ -6,9 +6,9 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -51,7 +51,7 @@ type AnchorTransactionBuilder struct {
 	// iotas which are on-chain. It does not include dust deposits on anchor and on internal outputs
 	totalIotasInL2Accounts uint64
 	// minimum dust deposit assumption for internal outputs. It is used as constants. Assumed real dust cost never grows
-	dustDepositAssumption InternalDustDepositAssumption
+	dustDepositAssumption transaction.DustDepositAssumption
 	// balance loader for native tokens
 	loadTokenOutput tokenOutputLoader
 	// foundry loader
@@ -88,7 +88,7 @@ func NewAnchorTransactionBuilder(
 	anchorOutputID *iotago.UTXOInput,
 	tokenBalanceLoader tokenOutputLoader,
 	foundryLoader foundryLoader,
-	dustDepositAssumptions InternalDustDepositAssumption,
+	dustDepositAssumptions transaction.DustDepositAssumption,
 	rentStructure *iotago.RentStructure,
 ) *AnchorTransactionBuilder {
 	if anchorOutput.Amount < dustDepositAssumptions.AnchorOutput {
@@ -178,21 +178,24 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.RequestData) int64 {
 }
 
 // AddOutput adds an information about posted request. It will produce output
-func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) {
+// Return adjustment needed for the L2 ledger
+func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	if txb.outputsAreFull() {
 		panic(ErrOutputLimitExceeded)
 	}
 	if txb.numNativeTokensExceeded() {
 		panic(ErrNumberOfNativeTokensLimitExceeded)
 	}
-	assets := AssetsFromOutput(o)
+	assets := transaction.AssetsFromOutput(o)
 	txb.subDeltaIotasFromTotal(assets.Iotas)
 	bi := new(big.Int)
+	iotaAdjustmentL2 := int64(0)
 	for _, nt := range assets.Tokens {
 		bi.Neg(nt.Amount)
-		txb.addNativeTokenBalanceDelta(&nt.ID, bi)
+		iotaAdjustmentL2 += txb.addNativeTokenBalanceDelta(&nt.ID, bi)
 	}
 	txb.postedOutputs = append(txb.postedOutputs, o)
+	return iotaAdjustmentL2
 }
 
 // inputs generate a deterministic list of inputs for the transaction essence
@@ -395,14 +398,16 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 	nt := txb.ensureNativeTokenBalance(id)
 	tmp := new(big.Int).Add(nt.getOutValue(), delta)
 	if tmp.Sign() < 0 {
-		panic(xerrors.Errorf("addNativeTokenBalanceDelta (id: %s, delta: %d): %w",
+		panic(xerrors.Errorf("addNativeTokenBalanceDelta (id: %s, delta: %d): %v",
 			id, delta, ErrNotEnoughNativeAssetBalance))
 	}
 	if tmp.Cmp(abi.MaxUint256) > 0 {
-		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %w", ErrOverflow))
+		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %v", ErrOverflow))
 	}
 	nt.setOutValue(tmp)
 	switch {
+	case nt.identicalInOut():
+		return 0
 	case nt.dustDepositCharged && !nt.producesOutput():
 		// this is an old token in the on-chain ledger. Now it disappears and dust deposit
 		// is released and delta of anchor is positive
@@ -460,87 +465,5 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateData *iscp.Sta
 		Inputs:  txb.inputs(),
 		Outputs: txb.outputs(stateData),
 		Payload: nil,
-	}
-}
-
-// ExtendedOutputFromPostData creates extended output object from parameters.
-// It automatically adjusts amount of iotas required for the dust deposit
-func ExtendedOutputFromPostData(
-	senderAddress iotago.Address,
-	senderContract iscp.Hname,
-	par iscp.RequestParameters,
-	rentStructure *iotago.RentStructure,
-) *iotago.ExtendedOutput {
-	ret, _ := MakeExtendedOutput(
-		par.TargetAddress,
-		senderAddress,
-		par.Assets,
-		&iscp.RequestMetadata{
-			SenderContract: senderContract,
-			TargetContract: par.Metadata.TargetContract,
-			EntryPoint:     par.Metadata.EntryPoint,
-			Params:         par.Metadata.Params,
-			Transfer:       par.Metadata.Transfer,
-			GasBudget:      par.Metadata.GasBudget,
-		},
-		par.Options,
-		rentStructure,
-	)
-	return ret
-}
-
-// MakeExtendedOutput creates new ExtendedOutput from input parameters.
-// Adjusts dust deposit if needed and returns flag if adjusted
-func MakeExtendedOutput(
-	targetAddress iotago.Address,
-	senderAddress iotago.Address,
-	assets *iscp.Assets,
-	metadata *iscp.RequestMetadata,
-	options *iscp.SendOptions,
-	rentStructure *iotago.RentStructure,
-) (*iotago.ExtendedOutput, bool) {
-	if assets == nil {
-		assets = &iscp.Assets{}
-	}
-	ret := &iotago.ExtendedOutput{
-		Address:      targetAddress,
-		Amount:       assets.Iotas,
-		NativeTokens: assets.Tokens,
-		Blocks:       iotago.FeatureBlocks{},
-	}
-	if senderAddress != nil {
-		ret.Blocks = append(ret.Blocks, &iotago.SenderFeatureBlock{
-			Address: senderAddress,
-		})
-	}
-	if metadata != nil {
-		ret.Blocks = append(ret.Blocks, &iotago.MetadataFeatureBlock{
-			Data: metadata.Bytes(),
-		})
-	}
-
-	if options != nil {
-		panic(" send options FeatureBlocks not implemented yet")
-	}
-
-	// Adjust to minimum dust deposit
-	dustDepositAdjusted := false
-	neededDustDeposit := ret.VByteCost(rentStructure, nil)
-	if ret.Amount < neededDustDeposit {
-		ret.Amount = neededDustDeposit
-		dustDepositAdjusted = true
-	}
-	return ret, dustDepositAdjusted
-}
-
-func AssetsFromOutput(o iotago.Output) *iscp.Assets {
-	switch o := o.(type) {
-	case *iotago.ExtendedOutput:
-		return &iscp.Assets{
-			Iotas:  o.Amount,
-			Tokens: o.NativeTokens,
-		}
-	default:
-		panic(xerrors.Errorf("AssetsFromOutput: not supported output type: %T", o))
 	}
 }

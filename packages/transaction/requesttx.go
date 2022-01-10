@@ -6,7 +6,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
 type NewRequestTransactionParams struct {
@@ -36,7 +35,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			assets = &iscp.Assets{}
 		}
 		// will adjust to minimum dust deposit
-		out, _ := vmtxbuilder.MakeExtendedOutput(
+		out := MakeExtendedOutput(
 			req.TargetAddress,
 			senderAddress,
 			assets,
@@ -45,7 +44,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 				TargetContract: req.Metadata.TargetContract,
 				EntryPoint:     req.Metadata.EntryPoint,
 				Params:         req.Metadata.Params,
-				Transfer:       req.Metadata.Transfer,
+				Allowance:      req.Metadata.Allowance,
 				GasBudget:      req.Metadata.GasBudget,
 			},
 			req.Options,
@@ -66,7 +65,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	if err != nil {
 		return nil, err
 	}
-	if remainder.Amount > 0 {
+	if remainder != nil {
 		outputs = append(outputs, remainder)
 	}
 	essence := &iotago.TransactionEssence{

@@ -30,7 +30,7 @@ var (
 			a := assert.NewAssert(ctx.Log())
 			par := kvdecoder.New(ctx.Params())
 			shouldEmitEvent := par.MustGetInt16(paramShouldEmitEvent, 0) == 1
-			iotas := ctx.IncomingTransfer()[colored.IOTA]
+			iotas := ctx.Allowance()[colored.IOTA]
 			for i := uint64(0); i < iotas; i += 1000 {
 				ret := ctx.Send(
 					ctx.Caller().Address(),
@@ -58,7 +58,7 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 	initialBalance := env.L1NativeTokenBalance(address, colored.IOTA)
 
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(manyOutputsContract.Name, funcSplitFunds.Name).WithIotas(1000000),
+		solo.NewCallParams(manyOutputsContract.Name, funcSplitFunds.Name).AddAssetsIotas(1000000),
 		wallet,
 	)
 	require.Error(t, err)
@@ -87,7 +87,7 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 		req := solo.NewCallParams(
 			manyOutputsContract.Name, funcSplitFunds.Name,
 			paramShouldEmitEvent, uint16(1),
-		).WithIotas(1000)
+		).AddAssetsIotas(1000)
 		txs[i], _, err = ch.RequestFromParamsToLedger(req, wallet)
 		require.NoError(t, err)
 	}
@@ -111,7 +111,7 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 
 		rec, _, _, ok := ch.GetRequestReceipt(reqID)
 		require.True(ch.Env.T, ok)
-		require.Len(t, rec.Error, 0)
+		require.Len(t, rec.ErrorStr, 0)
 	}
 
 	lastBlock := ch.GetLatestBlockInfo()

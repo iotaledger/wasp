@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/vm/core"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,6 +37,9 @@ func TestInitFailRepeat(t *testing.T) {
 }
 
 func TestInitFailRepeatWasm(t *testing.T) {
+	if FORCE_SKIP_WASM {
+		t.SkipNow()
+	}
 	_, chain := setupChain(t, nil)
 	err := chain.DeployWasmContract(nil, ScName, WasmFileTestcore,
 		sbtestsc.ParamFail, 1)
