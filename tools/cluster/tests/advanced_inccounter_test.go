@@ -172,7 +172,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 
 	t.Run("cluster=30,N=15,req=8", func(t *testing.T) {
 		testutil.RunHeavy(t)
-		const waitFor = 60 * time.Second
+		const waitFor = 180 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 15
 		const clusterSize = 30
@@ -181,7 +181,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 
 	t.Run("cluster=30,N=20,req=8", func(t *testing.T) {
 		testutil.RunHeavy(t)
-		const waitFor = 60 * time.Second
+		const waitFor = 300 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 20
 		const clusterSize = 30
