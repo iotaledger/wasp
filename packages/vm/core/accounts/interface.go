@@ -1,10 +1,6 @@
 package accounts
 
 import (
-	"encoding/binary"
-
-	"github.com/iotaledger/hive.go/serializer/v2"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -66,12 +62,6 @@ const (
 )
 
 var ErrDustDepositAssumptionsWrong = xerrors.New("'dust deposit assumptions' parameter not specified or wrong")
-
-// FIXME hackery. Replace with proper function
-func FoundrySNFromNativeTokenID(tokenID *iotago.NativeTokenID) uint32 {
-	slice := tokenID[iotago.AliasAddressSerializedBytesSize : iotago.AliasAddressSerializedBytesSize+serializer.UInt32ByteSize]
-	return binary.LittleEndian.Uint32(slice)
-}
 
 // DecodeBalances TODO move to iscp package
 func DecodeBalances(balances dict.Dict) (*iscp.Assets, error) {

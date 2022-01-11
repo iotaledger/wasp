@@ -124,7 +124,7 @@ func (d *Dashboard) fetchTotalAssets(chainID *iscp.ChainID) (*iscp.Assets, error
 	if err != nil {
 		return nil, err
 	}
-	return accounts.DecodeBalances(bal)
+	return iscp.AssetsFromDict(bal)
 }
 
 func (d *Dashboard) fetchBlobs(chainID *iscp.ChainID) (map[hashing.HashValue]uint32, error) {

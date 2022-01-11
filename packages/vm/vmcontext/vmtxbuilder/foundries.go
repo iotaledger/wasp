@@ -6,8 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/util"
@@ -63,7 +61,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 // returns adjustment of the dust deposit.
 func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) int64 {
 	txb.MustBalanced("ModifyNativeTokenSupply: IN")
-	sn := accounts.FoundrySNFromNativeTokenID(tokenID)
+	sn := tokenID.FoundrySerialNumber()
 	nt, ok := txb.invokedFoundries[sn]
 	if !ok {
 		// load foundry output from the state

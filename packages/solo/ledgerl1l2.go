@@ -220,9 +220,9 @@ func toFoundrySN(foundry interface{}) uint32 {
 	case uint32:
 		return f
 	case *iotago.NativeTokenID:
-		return accounts.FoundrySNFromNativeTokenID(f)
+		return f.FoundrySerialNumber()
 	case iotago.NativeTokenID:
-		return accounts.FoundrySNFromNativeTokenID(&f)
+		return f.FoundrySerialNumber()
 	}
 	panic(fmt.Sprintf("toFoundrySN: type %T not supported", foundry))
 }
