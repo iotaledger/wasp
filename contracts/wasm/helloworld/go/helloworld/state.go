@@ -14,3 +14,7 @@ type ImmutableHelloWorldState struct {
 type MutableHelloWorldState struct {
 	id int32
 }
+
+func (s MutableHelloWorldState) AsImmutable() ImmutableHelloWorldState {
+	return ImmutableHelloWorldState(s)
+}

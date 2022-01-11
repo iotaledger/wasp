@@ -11,7 +11,7 @@ import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 const (
 	ScName        = "testwasmlib"
-	ScDescription = "Exercise all aspects of WasmLib"
+	ScDescription = "Exercise several aspects of WasmLib"
 	HScName       = wasmlib.ScHname(0x89703a45)
 )
 
@@ -30,6 +30,7 @@ const (
 	ParamInt32       = "int32"
 	ParamInt64       = "int64"
 	ParamInt8        = "int8"
+	ParamKey         = "key"
 	ParamName        = "name"
 	ParamParam       = "this"
 	ParamRecordIndex = "recordIndex"
@@ -53,6 +54,7 @@ const (
 
 const (
 	StateArrays = "arrays"
+	StateMaps   = "maps"
 	StateRandom = "random"
 )
 
@@ -60,26 +62,36 @@ const (
 	FuncArrayClear   = "arrayClear"
 	FuncArrayCreate  = "arrayCreate"
 	FuncArraySet     = "arraySet"
+	FuncMapClear     = "mapClear"
+	FuncMapCreate    = "mapCreate"
+	FuncMapSet       = "mapSet"
 	FuncParamTypes   = "paramTypes"
 	FuncRandom       = "random"
+	FuncTriggerEvent = "triggerEvent"
 	ViewArrayLength  = "arrayLength"
 	ViewArrayValue   = "arrayValue"
 	ViewBlockRecord  = "blockRecord"
 	ViewBlockRecords = "blockRecords"
 	ViewGetRandom    = "getRandom"
 	ViewIotaBalance  = "iotaBalance"
+	ViewMapValue     = "mapValue"
 )
 
 const (
 	HFuncArrayClear   = wasmlib.ScHname(0x88021821)
 	HFuncArrayCreate  = wasmlib.ScHname(0x1ed5b23b)
 	HFuncArraySet     = wasmlib.ScHname(0x2c4150b3)
+	HFuncMapClear     = wasmlib.ScHname(0x027f215a)
+	HFuncMapCreate    = wasmlib.ScHname(0x6295d599)
+	HFuncMapSet       = wasmlib.ScHname(0xf2260404)
 	HFuncParamTypes   = wasmlib.ScHname(0x6921c4cd)
 	HFuncRandom       = wasmlib.ScHname(0xe86c97ca)
+	HFuncTriggerEvent = wasmlib.ScHname(0xd5438ac6)
 	HViewArrayLength  = wasmlib.ScHname(0x3a831021)
 	HViewArrayValue   = wasmlib.ScHname(0x662dbd81)
 	HViewBlockRecord  = wasmlib.ScHname(0xad13b2f8)
 	HViewBlockRecords = wasmlib.ScHname(0x16e249ea)
 	HViewGetRandom    = wasmlib.ScHname(0x46263045)
 	HViewIotaBalance  = wasmlib.ScHname(0x9d3920bd)
+	HViewMapValue     = wasmlib.ScHname(0x23149bef)
 )

@@ -11,6 +11,7 @@
 use wasmlib::*;
 use wasmlib::host::*;
 
+#[derive(Clone)]
 pub struct Donation {
     pub amount    : i64,  // amount donated
     pub donator   : ScAgentID,  // who donated
@@ -42,6 +43,7 @@ impl Donation {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct ImmutableDonation {
     pub(crate) obj_id: i32,
     pub(crate) key_id: Key32,
@@ -57,6 +59,7 @@ impl ImmutableDonation {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MutableDonation {
     pub(crate) obj_id: i32,
     pub(crate) key_id: Key32,

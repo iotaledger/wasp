@@ -208,7 +208,8 @@ func (g *GenBase) emitEachFunc(funcs []*model.Func, template string) {
 func (g *GenBase) emitEachMandatoryField(template string) {
 	mandatoryFields := make([]*model.Field, 0)
 	for _, g.currentField = range g.currentFunc.Params {
-		if !g.currentField.Optional {
+		fld := g.currentField
+		if !fld.Optional && fld.TypeID != 0 && !fld.Array && fld.MapKey == "" {
 			mandatoryFields = append(mandatoryFields, g.currentField)
 		}
 	}
@@ -279,6 +280,8 @@ func (g *GenBase) emitIf(line string) {
 		condition = g.keys["kind"] == KeyFunc
 	case KeyInit:
 		condition = g.currentFunc.Name == KeyInit
+	case KeyMandatory:
+		condition = !g.currentField.Optional
 	case KeyMap:
 		condition = g.currentField.MapKey != ""
 	case KeyMut:
@@ -435,7 +438,7 @@ func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 func (g *GenBase) setFuncKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 	g.setMultiKeyValues("funcName", g.currentFunc.Name)
 	g.setMultiKeyValues("kind", g.currentFunc.Kind)
-	g.keys["funcHname"] = iscp.Hn(g.keys["funcName"]).String()
+	g.keys["hFuncName"] = iscp.Hn(g.keys["funcName"]).String()
 	grant := g.currentFunc.Access
 	comment := ""
 	index := strings.Index(grant, "//")

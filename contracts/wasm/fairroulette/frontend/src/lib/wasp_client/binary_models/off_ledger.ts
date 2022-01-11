@@ -7,6 +7,7 @@ import type { IOffLedger } from './IOffLedger';
 
 export class OffLedger {
   public static ToStruct(buffer: Buffer): IOffLedger {
+    const chainIDSize = 32;
     const publicKeySize = 32;
     const colorLength = 32;
     const signatureSize = 64;
@@ -14,6 +15,7 @@ export class OffLedger {
     const reader = new SimpleBufferCursor(buffer);
 
     const requestType = reader.readIntBE(1);
+    const chainID = reader.readBytes(chainIDSize);
     const contract = reader.readUInt32LE();
     const entrypoint = reader.readUInt32LE();
     const numArguments = reader.readUInt32LE();
@@ -46,11 +48,12 @@ export class OffLedger {
 
     const offLedgerStruct: IOffLedger = {
       requestType: requestType,
+      chainID: Buffer.from(chainID),
       contract: contract,
       entrypoint: entrypoint,
       arguments: args,
       publicKey: Buffer.from(publicKey),
-      noonce: noonce,
+      nonce: noonce,
       balances: balances,
       signature: Buffer.from(signature),
     };
@@ -61,15 +64,15 @@ export class OffLedger {
   public static ToBuffer(req: IOffLedger): Buffer {
     const buffer = new SimpleBufferCursor(Buffer.alloc(0));
 
-    if ([0, 1].includes(req.requestType)) {
-      buffer.writeIntBE(req.requestType, 1);
+    if (req.requestType) {
+      buffer.writeInt8(1);
     }
 
+    buffer.writeBytes(req.chainID);
     buffer.writeUInt32LE(req.contract);
     buffer.writeUInt32LE(req.entrypoint);
 
     buffer.writeUInt32LE(req.arguments.length || 0);
-
     if (req.arguments) {
       req.arguments.sort((lhs,rhs)=> lhs.key.localeCompare(rhs.key));
       for (const arg of req.arguments) {
@@ -78,6 +81,7 @@ export class OffLedger {
         buffer.writeUInt16LE(keyBuffer.length);
         buffer.writeBytes(keyBuffer);
 
+        //TODO FIXME: always a number?
         const valueBuffer = Buffer.alloc(8);
         valueBuffer.writeInt32LE(arg.value, 0);
 
@@ -87,10 +91,9 @@ export class OffLedger {
     }
 
     buffer.writeBytes(req.publicKey);
-    buffer.writeUInt64LE(req.noonce);
+    buffer.writeUInt64LE(req.nonce);
 
     buffer.writeUInt32LE(req.balances.length || 0);
-
     if (req.balances) {
       for (const balance of req.balances) {
         buffer.writeBytes(balance.color);
@@ -111,9 +114,10 @@ export class OffLedger {
     const cleanCopyOfRequest: IOffLedger = {
       arguments: request.arguments,
       balances: request.balances,
+      chainID: request.chainID,
       contract: request.contract,
       entrypoint: request.entrypoint,
-      noonce: request.noonce,
+      nonce: request.nonce,
       publicKey: keyPair.publicKey,
 
       requestType: null,

@@ -20,24 +20,26 @@ const (
 	IdxParamSymbol   = 7
 	IdxParamTo       = 8
 	IdxParamTokenID  = 9
+	IdxParamTokenURI = 10
 
-	IdxResultAmount   = 10
-	IdxResultApproval = 11
-	IdxResultApproved = 12
-	IdxResultName     = 13
-	IdxResultOwner    = 14
-	IdxResultSymbol   = 15
-	IdxResultTokenURI = 16
+	IdxResultAmount   = 11
+	IdxResultApproval = 12
+	IdxResultApproved = 13
+	IdxResultName     = 14
+	IdxResultOwner    = 15
+	IdxResultSymbol   = 16
+	IdxResultTokenURI = 17
 
-	IdxStateApprovedAccounts  = 17
-	IdxStateApprovedOperators = 18
-	IdxStateBalances          = 19
-	IdxStateName              = 20
-	IdxStateOwners            = 21
-	IdxStateSymbol            = 22
+	IdxStateApprovedAccounts  = 18
+	IdxStateApprovedOperators = 19
+	IdxStateBalances          = 20
+	IdxStateName              = 21
+	IdxStateOwners            = 22
+	IdxStateSymbol            = 23
+	IdxStateTokenURIs         = 24
 )
 
-const keyMapLen = 23
+const keyMapLen = 25
 
 var keyMap = [keyMapLen]wasmlib.Key{
 	ParamApproval,
@@ -50,6 +52,7 @@ var keyMap = [keyMapLen]wasmlib.Key{
 	ParamSymbol,
 	ParamTo,
 	ParamTokenID,
+	ParamTokenURI,
 	ResultAmount,
 	ResultApproval,
 	ResultApproved,
@@ -63,6 +66,7 @@ var keyMap = [keyMapLen]wasmlib.Key{
 	StateName,
 	StateOwners,
 	StateSymbol,
+	StateTokenURIs,
 }
 
 var idxMap [keyMapLen]wasmlib.Key32

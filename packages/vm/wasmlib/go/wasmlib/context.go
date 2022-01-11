@@ -316,6 +316,9 @@ func (ctx ScFuncContext) Post(chainID ScChainID, hContract, hFunction ScHname, p
 
 // generates a random value from 0 to max (exclusive max) using a deterministic RNG
 func (ctx ScFuncContext) Random(max int64) int64 {
+	if max == 0 {
+		ctx.Panic("random: max parameter should be non-zero")
+	}
 	state := ScMutableMap{objID: OBJ_ID_STATE}
 	rnd := state.GetBytes(KeyRandom)
 	seed := rnd.Value()
