@@ -46,10 +46,10 @@ func AddEndpoints(
 		AddParamPath("", "chainID", "chainID represented in base58").
 		AddParamBody(
 			model.OffLedgerRequestBody{Request: "base64 string"},
-			"RequestData",
-			"Offledger RequestData encoded in base64. Optionally, the body can be the binary representation of the offledger request, but mime-type must be specified to \"application/octet-stream\"",
+			"RequestRaw",
+			"Offledger RequestRaw encoded in base64. Optionally, the body can be the binary representation of the offledger request, but mime-type must be specified to \"application/octet-stream\"",
 			false).
-		AddResponse(http.StatusAccepted, "RequestData submitted", nil, nil)
+		AddResponse(http.StatusAccepted, "RequestRaw submitted", nil, nil)
 }
 
 type offLedgerReqAPI struct {
@@ -81,7 +81,7 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	// check req is for the correct chain
 	if !offLedgerReq.ChainID().Equals(chainID) {
 		// do not add to cache, it can still be sent to the correct chain
-		return httperrors.BadRequest("RequestData is for a different chain")
+		return httperrors.BadRequest("RequestRaw is for a different chain")
 	}
 
 	// check chain exists

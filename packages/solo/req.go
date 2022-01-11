@@ -235,7 +235,7 @@ func (ch *Chain) PostRequestOffLedgerReceipt(req *CallParams, keyPair *cryptolib
 		keyPair = &ch.OriginatorPrivateKey
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
-	res, err := ch.runRequestsSync([]iscp.RequestData{r}, "off-ledger")
+	res, err := ch.runRequestsSync([]iscp.RequestRaw{r}, "off-ledger")
 	rec, _ := ch.GetRequestReceipt(r.ID())
 	return rec, res, err
 }

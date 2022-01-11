@@ -503,12 +503,12 @@ func TestReadyFromIDs(t *testing.T) {
 		requests[0].ID(),
 		requests[1].ID(),
 		requests[2].ID(),
-		requests[3].ID(), // RequestData was removed from mempool
+		requests[3].ID(), // RequestRaw was removed from mempool
 	)
 	require.False(t, result)
 	require.EqualValues(t, missingIndexes, []int{3})
 	_, missingIndexes, result = pool.ReadyFromIDs(time.Now(),
-		requests[5].ID(), // RequestData hasn't been received by mempool
+		requests[5].ID(), // RequestRaw hasn't been received by mempool
 		requests[4].ID(),
 		requests[2].ID(),
 	)

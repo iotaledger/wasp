@@ -17,8 +17,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-// RequestDataFromMarshalUtil read RequestData from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
-func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestData, error) {
+// RequestDataFromMarshalUtil read RequestRaw from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
+func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestRaw, error) {
 	isOffLedger, err := mu.ReadBool()
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestData, error
 	return OnLedgerRequestFromMarshalUtil(mu)
 }
 
-func RequestDataToMarshalUtil(req RequestData, mu *marshalutil.MarshalUtil) {
+func RequestDataToMarshalUtil(req RequestRaw, mu *marshalutil.MarshalUtil) {
 	switch req := req.(type) {
 	case *OnLedgerRequestData:
 		mu.WriteBool(false)
@@ -68,8 +68,8 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 	}
 }
 
-// implement RequestData interface
-var _ RequestData = &OffLedgerRequestData{}
+// implement RequestRaw interface
+var _ RequestRaw = &OffLedgerRequestData{}
 
 func (r *OffLedgerRequestData) IsOffLedger() bool {
 	return true
@@ -87,7 +87,7 @@ func (r *OffLedgerRequestData) ChainID() *ChainID {
 }
 
 func (r *OffLedgerRequestData) AsOnLedger() AsOnLedger {
-	panic("not an UTXO RequestData")
+	panic("not an UTXO RequestRaw")
 }
 
 // implements Features interface
@@ -455,8 +455,8 @@ func (r *OnLedgerRequestData) GasBudget() uint64 {
 	return r.requestMetadata.GasBudget
 }
 
-// implements RequestData interface
-var _ RequestData = &OnLedgerRequestData{}
+// implements RequestRaw interface
+var _ RequestRaw = &OnLedgerRequestData{}
 
 func (r *OnLedgerRequestData) IsOffLedger() bool {
 	return false
@@ -471,7 +471,7 @@ func (r *OnLedgerRequestData) String() string {
 }
 
 func (r *OnLedgerRequestData) AsOffLedger() AsOffLedger {
-	panic("not an off-ledger RequestData")
+	panic("not an off-ledger RequestRaw")
 }
 
 func (r *OnLedgerRequestData) AsOnLedger() AsOnLedger {

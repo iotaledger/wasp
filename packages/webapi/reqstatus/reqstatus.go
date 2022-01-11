@@ -28,13 +28,13 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider) {
 	server.GET(routes.RequestStatus(":chainID", ":reqID"), r.handleRequestStatus).
 		SetSummary("Get the processing status of a given request in the node").
 		AddParamPath("", "chainID", "ChainID (base58)").
-		AddParamPath("", "reqID", "RequestData ID (base58)").
-		AddResponse(http.StatusOK, "RequestData status", model.RequestStatusResponse{}, nil)
+		AddParamPath("", "reqID", "RequestRaw ID (base58)").
+		AddResponse(http.StatusOK, "RequestRaw status", model.RequestStatusResponse{}, nil)
 
 	server.GET(routes.WaitRequestProcessed(":chainID", ":reqID"), r.handleWaitRequestProcessed).
 		SetSummary("Wait until the given request has been processed by the node").
 		AddParamPath("", "chainID", "ChainID (base58)").
-		AddParamPath("", "reqID", "RequestData ID (base58)").
+		AddParamPath("", "reqID", "RequestRaw ID (base58)").
 		AddParamBody(model.WaitRequestProcessedParams{}, "Params", "Optional parameters", false)
 }
 

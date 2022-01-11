@@ -9,7 +9,7 @@ import (
 )
 
 type MissingRequestMsg struct {
-	Request iscp.RequestData
+	Request iscp.RequestRaw
 }
 
 func (msg *MissingRequestMsg) Bytes() []byte {

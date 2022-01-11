@@ -15,7 +15,7 @@ import (
 )
 
 func TestSerializeRequestData(t *testing.T) {
-	var req iscp.RequestData
+	var req iscp.RequestRaw
 	var err error
 	t.Run("off ledger", func(t *testing.T) {
 		req = iscp.NewOffLedgerRequest(iscp.RandomChainID(), 3, 14, dict.New(), 1337)
