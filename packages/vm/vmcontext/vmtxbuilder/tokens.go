@@ -14,8 +14,8 @@ func (n *nativeTokenBalance) clone() *nativeTokenBalance {
 		tokenID:            n.tokenID,
 		input:              n.input,
 		dustDepositCharged: n.dustDepositCharged,
-		in:                 cloneInternalExtendedOutput(n.in),
-		out:                cloneInternalExtendedOutput(n.out),
+		in:                 cloneInternalExtendedOutputOrNil(n.in),
+		out:                cloneInternalExtendedOutputOrNil(n.out),
 	}
 }
 
@@ -79,16 +79,11 @@ func (n *nativeTokenBalance) identicalInOut() bool {
 	return true
 }
 
-func cloneInternalExtendedOutput(o *iotago.ExtendedOutput) *iotago.ExtendedOutput {
+func cloneInternalExtendedOutputOrNil(o *iotago.ExtendedOutput) *iotago.ExtendedOutput {
 	if o == nil {
 		return nil
 	}
-	return &iotago.ExtendedOutput{
-		Address:      o.Address, // immutable
-		Amount:       o.Amount,
-		NativeTokens: o.NativeTokens.Clone(),
-		Blocks:       o.Blocks, // immutable
-	}
+	return o.Clone().(*iotago.ExtendedOutput)
 }
 
 func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.AliasID, nativeTokenID iotago.NativeTokenID) *iotago.ExtendedOutput {

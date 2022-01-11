@@ -1,9 +1,7 @@
 package accounts
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"golang.org/x/xerrors"
 )
 
@@ -62,8 +60,3 @@ const (
 )
 
 var ErrDustDepositAssumptionsWrong = xerrors.New("'dust deposit assumptions' parameter not specified or wrong")
-
-// DecodeBalances TODO move to iscp package
-func DecodeBalances(balances dict.Dict) (*iscp.Assets, error) {
-	return iscp.AssetsFromDict(balances)
-}
