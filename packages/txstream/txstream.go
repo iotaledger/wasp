@@ -1,7 +1,7 @@
 package txstream
 
 import (
-	"github.com/gobuffalo/logger"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 

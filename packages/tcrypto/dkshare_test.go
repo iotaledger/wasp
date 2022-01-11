@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 )

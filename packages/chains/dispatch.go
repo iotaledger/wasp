@@ -1,9 +1,9 @@
 package chains
 
 import (
-	"github.com/iotaledger/goshimmer/packages/txstream"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/txstream"
 )
 
 func (c *Chains) dispatchTransactionMsg(msg *txstream.MsgTransaction) {
