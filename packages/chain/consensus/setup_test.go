@@ -114,10 +114,10 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
 	log.Infof("running DKG and setting up mocked network..")
-	nodeIDs, identities := testpeers.SetupKeys(n)
+	nodeIDs, nodeIdentities := testpeers.SetupKeys(n)
 	ret.NodeIDs = nodeIDs
-	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeIDs, tcrypto.DefaultSuite())
-	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
+	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities, tcrypto.DefaultSuite())
+	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(ret.NodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
@@ -203,32 +203,26 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	mempoolMetrics := metrics.DefaultChainMetrics()
 	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
 
-	cfg := &consensusTestConfigProvider{
-		ownNetID:  nodeID,
-		neighbors: env.NodeIDs,
-	}
 	//
 	// Pass the ACS mock, if it was set in env.MockedACS.
 	acs := make([]chain.AsynchronousCommonSubsetRunner, 0, 1)
 	if env.MockedACS != nil {
 		acs = append(acs, env.MockedACS)
 	}
-	cmtRec := &registry.CommitteeRecord{
-		Address: env.StateAddress,
-		Nodes:   env.NodeIDs,
+	dkShare, err := env.DKSRegistries[nodeIndex].LoadDKShare(env.StateAddress)
+	if err != nil {
+		panic(err)
 	}
 	cmt, cmtPeerGroup, err := committee.New(
-		cmtRec,
+		dkShare,
 		env.ChainID,
 		env.NetworkProviders[nodeIndex],
-		cfg,
-		env.DKSRegistries[nodeIndex],
 		log,
 		acs...,
 	)
 	require.NoError(env.T, err)
 	cmtPeerGroup.Attach(peering.PeerMessageReceiverConsensus, func(peerMsg *peering.PeerMessageGroupIn) {
-		log.Debugf("Consensus received peer message from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
+		log.Debugf("Consensus received peer message from %v of type %v", peerMsg.SenderPubKey.String(), peerMsg.MsgType)
 		switch peerMsg.MsgType {
 		case peerMsgTypeSignedResult:
 			msg, err := messages.NewSignedResultMsg(peerMsg.MsgData)
@@ -443,28 +437,4 @@ func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
 			}(n, req)
 		}
 	}
-}
-
-// TODO: should this object be obtained from peering.NetworkProvider?
-// Or should registry.PeerNetworkConfigProvider methods methods be part of
-// peering.NetworkProvider interface
-type consensusTestConfigProvider struct {
-	ownNetID  string
-	neighbors []string
-}
-
-func (p *consensusTestConfigProvider) OwnNetID() string {
-	return p.ownNetID
-}
-
-func (p *consensusTestConfigProvider) PeeringPort() int {
-	return 0 // Anything
-}
-
-func (p *consensusTestConfigProvider) Neighbors() []string {
-	return p.neighbors
-}
-
-func (p *consensusTestConfigProvider) String() string {
-	return fmt.Sprintf("consensusTestConfigProvider( ownNetID: %s, neighbors: %+v )", p.OwnNetID(), p.Neighbors())
 }

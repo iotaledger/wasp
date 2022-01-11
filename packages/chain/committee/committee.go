@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.uber.org/atomic"
@@ -23,7 +23,6 @@ import (
 type committee struct {
 	isReady        *atomic.Bool
 	address        ledgerstate.Address
-	peerConfig     registry.PeerNetworkConfigProvider
 	validatorNodes peering.GroupProvider
 	acsRunner      chain.AsynchronousCommonSubsetRunner
 	size           uint16
@@ -38,28 +37,19 @@ var _ chain.Committee = &committee{}
 const waitReady = false
 
 func New(
-	cmtRec *registry.CommitteeRecord,
+	dkShare *tcrypto.DKShare,
 	chainID *iscp.ChainID,
 	netProvider peering.NetworkProvider,
-	peerConfig registry.PeerNetworkConfigProvider,
-	dksProvider registry.DKShareRegistryProvider,
 	log *logger.Logger,
 	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
 ) (chain.Committee, peering.GroupProvider, error) {
-	// load DKShare from the registry
-	dkshare, err := dksProvider.LoadDKShare(cmtRec.Address)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("NewCommittee: failed loading DKShare for address %s: %w", cmtRec.Address.Base58(), err)
-	}
-	if dkshare.Index == nil {
-		return nil, nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: %w", cmtRec.Address.Base58(), err)
-	}
-	if err := checkValidatorNodeIDs(peerConfig, dkshare.N, *dkshare.Index, cmtRec.Nodes); err != nil {
-		return nil, nil, xerrors.Errorf("NewCommittee: %w", err)
+	var err error
+	if dkShare.Index == nil {
+		return nil, nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: nil index", dkShare.Address.Base58())
 	}
 	// peerGroupID is calculated by XORing chainID and stateAddr.
 	// It allows to use same statAddr for different chains
-	peerGroupID := cmtRec.Address.Array()
+	peerGroupID := dkShare.Address.Array()
 	var chainArr [33]byte
 	if chainID != nil {
 		chainArr = chainID.Array()
@@ -68,19 +58,18 @@ func New(
 		peerGroupID[i] ^= chainArr[i]
 	}
 	var peers peering.GroupProvider
-	if peers, err = netProvider.PeerGroup(peerGroupID, cmtRec.Nodes); err != nil {
-		return nil, nil, xerrors.Errorf("NewCommittee: failed to create peer group for committee: %+v: %w", cmtRec.Nodes, err)
+	if peers, err = netProvider.PeerGroup(peerGroupID, dkShare.NodePubKeys); err != nil {
+		return nil, nil, xerrors.Errorf("NewCommittee: failed to create peer group for committee: %+v: %w", dkShare.NodePubKeys, err)
 	}
-	log.Debugf("NewCommittee: peer group: %+v", cmtRec.Nodes)
+	log.Debugf("NewCommittee: peer group: %+v", dkShare.NodePubKeys)
 	ret := &committee{
 		isReady:        atomic.NewBool(false),
-		address:        cmtRec.Address,
+		address:        dkShare.Address,
 		validatorNodes: peers,
-		peerConfig:     peerConfig,
-		size:           dkshare.N,
-		quorum:         dkshare.T,
-		ownIndex:       *dkshare.Index,
-		dkshare:        dkshare,
+		size:           dkShare.N,
+		quorum:         dkShare.T,
+		ownIndex:       *dkShare.Index,
+		dkshare:        dkShare,
 		log:            log,
 	}
 	if len(acsRunner) > 0 {
@@ -91,7 +80,7 @@ func New(
 		ret.acsRunner = commonsubset.NewCommonSubsetCoordinator(
 			netProvider,
 			ret.validatorNodes,
-			dkshare,
+			dkShare,
 			log,
 		)
 	}
@@ -158,17 +147,11 @@ func (c *committee) QuorumIsAlive(quorum ...uint16) bool {
 func (c *committee) PeerStatus() []*chain.PeerStatus {
 	ret := make([]*chain.PeerStatus, 0)
 	for i, peer := range c.validatorNodes.AllNodes() {
-		isSelf := peer == nil || peer.NetID() == c.peerConfig.OwnNetID()
 		status := &chain.PeerStatus{
-			Index:  int(i),
-			IsSelf: isSelf,
-		}
-		if isSelf {
-			status.PeeringID = c.peerConfig.OwnNetID()
-			status.Connected = true
-		} else {
-			status.PeeringID = peer.NetID()
-			status.Connected = peer.IsAlive()
+			Index:     int(i),
+			NetID:     peer.NetID(),
+			PubKey:    peer.PubKey(),
+			Connected: peer.IsAlive(),
 		}
 		ret = append(ret, status)
 	}
@@ -197,44 +180,14 @@ func (c *committee) waitReady(waitReady bool) {
 	c.isReady.Store(true)
 }
 
-func checkValidatorNodeIDs(cfg registry.PeerNetworkConfigProvider, n, ownIndex uint16, validatorNetIDs []string) error {
-	if !util.AllDifferentStrings(validatorNetIDs) {
-		return xerrors.Errorf("checkValidatorNodeIDs: list of validators nodes contains duplicates: %+v", validatorNetIDs)
-	}
-	if len(validatorNetIDs) != int(n) {
-		return xerrors.Errorf("checkValidatorNodeIDs: number of validator nodes must be equal to the N parameter of the committee")
-	}
-	if ownIndex >= n {
-		return xerrors.New("checkValidatorNodeIDs: wrong own validator index")
-	}
-	if validatorNetIDs[ownIndex] != cfg.OwnNetID() {
-		return xerrors.New("checkValidatorNodeIDs: own netID is expected at own validator index")
-	}
-	// check if all validator node IDs are among known validatorNodes
-	allPeers := []string{cfg.OwnNetID()}
-	allPeers = append(allPeers, cfg.Neighbors()...)
-	if !util.IsSubset(validatorNetIDs, allPeers) {
-		return xerrors.Errorf("not all validator nodes are among known neighbors: all peers: %+v, committee: %+v",
-			allPeers, validatorNetIDs)
-	}
-	return nil
-}
-
-func (c *committee) GetOtherValidatorsPeerIDs() []string {
-	nodes := c.validatorNodes.OtherNodes()
-	ret := make([]string, len(nodes))
-	i := 0
-	for _, node := range nodes {
-		ret[i] = node.NetID()
-		i++
-	}
-	return ret
-}
-
-func (c *committee) GetRandomValidators(upToN int) []string {
-	validators := c.GetOtherValidatorsPeerIDs()
+func (c *committee) GetRandomValidators(upToN int) []*ed25519.PublicKey {
+	validators := c.validatorNodes.OtherNodes()
 	if upToN >= len(validators) {
-		return validators
+		valPubKeys := make([]*ed25519.PublicKey, 0)
+		for i := range validators {
+			valPubKeys = append(valPubKeys, validators[i].PubKey())
+		}
+		return valPubKeys
 	}
 
 	var b [8]byte
@@ -242,10 +195,10 @@ func (c *committee) GetRandomValidators(upToN int) []string {
 	_, _ = rand.Read(seed)
 	permutation := util.NewPermutation16(uint16(len(validators)), seed)
 	permutation.Shuffle(seed)
-	ret := make([]string, 0)
+	ret := make([]*ed25519.PublicKey, 0)
 	for len(ret) < upToN {
 		i := permutation.Next()
-		ret = append(ret, validators[i])
+		ret = append(ret, validators[i].PubKey())
 	}
 
 	return ret

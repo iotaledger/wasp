@@ -4,6 +4,7 @@
 package messages
 
 import (
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/iscp"
 )
@@ -14,7 +15,7 @@ type MissingRequestIDsMsg struct {
 
 type MissingRequestIDsMsgIn struct {
 	MissingRequestIDsMsg
-	SenderNetID string
+	SenderPubKey *ed25519.PublicKey
 }
 
 func (msg *MissingRequestIDsMsg) Bytes() []byte {
