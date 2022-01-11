@@ -40,7 +40,7 @@ type consensus struct {
 	iAmContributor                   bool
 	myContributionSeqNumber          uint16
 	contributors                     []uint16
-	workflow                         workflowFlags
+	workflow                         *WorkflowStatus
 	delayBatchProposalUntil          time.Time
 	delayRunVMUntil                  time.Time
 	delaySendingSignedResult         time.Time
@@ -70,18 +70,6 @@ type consensus struct {
 	consensusMetrics                 metrics.ConsensusMetrics
 }
 
-type workflowFlags struct {
-	stateReceived        bool
-	batchProposalSent    bool
-	consensusBatchKnown  bool
-	vmStarted            bool
-	vmResultSigned       bool
-	transactionFinalized bool
-	transactionPosted    bool
-	transactionSeen      bool
-	inProgress           bool
-}
-
 var _ chain.Consensus = &consensus{}
 
 const (
@@ -106,6 +94,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		mempool:                          mempool,
 		nodeConn:                         nodeConn,
 		vmRunner:                         runvm.NewVMRunner(),
+		workflow:                         newWorkflowStatus(false),
 		resultSignatures:                 make([]*messages.SignedResultMsgIn, committee.Size()),
 		resultSigAck:                     make([]uint16, 0, committee.Size()),
 		timers:                           timers,

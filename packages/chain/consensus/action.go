@@ -27,9 +27,9 @@ import (
 
 // takeAction triggers actions whenever relevant
 func (c *consensus) takeAction() {
-	if !c.workflow.stateReceived || !c.workflow.inProgress {
+	if !c.workflow.IsStateReceived() || !c.workflow.IsInProgress() {
 		c.log.Debugf("takeAction skipped: stateReceived: %v, workflow in progress: %v",
-			c.workflow.stateReceived, c.workflow.inProgress)
+			c.workflow.IsStateReceived(), c.workflow.IsInProgress())
 		return
 	}
 
@@ -44,11 +44,11 @@ func (c *consensus) takeAction() {
 // proposeBatchIfNeeded when non empty ready batch is available is in mempool propose it as a candidate
 // for the ACS agreement
 func (c *consensus) proposeBatchIfNeeded() {
-	if c.workflow.batchProposalSent {
+	if c.workflow.IsBatchProposalSent() {
 		c.log.Debugf("proposeBatch not needed: batch proposal already sent")
 		return
 	}
-	if c.workflow.consensusBatchKnown {
+	if c.workflow.IsConsensusBatchKnown() {
 		c.log.Debugf("proposeBatch not needed: consensus batch already known")
 		return
 	}
@@ -78,19 +78,19 @@ func (c *consensus) proposeBatchIfNeeded() {
 
 	c.log.Infof("proposeBatch: proposed batch len = %d, ACS session ID: %d, state index: %d",
 		len(reqs), c.acsSessionID, c.stateOutput.GetStateIndex())
-	c.workflow.batchProposalSent = true
+	c.workflow.setBatchProposalSent()
 }
 
 // runVMIfNeeded attempts to extract deterministic batch of requests from ACS.
 // If it succeeds (i.e. all requests are available) and the extracted batch is nonempty, it runs the request
 func (c *consensus) runVMIfNeeded() {
-	if !c.workflow.consensusBatchKnown {
+	if !c.workflow.IsConsensusBatchKnown() {
 		c.log.Debugf("runVM not needed: consensus batch is not known")
 		return
 	}
-	if c.workflow.vmStarted || c.workflow.vmResultSigned {
+	if c.workflow.IsVMStarted() || c.workflow.IsVMResultSigned() {
 		c.log.Debugf("runVM not needed: vmStarted %v, vmResultSigned %v",
-			c.workflow.vmStarted, c.workflow.vmResultSigned)
+			c.workflow.IsVMStarted(), c.workflow.IsVMResultSigned())
 		return
 	}
 	if time.Now().Before(c.delayRunVMUntil) {
@@ -147,7 +147,7 @@ func (c *consensus) runVMIfNeeded() {
 			"block index", vmTask.ChainInput.GetStateIndex(),
 			"num req", len(vmTask.Requests),
 		)
-		c.workflow.vmStarted = true
+		c.workflow.setVMStarted()
 		vmTask.StartTime = time.Now()
 		c.consensusMetrics.CountVMRuns()
 		go c.vmRunner.Run(vmTask)
@@ -252,7 +252,7 @@ func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 }
 
 func (c *consensus) broadcastSignedResultIfNeeded() {
-	if !c.workflow.vmResultSigned {
+	if !c.workflow.IsVMResultSigned() {
 		c.log.Debugf("broadcastSignedResult not needed: vm result is not signed")
 		return
 	}
@@ -285,11 +285,11 @@ func (c *consensus) broadcastSignedResultIfNeeded() {
 // the transaction to L1. The deadline por posting is set proportionally to the sequence number (deterministic)
 // If the node sees the transaction of the L1 before its deadline, it cancels its posting
 func (c *consensus) checkQuorum() {
-	if c.workflow.transactionFinalized {
+	if c.workflow.IsTransactionFinalized() {
 		c.log.Debugf("checkQuorum not needed: transaction already finalized")
 		return
 	}
-	if !c.workflow.vmResultSigned {
+	if !c.workflow.IsVMResultSigned() {
 		// only can aggregate signatures if own result is calculated
 		c.log.Debugf("checkQuorum not needed: vm result is not signed")
 		return
@@ -363,13 +363,13 @@ func (c *consensus) checkQuorum() {
 	} else {
 		c.log.Debugf("checkQuorum: finalized tx %s, iAmContributor: false", tx.ID().Base58())
 	}
-	c.workflow.transactionFinalized = true
+	c.workflow.setTransactionFinalized()
 	c.pullInclusionStateDeadline = time.Now()
 }
 
 // postTransactionIfNeeded posts a finalized transaction upon deadline unless it was evidenced on L1 before the deadline.
 func (c *consensus) postTransactionIfNeeded() {
-	if !c.workflow.transactionFinalized {
+	if !c.workflow.IsTransactionFinalized() {
 		c.log.Debugf("postTransaction not needed: transaction is not finalized")
 		return
 	}
@@ -378,11 +378,11 @@ func (c *consensus) postTransactionIfNeeded() {
 		c.log.Debugf("postTransaction not needed: i am not a contributor")
 		return
 	}
-	if c.workflow.transactionPosted {
+	if c.workflow.IsTransactionPosted() {
 		c.log.Debugf("postTransaction not needed: transaction already posted")
 		return
 	}
-	if c.workflow.transactionSeen {
+	if c.workflow.IsTransactionSeen() {
 		c.log.Debugf("postTransaction not needed: transaction already seen")
 		return
 	}
@@ -392,18 +392,18 @@ func (c *consensus) postTransactionIfNeeded() {
 	}
 	go c.nodeConn.PostTransaction(c.finalTx)
 
-	c.workflow.transactionPosted = true // TODO: Fix it, retries should be in place for robustness.
+	c.workflow.setTransactionPosted() // TODO: Fix it, retries should be in place for robustness.
 	c.log.Infof("postTransaction: POSTED TRANSACTION: %s, number of inputs: %d, outputs: %d", c.finalTx.ID().Base58(), len(c.finalTx.Essence().Inputs()), len(c.finalTx.Essence().Outputs()))
 }
 
 // pullInclusionStateIfNeeded periodic pull to know the inclusions state of the transaction. Note that pulling
 // starts immediately after finalization of the transaction, not after posting it
 func (c *consensus) pullInclusionStateIfNeeded() {
-	if !c.workflow.transactionFinalized {
+	if !c.workflow.IsTransactionFinalized() {
 		c.log.Debugf("pullInclusionState not needed: transaction is not finalized")
 		return
 	}
-	if c.workflow.transactionSeen {
+	if c.workflow.IsTransactionSeen() {
 		c.log.Debugf("pullInclusionState not needed: transaction already seen")
 		return
 	}
@@ -456,7 +456,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 		c.log.Debugf("receiveACS: session id missmatch: expected %v, received %v", c.acsSessionID, sessionID)
 		return
 	}
-	if c.workflow.consensusBatchKnown {
+	if c.workflow.IsConsensusBatchKnown() {
 		// should not happen
 		c.log.Debugf("receiveACS: consensus batch already known (should not happen)")
 		return
@@ -552,7 +552,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 	c.myContributionSeqNumber = myContributionSeqNumber
 	c.contributors = contributors
 
-	c.workflow.consensusBatchKnown = true
+	c.workflow.setConsensusBatchKnown()
 
 	if c.iAmContributor {
 		c.log.Debugf("receiveACS: ACS received. Contributors to ACS: %+v, iAmContributor: true, seqnr: %d, reqs: %+v",
@@ -566,7 +566,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 }
 
 func (c *consensus) processInclusionState(msg *messages.InclusionStateMsg) {
-	if !c.workflow.transactionFinalized {
+	if !c.workflow.IsTransactionFinalized() {
 		c.log.Debugf("processInclusionState: transaction not finalized -> skipping.")
 		return
 	}
@@ -577,15 +577,15 @@ func (c *consensus) processInclusionState(msg *messages.InclusionStateMsg) {
 	}
 	switch msg.State {
 	case ledgerstate.Pending:
-		c.workflow.transactionSeen = true
+		c.workflow.setTransactionSeen()
 		c.log.Debugf("processInclusionState: transaction id %v is pending.", c.finalTx.ID().Base58())
 	case ledgerstate.Confirmed:
-		c.workflow.transactionSeen = true
-		c.workflow.inProgress = false
+		c.workflow.setTransactionSeen()
+		c.workflow.setCompleted()
 		c.refreshConsensusInfo()
 		c.log.Debugf("processInclusionState: transaction id %s is confirmed; workflow finished", msg.TxID.Base58())
 	case ledgerstate.Rejected:
-		c.workflow.transactionSeen = true
+		c.workflow.setTransactionSeen()
 		c.log.Infof("processInclusionState: transaction id %s is rejected; restarting consensus.", msg.TxID.Base58())
 		c.resetWorkflow()
 	}
@@ -668,20 +668,17 @@ func (c *consensus) resetWorkflow() {
 	c.consensusBatch = nil
 	c.contributors = nil
 	c.resultSigAck = c.resultSigAck[:0]
-	c.workflow = workflowFlags{
-		stateReceived: c.stateOutput != nil,
-		inProgress:    c.stateOutput != nil,
-	}
+	c.workflow = newWorkflowStatus(c.stateOutput != nil)
 	c.log.Debugf("Workflow reset")
 }
 
 func (c *consensus) processVMResult(result *vm.VMTask) {
-	if !c.workflow.vmStarted ||
-		c.workflow.vmResultSigned ||
+	if !c.workflow.IsVMStarted() ||
+		c.workflow.IsVMResultSigned() ||
 		c.acsSessionID != result.ACSSessionID {
 		// out of context
 		c.log.Debugf("processVMResult: out of context vmStarted %v, vmResultSignedAndBroadcasted %v, expected ACS session ID %v, returned ACS session ID %v",
-			c.workflow.vmStarted, c.workflow.vmResultSigned, c.acsSessionID, result.ACSSessionID)
+			c.workflow.IsVMStarted(), c.workflow.IsVMResultSigned(), c.acsSessionID, result.ACSSessionID)
 		return
 	}
 	rotation := result.RotationAddress != nil
@@ -713,7 +710,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 		SenderIndex: c.committee.OwnPeerIndex(),
 	}
 
-	c.workflow.vmResultSigned = true
+	c.workflow.setVMResultSigned()
 
 	c.log.Debugf("processVMResult signed: essence hash: %s", essenceHash.String())
 }
