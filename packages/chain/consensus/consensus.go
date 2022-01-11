@@ -40,7 +40,7 @@ type consensus struct {
 	iAmContributor                   bool
 	myContributionSeqNumber          uint16
 	contributors                     []uint16
-	workflow                         *WorkflowStatus
+	workflow                         *workflowStatus
 	delayBatchProposalUntil          time.Time
 	delayRunVMUntil                  time.Time
 	delaySendingSignedResult         time.Time
@@ -282,4 +282,8 @@ func (c *consensus) GetStatusSnapshot() *chain.ConsensusInfo {
 		return nil
 	}
 	return ret.(*chain.ConsensusInfo)
+}
+
+func (c *consensus) GetWorkflowStatus() chain.ConsensusWorkflowStatus {
+	return c.workflow
 }

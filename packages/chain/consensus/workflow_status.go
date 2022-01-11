@@ -5,9 +5,11 @@ package consensus
 
 import (
 	"time"
+
+	"github.com/iotaledger/wasp/packages/chain"
 )
 
-type WorkflowStatus struct {
+type workflowStatus struct {
 	flagStateReceived        bool
 	flagBatchProposalSent    bool
 	flagConsensusBatchKnown  bool
@@ -28,117 +30,119 @@ type WorkflowStatus struct {
 	timeCompleted            time.Time
 }
 
-func newWorkflowStatus(stateReceived bool) *WorkflowStatus {
-	return &WorkflowStatus{
+var _ chain.ConsensusWorkflowStatus = &workflowStatus{}
+
+func newWorkflowStatus(stateReceived bool) *workflowStatus {
+	return &workflowStatus{
 		flagStateReceived: stateReceived,
 		flagInProgress:    stateReceived,
 	}
 }
 
-func (wsT *WorkflowStatus) setBatchProposalSent() {
+func (wsT *workflowStatus) setBatchProposalSent() {
 	wsT.flagBatchProposalSent = true
 	wsT.timeBatchProposalSent = time.Now()
 }
 
-func (wsT *WorkflowStatus) setConsensusBatchKnown() {
+func (wsT *workflowStatus) setConsensusBatchKnown() {
 	wsT.flagConsensusBatchKnown = true
 	wsT.timeConsensusBatchKnown = time.Now()
 }
 
-func (wsT *WorkflowStatus) setVMStarted() {
+func (wsT *workflowStatus) setVMStarted() {
 	wsT.flagVMStarted = true
 	wsT.timeVMStarted = time.Now()
 }
 
-func (wsT *WorkflowStatus) setVMResultSigned() {
+func (wsT *workflowStatus) setVMResultSigned() {
 	wsT.flagVMResultSigned = true
 	wsT.timeVMResultSigned = time.Now()
 }
 
-func (wsT *WorkflowStatus) setTransactionFinalized() {
+func (wsT *workflowStatus) setTransactionFinalized() {
 	wsT.flagTransactionFinalized = true
 	wsT.timeTransactionFinalized = time.Now()
 }
 
-func (wsT *WorkflowStatus) setTransactionPosted() {
+func (wsT *workflowStatus) setTransactionPosted() {
 	wsT.flagTransactionPosted = true
 	wsT.timeTransactionPosted = time.Now()
 }
 
-func (wsT *WorkflowStatus) setTransactionSeen() {
+func (wsT *workflowStatus) setTransactionSeen() {
 	wsT.flagTransactionSeen = true
 	wsT.timeTransactionSeen = time.Now()
 }
 
-func (wsT *WorkflowStatus) setCompleted() {
+func (wsT *workflowStatus) setCompleted() {
 	wsT.flagInProgress = false
 	wsT.timeCompleted = time.Now()
 }
 
-func (wsT *WorkflowStatus) IsStateReceived() bool {
+func (wsT *workflowStatus) IsStateReceived() bool {
 	return wsT.flagStateReceived
 }
 
-func (wsT *WorkflowStatus) IsBatchProposalSent() bool {
+func (wsT *workflowStatus) IsBatchProposalSent() bool {
 	return wsT.flagBatchProposalSent
 }
 
-func (wsT *WorkflowStatus) IsConsensusBatchKnown() bool {
+func (wsT *workflowStatus) IsConsensusBatchKnown() bool {
 	return wsT.flagConsensusBatchKnown
 }
 
-func (wsT *WorkflowStatus) IsVMStarted() bool {
+func (wsT *workflowStatus) IsVMStarted() bool {
 	return wsT.flagVMStarted
 }
 
-func (wsT *WorkflowStatus) IsVMResultSigned() bool {
+func (wsT *workflowStatus) IsVMResultSigned() bool {
 	return wsT.flagVMResultSigned
 }
 
-func (wsT *WorkflowStatus) IsTransactionFinalized() bool {
+func (wsT *workflowStatus) IsTransactionFinalized() bool {
 	return wsT.flagTransactionFinalized
 }
 
-func (wsT *WorkflowStatus) IsTransactionPosted() bool {
+func (wsT *workflowStatus) IsTransactionPosted() bool {
 	return wsT.flagTransactionPosted
 }
 
-func (wsT *WorkflowStatus) IsTransactionSeen() bool {
+func (wsT *workflowStatus) IsTransactionSeen() bool {
 	return wsT.flagTransactionSeen
 }
 
-func (wsT *WorkflowStatus) IsInProgress() bool {
+func (wsT *workflowStatus) IsInProgress() bool {
 	return wsT.flagInProgress
 }
 
-func (wsT *WorkflowStatus) GetBatchProposalSentTime() time.Time {
+func (wsT *workflowStatus) GetBatchProposalSentTime() time.Time {
 	return wsT.timeBatchProposalSent
 }
 
-func (wsT *WorkflowStatus) GetConsensusBatchKnownTime() time.Time {
+func (wsT *workflowStatus) GetConsensusBatchKnownTime() time.Time {
 	return wsT.timeConsensusBatchKnown
 }
 
-func (wsT *WorkflowStatus) GetVMStartedTime() time.Time {
+func (wsT *workflowStatus) GetVMStartedTime() time.Time {
 	return wsT.timeVMStarted
 }
 
-func (wsT *WorkflowStatus) GetVMResultSignedTime() time.Time {
+func (wsT *workflowStatus) GetVMResultSignedTime() time.Time {
 	return wsT.timeVMResultSigned
 }
 
-func (wsT *WorkflowStatus) GetTransactionFinalizedTime() time.Time {
+func (wsT *workflowStatus) GetTransactionFinalizedTime() time.Time {
 	return wsT.timeTransactionFinalized
 }
 
-func (wsT *WorkflowStatus) GetTransactionPostedTime() time.Time {
+func (wsT *workflowStatus) GetTransactionPostedTime() time.Time {
 	return wsT.timeTransactionPosted
 }
 
-func (wsT *WorkflowStatus) GetTransactionSeenTime() time.Time {
+func (wsT *workflowStatus) GetTransactionSeenTime() time.Time {
 	return wsT.timeTransactionSeen
 }
 
-func (wsT *WorkflowStatus) GetCompletedTime() time.Time {
+func (wsT *workflowStatus) GetCompletedTime() time.Time {
 	return wsT.timeCompleted
 }

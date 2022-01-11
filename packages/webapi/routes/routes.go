@@ -63,6 +63,10 @@ func GetChainNodeConnectionMetrics(chainID string) string {
 	return "/adm/chain/" + chainID + "/nodeconn/metrics"
 }
 
+func GetChainConsensusWorkflowStatus(chainID string) string {
+	return "/adm/chain/" + chainID + "/consensus/status"
+}
+
 func GetCommitteeForChain(chainID string) string {
 	return "/adm/chain/" + chainID + "/committeerecord"
 }
