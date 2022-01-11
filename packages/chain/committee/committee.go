@@ -149,7 +149,8 @@ func (c *committee) PeerStatus() []*chain.PeerStatus {
 	for i, peer := range c.validatorNodes.AllNodes() {
 		status := &chain.PeerStatus{
 			Index:     int(i),
-			PeeringID: peer.NetID(),
+			NetID:     peer.NetID(),
+			PubKey:    peer.PubKey(),
 			Connected: peer.IsAlive(),
 		}
 		ret = append(ret, status)

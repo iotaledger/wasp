@@ -226,7 +226,8 @@ type CommitteeInfo struct {
 
 type PeerStatus struct {
 	Index     int
-	PeeringID string
+	PubKey    *ed25519.PublicKey
+	NetID     string
 	Connected bool
 }
 
