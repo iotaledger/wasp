@@ -48,7 +48,7 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	result.Balances, err = accounts.DecodeBalances(bal)
+	result.Balances, err = iscp.AssetsFromDict(bal)
 	if err != nil {
 		return err
 	}

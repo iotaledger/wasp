@@ -15,5 +15,5 @@ func GetAccountBalance(ch chain.Chain, agentID *iscp.AgentID) (*iscp.Assets, err
 	if err != nil {
 		return nil, err
 	}
-	return accounts.DecodeBalances(ret)
+	return iscp.AssetsFromDict(ret)
 }

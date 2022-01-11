@@ -84,7 +84,7 @@ func (e *EVMChain) GetOnChainBalance() (*iscp.Assets, error) {
 	if err != nil {
 		return nil, err
 	}
-	return accounts.DecodeBalances(ret)
+	return iscp.AssetsFromDict(ret)
 }
 
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {

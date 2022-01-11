@@ -372,7 +372,7 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id *iotago.NativeT
 	if in == nil {
 		out = txb.newInternalTokenOutput(txb.anchorOutput.AliasID, *id)
 	} else {
-		out = cloneInternalExtendedOutput(in)
+		out = cloneInternalExtendedOutputOrNil(in)
 	}
 	b := &nativeTokenBalance{
 		tokenID:            out.NativeTokens[0].ID,
