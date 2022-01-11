@@ -15,8 +15,8 @@ import (
 // the contract has already been deployed in some way, so
 // these values are usually available from elsewhere
 const (
+	myChainID = "tRA59jhoDG9QpXi7NcQ3phuQaaPqgXRBgXxK2Sy1FPGf"
 	mySeed    = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
-	myChainID = "j2mrizabjDRPwU2eU37yXFLcgCHCwVUD79v2ufWbBFm4"
 )
 
 func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {

@@ -10,14 +10,14 @@ package corerootclient
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
 
 const (
-	ArgDeployer = "dp"
+	ArgDeployer    = "dp"
 	ArgDescription = "ds"
-	ArgHname = "hn"
-	ArgName = "nm"
+	ArgHname       = "hn"
+	ArgName        = "nm"
 	ArgProgramHash = "ph"
 
-	ResContractFound = "cf"
-	ResContractRecData = "dt"
+	ResContractFound    = "cf"
+	ResContractRecData  = "dt"
 	ResContractRegistry = "r"
 )
 
@@ -29,15 +29,15 @@ type DeployContractFunc struct {
 }
 
 func (f *DeployContractFunc) Description(v string) {
-	f.args.SetString(ArgDescription, v)
+	f.args.Set(ArgDescription, f.args.FromString(v))
 }
 
 func (f *DeployContractFunc) Name(v string) {
-	f.args.SetString(ArgName, v)
+	f.args.Set(ArgName, f.args.FromString(v))
 }
 
 func (f *DeployContractFunc) ProgramHash(v wasmclient.Hash) {
-	f.args.SetHash(ArgProgramHash, v)
+	f.args.Set(ArgProgramHash, f.args.FromHash(v))
 }
 
 func (f *DeployContractFunc) Post() wasmclient.Request {
@@ -54,7 +54,7 @@ type GrantDeployPermissionFunc struct {
 }
 
 func (f *GrantDeployPermissionFunc) Deployer(v wasmclient.AgentID) {
-	f.args.SetAgentID(ArgDeployer, v)
+	f.args.Set(ArgDeployer, f.args.FromAgentID(v))
 }
 
 func (f *GrantDeployPermissionFunc) Post() wasmclient.Request {
@@ -70,7 +70,7 @@ type RevokeDeployPermissionFunc struct {
 }
 
 func (f *RevokeDeployPermissionFunc) Deployer(v wasmclient.AgentID) {
-	f.args.SetAgentID(ArgDeployer, v)
+	f.args.Set(ArgDeployer, f.args.FromAgentID(v))
 }
 
 func (f *RevokeDeployPermissionFunc) Post() wasmclient.Request {
@@ -86,7 +86,7 @@ type FindContractView struct {
 }
 
 func (f *FindContractView) Hname(v wasmclient.Hname) {
-	f.args.SetHname(ArgHname, v)
+	f.args.Set(ArgHname, f.args.FromHname(v))
 }
 
 func (f *FindContractView) Call() FindContractResults {
@@ -100,11 +100,11 @@ type FindContractResults struct {
 }
 
 func (r *FindContractResults) ContractFound() []byte {
-	return r.res.GetBytes(ResContractFound)
+	return r.res.ToBytes(r.res.Get(ResContractFound))
 }
 
 func (r *FindContractResults) ContractRecData() []byte {
-	return r.res.GetBytes(ResContractRecData)
+	return r.res.ToBytes(r.res.Get(ResContractRecData))
 }
 
 ///////////////////////////// getContractRecords /////////////////////////////
@@ -123,10 +123,10 @@ type GetContractRecordsResults struct {
 }
 
 func (r *GetContractRecordsResults) ContractRegistry() map[wasmclient.Hname][]byte {
-    res := make(map[wasmclient.Hname][]byte)
-    r.res.ForEach(func(key string, val string) {
-        res[wasmclient.Hname(key)] = r.res.GetBytes(val)
-    })
+	res := make(map[wasmclient.Hname][]byte)
+	r.res.ForEach(func(key []byte, val []byte) {
+		res[r.res.ToHname(key)] = r.res.ToBytes(val)
+	})
 	return res
 }
 

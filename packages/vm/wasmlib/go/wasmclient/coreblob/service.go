@@ -27,7 +27,7 @@ type StoreBlobFunc struct {
 }
 
 func (f *StoreBlobFunc) Blobs(v []byte) {
-	f.args.SetBytes(ArgBlobs, v)
+	f.args.Set(ArgBlobs, f.args.FromBytes(v))
 }
 
 func (f *StoreBlobFunc) Post() wasmclient.Request {
@@ -42,11 +42,11 @@ type GetBlobFieldView struct {
 }
 
 func (f *GetBlobFieldView) Field(v string) {
-	f.args.SetString(ArgField, v)
+	f.args.Set(ArgField, f.args.FromString(v))
 }
 
 func (f *GetBlobFieldView) Hash(v wasmclient.Hash) {
-	f.args.SetHash(ArgHash, v)
+	f.args.Set(ArgHash, f.args.FromHash(v))
 }
 
 func (f *GetBlobFieldView) Call() GetBlobFieldResults {
@@ -61,7 +61,7 @@ type GetBlobFieldResults struct {
 }
 
 func (r *GetBlobFieldResults) Bytes() []byte {
-	return r.res.GetBytes(ResBytes)
+	return r.res.ToBytes(r.res.Get(ResBytes))
 }
 
 ///////////////////////////// getBlobInfo /////////////////////////////
@@ -72,7 +72,7 @@ type GetBlobInfoView struct {
 }
 
 func (f *GetBlobInfoView) Hash(v wasmclient.Hash) {
-	f.args.SetHash(ArgHash, v)
+	f.args.Set(ArgHash, f.args.FromHash(v))
 }
 
 func (f *GetBlobInfoView) Call() GetBlobInfoResults {
@@ -87,8 +87,8 @@ type GetBlobInfoResults struct {
 
 func (r *GetBlobInfoResults) BlobSizes() map[string]int32 {
 	res := make(map[string]int32)
-	r.res.ForEach(func(key string, val string) {
-		res[string(key)] = r.res.GetInt32(val)
+	r.res.ForEach(func(key []byte, val []byte) {
+		res[r.res.ToString(key)] = r.res.ToInt32(val)
 	})
 	return res
 }
@@ -110,8 +110,8 @@ type ListBlobsResults struct {
 
 func (r *ListBlobsResults) BlobSizes() map[wasmclient.Hash]int32 {
 	res := make(map[wasmclient.Hash]int32)
-	r.res.ForEach(func(key string, val string) {
-		res[wasmclient.Hash(key)] = r.res.GetInt32(val)
+	r.res.ForEach(func(key []byte, val []byte) {
+		res[r.res.ToHash(key)] = r.res.ToInt32(val)
 	})
 	return res
 }

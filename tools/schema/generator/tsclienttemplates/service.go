@@ -59,7 +59,7 @@ $#if array funcArgSetterArray funcArgSetterBasic
 	"funcArgSetterBasic": `
 	
 	public $fldName(v: $fldLangType): void {
-		this.args.set$FldType(Arg$FldName, v);
+		this.args.set(Arg$FldName, this.args.from$FldType(v));
 	}
 `,
 	// *******************************
@@ -67,9 +67,9 @@ $#if array funcArgSetterArray funcArgSetterBasic
 	
 	public $fldName(a: $fldLangType[]): void {
 		for (let i = 0; i < a.length; i++) {
-			this.args.set$FldType(this.args.indexedKey(Arg$FldName, i), a[i]);
+			this.args.set(this.args.indexedKey(Arg$FldName, i), this.args.from$FldType(a[i]));
 		}
-		this.args.setInt32(Arg$FldName, a.length);
+		this.args.set(Arg$FldName, this.args.setInt32(a.length));
 	}
 `,
 	// *******************************
@@ -87,7 +87,9 @@ $#if param execWithArgs execNoArgs
 	public async call(): Promise<$FuncName$+Results> {
 $#each mandatory mandatoryCheck
 $#if param execWithArgs execNoArgs
-		return new $FuncName$+Results(await this.callView("$funcName", $args));
+        const res = new $FuncName$+Results();
+		await this.callView("$funcName", $args, res);
+		return res;
 	}
 `,
 	// *******************************
@@ -105,7 +107,7 @@ $#set args null
 	// *******************************
 	"resultStruct": `
 
-export class $FuncName$+Results extends wasmclient.ViewResults {
+export class $FuncName$+Results extends wasmclient.Results {
 $#each result callResultGetter
 }
 `,
@@ -117,9 +119,9 @@ $#if map callResultGetterMap callResultGetterBasic
 	"callResultGetterMap": `
 
 	$fldName(): Map<$fldKeyLangType, $fldLangType> {
-		const res = new Map();
-		this.res.forEach((key, val) => {
-			res.set(key, this.res.get$FldType(val));
+		const res = new Map<$fldKeyLangType, $fldLangType>();
+		this.forEach((key, val) => {
+			res.set(this.to$fldMapKey(key), this.to$FldType(val));
 		});
 		return res;
 	}
@@ -129,14 +131,14 @@ $#if map callResultGetterMap callResultGetterBasic
 $#if mandatory else callResultOptional
 
 	$fldName(): $fldLangType {
-		return this.res.get$FldType(Res$FldName);
+		return this.to$FldType(this.get(Res$FldName));
 	}
 `,
 	// *******************************
 	"callResultOptional": `
 	
 	$fldName$+Exists(): boolean {
-		return this.res.exists(Res$FldName)
+		return this.exists(Res$FldName)
 	}
 `,
 	// *******************************

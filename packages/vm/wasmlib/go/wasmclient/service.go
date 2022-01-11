@@ -14,10 +14,27 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/mr-tron/base58"
 )
+
+type ArgMap dict.Dict
+
+func (m ArgMap) Get(key string) []byte {
+	return m[kv.Key(key)]
+}
+
+func (m ArgMap) Set(key string, value []byte) {
+	m[kv.Key(key)] = value
+}
+
+type ResMap dict.Dict
+
+func (m ResMap) Get(key string) []byte {
+	return m[kv.Key(key)]
+}
 
 type Service struct {
 	chainID    *iscp.ChainID
@@ -48,21 +65,22 @@ func (s *Service) AsClientView() ClientView {
 	return ClientView{svc: s}
 }
 
-func (s *Service) CallView(viewName string, args *Arguments) (dict.Dict, error) {
-	if args == nil {
-		args = &Arguments{}
+func (s *Service) CallView(viewName string, args ArgMap) (ResMap, error) {
+	res, err := s.waspClient.CallView(s.chainID, s.scHname, viewName, dict.Dict(args))
+	if err != nil {
+		return nil, err
 	}
-	return s.waspClient.CallView(s.chainID, s.scHname, viewName, args.args)
+	return ResMap(res), nil
 }
 
-func (s *Service) PostRequest(hFuncName uint32, args *Arguments, transfer *Transfer, keyPair *ed25519.KeyPair, onLedger bool) Request {
+func (s *Service) PostRequest(hFuncName uint32, args ArgMap, transfer *Transfer, keyPair *ed25519.KeyPair, onLedger bool) Request {
 	bal, err := makeBalances(transfer)
 	if err != nil {
 		return Request{err: err}
 	}
 	reqArgs := requestargs.New()
 	if args != nil {
-		reqArgs.AddEncodeSimpleMany(args.args)
+		reqArgs.AddEncodeSimpleMany(dict.Dict(args))
 	}
 
 	if onLedger {

@@ -42,15 +42,15 @@ type AddAllowedStateControllerAddressFunc struct {
 }
 
 func (f *AddAllowedStateControllerAddressFunc) ChainOwner(v wasmclient.AgentID) {
-	f.args.SetAgentID(ArgChainOwner, v)
+	f.args.Set(ArgChainOwner, f.args.FromAgentID(v))
 }
 
 func (f *AddAllowedStateControllerAddressFunc) FeeColor(v wasmclient.Color) {
-	f.args.SetColor(ArgFeeColor, v)
+	f.args.Set(ArgFeeColor, f.args.FromColor(v))
 }
 
 func (f *AddAllowedStateControllerAddressFunc) StateControllerAddress(v wasmclient.Address) {
-	f.args.SetAddress(ArgStateControllerAddress, v)
+	f.args.Set(ArgStateControllerAddress, f.args.FromAddress(v))
 }
 
 func (f *AddAllowedStateControllerAddressFunc) Post() wasmclient.Request {
@@ -77,7 +77,7 @@ type DelegateChainOwnershipFunc struct {
 }
 
 func (f *DelegateChainOwnershipFunc) ChainOwner(v wasmclient.AgentID) {
-	f.args.SetAgentID(ArgChainOwner, v)
+	f.args.Set(ArgChainOwner, f.args.FromAgentID(v))
 }
 
 func (f *DelegateChainOwnershipFunc) Post() wasmclient.Request {
@@ -93,7 +93,7 @@ type RemoveAllowedStateControllerAddressFunc struct {
 }
 
 func (f *RemoveAllowedStateControllerAddressFunc) StateControllerAddress(v wasmclient.Address) {
-	f.args.SetAddress(ArgStateControllerAddress, v)
+	f.args.Set(ArgStateControllerAddress, f.args.FromAddress(v))
 }
 
 func (f *RemoveAllowedStateControllerAddressFunc) Post() wasmclient.Request {
@@ -109,7 +109,7 @@ type RotateStateControllerFunc struct {
 }
 
 func (f *RotateStateControllerFunc) StateControllerAddress(v wasmclient.Address) {
-	f.args.SetAddress(ArgStateControllerAddress, v)
+	f.args.Set(ArgStateControllerAddress, f.args.FromAddress(v))
 }
 
 func (f *RotateStateControllerFunc) Post() wasmclient.Request {
@@ -125,23 +125,23 @@ type SetChainInfoFunc struct {
 }
 
 func (f *SetChainInfoFunc) MaxBlobSize(v int32) {
-	f.args.SetInt32(ArgMaxBlobSize, v)
+	f.args.Set(ArgMaxBlobSize, f.args.FromInt32(v))
 }
 
 func (f *SetChainInfoFunc) MaxEventSize(v int16) {
-	f.args.SetInt16(ArgMaxEventSize, v)
+	f.args.Set(ArgMaxEventSize, f.args.FromInt16(v))
 }
 
 func (f *SetChainInfoFunc) MaxEventsPerReq(v int16) {
-	f.args.SetInt16(ArgMaxEventsPerReq, v)
+	f.args.Set(ArgMaxEventsPerReq, f.args.FromInt16(v))
 }
 
 func (f *SetChainInfoFunc) OwnerFee(v int64) {
-	f.args.SetInt64(ArgOwnerFee, v)
+	f.args.Set(ArgOwnerFee, f.args.FromInt64(v))
 }
 
 func (f *SetChainInfoFunc) ValidatorFee(v int64) {
-	f.args.SetInt64(ArgValidatorFee, v)
+	f.args.Set(ArgValidatorFee, f.args.FromInt64(v))
 }
 
 func (f *SetChainInfoFunc) Post() wasmclient.Request {
@@ -156,15 +156,15 @@ type SetContractFeeFunc struct {
 }
 
 func (f *SetContractFeeFunc) Hname(v wasmclient.Hname) {
-	f.args.SetHname(ArgHname, v)
+	f.args.Set(ArgHname, f.args.FromHname(v))
 }
 
 func (f *SetContractFeeFunc) OwnerFee(v int64) {
-	f.args.SetInt64(ArgOwnerFee, v)
+	f.args.Set(ArgOwnerFee, f.args.FromInt64(v))
 }
 
 func (f *SetContractFeeFunc) ValidatorFee(v int64) {
-	f.args.SetInt64(ArgValidatorFee, v)
+	f.args.Set(ArgValidatorFee, f.args.FromInt64(v))
 }
 
 func (f *SetContractFeeFunc) Post() wasmclient.Request {
@@ -180,11 +180,11 @@ type SetDefaultFeeFunc struct {
 }
 
 func (f *SetDefaultFeeFunc) OwnerFee(v int64) {
-	f.args.SetInt64(ArgOwnerFee, v)
+	f.args.Set(ArgOwnerFee, f.args.FromInt64(v))
 }
 
 func (f *SetDefaultFeeFunc) ValidatorFee(v int64) {
-	f.args.SetInt64(ArgValidatorFee, v)
+	f.args.Set(ArgValidatorFee, f.args.FromInt64(v))
 }
 
 func (f *SetDefaultFeeFunc) Post() wasmclient.Request {
@@ -207,7 +207,7 @@ type GetAllowedStateControllerAddressesResults struct {
 }
 
 func (r *GetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() []byte {
-	return r.res.GetBytes(ResAllowedStateControllerAddresses)
+	return r.res.ToBytes(r.res.Get(ResAllowedStateControllerAddresses))
 }
 
 ///////////////////////////// getChainInfo /////////////////////////////
@@ -226,39 +226,39 @@ type GetChainInfoResults struct {
 }
 
 func (r *GetChainInfoResults) ChainID() wasmclient.ChainID {
-	return r.res.GetChainID(ResChainID)
+	return r.res.ToChainID(r.res.Get(ResChainID))
 }
 
 func (r *GetChainInfoResults) ChainOwnerID() wasmclient.AgentID {
-	return r.res.GetAgentID(ResChainOwnerID)
+	return r.res.ToAgentID(r.res.Get(ResChainOwnerID))
 }
 
 func (r *GetChainInfoResults) DefaultOwnerFee() int64 {
-	return r.res.GetInt64(ResDefaultOwnerFee)
+	return r.res.ToInt64(r.res.Get(ResDefaultOwnerFee))
 }
 
 func (r *GetChainInfoResults) DefaultValidatorFee() int64 {
-	return r.res.GetInt64(ResDefaultValidatorFee)
+	return r.res.ToInt64(r.res.Get(ResDefaultValidatorFee))
 }
 
 func (r *GetChainInfoResults) Description() string {
-	return r.res.GetString(ResDescription)
+	return r.res.ToString(r.res.Get(ResDescription))
 }
 
 func (r *GetChainInfoResults) FeeColor() wasmclient.Color {
-	return r.res.GetColor(ResFeeColor)
+	return r.res.ToColor(r.res.Get(ResFeeColor))
 }
 
 func (r *GetChainInfoResults) MaxBlobSize() int32 {
-	return r.res.GetInt32(ResMaxBlobSize)
+	return r.res.ToInt32(r.res.Get(ResMaxBlobSize))
 }
 
 func (r *GetChainInfoResults) MaxEventSize() int16 {
-	return r.res.GetInt16(ResMaxEventSize)
+	return r.res.ToInt16(r.res.Get(ResMaxEventSize))
 }
 
 func (r *GetChainInfoResults) MaxEventsPerReq() int16 {
-	return r.res.GetInt16(ResMaxEventsPerReq)
+	return r.res.ToInt16(r.res.Get(ResMaxEventsPerReq))
 }
 
 ///////////////////////////// getFeeInfo /////////////////////////////
@@ -269,7 +269,7 @@ type GetFeeInfoView struct {
 }
 
 func (f *GetFeeInfoView) Hname(v wasmclient.Hname) {
-	f.args.SetHname(ArgHname, v)
+	f.args.Set(ArgHname, f.args.FromHname(v))
 }
 
 func (f *GetFeeInfoView) Call() GetFeeInfoResults {
@@ -283,15 +283,15 @@ type GetFeeInfoResults struct {
 }
 
 func (r *GetFeeInfoResults) FeeColor() wasmclient.Color {
-	return r.res.GetColor(ResFeeColor)
+	return r.res.ToColor(r.res.Get(ResFeeColor))
 }
 
 func (r *GetFeeInfoResults) OwnerFee() int64 {
-	return r.res.GetInt64(ResOwnerFee)
+	return r.res.ToInt64(r.res.Get(ResOwnerFee))
 }
 
 func (r *GetFeeInfoResults) ValidatorFee() int64 {
-	return r.res.GetInt64(ResValidatorFee)
+	return r.res.ToInt64(r.res.Get(ResValidatorFee))
 }
 
 ///////////////////////////// getMaxBlobSize /////////////////////////////
@@ -310,7 +310,7 @@ type GetMaxBlobSizeResults struct {
 }
 
 func (r *GetMaxBlobSizeResults) MaxBlobSize() int32 {
-	return r.res.GetInt32(ResMaxBlobSize)
+	return r.res.ToInt32(r.res.Get(ResMaxBlobSize))
 }
 
 ///////////////////////////// CoreGovernanceService /////////////////////////////

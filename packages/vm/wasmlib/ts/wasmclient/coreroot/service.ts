@@ -23,15 +23,15 @@ export class DeployContractFunc extends wasmclient.ClientFunc {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public description(v: string): void {
-		this.args.setString(ArgDescription, v);
+		this.args.set(ArgDescription, this.args.fromString(v));
 	}
 	
 	public name(v: string): void {
-		this.args.setString(ArgName, v);
+		this.args.set(ArgName, this.args.fromString(v));
 	}
 	
 	public programHash(v: wasmclient.Hash): void {
-		this.args.setHash(ArgProgramHash, v);
+		this.args.set(ArgProgramHash, this.args.fromHash(v));
 	}
 	
 	public async post(): Promise<wasmclient.RequestID> {
@@ -47,7 +47,7 @@ export class GrantDeployPermissionFunc extends wasmclient.ClientFunc {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public deployer(v: wasmclient.AgentID): void {
-		this.args.setAgentID(ArgDeployer, v);
+		this.args.set(ArgDeployer, this.args.fromAgentID(v));
 	}
 	
 	public async post(): Promise<wasmclient.RequestID> {
@@ -62,7 +62,7 @@ export class RevokeDeployPermissionFunc extends wasmclient.ClientFunc {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public deployer(v: wasmclient.AgentID): void {
-		this.args.setAgentID(ArgDeployer, v);
+		this.args.set(ArgDeployer, this.args.fromAgentID(v));
 	}
 	
 	public async post(): Promise<wasmclient.RequestID> {
@@ -77,23 +77,25 @@ export class FindContractView extends wasmclient.ClientView {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public hname(v: wasmclient.Hname): void {
-		this.args.setHname(ArgHname, v);
+		this.args.set(ArgHname, this.args.fromHname(v));
 	}
 
 	public async call(): Promise<FindContractResults> {
 		this.args.mandatory(ArgHname);
-		return new FindContractResults(await this.callView("findContract", this.args));
+        const res = new FindContractResults();
+		await this.callView("findContract", this.args, res);
+		return res;
 	}
 }
 
-export class FindContractResults extends wasmclient.ViewResults {
+export class FindContractResults extends wasmclient.Results {
 
 	contractFound(): wasmclient.Bytes {
-		return this.res.getBytes(ResContractFound);
+		return this.toBytes(this.get(ResContractFound));
 	}
 
 	contractRecData(): wasmclient.Bytes {
-		return this.res.getBytes(ResContractRecData);
+		return this.toBytes(this.get(ResContractRecData));
 	}
 }
 
@@ -102,16 +104,18 @@ export class FindContractResults extends wasmclient.ViewResults {
 export class GetContractRecordsView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetContractRecordsResults> {
-		return new GetContractRecordsResults(await this.callView("getContractRecords", null));
+        const res = new GetContractRecordsResults();
+		await this.callView("getContractRecords", null, res);
+		return res;
 	}
 }
 
-export class GetContractRecordsResults extends wasmclient.ViewResults {
+export class GetContractRecordsResults extends wasmclient.Results {
 
 	contractRegistry(): Map<wasmclient.Hname, wasmclient.Bytes> {
-		const res = new Map();
-		this.res.forEach((key, val) => {
-			res.set(key, this.res.getBytes(val));
+		const res = new Map<wasmclient.Hname, wasmclient.Bytes>();
+		this.forEach((key, val) => {
+			res.set(this.toHname(key), this.toBytes(val));
 		});
 		return res;
 	}

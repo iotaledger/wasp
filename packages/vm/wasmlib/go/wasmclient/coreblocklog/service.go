@@ -43,15 +43,15 @@ type ControlAddressesResults struct {
 }
 
 func (r *ControlAddressesResults) BlockIndex() int32 {
-	return r.res.GetInt32(ResBlockIndex)
+	return r.res.ToInt32(r.res.Get(ResBlockIndex))
 }
 
 func (r *ControlAddressesResults) GoverningAddress() wasmclient.Address {
-	return r.res.GetAddress(ResGoverningAddress)
+	return r.res.ToAddress(r.res.Get(ResGoverningAddress))
 }
 
 func (r *ControlAddressesResults) StateControllerAddress() wasmclient.Address {
-	return r.res.GetAddress(ResStateControllerAddress)
+	return r.res.ToAddress(r.res.Get(ResStateControllerAddress))
 }
 
 ///////////////////////////// getBlockInfo /////////////////////////////
@@ -62,7 +62,7 @@ type GetBlockInfoView struct {
 }
 
 func (f *GetBlockInfoView) BlockIndex(v int32) {
-	f.args.SetInt32(ArgBlockIndex, v)
+	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
 }
 
 func (f *GetBlockInfoView) Call() GetBlockInfoResults {
@@ -76,7 +76,7 @@ type GetBlockInfoResults struct {
 }
 
 func (r *GetBlockInfoResults) BlockInfo() []byte {
-	return r.res.GetBytes(ResBlockInfo)
+	return r.res.ToBytes(r.res.Get(ResBlockInfo))
 }
 
 ///////////////////////////// getEventsForBlock /////////////////////////////
@@ -87,7 +87,7 @@ type GetEventsForBlockView struct {
 }
 
 func (f *GetEventsForBlockView) BlockIndex(v int32) {
-	f.args.SetInt32(ArgBlockIndex, v)
+	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
 }
 
 func (f *GetEventsForBlockView) Call() GetEventsForBlockResults {
@@ -101,7 +101,7 @@ type GetEventsForBlockResults struct {
 }
 
 func (r *GetEventsForBlockResults) Event() []byte {
-	return r.res.GetBytes(ResEvent)
+	return r.res.ToBytes(r.res.Get(ResEvent))
 }
 
 ///////////////////////////// getEventsForContract /////////////////////////////
@@ -112,15 +112,15 @@ type GetEventsForContractView struct {
 }
 
 func (f *GetEventsForContractView) ContractHname(v wasmclient.Hname) {
-	f.args.SetHname(ArgContractHname, v)
+	f.args.Set(ArgContractHname, f.args.FromHname(v))
 }
 
 func (f *GetEventsForContractView) FromBlock(v int32) {
-	f.args.SetInt32(ArgFromBlock, v)
+	f.args.Set(ArgFromBlock, f.args.FromInt32(v))
 }
 
 func (f *GetEventsForContractView) ToBlock(v int32) {
-	f.args.SetInt32(ArgToBlock, v)
+	f.args.Set(ArgToBlock, f.args.FromInt32(v))
 }
 
 func (f *GetEventsForContractView) Call() GetEventsForContractResults {
@@ -134,7 +134,7 @@ type GetEventsForContractResults struct {
 }
 
 func (r *GetEventsForContractResults) Event() []byte {
-	return r.res.GetBytes(ResEvent)
+	return r.res.ToBytes(r.res.Get(ResEvent))
 }
 
 ///////////////////////////// getEventsForRequest /////////////////////////////
@@ -145,7 +145,7 @@ type GetEventsForRequestView struct {
 }
 
 func (f *GetEventsForRequestView) RequestID(v wasmclient.RequestID) {
-	f.args.SetRequestID(ArgRequestID, v)
+	f.args.Set(ArgRequestID, f.args.FromRequestID(v))
 }
 
 func (f *GetEventsForRequestView) Call() GetEventsForRequestResults {
@@ -159,7 +159,7 @@ type GetEventsForRequestResults struct {
 }
 
 func (r *GetEventsForRequestResults) Event() []byte {
-	return r.res.GetBytes(ResEvent)
+	return r.res.ToBytes(r.res.Get(ResEvent))
 }
 
 ///////////////////////////// getLatestBlockInfo /////////////////////////////
@@ -178,11 +178,11 @@ type GetLatestBlockInfoResults struct {
 }
 
 func (r *GetLatestBlockInfoResults) BlockIndex() int32 {
-	return r.res.GetInt32(ResBlockIndex)
+	return r.res.ToInt32(r.res.Get(ResBlockIndex))
 }
 
 func (r *GetLatestBlockInfoResults) BlockInfo() []byte {
-	return r.res.GetBytes(ResBlockInfo)
+	return r.res.ToBytes(r.res.Get(ResBlockInfo))
 }
 
 ///////////////////////////// getRequestIDsForBlock /////////////////////////////
@@ -193,7 +193,7 @@ type GetRequestIDsForBlockView struct {
 }
 
 func (f *GetRequestIDsForBlockView) BlockIndex(v int32) {
-	f.args.SetInt32(ArgBlockIndex, v)
+	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
 }
 
 func (f *GetRequestIDsForBlockView) Call() GetRequestIDsForBlockResults {
@@ -207,7 +207,7 @@ type GetRequestIDsForBlockResults struct {
 }
 
 func (r *GetRequestIDsForBlockResults) RequestID() wasmclient.RequestID {
-	return r.res.GetRequestID(ResRequestID)
+	return r.res.ToRequestID(r.res.Get(ResRequestID))
 }
 
 ///////////////////////////// getRequestReceipt /////////////////////////////
@@ -218,7 +218,7 @@ type GetRequestReceiptView struct {
 }
 
 func (f *GetRequestReceiptView) RequestID(v wasmclient.RequestID) {
-	f.args.SetRequestID(ArgRequestID, v)
+	f.args.Set(ArgRequestID, f.args.FromRequestID(v))
 }
 
 func (f *GetRequestReceiptView) Call() GetRequestReceiptResults {
@@ -232,15 +232,15 @@ type GetRequestReceiptResults struct {
 }
 
 func (r *GetRequestReceiptResults) BlockIndex() int32 {
-	return r.res.GetInt32(ResBlockIndex)
+	return r.res.ToInt32(r.res.Get(ResBlockIndex))
 }
 
 func (r *GetRequestReceiptResults) RequestIndex() int16 {
-	return r.res.GetInt16(ResRequestIndex)
+	return r.res.ToInt16(r.res.Get(ResRequestIndex))
 }
 
 func (r *GetRequestReceiptResults) RequestRecord() []byte {
-	return r.res.GetBytes(ResRequestRecord)
+	return r.res.ToBytes(r.res.Get(ResRequestRecord))
 }
 
 ///////////////////////////// getRequestReceiptsForBlock /////////////////////////////
@@ -251,7 +251,7 @@ type GetRequestReceiptsForBlockView struct {
 }
 
 func (f *GetRequestReceiptsForBlockView) BlockIndex(v int32) {
-	f.args.SetInt32(ArgBlockIndex, v)
+	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
 }
 
 func (f *GetRequestReceiptsForBlockView) Call() GetRequestReceiptsForBlockResults {
@@ -265,7 +265,7 @@ type GetRequestReceiptsForBlockResults struct {
 }
 
 func (r *GetRequestReceiptsForBlockResults) RequestRecord() []byte {
-	return r.res.GetBytes(ResRequestRecord)
+	return r.res.ToBytes(r.res.Get(ResRequestRecord))
 }
 
 ///////////////////////////// isRequestProcessed /////////////////////////////
@@ -276,7 +276,7 @@ type IsRequestProcessedView struct {
 }
 
 func (f *IsRequestProcessedView) RequestID(v wasmclient.RequestID) {
-	f.args.SetRequestID(ArgRequestID, v)
+	f.args.Set(ArgRequestID, f.args.FromRequestID(v))
 }
 
 func (f *IsRequestProcessedView) Call() IsRequestProcessedResults {
@@ -290,7 +290,7 @@ type IsRequestProcessedResults struct {
 }
 
 func (r *IsRequestProcessedResults) RequestProcessed() string {
-	return r.res.GetString(ResRequestProcessed)
+	return r.res.ToString(r.res.Get(ResRequestProcessed))
 }
 
 ///////////////////////////// CoreBlockLogService /////////////////////////////

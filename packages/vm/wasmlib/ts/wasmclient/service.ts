@@ -25,12 +25,13 @@ export class Service {
         }
     }
 
-    public async callView(viewName: string, args: wasmclient.Arguments): Promise<wasmclient.Results> {
-        return await this.serviceClient.waspClient.callView(
+    public async callView(viewName: string, args: wasmclient.Arguments, res: wasmclient.Results): Promise<void> {
+        await this.serviceClient.waspClient.callView(
             this.serviceClient.configuration.chainId,
             this.scHname.toString(16),
             viewName,
-            args.encodeCall()
+            args.encodeCall(),
+            res
         );
     }
 

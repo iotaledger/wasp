@@ -37,25 +37,20 @@ export class WaspClient {
         else this.waspAPI = "http://" + waspAPI;
     }
 
-    public async callView(chainID: string, contractHName: string, entryPoint: string, args: Items): Promise<wasmclient.Results> {
+    public async callView(chainID: string, contractHName: string, entryPoint: string, args: Items, res: wasmclient.Results): Promise<void> {
         const result = await requestSender.sendRequestExt<unknown, ICallViewResponse>(
             this.waspAPI,
             "post",
             `/chain/${chainID}/contract/${contractHName}/callview/${entryPoint}`,
             args
         );
-        const res = new wasmclient.Results();
-
         if (result?.body !== null && result.body.Items) {
             for (const item of result.body.Items) {
                 const key = Buffer.from(item.Key, "base64");
                 const val = Buffer.from(item.Value, "base64");
-                const stringKey = key.toString()
-                res.res.set(stringKey, val);
-                res.keys.set(stringKey, key);
+                res.set(key, val);
             }
         }
-        return res;
     }
 
     public async postRequest(chainID: string, offLedgerRequest: Buffer): Promise<void> {

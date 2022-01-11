@@ -51,7 +51,7 @@ type ArrayClearFunc struct {
 }
 
 func (f *ArrayClearFunc) Name(v string) {
-	f.args.SetString(ArgName, v)
+	f.args.Set(ArgName, f.args.FromString(v))
 }
 
 func (f *ArrayClearFunc) Post() wasmclient.Request {
@@ -67,7 +67,7 @@ type ArrayCreateFunc struct {
 }
 
 func (f *ArrayCreateFunc) Name(v string) {
-	f.args.SetString(ArgName, v)
+	f.args.Set(ArgName, f.args.FromString(v))
 }
 
 func (f *ArrayCreateFunc) Post() wasmclient.Request {
@@ -83,15 +83,15 @@ type ArraySetFunc struct {
 }
 
 func (f *ArraySetFunc) Index(v int32) {
-	f.args.SetInt32(ArgIndex, v)
+	f.args.Set(ArgIndex, f.args.FromInt32(v))
 }
 
 func (f *ArraySetFunc) Name(v string) {
-	f.args.SetString(ArgName, v)
+	f.args.Set(ArgName, f.args.FromString(v))
 }
 
 func (f *ArraySetFunc) Value(v string) {
-	f.args.SetString(ArgValue, v)
+	f.args.Set(ArgValue, f.args.FromString(v))
 }
 
 func (f *ArraySetFunc) Post() wasmclient.Request {
@@ -109,79 +109,79 @@ type ParamTypesFunc struct {
 }
 
 func (f *ParamTypesFunc) Address(v wasmclient.Address) {
-	f.args.SetAddress(ArgAddress, v)
+	f.args.Set(ArgAddress, f.args.FromAddress(v))
 }
 
 func (f *ParamTypesFunc) AgentID(v wasmclient.AgentID) {
-	f.args.SetAgentID(ArgAgentID, v)
+	f.args.Set(ArgAgentID, f.args.FromAgentID(v))
 }
 
 func (f *ParamTypesFunc) Bool(v bool) {
-	f.args.SetBool(ArgBool, v)
+	f.args.Set(ArgBool, f.args.FromBool(v))
 }
 
 func (f *ParamTypesFunc) Bytes(v []byte) {
-	f.args.SetBytes(ArgBytes, v)
+	f.args.Set(ArgBytes, f.args.FromBytes(v))
 }
 
 func (f *ParamTypesFunc) ChainID(v wasmclient.ChainID) {
-	f.args.SetChainID(ArgChainID, v)
+	f.args.Set(ArgChainID, f.args.FromChainID(v))
 }
 
 func (f *ParamTypesFunc) Color(v wasmclient.Color) {
-	f.args.SetColor(ArgColor, v)
+	f.args.Set(ArgColor, f.args.FromColor(v))
 }
 
 func (f *ParamTypesFunc) Hash(v wasmclient.Hash) {
-	f.args.SetHash(ArgHash, v)
+	f.args.Set(ArgHash, f.args.FromHash(v))
 }
 
 func (f *ParamTypesFunc) Hname(v wasmclient.Hname) {
-	f.args.SetHname(ArgHname, v)
+	f.args.Set(ArgHname, f.args.FromHname(v))
 }
 
 func (f *ParamTypesFunc) Int16(v int16) {
-	f.args.SetInt16(ArgInt16, v)
+	f.args.Set(ArgInt16, f.args.FromInt16(v))
 }
 
 func (f *ParamTypesFunc) Int32(v int32) {
-	f.args.SetInt32(ArgInt32, v)
+	f.args.Set(ArgInt32, f.args.FromInt32(v))
 }
 
 func (f *ParamTypesFunc) Int64(v int64) {
-	f.args.SetInt64(ArgInt64, v)
+	f.args.Set(ArgInt64, f.args.FromInt64(v))
 }
 
 func (f *ParamTypesFunc) Int8(v int8) {
-	f.args.SetInt8(ArgInt8, v)
+	f.args.Set(ArgInt8, f.args.FromInt8(v))
 }
 
 func (f *ParamTypesFunc) Param(v []byte) {
-	f.args.SetBytes(ArgParam, v)
+	f.args.Set(ArgParam, f.args.FromBytes(v))
 }
 
 func (f *ParamTypesFunc) RequestID(v wasmclient.RequestID) {
-	f.args.SetRequestID(ArgRequestID, v)
+	f.args.Set(ArgRequestID, f.args.FromRequestID(v))
 }
 
 func (f *ParamTypesFunc) String(v string) {
-	f.args.SetString(ArgString, v)
+	f.args.Set(ArgString, f.args.FromString(v))
 }
 
 func (f *ParamTypesFunc) Uint16(v uint16) {
-	f.args.SetUint16(ArgUint16, v)
+	f.args.Set(ArgUint16, f.args.FromUint16(v))
 }
 
 func (f *ParamTypesFunc) Uint32(v uint32) {
-	f.args.SetUint32(ArgUint32, v)
+	f.args.Set(ArgUint32, f.args.FromUint32(v))
 }
 
 func (f *ParamTypesFunc) Uint64(v uint64) {
-	f.args.SetUint64(ArgUint64, v)
+	f.args.Set(ArgUint64, f.args.FromUint64(v))
 }
 
 func (f *ParamTypesFunc) Uint8(v uint8) {
-	f.args.SetUint8(ArgUint8, v)
+	f.args.Set(ArgUint8, f.args.FromUint8(v))
 }
 
 func (f *ParamTypesFunc) Post() wasmclient.Request {
@@ -206,11 +206,11 @@ type TriggerEventFunc struct {
 }
 
 func (f *TriggerEventFunc) Address(v wasmclient.Address) {
-	f.args.SetAddress(ArgAddress, v)
+	f.args.Set(ArgAddress, f.args.FromAddress(v))
 }
 
 func (f *TriggerEventFunc) Name(v string) {
-	f.args.SetString(ArgName, v)
+	f.args.Set(ArgName, f.args.FromString(v))
 }
 
 func (f *TriggerEventFunc) Post() wasmclient.Request {
@@ -227,7 +227,7 @@ type ArrayLengthView struct {
 }
 
 func (f *ArrayLengthView) Name(v string) {
-	f.args.SetString(ArgName, v)
+	f.args.Set(ArgName, f.args.FromString(v))
 }
 
 func (f *ArrayLengthView) Call() ArrayLengthResults {
@@ -241,7 +241,7 @@ type ArrayLengthResults struct {
 }
 
 func (r *ArrayLengthResults) Length() int32 {
-	return r.res.GetInt32(ResLength)
+	return r.res.ToInt32(r.res.Get(ResLength))
 }
 
 ///////////////////////////// arrayValue /////////////////////////////
@@ -252,11 +252,11 @@ type ArrayValueView struct {
 }
 
 func (f *ArrayValueView) Index(v int32) {
-	f.args.SetInt32(ArgIndex, v)
+	f.args.Set(ArgIndex, f.args.FromInt32(v))
 }
 
 func (f *ArrayValueView) Name(v string) {
-	f.args.SetString(ArgName, v)
+	f.args.Set(ArgName, f.args.FromString(v))
 }
 
 func (f *ArrayValueView) Call() ArrayValueResults {
@@ -271,7 +271,7 @@ type ArrayValueResults struct {
 }
 
 func (r *ArrayValueResults) Value() string {
-	return r.res.GetString(ResValue)
+	return r.res.ToString(r.res.Get(ResValue))
 }
 
 ///////////////////////////// blockRecord /////////////////////////////
@@ -282,11 +282,11 @@ type BlockRecordView struct {
 }
 
 func (f *BlockRecordView) BlockIndex(v int32) {
-	f.args.SetInt32(ArgBlockIndex, v)
+	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
 }
 
 func (f *BlockRecordView) RecordIndex(v int32) {
-	f.args.SetInt32(ArgRecordIndex, v)
+	f.args.Set(ArgRecordIndex, f.args.FromInt32(v))
 }
 
 func (f *BlockRecordView) Call() BlockRecordResults {
@@ -301,7 +301,7 @@ type BlockRecordResults struct {
 }
 
 func (r *BlockRecordResults) Record() []byte {
-	return r.res.GetBytes(ResRecord)
+	return r.res.ToBytes(r.res.Get(ResRecord))
 }
 
 ///////////////////////////// blockRecords /////////////////////////////
@@ -312,7 +312,7 @@ type BlockRecordsView struct {
 }
 
 func (f *BlockRecordsView) BlockIndex(v int32) {
-	f.args.SetInt32(ArgBlockIndex, v)
+	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
 }
 
 func (f *BlockRecordsView) Call() BlockRecordsResults {
@@ -326,7 +326,7 @@ type BlockRecordsResults struct {
 }
 
 func (r *BlockRecordsResults) Count() int32 {
-	return r.res.GetInt32(ResCount)
+	return r.res.ToInt32(r.res.Get(ResCount))
 }
 
 ///////////////////////////// getRandom /////////////////////////////
@@ -345,7 +345,7 @@ type GetRandomResults struct {
 }
 
 func (r *GetRandomResults) Random() int64 {
-	return r.res.GetInt64(ResRandom)
+	return r.res.ToInt64(r.res.Get(ResRandom))
 }
 
 ///////////////////////////// iotaBalance /////////////////////////////
@@ -364,7 +364,7 @@ type IotaBalanceResults struct {
 }
 
 func (r *IotaBalanceResults) Iotas() int64 {
-	return r.res.GetInt64(ResIotas)
+	return r.res.ToInt64(r.res.Get(ResIotas))
 }
 
 ///////////////////////////// TestWasmLibService /////////////////////////////

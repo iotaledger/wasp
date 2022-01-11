@@ -10,10 +10,10 @@ export class ClientView {
         this.svc = svc;
     }
 
-    protected async callView(viewName: string, args: wasmclient.Arguments | null): Promise<wasmclient.Results> {
+    protected async callView(viewName: string, args: wasmclient.Arguments | null, res: wasmclient.Results): Promise<void> {
         if (args == null) {
             args = new wasmclient.Arguments();
         }
-        return await this.svc.callView(viewName, args);
+        await this.svc.callView(viewName, args, res);
     }
 }

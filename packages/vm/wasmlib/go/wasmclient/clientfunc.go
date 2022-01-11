@@ -25,7 +25,10 @@ func (f *ClientFunc) Post(hFuncName uint32, args *Arguments) Request {
 	if keyPair == nil {
 		keyPair = f.svc.keyPair
 	}
-	return f.svc.PostRequest(hFuncName, args, f.xfer, keyPair, f.onLedger)
+	if args == nil {
+		args = &Arguments{}
+	}
+	return f.svc.PostRequest(hFuncName, args.args, f.xfer, keyPair, f.onLedger)
 }
 
 // Sign optionally overrides the default keypair from the service

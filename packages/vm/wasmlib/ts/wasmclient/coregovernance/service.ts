@@ -36,15 +36,15 @@ export class AddAllowedStateControllerAddressFunc extends wasmclient.ClientFunc 
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public chainOwner(v: wasmclient.AgentID): void {
-		this.args.setAgentID(ArgChainOwner, v);
+		this.args.set(ArgChainOwner, this.args.fromAgentID(v));
 	}
 	
 	public feeColor(v: wasmclient.Color): void {
-		this.args.setColor(ArgFeeColor, v);
+		this.args.set(ArgFeeColor, this.args.fromColor(v));
 	}
 	
 	public stateControllerAddress(v: wasmclient.Address): void {
-		this.args.setAddress(ArgStateControllerAddress, v);
+		this.args.set(ArgStateControllerAddress, this.args.fromAddress(v));
 	}
 	
 	public async post(): Promise<wasmclient.RequestID> {
@@ -69,7 +69,7 @@ export class DelegateChainOwnershipFunc extends wasmclient.ClientFunc {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public chainOwner(v: wasmclient.AgentID): void {
-		this.args.setAgentID(ArgChainOwner, v);
+		this.args.set(ArgChainOwner, this.args.fromAgentID(v));
 	}
 	
 	public async post(): Promise<wasmclient.RequestID> {
@@ -84,7 +84,7 @@ export class RemoveAllowedStateControllerAddressFunc extends wasmclient.ClientFu
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public stateControllerAddress(v: wasmclient.Address): void {
-		this.args.setAddress(ArgStateControllerAddress, v);
+		this.args.set(ArgStateControllerAddress, this.args.fromAddress(v));
 	}
 	
 	public async post(): Promise<wasmclient.RequestID> {
@@ -99,7 +99,7 @@ export class RotateStateControllerFunc extends wasmclient.ClientFunc {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public stateControllerAddress(v: wasmclient.Address): void {
-		this.args.setAddress(ArgStateControllerAddress, v);
+		this.args.set(ArgStateControllerAddress, this.args.fromAddress(v));
 	}
 	
 	public async post(): Promise<wasmclient.RequestID> {
@@ -114,23 +114,23 @@ export class SetChainInfoFunc extends wasmclient.ClientFunc {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public maxBlobSize(v: wasmclient.Int32): void {
-		this.args.setInt32(ArgMaxBlobSize, v);
+		this.args.set(ArgMaxBlobSize, this.args.fromInt32(v));
 	}
 	
 	public maxEventSize(v: wasmclient.Int16): void {
-		this.args.setInt16(ArgMaxEventSize, v);
+		this.args.set(ArgMaxEventSize, this.args.fromInt16(v));
 	}
 	
 	public maxEventsPerReq(v: wasmclient.Int16): void {
-		this.args.setInt16(ArgMaxEventsPerReq, v);
+		this.args.set(ArgMaxEventsPerReq, this.args.fromInt16(v));
 	}
 	
 	public ownerFee(v: wasmclient.Int64): void {
-		this.args.setInt64(ArgOwnerFee, v);
+		this.args.set(ArgOwnerFee, this.args.fromInt64(v));
 	}
 	
 	public validatorFee(v: wasmclient.Int64): void {
-		this.args.setInt64(ArgValidatorFee, v);
+		this.args.set(ArgValidatorFee, this.args.fromInt64(v));
 	}
 	
 	public async post(): Promise<wasmclient.RequestID> {
@@ -144,15 +144,15 @@ export class SetContractFeeFunc extends wasmclient.ClientFunc {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public hname(v: wasmclient.Hname): void {
-		this.args.setHname(ArgHname, v);
+		this.args.set(ArgHname, this.args.fromHname(v));
 	}
 	
 	public ownerFee(v: wasmclient.Int64): void {
-		this.args.setInt64(ArgOwnerFee, v);
+		this.args.set(ArgOwnerFee, this.args.fromInt64(v));
 	}
 	
 	public validatorFee(v: wasmclient.Int64): void {
-		this.args.setInt64(ArgValidatorFee, v);
+		this.args.set(ArgValidatorFee, this.args.fromInt64(v));
 	}
 	
 	public async post(): Promise<wasmclient.RequestID> {
@@ -167,11 +167,11 @@ export class SetDefaultFeeFunc extends wasmclient.ClientFunc {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public ownerFee(v: wasmclient.Int64): void {
-		this.args.setInt64(ArgOwnerFee, v);
+		this.args.set(ArgOwnerFee, this.args.fromInt64(v));
 	}
 	
 	public validatorFee(v: wasmclient.Int64): void {
-		this.args.setInt64(ArgValidatorFee, v);
+		this.args.set(ArgValidatorFee, this.args.fromInt64(v));
 	}
 	
 	public async post(): Promise<wasmclient.RequestID> {
@@ -184,14 +184,16 @@ export class SetDefaultFeeFunc extends wasmclient.ClientFunc {
 export class GetAllowedStateControllerAddressesView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetAllowedStateControllerAddressesResults> {
-		return new GetAllowedStateControllerAddressesResults(await this.callView("getAllowedStateControllerAddresses", null));
+        const res = new GetAllowedStateControllerAddressesResults();
+		await this.callView("getAllowedStateControllerAddresses", null, res);
+		return res;
 	}
 }
 
-export class GetAllowedStateControllerAddressesResults extends wasmclient.ViewResults {
+export class GetAllowedStateControllerAddressesResults extends wasmclient.Results {
 
 	allowedStateControllerAddresses(): wasmclient.Bytes {
-		return this.res.getBytes(ResAllowedStateControllerAddresses);
+		return this.toBytes(this.get(ResAllowedStateControllerAddresses));
 	}
 }
 
@@ -200,46 +202,48 @@ export class GetAllowedStateControllerAddressesResults extends wasmclient.ViewRe
 export class GetChainInfoView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetChainInfoResults> {
-		return new GetChainInfoResults(await this.callView("getChainInfo", null));
+        const res = new GetChainInfoResults();
+		await this.callView("getChainInfo", null, res);
+		return res;
 	}
 }
 
-export class GetChainInfoResults extends wasmclient.ViewResults {
+export class GetChainInfoResults extends wasmclient.Results {
 
 	chainID(): wasmclient.ChainID {
-		return this.res.getChainID(ResChainID);
+		return this.toChainID(this.get(ResChainID));
 	}
 
 	chainOwnerID(): wasmclient.AgentID {
-		return this.res.getAgentID(ResChainOwnerID);
+		return this.toAgentID(this.get(ResChainOwnerID));
 	}
 
 	defaultOwnerFee(): wasmclient.Int64 {
-		return this.res.getInt64(ResDefaultOwnerFee);
+		return this.toInt64(this.get(ResDefaultOwnerFee));
 	}
 
 	defaultValidatorFee(): wasmclient.Int64 {
-		return this.res.getInt64(ResDefaultValidatorFee);
+		return this.toInt64(this.get(ResDefaultValidatorFee));
 	}
 
 	description(): string {
-		return this.res.getString(ResDescription);
+		return this.toString(this.get(ResDescription));
 	}
 
 	feeColor(): wasmclient.Color {
-		return this.res.getColor(ResFeeColor);
+		return this.toColor(this.get(ResFeeColor));
 	}
 
 	maxBlobSize(): wasmclient.Int32 {
-		return this.res.getInt32(ResMaxBlobSize);
+		return this.toInt32(this.get(ResMaxBlobSize));
 	}
 
 	maxEventSize(): wasmclient.Int16 {
-		return this.res.getInt16(ResMaxEventSize);
+		return this.toInt16(this.get(ResMaxEventSize));
 	}
 
 	maxEventsPerReq(): wasmclient.Int16 {
-		return this.res.getInt16(ResMaxEventsPerReq);
+		return this.toInt16(this.get(ResMaxEventsPerReq));
 	}
 }
 
@@ -249,27 +253,29 @@ export class GetFeeInfoView extends wasmclient.ClientView {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
 	public hname(v: wasmclient.Hname): void {
-		this.args.setHname(ArgHname, v);
+		this.args.set(ArgHname, this.args.fromHname(v));
 	}
 
 	public async call(): Promise<GetFeeInfoResults> {
 		this.args.mandatory(ArgHname);
-		return new GetFeeInfoResults(await this.callView("getFeeInfo", this.args));
+        const res = new GetFeeInfoResults();
+		await this.callView("getFeeInfo", this.args, res);
+		return res;
 	}
 }
 
-export class GetFeeInfoResults extends wasmclient.ViewResults {
+export class GetFeeInfoResults extends wasmclient.Results {
 
 	feeColor(): wasmclient.Color {
-		return this.res.getColor(ResFeeColor);
+		return this.toColor(this.get(ResFeeColor));
 	}
 
 	ownerFee(): wasmclient.Int64 {
-		return this.res.getInt64(ResOwnerFee);
+		return this.toInt64(this.get(ResOwnerFee));
 	}
 
 	validatorFee(): wasmclient.Int64 {
-		return this.res.getInt64(ResValidatorFee);
+		return this.toInt64(this.get(ResValidatorFee));
 	}
 }
 
@@ -278,14 +284,16 @@ export class GetFeeInfoResults extends wasmclient.ViewResults {
 export class GetMaxBlobSizeView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetMaxBlobSizeResults> {
-		return new GetMaxBlobSizeResults(await this.callView("getMaxBlobSize", null));
+        const res = new GetMaxBlobSizeResults();
+		await this.callView("getMaxBlobSize", null, res);
+		return res;
 	}
 }
 
-export class GetMaxBlobSizeResults extends wasmclient.ViewResults {
+export class GetMaxBlobSizeResults extends wasmclient.Results {
 
 	maxBlobSize(): wasmclient.Int32 {
-		return this.res.getInt32(ResMaxBlobSize);
+		return this.toInt32(this.get(ResMaxBlobSize));
 	}
 }
 

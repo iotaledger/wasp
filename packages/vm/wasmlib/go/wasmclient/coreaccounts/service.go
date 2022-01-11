@@ -27,7 +27,7 @@ type DepositFunc struct {
 }
 
 func (f *DepositFunc) AgentID(v wasmclient.AgentID) {
-	f.args.SetAgentID(ArgAgentID, v)
+	f.args.Set(ArgAgentID, f.args.FromAgentID(v))
 }
 
 func (f *DepositFunc) Post() wasmclient.Request {
@@ -42,11 +42,11 @@ type HarvestFunc struct {
 }
 
 func (f *HarvestFunc) WithdrawAmount(v int64) {
-	f.args.SetInt64(ArgWithdrawAmount, v)
+	f.args.Set(ArgWithdrawAmount, f.args.FromInt64(v))
 }
 
 func (f *HarvestFunc) WithdrawColor(v wasmclient.Color) {
-	f.args.SetColor(ArgWithdrawColor, v)
+	f.args.Set(ArgWithdrawColor, f.args.FromColor(v))
 }
 
 func (f *HarvestFunc) Post() wasmclient.Request {
@@ -80,8 +80,8 @@ type AccountsResults struct {
 
 func (r *AccountsResults) Agents() map[wasmclient.AgentID][]byte {
 	res := make(map[wasmclient.AgentID][]byte)
-	r.res.ForEach(func(key string, val string) {
-		res[wasmclient.AgentID(key)] = r.res.GetBytes(val)
+	r.res.ForEach(func(key []byte, val []byte) {
+		res[r.res.ToAgentID(key)] = r.res.ToBytes(val)
 	})
 	return res
 }
@@ -94,7 +94,7 @@ type BalanceView struct {
 }
 
 func (f *BalanceView) AgentID(v wasmclient.AgentID) {
-	f.args.SetAgentID(ArgAgentID, v)
+	f.args.Set(ArgAgentID, f.args.FromAgentID(v))
 }
 
 func (f *BalanceView) Call() BalanceResults {
@@ -109,8 +109,8 @@ type BalanceResults struct {
 
 func (r *BalanceResults) Balances() map[wasmclient.Color]int64 {
 	res := make(map[wasmclient.Color]int64)
-	r.res.ForEach(func(key string, val string) {
-		res[wasmclient.Color(key)] = r.res.GetInt64(val)
+	r.res.ForEach(func(key []byte, val []byte) {
+		res[r.res.ToColor(key)] = r.res.ToInt64(val)
 	})
 	return res
 }
@@ -123,7 +123,7 @@ type GetAccountNonceView struct {
 }
 
 func (f *GetAccountNonceView) AgentID(v wasmclient.AgentID) {
-	f.args.SetAgentID(ArgAgentID, v)
+	f.args.Set(ArgAgentID, f.args.FromAgentID(v))
 }
 
 func (f *GetAccountNonceView) Call() GetAccountNonceResults {
@@ -137,7 +137,7 @@ type GetAccountNonceResults struct {
 }
 
 func (r *GetAccountNonceResults) AccountNonce() int64 {
-	return r.res.GetInt64(ResAccountNonce)
+	return r.res.ToInt64(r.res.Get(ResAccountNonce))
 }
 
 ///////////////////////////// totalAssets /////////////////////////////
@@ -157,8 +157,8 @@ type TotalAssetsResults struct {
 
 func (r *TotalAssetsResults) Balances() map[wasmclient.Color]int64 {
 	res := make(map[wasmclient.Color]int64)
-	r.res.ForEach(func(key string, val string) {
-		res[wasmclient.Color(key)] = r.res.GetInt64(val)
+	r.res.ForEach(func(key []byte, val []byte) {
+		res[r.res.ToColor(key)] = r.res.ToInt64(val)
 	})
 	return res
 }

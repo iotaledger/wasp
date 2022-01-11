@@ -2,136 +2,30 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmclient from "./index"
-import {Base58} from "./crypto";
 import {Buffer} from "./buffer";
 
 // The Arguments struct is used to gather all arguments for this smart
 // contract function call and encode it into this deterministic byte array
-export class Arguments {
+export class Arguments extends wasmclient.Encoder {
     private args = new Map<string, wasmclient.Bytes>();
 
-    get(key: string): wasmclient.Bytes {
-        const bytes = this.args.get(key);
-        return bytes ?? Buffer.alloc(0);
-    }
+    // get(key: string): wasmclient.Bytes {
+    //     const bytes = this.args.get(key);
+    //     return bytes ?? Buffer.alloc(0);
+    // }
 
-    private set(key: string, val: wasmclient.Bytes): void {
+    public set(key: string, val: wasmclient.Bytes): void {
         this.args.set(key, val);
     }
 
-    private setBase58(key: string, val: string, typeID: wasmclient.Int32): void {
-        const bytes = Base58.decode(val);
-        if (bytes.length != wasmclient.TYPE_SIZES[typeID]) {
-            wasmclient.panic("invalid byte size");
-        }
-        this.set(key, bytes);
-    }
-
-    indexedKey(key: string, index: wasmclient.Int32): string {
+    public indexedKey(key: string, index: wasmclient.Int32): string {
         return key + "." + index.toString();
     }
 
-    mandatory(key: string): void {
+    public mandatory(key: string): void {
         if (!this.args.has(key)) {
             wasmclient.panic("missing mandatory " + key)
         }
-    }
-
-    setAddress(key: string, val: wasmclient.AgentID): void {
-        this.setBase58(key, val, wasmclient.TYPE_ADDRESS);
-    }
-
-    setAgentID(key: string, val: wasmclient.AgentID): void {
-        this.setBase58(key, val, wasmclient.TYPE_AGENT_ID);
-    }
-
-    setBool(key: string, val: boolean): void {
-        const bytes = Buffer.alloc(1);
-        if (val) {
-            bytes.writeUInt8(1, 0);
-        }
-        this.set(key, bytes)
-    }
-
-    setBytes(key: string, val: wasmclient.Bytes): void {
-        this.set(key, Buffer.from(val));
-    }
-
-    setColor(key: string, val: wasmclient.Color): void {
-        this.setBase58(key, val, wasmclient.TYPE_COLOR);
-    }
-
-    setChainID(key: string, val: wasmclient.ChainID): void {
-        this.setBase58(key, val, wasmclient.TYPE_CHAIN_ID);
-    }
-
-    setHash(key: string, val: wasmclient.Hash): void {
-        this.setBase58(key, val, wasmclient.TYPE_HASH);
-    }
-
-    setHname(key: string, val: wasmclient.Hname): void {
-        this.setUint32(key, val);
-    }
-
-    setInt8(key: string, val: wasmclient.Int8): void {
-        const bytes = Buffer.alloc(1);
-        bytes.writeInt8(val, 0);
-        this.set(key, bytes);
-    }
-
-    setInt16(key: string, val: wasmclient.Int16): void {
-        const bytes = Buffer.alloc(2);
-        bytes.writeInt16LE(val, 0);
-        this.set(key, bytes);
-    }
-
-    setInt32(key: string, val: wasmclient.Int32): void {
-        const bytes = Buffer.alloc(4);
-        bytes.writeInt32LE(val, 0);
-        this.set(key, bytes);
-    }
-
-    setInt64(key: string, val: wasmclient.Int64): void {
-        const bytes = Buffer.alloc(8);
-        bytes.writeBigInt64LE(val, 0);
-        this.set(key, bytes);
-    }
-
-    setRequestID(key: string, val: wasmclient.RequestID): void {
-        this.setBase58(key, val, wasmclient.TYPE_REQUEST_ID);
-    }
-
-    getString(key: string): string {
-        const bytes = this.get(key);
-        return bytes.toString();
-    }
-
-    setString(key: string, val: string): void {
-        this.set(key, Buffer.from(val));
-    }
-
-    setUint8(key: string, val: wasmclient.Uint8): void {
-        const bytes = Buffer.alloc(1);
-        bytes.writeUInt8(val, 0);
-        this.set(key, bytes);
-    }
-
-    setUint16(key: string, val: wasmclient.Uint16): void {
-        const bytes = Buffer.alloc(2);
-        bytes.writeUInt16LE(val, 0);
-        this.set(key, bytes);
-    }
-
-    setUint32(key: string, val: wasmclient.Uint32): void {
-        const bytes = Buffer.alloc(4);
-        bytes.writeUInt32LE(val, 0);
-        this.set(key, bytes);
-    }
-
-    setUint64(key: string, val: wasmclient.Uint64): void {
-        const bytes = Buffer.alloc(8);
-        bytes.writeBigUInt64LE(val, 0);
-        this.set(key, bytes);
     }
 
     // Encode returns a byte array that encodes the Arguments as follows:
@@ -140,7 +34,7 @@ export class Arguments {
     // be 100% deterministic). Then emit the 4-byte argument count.
     // Next for each argument emit the 2-byte key length, the key prepended
     // with the minus sign, the 4-byte value length, and then the value bytes.
-    encode(): wasmclient.Bytes {
+    public encode(): wasmclient.Bytes {
         const keys = new Array<string>();
         for (const key of this.args.keys()) {
             keys.push(key);
@@ -164,7 +58,7 @@ export class Arguments {
         return buf;
     }
 
-    encodeCall(): wasmclient.Items {
+    public encodeCall(): wasmclient.Items {
         let items = new wasmclient.Items()
         for (const [key, val] of this.args) {
             const k = Buffer.from(key).toString("base64");

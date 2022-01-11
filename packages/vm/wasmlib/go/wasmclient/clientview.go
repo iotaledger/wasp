@@ -3,16 +3,17 @@
 
 package wasmclient
 
-import "github.com/iotaledger/wasp/packages/kv/dict"
-
 type ClientView struct {
 	svc *Service
 	err error
-	res dict.Dict
+	res ResMap
 }
 
 func (v *ClientView) Call(viewName string, args *Arguments) {
-	v.res, v.err = v.svc.CallView(viewName, args)
+	if args == nil {
+		args = &Arguments{}
+	}
+	v.res, v.err = v.svc.CallView(viewName, args.args)
 }
 
 func (v *ClientView) Error() error {

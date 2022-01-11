@@ -24,8 +24,8 @@ func TransferTokens(color string, amount uint64) *Transfer {
 }
 
 func (t *Transfer) Set(color string, amount uint64) {
-	if color == "IOTA" {
-		color = "11111111111111111111111111111111"
+	if color == COLOR_IOTA {
+		color = COLOR_IOTA_BASE58
 	}
 	t.xfer[color] = amount
 }
