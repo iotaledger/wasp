@@ -25,3 +25,12 @@ func (c *WaspClient) GetChainNodeConnectionMetrics(chID *iscp.ChainID) (*model.N
 	}
 	return ncmm, nil
 }
+
+// GetNodeConnectionMetrics fetches a consensus workflow status by address
+func (c *WaspClient) GetChainConsensusWorkflowStatus(chID *iscp.ChainID) (*model.ConsensusWorkflowStatus, error) {
+	ncmm := &model.ConsensusWorkflowStatus{}
+	if err := c.do(http.MethodGet, routes.GetChainConsensusWorkflowStatus(chID.Base58()), nil, ncmm); err != nil {
+		return nil, err
+	}
+	return ncmm, nil
+}
