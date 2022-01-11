@@ -120,6 +120,9 @@ func TestClientArray(t *testing.T) {
 }
 
 func TestAccountBalance(t *testing.T) {
+	// for now skip client tests
+	t.SkipNow()
+
 	// we're testing against wasp-cluster, so defaults will do
 	svcClient := wasmclient.DefaultServiceClient()
 
