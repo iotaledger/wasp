@@ -310,7 +310,7 @@ func TestFoundryValidation(t *testing.T) {
 
 	t.Run("fail", func(t *testing.T) {
 		err := iotago.NativeTokenSumBalancedWithDiff(tokenID, inSums, outSumsBad, circSupplyChange)
-		require.Error(t, err) // <<<<<<<<<<<<<<<<<<< FIXME wrong
+		require.NoError(t, err)
 	})
 	t.Run("pass", func(t *testing.T) {
 		err := iotago.NativeTokenSumBalancedWithDiff(tokenID, inSums, outSumsGood, circSupplyChange)
@@ -544,8 +544,6 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.printBalances("AFTER DESTROY")
 	})
 	t.Run("BUG unwrap use case", func(t *testing.T) {
-		t.SkipNow()
-
 		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2AccountAssets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
@@ -568,8 +566,6 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 	})
 	t.Run("BUG unwrap use case", func(t *testing.T) {
-		t.SkipNow()
-
 		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2AccountAssets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
@@ -584,12 +580,10 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		err = v.ch.DestroyTokensOnL1(v.tokenID, 49, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER DESTROY")
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 1)
-		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 51)
 	})
-	t.Run("BUG mint withdraw destroy fail bug iotago", func(t *testing.T) {
-		t.SkipNow()
-
+	t.Run("mint withdraw destroy fail", func(t *testing.T) {
 		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2AccountAssets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
@@ -602,15 +596,16 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
 
 		err = v.ch.DepositAssets(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
+		require.NoError(t, err)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 50)
 		v.ch.AssertL2TotalNativeTokens(v.tokenID, 50)
 		v.printBalances("AFTER DEPOSIT")
-		// FIXME bug when destroying native tokens and outputs do not contain native tokens
-		//err = v.ch.DestroyTokensOnL2(sn, 50, v.user)
-		//require.NoError(t, err)
-		//v.ch.AssertL2AccountNativeToken(v.userAgentID, tokenID, 0)
-		//v.env.AssertL1NativeTokens(v.userAddr, tokenID, 50)
+
+		err = v.ch.DestroyTokensOnL2(v.sn, 50, v.user)
+		require.NoError(t, err)
+		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 	})
 
 }
@@ -649,4 +644,98 @@ func TestTransferAndHarvest(t *testing.T) {
 	// in the common account should have left minimum plus gas fee from the last request
 	require.EqualValues(t, accounts.MinimumIotasOnCommonAccount+receipt.GasFeeCharged, commonAssets.Iotas)
 	require.EqualValues(t, 0, len(commonAssets.Tokens))
+}
+
+func TestCirculatingSupplyBurn(t *testing.T) {
+	const OneMi = 1_000_000
+
+	_, ident1, ident1AddrKeys := tpkg.RandEd25519Identity()
+	aliasIdent1 := tpkg.RandAliasAddress()
+
+	tokenTag := tpkg.Rand12ByteArray()
+
+	inputIDs := tpkg.RandOutputIDs(3)
+	inputs := iotago.OutputSet{
+		inputIDs[0]: &iotago.ExtendedOutput{
+			Address: ident1,
+			Amount:  OneMi,
+		},
+		inputIDs[1]: &iotago.AliasOutput{
+			Amount:               OneMi,
+			NativeTokens:         nil,
+			AliasID:              aliasIdent1.AliasID(),
+			StateController:      ident1,
+			GovernanceController: ident1,
+			StateIndex:           1,
+			StateMetadata:        nil,
+			FoundryCounter:       1,
+			Blocks:               nil,
+		},
+		inputIDs[2]: &iotago.FoundryOutput{
+			Address:           aliasIdent1,
+			Amount:            OneMi,
+			NativeTokens:      nil,
+			SerialNumber:      1,
+			TokenTag:          tokenTag,
+			CirculatingSupply: big.NewInt(50),
+			MaximumSupply:     big.NewInt(50),
+			TokenScheme:       &iotago.SimpleTokenScheme{},
+			Blocks:            nil,
+		},
+	}
+
+	// set input ExtendedOutput NativeToken to 50 which get burned
+	foundryNativeTokenID := inputs[inputIDs[2]].(*iotago.FoundryOutput).MustNativeTokenID()
+	inputs[inputIDs[0]].(*iotago.ExtendedOutput).NativeTokens = iotago.NativeTokens{
+		{
+			ID:     foundryNativeTokenID,
+			Amount: new(big.Int).SetInt64(50),
+		},
+	}
+
+	essence := &iotago.TransactionEssence{
+		Inputs: inputIDs.UTXOInputs(),
+		Outputs: iotago.Outputs{
+			&iotago.AliasOutput{
+				Amount:               OneMi,
+				NativeTokens:         nil,
+				AliasID:              aliasIdent1.AliasID(),
+				StateController:      ident1,
+				GovernanceController: ident1,
+				StateIndex:           1,
+				StateMetadata:        nil,
+				FoundryCounter:       1,
+				Blocks:               nil,
+			},
+			&iotago.FoundryOutput{
+				Address:      aliasIdent1,
+				Amount:       2 * OneMi,
+				NativeTokens: nil,
+				SerialNumber: 1,
+				TokenTag:     tokenTag,
+				// burn supply by -50
+				CirculatingSupply: big.NewInt(0),
+				MaximumSupply:     big.NewInt(50),
+				TokenScheme:       &iotago.SimpleTokenScheme{},
+				Blocks:            nil,
+			},
+		},
+	}
+
+	sigs, err := essence.Sign(ident1AddrKeys)
+	require.NoError(t, err)
+
+	tx := &iotago.Transaction{
+		Essence: essence,
+		UnlockBlocks: iotago.UnlockBlocks{
+			&iotago.SignatureUnlockBlock{Signature: sigs[0]},
+			&iotago.ReferenceUnlockBlock{Reference: 0},
+			&iotago.AliasUnlockBlock{Reference: 1},
+		},
+	}
+
+	require.NoError(t, tx.SemanticallyValidate(&iotago.SemanticValidationContext{
+		ExtParas:   nil,
+		WorkingSet: nil,
+	}, inputs))
 }
