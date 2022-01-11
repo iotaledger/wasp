@@ -22,7 +22,7 @@ func (d *Dashboard) initMetrics(e *echo.Echo, r renderer) Tab {
 	route := e.GET("/metrics", d.handleMetrics)
 	route.Name = "metrics"
 
-	r[route.Path] = d.makeTemplate(e, tplMetrics)
+	r[route.Path] = d.makeTemplate(e, tplMetricsChain, tplMetrics)
 
 	return Tab{
 		Path:  route.Path,

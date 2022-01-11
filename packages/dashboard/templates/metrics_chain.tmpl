@@ -1,10 +1,15 @@
+{{define "metricsChainAll"}}
+	{{ $id := (index . 0) }}
+	<ul>
+		<li><a href="{{ uri "metricsChainNodeconn" $id }}"><code>Connection to L1</code></a></li>
+	</ul>
+{{end}}
+
 {{define "title"}}Chain  metrics{{end}}
 
 {{define "body"}}
 <div class="card fluid">
 	<h2 class="section">{{.ChainID}}</h2>
-	<ul>
-		<li><a href="{{ uri "metricsChainNodeconn" .ChainID }}"><code>Connection to L1</code></a></li>
-	</ul>
+	{{template "metricsChainAll" (args .ChainID)}}
 </div>
 {{end}}
