@@ -15,6 +15,7 @@ use crate::*;
 use crate::keys::*;
 use crate::structs::*;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableColor {
 	pub(crate) obj_id: i32,
 }
@@ -29,6 +30,7 @@ impl ArrayOfImmutableColor {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapColorToImmutableToken {
 	pub(crate) obj_id: i32,
 }
@@ -46,16 +48,17 @@ pub struct ImmutableTokenRegistryState {
 
 impl ImmutableTokenRegistryState {
     pub fn color_list(&self) -> ArrayOfImmutableColor {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_COLOR_LIST), TYPE_ARRAY | TYPE_COLOR);
+		let arr_id = get_object_id(self.id, STATE_COLOR_LIST.get_key_id(), TYPE_ARRAY | TYPE_COLOR);
 		ArrayOfImmutableColor { obj_id: arr_id }
 	}
 
     pub fn registry(&self) -> MapColorToImmutableToken {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_REGISTRY), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_REGISTRY.get_key_id(), TYPE_MAP);
 		MapColorToImmutableToken { obj_id: map_id }
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableColor {
 	pub(crate) obj_id: i32,
 }
@@ -74,6 +77,7 @@ impl ArrayOfMutableColor {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapColorToMutableToken {
 	pub(crate) obj_id: i32,
 }
@@ -94,13 +98,17 @@ pub struct MutableTokenRegistryState {
 }
 
 impl MutableTokenRegistryState {
+    pub fn as_immutable(&self) -> ImmutableTokenRegistryState {
+		ImmutableTokenRegistryState { id: self.id }
+	}
+
     pub fn color_list(&self) -> ArrayOfMutableColor {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_COLOR_LIST), TYPE_ARRAY | TYPE_COLOR);
+		let arr_id = get_object_id(self.id, STATE_COLOR_LIST.get_key_id(), TYPE_ARRAY | TYPE_COLOR);
 		ArrayOfMutableColor { obj_id: arr_id }
 	}
 
     pub fn registry(&self) -> MapColorToMutableToken {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_REGISTRY), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_REGISTRY.get_key_id(), TYPE_MAP);
 		MapColorToMutableToken { obj_id: map_id }
 	}
 }

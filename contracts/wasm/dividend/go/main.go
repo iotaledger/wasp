@@ -9,7 +9,7 @@
 
 package main
 
-import "github.com/iotaledger/wasp/packages/vm/wasmclient"
+import "github.com/iotaledger/wasp/packages/vm/wasmvmhost"
 
 import "github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
 
@@ -18,7 +18,7 @@ func main() {
 
 //export on_load
 func onLoad() {
-	h := &wasmclient.WasmVMHost{}
+	h := &wasmvmhost.WasmVMHost{}
 	h.ConnectWasmHost()
 	dividend.OnLoad()
 }

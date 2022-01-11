@@ -40,3 +40,27 @@ func (a ArrayOfMutableString) GetString(index int32) wasmlib.ScMutableString {
 }
 
 type MutableStringArray = ArrayOfMutableString
+
+type MapStringToImmutableString struct {
+	objID int32
+}
+
+func (m MapStringToImmutableString) GetString(key string) wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(m.objID, wasmlib.Key(key).KeyID())
+}
+
+type ImmutableStringMap = MapStringToImmutableString
+
+type MapStringToMutableString struct {
+	objID int32
+}
+
+func (m MapStringToMutableString) Clear() {
+	wasmlib.Clear(m.objID)
+}
+
+func (m MapStringToMutableString) GetString(key string) wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(m.objID, wasmlib.Key(key).KeyID())
+}
+
+type MutableStringMap = MapStringToMutableString

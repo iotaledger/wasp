@@ -3,7 +3,7 @@
 
 // +build wasm
 
-package wasmclient
+package wasmvmhost
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 

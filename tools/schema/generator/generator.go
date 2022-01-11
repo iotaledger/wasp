@@ -190,12 +190,12 @@ func (g *GenBase) generateCode() error {
 		return err
 	}
 	if !g.s.CoreContracts {
-		return g.generateFuncs()
+		return g.generateFuncs(g.appendFuncs)
 	}
 	return nil
 }
 
-func (g *GenBase) generateFuncs() error {
+func (g *GenBase) generateFuncs(appendFuncs func(existing model.StringMap)) error {
 	scFileName := g.folder + g.s.PackageName + g.extension
 	if g.exists(scFileName) != nil {
 		// generate initial SC function file
@@ -229,17 +229,21 @@ func (g *GenBase) generateFuncs() error {
 		}
 
 		// append any new funcs
-		for _, g.currentFunc = range g.s.Funcs {
-			if existing[g.funcName(g.currentFunc)] == "" {
-				g.setFuncKeys(false, 0, 0)
-				g.emit("funcSignature")
-			}
-		}
+		appendFuncs(existing)
 	})
 	if err != nil {
 		return err
 	}
 	return os.Remove(scOriginal)
+}
+
+func (g *GenBase) appendFuncs(existing model.StringMap) {
+	for _, g.currentFunc = range g.s.Funcs {
+		if existing[g.funcName(g.currentFunc)] == "" {
+			g.setFuncKeys(false, 0, 0)
+			g.emit("funcSignature")
+		}
+	}
 }
 
 func (g *GenBase) generateTests() error {

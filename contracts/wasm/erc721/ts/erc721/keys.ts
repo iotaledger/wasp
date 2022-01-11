@@ -18,21 +18,23 @@ export const IdxParamOwner    = 6;
 export const IdxParamSymbol   = 7;
 export const IdxParamTo       = 8;
 export const IdxParamTokenID  = 9;
+export const IdxParamTokenURI = 10;
 
-export const IdxResultAmount   = 10;
-export const IdxResultApproval = 11;
-export const IdxResultApproved = 12;
-export const IdxResultName     = 13;
-export const IdxResultOwner    = 14;
-export const IdxResultSymbol   = 15;
-export const IdxResultTokenURI = 16;
+export const IdxResultAmount   = 11;
+export const IdxResultApproval = 12;
+export const IdxResultApproved = 13;
+export const IdxResultName     = 14;
+export const IdxResultOwner    = 15;
+export const IdxResultSymbol   = 16;
+export const IdxResultTokenURI = 17;
 
-export const IdxStateApprovedAccounts  = 17;
-export const IdxStateApprovedOperators = 18;
-export const IdxStateBalances          = 19;
-export const IdxStateName              = 20;
-export const IdxStateOwners            = 21;
-export const IdxStateSymbol            = 22;
+export const IdxStateApprovedAccounts  = 18;
+export const IdxStateApprovedOperators = 19;
+export const IdxStateBalances          = 20;
+export const IdxStateName              = 21;
+export const IdxStateOwners            = 22;
+export const IdxStateSymbol            = 23;
+export const IdxStateTokenURIs         = 24;
 
 export let keyMap: string[] = [
 	sc.ParamApproval,
@@ -45,6 +47,7 @@ export let keyMap: string[] = [
 	sc.ParamSymbol,
 	sc.ParamTo,
 	sc.ParamTokenID,
+	sc.ParamTokenURI,
 	sc.ResultAmount,
 	sc.ResultApproval,
 	sc.ResultApproved,
@@ -58,6 +61,7 @@ export let keyMap: string[] = [
 	sc.StateName,
 	sc.StateOwners,
 	sc.StateSymbol,
+	sc.StateTokenURIs,
 ];
 
 export let idxMap: wasmlib.Key32[] = new Array(keyMap.length);

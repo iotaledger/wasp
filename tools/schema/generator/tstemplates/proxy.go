@@ -10,9 +10,14 @@ $#if map typedefProxyMap
 	"proxyMethods": `
 $#if separator newline
 $#set separator $true
-$#set varID sc.idxMap[sc.Idx$Kind$FldName]
+$#set varID wasmlib.Key32.fromString(sc.$Kind$FldName)
+$#if init setInitVarID
 $#if core setCoreVarID
 $#if array proxyArray proxyMethods2
+`,
+	// *******************************
+	"setInitVarID": `
+$#set varID sc.idxMap[sc.Idx$Kind$FldName]
 `,
 	// *******************************
 	"proxyMethods2": `

@@ -49,3 +49,37 @@ export class ArrayOfMutableString {
 
 export class MutableStringArray extends ArrayOfMutableString {
 };
+
+export class MapStringToImmutableString {
+	objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    getString(key: string): wasmlib.ScImmutableString {
+        return new wasmlib.ScImmutableString(this.objID, wasmlib.Key32.fromString(key));
+    }
+}
+
+export class ImmutableStringMap extends MapStringToImmutableString {
+};
+
+export class MapStringToMutableString {
+	objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    clear(): void {
+        wasmlib.clear(this.objID);
+    }
+
+    getString(key: string): wasmlib.ScMutableString {
+        return new wasmlib.ScMutableString(this.objID, wasmlib.Key32.fromString(key));
+    }
+}
+
+export class MutableStringMap extends MapStringToMutableString {
+};

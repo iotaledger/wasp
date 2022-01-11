@@ -18,17 +18,31 @@ func (m MapStringToImmutableStringArray) GetStringArray(key string) ImmutableStr
 	return ImmutableStringArray{objID: subID}
 }
 
+type MapStringToImmutableStringMap struct {
+	objID int32
+}
+
+func (m MapStringToImmutableStringMap) GetStringMap(key string) ImmutableStringMap {
+	subID := wasmlib.GetObjectID(m.objID, wasmlib.Key(key).KeyID(), wasmlib.TYPE_MAP)
+	return ImmutableStringMap{objID: subID}
+}
+
 type ImmutableTestWasmLibState struct {
 	id int32
 }
 
 func (s ImmutableTestWasmLibState) Arrays() MapStringToImmutableStringArray {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateArrays], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateArrays), wasmlib.TYPE_MAP)
 	return MapStringToImmutableStringArray{objID: mapID}
 }
 
+func (s ImmutableTestWasmLibState) Maps() MapStringToImmutableStringMap {
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateMaps), wasmlib.TYPE_MAP)
+	return MapStringToImmutableStringMap{objID: mapID}
+}
+
 func (s ImmutableTestWasmLibState) Random() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateRandom])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateRandom))
 }
 
 type MapStringToMutableStringArray struct {
@@ -44,15 +58,37 @@ func (m MapStringToMutableStringArray) GetStringArray(key string) MutableStringA
 	return MutableStringArray{objID: subID}
 }
 
+type MapStringToMutableStringMap struct {
+	objID int32
+}
+
+func (m MapStringToMutableStringMap) Clear() {
+	wasmlib.Clear(m.objID)
+}
+
+func (m MapStringToMutableStringMap) GetStringMap(key string) MutableStringMap {
+	subID := wasmlib.GetObjectID(m.objID, wasmlib.Key(key).KeyID(), wasmlib.TYPE_MAP)
+	return MutableStringMap{objID: subID}
+}
+
 type MutableTestWasmLibState struct {
 	id int32
 }
 
+func (s MutableTestWasmLibState) AsImmutable() ImmutableTestWasmLibState {
+	return ImmutableTestWasmLibState(s)
+}
+
 func (s MutableTestWasmLibState) Arrays() MapStringToMutableStringArray {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateArrays], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateArrays), wasmlib.TYPE_MAP)
 	return MapStringToMutableStringArray{objID: mapID}
 }
 
+func (s MutableTestWasmLibState) Maps() MapStringToMutableStringMap {
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateMaps), wasmlib.TYPE_MAP)
+	return MapStringToMutableStringMap{objID: mapID}
+}
+
 func (s MutableTestWasmLibState) Random() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateRandom])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateRandom))
 }

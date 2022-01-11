@@ -19,6 +19,6 @@ wasp-cli.json
 .DS_Store
 ./tools/wasp-cli/wasp-cli
 .docusaurus
-node_modules
+**/node_modules/
 goshimmer.log
 /*.sh
