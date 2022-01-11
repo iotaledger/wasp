@@ -190,17 +190,12 @@ func (c *chainObj) getChainDKShare(addr ledgerstate.Address) (*tcrypto.DKShare, 
 	if err != nil {
 		return nil, err
 	}
-	found := false
 	for i := range cmtDKShare.NodePubKeys {
 		if *cmtDKShare.NodePubKeys[i] == *selfPubKey {
-			found = true
-			break
+			return cmtDKShare, nil
 		}
 	}
-	if !found {
-		return nil, xerrors.Errorf("createCommitteeIfNeeded: I am not among nodes of the committee record. Inconsistency")
-	}
-	return cmtDKShare, nil
+	return nil, xerrors.Errorf("createCommitteeIfNeeded: I am not among nodes of the committee record. Inconsistency")
 }
 
 func (c *chainObj) createNewCommitteeAndConsensus(dkShare *tcrypto.DKShare) error {

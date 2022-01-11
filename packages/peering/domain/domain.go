@@ -76,47 +76,47 @@ func (d *DomainImpl) GetRandomOtherPeers(upToNumPeers int) []*ed25519.PublicKey 
 
 func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*ed25519.PublicKey) {
 	d.mutex.RLock()
-	nodes := make(map[ed25519.PublicKey]peering.PeerSender)
+	oldPeers := make(map[ed25519.PublicKey]peering.PeerSender) // A copy, to avoid keeping the lock.
 	for k, v := range d.nodes {
-		nodes[k] = v
+		oldPeers[k] = v
 	}
 	d.mutex.RUnlock()
+	nodes := make(map[ed25519.PublicKey]peering.PeerSender) // Will collect the new set of nodes.
 	changed := false
 	//
 	// Add new peers.
 	for _, newPeerPubKey := range newPeerPubKeys {
-		found := false
-		for _, existingPeer := range nodes {
-			if *existingPeer.PubKey() == *newPeerPubKey {
-				found = true
-				break
-			}
+		if _, isOldPeer := oldPeers[*newPeerPubKey]; isOldPeer {
+			continue // Old peers will be retained bellow.
 		}
-		if !found {
-			newPeerSender, err := d.netProvider.PeerByPubKey(newPeerPubKey)
-			if err != nil {
-				// TODO: Maybe more control should be needed here. Distinguish the mandatory and the optional nodes?
-				d.log.Warnf("Peer with pubKey=%v not found, will be ignored for now, reason: %v", newPeerPubKey.String(), err)
-			} else {
-				changed = true
-				nodes[*newPeerSender.PubKey()] = newPeerSender
-				d.log.Infof("Domain peer added, pubKey=%v, netID=%v", newPeerSender.PubKey().String(), newPeerSender.NetID())
-			}
+		newPeerSender, err := d.netProvider.PeerByPubKey(newPeerPubKey)
+		if err != nil {
+			d.log.Warnf("Domain peer skipped for now, pubKey=%v not found, reason: %v", newPeerPubKey.String(), err)
+			continue
 		}
+		changed = true
+		nodes[*newPeerSender.PubKey()] = newPeerSender
+		d.log.Infof("Domain peer added, pubKey=%v, netID=%v", newPeerSender.PubKey().String(), newPeerSender.NetID())
 	}
 	//
-	// Remove peers that are not needed anymore.
-	for _, oldPeer := range nodes {
-		found := false
-		for _, newPeerPubKey := range newPeerPubKeys {
-			if *oldPeer.PubKey() == *newPeerPubKey {
-				found = true
-				break
+	// Remove peers that are not needed anymore and retain others.
+	for _, oldPeer := range oldPeers {
+		oldPeerDropped := true
+		if *oldPeer.PubKey() == *d.netProvider.Self().PubKey() {
+			// We retain the current node in the domain all the time.
+			nodes[*oldPeer.PubKey()] = oldPeer
+			oldPeerDropped = false
+		} else {
+			for _, newPeerPubKey := range newPeerPubKeys {
+				if *oldPeer.PubKey() == *newPeerPubKey {
+					nodes[*oldPeer.PubKey()] = oldPeer
+					oldPeerDropped = false
+					break
+				}
 			}
 		}
-		if !found && (*oldPeer.PubKey() != *d.netProvider.Self().PubKey()) {
+		if oldPeerDropped {
 			changed = true
-			delete(nodes, *oldPeer.PubKey())
 			d.log.Infof("Domain peer removed, pubKey=%v, netID=%v", oldPeer.PubKey().String(), oldPeer.NetID())
 		}
 	}
