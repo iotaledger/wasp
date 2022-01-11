@@ -52,7 +52,7 @@ export class GetBlobFieldView extends wasmclient.ClientView {
 	public async call(): Promise<GetBlobFieldResults> {
 		this.args.mandatory(ArgField);
 		this.args.mandatory(ArgHash);
-        const res = new GetBlobFieldResults();
+		const res = new GetBlobFieldResults();
 		await this.callView("getBlobField", this.args, res);
 		return res;
 	}
@@ -76,7 +76,7 @@ export class GetBlobInfoView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetBlobInfoResults> {
 		this.args.mandatory(ArgHash);
-        const res = new GetBlobInfoResults();
+		const res = new GetBlobInfoResults();
 		await this.callView("getBlobInfo", this.args, res);
 		return res;
 	}
@@ -98,7 +98,7 @@ export class GetBlobInfoResults extends wasmclient.Results {
 export class ListBlobsView extends wasmclient.ClientView {
 
 	public async call(): Promise<ListBlobsResults> {
-        const res = new ListBlobsResults();
+		const res = new ListBlobsResults();
 		await this.callView("listBlobs", null, res);
 		return res;
 	}

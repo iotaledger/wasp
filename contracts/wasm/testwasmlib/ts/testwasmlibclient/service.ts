@@ -22,6 +22,7 @@ const ArgInt16 = "int16";
 const ArgInt32 = "int32";
 const ArgInt64 = "int64";
 const ArgInt8 = "int8";
+const ArgKey = "key";
 const ArgName = "name";
 const ArgParam = "this";
 const ArgRecordIndex = "recordIndex";
@@ -92,6 +93,61 @@ export class ArraySetFunc extends wasmclient.ClientFunc {
 		this.args.mandatory(ArgName);
 		this.args.mandatory(ArgValue);
 		return await super.post(0x2c4150b3, this.args);
+	}
+}
+
+///////////////////////////// mapClear /////////////////////////////
+
+export class MapClearFunc extends wasmclient.ClientFunc {
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
+	
+	public name(v: string): void {
+		this.args.set(ArgName, this.args.fromString(v));
+	}
+	
+	public async post(): Promise<wasmclient.RequestID> {
+		this.args.mandatory(ArgName);
+		return await super.post(0x027f215a, this.args);
+	}
+}
+
+///////////////////////////// mapCreate /////////////////////////////
+
+export class MapCreateFunc extends wasmclient.ClientFunc {
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
+	
+	public name(v: string): void {
+		this.args.set(ArgName, this.args.fromString(v));
+	}
+	
+	public async post(): Promise<wasmclient.RequestID> {
+		this.args.mandatory(ArgName);
+		return await super.post(0x6295d599, this.args);
+	}
+}
+
+///////////////////////////// mapSet /////////////////////////////
+
+export class MapSetFunc extends wasmclient.ClientFunc {
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
+	
+	public key(v: string): void {
+		this.args.set(ArgKey, this.args.fromString(v));
+	}
+	
+	public name(v: string): void {
+		this.args.set(ArgName, this.args.fromString(v));
+	}
+	
+	public value(v: string): void {
+		this.args.set(ArgValue, this.args.fromString(v));
+	}
+	
+	public async post(): Promise<wasmclient.RequestID> {
+		this.args.mandatory(ArgKey);
+		this.args.mandatory(ArgName);
+		this.args.mandatory(ArgValue);
+		return await super.post(0xf2260404, this.args);
 	}
 }
 
@@ -352,6 +408,35 @@ export class IotaBalanceResults extends wasmclient.Results {
 	}
 }
 
+///////////////////////////// mapValue /////////////////////////////
+
+export class MapValueView extends wasmclient.ClientView {
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
+	
+	public key(v: string): void {
+		this.args.set(ArgKey, this.args.fromString(v));
+	}
+	
+	public name(v: string): void {
+		this.args.set(ArgName, this.args.fromString(v));
+	}
+
+	public async call(): Promise<MapValueResults> {
+		this.args.mandatory(ArgKey);
+		this.args.mandatory(ArgName);
+        const res = new MapValueResults();
+		await this.callView("mapValue", this.args, res);
+		return res;
+	}
+}
+
+export class MapValueResults extends wasmclient.Results {
+
+	value(): string {
+		return this.toString(this.get(ResValue));
+	}
+}
+
 ///////////////////////////// TestWasmLibService /////////////////////////////
 
 export class TestWasmLibService extends wasmclient.Service {
@@ -370,6 +455,18 @@ export class TestWasmLibService extends wasmclient.Service {
 
 	public arraySet(): ArraySetFunc {
 		return new ArraySetFunc(this);
+	}
+
+	public mapClear(): MapClearFunc {
+		return new MapClearFunc(this);
+	}
+
+	public mapCreate(): MapCreateFunc {
+		return new MapCreateFunc(this);
+	}
+
+	public mapSet(): MapSetFunc {
+		return new MapSetFunc(this);
 	}
 
 	public paramTypes(): ParamTypesFunc {
@@ -406,5 +503,9 @@ export class TestWasmLibService extends wasmclient.Service {
 
 	public iotaBalance(): IotaBalanceView {
 		return new IotaBalanceView(this);
+	}
+
+	public mapValue(): MapValueView {
+		return new MapValueView(this);
 	}
 }

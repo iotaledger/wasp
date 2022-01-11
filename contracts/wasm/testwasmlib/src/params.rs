@@ -98,6 +98,88 @@ impl MutableArraySetParams {
 }
 
 #[derive(Clone, Copy)]
+pub struct ImmutableMapClearParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableMapClearParams {
+    pub fn name(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableMapClearParams {
+    pub(crate) id: i32,
+}
+
+impl MutableMapClearParams {
+    pub fn name(&self) -> ScMutableString {
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct ImmutableMapCreateParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableMapCreateParams {
+    pub fn name(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableMapCreateParams {
+    pub(crate) id: i32,
+}
+
+impl MutableMapCreateParams {
+    pub fn name(&self) -> ScMutableString {
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct ImmutableMapSetParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableMapSetParams {
+    pub fn key(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, PARAM_KEY.get_key_id())
+	}
+
+    pub fn name(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
+	}
+
+    pub fn value(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, PARAM_VALUE.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableMapSetParams {
+    pub(crate) id: i32,
+}
+
+impl MutableMapSetParams {
+    pub fn key(&self) -> ScMutableString {
+		ScMutableString::new(self.id, PARAM_KEY.get_key_id())
+	}
+
+    pub fn name(&self) -> ScMutableString {
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
+	}
+
+    pub fn value(&self) -> ScMutableString {
+		ScMutableString::new(self.id, PARAM_VALUE.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
 pub struct MapStringToImmutableBytes {
 	pub(crate) obj_id: i32,
 }
@@ -420,5 +502,35 @@ pub struct MutableBlockRecordsParams {
 impl MutableBlockRecordsParams {
     pub fn block_index(&self) -> ScMutableInt32 {
 		ScMutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct ImmutableMapValueParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableMapValueParams {
+    pub fn key(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, PARAM_KEY.get_key_id())
+	}
+
+    pub fn name(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableMapValueParams {
+    pub(crate) id: i32,
+}
+
+impl MutableMapValueParams {
+    pub fn key(&self) -> ScMutableString {
+		ScMutableString::new(self.id, PARAM_KEY.get_key_id())
+	}
+
+    pub fn name(&self) -> ScMutableString {
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
 }

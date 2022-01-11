@@ -21,10 +21,28 @@ export class MapStringToImmutableStringArray {
     }
 }
 
+export class MapStringToImmutableStringMap {
+	objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    getStringMap(key: string): sc.ImmutableStringMap {
+        let subID = wasmlib.getObjectID(this.objID, wasmlib.Key32.fromString(key), wasmlib.TYPE_MAP);
+        return new sc.ImmutableStringMap(subID);
+    }
+}
+
 export class ImmutableTestWasmLibState extends wasmlib.ScMapID {
     arrays(): sc.MapStringToImmutableStringArray {
 		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateArrays), wasmlib.TYPE_MAP);
 		return new sc.MapStringToImmutableStringArray(mapID);
+	}
+
+    maps(): sc.MapStringToImmutableStringMap {
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateMaps), wasmlib.TYPE_MAP);
+		return new sc.MapStringToImmutableStringMap(mapID);
 	}
 
     random(): wasmlib.ScImmutableInt64 {
@@ -49,6 +67,23 @@ export class MapStringToMutableStringArray {
     }
 }
 
+export class MapStringToMutableStringMap {
+	objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    clear(): void {
+        wasmlib.clear(this.objID);
+    }
+
+    getStringMap(key: string): sc.MutableStringMap {
+        let subID = wasmlib.getObjectID(this.objID, wasmlib.Key32.fromString(key), wasmlib.TYPE_MAP);
+        return new sc.MutableStringMap(subID);
+    }
+}
+
 export class MutableTestWasmLibState extends wasmlib.ScMapID {
     asImmutable(): sc.ImmutableTestWasmLibState {
 		const imm = new sc.ImmutableTestWasmLibState();
@@ -59,6 +94,11 @@ export class MutableTestWasmLibState extends wasmlib.ScMapID {
     arrays(): sc.MapStringToMutableStringArray {
 		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateArrays), wasmlib.TYPE_MAP);
 		return new sc.MapStringToMutableStringArray(mapID);
+	}
+
+    maps(): sc.MapStringToMutableStringMap {
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateMaps), wasmlib.TYPE_MAP);
+		return new sc.MapStringToMutableStringMap(mapID);
 	}
 
     random(): wasmlib.ScMutableInt64 {

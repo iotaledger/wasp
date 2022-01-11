@@ -137,3 +137,30 @@ func viewGetRandom(ctx wasmlib.ScViewContext, f *GetRandomContext) {
 func funcTriggerEvent(ctx wasmlib.ScFuncContext, f *TriggerEventContext) {
 	f.Events.Test(f.Params.Address().Value(), f.Params.Name().Value())
 }
+
+func funcMapClear(ctx wasmlib.ScFuncContext, f *MapClearContext) {
+	name := f.Params.Name().Value()
+	myMap := f.State.Maps().GetStringMap(name)
+	myMap.Clear()
+}
+
+func funcMapCreate(ctx wasmlib.ScFuncContext, f *MapCreateContext) {
+	name := f.Params.Name().Value()
+	myMap := f.State.Maps().GetStringMap(name)
+	myMap.Clear()
+}
+
+func funcMapSet(ctx wasmlib.ScFuncContext, f *MapSetContext) {
+	name := f.Params.Name().Value()
+	myMap := f.State.Maps().GetStringMap(name)
+	key := f.Params.Key().Value()
+	value := f.Params.Value().Value()
+	myMap.GetString(key).SetValue(value)
+}
+
+func viewMapValue(ctx wasmlib.ScViewContext, f *MapValueContext) {
+	name := f.Params.Name().Value()
+	myMap := f.State.Maps().GetStringMap(name)
+	key := f.Params.Key().Value()
+	f.Results.Value().SetValue(myMap.GetString(key).Value())
+}

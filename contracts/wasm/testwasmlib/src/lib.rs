@@ -35,6 +35,9 @@ fn on_load() {
     exports.add_func(FUNC_ARRAY_CLEAR,   func_array_clear_thunk);
     exports.add_func(FUNC_ARRAY_CREATE,  func_array_create_thunk);
     exports.add_func(FUNC_ARRAY_SET,     func_array_set_thunk);
+    exports.add_func(FUNC_MAP_CLEAR,     func_map_clear_thunk);
+    exports.add_func(FUNC_MAP_CREATE,    func_map_create_thunk);
+    exports.add_func(FUNC_MAP_SET,       func_map_set_thunk);
     exports.add_func(FUNC_PARAM_TYPES,   func_param_types_thunk);
     exports.add_func(FUNC_RANDOM,        func_random_thunk);
     exports.add_func(FUNC_TRIGGER_EVENT, func_trigger_event_thunk);
@@ -44,6 +47,7 @@ fn on_load() {
     exports.add_view(VIEW_BLOCK_RECORDS, view_block_records_thunk);
     exports.add_view(VIEW_GET_RANDOM,    view_get_random_thunk);
     exports.add_view(VIEW_IOTA_BALANCE,  view_iota_balance_thunk);
+    exports.add_view(VIEW_MAP_VALUE,     view_map_value_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {
@@ -118,6 +122,74 @@ fn func_array_set_thunk(ctx: &ScFuncContext) {
 	ctx.require(f.params.value().exists(), "missing mandatory value");
 	func_array_set(ctx, &f);
 	ctx.log("testwasmlib.funcArraySet ok");
+}
+
+pub struct MapClearContext {
+	events:  TestWasmLibEvents,
+	params: ImmutableMapClearParams,
+	state: MutableTestWasmLibState,
+}
+
+fn func_map_clear_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcMapClear");
+	let f = MapClearContext {
+		events:  TestWasmLibEvents {},
+		params: ImmutableMapClearParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: MutableTestWasmLibState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	func_map_clear(ctx, &f);
+	ctx.log("testwasmlib.funcMapClear ok");
+}
+
+pub struct MapCreateContext {
+	events:  TestWasmLibEvents,
+	params: ImmutableMapCreateParams,
+	state: MutableTestWasmLibState,
+}
+
+fn func_map_create_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcMapCreate");
+	let f = MapCreateContext {
+		events:  TestWasmLibEvents {},
+		params: ImmutableMapCreateParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: MutableTestWasmLibState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	func_map_create(ctx, &f);
+	ctx.log("testwasmlib.funcMapCreate ok");
+}
+
+pub struct MapSetContext {
+	events:  TestWasmLibEvents,
+	params: ImmutableMapSetParams,
+	state: MutableTestWasmLibState,
+}
+
+fn func_map_set_thunk(ctx: &ScFuncContext) {
+	ctx.log("testwasmlib.funcMapSet");
+	let f = MapSetContext {
+		events:  TestWasmLibEvents {},
+		params: ImmutableMapSetParams {
+			id: OBJ_ID_PARAMS,
+		},
+		state: MutableTestWasmLibState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.key().exists(), "missing mandatory key");
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	ctx.require(f.params.value().exists(), "missing mandatory value");
+	func_map_set(ctx, &f);
+	ctx.log("testwasmlib.funcMapSet ok");
 }
 
 pub struct ParamTypesContext {
@@ -315,4 +387,29 @@ fn view_iota_balance_thunk(ctx: &ScViewContext) {
 	};
 	view_iota_balance(ctx, &f);
 	ctx.log("testwasmlib.viewIotaBalance ok");
+}
+
+pub struct MapValueContext {
+	params: ImmutableMapValueParams,
+	results: MutableMapValueResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_map_value_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewMapValue");
+	let f = MapValueContext {
+		params: ImmutableMapValueParams {
+			id: OBJ_ID_PARAMS,
+		},
+		results: MutableMapValueResults {
+			id: OBJ_ID_RESULTS,
+		},
+		state: ImmutableTestWasmLibState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.key().exists(), "missing mandatory key");
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	view_map_value(ctx, &f);
+	ctx.log("testwasmlib.viewMapValue ok");
 }

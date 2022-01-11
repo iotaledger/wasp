@@ -19,12 +19,14 @@ structs:
 typedefs:
 # ##################################
   StringArray: String[]
+  StringMap: map[String]String
 # Longitude: map[Int32]Location
 
 # ##################################
 state:
 # ##################################
   arrays: map[String]StringArray
+  maps: map[String]StringMap
   random: Int64
 # latLong: map[Int32]Longitude
 
@@ -43,6 +45,20 @@ funcs:
     params:
       index: Int32
       name: String
+      value: String
+
+  mapClear:
+    params:
+      name: String
+
+  mapCreate:
+    params:
+      name: String
+
+  mapSet:
+    params:
+      name: String
+      key: String
       value: String
 
   paramTypes:
@@ -106,6 +122,13 @@ views:
   iotaBalance:
     results:
       iotas: Int64
+
+  mapValue:
+    params:
+      name: String
+      key: String
+    results:
+      value: String
 
   getRandom:
     results:

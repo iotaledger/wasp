@@ -14,6 +14,9 @@ func OnLoad() {
 	exports.AddFunc(FuncArrayClear, funcArrayClearThunk)
 	exports.AddFunc(FuncArrayCreate, funcArrayCreateThunk)
 	exports.AddFunc(FuncArraySet, funcArraySetThunk)
+	exports.AddFunc(FuncMapClear, funcMapClearThunk)
+	exports.AddFunc(FuncMapCreate, funcMapCreateThunk)
+	exports.AddFunc(FuncMapSet, funcMapSetThunk)
 	exports.AddFunc(FuncParamTypes, funcParamTypesThunk)
 	exports.AddFunc(FuncRandom, funcRandomThunk)
 	exports.AddFunc(FuncTriggerEvent, funcTriggerEventThunk)
@@ -23,6 +26,7 @@ func OnLoad() {
 	exports.AddView(ViewBlockRecords, viewBlockRecordsThunk)
 	exports.AddView(ViewGetRandom, viewGetRandomThunk)
 	exports.AddView(ViewIotaBalance, viewIotaBalanceThunk)
+	exports.AddView(ViewMapValue, viewMapValueThunk)
 
 	for i, key := range keyMap {
 		idxMap[i] = key.KeyID()
@@ -92,6 +96,71 @@ func funcArraySetThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Require(f.Params.Value().Exists(), "missing mandatory value")
 	funcArraySet(ctx, f)
 	ctx.Log("testwasmlib.funcArraySet ok")
+}
+
+type MapClearContext struct {
+	Events TestWasmLibEvents
+	Params ImmutableMapClearParams
+	State  MutableTestWasmLibState
+}
+
+func funcMapClearThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcMapClear")
+	f := &MapClearContext{
+		Params: ImmutableMapClearParams{
+			id: wasmlib.OBJ_ID_PARAMS,
+		},
+		State: MutableTestWasmLibState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
+	funcMapClear(ctx, f)
+	ctx.Log("testwasmlib.funcMapClear ok")
+}
+
+type MapCreateContext struct {
+	Events TestWasmLibEvents
+	Params ImmutableMapCreateParams
+	State  MutableTestWasmLibState
+}
+
+func funcMapCreateThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcMapCreate")
+	f := &MapCreateContext{
+		Params: ImmutableMapCreateParams{
+			id: wasmlib.OBJ_ID_PARAMS,
+		},
+		State: MutableTestWasmLibState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
+	funcMapCreate(ctx, f)
+	ctx.Log("testwasmlib.funcMapCreate ok")
+}
+
+type MapSetContext struct {
+	Events TestWasmLibEvents
+	Params ImmutableMapSetParams
+	State  MutableTestWasmLibState
+}
+
+func funcMapSetThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcMapSet")
+	f := &MapSetContext{
+		Params: ImmutableMapSetParams{
+			id: wasmlib.OBJ_ID_PARAMS,
+		},
+		State: MutableTestWasmLibState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	ctx.Require(f.Params.Key().Exists(), "missing mandatory key")
+	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
+	ctx.Require(f.Params.Value().Exists(), "missing mandatory value")
+	funcMapSet(ctx, f)
+	ctx.Log("testwasmlib.funcMapSet ok")
 }
 
 type ParamTypesContext struct {
@@ -286,4 +355,29 @@ func viewIotaBalanceThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewIotaBalance(ctx, f)
 	ctx.Log("testwasmlib.viewIotaBalance ok")
+}
+
+type MapValueContext struct {
+	Params  ImmutableMapValueParams
+	Results MutableMapValueResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewMapValueThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewMapValue")
+	f := &MapValueContext{
+		Params: ImmutableMapValueParams{
+			id: wasmlib.OBJ_ID_PARAMS,
+		},
+		Results: MutableMapValueResults{
+			id: wasmlib.OBJ_ID_RESULTS,
+		},
+		State: ImmutableTestWasmLibState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	ctx.Require(f.Params.Key().Exists(), "missing mandatory key")
+	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
+	viewMapValue(ctx, f)
+	ctx.Log("testwasmlib.viewMapValue ok")
 }

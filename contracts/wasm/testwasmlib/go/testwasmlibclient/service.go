@@ -24,6 +24,7 @@ const (
 	ArgInt32       = "int32"
 	ArgInt64       = "int64"
 	ArgInt8        = "int8"
+	ArgKey         = "key"
 	ArgName        = "name"
 	ArgParam       = "this"
 	ArgRecordIndex = "recordIndex"
@@ -99,6 +100,64 @@ func (f *ArraySetFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgName)
 	f.args.Mandatory(ArgValue)
 	return f.ClientFunc.Post(0x2c4150b3, &f.args)
+}
+
+///////////////////////////// mapClear /////////////////////////////
+
+type MapClearFunc struct {
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
+}
+
+func (f *MapClearFunc) Name(v string) {
+	f.args.Set(ArgName, f.args.FromString(v))
+}
+
+func (f *MapClearFunc) Post() wasmclient.Request {
+	f.args.Mandatory(ArgName)
+	return f.ClientFunc.Post(0x027f215a, &f.args)
+}
+
+///////////////////////////// mapCreate /////////////////////////////
+
+type MapCreateFunc struct {
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
+}
+
+func (f *MapCreateFunc) Name(v string) {
+	f.args.Set(ArgName, f.args.FromString(v))
+}
+
+func (f *MapCreateFunc) Post() wasmclient.Request {
+	f.args.Mandatory(ArgName)
+	return f.ClientFunc.Post(0x6295d599, &f.args)
+}
+
+///////////////////////////// mapSet /////////////////////////////
+
+type MapSetFunc struct {
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
+}
+
+func (f *MapSetFunc) Key(v string) {
+	f.args.Set(ArgKey, f.args.FromString(v))
+}
+
+func (f *MapSetFunc) Name(v string) {
+	f.args.Set(ArgName, f.args.FromString(v))
+}
+
+func (f *MapSetFunc) Value(v string) {
+	f.args.Set(ArgValue, f.args.FromString(v))
+}
+
+func (f *MapSetFunc) Post() wasmclient.Request {
+	f.args.Mandatory(ArgKey)
+	f.args.Mandatory(ArgName)
+	f.args.Mandatory(ArgValue)
+	return f.ClientFunc.Post(0xf2260404, &f.args)
 }
 
 ///////////////////////////// paramTypes /////////////////////////////
@@ -367,6 +426,36 @@ func (r *IotaBalanceResults) Iotas() int64 {
 	return r.res.ToInt64(r.res.Get(ResIotas))
 }
 
+///////////////////////////// mapValue /////////////////////////////
+
+type MapValueView struct {
+	wasmclient.ClientView
+	args wasmclient.Arguments
+}
+
+func (f *MapValueView) Key(v string) {
+	f.args.Set(ArgKey, f.args.FromString(v))
+}
+
+func (f *MapValueView) Name(v string) {
+	f.args.Set(ArgName, f.args.FromString(v))
+}
+
+func (f *MapValueView) Call() MapValueResults {
+	f.args.Mandatory(ArgKey)
+	f.args.Mandatory(ArgName)
+	f.ClientView.Call("mapValue", &f.args)
+	return MapValueResults{res: f.Results()}
+}
+
+type MapValueResults struct {
+	res wasmclient.Results
+}
+
+func (r *MapValueResults) Value() string {
+	return r.res.ToString(r.res.Get(ResValue))
+}
+
 ///////////////////////////// TestWasmLibService /////////////////////////////
 
 type TestWasmLibService struct {
@@ -389,6 +478,18 @@ func (s *TestWasmLibService) ArrayCreate() ArrayCreateFunc {
 
 func (s *TestWasmLibService) ArraySet() ArraySetFunc {
 	return ArraySetFunc{ClientFunc: s.AsClientFunc()}
+}
+
+func (s *TestWasmLibService) MapClear() MapClearFunc {
+	return MapClearFunc{ClientFunc: s.AsClientFunc()}
+}
+
+func (s *TestWasmLibService) MapCreate() MapCreateFunc {
+	return MapCreateFunc{ClientFunc: s.AsClientFunc()}
+}
+
+func (s *TestWasmLibService) MapSet() MapSetFunc {
+	return MapSetFunc{ClientFunc: s.AsClientFunc()}
 }
 
 func (s *TestWasmLibService) ParamTypes() ParamTypesFunc {
@@ -425,4 +526,8 @@ func (s *TestWasmLibService) GetRandom() GetRandomView {
 
 func (s *TestWasmLibService) IotaBalance() IotaBalanceView {
 	return IotaBalanceView{ClientView: s.AsClientView()}
+}
+
+func (s *TestWasmLibService) MapValue() MapValueView {
+	return MapValueView{ClientView: s.AsClientView()}
 }

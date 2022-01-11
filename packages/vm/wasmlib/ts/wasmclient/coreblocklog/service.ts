@@ -28,7 +28,7 @@ const ResStateControllerAddress = "s";
 export class ControlAddressesView extends wasmclient.ClientView {
 
 	public async call(): Promise<ControlAddressesResults> {
-        const res = new ControlAddressesResults();
+		const res = new ControlAddressesResults();
 		await this.callView("controlAddresses", null, res);
 		return res;
 	}
@@ -60,7 +60,7 @@ export class GetBlockInfoView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetBlockInfoResults> {
 		this.args.mandatory(ArgBlockIndex);
-        const res = new GetBlockInfoResults();
+		const res = new GetBlockInfoResults();
 		await this.callView("getBlockInfo", this.args, res);
 		return res;
 	}
@@ -84,7 +84,7 @@ export class GetEventsForBlockView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetEventsForBlockResults> {
 		this.args.mandatory(ArgBlockIndex);
-        const res = new GetEventsForBlockResults();
+		const res = new GetEventsForBlockResults();
 		await this.callView("getEventsForBlock", this.args, res);
 		return res;
 	}
@@ -116,7 +116,7 @@ export class GetEventsForContractView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetEventsForContractResults> {
 		this.args.mandatory(ArgContractHname);
-        const res = new GetEventsForContractResults();
+		const res = new GetEventsForContractResults();
 		await this.callView("getEventsForContract", this.args, res);
 		return res;
 	}
@@ -140,7 +140,7 @@ export class GetEventsForRequestView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetEventsForRequestResults> {
 		this.args.mandatory(ArgRequestID);
-        const res = new GetEventsForRequestResults();
+		const res = new GetEventsForRequestResults();
 		await this.callView("getEventsForRequest", this.args, res);
 		return res;
 	}
@@ -158,7 +158,7 @@ export class GetEventsForRequestResults extends wasmclient.Results {
 export class GetLatestBlockInfoView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetLatestBlockInfoResults> {
-        const res = new GetLatestBlockInfoResults();
+		const res = new GetLatestBlockInfoResults();
 		await this.callView("getLatestBlockInfo", null, res);
 		return res;
 	}
@@ -186,7 +186,7 @@ export class GetRequestIDsForBlockView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetRequestIDsForBlockResults> {
 		this.args.mandatory(ArgBlockIndex);
-        const res = new GetRequestIDsForBlockResults();
+		const res = new GetRequestIDsForBlockResults();
 		await this.callView("getRequestIDsForBlock", this.args, res);
 		return res;
 	}
@@ -210,7 +210,7 @@ export class GetRequestReceiptView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetRequestReceiptResults> {
 		this.args.mandatory(ArgRequestID);
-        const res = new GetRequestReceiptResults();
+		const res = new GetRequestReceiptResults();
 		await this.callView("getRequestReceipt", this.args, res);
 		return res;
 	}
@@ -242,7 +242,7 @@ export class GetRequestReceiptsForBlockView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetRequestReceiptsForBlockResults> {
 		this.args.mandatory(ArgBlockIndex);
-        const res = new GetRequestReceiptsForBlockResults();
+		const res = new GetRequestReceiptsForBlockResults();
 		await this.callView("getRequestReceiptsForBlock", this.args, res);
 		return res;
 	}
@@ -266,7 +266,7 @@ export class IsRequestProcessedView extends wasmclient.ClientView {
 
 	public async call(): Promise<IsRequestProcessedResults> {
 		this.args.mandatory(ArgRequestID);
-        const res = new IsRequestProcessedResults();
+		const res = new IsRequestProcessedResults();
 		await this.callView("isRequestProcessed", this.args, res);
 		return res;
 	}

@@ -184,7 +184,7 @@ export class SetDefaultFeeFunc extends wasmclient.ClientFunc {
 export class GetAllowedStateControllerAddressesView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetAllowedStateControllerAddressesResults> {
-        const res = new GetAllowedStateControllerAddressesResults();
+		const res = new GetAllowedStateControllerAddressesResults();
 		await this.callView("getAllowedStateControllerAddresses", null, res);
 		return res;
 	}
@@ -202,7 +202,7 @@ export class GetAllowedStateControllerAddressesResults extends wasmclient.Result
 export class GetChainInfoView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetChainInfoResults> {
-        const res = new GetChainInfoResults();
+		const res = new GetChainInfoResults();
 		await this.callView("getChainInfo", null, res);
 		return res;
 	}
@@ -258,7 +258,7 @@ export class GetFeeInfoView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetFeeInfoResults> {
 		this.args.mandatory(ArgHname);
-        const res = new GetFeeInfoResults();
+		const res = new GetFeeInfoResults();
 		await this.callView("getFeeInfo", this.args, res);
 		return res;
 	}
@@ -284,7 +284,7 @@ export class GetFeeInfoResults extends wasmclient.Results {
 export class GetMaxBlobSizeView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetMaxBlobSizeResults> {
-        const res = new GetMaxBlobSizeResults();
+		const res = new GetMaxBlobSizeResults();
 		await this.callView("getMaxBlobSize", null, res);
 		return res;
 	}

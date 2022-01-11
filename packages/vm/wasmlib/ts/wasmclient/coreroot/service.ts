@@ -82,7 +82,7 @@ export class FindContractView extends wasmclient.ClientView {
 
 	public async call(): Promise<FindContractResults> {
 		this.args.mandatory(ArgHname);
-        const res = new FindContractResults();
+		const res = new FindContractResults();
 		await this.callView("findContract", this.args, res);
 		return res;
 	}
@@ -104,7 +104,7 @@ export class FindContractResults extends wasmclient.Results {
 export class GetContractRecordsView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetContractRecordsResults> {
-        const res = new GetContractRecordsResults();
+		const res = new GetContractRecordsResults();
 		await this.callView("getContractRecords", null, res);
 		return res;
 	}

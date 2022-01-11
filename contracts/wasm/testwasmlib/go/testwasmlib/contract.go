@@ -24,6 +24,21 @@ type ArraySetCall struct {
 	Params MutableArraySetParams
 }
 
+type MapClearCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableMapClearParams
+}
+
+type MapCreateCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableMapCreateParams
+}
+
+type MapSetCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableMapSetParams
+}
+
 type ParamTypesCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableParamTypesParams
@@ -72,6 +87,12 @@ type IotaBalanceCall struct {
 	Results ImmutableIotaBalanceResults
 }
 
+type MapValueCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableMapValueParams
+	Results ImmutableMapValueResults
+}
+
 type Funcs struct{}
 
 var ScFuncs Funcs
@@ -90,6 +111,24 @@ func (sc Funcs) ArrayCreate(ctx wasmlib.ScFuncCallContext) *ArrayCreateCall {
 
 func (sc Funcs) ArraySet(ctx wasmlib.ScFuncCallContext) *ArraySetCall {
 	f := &ArraySetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArraySet)}
+	f.Func.SetPtrs(&f.Params.id, nil)
+	return f
+}
+
+func (sc Funcs) MapClear(ctx wasmlib.ScFuncCallContext) *MapClearCall {
+	f := &MapClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapClear)}
+	f.Func.SetPtrs(&f.Params.id, nil)
+	return f
+}
+
+func (sc Funcs) MapCreate(ctx wasmlib.ScFuncCallContext) *MapCreateCall {
+	f := &MapCreateCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapCreate)}
+	f.Func.SetPtrs(&f.Params.id, nil)
+	return f
+}
+
+func (sc Funcs) MapSet(ctx wasmlib.ScFuncCallContext) *MapSetCall {
+	f := &MapSetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMapSet)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
@@ -143,5 +182,11 @@ func (sc Funcs) GetRandom(ctx wasmlib.ScViewCallContext) *GetRandomCall {
 func (sc Funcs) IotaBalance(ctx wasmlib.ScViewCallContext) *IotaBalanceCall {
 	f := &IotaBalanceCall{Func: wasmlib.NewScView(ctx, HScName, HViewIotaBalance)}
 	f.Func.SetPtrs(nil, &f.Results.id)
+	return f
+}
+
+func (sc Funcs) MapValue(ctx wasmlib.ScViewCallContext) *MapValueCall {
+	f := &MapValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewMapValue)}
+	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }

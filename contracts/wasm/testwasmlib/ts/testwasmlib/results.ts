@@ -79,3 +79,15 @@ export class MutableIotaBalanceResults extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultIotas));
 	}
 }
+
+export class ImmutableMapValueResults extends wasmlib.ScMapID {
+    value(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultValue));
+	}
+}
+
+export class MutableMapValueResults extends wasmlib.ScMapID {
+    value(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultValue));
+	}
+}

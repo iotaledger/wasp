@@ -22,26 +22,28 @@ export const IdxParamInt16       = 10;
 export const IdxParamInt32       = 11;
 export const IdxParamInt64       = 12;
 export const IdxParamInt8        = 13;
-export const IdxParamName        = 14;
-export const IdxParamParam       = 15;
-export const IdxParamRecordIndex = 16;
-export const IdxParamRequestID   = 17;
-export const IdxParamString      = 18;
-export const IdxParamUint16      = 19;
-export const IdxParamUint32      = 20;
-export const IdxParamUint64      = 21;
-export const IdxParamUint8       = 22;
-export const IdxParamValue       = 23;
+export const IdxParamKey         = 14;
+export const IdxParamName        = 15;
+export const IdxParamParam       = 16;
+export const IdxParamRecordIndex = 17;
+export const IdxParamRequestID   = 18;
+export const IdxParamString      = 19;
+export const IdxParamUint16      = 20;
+export const IdxParamUint32      = 21;
+export const IdxParamUint64      = 22;
+export const IdxParamUint8       = 23;
+export const IdxParamValue       = 24;
 
-export const IdxResultCount  = 24;
-export const IdxResultIotas  = 25;
-export const IdxResultLength = 26;
-export const IdxResultRandom = 27;
-export const IdxResultRecord = 28;
-export const IdxResultValue  = 29;
+export const IdxResultCount  = 25;
+export const IdxResultIotas  = 26;
+export const IdxResultLength = 27;
+export const IdxResultRandom = 28;
+export const IdxResultRecord = 29;
+export const IdxResultValue  = 30;
 
-export const IdxStateArrays = 30;
-export const IdxStateRandom = 31;
+export const IdxStateArrays = 31;
+export const IdxStateMaps   = 32;
+export const IdxStateRandom = 33;
 
 export let keyMap: string[] = [
 	sc.ParamAddress,
@@ -58,6 +60,7 @@ export let keyMap: string[] = [
 	sc.ParamInt32,
 	sc.ParamInt64,
 	sc.ParamInt8,
+	sc.ParamKey,
 	sc.ParamName,
 	sc.ParamParam,
 	sc.ParamRecordIndex,
@@ -75,6 +78,7 @@ export let keyMap: string[] = [
 	sc.ResultRecord,
 	sc.ResultValue,
 	sc.StateArrays,
+	sc.StateMaps,
 	sc.StateRandom,
 ];
 

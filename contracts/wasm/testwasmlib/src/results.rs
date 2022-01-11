@@ -146,3 +146,25 @@ impl MutableIotaBalanceResults {
 		ScMutableInt64::new(self.id, RESULT_IOTAS.get_key_id())
 	}
 }
+
+#[derive(Clone, Copy)]
+pub struct ImmutableMapValueResults {
+    pub(crate) id: i32,
+}
+
+impl ImmutableMapValueResults {
+    pub fn value(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, RESULT_VALUE.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableMapValueResults {
+    pub(crate) id: i32,
+}
+
+impl MutableMapValueResults {
+    pub fn value(&self) -> ScMutableString {
+		ScMutableString::new(self.id, RESULT_VALUE.get_key_id())
+	}
+}

@@ -73,6 +73,70 @@ func (s MutableArraySetParams) Value() wasmlib.ScMutableString {
 	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamValue))
 }
 
+type ImmutableMapClearParams struct {
+	id int32
+}
+
+func (s ImmutableMapClearParams) Name() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamName))
+}
+
+type MutableMapClearParams struct {
+	id int32
+}
+
+func (s MutableMapClearParams) Name() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamName))
+}
+
+type ImmutableMapCreateParams struct {
+	id int32
+}
+
+func (s ImmutableMapCreateParams) Name() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamName))
+}
+
+type MutableMapCreateParams struct {
+	id int32
+}
+
+func (s MutableMapCreateParams) Name() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamName))
+}
+
+type ImmutableMapSetParams struct {
+	id int32
+}
+
+func (s ImmutableMapSetParams) Key() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamKey))
+}
+
+func (s ImmutableMapSetParams) Name() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamName))
+}
+
+func (s ImmutableMapSetParams) Value() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamValue))
+}
+
+type MutableMapSetParams struct {
+	id int32
+}
+
+func (s MutableMapSetParams) Key() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamKey))
+}
+
+func (s MutableMapSetParams) Name() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamName))
+}
+
+func (s MutableMapSetParams) Value() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamValue))
+}
+
 type MapStringToImmutableBytes struct {
 	objID int32
 }
@@ -355,4 +419,28 @@ type MutableBlockRecordsParams struct {
 
 func (s MutableBlockRecordsParams) BlockIndex() wasmlib.ScMutableInt32 {
 	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
+}
+
+type ImmutableMapValueParams struct {
+	id int32
+}
+
+func (s ImmutableMapValueParams) Key() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamKey))
+}
+
+func (s ImmutableMapValueParams) Name() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamName))
+}
+
+type MutableMapValueParams struct {
+	id int32
+}
+
+func (s MutableMapValueParams) Key() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamKey))
+}
+
+func (s MutableMapValueParams) Name() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamName))
 }

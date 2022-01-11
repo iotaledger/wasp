@@ -104,3 +104,19 @@ type MutableIotaBalanceResults struct {
 func (s MutableIotaBalanceResults) Iotas() wasmlib.ScMutableInt64 {
 	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultIotas))
 }
+
+type ImmutableMapValueResults struct {
+	id int32
+}
+
+func (s ImmutableMapValueResults) Value() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultValue))
+}
+
+type MutableMapValueResults struct {
+	id int32
+}
+
+func (s MutableMapValueResults) Value() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultValue))
+}

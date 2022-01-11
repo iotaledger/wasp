@@ -132,3 +132,15 @@ export function viewGetRandom(ctx: wasmlib.ScViewContext, f: sc.GetRandomContext
 export function funcTriggerEvent(ctx: wasmlib.ScFuncContext, f: sc.TriggerEventContext): void {
     f.events.test(f.params.address().value(), f.params.name().value());
 }
+
+export function funcMapClear(ctx: wasmlib.ScFuncContext, f: sc.MapClearContext): void {
+}
+
+export function funcMapCreate(ctx: wasmlib.ScFuncContext, f: sc.MapCreateContext): void {
+}
+
+export function funcMapSet(ctx: wasmlib.ScFuncContext, f: sc.MapSetContext): void {
+}
+
+export function viewMapValue(ctx: wasmlib.ScViewContext, f: sc.MapValueContext): void {
+}

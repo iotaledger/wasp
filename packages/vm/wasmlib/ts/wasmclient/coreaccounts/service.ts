@@ -61,7 +61,7 @@ export class WithdrawFunc extends wasmclient.ClientFunc {
 export class AccountsView extends wasmclient.ClientView {
 
 	public async call(): Promise<AccountsResults> {
-        const res = new AccountsResults();
+		const res = new AccountsResults();
 		await this.callView("accounts", null, res);
 		return res;
 	}
@@ -89,7 +89,7 @@ export class BalanceView extends wasmclient.ClientView {
 
 	public async call(): Promise<BalanceResults> {
 		this.args.mandatory(ArgAgentID);
-        const res = new BalanceResults();
+		const res = new BalanceResults();
 		await this.callView("balance", this.args, res);
 		return res;
 	}
@@ -117,7 +117,7 @@ export class GetAccountNonceView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetAccountNonceResults> {
 		this.args.mandatory(ArgAgentID);
-        const res = new GetAccountNonceResults();
+		const res = new GetAccountNonceResults();
 		await this.callView("getAccountNonce", this.args, res);
 		return res;
 	}
@@ -135,7 +135,7 @@ export class GetAccountNonceResults extends wasmclient.Results {
 export class TotalAssetsView extends wasmclient.ClientView {
 
 	public async call(): Promise<TotalAssetsResults> {
-        const res = new TotalAssetsResults();
+		const res = new TotalAssetsResults();
 		await this.callView("totalAssets", null, res);
 		return res;
 	}

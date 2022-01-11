@@ -60,6 +60,58 @@ export class MutableArraySetParams extends wasmlib.ScMapID {
 	}
 }
 
+export class ImmutableMapClearParams extends wasmlib.ScMapID {
+    name(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
+	}
+}
+
+export class MutableMapClearParams extends wasmlib.ScMapID {
+    name(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
+	}
+}
+
+export class ImmutableMapCreateParams extends wasmlib.ScMapID {
+    name(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
+	}
+}
+
+export class MutableMapCreateParams extends wasmlib.ScMapID {
+    name(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
+	}
+}
+
+export class ImmutableMapSetParams extends wasmlib.ScMapID {
+    key(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamKey));
+	}
+
+    name(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
+	}
+
+    value(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamValue));
+	}
+}
+
+export class MutableMapSetParams extends wasmlib.ScMapID {
+    key(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamKey));
+	}
+
+    name(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
+	}
+
+    value(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamValue));
+	}
+}
+
 export class MapStringToImmutableBytes {
 	objID: i32;
 
@@ -325,5 +377,25 @@ export class ImmutableBlockRecordsParams extends wasmlib.ScMapID {
 export class MutableBlockRecordsParams extends wasmlib.ScMapID {
     blockIndex(): wasmlib.ScMutableInt32 {
 		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+	}
+}
+
+export class ImmutableMapValueParams extends wasmlib.ScMapID {
+    key(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamKey));
+	}
+
+    name(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
+	}
+}
+
+export class MutableMapValueParams extends wasmlib.ScMapID {
+    key(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamKey));
+	}
+
+    name(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamName));
 	}
 }

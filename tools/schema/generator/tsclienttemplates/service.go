@@ -87,7 +87,7 @@ $#if param execWithArgs execNoArgs
 	public async call(): Promise<$FuncName$+Results> {
 $#each mandatory mandatoryCheck
 $#if param execWithArgs execNoArgs
-        const res = new $FuncName$+Results();
+		const res = new $FuncName$+Results();
 		await this.callView("$funcName", $args, res);
 		return res;
 	}
