@@ -123,6 +123,14 @@ func (w *waspServices) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectio
 	return chs.GetNodeConnectionMetrics(), nil
 }
 
+func (w *waspServices) GetChainConsensusWorkflowStatus(chainID *iscp.ChainID) (chain.ConsensusWorkflowStatus, error) {
+	ch := chains.AllChains().Get(chainID)
+	if ch == nil {
+		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
+	}
+	return ch.GetConsensusWorkflowStatus(), nil
+}
+
 func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error) {
 	ch := chains.AllChains().Get(chainID)
 	if ch == nil {

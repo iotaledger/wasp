@@ -2,10 +2,21 @@
 
 {{define "body"}}
 <div class="card fluid">
-	<h2 class="section">Metrics</h2>
-
+	<h2 class="section">Global metrics</h2>
 	<ul>
 		<li><a href="{{ uri "metricsNodeconn" }}">Connection to L1</a></li>
+	</ul>
+
+	<h2 class="section">Chain metrics</h2>
+	<ul>
+		{{range $_, $c := .Chains}}
+			{{ $id := $c.ChainRecord.ChainID.Base58 }}
+			<li><a href="{{ uri "metricsChain" $id }}"><code>{{ $id }}</code></a>
+				<ul>
+					<li><a href="{{ uri "metricsChainNodeconn" $id }}"><code>Connection to L1</code></a></li>
+				</ul>
+			</li>
+		{{end}}
 	</ul>
 </div>
 {{end}}

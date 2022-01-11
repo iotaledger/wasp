@@ -13,7 +13,8 @@ var tplMetrics string
 func (d *Dashboard) metricsInit(e *echo.Echo, r renderer) Tab {
 	ret := d.initMetrics(e, r)
 	d.initMetricsNodeconn(e, r)
-	d.initMetricsNodeconnMessages(e, r)
+	d.initMetricsChain(e, r)
+	d.initMetricsChainNodeconn(e, r)
 	return ret
 }
 
@@ -31,11 +32,17 @@ func (d *Dashboard) initMetrics(e *echo.Echo, r renderer) Tab {
 }
 
 func (d *Dashboard) handleMetrics(c echo.Context) error {
+	chains, err := d.fetchChains()
+	if err != nil {
+		return err
+	}
 	return c.Render(http.StatusOK, c.Path(), &MetricsTemplateParams{
 		BaseTemplateParams: d.BaseParams(c),
+		Chains:             chains,
 	})
 }
 
 type MetricsTemplateParams struct {
 	BaseTemplateParams
+	Chains []*ChainOverview
 }
