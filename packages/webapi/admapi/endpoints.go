@@ -46,10 +46,10 @@ func AddEndpoints(
 	}
 
 	addShutdownEndpoint(adm, shutdown)
+	addNodeOwnerEndpoints(adm, registryProvider)
 	addChainRecordEndpoints(adm, registryProvider)
 	addChainMetricsEndpoints(adm, chainsProvider)
-	addCommitteeRecordEndpoints(adm, registryProvider, chainsProvider)
-	addChainEndpoints(adm, registryProvider, chainsProvider, metrics)
+	addChainEndpoints(adm, registryProvider, chainsProvider, network, metrics)
 	addDKSharesEndpoints(adm, registryProvider, nodeProvider)
 	addPeeringEndpoints(adm, network, tnm)
 }

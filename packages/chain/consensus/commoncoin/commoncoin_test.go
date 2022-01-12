@@ -16,8 +16,8 @@ import (
 
 func TestBlsCommonCoin(t *testing.T) {
 	var err error
-	netIDs, _ := testpeers.SetupKeys(10)
-	address, regProviders := testpeers.SetupDkgPregenerated(t, 7, netIDs, tcrypto.DefaultSuite())
+	netIDs, identities := testpeers.SetupKeys(10)
+	address, regProviders := testpeers.SetupDkgPregenerated(t, 7, identities, tcrypto.DefaultSuite())
 
 	ccs := make([]hbbft.CommonCoin, len(netIDs))
 	salt := []byte{0, 1, 2, 3}

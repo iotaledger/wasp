@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -18,7 +19,7 @@ type BlockMsg struct {
 
 type BlockMsgIn struct {
 	BlockMsg
-	SenderNetID string
+	SenderPubKey *ed25519.PublicKey
 }
 
 func NewBlockMsg(data []byte) (*BlockMsg, error) {

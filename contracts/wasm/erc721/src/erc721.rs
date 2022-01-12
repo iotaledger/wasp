@@ -140,6 +140,12 @@ pub fn func_mint(ctx: &ScFuncContext, f: &MintContext) {
     let token_owner = f.state.owners().get_agent_id(&token_id);
     ctx.require(!token_owner.exists(), "tokenID already minted");
 
+    // save optional token uri
+    let token_uri = f.params.token_uri();
+    if token_uri.exists() {
+        f.state.token_ur_is().get_string(&token_id).set_value(&token_uri.value());
+    }
+
     let owner = ctx.caller();
     token_owner.set_value(&owner);
     let balance = f.state.balances().get_uint64(&owner);
@@ -238,6 +244,11 @@ pub fn view_symbol(_ctx: &ScViewContext, f: &SymbolContext) {
 pub fn view_token_uri(_ctx: &ScViewContext, f: &TokenURIContext) {
     let token_id = f.params.token_id();
     if token_id.exists() {
-        f.results.token_uri().set_value(&(BASE_URI.to_owned() + &token_id.to_string()));
+        let mut token_uri = BASE_URI.to_owned() + &token_id.to_string();
+        let saved_uri = f.state.token_ur_is().get_string(&token_id.value());
+        if saved_uri.exists() {
+            token_uri = saved_uri.value();
+        }
+        f.results.token_uri().set_value(&token_uri);
     }
 }

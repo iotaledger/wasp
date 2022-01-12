@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package registry
 
 import (
@@ -12,7 +15,6 @@ func TestChainRecord(t *testing.T) {
 
 	rec := ChainRecord{
 		ChainID: chainID,
-		Peers:   []string{"a", "b", "c"},
 		Active:  false,
 	}
 	recBack, err := ChainRecordFromBytes(rec.Bytes())
@@ -25,7 +27,6 @@ func TestChainRecord(t *testing.T) {
 
 	rec = ChainRecord{
 		ChainID: chainID,
-		Peers:   []string{"k", "l"},
 		Active:  true,
 	}
 	require.True(t, rec.Active)

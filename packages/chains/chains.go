@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package chains
 
 import (
@@ -12,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -121,15 +123,6 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		return nil
 	}
 	// create new chain object
-	peerNetworkConfig, err := peering.NewStaticPeerNetworkConfigProvider(
-		parameters.GetString(parameters.PeeringMyNetID),
-		parameters.GetInt(parameters.PeeringPort),
-		chr.Peers...,
-	)
-	if err != nil {
-		return xerrors.Errorf("cannot create peer network config provider")
-	}
-
 	defaultRegistry := registryProvider()
 	chainKVStore := c.getOrCreateKVStore(chr.ChainID)
 	chainMetrics := allMetrics.NewChainMetrics(chr.ChainID)
@@ -137,10 +130,8 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		chr.ChainID,
 		c.log,
 		c.nodeConn,
-		peerNetworkConfig,
 		chainKVStore,
 		c.networkProvider,
-		defaultRegistry,
 		defaultRegistry,
 		defaultRegistry,
 		c.processorConfig,

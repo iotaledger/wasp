@@ -38,14 +38,13 @@ const (
 type NetworkProvider interface {
 	Run(stopCh <-chan struct{})
 	Self() PeerSender
-	PeerGroup(peeringID PeeringID, peerAddrs []string) (GroupProvider, error)
-	PeerDomain(peeringID PeeringID, peerAddrs []string) (PeerDomainProvider, error)
-	PeerByNetID(peerNetID string) (PeerSender, error)
+	PeerGroup(peeringID PeeringID, peerPubKeys []*ed25519.PublicKey) (GroupProvider, error)
+	PeerDomain(peeringID PeeringID, peerAddrs []*ed25519.PublicKey) (PeerDomainProvider, error)
 	PeerByPubKey(peerPub *ed25519.PublicKey) (PeerSender, error)
+	SendMsgByPubKey(pubKey *ed25519.PublicKey, msg *PeerMessageData)
 	PeerStatus() []PeerStatusProvider
 	Attach(peeringID *PeeringID, receiver byte, callback func(recv *PeerMessageIn)) interface{}
 	Detach(attachID interface{})
-	SendMsgByNetID(netID string, msg *PeerMessageData)
 }
 
 // TrustedNetworkManager is used maintain a configuration which peers are trusted.
@@ -68,8 +67,8 @@ type TrustedNetworkManager interface {
 type GroupProvider interface {
 	SelfIndex() uint16
 	PeerIndex(peer PeerSender) (uint16, error)
-	PeerIndexByNetID(peerNetID string) (uint16, error)
-	NetIDByIndex(index uint16) (string, error)
+	PeerIndexByPubKey(peerPubKey *ed25519.PublicKey) (uint16, error)
+	PubKeyByIndex(index uint16) (*ed25519.PublicKey, error)
 	Attach(receiver byte, callback func(recv *PeerMessageGroupIn)) interface{}
 	Detach(attachID interface{})
 	SendMsgByIndex(peerIdx uint16, msgReceiver byte, msgType byte, msgData []byte)
@@ -91,11 +90,12 @@ type GroupProvider interface {
 // All peers in the domain shares same peeringID. Each peer within domain is identified via its netID
 type PeerDomainProvider interface {
 	ReshufflePeers(seedBytes ...[]byte)
-	GetRandomPeers(upToNumPeers int) []string
+	GetRandomOtherPeers(upToNumPeers int) []*ed25519.PublicKey
+	UpdatePeers(newPeerPubKeys []*ed25519.PublicKey)
 	Attach(receiver byte, callback func(recv *PeerMessageIn)) interface{}
 	Detach(attachID interface{})
-	SendMsgByNetID(netID string, msgReceiver byte, msgType byte, msgData []byte)
-	SendPeerMsgToRandomPeers(upToNumPeers int, msgReceiver byte, msgType byte, msgData []byte)
+	SendMsgByPubKey(pubKey *ed25519.PublicKey, msgReceiver byte, msgType byte, msgData []byte)
+	PeerStatus() []PeerStatusProvider
 	Close()
 }
 
@@ -122,6 +122,9 @@ type PeerSender interface {
 	// Await for the connection to be established, handshaked, and the
 	// public key resolved.
 	Await(timeout time.Duration) error
+
+	// Provides a read-only representation of this sender.
+	Status() PeerStatusProvider
 
 	// Close releases the reference to the peer, this informs the network
 	// implementation, that it can disconnect, cleanup resources, etc.

@@ -10,6 +10,7 @@
 use wasmlib::*;
 use wasmlib::host::*;
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToImmutableInt64 {
 	pub(crate) obj_id: i32,
 }
@@ -22,6 +23,7 @@ impl MapAgentIDToImmutableInt64 {
 
 pub type ImmutableAllowancesForAgent = MapAgentIDToImmutableInt64;
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToMutableInt64 {
 	pub(crate) obj_id: i32,
 }

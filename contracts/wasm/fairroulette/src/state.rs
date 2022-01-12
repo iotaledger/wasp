@@ -15,6 +15,7 @@ use crate::*;
 use crate::keys::*;
 use crate::structs::*;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableBet {
 	pub(crate) obj_id: i32,
 }
@@ -36,31 +37,32 @@ pub struct ImmutableFairRouletteState {
 
 impl ImmutableFairRouletteState {
     pub fn bets(&self) -> ArrayOfImmutableBet {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_BETS), TYPE_ARRAY | TYPE_BYTES);
+		let arr_id = get_object_id(self.id, STATE_BETS.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
 		ArrayOfImmutableBet { obj_id: arr_id }
 	}
 
     pub fn last_winning_number(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_LAST_WINNING_NUMBER))
+		ScImmutableInt64::new(self.id, STATE_LAST_WINNING_NUMBER.get_key_id())
 	}
 
     pub fn play_period(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_STATE_PLAY_PERIOD))
+		ScImmutableInt32::new(self.id, STATE_PLAY_PERIOD.get_key_id())
 	}
 
     pub fn round_number(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_ROUND_NUMBER))
+		ScImmutableInt64::new(self.id, STATE_ROUND_NUMBER.get_key_id())
 	}
 
     pub fn round_started_at(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_STATE_ROUND_STARTED_AT))
+		ScImmutableInt32::new(self.id, STATE_ROUND_STARTED_AT.get_key_id())
 	}
 
     pub fn round_status(&self) -> ScImmutableInt16 {
-		ScImmutableInt16::new(self.id, idx_map(IDX_STATE_ROUND_STATUS))
+		ScImmutableInt16::new(self.id, STATE_ROUND_STATUS.get_key_id())
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableBet {
 	pub(crate) obj_id: i32,
 }
@@ -85,28 +87,32 @@ pub struct MutableFairRouletteState {
 }
 
 impl MutableFairRouletteState {
+    pub fn as_immutable(&self) -> ImmutableFairRouletteState {
+		ImmutableFairRouletteState { id: self.id }
+	}
+
     pub fn bets(&self) -> ArrayOfMutableBet {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_BETS), TYPE_ARRAY | TYPE_BYTES);
+		let arr_id = get_object_id(self.id, STATE_BETS.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
 		ArrayOfMutableBet { obj_id: arr_id }
 	}
 
     pub fn last_winning_number(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_LAST_WINNING_NUMBER))
+		ScMutableInt64::new(self.id, STATE_LAST_WINNING_NUMBER.get_key_id())
 	}
 
     pub fn play_period(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_STATE_PLAY_PERIOD))
+		ScMutableInt32::new(self.id, STATE_PLAY_PERIOD.get_key_id())
 	}
 
     pub fn round_number(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_ROUND_NUMBER))
+		ScMutableInt64::new(self.id, STATE_ROUND_NUMBER.get_key_id())
 	}
 
     pub fn round_started_at(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_STATE_ROUND_STARTED_AT))
+		ScMutableInt32::new(self.id, STATE_ROUND_STARTED_AT.get_key_id())
 	}
 
     pub fn round_status(&self) -> ScMutableInt16 {
-		ScMutableInt16::new(self.id, idx_map(IDX_STATE_ROUND_STATUS))
+		ScMutableInt16::new(self.id, STATE_ROUND_STATUS.get_key_id())
 	}
 }

@@ -21,7 +21,6 @@ package lpp
 import (
 	"context"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -319,11 +318,11 @@ func (n *netImpl) Self() peering.PeerSender {
 }
 
 // Group creates peering.GroupProvider.
-func (n *netImpl) PeerGroup(peeringID peering.PeeringID, peerNetIDs []string) (peering.GroupProvider, error) {
+func (n *netImpl) PeerGroup(peeringID peering.PeeringID, peerPubKeys []*ed25519.PublicKey) (peering.GroupProvider, error) {
 	var err error
-	groupPeers := make([]peering.PeerSender, len(peerNetIDs))
-	for i := range peerNetIDs {
-		if groupPeers[i], err = n.usePeer(peerNetIDs[i]); err != nil {
+	groupPeers := make([]peering.PeerSender, len(peerPubKeys))
+	for i := range peerPubKeys {
+		if groupPeers[i], err = n.usePeer(peerPubKeys[i]); err != nil {
 			return nil, err
 		}
 	}
@@ -331,13 +330,13 @@ func (n *netImpl) PeerGroup(peeringID peering.PeeringID, peerNetIDs []string) (p
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (n *netImpl) PeerDomain(peeringID peering.PeeringID, peerNetIDs []string) (peering.PeerDomainProvider, error) {
-	peers := make([]peering.PeerSender, 0, len(peerNetIDs))
-	for _, nid := range peerNetIDs {
-		if nid == n.Self().NetID() {
+func (n *netImpl) PeerDomain(peeringID peering.PeeringID, peerPubKeys []*ed25519.PublicKey) (peering.PeerDomainProvider, error) {
+	peers := make([]peering.PeerSender, 0, len(peerPubKeys))
+	for _, peerPubKey := range peerPubKeys {
+		if *peerPubKey == *n.Self().PubKey() {
 			continue
 		}
-		p, err := n.usePeer(nid)
+		p, err := n.usePeer(peerPubKey)
 		if err != nil {
 			return nil, err
 		}
@@ -346,13 +345,15 @@ func (n *netImpl) PeerDomain(peeringID peering.PeeringID, peerNetIDs []string) (
 	return domain.NewPeerDomain(n, peeringID, peers, n.log), nil
 }
 
-func (n *netImpl) SendMsgByNetID(netID string, msg *peering.PeerMessageData) {
-	peer, err := n.PeerByNetID(netID)
+// SendMsgByPubKey sends a message to the specified peer.
+func (n *netImpl) SendMsgByPubKey(pubKey *ed25519.PublicKey, msg *peering.PeerMessageData) {
+	peer, err := n.PeerByPubKey(pubKey)
 	if err != nil {
-		n.log.Warnf("SendMsgByNetID: NetID %v is not in the network", netID)
+		n.log.Warnf("SendMsgByPubKey: PubKey %v is not in the network", pubKey.String())
 		return
 	}
 	peer.SendMsg(msg)
+	peer.Close()
 }
 
 // Attach implements peering.NetworkProvider.
@@ -372,23 +373,10 @@ func (n *netImpl) Detach(attachID interface{}) {
 	n.recvEvents.Detach(closure)
 }
 
-// PeerByNetID implements peering.NetworkProvider.
-func (n *netImpl) PeerByNetID(peerNetID string) (peering.PeerSender, error) {
-	return n.usePeer(peerNetID)
-}
-
 // PeerByPubKey implements peering.NetworkProvider.
 // NOTE: For now, only known nodes can be looked up by PubKey.
-func (n *netImpl) PeerByPubKey(peerPub *ed25519.PublicKey) (peering.PeerSender, error) {
-	n.peersLock.RLock()
-	defer n.peersLock.RUnlock()
-	for i := range n.peers {
-		pk := n.peers[i].PubKey()
-		if pk != nil && *pk == *peerPub { // Compared as binaries.
-			return n.PeerByNetID(n.peers[i].NetID())
-		}
-	}
-	return nil, errors.New("known peer not found by pubKey")
+func (n *netImpl) PeerByPubKey(peerPubKey *ed25519.PublicKey) (peering.PeerSender, error) {
+	return n.usePeer(peerPubKey)
 }
 
 // PeerStatus implements peering.NetworkProvider.
@@ -415,13 +403,13 @@ func (n *netImpl) PubKey() *ed25519.PublicKey {
 // SendMsg implements peering.PeerSender for the Self() node.
 func (n *netImpl) SendMsg(msg *peering.PeerMessageData) {
 	// Don't go via the network, if sending a message to self.
-	n.triggerRecvEvents(n.Self().NetID(), &peering.PeerMessageNet{PeerMessageData: *msg})
+	n.triggerRecvEvents(n.Self().PubKey(), &peering.PeerMessageNet{PeerMessageData: *msg})
 }
 
-func (n *netImpl) triggerRecvEvents(from string, msg *peering.PeerMessageNet) {
+func (n *netImpl) triggerRecvEvents(from *ed25519.PublicKey, msg *peering.PeerMessageNet) {
 	n.recvEvents.Trigger(&peering.PeerMessageIn{
 		PeerMessageData: msg.PeerMessageData,
-		SenderNetID:     from,
+		SenderPubKey:    from,
 	})
 }
 
@@ -430,9 +418,19 @@ func (n *netImpl) IsAlive() bool {
 	return true // This node is alive.
 }
 
+// NumUsers implements peering.PeerStatusProvider for the Self() node.
+func (n *netImpl) NumUsers() int {
+	return 1
+}
+
 // Await implements peering.PeerSender for the Self() node.
 func (n *netImpl) Await(timeout time.Duration) error {
 	return nil // This node is alive immediately.
+}
+
+// Status implements peering.PeerSender interface for the remote peers.
+func (n *netImpl) Status() peering.PeerStatusProvider {
+	return n
 }
 
 // Close implements peering.PeerSender for the Self() node.
@@ -474,19 +472,19 @@ func (n *netImpl) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	return n.trusted.TrustedPeers()
 }
 
-func (n *netImpl) usePeer(remoteNetID string) (peering.PeerSender, error) {
-	if remoteNetID == n.myNetID {
+func (n *netImpl) usePeer(remotePubKey *ed25519.PublicKey) (peering.PeerSender, error) {
+	if *remotePubKey == n.nodeKeyPair.PublicKey {
 		return n, nil
 	}
 	n.peersLock.Lock()
 	defer n.peersLock.Unlock()
 	for _, p := range n.peers {
-		if p.remoteNetID == remoteNetID {
+		if *p.remotePubKey == *remotePubKey {
 			p.usePeer()
 			return p, nil
 		}
 	}
-	return nil, xerrors.Errorf("peer %v is not trusted", remoteNetID)
+	return nil, xerrors.Errorf("peer %v is not trusted", remotePubKey)
 }
 
 func (n *netImpl) maintenanceLoop(stopCh chan bool) {

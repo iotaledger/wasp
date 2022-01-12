@@ -11,7 +11,9 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -52,6 +54,14 @@ func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
 // GetStateReader returns a new copy of the optimistic state reader, with own baseline
 func (c *chainObj) GetStateReader() state.OptimisticStateReader {
 	return state.NewOptimisticStateReader(c.db, c.chainStateSync)
+}
+
+func (c *chainObj) GetChainNodes() []peering.PeerStatusProvider {
+	return c.chainPeers.PeerStatus()
+}
+
+func (c *chainObj) GetCandidateNodes() []*governance.AccessNodeInfo {
+	return c.candidateNodes
 }
 
 func (c *chainObj) Log() *logger.Logger {

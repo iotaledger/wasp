@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -15,9 +16,11 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/ready"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -29,6 +32,8 @@ type ChainCore interface {
 	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
+	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
+	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger
 
 	// Most of these methods are made public for mocking in tests
@@ -82,8 +87,7 @@ type Committee interface {
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
-	GetOtherValidatorsPeerIDs() []string
-	GetRandomValidators(upToN int) []string
+	GetRandomValidators(upToN int) []*ed25519.PublicKey // TODO: Remove after OffLedgerRequest dissemination is changed.
 }
 
 type (
@@ -145,6 +149,7 @@ type StateManager interface {
 	EnqueueStateCandidateMsg(state.VirtualStateAccess, ledgerstate.OutputID)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
+	SetChainPeers(peers []*ed25519.PublicKey)
 	Close()
 }
 
@@ -244,8 +249,8 @@ type CommitteeInfo struct {
 
 type PeerStatus struct {
 	Index     int
-	PeeringID string
-	IsSelf    bool
+	PubKey    *ed25519.PublicKey
+	NetID     string
 	Connected bool
 }
 

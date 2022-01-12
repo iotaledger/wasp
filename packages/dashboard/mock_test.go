@@ -106,6 +106,14 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
+	pubKey0, err := ed25519.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	if err != nil {
+		return nil, err
+	}
+	pubKey1, err := ed25519.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	if err != nil {
+		return nil, err
+	}
 	return &chain.CommitteeInfo{
 		Address:       ledgerstate.NewED25519Address(ed25519.PublicKey{}),
 		Size:          2,
@@ -114,14 +122,14 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 		PeerStatus: []*chain.PeerStatus{
 			{
 				Index:     0,
-				PeeringID: "0",
-				IsSelf:    true,
+				NetID:     "localhost:2000",
+				PubKey:    &pubKey0,
 				Connected: true,
 			},
 			{
 				Index:     1,
-				PeeringID: "1",
-				IsSelf:    false,
+				NetID:     "localhost:2001",
+				PubKey:    &pubKey1,
 				Connected: true,
 			},
 		},

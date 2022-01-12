@@ -183,9 +183,8 @@ type initiatorInitMsg struct {
 	step         byte
 	dkgRef       string // Some unique string to identify duplicate initialization.
 	peeringID    peering.PeeringID
-	peerNetIDs   []string
-	peerPubs     []ed25519.PublicKey
-	initiatorPub ed25519.PublicKey
+	peerPubs     []*ed25519.PublicKey
+	initiatorPub *ed25519.PublicKey
 	threshold    uint16
 	timeout      time.Duration
 	roundRetry   time.Duration
@@ -193,7 +192,7 @@ type initiatorInitMsg struct {
 
 type initiatorInitMsgIn struct {
 	initiatorInitMsg
-	SenderNetID string
+	SenderPubKey *ed25519.PublicKey
 }
 
 func (m *initiatorInitMsg) MsgType() byte {
@@ -218,9 +217,6 @@ func (m *initiatorInitMsg) Write(w io.Writer) error {
 		return err
 	}
 	if _, err = w.Write(m.peeringID[:]); err != nil {
-		return err
-	}
-	if err = util.WriteStrings16(w, m.peerNetIDs); err != nil {
 		return err
 	}
 	if err = util.WriteUint16(w, uint16(len(m.peerPubs))); err != nil {
@@ -260,30 +256,31 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 		return fmt.Errorf("error while reading peering ID: read %v bytes, expected %v bytes",
 			n, ledgerstate.AddressLength)
 	}
-	if m.peerNetIDs, err = util.ReadStrings16(r); err != nil {
-		return err
-	}
 	var arrLen uint16
 	if err = util.ReadUint16(r, &arrLen); err != nil {
 		return err
 	}
-	m.peerPubs = make([]ed25519.PublicKey, arrLen)
+	m.peerPubs = make([]*ed25519.PublicKey, arrLen)
 	for i := range m.peerPubs {
 		var peerPubBytes []byte
 		if peerPubBytes, err = util.ReadBytes16(r); err != nil {
 			return err
 		}
-		if m.peerPubs[i], _, err = ed25519.PublicKeyFromBytes(peerPubBytes); err != nil {
+		peerPubKey, _, err := ed25519.PublicKeyFromBytes(peerPubBytes)
+		if err != nil {
 			return err
 		}
+		m.peerPubs[i] = &peerPubKey
 	}
 	var initiatorPubBytes []byte
 	if initiatorPubBytes, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if m.initiatorPub, _, err = ed25519.PublicKeyFromBytes(initiatorPubBytes); err != nil {
+	initiatorPub, _, err := ed25519.PublicKeyFromBytes(initiatorPubBytes)
+	if err != nil {
 		return err
 	}
+	m.initiatorPub = &initiatorPub
 	if err = util.ReadUint16(r, &m.threshold); err != nil {
 		return err
 	}

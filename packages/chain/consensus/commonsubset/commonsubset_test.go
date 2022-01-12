@@ -51,7 +51,7 @@ func testBasic(t *testing.T, peerCount, threshold uint16, allRandom bool) {
 	)
 	t.Logf("Network created.")
 
-	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerIdentities, tcrypto.DefaultSuite())
 	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
 	for i := range dkShares {
 		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
@@ -61,7 +61,7 @@ func testBasic(t *testing.T, peerCount, threshold uint16, allRandom bool) {
 
 	acsPeers := make([]*CommonSubset, peerCount)
 	for a := range acsPeers {
-		group, err := networkProviders[a].PeerGroup(peeringID, peerNetIDs)
+		group, err := networkProviders[a].PeerGroup(peeringID, testpeers.PublicKeys(peerIdentities))
 		require.Nil(t, err)
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
 		acsPeers[a], err = NewCommonSubset(0, 0, group, dkShares[a], allRandom, nil, acsLog)
@@ -100,7 +100,7 @@ func TestRandomized(t *testing.T) {
 	networkProviders, networkCloser := testpeers.SetupNet(peerNetIDs, peerIdentities, netBehavior, netLogger)
 	t.Logf("Network created.")
 
-	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerIdentities, tcrypto.DefaultSuite())
 	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
 	for i := range dkShares {
 		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
@@ -110,7 +110,7 @@ func TestRandomized(t *testing.T) {
 
 	acsPeers := make([]*CommonSubset, peerCount)
 	for a := range acsPeers {
-		group, err := networkProviders[a].PeerGroup(peeringID, peerNetIDs)
+		group, err := networkProviders[a].PeerGroup(peeringID, testpeers.PublicKeys(peerIdentities))
 		require.Nil(t, err)
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("ACS[%02d]", a)), logger.LevelInfo, false)
 		acsPeers[a], err = NewCommonSubset(0, 0, group, dkShares[a], true, nil, acsLog)
@@ -195,7 +195,7 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16, inputLen int) {
 	)
 	t.Logf("Network created.")
 
-	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerIdentities, tcrypto.DefaultSuite())
 	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
 	for i := range dkShares {
 		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
@@ -205,7 +205,7 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16, inputLen int) {
 
 	acsCoords := make([]*CommonSubsetCoordinator, peerCount)
 	for i := range acsCoords {
-		group, err := networkProviders[i].PeerGroup(peeringID, peerNetIDs)
+		group, err := networkProviders[i].PeerGroup(peeringID, testpeers.PublicKeys(peerIdentities))
 		require.Nil(t, err)
 		acsLog := testlogger.WithLevel(log.Named(fmt.Sprintf("CSC[%02d]", i)), logger.LevelInfo, false)
 		acsCoords[i] = NewCommonSubsetCoordinator(networkProviders[i], group, dkShares[i], acsLog)
@@ -264,10 +264,10 @@ func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16, inputLen in
 		logs[i] = testlogger.WithLevel(log.Named(fmt.Sprintf("CSC[%02d]", i)), logger.LevelInfo, false)
 	}
 
-	dkAddress, dkShares := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	dkAddress, dkShares := testpeers.SetupDkgPregenerated(t, threshold, peerIdentities, tcrypto.DefaultSuite())
 	acsCoords := make([]*CommonSubsetCoordinator, peerCount)
 	for i := range acsCoords {
-		group, err := networkProviders[i].PeerGroup(peeringID, peerNetIDs)
+		group, err := networkProviders[i].PeerGroup(peeringID, testpeers.PublicKeys(peerIdentities))
 		require.Nil(t, err)
 		dkShare, err := dkShares[i].LoadDKShare(dkAddress)
 		require.Nil(t, err)

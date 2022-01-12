@@ -10,21 +10,21 @@ import * as sc from "./index";
 
 export class ImmutableApproveParams extends wasmlib.ScMapID {
     amount(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamAmount]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 
     delegation(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamDelegation]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDelegation));
 	}
 }
 
 export class MutableApproveParams extends wasmlib.ScMapID {
     amount(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamAmount]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 
     delegation(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamDelegation]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDelegation));
 	}
 }
 
@@ -50,80 +50,80 @@ export class MutableInitParams extends wasmlib.ScMapID {
 
 export class ImmutableTransferParams extends wasmlib.ScMapID {
     account(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 
     amount(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamAmount]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 }
 
 export class MutableTransferParams extends wasmlib.ScMapID {
     account(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 
     amount(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamAmount]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 }
 
 export class ImmutableTransferFromParams extends wasmlib.ScMapID {
     account(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 
     amount(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamAmount]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 
     recipient(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamRecipient]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamRecipient));
 	}
 }
 
 export class MutableTransferFromParams extends wasmlib.ScMapID {
     account(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 
     amount(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamAmount]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 
     recipient(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamRecipient]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamRecipient));
 	}
 }
 
 export class ImmutableAllowanceParams extends wasmlib.ScMapID {
     account(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 
     delegation(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamDelegation]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDelegation));
 	}
 }
 
 export class MutableAllowanceParams extends wasmlib.ScMapID {
     account(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 
     delegation(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamDelegation]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDelegation));
 	}
 }
 
 export class ImmutableBalanceOfParams extends wasmlib.ScMapID {
     account(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 }
 
 export class MutableBalanceOfParams extends wasmlib.ScMapID {
     account(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamAccount]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 }

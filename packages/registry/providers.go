@@ -4,6 +4,7 @@
 package registry
 
 import (
+	"errors"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -28,14 +29,6 @@ type NodeIdentityProvider interface {
 	GetNodePublicKey() (*ed25519.PublicKey, error)
 }
 
-// PeerNetworkConfigProvider access to node and chain configuration: a list of netIDs of potential peers
-type PeerNetworkConfigProvider interface { // TODO: KP: Remove or redesign.
-	OwnNetID() string
-	PeeringPort() int
-	Neighbors() []string
-	String() string
-}
-
 // DKShareRegistryProvider stands for a partial registry interface, needed for this package.
 // It should be implemented by registry.impl
 type DKShareRegistryProvider interface {
@@ -43,10 +36,7 @@ type DKShareRegistryProvider interface {
 	LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error)
 }
 
-type CommitteeRegistryProvider interface {
-	GetCommitteeRecord(addr ledgerstate.Address) (*CommitteeRecord, error)
-	SaveCommitteeRecord(rec *CommitteeRecord) error
-}
+var ErrDKShareNotFound = errors.New("dkShare not found")
 
 // ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
 type ChainRecordRegistryProvider interface {

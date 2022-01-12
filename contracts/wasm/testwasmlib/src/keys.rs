@@ -25,28 +25,30 @@ pub(crate) const IDX_PARAM_INT16        : usize = 10;
 pub(crate) const IDX_PARAM_INT32        : usize = 11;
 pub(crate) const IDX_PARAM_INT64        : usize = 12;
 pub(crate) const IDX_PARAM_INT8         : usize = 13;
-pub(crate) const IDX_PARAM_NAME         : usize = 14;
-pub(crate) const IDX_PARAM_PARAM        : usize = 15;
-pub(crate) const IDX_PARAM_RECORD_INDEX : usize = 16;
-pub(crate) const IDX_PARAM_REQUEST_ID   : usize = 17;
-pub(crate) const IDX_PARAM_STRING       : usize = 18;
-pub(crate) const IDX_PARAM_UINT16       : usize = 19;
-pub(crate) const IDX_PARAM_UINT32       : usize = 20;
-pub(crate) const IDX_PARAM_UINT64       : usize = 21;
-pub(crate) const IDX_PARAM_UINT8        : usize = 22;
-pub(crate) const IDX_PARAM_VALUE        : usize = 23;
+pub(crate) const IDX_PARAM_KEY          : usize = 14;
+pub(crate) const IDX_PARAM_NAME         : usize = 15;
+pub(crate) const IDX_PARAM_PARAM        : usize = 16;
+pub(crate) const IDX_PARAM_RECORD_INDEX : usize = 17;
+pub(crate) const IDX_PARAM_REQUEST_ID   : usize = 18;
+pub(crate) const IDX_PARAM_STRING       : usize = 19;
+pub(crate) const IDX_PARAM_UINT16       : usize = 20;
+pub(crate) const IDX_PARAM_UINT32       : usize = 21;
+pub(crate) const IDX_PARAM_UINT64       : usize = 22;
+pub(crate) const IDX_PARAM_UINT8        : usize = 23;
+pub(crate) const IDX_PARAM_VALUE        : usize = 24;
 
-pub(crate) const IDX_RESULT_COUNT  : usize = 24;
-pub(crate) const IDX_RESULT_IOTAS  : usize = 25;
-pub(crate) const IDX_RESULT_LENGTH : usize = 26;
-pub(crate) const IDX_RESULT_RANDOM : usize = 27;
-pub(crate) const IDX_RESULT_RECORD : usize = 28;
-pub(crate) const IDX_RESULT_VALUE  : usize = 29;
+pub(crate) const IDX_RESULT_COUNT  : usize = 25;
+pub(crate) const IDX_RESULT_IOTAS  : usize = 26;
+pub(crate) const IDX_RESULT_LENGTH : usize = 27;
+pub(crate) const IDX_RESULT_RANDOM : usize = 28;
+pub(crate) const IDX_RESULT_RECORD : usize = 29;
+pub(crate) const IDX_RESULT_VALUE  : usize = 30;
 
-pub(crate) const IDX_STATE_ARRAYS : usize = 30;
-pub(crate) const IDX_STATE_RANDOM : usize = 31;
+pub(crate) const IDX_STATE_ARRAYS : usize = 31;
+pub(crate) const IDX_STATE_MAPS   : usize = 32;
+pub(crate) const IDX_STATE_RANDOM : usize = 33;
 
-pub const KEY_MAP_LEN: usize = 32;
+pub const KEY_MAP_LEN: usize = 34;
 
 pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
 	PARAM_ADDRESS,
@@ -63,6 +65,7 @@ pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
 	PARAM_INT32,
 	PARAM_INT64,
 	PARAM_INT8,
+	PARAM_KEY,
 	PARAM_NAME,
 	PARAM_PARAM,
 	PARAM_RECORD_INDEX,
@@ -80,6 +83,7 @@ pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
 	RESULT_RECORD,
 	RESULT_VALUE,
 	STATE_ARRAYS,
+	STATE_MAPS,
 	STATE_RANDOM,
 ];
 

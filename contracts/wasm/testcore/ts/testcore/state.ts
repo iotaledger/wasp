@@ -10,46 +10,52 @@ import * as sc from "./index";
 
 export class ImmutableTestCoreState extends wasmlib.ScMapID {
     counter(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateCounter]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateCounter));
 	}
 
     hnameEP(): wasmlib.ScImmutableHname {
-		return new wasmlib.ScImmutableHname(this.mapID, sc.idxMap[sc.IdxStateHnameEP]);
+		return new wasmlib.ScImmutableHname(this.mapID, wasmlib.Key32.fromString(sc.StateHnameEP));
 	}
 
     ints(): sc.MapStringToImmutableInt64 {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateInts], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateInts), wasmlib.TYPE_MAP);
 		return new sc.MapStringToImmutableInt64(mapID);
 	}
 
     mintedColor(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxStateMintedColor]);
+		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.StateMintedColor));
 	}
 
     mintedSupply(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateMintedSupply]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateMintedSupply));
 	}
 }
 
 export class MutableTestCoreState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableTestCoreState {
+		const imm = new sc.ImmutableTestCoreState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     counter(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateCounter]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateCounter));
 	}
 
     hnameEP(): wasmlib.ScMutableHname {
-		return new wasmlib.ScMutableHname(this.mapID, sc.idxMap[sc.IdxStateHnameEP]);
+		return new wasmlib.ScMutableHname(this.mapID, wasmlib.Key32.fromString(sc.StateHnameEP));
 	}
 
     ints(): sc.MapStringToMutableInt64 {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateInts], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateInts), wasmlib.TYPE_MAP);
 		return new sc.MapStringToMutableInt64(mapID);
 	}
 
     mintedColor(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxStateMintedColor]);
+		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.StateMintedColor));
 	}
 
     mintedSupply(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateMintedSupply]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateMintedSupply));
 	}
 }

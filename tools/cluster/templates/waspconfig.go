@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package templates
 
 type WaspConfigParams struct {
@@ -5,12 +8,12 @@ type WaspConfigParams struct {
 	DashboardPort                int
 	PeeringPort                  int
 	NanomsgPort                  int
-	Neighbors                    string
 	TxStreamPort                 int
 	TxStreamHost                 string
 	ProfilingPort                int
 	MetricsPort                  int
 	OffledgerBroadcastUpToNPeers int
+	OwnerAddress                 string
 }
 
 const WaspConfig = `
@@ -36,7 +39,8 @@ const WaspConfig = `
   },
   "node": {
     "disablePlugins": [],
-    "enablePlugins": []
+    "enablePlugins": [],
+    "ownerAddresses": ["{{.OwnerAddress}}"]
   },
   "webapi": {
     "bindAddress": "0.0.0.0:{{.APIPort}}"
@@ -46,8 +50,7 @@ const WaspConfig = `
   },
   "peering":{
     "port": {{.PeeringPort}},
-    "netid": "127.0.0.1:{{.PeeringPort}}",
-    "neighbors": [{{.Neighbors}}]
+    "netid": "127.0.0.1:{{.PeeringPort}}"
   },
   "nodeconn": {
     "address": "{{.TxStreamHost}}:{{.TxStreamPort}}"

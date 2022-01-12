@@ -139,6 +139,12 @@ export function funcMint(ctx: wasmlib.ScFuncContext, f: sc.MintContext): void {
     let tokenOwner = f.state.owners().getAgentID(tokenID);
     ctx.require(!tokenOwner.exists(), "tokenID already minted");
 
+    // save optional token uri
+    let tokenURI = f.params.tokenURI();
+    if (tokenURI.exists()) {
+        f.state.tokenURIs().getString(tokenID).setValue(tokenURI.value());
+    }
+
     let owner = ctx.caller();
     tokenOwner.setValue(owner);
     let balance = f.state.balances().getUint64(owner);
@@ -237,6 +243,11 @@ export function viewSymbol(ctx: wasmlib.ScViewContext, f: sc.SymbolContext): voi
 export function viewTokenURI(ctx: wasmlib.ScViewContext, f: sc.TokenURIContext): void {
     let tokenID = f.params.tokenID();
     if (tokenID.exists()) {
-        f.results.tokenURI().setValue(BASE_URI + tokenID.toString());
+        let tokenURI = BASE_URI + tokenID.toString();
+        let savedURI = f.state.tokenURIs().getString(tokenID.value());
+        if (savedURI.exists()) {
+            tokenURI = savedURI.value();
+        }
+        f.results.tokenURI().setValue(tokenURI);
     }
 }

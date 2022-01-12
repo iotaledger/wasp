@@ -14,7 +14,7 @@ type ImmutableAllowanceResults struct {
 }
 
 func (s ImmutableAllowanceResults) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultAmount])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultAmount))
 }
 
 type MutableAllowanceResults struct {
@@ -22,7 +22,7 @@ type MutableAllowanceResults struct {
 }
 
 func (s MutableAllowanceResults) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultAmount])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultAmount))
 }
 
 type ImmutableBalanceOfResults struct {
@@ -30,7 +30,7 @@ type ImmutableBalanceOfResults struct {
 }
 
 func (s ImmutableBalanceOfResults) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultAmount])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultAmount))
 }
 
 type MutableBalanceOfResults struct {
@@ -38,7 +38,7 @@ type MutableBalanceOfResults struct {
 }
 
 func (s MutableBalanceOfResults) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultAmount])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultAmount))
 }
 
 type ImmutableTotalSupplyResults struct {
@@ -46,7 +46,7 @@ type ImmutableTotalSupplyResults struct {
 }
 
 func (s ImmutableTotalSupplyResults) Supply() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultSupply])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultSupply))
 }
 
 type MutableTotalSupplyResults struct {
@@ -54,5 +54,5 @@ type MutableTotalSupplyResults struct {
 }
 
 func (s MutableTotalSupplyResults) Supply() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultSupply])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultSupply))
 }
