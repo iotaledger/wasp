@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (ch *Chain) runRequestsSync(reqs []iscp.RequestRaw, trace string) (dict.Dict, error) {
+func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (dict.Dict, error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
@@ -29,7 +29,7 @@ func (ch *Chain) runRequestsSync(reqs []iscp.RequestRaw, trace string) (dict.Dic
 	return ch.runRequestsNolock(reqs, trace)
 }
 
-func (ch *Chain) runRequestsNolock(reqs []iscp.RequestRaw, trace string) (dict.Dict, error) {
+func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict, error) {
 	ch.Log.Debugf("runRequestsNolock ('%s')", trace)
 
 	anchorOutput, anchorOutputID := ch.GetAnchorOutput()

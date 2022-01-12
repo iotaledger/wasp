@@ -26,9 +26,9 @@ func UTXOInputToMarshalUtil(id *iotago.UTXOInput, mu *marshalutil.MarshalUtil) {
 	mu.WriteBytes(EncodeOutputID(id.ID()))
 }
 
-// RequestRaw wraps any data which can be potentially be interpreted as a request
-type RequestRaw interface {
-	Request
+// Request wraps any data which can be potentially be interpreted as a request
+type Request interface {
+	Calldata
 
 	IsOffLedger() bool
 	AsOffLedger() AsOffLedger
@@ -48,7 +48,7 @@ type NFT struct {
 	NFTMetadata []byte
 }
 
-type Request interface {
+type Calldata interface {
 	ID() RequestID
 	Params() dict.Dict
 	SenderAccount() *AgentID // returns CommonAccount if sender address is not available
@@ -82,7 +82,7 @@ type ReturnAmountOptions interface {
 	Amount() uint64
 }
 
-func TakeRequestIDs(reqs ...RequestRaw) []RequestID {
+func TakeRequestIDs(reqs ...Request) []RequestID {
 	ret := make([]RequestID, len(reqs))
 	for i := range reqs {
 		ret[i] = reqs[i].ID()
@@ -91,19 +91,19 @@ func TakeRequestIDs(reqs ...RequestRaw) []RequestID {
 }
 
 // RequestsInTransaction parses the transaction and extracts those outputs which are interpreted as a request to a chain
-func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]RequestRaw, error) {
+func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error) {
 	txid, err := tx.ID()
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make(map[ChainID][]RequestRaw)
+	ret := make(map[ChainID][]Request)
 	for i, out := range tx.Essence.Outputs {
 		if _, ok := out.(*iotago.ExtendedOutput); !ok {
 			// only ExtendedOutputs are interpreted right now TODO nfts and other
 			continue
 		}
-		// wrap output into the iscp.RequestRaw
+		// wrap output into the iscp.Request
 		odata, err := OnLedgerFromUTXO(out, &iotago.UTXOInput{
 			TransactionID:          *txid,
 			TransactionOutputIndex: uint16(i),

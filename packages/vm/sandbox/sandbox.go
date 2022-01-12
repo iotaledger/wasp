@@ -127,7 +127,7 @@ func (s *sandbox) Params() dict.Dict {
 	return s.vmctx.Params()
 }
 
-func (s *sandbox) Request() iscp.Request {
+func (s *sandbox) Request() iscp.Calldata {
 	s.Burn(gas.GetRequestData)
 	return s.vmctx.Request()
 }

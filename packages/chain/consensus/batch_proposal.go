@@ -121,7 +121,7 @@ func (b *BatchProposal) Bytes() []byte {
 // the requests in the BatchProposal and the previous transaction. The timestamp is consistent,
 // if it is not bellow the timestamps of all the on-ledger requests and the previous transaction in the chain.
 // This implement the "fixing" part described in IscpBatchTimestamp.tla.
-func (b *BatchProposal) EnsureTimestampConsistent(requests []iscp.Request, stateTimestamp time.Time) error {
+func (b *BatchProposal) EnsureTimestampConsistent(requests []iscp.Calldata, stateTimestamp time.Time) error {
 	maxReqTime := time.Time{}
 	for i := range b.RequestIDs {
 		if requests[i].Hash() != b.RequestHashes[i] {

@@ -22,8 +22,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// RunTheRequest processes each iscp.RequestRaw in the batch
-func (vmctx *VMContext) RunTheRequest(req iscp.RequestRaw, requestIndex uint16) error {
+// RunTheRequest processes each iscp.Request in the batch
+func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) error {
 	// prepare context for the request
 	vmctx.req = req
 	vmctx.requestIndex = requestIndex
@@ -253,7 +253,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 func (vmctx *VMContext) chargeGasFee() {
 	vmctx.gasBurnEnable(false)
 	if vmctx.req.SenderAddress() == nil {
-		panic("inconsistency: vmctx.req.RequestRaw().SenderAddress() == nil")
+		panic("inconsistency: vmctx.req.Request().SenderAddress() == nil")
 	}
 	if vmctx.isInitChainRequest() {
 		// do not charge gas fees if init request

@@ -17,8 +17,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-// RequestDataFromMarshalUtil read RequestRaw from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
-func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestRaw, error) {
+// RequestDataFromMarshalUtil read Request from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
+func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
 	isOffLedger, err := mu.ReadBool()
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func RequestDataFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestRaw, error)
 	return OnLedgerRequestFromMarshalUtil(mu)
 }
 
-func RequestDataToMarshalUtil(req RequestRaw, mu *marshalutil.MarshalUtil) {
+func RequestDataToMarshalUtil(req Request, mu *marshalutil.MarshalUtil) {
 	switch req := req.(type) {
 	case *OnLedgerRequestData:
 		mu.WriteBool(false)
@@ -68,8 +68,8 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 	}
 }
 
-// implement RequestRaw interface
-var _ RequestRaw = &OffLedgerRequestData{}
+// implement Request interface
+var _ Request = &OffLedgerRequestData{}
 
 func (r *OffLedgerRequestData) IsOffLedger() bool {
 	return true
@@ -87,7 +87,7 @@ func (r *OffLedgerRequestData) ChainID() *ChainID {
 }
 
 func (r *OffLedgerRequestData) AsOnLedger() AsOnLedger {
-	panic("not an UTXO RequestRaw")
+	panic("not an UTXO Request")
 }
 
 // implements Features interface
@@ -105,8 +105,8 @@ func (r *OffLedgerRequestData) ReturnAmount() (uint64, bool) {
 	return 0, false
 }
 
-// implements iscp.Request interface
-var _ Request = &OffLedgerRequestData{}
+// implements iscp.Calldata interface
+var _ Calldata = &OffLedgerRequestData{}
 
 func (r *OffLedgerRequestData) Bytes() []byte {
 	mu := marshalutil.New()
@@ -254,7 +254,7 @@ func (r *OffLedgerRequestData) Nonce() uint64 {
 	return r.nonce
 }
 
-func (r *OffLedgerRequestData) WithNonce(nonce uint64) Request {
+func (r *OffLedgerRequestData) WithNonce(nonce uint64) Calldata {
 	r.nonce = nonce
 	return r
 }
@@ -389,8 +389,8 @@ func (r *OnLedgerRequestData) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.WriteByte(byte(r.output.Type()))
 }
 
-// implements Request interface
-var _ Request = &OnLedgerRequestData{}
+// implements Calldata interface
+var _ Calldata = &OnLedgerRequestData{}
 
 func (r *OnLedgerRequestData) ID() RequestID {
 	return RequestID(r.inputID)
@@ -455,8 +455,8 @@ func (r *OnLedgerRequestData) GasBudget() uint64 {
 	return r.requestMetadata.GasBudget
 }
 
-// implements RequestRaw interface
-var _ RequestRaw = &OnLedgerRequestData{}
+// implements Request interface
+var _ Request = &OnLedgerRequestData{}
 
 func (r *OnLedgerRequestData) IsOffLedger() bool {
 	return false
@@ -471,7 +471,7 @@ func (r *OnLedgerRequestData) String() string {
 }
 
 func (r *OnLedgerRequestData) AsOffLedger() AsOffLedger {
-	panic("not an off-ledger RequestRaw")
+	panic("not an off-ledger Request")
 }
 
 func (r *OnLedgerRequestData) AsOnLedger() AsOnLedger {

@@ -66,7 +66,7 @@ type Sandbox interface {
 	// State k/v store of the current call (in the context of the smart contract)
 	State() kv.KVStore
 	// Request return the request in the context of which the smart contract is called
-	Request() Request
+	Request() Calldata
 
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and

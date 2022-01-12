@@ -46,7 +46,7 @@ type VMContext struct {
 
 	// ---- request context
 	chainInfo          *governance.ChainInfo
-	req                iscp.RequestRaw
+	req                iscp.Request
 	requestIndex       uint16
 	requestEventIndex  uint16
 	currentStateUpdate state.StateUpdate
