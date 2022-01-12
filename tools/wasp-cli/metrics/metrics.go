@@ -20,5 +20,6 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(metricsCmd)
 
 	metricsCmd.AddCommand(nodeconnMetricsCmd)
+	metricsCmd.AddCommand(consensusMetricsCmd)
 	metricsCmd.PersistentFlags().StringVarP(&chainIDStr, "chain", "", "", "chain ID for which metrics should be displayed")
 }

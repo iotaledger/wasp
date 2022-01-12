@@ -64,6 +64,7 @@ type ChainRequests interface {
 
 type ChainMetrics interface {
 	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
+	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
 }
 
 type Chain interface {
@@ -163,6 +164,7 @@ type Consensus interface {
 	IsReady() bool
 	Close()
 	GetStatusSnapshot() *ConsensusInfo
+	GetWorkflowStatus() ConsensusWorkflowStatus
 	ShouldReceiveMissingRequest(req iscp.Request) bool
 }
 
@@ -209,6 +211,27 @@ type ConsensusInfo struct {
 	StateIndex uint32
 	Mempool    MempoolInfo
 	TimerTick  int
+}
+
+type ConsensusWorkflowStatus interface {
+	IsStateReceived() bool
+	IsBatchProposalSent() bool
+	IsConsensusBatchKnown() bool
+	IsVMStarted() bool
+	IsVMResultSigned() bool
+	IsTransactionFinalized() bool
+	IsTransactionPosted() bool
+	IsTransactionSeen() bool
+	IsInProgress() bool
+
+	GetBatchProposalSentTime() time.Time
+	GetConsensusBatchKnownTime() time.Time
+	GetVMStartedTime() time.Time
+	GetVMResultSignedTime() time.Time
+	GetTransactionFinalizedTime() time.Time
+	GetTransactionPostedTime() time.Time
+	GetTransactionSeenTime() time.Time
+	GetCompletedTime() time.Time
 }
 
 type ReadyListRecord struct {

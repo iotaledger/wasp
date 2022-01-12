@@ -26,6 +26,8 @@ type waspServicesMock struct {
 	chains map[[ledgerstate.AddressLength]byte]*solo.Chain
 }
 
+var _ WaspServices = &waspServicesMock{}
+
 func (w *waspServicesMock) ConfigDump() map[string]interface{} {
 	return map[string]interface{}{
 		"foo": "bar",
@@ -139,6 +141,10 @@ func (w *waspServicesMock) GetChainNodeConnectionMetrics(*iscp.ChainID) (nodecon
 }
 
 func (w *waspServicesMock) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error) {
+	panic("Not implemented")
+}
+
+func (w *waspServicesMock) GetChainConsensusWorkflowStatus(chainID *iscp.ChainID) (chain.ConsensusWorkflowStatus, error) {
 	panic("Not implemented")
 }
 
