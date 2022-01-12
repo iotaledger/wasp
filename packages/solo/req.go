@@ -236,9 +236,9 @@ func (ch *Chain) PostRequestOffLedgerReceipt(req *CallParams, keyPair *cryptolib
 		keyPair = &ch.OriginatorPrivateKey
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
-	res, err := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
-	rec, _ := ch.GetRequestReceipt(r.ID())
-	return rec, res, err
+	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
+	res := results[0]
+	return res.Receipt, res.Return, res.Error
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
@@ -260,15 +260,13 @@ func (ch *Chain) PostRequestSyncReceipt(req *CallParams, keyPair *cryptolib.KeyP
 func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
-	tx, reqid, err := ch.RequestFromParamsToLedger(req, keyPair)
-	if err != nil {
-		return tx, nil, nil, err
-	}
+	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
+	require.NoError(ch.Env.T, err)
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
-	res, err := ch.runRequestsSync(reqs, "post")
-	receipt, _ := ch.GetRequestReceipt(reqid)
-	return tx, receipt, res, err
+	results := ch.runRequestsSync(reqs, "post")
+	res := results[0]
+	return tx, res.Receipt, res.Return, res.Error
 }
 
 // callViewFull calls the view entry point of the smart contract

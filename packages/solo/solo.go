@@ -315,8 +315,10 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	initReq, err := env.RequestsForChain(initTx, chainID)
 	require.NoError(env.T, err)
 
-	_, err = ret.runRequestsSync(initReq, "new")
-	require.NoError(env.T, err)
+	results := ret.runRequestsSync(initReq, "new")
+	for _, res := range results {
+		require.NoError(env.T, res.Error)
+	}
 	ret.logRequestLastBlock()
 
 	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
@@ -438,9 +440,11 @@ func (ch *Chain) collateAndRunBatch() bool {
 
 	batch := ch.collateBatch()
 	if len(batch) > 0 {
-		_, err := ch.runRequestsNolock(batch, "batchLoop")
-		if err != nil {
-			ch.Log.Errorf("runRequestsSync: %v", err)
+		results := ch.runRequestsNolock(batch, "batchLoop")
+		for _, res := range results {
+			if res.Error != nil {
+				ch.Log.Errorf("runRequestsSync: %v", res.Error)
+			}
 		}
 		return true
 	}

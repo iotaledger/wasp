@@ -10,11 +10,12 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 type VMRunner interface {
-	Run(task *VMTask)
+	Run(task *VMTask) (results []*RequestResult, err error)
 }
 
 // VMTask is task context (for batch of requests). It is used to pass parameters and take results
@@ -34,8 +35,13 @@ type VMTask struct {
 	Entropy                  hashing.HashValue
 	ValidatorFeeTarget       *iscp.AgentID
 	Log                      *logger.Logger
-	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
 	ResultTransactionEssence *iotago.TransactionEssence // if not nil it is a normal block
 	RotationAddress          iotago.Address             // if not nil, it is a rotation
 	StartTime                time.Time
+}
+
+type RequestResult struct {
+	Return  dict.Dict
+	Error   error
+	Receipt *blocklog.RequestReceipt
 }
