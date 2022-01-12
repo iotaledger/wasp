@@ -15,6 +15,7 @@ func (d *Dashboard) metricsInit(e *echo.Echo, r renderer) Tab {
 	d.initMetricsNodeconn(e, r)
 	d.initMetricsChain(e, r)
 	d.initMetricsChainNodeconn(e, r)
+	d.initMetricsChainConsensus(e, r)
 	return ret
 }
 

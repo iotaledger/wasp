@@ -2,6 +2,7 @@
 	{{ $id := (index . 0) }}
 	<ul>
 		<li><a href="{{ uri "metricsChainNodeconn" $id }}"><code>Connection to L1</code></a></li>
+		<li><a href="{{ uri "metricsChainConsensus" $id }}"><code>Consensus</code></a></li>
 	</ul>
 {{end}}
 

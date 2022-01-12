@@ -64,8 +64,8 @@ func formatTimestamp(ts interface{}) string {
 }
 
 func formatTimestampOrNever(t time.Time) string {
-	bla := time.Time{}
-	if t == bla {
+	timestampNever := time.Time{}
+	if t == timestampNever {
 		return "NEVER"
 	}
 	return formatTimestamp(t)
