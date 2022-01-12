@@ -157,3 +157,95 @@ func TestAssets_FitsAllowance(t *testing.T) {
 	_, err = a.FitsTheBudget(allowance)
 	require.Error(t, err)
 }
+
+func TestAssets_SpendBudget(t *testing.T) {
+	var toSpend *Assets
+	var budget *Assets
+	require.True(t, budget.SpendFromBudget(toSpend))
+	require.True(t, budget.IsEmpty())
+	require.True(t, budget.IsEmpty())
+
+	budget = &Assets{Iotas: 1}
+	require.True(t, budget.SpendFromBudget(toSpend))
+	require.False(t, toSpend.SpendFromBudget(budget))
+
+	budget = &Assets{Iotas: 10}
+	require.True(t, budget.SpendFromBudget(budget))
+	require.True(t, budget.IsEmpty())
+
+	budget = &Assets{Iotas: 2}
+	toSpend = &Assets{Iotas: 1}
+	require.True(t, budget.SpendFromBudget(toSpend))
+	require.True(t, budget.Equals(&Assets{1, nil}))
+
+	budget = &Assets{Iotas: 1}
+	toSpend = &Assets{Iotas: 2}
+	require.False(t, budget.SpendFromBudget(toSpend))
+	require.True(t, budget.Equals(&Assets{1, nil}))
+
+	tokenID1 := tpkg.RandNativeToken().ID
+	tokenID2 := tpkg.RandNativeToken().ID
+
+	budget = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+		},
+	}
+	toSpend = budget.Clone()
+	require.True(t, budget.SpendFromBudget(toSpend))
+	require.True(t, budget.IsEmpty())
+
+	budget = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+		},
+	}
+	cloneBudget := budget.Clone()
+	toSpend = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(10)},
+		},
+	}
+	require.False(t, budget.SpendFromBudget(toSpend))
+	require.True(t, budget.Equals(cloneBudget))
+
+	budget = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+			{ID: tokenID2, Amount: big.NewInt(1)},
+		},
+	}
+	toSpend = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+		},
+	}
+	expected := &Assets{
+		Iotas: 0,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID2, Amount: big.NewInt(1)},
+		},
+	}
+	require.True(t, budget.SpendFromBudget(toSpend))
+	require.True(t, budget.Equals(expected))
+
+	budget = &Assets{
+		Iotas: 10,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID2, Amount: big.NewInt(1)},
+		},
+	}
+	toSpend = &Assets{
+		Iotas: 1,
+		Tokens: iotago.NativeTokens{
+			{ID: tokenID1, Amount: big.NewInt(5)},
+		},
+	}
+
+	require.False(t, budget.SpendFromBudget(toSpend))
+}

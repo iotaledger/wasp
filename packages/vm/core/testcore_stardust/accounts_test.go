@@ -461,7 +461,10 @@ func TestDepositIotas(t *testing.T) {
 // initWithdrawTest creates foundry with 1_000_000 of max supply and mint 100 tokens to user's account
 func initWithdrawTest(t *testing.T, initLoad ...uint64) *testParams {
 	v := initTest(t, initLoad...)
+	// create foundry and mint 100 tokens
 	v.sn, v.tokenID = v.createFoundryAndMint(nil, nil, 1_000_000, 100)
+	// prepare request parameters to withdraw everything what is in the account
+	// do not run the request yet
 	v.req = solo.NewCallParams("accounts", "withdraw").
 		AddAssetsIotas(1000).
 		WithGasBudget(2000)
@@ -493,10 +496,12 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	})
 	t.Run("withdraw almost all", func(t *testing.T) {
 		v := initWithdrawTest(t)
-		// we want to withdraw as much iotas as possible, however, all is not possible due to gas
-		allSenderAssets := v.ch.L2AccountAssets(v.userAgentID).AddIotas(300)
+		// we want to withdraw as many iotas as possible, so we add 300 because some more will come
+		// with assets attached to the 'withdraw' request. However, withdraw all is not possible due to gas
+		toWithdraw := v.ch.L2AccountAssets(v.userAgentID).AddIotas(200)
+		t.Logf("assets to withdraw: %s", toWithdraw.String())
 		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
-		v.req.AddAllowance(allSenderAssets)
+		v.req.AddAllowance(toWithdraw)
 		v.req.AddAssetsIotas(1000)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
@@ -543,7 +548,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 		v.printBalances("AFTER DESTROY")
 	})
-	t.Run("BUG unwrap use case", func(t *testing.T) {
+	t.Run("unwrap use case", func(t *testing.T) {
 		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2AccountAssets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
@@ -565,7 +570,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 1)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 	})
-	t.Run("BUG unwrap use case", func(t *testing.T) {
+	t.Run("unwrap use case", func(t *testing.T) {
 		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2AccountAssets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)

@@ -194,7 +194,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.SenderAddress() == nil")
 	}
-	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
+	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowanceRemains
 	tokensGuaranteed := uint64(0)
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID

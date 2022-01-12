@@ -71,8 +71,8 @@ func (vmctx *VMContext) AccountID() *iscp.AgentID {
 	return iscp.NewAgentID(vmctx.task.AnchorOutput.AliasID.ToAddress(), hname)
 }
 
-func (vmctx *VMContext) Allowance() *iscp.Assets {
-	return vmctx.getCallContext().allowance
+func (vmctx *VMContext) AllowanceAvailable() *iscp.Assets {
+	return vmctx.getCallContext().allowanceRemains
 }
 
 func (vmctx *VMContext) isOnChainAccount(agentID *iscp.AgentID) bool {
@@ -106,6 +106,12 @@ func (vmctx *VMContext) targetAccountExists(agentID *iscp.AgentID) bool {
 	return accountExists
 }
 
+func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Assets) {
+	if !vmctx.getCallContext().allowanceRemains.SpendFromBudget(toSpend) {
+		panic(accounts.ErrNotEnoughAllowance)
+	}
+}
+
 // TransferAllowedFunds transfers funds withing the budget set by the Allowance() to the existing target account on chain
 func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) {
 	if vmctx.isCoreAccount(target) {
@@ -120,14 +126,13 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, assets ...*is
 
 	var assetsToMove *iscp.Assets
 	if len(assets) == 0 {
-		assetsToMove = vmctx.Allowance()
+		assetsToMove = vmctx.AllowanceAvailable().Clone()
 	} else {
 		assetsToMove = assets[0]
 	}
-	// checks if the desired transfer fits the budget set by allowance
-	if !assetsToMove.MustFitsTheBudget(vmctx.Allowance()) {
-		panic(accounts.ErrNotEnoughAllowance)
-	}
+
+	vmctx.spendAllowedBudget(assetsToMove) // panics if not enough
+
 	caller := vmctx.Caller() // have to take it here because callCore changes that
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.MoveBetweenAccounts(s, caller, target, assetsToMove)

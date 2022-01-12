@@ -108,9 +108,9 @@ func (s *sandbox) Timestamp() int64 {
 	return s.vmctx.Timestamp()
 }
 
-func (s *sandbox) Allowance() *iscp.Assets {
+func (s *sandbox) AllowanceAvailable() *iscp.Assets {
 	s.Burn(gas.GetIncomingTransfer)
-	return s.vmctx.Allowance()
+	return s.vmctx.AllowanceAvailable()
 }
 
 func (s *sandbox) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) {
