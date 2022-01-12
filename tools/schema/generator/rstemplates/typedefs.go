@@ -36,6 +36,7 @@ $#if exist else typedefProxyArrayNew
 	// *******************************
 	"typedefProxyArrayNew": `
 
+#[derive(Clone, Copy)]
 pub struct $proxy {
 	pub(crate) obj_id: i32,
 }
@@ -89,6 +90,7 @@ $#if exist else typedefProxyMapNew
 	// *******************************
 	"typedefProxyMapNew": `
 
+#[derive(Clone, Copy)]
 pub struct $proxy {
 	pub(crate) obj_id: i32,
 }

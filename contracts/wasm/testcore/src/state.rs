@@ -21,24 +21,24 @@ pub struct ImmutableTestCoreState {
 
 impl ImmutableTestCoreState {
     pub fn counter(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
+		ScImmutableInt64::new(self.id, STATE_COUNTER.get_key_id())
 	}
 
     pub fn hname_ep(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, idx_map(IDX_STATE_HNAME_EP))
+		ScImmutableHname::new(self.id, STATE_HNAME_EP.get_key_id())
 	}
 
     pub fn ints(&self) -> MapStringToImmutableInt64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_INTS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_INTS.get_key_id(), TYPE_MAP);
 		MapStringToImmutableInt64 { obj_id: map_id }
 	}
 
     pub fn minted_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.id, idx_map(IDX_STATE_MINTED_COLOR))
+		ScImmutableColor::new(self.id, STATE_MINTED_COLOR.get_key_id())
 	}
 
     pub fn minted_supply(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_MINTED_SUPPLY))
+		ScImmutableInt64::new(self.id, STATE_MINTED_SUPPLY.get_key_id())
 	}
 }
 
@@ -48,24 +48,28 @@ pub struct MutableTestCoreState {
 }
 
 impl MutableTestCoreState {
+    pub fn as_immutable(&self) -> ImmutableTestCoreState {
+		ImmutableTestCoreState { id: self.id }
+	}
+
     pub fn counter(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_COUNTER))
+		ScMutableInt64::new(self.id, STATE_COUNTER.get_key_id())
 	}
 
     pub fn hname_ep(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, idx_map(IDX_STATE_HNAME_EP))
+		ScMutableHname::new(self.id, STATE_HNAME_EP.get_key_id())
 	}
 
     pub fn ints(&self) -> MapStringToMutableInt64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_INTS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_INTS.get_key_id(), TYPE_MAP);
 		MapStringToMutableInt64 { obj_id: map_id }
 	}
 
     pub fn minted_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.id, idx_map(IDX_STATE_MINTED_COLOR))
+		ScMutableColor::new(self.id, STATE_MINTED_COLOR.get_key_id())
 	}
 
     pub fn minted_supply(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_MINTED_SUPPLY))
+		ScMutableInt64::new(self.id, STATE_MINTED_SUPPLY.get_key_id())
 	}
 }

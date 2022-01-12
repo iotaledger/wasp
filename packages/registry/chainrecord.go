@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package registry
 
 import (
@@ -11,7 +14,6 @@ import (
 // TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
 	ChainID *iscp.ChainID
-	Peers   []string
 	Active  bool
 }
 
@@ -22,27 +24,11 @@ func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
 	// if err != nil {
 	// 	return nil, err
 	// }
-	// ret.ChainID = iscp.ChainIDFromAliasID(aliasAddr)
-
+	// ret.ChainID = iscp.NewChainID(aliasAddr)
+	
 	// ret.Active, err = mu.ReadBool()
 	// if err != nil {
 	// 	return nil, err
-	// }
-	// numPeers, err := mu.ReadUint16()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// ret.Peers = make([]string, numPeers)
-	// for i := uint16(0); i < numPeers; i++ {
-	// 	strSize, err := mu.ReadUint16()
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	d, err := mu.ReadBytes(int(strSize))
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	ret.Peers[i] = string(d)
 	// }
 	// return ret, nil
 }
@@ -54,19 +40,12 @@ func ChainRecordFromBytes(data []byte) (*ChainRecord, error) {
 
 func (rec *ChainRecord) Bytes() []byte {
 	mu := marshalutil.New().WriteBytes(rec.ChainID.Bytes()).
-		WriteBool(rec.Active).
-		WriteUint16(uint16(len(rec.Peers)))
-	for _, s := range rec.Peers {
-		b := []byte(s)
-		mu.WriteUint16(uint16(len(b))).
-			WriteBytes(b)
-	}
+		WriteBool(rec.Active)
 	return mu.Bytes()
 }
 
 func (rec *ChainRecord) String() string {
 	ret := "ChainID: " + rec.ChainID.String() + "\n"
-	ret += fmt.Sprintf("      Peers:  %+v\n", rec.Peers)
 	ret += fmt.Sprintf("      Active: %v\n", rec.Active)
 	return ret
 }

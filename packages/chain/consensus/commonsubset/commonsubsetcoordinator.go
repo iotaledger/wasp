@@ -44,10 +44,11 @@ const (
 // until they will be discarded because of the growing StateIndex in the new branch.
 //
 type CommonSubsetCoordinator struct {
-	csInsts           map[uint64]*CommonSubset // The actual instances can be created on request or on peer message.
-	csAsked           map[uint64]bool          // Indicates, which instances are already asked by this nodes.
-	currentStateIndex uint32                   // Last state index passed by this node.
-	lock              sync.RWMutex
+	csInsts                     map[uint64]*CommonSubset // The actual instances can be created on request or on peer message.
+	csAsked                     map[uint64]bool          // Indicates, which instances are already asked by this nodes.
+	currentStateIndex           uint32                   // Last state index passed by this node.
+	receivePeerMessagesAttachID interface{}
+	lock                        sync.RWMutex
 
 	netGroup peering.GroupProvider
 	dkShare  *tcrypto.DKShare
@@ -68,12 +69,13 @@ func NewCommonSubsetCoordinator(
 		dkShare:  dkShare,
 		log:      log,
 	}
-	netGroup.Attach(peering.PeerMessageReceiverCommonSubset, ret.receiveCommitteePeerMessages)
+	ret.receivePeerMessagesAttachID = ret.netGroup.Attach(peering.PeerMessageReceiverCommonSubset, ret.receiveCommitteePeerMessages)
 	return ret
 }
 
 // Close implements the AsynchronousCommonSubsetRunner interface.
 func (csc *CommonSubsetCoordinator) Close() {
+	csc.netGroup.Detach(csc.receivePeerMessagesAttachID)
 	for i := range csc.csInsts {
 		csc.csInsts[i].Close()
 	}

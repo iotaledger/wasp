@@ -10,12 +10,12 @@ import * as sc from "./index";
 
 export class ImmutableGetHelloWorldResults extends wasmlib.ScMapID {
     helloWorld(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxResultHelloWorld]);
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultHelloWorld));
 	}
 }
 
 export class MutableGetHelloWorldResults extends wasmlib.ScMapID {
     helloWorld(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxResultHelloWorld]);
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultHelloWorld));
 	}
 }

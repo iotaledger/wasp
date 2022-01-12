@@ -14,7 +14,7 @@ type ImmutableGetCounterResults struct {
 }
 
 func (s ImmutableGetCounterResults) Counter() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultCounter])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultCounter))
 }
 
 type MutableGetCounterResults struct {
@@ -22,5 +22,5 @@ type MutableGetCounterResults struct {
 }
 
 func (s MutableGetCounterResults) Counter() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultCounter])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultCounter))
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	util "github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -23,27 +24,35 @@ type mockedChain struct {
 	*testchain.MockedChainCore
 }
 
+var (
+	_ chain.Chain         = &mockedChain{}
+	_ chain.ChainCore     = &mockedChain{} // from testchain.MockedChainCore
+	_ chain.ChainEntry    = &mockedChain{}
+	_ chain.ChainRequests = &mockedChain{}
+	_ chain.ChainMetrics  = &mockedChain{}
+)
+
+// chain.ChainRequests implementation
+
 func (m *mockedChain) GetRequestProcessingStatus(_ iscp.RequestID) chain.RequestProcessingStatus {
 	panic("implement me")
 }
 
-func (m *mockedChain) EventRequestProcessed() *events.Event {
+func (m *mockedChain) AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure) {
 	panic("implement me")
 }
+
+func (m *mockedChain) DetachFromRequestProcessed(attachID *events.Closure) {
+	panic("implement me")
+}
+
+// chain.ChainEntry implementation
 
 func (m *mockedChain) ReceiveTransaction(_ *ledgerstate.Transaction) {
 	panic("implement me")
 }
 
-func (m *mockedChain) ReceiveInclusionState(_ ledgerstate.TransactionID, _ ledgerstate.InclusionState) {
-	panic("implement me")
-}
-
 func (m *mockedChain) ReceiveState(_ *ledgerstate.AliasOutput, _ time.Time) {
-	panic("implement me")
-}
-
-func (m *mockedChain) ReceiveOutput(_ ledgerstate.Output) {
 	panic("implement me")
 }
 
@@ -54,6 +63,18 @@ func (m *mockedChain) Dismiss(_ string) {
 func (m *mockedChain) IsDismissed() bool {
 	panic("implement me")
 }
+
+// chain.ChainMetrics implementation
+
+func (m *mockedChain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
+	panic("implement me")
+}
+
+func (m *mockedChain) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
+	panic("implement me")
+}
+
+// private methods
 
 func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	return func(chainID *iscp.ChainID) chain.Chain {
@@ -96,6 +117,8 @@ func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID *iscp.ChainID,
 		expectedStatus,
 	)
 }
+
+// Tests
 
 func TestNewRequestBase64(t *testing.T) {
 	instance := newMockedAPI(t)

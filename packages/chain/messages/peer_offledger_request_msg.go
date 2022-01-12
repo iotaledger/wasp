@@ -4,6 +4,7 @@
 package messages
 
 import (
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"golang.org/x/xerrors"
@@ -16,7 +17,7 @@ type OffLedgerRequestMsg struct {
 
 type OffLedgerRequestMsgIn struct {
 	OffLedgerRequestMsg
-	SenderNetID string
+	SenderPubKey *ed25519.PublicKey
 }
 
 func NewOffLedgerRequestMsg(chainID *iscp.ChainID, req *iscp.OffLedgerRequestData) *OffLedgerRequestMsg {

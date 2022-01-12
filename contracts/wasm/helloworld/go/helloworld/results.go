@@ -14,7 +14,7 @@ type ImmutableGetHelloWorldResults struct {
 }
 
 func (s ImmutableGetHelloWorldResults) HelloWorld() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxResultHelloWorld])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultHelloWorld))
 }
 
 type MutableGetHelloWorldResults struct {
@@ -22,5 +22,5 @@ type MutableGetHelloWorldResults struct {
 }
 
 func (s MutableGetHelloWorldResults) HelloWorld() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxResultHelloWorld])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultHelloWorld))
 }

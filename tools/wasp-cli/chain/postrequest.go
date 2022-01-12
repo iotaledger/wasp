@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -32,6 +33,7 @@ func postRequestCmd() *cobra.Command {
 			scClient := SCClient(iscp.Hn(args[0]))
 
 			if offLedger {
+				params.Nonce = uint64(time.Now().UnixNano())
 				util.WithOffLedgerRequest(GetCurrentChainID(), func() (*iscp.OffLedgerRequestData, error) {
 					return scClient.PostOffLedgerRequest(fname, params)
 				})

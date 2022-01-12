@@ -14,6 +14,7 @@ export class ArrayClearCall {
 }
 
 export class ArrayClearContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
 	params: sc.ImmutableArrayClearParams = new sc.ImmutableArrayClearParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
@@ -24,6 +25,7 @@ export class ArrayCreateCall {
 }
 
 export class ArrayCreateContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
 	params: sc.ImmutableArrayCreateParams = new sc.ImmutableArrayCreateParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
@@ -34,7 +36,41 @@ export class ArraySetCall {
 }
 
 export class ArraySetContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
 	params: sc.ImmutableArraySetParams = new sc.ImmutableArraySetParams();
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+}
+
+export class MapClearCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncMapClear);
+	params: sc.MutableMapClearParams = new sc.MutableMapClearParams();
+}
+
+export class MapClearContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
+	params: sc.ImmutableMapClearParams = new sc.ImmutableMapClearParams();
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+}
+
+export class MapCreateCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncMapCreate);
+	params: sc.MutableMapCreateParams = new sc.MutableMapCreateParams();
+}
+
+export class MapCreateContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
+	params: sc.ImmutableMapCreateParams = new sc.ImmutableMapCreateParams();
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+}
+
+export class MapSetCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncMapSet);
+	params: sc.MutableMapSetParams = new sc.MutableMapSetParams();
+}
+
+export class MapSetContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
+	params: sc.ImmutableMapSetParams = new sc.ImmutableMapSetParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
@@ -44,6 +80,7 @@ export class ParamTypesCall {
 }
 
 export class ParamTypesContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
 	params: sc.ImmutableParamTypesParams = new sc.ImmutableParamTypesParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
@@ -53,6 +90,18 @@ export class RandomCall {
 }
 
 export class RandomContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+}
+
+export class TriggerEventCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTriggerEvent);
+	params: sc.MutableTriggerEventParams = new sc.MutableTriggerEventParams();
+}
+
+export class TriggerEventContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
+	params: sc.ImmutableTriggerEventParams = new sc.ImmutableTriggerEventParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
@@ -124,6 +173,18 @@ export class IotaBalanceContext {
 	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
 }
 
+export class MapValueCall {
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewMapValue);
+	params: sc.MutableMapValueParams = new sc.MutableMapValueParams();
+	results: sc.ImmutableMapValueResults = new sc.ImmutableMapValueResults();
+}
+
+export class MapValueContext {
+	params: sc.ImmutableMapValueParams = new sc.ImmutableMapValueParams();
+	results: sc.MutableMapValueResults = new sc.MutableMapValueResults();
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState();
+}
+
 export class ScFuncs {
     static arrayClear(ctx: wasmlib.ScFuncCallContext): ArrayClearCall {
         let f = new ArrayClearCall();
@@ -143,6 +204,24 @@ export class ScFuncs {
         return f;
     }
 
+    static mapClear(ctx: wasmlib.ScFuncCallContext): MapClearCall {
+        let f = new MapClearCall();
+        f.func.setPtrs(f.params, null);
+        return f;
+    }
+
+    static mapCreate(ctx: wasmlib.ScFuncCallContext): MapCreateCall {
+        let f = new MapCreateCall();
+        f.func.setPtrs(f.params, null);
+        return f;
+    }
+
+    static mapSet(ctx: wasmlib.ScFuncCallContext): MapSetCall {
+        let f = new MapSetCall();
+        f.func.setPtrs(f.params, null);
+        return f;
+    }
+
     static paramTypes(ctx: wasmlib.ScFuncCallContext): ParamTypesCall {
         let f = new ParamTypesCall();
         f.func.setPtrs(f.params, null);
@@ -151,6 +230,12 @@ export class ScFuncs {
 
     static random(ctx: wasmlib.ScFuncCallContext): RandomCall {
         return new RandomCall();
+    }
+
+    static triggerEvent(ctx: wasmlib.ScFuncCallContext): TriggerEventCall {
+        let f = new TriggerEventCall();
+        f.func.setPtrs(f.params, null);
+        return f;
     }
 
     static arrayLength(ctx: wasmlib.ScViewCallContext): ArrayLengthCall {
@@ -186,6 +271,12 @@ export class ScFuncs {
     static iotaBalance(ctx: wasmlib.ScViewCallContext): IotaBalanceCall {
         let f = new IotaBalanceCall();
         f.func.setPtrs(null, f.results);
+        return f;
+    }
+
+    static mapValue(ctx: wasmlib.ScViewCallContext): MapValueCall {
+        let f = new MapValueCall();
+        f.func.setPtrs(f.params, f.results);
         return f;
     }
 }

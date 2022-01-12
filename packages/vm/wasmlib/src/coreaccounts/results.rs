@@ -12,6 +12,7 @@ use crate::*;
 use crate::coreaccounts::*;
 use crate::host::*;
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToImmutableBytes {
 	pub(crate) obj_id: i32,
 }
@@ -33,6 +34,7 @@ impl ImmutableAccountsResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToMutableBytes {
 	pub(crate) obj_id: i32,
 }
@@ -58,6 +60,7 @@ impl MutableAccountsResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapColorToImmutableInt64 {
 	pub(crate) obj_id: i32,
 }
@@ -79,6 +82,7 @@ impl ImmutableBalanceResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapColorToMutableInt64 {
 	pub(crate) obj_id: i32,
 }

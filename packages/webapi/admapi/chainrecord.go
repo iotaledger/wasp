@@ -55,7 +55,10 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 		return err
 	}
 	if bd2 != nil {
-		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", bd.ChainID.String()))
+		// Make this call idempotent.
+		// Record has no information apart from the ChainID and activation status.
+		// So just keep the existing, if it exists.
+		return c.NoContent(http.StatusCreated)
 	}
 	if err := reg.SaveChainRecord(bd); err != nil {
 		return err

@@ -17,6 +17,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	chain, err := e.clu.DeployDefaultChain()
 	require.NoError(t, err)
+	chainNodeCount := uint64(len(chain.AllPeers))
 
 	chEnv := newChainEnv(t, e.clu, chain)
 
@@ -29,13 +30,13 @@ func TestDepositWithdraw(t *testing.T) {
 		"myAddress begin") {
 		t.Fail()
 	}
-	if !e.clu.VerifyAddressBalances(chain.OriginatorAddress(), solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-1,
-		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-1),
+	if !e.clu.VerifyAddressBalances(chain.OriginatorAddress(), solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-1-chainNodeCount,
+		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-1-chainNodeCount),
 		"originatorAddress begin") {
 		t.Fail()
 	}
-	if !e.clu.VerifyAddressBalances(chain.ChainAddress(), ledgerstate.DustThresholdAliasOutputIOTA+1,
-		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+1),
+	if !e.clu.VerifyAddressBalances(chain.ChainAddress(), ledgerstate.DustThresholdAliasOutputIOTA+1+chainNodeCount,
+		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+1+chainNodeCount),
 		"chainAddress begin") {
 		t.Fail()
 	}

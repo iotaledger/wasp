@@ -128,3 +128,19 @@ pub fn func_random(ctx: &ScFuncContext, f: &RandomContext) {
 pub fn view_get_random(_ctx: &ScViewContext, f: &GetRandomContext) {
     f.results.random().set_value(f.state.random().value());
 }
+
+pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {
+    f.events.test(&f.params.address().value(), &f.params.name().value());
+}
+
+pub fn func_map_clear(_ctx: &ScFuncContext, _f: &MapClearContext) {
+}
+
+pub fn func_map_create(_ctx: &ScFuncContext, _f: &MapCreateContext) {
+}
+
+pub fn func_map_set(_ctx: &ScFuncContext, _f: &MapSetContext) {
+}
+
+pub fn view_map_value(_ctx: &ScViewContext, _f: &MapValueContext) {
+}

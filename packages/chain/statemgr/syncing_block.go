@@ -13,10 +13,16 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
+const (
+	pollFallbackDelay = 5 * time.Second
+)
+
 type syncingBlocks struct {
 	blocks            map[uint32]*syncingBlock // StateIndex -> BlockCandidates
 	log               *logger.Logger
 	initialBlockRetry time.Duration
+	lastPullTime      time.Time // Time, when we pulled for some block last time.
+	lastRecvTime      time.Time // Time, when we received any block we pulled. Used to determine, if fallback nodes should be used.
 }
 
 type syncingBlock struct {
@@ -182,4 +188,23 @@ func (syncsT *syncingBlocks) restartSyncing() {
 
 func (syncsT *syncingBlocks) deleteSyncingBlock(stateIndex uint32) {
 	delete(syncsT.blocks, stateIndex)
+}
+
+//
+// Track poll/reception times, to determine, if no one responds to our polls.
+//
+
+func (syncsT *syncingBlocks) blocksPulled() {
+	syncsT.lastPullTime = time.Now()
+}
+
+func (syncsT *syncingBlocks) blockReceived() {
+	syncsT.lastRecvTime = time.Now()
+}
+
+func (syncsT *syncingBlocks) blockPollFallbackNeeded() bool {
+	if len(syncsT.blocks) == 0 {
+		return false
+	}
+	return syncsT.lastPullTime.Sub(syncsT.lastRecvTime) >= pollFallbackDelay
 }

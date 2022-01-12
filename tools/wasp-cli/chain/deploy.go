@@ -1,8 +1,12 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package chain
 
 import (
 	"os"
 
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
@@ -13,7 +17,6 @@ import (
 
 func deployCmd() *cobra.Command {
 	var (
-		peers       []int
 		committee   []int
 		quorum      int
 		description string
@@ -26,24 +29,21 @@ func deployCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			alias := GetChainAlias()
 
-			if peers == nil {
-				if committee != nil {
-					peers = committee
-				} else {
-					peers = []int{0, 1, 2, 3}
-				}
+			if committee == nil {
+				committee = []int{0, 1, 2, 3}
 			}
 
-			if committee == nil {
-				committee = peers
+			committeePubKeys := make([]string, 0)
+			for _, api := range config.CommitteeAPI(committee) {
+				peerInfo, err := client.NewWaspClient(api).GetPeeringSelf()
+				log.Check(err)
+				committeePubKeys = append(committeePubKeys, peerInfo.PubKey)
 			}
 
 			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
 				Layer1Client:          config.GoshimmerClient(),
-				AllAPIHosts:           config.CommitteeAPI(peers),
-				AllPeeringHosts:       config.CommitteePeering(peers),
 				CommitteeAPIHosts:     config.CommitteeAPI(committee),
-				CommitteePeeringHosts: config.CommitteePeering(committee),
+				CommitteePubKeys:  committeePubKeys,
 				N:                     uint16(len(committee)),
 				T:                     uint16(quorum),
 				OriginatorPrivateKey:  wallet.Load().KeyPair(),
@@ -56,8 +56,7 @@ func deployCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().IntSliceVarP(&peers, "peers", "", nil, "indices of peer nodes (default: 0,1,2,3)")
-	cmd.Flags().IntSliceVarP(&committee, "committee", "", nil, "subset of peers acting as committee nodes  (default: same as peers)")
+	cmd.Flags().IntSliceVarP(&committee, "committee", "", nil, "peers acting as committee nodes  (default: 0,1,2,3)")
 	cmd.Flags().IntVarP(&quorum, "quorum", "", 3, "quorum")
 	cmd.Flags().StringVarP(&description, "description", "", "", "description")
 	return cmd

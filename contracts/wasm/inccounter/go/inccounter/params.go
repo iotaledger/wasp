@@ -14,7 +14,7 @@ type ImmutableIncrementWithDelayParams struct {
 }
 
 func (s ImmutableIncrementWithDelayParams) Delay() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxParamDelay])
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamDelay))
 }
 
 type MutableIncrementWithDelayParams struct {
@@ -22,7 +22,7 @@ type MutableIncrementWithDelayParams struct {
 }
 
 func (s MutableIncrementWithDelayParams) Delay() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxParamDelay])
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamDelay))
 }
 
 type ImmutableInitParams struct {
@@ -46,7 +46,7 @@ type ImmutableRepeatManyParams struct {
 }
 
 func (s ImmutableRepeatManyParams) NumRepeats() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamNumRepeats])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamNumRepeats))
 }
 
 type MutableRepeatManyParams struct {
@@ -54,7 +54,7 @@ type MutableRepeatManyParams struct {
 }
 
 func (s MutableRepeatManyParams) NumRepeats() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamNumRepeats])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamNumRepeats))
 }
 
 type ImmutableWhenMustIncrementParams struct {
@@ -62,7 +62,7 @@ type ImmutableWhenMustIncrementParams struct {
 }
 
 func (s ImmutableWhenMustIncrementParams) Dummy() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamDummy])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamDummy))
 }
 
 type MutableWhenMustIncrementParams struct {
@@ -70,5 +70,5 @@ type MutableWhenMustIncrementParams struct {
 }
 
 func (s MutableWhenMustIncrementParams) Dummy() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamDummy])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamDummy))
 }

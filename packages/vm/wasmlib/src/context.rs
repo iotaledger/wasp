@@ -345,6 +345,9 @@ impl ScFuncContext {
 
     // generates a random value from 0 to max (exclusive max) using a deterministic RNG
     pub fn random(&self, max: i64) -> i64 {
+        if max == 0 {
+            self.panic("random: max parameter should be non-zero");
+        }
         let state = ScMutableMap { obj_id: OBJ_ID_STATE };
         let rnd = state.get_bytes(&KEY_RANDOM);
         let mut seed = rnd.value();

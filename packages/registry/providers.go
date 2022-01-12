@@ -4,6 +4,7 @@
 package registry
 
 import (
+	"errors"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -17,14 +18,6 @@ type NodeIdentityProvider interface {
 	GetNodePublicKey() (*cryptolib.PublicKey, error)
 }
 
-// PeerNetworkConfigProvider access to node and chain configuration: a list of netIDs of potential peers
-type PeerNetworkConfigProvider interface { // TODO: KP: Remove or redesign.
-	OwnNetID() string
-	PeeringPort() int
-	Neighbors() []string
-	String() string
-}
-
 // DKShareRegistryProvider stands for a partial registry interface, needed for this package.
 // It should be implemented by registry.impl
 type DKShareRegistryProvider interface {
@@ -32,10 +25,7 @@ type DKShareRegistryProvider interface {
 	LoadDKShare(sharedAddress iotago.Address) (*tcrypto.DKShare, error)
 }
 
-type CommitteeRegistryProvider interface {
-	GetCommitteeRecord(addr iotago.Address) (*CommitteeRecord, error)
-	SaveCommitteeRecord(rec *CommitteeRecord) error
-}
+var ErrDKShareNotFound = errors.New("dkShare not found")
 
 // ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
 type ChainRecordRegistryProvider interface {

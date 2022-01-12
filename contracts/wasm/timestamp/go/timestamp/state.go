@@ -14,13 +14,17 @@ type ImmutabletimestampState struct {
 }
 
 func (s ImmutabletimestampState) Timestamp() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateTimestamp])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateTimestamp))
 }
 
 type MutabletimestampState struct {
 	id int32
 }
 
+func (s MutabletimestampState) AsImmutable() ImmutabletimestampState {
+	return ImmutabletimestampState(s)
+}
+
 func (s MutabletimestampState) Timestamp() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateTimestamp])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateTimestamp))
 }
