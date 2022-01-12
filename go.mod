@@ -8,7 +8,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bygui86/multi-profile/v2 v2.1.0
-	github.com/bytecodealliance/wasmtime-go v0.32.0
+	github.com/bytecodealliance/wasmtime-go v0.33.1
 	github.com/wasmerio/wasmer-go v1.0.4
 	github.com/second-state/WasmEdge-go v0.9.0 // indirect
 	github.com/ethereum/go-ethereum v1.10.10
