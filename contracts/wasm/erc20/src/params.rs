@@ -22,11 +22,11 @@ pub struct ImmutableApproveParams {
 
 impl ImmutableApproveParams {
     pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+		ScImmutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 
     pub fn delegation(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
+		ScImmutableAgentID::new(self.id, PARAM_DELEGATION.get_key_id())
 	}
 }
 
@@ -37,11 +37,11 @@ pub struct MutableApproveParams {
 
 impl MutableApproveParams {
     pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+		ScMutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 
     pub fn delegation(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
+		ScMutableAgentID::new(self.id, PARAM_DELEGATION.get_key_id())
 	}
 }
 
@@ -82,11 +82,11 @@ pub struct ImmutableTransferParams {
 
 impl ImmutableTransferParams {
     pub fn account(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+		ScImmutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 
     pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+		ScImmutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 }
 
@@ -97,11 +97,11 @@ pub struct MutableTransferParams {
 
 impl MutableTransferParams {
     pub fn account(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+		ScMutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 
     pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+		ScMutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 }
 
@@ -112,15 +112,15 @@ pub struct ImmutableTransferFromParams {
 
 impl ImmutableTransferFromParams {
     pub fn account(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+		ScImmutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 
     pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+		ScImmutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 
     pub fn recipient(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_RECIPIENT))
+		ScImmutableAgentID::new(self.id, PARAM_RECIPIENT.get_key_id())
 	}
 }
 
@@ -131,15 +131,15 @@ pub struct MutableTransferFromParams {
 
 impl MutableTransferFromParams {
     pub fn account(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+		ScMutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 
     pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+		ScMutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 
     pub fn recipient(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_RECIPIENT))
+		ScMutableAgentID::new(self.id, PARAM_RECIPIENT.get_key_id())
 	}
 }
 
@@ -150,11 +150,11 @@ pub struct ImmutableAllowanceParams {
 
 impl ImmutableAllowanceParams {
     pub fn account(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+		ScImmutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 
     pub fn delegation(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
+		ScImmutableAgentID::new(self.id, PARAM_DELEGATION.get_key_id())
 	}
 }
 
@@ -165,11 +165,11 @@ pub struct MutableAllowanceParams {
 
 impl MutableAllowanceParams {
     pub fn account(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+		ScMutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 
     pub fn delegation(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_DELEGATION))
+		ScMutableAgentID::new(self.id, PARAM_DELEGATION.get_key_id())
 	}
 }
 
@@ -180,7 +180,7 @@ pub struct ImmutableBalanceOfParams {
 
 impl ImmutableBalanceOfParams {
     pub fn account(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+		ScImmutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 }
 
@@ -191,6 +191,6 @@ pub struct MutableBalanceOfParams {
 
 impl MutableBalanceOfParams {
     pub fn account(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_ACCOUNT))
+		ScMutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 }

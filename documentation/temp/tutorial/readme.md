@@ -1,12 +1,12 @@
 # Exploring IOTA Smart Contracts
 
-This document is an introductory tutorial of the IOTA Smart Contract Platform
-(ISCP) for developers.
+This document is an introductory tutorial of the IOTA Smart Contracts Platform
+for developers.
 
 The level of this document is technical. Its target audience is software
-engineers who want to understand the ISCP, and the direction it is taking, in
+engineers who want to understand the IOTA Smart Contracts, and the direction it is taking, in
 order to develop their own dApps and/or contribute to the development of the
-ISCP and Wasp nodes.
+IOTA Smart Contracts and Wasp nodes.
 
 There are two ways of seeing the same thing, a smart contract: as a program of a state machine and as a distributed,
 fault-tolerant and decentralized system. Both views are correct.

@@ -14,7 +14,7 @@ export class ApproveCall {
 }
 
 export class ApproveContext {
-	events:  sc.Erc721Events = new sc.Erc721Events();
+	events: sc.Erc721Events = new sc.Erc721Events();
 	params: sc.ImmutableApproveParams = new sc.ImmutableApproveParams();
 	state: sc.MutableErc721State = new sc.MutableErc721State();
 }
@@ -25,7 +25,7 @@ export class BurnCall {
 }
 
 export class BurnContext {
-	events:  sc.Erc721Events = new sc.Erc721Events();
+	events: sc.Erc721Events = new sc.Erc721Events();
 	params: sc.ImmutableBurnParams = new sc.ImmutableBurnParams();
 	state: sc.MutableErc721State = new sc.MutableErc721State();
 }
@@ -36,7 +36,7 @@ export class InitCall {
 }
 
 export class InitContext {
-	events:  sc.Erc721Events = new sc.Erc721Events();
+	events: sc.Erc721Events = new sc.Erc721Events();
 	params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
 	state: sc.MutableErc721State = new sc.MutableErc721State();
 }
@@ -47,7 +47,7 @@ export class MintCall {
 }
 
 export class MintContext {
-	events:  sc.Erc721Events = new sc.Erc721Events();
+	events: sc.Erc721Events = new sc.Erc721Events();
 	params: sc.ImmutableMintParams = new sc.ImmutableMintParams();
 	state: sc.MutableErc721State = new sc.MutableErc721State();
 }
@@ -58,7 +58,7 @@ export class SafeTransferFromCall {
 }
 
 export class SafeTransferFromContext {
-	events:  sc.Erc721Events = new sc.Erc721Events();
+	events: sc.Erc721Events = new sc.Erc721Events();
 	params: sc.ImmutableSafeTransferFromParams = new sc.ImmutableSafeTransferFromParams();
 	state: sc.MutableErc721State = new sc.MutableErc721State();
 }
@@ -69,7 +69,7 @@ export class SetApprovalForAllCall {
 }
 
 export class SetApprovalForAllContext {
-	events:  sc.Erc721Events = new sc.Erc721Events();
+	events: sc.Erc721Events = new sc.Erc721Events();
 	params: sc.ImmutableSetApprovalForAllParams = new sc.ImmutableSetApprovalForAllParams();
 	state: sc.MutableErc721State = new sc.MutableErc721State();
 }
@@ -80,7 +80,7 @@ export class TransferFromCall {
 }
 
 export class TransferFromContext {
-	events:  sc.Erc721Events = new sc.Erc721Events();
+	events: sc.Erc721Events = new sc.Erc721Events();
 	params: sc.ImmutableTransferFromParams = new sc.ImmutableTransferFromParams();
 	state: sc.MutableErc721State = new sc.MutableErc721State();
 }

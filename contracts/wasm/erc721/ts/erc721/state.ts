@@ -45,33 +45,50 @@ export class MapAgentIDToImmutableUint64 {
     }
 }
 
+export class MapHashToImmutableString {
+	objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    getString(key: wasmlib.ScHash): wasmlib.ScImmutableString {
+        return new wasmlib.ScImmutableString(this.objID, key.getKeyID());
+    }
+}
+
 export class ImmutableErc721State extends wasmlib.ScMapID {
     approvedAccounts(): sc.MapHashToImmutableAgentID {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateApprovedAccounts], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateApprovedAccounts), wasmlib.TYPE_MAP);
 		return new sc.MapHashToImmutableAgentID(mapID);
 	}
 
     approvedOperators(): sc.MapAgentIDToImmutableOperators {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateApprovedOperators], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateApprovedOperators), wasmlib.TYPE_MAP);
 		return new sc.MapAgentIDToImmutableOperators(mapID);
 	}
 
     balances(): sc.MapAgentIDToImmutableUint64 {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBalances], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBalances), wasmlib.TYPE_MAP);
 		return new sc.MapAgentIDToImmutableUint64(mapID);
 	}
 
     name(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxStateName]);
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.StateName));
 	}
 
     owners(): sc.MapHashToImmutableAgentID {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateOwners], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateOwners), wasmlib.TYPE_MAP);
 		return new sc.MapHashToImmutableAgentID(mapID);
 	}
 
     symbol(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxStateSymbol]);
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.StateSymbol));
+	}
+
+    tokenURIs(): sc.MapHashToImmutableString {
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateTokenURIs), wasmlib.TYPE_MAP);
+		return new sc.MapHashToImmutableString(mapID);
 	}
 }
 
@@ -124,32 +141,59 @@ export class MapAgentIDToMutableUint64 {
     }
 }
 
+export class MapHashToMutableString {
+	objID: i32;
+
+    constructor(objID: i32) {
+        this.objID = objID;
+    }
+
+    clear(): void {
+        wasmlib.clear(this.objID);
+    }
+
+    getString(key: wasmlib.ScHash): wasmlib.ScMutableString {
+        return new wasmlib.ScMutableString(this.objID, key.getKeyID());
+    }
+}
+
 export class MutableErc721State extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutableErc721State {
+		const imm = new sc.ImmutableErc721State();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     approvedAccounts(): sc.MapHashToMutableAgentID {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateApprovedAccounts], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateApprovedAccounts), wasmlib.TYPE_MAP);
 		return new sc.MapHashToMutableAgentID(mapID);
 	}
 
     approvedOperators(): sc.MapAgentIDToMutableOperators {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateApprovedOperators], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateApprovedOperators), wasmlib.TYPE_MAP);
 		return new sc.MapAgentIDToMutableOperators(mapID);
 	}
 
     balances(): sc.MapAgentIDToMutableUint64 {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateBalances], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBalances), wasmlib.TYPE_MAP);
 		return new sc.MapAgentIDToMutableUint64(mapID);
 	}
 
     name(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxStateName]);
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.StateName));
 	}
 
     owners(): sc.MapHashToMutableAgentID {
-		let mapID = wasmlib.getObjectID(this.mapID, sc.idxMap[sc.IdxStateOwners], wasmlib.TYPE_MAP);
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateOwners), wasmlib.TYPE_MAP);
 		return new sc.MapHashToMutableAgentID(mapID);
 	}
 
     symbol(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxStateSymbol]);
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.StateSymbol));
+	}
+
+    tokenURIs(): sc.MapHashToMutableString {
+		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateTokenURIs), wasmlib.TYPE_MAP);
+		return new sc.MapHashToMutableString(mapID);
 	}
 }

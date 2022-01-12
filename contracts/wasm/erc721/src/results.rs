@@ -22,7 +22,7 @@ pub struct ImmutableBalanceOfResults {
 
 impl ImmutableBalanceOfResults {
     pub fn amount(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+		ScImmutableUint64::new(self.id, RESULT_AMOUNT.get_key_id())
 	}
 }
 
@@ -33,7 +33,7 @@ pub struct MutableBalanceOfResults {
 
 impl MutableBalanceOfResults {
     pub fn amount(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.id, idx_map(IDX_RESULT_AMOUNT))
+		ScMutableUint64::new(self.id, RESULT_AMOUNT.get_key_id())
 	}
 }
 
@@ -44,7 +44,7 @@ pub struct ImmutableGetApprovedResults {
 
 impl ImmutableGetApprovedResults {
     pub fn approved(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_APPROVED))
+		ScImmutableAgentID::new(self.id, RESULT_APPROVED.get_key_id())
 	}
 }
 
@@ -55,7 +55,7 @@ pub struct MutableGetApprovedResults {
 
 impl MutableGetApprovedResults {
     pub fn approved(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_APPROVED))
+		ScMutableAgentID::new(self.id, RESULT_APPROVED.get_key_id())
 	}
 }
 
@@ -66,7 +66,7 @@ pub struct ImmutableIsApprovedForAllResults {
 
 impl ImmutableIsApprovedForAllResults {
     pub fn approval(&self) -> ScImmutableBool {
-		ScImmutableBool::new(self.id, idx_map(IDX_RESULT_APPROVAL))
+		ScImmutableBool::new(self.id, RESULT_APPROVAL.get_key_id())
 	}
 }
 
@@ -77,7 +77,7 @@ pub struct MutableIsApprovedForAllResults {
 
 impl MutableIsApprovedForAllResults {
     pub fn approval(&self) -> ScMutableBool {
-		ScMutableBool::new(self.id, idx_map(IDX_RESULT_APPROVAL))
+		ScMutableBool::new(self.id, RESULT_APPROVAL.get_key_id())
 	}
 }
 
@@ -88,7 +88,7 @@ pub struct ImmutableNameResults {
 
 impl ImmutableNameResults {
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_RESULT_NAME))
+		ScImmutableString::new(self.id, RESULT_NAME.get_key_id())
 	}
 }
 
@@ -99,7 +99,7 @@ pub struct MutableNameResults {
 
 impl MutableNameResults {
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_RESULT_NAME))
+		ScMutableString::new(self.id, RESULT_NAME.get_key_id())
 	}
 }
 
@@ -110,7 +110,7 @@ pub struct ImmutableOwnerOfResults {
 
 impl ImmutableOwnerOfResults {
     pub fn owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_RESULT_OWNER))
+		ScImmutableAgentID::new(self.id, RESULT_OWNER.get_key_id())
 	}
 }
 
@@ -121,7 +121,7 @@ pub struct MutableOwnerOfResults {
 
 impl MutableOwnerOfResults {
     pub fn owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_RESULT_OWNER))
+		ScMutableAgentID::new(self.id, RESULT_OWNER.get_key_id())
 	}
 }
 
@@ -132,7 +132,7 @@ pub struct ImmutableSymbolResults {
 
 impl ImmutableSymbolResults {
     pub fn symbol(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_RESULT_SYMBOL))
+		ScImmutableString::new(self.id, RESULT_SYMBOL.get_key_id())
 	}
 }
 
@@ -143,7 +143,7 @@ pub struct MutableSymbolResults {
 
 impl MutableSymbolResults {
     pub fn symbol(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_RESULT_SYMBOL))
+		ScMutableString::new(self.id, RESULT_SYMBOL.get_key_id())
 	}
 }
 
@@ -154,7 +154,7 @@ pub struct ImmutableTokenURIResults {
 
 impl ImmutableTokenURIResults {
     pub fn token_uri(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_RESULT_TOKEN_URI))
+		ScImmutableString::new(self.id, RESULT_TOKEN_URI.get_key_id())
 	}
 }
 
@@ -165,6 +165,6 @@ pub struct MutableTokenURIResults {
 
 impl MutableTokenURIResults {
     pub fn token_uri(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_RESULT_TOKEN_URI))
+		ScMutableString::new(self.id, RESULT_TOKEN_URI.get_key_id())
 	}
 }

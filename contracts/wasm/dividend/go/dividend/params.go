@@ -30,11 +30,11 @@ type ImmutableMemberParams struct {
 }
 
 func (s ImmutableMemberParams) Address() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, idxMap[IdxParamAddress])
+	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ParamAddress))
 }
 
 func (s ImmutableMemberParams) Factor() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamFactor])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamFactor))
 }
 
 type MutableMemberParams struct {
@@ -42,11 +42,11 @@ type MutableMemberParams struct {
 }
 
 func (s MutableMemberParams) Address() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, idxMap[IdxParamAddress])
+	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ParamAddress))
 }
 
 func (s MutableMemberParams) Factor() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamFactor])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamFactor))
 }
 
 type ImmutableSetOwnerParams struct {
@@ -54,7 +54,7 @@ type ImmutableSetOwnerParams struct {
 }
 
 func (s ImmutableSetOwnerParams) Owner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamOwner])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamOwner))
 }
 
 type MutableSetOwnerParams struct {
@@ -62,7 +62,7 @@ type MutableSetOwnerParams struct {
 }
 
 func (s MutableSetOwnerParams) Owner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamOwner])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamOwner))
 }
 
 type ImmutableGetFactorParams struct {
@@ -70,7 +70,7 @@ type ImmutableGetFactorParams struct {
 }
 
 func (s ImmutableGetFactorParams) Address() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, idxMap[IdxParamAddress])
+	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ParamAddress))
 }
 
 type MutableGetFactorParams struct {
@@ -78,5 +78,5 @@ type MutableGetFactorParams struct {
 }
 
 func (s MutableGetFactorParams) Address() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, idxMap[IdxParamAddress])
+	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ParamAddress))
 }

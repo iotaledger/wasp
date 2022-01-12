@@ -141,7 +141,7 @@ func TestAccessNodes(t *testing.T) {
 				NodePubKey:   node1KP.PublicKey.Bytes(),
 				ForCommittee: false,
 				AccessAPI:    "http://my-api/url",
-			}).AddCertificate(node1KP.PrivateKey, node1OwnerAddr).ToAddCandidateNodeParams(),
+			}).AddCertificate(node1KP, node1OwnerAddr).ToAddCandidateNodeParams(),
 		).AddAssetsIotas(1),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)
@@ -189,7 +189,7 @@ func TestAccessNodes(t *testing.T) {
 			governance.FuncRevokeAccessNode.Name,
 			(&governance.AccessNodeInfo{
 				NodePubKey: node1KP.PublicKey.Bytes(),
-			}).AddCertificate(node1KP.PrivateKey, node1OwnerAddr).ToAddCandidateNodeParams(),
+			}).AddCertificate(node1KP, node1OwnerAddr).ToAddCandidateNodeParams(),
 		).AddAssetsIotas(1),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)

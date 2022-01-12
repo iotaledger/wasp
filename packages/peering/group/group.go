@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
@@ -66,24 +67,24 @@ func (g *groupImpl) SelfIndex() uint16 {
 
 // PeerIndex implements peering.GroupProvider.
 func (g *groupImpl) PeerIndex(peer peering.PeerSender) (uint16, error) {
-	return g.PeerIndexByNetID(peer.NetID())
+	return g.PeerIndexByPubKey(peer.PubKey())
 }
 
 // PeerIndexByNetID implements peering.GroupProvider.
-func (g *groupImpl) PeerIndexByNetID(peerNetID string) (uint16, error) {
+func (g *groupImpl) PeerIndexByPubKey(peerPubKey *ed25519.PublicKey) (uint16, error) {
 	for i := range g.nodes {
-		if g.nodes[i].NetID() == peerNetID {
+		if *g.nodes[i].PubKey() == *peerPubKey {
 			return uint16(i), nil
 		}
 	}
-	return NotInGroup, errors.New("peer_not_found_by_net_id")
+	return NotInGroup, errors.New("peer not found by pubKey")
 }
 
-func (g *groupImpl) NetIDByIndex(index uint16) (string, error) {
+func (g *groupImpl) PubKeyByIndex(index uint16) (*ed25519.PublicKey, error) {
 	if index < uint16(len(g.nodes)) {
-		return g.nodes[index].NetID(), nil
+		return g.nodes[index].PubKey(), nil
 	}
-	return "", errors.New("peer_index_out_of_scope")
+	return nil, errors.New("peer index out of scope")
 }
 
 // SendMsgByIndex implements peering.GroupProvider.
@@ -135,11 +136,11 @@ func (g *groupImpl) ExchangeRound(
 			if !ok {
 				return errors.New("recv_channel_closed")
 			}
-			senderIndex, err := g.PeerIndexByNetID(recvMsgNoIndex.SenderNetID)
+			senderIndex, err := g.PeerIndexByPubKey(recvMsgNoIndex.SenderPubKey)
 			if err != nil {
 				g.log.Warnf(
 					"Dropping message %v -> %v, MsgType=%v because of %v",
-					recvMsgNoIndex.SenderNetID, g.netProvider.Self().NetID(),
+					recvMsgNoIndex.SenderPubKey.String(), g.netProvider.Self().PubKey().String(),
 					recvMsgNoIndex.MsgType, err,
 				)
 				continue
@@ -151,7 +152,7 @@ func (g *groupImpl) ExchangeRound(
 			if acks[recvMsg.SenderIndex] { // Only consider first successful message.
 				g.log.Warnf(
 					"Dropping duplicate message %v -> %v, receiver=%v, MsgType=%v",
-					recvMsg.SenderNetID, g.netProvider.Self().NetID(),
+					recvMsg.SenderPubKey.String(), g.netProvider.Self().PubKey().String(),
 					recvMsg.MsgReceiver, recvMsg.MsgType,
 				)
 				continue
@@ -234,13 +235,13 @@ func (g *groupImpl) OtherNodes(except ...uint16) map[uint16]peering.PeerSender {
 // for the messages according to the message source.
 func (g *groupImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageGroupIn)) interface{} {
 	attachID := g.netProvider.Attach(&g.peeringID, receiver, func(recv *peering.PeerMessageIn) {
-		idx, err := g.PeerIndexByNetID(recv.SenderNetID)
+		idx, err := g.PeerIndexByPubKey(recv.SenderPubKey)
 		if idx == NotInGroup {
 			err = xerrors.Errorf("sender does not belong to the group")
 		}
 		if err != nil {
 			g.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: %v.",
-				recv.MsgReceiver, recv.MsgType, recv.SenderNetID, err)
+				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String(), err)
 			return
 		}
 		gRecv := &peering.PeerMessageGroupIn{

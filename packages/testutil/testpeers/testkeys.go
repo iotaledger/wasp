@@ -35,7 +35,7 @@ func SetupKeys(peerCount uint16) ([]string, []*cryptolib.KeyPair) {
 func PublicKeys(peerIdentities []*cryptolib.KeyPair) []cryptolib.PublicKey {
 	pubKeys := make([]cryptolib.PublicKey, len(peerIdentities))
 	for i := range pubKeys {
-		pubKeys[i] = peerIdentities[i].PublicKey
+		pubKeys[i] = &peerIdentities[i].PublicKey
 	}
 	return pubKeys
 }
@@ -66,7 +66,6 @@ func SetupDkg(
 	//
 	// Initiate the key generation from some client node.
 	dkShare, err := dkgNodes[0].GenerateDistributedKey(
-		peerNetIDs,
 		PublicKeys(peerIdentities),
 		threshold,
 		100*time.Second,
@@ -83,15 +82,20 @@ func SetupDkg(
 func SetupDkgPregenerated(
 	t *testing.T,
 	threshold uint16,
-	peerNetIDs []string,
+	identities []*ed25519.KeyPair,
 	suite tcrypto.Suite,
 ) (iotago.Address, []registry.DKShareRegistryProvider) {
 	var err error
-	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(peerNetIDs)), threshold)
+	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(identities)), threshold)
+	nodePubKeys := make([]*ed25519.PublicKey, len(identities))
+	for i := range nodePubKeys {
+		nodePubKeys[i] = &identities[i].PublicKey
+	}
 	dks := make([]*tcrypto.DKShare, len(serializedDks))
-	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
+	registries := make([]registry.DKShareRegistryProvider, len(identities))
 	for i := range dks {
 		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], suite)
+		dks[i].NodePubKeys = nodePubKeys
 		if i > 0 {
 			// It was removed to decrease the serialized size.
 			dks[i].PublicCommits = dks[0].PublicCommits
@@ -101,7 +105,7 @@ func SetupDkgPregenerated(
 		registries[i] = testutil.NewDkgRegistryProvider(suite)
 		require.Nil(t, registries[i].SaveDKShare(dks[i]))
 	}
-	require.Equal(t, dks[0].N, uint16(len(peerNetIDs)), "dks was pregenerated for different node count (N=%v)", dks[0].N)
+	require.Equal(t, dks[0].N, uint16(len(identities)), "dks was pregenerated for different node count (N=%v)", dks[0].N)
 	require.Equal(t, dks[0].T, threshold, "dks was pregenerated for different threshold (T=%v)", dks[0].T)
 	return dks[0].Address, registries
 }

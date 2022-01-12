@@ -8,6 +8,7 @@ import (
 	"io"
 
 	"github.com/iotaledger/hive.go/crypto/bls"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
@@ -27,6 +28,7 @@ type DKShare struct {
 	PublicCommits []kyber.Point
 	PublicShares  []kyber.Point
 	PrivateShare  kyber.Scalar
+	NodePubKeys   []*ed25519.PublicKey
 	suite         Suite // Transient, only needed for un-marshaling.
 }
 
@@ -39,6 +41,7 @@ func NewDKShare(
 	publicCommits []kyber.Point,
 	publicShares []kyber.Point,
 	privateShare kyber.Scalar,
+	nodePubKeys []*ed25519.PublicKey,
 ) (*DKShare, error) {
 	//var err error
 	//
@@ -60,6 +63,7 @@ func NewDKShare(
 		PublicCommits: publicCommits,
 		PublicShares:  publicShares,
 		PrivateShare:  privateShare,
+		NodePubKeys:   nodePubKeys,
 		// NOTE: suite is not stored here.
 	}
 	return &dkShare, nil
@@ -120,7 +124,18 @@ func (s *DKShare) Write(w io.Writer) error {
 	// 		return err
 	// 	}
 	// }
-	// return util.WriteMarshaled(w, s.PrivateShare)
+	// if err = util.WriteMarshaled(w, s.PrivateShare); err != nil {
+	// 	return err
+	// }
+	// if err = util.WriteUint16(w, uint16(len(s.NodePubKeys))); err != nil {
+	// 	return err
+	// }
+	// for _, nodePubKey := range s.NodePubKeys {
+	// 	if err = util.WriteBytes16(w, nodePubKey[:]); err != nil {
+	// 		return err
+	// 	}
+	// }
+	// return nil
 }
 
 //nolint:gocritic
@@ -128,12 +143,12 @@ func (s *DKShare) Read(r io.Reader) error {
 	panic("TODO implement")
 
 	// var err error
-	// var addrBytes [iotago.Ed25519AddressBytesLength]byte
+	// var addrBytes [ledgerstate.AddressLength]byte
 	// var arrLen uint16
-	// if n, err := r.Read(addrBytes[:]); err != nil || n != iotago.Ed25519AddressBytesLength {
+	// if n, err := r.Read(addrBytes[:]); err != nil || n != ledgerstate.AddressLength {
 	// 	return err
 	// }
-	// if s.Address, _, err = iotago.AddressFromBytes(addrBytes[:]); err != nil {
+	// if s.Address, _, err = ledgerstate.AddressFromBytes(addrBytes[:]); err != nil {
 	// 	return err
 	// }
 	// var index uint16
@@ -178,7 +193,27 @@ func (s *DKShare) Read(r io.Reader) error {
 	// //
 	// // Private share.
 	// s.PrivateShare = s.suite.G2().Scalar()
-	// return util.ReadMarshaled(r, s.PrivateShare)
+	// if err = util.ReadMarshaled(r, s.PrivateShare); err != nil {
+	// 	return err
+	// }
+	// //
+	// // NodePubKeys
+	// if err = util.ReadUint16(r, &arrLen); err != nil {
+	// 	return err
+	// }
+	// s.NodePubKeys = make([]*ed25519.PublicKey, arrLen)
+	// for i := range s.NodePubKeys {
+	// 	var nodePubKeyBin []byte
+	// 	var nodePubKey ed25519.PublicKey
+	// 	if nodePubKeyBin, err = util.ReadBytes16(r); err != nil {
+	// 		return err
+	// 	}
+	// 	if nodePubKey, _, err = ed25519.PublicKeyFromBytes(nodePubKeyBin); err != nil {
+	// 		return err
+	// 	}
+	// 	s.NodePubKeys[i] = &nodePubKey
+	// }
+	// return nil
 }
 
 // SignShare signs the data with the own key share.

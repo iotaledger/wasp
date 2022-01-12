@@ -31,6 +31,7 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 		// rotate request to another address has been issued. State update will be taken over by VM and will have no effect
 		// By setting StateVarRotateToAddress we signal the VM this special situation
 		// StateVarRotateToAddress value should never persist in the state
+		ctx.Log().Infof("Governance::RotateStateController: newStateControllerAddress=%s", newStateControllerAddr.String())
 		ctx.State().Set(governance.StateVarRotateToAddress, iscp.BytesFromAddress(newStateControllerAddr))
 		return nil, nil
 	}

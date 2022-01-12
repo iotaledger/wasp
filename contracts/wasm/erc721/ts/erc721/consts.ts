@@ -21,6 +21,7 @@ export const ParamOwner    = "owner";
 export const ParamSymbol   = "s";
 export const ParamTo       = "to";
 export const ParamTokenID  = "tokenID";
+export const ParamTokenURI = "tokenURI";
 
 export const ResultAmount   = "amount";
 export const ResultApproval = "approval";
@@ -36,6 +37,7 @@ export const StateBalances          = "balances";
 export const StateName              = "name";
 export const StateOwners            = "owners";
 export const StateSymbol            = "symbol";
+export const StateTokenURIs         = "tokenURIs";
 
 export const FuncApprove           = "approve";
 export const FuncBurn              = "burn";

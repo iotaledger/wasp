@@ -1,7 +1,9 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package chains
 
 import (
-	"net"
 	"testing"
 	"time"
 
@@ -10,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 )
 
 func TestBasic(t *testing.T) {
@@ -21,10 +22,5 @@ func TestBasic(t *testing.T) {
 		return db.NewStore()
 	}
 
-	ch := New(logger, processors.NewConfig(), 10, time.Second, false, nil, getOrCreateKVStore)
-
-	nconn := txstream.New("dummyID", logger, func() (addr string, conn net.Conn, err error) {
-		return "", nil, xerrors.New("dummy dial error")
-	})
-	ch.Attach(nconn)
+	_ = New(logger, processors.NewConfig(), 10, time.Second, false, nil, getOrCreateKVStore)
 }

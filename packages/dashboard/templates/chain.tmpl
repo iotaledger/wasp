@@ -88,16 +88,17 @@
 				<h3 class="section">Committee</h3>
 				<dl>
 				<dt>Address</dt>      <dd>{{template "address" .Committee.Address}}</dd>
-				<dt>Size</dt>      <dd><code>{{.Committee.Size}}</code></dd>
-				<dt>Quorum</dt>    <dd><code>{{.Committee.Quorum}}</code></dd>
-				<dt>Quorum status</dt>    <dd>{{if .Committee.QuorumIsAlive}}up{{else}}down{{end}}</dd>
+				<dt>Size</dt>         <dd><code>{{.Committee.Size}}</code></dd>
+				<dt>Quorum</dt>       <dd><code>{{.Committee.Quorum}}</code></dd>
+				<dt>Quorum status</dt><dd>{{if .Committee.QuorumIsAlive}}up{{else}}down{{end}}</dd>
 				</dl>
 				<h4>Peer status</h4>
 				<table>
 				<thead>
 					<tr>
 						<th>Index</th>
-						<th>ID</th>
+						<th>PubKey</th>
+						<th>NetID</th>
 						<th>Status</th>
 					</tr>
 				</thead>
@@ -105,7 +106,8 @@
 				{{range $_, $s := .Committee.PeerStatus}}
 					<tr>
 						<td>{{$s.Index}}</td>
-						<td><code>{{$s.PeeringID}}</code></td>
+						<td><code>{{$s.PubKey.String}}</code></td>
+						<td><code>{{$s.NetID}}</code></td>
 						<td>{{if $s.Connected}}up{{else}}down{{end}}</td>
 					</tr>
 				{{end}}

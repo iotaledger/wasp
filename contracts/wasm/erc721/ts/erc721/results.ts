@@ -10,84 +10,84 @@ import * as sc from "./index";
 
 export class ImmutableBalanceOfResults extends wasmlib.ScMapID {
     amount(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, sc.idxMap[sc.IdxResultAmount]);
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultAmount));
 	}
 }
 
 export class MutableBalanceOfResults extends wasmlib.ScMapID {
     amount(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, sc.idxMap[sc.IdxResultAmount]);
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultAmount));
 	}
 }
 
 export class ImmutableGetApprovedResults extends wasmlib.ScMapID {
     approved(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxResultApproved]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultApproved));
 	}
 }
 
 export class MutableGetApprovedResults extends wasmlib.ScMapID {
     approved(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxResultApproved]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultApproved));
 	}
 }
 
 export class ImmutableIsApprovedForAllResults extends wasmlib.ScMapID {
     approval(): wasmlib.ScImmutableBool {
-		return new wasmlib.ScImmutableBool(this.mapID, sc.idxMap[sc.IdxResultApproval]);
+		return new wasmlib.ScImmutableBool(this.mapID, wasmlib.Key32.fromString(sc.ResultApproval));
 	}
 }
 
 export class MutableIsApprovedForAllResults extends wasmlib.ScMapID {
     approval(): wasmlib.ScMutableBool {
-		return new wasmlib.ScMutableBool(this.mapID, sc.idxMap[sc.IdxResultApproval]);
+		return new wasmlib.ScMutableBool(this.mapID, wasmlib.Key32.fromString(sc.ResultApproval));
 	}
 }
 
 export class ImmutableNameResults extends wasmlib.ScMapID {
     name(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxResultName]);
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultName));
 	}
 }
 
 export class MutableNameResults extends wasmlib.ScMapID {
     name(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxResultName]);
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultName));
 	}
 }
 
 export class ImmutableOwnerOfResults extends wasmlib.ScMapID {
     owner(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxResultOwner]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultOwner));
 	}
 }
 
 export class MutableOwnerOfResults extends wasmlib.ScMapID {
     owner(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxResultOwner]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultOwner));
 	}
 }
 
 export class ImmutableSymbolResults extends wasmlib.ScMapID {
     symbol(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxResultSymbol]);
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultSymbol));
 	}
 }
 
 export class MutableSymbolResults extends wasmlib.ScMapID {
     symbol(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxResultSymbol]);
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultSymbol));
 	}
 }
 
 export class ImmutableTokenURIResults extends wasmlib.ScMapID {
     tokenURI(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxResultTokenURI]);
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultTokenURI));
 	}
 }
 
 export class MutableTokenURIResults extends wasmlib.ScMapID {
     tokenURI(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxResultTokenURI]);
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultTokenURI));
 	}
 }

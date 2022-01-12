@@ -51,17 +51,10 @@ func TestOriginHashes(t *testing.T) {
 		require.True(t, origBlock.Timestamp().IsZero())
 		require.EqualValues(t, hashing.NilHash, origBlock.PreviousStateHash())
 		t.Logf("zero state hash = %s", z.StateCommitment().String())
+		require.EqualValues(t, 0, z.BlockIndex())
+		require.True(t, z.Timestamp().IsZero())
+		require.EqualValues(t, hashing.NilHash, z.PreviousStateHash())
 		require.EqualValues(t, calcOriginStateHash(), z.StateCommitment())
-	})
-	t.Run("origin state construct", func(t *testing.T) {
-		emptyState := newVirtualState(mapdb.NewMapDB(), nil)
-		origBlock, err := emptyState.applyOriginBlock()
-		require.EqualValues(t, 0, origBlock.BlockIndex())
-		require.True(t, origBlock.Timestamp().IsZero())
-		require.EqualValues(t, hashing.NilHash, origBlock.PreviousStateHash())
-		require.NoError(t, err)
-		require.EqualValues(t, emptyState.StateCommitment(), calcOriginStateHash())
-		require.EqualValues(t, hashing.NilHash, emptyState.PreviousStateHash())
 	})
 }
 

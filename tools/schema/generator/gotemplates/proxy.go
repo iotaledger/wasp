@@ -8,9 +8,14 @@ $#if map typedefProxyMap
 `,
 	// *******************************
 	"proxyMethods": `
-$#set varID idxMap[Idx$Kind$FldName]
+$#set varID wasmlib.KeyID($Kind$FldName)
+$#if init setInitVarID
 $#if core setCoreVarID
 $#if array proxyArray proxyMethods2
+`,
+	// *******************************
+	"setInitVarID": `
+$#set varID idxMap[Idx$Kind$FldName]
 `,
 	// *******************************
 	"proxyMethods2": `
@@ -48,7 +53,7 @@ func (s $TypeName) $FldName() Map$fldMapKey$+To$mut$FldType {
 }
 `,
 	// *******************************
-	"proxyMapOther": `55544444.0
+	"proxyMapOther": `
 
 func (s $TypeName) $FldName() Map$fldMapKey$+To$mut$FldType {
 	mapID := wasmlib.GetObjectID(s.id, $varID, wasmlib.TYPE_MAP)

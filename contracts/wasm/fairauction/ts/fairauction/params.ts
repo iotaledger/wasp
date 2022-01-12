@@ -10,84 +10,84 @@ import * as sc from "./index";
 
 export class ImmutableFinalizeAuctionParams extends wasmlib.ScMapID {
     color(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }
 
 export class MutableFinalizeAuctionParams extends wasmlib.ScMapID {
     color(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }
 
 export class ImmutablePlaceBidParams extends wasmlib.ScMapID {
     color(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }
 
 export class MutablePlaceBidParams extends wasmlib.ScMapID {
     color(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }
 
 export class ImmutableSetOwnerMarginParams extends wasmlib.ScMapID {
     ownerMargin(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamOwnerMargin]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerMargin));
 	}
 }
 
 export class MutableSetOwnerMarginParams extends wasmlib.ScMapID {
     ownerMargin(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamOwnerMargin]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerMargin));
 	}
 }
 
 export class ImmutableStartAuctionParams extends wasmlib.ScMapID {
     color(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 
     description(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamDescription]);
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamDescription));
 	}
 
     duration(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxParamDuration]);
+		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamDuration));
 	}
 
     minimumBid(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamMinimumBid]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamMinimumBid));
 	}
 }
 
 export class MutableStartAuctionParams extends wasmlib.ScMapID {
     color(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 
     description(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamDescription]);
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamDescription));
 	}
 
     duration(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxParamDuration]);
+		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamDuration));
 	}
 
     minimumBid(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamMinimumBid]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamMinimumBid));
 	}
 }
 
 export class ImmutableGetInfoParams extends wasmlib.ScMapID {
     color(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }
 
 export class MutableGetInfoParams extends wasmlib.ScMapID {
     color(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }

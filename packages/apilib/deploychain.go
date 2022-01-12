@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 	"io"
@@ -21,10 +22,8 @@ import (
 
 type CreateChainParams struct {
 	Layer1Client          interface{}
-	AllAPIHosts           []string
-	AllPeeringHosts       []string
 	CommitteeAPIHosts     []string
-	CommitteePeeringHosts []string
+	CommitteePubKeys  []string
 	N                     uint16
 	T                     uint16
 	OriginatorKeyPair     *cryptolib.KeyPair
@@ -36,15 +35,8 @@ type CreateChainParams struct {
 // DeployChainWithDKG performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
 func DeployChainWithDKG(par CreateChainParams) (*iscp.ChainID, iotago.Address, error) {
-	if len(par.AllPeeringHosts) > 0 {
-		// all committee nodes most also be among allPeers
-		if !util.IsSubset(par.CommitteePeeringHosts, par.AllPeeringHosts) {
-			return nil, nil, xerrors.Errorf("DeployChainWithDKG: committee nodes must all be among peers")
-		}
-	}
-
 	dkgInitiatorIndex := uint16(rand.Intn(len(par.CommitteeAPIHosts)))
-	stateControllerAddr, err := RunDKG(par.CommitteeAPIHosts, par.CommitteePeeringHosts, par.T, dkgInitiatorIndex)
+	stateControllerAddr, err := RunDKG(par.CommitteeAPIHosts, par.CommitteePubKeys, par.T, dkgInitiatorIndex)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -85,7 +77,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", txID)
 	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 
-	err = ActivateChainOnAccessNodes(par.AllAPIHosts, par.AllPeeringHosts, chainID)
+	err = ActivateChainOnAccessNodes(par.CommitteeAPIHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.Bech32(iscp.Bech32Prefix), err)
@@ -165,12 +157,11 @@ func CreateChainOrigin(Layer1Client interface{}, originator *cryptolib.KeyPair, 
 
 // ActivateChainOnAccessNodes puts chain records into nodes and activates its
 // TODO needs refactoring and optimization
-func ActivateChainOnAccessNodes(apiHosts, peers []string, chainID *iscp.ChainID) error {
+func ActivateChainOnAccessNodes(apiHosts []string, chainID *iscp.ChainID) error {
 	nodes := multiclient.New(apiHosts)
 	// ------------ put chain records to hosts
 	err := nodes.PutChainRecord(&registry.ChainRecord{
 		ChainID: chainID,
-		Peers:   peers,
 	})
 	if err != nil {
 		return xerrors.Errorf("ActivateChainOnAccessNodes: %w", err)

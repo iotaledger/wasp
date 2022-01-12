@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -26,8 +27,8 @@ type stateManager struct {
 	ready                  *ready.Ready
 	store                  kvstore.KVStore
 	chain                  chain.ChainCore
-	chainPeers             peering.PeerDomainProvider
-	nodeConn               chain.NodeConnection
+	domain                      *DomainWithFallback
+	nodeConn                    chain.ChainNodeConnection
 	pullStateRetryTime     time.Time
 	solidState             state.VirtualStateAccess
 	stateOutput            *iotago.AliasOutput
@@ -35,6 +36,7 @@ type stateManager struct {
 	currentSyncData        atomic.Value
 	notifiedAnchorOutputID iotago.OutputID
 	syncingBlocks          *syncingBlocks
+	receivePeerMessagesAttachID interface{}
 	timers                 StateManagerTimers
 	log                    *logger.Logger
 
@@ -59,7 +61,14 @@ const (
 	peerMsgTypeBlock
 )
 
-func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, stateManagerMetrics metrics.StateManagerMetrics, timersOpt ...StateManagerTimers) chain.StateManager {
+func New(
+	store kvstore.KVStore,
+	c chain.ChainCore,
+	domain *DomainWithFallback,
+	nodeconn chain.ChainNodeConnection,
+	stateManagerMetrics metrics.StateManagerMetrics,
+	timersOpt ...StateManagerTimers,
+) chain.StateManager {
 	var timers StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -71,7 +80,7 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		store:                      store,
 		chain:                      c,
 		nodeConn:                   nodeconn,
-		chainPeers:                 peers,
+		domain:                     domain,
 		syncingBlocks:              newSyncingBlocks(c.Log(), timers.GetBlockRetry),
 		timers:                     timers,
 		log:                        c.Log().Named("s"),
@@ -84,7 +93,8 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		eventTimerMsgPipe:          pipe.NewLimitInfinitePipe(1),
 		stateManagerMetrics:        stateManagerMetrics,
 	}
-	ret.chainPeers.Attach(peering.PeerMessageReceiverStateManager, ret.receiveChainPeerMessages)
+	ret.receivePeerMessagesAttachID = ret.domain.Attach(peering.PeerMessageReceiverStateManager, ret.receiveChainPeerMessages)
+	ret.nodeConn.AttachToOutputReceived(ret.EnqueueOutputMsg)
 	go ret.initLoadState()
 
 	return ret
@@ -100,7 +110,7 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 		}
 		sm.EnqueueGetBlockMsg(&messages.GetBlockMsgIn{
 			GetBlockMsg: *msg,
-			SenderNetID: peerMsg.SenderNetID,
+			SenderPubKey: peerMsg.SenderPubKey,
 		})
 	case peerMsgTypeBlock:
 		msg, err := messages.NewBlockMsg(peerMsg.MsgData)
@@ -110,14 +120,22 @@ func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn)
 		}
 		sm.EnqueueBlockMsg(&messages.BlockMsgIn{
 			BlockMsg:    *msg,
-			SenderNetID: peerMsg.SenderNetID,
+			SenderPubKey: peerMsg.SenderPubKey,
 		})
 	default:
 		sm.log.Warnf("Wrong type of state manager message: %v, ignoring it", peerMsg.MsgType)
 	}
 }
 
+func (sm *stateManager) SetChainPeers(peers []*ed25519.PublicKey) {
+	sm.domain.SetMainPeers(peers)
+}
+
 func (sm *stateManager) Close() {
+	sm.nodeConn.DetachFromOutputReceived()
+	sm.domain.Detach(sm.receivePeerMessagesAttachID)
+	sm.domain.Close()
+
 	sm.eventGetBlockMsgPipe.Close()
 	sm.eventBlockMsgPipe.Close()
 	sm.eventStateOutputMsgPipe.Close()

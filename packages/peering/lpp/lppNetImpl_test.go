@@ -46,11 +46,11 @@ func TestLPPPeeringImpl(t *testing.T) {
 		go nodes[i].Run(make(<-chan struct{}))
 	}
 
-	n0p2, err := nodes[0].PeerByNetID(netIDs[2])
+	n0p2, err := nodes[0].PeerByPubKey(&keys[2].PublicKey)
 	require.NoError(t, err)
-	n1p1, err := nodes[1].PeerByNetID(netIDs[1])
+	n1p1, err := nodes[1].PeerByPubKey(&keys[1].PublicKey)
 	require.NoError(t, err)
-	n2p0, err := nodes[2].PeerByNetID(netIDs[0])
+	n2p0, err := nodes[2].PeerByPubKey(&keys[0].PublicKey)
 	require.NoError(t, err)
 
 	chain1 := peering.RandomPeeringID()

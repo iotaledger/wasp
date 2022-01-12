@@ -42,6 +42,7 @@ impl MutableFindContractResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapHnameToImmutableBytes {
 	pub(crate) obj_id: i32,
 }
@@ -64,6 +65,7 @@ impl ImmutableGetContractRecordsResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapHnameToMutableBytes {
 	pub(crate) obj_id: i32,
 }

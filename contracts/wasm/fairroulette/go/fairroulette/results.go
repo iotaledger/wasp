@@ -14,7 +14,7 @@ type ImmutableLastWinningNumberResults struct {
 }
 
 func (s ImmutableLastWinningNumberResults) LastWinningNumber() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultLastWinningNumber])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultLastWinningNumber))
 }
 
 type MutableLastWinningNumberResults struct {
@@ -22,7 +22,7 @@ type MutableLastWinningNumberResults struct {
 }
 
 func (s MutableLastWinningNumberResults) LastWinningNumber() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultLastWinningNumber])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultLastWinningNumber))
 }
 
 type ImmutableRoundNumberResults struct {
@@ -30,7 +30,7 @@ type ImmutableRoundNumberResults struct {
 }
 
 func (s ImmutableRoundNumberResults) RoundNumber() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultRoundNumber])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultRoundNumber))
 }
 
 type MutableRoundNumberResults struct {
@@ -38,7 +38,7 @@ type MutableRoundNumberResults struct {
 }
 
 func (s MutableRoundNumberResults) RoundNumber() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultRoundNumber])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultRoundNumber))
 }
 
 type ImmutableRoundStartedAtResults struct {
@@ -46,7 +46,7 @@ type ImmutableRoundStartedAtResults struct {
 }
 
 func (s ImmutableRoundStartedAtResults) RoundStartedAt() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxResultRoundStartedAt])
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultRoundStartedAt))
 }
 
 type MutableRoundStartedAtResults struct {
@@ -54,7 +54,7 @@ type MutableRoundStartedAtResults struct {
 }
 
 func (s MutableRoundStartedAtResults) RoundStartedAt() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxResultRoundStartedAt])
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultRoundStartedAt))
 }
 
 type ImmutableRoundStatusResults struct {
@@ -62,7 +62,7 @@ type ImmutableRoundStatusResults struct {
 }
 
 func (s ImmutableRoundStatusResults) RoundStatus() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, idxMap[IdxResultRoundStatus])
+	return wasmlib.NewScImmutableInt16(s.id, wasmlib.KeyID(ResultRoundStatus))
 }
 
 type MutableRoundStatusResults struct {
@@ -70,5 +70,5 @@ type MutableRoundStatusResults struct {
 }
 
 func (s MutableRoundStatusResults) RoundStatus() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, idxMap[IdxResultRoundStatus])
+	return wasmlib.NewScMutableInt16(s.id, wasmlib.KeyID(ResultRoundStatus))
 }
