@@ -6,16 +6,14 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/transaction"
-
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
@@ -659,7 +657,8 @@ func TestFoundryDestroy(t *testing.T) {
 	require.NoError(t, err)
 
 	err = v.ch.DestroyFoundry(sn, v.user)
-	testmisc.RequireErrorToBe(t, err, "implement me") // TODO
+	require.NoError(t, err)
+	//testmisc.RequireErrorToBe(t, err, "implement me") // TODO
 }
 
 // TestCirculatingSupplyBurn belongs to iota.go

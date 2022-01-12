@@ -209,9 +209,15 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	ctx.Requiref(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
 
-	ctx.Privileged().DestroyFoundry(sn)
+	dustDepositFree, err := ctx.Privileged().DestroyFoundry(sn)
+	ctx.RequireNoError(err, "destroyFoundry")
+
 	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
 	DeleteFoundryOutput(ctx.State(), sn)
+	// the dust deposit goes to the caller's account
+	CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
+		Iotas: dustDepositFree,
+	})
 	return nil, nil
 }
 
