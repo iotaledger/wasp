@@ -14,22 +14,12 @@
 		<tbody>
 			<tr>
 				<td>State received</td>
-				<td>
-					<input type="checkbox" disabled ="true"
-						{{- if (.Status.IsStateReceived) -}}
-							checked
-						{{- end -}}
-					>
-				</td>
+				<td>{{ template "booleanValue" (.Status.IsStateReceived) }}</td>
 				<td></td>
 			</tr>
 			<tr>
 				<td>Batch proposal sent</td>
-				<input type="checkbox" disabled ="true"
-					{{- if (.Status.IsBatchProposalSent) -}}
-						checked
-					{{- end -}}
-				>
+				<td>{{ template "booleanValue" (.Status.IsBatchProposalSent) }}</td>
 				<td>{{ (formatTimestampOrNever (.Status.GetBatchProposalSentTime)) }}</td>
 			</tr>
 		</tbody>
