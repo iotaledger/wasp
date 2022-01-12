@@ -113,7 +113,7 @@ func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Assets) {
 }
 
 // TransferAllowedFunds transfers funds withing the budget set by the Allowance() to the existing target account on chain
-func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) {
+func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) *iscp.Assets {
 	if vmctx.isCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = commonaccount.Get(vmctx.ChainID())
@@ -137,6 +137,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, assets ...*is
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.MoveBetweenAccounts(s, caller, target, assetsToMove)
 	})
+	return vmctx.AllowanceAvailable()
 }
 
 func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {

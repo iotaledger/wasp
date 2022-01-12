@@ -84,10 +84,10 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	// move all allowed funds to the account of the current contract context
 	// before saving the allowance budget because after the transfer it is mutated
 	fundsToWithdraw := ctx.AllowanceAvailable().Clone()
-	ctx.TransferAllowedFunds(ctx.AccountID())
+	remains := ctx.TransferAllowedFunds(ctx.AccountID())
 
 	// por las dudas
-	ctx.Requiref(ctx.AllowanceAvailable().IsEmpty(), "internal: allowance left after must be empty")
+	ctx.Requiref(remains.IsEmpty(), "internal: allowance left after must be empty")
 
 	ctx.Send(iscp.RequestParameters{
 		TargetAddress: ctx.Caller().Address(),

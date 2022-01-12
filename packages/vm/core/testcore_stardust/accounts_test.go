@@ -651,6 +651,18 @@ func TestTransferAndHarvest(t *testing.T) {
 	require.EqualValues(t, 0, len(commonAssets.Tokens))
 }
 
+func TestFoundryDestroy(t *testing.T) {
+	v := initTest(t)
+	sn, _, err := v.ch.NewFoundryParams(1_000_000).
+		WithUser(v.user).
+		CreateFoundry()
+	require.NoError(t, err)
+
+	err = v.ch.DestroyFoundry(sn, v.user)
+	testmisc.RequireErrorToBe(t, err, "implement me") // TODO
+}
+
+// TestCirculatingSupplyBurn belongs to iota.go
 func TestCirculatingSupplyBurn(t *testing.T) {
 	const OneMi = 1_000_000
 

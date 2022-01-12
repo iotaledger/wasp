@@ -88,7 +88,8 @@ type Sandbox interface {
 	// Skipping 'assets' means transfer all Allowance().
 	// The call fails if target account does not exist
 	// The TransferAllowedFunds call mutates AllowanceAvailable
-	TransferAllowedFunds(target *AgentID, assets ...*Assets)
+	// Returns remaining budget
+	TransferAllowedFunds(target *AgentID, assets ...*Assets) *Assets
 	// Send sends a on-ledger request
 	Send(metadata RequestParameters)
 	// BlockContext Internal for use in native hardcoded contracts

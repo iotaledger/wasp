@@ -72,7 +72,7 @@ type callContext struct {
 	caller           *iscp.AgentID // calling agent
 	contract         iscp.Hname    // called contract
 	params           dict.Dict     // params passed
-	allowanceRemains *iscp.Assets  // MUTATED: allowance budget left after TransferAllowedFunds
+	allowanceRemains *iscp.Assets  // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
 type blockContext struct {

@@ -113,8 +113,8 @@ func (s *sandbox) AllowanceAvailable() *iscp.Assets {
 	return s.vmctx.AllowanceAvailable()
 }
 
-func (s *sandbox) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) {
-	s.vmctx.TransferAllowedFunds(target, assets...)
+func (s *sandbox) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) *iscp.Assets {
+	return s.vmctx.TransferAllowedFunds(target, assets...)
 }
 
 func (s *sandbox) Log() iscp.LogInterface {
