@@ -306,7 +306,7 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
-	RequestData   iscp.RequestData // TODO request may be big (blobs). Do we want to store it all?
+	RequestData   iscp.Request // TODO request may be big (blobs). Do we want to store it all?
 	ErrorStr      string
 	GasBudget     uint64
 	GasBurned     uint64

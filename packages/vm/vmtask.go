@@ -28,7 +28,7 @@ type VMTask struct {
 	RentStructure            *iotago.RentStructure
 	VirtualStateAccess       state.VirtualStateAccess
 	SolidStateBaseline       coreutil.StateBaseline
-	Requests                 []iscp.RequestData
+	Requests                 []iscp.Request
 	ProcessedRequestsCount   uint16
 	TimeAssumption           iscp.TimeData
 	Entropy                  hashing.HashValue

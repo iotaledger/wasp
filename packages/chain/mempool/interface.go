@@ -7,13 +7,13 @@ import (
 )
 
 type Mempool interface {
-	ReceiveRequests(reqs ...iscp.RequestData)
-	ReceiveRequest(req iscp.RequestData) bool
+	ReceiveRequests(reqs ...iscp.Request)
+	ReceiveRequest(req iscp.Request) bool
 	RemoveRequests(reqs ...iscp.RequestID)
-	ReadyNow(currentTime ...time.Time) []iscp.RequestData
-	ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.RequestData, []int, bool)
+	ReadyNow(currentTime ...time.Time) []iscp.Request
+	ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool)
 	HasRequest(id iscp.RequestID) bool
-	GetRequest(id iscp.RequestID) iscp.RequestData
+	GetRequest(id iscp.RequestID) iscp.Request
 	Info() MempoolInfo
 	WaitRequestInPool(reqid iscp.RequestID, timeout ...time.Duration) bool // for testing
 	WaitInBufferEmpty(timeout ...time.Duration) bool                       // for testing

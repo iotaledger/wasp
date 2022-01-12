@@ -57,7 +57,7 @@ func transfer(ctx wasmlib.ScFuncContext, state MutableErc721State, from, to wasm
 		"not owner, operator, or approved")
 
 	ctx.Require(owner == from, "from is not owner")
-	// TODO ctx.Require(to == <check-if-is-a-valid-address> , "invalid 'to' agentid")
+	// TODO ctx.Requiref(to == <check-if-is-a-valid-address> , "invalid 'to' agentid")
 
 	nftCountFrom := state.Balances().GetUint64(from)
 	nftCountTo := state.Balances().GetUint64(to)

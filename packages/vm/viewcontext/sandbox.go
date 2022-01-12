@@ -96,7 +96,7 @@ func (s *sandboxview) Contract() iscp.Hname {
 
 func (s *sandboxview) ContractCreator() *iscp.AgentID {
 	contractRecord := root.FindContract(contractStateSubpartition(s.vctx.stateReader.KVStoreReader(), root.Contract.Hname()), s.contractHname)
-	assert.NewAssert(s.Log()).Require(contractRecord != nil, "failed to find contract %s", s.contractHname)
+	assert.NewAssert(s.Log()).Requiref(contractRecord != nil, "failed to find contract %s", s.contractHname)
 	return contractRecord.Creator
 }
 
@@ -146,8 +146,8 @@ func (s *sandboxview) gasBudgetLeft() uint64 {
 	return s.gasBudget - s.gasBurned
 }
 
-func (s *sandboxview) Require(cond bool, format string, args ...interface{}) {
-	s.assert.Require(cond, format, args...)
+func (s *sandboxview) Requiref(cond bool, format string, args ...interface{}) {
+	s.assert.Requiref(cond, format, args...)
 }
 
 func (s *sandboxview) RequireNoError(err error, str ...string) {

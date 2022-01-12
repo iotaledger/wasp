@@ -326,7 +326,7 @@ func (env *Solo) AddToLedger(tx *iotago.Transaction) error {
 }
 
 // RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
-func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID *iscp.ChainID) ([]iscp.RequestData, error) {
+func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID *iscp.ChainID) ([]iscp.Request, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
@@ -339,7 +339,7 @@ func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID *iscp.ChainID)
 }
 
 // requestsByChain parses the transaction and extracts those outputs which are interpreted as a request to a chain
-func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp.RequestData {
+func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp.Request {
 	ret, err := iscp.RequestsInTransaction(tx)
 	require.NoError(env.T, err)
 	return ret
@@ -388,7 +388,7 @@ func (ch *Chain) GetAnchorOutput() (*iotago.AliasOutput, *iotago.UTXOInput) {
 
 // collateBatch selects requests which are not time locked
 // returns batch and and 'remains unprocessed' flag
-func (ch *Chain) collateBatch() []iscp.RequestData {
+func (ch *Chain) collateBatch() []iscp.Request {
 	// emulating variable sized blocks
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
@@ -398,7 +398,7 @@ func (ch *Chain) collateBatch() []iscp.RequestData {
 	if batchSize > maxBatch {
 		batchSize = maxBatch
 	}
-	ret := make([]iscp.RequestData, 0)
+	ret := make([]iscp.Request, 0)
 	for _, req := range ready[:batchSize] {
 		if !req.IsOffLedger() {
 			timeData := req.AsOnLedger().Features().TimeLock()

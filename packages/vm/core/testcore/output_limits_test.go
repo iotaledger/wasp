@@ -35,7 +35,7 @@ var (
 					colored.NewBalancesForColor(colored.IOTA, 1000),
 					nil,
 				)
-				a.Require(ret == true, "failed to send funds")
+				a.Requiref(ret == true, "failed to send funds")
 				if shouldEmitEvent {
 					ctx.Event(fmt.Sprintf("reqid: %s, sent funds", ctx.Request().ID()))
 				}

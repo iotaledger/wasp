@@ -20,7 +20,7 @@ import (
 )
 
 type mempool struct {
-	inBuffer                map[iscp.RequestID]iscp.RequestData
+	inBuffer                map[iscp.RequestID]iscp.Request
 	inMutex                 sync.RWMutex
 	poolMutex               sync.RWMutex
 	inBufCounter            int
@@ -38,7 +38,7 @@ type mempool struct {
 var _ Mempool = &mempool{}
 
 type requestRef struct {
-	req          iscp.RequestData
+	req          iscp.Request
 	whenReceived time.Time
 }
 
@@ -49,7 +49,7 @@ const (
 
 func New(stateReader state.OptimisticStateReader, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) Mempool {
 	ret := &mempool{
-		inBuffer:       make(map[iscp.RequestID]iscp.RequestData),
+		inBuffer:       make(map[iscp.RequestID]iscp.Request),
 		stateReader:    stateReader,
 		pool:           make(map[iscp.RequestID]*requestRef),
 		chStop:         make(chan struct{}),
@@ -65,7 +65,7 @@ func New(stateReader state.OptimisticStateReader, log *logger.Logger, mempoolMet
 	return ret
 }
 
-func (m *mempool) addToInBuffer(req iscp.RequestData) bool {
+func (m *mempool) addToInBuffer(req iscp.Request) bool {
 	// just check if it is already in the pool
 	if m.HasRequest(req.ID()) {
 		return false
@@ -78,7 +78,7 @@ func (m *mempool) addToInBuffer(req iscp.RequestData) bool {
 	return true
 }
 
-func (m *mempool) removeFromInBuffer(req iscp.Request) {
+func (m *mempool) removeFromInBuffer(req iscp.Calldata) {
 	m.inMutex.Lock()
 	defer m.inMutex.Unlock()
 	if _, ok := m.inBuffer[req.ID()]; ok {
@@ -88,7 +88,7 @@ func (m *mempool) removeFromInBuffer(req iscp.Request) {
 }
 
 // fills up the buffer with requests from the in-buffer
-func (m *mempool) takeInBuffer(buf []iscp.RequestData) []iscp.RequestData {
+func (m *mempool) takeInBuffer(buf []iscp.Request) []iscp.Request {
 	buf = buf[:0]
 	m.inMutex.RLock()
 	defer m.inMutex.RUnlock()
@@ -101,7 +101,7 @@ func (m *mempool) takeInBuffer(buf []iscp.RequestData) []iscp.RequestData {
 
 // addToPool adds request to the pool. It may fail
 // returns true if it must be removed from the input buffer
-func (m *mempool) addToPool(req iscp.RequestData) bool {
+func (m *mempool) addToPool(req iscp.Request) bool {
 	reqid := req.ID()
 
 	// checking in the state if request is processed. Reading may fail
@@ -139,7 +139,7 @@ func (m *mempool) addToPool(req iscp.RequestData) bool {
 	return true
 }
 
-func (m *mempool) countRequestInMetrics(req iscp.RequestData) {
+func (m *mempool) countRequestInMetrics(req iscp.Request) {
 	// TODO refactor, this should be part of metrics logic.
 	if req.IsOffLedger() {
 		m.mempoolMetrics.CountOffLedgerRequestIn()
@@ -149,7 +149,7 @@ func (m *mempool) countRequestInMetrics(req iscp.RequestData) {
 }
 
 // ReceiveRequests places requests into the inBuffer. InBuffer is unordered and non-deterministic
-func (m *mempool) ReceiveRequests(reqs ...iscp.RequestData) {
+func (m *mempool) ReceiveRequests(reqs ...iscp.Request) {
 	for _, req := range reqs {
 		m.countRequestInMetrics(req)
 		m.addToInBuffer(req)
@@ -157,7 +157,7 @@ func (m *mempool) ReceiveRequests(reqs ...iscp.RequestData) {
 }
 
 // ReceiveRequest receives a single request and returns whether that request has been added to the in-buffer
-func (m *mempool) ReceiveRequest(req iscp.RequestData) bool {
+func (m *mempool) ReceiveRequest(req iscp.Request) bool {
 	m.countRequestInMetrics(req)
 	return m.addToInBuffer(req)
 }
@@ -183,7 +183,7 @@ func (m *mempool) RemoveRequests(reqs ...iscp.RequestID) {
 
 const traceInOut = false
 
-func (m *mempool) traceIn(req iscp.RequestData) {
+func (m *mempool) traceIn(req iscp.Request) {
 	rotateStr := ""
 	if rotate.IsRotateStateControllerRequest(req) {
 		rotateStr = "(rotate) "
@@ -274,19 +274,19 @@ func isRequestReady(ref *requestRef, currentTime time.Time) (bool, bool) {
 // Note that later status of request may change due to the time change and time constraints
 // If there's at least one committee rotation request in the mempool, the ReadyNow returns
 // batch with only one request, the oldest committee rotation request
-func (m *mempool) ReadyNow(currentTime ...time.Time) []iscp.RequestData {
+func (m *mempool) ReadyNow(currentTime ...time.Time) []iscp.Request {
 	m.poolMutex.RLock()
 
 	timeToValidate := time.Now()
 	if len(currentTime) > 0 {
 		timeToValidate = currentTime[0]
 	}
-	var oldestRotate iscp.RequestData
+	var oldestRotate iscp.Request
 	var oldestRotateTime time.Time
 
 	toRemove := []iscp.RequestID{}
 
-	ret := make([]iscp.RequestData, 0, len(m.pool))
+	ret := make([]iscp.Request, 0, len(m.pool))
 	for _, ref := range m.pool {
 		rdy, shouldBeRemoved := isRequestReady(ref, timeToValidate)
 		if shouldBeRemoved {
@@ -322,7 +322,7 @@ func (m *mempool) ReadyNow(currentTime ...time.Time) []iscp.RequestData {
 	go m.RemoveRequests(toRemove...)
 
 	if oldestRotate != nil {
-		return []iscp.RequestData{oldestRotate}
+		return []iscp.Request{oldestRotate}
 	}
 	return ret
 }
@@ -332,8 +332,8 @@ func (m *mempool) ReadyNow(currentTime ...time.Time) []iscp.RequestData {
 // - (a list of processable requests), true if the list can be deterministically calculated
 // Note that (a list of processable requests) can be empty if none satisfies currentTime time constraint (timelock, fallback)
 // For requests which are known and solidified, the result is deterministic
-func (m *mempool) ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.RequestData, []int, bool) {
-	requests := make([]iscp.RequestData, 0, len(reqIDs))
+func (m *mempool) ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool) {
+	requests := make([]iscp.Request, 0, len(reqIDs))
 	missingRequestIndexes := []int{}
 	toRemove := []iscp.RequestID{}
 	m.poolMutex.RLock()
@@ -368,7 +368,7 @@ func (m *mempool) HasRequest(id iscp.RequestID) bool {
 	return ok
 }
 
-func (m *mempool) GetRequest(id iscp.RequestID) iscp.RequestData {
+func (m *mempool) GetRequest(id iscp.RequestID) iscp.Request {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
@@ -453,7 +453,7 @@ func (m *mempool) Close() {
 
 // the loop validates and moves request from inBuffer to the pool
 func (m *mempool) moveToPoolLoop() {
-	buf := make([]iscp.RequestData, 0, 100)
+	buf := make([]iscp.Request, 0, 100)
 	for {
 		select {
 		case <-m.chStop:

@@ -119,7 +119,7 @@ type Consensus interface {
 	IsReady() bool
 	Close()
 	GetStatusSnapshot() *ConsensusInfo
-	ShouldReceiveMissingRequest(req iscp.Request) bool
+	ShouldReceiveMissingRequest(req iscp.Calldata) bool
 }
 
 type AsynchronousCommonSubsetRunner interface {
@@ -145,7 +145,7 @@ type ConsensusInfo struct {
 }
 
 type ReadyListRecord struct {
-	Request iscp.Request
+	Request iscp.Calldata
 	Seen    map[uint16]bool
 }
 

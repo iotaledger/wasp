@@ -43,7 +43,7 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 	s := &dkSharesService{registryProvider, nodeProvider}
 
 	adm.POST(routes.DKSharesPost(), s.handleDKSharesPost).
-		AddParamBody(requestExample, "DKSharesPostRequest", "RequestData parameters", true).
+		AddParamBody(requestExample, "DKSharesPostRequest", "Request parameters", true).
 		AddResponse(http.StatusOK, "DK shares info", infoExample, nil).
 		SetSummary("Generate a new distributed key")
 

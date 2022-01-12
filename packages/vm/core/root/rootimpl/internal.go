@@ -24,7 +24,7 @@ func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, pa
 func mustStoreContractRecord(ctx iscp.Sandbox, rec *root.ContractRecord) {
 	hname := rec.Hname()
 	contractRegistry := root.GetContractRegistry(ctx.State())
-	ctx.Require(!contractRegistry.MustHasAt(hname.Bytes()), "contract '%s'/%s already exist", rec.Name, hname.String())
+	ctx.Requiref(!contractRegistry.MustHasAt(hname.Bytes()), "contract '%s'/%s already exist", rec.Name, hname.String())
 	contractRegistry.MustSetAt(hname.Bytes(), rec.Bytes())
 }
 

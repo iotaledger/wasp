@@ -154,7 +154,7 @@ func paramBlockNumberOrHashAsNumber(ctx iscp.SandboxView, emu *emulator.EVMEmula
 		blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
 		header, err := emu.HeaderByHash(blockHash)
 		a.RequireNoError(err)
-		a.Require(header != nil, "block not found")
+		a.Requiref(header != nil, "block not found")
 		return header.Number
 	}
 	return paramBlockNumber(ctx)

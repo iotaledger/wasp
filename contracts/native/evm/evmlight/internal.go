@@ -128,7 +128,7 @@ func transactionByBlockNumberAndIndex(ctx iscp.SandboxView) (*emulator.EVMEmulat
 func requireLatestBlock(ctx iscp.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool, blockNumber uint64) uint64 {
 	current := emu.BlockchainDB().GetNumber()
 	if blockNumber != current {
-		assert.NewAssert(ctx.Log()).Require(allowPrevious, "unsupported operation")
+		assert.NewAssert(ctx.Log()).Requiref(allowPrevious, "unsupported operation")
 	}
 	return blockNumber
 }
@@ -147,7 +147,7 @@ func paramBlockNumberOrHashAsNumber(ctx iscp.SandboxView, emu *emulator.EVMEmula
 		a := assert.NewAssert(ctx.Log())
 		blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
 		header := emu.BlockchainDB().GetHeaderByHash(blockHash)
-		a.Require(header != nil, "block not found")
+		a.Requiref(header != nil, "block not found")
 		return requireLatestBlock(ctx, emu, allowPrevious, header.Number.Uint64())
 	}
 	return paramBlockNumber(ctx, emu, allowPrevious)

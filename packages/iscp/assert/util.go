@@ -18,7 +18,7 @@ func NewAssert(log iscp.LogInterface, name ...string) *Assert {
 }
 
 //nolint:goprintffuncname
-func (a Assert) Require(cond bool, format string, args ...interface{}) {
+func (a Assert) Requiref(cond bool, format string, args ...interface{}) {
 	if cond {
 		return
 	}
@@ -29,7 +29,7 @@ func (a Assert) Require(cond bool, format string, args ...interface{}) {
 }
 
 func (a Assert) RequireNoError(err error, str ...string) {
-	a.Require(err == nil, fmt.Sprintf("%s %v", strings.Join(str, " "), err))
+	a.Requiref(err == nil, fmt.Sprintf("%s %v", strings.Join(str, " "), err))
 }
 
 func (a Assert) RequireChainOwner(ctx iscp.Sandbox, name ...string) {

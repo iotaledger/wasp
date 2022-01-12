@@ -1,9 +1,10 @@
 package testchain
 
 import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -24,7 +25,7 @@ func NewMockedStateTransition(t *testing.T, chainKey *cryptolib.KeyPair) *Mocked
 	}
 }
 
-func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutput *iotago.AliasOutput, ts time.Time, reqs ...iscp.Request) {
+func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutput *iotago.AliasOutput, ts time.Time, reqs ...iscp.Calldata) {
 	panic("TODO implement")
 	// if c.chainKey != nil {
 	// 	require.True(c.t, chainOutput.GetStateAddress().Equals(iotago.NewED25519Address(c.chainKey.PublicKey)))

@@ -104,8 +104,8 @@ func (s *sandboxView) Budget() uint64 {
 
 // helper methods
 
-func (s *sandboxView) Require(cond bool, format string, args ...interface{}) {
-	s.assert.Require(cond, format, args...)
+func (s *sandboxView) Requiref(cond bool, format string, args ...interface{}) {
+	s.assert.Requiref(cond, format, args...)
 }
 
 func (s *sandboxView) RequireNoError(err error, str ...string) {

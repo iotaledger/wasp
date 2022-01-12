@@ -29,14 +29,14 @@ func initialize(_ iscp.Sandbox) (dict.Dict, error) {
 func publicKey(ctx iscp.Sandbox) (dict.Dict, error) {
 	panic("TODO implement")
 	// a := assert.NewAssert(ctx.Log())
-	// a.Require(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.publicKey: caller must be an address")
+	// a.Requiref(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.publicKey: caller must be an address")
 
 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	// pubKeyBin := par.MustGetBytes(ParamPublicKey)
 	// addr, err := ctx.Utils().ED25519().AddressFromPublicKey(pubKeyBin)
 	// a.RequireNoError(err)
-	// a.Require(addr.Equals(ctx.Caller().Address()), "public key does not correspond to the caller's address")
+	// a.Requiref(addr.Equals(ctx.Caller().Address()), "public key does not correspond to the caller's address")
 
 	// pkRegistry := collections.NewMap(ctx.State(), StateVarPublicKeys)
 	// a.RequireNoError(pkRegistry.SetAt(addr.Bytes(), pubKeyBin))
@@ -52,18 +52,18 @@ func addWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
 	// a := assert.NewAssert(ctx.Log())
 
-	// a.Require(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
+	// a.Requiref(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
 	// payerAddr := ctx.Caller().Address()
 
-	// a.Require(getPublicKey(ctx.State(), payerAddr, a) != nil,
+	// a.Requiref(getPublicKey(ctx.State(), payerAddr, a) != nil,
 	// 	fmt.Sprintf("unknown public key for address %s", payerAddr))
 
 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
 	// addWarrant := ctx.Allowance().Iotas
-	// a.Require(addWarrant >= MinimumWarrantIotas, fmt.Sprintf("warrant must be larger than %d iotas", MinimumWarrantIotas))
+	// a.Requiref(addWarrant >= MinimumWarrantIotas, fmt.Sprintf("warrant must be larger than %d iotas", MinimumWarrantIotas))
 
 	// warrant, revoke, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
-	// a.Require(revoke == 0, fmt.Sprintf("warrant of %s for %s is being revoked", payerAddr, serviceAddr))
+	// a.Requiref(revoke == 0, fmt.Sprintf("warrant of %s for %s is being revoked", payerAddr, serviceAddr))
 
 	// payerInfo := collections.NewMap(ctx.State(), string(payerAddr.Bytes()))
 	// setWarrant(payerInfo, serviceAddr, warrant+addWarrant)
@@ -101,13 +101,13 @@ func revokeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
 	// a := assert.NewAssert(ctx.Log())
 
-	// a.Require(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
+	// a.Requiref(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
 	// payerAddr := ctx.Caller().Address()
 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
 
 	// w, r, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
-	// a.Require(w > 0, fmt.Sprintf("warrant of %s to %s does not exist", payerAddr, serviceAddr))
-	// a.Require(r == 0, fmt.Sprintf("warrant of %s to %s is already being revoked", payerAddr, serviceAddr))
+	// a.Requiref(w > 0, fmt.Sprintf("warrant of %s to %s does not exist", payerAddr, serviceAddr))
+	// a.Requiref(r == 0, fmt.Sprintf("warrant of %s to %s is already being revoked", payerAddr, serviceAddr))
 
 	// revokeDeadline := getRevokeDeadline(ctx.Timestamp())
 	// payerInfo := collections.NewMap(ctx.State(), string(payerAddr.Bytes()))
@@ -125,7 +125,7 @@ func revokeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	// }
 	// opts := iscp.SendOptions{TimeLock: uint32(revokeDeadline.Unix())}
 	// succ := ctx.Send(ctx.ChainID().AsAddress(), iota1, meta, opts)
-	// a.Require(succ, "failed to issue deterred 'close warrant' request")
+	// a.Requiref(succ, "failed to issue deterred 'close warrant' request")
 	// return nil, nil
 }
 
@@ -137,7 +137,7 @@ func closeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	// a := assert.NewAssert(ctx.Log())
 	// myAgentID := iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
-	// a.Require(ctx.Caller().Equals(myAgentID), "caller must be self")
+	// a.Requiref(ctx.Caller().Equals(myAgentID), "caller must be self")
 
 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
 	// payerAddr := par.MustGetAddress(ParamPayerAddress)
@@ -146,7 +146,7 @@ func closeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	// if warrant > 0 {
 	// 	tokens := colored.NewBalancesForIotas(warrant)
 	// 	succ := ctx.Send(payerAddr, tokens, nil)
-	// 	a.Require(succ, "failed to send %d iotas to address %s", warrant, payerAddr)
+	// 	a.Requiref(succ, "failed to send %d iotas to address %s", warrant, payerAddr)
 	// }
 	// deleteWarrant(ctx.State(), payerAddr, serviceAddr)
 	// return nil, nil
@@ -160,12 +160,12 @@ func settle(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	// a := assert.NewAssert(ctx.Log())
 	// targetAddr := ctx.Caller().Address()
-	// a.Require(targetAddr.Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
+	// a.Requiref(targetAddr.Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
 
 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
 	// payerAddr := par.MustGetAddress(ParamPayerAddress)
 	// payerPubKeyBin := getPublicKey(ctx.State(), payerAddr, a)
-	// a.Require(payerPubKeyBin != nil, "public key unknown for %s", payerAddr)
+	// a.Requiref(payerPubKeyBin != nil, "public key unknown for %s", payerAddr)
 
 	// payments := decodePayments(ctx.Params(), a)
 	// settledSum, notSettled := processPayments(ctx, payments, payerAddr, targetAddr, payerPubKeyBin)
@@ -257,7 +257,7 @@ func getLastOrdKey(service iotago.Address) []byte {
 func decodePayments(state kv.KVStoreReader, a assert.Assert) []*Payment {
 	payments := collections.NewArray16ReadOnly(state, ParamPayments)
 	n := payments.MustLen()
-	a.Require(n > 0, "no payments found")
+	a.Requiref(n > 0, "no payments found")
 
 	ret := make([]*Payment, n)
 	for i := range ret {
@@ -272,7 +272,7 @@ func decodePayments(state kv.KVStoreReader, a assert.Assert) []*Payment {
 func processPayments(ctx iscp.Sandbox, payments []*Payment, payerAddr, targetAddr iotago.Address, payerPubKey []byte) (uint64, []*Payment) {
 	a := assert.NewAssert(ctx.Log())
 	remainingWarrant, _, lastOrd := getWarrantInfoIntern(ctx.State(), payerAddr, targetAddr, a)
-	a.Require(remainingWarrant > 0, "warrant == 0, can't settle payments")
+	a.Requiref(remainingWarrant > 0, "warrant == 0, can't settle payments")
 
 	notSettled := make([]*Payment, 0)
 	settledSum := uint64(0)

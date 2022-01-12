@@ -181,7 +181,7 @@ func (c *consensus) pollMissingRequests(missingRequestIndexes []int) {
 
 // sortBatch deterministically sorts batch based on the value extracted from the consensus entropy
 // It is needed for determinism and as a MEV prevention measure see [prevent-mev.md]
-func (c *consensus) sortBatch(reqs []iscp.Request) {
+func (c *consensus) sortBatch(reqs []iscp.Calldata) {
 	if len(reqs) <= 1 {
 		return
 	}
@@ -189,7 +189,7 @@ func (c *consensus) sortBatch(reqs []iscp.Request) {
 
 	type sortStru struct {
 		num uint32
-		req iscp.Request
+		req iscp.Calldata
 	}
 	toSort := make([]sortStru, len(reqs))
 	for i, req := range reqs {
@@ -213,7 +213,7 @@ func (c *consensus) sortBatch(reqs []iscp.Request) {
 	}
 }
 
-func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
+func (c *consensus) prepareVMTask(reqs []iscp.Calldata) *vm.VMTask {
 	stateBaseline := c.chain.GlobalStateSync().GetSolidIndexBaseline()
 	if !stateBaseline.IsValid() {
 		c.log.Debugf("prepareVMTask: solid state baseline is invalid. Do not even start the VM")
@@ -411,7 +411,7 @@ func (c *consensus) pullInclusionStateIfNeeded() {
 }
 
 // prepareBatchProposal creates a batch proposal structure out of requests
-func (c *consensus) prepareBatchProposal(reqs []iscp.Request) *BatchProposal {
+func (c *consensus) prepareBatchProposal(reqs []iscp.Calldata) *BatchProposal {
 	ts := time.Now()
 	if !ts.After(c.stateTimestamp) {
 		ts = c.stateTimestamp.Add(1 * time.Nanosecond)
@@ -602,7 +602,7 @@ func (c *consensus) processInclusionState(msg *messages.InclusionStateMsg) {
 	// 			break
 	// 		}
 	// 	}
-	// 	c.assert.Require(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", iscp.OID(c.stateOutput.ID())))
+	// 	c.assert.Requiref(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", iscp.OID(c.stateOutput.ID())))
 	// 	// check consistency ---------------- end
 
 	// 	blocks := make([]ledgerstate.UnlockBlock, len(c.resultTxEssence.Inputs()))
@@ -687,7 +687,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 		c.resultState = nil
 	} else {
 		// It is and ordinary state transition
-		c.assert.Require(result.ResultTransactionEssence != nil, "processVMResult: result.ResultTransactionEssence != nil")
+		c.assert.Requiref(result.ResultTransactionEssence != nil, "processVMResult: result.ResultTransactionEssence != nil")
 		c.resultTxEssence = result.ResultTransactionEssence
 		c.resultState = result.VirtualStateAccess
 	}
@@ -782,7 +782,7 @@ func (c *consensus) receiveSignedResultAck(msg *messages.SignedResultAckMsgIn) {
 // TODO mutex inside is not good
 
 // ShouldReceiveMissingRequest returns whether the request is missing, if the incoming request matches the expects ID/Hash it is removed from the list
-func (c *consensus) ShouldReceiveMissingRequest(req iscp.Request) bool {
+func (c *consensus) ShouldReceiveMissingRequest(req iscp.Calldata) bool {
 	c.log.Debugf("ShouldReceiveMissingRequest: reqID %s, hash %v", req.ID(), req.Hash())
 
 	c.missingRequestsMutex.Lock()

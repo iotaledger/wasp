@@ -108,9 +108,9 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 		{K: "Error", V: errMsg},
 	}
 	if len(index) > 0 {
-		log.Printf("RequestData #%d (%s):\n", index[0], req.ID().Base58())
+		log.Printf("Request #%d (%s):\n", index[0], req.ID().Base58())
 	} else {
-		log.Printf("RequestData %s:\n", req.ID().Base58())
+		log.Printf("Request %s:\n", req.ID().Base58())
 	}
 	log.PrintTree(tree, 2, 2)
 }
@@ -141,7 +141,7 @@ func requestCmd() *cobra.Command {
 			receipt, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
 			log.Check(err)
 
-			log.Printf("RequestData found in block %d\n\n", blockIndex)
+			log.Printf("Request found in block %d\n\n", blockIndex)
 			logReceipt(receipt)
 			log.Printf("\n")
 			logEventsInRequest(reqID)

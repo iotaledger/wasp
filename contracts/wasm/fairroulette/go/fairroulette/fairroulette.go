@@ -51,7 +51,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// retrieve its actual value into an i64.
 	number := f.Params.Number().Value()
 
-	// Require that the number is a valid number to bet on, otherwise panic out.
+	// Requiref that the number is a valid number to bet on, otherwise panic out.
 	ctx.Require(number >= 1 && number <= MaxNumber, "invalid number")
 
 	// Create ScBalances proxy to the incoming balances for this request.
@@ -62,7 +62,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// Retrieve the amount of plain iota tokens that are part of the incoming balance.
 	amount := incoming.Balance(wasmlib.IOTA)
 
-	// Require that there are actually some plain iotas there
+	// Requiref that there are actually some plain iotas there
 	ctx.Require(amount > 0, "empty bet")
 
 	// Now we gather all information together into a single serializable struct
@@ -255,7 +255,7 @@ func funcPlayPeriod(ctx wasmlib.ScFuncContext, f *PlayPeriodContext) {
 	// retrieve its actual value into an i32 value.
 	playPeriod := f.Params.PlayPeriod().Value()
 
-	// Require that the play period (in seconds) is not ridiculously low.
+	// Requiref that the play period (in seconds) is not ridiculously low.
 	// Otherwise, panic out with an error message.
 	ctx.Require(playPeriod >= 10, "invalid play period")
 

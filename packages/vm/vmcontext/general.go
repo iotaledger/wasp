@@ -59,7 +59,7 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 	return vmctx.entropy
 }
 
-func (vmctx *VMContext) Request() iscp.Request {
+func (vmctx *VMContext) Request() iscp.Calldata {
 	return vmctx.req
 }
 
