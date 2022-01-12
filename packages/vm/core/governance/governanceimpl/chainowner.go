@@ -36,8 +36,8 @@ func claimChainOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 	currentOwner := stateDecoder.MustGetAgentID(governance.VarChainOwnerID)
 	nextOwner := stateDecoder.MustGetAgentID(governance.VarChainOwnerIDDelegated, currentOwner)
 
-	ctx.Require(!nextOwner.Equals(currentOwner), "governance.claimChainOwnership: not delegated to another chain owner")
-	ctx.Require(nextOwner.Equals(ctx.Caller()), "governance.claimChainOwnership: not authorized")
+	ctx.Requiref(!nextOwner.Equals(currentOwner), "governance.claimChainOwnership: not delegated to another chain owner")
+	ctx.Requiref(nextOwner.Equals(ctx.Caller()), "governance.claimChainOwnership: not authorized")
 
 	state.Set(governance.VarChainOwnerID, codec.EncodeAgentID(nextOwner))
 	state.Del(governance.VarChainOwnerIDDelegated)

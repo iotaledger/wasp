@@ -55,10 +55,10 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 			creator != nil &&
 			creator.Equal(ctx.Caller().Address()) &&
 			contractRegistry.MustLen() == 0
-	ctx.Require(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
+	ctx.Requiref(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
 
 	assetsOnStateAnchor := iscp.NewAssets(stateAnchor.Deposit, nil)
-	ctx.Require(len(assetsOnStateAnchor.Tokens) == 0, "root.initialize.fail: native tokens in origin output are not allowed")
+	ctx.Requiref(len(assetsOnStateAnchor.Tokens) == 0, "root.initialize.fail: native tokens in origin output are not allowed")
 
 	extParams := ctx.Params().Clone()
 
@@ -97,14 +97,14 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamDescription string is an arbitrary string. Defaults to "N/A"
 func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.deployContract.begin")
-	ctx.Require(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller())
+	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller())
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	progHash := params.MustGetHashValue(root.ParamProgramHash)
 	description := params.MustGetString(root.ParamDescription, "N/A")
 	name := params.MustGetString(root.ParamName)
-	ctx.Require(name != "", "wrong name")
+	ctx.Requiref(name != "", "wrong name")
 
 	// pass to init function all params not consumed so far
 	initParams := dict.New()
@@ -115,7 +115,7 @@ func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 	}
 	// call to load VM from binary to check if it loads successfully
 	err := ctx.Privileged().TryLoadContract(progHash)
-	ctx.Require(err == nil, "root.deployContract.fail 1: %v", err)
+	ctx.Requiref(err == nil, "root.deployContract.fail 1: %v", err)
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor
 	mustStoreContractRecord(ctx, &root.ContractRecord{

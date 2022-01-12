@@ -39,7 +39,7 @@ type SandboxBase interface {
 }
 
 type Helpers interface {
-	Require(cond bool, format string, args ...interface{})
+	Requiref(cond bool, format string, args ...interface{})
 	RequireNoError(err error, str ...string)
 }
 

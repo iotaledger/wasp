@@ -53,7 +53,7 @@ func setBlockTime(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
 	blockTime := params.MustGetUint32(evm.FieldBlockTime)
-	a.Require(blockTime > 0, "blockTime must be > 0")
+	a.Requiref(blockTime > 0, "blockTime must be > 0")
 
 	mustSchedule := !ctx.State().MustHas(keyBlockTime)
 
@@ -84,7 +84,7 @@ func ScheduleNextBlock(ctx iscp.Sandbox) {
 		TimeLock: uint32(time.Unix(0, ctx.Timestamp()).Unix()) + blockTime,
 	})
 	a := assert.NewAssert(ctx.Log())
-	a.Require(ok, "failed to schedule next block")
+	a.Requiref(ok, "failed to schedule next block")
 }
 
 func requireOwner(ctx iscp.Sandbox, allowSelf ...bool) {

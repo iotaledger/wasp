@@ -169,8 +169,8 @@ func (s *sandbox) Budget() uint64 {
 
 // helper methods
 
-func (s *sandbox) Require(cond bool, format string, args ...interface{}) {
-	s.assert.Require(cond, format, args...)
+func (s *sandbox) Requiref(cond bool, format string, args ...interface{}) {
+	s.assert.Requiref(cond, format, args...)
 }
 
 func (s *sandbox) RequireNoError(err error, str ...string) {
@@ -194,8 +194,4 @@ func (s *sandbox) RequireCallerIsChainOwner(str ...string) {
 
 func (s *sandbox) Privileged() iscp.Privileged {
 	return s.vmctx
-}
-
-func (s *sandbox) TryLoadContract(programHash hashing.HashValue) error {
-	return s.vmctx.TryLoadContract(programHash)
 }

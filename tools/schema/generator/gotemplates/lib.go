@@ -95,7 +95,7 @@ $#if events PackageEventsExist
 `,
 	// *******************************
 	"requireMandatory": `
-	ctx.Require(f.Params.$FldName().Exists(), "missing mandatory $fldName")
+	ctx.Requiref(f.Params.$FldName().Exists(), "missing mandatory $fldName")
 `,
 
 	// *******************************
@@ -111,21 +111,21 @@ $#set accessFinalize accessDone
 	// *******************************
 	"caseAccessself": `
 $#if funcAccessComment accessComment
-	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
+	ctx.Requiref(ctx.Caller() == ctx.AccountID(), "no permission")
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccesschain": `
 $#if funcAccessComment accessComment
-	ctx.Require(ctx.Caller() == ctx.ChainOwnerID(), "no permission")
+	ctx.Requiref(ctx.Caller() == ctx.ChainOwnerID(), "no permission")
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccesscreator": `
 $#if funcAccessComment accessComment
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	ctx.Requiref(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 $#set accessFinalize accessDone
 `,
@@ -133,8 +133,8 @@ $#set accessFinalize accessDone
 	"accessOther": `
 $#if funcAccessComment accessComment
 	access := ctx.State().GetAgentID(wasmlib.Key("$funcAccess"))
-	ctx.Require(access.Exists(), "access not set: $funcAccess")
-	ctx.Require(ctx.Caller() == access.Value(), "no permission")
+	ctx.Requiref(access.Exists(), "access not set: $funcAccess")
+	ctx.Requiref(ctx.Caller() == access.Value(), "no permission")
 
 `,
 	// *******************************

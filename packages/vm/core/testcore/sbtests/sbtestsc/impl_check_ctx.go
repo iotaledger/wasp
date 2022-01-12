@@ -13,12 +13,12 @@ func testCheckContextFromFullEP(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
 
-	a.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
-	a.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
-	a.Require(par.MustGetAgentID(ParamCaller).Equals(ctx.Caller()), "fail: caller")
+	a.Requiref(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
+	a.Requiref(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
+	a.Requiref(par.MustGetAgentID(ParamCaller).Equals(ctx.Caller()), "fail: caller")
 	myAgentID := iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
-	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
-	a.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
+	a.Requiref(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
+	a.Requiref(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
 	return nil, nil
 }
 
@@ -26,11 +26,11 @@ func testCheckContextFromViewEP(ctx iscp.SandboxView) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
 
-	a.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
-	a.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
+	a.Requiref(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
+	a.Requiref(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
 	myAgentID := iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
-	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
-	a.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
+	a.Requiref(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
+	a.Requiref(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
 	return nil, nil
 }
 

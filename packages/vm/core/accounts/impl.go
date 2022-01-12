@@ -37,7 +37,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	dustAssumptionsBin := ctx.Params().MustGet(ParamDustDepositAssumptionsBin)
 	dustDepositAssumptions, err := transaction.DustDepositAssumptionFromBytes(dustAssumptionsBin)
 	// checking if assumptions are consistent
-	ctx.Require(err == nil && iotasOnAnchor >= dustDepositAssumptions.AnchorOutput,
+	ctx.Requiref(err == nil && iotasOnAnchor >= dustDepositAssumptions.AnchorOutput,
 		"accounts.initialize.fail: %v", ErrDustDepositAssumptionsWrong)
 	ctx.State().Set(kv.Key(stateVarMinimumDustDepositAssumptionsBin), dustAssumptionsBin)
 
@@ -75,7 +75,7 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	checkLedger(state, "accounts.withdraw.begin")
 
-	ctx.Require(!ctx.Allowance().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
+	ctx.Requiref(!ctx.Allowance().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
 
 	if ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) {
 		// if the caller is on the same chain, do nothing
@@ -199,10 +199,10 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamFoundrySN)
 	// check if foundry is controlled by the caller
-	ctx.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
-	ctx.Require(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
+	ctx.Requiref(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
 
 	ctx.Privileged().DestroyFoundry(sn)
 	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
@@ -224,7 +224,7 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	}
 	destroy := par.MustGetBool(ParamDestroyTokens, false)
 	// check if foundry is controlled by the caller
-	ctx.Require(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	tokenID, err := out.NativeTokenID()

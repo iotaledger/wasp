@@ -50,7 +50,7 @@ func getChainNodesFuncHandler(ctx iscp.SandboxView) (dict.Dict, error) {
 //
 func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	ani := governance.NewAccessNodeInfoFromAddCandidateNodeParams(ctx)
-	ctx.Require(ani.ValidateCertificate(ctx), "certificate invalid")
+	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
 	accessNodeCandidates.MustSetAt(ani.NodePubKey, ani.Bytes())
@@ -72,7 +72,7 @@ func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 //
 func revokeAccessNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	ani := governance.NewAccessNodeInfoFromRevokeAccessNodeParams(ctx)
-	ctx.Require(ani.ValidateCertificate(ctx), "certificate invalid")
+	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
 	accessNodeCandidates.MustDelAt(ani.NodePubKey)
@@ -96,7 +96,7 @@ func changeAccessNodesFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
 	paramNodeActions := collections.NewMapReadOnly(ctx.Params(), string(governance.ParamChangeAccessNodesActions))
 	paramNodeActions.MustIterate(func(pubKey, actionBin []byte) bool {
-		ctx.Require(len(actionBin) == 1, "action should be a single byte")
+		ctx.Requiref(len(actionBin) == 1, "action should be a single byte")
 		switch governance.ChangeAccessNodeAction(actionBin[0]) {
 		case governance.ChangeAccessNodeActionRemove:
 			accessNodes.MustDelAt(pubKey)
@@ -106,7 +106,7 @@ func changeAccessNodesFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 			accessNodes.MustDelAt(pubKey)
 			accessNodeCandidates.MustDelAt(pubKey)
 		default:
-			ctx.Require(false, "unexpected action")
+			ctx.Requiref(false, "unexpected action")
 		}
 		return true
 	})

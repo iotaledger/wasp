@@ -602,7 +602,7 @@ func (c *consensus) processInclusionState(msg *messages.InclusionStateMsg) {
 	// 			break
 	// 		}
 	// 	}
-	// 	c.assert.Require(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", iscp.OID(c.stateOutput.ID())))
+	// 	c.assert.Requiref(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", iscp.OID(c.stateOutput.ID())))
 	// 	// check consistency ---------------- end
 
 	// 	blocks := make([]ledgerstate.UnlockBlock, len(c.resultTxEssence.Inputs()))
@@ -687,7 +687,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 		c.resultState = nil
 	} else {
 		// It is and ordinary state transition
-		c.assert.Require(result.ResultTransactionEssence != nil, "processVMResult: result.ResultTransactionEssence != nil")
+		c.assert.Requiref(result.ResultTransactionEssence != nil, "processVMResult: result.ResultTransactionEssence != nil")
 		c.resultTxEssence = result.ResultTransactionEssence
 		c.resultState = result.VirtualStateAccess
 	}

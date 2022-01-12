@@ -117,10 +117,10 @@ func sendToAddress(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncSendToAddress.Name)
 	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	a.Require(ctx.Caller().Equals(ctx.ContractCreator()), MsgPanicUnauthorized)
+	a.Requiref(ctx.Caller().Equals(ctx.ContractCreator()), MsgPanicUnauthorized)
 	targetAddress := par.MustGetAddress(ParamAddress)
 	myTokens := ctx.Balances()
-	a.Require(ctx.Send(targetAddress, myTokens, nil),
+	a.Requiref(ctx.Send(targetAddress, myTokens, nil),
 		fmt.Sprintf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String()))
 
 	ctx.Log().Infof("sent to %s: tokens:\n%s", targetAddress.Base58(), myTokens.String())

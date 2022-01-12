@@ -72,7 +72,7 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 		// off-ledger account must exist, i.e. it should have non zero balance on the chain
 
 		if b := accounts.GetAccountAssets(vmctx.State(), vmctx.req.SenderAccount()); b.IsEmpty() {
-			// TODO check minimum balance. Require some minimum balance
+			// TODO check minimum balance. Requiref some minimum balance
 			unverified = true
 			return
 		}

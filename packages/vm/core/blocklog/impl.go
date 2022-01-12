@@ -32,7 +32,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,
 	})
-	ctx.Require(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
+	ctx.Requiref(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
 	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Contract.Hname().String())
 	return nil, nil
 }
@@ -102,7 +102,7 @@ func viewGetRequestIDsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 
 	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
 	ctx.RequireNoError(err)
-	ctx.Require(found, "not found")
+	ctx.Requiref(found, "not found")
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestID)
@@ -125,7 +125,7 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 
 	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
 	ctx.RequireNoError(err)
-	ctx.Require(found, "not found")
+	ctx.Requiref(found, "not found")
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestRecord)
@@ -138,7 +138,7 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 func viewControlAddresses(ctx iscp.SandboxView) (dict.Dict, error) {
 	registry := collections.NewArray32ReadOnly(ctx.State(), prefixControlAddresses)
 	l := registry.MustLen()
-	ctx.Require(l > 0, "inconsistency: unknown control addresses")
+	ctx.Requiref(l > 0, "inconsistency: unknown control addresses")
 	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
 	ctx.RequireNoError(err)
 	ret := dict.New()

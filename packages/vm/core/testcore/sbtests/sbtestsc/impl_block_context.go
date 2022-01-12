@@ -23,7 +23,7 @@ func getBlockContext1(ctx iscp.Sandbox) *blockCtx1 {
 	}
 	bctxi := ctx.BlockContext(construct, onClose)
 	bctx, ok := bctxi.(*blockCtx1)
-	assert.NewAssert(ctx.Log()).Require(ok, "unexpected block context type")
+	assert.NewAssert(ctx.Log()).Requiref(ok, "unexpected block context type")
 	return bctx
 }
 
