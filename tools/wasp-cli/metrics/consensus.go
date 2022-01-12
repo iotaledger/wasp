@@ -32,7 +32,7 @@ var consensusMetricsCmd = &cobra.Command{
 		table[5] = makeWorkflowTableRow("Transaction finalized", workflowStatus.FlagTransactionFinalized, workflowStatus.TimeTransactionFinalized)
 		table[6] = makeWorkflowTableRow("Transaction posted to L1", workflowStatus.FlagTransactionPosted, workflowStatus.TimeTransactionPosted) // TODO: is not meaningful, if I am not a contributor
 		table[7] = makeWorkflowTableRow("Transaction seen by L1", workflowStatus.FlagTransactionSeen, workflowStatus.TimeTransactionSeen)
-		table[8] = makeWorkflowTableRow("Consensus in progress", workflowStatus.FlagInProgress, workflowStatus.TimeCompleted)
+		table[8] = makeWorkflowTableRow("Consensus is completed", !(workflowStatus.FlagInProgress), workflowStatus.TimeCompleted)
 		log.PrintTable(header, table)
 	},
 }
