@@ -1,6 +1,5 @@
 ---
 keywords:
-- ISCP
 - Smart Contracts
 - structure
 - State
@@ -14,7 +13,7 @@ image: /img/tutorial/SC-structure.png
 
 Smart contracts are programs which are immutably stored in the chain.
 
-The logical structure of an ISCP smart contract is independent of the VM type you
+The logical structure of IOTA Smart Contracts is independent of the VM type you
 use, be it a _Wasm_ smart contract or any other VM type.
 
 ![Smart Contract Structure](/img/tutorial/SC-structure.png)

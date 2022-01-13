@@ -22,11 +22,6 @@ var zero = wasmlib.ScAgentID{}
 
 ///////////////////////////  HELPER FUNCTIONS  ////////////////////////////
 
-func approve(state MutableErc721State, owner, approved wasmlib.ScAgentID, tokenID wasmlib.ScHash) {
-	state.ApprovedAccounts().GetAgentID(tokenID).SetValue(approved)
-	Erc721Events{}.Approval(approved, owner, tokenID)
-}
-
 // checks if caller is owner, or one of its delegated operators
 func canOperate(state MutableErc721State, caller, owner wasmlib.ScAgentID) bool {
 	if caller == owner {
@@ -59,33 +54,53 @@ func transfer(ctx wasmlib.ScFuncContext, state MutableErc721State, from, to wasm
 	ctx.Require(owner == from, "from is not owner")
 	// TODO ctx.Requiref(to == <check-if-is-a-valid-address> , "invalid 'to' agentid")
 
-	nftCountFrom := state.Balances().GetUint64(from)
-	nftCountTo := state.Balances().GetUint64(to)
+	balanceFrom := state.Balances().GetUint64(from)
+	balanceTo := state.Balances().GetUint64(to)
 
-	nftCountFrom.SetValue(nftCountFrom.Value() - 1)
-	nftCountTo.SetValue(nftCountTo.Value() + 1)
+	balanceFrom.SetValue(balanceFrom.Value() - 1)
+	balanceTo.SetValue(balanceTo.Value() + 1)
 
 	tokenOwner.SetValue(to)
 
+	events := Erc721Events{}
 	// TODO should probably clear this entry, but for now just set to zero
-	approve(state, owner, zero, tokenID)
+	currentApproved := state.ApprovedAccounts().GetAgentID(tokenID)
+	if currentApproved.Exists() {
+		currentApproved.Delete()
+		events.Approval(zero, owner, tokenID)
+	}
 
-	Erc721Events{}.Transfer(from, to, tokenID)
+	events.Transfer(from, to, tokenID)
 }
 
 ///////////////////////////  SC FUNCS  ////////////////////////////
 
 // Gives permission to to to transfer tokenID token to another account.
-// The approval is cleared when the token is transferred.
+// The approval is cleared when optional approval account is omitted.
+// The approval will be cleared when the token is transferred.
 func funcApprove(ctx wasmlib.ScFuncContext, f *ApproveContext) {
 	tokenID := f.Params.TokenID().Value()
 	tokenOwner := f.State.Owners().GetAgentID(tokenID)
 	ctx.Require(tokenOwner.Exists(), "tokenID does not exist")
 	owner := tokenOwner.Value()
 	ctx.Require(canOperate(f.State, ctx.Caller(), owner), "not owner or operator")
-	approved := f.Params.Approved().Value()
-	ctx.Require(owner != approved, "approved equals owner")
-	approve(f.State, owner, approved, tokenID)
+
+	approved := f.Params.Approved()
+	if !approved.Exists() {
+		// remove approval if it exists
+		currentApproved := f.State.ApprovedAccounts().GetAgentID(tokenID)
+		if currentApproved.Exists() {
+			currentApproved.Delete()
+			f.Events.Approval(zero, owner, tokenID)
+		}
+		return
+	}
+
+	account := approved.Value()
+	ctx.Require(owner != account, "approved account equals owner")
+
+	f.State.ApprovedAccounts().GetAgentID(tokenID).SetValue(account)
+	f.Events.Approval(account, owner, tokenID)
 }
 
 // Destroys tokenID. The approval is cleared when the token is burned.
@@ -95,13 +110,17 @@ func funcBurn(ctx wasmlib.ScFuncContext, f *BurnContext) {
 	ctx.Require(owner != zero, "tokenID does not exist")
 	ctx.Require(ctx.Caller() == owner, "caller is not owner")
 
-	approve(f.State, owner, zero, tokenID)
+	// remove approval if it exists
+	currentApproved := f.State.ApprovedAccounts().GetAgentID(tokenID)
+	if currentApproved.Exists() {
+		currentApproved.Delete()
+		f.Events.Approval(zero, owner, tokenID)
+	}
 
 	balance := f.State.Balances().GetUint64(owner)
 	balance.SetValue(balance.Value() - 1)
-	// TODO clear this instead of setting to zero
-	f.State.Owners().GetAgentID(tokenID).SetValue(zero)
 
+	f.State.Owners().GetAgentID(tokenID).Delete()
 	f.Events.Transfer(owner, zero, tokenID)
 }
 
@@ -121,6 +140,12 @@ func funcMint(ctx wasmlib.ScFuncContext, f *MintContext) {
 	tokenID := f.Params.TokenID().Value()
 	tokenOwner := f.State.Owners().GetAgentID(tokenID)
 	ctx.Require(!tokenOwner.Exists(), "tokenID already minted")
+
+	// save optional token uri
+	tokenURI := f.Params.TokenURI()
+	if tokenURI.Exists() {
+		f.State.TokenURIs().GetString(tokenID).SetValue(tokenURI.Value())
+	}
 
 	owner := ctx.Caller()
 	tokenOwner.SetValue(owner)
@@ -152,8 +177,8 @@ func funcSetApprovalForAll(ctx wasmlib.ScFuncContext, f *SetApprovalForAllContex
 	ctx.Require(owner != operator, "owner equals operator")
 
 	approval := f.Params.Approval().Value()
-	approvalsByCaller := f.State.ApprovedOperators().GetOperators(owner)
-	approvalsByCaller.GetBool(operator).SetValue(approval)
+	operatorsForCaller := f.State.ApprovedOperators().GetOperators(owner)
+	operatorsForCaller.GetBool(operator).SetValue(approval)
 
 	f.Events.ApprovalForAll(approval, operator, owner)
 }
@@ -171,18 +196,18 @@ func funcTransferFrom(ctx wasmlib.ScFuncContext, f *TransferFromContext) {
 // Returns the number of tokens in owner's account if the owner exists.
 func viewBalanceOf(ctx wasmlib.ScViewContext, f *BalanceOfContext) {
 	owner := f.Params.Owner().Value()
-	nftCount := f.State.Balances().GetUint64(owner)
-	if nftCount.Exists() {
-		f.Results.Amount().SetValue(nftCount.Value())
+	balance := f.State.Balances().GetUint64(owner)
+	if balance.Exists() {
+		f.Results.Amount().SetValue(balance.Value())
 	}
 }
 
 // Returns the approved account for tokenID token if there is one.
 func viewGetApproved(ctx wasmlib.ScViewContext, f *GetApprovedContext) {
 	tokenID := f.Params.TokenID().Value()
-	approved := f.State.ApprovedAccounts().GetAgentID(tokenID).Value()
-	if approved != zero {
-		f.Results.Approved().SetValue(approved)
+	approved := f.State.ApprovedAccounts().GetAgentID(tokenID)
+	if approved.Exists() {
+		f.Results.Approved().SetValue(approved.Value())
 	}
 }
 
@@ -220,6 +245,11 @@ func viewSymbol(ctx wasmlib.ScViewContext, f *SymbolContext) {
 func viewTokenURI(ctx wasmlib.ScViewContext, f *TokenURIContext) {
 	tokenID := f.Params.TokenID()
 	if tokenID.Exists() {
-		f.Results.TokenURI().SetValue(baseURI + tokenID.String())
+		tokenURI := baseURI + tokenID.String()
+		savedURI := f.State.TokenURIs().GetString(tokenID.Value())
+		if savedURI.Exists() {
+			tokenURI = savedURI.Value()
+		}
+		f.Results.TokenURI().SetValue(tokenURI)
 	}
 }

@@ -22,7 +22,7 @@ pub struct ImmutableArrayLengthResults {
 
 impl ImmutableArrayLengthResults {
     pub fn length(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_LENGTH))
+		ScImmutableInt32::new(self.id, RESULT_LENGTH.get_key_id())
 	}
 }
 
@@ -33,7 +33,7 @@ pub struct MutableArrayLengthResults {
 
 impl MutableArrayLengthResults {
     pub fn length(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_RESULT_LENGTH))
+		ScMutableInt32::new(self.id, RESULT_LENGTH.get_key_id())
 	}
 }
 
@@ -44,7 +44,7 @@ pub struct ImmutableArrayValueResults {
 
 impl ImmutableArrayValueResults {
     pub fn value(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_RESULT_VALUE))
+		ScImmutableString::new(self.id, RESULT_VALUE.get_key_id())
 	}
 }
 
@@ -55,7 +55,7 @@ pub struct MutableArrayValueResults {
 
 impl MutableArrayValueResults {
     pub fn value(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_RESULT_VALUE))
+		ScMutableString::new(self.id, RESULT_VALUE.get_key_id())
 	}
 }
 
@@ -66,7 +66,7 @@ pub struct ImmutableBlockRecordResults {
 
 impl ImmutableBlockRecordResults {
     pub fn record(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.id, idx_map(IDX_RESULT_RECORD))
+		ScImmutableBytes::new(self.id, RESULT_RECORD.get_key_id())
 	}
 }
 
@@ -77,7 +77,7 @@ pub struct MutableBlockRecordResults {
 
 impl MutableBlockRecordResults {
     pub fn record(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.id, idx_map(IDX_RESULT_RECORD))
+		ScMutableBytes::new(self.id, RESULT_RECORD.get_key_id())
 	}
 }
 
@@ -88,7 +88,7 @@ pub struct ImmutableBlockRecordsResults {
 
 impl ImmutableBlockRecordsResults {
     pub fn count(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_COUNT))
+		ScImmutableInt32::new(self.id, RESULT_COUNT.get_key_id())
 	}
 }
 
@@ -99,7 +99,7 @@ pub struct MutableBlockRecordsResults {
 
 impl MutableBlockRecordsResults {
     pub fn count(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, idx_map(IDX_RESULT_COUNT))
+		ScMutableInt32::new(self.id, RESULT_COUNT.get_key_id())
 	}
 }
 
@@ -110,7 +110,7 @@ pub struct ImmutableGetRandomResults {
 
 impl ImmutableGetRandomResults {
     pub fn random(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_RANDOM))
+		ScImmutableInt64::new(self.id, RESULT_RANDOM.get_key_id())
 	}
 }
 
@@ -121,7 +121,7 @@ pub struct MutableGetRandomResults {
 
 impl MutableGetRandomResults {
     pub fn random(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_RANDOM))
+		ScMutableInt64::new(self.id, RESULT_RANDOM.get_key_id())
 	}
 }
 
@@ -132,7 +132,7 @@ pub struct ImmutableIotaBalanceResults {
 
 impl ImmutableIotaBalanceResults {
     pub fn iotas(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_IOTAS))
+		ScImmutableInt64::new(self.id, RESULT_IOTAS.get_key_id())
 	}
 }
 
@@ -143,6 +143,28 @@ pub struct MutableIotaBalanceResults {
 
 impl MutableIotaBalanceResults {
     pub fn iotas(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_RESULT_IOTAS))
+		ScMutableInt64::new(self.id, RESULT_IOTAS.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct ImmutableMapValueResults {
+    pub(crate) id: i32,
+}
+
+impl ImmutableMapValueResults {
+    pub fn value(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, RESULT_VALUE.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableMapValueResults {
+    pub(crate) id: i32,
+}
+
+impl MutableMapValueResults {
+    pub fn value(&self) -> ScMutableString {
+		ScMutableString::new(self.id, RESULT_VALUE.get_key_id())
 	}
 }

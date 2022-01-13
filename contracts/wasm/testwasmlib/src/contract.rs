@@ -30,6 +30,21 @@ pub struct ArraySetCall {
 	pub params: MutableArraySetParams,
 }
 
+pub struct MapClearCall {
+	pub func: ScFunc,
+	pub params: MutableMapClearParams,
+}
+
+pub struct MapCreateCall {
+	pub func: ScFunc,
+	pub params: MutableMapCreateParams,
+}
+
+pub struct MapSetCall {
+	pub func: ScFunc,
+	pub params: MutableMapSetParams,
+}
+
 pub struct ParamTypesCall {
 	pub func: ScFunc,
 	pub params: MutableParamTypesParams,
@@ -37,6 +52,11 @@ pub struct ParamTypesCall {
 
 pub struct RandomCall {
 	pub func: ScFunc,
+}
+
+pub struct TriggerEventCall {
+	pub func: ScFunc,
+	pub params: MutableTriggerEventParams,
 }
 
 pub struct ArrayLengthCall {
@@ -73,6 +93,12 @@ pub struct IotaBalanceCall {
 	pub results: ImmutableIotaBalanceResults,
 }
 
+pub struct MapValueCall {
+	pub func: ScView,
+	pub params: MutableMapValueParams,
+	pub results: ImmutableMapValueResults,
+}
+
 pub struct ScFuncs {
 }
 
@@ -104,6 +130,33 @@ impl ScFuncs {
         f
     }
 
+    pub fn map_clear(_ctx: & dyn ScFuncCallContext) -> MapClearCall {
+        let mut f = MapClearCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_MAP_CLEAR),
+            params: MutableMapClearParams { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        f
+    }
+
+    pub fn map_create(_ctx: & dyn ScFuncCallContext) -> MapCreateCall {
+        let mut f = MapCreateCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_MAP_CREATE),
+            params: MutableMapCreateParams { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        f
+    }
+
+    pub fn map_set(_ctx: & dyn ScFuncCallContext) -> MapSetCall {
+        let mut f = MapSetCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_MAP_SET),
+            params: MutableMapSetParams { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        f
+    }
+
     pub fn param_types(_ctx: & dyn ScFuncCallContext) -> ParamTypesCall {
         let mut f = ParamTypesCall {
             func: ScFunc::new(HSC_NAME, HFUNC_PARAM_TYPES),
@@ -117,6 +170,15 @@ impl ScFuncs {
         RandomCall {
             func: ScFunc::new(HSC_NAME, HFUNC_RANDOM),
         }
+    }
+
+    pub fn trigger_event(_ctx: & dyn ScFuncCallContext) -> TriggerEventCall {
+        let mut f = TriggerEventCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_TRIGGER_EVENT),
+            params: MutableTriggerEventParams { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        f
     }
 
     pub fn array_length(_ctx: & dyn ScViewCallContext) -> ArrayLengthCall {
@@ -174,6 +236,16 @@ impl ScFuncs {
             results: ImmutableIotaBalanceResults { id: 0 },
         };
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        f
+    }
+
+    pub fn map_value(_ctx: & dyn ScViewCallContext) -> MapValueCall {
+        let mut f = MapValueCall {
+            func: ScView::new(HSC_NAME, HVIEW_MAP_VALUE),
+            params: MutableMapValueParams { id: 0 },
+            results: ImmutableMapValueResults { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
 }

@@ -14,21 +14,25 @@ type ImmutableIncCounterState struct {
 }
 
 func (s ImmutableIncCounterState) Counter() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateCounter])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateCounter))
 }
 
 func (s ImmutableIncCounterState) NumRepeats() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateNumRepeats])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateNumRepeats))
 }
 
 type MutableIncCounterState struct {
 	id int32
 }
 
+func (s MutableIncCounterState) AsImmutable() ImmutableIncCounterState {
+	return ImmutableIncCounterState(s)
+}
+
 func (s MutableIncCounterState) Counter() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateCounter])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateCounter))
 }
 
 func (s MutableIncCounterState) NumRepeats() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateNumRepeats])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateNumRepeats))
 }

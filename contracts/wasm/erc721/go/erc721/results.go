@@ -14,7 +14,7 @@ type ImmutableBalanceOfResults struct {
 }
 
 func (s ImmutableBalanceOfResults) Amount() wasmlib.ScImmutableUint64 {
-	return wasmlib.NewScImmutableUint64(s.id, idxMap[IdxResultAmount])
+	return wasmlib.NewScImmutableUint64(s.id, wasmlib.KeyID(ResultAmount))
 }
 
 type MutableBalanceOfResults struct {
@@ -22,7 +22,7 @@ type MutableBalanceOfResults struct {
 }
 
 func (s MutableBalanceOfResults) Amount() wasmlib.ScMutableUint64 {
-	return wasmlib.NewScMutableUint64(s.id, idxMap[IdxResultAmount])
+	return wasmlib.NewScMutableUint64(s.id, wasmlib.KeyID(ResultAmount))
 }
 
 type ImmutableGetApprovedResults struct {
@@ -30,7 +30,7 @@ type ImmutableGetApprovedResults struct {
 }
 
 func (s ImmutableGetApprovedResults) Approved() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxResultApproved])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultApproved))
 }
 
 type MutableGetApprovedResults struct {
@@ -38,7 +38,7 @@ type MutableGetApprovedResults struct {
 }
 
 func (s MutableGetApprovedResults) Approved() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxResultApproved])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultApproved))
 }
 
 type ImmutableIsApprovedForAllResults struct {
@@ -46,7 +46,7 @@ type ImmutableIsApprovedForAllResults struct {
 }
 
 func (s ImmutableIsApprovedForAllResults) Approval() wasmlib.ScImmutableBool {
-	return wasmlib.NewScImmutableBool(s.id, idxMap[IdxResultApproval])
+	return wasmlib.NewScImmutableBool(s.id, wasmlib.KeyID(ResultApproval))
 }
 
 type MutableIsApprovedForAllResults struct {
@@ -54,7 +54,7 @@ type MutableIsApprovedForAllResults struct {
 }
 
 func (s MutableIsApprovedForAllResults) Approval() wasmlib.ScMutableBool {
-	return wasmlib.NewScMutableBool(s.id, idxMap[IdxResultApproval])
+	return wasmlib.NewScMutableBool(s.id, wasmlib.KeyID(ResultApproval))
 }
 
 type ImmutableNameResults struct {
@@ -62,7 +62,7 @@ type ImmutableNameResults struct {
 }
 
 func (s ImmutableNameResults) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxResultName])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultName))
 }
 
 type MutableNameResults struct {
@@ -70,7 +70,7 @@ type MutableNameResults struct {
 }
 
 func (s MutableNameResults) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxResultName])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultName))
 }
 
 type ImmutableOwnerOfResults struct {
@@ -78,7 +78,7 @@ type ImmutableOwnerOfResults struct {
 }
 
 func (s ImmutableOwnerOfResults) Owner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxResultOwner])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultOwner))
 }
 
 type MutableOwnerOfResults struct {
@@ -86,7 +86,7 @@ type MutableOwnerOfResults struct {
 }
 
 func (s MutableOwnerOfResults) Owner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxResultOwner])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultOwner))
 }
 
 type ImmutableSymbolResults struct {
@@ -94,7 +94,7 @@ type ImmutableSymbolResults struct {
 }
 
 func (s ImmutableSymbolResults) Symbol() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxResultSymbol])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultSymbol))
 }
 
 type MutableSymbolResults struct {
@@ -102,7 +102,7 @@ type MutableSymbolResults struct {
 }
 
 func (s MutableSymbolResults) Symbol() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxResultSymbol])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultSymbol))
 }
 
 type ImmutableTokenURIResults struct {
@@ -110,7 +110,7 @@ type ImmutableTokenURIResults struct {
 }
 
 func (s ImmutableTokenURIResults) TokenURI() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxResultTokenURI])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultTokenURI))
 }
 
 type MutableTokenURIResults struct {
@@ -118,5 +118,5 @@ type MutableTokenURIResults struct {
 }
 
 func (s MutableTokenURIResults) TokenURI() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxResultTokenURI])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultTokenURI))
 }

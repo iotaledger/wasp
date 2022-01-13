@@ -8,6 +8,7 @@ import (
 	"crypto"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -18,6 +19,38 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// NodeOwnershipCertificate is a proof that a specified address is an owner of the specified node.
+// It is implemented as a signature over the node pub key concatenated with the owner address.
+type NodeOwnershipCertificate []byte
+
+func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress iotago.Address) NodeOwnershipCertificate {
+	certData := bytes.Buffer{}
+	certData.Write(nodeKeyPair.PublicKey)
+	certData.Write(iscp.BytesFromAddress(ownerAddress))
+	result, err := nodeKeyPair.PrivateKey.Sign(nil, certData.Bytes(), crypto.Hash(0))
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
+
+func NewNodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
+	return NodeOwnershipCertificate(data)
+}
+
+func (c NodeOwnershipCertificate) Verify(nodePubKey ed25519.PublicKey, ownerAddress iotago.Address) bool {
+	certData := bytes.Buffer{}
+	certData.Write(nodePubKey)
+	certData.Write(iscp.BytesFromAddress(ownerAddress))
+	return cryptolib.Verify(nodePubKey, certData.Bytes(), c.Bytes())
+}
+
+func (c NodeOwnershipCertificate) Bytes() []byte {
+	return c
+}
+
+// AccessNodeInfo conveys all the information that is maintained
+// on the governance SC about a specific node.
 type AccessNodeInfo struct {
 	NodePubKey    []byte // Public Key of the node. Stored as a key in the SC State and Params.
 	ValidatorAddr []byte // Address of the validator owning the node. Not sent via parameters.
@@ -44,6 +77,26 @@ func NewAccessNodeInfoFromBytes(pubKey, value []byte) (*AccessNodeInfo, error) {
 		return nil, xerrors.Errorf("failed to read AccessNodeInfo.AccessAPI: %v", err)
 	}
 	return &a, nil
+}
+
+func NewAccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessNodeInfo, error) {
+	res := make([]*AccessNodeInfo, 0)
+	var accErr error
+	err := infoMap.Iterate(func(elemKey, value []byte) bool {
+		var a *AccessNodeInfo
+		if a, accErr = NewAccessNodeInfoFromBytes(elemKey, value); accErr != nil {
+			return false
+		}
+		res = append(res, a)
+		return true
+	})
+	if accErr != nil {
+		return nil, xerrors.Errorf("failed to iterate over AccessNodeInfo list: %v", accErr)
+	}
+	if err != nil {
+		return nil, xerrors.Errorf("failed to iterate over AccessNodeInfo list: %v", err)
+	}
+	return res, nil
 }
 
 func (a *AccessNodeInfo) Bytes() []byte {
@@ -103,23 +156,22 @@ func (a *AccessNodeInfo) ToRevokeAccessNodeParams() dict.Dict {
 	return d
 }
 
-func (a *AccessNodeInfo) AddCertificate(nodePrivKey ed25519.PrivateKey, ownerAddress iotago.Address) *AccessNodeInfo {
-	certData := bytes.Buffer{}
-	certData.Write(a.NodePubKey)
-	certData.Write(iscp.BytesFromAddress(ownerAddress))
-	var err error
-	a.Certificate, err = nodePrivKey.Sign(nil, certData.Bytes(), crypto.Hash(0))
-	if err != nil {
-		panic(err)
-	}
+func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress iotago.Address) *AccessNodeInfo {
+	a.Certificate = NewNodeOwnershipCertificate(nodeKeyPair, ownerAddress).Bytes()
 	return a
 }
 
 func (a *AccessNodeInfo) ValidateCertificate(ctx iscp.Sandbox) bool {
-	signedData := bytes.Buffer{}
-	signedData.Write(a.NodePubKey)
-	signedData.Write(a.ValidatorAddr)
-	return ctx.Utils().ED25519().ValidSignature(signedData.Bytes(), a.NodePubKey, a.Certificate)
+	nodePubKey, err := cryptolib.PublicKeyFromBytes(a.NodePubKey)
+	if err != nil {
+		return false
+	}
+	validatorAddr, _, err := iscp.AddressFromBytes(a.ValidatorAddr)
+	if err != nil {
+		return false
+	}
+	cert := NewNodeOwnershipCertificateFromBytes(a.Certificate)
+	return cert.Verify(nodePubKey, validatorAddr)
 }
 
 //

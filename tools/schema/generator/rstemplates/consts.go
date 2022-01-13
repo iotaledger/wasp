@@ -46,6 +46,6 @@ pub$crate const $KIND$+_$FUNC_NAME$func_pad : &str = "$funcName";
 `,
 	// *******************************
 	"constHFunc": `
-pub$crate const H$KIND$+_$FUNC_NAME$func_pad : ScHname = ScHname(0x$funcHname);
+pub$crate const H$KIND$+_$FUNC_NAME$func_pad : ScHname = ScHname(0x$hFuncName);
 `,
 }

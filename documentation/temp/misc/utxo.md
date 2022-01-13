@@ -61,7 +61,7 @@ validation rules of value transactions are the following:
 4. The number of tokens with `ColorIOTA` in the outputs can be smaller or
    larger than iotas in inputs, provided condition (1) is satisfied.
 
-The ISCP relies heavily on the logic of the tokens in the UTXO Ledger. In later
+The IOTA Smart Contracts relies heavily on the logic of the tokens in the UTXO Ledger. In later
 documentation we will describe exactly how. Meanwhile, to simplify our thinking,
 we can represent a 2D address balance as its 1-dimensional "projection to the
 color axis": a collection of sub balances per color, like this:

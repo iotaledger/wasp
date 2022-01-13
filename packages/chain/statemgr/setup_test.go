@@ -11,11 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
@@ -40,18 +36,18 @@ type MockedEnv struct {
 	Ledger            *utxodb.UtxoDB
 	OriginatorKeyPair *cryptolib.KeyPair
 	OriginatorAddress iotago.Address
-	NodeIDs           []string
+	NodePubKeys       []*ed25519.PublicKey
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	NetworkCloser     io.Closer
 	ChainID           *iscp.ChainID
 	mutex             sync.Mutex
-	Nodes             map[string]*MockedNode
+	Nodes             map[ed25519.PublicKey]*MockedNode
 	push              bool
 }
 
 type MockedNode struct {
-	NetID           string
+	PubKey          *ed25519.PublicKey
 	Env             *MockedEnv
 	store           kvstore.KVStore
 	NodeConn        *testchain.MockedNodeConn
@@ -80,7 +76,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 		Ledger:            utxodb.New(),
 		OriginatorKeyPair: nil,
 		OriginatorAddress: nil,
-		Nodes:             make(map[string]*MockedNode),
+		Nodes:             make(map[ed25519.PublicKey]*MockedNode),
 	}
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err := ret.Ledger.RequestFunds(ret.OriginatorAddress)
@@ -108,9 +104,9 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
-	nodeIDs, identities := testpeers.SetupKeys(uint16(nodeCount))
-	ret.NodeIDs = nodeIDs
-	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
+	nodeIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
+	ret.NodePubKeys = testpeers.PublicKeys(nodeIdentities)
+	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
 	return ret, originTx
 }
@@ -156,9 +152,9 @@ func (env *MockedEnv) PostTransactionToLedger(tx *ledgerstate.Transaction) {
 	env.Log.Infof("MockedEnv.PostTransactionToLedger: posted transaction to ledger: %s", tx.ID().Base58())
 }
 
-func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *messages.StateMsg {
-	env.Log.Debugf("MockedEnv.PullStateFromLedger request received for address %v", addr.Base58)
-	outputs := env.Ledger.GetAddressOutputs(addr)
+func (env *MockedEnv) PullStateFromLedger() *messages.StateMsg {
+	env.Log.Debugf("MockedEnv.PullStateFromLedger request received")
+	outputs := env.Ledger.GetAddressOutputs(env.ChainID.AsAliasAddress())
 	require.EqualValues(env.T, 1, len(outputs))
 	outTx, ok := env.Ledger.GetTransaction(outputs[0].ID().TransactionID())
 	require.True(env.T, ok)
@@ -172,8 +168,8 @@ func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *messa
 	}
 }
 
-func (env *MockedEnv) PullConfirmedOutputFromLedger(addr iotago.Address, outputID ledgerstate.OutputID) ledgerstate.Output {
-	env.Log.Debugf("MockedEnv.PullConfirmedOutputFromLedger for address %v output %v", addr.Base58, iscp.OID(outputID))
+func (env *MockedEnv) PullConfirmedOutputFromLedger(outputID ledgerstate.OutputID) ledgerstate.Output {
+	env.Log.Debugf("MockedEnv.PullConfirmedOutputFromLedger for output %v", iscp.OID(outputID))
 	tx, foundTx := env.Ledger.GetTransaction(outputID.TransactionID())
 	require.True(env.T, foundTx)
 	outputIndex := outputID.OutputIndex()
@@ -186,14 +182,17 @@ func (env *MockedEnv) PullConfirmedOutputFromLedger(addr iotago.Address, outputI
 }
 
 func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *MockedNode {
-	nodeID := env.NodeIDs[nodeIndex]
-	log := env.Log.Named(nodeID)
-	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.ChainID.Array(), env.NodeIDs)
+	nodePubKey := env.NodePubKeys[nodeIndex]
+	nodePubKeyStr := nodePubKey.String()[0:10]
+	log := env.Log.Named(nodePubKeyStr)
+	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.ChainID.Array(), env.NodePubKeys)
+	require.NoError(env.T, err)
+	stateMgrDomain, err := NewDomainWithFallback(env.ChainID.Array(), env.NetworkProviders[nodeIndex], log)
 	require.NoError(env.T, err)
 	ret := &MockedNode{
-		NetID:      nodeID,
+		PubKey:     nodePubKey,
 		Env:        env,
-		NodeConn:   testchain.NewMockedNodeConnection("Node_" + nodeID),
+		NodeConn:   testchain.NewMockedNodeConnection("Node_" + nodePubKeyStr),
 		store:      mapdb.NewMapDB(),
 		stateSync:  coreutil.NewChainStateSync(),
 		ChainCore:  testchain.NewMockedChainCore(env.T, env.ChainID, log),
@@ -210,7 +209,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
 	})
 	ret.ChainPeers.Attach(peering.PeerMessageReceiverStateManager, func(peerMsg *peering.PeerMessageIn) {
-		log.Debugf("State manager recvEvent from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
+		log.Debugf("State manager recvEvent from %v of type %v", peerMsg.SenderPubKey.String(), peerMsg.MsgType)
 		switch peerMsg.MsgType {
 		case peerMsgTypeGetBlock:
 			msg, err := messages.NewGetBlockMsg(peerMsg.MsgData)
@@ -220,7 +219,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 			}
 			ret.StateManager.EnqueueGetBlockMsg(&messages.GetBlockMsgIn{
 				GetBlockMsg: *msg,
-				SenderNetID: peerMsg.SenderNetID,
+				SenderPubKey: peerMsg.SenderPubKey,
 			})
 		case peerMsgTypeBlock:
 			msg, err := messages.NewBlockMsg(peerMsg.MsgData)
@@ -230,11 +229,11 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 			}
 			ret.StateManager.EnqueueBlockMsg(&messages.BlockMsgIn{
 				BlockMsg:    *msg,
-				SenderNetID: peerMsg.SenderNetID,
+				SenderPubKey: peerMsg.SenderPubKey,
 			})
 		}
 	})
-	ret.StateManager = New(ret.store, ret.ChainCore, ret.ChainPeers, ret.NodeConn, stateMgrMetrics, timers)
+	ret.StateManager = New(ret.store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, timers)
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
@@ -247,15 +246,15 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		log.Debugf("MockedNode.OnPostTransaction: transaction %v posted", tx.ID().Base58())
 		env.PostTransactionToLedger(tx)
 	})
-	ret.NodeConn.OnPullState(func(addr *ledgerstate.AliasAddress) {
-		log.Debugf("MockedNode.OnPullState request received for address %v", addr.Base58)
-		response := env.PullStateFromLedger(addr)
+	ret.NodeConn.OnPullState(func() {
+		log.Debugf("MockedNode.OnPullState request received")
+		response := env.PullStateFromLedger()
 		log.Debugf("MockedNode.OnPullState call EventStateMsg: chain output %s", iscp.OID(response.ChainOutput.ID()))
 		go ret.StateManager.EnqueueStateMsg(response)
 	})
-	ret.NodeConn.OnPullConfirmedOutput(func(addr iotago.Address, outputID ledgerstate.OutputID) {
+	ret.NodeConn.OnPullConfirmedOutput(func(outputID ledgerstate.OutputID) {
 		log.Debugf("MockedNode.OnPullConfirmedOutput %v", iscp.OID(outputID))
-		response := env.PullConfirmedOutputFromLedger(addr, outputID)
+		response := env.PullConfirmedOutputFromLedger(outputID)
 		log.Debugf("MockedNode.OnPullConfirmedOutput call EventOutputMsg")
 		go ret.StateManager.EnqueueOutputMsg(response)
 	})
@@ -311,14 +310,14 @@ func (env *MockedEnv) AddNode(node *MockedNode) {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
 
-	if _, ok := env.Nodes[node.NetID]; ok {
-		env.Log.Panicf("AddNode: duplicate node index %s", node.NetID)
+	if _, ok := env.Nodes[*node.PubKey]; ok {
+		env.Log.Panicf("AddNode: duplicate node index %s", node.PubKey.String())
 	}
-	env.Nodes[node.NetID] = node
+	env.Nodes[*node.PubKey] = node
 }
 
 func (env *MockedEnv) RemoveNode(node *MockedNode) {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
-	delete(env.Nodes, node.NetID)
+	delete(env.Nodes, *node.PubKey)
 }

@@ -1,10 +1,10 @@
 # Welcome to the Wasp
 
 [Wasp](https://github.com/iotaledger/wasp) is a node software developed by the
-[IOTA Foundation](http://iota.org) to run the _IOTA Smart Contract Protocol_
-(_ISCP_ in short) on top of the _IOTA Tangle_. Please find here a [high level
+[IOTA Foundation](http://iota.org) to run the _IOTA Smart Contracts_
+on top of the _IOTA Tangle_. Please find here a [high level
 introduction](https://blog.iota.org/an-introduction-to-iota-smart-contracts-16ea6f247936)
-into ISCP.
+into IOTA Smart Contracts.
 
 A _smart contract_ is a distributed software agent that stores its state in the
 [UTXO ledger](misc/utxo.md), and evolves with each _request_ sent to
@@ -18,7 +18,7 @@ program. This ensures that the operation of smart contracts is distributed,
 fault-tolerant and leaderless.
 
 The articles below explain how to run a Wasp node on the Goshimmer network, as
-well as concepts and architecture of ISCP and Wasp.
+well as concepts and architecture of IOTA Smart Contracts and Wasp.
 
 _Disclaimer: Wasp node and articles is a work in progress, and most likely will
 always be. The software presented in this repository is not ready for use in

@@ -1,16 +1,20 @@
 package testchain
 
-import iotago "github.com/iotaledger/iota.go/v3"
+import (
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+)
 
 type MockedNodeConn struct {
 	id                              string
-	onPullBacklog                   func(addr *iotago.AliasAddress)
-	onPullState                     func(addr *iotago.AliasAddress)
-	onPullConfirmedTransaction      func(addr iotago.Address, txid iotago.TransactionID)
-	onPullTransactionInclusionState func(addr iotago.Address, txid iotago.TransactionID)
-	onPullConfirmedOutput           func(addr iotago.Address, outputID iotago.OutputID)
+	onPullState                     func()
+	onPullTransactionInclusionState func(txid iotago.TransactionID)
+	onPullConfirmedOutput           func(outputID iotago.OutputID)
 	onPostTransaction               func(tx *iotago.Transaction)
 }
+
+var _ chain.ChainNodeConnection = &MockedNodeConn{}
 
 func NewMockedNodeConnection(id string) *MockedNodeConn {
 	return &MockedNodeConn{id: id}
@@ -20,50 +24,52 @@ func (m *MockedNodeConn) ID() string {
 	return m.id
 }
 
-func (m *MockedNodeConn) PullBacklog(addr *iotago.AliasAddress) {
-	m.onPullBacklog(addr)
+func (m *MockedNodeConn) PullState() {
+	m.onPullState()
 }
 
-func (m *MockedNodeConn) PullState(addr *iotago.AliasAddress) {
-	m.onPullState(addr)
+func (m *MockedNodeConn) PullTransactionInclusionState(txid iotago.TransactionID) {
+	m.onPullTransactionInclusionState(txid)
 }
 
-func (m *MockedNodeConn) PullConfirmedTransaction(addr iotago.Address, txid iotago.TransactionID) {
-	m.onPullConfirmedTransaction(addr, txid)
-}
-
-func (m *MockedNodeConn) PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID) {
-	m.onPullTransactionInclusionState(addr, txid)
-}
-
-func (m *MockedNodeConn) PullConfirmedOutput(addr iotago.Address, outputID iotago.OutputID) {
-	m.onPullConfirmedOutput(addr, outputID)
+func (m *MockedNodeConn) PullConfirmedOutput(outputID iotago.OutputID) {
+	m.onPullConfirmedOutput(outputID)
 }
 
 func (m *MockedNodeConn) PostTransaction(tx *iotago.Transaction) {
 	m.onPostTransaction(tx)
 }
 
-func (m *MockedNodeConn) OnPullBacklog(f func(addr *iotago.AliasAddress)) {
-	m.onPullBacklog = f
-}
-
-func (m *MockedNodeConn) OnPullState(f func(addr *iotago.AliasAddress)) {
+func (m *MockedNodeConn) OnPullState(f func()) {
 	m.onPullState = f
 }
 
-func (m *MockedNodeConn) OnPullConfirmedTransaction(f func(addr iotago.Address, txid iotago.TransactionID)) {
-	m.onPullConfirmedTransaction = f
-}
-
-func (m *MockedNodeConn) OnPullTransactionInclusionState(f func(addr iotago.Address, txid iotago.TransactionID)) {
+func (m *MockedNodeConn) OnPullTransactionInclusionState(f func(txid iotago.TransactionID)) {
 	m.onPullTransactionInclusionState = f
 }
 
-func (m *MockedNodeConn) OnPullConfirmedOutput(f func(addr iotago.Address, outputID iotago.OutputID)) {
+func (m *MockedNodeConn) OnPullConfirmedOutput(f func(outputID iotago.OutputID)) {
 	m.onPullConfirmedOutput = f
 }
 
 func (m *MockedNodeConn) OnPostTransaction(f func(tx *iotago.Transaction)) {
 	m.onPostTransaction = f
+}
+
+func (m *MockedNodeConn) AttachToTransactionReceived(chain.NodeConnectionHandleTransactionFun) {}
+func (m *MockedNodeConn) AttachToInclusionStateReceived(chain.NodeConnectionHandleInclusionStateFun) {
+}
+func (m *MockedNodeConn) AttachToOutputReceived(chain.NodeConnectionHandleOutputFun) {}
+func (m *MockedNodeConn) AttachToUnspentAliasOutputReceived(chain.NodeConnectionHandleUnspentAliasOutputFun) {
+}
+
+func (m *MockedNodeConn) DetachFromTransactionReceived()        {}
+func (m *MockedNodeConn) DetachFromInclusionStateReceived()     {}
+func (m *MockedNodeConn) DetachFromOutputReceived()             {}
+func (m *MockedNodeConn) DetachFromUnspentAliasOutputReceived() {}
+
+func (m *MockedNodeConn) Close() {}
+
+func (m *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
+	return nodeconnmetrics.NewEmptyNodeConnectionMessagesMetrics()
 }

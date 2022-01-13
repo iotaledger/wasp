@@ -53,14 +53,13 @@ fn transfer(ctx: &ScFuncContext, state: MutableErc721State, from: &ScAgentID, to
     ctx.require(owner == *from, "from is not owner");
     //TODO: ctx.require(to == <check-if-is-a-valid-address> , "invalid 'to' agentid");
 
-    let nft_count_from = state.balances().get_uint64(from);
-    let nft_count_to = state.balances().get_uint64(to);
+    let balance_from = state.balances().get_uint64(from);
+    let balance_to = state.balances().get_uint64(to);
 
-    nft_count_from.set_value(nft_count_from.value() - 1);
-    nft_count_to.set_value(nft_count_to.value() + 1);
+    balance_from.set_value(balance_from.value() - 1);
+    balance_to.set_value(balance_to.value() + 1);
 
     token_owner.set_value(to);
-
 
     let events = Erc721Events {};
     // remove approval if it exists
@@ -97,7 +96,7 @@ pub fn func_approve(ctx: &ScFuncContext, f: &ApproveContext) {
     }
 
     let account = approved.value();
-    ctx.require(owner != account, "approved equals owner");
+    ctx.require(owner != account, "approved account equals owner");
 
     f.state.approved_accounts().get_agent_id(&token_id).set_value(&account);
     f.events.approval(&account, &owner, &token_id);
@@ -141,15 +140,21 @@ pub fn func_mint(ctx: &ScFuncContext, f: &MintContext) {
     let token_owner = f.state.owners().get_agent_id(&token_id);
     ctx.require(!token_owner.exists(), "tokenID already minted");
 
+    // save optional token uri
+    let token_uri = f.params.token_uri();
+    if token_uri.exists() {
+        f.state.token_ur_is().get_string(&token_id).set_value(&token_uri.value());
+    }
+
     let owner = ctx.caller();
     token_owner.set_value(&owner);
     let balance = f.state.balances().get_uint64(&owner);
     balance.set_value(balance.value() + 1);
 
     f.events.transfer(&ScAgentID::ZERO, &owner, &token_id);
-    if !owner.is_address() {
-        //TODO interpret to as SC address and call its onERC721Received() function
-    }
+    // if !owner.is_address() {
+    //     //TODO interpret to as SC address and call its onERC721Received() function
+    // }
 }
 
 // Safely transfers tokenID token from from to to, checking first that contract
@@ -159,9 +164,9 @@ pub fn func_safe_transfer_from(ctx: &ScFuncContext, f: &SafeTransferFromContext)
     let to = f.params.to().value();
     let token_id = f.params.token_id().value();
     transfer(&ctx, f.state, &from, &to, &token_id);
-    if !to.is_address() {
-        //TODO interpret to as SC address and call its onERC721Received() function
-    }
+    // if !to.is_address() {
+    //     //TODO interpret to as SC address and call its onERC721Received() function
+    // }
 }
 
 // Approve or remove operator as an operator for the caller.
@@ -239,6 +244,11 @@ pub fn view_symbol(_ctx: &ScViewContext, f: &SymbolContext) {
 pub fn view_token_uri(_ctx: &ScViewContext, f: &TokenURIContext) {
     let token_id = f.params.token_id();
     if token_id.exists() {
-        f.results.token_uri().set_value(&(BASE_URI.to_owned() + &token_id.to_string()));
+        let mut token_uri = BASE_URI.to_owned() + &token_id.to_string();
+        let saved_uri = f.state.token_ur_is().get_string(&token_id.value());
+        if saved_uri.exists() {
+            token_uri = saved_uri.value();
+        }
+        f.results.token_uri().set_value(&token_uri);
     }
 }

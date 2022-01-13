@@ -59,5 +59,5 @@ The programmer forgets the parameter `paramString` and the program panics:
 
 You can see that all sent 42 tokens are returned to the sender's address.
 
-In case of panic in the smart contract for whatever reason, the fallback logic of the ISCP VM:
+In case of panic in the smart contract for whatever reason, the fallback logic of the IOTA Smart Contracts VM:
 returns all tokens (minus fees) to the sender (to the sender's address in the example above).

@@ -52,52 +52,7 @@ func TestBasic(t *testing.T) {
 	//
 	// Initiate the key generation from some client node.
 	dkShare, err := dkgNodes[0].GenerateDistributedKey(
-		peerNetIDs,
 		testpeers.PublicKeys(peerIdentities),
-		threshold,
-		1*time.Second,
-		2*time.Second,
-		timeout,
-	)
-	require.Nil(t, err)
-	require.NotNil(t, dkShare.Address)
-	require.NotNil(t, dkShare.SharedPublic)
-}
-
-// TestNoPubs checks, if public keys are taken from the peering network successfully.
-// See a NOTE in the test case bellow.
-func TestNoPubs(t *testing.T) {
-	log := testlogger.NewLogger(t)
-	defer log.Sync()
-	//
-	// Create a fake network and keys for the tests.
-	timeout := 100 * time.Second
-	var threshold uint16 = 10
-	var peerCount uint16 = 10
-	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
-		peerNetIDs, peerIdentities, 10000,
-		testutil.NewPeeringNetReliable(log),
-		testlogger.WithLevel(log, logger.LevelWarn, false),
-	)
-	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
-	//
-	// Initialize the DKG subsystem in each node.
-	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
-	for i := range peerNetIDs {
-		registry := testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
-		dkgNode, err := dkg.NewNode(
-			peerIdentities[i], networkProviders[i], registry,
-			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
-		)
-		require.NoError(t, err)
-		dkgNodes[i] = dkgNode
-	}
-	//
-	// Initiate the key generation from some client node.
-	dkShare, err := dkgNodes[0].GenerateDistributedKey(
-		peerNetIDs,
-		nil, // NOTE: Should be taken from the peering node.
 		threshold,
 		1*time.Second,
 		2*time.Second,
@@ -148,8 +103,7 @@ func TestUnreliableNet(t *testing.T) {
 	//
 	// Initiate the key generation from some client node.
 	dkShare, err := dkgNodes[0].GenerateDistributedKey(
-		peerNetIDs,
-		nil, // NOTE: Should be taken from the peering node.
+		testpeers.PublicKeys(peerIdentities),
 		threshold,
 		100*time.Millisecond, // Round retry.
 		500*time.Millisecond, // Step retry.
@@ -192,7 +146,6 @@ func TestLowN(t *testing.T) {
 		//
 		// Initiate the key generation from some client node.
 		dkShare, err := dkgNodes[0].GenerateDistributedKey(
-			peerNetIDs,
 			testpeers.PublicKeys(peerIdentities),
 			threshold,
 			1*time.Second,

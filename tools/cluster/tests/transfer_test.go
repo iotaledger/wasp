@@ -5,10 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
@@ -19,6 +17,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	chain, err := e.clu.DeployDefaultChain()
 	require.NoError(t, err)
+	chainNodeCount := uint64(len(chain.AllPeers))
 
 	chEnv := newChainEnv(t, e.clu, chain)
 
@@ -31,13 +30,13 @@ func TestDepositWithdraw(t *testing.T) {
 		"myAddress begin") {
 		t.Fail()
 	}
-	if !e.clu.VerifyAddressBalances(chain.OriginatorAddress(), solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-1,
-		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-1),
+	if !e.clu.VerifyAddressBalances(chain.OriginatorAddress(), solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-1-chainNodeCount,
+		colored.NewBalancesForIotas(solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-1-chainNodeCount),
 		"originatorAddress begin") {
 		t.Fail()
 	}
-	if !e.clu.VerifyAddressBalances(chain.ChainAddress(), ledgerstate.DustThresholdAliasOutputIOTA+1,
-		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+1),
+	if !e.clu.VerifyAddressBalances(chain.ChainAddress(), ledgerstate.DustThresholdAliasOutputIOTA+1+chainNodeCount,
+		colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA+1+chainNodeCount),
 		"chainAddress begin") {
 		t.Fail()
 	}

@@ -14,11 +14,11 @@ type ImmutableApproveParams struct {
 }
 
 func (s ImmutableApproveParams) Approved() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamApproved])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamApproved))
 }
 
 func (s ImmutableApproveParams) TokenID() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type MutableApproveParams struct {
@@ -26,11 +26,11 @@ type MutableApproveParams struct {
 }
 
 func (s MutableApproveParams) Approved() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamApproved])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamApproved))
 }
 
 func (s MutableApproveParams) TokenID() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type ImmutableBurnParams struct {
@@ -38,7 +38,7 @@ type ImmutableBurnParams struct {
 }
 
 func (s ImmutableBurnParams) TokenID() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type MutableBurnParams struct {
@@ -46,7 +46,7 @@ type MutableBurnParams struct {
 }
 
 func (s MutableBurnParams) TokenID() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type ImmutableInitParams struct {
@@ -78,7 +78,11 @@ type ImmutableMintParams struct {
 }
 
 func (s ImmutableMintParams) TokenID() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamTokenID))
+}
+
+func (s ImmutableMintParams) TokenURI() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamTokenURI))
 }
 
 type MutableMintParams struct {
@@ -86,7 +90,11 @@ type MutableMintParams struct {
 }
 
 func (s MutableMintParams) TokenID() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamTokenID))
+}
+
+func (s MutableMintParams) TokenURI() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamTokenURI))
 }
 
 type ImmutableSafeTransferFromParams struct {
@@ -94,19 +102,19 @@ type ImmutableSafeTransferFromParams struct {
 }
 
 func (s ImmutableSafeTransferFromParams) Data() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, idxMap[IdxParamData])
+	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ParamData))
 }
 
 func (s ImmutableSafeTransferFromParams) From() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamFrom])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamFrom))
 }
 
 func (s ImmutableSafeTransferFromParams) To() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamTo])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamTo))
 }
 
 func (s ImmutableSafeTransferFromParams) TokenID() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type MutableSafeTransferFromParams struct {
@@ -114,19 +122,19 @@ type MutableSafeTransferFromParams struct {
 }
 
 func (s MutableSafeTransferFromParams) Data() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, idxMap[IdxParamData])
+	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ParamData))
 }
 
 func (s MutableSafeTransferFromParams) From() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamFrom])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamFrom))
 }
 
 func (s MutableSafeTransferFromParams) To() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamTo])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamTo))
 }
 
 func (s MutableSafeTransferFromParams) TokenID() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type ImmutableSetApprovalForAllParams struct {
@@ -134,11 +142,11 @@ type ImmutableSetApprovalForAllParams struct {
 }
 
 func (s ImmutableSetApprovalForAllParams) Approval() wasmlib.ScImmutableBool {
-	return wasmlib.NewScImmutableBool(s.id, idxMap[IdxParamApproval])
+	return wasmlib.NewScImmutableBool(s.id, wasmlib.KeyID(ParamApproval))
 }
 
 func (s ImmutableSetApprovalForAllParams) Operator() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamOperator])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamOperator))
 }
 
 type MutableSetApprovalForAllParams struct {
@@ -146,11 +154,11 @@ type MutableSetApprovalForAllParams struct {
 }
 
 func (s MutableSetApprovalForAllParams) Approval() wasmlib.ScMutableBool {
-	return wasmlib.NewScMutableBool(s.id, idxMap[IdxParamApproval])
+	return wasmlib.NewScMutableBool(s.id, wasmlib.KeyID(ParamApproval))
 }
 
 func (s MutableSetApprovalForAllParams) Operator() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamOperator])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamOperator))
 }
 
 type ImmutableTransferFromParams struct {
@@ -158,15 +166,15 @@ type ImmutableTransferFromParams struct {
 }
 
 func (s ImmutableTransferFromParams) From() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamFrom])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamFrom))
 }
 
 func (s ImmutableTransferFromParams) To() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamTo])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamTo))
 }
 
 func (s ImmutableTransferFromParams) TokenID() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type MutableTransferFromParams struct {
@@ -174,15 +182,15 @@ type MutableTransferFromParams struct {
 }
 
 func (s MutableTransferFromParams) From() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamFrom])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamFrom))
 }
 
 func (s MutableTransferFromParams) To() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamTo])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamTo))
 }
 
 func (s MutableTransferFromParams) TokenID() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type ImmutableBalanceOfParams struct {
@@ -190,7 +198,7 @@ type ImmutableBalanceOfParams struct {
 }
 
 func (s ImmutableBalanceOfParams) Owner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamOwner])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamOwner))
 }
 
 type MutableBalanceOfParams struct {
@@ -198,7 +206,7 @@ type MutableBalanceOfParams struct {
 }
 
 func (s MutableBalanceOfParams) Owner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamOwner])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamOwner))
 }
 
 type ImmutableGetApprovedParams struct {
@@ -206,7 +214,7 @@ type ImmutableGetApprovedParams struct {
 }
 
 func (s ImmutableGetApprovedParams) TokenID() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type MutableGetApprovedParams struct {
@@ -214,7 +222,7 @@ type MutableGetApprovedParams struct {
 }
 
 func (s MutableGetApprovedParams) TokenID() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type ImmutableIsApprovedForAllParams struct {
@@ -222,11 +230,11 @@ type ImmutableIsApprovedForAllParams struct {
 }
 
 func (s ImmutableIsApprovedForAllParams) Operator() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamOperator])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamOperator))
 }
 
 func (s ImmutableIsApprovedForAllParams) Owner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamOwner])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamOwner))
 }
 
 type MutableIsApprovedForAllParams struct {
@@ -234,11 +242,11 @@ type MutableIsApprovedForAllParams struct {
 }
 
 func (s MutableIsApprovedForAllParams) Operator() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamOperator])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamOperator))
 }
 
 func (s MutableIsApprovedForAllParams) Owner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamOwner])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamOwner))
 }
 
 type ImmutableOwnerOfParams struct {
@@ -246,7 +254,7 @@ type ImmutableOwnerOfParams struct {
 }
 
 func (s ImmutableOwnerOfParams) TokenID() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type MutableOwnerOfParams struct {
@@ -254,7 +262,7 @@ type MutableOwnerOfParams struct {
 }
 
 func (s MutableOwnerOfParams) TokenID() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type ImmutableTokenURIParams struct {
@@ -262,7 +270,7 @@ type ImmutableTokenURIParams struct {
 }
 
 func (s ImmutableTokenURIParams) TokenID() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }
 
 type MutableTokenURIParams struct {
@@ -270,5 +278,5 @@ type MutableTokenURIParams struct {
 }
 
 func (s MutableTokenURIParams) TokenID() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, idxMap[IdxParamTokenID])
+	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamTokenID))
 }

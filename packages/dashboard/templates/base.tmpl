@@ -39,6 +39,19 @@
 	</a>
 {{end}}
 
+{{define "longStringCell"}}
+	{{ $longString := anythingToString . }}
+	<td title="{{$longString}}">{{ trim 100 (replace $longString "\n" "" -1) }}</td>
+{{end}}
+
+{{define "booleanValue"}}
+	<input type="checkbox" disabled ="true"
+		{{- if . -}}
+			checked
+		{{- end -}}
+	>
+{{end}}
+
 {{define "base"}}
 	<!doctype html>
 	<html lang="en">

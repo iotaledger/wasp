@@ -1,17 +1,16 @@
 ---
 keywords:
-- ISCP
 - Smart Contracts
 - scaling
 - fees
 - flexibility
 - Tangle
-description: ISCP stands for IOTA Smart Contract Protocol and is IOTA's solution for running smart contracts on top of the IOTA tangle. Wasp is the node software we've built to let you run smart contracts in a committee using a virtual machine of choice.
+description: IOTA Smart Contracts are IOTA's solution for running smart contracts on top of the IOTA tangle. Wasp is the node software we've built to let you run smart contracts in a committee using a virtual machine of choice.
 image: /img/logo/WASP_logo_dark.png
 ---
-# ISCP
+# IOTA Smart Contracts
 
-ISCP stands for IOTA Smart Contract Protocol. It is IOTA's solution for running smart contracts on top of the IOTA tangle. With ISCP we bring scalable and flexible smart contracts into the IOTA ecosystem by allowing anyone to spin up a smart contract blockchain and anchor it to the IOTA tangle. 
+The IOTA Smart Contracts are IOTA's solution for running smart contracts on top of the IOTA tangle. With IOTA Smart Contracts, we bring scalable and flexible smart contracts into the IOTA ecosystem by allowing anyone to spin up a smart contract blockchain and anchor it to the IOTA tangle. 
 
 Allowing multiple blockchains to anchor to the tangle will solve several problems with smart contracts.
 
@@ -29,9 +28,9 @@ Given that anyone can start a new chain, and set the rules for that chain, a lot
 
 You can run multiple types of virtual machines on any chain. We are starting with 
 [Rust/Wasm](https://rustwasm.github.io/docs/book/) based smart contracts, followed by 
-[Solidity/EVM](https://docs.soliditylang.org/en/v0.8.6/) based smart contracts, but eventually all kinds of virtual machines can be supported in a ISCP chain depending on the demand. 
+[Solidity/EVM](https://docs.soliditylang.org/en/v0.8.6/) based smart contracts, but eventually all kinds of virtual machines can be supported in IOTA Smart Contracts chain depending on the demand. 
 
-ISCP is more complex compared to conventional smart contracts, but this provides freedom and flexibility to allow the usage of smart contracts in a wide range of use cases.
+The IOTA Smart Contracts is more complex compared to conventional smart contracts, but this provides freedom and flexibility to allow the usage of smart contracts in a wide range of use cases.
 
 ## What is Wasp?
 

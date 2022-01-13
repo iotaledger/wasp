@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -131,14 +131,6 @@ func (c *ClusterConfig) PeeringHosts(nodeIndexes ...[]int) []string {
 	return c.waspHosts(nodes, func(i int) string { return c.PeeringHost(i) })
 }
 
-func (c *ClusterConfig) NeighborsString() string {
-	ret := make([]string, c.Wasp.NumNodes)
-	for i := range ret {
-		ret[i] = "\"" + c.PeeringHost(i) + "\""
-	}
-	return strings.Join(ret, ",")
-}
-
 func (c *ClusterConfig) PeeringHost(nodeIndex int) string {
 	return fmt.Sprintf("127.0.0.1:%d", c.PeeringPort(nodeIndex))
 }
@@ -189,17 +181,17 @@ func (c *ClusterConfig) PrometheusPort(nodeIndex int) int {
 	return c.Wasp.FirstMetricsPort + nodeIndex
 }
 
-func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigParams {
+func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress ledgerstate.Address) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
 		APIPort:                      c.APIPort(i),
 		DashboardPort:                c.DashboardPort(i),
 		PeeringPort:                  c.PeeringPort(i),
 		NanomsgPort:                  c.NanomsgPort(i),
-		Neighbors:                    c.NeighborsString(),
 		TxStreamPort:                 c.TxStreamPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
 		TxStreamHost:                 c.TxStreamHost(i),
 		MetricsPort:                  c.PrometheusPort(i),
+		OwnerAddress:                 ownerAddress.Base58(),
 		OffledgerBroadcastUpToNPeers: 10,
 	}
 }

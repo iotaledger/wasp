@@ -15,6 +15,7 @@ use crate::*;
 use crate::keys::*;
 use crate::typedefs::*;
 
+#[derive(Clone, Copy)]
 pub struct MapStringToImmutableStringArray {
 	pub(crate) obj_id: i32,
 }
@@ -27,21 +28,39 @@ impl MapStringToImmutableStringArray {
 }
 
 #[derive(Clone, Copy)]
+pub struct MapStringToImmutableStringMap {
+	pub(crate) obj_id: i32,
+}
+
+impl MapStringToImmutableStringMap {
+    pub fn get_string_map(&self, key: &str) -> ImmutableStringMap {
+        let sub_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_MAP);
+        ImmutableStringMap { obj_id: sub_id }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct ImmutableTestWasmLibState {
     pub(crate) id: i32,
 }
 
 impl ImmutableTestWasmLibState {
     pub fn arrays(&self) -> MapStringToImmutableStringArray {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ARRAYS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_ARRAYS.get_key_id(), TYPE_MAP);
 		MapStringToImmutableStringArray { obj_id: map_id }
 	}
 
+    pub fn maps(&self) -> MapStringToImmutableStringMap {
+		let map_id = get_object_id(self.id, STATE_MAPS.get_key_id(), TYPE_MAP);
+		MapStringToImmutableStringMap { obj_id: map_id }
+	}
+
     pub fn random(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_RANDOM))
+		ScImmutableInt64::new(self.id, STATE_RANDOM.get_key_id())
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapStringToMutableStringArray {
 	pub(crate) obj_id: i32,
 }
@@ -58,17 +77,42 @@ impl MapStringToMutableStringArray {
 }
 
 #[derive(Clone, Copy)]
+pub struct MapStringToMutableStringMap {
+	pub(crate) obj_id: i32,
+}
+
+impl MapStringToMutableStringMap {
+    pub fn clear(&self) {
+        clear(self.obj_id);
+    }
+
+    pub fn get_string_map(&self, key: &str) -> MutableStringMap {
+        let sub_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_MAP);
+        MutableStringMap { obj_id: sub_id }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct MutableTestWasmLibState {
     pub(crate) id: i32,
 }
 
 impl MutableTestWasmLibState {
+    pub fn as_immutable(&self) -> ImmutableTestWasmLibState {
+		ImmutableTestWasmLibState { id: self.id }
+	}
+
     pub fn arrays(&self) -> MapStringToMutableStringArray {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_ARRAYS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_ARRAYS.get_key_id(), TYPE_MAP);
 		MapStringToMutableStringArray { obj_id: map_id }
 	}
 
+    pub fn maps(&self) -> MapStringToMutableStringMap {
+		let map_id = get_object_id(self.id, STATE_MAPS.get_key_id(), TYPE_MAP);
+		MapStringToMutableStringMap { obj_id: map_id }
+	}
+
     pub fn random(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_RANDOM))
+		ScMutableInt64::new(self.id, STATE_RANDOM.get_key_id())
 	}
 }

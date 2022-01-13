@@ -35,7 +35,15 @@ $#if state stateProxyImpl
 
 impl $TypeName {
 $#set separator $false
+$#if mut stateProxyImmutableFunc
 $#each state proxyMethods
 }
+`,
+	// *******************************
+	"stateProxyImmutableFunc": `
+$#set separator $true
+    pub fn as_immutable(&self) -> Immutable$Package$+State {
+		Immutable$Package$+State { id: self.id }
+	}
 `,
 }

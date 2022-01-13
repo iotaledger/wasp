@@ -3,7 +3,6 @@ package testcore
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"

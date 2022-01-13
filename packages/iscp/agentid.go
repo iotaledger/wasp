@@ -5,6 +5,7 @@ package iscp
 
 import (
 	"encoding/hex"
+	"fmt"
 	"strings"
 
 	"github.com/iotaledger/hive.go/marshalutil"
@@ -48,6 +49,17 @@ func BytesFromAddress(address iotago.Address) []byte {
 		return nil
 	}
 	return addressInBytes
+}
+
+// AddressFromBytes unmarshals an Address from a sequence of bytes.
+func AddressFromBytes(bytes []byte) (address iotago.Address, consumedBytes int, err error) {
+	marshalUtil := marshalutil.New(bytes)
+	if address, err = AddressFromMarshalUtil(marshalUtil); err != nil {
+		err = fmt.Errorf("failed to parse Address from MarshalUtil: %w", err)
+	}
+	consumedBytes = marshalUtil.ReadOffset()
+
+	return
 }
 
 func AddressFromMarshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error) {

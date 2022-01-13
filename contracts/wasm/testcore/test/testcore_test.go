@@ -9,9 +9,9 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
-	coreaccounts2 "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreaccounts"
-	coregovernance2 "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coregovernance"
-	coreroot2 "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreroot"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreaccounts"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coregovernance"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreroot"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -137,8 +137,8 @@ func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64)
 }
 
 func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.SoloAgent, amount int64) {
-	ctxAcc := ctx.SoloContextForCore(t, coreaccounts2.ScName, coreaccounts2.OnLoad)
-	f := coreaccounts2.ScFuncs.Deposit(ctxAcc.Sign(user))
+	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
+	f := coreaccounts.ScFuncs.Deposit(ctxAcc.Sign(user))
 	if target != nil {
 		f.Params.AgentID().SetValue(target.ScAgentID())
 	}
@@ -147,16 +147,16 @@ func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.Sol
 }
 
 func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.SoloAgent) {
-	ctxRoot := ctx.SoloContextForCore(t, coreroot2.ScName, coreroot2.OnLoad)
-	f := coreroot2.ScFuncs.GrantDeployPermission(ctxRoot)
+	ctxRoot := ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnLoad)
+	f := coreroot.ScFuncs.GrantDeployPermission(ctxRoot)
 	f.Params.Deployer().SetValue(deployer.ScAgentID())
 	f.Func.TransferIotas(1).Post()
 	require.NoError(t, ctxRoot.Err)
 }
 
 func setOwnerFee(t *testing.T, ctx *wasmsolo.SoloContext, amount int64) {
-	ctxGov := ctx.SoloContextForCore(t, coregovernance2.ScName, coregovernance2.OnLoad)
-	f := coregovernance2.ScFuncs.SetContractFee(ctxGov)
+	ctxGov := ctx.SoloContextForCore(t, coregovernance.ScName, coregovernance.OnLoad)
+	f := coregovernance.ScFuncs.SetContractFee(ctxGov)
 	f.Params.Hname().SetValue(testcore.HScName)
 	f.Params.OwnerFee().SetValue(amount)
 	f.Func.TransferIotas(1).Post()
@@ -164,8 +164,8 @@ func setOwnerFee(t *testing.T, ctx *wasmsolo.SoloContext, amount int64) {
 }
 
 func withdraw(t *testing.T, ctx *wasmsolo.SoloContext, user *wasmsolo.SoloAgent) {
-	ctxAcc := ctx.SoloContextForCore(t, coreaccounts2.ScName, coreaccounts2.OnLoad)
-	f := coreaccounts2.ScFuncs.Withdraw(ctxAcc.Sign(user))
+	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
+	f := coreaccounts.ScFuncs.Withdraw(ctxAcc.Sign(user))
 	f.Func.TransferIotas(1).Post()
 	require.NoError(t, ctxAcc.Err)
 }

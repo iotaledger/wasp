@@ -14,11 +14,11 @@ type ImmutableApproveParams struct {
 }
 
 func (s ImmutableApproveParams) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamAmount])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamAmount))
 }
 
 func (s ImmutableApproveParams) Delegation() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamDelegation])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamDelegation))
 }
 
 type MutableApproveParams struct {
@@ -26,11 +26,11 @@ type MutableApproveParams struct {
 }
 
 func (s MutableApproveParams) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamAmount])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamAmount))
 }
 
 func (s MutableApproveParams) Delegation() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamDelegation])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamDelegation))
 }
 
 type ImmutableInitParams struct {
@@ -62,11 +62,11 @@ type ImmutableTransferParams struct {
 }
 
 func (s ImmutableTransferParams) Account() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamAccount])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
 }
 
 func (s ImmutableTransferParams) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamAmount])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamAmount))
 }
 
 type MutableTransferParams struct {
@@ -74,11 +74,11 @@ type MutableTransferParams struct {
 }
 
 func (s MutableTransferParams) Account() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamAccount])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
 }
 
 func (s MutableTransferParams) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamAmount])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamAmount))
 }
 
 type ImmutableTransferFromParams struct {
@@ -86,15 +86,15 @@ type ImmutableTransferFromParams struct {
 }
 
 func (s ImmutableTransferFromParams) Account() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamAccount])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
 }
 
 func (s ImmutableTransferFromParams) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamAmount])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamAmount))
 }
 
 func (s ImmutableTransferFromParams) Recipient() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamRecipient])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamRecipient))
 }
 
 type MutableTransferFromParams struct {
@@ -102,15 +102,15 @@ type MutableTransferFromParams struct {
 }
 
 func (s MutableTransferFromParams) Account() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamAccount])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
 }
 
 func (s MutableTransferFromParams) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamAmount])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamAmount))
 }
 
 func (s MutableTransferFromParams) Recipient() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamRecipient])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamRecipient))
 }
 
 type ImmutableAllowanceParams struct {
@@ -118,11 +118,11 @@ type ImmutableAllowanceParams struct {
 }
 
 func (s ImmutableAllowanceParams) Account() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamAccount])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
 }
 
 func (s ImmutableAllowanceParams) Delegation() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamDelegation])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamDelegation))
 }
 
 type MutableAllowanceParams struct {
@@ -130,11 +130,11 @@ type MutableAllowanceParams struct {
 }
 
 func (s MutableAllowanceParams) Account() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamAccount])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
 }
 
 func (s MutableAllowanceParams) Delegation() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamDelegation])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamDelegation))
 }
 
 type ImmutableBalanceOfParams struct {
@@ -142,7 +142,7 @@ type ImmutableBalanceOfParams struct {
 }
 
 func (s ImmutableBalanceOfParams) Account() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamAccount])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
 }
 
 type MutableBalanceOfParams struct {
@@ -150,5 +150,5 @@ type MutableBalanceOfParams struct {
 }
 
 func (s MutableBalanceOfParams) Account() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamAccount])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
 }

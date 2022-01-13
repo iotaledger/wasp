@@ -10,7 +10,7 @@ var config = map[string]string{
 }
 
 var Templates = []map[string]string{
-	config,
+	config, // always first one
 	common,
 	constsGo,
 	contractGo,

@@ -11,6 +11,7 @@
 use wasmlib::*;
 use wasmlib::host::*;
 
+#[derive(Clone)]
 pub struct Token {
     pub created      : i64,  // creation timestamp
     pub description  : String,  // description what minted token represents
@@ -48,6 +49,7 @@ impl Token {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct ImmutableToken {
     pub(crate) obj_id: i32,
     pub(crate) key_id: Key32,
@@ -63,6 +65,7 @@ impl ImmutableToken {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MutableToken {
     pub(crate) obj_id: i32,
     pub(crate) key_id: Key32,

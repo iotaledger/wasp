@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -16,11 +15,17 @@ import (
 
 type mockChain struct{}
 
+var _ chain.ChainRequests = &mockChain{}
+
 func (m *mockChain) GetRequestProcessingStatus(id iscp.RequestID) chain.RequestProcessingStatus {
 	return chain.RequestProcessingStatusCompleted
 }
 
-func (m *mockChain) EventRequestProcessed() *events.Event {
+func (m *mockChain) AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure) {
+	panic("not implemented")
+}
+
+func (m *mockChain) DetachFromRequestProcessed(attachID *events.Closure) {
 	panic("not implemented")
 }
 

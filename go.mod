@@ -9,11 +9,11 @@ require (
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
 	github.com/bygui86/multi-profile/v2 v2.1.0
-	github.com/bytecodealliance/wasmtime-go v0.21.0
+	github.com/bytecodealliance/wasmtime-go v0.32.0
 	github.com/ethereum/go-ethereum v1.10.13
 	github.com/iotaledger/hive.go v0.0.0-20211123102045-85f0c1036bf7
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20211208125510-04baae2057d6 // indirect
-	github.com/iotaledger/iota.go/v3 v3.0.0-20220110150042-5e2f58577afe // indirect
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20211208125510-04baae2057d6
+	github.com/iotaledger/iota.go/v3 v3.0.0-20220110150042-5e2f58577afe
 	github.com/knadh/koanf v1.2.1
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/libp2p/go-libp2p v0.14.4
@@ -21,7 +21,6 @@ require (
 	github.com/libp2p/go-libp2p-quic-transport v0.12.0
 	github.com/libp2p/go-libp2p-tls v0.2.0
 	github.com/libp2p/go-tcp-transport v0.2.4
-	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1 // indirect
 	github.com/mr-tron/base58 v1.2.0
 	github.com/multiformats/go-multiaddr v0.3.3
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0

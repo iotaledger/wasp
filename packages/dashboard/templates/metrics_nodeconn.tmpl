@@ -1,0 +1,16 @@
+{{define "title"}}Connection to L1 metrics{{end}}
+
+{{define "body"}}
+<div class="card fluid">
+	<h2 class="section">Chains, subscribed to L1</h2>
+	<ul>
+		{{range $_, $addr := (.Metrics.GetSubscribed)}}
+			{{ $id := $addr.Base58 }}
+			<li><a href="{{ uri "metricsChainNodeconn" $id }}"><code>{{ $id }}</code></a></li>
+		{{end}}
+	</ul>
+
+	<h2 class="section">Total L1 messages</h2>
+	{{template "metricsNodeconnMessages" (args .Metrics.NodeConnectionMessagesMetrics)}}
+</div>
+{{end}}

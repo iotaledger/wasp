@@ -12,9 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
@@ -25,9 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -115,10 +110,10 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
 	log.Infof("running DKG and setting up mocked network..")
-	nodeIDs, identities := testpeers.SetupKeys(n)
+	nodeIDs, nodeIdentities := testpeers.SetupKeys(n)
 	ret.NodeIDs = nodeIDs
-	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeIDs, tcrypto.DefaultSuite())
-	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
+	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities, tcrypto.DefaultSuite())
+	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(ret.NodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
@@ -186,8 +181,8 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 			ret.Log.Infof("stored transaction to the ledger: %s", tx.ID().Base58())
 			for _, node := range env.Nodes {
 				go func(n *mockedNode) {
-					ret.mutex.Lock()
-					defer ret.mutex.Unlock()
+					n.mutex.Lock()
+					defer n.mutex.Unlock()
 					n.StateOutput = stateOutput
 					n.checkStateApproval()
 				}(node)
@@ -196,7 +191,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 			ret.Log.Infof("transaction already in the ledger: %s", tx.ID().Base58())
 		}
 	})
-	ret.NodeConn.OnPullTransactionInclusionState(func(addr iotago.Address, txid ledgerstate.TransactionID) {
+	ret.NodeConn.OnPullTransactionInclusionState(func(txid ledgerstate.TransactionID) {
 		if _, already := env.Ledger.GetTransaction(txid); already {
 			go ret.Consensus.EnqueueInclusionsStateMsg(txid, ledgerstate.Confirmed)
 		}
@@ -204,32 +199,26 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	mempoolMetrics := metrics.DefaultChainMetrics()
 	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), log, mempoolMetrics)
 
-	cfg := &consensusTestConfigProvider{
-		ownNetID:  nodeID,
-		neighbors: env.NodeIDs,
-	}
 	//
 	// Pass the ACS mock, if it was set in env.MockedACS.
 	acs := make([]chain.AsynchronousCommonSubsetRunner, 0, 1)
 	if env.MockedACS != nil {
 		acs = append(acs, env.MockedACS)
 	}
-	cmtRec := &registry.CommitteeRecord{
-		Address: env.StateAddress,
-		Nodes:   env.NodeIDs,
+	dkShare, err := env.DKSRegistries[nodeIndex].LoadDKShare(env.StateAddress)
+	if err != nil {
+		panic(err)
 	}
 	cmt, cmtPeerGroup, err := committee.New(
-		cmtRec,
+		dkShare,
 		env.ChainID,
 		env.NetworkProviders[nodeIndex],
-		cfg,
-		env.DKSRegistries[nodeIndex],
 		log,
 		acs...,
 	)
 	require.NoError(env.T, err)
 	cmtPeerGroup.Attach(peering.PeerMessageReceiverConsensus, func(peerMsg *peering.PeerMessageGroupIn) {
-		log.Debugf("Consensus received peer message from %v of type %v", peerMsg.SenderNetID, peerMsg.MsgType)
+		log.Debugf("Consensus received peer message from %v of type %v", peerMsg.SenderPubKey.String(), peerMsg.MsgType)
 		switch peerMsg.MsgType {
 		case peerMsgTypeSignedResult:
 			msg, err := messages.NewSignedResultMsg(peerMsg.MsgData)
@@ -444,28 +433,4 @@ func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
 			}(n, req)
 		}
 	}
-}
-
-// TODO: should this object be obtained from peering.NetworkProvider?
-// Or should registry.PeerNetworkConfigProvider methods methods be part of
-// peering.NetworkProvider interface
-type consensusTestConfigProvider struct {
-	ownNetID  string
-	neighbors []string
-}
-
-func (p *consensusTestConfigProvider) OwnNetID() string {
-	return p.ownNetID
-}
-
-func (p *consensusTestConfigProvider) PeeringPort() int {
-	return 0 // Anything
-}
-
-func (p *consensusTestConfigProvider) Neighbors() []string {
-	return p.neighbors
-}
-
-func (p *consensusTestConfigProvider) String() string {
-	return fmt.Sprintf("consensusTestConfigProvider( ownNetID: %s, neighbors: %+v )", p.OwnNetID(), p.Neighbors())
 }

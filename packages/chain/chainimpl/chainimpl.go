@@ -7,13 +7,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/committee"
-	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
@@ -28,12 +27,12 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/txstream"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"go.uber.org/atomic"
-	"golang.org/x/xerrors"
 )
 
 const maxMsgBuffer = 1000
@@ -43,7 +42,8 @@ var (
 	_ chain.ChainCore     = &chainObj{}
 	_ chain.ChainEntry    = &chainObj{}
 	_ chain.ChainRequests = &chainObj{}
-	_ chain.ChainEvents   = &chainObj{}
+	_ chain.ChainMetrics         = &chainObj{}
+	_ map[ed25519.PublicKey]bool // We rely on value comparison on the pubkeys, just assert that here.
 )
 
 type chainObj struct {
@@ -59,17 +59,21 @@ type chainObj struct {
 	stateMgr                         chain.StateManager
 	consensus                        chain.Consensus
 	log                              *logger.Logger
-	nodeConn                         chain.NodeConnection
+	nodeConn                           chain.ChainNodeConnection
 	db                               kvstore.KVStore
-	peerNetworkConfig                registry.PeerNetworkConfigProvider
 	netProvider                      peering.NetworkProvider
 	dksProvider                      registry.DKShareRegistryProvider
+	blobProvider                       registry.BlobCache
 	committeeRegistry                registry.CommitteeRegistryProvider
 	eventRequestProcessed            *events.Event
 	eventChainTransition             *events.Event
+	eventChainTransitionClosure        *events.Closure
+	receiveChainPeerMessagesAttachID   interface{}
+	detachFromCommitteePeerMessagesFun func()
 	chainPeers                       peering.PeerDomainProvider
+	candidateNodes                     []*governance.AccessNodeInfo
 	offLedgerReqsAcksMutex           sync.RWMutex
-	offLedgerReqsAcks                map[iscp.RequestID][]string
+	offLedgerReqsAcks                  map[iscp.RequestID][]*ed25519.PublicKey
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
@@ -91,11 +95,11 @@ type committeeStruct struct {
 func NewChain(
 	chainID *iscp.ChainID,
 	log *logger.Logger,
-	txstreamClient *txstream.Client,
-	peerNetConfig registry.PeerNetworkConfigProvider,
+	nc chain.NodeConnection,
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
 	dksProvider registry.DKShareRegistryProvider,
+	blobProvider registry.BlobCache,
 	committeeRegistry registry.CommitteeRegistryProvider,
 	processorConfig *processors.Config,
 	offledgerBroadcastUpToNPeers int,
@@ -112,13 +116,13 @@ func NewChain(
 		procset:           processors.MustNew(processorConfig),
 		chainID:           chainID,
 		log:               chainLog,
-		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
+		nodeConn:       nodeconnimpl.NewChainNodeConnection(chainID, nc, chainLog),
 		db:                db,
 		chainStateSync:    chainStateSync,
 		stateReader:       state.NewOptimisticStateReader(db, chainStateSync),
-		peerNetworkConfig: peerNetConfig,
 		netProvider:       netProvider,
 		dksProvider:       dksProvider,
+		blobProvider:   blobProvider,
 		committeeRegistry: committeeRegistry,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ iscp.RequestID))(params[0].(iscp.RequestID))
@@ -126,7 +130,8 @@ func NewChain(
 		eventChainTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
-		offLedgerReqsAcks:                make(map[iscp.RequestID][]string),
+		candidateNodes:                   make([]*governance.AccessNodeInfo, 0),
+		offLedgerReqsAcks:                make(map[iscp.RequestID][]*ed25519.PublicKey),
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
@@ -140,19 +145,42 @@ func NewChain(
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
 	}
 	ret.committee.Store(&committeeStruct{})
-	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
 
 	var err error
-	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), peerNetConfig.Neighbors())
+	chainPeerNodes := []*ed25519.PublicKey{netProvider.Self().PubKey()}
+	ret.chainPeers, err = netProvider.PeerDomain(chainID.Array(), chainPeerNodes)
 	if err != nil {
-		log.Errorf("NewChain: %v", err)
+		log.Errorf("NewChain: unable to create chainPeers domain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(db, ret, ret.chainPeers, ret.nodeConn, chainMetrics)
-	ret.chainPeers.Attach(peering.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
+	stateMgrDomain, err := statemgr.NewDomainWithFallback(chainID.Array(), netProvider, log.Named("sm"))
+	if err != nil {
+		log.Errorf("NewChain: unable to create stateMgr.fallbackPeers domain: %v", err)
+		return nil
+	}
+	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics)
+	ret.stateMgr.SetChainPeers(chainPeerNodes)
+
+	ret.eventChainTransitionClosure = events.NewClosure(ret.processChainTransition)
+	ret.eventChainTransition.Attach(ret.eventChainTransitionClosure)
+	ret.nodeConn.AttachToTransactionReceived(ret.ReceiveTransaction)
+	ret.nodeConn.AttachToUnspentAliasOutputReceived(ret.ReceiveState)
+	ret.receiveChainPeerMessagesAttachID = ret.chainPeers.Attach(peering.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
 	go ret.recvLoop()
 	ret.startTimer()
 	return ret
+}
+
+func (c *chainObj) startTimer() {
+	go func() {
+		c.stateMgr.Ready().MustWait()
+		tick := 0
+		for !c.IsDismissed() {
+			c.EnqueueTimerTick(tick)
+			tick++
+			time.Sleep(chain.TimerTickPeriod)
+		}
+	}()
 }
 
 func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGroupIn) {
@@ -167,7 +195,7 @@ func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGrou
 	}
 	c.EnqueueMissingRequestIDsMsg(&messages.MissingRequestIDsMsgIn{
 		MissingRequestIDsMsg: *msg,
-		SenderNetID:          peerMsg.SenderNetID,
+		SenderPubKey:         peerMsg.SenderPubKey,
 	})
 }
 
@@ -181,7 +209,7 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 		}
 		c.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
 			OffLedgerRequestMsg: *msg,
-			SenderNetID:         peerMsg.SenderNetID,
+			SenderPubKey:        peerMsg.SenderPubKey,
 		})
 	case chain.PeerMsgTypeRequestAck:
 		msg, err := messages.NewRequestAckMsg(peerMsg.MsgData)
@@ -191,7 +219,7 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 		}
 		c.EnqueueRequestAckMsg(&messages.RequestAckMsgIn{
 			RequestAckMsg: *msg,
-			SenderNetID:   peerMsg.SenderNetID,
+			SenderPubKey:  peerMsg.SenderPubKey,
 		})
 	case chain.PeerMsgTypeMissingRequest:
 		msg, err := messages.NewMissingRequestMsg(peerMsg.MsgData)
@@ -245,6 +273,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		chain.LogStateTransition(msg, reqids, c.log)
 
 		c.mempoolLastCleanedIndex = stateIndex
+		c.updateChainNodes(stateIndex)
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
 			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String())
@@ -257,6 +286,54 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		c.consensus.EnqueueStateTransitionMsg(msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
 	}
 	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.StateCommitment().String())
+}
+
+func (c *chainObj) updateChainNodes(stateIndex uint32) {
+	c.log.Debugf("updateChainNodes, stateIndex=%v", stateIndex)
+	govAccessNodes := make([]ed25519.PublicKey, 0)
+	govCandidateNodes := make([]*governance.AccessNodeInfo, 0)
+	if stateIndex > 0 {
+		res, err := viewcontext.NewFromChain(c).CallView(
+			governance.Contract.Hname(),
+			governance.FuncGetChainNodes.Hname(),
+			governance.GetChainNodesRequest{}.AsDict(),
+		)
+		if err != nil {
+			c.log.Panicf("unable to read the governance contract state: %v", err)
+		}
+		govResponse := governance.NewGetChainNodesResponseFromDict(res)
+		govAccessNodes = govResponse.AccessNodes
+		govCandidateNodes = govResponse.AccessNodeCandidates
+	}
+
+	//
+	// Collect the new set of access nodes in the communication domain.
+	// They include the committee nodes as well as the explicitly set access nodes.
+	newMembers := make(map[ed25519.PublicKey]bool)
+	newMembers[*c.netProvider.Self().PubKey()] = true
+	cmt := c.getCommittee()
+	if cmt != nil {
+		for _, cm := range cmt.DKShare().NodePubKeys {
+			newMembers[*cm] = true
+		}
+	}
+	for _, newAccessNode := range govAccessNodes {
+		newMembers[newAccessNode] = true
+	}
+
+	//
+	// Pass it to the underlying domain to make a graceful update.
+	newMemberList := make([]*ed25519.PublicKey, 0)
+	for pubKey := range newMembers {
+		pubKeyCopy := pubKey
+		newMemberList = append(newMemberList, &pubKeyCopy)
+	}
+	c.chainPeers.UpdatePeers(newMemberList)
+	c.stateMgr.SetChainPeers(newMemberList)
+
+	//
+	// Remember the candidate nodes as well (as a cache).
+	c.candidateNodes = govCandidateNodes
 }
 
 func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
@@ -280,92 +357,6 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 	}()
 }
 
-func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iotago.AliasOutput, currentCmt chain.Committee) error {
-	if currentCmt.Address().Equals(anchorOutput.GetStateAddress()) {
-		// nothing changed. no rotation
-		return nil
-	}
-	// address changed
-	if !anchorOutput.GetIsGovernanceUpdated() {
-		return xerrors.Errorf("rotateCommitteeIfNeeded: inconsistency. Governance transition expected... New output: %s", anchorOutput.String())
-	}
-	rec, err := c.getOwnCommitteeRecord(anchorOutput.GetStateAddress())
-	if err != nil {
-		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
-	}
-	// rotation needed
-	// close current in any case
-	c.log.Infof("CLOSING COMMITTEE for %s", currentCmt.Address().Bech32(iscp.Bech32Prefix))
-
-	currentCmt.Close()
-	c.consensus.Close()
-	c.setCommittee(nil)
-	c.consensus = nil
-	if rec != nil {
-		// create new if committee record is available
-		if err = c.createNewCommitteeAndConsensus(rec); err != nil {
-			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
-		}
-	}
-	return nil
-}
-
-func (c *chainObj) createCommitteeIfNeeded(anchorOutput *iotago.AliasOutput) error {
-	// check if I am in the committee
-	rec, err := c.getOwnCommitteeRecord(anchorOutput.GetStateAddress())
-	if err != nil {
-		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
-	}
-	if rec != nil {
-		// create if record is present
-		if err = c.createNewCommitteeAndConsensus(rec); err != nil {
-			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
-		}
-	}
-	return nil
-}
-
-func (c *chainObj) getOwnCommitteeRecord(addr iotago.Address) (*registry.CommitteeRecord, error) {
-	rec, err := c.committeeRegistry.GetCommitteeRecord(addr)
-	if err != nil {
-		return nil, xerrors.Errorf("createCommitteeIfNeeded: reading committee record: %v", err)
-	}
-	if rec == nil {
-		// committee record wasn't found in th registry, I am not the part of the committee
-		return nil, nil
-	}
-	// just in case check if I am among committee nodes
-	// should not happen
-	if !util.StringInList(c.peerNetworkConfig.OwnNetID(), rec.Nodes) {
-		return nil, xerrors.Errorf("createCommitteeIfNeeded: I am not among nodes of the committee record. Inconsistency")
-	}
-	return rec, nil
-}
-
-func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeRecord) error {
-	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
-	cmt, cmtPeerGroup, err := committee.New(
-		cmtRec,
-		c.chainID,
-		c.netProvider,
-		c.peerNetworkConfig,
-		c.dksProvider,
-		c.log,
-	)
-	if err != nil {
-		c.setCommittee(nil)
-		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
-			cmtRec.Address.Bech32(iscp.Bech32Prefix), err)
-	}
-	cmtPeerGroup.Attach(peering.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
-	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
-	c.setCommittee(cmt)
-
-	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", cmtRec.Address.Bech32(iscp.Bech32Prefix))
-	return nil
-}
-
 func (c *chainObj) getCommittee() chain.Committee {
 	ret := c.committee.Load().(*committeeStruct)
 	if !ret.valid {
@@ -382,5 +373,8 @@ func (c *chainObj) setCommittee(cmt chain.Committee) {
 			valid: true,
 			cmt:   cmt,
 		})
+	}
+	if stateIndex, err := c.stateReader.BlockIndex(); err != nil {
+		c.updateChainNodes(stateIndex)
 	}
 }
