@@ -118,10 +118,11 @@ type InitOptions struct {
 
 func defaultInitOptions() *InitOptions {
 	return &InitOptions{
-		Debug:           false,
-		PrintStackTrace: false,
-		Seed:            cryptolib.Seed{},
-		RentStructure:   testdeserparams.RentStructure(),
+		Debug:                 false,
+		PrintStackTrace:       false,
+		Seed:                  cryptolib.Seed{},
+		RentStructure:         testdeserparams.RentStructure(),
+		AutoAdjustDustDeposit: false, // is OFF by default
 	}
 }
 
