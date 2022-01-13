@@ -6,9 +6,16 @@ var eventsGo = map[string]string{
 $#emit clientHeader
 
 var EventHandlers = map[string]func([]string) {
+$#each events funcSignature
 $#each events eventHandler
 }
 $#each events eventClass
+`,
+	// *******************************
+	"funcSignature": `
+
+func On$PkgName$EvtName(event *Event$EvtName) {
+}
 `,
 	// *******************************
 	"eventHandler": `

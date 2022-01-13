@@ -7,6 +7,7 @@ export * from "./clientview";
 export * from "./decoder";
 export * from "./encoder";
 export * from "./event";
+export * from "./eventhandler";
 export * from "./results";
 export * from "./service";
 export * from "./serviceclient";

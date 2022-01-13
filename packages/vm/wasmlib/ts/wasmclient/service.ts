@@ -7,22 +7,22 @@ import {IOnLedger} from "./goshimmer/models/on_ledger";
 import {Colors} from "./colors";
 import {Buffer} from './buffer';
 
-export type EventHandlers = Map<string, (message: string[]) => void>;
+export interface IEventHandler {
+    callHandler(topic: string, params: string[]): void;
+}
 
 export class Service {
     private serviceClient: wasmclient.ServiceClient;
     private webSocket: WebSocket | null = null;
     public keyPair: IKeyPair | null = null;
-    private eventHandlers: EventHandlers | null = null;
+    private eventHandlers: Array<IEventHandler> = new Array();
     public scHname: wasmclient.Hname;
     private waspWebSocketUrl: string = "";
 
-    constructor(client: wasmclient.ServiceClient, scHname: wasmclient.Hname, eventHandlers: EventHandlers) {
+    constructor(client: wasmclient.ServiceClient, scHname: wasmclient.Hname) {
         this.serviceClient = client;
         this.scHname = scHname;
-        if (eventHandlers.size != 0) {
-            this.configureWebSocketsEventHandlers(eventHandlers);
-        }
+        this.configureWebSocketsEventHandlers();
     }
 
     public async callView(viewName: string, args: wasmclient.Arguments, res: wasmclient.Results): Promise<void> {
@@ -62,6 +62,15 @@ export class Service {
         return transactionID;
     }
 
+    public register(handler: IEventHandler): void {
+        this.eventHandlers.push(handler);
+    }
+
+    public unregister(handler: IEventHandler): void {
+        // remove handler
+        this.eventHandlers = this.eventHandlers.filter(h => h !== handler);
+    }
+
     // overrides default contract name
     public serviceContractName(contractName: string): void {
         this.scHname = Hash.from(Buffer.from(contractName)).readUInt32LE(0)
@@ -71,9 +80,7 @@ export class Service {
         await this.serviceClient.waspClient.waitRequest(this.serviceClient.configuration.chainId, reqID);
     }
 
-    private configureWebSocketsEventHandlers(eventHandlers: EventHandlers) {
-        this.eventHandlers = eventHandlers;
-
+    private configureWebSocketsEventHandlers() {
         if (
             this.serviceClient.configuration.waspWebSocketUrl.startsWith("wss://") ||
             this.serviceClient.configuration.waspWebSocketUrl.startsWith("ws://")
@@ -83,7 +90,7 @@ export class Service {
 
         this.waspWebSocketUrl = this.waspWebSocketUrl.replace("%chainId", this.serviceClient.configuration.chainId);
 
-        if (this.eventHandlers.size > 1) this.connectWebSocket();
+        this.connectWebSocket();
     }
 
     private connectWebSocket(): void {
@@ -102,10 +109,9 @@ export class Service {
         }
         const topics = msg[3].split("|");
         const topic = topics[0];
-        if (this.eventHandlers && this.eventHandlers.has(topic)) {
-            const eventHandler = this.eventHandlers.get(topic)!;
-            const eventHandlerMsg = topics.slice(1);
-            eventHandler(eventHandlerMsg);
+        const params = topics.slice(1);
+        for (let i = 0; i < this.eventHandlers.length; i++) {
+            this.eventHandlers[i].callHandler(topic, params);
         }
     }
 }

@@ -277,7 +277,7 @@ export class ArrayLengthView extends wasmclient.ClientView {
 
 	public async call(): Promise<ArrayLengthResults> {
 		this.args.mandatory(ArgName);
-        const res = new ArrayLengthResults();
+		const res = new ArrayLengthResults();
 		await this.callView("arrayLength", this.args, res);
 		return res;
 	}
@@ -306,7 +306,7 @@ export class ArrayValueView extends wasmclient.ClientView {
 	public async call(): Promise<ArrayValueResults> {
 		this.args.mandatory(ArgIndex);
 		this.args.mandatory(ArgName);
-        const res = new ArrayValueResults();
+		const res = new ArrayValueResults();
 		await this.callView("arrayValue", this.args, res);
 		return res;
 	}
@@ -335,7 +335,7 @@ export class BlockRecordView extends wasmclient.ClientView {
 	public async call(): Promise<BlockRecordResults> {
 		this.args.mandatory(ArgBlockIndex);
 		this.args.mandatory(ArgRecordIndex);
-        const res = new BlockRecordResults();
+		const res = new BlockRecordResults();
 		await this.callView("blockRecord", this.args, res);
 		return res;
 	}
@@ -359,7 +359,7 @@ export class BlockRecordsView extends wasmclient.ClientView {
 
 	public async call(): Promise<BlockRecordsResults> {
 		this.args.mandatory(ArgBlockIndex);
-        const res = new BlockRecordsResults();
+		const res = new BlockRecordsResults();
 		await this.callView("blockRecords", this.args, res);
 		return res;
 	}
@@ -377,7 +377,7 @@ export class BlockRecordsResults extends wasmclient.Results {
 export class GetRandomView extends wasmclient.ClientView {
 
 	public async call(): Promise<GetRandomResults> {
-        const res = new GetRandomResults();
+		const res = new GetRandomResults();
 		await this.callView("getRandom", null, res);
 		return res;
 	}
@@ -395,7 +395,7 @@ export class GetRandomResults extends wasmclient.Results {
 export class IotaBalanceView extends wasmclient.ClientView {
 
 	public async call(): Promise<IotaBalanceResults> {
-        const res = new IotaBalanceResults();
+		const res = new IotaBalanceResults();
 		await this.callView("iotaBalance", null, res);
 		return res;
 	}
@@ -424,7 +424,7 @@ export class MapValueView extends wasmclient.ClientView {
 	public async call(): Promise<MapValueResults> {
 		this.args.mandatory(ArgKey);
 		this.args.mandatory(ArgName);
-        const res = new MapValueResults();
+		const res = new MapValueResults();
 		await this.callView("mapValue", this.args, res);
 		return res;
 	}

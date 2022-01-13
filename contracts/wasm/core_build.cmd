@@ -1,4 +1,5 @@
 @echo off
+go install ../../tools/schema
 cd ..\..\packages\vm\wasmlib
 schema -core -go -rust -ts -client -force
 del /s /q d:\work\node_modules\wasmlib\*.* >nul:

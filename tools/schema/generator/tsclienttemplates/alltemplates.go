@@ -13,7 +13,6 @@ var Templates = []map[string]string{
 	config, // always first one
 	common,
 	eventsTs,
-	funcsTs,
 	indexTs,
 	serviceTs,
 }
