@@ -326,7 +326,7 @@ func TestDeployNativeContract(t *testing.T) {
 	ch := env.NewChain(nil, "chain1")
 
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-	//userAgentID := iscp.NewAgentID(userAddr, 0)
+	// userAgentID := iscp.NewAgentID(userAddr, 0)
 
 	// get more iotas for originator
 	originatorBalance := env.L1AddressBalances(ch.OriginatorAddress).Iotas

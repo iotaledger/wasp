@@ -194,7 +194,7 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 	defer checkLedger(state, "DebitFromAccount OUT")
 
 	if !debitFromAccount(account, assets) {
-		panic(ErrNotEnoughFunds)
+		panic(xerrors.Errorf(" agentID: %s. %w", agentID.String(), ErrNotEnoughFunds))
 	}
 	if !debitFromAccount(getTotalL2AssetsAccount(state), assets) {
 		panic("debitFromAccount: inconsistent ledger state")
@@ -256,7 +256,7 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 
 func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, assets *iscp.Assets) {
 	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, assets) {
-		panic(ErrNotEnoughFunds)
+		panic(xerrors.Errorf(" agentID: %s. %w", fromAgentID.String(), ErrNotEnoughFunds))
 	}
 }
 
@@ -546,6 +546,7 @@ func MoveFoundryBetweenAccounts(state kv.KVStore, agentIDFrom, agentIDTo *iscp.A
 func HasFoundry(state kv.KVStoreReader, agentID *iscp.AgentID, sn uint32) bool {
 	return hasFoundry(getAccountFoundriesR(state, agentID), sn)
 }
+
 func hasFoundry(account *collections.ImmutableMap, sn uint32) bool {
 	return account.MustHasAt(util.Uint32To4Bytes(sn))
 }

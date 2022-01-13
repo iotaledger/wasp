@@ -23,7 +23,7 @@ var Processor = Contract.Processor(initialize,
 	FuncCallPanicViewEPFromView.WithHandler(testCallPanicViewEPFromView),
 
 	FuncDoNothing.WithHandler(doNothing),
-	//FuncSendToAddress.WithHandler(sendToAddress),
+	// FuncSendToAddress.WithHandler(sendToAddress),
 
 	FuncWithdrawToChain.WithHandler(withdrawToChain),
 	FuncCallOnChain.WithHandler(callOnChain),
@@ -75,7 +75,7 @@ var (
 	FuncWithdrawToChain = coreutil.Func("withdrawToChain")
 
 	FuncDoNothing = coreutil.Func("doNothing")
-	//FuncSendToAddress = coreutil.Func("sendToAddress")
+	// FuncSendToAddress = coreutil.Func("sendToAddress")
 	FuncJustView = coreutil.ViewFunc("justView")
 
 	FuncCallOnChain  = coreutil.Func("callOnChain")

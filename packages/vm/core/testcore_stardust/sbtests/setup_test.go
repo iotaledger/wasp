@@ -30,6 +30,7 @@ func init() {
 		panic("iscp.Hn(ScName) != HScName")
 	}
 }
+
 func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
 	core.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{Debug: DEBUG}).WithNativeContract(sbtestsc.Processor)
