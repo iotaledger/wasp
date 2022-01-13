@@ -60,11 +60,11 @@ func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 // Params:
 // - ParamAgentID. mandatory
 func transferAllowanceTo(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.Allowance())
+	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
 
 	targetAccount := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(ParamAgentID)
 	ctx.TransferAllowedFunds(targetAccount)
-	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.Allowance())
+	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.AllowanceAvailable())
 	return nil, nil
 }
 
@@ -75,24 +75,29 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	checkLedger(state, "accounts.withdraw.begin")
 
-	ctx.Requiref(!ctx.Allowance().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
+	ctx.Requiref(!ctx.AllowanceAvailable().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
 
 	if ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) {
 		// if the caller is on the same chain, do nothing
 		return nil, nil
 	}
 	// move all allowed funds to the account of the current contract context
-	ctx.TransferAllowedFunds(ctx.AccountID())
+	// before saving the allowance budget because after the transfer it is mutated
+	fundsToWithdraw := ctx.AllowanceAvailable().Clone()
+	remains := ctx.TransferAllowedFunds(ctx.AccountID())
+
+	// por las dudas
+	ctx.Requiref(remains.IsEmpty(), "internal: allowance left after must be empty")
 
 	ctx.Send(iscp.RequestParameters{
 		TargetAddress: ctx.Caller().Address(),
-		Assets:        ctx.Allowance(),
+		Assets:        fundsToWithdraw,
 		Metadata: &iscp.SendMetadata{
 			TargetContract: ctx.Caller().Hname(),
 			// other metadata parameters are not important for withdrawal
 		},
 	})
-	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.Allowance().String())
+	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
 	return nil, nil
 }
 
@@ -204,9 +209,14 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	ctx.Requiref(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
 
-	ctx.Privileged().DestroyFoundry(sn)
+	dustDepositFree := ctx.Privileged().DestroyFoundry(sn)
+
 	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
 	DeleteFoundryOutput(ctx.State(), sn)
+	// the dust deposit goes to the caller's account
+	CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
+		Iotas: dustDepositFree,
+	})
 	return nil, nil
 }
 
@@ -253,6 +263,7 @@ func foundryOutput(ctx iscp.SandboxView) (dict.Dict, error) {
 
 	sn := par.MustGetUint32(ParamFoundrySN)
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
+	ctx.Requiref(out != nil, "foundry #%d does not exist", sn)
 	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 	ctx.RequireNoError(err, "internal: error while serializing foundry output")
 	ret := dict.New()

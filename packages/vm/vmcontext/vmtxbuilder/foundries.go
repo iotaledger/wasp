@@ -62,39 +62,64 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) int64 {
 	txb.MustBalanced("ModifyNativeTokenSupply: IN")
 	sn := tokenID.FoundrySerialNumber()
-	nt, ok := txb.invokedFoundries[sn]
-	if !ok {
-		// load foundry output from the state
-		foundryOutput, inp := txb.loadFoundry(sn)
-		if foundryOutput == nil {
-			panic(ErrFoundryDoesNotExist)
-		}
-		nt = &foundryInvoked{
-			serialNumber: foundryOutput.SerialNumber,
-			input:        *inp,
-			in:           foundryOutput,
-			out:          cloneFoundryOutput(foundryOutput),
-		}
+	f := txb.ensureFoundry(sn)
+	if f == nil {
+		panic(ErrFoundryDoesNotExist)
 	}
 	// check if the loaded foundry matches the tokenID
-	if *tokenID != nt.in.MustNativeTokenID() {
+	if *tokenID != f.in.MustNativeTokenID() {
 		panic(xerrors.Errorf("%v: requested token ID: %s, foundry token id: %s",
-			ErrCantModifySupplyOfTheToken, tokenID.String(), nt.in.MustNativeTokenID().String()))
+			ErrCantModifySupplyOfTheToken, tokenID.String(), f.in.MustNativeTokenID().String()))
 	}
 	// check the supply bounds
-	newSupply := big.NewInt(0).Add(nt.out.CirculatingSupply, delta)
-	if newSupply.Cmp(big.NewInt(0)) < 0 || newSupply.Cmp(nt.out.MaximumSupply) > 0 {
+	newSupply := big.NewInt(0).Add(f.out.CirculatingSupply, delta)
+	if newSupply.Cmp(big.NewInt(0)) < 0 || newSupply.Cmp(f.out.MaximumSupply) > 0 {
 		panic(ErrNativeTokenSupplyOutOffBounds)
 	}
 	// accrue/adjust this token balance in the internal outputs
 	adjustment := txb.addNativeTokenBalanceDelta(tokenID, delta)
 	// update the supply and foundry record in the builder
-	nt.out.CirculatingSupply = newSupply
-	txb.invokedFoundries[sn] = nt
+	f.out.CirculatingSupply = newSupply
+	txb.invokedFoundries[sn] = f
 
-	adjustment += int64(nt.in.Amount) - int64(nt.out.Amount)
+	adjustment += int64(f.in.Amount) - int64(f.out.Amount)
 	txb.MustBalanced("ModifyNativeTokenSupply: OUT")
 	return adjustment
+}
+
+func (txb *AnchorTransactionBuilder) ensureFoundry(sn uint32) *foundryInvoked {
+	if f, ok := txb.invokedFoundries[sn]; ok {
+		return f
+	}
+	// load foundry output from the state
+	foundryOutput, inp := txb.loadFoundry(sn)
+	if foundryOutput == nil {
+		return nil
+	}
+	f := &foundryInvoked{
+		serialNumber: foundryOutput.SerialNumber,
+		input:        *inp,
+		in:           foundryOutput,
+		out:          cloneFoundryOutput(foundryOutput),
+	}
+	txb.invokedFoundries[sn] = f
+	return f
+}
+
+// DestroyFoundry destroys existing foundry. Return dust deposit
+func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
+	txb.MustBalanced("ModifyNativeTokenSupply: IN")
+	f := txb.ensureFoundry(sn)
+	if f == nil {
+		panic(ErrFoundryDoesNotExist)
+	}
+	if f.in == nil {
+		panic(ErrCantDestroyFoundryBeingCreated)
+	}
+	f.out = nil
+	// return dust deposit to accounts
+	txb.addDeltaIotasToTotal(f.in.Amount)
+	return f.in.Amount
 }
 
 func (txb *AnchorTransactionBuilder) nextFoundrySerialNumber() uint32 {
@@ -181,21 +206,7 @@ func cloneFoundryOutput(f *iotago.FoundryOutput) *iotago.FoundryOutput {
 	if f == nil {
 		return nil
 	}
-	ret := &iotago.FoundryOutput{
-		Address:           f.Address,
-		Amount:            f.Amount,
-		NativeTokens:      f.NativeTokens.Clone(),
-		SerialNumber:      f.SerialNumber,
-		TokenTag:          f.TokenTag,
-		CirculatingSupply: new(big.Int).Set(f.CirculatingSupply),
-		MaximumSupply:     new(big.Int).Set(f.MaximumSupply),
-		TokenScheme:       f.TokenScheme,
-		Blocks:            nil,
-	}
-	if !identicalFoundries(f, ret) {
-		panic("cloneFoundryOutput: very bad")
-	}
-	return ret
+	return f.Clone().(*iotago.FoundryOutput)
 }
 
 // identicalFoundries assumes use case and does consistency checks

@@ -160,6 +160,7 @@ const (
 	MintTokensGasBudgetIotas      = 1000
 	DestroyTokensGasBudgetIotas   = 1000
 	SendToL2AccountGasBudgetIotas = 1000
+	DestroyFoundryGasBudgetIotas  = 1000
 )
 
 func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {
@@ -225,6 +226,14 @@ func toFoundrySN(foundry interface{}) uint32 {
 		return f.FoundrySerialNumber()
 	}
 	panic(fmt.Sprintf("toFoundrySN: type %T not supported", foundry))
+}
+
+func (ch *Chain) DestroyFoundry(sn uint32, user *cryptolib.KeyPair) error {
+	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryDestroy.Name,
+		accounts.ParamFoundrySN, sn).
+		WithGasBudget(DestroyFoundryGasBudgetIotas)
+	_, err := ch.PostRequestSync(req, user)
+	return err
 }
 
 func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair) error {
