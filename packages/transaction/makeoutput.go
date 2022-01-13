@@ -44,7 +44,7 @@ func MakeExtendedOutput(
 	metadata *iscp.RequestMetadata,
 	options *iscp.SendOptions,
 	rentStructure *iotago.RentStructure,
-	notAutoAdjustToDustRequirement ...bool,
+	suppressAutoAdjustToDustRequirement ...bool,
 ) (*iotago.ExtendedOutput, error) {
 	if assets == nil {
 		assets = &iscp.Assets{}
@@ -73,7 +73,7 @@ func MakeExtendedOutput(
 	// Adjust to minimum dust deposit, if needed
 	requiredDustDeposit := ret.VByteCost(rentStructure, nil)
 	if ret.Amount < requiredDustDeposit {
-		if len(notAutoAdjustToDustRequirement) == 0 || (len(notAutoAdjustToDustRequirement) > 0 && !notAutoAdjustToDustRequirement[0]) {
+		if len(suppressAutoAdjustToDustRequirement) == 0 || (len(suppressAutoAdjustToDustRequirement) > 0 && !suppressAutoAdjustToDustRequirement[0]) {
 			// adjust the amount to the minimum required
 			ret.Amount = requiredDustDeposit
 		}
