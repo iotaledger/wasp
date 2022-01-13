@@ -1,8 +1,6 @@
 package vm
 
 import (
-	"time"
-
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -15,33 +13,61 @@ import (
 )
 
 type VMRunner interface {
-	Run(task *VMTask) (results []*RequestResult, err error)
+	Run(task *VMTask)
 }
 
 // VMTask is task context (for batch of requests). It is used to pass parameters and take results
 // It is assumed that all requests/inputs are unlock-able by aliasAddress of provided AnchorOutput
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
-	ACSSessionID             uint64
-	Processors               *processors.Cache
-	AnchorOutput             *iotago.AliasOutput
-	AnchorOutputID           iotago.UTXOInput
-	RentStructure            *iotago.RentStructure
-	VirtualStateAccess       state.VirtualStateAccess
-	SolidStateBaseline       coreutil.StateBaseline
-	Requests                 []iscp.Request
-	ProcessedRequestsCount   uint16
-	TimeAssumption           iscp.TimeData
-	Entropy                  hashing.HashValue
-	ValidatorFeeTarget       *iscp.AgentID
-	Log                      *logger.Logger
-	ResultTransactionEssence *iotago.TransactionEssence // if not nil it is a normal block
-	RotationAddress          iotago.Address             // if not nil, it is a rotation
-	StartTime                time.Time
+	// INPUTS:
+
+	ACSSessionID       uint64
+	Processors         *processors.Cache
+	AnchorOutput       *iotago.AliasOutput
+	AnchorOutputID     iotago.UTXOInput
+	RentStructure      *iotago.RentStructure
+	SolidStateBaseline coreutil.StateBaseline
+	Requests           []iscp.Request
+	TimeAssumption     iscp.TimeData
+	Entropy            hashing.HashValue
+	ValidatorFeeTarget *iscp.AgentID
+
+	// INPUTS_OUTPUTS:
+
+	// VirtualStateAccess is the initial state of the chain, which is also
+	// mutated during the execution of the task
+	VirtualStateAccess state.VirtualStateAccess
+	Log                *logger.Logger
+
+	// OUTPUTS:
+
+	// RotationAddress is the next address after a rotation, or nil if there is no rotation
+	RotationAddress iotago.Address
+	// TransactionEssence is the transaction essence for the next block,
+	// or nil if the task does not produce a normal block
+	ResultTransactionEssence *iotago.TransactionEssence
+	// Results contains one result for each non-skipped request
+	Results []*RequestResult
+	// If not nil, VMError is a fatal error that prevented the execution of the task
+	VMError error
 }
 
 type RequestResult struct {
-	Return  dict.Dict
-	Error   error
+	// Request is the corresponding request in the task
+	Request iscp.Request
+	// Return is the return value of the call
+	Return dict.Dict
+	// Error is the error produced by the call, if any
+	Error error
+	// Receipt is the receipt produced after executing the request
 	Receipt *blocklog.RequestReceipt
+}
+
+func (task *VMTask) GetProcessedRequestIDs() []iscp.RequestID {
+	ret := make([]iscp.RequestID, len(task.Results))
+	for i, res := range task.Results {
+		ret[i] = res.Request.ID()
+	}
+	return ret
 }

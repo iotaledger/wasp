@@ -47,10 +47,10 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 		SolidStateBaseline: ch.GlobalSync.GetSolidIndexBaseline(),
 	}
 
-	results, err := ch.Env.vmRunner.Run(task)
-	require.NoError(ch.Env.T, err)
+	ch.Env.vmRunner.Run(task)
+	require.NoError(ch.Env.T, task.VMError)
 
-	if task.ProcessedRequestsCount == 0 {
+	if len(task.Results) == 0 {
 		// TODO gracefully process empty blocks in Solo
 		ch.Log.Panicf("EMPTY BLOCKS not supported by Solo")
 	}
@@ -86,7 +86,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 	if task.RotationAddress == nil {
 		// normal state transition
 		ch.State = task.VirtualStateAccess
-		ch.settleStateTransition(tx, iscp.TakeRequestIDs(reqs[0:task.ProcessedRequestsCount]...))
+		ch.settleStateTransition(tx, task.GetProcessedRequestIDs())
 	} else {
 		anchor, _, err := transaction.GetAnchorFromTransaction(tx)
 		require.NoError(ch.Env.T, err)
@@ -94,7 +94,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 		ch.Log.Infof("ROTATED STATE CONTROLLER to %s", anchor.StateController)
 	}
 
-	return
+	return task.Results
 }
 
 func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []iscp.RequestID) {

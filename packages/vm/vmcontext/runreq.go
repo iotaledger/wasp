@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
@@ -57,7 +58,13 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 			// load gas and fee policy, calculate and set gas budget
 			vmctx.prepareGasBudget()
 			// run the contract program
-			result = vmctx.callTheContract()
+			receipt, callRet, callErr := vmctx.callTheContract()
+			result = &vm.RequestResult{
+				Request: req,
+				Receipt: receipt,
+				Return:  callRet,
+				Error:   callErr,
+			}
 		},
 		vmtxbuilder.ErrInputLimitExceeded,
 		vmtxbuilder.ErrOutputLimitExceeded,
@@ -107,7 +114,7 @@ func (vmctx *VMContext) prepareGasBudget() {
 }
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
-func (vmctx *VMContext) callTheContract() (result *vm.RequestResult) {
+func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict, callErr error) {
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
@@ -120,14 +127,13 @@ func (vmctx *VMContext) callTheContract() (result *vm.RequestResult) {
 			if panicErr == nil {
 				return
 			}
-			result = &vm.RequestResult{Error: panicErr}
+			callErr = panicErr
 			vmctx.Debugf("%v", panicErr)
 			vmctx.Debugf(string(debug.Stack()))
 		}()
-		callRet, callErr := vmctx.callFromRequest()
-		result = &vm.RequestResult{Return: callRet, Error: callErr}
+		callRet, callErr = vmctx.callFromRequest()
 	}()
-	if result.Error != nil {
+	if callErr != nil {
 		// panic happened during VM plugin call. Restore the state
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		vmctx.currentStateUpdate = snapMutations
@@ -135,7 +141,7 @@ func (vmctx *VMContext) callTheContract() (result *vm.RequestResult) {
 	// charge gas fee no matter what
 	vmctx.chargeGasFee()
 	// write receipt no matter what
-	result.Receipt = vmctx.writeReceiptToBlockLog(result.Error)
+	receipt = vmctx.writeReceiptToBlockLog(callErr)
 	return
 }
 

@@ -232,6 +232,8 @@ func (c *consensus) prepareVMTask(reqs []iscp.Calldata) *vm.VMTask {
 		Log:                c.log,
 	}
 	task.OnFinish = func(_ dict.Dict, err error, vmError error) {
+		// TODO: OnFinish was dropped; move this block to the goroutine that calls vmRunner.Run()
+		// TODO: vmError is now task.VMError
 		if vmError != nil {
 			c.log.Errorf("runVM OnFinish callback: VM task failed: %v", vmError)
 			return
@@ -241,6 +243,7 @@ func (c *consensus) prepareVMTask(reqs []iscp.Calldata) *vm.VMTask {
 		c.EnqueueVMResultMsg(&messages.VMResultMsg{
 			Task: task,
 		})
+		// TODO: use c.workflow.GetVMStartedTime() instead
 		elapsed := time.Since(task.StartTime)
 		c.consensusMetrics.RecordVMRunTime(elapsed)
 	}

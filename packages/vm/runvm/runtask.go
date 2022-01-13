@@ -11,16 +11,16 @@ import (
 
 type VMRunner struct{}
 
-func (r VMRunner) Run(task *vm.VMTask) (results []*vm.RequestResult, err error) {
+func (r VMRunner) Run(task *vm.VMTask) {
 	// optimistic read panic catcher for the whole VM task
-	err = util.CatchPanicReturnError(
-		func() { results = runTask(task) },
+	err := util.CatchPanicReturnError(
+		func() { runTask(task) },
 		coreutil.ErrorStateInvalidated,
 	)
 	if err != nil {
+		task.VMError = err
 		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
 	}
-	return
 }
 
 func NewVMRunner() vm.VMRunner {
@@ -28,7 +28,7 @@ func NewVMRunner() vm.VMRunner {
 }
 
 // runTask runs batch of requests on VM
-func runTask(task *vm.VMTask) (results []*vm.RequestResult) {
+func runTask(task *vm.VMTask) {
 	vmctx := vmcontext.CreateVMContext(task)
 
 	var numOffLedger, numSuccess uint16
@@ -43,13 +43,12 @@ func runTask(task *vm.VMTask) (results []*vm.RequestResult) {
 				req.ID().String(), skipReason)
 			continue
 		}
-		results = append(results, result)
+		task.Results = append(task.Results, result)
 		reqIndexInTheBlock++
 		if req.IsOffLedger() {
 			numOffLedger++
 		}
 
-		task.ProcessedRequestsCount++
 		if result.Error == nil {
 			numSuccess++
 		} else {
@@ -57,11 +56,13 @@ func runTask(task *vm.VMTask) (results []*vm.RequestResult) {
 		}
 	}
 
+	numProcessed := uint16(len(task.Results))
+
 	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
-		task.ProcessedRequestsCount, numSuccess, numOffLedger)
+		numProcessed, numSuccess, numOffLedger)
 
 	blockIndex, stateCommitment, timestamp, rotationAddr := vmctx.CloseVMContext(
-		task.ProcessedRequestsCount, numSuccess, numOffLedger)
+		numProcessed, numSuccess, numOffLedger)
 
 	task.Log.Debugf("closed VMContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
 		blockIndex, stateCommitment, timestamp, rotationAddr)
@@ -85,7 +86,6 @@ func runTask(task *vm.VMTask) (results []*vm.RequestResult) {
 		task.ResultTransactionEssence = nil
 		task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
-	return
 }
 
 // checkTotalAssets asserts if assets on transaction equals assets on ledger

@@ -6,19 +6,15 @@ package solo
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-
-	"github.com/iotaledger/wasp/packages/util"
-
-	"github.com/iotaledger/wasp/packages/transaction"
-
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
 )
