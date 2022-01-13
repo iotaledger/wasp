@@ -13,12 +13,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRootBasic(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t)
 	chain := env.NewChain(nil, "chain1")
 
 	chain.CheckChain()
@@ -26,7 +26,7 @@ func TestRootBasic(t *testing.T) {
 }
 
 func TestRootRepeatInit(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t)
 	chain := env.NewChain(nil, "chain1")
 
 	chain.CheckChain()
@@ -37,7 +37,7 @@ func TestRootRepeatInit(t *testing.T) {
 }
 
 func TestGetInfo(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t)
 	chain := env.NewChain(nil, "chain1")
 
 	chainID, ownerAgentID, contracts := chain.GetInfo()
@@ -59,7 +59,7 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestDeployExample(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Processor)
+	env := solo.New(t).WithNativeContract(sbtestsc.Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	name := "testInc"
@@ -93,7 +93,7 @@ func TestDeployExample(t *testing.T) {
 }
 
 func TestDeployDouble(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Processor)
+	env := solo.New(t).WithNativeContract(sbtestsc.Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	name := "testInc"
@@ -126,20 +126,28 @@ func TestDeployDouble(t *testing.T) {
 }
 
 func TestChangeOwnerAuthorized(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t)
 	chain := env.NewChain(nil, "chain1")
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name, governance.ParamChainOwner, newOwnerAgentID)
-	req.AddAssetsIotas(1)
+
+	req := solo.NewCallParams(
+		governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
+		string(governance.ParamChainOwner), newOwnerAgentID,
+	).WithGasBudget(1000).
+		AddAssetsIotas(1000)
+
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	_, ownerAgentID, _ := chain.GetInfo()
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
 
-	req = solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).AddAssetsIotas(1)
+	req = solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).
+		WithGasBudget(1000).
+		AddAssetsIotas(1000)
+
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
@@ -148,7 +156,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t)
 	chain := env.NewChain(nil, "chain1")
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
