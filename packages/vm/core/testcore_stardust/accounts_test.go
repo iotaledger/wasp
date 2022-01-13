@@ -650,16 +650,23 @@ func TestTransferAndHarvest(t *testing.T) {
 }
 
 func TestFoundryDestroy(t *testing.T) {
-	v := initTest(t)
-	sn, _, err := v.ch.NewFoundryParams(1_000_000).
-		WithUser(v.user).
-		CreateFoundry()
-	require.NoError(t, err)
+	t.Run("destroy existing", func(t *testing.T) {
+		v := initTest(t)
+		sn, _, err := v.ch.NewFoundryParams(1_000_000).
+			WithUser(v.user).
+			CreateFoundry()
+		require.NoError(t, err)
 
-	err = v.ch.DestroyFoundry(sn, v.user)
-	require.NoError(t, err)
-	_, err = v.ch.GetFoundryOutput(sn)
-	testmisc.RequireErrorToBe(t, err, "does not exist")
+		err = v.ch.DestroyFoundry(sn, v.user)
+		require.NoError(t, err)
+		_, err = v.ch.GetFoundryOutput(sn)
+		testmisc.RequireErrorToBe(t, err, "does not exist")
+	})
+	t.Run("destroy fail", func(t *testing.T) {
+		v := initTest(t)
+		err := v.ch.DestroyFoundry(2, v.user)
+		testmisc.RequireErrorToBe(t, err, "not controlled by the caller")
+	})
 }
 
 // TestCirculatingSupplyBurn belongs to iota.go
