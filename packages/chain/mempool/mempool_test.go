@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	//iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
@@ -22,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	//	"go.uber.org/zap/zapcore"
 )
 
 func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.OptimisticStateReader, state.VirtualStateAccess) {
@@ -34,13 +33,9 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 	return ret, vs
 }
 
-func getRequestsOnLedger(t *testing.T, amount int) ([]*iscp.OnLedgerRequestData, *cryptolib.KeyPair) {
+func getRequestsOnLedger(t *testing.T, amount int) []*iscp.OnLedgerRequestData {
 	utxo := utxodb.New()
-	//keyPair, addr := utxo.NewKeyPairByIndex(0)
 	var err error
-	//_, err := utxo.GetFundsFromFaucet(addr)
-	//require.NoError(t, err)
-
 	addr := tpkg.RandEd25519Address()
 	requestParams := iscp.RequestParameters{
 		TargetAddress: tpkg.RandEd25519Address(),
@@ -60,7 +55,7 @@ func getRequestsOnLedger(t *testing.T, amount int) ([]*iscp.OnLedgerRequestData,
 		result[i], err = iscp.OnLedgerFromUTXO(output, outputID)
 		require.NoError(t, err)
 	}
-	return result, nil
+	return result
 }
 
 type MockMempoolMetrics struct {
@@ -113,7 +108,7 @@ func TestAddRequest(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(rdr, log, mempoolMetrics)
 	require.NotNil(t, pool)
-	requests, _ := getRequestsOnLedger(t, 1)
+	requests := getRequestsOnLedger(t, 1)
 
 	pool.ReceiveRequests(requests[0])
 	require.True(t, pool.WaitRequestInPool(requests[0].ID()))
@@ -133,7 +128,7 @@ func TestAddRequestInvalidState(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(rdr, log, mempoolMetrics)
 	require.NotNil(t, pool)
-	requests, _ := getRequestsOnLedger(t, 1)
+	requests := getRequestsOnLedger(t, 1)
 
 	pool.ReceiveRequests(requests[0])
 	require.False(t, pool.WaitRequestInPool(requests[0].ID(), 100*time.Millisecond))
@@ -162,7 +157,7 @@ func TestAddRequestTwice(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(rdr, log, mempoolMetrics)
 	require.NotNil(t, pool)
-	requests, _ := getRequestsOnLedger(t, 1)
+	requests := getRequestsOnLedger(t, 1)
 
 	pool.ReceiveRequests(requests[0])
 	require.True(t, pool.WaitRequestInPool(requests[0].ID(), 200*time.Millisecond))
@@ -184,33 +179,25 @@ func TestAddRequestTwice(t *testing.T) {
 }
 
 // Test if adding off ledger requests works as expected
-/*func TestAddOffLedgerRequest(t *testing.T) {
+func TestAddOffLedgerRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	testlogger.WithLevel(log, zapcore.InfoLevel, false)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(rdr, log, mempoolMetrics)
 	require.NotNil(t, pool)
-	onLedgerRequests, keyPair := getRequestsOnLedger(t, 2)
 
-	offFromOnLedgerFun := func(onLedger *request.OnLedger) *request.OffLedger {
-		target := onLedger.Target()
-		return request.NewOffLedger(iscp.RandomChainID(), target.Contract, target.EntryPoint, onLedger.Args())
-	}
-	offLedgerRequestSigned := offFromOnLedgerFun(onLedgerRequests[1])
-	offLedgerRequestSigned.Sign(keyPair)
-
+	offLedgerRequest := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("dummyContract"), iscp.Hn("dummyEP"), dict.New(), 0)
 	require.EqualValues(t, 0, mempoolMetrics.offLedgerRequestCounter)
-	pool.ReceiveRequests(offLedgerRequestSigned)
-	require.True(t, pool.WaitRequestInPool(offLedgerRequestSigned.ID(), 200*time.Millisecond))
+	pool.ReceiveRequests(offLedgerRequest)
+	require.True(t, pool.WaitRequestInPool(offLedgerRequest.ID(), 200*time.Millisecond))
 	stats := pool.Info()
 	require.EqualValues(t, 1, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 1, stats.TotalPool)
 	require.EqualValues(t, 1, stats.ReadyCounter)
 	require.EqualValues(t, 1, mempoolMetrics.offLedgerRequestCounter)
-}*/
+}
 
 // Test if processed request cannot be added to mempool
 func TestProcessedRequest(t *testing.T) {
@@ -229,7 +216,7 @@ func TestProcessedRequest(t *testing.T) {
 	require.EqualValues(t, 0, stats.TotalPool)
 	require.EqualValues(t, 0, stats.ReadyCounter)
 
-	requests, _ := getRequestsOnLedger(t, 1)
+	requests := getRequestsOnLedger(t, 1)
 
 	// artificially put request log record into the state
 	rec := &blocklog.RequestReceipt{
@@ -260,7 +247,7 @@ func TestAddRemoveRequests(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(rdr, log, mempoolMetrics)
 	require.NotNil(t, pool)
-	requests, _ := getRequestsOnLedger(t, 6)
+	requests := getRequestsOnLedger(t, 6)
 
 	pool.ReceiveRequests(
 		requests[0],
@@ -309,12 +296,12 @@ func TestAddRemoveRequests(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(rdr, testlogger.NewLogger(t), mempoolMetrics)
 	require.NotNil(t, pool)
-	requests, _ := getRequestsOnLedger(t, 6)
+	requests := getRequestsOnLedger(t, 6)
 
 	now := time.Now()
-	requests[1].Output().(*ledgerstate.ExtendedLockedOutput).WithTimeLock(now.Add(-2 * time.Hour))
-	requests[2].Output().(*ledgerstate.ExtendedLockedOutput).WithTimeLock(now)
-	requests[3].Output().(*ledgerstate.ExtendedLockedOutput).WithTimeLock(now.Add(2 * time.Hour))
+	requests[1].Output().(*iotago.ExtendedOutput).WithTimeLock(now.Add(-2 * time.Hour))
+	requests[2].Output().(*iotago.ExtendedOutput).WithTimeLock(now)
+	requests[3].Output().(*iotago.ExtendedOutput).WithTimeLock(now.Add(2 * time.Hour))
 
 	testStatsFun := func() { // Info does not change after requests are added to the mempool
 		stats := pool.Info()
@@ -411,13 +398,13 @@ func TestAddRemoveRequests(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(rdr, testlogger.NewLogger(t), mempoolMetrics)
 	require.NotNil(t, pool)
-	requests, _ := getRequestsOnLedger(t, 3)
+	requests := getRequestsOnLedger(t, 3)
 
 	address := ledgerstate.NewAliasAddress([]byte{1, 2, 3})
 	validDeadline := time.Now().Add(FallbackDeadlineMinAllowedInterval).Add(time.Second)
 	pastDeadline := time.Now().Add(-time.Second)
-	requests[1].Output().(*ledgerstate.ExtendedLockedOutput).WithFallbackOptions(address, validDeadline)
-	requests[2].Output().(*ledgerstate.ExtendedLockedOutput).WithFallbackOptions(address, pastDeadline)
+	requests[1].Output().(*iotago.ExtendedOutput).WithFallbackOptions(address, validDeadline)
+	requests[2].Output().(*iotago.ExtendedOutput).WithFallbackOptions(address, pastDeadline)
 
 	testStatsFun := func() { // Info does not change after requests are added to the mempool
 		stats := pool.Info()
@@ -456,7 +443,7 @@ func TestReadyFromIDs(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(rdr, testlogger.NewLogger(t), mempoolMetrics)
 	require.NotNil(t, pool)
-	requests, _ := getRequestsOnLedger(t, 6)
+	requests := getRequestsOnLedger(t, 6)
 
 	pool.ReceiveRequests(
 		requests[0],
@@ -538,7 +525,7 @@ func TestRotateRequest(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(rdr, testlogger.NewLogger(t), mempoolMetrics)
 	require.NotNil(t, pool)
-	requests, _ := getRequestsOnLedger(t, 6)
+	requests := getRequestsOnLedger(t, 6)
 
 	pool.ReceiveRequests(
 		requests[0],
