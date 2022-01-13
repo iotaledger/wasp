@@ -13,8 +13,9 @@ func ExtendedOutputFromPostData(
 	senderContract iscp.Hname,
 	par iscp.RequestParameters,
 	rentStructure *iotago.RentStructure,
-) *iotago.ExtendedOutput {
-	ret := MakeExtendedOutput(
+	disableAutoAdjustDustDeposit ...bool,
+) (*iotago.ExtendedOutput, error) {
+	ret, err := MakeExtendedOutput(
 		par.TargetAddress,
 		senderAddress,
 		par.Assets,
@@ -28,12 +29,14 @@ func ExtendedOutputFromPostData(
 		},
 		par.Options,
 		rentStructure,
+		disableAutoAdjustDustDeposit...,
 	)
-	return ret
+	return ret, err
 }
 
 // MakeExtendedOutput creates new ExtendedOutput from input parameters.
-// Adjusts dust deposit if needed and returns flag if adjusted
+// Auto adjusts minimal dust deposit if the notAutoAdjust flag is absent or false
+// If auto adjustment to dust is disabled and not enough iotas, returns an error
 func MakeExtendedOutput(
 	targetAddress iotago.Address,
 	senderAddress iotago.Address,
@@ -41,7 +44,8 @@ func MakeExtendedOutput(
 	metadata *iscp.RequestMetadata,
 	options *iscp.SendOptions,
 	rentStructure *iotago.RentStructure,
-) *iotago.ExtendedOutput {
+	disableAutoAdjustDustDeposit ...bool,
+) (*iotago.ExtendedOutput, error) {
 	if assets == nil {
 		assets = &iscp.Assets{}
 	}
@@ -66,12 +70,19 @@ func MakeExtendedOutput(
 		panic(" send options FeatureBlocks not implemented yet")
 	}
 
-	// Adjust to minimum dust deposit
-	neededDustDeposit := ret.VByteCost(rentStructure, nil)
-	if ret.Amount < neededDustDeposit {
-		ret.Amount = neededDustDeposit
+	// Adjust to minimum dust deposit, if needed
+	requiredDustDeposit := ret.VByteCost(rentStructure, nil)
+	if ret.Amount < requiredDustDeposit {
+		if len(disableAutoAdjustDustDeposit) == 0 || (len(disableAutoAdjustDustDeposit) > 0 && !disableAutoAdjustDustDeposit[0]) {
+			// adjust the amount to the minimum required
+			ret.Amount = requiredDustDeposit
+		}
 	}
-	return ret
+	if ret.Amount < requiredDustDeposit {
+		return nil, xerrors.Errorf("%v: available %d < required %d iotas",
+			ErrNotEnoughIotasForDustDeposit, ret.Amount, requiredDustDeposit)
+	}
+	return ret, nil
 }
 
 func AssetsFromOutput(o iotago.Output) *iscp.Assets {
