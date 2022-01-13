@@ -36,13 +36,14 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 
 func getRequestsOnLedger(t *testing.T, amount int) ([]*iscp.OnLedgerRequestData, *cryptolib.KeyPair) {
 	utxo := utxodb.New()
-	keyPair, addr := utxo.NewKeyPairByIndex(0)
-	_, err := utxo.GetFundsFromFaucet(addr)
-	require.NoError(t, err)
+	//keyPair, addr := utxo.NewKeyPairByIndex(0)
+	var err error
+	//_, err := utxo.GetFundsFromFaucet(addr)
+	//require.NoError(t, err)
 
-	_, targetAddr := utxo.NewKeyPairByIndex(1)
+	addr := tpkg.RandEd25519Address()
 	requestParams := iscp.RequestParameters{
-		TargetAddress: targetAddr,
+		TargetAddress: tpkg.RandEd25519Address(),
 		Assets:        nil,
 		Metadata: &iscp.SendMetadata{
 			TargetContract: iscp.Hn("dummyTargetContract"),
@@ -59,7 +60,7 @@ func getRequestsOnLedger(t *testing.T, amount int) ([]*iscp.OnLedgerRequestData,
 		result[i], err = iscp.OnLedgerFromUTXO(output, outputID)
 		require.NoError(t, err)
 	}
-	return result, &keyPair
+	return result, nil
 }
 
 type MockMempoolMetrics struct {
