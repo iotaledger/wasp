@@ -71,15 +71,16 @@ func MakeExtendedOutput(
 	}
 
 	// Adjust to minimum dust deposit, if needed
-	neededDustDeposit := ret.VByteCost(rentStructure, nil)
-	adjustToDustRequirement := len(notAutoAdjustToDustRequirement) == 0 ||
-		(len(notAutoAdjustToDustRequirement) > 0 && !notAutoAdjustToDustRequirement[0])
-	if ret.Amount < neededDustDeposit && adjustToDustRequirement {
-		ret.Amount = neededDustDeposit
+	requiredDustDeposit := ret.VByteCost(rentStructure, nil)
+	if ret.Amount < requiredDustDeposit {
+		if len(notAutoAdjustToDustRequirement) == 0 || (len(notAutoAdjustToDustRequirement) > 0 && !notAutoAdjustToDustRequirement[0]) {
+			// adjust the amount to the minimum required
+			ret.Amount = requiredDustDeposit
+		}
 	}
-	if ret.Amount < neededDustDeposit {
+	if ret.Amount < requiredDustDeposit {
 		return nil, xerrors.Errorf("%v: available %d < required %d iotas",
-			ErrNotEnoughIotasForDustDeposit, ret.Amount, neededDustDeposit)
+			ErrNotEnoughIotasForDustDeposit, ret.Amount, requiredDustDeposit)
 	}
 	return ret, nil
 }
