@@ -3,8 +3,6 @@ package vmcontext
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"golang.org/x/xerrors"
 )
 
 // Send implements sandbox function of sending cross-chain request
@@ -13,17 +11,16 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 		panic(ErrAssetsCantBeEmptyInSend)
 	}
 	// create extended output with adjusted dust deposit
-	out := transaction.ExtendedOutputFromPostData(
+	out, err := transaction.ExtendedOutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,
 		vmctx.task.RentStructure,
+		true, // will return an error if not enough iotas for dust deposit
 	)
-	// the output must have exactly the amount of iotas specified by the user
-	// If it is different it means some iotas were added to adjust for dust requirements. Not good
-	if par.Assets.Iotas != out.Amount {
-		panic(xerrors.Errorf("Send: %v: needed at least %d, got %d",
-			accounts.ErrNotEnoughIotasForDustDeposit, out.Amount, par.Assets.Iotas))
+	if err != nil {
+		// only possible if not provided enough iotas for dust deposit
+		panic(err)
 	}
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: begin")
 	// this call cannot panic due to not enough iotas for dust because
