@@ -69,10 +69,10 @@ type VMContext struct {
 }
 
 type callContext struct {
-	caller           *iscp.AgentID // calling agent
-	contract         iscp.Hname    // called contract
-	params           dict.Dict     // params passed
-	allowanceRemains *iscp.Assets  // MUTABLE: allowance budget left after TransferAllowedFunds
+	caller             *iscp.AgentID // calling agent
+	contract           iscp.Hname    // called contract
+	params             dict.Dict     // params passed
+	allowanceAvailable *iscp.Assets  // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
 type blockContext struct {
