@@ -209,8 +209,7 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	ctx.Requiref(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
 
-	dustDepositFree, err := ctx.Privileged().DestroyFoundry(sn)
-	ctx.RequireNoError(err, "destroyFoundry")
+	dustDepositFree := ctx.Privileged().DestroyFoundry(sn)
 
 	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
 	DeleteFoundryOutput(ctx.State(), sn)
@@ -264,6 +263,7 @@ func foundryOutput(ctx iscp.SandboxView) (dict.Dict, error) {
 
 	sn := par.MustGetUint32(ParamFoundrySN)
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
+	ctx.Requiref(out != nil, "foundry #%d does not exist", sn)
 	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 	ctx.RequireNoError(err, "internal: error while serializing foundry output")
 	ret := dict.New()

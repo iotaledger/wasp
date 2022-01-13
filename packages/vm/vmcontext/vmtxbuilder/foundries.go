@@ -62,19 +62,9 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) int64 {
 	txb.MustBalanced("ModifyNativeTokenSupply: IN")
 	sn := tokenID.FoundrySerialNumber()
-	f, ok := txb.invokedFoundries[sn]
-	if !ok {
-		// load foundry output from the state
-		foundryOutput, inp := txb.loadFoundry(sn)
-		if foundryOutput == nil {
-			panic(ErrFoundryDoesNotExist)
-		}
-		f = &foundryInvoked{
-			serialNumber: foundryOutput.SerialNumber,
-			input:        *inp,
-			in:           foundryOutput,
-			out:          cloneFoundryOutput(foundryOutput),
-		}
+	f := txb.ensureFoundry(sn)
+	if f == nil {
+		panic(ErrFoundryDoesNotExist)
 	}
 	// check if the loaded foundry matches the tokenID
 	if *tokenID != f.in.MustNativeTokenID() {
@@ -97,33 +87,39 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	return adjustment
 }
 
+func (txb *AnchorTransactionBuilder) ensureFoundry(sn uint32) *foundryInvoked {
+	if f, ok := txb.invokedFoundries[sn]; ok {
+		return f
+	}
+	// load foundry output from the state
+	foundryOutput, inp := txb.loadFoundry(sn)
+	if foundryOutput == nil {
+		return nil
+	}
+	f := &foundryInvoked{
+		serialNumber: foundryOutput.SerialNumber,
+		input:        *inp,
+		in:           foundryOutput,
+		out:          cloneFoundryOutput(foundryOutput),
+	}
+	txb.invokedFoundries[sn] = f
+	return f
+}
+
 // DestroyFoundry destroys existing foundry. Return dust deposit
-func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) (uint64, error) {
+func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
 	txb.MustBalanced("ModifyNativeTokenSupply: IN")
-	f, ok := txb.invokedFoundries[sn]
-	if !ok {
-		// load foundry output from the state
-		foundryOutput, inp := txb.loadFoundry(sn)
-		if foundryOutput == nil {
-			panic(ErrFoundryDoesNotExist)
-		}
-		if !util.IsZeroBigInt(foundryOutput.CirculatingSupply) {
-			return 0, ErrCantDestroyFoundryWithSupply
-		}
-		f = &foundryInvoked{
-			serialNumber: foundryOutput.SerialNumber,
-			input:        *inp,
-			in:           foundryOutput,
-			out:          nil,
-		}
+	f := txb.ensureFoundry(sn)
+	if f == nil {
+		panic(ErrFoundryDoesNotExist)
 	}
 	if f.in == nil {
-		return 0, ErrCantDestroyFoundryBeingCreated
+		panic(ErrCantDestroyFoundryBeingCreated)
 	}
 	f.out = nil
 	// return dust deposit to accounts
 	txb.addDeltaIotasToTotal(f.in.Amount)
-	return f.in.Amount, nil
+	return f.in.Amount
 }
 
 func (txb *AnchorTransactionBuilder) nextFoundrySerialNumber() uint32 {
@@ -210,21 +206,7 @@ func cloneFoundryOutput(f *iotago.FoundryOutput) *iotago.FoundryOutput {
 	if f == nil {
 		return nil
 	}
-	ret := &iotago.FoundryOutput{
-		Address:           f.Address,
-		Amount:            f.Amount,
-		NativeTokens:      f.NativeTokens.Clone(),
-		SerialNumber:      f.SerialNumber,
-		TokenTag:          f.TokenTag,
-		CirculatingSupply: new(big.Int).Set(f.CirculatingSupply),
-		MaximumSupply:     new(big.Int).Set(f.MaximumSupply),
-		TokenScheme:       f.TokenScheme,
-		Blocks:            nil,
-	}
-	if !identicalFoundries(f, ret) {
-		panic("cloneFoundryOutput: very bad")
-	}
-	return ret
+	return f.Clone().(*iotago.FoundryOutput)
 }
 
 // identicalFoundries assumes use case and does consistency checks

@@ -35,7 +35,7 @@ func (vmctx *VMContext) CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.T
 	return vmctx.txbuilder.CreateNewFoundry(scheme, tag, maxSupply, metadata)
 }
 
-func (vmctx *VMContext) DestroyFoundry(sn uint32) (uint64, error) {
+func (vmctx *VMContext) DestroyFoundry(sn uint32) uint64 {
 	vmctx.mustBeCalledFromContract(accounts.Contract)
 	return vmctx.txbuilder.DestroyFoundry(sn)
 }

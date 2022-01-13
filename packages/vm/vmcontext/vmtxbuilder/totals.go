@@ -121,11 +121,11 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 
 // Totals check consistency. If input total equals with output totals, returns (iota total, native token totals, true)
 // Otherwise returns (0, nil, false)
-func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionTotals, bool) {
+func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionTotals, error) {
 	totalsIN := txb.sumInputs()
 	totalsOUT := txb.sumOutputs()
-	balanced := totalsIN.BalancedWith(totalsOUT)
-	return totalsIN, totalsOUT, balanced
+	err := totalsIN.BalancedWith(totalsOUT)
+	return totalsIN, totalsOUT, err
 }
 
 // TotalIotasInOutputs returns a) total iotas owned by SCs and b) total iotas locked as dust deposit
@@ -155,19 +155,18 @@ var DebugTxBuilder = func() bool { return true }() // trick linter
 
 func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
 	if DebugTxBuilder {
-		_, _, balanced := txb.Totals()
-		if !balanced {
-			ins, outs, _ := txb.Totals()
-			fmt.Printf("================= MustBalanced [%s] \ninTotals: %v\noutTotals: %v\n", checkpoint, ins, outs)
-			panic(xerrors.Errorf("internal: %v [%s]", ErrFatalTxBuilderNotBalanced, checkpoint))
+		ins, outs, err := txb.Totals()
+		if err != nil {
+			fmt.Printf("================= MustBalanced [%s]: %v \ninTotals: %v\noutTotals: %v\n", err, checkpoint, ins, outs)
+			panic(xerrors.Errorf("[%s] %v: %v ", checkpoint, ErrFatalTxBuilderNotBalanced, err))
 		}
 	}
 }
 
 func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp.Assets, checkpoint string) {
-	_, outTotal, balanced := txb.Totals()
-	if !balanced {
-		panic(ErrFatalTxBuilderNotBalanced)
+	_, outTotal, err := txb.Totals()
+	if err != nil {
+		panic(xerrors.Errorf("%v: %v", ErrFatalTxBuilderNotBalanced, err))
 	}
 	if outTotal.TotalIotasInL2Accounts != l2Totals.Iotas {
 		panic(xerrors.Errorf("'%s': iotas L1 (%d) != iotas L2 (%d): %w",
@@ -186,11 +185,15 @@ func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp
 	}
 }
 
-func (t *TransactionTotals) BalancedWith(another *TransactionTotals) bool {
+func (t *TransactionTotals) BalancedWith(another *TransactionTotals) error {
 	tIn := t.TotalIotasInL2Accounts + t.TotalIotasInDustDeposit
 	tOut := another.TotalIotasInL2Accounts + another.TotalIotasInDustDeposit + another.SentOutIotas
 	if tIn != tOut {
-		return false
+		msgIn := fmt.Sprintf("in.TotalIotasInL2Accounts: %d\n+ in.TotalIotasInDustDeposit: %d",
+			t.TotalIotasInL2Accounts, t.TotalIotasInDustDeposit)
+		msgOut := fmt.Sprintf("out.TotalIotasInL2Accounts: %d\n+ out.TotalIotasInDustDeposit: %d\n+ out.SentOutIotas: %d",
+			another.TotalIotasInL2Accounts, another.TotalIotasInDustDeposit, another.SentOutIotas)
+		return xerrors.Errorf("%v:\n %s\n    !=\n%s", ErrFatalTxBuilderNotBalanced, msgIn, msgOut)
 	}
 	tokenIDs := make(map[iotago.NativeTokenID]bool)
 	for id := range t.TokenCirculatingSupplies {
@@ -235,8 +238,8 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) bool {
 
 		begin.Add(begin, delta)
 		if begin.Cmp(end) != 0 {
-			return false
+			return xerrors.Errorf("%v: token %s not balanced: in (%d) != out (%d)", ErrFatalTxBuilderNotBalanced, id, begin, end)
 		}
 	}
-	return true
+	return nil
 }

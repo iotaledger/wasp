@@ -658,7 +658,8 @@ func TestFoundryDestroy(t *testing.T) {
 
 	err = v.ch.DestroyFoundry(sn, v.user)
 	require.NoError(t, err)
-	//testmisc.RequireErrorToBe(t, err, "implement me") // TODO
+	_, err = v.ch.GetFoundryOutput(sn)
+	testmisc.RequireErrorToBe(t, err, "does not exist")
 }
 
 // TestCirculatingSupplyBurn belongs to iota.go
