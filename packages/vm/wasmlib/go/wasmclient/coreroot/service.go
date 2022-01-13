@@ -138,7 +138,7 @@ type CoreRootService struct {
 
 func NewCoreRootService(cl *wasmclient.ServiceClient, chainID string) (*CoreRootService, error) {
 	s := &CoreRootService{}
-	err := s.Service.Init(cl, chainID, 0xcebf5908, nil)
+	err := s.Service.Init(cl, chainID, 0xcebf5908)
 	return s, err
 }
 

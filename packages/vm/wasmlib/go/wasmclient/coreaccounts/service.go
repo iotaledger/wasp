@@ -171,7 +171,7 @@ type CoreAccountsService struct {
 
 func NewCoreAccountsService(cl *wasmclient.ServiceClient, chainID string) (*CoreAccountsService, error) {
 	s := &CoreAccountsService{}
-	err := s.Service.Init(cl, chainID, 0x3c4b5e02, nil)
+	err := s.Service.Init(cl, chainID, 0x3c4b5e02)
 	return s, err
 }
 

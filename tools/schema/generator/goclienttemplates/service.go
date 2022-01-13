@@ -20,16 +20,11 @@ type $PkgName$+Service struct {
 
 func New$PkgName$+Service(cl *wasmclient.ServiceClient, chainID string) (*$PkgName$+Service, error) {
 	s := &$PkgName$+Service{}
-$#set eventHandlers EventHandlers
-$#if core noEventHandlers
-	err := s.Service.Init(cl, chainID, 0x$hscName, $eventHandlers)
+	err := s.Service.Init(cl, chainID, 0x$hscName)
 	return s, err
 }
+$#if events newEventHandler
 $#each func serviceFunction
-`,
-	// *******************************
-	"noEventHandlers": `
-$#set eventHandlers nil
 `,
 	// *******************************
 	"constArg": `
@@ -38,6 +33,13 @@ $#set eventHandlers nil
 	// *******************************
 	"constRes": `
 	Res$FldName = "$fldAlias"
+`,
+	// *******************************
+	"newEventHandler": `
+
+func (s *$PkgName$+Service) NewEventHandler() *$PkgName$+Events {
+	return &$PkgName$+Events{}
+}
 `,
 	// *******************************
 	"funcStruct": `

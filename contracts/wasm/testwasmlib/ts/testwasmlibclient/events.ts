@@ -7,21 +7,22 @@
 
 import * as wasmclient from "wasmclient"
 
-type TestWasmLibHandlers = Map<string, (evt: TestWasmLibEvents, msg: string[]) => void>;
+const testWasmLibHandlers = new Map<string, (evt: TestWasmLibEvents, msg: string[]) => void>([
+	["testwasmlib.test", (evt: TestWasmLibEvents, msg: string[]) => evt.test(new EventTest(msg))],
+]);
 
 export class TestWasmLibEvents implements wasmclient.IEventHandler {
-	private eventHandlers: TestWasmLibHandlers = new Map([
-		["testwasmlib.test", (evt: TestWasmLibEvents, msg: string[]) => evt.onTestWasmLibTest(new EventTest(msg))],
-	]);
+	test: (EventTest) => void = () => {};
 
 	public callHandler(topic: string, params: string[]): void {
-		const handler = this.eventHandlers.get(topic);
+		const handler = testWasmLibHandlers.get(topic);
 		if (handler !== undefined) {
 			handler(this, params);
 		}
 	}
 
-	public onTestWasmLibTest(event: EventTest): void {
+	public onTestWasmLibTest(handler: (EventTest) => void): void {
+		this.test = handler;
 	}
 }
 

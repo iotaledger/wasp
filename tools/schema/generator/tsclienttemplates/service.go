@@ -4,7 +4,7 @@ var serviceTs = map[string]string{
 	// *******************************
 	"service.ts": `
 $#emit importWasmLib
-$#if core else importEvents
+$#if events importEvents
 
 $#each params constArg
 
@@ -16,16 +16,11 @@ $#each func funcStruct
 export class $PkgName$+Service extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
-$#set eventHandlers events.eventHandlers
-$#if core noEventHandlers
-		super(cl, 0x$hscName, $eventHandlers);
+		super(cl, 0x$hscName);
 	}
+$#if events newEventHandler
 $#each func serviceFunction
 }
-`,
-	// *******************************
-	"noEventHandlers": `
-$#set eventHandlers new Map()
 `,
 	// *******************************
 	"constArg": `
@@ -34,6 +29,13 @@ const Arg$FldName = "$fldAlias";
 	// *******************************
 	"constRes": `
 const Res$FldName = "$fldAlias";
+`,
+	// *******************************
+	"newEventHandler": `
+
+	public newEventHandler(): events.$PkgName$+Events {
+		return new events.$PkgName$+Events();
+	}
 `,
 	// *******************************
 	"funcStruct": `

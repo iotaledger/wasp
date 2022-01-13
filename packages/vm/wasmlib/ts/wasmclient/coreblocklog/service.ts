@@ -6,6 +6,7 @@
 // Change the json schema instead
 
 import * as wasmclient from "wasmclient"
+import * as events from "./events"
 
 const ArgBlockIndex = "n";
 const ArgContractHname = "h";
@@ -284,7 +285,11 @@ export class IsRequestProcessedResults extends wasmclient.Results {
 export class CoreBlockLogService extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
-		super(cl, 0xf538ef2b, new Map());
+		super(cl, 0xf538ef2b);
+	}
+
+	public newEventHandlers(): events.CoreBlockLogEvents {
+		return new events.CoreBlockLogEvents();
 	}
 
 	public controlAddresses(): ControlAddressesView {

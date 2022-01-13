@@ -5,15 +5,15 @@ var eventsTs = map[string]string{
 	"events.ts": `
 $#emit importWasmLib
 
-type $PkgName$+Handlers = Map<string, (evt: $PkgName$+Events, msg: string[]) => void>;
+const $pkgName$+Handlers = new Map<string, (evt: $PkgName$+Events, msg: string[]) => void>([
+$#each events eventHandler
+]);
 
 export class $PkgName$+Events implements wasmclient.IEventHandler {
-	private eventHandlers: $PkgName$+Handlers = new Map([
-$#each events eventHandler
-	]);
+$#each events eventHandlerMember
 
 	public callHandler(topic: string, params: string[]): void {
-		const handler = this.eventHandlers.get(topic);
+		const handler = $pkgName$+Handlers.get(topic);
 		if (handler !== undefined) {
 			handler(this, params);
 		}
@@ -24,12 +24,17 @@ $#each events eventClass
 `,
 	// *******************************
 	"eventHandler": `
-		["$package.$evtName", (evt: $PkgName$+Events, msg: string[]) => evt.on$PkgName$EvtName(new Event$EvtName(msg))],
+	["$package.$evtName", (evt: $PkgName$+Events, msg: string[]) => evt.$evtName(new Event$EvtName(msg))],
+`,
+	// *******************************
+	"eventHandlerMember": `
+	$evtName: (Event$EvtName) => void = () => {};
 `,
 	// *******************************
 	"funcSignature": `
 
-	public on$PkgName$EvtName(event: Event$EvtName): void {
+	public on$PkgName$EvtName(handler: (Event$EvtName) => void): void {
+		this.$evtName = handler;
 	}
 `,
 	// *******************************

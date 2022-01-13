@@ -36,25 +36,26 @@ func (m ResMap) Get(key string) []byte {
 	return m[kv.Key(key)]
 }
 
-type Service struct {
-	chainID    *iscp.ChainID
-	keyPair    *ed25519.KeyPair
-	scHname    iscp.Hname
-	waspClient *client.WaspClient
+type IEventHandler interface {
+	CallHandler(topic string, params []string)
 }
 
-func (s *Service) Init(svcClient *ServiceClient, chainID string, scHname uint32, eventHandlers map[string]func([]string)) (err error) {
+type Service struct {
+	chainID       *iscp.ChainID
+	eventHandlers []IEventHandler
+	keyPair       *ed25519.KeyPair
+	scHname       iscp.Hname
+	waspClient    *client.WaspClient
+}
+
+func (s *Service) Init(svcClient *ServiceClient, chainID string, scHname uint32) (err error) {
 	s.waspClient = svcClient.waspClient
 	s.scHname = iscp.Hname(scHname)
 	s.chainID, err = iscp.ChainIDFromString(chainID)
 	if err != nil {
 		return err
 	}
-	if len(eventHandlers) != 0 {
-		// TODO allow user to specify event handlers for core contracts?
-		return s.startEventHandlers(svcClient.eventPort, eventHandlers)
-	}
-	return nil
+	return s.startEventHandlers(svcClient.eventPort)
 }
 
 func (s *Service) AsClientFunc() ClientFunc {
@@ -103,6 +104,15 @@ func (s *Service) postRequestOnLedger(hFuncName uint32, args requestargs.Request
 	return Request{}
 }
 
+func (s *Service) Register(handler IEventHandler) {
+	for _, h := range s.eventHandlers {
+		if h == handler {
+			return
+		}
+	}
+	s.eventHandlers = append(s.eventHandlers, handler)
+}
+
 // overrides default contract name
 func (s *Service) ServiceContractName(contractName string) {
 	s.scHname = iscp.Hn(contractName)
@@ -112,11 +122,20 @@ func (s *Service) SignRequests(keyPair *ed25519.KeyPair) {
 	s.keyPair = keyPair
 }
 
+func (s *Service) Unegister(handler IEventHandler) {
+	for i, h := range s.eventHandlers {
+		if h == handler {
+			s.eventHandlers = append(s.eventHandlers[:i], s.eventHandlers[i+1:]...)
+			return
+		}
+	}
+}
+
 func (s *Service) WaitRequest(req Request) error {
 	return s.waspClient.WaitUntilRequestProcessed(s.chainID, *req.id, 1*time.Minute)
 }
 
-func (s *Service) startEventHandlers(eventPort string, handlers map[string]func([]string)) error {
+func (s *Service) startEventHandlers(eventPort string) error {
 	chMsg := make(chan []string, 20)
 	chDone := make(chan bool)
 	err := subscribe.Subscribe(eventPort, chMsg, chDone, true, "")
@@ -130,9 +149,10 @@ func (s *Service) startEventHandlers(eventPort string, handlers map[string]func(
 				fmt.Printf("%s\n", event)
 				if msgSplit[0] == "vmmsg" {
 					msg := strings.Split(msgSplit[3], "|")
-					handler, ok := handlers[msg[0]]
-					if ok {
-						handler(msg[1:])
+					topic := msg[0]
+					params := msg[1:]
+					for _, handler := range s.eventHandlers {
+						handler.CallHandler(topic, params)
 					}
 				}
 			}

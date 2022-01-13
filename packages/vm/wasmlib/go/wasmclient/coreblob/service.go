@@ -124,7 +124,7 @@ type CoreBlobService struct {
 
 func NewCoreBlobService(cl *wasmclient.ServiceClient, chainID string) (*CoreBlobService, error) {
 	s := &CoreBlobService{}
-	err := s.Service.Init(cl, chainID, 0xfd91bc63, nil)
+	err := s.Service.Init(cl, chainID, 0xfd91bc63)
 	return s, err
 }
 

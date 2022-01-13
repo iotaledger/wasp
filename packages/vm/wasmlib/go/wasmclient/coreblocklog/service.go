@@ -301,7 +301,7 @@ type CoreBlockLogService struct {
 
 func NewCoreBlockLogService(cl *wasmclient.ServiceClient, chainID string) (*CoreBlockLogService, error) {
 	s := &CoreBlockLogService{}
-	err := s.Service.Init(cl, chainID, 0xf538ef2b, nil)
+	err := s.Service.Init(cl, chainID, 0xf538ef2b)
 	return s, err
 }
 

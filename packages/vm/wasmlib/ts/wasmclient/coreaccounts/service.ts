@@ -6,6 +6,7 @@
 // Change the json schema instead
 
 import * as wasmclient from "wasmclient"
+import * as events from "./events"
 
 const ArgAgentID = "a";
 const ArgWithdrawAmount = "m";
@@ -157,7 +158,11 @@ export class TotalAssetsResults extends wasmclient.Results {
 export class CoreAccountsService extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
-		super(cl, 0x3c4b5e02, new Map());
+		super(cl, 0x3c4b5e02);
+	}
+
+	public newEventHandlers(): events.CoreAccountsEvents {
+		return new events.CoreAccountsEvents();
 	}
 
 	public deposit(): DepositFunc {

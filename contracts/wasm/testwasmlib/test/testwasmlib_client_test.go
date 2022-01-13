@@ -15,7 +15,7 @@ import (
 // the contract has already been deployed in some way, so
 // these values are usually available from elsewhere
 const (
-	myChainID = "tRA59jhoDG9QpXi7NcQ3phuQaaPqgXRBgXxK2Sy1FPGf"
+	myChainID = "pDtVgzXtTwc2B9bnrf2RbpWuexynqNiGU7waLknsgjWf"
 	mySeed    = "6C6tRksZDWeDTCzX4Q7R2hbpyFV86cSGLVxdkFKSB3sv"
 )
 
@@ -40,6 +40,11 @@ func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {
 
 func TestClientEvents(t *testing.T) {
 	svc := setupClient(t)
+	events := svc.NewEventHandler()
+	events.OnTestWasmLibTest(func(e *testwasmlibclient.EventTest) {
+		fmt.Printf("Name is %s\n", e.Name)
+	})
+	svc.Register(events)
 
 	// get new triggerEvent interface, pass params, and post the request
 	f := svc.TriggerEvent()
@@ -48,8 +53,8 @@ func TestClientEvents(t *testing.T) {
 	req1 := f.Post()
 	require.NoError(t, req1.Error())
 
-	// err := svc.WaitRequest(req1)
-	// require.NoError(t, err)
+	err := svc.WaitRequest(req1)
+	require.NoError(t, err)
 
 	// get new triggerEvent interface, pass params, and post the request
 	f = svc.TriggerEvent()
@@ -58,7 +63,7 @@ func TestClientEvents(t *testing.T) {
 	req2 := f.Post()
 	require.NoError(t, req2.Error())
 
-	err := svc.WaitRequest(req2)
+	err = svc.WaitRequest(req2)
 	require.NoError(t, err)
 }
 

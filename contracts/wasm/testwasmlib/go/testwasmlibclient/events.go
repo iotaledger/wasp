@@ -9,8 +9,23 @@ package testwasmlibclient
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
 
-var EventHandlers = map[string]func([]string){
-	"testwasmlib.test": onTestWasmLibTestThunk,
+var testWasmLibHandlers = map[string]func(*TestWasmLibEvents, []string){
+	"testwasmlib.test": func(evt *TestWasmLibEvents, msg []string) { evt.onTestWasmLibTestThunk(msg) },
+}
+
+type TestWasmLibEvents struct {
+	test func(e *EventTest)
+}
+
+func (h *TestWasmLibEvents) CallHandler(topic string, params []string) {
+	handler := testWasmLibHandlers[topic]
+	if handler != nil {
+		handler(h, params)
+	}
+}
+
+func (h *TestWasmLibEvents) OnTestWasmLibTest(handler func(e *EventTest)) {
+	h.test = handler
 }
 
 type EventTest struct {
@@ -19,10 +34,13 @@ type EventTest struct {
 	Name    string
 }
 
-func onTestWasmLibTestThunk(message []string) {
+func (h *TestWasmLibEvents) onTestWasmLibTestThunk(message []string) {
+	if h.test == nil {
+		return
+	}
 	e := &EventTest{}
 	e.Init(message)
 	e.Address = e.NextAddress()
 	e.Name = e.NextString()
-	OnTestWasmLibTest(e)
+	h.test(e)
 }

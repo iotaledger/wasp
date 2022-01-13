@@ -442,7 +442,11 @@ export class MapValueResults extends wasmclient.Results {
 export class TestWasmLibService extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
-		super(cl, 0x89703a45, events.eventHandlers);
+		super(cl, 0x89703a45);
+	}
+
+	public newEventHandler(): events.TestWasmLibEvents {
+		return new events.TestWasmLibEvents();
 	}
 
 	public arrayClear(): ArrayClearFunc {

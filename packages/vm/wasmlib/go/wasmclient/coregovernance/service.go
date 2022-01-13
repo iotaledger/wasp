@@ -321,7 +321,7 @@ type CoreGovernanceService struct {
 
 func NewCoreGovernanceService(cl *wasmclient.ServiceClient, chainID string) (*CoreGovernanceService, error) {
 	s := &CoreGovernanceService{}
-	err := s.Service.Init(cl, chainID, 0x17cf909f, nil)
+	err := s.Service.Init(cl, chainID, 0x17cf909f)
 	return s, err
 }
 

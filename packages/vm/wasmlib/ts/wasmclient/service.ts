@@ -63,6 +63,11 @@ export class Service {
     }
 
     public register(handler: IEventHandler): void {
+        for (let i = 0; i < this.eventHandlers.length; i++) {
+            if (this.eventHandlers[i] === handler) {
+                return;
+            }
+        }
         this.eventHandlers.push(handler);
     }
 

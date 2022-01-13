@@ -6,6 +6,7 @@
 // Change the json schema instead
 
 import * as wasmclient from "wasmclient"
+import * as events from "./events"
 
 const ArgBlobs = "this";
 const ArgField = "field";
@@ -120,7 +121,11 @@ export class ListBlobsResults extends wasmclient.Results {
 export class CoreBlobService extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
-		super(cl, 0xfd91bc63, new Map());
+		super(cl, 0xfd91bc63);
+	}
+
+	public newEventHandlers(): events.CoreBlobEvents {
+		return new events.CoreBlobEvents();
 	}
 
 	public storeBlob(): StoreBlobFunc {
