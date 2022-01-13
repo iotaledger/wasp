@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmclient from "wasmclient"
-import * as events from "./events"
 
 const ArgDeployer = "dp";
 const ArgDescription = "ds";
@@ -128,10 +127,6 @@ export class CoreRootService extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
 		super(cl, 0xcebf5908);
-	}
-
-	public newEventHandlers(): events.CoreRootEvents {
-		return new events.CoreRootEvents();
 	}
 
 	public deployContract(): DeployContractFunc {

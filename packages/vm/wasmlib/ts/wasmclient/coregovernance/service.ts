@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmclient from "wasmclient"
-import * as events from "./events"
 
 const ArgChainOwner = "oi";
 const ArgFeeColor = "fc";
@@ -304,10 +303,6 @@ export class CoreGovernanceService extends wasmclient.Service {
 
 	public constructor(cl: wasmclient.ServiceClient) {
 		super(cl, 0x17cf909f);
-	}
-
-	public newEventHandlers(): events.CoreGovernanceEvents {
-		return new events.CoreGovernanceEvents();
 	}
 
 	public addAllowedStateControllerAddress(): AddAllowedStateControllerAddressFunc {
