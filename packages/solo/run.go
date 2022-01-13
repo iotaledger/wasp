@@ -28,9 +28,15 @@ func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (results []*
 	return ch.runRequestsNolock(reqs, trace)
 }
 
-func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
-	ch.Log.Debugf("runRequestsNolock ('%s')", trace)
+func (ch *Chain) simulateRequest(req iscp.Request) (result *vm.RequestResult) {
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
 
+	task := ch.runTaskNoLock([]iscp.Request{req})
+	return task.Results[0]
+}
+
+func (ch *Chain) runTaskNoLock(reqs []iscp.Request) *vm.VMTask {
 	anchorOutput, anchorOutputID := ch.GetAnchorOutput()
 	task := &vm.VMTask{
 		Processors:         ch.proc,
@@ -49,6 +55,14 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 
 	ch.Env.vmRunner.Run(task)
 	require.NoError(ch.Env.T, task.VMError)
+
+	return task
+}
+
+func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
+	ch.Log.Debugf("runRequestsNolock ('%s')", trace)
+
+	task := ch.runTaskNoLock(reqs)
 
 	if len(task.Results) == 0 {
 		// TODO gracefully process empty blocks in Solo
