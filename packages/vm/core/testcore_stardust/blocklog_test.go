@@ -12,7 +12,7 @@ import (
 
 func TestBlockInfoLatest(t *testing.T) {
 	core.PrintWellKnownHnames()
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	bi := chain.GetLatestBlockInfo()
@@ -26,7 +26,7 @@ func TestBlockInfoLatest(t *testing.T) {
 
 func TestBlockInfo(t *testing.T) {
 	core.PrintWellKnownHnames()
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	bi, err := chain.GetBlockInfo(0)
@@ -49,7 +49,7 @@ func TestBlockInfo(t *testing.T) {
 }
 
 func TestBlockInfoLatestWithRequest(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 
 	chain := env.NewChain(nil, "chain1")
 	bi := chain.GetLatestBlockInfo()
@@ -68,7 +68,7 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 }
 
 func TestBlockInfoSeveral(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	const numReqs = 5
@@ -93,7 +93,7 @@ func TestBlockInfoSeveral(t *testing.T) {
 }
 
 func TestRequestIsProcessed(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
@@ -112,7 +112,7 @@ func TestRequestIsProcessed(t *testing.T) {
 }
 
 func TestRequestReceipt(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
@@ -137,7 +137,7 @@ func TestRequestReceipt(t *testing.T) {
 }
 
 func TestRequestReceiptsForBlocks(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
@@ -158,7 +158,7 @@ func TestRequestReceiptsForBlocks(t *testing.T) {
 }
 
 func TestRequestIDsForBlocks(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).

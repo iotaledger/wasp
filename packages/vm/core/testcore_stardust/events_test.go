@@ -66,7 +66,8 @@ func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) [
 }
 
 func TestGetEvents(t *testing.T) {
-	env := solo.New(t).WithNativeContract(inccounter.Processor)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
+		WithNativeContract(inccounter.Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.VarCounter, 0)
