@@ -60,8 +60,10 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 		transfer.Set(col, amount)
 		return true
 	})
-	if !o.wc.ctx.Send(o.address, transfer, nil) {
-		o.Panicf("failed to send to %s", o.address.Base58())
+	if len(transfer) != 0 {
+		if !o.wc.ctx.Send(o.address, transfer, nil) {
+			o.Panicf("failed to send to %s", o.address.Base58())
+		}
 	}
 }
 
