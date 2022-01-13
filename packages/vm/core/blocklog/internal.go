@@ -72,7 +72,7 @@ func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governi
 func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLookupKey) error {
 	// save lookup record for fast lookup
 	lookupTable := collections.NewMap(partition, prefixRequestLookupIndex)
-	digest := rec.RequestData.ID().LookupDigest()
+	digest := rec.Request.ID().LookupDigest()
 	var lst RequestLookupKeyList
 	digestExists, err := lookupTable.HasAt(digest[:])
 	if err != nil {
@@ -158,7 +158,7 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 		if err != nil {
 			return nil, err
 		}
-		if rec.RequestData.ID() == *reqID {
+		if rec.Request.ID() == *reqID {
 			rec.BlockIndex = lookupKey.BlockIndex()
 			rec.RequestIndex = lookupKey.RequestIndex()
 			return rec, nil
@@ -342,7 +342,7 @@ func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID)
 		a.Requiref(found, "inconsistency: request log record wasn't found by exact reference")
 		rec, err := RequestReceiptFromBytes(recBin)
 		a.RequireNoError(err)
-		if rec.RequestData.ID() == reqID {
+		if rec.Request.ID() == reqID {
 			return recBin, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex(), true
 		}
 	}

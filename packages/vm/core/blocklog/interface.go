@@ -306,7 +306,7 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
-	RequestData   iscp.Request // TODO request may be big (blobs). Do we want to store it all?
+	Request       iscp.Request // TODO request may be big (blobs). Do we want to store it all?
 	ErrorStr      string
 	GasBudget     uint64
 	GasBurned     uint64
@@ -341,7 +341,7 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	if ret.GasFeeCharged, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
-	if ret.RequestData, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
+	if ret.Request, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -354,7 +354,7 @@ func (r *RequestReceipt) Bytes() []byte {
 		WriteUint64(r.GasBudget).
 		WriteUint64(r.GasBurned).
 		WriteUint64(r.GasFeeCharged)
-	iscp.RequestDataToMarshalUtil(r.RequestData, mu)
+	iscp.RequestDataToMarshalUtil(r.Request, mu)
 	return mu.Bytes()
 }
 
@@ -365,20 +365,20 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 }
 
 func (r *RequestReceipt) String() string {
-	ret := fmt.Sprintf("ID: %s\n", r.RequestData.ID().String())
+	ret := fmt.Sprintf("ID: %s\n", r.Request.ID().String())
 	ret += fmt.Sprintf("Err: '%s'\n", r.ErrorStr)
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
-	ret += fmt.Sprintf("Request data: %s\n", r.RequestData.String())
+	ret += fmt.Sprintf("Call data: %s\n", r.Request.String())
 	return ret
 }
 
 func (r *RequestReceipt) Short() string {
 	prefix := "tx"
-	if r.RequestData.IsOffLedger() {
+	if r.Request.IsOffLedger() {
 		prefix = "api"
 	}
-	ret := fmt.Sprintf("%s/%s", prefix, r.RequestData.ID())
+	ret := fmt.Sprintf("%s/%s", prefix, r.Request.ID())
 	if r.Error() != nil {
 		ret += ": '" + r.ErrorStr + "'"
 	}

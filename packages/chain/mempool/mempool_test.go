@@ -6,6 +6,8 @@ import (
 
 	"go.uber.org/zap/zapcore"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -17,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -229,7 +232,7 @@ func TestProcessedRequest(t *testing.T) {
 
 	// artificially put request log record into the state
 	rec := &blocklog.RequestReceipt{
-		RequestData: requests[0],
+		Request: requests[0],
 	}
 	blocklogPartition := subrealm.New(wrt, kv.Key(blocklog.Contract.Hname().Bytes()))
 	err := blocklog.SaveRequestReceipt(blocklogPartition, rec, [6]byte{})

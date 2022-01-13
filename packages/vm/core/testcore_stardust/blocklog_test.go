@@ -128,7 +128,7 @@ func TestRequestReceipt(t *testing.T) {
 	receipt, ok := chain.GetRequestReceipt(reqs[0].ID())
 	require.True(t, ok)
 	a := reqs[0].Bytes()
-	b := receipt.RequestData.Bytes()
+	b := receipt.Request.Bytes()
 	require.Equal(t, a, b)
 	require.NoError(t, receipt.Error())
 	require.EqualValues(t, 2, receipt.BlockIndex)
@@ -153,7 +153,7 @@ func TestRequestReceiptsForBlocks(t *testing.T) {
 
 	recs := chain.GetRequestReceiptsForBlock(2)
 	require.EqualValues(t, 1, len(recs))
-	require.EqualValues(t, reqs[0].ID(), recs[0].RequestData.ID())
+	require.EqualValues(t, reqs[0].ID(), recs[0].Request.ID())
 	t.Logf("%s\n", recs[0].String())
 }
 

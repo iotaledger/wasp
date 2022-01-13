@@ -69,7 +69,7 @@ func logRequestsInBlock(index uint32) {
 }
 
 func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
-	req := receipt.RequestData
+	req := receipt.Request
 
 	feePrepaid := "no"
 	if req.IsFeePrepaid() {
