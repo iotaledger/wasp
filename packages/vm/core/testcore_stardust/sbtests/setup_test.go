@@ -33,7 +33,11 @@ func init() {
 
 func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
 	core.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{Debug: DEBUG}).WithNativeContract(sbtestsc.Processor)
+	env := solo.New(t, &solo.InitOptions{
+		Debug:                 DEBUG,
+		AutoAdjustDustDeposit: true,
+	}).
+		WithNativeContract(sbtestsc.Processor)
 	chain, _, _ := env.NewChainExt(keyPairOriginator, 10_000, "ch1")
 	err := chain.SendFromL1ToL2AccountIotas(solo.Saldo/2, chain.OriginatorAgentID, &chain.OriginatorPrivateKey)
 	require.NoError(t, err)

@@ -134,7 +134,7 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) {
 	var err error
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 		err = blocklog.SaveRequestReceipt(vmctx.State(), &blocklog.RequestReceipt{
-			RequestData:   vmctx.req,
+			Request:       vmctx.req,
 			ErrorStr:      errStr,
 			GasBudget:     vmctx.gasBudget,
 			GasBurned:     vmctx.gasBurned,

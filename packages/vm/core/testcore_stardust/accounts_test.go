@@ -30,7 +30,7 @@ func TestFoundries(t *testing.T) {
 	var senderAgentID *iscp.AgentID
 
 	initTest := func() {
-		env = solo.New(t)
+		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		env.EnablePublisher(true)
 		ch = env.NewChain(nil, "chain1")
 		defer env.WaitPublisher()
@@ -406,7 +406,7 @@ type testParams struct {
 
 func initTest(t *testing.T, initLoad ...uint64) *testParams {
 	ret := &testParams{}
-	ret.env = solo.New(t)
+	ret.env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 
 	ret.chainOwner, ret.chainOwnerAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(10))
 	ret.chainOwnerAgentID = iscp.NewAgentID(ret.chainOwnerAddr, 0)

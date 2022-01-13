@@ -12,7 +12,7 @@ import (
 
 func TestBlockInfoLatest(t *testing.T) {
 	core.PrintWellKnownHnames()
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	bi := chain.GetLatestBlockInfo()
@@ -26,7 +26,7 @@ func TestBlockInfoLatest(t *testing.T) {
 
 func TestBlockInfo(t *testing.T) {
 	core.PrintWellKnownHnames()
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	bi, err := chain.GetBlockInfo(0)
@@ -49,7 +49,7 @@ func TestBlockInfo(t *testing.T) {
 }
 
 func TestBlockInfoLatestWithRequest(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 
 	chain := env.NewChain(nil, "chain1")
 	bi := chain.GetLatestBlockInfo()
@@ -68,7 +68,7 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 }
 
 func TestBlockInfoSeveral(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	const numReqs = 5
@@ -93,7 +93,7 @@ func TestBlockInfoSeveral(t *testing.T) {
 }
 
 func TestRequestIsProcessed(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
@@ -112,7 +112,7 @@ func TestRequestIsProcessed(t *testing.T) {
 }
 
 func TestRequestReceipt(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
@@ -128,7 +128,7 @@ func TestRequestReceipt(t *testing.T) {
 	receipt, ok := chain.GetRequestReceipt(reqs[0].ID())
 	require.True(t, ok)
 	a := reqs[0].Bytes()
-	b := receipt.RequestData.Bytes()
+	b := receipt.Request.Bytes()
 	require.Equal(t, a, b)
 	require.NoError(t, receipt.Error())
 	require.EqualValues(t, 2, receipt.BlockIndex)
@@ -137,7 +137,7 @@ func TestRequestReceipt(t *testing.T) {
 }
 
 func TestRequestReceiptsForBlocks(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
@@ -153,12 +153,12 @@ func TestRequestReceiptsForBlocks(t *testing.T) {
 
 	recs := chain.GetRequestReceiptsForBlock(2)
 	require.EqualValues(t, 1, len(recs))
-	require.EqualValues(t, reqs[0].ID(), recs[0].RequestData.ID())
+	require.EqualValues(t, reqs[0].ID(), recs[0].Request.ID())
 	t.Logf("%s\n", recs[0].String())
 }
 
 func TestRequestIDsForBlocks(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).

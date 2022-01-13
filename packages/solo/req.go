@@ -191,7 +191,8 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 			},
 			Options: nil,
 		}},
-		RentStructure: ch.Env.utxoDB.RentStructure(),
+		RentStructure:                ch.Env.utxoDB.RentStructure(),
+		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
 	})
 	require.NoError(ch.Env.T, err)
 

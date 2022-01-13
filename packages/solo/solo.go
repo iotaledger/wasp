@@ -46,17 +46,18 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T                TestContext
-	logger           *logger.Logger
-	dbmanager        *dbmanager.DBManager
-	utxoDB           *utxodb.UtxoDB
-	glbMutex         sync.RWMutex
-	ledgerMutex      sync.RWMutex
-	chains           map[iscp.ChainID]*Chain
-	vmRunner         vm.VMRunner
-	publisherWG      sync.WaitGroup
-	publisherEnabled atomic.Bool
-	processorConfig  *processors.Config
+	T                            TestContext
+	logger                       *logger.Logger
+	dbmanager                    *dbmanager.DBManager
+	utxoDB                       *utxodb.UtxoDB
+	glbMutex                     sync.RWMutex
+	ledgerMutex                  sync.RWMutex
+	chains                       map[iscp.ChainID]*Chain
+	vmRunner                     vm.VMRunner
+	publisherWG                  sync.WaitGroup
+	publisherEnabled             atomic.Bool
+	processorConfig              *processors.Config
+	disableAutoAdjustDustDeposit bool
 }
 
 // Chain represents state of individual chain.
@@ -107,19 +108,21 @@ type Chain struct {
 }
 
 type InitOptions struct {
-	Debug           bool
-	PrintStackTrace bool
-	Seed            cryptolib.Seed
-	RentStructure   *iotago.RentStructure
-	Log             *logger.Logger
+	AutoAdjustDustDeposit bool
+	Debug                 bool
+	PrintStackTrace       bool
+	Seed                  cryptolib.Seed
+	RentStructure         *iotago.RentStructure
+	Log                   *logger.Logger
 }
 
 func defaultInitOptions() *InitOptions {
 	return &InitOptions{
-		Debug:           false,
-		PrintStackTrace: false,
-		Seed:            cryptolib.Seed{},
-		RentStructure:   testdeserparams.RentStructure(),
+		Debug:                 false,
+		PrintStackTrace:       false,
+		Seed:                  cryptolib.Seed{},
+		RentStructure:         testdeserparams.RentStructure(),
+		AutoAdjustDustDeposit: false, // is OFF by default
 	}
 }
 
@@ -152,15 +155,16 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	//})
 	//require.NoError(t, err)
 
-	initParams := utxodb.DefaultInitParams(opt.Seed[:]).WithRentStructure(opt.RentStructure)
+	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:]).WithRentStructure(opt.RentStructure)
 	ret := &Solo{
-		T:               t,
-		logger:          opt.Log,
-		dbmanager:       dbmanager.NewDBManager(opt.Log.Named("db"), true),
-		utxoDB:          utxodb.New(initParams),
-		chains:          make(map[iscp.ChainID]*Chain),
-		vmRunner:        runvm.NewVMRunner(),
-		processorConfig: processors.NewConfig(),
+		T:                            t,
+		logger:                       opt.Log,
+		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true),
+		utxoDB:                       utxodb.New(utxoDBinitParams),
+		chains:                       make(map[iscp.ChainID]*Chain),
+		vmRunner:                     runvm.NewVMRunner(),
+		processorConfig:              processors.NewConfig(),
+		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v, milestone index: #%d",

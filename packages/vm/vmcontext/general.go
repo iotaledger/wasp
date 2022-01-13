@@ -72,7 +72,7 @@ func (vmctx *VMContext) AccountID() *iscp.AgentID {
 }
 
 func (vmctx *VMContext) AllowanceAvailable() *iscp.Assets {
-	return vmctx.getCallContext().allowanceRemains
+	return vmctx.getCallContext().allowanceAvailable
 }
 
 func (vmctx *VMContext) isOnChainAccount(agentID *iscp.AgentID) bool {
@@ -107,7 +107,7 @@ func (vmctx *VMContext) targetAccountExists(agentID *iscp.AgentID) bool {
 }
 
 func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Assets) {
-	if !vmctx.getCallContext().allowanceRemains.SpendFromBudget(toSpend) {
+	if !vmctx.getCallContext().allowanceAvailable.SpendFromBudget(toSpend) {
 		panic(accounts.ErrNotEnoughAllowance)
 	}
 }

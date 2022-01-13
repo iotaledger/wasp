@@ -14,7 +14,7 @@ type NewRequestTransactionParams struct {
 	UnspentOutputIDs             []*iotago.UTXOInput
 	Requests                     []*iscp.RequestParameters
 	RentStructure                *iotago.RentStructure
-	SuspendAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
+	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
 }
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
@@ -50,7 +50,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			},
 			req.Options,
 			par.RentStructure,
-			par.SuspendAutoAdjustDustDeposit,
+			par.DisableAutoAdjustDustDeposit,
 		)
 		if err != nil {
 			return nil, err

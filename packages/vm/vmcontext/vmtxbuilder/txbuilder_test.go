@@ -34,7 +34,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 			Tokens: iotago.NativeTokens{{id, big.NewInt(int64(amountNative))}},
 		}
 	}
-	out := transaction.MakeExtendedOutput(
+	out, _ := transaction.MakeExtendedOutput(
 		txb.anchorOutput.AliasID.ToAddress(),
 		nil,
 		assets,
@@ -63,7 +63,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 			},
 		},
 	}
-	exout := transaction.ExtendedOutputFromPostData(
+	exout, _ := transaction.ExtendedOutputFromPostData(
 		txb.anchorOutput.AliasID.ToAddress(),
 		iscp.Hn("test"),
 		iscp.RequestParameters{
@@ -631,7 +631,7 @@ func TestDustDeposit(t *testing.T) {
 	})
 	t.Run("adjusts the output amount to the correct bytecost when needed", func(t *testing.T) {
 		assets := iscp.NewEmptyAssets()
-		out := transaction.MakeExtendedOutput(
+		out, _ := transaction.MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
@@ -643,7 +643,7 @@ func TestDustDeposit(t *testing.T) {
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
 		assets := iscp.NewAssets(10000, nil)
-		out := transaction.MakeExtendedOutput(
+		out, _ := transaction.MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
@@ -747,7 +747,7 @@ func TestSerDe(t *testing.T) {
 			GasBudget:      0,
 		}
 		assets := iscp.NewEmptyAssets()
-		out := transaction.MakeExtendedOutput(
+		out, _ := transaction.MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
