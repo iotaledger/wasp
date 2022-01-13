@@ -13,8 +13,9 @@ func ExtendedOutputFromPostData(
 	senderContract iscp.Hname,
 	par iscp.RequestParameters,
 	rentStructure *iotago.RentStructure,
-) *iotago.ExtendedOutput {
-	ret := MakeExtendedOutput(
+	suspendAutoAdjustDustDeposit ...bool,
+) (*iotago.ExtendedOutput, error) {
+	ret, err := MakeExtendedOutput(
 		par.TargetAddress,
 		senderAddress,
 		par.Assets,
@@ -28,12 +29,14 @@ func ExtendedOutputFromPostData(
 		},
 		par.Options,
 		rentStructure,
+		suspendAutoAdjustDustDeposit...,
 	)
-	return ret
+	return ret, err
 }
 
 // MakeExtendedOutput creates new ExtendedOutput from input parameters.
-// Adjusts dust deposit if needed and returns flag if adjusted
+// Auto adjusts minimal dust deposit if the notAutoAdjust flag is absent or false
+// If auto adjustment to dust is disabled and not enough iotas, returns an error
 func MakeExtendedOutput(
 	targetAddress iotago.Address,
 	senderAddress iotago.Address,
@@ -41,7 +44,8 @@ func MakeExtendedOutput(
 	metadata *iscp.RequestMetadata,
 	options *iscp.SendOptions,
 	rentStructure *iotago.RentStructure,
-) *iotago.ExtendedOutput {
+	notAutoAdjustToDustRequirement ...bool,
+) (*iotago.ExtendedOutput, error) {
 	if assets == nil {
 		assets = &iscp.Assets{}
 	}
@@ -66,12 +70,18 @@ func MakeExtendedOutput(
 		panic(" send options FeatureBlocks not implemented yet")
 	}
 
-	// Adjust to minimum dust deposit
+	// Adjust to minimum dust deposit, if needed
 	neededDustDeposit := ret.VByteCost(rentStructure, nil)
-	if ret.Amount < neededDustDeposit {
+	adjustToDustRequirement := len(notAutoAdjustToDustRequirement) == 0 ||
+		(len(notAutoAdjustToDustRequirement) > 0 && !notAutoAdjustToDustRequirement[0])
+	if ret.Amount < neededDustDeposit && adjustToDustRequirement {
 		ret.Amount = neededDustDeposit
 	}
-	return ret
+	if ret.Amount < neededDustDeposit {
+		return nil, xerrors.Errorf("%v: available %d < required %d iotas",
+			ErrNotEnoughIotasForDustDeposit, ret.Amount, neededDustDeposit)
+	}
+	return ret, nil
 }
 
 func AssetsFromOutput(o iotago.Output) *iscp.Assets {
