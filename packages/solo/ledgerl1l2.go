@@ -298,10 +298,7 @@ func (ch *Chain) SendFromL1ToL2Account(assets *iscp.Assets, target *iscp.AgentID
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, target)
 
-	req.AddAssets(assets).
-		AddAssetsIotas(SendToL2AccountGasBudgetIotas).
-		AddAllowance(assets).
-		WithGasBudget(SendToL2AccountGasBudgetIotas)
+	req.AddAssets(assets).WithGasBudget(SendToL2AccountGasBudgetIotas)
 	_, err := ch.PostRequestSync(req, user)
 	return err
 }
