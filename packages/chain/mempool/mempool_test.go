@@ -35,7 +35,6 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 
 func getRequestsOnLedger(t *testing.T, amount int) []*iscp.OnLedgerRequestData {
 	utxo := utxodb.New()
-	var err error
 	addr := tpkg.RandEd25519Address()
 	requestParams := iscp.RequestParameters{
 		TargetAddress: tpkg.RandEd25519Address(),
@@ -50,10 +49,11 @@ func getRequestsOnLedger(t *testing.T, amount int) []*iscp.OnLedgerRequestData {
 	}
 	result := make([]*iscp.OnLedgerRequestData, amount)
 	for i := range result {
-		output := transaction.ExtendedOutputFromPostData(addr, iscp.Hn("dummySenderContract"), requestParams, utxo.RentStructure())
+		output, err := transaction.ExtendedOutputFromPostData(addr, iscp.Hn("dummySenderContract"), requestParams, utxo.RentStructure())
+		require.NoError(t, err)
 		outputID := tpkg.RandOutputID(uint16(i)).UTXOInput()
 		result[i], err = iscp.OnLedgerFromUTXO(output, outputID)
-	require.NoError(t, err)
+		require.NoError(t, err)
 	}
 	return result
 }
