@@ -113,7 +113,7 @@ func getMaxBlobSize(ctx iscp.Sandbox) uint32 {
 	if err != nil {
 		ctx.Log().Panicf("error getting max blob size, %v", err)
 	}
-	maxBlobSize, err := codec.DecodeUint32(r.MustGet(governance.ParamMaxBlobSize), 0)
+	maxBlobSize, err := codec.DecodeUint32(r.MustGet(governance.ParamMaxBlobSizeUint32), 0)
 	if err != nil {
 		ctx.Log().Panicf("error getting max blob size, %v", err)
 	}

@@ -227,12 +227,12 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	} else {
 		// Iotas are used to pay the gas fee
 		tokensGuaranteed = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
-		// safely subtract the transfer from the sender to the target
-		if transfer := vmctx.req.Allowance(); transfer != nil {
-			if tokensGuaranteed < transfer.Iotas {
+		// safely subtract the allowed from the sender to the target
+		if allowed := vmctx.req.Allowance(); allowed != nil {
+			if tokensGuaranteed < allowed.Iotas {
 				tokensGuaranteed = 0
 			} else {
-				tokensGuaranteed -= transfer.Iotas
+				tokensGuaranteed -= allowed.Iotas
 			}
 		}
 	}

@@ -89,9 +89,9 @@ const (
 	// chain info
 	ParamChainID
 	ParamDescription
-	ParamMaxBlobSize
-	ParamMaxEventSize
-	ParamMaxEventsPerRequest
+	ParamMaxBlobSizeUint32
+	ParamMaxEventSizeUint16
+	ParamMaxEventsPerRequestUint16
 
 	ParamGetChainNodesAccessNodeCandidates
 	ParamGetChainNodesAccessNodes

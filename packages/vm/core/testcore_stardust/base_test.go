@@ -276,12 +276,14 @@ func TestEstimateGas(t *testing.T) {
 	env.EnablePublisher(true)
 	ch := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
+		governance.ParamMaxEventsPerRequestUint16, uint16(100)).
 		WithGasBudget(1000)
 
 	gasBurned, gasFeeCharged := ch.EstimateGas(req, nil)
 	require.NotZero(t, gasBurned)
 	require.NotZero(t, gasFeeCharged)
+	t.Logf("gasBurned: %d, gasFeeCharged: %d", gasBurned, gasFeeCharged)
 }
 
 func TestRepeatInit(t *testing.T) {

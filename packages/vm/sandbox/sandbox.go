@@ -93,6 +93,8 @@ func (s *sandbox) DeployContract(programHash hashing.HashValue, name, descriptio
 }
 
 func (s *sandbox) Event(msg string) {
+	// TODO why burn gas based on size, if it is burned by MustSaveEvent by bytes ?
+	//  Probably we should charge some fixed overhead for the call
 	s.Burn(gas.LogEvent(msg))
 	s.Log().Infof("event::%s -> '%s'", s.vmctx.CurrentContractHname(), msg)
 	s.vmctx.MustSaveEvent(s.vmctx.CurrentContractHname(), msg)

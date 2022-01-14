@@ -7,12 +7,22 @@ import (
 	"golang.org/x/xerrors"
 )
 
+func checkLength(d []byte, mustLen int, typeName string) error {
+	if len(d) != mustLen {
+		return xerrors.Errorf("%d bytes expected for '%s'", mustLen, typeName)
+	}
+	return nil
+}
+
 func DecodeInt8(b []byte, def ...int8) (int8, error) {
 	if b == nil {
 		if len(def) == 0 {
 			return 0, xerrors.Errorf("cannot decode nil bytes")
 		}
 		return def[0], nil
+	}
+	if err := checkLength(b, 1, "int8"); err != nil {
+		return 0, err
 	}
 	r, err := util.Uint8From1Bytes(b)
 	return int8(r), err
@@ -29,6 +39,9 @@ func DecodeUint8(b []byte, def ...uint8) (uint8, error) {
 		}
 		return def[0], nil
 	}
+	if err := checkLength(b, 1, "uint8"); err != nil {
+		return 0, err
+	}
 	return util.Uint8From1Bytes(b)
 }
 
@@ -42,6 +55,9 @@ func DecodeInt16(b []byte, def ...int16) (int16, error) {
 			return 0, xerrors.Errorf("cannot decode nil bytes")
 		}
 		return def[0], nil
+	}
+	if err := checkLength(b, 2, "int16"); err != nil {
+		return 0, err
 	}
 	r, err := util.Uint16From2Bytes(b)
 	return int16(r), err
@@ -58,6 +74,9 @@ func DecodeUint16(b []byte, def ...uint16) (uint16, error) {
 		}
 		return def[0], nil
 	}
+	if err := checkLength(b, 2, "uint16"); err != nil {
+		return 0, err
+	}
 	return util.Uint16From2Bytes(b)
 }
 
@@ -71,6 +90,9 @@ func DecodeInt32(b []byte, def ...int32) (int32, error) {
 			return 0, xerrors.Errorf("cannot decode nil bytes")
 		}
 		return def[0], nil
+	}
+	if err := checkLength(b, 4, "int32"); err != nil {
+		return 0, err
 	}
 	r, err := util.Uint32From4Bytes(b)
 	return int32(r), err
@@ -87,6 +109,9 @@ func DecodeUint32(b []byte, def ...uint32) (uint32, error) {
 		}
 		return def[0], nil
 	}
+	if err := checkLength(b, 4, "uint32"); err != nil {
+		return 0, err
+	}
 	return util.Uint32From4Bytes(b)
 }
 
@@ -100,6 +125,9 @@ func DecodeInt64(b []byte, def ...int64) (int64, error) {
 			return 0, xerrors.Errorf("cannot decode nil bytes")
 		}
 		return def[0], nil
+	}
+	if err := checkLength(b, 8, "int64"); err != nil {
+		return 0, err
 	}
 	r, err := util.Uint64From8Bytes(b)
 	return int64(r), err
@@ -115,6 +143,9 @@ func DecodeUint64(b []byte, def ...uint64) (uint64, error) {
 			return 0, xerrors.Errorf("cannot decode nil bytes")
 		}
 		return def[0], nil
+	}
+	if err := checkLength(b, 8, "uint64"); err != nil {
+		return 0, err
 	}
 	return util.Uint64From8Bytes(b)
 }
