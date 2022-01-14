@@ -271,6 +271,19 @@ func TestOkCall(t *testing.T) {
 	env.WaitPublisher()
 }
 
+func TestEstimateGas(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env.EnablePublisher(true)
+	ch := env.NewChain(nil, "chain1")
+
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
+		WithGasBudget(1000)
+
+	gasBurned, gasFeeCharged := ch.EstimateGas(req, nil)
+	require.NotZero(t, gasBurned)
+	require.NotZero(t, gasFeeCharged)
+}
+
 func TestRepeatInit(t *testing.T) {
 	t.Run("root", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})

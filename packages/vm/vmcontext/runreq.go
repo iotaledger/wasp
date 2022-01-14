@@ -15,7 +15,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
@@ -23,7 +25,7 @@ import (
 )
 
 // RunTheRequest processes each iscp.Request in the batch
-func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) error {
+func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (result *vm.RequestResult, err error) {
 	// prepare context for the request
 	vmctx.req = req
 	vmctx.requestIndex = requestIndex
@@ -39,7 +41,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) err
 	defer func() { vmctx.currentStateUpdate = nil }()
 
 	if err := vmctx.earlyCheckReasonToSkip(); err != nil {
-		return err
+		return nil, err
 	}
 	vmctx.loadChainConfig()
 
@@ -49,14 +51,20 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) err
 
 	// catches error which is not the request or contract fault
 	// If it occurs, the request is just skipped
-	err := util.CatchPanicReturnError(
+	err = util.CatchPanicReturnError(
 		func() {
 			// transfer all attached assets to the sender's account
 			vmctx.creditAssetsToChain()
 			// load gas and fee policy, calculate and set gas budget
 			vmctx.prepareGasBudget()
 			// run the contract program
-			vmctx.callTheContract()
+			receipt, callRet, callErr := vmctx.callTheContract()
+			result = &vm.RequestResult{
+				Request: req,
+				Receipt: receipt,
+				Return:  callRet,
+				Error:   callErr,
+			}
 		},
 		vmtxbuilder.ErrInputLimitExceeded,
 		vmtxbuilder.ErrOutputLimitExceeded,
@@ -66,11 +74,11 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) err
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
-		return err
+		return nil, err
 	}
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.assertConsistentL2WithL1TxBuilder("end RunTheRequest")
-	return nil
+	return result, nil
 }
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
@@ -106,28 +114,26 @@ func (vmctx *VMContext) prepareGasBudget() {
 }
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
-func (vmctx *VMContext) callTheContract() {
+func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict, callErr error) {
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
 	if vmctx.req.IsOffLedger() {
 		vmctx.updateOffLedgerRequestMaxAssumedNonce()
 	}
-	vmctx.lastError = nil
 	func() {
 		defer func() {
 			panicErr := checkVMPluginPanic(recover())
 			if panicErr == nil {
 				return
 			}
-			vmctx.lastError = panicErr
-			vmctx.lastResult = nil
-			vmctx.Debugf("%v", vmctx.lastError)
+			callErr = panicErr
+			vmctx.Debugf("%v", panicErr)
 			vmctx.Debugf(string(debug.Stack()))
 		}()
-		vmctx.lastResult, vmctx.lastError = vmctx.callFromRequest()
+		callRet, callErr = vmctx.callFromRequest()
 	}()
-	if vmctx.lastError != nil {
+	if callErr != nil {
 		// panic happened during VM plugin call. Restore the state
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		vmctx.currentStateUpdate = snapMutations
@@ -135,7 +141,8 @@ func (vmctx *VMContext) callTheContract() {
 	// charge gas fee no matter what
 	vmctx.chargeGasFee()
 	// write receipt no matter what
-	vmctx.writeReceiptToBlockLog(vmctx.lastError)
+	receipt = vmctx.writeReceiptToBlockLog(callErr)
+	return
 }
 
 func checkVMPluginPanic(r interface{}) error {

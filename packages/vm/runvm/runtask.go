@@ -3,10 +3,8 @@ package runvm
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/util"
-
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
@@ -20,11 +18,12 @@ func (r VMRunner) Run(task *vm.VMTask) {
 		coreutil.ErrorStateInvalidated,
 	)
 	if err != nil {
+		task.VMError = err
 		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
 	}
 }
 
-func NewVMRunner() VMRunner {
+func NewVMRunner() vm.VMRunner {
 	return VMRunner{}
 }
 
@@ -32,45 +31,38 @@ func NewVMRunner() VMRunner {
 func runTask(task *vm.VMTask) {
 	vmctx := vmcontext.CreateVMContext(task)
 
-	var lastResult dict.Dict
-	var lastErr error
-
 	var numOffLedger, numSuccess uint16
 	reqIndexInTheBlock := 0
 
 	// main loop over the batch of requests
 	for _, req := range task.Requests {
-		if skipReason := vmctx.RunTheRequest(req, uint16(reqIndexInTheBlock)); skipReason != nil {
+		result, skipReason := vmctx.RunTheRequest(req, uint16(reqIndexInTheBlock))
+		if skipReason != nil {
 			// some requests are just ignored (deterministically)
 			task.Log.Warnf("request skipped (ignored) by the VM: %s, reason: %v",
 				req.ID().String(), skipReason)
 			continue
 		}
+		task.Results = append(task.Results, result)
 		reqIndexInTheBlock++
 		if req.IsOffLedger() {
 			numOffLedger++
 		}
-		// get the last result from the call to the entry point. It is used by Solo only
-		lastResult, lastErr = vmctx.GetResult()
 
-		task.ProcessedRequestsCount++
-		if lastErr == nil {
+		if result.Error == nil {
 			numSuccess++
 		} else {
-			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), lastErr)
+			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Error)
 		}
 	}
 
-	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
-		task.ProcessedRequestsCount, numSuccess, numOffLedger)
+	numProcessed := uint16(len(task.Results))
 
-	if task.ProcessedRequestsCount == 0 {
-		// empty result. Abandon without closing
-		task.OnFinish(nil, nil, nil)
-	}
+	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
+		numProcessed, numSuccess, numOffLedger)
 
 	blockIndex, stateCommitment, timestamp, rotationAddr := vmctx.CloseVMContext(
-		task.ProcessedRequestsCount, numSuccess, numOffLedger)
+		numProcessed, numSuccess, numOffLedger)
 
 	task.Log.Debugf("closed VMContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
 		blockIndex, stateCommitment, timestamp, rotationAddr)
@@ -94,8 +86,6 @@ func runTask(task *vm.VMTask) {
 		task.ResultTransactionEssence = nil
 		task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
-	// call callback closure
-	task.OnFinish(lastResult, lastErr, nil)
 }
 
 // checkTotalAssets asserts if assets on transaction equals assets on ledger

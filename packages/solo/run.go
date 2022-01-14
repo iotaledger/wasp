@@ -12,14 +12,13 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
 )
 
-func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (dict.Dict, error) {
+func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
@@ -29,12 +28,16 @@ func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (dict.Dict, 
 	return ch.runRequestsNolock(reqs, trace)
 }
 
-func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict, error) {
-	ch.Log.Debugf("runRequestsNolock ('%s')", trace)
+func (ch *Chain) simulateRequest(req iscp.Request) (result *vm.RequestResult) {
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
 
+	task := ch.runTaskNoLock([]iscp.Request{req})
+	return task.Results[0]
+}
+
+func (ch *Chain) runTaskNoLock(reqs []iscp.Request) *vm.VMTask {
 	anchorOutput, anchorOutputID := ch.GetAnchorOutput()
-	var callRes dict.Dict
-	var callErr error
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		AnchorOutput:       anchorOutput,
@@ -48,21 +51,25 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict
 		RentStructure:      ch.Env.utxoDB.RentStructure(),
 		// state baseline is always valid in Solo
 		SolidStateBaseline: ch.GlobalSync.GetSolidIndexBaseline(),
-		OnFinish: func(callResult dict.Dict, callError error, err error) {
-			require.NoError(ch.Env.T, err)
-			callRes = callResult
-			callErr = callError
-		},
 	}
 
 	ch.Env.vmRunner.Run(task)
+	require.NoError(ch.Env.T, task.VMError)
 
-	if task.ProcessedRequestsCount == 0 {
+	return task
+}
+
+func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
+	ch.Log.Debugf("runRequestsNolock ('%s')", trace)
+
+	task := ch.runTaskNoLock(reqs)
+
+	if len(task.Results) == 0 {
 		// TODO gracefully process empty blocks in Solo
 		ch.Log.Panicf("EMPTY BLOCKS not supported by Solo")
 	}
-	var essence *iotago.TransactionEssence
 
+	var essence *iotago.TransactionEssence
 	if task.RotationAddress == nil {
 		essence = task.ResultTransactionEssence
 	} else {
@@ -93,7 +100,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict
 	if task.RotationAddress == nil {
 		// normal state transition
 		ch.State = task.VirtualStateAccess
-		ch.settleStateTransition(tx, iscp.TakeRequestIDs(reqs[0:task.ProcessedRequestsCount]...))
+		ch.settleStateTransition(tx, task.GetProcessedRequestIDs())
 	} else {
 		anchor, _, err := transaction.GetAnchorFromTransaction(tx)
 		require.NoError(ch.Env.T, err)
@@ -101,7 +108,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict
 		ch.Log.Infof("ROTATED STATE CONTROLLER to %s", anchor.StateController)
 	}
 
-	return callRes, callErr
+	return task.Results
 }
 
 func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []iscp.RequestID) {
