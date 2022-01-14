@@ -160,7 +160,7 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.Request) int64 {
 }
 
 // AddOutput adds an information about posted request. It will produce output
-// Return adjustment needed for the L2 ledger
+// Return adjustment needed for the L2 ledger (adjustment on iotas related to dust protection)
 func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	if txb.outputsAreFull() {
 		panic(ErrOutputLimitExceeded)

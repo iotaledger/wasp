@@ -17,7 +17,6 @@ func NewAssert(log iscp.LogInterface, name ...string) *Assert {
 	}
 }
 
-//nolint:goprintffuncname
 func (a Assert) Requiref(cond bool, format string, args ...interface{}) {
 	if cond {
 		return

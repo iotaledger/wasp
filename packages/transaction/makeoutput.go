@@ -15,6 +15,9 @@ func ExtendedOutputFromPostData(
 	rentStructure *iotago.RentStructure,
 	disableAutoAdjustDustDeposit ...bool,
 ) (*iotago.ExtendedOutput, error) {
+	if par.Metadata == nil {
+		par.Metadata = &iscp.SendMetadata{} // prevent null point exception when metadata is nil
+	}
 	ret, err := MakeExtendedOutput(
 		par.TargetAddress,
 		senderAddress,
