@@ -106,8 +106,8 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	}
 	for _, o := range txb.postedOutputs {
 		assets := transaction.AssetsFromOutput(o)
+		ret.SentOutIotas += assets.Iotas
 		for _, nt := range assets.Tokens {
-			ret.SentOutIotas += assets.Iotas
 			s, ok := ret.SentOutTokenBalances[nt.ID]
 			if !ok {
 				s = new(big.Int)
@@ -132,7 +132,6 @@ func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionT
 func (txb *AnchorTransactionBuilder) TotalIotasInOutputs() (uint64, uint64) {
 	totals := txb.sumOutputs()
 	return totals.TotalIotasInL2Accounts, totals.TotalIotasInDustDeposit
-
 }
 
 // InternalNativeTokenBalances returns internally maintained balances of native tokens in inputs and

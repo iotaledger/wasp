@@ -712,7 +712,6 @@ func TestFoundries(t *testing.T) {
 			t.Logf("%d. dust deposit IN: %d, dust deposit OUT: %d", i, tin.TotalIotasInDustDeposit, tout.TotalIotasInDustDeposit)
 			t.Logf("%d. num foundries: %d", i, txb.nextFoundrySerialNumber())
 		}
-
 	}
 	t.Run("create foundry ok", func(t *testing.T) {
 		initTest()

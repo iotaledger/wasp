@@ -90,7 +90,7 @@ type Sandbox interface {
 	// The TransferAllowedFunds call mutates AllowanceAvailable
 	// Returns remaining budget
 	TransferAllowedFunds(target *AgentID, assets ...*Assets) *Assets
-	// Send sends a on-ledger request
+	// Send sends a on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
 	// BlockContext Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
@@ -107,7 +107,7 @@ type Privileged interface {
 	CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64)
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
-	//BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
+	// BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
