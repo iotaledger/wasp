@@ -26,7 +26,7 @@ func TestRootBasic(t *testing.T) {
 }
 
 func TestRootRepeatInit(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	chain.CheckChain()
@@ -156,7 +156,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()

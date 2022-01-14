@@ -30,9 +30,9 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 
 // setChainInfo sets the configuration parameters of the chain
 // Input (all optional):
-// - ParamMaxBlobSize         - uint32 maximum size of a blob to be saved in the blob contract.
-// - ParamMaxEventSize        - uint16 maximum size of a single event.
-// - ParamMaxEventsPerRequest - uint16 maximum number of events per request.
+// - ParamMaxBlobSizeUint32         - uint32 maximum size of a blob to be saved in the blob contract.
+// - ParamMaxEventSizeUint16        - uint16 maximum size of a single event.
+// - ParamMaxEventsPerRequestUint16 - uint16 maximum number of events per request.
 // Does not set gas fee policy!
 func setChainInfo(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.RequireCallerIsChainOwner("governance.setContractFee: not authorized")
@@ -40,14 +40,14 @@ func setChainInfo(ctx iscp.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	// max blob size
-	maxBlobSize := params.MustGetUint32(governance.ParamMaxBlobSize, 0)
+	maxBlobSize := params.MustGetUint32(governance.ParamMaxBlobSizeUint32, 0)
 	if maxBlobSize > 0 {
 		ctx.State().Set(governance.VarMaxBlobSize, codec.Encode(maxBlobSize))
 		ctx.Event(fmt.Sprintf("[updated chain config] max blob size: %d", maxBlobSize))
 	}
 
 	// max event size
-	maxEventSize := params.MustGetUint16(governance.ParamMaxEventSize, 0)
+	maxEventSize := params.MustGetUint16(governance.ParamMaxEventSizeUint16, 0)
 	if maxEventSize > 0 {
 		if maxEventSize < governance.MinEventSize {
 			// don't allow to set less than MinEventSize to prevent chain owner from bricking the chain
@@ -58,7 +58,7 @@ func setChainInfo(ctx iscp.Sandbox) (dict.Dict, error) {
 	}
 
 	// max events per request
-	maxEventsPerReq := params.MustGetUint16(governance.ParamMaxEventsPerRequest, 0)
+	maxEventsPerReq := params.MustGetUint16(governance.ParamMaxEventsPerRequestUint16, 0)
 	if maxEventsPerReq > 0 {
 		if maxEventsPerReq < governance.MinEventsPerRequest {
 			maxEventsPerReq = governance.MinEventsPerRequest
@@ -75,6 +75,6 @@ func getMaxBlobSize(ctx iscp.SandboxView) (dict.Dict, error) {
 		ctx.Log().Panicf("error getting max blob size, %v", err)
 	}
 	ret := dict.New()
-	ret.Set(governance.ParamMaxBlobSize, maxBlobSize)
+	ret.Set(governance.ParamMaxBlobSizeUint32, maxBlobSize)
 	return ret, nil
 }

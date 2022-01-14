@@ -73,7 +73,7 @@ func TestManyEvents(t *testing.T) {
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			governance.Contract.Name, governance.FuncSetChainInfo.Name,
-			governance.ParamMaxEventsPerRequest, uint16(nEvents),
+			governance.ParamMaxEventsPerRequestUint16, uint16(nEvents),
 		).AddAssetsIotas(1),
 		nil,
 	)
@@ -109,7 +109,7 @@ func TestEventTooLarge(t *testing.T) {
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			governance.Contract.Name, governance.FuncSetChainInfo.Name,
-			governance.ParamMaxEventSize, uint16(bigEventSize),
+			governance.ParamMaxEventSizeUint16, uint16(bigEventSize),
 		).AddAssetsIotas(1),
 		nil,
 	)
