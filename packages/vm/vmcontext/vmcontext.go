@@ -41,6 +41,7 @@ type VMContext struct {
 	blockContextCloseSeq []iscp.Hname
 	blockOutputCount     uint8
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
+	txsnapshot           *vmtxbuilder.AnchorTransactionBuilder
 	gasBurnedTotal       uint64
 	gasFeeChargedTotal   uint64
 

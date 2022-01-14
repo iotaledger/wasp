@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,8 +51,7 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 	require.NoError(t, err)
 
 	// send 1 tx will 1_000_000 iotas which should result in too mant outputs, so the request must fail
-	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-	initialBalance := env.L1IotaBalance(address)
+	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 
 	req := solo.NewCallParams(manyOutputsContract.Name, funcSplitFunds.Name).
 		AddAssetsIotas(1_000_000).
@@ -58,9 +59,6 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 		WithGasBudget(1_000_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "exceeded max number of allowed outputs")
+	require.True(t, errors.Is(err, vmtxbuilder.ErrOutputLimitInSingleCallExceeded))
 	require.NotContains(t, err.Error(), "skipped")
-
-	finalBalance := env.L1IotaBalance(address)
-	require.Equal(t, finalBalance, initialBalance)
 }

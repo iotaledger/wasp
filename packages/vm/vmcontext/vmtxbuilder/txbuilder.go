@@ -273,8 +273,8 @@ func (txb *AnchorTransactionBuilder) InputsAreFull() bool {
 	return txb.numInputs() >= iotago.MaxInputsCount
 }
 
-// numOutputs in the transaction
-func (txb *AnchorTransactionBuilder) numOutputs() int {
+// NumOutputs in the transaction
+func (txb *AnchorTransactionBuilder) NumOutputs() int {
 	ret := 1 // for chain output
 	for _, v := range txb.balanceNativeTokens {
 		if v.producesOutput() {
@@ -292,7 +292,7 @@ func (txb *AnchorTransactionBuilder) numOutputs() int {
 
 // outputsAreFull return if transaction cannot bear more outputs
 func (txb *AnchorTransactionBuilder) outputsAreFull() bool {
-	return txb.numOutputs() >= iotago.MaxOutputsCount
+	return txb.NumOutputs() >= iotago.MaxOutputsCount
 }
 
 func (txb *AnchorTransactionBuilder) numNativeTokensExceeded() bool {

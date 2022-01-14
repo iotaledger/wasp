@@ -121,7 +121,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, 0, len(totals.NativeTokenBalances))
 
 		require.EqualValues(t, 1, txb.numInputs())
-		require.EqualValues(t, 1, txb.numOutputs())
+		require.EqualValues(t, 1, txb.NumOutputs())
 		require.False(t, txb.InputsAreFull())
 		require.False(t, txb.outputsAreFull())
 

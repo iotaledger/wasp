@@ -115,7 +115,7 @@ func (vmctx *VMContext) prepareGasBudget() {
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
 func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict, callErr error) {
-	txsnapshot := vmctx.createTxBuilderSnapshot()
+	vmctx.txsnapshot = vmctx.createTxBuilderSnapshot()
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
 	if vmctx.req.IsOffLedger() {
@@ -123,7 +123,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	}
 	func() {
 		defer func() {
-			panicErr := checkVMPluginPanic(recover())
+			panicErr := vmctx.checkVMPluginPanic(recover())
 			if panicErr == nil {
 				return
 			}
@@ -135,7 +135,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	}()
 	if callErr != nil {
 		// panic happened during VM plugin call. Restore the state
-		vmctx.restoreTxBuilderSnapshot(txsnapshot)
+		vmctx.restoreTxBuilderSnapshot(vmctx.txsnapshot)
 		vmctx.currentStateUpdate = snapMutations
 	}
 	// charge gas fee no matter what
@@ -145,7 +145,9 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	return
 }
 
-func checkVMPluginPanic(r interface{}) error {
+const maxOuputsProducedInSingleCall = 50
+
+func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 	if r == nil {
 		return nil
 	}
@@ -161,6 +163,10 @@ func checkVMPluginPanic(r interface{}) error {
 			panic(err)
 		}
 		if errors.Is(err, vmtxbuilder.ErrOutputLimitExceeded) {
+			outputsCreatedByRequest := vmctx.txbuilder.NumOutputs() - vmctx.txsnapshot.NumOutputs()
+			if outputsCreatedByRequest > maxOuputsProducedInSingleCall {
+				return vmtxbuilder.ErrOutputLimitInSingleCallExceeded
+			}
 			panic(err)
 		}
 		if errors.Is(err, vmtxbuilder.ErrInputLimitExceeded) {
