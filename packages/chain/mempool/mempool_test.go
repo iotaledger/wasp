@@ -53,7 +53,7 @@ func getRequestsOnLedger(t *testing.T, amount int) []*iscp.OnLedgerRequestData {
 		output := transaction.ExtendedOutputFromPostData(addr, iscp.Hn("dummySenderContract"), requestParams, utxo.RentStructure())
 		outputID := tpkg.RandOutputID(uint16(i)).UTXOInput()
 		result[i], err = iscp.OnLedgerFromUTXO(output, outputID)
-		require.NoError(t, err)
+	require.NoError(t, err)
 	}
 	return result
 }
@@ -220,7 +220,7 @@ func TestProcessedRequest(t *testing.T) {
 
 	// artificially put request log record into the state
 	rec := &blocklog.RequestReceipt{
-		RequestData: requests[0],
+		Request: requests[0],
 	}
 	blocklogPartition := subrealm.New(wrt, kv.Key(blocklog.Contract.Hname().Bytes()))
 	err := blocklog.SaveRequestReceipt(blocklogPartition, rec, [6]byte{})

@@ -52,8 +52,6 @@ type VMContext struct {
 	currentStateUpdate state.StateUpdate
 	entropy            hashing.HashValue
 	contractRecord     *root.ContractRecord
-	lastError          error
-	lastResult         dict.Dict
 	callStack          []*callContext
 	// --- gas related
 	// max tokens available for gas fee
@@ -69,10 +67,10 @@ type VMContext struct {
 }
 
 type callContext struct {
-	caller    *iscp.AgentID // calling agent
-	contract  iscp.Hname    // called contract
-	params    dict.Dict     // params passed
-	allowance *iscp.Assets  // allowance passed
+	caller             *iscp.AgentID // calling agent
+	contract           iscp.Hname    // called contract
+	params             dict.Dict     // params passed
+	allowanceAvailable *iscp.Assets  // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
 type blockContext struct {
@@ -162,11 +160,6 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	)
 
 	return ret
-}
-
-//nolint:revive
-func (vmctx *VMContext) GetResult() (dict.Dict, error) {
-	return vmctx.lastResult, vmctx.lastError
 }
 
 // CloseVMContext does the closing actions on the block

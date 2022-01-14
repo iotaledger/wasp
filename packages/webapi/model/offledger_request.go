@@ -1,5 +1,5 @@
 package model
 
 type OffLedgerRequestBody struct {
-	Request Bytes `swagger:"desc(Offledger RequestData (base64))"`
+	Request Bytes `swagger:"desc(Offledger Request (base64))"`
 }

@@ -20,7 +20,7 @@ import (
 )
 
 func TestInitLoad(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	env.EnablePublisher(true)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
 	env.AssertL1AddressIotas(userAddr, solo.Saldo)
@@ -35,7 +35,7 @@ func TestInitLoad(t *testing.T) {
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	env.EnablePublisher(true)
 	genesisAddr := env.L1Ledger().GenesisAddress()
 	assets := env.L1AddressBalances(genesisAddr)
@@ -91,7 +91,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 // TestNoTargetPostOnLedger test what happens when sending requests to non-existent contract or entry point
 func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator==user", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
 		defer ch.Log.Sync()
@@ -123,7 +123,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		env.WaitPublisher()
 	})
 	t.Run("no contract,originator!=user", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
 		defer ch.Log.Sync()
@@ -163,7 +163,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		env.WaitPublisher()
 	})
 	t.Run("no EP,originator==user", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
 		defer ch.Log.Sync()
@@ -195,7 +195,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		env.WaitPublisher()
 	})
 	t.Run("no EP,originator!=user", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
 		defer ch.Log.Sync()
@@ -238,7 +238,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 
 func TestNoTargetView(t *testing.T) {
 	t.Run("no contract view", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		env.EnablePublisher(true)
 		chain := env.NewChain(nil, "chain1")
 		chain.AssertControlAddresses()
@@ -248,7 +248,7 @@ func TestNoTargetView(t *testing.T) {
 		env.WaitPublisher()
 	})
 	t.Run("no EP view", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		env.EnablePublisher(true)
 		chain := env.NewChain(nil, "chain1")
 		chain.AssertControlAddresses()
@@ -260,7 +260,7 @@ func TestNoTargetView(t *testing.T) {
 }
 
 func TestOkCall(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	env.EnablePublisher(true)
 	ch := env.NewChain(nil, "chain1")
 
@@ -271,9 +271,22 @@ func TestOkCall(t *testing.T) {
 	env.WaitPublisher()
 }
 
+func TestEstimateGas(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env.EnablePublisher(true)
+	ch := env.NewChain(nil, "chain1")
+
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
+		WithGasBudget(1000)
+
+	gasBurned, gasFeeCharged := ch.EstimateGas(req, nil)
+	require.NotZero(t, gasBurned)
+	require.NotZero(t, gasFeeCharged)
+}
+
 func TestRepeatInit(t *testing.T) {
 	t.Run("root", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
 		req := solo.NewCallParams(root.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
@@ -282,7 +295,7 @@ func TestRepeatInit(t *testing.T) {
 		ch.CheckAccountLedger()
 	})
 	t.Run("accounts", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
 		req := solo.NewCallParams(accounts.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
@@ -291,7 +304,7 @@ func TestRepeatInit(t *testing.T) {
 		ch.CheckAccountLedger()
 	})
 	t.Run("blocklog", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
 		req := solo.NewCallParams(blocklog.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
@@ -300,7 +313,7 @@ func TestRepeatInit(t *testing.T) {
 		ch.CheckAccountLedger()
 	})
 	t.Run("blob", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
 		req := solo.NewCallParams(blob.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
@@ -309,7 +322,7 @@ func TestRepeatInit(t *testing.T) {
 		ch.CheckAccountLedger()
 	})
 	t.Run("governance", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
 		req := solo.NewCallParams(governance.Contract.Name, "init")
 		_, err := ch.PostRequestSync(req, nil)
@@ -320,13 +333,14 @@ func TestRepeatInit(t *testing.T) {
 }
 
 func TestDeployNativeContract(t *testing.T) {
-	env := solo.New(t).WithNativeContract(sbtestsc.Processor)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
+		WithNativeContract(sbtestsc.Processor)
 
 	env.EnablePublisher(true)
 	ch := env.NewChain(nil, "chain1")
 
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-	//userAgentID := iscp.NewAgentID(userAddr, 0)
+	// userAgentID := iscp.NewAgentID(userAddr, 0)
 
 	// get more iotas for originator
 	originatorBalance := env.L1AddressBalances(ch.OriginatorAddress).Iotas
@@ -350,7 +364,7 @@ func TestDeployNativeContract(t *testing.T) {
 }
 
 func TestFeeBasic(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 	feePolicy := chain.GetGasFeePolicy()
 	require.Nil(t, feePolicy.GasFeeTokenID)

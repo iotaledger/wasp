@@ -197,45 +197,43 @@ func (a *Assets) Equals(b *Assets) bool {
 	return true
 }
 
-// FitsTheBudget checks if:
-// - 'a' has all non-negative values. Negative values is error
-// - 'a' all values are <= of corresponding values of 'b'. It means, we can debit 'a' from 'b' without overrun of funds
-func (a *Assets) FitsTheBudget(budget *Assets) (bool, error) {
-	if a == budget {
-		return true, nil
-	}
+// SpendFromBudget subtracts assets from budget.
+// Mutates receiver `a` !
+// If budget is not enough, returns false and leaves receiver untouched
+func (a *Assets) SpendFromBudget(toSpend *Assets) bool {
 	if a.IsEmpty() {
-		return true, nil
+		return toSpend.IsEmpty()
 	}
-	if budget.IsEmpty() {
-		return false, nil
+	if toSpend.IsEmpty() {
+		return true
 	}
-	if a.Iotas > budget.Iotas {
-		return false, nil
+	if a.Equals(toSpend) {
+		a.Iotas = 0
+		a.Tokens = nil
+		return true
 	}
-	allowedSet, err := budget.Tokens.Set()
-	if err != nil {
-		return false, err
+	if a.Iotas < toSpend.Iotas {
+		return false
 	}
-	big0 := big.NewInt(0)
-	for _, aNT := range a.Tokens {
-		if aNT.Amount.Cmp(big0) <= 0 {
-			return false, xerrors.New("non positive token balance in assets")
-		}
-		allowedAmount, ok := allowedSet[aNT.ID]
-		if !ok || aNT.Amount.Cmp(allowedAmount.Amount) > 0 {
-			return false, nil
-		}
-	}
-	return true, nil
-}
+	targetSet := a.Tokens.Clone().MustSet()
 
-func (a *Assets) MustFitsTheBudget(budget *Assets) bool {
-	ret, err := a.FitsTheBudget(budget)
-	if err != nil {
-		panic(xerrors.Errorf("MustFitsTheBudget: %w", err))
+	for _, nt := range toSpend.Tokens {
+		curr, ok := targetSet[nt.ID]
+		if !ok || curr.Amount.Cmp(nt.Amount) < 0 {
+			return false
+		}
+		curr.Amount.Sub(curr.Amount, nt.Amount)
 	}
-	return ret
+	// budget is enough
+	a.Iotas -= toSpend.Iotas
+	a.Tokens = a.Tokens[:0]
+	for _, nt := range targetSet {
+		if util.IsZeroBigInt(nt.Amount) {
+			continue
+		}
+		a.Tokens = append(a.Tokens, nt)
+	}
+	return true
 }
 
 func (a *Assets) Add(b *Assets) *Assets {

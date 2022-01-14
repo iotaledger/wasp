@@ -80,13 +80,16 @@ type Sandbox interface {
 	Event(msg string)
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue
-	// Allowance specifies max budget of assets the smart contract can take
-	// from the caller with TransferAllowedFunds. Nil means no allowance (zero budget)
-	Allowance() *Assets
+	// AllowanceAvailable specifies max remaining (after transfers) budget of assets the smart contract can take
+	// from the caller with TransferAllowedFunds. Nil means no allowance left (zero budget)
+	// AllowanceAvailable MUTATES with each call to TransferAllowedFunds
+	AllowanceAvailable() *Assets
 	// TransferAllowedFunds moves assets from the caller's account to specified account within the budget set by Allowance.
 	// Skipping 'assets' means transfer all Allowance().
 	// The call fails if target account does not exist
-	TransferAllowedFunds(target *AgentID, assets ...*Assets)
+	// The TransferAllowedFunds call mutates AllowanceAvailable
+	// Returns remaining budget
+	TransferAllowedFunds(target *AgentID, assets ...*Assets) *Assets
 	// Send sends a on-ledger request
 	Send(metadata RequestParameters)
 	// BlockContext Internal for use in native hardcoded contracts
@@ -102,7 +105,7 @@ type Sandbox interface {
 type Privileged interface {
 	TryLoadContract(programHash hashing.HashValue) error
 	CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64)
-	DestroyFoundry(uint32) int64
+	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
 	//BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 }

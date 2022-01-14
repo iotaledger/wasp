@@ -130,16 +130,19 @@ func (u *UtxoDB) genesisInit() {
 	if err != nil {
 		panic(err)
 	}
-	u.addTransaction(genesisTx)
+	u.addTransaction(genesisTx, true)
 }
 
-func (u *UtxoDB) addTransaction(tx *iotago.Transaction) {
+func (u *UtxoDB) addTransaction(tx *iotago.Transaction, isGenesis bool) {
 	txid, err := tx.ID()
 	if err != nil {
 		panic(err)
 	}
 	// delete consumed outputs from the ledger
 	inputs, err := u.getTransactionInputs(tx)
+	if !isGenesis && err != nil {
+		panic(err)
+	}
 	for outID := range inputs {
 		delete(u.utxo, outID)
 	}
@@ -278,7 +281,7 @@ func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 
 	inputs, err := u.getTransactionInputs(tx)
 	if err != nil {
-		return err
+		return xerrors.Errorf("validateTransaction: %w", err)
 	}
 	for outID := range inputs {
 		if _, ok := u.utxo[outID]; !ok {
@@ -307,10 +310,10 @@ func (u *UtxoDB) AddToLedger(tx *iotago.Transaction) error {
 	defer u.mutex.Unlock()
 
 	if err := u.validateTransaction(tx); err != nil {
-		return err
+		panic(err)
 	}
 
-	u.addTransaction(tx)
+	u.addTransaction(tx, false)
 	return nil
 }
 

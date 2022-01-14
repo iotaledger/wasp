@@ -34,7 +34,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 			Tokens: iotago.NativeTokens{{id, big.NewInt(int64(amountNative))}},
 		}
 	}
-	out := transaction.MakeExtendedOutput(
+	out, _ := transaction.MakeExtendedOutput(
 		txb.anchorOutput.AliasID.ToAddress(),
 		nil,
 		assets,
@@ -48,8 +48,8 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 	reqData, err := iscp.OnLedgerFromUTXO(out, &iotago.UTXOInput{})
 	require.NoError(t, err)
 	txb.Consume(reqData)
-	_, _, isBalanced := txb.Totals()
-	require.True(t, isBalanced)
+	_, _, err = txb.Totals()
+	require.NoError(t, err)
 	return out.Deposit()
 }
 
@@ -63,7 +63,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 			},
 		},
 	}
-	exout := transaction.ExtendedOutputFromPostData(
+	exout, _ := transaction.ExtendedOutputFromPostData(
 		txb.anchorOutput.AliasID.ToAddress(),
 		iscp.Hn("test"),
 		iscp.RequestParameters{
@@ -75,9 +75,9 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 		testdeserparams.DeSerializationParameters().RentStructure,
 	)
 	txb.AddOutput(exout)
-	_, _, isBalanced := txb.Totals()
-	if !isBalanced {
-		panic("not balanced txbuilder")
+	_, _, err := txb.Totals()
+	if err != nil {
+		panic(err)
 	}
 	return exout.Deposit()
 }
@@ -115,8 +115,8 @@ func TestTxBuilderBasic(t *testing.T) {
 			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
 			testdeserparams.RentStructure(),
 		)
-		totals, _, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		totals, _, err := txb.Totals()
+		require.NoError(t, err)
 		require.EqualValues(t, 1000-txb.dustDepositAssumption.AnchorOutput, totals.TotalIotasInL2Accounts)
 		require.EqualValues(t, 0, len(totals.NativeTokenBalances))
 
@@ -143,8 +143,8 @@ func TestTxBuilderBasic(t *testing.T) {
 		)
 		txb.addDeltaIotasToTotal(42)
 		require.EqualValues(t, int(initialTotalIotas-txb.dustDepositAssumption.AnchorOutput+42), int(txb.totalIotasInL2Accounts))
-		_, _, isBalanced := txb.Totals()
-		require.False(t, isBalanced)
+		_, _, err := txb.Totals()
+		require.Error(t, err)
 	})
 	t.Run("3", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(
@@ -152,15 +152,15 @@ func TestTxBuilderBasic(t *testing.T) {
 			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
 			testdeserparams.RentStructure(),
 		)
-		_, _, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		_, _, err := txb.Totals()
+		require.NoError(t, err)
 		deposit := consumeUTXO(t, txb, tokenID, 0)
 
 		t.Logf("vByteCost anchor: %d, internal output: %d, 'empty' output deposit: %d",
 			txb.dustDepositAssumption.AnchorOutput, txb.dustDepositAssumption.NativeTokenOutput, deposit)
 
-		totalsIn, totalsOut, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		totalsIn, totalsOut, err := txb.Totals()
+		require.NoError(t, err)
 		require.EqualValues(t, txb.dustDepositAssumption.AnchorOutput, totalsIn.TotalIotasInDustDeposit)
 		require.EqualValues(t, txb.dustDepositAssumption.AnchorOutput, totalsOut.TotalIotasInDustDeposit)
 
@@ -179,15 +179,15 @@ func TestTxBuilderBasic(t *testing.T) {
 			*transaction.NewDepositEstimate(testdeserparams.RentStructure()),
 			testdeserparams.RentStructure(),
 		)
-		_, _, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		_, _, err := txb.Totals()
+		require.NoError(t, err)
 		deposit := consumeUTXO(t, txb, tokenID, 10)
 
 		t.Logf("vByteCost anchor: %d, internal output: %d",
 			txb.dustDepositAssumption.AnchorOutput, txb.dustDepositAssumption.NativeTokenOutput)
 
-		totalsIn, totalsOut, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		totalsIn, totalsOut, err := txb.Totals()
+		require.NoError(t, err)
 		require.EqualValues(t, int(txb.dustDepositAssumption.AnchorOutput), int(totalsIn.TotalIotasInDustDeposit))
 		require.EqualValues(t, int(txb.dustDepositAssumption.AnchorOutput+txb.dustDepositAssumption.NativeTokenOutput), int(totalsOut.TotalIotasInDustDeposit))
 
@@ -274,11 +274,11 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 			deposit += consumeUTXO(t, txb, nativeTokenIDs[idx], amountNative, addIotasToDustMinimum...)
 
-			_, _, isBalanced := txb.Totals()
-			require.True(t, isBalanced)
+			_, _, err := txb.Totals()
+			require.NoError(t, err)
 		}
-		sumIN, sumOUT, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		sumIN, sumOUT, err := txb.Totals()
+		require.NoError(t, err)
 		expectedDust := txb.dustDepositAssumption.AnchorOutput
 		if numRun < numTokenIDs {
 			expectedDust += uint64(numRun) * txb.dustDepositAssumption.NativeTokenOutput
@@ -301,11 +301,11 @@ func TestTxBuilderConsistency(t *testing.T) {
 			amounts[idx] += amount
 			deposit += consumeUTXO(t, txb, nativeTokenIDs[idx], amount)
 
-			_, _, isBalanced := txb.Totals()
-			require.True(t, isBalanced)
+			_, _, err := txb.Totals()
+			require.NoError(t, err)
 		}
-		sumIN, sumOUT, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		sumIN, sumOUT, err := txb.Totals()
+		require.NoError(t, err)
 
 		expectedIotas := initialTotalIotas - int(txb.dustDepositAssumption.AnchorOutput) + int(deposit)
 		require.EqualValues(t, expectedIotas, int(sumIN.TotalIotasInL2Accounts))
@@ -318,8 +318,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		for i := 0; i < n; i++ {
 			idx := i % numTokenIDs
 			ret += addOutput(txb, amount, nativeTokenIDs[idx])
-			_, _, isBalanced := txb.Totals()
-			require.True(t, isBalanced)
+			_, _, err := txb.Totals()
+			require.NoError(t, err)
 		}
 		return ret
 	}
@@ -329,8 +329,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		for i := 0; i < n; i++ {
 			idx := rand.Intn(numTokenIDs)
 			ret += addOutput(txb, amount, nativeTokenIDs[idx])
-			_, _, isBalanced := txb.Totals()
-			require.True(t, isBalanced)
+			_, _, err := txb.Totals()
+			require.NoError(t, err)
 		}
 		return ret
 	}
@@ -401,8 +401,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		}, ErrInputLimitExceeded)
 		require.Error(t, err, ErrInputLimitExceeded)
 
-		_, _, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		_, _, err = txb.Totals()
+		require.NoError(t, err)
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
@@ -416,17 +416,17 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		initTest()
 		runConsume(runTimesInputs, 10, 1000)
-		_, _, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		_, _, err := txb.Totals()
+		require.NoError(t, err)
 
-		err := util.CatchPanicReturnError(func() {
+		err = util.CatchPanicReturnError(func() {
 			runPostRequest(runTimesOutputs, 1)
 		}, ErrOutputLimitExceeded)
 
 		require.Error(t, err, ErrOutputLimitExceeded)
 
-		_, _, isBalanced = txb.Totals()
-		require.True(t, isBalanced)
+		_, _, err = txb.Totals()
+		require.NoError(t, err)
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
@@ -440,17 +440,17 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		initTest()
 		runConsume(runTimesInputs, 10, 1000)
-		_, _, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		_, _, err := txb.Totals()
+		require.NoError(t, err)
 
-		err := util.CatchPanicReturnError(func() {
+		err = util.CatchPanicReturnError(func() {
 			runPostRequestRandomly(runTimesOutputs, 1)
 		}, ErrOutputLimitExceeded)
 
 		require.Error(t, err, ErrOutputLimitExceeded)
 
-		_, _, isBalanced = txb.Totals()
-		require.True(t, isBalanced)
+		_, _, err = txb.Totals()
+		require.NoError(t, err)
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
@@ -471,11 +471,11 @@ func TestTxBuilderConsistency(t *testing.T) {
 			consumeUTXO(t, txb, nativeTokenIDs[idx1], 1, 1000)
 			idx2 := rand.Intn(numTokenIDs)
 			addOutput(txb, 1, nativeTokenIDs[idx2])
-			_, _, isBalanced := txb.Totals()
-			require.True(t, isBalanced)
+			_, _, err := txb.Totals()
+			require.NoError(t, err)
 		}
-		_, _, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		_, _, err := txb.Totals()
+		require.NoError(t, err)
 
 		t.Logf(">>>>>>>>>> \n%s", txb.String())
 
@@ -493,26 +493,26 @@ func TestTxBuilderConsistency(t *testing.T) {
 		for _, id := range nativeTokenIDs {
 			consumeUTXO(t, txb, id, 100)
 		}
-		totals, _, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		totals, _, err := txb.Totals()
+		require.NoError(t, err)
 
 		txbClone := txb.Clone()
-		totalsClone, _, isBalanced := txbClone.Totals()
-		require.True(t, isBalanced)
-		require.True(t, totals.BalancedWith(totalsClone))
+		totalsClone, _, err := txbClone.Totals()
+		require.NoError(t, err)
+		require.NoError(t, totals.BalancedWith(totalsClone))
 
 		for i := 0; i < runTimes; i++ {
 			idx1 := rand.Intn(numTokenIDs)
 			consumeUTXO(t, txb, nativeTokenIDs[idx1], 1, 100)
 			idx2 := rand.Intn(numTokenIDs)
 			addOutput(txb, 1, nativeTokenIDs[idx2])
-			_, _, isBalanced = txb.Totals()
-			require.True(t, isBalanced)
+			_, _, err = txb.Totals()
+			require.NoError(t, err)
 		}
 
-		totalsClone, _, isBalanced = txbClone.Totals()
-		require.True(t, isBalanced)
-		require.True(t, totals.BalancedWith(totalsClone))
+		totalsClone, _, err = txbClone.Totals()
+		require.NoError(t, err)
+		require.NoError(t, totals.BalancedWith(totalsClone))
 	})
 	t.Run("in balance 1", func(t *testing.T) {
 		numTokenIDs = 5
@@ -524,8 +524,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		// send 90 < 100 which is on-chain. 10 must be left and dust deposit should not disappear
 		addOutput(txb, 90, nativeTokenIDs[0])
 
-		totalIn, totalOut, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		totalIn, totalOut, err := txb.Totals()
+		require.NoError(t, err)
 		require.EqualValues(t, int(initialTotalIotas-txb.dustDepositAssumption.AnchorOutput), int(totalOut.TotalIotasInL2Accounts+totalOut.SentOutIotas))
 		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput+txb.dustDepositAssumption.AnchorOutput), int(totalIn.TotalIotasInDustDeposit))
 		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput+txb.dustDepositAssumption.AnchorOutput), int(totalOut.TotalIotasInDustDeposit))
@@ -551,8 +551,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		// output will close internal account
 		sentOut := addOutput(txb, 100, nativeTokenIDs[0])
 
-		totalIn, totalOut, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		totalIn, totalOut, err := txb.Totals()
+		require.NoError(t, err)
 		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput+txb.dustDepositAssumption.AnchorOutput), int(totalIn.TotalIotasInDustDeposit))
 		require.EqualValues(t, int(sentOut), totalOut.SentOutIotas)
 		require.EqualValues(t, int(initialTotalIotas-txb.dustDepositAssumption.AnchorOutput-sentOut+txb.dustDepositAssumption.NativeTokenOutput), int(txb.totalIotasInL2Accounts))
@@ -585,8 +585,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 			addOutput(txb, 100, nativeTokenIDs[i])
 		}
 
-		totalIn, totalOut, isBalanced := txb.Totals()
-		require.True(t, isBalanced)
+		totalIn, totalOut, err := txb.Totals()
+		require.NoError(t, err)
 		expectedIotas := initialTotalIotas - int(txb.dustDepositAssumption.AnchorOutput) + int(txb.dustDepositAssumption.NativeTokenOutput)*len(nativeTokenIDs)
 		require.EqualValues(t, expectedIotas, int(totalOut.TotalIotasInL2Accounts+totalOut.SentOutIotas))
 		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput)*len(nativeTokenIDs)+int(txb.dustDepositAssumption.AnchorOutput), int(totalIn.TotalIotasInDustDeposit))
@@ -631,7 +631,7 @@ func TestDustDeposit(t *testing.T) {
 	})
 	t.Run("adjusts the output amount to the correct bytecost when needed", func(t *testing.T) {
 		assets := iscp.NewEmptyAssets()
-		out := transaction.MakeExtendedOutput(
+		out, _ := transaction.MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
@@ -643,7 +643,7 @@ func TestDustDeposit(t *testing.T) {
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
 		assets := iscp.NewAssets(10000, nil)
-		out := transaction.MakeExtendedOutput(
+		out, _ := transaction.MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
@@ -706,8 +706,8 @@ func TestFoundries(t *testing.T) {
 			sn, _ := txb.CreateNewFoundry(&iotago.SimpleTokenScheme{}, iotago.TokenTag{}, big.NewInt(10_000_000), nil)
 			require.EqualValues(t, i+1, int(sn))
 
-			tin, tout, balanced := txb.Totals()
-			require.True(t, balanced)
+			tin, tout, err := txb.Totals()
+			require.NoError(t, err)
 			t.Logf("%d. total iotas IN: %d, total iotas OUT: %d", i, tin.TotalIotasInL2Accounts, tout.TotalIotasInL2Accounts)
 			t.Logf("%d. dust deposit IN: %d, dust deposit OUT: %d", i, tin.TotalIotasInDustDeposit, tout.TotalIotasInDustDeposit)
 			t.Logf("%d. num foundries: %d", i, txb.nextFoundrySerialNumber())
@@ -747,7 +747,7 @@ func TestSerDe(t *testing.T) {
 			GasBudget:      0,
 		}
 		assets := iscp.NewEmptyAssets()
-		out := transaction.MakeExtendedOutput(
+		out, _ := transaction.MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,

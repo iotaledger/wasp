@@ -29,7 +29,7 @@ func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex u
 		if err != nil {
 			panic(err)
 		}
-		ret[i] = rec.RequestData.ID()
+		ret[i] = rec.Request.ID()
 	}
 	return ret, nil
 }

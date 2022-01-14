@@ -17,7 +17,7 @@ var fileName = "blob_test.go"
 
 func TestUploadBlob(t *testing.T) {
 	t.Run("from binary", func(t *testing.T) {
-		env := solo.New(t)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
 
 		h, err := ch.UploadBlob(nil, "field", "dummy data")

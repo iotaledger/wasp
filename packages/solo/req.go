@@ -6,19 +6,15 @@ package solo
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-
-	"github.com/iotaledger/wasp/packages/util"
-
-	"github.com/iotaledger/wasp/packages/transaction"
-
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
 )
@@ -162,13 +158,7 @@ func toMap(params []interface{}) map[string]interface{} {
 	return par
 }
 
-// RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
-// Then it adds it to the ledger, atomically.
-// Locking on the mutex is needed to prevent mess when several goroutines work on the same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, iscp.RequestID, error) {
-	ch.Env.ledgerMutex.Lock()
-	defer ch.Env.ledgerMutex.Unlock()
-
+func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) *iotago.Transaction {
 	if keyPair == nil {
 		keyPair = &ch.OriginatorPrivateKey
 	}
@@ -195,7 +185,33 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 	})
 	require.NoError(ch.Env.T, err)
 
-	err = ch.Env.AddToLedger(tx)
+	return tx
+}
+
+// requestFromParams creates an on-ledger request without posting the transaction. It is intended
+// mainly for estimating gas.
+func (ch *Chain) requestFromParams(req *CallParams, keyPair *cryptolib.KeyPair) iscp.Request {
+	ch.Env.ledgerMutex.Lock()
+	defer ch.Env.ledgerMutex.Unlock()
+
+	tx := ch.createRequestTx(req, keyPair)
+	reqs, err := iscp.RequestsInTransaction(tx)
+	require.NoError(ch.Env.T, err)
+	for _, req := range reqs[*ch.ChainID] {
+		return req
+	}
+	panic("unreachable")
+}
+
+// RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
+// Then it adds it to the ledger, atomically.
+// Locking on the mutex is needed to prevent mess when several goroutines work on the same address
+func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, iscp.RequestID, error) {
+	ch.Env.ledgerMutex.Lock()
+	defer ch.Env.ledgerMutex.Unlock()
+
+	tx := ch.createRequestTx(req, keyPair)
+	err := ch.Env.AddToLedger(tx)
 	require.NoError(ch.Env.T, err)
 	txid, err := tx.ID()
 	require.NoError(ch.Env.T, err)
@@ -235,9 +251,9 @@ func (ch *Chain) PostRequestOffLedgerReceipt(req *CallParams, keyPair *cryptolib
 		keyPair = &ch.OriginatorPrivateKey
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
-	res, err := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
-	rec, _ := ch.GetRequestReceipt(r.ID())
-	return rec, res, err
+	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
+	res := results[0]
+	return res.Receipt, res.Return, res.Error
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
@@ -259,15 +275,29 @@ func (ch *Chain) PostRequestSyncReceipt(req *CallParams, keyPair *cryptolib.KeyP
 func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
-	tx, reqid, err := ch.RequestFromParamsToLedger(req, keyPair)
-	if err != nil {
-		return tx, nil, nil, err
-	}
+	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
+	require.NoError(ch.Env.T, err)
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
-	res, err := ch.runRequestsSync(reqs, "post")
-	receipt, _ := ch.GetRequestReceipt(reqid)
-	return tx, receipt, res, err
+	results := ch.runRequestsSync(reqs, "post")
+	res := results[0]
+	return tx, res.Receipt, res.Return, res.Error
+}
+
+// SimulateRequest executes the request without committing any changes in the ledger. It can be used
+// to estimate gas.
+func (ch *Chain) SimulateRequest(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
+	r := ch.requestFromParams(req, keyPair)
+	result := ch.simulateRequest(r)
+	return result.Receipt, result.Return, result.Error
+}
+
+// EstimateGas executes the request without committing any changes in the ledger. It returns
+// the amount of gas consumed.
+func (ch *Chain) EstimateGas(req *CallParams, keyPair *cryptolib.KeyPair) (gasBurned uint64, gasFeeCharged uint64) {
+	receipt, _, err := ch.SimulateRequest(req, keyPair)
+	require.NoError(ch.Env.T, err)
+	return receipt.GasBurned, receipt.GasFeeCharged
 }
 
 // callViewFull calls the view entry point of the smart contract

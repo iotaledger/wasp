@@ -109,7 +109,7 @@ func viewGetRequestIDsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	for _, d := range dataArr {
 		rec, err := RequestReceiptFromBytes(d)
 		ctx.RequireNoError(err)
-		arr.MustPush(rec.RequestData.ID().Bytes())
+		arr.MustPush(rec.Request.ID().Bytes())
 	}
 	return ret, nil
 }

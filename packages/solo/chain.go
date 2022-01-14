@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -515,21 +516,19 @@ func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyP
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).AddAssetsIotas(1)
-	err := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
-	if err == nil {
+	result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
+	if result.Error == nil {
 		ch.StateControllerAddress = newStateAddr
 		ch.StateControllerKeyPair = newStateKeyPair
 	}
-	return err
+	return result.Error
 }
 
-func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair cryptolib.KeyPair) error {
+func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair cryptolib.KeyPair) *vm.RequestResult {
 	tx, _, err := ch.RequestFromParamsToLedger(req, &keyPair)
-	if err != nil {
-		return err
-	}
+	require.NoError(ch.Env.T, err)
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
-	_, err = ch.runRequestsSync(reqs, "postSpecial")
-	return err
+	results := ch.runRequestsSync(reqs, "postSpecial")
+	return results[0]
 }

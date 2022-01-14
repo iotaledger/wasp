@@ -126,25 +126,26 @@ func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
 	return blocklog.NewEventLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex, vmctx.requestEventIndex)
 }
 
-func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) {
+func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.RequestReceipt {
 	errStr := ""
 	if errProvided != nil {
 		errStr = errProvided.Error()
 	}
+	receipt := &blocklog.RequestReceipt{
+		Request:   vmctx.req,
+		ErrorStr:      errStr,
+		GasBudget:     vmctx.gasBudget,
+		GasBurned:     vmctx.gasBurned,
+		GasFeeCharged: vmctx.gasFeeCharged,
+	}
 	var err error
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		err = blocklog.SaveRequestReceipt(vmctx.State(), &blocklog.RequestReceipt{
-			RequestData:   vmctx.req,
-			ErrorStr:      errStr,
-			GasBudget:     vmctx.gasBudget,
-			GasBurned:     vmctx.gasBurned,
-			GasFeeCharged: vmctx.gasFeeCharged,
-		}, vmctx.requestLookupKey())
-
+		err = blocklog.SaveRequestReceipt(vmctx.State(), receipt, vmctx.requestLookupKey())
 	})
 	if err != nil {
 		panic(err)
 	}
+	return receipt
 }
 
 func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {

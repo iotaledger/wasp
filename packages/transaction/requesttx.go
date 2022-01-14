@@ -9,11 +9,12 @@ import (
 )
 
 type NewRequestTransactionParams struct {
-	SenderKeyPair    cryptolib.KeyPair
-	UnspentOutputs   []iotago.Output
-	UnspentOutputIDs []*iotago.UTXOInput
-	Requests         []*iscp.RequestParameters
-	RentStructure    *iotago.RentStructure
+	SenderKeyPair                cryptolib.KeyPair
+	UnspentOutputs               []iotago.Output
+	UnspentOutputIDs             []*iotago.UTXOInput
+	Requests                     []*iscp.RequestParameters
+	RentStructure                *iotago.RentStructure
+	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
 }
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
@@ -35,7 +36,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			assets = &iscp.Assets{}
 		}
 		// will adjust to minimum dust deposit
-		out := MakeExtendedOutput(
+		out, err := MakeExtendedOutput(
 			req.TargetAddress,
 			senderAddress,
 			assets,
@@ -49,7 +50,11 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			},
 			req.Options,
 			par.RentStructure,
+			par.DisableAutoAdjustDustDeposit,
 		)
+		if err != nil {
+			return nil, err
+		}
 		outputs = append(outputs, out)
 		sumIotasOut += out.Amount
 		for _, nt := range out.NativeTokens {

@@ -67,10 +67,10 @@ const traceStack = false
 
 func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, allowance *iscp.Assets) {
 	ctx := &callContext{
-		caller:    vmctx.getToBeCaller(),
-		contract:  contract,
-		params:    params.Clone(),
-		allowance: allowance,
+		caller:             vmctx.getToBeCaller(),
+		contract:           contract,
+		params:             params.Clone(),
+		allowanceAvailable: allowance.Clone(), // we have to clone it because it will be mutated by TransferAllowedFunds
 	}
 	if traceStack {
 		vmctx.Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), ctx.caller)
