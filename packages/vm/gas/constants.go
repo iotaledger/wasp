@@ -41,9 +41,8 @@ func LogEvent(msg string) uint64     { return 10 + uint64(len([]byte(msg)))*LogB
 const (
 	CallContract   = uint64(100)
 	NotFoundTarget = uint64(100)
-	SendL1Request  = uint64(1000)
-
-	MinGasPerBlob = uint64(1000)
+	SendL1Request  = uint64(10_000)
+	MinGasPerBlob  = uint64(1000)
 )
 
 // Constant initial cas cost to call Core Contracts entry points

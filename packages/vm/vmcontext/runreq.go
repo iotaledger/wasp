@@ -145,7 +145,8 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	return
 }
 
-const maxOuputsProducedInSingleCall = 50
+// TODO make it configurable (move to governance)
+const maxOuputsProducedInSingleCall = 5
 
 func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 	if r == nil {
