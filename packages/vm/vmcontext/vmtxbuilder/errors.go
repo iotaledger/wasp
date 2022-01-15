@@ -9,6 +9,7 @@ import (
 var (
 	ErrInputLimitExceeded                   = xerrors.Errorf("exceeded maximum number of inputs in transaction. iotago.MaxInputsCount = %d", iotago.MaxInputsCount)
 	ErrOutputLimitExceeded                  = xerrors.Errorf("exceeded maximum number of outputs in transaction. iotago.MaxOutputsCount = %d", iotago.MaxOutputsCount)
+	ErrOutputLimitInSingleCallExceeded      = xerrors.Errorf("exceeded maximum number of outputs a contract call can produce. iotago.MaxOutputsCount = %d", iotago.MaxOutputsCount)
 	ErrNumberOfNativeTokensLimitExceeded    = xerrors.Errorf("exceeded maximum number of different native tokens in transaction. iotago.MaxNativeTokensCount = %d", iotago.MaxNativeTokensCount)
 	ErrNotEnoughFundsForInternalDustDeposit = xerrors.New("not enough funds for internal dust deposit")
 	ErrOverflow                             = xerrors.New("overflow")

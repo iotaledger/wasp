@@ -46,6 +46,8 @@ var Processor = Contract.Processor(initialize,
 	FuncJustView.WithHandler(testJustView),
 
 	FuncSpawn.WithHandler(spawn),
+
+	FuncSplitFunds.WithHandler(testSplitFunds),
 )
 
 var (
@@ -90,6 +92,8 @@ var (
 	FuncPassTypesView = coreutil.ViewFunc("passTypesView")
 
 	FuncSpawn = coreutil.Func("spawn")
+
+	FuncSplitFunds = coreutil.Func("splitFunds")
 )
 
 const (
