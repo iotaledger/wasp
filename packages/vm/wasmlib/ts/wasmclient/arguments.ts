@@ -1,30 +1,30 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasmclient from "./index"
+import {Bytes, Int32, panic, Items, Item} from "."
+import {Encoder} from "./encoder"
 import {Buffer} from "./buffer";
 
 // The Arguments struct is used to gather all arguments for this smart
 // contract function call and encode it into this deterministic byte array
-export class Arguments extends wasmclient.Encoder {
-    private args = new Map<string, wasmclient.Bytes>();
-
+export class Arguments extends Encoder {
+    private args = new Map<string, Bytes>();
     // get(key: string): wasmclient.Bytes {
     //     const bytes = this.args.get(key);
     //     return bytes ?? Buffer.alloc(0);
     // }
 
-    public set(key: string, val: wasmclient.Bytes): void {
+    public set(key: string, val: Bytes): void {
         this.args.set(key, val);
     }
 
-    public indexedKey(key: string, index: wasmclient.Int32): string {
+    public indexedKey(key: string, index: Int32): string {
         return key + "." + index.toString();
     }
 
     public mandatory(key: string): void {
         if (!this.args.has(key)) {
-            wasmclient.panic("missing mandatory " + key)
+            panic("missing mandatory " + key)
         }
     }
 
@@ -34,7 +34,7 @@ export class Arguments extends wasmclient.Encoder {
     // be 100% deterministic). Then emit the 4-byte argument count.
     // Next for each argument emit the 2-byte key length, the key prepended
     // with the minus sign, the 4-byte value length, and then the value bytes.
-    public encode(): wasmclient.Bytes {
+    public encode(): Bytes {
         const keys = new Array<string>();
         for (const key of this.args.keys()) {
             keys.push(key);
@@ -58,12 +58,12 @@ export class Arguments extends wasmclient.Encoder {
         return buf;
     }
 
-    public encodeCall(): wasmclient.Items {
-        let items = new wasmclient.Items()
+    public encodeCall(): Items {
+        const items = new Items()
         for (const [key, val] of this.args) {
             const k = Buffer.from(key).toString("base64");
             const v = val.toString("base64");
-            items.Items.push(new wasmclient.Item(k, v))
+            items.Items.push(new Item(k, v))
         }
         return items;
     }
