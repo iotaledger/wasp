@@ -131,14 +131,24 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 	reqEstimate := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
 		AddAssetsIotas(minimumIotasForEstimate).
 		WithGasBudget(minimumIotasForEstimate)
-	gasBudgetEstimate, gasFeeEstimate := ch.EstimateGas(reqEstimate, user)
+	gasBudgetEstimate, gasFeeEstimate, err := ch.EstimateGas(reqEstimate, user)
+	require.NoError(ch.Env.T, err)
+
+	r := ch.LastReceipt()
+	ch.Env.T.Logf("Estimate ====== last receipt: %s", r)
+	ch.Env.T.Logf("Estimate ====== gas burn log:\n%s", r.GasBurnLog)
 
 	err = ch.DepositIotasToL2(gasFeeEstimate*2, user)
 	require.NoError(ch.Env.T, err)
 
 	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
-		WithGasBudget(gasBudgetEstimate)
+		WithGasBudget(gasBudgetEstimate * 2) // double the estimate, to be on the safe side
 	res, err := ch.PostRequestOffLedger(req, user)
+
+	r = ch.LastReceipt()
+	ch.Env.T.Logf("Run ====== last receipt: %s", r)
+	ch.Env.T.Logf("Run ====== gas burn log:\n%s", r.GasBurnLog)
+
 	if err != nil {
 		return
 	}
@@ -548,4 +558,8 @@ func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
 		AssetsL1: ch.Env.L1AddressBalances(addr),
 		AssetsL2: ch.L2AccountAssets(iscp.NewAgentID(addr, 0)),
 	}
+}
+
+func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
+	return ch.lastReceipt
 }

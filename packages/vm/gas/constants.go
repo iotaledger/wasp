@@ -22,27 +22,26 @@ const (
 	UtilsBLSAggregateBLSSignature1   = uint64(500)
 )
 
-// fixed gas budged to process NFT in the VM
-const FixedGasBudgedNFT = uint64(100)
-
 // Sandbox calls
 const (
-	GetRequestData      = uint64(10)
-	GetContractContext  = uint64(10) // contract accountID, balances, current timestamp, etc
-	GetCallerData       = uint64(10)
-	GetIncomingTransfer = uint64(10)
-	GetEntropy          = uint64(10)
-	GetStateAnchorInfo  = uint64(10)
+	GetRequest         = uint64(10)
+	GetContractContext = uint64(10)
+	GetCallerData      = uint64(10)
+	GetAllowance       = uint64(10)
+	GetStateAnchorInfo = uint64(10)
+	GetBalance         = uint64(20)
 )
 
 func ReadTheState(length int) uint64 { return 10 + uint64(length/10) } // 2 + 0.1 per byte
 func LogEvent(msg string) uint64     { return 10 + uint64(len([]byte(msg)))*LogByte }
 
 const (
-	CallContract   = uint64(100)
-	NotFoundTarget = uint64(100)
-	SendL1Request  = uint64(10_000)
-	MinGasPerBlob  = uint64(1000)
+	CallContract      = uint64(100)
+	EmitEventFixed    = uint64(500)
+	TransferAllowance = uint64(500) // must be parametrized
+	NotFoundTarget    = uint64(100)
+	SendL1Request     = uint64(10_000)
+	MinGasPerBlob     = uint64(1000)
 )
 
 // Constant initial cas cost to call Core Contracts entry points

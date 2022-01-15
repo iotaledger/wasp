@@ -10,13 +10,36 @@ import (
 type BurnCode uint8
 
 const (
-	Storage = BurnCode(iota)
-	CallTargetNotFound
-	SandboxUtils
+	BurnStorage = BurnCode(iota)
+	BurnCallTargetNotFound
+	BurnSandboxUtils
+	BurnGetRequest
+	BurnGetContractContext
+	BurnGetCallerData
+	BurnGetAllowance
+	BurnGetStateAnchorInfo
+	BurnGetBalance
+	BurnCallContract
+	BurnDeployContract
+	BurnEmitEventFixed
+	BurnTransferAllowance
+	BurnSendL1Request
 )
 
 var codeNames = map[BurnCode]string{
-	Storage: "storage",
+	BurnStorage:            "storage",
+	BurnCallTargetNotFound: "target not found",
+	BurnGetRequest:         "req data",
+	BurnGetContractContext: "sc context",
+	BurnGetCallerData:      "caller data",
+	BurnGetAllowance:       "allowance",
+	BurnGetStateAnchorInfo: "anchor info",
+	BurnGetBalance:         "balance",
+	BurnCallContract:       "call",
+	BurnDeployContract:     "deploy",
+	BurnEmitEventFixed:     "event",
+	BurnTransferAllowance:  "transfer",
+	BurnSendL1Request:      "post req",
 }
 
 type GasBurnRecord struct {
@@ -42,13 +65,16 @@ func (h *GasBurnLog) String() string {
 	if h == nil {
 		return "(no burn history)"
 	}
-	ret := make([]string, len(h.records))
+	ret := make([]string, 0, len(h.records)+2)
+	var total uint64
 	for i := range h.records {
 		s, ok := codeNames[h.records[i].Code]
 		if !ok {
 			s = "(unkown)"
 		}
-		ret[i] = fmt.Sprintf("%10s: %d\n", s, h.records[i].GasBurned)
+		ret = append(ret, fmt.Sprintf("%10s: %d", s, h.records[i].GasBurned))
+		total += h.records[i].GasBurned
 	}
+	ret = append(ret, fmt.Sprintf("---------------"), fmt.Sprintf("%10s: %d", "TOTAL", total))
 	return strings.Join(ret, "\n")
 }

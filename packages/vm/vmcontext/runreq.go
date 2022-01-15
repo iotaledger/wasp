@@ -188,7 +188,7 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 	entryPoint := vmctx.req.CallTarget().EntryPoint
 	targetContract := vmctx.targetContract()
 	if targetContract == nil {
-		vmctx.GasBurn(gas.NotFoundTarget, gas.CallTargetNotFound)
+		vmctx.GasBurn(gas.NotFoundTarget, gas.BurnCallTargetNotFound)
 		panic(xerrors.Errorf("%v: target = %s", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract))
 	}
 	return vmctx.callByProgramHash(

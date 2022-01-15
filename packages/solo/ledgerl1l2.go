@@ -294,21 +294,27 @@ func (ch *Chain) DepositIotasToL2(amount uint64, user *cryptolib.KeyPair) error 
 }
 
 // SendFromL1ToL2Account sends assets from L1 address to the target account on L2
-func (ch *Chain) SendFromL1ToL2Account(assets *iscp.Assets, target *iscp.AgentID, user *cryptolib.KeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
-		accounts.ParamAgentID, target)
+// Sender pays the gas fee
+func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.Assets, target *iscp.AgentID, user *cryptolib.KeyPair) error {
+	require.False(ch.Env.T, toSend.IsEmpty())
+	sumAssets := toSend.Clone().AddIotas(feeIotas)
+	reqEstimate := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
+		AddAssets(sumAssets).
+		AddAllowance(toSend).
+		WithGasBudget(10_000)
+	gas, _, err := ch.EstimateGas(reqEstimate, user)
+	require.NoError(ch.Env.T, err)
 
-	req.AddAssets(assets).WithGasBudget(SendToL2AccountGasBudgetIotas)
-	_, err := ch.PostRequestSync(req, user)
+	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
+		AddAssets(sumAssets).
+		WithGasBudget(gas).
+		AddAllowance(toSend)
+	_, err = ch.PostRequestSync(req, user)
 	return err
 }
 
-func (ch *Chain) SendFromL1ToL2AccountIotas(iotas uint64, target *iscp.AgentID, user *cryptolib.KeyPair) error {
-	return ch.SendFromL1ToL2Account(iscp.NewAssets(iotas, nil), target, user)
-}
-
-func (ch *Chain) SendFromL1ToL2AccountNativeTokens(id iotago.NativeTokenID, target *iscp.AgentID, amount interface{}, user *cryptolib.KeyPair) error {
-	return ch.SendFromL1ToL2Account(iscp.NewEmptyAssets().AddNativeTokens(id, amount), target, user)
+func (ch *Chain) SendFromL1ToL2AccountIotas(iotasFee, iotasSend uint64, target *iscp.AgentID, user *cryptolib.KeyPair) error {
+	return ch.SendFromL1ToL2Account(iotasFee, iscp.NewAssetsIotas(iotasSend), target, user)
 }
 
 // SendFromL2ToL2Account moves assets on L2 from user's account to the target

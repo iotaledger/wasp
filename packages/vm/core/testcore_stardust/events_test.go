@@ -14,15 +14,22 @@ import (
 
 // TODO test analysis not finished
 
-func incrementSCCounter(t *testing.T, chain *solo.Chain) iscp.RequestID {
-	tx, _, err := chain.PostRequestSyncTx(
+func incrementSCCounter(t *testing.T, ch *solo.Chain) iscp.RequestID {
+	reqEstimate := solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).
+		WithGasBudget(100_000).
+		AddAssetsIotas(100_000)
+
+	gas, gasFee, err := ch.EstimateGas(reqEstimate, nil)
+	require.NoError(t, err)
+
+	tx, _, err := ch.PostRequestSyncTx(
 		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).
-			WithGasBudget(500).
-			AddAssetsIotas(1000),
+			WithGasBudget(gas).
+			AddAssetsIotas(gasFee),
 		nil,
 	)
 	require.NoError(t, err)
-	reqs, err := chain.Env.RequestsForChain(tx, chain.ChainID)
+	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(t, err)
 	return reqs[0].ID()
 }

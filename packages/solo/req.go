@@ -6,6 +6,8 @@ package solo
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm"
+
 	"github.com/iotaledger/wasp/packages/kv"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -272,6 +274,7 @@ func (ch *Chain) PostRequestOffLedgerReceipt(req *CallParams, keyPair *cryptolib
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
 	res := results[0]
+	ch.lastReceipt = res.Receipt
 	return res.Receipt, res.Return, res.Error
 }
 
@@ -300,28 +303,32 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	require.NoError(ch.Env.T, err)
 	results := ch.runRequestsSync(reqs, "post")
 	res := results[0]
+	ch.lastReceipt = res.Receipt
 	return tx, res.Receipt, res.Return, res.Error
 }
 
 // SimulateRequest executes the request without committing any changes in the ledger.
 // It can be used to estimate gas needed to run the request
-func (ch *Chain) SimulateRequest(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
+func (ch *Chain) SimulateRequest(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
 	r, err := ch.requestFromParams(req, keyPair)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	result := ch.simulateRequest(r)
-	return result.Receipt, result.Return, result.Error
+	return ch.simulateRequest(r), nil
 }
 
 // EstimateGas executes the request without committing any changes in the ledger. It returns
 // the amount of gas consumed.
-func (ch *Chain) EstimateGas(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64) {
-	receipt, _, err := ch.SimulateRequest(req, keyPair)
-	require.NoError(ch.Env.T, err)
+func (ch *Chain) EstimateGas(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
+	res, err := ch.SimulateRequest(req, keyPair)
+	if err != nil {
+		return 0, 0, err
+	}
+	ch.lastReceipt = res.Receipt
 	gasFeePolicy := ch.GetGasFeePolicy()
-	f1, f2 := gasFeePolicy.FeeFromGas(receipt.GasBurned)
-	return receipt.GasBurned, f1 + f2
+	f1, f2 := gasFeePolicy.FeeFromGas(res.Receipt.GasBurned)
+	feeEstimate := f1 + f2 + gasFeePolicy.GasPricePerNominalUnit
+	return res.Receipt.GasBurned, feeEstimate, nil
 }
 
 // callViewFull calls the view entry point of the smart contract

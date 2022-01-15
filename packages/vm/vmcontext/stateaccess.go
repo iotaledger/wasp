@@ -132,7 +132,7 @@ func (s chainStateWrapper) Set(name kv.Key, value []byte) {
 
 	s.vmctx.currentStateUpdate.Mutations().Set(name, value)
 	// only burning gas when storing bytes to the state
-	s.vmctx.GasBurn(gas.StoreBytes(len(name)+len(value)), gas.Storage)
+	s.vmctx.GasBurn(gas.StoreBytes(len(name)+len(value)), gas.BurnStorage)
 }
 
 func (vmctx *VMContext) State() kv.KVStore {

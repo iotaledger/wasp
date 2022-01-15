@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -93,18 +95,16 @@ type Chain struct {
 	GlobalSync coreutil.ChainStateSync
 	// StateReader is the read only access to the state
 	StateReader state.OptimisticStateReader
-
 	// Log is the named logger of the chain
 	Log *logger.Logger
-
 	// global processor cache
 	proc *processors.Cache
-
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
-
 	// mempool of the chain is used in Solo to mimic a real node
 	mempool mempool.Mempool
+	// receipt of the last call
+	lastReceipt *blocklog.RequestReceipt
 }
 
 type InitOptions struct {
