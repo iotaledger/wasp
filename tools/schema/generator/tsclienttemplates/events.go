@@ -44,7 +44,7 @@ export class Event$EvtName extends wasmclient.Event {
 $#each event eventClassField
 	
 	public constructor(msg: string[]) {
-		super(msg)
+		super(msg);
 $#each event eventHandlerField
 	}
 }
