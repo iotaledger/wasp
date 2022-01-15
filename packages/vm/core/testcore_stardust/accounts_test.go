@@ -366,8 +366,8 @@ func TestAccountBalances(t *testing.T) {
 		require.Equal(t, numReqs == 0, bi.GasFeeCharged == 0)
 		totalGasFeeCharged += bi.GasFeeCharged
 		require.EqualValues(t,
-			l2Iotas(chain.CommonAccount()),
-			totalGasFeeCharged,
+			int(l2Iotas(chain.CommonAccount())),
+			int(totalGasFeeCharged),
 		)
 
 		require.EqualValues(t,
@@ -381,9 +381,11 @@ func TestAccountBalances(t *testing.T) {
 	}
 
 	checkBalance(0)
+	t.Logf("++++++++++++++#%d COMMON %s", 0, chain.L2CommonAccountAssets())
 
 	for i := 0; i < 5; i++ {
 		_, err := chain.UploadBlob(sender, "field", fmt.Sprintf("dummy blob data #%d", i))
+		t.Logf("++++++++++++++#%d COMMON %s", i, chain.L2CommonAccountAssets())
 		require.NoError(t, err)
 
 		checkBalance(i + 1)
@@ -404,7 +406,7 @@ type testParams struct {
 	tokenID           *iotago.NativeTokenID
 }
 
-func initTest(t *testing.T, initLoad ...uint64) *testParams {
+func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
 	ret := &testParams{}
 	ret.env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 
@@ -445,7 +447,11 @@ func TestDepositIotas(t *testing.T) {
 	// dust deposit. If byte cost is 185, anything below that fill be topped up to 185, above that no adjustment is needed
 	for _, addIotas := range []uint64{0, 50, 150, 200, 1000} {
 		t.Run("add iotas "+strconv.Itoa(int(addIotas)), func(t *testing.T) {
-			v := initTest(t)
+			v := initDepositTest(t)
+			v.req.WithGasBudget(1000)
+			gas, gasFee := v.ch.EstimateGas(v.req, v.user)
+			v.req.WithGasBudget(gas)
+
 			v.req = v.req.AddAssetsIotas(addIotas)
 			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.user)
 			require.NoError(t, err)
@@ -458,6 +464,8 @@ func TestDepositIotas(t *testing.T) {
 			if expected < byteCost {
 				expected = byteCost
 			}
+			require.True(t, gasFee <= expected)
+			expected -= gasFee
 			v.ch.AssertL2AccountIotas(v.userAgentID, expected)
 		})
 	}
@@ -465,7 +473,7 @@ func TestDepositIotas(t *testing.T) {
 
 // initWithdrawTest creates foundry with 1_000_000 of max supply and mint 100 tokens to user's account
 func initWithdrawTest(t *testing.T, initLoad ...uint64) *testParams {
-	v := initTest(t, initLoad...)
+	v := initDepositTest(t, initLoad...)
 	// create foundry and mint 100 tokens
 	v.sn, v.tokenID = v.createFoundryAndMint(nil, nil, 1_000_000, 100)
 	// prepare request parameters to withdraw everything what is in the account
@@ -541,7 +549,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
 		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
 
-		err = v.ch.DepositAssets(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
+		err = v.ch.DepositAssetsToL2(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
 		require.NoError(t, err)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 50)
@@ -565,7 +573,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
 		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
 
-		err = v.ch.DepositAssets(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 1), v.user)
+		err = v.ch.DepositAssetsToL2(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 1), v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER DEPOSIT 1")
 
@@ -606,7 +614,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
 		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
 
-		err = v.ch.DepositAssets(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
+		err = v.ch.DepositAssetsToL2(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
 		require.NoError(t, err)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 50)
@@ -658,7 +666,7 @@ func TestTransferAndHarvest(t *testing.T) {
 
 func TestFoundryDestroy(t *testing.T) {
 	t.Run("destroy existing", func(t *testing.T) {
-		v := initTest(t)
+		v := initDepositTest(t)
 		sn, _, err := v.ch.NewFoundryParams(1_000_000).
 			WithUser(v.user).
 			CreateFoundry()
@@ -670,14 +678,14 @@ func TestFoundryDestroy(t *testing.T) {
 		testmisc.RequireErrorToBe(t, err, "does not exist")
 	})
 	t.Run("destroy fail", func(t *testing.T) {
-		v := initTest(t)
+		v := initDepositTest(t)
 		err := v.ch.DestroyFoundry(2, v.user)
 		testmisc.RequireErrorToBe(t, err, "not controlled by the caller")
 	})
 }
 
 func TestTransferPartialAssets(t *testing.T) {
-	e := initTest(t)
+	e := initDepositTest(t)
 	// setup a chain with some iotas and native tokens for user1
 	sn, tokenID, err := e.ch.NewFoundryParams(10).
 		WithUser(e.user).

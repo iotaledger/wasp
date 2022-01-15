@@ -3,6 +3,8 @@ package vmcontext
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
@@ -132,11 +134,15 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.Requ
 		errStr = errProvided.Error()
 	}
 	receipt := &blocklog.RequestReceipt{
-		Request:   vmctx.req,
+		Request:       vmctx.req,
 		ErrorStr:      errStr,
 		GasBudget:     vmctx.gasBudget,
 		GasBurned:     vmctx.gasBurned,
 		GasFeeCharged: vmctx.gasFeeCharged,
+	}
+	receipt.GasBurnLog = vmctx.gasBurnLog
+	if vmctx.task.EnableGasBurnLogging {
+		vmctx.gasBurnLog = gas.NewGasBurnLog()
 	}
 	var err error
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {

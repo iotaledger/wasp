@@ -97,6 +97,7 @@ func TestRequestIsProcessed(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
+		AddAssetsIotas(100).
 		WithGasBudget(30)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)

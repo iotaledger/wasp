@@ -54,6 +54,7 @@ func runTask(task *vm.VMTask) {
 		} else {
 			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Error)
 		}
+		vmctx.AssertConsistentGasTotals()
 	}
 
 	numProcessed := uint16(len(task.Results))

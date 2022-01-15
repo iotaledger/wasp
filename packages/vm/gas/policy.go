@@ -32,11 +32,12 @@ func (p *GasFeePolicy) FeeFromGas(g uint64, availableTokens ...uint64) (uint64, 
 	nominalUnits := g / p.GasNominalUnit
 	if nominalUnits == 0 {
 		totalFee = util.MinUint64(available, p.GasPricePerNominalUnit)
-	}
-	if nominalUnits > math.MaxUint64/p.GasPricePerNominalUnit {
-		totalFee = math.MaxUint64
 	} else {
-		totalFee = nominalUnits * p.GasPricePerNominalUnit
+		if nominalUnits > math.MaxUint64/p.GasPricePerNominalUnit {
+			totalFee = math.MaxUint64
+		} else {
+			totalFee = nominalUnits * p.GasPricePerNominalUnit
+		}
 	}
 	totalFee = util.MinUint64(totalFee, available)
 
@@ -52,6 +53,21 @@ func (p *GasFeePolicy) FeeFromGas(g uint64, availableTokens ...uint64) (uint64, 
 		sendToValidator = (totalFee * uint64(validatorPercentage)) / 100
 	}
 	return totalFee - sendToValidator, sendToValidator
+}
+
+func (p *GasFeePolicy) AffordableGasBudgetFromAvailableTokens(availableTokens uint64) uint64 {
+	if p.GasPricePerNominalUnit == 0 {
+		return math.MaxUint64
+	}
+	if availableTokens < p.GasPricePerNominalUnit {
+		return 0 // if available tokens are less than price of 1 nominal gas unit, can;t afford and gas
+	}
+	nominalUnitsOfGas := availableTokens / p.GasPricePerNominalUnit
+	if nominalUnitsOfGas > math.MaxUint64/p.GasNominalUnit {
+		return math.MaxUint64
+	}
+	return nominalUnitsOfGas * p.GasNominalUnit
+
 }
 
 func DefaultGasFeePolicy() *GasFeePolicy {

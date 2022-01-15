@@ -48,7 +48,7 @@ func TestOffLedgerSuccess(t *testing.T) {
 		chain.AssertL2AccountIotas(userAgentID, 0)
 		chain.AssertL2AccountIotas(cAID, 0)
 
-		err := chain.DepositIotas(1000, user)
+		err := chain.DepositIotasToL2(1000, user)
 		require.NoError(t, err)
 
 		req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,

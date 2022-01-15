@@ -17,7 +17,7 @@ func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict
 	if rec := vmctx.findContractByHname(targetContract); rec != nil {
 		return vmctx.callByProgramHash(targetContract, epCode, params, allowance, rec.ProgramHash)
 	}
-	vmctx.GasBurn(gas.NotFoundTarget)
+	vmctx.GasBurn(gas.NotFoundTarget, gas.Storage)
 	panic(xerrors.Errorf("%v: contract='%s'", ErrContractNotFound, targetContract))
 }
 
@@ -28,7 +28,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		vmctx.GasBurn(gas.NotFoundTarget)
+		vmctx.GasBurn(gas.NotFoundTarget, gas.CallTargetNotFound)
 		panic(xerrors.Errorf("%v: target=(%s, %s)",
 			ErrTargetEntryPointNotFound, targetContract, epCode))
 	}

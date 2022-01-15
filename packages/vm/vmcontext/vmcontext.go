@@ -3,6 +3,8 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
 	"github.com/iotaledger/wasp/packages/transaction"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -55,8 +57,8 @@ type VMContext struct {
 	contractRecord     *root.ContractRecord
 	callStack          []*callContext
 	// --- gas related
-	// max tokens available for gas fee
-	gasMaxTokensAvailableForGasFee uint64
+	// max tokens cane be charged for gas fee
+	gasMaxTokensToSpendForGasFee uint64
 	// final gas budget set for the run
 	gasBudget uint64
 	// is gas bur enabled
@@ -65,6 +67,8 @@ type VMContext struct {
 	gasBurned uint64
 	// tokens charged
 	gasFeeCharged uint64
+	// burn history. If disabled, it is nil
+	gasBurnLog *gas.GasBurnLog
 }
 
 type callContext struct {
@@ -116,7 +120,9 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),
 	}
-
+	if task.EnableGasBurnLogging {
+		ret.gasBurnLog = gas.NewGasBurnLog()
+	}
 	// at the beginning of each block
 	var dustAssumptions *transaction.DustDepositAssumption
 
@@ -278,4 +284,19 @@ func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
 		totalL2Assets = accounts.GetTotalL2Assets(s)
 	})
 	vmctx.txbuilder.AssertConsistentWithL2Totals(totalL2Assets, checkpoint)
+}
+
+func (vmctx *VMContext) AssertConsistentGasTotals() {
+	var sumGasBurned, sumGasFeeCharged uint64
+
+	for _, r := range vmctx.task.Results {
+		sumGasBurned += r.Receipt.GasBurned
+		sumGasFeeCharged += r.Receipt.GasFeeCharged
+	}
+	if vmctx.gasBurnedTotal != sumGasBurned {
+		panic("vmctx.gasBurnedTotal != sumGasBurned")
+	}
+	if vmctx.gasFeeChargedTotal != sumGasFeeCharged {
+		panic("vmctx.gasFeeChargedTotal != sumGasFeeCharged")
+	}
 }

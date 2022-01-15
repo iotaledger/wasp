@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"golang.org/x/xerrors"
 )
 
@@ -14,13 +15,14 @@ func (vmctx *VMContext) gasSetBudget(gasBudget uint64) {
 	vmctx.gasBurned = 0
 }
 
-func (vmctx *VMContext) GasBurn(gas uint64) {
+func (vmctx *VMContext) GasBurn(g uint64, burnCode gas.BurnCode) {
 	if !vmctx.gasBurnEnabled {
 		return
 	}
-	vmctx.gasBurned += gas
+	vmctx.gasBurnLog.Record(burnCode, g)
+	vmctx.gasBurned += g
 	if vmctx.gasBurned > vmctx.gasBudget {
-		panic(xerrors.Errorf("%v: burned (budget)= %d (%d)",
+		panic(xerrors.Errorf("%v: burned (budget) = %d (%d)",
 			coreutil.ErrorGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudget))
 	}
 }

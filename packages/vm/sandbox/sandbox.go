@@ -161,8 +161,12 @@ func (s *sandbox) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandbox) Burn(gas uint64) {
-	s.vmctx.GasBurn(gas)
+func (s *sandbox) Burn(g uint64, burnCode ...gas.BurnCode) {
+	c := gas.BurnCode(255)
+	if len(burnCode) > 0 {
+		c = burnCode[0]
+	}
+	s.vmctx.GasBurn(g, c)
 }
 
 func (s *sandbox) Budget() uint64 {

@@ -188,7 +188,7 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 	entryPoint := vmctx.req.CallTarget().EntryPoint
 	targetContract := vmctx.targetContract()
 	if targetContract == nil {
-		vmctx.GasBurn(gas.NotFoundTarget)
+		vmctx.GasBurn(gas.NotFoundTarget, gas.CallTargetNotFound)
 		panic(xerrors.Errorf("%v: target = %s", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract))
 	}
 	return vmctx.callByProgramHash(
@@ -209,30 +209,23 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 		panic("inconsistency: vmctx.req.SenderAddress() == nil")
 	}
 	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
-	tokensGuaranteed := uint64(0)
-	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
-		tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
-		// to pay for gas chain is configured to use some native token, not IOTA
-		tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), tokenID)
-		if tokensAvailableBig != nil {
-			// safely subtract the transfer from the sender to the target
-			if transfer := vmctx.req.Allowance(); transfer != nil {
-				if transferTokens := iscp.FindNativeTokenBalance(transfer.Tokens, tokenID); transferTokens != nil {
-					if tokensAvailableBig.Cmp(transferTokens) < 0 {
-						tokensAvailableBig.SetUint64(0)
-					} else {
-						tokensAvailableBig.Sub(tokensAvailableBig, transferTokens)
-					}
-				}
-			}
-			if tokensAvailableBig.IsUint64() {
-				tokensGuaranteed = tokensAvailableBig.Uint64()
-			} else {
-				tokensGuaranteed = math.MaxUint64
-			}
-		}
-	} else {
-		// Iotas are used to pay the gas fee
+	guaranteedFeeTokens := vmctx.calcGuaranteedFeeTokens()
+	// calculate how many tokens maximum will be charged taking into account the budget
+	f1, f2 := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.req.GasBudget(), guaranteedFeeTokens)
+	vmctx.gasMaxTokensToSpendForGasFee = f1 + f2
+	// calculate affordable gas budget
+	affordable := vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
+	// adjust gas budget to what is affordable
+	vmctx.gasBudget = util.MinUint64(vmctx.req.GasBudget(), affordable)
+}
+
+// calcGuaranteedFeeTokens return hiw maximum tokens (iotas or native) can be guaranteed for the fee,
+// taking into account allowance (which must be 'reserved')
+func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
+	var tokensGuaranteed uint64
+
+	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
+		// iotas are used as gas tokens
 		tokensGuaranteed = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
 		// safely subtract the allowed from the sender to the target
 		if allowed := vmctx.req.Allowance(); allowed != nil {
@@ -242,24 +235,30 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 				tokensGuaranteed -= allowed.Iotas
 			}
 		}
+		return tokensGuaranteed
 	}
-	vmctx.gasMaxTokensAvailableForGasFee = tokensGuaranteed
-	if tokensGuaranteed < vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit {
-		// it will not proceed but will charge at least the minimum
-		panic(ErrNotEnoughTokensFor1GasNominalUnit)
-	}
-	var gasBudgetAffordable uint64
-	if vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit == 0 {
-		gasBudgetAffordable = math.MaxUint64
-	} else {
-		nominalUnitsOfGas := tokensGuaranteed / vmctx.chainInfo.GasFeePolicy.GasPricePerNominalUnit
-		if nominalUnitsOfGas > math.MaxUint64/vmctx.chainInfo.GasFeePolicy.GasNominalUnit {
-			gasBudgetAffordable = math.MaxUint64
+	// native tokens are used for gas fee
+	tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
+	// to pay for gas chain is configured to use some native token, not IOTA
+	tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), tokenID)
+	if tokensAvailableBig != nil {
+		// safely subtract the transfer from the sender to the target
+		if transfer := vmctx.req.Allowance(); transfer != nil {
+			if transferTokens := iscp.FindNativeTokenBalance(transfer.Tokens, tokenID); transferTokens != nil {
+				if tokensAvailableBig.Cmp(transferTokens) < 0 {
+					tokensAvailableBig.SetUint64(0)
+				} else {
+					tokensAvailableBig.Sub(tokensAvailableBig, transferTokens)
+				}
+			}
+		}
+		if tokensAvailableBig.IsUint64() {
+			tokensGuaranteed = tokensAvailableBig.Uint64()
 		} else {
-			gasBudgetAffordable = nominalUnitsOfGas * vmctx.chainInfo.GasFeePolicy.GasNominalUnit
+			tokensGuaranteed = math.MaxUint64
 		}
 	}
-	vmctx.gasBudget = util.MinUint64(vmctx.req.GasBudget(), gasBudgetAffordable)
+	return tokensGuaranteed
 }
 
 // chargeGasFee takes burned tokens from the sender's account
@@ -274,10 +273,10 @@ func (vmctx *VMContext) chargeGasFee() {
 		return
 	}
 	// total fees to charge
-	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), vmctx.gasMaxTokensAvailableForGasFee)
+	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), vmctx.gasMaxTokensToSpendForGasFee)
 	vmctx.gasFeeCharged = sendToOwner + sendToValidator
 
-	// calc totals
+	// calc gas totals
 	vmctx.gasBurnedTotal += vmctx.gasBurned
 	vmctx.gasFeeChargedTotal += vmctx.gasFeeCharged
 

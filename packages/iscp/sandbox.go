@@ -6,6 +6,8 @@ package iscp
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -125,7 +127,7 @@ type RequestParameters struct {
 }
 
 type Gas interface {
-	Burn(uint64)
+	Burn(gas uint64, burnCode ...gas.BurnCode)
 	Budget() uint64
 }
 

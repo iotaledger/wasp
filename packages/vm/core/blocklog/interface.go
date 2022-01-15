@@ -10,6 +10,8 @@ import (
 	"math"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
 	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -314,6 +316,7 @@ type RequestReceipt struct {
 	// not persistent
 	BlockIndex   uint32
 	RequestIndex uint16
+	GasBurnLog   *gas.GasBurnLog
 }
 
 func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {

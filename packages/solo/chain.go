@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -119,27 +118,18 @@ func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (
 		// blob exists, return hash of existing
 		return expectedHash, nil
 	}
+	// estimate gas budget and iotas needed
+	reqEstimate := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
+		AddAssetsIotas(1_000_000).
+		WithGasBudget(1_000_000)
+	gasBudgetEstimate, gasFeeEstimate := ch.EstimateGas(reqEstimate, keyPair)
 
-	gasFeePolicy := ch.GetGasFeePolicy()
-	require.Nil(ch.Env.T, gasFeePolicy.GasFeeTokenID)
-	gasEstimate := blob.GasForBlob(blobAsADict) + gasFeePolicy.GasNominalUnit*10
+	err = ch.DepositIotasToL2(gasFeeEstimate*2, keyPair)
+	require.NoError(ch.Env.T, err)
 
-	f1, f2 := gasFeePolicy.FeeFromGas(gasEstimate)
-	_, err = ch.PostRequestSync(
-		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			AddAssetsIotas(f1+f2).
-			WithGasBudget(gasFeePolicy.GasNominalUnit),
-		keyPair,
-	)
-	if err != nil {
-		return
-	}
-
-	res, err := ch.PostRequestOffLedger(
-		NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
-			WithGasBudget(gasEstimate),
-		keyPair,
-	)
+	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
+		WithGasBudget(gasBudgetEstimate)
+	res, err := ch.PostRequestOffLedger(req, keyPair)
 	if err != nil {
 		return
 	}

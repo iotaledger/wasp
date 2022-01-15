@@ -281,16 +281,16 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 	return err
 }
 
-// DepositAssets deposits assets on user's on-chain account
-func (ch *Chain) DepositAssets(assets *iscp.Assets, user *cryptolib.KeyPair) error {
+// DepositAssetsToL2 deposits assets on user's on-chain account
+func (ch *Chain) DepositAssetsToL2(assets *iscp.Assets, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).AddAssets(assets)
 	_, err := ch.PostRequestSync(req, user)
 	return err
 }
 
-// DepositIotas deposits assets on user's on-chain account
-func (ch *Chain) DepositIotas(amount uint64, user *cryptolib.KeyPair) error {
-	return ch.DepositAssets(iscp.NewAssets(amount, nil), user)
+// DepositIotasToL2 deposits assets on user's on-chain account
+func (ch *Chain) DepositIotasToL2(amount uint64, user *cryptolib.KeyPair) error {
+	return ch.DepositAssetsToL2(iscp.NewAssets(amount, nil), user)
 }
 
 // SendFromL1ToL2Account sends assets from L1 address to the target account on L2

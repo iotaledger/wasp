@@ -31,8 +31,9 @@ func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
 	require.NotContains(t, err.Error(), "skipped")
 }
 
-func TestPing10Iotas(t *testing.T) { run2(t, testPing10Iotas) }
-func testPing10Iotas(t *testing.T, w bool) {
+// TestPingIotas1 sends some iotas to SC and receives the whole allowance sent back to L1 as on-ledger request
+func TestPingIotas1(t *testing.T) { run2(t, testPingIotas1) }
+func testPingIotas1(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
@@ -42,14 +43,22 @@ func testPing10Iotas(t *testing.T, w bool) {
 	commonBefore := ch.L2CommonAccountAssets()
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
-	const sendIotas = 20_000
 	const expectedBack = 1_000
 	ch.Env.AssertL1AddressIotas(userAddr, solo.Saldo)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddAssetsIotas(sendIotas).
+	reqEstimate := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
+		AddAssetsIotas(100_000).
 		AddIotaAllowance(expectedBack).
-		WithGasBudget(15000)
+		WithGasBudget(100_000)
+
+	gasEstimate, feeEstimate := ch.EstimateGas(reqEstimate, user)
+	t.Logf("gasEstimate: %d, feeEstimate: %d", gasEstimate, feeEstimate)
+
+	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
+		AddAssetsIotas(feeEstimate + expectedBack).
+		AddIotaAllowance(expectedBack).
+		WithGasBudget(gasEstimate)
+
 	receipt, _, err := ch.PostRequestSyncReceipt(req, user)
 	require.NoError(t, err)
 
@@ -57,7 +66,7 @@ func testPing10Iotas(t *testing.T, w bool) {
 	commonAfter := ch.L2CommonAccountAssets()
 	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", receipt, userFundsAfter, commonAfter)
 
-	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, solo.Saldo-sendIotas+expectedBack)
+	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, solo.Saldo-feeEstimate)
 	require.EqualValues(t, int(commonBefore.Iotas+receipt.GasFeeCharged), int(commonAfter.Iotas))
-	require.EqualValues(t, int(sendIotas-expectedBack-receipt.GasFeeCharged), int(userFundsAfter.AssetsL2.Iotas))
+	require.EqualValues(t, 0, int(userFundsAfter.AssetsL2.Iotas))
 }

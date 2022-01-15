@@ -316,10 +316,12 @@ func (ch *Chain) SimulateRequest(req *CallParams, keyPair *cryptolib.KeyPair) (*
 
 // EstimateGas executes the request without committing any changes in the ledger. It returns
 // the amount of gas consumed.
-func (ch *Chain) EstimateGas(req *CallParams, keyPair *cryptolib.KeyPair) (gasBurned uint64, gasFeeCharged uint64) {
+func (ch *Chain) EstimateGas(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64) {
 	receipt, _, err := ch.SimulateRequest(req, keyPair)
 	require.NoError(ch.Env.T, err)
-	return receipt.GasBurned, receipt.GasFeeCharged
+	gasFeePolicy := ch.GetGasFeePolicy()
+	f1, f2 := gasFeePolicy.FeeFromGas(receipt.GasBurned)
+	return receipt.GasBurned, f1 + f2
 }
 
 // callViewFull calls the view entry point of the smart contract

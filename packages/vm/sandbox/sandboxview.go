@@ -6,6 +6,8 @@ package sandbox
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -94,8 +96,12 @@ func (s *sandboxView) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandboxView) Burn(gas uint64) {
-	s.vmctx.GasBurn(gas)
+func (s *sandboxView) Burn(g uint64, burnCode ...gas.BurnCode) {
+	c := gas.BurnCode(255)
+	if len(burnCode) > 0 {
+		c = burnCode[0]
+	}
+	s.vmctx.GasBurn(g, c)
 }
 
 func (s *sandboxView) Budget() uint64 {
