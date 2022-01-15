@@ -471,8 +471,8 @@ func initWithdrawTest(t *testing.T, initLoad ...uint64) *testParams {
 	// prepare request parameters to withdraw everything what is in the account
 	// do not run the request yet
 	v.req = solo.NewCallParams("accounts", "withdraw").
-		AddAssetsIotas(1000).
-		WithGasBudget(2000)
+		AddAssetsIotas(12000).
+		WithGasBudget(12000)
 	v.printBalances("BEGIN")
 	return v
 }

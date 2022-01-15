@@ -38,6 +38,8 @@ type ChainCore interface {
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger
 
+	// FIXME these methods should not be part of the chain interface just for the need of mocking
+	//  Mocking interfaces should be available only in the testing environment
 	// Most of these methods are made public for mocking in tests
 	EnqueueDismissChain(reason string) // This one should really be public
 	Enqueueiotago(chainOutput *iotago.AliasOutput, timestamp time.Time)
