@@ -13,7 +13,7 @@ export class Results extends wasmclient.Decoder {
 
     protected forEach(keyValue: (key: Buffer, val: Buffer) => void): void {
         this.res.forEach((val, key) => {
-            let keyBuf = this.keys.get(key);
+            const keyBuf = this.keys.get(key);
             if (keyBuf === undefined) {
                 wasmclient.panic("missing key");
                 return;
