@@ -15,8 +15,10 @@ func ExtendedOutputFromPostData(
 	rentStructure *iotago.RentStructure,
 	disableAutoAdjustDustDeposit ...bool,
 ) (*iotago.ExtendedOutput, error) {
-	if par.Metadata == nil {
-		par.Metadata = &iscp.SendMetadata{} // prevent null point exception when metadata is nil
+	metadata := par.Metadata
+	if metadata == nil {
+		// if metadata is not specified, target is nil. It corresponds to sending funds to the plain L1 address
+		metadata = &iscp.SendMetadata{}
 	}
 	ret, err := MakeExtendedOutput(
 		par.TargetAddress,
@@ -24,11 +26,11 @@ func ExtendedOutputFromPostData(
 		par.Assets,
 		&iscp.RequestMetadata{
 			SenderContract: senderContract,
-			TargetContract: par.Metadata.TargetContract,
-			EntryPoint:     par.Metadata.EntryPoint,
-			Params:         par.Metadata.Params,
-			Allowance:      par.Metadata.Allowance,
-			GasBudget:      par.Metadata.GasBudget,
+			TargetContract: metadata.TargetContract,
+			EntryPoint:     metadata.EntryPoint,
+			Params:         metadata.Params,
+			Allowance:      metadata.Allowance,
+			GasBudget:      metadata.GasBudget,
 		},
 		par.Options,
 		rentStructure,

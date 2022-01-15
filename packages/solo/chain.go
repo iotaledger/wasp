@@ -532,3 +532,21 @@ func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair cryptolib.Key
 	results := ch.runRequestsSync(reqs, "postSpecial")
 	return results[0]
 }
+
+type L1L2AddressAssets struct {
+	Address  iotago.Address
+	AssetsL1 *iscp.Assets
+	AssetsL2 *iscp.Assets
+}
+
+func (a *L1L2AddressAssets) String() string {
+	return fmt.Sprintf("Address: %s\nL1 assets:\n  %s\nL2 assets:\n  %s", a.Address, a.AssetsL1, a.AssetsL2)
+}
+
+func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
+	return &L1L2AddressAssets{
+		Address:  addr,
+		AssetsL1: ch.Env.L1AddressBalances(addr),
+		AssetsL2: ch.L2AccountAssets(iscp.NewAgentID(addr, 0)),
+	}
+}
