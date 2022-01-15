@@ -27,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
 )
 
 // String is string representation for main parameters of the chain
@@ -107,9 +108,9 @@ func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
 // Estimates needed gas fee and uploads iotas to the sender's account before uploading blob.
 // So, it takes 2 requests for each call
-func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
-	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
+	if user == nil {
+		user = &ch.OriginatorPrivateKey
 	}
 
 	blobAsADict := parseParams(params)
@@ -118,18 +119,26 @@ func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (
 		// blob exists, return hash of existing
 		return expectedHash, nil
 	}
+
+	// We have to have some iotas even in estimate mode, otherwise we cannot create transaction
+	const minimumIotasForEstimate = 100_000
+
+	userIotas := ch.Env.L1IotaBalance(cryptolib.Ed25519AddressFromPubKey(user.PublicKey))
+	if userIotas < minimumIotasForEstimate {
+		return [32]byte{}, xerrors.Errorf("expected at least %d iotas on user L1 account", minimumIotasForEstimate)
+	}
 	// estimate gas budget and iotas needed
 	reqEstimate := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
-		AddAssetsIotas(1_000_000).
-		WithGasBudget(1_000_000)
-	gasBudgetEstimate, gasFeeEstimate := ch.EstimateGas(reqEstimate, keyPair)
+		AddAssetsIotas(minimumIotasForEstimate).
+		WithGasBudget(minimumIotasForEstimate)
+	gasBudgetEstimate, gasFeeEstimate := ch.EstimateGas(reqEstimate, user)
 
-	err = ch.DepositIotasToL2(gasFeeEstimate*2, keyPair)
+	err = ch.DepositIotasToL2(gasFeeEstimate*2, user)
 	require.NoError(ch.Env.T, err)
 
 	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
 		WithGasBudget(gasBudgetEstimate)
-	res, err := ch.PostRequestOffLedger(req, keyPair)
+	res, err := ch.PostRequestOffLedger(req, user)
 	if err != nil {
 		return
 	}
