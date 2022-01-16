@@ -10,17 +10,14 @@ import (
 	"math"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
-	"golang.org/x/xerrors"
-
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/hive.go/marshalutil"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/gas"
+	"golang.org/x/xerrors"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log contract")
@@ -316,7 +313,7 @@ type RequestReceipt struct {
 	// not persistent
 	BlockIndex   uint32
 	RequestIndex uint16
-	GasBurnLog   *gas.GasBurnLog
+	GasBurnLog   *gas.BurnLog
 }
 
 func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {

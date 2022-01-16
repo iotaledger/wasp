@@ -43,13 +43,16 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 	return env, chain
 }
 
-func setupDeployer(t *testing.T, chain *solo.Chain) (*cryptolib.KeyPair, iotago.Address, *iscp.AgentID) {
-	user, userAddr := chain.Env.NewKeyPairWithFunds()
-	chain.Env.AssertL1AddressIotas(userAddr, solo.Saldo)
+func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iotago.Address, *iscp.AgentID) {
+	user, userAddr := ch.Env.NewKeyPairWithFunds()
+	ch.Env.AssertL1AddressIotas(userAddr, solo.Saldo)
+
+	err := ch.DepositIotasToL2(10_000, user)
+	require.NoError(t, err)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(userAddr, 0)).WithGasBudget(1_000)
-	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+	_, err = ch.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 	return user, userAddr, iscp.NewAgentID(userAddr, 0)
 }

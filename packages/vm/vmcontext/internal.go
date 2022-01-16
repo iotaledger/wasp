@@ -5,20 +5,18 @@ import (
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
-
-	"github.com/iotaledger/wasp/packages/kv"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract

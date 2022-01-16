@@ -6,12 +6,11 @@ package iscp
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // SandboxBase is the common interface of Sandbox and SandboxView
@@ -130,7 +129,7 @@ type RequestParameters struct {
 }
 
 type Gas interface {
-	Burn(gas uint64, burnCode ...gas.BurnCode)
+	Burn(burnCode gas.BurnCode, par ...int)
 	Budget() uint64
 }
 

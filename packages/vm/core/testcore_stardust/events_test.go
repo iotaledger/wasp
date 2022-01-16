@@ -75,48 +75,50 @@ func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) [
 func TestGetEvents(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
 		WithNativeContract(inccounter.Processor)
-	chain := env.NewChain(nil, "chain1")
+	ch := env.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.VarCounter, 0)
+	err := ch.DepositIotasToL2(10_000, nil)
 	require.NoError(t, err)
 
-	// block 1 = chain init
+	err = ch.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.VarCounter, 0)
+	require.NoError(t, err)
+
+	// block 1 = ch init
 	// block 2 = inccounter contract deployment
-	reqID1 := incrementSCCounter(t, chain) // #block 3
-	reqID2 := incrementSCCounter(t, chain) // #block 4
-	reqID3 := incrementSCCounter(t, chain) // #block 5
+	reqID1 := incrementSCCounter(t, ch) // #block 3
+	reqID2 := incrementSCCounter(t, ch) // #block 4
+	reqID3 := incrementSCCounter(t, ch) // #block 5
 
-	events := getEventsForRequest(t, chain, reqID1)
+	events := getEventsForRequest(t, ch, reqID1)
 	require.Len(t, events, 1)
 	require.Contains(t, events[0], "counter = 1")
-	events = getEventsForRequest(t, chain, reqID2)
+	events = getEventsForRequest(t, ch, reqID2)
 	require.Len(t, events, 1)
 	require.Contains(t, events[0], "counter = 2")
-	events = getEventsForRequest(t, chain, reqID3)
+	events = getEventsForRequest(t, ch, reqID3)
 	require.Len(t, events, 1)
 	require.Contains(t, events[0], "counter = 3")
 
-	events = getEventsForBlock(t, chain, 3)
+	events = getEventsForBlock(t, ch, 3)
+	require.Len(t, events, 2)
+	require.Contains(t, events[0], "counter = 0")
+	events = getEventsForBlock(t, ch, 4)
 	require.Len(t, events, 1)
 	require.Contains(t, events[0], "counter = 1")
-	events = getEventsForBlock(t, chain, 4)
+	events = getEventsForBlock(t, ch, 5)
 	require.Len(t, events, 1)
 	require.Contains(t, events[0], "counter = 2")
-	events = getEventsForBlock(t, chain, 5)
-	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 3")
-	events = getEventsForBlock(t, chain) // latest block should be 5
+	events = getEventsForBlock(t, ch)
 	require.Len(t, events, 1)
 	require.Contains(t, events[0], "counter = 3")
 
-	events = getEventsForSC(t, chain, 0, 1000)
+	events = getEventsForSC(t, ch, 0, 1000)
 	require.Len(t, events, 4)
 	require.Contains(t, events[0], "counter = 0")
 	require.Contains(t, events[1], "counter = 1")
 	require.Contains(t, events[2], "counter = 2")
 	require.Contains(t, events[3], "counter = 3")
-	events = getEventsForSC(t, chain, 2, 3)
-	require.Len(t, events, 2)
+	events = getEventsForSC(t, ch, 2, 3)
+	require.Len(t, events, 1)
 	require.Contains(t, events[0], "counter = 0")
-	require.Contains(t, events[1], "counter = 1")
 }

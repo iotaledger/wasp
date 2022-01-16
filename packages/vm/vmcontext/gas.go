@@ -15,10 +15,11 @@ func (vmctx *VMContext) gasSetBudget(gasBudget uint64) {
 	vmctx.gasBurned = 0
 }
 
-func (vmctx *VMContext) GasBurn(g uint64, burnCode gas.BurnCode) {
+func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...int) {
 	if !vmctx.gasBurnEnabled {
 		return
 	}
+	g := burnCode.Value(par...)
 	vmctx.gasBurnLog.Record(burnCode, g)
 	vmctx.gasBurned += g
 	if vmctx.gasBurned > vmctx.gasBudgetAdjusted {

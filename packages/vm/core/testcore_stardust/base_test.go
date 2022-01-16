@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
@@ -111,15 +110,16 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
+		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
 		// user on L1 is charged with dust deposit
 		env.AssertL1AddressIotas(ch.OriginatorAddress, originatorsL1IotasBefore-reqDustDeposit)
 		// originator (user) is charged with gas fee on L2
-		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-gas.NotFoundTarget)
+		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
 		env.WaitPublisher()
 	})
 	t.Run("no contract,originator!=user", func(t *testing.T) {
@@ -147,6 +147,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
+		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
@@ -157,9 +158,9 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// originator account does not change
 		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore)
 		// user is charged with gas fee on L2
-		ch.AssertL2AccountIotas(senderAgentID, reqDustDeposit-gas.NotFoundTarget)
+		ch.AssertL2AccountIotas(senderAgentID, reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
 		env.WaitPublisher()
 	})
 	t.Run("no EP,originator==user", func(t *testing.T) {
@@ -183,15 +184,16 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
+		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
 		// user on L1 is charged with dust deposit
 		env.AssertL1AddressIotas(ch.OriginatorAddress, originatorsL1IotasBefore-reqDustDeposit)
 		// originator (user) is charged with gas fee on L2
-		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-gas.NotFoundTarget)
+		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
 		env.WaitPublisher()
 	})
 	t.Run("no EP,originator!=user", func(t *testing.T) {
@@ -219,7 +221,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
-
+		rec := ch.LastReceipt()
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
 		// originator on L1 does not change
@@ -229,9 +231,9 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// originator account does not change
 		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore)
 		// user is charged with gas fee on L2
-		ch.AssertL2AccountIotas(senderAgentID, reqDustDeposit-gas.NotFoundTarget)
+		ch.AssertL2AccountIotas(senderAgentID, reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
 		env.WaitPublisher()
 	})
 }
@@ -345,9 +347,12 @@ func TestDeployNativeContract(t *testing.T) {
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 	// userAgentID := iscp.NewAgentID(userAddr, 0)
 
+	err := ch.DepositIotasToL2(10_000, senderKeyPair)
+	require.NoError(t, err)
+
 	// get more iotas for originator
 	originatorBalance := env.L1AddressBalances(ch.OriginatorAddress).Iotas
-	_, err := env.L1Ledger().GetFundsFromFaucet(ch.OriginatorAddress)
+	_, err = env.L1Ledger().GetFundsFromFaucet(ch.OriginatorAddress)
 	require.NoError(t, err)
 	env.AssertL1AddressIotas(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
 

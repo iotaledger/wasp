@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -24,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
@@ -223,7 +224,10 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 //   - it is and ID of  the blob stored on the chain in the format of Wasm binary
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
 //     smart contract must be made available with the call examples.AddProcessor
-func (ch *Chain) DeployContract(keyPair *cryptolib.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
+func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
+	if user == nil {
+		user = &ch.OriginatorPrivateKey
+	}
 	par := codec.MakeDict(map[string]interface{}{
 		root.ParamProgramHash: programHash,
 		root.ParamName:        name,
@@ -231,13 +235,22 @@ func (ch *Chain) DeployContract(keyPair *cryptolib.KeyPair, name string, program
 	for k, v := range parseParams(params) {
 		par[k] = v
 	}
-	gasPolicy := ch.GetGasFeePolicy()
-	budgetEstimate := root.GasToDeploy(programHash) + gasPolicy.GasPricePerNominalUnit
-	f1, f2 := gasPolicy.FeeFromGas(budgetEstimate)
+	reqEstimate := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
+		WithGasBudget(100_000).
+		AddAssetsIotas(10_000)
+	gasEstimate, gasFeeEstimate, err := ch.EstimateGas(reqEstimate, user)
+	require.NoError(ch.Env.T, err)
+
+	userAddr := cryptolib.Ed25519AddressFromPubKey(user.PublicKey)
+	userIotasL2 := ch.L2AccountIotas(iscp.NewAgentID(userAddr, 0))
+	if userIotasL2 < gasFeeEstimate*2 {
+		return xerrors.Errorf("sender's %di on L2 is not enough. At least %di is required", userIotasL2, gasFeeEstimate*2)
+	}
+
 	req := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
-		WithGasBudget(budgetEstimate).
-		AddAssetsIotas(f1 + f2)
-	_, err := ch.PostRequestSync(req, keyPair)
+		WithGasBudget(gasEstimate)
+
+	_, err = ch.PostRequestSync(req, user)
 	return err
 }
 
