@@ -93,7 +93,7 @@ type Sandbox interface {
 	// TransferAllowedFunds fails if target does not exist
 	TransferAllowedFunds(target *AgentID, assets ...*Assets) *Assets
 	// TransferAllowedFundsForceCreateTarget does not fail when target does not exist.
-	// If it is a random target, funds may be inaccessible (not safe)
+	// If it is a random target, funds may be inaccessible (less safe)
 	TransferAllowedFundsForceCreateTarget(target *AgentID, assets ...*Assets) *Assets
 	// Send sends a on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
