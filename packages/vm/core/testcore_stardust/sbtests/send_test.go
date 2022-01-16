@@ -3,11 +3,10 @@ package sbtests
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +16,7 @@ func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
 	setupTestSandboxSC(t, ch, nil, w)
 
 	// send 1 tx will 1_000_000 iotas which should result in too many outputs, so the request must fail
-	wallet, address := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(1))
+	wallet, address := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 	_, err := ch.Env.GetFundsFromFaucet(address, 10_000_000)
 	require.NoError(t, err)
 
@@ -27,7 +26,53 @@ func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
 		WithGasBudget(10_000_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.Error(t, err)
-	testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrOutputLimitInSingleCallExceeded)
+	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
+	require.NotContains(t, err.Error(), "skipped")
+}
+
+func TestSeveralOutputsInASingleCall(t *testing.T) { run2(t, testSeveralOutputsInASingleCall) }
+func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, w)
+
+	wallet, walletAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
+
+	err := ch.DepositIotasToL2(100_000, wallet)
+	require.NoError(t, err)
+
+	beforeWallet := ch.L1L2Funds(walletAddr)
+	t.Logf("----- BEFORE wallet: %s", beforeWallet)
+
+	const allowance = 800
+	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
+		AddIotaAllowance(allowance).
+		WithGasBudget(200_000)
+	tx, _, err := ch.PostRequestSyncTx(req, wallet)
+	require.NoError(t, err)
+
+	dustDeposit := tx.Essence.Outputs[0].Deposit()
+	ch.Env.AssertL1AddressIotas(walletAddr, beforeWallet.AssetsL1.Iotas+allowance-dustDeposit)
+}
+
+func TestSeveralOutputsInASingleCallFail(t *testing.T) { run2(t, testSeveralOutputsInASingleCallFail) }
+func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, w)
+
+	wallet, walletAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
+
+	err := ch.DepositIotasToL2(100_000, wallet)
+	require.NoError(t, err)
+
+	beforeWallet := ch.L1L2Funds(walletAddr)
+	t.Logf("----- BEFORE wallet: %s", beforeWallet)
+
+	const allowance = 1000
+	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
+		AddIotaAllowance(allowance).
+		WithGasBudget(200_000)
+	_, err = ch.PostRequestSync(req, wallet)
+	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
 }
 

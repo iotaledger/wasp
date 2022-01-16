@@ -28,6 +28,7 @@ import (
 func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (result *vm.RequestResult, err error) {
 	// prepare context for the request
 	vmctx.req = req
+	vmctx.numPostedOutputs = 0
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])

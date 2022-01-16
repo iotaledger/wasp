@@ -50,6 +50,7 @@ type VMContext struct {
 	// ---- request context
 	chainInfo          *governance.ChainInfo
 	req                iscp.Request
+	numPostedOutputs   int // how many outputs has been posted in the request
 	requestIndex       uint16
 	requestEventIndex  uint16
 	currentStateUpdate state.StateUpdate

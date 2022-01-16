@@ -7,10 +7,11 @@ import (
 
 // testSplitFunds calls Send in a loop by sending 200 iotas back to the caller
 func testSplitFunds(ctx iscp.Sandbox) (dict.Dict, error) {
-	for ctx.AllowanceAvailable().Iotas >= 200 {
-		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAssetsIotas(200)) // claim 200 iotas from allowance at a time
+	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().Iotas >= 200 {
+		// claim 200 iotas from allowance at a time
 		// send back to caller's address
 		// depending on the amount of iotas, it will exceed number of outputs or not
+		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAssetsIotas(200))
 		ctx.Send(
 			iscp.RequestParameters{
 				TargetAddress: ctx.Caller().Address(),
