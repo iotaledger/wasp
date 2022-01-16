@@ -3,7 +3,7 @@ package tsclienttemplates
 var eventsTs = map[string]string{
 	// *******************************
 	"events.ts": `
-$#emit importWasmLib
+$#emit importWasmClient
 
 const $pkgName$+Handlers = new Map<string, (evt: $PkgName$+Events, msg: string[]) => void>([
 $#each events eventHandler

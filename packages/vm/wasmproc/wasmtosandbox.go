@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmproc
 
 import (
@@ -23,43 +26,34 @@ const (
 	FnContract            = int32(-9)
 	FnContractCreator     = int32(-10)
 	FnDeployContract      = int32(-11)
-	FnEvent               = int32(-12)
-	FnGetEntropy          = int32(-13)
-	FnGetTimestamp        = int32(-14)
-	FnIncomingTransfer    = int32(-15)
-	FnLog                 = int32(-16)
-	FnMinted              = int32(-17)
+	FnEntropy             = int32(-12)
+	FnEvent               = int32(-13)
+	FnIncomingTransfer    = int32(-14)
+	FnLog                 = int32(-15)
+	FnMinted              = int32(-16)
+	FnPanic               = int32(-17)
 	FnParams              = int32(-18)
-	FnRequest             = int32(-19)
-	FnSend                = int32(-20)
-	FnDebug               = int32(-21)
-	FnStateAnchor         = int32(-22)
-	FnPanic               = int32(-23)
-	FnUtilsBase58Decode   = int32(-24)
-	FnUtilsBase58Encode   = int32(-25)
-	FnUtilsBlsAddress     = int32(-26)
-	FnUtilsBlsAggregate   = int32(-27)
-	FnUtilsBlsValid       = int32(-28)
-	FnUtilsEd25519Address = int32(-29)
-	FnUtilsEd25519Valid   = int32(-30)
-	FnUtilsHashBlake2b    = int32(-31)
-	FnUtilsHashName       = int32(-32)
-	FnUtilsHashSha3       = int32(-33)
-
-	// FnColor           = int32(-13)
-	// FnExports         = int32(-20)
-	// FnLength          = int32(-25)
-	// FnMaps            = int32(-27)
-	// FnPanic           = int32(-29)
-	// FnPost            = int32(-31)
-	// FnRandom          = int32(-32)
-	// FnResults         = int32(-34)
-	// FnReturn          = int32(-35)
-	// FnTrace           = int32(-38)
-	// FnTransfers       = int32(-39)
+	FnPost                = int32(-19)
+	FnRequest             = int32(-20)
+	FnRequestID           = int32(-21)
+	FnSend                = int32(-22)
+	FnStateAnchor         = int32(-23)
+	FnTimestamp           = int32(-24)
+	FnTrace               = int32(-25)
+	FnUtilsBase58Decode   = int32(-26)
+	FnUtilsBase58Encode   = int32(-27)
+	FnUtilsBlsAddress     = int32(-28)
+	FnUtilsBlsAggregate   = int32(-29)
+	FnUtilsBlsValid       = int32(-30)
+	FnUtilsEd25519Address = int32(-31)
+	FnUtilsEd25519Valid   = int32(-32)
+	FnUtilsHashBlake2b    = int32(-33)
+	FnUtilsHashName       = int32(-34)
+	FnUtilsHashSha3       = int32(-35)
+	FnZzzLastItem         = int32(-36)
 )
 
-var sandboxFunctions = []func(*WasmToSandbox, []byte) []byte{
+var sandboxFunctions = [-FnZzzLastItem]func(*WasmToSandbox, []byte) []byte{
 	nil,
 	(*WasmToSandbox).fnAccountID,
 	(*WasmToSandbox).fnBalance,
@@ -72,18 +66,20 @@ var sandboxFunctions = []func(*WasmToSandbox, []byte) []byte{
 	(*WasmToSandbox).fnContract,
 	(*WasmToSandbox).fnContractCreator,
 	(*WasmToSandbox).fnDeployContract,
+	(*WasmToSandbox).fnEntropy,
 	(*WasmToSandbox).fnEvent,
-	(*WasmToSandbox).fnGetEntropy,
-	(*WasmToSandbox).fnGetTimestamp,
 	(*WasmToSandbox).fnIncomingTransfer,
 	(*WasmToSandbox).fnLog,
 	(*WasmToSandbox).fnMinted,
-	(*WasmToSandbox).fnParams,
-	(*WasmToSandbox).fnRequest,
-	(*WasmToSandbox).fnSend,
-	(*WasmToSandbox).fnDebug,
-	(*WasmToSandbox).fnStateAnchor,
 	(*WasmToSandbox).fnPanic,
+	(*WasmToSandbox).fnParams,
+	(*WasmToSandbox).fnPost,
+	(*WasmToSandbox).fnRequest,
+	(*WasmToSandbox).fnRequestID,
+	(*WasmToSandbox).fnSend,
+	(*WasmToSandbox).fnStateAnchor,
+	(*WasmToSandbox).fnTimestamp,
+	(*WasmToSandbox).fnTrace,
 	(*WasmToSandbox).fnUtilsBase58Decode,
 	(*WasmToSandbox).fnUtilsBase58Encode,
 	(*WasmToSandbox).fnUtilsBlsAddress,
@@ -117,6 +113,10 @@ func (f *WasmToSandbox) Panicf(format string, args ...interface{}) {
 	f.common.Log().Panicf(format, args...)
 }
 
+func (f *WasmToSandbox) Tracef(format string, args ...interface{}) {
+	f.common.Log().Debugf(format, args...)
+}
+
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
 
 func (f *WasmToSandbox) fnAccountID(args []byte) []byte {
@@ -134,8 +134,7 @@ func (f *WasmToSandbox) fnBalances(args []byte) []byte {
 }
 
 func (f *WasmToSandbox) fnBlockContext(args []byte) []byte {
-	// TODO
-	return nil
+	panic("implement me")
 }
 
 func (f *WasmToSandbox) fnCall(args []byte) []byte {
@@ -148,7 +147,7 @@ func (f *WasmToSandbox) fnCall(args []byte) []byte {
 	f.checkErr(err)
 	transfer, err := colored.BalancesFromBytes(decode.Bytes())
 	f.checkErr(err)
-	// o.Tracef("CALL c'%s' f'%s'", contract.String(), function.String())
+	f.Tracef("CALL c'%s' f'%s'", contract.String(), function.String())
 	results, err := f.callUnlocked(contract, function, params, transfer)
 	f.checkErr(err)
 	return results.Bytes()
@@ -184,21 +183,16 @@ func (f *WasmToSandbox) fnContractCreator(args []byte) []byte {
 	return f.common.ContractCreator().Bytes()
 }
 
-func (f *WasmToSandbox) fnDebug(args []byte) []byte {
-	f.common.Log().Debugf(string(args))
-	return nil
-}
-
 func (f *WasmToSandbox) fnDeployContract(args []byte) []byte {
 	decode := NewBytesDecoder(args)
 	programHash, err := hashing.HashValueFromBytes(decode.Bytes())
 	f.checkErr(err)
 	name := string(decode.Bytes())
 	description := string(decode.Bytes())
-	params, err := dict.FromBytes(decode.Bytes())
+	initParams, err := dict.FromBytes(decode.Bytes())
 	f.checkErr(err)
-	// o.Tracef("DEPLOY c'%s' f'%s'", name, description)
-	err = f.deployUnlocked(programHash, name, description, params)
+	f.Tracef("DEPLOY c'%s' f'%s'", name, description)
+	err = f.deployUnlocked(programHash, name, description, initParams)
 	f.checkErr(err)
 	return nil
 }
@@ -210,17 +204,13 @@ func (f *WasmToSandbox) deployUnlocked(programHash hashing.HashValue, name, desc
 	return f.ctx.DeployContract(programHash, name, description, params)
 }
 
-func (f *WasmToSandbox) fnEvent(args []byte) []byte {
-	f.ctx.Event(string(args))
-	return nil
-}
-
-func (f *WasmToSandbox) fnGetEntropy(args []byte) []byte {
+func (f *WasmToSandbox) fnEntropy(args []byte) []byte {
 	return f.ctx.GetEntropy().Bytes()
 }
 
-func (f *WasmToSandbox) fnGetTimestamp(args []byte) []byte {
-	return codec.EncodeInt64(f.common.GetTimestamp())
+func (f *WasmToSandbox) fnEvent(args []byte) []byte {
+	f.ctx.Event(string(args))
+	return nil
 }
 
 func (f *WasmToSandbox) fnIncomingTransfer(args []byte) []byte {
@@ -245,11 +235,6 @@ func (f *WasmToSandbox) fnParams(args []byte) []byte {
 	return f.common.Params().Bytes()
 }
 
-func (f *WasmToSandbox) fnRequest(args []byte) []byte {
-	return f.ctx.Request().Bytes()
-}
-
-// post request to SC
 func (f *WasmToSandbox) fnPost(args []byte) []byte {
 	decode := NewBytesDecoder(args)
 	chainID, err := iscp.ChainIDFromBytes(decode.Bytes())
@@ -258,7 +243,7 @@ func (f *WasmToSandbox) fnPost(args []byte) []byte {
 	f.checkErr(err)
 	function, err := iscp.HnameFromBytes(decode.Bytes())
 	f.checkErr(err)
-	// o.Tracef("POST c'%s' f'%s'", contract.String(), function.String())
+	f.Tracef("POST c'%s' f'%s'", contract.String(), function.String())
 	params, err := dict.FromBytes(decode.Bytes())
 	f.checkErr(err)
 	transfer, err := colored.BalancesFromBytes(decode.Bytes())
@@ -271,16 +256,12 @@ func (f *WasmToSandbox) fnPost(args []byte) []byte {
 		EntryPoint:     function,
 		Args:           params,
 	}
-	delay := decode.Int32()
+	delay := decode.Uint32()
 	if delay == 0 {
 		if !f.ctx.Send(chainID.AsAddress(), transfer, metadata) {
 			f.Panicf("failed to send to %s", chainID.AsAddress().String())
 		}
 		return nil
-	}
-
-	if delay < 0 {
-		f.Panicf("invalid delay: %d", delay)
 	}
 
 	timeLock := time.Unix(0, f.ctx.GetTimestamp())
@@ -292,6 +273,14 @@ func (f *WasmToSandbox) fnPost(args []byte) []byte {
 		f.Panicf("failed to send to %s", chainID.AsAddress().String())
 	}
 	return nil
+}
+
+func (f *WasmToSandbox) fnRequest(args []byte) []byte {
+	return f.ctx.Request().Bytes()
+}
+
+func (f *WasmToSandbox) fnRequestID(args []byte) []byte {
+	return f.ctx.Request().ID().Bytes()
 }
 
 // transfer tokens to address
@@ -310,5 +299,14 @@ func (f *WasmToSandbox) fnSend(args []byte) []byte {
 }
 
 func (f *WasmToSandbox) fnStateAnchor(args []byte) []byte {
+	return nil
+}
+
+func (f *WasmToSandbox) fnTimestamp(args []byte) []byte {
+	return codec.EncodeInt64(f.common.GetTimestamp())
+}
+
+func (f *WasmToSandbox) fnTrace(args []byte) []byte {
+	f.common.Log().Debugf(string(args))
 	return nil
 }

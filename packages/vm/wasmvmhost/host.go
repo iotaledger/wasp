@@ -24,6 +24,16 @@ func hostGetObjectID(objID, keyID, typeID int32) int32
 //export hostSetBytes
 func hostSetBytes(objID, keyID, typeID int32, value *byte, size int32)
 
+// new Wasm VM
+
+//go:wasm-module WasmLib
+//export hostStateGet
+func hostStateGet(keyRef *byte, keyLen int32, valRef *byte, valLen int32) int32
+
+//go:wasm-module WasmLib
+//export hostStateSet
+func hostStateSet(keyRef *byte, keyLen int32, valRef *byte, valLen int32)
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type WasmVMHost struct {
@@ -144,7 +154,7 @@ func (w *WasmVMHost) SetBytes(objID, keyID, typeID int32, value []byte) {
 
 func (w *WasmVMHost) Sandbox(funcNr int32, params []byte) []byte {
 	// &params[0] will panic on zero length slice, so use nil instead
-	par := []byte(nil)
+	par := (*byte)(nil)
 	size := int32(len(params))
 	if size != 0 {
 		par = &params[0]
@@ -162,11 +172,11 @@ func (w *WasmVMHost) Sandbox(funcNr int32, params []byte) []byte {
 
 	// retrieve cached result value from host
 	result := make([]byte, size)
-	_ = hostStateGet(nil, 0, &result, size)
+	_ = hostStateGet(nil, 0, &result[0], size)
 	return result
 }
 
-func (w *WasmVMHost) StateDel(key []byte) {
+func (w *WasmVMHost) StateDelete(key []byte) {
 	// value size -1 means delete key
 	// this removes the need for a separate hostStateDel function
 	hostStateSet(&key[0], int32(len(key)), nil, -1)
@@ -179,13 +189,15 @@ func (w *WasmVMHost) StateExists(key []byte) bool {
 	return hostStateGet(&key[0], int32(len(key)), nil, -1) >= 0
 }
 
-func (w *WasmVMHost) StateGet(key []byte, value []byte) []byte {
-	size := int32(len(value))
-	if size != 0 {
-		// size known in advance, just get the data
-		_ = hostStateGet(&key[0], int32(len(key)), &value, size)
-		return value
-	}
+func (w *WasmVMHost) StateGet(key []byte) []byte {
+	//TODO optimize when type size is known in advance?
+	// or maybe pass in a larger buffer that will fit most rsults?
+	//size := int32(len(value))
+	//if size != 0 {
+	//	// size known in advance, just get the data
+	//	_ = hostStateGet(&key[0], int32(len(key)), &value[0], size)
+	//	return value
+	//}
 
 	// variable sized result expected,
 	// query size first by passing zero length buffer
@@ -203,23 +215,17 @@ func (w *WasmVMHost) StateGet(key []byte, value []byte) []byte {
 	}
 
 	// retrieve cached value from host
-	value = make([]byte, size)
-	_ = hostStateGet(nil, 0, &value, size)
+	value := make([]byte, size)
+	_ = hostStateGet(nil, 0, &value[0], size)
 	return value
 }
 
 func (w *WasmVMHost) StateSet(key []byte, value []byte) {
 	// &value[0] will panic on zero length slice, so use nil instead
-	val := []byte(nil)
+	val := (*byte)(nil)
 	size := int32(len(value))
 	if size != 0 {
 		val = &value[0]
 	}
 	hostStateSet(&key[0], int32(len(key)), val, size)
-}
-
-func hostStateGet(key *byte, keyLen int32, val *byte, valLen int32) int32 {
-}
-
-func hostStateSet(key *byte, keyLen int32, val *byte, valLen int32) {
 }

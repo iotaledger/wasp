@@ -53,6 +53,11 @@ type (
 		GetKeyIDFromString(key string) int32
 		GetObjectID(objID, keyID, typeID int32) int32
 		SetBytes(objID, keyID, typeID int32, value []byte)
+		Sandbox(funcNr int32, params []byte) []byte
+		StateDelete(key []byte)
+		StateExists(key []byte) bool
+		StateGet(key []byte) []byte
+		StateSet(key, value []byte)
 	}
 )
 
@@ -135,4 +140,24 @@ func SetBytes(objID int32, keyID Key32, typeID int32, value []byte) {
 
 func Trace(text string) {
 	SetBytes(1, KeyTrace, TYPE_STRING, []byte(text))
+}
+
+func Sandbox(funcNr int32, params []byte) []byte {
+	return host.Sandbox(funcNr, params)
+}
+
+func StateDelete(key []byte) {
+	host.StateDelete(key)
+}
+
+func StateExists(key []byte) bool {
+	return host.StateExists(key)
+}
+
+func StateGet(key []byte) []byte {
+	return host.StateGet(key)
+}
+
+func StateSet(key, value []byte) {
+	host.StateSet(key, value)
 }

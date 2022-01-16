@@ -102,7 +102,7 @@ import * as events from "./events"
 import * as service from "./service"
 `,
 	// *******************************
-	"importWasmLib": `
+	"importWasmClient": `
 import * as wasmclient from "wasmclient"
 `,
 }

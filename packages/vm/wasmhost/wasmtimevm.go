@@ -63,6 +63,16 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) (err error) {
 		return err
 	}
 
+	// new Wasm VM interface
+	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostStateGet, vm.HostStateGet)
+	if err != nil {
+		return err
+	}
+	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostStateSet, vm.HostStateSet)
+	if err != nil {
+		return err
+	}
+
 	// AssemblyScript Wasm versions uses this one to write panic message to console
 	err = vm.linker.DefineFunc(vm.store, ModuleEnv, FuncAbort, vm.HostAbort)
 	if err != nil {

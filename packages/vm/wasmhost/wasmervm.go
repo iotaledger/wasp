@@ -27,7 +27,7 @@ func NewWasmerVM() WasmVM {
 }
 
 func (vm *WasmerVM) NewInstance() WasmVM {
-	return &WasmerVM{ store: vm.store }
+	return &WasmerVM{store: vm.store}
 }
 
 //TODO
@@ -44,6 +44,10 @@ func (vm *WasmerVM) LinkHost(impl WasmVM, host *WasmHost) error {
 		FuncHostGetKeyID:    vm.importFunc(2, 1, vm.exportHostGetKeyID),
 		FuncHostGetObjectID: vm.importFunc(3, 1, vm.exportHostGetObjectID),
 		FuncHostSetBytes:    vm.importFunc(5, 0, vm.exportHostSetBytes),
+
+		// new Wasm VM interface
+		FuncHostStateGet: vm.importFunc(4, 1, vm.exportHostStateGet),
+		FuncHostStateSet: vm.importFunc(4, 0, vm.exportHostStateSet),
 	}
 	vm.linker.Register(ModuleWasmLib, funcs)
 
@@ -161,5 +165,23 @@ func (vm *WasmerVM) exportHostSetBytes(args []wasmer.Value) ([]wasmer.Value, err
 	stringRef := args[3].I32()
 	size := args[4].I32()
 	vm.HostSetBytes(objID, keyID, typeID, stringRef, size)
+	return nil, nil
+}
+
+func (vm *WasmerVM) exportHostStateGet(args []wasmer.Value) ([]wasmer.Value, error) {
+	keyRef := args[0].I32()
+	keyLen := args[1].I32()
+	valRef := args[2].I32()
+	valLen := args[3].I32()
+	ret := vm.HostStateGet(keyRef, keyLen, valRef, valLen)
+	return []wasmer.Value{wasmer.NewI32(ret)}, nil
+}
+
+func (vm *WasmerVM) exportHostStateSet(args []wasmer.Value) ([]wasmer.Value, error) {
+	keyRef := args[0].I32()
+	keyLen := args[1].I32()
+	valRef := args[2].I32()
+	valLen := args[3].I32()
+	vm.HostStateSet(keyRef, keyLen, valRef, valLen)
 	return nil, nil
 }

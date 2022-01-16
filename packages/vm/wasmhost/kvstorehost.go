@@ -319,3 +319,23 @@ func (h *KvStoreHost) TypeCheck(typeID int32, bytes []byte) {
 		}
 	}
 }
+
+func (h *KvStoreHost) Sandbox(funcNr int32, params []byte) []byte {
+	panic("implement me")
+}
+
+func (h *KvStoreHost) StateDelete(key []byte) {
+	panic("implement me")
+}
+
+func (h *KvStoreHost) StateExists(key []byte) bool {
+	panic("implement me")
+}
+
+func (h *KvStoreHost) StateGet(key []byte) []byte {
+	panic("implement me")
+}
+
+func (h *KvStoreHost) StateSet(key, value []byte) {
+	panic("implement me")
+}

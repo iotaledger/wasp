@@ -89,3 +89,23 @@ func (h InitHost) SetBytes(objID, keyID, typeID int32, value []byte) {
 	}
 	Panic("InitHost::SetBytes")
 }
+
+func (h InitHost) Sandbox(funcNr int32, params []byte) []byte {
+	panic("implement me")
+}
+
+func (h InitHost) StateDelete(key []byte) {
+	panic("implement me")
+}
+
+func (h InitHost) StateExists(key []byte) bool {
+	panic("implement me")
+}
+
+func (h InitHost) StateGet(key []byte) []byte {
+	panic("implement me")
+}
+
+func (h InitHost) StateSet(key, value []byte) {
+	panic("implement me")
+}
