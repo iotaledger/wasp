@@ -57,17 +57,18 @@ func TestOffLedgerSuccess(t *testing.T) {
 			sbtestsc.ParamIntParamName, "ppp",
 			sbtestsc.ParamIntParamValue, 314,
 		).WithGasBudget(1000)
-		receipt, _, err := ch.PostRequestOffLedgerReceipt(req, user)
+		_, err = ch.PostRequestOffLedger(req, user)
 		require.NoError(t, err)
-		require.NoError(t, receipt.Error())
-		t.Logf("receipt: %s", receipt)
+		rec := ch.LastReceipt()
+		require.NoError(t, rec.Error())
+		t.Logf("receipt: %s", rec)
 
 		res, err := ch.CallView(ScName, sbtestsc.FuncGetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp",
 		)
 		require.NoError(t, err)
 		require.EqualValues(t, 314, kvdecoder.New(res).MustGetUint64("ppp"))
-		ch.AssertL2AccountIotas(userAgentID, expectedUser-receipt.GasFeeCharged)
+		ch.AssertL2AccountIotas(userAgentID, expectedUser-rec.GasFeeCharged)
 	})
 }
 

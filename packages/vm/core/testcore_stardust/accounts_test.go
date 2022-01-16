@@ -333,23 +333,23 @@ func TestAccountBalances(t *testing.T) {
 	l1Iotas := func(addr iotago.Address) uint64 { return env.L1AddressBalances(addr).Iotas }
 	totalIotas := l1Iotas(chainOwnerAddr) + l1Iotas(senderAddr)
 
-	chain := env.NewChain(chainOwner, "chain1")
+	ch := env.NewChain(chainOwner, "chain1")
 
-	l2Iotas := func(agentID *iscp.AgentID) uint64 { return chain.L2AccountIotas(agentID) }
+	l2Iotas := func(agentID *iscp.AgentID) uint64 { return ch.L2AccountIotas(agentID) }
 	totalGasFeeCharged := uint64(0)
 
 	checkBalance := func(numReqs int) {
 		require.EqualValues(t,
 			totalIotas,
-			l1Iotas(chainOwnerAddr)+l1Iotas(senderAddr)+l1Iotas(chain.ChainID.AsAddress()),
+			l1Iotas(chainOwnerAddr)+l1Iotas(senderAddr)+l1Iotas(ch.ChainID.AsAddress()),
 		)
 
-		anchor, _ := chain.GetAnchorOutput()
-		require.EqualValues(t, l1Iotas(chain.ChainID.AsAddress()), anchor.Deposit())
+		anchor, _ := ch.GetAnchorOutput()
+		require.EqualValues(t, l1Iotas(ch.ChainID.AsAddress()), anchor.Deposit())
 
-		require.LessOrEqual(t, len(chain.L2Accounts()), 3)
+		require.LessOrEqual(t, len(ch.L2Accounts()), 3)
 
-		bi := chain.GetLatestBlockInfo()
+		bi := ch.GetLatestBlockInfo()
 
 		require.EqualValues(t,
 			anchor.Deposit(),
@@ -358,19 +358,21 @@ func TestAccountBalances(t *testing.T) {
 
 		require.EqualValues(t,
 			bi.TotalIotasInL2Accounts,
-			l2Iotas(chainOwnerAgentID)+l2Iotas(senderAgentID)+l2Iotas(chain.CommonAccount()),
+			l2Iotas(chainOwnerAgentID)+l2Iotas(senderAgentID)+l2Iotas(ch.CommonAccount()),
 		)
 
-		require.Equal(t, numReqs == 0, bi.GasFeeCharged == 0)
+		// not true because of deposit preload
+		//require.Equal(t, numReqs == 0, bi.GasFeeCharged == 0)
+
 		totalGasFeeCharged += bi.GasFeeCharged
 		require.EqualValues(t,
-			int(l2Iotas(chain.CommonAccount())),
+			int(l2Iotas(ch.CommonAccount())),
 			int(totalGasFeeCharged),
 		)
 
 		require.EqualValues(t,
 			solo.Saldo+totalGasFeeCharged-bi.TotalDustDeposit,
-			l1Iotas(chainOwnerAddr)+l2Iotas(chainOwnerAgentID)+l2Iotas(chain.CommonAccount()),
+			l1Iotas(chainOwnerAddr)+l2Iotas(chainOwnerAgentID)+l2Iotas(ch.CommonAccount()),
 		)
 		require.EqualValues(t,
 			solo.Saldo-totalGasFeeCharged,
@@ -378,12 +380,15 @@ func TestAccountBalances(t *testing.T) {
 		)
 	}
 
+	// preload sender account with iotas in order to be able to pay for gass fees
+	err := ch.DepositIotasToL2(100_000, sender)
+	require.NoError(t, err)
+
 	checkBalance(0)
-	t.Logf("++++++++++++++#%d COMMON %s", 0, chain.L2CommonAccountAssets())
 
 	for i := 0; i < 5; i++ {
-		_, err := chain.UploadBlob(sender, "field", fmt.Sprintf("dummy blob data #%d", i))
-		t.Logf("++++++++++++++#%d COMMON %s", i, chain.L2CommonAccountAssets())
+		blobData := fmt.Sprintf("dummy blob data #%d", i+1)
+		_, err := ch.UploadBlob(sender, "field", blobData)
 		require.NoError(t, err)
 
 		checkBalance(i + 1)
@@ -647,10 +652,11 @@ func TestTransferAndHarvest(t *testing.T) {
 
 	v.req = solo.NewCallParams("accounts", "harvest").
 		WithGasBudget(1000)
-	receipt, _, err := v.ch.PostRequestSyncReceipt(v.req, v.chainOwner)
+	_, err = v.ch.PostRequestSync(v.req, v.chainOwner)
 	require.NoError(t, err)
 
-	t.Logf("receipt from the 'harvest' tx: %s", receipt)
+	rec := v.ch.LastReceipt()
+	t.Logf("receipt from the 'harvest' tx: %s", rec)
 
 	// now we have 0 tokens on common account
 	v.ch.AssertL2AccountNativeToken(v.ch.CommonAccount(), v.tokenID, 0)
@@ -659,7 +665,7 @@ func TestTransferAndHarvest(t *testing.T) {
 
 	commonAssets = v.ch.L2CommonAccountAssets()
 	// in the common account should have left minimum plus gas fee from the last request
-	require.EqualValues(t, accounts.MinimumIotasOnCommonAccount+receipt.GasFeeCharged, commonAssets.Iotas)
+	require.EqualValues(t, accounts.MinimumIotasOnCommonAccount+rec.GasFeeCharged, commonAssets.Iotas)
 	require.EqualValues(t, 0, len(commonAssets.Tokens))
 }
 

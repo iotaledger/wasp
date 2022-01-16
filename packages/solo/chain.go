@@ -106,8 +106,7 @@ func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
 // UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
 // data to the chain. It returns hash of the blob, the unique identifier of it.
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
-// Estimates needed gas fee and uploads iotas to the sender's account before uploading blob.
-// So, it takes 2 requests for each call
+// Requires at least 2 x gasFeeEstimate to be on sender's L2 account
 func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
 	if user == nil {
 		user = &ch.OriginatorPrivateKey
@@ -120,12 +119,14 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 		return expectedHash, nil
 	}
 
+	userAddr := cryptolib.Ed25519AddressFromPubKey(user.PublicKey)
 	// We have to have some iotas even in estimate mode, otherwise we cannot create transaction
 	const minimumIotasForEstimate = 100_000
 
-	userIotas := ch.Env.L1IotaBalance(cryptolib.Ed25519AddressFromPubKey(user.PublicKey))
+	// estimate gas
+	userIotas := ch.Env.L1IotaBalance(userAddr)
 	if userIotas < minimumIotasForEstimate {
-		return [32]byte{}, xerrors.Errorf("expected at least %d iotas on user L1 account", minimumIotasForEstimate)
+		return hashing.HashValue{}, xerrors.Errorf("expected at least %d iotas on user L1 account", minimumIotasForEstimate)
 	}
 	// estimate gas budget and iotas needed
 	reqEstimate := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
@@ -134,20 +135,15 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 	gasBudgetEstimate, gasFeeEstimate, err := ch.EstimateGas(reqEstimate, user)
 	require.NoError(ch.Env.T, err)
 
-	r := ch.LastReceipt()
-	ch.Env.T.Logf("Estimate ====== last receipt: %s", r)
-	ch.Env.T.Logf("Estimate ====== gas burn log:\n%s", r.GasBurnLog)
-
-	err = ch.DepositIotasToL2(gasFeeEstimate*2, user)
-	require.NoError(ch.Env.T, err)
-
+	// check if user has required iotas on L2
+	userIotasL2 := ch.L2AccountIotas(iscp.NewAgentID(userAddr, 0))
+	if userIotasL2 < gasFeeEstimate*2 {
+		err = xerrors.Errorf("sender's %di on L2 is not enough. At least %di is required", userIotasL2, gasFeeEstimate*2)
+		return hashing.HashValue{}, err
+	}
 	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
 		WithGasBudget(gasBudgetEstimate * 2) // double the estimate, to be on the safe side
 	res, err := ch.PostRequestOffLedger(req, user)
-
-	r = ch.LastReceipt()
-	ch.Env.T.Logf("Run ====== last receipt: %s", r)
-	ch.Env.T.Logf("Run ====== gas burn log:\n%s", r.GasBurnLog)
 
 	if err != nil {
 		return
@@ -558,8 +554,4 @@ func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
 		AssetsL1: ch.Env.L1AddressBalances(addr),
 		AssetsL2: ch.L2AccountAssets(iscp.NewAgentID(addr, 0)),
 	}
-}
-
-func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
-	return ch.lastReceipt
 }

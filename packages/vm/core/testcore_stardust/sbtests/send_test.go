@@ -60,14 +60,15 @@ func testPingIotas1(t *testing.T, w bool) {
 		AddIotaAllowance(expectedBack).
 		WithGasBudget(gasEstimate)
 
-	receipt, _, err := ch.PostRequestSyncReceipt(req, user)
+	_, err = ch.PostRequestSync(req, user)
 	require.NoError(t, err)
+	rec := ch.LastReceipt()
 
 	userFundsAfter := ch.L1L2Funds(userAddr)
 	commonAfter := ch.L2CommonAccountAssets()
-	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", receipt, userFundsAfter, commonAfter)
+	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", rec, userFundsAfter, commonAfter)
 
 	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, solo.Saldo-feeEstimate)
-	require.EqualValues(t, int(commonBefore.Iotas+receipt.GasFeeCharged), int(commonAfter.Iotas))
-	require.EqualValues(t, 0, int(userFundsAfter.AssetsL2.Iotas))
+	require.EqualValues(t, int(commonBefore.Iotas+rec.GasFeeCharged), int(commonAfter.Iotas))
+	require.EqualValues(t, feeEstimate-rec.GasFeeCharged, int(userFundsAfter.AssetsL2.Iotas))
 }

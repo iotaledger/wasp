@@ -51,14 +51,18 @@ func TestBlockInfo(t *testing.T) {
 func TestBlockInfoLatestWithRequest(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 
-	chain := env.NewChain(nil, "chain1")
-	bi := chain.GetLatestBlockInfo()
-	t.Logf("after chain deployment:\n%s", bi.String())
-	// uploading one blob
-	_, err := chain.UploadBlob(nil, "field", "dummy blob data")
+	ch := env.NewChain(nil, "chain1")
+
+	err := ch.DepositIotasToL2(100_000, nil)
 	require.NoError(t, err)
 
-	bi = chain.GetLatestBlockInfo()
+	bi := ch.GetLatestBlockInfo()
+	t.Logf("after ch deployment:\n%s", bi.String())
+	// uploading one blob
+	_, err = ch.UploadBlob(nil, "field", "dummy blob data")
+	require.NoError(t, err)
+
+	bi = ch.GetLatestBlockInfo()
 	require.NotNil(t, bi)
 	require.EqualValues(t, 3, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
@@ -69,19 +73,22 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 
 func TestBlockInfoSeveral(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	chain := env.NewChain(nil, "chain1")
+	ch := env.NewChain(nil, "chain1")
+
+	err := ch.DepositIotasToL2(100_000, nil)
+	require.NoError(t, err)
 
 	const numReqs = 5
 	for i := 0; i < numReqs; i++ {
-		_, err := chain.UploadBlob(nil, "field", fmt.Sprintf("dummy blob data #%d", i))
+		_, err := ch.UploadBlob(nil, "field", fmt.Sprintf("dummy blob data #%d", i))
 		require.NoError(t, err)
 	}
 
-	bi := chain.GetLatestBlockInfo()
-	require.EqualValues(t, 1+2*numReqs, int(bi.BlockIndex))
+	bi := ch.GetLatestBlockInfo()
+	require.EqualValues(t, 2+numReqs, int(bi.BlockIndex))
 
 	for blockIndex := uint32(0); blockIndex <= bi.BlockIndex; blockIndex++ {
-		bi1, err := chain.GetBlockInfo(blockIndex)
+		bi1, err := ch.GetBlockInfo(blockIndex)
 		require.NoError(t, err)
 		require.NotNil(t, bi1)
 		t.Logf("%s", bi1.String())

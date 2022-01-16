@@ -261,11 +261,6 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (d
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, error) {
-	receipt, res, _ := ch.PostRequestOffLedgerReceipt(req, keyPair)
-	return res, receipt.Error()
-}
-
-func (ch *Chain) PostRequestOffLedgerReceipt(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
 	if keyPair == nil {
@@ -275,7 +270,7 @@ func (ch *Chain) PostRequestOffLedgerReceipt(req *CallParams, keyPair *cryptolib
 	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
 	res := results[0]
 	ch.lastReceipt = res.Receipt
-	return res.Receipt, res.Return, res.Error
+	return res.Return, res.Error
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
@@ -286,12 +281,8 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 	return tx, res, receipt.Error()
 }
 
-func (ch *Chain) PostRequestSyncReceipt(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
-	_, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
-	if err != nil {
-		return receipt, res, err
-	}
-	return receipt, res, receipt.Error()
+func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
+	return ch.lastReceipt
 }
 
 func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
