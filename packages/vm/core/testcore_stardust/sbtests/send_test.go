@@ -43,6 +43,7 @@ func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
 	beforeWallet := ch.L1L2Funds(walletAddr)
 	t.Logf("----- BEFORE wallet: %s", beforeWallet)
 
+	// this will SUCCEED because it will result in 4 = 800/200 outputs in the single call
 	const allowance = 800
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
 		AddIotaAllowance(allowance).
@@ -67,6 +68,7 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 	beforeWallet := ch.L1L2Funds(walletAddr)
 	t.Logf("----- BEFORE wallet: %s", beforeWallet)
 
+	// this will FAIL because it will result in 1000/200 = 5 outputs in the single call
 	const allowance = 1000
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
 		AddIotaAllowance(allowance).
