@@ -60,7 +60,7 @@ type VMContext struct {
 	// max tokens cane be charged for gas fee
 	gasMaxTokensToSpendForGasFee uint64
 	// final gas budget set for the run
-	gasBudget uint64
+	gasBudgetAdjusted uint64
 	// is gas bur enabled
 	gasBurnEnabled bool
 	// gas already burned

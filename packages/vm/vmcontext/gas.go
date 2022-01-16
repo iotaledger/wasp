@@ -11,7 +11,7 @@ func (vmctx *VMContext) gasBurnEnable(enable bool) {
 }
 
 func (vmctx *VMContext) gasSetBudget(gasBudget uint64) {
-	vmctx.gasBudget = gasBudget
+	vmctx.gasBudgetAdjusted = gasBudget
 	vmctx.gasBurned = 0
 }
 
@@ -21,17 +21,17 @@ func (vmctx *VMContext) GasBurn(g uint64, burnCode gas.BurnCode) {
 	}
 	vmctx.gasBurnLog.Record(burnCode, g)
 	vmctx.gasBurned += g
-	if vmctx.gasBurned > vmctx.gasBudget {
+	if vmctx.gasBurned > vmctx.gasBudgetAdjusted {
 		panic(xerrors.Errorf("%v: burned (budget) = %d (%d)",
-			coreutil.ErrorGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudget))
+			coreutil.ErrorGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudgetAdjusted))
 	}
 }
 
 func (vmctx *VMContext) GasBudgetLeft() uint64 {
-	if vmctx.gasBudget < vmctx.gasBurned {
+	if vmctx.gasBudgetAdjusted < vmctx.gasBurned {
 		return 0
 	}
-	return vmctx.gasBudget - vmctx.gasBurned
+	return vmctx.gasBudgetAdjusted - vmctx.gasBurned
 }
 
 func (vmctx *VMContext) GasBurned() uint64 {

@@ -136,7 +136,7 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.Requ
 	receipt := &blocklog.RequestReceipt{
 		Request:       vmctx.req,
 		ErrorStr:      errStr,
-		GasBudget:     vmctx.gasBudget,
+		GasBudget:     vmctx.gasBudgetAdjusted,
 		GasBurned:     vmctx.gasBurned,
 		GasFeeCharged: vmctx.gasFeeCharged,
 	}

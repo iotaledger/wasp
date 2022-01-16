@@ -32,7 +32,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 	vmctx.requestEventIndex = 0
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.callStack = vmctx.callStack[:0]
-	vmctx.gasBudget = 0
+	vmctx.gasBudgetAdjusted = 0
 	vmctx.gasBurned = 0
 	vmctx.gasFeeCharged = 0
 	vmctx.gasBurnEnable(false)
@@ -109,7 +109,7 @@ func (vmctx *VMContext) prepareGasBudget() {
 		return
 	}
 	vmctx.calculateAffordableGasBudget()
-	vmctx.gasSetBudget(vmctx.gasBudget)
+	vmctx.gasSetBudget(vmctx.gasBudgetAdjusted)
 	vmctx.gasBurnEnable(true)
 }
 
@@ -216,7 +216,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	// calculate affordable gas budget
 	affordable := vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
 	// adjust gas budget to what is affordable
-	vmctx.gasBudget = util.MinUint64(vmctx.req.GasBudget(), affordable)
+	vmctx.gasBudgetAdjusted = util.MinUint64(vmctx.req.GasBudget(), affordable)
 }
 
 // calcGuaranteedFeeTokens return hiw maximum tokens (iotas or native) can be guaranteed for the fee,
