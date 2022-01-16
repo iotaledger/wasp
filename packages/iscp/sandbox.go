@@ -36,7 +36,7 @@ type SandboxBase interface {
 	Log() LogInterface
 	// Utils provides access to common necessary functionality
 	Utils() Utils
-	// Gas returns sub-interface for gas related functions
+	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
 }
 
@@ -88,10 +88,13 @@ type Sandbox interface {
 	AllowanceAvailable() *Assets
 	// TransferAllowedFunds moves assets from the caller's account to specified account within the budget set by Allowance.
 	// Skipping 'assets' means transfer all Allowance().
-	// The call fails if target account does not exist
 	// The TransferAllowedFunds call mutates AllowanceAvailable
 	// Returns remaining budget
+	// TransferAllowedFunds fails if target does not exist
 	TransferAllowedFunds(target *AgentID, assets ...*Assets) *Assets
+	// TransferAllowedFundsForceCreateTarget does not fail when target does not exist.
+	// If it is a random target, funds may be inaccessible (not safe)
+	TransferAllowedFundsForceCreateTarget(target *AgentID, assets ...*Assets) *Assets
 	// Send sends a on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
 	// BlockContext Internal for use in native hardcoded contracts

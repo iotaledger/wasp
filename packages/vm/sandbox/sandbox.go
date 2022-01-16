@@ -118,7 +118,12 @@ func (s *sandbox) AllowanceAvailable() *iscp.Assets {
 
 func (s *sandbox) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) *iscp.Assets {
 	s.Burn(gas.TransferAllowance, gas.BurnTransferAllowance)
-	return s.vmctx.TransferAllowedFunds(target, assets...)
+	return s.vmctx.TransferAllowedFunds(target, false, assets...)
+}
+
+func (s *sandbox) TransferAllowedFundsForceCreateTarget(target *iscp.AgentID, assets ...*iscp.Assets) *iscp.Assets {
+	s.Burn(gas.TransferAllowance, gas.BurnTransferAllowance)
+	return s.vmctx.TransferAllowedFunds(target, true, assets...)
 }
 
 func (s *sandbox) Log() iscp.LogInterface {

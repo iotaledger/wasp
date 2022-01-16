@@ -113,13 +113,14 @@ func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Assets) {
 }
 
 // TransferAllowedFunds transfers funds withing the budget set by the Allowance() to the existing target account on chain
-func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) *iscp.Assets {
+func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAccount bool, assets ...*iscp.Assets) *iscp.Assets {
 	if vmctx.isCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = commonaccount.Get(vmctx.ChainID())
 	} else {
-		// check if target exists
-		if !vmctx.targetAccountExists(target) {
+		// check if target exists, if it is not forced
+		// forceOpenAccount == true it is not checked and the transfer will occur even if the target does not exist
+		if !forceOpenAccount && !vmctx.targetAccountExists(target) {
 			panic(ErrTransferTargetAccountDoesNotExists)
 		}
 	}
