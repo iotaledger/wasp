@@ -22,7 +22,6 @@ export class Service {
     constructor(client: wasmclient.ServiceClient, scHname: wasmclient.Hname) {
         this.serviceClient = client;
         this.scHname = scHname;
-        this.configureWebSocketsEventHandlers();
     }
 
     public async callView(viewName: string, args: wasmclient.Arguments, res: wasmclient.Results): Promise<void> {
@@ -63,6 +62,9 @@ export class Service {
     }
 
     public register(handler: IEventHandler): void {
+        if(this.eventHandlers.length === 0)
+            this.configureWebSocketsEventHandlers();
+            
         for (let i = 0; i < this.eventHandlers.length; i++) {
             if (this.eventHandlers[i] === handler) {
                 return;
