@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build wasm
 // +build wasm
 
 package wasmvmhost
@@ -25,7 +26,7 @@ func hostSetBytes(objID, keyID, typeID int32, value *byte, size int32)
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-type WasmVMHost struct{
+type WasmVMHost struct {
 	funcs []wasmlib.ScFuncContextFunction
 	views []wasmlib.ScViewContextFunction
 }
@@ -139,4 +140,86 @@ func (w *WasmVMHost) SetBytes(objID, keyID, typeID int32, value []byte) {
 		return
 	}
 	hostSetBytes(objID, keyID, typeID, &value[0], size)
+}
+
+func (w *WasmVMHost) Sandbox(funcNr int32, params []byte) []byte {
+	// &params[0] will panic on zero length slice, so use nil instead
+	par := []byte(nil)
+	size := int32(len(params))
+	if size != 0 {
+		par = &params[0]
+	}
+
+	// call sandbox function, result value will be cached by host
+	// always negative funcNr as keyLen indicates sandbox call
+	// this removes the need for a separate hostSandbox function
+	size = hostStateGet(nil, funcNr, par, size)
+
+	// zero length, no need to retrieve cached value
+	if size == 0 {
+		return []byte{}
+	}
+
+	// retrieve cached result value from host
+	result := make([]byte, size)
+	_ = hostStateGet(nil, 0, &result, size)
+	return result
+}
+
+func (w *WasmVMHost) StateDel(key []byte) {
+	// value size -1 means delete key
+	// this removes the need for a separate hostStateDel function
+	hostStateSet(&key[0], int32(len(key)), nil, -1)
+}
+
+func (w *WasmVMHost) StateExists(key []byte) bool {
+	// value size -1 means only test for existence
+	// returned size -1 indicates keyID not found (or error)
+	// this removes the need for a separate hostStateExists function
+	return hostStateGet(&key[0], int32(len(key)), nil, -1) >= 0
+}
+
+func (w *WasmVMHost) StateGet(key []byte, value []byte) []byte {
+	size := int32(len(value))
+	if size != 0 {
+		// size known in advance, just get the data
+		_ = hostStateGet(&key[0], int32(len(key)), &value, size)
+		return value
+	}
+
+	// variable sized result expected,
+	// query size first by passing zero length buffer
+	// value will be cached by host
+	size = hostStateGet(&key[0], int32(len(key)), nil, 0)
+
+	// -1 means non-existent
+	if size < 0 {
+		return []byte(nil)
+	}
+
+	// zero length, no need to retrieve cached value
+	if size == 0 {
+		return []byte{}
+	}
+
+	// retrieve cached value from host
+	value = make([]byte, size)
+	_ = hostStateGet(nil, 0, &value, size)
+	return value
+}
+
+func (w *WasmVMHost) StateSet(key []byte, value []byte) {
+	// &value[0] will panic on zero length slice, so use nil instead
+	val := []byte(nil)
+	size := int32(len(value))
+	if size != 0 {
+		val = &value[0]
+	}
+	hostStateSet(&key[0], int32(len(key)), val, size)
+}
+
+func hostStateGet(key *byte, keyLen int32, val *byte, valLen int32) int32 {
+}
+
+func hostStateSet(key *byte, keyLen int32, val *byte, valLen int32) {
 }

@@ -14,6 +14,7 @@ const (
 
 type WasmContext struct {
 	wasmhost.KvStoreHost
+	common   iscp.SandboxBase
 	ctx      iscp.Sandbox
 	ctxView  iscp.SandboxView
 	function string
@@ -70,8 +71,12 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 
 	switch tctx := ctx.(type) {
 	case iscp.Sandbox:
+		wc.common = tctx
 		wc.ctx = tctx
+		wc.ctxView = nil
 	case iscp.SandboxView:
+		wc.common = tctx
+		wc.ctx = nil
 		wc.ctxView = tctx
 	default:
 		panic(iscp.ErrWrongTypeEntryPoint)
@@ -118,20 +123,14 @@ func (wc *WasmContext) IsView() bool {
 }
 
 func (wc *WasmContext) log() iscp.LogInterface {
-	if wc.ctx != nil {
-		return wc.ctx.Log()
-	}
-	if wc.ctxView != nil {
-		return wc.ctxView.Log()
+	if wc.common != nil {
+		return wc.common.Log()
 	}
 	return wc.proc.log
 }
 
 func (wc *WasmContext) params() dict.Dict {
-	if wc.ctx != nil {
-		return wc.ctx.Params()
-	}
-	return wc.ctxView.Params()
+	return wc.common.Params()
 }
 
 func (wc *WasmContext) state() kv.KVStore {

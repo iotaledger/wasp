@@ -73,53 +73,27 @@ func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
 	if o.wc == nil {
 		o.Panicf("missing context")
 	}
-	ctx := o.wc.ctx
-	if ctx == nil {
-		return o.getBytesForView(keyID, typeID)
-	}
 	switch keyID {
+	// common functionality
 	case wasmhost.KeyAccountID:
-		return ctx.AccountID().Bytes()
+		return o.wc.common.AccountID().Bytes()
+	case wasmhost.KeyChainID:
+		return o.wc.common.ChainID().Bytes()
+	case wasmhost.KeyChainOwnerID:
+		return o.wc.common.ChainOwnerID().Bytes()
+	case wasmhost.KeyContract:
+		return o.wc.common.Contract().Bytes()
+	case wasmhost.KeyContractCreator:
+		return o.wc.common.ContractCreator().Bytes()
+	case wasmhost.KeyTimestamp:
+		return codec.EncodeInt64(o.wc.common.GetTimestamp())
+		// ctx-only functionality
 	case wasmhost.KeyCaller:
-		return ctx.Caller().Bytes()
-	case wasmhost.KeyChainID:
-		return ctx.ChainID().Bytes()
-	case wasmhost.KeyChainOwnerID:
-		return ctx.ChainOwnerID().Bytes()
-	case wasmhost.KeyContract:
-		return ctx.Contract().Bytes()
-	case wasmhost.KeyContractCreator:
-		return ctx.ContractCreator().Bytes()
+		return o.wc.ctx.Caller().Bytes()
 	case wasmhost.KeyRandom:
-		return ctx.GetEntropy().Bytes()
+		return o.wc.ctx.GetEntropy().Bytes()
 	case wasmhost.KeyRequestID:
-		return ctx.Request().ID().Bytes()
-	case wasmhost.KeyTimestamp:
-		return codec.EncodeInt64(ctx.GetTimestamp())
-	}
-	o.InvalidKey(keyID)
-	return nil
-}
-
-//nolint:unparam
-func (o *ScContext) getBytesForView(keyID, typeID int32) []byte {
-	ctx := o.wc.ctxView
-	if ctx == nil {
-		o.Panicf("missing context")
-	}
-	switch keyID {
-	case wasmhost.KeyAccountID:
-		return ctx.AccountID().Bytes()
-	case wasmhost.KeyChainID:
-		return ctx.ChainID().Bytes()
-	case wasmhost.KeyChainOwnerID:
-		return ctx.ChainOwnerID().Bytes()
-	case wasmhost.KeyContract:
-		return ctx.Contract().Bytes()
-	case wasmhost.KeyContractCreator:
-		return ctx.ContractCreator().Bytes()
-	case wasmhost.KeyTimestamp:
-		return codec.EncodeInt64(ctx.GetTimestamp())
+		return o.wc.ctx.Request().ID().Bytes()
 	}
 	o.InvalidKey(keyID)
 	return nil

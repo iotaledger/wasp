@@ -14,9 +14,11 @@ const (
 	defaultTimeout      = 5 * time.Second
 	FuncAbort           = "abort"
 	FuncFdWrite         = "fd_write"
+	FuncHostGet         = "hostGet"
 	FuncHostGetBytes    = "hostGetBytes"
 	FuncHostGetKeyID    = "hostGetKeyID"
 	FuncHostGetObjectID = "hostGetObjectID"
+	FuncHostSet         = "hostSet"
 	FuncHostSetBytes    = "hostSetBytes"
 	ModuleEnv           = "env"
 	ModuleWasi1         = "wasi_unstable"
@@ -52,9 +54,19 @@ type WasmVM interface {
 	VMSetBytes(offset int32, size int32, bytes []byte) int32
 }
 
+// TODO implement this in WasmContext?
+type SandboxContext interface {
+	CallSandbox(funcNr int32, params []byte) []byte
+	StateDelete(key []byte)
+	StateExists(key []byte) bool
+	StateGet(key []byte) []byte
+	StateSet(key []byte, value []byte)
+}
+
 type WasmVMBase struct {
 	impl           WasmVM
 	host           *WasmHost
+	ctx            SandboxContext
 	panicErr       error
 	result         []byte
 	resultKeyID    int32
@@ -215,6 +227,59 @@ func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) 
 
 	bytes := vm.impl.VMGetBytes(stringRef, size)
 	host.SetBytes(objID, keyID, typeID, bytes)
+}
+
+func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
+	defer vm.catchPanicMessage()
+
+	host := vm.getKvStore(0)
+	host.TraceAllf("HostStateGet(k(%d,%d),v(%d,s%d))", keyRef, keyLen, valRef, valLen)
+
+	// only check for existence ?
+	if valLen < 0 {
+		key := vm.impl.VMGetBytes(keyRef, keyLen)
+		if vm.ctx.StateExists(key) {
+			return 0
+		}
+		// missing key is indicated by -1
+		return -1
+	}
+
+	//  get value for key request, or get cached result request (keyLen == 0)
+	if keyLen >= 0 {
+		if keyLen > 0 {
+			// retrieve value associated with key
+			key := vm.impl.VMGetBytes(keyRef, keyLen)
+			vm.result = vm.ctx.StateGet(key)
+		}
+		if vm.result == nil {
+			return -1
+		}
+		return vm.impl.VMSetBytes(valRef, valLen, vm.result)
+	}
+
+	// sandbox func call request, keyLen is func nr
+	params := vm.impl.VMGetBytes(valRef, valLen)
+	vm.result = vm.ctx.CallSandbox(keyLen, params)
+	return int32(len(vm.result))
+}
+
+func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
+	defer vm.catchPanicMessage()
+
+	host := vm.getKvStore(0)
+	host.TraceAllf("HostStateSet(k(%d,%d),v(%d,s%d))", keyRef, keyLen, valRef, valLen)
+
+	key := vm.impl.VMGetBytes(keyRef, keyLen)
+
+	// delete key ?
+	if valLen < 0 {
+		vm.ctx.StateDelete(key)
+		return
+	}
+
+	value := vm.impl.VMGetBytes(valRef, valLen)
+	vm.ctx.StateSet(key, value)
 }
 
 func (vm *WasmVMBase) Instantiate() error {
