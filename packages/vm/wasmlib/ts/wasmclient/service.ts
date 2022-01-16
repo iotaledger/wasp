@@ -78,7 +78,7 @@ export class Service {
 
     // overrides default contract name
     public serviceContractName(contractName: string): void {
-        this.scHname = Hash.from(Buffer.from(contractName)).readUInt32LE(0)
+        this.scHname = Hash.from(Buffer.from(contractName)).readUInt32LE(0);
     }
 
     public async waitRequest(reqID: wasmclient.RequestID): Promise<void> {

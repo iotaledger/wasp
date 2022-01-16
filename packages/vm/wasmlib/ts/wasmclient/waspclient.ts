@@ -6,6 +6,8 @@ import { Buffer } from "./buffer";
 import { IResponse } from "./api_common/response_models";
 import * as requestSender from "./api_common/request_sender";
 import { Base58, ED25519, Hash, IKeyPair } from "./crypto";
+import { Colors } from "./colors";
+import { CoreAccountsService } from "./coreaccounts/service";
 
 interface ICallViewResponse extends IResponse {
     Items: [{ Key: string; Value: string }];
@@ -31,10 +33,12 @@ export class Items {
 
 export class WaspClient {
     private waspAPI: string;
+    private coreAccountsService: CoreAccountsService;
 
-    constructor(waspAPI: string) {
+    constructor(waspAPI: string, coreAccountsService: CoreAccountsService) {
         if (waspAPI.startsWith("https://") || waspAPI.startsWith("http://")) this.waspAPI = waspAPI;
         else this.waspAPI = "http://" + waspAPI;
+        this.coreAccountsService = coreAccountsService;
     }
 
     public async callView(chainID: string, contractHName: string, entryPoint: string, args: Items, res: wasmclient.Results): Promise<void> {
@@ -88,5 +92,18 @@ export class WaspClient {
         await this.postRequest(chainId, buf);
 
         return Base58.encode(requestID);
+    }
+
+    public async getIOTABalanceInChain(agentID: wasmclient.AgentID): Promise<bigint> {
+        const balanceView = this.coreAccountsService.balance();
+        balanceView.agentID(agentID);
+        const result = await balanceView.call();
+        const balances = result.balances();
+        const iotaBalance = balances.has(Colors.IOTA_COLOR_STRING)
+            ? balances.get(Colors.IOTA_COLOR_STRING)!
+            : balances.has(Colors.IOTA_COLOR)
+            ? balances.get(Colors.IOTA_COLOR)!
+            : 0n;
+        return iotaBalance;
     }
 }

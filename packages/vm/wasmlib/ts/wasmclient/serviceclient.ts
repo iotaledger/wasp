@@ -12,8 +12,8 @@ export class ServiceClient {
 
     constructor(configuration: Configuration) {
         this.configuration = configuration;
-        this.waspClient = new wasmclient.WaspClient(configuration.waspApiUrl);
         const accountsService = new CoreAccountsService(this);
+        this.waspClient = new wasmclient.WaspClient(configuration.waspApiUrl, accountsService);
         this.goShimmerClient = new wasmclient.GoShimmerClient(configuration, accountsService);
     }
 
