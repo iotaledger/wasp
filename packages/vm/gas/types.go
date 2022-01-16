@@ -14,25 +14,9 @@ type BurnCodeRecord struct {
 type BurnTable map[BurnCode]BurnCodeRecord
 
 var (
-	ErrUnknownBurnCode = xerrors.New("unknown gas burn code")
+	ErrUnknownBurnCode            = xerrors.New("unknown gas burn code")
+	ErrInLinear1ParameterExpected = xerrors.New("'linear' gas burn requires exactly 1 parameter")
 )
-
-func constValue(constGas uint64) BurnFunction {
-	g := constGas
-	return func(_ BurnCode, _ []int) uint64 {
-		return g
-	}
-}
-
-func notImplemented() BurnFunction {
-	return func(code BurnCode, _ []int) uint64 {
-		panic(xerrors.Errorf("burn code %d not implemented", code))
-	}
-}
-
-func (c BurnCode) Value(p ...int) uint64 {
-	return Value(c, p...)
-}
 
 func (c BurnCode) Name() string {
 	r, ok := burnTable[c]
