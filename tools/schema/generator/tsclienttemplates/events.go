@@ -14,7 +14,7 @@ $#each events eventHandlerMember
 
 	public callHandler(topic: string, params: string[]): void {
 		const handler = $pkgName$+Handlers.get(topic);
-		if (handler !== undefined) {
+		if (handler) {
 			handler(this, params);
 		}
 	}
