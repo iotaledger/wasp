@@ -19,7 +19,7 @@ func incrementSCCounter(t *testing.T, ch *solo.Chain) iscp.RequestID {
 		WithGasBudget(100_000).
 		AddAssetsIotas(100_000)
 
-	gas, gasFee, err := ch.EstimateGas(reqEstimate, nil)
+	gas, gasFee, err := ch.EstimateGasOnLedger(reqEstimate, nil)
 	require.NoError(t, err)
 
 	tx, _, err := ch.PostRequestSyncTx(

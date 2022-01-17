@@ -98,7 +98,7 @@ func testPingIotas1(t *testing.T, w bool) {
 		AddIotaAllowance(expectedBack).
 		WithGasBudget(100_000)
 
-	gasEstimate, feeEstimate, err := ch.EstimateGas(reqEstimate, user)
+	gasEstimate, feeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
 	require.NoError(t, err)
 	t.Logf("gasEstimate: %d, feeEstimate: %d", gasEstimate, feeEstimate)
 

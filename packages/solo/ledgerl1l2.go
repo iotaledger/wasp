@@ -286,7 +286,7 @@ func (ch *Chain) DepositAssetsToL2(assets *iscp.Assets, user *cryptolib.KeyPair)
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 		AddAssets(assets).
 		WithGasBudget(10_000)
-	gas, _, err := ch.EstimateGas(req, user)
+	gas, _, err := ch.EstimateGasOnLedger(req, user)
 	require.NoError(ch.Env.T, err)
 
 	req.WithGasBudget(gas * 2)
@@ -313,7 +313,7 @@ func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.Assets, tar
 		AddAssets(sumAssets).
 		AddAllowance(toSend).
 		WithGasBudget(10_000)
-	gas, _, err := ch.EstimateGas(reqEstimate, user)
+	gas, _, err := ch.EstimateGasOnLedger(reqEstimate, user)
 	require.NoError(ch.Env.T, err)
 
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
