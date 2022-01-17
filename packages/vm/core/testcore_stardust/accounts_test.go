@@ -20,6 +20,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestDeposit(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
+	ch := env.NewChain(nil, "chain1")
+
+	err := ch.DepositIotasToL2(100_000, sender)
+	require.NoError(t, err)
+
+	rec := ch.LastReceipt()
+	t.Logf("========= receipt: %s", rec)
+	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
+}
+
 func TestFoundries(t *testing.T) {
 	var env *solo.Solo
 	var ch *solo.Chain
@@ -380,7 +393,7 @@ func TestAccountBalances(t *testing.T) {
 		)
 	}
 
-	// preload sender account with iotas in order to be able to pay for gass fees
+	// preload sender account with iotas in order to be able to pay for gas fees
 	err := ch.DepositIotasToL2(100_000, sender)
 	require.NoError(t, err)
 
@@ -423,6 +436,7 @@ func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
 	} else {
 		ret.ch, _, _ = ret.env.NewChainExt(ret.chainOwner, initLoad[0], "chain1")
 	}
+
 	ret.req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 	return ret
 }
@@ -649,6 +663,9 @@ func TestTransferAndHarvest(t *testing.T) {
 	v.ch.AssertL2AccountNativeToken(v.ch.CommonAccount(), v.tokenID, 50)
 	// no native tokens for chainOwner on L1
 	v.env.AssertL1NativeTokens(v.chainOwnerAddr, v.tokenID, 0)
+
+	err = v.ch.DepositIotasToL2(10_000, v.chainOwner)
+	require.NoError(t, err)
 
 	v.req = solo.NewCallParams("accounts", "harvest").
 		WithGasBudget(1000)

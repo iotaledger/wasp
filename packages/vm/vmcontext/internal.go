@@ -70,6 +70,8 @@ func (vmctx *VMContext) getChainInfo() *governance.ChainInfo {
 }
 
 func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
+	vmctx.GasBurn(gas.BurnGetBalance)
+
 	var ret uint64
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetIotaBalance(s, agentID)
@@ -78,6 +80,8 @@ func (vmctx *VMContext) GetIotaBalance(agentID *iscp.AgentID) uint64 {
 }
 
 func (vmctx *VMContext) GetNativeTokenBalance(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+	vmctx.GasBurn(gas.BurnGetBalance)
+
 	var ret *big.Int
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetNativeTokenBalance(s, agentID, tokenID)
@@ -94,6 +98,8 @@ func (vmctx *VMContext) GetNativeTokenBalanceTotal(tokenID *iotago.NativeTokenID
 }
 
 func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
+	vmctx.GasBurn(gas.BurnGetBalance)
+
 	var ret *iscp.Assets
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetAssets(s, agentID)
@@ -153,6 +159,8 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.Requ
 }
 
 func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
+	vmctx.GasBurn(gas.BurnEmitEventFixed)
+
 	if vmctx.requestEventIndex > vmctx.chainInfo.MaxEventsPerReq {
 		panic(ErrTooManyEvents)
 	}

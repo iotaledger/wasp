@@ -43,7 +43,7 @@ var burnTable = BurnTable{
 	BurnEmitEventFixed:             {"event", constValue(10)},
 	BurnGetAllowance:               {"allowance", constValue(10)},
 	BurnTransferAllowance:          {"transfer", constValue(10)},
-	BurnSendL1Request:              {"send", constValue(10)},
+	BurnSendL1Request:              {"send", linear(Coef1Send)},
 	BurnDeployContract:             {"deploy", constValue(10)},
 	BurnStorage1P:                  {"storage", linear()},
 	BurnWasm1P:                     {"wasm", linear()},
@@ -56,8 +56,13 @@ var burnTable = BurnTable{
 	BurnUtilsED25519AddrFromPubKey: {"ed25517 addr", constValue(50)},
 	BurnUtilsBLSValidSignature:     {"bls valid", constValue(2000)},
 	BurnUtilsBLSAddrFromPubKey:     {"bls addr", constValue(50)},
-	BurnUtilsBLSAggregateBLS1P:     {"bls aggregate", linear(400)},
+	BurnUtilsBLSAggregateBLS1P:     {"bls aggregate", linear(CoefBLSAggregate)},
 }
+
+const (
+	Coef1Send        = 200
+	CoefBLSAggregate = 400
+)
 
 func constValue(constGas uint64) BurnFunction {
 	g := constGas

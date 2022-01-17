@@ -293,8 +293,11 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("root", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		req := solo.NewCallParams(root.Contract.Name, "init")
-		_, err := ch.PostRequestSync(req, nil)
+		err := ch.DepositIotasToL2(10_000, nil)
+		require.NoError(t, err)
+		req := solo.NewCallParams(root.Contract.Name, "init").
+			WithGasBudget(1000)
+		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, root.ErrChainInitConditionsFailed)
 		ch.CheckAccountLedger()
@@ -302,8 +305,11 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("accounts", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		req := solo.NewCallParams(accounts.Contract.Name, "init")
-		_, err := ch.PostRequestSync(req, nil)
+		err := ch.DepositIotasToL2(10_000, nil)
+		require.NoError(t, err)
+		req := solo.NewCallParams(accounts.Contract.Name, "init").
+			WithGasBudget(1000)
+		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
@@ -311,8 +317,11 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("blocklog", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		req := solo.NewCallParams(blocklog.Contract.Name, "init")
-		_, err := ch.PostRequestSync(req, nil)
+		err := ch.DepositIotasToL2(10_000, nil)
+		require.NoError(t, err)
+		req := solo.NewCallParams(blocklog.Contract.Name, "init").
+			WithGasBudget(1000)
+		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
@@ -320,8 +329,11 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("blob", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		req := solo.NewCallParams(blob.Contract.Name, "init")
-		_, err := ch.PostRequestSync(req, nil)
+		err := ch.DepositIotasToL2(10_000, nil)
+		require.NoError(t, err)
+		req := solo.NewCallParams(blob.Contract.Name, "init").
+			WithGasBudget(1000)
+		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
@@ -329,8 +341,11 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("governance", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		req := solo.NewCallParams(governance.Contract.Name, "init")
-		_, err := ch.PostRequestSync(req, nil)
+		err := ch.DepositIotasToL2(10_000, nil)
+		require.NoError(t, err)
+		req := solo.NewCallParams(governance.Contract.Name, "init").
+			WithGasBudget(1000)
+		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()

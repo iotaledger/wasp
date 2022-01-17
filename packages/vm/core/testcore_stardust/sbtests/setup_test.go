@@ -83,8 +83,9 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair
 	require.NoError(t, err)
 
 	deployed := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
-	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name)
-	_, err = chain.PostRequestSync(req.AddAssetsIotas(1), user)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).
+		WithGasBudget(1000)
+	_, err = chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 	t.Logf("deployed test_sandbox'%s': %s", ScName, HScName)
 	return deployed, extraToken

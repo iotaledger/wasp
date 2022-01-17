@@ -85,7 +85,7 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 		sbtestsc.ParamIntParamValue, n,
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname()).
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	ret, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))

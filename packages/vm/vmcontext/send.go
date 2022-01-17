@@ -3,6 +3,7 @@ package vmcontext
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"golang.org/x/xerrors"
 )
 
@@ -16,6 +17,10 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 	if vmctx.numPostedOutputs >= MaxPostedOutputsInOneRequest {
 		panic(xerrors.Errorf("%v: max = %d", ErrExceededPostedOutputLimit, MaxPostedOutputsInOneRequest))
 	}
+
+	vmctx.numPostedOutputs++
+	vmctx.GasBurn(gas.BurnSendL1Request, vmctx.numPostedOutputs)
+
 	// create extended output with adjusted dust deposit
 	out, err := transaction.ExtendedOutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
@@ -39,5 +44,4 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 	vmctx.debitFromAccount(vmctx.AccountID(), par.Assets)
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: end")
 
-	vmctx.numPostedOutputs++
 }
