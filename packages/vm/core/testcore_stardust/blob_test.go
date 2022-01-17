@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/stretchr/testify/require"
 )
@@ -20,6 +19,8 @@ func TestUploadBlob(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
 
+		ch.MustDepositIotasToL2(100_000, nil)
+
 		h, err := ch.UploadBlob(nil, "field", "dummy data")
 		require.NoError(t, err)
 
@@ -30,11 +31,8 @@ func TestUploadBlob(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain(nil, "chain1")
 
-		// get more iotas for originator
-		originatorBalance := env.L1AddressBalances(ch.OriginatorAddress).Iotas
-		_, err := env.L1Ledger().GetFundsFromFaucet(ch.OriginatorAddress)
+		err := ch.DepositIotasToL2(100_000, nil)
 		require.NoError(t, err)
-		env.AssertL1AddressIotas(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
 
 		h, err := ch.UploadBlobFromFile(nil, fileName, "file")
 		require.NoError(t, err)
@@ -46,9 +44,11 @@ func TestUploadBlob(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain(nil, "chain1")
 
+		err := ch.DepositIotasToL2(100_000, nil)
+		require.NoError(t, err)
+
 		const howMany = 5
 		hashes := make([]hashing.HashValue, howMany)
-		var err error
 		for i := 0; i < howMany; i++ {
 			data := []byte(fmt.Sprintf("dummy data #%d", i))
 			hashes[i], err = ch.UploadBlob(nil, "field", data)

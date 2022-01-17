@@ -51,14 +51,18 @@ func TestBlockInfo(t *testing.T) {
 func TestBlockInfoLatestWithRequest(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 
-	chain := env.NewChain(nil, "chain1")
-	bi := chain.GetLatestBlockInfo()
-	t.Logf("after chain deployment:\n%s", bi.String())
-	// uploading one blob
-	_, err := chain.UploadBlob(nil, "field", "dummy blob data")
+	ch := env.NewChain(nil, "chain1")
+
+	err := ch.DepositIotasToL2(100_000, nil)
 	require.NoError(t, err)
 
-	bi = chain.GetLatestBlockInfo()
+	bi := ch.GetLatestBlockInfo()
+	t.Logf("after ch deployment:\n%s", bi.String())
+	// uploading one blob
+	_, err = ch.UploadBlob(nil, "field", "dummy blob data")
+	require.NoError(t, err)
+
+	bi = ch.GetLatestBlockInfo()
 	require.NotNil(t, bi)
 	require.EqualValues(t, 3, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
@@ -69,19 +73,22 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 
 func TestBlockInfoSeveral(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	chain := env.NewChain(nil, "chain1")
+	ch := env.NewChain(nil, "chain1")
+
+	err := ch.DepositIotasToL2(100_000, nil)
+	require.NoError(t, err)
 
 	const numReqs = 5
 	for i := 0; i < numReqs; i++ {
-		_, err := chain.UploadBlob(nil, "field", fmt.Sprintf("dummy blob data #%d", i))
+		_, err := ch.UploadBlob(nil, "field", fmt.Sprintf("dummy blob data #%d", i))
 		require.NoError(t, err)
 	}
 
-	bi := chain.GetLatestBlockInfo()
-	require.EqualValues(t, 1+2*numReqs, int(bi.BlockIndex))
+	bi := ch.GetLatestBlockInfo()
+	require.EqualValues(t, 2+numReqs, int(bi.BlockIndex))
 
 	for blockIndex := uint32(0); blockIndex <= bi.BlockIndex; blockIndex++ {
-		bi1, err := chain.GetBlockInfo(blockIndex)
+		bi1, err := ch.GetBlockInfo(blockIndex)
 		require.NoError(t, err)
 		require.NotNil(t, bi1)
 		t.Logf("%s", bi1.String())
@@ -94,64 +101,70 @@ func TestBlockInfoSeveral(t *testing.T) {
 
 func TestRequestIsProcessed(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	chain := env.NewChain(nil, "chain1")
+	ch := env.NewChain(nil, "chain1")
+
+	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(30)
-	tx, _, err := chain.PostRequestSyncTx(req, nil)
+		WithGasBudget(1000)
+	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
-	reqs, err := env.RequestsForChain(tx, chain.ChainID)
+	reqs, err := env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, len(reqs))
 
-	bi := chain.GetLatestBlockInfo()
+	bi := ch.GetLatestBlockInfo()
 	require.NoError(t, err)
-	require.True(t, chain.IsRequestProcessed(reqs[0].ID()))
+	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
 	t.Logf("%s", bi.String())
 }
 
 func TestRequestReceipt(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	chain := env.NewChain(nil, "chain1")
+	ch := env.NewChain(nil, "chain1")
+
+	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(30)
-	tx, _, err := chain.PostRequestSyncTx(req, nil)
+		WithGasBudget(1000)
+	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
-	reqs, err := env.RequestsForChain(tx, chain.ChainID)
+	reqs, err := env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, len(reqs))
-	require.True(t, chain.IsRequestProcessed(reqs[0].ID()))
+	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
 
-	receipt, ok := chain.GetRequestReceipt(reqs[0].ID())
+	receipt, ok := ch.GetRequestReceipt(reqs[0].ID())
 	require.True(t, ok)
 	a := reqs[0].Bytes()
 	b := receipt.Request.Bytes()
 	require.Equal(t, a, b)
 	require.NoError(t, receipt.Error())
-	require.EqualValues(t, 2, receipt.BlockIndex)
+	require.EqualValues(t, 3, int(receipt.BlockIndex))
 	require.EqualValues(t, 0, receipt.RequestIndex)
 	t.Logf("%s", receipt.String())
 }
 
 func TestRequestReceiptsForBlocks(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	chain := env.NewChain(nil, "chain1")
+	ch := env.NewChain(nil, "chain1")
+
+	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(30)
-	tx, _, err := chain.PostRequestSyncTx(req, nil)
+		WithGasBudget(1000)
+	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
-	reqs, err := env.RequestsForChain(tx, chain.ChainID)
+	reqs, err := env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, len(reqs))
 
-	require.True(t, chain.IsRequestProcessed(reqs[0].ID()))
+	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
 
-	recs := chain.GetRequestReceiptsForBlock(2)
+	recs := ch.GetRequestReceiptsForBlock(3)
 	require.EqualValues(t, 1, len(recs))
 	require.EqualValues(t, reqs[0].ID(), recs[0].Request.ID())
 	t.Logf("%s\n", recs[0].String())
@@ -159,20 +172,22 @@ func TestRequestReceiptsForBlocks(t *testing.T) {
 
 func TestRequestIDsForBlocks(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	chain := env.NewChain(nil, "chain1")
+	ch := env.NewChain(nil, "chain1")
+
+	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(30)
-	tx, _, err := chain.PostRequestSyncTx(req, nil)
+		WithGasBudget(1000)
+	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
-	reqs, err := env.RequestsForChain(tx, chain.ChainID)
+	reqs, err := env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, len(reqs))
 
-	require.True(t, chain.IsRequestProcessed(reqs[0].ID()))
+	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
 
-	ids := chain.GetRequestIDsForBlock(2)
+	ids := ch.GetRequestIDsForBlock(3)
 	require.EqualValues(t, 1, len(ids))
 	require.EqualValues(t, reqs[0].ID(), ids[0])
 }

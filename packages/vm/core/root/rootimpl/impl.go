@@ -126,7 +126,6 @@ func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 	})
 	_, err = ctx.Call(iscp.Hn(name), iscp.EntryPointInit, initParams, nil)
 	ctx.RequireNoError(err)
-
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
 		name, iscp.Hn(name), progHash.String(), description))
 	return nil, nil

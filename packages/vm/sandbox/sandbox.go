@@ -6,15 +6,13 @@ package sandbox
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/iscp/assert"
-
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
@@ -35,88 +33,76 @@ func init() {
 }
 
 func (s *sandbox) AccountID() *iscp.AgentID {
-	s.Burn(gas.GetContractContext)
 	return s.vmctx.AccountID()
 }
 
 func (s *sandbox) BalanceIotas() uint64 {
-	s.Burn(gas.GetContractContext)
 	return s.vmctx.GetIotaBalance(s.vmctx.AccountID())
 }
 
 func (s *sandbox) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
-	s.Burn(gas.GetContractContext)
 	return s.vmctx.GetNativeTokenBalance(s.vmctx.AccountID(), id)
 }
 
 func (s *sandbox) Assets() *iscp.Assets {
-	s.Burn(gas.GetContractContext)
 	return s.vmctx.GetAssets(s.vmctx.AccountID())
 }
 
 // Call calls an entry point of contract, passes parameters and funds
 func (s *sandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *iscp.Assets) (dict.Dict, error) {
-	s.Burn(gas.CallContract)
 	return s.vmctx.Call(target, entryPoint, params, transfer)
 }
 
 func (s *sandbox) Caller() *iscp.AgentID {
-	s.Burn(gas.GetCallerData)
 	return s.vmctx.Caller()
 }
 
 func (s *sandbox) ChainID() *iscp.ChainID {
-	s.Burn(gas.GetContractContext)
 	return s.vmctx.ChainID()
 }
 
 func (s *sandbox) ChainOwnerID() *iscp.AgentID {
-	s.Burn(gas.GetContractContext)
 	return s.vmctx.ChainOwnerID()
 }
 
 func (s *sandbox) Contract() iscp.Hname {
-	s.Burn(gas.GetContractContext)
 	return s.vmctx.CurrentContractHname()
 }
 
 func (s *sandbox) ContractCreator() *iscp.AgentID {
-	s.Burn(gas.GetContractContext)
 	return s.vmctx.ContractCreator()
 }
 
 // DeployContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
 func (s *sandbox) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) error {
-	// gas is deducted in the root contract
-	return s.vmctx.DeployContract(programHash, name, description, initParams)
+	err := s.vmctx.DeployContract(programHash, name, description, initParams)
+	return err
 }
 
 func (s *sandbox) Event(msg string) {
-	// TODO why burn gas based on size, if it is burned by MustSaveEvent by bytes ?
-	//  Probably we should charge some fixed overhead for the call
-	s.Burn(gas.LogEvent(msg))
 	s.Log().Infof("event::%s -> '%s'", s.vmctx.CurrentContractHname(), msg)
 	s.vmctx.MustSaveEvent(s.vmctx.CurrentContractHname(), msg)
 }
 
 func (s *sandbox) GetEntropy() hashing.HashValue {
-	s.Burn(gas.GetEntropy)
 	return s.vmctx.Entropy()
 }
 
 func (s *sandbox) Timestamp() int64 {
-	s.Burn(gas.GetContractContext)
 	return s.vmctx.Timestamp()
 }
 
 func (s *sandbox) AllowanceAvailable() *iscp.Assets {
-	s.Burn(gas.GetIncomingTransfer)
 	return s.vmctx.AllowanceAvailable()
 }
 
 func (s *sandbox) TransferAllowedFunds(target *iscp.AgentID, assets ...*iscp.Assets) *iscp.Assets {
-	return s.vmctx.TransferAllowedFunds(target, assets...)
+	return s.vmctx.TransferAllowedFunds(target, false, assets...)
+}
+
+func (s *sandbox) TransferAllowedFundsForceCreateTarget(target *iscp.AgentID, assets ...*iscp.Assets) *iscp.Assets {
+	return s.vmctx.TransferAllowedFunds(target, true, assets...)
 }
 
 func (s *sandbox) Log() iscp.LogInterface {
@@ -125,17 +111,14 @@ func (s *sandbox) Log() iscp.LogInterface {
 }
 
 func (s *sandbox) Params() dict.Dict {
-	s.Burn(gas.GetRequestData)
 	return s.vmctx.Params()
 }
 
 func (s *sandbox) Request() iscp.Calldata {
-	s.Burn(gas.GetRequestData)
 	return s.vmctx.Request()
 }
 
 func (s *sandbox) Send(par iscp.RequestParameters) {
-	s.Burn(gas.SendL1Request)
 	s.vmctx.Send(par)
 }
 
@@ -153,7 +136,6 @@ func (s *sandbox) BlockContext(construct func(ctx iscp.Sandbox) interface{}, onC
 }
 
 func (s *sandbox) StateAnchor() *iscp.StateAnchor {
-	s.Burn(gas.GetStateAnchorInfo)
 	return s.vmctx.StateAnchor()
 }
 
@@ -161,8 +143,8 @@ func (s *sandbox) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandbox) Burn(gas uint64) {
-	s.vmctx.GasBurn(gas)
+func (s *sandbox) Burn(burnCode gas.BurnCode, par ...int) {
+	s.vmctx.GasBurn(burnCode, par...)
 }
 
 func (s *sandbox) Budget() uint64 {

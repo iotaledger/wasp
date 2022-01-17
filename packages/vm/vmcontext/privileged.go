@@ -17,7 +17,7 @@ import (
 
 func (vmctx *VMContext) mustBeCalledFromContract(contract *coreutil.ContractInfo) {
 	if vmctx.CurrentContractHname() != contract.Hname() {
-		panic(fmt.Sprintf("%v: core contract '%s' expected", ErrPriviledgedCallFailed, contract.Name))
+		panic(fmt.Sprintf("%v: core contract '%s' expected", ErrPrivilegedCallFailed, contract.Name))
 	}
 }
 

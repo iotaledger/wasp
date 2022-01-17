@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -14,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
@@ -111,15 +111,16 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
+		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
 		// user on L1 is charged with dust deposit
 		env.AssertL1AddressIotas(ch.OriginatorAddress, originatorsL1IotasBefore-reqDustDeposit)
 		// originator (user) is charged with gas fee on L2
-		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-gas.NotFoundTarget)
+		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
 		env.WaitPublisher()
 	})
 	t.Run("no contract,originator!=user", func(t *testing.T) {
@@ -147,6 +148,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
+		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
@@ -157,9 +159,9 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// originator account does not change
 		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore)
 		// user is charged with gas fee on L2
-		ch.AssertL2AccountIotas(senderAgentID, reqDustDeposit-gas.NotFoundTarget)
+		ch.AssertL2AccountIotas(senderAgentID, reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
 		env.WaitPublisher()
 	})
 	t.Run("no EP,originator==user", func(t *testing.T) {
@@ -183,15 +185,16 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
+		rec := ch.LastReceipt()
 
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
 		// user on L1 is charged with dust deposit
 		env.AssertL1AddressIotas(ch.OriginatorAddress, originatorsL1IotasBefore-reqDustDeposit)
 		// originator (user) is charged with gas fee on L2
-		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-gas.NotFoundTarget)
+		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
 		env.WaitPublisher()
 	})
 	t.Run("no EP,originator!=user", func(t *testing.T) {
@@ -219,7 +222,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountIotasAfter := ch.L2CommonAccountIotas()
 
 		reqDustDeposit := transaction.GetVByteCosts(reqTx, env.RentStructure())[0]
-
+		rec := ch.LastReceipt()
 		// total iotas on chain increase by the dust deposit from the request tx
 		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
 		// originator on L1 does not change
@@ -229,9 +232,9 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// originator account does not change
 		ch.AssertL2AccountIotas(ch.OriginatorAgentID, originatorsL2IotasBefore)
 		// user is charged with gas fee on L2
-		ch.AssertL2AccountIotas(senderAgentID, reqDustDeposit-gas.NotFoundTarget)
+		ch.AssertL2AccountIotas(senderAgentID, reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(gas.NotFoundTarget), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
 		env.WaitPublisher()
 	})
 }
@@ -280,7 +283,8 @@ func TestEstimateGas(t *testing.T) {
 		governance.ParamMaxEventsPerRequestUint16, uint16(100)).
 		WithGasBudget(1000)
 
-	gasBurned, gasFeeCharged := ch.EstimateGas(req, nil)
+	gasBurned, gasFeeCharged, err := ch.EstimateGas(req, nil)
+	require.NoError(t, err)
 	require.NotZero(t, gasBurned)
 	require.NotZero(t, gasFeeCharged)
 	t.Logf("gasBurned: %d, gasFeeCharged: %d", gasBurned, gasFeeCharged)
@@ -290,8 +294,11 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("root", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		req := solo.NewCallParams(root.Contract.Name, "init")
-		_, err := ch.PostRequestSync(req, nil)
+		err := ch.DepositIotasToL2(10_000, nil)
+		require.NoError(t, err)
+		req := solo.NewCallParams(root.Contract.Name, "init").
+			WithGasBudget(1000)
+		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, root.ErrChainInitConditionsFailed)
 		ch.CheckAccountLedger()
@@ -299,8 +306,11 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("accounts", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		req := solo.NewCallParams(accounts.Contract.Name, "init")
-		_, err := ch.PostRequestSync(req, nil)
+		err := ch.DepositIotasToL2(10_000, nil)
+		require.NoError(t, err)
+		req := solo.NewCallParams(accounts.Contract.Name, "init").
+			WithGasBudget(1000)
+		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
@@ -308,8 +318,11 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("blocklog", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		req := solo.NewCallParams(blocklog.Contract.Name, "init")
-		_, err := ch.PostRequestSync(req, nil)
+		err := ch.DepositIotasToL2(10_000, nil)
+		require.NoError(t, err)
+		req := solo.NewCallParams(blocklog.Contract.Name, "init").
+			WithGasBudget(1000)
+		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
@@ -317,8 +330,11 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("blob", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		req := solo.NewCallParams(blob.Contract.Name, "init")
-		_, err := ch.PostRequestSync(req, nil)
+		err := ch.DepositIotasToL2(10_000, nil)
+		require.NoError(t, err)
+		req := solo.NewCallParams(blob.Contract.Name, "init").
+			WithGasBudget(1000)
+		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
@@ -326,8 +342,11 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("governance", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		req := solo.NewCallParams(governance.Contract.Name, "init")
-		_, err := ch.PostRequestSync(req, nil)
+		err := ch.DepositIotasToL2(10_000, nil)
+		require.NoError(t, err)
+		req := solo.NewCallParams(governance.Contract.Name, "init").
+			WithGasBudget(1000)
+		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
@@ -344,9 +363,12 @@ func TestDeployNativeContract(t *testing.T) {
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 	// userAgentID := iscp.NewAgentID(userAddr, 0)
 
+	err := ch.DepositIotasToL2(10_000, senderKeyPair)
+	require.NoError(t, err)
+
 	// get more iotas for originator
 	originatorBalance := env.L1AddressBalances(ch.OriginatorAddress).Iotas
-	_, err := env.L1Ledger().GetFundsFromFaucet(ch.OriginatorAddress)
+	_, err = env.L1Ledger().GetFundsFromFaucet(ch.OriginatorAddress)
 	require.NoError(t, err)
 	env.AssertL1AddressIotas(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
 
@@ -371,4 +393,21 @@ func TestFeeBasic(t *testing.T) {
 	feePolicy := chain.GetGasFeePolicy()
 	require.Nil(t, feePolicy.GasFeeTokenID)
 	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
+}
+
+func TestBurnLog(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	ch := env.NewChain(nil, "chain1")
+
+	ch.MustDepositIotasToL2(30_000, nil)
+	rec := ch.LastReceipt()
+	t.Logf("receipt 1:\n%s", rec)
+	t.Logf("burn log 1:\n%s", rec.GasBurnLog)
+
+	_, err := ch.UploadBlob(nil, "field", strings.Repeat("dummy data", 1000))
+	require.NoError(t, err)
+
+	rec = ch.LastReceipt()
+	t.Logf("receipt 2:\n%s", rec)
+	t.Logf("burn log 2:\n%s", rec.GasBurnLog)
 }

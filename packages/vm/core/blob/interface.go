@@ -2,8 +2,6 @@ package blob
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractBlob, "Blob Contract")
@@ -27,15 +25,3 @@ var (
 	FuncGetBlobField = coreutil.ViewFunc("getBlobField")
 	FuncListBlobs    = coreutil.ViewFunc("listBlobs")
 )
-
-func GasForBlob(blob dict.Dict) uint64 {
-	g := uint64(0)
-	for k, v := range blob {
-		g += uint64(len(k)) + uint64(len(v))
-	}
-	g = gas.StoreBytes(int(g))
-	if g < gas.MinGasPerBlob {
-		g = gas.MinGasPerBlob
-	}
-	return g
-}

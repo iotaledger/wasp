@@ -32,20 +32,20 @@ func testGetSet(t *testing.T, w bool) {
 
 func TestCallRecursive(t *testing.T) { run2(t, testCallRecursive) }
 func testCallRecursive(t *testing.T, w bool) {
-	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, w)
 
-	t.Logf("originator iotas: %d", chain.L2AccountIotas(chain.OriginatorAgentID))
+	t.Logf("originator iotas: %d", ch.L2AccountIotas(ch.OriginatorAgentID))
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamIntParamValue, 31,
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncRunRecursion.Hname()).
 		WithGasBudget(1_000_000)
-	receipt, _, err := chain.PostRequestSyncReceipt(req, nil)
-	t.Logf("receipt: %s", receipt)
+	_, err := ch.PostRequestSync(req, nil)
+	t.Logf("receipt: %s", ch.LastReceipt())
 	require.NoError(t, err)
 
-	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err := ch.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.VarCounter))
@@ -85,7 +85,7 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 		sbtestsc.ParamIntParamValue, n,
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname()).
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	ret, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))

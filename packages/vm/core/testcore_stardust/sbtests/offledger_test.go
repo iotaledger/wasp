@@ -39,33 +39,36 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 
 func TestOffLedgerSuccess(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, _ := setupTestSandboxSC(t, chain, nil, w)
+		env, ch := setupChain(t, nil)
+		cAID, _ := setupTestSandboxSC(t, ch, nil, w)
 
 		user, userAddr := env.NewKeyPairWithFunds()
 		userAgentID := iscp.NewAgentID(userAddr, 0)
 
-		chain.AssertL2AccountIotas(userAgentID, 0)
-		chain.AssertL2AccountIotas(cAID, 0)
+		ch.AssertL2AccountIotas(userAgentID, 0)
+		ch.AssertL2AccountIotas(cAID, 0)
 
-		err := chain.DepositIotas(1000, user)
+		err := ch.DepositIotasToL2(1000, user)
+		expectedUser := 1000 - ch.LastReceipt().GasFeeCharged
+		ch.AssertL2AccountIotas(userAgentID, expectedUser)
 		require.NoError(t, err)
 
 		req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp",
 			sbtestsc.ParamIntParamValue, 314,
 		).WithGasBudget(1000)
-		receipt, _, err := chain.PostRequestOffLedgerReceipt(req, user)
+		_, err = ch.PostRequestOffLedger(req, user)
 		require.NoError(t, err)
-		require.NoError(t, receipt.Error())
-		t.Logf("receipt: %s", receipt)
+		rec := ch.LastReceipt()
+		require.NoError(t, rec.Error())
+		t.Logf("receipt: %s", rec)
 
-		res, err := chain.CallView(ScName, sbtestsc.FuncGetInt.Name,
+		res, err := ch.CallView(ScName, sbtestsc.FuncGetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp",
 		)
 		require.NoError(t, err)
 		require.EqualValues(t, 314, kvdecoder.New(res).MustGetUint64("ppp"))
-		chain.AssertL2AccountIotas(userAgentID, 1000-receipt.GasFeeCharged)
+		ch.AssertL2AccountIotas(userAgentID, expectedUser-rec.GasFeeCharged)
 	})
 }
 
