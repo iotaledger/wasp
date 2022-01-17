@@ -76,6 +76,8 @@ export class Service {
     public unregister(handler: IEventHandler): void {
         // remove handler
         this.eventHandlers = this.eventHandlers.filter(h => h !== handler);
+        if(this.eventHandlers.length === 0)
+            this.webSocket?.close();
     }
 
     // overrides default contract name
