@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -392,4 +393,21 @@ func TestFeeBasic(t *testing.T) {
 	feePolicy := chain.GetGasFeePolicy()
 	require.Nil(t, feePolicy.GasFeeTokenID)
 	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
+}
+
+func TestBurnLog(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	ch := env.NewChain(nil, "chain1")
+
+	ch.MustDepositIotasToL2(30_000, nil)
+	rec := ch.LastReceipt()
+	t.Logf("receipt 1:\n%s", rec)
+	t.Logf("burn log 1:\n%s", rec.GasBurnLog)
+
+	_, err := ch.UploadBlob(nil, "field", strings.Repeat("dummy data", 1000))
+	require.NoError(t, err)
+
+	rec = ch.LastReceipt()
+	t.Logf("receipt 2:\n%s", rec)
+	t.Logf("burn log 2:\n%s", rec.GasBurnLog)
 }

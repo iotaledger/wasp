@@ -19,8 +19,7 @@ func TestUploadBlob(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
 
-		err := ch.DepositIotasToL2(100_000, nil)
-		require.NoError(t, err)
+		ch.MustDepositIotasToL2(100_000, nil)
 
 		h, err := ch.UploadBlob(nil, "field", "dummy data")
 		require.NoError(t, err)
