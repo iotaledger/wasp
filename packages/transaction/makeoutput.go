@@ -13,7 +13,6 @@ func ExtendedOutputFromPostData(
 	senderContract iscp.Hname,
 	par iscp.RequestParameters,
 	rentStructure *iotago.RentStructure,
-	disableAutoAdjustDustDeposit ...bool,
 ) (*iotago.ExtendedOutput, error) {
 	metadata := par.Metadata
 	if metadata == nil {
@@ -34,7 +33,7 @@ func ExtendedOutputFromPostData(
 		},
 		par.Options,
 		rentStructure,
-		disableAutoAdjustDustDeposit...,
+		!par.AdjustToMinimumDustDeposit,
 	)
 	return ret, err
 }

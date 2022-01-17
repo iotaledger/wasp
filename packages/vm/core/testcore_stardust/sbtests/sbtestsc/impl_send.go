@@ -27,7 +27,7 @@ func pingAllowanceBack(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Requiref(!ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) && ctx.Caller().Hname() == 0,
 		"pingAllowanceBack: caller expected to be a L1 address")
 	// save allowance budget because after transfer it will be modified
-	toSend := ctx.AllowanceAvailable().Clone()
+	toSend := ctx.AllowanceAvailable()
 	if toSend.IsEmpty() {
 		// nothing to send back, NOP
 		return nil, nil

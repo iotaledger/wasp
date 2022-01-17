@@ -122,6 +122,8 @@ type RequestParameters struct {
 	// It expected to contain iotas at least the amount required for dust deposit
 	// It depends on the context how it is handled when iotas are not enough for dust deposit
 	Assets *Assets
+	// AdjustToMinimumDustDeposit is true, iotas in assets will be added to meet minimum dust deposit requirements
+	AdjustToMinimumDustDeposit bool
 	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address
 	Metadata *SendMetadata
 	// SendOptions includes options of the output, such as time lock or expiry parameters
