@@ -190,7 +190,7 @@ export class Wallet {
         builtInputs: string[]
     ): Array<IUnlockBlock> {
         const unlockBlocks: IUnlockBlock[] = [];
-        const txEssence = Transaction.essence(tx, Buffer.alloc(0));
+        const txEssence = Transaction.essence(tx);
 
         const addressByOutputID: { [outputID: string]: string } = {};
         for (const address in consumedOutputs) {
