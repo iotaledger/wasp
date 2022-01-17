@@ -15,7 +15,7 @@ export class Service {
     private serviceClient: wasmclient.ServiceClient;
     private webSocket: WebSocket | null = null;
     public keyPair: IKeyPair | null = null;
-    private eventHandlers: Array<IEventHandler> = new Array();
+    private eventHandlers: Array<IEventHandler> = [];
     public scHname: wasmclient.Hname;
     private waspWebSocketUrl: string = "";
 
