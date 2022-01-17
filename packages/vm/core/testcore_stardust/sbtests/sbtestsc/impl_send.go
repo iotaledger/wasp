@@ -1,6 +1,7 @@
 package sbtestsc
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -34,7 +35,8 @@ func testSplitFundsNativeTokens(ctx iscp.Sandbox) (dict.Dict, error) {
 			// send back to caller's address
 			// depending on the amount of tokens, it will exceed number of outputs or not
 			transfer := iscp.NewEmptyAssets().AddNativeTokens(token.ID, 1)
-			ctx.TransferAllowedFunds(ctx.AccountID(), transfer)
+			rem := ctx.TransferAllowedFunds(ctx.AccountID(), transfer)
+			fmt.Printf("%s\n", rem)
 			ctx.Send(
 				iscp.RequestParameters{
 					TargetAddress:              ctx.Caller().Address(),

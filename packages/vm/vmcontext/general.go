@@ -146,7 +146,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAcco
 
 	var assetsToMove *iscp.Assets
 	if len(assets) == 0 {
-		assetsToMove = vmctx.AllowanceAvailable().Clone()
+		assetsToMove = vmctx.AllowanceAvailable()
 	} else {
 		assetsToMove = assets[0]
 	}

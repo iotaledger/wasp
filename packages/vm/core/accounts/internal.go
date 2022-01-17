@@ -194,7 +194,7 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 	defer checkLedger(state, "DebitFromAccount OUT")
 
 	if !debitFromAccount(account, assets) {
-		panic(xerrors.Errorf(" agentID: %s. %w", agentID.String(), ErrNotEnoughFunds))
+		panic(xerrors.Errorf(" agentID: %s. %v", agentID.String(), ErrNotEnoughFunds))
 	}
 	if !debitFromAccount(getTotalL2AssetsAccount(state), assets) {
 		panic("debitFromAccount: inconsistent ledger state")
