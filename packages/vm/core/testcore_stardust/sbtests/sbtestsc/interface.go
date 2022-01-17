@@ -48,6 +48,7 @@ var Processor = Contract.Processor(initialize,
 	FuncSpawn.WithHandler(spawn),
 
 	FuncSplitFunds.WithHandler(testSplitFunds),
+	FuncSplitFundsNativeTokens.WithHandler(testSplitFundsNativeTokens),
 	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
 )
 
@@ -94,8 +95,9 @@ var (
 
 	FuncSpawn = coreutil.Func("spawn")
 
-	FuncSplitFunds        = coreutil.Func("splitFunds")
-	FuncPingAllowanceBack = coreutil.Func("pingAllowanceBack")
+	FuncSplitFunds             = coreutil.Func("splitFunds")
+	FuncSplitFundsNativeTokens = coreutil.Func("splitFundsNativeTokens")
+	FuncPingAllowanceBack      = coreutil.Func("pingAllowanceBack")
 )
 
 const (

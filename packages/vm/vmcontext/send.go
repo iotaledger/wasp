@@ -42,5 +42,4 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 	// It panics with accounts.ErrNotEnoughFunds if sender's account balances are exceeded
 	vmctx.debitFromAccount(vmctx.AccountID(), par.Assets)
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: end")
-
 }

@@ -1,8 +1,10 @@
 package sbtests
 
 import (
+	"math/big"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
@@ -78,8 +80,37 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 	require.NotContains(t, err.Error(), "skipped")
 }
 
+func TestSplitTokensFail(t *testing.T) { run2(t, testSplitTokensFail) }
+func testSplitTokensFail(t *testing.T, w bool) {
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, w)
+
+	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
+
+	err := ch.DepositIotasToL2(100_000, wallet)
+	require.NoError(t, err)
+
+	sn, tokenID, err := ch.NewFoundryParams(100).
+		WithUser(wallet).
+		CreateFoundry()
+	require.NoError(t, err)
+	err = ch.MintTokens(sn, big.NewInt(100), wallet)
+	require.NoError(t, err)
+
+	// this will FAIL because it will result in 100 outputs in the single call
+	allowance := iscp.NewAssetsIotas(100_000).AddNativeTokens(tokenID, 100)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
+		AddAllowance(allowance).
+		AddAssetsIotas(100_000).
+		WithGasBudget(200_000)
+	_, err = ch.PostRequestSync(req, wallet)
+	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
+	require.NotContains(t, err.Error(), "skipped")
+}
+
 // TestPingIotas1 sends some iotas to SC and receives the whole allowance sent back to L1 as on-ledger request
 func TestPingIotas1(t *testing.T) { run2(t, testPingIotas1) }
+
 func testPingIotas1(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
