@@ -27,7 +27,6 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 		vmctx.CurrentContractHname(),
 		par,
 		vmctx.task.RentStructure,
-		true, // will return an error if not enough iotas for dust deposit
 	)
 	if err != nil {
 		// only possible if not provided enough iotas for dust deposit
