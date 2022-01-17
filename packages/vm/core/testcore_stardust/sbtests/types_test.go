@@ -6,14 +6,16 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTypesFull(t *testing.T) { run2(t, testTypesFull) }
 func testTypesFull(t *testing.T, w bool) {
-	_, chain := setupChain(t, nil)
-	cID, _ := setupTestSandboxSC(t, chain, nil, w)
+	_, ch := setupChain(t, nil)
+	cID, _ := setupTestSandboxSC(t, ch, nil, w)
+
+	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPassTypesFull.Name,
 		"string", "string",
@@ -24,11 +26,11 @@ func testTypesFull(t *testing.T, w bool) {
 		"Hname", iscp.Hn("Hname"),
 		"Hname-0", iscp.Hname(0),
 		"contractID", cID,
-		"chainID", chain.ChainID,
-		"address", chain.ChainID.AsAddress(),
-		"agentID", chain.OriginatorAgentID,
-	)
-	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
+		"chainID", ch.ChainID,
+		"address", ch.ChainID.AsAddress(),
+		"agentID", ch.OriginatorAgentID,
+	).WithGasBudget(10_000)
+	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 }
 
