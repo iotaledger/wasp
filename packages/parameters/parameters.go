@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package parameters
 
 import (
@@ -12,7 +15,8 @@ import (
 var all *configuration.Configuration
 
 const (
-	AccountsList = "accounts"
+	AccountsList       = "accounts"
+	NodeOwnerAddresses = "node.ownerAddresses"
 
 	LoggerLevel             = "logger.level"
 	LoggerDisableCaller     = "logger.disableCaller"
@@ -24,9 +28,10 @@ const (
 	DatabaseDir      = "database.directory"
 	DatabaseInMemory = "database.inMemory"
 
-	WebAPIBindAddress    = "webapi.bindAddress"
-	WebAPIAdminWhitelist = "webapi.adminWhitelist"
-	WebAPIAuth           = "webapi.auth"
+	WebAPIBindAddress            = "webapi.bindAddress"
+	WebAPIAdminWhitelist         = "webapi.adminWhitelist"
+	WebAPIAdminWhitelistDisabled = "webapi.adminWhitelistDisabled"
+	WebAPIAuth                   = "webapi.auth"
 
 	DashboardBindAddress       = "dashboard.bindAddress"
 	DashboardExploreAddressURL = "dashboard.exploreAddressUrl"
@@ -36,7 +41,6 @@ const (
 
 	PeeringMyNetID                   = "peering.netid"
 	PeeringPort                      = "peering.port"
-	PeeringNeighbors                 = "peering.neighbors"
 	PullMissingRequestsFromCommittee = "peering.pullMissingRequests"
 
 	NanomsgPublisherPort = "nanomsg.port"
@@ -59,6 +63,8 @@ func Init() *configuration.Configuration {
 	// set the default logger config
 	all = configuration.New()
 
+	flag.StringSlice(NodeOwnerAddresses, []string{}, "A list of node owner addresses.")
+
 	flag.String(LoggerLevel, "info", "log level")
 	flag.Bool(LoggerDisableCaller, false, "disable caller info in log")
 	flag.Bool(LoggerDisableStacktrace, false, "disable stack trace in log")
@@ -72,6 +78,7 @@ func Init() *configuration.Configuration {
 	flag.String(WebAPIBindAddress, "127.0.0.1:8080", "the bind address for the web API")
 	flag.StringSlice(WebAPIAdminWhitelist, []string{}, "IP whitelist for /adm wndpoints")
 	flag.StringToString(WebAPIAuth, nil, "authentication scheme for web API")
+	flag.Bool(WebAPIAdminWhitelistDisabled, false, "Disables IP whitelisting and allows requests from _any_ IP")
 
 	flag.String(DashboardBindAddress, "127.0.0.1:7000", "the bind address for the node dashboard")
 	flag.String(DashboardExploreAddressURL, "", "URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address]")
@@ -81,7 +88,7 @@ func Init() *configuration.Configuration {
 
 	flag.Int(PeeringPort, 4000, "port for Wasp committee connection/peering")
 	flag.String(PeeringMyNetID, "127.0.0.1:4000", "node host address as it is recognized by other peers")
-	flag.StringSlice(PeeringNeighbors, []string{}, "list of neighbors: known peer netIDs")
+
 	flag.Bool(PullMissingRequestsFromCommittee, true, "whether or not to pull missing requests from other committee members")
 
 	flag.Int(NanomsgPublisherPort, 5550, "the port for nanomsg even publisher")

@@ -112,29 +112,6 @@ func (r *Impl) SaveChainRecord(rec *ChainRecord) error {
 
 // endregion ///////////////////////////////////////////////////////////////
 
-// region CommitteeRegistryProvider  ///////////////////////////////////////////////////////////
-
-func dbKeyCommitteeRecord(addr ledgerstate.Address) []byte {
-	return dbkeys.MakeKey(dbkeys.ObjectTypeCommitteeRecord, addr.Bytes())
-}
-
-func (r *Impl) GetCommitteeRecord(addr ledgerstate.Address) (*CommitteeRecord, error) {
-	data, err := r.store.Get(dbKeyCommitteeRecord(addr))
-	if errors.Is(err, kvstore.ErrKeyNotFound) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return CommitteeRecordFromBytes(data)
-}
-
-func (r *Impl) SaveCommitteeRecord(rec *CommitteeRecord) error {
-	return r.store.Set(dbKeyCommitteeRecord(rec.Address), rec.Bytes())
-}
-
-// endregion  //////////////////////////////////////////////////////////////////////
-
 // region DKShareRegistryProvider ////////////////////////////////////////////////////
 
 // SaveDKShare implements dkg.DKShareRegistryProvider.
@@ -156,6 +133,9 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 func (r *Impl) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error) {
 	data, err := r.store.Get(dbKeyForDKShare(sharedAddress))
 	if err != nil {
+		if errors.Is(err, kvstore.ErrKeyNotFound) {
+			return nil, ErrDKShareNotFound
+		}
 		return nil, err
 	}
 	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultSuite())

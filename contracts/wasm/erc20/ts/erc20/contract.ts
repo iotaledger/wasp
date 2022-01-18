@@ -14,7 +14,7 @@ export class ApproveCall {
 }
 
 export class ApproveContext {
-	events:  sc.Erc20Events = new sc.Erc20Events();
+	events: sc.Erc20Events = new sc.Erc20Events();
 	params: sc.ImmutableApproveParams = new sc.ImmutableApproveParams();
 	state: sc.MutableErc20State = new sc.MutableErc20State();
 }
@@ -25,7 +25,7 @@ export class InitCall {
 }
 
 export class InitContext {
-	events:  sc.Erc20Events = new sc.Erc20Events();
+	events: sc.Erc20Events = new sc.Erc20Events();
 	params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
 	state: sc.MutableErc20State = new sc.MutableErc20State();
 }
@@ -36,7 +36,7 @@ export class TransferCall {
 }
 
 export class TransferContext {
-	events:  sc.Erc20Events = new sc.Erc20Events();
+	events: sc.Erc20Events = new sc.Erc20Events();
 	params: sc.ImmutableTransferParams = new sc.ImmutableTransferParams();
 	state: sc.MutableErc20State = new sc.MutableErc20State();
 }
@@ -47,7 +47,7 @@ export class TransferFromCall {
 }
 
 export class TransferFromContext {
-	events:  sc.Erc20Events = new sc.Erc20Events();
+	events: sc.Erc20Events = new sc.Erc20Events();
 	params: sc.ImmutableTransferFromParams = new sc.ImmutableTransferFromParams();
 	state: sc.MutableErc20State = new sc.MutableErc20State();
 }

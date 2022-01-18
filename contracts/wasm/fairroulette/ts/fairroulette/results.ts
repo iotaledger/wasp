@@ -10,48 +10,48 @@ import * as sc from "./index";
 
 export class ImmutableLastWinningNumberResults extends wasmlib.ScMapID {
     lastWinningNumber(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultLastWinningNumber]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultLastWinningNumber));
 	}
 }
 
 export class MutableLastWinningNumberResults extends wasmlib.ScMapID {
     lastWinningNumber(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultLastWinningNumber]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultLastWinningNumber));
 	}
 }
 
 export class ImmutableRoundNumberResults extends wasmlib.ScMapID {
     roundNumber(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxResultRoundNumber]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundNumber));
 	}
 }
 
 export class MutableRoundNumberResults extends wasmlib.ScMapID {
     roundNumber(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxResultRoundNumber]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundNumber));
 	}
 }
 
 export class ImmutableRoundStartedAtResults extends wasmlib.ScMapID {
     roundStartedAt(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, sc.idxMap[sc.IdxResultRoundStartedAt]);
+		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundStartedAt));
 	}
 }
 
 export class MutableRoundStartedAtResults extends wasmlib.ScMapID {
     roundStartedAt(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, sc.idxMap[sc.IdxResultRoundStartedAt]);
+		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundStartedAt));
 	}
 }
 
 export class ImmutableRoundStatusResults extends wasmlib.ScMapID {
     roundStatus(): wasmlib.ScImmutableInt16 {
-		return new wasmlib.ScImmutableInt16(this.mapID, sc.idxMap[sc.IdxResultRoundStatus]);
+		return new wasmlib.ScImmutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundStatus));
 	}
 }
 
 export class MutableRoundStatusResults extends wasmlib.ScMapID {
     roundStatus(): wasmlib.ScMutableInt16 {
-		return new wasmlib.ScMutableInt16(this.mapID, sc.idxMap[sc.IdxResultRoundStatus]);
+		return new wasmlib.ScMutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultRoundStatus));
 	}
 }

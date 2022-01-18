@@ -62,11 +62,11 @@ export class FairRouletteService {
 
   private handleVmMessage(message: string[]): void {
     const messageHandlers: MessageHandlers = {
-      'fairroulette.bet': (index) => {
+      'fairroulette.bet': () => {
         const bet: Bet = {
-          better: message[index + 2],
-          amount: Number(message[index + 3]),
-          betNumber: Number(message[index + 4]),
+          better: message[2],
+          amount: Number(message[3]),
+          betNumber: Number(message[4]),
         };
 
         this.emitter.emit('betPlaced', bet);
@@ -74,8 +74,8 @@ export class FairRouletteService {
 
       'fairroulette.payout': (index) => {
         const bet: Bet = {
-          better: message[index + 2],
-          amount: Number(message[index + 3]),
+          better: message[2],
+          amount: Number(message[3]),
           betNumber: undefined,
         };
 
@@ -83,11 +83,11 @@ export class FairRouletteService {
       },
 
       'fairroulette.round': (index) => {
-        this.emitter.emit('roundNumber', message[index + 2] || 0);
+        this.emitter.emit('roundNumber', message[2] || 0);
       },
 
       'fairroulette.start': (index) => {
-          this.emitter.emit('roundStarted', message[index + 1] || 0);
+          this.emitter.emit('roundStarted', message[1] || 0);
       },
 
       'fairroulette.stop': (index) => {
@@ -95,30 +95,24 @@ export class FairRouletteService {
       },
 
       'fairroulette.winner': (index) => {
-        this.emitter.emit('winningNumber', message[index + 2] || 0);
+        this.emitter.emit('winningNumber', message[2] || 0);
       },
     };
 
-    const topicIndex = 3;
-    const topic = message[topicIndex];
-
+    const topic = message[0];
     if (typeof messageHandlers[topic] != 'undefined') {
-      messageHandlers[topic](topicIndex);
+      messageHandlers[topic](0);
     }
   }
 
   private handleIncomingMessage(message: MessageEvent<string>): void {
-    const msg = message.data.toString().split('|');
-
-    if (msg.length == 0) {
+    // expect vmmsg <chain ID> <contract hname> contract.event|param1|param2|...
+    const msg = message.data.toString().split(' ');
+    if (msg.length != 4 || msg[0] != 'vmmsg') {
       return;
     }
-
-    if (msg[0] != 'vmmsg') {
-      return;
-    }
-
-    this.handleVmMessage(msg);
+    const topics = msg[3].split('|');
+    this.handleVmMessage(topics);
   }
 
   public async placeBetOffLedger(keyPair: IKeyPair, betNumber: number, take: bigint): Promise<void> {
@@ -128,7 +122,7 @@ export class FairRouletteService {
       balances: [{ balance: take, color: Colors.IOTA_COLOR_BYTES }],
       contract: HName.HashAsNumber(this.scName),
       entrypoint: HName.HashAsNumber(this.scPlaceBet),
-      noonce: BigInt(performance.now() + performance.timeOrigin * 10000000),
+      nonce: BigInt(performance.now() + performance.timeOrigin * 10000000),
     };
 
     betRequest = OffLedger.Sign(betRequest, keyPair);

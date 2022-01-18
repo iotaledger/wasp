@@ -57,6 +57,10 @@ type MutableDonation struct {
 	keyID wasmlib.Key32
 }
 
+func (o MutableDonation) Delete() {
+	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+}
+
 func (o MutableDonation) Exists() bool {
 	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
 }

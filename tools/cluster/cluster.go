@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package cluster
 
 import (
@@ -17,12 +20,14 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/tools/cluster/mocknode"
@@ -31,10 +36,11 @@ import (
 )
 
 type Cluster struct {
-	Name     string
-	Config   *ClusterConfig
-	Started  bool
-	DataPath string
+	Name          string
+	Config        *ClusterConfig
+	Started       bool
+	DataPath      string
+	ValidatorSeed *seed.Seed // Default identity for validators, chain owners, etc.
 
 	goshimmer *mocknode.MockNode
 	waspCmds  []*exec.Cmd
@@ -42,10 +48,15 @@ type Cluster struct {
 
 func New(name string, config *ClusterConfig) *Cluster {
 	return &Cluster{
-		Name:     name,
-		Config:   config,
-		waspCmds: make([]*exec.Cmd, config.Wasp.NumNodes),
+		Name:          name,
+		Config:        config,
+		ValidatorSeed: seed.NewSeed(),
+		waspCmds:      make([]*exec.Cmd, config.Wasp.NumNodes),
 	}
+}
+
+func (clu *Cluster) ValidatorAddress() ledgerstate.Address {
+	return clu.ValidatorSeed.Address(0).Address()
 }
 
 func (clu *Cluster) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address, error) {
@@ -102,10 +113,18 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 		threshold = (uint16(len(committeeNodes))*2)/3 + 1
 	}
 	apiHosts := clu.Config.APIHosts(committeeNodes)
-	peeringHosts := clu.Config.PeeringHosts(committeeNodes)
+
+	peerPubKeys := make([]string, 0)
+	for _, i := range committeeNodes {
+		peeringNodeInfo, err := clu.WaspClient(i).GetPeeringSelf()
+		if err != nil {
+			return nil, err
+		}
+		peerPubKeys = append(peerPubKeys, peeringNodeInfo.PubKey)
+	}
 
 	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
-	return apilib.RunDKG(apiHosts, peeringHosts, threshold, dkgInitiatorIndex, timeout...)
+	return apilib.RunDKG(apiHosts, peerPubKeys, threshold, dkgInitiatorIndex, timeout...)
 }
 
 func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
@@ -117,15 +136,13 @@ func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNo
 }
 
 func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []int, quorum uint16, stateAddr ledgerstate.Address) (*Chain, error) {
-	ownerSeed := seed.NewSeed()
-
 	if len(allPeers) == 0 {
 		allPeers = clu.Config.AllNodes()
 	}
 
 	chain := &Chain{
 		Description:    description,
-		OriginatorSeed: ownerSeed,
+		OriginatorSeed: clu.ValidatorSeed,
 		AllPeers:       allPeers,
 		CommitteeNodes: committeeNodes,
 		Quorum:         quorum,
@@ -139,27 +156,79 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
 
-	chainid, err := apilib.DeployChain(apilib.CreateChainParams{
-		Node:                  clu.GoshimmerClient(),
-		AllAPIHosts:           chain.AllAPIHosts(),
-		AllPeeringHosts:       chain.AllPeeringHosts(),
-		CommitteeAPIHosts:     chain.CommitteeAPIHosts(),
-		CommitteePeeringHosts: chain.CommitteePeeringHosts(),
-		N:                     uint16(len(committeeNodes)),
-		T:                     quorum,
-		OriginatorKeyPair:     chain.OriginatorKeyPair(),
-		Description:           description,
-		Textout:               os.Stdout,
-		Prefix:                "[cluster] ",
+	committeePubKeys := make([]string, 0)
+	for _, i := range chain.CommitteeNodes {
+		peeringNode, err := clu.WaspClient(i).GetPeeringSelf()
+		if err != nil {
+			return nil, err
+		}
+		committeePubKeys = append(committeePubKeys, peeringNode.PubKey)
+	}
+
+	chainID, err := apilib.DeployChain(apilib.CreateChainParams{
+		Node:              clu.GoshimmerClient(),
+		CommitteeAPIHosts: chain.CommitteeAPIHosts(),
+		CommitteePubKeys:  committeePubKeys,
+		N:                 uint16(len(committeeNodes)),
+		T:                 quorum,
+		OriginatorKeyPair: chain.OriginatorKeyPair(),
+		Description:       description,
+		Textout:           os.Stdout,
+		Prefix:            "[cluster] ",
 	}, stateAddr)
 	if err != nil {
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
 
 	chain.StateAddress = stateAddr
-	chain.ChainID = chainid
+	chain.ChainID = chainID
+
+	//
+	// Register all non-committee nodes as access nodes.
+	for _, a := range allPeers {
+		if err := clu.AddAccessNode(a, chain); err != nil {
+			return nil, err
+		}
+	}
 
 	return chain, nil
+}
+
+// AddAccessNode introduces node at accessNodeIndex as an access node to the chain.
+// This is done by activating the chain on the node and asking the governance contract
+// to consider it as an access node.
+func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) error {
+	waspClient := clu.WaspClient(accessNodeIndex)
+	if err := apilib.ActivateChainOnAccessNodes(clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
+		return err
+	}
+	accessNodePeering, err := waspClient.GetPeeringSelf()
+	if err != nil {
+		return err
+	}
+	accessNodePubKey, err := ed25519.PublicKeyFromString(accessNodePeering.PubKey)
+	if err != nil {
+		return err
+	}
+	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress())
+	if err != nil {
+		return err
+	}
+	scArgs := governance.AccessNodeInfo{
+		NodePubKey:    accessNodePubKey.Bytes(),
+		ValidatorAddr: chain.OriginatorAddress().Bytes(),
+		Certificate:   cert.Bytes(),
+		ForCommittee:  false,
+		AccessAPI:     clu.Config.APIHost(accessNodeIndex),
+	}
+	scParams := chainclient.NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).WithIotas(1)
+	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair())
+	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, args=%+v\n", tx.ID(), scArgs)
+	return nil
 }
 
 func (clu *Cluster) IsGoshimmerUp() bool {
@@ -217,7 +286,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			waspNodeDataPath(dataPath, i),
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
-			clu.Config.WaspConfigTemplateParams(i),
+			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress()),
 			i,
 			modifyConfig,
 		)
@@ -555,7 +624,7 @@ func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 			assertionOk = false
 			isOk = "FAIL"
 		}
-		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col, act, expect[col], isOk)
+		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col.String(), act, expect[col], isOk)
 	}
 	lst = lst[:0]
 	for col := range actual {

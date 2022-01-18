@@ -1,0 +1,97 @@
+name: Erc721
+description: ERC-721 NFT PoC for IOTA Smart Contracts
+events:
+  init:
+    name: String
+    symbol: String
+  approval:
+    owner: AgentID
+    approved: AgentID
+    tokenID: Hash
+  approvalForAll:
+    owner: AgentID
+    operator: AgentID
+    approval: Bool
+  mint:
+    balance: Uint64
+    owner: AgentID
+    tokenID: Hash
+  transfer:
+    from: AgentID
+    to: AgentID
+    tokenID: Hash
+structs: { }
+typedefs:
+  Operators: map[AgentID]Bool // approval status of each operator
+state:
+  name: String
+  symbol: String
+  owners: map[Hash]AgentID  // 1:1 mapping of owners to token IDs
+  approvedAccounts: map[Hash]AgentID // approved token controller agents
+  balances: map[AgentID]Uint64 // number of tokens held by owners
+  approvedOperators: map[AgentID]Operators // approved operators per owner
+  tokenURIs: map[Hash]String // token uri per token id
+funcs:
+  approve:
+    params:
+      approved: AgentID? // target account, clear approval when not present
+      tokenID: Hash // token ID
+  burn:
+    params:
+      tokenID: Hash // token ID
+  init:
+    params:
+      name=n: String // creator/owner of the initial supply
+      symbol=s: String // initial token supply
+  mint:
+    params:
+      tokenID: Hash // New token id
+      tokenURI: String? // Optional token URI that overrides default
+  safeTransferFrom:
+    params:
+      from: AgentID // from account
+      to: AgentID // to account, which is SC
+      tokenID: Hash // token ID
+      data: Bytes? // extra data to pass to SC
+  setApprovalForAll:
+    params:
+      operator: AgentID // target operator of account
+      approval: Bool
+  transferFrom:
+    params:
+      from: AgentID // from account
+      to: AgentID // to account
+      tokenID: Hash // token ID
+views:
+  balanceOf:
+    params:
+      owner: AgentID // account owner
+    results:
+      amount: Uint64? // amount of tokens owned by owner
+  getApproved:
+    params:
+      tokenID: Hash
+    results:
+      approved: AgentID?
+  isApprovedForAll:
+    params:
+      owner: AgentID
+      operator: AgentID
+    results:
+      approval: Bool?
+  name:
+    results:
+      name: String
+  ownerOf:
+    params:
+      tokenID: Hash
+    results:
+      owner: AgentID?
+  symbol:
+    results:
+      symbol: String
+  tokenURI:
+    params:
+      tokenID: Hash
+    results:
+      tokenURI: String?

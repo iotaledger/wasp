@@ -44,6 +44,6 @@ export const $Kind$FuncName$funcPad = "$funcName";
 `,
 	// *******************************
 	"constHFunc": `
-export const H$Kind$FuncName$funcPad = new wasmlib.ScHname(0x$funcHname);
+export const H$Kind$FuncName$funcPad = new wasmlib.ScHname(0x$hFuncName);
 `,
 }

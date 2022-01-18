@@ -15,14 +15,14 @@
 		</thead>
 		<tbody>
 			{{range $_, $c := .Chains}}
-				{{ $id := $c.ChainRecord.ChainID.Base58 }}
+				{{ $id := $c.ChainID.Base58 }}
 				<tr>
 					<td data-label="ID">{{ if not $c.Error }}<a href="{{ uri "chain" $id }}"><code>{{ $id }}</code></a>{{ else }}<code>{{ $id }}</code>{{ end }}</td>
 					<td data-label="Description">{{ trim 50 $c.RootInfo.Description }}
 						{{- if $c.Error }}<div class="card fluid error">{{ $c.Error }}</div>{{ end }}</td>
-					<td data-label="#Peers">{{if not $c.Error}}<code>{{ len $c.ChainRecord.Peers }}</code>{{ end }}</td>
+					<td data-label="#Peers">{{if not $c.Error}}<code>{{ $c.CommitteeSize }}</code>{{ end }}</td>
 					<td data-label="#Contracts">{{if not $c.Error}}<code>{{ len $c.RootInfo.Contracts }}</code>{{ end }}</td>
-					<td data-label="Active?">{{ if $c.ChainRecord.Active }} yes {{ else }} no {{ end }}</td>
+					<td data-label="Active?">{{ if $c.Active }} yes {{ else }} no {{ end }}</td>
 				</tr>
 			{{end}}
 		</tbody>

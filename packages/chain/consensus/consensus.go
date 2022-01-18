@@ -29,7 +29,7 @@ type consensus struct {
 	committee                        chain.Committee
 	committeePeerGroup               peering.GroupProvider
 	mempool                          chain.Mempool
-	nodeConn                         chain.NodeConnection
+	nodeConn                         chain.ChainNodeConnection
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
 	stateOutput                      *ledgerstate.AliasOutput
@@ -40,7 +40,7 @@ type consensus struct {
 	iAmContributor                   bool
 	myContributionSeqNumber          uint16
 	contributors                     []uint16
-	workflow                         workflowFlags
+	workflow                         *workflowStatus
 	delayBatchProposalUntil          time.Time
 	delayRunVMUntil                  time.Time
 	delaySendingSignedResult         time.Time
@@ -66,19 +66,8 @@ type consensus struct {
 	missingRequestsFromBatch         map[iscp.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
 	pullMissingRequestsFromCommittee bool
+	receivePeerMessagesAttachID      interface{}
 	consensusMetrics                 metrics.ConsensusMetrics
-}
-
-type workflowFlags struct {
-	stateReceived        bool
-	batchProposalSent    bool
-	consensusBatchKnown  bool
-	vmStarted            bool
-	vmResultSigned       bool
-	transactionFinalized bool
-	transactionPosted    bool
-	transactionSeen      bool
-	inProgress           bool
 }
 
 var _ chain.Consensus = &consensus{}
@@ -90,7 +79,7 @@ const (
 	maxMsgBuffer = 1000
 )
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, peerGroup peering.GroupProvider, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) chain.Consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, peerGroup peering.GroupProvider, nodeConn chain.ChainNodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) chain.Consensus {
 	var timers ConsensusTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -105,6 +94,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		mempool:                          mempool,
 		nodeConn:                         nodeConn,
 		vmRunner:                         runvm.NewVMRunner(),
+		workflow:                         newWorkflowStatus(false),
 		resultSignatures:                 make([]*messages.SignedResultMsgIn, committee.Size()),
 		resultSigAck:                     make([]uint16, 0, committee.Size()),
 		timers:                           timers,
@@ -120,7 +110,10 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
 	}
-	ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
+	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
+	ret.nodeConn.AttachToInclusionStateReceived(func(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
+		ret.EnqueueInclusionsStateMsg(txID, inclusionState)
+	})
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret
@@ -158,6 +151,9 @@ func (c *consensus) IsReady() bool {
 }
 
 func (c *consensus) Close() {
+	c.nodeConn.DetachFromInclusionStateReceived()
+	c.committeePeerGroup.Detach(c.receivePeerMessagesAttachID)
+
 	c.eventStateTransitionMsgPipe.Close()
 	c.eventSignedResultMsgPipe.Close()
 	c.eventSignedResultAckMsgPipe.Close()
@@ -286,4 +282,8 @@ func (c *consensus) GetStatusSnapshot() *chain.ConsensusInfo {
 		return nil
 	}
 	return ret.(*chain.ConsensusInfo)
+}
+
+func (c *consensus) GetWorkflowStatus() chain.ConsensusWorkflowStatus {
+	return c.workflow
 }

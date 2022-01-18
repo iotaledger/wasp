@@ -8,15 +8,19 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/ready"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -24,10 +28,12 @@ type ChainCore interface {
 	ID() *iscp.ChainID
 	GetCommitteeInfo() *CommitteeInfo
 	StateCandidateToStateManager(state.VirtualStateAccess, ledgerstate.OutputID)
-	Events() ChainEvents
+	TriggerChainTransition(*ChainTransitionEventData)
 	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
+	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
+	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger
 
 	// Most of these methods are made public for mocking in tests
@@ -43,9 +49,7 @@ type ChainCore interface {
 // ChainEntry interface to access chain from the chain registry side
 type ChainEntry interface {
 	ReceiveTransaction(*ledgerstate.Transaction)
-	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
-	ReceiveOutput(output ledgerstate.Output)
 
 	Dismiss(reason string)
 	IsDismissed() bool
@@ -54,18 +58,20 @@ type ChainEntry interface {
 // ChainRequests is an interface to query status of the request
 type ChainRequests interface {
 	GetRequestProcessingStatus(id iscp.RequestID) RequestProcessingStatus
-	EventRequestProcessed() *events.Event
+	AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure)
+	DetachFromRequestProcessed(attachID *events.Closure)
 }
 
-type ChainEvents interface {
-	RequestProcessed() *events.Event
-	ChainTransition() *events.Event
+type ChainMetrics interface {
+	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
+	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
 }
 
 type Chain interface {
 	ChainCore
 	ChainRequests
 	ChainEntry
+	ChainMetrics
 }
 
 // Committee is ordered (indexed 0..size-1) list of peers which run the consensus
@@ -81,17 +87,57 @@ type Committee interface {
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
-	GetOtherValidatorsPeerIDs() []string
-	GetRandomValidators(upToN int) []string
+	GetRandomValidators(upToN int) []*ed25519.PublicKey // TODO: Remove after OffLedgerRequest dissemination is changed.
 }
 
+type (
+	NodeConnectionHandleTransactionFun        func(*ledgerstate.Transaction)
+	NodeConnectionHandleInclusionStateFun     func(ledgerstate.TransactionID, ledgerstate.InclusionState)
+	NodeConnectionHandleOutputFun             func(ledgerstate.Output)
+	NodeConnectionHandleUnspentAliasOutputFun func(*ledgerstate.AliasOutput, time.Time)
+)
+
 type NodeConnection interface {
-	PullBacklog(addr *ledgerstate.AliasAddress)
+	Subscribe(addr ledgerstate.Address)
+	Unsubscribe(addr ledgerstate.Address)
+
+	AttachToTransactionReceived(*ledgerstate.AliasAddress, NodeConnectionHandleTransactionFun)
+	AttachToInclusionStateReceived(*ledgerstate.AliasAddress, NodeConnectionHandleInclusionStateFun)
+	AttachToOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleOutputFun)
+	AttachToUnspentAliasOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
+
 	PullState(addr *ledgerstate.AliasAddress)
-	PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
+
+	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
+
+	DetachFromTransactionReceived(*ledgerstate.AliasAddress)
+	DetachFromInclusionStateReceived(*ledgerstate.AliasAddress)
+	DetachFromOutputReceived(*ledgerstate.AliasAddress)
+	DetachFromUnspentAliasOutputReceived(*ledgerstate.AliasAddress)
+	Close()
+}
+
+type ChainNodeConnection interface {
+	AttachToTransactionReceived(NodeConnectionHandleTransactionFun)
+	AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)
+	AttachToOutputReceived(NodeConnectionHandleOutputFun)
+	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
+
+	PullState()
+	PullTransactionInclusionState(txid ledgerstate.TransactionID)
+	PullConfirmedOutput(outputID ledgerstate.OutputID)
+	PostTransaction(tx *ledgerstate.Transaction)
+
+	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
+
+	DetachFromTransactionReceived()
+	DetachFromInclusionStateReceived()
+	DetachFromOutputReceived()
+	DetachFromUnspentAliasOutputReceived()
+	Close()
 }
 
 type StateManager interface {
@@ -103,6 +149,7 @@ type StateManager interface {
 	EnqueueStateCandidateMsg(state.VirtualStateAccess, ledgerstate.OutputID)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
+	SetChainPeers(peers []*ed25519.PublicKey)
 	Close()
 }
 
@@ -117,6 +164,7 @@ type Consensus interface {
 	IsReady() bool
 	Close()
 	GetStatusSnapshot() *ConsensusInfo
+	GetWorkflowStatus() ConsensusWorkflowStatus
 	ShouldReceiveMissingRequest(req iscp.Request) bool
 }
 
@@ -165,6 +213,27 @@ type ConsensusInfo struct {
 	TimerTick  int
 }
 
+type ConsensusWorkflowStatus interface {
+	IsStateReceived() bool
+	IsBatchProposalSent() bool
+	IsConsensusBatchKnown() bool
+	IsVMStarted() bool
+	IsVMResultSigned() bool
+	IsTransactionFinalized() bool
+	IsTransactionPosted() bool
+	IsTransactionSeen() bool
+	IsInProgress() bool
+
+	GetBatchProposalSentTime() time.Time
+	GetConsensusBatchKnownTime() time.Time
+	GetVMStartedTime() time.Time
+	GetVMResultSignedTime() time.Time
+	GetTransactionFinalizedTime() time.Time
+	GetTransactionPostedTime() time.Time
+	GetTransactionSeenTime() time.Time
+	GetCompletedTime() time.Time
+}
+
 type ReadyListRecord struct {
 	Request iscp.Request
 	Seen    map[uint16]bool
@@ -180,8 +249,8 @@ type CommitteeInfo struct {
 
 type PeerStatus struct {
 	Index     int
-	PeeringID string
-	IsSelf    bool
+	PubKey    *ed25519.PublicKey
+	NetID     string
 	Connected bool
 }
 

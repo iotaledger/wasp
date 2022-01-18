@@ -10,12 +10,18 @@ import * as sc from "./index";
 
 export class ImmutabletimestampState extends wasmlib.ScMapID {
     timestamp(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxStateTimestamp]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateTimestamp));
 	}
 }
 
 export class MutabletimestampState extends wasmlib.ScMapID {
+    asImmutable(): sc.ImmutabletimestampState {
+		const imm = new sc.ImmutabletimestampState();
+		imm.mapID = this.mapID;
+		return imm;
+	}
+
     timestamp(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxStateTimestamp]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateTimestamp));
 	}
 }

@@ -1,14 +1,14 @@
 # On-chain accounts
 
-ISCP introduces the concept of _on-chain account_. Each chain maintains a list
+IOTA Smart Contracts introduces the concept of _on-chain account_. Each chain maintains a list
 of pairs: `<agent ID>: <colored balance>`.  Each pair is an account with its
 colored balances.
 
-**Any agent ID on the ISCP network may have an account on any chain**.  In
+**Any agent ID on the IOTA Smart Contracts network may have an account on any chain**.  In
 other words, any smart contract and any ordinary address on the network can
 have account on any chain.
 
-ISCP ensures that the tokens owned by the chain address may be moved to another
+IOTA Smart Contracts ensures that the tokens owned by the chain address may be moved to another
 location only by the entity represented by the corresponding agent ID.  The
 system requires cryptographically secure authorization to move funds between
 on-chain accounts. 

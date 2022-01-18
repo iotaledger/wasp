@@ -4,14 +4,21 @@
 package chainimpl
 
 import (
+	"errors"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/committee"
+	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"golang.org/x/xerrors"
 )
 
@@ -101,7 +108,7 @@ func (c *chainObj) EnqueueLedgerState(chainOutput *ledgerstate.AliasOutput, time
 // handleLedgerState processes the only chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
 func (c *chainObj) handleLedgerState(msg *messages.StateMsg) {
-	c.log.Debugf("handleLedgerState message received, stateIndex: %d, stateAddr: %s, state transition: %v, timestamp: ",
+	c.log.Debugf("handleLedgerState message received, stateIndex: %d, stateAddr: %s, state transition: %v, timestamp: %v",
 		msg.ChainOutput.GetStateIndex(), msg.ChainOutput.GetStateAddress().Base58(), !msg.ChainOutput.GetIsGovernanceUpdated(), msg.Timestamp)
 	sh, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
 	if err != nil {
@@ -124,14 +131,109 @@ func (c *chainObj) handleLedgerState(msg *messages.StateMsg) {
 	c.log.Debugf("handleLedgerState passed to state manager")
 }
 
+func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput, currentCmt chain.Committee) error {
+	if currentCmt.Address().Equals(anchorOutput.GetStateAddress()) {
+		// nothing changed. no rotation
+		return nil
+	}
+	// address changed
+	if !anchorOutput.GetIsGovernanceUpdated() {
+		return xerrors.Errorf("rotateCommitteeIfNeeded: inconsistency. Governance transition expected... New output: %s", anchorOutput.String())
+	}
+	dkShare, err := c.getChainDKShare(anchorOutput.GetStateAddress())
+	if err != nil {
+		if !errors.Is(err, registry.ErrDKShareNotFound) {
+			return xerrors.Errorf("rotateCommitteeIfNeeded: unable to load dkShare: %w", err)
+		}
+	}
+	// rotation needed
+	// close current in any case
+	c.log.Infof("CLOSING COMMITTEE for %s", currentCmt.Address().Base58())
+
+	currentCmt.Close()
+	c.consensus.Close()
+	c.setCommittee(nil)
+	c.consensus = nil
+	if dkShare != nil {
+		// create new if committee record is available
+		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
+			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
+		}
+	}
+	return nil
+}
+
+func (c *chainObj) createCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput) error {
+	// check if I am in the committee
+	dkShare, err := c.getChainDKShare(anchorOutput.GetStateAddress())
+	if err != nil {
+		if errors.Is(err, registry.ErrDKShareNotFound) {
+			return nil
+		}
+		return xerrors.Errorf("createCommitteeIfNeeded: unable to load dkShare: %w", err)
+	}
+	if dkShare != nil {
+		// create if record is present
+		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
+			return xerrors.Errorf("createCommitteeIfNeeded: creating committee and consensus: %w", err)
+		}
+	}
+	return nil
+}
+
+func (c *chainObj) getChainDKShare(addr ledgerstate.Address) (*tcrypto.DKShare, error) {
+	//
+	// just in case check if I am among committee nodes
+	// should not happen
+	selfPubKey := c.netProvider.Self().PubKey()
+	cmtDKShare, err := c.dksProvider.LoadDKShare(addr)
+	if err != nil {
+		return nil, err
+	}
+	for i := range cmtDKShare.NodePubKeys {
+		if *cmtDKShare.NodePubKeys[i] == *selfPubKey {
+			return cmtDKShare, nil
+		}
+	}
+	return nil, xerrors.Errorf("createCommitteeIfNeeded: I am not among nodes of the committee record. Inconsistency")
+}
+
+func (c *chainObj) createNewCommitteeAndConsensus(dkShare *tcrypto.DKShare) error {
+	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
+	if c.detachFromCommitteePeerMessagesFun != nil {
+		c.detachFromCommitteePeerMessagesFun()
+	}
+	cmt, cmtPeerGroup, err := committee.New(
+		dkShare,
+		c.chainID,
+		c.netProvider,
+		c.log,
+	)
+	if err != nil {
+		c.setCommittee(nil)
+		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
+			dkShare.Address.Base58(), err)
+	}
+	attachID := cmtPeerGroup.Attach(peering.PeerMessageReceiverChain, c.receiveCommitteePeerMessages)
+	c.detachFromCommitteePeerMessagesFun = func() {
+		cmtPeerGroup.Detach(attachID)
+	}
+	c.log.Debugf("creating new consensus object...")
+	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics)
+	c.setCommittee(cmt)
+
+	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", dkShare.Address.Base58())
+	return nil
+}
+
 func (c *chainObj) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
 	c.offLedgerRequestPeerMsgPipe.In() <- msg
 	c.chainMetrics.CountMessages()
 }
 
 func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
-	c.log.Debugf("handleOffLedgerRequestMsg message received from peer %v, reqID: %s", msg.SenderNetID, msg.Req.ID().Base58())
-	c.sendRequestAcknowledgementMsg(msg.Req.ID(), msg.SenderNetID)
+	c.log.Debugf("handleOffLedgerRequestMsg message received from peer %v, reqID: %s", msg.SenderPubKey.String(), msg.Req.ID().Base58())
+	c.sendRequestAcknowledgementMsg(msg.Req.ID(), msg.SenderPubKey)
 
 	if !c.isRequestValid(msg.Req) {
 		// this means some node broadcasted an invalid request (bad chainID or signature)
@@ -147,8 +249,77 @@ func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn
 	c.log.Debugf("handleOffLedgerRequestMsg message added to mempool and broadcasted: reqID: %s", msg.Req.ID().Base58())
 }
 
+func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerPubKey *ed25519.PublicKey) {
+	if peerPubKey == nil {
+		return
+	}
+	c.log.Debugf("sendRequestAcknowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerPubKey.String())
+	msg := &messages.RequestAckMsg{ReqID: &reqID}
+	c.chainPeers.SendMsgByPubKey(peerPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
+}
+
 func (c *chainObj) isRequestValid(req *request.OffLedger) bool {
 	return req.ChainID().Equals(c.ID()) && req.VerifySignature()
+}
+
+func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
+	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
+	msg := &messages.OffLedgerRequestMsg{
+		ChainID: c.chainID,
+		Req:     req,
+	}
+	cmt := c.getCommittee()
+	getPeerPubKeys := c.chainPeers.GetRandomOtherPeers
+
+	if cmt != nil {
+		getPeerPubKeys = cmt.GetRandomValidators
+	}
+
+	sendMessage := func(ackPeers []*ed25519.PublicKey) {
+		peerPubKeys := getPeerPubKeys(c.offledgerBroadcastUpToNPeers)
+		for _, peerPubKey := range peerPubKeys {
+			if shouldSendToPeer(peerPubKey, ackPeers) {
+				c.log.Debugf("sending offledger request ID: reqID: %s, peerPubKey: %s", req.ID().Base58(), peerPubKey.String())
+				c.chainPeers.SendMsgByPubKey(peerPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
+			}
+		}
+	}
+
+	ticker := time.NewTicker(c.offledgerBroadcastInterval)
+	stopBroadcast := func() {
+		c.offLedgerReqsAcksMutex.Lock()
+		delete(c.offLedgerReqsAcks, req.ID())
+		c.offLedgerReqsAcksMutex.Unlock()
+		ticker.Stop()
+	}
+
+	go func() {
+		defer stopBroadcast()
+		for {
+			<-ticker.C
+			// check if processed (request already left the mempool)
+			if !c.mempool.HasRequest(req.ID()) {
+				return
+			}
+			c.offLedgerReqsAcksMutex.RLock()
+			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
+			c.offLedgerReqsAcksMutex.RUnlock()
+			if cmt != nil && len(ackPeers) >= int(cmt.Size())-1 {
+				// this node is part of the committee and the message has already been received by every other committee node
+				return
+			}
+			sendMessage(ackPeers)
+		}
+	}()
+}
+
+func shouldSendToPeer(peerPubKey *ed25519.PublicKey, ackPeers []*ed25519.PublicKey) bool {
+	for _, p := range ackPeers {
+		if *p == *peerPubKey {
+			return false
+		}
+	}
+	return true
 }
 
 func (c *chainObj) EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn) {
@@ -157,10 +328,10 @@ func (c *chainObj) EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn) {
 }
 
 func (c *chainObj) handleRequestAckPeerMsg(msg *messages.RequestAckMsgIn) {
-	c.log.Debugf("handleRequestAckPeerMsg message received from peer %v, reqID: %s", msg.SenderNetID, msg.ReqID.Base58())
+	c.log.Debugf("handleRequestAckPeerMsg message received from peer %v, reqID: %s", msg.SenderPubKey.String(), msg.ReqID.Base58())
 	c.offLedgerReqsAcksMutex.Lock()
 	defer c.offLedgerReqsAcksMutex.Unlock()
-	c.offLedgerReqsAcks[*msg.ReqID] = append(c.offLedgerReqsAcks[*msg.ReqID], msg.SenderNetID)
+	c.offLedgerReqsAcks[*msg.ReqID] = append(c.offLedgerReqsAcks[*msg.ReqID], msg.SenderPubKey)
 	c.chainMetrics.CountRequestAckMessages()
 	c.log.Debugf("handleRequestAckPeerMsg comleted: reqID: %s", msg.ReqID.Base58())
 }
@@ -171,7 +342,7 @@ func (c *chainObj) EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMs
 }
 
 func (c *chainObj) handleMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn) {
-	c.log.Debugf("handleMissingRequestIDsMsg message received from peer %v, number of reqIDs: %v", msg.SenderNetID, len(msg.IDs))
+	c.log.Debugf("handleMissingRequestIDsMsg message received from peer %v, number of reqIDs: %v", msg.SenderPubKey.String(), len(msg.IDs))
 	if !c.pullMissingRequestsFromCommittee {
 		c.log.Warnf("handleMissingRequestIDsMsg ignored: pull from committee disabled")
 		return
@@ -180,8 +351,8 @@ func (c *chainObj) handleMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsg
 		c.log.Debugf("handleMissingRequestIDsMsg: finding reqID %s...", reqID.Base58())
 		if req := c.mempool.GetRequest(reqID); req != nil {
 			resultMsg := &messages.MissingRequestMsg{Request: req}
-			c.chainPeers.SendMsgByNetID(msg.SenderNetID, peering.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequest, resultMsg.Bytes())
-			c.log.Warnf("handleMissingRequestIDsMsg: reqID %s sent to %v.", reqID.Base58(), msg.SenderNetID)
+			c.chainPeers.SendMsgByPubKey(msg.SenderPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequest, resultMsg.Bytes())
+			c.log.Warnf("handleMissingRequestIDsMsg: reqID %s sent to %v.", reqID.Base58(), msg.SenderPubKey.String())
 		} else {
 			c.log.Warnf("handleMissingRequestIDsMsg: reqID %s not found.", reqID.Base58())
 		}

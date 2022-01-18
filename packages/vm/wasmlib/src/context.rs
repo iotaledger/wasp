@@ -290,11 +290,6 @@ impl ScFuncContext {
         ROOT.get_map(&KEY_RETURN).immutable()
     }
 
-    // shorthand to synchronously call a smart contract function of the current contract
-    pub fn call_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfers: Option<ScTransfers>) -> ScImmutableMap {
-        self.call(self.contract(), hfunction, params, transfers)
-    }
-
     // retrieve the agent id of the caller of the smart contract
     pub fn caller(&self) -> ScAgentID {
         ROOT.get_agent_id(&KEY_CALLER).value()
@@ -338,7 +333,7 @@ impl ScFuncContext {
         encode.chain_id(chain_id);
         encode.hname(hcontract);
         encode.hname(hfunction);
-        if let Some(params) = &params {
+        if let Some(params) = params {
             encode.int32(params.map_id());
         } else {
             encode.int32(0);
@@ -348,13 +343,11 @@ impl ScFuncContext {
         ROOT.get_bytes(&KEY_POST).set_value(&encode.data());
     }
 
-    // shorthand to asynchronously call a smart contract function of the current contract
-    pub fn post_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfer: ScTransfers, delay: i32) {
-        self.post(&self.chain_id(), self.contract(), hfunction, params, transfer, delay);
-    }
-
     // generates a random value from 0 to max (exclusive max) using a deterministic RNG
     pub fn random(&self, max: i64) -> i64 {
+        if max == 0 {
+            self.panic("random: max parameter should be non-zero");
+        }
         let state = ScMutableMap { obj_id: OBJ_ID_STATE };
         let rnd = state.get_bytes(&KEY_RANDOM);
         let mut seed = rnd.value();
@@ -416,11 +409,6 @@ impl ScViewContext {
         encode.int32(0);
         ROOT.get_bytes(&KEY_CALL).set_value(&encode.data());
         ROOT.get_map(&KEY_RETURN).immutable()
-    }
-
-    // shorthand to synchronously call a smart contract view of the current contract
-    pub fn call_self(&self, hfunction: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
-        self.call(self.contract(), hfunction, params)
     }
 
     // access immutable state storage on the host

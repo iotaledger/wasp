@@ -54,6 +54,7 @@ export class $mut$StrName {
         this.objID = objID;
         this.keyID = keyID;
     }
+$#if mut structMethodDelete
 
     exists(): boolean {
         return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
@@ -64,6 +65,13 @@ $#if mut structMethodSetValue
         return $StrName.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
     }
 }
+`,
+	// *******************************
+	"structMethodDelete": `
+
+    delete(): void {
+        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+    }
 `,
 	// *******************************
 	"structMethodSetValue": `

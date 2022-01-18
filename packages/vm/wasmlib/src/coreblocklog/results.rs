@@ -72,6 +72,7 @@ impl MutableGetBlockInfoResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableBytes {
 	pub(crate) obj_id: i32,
 }
@@ -98,6 +99,7 @@ impl ImmutableGetEventsForBlockResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableBytes {
 	pub(crate) obj_id: i32,
 }
@@ -206,6 +208,7 @@ impl MutableGetLatestBlockInfoResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableRequestID {
 	pub(crate) obj_id: i32,
 }
@@ -232,6 +235,7 @@ impl ImmutableGetRequestIDsForBlockResults {
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableRequestID {
 	pub(crate) obj_id: i32,
 }

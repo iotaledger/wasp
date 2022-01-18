@@ -14,7 +14,7 @@ type ImmutablePlaceBetParams struct {
 }
 
 func (s ImmutablePlaceBetParams) Number() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamNumber])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamNumber))
 }
 
 type MutablePlaceBetParams struct {
@@ -22,7 +22,7 @@ type MutablePlaceBetParams struct {
 }
 
 func (s MutablePlaceBetParams) Number() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamNumber])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamNumber))
 }
 
 type ImmutablePlayPeriodParams struct {
@@ -30,7 +30,7 @@ type ImmutablePlayPeriodParams struct {
 }
 
 func (s ImmutablePlayPeriodParams) PlayPeriod() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxParamPlayPeriod])
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamPlayPeriod))
 }
 
 type MutablePlayPeriodParams struct {
@@ -38,5 +38,5 @@ type MutablePlayPeriodParams struct {
 }
 
 func (s MutablePlayPeriodParams) PlayPeriod() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxParamPlayPeriod])
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamPlayPeriod))
 }

@@ -6,12 +6,12 @@
     <coordinates>
       <x>603</x>
       <y>36</y>
-      <w>441</w>
+      <w>432</w>
       <h>513</h>
     </coordinates>
     <panel_attributes>lt=.&gt;
 r2=/ACSConsensus(proposal, acsSessionID, stateOutput.Index())/</panel_attributes>
-    <additional_attributes>10.0;550.0;110.0;550.0;110.0;20.0;470.0;20.0</additional_attributes>
+    <additional_attributes>10.0;550.0;110.0;550.0;110.0;20.0;460.0;20.0</additional_attributes>
   </element>
   <element>
     <id>UMLSpecialState</id>
@@ -27,25 +27,25 @@ r2=/ACSConsensus(proposal, acsSessionID, stateOutput.Index())/</panel_attributes
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>36</x>
+      <x>72</x>
       <y>108</y>
-      <w>261</w>
+      <w>225</w>
       <h>54</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-m1=!stateReceived || workflowFinished</panel_attributes>
-    <additional_attributes>270.0;30.0;50.0;30.0;50.0;10.0</additional_attributes>
+m1=!stateReceived || !inProgress</panel_attributes>
+    <additional_attributes>230.0;30.0;10.0;30.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>288</x>
       <y>144</y>
-      <w>252</w>
+      <w>207</w>
       <h>54</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-m2=stateReceived &amp;&amp; !workflowFinished</panel_attributes>
+m2=stateReceived &amp;&amp; inProgress</panel_attributes>
     <additional_attributes>10.0;10.0;10.0;40.0</additional_attributes>
   </element>
   <element>
@@ -53,8 +53,8 @@ m2=stateReceived &amp;&amp; !workflowFinished</panel_attributes>
     <coordinates>
       <x>0</x>
       <y>0</y>
-      <w>1719</w>
-      <h>2403</h>
+      <w>1710</w>
+      <h>2439</h>
     </coordinates>
     <panel_attributes>_Wasp:this_
 </panel_attributes>
@@ -77,13 +77,13 @@ valign=top
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1773</x>
+      <x>1764</x>
       <y>0</y>
       <w>90</w>
       <h>36</h>
     </coordinates>
     <panel_attributes>*Consensus*
-version: 3
+version: 4
 </panel_attributes>
     <additional_attributes/>
   </element>
@@ -239,7 +239,7 @@ halign=left</panel_attributes>
   <element>
     <id>UMLDeployment</id>
     <coordinates>
-      <x>1026</x>
+      <x>1017</x>
       <y>27</y>
       <w>99</w>
       <h>36</h>
@@ -250,7 +250,7 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1062</x>
+      <x>1053</x>
       <y>54</y>
       <w>342</w>
       <h>54</h>
@@ -441,14 +441,15 @@ len(reqs) == 0</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>585</x>
-      <y>2124</y>
+      <x>657</x>
+      <y>2142</y>
       <w>270</w>
-      <h>261</h>
+      <h>279</h>
     </coordinates>
     <panel_attributes>*resetWorkflow()*
 --
 resultSignatures[i] := nil for all i
+resultSigAck := []
 acsSessionID++
 resultState := nil
 resultTxEssence := nil
@@ -459,11 +460,11 @@ stateReceived := (stateOutput != nil)
 batchProposalSent := false
 consensusBatchKnown := false
 vmStarted := false
-vmResultSignedAndBroadcasted := false
+vmResultSigned := false
 transactionFinalized := false
 transactionPosted := false
 transactionSeen := false
-workflowFinished := false
+inProgress := (stateOutput != nil)
 valign=top
 </panel_attributes>
     <additional_attributes/>
@@ -509,17 +510,17 @@ halign=left</panel_attributes>
     <coordinates>
       <x>450</x>
       <y>837</y>
-      <w>594</w>
+      <w>585</w>
       <h>234</h>
     </coordinates>
     <panel_attributes>lt=.&gt;
 r1=/Run(task)/</panel_attributes>
-    <additional_attributes>10.0;240.0;450.0;240.0;450.0;10.0;640.0;10.0</additional_attributes>
+    <additional_attributes>10.0;240.0;450.0;240.0;450.0;10.0;630.0;10.0</additional_attributes>
   </element>
   <element>
     <id>UMLDeployment</id>
     <coordinates>
-      <x>1026</x>
+      <x>1017</x>
       <y>828</y>
       <w>117</w>
       <h>36</h>
@@ -530,7 +531,7 @@ r1=/Run(task)/</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1071</x>
+      <x>1062</x>
       <y>855</y>
       <w>144</w>
       <h>54</h>
@@ -555,7 +556,7 @@ m2=/VMResultMsg(task)/</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>54</x>
-      <y>1278</y>
+      <y>1296</y>
       <w>801</w>
       <h>567</h>
     </coordinates>
@@ -569,7 +570,7 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>81</x>
-      <y>1323</y>
+      <y>1341</y>
       <w>45</w>
       <h>27</h>
     </coordinates>
@@ -580,7 +581,7 @@ valign=top
     <id>UMLSpecialState</id>
     <coordinates>
       <x>72</x>
-      <y>1323</y>
+      <y>1341</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -591,7 +592,7 @@ valign=top
     <id>UMLSpecialState</id>
     <coordinates>
       <x>108</x>
-      <y>1314</y>
+      <y>1332</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -602,7 +603,7 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>135</x>
-      <y>1314</y>
+      <y>1332</y>
       <w>774</w>
       <h>603</h>
     </coordinates>
@@ -614,7 +615,7 @@ r1=transactionFinalized || !vmResultSigned</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>117</x>
-      <y>1341</y>
+      <y>1359</y>
       <w>288</w>
       <h>54</h>
     </coordinates>
@@ -626,7 +627,7 @@ m2=!transactionFinalized &amp;&amp; vmResultSigned</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>72</x>
-      <y>1377</y>
+      <y>1395</y>
       <w>675</w>
       <h>36</h>
     </coordinates>
@@ -637,8 +638,8 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>117</x>
-      <y>1404</y>
+      <x>99</x>
+      <y>1422</y>
       <w>27</w>
       <h>45</h>
     </coordinates>
@@ -649,8 +650,8 @@ halign=left</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>108</x>
-      <y>1431</y>
+      <x>90</x>
+      <y>1449</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -660,8 +661,8 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>117</x>
-      <y>1458</y>
+      <x>99</x>
+      <y>1476</y>
       <w>288</w>
       <h>54</h>
     </coordinates>
@@ -672,20 +673,20 @@ len(contributors) &gt;= committee.Quorum()</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>135</x>
-      <y>1431</y>
-      <w>765</w>
+      <x>117</x>
+      <y>1449</y>
+      <w>783</w>
       <h>477</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 r1=len(contributors) &lt; committee.Quorum()</panel_attributes>
-    <additional_attributes>10.0;20.0;830.0;20.0;830.0;510.0;760.0;510.0</additional_attributes>
+    <additional_attributes>10.0;20.0;850.0;20.0;850.0;510.0;780.0;510.0</additional_attributes>
   </element>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>108</x>
-      <y>1494</y>
+      <x>90</x>
+      <y>1512</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -695,20 +696,20 @@ r1=len(contributors) &lt; committee.Quorum()</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>135</x>
-      <y>1494</y>
-      <w>594</w>
+      <x>117</x>
+      <y>1512</y>
+      <w>612</w>
       <h>36</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 for some i DKShare.VerifySig(resultTxEssence, resultSignatures[contributors[i]]) is error</panel_attributes>
-    <additional_attributes>10.0;20.0;640.0;20.0</additional_attributes>
+    <additional_attributes>10.0;20.0;660.0;20.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>117</x>
-      <y>1521</y>
+      <x>99</x>
+      <y>1539</y>
       <w>549</w>
       <h>54</h>
     </coordinates>
@@ -732,7 +733,7 @@ m2=for all i DKShare.VerifySig(resultTxEssence, resultSignatures[contributors[i]
     <id>Relation</id>
     <coordinates>
       <x>810</x>
-      <y>1503</y>
+      <y>1521</y>
       <w>81</w>
       <h>396</h>
     </coordinates>
@@ -744,7 +745,7 @@ m2=for all i DKShare.VerifySig(resultTxEssence, resultSignatures[contributors[i]
     <id>UMLState</id>
     <coordinates>
       <x>711</x>
-      <y>1503</y>
+      <y>1521</y>
       <w>126</w>
       <h>27</h>
     </coordinates>
@@ -756,7 +757,7 @@ halign=left</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>243</x>
-      <y>1800</y>
+      <y>1818</y>
       <w>594</w>
       <h>27</h>
     </coordinates>
@@ -767,8 +768,8 @@ halign=left</panel_attributes>
   <element>
     <id>UMLDeployment</id>
     <coordinates>
-      <x>1026</x>
-      <y>1728</y>
+      <x>1017</x>
+      <y>1746</y>
       <w>99</w>
       <h>36</h>
     </coordinates>
@@ -778,8 +779,8 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1062</x>
-      <y>1755</y>
+      <x>1053</x>
+      <y>1773</y>
       <w>360</w>
       <h>54</h>
     </coordinates>
@@ -791,19 +792,19 @@ m2=/StateTransitionMsg(state, output, outputTimestamp)/</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>504</x>
-      <y>1728</y>
-      <w>540</w>
+      <y>1746</y>
+      <w>531</w>
       <h>36</h>
     </coordinates>
     <panel_attributes>lt=.&gt;
 /StateCandidateMsg(resultState, chainOutput.ID())/</panel_attributes>
-    <additional_attributes>10.0;20.0;580.0;20.0</additional_attributes>
+    <additional_attributes>10.0;20.0;570.0;20.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>99</x>
-      <y>1701</y>
+      <y>1719</y>
       <w>27</w>
       <h>45</h>
     </coordinates>
@@ -815,7 +816,7 @@ m2=/StateTransitionMsg(state, output, outputTimestamp)/</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>90</x>
-      <y>1791</y>
+      <y>1809</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -826,7 +827,7 @@ m2=/StateTransitionMsg(state, output, outputTimestamp)/</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>99</x>
-      <y>1818</y>
+      <y>1836</y>
       <w>126</w>
       <h>63</h>
     </coordinates>
@@ -839,7 +840,7 @@ m2pos=0,-10</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>117</x>
-      <y>1791</y>
+      <y>1809</y>
       <w>144</w>
       <h>36</h>
     </coordinates>
@@ -850,8 +851,8 @@ iAmContributor</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>81</x>
-      <y>1557</y>
+      <x>72</x>
+      <y>1575</y>
       <w>594</w>
       <h>153</h>
     </coordinates>
@@ -871,7 +872,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>252</x>
-      <y>1818</y>
+      <y>1836</y>
       <w>27</w>
       <h>63</h>
     </coordinates>
@@ -883,7 +884,7 @@ halign=left</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>72</x>
-      <y>1908</y>
+      <y>1926</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -894,7 +895,7 @@ halign=left</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>108</x>
-      <y>1899</y>
+      <y>1917</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -905,7 +906,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>81</x>
-      <y>1908</y>
+      <y>1926</y>
       <w>45</w>
       <h>27</h>
     </coordinates>
@@ -916,7 +917,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>117</x>
-      <y>1926</y>
+      <y>1944</y>
       <w>414</w>
       <h>63</h>
     </coordinates>
@@ -929,7 +930,7 @@ transactionSeen || Now is before postTxDeadline</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>135</x>
-      <y>1899</y>
+      <y>1917</y>
       <w>468</w>
       <h>45</h>
     </coordinates>
@@ -942,7 +943,7 @@ transactionFinalized &amp;&amp; iAmContributor &amp;&amp; !transactionPosted &am
     <id>UMLState</id>
     <coordinates>
       <x>585</x>
-      <y>1899</y>
+      <y>1917</y>
       <w>189</w>
       <h>36</h>
     </coordinates>
@@ -954,19 +955,19 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>765</x>
-      <y>1899</y>
-      <w>1053</w>
+      <y>1917</y>
+      <w>1044</w>
       <h>153</h>
     </coordinates>
     <panel_attributes>lt=.&gt;
 /MsgPostTransaction(finalTx)/</panel_attributes>
-    <additional_attributes>10.0;20.0;1150.0;20.0;1150.0;150.0</additional_attributes>
+    <additional_attributes>10.0;20.0;1140.0;20.0;1140.0;150.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>630</x>
-      <y>1926</y>
+      <y>1944</y>
       <w>27</w>
       <h>63</h>
     </coordinates>
@@ -978,7 +979,7 @@ halign=left</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>54</x>
-      <y>1971</y>
+      <y>1989</y>
       <w>873</w>
       <h>117</h>
     </coordinates>
@@ -992,7 +993,7 @@ valign=top
     <id>UMLSpecialState</id>
     <coordinates>
       <x>72</x>
-      <y>2007</y>
+      <y>2025</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -1003,7 +1004,7 @@ valign=top
     <id>Relation</id>
     <coordinates>
       <x>81</x>
-      <y>2007</y>
+      <y>2025</y>
       <w>270</w>
       <h>45</h>
     </coordinates>
@@ -1014,7 +1015,7 @@ valign=top
     <id>UMLSpecialState</id>
     <coordinates>
       <x>315</x>
-      <y>2034</y>
+      <y>2052</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1027,18 +1028,18 @@ valign=top
       <x>27</x>
       <y>99</y>
       <w>306</w>
-      <h>1980</h>
+      <h>1998</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 !transactionFinalized || transactionSeen || 
 Now is before pullInclusionStateDeadline</panel_attributes>
-    <additional_attributes>320.0;2170.0;10.0;2170.0;320.0;2170.0;10.0;2170.0;10.0;10.0;30.0;10.0</additional_attributes>
+    <additional_attributes>320.0;2190.0;10.0;2190.0;320.0;2190.0;10.0;2190.0;10.0;10.0;30.0;10.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>342</x>
-      <y>2034</y>
+      <y>2052</y>
       <w>324</w>
       <h>45</h>
     </coordinates>
@@ -1051,7 +1052,7 @@ Now is not before pullInclusionStateDeadline</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>648</x>
-      <y>2034</y>
+      <y>2052</y>
       <w>261</w>
       <h>36</h>
     </coordinates>
@@ -1065,29 +1066,29 @@ halign=left</panel_attributes>
       <x>18</x>
       <y>81</y>
       <w>774</w>
-      <h>2043</h>
+      <h>2061</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 </panel_attributes>
-    <additional_attributes>840.0;2210.0;840.0;2250.0;10.0;2250.0;10.0;10.0;40.0;10.0</additional_attributes>
+    <additional_attributes>840.0;2230.0;840.0;2270.0;10.0;2270.0;10.0;10.0;40.0;10.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>900</x>
-      <y>2034</y>
-      <w>855</w>
+      <y>2052</y>
+      <w>846</w>
       <h>36</h>
     </coordinates>
     <panel_attributes>lt=.&gt;
 /MsgGetTxInclusionState(chain.ID(), finalTx.ID())/</panel_attributes>
-    <additional_attributes>10.0;20.0;930.0;20.0</additional_attributes>
+    <additional_attributes>10.0;20.0;920.0;20.0</additional_attributes>
   </element>
   <element>
     <id>UMLDeployment</id>
     <coordinates>
-      <x>1737</x>
-      <y>2034</y>
+      <x>1728</x>
+      <y>2052</y>
       <w>126</w>
       <h>36</h>
     </coordinates>
@@ -1097,8 +1098,8 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1395</x>
-      <y>2061</y>
+      <x>1386</x>
+      <y>2079</y>
       <w>423</w>
       <h>54</h>
     </coordinates>
@@ -1146,7 +1147,7 @@ TimerTick</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1062</x>
+      <x>1053</x>
       <y>891</y>
       <w>36</w>
       <h>36</h>
@@ -1157,7 +1158,7 @@ TimerTick</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1089</x>
+      <x>1080</x>
       <y>891</y>
       <w>360</w>
       <h>45</h>
@@ -1170,7 +1171,7 @@ acsSessionID != task.ACSSessionID </panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1431</x>
+      <x>1422</x>
       <y>900</y>
       <w>18</w>
       <h>18</h>
@@ -1181,7 +1182,7 @@ acsSessionID != task.ACSSessionID </panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1071</x>
+      <x>1062</x>
       <y>918</y>
       <w>486</w>
       <h>54</h>
@@ -1193,13 +1194,14 @@ acsSessionID != task.ACSSessionID </panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1026</x>
+      <x>1017</x>
       <y>1071</y>
-      <w>405</w>
-      <h>99</h>
+      <w>441</w>
+      <h>117</h>
     </coordinates>
     <panel_attributes>essenceHash = Hash(resultTxEssence)
 sigShare = DKShare.Sign(resultTxEssence)
+resultSignatures[ownPeerIndex].ChainInputID = task.ChainInput.ID()
 resultSignatures[ownPeerIndex].SenderIndex = ownPeerIndex
 resultSignatures[ownPeerIndex].EssenceHash = essenceHash
 resultSignatures[ownPeerIndex].SigShare = sigShare
@@ -1211,30 +1213,30 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>324</x>
-      <y>1206</y>
-      <w>1431</w>
+      <y>1224</y>
+      <w>1422</w>
       <h>36</h>
     </coordinates>
     <panel_attributes>lt=.&gt;
 r1=/SignedResultMsg(ownPeerIndex, stateOutput.ID(), essenceHash, sigShare, Now)/</panel_attributes>
-    <additional_attributes>10.0;20.0;1570.0;20.0</additional_attributes>
+    <additional_attributes>10.0;20.0;1560.0;20.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>306</x>
       <y>126</y>
-      <w>738</w>
+      <w>729</w>
       <h>1044</h>
     </coordinates>
     <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>800.0;1140.0;770.0;1140.0;770.0;10.0;10.0;10.0</additional_attributes>
+    <additional_attributes>790.0;1140.0;760.0;1140.0;760.0;10.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1026</x>
-      <y>2115</y>
+      <x>1017</x>
+      <y>2133</y>
       <w>153</w>
       <h>27</h>
     </coordinates>
@@ -1245,8 +1247,8 @@ halign=left</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1368</x>
-      <y>2079</y>
+      <x>1359</x>
+      <y>2097</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1256,8 +1258,8 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1377</x>
-      <y>2106</y>
+      <x>1368</x>
+      <y>2124</y>
       <w>288</w>
       <h>54</h>
     </coordinates>
@@ -1268,8 +1270,8 @@ halign=left</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1377</x>
-      <y>2142</y>
+      <x>1368</x>
+      <y>2160</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -1279,8 +1281,8 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1089</x>
-      <y>2079</y>
+      <x>1080</x>
+      <y>2097</y>
       <w>297</w>
       <h>54</h>
     </coordinates>
@@ -1291,8 +1293,8 @@ transactionFinalized &amp;&amp; txID == finalTx.ID()</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1089</x>
-      <y>2133</y>
+      <x>1080</x>
+      <y>2151</y>
       <w>27</w>
       <h>45</h>
     </coordinates>
@@ -1303,8 +1305,8 @@ transactionFinalized &amp;&amp; txID == finalTx.ID()</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1080</x>
-      <y>2160</y>
+      <x>1071</x>
+      <y>2178</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1314,8 +1316,8 @@ transactionFinalized &amp;&amp; txID == finalTx.ID()</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1089</x>
-      <y>2187</y>
+      <x>1080</x>
+      <y>2205</y>
       <w>126</w>
       <h>54</h>
     </coordinates>
@@ -1326,8 +1328,8 @@ m2=state is Rejected</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1026</x>
-      <y>2223</y>
+      <x>1017</x>
+      <y>2241</y>
       <w>126</w>
       <h>27</h>
     </coordinates>
@@ -1340,18 +1342,18 @@ halign=left</panel_attributes>
     <coordinates>
       <x>306</x>
       <y>126</y>
-      <w>738</w>
-      <h>2133</h>
+      <w>729</w>
+      <h>2151</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 </panel_attributes>
-    <additional_attributes>800.0;2350.0;720.0;2350.0;720.0;10.0;10.0;10.0</additional_attributes>
+    <additional_attributes>790.0;2370.0;720.0;2370.0;720.0;10.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1107</x>
-      <y>2160</y>
+      <x>1098</x>
+      <y>2178</y>
       <w>171</w>
       <h>36</h>
     </coordinates>
@@ -1362,12 +1364,12 @@ state is Confirmed</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1260</x>
-      <y>2169</y>
+      <x>1251</x>
+      <y>2187</y>
       <w>180</w>
       <h>45</h>
     </coordinates>
-    <panel_attributes>finished = true
+    <panel_attributes>inProgress = false
 *refreshConsensusInfo()*
 halign=left</panel_attributes>
     <additional_attributes/>
@@ -1377,18 +1379,18 @@ halign=left</panel_attributes>
     <coordinates>
       <x>306</x>
       <y>126</y>
-      <w>1062</w>
-      <h>2160</h>
+      <w>1053</w>
+      <h>2178</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 </panel_attributes>
-    <additional_attributes>1160.0;2320.0;1160.0;2380.0;710.0;2380.0;710.0;10.0;10.0;10.0</additional_attributes>
+    <additional_attributes>1150.0;2340.0;1150.0;2400.0;710.0;2400.0;710.0;10.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>873</x>
-      <y>2286</y>
+      <x>945</x>
+      <y>2322</y>
       <w>351</w>
       <h>99</h>
     </coordinates>
@@ -1406,7 +1408,7 @@ valign=top
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1053</x>
+      <x>1044</x>
       <y>90</y>
       <w>36</w>
       <h>36</h>
@@ -1417,7 +1419,7 @@ valign=top
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1080</x>
+      <x>1071</x>
       <y>90</y>
       <w>387</w>
       <h>36</h>
@@ -1429,7 +1431,7 @@ acsSessionID != sessionID || consensusBatchKnown</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1449</x>
+      <x>1440</x>
       <y>99</y>
       <w>18</w>
       <h>18</h>
@@ -1440,7 +1442,7 @@ acsSessionID != sessionID || consensusBatchKnown</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1062</x>
+      <x>1053</x>
       <y>117</y>
       <w>369</w>
       <h>54</h>
@@ -1452,7 +1454,7 @@ acsSessionID == sessionID &amp;&amp; !consensusBatchKnown</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1053</x>
+      <x>1044</x>
       <y>153</y>
       <w>36</w>
       <h>36</h>
@@ -1463,7 +1465,7 @@ acsSessionID == sessionID &amp;&amp; !consensusBatchKnown</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1080</x>
+      <x>1071</x>
       <y>153</y>
       <w>432</w>
       <h>72</h>
@@ -1478,7 +1480,7 @@ for some i, j: acs[i].ValidatorIndex == acs[j].ValidatorIndex </panel_attributes
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1494</x>
+      <x>1485</x>
       <y>162</y>
       <w>126</w>
       <h>27</h>
@@ -1490,7 +1492,7 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1062</x>
+      <x>1053</x>
       <y>180</y>
       <w>369</w>
       <h>135</h>
@@ -1505,7 +1507,7 @@ for all i, j: acs[i].ValidatorIndex != acs[j].ValidatorIndex </panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1026</x>
+      <x>1017</x>
       <y>297</y>
       <w>495</w>
       <h>63</h>
@@ -1519,7 +1521,7 @@ halign=left</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1206</x>
+      <x>1197</x>
       <y>531</y>
       <w>270</w>
       <h>45</h>
@@ -1532,7 +1534,7 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1062</x>
+      <x>1053</x>
       <y>351</y>
       <w>27</w>
       <h>45</h>
@@ -1543,7 +1545,7 @@ halign=left</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1053</x>
+      <x>1044</x>
       <y>378</y>
       <w>36</w>
       <h>36</h>
@@ -1554,7 +1556,7 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1080</x>
+      <x>1071</x>
       <y>378</y>
       <w>189</w>
       <h>36</h>
@@ -1566,7 +1568,7 @@ len(inBatchSet) == 0</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1539</x>
+      <x>1530</x>
       <y>387</y>
       <w>18</w>
       <h>18</h>
@@ -1577,7 +1579,7 @@ len(inBatchSet) == 0</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1251</x>
+      <x>1242</x>
       <y>378</y>
       <w>270</w>
       <h>36</h>
@@ -1590,7 +1592,7 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1512</x>
+      <x>1503</x>
       <y>387</y>
       <w>45</w>
       <h>27</h>
@@ -1601,7 +1603,7 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1062</x>
+      <x>1053</x>
       <y>405</y>
       <w>144</w>
       <h>54</h>
@@ -1613,7 +1615,7 @@ m2=len(inBatchSet) &gt; 0</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1026</x>
+      <x>1017</x>
       <y>441</y>
       <w>594</w>
       <h>72</h>
@@ -1628,7 +1630,7 @@ halign=left</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1053</x>
+      <x>1044</x>
       <y>531</y>
       <w>36</w>
       <h>36</h>
@@ -1639,7 +1641,7 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1062</x>
+      <x>1053</x>
       <y>504</y>
       <w>27</w>
       <h>45</h>
@@ -1650,7 +1652,7 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1080</x>
+      <x>1071</x>
       <y>531</y>
       <w>144</w>
       <h>36</h>
@@ -1662,7 +1664,7 @@ DKShare error</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1026</x>
+      <x>1017</x>
       <y>594</y>
       <w>594</w>
       <h>207</h>
@@ -1686,7 +1688,7 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1062</x>
+      <x>1053</x>
       <y>558</y>
       <w>99</w>
       <h>54</h>
@@ -1698,7 +1700,7 @@ m2=DKShare ok</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1467</x>
+      <x>1458</x>
       <y>558</y>
       <w>45</w>
       <h>54</h>
@@ -1711,11 +1713,11 @@ m2=DKShare ok</panel_attributes>
     <coordinates>
       <x>306</x>
       <y>126</y>
-      <w>738</w>
+      <w>729</w>
       <h>675</h>
     </coordinates>
     <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>800.0;730.0;780.0;730.0;780.0;10.0;10.0;10.0</additional_attributes>
+    <additional_attributes>790.0;730.0;770.0;730.0;770.0;10.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>UMLSpecialState</id>
@@ -1765,8 +1767,8 @@ halign=center</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1026</x>
-      <y>1791</y>
+      <x>1017</x>
+      <y>1809</y>
       <w>405</w>
       <h>81</h>
     </coordinates>
@@ -1783,19 +1785,19 @@ halign=left</panel_attributes>
     <coordinates>
       <x>306</x>
       <y>126</y>
-      <w>738</w>
-      <h>1746</h>
+      <w>729</w>
+      <h>1764</h>
     </coordinates>
     <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>800.0;1920.0;740.0;1920.0;740.0;10.0;10.0;10.0</additional_attributes>
+    <additional_attributes>790.0;1940.0;740.0;1940.0;740.0;10.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>UMLDeployment</id>
     <coordinates>
-      <x>1737</x>
-      <y>1206</y>
+      <x>1728</x>
+      <y>1224</y>
       <w>126</w>
-      <h>36</h>
+      <h>342</h>
     </coordinates>
     <panel_attributes>_Wasp:Other_</panel_attributes>
     <additional_attributes/>
@@ -1803,20 +1805,21 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1359</x>
-      <y>1233</y>
-      <w>513</w>
-      <h>54</h>
+      <x>1341</x>
+      <y>1269</y>
+      <w>405</w>
+      <h>45</h>
     </coordinates>
     <panel_attributes>lt=.&gt;
-r2=/SignedResultMsg(senderIndex, chainInputID, essenceHash, sigShare, Now)/</panel_attributes>
-    <additional_attributes>480.0;10.0;480.0;40.0;10.0;40.0</additional_attributes>
+/SignedResultMsg(senderIndex, chainInputID, essenceHash,/
+/sigShare, Now)/</panel_attributes>
+    <additional_attributes>430.0;20.0;10.0;20.0</additional_attributes>
   </element>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1332</x>
-      <y>1251</y>
+      <x>1314</x>
+      <y>1269</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -1826,46 +1829,41 @@ r2=/SignedResultMsg(senderIndex, chainInputID, essenceHash, sigShare, Now)/</pan
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>306</x>
-      <y>126</y>
-      <w>1044</w>
-      <h>1224</h>
+      <x>1062</x>
+      <y>1269</y>
+      <w>270</w>
+      <h>54</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 stateOutput == nil ||
 stateOutput.ID() != chainInputID ||
-resultSignatures[senderIndex] != nil ||
-sigShare &gt;= committee.Size() ||
-sigShare == ownPeerIndex ||
-sigShare != senderIndex</panel_attributes>
-    <additional_attributes>1140.0;1270.0;760.0;1270.0;1140.0;1270.0;760.0;1270.0;760.0;10.0;10.0;10.0</additional_attributes>
+resultSignatures[senderIndex] != nil</panel_attributes>
+    <additional_attributes>280.0;20.0;10.0;20.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1341</x>
-      <y>1278</y>
-      <w>279</w>
-      <h>117</h>
+      <x>1323</x>
+      <y>1296</y>
+      <w>261</w>
+      <h>81</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 stateOutput != nil &amp;&amp;
 stateOutput.ID() == chainInputID &amp;&amp;
-resultSignatures[senderIndex] == nil &amp;&amp;
-sigShare &lt; committee.Size() &amp;&amp;
-sigShare != ownPeerIndex &amp;&amp;
-sigShare == senderIndex</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;80.0;10.0;10.0;10.0;110.0</additional_attributes>
+resultSignatures[senderIndex] == nil</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;50.0;10.0;10.0;10.0;70.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1026</x>
-      <y>1377</y>
+      <x>1017</x>
+      <y>1413</y>
       <w>387</w>
-      <h>54</h>
+      <h>72</h>
     </coordinates>
-    <panel_attributes>resultSignatures[senderIndex].SenderIndex = senderIndex
+    <panel_attributes>resultSignatures[senderIndex].ChainInputID = chainInputID
+resultSignatures[senderIndex].SenderIndex = senderIndex
 resultSignatures[senderIndex].EssenceHash = essenceHash
 resultSignatures[senderIndex].SigShare = sigShare
 halign=left</panel_attributes>
@@ -1876,18 +1874,18 @@ halign=left</panel_attributes>
     <coordinates>
       <x>306</x>
       <y>126</y>
-      <w>738</w>
-      <h>1305</h>
+      <w>729</w>
+      <h>1431</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 </panel_attributes>
-    <additional_attributes>800.0;1430.0;750.0;1430.0;750.0;10.0;10.0;10.0</additional_attributes>
+    <additional_attributes>790.0;1570.0;750.0;1570.0;750.0;10.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
     <coordinates>
       <x>54</x>
-      <y>1863</y>
+      <y>1881</y>
       <w>765</w>
       <h>90</h>
     </coordinates>
@@ -1900,7 +1898,7 @@ valign=top
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1458</x>
+      <x>1449</x>
       <y>99</y>
       <w>117</w>
       <h>81</h>
@@ -1913,12 +1911,12 @@ valign=top
     <coordinates>
       <x>306</x>
       <y>126</y>
-      <w>792</w>
-      <h>2070</h>
+      <w>783</w>
+      <h>2088</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 r1=  state is Pending</panel_attributes>
-    <additional_attributes>860.0;2280.0;730.0;2280.0;730.0;10.0;10.0;10.0</additional_attributes>
+    <additional_attributes>850.0;2300.0;730.0;2300.0;730.0;10.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
@@ -1926,7 +1924,7 @@ r1=  state is Pending</panel_attributes>
       <x>54</x>
       <y>1107</y>
       <w>297</w>
-      <h>153</h>
+      <h>171</h>
     </coordinates>
     <panel_attributes>*broadcastSignedResultIfNeeded()*
 --
@@ -1972,30 +1970,32 @@ valign=top
     <coordinates>
       <x>117</x>
       <y>1170</y>
-      <w>405</w>
-      <h>54</h>
+      <w>423</w>
+      <h>72</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-vmResultSigned &amp;&amp; Now is after delaySendingSignedResult</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;20.0;10.0;10.0;10.0;40.0</additional_attributes>
+vmResultSigned &amp;&amp; len(resultSigAck) &lt; committee.Size()-1 &amp;&amp;
+Now is after delaySendingSignedResult</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;40.0;10.0;10.0;10.0;60.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>135</x>
       <y>1143</y>
-      <w>423</w>
-      <h>153</h>
+      <w>450</w>
+      <h>171</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-!vmResultSigned || Now is not after delaySendingSignedResult</panel_attributes>
-    <additional_attributes>10.0;20.0;450.0;20.0;450.0;150.0</additional_attributes>
+!vmResultSigned || len(resultSigAck) &gt;= committee.Size()-1 ||
+Now is not after delaySendingSignedResult</panel_attributes>
+    <additional_attributes>10.0;20.0;480.0;20.0;480.0;170.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
     <coordinates>
       <x>72</x>
-      <y>1206</y>
+      <y>1224</y>
       <w>261</w>
       <h>36</h>
     </coordinates>
@@ -2008,7 +2008,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>117</x>
-      <y>1233</y>
+      <y>1251</y>
       <w>27</w>
       <h>63</h>
     </coordinates>
@@ -2020,7 +2020,7 @@ halign=left</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>90</x>
-      <y>1728</y>
+      <y>1746</y>
       <w>36</w>
       <h>36</h>
     </coordinates>
@@ -2031,7 +2031,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>117</x>
-      <y>1728</y>
+      <y>1746</y>
       <w>279</w>
       <h>36</h>
     </coordinates>
@@ -2043,7 +2043,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>99</x>
-      <y>1755</y>
+      <y>1773</y>
       <w>243</w>
       <h>54</h>
     </coordinates>
@@ -2055,7 +2055,7 @@ m2=chainOutput.isGovernanceUpdated</panel_attributes>
     <id>UMLState</id>
     <coordinates>
       <x>378</x>
-      <y>1737</y>
+      <y>1755</y>
       <w>135</w>
       <h>27</h>
     </coordinates>
@@ -2066,7 +2066,7 @@ halign=left</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1062</x>
+      <x>1053</x>
       <y>954</y>
       <w>36</w>
       <h>36</h>
@@ -2077,7 +2077,7 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1089</x>
+      <x>1080</x>
       <y>954</y>
       <w>288</w>
       <h>36</h>
@@ -2089,7 +2089,7 @@ result.RotationAddress != nil</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1071</x>
+      <x>1062</x>
       <y>981</y>
       <w>207</w>
       <h>54</h>
@@ -2101,7 +2101,7 @@ result.RotationAddress == nil</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1026</x>
+      <x>1017</x>
       <y>1017</y>
       <w>324</w>
       <h>36</h>
@@ -2114,7 +2114,7 @@ halign=left</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1359</x>
+      <x>1350</x>
       <y>954</y>
       <w>333</w>
       <h>99</h>
@@ -2131,7 +2131,7 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1071</x>
+      <x>1062</x>
       <y>1044</y>
       <w>27</w>
       <h>45</h>
@@ -2142,12 +2142,184 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1377</x>
+      <x>1368</x>
       <y>1044</y>
       <w>27</w>
       <h>45</h>
     </coordinates>
     <panel_attributes>lt=-&gt;</panel_attributes>
     <additional_attributes>10.0;10.0;10.0;30.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>1314</x>
+      <y>1359</y>
+      <w>36</w>
+      <h>36</h>
+    </coordinates>
+    <panel_attributes>type=decision</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1089</x>
+      <y>1359</y>
+      <w>243</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+sigShare &lt; committee.Size() &amp;&amp;
+sigShare != ownPeerIndex &amp;&amp;
+sigShare == senderIndex</panel_attributes>
+    <additional_attributes>250.0;20.0;10.0;20.0;10.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1152</x>
+      <y>1359</y>
+      <w>486</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+sigShare &gt;= committee.Size() ||
+sigShare == ownPeerIndex ||
+sigShare != senderIndex</panel_attributes>
+    <additional_attributes>220.0;20.0;300.0;20.0;300.0;40.0;300.0;20.0;300.0;160.0;10.0;160.0;10.0;180.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1017</x>
+      <y>1521</y>
+      <w>162</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>sendSignedResultAck()
+halign=left</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1089</x>
+      <y>1476</y>
+      <w>27</w>
+      <h>63</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;50.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1170</x>
+      <y>1512</y>
+      <w>576</w>
+      <h>36</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+r1=/SignedResultAckMsg(ownPeerIndex, chainInputID, essenceHash)/</panel_attributes>
+    <additional_attributes>10.0;20.0;620.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1305</x>
+      <y>1539</y>
+      <w>441</w>
+      <h>54</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+r1=/SignedResultAckMsg(senderIndex, chainInputID, essenceHash)/</panel_attributes>
+    <additional_attributes>470.0;20.0;90.0;20.0;80.0;40.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>1359</x>
+      <y>1575</y>
+      <w>36</w>
+      <h>36</h>
+    </coordinates>
+    <panel_attributes>type=decision</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>1053</x>
+      <y>1278</y>
+      <w>18</w>
+      <h>18</h>
+    </coordinates>
+    <panel_attributes>type=final</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1368</x>
+      <y>1602</y>
+      <w>333</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+ownSignature := resultSignatures[ownPeerIndex]
+ownSignature == nil ||
+ownSignature.EssenceHash != essenceHash ||
+ownSignature.ChainInputID != chainInputID</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;50.0;10.0;10.0;10.0;80.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>1368</x>
+      <y>1674</y>
+      <w>18</w>
+      <h>18</h>
+    </coordinates>
+    <panel_attributes>type=final</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1026</x>
+      <y>1575</y>
+      <w>351</w>
+      <h>108</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+ownSignature := resultSignatures[ownPeerIndex]
+ownSignature == nil ||
+ownSignature.EssenceHash != essenceHash ||
+ownSignature.ChainInputID != chainInputID</panel_attributes>
+    <additional_attributes>370.0;20.0;10.0;20.0;10.0;100.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1017</x>
+      <y>1665</y>
+      <w>234</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>append(resultSigAck, senderIndex)
+halign=left</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1242</x>
+      <y>1674</y>
+      <w>144</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;140.0;10.0</additional_attributes>
   </element>
 </diagram>

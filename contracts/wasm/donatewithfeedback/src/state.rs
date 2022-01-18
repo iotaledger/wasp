@@ -15,6 +15,7 @@ use crate::*;
 use crate::keys::*;
 use crate::structs::*;
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfImmutableDonation {
 	pub(crate) obj_id: i32,
 }
@@ -36,19 +37,20 @@ pub struct ImmutableDonateWithFeedbackState {
 
 impl ImmutableDonateWithFeedbackState {
     pub fn log(&self) -> ArrayOfImmutableDonation {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_LOG), TYPE_ARRAY | TYPE_BYTES);
+		let arr_id = get_object_id(self.id, STATE_LOG.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
 		ArrayOfImmutableDonation { obj_id: arr_id }
 	}
 
     pub fn max_donation(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_MAX_DONATION))
+		ScImmutableInt64::new(self.id, STATE_MAX_DONATION.get_key_id())
 	}
 
     pub fn total_donation(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_STATE_TOTAL_DONATION))
+		ScImmutableInt64::new(self.id, STATE_TOTAL_DONATION.get_key_id())
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct ArrayOfMutableDonation {
 	pub(crate) obj_id: i32,
 }
@@ -73,16 +75,20 @@ pub struct MutableDonateWithFeedbackState {
 }
 
 impl MutableDonateWithFeedbackState {
+    pub fn as_immutable(&self) -> ImmutableDonateWithFeedbackState {
+		ImmutableDonateWithFeedbackState { id: self.id }
+	}
+
     pub fn log(&self) -> ArrayOfMutableDonation {
-		let arr_id = get_object_id(self.id, idx_map(IDX_STATE_LOG), TYPE_ARRAY | TYPE_BYTES);
+		let arr_id = get_object_id(self.id, STATE_LOG.get_key_id(), TYPE_ARRAY | TYPE_BYTES);
 		ArrayOfMutableDonation { obj_id: arr_id }
 	}
 
     pub fn max_donation(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_MAX_DONATION))
+		ScMutableInt64::new(self.id, STATE_MAX_DONATION.get_key_id())
 	}
 
     pub fn total_donation(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_STATE_TOTAL_DONATION))
+		ScMutableInt64::new(self.id, STATE_TOTAL_DONATION.get_key_id())
 	}
 }

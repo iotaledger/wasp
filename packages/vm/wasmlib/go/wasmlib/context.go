@@ -257,11 +257,6 @@ func (ctx ScFuncContext) Caller() ScAgentID {
 	return Root.GetAgentID(KeyCaller).Value()
 }
 
-// calls a smart contract function on the current contract
-func (ctx ScFuncContext) CallSelf(hFunction ScHname, params *ScMutableMap, transfer *ScTransfers) ScImmutableMap {
-	return ctx.Call(ctx.Contract(), hFunction, params, transfer)
-}
-
 // deploys a smart contract
 func (ctx ScFuncContext) Deploy(programHash ScHash, name, description string, params *ScMutableMap) {
 	encode := NewBytesEncoder()
@@ -317,14 +312,13 @@ func (ctx ScFuncContext) Post(chainID ScChainID, hContract, hFunction ScHname, p
 	Root.GetBytes(KeyPost).SetValue(encode.Data())
 }
 
-func (ctx ScFuncContext) PostSelf(hFunction ScHname, params *ScMutableMap, transfer ScTransfers, delay int32) {
-	ctx.Post(ctx.ChainID(), ctx.Contract(), hFunction, params, transfer, delay)
-}
-
 // TODO expose Entropy function
 
 // generates a random value from 0 to max (exclusive max) using a deterministic RNG
 func (ctx ScFuncContext) Random(max int64) int64 {
+	if max == 0 {
+		ctx.Panic("random: max parameter should be non-zero")
+	}
 	state := ScMutableMap{objID: OBJ_ID_STATE}
 	rnd := state.GetBytes(KeyRandom)
 	seed := rnd.Value()
@@ -375,11 +369,6 @@ func (ctx ScViewContext) Call(contract, function ScHname, params *ScMutableMap) 
 	encode.Int32(0)
 	Root.GetBytes(KeyCall).SetValue(encode.Data())
 	return Root.GetMap(KeyReturn).Immutable()
-}
-
-// calls a smart contract function on the current contract
-func (ctx ScViewContext) CallSelf(function ScHname, params *ScMutableMap) ScImmutableMap {
-	return ctx.Call(ctx.Contract(), function, params)
 }
 
 func (ctx ScViewContext) InitViewCallContext() {

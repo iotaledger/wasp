@@ -22,7 +22,7 @@ pub struct ImmutableDonateParams {
 
 impl ImmutableDonateParams {
     pub fn feedback(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_PARAM_FEEDBACK))
+		ScImmutableString::new(self.id, PARAM_FEEDBACK.get_key_id())
 	}
 }
 
@@ -33,7 +33,7 @@ pub struct MutableDonateParams {
 
 impl MutableDonateParams {
     pub fn feedback(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_PARAM_FEEDBACK))
+		ScMutableString::new(self.id, PARAM_FEEDBACK.get_key_id())
 	}
 }
 
@@ -44,7 +44,7 @@ pub struct ImmutableWithdrawParams {
 
 impl ImmutableWithdrawParams {
     pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+		ScImmutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 }
 
@@ -55,7 +55,7 @@ pub struct MutableWithdrawParams {
 
 impl MutableWithdrawParams {
     pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_AMOUNT))
+		ScMutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 }
 
@@ -66,7 +66,7 @@ pub struct ImmutableDonationParams {
 
 impl ImmutableDonationParams {
     pub fn nr(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_NR))
+		ScImmutableInt64::new(self.id, PARAM_NR.get_key_id())
 	}
 }
 
@@ -77,6 +77,6 @@ pub struct MutableDonationParams {
 
 impl MutableDonationParams {
     pub fn nr(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_NR))
+		ScMutableInt64::new(self.id, PARAM_NR.get_key_id())
 	}
 }

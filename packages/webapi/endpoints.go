@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package webapi
 
 import (
@@ -48,6 +51,7 @@ func Init(
 		chainsProvider.ChainProvider(),
 		webapiutil.GetAccountBalance,
 		webapiutil.HasRequestBeenProcessed,
+		network.Self().PubKey(),
 		time.Duration(parameters.GetInt(parameters.OffledgerAPICacheTTL))*time.Second,
 		log,
 	)

@@ -8,7 +8,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bygui86/multi-profile/v2 v2.1.0
-	github.com/bytecodealliance/wasmtime-go v0.31.0
+	github.com/bytecodealliance/wasmtime-go v0.32.0
 	github.com/ethereum/go-ethereum v1.10.10
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
@@ -20,12 +20,13 @@ require (
 	github.com/libp2p/go-libp2p-quic-transport v0.12.0
 	github.com/libp2p/go-libp2p-tls v0.2.0
 	github.com/libp2p/go-tcp-transport v0.2.4
+	github.com/mitchellh/mapstructure v1.4.1
 	github.com/mr-tron/base58 v1.2.0
 	github.com/multiformats/go-multiaddr v0.3.3
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
-	github.com/second-state/WasmEdge-go v0.9.0-rc3
+	github.com/second-state/WasmEdge-go v0.9.0
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
@@ -39,7 +40,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	gopkg.in/yaml.v2 v2.4.0
 	nhooyr.io/websocket v1.8.7
-	github.com/mitchellh/mapstructure v1.4.1
 )
 
 replace (
