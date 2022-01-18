@@ -122,6 +122,10 @@ func (s *sandbox) Send(par iscp.RequestParameters) {
 	s.vmctx.Send(par)
 }
 
+func (s *sandbox) EstimateRequiredDustDeposit(par iscp.RequestParameters) (uint64, error) {
+	return s.vmctx.EstimateRequiredDustDeposit(par)
+}
+
 func (s *sandbox) State() kv.KVStore {
 	return s.vmctx.State()
 }

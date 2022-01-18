@@ -96,6 +96,8 @@ type Sandbox interface {
 	TransferAllowedFundsForceCreateTarget(target *AgentID, assets ...*Assets) *Assets
 	// Send sends a on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
+	// EstimateRequiredDustDeposit returns the amount of iotas needed to cover for a given request's dust deposit
+	EstimateRequiredDustDeposit(r RequestParameters) (uint64, error)
 	// BlockContext Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// StateAnchor properties of the anchor output

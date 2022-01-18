@@ -11,9 +11,6 @@ const MaxPostedOutputsInOneRequest = 4
 
 // Send implements sandbox function of sending cross-chain request
 func (vmctx *VMContext) Send(par iscp.RequestParameters) {
-	if par.Assets == nil {
-		panic(ErrAssetsCantBeEmptyInSend)
-	}
 	if vmctx.numPostedOutputs >= MaxPostedOutputsInOneRequest {
 		panic(xerrors.Errorf("%v: max = %d", ErrExceededPostedOutputLimit, MaxPostedOutputsInOneRequest))
 	}
@@ -23,16 +20,12 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 
 	assets := par.Assets
 	// create extended output with adjusted dust deposit
-	out, err := transaction.ExtendedOutputFromPostData(
+	out := transaction.ExtendedOutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,
 		vmctx.task.RentStructure,
 	)
-	if err != nil {
-		// only possible if not provided enough iotas for dust deposit
-		panic(err)
-	}
 	if out.Amount > par.Assets.Iotas {
 		// it was adjusted
 		assets = assets.Clone()
