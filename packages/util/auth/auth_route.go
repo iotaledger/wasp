@@ -43,7 +43,14 @@ func (s *AuthRoute) CrossAPIAuthHandler(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 
-	t, err := s.jwt.IssueJWT(request.User, true, true)
+	account := accounts.GetAccountByName(request.User)
+	claims, err := account.GetTypedClaims()
+
+	if err != nil {
+		return err
+	}
+
+	t, err := s.jwt.IssueJWT(request.User, claims)
 
 	if err != nil {
 		return err

@@ -44,8 +44,10 @@ func NewJWTAuth(sessionTimeout time.Duration, nodeID string, secret crypto.PrivK
 
 type AuthClaims struct {
 	jwt.StandardClaims
-	Dashboard bool `json:"dashboard"`
-	API       bool `json:"api"`
+	Dashboard  bool `json:"dashboard"`
+	API        bool `json:"api"`
+	ChainRead  bool `json:"chain.read"`
+	ChainWrite bool `json:"chain.write"`
 }
 
 func (c *AuthClaims) HasClaim(claim string) bool {
@@ -74,13 +76,6 @@ func (c *AuthClaims) VerifySubject(expected string) bool {
 	return c.compare(c.Subject, expected)
 }
 
-type AuthenticationMethod int
-
-const (
-	AuthenticateWebAPI AuthenticationMethod = iota
-	AuthenticateDashboard
-)
-
 func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidator) echo.MiddlewareFunc {
 
 	config := middleware.JWTConfig{
@@ -108,8 +103,7 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 				return ErrInvalidJWT
 			}
 
-			preToken := c.Get("jwt")
-			token := preToken.(*jwt.Token)
+			token := c.Get("jwt").(*jwt.Token)
 
 			// validate the signing method we expect
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -135,7 +129,7 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 	}
 }
 
-func (j *JWTAuth) IssueJWT(username string, api bool, dashboard bool) (string, error) {
+func (j *JWTAuth) IssueJWT(username string, authClaims *AuthClaims) (string, error) {
 
 	now := time.Now()
 
@@ -153,14 +147,10 @@ func (j *JWTAuth) IssueJWT(username string, api bool, dashboard bool) (string, e
 		stdClaims.ExpiresAt = now.Add(j.sessionTimeout).Unix()
 	}
 
-	claims := &AuthClaims{
-		StandardClaims: stdClaims,
-		Dashboard:      dashboard,
-		API:            api,
-	}
+	authClaims.StandardClaims = stdClaims
 
 	// Create token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, authClaims)
 
 	// Generate encoded token and send it as response.
 	return token.SignedString(j.secret)
