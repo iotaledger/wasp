@@ -119,7 +119,6 @@ func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte
 	var err error
 	vmctx.callCore(blob.Contract, func(s kv.KVStore) {
 		vmtype, binary, err = blob.LocateProgram(vmctx.State(), programHash)
-
 	})
 	return vmtype, binary, err
 }

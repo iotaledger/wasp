@@ -129,7 +129,7 @@ func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Assets) {
 	}
 }
 
-// TransferAllowedFunds transfers funds withing the budget set by the Allowance() to the existing target account on chain
+// TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
 func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAccount bool, assets ...*iscp.Assets) *iscp.Assets {
 	vmctx.GasBurn(gas.BurnTransferAllowance)
 

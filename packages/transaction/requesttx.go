@@ -6,6 +6,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"golang.org/x/xerrors"
 )
 
 type NewRequestTransactionParams struct {
@@ -36,7 +37,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			assets = &iscp.Assets{}
 		}
 		// will adjust to minimum dust deposit
-		out, err := MakeExtendedOutput(
+		out := MakeExtendedOutput(
 			req.TargetAddress,
 			senderAddress,
 			assets,
@@ -52,8 +53,10 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			par.RentStructure,
 			par.DisableAutoAdjustDustDeposit,
 		)
-		if err != nil {
-			return nil, err
+		requiredDustDeposit := out.VByteCost(par.RentStructure, nil)
+		if out.Deposit() < requiredDustDeposit {
+			xerrors.Errorf("%v: available %d < required %d iotas",
+				ErrNotEnoughIotasForDustDeposit, out.Deposit(), requiredDustDeposit)
 		}
 		outputs = append(outputs, out)
 		sumIotasOut += out.Amount

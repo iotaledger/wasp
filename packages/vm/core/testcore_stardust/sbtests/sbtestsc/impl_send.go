@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -71,5 +72,25 @@ func pingAllowanceBack(ctx iscp.Sandbox) (dict.Dict, error) {
 			Assets:        toSend,
 		},
 	)
+	return nil, nil
+}
+
+// testEstimateMinimumDust returns true if the provided allowance is enough to pay for a L1 request, panics otherwise
+func testEstimateMinimumDust(ctx iscp.Sandbox) (dict.Dict, error) {
+	provided := ctx.AllowanceAvailable().Iotas
+
+	requestParams := iscp.RequestParameters{
+		TargetAddress: tpkg.RandEd25519Address(),
+		Metadata: &iscp.SendMetadata{
+			EntryPoint:     iscp.Hn("foo"),
+			TargetContract: iscp.Hn("bar"),
+		},
+		AdjustToMinimumDustDeposit: true,
+	}
+
+	required, _ := ctx.EstimateRequiredDustDeposit(requestParams)
+	if provided < required {
+		panic("not enough funds")
+	}
 	return nil, nil
 }

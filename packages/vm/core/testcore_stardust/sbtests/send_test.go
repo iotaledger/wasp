@@ -108,6 +108,38 @@ func testSplitTokensFail(t *testing.T, w bool) {
 	require.NotContains(t, err.Error(), "skipped")
 }
 
+func TestSplitTokensSuccess(t *testing.T) { run2(t, testSplitTokensSuccess) }
+func testSplitTokensSuccess(t *testing.T, w bool) {
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, w)
+
+	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
+	agentID := iscp.NewAgentID(addr, 0)
+
+	err := ch.DepositIotasToL2(100_000, wallet)
+	require.NoError(t, err)
+
+	amountMintedTokens := int64(100)
+	sn, tokenID, err := ch.NewFoundryParams(amountMintedTokens).
+		WithUser(wallet).
+		CreateFoundry()
+	require.NoError(t, err)
+	err = ch.MintTokens(sn, big.NewInt(amountMintedTokens), wallet)
+	require.NoError(t, err)
+
+	amountTokensToSend := int64(3)
+	// this will FAIL because it will result in 100 outputs in the single call
+	allowance := iscp.NewAssetsIotas(100_000).AddNativeTokens(tokenID, amountTokensToSend)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
+		AddAllowance(allowance).
+		AddAssetsIotas(100_000).
+		WithGasBudget(200_000)
+	_, err = ch.PostRequestSync(req, wallet)
+	require.NoError(t, err)
+	require.Equal(t, ch.L2AccountNativeTokens(agentID, &tokenID).Int64(), amountMintedTokens-amountTokensToSend)
+	require.Equal(t, ch.Env.L1NativeTokenBalance(addr, &tokenID).Int64(), amountTokensToSend)
+}
+
 // TestPingIotas1 sends some iotas to SC and receives the whole allowance sent back to L1 as on-ledger request
 func TestPingIotas1(t *testing.T) { run2(t, testPingIotas1) }
 
@@ -149,4 +181,32 @@ func testPingIotas1(t *testing.T, w bool) {
 	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, solo.Saldo-feeEstimate)
 	require.EqualValues(t, int(commonBefore.Iotas+rec.GasFeeCharged), int(commonAfter.Iotas))
 	require.EqualValues(t, feeEstimate-rec.GasFeeCharged, int(userFundsAfter.AssetsL2.Iotas))
+}
+
+func TestEstimateMinimumDust(t *testing.T) { run2(t, testEstimateMinimumDust) }
+func testEstimateMinimumDust(t *testing.T, w bool) {
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil, w)
+
+	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
+
+	// should fail without enough iotas to pay for a L1 transaction dust
+	allowance := iscp.NewAssetsIotas(1)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
+		AddAllowance(allowance).
+		AddAssetsIotas(100_000).
+		WithGasBudget(100_000)
+
+	_, err := ch.PostRequestSync(req, wallet)
+	require.Error(t, err)
+
+	// should succeed with enough iotas to pay for a L1 transaction dust
+	allowance = iscp.NewAssetsIotas(100_000)
+	req = solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
+		AddAllowance(allowance).
+		AddAssetsIotas(100_000).
+		WithGasBudget(100_000)
+
+	_, err = ch.PostRequestSync(req, wallet)
+	require.NoError(t, err)
 }
