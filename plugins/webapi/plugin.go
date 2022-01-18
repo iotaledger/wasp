@@ -3,7 +3,6 @@ package webapi
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"time"
 
@@ -75,7 +74,6 @@ func configure(*node.Plugin) {
 	}
 	webapi.Init(
 		Server,
-		adminWhitelist(),
 		network,
 		tnm,
 		registry.DefaultRegistry,
@@ -84,14 +82,6 @@ func configure(*node.Plugin) {
 		gracefulshutdown.Shutdown,
 		allMetrics,
 	)
-}
-
-func adminWhitelist() []net.IP {
-	r := make([]net.IP, 0)
-	for _, ip := range parameters.GetStringSlice(parameters.WebAPIAdminWhitelist) {
-		r = append(r, net.ParseIP(ip))
-	}
-	return r
 }
 
 func run(_ *node.Plugin) {
