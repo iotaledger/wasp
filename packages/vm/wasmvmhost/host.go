@@ -36,6 +36,17 @@ func hostStateSet(keyRef *byte, keyLen int32, valRef *byte, valLen int32)
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// ptr returns pointer to slice or nil when slice is empty
+func ptr(buf []byte) *byte {
+	// &buf[0] will panic on zero length slice, so use nil instead
+	if len(buf) == 0 {
+		return nil
+	}
+	return &buf[0]
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 type WasmVMHost struct {
 	funcs []wasmlib.ScFuncContextFunction
 	views []wasmlib.ScViewContextFunction
@@ -63,14 +74,8 @@ func (w *WasmVMHost) ConnectWasmHost() {
 }
 
 func (w *WasmVMHost) CallFunc(objID, keyID int32, params []byte) []byte {
-	args := (*byte)(nil)
-	size := int32(len(params))
-	if size != 0 {
-		args = &params[0]
-	}
-
 	// pass params and query expected length of result
-	size = hostGetBytes(objID, keyID, wasmlib.TYPE_CALL, args, size)
+	size := hostGetBytes(objID, keyID, wasmlib.TYPE_CALL, ptr(params), int32(len(params)))
 
 	// -1 means non-existent, so return default value for type
 	if size <= 0 {
@@ -153,17 +158,10 @@ func (w *WasmVMHost) SetBytes(objID, keyID, typeID int32, value []byte) {
 }
 
 func (w *WasmVMHost) Sandbox(funcNr int32, params []byte) []byte {
-	// &params[0] will panic on zero length slice, so use nil instead
-	par := (*byte)(nil)
-	size := int32(len(params))
-	if size != 0 {
-		par = &params[0]
-	}
-
 	// call sandbox function, result value will be cached by host
 	// always negative funcNr as keyLen indicates sandbox call
 	// this removes the need for a separate hostSandbox function
-	size = hostStateGet(nil, funcNr, par, size)
+	size := hostStateGet(nil, funcNr, ptr(params), int32(len(params)))
 
 	// zero length, no need to retrieve cached value
 	if size == 0 {
@@ -221,11 +219,5 @@ func (w *WasmVMHost) StateGet(key []byte) []byte {
 }
 
 func (w *WasmVMHost) StateSet(key []byte, value []byte) {
-	// &value[0] will panic on zero length slice, so use nil instead
-	val := (*byte)(nil)
-	size := int32(len(value))
-	if size != 0 {
-		val = &value[0]
-	}
-	hostStateSet(&key[0], int32(len(key)), val, size)
+	hostStateSet(&key[0], int32(len(key)), ptr(value), int32(len(value)))
 }

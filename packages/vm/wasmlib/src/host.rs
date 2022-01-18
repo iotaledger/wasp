@@ -59,6 +59,10 @@ extern {
     // copy the <len> value data bytes of type <type_id> from the <buffer>
     // into the host container object <obj_id>, under key <key_id>.
     pub fn hostSetBytes(obj_id: i32, key_id: i32, type_id: i32, buffer: *const u8, size: i32);
+
+    pub fn hostStateGet(key_ref: *const u8, key_len: i32, val_ref: *const u8, val_len: i32) -> i32;
+
+    pub fn hostStateSet(key_ref: *const u8, key_len: i32, val_ref: *const u8, val_len: i32);
 }
 
 pub fn call_func(obj_id: i32, key_id: Key32, params: &[u8]) -> Vec<u8> {
@@ -82,7 +86,7 @@ pub fn call_func(obj_id: i32, key_id: Key32, params: &[u8]) -> Vec<u8> {
         // and let the host copy the actual data bytes into this Wasm byte array
         let mut result = vec![0_u8; size as usize];
         hostGetBytes(obj_id, key_id.0, TYPE_CALL + 1, result.as_mut_ptr(), size);
-        return result;
+        result
     }
 }
 
@@ -90,7 +94,7 @@ pub fn call_func(obj_id: i32, key_id: Key32, params: &[u8]) -> Vec<u8> {
 // Removes all its sub-objects as well.
 pub fn clear(obj_id: i32) {
     // special key "length" is used with integer value zero
-    set_bytes(obj_id, KEY_LENGTH, TYPE_INT32, &0_i32.to_le_bytes())
+    set_bytes(obj_id, KEY_LENGTH, TYPE_INT32, &0_i32.to_le_bytes());
 }
 
 // Delete the value with the specified key and type from the specified container object.
@@ -98,7 +102,7 @@ pub fn del_key(obj_id: i32, key_id: Key32, type_id: i32) {
     unsafe {
         // size -1 means delete
         // this removes the need for a separate hostDelete function
-        hostSetBytes(obj_id, key_id.0, type_id, std::ptr::null_mut(), -1);
+        hostSetBytes(obj_id, key_id.0, type_id, std::ptr::null(), -1);
     }
 }
 
@@ -108,7 +112,7 @@ pub fn exists(obj_id: i32, key_id: Key32, type_id: i32) -> bool {
         // size -1 means only test for existence
         // returned size -1 indicates keyID not found (or error)
         // this removes the need for a separate hostExists function
-        hostGetBytes(obj_id, key_id.0, type_id, std::ptr::null_mut(), -1) >= 0
+        hostGetBytes(obj_id, key_id.0, type_id, std::ptr::null(), -1) >= 0
     }
 }
 
@@ -121,7 +125,7 @@ pub fn get_bytes(obj_id: i32, key_id: Key32, type_id: i32) -> Vec<u8> {
         if size == 0 {
             // variable-sized type, first query expected length of bytes array
             // (pass zero-length buffer)
-            size = hostGetBytes(obj_id, key_id.0, type_id, std::ptr::null_mut(), 0);
+            size = hostGetBytes(obj_id, key_id.0, type_id, std::ptr::null(), 0);
 
             // -1 means non-existent, so return default value for type
             if size < 0 {
@@ -133,7 +137,7 @@ pub fn get_bytes(obj_id: i32, key_id: Key32, type_id: i32) -> Vec<u8> {
         // and let the host copy the actual data bytes into this Wasm byte array
         let mut result = vec![0_u8; size as usize];
         hostGetBytes(obj_id, key_id.0, type_id, result.as_mut_ptr(), size);
-        return result;
+        result
     }
 }
 
@@ -177,12 +181,12 @@ pub fn get_object_id(obj_id: i32, key_id: Key32, type_id: i32) -> i32 {
 
 // Direct logging of informational text to host log
 pub fn log(text: &str) {
-    set_bytes(1, KEY_LOG, TYPE_STRING, text.as_bytes())
+    set_bytes(1, KEY_LOG, TYPE_STRING, text.as_bytes());
 }
 
 // Direct logging of error to host log, followed by panicking out of the Wasm code
 pub fn panic(text: &str) {
-    set_bytes(1, KEY_PANIC, TYPE_STRING, text.as_bytes())
+    set_bytes(1, KEY_PANIC, TYPE_STRING, text.as_bytes());
 }
 
 // Store the provided value bytes of specified type in the specified container object
@@ -190,11 +194,72 @@ pub fn panic(text: &str) {
 // create it first.
 pub fn set_bytes(obj_id: i32, key_id: Key32, type_id: i32, value: &[u8]) {
     unsafe {
-        hostSetBytes(obj_id, key_id.0, type_id, value.as_ptr(), value.len() as i32)
+        hostSetBytes(obj_id, key_id.0, type_id, value.as_ptr(), value.len() as i32);
     }
 }
 
 // Direct logging of debug trace text to host log
 pub fn trace(text: &str) {
     set_bytes(1, KEY_TRACE, TYPE_STRING, text.as_bytes())
+}
+
+pub fn sandbox(func_nr: i32, params: &[u8]) -> Vec<u8> {
+    unsafe {
+        // call sandbox function, result value will be cached by host
+        // always negative funcNr as keyLen indicates sandbox call
+        // this removes the need for a separate hostSandbox function
+        let size = hostStateGet(std::ptr::null(), func_nr, params.as_ptr(), params.len() as i32);
+
+        // zero length, no need to retrieve cached value
+        if size == 0 {
+            return vec![0_u8; 0];
+        }
+
+        // retrieve cached value from host
+        let mut result = vec![0_u8; size as usize];
+        hostStateGet(std::ptr::null(), 0, result.as_mut_ptr(), size);
+        result
+    }
+}
+
+pub fn state_delete(key: &[u8]) {
+    unsafe {
+        hostStateSet(key.as_ptr(), key.len() as i32, std::ptr::null(), -1);
+    }
+}
+
+pub fn state_exists(key: &[u8]) -> bool {
+    unsafe {
+        hostStateGet(key.as_ptr(), key.len() as i32, std::ptr::null(), -1) >= 0
+    }
+}
+
+pub fn state_get(key: &[u8]) -> Option<Vec<u8>> {
+    unsafe {
+        // variable sized result expected,
+        // query size first by passing zero length buffer
+        // value will be cached by host
+        let size = hostStateGet(key.as_ptr(), key.len() as i32, std::ptr::null(), 0);
+
+        // -1 means non-existent
+        if size < 0 {
+            return None;
+        }
+
+        // zero length, no need to retrieve cached value
+        if size == 0 {
+            return Some(vec![0_u8; 0]);
+        }
+
+        // retrieve cached value from host
+        let mut result = vec![0_u8; size as usize];
+        hostStateGet(std::ptr::null(), 0, result.as_mut_ptr(), size);
+        Some(result)
+    }
+}
+
+pub fn state_set(key: &[u8], value: &[u8]) {
+    unsafe {
+        hostStateSet(key.as_ptr(), key.len() as i32, value.as_ptr(), value.len() as i32);
+    }
 }

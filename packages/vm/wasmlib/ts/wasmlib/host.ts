@@ -5,8 +5,8 @@
 
 // all type id values should exactly match their counterpart values on the host!
 
-import {Key32} from "./keys";
 import * as keys from "./keys";
+import {Key32} from "./keys";
 import {Convert} from "./convert";
 
 export const TYPE_ARRAY: i32 = 0x20;
@@ -63,7 +63,13 @@ export declare function hostGetObjectID(objID: i32, keyID: i32, typeID: i32): i3
 // copy the <len> value data bytes of type <typeID> from the <buffer>
 // into the host container object <objID>, under key <keyID>.
 @external("WasmLib", "hostSetBytes")
-export declare function hostSetBytes(objID: i32, keyID: i32, typeID: i32, buffer: usize, size: i32):void;
+export declare function hostSetBytes(objID: i32, keyID: i32, typeID: i32, buffer: usize, size: i32): void;
+
+@external("WasmLib", "hostStateGet")
+export declare function hostStateGet(keyRef: usize, keyLen: i32, valRef: usize, valLen: i32): i32;
+
+@external("WasmLib", "hostStateSet")
+export declare function hostStateSet(keyRef: usize, keyLen: i32, valRef: usize, valLen: i32): void;
 
 
 export function callFunc(objID: i32, keyID: Key32, params: u8[]): u8[] {
@@ -78,7 +84,7 @@ export function callFunc(objID: i32, keyID: Key32, params: u8[]): u8[] {
 
     // allocate a sufficient length byte array in Wasm memory
     // and let the host copy the actual data bytes into this Wasm byte array
-    let result:u8[] = new Array(size);
+    let result: u8[] = new Array(size);
     hostGetBytes(objID, keyID.keyID, TYPE_CALL + 1, result.dataStart, size);
     return result;
 }
@@ -123,13 +129,13 @@ export function getBytes(objID: i32, keyID: Key32, typeID: i32): u8[] {
 
     // allocate a sufficient length byte array in Wasm memory
     // and let the host copy the actual data bytes into this Wasm byte array
-    let result:u8[] = new Array(size);
+    let result: u8[] = new Array(size);
     hostGetBytes(objID, keyID.keyID, typeID, result.dataStart, size);
     return result;
 }
 
 // Retrieve the key id that the host has associated with the specified bytes key
-export function getKeyID(bytes: u8[], size:i32): Key32 {
+export function getKeyID(bytes: u8[], size: i32): Key32 {
     // negative size indicates this is a bytes key
     return new Key32(hostGetKeyID(bytes.dataStart, size));
 }
@@ -186,4 +192,55 @@ export function setBytes(objID: i32, keyID: Key32, typeID: i32, value: u8[]): vo
 // Direct logging of debug trace text to host log
 export function trace(text: string): void {
     setBytes(1, keys.KEY_TRACE, TYPE_STRING, Convert.fromString(text));
+}
+
+export function sandbox(funcNr: i32, params: u8[]): u8[] {
+    // call sandbox function, result value will be cached by host
+    // always negative funcNr as keyLen indicates sandbox call
+    // this removes the need for a separate hostSandbox function
+    let size = hostStateGet(0, funcNr, params.dataStart, params.length as i32);
+
+    // zero length, no need to retrieve cached value
+    if (size == 0) {
+        return [];
+    }
+
+    // retrieve cached value from host
+    let result: u8[] = new Array(size);
+    hostStateGet(0, 0, result.dataStart, size);
+    return result;
+}
+
+export function stateDelete(key: u8[]): void {
+    hostStateSet(key.dataStart, key.length as i32, 0, -1);
+}
+
+export function stateExistst(key: u8[]): bool {
+    return hostStateGet(key.dataStart, key.length as i32, 0, -1) >= 0;
+}
+
+export function stateGet(key: u8[]): u8[] | null {
+    // variable sized result expected,
+    // query size first by passing zero length buffer
+    // value will be cached by host
+    let size = hostStateGet(key.dataStart, key.length as i32, 0, 0);
+
+    // -1 means non-existent
+    if (size < 0) {
+        return null;
+    }
+
+    // zero length, no need to retrieve cached value
+    if (size == 0) {
+        return [];
+    }
+
+    // retrieve cached value from host
+    let result: u8[] = new Array(size);
+    hostStateGet(0, 0, result.dataStart, size);
+    return result;
+}
+
+export function stateSet(key: u8[], value: u8[]): void {
+    hostStateSet(key.dataStart, key.length as i32, value.dataStart, value.length as i32);
 }
