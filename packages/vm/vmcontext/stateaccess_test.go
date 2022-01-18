@@ -17,7 +17,7 @@ import (
 
 func TestSetThenGet(t *testing.T) {
 	chainID := iscp.RandomChainID([]byte("hmm"))
-	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), &chainID)
+	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
 	hname := iscp.Hn("test")
@@ -77,7 +77,7 @@ func TestSetThenGet(t *testing.T) {
 
 func TestIterate(t *testing.T) {
 	chainID := iscp.RandomChainID([]byte("hmm"))
-	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), &chainID)
+	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
 	hname := iscp.Hn("test")
