@@ -171,8 +171,8 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 
 	requiredDustDeposit := o.VByteCost(txb.rentStructure, nil)
 	if o.Deposit() < requiredDustDeposit {
-		xerrors.Errorf("%v: available %d < required %d iotas",
-			transaction.ErrNotEnoughIotasForDustDeposit, o.Deposit(), requiredDustDeposit)
+		panic(xerrors.Errorf("%v: available %d < required %d iotas",
+			transaction.ErrNotEnoughIotasForDustDeposit, o.Deposit(), requiredDustDeposit))
 	}
 	assets := transaction.AssetsFromOutput(o)
 	txb.subDeltaIotasFromTotal(assets.Iotas)
