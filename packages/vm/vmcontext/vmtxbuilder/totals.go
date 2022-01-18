@@ -168,7 +168,7 @@ func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp
 		panic(xerrors.Errorf("%v: %v", ErrFatalTxBuilderNotBalanced, err))
 	}
 	if outTotal.TotalIotasInL2Accounts != l2Totals.Iotas {
-		panic(xerrors.Errorf("'%s': iotas L1 (%d) != iotas L2 (%d): %w",
+		panic(xerrors.Errorf("'%s': iotas L1 (%d) != iotas L2 (%d): %v",
 			checkpoint, outTotal.TotalIotasInL2Accounts, l2Totals.Iotas, ErrInconsistentL2LedgerWithL1TxBuilder))
 	}
 	for _, nt := range l2Totals.Tokens {
@@ -178,8 +178,8 @@ func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp
 			continue
 		}
 		if nt.Amount.Cmp(b1) != 0 {
-			panic(xerrors.Errorf("token %s L1 (%d) != iotas L2 (%d): %w",
-				nt.ID.String(), outTotal.TotalIotasInL2Accounts, l2Totals.Iotas, ErrInconsistentL2LedgerWithL1TxBuilder))
+			panic(xerrors.Errorf("token %s L1 (%d) != L2 (%d): %v",
+				nt.ID.String(), nt.Amount, b1, ErrInconsistentL2LedgerWithL1TxBuilder))
 		}
 	}
 }
@@ -224,17 +224,23 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) error {
 		begin, ok := t.NativeTokenBalances[id]
 		if !ok {
 			begin = big.NewInt(0)
+		} else {
+			begin = new(big.Int).Set(begin) // clone
 		}
 		end, ok := another.NativeTokenBalances[id]
 		if !ok {
 			end = big.NewInt(0)
+		} else {
+			end = new(big.Int).Set(end) // clone
 		}
 		sent, ok := another.SentOutTokenBalances[id]
 		if !ok {
 			sent = big.NewInt(0)
+		} else {
+			sent = new(big.Int).Set(sent) // clone
 		}
-		end.Add(end, sent)
 
+		end.Add(end, sent)
 		begin.Add(begin, delta)
 		if begin.Cmp(end) != 0 {
 			return xerrors.Errorf("%v: token %s not balanced: in (%d) != out (%d)", ErrFatalTxBuilderNotBalanced, id, begin, end)

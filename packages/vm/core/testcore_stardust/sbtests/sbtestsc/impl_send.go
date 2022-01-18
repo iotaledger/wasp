@@ -1,6 +1,9 @@
 package sbtestsc
 
 import (
+	"fmt"
+	"math/big"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -18,6 +21,30 @@ func testSplitFunds(ctx iscp.Sandbox) (dict.Dict, error) {
 				Assets:        iscp.NewAssetsIotas(200),
 			},
 		)
+	}
+	return nil, nil
+}
+
+// testSplitFundsNativeTokens calls Send for each Native token
+func testSplitFundsNativeTokens(ctx iscp.Sandbox) (dict.Dict, error) {
+	// claims all iotas from allowance
+	ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAssetsIotas(ctx.AllowanceAvailable().Iotas))
+	for _, token := range ctx.AllowanceAvailable().Tokens {
+		for ctx.AllowanceAvailable().AmountNativeToken(&token.ID).Cmp(big.NewInt(0)) > 0 {
+			// claim 1 token from allowance at a time
+			// send back to caller's address
+			// depending on the amount of tokens, it will exceed number of outputs or not
+			transfer := iscp.NewEmptyAssets().AddNativeTokens(token.ID, 1)
+			rem := ctx.TransferAllowedFunds(ctx.AccountID(), transfer)
+			fmt.Printf("%s\n", rem)
+			ctx.Send(
+				iscp.RequestParameters{
+					TargetAddress:              ctx.Caller().Address(),
+					Assets:                     transfer,
+					AdjustToMinimumDustDeposit: true,
+				},
+			)
+		}
 	}
 	return nil, nil
 }

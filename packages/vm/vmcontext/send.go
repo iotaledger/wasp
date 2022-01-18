@@ -21,6 +21,7 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 	vmctx.numPostedOutputs++
 	vmctx.GasBurn(gas.BurnSendL1Request, vmctx.numPostedOutputs)
 
+	assets := par.Assets
 	// create extended output with adjusted dust deposit
 	out, err := transaction.ExtendedOutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
@@ -32,6 +33,11 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 		// only possible if not provided enough iotas for dust deposit
 		panic(err)
 	}
+	if out.Amount > par.Assets.Iotas {
+		// it was adjusted
+		assets = assets.Clone()
+		assets.Iotas = out.Amount
+	}
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: begin")
 	// this call cannot panic due to not enough iotas for dust because
 	// it does not change total balance of the transaction and it does not create new internal outputs
@@ -40,7 +46,6 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 	vmctx.adjustL2IotasIfNeeded(iotaAdjustmentL2)
 	// debit the assets from the on-chain account
 	// It panics with accounts.ErrNotEnoughFunds if sender's account balances are exceeded
-	vmctx.debitFromAccount(vmctx.AccountID(), par.Assets)
+	vmctx.debitFromAccount(vmctx.AccountID(), assets)
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: end")
-
 }
