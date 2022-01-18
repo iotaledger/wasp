@@ -157,7 +157,6 @@ func TestLeb128(t *testing.T) {
 }
 
 func TestVli(t *testing.T) {
-	*wasmsolo.TsWasm = true
 	wasmhost.DisableWasmTimeout = true
 	ctx := setupTest(t)
 	wasmhost.DisableWasmTimeout = false
