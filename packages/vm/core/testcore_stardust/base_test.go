@@ -283,7 +283,7 @@ func TestEstimateGas(t *testing.T) {
 		governance.ParamMaxEventsPerRequestUint16, uint16(100)).
 		WithGasBudget(1000)
 
-	gasBurned, gasFeeCharged, err := ch.EstimateGas(req, nil)
+	gasBurned, gasFeeCharged, err := ch.EstimateGasOnLedger(req, nil)
 	require.NoError(t, err)
 	require.NotZero(t, gasBurned)
 	require.NotZero(t, gasFeeCharged)

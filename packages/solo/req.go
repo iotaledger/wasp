@@ -6,18 +6,16 @@ package solo
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm"
-
-	"github.com/iotaledger/wasp/packages/kv"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
@@ -298,9 +296,10 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	return tx, res.Receipt, res.Return, res.Error
 }
 
-// SimulateRequest executes the request without committing any changes in the ledger.
-// It can be used to estimate gas needed to run the request
-func (ch *Chain) SimulateRequest(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
+// SimulateRequestOnLedger executes the given on-ledger request without
+// committing any changes in the ledger.
+// It can be used to estimate the gas needed to run the request
+func (ch *Chain) SimulateRequestOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
 	r, err := ch.requestFromParams(req, keyPair)
 	if err != nil {
 		return nil, err
@@ -308,18 +307,32 @@ func (ch *Chain) SimulateRequest(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	return ch.simulateRequest(r), nil
 }
 
-// EstimateGas executes the request without committing any changes in the ledger. It returns
-// the amount of gas consumed.
-func (ch *Chain) EstimateGas(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
-	res, err := ch.SimulateRequest(req, keyPair)
+// SimulateRequestOffLedger executes the given off-ledger request without
+// committing any changes in the ledger.
+// It can be used to estimate the gas needed to run the request
+func (ch *Chain) SimulateRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
+	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
+	return ch.simulateRequest(r), nil
+}
+
+// EstimateGasOnLedger executes the given on-ledger request without committing
+// any changes in the ledger. It returns the amount of gas consumed.
+func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
+	res, err := ch.SimulateRequestOnLedger(req, keyPair)
 	if err != nil {
 		return 0, 0, err
 	}
-	ch.lastReceipt = res.Receipt
-	gasFeePolicy := ch.GetGasFeePolicy()
-	f1, f2 := gasFeePolicy.FeeFromGas(res.Receipt.GasBurned)
-	feeEstimate := f1 + f2 + gasFeePolicy.GasPricePerNominalUnit
-	return res.Receipt.GasBurned, feeEstimate, nil
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, nil
+}
+
+// EstimateGasOffLedger executes the given on-ledger request without committing
+// any changes in the ledger. It returns the amount of gas consumed.
+func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
+	res, err := ch.SimulateRequestOffLedger(req, keyPair)
+	if err != nil {
+		return 0, 0, err
+	}
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, nil
 }
 
 // callViewFull calls the view entry point of the smart contract

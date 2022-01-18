@@ -133,7 +133,7 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 	reqEstimate := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
 		AddAssetsIotas(minimumIotasForEstimate).
 		WithGasBudget(minimumIotasForEstimate)
-	gasBudgetEstimate, gasFeeEstimate, err := ch.EstimateGas(reqEstimate, user)
+	gasBudgetEstimate, gasFeeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
 	require.NoError(ch.Env.T, err)
 
 	// check if user has required iotas on L2
@@ -238,7 +238,7 @@ func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHas
 	reqEstimate := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
 		WithGasBudget(100_000).
 		AddAssetsIotas(10_000)
-	gasEstimate, gasFeeEstimate, err := ch.EstimateGas(reqEstimate, user)
+	gasEstimate, gasFeeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
 	require.NoError(ch.Env.T, err)
 
 	userAddr := cryptolib.Ed25519AddressFromPubKey(user.PublicKey)
