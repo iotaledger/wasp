@@ -109,7 +109,6 @@ export class Wallet {
         if (!outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING]) {
             outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING] = 0n;
         }
-        const t = outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING];
         outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING] += iotas;
 
         consumedFunds[Colors.IOTA_COLOR_STRING] = BigInt(consumedFunds[Colors.IOTA_COLOR_STRING] ?? 0n) - iotas;
@@ -191,7 +190,7 @@ export class Wallet {
         builtInputs: string[]
     ): Array<IUnlockBlock> {
         const unlockBlocks: IUnlockBlock[] = [];
-        const txEssence = Transaction.essence(tx, Buffer.alloc(0));
+        const txEssence = Transaction.essence(tx);
 
         const addressByOutputID: { [outputID: string]: string } = {};
         for (const address in consumedOutputs) {

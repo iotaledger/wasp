@@ -19,7 +19,7 @@ export class Results extends wasmclient.Decoder {
                 return;
             }
             keyValue(keyBuf, val);
-        })
+        });
     }
 
     protected get(key: string): Buffer | undefined {

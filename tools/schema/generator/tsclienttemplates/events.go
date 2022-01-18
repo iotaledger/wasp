@@ -14,7 +14,7 @@ $#each events eventHandlerMember
 
 	public callHandler(topic: string, params: string[]): void {
 		const handler = $pkgName$+Handlers.get(topic);
-		if (handler !== undefined) {
+		if (handler) {
 			handler(this, params);
 		}
 	}
@@ -28,12 +28,12 @@ $#each events eventClass
 `,
 	// *******************************
 	"eventHandlerMember": `
-	$evtName: (Event$EvtName) => void = () => {};
+	$evtName: (evt: Event$EvtName) => void = () => {};
 `,
 	// *******************************
 	"funcSignature": `
 
-	public on$PkgName$EvtName(handler: (Event$EvtName) => void): void {
+	public on$PkgName$EvtName(handler: (evt: Event$EvtName) => void): void {
 		this.$evtName = handler;
 	}
 `,

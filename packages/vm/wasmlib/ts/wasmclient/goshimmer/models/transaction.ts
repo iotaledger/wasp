@@ -81,7 +81,7 @@ export class Transaction {
      * @param tx The tx to get the essence for.
      * @returns The essence of the transaction.
      */
-    public static essence(tx: ITransaction, payload: Buffer = Buffer.alloc(0)): Buffer {
+    public static essence(tx: ITransaction): Buffer {
         const essenceBuffer = new SimpleBufferCursor();
 
         essenceBuffer.writeInt8(tx.version);
