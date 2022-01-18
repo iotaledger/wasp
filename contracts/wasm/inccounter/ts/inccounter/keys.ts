@@ -11,19 +11,29 @@ import * as sc from "./index";
 export const IdxParamCounter    = 0;
 export const IdxParamDelay      = 1;
 export const IdxParamDummy      = 2;
-export const IdxParamNumRepeats = 3;
+export const IdxParamN          = 3;
+export const IdxParamNumRepeats = 4;
 
-export const IdxResultCounter = 4;
+export const IdxResultBuf     = 5;
+export const IdxResultCounter = 6;
+export const IdxResultN       = 7;
+export const IdxResultStr     = 8;
+export const IdxResultX       = 9;
 
-export const IdxStateCounter    = 5;
-export const IdxStateNumRepeats = 6;
+export const IdxStateCounter    = 10;
+export const IdxStateNumRepeats = 11;
 
 export let keyMap: string[] = [
 	sc.ParamCounter,
 	sc.ParamDelay,
 	sc.ParamDummy,
+	sc.ParamN,
 	sc.ParamNumRepeats,
+	sc.ResultBuf,
 	sc.ResultCounter,
+	sc.ResultN,
+	sc.ResultStr,
+	sc.ResultX,
 	sc.StateCounter,
 	sc.StateNumRepeats,
 ];

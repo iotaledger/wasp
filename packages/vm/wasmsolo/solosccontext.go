@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
 )
 
@@ -71,12 +72,12 @@ func (o *SoloScContext) SetBytes(keyID, typeID int32, bytes []byte) {
 }
 
 func (o *SoloScContext) processCall(bytes []byte) {
-	decode := wasmproc.NewBytesDecoder(bytes)
-	contract, err := iscp.HnameFromBytes(decode.Bytes())
+	decode := wasmlib.NewBytesDecoder(bytes)
+	contract, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	if err != nil {
 		o.Panicf(err.Error())
 	}
-	function, err := iscp.HnameFromBytes(decode.Bytes())
+	function, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	if err != nil {
 		o.Panicf(err.Error())
 	}
@@ -107,19 +108,19 @@ func (o *SoloScContext) processCall(bytes []byte) {
 }
 
 func (o *SoloScContext) processPost(bytes []byte) {
-	decode := wasmproc.NewBytesDecoder(bytes)
-	chainID, err := iscp.ChainIDFromBytes(decode.Bytes())
+	decode := wasmlib.NewBytesDecoder(bytes)
+	chainID, err := iscp.ChainIDFromBytes(decode.ChainID().Bytes())
 	if err != nil {
 		o.Panicf(err.Error())
 	}
 	if !chainID.Equals(o.ctx.Chain.ChainID) {
 		o.Panicf("invalid chainID")
 	}
-	contract, err := iscp.HnameFromBytes(decode.Bytes())
+	contract, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	if err != nil {
 		o.Panicf(err.Error())
 	}
-	function, err := iscp.HnameFromBytes(decode.Bytes())
+	function, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	if err != nil {
 		o.Panicf(err.Error())
 	}

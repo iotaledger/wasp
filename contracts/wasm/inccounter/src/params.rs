@@ -101,3 +101,25 @@ impl MutableWhenMustIncrementParams {
 		ScMutableInt64::new(self.id, PARAM_DUMMY.get_key_id())
 	}
 }
+
+#[derive(Clone, Copy)]
+pub struct ImmutableGetVliParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableGetVliParams {
+    pub fn n(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.id, PARAM_N.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableGetVliParams {
+    pub(crate) id: i32,
+}
+
+impl MutableGetVliParams {
+    pub fn n(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.id, PARAM_N.get_key_id())
+	}
+}

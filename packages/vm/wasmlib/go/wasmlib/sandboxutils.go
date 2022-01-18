@@ -34,7 +34,8 @@ func (u ScSandboxUtils) BlsAggregate(pubKeys, sigs [][]byte) ([]byte, []byte) {
 
 func (u ScSandboxUtils) BlsValid(data, pubKey, signature []byte) bool {
 	encode := NewBytesEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
-	return NewBoolFromBytes(Sandbox(FnUtilsBlsValid, encode.Data()))
+	valid, _ := ExtractBool(Sandbox(FnUtilsBlsValid, encode.Data()))
+	return valid
 }
 
 func (u ScSandboxUtils) Ed25519Address(pubKey []byte) ScAddress {
@@ -43,7 +44,8 @@ func (u ScSandboxUtils) Ed25519Address(pubKey []byte) ScAddress {
 
 func (u ScSandboxUtils) Ed25519Valid(data, pubKey, signature []byte) bool {
 	encode := NewBytesEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
-	return NewBoolFromBytes(Sandbox(FnUtilsEd25519Valid, encode.Data()))
+	valid, _ := ExtractBool(Sandbox(FnUtilsEd25519Valid, encode.Data()))
+	return valid
 }
 
 func (u ScSandboxUtils) HashBlake2b(value []byte) ScHash {

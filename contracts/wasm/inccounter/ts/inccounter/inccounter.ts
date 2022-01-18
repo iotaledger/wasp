@@ -109,9 +109,9 @@ export function funcTestLeb128(ctx: wasmlib.ScFuncContext, f: sc.TestLeb128Conte
         // let txt = i.toString() + " -";
         // for (let j = 0; j < d.buf.length; j++) {
         //     let b = d.buf[j];
-        //     txt += " " + hex[(b >> 4) & 0x0f] + hex[d.buf[j] & 0x0f];
+        //     txt += " " + hex.charAt((b >> 4) & 0x0f) + hex.charAt(b & 0x0f);
         // }
-        let e = new wasmlib.BytesDecoder(d.buf);
+        let e = new wasmlib.BytesDecoder(d.data());
         let v = e.int64();
         // txt += " - " + v.toString();
         // ctx.log(txt);
@@ -176,4 +176,22 @@ function whenMustIncrementState(ctx: wasmlib.ScFuncContext, state: sc.MutableInc
     let counter = state.counter();
     counter.setValue(counter.value() + 1);
     ctx.log("whenMustIncrement incremented");
+}
+
+export function viewGetVli(ctx: wasmlib.ScViewContext, f: sc.GetVliContext): void {
+    let d = new wasmlib.BytesEncoder();
+    let n = f.params.n().value();
+    d = d.int64(n);
+    let str = n.toString() + " -";
+    for (let j = 0; j < d.buf.length; j++) {
+        let b = d.buf[j];
+        str += " " + hex.charAt((b >> 4) & 0x0f) + hex.charAt(b & 0x0f);
+    }
+    let e = new wasmlib.BytesDecoder(d.data());
+    let x = e.int64();
+    str += " - " + x.toString();
+    f.results.n().setValue(n);
+    f.results.x().setValue(x);
+    f.results.str().setValue(str);
+    f.results.buf().setValue(d.buf);
 }

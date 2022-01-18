@@ -35,3 +35,49 @@ impl MutableGetCounterResults {
 		ScMutableInt64::new(self.id, RESULT_COUNTER.get_key_id())
 	}
 }
+
+#[derive(Clone, Copy)]
+pub struct ImmutableGetVliResults {
+    pub(crate) id: i32,
+}
+
+impl ImmutableGetVliResults {
+    pub fn buf(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.id, RESULT_BUF.get_key_id())
+	}
+
+    pub fn n(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.id, RESULT_N.get_key_id())
+	}
+
+    pub fn str(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, RESULT_STR.get_key_id())
+	}
+
+    pub fn x(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.id, RESULT_X.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableGetVliResults {
+    pub(crate) id: i32,
+}
+
+impl MutableGetVliResults {
+    pub fn buf(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.id, RESULT_BUF.get_key_id())
+	}
+
+    pub fn n(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.id, RESULT_N.get_key_id())
+	}
+
+    pub fn str(&self) -> ScMutableString {
+		ScMutableString::new(self.id, RESULT_STR.get_key_id())
+	}
+
+    pub fn x(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.id, RESULT_X.get_key_id())
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -147,12 +148,12 @@ func (o *ScContext) SetBytes(keyID, typeID int32, bytes []byte) {
 }
 
 func (o *ScContext) processCall(bytes []byte) {
-	decode := NewBytesDecoder(bytes)
-	contract, err := iscp.HnameFromBytes(decode.Bytes())
+	decode := wasmlib.NewBytesDecoder(bytes)
+	contract, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	if err != nil {
 		o.Panicf(err.Error())
 	}
-	function, err := iscp.HnameFromBytes(decode.Bytes())
+	function, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	if err != nil {
 		o.Panicf(err.Error())
 	}
@@ -179,8 +180,8 @@ func (o *ScContext) processCallUnlocked(contract, function iscp.Hname, params di
 }
 
 func (o *ScContext) processDeploy(bytes []byte) {
-	decode := NewBytesDecoder(bytes)
-	programHash, err := hashing.HashValueFromBytes(decode.Bytes())
+	decode := wasmlib.NewBytesDecoder(bytes)
+	programHash, err := hashing.HashValueFromBytes(decode.Hash().Bytes())
 	if err != nil {
 		o.Panicf(err.Error())
 	}
@@ -202,16 +203,16 @@ func (o *ScContext) processDeployUnlocked(programHash hashing.HashValue, name, d
 }
 
 func (o *ScContext) processPost(bytes []byte) {
-	decode := NewBytesDecoder(bytes)
-	chainID, err := iscp.ChainIDFromBytes(decode.Bytes())
+	decode := wasmlib.NewBytesDecoder(bytes)
+	chainID, err := iscp.ChainIDFromBytes(decode.ChainID().Bytes())
 	if err != nil {
 		o.Panicf(err.Error())
 	}
-	contract, err := iscp.HnameFromBytes(decode.Bytes())
+	contract, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	if err != nil {
 		o.Panicf(err.Error())
 	}
-	function, err := iscp.HnameFromBytes(decode.Bytes())
+	function, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	if err != nil {
 		o.Panicf(err.Error())
 	}

@@ -70,6 +70,12 @@ type GetCounterCall struct {
 	Results ImmutableGetCounterResults
 }
 
+type GetVliCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableGetVliParams
+	Results ImmutableGetVliResults
+}
+
 type Funcs struct{}
 
 var ScFuncs Funcs
@@ -137,5 +143,11 @@ func (sc Funcs) WhenMustIncrement(ctx wasmlib.ScFuncCallContext) *WhenMustIncrem
 func (sc Funcs) GetCounter(ctx wasmlib.ScViewCallContext) *GetCounterCall {
 	f := &GetCounterCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetCounter)}
 	f.Func.SetPtrs(nil, &f.Results.id)
+	return f
+}
+
+func (sc Funcs) GetVli(ctx wasmlib.ScViewCallContext) *GetVliCall {
+	f := &GetVliCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetVli)}
+	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }

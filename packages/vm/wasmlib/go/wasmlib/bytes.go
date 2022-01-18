@@ -15,11 +15,11 @@ func NewBytesDecoder(data []byte) *BytesDecoder {
 }
 
 func (d *BytesDecoder) Address() ScAddress {
-	return NewScAddressFromBytes(d.Bytes())
+	return NewScAddressFromBytes(d.FixedBytes(uint32(TypeSizes[TYPE_ADDRESS])))
 }
 
 func (d *BytesDecoder) AgentID() ScAgentID {
-	return NewScAgentIDFromBytes(d.Bytes())
+	return NewScAgentIDFromBytes(d.FixedBytes(uint32(TypeSizes[TYPE_AGENT_ID])))
 }
 
 func (d *BytesDecoder) Bool() bool {
@@ -27,21 +27,12 @@ func (d *BytesDecoder) Bool() bool {
 }
 
 func (d *BytesDecoder) Bytes() []byte {
-	size := d.Uint32()
-	if uint32(len(d.data)) < size {
-		panic("insufficient bytes")
-	}
-	value := d.data[:size]
-	d.data = d.data[size:]
-	return value
+	length := d.Uint32()
+	return d.FixedBytes(length)
 }
 
 func (d *BytesDecoder) ChainID() ScChainID {
-	return NewScChainIDFromBytes(d.Bytes())
-}
-
-func (d *BytesDecoder) Color() ScColor {
-	return NewScColorFromBytes(d.Bytes())
+	return NewScChainIDFromBytes(d.FixedBytes(uint32(TypeSizes[TYPE_CHAIN_ID])))
 }
 
 func (d *BytesDecoder) Close() {
@@ -50,12 +41,25 @@ func (d *BytesDecoder) Close() {
 	}
 }
 
+func (d *BytesDecoder) Color() ScColor {
+	return NewScColorFromBytes(d.FixedBytes(uint32(TypeSizes[TYPE_COLOR])))
+}
+
+func (d *BytesDecoder) FixedBytes(size uint32) []byte {
+	if uint32(len(d.data)) < size {
+		panic("insufficient bytes")
+	}
+	value := d.data[:size]
+	d.data = d.data[size:]
+	return value
+}
+
 func (d *BytesDecoder) Hash() ScHash {
-	return NewScHashFromBytes(d.Bytes())
+	return NewScHashFromBytes(d.FixedBytes(uint32(TypeSizes[TYPE_HASH])))
 }
 
 func (d *BytesDecoder) Hname() ScHname {
-	return NewScHnameFromBytes(d.Bytes())
+	return NewScHnameFromBytes(d.FixedBytes(uint32(TypeSizes[TYPE_HNAME])))
 }
 
 func (d *BytesDecoder) Int8() int8 {
@@ -63,48 +67,19 @@ func (d *BytesDecoder) Int8() int8 {
 }
 
 func (d *BytesDecoder) Int16() int16 {
-	return int16(d.leb128Decode(16))
+	return int16(d.vliDecode(16))
 }
 
 func (d *BytesDecoder) Int32() int32 {
-	return int32(d.leb128Decode(32))
+	return int32(d.vliDecode(32))
 }
 
 func (d *BytesDecoder) Int64() int64 {
-	return d.leb128Decode(64)
-}
-
-// leb128 decoder
-func (d *BytesDecoder) leb128Decode(bits int) int64 {
-	val := int64(0)
-	s := 0
-	for {
-		if len(d.data) == 0 {
-			panic("insufficient bytes")
-		}
-		b := int8(d.data[0])
-		d.data = d.data[1:]
-		val |= int64(b&0x7f) << s
-		if (b & -0x80) == 0 {
-			if int8(val>>s)&0x7f != b&0x7f {
-				panic("integer too large")
-			}
-
-			// extend int7 sign to int8
-			b |= (b & 0x40) << 1
-
-			// extend int8 sign to int64
-			return val | (int64(b) << s)
-		}
-		s += 7
-		if s >= bits {
-			panic("integer representation too long")
-		}
-	}
+	return d.vliDecode(64)
 }
 
 func (d *BytesDecoder) RequestID() ScRequestID {
-	return NewScRequestIDFromBytes(d.Bytes())
+	return NewScRequestIDFromBytes(d.FixedBytes(uint32(TypeSizes[TYPE_REQUEST_ID])))
 }
 
 func (d *BytesDecoder) String() string {
@@ -121,15 +96,66 @@ func (d *BytesDecoder) Uint8() uint8 {
 }
 
 func (d *BytesDecoder) Uint16() uint16 {
-	return uint16(d.Int16())
+	return uint16(d.vluDecode(16))
 }
 
 func (d *BytesDecoder) Uint32() uint32 {
-	return uint32(d.Int32())
+	return uint32(d.vluDecode(32))
 }
 
 func (d *BytesDecoder) Uint64() uint64 {
-	return uint64(d.Int64())
+	return d.vluDecode(64)
+}
+
+// vli (variable length integer) decoder
+func (d *BytesDecoder) vliDecode(bits int) (value int64) {
+	b := d.Uint8()
+	sign := b & 0x40
+
+	// first group of 6 bits
+	value = int64(b & 0x3f)
+	s := 6
+
+	// while continuation bit is set
+	for (b & 0x80) != 0 {
+		if s >= bits {
+			panic("integer representation too long")
+		}
+
+		// next group of 7 bits
+		b = d.Uint8()
+		value |= int64(b&0x7f) << s
+		s += 7
+	}
+
+	if sign == 0 {
+		// positive, sign bits are already zero
+		return value
+	}
+
+	// negative, extend sign bits
+	return value | (int64(-1) << s)
+}
+
+// vlu (variable length unsigned) decoder
+func (d *BytesDecoder) vluDecode(bits int) uint64 {
+	// first group of 7 bits
+	b := d.Uint8()
+	value := uint64(b & 0x7f)
+	s := 7
+
+	// while continuation bit is set
+	for (b & 0x80) != 0 {
+		if s >= bits {
+			panic("integer representation too long")
+		}
+
+		// next group of 7 bits
+		b = d.Uint8()
+		value |= uint64(b&0x7f) << s
+		s += 7
+	}
+	return value
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -143,11 +169,11 @@ func NewBytesEncoder() *BytesEncoder {
 }
 
 func (e *BytesEncoder) Address(value ScAddress) *BytesEncoder {
-	return e.Bytes(value.Bytes())
+	return e.FixedBytes(value.Bytes(), uint32(TypeSizes[TYPE_ADDRESS]))
 }
 
 func (e *BytesEncoder) AgentID(value ScAgentID) *BytesEncoder {
-	return e.Bytes(value.Bytes())
+	return e.FixedBytes(value.Bytes(), uint32(TypeSizes[TYPE_AGENT_ID]))
 }
 
 func (e *BytesEncoder) Bool(value bool) *BytesEncoder {
@@ -158,29 +184,38 @@ func (e *BytesEncoder) Bool(value bool) *BytesEncoder {
 }
 
 func (e *BytesEncoder) Bytes(value []byte) *BytesEncoder {
-	e.Uint32(uint32(len(value)))
-	e.data = append(e.data, value...)
+	length := uint32(len(value))
+	e.Uint32(length)
+	e.FixedBytes(value, length)
 	return e
 }
 
 func (e *BytesEncoder) ChainID(value ScChainID) *BytesEncoder {
-	return e.Bytes(value.Bytes())
+	return e.FixedBytes(value.Bytes(), uint32(TypeSizes[TYPE_CHAIN_ID]))
 }
 
 func (e *BytesEncoder) Color(value ScColor) *BytesEncoder {
-	return e.Bytes(value.Bytes())
+	return e.FixedBytes(value.Bytes(), uint32(TypeSizes[TYPE_COLOR]))
 }
 
 func (e *BytesEncoder) Data() []byte {
 	return e.data
 }
 
+func (e *BytesEncoder) FixedBytes(value []byte, length uint32) *BytesEncoder {
+	if len(value) != int(length) {
+		panic("invalid fixed bytes length")
+	}
+	e.data = append(e.data, value...)
+	return e
+}
+
 func (e *BytesEncoder) Hash(value ScHash) *BytesEncoder {
-	return e.Bytes(value.Bytes())
+	return e.FixedBytes(value.Bytes(), uint32(TypeSizes[TYPE_HASH]))
 }
 
 func (e *BytesEncoder) Hname(value ScHname) *BytesEncoder {
-	return e.Bytes(value.Bytes())
+	return e.FixedBytes(value.Bytes(), uint32(TypeSizes[TYPE_HNAME]))
 }
 
 func (e *BytesEncoder) Int8(value int8) *BytesEncoder {
@@ -188,33 +223,45 @@ func (e *BytesEncoder) Int8(value int8) *BytesEncoder {
 }
 
 func (e *BytesEncoder) Int16(value int16) *BytesEncoder {
-	return e.leb128Encode(int64(value))
+	return e.Int64(int64(value))
 }
 
 func (e *BytesEncoder) Int32(value int32) *BytesEncoder {
-	return e.leb128Encode(int64(value))
+	return e.Int64(int64(value))
 }
 
+// vli (variable length integer) encoder
 func (e *BytesEncoder) Int64(value int64) *BytesEncoder {
-	return e.leb128Encode(value)
-}
+	// first group of 6 bits
+	// 1st byte encodes 0 as positive in bit 6
+	b := byte(value) & 0x3f
+	value >>= 6
 
-// leb128 encoder
-func (e *BytesEncoder) leb128Encode(value int64) *BytesEncoder {
-	for {
-		b := byte(value)
-		s := b & 0x40
-		value >>= 7
-		if (value == 0 && s == 0) || (value == -1 && s != 0) {
-			e.data = append(e.data, b&0x7f)
-			return e
-		}
-		e.data = append(e.data, b|0x80)
+	finalValue := int64(0)
+	if value < 0 {
+		// encode negative value
+		// 1st byte encodes 1 as negative in bit 6
+		b |= 0x40
+		finalValue = -1
 	}
+
+	// keep shifting until all bits are done
+	for value != finalValue {
+		// emit with continuation bit
+		e.data = append(e.data, b|0x80)
+
+		// next group of 7 bits
+		b = byte(value) & 0x7f
+		value >>= 7
+	}
+
+	// emit without continuation bit
+	e.data = append(e.data, b)
+	return e
 }
 
 func (e *BytesEncoder) RequestID(value ScRequestID) *BytesEncoder {
-	return e.Bytes(value.Bytes())
+	return e.FixedBytes(value.Bytes(), uint32(TypeSizes[TYPE_REQUEST_ID]))
 }
 
 func (e *BytesEncoder) String(value string) *BytesEncoder {
@@ -227,13 +274,30 @@ func (e *BytesEncoder) Uint8(value uint8) *BytesEncoder {
 }
 
 func (e *BytesEncoder) Uint16(value uint16) *BytesEncoder {
-	return e.Int16(int16(value))
+	return e.Uint64(uint64(value))
 }
 
 func (e *BytesEncoder) Uint32(value uint32) *BytesEncoder {
-	return e.Int32(int32(value))
+	return e.Uint64(uint64(value))
 }
 
+// vlu (variable length unsigned) encoder
 func (e *BytesEncoder) Uint64(value uint64) *BytesEncoder {
-	return e.Int64(int64(value))
+	// first group of 7 bits
+	b := byte(value)
+	value >>= 7
+
+	// keep shifting until all bits are done
+	for value != 0 {
+		// emit with continuation bit
+		e.data = append(e.data, b|0x80)
+
+		// next group of 7 bits
+		b = byte(value)
+		value >>= 7
+	}
+
+	// emit without continuation bit
+	e.data = append(e.data, b)
+	return e
 }

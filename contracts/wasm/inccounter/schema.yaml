@@ -31,3 +31,11 @@ views:
   getCounter:
     results:
       counter: Int64
+  getVli:
+    params:
+      n: Int64
+    results:
+      n: Int64
+      x: Int64
+      buf: Bytes
+      str: String

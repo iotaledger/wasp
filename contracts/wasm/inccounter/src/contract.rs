@@ -76,6 +76,12 @@ pub struct GetCounterCall {
 	pub results: ImmutableGetCounterResults,
 }
 
+pub struct GetVliCall {
+	pub func: ScView,
+	pub params: MutableGetVliParams,
+	pub results: ImmutableGetVliResults,
+}
+
 pub struct ScFuncs {
 }
 
@@ -176,6 +182,16 @@ impl ScFuncs {
             results: ImmutableGetCounterResults { id: 0 },
         };
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        f
+    }
+
+    pub fn get_vli(_ctx: & dyn ScViewCallContext) -> GetVliCall {
+        let mut f = GetVliCall {
+            func: ScView::new(HSC_NAME, HVIEW_GET_VLI),
+            params: MutableGetVliParams { id: 0 },
+            results: ImmutableGetVliResults { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
 }

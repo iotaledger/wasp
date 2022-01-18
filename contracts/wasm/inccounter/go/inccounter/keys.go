@@ -13,22 +13,32 @@ const (
 	IdxParamCounter    = 0
 	IdxParamDelay      = 1
 	IdxParamDummy      = 2
-	IdxParamNumRepeats = 3
+	IdxParamN          = 3
+	IdxParamNumRepeats = 4
 
-	IdxResultCounter = 4
+	IdxResultBuf     = 5
+	IdxResultCounter = 6
+	IdxResultN       = 7
+	IdxResultStr     = 8
+	IdxResultX       = 9
 
-	IdxStateCounter    = 5
-	IdxStateNumRepeats = 6
+	IdxStateCounter    = 10
+	IdxStateNumRepeats = 11
 )
 
-const keyMapLen = 7
+const keyMapLen = 12
 
 var keyMap = [keyMapLen]wasmlib.Key{
 	ParamCounter,
 	ParamDelay,
 	ParamDummy,
+	ParamN,
 	ParamNumRepeats,
+	ResultBuf,
 	ResultCounter,
+	ResultN,
+	ResultStr,
+	ResultX,
 	StateCounter,
 	StateNumRepeats,
 }

@@ -72,3 +72,19 @@ type MutableWhenMustIncrementParams struct {
 func (s MutableWhenMustIncrementParams) Dummy() wasmlib.ScMutableInt64 {
 	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamDummy))
 }
+
+type ImmutableGetVliParams struct {
+	id int32
+}
+
+func (s ImmutableGetVliParams) N() wasmlib.ScImmutableInt64 {
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamN))
+}
+
+type MutableGetVliParams struct {
+	id int32
+}
+
+func (s MutableGetVliParams) N() wasmlib.ScMutableInt64 {
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamN))
+}

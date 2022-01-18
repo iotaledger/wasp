@@ -43,6 +43,7 @@ fn on_load() {
     exports.add_func(FUNC_TEST_LEB128,               func_test_leb128_thunk);
     exports.add_func(FUNC_WHEN_MUST_INCREMENT,       func_when_must_increment_thunk);
     exports.add_view(VIEW_GET_COUNTER,               view_get_counter_thunk);
+    exports.add_view(VIEW_GET_VLI,                   view_get_vli_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {
@@ -280,4 +281,28 @@ fn view_get_counter_thunk(ctx: &ScViewContext) {
 	};
 	view_get_counter(ctx, &f);
 	ctx.log("inccounter.viewGetCounter ok");
+}
+
+pub struct GetVliContext {
+	params: ImmutableGetVliParams,
+	results: MutableGetVliResults,
+	state: ImmutableIncCounterState,
+}
+
+fn view_get_vli_thunk(ctx: &ScViewContext) {
+	ctx.log("inccounter.viewGetVli");
+	let f = GetVliContext {
+		params: ImmutableGetVliParams {
+			id: OBJ_ID_PARAMS,
+		},
+		results: MutableGetVliResults {
+			id: OBJ_ID_RESULTS,
+		},
+		state: ImmutableIncCounterState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.n().exists(), "missing mandatory n");
+	view_get_vli(ctx, &f);
+	ctx.log("inccounter.viewGetVli ok");
 }

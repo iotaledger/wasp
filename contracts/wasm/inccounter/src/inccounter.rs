@@ -174,3 +174,25 @@ fn when_must_increment_state(ctx: &ScFuncContext, state: &MutableIncCounterState
     let counter = state.counter();
     counter.set_value(counter.value() + 1);
 }
+
+const HEX        : &str = "0123456789abcdef";
+
+pub fn view_get_vli(_ctx: &ScViewContext, f: &GetVliContext) {
+    let mut d = BytesEncoder::new();
+    let n = f.params.n().value();
+    d.int64(n);
+    let mut str = n.to_string() + " -";
+    let buf = d.data();
+    for b in &buf {
+        let h1 = ((b >> 4) & 0x0f) as usize;
+        let h2 = (b & 0x0f) as usize;
+        str += &(" ".to_string() + &HEX[h1..h1+1] + &HEX[h2..h2+1]);
+    }
+    let mut e = BytesDecoder::new(&buf);
+    let x = e.int64();
+    str += &(" - ".to_string() + &x.to_string());
+    f.results.n().set_value(n);
+    f.results.x().set_value(x);
+    f.results.str().set_value(&str);
+    f.results.buf().set_value(&buf);
+}

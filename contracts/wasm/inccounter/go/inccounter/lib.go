@@ -25,6 +25,7 @@ func OnLoad() {
 	exports.AddFunc(FuncTestLeb128, funcTestLeb128Thunk)
 	exports.AddFunc(FuncWhenMustIncrement, funcWhenMustIncrementThunk)
 	exports.AddView(ViewGetCounter, viewGetCounterThunk)
+	exports.AddView(ViewGetVli, viewGetVliThunk)
 
 	for i, key := range keyMap {
 		idxMap[i] = key.KeyID()
@@ -260,4 +261,28 @@ func viewGetCounterThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewGetCounter(ctx, f)
 	ctx.Log("inccounter.viewGetCounter ok")
+}
+
+type GetVliContext struct {
+	Params  ImmutableGetVliParams
+	Results MutableGetVliResults
+	State   ImmutableIncCounterState
+}
+
+func viewGetVliThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("inccounter.viewGetVli")
+	f := &GetVliContext{
+		Params: ImmutableGetVliParams{
+			id: wasmlib.OBJ_ID_PARAMS,
+		},
+		Results: MutableGetVliResults{
+			id: wasmlib.OBJ_ID_RESULTS,
+		},
+		State: ImmutableIncCounterState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	ctx.Require(f.Params.N().Exists(), "missing mandatory n")
+	viewGetVli(ctx, f)
+	ctx.Log("inccounter.viewGetVli ok")
 }

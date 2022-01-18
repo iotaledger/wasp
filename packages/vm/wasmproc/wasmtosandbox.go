@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 const (
@@ -138,10 +139,10 @@ func (f *WasmToSandbox) fnBlockContext(args []byte) []byte {
 }
 
 func (f *WasmToSandbox) fnCall(args []byte) []byte {
-	decode := NewBytesDecoder(args)
-	contract, err := iscp.HnameFromBytes(decode.Bytes())
+	decode := wasmlib.NewBytesDecoder(args)
+	contract, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	f.checkErr(err)
-	function, err := iscp.HnameFromBytes(decode.Bytes())
+	function, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	f.checkErr(err)
 	params, err := dict.FromBytes(decode.Bytes())
 	f.checkErr(err)
@@ -184,8 +185,8 @@ func (f *WasmToSandbox) fnContractCreator(args []byte) []byte {
 }
 
 func (f *WasmToSandbox) fnDeployContract(args []byte) []byte {
-	decode := NewBytesDecoder(args)
-	programHash, err := hashing.HashValueFromBytes(decode.Bytes())
+	decode := wasmlib.NewBytesDecoder(args)
+	programHash, err := hashing.HashValueFromBytes(decode.Hash().Bytes())
 	f.checkErr(err)
 	name := string(decode.Bytes())
 	description := string(decode.Bytes())
@@ -236,12 +237,12 @@ func (f *WasmToSandbox) fnParams(args []byte) []byte {
 }
 
 func (f *WasmToSandbox) fnPost(args []byte) []byte {
-	decode := NewBytesDecoder(args)
-	chainID, err := iscp.ChainIDFromBytes(decode.Bytes())
+	decode := wasmlib.NewBytesDecoder(args)
+	chainID, err := iscp.ChainIDFromBytes(decode.ChainID().Bytes())
 	f.checkErr(err)
-	contract, err := iscp.HnameFromBytes(decode.Bytes())
+	contract, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	f.checkErr(err)
-	function, err := iscp.HnameFromBytes(decode.Bytes())
+	function, err := iscp.HnameFromBytes(decode.Hname().Bytes())
 	f.checkErr(err)
 	f.Tracef("POST c'%s' f'%s'", contract.String(), function.String())
 	params, err := dict.FromBytes(decode.Bytes())
@@ -285,8 +286,8 @@ func (f *WasmToSandbox) fnRequestID(args []byte) []byte {
 
 // transfer tokens to address
 func (f *WasmToSandbox) fnSend(args []byte) []byte {
-	decode := NewBytesDecoder(args)
-	address, _, err := ledgerstate.AddressFromBytes(decode.Bytes())
+	decode := wasmlib.NewBytesDecoder(args)
+	address, _, err := ledgerstate.AddressFromBytes(decode.Address().Bytes())
 	f.checkErr(err)
 	transfer, err := colored.BalancesFromBytes(decode.Bytes())
 	f.checkErr(err)

@@ -14,9 +14,14 @@ export const HScName       = new wasmlib.ScHname(0xaf2438e9);
 export const ParamCounter    = "counter";
 export const ParamDelay      = "delay";
 export const ParamDummy      = "dummy";
+export const ParamN          = "n";
 export const ParamNumRepeats = "numRepeats";
 
+export const ResultBuf     = "buf";
 export const ResultCounter = "counter";
+export const ResultN       = "n";
+export const ResultStr     = "str";
+export const ResultX       = "x";
 
 export const StateCounter    = "counter";
 export const StateNumRepeats = "numRepeats";
@@ -35,6 +40,7 @@ export const FuncRepeatMany             = "repeatMany";
 export const FuncTestLeb128             = "testLeb128";
 export const FuncWhenMustIncrement      = "whenMustIncrement";
 export const ViewGetCounter             = "getCounter";
+export const ViewGetVli                 = "getVli";
 
 export const HFuncCallIncrement          = new wasmlib.ScHname(0xeb5dcacd);
 export const HFuncCallIncrementRecurse5x = new wasmlib.ScHname(0x8749fbff);
@@ -50,3 +56,4 @@ export const HFuncRepeatMany             = new wasmlib.ScHname(0x4ff450d3);
 export const HFuncTestLeb128             = new wasmlib.ScHname(0xd8364cb9);
 export const HFuncWhenMustIncrement      = new wasmlib.ScHname(0xb4c3e7a6);
 export const HViewGetCounter             = new wasmlib.ScHname(0xb423e607);
+export const HViewGetVli                 = new wasmlib.ScHname(0x0ee16f89);

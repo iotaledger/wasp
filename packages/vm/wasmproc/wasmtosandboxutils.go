@@ -5,6 +5,7 @@ package wasmproc
 
 import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 func (f WasmToSandbox) fnUtilsBase58Decode(args []byte) []byte {
@@ -24,7 +25,7 @@ func (f WasmToSandbox) fnUtilsBlsAddress(args []byte) []byte {
 }
 
 func (f WasmToSandbox) fnUtilsBlsAggregate(args []byte) []byte {
-	decode := NewBytesDecoder(args)
+	decode := wasmlib.NewBytesDecoder(args)
 	count := int(decode.Int32())
 	pubKeysBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
@@ -37,11 +38,11 @@ func (f WasmToSandbox) fnUtilsBlsAggregate(args []byte) []byte {
 	}
 	pubKeyBin, sigBin, err := f.common.Utils().BLS().AggregateBLSSignatures(pubKeysBin, sigsBin)
 	f.checkErr(err)
-	return NewBytesEncoder().Bytes(pubKeyBin).Bytes(sigBin).Data()
+	return wasmlib.NewBytesEncoder().Bytes(pubKeyBin).Bytes(sigBin).Data()
 }
 
 func (f WasmToSandbox) fnUtilsBlsValid(args []byte) []byte {
-	decode := NewBytesDecoder(args)
+	decode := wasmlib.NewBytesDecoder(args)
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
@@ -56,7 +57,7 @@ func (f WasmToSandbox) fnUtilsEd25519Address(args []byte) []byte {
 }
 
 func (f WasmToSandbox) fnUtilsEd25519Valid(args []byte) []byte {
-	decode := NewBytesDecoder(args)
+	decode := wasmlib.NewBytesDecoder(args)
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()

@@ -4,6 +4,7 @@
 package test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -153,6 +154,23 @@ func TestLeb128(t *testing.T) {
 	testLeb128 := inccounter.ScFuncs.TestLeb128(ctx)
 	testLeb128.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
+}
+
+func TestVli(t *testing.T) {
+	*wasmsolo.TsWasm = true
+	wasmhost.DisableWasmTimeout = true
+	ctx := setupTest(t)
+	wasmhost.DisableWasmTimeout = false
+
+	for i := int64(0); i < 200; i++ {
+		vli := inccounter.ScFuncs.GetVli(ctx)
+		vli.Params.N().SetValue(i)
+		vli.Func.Call()
+		require.NoError(t, ctx.Err)
+		fmt.Printf("Bytes: %s\n", vli.Results.Str().Value())
+		require.Equal(t, i, vli.Results.N().Value())
+		require.Equal(t, i, vli.Results.X().Value())
+	}
 }
 
 func TestLoop(t *testing.T) {

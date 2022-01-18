@@ -19,11 +19,16 @@ const (
 	ParamCounter    = "counter"
 	ParamDelay      = "delay"
 	ParamDummy      = "dummy"
+	ParamN          = "n"
 	ParamNumRepeats = "numRepeats"
 )
 
 const (
+	ResultBuf     = "buf"
 	ResultCounter = "counter"
+	ResultN       = "n"
+	ResultStr     = "str"
+	ResultX       = "x"
 )
 
 const (
@@ -46,6 +51,7 @@ const (
 	FuncTestLeb128             = "testLeb128"
 	FuncWhenMustIncrement      = "whenMustIncrement"
 	ViewGetCounter             = "getCounter"
+	ViewGetVli                 = "getVli"
 )
 
 const (
@@ -63,4 +69,5 @@ const (
 	HFuncTestLeb128             = wasmlib.ScHname(0xd8364cb9)
 	HFuncWhenMustIncrement      = wasmlib.ScHname(0xb4c3e7a6)
 	HViewGetCounter             = wasmlib.ScHname(0xb423e607)
+	HViewGetVli                 = wasmlib.ScHname(0x0ee16f89)
 )

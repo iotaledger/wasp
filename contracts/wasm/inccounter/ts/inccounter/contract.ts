@@ -130,6 +130,18 @@ export class GetCounterContext {
 	state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState();
 }
 
+export class GetVliCall {
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetVli);
+	params: sc.MutableGetVliParams = new sc.MutableGetVliParams();
+	results: sc.ImmutableGetVliResults = new sc.ImmutableGetVliResults();
+}
+
+export class GetVliContext {
+	params: sc.ImmutableGetVliParams = new sc.ImmutableGetVliParams();
+	results: sc.MutableGetVliResults = new sc.MutableGetVliResults();
+	state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState();
+}
+
 export class ScFuncs {
     static callIncrement(ctx: wasmlib.ScFuncCallContext): CallIncrementCall {
         return new CallIncrementCall();
@@ -194,6 +206,12 @@ export class ScFuncs {
     static getCounter(ctx: wasmlib.ScViewCallContext): GetCounterCall {
         let f = new GetCounterCall();
         f.func.setPtrs(null, f.results);
+        return f;
+    }
+
+    static getVli(ctx: wasmlib.ScViewCallContext): GetVliCall {
+        let f = new GetVliCall();
+        f.func.setPtrs(f.params, f.results);
         return f;
     }
 }

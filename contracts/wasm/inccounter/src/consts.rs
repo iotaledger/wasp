@@ -16,9 +16,14 @@ pub const HSC_NAME       : ScHname = ScHname(0xaf2438e9);
 pub const PARAM_COUNTER     : &str = "counter";
 pub const PARAM_DELAY       : &str = "delay";
 pub const PARAM_DUMMY       : &str = "dummy";
+pub const PARAM_N           : &str = "n";
 pub const PARAM_NUM_REPEATS : &str = "numRepeats";
 
+pub const RESULT_BUF     : &str = "buf";
 pub const RESULT_COUNTER : &str = "counter";
+pub const RESULT_N       : &str = "n";
+pub const RESULT_STR     : &str = "str";
+pub const RESULT_X       : &str = "x";
 
 pub const STATE_COUNTER     : &str = "counter";
 pub const STATE_NUM_REPEATS : &str = "numRepeats";
@@ -37,6 +42,7 @@ pub const FUNC_REPEAT_MANY               : &str = "repeatMany";
 pub const FUNC_TEST_LEB128               : &str = "testLeb128";
 pub const FUNC_WHEN_MUST_INCREMENT       : &str = "whenMustIncrement";
 pub const VIEW_GET_COUNTER               : &str = "getCounter";
+pub const VIEW_GET_VLI                   : &str = "getVli";
 
 pub const HFUNC_CALL_INCREMENT            : ScHname = ScHname(0xeb5dcacd);
 pub const HFUNC_CALL_INCREMENT_RECURSE5X  : ScHname = ScHname(0x8749fbff);
@@ -52,3 +58,4 @@ pub const HFUNC_REPEAT_MANY               : ScHname = ScHname(0x4ff450d3);
 pub const HFUNC_TEST_LEB128               : ScHname = ScHname(0xd8364cb9);
 pub const HFUNC_WHEN_MUST_INCREMENT       : ScHname = ScHname(0xb4c3e7a6);
 pub const HVIEW_GET_COUNTER               : ScHname = ScHname(0xb423e607);
+pub const HVIEW_GET_VLI                   : ScHname = ScHname(0x0ee16f89);

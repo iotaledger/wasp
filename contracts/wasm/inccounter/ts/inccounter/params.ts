@@ -55,3 +55,15 @@ export class MutableWhenMustIncrementParams extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamDummy));
 	}
 }
+
+export class ImmutableGetVliParams extends wasmlib.ScMapID {
+    n(): wasmlib.ScImmutableInt64 {
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamN));
+	}
+}
+
+export class MutableGetVliParams extends wasmlib.ScMapID {
+    n(): wasmlib.ScMutableInt64 {
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamN));
+	}
+}

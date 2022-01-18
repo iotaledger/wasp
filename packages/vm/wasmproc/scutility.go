@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 type ScUtility struct {
@@ -85,7 +86,7 @@ func (o *ScUtility) GetTypeID(keyID int32) int32 {
 }
 
 func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
-	decode := NewBytesDecoder(bytes)
+	decode := wasmlib.NewBytesDecoder(bytes)
 	count := int(decode.Int32())
 	pubKeysBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
@@ -100,11 +101,11 @@ func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
 	if err != nil {
 		o.Panicf(err.Error())
 	}
-	return NewBytesEncoder().Bytes(pubKeyBin).Bytes(sigBin).Data()
+	return wasmlib.NewBytesEncoder().Bytes(pubKeyBin).Bytes(sigBin).Data()
 }
 
 func (o *ScUtility) validBLSSignature(bytes []byte) bool {
-	decode := NewBytesDecoder(bytes)
+	decode := wasmlib.NewBytesDecoder(bytes)
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
@@ -112,7 +113,7 @@ func (o *ScUtility) validBLSSignature(bytes []byte) bool {
 }
 
 func (o *ScUtility) validED25519Signature(bytes []byte) bool {
-	decode := NewBytesDecoder(bytes)
+	decode := wasmlib.NewBytesDecoder(bytes)
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()

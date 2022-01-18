@@ -3,10 +3,6 @@
 
 package wasmlib
 
-import (
-	"github.com/iotaledger/wasp/packages/iscp"
-)
-
 const (
 	FnAccountID           = int32(-1)
 	FnBalance             = int32(-2)
@@ -53,14 +49,15 @@ func (s ScSandbox) AccountID() ScAgentID {
 }
 
 func (s ScSandbox) Balance(color ScColor) uint64 {
-	return NewUint64FromBytes(Sandbox(FnBalance, color.Bytes()))
+	bal, _ := ExtractUint64(Sandbox(FnBalance, color.Bytes()))
+	return bal
 }
 
 func (s ScSandbox) Balances() ScAssets {
 	return NewScAssetsFromBytes(Sandbox(FnBalances, nil))
 }
 
-func (s ScSandbox) BlockContext(construct func(sandbox iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
+func (s ScSandbox) BlockContext(construct func(sandbox ScSandbox) interface{}, onClose func(interface{})) interface{} {
 	panic("implement me")
 }
 
@@ -156,12 +153,13 @@ func (s ScSandbox) Send(target ScAddress, tokens ScAssets) {
 	Sandbox(FnSend, enc.Data())
 }
 
-func (s ScSandbox) StateAnchor() iscp.StateAnchor {
+func (s ScSandbox) StateAnchor() interface{} {
 	panic("implement me")
 }
 
 func (s ScSandbox) Timestamp() int64 {
-	return NewInt64FromBytes(Sandbox(FnTimestamp, nil))
+	ts, _ := ExtractInt64(Sandbox(FnTimestamp, nil))
+	return ts
 }
 
 func (s ScSandbox) Trace(text string) {

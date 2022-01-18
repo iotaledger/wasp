@@ -36,7 +36,7 @@ pub const OBJ_ID_PARAMS: i32 = 3;
 pub const OBJ_ID_RESULTS: i32 = 4;
 
 // size in bytes of predefined types, indexed by the TYPE_* consts
-const TYPE_SIZES: &[u8] = &[0, 33, 37, 1, 0, 33, 32, 32, 4, 1, 2, 4, 8, 0, 34, 0];
+pub const TYPE_SIZES: &[u8] = &[0, 33, 37, 1, 0, 33, 32, 32, 4, 1, 2, 4, 8, 0, 34, 0];
 
 // These 4 external functions are funneling the entire WasmLib functionality
 // to their counterparts on the host.

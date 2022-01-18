@@ -4,6 +4,8 @@
 package inccounter
 
 import (
+	"strconv"
+
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
@@ -168,4 +170,25 @@ func funcIncrementWithDelay(ctx wasmlib.ScFuncContext, f *IncrementWithDelayCont
 	delay := f.Params.Delay().Value()
 	inc := ScFuncs.CallIncrement(ctx)
 	inc.Func.Delay(delay).TransferIotas(1).Post()
+}
+
+const hex = "0123456789abcdef"
+
+func viewGetVli(ctx wasmlib.ScViewContext, f *GetVliContext) {
+	d := wasmlib.NewBytesEncoder()
+	n := f.Params.N().Value()
+	d = d.Int64(n)
+	buf := d.Data()
+	str := strconv.FormatInt(n, 10) + " -"
+	for j := 0; j < len(buf); j++ {
+		b := buf[j]
+		str += " " + string(append([]byte(nil), hex[(b>>4)&0x0f], hex[b&0x0f]))
+	}
+	e := wasmlib.NewBytesDecoder(buf)
+	x := e.Int64()
+	str += " - " + strconv.FormatInt(x, 10)
+	f.Results.N().SetValue(n)
+	f.Results.X().SetValue(x)
+	f.Results.Str().SetValue(str)
+	f.Results.Buf().SetValue(buf)
 }

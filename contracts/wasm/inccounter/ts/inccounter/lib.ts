@@ -28,6 +28,7 @@ export function on_load(): void {
     exports.addFunc(sc.FuncTestLeb128,             funcTestLeb128Thunk);
     exports.addFunc(sc.FuncWhenMustIncrement,      funcWhenMustIncrementThunk);
     exports.addView(sc.ViewGetCounter,             viewGetCounterThunk);
+    exports.addView(sc.ViewGetVli,                 viewGetVliThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
@@ -150,4 +151,15 @@ function viewGetCounterThunk(ctx: wasmlib.ScViewContext): void {
     f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.viewGetCounter(ctx, f);
 	ctx.log("inccounter.viewGetCounter ok");
+}
+
+function viewGetVliThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("inccounter.viewGetVli");
+	let f = new sc.GetVliContext();
+    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
+    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	ctx.require(f.params.n().exists(), "missing mandatory n");
+	sc.viewGetVli(ctx, f);
+	ctx.log("inccounter.viewGetVli ok");
 }

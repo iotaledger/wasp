@@ -202,7 +202,7 @@ func (w *WasmVMHost) StateGet(key []byte) []byte {
 	// variable sized result expected,
 	// query size first by passing zero length buffer
 	// value will be cached by host
-	size = hostStateGet(&key[0], int32(len(key)), nil, 0)
+	size := hostStateGet(&key[0], int32(len(key)), nil, 0)
 
 	// -1 means non-existent
 	if size < 0 {

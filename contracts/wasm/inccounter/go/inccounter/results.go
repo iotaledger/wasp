@@ -24,3 +24,43 @@ type MutableGetCounterResults struct {
 func (s MutableGetCounterResults) Counter() wasmlib.ScMutableInt64 {
 	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultCounter))
 }
+
+type ImmutableGetVliResults struct {
+	id int32
+}
+
+func (s ImmutableGetVliResults) Buf() wasmlib.ScImmutableBytes {
+	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultBuf))
+}
+
+func (s ImmutableGetVliResults) N() wasmlib.ScImmutableInt64 {
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultN))
+}
+
+func (s ImmutableGetVliResults) Str() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultStr))
+}
+
+func (s ImmutableGetVliResults) X() wasmlib.ScImmutableInt64 {
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultX))
+}
+
+type MutableGetVliResults struct {
+	id int32
+}
+
+func (s MutableGetVliResults) Buf() wasmlib.ScMutableBytes {
+	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultBuf))
+}
+
+func (s MutableGetVliResults) N() wasmlib.ScMutableInt64 {
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultN))
+}
+
+func (s MutableGetVliResults) Str() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultStr))
+}
+
+func (s MutableGetVliResults) X() wasmlib.ScMutableInt64 {
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultX))
+}
