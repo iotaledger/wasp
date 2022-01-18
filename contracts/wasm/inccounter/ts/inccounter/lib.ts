@@ -25,10 +25,12 @@ export function on_load(): void {
     exports.addFunc(sc.FuncLocalStateSandboxCall,  funcLocalStateSandboxCallThunk);
     exports.addFunc(sc.FuncPostIncrement,          funcPostIncrementThunk);
     exports.addFunc(sc.FuncRepeatMany,             funcRepeatManyThunk);
-    exports.addFunc(sc.FuncTestLeb128,             funcTestLeb128Thunk);
+    exports.addFunc(sc.FuncTestVliCodec,           funcTestVliCodecThunk);
+    exports.addFunc(sc.FuncTestVluCodec,           funcTestVluCodecThunk);
     exports.addFunc(sc.FuncWhenMustIncrement,      funcWhenMustIncrementThunk);
     exports.addView(sc.ViewGetCounter,             viewGetCounterThunk);
     exports.addView(sc.ViewGetVli,                 viewGetVliThunk);
+    exports.addView(sc.ViewGetVlu,                 viewGetVluThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
@@ -127,12 +129,20 @@ function funcRepeatManyThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcRepeatMany ok");
 }
 
-function funcTestLeb128Thunk(ctx: wasmlib.ScFuncContext): void {
-	ctx.log("inccounter.funcTestLeb128");
-	let f = new sc.TestLeb128Context();
+function funcTestVliCodecThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("inccounter.funcTestVliCodec");
+	let f = new sc.TestVliCodecContext();
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-	sc.funcTestLeb128(ctx, f);
-	ctx.log("inccounter.funcTestLeb128 ok");
+	sc.funcTestVliCodec(ctx, f);
+	ctx.log("inccounter.funcTestVliCodec ok");
+}
+
+function funcTestVluCodecThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("inccounter.funcTestVluCodec");
+	let f = new sc.TestVluCodecContext();
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	sc.funcTestVluCodec(ctx, f);
+	ctx.log("inccounter.funcTestVluCodec ok");
 }
 
 function funcWhenMustIncrementThunk(ctx: wasmlib.ScFuncContext): void {
@@ -159,7 +169,18 @@ function viewGetVliThunk(ctx: wasmlib.ScViewContext): void {
     f.params.mapID = wasmlib.OBJ_ID_PARAMS;
     f.results.mapID = wasmlib.OBJ_ID_RESULTS;
     f.state.mapID = wasmlib.OBJ_ID_STATE;
-	ctx.require(f.params.n().exists(), "missing mandatory n");
+	ctx.require(f.params.ni64().exists(), "missing mandatory ni64");
 	sc.viewGetVli(ctx, f);
 	ctx.log("inccounter.viewGetVli ok");
+}
+
+function viewGetVluThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("inccounter.viewGetVlu");
+	let f = new sc.GetVluContext();
+    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
+    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	ctx.require(f.params.nu64().exists(), "missing mandatory nu64");
+	sc.viewGetVlu(ctx, f);
+	ctx.log("inccounter.viewGetVlu ok");
 }

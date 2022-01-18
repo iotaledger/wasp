@@ -77,14 +77,30 @@ type ImmutableGetVliParams struct {
 	id int32
 }
 
-func (s ImmutableGetVliParams) N() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamN))
+func (s ImmutableGetVliParams) Ni64() wasmlib.ScImmutableInt64 {
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamNi64))
 }
 
 type MutableGetVliParams struct {
 	id int32
 }
 
-func (s MutableGetVliParams) N() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamN))
+func (s MutableGetVliParams) Ni64() wasmlib.ScMutableInt64 {
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamNi64))
+}
+
+type ImmutableGetVluParams struct {
+	id int32
+}
+
+func (s ImmutableGetVluParams) Nu64() wasmlib.ScImmutableUint64 {
+	return wasmlib.NewScImmutableUint64(s.id, wasmlib.KeyID(ParamNu64))
+}
+
+type MutableGetVluParams struct {
+	id int32
+}
+
+func (s MutableGetVluParams) Nu64() wasmlib.ScMutableUint64 {
+	return wasmlib.NewScMutableUint64(s.id, wasmlib.KeyID(ParamNu64))
 }

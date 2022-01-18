@@ -102,11 +102,19 @@ export class RepeatManyContext {
 	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
-export class TestLeb128Call {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestLeb128);
+export class TestVliCodecCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestVliCodec);
 }
 
-export class TestLeb128Context {
+export class TestVliCodecContext {
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+}
+
+export class TestVluCodecCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTestVluCodec);
+}
+
+export class TestVluCodecContext {
 	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
 }
 
@@ -139,6 +147,18 @@ export class GetVliCall {
 export class GetVliContext {
 	params: sc.ImmutableGetVliParams = new sc.ImmutableGetVliParams();
 	results: sc.MutableGetVliResults = new sc.MutableGetVliResults();
+	state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState();
+}
+
+export class GetVluCall {
+	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetVlu);
+	params: sc.MutableGetVluParams = new sc.MutableGetVluParams();
+	results: sc.ImmutableGetVluResults = new sc.ImmutableGetVluResults();
+}
+
+export class GetVluContext {
+	params: sc.ImmutableGetVluParams = new sc.ImmutableGetVluParams();
+	results: sc.MutableGetVluResults = new sc.MutableGetVluResults();
 	state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState();
 }
 
@@ -193,8 +213,12 @@ export class ScFuncs {
         return f;
     }
 
-    static testLeb128(ctx: wasmlib.ScFuncCallContext): TestLeb128Call {
-        return new TestLeb128Call();
+    static testVliCodec(ctx: wasmlib.ScFuncCallContext): TestVliCodecCall {
+        return new TestVliCodecCall();
+    }
+
+    static testVluCodec(ctx: wasmlib.ScFuncCallContext): TestVluCodecCall {
+        return new TestVluCodecCall();
     }
 
     static whenMustIncrement(ctx: wasmlib.ScFuncCallContext): WhenMustIncrementCall {
@@ -211,6 +235,12 @@ export class ScFuncs {
 
     static getVli(ctx: wasmlib.ScViewCallContext): GetVliCall {
         let f = new GetVliCall();
+        f.func.setPtrs(f.params, f.results);
+        return f;
+    }
+
+    static getVlu(ctx: wasmlib.ScViewCallContext): GetVluCall {
+        let f = new GetVluCall();
         f.func.setPtrs(f.params, f.results);
         return f;
     }

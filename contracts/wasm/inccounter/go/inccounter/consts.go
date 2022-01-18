@@ -19,16 +19,19 @@ const (
 	ParamCounter    = "counter"
 	ParamDelay      = "delay"
 	ParamDummy      = "dummy"
-	ParamN          = "n"
+	ParamNi64       = "ni64"
+	ParamNu64       = "nu64"
 	ParamNumRepeats = "numRepeats"
 )
 
 const (
 	ResultBuf     = "buf"
 	ResultCounter = "counter"
-	ResultN       = "n"
+	ResultNi64    = "ni64"
+	ResultNu64    = "nu64"
 	ResultStr     = "str"
-	ResultX       = "x"
+	ResultXi64    = "xi64"
+	ResultXu64    = "xu64"
 )
 
 const (
@@ -48,10 +51,12 @@ const (
 	FuncLocalStateSandboxCall  = "localStateSandboxCall"
 	FuncPostIncrement          = "postIncrement"
 	FuncRepeatMany             = "repeatMany"
-	FuncTestLeb128             = "testLeb128"
+	FuncTestVliCodec           = "testVliCodec"
+	FuncTestVluCodec           = "testVluCodec"
 	FuncWhenMustIncrement      = "whenMustIncrement"
 	ViewGetCounter             = "getCounter"
 	ViewGetVli                 = "getVli"
+	ViewGetVlu                 = "getVlu"
 )
 
 const (
@@ -66,8 +71,10 @@ const (
 	HFuncLocalStateSandboxCall  = wasmlib.ScHname(0x7bd22c53)
 	HFuncPostIncrement          = wasmlib.ScHname(0x81c772f5)
 	HFuncRepeatMany             = wasmlib.ScHname(0x4ff450d3)
-	HFuncTestLeb128             = wasmlib.ScHname(0xd8364cb9)
+	HFuncTestVliCodec           = wasmlib.ScHname(0xd5356012)
+	HFuncTestVluCodec           = wasmlib.ScHname(0x9f7f63e6)
 	HFuncWhenMustIncrement      = wasmlib.ScHname(0xb4c3e7a6)
 	HViewGetCounter             = wasmlib.ScHname(0xb423e607)
 	HViewGetVli                 = wasmlib.ScHname(0x0ee16f89)
+	HViewGetVlu                 = wasmlib.ScHname(0x54d624e6)
 )

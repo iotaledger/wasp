@@ -56,7 +56,11 @@ type RepeatManyCall struct {
 	Params MutableRepeatManyParams
 }
 
-type TestLeb128Call struct {
+type TestVliCodecCall struct {
+	Func *wasmlib.ScFunc
+}
+
+type TestVluCodecCall struct {
 	Func *wasmlib.ScFunc
 }
 
@@ -74,6 +78,12 @@ type GetVliCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableGetVliParams
 	Results ImmutableGetVliResults
+}
+
+type GetVluCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableGetVluParams
+	Results ImmutableGetVluResults
 }
 
 type Funcs struct{}
@@ -130,8 +140,12 @@ func (sc Funcs) RepeatMany(ctx wasmlib.ScFuncCallContext) *RepeatManyCall {
 	return f
 }
 
-func (sc Funcs) TestLeb128(ctx wasmlib.ScFuncCallContext) *TestLeb128Call {
-	return &TestLeb128Call{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestLeb128)}
+func (sc Funcs) TestVliCodec(ctx wasmlib.ScFuncCallContext) *TestVliCodecCall {
+	return &TestVliCodecCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestVliCodec)}
+}
+
+func (sc Funcs) TestVluCodec(ctx wasmlib.ScFuncCallContext) *TestVluCodecCall {
+	return &TestVluCodecCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestVluCodec)}
 }
 
 func (sc Funcs) WhenMustIncrement(ctx wasmlib.ScFuncCallContext) *WhenMustIncrementCall {
@@ -148,6 +162,12 @@ func (sc Funcs) GetCounter(ctx wasmlib.ScViewCallContext) *GetCounterCall {
 
 func (sc Funcs) GetVli(ctx wasmlib.ScViewCallContext) *GetVliCall {
 	f := &GetVliCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetVli)}
+	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	return f
+}
+
+func (sc Funcs) GetVlu(ctx wasmlib.ScViewCallContext) *GetVluCall {
+	f := &GetVluCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetVlu)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }

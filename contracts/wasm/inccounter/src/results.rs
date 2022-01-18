@@ -46,16 +46,16 @@ impl ImmutableGetVliResults {
 		ScImmutableBytes::new(self.id, RESULT_BUF.get_key_id())
 	}
 
-    pub fn n(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_N.get_key_id())
+    pub fn ni64(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.id, RESULT_NI64.get_key_id())
 	}
 
     pub fn str(&self) -> ScImmutableString {
 		ScImmutableString::new(self.id, RESULT_STR.get_key_id())
 	}
 
-    pub fn x(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_X.get_key_id())
+    pub fn xi64(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.id, RESULT_XI64.get_key_id())
 	}
 }
 
@@ -69,15 +69,61 @@ impl MutableGetVliResults {
 		ScMutableBytes::new(self.id, RESULT_BUF.get_key_id())
 	}
 
-    pub fn n(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_N.get_key_id())
+    pub fn ni64(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.id, RESULT_NI64.get_key_id())
 	}
 
     pub fn str(&self) -> ScMutableString {
 		ScMutableString::new(self.id, RESULT_STR.get_key_id())
 	}
 
-    pub fn x(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_X.get_key_id())
+    pub fn xi64(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.id, RESULT_XI64.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct ImmutableGetVluResults {
+    pub(crate) id: i32,
+}
+
+impl ImmutableGetVluResults {
+    pub fn buf(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.id, RESULT_BUF.get_key_id())
+	}
+
+    pub fn nu64(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_NU64.get_key_id())
+	}
+
+    pub fn str(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, RESULT_STR.get_key_id())
+	}
+
+    pub fn xu64(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_XU64.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableGetVluResults {
+    pub(crate) id: i32,
+}
+
+impl MutableGetVluResults {
+    pub fn buf(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.id, RESULT_BUF.get_key_id())
+	}
+
+    pub fn nu64(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_NU64.get_key_id())
+	}
+
+    pub fn str(&self) -> ScMutableString {
+		ScMutableString::new(self.id, RESULT_STR.get_key_id())
+	}
+
+    pub fn xu64(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_XU64.get_key_id())
 	}
 }

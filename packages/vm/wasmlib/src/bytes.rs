@@ -164,7 +164,7 @@ impl BytesDecoder<'_> {
     fn vlu_decode(&mut self, bits: i32) -> u64 {
         // first group of 6 bits
         let mut b = self.uint8();
-        let mut value = (b & 0x3f) as u64;
+        let mut value = (b & 0x7f) as u64;
         let mut s = 7;
 
         // while continuation bit is set

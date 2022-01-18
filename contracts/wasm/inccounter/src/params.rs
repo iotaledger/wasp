@@ -108,8 +108,8 @@ pub struct ImmutableGetVliParams {
 }
 
 impl ImmutableGetVliParams {
-    pub fn n(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_N.get_key_id())
+    pub fn ni64(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.id, PARAM_NI64.get_key_id())
 	}
 }
 
@@ -119,7 +119,29 @@ pub struct MutableGetVliParams {
 }
 
 impl MutableGetVliParams {
-    pub fn n(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_N.get_key_id())
+    pub fn ni64(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.id, PARAM_NI64.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct ImmutableGetVluParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableGetVluParams {
+    pub fn nu64(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, PARAM_NU64.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableGetVluParams {
+    pub(crate) id: i32,
+}
+
+impl MutableGetVluParams {
+    pub fn nu64(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, PARAM_NU64.get_key_id())
 	}
 }

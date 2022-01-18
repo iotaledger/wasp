@@ -23,7 +23,8 @@ funcs:
   repeatMany:
     params:
       numRepeats: Int64? // number of times to recursively call myself
-  testLeb128: {}
+  testVliCodec: {}
+  testVluCodec: {}
   whenMustIncrement:
     params:
       dummy: Int64? // dummy param to prevent 'duplicate outputs not allowed'
@@ -33,9 +34,17 @@ views:
       counter: Int64
   getVli:
     params:
-      n: Int64
+      ni64: Int64
     results:
-      n: Int64
-      x: Int64
+      ni64: Int64
+      xi64: Int64
+      buf: Bytes
+      str: String
+  getVlu:
+    params:
+      nu64: Uint64
+    results:
+      nu64: Uint64
+      xu64: Uint64
       buf: Bytes
       str: String

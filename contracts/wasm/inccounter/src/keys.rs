@@ -14,31 +14,37 @@ use crate::*;
 pub(crate) const IDX_PARAM_COUNTER     : usize = 0;
 pub(crate) const IDX_PARAM_DELAY       : usize = 1;
 pub(crate) const IDX_PARAM_DUMMY       : usize = 2;
-pub(crate) const IDX_PARAM_N           : usize = 3;
-pub(crate) const IDX_PARAM_NUM_REPEATS : usize = 4;
+pub(crate) const IDX_PARAM_NI64        : usize = 3;
+pub(crate) const IDX_PARAM_NU64        : usize = 4;
+pub(crate) const IDX_PARAM_NUM_REPEATS : usize = 5;
 
-pub(crate) const IDX_RESULT_BUF     : usize = 5;
-pub(crate) const IDX_RESULT_COUNTER : usize = 6;
-pub(crate) const IDX_RESULT_N       : usize = 7;
-pub(crate) const IDX_RESULT_STR     : usize = 8;
-pub(crate) const IDX_RESULT_X       : usize = 9;
+pub(crate) const IDX_RESULT_BUF     : usize = 6;
+pub(crate) const IDX_RESULT_COUNTER : usize = 7;
+pub(crate) const IDX_RESULT_NI64    : usize = 8;
+pub(crate) const IDX_RESULT_NU64    : usize = 9;
+pub(crate) const IDX_RESULT_STR     : usize = 10;
+pub(crate) const IDX_RESULT_XI64    : usize = 11;
+pub(crate) const IDX_RESULT_XU64    : usize = 12;
 
-pub(crate) const IDX_STATE_COUNTER     : usize = 10;
-pub(crate) const IDX_STATE_NUM_REPEATS : usize = 11;
+pub(crate) const IDX_STATE_COUNTER     : usize = 13;
+pub(crate) const IDX_STATE_NUM_REPEATS : usize = 14;
 
-pub const KEY_MAP_LEN: usize = 12;
+pub const KEY_MAP_LEN: usize = 15;
 
 pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
 	PARAM_COUNTER,
 	PARAM_DELAY,
 	PARAM_DUMMY,
-	PARAM_N,
+	PARAM_NI64,
+	PARAM_NU64,
 	PARAM_NUM_REPEATS,
 	RESULT_BUF,
 	RESULT_COUNTER,
-	RESULT_N,
+	RESULT_NI64,
+	RESULT_NU64,
 	RESULT_STR,
-	RESULT_X,
+	RESULT_XI64,
+	RESULT_XU64,
 	STATE_COUNTER,
 	STATE_NUM_REPEATS,
 ];

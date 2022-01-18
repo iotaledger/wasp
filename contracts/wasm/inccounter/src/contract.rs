@@ -62,7 +62,11 @@ pub struct RepeatManyCall {
 	pub params: MutableRepeatManyParams,
 }
 
-pub struct TestLeb128Call {
+pub struct TestVliCodecCall {
+	pub func: ScFunc,
+}
+
+pub struct TestVluCodecCall {
 	pub func: ScFunc,
 }
 
@@ -80,6 +84,12 @@ pub struct GetVliCall {
 	pub func: ScView,
 	pub params: MutableGetVliParams,
 	pub results: ImmutableGetVliResults,
+}
+
+pub struct GetVluCall {
+	pub func: ScView,
+	pub params: MutableGetVluParams,
+	pub results: ImmutableGetVluResults,
 }
 
 pub struct ScFuncs {
@@ -161,9 +171,15 @@ impl ScFuncs {
         f
     }
 
-    pub fn test_leb128(_ctx: & dyn ScFuncCallContext) -> TestLeb128Call {
-        TestLeb128Call {
-            func: ScFunc::new(HSC_NAME, HFUNC_TEST_LEB128),
+    pub fn test_vli_codec(_ctx: & dyn ScFuncCallContext) -> TestVliCodecCall {
+        TestVliCodecCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_TEST_VLI_CODEC),
+        }
+    }
+
+    pub fn test_vlu_codec(_ctx: & dyn ScFuncCallContext) -> TestVluCodecCall {
+        TestVluCodecCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_TEST_VLU_CODEC),
         }
     }
 
@@ -190,6 +206,16 @@ impl ScFuncs {
             func: ScView::new(HSC_NAME, HVIEW_GET_VLI),
             params: MutableGetVliParams { id: 0 },
             results: ImmutableGetVliResults { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        f
+    }
+
+    pub fn get_vlu(_ctx: & dyn ScViewCallContext) -> GetVluCall {
+        let mut f = GetVluCall {
+            func: ScView::new(HSC_NAME, HVIEW_GET_VLU),
+            params: MutableGetVluParams { id: 0 },
+            results: ImmutableGetVluResults { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f

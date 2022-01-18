@@ -22,10 +22,12 @@ func OnLoad() {
 	exports.AddFunc(FuncLocalStateSandboxCall, funcLocalStateSandboxCallThunk)
 	exports.AddFunc(FuncPostIncrement, funcPostIncrementThunk)
 	exports.AddFunc(FuncRepeatMany, funcRepeatManyThunk)
-	exports.AddFunc(FuncTestLeb128, funcTestLeb128Thunk)
+	exports.AddFunc(FuncTestVliCodec, funcTestVliCodecThunk)
+	exports.AddFunc(FuncTestVluCodec, funcTestVluCodecThunk)
 	exports.AddFunc(FuncWhenMustIncrement, funcWhenMustIncrementThunk)
 	exports.AddView(ViewGetCounter, viewGetCounterThunk)
 	exports.AddView(ViewGetVli, viewGetVliThunk)
+	exports.AddView(ViewGetVlu, viewGetVluThunk)
 
 	for i, key := range keyMap {
 		idxMap[i] = key.KeyID()
@@ -210,19 +212,34 @@ func funcRepeatManyThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcRepeatMany ok")
 }
 
-type TestLeb128Context struct {
+type TestVliCodecContext struct {
 	State MutableIncCounterState
 }
 
-func funcTestLeb128Thunk(ctx wasmlib.ScFuncContext) {
-	ctx.Log("inccounter.funcTestLeb128")
-	f := &TestLeb128Context{
+func funcTestVliCodecThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("inccounter.funcTestVliCodec")
+	f := &TestVliCodecContext{
 		State: MutableIncCounterState{
 			id: wasmlib.OBJ_ID_STATE,
 		},
 	}
-	funcTestLeb128(ctx, f)
-	ctx.Log("inccounter.funcTestLeb128 ok")
+	funcTestVliCodec(ctx, f)
+	ctx.Log("inccounter.funcTestVliCodec ok")
+}
+
+type TestVluCodecContext struct {
+	State MutableIncCounterState
+}
+
+func funcTestVluCodecThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("inccounter.funcTestVluCodec")
+	f := &TestVluCodecContext{
+		State: MutableIncCounterState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	funcTestVluCodec(ctx, f)
+	ctx.Log("inccounter.funcTestVluCodec ok")
 }
 
 type WhenMustIncrementContext struct {
@@ -282,7 +299,31 @@ func viewGetVliThunk(ctx wasmlib.ScViewContext) {
 			id: wasmlib.OBJ_ID_STATE,
 		},
 	}
-	ctx.Require(f.Params.N().Exists(), "missing mandatory n")
+	ctx.Require(f.Params.Ni64().Exists(), "missing mandatory ni64")
 	viewGetVli(ctx, f)
 	ctx.Log("inccounter.viewGetVli ok")
+}
+
+type GetVluContext struct {
+	Params  ImmutableGetVluParams
+	Results MutableGetVluResults
+	State   ImmutableIncCounterState
+}
+
+func viewGetVluThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("inccounter.viewGetVlu")
+	f := &GetVluContext{
+		Params: ImmutableGetVluParams{
+			id: wasmlib.OBJ_ID_PARAMS,
+		},
+		Results: MutableGetVluResults{
+			id: wasmlib.OBJ_ID_RESULTS,
+		},
+		State: ImmutableIncCounterState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	ctx.Require(f.Params.Nu64().Exists(), "missing mandatory nu64")
+	viewGetVlu(ctx, f)
+	ctx.Log("inccounter.viewGetVlu ok")
 }

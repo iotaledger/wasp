@@ -25,16 +25,16 @@ export class ImmutableGetVliResults extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBuf));
 	}
 
-    n(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultN));
+    ni64(): wasmlib.ScImmutableInt64 {
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultNi64));
 	}
 
     str(): wasmlib.ScImmutableString {
 		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultStr));
 	}
 
-    x(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultX));
+    xi64(): wasmlib.ScImmutableInt64 {
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultXi64));
 	}
 }
 
@@ -43,15 +43,51 @@ export class MutableGetVliResults extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBuf));
 	}
 
-    n(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultN));
+    ni64(): wasmlib.ScMutableInt64 {
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultNi64));
 	}
 
     str(): wasmlib.ScMutableString {
 		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultStr));
 	}
 
-    x(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultX));
+    xi64(): wasmlib.ScMutableInt64 {
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultXi64));
+	}
+}
+
+export class ImmutableGetVluResults extends wasmlib.ScMapID {
+    buf(): wasmlib.ScImmutableBytes {
+		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBuf));
+	}
+
+    nu64(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultNu64));
+	}
+
+    str(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultStr));
+	}
+
+    xu64(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultXu64));
+	}
+}
+
+export class MutableGetVluResults extends wasmlib.ScMapID {
+    buf(): wasmlib.ScMutableBytes {
+		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBuf));
+	}
+
+    nu64(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultNu64));
+	}
+
+    str(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultStr));
+	}
+
+    xu64(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultXu64));
 	}
 }

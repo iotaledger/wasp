@@ -40,10 +40,12 @@ fn on_load() {
     exports.add_func(FUNC_LOCAL_STATE_SANDBOX_CALL,  func_local_state_sandbox_call_thunk);
     exports.add_func(FUNC_POST_INCREMENT,            func_post_increment_thunk);
     exports.add_func(FUNC_REPEAT_MANY,               func_repeat_many_thunk);
-    exports.add_func(FUNC_TEST_LEB128,               func_test_leb128_thunk);
+    exports.add_func(FUNC_TEST_VLI_CODEC,            func_test_vli_codec_thunk);
+    exports.add_func(FUNC_TEST_VLU_CODEC,            func_test_vlu_codec_thunk);
     exports.add_func(FUNC_WHEN_MUST_INCREMENT,       func_when_must_increment_thunk);
     exports.add_view(VIEW_GET_COUNTER,               view_get_counter_thunk);
     exports.add_view(VIEW_GET_VLI,                   view_get_vli_thunk);
+    exports.add_view(VIEW_GET_VLU,                   view_get_vlu_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {
@@ -230,19 +232,34 @@ fn func_repeat_many_thunk(ctx: &ScFuncContext) {
 	ctx.log("inccounter.funcRepeatMany ok");
 }
 
-pub struct TestLeb128Context {
+pub struct TestVliCodecContext {
 	state: MutableIncCounterState,
 }
 
-fn func_test_leb128_thunk(ctx: &ScFuncContext) {
-	ctx.log("inccounter.funcTestLeb128");
-	let f = TestLeb128Context {
+fn func_test_vli_codec_thunk(ctx: &ScFuncContext) {
+	ctx.log("inccounter.funcTestVliCodec");
+	let f = TestVliCodecContext {
 		state: MutableIncCounterState {
 			id: OBJ_ID_STATE,
 		},
 	};
-	func_test_leb128(ctx, &f);
-	ctx.log("inccounter.funcTestLeb128 ok");
+	func_test_vli_codec(ctx, &f);
+	ctx.log("inccounter.funcTestVliCodec ok");
+}
+
+pub struct TestVluCodecContext {
+	state: MutableIncCounterState,
+}
+
+fn func_test_vlu_codec_thunk(ctx: &ScFuncContext) {
+	ctx.log("inccounter.funcTestVluCodec");
+	let f = TestVluCodecContext {
+		state: MutableIncCounterState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	func_test_vlu_codec(ctx, &f);
+	ctx.log("inccounter.funcTestVluCodec ok");
 }
 
 pub struct WhenMustIncrementContext {
@@ -302,7 +319,31 @@ fn view_get_vli_thunk(ctx: &ScViewContext) {
 			id: OBJ_ID_STATE,
 		},
 	};
-	ctx.require(f.params.n().exists(), "missing mandatory n");
+	ctx.require(f.params.ni64().exists(), "missing mandatory ni64");
 	view_get_vli(ctx, &f);
 	ctx.log("inccounter.viewGetVli ok");
+}
+
+pub struct GetVluContext {
+	params: ImmutableGetVluParams,
+	results: MutableGetVluResults,
+	state: ImmutableIncCounterState,
+}
+
+fn view_get_vlu_thunk(ctx: &ScViewContext) {
+	ctx.log("inccounter.viewGetVlu");
+	let f = GetVluContext {
+		params: ImmutableGetVluParams {
+			id: OBJ_ID_PARAMS,
+		},
+		results: MutableGetVluResults {
+			id: OBJ_ID_RESULTS,
+		},
+		state: ImmutableIncCounterState {
+			id: OBJ_ID_STATE,
+		},
+	};
+	ctx.require(f.params.nu64().exists(), "missing mandatory nu64");
+	view_get_vlu(ctx, &f);
+	ctx.log("inccounter.viewGetVlu ok");
 }
