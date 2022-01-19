@@ -23,6 +23,7 @@ type Metrics struct {
 	processedRequestCounter *prometheus.CounterVec
 	messagesReceived        *prometheus.CounterVec
 	requestAckMessages      *prometheus.CounterVec
+	currentStateIndex       *prometheus.GaugeVec
 	requestProcessingTime   *prometheus.GaugeVec
 	vmRunTime               *prometheus.GaugeVec
 	vmRunCounter            *prometheus.CounterVec
@@ -108,6 +109,12 @@ func (m *Metrics) registerMetrics() {
 		Help: "Receive request acknowledgement messages per chain",
 	}, []string{"chain"})
 	prometheus.MustRegister(m.requestAckMessages)
+
+	m.currentStateIndex = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "current_state_index",
+		Help: "The current chain state index.",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.currentStateIndex)
 
 	m.requestProcessingTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "request_processing_time",

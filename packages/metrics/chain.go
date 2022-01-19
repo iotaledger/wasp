@@ -15,6 +15,7 @@ type StateManagerMetrics interface {
 type ChainMetrics interface {
 	CountMessages()
 	CountRequestAckMessages()
+	CurrentStateIndex(stateIndex uint32)
 	MempoolMetrics
 	ConsensusMetrics
 	StateManagerMetrics
@@ -63,6 +64,10 @@ func (c *chainMetricsObj) CountRequestAckMessages() {
 	c.metrics.requestAckMessages.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
+func (c *chainMetricsObj) CurrentStateIndex(stateIndex uint32) {
+	c.metrics.currentStateIndex.With(prometheus.Labels{"chain": c.chainID.String()}).Set(float64(stateIndex))
+}
+
 func (c *chainMetricsObj) RecordRequestProcessingTime(reqID iscp.RequestID, elapse time.Duration) {
 	c.metrics.requestProcessingTime.With(prometheus.Labels{"chain": c.chainID.String(), "request": reqID.String()}).Set(elapse.Seconds())
 }
@@ -98,6 +103,8 @@ func (m *defaultChainMetrics) CountRequestOut() {}
 func (m *defaultChainMetrics) CountMessages() {}
 
 func (m *defaultChainMetrics) CountRequestAckMessages() {}
+
+func (m *defaultChainMetrics) CurrentStateIndex(stateIndex uint32) {}
 
 func (m *defaultChainMetrics) RecordRequestProcessingTime(_ iscp.RequestID, _ time.Duration) {}
 
