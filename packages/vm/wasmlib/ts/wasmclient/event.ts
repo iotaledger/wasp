@@ -15,7 +15,7 @@ export class Event {
     }
 
     private next(): string {
-        return this.msg[this.index++];
+        return this.msg[this.index++] ?? "";
     }
 
     protected nextAddress(): wasmclient.Address {
