@@ -105,6 +105,7 @@ func (sm *stateManager) handleStateMsg(msg *messages.StateMsg) {
 		"state index", msg.ChainOutput.GetStateIndex(),
 		"chainOutput", iscp.OID(msg.ChainOutput.ID()),
 	)
+	sm.stateManagerMetrics.LastSeenStateIndex(msg.ChainOutput.GetStateIndex())
 	stateHash, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
 	if err != nil {
 		sm.log.Errorf("EventStateMsg ignored: failed to parse state hash: %v", err)

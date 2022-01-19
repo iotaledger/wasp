@@ -64,6 +64,8 @@ type MockedStateManagerMetrics struct{}
 
 func (c *MockedStateManagerMetrics) RecordBlockSize(_ uint32, _ float64) {}
 
+func (c *MockedStateManagerMetrics) LastSeenStateIndex(_ uint32) {}
+
 func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
 	level := zapcore.InfoLevel
 	if debug {

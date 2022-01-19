@@ -29,6 +29,8 @@ type Metrics struct {
 	vmRunCounter            *prometheus.CounterVec
 	blocksPerChain          *prometheus.CounterVec
 	blockSizes              *prometheus.GaugeVec
+	lastSeenStateIndex      *prometheus.GaugeVec
+	lastSeenStateIndexVal   uint32
 	nodeconnMetrics         nodeconnmetrics.NodeConnectionMetrics
 }
 
@@ -145,6 +147,12 @@ func (m *Metrics) registerMetrics() {
 		Help: "Block sizes",
 	}, []string{"block_index", "chain"})
 	prometheus.MustRegister(m.blockSizes)
+
+	m.lastSeenStateIndex = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "last_seen_state_index",
+		Help: "Last seen state index",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.lastSeenStateIndex)
 }
 
 func (m *Metrics) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
