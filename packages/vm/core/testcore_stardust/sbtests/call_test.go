@@ -35,7 +35,7 @@ func testCallRecursive(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
-	t.Logf("originator iotas: %d", ch.L2AccountIotas(ch.OriginatorAgentID))
+	t.Logf("originator iotas: %d", ch.L2Iotas(ch.OriginatorAgentID))
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamIntParamValue, 31,
 		sbtestsc.ParamHnameContract, HScName,

@@ -97,7 +97,7 @@ func TestFoundries(t *testing.T) {
 			CreateFoundry()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 
 		err = ch.SendFromL1ToL2AccountIotas(1000, 1000, ch.CommonAccount(), senderKeyPair)
@@ -107,7 +107,7 @@ func TestFoundries(t *testing.T) {
 		err = ch.MintTokens(sn, big.NewInt(5), senderKeyPair)
 		require.NoError(t, err)
 
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(5))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(5))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(5))
 	})
 	t.Run("max supply 1, mintTokens 1", func(t *testing.T) {
@@ -117,7 +117,7 @@ func TestFoundries(t *testing.T) {
 			CreateFoundry()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 
 		err = ch.SendFromL1ToL2AccountIotas(1000, 1000, ch.CommonAccount(), senderKeyPair)
@@ -125,7 +125,7 @@ func TestFoundries(t *testing.T) {
 		err = ch.MintTokens(sn, 1, senderKeyPair)
 		require.NoError(t, err)
 
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(1))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(1))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1))
 	})
 
@@ -140,7 +140,7 @@ func TestFoundries(t *testing.T) {
 		err = ch.MintTokens(sn, 2, senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds)
 
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 	})
 	t.Run("max supply 1000, mintTokens 500_500_1", func(t *testing.T) {
@@ -155,18 +155,18 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, 500, senderKeyPair)
 		require.NoError(t, err)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(500))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(500))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(500))
 
 		err = ch.MintTokens(sn, 500, senderKeyPair)
 		require.NoError(t, err)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 1000)
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, 1000)
 		ch.AssertL2TotalNativeTokens(&tokenID, 1000)
 
 		err = ch.MintTokens(sn, 1, senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds)
 
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 1000)
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, 1000)
 		ch.AssertL2TotalNativeTokens(&tokenID, 1000)
 	})
 	t.Run("max supply MaxUint256, mintTokens MaxUint256_1", func(t *testing.T) {
@@ -181,12 +181,12 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, abi.MaxUint256, senderKeyPair)
 		require.NoError(t, err)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, abi.MaxUint256)
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, abi.MaxUint256)
 
 		err = ch.MintTokens(sn, 1, senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrOverflow)
 
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, abi.MaxUint256)
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, abi.MaxUint256)
 		ch.AssertL2TotalNativeTokens(&tokenID, abi.MaxUint256)
 	})
 	t.Run("max supply 100, destroy fail", func(t *testing.T) {
@@ -199,7 +199,7 @@ func TestFoundries(t *testing.T) {
 
 		err = ch.DestroyTokensOnL2(sn, big.NewInt(1), senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 	})
 	t.Run("max supply 100, mint_20, destroy_10", func(t *testing.T) {
@@ -213,20 +213,20 @@ func TestFoundries(t *testing.T) {
 		out, err := ch.GetFoundryOutput(1)
 		require.NoError(t, err)
 		require.EqualValues(t, out.MustNativeTokenID(), tokenID)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 
 		err = ch.SendFromL1ToL2AccountIotas(1000, 1000, ch.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, 20, senderKeyPair)
 		require.NoError(t, err)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 20)
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, 20)
 		ch.AssertL2TotalNativeTokens(&tokenID, 20)
 
 		err = ch.DestroyTokensOnL2(sn, 10, senderKeyPair)
 		require.NoError(t, err)
 		ch.AssertL2TotalNativeTokens(&tokenID, 10)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 10)
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, 10)
 	})
 	t.Run("max supply 1000000, mint_1000000, destroy_1000000", func(t *testing.T) {
 		initTest()
@@ -239,14 +239,14 @@ func TestFoundries(t *testing.T) {
 		out, err := ch.GetFoundryOutput(1)
 		require.NoError(t, err)
 		require.EqualValues(t, out.MustNativeTokenID(), tokenID)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, 0)
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, 0)
 		ch.AssertL2TotalNativeTokens(&tokenID, 0)
 
 		err = ch.SendFromL1ToL2AccountIotas(1000, 1000, ch.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, 1_000_000, senderKeyPair)
 		require.NoError(t, err)
-		ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(1_000_000))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(1_000_000))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(1_000_000))
 		out, err = ch.GetFoundryOutput(1)
 		require.NoError(t, err)
@@ -256,7 +256,7 @@ func TestFoundries(t *testing.T) {
 		// err = destroyTokens(sn, big.NewInt(1000000))
 		// require.NoError(t, err)
 		// ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
-		// ch.AssertL2AccountNativeToken(userAgentID, &tokenID, big.NewInt(0))
+		// ch.AssertL2NativeTokens(userAgentID, &tokenID, big.NewInt(0))
 		// out, err = ch.GetFoundryOutput(1)
 		// require.NoError(t, err)
 		// require.True(t, big.NewInt(0).Cmp(out.CirculatingSupply) == 0)
@@ -273,7 +273,7 @@ func TestFoundries(t *testing.T) {
 				CreateFoundry()
 			require.NoError(t, err)
 			require.EqualValues(t, int(sn), int(snBack))
-			ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(0))
+			ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
 			ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 		}
 		// mint max supply from each
@@ -289,7 +289,7 @@ func TestFoundries(t *testing.T) {
 			require.True(t, out.CirculatingSupply.Cmp(big.NewInt(int64(sn+1))) == 0)
 			tokenID := out.MustNativeTokenID()
 
-			ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(int64(sn+1)))
+			ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(int64(sn+1)))
 			ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(int64(sn+1)))
 		}
 		// destroy 1 token of each tokenID
@@ -307,7 +307,7 @@ func TestFoundries(t *testing.T) {
 			require.True(t, out.CirculatingSupply.Cmp(big.NewInt(int64(sn))) == 0)
 			tokenID := out.MustNativeTokenID()
 
-			ch.AssertL2AccountNativeToken(senderAgentID, &tokenID, big.NewInt(int64(sn)))
+			ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(int64(sn)))
 			ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(int64(sn)))
 		}
 	})
@@ -343,12 +343,12 @@ func TestAccountBalances(t *testing.T) {
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
 	senderAgentID := iscp.NewAgentID(senderAddr, 0)
 
-	l1Iotas := func(addr iotago.Address) uint64 { return env.L1AddressBalances(addr).Iotas }
+	l1Iotas := func(addr iotago.Address) uint64 { return env.L1Assets(addr).Iotas }
 	totalIotas := l1Iotas(chainOwnerAddr) + l1Iotas(senderAddr)
 
 	ch := env.NewChain(chainOwner, "chain1")
 
-	l2Iotas := func(agentID *iscp.AgentID) uint64 { return ch.L2AccountIotas(agentID) }
+	l2Iotas := func(agentID *iscp.AgentID) uint64 { return ch.L2Iotas(agentID) }
 	totalGasFeeCharged := uint64(0)
 
 	checkBalance := func(numReqs int) {
@@ -375,7 +375,7 @@ func TestAccountBalances(t *testing.T) {
 		)
 
 		// not true because of deposit preload
-		//require.Equal(t, numReqs == 0, bi.GasFeeCharged == 0)
+		// require.Equal(t, numReqs == 0, bi.GasFeeCharged == 0)
 
 		totalGasFeeCharged += bi.GasFeeCharged
 		require.EqualValues(t,
@@ -454,8 +454,8 @@ func (v *testParams) createFoundryAndMint(sch iotago.TokenScheme, tag *iotago.To
 	err = v.ch.MintTokens(sn, amount, v.user)
 	require.NoError(v.env.T, err)
 	// check the balance of the user
-	v.ch.AssertL2AccountNativeToken(v.userAgentID, &tokenID, amount)
-	require.True(v.env.T, v.ch.L2AccountIotas(v.userAgentID) > 100) // must be some coming from dust deposits
+	v.ch.AssertL2NativeTokens(v.userAgentID, &tokenID, amount)
+	require.True(v.env.T, v.ch.L2Iotas(v.userAgentID) > 100) // must be some coming from dust deposits
 	return sn, &tokenID
 }
 
@@ -484,7 +484,7 @@ func TestDepositIotas(t *testing.T) {
 				adjusted = byteCost
 			}
 			require.True(t, rec.GasFeeCharged <= adjusted)
-			v.ch.AssertL2AccountIotas(v.userAgentID, adjusted-rec.GasFeeCharged)
+			v.ch.AssertL2Iotas(v.userAgentID, adjusted-rec.GasFeeCharged)
 		})
 	}
 }
@@ -504,9 +504,9 @@ func initWithdrawTest(t *testing.T, initLoad ...uint64) *testParams {
 }
 
 func (v *testParams) printBalances(prefix string) {
-	v.env.T.Logf("%s: user L1 iotas: %d", prefix, v.env.L1IotaBalance(v.userAddr))
-	v.env.T.Logf("%s: user L1 tokens: %s : %d", prefix, v.tokenID, v.env.L1NativeTokenBalance(v.userAddr, v.tokenID))
-	v.env.T.Logf("%s: user L2: %s", prefix, v.ch.L2AccountAssets(v.userAgentID))
+	v.env.T.Logf("%s: user L1 iotas: %d", prefix, v.env.L1Iotas(v.userAddr))
+	v.env.T.Logf("%s: user L1 tokens: %s : %d", prefix, v.tokenID, v.env.L1NativeTokens(v.userAddr, v.tokenID))
+	v.env.T.Logf("%s: user L2: %s", prefix, v.ch.L2Assets(v.userAgentID))
 	v.env.T.Logf("%s: common account L2: %s", prefix, v.ch.L2CommonAccountAssets())
 }
 
@@ -529,7 +529,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v := initWithdrawTest(t)
 		// we want to withdraw as many iotas as possible, so we add 300 because some more will come
 		// with assets attached to the 'withdraw' request. However, withdraw all is not possible due to gas
-		toWithdraw := v.ch.L2AccountAssets(v.userAgentID).AddIotas(200)
+		toWithdraw := v.ch.L2Assets(v.userAgentID).AddIotas(200)
 		t.Logf("assets to withdraw: %s", toWithdraw.String())
 		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
 		v.req.AddAllowance(toWithdraw)
@@ -540,7 +540,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	})
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
 		v := initWithdrawTest(t)
-		allSenderAssets := v.ch.L2AccountAssets(v.userAgentID)
+		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		v.req.AddAssetsIotas(1000)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
@@ -558,38 +558,38 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("mint withdraw destroy success 1", func(t *testing.T) {
 		v := initWithdrawTest(t)
 
-		allSenderAssets := v.ch.L2AccountAssets(v.userAgentID)
+		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		v.req.AddAssetsIotas(1000)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER MINT")
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 
 		err = v.ch.DepositAssetsToL2(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
 		require.NoError(t, err)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 50)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 50)
 		v.ch.AssertL2TotalNativeTokens(v.tokenID, 50)
 		v.printBalances("AFTER DEPOSIT")
 
 		err = v.ch.DestroyTokensOnL2(v.sn, 49, v.user)
 		require.NoError(t, err)
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 1)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 1)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 		v.printBalances("AFTER DESTROY")
 	})
 	t.Run("unwrap use case", func(t *testing.T) {
 		v := initWithdrawTest(t)
-		allSenderAssets := v.ch.L2AccountAssets(v.userAgentID)
+		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		v.req.AddAssetsIotas(1000)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER MINT")
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 
 		err = v.ch.DepositAssetsToL2(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 1), v.user)
 		require.NoError(t, err)
@@ -599,30 +599,30 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		err = v.ch.DestroyTokensOnL1(v.tokenID, 49, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER DESTROY")
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 1)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 1)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 	})
 	t.Run("unwrap use case", func(t *testing.T) {
 		v := initWithdrawTest(t)
-		allSenderAssets := v.ch.L2AccountAssets(v.userAgentID)
+		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		v.req.AddAssetsIotas(1000)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER MINT")
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 
 		// without deposit
 		err = v.ch.DestroyTokensOnL1(v.tokenID, 49, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER DESTROY")
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 51)
 	})
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
 		v := initWithdrawTest(t)
-		allSenderAssets := v.ch.L2AccountAssets(v.userAgentID)
+		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		v.req.AddAssetsIotas(1000)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
@@ -630,18 +630,18 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 
 		v.printBalances("AFTER MINT")
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 
 		err = v.ch.DepositAssetsToL2(iscp.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
 		require.NoError(t, err)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 50)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 50)
 		v.ch.AssertL2TotalNativeTokens(v.tokenID, 50)
 		v.printBalances("AFTER DEPOSIT")
 
 		err = v.ch.DestroyTokensOnL2(v.sn, 50, v.user)
 		require.NoError(t, err)
-		v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 0)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 	})
 }
@@ -654,13 +654,13 @@ func TestTransferAndHarvest(t *testing.T) {
 	require.True(t, commonAssets.Iotas+dustCosts.AnchorOutput > 10_000)
 	require.EqualValues(t, 0, len(commonAssets.Tokens))
 
-	v.ch.AssertL2AccountNativeToken(v.userAgentID, v.tokenID, 100)
+	v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 100)
 
 	// move minted tokens from user to the common account on-chain
 	err := v.ch.SendFromL2ToL2AccountNativeTokens(*v.tokenID, v.ch.CommonAccount(), 50, v.user)
 	require.NoError(t, err)
 	// now we have 50 tokens on common account
-	v.ch.AssertL2AccountNativeToken(v.ch.CommonAccount(), v.tokenID, 50)
+	v.ch.AssertL2NativeTokens(v.ch.CommonAccount(), v.tokenID, 50)
 	// no native tokens for chainOwner on L1
 	v.env.AssertL1NativeTokens(v.chainOwnerAddr, v.tokenID, 0)
 
@@ -676,9 +676,9 @@ func TestTransferAndHarvest(t *testing.T) {
 	t.Logf("receipt from the 'harvest' tx: %s", rec)
 
 	// now we have 0 tokens on common account
-	v.ch.AssertL2AccountNativeToken(v.ch.CommonAccount(), v.tokenID, 0)
+	v.ch.AssertL2NativeTokens(v.ch.CommonAccount(), v.tokenID, 0)
 	// 50 native tokens for chain on L2
-	v.ch.AssertL2AccountNativeToken(v.chainOwnerAgentID, v.tokenID, 50)
+	v.ch.AssertL2NativeTokens(v.chainOwnerAgentID, v.tokenID, 50)
 
 	commonAssets = v.ch.L2CommonAccountAssets()
 	// in the common account should have left minimum plus gas fee from the last request
@@ -724,7 +724,7 @@ func TestTransferPartialAssets(t *testing.T) {
 	err = e.ch.MintTokens(sn, big.NewInt(10), e.user)
 	require.NoError(t, err)
 
-	e.ch.AssertL2AccountNativeToken(e.userAgentID, &tokenID, big.NewInt(10))
+	e.ch.AssertL2NativeTokens(e.userAgentID, &tokenID, big.NewInt(10))
 	e.ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(10))
 
 	// send funds to user2
@@ -732,13 +732,13 @@ func TestTransferPartialAssets(t *testing.T) {
 	user2AgentID := iscp.NewAgentID(user2Addr, 0)
 
 	// deposit 1 iota to "create account" for user2 // TODO maybe remove if account creation is not needed
-	e.ch.AssertL2AccountIotas(user2AgentID, 0)
+	e.ch.AssertL2Iotas(user2AgentID, 0)
 	err = e.ch.SendFromL1ToL2AccountIotas(1000, 300, user2AgentID, user2)
 	rec := e.ch.LastReceipt()
 	require.NoError(t, err)
 	e.env.T.Logf("gas fee charged: %d", rec.GasFeeCharged)
 	expectedUser2 := 1000 + 300 - rec.GasFeeCharged
-	e.ch.AssertL2AccountIotas(user2AgentID, expectedUser2)
+	e.ch.AssertL2Iotas(user2AgentID, expectedUser2)
 	// -----------------------------
 	err = e.ch.SendFromL2ToL2Account(
 		iscp.NewAssets(300, iotago.NativeTokens{
@@ -753,9 +753,9 @@ func TestTransferPartialAssets(t *testing.T) {
 	require.NoError(t, err)
 
 	// assert that balances are correct
-	e.ch.AssertL2AccountNativeToken(e.userAgentID, &tokenID, big.NewInt(1))
-	e.ch.AssertL2AccountNativeToken(user2AgentID, &tokenID, big.NewInt(9))
-	e.ch.AssertL2AccountIotas(user2AgentID, expectedUser2+300)
+	e.ch.AssertL2NativeTokens(e.userAgentID, &tokenID, big.NewInt(1))
+	e.ch.AssertL2NativeTokens(user2AgentID, &tokenID, big.NewInt(9))
+	e.ch.AssertL2Iotas(user2AgentID, expectedUser2+300)
 	e.ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(10))
 }
 
