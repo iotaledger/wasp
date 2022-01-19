@@ -10,6 +10,7 @@ import (
 
 type StateManagerMetrics interface {
 	RecordBlockSize(blockIndex uint32, size float64)
+	LastSeenStateIndex(stateIndex uint32)
 }
 
 type ChainMetrics interface {
@@ -88,6 +89,14 @@ func (c *chainMetricsObj) RecordBlockSize(blockIndex uint32, blockSize float64) 
 	c.metrics.blockSizes.With(prometheus.Labels{"chain": c.chainID.String(), "block_index": fmt.Sprintf("%d", blockIndex)}).Set(blockSize)
 }
 
+func (c *chainMetricsObj) LastSeenStateIndex(stateIndex uint32) {
+	if c.metrics.lastSeenStateIndexVal >= stateIndex {
+		return
+	}
+	c.metrics.lastSeenStateIndexVal = stateIndex
+	c.metrics.lastSeenStateIndex.With(prometheus.Labels{"chain": c.chainID.String()}).Set(float64(stateIndex))
+}
+
 type defaultChainMetrics struct{}
 
 func DefaultChainMetrics() ChainMetrics {
@@ -115,3 +124,5 @@ func (m *defaultChainMetrics) CountVMRuns() {}
 func (m *defaultChainMetrics) CountBlocksPerChain() {}
 
 func (m *defaultChainMetrics) RecordBlockSize(_ uint32, _ float64) {}
+
+func (m *defaultChainMetrics) LastSeenStateIndex(stateIndex uint32) {}
