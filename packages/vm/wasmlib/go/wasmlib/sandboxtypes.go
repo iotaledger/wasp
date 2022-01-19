@@ -8,7 +8,7 @@ import (
 	"sort"
 )
 
-type Map interface {
+type IKvStore interface {
 	Delete(key []byte)
 	Exists(key []byte) bool
 	Get(key []byte) []byte
@@ -49,7 +49,7 @@ func (a ScAssets) Bytes() []byte {
 
 type ScDict map[string][]byte
 
-var _ Map = new(ScDict)
+var _ IKvStore = new(ScDict)
 
 func NewScDict() ScDict {
 	return make(ScDict)
@@ -111,7 +111,7 @@ func (d ScDict) Set(key, value []byte) {
 
 type ScState struct{}
 
-var _ Map = new(ScState)
+var _ IKvStore = new(ScState)
 
 func (d ScState) Delete(key []byte) {
 	StateDelete(key)
