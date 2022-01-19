@@ -35,7 +35,7 @@ func TestTutorial2(t *testing.T) {
 	env := solo.New(t, false, false, seed)
 	_, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 	t.Logf("address of the userWallet is: %s", userAddress.Base58())
-	numIotas := env.L1NativeTokenBalance(userAddress, iscp.IotaTokenID) // how many iotas the address contains
+	numIotas := env.L1NativeTokens(userAddress, iscp.IotaTokenID) // how many iotas the address contains
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
 	env.AssertAddressNativeTokenBalance(userAddress, iscp.IotaTokenID, solo.Saldo)
 }
@@ -84,10 +84,10 @@ func TestTutorial5(t *testing.T) {
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
-	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 0) // empty on-chain
+	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0) // empty on-chain
 
 	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
-	numIotas := env.L1NativeTokenBalance(userAddress, colored.IOTA)
+	numIotas := env.L1NativeTokens(userAddress, colored.IOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
 
@@ -99,7 +99,7 @@ func TestTutorial5(t *testing.T) {
 	// check address balance: must be 42 iotas less
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-42)
 	// check the on-chain account. Must contain 42 iotas
-	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 42)
+	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 42)
 
 	// withdraw all iotas back to the sender
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).AddAssetsIotas(1)
@@ -108,7 +108,7 @@ func TestTutorial5(t *testing.T) {
 
 	// we are back to initial situation: IOTA is fee-less!
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
-	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 0) // empty
+	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0) // empty
 }
 
 func TestTutorial6(t *testing.T) {
@@ -124,15 +124,15 @@ func TestTutorial6(t *testing.T) {
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
-	chain.AssertL2AccountNativeToken(contractAgentID, colored.IOTA, 0) // empty on-chain
-	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 0)     // empty on-chain
+	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // empty on-chain
+	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)     // empty on-chain
 
 	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").AddAssetsIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	chain.AssertL2AccountNativeToken(contractAgentID, colored.IOTA, 42)
-	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 0)
+	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 42)
+	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-42)
 }
 
@@ -150,8 +150,8 @@ func TestTutorial7(t *testing.T) {
 
 	// we start with these balances on address and on chain
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
-	chain.AssertL2AccountNativeToken(contractAgentID, colored.IOTA, 0) // empty
-	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 0)     // empty
+	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // empty
+	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)     // empty
 
 	// missing parameter, request will panic
 	req := solo.NewCallParams("example1", "storeString").AddAssetsIotas(42)
@@ -160,8 +160,8 @@ func TestTutorial7(t *testing.T) {
 
 	// assert balances didn't change on address and on chain
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
-	chain.AssertL2AccountNativeToken(contractAgentID, colored.IOTA, 0) // still empty
-	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 0)     // still empty
+	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // still empty
+	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0)     // still empty
 }
 
 // test withdrawIota method
@@ -177,7 +177,7 @@ func TestTutorial8(t *testing.T) {
 	t.Logf("userAgentID: %s", userAgentID)
 
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo)
-	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 0) // empty on-chain
+	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 0) // empty on-chain
 
 	// the chain owner (default) send a request to the root contract to grant right to deploy
 	// contract on the chain to the use
@@ -198,8 +198,8 @@ func TestTutorial8(t *testing.T) {
 	// Two tokens were taken from the user account to form requests and then were
 	// deposited to the user's account on the chain
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-2)
-	chain.AssertL2AccountNativeToken(contractAgentID, colored.IOTA, 0) // empty on-chain
-	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 1)
+	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0) // empty on-chain
+	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 1)
 
 	// user send a "storeString" request to the smart contract. It attaches 42 iotas to the request
 	// It also takes 1 iota for the request token
@@ -209,8 +209,8 @@ func TestTutorial8(t *testing.T) {
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	chain.AssertL2AccountNativeToken(contractAgentID, colored.IOTA, 42)
-	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 1)
+	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 42)
+	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 1)
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-44)
 
 	// user withdraws all iotas from the smart contract back
@@ -221,7 +221,7 @@ func TestTutorial8(t *testing.T) {
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	chain.AssertL2AccountNativeToken(contractAgentID, colored.IOTA, 0)
-	chain.AssertL2AccountNativeToken(userAgentID, colored.IOTA, 1)
+	chain.AssertL2NativeTokens(contractAgentID, colored.IOTA, 0)
+	chain.AssertL2NativeTokens(userAgentID, colored.IOTA, 1)
 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, solo.Saldo-44+42)
 }

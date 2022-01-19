@@ -54,7 +54,7 @@ func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	dustDeposit := tx.Essence.Outputs[0].Deposit()
-	ch.Env.AssertL1AddressIotas(walletAddr, beforeWallet.AssetsL1.Iotas+allowance-dustDeposit)
+	ch.Env.AssertL1Iotas(walletAddr, beforeWallet.AssetsL1.Iotas+allowance-dustDeposit)
 }
 
 func TestSeveralOutputsInASingleCallFail(t *testing.T) { run2(t, testSeveralOutputsInASingleCallFail) }
@@ -136,8 +136,8 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 		WithGasBudget(200_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
-	require.Equal(t, ch.L2AccountNativeTokens(agentID, &tokenID).Int64(), amountMintedTokens-amountTokensToSend)
-	require.Equal(t, ch.Env.L1NativeTokenBalance(addr, &tokenID).Int64(), amountTokensToSend)
+	require.Equal(t, ch.L2NativeTokens(agentID, &tokenID).Int64(), amountMintedTokens-amountTokensToSend)
+	require.Equal(t, ch.Env.L1NativeTokens(addr, &tokenID).Int64(), amountTokensToSend)
 }
 
 // TestPingIotas1 sends some iotas to SC and receives the whole allowance sent back to L1 as on-ledger request
@@ -154,7 +154,7 @@ func testPingIotas1(t *testing.T, w bool) {
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
 	const expectedBack = 1_000
-	ch.Env.AssertL1AddressIotas(userAddr, solo.Saldo)
+	ch.Env.AssertL1Iotas(userAddr, solo.Saldo)
 
 	reqEstimate := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
 		AddAssetsIotas(100_000).

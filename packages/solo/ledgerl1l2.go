@@ -46,7 +46,7 @@ func (ch *Chain) L2Ledger() map[string]*iscp.Assets {
 	accs := ch.L2Accounts()
 	ret := make(map[string]*iscp.Assets)
 	for i := range accs {
-		ret[accs[i].String()] = ch.L2AccountAssets(accs[i])
+		ret[accs[i].String()] = ch.L2Assets(accs[i])
 	}
 	return ret
 }
@@ -66,43 +66,43 @@ func (ch *Chain) L2LedgerString() string {
 	return ret
 }
 
-// L2AccountAssets return all assets contained in the on-chain account controlled by the 'agentID'
-func (ch *Chain) L2AccountAssets(agentID *iscp.AgentID) *iscp.Assets {
+// L2Assets return all assets contained in the on-chain account controlled by the 'agentID'
+func (ch *Chain) L2Assets(agentID *iscp.AgentID) *iscp.Assets {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
 	)
 }
 
-func (ch *Chain) L2AccountIotas(agentID *iscp.AgentID) uint64 {
-	return ch.L2AccountAssets(agentID).Iotas
+func (ch *Chain) L2Iotas(agentID *iscp.AgentID) uint64 {
+	return ch.L2Assets(agentID).Iotas
 }
 
-func (ch *Chain) L2AccountNativeTokens(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
-	return ch.L2AccountAssets(agentID).AmountNativeToken(tokenID)
+func (ch *Chain) L2NativeTokens(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+	return ch.L2Assets(agentID).AmountNativeToken(tokenID)
 }
 
 func (ch *Chain) L2CommonAccountAssets() *iscp.Assets {
-	return ch.L2AccountAssets(ch.CommonAccount())
+	return ch.L2Assets(ch.CommonAccount())
 }
 
 func (ch *Chain) L2CommonAccountIotas() uint64 {
-	return ch.L2AccountAssets(ch.CommonAccount()).Iotas
+	return ch.L2Assets(ch.CommonAccount()).Iotas
 }
 
 func (ch *Chain) L2CommonAccountNativeTokens(tokenID *iotago.NativeTokenID) *big.Int {
-	return ch.L2AccountAssets(ch.CommonAccount()).AmountNativeToken(tokenID)
+	return ch.L2Assets(ch.CommonAccount()).AmountNativeToken(tokenID)
 }
 
-// L2TotalAssetsInAccounts return total sum of assets contained in the on-chain accounts
-func (ch *Chain) L2TotalAssetsInAccounts() *iscp.Assets {
+// L2TotalAssets return total sum of assets contained in the on-chain accounts
+func (ch *Chain) L2TotalAssets() *iscp.Assets {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewTotalAssets.Name),
 	)
 }
 
-// L2TotalIotasInAccounts return total sum of iotas
-func (ch *Chain) L2TotalIotasInAccounts() uint64 {
-	return ch.L2TotalAssetsInAccounts().Iotas
+// L2TotalIotas return total sum of iotas in L2 (all accounts)
+func (ch *Chain) L2TotalIotas() uint64 {
+	return ch.L2TotalAssets().Iotas
 }
 
 func mustNativeTokenIDFromBytes(data []byte) *iotago.NativeTokenID {

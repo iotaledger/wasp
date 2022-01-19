@@ -45,7 +45,7 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 
 func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iotago.Address, *iscp.AgentID) {
 	user, userAddr := ch.Env.NewKeyPairWithFunds()
-	ch.Env.AssertL1AddressIotas(userAddr, solo.Saldo)
+	ch.Env.AssertL1Iotas(userAddr, solo.Saldo)
 
 	err := ch.DepositIotasToL2(10_000, user)
 	require.NoError(t, err)
