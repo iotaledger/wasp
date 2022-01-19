@@ -269,6 +269,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 
 		c.mempoolLastCleanedIndex = stateIndex
 		c.updateChainNodes(stateIndex)
+		c.chainMetrics.CurrentStateIndex(stateIndex)
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
 			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String())
