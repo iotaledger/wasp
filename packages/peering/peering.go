@@ -52,9 +52,9 @@ type NetworkProvider interface {
 // struct, that implements the NetworkProvider. These implementations should interact,
 // e.g. when we distrust some peer, all the connections to it should be cut immediately.
 type TrustedNetworkManager interface {
-	IsTrustedPeer(pubKey cryptolib.PublicKey) error
-	TrustPeer(pubKey cryptolib.PublicKey, netID string) (*TrustedPeer, error)
-	DistrustPeer(pubKey cryptolib.PublicKey) (*TrustedPeer, error)
+	IsTrustedPeer(pubKey ed25519.PublicKey) error
+	TrustPeer(pubKey ed25519.PublicKey, netID string) (*TrustedPeer, error)
+	DistrustPeer(pubKey ed25519.PublicKey) (*TrustedPeer, error)
 	TrustedPeers() ([]*TrustedPeer, error)
 }
 
@@ -109,7 +109,7 @@ type PeerSender interface {
 	// authenticated, therefore it can return nil, if pub
 	// key is not known yet. You can call await before calling
 	// this function to ensure the public key is already resolved.
-	PubKey() *cryptolib.PublicKey
+	PubKey() *ed25519.PublicKey
 
 	// SendMsg works in an asynchronous way, and therefore the
 	// errors are not returned here.
@@ -138,7 +138,7 @@ type PeerSender interface {
 // by the same object.
 type PeerStatusProvider interface {
 	NetID() string
-	PubKey() *cryptolib.PublicKey
+	PubKey() *ed25519.PublicKey
 	IsAlive() bool
 	NumUsers() int
 }
