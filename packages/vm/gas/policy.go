@@ -3,10 +3,9 @@ package gas
 import (
 	"math"
 
-	"github.com/iotaledger/wasp/packages/util"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type GasFeePolicy struct {
@@ -67,14 +66,13 @@ func (p *GasFeePolicy) AffordableGasBudgetFromAvailableTokens(availableTokens ui
 		return math.MaxUint64
 	}
 	return nominalUnitsOfGas * p.GasNominalUnit
-
 }
 
 func DefaultGasFeePolicy() *GasFeePolicy {
 	return &GasFeePolicy{
 		GasFeeTokenID:          nil, // default is iotas
-		GasNominalUnit:         100, // gas is burned in 100-s and not less than 100
-		GasPricePerNominalUnit: 100, // default is 1 gas == 1 iota
+		GasNominalUnit:         100, // gas is burned in 1000-s and not less than 1000
+		GasPricePerNominalUnit: 1,   // default is 1 iota = 1000 gas
 		ValidatorFeeShare:      0,   // by default all goes to the governor
 	}
 }

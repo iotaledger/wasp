@@ -17,7 +17,7 @@ func testGetSet(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
 		sbtestsc.ParamIntParamName, "ppp",
 		sbtestsc.ParamIntParamValue, 314).
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	_, err := chain.PostRequestSync(req.AddAssetsIotas(1), nil)
 	require.NoError(t, err)
 

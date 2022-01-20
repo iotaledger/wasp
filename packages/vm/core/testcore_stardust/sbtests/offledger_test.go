@@ -56,7 +56,7 @@ func TestOffLedgerSuccess(t *testing.T) {
 		req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp",
 			sbtestsc.ParamIntParamValue, 314,
-		).WithGasBudget(1000)
+		).WithGasBudget(100_000)
 		_, err = ch.PostRequestOffLedger(req, user)
 		require.NoError(t, err)
 		rec := ch.LastReceipt()

@@ -14,7 +14,7 @@ import (
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
-	vmctx.GasBurn(gas.BurnGetContext)
+	vmctx.GasBurn(gas.BurnCodeGetContext)
 
 	var ret iscp.ChainID
 	if vmctx.task.AnchorOutput.StateIndex == 0 {
@@ -27,13 +27,13 @@ func (vmctx *VMContext) ChainID() *iscp.ChainID {
 }
 
 func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
-	vmctx.GasBurn(gas.BurnGetContext)
+	vmctx.GasBurn(gas.BurnCodeGetContext)
 
 	return vmctx.chainOwnerID
 }
 
 func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
-	vmctx.GasBurn(gas.BurnGetContext)
+	vmctx.GasBurn(gas.BurnCodeGetContext)
 
 	rec := vmctx.findContractByHname(vmctx.CurrentContractHname())
 	if rec == nil {
@@ -43,12 +43,12 @@ func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
 }
 
 func (vmctx *VMContext) CurrentContractHname() iscp.Hname {
-	vmctx.GasBurn(gas.BurnGetContext)
+	vmctx.GasBurn(gas.BurnCodeGetContext)
 	return vmctx.getCallContext().contract
 }
 
 func (vmctx *VMContext) Params() dict.Dict {
-	vmctx.GasBurn(gas.BurnGetContext)
+	vmctx.GasBurn(gas.BurnCodeGetContext)
 	return vmctx.getCallContext().params
 }
 
@@ -57,28 +57,28 @@ func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
 }
 
 func (vmctx *VMContext) Caller() *iscp.AgentID {
-	vmctx.GasBurn(gas.BurnGetCallerData)
+	vmctx.GasBurn(gas.BurnCodeGetCallerData)
 	return vmctx.getCallContext().caller
 }
 
 func (vmctx *VMContext) Timestamp() int64 {
-	vmctx.GasBurn(gas.BurnGetContext)
+	vmctx.GasBurn(gas.BurnCodeGetContext)
 	return vmctx.virtualState.Timestamp().UnixNano()
 }
 
 func (vmctx *VMContext) Entropy() hashing.HashValue {
-	vmctx.GasBurn(gas.BurnGetContext)
+	vmctx.GasBurn(gas.BurnCodeGetContext)
 
 	return vmctx.entropy
 }
 
 func (vmctx *VMContext) Request() iscp.Calldata {
-	vmctx.GasBurn(gas.BurnGetContext)
+	vmctx.GasBurn(gas.BurnCodeGetContext)
 	return vmctx.req
 }
 
 func (vmctx *VMContext) AccountID() *iscp.AgentID {
-	vmctx.GasBurn(gas.BurnGetContext)
+	vmctx.GasBurn(gas.BurnCodeGetContext)
 
 	hname := vmctx.CurrentContractHname()
 	if commonaccount.IsCoreHname(hname) {
@@ -88,7 +88,7 @@ func (vmctx *VMContext) AccountID() *iscp.AgentID {
 }
 
 func (vmctx *VMContext) AllowanceAvailable() *iscp.Assets {
-	vmctx.GasBurn(gas.BurnGetAllowance)
+	vmctx.GasBurn(gas.BurnCodeGetAllowance)
 	return vmctx.getCallContext().allowanceAvailable.Clone()
 }
 
@@ -131,7 +131,7 @@ func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Assets) {
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
 func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAccount bool, assets ...*iscp.Assets) *iscp.Assets {
-	vmctx.GasBurn(gas.BurnTransferAllowance)
+	vmctx.GasBurn(gas.BurnCodeTransferAllowance)
 
 	if vmctx.isCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
@@ -161,7 +161,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target *iscp.AgentID, forceOpenAcco
 }
 
 func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
-	vmctx.GasBurn(gas.BurnGetContext)
+	vmctx.GasBurn(gas.BurnCodeGetContext)
 
 	sd, err := iscp.StateDataFromBytes(vmctx.task.AnchorOutput.StateMetadata)
 	if err != nil {
@@ -203,6 +203,6 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, desc
 	par.Set(root.ParamDescription, codec.EncodeString(description))
 	_, err := vmctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
 
-	vmctx.GasBurn(gas.BurnDeployContract)
+	vmctx.GasBurn(gas.BurnCodeDeployContract)
 	return err
 }

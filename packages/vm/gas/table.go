@@ -3,60 +3,62 @@ package gas
 import "golang.org/x/xerrors"
 
 const (
-	BurnStorage1P = BurnCode(iota)
-	BurnCallTargetNotFound
-	BurnGetContext
-	BurnGetCallerData
-	BurnGetAllowance
-	BurnGetStateAnchorInfo
-	BurnGetBalance
-	BurnCallContract
-	BurnDeployContract
-	BurnEmitEventFixed
-	BurnTransferAllowance
-	BurnSendL1Request
+	BurnCodeStorage1P = BurnCode(iota)
+	BurnCodeReadFromState1P
+	BurnCodeCallTargetNotFound
+	BurnCodeGetContext
+	BurnCodeGetCallerData
+	BurnCodeGetAllowance
+	BurnCodeGetStateAnchorInfo
+	BurnCodeGetBalance
+	BurnCodeCallContract
+	BurnCodeDeployContract
+	BurnCodeEmitEventFixed
+	BurnCodeTransferAllowance
+	BurnCodeSendL1Request
 
 	// Sandbox util codes
 
-	BurnUtilsHashingBlake2b
-	BurnUtilsHashingSha3
-	BurnUtilsHashingHname
-	BurnUtilsBase58Encode
-	BurnUtilsBase58Decode
-	BurnUtilsED25519ValidSig
-	BurnUtilsED25519AddrFromPubKey
-	BurnUtilsBLSValidSignature
-	BurnUtilsBLSAddrFromPubKey
-	BurnUtilsBLSAggregateBLS1P
+	BurnCodeUtilsHashingBlake2b
+	BurnCodeUtilsHashingSha3
+	BurnCodeUtilsHashingHname
+	BurnCodeUtilsBase58Encode
+	BurnCodeUtilsBase58Decode
+	BurnCodeUtilsED25519ValidSig
+	BurnCodeUtilsED25519AddrFromPubKey
+	BurnCodeUtilsBLSValidSignature
+	BurnCodeUtilsBLSAddrFromPubKey
+	BurnCodeUtilsBLSAggregateBLS1P
 
-	BurnWasm1P
+	BurnCodeWasm1P
 )
 
 // burnTable contains all possible burn codes with their burn value computing functions
 var burnTable = BurnTable{
-	BurnCallTargetNotFound:         {"target n/f", constValue(10)},
-	BurnGetContext:                 {"context", constValue(10)},
-	BurnGetCallerData:              {"caller", constValue(10)},
-	BurnGetStateAnchorInfo:         {"anchor", constValue(10)},
-	BurnGetBalance:                 {"balance", constValue(20)},
-	BurnCallContract:               {"call", constValue(10)},
-	BurnEmitEventFixed:             {"event", constValue(10)},
-	BurnGetAllowance:               {"allowance", constValue(10)},
-	BurnTransferAllowance:          {"transfer", constValue(10)},
-	BurnSendL1Request:              {"send", linear(Coef1Send)},
-	BurnDeployContract:             {"deploy", constValue(10)},
-	BurnStorage1P:                  {"storage", linear()},
-	BurnWasm1P:                     {"wasm", linear()},
-	BurnUtilsHashingBlake2b:        {"blake2b", constValue(50)},
-	BurnUtilsHashingSha3:           {"sha3", constValue(80)},
-	BurnUtilsHashingHname:          {"hname", constValue(50)},
-	BurnUtilsBase58Encode:          {"base58enc", constValue(50)},
-	BurnUtilsBase58Decode:          {"base58dec", constValue(50)},
-	BurnUtilsED25519ValidSig:       {"ed25517 valid", constValue(200)},
-	BurnUtilsED25519AddrFromPubKey: {"ed25517 addr", constValue(50)},
-	BurnUtilsBLSValidSignature:     {"bls valid", constValue(2000)},
-	BurnUtilsBLSAddrFromPubKey:     {"bls addr", constValue(50)},
-	BurnUtilsBLSAggregateBLS1P:     {"bls aggregate", linear(CoefBLSAggregate)},
+	BurnCodeCallTargetNotFound:         {"target n/f", constValue(10)},
+	BurnCodeGetContext:                 {"context", constValue(10)},
+	BurnCodeGetCallerData:              {"caller", constValue(10)},
+	BurnCodeGetStateAnchorInfo:         {"anchor", constValue(10)},
+	BurnCodeGetBalance:                 {"balance", constValue(20)},
+	BurnCodeCallContract:               {"call", constValue(10)},
+	BurnCodeEmitEventFixed:             {"event", constValue(10)},
+	BurnCodeGetAllowance:               {"allowance", constValue(10)},
+	BurnCodeTransferAllowance:          {"transfer", constValue(10)},
+	BurnCodeSendL1Request:              {"send", linear(Coef1Send)},
+	BurnCodeDeployContract:             {"deploy", constValue(10)},
+	BurnCodeStorage1P:                  {"storage", linear(100)},
+	BurnCodeReadFromState1P:            {"state read", linear(1)},
+	BurnCodeWasm1P:                     {"wasm", linear(1)},
+	BurnCodeUtilsHashingBlake2b:        {"blake2b", constValue(50)},
+	BurnCodeUtilsHashingSha3:           {"sha3", constValue(80)},
+	BurnCodeUtilsHashingHname:          {"hname", constValue(50)},
+	BurnCodeUtilsBase58Encode:          {"base58enc", linear(50)},
+	BurnCodeUtilsBase58Decode:          {"base58dec", linear(5)},
+	BurnCodeUtilsED25519ValidSig:       {"ed25517 valid", constValue(200)},
+	BurnCodeUtilsED25519AddrFromPubKey: {"ed25517 addr", constValue(50)},
+	BurnCodeUtilsBLSValidSignature:     {"bls valid", constValue(2000)},
+	BurnCodeUtilsBLSAddrFromPubKey:     {"bls addr", constValue(50)},
+	BurnCodeUtilsBLSAggregateBLS1P:     {"bls aggregate", linear(CoefBLSAggregate)},
 }
 
 const (
@@ -66,61 +68,24 @@ const (
 
 func constValue(constGas uint64) BurnFunction {
 	g := constGas
-	return func(_ BurnCode, _ []int) uint64 {
+	return func(_ uint64) uint64 {
 		return g
 	}
 }
 
-func notImplemented() BurnFunction {
-	return func(code BurnCode, _ []int) uint64 {
-		panic(xerrors.Errorf("burn code %d not implemented", code))
+func (c BurnCode) Cost(p ...int) uint64 {
+	x := uint64(0)
+	if len(p) > 0 {
+		x = uint64(p[0])
 	}
+	if r, ok := burnTable[c]; ok {
+		return r.BurnFunction(x)
+	}
+	panic(xerrors.Errorf("%v: %d", ErrUnknownBurnCode, c))
 }
 
-func (c BurnCode) Value(p ...int) uint64 {
-	return Value(c, p...)
-}
-
-// linear takes A and B as parameters ans construct a closure which returns gas as a linear function A*x+B of the parameter x.
-// linear() without parameters returns closure corresponding to identity function 1*x+0
-func linear(p ...int) BurnFunction {
-	switch len(p) {
-	case 0:
-		// burn value == X
-		return func(_ BurnCode, x []int) uint64 {
-			if len(x) != 1 {
-				panic(ErrInLinear1ParameterExpected)
-			}
-			return uint64(x[0])
-		}
-	case 1:
-		a := uint64(p[0])
-		// burn value == a*X
-		return func(_ BurnCode, x []int) uint64 {
-			if len(x) != 1 {
-				panic(ErrInLinear1ParameterExpected)
-			}
-			return a * uint64(x[0])
-		}
-	case 2:
-		a := uint64(p[0])
-		b := uint64(p[1])
-		if a == 0 {
-			// burn value = 0*X+b
-			return constValue(b)
-		}
-		if b == 0 {
-			// burn value = a*X
-			return linear(p[0])
-		}
-		// burn value = a*X+b
-		return func(_ BurnCode, x []int) uint64 {
-			if len(x) != 1 {
-				panic(ErrInLinear1ParameterExpected)
-			}
-			return a*uint64(x[0]) + b
-		}
-	default:
-		panic("function requires 0, 1 or 2 parameter")
+func linear(a uint64) BurnFunction {
+	return func(x uint64) uint64 {
+		return a * x
 	}
 }

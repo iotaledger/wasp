@@ -7,8 +7,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -21,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 )
@@ -190,7 +189,7 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 	entryPoint := vmctx.req.CallTarget().EntryPoint
 	targetContract := vmctx.targetContract()
 	if targetContract == nil {
-		vmctx.GasBurn(gas.BurnCallTargetNotFound)
+		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
 		panic(xerrors.Errorf("%v: target = %s", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract))
 	}
 	return vmctx.callByProgramHash(

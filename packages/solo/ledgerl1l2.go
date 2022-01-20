@@ -156,11 +156,11 @@ type foundryParams struct {
 
 // CreateFoundryGasBudgetIotas always takes 1000 iotas as gas budget and assets for the call
 const (
-	CreateFoundryGasBudgetIotas   = 1000
-	MintTokensGasBudgetIotas      = 1000
-	DestroyTokensGasBudgetIotas   = 1000
-	SendToL2AccountGasBudgetIotas = 1000
-	DestroyFoundryGasBudgetIotas  = 1000
+	CreateFoundryGasBudgetIotas   = 100_000
+	MintTokensGasBudgetIotas      = 100_000
+	DestroyTokensGasBudgetIotas   = 100_000
+	SendToL2AccountGasBudgetIotas = 100_000
+	DestroyFoundryGasBudgetIotas  = 100_000
 )
 
 func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {
@@ -312,7 +312,7 @@ func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.Assets, tar
 	reqEstimate := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
 		AddAssets(sumAssets).
 		AddAllowance(toSend).
-		WithGasBudget(10_000)
+		WithGasBudget(200_000)
 	gas, _, err := ch.EstimateGasOnLedger(reqEstimate, user)
 	require.NoError(ch.Env.T, err)
 
