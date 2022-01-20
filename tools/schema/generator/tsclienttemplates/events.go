@@ -10,7 +10,9 @@ $#each events eventHandler
 ]);
 
 export class $PkgName$+Events implements wasmclient.IEventHandler {
+/* eslint-disable @typescript-eslint/no-empty-function */
 $#each events eventHandlerMember
+/* eslint-enable @typescript-eslint/no-empty-function */
 
 	public callHandler(topic: string, params: string[]): void {
 		const handler = $pkgName$+Handlers.get(topic);
