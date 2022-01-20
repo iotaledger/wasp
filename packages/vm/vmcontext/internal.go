@@ -180,6 +180,8 @@ func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 
 // updateOffLedgerRequestMaxAssumedNonce updates stored nonce for off ledger requests
 func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
+	vmctx.gasBurnEnable(false)
+	defer vmctx.gasBurnEnable(true)
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.SaveMaxAssumedNonce(
 			s,
