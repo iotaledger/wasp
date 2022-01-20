@@ -46,8 +46,9 @@ export class GoShimmerClient {
 
         const unspents = await this.unspentOutputs({ addresses: [address] });
         const currentUnspent = unspents.unspentOutputs.find((x) => x.address.base58 == address);
+        if (!currentUnspent) throw new Error("current unspent not found");
 
-        const balance = currentUnspent!.outputs
+        const balance = currentUnspent.outputs
             .filter(
                 (o) =>
                     ["ExtendedLockedOutputType", "SigLockedColoredOutputType"].includes(o.output.type) &&
