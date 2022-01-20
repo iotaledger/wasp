@@ -15,17 +15,8 @@ import (
 // TODO test analysis not finished
 
 func incrementSCCounter(t *testing.T, ch *solo.Chain) iscp.RequestID {
-	reqEstimate := solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).
-		WithGasBudget(100_000).
-		AddAssetsIotas(100_000)
-
-	gas, gasFee, err := ch.EstimateGasOnLedger(reqEstimate, nil)
-	require.NoError(t, err)
-
 	tx, _, err := ch.PostRequestSyncTx(
-		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).
-			WithGasBudget(gas).
-			AddAssetsIotas(gasFee),
+		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name),
 		nil,
 	)
 	require.NoError(t, err)

@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"math"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -262,6 +263,20 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (d
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
+	if req.gasBudget == 0 {
+		gas, fee, err := ch.EstimateGasOffLedger(req, keyPair)
+		if err != nil {
+			return nil, xerrors.Errorf("cannot estimate gas: %w", err)
+		}
+		if fee > 0 {
+			err := ch.checkCanAffordFee(fee, req, keyPair)
+			if err != nil {
+				return nil, err
+			}
+		}
+		req.WithGasBudget(gas)
+	}
+
 	if keyPair == nil {
 		keyPair = &ch.OriginatorPrivateKey
 	}
@@ -287,8 +302,59 @@ func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
 	return ch.lastReceipt
 }
 
+func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptolib.KeyPair) error {
+	if keyPair == nil {
+		keyPair = &ch.OriginatorPrivateKey
+	}
+	agentID := iscp.NewAgentID(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey), 0)
+	policy := ch.GetGasFeePolicy()
+	available := uint64(0)
+	if policy.GasFeeTokenID == nil {
+		available = ch.L2Iotas(agentID)
+		if req.assets != nil {
+			available += req.assets.Iotas
+		}
+		if req.allowance != nil {
+			available -= req.allowance.Iotas
+		}
+	} else {
+		n := ch.L2NativeTokens(agentID, policy.GasFeeTokenID)
+		if req.assets != nil {
+			n.Add(n, req.assets.AmountNativeToken(policy.GasFeeTokenID))
+		}
+		if req.allowance != nil {
+			n.Sub(n, req.allowance.AmountNativeToken(policy.GasFeeTokenID))
+		}
+		if n.IsUint64() {
+			available = n.Uint64()
+		} else {
+			available = math.MaxUint64
+		}
+	}
+	if available < fee {
+		return xerrors.Errorf("sender's available tokens on L2 (%d) is less than the %d required", available, fee)
+	}
+	return nil
+}
+
 func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
+
+	if req.gasBudget == 0 {
+		gas, fee, err := ch.EstimateGasOnLedger(req, keyPair)
+		if err != nil {
+			return nil, nil, nil, xerrors.Errorf("cannot estimate gas: %w", err)
+		}
+
+		if fee > 0 {
+			err := ch.checkCanAffordFee(fee, req, keyPair)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+		}
+
+		req.WithGasBudget(gas)
+	}
 
 	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
 	require.NoError(ch.Env.T, err)
