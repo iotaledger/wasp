@@ -120,7 +120,11 @@ $#each result callResultGetter
 `,
 	// *******************************
 	"callResultGetter": `
-$#if map callResultGetterMap callResultGetterBasic
+$#if map callResultGetterMap callResultGetter2
+`,
+	// *******************************
+	"callResultGetter2": `
+$#if basetype callResultGetterBasic callResultGetterStruct
 `,
 	// *******************************
 	"callResultGetterMap": `
@@ -139,6 +143,13 @@ $#if mandatory else callResultOptional
 
 func (r *$FuncName$+Results) $FldName() $fldLangType {
 	return r.res.To$FldType(r.res.Get(Res$FldName))
+}
+`,
+	// *******************************
+	"callResultGetterStruct": `
+
+func (r *$FuncName$+Results) $FldName() *$FldType {
+	return New$FldType$+FromBytes(r.res.Get(Res$FldName))
 }
 `,
 	// *******************************

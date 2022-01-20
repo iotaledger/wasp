@@ -8,26 +8,9 @@ import {Convert} from "./convert";
 import {ScAddress, ScAgentID, ScChainID, ScColor, ScHash, ScHname, ScRequestID} from "./hashtypes";
 import * as host from "./host";
 import {
-    ScImmutableAddressArray,
-    ScImmutableAgentIDArray,
-    ScImmutableBoolArray,
-    ScImmutableBytesArray,
-    ScImmutableChainIDArray,
-    ScImmutableColorArray,
-    ScImmutableHashArray,
-    ScImmutableHnameArray,
-    ScImmutableInt8Array,
-    ScImmutableInt16Array,
-    ScImmutableInt32Array,
-    ScImmutableInt64Array,
     ScImmutableMap,
     ScImmutableMapArray,
-    ScImmutableRequestIDArray,
     ScImmutableStringArray,
-    ScImmutableUint8Array,
-    ScImmutableUint16Array,
-    ScImmutableUint32Array,
-    ScImmutableUint64Array,
 } from "./immutable";
 import {Key32, KEY_MAPS, MapKey} from "./keys";
 
@@ -71,38 +54,6 @@ export class ScMutableAddress {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for mutable array of ScAddress
-export class ScMutableAddressArray {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getAddress(index: i32): ScMutableAddress {
-        return new ScMutableAddress(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableAddressArray {
-        return new ScImmutableAddressArray(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 // value proxy for mutable ScAgentID in host container
 export class ScMutableAgentID {
     objID: i32;
@@ -136,38 +87,6 @@ export class ScMutableAgentID {
     // retrieve value from host container
     value(): ScAgentID {
         return ScAgentID.fromBytes(host.getBytes(this.objID, this.keyID, host.TYPE_AGENT_ID));
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-// array proxy for mutable array of ScAgentID
-export class ScMutableAgentIDArray {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getAgentID(index: i32): ScMutableAgentID {
-        return new ScMutableAgentID(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableAgentIDArray {
-        return new ScImmutableAgentIDArray(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
     }
 }
 
@@ -213,38 +132,6 @@ export class ScMutableBool {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for mutable array of Bool
-export class ScMutableBoolArray {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getBool(index: i32): ScMutableBool {
-        return new ScMutableBool(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableBoolArray {
-        return new ScImmutableBoolArray(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 // value proxy for mutable bytes array in host container
 export class ScMutableBytes {
     objID: i32;
@@ -278,38 +165,6 @@ export class ScMutableBytes {
     // retrieve value from host container
     value(): u8[] {
         return host.getBytes(this.objID, this.keyID, host.TYPE_BYTES);
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-// array proxy for mutable array of byte array
-export class ScMutableBytesArray {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getBytes(index: i32): ScMutableBytes {
-        return new ScMutableBytes(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableBytesArray {
-        return new ScImmutableBytesArray(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
     }
 }
 
@@ -353,38 +208,6 @@ export class ScMutableChainID {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for mutable array of ScChainID
-export class ScMutableChainIDArray {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getChainID(index: i32): ScMutableChainID {
-        return new ScMutableChainID(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableChainIDArray {
-        return new ScImmutableChainIDArray(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 // value proxy for mutable ScColor in host container
 export class ScMutableColor {
     objID: i32;
@@ -418,38 +241,6 @@ export class ScMutableColor {
     // retrieve value from host container
     value(): ScColor {
         return ScColor.fromBytes(host.getBytes(this.objID, this.keyID, host.TYPE_COLOR));
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-// array proxy for mutable array of ScColor
-export class ScMutableColorArray {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getColor(index: i32): ScMutableColor {
-        return new ScMutableColor(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableColorArray {
-        return new ScImmutableColorArray(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
     }
 }
 
@@ -493,38 +284,6 @@ export class ScMutableHash {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for mutable array of ScHash
-export class ScMutableHashArray {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getHash(index: i32): ScMutableHash {
-        return new ScMutableHash(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableHashArray {
-        return new ScImmutableHashArray(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 // value proxy for mutable ScHname in host container
 export class ScMutableHname {
     objID: i32;
@@ -558,38 +317,6 @@ export class ScMutableHname {
     // retrieve value from host container
     value(): ScHname {
         return ScHname.fromBytes(host.getBytes(this.objID, this.keyID, host.TYPE_HNAME));
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-// array proxy for mutable array of ScHname
-export class ScMutableHnameArray {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getHname(index: i32): ScMutableHname {
-        return new ScMutableHname(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableHnameArray {
-        return new ScImmutableHnameArray(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
     }
 }
 
@@ -635,38 +362,6 @@ export class ScMutableInt8 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for mutable array of Int8
-export class ScMutableInt8Array {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getInt8(index: i32): ScMutableInt8 {
-        return new ScMutableInt8(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableInt8Array {
-        return new ScImmutableInt8Array(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 // value proxy for mutable Int16 in host container
 export class ScMutableInt16 {
     objID: i32;
@@ -700,38 +395,6 @@ export class ScMutableInt16 {
     // retrieve value from host container
     value(): i16 {
         return Convert.toI16(host.getBytes(this.objID, this.keyID, host.TYPE_INT16));
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-// array proxy for mutable array of Int16
-export class ScMutableInt16Array {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getInt16(index: i32): ScMutableInt16 {
-        return new ScMutableInt16(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableInt16Array {
-        return new ScImmutableInt16Array(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
     }
 }
 
@@ -775,38 +438,6 @@ export class ScMutableInt32 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for mutable array of Int32
-export class ScMutableInt32Array {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getInt32(index: i32): ScMutableInt32 {
-        return new ScMutableInt32(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableInt32Array {
-        return new ScImmutableInt32Array(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 // value proxy for mutable Int64 in host container
 export class ScMutableInt64 {
     objID: i32;
@@ -845,38 +476,6 @@ export class ScMutableInt64 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for mutable array of Int64
-export class ScMutableInt64Array {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getInt64(index: i32): ScMutableInt64 {
-        return new ScMutableInt64(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableInt64Array {
-        return new ScImmutableInt64Array(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 // map proxy for mutable map
 export class ScMutableMap {
     objID: i32;
@@ -905,21 +504,9 @@ export class ScMutableMap {
         return new ScMutableAddress(this.objID, key.getKeyID());
     }
 
-    // get array proxy for ScMutableAddressArray specified by key
-    getAddressArray(key: MapKey): ScMutableAddressArray {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_ADDRESS | host.TYPE_ARRAY);
-        return new ScMutableAddressArray(arrID);
-    }
-
     // get value proxy for mutable ScAgentID field specified by key
     getAgentID(key: MapKey): ScMutableAgentID {
         return new ScMutableAgentID(this.objID, key.getKeyID());
-    }
-
-    // get array proxy for ScMutableAgentIDArray specified by key
-    getAgentIDArray(key: MapKey): ScMutableAgentIDArray {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_AGENT_ID | host.TYPE_ARRAY);
-        return new ScMutableAgentIDArray(arrID);
     }
 
     // get value proxy for mutable Bool field specified by key
@@ -927,21 +514,9 @@ export class ScMutableMap {
         return new ScMutableBool(this.objID, key.getKeyID());
     }
 
-    // get array proxy for ScMutableBoolArray specified by key
-    getBoolArray(key: MapKey): ScMutableBoolArray {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_BOOL | host.TYPE_ARRAY);
-        return new ScMutableBoolArray(arrID);
-    }
-
     // get value proxy for mutable Bytes array field specified by key
     getBytes(key: MapKey): ScMutableBytes {
         return new ScMutableBytes(this.objID, key.getKeyID());
-    }
-
-    // get array proxy for ScMutableBytesArray specified by key
-    getBytesArray(key: MapKey): ScMutableBytesArray {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_BYTES | host.TYPE_ARRAY);
-        return new ScMutableBytesArray(arrID);
     }
 
     // get value proxy for mutable ScChainID field specified by key
@@ -949,21 +524,9 @@ export class ScMutableMap {
         return new ScMutableChainID(this.objID, key.getKeyID());
     }
 
-    // get array proxy for ScMutableChainIDArray specified by key
-    getChainIDArray(key: MapKey): ScMutableChainIDArray {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_CHAIN_ID | host.TYPE_ARRAY);
-        return new ScMutableChainIDArray(arrID);
-    }
-
     // get value proxy for mutable ScColor field specified by key
     getColor(key: MapKey): ScMutableColor {
         return new ScMutableColor(this.objID, key.getKeyID());
-    }
-
-    // get array proxy for ScMutableColorArray specified by key
-    getColorArray(key: MapKey): ScMutableColorArray {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_COLOR | host.TYPE_ARRAY);
-        return new ScMutableColorArray(arrID);
     }
 
     // get value proxy for mutable ScHash field specified by key
@@ -971,21 +534,9 @@ export class ScMutableMap {
         return new ScMutableHash(this.objID, key.getKeyID());
     }
 
-    // get array proxy for ScMutableHashArray specified by key
-    getHashArray(key: MapKey): ScMutableHashArray {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_HASH | host.TYPE_ARRAY);
-        return new ScMutableHashArray(arrID);
-    }
-
     // get value proxy for mutable ScHname field specified by key
     getHname(key: MapKey): ScMutableHname {
         return new ScMutableHname(this.objID, key.getKeyID());
-    }
-
-    // get array proxy for ScMutableHnameArray specified by key
-    getHnameArray(key: MapKey): ScMutableHnameArray {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_HNAME | host.TYPE_ARRAY);
-        return new ScMutableHnameArray(arrID);
     }
 
     // get value proxy for mutable Int8 field specified by key
@@ -993,21 +544,9 @@ export class ScMutableMap {
         return new ScMutableInt8(this.objID, key.getKeyID());
     }
 
-    // get array proxy for ScMutableInt8Array specified by key
-    getInt8Array(key: MapKey): ScMutableInt8Array {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_INT8 | host.TYPE_ARRAY);
-        return new ScMutableInt8Array(arrID);
-    }
-
     // get value proxy for mutable Int16 field specified by key
     getInt16(key: MapKey): ScMutableInt16 {
         return new ScMutableInt16(this.objID, key.getKeyID());
-    }
-
-    // get array proxy for ScMutableInt16Array specified by key
-    getInt16Array(key: MapKey): ScMutableInt16Array {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_INT16 | host.TYPE_ARRAY);
-        return new ScMutableInt16Array(arrID);
     }
 
     // get value proxy for mutable Int32 field specified by key
@@ -1015,21 +554,9 @@ export class ScMutableMap {
         return new ScMutableInt32(this.objID, key.getKeyID());
     }
 
-    // get array proxy for ScMutableInt32Array specified by key
-    getInt32Array(key: MapKey): ScMutableInt32Array {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_INT32 | host.TYPE_ARRAY);
-        return new ScMutableInt32Array(arrID);
-    }
-
     // get value proxy for mutable Int64 field specified by key
     getInt64(key: MapKey): ScMutableInt64 {
         return new ScMutableInt64(this.objID, key.getKeyID());
-    }
-
-    // get array proxy for ScMutableInt64Array specified by key
-    getInt64Array(key: MapKey): ScMutableInt64Array {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_INT64 | host.TYPE_ARRAY);
-        return new ScMutableInt64Array(arrID);
     }
 
     // get map proxy for ScMutableMap specified by key
@@ -1049,12 +576,6 @@ export class ScMutableMap {
         return new ScMutableRequestID(this.objID, key.getKeyID());
     }
 
-    // get array proxy for ScMutableRequestIDArray specified by key
-    getRequestIDArray(key: MapKey): ScMutableRequestIDArray {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_REQUEST_ID | host.TYPE_ARRAY);
-        return new ScMutableRequestIDArray(arrID);
-    }
-
     // get value proxy for mutable UTF-8 text string field specified by key
     getString(key: MapKey): ScMutableString {
         return new ScMutableString(this.objID, key.getKeyID());
@@ -1071,21 +592,9 @@ export class ScMutableMap {
         return new ScMutableUint8(this.objID, key.getKeyID());
     }
 
-    // get array proxy for ScMutableUint8Array specified by key
-    getUint8Array(key: MapKey): ScMutableUint8Array {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_INT8 | host.TYPE_ARRAY);
-        return new ScMutableUint8Array(arrID);
-    }
-
     // get value proxy for mutable Uint16 field specified by key
     getUint16(key: MapKey): ScMutableUint16 {
         return new ScMutableUint16(this.objID, key.getKeyID());
-    }
-
-    // get array proxy for ScMutableUint16Array specified by key
-    getUint16Array(key: MapKey): ScMutableUint16Array {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_INT16 | host.TYPE_ARRAY);
-        return new ScMutableUint16Array(arrID);
     }
 
     // get value proxy for mutable Uint32 field specified by key
@@ -1093,21 +602,9 @@ export class ScMutableMap {
         return new ScMutableUint32(this.objID, key.getKeyID());
     }
 
-    // get array proxy for ScMutableUint32Array specified by key
-    getUint32Array(key: MapKey): ScMutableUint32Array {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_INT32 | host.TYPE_ARRAY);
-        return new ScMutableUint32Array(arrID);
-    }
-
     // get value proxy for mutable Uint64 field specified by key
     getUint64(key: MapKey): ScMutableUint64 {
         return new ScMutableUint64(this.objID, key.getKeyID());
-    }
-
-    // get array proxy for ScMutableUint64Array specified by key
-    getUint64Array(key: MapKey): ScMutableUint64Array {
-        let arrID = host.getObjectID(this.objID, key.getKeyID(), host.TYPE_INT64 | host.TYPE_ARRAY);
-        return new ScMutableUint64Array(arrID);
     }
 
     // get immutable version of map proxy
@@ -1188,38 +685,6 @@ export class ScMutableRequestID {
     // retrieve value from host container
     value(): ScRequestID {
         return ScRequestID.fromBytes(host.getBytes(this.objID, this.keyID, host.TYPE_REQUEST_ID));
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-// array proxy for mutable array of ScRequestID
-export class ScMutableRequestIDArray {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getRequestID(index: i32): ScMutableRequestID {
-        return new ScMutableRequestID(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableRequestIDArray {
-        return new ScImmutableRequestIDArray(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
     }
 }
 
@@ -1336,38 +801,6 @@ export class ScMutableUint8 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for mutable array of Uint8
-export class ScMutableUint8Array {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getUint8(index: i32): ScMutableUint8 {
-        return new ScMutableUint8(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableUint8Array {
-        return new ScImmutableUint8Array(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 // value proxy for mutable Uint16 in host container
 export class ScMutableUint16 {
     objID: i32;
@@ -1402,38 +835,6 @@ export class ScMutableUint16 {
     value(): u16 {
         let bytes = host.getBytes(this.objID, this.keyID, host.TYPE_INT16);
         return Convert.toI16(bytes) as u16;
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-// array proxy for mutable array of Uint16
-export class ScMutableUint16Array {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getUint16(index: i32): ScMutableUint16 {
-        return new ScMutableUint16(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableUint16Array {
-        return new ScImmutableUint16Array(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
     }
 }
 
@@ -1478,38 +879,6 @@ export class ScMutableUint32 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// array proxy for mutable array of Uint32
-export class ScMutableUint32Array {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getUint32(index: i32): ScMutableUint32 {
-        return new ScMutableUint32(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableUint32Array {
-        return new ScImmutableUint32Array(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 // value proxy for mutable Uint64 in host container
 export class ScMutableUint64 {
     objID: i32;
@@ -1544,37 +913,5 @@ export class ScMutableUint64 {
     value(): u64 {
         let bytes = host.getBytes(this.objID, this.keyID, host.TYPE_INT64);
         return Convert.toI64(bytes) as u64;
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-// array proxy for mutable array of Uint64
-export class ScMutableUint64Array {
-    objID: i32;
-
-    constructor(id: i32) {
-        this.objID = id;
-    }
-
-    // empty the array
-    clear(): void {
-        host.clear(this.objID);
-    }
-
-    // get value proxy for item at index, index can be 0..length()
-    // when index equals length() a new item is appended
-    getUint64(index: i32): ScMutableUint64 {
-        return new ScMutableUint64(this.objID, new Key32(index));
-    }
-
-    // get immutable version of array proxy
-    immutable(): ScImmutableUint64Array {
-        return new ScImmutableUint64Array(this.objID);
-    }
-
-    // number of items in array
-    length(): i32 {
-        return host.getLength(this.objID);
     }
 }

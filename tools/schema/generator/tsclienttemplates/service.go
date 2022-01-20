@@ -115,7 +115,11 @@ $#each result callResultGetter
 `,
 	// *******************************
 	"callResultGetter": `
-$#if map callResultGetterMap callResultGetterBasic
+$#if map callResultGetterMap callResultGetter2
+`,
+	// *******************************
+	"callResultGetter2": `
+$#if basetype callResultGetterBasic callResultGetterStruct
 `,
 	// *******************************
 	"callResultGetterMap": `
@@ -134,6 +138,13 @@ $#if mandatory else callResultOptional
 
 	$fldName(): $fldLangType {
 		return this.to$FldType(this.get(Res$FldName));
+	}
+`,
+	// *******************************
+	"callResultGetterStruct": `
+
+	$fldName(): $FldType {
+		return $FldType.fromBytes(this.get(Res$FldName));
 	}
 `,
 	// *******************************
