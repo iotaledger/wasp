@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // SandboxBase is the common interface of Sandbox and SandboxView
@@ -34,7 +35,7 @@ type SandboxBase interface {
 	Log() LogInterface
 	// Utils provides access to common necessary functionality
 	Utils() Utils
-	// Gas returns sub-interface for gas related functions
+	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
 }
 
@@ -86,12 +87,17 @@ type Sandbox interface {
 	AllowanceAvailable() *Assets
 	// TransferAllowedFunds moves assets from the caller's account to specified account within the budget set by Allowance.
 	// Skipping 'assets' means transfer all Allowance().
-	// The call fails if target account does not exist
 	// The TransferAllowedFunds call mutates AllowanceAvailable
 	// Returns remaining budget
+	// TransferAllowedFunds fails if target does not exist
 	TransferAllowedFunds(target *AgentID, assets ...*Assets) *Assets
-	// Send sends a on-ledger request
+	// TransferAllowedFundsForceCreateTarget does not fail when target does not exist.
+	// If it is a random target, funds may be inaccessible (less safe)
+	TransferAllowedFundsForceCreateTarget(target *AgentID, assets ...*Assets) *Assets
+	// Send sends a on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
+	// EstimateRequiredDustDeposit returns the amount of iotas needed to cover for a given request's dust deposit
+	EstimateRequiredDustDeposit(r RequestParameters) (uint64, error)
 	// BlockContext Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// StateAnchor properties of the anchor output
@@ -107,7 +113,7 @@ type Privileged interface {
 	CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64)
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
-	//BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
+	// BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
@@ -118,6 +124,8 @@ type RequestParameters struct {
 	// It expected to contain iotas at least the amount required for dust deposit
 	// It depends on the context how it is handled when iotas are not enough for dust deposit
 	Assets *Assets
+	// AdjustToMinimumDustDeposit if true iotas in assets will be added to meet minimum dust deposit requirements
+	AdjustToMinimumDustDeposit bool
 	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address
 	Metadata *SendMetadata
 	// SendOptions includes options of the output, such as time lock or expiry parameters
@@ -125,7 +133,7 @@ type RequestParameters struct {
 }
 
 type Gas interface {
-	Burn(uint64)
+	Burn(burnCode gas.BurnCode, par ...int)
 	Budget() uint64
 }
 

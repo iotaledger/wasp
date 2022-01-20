@@ -160,13 +160,19 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.Request) int64 {
 }
 
 // AddOutput adds an information about posted request. It will produce output
-// Return adjustment needed for the L2 ledger
+// Return adjustment needed for the L2 ledger (adjustment on iotas related to dust protection)
 func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	if txb.outputsAreFull() {
 		panic(ErrOutputLimitExceeded)
 	}
 	if txb.numNativeTokensExceeded() {
 		panic(ErrNumberOfNativeTokensLimitExceeded)
+	}
+
+	requiredDustDeposit := o.VByteCost(txb.rentStructure, nil)
+	if o.Deposit() < requiredDustDeposit {
+		panic(xerrors.Errorf("%v: available %d < required %d iotas",
+			transaction.ErrNotEnoughIotasForDustDeposit, o.Deposit(), requiredDustDeposit))
 	}
 	assets := transaction.AssetsFromOutput(o)
 	txb.subDeltaIotasFromTotal(assets.Iotas)
@@ -273,8 +279,8 @@ func (txb *AnchorTransactionBuilder) InputsAreFull() bool {
 	return txb.numInputs() >= iotago.MaxInputsCount
 }
 
-// numOutputs in the transaction
-func (txb *AnchorTransactionBuilder) numOutputs() int {
+// NumOutputs in the transaction
+func (txb *AnchorTransactionBuilder) NumOutputs() int {
 	ret := 1 // for chain output
 	for _, v := range txb.balanceNativeTokens {
 		if v.producesOutput() {
@@ -292,7 +298,7 @@ func (txb *AnchorTransactionBuilder) numOutputs() int {
 
 // outputsAreFull return if transaction cannot bear more outputs
 func (txb *AnchorTransactionBuilder) outputsAreFull() bool {
-	return txb.numOutputs() >= iotago.MaxOutputsCount
+	return txb.NumOutputs() >= iotago.MaxOutputsCount
 }
 
 func (txb *AnchorTransactionBuilder) numNativeTokensExceeded() bool {

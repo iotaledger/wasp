@@ -193,7 +193,7 @@ func TestBigBlob(t *testing.T) {
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			governance.Contract.Name, governance.FuncSetChainInfo.Name,
-			governance.ParamMaxBlobSize, bigblobSize,
+			governance.ParamMaxBlobSizeUint32, bigblobSize,
 		).AddAssetsIotas(1),
 		nil,
 	)

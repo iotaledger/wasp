@@ -10,10 +10,12 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
@@ -149,16 +151,21 @@ func toMap(params []interface{}) map[string]interface{} {
 		panic("WithParams: len(params) % 2 != 0")
 	}
 	for i := 0; i < len(params)/2; i++ {
-		key, ok := params[2*i].(string)
-		if !ok {
-			panic("WithParams: string expected")
+		var key string
+		switch p := params[2*i].(type) {
+		case string:
+			key = p
+		case kv.Key:
+			key = string(p)
+		default:
+			panic("WithParams: string or kv.Key expected")
 		}
 		par[key] = params[2*i+1]
 	}
 	return par
 }
 
-func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) *iotago.Transaction {
+func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, error) {
 	if keyPair == nil {
 		keyPair = &ch.OriginatorPrivateKey
 	}
@@ -181,24 +188,32 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) *i
 			},
 			Options: nil,
 		}},
-		RentStructure: ch.Env.utxoDB.RentStructure(),
+		RentStructure:                ch.Env.utxoDB.RentStructure(),
+		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
 	})
-	require.NoError(ch.Env.T, err)
+	if err != nil {
+		return nil, err
+	}
 
-	return tx
+	return tx, err
 }
 
 // requestFromParams creates an on-ledger request without posting the transaction. It is intended
 // mainly for estimating gas.
-func (ch *Chain) requestFromParams(req *CallParams, keyPair *cryptolib.KeyPair) iscp.Request {
+func (ch *Chain) requestFromParams(req *CallParams, keyPair *cryptolib.KeyPair) (iscp.Request, error) {
 	ch.Env.ledgerMutex.Lock()
 	defer ch.Env.ledgerMutex.Unlock()
 
-	tx := ch.createRequestTx(req, keyPair)
+	tx, err := ch.createRequestTx(req, keyPair)
+	if err != nil {
+		return nil, err
+	}
 	reqs, err := iscp.RequestsInTransaction(tx)
 	require.NoError(ch.Env.T, err)
-	for _, req := range reqs[*ch.ChainID] {
-		return req
+
+	for _, r := range reqs[*ch.ChainID] {
+		// return the first one
+		return r, nil
 	}
 	panic("unreachable")
 }
@@ -210,8 +225,12 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 	ch.Env.ledgerMutex.Lock()
 	defer ch.Env.ledgerMutex.Unlock()
 
-	tx := ch.createRequestTx(req, keyPair)
-	err := ch.Env.AddToLedger(tx)
+	tx, err := ch.createRequestTx(req, keyPair)
+	if err != nil {
+		return nil, iscp.RequestID{}, err
+	}
+	err = ch.Env.AddToLedger(tx)
+	// once we created transaction successfully, it should be added to the ledger smoothly
 	require.NoError(ch.Env.T, err)
 	txid, err := tx.ID()
 	require.NoError(ch.Env.T, err)
@@ -240,11 +259,6 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (d
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, error) {
-	receipt, res, _ := ch.PostRequestOffLedgerReceipt(req, keyPair)
-	return res, receipt.Error()
-}
-
-func (ch *Chain) PostRequestOffLedgerReceipt(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
 	if keyPair == nil {
@@ -253,7 +267,8 @@ func (ch *Chain) PostRequestOffLedgerReceipt(req *CallParams, keyPair *cryptolib
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
 	res := results[0]
-	return res.Receipt, res.Return, res.Error
+	ch.lastReceipt = res.Receipt
+	return res.Return, res.Error
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, dict.Dict, error) {
@@ -264,12 +279,8 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 	return tx, res, receipt.Error()
 }
 
-func (ch *Chain) PostRequestSyncReceipt(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
-	_, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
-	if err != nil {
-		return receipt, res, err
-	}
-	return receipt, res, receipt.Error()
+func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
+	return ch.lastReceipt
 }
 
 func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
@@ -281,23 +292,47 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	require.NoError(ch.Env.T, err)
 	results := ch.runRequestsSync(reqs, "post")
 	res := results[0]
+	ch.lastReceipt = res.Receipt
 	return tx, res.Receipt, res.Return, res.Error
 }
 
-// SimulateRequest executes the request without committing any changes in the ledger. It can be used
-// to estimate gas.
-func (ch *Chain) SimulateRequest(req *CallParams, keyPair *cryptolib.KeyPair) (*blocklog.RequestReceipt, dict.Dict, error) {
-	r := ch.requestFromParams(req, keyPair)
-	result := ch.simulateRequest(r)
-	return result.Receipt, result.Return, result.Error
+// SimulateRequestOnLedger executes the given on-ledger request without
+// committing any changes in the ledger.
+// It can be used to estimate the gas needed to run the request
+func (ch *Chain) SimulateRequestOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
+	r, err := ch.requestFromParams(req, keyPair)
+	if err != nil {
+		return nil, err
+	}
+	return ch.simulateRequest(r), nil
 }
 
-// EstimateGas executes the request without committing any changes in the ledger. It returns
-// the amount of gas consumed.
-func (ch *Chain) EstimateGas(req *CallParams, keyPair *cryptolib.KeyPair) (gasBurned uint64, gasFeeCharged uint64) {
-	receipt, _, err := ch.SimulateRequest(req, keyPair)
-	require.NoError(ch.Env.T, err)
-	return receipt.GasBurned, receipt.GasFeeCharged
+// SimulateRequestOffLedger executes the given off-ledger request without
+// committing any changes in the ledger.
+// It can be used to estimate the gas needed to run the request
+func (ch *Chain) SimulateRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
+	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
+	return ch.simulateRequest(r), nil
+}
+
+// EstimateGasOnLedger executes the given on-ledger request without committing
+// any changes in the ledger. It returns the amount of gas consumed.
+func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
+	res, err := ch.SimulateRequestOnLedger(req, keyPair)
+	if err != nil {
+		return 0, 0, err
+	}
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, nil
+}
+
+// EstimateGasOffLedger executes the given on-ledger request without committing
+// any changes in the ledger. It returns the amount of gas consumed.
+func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
+	res, err := ch.SimulateRequestOffLedger(req, keyPair)
+	if err != nil {
+		return 0, 0, err
+	}
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, nil
 }
 
 // callViewFull calls the view entry point of the smart contract

@@ -46,6 +46,11 @@ var Processor = Contract.Processor(initialize,
 	FuncJustView.WithHandler(testJustView),
 
 	FuncSpawn.WithHandler(spawn),
+
+	FuncSplitFunds.WithHandler(testSplitFunds),
+	FuncSplitFundsNativeTokens.WithHandler(testSplitFundsNativeTokens),
+	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
+	FuncEstimateMinDust.WithHandler(testEstimateMinimumDust),
 )
 
 var (
@@ -90,6 +95,11 @@ var (
 	FuncPassTypesView = coreutil.ViewFunc("passTypesView")
 
 	FuncSpawn = coreutil.Func("spawn")
+
+	FuncSplitFunds             = coreutil.Func("splitFunds")
+	FuncSplitFundsNativeTokens = coreutil.Func("splitFundsNativeTokens")
+	FuncPingAllowanceBack      = coreutil.Func("pingAllowanceBack")
+	FuncEstimateMinDust        = coreutil.Func("estimateMinDust")
 )
 
 const (

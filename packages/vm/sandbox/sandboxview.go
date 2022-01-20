@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
@@ -94,8 +95,8 @@ func (s *sandboxView) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandboxView) Burn(gas uint64) {
-	s.vmctx.GasBurn(gas)
+func (s *sandboxView) Burn(burnCode gas.BurnCode, par ...int) {
+	s.vmctx.GasBurn(burnCode, par...)
 }
 
 func (s *sandboxView) Budget() uint64 {

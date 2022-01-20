@@ -26,9 +26,13 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 
 	_, err := env.utxoDB.GetFundsFromFaucet(addr)
 	require.NoError(env.T, err)
-	env.AssertL1AddressIotas(addr, Saldo)
+	env.AssertL1Iotas(addr, Saldo)
 
 	return keyPair, addr
+}
+
+func (env *Solo) GetFundsFromFaucet(target iotago.Address, amount ...uint64) (*iotago.Transaction, error) {
+	return env.utxoDB.GetFundsFromFaucet(target, amount...)
 }
 
 // NewSignatureSchemeAndPubKey generates new ed25519 signature scheme

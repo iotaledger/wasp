@@ -50,7 +50,8 @@ func (ch *Chain) runTaskNoLock(reqs []iscp.Request) *vm.VMTask {
 		Log:                ch.Log,
 		RentStructure:      ch.Env.utxoDB.RentStructure(),
 		// state baseline is always valid in Solo
-		SolidStateBaseline: ch.GlobalSync.GetSolidIndexBaseline(),
+		SolidStateBaseline:   ch.GlobalSync.GetSolidIndexBaseline(),
+		EnableGasBurnLogging: true,
 	}
 
 	ch.Env.vmRunner.Run(task)

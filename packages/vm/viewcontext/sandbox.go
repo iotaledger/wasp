@@ -3,6 +3,8 @@ package viewcontext
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -128,8 +130,8 @@ func (s *sandboxview) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandboxview) Burn(gas uint64) {
-	s.gasBurned += gas
+func (s *sandboxview) Burn(burnCode gas.BurnCode, par ...int) {
+	s.gasBurned += burnCode.Value(par...)
 	if s.gasBurned > s.gasBudget {
 		panic(coreutil.ErrorGasBudgetExceeded)
 	}

@@ -26,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
@@ -93,18 +94,16 @@ type Chain struct {
 	GlobalSync coreutil.ChainStateSync
 	// StateReader is the read only access to the state
 	StateReader state.OptimisticStateReader
-
 	// Log is the named logger of the chain
 	Log *logger.Logger
-
 	// global processor cache
 	proc *processors.Cache
-
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
-
 	// mempool of the chain is used in Solo to mimic a real node
 	mempool mempool.Mempool
+	// receipt of the last call
+	lastReceipt *blocklog.RequestReceipt
 }
 
 type InitOptions struct {
@@ -240,7 +239,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
-	env.AssertL1AddressIotas(originatorAddr, Saldo-anchor.Deposit)
+	env.AssertL1Iotas(originatorAddr, Saldo-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateAddr.Bech32(iscp.Bech32Prefix))
@@ -457,18 +456,18 @@ func (ch *Chain) BacklogLen() int {
 	return mstats.InBufCounter - mstats.OutPoolCounter
 }
 
-// L1NativeTokenBalance returns number of native tokens contained in the given address on the UTXODB ledger
-func (env *Solo) L1NativeTokenBalance(addr iotago.Address, tokenID *iotago.NativeTokenID) *big.Int {
-	assets := env.L1AddressBalances(addr)
+// L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger
+func (env *Solo) L1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID) *big.Int {
+	assets := env.L1Assets(addr)
 	return assets.AmountNativeToken(tokenID)
 }
 
-func (env *Solo) L1IotaBalance(addr iotago.Address) uint64 {
+func (env *Solo) L1Iotas(addr iotago.Address) uint64 {
 	return env.utxoDB.GetAddressBalances(addr).Iotas
 }
 
-// L1AddressBalances returns all assets of the address contained in the UTXODB ledger
-func (env *Solo) L1AddressBalances(addr iotago.Address) *iscp.Assets {
+// L1Assets returns all assets of the address contained in the UTXODB ledger
+func (env *Solo) L1Assets(addr iotago.Address) *iscp.Assets {
 	return env.utxoDB.GetAddressBalances(addr)
 }
 

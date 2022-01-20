@@ -47,36 +47,36 @@ func (u utilImpl) BLS() iscp.BLS {
 // --- iscp.Base58 interface
 
 func (u utilImpl) Decode(s string) ([]byte, error) {
-	u.gas.Burn(gas.UtilsBase58Decode)
+	u.gas.Burn(gas.BurnUtilsBase58Decode)
 	return base58.Decode(s)
 }
 
 func (u utilImpl) Encode(data []byte) string {
-	u.gas.Burn(gas.UtilsBase58Encode)
+	u.gas.Burn(gas.BurnUtilsBase58Encode)
 	return base58.Encode(data)
 }
 
 // --- iscp.Hashing interface
 
 func (u utilImpl) Blake2b(data []byte) hashing.HashValue {
-	u.gas.Burn(gas.UtilsHashingBlake2b)
+	u.gas.Burn(gas.BurnUtilsHashingBlake2b)
 	return hashing.HashDataBlake2b(data)
 }
 
 func (u utilImpl) Sha3(data []byte) hashing.HashValue {
-	u.gas.Burn(gas.UtilsHashingSha3)
+	u.gas.Burn(gas.BurnUtilsHashingSha3)
 	return hashing.HashSha3(data)
 }
 
 func (u utilImpl) Hname(name string) iscp.Hname {
-	u.gas.Burn(gas.UtilsHashingHname)
+	u.gas.Burn(gas.BurnUtilsHashingHname)
 	return iscp.Hn(name)
 }
 
 // --- iscp.ED25519 interface
 
 func (u utilImpl) ValidSignature(data []byte, pubKey []byte, signature []byte) bool {
-	u.gas.Burn(gas.UtilsED25519ValidSignature)
+	u.gas.Burn(gas.BurnUtilsED25519ValidSig)
 	pk, err := cryptolib.PublicKeyFromBytes(pubKey)
 	if err != nil {
 		return false
@@ -89,7 +89,7 @@ func (u utilImpl) ValidSignature(data []byte, pubKey []byte, signature []byte) b
 }
 
 func (u utilImpl) AddressFromPublicKey(pubKey []byte) (iotago.Address, error) {
-	u.gas.Burn(gas.UtilsED25519AddressFromPublicKey)
+	u.gas.Burn(gas.BurnUtilsED25519AddrFromPubKey)
 	return cryptolib.Ed25519AddressFromPubKey(pubKey), nil
 }
 
@@ -97,7 +97,7 @@ func (u utilImpl) AddressFromPublicKey(pubKey []byte) (iotago.Address, error) {
 var suite = bn256.NewSuite()
 
 func (u utilImplBLS) ValidSignature(data []byte, pubKeyBin []byte, signature []byte) bool {
-	u.gas.Burn(gas.UtilsBLSValidSignature)
+	u.gas.Burn(gas.BurnUtilsBLSValidSignature)
 	pubKey := suite.G2().Point()
 	var err error
 	if err = pubKey.UnmarshalBinary(pubKeyBin); err != nil {
@@ -120,7 +120,7 @@ func (u utilImplBLS) AggregateBLSSignatures(pubKeysBin [][]byte, sigsBin [][]byt
 	if len(sigsBin) == 0 || len(pubKeysBin) != len(sigsBin) {
 		return nil, nil, xerrors.Errorf("BLSUtil: number of public keys must be equal to the number of signatures and not empty")
 	}
-	u.gas.Burn(gas.UtilsBLSAggregateBLSSignature1 * uint64(len(pubKeysBin)))
+	u.gas.Burn(gas.BurnUtilsBLSAggregateBLS1P, len(sigsBin))
 
 	sigPubKey := make([]bls.SignatureWithPublicKey, len(pubKeysBin))
 	for i := range pubKeysBin {

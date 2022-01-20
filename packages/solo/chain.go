@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -28,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
 )
 
 // String is string representation for main parameters of the chain
@@ -49,7 +49,7 @@ func (ch *Chain) DumpAccounts() string {
 	for i := range acc {
 		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
-		bals := ch.L2AccountAssets(aid)
+		bals := ch.L2Assets(aid)
 		ret += fmt.Sprintf("%s\n", bals.String())
 	}
 	return ret
@@ -106,11 +106,10 @@ func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
 // UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
 // data to the chain. It returns hash of the blob, the unique identifier of it.
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
-// Estimates needed gas fee and uploads iotas to the sender's account before uploading blob.
-// So, it takes 2 requests for each call
-func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
-	if keyPair == nil {
-		keyPair = &ch.OriginatorPrivateKey
+// Requires at least 2 x gasFeeEstimate to be on sender's L2 account
+func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
+	if user == nil {
+		user = &ch.OriginatorPrivateKey
 	}
 
 	blobAsADict := parseParams(params)
@@ -120,26 +119,31 @@ func (ch *Chain) UploadBlob(keyPair *cryptolib.KeyPair, params ...interface{}) (
 		return expectedHash, nil
 	}
 
-	gasFeePolicy := ch.GetGasFeePolicy()
-	require.Nil(ch.Env.T, gasFeePolicy.GasFeeTokenID)
-	gasEstimate := blob.GasForBlob(blobAsADict) + gasFeePolicy.GasNominalUnit*10
+	userAddr := cryptolib.Ed25519AddressFromPubKey(user.PublicKey)
+	// We have to have some iotas even in estimate mode, otherwise we cannot create transaction
+	const minimumIotasForEstimate = 100_000
 
-	f1, f2 := gasFeePolicy.FeeFromGas(gasEstimate)
-	_, err = ch.PostRequestSync(
-		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			AddAssetsIotas(f1+f2).
-			WithGasBudget(gasFeePolicy.GasNominalUnit),
-		keyPair,
-	)
-	if err != nil {
-		return
+	// estimate gas
+	userIotas := ch.Env.L1Iotas(userAddr)
+	if userIotas < minimumIotasForEstimate {
+		return hashing.HashValue{}, xerrors.Errorf("expected at least %d iotas on user L1 account", minimumIotasForEstimate)
 	}
+	// estimate gas budget and iotas needed
+	reqEstimate := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
+		AddAssetsIotas(minimumIotasForEstimate).
+		WithGasBudget(minimumIotasForEstimate)
+	gasBudgetEstimate, gasFeeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
+	require.NoError(ch.Env.T, err)
 
-	res, err := ch.PostRequestOffLedger(
-		NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
-			WithGasBudget(gasEstimate),
-		keyPair,
-	)
+	// check if user has required iotas on L2
+	userIotasL2 := ch.L2Iotas(iscp.NewAgentID(userAddr, 0))
+	if userIotasL2 < gasFeeEstimate*2 {
+		err = xerrors.Errorf("sender's %di on L2 is not enough. At least %di is required", userIotasL2, gasFeeEstimate*2)
+		return hashing.HashValue{}, err
+	}
+	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
+		WithGasBudget(gasBudgetEstimate * 2) // double the estimate, to be on the safe side
+	res, err := ch.PostRequestOffLedger(req, user)
 	if err != nil {
 		return
 	}
@@ -218,7 +222,10 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 //   - it is and ID of  the blob stored on the chain in the format of Wasm binary
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
 //     smart contract must be made available with the call examples.AddProcessor
-func (ch *Chain) DeployContract(keyPair *cryptolib.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
+func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
+	if user == nil {
+		user = &ch.OriginatorPrivateKey
+	}
 	par := codec.MakeDict(map[string]interface{}{
 		root.ParamProgramHash: programHash,
 		root.ParamName:        name,
@@ -226,13 +233,22 @@ func (ch *Chain) DeployContract(keyPair *cryptolib.KeyPair, name string, program
 	for k, v := range parseParams(params) {
 		par[k] = v
 	}
-	gasPolicy := ch.GetGasFeePolicy()
-	budgetEstimate := root.GasToDeploy(programHash) + gasPolicy.GasPricePerNominalUnit
-	f1, f2 := gasPolicy.FeeFromGas(budgetEstimate)
+	reqEstimate := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
+		WithGasBudget(100_000).
+		AddAssetsIotas(10_000)
+	gasEstimate, gasFeeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
+	require.NoError(ch.Env.T, err)
+
+	userAddr := cryptolib.Ed25519AddressFromPubKey(user.PublicKey)
+	userIotasL2 := ch.L2Iotas(iscp.NewAgentID(userAddr, 0))
+	if userIotasL2 < gasFeeEstimate*2 {
+		return xerrors.Errorf("sender's %di on L2 is not enough. At least %di is required", userIotasL2, gasFeeEstimate*2)
+	}
+
 	req := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
-		WithGasBudget(budgetEstimate).
-		AddAssetsIotas(f1 + f2)
-	_, err := ch.PostRequestSync(req, keyPair)
+		WithGasBudget(gasEstimate)
+
+	_, err = ch.PostRequestSync(req, user)
 	return err
 }
 
@@ -531,4 +547,22 @@ func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair cryptolib.Key
 	require.NoError(ch.Env.T, err)
 	results := ch.runRequestsSync(reqs, "postSpecial")
 	return results[0]
+}
+
+type L1L2AddressAssets struct {
+	Address  iotago.Address
+	AssetsL1 *iscp.Assets
+	AssetsL2 *iscp.Assets
+}
+
+func (a *L1L2AddressAssets) String() string {
+	return fmt.Sprintf("Address: %s\nL1 assets:\n  %s\nL2 assets:\n  %s", a.Address, a.AssetsL1, a.AssetsL2)
+}
+
+func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
+	return &L1L2AddressAssets{
+		Address:  addr,
+		AssetsL1: ch.Env.L1Assets(addr),
+		AssetsL2: ch.L2Assets(iscp.NewAgentID(addr, 0)),
+	}
 }

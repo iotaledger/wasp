@@ -67,10 +67,11 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 		txb.anchorOutput.AliasID.ToAddress(),
 		iscp.Hn("test"),
 		iscp.RequestParameters{
-			TargetAddress: tpkg.RandEd25519Address(),
-			Assets:        assets,
-			Metadata:      &iscp.SendMetadata{},
-			Options:       nil,
+			TargetAddress:              tpkg.RandEd25519Address(),
+			Assets:                     assets,
+			Metadata:                   &iscp.SendMetadata{},
+			Options:                    nil,
+			AdjustToMinimumDustDeposit: true,
 		},
 		testdeserparams.DeSerializationParameters().RentStructure,
 	)
@@ -121,7 +122,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, 0, len(totals.NativeTokenBalances))
 
 		require.EqualValues(t, 1, txb.numInputs())
-		require.EqualValues(t, 1, txb.numOutputs())
+		require.EqualValues(t, 1, txb.NumOutputs())
 		require.False(t, txb.InputsAreFull())
 		require.False(t, txb.outputsAreFull())
 
@@ -712,7 +713,6 @@ func TestFoundries(t *testing.T) {
 			t.Logf("%d. dust deposit IN: %d, dust deposit OUT: %d", i, tin.TotalIotasInDustDeposit, tout.TotalIotasInDustDeposit)
 			t.Logf("%d. num foundries: %d", i, txb.nextFoundrySerialNumber())
 		}
-
 	}
 	t.Run("create foundry ok", func(t *testing.T) {
 		initTest()

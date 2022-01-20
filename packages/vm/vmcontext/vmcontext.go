@@ -3,21 +3,20 @@ package vmcontext
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/transaction"
-
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 )
@@ -41,12 +40,14 @@ type VMContext struct {
 	blockContextCloseSeq []iscp.Hname
 	blockOutputCount     uint8
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
+	txsnapshot           *vmtxbuilder.AnchorTransactionBuilder
 	gasBurnedTotal       uint64
 	gasFeeChargedTotal   uint64
 
 	// ---- request context
 	chainInfo          *governance.ChainInfo
 	req                iscp.Request
+	numPostedOutputs   int // how many outputs has been posted in the request
 	requestIndex       uint16
 	requestEventIndex  uint16
 	currentStateUpdate state.StateUpdate
@@ -54,16 +55,18 @@ type VMContext struct {
 	contractRecord     *root.ContractRecord
 	callStack          []*callContext
 	// --- gas related
-	// max tokens available for gas fee
-	gasMaxTokensAvailableForGasFee uint64
+	// max tokens cane be charged for gas fee
+	gasMaxTokensToSpendForGasFee uint64
 	// final gas budget set for the run
-	gasBudget uint64
+	gasBudgetAdjusted uint64
 	// is gas bur enabled
 	gasBurnEnabled bool
 	// gas already burned
 	gasBurned uint64
 	// tokens charged
 	gasFeeCharged uint64
+	// burn history. If disabled, it is nil
+	gasBurnLog *gas.BurnLog
 }
 
 type callContext struct {
@@ -115,7 +118,9 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),
 	}
-
+	if task.EnableGasBurnLogging {
+		ret.gasBurnLog = gas.NewGasBurnLog()
+	}
 	// at the beginning of each block
 	var dustAssumptions *transaction.DustDepositAssumption
 
@@ -277,4 +282,19 @@ func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
 		totalL2Assets = accounts.GetTotalL2Assets(s)
 	})
 	vmctx.txbuilder.AssertConsistentWithL2Totals(totalL2Assets, checkpoint)
+}
+
+func (vmctx *VMContext) AssertConsistentGasTotals() {
+	var sumGasBurned, sumGasFeeCharged uint64
+
+	for _, r := range vmctx.task.Results {
+		sumGasBurned += r.Receipt.GasBurned
+		sumGasFeeCharged += r.Receipt.GasFeeCharged
+	}
+	if vmctx.gasBurnedTotal != sumGasBurned {
+		panic("vmctx.gasBurnedTotal != sumGasBurned")
+	}
+	if vmctx.gasFeeChargedTotal != sumGasFeeCharged {
+		panic("vmctx.gasFeeChargedTotal != sumGasFeeCharged")
+	}
 }

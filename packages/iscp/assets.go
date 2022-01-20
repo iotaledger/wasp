@@ -36,6 +36,10 @@ func NewAssets(iotas uint64, tokens iotago.NativeTokens) *Assets {
 	}
 }
 
+func NewAssetsIotas(amount uint64) *Assets {
+	return &Assets{Iotas: amount}
+}
+
 func AssetsFromDict(d dict.Dict) (*Assets, error) {
 	ret := NewEmptyAssets()
 	for key, val := range d {
@@ -124,9 +128,9 @@ func (a *Assets) AmountNativeToken(tokenID *iotago.NativeTokenID) *big.Int {
 }
 
 func (a *Assets) String() string {
-	ret := fmt.Sprintf("Assets: iotas: %d tokens : %d\n", a.Iotas, len(a.Tokens))
+	ret := fmt.Sprintf("iotas: %d, tokens (%d):", a.Iotas, len(a.Tokens))
 	for _, nt := range a.Tokens {
-		ret += fmt.Sprintf("       %s: %d\n", nt.ID.String(), nt.Amount)
+		ret += fmt.Sprintf("\n       %s: %d", nt.ID.String(), nt.Amount)
 	}
 	return ret
 }

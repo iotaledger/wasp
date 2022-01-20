@@ -3,24 +3,33 @@ package vmcontext
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/gas"
+	"golang.org/x/xerrors"
 )
+
+const MaxPostedOutputsInOneRequest = 4
 
 // Send implements sandbox function of sending cross-chain request
 func (vmctx *VMContext) Send(par iscp.RequestParameters) {
-	if par.Assets == nil {
-		panic(ErrAssetsCantBeEmptyInSend)
+	if vmctx.numPostedOutputs >= MaxPostedOutputsInOneRequest {
+		panic(xerrors.Errorf("%v: max = %d", ErrExceededPostedOutputLimit, MaxPostedOutputsInOneRequest))
 	}
+
+	vmctx.numPostedOutputs++
+	vmctx.GasBurn(gas.BurnSendL1Request, vmctx.numPostedOutputs)
+
+	assets := par.Assets
 	// create extended output with adjusted dust deposit
-	out, err := transaction.ExtendedOutputFromPostData(
+	out := transaction.ExtendedOutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),
 		par,
 		vmctx.task.RentStructure,
-		true, // will return an error if not enough iotas for dust deposit
 	)
-	if err != nil {
-		// only possible if not provided enough iotas for dust deposit
-		panic(err)
+	if out.Amount > par.Assets.Iotas {
+		// it was adjusted
+		assets = assets.Clone()
+		assets.Iotas = out.Amount
 	}
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: begin")
 	// this call cannot panic due to not enough iotas for dust because
@@ -30,6 +39,6 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 	vmctx.adjustL2IotasIfNeeded(iotaAdjustmentL2)
 	// debit the assets from the on-chain account
 	// It panics with accounts.ErrNotEnoughFunds if sender's account balances are exceeded
-	vmctx.debitFromAccount(vmctx.AccountID(), par.Assets)
+	vmctx.debitFromAccount(vmctx.AccountID(), assets)
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: end")
 }

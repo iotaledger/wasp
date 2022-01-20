@@ -46,6 +46,7 @@ func getRequestsOnLedger(t *testing.T, amount int) []*iscp.OnLedgerRequestData {
 			Allowance:      nil,
 			GasBudget:      1000,
 		},
+		AdjustToMinimumDustDeposit: true,
 	}
 	result := make([]*iscp.OnLedgerRequestData, amount)
 	for i := range result {

@@ -1,9 +1,7 @@
 package root
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"golang.org/x/xerrors"
 )
 
@@ -45,7 +43,3 @@ var (
 var (
 	ErrChainInitConditionsFailed = xerrors.New("root.init can't be called in this state")
 )
-
-func GasToDeploy(programHash hashing.HashValue) uint64 {
-	return gas.CoreRootDeployContract
-}
