@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
 )
 
 type CallParams struct {
@@ -266,6 +267,9 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
+	if len(results) == 0 {
+		return nil, xerrors.Errorf("request was skipped")
+	}
 	res := results[0]
 	ch.lastReceipt = res.Receipt
 	return res.Return, res.Error
@@ -298,21 +302,23 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 
 // SimulateRequestOnLedger executes the given on-ledger request without
 // committing any changes in the ledger.
-// It can be used to estimate the gas needed to run the request
+// Gas fee is calculated but not charged, so it can be used to estimate the gas
+// needed to run the request.
 func (ch *Chain) SimulateRequestOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
 	r, err := ch.requestFromParams(req, keyPair)
 	if err != nil {
 		return nil, err
 	}
-	return ch.simulateRequest(r), nil
+	return ch.estimateGas(r), nil
 }
 
 // SimulateRequestOffLedger executes the given off-ledger request without
 // committing any changes in the ledger.
-// It can be used to estimate the gas needed to run the request
+// Gas fee is calculated but not charged, so it can be used to estimate the gas
+// needed to run the request.
 func (ch *Chain) SimulateRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
-	return ch.simulateRequest(r), nil
+	return ch.estimateGas(r), nil
 }
 
 // EstimateGasOnLedger executes the given on-ledger request without committing
@@ -322,7 +328,7 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 	if err != nil {
 		return 0, 0, err
 	}
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, nil
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
 }
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
@@ -332,7 +338,7 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	if err != nil {
 		return 0, 0, err
 	}
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, nil
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
 }
 
 // callViewFull calls the view entry point of the smart contract

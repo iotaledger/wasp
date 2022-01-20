@@ -5,8 +5,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -277,52 +276,45 @@ func TestOkCall(t *testing.T) {
 }
 
 func TestEstimateGas(t *testing.T) {
-	contract := coreutil.NewContract("testContract", "test")
-	set := coreutil.Func("set")
-	get := coreutil.ViewFunc("get")
-	processor := contract.Processor(nil,
-		set.WithHandler(func(ctx iscp.Sandbox) (dict.Dict, error) {
-			ctx.State().Set("value", []byte{1})
-			return nil, nil
-		}),
-		get.WithHandler(func(ctx iscp.SandboxView) (dict.Dict, error) {
-			v := ctx.State().MustGet("value")
-			if v == nil {
-				return nil, nil
-			}
-			return dict.Dict{"value": v}, nil
-		}),
-	)
-
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
-		WithNativeContract(processor)
+		WithNativeContract(sbtestsc.Processor)
 	env.EnablePublisher(true)
 	ch := env.NewChain(nil, "chain1")
 	ch.MustDepositIotasToL2(10000, nil)
-	err := ch.DeployContract(nil, contract.Name, contract.ProgramHash)
+	err := ch.DeployContract(nil, sbtestsc.Contract.Name, sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
 
-	estimatedGas := uint64(86)
-	estimatedGasFee := uint64(100)
-	/*var estimatedGas, estimatedGasFee uint64
+	callParams := func() *solo.CallParams {
+		return solo.NewCallParams(sbtestsc.Contract.Name, sbtestsc.FuncSetInt.Name,
+			sbtestsc.ParamIntParamName, "v",
+			sbtestsc.ParamIntParamValue, 42,
+		)
+	}
+
+	getInt := func() int64 {
+		v, err := ch.CallView(sbtestsc.Contract.Name, sbtestsc.FuncGetInt.Name,
+			sbtestsc.ParamIntParamName, "v",
+		)
+		require.NoError(t, err)
+		n, err := codec.DecodeInt64(v.MustGet("v"), 0)
+		require.NoError(t, err)
+		return n
+	}
+
+	var estimatedGas, estimatedGasFee uint64
 	{
 		keyPair, _ := env.NewKeyPair()
 
 		// we can call EstimateGas even with 0 iotas in L2 account
-		estimatedGas, estimatedGasFee, err = ch.EstimateGasOffLedger(
-			solo.NewCallParams(contract.Name, set.Name),
-			keyPair,
-		)
+		estimatedGas, estimatedGasFee, err = ch.EstimateGasOffLedger(callParams(), keyPair)
 		require.NoError(t, err)
 		require.NotZero(t, estimatedGas)
 		require.NotZero(t, estimatedGasFee)
 		t.Logf("estimatedGas: %d, estimatedGasFee: %d", estimatedGas, estimatedGasFee)
 
 		// test that EstimateGas did not actually commit changes in the state
-		v, err := ch.CallView(contract.Name, get.Name)
-		require.NoError(t, err)
-		require.Empty(t, v)
-	}*/
+		require.EqualValues(t, 0, getInt())
+	}
 
 	// dirty hack to find out the dust deposit + gas fee necessary for DepositIotasToL2
 	depositFee := func() uint64 {
@@ -332,48 +324,55 @@ func TestEstimateGas(t *testing.T) {
 	}()
 
 	for _, testCase := range []struct {
+		Desc          string
 		L2Balance     uint64
 		GasBudget     uint64
 		ExpectedError string
 	}{
-		// insufficient iotas in L2 balance to cover gas fee
 		{
+			Desc:          "0 iotas in L2 balance to cover gas fee",
+			L2Balance:     0,
+			GasBudget:     estimatedGas,
+			ExpectedError: "gas budget exceeded",
+		},
+		{
+			Desc:          "insufficient iotas in L2 balance to cover gas fee",
 			L2Balance:     estimatedGasFee - 1,
 			GasBudget:     estimatedGas,
 			ExpectedError: "gas budget exceeded",
 		},
-		// insufficient gas budget
 		{
+			Desc:          "insufficient gas budget",
 			L2Balance:     estimatedGasFee,
 			GasBudget:     estimatedGas - 1,
 			ExpectedError: "gas budget exceeded",
 		},
-		// success
 		{
+			Desc:      "success",
 			L2Balance: estimatedGasFee,
 			GasBudget: estimatedGas,
 		},
 	} {
-		keyPair, addr := env.NewKeyPairWithFunds()
-		ch.MustDepositIotasToL2(testCase.L2Balance+depositFee, keyPair)
-		require.Equal(t, testCase.L2Balance, ch.L2Iotas(iscp.NewAgentID(addr, 0)))
+		t.Run(testCase.Desc, func(t *testing.T) {
+			keyPair, addr := env.NewKeyPairWithFunds()
+			if testCase.L2Balance > 0 {
+				ch.MustDepositIotasToL2(testCase.L2Balance+depositFee, keyPair)
+				require.Equal(t, testCase.L2Balance, ch.L2Iotas(iscp.NewAgentID(addr, 0)))
+			}
 
-		_, err := ch.PostRequestOffLedger(
-			solo.NewCallParams(contract.Name, set.Name).
-				WithGasBudget(testCase.GasBudget),
-			keyPair,
-		)
-		if testCase.ExpectedError != "" {
-			require.Error(t, err)
-			require.Contains(t, err.Error(), "gas budget exceeded")
-		} else {
-			require.NoError(t, err)
-
-			// changes committed to the state
-			v, err := ch.CallView(contract.Name, get.Name)
-			require.NoError(t, err)
-			require.NotEmpty(t, v)
-		}
+			_, err := ch.PostRequestOffLedger(
+				callParams().WithGasBudget(testCase.GasBudget),
+				keyPair,
+			)
+			if testCase.ExpectedError != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedError)
+			} else {
+				require.NoError(t, err)
+				// changes committed to the state
+				require.EqualValues(t, 42, getInt())
+			}
+		})
 	}
 }
 

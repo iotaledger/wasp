@@ -22,7 +22,7 @@ func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...int) {
 	g := burnCode.Value(par...)
 	vmctx.gasBurnLog.Record(burnCode, g)
 	vmctx.gasBurned += g
-	if vmctx.gasBurned > vmctx.gasBudgetAdjusted {
+	if !vmctx.task.EstimateGasMode && vmctx.gasBurned > vmctx.gasBudgetAdjusted {
 		panic(xerrors.Errorf("%v: burned (budget) = %d (%d)",
 			coreutil.ErrorGasBudgetExceeded, vmctx.gasBurned, vmctx.gasBudgetAdjusted))
 	}
