@@ -29,7 +29,7 @@ export class PoWWorkerManager {
                 const message: PowWorkerResponse = e.data;
 
                 if (message.type == 'pow_response' && message.uuid == requestId) {
-                    this.powWorker!.removeEventListener('message', responseHandler);
+                    this.powWorker.removeEventListener('message', responseHandler);
 
                     if (!message.error) {
                         resolve(message.data);

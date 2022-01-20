@@ -46,8 +46,9 @@ export class GoShimmerClient {
 
         const unspents = await this.unspentOutputs({ addresses: [address] });
         const currentUnspent = unspents.unspentOutputs.find((x) => x.address.base58 == address);
+        if (!currentUnspent) throw new Error("current unspent not found");
 
-        const balance = currentUnspent!.outputs
+        const balance = currentUnspent.outputs
             .filter(
                 (o) =>
                     ["ExtendedLockedOutputType", "SigLockedColoredOutputType"].includes(o.output.type) &&
@@ -123,7 +124,7 @@ export class GoShimmerClient {
     public async postOnLedgerRequest(
         chainId: string,
         payload: IOnLedger,
-        transfer: bigint = 1n,
+        transfer = 1n,
         keyPair: IKeyPair
     ): Promise<string> {
         if (transfer <= 0) {

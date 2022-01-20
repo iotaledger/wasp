@@ -100,10 +100,10 @@ export class WaspClient {
         const result = await balanceView.call();
         const balances = result.balances();
         const iotaBalance = balances.has(Colors.IOTA_COLOR_STRING)
-            ? balances.get(Colors.IOTA_COLOR_STRING)!
+            ? balances.get(Colors.IOTA_COLOR_STRING)
             : balances.has(Colors.IOTA_COLOR)
-            ? balances.get(Colors.IOTA_COLOR)!
+            ? balances.get(Colors.IOTA_COLOR)
             : 0n;
-        return iotaBalance;
+        return iotaBalance ?? 0n;
     }
 }
