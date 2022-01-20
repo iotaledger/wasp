@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -53,7 +54,7 @@ type proc struct {
 	attachID     interface{}                      // We keep it here to be able to detach from the network.
 	peerMsgCh    chan *peering.PeerMessageGroupIn // A buffer for the received peer messages.
 	log          *logger.Logger                   // A logger to use.
-	myPubKey     cryptolib.PublicKey               // Just to make logging easier.
+	myPubKey     *ed25519.PublicKey               // Just to make logging easier.
 	steps        map[byte]*procStep               // All the steps for the procedure.
 }
 

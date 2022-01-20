@@ -183,8 +183,8 @@ type initiatorInitMsg struct {
 	step         byte
 	dkgRef       string // Some unique string to identify duplicate initialization.
 	peeringID    peering.PeeringID
-	peerPubs     []cryptolib.PublicKey
-	initiatorPub cryptolib.PublicKey
+	peerPubs     []*ed25519.PublicKey
+	initiatorPub *ed25519.PublicKey
 	threshold    uint16
 	timeout      time.Duration
 	roundRetry   time.Duration
@@ -192,7 +192,7 @@ type initiatorInitMsg struct {
 
 type initiatorInitMsgIn struct {
 	initiatorInitMsg
-	SenderPubKey cryptolib.PublicKey
+	SenderPubKey *ed25519.PublicKey
 }
 
 func (m *initiatorInitMsg) MsgType() byte {

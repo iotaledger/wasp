@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -99,7 +100,7 @@ func (n *Node) Close() {
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
 //nolint:funlen,gocritic
 func (n *Node) GenerateDistributedKey(
-	peerPubs []cryptolib.PublicKey,
+	peerPubs []*ed25519.PublicKey,
 	threshold uint16,
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
 	stepRetry time.Duration, // Retry for Initiator -> Peer communication.

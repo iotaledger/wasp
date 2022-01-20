@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -32,8 +33,8 @@ func SetupKeys(peerCount uint16) ([]string, []*cryptolib.KeyPair) {
 	return peerNetIDs, peerIdentities
 }
 
-func PublicKeys(peerIdentities []*cryptolib.KeyPair) []cryptolib.PublicKey {
-	pubKeys := make([]cryptolib.PublicKey, len(peerIdentities))
+func PublicKeys(peerIdentities []*ed25519.KeyPair) []*ed25519.PublicKey {
+	pubKeys := make([]*ed25519.PublicKey, len(peerIdentities))
 	for i := range pubKeys {
 		pubKeys[i] = &peerIdentities[i].PublicKey
 	}
