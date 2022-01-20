@@ -17,7 +17,7 @@ export class Service {
     public keyPair: IKeyPair | null = null;
     private eventHandlers: Array<IEventHandler> = [];
     public scHname: wasmclient.Hname;
-    private waspWebSocketUrl: string = "";
+    private waspWebSocketUrl = "";
 
     constructor(client: wasmclient.ServiceClient, scHname: wasmclient.Hname) {
         this.serviceClient = client;
