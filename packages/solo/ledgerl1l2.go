@@ -154,7 +154,7 @@ type foundryParams struct {
 	maxSupply *big.Int
 }
 
-// CreateFoundryGasBudgetIotas always takes 1000 iotas as gas budget and assets for the call
+// CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and assets for the call
 const (
 	CreateFoundryGasBudgetIotas   = 100_000
 	MintTokensGasBudgetIotas      = 100_000
