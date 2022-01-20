@@ -123,7 +123,7 @@ export class GoShimmerClient {
     public async postOnLedgerRequest(
         chainId: string,
         payload: IOnLedger,
-        transfer: bigint = 1n,
+        transfer = 1n,
         keyPair: IKeyPair
     ): Promise<string> {
         if (transfer <= 0) {
