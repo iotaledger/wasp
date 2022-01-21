@@ -10,7 +10,7 @@ type MockedNodeConn struct {
 	id                              string
 	onPullState                     func()
 	onPullTransactionInclusionState func(txid iotago.TransactionID)
-	onPullConfirmedOutput           func(outputID iotago.OutputID)
+	onPullConfirmedOutput           func(outputID *iotago.UTXOInput)
 	onPostTransaction               func(tx *iotago.Transaction)
 }
 
@@ -32,7 +32,7 @@ func (m *MockedNodeConn) PullTransactionInclusionState(txid iotago.TransactionID
 	m.onPullTransactionInclusionState(txid)
 }
 
-func (m *MockedNodeConn) PullConfirmedOutput(outputID iotago.OutputID) {
+func (m *MockedNodeConn) PullConfirmedOutput(outputID *iotago.UTXOInput) {
 	m.onPullConfirmedOutput(outputID)
 }
 
@@ -48,7 +48,7 @@ func (m *MockedNodeConn) OnPullTransactionInclusionState(f func(txid iotago.Tran
 	m.onPullTransactionInclusionState = f
 }
 
-func (m *MockedNodeConn) OnPullConfirmedOutput(f func(outputID iotago.OutputID)) {
+func (m *MockedNodeConn) OnPullConfirmedOutput(f func(outputID *iotago.UTXOInput)) {
 	m.onPullConfirmedOutput = f
 }
 
@@ -57,8 +57,9 @@ func (m *MockedNodeConn) OnPostTransaction(f func(tx *iotago.Transaction)) {
 }
 
 func (m *MockedNodeConn) AttachToTransactionReceived(chain.NodeConnectionHandleTransactionFun) {}
-func (m *MockedNodeConn) AttachToInclusionStateReceived(chain.NodeConnectionHandleInclusionStateFun) {
-}
+
+/*func (m *MockedNodeConn) AttachToInclusionStateReceived(chain.NodeConnectionHandleInclusionStateFun) {
+}*/
 func (m *MockedNodeConn) AttachToOutputReceived(chain.NodeConnectionHandleOutputFun) {}
 func (m *MockedNodeConn) AttachToUnspentAliasOutputReceived(chain.NodeConnectionHandleUnspentAliasOutputFun) {
 }

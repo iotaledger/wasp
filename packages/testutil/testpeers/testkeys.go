@@ -12,7 +12,6 @@ import (
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -22,11 +21,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetupKeys(peerCount uint16) ([]string, []*cryptolib.KeyPair) {
+func SetupKeys(peerCount uint16) ([]string, []*ed25519.KeyPair) {
 	peerNetIDs := make([]string, peerCount)
-	peerIdentities := make([]*cryptolib.KeyPair, peerCount)
+	peerIdentities := make([]*ed25519.KeyPair, peerCount)
 	for i := range peerNetIDs {
-		peerIdentity := cryptolib.NewKeyPair()
+		peerIdentity := ed25519.GenerateKeyPair()
 		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
 		peerIdentities[i] = &peerIdentity
 	}
@@ -45,7 +44,7 @@ func SetupDkg(
 	t *testing.T,
 	threshold uint16,
 	peerNetIDs []string,
-	peerIdentities []*cryptolib.KeyPair,
+	peerIdentities []*ed25519.KeyPair,
 	suite tcrypto.Suite,
 	log *logger.Logger,
 ) (iotago.Address, []registry.DKShareRegistryProvider) {
@@ -113,7 +112,7 @@ func SetupDkgPregenerated(
 
 func SetupNet(
 	peerNetIDs []string,
-	peerIdentities []*cryptolib.KeyPair,
+	peerIdentities []*ed25519.KeyPair,
 	behavior testutil.PeeringNetBehavior,
 	log *logger.Logger,
 ) ([]peering.NetworkProvider, io.Closer) {

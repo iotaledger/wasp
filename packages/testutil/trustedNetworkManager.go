@@ -4,23 +4,23 @@
 package testutil
 
 import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/peering"
 	"golang.org/x/xerrors"
 )
 
 type trustedNetworkManager struct {
-	data map[cryptolib.PublicKey]string
+	data map[ed25519.PublicKey]string
 }
 
 func NewTrustedNetworkManager() peering.TrustedNetworkManager {
 	return &trustedNetworkManager{
-		data: map[cryptolib.PublicKey]string{},
+		data: map[ed25519.PublicKey]string{},
 	}
 }
 
 // IsTrustedPeer implements the peering.TrustedNetworkManager interface.
-func (tnm *trustedNetworkManager) IsTrustedPeer(pubKey cryptolib.PublicKey) error {
+func (tnm *trustedNetworkManager) IsTrustedPeer(pubKey ed25519.PublicKey) error {
 	if _, ok := tnm.data[pubKey]; ok {
 		return nil
 	}
@@ -28,13 +28,13 @@ func (tnm *trustedNetworkManager) IsTrustedPeer(pubKey cryptolib.PublicKey) erro
 }
 
 // TrustPeer implements the peering.TrustedNetworkManager interface.
-func (tnm *trustedNetworkManager) TrustPeer(pubKey cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
+func (tnm *trustedNetworkManager) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.TrustedPeer, error) {
 	tnm.data[pubKey] = netID
 	return &peering.TrustedPeer{PubKey: pubKey, NetID: netID}, nil
 }
 
 // DistrustPeer implements the peering.TrustedNetworkManager interface.
-func (tnm *trustedNetworkManager) DistrustPeer(pubKey cryptolib.PublicKey) (*peering.TrustedPeer, error) {
+func (tnm *trustedNetworkManager) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, error) {
 	delete(tnm.data, pubKey)
 	return nil, nil
 }

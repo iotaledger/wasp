@@ -21,10 +21,10 @@ func TestMarshalling(t *testing.T) {
 	entrypoint := iscp.Hn("someentrypoint")
 	args := dict.Dict{foo: []byte("bar")}
 	nonce := uint64(time.Now().UnixNano())
-	chainId := iscp.RandomChainID()
+	chainID := iscp.RandomChainID()
 
 	msg := NewOffLedgerRequestMsg(
-		&chainId,
+		chainID,
 		iscp.NewOffLedgerRequest(iscp.RandomChainID(), contract, entrypoint, args, nonce),
 	)
 
@@ -32,7 +32,7 @@ func TestMarshalling(t *testing.T) {
 	msgBytes := msg.Bytes()
 
 	// unmashal the message from bytes and ensure everything checks out
-	unmarshalledMsg, err := NewOffLedgerRequestMsg(msgBytes)
+	unmarshalledMsg, err := OffLedgerRequestMsgFromBytes(msgBytes)
 	require.NoError(t, err)
 
 	require.Equal(t, unmarshalledMsg.ChainID.AsAliasAddress(), msg.ChainID.AsAliasAddress())

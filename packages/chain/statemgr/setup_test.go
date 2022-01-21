@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
@@ -24,7 +24,8 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	// "github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/xerrors"
@@ -34,7 +35,7 @@ type MockedEnv struct {
 	T                 *testing.T
 	Log               *logger.Logger
 	Ledger            *utxodb.UtxoDB
-	OriginatorKeyPair *cryptolib.KeyPair
+	OriginatorKeyPair *ed25519.KeyPair
 	OriginatorAddress iotago.Address
 	NodePubKeys       []*ed25519.PublicKey
 	NetworkProviders  []peering.NetworkProvider
@@ -64,7 +65,7 @@ type MockedStateManagerMetrics struct{}
 
 func (c *MockedStateManagerMetrics) RecordBlockSize(_ uint32, _ float64) {}
 
-func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
+func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *iotago.Transaction) {
 	level := zapcore.InfoLevel
 	if debug {
 		level = zapcore.DebugLevel
@@ -78,11 +79,15 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 		OriginatorAddress: nil,
 		Nodes:             make(map[ed25519.PublicKey]*MockedNode),
 	}
-	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
-	_, err := ret.Ledger.RequestFunds(ret.OriginatorAddress)
+	kpCryptolib, addr := ret.Ledger.NewKeyPairByIndex(0)
+	kpHive := cryptolib.CryptolibKeyPairToHiveKeyPair(kpCryptolib)
+	ret.OriginatorKeyPair = &kpHive
+	ret.OriginatorAddress = addr
+	tx, err := ret.Ledger.GetFundsFromFaucet(ret.OriginatorAddress)
 	require.NoError(t, err)
 
-	outputs := ret.Ledger.GetAddressOutputs(ret.OriginatorAddress)
+	//TODO
+	/*outputs := ret.Ledger.GetAddressOutputs(ret.OriginatorAddress)
 	require.True(t, len(outputs) == 1)
 
 	bals := colored.ToL1Map(colored.NewBalancesForIotas(100))
@@ -106,9 +111,9 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 
 	nodeIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	ret.NodePubKeys = testpeers.PublicKeys(nodeIdentities)
-	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
+	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)*/
 
-	return ret, originTx
+	return ret, tx //originTx
 }
 
 func (env *MockedEnv) SetPushStateToNodesOption(push bool) {
@@ -117,66 +122,70 @@ func (env *MockedEnv) SetPushStateToNodesOption(push bool) {
 	env.push = push
 }
 
-func (env *MockedEnv) pushStateToNodesIfSet(tx *ledgerstate.Transaction) {
+func (env *MockedEnv) pushStateToNodesIfSet(tx *iotago.Transaction) {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
 
 	if !env.push {
 		return
 	}
-	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
-	require.NoError(env.T, err)
+	/*	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
+		require.NoError(env.T, err)
 
-	for _, node := range env.Nodes {
-		go node.StateManager.EnqueueStateMsg(&messages.StateMsg{
-			ChainOutput: stateOutput,
-			Timestamp:   tx.Essence().Timestamp(),
-		})
-	}
+		for _, node := range env.Nodes {
+			go node.StateManager.EnqueueStateMsg(&messages.StateMsg{
+				ChainOutput: stateOutput,
+				Timestamp:   tx.Essence().Timestamp(),
+			})
+		}*/
 }
 
-func (env *MockedEnv) PostTransactionToLedger(tx *ledgerstate.Transaction) {
-	env.Log.Debugf("MockedEnv.PostTransactionToLedger: transaction %v", tx.ID().Base58())
-	_, exists := env.Ledger.GetTransaction(tx.ID())
+func (env *MockedEnv) PostTransactionToLedger(tx *iotago.Transaction) {
+	txID, err := tx.ID()
+	if err != nil {
+		env.Log.Errorf("MockedEnv.PostTransactionToLedger: error geting transaction id: %v", err)
+	}
+	env.Log.Debugf("MockedEnv.PostTransactionToLedger: transaction %v", txID)
+	_, exists := env.Ledger.GetTransaction(*txID)
 	if exists {
-		env.Log.Debugf("MockedEnv.PostTransactionToLedger: posted repeating originTx: %s", tx.ID().Base58())
+		env.Log.Debugf("MockedEnv.PostTransactionToLedger: posted repeating originTx: %v", txID)
 		return
 	}
-	if err := env.Ledger.AddTransaction(tx); err != nil {
+	if err = env.Ledger.AddToLedger(tx); err != nil {
 		env.Log.Errorf("MockedEnv.PostTransactionToLedger: error adding transaction: %v", err)
 		return
 	}
 	// Push transaction to nodes
 	go env.pushStateToNodesIfSet(tx)
 
-	env.Log.Infof("MockedEnv.PostTransactionToLedger: posted transaction to ledger: %s", tx.ID().Base58())
+	env.Log.Infof("MockedEnv.PostTransactionToLedger: posted transaction to ledger: %s", txID)
 }
 
 func (env *MockedEnv) PullStateFromLedger() *messages.StateMsg {
-	env.Log.Debugf("MockedEnv.PullStateFromLedger request received")
-	outputs := env.Ledger.GetAddressOutputs(env.ChainID.AsAliasAddress())
-	require.EqualValues(env.T, 1, len(outputs))
-	outTx, ok := env.Ledger.GetTransaction(outputs[0].ID().TransactionID())
-	require.True(env.T, ok)
-	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(outTx)
-	require.NoError(env.T, err)
+	/*	env.Log.Debugf("MockedEnv.PullStateFromLedger request received")
+		outputs := env.Ledger.GetAddressOutputs(env.ChainID.AsAliasAddress())
+		require.EqualValues(env.T, 1, len(outputs))
+		outTx, ok := env.Ledger.GetTransaction(outputs[0].ID().TransactionID())
+		require.True(env.T, ok)
+		stateOutput, err := utxoutil.GetSingleChainedAliasOutput(outTx)
+		require.NoError(env.T, err)
 
-	env.Log.Debugf("MockedEnv.PullStateFromLedger chain output %s found", iscp.OID(stateOutput.ID()))
-	return &messages.StateMsg{
-		ChainOutput: stateOutput,
-		Timestamp:   outTx.Essence().Timestamp(),
-	}
+		env.Log.Debugf("MockedEnv.PullStateFromLedger chain output %s found", iscp.OID(stateOutput.ID()))
+		return &messages.StateMsg{
+			ChainOutput: stateOutput,
+			Timestamp:   outTx.Essence().Timestamp(),
+		}*/
+	return nil
 }
 
-func (env *MockedEnv) PullConfirmedOutputFromLedger(outputID ledgerstate.OutputID) ledgerstate.Output {
+func (env *MockedEnv) PullConfirmedOutputFromLedger(outputID *iotago.UTXOInput) iotago.Output {
 	env.Log.Debugf("MockedEnv.PullConfirmedOutputFromLedger for output %v", iscp.OID(outputID))
-	tx, foundTx := env.Ledger.GetTransaction(outputID.TransactionID())
+	tx, foundTx := env.Ledger.GetTransaction(outputID.TransactionID)
 	require.True(env.T, foundTx)
-	outputIndex := outputID.OutputIndex()
-	outputs := tx.Essence().Outputs()
-	require.True(env.T, int(outputIndex) < len(outputs))
-	output := outputs[outputIndex].UpdateMintingColor()
-	require.NotNil(env.T, output)
+	outputs, err := tx.OutputsSet()
+	require.NoError(env.T, err)
+	output, ok := outputs[outputID.ID()]
+	require.True(env.T, ok)
 	env.Log.Debugf("MockedEnv.PullConfirmedOutputFromLedger output found")
 	return output
 }
@@ -185,9 +194,11 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 	nodePubKey := env.NodePubKeys[nodeIndex]
 	nodePubKeyStr := nodePubKey.String()[0:10]
 	log := env.Log.Named(nodePubKeyStr)
-	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.ChainID.Array(), env.NodePubKeys)
+	var peeringID peering.PeeringID
+	copy(peeringID[:], env.ChainID[:iotago.AliasIDLength])
+	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(peeringID, env.NodePubKeys)
 	require.NoError(env.T, err)
-	stateMgrDomain, err := NewDomainWithFallback(env.ChainID.Array(), env.NetworkProviders[nodeIndex], log)
+	stateMgrDomain, err := NewDomainWithFallback(peeringID, env.NetworkProviders[nodeIndex], log)
 	require.NoError(env.T, err)
 	ret := &MockedNode{
 		PubKey:     nodePubKey,
@@ -218,7 +229,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 				return
 			}
 			ret.StateManager.EnqueueGetBlockMsg(&messages.GetBlockMsgIn{
-				GetBlockMsg: *msg,
+				GetBlockMsg:  *msg,
 				SenderPubKey: peerMsg.SenderPubKey,
 			})
 		case peerMsgTypeBlock:
@@ -228,22 +239,26 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 				return
 			}
 			ret.StateManager.EnqueueBlockMsg(&messages.BlockMsgIn{
-				BlockMsg:    *msg,
+				BlockMsg:     *msg,
 				SenderPubKey: peerMsg.SenderPubKey,
 			})
 		}
 	})
 	ret.StateManager = New(ret.store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, timers)
-	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
-	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *ledgerstate.Transaction) {
+	originatorKeyPairCryptolib := cryptolib.HiveKeyPairToCryptolibKeyPair(*env.OriginatorKeyPair)
+	ret.StateTransition = testchain.NewMockedStateTransition(env.T, &originatorKeyPairCryptolib)
+	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *iotago.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
-		stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
+		// TODO
+		/*stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
 		require.NoError(env.T, err)
-		go ret.StateManager.EnqueueStateCandidateMsg(vstate, stateOutput.ID())
+		go ret.StateManager.EnqueueStateCandidateMsg(vstate, stateOutput.ID())*/
 		go ret.NodeConn.PostTransaction(tx)
 	})
-	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
-		log.Debugf("MockedNode.OnPostTransaction: transaction %v posted", tx.ID().Base58())
+	ret.NodeConn.OnPostTransaction(func(tx *iotago.Transaction) {
+		txID, err := tx.ID()
+		require.NoError(env.T, err)
+		log.Debugf("MockedNode.OnPostTransaction: transaction %v posted", txID)
 		env.PostTransactionToLedger(tx)
 	})
 	ret.NodeConn.OnPullState(func() {
@@ -252,11 +267,11 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		log.Debugf("MockedNode.OnPullState call EventStateMsg: chain output %s", iscp.OID(response.ChainOutput.ID()))
 		go ret.StateManager.EnqueueStateMsg(response)
 	})
-	ret.NodeConn.OnPullConfirmedOutput(func(outputID ledgerstate.OutputID) {
+	ret.NodeConn.OnPullConfirmedOutput(func(outputID *iotago.UTXOInput) {
 		log.Debugf("MockedNode.OnPullConfirmedOutput %v", iscp.OID(outputID))
 		response := env.PullConfirmedOutputFromLedger(outputID)
 		log.Debugf("MockedNode.OnPullConfirmedOutput call EventOutputMsg")
-		go ret.StateManager.EnqueueOutputMsg(response)
+		go ret.StateManager.EnqueueOutputMsg(response, outputID.ID())
 	})
 
 	return ret

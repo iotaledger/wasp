@@ -25,7 +25,7 @@ func NewMockedStateTransition(t *testing.T, chainKey *cryptolib.KeyPair) *Mocked
 	}
 }
 
-func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutput *iotago.AliasOutput, ts time.Time, reqs ...iscp.Calldata) {
+func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutput *iscp.AliasOutputWithID, ts time.Time, reqs ...iscp.Calldata) {
 	panic("TODO implement")
 	// if c.chainKey != nil {
 	// 	require.True(c.t, chainOutput.GetStateAddress().Equals(iotago.NewED25519Address(c.chainKey.PublicKey)))

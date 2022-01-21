@@ -9,7 +9,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -42,12 +41,14 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	sm.notifiedAnchorOutputID = sm.stateOutput.ID()
 	stateOutputID := sm.stateOutput.ID()
 	stateOutputIndex := sm.stateOutput.GetStateIndex()
-	gu := ""
+	/*gu := ""
 	if sm.stateOutput.GetIsGovernanceUpdated() {
 		gu = " (rotation) "
 	}
 	sm.log.Debugf("notifyStateTransition: %sstate IS SYNCED to index %d and is approved by output %v",
-		gu, stateOutputIndex, iscp.OID(stateOutputID))
+		gu, stateOutputIndex, iscp.OID(stateOutputID))*/
+	sm.log.Debugf("notifyStateTransition: state IS SYNCED to index %d and is approved by output %v",
+		stateOutputIndex, iscp.OID(stateOutputID))
 	sm.chain.TriggerChainTransition(&chain.ChainTransitionEventData{
 		VirtualState:    sm.solidState.Copy(),
 		ChainOutput:     sm.stateOutput,
@@ -59,7 +60,8 @@ func (sm *stateManager) isSynced() bool {
 	if sm.stateOutput == nil {
 		return false
 	}
-	return bytes.Equal(sm.solidState.StateCommitment().Bytes(), sm.stateOutput.GetStateData())
+	// GetStateMetadata is supposed to return hash of state data (state commitment)
+	return bytes.Equal(sm.solidState.StateCommitment().Bytes(), sm.stateOutput.GetStateMetadata())
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -80,12 +82,12 @@ func (sm *stateManager) pullStateIfNeeded() {
 	}
 }
 
-func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualStateAccess, approvingOutput iotago.OutputID) bool {
+func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualStateAccess, approvingOutputID *iotago.UTXOInput) bool {
 	sm.log.Debugw("addStateCandidateFromConsensus: adding state candidate",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
 		"hash", nextState.StateCommitment(),
-		"output", approvingOutput.UTXOInput().ID(),
+		"output", approvingOutputID,
 	)
 
 	block, err := nextState.ExtractBlock()
@@ -102,7 +104,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 		sm.log.Warnf("addStateCandidateFromConsensus: block index %v is not needed as solid state is already at index %v", block.BlockIndex(), sm.solidState.BlockIndex())
 		return false
 	}
-	block.SetApprovingOutputID(approvingOutput)
+	block.SetApprovingOutputID(approvingOutputID)
 	sm.addBlockAndCheckStateOutput(block, nextState)
 
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < block.BlockIndex() {
@@ -142,7 +144,7 @@ func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState
 	if isBlockNew {
 		if sm.stateOutput != nil {
 			sm.log.Debugf("addBlockAndCheckStateOutput: checking if block index %v (local %v, nextStateHash %v, approvingOutputID %v, already approved %v) is approved by current stateOutput",
-				block.BlockIndex(), candidate.isLocal(), candidate.getNextStateHash().String(), iscp.OID(candidate.getApprovingOutputID()), candidate.isApproved())
+				block.BlockIndex(), candidate.isLocal(), candidate.getNextStateCommitment().String(), iscp.OID(candidate.getApprovingOutputID()), candidate.isApproved())
 			candidate.approveIfRightOutput(sm.stateOutput)
 		}
 		sm.log.Debugf("addBlockAndCheckStateOutput: block index %v approved %v", block.BlockIndex(), candidate.isApproved())
@@ -156,13 +158,13 @@ func (sm *stateManager) storeSyncingData() {
 		sm.log.Debugf("storeSyncingData not needed: stateOutput is nil")
 		return
 	}
-	outputStateHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())
+	outputStateCommitment, err := sm.stateOutput.GetStateCommitment()
 	if err != nil {
 		sm.log.Debugf("storeSyncingData failed: error calculating stateOutput state data hash: %v", err)
 		return
 	}
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateHash %v, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputHash %v, StateOutputTimestamp %v",
-		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.StateCommitment().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateHash.String(), sm.stateOutputTimestamp)
+		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.StateCommitment().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment.String(), sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
 		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
@@ -170,7 +172,7 @@ func (sm *stateManager) storeSyncingData() {
 		SyncedStateTimestamp:  sm.solidState.Timestamp(),
 		StateOutputBlockIndex: sm.stateOutput.GetStateIndex(),
 		StateOutputID:         sm.stateOutput.ID(),
-		StateOutputHash:       outputStateHash,
+		StateOutputCommitment: outputStateCommitment,
 		StateOutputTimestamp:  sm.stateOutputTimestamp,
 	})
 }
