@@ -154,13 +154,13 @@ type foundryParams struct {
 	maxSupply *big.Int
 }
 
-// CreateFoundryGasBudgetIotas always takes 1000 iotas as gas budget and assets for the call
+// CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and assets for the call
 const (
-	CreateFoundryGasBudgetIotas   = 1000
-	MintTokensGasBudgetIotas      = 1000
-	DestroyTokensGasBudgetIotas   = 1000
-	SendToL2AccountGasBudgetIotas = 1000
-	DestroyFoundryGasBudgetIotas  = 1000
+	CreateFoundryGasBudgetIotas   = 100_000
+	MintTokensGasBudgetIotas      = 100_000
+	DestroyTokensGasBudgetIotas   = 100_000
+	SendToL2AccountGasBudgetIotas = 100_000
+	DestroyFoundryGasBudgetIotas  = 100_000
 )
 
 func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {

@@ -74,7 +74,7 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 	const allowance = 1000
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
 		AddIotaAllowance(allowance).
-		WithGasBudget(200_000)
+		WithGasBudget(400_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
@@ -102,7 +102,7 @@ func testSplitTokensFail(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
 		AddAssetsIotas(100_000).
-		WithGasBudget(200_000)
+		WithGasBudget(400_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
@@ -174,6 +174,7 @@ func testPingIotas1(t *testing.T, w bool) {
 }
 
 func TestEstimateMinimumDust(t *testing.T) { run2(t, testEstimateMinimumDust) }
+
 func testEstimateMinimumDust(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)

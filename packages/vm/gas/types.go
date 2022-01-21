@@ -4,7 +4,7 @@ import "golang.org/x/xerrors"
 
 type BurnCode uint16
 
-type BurnFunction func(code BurnCode, params []int) uint64
+type BurnFunction func(x uint64) uint64
 
 type BurnCodeRecord struct {
 	Name string
@@ -24,12 +24,4 @@ func (c BurnCode) Name() string {
 		return "(undef)"
 	}
 	return r.Name
-}
-
-func Value(c BurnCode, p ...int) uint64 {
-	if r, ok := burnTable[c]; ok {
-		return r.BurnFunction(c, p)
-	}
-	panic(xerrors.Errorf("%v: %d", ErrUnknownBurnCode, c))
-
 }

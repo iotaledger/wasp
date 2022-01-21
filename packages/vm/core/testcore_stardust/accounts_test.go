@@ -20,6 +20,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const IotasDepositFee = 100_000
+
 func TestDeposit(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
@@ -50,7 +52,6 @@ func TestFoundries(t *testing.T) {
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID = iscp.NewAgentID(senderAddr, 0)
 	}
-
 	t.Run("supply 10", func(t *testing.T) {
 		initTest()
 		sn, _, err := ch.NewFoundryParams(10).CreateFoundry()
@@ -100,7 +101,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 
-		err = ch.SendFromL1ToL2AccountIotas(1000, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		t.Logf("common account iotas = %d before mint", ch.L2CommonAccountIotas())
 
@@ -120,7 +121,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 
-		err = ch.SendFromL1ToL2AccountIotas(1000, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, 1, senderKeyPair)
 		require.NoError(t, err)
@@ -151,7 +152,7 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 
-		err = ch.SendFromL1ToL2AccountIotas(1000, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, 500, senderKeyPair)
 		require.NoError(t, err)
@@ -177,7 +178,7 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 
-		err = ch.SendFromL1ToL2AccountIotas(1000, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, abi.MaxUint256, senderKeyPair)
 		require.NoError(t, err)
@@ -216,7 +217,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
 		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
 
-		err = ch.SendFromL1ToL2AccountIotas(1000, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, 20, senderKeyPair)
 		require.NoError(t, err)
@@ -242,7 +243,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2NativeTokens(senderAgentID, &tokenID, 0)
 		ch.AssertL2TotalNativeTokens(&tokenID, 0)
 
-		err = ch.SendFromL1ToL2AccountIotas(1000, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, 1_000_000, senderKeyPair)
 		require.NoError(t, err)
@@ -449,7 +450,7 @@ func (v *testParams) createFoundryAndMint(sch iotago.TokenScheme, tag *iotago.To
 		CreateFoundry()
 	require.NoError(v.env.T, err)
 	// mint some tokens for the user
-	err = v.ch.SendFromL1ToL2AccountIotas(1000, 1000, v.ch.CommonAccount(), v.user)
+	err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1000, v.ch.CommonAccount(), v.user)
 	require.NoError(v.env.T, err)
 	err = v.ch.MintTokens(sn, amount, v.user)
 	require.NoError(v.env.T, err)
@@ -498,7 +499,7 @@ func initWithdrawTest(t *testing.T, initLoad ...uint64) *testParams {
 	// do not run the request yet
 	v.req = solo.NewCallParams("accounts", "withdraw").
 		AddAssetsIotas(12000).
-		WithGasBudget(12000)
+		WithGasBudget(100_000)
 	v.printBalances("BEGIN")
 	return v
 }
@@ -533,7 +534,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		t.Logf("assets to withdraw: %s", toWithdraw.String())
 		// withdraw all tokens to L1, but we do not add iotas to allowance, so not enough for dust
 		v.req.AddAllowance(toWithdraw)
-		v.req.AddAssetsIotas(1000)
+		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
 		v.printBalances("END")
@@ -542,7 +543,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
-		v.req.AddAssetsIotas(1000)
+		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
 
@@ -560,7 +561,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
-		v.req.AddAssetsIotas(1000)
+		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER MINT")
@@ -584,7 +585,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
-		v.req.AddAssetsIotas(1000)
+		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER MINT")
@@ -606,7 +607,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
-		v.req.AddAssetsIotas(1000)
+		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER MINT")
@@ -624,7 +625,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
-		v.req.AddAssetsIotas(1000)
+		v.req.AddAssetsIotas(IotasDepositFee)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
 
@@ -668,7 +669,7 @@ func TestTransferAndHarvest(t *testing.T) {
 	require.NoError(t, err)
 
 	v.req = solo.NewCallParams("accounts", "harvest").
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	_, err = v.ch.PostRequestSync(v.req, v.chainOwner)
 	require.NoError(t, err)
 
@@ -716,9 +717,9 @@ func TestTransferPartialAssets(t *testing.T) {
 	require.EqualValues(t, 1, int(sn))
 
 	// deposit iotas for the chain owner (needed for L1 dust byte cost to mint tokens)
-	err = e.ch.SendFromL1ToL2AccountIotas(1000, 10000, e.ch.CommonAccount(), e.chainOwner)
+	err = e.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 10000, e.ch.CommonAccount(), e.chainOwner)
 	require.NoError(t, err)
-	err = e.ch.SendFromL1ToL2AccountIotas(1000, 10000, e.userAgentID, e.user)
+	err = e.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 10000, e.userAgentID, e.user)
 	require.NoError(t, err)
 
 	err = e.ch.MintTokens(sn, big.NewInt(10), e.user)
@@ -733,11 +734,11 @@ func TestTransferPartialAssets(t *testing.T) {
 
 	// deposit 1 iota to "create account" for user2 // TODO maybe remove if account creation is not needed
 	e.ch.AssertL2Iotas(user2AgentID, 0)
-	err = e.ch.SendFromL1ToL2AccountIotas(1000, 300, user2AgentID, user2)
+	err = e.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 300, user2AgentID, user2)
 	rec := e.ch.LastReceipt()
 	require.NoError(t, err)
 	e.env.T.Logf("gas fee charged: %d", rec.GasFeeCharged)
-	expectedUser2 := 1000 + 300 - rec.GasFeeCharged
+	expectedUser2 := IotasDepositFee + 300 - rec.GasFeeCharged
 	e.ch.AssertL2Iotas(user2AgentID, expectedUser2)
 	// -----------------------------
 	err = e.ch.SendFromL2ToL2Account(
