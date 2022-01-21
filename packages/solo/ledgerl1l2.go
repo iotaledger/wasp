@@ -283,14 +283,11 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 
 // DepositAssetsToL2 deposits assets on user's on-chain account
 func (ch *Chain) DepositAssetsToL2(assets *iscp.Assets, user *cryptolib.KeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddAssets(assets).
-		WithGasBudget(10_000)
-	gas, _, err := ch.EstimateGasOnLedger(req, user)
-	require.NoError(ch.Env.T, err)
-
-	req.WithGasBudget(gas * 2)
-	_, err = ch.PostRequestSync(req, user)
+	_, err := ch.PostRequestSync(
+		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			AddAssets(assets),
+		user,
+	)
 	return err
 }
 
@@ -309,18 +306,12 @@ func (ch *Chain) MustDepositIotasToL2(amount uint64, user *cryptolib.KeyPair) {
 func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.Assets, target *iscp.AgentID, user *cryptolib.KeyPair) error {
 	require.False(ch.Env.T, toSend.IsEmpty())
 	sumAssets := toSend.Clone().AddIotas(feeIotas)
-	reqEstimate := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
-		AddAssets(sumAssets).
-		AddAllowance(toSend).
-		WithGasBudget(200_000)
-	gas, _, err := ch.EstimateGasOnLedger(reqEstimate, user)
-	require.NoError(ch.Env.T, err)
-
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
-		AddAssets(sumAssets).
-		WithGasBudget(gas).
-		AddAllowance(toSend)
-	_, err = ch.PostRequestSync(req, user)
+	_, err := ch.PostRequestSync(
+		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
+			AddAssets(sumAssets).
+			AddAllowance(toSend),
+		user,
+	)
 	return err
 }
 

@@ -156,21 +156,11 @@ func testPingIotas1(t *testing.T, w bool) {
 	const expectedBack = 1_000
 	ch.Env.AssertL1Iotas(userAddr, solo.Saldo)
 
-	reqEstimate := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddAssetsIotas(100_000).
-		AddIotaAllowance(expectedBack).
-		WithGasBudget(100_000)
-
-	gasEstimate, feeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
-	require.NoError(t, err)
-	t.Logf("gasEstimate: %d, feeEstimate: %d", gasEstimate, feeEstimate)
-
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddAssetsIotas(feeEstimate + expectedBack).
-		AddIotaAllowance(expectedBack).
-		WithGasBudget(gasEstimate)
+		AddAssetsIotas(expectedBack).
+		AddIotaAllowance(expectedBack)
 
-	_, err = ch.PostRequestSync(req, user)
+	_, receipt, _, err := ch.PostRequestSyncExt(req, user)
 	require.NoError(t, err)
 	rec := ch.LastReceipt()
 
@@ -178,9 +168,9 @@ func testPingIotas1(t *testing.T, w bool) {
 	commonAfter := ch.L2CommonAccountAssets()
 	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", rec, userFundsAfter, commonAfter)
 
-	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, solo.Saldo-feeEstimate)
+	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, solo.Saldo-receipt.GasFeeCharged)
 	require.EqualValues(t, int(commonBefore.Iotas+rec.GasFeeCharged), int(commonAfter.Iotas))
-	require.EqualValues(t, feeEstimate-rec.GasFeeCharged, int(userFundsAfter.AssetsL2.Iotas))
+	require.EqualValues(t, receipt.GasFeeCharged-rec.GasFeeCharged, int(userFundsAfter.AssetsL2.Iotas))
 }
 
 func TestEstimateMinimumDust(t *testing.T) { run2(t, testEstimateMinimumDust) }

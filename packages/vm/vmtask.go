@@ -22,16 +22,18 @@ type VMRunner interface {
 type VMTask struct {
 	// INPUTS:
 
-	ACSSessionID         uint64
-	Processors           *processors.Cache
-	AnchorOutput         *iotago.AliasOutput
-	AnchorOutputID       iotago.UTXOInput
-	RentStructure        *iotago.RentStructure
-	SolidStateBaseline   coreutil.StateBaseline
-	Requests             []iscp.Request
-	TimeAssumption       iscp.TimeData
-	Entropy              hashing.HashValue
-	ValidatorFeeTarget   *iscp.AgentID
+	ACSSessionID       uint64
+	Processors         *processors.Cache
+	AnchorOutput       *iotago.AliasOutput
+	AnchorOutputID     iotago.UTXOInput
+	RentStructure      *iotago.RentStructure
+	SolidStateBaseline coreutil.StateBaseline
+	Requests           []iscp.Request
+	TimeAssumption     iscp.TimeData
+	Entropy            hashing.HashValue
+	ValidatorFeeTarget *iscp.AgentID
+	// If EstimateGasMode is enabled, gas fee will be calculated but not charged
+	EstimateGasMode      bool
 	EnableGasBurnLogging bool // for testing and Solo only
 
 	// INPUTS_OUTPUTS:
