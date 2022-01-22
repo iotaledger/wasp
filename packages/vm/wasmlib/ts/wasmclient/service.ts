@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmclient from "./index";
-import {Hash, IKeyPair} from "./crypto";
-import {IOnLedger} from "./goshimmer/models/on_ledger";
-import {Colors} from "./colors";
-import {Buffer} from './buffer';
+import { Hash, IKeyPair } from "./crypto";
+import { IOnLedger } from "./goshimmer/models/on_ledger";
+import { Colors } from "./colors";
+import { Buffer } from "./buffer";
 
 export interface IEventHandler {
     callHandler(topic: string, params: string[]): void;
@@ -42,7 +42,7 @@ export class Service {
         onLedger: boolean
     ): Promise<string> {
         const chainId = this.serviceClient.configuration.chainId;
-        if (! onLedger) {
+        if (!onLedger) {
             // requested off-ledger request
             const requestID = await this.serviceClient.waspClient.postOffLedgerRequest(chainId, this.scHname, hFuncName, args, transfer, keyPair);
             return requestID;
@@ -62,9 +62,8 @@ export class Service {
     }
 
     public register(handler: IEventHandler): void {
-        if(this.eventHandlers.length === 0)
-            this.configureWebSocketsEventHandlers();
-            
+        if (this.eventHandlers.length === 0) this.configureWebSocketsEventHandlers();
+
         for (let i = 0; i < this.eventHandlers.length; i++) {
             if (this.eventHandlers[i] === handler) {
                 return;
@@ -75,9 +74,8 @@ export class Service {
 
     public unregister(handler: IEventHandler): void {
         // remove handler
-        this.eventHandlers = this.eventHandlers.filter(h => h !== handler);
-        if(this.eventHandlers.length === 0)
-            this.webSocket?.close();
+        this.eventHandlers = this.eventHandlers.filter((h) => h !== handler);
+        if (this.eventHandlers.length === 0) this.webSocket?.close();
     }
 
     // overrides default contract name
@@ -103,11 +101,23 @@ export class Service {
     }
 
     private connectWebSocket(): void {
-        // eslint-disable-next-line no-console
-        console.log(`Connecting to Websocket => ${this.waspWebSocketUrl}`);
         this.webSocket = new WebSocket(this.waspWebSocketUrl);
+        this.webSocket.addEventListener("open", () => this.handleOpenWebSocket());
+        this.webSocket.addEventListener("close", () => this.handleCloseWebSocket());
+        this.webSocket.addEventListener("error", (x) => this.handleErrorWebSocket(x));
         this.webSocket.addEventListener("message", (x) => this.handleIncomingMessage(x));
-        this.webSocket.addEventListener("close", () => setTimeout(this.connectWebSocket.bind(this), 1000));
+    }
+
+    private handleOpenWebSocket(): void {
+        console.log(`Connected to Websocket => ${this.waspWebSocketUrl}`);
+    }
+
+    private handleCloseWebSocket(): void {
+        console.log(`Disconnected from Websocket => ${this.waspWebSocketUrl}`);
+    }
+
+    private handleErrorWebSocket(event: Event): void {
+        console.error(`Web socket error  => ${this.waspWebSocketUrl} => ${event}`);
     }
 
     private handleIncomingMessage(message: MessageEvent<string>): void {
