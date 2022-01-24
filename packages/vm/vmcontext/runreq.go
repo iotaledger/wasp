@@ -273,13 +273,14 @@ func (vmctx *VMContext) chargeGasFee() {
 		// do not charge gas fees if init request
 		return
 	}
-	// ensure at least the minimum amount of gas is charged
-	if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest.Cost() {
-		vmctx.gasBurned = gas.BurnCodeMinimumGasPerRequest.Cost()
-		// TODO this is not right - violates the "gas budget is set affordable" thingy
+
+	availableToPayFee := vmctx.gasMaxTokensToSpendForGasFee
+	if !vmctx.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(availableToPayFee) {
+		// user didn't specify enough iotas to cover the minimum request fee, charge whetever is present in the user's account
+		availableToPayFee = vmctx.GetSenderTokenBalanceForFees()
 	}
 	// total fees to charge
-	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), vmctx.gasMaxTokensToSpendForGasFee)
+	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), availableToPayFee)
 	vmctx.gasFeeCharged = sendToOwner + sendToValidator
 
 	// calc gas totals

@@ -35,26 +35,29 @@ func TestDeposit(t *testing.T) {
 	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
 }
 
-// TODO allowance shouldnt allow you to bypass gas fees.
+// allowance shouldnt allow you to bypass gas fees.
 func TestDepositCheatAllowance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
 	senderAgentID := iscp.NewAgentID(senderAddr, 0)
 	ch := env.NewChain(nil, "chain1")
 
+	iotasSent := uint64(1000)
+
+	// send a request where allowance == assets - so that no iotas are available outside allowance
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			AddAssetsIotas(1000).WithGasBudget(100_000).AddIotaAllowance(1000),
+			AddAssetsIotas(iotasSent).
+			WithGasBudget(100_000).
+			AddIotaAllowance(iotasSent),
 		sender,
 	)
 	require.Error(t, err)
 
 	rec := ch.LastReceipt()
-	bal := ch.L2Iotas(senderAgentID)
-	println(bal)
-
-	t.Logf("========= receipt: %s", rec)
-	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
+	finalBalance := ch.L2Iotas(senderAgentID)
+	require.Less(t, finalBalance, iotasSent)
+	require.EqualValues(t, iotasSent, finalBalance+rec.GasFeeCharged)
 }
 
 func TestWithdrawEverything(t *testing.T) {

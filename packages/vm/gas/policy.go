@@ -19,16 +19,21 @@ type GasFeePolicy struct {
 	ValidatorFeeShare uint8
 }
 
+func calcFee(gasUnits, gasPerToken uint64) uint64 {
+	return uint64(math.Ceil(float64(gasUnits) / float64(gasPerToken)))
+}
+
 // FeeFromGas return ownerFee and validatorFee
 func (p *GasFeePolicy) FeeFromGas(gasUnits, availableTokens uint64) (sendToOwner, sendToValidator uint64) {
 	var fee uint64
+	// ensure at least the minimum amount of gas is charged
 	minimumGas := BurnCodeMinimumGasPerRequest.Cost()
 	if gasUnits < minimumGas {
 		gasUnits = minimumGas
 	}
 
 	// round up
-	fee = uint64(math.Ceil(float64(gasUnits) / float64(p.GasPerToken)))
+	fee = calcFee(gasUnits, p.GasPerToken)
 	fee = util.MinUint64(fee, availableTokens)
 
 	validatorPercentage := p.ValidatorFeeShare
@@ -42,6 +47,11 @@ func (p *GasFeePolicy) FeeFromGas(gasUnits, availableTokens uint64) (sendToOwner
 		sendToValidator = (fee * uint64(validatorPercentage)) / 100
 	}
 	return fee - sendToValidator, sendToValidator
+}
+
+func (p *GasFeePolicy) IsEnoughForMinimumFee(availableTokens uint64) bool {
+	minFee := calcFee(BurnCodeMinimumGasPerRequest.Cost(), p.GasPerToken)
+	return availableTokens >= minFee
 }
 
 func (p *GasFeePolicy) AffordableGasBudgetFromAvailableTokens(availableTokens uint64) uint64 {
