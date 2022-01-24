@@ -74,23 +74,25 @@ func TestWithdrawEverything(t *testing.T) {
 
 	// construct request with low allowance (just sufficient for dust balance), so its possible to estimate the gas fees
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
-		AddAssets(iscp.NewAssetsIotas(l2balance)).AddAllowance(iscp.NewAssetsIotas(5200))
+		WithAssets(iscp.NewAssetsIotas(l2balance)).AddAllowance(iscp.NewAssetsIotas(5200))
 
-	_, fee, err := ch.EstimateGasOnLedger(req, sender)
+	gasEstimate, fee, err := ch.EstimateGasOffLedger(req, sender)
 	require.NoError(t, err)
 
 	// set the allowance to the maximum possible value
-	req = req.AddAllowance(iscp.NewAssetsIotas(l2balance - fee))
+	req = req.WithAllowance(iscp.NewAssetsIotas(l2balance - fee - 1000)).
+		WithGasBudget(gasEstimate)
 
-	_, err = ch.PostRequestSync(req, sender)
+	_, err = ch.PostRequestOffLedger(req, sender)
 	require.NoError(t, err)
 
 	withdrawalGasFee := ch.LastReceipt().GasFeeCharged
-	finall1Balance := ch.Env.L1Iotas(senderAddr)
+	finalL1Balance := ch.Env.L1Iotas(senderAddr)
+	finalL2Balance := ch.L2Iotas(senderAgentID)
 
 	// ensure everything was withdrawn
-	require.Equal(t, initialL1balance, finall1Balance+depositGasFee+withdrawalGasFee)
-	require.Zero(t, ch.L2Iotas(senderAgentID))
+	require.Equal(t, initialL1balance, finalL1Balance+depositGasFee+withdrawalGasFee+1000)
+	require.Zero(t, finalL2Balance)
 }
 
 func TestFoundries(t *testing.T) {

@@ -61,6 +61,11 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
 }
 
+func (r *CallParams) WithAllowance(allowance *iscp.Assets) *CallParams {
+	r.allowance = allowance.Clone()
+	return r
+}
+
 func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
 	if r.allowance == nil {
 		r.allowance = allowance.Clone()
@@ -87,6 +92,11 @@ func (r *CallParams) AddNativeTokensAllowance(id *iotago.NativeTokenID, amount i
 			Amount: util.ToBigInt(amount),
 		}},
 	})
+}
+
+func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
+	r.assets = assets.Clone()
+	return r
 }
 
 func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
@@ -371,6 +381,7 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 // Gas fee is calculated but not charged, so it can be used to estimate the gas
 // needed to run the request.
 func (ch *Chain) SimulateRequestOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
+	req.WithGasBudget(math.MaxUint64)
 	r, err := ch.requestFromParams(req, keyPair)
 	if err != nil {
 		return nil, err
@@ -383,6 +394,7 @@ func (ch *Chain) SimulateRequestOnLedger(req *CallParams, keyPair *cryptolib.Key
 // Gas fee is calculated but not charged, so it can be used to estimate the gas
 // needed to run the request.
 func (ch *Chain) SimulateRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
+	req.WithGasBudget(math.MaxUint64)
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	return ch.estimateGas(r), nil
 }
