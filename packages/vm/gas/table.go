@@ -31,6 +31,7 @@ const (
 	BurnCodeUtilsBLSAggregateBLS1P
 
 	BurnCodeWasm1P
+	BurnCodeMinimumGasPerRequest
 )
 
 // burnTable contains all possible burn codes with their burn value computing functions
@@ -59,6 +60,7 @@ var burnTable = BurnTable{
 	BurnCodeUtilsBLSValidSignature:     {"bls valid", constValue(2000)},
 	BurnCodeUtilsBLSAddrFromPubKey:     {"bls addr", constValue(50)},
 	BurnCodeUtilsBLSAggregateBLS1P:     {"bls aggregate", linear(CoefBLSAggregate)},
+	BurnCodeMinimumGasPerRequest:       {"minimum gas per request", constValue(100)}, // TODO maby make it configurable (gov contract?)
 }
 
 const (

@@ -63,13 +63,13 @@ func TestWithdrawEverything(t *testing.T) {
 	senderAgentID := iscp.NewAgentID(senderAddr, 0)
 	ch := env.NewChain(nil, "chain1")
 
+	// deposit some iotas to L2
 	initialL1balance := ch.Env.L1Iotas(senderAddr)
 	iotasToDepositToL2 := uint64(100_000)
 	err := ch.DepositIotasToL2(iotasToDepositToL2, sender)
 	require.NoError(t, err)
 
 	depositGasFee := ch.LastReceipt().GasFeeCharged
-
 	l2balance := ch.L2Iotas(senderAgentID)
 
 	// construct request with low allowance (just sufficient for dust balance), so its possible to estimate the gas fees
@@ -80,7 +80,7 @@ func TestWithdrawEverything(t *testing.T) {
 	require.NoError(t, err)
 
 	// set the allowance to the maximum possible value
-	req = req.WithAllowance(iscp.NewAssetsIotas(l2balance - fee - 1000)).
+	req = req.WithAllowance(iscp.NewAssetsIotas(l2balance - fee)).
 		WithGasBudget(gasEstimate)
 
 	_, err = ch.PostRequestOffLedger(req, sender)
@@ -91,7 +91,7 @@ func TestWithdrawEverything(t *testing.T) {
 	finalL2Balance := ch.L2Iotas(senderAgentID)
 
 	// ensure everything was withdrawn
-	require.Equal(t, initialL1balance, finalL1Balance+depositGasFee+withdrawalGasFee+1000)
+	require.Equal(t, initialL1balance, finalL1Balance+depositGasFee+withdrawalGasFee)
 	require.Zero(t, finalL2Balance)
 }
 

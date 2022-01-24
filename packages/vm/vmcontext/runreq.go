@@ -215,10 +215,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	f1, f2 := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.req.GasBudget(), guaranteedFeeTokens)
 	vmctx.gasMaxTokensToSpendForGasFee = f1 + f2
 	// calculate affordable gas budget
-	affordable := uint64(math.MaxUint64)
-	if !vmctx.task.EstimateGasMode {
-		affordable = vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
-	}
+	affordable := vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
 	// adjust gas budget to what is affordable
 	vmctx.gasBudgetAdjusted = util.MinUint64(vmctx.req.GasBudget(), affordable)
 }
@@ -226,10 +223,6 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 // calcGuaranteedFeeTokens return hiw maximum tokens (iotas or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
 func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
-	if vmctx.task.EstimateGasMode {
-		return math.MaxUint64
-	}
-
 	var tokensGuaranteed uint64
 
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
@@ -279,6 +272,11 @@ func (vmctx *VMContext) chargeGasFee() {
 	if vmctx.isInitChainRequest() {
 		// do not charge gas fees if init request
 		return
+	}
+	// ensure at least the minimum amount of gas is charged
+	if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest.Cost() {
+		vmctx.gasBurned = gas.BurnCodeMinimumGasPerRequest.Cost()
+		// TODO this is not right - violates the "gas budget is set affordable" thingy
 	}
 	// total fees to charge
 	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), vmctx.gasMaxTokensToSpendForGasFee)

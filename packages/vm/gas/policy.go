@@ -22,7 +22,7 @@ type GasFeePolicy struct {
 }
 
 // FeeFromGas return ownerFee and validatorFee
-func (p *GasFeePolicy) FeeFromGas(g uint64, availableTokens ...uint64) (uint64, uint64) {
+func (p *GasFeePolicy) FeeFromGas(g uint64, availableTokens ...uint64) (sendToOwner, sendToValidator uint64) {
 	available := uint64(math.MaxUint64)
 	if len(availableTokens) > 0 {
 		available = availableTokens[0]
@@ -44,7 +44,6 @@ func (p *GasFeePolicy) FeeFromGas(g uint64, availableTokens ...uint64) (uint64, 
 	if validatorPercentage > 100 {
 		validatorPercentage = 100
 	}
-	var sendToValidator uint64
 	// safe arithmetics
 	if totalFee >= 100 {
 		sendToValidator = (totalFee / 100) * uint64(validatorPercentage)
