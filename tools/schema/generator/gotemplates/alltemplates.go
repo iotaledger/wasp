@@ -32,6 +32,7 @@ var TypeDependent = model.StringMapMap{
 		"Address":   "wasmlib.ScAddress",
 		"AgentID":   "wasmlib.ScAgentID",
 		"Bool":      "bool",
+		"Bytes":     "[]byte",
 		"ChainID":   "wasmlib.ScChainID",
 		"Color":     "wasmlib.ScColor",
 		"Hash":      "wasmlib.ScHash",
