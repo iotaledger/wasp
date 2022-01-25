@@ -61,7 +61,7 @@ func (p *GasFeePolicy) AffordableGasBudgetFromAvailableTokens(availableTokens ui
 func DefaultGasFeePolicy() *GasFeePolicy {
 	return &GasFeePolicy{
 		GasFeeTokenID:     nil, // default is iotas
-		GasPerToken:       100, // gas is burned in 100-s and not less than 100
+		GasPerToken:       100, // each token pays for 100 units of gas
 		ValidatorFeeShare: 0,   // by default all goes to the governor
 	}
 }
