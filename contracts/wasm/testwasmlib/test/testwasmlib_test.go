@@ -110,6 +110,7 @@ func TestValidSizeParams(t *testing.T) {
 	ctx := setupTest(t)
 	for index, param := range allParams {
 		t.Run("ValidSize "+param, func(t *testing.T) {
+			paramMismatch := fmt.Sprintf("mismatch: %s%s", strings.ToUpper(param[:1]), param[1:])
 			pt := testwasmlib.ScFuncs.ParamTypes(ctx)
 			bytes := make([]byte, allLengths[index])
 			if param == testwasmlib.ParamChainID {
@@ -118,7 +119,7 @@ func TestValidSizeParams(t *testing.T) {
 			pt.Params.Param().GetBytes(param).SetValue(bytes)
 			pt.Func.TransferIotas(1).Post()
 			require.Error(t, ctx.Err)
-			require.Contains(t, ctx.Err.Error(), "mismatch: ")
+			require.Contains(t, ctx.Err.Error(), paramMismatch)
 		})
 	}
 }
@@ -154,12 +155,13 @@ func TestInvalidTypeParams(t *testing.T) {
 	for param, values := range invalidValues {
 		for index, value := range values {
 			t.Run("InvalidType "+param+" "+strconv.Itoa(index), func(t *testing.T) {
+				invalidParam := fmt.Sprintf("invalid %s%s:", strings.ToUpper(param[:1]), param[1:])
 				req := solo.NewCallParams(testwasmlib.ScName, testwasmlib.FuncParamTypes,
 					param, value,
 				).WithIotas(1)
 				_, err := ctx.Chain.PostRequestSync(req, nil)
 				require.Error(t, err)
-				require.Contains(t, err.Error(), "invalid ")
+				require.Contains(t, err.Error(), invalidParam)
 			})
 		}
 	}
@@ -188,23 +190,20 @@ func TestViewBlockRecords(t *testing.T) {
 func TestClearArray(t *testing.T) {
 	ctx := setupTest(t)
 
-	as := testwasmlib.ScFuncs.ArraySet(ctx)
+	as := testwasmlib.ScFuncs.ArrayAppend(ctx)
 	as.Params.Name().SetValue("bands")
-	as.Params.Index().SetValue(0)
 	as.Params.Value().SetValue("Simple Minds")
 	as.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
-	as = testwasmlib.ScFuncs.ArraySet(ctx)
+	as = testwasmlib.ScFuncs.ArrayAppend(ctx)
 	as.Params.Name().SetValue("bands")
-	as.Params.Index().SetValue(1)
 	as.Params.Value().SetValue("Dire Straits")
 	as.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
 
-	as = testwasmlib.ScFuncs.ArraySet(ctx)
+	as = testwasmlib.ScFuncs.ArrayAppend(ctx)
 	as.Params.Name().SetValue("bands")
-	as.Params.Index().SetValue(2)
 	as.Params.Value().SetValue("ELO")
 	as.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)

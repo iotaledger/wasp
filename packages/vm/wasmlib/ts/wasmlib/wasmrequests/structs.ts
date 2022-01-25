@@ -10,8 +10,8 @@ import * as wasmlib from "wasmlib";
 export class CallRequest {
     contract : wasmlib.ScHname = new wasmlib.ScHname(0); 
     function : wasmlib.ScHname = new wasmlib.ScHname(0); 
-    params   :  = ; 
-    transfer :  = ; 
+    params   : u8[] = []; 
+    transfer : u8[] = []; 
 
     static fromBytes(bytes: u8[]): CallRequest {
         let decode = new wasmlib.BytesDecoder(bytes);
@@ -81,7 +81,7 @@ export class MutableCallRequest {
 export class DeployRequest {
     description : string = ""; 
     name        : string = ""; 
-    params      :  = ; 
+    params      : u8[] = []; 
     progHash    : wasmlib.ScHash = new wasmlib.ScHash(); 
 
     static fromBytes(bytes: u8[]): DeployRequest {
@@ -154,8 +154,8 @@ export class PostRequest {
     contract : wasmlib.ScHname = new wasmlib.ScHname(0); 
     delay    : u32 = 0; 
     function : wasmlib.ScHname = new wasmlib.ScHname(0); 
-    params   :  = ; 
-    transfer :  = ; 
+    params   : u8[] = []; 
+    transfer : u8[] = []; 
 
     static fromBytes(bytes: u8[]): PostRequest {
         let decode = new wasmlib.BytesDecoder(bytes);
@@ -228,7 +228,7 @@ export class MutablePostRequest {
 
 export class SendRequest {
     address  : wasmlib.ScAddress = new wasmlib.ScAddress(); 
-    transfer :  = ; 
+    transfer : u8[] = []; 
 
     static fromBytes(bytes: u8[]): SendRequest {
         let decode = new wasmlib.BytesDecoder(bytes);

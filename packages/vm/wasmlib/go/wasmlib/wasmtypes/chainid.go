@@ -27,6 +27,10 @@ func ChainIDFromBytes(buf []byte) ScChainID {
 	if len(buf) != ScChainIDLength {
 		Panic("invalid ChainID length")
 	}
+	// must be ledgerstate.AliasAddressType
+	if buf[0] != 2 {
+		Panic("invalid ChainID: not an alias address")
+	}
 	return newChainIDFromBytes(buf)
 }
 

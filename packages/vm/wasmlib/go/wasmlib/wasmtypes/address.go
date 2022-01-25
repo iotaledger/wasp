@@ -27,6 +27,10 @@ func AddressFromBytes(buf []byte) ScAddress {
 	if len(buf) != ScAddressLength {
 		Panic("invalid Address length")
 	}
+	// max ledgerstate.AliasAddressType
+	if buf[0] > 2 {
+		Panic("invalid Address: address type > 2")
+	}
 	return newAddressFromBytes(buf)
 }
 

@@ -1,7 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//nolint:dupl
 package wasmtypes
 
 import (
@@ -27,6 +26,10 @@ func EncodeRequestID(enc *wasmcodec.WasmEncoder, value ScRequestID) {
 func RequestIDFromBytes(buf []byte) ScRequestID {
 	if len(buf) != ScRequestIDLength {
 		Panic("invalid RequestID length")
+	}
+	// final uint16 output index must be > ledgerstate.MaxOutputCount
+	if buf[ScHashLength] > 127 || buf[ScHashLength+1] != 0 {
+		Panic("invalid RequestID: output index > 127")
 	}
 	return newRequestIDFromBytes(buf)
 }
