@@ -54,22 +54,11 @@ type WasmVM interface {
 	VMSetBytes(offset int32, size int32, bytes []byte) int32
 }
 
-// TODO implement this in WasmContext?
-type SandboxContext interface {
-	CallSandbox(funcNr int32, params []byte) []byte
-	StateDelete(key []byte)
-	StateExists(key []byte) bool
-	StateGet(key []byte) []byte
-	StateSet(key []byte, value []byte)
-}
-
 type WasmVMBase struct {
 	impl           WasmVM
 	host           *WasmHost
-	ctx            SandboxContext
 	panicErr       error
 	result         []byte
-	resultKeyID    int32
 	timeoutStarted bool
 }
 
@@ -95,9 +84,8 @@ func (vm *WasmVMBase) catchPanicMessage() {
 	panic(panicMsg)
 }
 
-//nolint:unparam
-func (vm *WasmVMBase) getKvStore(id int32) *KvStoreHost {
-	return vm.host.getKvStore(id)
+func (vm *WasmVMBase) getContext(id int32) *WasmContext {
+	return vm.host.store.GetContext(id)
 }
 
 func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
@@ -127,8 +115,9 @@ func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 	defer vm.catchPanicMessage()
 
-	host := vm.getKvStore(0)
-	host.TraceAllf("HostFdWrite(...)")
+	ctx := vm.getContext(0)
+	ctx.log().Debugf("HostFdWrite(...)")
+
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
 	ptr := vm.impl.VMGetBytes(iovs, 8)
 	text := int32(binary.LittleEndian.Uint32(ptr[0:4]))
@@ -143,102 +132,34 @@ func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 
 func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) int32 {
 	defer vm.catchPanicMessage()
-
-	host := vm.getKvStore(0)
-	host.TraceAllf("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
-
-	// only check for existence ?
-	if size < 0 {
-		if host.Exists(objID, keyID, typeID) {
-			return 0
-		}
-		// missing key is indicated by -1
-		return -1
-	}
-
-	// actual GetBytes request ?
-	if (typeID & OBJTYPE_CALL) == 0 {
-		bytes := host.GetBytes(objID, keyID, typeID)
-		if bytes == nil {
-			return -1
-		}
-		return vm.impl.VMSetBytes(stringRef, size, bytes)
-	}
-
-	// func call request
-	switch typeID {
-	case OBJTYPE_CALL:
-		// func call with params, returns result length
-		vm.resultKeyID = keyID
-		params := vm.impl.VMGetBytes(stringRef, size)
-		vm.result = host.CallFunc(objID, keyID, params)
-		return int32(len(vm.result))
-
-	case OBJTYPE_CALL + 1:
-		// retrieve previous func call result
-		if vm.resultKeyID == keyID {
-			result := vm.result
-			vm.result = nil
-			vm.resultKeyID = 0
-			if result == nil {
-				return -1
-			}
-			return vm.impl.VMSetBytes(stringRef, int32(len(result)), result)
-		}
-	}
-	panic("HostGetBytes: Invalid func call state")
+	panic("deprecated: HostGetBytes")
 }
 
 func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
 	defer vm.catchPanicMessage()
-
-	host := vm.getKvStore(0)
-	host.TraceAllf("HostGetKeyID(r%d,s%d)", keyRef, size)
-	// non-negative size means original key was a string
-	if size >= 0 {
-		bytes := vm.impl.VMGetBytes(keyRef, size)
-		return host.GetKeyIDFromString(string(bytes))
-	}
-
-	// negative size means original key was a byte slice
-	bytes := vm.impl.VMGetBytes(keyRef, -size-1)
-	return host.GetKeyIDFromBytes(bytes)
+	panic("deprecated: HostGetKeyID")
 }
 
 func (vm *WasmVMBase) HostGetObjectID(objID, keyID, typeID int32) int32 {
 	defer vm.catchPanicMessage()
-
-	host := vm.getKvStore(0)
-	host.TraceAllf("HostGetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
-	return host.GetObjectID(objID, keyID, typeID)
+	panic("deprecated: HostGetObjectID")
 }
 
 func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) {
 	defer vm.catchPanicMessage()
-
-	host := vm.getKvStore(0)
-	host.TraceAllf("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
-
-	// delete key ?
-	if size < 0 {
-		host.DelKey(objID, keyID, typeID)
-		return
-	}
-
-	bytes := vm.impl.VMGetBytes(stringRef, size)
-	host.SetBytes(objID, keyID, typeID, bytes)
+	panic("deprecated: HostSetBytes")
 }
 
 func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 	defer vm.catchPanicMessage()
 
-	host := vm.getKvStore(0)
-	host.TraceAllf("HostStateGet(k(%d,%d),v(%d,s%d))", keyRef, keyLen, valRef, valLen)
+	ctx := vm.getContext(0)
+	ctx.log().Debugf("HostStateGet(k(%d,%d),v(%d,s%d))", keyRef, keyLen, valRef, valLen)
 
 	// only check for existence ?
 	if valLen < 0 {
 		key := vm.impl.VMGetBytes(keyRef, keyLen)
-		if vm.ctx.StateExists(key) {
+		if ctx.StateExists(key) {
 			return 0
 		}
 		// missing key is indicated by -1
@@ -250,7 +171,7 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 		if keyLen > 0 {
 			// retrieve value associated with key
 			key := vm.impl.VMGetBytes(keyRef, keyLen)
-			vm.result = vm.ctx.StateGet(key)
+			vm.result = ctx.StateGet(key)
 		}
 		if vm.result == nil {
 			return -1
@@ -260,26 +181,26 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 
 	// sandbox func call request, keyLen is func nr
 	params := vm.impl.VMGetBytes(valRef, valLen)
-	vm.result = vm.ctx.CallSandbox(keyLen, params)
+	vm.result = ctx.Sandbox(keyLen, params)
 	return int32(len(vm.result))
 }
 
 func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 	defer vm.catchPanicMessage()
 
-	host := vm.getKvStore(0)
-	host.TraceAllf("HostStateSet(k(%d,%d),v(%d,s%d))", keyRef, keyLen, valRef, valLen)
+	ctx := vm.getContext(0)
+	ctx.log().Debugf("HostStateSet(k(%d,%d),v(%d,s%d))", keyRef, keyLen, valRef, valLen)
 
 	key := vm.impl.VMGetBytes(keyRef, keyLen)
 
 	// delete key ?
 	if valLen < 0 {
-		vm.ctx.StateDelete(key)
+		ctx.StateDelete(key)
 		return
 	}
 
 	value := vm.impl.VMGetBytes(valRef, valLen)
-	vm.ctx.StateSet(key, value)
+	ctx.StateSet(key, value)
 }
 
 func (vm *WasmVMBase) Instantiate() error {

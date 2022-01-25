@@ -3,7 +3,13 @@ package goclienttemplates
 var serviceGo = map[string]string{
 	// *******************************
 	"service.go": `
-$#emit clientHeader
+package $package$+client
+$#if funcs emitContract
+`,
+	// *******************************
+	"emitContract": `
+
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
 
 const (
 $#each params constArg

@@ -5,6 +5,7 @@ var eventsGo = map[string]string{
 	"events.go": `
 //nolint:gocritic
 $#emit goHeader
+$#emit importWasmTypes
 
 $#set TypeName $Package$+Events
 type $TypeName struct {

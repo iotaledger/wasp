@@ -21,8 +21,8 @@ pub struct ImmutableDonationResults {
 }
 
 impl ImmutableDonationResults {
-    pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_AMOUNT.get_key_id())
 	}
 
     pub fn donator(&self) -> ScImmutableAgentID {
@@ -37,8 +37,8 @@ impl ImmutableDonationResults {
 		ScImmutableString::new(self.id, RESULT_FEEDBACK.get_key_id())
 	}
 
-    pub fn timestamp(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_TIMESTAMP.get_key_id())
+    pub fn timestamp(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_TIMESTAMP.get_key_id())
 	}
 }
 
@@ -48,8 +48,8 @@ pub struct MutableDonationResults {
 }
 
 impl MutableDonationResults {
-    pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_AMOUNT.get_key_id())
 	}
 
     pub fn donator(&self) -> ScMutableAgentID {
@@ -64,8 +64,8 @@ impl MutableDonationResults {
 		ScMutableString::new(self.id, RESULT_FEEDBACK.get_key_id())
 	}
 
-    pub fn timestamp(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_TIMESTAMP.get_key_id())
+    pub fn timestamp(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_TIMESTAMP.get_key_id())
 	}
 }
 
@@ -75,16 +75,16 @@ pub struct ImmutableDonationInfoResults {
 }
 
 impl ImmutableDonationInfoResults {
-    pub fn count(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_COUNT.get_key_id())
+    pub fn count(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, RESULT_COUNT.get_key_id())
 	}
 
-    pub fn max_donation(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_MAX_DONATION.get_key_id())
+    pub fn max_donation(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_MAX_DONATION.get_key_id())
 	}
 
-    pub fn total_donation(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_TOTAL_DONATION.get_key_id())
+    pub fn total_donation(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_TOTAL_DONATION.get_key_id())
 	}
 }
 
@@ -94,15 +94,15 @@ pub struct MutableDonationInfoResults {
 }
 
 impl MutableDonationInfoResults {
-    pub fn count(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_COUNT.get_key_id())
+    pub fn count(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, RESULT_COUNT.get_key_id())
 	}
 
-    pub fn max_donation(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_MAX_DONATION.get_key_id())
+    pub fn max_donation(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_MAX_DONATION.get_key_id())
 	}
 
-    pub fn total_donation(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_TOTAL_DONATION.get_key_id())
+    pub fn total_donation(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_TOTAL_DONATION.get_key_id())
 	}
 }

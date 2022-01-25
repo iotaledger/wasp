@@ -123,7 +123,7 @@ export class ScInitFunc {
 
 export class ScFunc {
     view: ScView;
-    delaySeconds: i32 = 0;
+    delaySeconds: u32 = 0;
     transferID: i32 = 0;
 
     constructor(hContract: ScHname, hFunction: ScHname) {
@@ -149,7 +149,7 @@ export class ScFunc {
         return o;
     }
 
-    delay(seconds: i32): ScFunc {
+    delay(seconds: u32): ScFunc {
         let ret = this.clone();
         ret.delaySeconds = seconds;
         return ret;
@@ -172,7 +172,7 @@ export class ScFunc {
         encode.hname(this.view.hFunction);
         encode.int32(this.view.id(this.view.paramsID));
         encode.int32(this.transferID);
-        encode.int32(this.delaySeconds);
+        encode.uint32(this.delaySeconds);
         ROOT.getBytes(keys.KEY_POST).setValue(encode.data());
     }
 

@@ -17,10 +17,6 @@ func OnLoad() {
 	exports.AddFunc(FuncSetOwner, funcSetOwnerThunk)
 	exports.AddView(ViewGetFactor, viewGetFactorThunk)
 	exports.AddView(ViewGetOwner, viewGetOwnerThunk)
-
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
-	}
 }
 
 type DivideContext struct {
@@ -31,7 +27,7 @@ func funcDivideThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("dividend.funcDivide")
 	f := &DivideContext{
 		State: MutableDividendState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcDivide(ctx, f)
@@ -47,10 +43,10 @@ func funcInitThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("dividend.funcInit")
 	f := &InitContext{
 		Params: ImmutableInitParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableDividendState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcInit(ctx, f)
@@ -64,20 +60,20 @@ type MemberContext struct {
 
 func funcMemberThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("dividend.funcMember")
+	f := &MemberContext{
+		Params: ImmutableMemberParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableDividendState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
 
 	// only defined owner of contract can add members
-	access := ctx.State().GetAgentID(wasmlib.Key("owner"))
+	access := f.State.Owner()
 	ctx.Require(access.Exists(), "access not set: owner")
 	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
-	f := &MemberContext{
-		Params: ImmutableMemberParams{
-			id: wasmlib.OBJ_ID_PARAMS,
-		},
-		State: MutableDividendState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
 	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
 	ctx.Require(f.Params.Factor().Exists(), "missing mandatory factor")
 	funcMember(ctx, f)
@@ -91,20 +87,20 @@ type SetOwnerContext struct {
 
 func funcSetOwnerThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("dividend.funcSetOwner")
+	f := &SetOwnerContext{
+		Params: ImmutableSetOwnerParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableDividendState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
 
 	// only defined owner of contract can change owner
-	access := ctx.State().GetAgentID(wasmlib.Key("owner"))
+	access := f.State.Owner()
 	ctx.Require(access.Exists(), "access not set: owner")
 	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
-	f := &SetOwnerContext{
-		Params: ImmutableSetOwnerParams{
-			id: wasmlib.OBJ_ID_PARAMS,
-		},
-		State: MutableDividendState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
 	ctx.Require(f.Params.Owner().Exists(), "missing mandatory owner")
 	funcSetOwner(ctx, f)
 	ctx.Log("dividend.funcSetOwner ok")
@@ -120,13 +116,13 @@ func viewGetFactorThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("dividend.viewGetFactor")
 	f := &GetFactorContext{
 		Params: ImmutableGetFactorParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetFactorResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableDividendState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
@@ -143,10 +139,10 @@ func viewGetOwnerThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("dividend.viewGetOwner")
 	f := &GetOwnerContext{
 		Results: MutableGetOwnerResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableDividendState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewGetOwner(ctx, f)

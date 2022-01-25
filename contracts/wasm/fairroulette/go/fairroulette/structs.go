@@ -7,62 +7,63 @@
 
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import (
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type Bet struct {
-	Amount int64
-	Better wasmlib.ScAgentID
-	Number int64
+	Amount uint64
+	Better wasmtypes.ScAgentID
+	Number uint16
 }
 
-func NewBetFromBytes(bytes []byte) *Bet {
-	decode := wasmlib.NewBytesDecoder(bytes)
+func NewBetFromBytes(buf []byte) *Bet {
+	dec := wasmcodec.NewWasmDecoder(buf)
 	data := &Bet{}
-	data.Amount = decode.Int64()
-	data.Better = decode.AgentID()
-	data.Number = decode.Int64()
-	decode.Close()
+	data.Amount = wasmtypes.DecodeUint64(dec)
+	data.Better = wasmtypes.DecodeAgentID(dec)
+	data.Number = wasmtypes.DecodeUint16(dec)
+	dec.Close()
 	return data
 }
 
 func (o *Bet) Bytes() []byte {
-	return wasmlib.NewBytesEncoder().
-		Int64(o.Amount).
-		AgentID(o.Better).
-		Int64(o.Number).
-		Data()
+	enc := wasmcodec.NewWasmEncoder()
+	wasmtypes.EncodeUint64(enc, o.Amount)
+	wasmtypes.EncodeAgentID(enc, o.Better)
+	wasmtypes.EncodeUint16(enc, o.Number)
+	return enc.Buf()
 }
 
 type ImmutableBet struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o ImmutableBet) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o ImmutableBet) Value() *Bet {
-	return NewBetFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewBetFromBytes(o.proxy.Get())
 }
 
 type MutableBet struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o MutableBet) Delete() {
-	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	o.proxy.Delete()
 }
 
 func (o MutableBet) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o MutableBet) SetValue(value *Bet) {
-	wasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())
+	o.proxy.Set(value.Bytes())
 }
 
 func (o MutableBet) Value() *Bet {
-	return NewBetFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewBetFromBytes(o.proxy.Get())
 }

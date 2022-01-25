@@ -75,7 +75,7 @@ var ScFuncs Funcs
 
 func (sc Funcs) AddAllowedStateControllerAddress(ctx wasmlib.ScFuncCallContext) *AddAllowedStateControllerAddressCall {
 	f := &AddAllowedStateControllerAddressCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncAddAllowedStateControllerAddress)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
@@ -85,61 +85,62 @@ func (sc Funcs) ClaimChainOwnership(ctx wasmlib.ScFuncCallContext) *ClaimChainOw
 
 func (sc Funcs) DelegateChainOwnership(ctx wasmlib.ScFuncCallContext) *DelegateChainOwnershipCall {
 	f := &DelegateChainOwnershipCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDelegateChainOwnership)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) RemoveAllowedStateControllerAddress(ctx wasmlib.ScFuncCallContext) *RemoveAllowedStateControllerAddressCall {
 	f := &RemoveAllowedStateControllerAddressCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRemoveAllowedStateControllerAddress)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) RotateStateController(ctx wasmlib.ScFuncCallContext) *RotateStateControllerCall {
 	f := &RotateStateControllerCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRotateStateController)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) SetChainInfo(ctx wasmlib.ScFuncCallContext) *SetChainInfoCall {
 	f := &SetChainInfoCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetChainInfo)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) SetContractFee(ctx wasmlib.ScFuncCallContext) *SetContractFeeCall {
 	f := &SetContractFeeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetContractFee)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) SetDefaultFee(ctx wasmlib.ScFuncCallContext) *SetDefaultFeeCall {
 	f := &SetDefaultFeeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetDefaultFee)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) GetAllowedStateControllerAddresses(ctx wasmlib.ScViewCallContext) *GetAllowedStateControllerAddressesCall {
 	f := &GetAllowedStateControllerAddressesCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetAllowedStateControllerAddresses)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetChainInfo(ctx wasmlib.ScViewCallContext) *GetChainInfoCall {
 	f := &GetChainInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetChainInfo)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetFeeInfo(ctx wasmlib.ScViewCallContext) *GetFeeInfoCall {
 	f := &GetFeeInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetFeeInfo)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetMaxBlobSize(ctx wasmlib.ScViewCallContext) *GetMaxBlobSizeCall {
 	f := &GetMaxBlobSizeCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetMaxBlobSize)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 

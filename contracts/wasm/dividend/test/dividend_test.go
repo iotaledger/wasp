@@ -13,19 +13,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor int64) {
+func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor uint64) {
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Address().SetValue(agent.ScAddress())
 	member.Params.Factor().SetValue(factor)
 	member.Func.TransferIotas(1).Post()
 }
 
-func dividendDivide(ctx *wasmsolo.SoloContext, amount int64) {
+func dividendDivide(ctx *wasmsolo.SoloContext, amount uint64) {
 	divide := dividend.ScFuncs.Divide(ctx)
 	divide.Func.TransferIotas(amount).Post()
 }
 
-func dividendGetFactor(ctx *wasmsolo.SoloContext, member *wasmsolo.SoloAgent) int64 {
+func dividendGetFactor(ctx *wasmsolo.SoloContext, member *wasmsolo.SoloAgent) uint64 {
 	getFactor := dividend.ScFuncs.GetFactor(ctx)
 	getFactor.Params.Address().SetValue(member.ScAddress())
 	getFactor.Func.Call()

@@ -44,6 +44,27 @@ const (
 	ResValue  = "value"
 )
 
+///////////////////////////// arrayAppend /////////////////////////////
+
+type ArrayAppendFunc struct {
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
+}
+
+func (f *ArrayAppendFunc) Name(v string) {
+	f.args.Set(ArgName, f.args.FromString(v))
+}
+
+func (f *ArrayAppendFunc) Value(v string) {
+	f.args.Set(ArgValue, f.args.FromString(v))
+}
+
+func (f *ArrayAppendFunc) Post() wasmclient.Request {
+	f.args.Mandatory(ArgName)
+	f.args.Mandatory(ArgValue)
+	return f.ClientFunc.Post(0x612f835f, &f.args)
+}
+
 ///////////////////////////// arrayClear /////////////////////////////
 
 type ArrayClearFunc struct {
@@ -60,22 +81,6 @@ func (f *ArrayClearFunc) Post() wasmclient.Request {
 	return f.ClientFunc.Post(0x88021821, &f.args)
 }
 
-///////////////////////////// arrayCreate /////////////////////////////
-
-type ArrayCreateFunc struct {
-	wasmclient.ClientFunc
-	args wasmclient.Arguments
-}
-
-func (f *ArrayCreateFunc) Name(v string) {
-	f.args.Set(ArgName, f.args.FromString(v))
-}
-
-func (f *ArrayCreateFunc) Post() wasmclient.Request {
-	f.args.Mandatory(ArgName)
-	return f.ClientFunc.Post(0x1ed5b23b, &f.args)
-}
-
 ///////////////////////////// arraySet /////////////////////////////
 
 type ArraySetFunc struct {
@@ -83,8 +88,8 @@ type ArraySetFunc struct {
 	args wasmclient.Arguments
 }
 
-func (f *ArraySetFunc) Index(v int32) {
-	f.args.Set(ArgIndex, f.args.FromInt32(v))
+func (f *ArraySetFunc) Index(v uint32) {
+	f.args.Set(ArgIndex, f.args.FromUint32(v))
 }
 
 func (f *ArraySetFunc) Name(v string) {
@@ -116,22 +121,6 @@ func (f *MapClearFunc) Name(v string) {
 func (f *MapClearFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgName)
 	return f.ClientFunc.Post(0x027f215a, &f.args)
-}
-
-///////////////////////////// mapCreate /////////////////////////////
-
-type MapCreateFunc struct {
-	wasmclient.ClientFunc
-	args wasmclient.Arguments
-}
-
-func (f *MapCreateFunc) Name(v string) {
-	f.args.Set(ArgName, f.args.FromString(v))
-}
-
-func (f *MapCreateFunc) Post() wasmclient.Request {
-	f.args.Mandatory(ArgName)
-	return f.ClientFunc.Post(0x6295d599, &f.args)
 }
 
 ///////////////////////////// mapSet /////////////////////////////
@@ -299,8 +288,8 @@ type ArrayLengthResults struct {
 	res wasmclient.Results
 }
 
-func (r *ArrayLengthResults) Length() int32 {
-	return r.res.ToInt32(r.res.Get(ResLength))
+func (r *ArrayLengthResults) Length() uint32 {
+	return r.res.ToUint32(r.res.Get(ResLength))
 }
 
 ///////////////////////////// arrayValue /////////////////////////////
@@ -310,8 +299,8 @@ type ArrayValueView struct {
 	args wasmclient.Arguments
 }
 
-func (f *ArrayValueView) Index(v int32) {
-	f.args.Set(ArgIndex, f.args.FromInt32(v))
+func (f *ArrayValueView) Index(v uint32) {
+	f.args.Set(ArgIndex, f.args.FromUint32(v))
 }
 
 func (f *ArrayValueView) Name(v string) {
@@ -340,12 +329,12 @@ type BlockRecordView struct {
 	args wasmclient.Arguments
 }
 
-func (f *BlockRecordView) BlockIndex(v int32) {
-	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
+func (f *BlockRecordView) BlockIndex(v uint32) {
+	f.args.Set(ArgBlockIndex, f.args.FromUint32(v))
 }
 
-func (f *BlockRecordView) RecordIndex(v int32) {
-	f.args.Set(ArgRecordIndex, f.args.FromInt32(v))
+func (f *BlockRecordView) RecordIndex(v uint32) {
+	f.args.Set(ArgRecordIndex, f.args.FromUint32(v))
 }
 
 func (f *BlockRecordView) Call() BlockRecordResults {
@@ -370,8 +359,8 @@ type BlockRecordsView struct {
 	args wasmclient.Arguments
 }
 
-func (f *BlockRecordsView) BlockIndex(v int32) {
-	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
+func (f *BlockRecordsView) BlockIndex(v uint32) {
+	f.args.Set(ArgBlockIndex, f.args.FromUint32(v))
 }
 
 func (f *BlockRecordsView) Call() BlockRecordsResults {
@@ -384,8 +373,8 @@ type BlockRecordsResults struct {
 	res wasmclient.Results
 }
 
-func (r *BlockRecordsResults) Count() int32 {
-	return r.res.ToInt32(r.res.Get(ResCount))
+func (r *BlockRecordsResults) Count() uint32 {
+	return r.res.ToUint32(r.res.Get(ResCount))
 }
 
 ///////////////////////////// getRandom /////////////////////////////
@@ -403,8 +392,8 @@ type GetRandomResults struct {
 	res wasmclient.Results
 }
 
-func (r *GetRandomResults) Random() int64 {
-	return r.res.ToInt64(r.res.Get(ResRandom))
+func (r *GetRandomResults) Random() uint64 {
+	return r.res.ToUint64(r.res.Get(ResRandom))
 }
 
 ///////////////////////////// iotaBalance /////////////////////////////
@@ -422,8 +411,8 @@ type IotaBalanceResults struct {
 	res wasmclient.Results
 }
 
-func (r *IotaBalanceResults) Iotas() int64 {
-	return r.res.ToInt64(r.res.Get(ResIotas))
+func (r *IotaBalanceResults) Iotas() uint64 {
+	return r.res.ToUint64(r.res.Get(ResIotas))
 }
 
 ///////////////////////////// mapValue /////////////////////////////
@@ -472,12 +461,12 @@ func (s *TestWasmLibService) NewEventHandler() *TestWasmLibEvents {
 	return &TestWasmLibEvents{}
 }
 
-func (s *TestWasmLibService) ArrayClear() ArrayClearFunc {
-	return ArrayClearFunc{ClientFunc: s.AsClientFunc()}
+func (s *TestWasmLibService) ArrayAppend() ArrayAppendFunc {
+	return ArrayAppendFunc{ClientFunc: s.AsClientFunc()}
 }
 
-func (s *TestWasmLibService) ArrayCreate() ArrayCreateFunc {
-	return ArrayCreateFunc{ClientFunc: s.AsClientFunc()}
+func (s *TestWasmLibService) ArrayClear() ArrayClearFunc {
+	return ArrayClearFunc{ClientFunc: s.AsClientFunc()}
 }
 
 func (s *TestWasmLibService) ArraySet() ArraySetFunc {
@@ -486,10 +475,6 @@ func (s *TestWasmLibService) ArraySet() ArraySetFunc {
 
 func (s *TestWasmLibService) MapClear() MapClearFunc {
 	return MapClearFunc{ClientFunc: s.AsClientFunc()}
-}
-
-func (s *TestWasmLibService) MapCreate() MapCreateFunc {
-	return MapCreateFunc{ClientFunc: s.AsClientFunc()}
 }
 
 func (s *TestWasmLibService) MapSet() MapSetFunc {

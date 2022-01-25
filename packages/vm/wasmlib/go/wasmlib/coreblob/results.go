@@ -7,108 +7,112 @@
 
 package coreblob
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableStoreBlobResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableStoreBlobResults) Hash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ResultHash))
+func (s ImmutableStoreBlobResults) Hash() wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(s.proxy.Root(ResultHash))
 }
 
 type MutableStoreBlobResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableStoreBlobResults) Hash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ResultHash))
+func (s MutableStoreBlobResults) Hash() wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(s.proxy.Root(ResultHash))
 }
 
 type ImmutableGetBlobFieldResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetBlobFieldResults) Bytes() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultBytes))
+func (s ImmutableGetBlobFieldResults) Bytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultBytes))
 }
 
 type MutableGetBlobFieldResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetBlobFieldResults) Bytes() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultBytes))
+func (s MutableGetBlobFieldResults) Bytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultBytes))
 }
 
 type MapStringToImmutableInt32 struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapStringToImmutableInt32) GetInt32(key string) wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToImmutableInt32) GetInt32(key string) wasmtypes.ScImmutableInt32 {
+	return wasmtypes.NewScImmutableInt32(m.proxy.Key(wasmtypes.BytesFromString(key)))
 }
 
 type ImmutableGetBlobInfoResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableGetBlobInfoResults) BlobSizes() MapStringToImmutableInt32 {
-	return MapStringToImmutableInt32{objID: s.id}
+	//nolint:gosimple
+	return MapStringToImmutableInt32{proxy: s.proxy}
 }
 
 type MapStringToMutableInt32 struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapStringToMutableInt32) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapStringToMutableInt32) GetInt32(key string) wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToMutableInt32) GetInt32(key string) wasmtypes.ScMutableInt32 {
+	return wasmtypes.NewScMutableInt32(m.proxy.Key(wasmtypes.BytesFromString(key)))
 }
 
 type MutableGetBlobInfoResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableGetBlobInfoResults) BlobSizes() MapStringToMutableInt32 {
-	return MapStringToMutableInt32{objID: s.id}
+	//nolint:gosimple
+	return MapStringToMutableInt32{proxy: s.proxy}
 }
 
 type MapHashToImmutableInt32 struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapHashToImmutableInt32) GetInt32(key wasmlib.ScHash) wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(m.objID, key.KeyID())
+func (m MapHashToImmutableInt32) GetInt32(key wasmtypes.ScHash) wasmtypes.ScImmutableInt32 {
+	return wasmtypes.NewScImmutableInt32(m.proxy.Key(key.Bytes()))
 }
 
 type ImmutableListBlobsResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableListBlobsResults) BlobSizes() MapHashToImmutableInt32 {
-	return MapHashToImmutableInt32{objID: s.id}
+	//nolint:gosimple
+	return MapHashToImmutableInt32{proxy: s.proxy}
 }
 
 type MapHashToMutableInt32 struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapHashToMutableInt32) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapHashToMutableInt32) GetInt32(key wasmlib.ScHash) wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(m.objID, key.KeyID())
+func (m MapHashToMutableInt32) GetInt32(key wasmtypes.ScHash) wasmtypes.ScMutableInt32 {
+	return wasmtypes.NewScMutableInt32(m.proxy.Key(key.Bytes()))
 }
 
 type MutableListBlobsResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableListBlobsResults) BlobSizes() MapHashToMutableInt32 {
-	return MapHashToMutableInt32{objID: s.id}
+	//nolint:gosimple
+	return MapHashToMutableInt32{proxy: s.proxy}
 }

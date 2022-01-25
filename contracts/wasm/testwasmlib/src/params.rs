@@ -16,6 +16,36 @@ use crate::keys::*;
 use crate::typedefs::*;
 
 #[derive(Clone, Copy)]
+pub struct ImmutableArrayAppendParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableArrayAppendParams {
+    pub fn name(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
+	}
+
+    pub fn value(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, PARAM_VALUE.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableArrayAppendParams {
+    pub(crate) id: i32,
+}
+
+impl MutableArrayAppendParams {
+    pub fn name(&self) -> ScMutableString {
+		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
+	}
+
+    pub fn value(&self) -> ScMutableString {
+		ScMutableString::new(self.id, PARAM_VALUE.get_key_id())
+	}
+}
+
+#[derive(Clone, Copy)]
 pub struct ImmutableArrayClearParams {
     pub(crate) id: i32,
 }
@@ -38,35 +68,13 @@ impl MutableArrayClearParams {
 }
 
 #[derive(Clone, Copy)]
-pub struct ImmutableArrayCreateParams {
-    pub(crate) id: i32,
-}
-
-impl ImmutableArrayCreateParams {
-    pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
-	}
-}
-
-#[derive(Clone, Copy)]
-pub struct MutableArrayCreateParams {
-    pub(crate) id: i32,
-}
-
-impl MutableArrayCreateParams {
-    pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
-	}
-}
-
-#[derive(Clone, Copy)]
 pub struct ImmutableArraySetParams {
     pub(crate) id: i32,
 }
 
 impl ImmutableArraySetParams {
-    pub fn index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_INDEX.get_key_id())
+    pub fn index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_INDEX.get_key_id())
 	}
 
     pub fn name(&self) -> ScImmutableString {
@@ -84,8 +92,8 @@ pub struct MutableArraySetParams {
 }
 
 impl MutableArraySetParams {
-    pub fn index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_INDEX.get_key_id())
+    pub fn index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_INDEX.get_key_id())
 	}
 
     pub fn name(&self) -> ScMutableString {
@@ -114,28 +122,6 @@ pub struct MutableMapClearParams {
 }
 
 impl MutableMapClearParams {
-    pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
-	}
-}
-
-#[derive(Clone, Copy)]
-pub struct ImmutableMapCreateParams {
-    pub(crate) id: i32,
-}
-
-impl ImmutableMapCreateParams {
-    pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
-	}
-}
-
-#[derive(Clone, Copy)]
-pub struct MutableMapCreateParams {
-    pub(crate) id: i32,
-}
-
-impl MutableMapCreateParams {
     pub fn name(&self) -> ScMutableString {
 		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
 	}
@@ -429,8 +415,8 @@ pub struct ImmutableArrayValueParams {
 }
 
 impl ImmutableArrayValueParams {
-    pub fn index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_INDEX.get_key_id())
+    pub fn index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_INDEX.get_key_id())
 	}
 
     pub fn name(&self) -> ScImmutableString {
@@ -444,8 +430,8 @@ pub struct MutableArrayValueParams {
 }
 
 impl MutableArrayValueParams {
-    pub fn index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_INDEX.get_key_id())
+    pub fn index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_INDEX.get_key_id())
 	}
 
     pub fn name(&self) -> ScMutableString {
@@ -459,12 +445,12 @@ pub struct ImmutableBlockRecordParams {
 }
 
 impl ImmutableBlockRecordParams {
-    pub fn block_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 
-    pub fn record_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_RECORD_INDEX.get_key_id())
+    pub fn record_index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_RECORD_INDEX.get_key_id())
 	}
 }
 
@@ -474,12 +460,12 @@ pub struct MutableBlockRecordParams {
 }
 
 impl MutableBlockRecordParams {
-    pub fn block_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 
-    pub fn record_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_RECORD_INDEX.get_key_id())
+    pub fn record_index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_RECORD_INDEX.get_key_id())
 	}
 }
 
@@ -489,8 +475,8 @@ pub struct ImmutableBlockRecordsParams {
 }
 
 impl ImmutableBlockRecordsParams {
-    pub fn block_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }
 
@@ -500,8 +486,8 @@ pub struct MutableBlockRecordsParams {
 }
 
 impl MutableBlockRecordsParams {
-    pub fn block_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }
 

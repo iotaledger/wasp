@@ -11,31 +11,31 @@ use wasmlib::*;
 use wasmlib::host::*;
 
 #[derive(Clone, Copy)]
-pub struct MapAgentIDToImmutableInt64 {
+pub struct MapAgentIDToImmutableUint64 {
 	pub(crate) obj_id: i32,
 }
 
-impl MapAgentIDToImmutableInt64 {
-    pub fn get_int64(&self, key: &ScAgentID) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.obj_id, key.get_key_id())
+impl MapAgentIDToImmutableUint64 {
+    pub fn get_uint64(&self, key: &ScAgentID) -> ScImmutableUint64 {
+        ScImmutableUint64::new(self.obj_id, key.get_key_id())
     }
 }
 
-pub type ImmutableAllowancesForAgent = MapAgentIDToImmutableInt64;
+pub type ImmutableAllowancesForAgent = MapAgentIDToImmutableUint64;
 
 #[derive(Clone, Copy)]
-pub struct MapAgentIDToMutableInt64 {
+pub struct MapAgentIDToMutableUint64 {
 	pub(crate) obj_id: i32,
 }
 
-impl MapAgentIDToMutableInt64 {
+impl MapAgentIDToMutableUint64 {
     pub fn clear(&self) {
         clear(self.obj_id);
     }
 
-    pub fn get_int64(&self, key: &ScAgentID) -> ScMutableInt64 {
-        ScMutableInt64::new(self.obj_id, key.get_key_id())
+    pub fn get_uint64(&self, key: &ScAgentID) -> ScMutableUint64 {
+        ScMutableUint64::new(self.obj_id, key.get_key_id())
     }
 }
 
-pub type MutableAllowancesForAgent = MapAgentIDToMutableInt64;
+pub type MutableAllowancesForAgent = MapAgentIDToMutableUint64;

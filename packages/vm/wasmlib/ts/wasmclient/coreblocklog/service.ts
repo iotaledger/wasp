@@ -36,8 +36,8 @@ export class ControlAddressesView extends wasmclient.ClientView {
 
 export class ControlAddressesResults extends wasmclient.Results {
 
-	blockIndex(): wasmclient.Int32 {
-		return this.toInt32(this.get(ResBlockIndex));
+	blockIndex(): wasmclient.Uint32 {
+		return this.toUint32(this.get(ResBlockIndex));
 	}
 
 	governingAddress(): wasmclient.Address {
@@ -54,8 +54,8 @@ export class ControlAddressesResults extends wasmclient.Results {
 export class GetBlockInfoView extends wasmclient.ClientView {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	public blockIndex(v: wasmclient.Int32): void {
-		this.args.set(ArgBlockIndex, this.args.fromInt32(v));
+	public blockIndex(v: wasmclient.Uint32): void {
+		this.args.set(ArgBlockIndex, this.args.fromUint32(v));
 	}
 
 	public async call(): Promise<GetBlockInfoResults> {
@@ -78,8 +78,8 @@ export class GetBlockInfoResults extends wasmclient.Results {
 export class GetEventsForBlockView extends wasmclient.ClientView {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	public blockIndex(v: wasmclient.Int32): void {
-		this.args.set(ArgBlockIndex, this.args.fromInt32(v));
+	public blockIndex(v: wasmclient.Uint32): void {
+		this.args.set(ArgBlockIndex, this.args.fromUint32(v));
 	}
 
 	public async call(): Promise<GetEventsForBlockResults> {
@@ -106,12 +106,12 @@ export class GetEventsForContractView extends wasmclient.ClientView {
 		this.args.set(ArgContractHname, this.args.fromHname(v));
 	}
 	
-	public fromBlock(v: wasmclient.Int32): void {
-		this.args.set(ArgFromBlock, this.args.fromInt32(v));
+	public fromBlock(v: wasmclient.Uint32): void {
+		this.args.set(ArgFromBlock, this.args.fromUint32(v));
 	}
 	
-	public toBlock(v: wasmclient.Int32): void {
-		this.args.set(ArgToBlock, this.args.fromInt32(v));
+	public toBlock(v: wasmclient.Uint32): void {
+		this.args.set(ArgToBlock, this.args.fromUint32(v));
 	}
 
 	public async call(): Promise<GetEventsForContractResults> {
@@ -166,8 +166,8 @@ export class GetLatestBlockInfoView extends wasmclient.ClientView {
 
 export class GetLatestBlockInfoResults extends wasmclient.Results {
 
-	blockIndex(): wasmclient.Int32 {
-		return this.toInt32(this.get(ResBlockIndex));
+	blockIndex(): wasmclient.Uint32 {
+		return this.toUint32(this.get(ResBlockIndex));
 	}
 
 	blockInfo(): wasmclient.Bytes {
@@ -180,8 +180,8 @@ export class GetLatestBlockInfoResults extends wasmclient.Results {
 export class GetRequestIDsForBlockView extends wasmclient.ClientView {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	public blockIndex(v: wasmclient.Int32): void {
-		this.args.set(ArgBlockIndex, this.args.fromInt32(v));
+	public blockIndex(v: wasmclient.Uint32): void {
+		this.args.set(ArgBlockIndex, this.args.fromUint32(v));
 	}
 
 	public async call(): Promise<GetRequestIDsForBlockResults> {
@@ -218,12 +218,12 @@ export class GetRequestReceiptView extends wasmclient.ClientView {
 
 export class GetRequestReceiptResults extends wasmclient.Results {
 
-	blockIndex(): wasmclient.Int32 {
-		return this.toInt32(this.get(ResBlockIndex));
+	blockIndex(): wasmclient.Uint32 {
+		return this.toUint32(this.get(ResBlockIndex));
 	}
 
-	requestIndex(): wasmclient.Int16 {
-		return this.toInt16(this.get(ResRequestIndex));
+	requestIndex(): wasmclient.Uint16 {
+		return this.toUint16(this.get(ResRequestIndex));
 	}
 
 	requestRecord(): wasmclient.Bytes {
@@ -236,8 +236,8 @@ export class GetRequestReceiptResults extends wasmclient.Results {
 export class GetRequestReceiptsForBlockView extends wasmclient.ClientView {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	public blockIndex(v: wasmclient.Int32): void {
-		this.args.set(ArgBlockIndex, this.args.fromInt32(v));
+	public blockIndex(v: wasmclient.Uint32): void {
+		this.args.set(ArgBlockIndex, this.args.fromUint32(v));
 	}
 
 	public async call(): Promise<GetRequestReceiptsForBlockResults> {

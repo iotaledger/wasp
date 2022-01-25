@@ -7,178 +7,180 @@
 
 package coregovernance
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ArrayOfImmutableBytes struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (a ArrayOfImmutableBytes) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfImmutableBytes) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfImmutableBytes) GetBytes(index int32) wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(a.objID, wasmlib.Key32(index))
+func (a ArrayOfImmutableBytes) GetBytes(index uint32) wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(a.proxy.Index(index))
 }
 
 type ImmutableGetAllowedStateControllerAddressesResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfImmutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultAllowedStateControllerAddresses), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
-	return ArrayOfImmutableBytes{objID: arrID}
+	return ArrayOfImmutableBytes{proxy: s.proxy.Root(ResultAllowedStateControllerAddresses)}
 }
 
 type ArrayOfMutableBytes struct {
-	objID int32
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableBytes) AppendBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(a.proxy.Append())
 }
 
 func (a ArrayOfMutableBytes) Clear() {
-	wasmlib.Clear(a.objID)
+	a.proxy.ClearArray()
 }
 
-func (a ArrayOfMutableBytes) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfMutableBytes) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfMutableBytes) GetBytes(index int32) wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(a.objID, wasmlib.Key32(index))
+func (a ArrayOfMutableBytes) GetBytes(index uint32) wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(a.proxy.Index(index))
 }
 
 type MutableGetAllowedStateControllerAddressesResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfMutableBytes {
-	arrID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultAllowedStateControllerAddresses), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES)
-	return ArrayOfMutableBytes{objID: arrID}
+	return ArrayOfMutableBytes{proxy: s.proxy.Root(ResultAllowedStateControllerAddresses)}
 }
 
 type ImmutableGetChainInfoResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetChainInfoResults) ChainID() wasmlib.ScImmutableChainID {
-	return wasmlib.NewScImmutableChainID(s.id, wasmlib.KeyID(ResultChainID))
+func (s ImmutableGetChainInfoResults) ChainID() wasmtypes.ScImmutableChainID {
+	return wasmtypes.NewScImmutableChainID(s.proxy.Root(ResultChainID))
 }
 
-func (s ImmutableGetChainInfoResults) ChainOwnerID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
+func (s ImmutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultChainOwnerID))
 }
 
-func (s ImmutableGetChainInfoResults) DefaultOwnerFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultDefaultOwnerFee))
+func (s ImmutableGetChainInfoResults) DefaultOwnerFee() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultDefaultOwnerFee))
 }
 
-func (s ImmutableGetChainInfoResults) DefaultValidatorFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultDefaultValidatorFee))
+func (s ImmutableGetChainInfoResults) DefaultValidatorFee() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultDefaultValidatorFee))
 }
 
-func (s ImmutableGetChainInfoResults) Description() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultDescription))
+func (s ImmutableGetChainInfoResults) Description() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultDescription))
 }
 
-func (s ImmutableGetChainInfoResults) FeeColor() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ResultFeeColor))
+func (s ImmutableGetChainInfoResults) FeeColor() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ResultFeeColor))
 }
 
-func (s ImmutableGetChainInfoResults) MaxBlobSize() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultMaxBlobSize))
+func (s ImmutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScImmutableInt32 {
+	return wasmtypes.NewScImmutableInt32(s.proxy.Root(ResultMaxBlobSize))
 }
 
-func (s ImmutableGetChainInfoResults) MaxEventSize() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, wasmlib.KeyID(ResultMaxEventSize))
+func (s ImmutableGetChainInfoResults) MaxEventSize() wasmtypes.ScImmutableInt16 {
+	return wasmtypes.NewScImmutableInt16(s.proxy.Root(ResultMaxEventSize))
 }
 
-func (s ImmutableGetChainInfoResults) MaxEventsPerReq() wasmlib.ScImmutableInt16 {
-	return wasmlib.NewScImmutableInt16(s.id, wasmlib.KeyID(ResultMaxEventsPerReq))
+func (s ImmutableGetChainInfoResults) MaxEventsPerReq() wasmtypes.ScImmutableInt16 {
+	return wasmtypes.NewScImmutableInt16(s.proxy.Root(ResultMaxEventsPerReq))
 }
 
 type MutableGetChainInfoResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetChainInfoResults) ChainID() wasmlib.ScMutableChainID {
-	return wasmlib.NewScMutableChainID(s.id, wasmlib.KeyID(ResultChainID))
+func (s MutableGetChainInfoResults) ChainID() wasmtypes.ScMutableChainID {
+	return wasmtypes.NewScMutableChainID(s.proxy.Root(ResultChainID))
 }
 
-func (s MutableGetChainInfoResults) ChainOwnerID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
+func (s MutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultChainOwnerID))
 }
 
-func (s MutableGetChainInfoResults) DefaultOwnerFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultDefaultOwnerFee))
+func (s MutableGetChainInfoResults) DefaultOwnerFee() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultDefaultOwnerFee))
 }
 
-func (s MutableGetChainInfoResults) DefaultValidatorFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultDefaultValidatorFee))
+func (s MutableGetChainInfoResults) DefaultValidatorFee() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultDefaultValidatorFee))
 }
 
-func (s MutableGetChainInfoResults) Description() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultDescription))
+func (s MutableGetChainInfoResults) Description() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultDescription))
 }
 
-func (s MutableGetChainInfoResults) FeeColor() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ResultFeeColor))
+func (s MutableGetChainInfoResults) FeeColor() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ResultFeeColor))
 }
 
-func (s MutableGetChainInfoResults) MaxBlobSize() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultMaxBlobSize))
+func (s MutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScMutableInt32 {
+	return wasmtypes.NewScMutableInt32(s.proxy.Root(ResultMaxBlobSize))
 }
 
-func (s MutableGetChainInfoResults) MaxEventSize() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, wasmlib.KeyID(ResultMaxEventSize))
+func (s MutableGetChainInfoResults) MaxEventSize() wasmtypes.ScMutableInt16 {
+	return wasmtypes.NewScMutableInt16(s.proxy.Root(ResultMaxEventSize))
 }
 
-func (s MutableGetChainInfoResults) MaxEventsPerReq() wasmlib.ScMutableInt16 {
-	return wasmlib.NewScMutableInt16(s.id, wasmlib.KeyID(ResultMaxEventsPerReq))
+func (s MutableGetChainInfoResults) MaxEventsPerReq() wasmtypes.ScMutableInt16 {
+	return wasmtypes.NewScMutableInt16(s.proxy.Root(ResultMaxEventsPerReq))
 }
 
 type ImmutableGetFeeInfoResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetFeeInfoResults) FeeColor() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ResultFeeColor))
+func (s ImmutableGetFeeInfoResults) FeeColor() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ResultFeeColor))
 }
 
-func (s ImmutableGetFeeInfoResults) OwnerFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultOwnerFee))
+func (s ImmutableGetFeeInfoResults) OwnerFee() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultOwnerFee))
 }
 
-func (s ImmutableGetFeeInfoResults) ValidatorFee() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultValidatorFee))
+func (s ImmutableGetFeeInfoResults) ValidatorFee() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultValidatorFee))
 }
 
 type MutableGetFeeInfoResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetFeeInfoResults) FeeColor() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ResultFeeColor))
+func (s MutableGetFeeInfoResults) FeeColor() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ResultFeeColor))
 }
 
-func (s MutableGetFeeInfoResults) OwnerFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultOwnerFee))
+func (s MutableGetFeeInfoResults) OwnerFee() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultOwnerFee))
 }
 
-func (s MutableGetFeeInfoResults) ValidatorFee() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultValidatorFee))
+func (s MutableGetFeeInfoResults) ValidatorFee() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultValidatorFee))
 }
 
 type ImmutableGetMaxBlobSizeResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetMaxBlobSizeResults) MaxBlobSize() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultMaxBlobSize))
+func (s ImmutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScImmutableInt32 {
+	return wasmtypes.NewScImmutableInt32(s.proxy.Root(ResultMaxBlobSize))
 }
 
 type MutableGetMaxBlobSizeResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetMaxBlobSizeResults) MaxBlobSize() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultMaxBlobSize))
+func (s MutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScMutableInt32 {
+	return wasmtypes.NewScMutableInt32(s.proxy.Root(ResultMaxBlobSize))
 }

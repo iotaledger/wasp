@@ -166,10 +166,10 @@ pub fn get_key_id_from_uint64(key: u64, nr_of_bytes: usize) -> Key32 {
 }
 
 // Retrieve the length of an array container object on the host
-pub fn get_length(obj_id: i32) -> i32 {
+pub fn get_length(obj_id: i32) -> u32 {
     // special integer key "length" is used
     let bytes = get_bytes(obj_id, KEY_LENGTH, TYPE_INT32);
-    i32::from_le_bytes(bytes.try_into().unwrap())
+    u32::from_le_bytes(bytes.try_into().unwrap())
 }
 
 // Retrieve the id of the specified container sub-object

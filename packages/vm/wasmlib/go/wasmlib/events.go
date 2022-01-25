@@ -5,6 +5,8 @@ package wasmlib
 
 import (
 	"strconv"
+
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 // encodes separate entities into a byte buffer
@@ -14,16 +16,16 @@ type EventEncoder struct {
 
 func NewEventEncoder(eventName string) *EventEncoder {
 	e := &EventEncoder{event: eventName}
-	timestamp := Root.GetInt64(KeyTimestamp).Value()
+	timestamp := ScSandbox{}.Timestamp()
 	// convert nanoseconds to seconds
-	return e.Int64(timestamp / 1_000_000_000)
+	return e.Uint64(timestamp / 1_000_000_000)
 }
 
-func (e *EventEncoder) Address(value ScAddress) *EventEncoder {
+func (e *EventEncoder) Address(value wasmtypes.ScAddress) *EventEncoder {
 	return e.String(value.String())
 }
 
-func (e *EventEncoder) AgentID(value ScAgentID) *EventEncoder {
+func (e *EventEncoder) AgentID(value wasmtypes.ScAgentID) *EventEncoder {
 	return e.String(value.String())
 }
 
@@ -38,23 +40,23 @@ func (e *EventEncoder) Bytes(value []byte) *EventEncoder {
 	return e.String(base58Encode(value))
 }
 
-func (e *EventEncoder) ChainID(value ScChainID) *EventEncoder {
+func (e *EventEncoder) ChainID(value wasmtypes.ScChainID) *EventEncoder {
 	return e.String(value.String())
 }
 
-func (e *EventEncoder) Color(value ScColor) *EventEncoder {
+func (e *EventEncoder) Color(value wasmtypes.ScColor) *EventEncoder {
 	return e.String(value.String())
 }
 
 func (e *EventEncoder) Emit() {
-	Root.GetString(KeyEvent).SetValue(e.event)
+	ScSandboxFunc{}.Event(e.event)
 }
 
-func (e *EventEncoder) Hash(value ScHash) *EventEncoder {
+func (e *EventEncoder) Hash(value wasmtypes.ScHash) *EventEncoder {
 	return e.String(value.String())
 }
 
-func (e *EventEncoder) Hname(value ScHname) *EventEncoder {
+func (e *EventEncoder) Hname(value wasmtypes.ScHname) *EventEncoder {
 	return e.String(value.String())
 }
 
@@ -74,7 +76,7 @@ func (e *EventEncoder) Int64(value int64) *EventEncoder {
 	return e.String(strconv.FormatInt(value, 10))
 }
 
-func (e *EventEncoder) RequestID(value ScRequestID) *EventEncoder {
+func (e *EventEncoder) RequestID(value wasmtypes.ScRequestID) *EventEncoder {
 	return e.String(value.String())
 }
 

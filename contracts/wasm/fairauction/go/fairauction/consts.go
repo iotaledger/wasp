@@ -7,12 +7,12 @@
 
 package fairauction
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "fairauction"
 	ScDescription = "Decentralized auction to securely sell tokens to the highest bidder"
-	HScName       = wasmlib.ScHname(0x1b5c43b1)
+	HScName       = wasmtypes.ScHname(0x1b5c43b1)
 )
 
 const (
@@ -54,9 +54,9 @@ const (
 )
 
 const (
-	HFuncFinalizeAuction = wasmlib.ScHname(0x8d534ddc)
-	HFuncPlaceBid        = wasmlib.ScHname(0x9bd72fa9)
-	HFuncSetOwnerMargin  = wasmlib.ScHname(0x1774461a)
-	HFuncStartAuction    = wasmlib.ScHname(0xd5b7bacb)
-	HViewGetInfo         = wasmlib.ScHname(0xcfedba5f)
+	HFuncFinalizeAuction = wasmtypes.ScHname(0x8d534ddc)
+	HFuncPlaceBid        = wasmtypes.ScHname(0x9bd72fa9)
+	HFuncSetOwnerMargin  = wasmtypes.ScHname(0x1774461a)
+	HFuncStartAuction    = wasmtypes.ScHname(0xd5b7bacb)
+	HViewGetInfo         = wasmtypes.ScHname(0xcfedba5f)
 )

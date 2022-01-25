@@ -5,13 +5,10 @@ use wasmlib::*;
 
 use crate::*;
 
-pub fn func_array_clear(_ctx: &ScFuncContext, f: &ArrayClearContext) {
-    let name = f.params.name().value();
-    let array = f.state.arrays().get_string_array(&name);
-    array.clear();
+pub fn func_array_append(_ctx: &ScFuncContext, _f: &ArrayAppendContext) {
 }
 
-pub fn func_array_create(_ctx: &ScFuncContext, f: &ArrayCreateContext) {
+pub fn func_array_clear(_ctx: &ScFuncContext, f: &ArrayClearContext) {
     let name = f.params.name().value();
     let array = f.state.arrays().get_string_array(&name);
     array.clear();
@@ -23,6 +20,12 @@ pub fn func_array_set(_ctx: &ScFuncContext, f: &ArraySetContext) {
     let index = f.params.index().value();
     let value = f.params.value().value();
     array.get_string(index).set_value(&value);
+}
+
+pub fn func_map_clear(_ctx: &ScFuncContext, _f: &MapClearContext) {
+}
+
+pub fn func_map_set(_ctx: &ScFuncContext, _f: &MapSetContext) {
 }
 
 pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
@@ -86,6 +89,14 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
     }
 }
 
+pub fn func_random(ctx: &ScFuncContext, f: &RandomContext) {
+    f.state.random().set_value(ctx.random(1000));
+}
+
+pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {
+    f.events.test(&f.params.address().value(), &f.params.name().value());
+}
+
 pub fn view_array_length(_ctx: &ScViewContext, f: &ArrayLengthContext) {
     let name = f.params.name().value();
     let array = f.state.arrays().get_string_array(&name);
@@ -117,29 +128,12 @@ pub fn view_block_records(ctx: &ScViewContext, f: &BlockRecordsContext) {
     f.results.count().set_value(records.results.request_record().length());
 }
 
-pub fn view_iota_balance(ctx: &ScViewContext, f: &IotaBalanceContext) {
-    f.results.iotas().set_value(ctx.balances().balance(&ScColor::IOTA));
-}
-
-pub fn func_random(ctx: &ScFuncContext, f: &RandomContext) {
-    f.state.random().set_value(ctx.random(1000));
-}
-
 pub fn view_get_random(_ctx: &ScViewContext, f: &GetRandomContext) {
     f.results.random().set_value(f.state.random().value());
 }
 
-pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {
-    f.events.test(&f.params.address().value(), &f.params.name().value());
-}
-
-pub fn func_map_clear(_ctx: &ScFuncContext, _f: &MapClearContext) {
-}
-
-pub fn func_map_create(_ctx: &ScFuncContext, _f: &MapCreateContext) {
-}
-
-pub fn func_map_set(_ctx: &ScFuncContext, _f: &MapSetContext) {
+pub fn view_iota_balance(ctx: &ScViewContext, f: &IotaBalanceContext) {
+    f.results.iotas().set_value(ctx.balances().balance(&ScColor::IOTA));
 }
 
 pub fn view_map_value(_ctx: &ScViewContext, _f: &MapValueContext) {

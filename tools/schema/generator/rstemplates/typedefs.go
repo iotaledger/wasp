@@ -43,7 +43,7 @@ pub struct $proxy {
 
 impl $proxy {
 $#if mut typedefProxyArrayClear
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
@@ -60,8 +60,8 @@ $#set exist $proxy
 `,
 	// *******************************
 	"typedefProxyArrayNewBaseType": `
-    pub fn get_$fld_type(&self, index: i32) -> Sc$mut$FldType {
-        Sc$mut$FldType::new(self.obj_id, Key32(index))
+    pub fn get_$fld_type(&self, index: u32) -> Sc$mut$FldType {
+        Sc$mut$FldType::new(self.obj_id, Key32(index as i32))
     }
 `,
 	// *******************************
@@ -71,15 +71,15 @@ $#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeS
 	// *******************************
 	"typedefProxyArrayNewOtherTypeTypeDef": `
 $#emit setVarType
-	pub fn get_$old_type(&self, index: i32) -> $mut$OldType {
-		let sub_id = get_object_id(self.obj_id, Key32(index), $varType);
+	pub fn get_$old_type(&self, index: u32) -> $mut$OldType {
+		let sub_id = get_object_id(self.obj_id, Key32(index as i32), $varType);
 		$mut$OldType { obj_id: sub_id }
 	}
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherTypeStruct": `
-	pub fn get_$fld_type(&self, index: i32) -> $mut$FldType {
-		$mut$FldType { obj_id: self.obj_id, key_id: Key32(index) }
+	pub fn get_$fld_type(&self, index: u32) -> $mut$FldType {
+		$mut$FldType { obj_id: self.obj_id, key_id: Key32(index as i32) }
 	}
 `,
 	// *******************************

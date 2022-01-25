@@ -13,10 +13,6 @@ func OnLoad() {
 	exports := wasmlib.NewScExports()
 	exports.AddFunc(FuncNow, funcNowThunk)
 	exports.AddView(ViewGetTimestamp, viewGetTimestampThunk)
-
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
-	}
 }
 
 type NowContext struct {
@@ -27,7 +23,7 @@ func funcNowThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("timestamp.funcNow")
 	f := &NowContext{
 		State: MutabletimestampState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcNow(ctx, f)
@@ -43,10 +39,10 @@ func viewGetTimestampThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("timestamp.viewGetTimestamp")
 	f := &GetTimestampContext{
 		Results: MutableGetTimestampResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutabletimestampState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewGetTimestamp(ctx, f)

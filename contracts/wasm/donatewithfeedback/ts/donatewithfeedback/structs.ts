@@ -8,31 +8,31 @@
 import * as wasmlib from "wasmlib";
 
 export class Donation {
-    amount    : i64 = 0;  // amount donated
+    amount    : u64 = 0;  // amount donated
     donator   : wasmlib.ScAgentID = new wasmlib.ScAgentID();  // who donated
     error     : string = "";  // error to be reported to donator if anything goes wrong
     feedback  : string = "";  // the feedback for the person donated to
-    timestamp : i64 = 0;  // when the donation took place
+    timestamp : u64 = 0;  // when the donation took place
 
     static fromBytes(bytes: u8[]): Donation {
         let decode = new wasmlib.BytesDecoder(bytes);
         let data = new Donation();
-        data.amount    = decode.int64();
+        data.amount    = decode.uint64();
         data.donator   = decode.agentID();
         data.error     = decode.string();
         data.feedback  = decode.string();
-        data.timestamp = decode.int64();
+        data.timestamp = decode.uint64();
         decode.close();
         return data;
     }
 
     bytes(): u8[] {
         return new wasmlib.BytesEncoder().
-		    int64(this.amount).
+		    uint64(this.amount).
 		    agentID(this.donator).
 		    string(this.error).
 		    string(this.feedback).
-		    int64(this.timestamp).
+		    uint64(this.timestamp).
             data();
     }
 }

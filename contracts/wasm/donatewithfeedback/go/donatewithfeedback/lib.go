@@ -15,10 +15,6 @@ func OnLoad() {
 	exports.AddFunc(FuncWithdraw, funcWithdrawThunk)
 	exports.AddView(ViewDonation, viewDonationThunk)
 	exports.AddView(ViewDonationInfo, viewDonationInfoThunk)
-
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
-	}
 }
 
 type DonateContext struct {
@@ -30,10 +26,10 @@ func funcDonateThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("donatewithfeedback.funcDonate")
 	f := &DonateContext{
 		Params: ImmutableDonateParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableDonateWithFeedbackState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcDonate(ctx, f)
@@ -47,18 +43,18 @@ type WithdrawContext struct {
 
 func funcWithdrawThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("donatewithfeedback.funcWithdraw")
+	f := &WithdrawContext{
+		Params: ImmutableWithdrawParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableDonateWithFeedbackState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
 
 	// only SC creator can withdraw donated funds
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
-	f := &WithdrawContext{
-		Params: ImmutableWithdrawParams{
-			id: wasmlib.OBJ_ID_PARAMS,
-		},
-		State: MutableDonateWithFeedbackState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
 	funcWithdraw(ctx, f)
 	ctx.Log("donatewithfeedback.funcWithdraw ok")
 }
@@ -73,13 +69,13 @@ func viewDonationThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("donatewithfeedback.viewDonation")
 	f := &DonationContext{
 		Params: ImmutableDonationParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableDonationResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableDonateWithFeedbackState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Nr().Exists(), "missing mandatory nr")
@@ -96,10 +92,10 @@ func viewDonationInfoThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("donatewithfeedback.viewDonationInfo")
 	f := &DonationInfoContext{
 		Results: MutableDonationInfoResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableDonateWithFeedbackState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewDonationInfo(ctx, f)

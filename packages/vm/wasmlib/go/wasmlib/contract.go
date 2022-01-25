@@ -1,6 +1,15 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package wasmlib
 
+import (
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmrequests"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+)
+
 type ScFuncCallContext interface {
+	ChainID() wasmtypes.ScChainID
 	InitFuncCallContext()
 }
 
@@ -11,67 +20,65 @@ type ScViewCallContext interface {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScView struct {
-	hContract ScHname
-	hFunction ScHname
-	paramsID  *int32
-	resultsID *int32
+	hContract    wasmtypes.ScHname
+	hFunction    wasmtypes.ScHname
+	params       ScDict
+	resultsProxy *wasmtypes.Proxy
 }
 
-func NewScView(ctx ScViewCallContext, hContract, hFunction ScHname) *ScView {
+func NewScView(ctx ScViewCallContext, hContract, hFunction wasmtypes.ScHname) *ScView {
 	ctx.InitViewCallContext()
-	return &ScView{hContract, hFunction, nil, nil}
-}
-
-func (v *ScView) SetPtrs(paramsID, resultsID *int32) {
-	v.paramsID = paramsID
-	v.resultsID = resultsID
-	if paramsID != nil {
-		*paramsID = NewScMutableMap().MapID()
-	}
-}
-
-func (v *ScView) Call() {
-	v.call(0)
-}
-
-func (v *ScView) call(transferID int32) {
-	encode := NewBytesEncoder()
-	encode.Hname(v.hContract)
-	encode.Hname(v.hFunction)
-	encode.Int32(paramsID(v.paramsID))
-	encode.Int32(transferID)
-	Root.GetBytes(KeyCall).SetValue(encode.Data())
-	if v.resultsID != nil {
-		*v.resultsID = GetObjectID(OBJ_ID_ROOT, KeyReturn, TYPE_MAP)
-	}
-}
-
-func (v *ScView) OfContract(hContract ScHname) *ScView {
-	v.hContract = hContract
+	v := new(ScView)
+	v.initView(hContract, hFunction)
 	return v
 }
 
-func paramsID(id *int32) int32 {
-	if id == nil {
-		return 0
+func NewCallParamsProxy(v *ScView) wasmtypes.Proxy {
+	v.params = NewScDict()
+	return wasmtypes.NewProxy(v.params)
+}
+
+func NewCallResultsProxy(v *ScView, resultsProxy *wasmtypes.Proxy) {
+	v.resultsProxy = resultsProxy
+}
+
+func (v *ScView) Call() {
+	v.call(nil)
+}
+
+func (v *ScView) call(transfer ScAssets) {
+	req := wasmrequests.CallRequest{
+		Contract: v.hContract,
+		Function: v.hFunction,
+		Params:   v.params.Bytes(),
+		Transfer: transfer.Bytes(),
 	}
-	return *id
+	res := Sandbox(FnCall, req.Bytes())
+	if v.resultsProxy != nil {
+		*v.resultsProxy = wasmtypes.NewProxy(NewScDictFromBytes(res))
+	}
+}
+
+func (v *ScView) initView(hContract, hFunction wasmtypes.ScHname) {
+	v.hContract = hContract
+	v.hFunction = hFunction
+}
+
+func (v *ScView) OfContract(hContract wasmtypes.ScHname) *ScView {
+	v.hContract = hContract
+	return v
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScInitFunc struct {
 	ScView
-	keys       []Key
-	indexes    []Key32
-	oldIndexes []Key32
-	host       ScHost
+	host ScHost
 }
 
-func NewScInitFunc(ctx ScFuncCallContext, hContract, hFunction ScHname, keys []Key, indexes []Key32) *ScInitFunc {
-	f := &ScInitFunc{}
-	f.hContract = hContract
-	f.hFunction = hFunction
+func NewScInitFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *ScInitFunc {
+	f := new(ScInitFunc)
+	f.initView(hContract, hFunction)
 	if ctx != nil {
 		ctx.InitFuncCallContext()
 		return f
@@ -85,12 +92,6 @@ func NewScInitFunc(ctx ScFuncCallContext, hContract, hFunction ScHname, keys []K
 	// just enough to gather the parameter data and pass it correctly to
 	// solo's contract deployment function, which in turn passes it to the
 	// contract's init() function
-	f.keys = keys
-	f.oldIndexes = append(f.oldIndexes, indexes...)
-	f.indexes = indexes
-	for i := 0; i < len(indexes); i++ {
-		indexes[i] = Key32(i)
-	}
 	f.host = ConnectHost(NewInitHost())
 	return f
 }
@@ -99,22 +100,17 @@ func (f *ScInitFunc) Call() {
 	Panic("cannot call init")
 }
 
-func (f *ScInitFunc) OfContract(hContract ScHname) *ScInitFunc {
+func (f *ScInitFunc) OfContract(hContract wasmtypes.ScHname) *ScInitFunc {
 	f.hContract = hContract
 	return f
 }
 
 func (f *ScInitFunc) Params() []interface{} {
-	if f.keys == nil {
-		Panic("cannot call params")
-	}
-
 	var params []interface{}
-	for k, v := range host.(*InitHost).params {
-		params = append(params, string(f.keys[k]))
+	for k, v := range f.params {
+		params = append(params, k)
 		params = append(params, v)
 	}
-	copy(f.indexes, f.oldIndexes)
 	ConnectHost(f.host)
 	return params
 }
@@ -123,55 +119,62 @@ func (f *ScInitFunc) Params() []interface{} {
 
 type ScFunc struct {
 	ScView
-	delay      int32
-	transferID int32
+	ctx      ScFuncCallContext
+	delay    uint32
+	transfer ScAssets
 }
 
-func NewScFunc(ctx ScFuncCallContext, hContract, hFunction ScHname) *ScFunc {
+func NewScFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *ScFunc {
 	ctx.InitFuncCallContext()
-	return &ScFunc{ScView{hContract, hFunction, nil, nil}, 0, 0}
+	f := new(ScFunc)
+	f.ctx = ctx
+	f.initView(hContract, hFunction)
+	return f
 }
 
 func (f *ScFunc) Call() {
 	if f.delay != 0 {
 		Panic("cannot delay a call")
 	}
-	f.call(f.transferID)
+	f.call(f.transfer)
 }
 
-func (f *ScFunc) Delay(seconds int32) *ScFunc {
+func (f *ScFunc) Delay(seconds uint32) *ScFunc {
 	f.delay = seconds
 	return f
 }
 
-func (f *ScFunc) OfContract(hContract ScHname) *ScFunc {
+func (f *ScFunc) OfContract(hContract wasmtypes.ScHname) *ScFunc {
 	f.hContract = hContract
 	return f
 }
 
 func (f *ScFunc) Post() {
-	f.PostToChain(Root.GetChainID(KeyChainID).Value())
+	f.PostToChain(f.ctx.ChainID())
 }
 
-func (f *ScFunc) PostToChain(chainID ScChainID) {
-	encode := NewBytesEncoder()
-	encode.ChainID(chainID)
-	encode.Hname(f.hContract)
-	encode.Hname(f.hFunction)
-	encode.Int32(paramsID(f.paramsID))
-	encode.Int32(f.transferID)
-	encode.Int32(f.delay)
-	Root.GetBytes(KeyPost).SetValue(encode.Data())
-	if f.resultsID != nil {
-		*f.resultsID = GetObjectID(OBJ_ID_ROOT, KeyReturn, TYPE_MAP)
+func (f *ScFunc) PostToChain(chainID wasmtypes.ScChainID) {
+	req := wasmrequests.PostRequest{
+		ChainID:  chainID,
+		Contract: f.hContract,
+		Function: f.hFunction,
+		Params:   f.params.Bytes(),
+		Transfer: f.transfer.Bytes(),
+		Delay:    f.delay,
+	}
+	res := Sandbox(FnPost, req.Bytes())
+	if f.resultsProxy != nil {
+		*f.resultsProxy = wasmtypes.NewProxy(NewScDictFromBytes(res))
 	}
 }
 
 func (f *ScFunc) Transfer(transfer ScTransfers) *ScFunc {
-	f.transferID = transfer.transfers.MapID()
+	f.transfer = ScAssets(transfer)
 	return f
 }
 
-func (f *ScFunc) TransferIotas(amount int64) *ScFunc {
-	return f.Transfer(NewScTransferIotas(amount))
+func (f *ScFunc) TransferIotas(amount uint64) *ScFunc {
+	f.transfer = make(ScAssets)
+	f.transfer[wasmtypes.IOTA] = amount
+	return f
 }

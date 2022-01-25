@@ -8,21 +8,24 @@
 //nolint:gocritic
 package erc20
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import (
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type Erc20Events struct{}
 
-func (e Erc20Events) Approval(amount int64, owner wasmlib.ScAgentID, spender wasmlib.ScAgentID) {
+func (e Erc20Events) Approval(amount uint64, owner wasmtypes.ScAgentID, spender wasmtypes.ScAgentID) {
 	wasmlib.NewEventEncoder("erc20.approval").
-		Int64(amount).
+		Uint64(amount).
 		AgentID(owner).
 		AgentID(spender).
 		Emit()
 }
 
-func (e Erc20Events) Transfer(amount int64, from wasmlib.ScAgentID, to wasmlib.ScAgentID) {
+func (e Erc20Events) Transfer(amount uint64, from wasmtypes.ScAgentID, to wasmtypes.ScAgentID) {
 	wasmlib.NewEventEncoder("erc20.transfer").
-		Int64(amount).
+		Uint64(amount).
 		AgentID(from).
 		AgentID(to).
 		Emit()

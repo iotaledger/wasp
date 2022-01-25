@@ -7,100 +7,100 @@
 
 package inccounter
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableGetCounterResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetCounterResults) Counter() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultCounter))
+func (s ImmutableGetCounterResults) Counter() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultCounter))
 }
 
 type MutableGetCounterResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetCounterResults) Counter() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultCounter))
+func (s MutableGetCounterResults) Counter() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultCounter))
 }
 
 type ImmutableGetVliResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetVliResults) Buf() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultBuf))
+func (s ImmutableGetVliResults) Buf() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultBuf))
 }
 
-func (s ImmutableGetVliResults) Ni64() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultNi64))
+func (s ImmutableGetVliResults) Ni64() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultNi64))
 }
 
-func (s ImmutableGetVliResults) Str() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultStr))
+func (s ImmutableGetVliResults) Str() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultStr))
 }
 
-func (s ImmutableGetVliResults) Xi64() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultXi64))
+func (s ImmutableGetVliResults) Xi64() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultXi64))
 }
 
 type MutableGetVliResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetVliResults) Buf() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultBuf))
+func (s MutableGetVliResults) Buf() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultBuf))
 }
 
-func (s MutableGetVliResults) Ni64() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultNi64))
+func (s MutableGetVliResults) Ni64() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultNi64))
 }
 
-func (s MutableGetVliResults) Str() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultStr))
+func (s MutableGetVliResults) Str() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultStr))
 }
 
-func (s MutableGetVliResults) Xi64() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultXi64))
+func (s MutableGetVliResults) Xi64() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultXi64))
 }
 
 type ImmutableGetVluResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetVluResults) Buf() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultBuf))
+func (s ImmutableGetVluResults) Buf() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultBuf))
 }
 
-func (s ImmutableGetVluResults) Nu64() wasmlib.ScImmutableUint64 {
-	return wasmlib.NewScImmutableUint64(s.id, wasmlib.KeyID(ResultNu64))
+func (s ImmutableGetVluResults) Nu64() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultNu64))
 }
 
-func (s ImmutableGetVluResults) Str() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultStr))
+func (s ImmutableGetVluResults) Str() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultStr))
 }
 
-func (s ImmutableGetVluResults) Xu64() wasmlib.ScImmutableUint64 {
-	return wasmlib.NewScImmutableUint64(s.id, wasmlib.KeyID(ResultXu64))
+func (s ImmutableGetVluResults) Xu64() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultXu64))
 }
 
 type MutableGetVluResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetVluResults) Buf() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultBuf))
+func (s MutableGetVluResults) Buf() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultBuf))
 }
 
-func (s MutableGetVluResults) Nu64() wasmlib.ScMutableUint64 {
-	return wasmlib.NewScMutableUint64(s.id, wasmlib.KeyID(ResultNu64))
+func (s MutableGetVluResults) Nu64() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultNu64))
 }
 
-func (s MutableGetVluResults) Str() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultStr))
+func (s MutableGetVluResults) Str() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultStr))
 }
 
-func (s MutableGetVluResults) Xu64() wasmlib.ScMutableUint64 {
-	return wasmlib.NewScMutableUint64(s.id, wasmlib.KeyID(ResultXu64))
+func (s MutableGetVluResults) Xu64() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultXu64))
 }

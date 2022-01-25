@@ -7,76 +7,76 @@
 
 package dividend
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableInitParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableInitParams) Owner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamOwner])
+func (s ImmutableInitParams) Owner() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamOwner))
 }
 
 type MutableInitParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableInitParams) Owner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamOwner])
+func (s MutableInitParams) Owner() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamOwner))
 }
 
 type ImmutableMemberParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableMemberParams) Address() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ParamAddress))
+func (s ImmutableMemberParams) Address() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamAddress))
 }
 
-func (s ImmutableMemberParams) Factor() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamFactor))
+func (s ImmutableMemberParams) Factor() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamFactor))
 }
 
 type MutableMemberParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableMemberParams) Address() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ParamAddress))
+func (s MutableMemberParams) Address() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamAddress))
 }
 
-func (s MutableMemberParams) Factor() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamFactor))
+func (s MutableMemberParams) Factor() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamFactor))
 }
 
 type ImmutableSetOwnerParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableSetOwnerParams) Owner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamOwner))
+func (s ImmutableSetOwnerParams) Owner() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamOwner))
 }
 
 type MutableSetOwnerParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableSetOwnerParams) Owner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamOwner))
+func (s MutableSetOwnerParams) Owner() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamOwner))
 }
 
 type ImmutableGetFactorParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetFactorParams) Address() wasmlib.ScImmutableAddress {
-	return wasmlib.NewScImmutableAddress(s.id, wasmlib.KeyID(ParamAddress))
+func (s ImmutableGetFactorParams) Address() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamAddress))
 }
 
 type MutableGetFactorParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetFactorParams) Address() wasmlib.ScMutableAddress {
-	return wasmlib.NewScMutableAddress(s.id, wasmlib.KeyID(ParamAddress))
+func (s MutableGetFactorParams) Address() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.proxy.Root(ParamAddress))
 }

@@ -7,108 +7,108 @@
 
 package fairauction
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableFinalizeAuctionParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableFinalizeAuctionParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamColor))
+func (s ImmutableFinalizeAuctionParams) Color() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
 }
 
 type MutableFinalizeAuctionParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableFinalizeAuctionParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamColor))
+func (s MutableFinalizeAuctionParams) Color() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
 }
 
 type ImmutablePlaceBidParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutablePlaceBidParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamColor))
+func (s ImmutablePlaceBidParams) Color() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
 }
 
 type MutablePlaceBidParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutablePlaceBidParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamColor))
+func (s MutablePlaceBidParams) Color() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
 }
 
 type ImmutableSetOwnerMarginParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableSetOwnerMarginParams) OwnerMargin() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamOwnerMargin))
+func (s ImmutableSetOwnerMarginParams) OwnerMargin() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamOwnerMargin))
 }
 
 type MutableSetOwnerMarginParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableSetOwnerMarginParams) OwnerMargin() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamOwnerMargin))
+func (s MutableSetOwnerMarginParams) OwnerMargin() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamOwnerMargin))
 }
 
 type ImmutableStartAuctionParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableStartAuctionParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamColor))
+func (s ImmutableStartAuctionParams) Color() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
 }
 
-func (s ImmutableStartAuctionParams) Description() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamDescription))
+func (s ImmutableStartAuctionParams) Description() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
 }
 
-func (s ImmutableStartAuctionParams) Duration() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamDuration))
+func (s ImmutableStartAuctionParams) Duration() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamDuration))
 }
 
-func (s ImmutableStartAuctionParams) MinimumBid() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamMinimumBid))
+func (s ImmutableStartAuctionParams) MinimumBid() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamMinimumBid))
 }
 
 type MutableStartAuctionParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableStartAuctionParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamColor))
+func (s MutableStartAuctionParams) Color() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
 }
 
-func (s MutableStartAuctionParams) Description() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamDescription))
+func (s MutableStartAuctionParams) Description() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamDescription))
 }
 
-func (s MutableStartAuctionParams) Duration() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamDuration))
+func (s MutableStartAuctionParams) Duration() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamDuration))
 }
 
-func (s MutableStartAuctionParams) MinimumBid() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamMinimumBid))
+func (s MutableStartAuctionParams) MinimumBid() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamMinimumBid))
 }
 
 type ImmutableGetInfoParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetInfoParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamColor))
+func (s ImmutableGetInfoParams) Color() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamColor))
 }
 
 type MutableGetInfoParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetInfoParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamColor))
+func (s MutableGetInfoParams) Color() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamColor))
 }

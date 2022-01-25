@@ -108,13 +108,13 @@ func (sc Funcs) Increment(ctx wasmlib.ScFuncCallContext) *IncrementCall {
 
 func (sc Funcs) IncrementWithDelay(ctx wasmlib.ScFuncCallContext) *IncrementWithDelayCall {
 	f := &IncrementWithDelayCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncIncrementWithDelay)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
-	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit, keyMap[:], idxMap[:])}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
@@ -136,7 +136,7 @@ func (sc Funcs) PostIncrement(ctx wasmlib.ScFuncCallContext) *PostIncrementCall 
 
 func (sc Funcs) RepeatMany(ctx wasmlib.ScFuncCallContext) *RepeatManyCall {
 	f := &RepeatManyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRepeatMany)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
@@ -150,24 +150,26 @@ func (sc Funcs) TestVluCodec(ctx wasmlib.ScFuncCallContext) *TestVluCodecCall {
 
 func (sc Funcs) WhenMustIncrement(ctx wasmlib.ScFuncCallContext) *WhenMustIncrementCall {
 	f := &WhenMustIncrementCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWhenMustIncrement)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) GetCounter(ctx wasmlib.ScViewCallContext) *GetCounterCall {
 	f := &GetCounterCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetCounter)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetVli(ctx wasmlib.ScViewCallContext) *GetVliCall {
 	f := &GetVliCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetVli)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetVlu(ctx wasmlib.ScViewCallContext) *GetVluCall {
 	f := &GetVluCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetVlu)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }

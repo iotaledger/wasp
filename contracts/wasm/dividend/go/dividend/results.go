@@ -7,36 +7,36 @@
 
 package dividend
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableGetFactorResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetFactorResults) Factor() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultFactor))
+func (s ImmutableGetFactorResults) Factor() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultFactor))
 }
 
 type MutableGetFactorResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetFactorResults) Factor() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultFactor))
+func (s MutableGetFactorResults) Factor() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultFactor))
 }
 
 type ImmutableGetOwnerResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetOwnerResults) Owner() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultOwner))
+func (s ImmutableGetOwnerResults) Owner() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultOwner))
 }
 
 type MutableGetOwnerResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetOwnerResults) Owner() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultOwner))
+func (s MutableGetOwnerResults) Owner() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultOwner))
 }

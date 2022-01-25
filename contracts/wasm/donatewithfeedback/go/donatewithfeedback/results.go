@@ -7,84 +7,84 @@
 
 package donatewithfeedback
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableDonationResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableDonationResults) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultAmount))
+func (s ImmutableDonationResults) Amount() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultAmount))
 }
 
-func (s ImmutableDonationResults) Donator() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultDonator))
+func (s ImmutableDonationResults) Donator() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultDonator))
 }
 
-func (s ImmutableDonationResults) Error() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultError))
+func (s ImmutableDonationResults) Error() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultError))
 }
 
-func (s ImmutableDonationResults) Feedback() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultFeedback))
+func (s ImmutableDonationResults) Feedback() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultFeedback))
 }
 
-func (s ImmutableDonationResults) Timestamp() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultTimestamp))
+func (s ImmutableDonationResults) Timestamp() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultTimestamp))
 }
 
 type MutableDonationResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableDonationResults) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultAmount))
+func (s MutableDonationResults) Amount() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultAmount))
 }
 
-func (s MutableDonationResults) Donator() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultDonator))
+func (s MutableDonationResults) Donator() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultDonator))
 }
 
-func (s MutableDonationResults) Error() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultError))
+func (s MutableDonationResults) Error() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultError))
 }
 
-func (s MutableDonationResults) Feedback() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultFeedback))
+func (s MutableDonationResults) Feedback() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultFeedback))
 }
 
-func (s MutableDonationResults) Timestamp() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultTimestamp))
+func (s MutableDonationResults) Timestamp() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultTimestamp))
 }
 
 type ImmutableDonationInfoResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableDonationInfoResults) Count() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultCount))
+func (s ImmutableDonationInfoResults) Count() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultCount))
 }
 
-func (s ImmutableDonationInfoResults) MaxDonation() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultMaxDonation))
+func (s ImmutableDonationInfoResults) MaxDonation() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultMaxDonation))
 }
 
-func (s ImmutableDonationInfoResults) TotalDonation() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultTotalDonation))
+func (s ImmutableDonationInfoResults) TotalDonation() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultTotalDonation))
 }
 
 type MutableDonationInfoResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableDonationInfoResults) Count() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultCount))
+func (s MutableDonationInfoResults) Count() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultCount))
 }
 
-func (s MutableDonationInfoResults) MaxDonation() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultMaxDonation))
+func (s MutableDonationInfoResults) MaxDonation() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultMaxDonation))
 }
 
-func (s MutableDonationInfoResults) TotalDonation() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultTotalDonation))
+func (s MutableDonationInfoResults) TotalDonation() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultTotalDonation))
 }

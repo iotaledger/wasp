@@ -7,12 +7,12 @@
 
 package erc20
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "erc20"
 	ScDescription = "ERC-20 PoC for IOTA Smart Contracts"
-	HScName       = wasmlib.ScHname(0x200e3733)
+	HScName       = wasmtypes.ScHname(0x200e3733)
 )
 
 const (
@@ -46,11 +46,11 @@ const (
 )
 
 const (
-	HFuncApprove      = wasmlib.ScHname(0xa0661268)
-	HFuncInit         = wasmlib.ScHname(0x1f44d644)
-	HFuncTransfer     = wasmlib.ScHname(0xa15da184)
-	HFuncTransferFrom = wasmlib.ScHname(0xd5e0a602)
-	HViewAllowance    = wasmlib.ScHname(0x5e16006a)
-	HViewBalanceOf    = wasmlib.ScHname(0x67ef8df4)
-	HViewTotalSupply  = wasmlib.ScHname(0x9505e6ca)
+	HFuncApprove      = wasmtypes.ScHname(0xa0661268)
+	HFuncInit         = wasmtypes.ScHname(0x1f44d644)
+	HFuncTransfer     = wasmtypes.ScHname(0xa15da184)
+	HFuncTransferFrom = wasmtypes.ScHname(0xd5e0a602)
+	HViewAllowance    = wasmtypes.ScHname(0x5e16006a)
+	HViewBalanceOf    = wasmtypes.ScHname(0x67ef8df4)
+	HViewTotalSupply  = wasmtypes.ScHname(0x9505e6ca)
 )

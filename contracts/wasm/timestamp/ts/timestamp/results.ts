@@ -9,13 +9,13 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableGetTimestampResults extends wasmlib.ScMapID {
-    timestamp(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultTimestamp));
+    timestamp(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultTimestamp));
 	}
 }
 
 export class MutableGetTimestampResults extends wasmlib.ScMapID {
-    timestamp(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultTimestamp));
+    timestamp(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultTimestamp));
 	}
 }

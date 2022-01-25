@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coregovernance"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 )
 
 const (
@@ -39,10 +40,10 @@ func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
 
 	counter.SetValue(counter.Value() + 1)
 
-	params := wasmlib.NewScMutableMap()
-	params.GetInt64(wasmlib.Key(ParamIntValue)).SetValue(paramIn)
+	params := wasmlib.NewScDict()
+	params.Set([]byte(ParamIntValue), wasmcodec.AppendInt64(nil, paramIn))
 	ret := ctx.Call(hnameContract, hnameEP, params, nil)
-	retVal := ret.GetInt64(wasmlib.Key(ResultIntValue)).Value()
+	retVal, _ := wasmcodec.ExtractInt64(ret.Get([]byte(ParamIntValue)))
 	f.Results.IntValue().SetValue(retVal)
 }
 
@@ -62,8 +63,8 @@ func funcDoNothing(ctx wasmlib.ScFuncContext, f *DoNothingContext) {
 func funcGetMintedSupply(ctx wasmlib.ScFuncContext, f *GetMintedSupplyContext) {
 	minted := ctx.Minted()
 	mintedColors := minted.Colors()
-	ctx.Require(mintedColors.Length() == 1, "test only supports one minted color")
-	color := mintedColors.GetColor(0).Value()
+	ctx.Require(len(mintedColors) == 1, "test only supports one minted color")
+	color := mintedColors[0]
 	amount := minted.Balance(color)
 	f.Results.MintedColor().SetValue(color)
 	f.Results.MintedSupply().SetValue(amount)
@@ -87,8 +88,8 @@ func funcPassTypesFull(ctx wasmlib.ScFuncContext, f *PassTypesFullContext) {
 	ctx.Require(f.Params.Int64Zero().Value() == 0, "int64-0 wrong")
 	ctx.Require(f.Params.String().Value() == string(ParamString), "string wrong")
 	ctx.Require(f.Params.StringZero().Value() == "", "string-0 wrong")
-	ctx.Require(f.Params.Hname().Value() == wasmlib.NewScHname(string(ParamHname)), "Hname wrong")
-	ctx.Require(f.Params.HnameZero().Value() == wasmlib.ScHname(0), "Hname-0 wrong")
+	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(ParamHname), "Hname wrong")
+	ctx.Require(f.Params.HnameZero().Value() == 0, "Hname-0 wrong")
 }
 
 func funcRunRecursion(ctx wasmlib.ScFuncContext, f *RunRecursionContext) {
@@ -132,7 +133,7 @@ func funcTestChainOwnerIDFull(ctx wasmlib.ScFuncContext, f *TestChainOwnerIDFull
 func funcTestEventLogDeploy(ctx wasmlib.ScFuncContext, f *TestEventLogDeployContext) {
 	// deploy the same contract with another name
 	programHash := ctx.Utility().HashBlake2b([]byte("testcore"))
-	ctx.Deploy(programHash, ContractNameDeployed, "test contract deploy log", nil)
+	ctx.DeployContract(programHash, ContractNameDeployed, "test contract deploy log", nil)
 }
 
 //nolint:unparam
@@ -203,8 +204,8 @@ func viewPassTypesView(ctx wasmlib.ScViewContext, f *PassTypesViewContext) {
 	ctx.Require(f.Params.Int64Zero().Value() == 0, "int64-0 wrong")
 	ctx.Require(f.Params.String().Value() == string(ParamString), "string wrong")
 	ctx.Require(f.Params.StringZero().Value() == "", "string-0 wrong")
-	ctx.Require(f.Params.Hname().Value() == wasmlib.NewScHname(string(ParamHname)), "Hname wrong")
-	ctx.Require(f.Params.HnameZero().Value() == wasmlib.ScHname(0), "Hname-0 wrong")
+	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(ParamHname), "Hname wrong")
+	ctx.Require(f.Params.HnameZero().Value() == 0, "Hname-0 wrong")
 }
 
 //nolint:unparam
@@ -245,9 +246,9 @@ func viewGetStringValue(ctx wasmlib.ScViewContext, f *GetStringValueContext) {
 func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
 	spawnName := ScName + "_spawned"
 	spawnDescr := "spawned contract description"
-	ctx.Deploy(f.Params.ProgHash().Value(), spawnName, spawnDescr, nil)
+	ctx.DeployContract(f.Params.ProgHash().Value(), spawnName, spawnDescr, nil)
 
-	spawnHname := wasmlib.NewScHname(spawnName)
+	spawnHname := ctx.Utility().Hname(spawnName)
 	for i := 0; i < 5; i++ {
 		ctx.Call(spawnHname, HFuncIncCounter, nil, nil)
 	}

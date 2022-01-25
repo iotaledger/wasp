@@ -7,76 +7,76 @@
 
 package coreaccounts
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableDepositParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableDepositParams) AgentID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s ImmutableDepositParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
 type MutableDepositParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableDepositParams) AgentID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s MutableDepositParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
 type ImmutableHarvestParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableHarvestParams) WithdrawAmount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamWithdrawAmount))
+func (s ImmutableHarvestParams) WithdrawAmount() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamWithdrawAmount))
 }
 
-func (s ImmutableHarvestParams) WithdrawColor() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamWithdrawColor))
+func (s ImmutableHarvestParams) WithdrawColor() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ParamWithdrawColor))
 }
 
 type MutableHarvestParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableHarvestParams) WithdrawAmount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamWithdrawAmount))
+func (s MutableHarvestParams) WithdrawAmount() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamWithdrawAmount))
 }
 
-func (s MutableHarvestParams) WithdrawColor() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamWithdrawColor))
+func (s MutableHarvestParams) WithdrawColor() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ParamWithdrawColor))
 }
 
 type ImmutableBalanceParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableBalanceParams) AgentID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s ImmutableBalanceParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
 type MutableBalanceParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableBalanceParams) AgentID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s MutableBalanceParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
 type ImmutableGetAccountNonceParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetAccountNonceParams) AgentID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s ImmutableGetAccountNonceParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
 type MutableGetAccountNonceParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetAccountNonceParams) AgentID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAgentID))
+func (s MutableGetAccountNonceParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }

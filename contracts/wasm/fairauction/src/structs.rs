@@ -16,15 +16,15 @@ use crate::typedefs::*;
 pub struct Auction {
     pub color          : ScColor,  // color of tokens for sale
     pub creator        : ScAgentID,  // issuer of start_auction transaction
-    pub deposit        : i64,  // deposit by auction owner to cover the SC fees
+    pub deposit        : u64,  // deposit by auction owner to cover the SC fees
     pub description    : String,  // auction description
-    pub duration       : i32,  // auction duration in minutes
-    pub highest_bid    : i64,  // the current highest bid amount
+    pub duration       : u32,  // auction duration in minutes
+    pub highest_bid    : u64,  // the current highest bid amount
     pub highest_bidder : ScAgentID,  // the current highest bidder
-    pub minimum_bid    : i64,  // minimum bid amount
-    pub num_tokens     : i64,  // number of tokens for sale
-    pub owner_margin   : i64,  // auction owner's margin in promilles
-    pub when_started   : i64,  // timestamp when auction started
+    pub minimum_bid    : u64,  // minimum bid amount
+    pub num_tokens     : u64,  // number of tokens for sale
+    pub owner_margin   : u64,  // auction owner's margin in promilles
+    pub when_started   : u64,  // timestamp when auction started
 }
 
 impl Auction {
@@ -33,15 +33,15 @@ impl Auction {
         Auction {
             color          : decode.color(),
             creator        : decode.agent_id(),
-            deposit        : decode.int64(),
+            deposit        : decode.uint64(),
             description    : decode.string(),
-            duration       : decode.int32(),
-            highest_bid    : decode.int64(),
+            duration       : decode.uint32(),
+            highest_bid    : decode.uint64(),
             highest_bidder : decode.agent_id(),
-            minimum_bid    : decode.int64(),
-            num_tokens     : decode.int64(),
-            owner_margin   : decode.int64(),
-            when_started   : decode.int64(),
+            minimum_bid    : decode.uint64(),
+            num_tokens     : decode.uint64(),
+            owner_margin   : decode.uint64(),
+            when_started   : decode.uint64(),
         }
     }
 
@@ -49,15 +49,15 @@ impl Auction {
         let mut encode = BytesEncoder::new();
 		encode.color(&self.color);
 		encode.agent_id(&self.creator);
-		encode.int64(self.deposit);
+		encode.uint64(self.deposit);
 		encode.string(&self.description);
-		encode.int32(self.duration);
-		encode.int64(self.highest_bid);
+		encode.uint32(self.duration);
+		encode.uint64(self.highest_bid);
 		encode.agent_id(&self.highest_bidder);
-		encode.int64(self.minimum_bid);
-		encode.int64(self.num_tokens);
-		encode.int64(self.owner_margin);
-		encode.int64(self.when_started);
+		encode.uint64(self.minimum_bid);
+		encode.uint64(self.num_tokens);
+		encode.uint64(self.owner_margin);
+		encode.uint64(self.when_started);
         return encode.data();
     }
 }
@@ -104,26 +104,26 @@ impl MutableAuction {
 
 #[derive(Clone)]
 pub struct Bid {
-    pub amount    : i64,  // cumulative amount of bids from same bidder
-    pub index     : i32,  // index of bidder in bidder list
-    pub timestamp : i64,  // timestamp of most recent bid
+    pub amount    : u64,  // cumulative amount of bids from same bidder
+    pub index     : u32,  // index of bidder in bidder list
+    pub timestamp : u64,  // timestamp of most recent bid
 }
 
 impl Bid {
     pub fn from_bytes(bytes: &[u8]) -> Bid {
         let mut decode = BytesDecoder::new(bytes);
         Bid {
-            amount    : decode.int64(),
-            index     : decode.int32(),
-            timestamp : decode.int64(),
+            amount    : decode.uint64(),
+            index     : decode.uint32(),
+            timestamp : decode.uint64(),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut encode = BytesEncoder::new();
-		encode.int64(self.amount);
-		encode.int32(self.index);
-		encode.int64(self.timestamp);
+		encode.uint64(self.amount);
+		encode.uint32(self.index);
+		encode.uint64(self.timestamp);
         return encode.data();
     }
 }

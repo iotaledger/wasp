@@ -7,12 +7,12 @@
 
 package coreaccounts
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "accounts"
 	ScDescription = "Core chain account ledger contract"
-	HScName       = wasmlib.ScHname(0x3c4b5e02)
+	HScName       = wasmtypes.ScHname(0x3c4b5e02)
 )
 
 const (
@@ -38,11 +38,11 @@ const (
 )
 
 const (
-	HFuncDeposit         = wasmlib.ScHname(0xbdc9102d)
-	HFuncHarvest         = wasmlib.ScHname(0x7b40efbd)
-	HFuncWithdraw        = wasmlib.ScHname(0x9dcc0f41)
-	HViewAccounts        = wasmlib.ScHname(0x3c4b5e02)
-	HViewBalance         = wasmlib.ScHname(0x84168cb4)
-	HViewGetAccountNonce = wasmlib.ScHname(0x529d7df9)
-	HViewTotalAssets     = wasmlib.ScHname(0xfab0f8d2)
+	HFuncDeposit         = wasmtypes.ScHname(0xbdc9102d)
+	HFuncHarvest         = wasmtypes.ScHname(0x7b40efbd)
+	HFuncWithdraw        = wasmtypes.ScHname(0x9dcc0f41)
+	HViewAccounts        = wasmtypes.ScHname(0x3c4b5e02)
+	HViewBalance         = wasmtypes.ScHname(0x84168cb4)
+	HViewGetAccountNonce = wasmtypes.ScHname(0x529d7df9)
+	HViewTotalAssets     = wasmtypes.ScHname(0xfab0f8d2)
 )

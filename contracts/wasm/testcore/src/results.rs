@@ -46,8 +46,8 @@ impl ImmutableGetMintedSupplyResults {
 		ScImmutableColor::new(self.id, RESULT_MINTED_COLOR.get_key_id())
 	}
 
-    pub fn minted_supply(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_MINTED_SUPPLY.get_key_id())
+    pub fn minted_supply(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_MINTED_SUPPLY.get_key_id())
 	}
 }
 
@@ -61,8 +61,8 @@ impl MutableGetMintedSupplyResults {
 		ScMutableColor::new(self.id, RESULT_MINTED_COLOR.get_key_id())
 	}
 
-    pub fn minted_supply(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_MINTED_SUPPLY.get_key_id())
+    pub fn minted_supply(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_MINTED_SUPPLY.get_key_id())
 	}
 }
 

@@ -20,23 +20,23 @@ pub struct ArrayOfImmutableAddress {
 }
 
 impl ArrayOfImmutableAddress {
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_address(&self, index: i32) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.obj_id, Key32(index))
+    pub fn get_address(&self, index: u32) -> ScImmutableAddress {
+        ScImmutableAddress::new(self.obj_id, Key32(index as i32))
     }
 }
 
 #[derive(Clone, Copy)]
-pub struct MapAddressToImmutableInt64 {
+pub struct MapAddressToImmutableUint64 {
 	pub(crate) obj_id: i32,
 }
 
-impl MapAddressToImmutableInt64 {
-    pub fn get_int64(&self, key: &ScAddress) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.obj_id, key.get_key_id())
+impl MapAddressToImmutableUint64 {
+    pub fn get_uint64(&self, key: &ScAddress) -> ScImmutableUint64 {
+        ScImmutableUint64::new(self.obj_id, key.get_key_id())
     }
 }
 
@@ -51,17 +51,17 @@ impl ImmutableDividendState {
 		ArrayOfImmutableAddress { obj_id: arr_id }
 	}
 
-    pub fn members(&self) -> MapAddressToImmutableInt64 {
+    pub fn members(&self) -> MapAddressToImmutableUint64 {
 		let map_id = get_object_id(self.id, STATE_MEMBERS.get_key_id(), TYPE_MAP);
-		MapAddressToImmutableInt64 { obj_id: map_id }
+		MapAddressToImmutableUint64 { obj_id: map_id }
 	}
 
     pub fn owner(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.id, STATE_OWNER.get_key_id())
 	}
 
-    pub fn total_factor(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_TOTAL_FACTOR.get_key_id())
+    pub fn total_factor(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, STATE_TOTAL_FACTOR.get_key_id())
 	}
 }
 
@@ -75,27 +75,27 @@ impl ArrayOfMutableAddress {
         clear(self.obj_id);
     }
 
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_address(&self, index: i32) -> ScMutableAddress {
-        ScMutableAddress::new(self.obj_id, Key32(index))
+    pub fn get_address(&self, index: u32) -> ScMutableAddress {
+        ScMutableAddress::new(self.obj_id, Key32(index as i32))
     }
 }
 
 #[derive(Clone, Copy)]
-pub struct MapAddressToMutableInt64 {
+pub struct MapAddressToMutableUint64 {
 	pub(crate) obj_id: i32,
 }
 
-impl MapAddressToMutableInt64 {
+impl MapAddressToMutableUint64 {
     pub fn clear(&self) {
         clear(self.obj_id);
     }
 
-    pub fn get_int64(&self, key: &ScAddress) -> ScMutableInt64 {
-        ScMutableInt64::new(self.obj_id, key.get_key_id())
+    pub fn get_uint64(&self, key: &ScAddress) -> ScMutableUint64 {
+        ScMutableUint64::new(self.obj_id, key.get_key_id())
     }
 }
 
@@ -114,16 +114,16 @@ impl MutableDividendState {
 		ArrayOfMutableAddress { obj_id: arr_id }
 	}
 
-    pub fn members(&self) -> MapAddressToMutableInt64 {
+    pub fn members(&self) -> MapAddressToMutableUint64 {
 		let map_id = get_object_id(self.id, STATE_MEMBERS.get_key_id(), TYPE_MAP);
-		MapAddressToMutableInt64 { obj_id: map_id }
+		MapAddressToMutableUint64 { obj_id: map_id }
 	}
 
     pub fn owner(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.id, STATE_OWNER.get_key_id())
 	}
 
-    pub fn total_factor(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_TOTAL_FACTOR.get_key_id())
+    pub fn total_factor(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, STATE_TOTAL_FACTOR.get_key_id())
 	}
 }

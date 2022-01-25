@@ -45,7 +45,7 @@ export function funcWithdraw(ctx: wasmlib.ScFuncContext, f: sc.WithdrawContext):
 }
 
 export function viewDonation(ctx: wasmlib.ScViewContext, f: sc.DonationContext): void {
-    let nr = (f.params.nr().value()) as i32;
+    let nr = f.params.nr().value();
     let donation = f.state.log().getDonation(nr).value();
     f.results.amount().setValue(donation.amount);
     f.results.donator().setValue(donation.donator);
@@ -57,5 +57,5 @@ export function viewDonation(ctx: wasmlib.ScViewContext, f: sc.DonationContext):
 export function viewDonationInfo(ctx: wasmlib.ScViewContext, f: sc.DonationInfoContext): void {
     f.results.maxDonation().setValue(f.state.maxDonation().value());
     f.results.totalDonation().setValue(f.state.totalDonation().value());
-    f.results.count().setValue(f.state.log().length() as i64);
+    f.results.count().setValue(f.state.log().length());
 }

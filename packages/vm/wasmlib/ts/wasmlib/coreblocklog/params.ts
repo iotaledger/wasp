@@ -9,26 +9,26 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableGetBlockInfoParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+    blockIndex(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
 	}
 }
 
 export class MutableGetBlockInfoParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+    blockIndex(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
 	}
 }
 
 export class ImmutableGetEventsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+    blockIndex(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
 	}
 }
 
 export class MutableGetEventsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+    blockIndex(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
 	}
 }
 
@@ -37,12 +37,12 @@ export class ImmutableGetEventsForContractParams extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamContractHname));
 	}
 
-    fromBlock(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamFromBlock));
+    fromBlock(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamFromBlock));
 	}
 
-    toBlock(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamToBlock));
+    toBlock(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamToBlock));
 	}
 }
 
@@ -51,12 +51,12 @@ export class MutableGetEventsForContractParams extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamContractHname));
 	}
 
-    fromBlock(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamFromBlock));
+    fromBlock(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamFromBlock));
 	}
 
-    toBlock(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamToBlock));
+    toBlock(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamToBlock));
 	}
 }
 
@@ -73,14 +73,14 @@ export class MutableGetEventsForRequestParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableGetRequestIDsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+    blockIndex(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
 	}
 }
 
 export class MutableGetRequestIDsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+    blockIndex(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
 	}
 }
 
@@ -97,14 +97,14 @@ export class MutableGetRequestReceiptParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableGetRequestReceiptsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+    blockIndex(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
 	}
 }
 
 export class MutableGetRequestReceiptsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+    blockIndex(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
 	}
 }
 

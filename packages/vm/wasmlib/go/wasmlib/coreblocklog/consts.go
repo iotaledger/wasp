@@ -7,12 +7,12 @@
 
 package coreblocklog
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "blocklog"
 	ScDescription = "Core block log contract"
-	HScName       = wasmlib.ScHname(0xf538ef2b)
+	HScName       = wasmtypes.ScHname(0xf538ef2b)
 )
 
 const (
@@ -49,14 +49,14 @@ const (
 )
 
 const (
-	HViewControlAddresses           = wasmlib.ScHname(0x796bd223)
-	HViewGetBlockInfo               = wasmlib.ScHname(0xbe89f9b3)
-	HViewGetEventsForBlock          = wasmlib.ScHname(0x36232798)
-	HViewGetEventsForContract       = wasmlib.ScHname(0x682a1922)
-	HViewGetEventsForRequest        = wasmlib.ScHname(0x4f8d68e4)
-	HViewGetLatestBlockInfo         = wasmlib.ScHname(0x084a1760)
-	HViewGetRequestIDsForBlock      = wasmlib.ScHname(0x5a20327a)
-	HViewGetRequestReceipt          = wasmlib.ScHname(0xb7f9534f)
-	HViewGetRequestReceiptsForBlock = wasmlib.ScHname(0x77e3beef)
-	HViewIsRequestProcessed         = wasmlib.ScHname(0xd57d50a9)
+	HViewControlAddresses           = wasmtypes.ScHname(0x796bd223)
+	HViewGetBlockInfo               = wasmtypes.ScHname(0xbe89f9b3)
+	HViewGetEventsForBlock          = wasmtypes.ScHname(0x36232798)
+	HViewGetEventsForContract       = wasmtypes.ScHname(0x682a1922)
+	HViewGetEventsForRequest        = wasmtypes.ScHname(0x4f8d68e4)
+	HViewGetLatestBlockInfo         = wasmtypes.ScHname(0x084a1760)
+	HViewGetRequestIDsForBlock      = wasmtypes.ScHname(0x5a20327a)
+	HViewGetRequestReceipt          = wasmtypes.ScHname(0xb7f9534f)
+	HViewGetRequestReceiptsForBlock = wasmtypes.ScHname(0x77e3beef)
+	HViewIsRequestProcessed         = wasmtypes.ScHname(0xd57d50a9)
 )

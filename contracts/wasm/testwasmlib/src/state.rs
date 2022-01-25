@@ -55,8 +55,8 @@ impl ImmutableTestWasmLibState {
 		MapStringToImmutableStringMap { obj_id: map_id }
 	}
 
-    pub fn random(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_RANDOM.get_key_id())
+    pub fn random(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, STATE_RANDOM.get_key_id())
 	}
 }
 
@@ -112,7 +112,7 @@ impl MutableTestWasmLibState {
 		MapStringToMutableStringMap { obj_id: map_id }
 	}
 
-    pub fn random(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_RANDOM.get_key_id())
+    pub fn random(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, STATE_RANDOM.get_key_id())
 	}
 }

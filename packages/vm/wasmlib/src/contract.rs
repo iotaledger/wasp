@@ -120,7 +120,7 @@ impl ScInitFunc {
 #[derive(Clone, Copy)]
 pub struct ScFunc {
     view: ScView,
-    delay: i32,
+    delay: u32,
     transfer_id: i32,
 }
 
@@ -144,7 +144,7 @@ impl ScFunc {
         self.view.call_with_transfer(self.transfer_id);
     }
 
-    pub fn delay(&self, seconds: i32) -> ScFunc {
+    pub fn delay(&self, seconds: u32) -> ScFunc {
         let mut ret = self.clone();
         ret.delay = seconds;
         ret
@@ -167,7 +167,7 @@ impl ScFunc {
         encode.hname(self.view.h_function);
         encode.int32(self.view.id(self.view.params_id));
         encode.int32(self.transfer_id);
-        encode.int32(self.delay);
+        encode.uint32(self.delay);
         ROOT.get_bytes(&KEY_POST).set_value(&encode.data());
     }
 
@@ -177,7 +177,7 @@ impl ScFunc {
         ret
     }
 
-    pub fn transfer_iotas(&self, amount: i64) -> ScFunc {
+    pub fn transfer_iotas(&self, amount: u64) -> ScFunc {
         self.transfer(ScTransfers::iotas(amount))
     }
 }

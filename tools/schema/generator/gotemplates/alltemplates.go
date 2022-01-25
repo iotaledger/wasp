@@ -29,96 +29,69 @@ var Templates = []map[string]string{
 
 var TypeDependent = model.StringMapMap{
 	"fldLangType": {
-		"Address":   "wasmlib.ScAddress",
-		"AgentID":   "wasmlib.ScAgentID",
+		"Address":   "wasmtypes.ScAddress",
+		"AgentID":   "wasmtypes.ScAgentID",
 		"Bool":      "bool",
-		"ChainID":   "wasmlib.ScChainID",
-		"Color":     "wasmlib.ScColor",
-		"Hash":      "wasmlib.ScHash",
-		"Hname":     "wasmlib.ScHname",
+		"Bytes":     "[]byte",
+		"ChainID":   "wasmtypes.ScChainID",
+		"Color":     "wasmtypes.ScColor",
+		"Hash":      "wasmtypes.ScHash",
+		"Hname":     "wasmtypes.ScHname",
 		"Int8":      "int8",
 		"Int16":     "int16",
 		"Int32":     "int32",
 		"Int64":     "int64",
-		"RequestID": "wasmlib.ScRequestID",
+		"RequestID": "wasmtypes.ScRequestID",
 		"String":    "string",
 		"Uint8":     "uint8",
 		"Uint16":    "uint16",
 		"Uint32":    "uint32",
 		"Uint64":    "uint64",
 	},
-	"fldTypeID": {
-		"Address":   "wasmlib.TYPE_ADDRESS",
-		"AgentID":   "wasmlib.TYPE_AGENT_ID",
-		"Bool":      "wasmlib.TYPE_BOOL",
-		"ChainID":   "wasmlib.TYPE_CHAIN_ID",
-		"Color":     "wasmlib.TYPE_COLOR",
-		"Hash":      "wasmlib.TYPE_HASH",
-		"Hname":     "wasmlib.TYPE_HNAME",
-		"Int8":      "wasmlib.TYPE_INT8",
-		"Int16":     "wasmlib.TYPE_INT16",
-		"Int32":     "wasmlib.TYPE_INT32",
-		"Int64":     "wasmlib.TYPE_INT64",
-		"RequestID": "wasmlib.TYPE_REQUEST_ID",
-		"String":    "wasmlib.TYPE_STRING",
-		"Uint8":     "wasmlib.TYPE_INT8",
-		"Uint16":    "wasmlib.TYPE_INT16",
-		"Uint32":    "wasmlib.TYPE_INT32",
-		"Uint64":    "wasmlib.TYPE_INT64",
-		"":          "wasmlib.TYPE_BYTES",
-	},
-	"fldToKey32": {
-		"Address":   "key.KeyID()",
-		"AgentID":   "key.KeyID()",
-		"Bool":      "???cannot use Bool as map key",
-		"ChainID":   "key.KeyID()",
-		"Color":     "key.KeyID()",
-		"Hash":      "key.KeyID()",
-		"Hname":     "key.KeyID()",
-		"Int8":      "wasmlib.GetKeyIDFromUint64(uint64(key), 1)",
-		"Int16":     "wasmlib.GetKeyIDFromUint64(uint64(key), 2)",
-		"Int32":     "wasmlib.GetKeyIDFromUint64(uint64(key), 4)",
-		"Int64":     "wasmlib.GetKeyIDFromUint64(uint64(key), 8)",
-		"RequestID": "key.KeyID()",
-		"String":    "wasmlib.Key(key).KeyID()",
-		"Uint8":     "wasmlib.GetKeyIDFromUint64(uint64(key), 1)",
-		"Uint16":    "wasmlib.GetKeyIDFromUint64(uint64(key), 2)",
-		"Uint32":    "wasmlib.GetKeyIDFromUint64(uint64(key), 4)",
-		"Uint64":    "wasmlib.GetKeyIDFromUint64(key, 8)",
+	"fldToBytes": {
+		"Address":   "key.Bytes()",
+		"AgentID":   "key.Bytes()",
+		"Bool":      "wasmtypes.BytesFromBool(key)",
+		"Bytes":     "wasmtypes.BytesFromBytes(key)",
+		"ChainID":   "key.Bytes()",
+		"Color":     "key.Bytes()",
+		"Hash":      "key.Bytes()",
+		"Hname":     "key.Bytes()",
+		"Int8":      "wasmtypes.BytesFromInt8(key)",
+		"Int16":     "wasmtypes.BytesFromInt16(key)",
+		"Int32":     "wasmtypes.BytesFromInt32(key)",
+		"Int64":     "wasmtypes.BytesFromInt64(key)",
+		"RequestID": "key.Bytes()",
+		"String":    "wasmtypes.BytesFromString(key)",
+		"Uint8":     "wasmtypes.BytesFromUint8(key)",
+		"Uint16":    "wasmtypes.BytesFromUint16(key)",
+		"Uint32":    "wasmtypes.BytesFromUint32(key)",
+		"Uint64":    "wasmtypes.BytesFromUint64(key)",
+		"":          "key.Bytes()",
 	},
 }
 
 var common = map[string]string{
 	// *******************************
-	"initGlobals": `
-$#set arrayTypeID wasmlib.TYPE_ARRAY
-$#if core setArrayTypeID
-`,
-	// *******************************
-	"setArrayTypeID": `
-$#set arrayTypeID wasmlib.TYPE_ARRAY16
-`,
-	// *******************************
 	"goPackage": `
 package $package
 `,
 	// *******************************
+	"importWasmCodec": `
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
+`,
+	// *******************************
 	"importWasmLib": `
-
 import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+`,
+	// *******************************
+	"importWasmTypes": `
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 `,
 	// *******************************
 	"goHeader": `
 $#emit goPackage
+
 $#emit importWasmLib
-`,
-	// *******************************
-	"setVarType": `
-$#set varType wasmlib.TYPE_MAP
-$#if array setVarTypeArray
-`,
-	// *******************************
-	"setVarTypeArray": `
-$#set varType $arrayTypeID|$fldTypeID
 `,
 }

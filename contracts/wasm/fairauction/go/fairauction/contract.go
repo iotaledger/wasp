@@ -41,30 +41,31 @@ var ScFuncs Funcs
 
 func (sc Funcs) FinalizeAuction(ctx wasmlib.ScFuncCallContext) *FinalizeAuctionCall {
 	f := &FinalizeAuctionCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncFinalizeAuction)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) PlaceBid(ctx wasmlib.ScFuncCallContext) *PlaceBidCall {
 	f := &PlaceBidCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncPlaceBid)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) SetOwnerMargin(ctx wasmlib.ScFuncCallContext) *SetOwnerMarginCall {
 	f := &SetOwnerMarginCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetOwnerMargin)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) StartAuction(ctx wasmlib.ScFuncCallContext) *StartAuctionCall {
 	f := &StartAuctionCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncStartAuction)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) GetInfo(ctx wasmlib.ScViewCallContext) *GetInfoCall {
 	f := &GetInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetInfo)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }

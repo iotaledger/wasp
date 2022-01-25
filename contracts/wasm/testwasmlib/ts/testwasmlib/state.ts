@@ -45,8 +45,8 @@ export class ImmutableTestWasmLibState extends wasmlib.ScMapID {
 		return new sc.MapStringToImmutableStringMap(mapID);
 	}
 
-    random(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateRandom));
+    random(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateRandom));
 	}
 }
 
@@ -101,7 +101,7 @@ export class MutableTestWasmLibState extends wasmlib.ScMapID {
 		return new sc.MapStringToMutableStringMap(mapID);
 	}
 
-    random(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateRandom));
+    random(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateRandom));
 	}
 }

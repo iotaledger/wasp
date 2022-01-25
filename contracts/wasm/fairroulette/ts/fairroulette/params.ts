@@ -9,25 +9,25 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutablePlaceBetParams extends wasmlib.ScMapID {
-    number(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamNumber));
+    number(): wasmlib.ScImmutableUint16 {
+		return new wasmlib.ScImmutableUint16(this.mapID, wasmlib.Key32.fromString(sc.ParamNumber));
 	}
 }
 
 export class MutablePlaceBetParams extends wasmlib.ScMapID {
-    number(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamNumber));
+    number(): wasmlib.ScMutableUint16 {
+		return new wasmlib.ScMutableUint16(this.mapID, wasmlib.Key32.fromString(sc.ParamNumber));
 	}
 }
 
 export class ImmutablePlayPeriodParams extends wasmlib.ScMapID {
-    playPeriod(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamPlayPeriod));
+    playPeriod(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamPlayPeriod));
 	}
 }
 
 export class MutablePlayPeriodParams extends wasmlib.ScMapID {
-    playPeriod(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamPlayPeriod));
+    playPeriod(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamPlayPeriod));
 	}
 }

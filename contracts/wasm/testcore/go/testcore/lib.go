@@ -44,10 +44,6 @@ func OnLoad() {
 	exports.AddView(ViewTestChainOwnerIDView, viewTestChainOwnerIDViewThunk)
 	exports.AddView(ViewTestPanicViewEP, viewTestPanicViewEPThunk)
 	exports.AddView(ViewTestSandboxCall, viewTestSandboxCallThunk)
-
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
-	}
 }
 
 type CallOnChainContext struct {
@@ -60,13 +56,13 @@ func funcCallOnChainThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcCallOnChain")
 	f := &CallOnChainContext{
 		Params: ImmutableCallOnChainParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableCallOnChainResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
@@ -83,10 +79,10 @@ func funcCheckContextFromFullEPThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcCheckContextFromFullEP")
 	f := &CheckContextFromFullEPContext{
 		Params: ImmutableCheckContextFromFullEPParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.AgentID().Exists(), "missing mandatory agentID")
@@ -106,7 +102,7 @@ func funcDoNothingThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcDoNothing")
 	f := &DoNothingContext{
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcDoNothing(ctx, f)
@@ -122,10 +118,10 @@ func funcGetMintedSupplyThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcGetMintedSupply")
 	f := &GetMintedSupplyContext{
 		Results: MutableGetMintedSupplyResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcGetMintedSupply(ctx, f)
@@ -140,7 +136,7 @@ func funcIncCounterThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcIncCounter")
 	f := &IncCounterContext{
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcIncCounter(ctx, f)
@@ -156,10 +152,10 @@ func funcInitThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcInit")
 	f := &InitContext{
 		Params: ImmutableInitParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcInit(ctx, f)
@@ -175,10 +171,10 @@ func funcPassTypesFullThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcPassTypesFull")
 	f := &PassTypesFullContext{
 		Params: ImmutablePassTypesFullParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
@@ -206,13 +202,13 @@ func funcRunRecursionThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcRunRecursion")
 	f := &RunRecursionContext{
 		Params: ImmutableRunRecursionParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableRunRecursionResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
@@ -227,16 +223,16 @@ type SendToAddressContext struct {
 
 func funcSendToAddressThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcSendToAddress")
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
-
 	f := &SendToAddressContext{
 		Params: ImmutableSendToAddressParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
+	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+
 	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
 	funcSendToAddress(ctx, f)
 	ctx.Log("testcore.funcSendToAddress ok")
@@ -251,10 +247,10 @@ func funcSetIntThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcSetInt")
 	f := &SetIntContext{
 		Params: ImmutableSetIntParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
@@ -272,10 +268,10 @@ func funcSpawnThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcSpawn")
 	f := &SpawnContext{
 		Params: ImmutableSpawnParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.ProgHash().Exists(), "missing mandatory progHash")
@@ -291,7 +287,7 @@ func funcTestBlockContext1Thunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcTestBlockContext1")
 	f := &TestBlockContext1Context{
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcTestBlockContext1(ctx, f)
@@ -306,7 +302,7 @@ func funcTestBlockContext2Thunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcTestBlockContext2")
 	f := &TestBlockContext2Context{
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcTestBlockContext2(ctx, f)
@@ -321,7 +317,7 @@ func funcTestCallPanicFullEPThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcTestCallPanicFullEP")
 	f := &TestCallPanicFullEPContext{
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcTestCallPanicFullEP(ctx, f)
@@ -336,7 +332,7 @@ func funcTestCallPanicViewEPFromFullThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcTestCallPanicViewEPFromFull")
 	f := &TestCallPanicViewEPFromFullContext{
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcTestCallPanicViewEPFromFull(ctx, f)
@@ -352,10 +348,10 @@ func funcTestChainOwnerIDFullThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcTestChainOwnerIDFull")
 	f := &TestChainOwnerIDFullContext{
 		Results: MutableTestChainOwnerIDFullResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcTestChainOwnerIDFull(ctx, f)
@@ -370,7 +366,7 @@ func funcTestEventLogDeployThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcTestEventLogDeploy")
 	f := &TestEventLogDeployContext{
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcTestEventLogDeploy(ctx, f)
@@ -385,7 +381,7 @@ func funcTestEventLogEventDataThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcTestEventLogEventData")
 	f := &TestEventLogEventDataContext{
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcTestEventLogEventData(ctx, f)
@@ -401,10 +397,10 @@ func funcTestEventLogGenericDataThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcTestEventLogGenericData")
 	f := &TestEventLogGenericDataContext{
 		Params: ImmutableTestEventLogGenericDataParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Counter().Exists(), "missing mandatory counter")
@@ -420,7 +416,7 @@ func funcTestPanicFullEPThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcTestPanicFullEP")
 	f := &TestPanicFullEPContext{
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcTestPanicFullEP(ctx, f)
@@ -436,10 +432,10 @@ func funcWithdrawToChainThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcWithdrawToChain")
 	f := &WithdrawToChainContext{
 		Params: ImmutableWithdrawToChainParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.ChainID().Exists(), "missing mandatory chainID")
@@ -456,10 +452,10 @@ func viewCheckContextFromViewEPThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewCheckContextFromViewEP")
 	f := &CheckContextFromViewEPContext{
 		Params: ImmutableCheckContextFromViewEPParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: ImmutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.AgentID().Exists(), "missing mandatory agentID")
@@ -480,13 +476,13 @@ func viewFibonacciThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewFibonacci")
 	f := &FibonacciContext{
 		Params: ImmutableFibonacciParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableFibonacciResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
@@ -503,10 +499,10 @@ func viewGetCounterThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewGetCounter")
 	f := &GetCounterContext{
 		Results: MutableGetCounterResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewGetCounter(ctx, f)
@@ -523,13 +519,13 @@ func viewGetIntThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewGetInt")
 	f := &GetIntContext{
 		Params: ImmutableGetIntParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetIntResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
@@ -547,13 +543,13 @@ func viewGetStringValueThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewGetStringValue")
 	f := &GetStringValueContext{
 		Params: ImmutableGetStringValueParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetStringValueResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.VarName().Exists(), "missing mandatory varName")
@@ -569,7 +565,7 @@ func viewJustViewThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewJustView")
 	f := &JustViewContext{
 		State: ImmutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewJustView(ctx, f)
@@ -585,10 +581,10 @@ func viewPassTypesViewThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewPassTypesView")
 	f := &PassTypesViewContext{
 		Params: ImmutablePassTypesViewParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: ImmutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
@@ -614,7 +610,7 @@ func viewTestCallPanicViewEPFromViewThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewTestCallPanicViewEPFromView")
 	f := &TestCallPanicViewEPFromViewContext{
 		State: ImmutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewTestCallPanicViewEPFromView(ctx, f)
@@ -630,10 +626,10 @@ func viewTestChainOwnerIDViewThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewTestChainOwnerIDView")
 	f := &TestChainOwnerIDViewContext{
 		Results: MutableTestChainOwnerIDViewResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewTestChainOwnerIDView(ctx, f)
@@ -648,7 +644,7 @@ func viewTestPanicViewEPThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewTestPanicViewEP")
 	f := &TestPanicViewEPContext{
 		State: ImmutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewTestPanicViewEP(ctx, f)
@@ -664,10 +660,10 @@ func viewTestSandboxCallThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewTestSandboxCall")
 	f := &TestSandboxCallContext{
 		Results: MutableTestSandboxCallResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestCoreState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewTestSandboxCall(ctx, f)

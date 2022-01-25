@@ -69,36 +69,36 @@ func (sc Funcs) PayWinners(ctx wasmlib.ScFuncCallContext) *PayWinnersCall {
 
 func (sc Funcs) PlaceBet(ctx wasmlib.ScFuncCallContext) *PlaceBetCall {
 	f := &PlaceBetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncPlaceBet)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) PlayPeriod(ctx wasmlib.ScFuncCallContext) *PlayPeriodCall {
 	f := &PlayPeriodCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncPlayPeriod)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) LastWinningNumber(ctx wasmlib.ScViewCallContext) *LastWinningNumberCall {
 	f := &LastWinningNumberCall{Func: wasmlib.NewScView(ctx, HScName, HViewLastWinningNumber)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) RoundNumber(ctx wasmlib.ScViewCallContext) *RoundNumberCall {
 	f := &RoundNumberCall{Func: wasmlib.NewScView(ctx, HScName, HViewRoundNumber)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) RoundStartedAt(ctx wasmlib.ScViewCallContext) *RoundStartedAtCall {
 	f := &RoundStartedAtCall{Func: wasmlib.NewScView(ctx, HScName, HViewRoundStartedAt)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) RoundStatus(ctx wasmlib.ScViewCallContext) *RoundStatusCall {
 	f := &RoundStatusCall{Func: wasmlib.NewScView(ctx, HScName, HViewRoundStatus)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }

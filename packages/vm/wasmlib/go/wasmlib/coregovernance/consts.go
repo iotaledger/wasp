@@ -7,12 +7,12 @@
 
 package coregovernance
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "governance"
 	ScDescription = "Core governance contract"
-	HScName       = wasmlib.ScHname(0x17cf909f)
+	HScName       = wasmtypes.ScHname(0x17cf909f)
 )
 
 const (
@@ -58,16 +58,16 @@ const (
 )
 
 const (
-	HFuncAddAllowedStateControllerAddress    = wasmlib.ScHname(0x9469d567)
-	HFuncClaimChainOwnership                 = wasmlib.ScHname(0x03ff0fc0)
-	HFuncDelegateChainOwnership              = wasmlib.ScHname(0x93ecb6ad)
-	HFuncRemoveAllowedStateControllerAddress = wasmlib.ScHname(0x31f69447)
-	HFuncRotateStateController               = wasmlib.ScHname(0x244d1038)
-	HFuncSetChainInfo                        = wasmlib.ScHname(0x702f5d2b)
-	HFuncSetContractFee                      = wasmlib.ScHname(0x8421a42b)
-	HFuncSetDefaultFee                       = wasmlib.ScHname(0x3310ecd0)
-	HViewGetAllowedStateControllerAddresses  = wasmlib.ScHname(0xf3505183)
-	HViewGetChainInfo                        = wasmlib.ScHname(0x434477e2)
-	HViewGetFeeInfo                          = wasmlib.ScHname(0x9fe54b48)
-	HViewGetMaxBlobSize                      = wasmlib.ScHname(0xe1db3d28)
+	HFuncAddAllowedStateControllerAddress    = wasmtypes.ScHname(0x9469d567)
+	HFuncClaimChainOwnership                 = wasmtypes.ScHname(0x03ff0fc0)
+	HFuncDelegateChainOwnership              = wasmtypes.ScHname(0x93ecb6ad)
+	HFuncRemoveAllowedStateControllerAddress = wasmtypes.ScHname(0x31f69447)
+	HFuncRotateStateController               = wasmtypes.ScHname(0x244d1038)
+	HFuncSetChainInfo                        = wasmtypes.ScHname(0x702f5d2b)
+	HFuncSetContractFee                      = wasmtypes.ScHname(0x8421a42b)
+	HFuncSetDefaultFee                       = wasmtypes.ScHname(0x3310ecd0)
+	HViewGetAllowedStateControllerAddresses  = wasmtypes.ScHname(0xf3505183)
+	HViewGetChainInfo                        = wasmtypes.ScHname(0x434477e2)
+	HViewGetFeeInfo                          = wasmtypes.ScHname(0x9fe54b48)
+	HViewGetMaxBlobSize                      = wasmtypes.ScHname(0xe1db3d28)
 )

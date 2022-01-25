@@ -25,8 +25,8 @@ pub struct ScBalances {
 
 impl ScBalances {
     // retrieve the balance for the specified token color
-    pub fn balance(&self, color: &ScColor) -> i64 {
-        self.balances.get_int64(color).value()
+    pub fn balance(&self, color: &ScColor) -> u64 {
+        self.balances.get_uint64(color).value()
     }
 
     // retrieve an array of all token colors that have a non-zero balance
@@ -61,12 +61,12 @@ impl ScTransfers {
     }
 
     // create a new transfers object and initialize it with the specified amount of iotas
-    pub fn iotas(amount: i64) -> ScTransfers {
+    pub fn iotas(amount: u64) -> ScTransfers {
         ScTransfers::transfer(&ScColor::IOTA, amount)
     }
 
     // create a new transfers object and initialize it with the specified token transfer
-    pub fn transfer(color: &ScColor, amount: i64) -> ScTransfers {
+    pub fn transfer(color: &ScColor, amount: u64) -> ScTransfers {
         let transfer = ScTransfers::new();
         transfer.set(color, amount);
         transfer
@@ -74,8 +74,8 @@ impl ScTransfers {
 
     // set the specified colored token transfer in the transfers object
     // note that this will overwrite any previous amount for the specified color
-    pub fn set(&self, color: &ScColor, amount: i64) {
-        self.transfers.get_int64(color).set_value(amount);
+    pub fn set(&self, color: &ScColor, amount: u64) {
+        self.transfers.get_uint64(color).set_value(amount);
     }
 }
 
@@ -232,8 +232,8 @@ pub trait ScBaseContext {
     }
 
     // deterministic time stamp fixed at the moment of calling the smart contract
-    fn timestamp(&self) -> i64 {
-        ROOT.get_int64(&KEY_TIMESTAMP).value()
+    fn timestamp(&self) -> u64 {
+        ROOT.get_uint64(&KEY_TIMESTAMP).value()
     }
 
     // logs debugging trace text message in the log on the host
@@ -328,7 +328,7 @@ impl ScFuncContext {
     // asynchronously calls the specified smart contract function,
     // passing the provided parameters and token transfers to it
     // it is possible to schedule the call for a later execution by specifying a delay
-    pub fn post(&self, chain_id: &ScChainID, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: ScTransfers, delay: i32) {
+    pub fn post(&self, chain_id: &ScChainID, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: ScTransfers, delay: u32) {
         let mut encode = BytesEncoder::new();
         encode.chain_id(chain_id);
         encode.hname(hcontract);
@@ -339,12 +339,12 @@ impl ScFuncContext {
             encode.int32(0);
         }
         encode.int32(transfer.transfers.map_id());
-        encode.int32(delay);
+        encode.uint32(delay);
         ROOT.get_bytes(&KEY_POST).set_value(&encode.data());
     }
 
     // generates a random value from 0 to max (exclusive max) using a deterministic RNG
-    pub fn random(&self, max: i64) -> i64 {
+    pub fn random(&self, max: u64) -> u64 {
         if max == 0 {
             self.panic("random: max parameter should be non-zero");
         }
@@ -356,8 +356,8 @@ impl ScFuncContext {
             seed = ROOT.get_bytes(&KEY_RANDOM).value();
         }
         rnd.set_value(&self.utility().hash_sha3(&seed).to_bytes());
-        let rnd = i64::from_le_bytes(seed[0..8].try_into().expect("invalid i64 length"));
-        (rnd as u64 % max as u64) as i64
+        let rnd = u64::from_le_bytes(seed[0..8].try_into().expect("invalid u64 length"));
+        rnd % max
     }
 
     // retrieve the request id of this transaction

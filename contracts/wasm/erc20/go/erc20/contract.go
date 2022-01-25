@@ -52,42 +52,44 @@ var ScFuncs Funcs
 
 func (sc Funcs) Approve(ctx wasmlib.ScFuncCallContext) *ApproveCall {
 	f := &ApproveCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncApprove)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
-	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit, keyMap[:], idxMap[:])}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Transfer(ctx wasmlib.ScFuncCallContext) *TransferCall {
 	f := &TransferCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTransfer)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) TransferFrom(ctx wasmlib.ScFuncCallContext) *TransferFromCall {
 	f := &TransferFromCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTransferFrom)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Allowance(ctx wasmlib.ScViewCallContext) *AllowanceCall {
 	f := &AllowanceCall{Func: wasmlib.NewScView(ctx, HScName, HViewAllowance)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) BalanceOf(ctx wasmlib.ScViewCallContext) *BalanceOfCall {
 	f := &BalanceOfCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalanceOf)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) TotalSupply(ctx wasmlib.ScViewCallContext) *TotalSupplyCall {
 	f := &TotalSupplyCall{Func: wasmlib.NewScView(ctx, HScName, HViewTotalSupply)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }

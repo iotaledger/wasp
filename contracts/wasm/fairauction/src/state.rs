@@ -72,8 +72,8 @@ impl ImmutableFairAuctionState {
 		MapColorToImmutableBids { obj_id: map_id }
 	}
 
-    pub fn owner_margin(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_OWNER_MARGIN.get_key_id())
+    pub fn owner_margin(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, STATE_OWNER_MARGIN.get_key_id())
 	}
 }
 
@@ -149,7 +149,7 @@ impl MutableFairAuctionState {
 		MapColorToMutableBids { obj_id: map_id }
 	}
 
-    pub fn owner_margin(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_OWNER_MARGIN.get_key_id())
+    pub fn owner_margin(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, STATE_OWNER_MARGIN.get_key_id())
 	}
 }

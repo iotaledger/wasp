@@ -3,59 +3,74 @@
 
 package wasmlib
 
+import (
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+)
+
 type ScSandboxUtils struct{}
 
+// decodes the specified base58-encoded string value to its original bytes
 func (u ScSandboxUtils) Base58Decode(value string) []byte {
 	return Sandbox(FnUtilsBase58Decode, []byte(value))
 }
 
+// encodes the specified bytes to a base-58-encoded string
 func (u ScSandboxUtils) Base58Encode(bytes []byte) string {
 	return string(Sandbox(FnUtilsBase58Encode, bytes))
 }
 
-func (u ScSandboxUtils) BlsAddress(pubKey []byte) ScAddress {
-	return NewScAddressFromBytes(Sandbox(FnUtilsBlsAddress, pubKey))
+func (u ScSandboxUtils) BlsAddressFromPubKey(pubKey []byte) wasmtypes.ScAddress {
+	return wasmtypes.AddressFromBytes(Sandbox(FnUtilsBlsAddress, pubKey))
 }
 
-func (u ScSandboxUtils) BlsAggregate(pubKeys, sigs [][]byte) ([]byte, []byte) {
-	encode := NewBytesEncoder()
-	encode.Int32(int32(len(pubKeys)))
+func (u ScSandboxUtils) BlsAggregateSignatures(pubKeys, sigs [][]byte) ([]byte, []byte) {
+	enc := wasmcodec.NewWasmEncoder()
+	wasmtypes.EncodeUint32(enc, uint32(len(pubKeys)))
 	for _, pubKey := range pubKeys {
-		encode.Bytes(pubKey)
+		enc.Bytes(pubKey)
 	}
-	encode.Int32(int32(len(sigs)))
+	wasmtypes.EncodeUint32(enc, uint32(len(sigs)))
 	for _, sig := range sigs {
-		encode.Bytes(sig)
+		enc.Bytes(sig)
 	}
-	result := Sandbox(FnUtilsBlsAggregate, encode.Data())
-	decode := NewBytesDecoder(result)
+	result := Sandbox(FnUtilsBlsAggregate, enc.Buf())
+	decode := wasmcodec.NewWasmDecoder(result)
 	return decode.Bytes(), decode.Bytes()
 }
 
-func (u ScSandboxUtils) BlsValid(data, pubKey, signature []byte) bool {
-	encode := NewBytesEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
-	valid, _ := ExtractBool(Sandbox(FnUtilsBlsValid, encode.Data()))
+func (u ScSandboxUtils) BlsValidSignature(data, pubKey, signature []byte) bool {
+	enc := wasmcodec.NewWasmEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
+	valid, _ := wasmcodec.ExtractBool(Sandbox(FnUtilsBlsValid, enc.Buf()))
 	return valid
 }
 
-func (u ScSandboxUtils) Ed25519Address(pubKey []byte) ScAddress {
-	return NewScAddressFromBytes(Sandbox(FnUtilsEd25519Address, pubKey))
+func (u ScSandboxUtils) Ed25519AddressFromPubKey(pubKey []byte) wasmtypes.ScAddress {
+	return wasmtypes.AddressFromBytes(Sandbox(FnUtilsEd25519Address, pubKey))
 }
 
-func (u ScSandboxUtils) Ed25519Valid(data, pubKey, signature []byte) bool {
-	encode := NewBytesEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
-	valid, _ := ExtractBool(Sandbox(FnUtilsEd25519Valid, encode.Data()))
+func (u ScSandboxUtils) Ed25519ValidSignature(data, pubKey, signature []byte) bool {
+	enc := wasmcodec.NewWasmEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
+	valid, _ := wasmcodec.ExtractBool(Sandbox(FnUtilsEd25519Valid, enc.Buf()))
 	return valid
 }
 
-func (u ScSandboxUtils) HashBlake2b(value []byte) ScHash {
-	return NewScHashFromBytes(Sandbox(FnUtilsHashBlake2b, value))
+// hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+func (u ScSandboxUtils) HashBlake2b(value []byte) wasmtypes.ScHash {
+	return wasmtypes.HashFromBytes(Sandbox(FnUtilsHashBlake2b, value))
 }
 
-func (u ScSandboxUtils) HashName(value string) ScHname {
-	return NewScHnameFromBytes(Sandbox(FnUtilsHashName, []byte(value)))
+// hashes the specified value bytes using sha3 hashing and returns the resulting 32-byte hash
+func (u ScSandboxUtils) HashSha3(value []byte) wasmtypes.ScHash {
+	return wasmtypes.HashFromBytes(Sandbox(FnUtilsHashSha3, value))
 }
 
-func (u ScSandboxUtils) HashSha3(value []byte) ScHash {
-	return NewScHashFromBytes(Sandbox(FnUtilsHashSha3, value))
+// hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+func (u ScSandboxUtils) Hname(value string) wasmtypes.ScHname {
+	return wasmtypes.HnameFromBytes(Sandbox(FnUtilsHashName, []byte(value)))
+}
+
+// converts an integer to its string representation
+func (u ScSandboxUtils) String(value int64) string {
+	return wasmtypes.StringFromInt64(value)
 }

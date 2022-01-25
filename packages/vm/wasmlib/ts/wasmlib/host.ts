@@ -161,10 +161,10 @@ export function getKeyIDFromUint64(key: u64, nrOfBytes: usize): Key32 {
 }
 
 // Retrieve the length of an array container object on the host
-export function getLength(objID: i32): i32 {
+export function getLength(objID: i32): u32 {
     // special integer key "length" is used
     let bytes = getBytes(objID, keys.KEY_LENGTH, TYPE_INT32);
-    return Convert.toI32(bytes);
+    return Convert.toI32(bytes) as u32;
 }
 
 // Retrieve the id of the specified container sub-object

@@ -7,52 +7,52 @@
 
 package donatewithfeedback
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableDonateParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableDonateParams) Feedback() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamFeedback))
+func (s ImmutableDonateParams) Feedback() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamFeedback))
 }
 
 type MutableDonateParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableDonateParams) Feedback() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamFeedback))
+func (s MutableDonateParams) Feedback() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamFeedback))
 }
 
 type ImmutableWithdrawParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableWithdrawParams) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamAmount))
+func (s ImmutableWithdrawParams) Amount() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamAmount))
 }
 
 type MutableWithdrawParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableWithdrawParams) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamAmount))
+func (s MutableWithdrawParams) Amount() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamAmount))
 }
 
 type ImmutableDonationParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableDonationParams) Nr() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamNr))
+func (s ImmutableDonationParams) Nr() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamNr))
 }
 
 type MutableDonationParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableDonationParams) Nr() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamNr))
+func (s MutableDonationParams) Nr() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamNr))
 }

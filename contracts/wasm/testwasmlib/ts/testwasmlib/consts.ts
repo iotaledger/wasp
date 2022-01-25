@@ -48,11 +48,10 @@ export const StateArrays = "arrays";
 export const StateMaps   = "maps";
 export const StateRandom = "random";
 
+export const FuncArrayAppend  = "arrayAppend";
 export const FuncArrayClear   = "arrayClear";
-export const FuncArrayCreate  = "arrayCreate";
 export const FuncArraySet     = "arraySet";
 export const FuncMapClear     = "mapClear";
-export const FuncMapCreate    = "mapCreate";
 export const FuncMapSet       = "mapSet";
 export const FuncParamTypes   = "paramTypes";
 export const FuncRandom       = "random";
@@ -65,11 +64,10 @@ export const ViewGetRandom    = "getRandom";
 export const ViewIotaBalance  = "iotaBalance";
 export const ViewMapValue     = "mapValue";
 
+export const HFuncArrayAppend  = new wasmlib.ScHname(0x612f835f);
 export const HFuncArrayClear   = new wasmlib.ScHname(0x88021821);
-export const HFuncArrayCreate  = new wasmlib.ScHname(0x1ed5b23b);
 export const HFuncArraySet     = new wasmlib.ScHname(0x2c4150b3);
 export const HFuncMapClear     = new wasmlib.ScHname(0x027f215a);
-export const HFuncMapCreate    = new wasmlib.ScHname(0x6295d599);
 export const HFuncMapSet       = new wasmlib.ScHname(0xf2260404);
 export const HFuncParamTypes   = new wasmlib.ScHname(0x6921c4cd);
 export const HFuncRandom       = new wasmlib.ScHname(0xe86c97ca);

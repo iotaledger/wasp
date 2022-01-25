@@ -13,26 +13,26 @@ use wasmlib::host::*;
 
 #[derive(Clone)]
 pub struct Bet {
-    pub amount : i64, 
+    pub amount : u64, 
     pub better : ScAgentID, 
-    pub number : i64, 
+    pub number : u16, 
 }
 
 impl Bet {
     pub fn from_bytes(bytes: &[u8]) -> Bet {
         let mut decode = BytesDecoder::new(bytes);
         Bet {
-            amount : decode.int64(),
+            amount : decode.uint64(),
             better : decode.agent_id(),
-            number : decode.int64(),
+            number : decode.uint16(),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut encode = BytesEncoder::new();
-		encode.int64(self.amount);
+		encode.uint64(self.amount);
 		encode.agent_id(&self.better);
-		encode.int64(self.number);
+		encode.uint16(self.number);
         return encode.data();
     }
 }

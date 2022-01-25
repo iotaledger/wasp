@@ -9,14 +9,14 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableIncrementWithDelayParams extends wasmlib.ScMapID {
-    delay(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamDelay));
+    delay(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamDelay));
 	}
 }
 
 export class MutableIncrementWithDelayParams extends wasmlib.ScMapID {
-    delay(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamDelay));
+    delay(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamDelay));
 	}
 }
 

@@ -27,13 +27,13 @@ export class ImmutableErc20State extends wasmlib.ScMapID {
 		return new sc.MapAgentIDToImmutableAllowancesForAgent(mapID);
 	}
 
-    balances(): sc.MapAgentIDToImmutableInt64 {
+    balances(): sc.MapAgentIDToImmutableUint64 {
 		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBalances), wasmlib.TYPE_MAP);
-		return new sc.MapAgentIDToImmutableInt64(mapID);
+		return new sc.MapAgentIDToImmutableUint64(mapID);
 	}
 
-    supply(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateSupply));
+    supply(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateSupply));
 	}
 }
 
@@ -66,12 +66,12 @@ export class MutableErc20State extends wasmlib.ScMapID {
 		return new sc.MapAgentIDToMutableAllowancesForAgent(mapID);
 	}
 
-    balances(): sc.MapAgentIDToMutableInt64 {
+    balances(): sc.MapAgentIDToMutableUint64 {
 		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateBalances), wasmlib.TYPE_MAP);
-		return new sc.MapAgentIDToMutableInt64(mapID);
+		return new sc.MapAgentIDToMutableUint64(mapID);
 	}
 
-    supply(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateSupply));
+    supply(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateSupply));
 	}
 }

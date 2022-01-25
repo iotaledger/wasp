@@ -192,12 +192,12 @@ pub struct ScImmutableColorArray {
 
 impl ScImmutableColorArray {
     // get value proxy for item at index, index can be 0..length()-1
-    pub fn get_color(&self, index: i32) -> ScImmutableColor {
-        ScImmutableColor { obj_id: self.obj_id, key_id: Key32(index) }
+    pub fn get_color(&self, index: u32) -> ScImmutableColor {
+        ScImmutableColor { obj_id: self.obj_id, key_id: Key32(index as i32) }
     }
 
     // number of items in array
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 }
@@ -520,13 +520,13 @@ pub struct ScImmutableMapArray {
 
 impl ScImmutableMapArray {
     // get value proxy for item at index, index can be 0..length()-1
-    pub fn get_map(&self, index: i32) -> ScImmutableMap {
-        let map_id = get_object_id(self.obj_id, Key32(index), TYPE_MAP);
+    pub fn get_map(&self, index: u32) -> ScImmutableMap {
+        let map_id = get_object_id(self.obj_id, Key32(index as i32), TYPE_MAP);
         ScImmutableMap { obj_id: map_id }
     }
 
     // number of items in array
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 }
@@ -597,12 +597,12 @@ pub struct ScImmutableStringArray {
 
 impl ScImmutableStringArray {
     // get value proxy for item at index, index can be 0..length()-1
-    pub fn get_string(&self, index: i32) -> ScImmutableString {
-        ScImmutableString { obj_id: self.obj_id, key_id: Key32(index) }
+    pub fn get_string(&self, index: u32) -> ScImmutableString {
+        ScImmutableString { obj_id: self.obj_id, key_id: Key32(index as i32) }
     }
 
     // number of items in array
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 }

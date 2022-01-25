@@ -9,10 +9,6 @@ $#emit goHeader
 func OnLoad() {
 	exports := wasmlib.NewScExports()
 $#each func libExportFunc
-
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
-	}
 }
 $#each func libThunk
 `,
@@ -33,13 +29,13 @@ $#if view ImmutablePackageState
 
 func $kind$FuncName$+Thunk(ctx wasmlib.Sc$Kind$+Context) {
 	ctx.Log("$package.$kind$FuncName")
-$#emit accessCheck
 	f := &$FuncName$+Context{
 $#if param ImmutableFuncNameParamsInit
 $#if result MutableFuncNameResultsInit
 $#if func MutablePackageStateInit
 $#if view ImmutablePackageStateInit
 	}
+$#emit accessCheck
 $#each mandatory requireMandatory
 	$kind$FuncName(ctx, f)
 	ctx.Log("$package.$kind$FuncName ok")
@@ -60,7 +56,7 @@ $#if events PackageEventsExist
 	// *******************************
 	"ImmutableFuncNameParamsInit": `
 		Params: Immutable$FuncName$+Params{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 `,
 	// *******************************
@@ -70,7 +66,7 @@ $#if events PackageEventsExist
 	// *******************************
 	"MutableFuncNameResultsInit": `
 		Results: Mutable$FuncName$+Results{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 `,
 	// *******************************
@@ -80,7 +76,7 @@ $#if events PackageEventsExist
 	// *******************************
 	"MutablePackageStateInit": `
 		State: Mutable$Package$+State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 `,
 	// *******************************
@@ -90,7 +86,7 @@ $#if events PackageEventsExist
 	// *******************************
 	"ImmutablePackageStateInit": `
 		State: Immutable$Package$+State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 `,
 	// *******************************
@@ -132,7 +128,7 @@ $#set accessFinalize accessDone
 	// *******************************
 	"accessOther": `
 $#if funcAccessComment accessComment
-	access := ctx.State().GetAgentID(wasmlib.Key("$funcAccess"))
+	access := f.State.$FuncAccess()
 	ctx.Require(access.Exists(), "access not set: $funcAccess")
 	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 

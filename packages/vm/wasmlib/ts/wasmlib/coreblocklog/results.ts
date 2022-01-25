@@ -9,8 +9,8 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableControlAddressesResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+    blockIndex(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
 	}
 
     governingAddress(): wasmlib.ScImmutableAddress {
@@ -23,8 +23,8 @@ export class ImmutableControlAddressesResults extends wasmlib.ScMapID {
 }
 
 export class MutableControlAddressesResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+    blockIndex(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
 	}
 
     governingAddress(): wasmlib.ScMutableAddress {
@@ -55,12 +55,12 @@ export class ArrayOfImmutableBytes {
         this.objID = objID;
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getBytes(index: i32): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.objID, new wasmlib.Key32(index));
+    getBytes(index: u32): wasmlib.ScImmutableBytes {
+        return new wasmlib.ScImmutableBytes(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 
@@ -82,12 +82,12 @@ export class ArrayOfMutableBytes {
         wasmlib.clear(this.objID);
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getBytes(index: i32): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.objID, new wasmlib.Key32(index));
+    getBytes(index: u32): wasmlib.ScMutableBytes {
+        return new wasmlib.ScMutableBytes(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 
@@ -127,8 +127,8 @@ export class MutableGetEventsForRequestResults extends wasmlib.ScMapID {
 }
 
 export class ImmutableGetLatestBlockInfoResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+    blockIndex(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
 	}
 
     blockInfo(): wasmlib.ScImmutableBytes {
@@ -137,8 +137,8 @@ export class ImmutableGetLatestBlockInfoResults extends wasmlib.ScMapID {
 }
 
 export class MutableGetLatestBlockInfoResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+    blockIndex(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
 	}
 
     blockInfo(): wasmlib.ScMutableBytes {
@@ -153,12 +153,12 @@ export class ArrayOfImmutableRequestID {
         this.objID = objID;
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getRequestID(index: i32): wasmlib.ScImmutableRequestID {
-        return new wasmlib.ScImmutableRequestID(this.objID, new wasmlib.Key32(index));
+    getRequestID(index: u32): wasmlib.ScImmutableRequestID {
+        return new wasmlib.ScImmutableRequestID(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 
@@ -180,12 +180,12 @@ export class ArrayOfMutableRequestID {
         wasmlib.clear(this.objID);
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getRequestID(index: i32): wasmlib.ScMutableRequestID {
-        return new wasmlib.ScMutableRequestID(this.objID, new wasmlib.Key32(index));
+    getRequestID(index: u32): wasmlib.ScMutableRequestID {
+        return new wasmlib.ScMutableRequestID(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 
@@ -197,12 +197,12 @@ export class MutableGetRequestIDsForBlockResults extends wasmlib.ScMapID {
 }
 
 export class ImmutableGetRequestReceiptResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+    blockIndex(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
 	}
 
-    requestIndex(): wasmlib.ScImmutableInt16 {
-		return new wasmlib.ScImmutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestIndex));
+    requestIndex(): wasmlib.ScImmutableUint16 {
+		return new wasmlib.ScImmutableUint16(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestIndex));
 	}
 
     requestRecord(): wasmlib.ScImmutableBytes {
@@ -211,12 +211,12 @@ export class ImmutableGetRequestReceiptResults extends wasmlib.ScMapID {
 }
 
 export class MutableGetRequestReceiptResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+    blockIndex(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
 	}
 
-    requestIndex(): wasmlib.ScMutableInt16 {
-		return new wasmlib.ScMutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestIndex));
+    requestIndex(): wasmlib.ScMutableUint16 {
+		return new wasmlib.ScMutableUint16(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestIndex));
 	}
 
     requestRecord(): wasmlib.ScMutableBytes {

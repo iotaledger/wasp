@@ -21,12 +21,12 @@ pub struct ArrayOfImmutableColor {
 }
 
 impl ArrayOfImmutableColor {
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_color(&self, index: i32) -> ScImmutableColor {
-        ScImmutableColor::new(self.obj_id, Key32(index))
+    pub fn get_color(&self, index: u32) -> ScImmutableColor {
+        ScImmutableColor::new(self.obj_id, Key32(index as i32))
     }
 }
 
@@ -68,12 +68,12 @@ impl ArrayOfMutableColor {
         clear(self.obj_id);
     }
 
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_color(&self, index: i32) -> ScMutableColor {
-        ScMutableColor::new(self.obj_id, Key32(index))
+    pub fn get_color(&self, index: u32) -> ScMutableColor {
+        ScMutableColor::new(self.obj_id, Key32(index as i32))
     }
 }
 

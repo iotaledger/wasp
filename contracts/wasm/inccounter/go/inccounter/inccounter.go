@@ -7,6 +7,8 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 const hex = "0123456789abcdef"
@@ -167,12 +169,11 @@ func viewGetCounter(ctx wasmlib.ScViewContext, f *GetCounterContext) {
 
 //nolint:dupl
 func viewGetVli(ctx wasmlib.ScViewContext, f *GetVliContext) {
-	enc := wasmlib.NewBytesEncoder()
+	enc := wasmcodec.NewWasmEncoder()
 	n := f.Params.Ni64().Value()
-	enc = enc.Int64(n)
-	buf := enc.Data()
-	dec := wasmlib.NewBytesDecoder(buf)
-	x := dec.Int64()
+	buf := enc.VliEncode(n).Buf()
+	dec := wasmcodec.NewWasmDecoder(buf)
+	x := wasmtypes.DecodeInt64(dec)
 
 	str := strconv.FormatInt(n, 10) + " -"
 	for j := 0; j < len(buf); j++ {
@@ -189,12 +190,11 @@ func viewGetVli(ctx wasmlib.ScViewContext, f *GetVliContext) {
 
 //nolint:dupl
 func viewGetVlu(ctx wasmlib.ScViewContext, f *GetVluContext) {
-	enc := wasmlib.NewBytesEncoder()
+	enc := wasmcodec.NewWasmEncoder()
 	n := f.Params.Nu64().Value()
-	enc = enc.Uint64(n)
-	buf := enc.Data()
-	dec := wasmlib.NewBytesDecoder(buf)
-	x := dec.Uint64()
+	buf := enc.VluEncode(n).Buf()
+	dec := wasmcodec.NewWasmDecoder(buf)
+	x := wasmtypes.DecodeUint64(dec)
 
 	str := strconv.FormatUint(n, 10) + " -"
 	for j := 0; j < len(buf); j++ {
@@ -219,14 +219,13 @@ func localStatePost(ctx wasmlib.ScFuncContext, nr int64) {
 }
 
 func vliSave(ctx wasmlib.ScFuncContext, name string, value int64) {
-	encoder := wasmlib.NewBytesEncoder()
-	encoder.Int64(value)
-	spot := ctx.State().GetBytes(wasmlib.Key(name))
-	spot.SetValue(encoder.Data())
+	enc := wasmcodec.NewWasmEncoder()
+	state := wasmlib.ScState{}
+	state.Set([]byte(name), enc.VliEncode(value).Buf())
 
-	bytes := spot.Value()
-	decoder := wasmlib.NewBytesDecoder(bytes)
-	retrieved := decoder.Int64()
+	buf := state.Get([]byte(name))
+	dec := wasmcodec.NewWasmDecoder(buf)
+	retrieved := wasmtypes.DecodeInt64(dec)
 	if retrieved != value {
 		ctx.Log(name + " in : " + ctx.Utility().String(value))
 		ctx.Log(name + " out: " + ctx.Utility().String(retrieved))
@@ -234,14 +233,13 @@ func vliSave(ctx wasmlib.ScFuncContext, name string, value int64) {
 }
 
 func vluSave(ctx wasmlib.ScFuncContext, name string, value uint64) {
-	encoder := wasmlib.NewBytesEncoder()
-	encoder.Uint64(value)
-	spot := ctx.State().GetBytes(wasmlib.Key(name))
-	spot.SetValue(encoder.Data())
+	enc := wasmcodec.NewWasmEncoder()
+	state := wasmlib.ScState{}
+	state.Set([]byte(name), enc.VluEncode(value).Buf())
 
-	bytes := spot.Value()
-	decoder := wasmlib.NewBytesDecoder(bytes)
-	retrieved := decoder.Uint64()
+	buf := state.Get([]byte(name))
+	dec := wasmcodec.NewWasmDecoder(buf)
+	retrieved := wasmtypes.DecodeUint64(dec)
 	if retrieved != value {
 		ctx.Log(name + " in : " + ctx.Utility().String(int64(value)))
 		ctx.Log(name + " out: " + ctx.Utility().String(int64(retrieved)))

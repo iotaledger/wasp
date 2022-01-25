@@ -42,8 +42,8 @@ type ControlAddressesResults struct {
 	res wasmclient.Results
 }
 
-func (r *ControlAddressesResults) BlockIndex() int32 {
-	return r.res.ToInt32(r.res.Get(ResBlockIndex))
+func (r *ControlAddressesResults) BlockIndex() uint32 {
+	return r.res.ToUint32(r.res.Get(ResBlockIndex))
 }
 
 func (r *ControlAddressesResults) GoverningAddress() wasmclient.Address {
@@ -61,8 +61,8 @@ type GetBlockInfoView struct {
 	args wasmclient.Arguments
 }
 
-func (f *GetBlockInfoView) BlockIndex(v int32) {
-	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
+func (f *GetBlockInfoView) BlockIndex(v uint32) {
+	f.args.Set(ArgBlockIndex, f.args.FromUint32(v))
 }
 
 func (f *GetBlockInfoView) Call() GetBlockInfoResults {
@@ -86,8 +86,8 @@ type GetEventsForBlockView struct {
 	args wasmclient.Arguments
 }
 
-func (f *GetEventsForBlockView) BlockIndex(v int32) {
-	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
+func (f *GetEventsForBlockView) BlockIndex(v uint32) {
+	f.args.Set(ArgBlockIndex, f.args.FromUint32(v))
 }
 
 func (f *GetEventsForBlockView) Call() GetEventsForBlockResults {
@@ -115,12 +115,12 @@ func (f *GetEventsForContractView) ContractHname(v wasmclient.Hname) {
 	f.args.Set(ArgContractHname, f.args.FromHname(v))
 }
 
-func (f *GetEventsForContractView) FromBlock(v int32) {
-	f.args.Set(ArgFromBlock, f.args.FromInt32(v))
+func (f *GetEventsForContractView) FromBlock(v uint32) {
+	f.args.Set(ArgFromBlock, f.args.FromUint32(v))
 }
 
-func (f *GetEventsForContractView) ToBlock(v int32) {
-	f.args.Set(ArgToBlock, f.args.FromInt32(v))
+func (f *GetEventsForContractView) ToBlock(v uint32) {
+	f.args.Set(ArgToBlock, f.args.FromUint32(v))
 }
 
 func (f *GetEventsForContractView) Call() GetEventsForContractResults {
@@ -177,8 +177,8 @@ type GetLatestBlockInfoResults struct {
 	res wasmclient.Results
 }
 
-func (r *GetLatestBlockInfoResults) BlockIndex() int32 {
-	return r.res.ToInt32(r.res.Get(ResBlockIndex))
+func (r *GetLatestBlockInfoResults) BlockIndex() uint32 {
+	return r.res.ToUint32(r.res.Get(ResBlockIndex))
 }
 
 func (r *GetLatestBlockInfoResults) BlockInfo() []byte {
@@ -192,8 +192,8 @@ type GetRequestIDsForBlockView struct {
 	args wasmclient.Arguments
 }
 
-func (f *GetRequestIDsForBlockView) BlockIndex(v int32) {
-	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
+func (f *GetRequestIDsForBlockView) BlockIndex(v uint32) {
+	f.args.Set(ArgBlockIndex, f.args.FromUint32(v))
 }
 
 func (f *GetRequestIDsForBlockView) Call() GetRequestIDsForBlockResults {
@@ -231,12 +231,12 @@ type GetRequestReceiptResults struct {
 	res wasmclient.Results
 }
 
-func (r *GetRequestReceiptResults) BlockIndex() int32 {
-	return r.res.ToInt32(r.res.Get(ResBlockIndex))
+func (r *GetRequestReceiptResults) BlockIndex() uint32 {
+	return r.res.ToUint32(r.res.Get(ResBlockIndex))
 }
 
-func (r *GetRequestReceiptResults) RequestIndex() int16 {
-	return r.res.ToInt16(r.res.Get(ResRequestIndex))
+func (r *GetRequestReceiptResults) RequestIndex() uint16 {
+	return r.res.ToUint16(r.res.Get(ResRequestIndex))
 }
 
 func (r *GetRequestReceiptResults) RequestRecord() []byte {
@@ -250,8 +250,8 @@ type GetRequestReceiptsForBlockView struct {
 	args wasmclient.Arguments
 }
 
-func (f *GetRequestReceiptsForBlockView) BlockIndex(v int32) {
-	f.args.Set(ArgBlockIndex, f.args.FromInt32(v))
+func (f *GetRequestReceiptsForBlockView) BlockIndex(v uint32) {
+	f.args.Set(ArgBlockIndex, f.args.FromUint32(v))
 }
 
 func (f *GetRequestReceiptsForBlockView) Call() GetRequestReceiptsForBlockResults {

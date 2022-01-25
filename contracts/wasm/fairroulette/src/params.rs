@@ -21,8 +21,8 @@ pub struct ImmutablePlaceBetParams {
 }
 
 impl ImmutablePlaceBetParams {
-    pub fn number(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_NUMBER.get_key_id())
+    pub fn number(&self) -> ScImmutableUint16 {
+		ScImmutableUint16::new(self.id, PARAM_NUMBER.get_key_id())
 	}
 }
 
@@ -32,8 +32,8 @@ pub struct MutablePlaceBetParams {
 }
 
 impl MutablePlaceBetParams {
-    pub fn number(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_NUMBER.get_key_id())
+    pub fn number(&self) -> ScMutableUint16 {
+		ScMutableUint16::new(self.id, PARAM_NUMBER.get_key_id())
 	}
 }
 
@@ -43,8 +43,8 @@ pub struct ImmutablePlayPeriodParams {
 }
 
 impl ImmutablePlayPeriodParams {
-    pub fn play_period(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_PLAY_PERIOD.get_key_id())
+    pub fn play_period(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_PLAY_PERIOD.get_key_id())
 	}
 }
 
@@ -54,7 +54,7 @@ pub struct MutablePlayPeriodParams {
 }
 
 impl MutablePlayPeriodParams {
-    pub fn play_period(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_PLAY_PERIOD.get_key_id())
+    pub fn play_period(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_PLAY_PERIOD.get_key_id())
 	}
 }

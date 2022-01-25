@@ -46,8 +46,8 @@ impl ImmutableMemberParams {
 		ScImmutableAddress::new(self.id, PARAM_ADDRESS.get_key_id())
 	}
 
-    pub fn factor(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_FACTOR.get_key_id())
+    pub fn factor(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, PARAM_FACTOR.get_key_id())
 	}
 }
 
@@ -61,8 +61,8 @@ impl MutableMemberParams {
 		ScMutableAddress::new(self.id, PARAM_ADDRESS.get_key_id())
 	}
 
-    pub fn factor(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_FACTOR.get_key_id())
+    pub fn factor(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, PARAM_FACTOR.get_key_id())
 	}
 }
 

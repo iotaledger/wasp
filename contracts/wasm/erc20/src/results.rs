@@ -21,8 +21,8 @@ pub struct ImmutableAllowanceResults {
 }
 
 impl ImmutableAllowanceResults {
-    pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_AMOUNT.get_key_id())
 	}
 }
 
@@ -32,8 +32,8 @@ pub struct MutableAllowanceResults {
 }
 
 impl MutableAllowanceResults {
-    pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_AMOUNT.get_key_id())
 	}
 }
 
@@ -43,8 +43,8 @@ pub struct ImmutableBalanceOfResults {
 }
 
 impl ImmutableBalanceOfResults {
-    pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_AMOUNT.get_key_id())
 	}
 }
 
@@ -54,8 +54,8 @@ pub struct MutableBalanceOfResults {
 }
 
 impl MutableBalanceOfResults {
-    pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_AMOUNT.get_key_id())
 	}
 }
 
@@ -65,8 +65,8 @@ pub struct ImmutableTotalSupplyResults {
 }
 
 impl ImmutableTotalSupplyResults {
-    pub fn supply(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_SUPPLY.get_key_id())
+    pub fn supply(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_SUPPLY.get_key_id())
 	}
 }
 
@@ -76,7 +76,7 @@ pub struct MutableTotalSupplyResults {
 }
 
 impl MutableTotalSupplyResults {
-    pub fn supply(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_SUPPLY.get_key_id())
+    pub fn supply(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_SUPPLY.get_key_id())
 	}
 }

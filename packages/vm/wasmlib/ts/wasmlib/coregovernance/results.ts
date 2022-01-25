@@ -15,12 +15,12 @@ export class ArrayOfImmutableBytes {
         this.objID = objID;
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getBytes(index: i32): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.objID, new wasmlib.Key32(index));
+    getBytes(index: u32): wasmlib.ScImmutableBytes {
+        return new wasmlib.ScImmutableBytes(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 
@@ -42,12 +42,12 @@ export class ArrayOfMutableBytes {
         wasmlib.clear(this.objID);
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getBytes(index: i32): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.objID, new wasmlib.Key32(index));
+    getBytes(index: u32): wasmlib.ScMutableBytes {
+        return new wasmlib.ScMutableBytes(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 

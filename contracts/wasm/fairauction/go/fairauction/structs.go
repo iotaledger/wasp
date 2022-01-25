@@ -7,144 +7,143 @@
 
 package fairauction
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import (
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type Auction struct {
-	Color         wasmlib.ScColor   // color of tokens for sale
-	Creator       wasmlib.ScAgentID // issuer of start_auction transaction
-	Deposit       int64             // deposit by auction owner to cover the SC fees
-	Description   string            // auction description
-	Duration      int32             // auction duration in minutes
-	HighestBid    int64             // the current highest bid amount
-	HighestBidder wasmlib.ScAgentID // the current highest bidder
-	MinimumBid    int64             // minimum bid amount
-	NumTokens     int64             // number of tokens for sale
-	OwnerMargin   int64             // auction owner's margin in promilles
-	WhenStarted   int64             // timestamp when auction started
+	Color         wasmtypes.ScColor   // color of tokens for sale
+	Creator       wasmtypes.ScAgentID // issuer of start_auction transaction
+	Deposit       uint64              // deposit by auction owner to cover the SC fees
+	Description   string              // auction description
+	Duration      uint32              // auction duration in minutes
+	HighestBid    uint64              // the current highest bid amount
+	HighestBidder wasmtypes.ScAgentID // the current highest bidder
+	MinimumBid    uint64              // minimum bid amount
+	NumTokens     uint64              // number of tokens for sale
+	OwnerMargin   uint64              // auction owner's margin in promilles
+	WhenStarted   uint64              // timestamp when auction started
 }
 
-func NewAuctionFromBytes(bytes []byte) *Auction {
-	decode := wasmlib.NewBytesDecoder(bytes)
+func NewAuctionFromBytes(buf []byte) *Auction {
+	dec := wasmcodec.NewWasmDecoder(buf)
 	data := &Auction{}
-	data.Color = decode.Color()
-	data.Creator = decode.AgentID()
-	data.Deposit = decode.Int64()
-	data.Description = decode.String()
-	data.Duration = decode.Int32()
-	data.HighestBid = decode.Int64()
-	data.HighestBidder = decode.AgentID()
-	data.MinimumBid = decode.Int64()
-	data.NumTokens = decode.Int64()
-	data.OwnerMargin = decode.Int64()
-	data.WhenStarted = decode.Int64()
-	decode.Close()
+	data.Color = wasmtypes.DecodeColor(dec)
+	data.Creator = wasmtypes.DecodeAgentID(dec)
+	data.Deposit = wasmtypes.DecodeUint64(dec)
+	data.Description = wasmtypes.DecodeString(dec)
+	data.Duration = wasmtypes.DecodeUint32(dec)
+	data.HighestBid = wasmtypes.DecodeUint64(dec)
+	data.HighestBidder = wasmtypes.DecodeAgentID(dec)
+	data.MinimumBid = wasmtypes.DecodeUint64(dec)
+	data.NumTokens = wasmtypes.DecodeUint64(dec)
+	data.OwnerMargin = wasmtypes.DecodeUint64(dec)
+	data.WhenStarted = wasmtypes.DecodeUint64(dec)
+	dec.Close()
 	return data
 }
 
 func (o *Auction) Bytes() []byte {
-	return wasmlib.NewBytesEncoder().
-		Color(o.Color).
-		AgentID(o.Creator).
-		Int64(o.Deposit).
-		String(o.Description).
-		Int32(o.Duration).
-		Int64(o.HighestBid).
-		AgentID(o.HighestBidder).
-		Int64(o.MinimumBid).
-		Int64(o.NumTokens).
-		Int64(o.OwnerMargin).
-		Int64(o.WhenStarted).
-		Data()
+	enc := wasmcodec.NewWasmEncoder()
+	wasmtypes.EncodeColor(enc, o.Color)
+	wasmtypes.EncodeAgentID(enc, o.Creator)
+	wasmtypes.EncodeUint64(enc, o.Deposit)
+	wasmtypes.EncodeString(enc, o.Description)
+	wasmtypes.EncodeUint32(enc, o.Duration)
+	wasmtypes.EncodeUint64(enc, o.HighestBid)
+	wasmtypes.EncodeAgentID(enc, o.HighestBidder)
+	wasmtypes.EncodeUint64(enc, o.MinimumBid)
+	wasmtypes.EncodeUint64(enc, o.NumTokens)
+	wasmtypes.EncodeUint64(enc, o.OwnerMargin)
+	wasmtypes.EncodeUint64(enc, o.WhenStarted)
+	return enc.Buf()
 }
 
 type ImmutableAuction struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o ImmutableAuction) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o ImmutableAuction) Value() *Auction {
-	return NewAuctionFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewAuctionFromBytes(o.proxy.Get())
 }
 
 type MutableAuction struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o MutableAuction) Delete() {
-	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	o.proxy.Delete()
 }
 
 func (o MutableAuction) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o MutableAuction) SetValue(value *Auction) {
-	wasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())
+	o.proxy.Set(value.Bytes())
 }
 
 func (o MutableAuction) Value() *Auction {
-	return NewAuctionFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewAuctionFromBytes(o.proxy.Get())
 }
 
 type Bid struct {
-	Amount    int64 // cumulative amount of bids from same bidder
-	Index     int32 // index of bidder in bidder list
-	Timestamp int64 // timestamp of most recent bid
+	Amount    uint64 // cumulative amount of bids from same bidder
+	Index     uint32 // index of bidder in bidder list
+	Timestamp uint64 // timestamp of most recent bid
 }
 
-func NewBidFromBytes(bytes []byte) *Bid {
-	decode := wasmlib.NewBytesDecoder(bytes)
+func NewBidFromBytes(buf []byte) *Bid {
+	dec := wasmcodec.NewWasmDecoder(buf)
 	data := &Bid{}
-	data.Amount = decode.Int64()
-	data.Index = decode.Int32()
-	data.Timestamp = decode.Int64()
-	decode.Close()
+	data.Amount = wasmtypes.DecodeUint64(dec)
+	data.Index = wasmtypes.DecodeUint32(dec)
+	data.Timestamp = wasmtypes.DecodeUint64(dec)
+	dec.Close()
 	return data
 }
 
 func (o *Bid) Bytes() []byte {
-	return wasmlib.NewBytesEncoder().
-		Int64(o.Amount).
-		Int32(o.Index).
-		Int64(o.Timestamp).
-		Data()
+	enc := wasmcodec.NewWasmEncoder()
+	wasmtypes.EncodeUint64(enc, o.Amount)
+	wasmtypes.EncodeUint32(enc, o.Index)
+	wasmtypes.EncodeUint64(enc, o.Timestamp)
+	return enc.Buf()
 }
 
 type ImmutableBid struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o ImmutableBid) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o ImmutableBid) Value() *Bid {
-	return NewBidFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewBidFromBytes(o.proxy.Get())
 }
 
 type MutableBid struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o MutableBid) Delete() {
-	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	o.proxy.Delete()
 }
 
 func (o MutableBid) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o MutableBid) SetValue(value *Bid) {
-	wasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())
+	o.proxy.Set(value.Bytes())
 }
 
 func (o MutableBid) Value() *Bid {
-	return NewBidFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewBidFromBytes(o.proxy.Get())
 }

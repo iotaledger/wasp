@@ -1,0 +1,32 @@
+name: WasmRequests
+description: WasmLib request structures
+events: {}
+structs:
+  CallRequest:
+    contract: Hname
+    function: Hname
+    params: Bytes
+    transfer: Bytes
+
+  DeployRequest:
+    progHash: Hash
+    name: String
+    description: String
+    params: Bytes
+
+  PostRequest:
+    chainID: ChainID
+    contract: Hname
+    function: Hname
+    params: Bytes
+    transfer: Bytes
+    delay: Uint32
+
+  SendRequest:
+    address: Address
+    transfer: Bytes
+
+typedefs: {}
+state: {}
+funcs: {}
+views: {}

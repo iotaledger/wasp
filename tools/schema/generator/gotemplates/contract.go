@@ -3,7 +3,13 @@ package gotemplates
 var contractGo = map[string]string{
 	// *******************************
 	"contract.go": `
-$#emit goHeader
+$#emit goPackage
+$#if funcs emitContract
+`,
+	// *******************************
+	"emitContract": `
+
+$#emit importWasmLib
 $#each func FuncNameCall
 
 type Funcs struct{}
@@ -35,12 +41,21 @@ $#if result ImmutableFuncNameResults
 $#emit setupInitFunc
 
 func (sc Funcs) $FuncName(ctx wasmlib.Sc$Kind$+CallContext) *$FuncName$+Call {
-$#set paramsID nil
-$#set resultsID nil
-$#if param setParamsID
-$#if result setResultsID
-$#if ptrs setPtrs noPtrs
+$#set thisView f.Func
+$#if func setThisView
+$#set complex $false
+$#if param setComplex
+$#if result setComplex
+$#if complex initComplex initSimple
 }
+`,
+	// *******************************
+	"setThisView": `
+$#set thisView &f.Func.ScView
+`,
+	// *******************************
+	"setComplex": `
+$#set complex $true
 `,
 	// *******************************
 	"coreOnload": `
@@ -55,21 +70,22 @@ $#each func coreExportFunc
 	exports.Add$Kind($Kind$FuncName, wasmlib.$Kind$+Error)
 `,
 	// *******************************
-	"setPtrs": `
-	f := &$FuncName$+Call{Func: wasmlib.NewSc$initFunc$Kind(ctx, HScName, H$Kind$FuncName$initMap)}
-	f.Func.SetPtrs($paramsID, $resultsID)
+	"initComplex": `
+	f := &$FuncName$+Call{Func: wasmlib.NewSc$initFunc$Kind(ctx, HScName, H$Kind$FuncName)}
+$#if param initParams
+$#if result initResults
 	return f
 `,
 	// *******************************
-	"setParamsID": `
-$#set paramsID &f.Params.id
+	"initParams": `
+	f.Params.proxy = wasmlib.NewCallParamsProxy($thisView)
 `,
 	// *******************************
-	"setResultsID": `
-$#set resultsID &f.Results.id
+	"initResults": `
+	wasmlib.NewCallResultsProxy($thisView, &f.Results.proxy)
 `,
 	// *******************************
-	"noPtrs": `
-	return &$FuncName$+Call{Func: wasmlib.NewSc$initFunc$Kind(ctx, HScName, H$Kind$FuncName$initMap)}
+	"initSimple": `
+	return &$FuncName$+Call{Func: wasmlib.NewSc$initFunc$Kind(ctx, HScName, H$Kind$FuncName)}
 `,
 }

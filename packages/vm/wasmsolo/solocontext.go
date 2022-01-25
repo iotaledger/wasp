@@ -19,18 +19,18 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/vm/wasmproc"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	SoloDebug        = false
-	SoloHostTracing  = false
-	SoloStackTracing = false
+	SoloDebug        = true
+	SoloHostTracing  = true
+	SoloStackTracing = true
 )
 
-var (
-	GoDebug    = flag.Bool("godebug", false, "debug go smart contract code")
+var ( // TODO set back to false
+	GoDebug    = flag.Bool("godebug", true, "debug go smart contract code")
 	GoWasm     = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
 	GoWasmEdge = flag.Bool("gowasmedge", false, "use WasmEdge instead of WasmTime")
 	TsWasm     = flag.Bool("tswasm", false, "prefer typescript wasm smart contract code")
@@ -48,7 +48,7 @@ type SoloContext struct {
 	offLedger   bool
 	scName      string
 	Tx          *ledgerstate.Transaction
-	wc          *wasmproc.WasmContext
+	wc          *wasmhost.WasmContext
 	wasmHostOld wasmlib.ScHost
 }
 
@@ -111,7 +111,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 		params = init[0].Params()
 	}
 	if *GoDebug {
-		wasmproc.GoWasmVM = func() wasmhost.WasmVM {
+		wasmhost.GoWasmVM = func() wasmhost.WasmVM {
 			return wasmhost.NewWasmGoVM(ctx.scName, onLoad)
 		}
 	}
@@ -121,7 +121,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	ctx.Err = ctx.Chain.DeployContract(keyPair, ctx.scName, ctx.Hprog, params...)
 	if *GoDebug {
 		// just in case deploy failed we don't want to leave this around
-		wasmproc.GoWasmVM = nil
+		wasmhost.GoWasmVM = nil
 	}
 	if ctx.Err != nil {
 		return ctx
@@ -197,7 +197,7 @@ func (ctx *SoloContext) Account() *SoloAgent {
 	}
 }
 
-func (ctx *SoloContext) AccountID() wasmlib.ScAgentID {
+func (ctx *SoloContext) AccountID() wasmtypes.ScAgentID {
 	return ctx.Account().ScAgentID()
 }
 
@@ -209,31 +209,31 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 // Balance returns the account balance of the specified agent on the chain associated with ctx.
 // The optional color parameter can be used to retrieve the balance for the specific color.
 // When color is omitted, wasmlib.IOTA is assumed.
-func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmlib.ScColor) int64 {
+func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) uint64 {
 	account := iscp.NewAgentID(agent.address, agent.hname)
 	balances := ctx.Chain.GetAccountBalance(account)
 	switch len(color) {
 	case 0:
-		return int64(balances.Get(colored.IOTA))
+		return balances.Get(colored.IOTA)
 	case 1:
 		col, err := colored.ColorFromBytes(color[0].Bytes())
 		require.NoError(ctx.Chain.Env.T, err)
-		return int64(balances.Get(col))
+		return balances.Get(col)
 	default:
 		require.Fail(ctx.Chain.Env.T, "too many color arguments")
 		return 0
 	}
 }
 
-func (ctx *SoloContext) ChainID() wasmlib.ScChainID {
+func (ctx *SoloContext) ChainID() wasmtypes.ScChainID {
 	return ctx.Convertor.ScChainID(ctx.Chain.ChainID)
 }
 
-func (ctx *SoloContext) ChainOwnerID() wasmlib.ScAgentID {
+func (ctx *SoloContext) ChainOwnerID() wasmtypes.ScAgentID {
 	return ctx.Convertor.ScAgentID(ctx.Chain.OriginatorAgentID)
 }
 
-func (ctx *SoloContext) ContractCreator() wasmlib.ScAgentID {
+func (ctx *SoloContext) ContractCreator() wasmtypes.ScAgentID {
 	return ctx.Creator().ScAgentID()
 }
 
@@ -261,10 +261,7 @@ func (ctx *SoloContext) Host() wasmlib.ScHost {
 
 // init further initializes the SoloContext.
 func (ctx *SoloContext) init(onLoad func()) *SoloContext {
-	ctx.wc = wasmproc.NewWasmContext("-solo", nil)
-	ctx.wc.Init(nil)
-	ctx.wc.TrackObject(wasmproc.NewNullObject(&ctx.wc.KvStoreHost))
-	ctx.wc.TrackObject(NewSoloScContext(ctx))
+	ctx.wc = wasmhost.NewWasmMiniContext("-solo-", NewSoloSandbox(ctx))
 	ctx.wasmHostOld = wasmhost.Connect(ctx.wc)
 	onLoad()
 	return ctx
@@ -281,12 +278,12 @@ func (ctx *SoloContext) InitViewCallContext() {
 }
 
 // Minted returns the color and amount of newly minted tokens
-func (ctx *SoloContext) Minted() (wasmlib.ScColor, uint64) {
+func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
 	t := ctx.Chain.Env.T
 	t.Logf("minting request tx: %s", ctx.Tx.ID().Base58())
 	mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(ctx.Tx))
 	require.Len(t, mintedAmounts, 1)
-	var mintedColor wasmlib.ScColor
+	var mintedColor wasmtypes.ScColor
 	var mintedAmount uint64
 	for c := range mintedAmounts {
 		mintedColor = ctx.Convertor.ScColor(c)

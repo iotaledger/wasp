@@ -13,16 +13,16 @@ import * as sc from "./index";
 // Define some default configuration parameters.
 
 // The maximum number one can bet on. The range of numbers starts at 1.
-const MAX_NUMBER: i64 = 8;
+const MAX_NUMBER: u16 = 8;
 
 // The default playing period of one betting round in seconds.
-const DEFAULT_PLAY_PERIOD: i32 = 60;
+const DEFAULT_PLAY_PERIOD: u32 = 60;
 
 // Enable this if you deploy the contract to an actual node. It will pay out the prize after a certain timeout.
 const ENABLE_SELF_POST: boolean = true;
 
 // The number to divide nano seconds to seconds.
-const NANO_TIME_DIVIDER: i64 = 1000000000;
+const NANO_TIME_DIVIDER: u64 = 1000000000;
 
 // 'placeBet' is used by betters to place a bet on a number from 1 to MAX_NUMBER. The first
 // incoming bet triggers a betting round of configurable duration. After the playing period
@@ -36,7 +36,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     // Get the array of current bets from state storage.
     let bets: sc.ArrayOfMutableBet = f.state.bets();
 
-    for (let i = 0; i < bets.length(); i++) {
+    for (let i: u32 = 0; i < bets.length(); i++) {
         let bet: sc.Bet = bets.getBet(i).value();
 
         if (bet.better.address() == ctx.caller().address()) {
@@ -46,7 +46,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
 
     // Since we are sure that the 'number' parameter actually exists we can
     // retrieve its actual value into an i64.
-    let number: i64 = f.params.number().value();
+    let number: u16 = f.params.number().value();
 
     // Require that the number is a valid number to bet on, otherwise panic out.
     ctx.require(number >= 1 && number <= MAX_NUMBER, "invalid number");
@@ -57,7 +57,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     let incoming: wasmlib.ScBalances = ctx.incoming();
 
     // Retrieve the amount of plain iota tokens that are part of the incoming balance.
-    let amount: i64 = incoming.balance(wasmlib.ScColor.IOTA);
+    let amount: u64 = incoming.balance(wasmlib.ScColor.IOTA);
 
     // Require that there are actually some plain iotas there
     ctx.require(amount > 0, "empty bet");
@@ -71,7 +71,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     bet.number = number;
 
     // Determine what the next bet number is by retrieving the length of the bets array.
-    let betNr: i32 = bets.length();
+    let betNr: u32 = bets.length();
 
     // Append the bet data to the bets array. The bet array will automatically take care
     // of serializing the bet struct into a bytes representation.
@@ -83,7 +83,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     if (betNr == 0) {
         // Yes it was, query the state for the length of the playing period in seconds by
         // retrieving the playPeriod value from state storage
-        let playPeriod: i32 = f.state.playPeriod().value();
+        let playPeriod: u32 = f.state.playPeriod().value();
 
         // if the play period is less than 10 seconds we override it with the default duration.
         // Note that this will also happen when the play period was not set yet because in that
@@ -97,7 +97,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
             f.state.roundStatus().setValue(1);
 
             // timestamp is nanotime, divide by NANO_TIME_DIVIDER to get seconds => common unix timestamp
-            let timestamp = (ctx.timestamp() / NANO_TIME_DIVIDER) as i32;
+            let timestamp = (ctx.timestamp() / NANO_TIME_DIVIDER) as u32;
             f.state.roundStartedAt().setValue(timestamp);
 
             f.events.start();
@@ -129,7 +129,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
     // generator will use the next 8 bytes from the hash as its random Int64 number and once
     // it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
     // Here we determine the winning number for this round in the range of 1 thru MAX_NUMBER.
-    let winningNumber: i64 = ctx.random(MAX_NUMBER - 1) + 1;
+    let winningNumber: u16 = (ctx.random(MAX_NUMBER - 1) + 1) as u16;
 
     // Save the last winning number in state storage under 'lastWinningNumber' so that there
     // is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
@@ -142,18 +142,18 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
     // Keep track of the total bet amount, the total win amount, and all the winners.
     // Note how we decided to keep the winners in a local vector instead of creating
     // yet another array in state storage or having to go through lockedBets again.
-    let totalBetAmount: i64 = 0;
-    let totalWinAmount: i64 = 0;
+    let totalBetAmount: u64 = 0;
+    let totalWinAmount: u64 = 0;
     let winners: sc.Bet[] = [];
 
     // Get the 'bets' array in state storage.
     let bets: sc.ArrayOfMutableBet = f.state.bets();
 
     // Determine the amount of bets in the 'bets' array.
-    let nrBets: i32 = bets.length();
+    let nrBets: u32 = bets.length();
 
     // Loop through all indexes of the 'bets' array.
-    for (let i = 0; i < nrBets; i++) {
+    for (let i: u32 = 0; i < nrBets; i++) {
         // Retrieve the bet stored at the next index
         let bet: sc.Bet = bets.getBet(i).value();
 
@@ -186,7 +186,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
     // a small percentage that would go to the owner of the smart contract as hosting payment.
 
     // Keep track of the total payout so we can calculate the remainder after truncation.
-    let totalPayout: i64 = 0;
+    let totalPayout: u64 = 0;
 
     // Loop through all winners.
     let size = winners.length;
@@ -195,7 +195,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
         let bet: sc.Bet = winners[i];
 
         // Determine the proportional win amount (we could take our percentage here)
-        let payout: i64 = totalBetAmount * bet.amount / totalWinAmount;
+        let payout: u64 = totalBetAmount * bet.amount / totalWinAmount;
 
         // Anything to pay to the winner?
         if (payout != 0) {
@@ -222,7 +222,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
 
     // This is where we transfer the remainder after payout to the creator of the smart contract.
     // The bank always wins :-P
-    let remainder: i64 = totalBetAmount - totalPayout;
+    let remainder: u64 = totalBetAmount - totalPayout;
     if (remainder != 0) {
         // We have a remainder. First create a transfer for the remainder.
         let transfers: wasmlib.ScTransfers = wasmlib.ScTransfers.iotas(remainder);
@@ -254,7 +254,7 @@ export function funcForceReset(ctx: wasmlib.ScFuncContext, f: sc.ForceResetConte
 export function funcPlayPeriod(ctx: wasmlib.ScFuncContext, f: sc.PlayPeriodContext): void {
     // Since we are sure that the 'playPeriod' parameter actually exists we can
     // retrieve its actual value into an i32 value.
-    let playPeriod: i32 = f.params.playPeriod().value();
+    let playPeriod: u32 = f.params.playPeriod().value();
 
     // Require that the play period (in seconds) is not ridiculously low.
     // Otherwise, panic out with an error message.
@@ -275,7 +275,7 @@ export function viewLastWinningNumber(ctx: wasmlib.ScViewContext, f: sc.LastWinn
 }
 
 export function viewRoundNumber(ctx: wasmlib.ScViewContext, f: sc.RoundNumberContext): void {
-    // Get the 'roundNumber' int64 value from state storage.
+    // Get the 'roundNumber' uint32 value from state storage.
     let roundNumber = f.state.roundNumber().value();
 
     // Set the 'roundNumber' in results to the value from state storage.
@@ -283,7 +283,7 @@ export function viewRoundNumber(ctx: wasmlib.ScViewContext, f: sc.RoundNumberCon
 }
 
 export function viewRoundStatus(ctx: wasmlib.ScViewContext, f: sc.RoundStatusContext): void {
-    // Get the 'roundStatus' int16 value from state storage.
+    // Get the 'roundStatus' uint16 value from state storage.
     let roundStatus = f.state.roundStatus().value();
 
     // Set the 'roundStatus' in results to the value from state storage.
@@ -291,7 +291,7 @@ export function viewRoundStatus(ctx: wasmlib.ScViewContext, f: sc.RoundStatusCon
 }
 
 export function viewRoundStartedAt(ctx: wasmlib.ScViewContext, f: sc.RoundStartedAtContext): void {
-    // Get the 'roundStartedAt' int32 value from state storage.
+    // Get the 'roundStartedAt' uint32 value from state storage.
     let roundStartedAt = f.state.roundStartedAt().value();
 
     // Set the 'roundStartedAt' in results to the value from state storage.

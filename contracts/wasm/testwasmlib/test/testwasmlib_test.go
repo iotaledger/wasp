@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -34,7 +34,7 @@ var (
 		testwasmlib.ParamUint64,
 	}
 	allLengths    = []int{33, 37, 1, 33, 32, 32, 4, 1, 2, 4, 8, 34, 1, 2, 4, 8}
-	invalidValues = map[wasmlib.Key][][]byte{
+	invalidValues = map[string][][]byte{
 		testwasmlib.ParamAddress: {
 			append([]byte{3}, zeroHash...),
 			append([]byte{4}, zeroHash...),
@@ -88,14 +88,14 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 	pt.Params.Bool().SetValue(true)
 	pt.Params.Bytes().SetValue([]byte("these are bytes"))
 	pt.Params.ChainID().SetValue(ctx.ChainID())
-	pt.Params.Color().SetValue(wasmlib.NewScColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite")))
-	pt.Params.Hash().SetValue(wasmlib.NewScHashFromBytes([]byte("0123456789abcdeffedcba9876543210")))
+	pt.Params.Color().SetValue(wasmtypes.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite")))
+	pt.Params.Hash().SetValue(wasmtypes.HashFromBytes([]byte("0123456789abcdeffedcba9876543210")))
 	pt.Params.Hname().SetValue(testwasmlib.HScName)
 	pt.Params.Int8().SetValue(-123)
 	pt.Params.Int16().SetValue(-12345)
 	pt.Params.Int32().SetValue(-1234567890)
 	pt.Params.Int64().SetValue(-1234567890123456789)
-	pt.Params.RequestID().SetValue(wasmlib.NewScRequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00")))
+	pt.Params.RequestID().SetValue(wasmtypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00")))
 	pt.Params.String().SetValue("this is a string")
 	pt.Params.Uint8().SetValue(123)
 	pt.Params.Uint16().SetValue(12345)
@@ -127,23 +127,24 @@ func TestInvalidSizeParams(t *testing.T) {
 	ctx := setupTest(t)
 	for index, param := range allParams {
 		t.Run("InvalidSize "+param, func(t *testing.T) {
+			invalidLength := fmt.Sprintf("invalid %s%s length", strings.ToUpper(param[:1]), param[1:])
 			pt := testwasmlib.ScFuncs.ParamTypes(ctx)
 			pt.Params.Param().GetBytes(param).SetValue(make([]byte, 0))
 			pt.Func.TransferIotas(1).Post()
 			require.Error(t, ctx.Err)
-			require.True(t, strings.HasSuffix(ctx.Err.Error(), "invalid type size"))
+			require.Contains(t, ctx.Err.Error(), invalidLength)
 
 			pt = testwasmlib.ScFuncs.ParamTypes(ctx)
 			pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]-1))
 			pt.Func.TransferIotas(1).Post()
 			require.Error(t, ctx.Err)
-			require.True(t, strings.HasSuffix(ctx.Err.Error(), "invalid type size"))
+			require.Contains(t, ctx.Err.Error(), invalidLength)
 
 			pt = testwasmlib.ScFuncs.ParamTypes(ctx)
 			pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]+1))
 			pt.Func.TransferIotas(1).Post()
 			require.Error(t, ctx.Err)
-			require.Contains(t, ctx.Err.Error(), "invalid type size")
+			require.Contains(t, ctx.Err.Error(), invalidLength)
 		})
 	}
 }
@@ -152,9 +153,9 @@ func TestInvalidTypeParams(t *testing.T) {
 	ctx := setupTest(t)
 	for param, values := range invalidValues {
 		for index, value := range values {
-			t.Run("InvalidType "+string(param)+" "+strconv.Itoa(index), func(t *testing.T) {
+			t.Run("InvalidType "+param+" "+strconv.Itoa(index), func(t *testing.T) {
 				req := solo.NewCallParams(testwasmlib.ScName, testwasmlib.FuncParamTypes,
-					string(param), value,
+					param, value,
 				).WithIotas(1)
 				_, err := ctx.Chain.PostRequestSync(req, nil)
 				require.Error(t, err)
@@ -282,7 +283,7 @@ func TestClearMap(t *testing.T) {
 	require.True(t, value.Exists())
 	require.EqualValues(t, "Calling Elvis", value.Value())
 
-	ac := testwasmlib.ScFuncs.ArrayClear(ctx)
+	ac := testwasmlib.ScFuncs.MapClear(ctx)
 	ac.Params.Name().SetValue("bands")
 	ac.Func.TransferIotas(1).Post()
 	require.NoError(t, ctx.Err)
@@ -331,14 +332,14 @@ func TestRandom(t *testing.T) {
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
 	random := v.Results.Random().Value()
-	require.True(t, random >= 0 && random < 1000)
+	require.True(t, random < 1000)
 	fmt.Printf("Random value: %d\n", random)
 }
 
 func TestMultiRandom(t *testing.T) {
 	ctx := setupTest(t)
 
-	numbers := make([]int64, 0)
+	numbers := make([]uint64, 0)
 	for i := 0; i < 10; i++ {
 		f := testwasmlib.ScFuncs.Random(ctx)
 		f.Func.TransferIotas(1).Post()
@@ -348,7 +349,7 @@ func TestMultiRandom(t *testing.T) {
 		v.Func.Call()
 		require.NoError(t, ctx.Err)
 		random := v.Results.Random().Value()
-		require.True(t, random >= 0 && random < 1000)
+		require.True(t, random < 1000)
 		numbers = append(numbers, random)
 	}
 

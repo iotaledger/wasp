@@ -7,108 +7,108 @@
 
 package fairauction
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableGetInfoResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetInfoResults) Bidders() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultBidders))
+func (s ImmutableGetInfoResults) Bidders() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultBidders))
 }
 
-func (s ImmutableGetInfoResults) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ResultColor))
+func (s ImmutableGetInfoResults) Color() wasmtypes.ScImmutableColor {
+	return wasmtypes.NewScImmutableColor(s.proxy.Root(ResultColor))
 }
 
-func (s ImmutableGetInfoResults) Creator() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultCreator))
+func (s ImmutableGetInfoResults) Creator() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultCreator))
 }
 
-func (s ImmutableGetInfoResults) Deposit() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultDeposit))
+func (s ImmutableGetInfoResults) Deposit() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultDeposit))
 }
 
-func (s ImmutableGetInfoResults) Description() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultDescription))
+func (s ImmutableGetInfoResults) Description() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultDescription))
 }
 
-func (s ImmutableGetInfoResults) Duration() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultDuration))
+func (s ImmutableGetInfoResults) Duration() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultDuration))
 }
 
-func (s ImmutableGetInfoResults) HighestBid() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultHighestBid))
+func (s ImmutableGetInfoResults) HighestBid() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultHighestBid))
 }
 
-func (s ImmutableGetInfoResults) HighestBidder() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultHighestBidder))
+func (s ImmutableGetInfoResults) HighestBidder() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultHighestBidder))
 }
 
-func (s ImmutableGetInfoResults) MinimumBid() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultMinimumBid))
+func (s ImmutableGetInfoResults) MinimumBid() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultMinimumBid))
 }
 
-func (s ImmutableGetInfoResults) NumTokens() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultNumTokens))
+func (s ImmutableGetInfoResults) NumTokens() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultNumTokens))
 }
 
-func (s ImmutableGetInfoResults) OwnerMargin() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultOwnerMargin))
+func (s ImmutableGetInfoResults) OwnerMargin() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultOwnerMargin))
 }
 
-func (s ImmutableGetInfoResults) WhenStarted() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultWhenStarted))
+func (s ImmutableGetInfoResults) WhenStarted() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultWhenStarted))
 }
 
 type MutableGetInfoResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetInfoResults) Bidders() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultBidders))
+func (s MutableGetInfoResults) Bidders() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultBidders))
 }
 
-func (s MutableGetInfoResults) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ResultColor))
+func (s MutableGetInfoResults) Color() wasmtypes.ScMutableColor {
+	return wasmtypes.NewScMutableColor(s.proxy.Root(ResultColor))
 }
 
-func (s MutableGetInfoResults) Creator() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultCreator))
+func (s MutableGetInfoResults) Creator() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultCreator))
 }
 
-func (s MutableGetInfoResults) Deposit() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultDeposit))
+func (s MutableGetInfoResults) Deposit() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultDeposit))
 }
 
-func (s MutableGetInfoResults) Description() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultDescription))
+func (s MutableGetInfoResults) Description() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultDescription))
 }
 
-func (s MutableGetInfoResults) Duration() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultDuration))
+func (s MutableGetInfoResults) Duration() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultDuration))
 }
 
-func (s MutableGetInfoResults) HighestBid() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultHighestBid))
+func (s MutableGetInfoResults) HighestBid() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultHighestBid))
 }
 
-func (s MutableGetInfoResults) HighestBidder() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultHighestBidder))
+func (s MutableGetInfoResults) HighestBidder() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultHighestBidder))
 }
 
-func (s MutableGetInfoResults) MinimumBid() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultMinimumBid))
+func (s MutableGetInfoResults) MinimumBid() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultMinimumBid))
 }
 
-func (s MutableGetInfoResults) NumTokens() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultNumTokens))
+func (s MutableGetInfoResults) NumTokens() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultNumTokens))
 }
 
-func (s MutableGetInfoResults) OwnerMargin() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultOwnerMargin))
+func (s MutableGetInfoResults) OwnerMargin() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultOwnerMargin))
 }
 
-func (s MutableGetInfoResults) WhenStarted() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultWhenStarted))
+func (s MutableGetInfoResults) WhenStarted() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultWhenStarted))
 }

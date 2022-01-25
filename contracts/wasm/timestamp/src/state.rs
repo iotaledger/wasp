@@ -20,8 +20,8 @@ pub struct ImmutabletimestampState {
 }
 
 impl ImmutabletimestampState {
-    pub fn timestamp(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_TIMESTAMP.get_key_id())
+    pub fn timestamp(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, STATE_TIMESTAMP.get_key_id())
 	}
 }
 
@@ -35,7 +35,7 @@ impl MutabletimestampState {
 		ImmutabletimestampState { id: self.id }
 	}
 
-    pub fn timestamp(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_TIMESTAMP.get_key_id())
+    pub fn timestamp(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, STATE_TIMESTAMP.get_key_id())
 	}
 }

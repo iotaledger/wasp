@@ -14,17 +14,17 @@ pub struct Erc20Events {
 
 impl Erc20Events {
 
-	pub fn approval(&self, amount: i64, owner: &ScAgentID, spender: &ScAgentID) {
+	pub fn approval(&self, amount: u64, owner: &ScAgentID, spender: &ScAgentID) {
 		let mut encoder = EventEncoder::new("erc20.approval");
-		encoder.int64(amount);
+		encoder.uint64(amount);
 		encoder.agent_id(&owner);
 		encoder.agent_id(&spender);
 		encoder.emit();
 	}
 
-	pub fn transfer(&self, amount: i64, from: &ScAgentID, to: &ScAgentID) {
+	pub fn transfer(&self, amount: u64, from: &ScAgentID, to: &ScAgentID) {
 		let mut encoder = EventEncoder::new("erc20.transfer");
-		encoder.int64(amount);
+		encoder.uint64(amount);
 		encoder.agent_id(&from);
 		encoder.agent_id(&to);
 		encoder.emit();

@@ -26,8 +26,8 @@ export class ImmutableTestCoreState extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.StateMintedColor));
 	}
 
-    mintedSupply(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateMintedSupply));
+    mintedSupply(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateMintedSupply));
 	}
 }
 
@@ -55,7 +55,7 @@ export class MutableTestCoreState extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.StateMintedColor));
 	}
 
-    mintedSupply(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateMintedSupply));
+    mintedSupply(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateMintedSupply));
 	}
 }

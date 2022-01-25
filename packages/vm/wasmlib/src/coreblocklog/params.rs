@@ -18,8 +18,8 @@ pub struct ImmutableGetBlockInfoParams {
 }
 
 impl ImmutableGetBlockInfoParams {
-    pub fn block_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }
 
@@ -29,8 +29,8 @@ pub struct MutableGetBlockInfoParams {
 }
 
 impl MutableGetBlockInfoParams {
-    pub fn block_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }
 
@@ -40,8 +40,8 @@ pub struct ImmutableGetEventsForBlockParams {
 }
 
 impl ImmutableGetEventsForBlockParams {
-    pub fn block_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }
 
@@ -51,8 +51,8 @@ pub struct MutableGetEventsForBlockParams {
 }
 
 impl MutableGetEventsForBlockParams {
-    pub fn block_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }
 
@@ -66,12 +66,12 @@ impl ImmutableGetEventsForContractParams {
 		ScImmutableHname::new(self.id, PARAM_CONTRACT_HNAME.get_key_id())
 	}
 
-    pub fn from_block(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_FROM_BLOCK.get_key_id())
+    pub fn from_block(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_FROM_BLOCK.get_key_id())
 	}
 
-    pub fn to_block(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_TO_BLOCK.get_key_id())
+    pub fn to_block(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_TO_BLOCK.get_key_id())
 	}
 }
 
@@ -85,12 +85,12 @@ impl MutableGetEventsForContractParams {
 		ScMutableHname::new(self.id, PARAM_CONTRACT_HNAME.get_key_id())
 	}
 
-    pub fn from_block(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_FROM_BLOCK.get_key_id())
+    pub fn from_block(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_FROM_BLOCK.get_key_id())
 	}
 
-    pub fn to_block(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_TO_BLOCK.get_key_id())
+    pub fn to_block(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_TO_BLOCK.get_key_id())
 	}
 }
 
@@ -122,8 +122,8 @@ pub struct ImmutableGetRequestIDsForBlockParams {
 }
 
 impl ImmutableGetRequestIDsForBlockParams {
-    pub fn block_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }
 
@@ -133,8 +133,8 @@ pub struct MutableGetRequestIDsForBlockParams {
 }
 
 impl MutableGetRequestIDsForBlockParams {
-    pub fn block_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }
 
@@ -166,8 +166,8 @@ pub struct ImmutableGetRequestReceiptsForBlockParams {
 }
 
 impl ImmutableGetRequestReceiptsForBlockParams {
-    pub fn block_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }
 
@@ -177,8 +177,8 @@ pub struct MutableGetRequestReceiptsForBlockParams {
 }
 
 impl MutableGetRequestReceiptsForBlockParams {
-    pub fn block_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
 	}
 }
 

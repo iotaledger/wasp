@@ -7,66 +7,64 @@
 
 package coreroot
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableFindContractResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableFindContractResults) ContractFound() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultContractFound))
+func (s ImmutableFindContractResults) ContractFound() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultContractFound))
 }
 
-func (s ImmutableFindContractResults) ContractRecData() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultContractRecData))
+func (s ImmutableFindContractResults) ContractRecData() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultContractRecData))
 }
 
 type MutableFindContractResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableFindContractResults) ContractFound() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultContractFound))
+func (s MutableFindContractResults) ContractFound() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultContractFound))
 }
 
-func (s MutableFindContractResults) ContractRecData() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultContractRecData))
+func (s MutableFindContractResults) ContractRecData() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultContractRecData))
 }
 
 type MapHnameToImmutableBytes struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapHnameToImmutableBytes) GetBytes(key wasmlib.ScHname) wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(m.objID, key.KeyID())
+func (m MapHnameToImmutableBytes) GetBytes(key wasmtypes.ScHname) wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(m.proxy.Key(key.Bytes()))
 }
 
 type ImmutableGetContractRecordsResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableGetContractRecordsResults) ContractRegistry() MapHnameToImmutableBytes {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultContractRegistry), wasmlib.TYPE_MAP)
-	return MapHnameToImmutableBytes{objID: mapID}
+	return MapHnameToImmutableBytes{proxy: s.proxy.Root(ResultContractRegistry)}
 }
 
 type MapHnameToMutableBytes struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapHnameToMutableBytes) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapHnameToMutableBytes) GetBytes(key wasmlib.ScHname) wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(m.objID, key.KeyID())
+func (m MapHnameToMutableBytes) GetBytes(key wasmtypes.ScHname) wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(m.proxy.Key(key.Bytes()))
 }
 
 type MutableGetContractRecordsResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableGetContractRecordsResults) ContractRegistry() MapHnameToMutableBytes {
-	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(ResultContractRegistry), wasmlib.TYPE_MAP)
-	return MapHnameToMutableBytes{objID: mapID}
+	return MapHnameToMutableBytes{proxy: s.proxy.Root(ResultContractRegistry)}
 }

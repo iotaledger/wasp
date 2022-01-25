@@ -20,8 +20,8 @@ pub struct ImmutableIncrementWithDelayParams {
 }
 
 impl ImmutableIncrementWithDelayParams {
-    pub fn delay(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_DELAY.get_key_id())
+    pub fn delay(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_DELAY.get_key_id())
 	}
 }
 
@@ -31,8 +31,8 @@ pub struct MutableIncrementWithDelayParams {
 }
 
 impl MutableIncrementWithDelayParams {
-    pub fn delay(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_DELAY.get_key_id())
+    pub fn delay(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_DELAY.get_key_id())
 	}
 }
 

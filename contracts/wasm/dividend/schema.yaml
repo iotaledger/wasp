@@ -4,9 +4,9 @@ structs: {}
 typedefs: {}
 state:
   memberList: Address[] // array with all the recipients of this dividend
-  members: map[Address]Int64 // map with all the recipient factors of this dividend
+  members: map[Address]Uint64 // map with all the recipient factors of this dividend
   owner: AgentID // owner of contract, the only one who can call 'member' func
-  totalFactor: Int64 // sum of all recipient factors
+  totalFactor: Uint64 // sum of all recipient factors
 funcs:
   divide: {}
   init:
@@ -16,7 +16,7 @@ funcs:
     access: owner // only defined owner of contract can add members
     params:
       address: Address // address of dividend recipient
-      factor: Int64 // relative division factor
+      factor: Uint64 // relative division factor
   setOwner:
     access: owner // only defined owner of contract can change owner
     params:
@@ -26,7 +26,7 @@ views:
     params:
       address: Address // address of dividend recipient
     results:
-      factor: Int64 // relative division factor
+      factor: Uint64 // relative division factor
   getOwner:
     results:
       owner: AgentID // current owner of this smart contract

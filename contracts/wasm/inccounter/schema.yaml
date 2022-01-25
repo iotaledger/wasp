@@ -12,7 +12,7 @@ funcs:
   increment: {}
   incrementWithDelay:
     params:
-      delay: Int32 // delay in seconds
+      delay: Uint32 // delay in seconds
   init:
     params:
       counter: Int64? // value to initialize state counter with

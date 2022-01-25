@@ -66,8 +66,8 @@ pub struct ImmutableSetOwnerMarginParams {
 }
 
 impl ImmutableSetOwnerMarginParams {
-    pub fn owner_margin(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_OWNER_MARGIN.get_key_id())
+    pub fn owner_margin(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, PARAM_OWNER_MARGIN.get_key_id())
 	}
 }
 
@@ -77,8 +77,8 @@ pub struct MutableSetOwnerMarginParams {
 }
 
 impl MutableSetOwnerMarginParams {
-    pub fn owner_margin(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_OWNER_MARGIN.get_key_id())
+    pub fn owner_margin(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, PARAM_OWNER_MARGIN.get_key_id())
 	}
 }
 
@@ -96,12 +96,12 @@ impl ImmutableStartAuctionParams {
 		ScImmutableString::new(self.id, PARAM_DESCRIPTION.get_key_id())
 	}
 
-    pub fn duration(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_DURATION.get_key_id())
+    pub fn duration(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_DURATION.get_key_id())
 	}
 
-    pub fn minimum_bid(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_MINIMUM_BID.get_key_id())
+    pub fn minimum_bid(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, PARAM_MINIMUM_BID.get_key_id())
 	}
 }
 
@@ -119,12 +119,12 @@ impl MutableStartAuctionParams {
 		ScMutableString::new(self.id, PARAM_DESCRIPTION.get_key_id())
 	}
 
-    pub fn duration(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_DURATION.get_key_id())
+    pub fn duration(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_DURATION.get_key_id())
 	}
 
-    pub fn minimum_bid(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_MINIMUM_BID.get_key_id())
+    pub fn minimum_bid(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, PARAM_MINIMUM_BID.get_key_id())
 	}
 }
 

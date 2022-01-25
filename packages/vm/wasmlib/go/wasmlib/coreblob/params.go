@@ -7,80 +7,82 @@
 
 package coreblob
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type MapStringToImmutableBytes struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapStringToImmutableBytes) GetBytes(key string) wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToImmutableBytes) GetBytes(key string) wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.BytesFromString(key)))
 }
 
 type ImmutableStoreBlobParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableStoreBlobParams) Blobs() MapStringToImmutableBytes {
-	return MapStringToImmutableBytes{objID: s.id}
+	//nolint:gosimple
+	return MapStringToImmutableBytes{proxy: s.proxy}
 }
 
 type MapStringToMutableBytes struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapStringToMutableBytes) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapStringToMutableBytes) GetBytes(key string) wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(m.objID, wasmlib.Key(key).KeyID())
+func (m MapStringToMutableBytes) GetBytes(key string) wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.BytesFromString(key)))
 }
 
 type MutableStoreBlobParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableStoreBlobParams) Blobs() MapStringToMutableBytes {
-	return MapStringToMutableBytes{objID: s.id}
+	//nolint:gosimple
+	return MapStringToMutableBytes{proxy: s.proxy}
 }
 
 type ImmutableGetBlobFieldParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetBlobFieldParams) Field() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamField))
+func (s ImmutableGetBlobFieldParams) Field() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamField))
 }
 
-func (s ImmutableGetBlobFieldParams) Hash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamHash))
+func (s ImmutableGetBlobFieldParams) Hash() wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamHash))
 }
 
 type MutableGetBlobFieldParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetBlobFieldParams) Field() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamField))
+func (s MutableGetBlobFieldParams) Field() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamField))
 }
 
-func (s MutableGetBlobFieldParams) Hash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamHash))
+func (s MutableGetBlobFieldParams) Hash() wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamHash))
 }
 
 type ImmutableGetBlobInfoParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetBlobInfoParams) Hash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamHash))
+func (s ImmutableGetBlobInfoParams) Hash() wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamHash))
 }
 
 type MutableGetBlobInfoParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetBlobInfoParams) Hash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamHash))
+func (s MutableGetBlobInfoParams) Hash() wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamHash))
 }

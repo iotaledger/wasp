@@ -8,23 +8,23 @@
 import * as wasmlib from "wasmlib";
 
 export class Token {
-    created     : i64 = 0;  // creation timestamp
+    created     : u64 = 0;  // creation timestamp
     description : string = "";  // description what minted token represents
     mintedBy    : wasmlib.ScAgentID = new wasmlib.ScAgentID();  // original minter
     owner       : wasmlib.ScAgentID = new wasmlib.ScAgentID();  // current owner
-    supply      : i64 = 0;  // amount of tokens originally minted
-    updated     : i64 = 0;  // last update timestamp
+    supply      : u64 = 0;  // amount of tokens originally minted
+    updated     : u64 = 0;  // last update timestamp
     userDefined : string = "";  // any user defined text
 
     static fromBytes(bytes: u8[]): Token {
         let decode = new wasmlib.BytesDecoder(bytes);
         let data = new Token();
-        data.created     = decode.int64();
+        data.created     = decode.uint64();
         data.description = decode.string();
         data.mintedBy    = decode.agentID();
         data.owner       = decode.agentID();
-        data.supply      = decode.int64();
-        data.updated     = decode.int64();
+        data.supply      = decode.uint64();
+        data.updated     = decode.uint64();
         data.userDefined = decode.string();
         decode.close();
         return data;
@@ -32,12 +32,12 @@ export class Token {
 
     bytes(): u8[] {
         return new wasmlib.BytesEncoder().
-		    int64(this.created).
+		    uint64(this.created).
 		    string(this.description).
 		    agentID(this.mintedBy).
 		    agentID(this.owner).
-		    int64(this.supply).
-		    int64(this.updated).
+		    uint64(this.supply).
+		    uint64(this.updated).
 		    string(this.userDefined).
             data();
     }

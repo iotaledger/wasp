@@ -21,8 +21,8 @@ pub struct ImmutableArrayLengthResults {
 }
 
 impl ImmutableArrayLengthResults {
-    pub fn length(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, RESULT_LENGTH.get_key_id())
+    pub fn length(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, RESULT_LENGTH.get_key_id())
 	}
 }
 
@@ -32,8 +32,8 @@ pub struct MutableArrayLengthResults {
 }
 
 impl MutableArrayLengthResults {
-    pub fn length(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, RESULT_LENGTH.get_key_id())
+    pub fn length(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, RESULT_LENGTH.get_key_id())
 	}
 }
 
@@ -87,8 +87,8 @@ pub struct ImmutableBlockRecordsResults {
 }
 
 impl ImmutableBlockRecordsResults {
-    pub fn count(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, RESULT_COUNT.get_key_id())
+    pub fn count(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, RESULT_COUNT.get_key_id())
 	}
 }
 
@@ -98,8 +98,8 @@ pub struct MutableBlockRecordsResults {
 }
 
 impl MutableBlockRecordsResults {
-    pub fn count(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, RESULT_COUNT.get_key_id())
+    pub fn count(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, RESULT_COUNT.get_key_id())
 	}
 }
 
@@ -109,8 +109,8 @@ pub struct ImmutableGetRandomResults {
 }
 
 impl ImmutableGetRandomResults {
-    pub fn random(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_RANDOM.get_key_id())
+    pub fn random(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_RANDOM.get_key_id())
 	}
 }
 
@@ -120,8 +120,8 @@ pub struct MutableGetRandomResults {
 }
 
 impl MutableGetRandomResults {
-    pub fn random(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_RANDOM.get_key_id())
+    pub fn random(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_RANDOM.get_key_id())
 	}
 }
 
@@ -131,8 +131,8 @@ pub struct ImmutableIotaBalanceResults {
 }
 
 impl ImmutableIotaBalanceResults {
-    pub fn iotas(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_IOTAS.get_key_id())
+    pub fn iotas(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, RESULT_IOTAS.get_key_id())
 	}
 }
 
@@ -142,8 +142,8 @@ pub struct MutableIotaBalanceResults {
 }
 
 impl MutableIotaBalanceResults {
-    pub fn iotas(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_IOTAS.get_key_id())
+    pub fn iotas(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, RESULT_IOTAS.get_key_id())
 	}
 }
 

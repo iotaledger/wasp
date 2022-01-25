@@ -11,11 +11,10 @@ import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 
 func OnLoad() {
 	exports := wasmlib.NewScExports()
+	exports.AddFunc(FuncArrayAppend, funcArrayAppendThunk)
 	exports.AddFunc(FuncArrayClear, funcArrayClearThunk)
-	exports.AddFunc(FuncArrayCreate, funcArrayCreateThunk)
 	exports.AddFunc(FuncArraySet, funcArraySetThunk)
 	exports.AddFunc(FuncMapClear, funcMapClearThunk)
-	exports.AddFunc(FuncMapCreate, funcMapCreateThunk)
 	exports.AddFunc(FuncMapSet, funcMapSetThunk)
 	exports.AddFunc(FuncParamTypes, funcParamTypesThunk)
 	exports.AddFunc(FuncRandom, funcRandomThunk)
@@ -27,10 +26,28 @@ func OnLoad() {
 	exports.AddView(ViewGetRandom, viewGetRandomThunk)
 	exports.AddView(ViewIotaBalance, viewIotaBalanceThunk)
 	exports.AddView(ViewMapValue, viewMapValueThunk)
+}
 
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
+type ArrayAppendContext struct {
+	Events TestWasmLibEvents
+	Params ImmutableArrayAppendParams
+	State  MutableTestWasmLibState
+}
+
+func funcArrayAppendThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testwasmlib.funcArrayAppend")
+	f := &ArrayAppendContext{
+		Params: ImmutableArrayAppendParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
 	}
+	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
+	ctx.Require(f.Params.Value().Exists(), "missing mandatory value")
+	funcArrayAppend(ctx, f)
+	ctx.Log("testwasmlib.funcArrayAppend ok")
 }
 
 type ArrayClearContext struct {
@@ -43,36 +60,15 @@ func funcArrayClearThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testwasmlib.funcArrayClear")
 	f := &ArrayClearContext{
 		Params: ImmutableArrayClearParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	funcArrayClear(ctx, f)
 	ctx.Log("testwasmlib.funcArrayClear ok")
-}
-
-type ArrayCreateContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableArrayCreateParams
-	State  MutableTestWasmLibState
-}
-
-func funcArrayCreateThunk(ctx wasmlib.ScFuncContext) {
-	ctx.Log("testwasmlib.funcArrayCreate")
-	f := &ArrayCreateContext{
-		Params: ImmutableArrayCreateParams{
-			id: wasmlib.OBJ_ID_PARAMS,
-		},
-		State: MutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
-	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
-	funcArrayCreate(ctx, f)
-	ctx.Log("testwasmlib.funcArrayCreate ok")
 }
 
 type ArraySetContext struct {
@@ -85,10 +81,10 @@ func funcArraySetThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testwasmlib.funcArraySet")
 	f := &ArraySetContext{
 		Params: ImmutableArraySetParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Index().Exists(), "missing mandatory index")
@@ -108,36 +104,15 @@ func funcMapClearThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testwasmlib.funcMapClear")
 	f := &MapClearContext{
 		Params: ImmutableMapClearParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	funcMapClear(ctx, f)
 	ctx.Log("testwasmlib.funcMapClear ok")
-}
-
-type MapCreateContext struct {
-	Events TestWasmLibEvents
-	Params ImmutableMapCreateParams
-	State  MutableTestWasmLibState
-}
-
-func funcMapCreateThunk(ctx wasmlib.ScFuncContext) {
-	ctx.Log("testwasmlib.funcMapCreate")
-	f := &MapCreateContext{
-		Params: ImmutableMapCreateParams{
-			id: wasmlib.OBJ_ID_PARAMS,
-		},
-		State: MutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
-	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
-	funcMapCreate(ctx, f)
-	ctx.Log("testwasmlib.funcMapCreate ok")
 }
 
 type MapSetContext struct {
@@ -150,10 +125,10 @@ func funcMapSetThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testwasmlib.funcMapSet")
 	f := &MapSetContext{
 		Params: ImmutableMapSetParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Key().Exists(), "missing mandatory key")
@@ -173,10 +148,10 @@ func funcParamTypesThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testwasmlib.funcParamTypes")
 	f := &ParamTypesContext{
 		Params: ImmutableParamTypesParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcParamTypes(ctx, f)
@@ -192,7 +167,7 @@ func funcRandomThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testwasmlib.funcRandom")
 	f := &RandomContext{
 		State: MutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcRandom(ctx, f)
@@ -209,10 +184,10 @@ func funcTriggerEventThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testwasmlib.funcTriggerEvent")
 	f := &TriggerEventContext{
 		Params: ImmutableTriggerEventParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
@@ -231,13 +206,13 @@ func viewArrayLengthThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewArrayLength")
 	f := &ArrayLengthContext{
 		Params: ImmutableArrayLengthParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableArrayLengthResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
@@ -255,13 +230,13 @@ func viewArrayValueThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewArrayValue")
 	f := &ArrayValueContext{
 		Params: ImmutableArrayValueParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableArrayValueResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Index().Exists(), "missing mandatory index")
@@ -280,13 +255,13 @@ func viewBlockRecordThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewBlockRecord")
 	f := &BlockRecordContext{
 		Params: ImmutableBlockRecordParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableBlockRecordResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.BlockIndex().Exists(), "missing mandatory blockIndex")
@@ -305,13 +280,13 @@ func viewBlockRecordsThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewBlockRecords")
 	f := &BlockRecordsContext{
 		Params: ImmutableBlockRecordsParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableBlockRecordsResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.BlockIndex().Exists(), "missing mandatory blockIndex")
@@ -328,10 +303,10 @@ func viewGetRandomThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewGetRandom")
 	f := &GetRandomContext{
 		Results: MutableGetRandomResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewGetRandom(ctx, f)
@@ -347,10 +322,10 @@ func viewIotaBalanceThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewIotaBalance")
 	f := &IotaBalanceContext{
 		Results: MutableIotaBalanceResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewIotaBalance(ctx, f)
@@ -367,13 +342,13 @@ func viewMapValueThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewMapValue")
 	f := &MapValueContext{
 		Params: ImmutableMapValueParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableMapValueResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Key().Exists(), "missing mandatory key")

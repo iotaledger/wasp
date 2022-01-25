@@ -7,24 +7,24 @@ funcs: {}
 views:
   controlAddresses:
     results:
-      blockIndex=n: Int32
+      blockIndex=n: Uint32
       governingAddress=g: Address
       stateControllerAddress=s: Address
   getBlockInfo:
     params:
-      blockIndex=n: Int32
+      blockIndex=n: Uint32
     results:
       blockInfo=i: Bytes
   getEventsForBlock:
     params:
-      blockIndex=n: Int32
+      blockIndex=n: Uint32
     results:
       event=e: Bytes[] // native contract, so this is an Array16
   getEventsForContract:
     params:
       contractHname=h: Hname
-      fromBlock=f: Int32?
-      toBlock=t: Int32?
+      fromBlock=f: Uint32?
+      toBlock=t: Uint32?
     results:
       event=e: Bytes[] // native contract, so this is an Array16
   getEventsForRequest:
@@ -34,23 +34,23 @@ views:
       event=e: Bytes[] // native contract, so this is an Array16
   getLatestBlockInfo:
     results:
-      blockIndex=n: Int32
+      blockIndex=n: Uint32
       blockInfo=i: Bytes
   getRequestIDsForBlock:
     params:
-      blockIndex=n: Int32
+      blockIndex=n: Uint32
     results:
       requestID=u: RequestID[] // native contract, so this is an Array16
   getRequestReceipt:
     params:
       requestID=u: RequestID
     results:
-      blockIndex=n: Int32
-      requestIndex=r: Int16
+      blockIndex=n: Uint32
+      requestIndex=r: Uint16
       requestRecord=d: Bytes
   getRequestReceiptsForBlock:
     params:
-      blockIndex=n: Int32
+      blockIndex=n: Uint32
     results:
       requestRecord=d: Bytes[] // native contract, so this is an Array16
   isRequestProcessed:

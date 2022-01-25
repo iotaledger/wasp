@@ -11,7 +11,7 @@ import (
 )
 
 type WasmStore interface {
-	GetKvStore(id int32) *KvStoreHost
+	GetContext(id int32) *WasmContext
 }
 
 type WasmHost struct {
@@ -36,10 +36,6 @@ func (host *WasmHost) AddView(v wasmlib.ScViewContextFunction) []wasmlib.ScViewC
 		host.views = append(host.views, v)
 	}
 	return host.views
-}
-
-func (host *WasmHost) getKvStore(id int32) *KvStoreHost {
-	return host.store.GetKvStore(id)
 }
 
 func (host *WasmHost) InitVM(vm WasmVM, store WasmStore) error {
@@ -86,28 +82,21 @@ func (host *WasmHost) RunScFunction(functionName string) (err error) {
 }
 
 func (host *WasmHost) SetExport(index int32, functionName string) {
-	if index < 0 {
-		// double check that predefined keys are in sync
-		if index == KeyZzzzzzz {
-			return
-		}
-		panic("SetExport: predefined key value mismatch")
-	}
-
 	funcIndex, ok := host.funcToIndex[functionName]
 	if ok {
+		// TODO remove this check?
 		if funcIndex != index {
 			panic("SetExport: duplicate function name")
 		}
 		return
 	}
 
-	hn := iscp.Hn(functionName)
-	hashedName := uint32(hn)
+	hashedName := uint32(iscp.Hn(functionName))
 	_, ok = host.codeToFunc[hashedName]
 	if ok {
 		panic("SetExport: duplicate hashed name")
 	}
+
 	host.codeToFunc[hashedName] = functionName
 	host.funcToCode[functionName] = hashedName
 	host.funcToIndex[functionName] = index

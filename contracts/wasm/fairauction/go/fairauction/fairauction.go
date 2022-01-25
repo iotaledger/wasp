@@ -5,6 +5,7 @@ package fairauction
 
 import (
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 const (
@@ -22,16 +23,16 @@ func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
 	currentAuction := f.State.Auctions().GetAuction(color)
 	ctx.Require(currentAuction.Exists(), "Missing auction info")
 	auction := currentAuction.Value()
-	if auction.HighestBid < 0 {
+	if auction.HighestBid == 0 {
 		ctx.Log("No one bid on " + color.String())
 		ownerFee := auction.MinimumBid * auction.OwnerMargin / 1000
 		if ownerFee == 0 {
 			ownerFee = 1
 		}
 		// finalizeAuction request token was probably not confirmed yet
-		transferTokens(ctx, ctx.ContractCreator(), wasmlib.IOTA, ownerFee-1)
+		transferTokens(ctx, ctx.ContractCreator(), wasmtypes.IOTA, ownerFee-1)
 		transferTokens(ctx, auction.Creator, auction.Color, auction.NumTokens)
-		transferTokens(ctx, auction.Creator, wasmlib.IOTA, auction.Deposit-ownerFee)
+		transferTokens(ctx, auction.Creator, wasmtypes.IOTA, auction.Deposit-ownerFee)
 		return
 	}
 
@@ -44,22 +45,22 @@ func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
 	bids := f.State.Bids().GetBids(color)
 	bidderList := f.State.BidderList().GetBidderList(color)
 	size := bidderList.Length()
-	for i := int32(0); i < size; i++ {
+	for i := uint32(0); i < size; i++ {
 		loser := bidderList.GetAgentID(i).Value()
 		if loser != auction.HighestBidder {
 			bid := bids.GetBid(loser).Value()
-			transferTokens(ctx, loser, wasmlib.IOTA, bid.Amount)
+			transferTokens(ctx, loser, wasmtypes.IOTA, bid.Amount)
 		}
 	}
 
 	// finalizeAuction request token was probably not confirmed yet
-	transferTokens(ctx, ctx.ContractCreator(), wasmlib.IOTA, ownerFee-1)
+	transferTokens(ctx, ctx.ContractCreator(), wasmtypes.IOTA, ownerFee-1)
 	transferTokens(ctx, auction.HighestBidder, auction.Color, auction.NumTokens)
-	transferTokens(ctx, auction.Creator, wasmlib.IOTA, auction.Deposit+auction.HighestBid-ownerFee)
+	transferTokens(ctx, auction.Creator, wasmtypes.IOTA, auction.Deposit+auction.HighestBid-ownerFee)
 }
 
 func funcPlaceBid(ctx wasmlib.ScFuncContext, f *PlaceBidContext) {
-	bidAmount := ctx.Incoming().Balance(wasmlib.IOTA)
+	bidAmount := ctx.Incoming().Balance(wasmtypes.IOTA)
 	ctx.Require(bidAmount > 0, "Missing bid amount")
 
 	color := f.Params.Color().Value()
@@ -82,7 +83,7 @@ func funcPlaceBid(ctx wasmlib.ScFuncContext, f *PlaceBidContext) {
 		ctx.Require(bidAmount >= auction.MinimumBid, "Insufficient bid amount")
 		ctx.Log("New bid from: " + caller.String())
 		index := bidderList.Length()
-		bidderList.GetAgentID(index).SetValue(caller)
+		bidderList.AppendAgentID().SetValue(caller)
 		bid := &Bid{
 			Index:     index,
 			Amount:    bidAmount,
@@ -111,7 +112,7 @@ func funcSetOwnerMargin(ctx wasmlib.ScFuncContext, f *SetOwnerMarginContext) {
 
 func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	color := f.Params.Color().Value()
-	if color == wasmlib.IOTA || color == wasmlib.MINT {
+	if color == wasmtypes.IOTA || color == wasmtypes.MINT {
 		ctx.Panic("Reserved auction token color")
 	}
 	numTokens := ctx.Incoming().Balance(color)
@@ -152,7 +153,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	if margin == 0 {
 		margin = 1
 	}
-	deposit := ctx.Incoming().Balance(wasmlib.IOTA)
+	deposit := ctx.Incoming().Balance(wasmtypes.IOTA)
 	if deposit < margin {
 		ctx.Panic("Insufficient deposit")
 	}
@@ -168,8 +169,8 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 		Deposit:       deposit,
 		Description:   description,
 		Duration:      duration,
-		HighestBid:    -1,
-		HighestBidder: wasmlib.ScAgentID{},
+		HighestBid:    0,
+		HighestBidder: wasmtypes.ScAgentID{},
 		MinimumBid:    minimumBid,
 		NumTokens:     numTokens,
 		OwnerMargin:   ownerMargin,
@@ -206,13 +207,13 @@ func viewGetInfo(ctx wasmlib.ScViewContext, f *GetInfoContext) {
 	f.Results.Bidders().SetValue(bidderList.Length())
 }
 
-func transferTokens(ctx wasmlib.ScFuncContext, agent wasmlib.ScAgentID, color wasmlib.ScColor, amount int64) {
+func transferTokens(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, color wasmtypes.ScColor, amount uint64) {
 	if agent.IsAddress() {
 		// send back to original Tangle address
-		ctx.TransferToAddress(agent.Address(), wasmlib.NewScTransfer(color, amount))
+		ctx.Send(agent.Address(), wasmlib.NewScTransfer(color, amount))
 		return
 	}
 
 	// TODO not an address, deposit into account on chain
-	ctx.TransferToAddress(agent.Address(), wasmlib.NewScTransfer(color, amount))
+	ctx.Send(agent.Address(), wasmlib.NewScTransfer(color, amount))
 }

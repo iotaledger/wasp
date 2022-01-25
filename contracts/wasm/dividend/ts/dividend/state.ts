@@ -15,24 +15,24 @@ export class ArrayOfImmutableAddress {
         this.objID = objID;
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getAddress(index: i32): wasmlib.ScImmutableAddress {
-        return new wasmlib.ScImmutableAddress(this.objID, new wasmlib.Key32(index));
+    getAddress(index: u32): wasmlib.ScImmutableAddress {
+        return new wasmlib.ScImmutableAddress(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 
-export class MapAddressToImmutableInt64 {
+export class MapAddressToImmutableUint64 {
 	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
     }
 
-    getInt64(key: wasmlib.ScAddress): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.objID, key.getKeyID());
+    getUint64(key: wasmlib.ScAddress): wasmlib.ScImmutableUint64 {
+        return new wasmlib.ScImmutableUint64(this.objID, key.getKeyID());
     }
 }
 
@@ -42,17 +42,17 @@ export class ImmutableDividendState extends wasmlib.ScMapID {
 		return new sc.ArrayOfImmutableAddress(arrID);
 	}
 
-    members(): sc.MapAddressToImmutableInt64 {
+    members(): sc.MapAddressToImmutableUint64 {
 		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateMembers), wasmlib.TYPE_MAP);
-		return new sc.MapAddressToImmutableInt64(mapID);
+		return new sc.MapAddressToImmutableUint64(mapID);
 	}
 
     owner(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.StateOwner));
 	}
 
-    totalFactor(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalFactor));
+    totalFactor(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalFactor));
 	}
 }
 
@@ -67,16 +67,16 @@ export class ArrayOfMutableAddress {
         wasmlib.clear(this.objID);
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getAddress(index: i32): wasmlib.ScMutableAddress {
-        return new wasmlib.ScMutableAddress(this.objID, new wasmlib.Key32(index));
+    getAddress(index: u32): wasmlib.ScMutableAddress {
+        return new wasmlib.ScMutableAddress(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 
-export class MapAddressToMutableInt64 {
+export class MapAddressToMutableUint64 {
 	objID: i32;
 
     constructor(objID: i32) {
@@ -87,8 +87,8 @@ export class MapAddressToMutableInt64 {
         wasmlib.clear(this.objID);
     }
 
-    getInt64(key: wasmlib.ScAddress): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.objID, key.getKeyID());
+    getUint64(key: wasmlib.ScAddress): wasmlib.ScMutableUint64 {
+        return new wasmlib.ScMutableUint64(this.objID, key.getKeyID());
     }
 }
 
@@ -104,16 +104,16 @@ export class MutableDividendState extends wasmlib.ScMapID {
 		return new sc.ArrayOfMutableAddress(arrID);
 	}
 
-    members(): sc.MapAddressToMutableInt64 {
+    members(): sc.MapAddressToMutableUint64 {
 		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateMembers), wasmlib.TYPE_MAP);
-		return new sc.MapAddressToMutableInt64(mapID);
+		return new sc.MapAddressToMutableUint64(mapID);
 	}
 
     owner(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.StateOwner));
 	}
 
-    totalFactor(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalFactor));
+    totalFactor(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalFactor));
 	}
 }

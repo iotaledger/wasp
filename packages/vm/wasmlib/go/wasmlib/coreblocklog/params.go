@@ -7,148 +7,148 @@
 
 package coreblocklog
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableGetBlockInfoParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetBlockInfoParams) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
+func (s ImmutableGetBlockInfoParams) BlockIndex() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
 type MutableGetBlockInfoParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetBlockInfoParams) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
+func (s MutableGetBlockInfoParams) BlockIndex() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
 type ImmutableGetEventsForBlockParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetEventsForBlockParams) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
+func (s ImmutableGetEventsForBlockParams) BlockIndex() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
 type MutableGetEventsForBlockParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetEventsForBlockParams) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
+func (s MutableGetEventsForBlockParams) BlockIndex() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
 type ImmutableGetEventsForContractParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetEventsForContractParams) ContractHname() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamContractHname))
+func (s ImmutableGetEventsForContractParams) ContractHname() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamContractHname))
 }
 
-func (s ImmutableGetEventsForContractParams) FromBlock() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamFromBlock))
+func (s ImmutableGetEventsForContractParams) FromBlock() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamFromBlock))
 }
 
-func (s ImmutableGetEventsForContractParams) ToBlock() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamToBlock))
+func (s ImmutableGetEventsForContractParams) ToBlock() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamToBlock))
 }
 
 type MutableGetEventsForContractParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetEventsForContractParams) ContractHname() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamContractHname))
+func (s MutableGetEventsForContractParams) ContractHname() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamContractHname))
 }
 
-func (s MutableGetEventsForContractParams) FromBlock() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamFromBlock))
+func (s MutableGetEventsForContractParams) FromBlock() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamFromBlock))
 }
 
-func (s MutableGetEventsForContractParams) ToBlock() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamToBlock))
+func (s MutableGetEventsForContractParams) ToBlock() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamToBlock))
 }
 
 type ImmutableGetEventsForRequestParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetEventsForRequestParams) RequestID() wasmlib.ScImmutableRequestID {
-	return wasmlib.NewScImmutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
+func (s ImmutableGetEventsForRequestParams) RequestID() wasmtypes.ScImmutableRequestID {
+	return wasmtypes.NewScImmutableRequestID(s.proxy.Root(ParamRequestID))
 }
 
 type MutableGetEventsForRequestParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetEventsForRequestParams) RequestID() wasmlib.ScMutableRequestID {
-	return wasmlib.NewScMutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
+func (s MutableGetEventsForRequestParams) RequestID() wasmtypes.ScMutableRequestID {
+	return wasmtypes.NewScMutableRequestID(s.proxy.Root(ParamRequestID))
 }
 
 type ImmutableGetRequestIDsForBlockParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetRequestIDsForBlockParams) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
+func (s ImmutableGetRequestIDsForBlockParams) BlockIndex() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
 type MutableGetRequestIDsForBlockParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetRequestIDsForBlockParams) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
+func (s MutableGetRequestIDsForBlockParams) BlockIndex() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
 type ImmutableGetRequestReceiptParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetRequestReceiptParams) RequestID() wasmlib.ScImmutableRequestID {
-	return wasmlib.NewScImmutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
+func (s ImmutableGetRequestReceiptParams) RequestID() wasmtypes.ScImmutableRequestID {
+	return wasmtypes.NewScImmutableRequestID(s.proxy.Root(ParamRequestID))
 }
 
 type MutableGetRequestReceiptParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetRequestReceiptParams) RequestID() wasmlib.ScMutableRequestID {
-	return wasmlib.NewScMutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
+func (s MutableGetRequestReceiptParams) RequestID() wasmtypes.ScMutableRequestID {
+	return wasmtypes.NewScMutableRequestID(s.proxy.Root(ParamRequestID))
 }
 
 type ImmutableGetRequestReceiptsForBlockParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetRequestReceiptsForBlockParams) BlockIndex() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
+func (s ImmutableGetRequestReceiptsForBlockParams) BlockIndex() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
 type MutableGetRequestReceiptsForBlockParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetRequestReceiptsForBlockParams) BlockIndex() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamBlockIndex))
+func (s MutableGetRequestReceiptsForBlockParams) BlockIndex() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamBlockIndex))
 }
 
 type ImmutableIsRequestProcessedParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableIsRequestProcessedParams) RequestID() wasmlib.ScImmutableRequestID {
-	return wasmlib.NewScImmutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
+func (s ImmutableIsRequestProcessedParams) RequestID() wasmtypes.ScImmutableRequestID {
+	return wasmtypes.NewScImmutableRequestID(s.proxy.Root(ParamRequestID))
 }
 
 type MutableIsRequestProcessedParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableIsRequestProcessedParams) RequestID() wasmlib.ScMutableRequestID {
-	return wasmlib.NewScMutableRequestID(s.id, wasmlib.KeyID(ParamRequestID))
+func (s MutableIsRequestProcessedParams) RequestID() wasmtypes.ScMutableRequestID {
+	return wasmtypes.NewScMutableRequestID(s.proxy.Root(ParamRequestID))
 }

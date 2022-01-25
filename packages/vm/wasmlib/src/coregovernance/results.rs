@@ -18,12 +18,12 @@ pub struct ArrayOfImmutableBytes {
 }
 
 impl ArrayOfImmutableBytes {
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_bytes(&self, index: i32) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.obj_id, Key32(index))
+    pub fn get_bytes(&self, index: u32) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.obj_id, Key32(index as i32))
     }
 }
 
@@ -49,12 +49,12 @@ impl ArrayOfMutableBytes {
         clear(self.obj_id);
     }
 
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_bytes(&self, index: i32) -> ScMutableBytes {
-        ScMutableBytes::new(self.obj_id, Key32(index))
+    pub fn get_bytes(&self, index: u32) -> ScMutableBytes {
+        ScMutableBytes::new(self.obj_id, Key32(index as i32))
     }
 }
 

@@ -9,14 +9,14 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableArrayLengthResults extends wasmlib.ScMapID {
-    length(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultLength));
+    length(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultLength));
 	}
 }
 
 export class MutableArrayLengthResults extends wasmlib.ScMapID {
-    length(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultLength));
+    length(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultLength));
 	}
 }
 
@@ -45,38 +45,38 @@ export class MutableBlockRecordResults extends wasmlib.ScMapID {
 }
 
 export class ImmutableBlockRecordsResults extends wasmlib.ScMapID {
-    count(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultCount));
+    count(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultCount));
 	}
 }
 
 export class MutableBlockRecordsResults extends wasmlib.ScMapID {
-    count(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultCount));
+    count(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultCount));
 	}
 }
 
 export class ImmutableGetRandomResults extends wasmlib.ScMapID {
-    random(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultRandom));
+    random(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultRandom));
 	}
 }
 
 export class MutableGetRandomResults extends wasmlib.ScMapID {
-    random(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultRandom));
+    random(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultRandom));
 	}
 }
 
 export class ImmutableIotaBalanceResults extends wasmlib.ScMapID {
-    iotas(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultIotas));
+    iotas(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultIotas));
 	}
 }
 
 export class MutableIotaBalanceResults extends wasmlib.ScMapID {
-    iotas(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultIotas));
+    iotas(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultIotas));
 	}
 }
 

@@ -36,24 +36,25 @@ var ScFuncs Funcs
 
 func (sc Funcs) Donate(ctx wasmlib.ScFuncCallContext) *DonateCall {
 	f := &DonateCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDonate)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Withdraw(ctx wasmlib.ScFuncCallContext) *WithdrawCall {
 	f := &WithdrawCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWithdraw)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Donation(ctx wasmlib.ScViewCallContext) *DonationCall {
 	f := &DonationCall{Func: wasmlib.NewScView(ctx, HScName, HViewDonation)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) DonationInfo(ctx wasmlib.ScViewCallContext) *DonationInfoCall {
 	f := &DonationInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewDonationInfo)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }

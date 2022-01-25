@@ -15,12 +15,12 @@ export class ArrayOfImmutableBet {
         this.objID = objID;
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-	getBet(index: i32): sc.ImmutableBet {
-		return new sc.ImmutableBet(this.objID, new wasmlib.Key32(index));
+	getBet(index: u32): sc.ImmutableBet {
+		return new sc.ImmutableBet(this.objID, new wasmlib.Key32(index as i32));
 	}
 }
 
@@ -30,24 +30,24 @@ export class ImmutableFairRouletteState extends wasmlib.ScMapID {
 		return new sc.ArrayOfImmutableBet(arrID);
 	}
 
-    lastWinningNumber(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateLastWinningNumber));
+    lastWinningNumber(): wasmlib.ScImmutableUint16 {
+		return new wasmlib.ScImmutableUint16(this.mapID, wasmlib.Key32.fromString(sc.StateLastWinningNumber));
 	}
 
-    playPeriod(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.StatePlayPeriod));
+    playPeriod(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.StatePlayPeriod));
 	}
 
-    roundNumber(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateRoundNumber));
+    roundNumber(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.StateRoundNumber));
 	}
 
-    roundStartedAt(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStartedAt));
+    roundStartedAt(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStartedAt));
 	}
 
-    roundStatus(): wasmlib.ScImmutableInt16 {
-		return new wasmlib.ScImmutableInt16(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStatus));
+    roundStatus(): wasmlib.ScImmutableUint16 {
+		return new wasmlib.ScImmutableUint16(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStatus));
 	}
 }
 
@@ -62,12 +62,12 @@ export class ArrayOfMutableBet {
         wasmlib.clear(this.objID);
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-	getBet(index: i32): sc.MutableBet {
-		return new sc.MutableBet(this.objID, new wasmlib.Key32(index));
+	getBet(index: u32): sc.MutableBet {
+		return new sc.MutableBet(this.objID, new wasmlib.Key32(index as i32));
 	}
 }
 
@@ -83,23 +83,23 @@ export class MutableFairRouletteState extends wasmlib.ScMapID {
 		return new sc.ArrayOfMutableBet(arrID);
 	}
 
-    lastWinningNumber(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateLastWinningNumber));
+    lastWinningNumber(): wasmlib.ScMutableUint16 {
+		return new wasmlib.ScMutableUint16(this.mapID, wasmlib.Key32.fromString(sc.StateLastWinningNumber));
 	}
 
-    playPeriod(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.StatePlayPeriod));
+    playPeriod(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.StatePlayPeriod));
 	}
 
-    roundNumber(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateRoundNumber));
+    roundNumber(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.StateRoundNumber));
 	}
 
-    roundStartedAt(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStartedAt));
+    roundStartedAt(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStartedAt));
 	}
 
-    roundStatus(): wasmlib.ScMutableInt16 {
-		return new wasmlib.ScMutableInt16(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStatus));
+    roundStatus(): wasmlib.ScMutableUint16 {
+		return new wasmlib.ScMutableUint16(this.mapID, wasmlib.Key32.fromString(sc.StateRoundStatus));
 	}
 }

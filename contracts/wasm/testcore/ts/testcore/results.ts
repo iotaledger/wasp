@@ -25,8 +25,8 @@ export class ImmutableGetMintedSupplyResults extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ResultMintedColor));
 	}
 
-    mintedSupply(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultMintedSupply));
+    mintedSupply(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultMintedSupply));
 	}
 }
 
@@ -35,8 +35,8 @@ export class MutableGetMintedSupplyResults extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ResultMintedColor));
 	}
 
-    mintedSupply(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultMintedSupply));
+    mintedSupply(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultMintedSupply));
 	}
 }
 

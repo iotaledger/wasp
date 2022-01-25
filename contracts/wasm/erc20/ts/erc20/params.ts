@@ -9,8 +9,8 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableApproveParams extends wasmlib.ScMapID {
-    amount(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
+    amount(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 
     delegation(): wasmlib.ScImmutableAgentID {
@@ -19,8 +19,8 @@ export class ImmutableApproveParams extends wasmlib.ScMapID {
 }
 
 export class MutableApproveParams extends wasmlib.ScMapID {
-    amount(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
+    amount(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 
     delegation(): wasmlib.ScMutableAgentID {
@@ -33,8 +33,8 @@ export class ImmutableInitParams extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamCreator]);
 	}
 
-    supply(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamSupply]);
+    supply(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, sc.idxMap[sc.IdxParamSupply]);
 	}
 }
 
@@ -43,8 +43,8 @@ export class MutableInitParams extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamCreator]);
 	}
 
-    supply(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamSupply]);
+    supply(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, sc.idxMap[sc.IdxParamSupply]);
 	}
 }
 
@@ -53,8 +53,8 @@ export class ImmutableTransferParams extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 
-    amount(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
+    amount(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 }
 
@@ -63,8 +63,8 @@ export class MutableTransferParams extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 
-    amount(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
+    amount(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 }
 
@@ -73,8 +73,8 @@ export class ImmutableTransferFromParams extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 
-    amount(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
+    amount(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 
     recipient(): wasmlib.ScImmutableAgentID {
@@ -87,8 +87,8 @@ export class MutableTransferFromParams extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
 	}
 
-    amount(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
+    amount(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
 	}
 
     recipient(): wasmlib.ScMutableAgentID {

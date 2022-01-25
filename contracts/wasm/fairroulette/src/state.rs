@@ -21,12 +21,12 @@ pub struct ArrayOfImmutableBet {
 }
 
 impl ArrayOfImmutableBet {
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-	pub fn get_bet(&self, index: i32) -> ImmutableBet {
-		ImmutableBet { obj_id: self.obj_id, key_id: Key32(index) }
+	pub fn get_bet(&self, index: u32) -> ImmutableBet {
+		ImmutableBet { obj_id: self.obj_id, key_id: Key32(index as i32) }
 	}
 }
 
@@ -41,24 +41,24 @@ impl ImmutableFairRouletteState {
 		ArrayOfImmutableBet { obj_id: arr_id }
 	}
 
-    pub fn last_winning_number(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_LAST_WINNING_NUMBER.get_key_id())
+    pub fn last_winning_number(&self) -> ScImmutableUint16 {
+		ScImmutableUint16::new(self.id, STATE_LAST_WINNING_NUMBER.get_key_id())
 	}
 
-    pub fn play_period(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, STATE_PLAY_PERIOD.get_key_id())
+    pub fn play_period(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, STATE_PLAY_PERIOD.get_key_id())
 	}
 
-    pub fn round_number(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_ROUND_NUMBER.get_key_id())
+    pub fn round_number(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, STATE_ROUND_NUMBER.get_key_id())
 	}
 
-    pub fn round_started_at(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, STATE_ROUND_STARTED_AT.get_key_id())
+    pub fn round_started_at(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, STATE_ROUND_STARTED_AT.get_key_id())
 	}
 
-    pub fn round_status(&self) -> ScImmutableInt16 {
-		ScImmutableInt16::new(self.id, STATE_ROUND_STATUS.get_key_id())
+    pub fn round_status(&self) -> ScImmutableUint16 {
+		ScImmutableUint16::new(self.id, STATE_ROUND_STATUS.get_key_id())
 	}
 }
 
@@ -72,12 +72,12 @@ impl ArrayOfMutableBet {
         clear(self.obj_id);
     }
 
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-	pub fn get_bet(&self, index: i32) -> MutableBet {
-		MutableBet { obj_id: self.obj_id, key_id: Key32(index) }
+	pub fn get_bet(&self, index: u32) -> MutableBet {
+		MutableBet { obj_id: self.obj_id, key_id: Key32(index as i32) }
 	}
 }
 
@@ -96,23 +96,23 @@ impl MutableFairRouletteState {
 		ArrayOfMutableBet { obj_id: arr_id }
 	}
 
-    pub fn last_winning_number(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_LAST_WINNING_NUMBER.get_key_id())
+    pub fn last_winning_number(&self) -> ScMutableUint16 {
+		ScMutableUint16::new(self.id, STATE_LAST_WINNING_NUMBER.get_key_id())
 	}
 
-    pub fn play_period(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, STATE_PLAY_PERIOD.get_key_id())
+    pub fn play_period(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, STATE_PLAY_PERIOD.get_key_id())
 	}
 
-    pub fn round_number(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_ROUND_NUMBER.get_key_id())
+    pub fn round_number(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, STATE_ROUND_NUMBER.get_key_id())
 	}
 
-    pub fn round_started_at(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, STATE_ROUND_STARTED_AT.get_key_id())
+    pub fn round_started_at(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, STATE_ROUND_STARTED_AT.get_key_id())
 	}
 
-    pub fn round_status(&self) -> ScMutableInt16 {
-		ScMutableInt16::new(self.id, STATE_ROUND_STATUS.get_key_id())
+    pub fn round_status(&self) -> ScMutableUint16 {
+		ScMutableUint16::new(self.id, STATE_ROUND_STATUS.get_key_id())
 	}
 }

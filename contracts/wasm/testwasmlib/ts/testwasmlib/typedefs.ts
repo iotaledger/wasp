@@ -15,12 +15,12 @@ export class ArrayOfImmutableString {
         this.objID = objID;
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getString(index: i32): wasmlib.ScImmutableString {
-        return new wasmlib.ScImmutableString(this.objID, new wasmlib.Key32(index));
+    getString(index: u32): wasmlib.ScImmutableString {
+        return new wasmlib.ScImmutableString(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 
@@ -38,12 +38,12 @@ export class ArrayOfMutableString {
         wasmlib.clear(this.objID);
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getString(index: i32): wasmlib.ScMutableString {
-        return new wasmlib.ScMutableString(this.objID, new wasmlib.Key32(index));
+    getString(index: u32): wasmlib.ScMutableString {
+        return new wasmlib.ScMutableString(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 

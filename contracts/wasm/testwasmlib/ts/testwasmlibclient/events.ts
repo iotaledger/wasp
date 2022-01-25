@@ -12,16 +12,18 @@ const testWasmLibHandlers = new Map<string, (evt: TestWasmLibEvents, msg: string
 ]);
 
 export class TestWasmLibEvents implements wasmclient.IEventHandler {
-	test: (EventTest) => void = () => {};
+/* eslint-disable @typescript-eslint/no-empty-function */
+	test: (evt: EventTest) => void = () => {};
+/* eslint-enable @typescript-eslint/no-empty-function */
 
 	public callHandler(topic: string, params: string[]): void {
 		const handler = testWasmLibHandlers.get(topic);
-		if (handler !== undefined) {
+		if (handler) {
 			handler(this, params);
 		}
 	}
 
-	public onTestWasmLibTest(handler: (EventTest) => void): void {
+	public onTestWasmLibTest(handler: (evt: EventTest) => void): void {
 		this.test = handler;
 	}
 }
@@ -31,7 +33,7 @@ export class EventTest extends wasmclient.Event {
 	public readonly name: wasmclient.String;
 	
 	public constructor(msg: string[]) {
-		super(msg)
+		super(msg);
 		this.address = this.nextAddress();
 		this.name = this.nextString();
 	}

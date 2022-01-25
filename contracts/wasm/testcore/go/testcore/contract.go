@@ -168,13 +168,14 @@ var ScFuncs Funcs
 
 func (sc Funcs) CallOnChain(ctx wasmlib.ScFuncCallContext) *CallOnChainCall {
 	f := &CallOnChainCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncCallOnChain)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	wasmlib.NewCallResultsProxy(&f.Func.ScView, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) CheckContextFromFullEP(ctx wasmlib.ScFuncCallContext) *CheckContextFromFullEPCall {
 	f := &CheckContextFromFullEPCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncCheckContextFromFullEP)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
@@ -184,7 +185,7 @@ func (sc Funcs) DoNothing(ctx wasmlib.ScFuncCallContext) *DoNothingCall {
 
 func (sc Funcs) GetMintedSupply(ctx wasmlib.ScFuncCallContext) *GetMintedSupplyCall {
 	f := &GetMintedSupplyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncGetMintedSupply)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(&f.Func.ScView, &f.Results.proxy)
 	return f
 }
 
@@ -193,38 +194,39 @@ func (sc Funcs) IncCounter(ctx wasmlib.ScFuncCallContext) *IncCounterCall {
 }
 
 func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
-	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit, keyMap[:], idxMap[:])}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) PassTypesFull(ctx wasmlib.ScFuncCallContext) *PassTypesFullCall {
 	f := &PassTypesFullCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncPassTypesFull)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) RunRecursion(ctx wasmlib.ScFuncCallContext) *RunRecursionCall {
 	f := &RunRecursionCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRunRecursion)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	wasmlib.NewCallResultsProxy(&f.Func.ScView, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) SendToAddress(ctx wasmlib.ScFuncCallContext) *SendToAddressCall {
 	f := &SendToAddressCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSendToAddress)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) SetInt(ctx wasmlib.ScFuncCallContext) *SetIntCall {
 	f := &SetIntCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetInt)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Spawn(ctx wasmlib.ScFuncCallContext) *SpawnCall {
 	f := &SpawnCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSpawn)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
@@ -246,7 +248,7 @@ func (sc Funcs) TestCallPanicViewEPFromFull(ctx wasmlib.ScFuncCallContext) *Test
 
 func (sc Funcs) TestChainOwnerIDFull(ctx wasmlib.ScFuncCallContext) *TestChainOwnerIDFullCall {
 	f := &TestChainOwnerIDFullCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestChainOwnerIDFull)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(&f.Func.ScView, &f.Results.proxy)
 	return f
 }
 
@@ -260,7 +262,7 @@ func (sc Funcs) TestEventLogEventData(ctx wasmlib.ScFuncCallContext) *TestEventL
 
 func (sc Funcs) TestEventLogGenericData(ctx wasmlib.ScFuncCallContext) *TestEventLogGenericDataCall {
 	f := &TestEventLogGenericDataCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTestEventLogGenericData)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
@@ -270,37 +272,40 @@ func (sc Funcs) TestPanicFullEP(ctx wasmlib.ScFuncCallContext) *TestPanicFullEPC
 
 func (sc Funcs) WithdrawToChain(ctx wasmlib.ScFuncCallContext) *WithdrawToChainCall {
 	f := &WithdrawToChainCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWithdrawToChain)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) CheckContextFromViewEP(ctx wasmlib.ScViewCallContext) *CheckContextFromViewEPCall {
 	f := &CheckContextFromViewEPCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckContextFromViewEP)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	return f
 }
 
 func (sc Funcs) Fibonacci(ctx wasmlib.ScViewCallContext) *FibonacciCall {
 	f := &FibonacciCall{Func: wasmlib.NewScView(ctx, HScName, HViewFibonacci)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetCounter(ctx wasmlib.ScViewCallContext) *GetCounterCall {
 	f := &GetCounterCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetCounter)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetInt(ctx wasmlib.ScViewCallContext) *GetIntCall {
 	f := &GetIntCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetInt)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetStringValue(ctx wasmlib.ScViewCallContext) *GetStringValueCall {
 	f := &GetStringValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetStringValue)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
@@ -310,7 +315,7 @@ func (sc Funcs) JustView(ctx wasmlib.ScViewCallContext) *JustViewCall {
 
 func (sc Funcs) PassTypesView(ctx wasmlib.ScViewCallContext) *PassTypesViewCall {
 	f := &PassTypesViewCall{Func: wasmlib.NewScView(ctx, HScName, HViewPassTypesView)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	return f
 }
 
@@ -320,7 +325,7 @@ func (sc Funcs) TestCallPanicViewEPFromView(ctx wasmlib.ScViewCallContext) *Test
 
 func (sc Funcs) TestChainOwnerIDView(ctx wasmlib.ScViewCallContext) *TestChainOwnerIDViewCall {
 	f := &TestChainOwnerIDViewCall{Func: wasmlib.NewScView(ctx, HScName, HViewTestChainOwnerIDView)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
@@ -330,6 +335,6 @@ func (sc Funcs) TestPanicViewEP(ctx wasmlib.ScViewCallContext) *TestPanicViewEPC
 
 func (sc Funcs) TestSandboxCall(ctx wasmlib.ScViewCallContext) *TestSandboxCallCall {
 	f := &TestSandboxCallCall{Func: wasmlib.NewScView(ctx, HScName, HViewTestSandboxCall)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }

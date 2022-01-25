@@ -41,31 +41,32 @@ var ScFuncs Funcs
 
 func (sc Funcs) DeployContract(ctx wasmlib.ScFuncCallContext) *DeployContractCall {
 	f := &DeployContractCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDeployContract)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) GrantDeployPermission(ctx wasmlib.ScFuncCallContext) *GrantDeployPermissionCall {
 	f := &GrantDeployPermissionCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncGrantDeployPermission)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) RevokeDeployPermission(ctx wasmlib.ScFuncCallContext) *RevokeDeployPermissionCall {
 	f := &RevokeDeployPermissionCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRevokeDeployPermission)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) FindContract(ctx wasmlib.ScViewCallContext) *FindContractCall {
 	f := &FindContractCall{Func: wasmlib.NewScView(ctx, HScName, HViewFindContract)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetContractRecords(ctx wasmlib.ScViewCallContext) *GetContractRecordsCall {
 	f := &GetContractRecordsCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetContractRecords)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 

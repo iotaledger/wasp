@@ -8,7 +8,43 @@ import (
 
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreblocklog"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 )
+
+func funcArrayAppend(ctx wasmlib.ScFuncContext, f *ArrayAppendContext) {
+	name := f.Params.Name().Value()
+	array := f.State.Arrays().GetStringArray(name)
+	value := f.Params.Value().Value()
+	array.AppendString().SetValue(value)
+}
+
+func funcArrayClear(ctx wasmlib.ScFuncContext, f *ArrayClearContext) {
+	name := f.Params.Name().Value()
+	array := f.State.Arrays().GetStringArray(name)
+	array.Clear()
+}
+
+func funcArraySet(ctx wasmlib.ScFuncContext, f *ArraySetContext) {
+	name := f.Params.Name().Value()
+	array := f.State.Arrays().GetStringArray(name)
+	index := f.Params.Index().Value()
+	value := f.Params.Value().Value()
+	array.GetString(index).SetValue(value)
+}
+
+func funcMapClear(ctx wasmlib.ScFuncContext, f *MapClearContext) {
+	name := f.Params.Name().Value()
+	myMap := f.State.Maps().GetStringMap(name)
+	myMap.Clear()
+}
+
+func funcMapSet(ctx wasmlib.ScFuncContext, f *MapSetContext) {
+	name := f.Params.Name().Value()
+	myMap := f.State.Maps().GetStringMap(name)
+	key := f.Params.Key().Value()
+	value := f.Params.Value().Value()
+	myMap.GetString(key).SetValue(value)
+}
 
 func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	if f.Params.Address().Exists() {
@@ -28,11 +64,11 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(f.Params.ChainID().Value() == ctx.ChainID(), "mismatch: ChainID")
 	}
 	if f.Params.Color().Exists() {
-		color := wasmlib.NewScColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite"))
+		color := wasmtypes.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite"))
 		ctx.Require(f.Params.Color().Value() == color, "mismatch: Color")
 	}
 	if f.Params.Hash().Exists() {
-		hash := wasmlib.NewScHashFromBytes([]byte("0123456789abcdeffedcba9876543210"))
+		hash := wasmtypes.HashFromBytes([]byte("0123456789abcdeffedcba9876543210"))
 		ctx.Require(f.Params.Hash().Value() == hash, "mismatch: Hash")
 	}
 	if f.Params.Hname().Exists() {
@@ -51,7 +87,7 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 		ctx.Require(f.Params.Int64().Value() == -1234567890123456789, "mismatch: Int64")
 	}
 	if f.Params.RequestID().Exists() {
-		requestID := wasmlib.NewScRequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
+		requestID := wasmtypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
 		ctx.Require(f.Params.RequestID().Value() == requestID, "mismatch: RequestID")
 	}
 	if f.Params.String().Exists() {
@@ -71,6 +107,29 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	}
 }
 
+func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
+	f.State.Random().SetValue(ctx.Random(1000))
+}
+
+func funcTriggerEvent(ctx wasmlib.ScFuncContext, f *TriggerEventContext) {
+	f.Events.Test(f.Params.Address().Value(), f.Params.Name().Value())
+}
+
+func viewArrayValue(ctx wasmlib.ScViewContext, f *ArrayValueContext) {
+	name := f.Params.Name().Value()
+	array := f.State.Arrays().GetStringArray(name)
+	index := f.Params.Index().Value()
+	value := array.GetString(index).Value()
+	f.Results.Value().SetValue(value)
+}
+
+func viewArrayLength(ctx wasmlib.ScViewContext, f *ArrayLengthContext) {
+	name := f.Params.Name().Value()
+	array := f.State.Arrays().GetStringArray(name)
+	length := array.Length()
+	f.Results.Length().SetValue(length)
+}
+
 func viewBlockRecord(ctx wasmlib.ScViewContext, f *BlockRecordContext) {
 	records := coreblocklog.ScFuncs.GetRequestReceiptsForBlock(ctx)
 	records.Params.BlockIndex().SetValue(f.Params.BlockIndex().Value())
@@ -87,75 +146,12 @@ func viewBlockRecords(ctx wasmlib.ScViewContext, f *BlockRecordsContext) {
 	f.Results.Count().SetValue(records.Results.RequestRecord().Length())
 }
 
-func funcArrayClear(ctx wasmlib.ScFuncContext, f *ArrayClearContext) {
-	name := f.Params.Name().Value()
-	array := f.State.Arrays().GetStringArray(name)
-	array.Clear()
-}
-
-func funcArrayCreate(ctx wasmlib.ScFuncContext, f *ArrayCreateContext) {
-	name := f.Params.Name().Value()
-	array := f.State.Arrays().GetStringArray(name)
-	array.Clear()
-}
-
-func funcArraySet(ctx wasmlib.ScFuncContext, f *ArraySetContext) {
-	name := f.Params.Name().Value()
-	array := f.State.Arrays().GetStringArray(name)
-	index := f.Params.Index().Value()
-	value := f.Params.Value().Value()
-	array.GetString(index).SetValue(value)
-}
-
-func viewArrayLength(ctx wasmlib.ScViewContext, f *ArrayLengthContext) {
-	name := f.Params.Name().Value()
-	array := f.State.Arrays().GetStringArray(name)
-	length := array.Length()
-	f.Results.Length().SetValue(length)
-}
-
-func viewArrayValue(ctx wasmlib.ScViewContext, f *ArrayValueContext) {
-	name := f.Params.Name().Value()
-	array := f.State.Arrays().GetStringArray(name)
-	index := f.Params.Index().Value()
-	value := array.GetString(index).Value()
-	f.Results.Value().SetValue(value)
-}
-
-func viewIotaBalance(ctx wasmlib.ScViewContext, f *IotaBalanceContext) {
-	f.Results.Iotas().SetValue(ctx.Balances().Balance(wasmlib.IOTA))
-}
-
-func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
-	f.State.Random().SetValue(ctx.Random(1000))
-}
-
 func viewGetRandom(ctx wasmlib.ScViewContext, f *GetRandomContext) {
 	f.Results.Random().SetValue(f.State.Random().Value())
 }
 
-func funcTriggerEvent(ctx wasmlib.ScFuncContext, f *TriggerEventContext) {
-	f.Events.Test(f.Params.Address().Value(), f.Params.Name().Value())
-}
-
-func funcMapClear(ctx wasmlib.ScFuncContext, f *MapClearContext) {
-	name := f.Params.Name().Value()
-	myMap := f.State.Maps().GetStringMap(name)
-	myMap.Clear()
-}
-
-func funcMapCreate(ctx wasmlib.ScFuncContext, f *MapCreateContext) {
-	name := f.Params.Name().Value()
-	myMap := f.State.Maps().GetStringMap(name)
-	myMap.Clear()
-}
-
-func funcMapSet(ctx wasmlib.ScFuncContext, f *MapSetContext) {
-	name := f.Params.Name().Value()
-	myMap := f.State.Maps().GetStringMap(name)
-	key := f.Params.Key().Value()
-	value := f.Params.Value().Value()
-	myMap.GetString(key).SetValue(value)
+func viewIotaBalance(ctx wasmlib.ScViewContext, f *IotaBalanceContext) {
+	f.Results.Iotas().SetValue(ctx.Balances().Balance(wasmtypes.IOTA))
 }
 
 func viewMapValue(ctx wasmlib.ScViewContext, f *MapValueContext) {

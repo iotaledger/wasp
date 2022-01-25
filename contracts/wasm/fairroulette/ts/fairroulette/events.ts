@@ -9,24 +9,24 @@ import * as wasmlib from "wasmlib";
 
 export class FairRouletteEvents {
 
-	bet(address: wasmlib.ScAddress, amount: i64, number: i64): void {
+	bet(address: wasmlib.ScAddress, amount: u64, number: u16): void {
 		new wasmlib.EventEncoder("fairroulette.bet").
 		address(address).
-		int64(amount).
-		int64(number).
+		uint64(amount).
+		uint16(number).
 		emit();
 	}
 
-	payout(address: wasmlib.ScAddress, amount: i64): void {
+	payout(address: wasmlib.ScAddress, amount: u64): void {
 		new wasmlib.EventEncoder("fairroulette.payout").
 		address(address).
-		int64(amount).
+		uint64(amount).
 		emit();
 	}
 
-	round(number: i64): void {
+	round(number: u32): void {
 		new wasmlib.EventEncoder("fairroulette.round").
-		int64(number).
+		uint32(number).
 		emit();
 	}
 
@@ -40,9 +40,9 @@ export class FairRouletteEvents {
 		emit();
 	}
 
-	winner(number: i64): void {
+	winner(number: u16): void {
 		new wasmlib.EventEncoder("fairroulette.winner").
-		int64(number).
+		uint16(number).
 		emit();
 	}
 }

@@ -67,7 +67,7 @@ func checkErc20Allowance(ctx *wasmsolo.SoloContext, account, delegation *wasmsol
 func approve(ctx *wasmsolo.SoloContext, from, to *wasmsolo.SoloAgent, amount uint64) error {
 	appr := erc20.ScFuncs.Approve(ctx.Sign(from))
 	appr.Params.Delegation().SetValue(to.ScAgentID())
-	appr.Params.Amount().SetValue(int64(amount))
+	appr.Params.Amount().SetValue(amount)
 	appr.Func.TransferIotas(1).Post()
 	return ctx.Err
 }
@@ -75,7 +75,7 @@ func approve(ctx *wasmsolo.SoloContext, from, to *wasmsolo.SoloAgent, amount uin
 func transfer(ctx *wasmsolo.SoloContext, from, to *wasmsolo.SoloAgent, amount uint64) error {
 	tx := erc20.ScFuncs.Transfer(ctx.Sign(from))
 	tx.Params.Account().SetValue(to.ScAgentID())
-	tx.Params.Amount().SetValue(int64(amount))
+	tx.Params.Amount().SetValue(amount)
 	tx.Func.TransferIotas(1).Post()
 	return ctx.Err
 }
@@ -84,7 +84,7 @@ func transferFrom(ctx *wasmsolo.SoloContext, delegate, from, to *wasmsolo.SoloAg
 	tx := erc20.ScFuncs.TransferFrom(ctx.Sign(delegate))
 	tx.Params.Account().SetValue(from.ScAgentID())
 	tx.Params.Recipient().SetValue(to.ScAgentID())
-	tx.Params.Amount().SetValue(int64(amount))
+	tx.Params.Amount().SetValue(amount)
 	tx.Func.TransferIotas(1).Post()
 	return ctx.Err
 }

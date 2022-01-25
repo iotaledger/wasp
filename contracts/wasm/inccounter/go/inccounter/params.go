@@ -7,100 +7,100 @@
 
 package inccounter
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableIncrementWithDelayParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableIncrementWithDelayParams) Delay() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ParamDelay))
+func (s ImmutableIncrementWithDelayParams) Delay() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamDelay))
 }
 
 type MutableIncrementWithDelayParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableIncrementWithDelayParams) Delay() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ParamDelay))
+func (s MutableIncrementWithDelayParams) Delay() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamDelay))
 }
 
 type ImmutableInitParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableInitParams) Counter() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamCounter])
+func (s ImmutableInitParams) Counter() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamCounter))
 }
 
 type MutableInitParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableInitParams) Counter() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamCounter])
+func (s MutableInitParams) Counter() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamCounter))
 }
 
 type ImmutableRepeatManyParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableRepeatManyParams) NumRepeats() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamNumRepeats))
+func (s ImmutableRepeatManyParams) NumRepeats() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamNumRepeats))
 }
 
 type MutableRepeatManyParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableRepeatManyParams) NumRepeats() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamNumRepeats))
+func (s MutableRepeatManyParams) NumRepeats() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamNumRepeats))
 }
 
 type ImmutableWhenMustIncrementParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableWhenMustIncrementParams) Dummy() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamDummy))
+func (s ImmutableWhenMustIncrementParams) Dummy() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamDummy))
 }
 
 type MutableWhenMustIncrementParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableWhenMustIncrementParams) Dummy() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamDummy))
+func (s MutableWhenMustIncrementParams) Dummy() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamDummy))
 }
 
 type ImmutableGetVliParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetVliParams) Ni64() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamNi64))
+func (s ImmutableGetVliParams) Ni64() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ParamNi64))
 }
 
 type MutableGetVliParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetVliParams) Ni64() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamNi64))
+func (s MutableGetVliParams) Ni64() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ParamNi64))
 }
 
 type ImmutableGetVluParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetVluParams) Nu64() wasmlib.ScImmutableUint64 {
-	return wasmlib.NewScImmutableUint64(s.id, wasmlib.KeyID(ParamNu64))
+func (s ImmutableGetVluParams) Nu64() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamNu64))
 }
 
 type MutableGetVluParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetVluParams) Nu64() wasmlib.ScMutableUint64 {
-	return wasmlib.NewScMutableUint64(s.id, wasmlib.KeyID(ParamNu64))
+func (s MutableGetVluParams) Nu64() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamNu64))
 }

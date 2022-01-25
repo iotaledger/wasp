@@ -28,10 +28,6 @@ func OnLoad() {
 	exports.AddView(ViewGetCounter, viewGetCounterThunk)
 	exports.AddView(ViewGetVli, viewGetVliThunk)
 	exports.AddView(ViewGetVlu, viewGetVluThunk)
-
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
-	}
 }
 
 type CallIncrementContext struct {
@@ -42,7 +38,7 @@ func funcCallIncrementThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcCallIncrement")
 	f := &CallIncrementContext{
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcCallIncrement(ctx, f)
@@ -57,7 +53,7 @@ func funcCallIncrementRecurse5xThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcCallIncrementRecurse5x")
 	f := &CallIncrementRecurse5xContext{
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcCallIncrementRecurse5x(ctx, f)
@@ -72,7 +68,7 @@ func funcEndlessLoopThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcEndlessLoop")
 	f := &EndlessLoopContext{
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcEndlessLoop(ctx, f)
@@ -87,7 +83,7 @@ func funcIncrementThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcIncrement")
 	f := &IncrementContext{
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcIncrement(ctx, f)
@@ -103,10 +99,10 @@ func funcIncrementWithDelayThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcIncrementWithDelay")
 	f := &IncrementWithDelayContext{
 		Params: ImmutableIncrementWithDelayParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Delay().Exists(), "missing mandatory delay")
@@ -123,10 +119,10 @@ func funcInitThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcInit")
 	f := &InitContext{
 		Params: ImmutableInitParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcInit(ctx, f)
@@ -141,7 +137,7 @@ func funcLocalStateInternalCallThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcLocalStateInternalCall")
 	f := &LocalStateInternalCallContext{
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcLocalStateInternalCall(ctx, f)
@@ -156,7 +152,7 @@ func funcLocalStatePostThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcLocalStatePost")
 	f := &LocalStatePostContext{
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcLocalStatePost(ctx, f)
@@ -171,7 +167,7 @@ func funcLocalStateSandboxCallThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcLocalStateSandboxCall")
 	f := &LocalStateSandboxCallContext{
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcLocalStateSandboxCall(ctx, f)
@@ -186,7 +182,7 @@ func funcPostIncrementThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcPostIncrement")
 	f := &PostIncrementContext{
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcPostIncrement(ctx, f)
@@ -202,10 +198,10 @@ func funcRepeatManyThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcRepeatMany")
 	f := &RepeatManyContext{
 		Params: ImmutableRepeatManyParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcRepeatMany(ctx, f)
@@ -220,7 +216,7 @@ func funcTestVliCodecThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcTestVliCodec")
 	f := &TestVliCodecContext{
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcTestVliCodec(ctx, f)
@@ -235,7 +231,7 @@ func funcTestVluCodecThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcTestVluCodec")
 	f := &TestVluCodecContext{
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcTestVluCodec(ctx, f)
@@ -251,10 +247,10 @@ func funcWhenMustIncrementThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("inccounter.funcWhenMustIncrement")
 	f := &WhenMustIncrementContext{
 		Params: ImmutableWhenMustIncrementParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	funcWhenMustIncrement(ctx, f)
@@ -270,10 +266,10 @@ func viewGetCounterThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("inccounter.viewGetCounter")
 	f := &GetCounterContext{
 		Results: MutableGetCounterResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewGetCounter(ctx, f)
@@ -290,13 +286,13 @@ func viewGetVliThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("inccounter.viewGetVli")
 	f := &GetVliContext{
 		Params: ImmutableGetVliParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetVliResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Ni64().Exists(), "missing mandatory ni64")
@@ -314,13 +310,13 @@ func viewGetVluThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("inccounter.viewGetVlu")
 	f := &GetVluContext{
 		Params: ImmutableGetVluParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetVluResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableIncCounterState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Nu64().Exists(), "missing mandatory nu64")

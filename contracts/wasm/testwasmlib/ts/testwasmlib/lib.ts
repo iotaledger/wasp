@@ -14,11 +14,10 @@ export function on_call(index: i32): void {
 
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
+    exports.addFunc(sc.FuncArrayAppend,  funcArrayAppendThunk);
     exports.addFunc(sc.FuncArrayClear,   funcArrayClearThunk);
-    exports.addFunc(sc.FuncArrayCreate,  funcArrayCreateThunk);
     exports.addFunc(sc.FuncArraySet,     funcArraySetThunk);
     exports.addFunc(sc.FuncMapClear,     funcMapClearThunk);
-    exports.addFunc(sc.FuncMapCreate,    funcMapCreateThunk);
     exports.addFunc(sc.FuncMapSet,       funcMapSetThunk);
     exports.addFunc(sc.FuncParamTypes,   funcParamTypesThunk);
     exports.addFunc(sc.FuncRandom,       funcRandomThunk);
@@ -36,6 +35,17 @@ export function on_load(): void {
     }
 }
 
+function funcArrayAppendThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcArrayAppend");
+	let f = new sc.ArrayAppendContext();
+    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	ctx.require(f.params.value().exists(), "missing mandatory value");
+	sc.funcArrayAppend(ctx, f);
+	ctx.log("testwasmlib.funcArrayAppend ok");
+}
+
 function funcArrayClearThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testwasmlib.funcArrayClear");
 	let f = new sc.ArrayClearContext();
@@ -44,16 +54,6 @@ function funcArrayClearThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	sc.funcArrayClear(ctx, f);
 	ctx.log("testwasmlib.funcArrayClear ok");
-}
-
-function funcArrayCreateThunk(ctx: wasmlib.ScFuncContext): void {
-	ctx.log("testwasmlib.funcArrayCreate");
-	let f = new sc.ArrayCreateContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
-	ctx.require(f.params.name().exists(), "missing mandatory name");
-	sc.funcArrayCreate(ctx, f);
-	ctx.log("testwasmlib.funcArrayCreate ok");
 }
 
 function funcArraySetThunk(ctx: wasmlib.ScFuncContext): void {
@@ -76,16 +76,6 @@ function funcMapClearThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	sc.funcMapClear(ctx, f);
 	ctx.log("testwasmlib.funcMapClear ok");
-}
-
-function funcMapCreateThunk(ctx: wasmlib.ScFuncContext): void {
-	ctx.log("testwasmlib.funcMapCreate");
-	let f = new sc.MapCreateContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
-	ctx.require(f.params.name().exists(), "missing mandatory name");
-	sc.funcMapCreate(ctx, f);
-	ctx.log("testwasmlib.funcMapCreate ok");
 }
 
 function funcMapSetThunk(ctx: wasmlib.ScFuncContext): void {

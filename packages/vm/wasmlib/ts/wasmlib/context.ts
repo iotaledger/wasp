@@ -26,8 +26,8 @@ export class ScBalances {
     }
 
     // retrieve the balance for the specified token color
-    balance(color: ScColor): i64 {
-        return this.balances.getInt64(color).value();
+    balance(color: ScColor): u64 {
+        return this.balances.getUint64(color).value();
     }
 
     // retrieve an array of all token colors that have a non-zero balance
@@ -51,7 +51,7 @@ export class ScTransfers {
     static fromBalances(balances: ScBalances): ScTransfers {
         let transfers = new ScTransfers();
         let colors = balances.colors();
-        for (let i = 0; i < colors.length(); i++) {
+        for (let i:u32 = 0; i < colors.length(); i++) {
             let color = colors.getColor(i).value();
             transfers.set(color, balances.balance(color));
         }
@@ -59,12 +59,12 @@ export class ScTransfers {
     }
 
     // create a new transfers object and initialize it with the specified amount of iotas
-    static iotas(amount: i64): ScTransfers {
+    static iotas(amount: u64): ScTransfers {
         return ScTransfers.transfer(ScColor.IOTA, amount);
     }
 
     // create a new transfers object and initialize it with the specified token transfer
-    static transfer(color: ScColor, amount: i64): ScTransfers {
+    static transfer(color: ScColor, amount: u64): ScTransfers {
         let transfer = new ScTransfers();
         transfer.set(color, amount);
         return transfer;
@@ -72,8 +72,8 @@ export class ScTransfers {
 
     // set the specified colored token transfer in the transfers object
     // note that this will overwrite any previous amount for the specified color
-    set(color: ScColor, amount: i64): void {
-        this.transfers.getInt64(color).setValue(amount);
+    set(color: ScColor, amount: u64): void {
+        this.transfers.getUint64(color).setValue(amount);
     }
 }
 
@@ -306,19 +306,19 @@ export class ScFuncContext extends ScBaseContext implements ScViewCallContext, S
     // asynchronously calls the specified smart contract function,
     // passing the provided parameters and token transfers to it
     // it is possible to schedule the call for a later execution by specifying a delay
-    post(chainID: ScChainID, hcontract: ScHname, hfunction: ScHname, params: ScMutableMap | null, transfer: ScTransfers, delay: i32): void {
+    post(chainID: ScChainID, hcontract: ScHname, hfunction: ScHname, params: ScMutableMap | null, transfer: ScTransfers, delay: u32): void {
         let encode = new BytesEncoder();
         encode.chainID(chainID);
         encode.hname(hcontract);
         encode.hname(hfunction);
         encode.int32((params === null) ? 0 : params.mapID());
         encode.int32(transfer.transfers.mapID());
-        encode.int32(delay);
+        encode.uint32(delay);
         ROOT.getBytes(keys.KEY_POST).setValue(encode.data());
     }
 
     // generates a random value from 0 to max (exclusive max) using a deterministic RNG
-    random(max: i64): i64 {
+    random(max: u64): u64 {
         if (max == 0) {
             this.panic("random: max parameter should be non-zero");
         }
@@ -329,7 +329,7 @@ export class ScFuncContext extends ScBaseContext implements ScViewCallContext, S
             seed = ROOT.getBytes(keys.KEY_RANDOM).value();
         }
         rnd.setValue(this.utility().hashSha3(seed).toBytes());
-        return (Convert.toI64(seed.slice(0, 8)) as u64 % max as u64) as i64;
+        return Convert.toI64(seed.slice(0, 8)) as u64 % max
     }
 
     // retrieve the request id of this transaction

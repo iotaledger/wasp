@@ -7,28 +7,28 @@
 
 package erc721
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type MapAgentIDToImmutableBool struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToImmutableBool) GetBool(key wasmlib.ScAgentID) wasmlib.ScImmutableBool {
-	return wasmlib.NewScImmutableBool(m.objID, key.KeyID())
+func (m MapAgentIDToImmutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(m.proxy.Key(key.Bytes()))
 }
 
 type ImmutableOperators = MapAgentIDToImmutableBool
 
 type MapAgentIDToMutableBool struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapAgentIDToMutableBool) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapAgentIDToMutableBool) GetBool(key wasmlib.ScAgentID) wasmlib.ScMutableBool {
-	return wasmlib.NewScMutableBool(m.objID, key.KeyID())
+func (m MapAgentIDToMutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(m.proxy.Key(key.Bytes()))
 }
 
 type MutableOperators = MapAgentIDToMutableBool

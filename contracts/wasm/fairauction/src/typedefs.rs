@@ -17,12 +17,12 @@ pub struct ArrayOfImmutableAgentID {
 }
 
 impl ArrayOfImmutableAgentID {
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_agent_id(&self, index: i32) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.obj_id, Key32(index))
+    pub fn get_agent_id(&self, index: u32) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.obj_id, Key32(index as i32))
     }
 }
 
@@ -38,12 +38,12 @@ impl ArrayOfMutableAgentID {
         clear(self.obj_id);
     }
 
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_agent_id(&self, index: i32) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.obj_id, Key32(index))
+    pub fn get_agent_id(&self, index: u32) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.obj_id, Key32(index as i32))
     }
 }
 

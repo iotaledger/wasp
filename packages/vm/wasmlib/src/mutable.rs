@@ -643,8 +643,8 @@ impl ScMutableMapArray {
 
     // get value proxy for item at index, index can be 0..length()
     // when index equals length() a new item is appended
-    pub fn get_map(&self, index: i32) -> ScMutableMap {
-        let map_id = get_object_id(self.obj_id, Key32(index), TYPE_MAP);
+    pub fn get_map(&self, index: u32) -> ScMutableMap {
+        let map_id = get_object_id(self.obj_id, Key32(index as i32), TYPE_MAP);
         ScMutableMap { obj_id: map_id }
     }
 
@@ -654,7 +654,7 @@ impl ScMutableMapArray {
     }
 
     // number of items in array
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 }
@@ -753,8 +753,8 @@ impl ScMutableStringArray {
 
     // get value proxy for item at index, index can be 0..length()
     // when index equals length() a new item is appended
-    pub fn get_string(&self, index: i32) -> ScMutableString {
-        ScMutableString { obj_id: self.obj_id, key_id: Key32(index) }
+    pub fn get_string(&self, index: u32) -> ScMutableString {
+        ScMutableString { obj_id: self.obj_id, key_id: Key32(index as i32) }
     }
 
     // get immutable version of array proxy
@@ -763,7 +763,7 @@ impl ScMutableStringArray {
     }
 
     // number of items in array
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 }

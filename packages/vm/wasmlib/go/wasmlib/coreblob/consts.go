@@ -7,12 +7,12 @@
 
 package coreblob
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "blob"
 	ScDescription = "Core blob contract"
-	HScName       = wasmlib.ScHname(0xfd91bc63)
+	HScName       = wasmtypes.ScHname(0xfd91bc63)
 )
 
 const (
@@ -35,8 +35,8 @@ const (
 )
 
 const (
-	HFuncStoreBlob    = wasmlib.ScHname(0xddd4c281)
-	HViewGetBlobField = wasmlib.ScHname(0x1f448130)
-	HViewGetBlobInfo  = wasmlib.ScHname(0xfde4ab46)
-	HViewListBlobs    = wasmlib.ScHname(0x62ca7990)
+	HFuncStoreBlob    = wasmtypes.ScHname(0xddd4c281)
+	HViewGetBlobField = wasmtypes.ScHname(0x1f448130)
+	HViewGetBlobInfo  = wasmtypes.ScHname(0xfde4ab46)
+	HViewListBlobs    = wasmtypes.ScHname(0x62ca7990)
 )

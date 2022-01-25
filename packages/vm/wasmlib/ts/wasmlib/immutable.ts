@@ -187,12 +187,12 @@ export class ScImmutableColorArray {
     }
 
     // get value proxy for item at index, index can be 0..length()-1
-    getColor(index: i32): ScImmutableColor {
-        return new ScImmutableColor(this.objID, new Key32(index));
+    getColor(index: u32): ScImmutableColor {
+        return new ScImmutableColor(this.objID, new Key32(index as i32));
     }
 
     // number of items in array
-    length(): i32 {
+    length(): u32 {
         return host.getLength(this.objID);
     }
 }
@@ -513,13 +513,13 @@ export class ScImmutableMapArray {
     }
 
     // get value proxy for item at index, index can be 0..length()-1
-    getMap(index: i32): ScImmutableMap {
-        let mapID = host.getObjectID(this.objID, new Key32(index), host.TYPE_MAP);
+    getMap(index: u32): ScImmutableMap {
+        let mapID = host.getObjectID(this.objID, new Key32(index as i32), host.TYPE_MAP);
         return new ScImmutableMap(mapID);
     }
 
     // number of items in array
-    length(): i32 {
+    length(): u32 {
         return host.getLength(this.objID);
     }
 }
@@ -590,12 +590,12 @@ export class ScImmutableStringArray {
     }
 
     // get value proxy for item at index, index can be 0..length()-1
-    getString(index: i32): ScImmutableString {
-        return new ScImmutableString(this.objID, new Key32(index));
+    getString(index: u32): ScImmutableString {
+        return new ScImmutableString(this.objID, new Key32(index as i32));
     }
 
     // number of items in array
-    length(): i32 {
+    length(): u2 {
         return host.getLength(this.objID);
     }
 }

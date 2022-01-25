@@ -41,6 +41,26 @@ const ResRandom = "random";
 const ResRecord = "record";
 const ResValue = "value";
 
+///////////////////////////// arrayAppend /////////////////////////////
+
+export class ArrayAppendFunc extends wasmclient.ClientFunc {
+	private args: wasmclient.Arguments = new wasmclient.Arguments();
+	
+	public name(v: string): void {
+		this.args.set(ArgName, this.args.fromString(v));
+	}
+	
+	public value(v: string): void {
+		this.args.set(ArgValue, this.args.fromString(v));
+	}
+	
+	public async post(): Promise<wasmclient.RequestID> {
+		this.args.mandatory(ArgName);
+		this.args.mandatory(ArgValue);
+		return await super.post(0x612f835f, this.args);
+	}
+}
+
 ///////////////////////////// arrayClear /////////////////////////////
 
 export class ArrayClearFunc extends wasmclient.ClientFunc {
@@ -56,28 +76,13 @@ export class ArrayClearFunc extends wasmclient.ClientFunc {
 	}
 }
 
-///////////////////////////// arrayCreate /////////////////////////////
-
-export class ArrayCreateFunc extends wasmclient.ClientFunc {
-	private args: wasmclient.Arguments = new wasmclient.Arguments();
-	
-	public name(v: string): void {
-		this.args.set(ArgName, this.args.fromString(v));
-	}
-	
-	public async post(): Promise<wasmclient.RequestID> {
-		this.args.mandatory(ArgName);
-		return await super.post(0x1ed5b23b, this.args);
-	}
-}
-
 ///////////////////////////// arraySet /////////////////////////////
 
 export class ArraySetFunc extends wasmclient.ClientFunc {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	public index(v: wasmclient.Int32): void {
-		this.args.set(ArgIndex, this.args.fromInt32(v));
+	public index(v: wasmclient.Uint32): void {
+		this.args.set(ArgIndex, this.args.fromUint32(v));
 	}
 	
 	public name(v: string): void {
@@ -108,21 +113,6 @@ export class MapClearFunc extends wasmclient.ClientFunc {
 	public async post(): Promise<wasmclient.RequestID> {
 		this.args.mandatory(ArgName);
 		return await super.post(0x027f215a, this.args);
-	}
-}
-
-///////////////////////////// mapCreate /////////////////////////////
-
-export class MapCreateFunc extends wasmclient.ClientFunc {
-	private args: wasmclient.Arguments = new wasmclient.Arguments();
-	
-	public name(v: string): void {
-		this.args.set(ArgName, this.args.fromString(v));
-	}
-	
-	public async post(): Promise<wasmclient.RequestID> {
-		this.args.mandatory(ArgName);
-		return await super.post(0x6295d599, this.args);
 	}
 }
 
@@ -285,8 +275,8 @@ export class ArrayLengthView extends wasmclient.ClientView {
 
 export class ArrayLengthResults extends wasmclient.Results {
 
-	length(): wasmclient.Int32 {
-		return this.toInt32(this.get(ResLength));
+	length(): wasmclient.Uint32 {
+		return this.toUint32(this.get(ResLength));
 	}
 }
 
@@ -295,8 +285,8 @@ export class ArrayLengthResults extends wasmclient.Results {
 export class ArrayValueView extends wasmclient.ClientView {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	public index(v: wasmclient.Int32): void {
-		this.args.set(ArgIndex, this.args.fromInt32(v));
+	public index(v: wasmclient.Uint32): void {
+		this.args.set(ArgIndex, this.args.fromUint32(v));
 	}
 	
 	public name(v: string): void {
@@ -324,12 +314,12 @@ export class ArrayValueResults extends wasmclient.Results {
 export class BlockRecordView extends wasmclient.ClientView {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	public blockIndex(v: wasmclient.Int32): void {
-		this.args.set(ArgBlockIndex, this.args.fromInt32(v));
+	public blockIndex(v: wasmclient.Uint32): void {
+		this.args.set(ArgBlockIndex, this.args.fromUint32(v));
 	}
 	
-	public recordIndex(v: wasmclient.Int32): void {
-		this.args.set(ArgRecordIndex, this.args.fromInt32(v));
+	public recordIndex(v: wasmclient.Uint32): void {
+		this.args.set(ArgRecordIndex, this.args.fromUint32(v));
 	}
 
 	public async call(): Promise<BlockRecordResults> {
@@ -353,8 +343,8 @@ export class BlockRecordResults extends wasmclient.Results {
 export class BlockRecordsView extends wasmclient.ClientView {
 	private args: wasmclient.Arguments = new wasmclient.Arguments();
 	
-	public blockIndex(v: wasmclient.Int32): void {
-		this.args.set(ArgBlockIndex, this.args.fromInt32(v));
+	public blockIndex(v: wasmclient.Uint32): void {
+		this.args.set(ArgBlockIndex, this.args.fromUint32(v));
 	}
 
 	public async call(): Promise<BlockRecordsResults> {
@@ -367,8 +357,8 @@ export class BlockRecordsView extends wasmclient.ClientView {
 
 export class BlockRecordsResults extends wasmclient.Results {
 
-	count(): wasmclient.Int32 {
-		return this.toInt32(this.get(ResCount));
+	count(): wasmclient.Uint32 {
+		return this.toUint32(this.get(ResCount));
 	}
 }
 
@@ -385,8 +375,8 @@ export class GetRandomView extends wasmclient.ClientView {
 
 export class GetRandomResults extends wasmclient.Results {
 
-	random(): wasmclient.Int64 {
-		return this.toInt64(this.get(ResRandom));
+	random(): wasmclient.Uint64 {
+		return this.toUint64(this.get(ResRandom));
 	}
 }
 
@@ -403,8 +393,8 @@ export class IotaBalanceView extends wasmclient.ClientView {
 
 export class IotaBalanceResults extends wasmclient.Results {
 
-	iotas(): wasmclient.Int64 {
-		return this.toInt64(this.get(ResIotas));
+	iotas(): wasmclient.Uint64 {
+		return this.toUint64(this.get(ResIotas));
 	}
 }
 
@@ -449,12 +439,12 @@ export class TestWasmLibService extends wasmclient.Service {
 		return new events.TestWasmLibEvents();
 	}
 
-	public arrayClear(): ArrayClearFunc {
-		return new ArrayClearFunc(this);
+	public arrayAppend(): ArrayAppendFunc {
+		return new ArrayAppendFunc(this);
 	}
 
-	public arrayCreate(): ArrayCreateFunc {
-		return new ArrayCreateFunc(this);
+	public arrayClear(): ArrayClearFunc {
+		return new ArrayClearFunc(this);
 	}
 
 	public arraySet(): ArraySetFunc {
@@ -463,10 +453,6 @@ export class TestWasmLibService extends wasmclient.Service {
 
 	public mapClear(): MapClearFunc {
 		return new MapClearFunc(this);
-	}
-
-	public mapCreate(): MapCreateFunc {
-		return new MapCreateFunc(this);
 	}
 
 	public mapSet(): MapSetFunc {

@@ -3,7 +3,10 @@ package gotemplates
 var structsGo = map[string]string{
 	// *******************************
 	"structs.go": `
-$#emit goHeader
+$#emit goPackage
+
+$#emit importWasmCodec
+$#emit importWasmTypes
 $#each structs structType
 `,
 	// *******************************
@@ -13,18 +16,18 @@ type $StrName struct {
 $#each struct structField
 }
 
-func New$StrName$+FromBytes(bytes []byte) *$StrName {
-	decode := wasmlib.NewBytesDecoder(bytes)
+func New$StrName$+FromBytes(buf []byte) *$StrName {
+	dec := wasmcodec.NewWasmDecoder(buf)
 	data := &$StrName$+{}
 $#each struct structDecode
-	decode.Close()
+	dec.Close()
 	return data
 }
 
 func (o *$StrName) Bytes() []byte {
-	return wasmlib.NewBytesEncoder().
+	enc := wasmcodec.NewWasmEncoder()
 $#each struct structEncode
-		Data()
+	return enc.Buf()
 }
 $#set mut Immutable
 $#emit structMethods
@@ -37,42 +40,41 @@ $#emit structMethods
 `,
 	// *******************************
 	"structDecode": `
-	data.$FldName$fldPad = decode.$FldType()
+	data.$FldName$fldPad = wasmtypes.Decode$FldType(dec)
 `,
 	// *******************************
 	"structEncode": `
-		$FldType(o.$FldName).
+		wasmtypes.Encode$FldType(enc, o.$FldName)
 `,
 	// *******************************
 	"structMethods": `
 
 type $mut$StrName struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 $#if mut structMethodDelete
 
 func (o $mut$StrName) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 $#if mut structMethodSetValue
 
 func (o $mut$StrName) Value() *$StrName {
-	return New$StrName$+FromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return New$StrName$+FromBytes(o.proxy.Get())
 }
 `,
 	// *******************************
 	"structMethodDelete": `
 
 func (o $mut$StrName) Delete() {
-	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	o.proxy.Delete()
 }
 `,
 	// *******************************
 	"structMethodSetValue": `
 
 func (o $mut$StrName) SetValue(value *$StrName) {
-	wasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())
+	o.proxy.Set(value.Bytes())
 }
 `,
 }

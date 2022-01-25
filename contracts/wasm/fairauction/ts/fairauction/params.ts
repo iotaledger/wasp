@@ -33,14 +33,14 @@ export class MutablePlaceBidParams extends wasmlib.ScMapID {
 }
 
 export class ImmutableSetOwnerMarginParams extends wasmlib.ScMapID {
-    ownerMargin(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerMargin));
+    ownerMargin(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerMargin));
 	}
 }
 
 export class MutableSetOwnerMarginParams extends wasmlib.ScMapID {
-    ownerMargin(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerMargin));
+    ownerMargin(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerMargin));
 	}
 }
 
@@ -53,12 +53,12 @@ export class ImmutableStartAuctionParams extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamDescription));
 	}
 
-    duration(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamDuration));
+    duration(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamDuration));
 	}
 
-    minimumBid(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamMinimumBid));
+    minimumBid(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamMinimumBid));
 	}
 }
 
@@ -71,12 +71,12 @@ export class MutableStartAuctionParams extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamDescription));
 	}
 
-    duration(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamDuration));
+    duration(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamDuration));
 	}
 
-    minimumBid(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamMinimumBid));
+    minimumBid(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamMinimumBid));
 	}
 }
 

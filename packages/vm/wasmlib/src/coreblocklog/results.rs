@@ -18,8 +18,8 @@ pub struct ImmutableControlAddressesResults {
 }
 
 impl ImmutableControlAddressesResults {
-    pub fn block_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
 
     pub fn governing_address(&self) -> ScImmutableAddress {
@@ -37,8 +37,8 @@ pub struct MutableControlAddressesResults {
 }
 
 impl MutableControlAddressesResults {
-    pub fn block_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
 
     pub fn governing_address(&self) -> ScMutableAddress {
@@ -78,12 +78,12 @@ pub struct ArrayOfImmutableBytes {
 }
 
 impl ArrayOfImmutableBytes {
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_bytes(&self, index: i32) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.obj_id, Key32(index))
+    pub fn get_bytes(&self, index: u32) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.obj_id, Key32(index as i32))
     }
 }
 
@@ -109,12 +109,12 @@ impl ArrayOfMutableBytes {
         clear(self.obj_id);
     }
 
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_bytes(&self, index: i32) -> ScMutableBytes {
-        ScMutableBytes::new(self.obj_id, Key32(index))
+    pub fn get_bytes(&self, index: u32) -> ScMutableBytes {
+        ScMutableBytes::new(self.obj_id, Key32(index as i32))
     }
 }
 
@@ -184,8 +184,8 @@ pub struct ImmutableGetLatestBlockInfoResults {
 }
 
 impl ImmutableGetLatestBlockInfoResults {
-    pub fn block_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
 
     pub fn block_info(&self) -> ScImmutableBytes {
@@ -199,8 +199,8 @@ pub struct MutableGetLatestBlockInfoResults {
 }
 
 impl MutableGetLatestBlockInfoResults {
-    pub fn block_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
 
     pub fn block_info(&self) -> ScMutableBytes {
@@ -214,12 +214,12 @@ pub struct ArrayOfImmutableRequestID {
 }
 
 impl ArrayOfImmutableRequestID {
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_request_id(&self, index: i32) -> ScImmutableRequestID {
-        ScImmutableRequestID::new(self.obj_id, Key32(index))
+    pub fn get_request_id(&self, index: u32) -> ScImmutableRequestID {
+        ScImmutableRequestID::new(self.obj_id, Key32(index as i32))
     }
 }
 
@@ -245,12 +245,12 @@ impl ArrayOfMutableRequestID {
         clear(self.obj_id);
     }
 
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_request_id(&self, index: i32) -> ScMutableRequestID {
-        ScMutableRequestID::new(self.obj_id, Key32(index))
+    pub fn get_request_id(&self, index: u32) -> ScMutableRequestID {
+        ScMutableRequestID::new(self.obj_id, Key32(index as i32))
     }
 }
 
@@ -272,12 +272,12 @@ pub struct ImmutableGetRequestReceiptResults {
 }
 
 impl ImmutableGetRequestReceiptResults {
-    pub fn block_index(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
 
-    pub fn request_index(&self) -> ScImmutableInt16 {
-		ScImmutableInt16::new(self.id, RESULT_REQUEST_INDEX.get_key_id())
+    pub fn request_index(&self) -> ScImmutableUint16 {
+		ScImmutableUint16::new(self.id, RESULT_REQUEST_INDEX.get_key_id())
 	}
 
     pub fn request_record(&self) -> ScImmutableBytes {
@@ -291,12 +291,12 @@ pub struct MutableGetRequestReceiptResults {
 }
 
 impl MutableGetRequestReceiptResults {
-    pub fn block_index(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+    pub fn block_index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
 	}
 
-    pub fn request_index(&self) -> ScMutableInt16 {
-		ScMutableInt16::new(self.id, RESULT_REQUEST_INDEX.get_key_id())
+    pub fn request_index(&self) -> ScMutableUint16 {
+		ScMutableUint16::new(self.id, RESULT_REQUEST_INDEX.get_key_id())
 	}
 
     pub fn request_record(&self) -> ScMutableBytes {

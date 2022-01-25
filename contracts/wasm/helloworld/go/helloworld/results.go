@@ -7,20 +7,20 @@
 
 package helloworld
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableGetHelloWorldResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetHelloWorldResults) HelloWorld() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultHelloWorld))
+func (s ImmutableGetHelloWorldResults) HelloWorld() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultHelloWorld))
 }
 
 type MutableGetHelloWorldResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetHelloWorldResults) HelloWorld() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultHelloWorld))
+func (s MutableGetHelloWorldResults) HelloWorld() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ResultHelloWorld))
 }

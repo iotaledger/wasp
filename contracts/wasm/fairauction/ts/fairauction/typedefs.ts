@@ -15,12 +15,12 @@ export class ArrayOfImmutableAgentID {
         this.objID = objID;
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getAgentID(index: i32): wasmlib.ScImmutableAgentID {
-        return new wasmlib.ScImmutableAgentID(this.objID, new wasmlib.Key32(index));
+    getAgentID(index: u32): wasmlib.ScImmutableAgentID {
+        return new wasmlib.ScImmutableAgentID(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 
@@ -38,12 +38,12 @@ export class ArrayOfMutableAgentID {
         wasmlib.clear(this.objID);
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getAgentID(index: i32): wasmlib.ScMutableAgentID {
-        return new wasmlib.ScMutableAgentID(this.objID, new wasmlib.Key32(index));
+    getAgentID(index: u32): wasmlib.ScMutableAgentID {
+        return new wasmlib.ScMutableAgentID(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 

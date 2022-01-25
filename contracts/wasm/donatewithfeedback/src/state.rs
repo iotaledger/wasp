@@ -21,12 +21,12 @@ pub struct ArrayOfImmutableDonation {
 }
 
 impl ArrayOfImmutableDonation {
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-	pub fn get_donation(&self, index: i32) -> ImmutableDonation {
-		ImmutableDonation { obj_id: self.obj_id, key_id: Key32(index) }
+	pub fn get_donation(&self, index: u32) -> ImmutableDonation {
+		ImmutableDonation { obj_id: self.obj_id, key_id: Key32(index as i32) }
 	}
 }
 
@@ -41,12 +41,12 @@ impl ImmutableDonateWithFeedbackState {
 		ArrayOfImmutableDonation { obj_id: arr_id }
 	}
 
-    pub fn max_donation(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_MAX_DONATION.get_key_id())
+    pub fn max_donation(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, STATE_MAX_DONATION.get_key_id())
 	}
 
-    pub fn total_donation(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_TOTAL_DONATION.get_key_id())
+    pub fn total_donation(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, STATE_TOTAL_DONATION.get_key_id())
 	}
 }
 
@@ -60,12 +60,12 @@ impl ArrayOfMutableDonation {
         clear(self.obj_id);
     }
 
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-	pub fn get_donation(&self, index: i32) -> MutableDonation {
-		MutableDonation { obj_id: self.obj_id, key_id: Key32(index) }
+	pub fn get_donation(&self, index: u32) -> MutableDonation {
+		MutableDonation { obj_id: self.obj_id, key_id: Key32(index as i32) }
 	}
 }
 
@@ -84,11 +84,11 @@ impl MutableDonateWithFeedbackState {
 		ArrayOfMutableDonation { obj_id: arr_id }
 	}
 
-    pub fn max_donation(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_MAX_DONATION.get_key_id())
+    pub fn max_donation(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, STATE_MAX_DONATION.get_key_id())
 	}
 
-    pub fn total_donation(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_TOTAL_DONATION.get_key_id())
+    pub fn total_donation(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, STATE_TOTAL_DONATION.get_key_id())
 	}
 }

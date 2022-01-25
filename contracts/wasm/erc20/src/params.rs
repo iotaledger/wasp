@@ -21,8 +21,8 @@ pub struct ImmutableApproveParams {
 }
 
 impl ImmutableApproveParams {
-    pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 
     pub fn delegation(&self) -> ScImmutableAgentID {
@@ -36,8 +36,8 @@ pub struct MutableApproveParams {
 }
 
 impl MutableApproveParams {
-    pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 
     pub fn delegation(&self) -> ScMutableAgentID {
@@ -55,8 +55,8 @@ impl ImmutableInitParams {
 		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CREATOR))
 	}
 
-    pub fn supply(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_SUPPLY))
+    pub fn supply(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, idx_map(IDX_PARAM_SUPPLY))
 	}
 }
 
@@ -70,8 +70,8 @@ impl MutableInitParams {
 		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CREATOR))
 	}
 
-    pub fn supply(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_SUPPLY))
+    pub fn supply(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, idx_map(IDX_PARAM_SUPPLY))
 	}
 }
 
@@ -85,8 +85,8 @@ impl ImmutableTransferParams {
 		ScImmutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 
-    pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 }
 
@@ -100,8 +100,8 @@ impl MutableTransferParams {
 		ScMutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 
-    pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 }
 
@@ -115,8 +115,8 @@ impl ImmutableTransferFromParams {
 		ScImmutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 
-    pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 
     pub fn recipient(&self) -> ScImmutableAgentID {
@@ -134,8 +134,8 @@ impl MutableTransferFromParams {
 		ScMutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
 	}
 
-    pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 
     pub fn recipient(&self) -> ScMutableAgentID {

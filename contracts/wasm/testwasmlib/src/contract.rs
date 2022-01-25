@@ -15,14 +15,14 @@ use crate::consts::*;
 use crate::params::*;
 use crate::results::*;
 
+pub struct ArrayAppendCall {
+	pub func: ScFunc,
+	pub params: MutableArrayAppendParams,
+}
+
 pub struct ArrayClearCall {
 	pub func: ScFunc,
 	pub params: MutableArrayClearParams,
-}
-
-pub struct ArrayCreateCall {
-	pub func: ScFunc,
-	pub params: MutableArrayCreateParams,
 }
 
 pub struct ArraySetCall {
@@ -33,11 +33,6 @@ pub struct ArraySetCall {
 pub struct MapClearCall {
 	pub func: ScFunc,
 	pub params: MutableMapClearParams,
-}
-
-pub struct MapCreateCall {
-	pub func: ScFunc,
-	pub params: MutableMapCreateParams,
 }
 
 pub struct MapSetCall {
@@ -103,19 +98,19 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn array_clear(_ctx: & dyn ScFuncCallContext) -> ArrayClearCall {
-        let mut f = ArrayClearCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_CLEAR),
-            params: MutableArrayClearParams { id: 0 },
+    pub fn array_append(_ctx: & dyn ScFuncCallContext) -> ArrayAppendCall {
+        let mut f = ArrayAppendCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_APPEND),
+            params: MutableArrayAppendParams { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
     }
 
-    pub fn array_create(_ctx: & dyn ScFuncCallContext) -> ArrayCreateCall {
-        let mut f = ArrayCreateCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_CREATE),
-            params: MutableArrayCreateParams { id: 0 },
+    pub fn array_clear(_ctx: & dyn ScFuncCallContext) -> ArrayClearCall {
+        let mut f = ArrayClearCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_ARRAY_CLEAR),
+            params: MutableArrayClearParams { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f
@@ -134,15 +129,6 @@ impl ScFuncs {
         let mut f = MapClearCall {
             func: ScFunc::new(HSC_NAME, HFUNC_MAP_CLEAR),
             params: MutableMapClearParams { id: 0 },
-        };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
-        f
-    }
-
-    pub fn map_create(_ctx: & dyn ScFuncCallContext) -> MapCreateCall {
-        let mut f = MapCreateCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_MAP_CREATE),
-            params: MutableMapCreateParams { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
         f

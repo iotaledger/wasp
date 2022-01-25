@@ -15,12 +15,12 @@ export class ArrayOfImmutableDonation {
         this.objID = objID;
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-	getDonation(index: i32): sc.ImmutableDonation {
-		return new sc.ImmutableDonation(this.objID, new wasmlib.Key32(index));
+	getDonation(index: u32): sc.ImmutableDonation {
+		return new sc.ImmutableDonation(this.objID, new wasmlib.Key32(index as i32));
 	}
 }
 
@@ -30,12 +30,12 @@ export class ImmutableDonateWithFeedbackState extends wasmlib.ScMapID {
 		return new sc.ArrayOfImmutableDonation(arrID);
 	}
 
-    maxDonation(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateMaxDonation));
+    maxDonation(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateMaxDonation));
 	}
 
-    totalDonation(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalDonation));
+    totalDonation(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalDonation));
 	}
 }
 
@@ -50,12 +50,12 @@ export class ArrayOfMutableDonation {
         wasmlib.clear(this.objID);
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-	getDonation(index: i32): sc.MutableDonation {
-		return new sc.MutableDonation(this.objID, new wasmlib.Key32(index));
+	getDonation(index: u32): sc.MutableDonation {
+		return new sc.MutableDonation(this.objID, new wasmlib.Key32(index as i32));
 	}
 }
 
@@ -71,11 +71,11 @@ export class MutableDonateWithFeedbackState extends wasmlib.ScMapID {
 		return new sc.ArrayOfMutableDonation(arrID);
 	}
 
-    maxDonation(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateMaxDonation));
+    maxDonation(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateMaxDonation));
 	}
 
-    totalDonation(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalDonation));
+    totalDonation(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalDonation));
 	}
 }

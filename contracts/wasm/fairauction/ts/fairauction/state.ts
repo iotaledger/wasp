@@ -62,8 +62,8 @@ export class ImmutableFairAuctionState extends wasmlib.ScMapID {
 		return new sc.MapColorToImmutableBids(mapID);
 	}
 
-    ownerMargin(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateOwnerMargin));
+    ownerMargin(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateOwnerMargin));
 	}
 }
 
@@ -139,7 +139,7 @@ export class MutableFairAuctionState extends wasmlib.ScMapID {
 		return new sc.MapColorToMutableBids(mapID);
 	}
 
-    ownerMargin(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.StateOwnerMargin));
+    ownerMargin(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateOwnerMargin));
 	}
 }

@@ -9,14 +9,14 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableGetFactorResults extends wasmlib.ScMapID {
-    factor(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultFactor));
+    factor(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultFactor));
 	}
 }
 
 export class MutableGetFactorResults extends wasmlib.ScMapID {
-    factor(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultFactor));
+    factor(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultFactor));
 	}
 }
 

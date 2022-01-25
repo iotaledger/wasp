@@ -41,7 +41,7 @@ export class $proxy {
     }
 $#if mut typedefProxyArrayClear
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 $#if basetype typedefProxyArrayNewBaseType typedefProxyArrayNewOtherType
@@ -58,8 +58,8 @@ $#set exist $proxy
 	// *******************************
 	"typedefProxyArrayNewBaseType": `
 
-    get$FldType(index: i32): wasmlib.Sc$mut$FldType {
-        return new wasmlib.Sc$mut$FldType(this.objID, new wasmlib.Key32(index));
+    get$FldType(index: u32): wasmlib.Sc$mut$FldType {
+        return new wasmlib.Sc$mut$FldType(this.objID, new wasmlib.Key32(index as i32));
     }
 `,
 	// *******************************
@@ -70,16 +70,16 @@ $#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeS
 	"typedefProxyArrayNewOtherTypeTypeDef": `
 $#emit setVarType
 
-	get$OldType(index: i32): sc.$mut$OldType {
-		let subID = wasmlib.getObjectID(this.objID, new wasmlib.Key32(index), $varType);
+	get$OldType(index: u32): sc.$mut$OldType {
+		let subID = wasmlib.getObjectID(this.objID, new wasmlib.Key32(index as i32), $varType);
 		return new sc.$mut$OldType(subID);
 	}
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherTypeStruct": `
 
-	get$FldType(index: i32): sc.$mut$FldType {
-		return new sc.$mut$FldType(this.objID, new wasmlib.Key32(index));
+	get$FldType(index: u32): sc.$mut$FldType {
+		return new sc.$mut$FldType(this.objID, new wasmlib.Key32(index as i32));
 	}
 `,
 	// *******************************

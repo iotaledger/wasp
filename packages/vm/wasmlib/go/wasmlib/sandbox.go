@@ -3,6 +3,14 @@
 
 package wasmlib
 
+import (
+	"encoding/binary"
+
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmrequests"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+)
+
 const (
 	FnAccountID           = int32(-1)
 	FnBalance             = int32(-2)
@@ -39,129 +47,235 @@ const (
 	FnUtilsHashBlake2b    = int32(-33)
 	FnUtilsHashName       = int32(-34)
 	FnUtilsHashSha3       = int32(-35)
-	FnZzzLastItem         = int32(-36)
 )
 
 type ScSandbox struct{}
 
-func (s ScSandbox) AccountID() ScAgentID {
-	return NewScAgentIDFromBytes(Sandbox(FnAccountID, nil))
+// TODO go over core contract schemas to set correct unsigned types
+
+func NewParamsProxy() wasmtypes.Proxy {
+	return wasmtypes.NewProxy(NewScDictFromBytes(Sandbox(FnParams, nil)))
 }
 
-func (s ScSandbox) Balance(color ScColor) uint64 {
-	bal, _ := ExtractUint64(Sandbox(FnBalance, color.Bytes()))
+// retrieve the agent id of this contract account
+func (s ScSandbox) AccountID() wasmtypes.ScAgentID {
+	return wasmtypes.AgentIDFromBytes(Sandbox(FnAccountID, nil))
+}
+
+func (s ScSandbox) Balance(color wasmtypes.ScColor) uint64 {
+	bal, _ := wasmcodec.ExtractUint64(Sandbox(FnBalance, color.Bytes()))
 	return bal
 }
 
-func (s ScSandbox) Balances() ScAssets {
-	return NewScAssetsFromBytes(Sandbox(FnBalances, nil))
+// access the current balances for all assets
+func (s ScSandbox) Balances() ScBalances {
+	return NewScAssetsFromBytes(Sandbox(FnBalances, nil)).Balances()
 }
 
-func (s ScSandbox) BlockContext(construct func(sandbox ScSandbox) interface{}, onClose func(interface{})) interface{} {
-	panic("implement me")
+// calls a smart contract view
+func (s ScSandbox) Call(hContract, hFunction wasmtypes.ScHname, params ScDict) ScImmutableDict {
+	return s.call(hContract, hFunction, params, nil)
 }
 
-func (s ScSandbox) Call(contract, function ScHname, params ScDict, transfer ScAssets) ScDict {
-	enc := NewBytesEncoder()
-	enc.Hname(contract)
-	enc.Hname(function)
-	enc.Bytes(params.Bytes())
-	enc.Bytes(transfer.Bytes())
-	return NewScDictFromBytes(Sandbox(FnCall, enc.Data()))
+// calls a smart contract function
+func (s ScSandbox) call(hContract, hFunction wasmtypes.ScHname, params ScDict, transfer ScTransfers) ScImmutableDict {
+	req := &wasmrequests.CallRequest{
+		Contract: hContract,
+		Function: hFunction,
+		Params:   params.Bytes(),
+		Transfer: ScAssets(transfer).Bytes(),
+	}
+	res := Sandbox(FnCall, req.Bytes())
+	return NewScDictFromBytes(res).Immutable()
 }
 
-func (s ScSandbox) Caller() ScAgentID {
-	return NewScAgentIDFromBytes(Sandbox(FnCaller, nil))
+// retrieve the chain id of the chain this contract lives on
+func (s ScSandbox) ChainID() wasmtypes.ScChainID {
+	return wasmtypes.ChainIDFromBytes(Sandbox(FnChainID, nil))
 }
 
-func (s ScSandbox) ChainID() ScChainID {
-	return NewScChainIDFromBytes(Sandbox(FnChainID, nil))
+// retrieve the agent id of the owner of the chain this contract lives on
+func (s ScSandbox) ChainOwnerID() wasmtypes.ScAgentID {
+	return wasmtypes.AgentIDFromBytes(Sandbox(FnChainOwnerID, nil))
 }
 
-func (s ScSandbox) ChainOwnerID() ScAgentID {
-	return NewScAgentIDFromBytes(Sandbox(FnChainOwnerID, nil))
+// retrieve the hname of this contract
+func (s ScSandbox) Contract() wasmtypes.ScHname {
+	return wasmtypes.HnameFromBytes(Sandbox(FnContract, nil))
 }
 
-func (s ScSandbox) Contract() ScHname {
-	return NewScHnameFromBytes(Sandbox(FnContract, nil))
+// retrieve the agent id of the creator of this contract
+func (s ScSandbox) ContractCreator() wasmtypes.ScAgentID {
+	return wasmtypes.AgentIDFromBytes(Sandbox(FnContractCreator, nil))
 }
 
-func (s ScSandbox) ContractCreator() ScAgentID {
-	return NewScAgentIDFromBytes(Sandbox(FnContractCreator, nil))
-}
-
-func (s ScSandbox) DeployContract(programHash ScHash, name, description string, initParams ScDict) {
-	enc := NewBytesEncoder()
-	enc.Hash(programHash)
-	enc.String(name)
-	enc.String(description)
-	enc.Bytes(initParams.Bytes())
-	Sandbox(FnDeployContract, enc.Data())
-}
-
-func (s ScSandbox) Entropy() ScHash {
-	return NewScHashFromBytes(Sandbox(FnEntropy, nil))
-}
-
-func (s ScSandbox) Event(msg string) {
-	Sandbox(FnEvent, []byte(msg))
-}
-
-func (s ScSandbox) IncomingTransfer() ScAssets {
-	return NewScAssetsFromBytes(Sandbox(FnIncomingTransfer, nil))
-}
-
+// logs informational text message
 func (s ScSandbox) Log(text string) {
 	Sandbox(FnLog, []byte(text))
 }
 
-func (s ScSandbox) Minted() ScAssets {
-	return NewScAssetsFromBytes(Sandbox(FnMinted, nil))
-}
-
+// logs error text message and then panics
 func (s ScSandbox) Panic(text string) {
 	Sandbox(FnPanic, []byte(text))
 }
 
-func (s ScSandbox) Params() ScDict {
-	return NewScDictFromBytes(Sandbox(FnParams, nil))
+// retrieve parameters passed to the smart contract function that was called
+func (s ScSandbox) Params() ScImmutableDict {
+	return NewScDictFromBytes(Sandbox(FnParams, nil)).Immutable()
 }
 
-func (s ScSandbox) Post(chainID ScChainID, contract, function ScHname, params ScDict, transfer ScAssets, delay uint32) {
-	enc := NewBytesEncoder()
-	enc.ChainID(chainID)
-	enc.Hname(contract)
-	enc.Hname(function)
-	enc.Bytes(params.Bytes())
-	enc.Bytes(transfer.Bytes())
-	enc.Uint32(delay)
-	Sandbox(FnSend, enc.Data())
+func (s ScSandbox) RawState() ScImmutableState {
+	return ScImmutableState{}
 }
 
-//func (s ScSandbox) Request() ScRequest {
-//	panic("implement me")
-//}
-
-func (s ScSandbox) RequestID() ScRequestID {
-	return NewScRequestIDFromBytes(Sandbox(FnRequestID, nil))
+// panics if condition is not satisfied
+func (s ScSandbox) Require(cond bool, msg string) {
+	if !cond {
+		s.Panic(msg)
+	}
 }
 
-func (s ScSandbox) Send(target ScAddress, tokens ScAssets) {
-	enc := NewBytesEncoder()
-	enc.Address(target)
-	enc.Bytes(tokens.Bytes())
-	Sandbox(FnSend, enc.Data())
-}
-
-func (s ScSandbox) StateAnchor() interface{} {
-	panic("implement me")
-}
-
-func (s ScSandbox) Timestamp() int64 {
-	ts, _ := ExtractInt64(Sandbox(FnTimestamp, nil))
+// deterministic time stamp fixed at the moment of calling the smart contract
+func (s ScSandbox) Timestamp() uint64 {
+	ts, _ := wasmcodec.ExtractUint64(Sandbox(FnTimestamp, nil))
 	return ts
 }
 
+// logs debugging trace text message
 func (s ScSandbox) Trace(text string) {
 	Sandbox(FnTrace, []byte(text))
 }
+
+// access diverse utility functions
+func (s ScSandbox) Utility() ScSandboxUtils {
+	return ScSandboxUtils{}
+}
+
+type ScSandboxFunc struct {
+	ScSandbox
+}
+
+//func (s ScSandbox) BlockContext(construct func(sandbox ScSandbox) interface{}, onClose func(interface{})) interface{} {
+//	panic("implement me")
+//}
+
+// calls a smart contract function
+func (s ScSandboxFunc) Call(hContract, hFunction wasmtypes.ScHname, params ScDict, transfer ScTransfers) ScImmutableDict {
+	return s.call(hContract, hFunction, params, transfer)
+}
+
+// retrieve the agent id of the caller of the smart contract
+func (s ScSandboxFunc) Caller() wasmtypes.ScAgentID {
+	return wasmtypes.AgentIDFromBytes(Sandbox(FnCaller, nil))
+}
+
+// deploys a smart contract
+func (s ScSandboxFunc) DeployContract(programHash wasmtypes.ScHash, name, description string, initParams ScDict) {
+	req := &wasmrequests.DeployRequest{
+		ProgHash:    programHash,
+		Name:        name,
+		Description: description,
+		Params:      initParams.Bytes(),
+	}
+	Sandbox(FnDeployContract, req.Bytes())
+}
+
+// returns random entropy data for current request.
+func (s ScSandboxFunc) Entropy() wasmtypes.ScHash {
+	return wasmtypes.HashFromBytes(Sandbox(FnEntropy, nil))
+}
+
+// signals an event on the node that external entities can subscribe to
+func (s ScSandboxFunc) Event(msg string) {
+	Sandbox(FnEvent, []byte(msg))
+}
+
+// access the incoming balances for all assets
+func (s ScSandboxFunc) IncomingTransfer() ScBalances {
+	buf := Sandbox(FnIncomingTransfer, nil)
+	return NewScAssetsFromBytes(buf).Balances()
+}
+
+// retrieve the assets that were minted in this transaction
+func (s ScSandboxFunc) Minted() ScBalances {
+	return NewScAssetsFromBytes(Sandbox(FnMinted, nil)).Balances()
+}
+
+// (delayed) posts a smart contract function request
+func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params ScDict, transfer ScTransfers, delay uint32) {
+	if len(transfer) == 0 {
+		s.Panic("missing transfer")
+	}
+	req := &wasmrequests.PostRequest{
+		ChainID:  chainID,
+		Contract: hContract,
+		Function: hFunction,
+		Params:   params.Bytes(),
+		Transfer: ScAssets(transfer).Bytes(),
+		Delay:    delay,
+	}
+	Sandbox(FnPost, req.Bytes())
+}
+
+var (
+	entropy []byte
+	offset  = 0
+)
+
+// generates a random value from 0 to max (exclusive max) using a deterministic RNG
+func (s ScSandboxFunc) Random(max uint64) (rnd uint64) {
+	if max == 0 {
+		s.Panic("random: max parameter should be non-zero")
+	}
+
+	// note that entropy gets reset for every request
+	if len(entropy) == 0 {
+		// first time in this request, initialize with current request entropy
+		entropy = s.Entropy().Bytes()
+		offset = 0
+	}
+	if offset == 32 {
+		// ran out of entropy data, hash entropy for next pseudo-random entropy
+		entropy = s.Utility().HashBlake2b(entropy).Bytes()
+		offset = 0
+	}
+	rnd = binary.LittleEndian.Uint64(entropy[offset:offset+8]) % max
+	offset += 8
+	return
+}
+
+func (s ScSandboxFunc) RawState() ScState {
+	return ScState{}
+}
+
+//func (s ScSandboxFunc) Request() ScRequest {
+//	panic("implement me")
+//}
+
+// retrieve the request id of this transaction
+func (s ScSandboxFunc) RequestID() wasmtypes.ScRequestID {
+	return wasmtypes.RequestIDFromBytes(Sandbox(FnRequestID, nil))
+}
+
+// transfer assetss to the specified Tangle ledger address
+func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
+	// we need some assets to send
+	assets := uint64(0)
+	for _, amount := range transfer {
+		assets += amount
+	}
+	if assets == 0 {
+		// only try to send when non-zero assets
+		return
+	}
+
+	req := wasmrequests.SendRequest{
+		Address:  address,
+		Transfer: ScAssets(transfer).Bytes(),
+	}
+	Sandbox(FnSend, req.Bytes())
+}
+
+//func (s ScSandboxFunc) StateAnchor() interface{} {
+//	panic("implement me")
+//}

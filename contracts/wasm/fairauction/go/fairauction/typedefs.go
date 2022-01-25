@@ -7,60 +7,64 @@
 
 package fairauction
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ArrayOfImmutableAgentID struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (a ArrayOfImmutableAgentID) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfImmutableAgentID) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfImmutableAgentID) GetAgentID(index int32) wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(a.objID, wasmlib.Key32(index))
+func (a ArrayOfImmutableAgentID) GetAgentID(index uint32) wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(a.proxy.Index(index))
 }
 
 type ImmutableBidderList = ArrayOfImmutableAgentID
 
 type ArrayOfMutableAgentID struct {
-	objID int32
+	proxy wasmtypes.Proxy
+}
+
+func (a ArrayOfMutableAgentID) AppendAgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(a.proxy.Append())
 }
 
 func (a ArrayOfMutableAgentID) Clear() {
-	wasmlib.Clear(a.objID)
+	a.proxy.ClearArray()
 }
 
-func (a ArrayOfMutableAgentID) Length() int32 {
-	return wasmlib.GetLength(a.objID)
+func (a ArrayOfMutableAgentID) Length() uint32 {
+	return a.proxy.Length()
 }
 
-func (a ArrayOfMutableAgentID) GetAgentID(index int32) wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(a.objID, wasmlib.Key32(index))
+func (a ArrayOfMutableAgentID) GetAgentID(index uint32) wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(a.proxy.Index(index))
 }
 
 type MutableBidderList = ArrayOfMutableAgentID
 
 type MapAgentIDToImmutableBid struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToImmutableBid) GetBid(key wasmlib.ScAgentID) ImmutableBid {
-	return ImmutableBid{objID: m.objID, keyID: key.KeyID()}
+func (m MapAgentIDToImmutableBid) GetBid(key wasmtypes.ScAgentID) ImmutableBid {
+	return ImmutableBid{proxy: m.proxy.Key(key.Bytes())}
 }
 
 type ImmutableBids = MapAgentIDToImmutableBid
 
 type MapAgentIDToMutableBid struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapAgentIDToMutableBid) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapAgentIDToMutableBid) GetBid(key wasmlib.ScAgentID) MutableBid {
-	return MutableBid{objID: m.objID, keyID: key.KeyID()}
+func (m MapAgentIDToMutableBid) GetBid(key wasmtypes.ScAgentID) MutableBid {
+	return MutableBid{proxy: m.proxy.Key(key.Bytes())}
 }
 
 type MutableBids = MapAgentIDToMutableBid

@@ -57,7 +57,7 @@ impl ScExports {
         // tell host what value our special predefined key is
         // this helps detect versioning problems between host
         // and client versions of WasmLib
-        exports.get_string(KEY_ZZZZZZZ.0).set_value("Rust:KEY_ZZZZZZZ");
+        exports.get_string(KEY_ZZZZZZZ.0 as u32).set_value("Rust:KEY_ZZZZZZZ");
         ScExports { exports: exports }
     }
 
@@ -65,7 +65,7 @@ impl ScExports {
     // and the entry point function associated with it
     pub fn add_func(&self, name: &str, f: fn(&ScFuncContext)) {
         unsafe {
-            let index = FUNCS.len() as i32;
+            let index = FUNCS.len() as u32;
             FUNCS.push(f);
             self.exports.get_string(index).set_value(name);
         }
@@ -75,7 +75,7 @@ impl ScExports {
     // and the entry point function associated with it
     pub fn add_view(&self, name: &str, v: fn(&ScViewContext)) {
         unsafe {
-            let index = VIEWS.len() as i32;
+            let index = VIEWS.len() as u32;
             VIEWS.push(v);
             self.exports.get_string(index | 0x8000).set_value(name);
         }

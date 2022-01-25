@@ -634,8 +634,8 @@ export class ScMutableMapArray {
 
     // get value proxy for item at index, index can be 0..length()
     // when index equals length() a new item is appended
-    getMap(index: i32): ScMutableMap {
-        let mapID = host.getObjectID(this.objID, new Key32(index), host.TYPE_MAP);
+    getMap(index: u32): ScMutableMap {
+        let mapID = host.getObjectID(this.objID, new Key32(index as i32), host.TYPE_MAP);
         return new ScMutableMap(mapID);
     }
 
@@ -645,7 +645,7 @@ export class ScMutableMapArray {
     }
 
     // number of items in array
-    length(): i32 {
+    length(): u32 {
         return host.getLength(this.objID);
     }
 }
@@ -744,8 +744,8 @@ export class ScMutableStringArray {
 
     // get value proxy for item at index, index can be 0..length()
     // when index equals length() a new item is appended
-    getString(index: i32): ScMutableString {
-        return new ScMutableString(this.objID, new Key32(index));
+    getString(index: u32): ScMutableString {
+        return new ScMutableString(this.objID, new Key32(index as i32));
     }
 
     // get immutable version of array proxy
@@ -754,7 +754,7 @@ export class ScMutableStringArray {
     }
 
     // number of items in array
-    length(): i32 {
+    length(): u32 {
         return host.getLength(this.objID);
     }
 }

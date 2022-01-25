@@ -7,12 +7,12 @@
 
 package coreroot
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "root"
 	ScDescription = "Core root contract"
-	HScName       = wasmlib.ScHname(0xcebf5908)
+	HScName       = wasmtypes.ScHname(0xcebf5908)
 )
 
 const (
@@ -38,9 +38,9 @@ const (
 )
 
 const (
-	HFuncDeployContract         = wasmlib.ScHname(0x28232c27)
-	HFuncGrantDeployPermission  = wasmlib.ScHname(0xf440263a)
-	HFuncRevokeDeployPermission = wasmlib.ScHname(0x850744f1)
-	HViewFindContract           = wasmlib.ScHname(0xc145ca00)
-	HViewGetContractRecords     = wasmlib.ScHname(0x078b3ef3)
+	HFuncDeployContract         = wasmtypes.ScHname(0x28232c27)
+	HFuncGrantDeployPermission  = wasmtypes.ScHname(0xf440263a)
+	HFuncRevokeDeployPermission = wasmtypes.ScHname(0x850744f1)
+	HViewFindContract           = wasmtypes.ScHname(0xc145ca00)
+	HViewGetContractRecords     = wasmtypes.ScHname(0x078b3ef3)
 )

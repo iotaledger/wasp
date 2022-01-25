@@ -5,13 +5,10 @@ import * as wasmlib from "wasmlib"
 import * as coreblocklog from "wasmlib/coreblocklog"
 import * as sc from "./index";
 
-export function funcArrayClear(ctx: wasmlib.ScFuncContext, f: sc.ArrayClearContext): void {
-    let name = f.params.name().value();
-    let array = f.state.arrays().getStringArray(name);
-    array.clear();
+export function funcArrayAppend(ctx: wasmlib.ScFuncContext, f: sc.ArrayAppendContext): void {
 }
 
-export function funcArrayCreate(ctx: wasmlib.ScFuncContext, f: sc.ArrayCreateContext): void {
+export function funcArrayClear(ctx: wasmlib.ScFuncContext, f: sc.ArrayClearContext): void {
     let name = f.params.name().value();
     let array = f.state.arrays().getStringArray(name);
     array.clear();
@@ -23,6 +20,12 @@ export function funcArraySet(ctx: wasmlib.ScFuncContext, f: sc.ArraySetContext):
     let index = f.params.index().value();
     let value = f.params.value().value();
     array.getString(index).setValue(value);
+}
+
+export function funcMapClear(ctx: wasmlib.ScFuncContext, f: sc.MapClearContext): void {
+}
+
+export function funcMapSet(ctx: wasmlib.ScFuncContext, f: sc.MapSetContext): void {
 }
 
 export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesContext): void {
@@ -86,6 +89,14 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
     }
 }
 
+export function funcRandom(ctx: wasmlib.ScFuncContext, f: sc.RandomContext): void {
+    f.state.random().setValue(ctx.random(1000));
+}
+
+export function funcTriggerEvent(ctx: wasmlib.ScFuncContext, f: sc.TriggerEventContext): void {
+    f.events.test(f.params.address().value(), f.params.name().value());
+}
+
 export function viewArrayLength(ctx: wasmlib.ScViewContext, f: sc.ArrayLengthContext): void {
     let name = f.params.name().value();
     let array = f.state.arrays().getStringArray(name);
@@ -117,29 +128,12 @@ export function viewBlockRecords(ctx: wasmlib.ScViewContext, f: sc.BlockRecordsC
     f.results.count().setValue(records.results.requestRecord().length());
 }
 
-export function viewIotaBalance(ctx: wasmlib.ScViewContext, f: sc.IotaBalanceContext): void {
-    f.results.iotas().setValue(ctx.balances().balance(wasmlib.ScColor.IOTA));
-}
-
-export function funcRandom(ctx: wasmlib.ScFuncContext, f: sc.RandomContext): void {
-    f.state.random().setValue(ctx.random(1000));
-}
-
 export function viewGetRandom(ctx: wasmlib.ScViewContext, f: sc.GetRandomContext): void {
     f.results.random().setValue(f.state.random().value());
 }
 
-export function funcTriggerEvent(ctx: wasmlib.ScFuncContext, f: sc.TriggerEventContext): void {
-    f.events.test(f.params.address().value(), f.params.name().value());
-}
-
-export function funcMapClear(ctx: wasmlib.ScFuncContext, f: sc.MapClearContext): void {
-}
-
-export function funcMapCreate(ctx: wasmlib.ScFuncContext, f: sc.MapCreateContext): void {
-}
-
-export function funcMapSet(ctx: wasmlib.ScFuncContext, f: sc.MapSetContext): void {
+export function viewIotaBalance(ctx: wasmlib.ScViewContext, f: sc.IotaBalanceContext): void {
+    f.results.iotas().setValue(ctx.balances().balance(wasmlib.ScColor.IOTA));
 }
 
 export function viewMapValue(ctx: wasmlib.ScViewContext, f: sc.MapValueContext): void {

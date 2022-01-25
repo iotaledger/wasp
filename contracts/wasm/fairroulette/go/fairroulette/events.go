@@ -5,31 +5,33 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:gocritic
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import (
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type FairRouletteEvents struct{}
 
-func (e FairRouletteEvents) Bet(address wasmlib.ScAddress, amount int64, number int64) {
+func (e FairRouletteEvents) Bet(address wasmtypes.ScAddress, amount uint64, number uint16) {
 	wasmlib.NewEventEncoder("fairroulette.bet").
 		Address(address).
-		Int64(amount).
-		Int64(number).
+		Uint64(amount).
+		Uint16(number).
 		Emit()
 }
 
-func (e FairRouletteEvents) Payout(address wasmlib.ScAddress, amount int64) {
+func (e FairRouletteEvents) Payout(address wasmtypes.ScAddress, amount uint64) {
 	wasmlib.NewEventEncoder("fairroulette.payout").
 		Address(address).
-		Int64(amount).
+		Uint64(amount).
 		Emit()
 }
 
-func (e FairRouletteEvents) Round(number int64) {
+func (e FairRouletteEvents) Round(number uint32) {
 	wasmlib.NewEventEncoder("fairroulette.round").
-		Int64(number).
+		Uint32(number).
 		Emit()
 }
 
@@ -43,8 +45,8 @@ func (e FairRouletteEvents) Stop() {
 		Emit()
 }
 
-func (e FairRouletteEvents) Winner(number int64) {
+func (e FairRouletteEvents) Winner(number uint16) {
 	wasmlib.NewEventEncoder("fairroulette.winner").
-		Int64(number).
+		Uint16(number).
 		Emit()
 }

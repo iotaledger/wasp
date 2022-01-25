@@ -7,108 +7,114 @@
 
 package coreaccounts
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type MapAgentIDToImmutableBytes struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToImmutableBytes) GetBytes(key wasmlib.ScAgentID) wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(m.objID, key.KeyID())
+func (m MapAgentIDToImmutableBytes) GetBytes(key wasmtypes.ScAgentID) wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(m.proxy.Key(key.Bytes()))
 }
 
 type ImmutableAccountsResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableAccountsResults) Agents() MapAgentIDToImmutableBytes {
-	return MapAgentIDToImmutableBytes{objID: s.id}
+	//nolint:gosimple
+	return MapAgentIDToImmutableBytes{proxy: s.proxy}
 }
 
 type MapAgentIDToMutableBytes struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapAgentIDToMutableBytes) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapAgentIDToMutableBytes) GetBytes(key wasmlib.ScAgentID) wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(m.objID, key.KeyID())
+func (m MapAgentIDToMutableBytes) GetBytes(key wasmtypes.ScAgentID) wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(m.proxy.Key(key.Bytes()))
 }
 
 type MutableAccountsResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableAccountsResults) Agents() MapAgentIDToMutableBytes {
-	return MapAgentIDToMutableBytes{objID: s.id}
+	//nolint:gosimple
+	return MapAgentIDToMutableBytes{proxy: s.proxy}
 }
 
 type MapColorToImmutableInt64 struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
-func (m MapColorToImmutableInt64) GetInt64(key wasmlib.ScColor) wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(m.objID, key.KeyID())
+func (m MapColorToImmutableInt64) GetInt64(key wasmtypes.ScColor) wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(m.proxy.Key(key.Bytes()))
 }
 
 type ImmutableBalanceResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableBalanceResults) Balances() MapColorToImmutableInt64 {
-	return MapColorToImmutableInt64{objID: s.id}
+	//nolint:gosimple
+	return MapColorToImmutableInt64{proxy: s.proxy}
 }
 
 type MapColorToMutableInt64 struct {
-	objID int32
+	proxy wasmtypes.Proxy
 }
 
 func (m MapColorToMutableInt64) Clear() {
-	wasmlib.Clear(m.objID)
+	m.proxy.ClearMap()
 }
 
-func (m MapColorToMutableInt64) GetInt64(key wasmlib.ScColor) wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(m.objID, key.KeyID())
+func (m MapColorToMutableInt64) GetInt64(key wasmtypes.ScColor) wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(m.proxy.Key(key.Bytes()))
 }
 
 type MutableBalanceResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableBalanceResults) Balances() MapColorToMutableInt64 {
-	return MapColorToMutableInt64{objID: s.id}
+	//nolint:gosimple
+	return MapColorToMutableInt64{proxy: s.proxy}
 }
 
 type ImmutableGetAccountNonceResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetAccountNonceResults) AccountNonce() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultAccountNonce))
+func (s ImmutableGetAccountNonceResults) AccountNonce() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(ResultAccountNonce))
 }
 
 type MutableGetAccountNonceResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetAccountNonceResults) AccountNonce() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultAccountNonce))
+func (s MutableGetAccountNonceResults) AccountNonce() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(ResultAccountNonce))
 }
 
 type ImmutableTotalAssetsResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s ImmutableTotalAssetsResults) Balances() MapColorToImmutableInt64 {
-	return MapColorToImmutableInt64{objID: s.id}
+	//nolint:gosimple
+	return MapColorToImmutableInt64{proxy: s.proxy}
 }
 
 type MutableTotalAssetsResults struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableTotalAssetsResults) Balances() MapColorToMutableInt64 {
-	return MapColorToMutableInt64{objID: s.id}
+	//nolint:gosimple
+	return MapColorToMutableInt64{proxy: s.proxy}
 }

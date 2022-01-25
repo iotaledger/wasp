@@ -8,6 +8,17 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+export class ArrayAppendCall {
+	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayAppend);
+	params: sc.MutableArrayAppendParams = new sc.MutableArrayAppendParams();
+}
+
+export class ArrayAppendContext {
+	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
+	params: sc.ImmutableArrayAppendParams = new sc.ImmutableArrayAppendParams();
+	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
+}
+
 export class ArrayClearCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayClear);
 	params: sc.MutableArrayClearParams = new sc.MutableArrayClearParams();
@@ -16,17 +27,6 @@ export class ArrayClearCall {
 export class ArrayClearContext {
 	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
 	params: sc.ImmutableArrayClearParams = new sc.ImmutableArrayClearParams();
-	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
-}
-
-export class ArrayCreateCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncArrayCreate);
-	params: sc.MutableArrayCreateParams = new sc.MutableArrayCreateParams();
-}
-
-export class ArrayCreateContext {
-	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
-	params: sc.ImmutableArrayCreateParams = new sc.ImmutableArrayCreateParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
@@ -49,17 +49,6 @@ export class MapClearCall {
 export class MapClearContext {
 	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
 	params: sc.ImmutableMapClearParams = new sc.ImmutableMapClearParams();
-	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
-}
-
-export class MapCreateCall {
-	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncMapCreate);
-	params: sc.MutableMapCreateParams = new sc.MutableMapCreateParams();
-}
-
-export class MapCreateContext {
-	events: sc.TestWasmLibEvents = new sc.TestWasmLibEvents();
-	params: sc.ImmutableMapCreateParams = new sc.ImmutableMapCreateParams();
 	state: sc.MutableTestWasmLibState = new sc.MutableTestWasmLibState();
 }
 
@@ -186,14 +175,14 @@ export class MapValueContext {
 }
 
 export class ScFuncs {
-    static arrayClear(ctx: wasmlib.ScFuncCallContext): ArrayClearCall {
-        let f = new ArrayClearCall();
+    static arrayAppend(ctx: wasmlib.ScFuncCallContext): ArrayAppendCall {
+        let f = new ArrayAppendCall();
         f.func.setPtrs(f.params, null);
         return f;
     }
 
-    static arrayCreate(ctx: wasmlib.ScFuncCallContext): ArrayCreateCall {
-        let f = new ArrayCreateCall();
+    static arrayClear(ctx: wasmlib.ScFuncCallContext): ArrayClearCall {
+        let f = new ArrayClearCall();
         f.func.setPtrs(f.params, null);
         return f;
     }
@@ -206,12 +195,6 @@ export class ScFuncs {
 
     static mapClear(ctx: wasmlib.ScFuncCallContext): MapClearCall {
         let f = new MapClearCall();
-        f.func.setPtrs(f.params, null);
-        return f;
-    }
-
-    static mapCreate(ctx: wasmlib.ScFuncCallContext): MapCreateCall {
-        let f = new MapCreateCall();
         f.func.setPtrs(f.params, null);
         return f;
     }

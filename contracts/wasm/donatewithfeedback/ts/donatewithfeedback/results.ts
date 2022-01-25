@@ -9,8 +9,8 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableDonationResults extends wasmlib.ScMapID {
-    amount(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultAmount));
+    amount(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultAmount));
 	}
 
     donator(): wasmlib.ScImmutableAgentID {
@@ -25,14 +25,14 @@ export class ImmutableDonationResults extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultFeedback));
 	}
 
-    timestamp(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultTimestamp));
+    timestamp(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultTimestamp));
 	}
 }
 
 export class MutableDonationResults extends wasmlib.ScMapID {
-    amount(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultAmount));
+    amount(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultAmount));
 	}
 
     donator(): wasmlib.ScMutableAgentID {
@@ -47,35 +47,35 @@ export class MutableDonationResults extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultFeedback));
 	}
 
-    timestamp(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultTimestamp));
+    timestamp(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultTimestamp));
 	}
 }
 
 export class ImmutableDonationInfoResults extends wasmlib.ScMapID {
-    count(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultCount));
+    count(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultCount));
 	}
 
-    maxDonation(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxDonation));
+    maxDonation(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxDonation));
 	}
 
-    totalDonation(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultTotalDonation));
+    totalDonation(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultTotalDonation));
 	}
 }
 
 export class MutableDonationInfoResults extends wasmlib.ScMapID {
-    count(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultCount));
+    count(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultCount));
 	}
 
-    maxDonation(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxDonation));
+    maxDonation(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxDonation));
 	}
 
-    totalDonation(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultTotalDonation));
+    totalDonation(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultTotalDonation));
 	}
 }

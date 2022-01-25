@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,15 +26,15 @@ func NewSoloAgent(env *solo.Solo) *SoloAgent {
 	return agent
 }
 
-func (a *SoloAgent) ScAddress() wasmlib.ScAddress {
-	return wasmlib.NewScAddressFromBytes(a.address.Bytes())
+func (a *SoloAgent) ScAddress() wasmtypes.ScAddress {
+	return wasmtypes.AddressFromBytes(a.address.Bytes())
 }
 
-func (a *SoloAgent) ScAgentID() wasmlib.ScAgentID {
-	return wasmlib.NewScAgentID(a.ScAddress(), wasmlib.ScHname(a.hname))
+func (a *SoloAgent) ScAgentID() wasmtypes.ScAgentID {
+	return wasmtypes.NewScAgentID(a.ScAddress(), wasmtypes.ScHname(a.hname))
 }
 
-func (a *SoloAgent) Balance(color ...wasmlib.ScColor) int64 {
+func (a *SoloAgent) Balance(color ...wasmtypes.ScColor) int64 {
 	switch len(color) {
 	case 0:
 		return int64(a.Env.GetAddressBalance(a.address, colored.IOTA))
@@ -48,7 +48,7 @@ func (a *SoloAgent) Balance(color ...wasmlib.ScColor) int64 {
 	}
 }
 
-func (a *SoloAgent) Mint(amount int64) (wasmlib.ScColor, error) {
+func (a *SoloAgent) Mint(amount int64) (wasmtypes.ScColor, error) {
 	color, err := a.Env.MintTokens(a.Pair, uint64(amount))
-	return wasmlib.NewScColorFromBytes(color.Bytes()), err
+	return wasmtypes.ColorFromBytes(color.Bytes()), err
 }

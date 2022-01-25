@@ -7,84 +7,84 @@
 
 package coreroot
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableDeployContractParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableDeployContractParams) Description() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamDescription))
+func (s ImmutableDeployContractParams) Description() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
 }
 
-func (s ImmutableDeployContractParams) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamName))
+func (s ImmutableDeployContractParams) Name() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
-func (s ImmutableDeployContractParams) ProgramHash() wasmlib.ScImmutableHash {
-	return wasmlib.NewScImmutableHash(s.id, wasmlib.KeyID(ParamProgramHash))
+func (s ImmutableDeployContractParams) ProgramHash() wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamProgramHash))
 }
 
 type MutableDeployContractParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableDeployContractParams) Description() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamDescription))
+func (s MutableDeployContractParams) Description() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamDescription))
 }
 
-func (s MutableDeployContractParams) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamName))
+func (s MutableDeployContractParams) Name() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
-func (s MutableDeployContractParams) ProgramHash() wasmlib.ScMutableHash {
-	return wasmlib.NewScMutableHash(s.id, wasmlib.KeyID(ParamProgramHash))
+func (s MutableDeployContractParams) ProgramHash() wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamProgramHash))
 }
 
 type ImmutableGrantDeployPermissionParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGrantDeployPermissionParams) Deployer() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamDeployer))
+func (s ImmutableGrantDeployPermissionParams) Deployer() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamDeployer))
 }
 
 type MutableGrantDeployPermissionParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGrantDeployPermissionParams) Deployer() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamDeployer))
+func (s MutableGrantDeployPermissionParams) Deployer() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamDeployer))
 }
 
 type ImmutableRevokeDeployPermissionParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableRevokeDeployPermissionParams) Deployer() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamDeployer))
+func (s ImmutableRevokeDeployPermissionParams) Deployer() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamDeployer))
 }
 
 type MutableRevokeDeployPermissionParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableRevokeDeployPermissionParams) Deployer() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamDeployer))
+func (s MutableRevokeDeployPermissionParams) Deployer() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamDeployer))
 }
 
 type ImmutableFindContractParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableFindContractParams) Hname() wasmlib.ScImmutableHname {
-	return wasmlib.NewScImmutableHname(s.id, wasmlib.KeyID(ParamHname))
+func (s ImmutableFindContractParams) Hname() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHname))
 }
 
 type MutableFindContractParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableFindContractParams) Hname() wasmlib.ScMutableHname {
-	return wasmlib.NewScMutableHname(s.id, wasmlib.KeyID(ParamHname))
+func (s MutableFindContractParams) Hname() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHname))
 }

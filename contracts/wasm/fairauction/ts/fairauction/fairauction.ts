@@ -4,20 +4,20 @@
 import * as wasmlib from "wasmlib"
 import * as sc from "./index";
 
-const DURATION_DEFAULT: i32 = 60;
-const DURATION_MIN: i32 = 1;
-const DURATION_MAX: i32 = 120;
+const DURATION_DEFAULT: u32 = 60;
+const DURATION_MIN: u32 = 1;
+const DURATION_MAX: u32 = 120;
 const MAX_DESCRIPTION_LENGTH: i32 = 150;
-const OWNER_MARGIN_DEFAULT: i64 = 50;
-const OWNER_MARGIN_MIN: i64 = 5;
-const OWNER_MARGIN_MAX: i64 = 100;
+const OWNER_MARGIN_DEFAULT: u64 = 50;
+const OWNER_MARGIN_MIN: u64 = 5;
+const OWNER_MARGIN_MAX: u64 = 100;
 
 export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAuctionContext): void {
     let color = f.params.color().value();
     let currentAuction = f.state.auctions().getAuction(color);
     ctx.require(currentAuction.exists(), "Missing auction info");
     let auction = currentAuction.value();
-    if (auction.highestBid < 0) {
+    if (auction.highestBid == 0) {
         ctx.log("No one bid on " + color.toString());
         let ownerFee = auction.minimumBid * auction.ownerMargin / 1000;
         if (ownerFee == 0) {
@@ -39,7 +39,7 @@ export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAu
     let bids = f.state.bids().getBids(color);
     let bidderList = f.state.bidderList().getBidderList(color);
     let size = bidderList.length();
-    for (let i = 0; i < size; i++) {
+    for (let i: u32 = 0; i < size; i++) {
         let loser = bidderList.getAgentID(i).value();
         if (loser != auction.highestBidder) {
             let bid = bids.getBid(loser).value();
@@ -161,7 +161,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
     auction.deposit = deposit;
     auction.description = description;
     auction.duration = duration;
-    auction.highestBid = -1;
+    auction.highestBid = 0;
     auction.highestBidder = new wasmlib.ScAgentID();
     auction.minimumBid = minimumBid;
     auction.numTokens = numTokens;

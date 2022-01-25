@@ -20,6 +20,8 @@ export class ClientFunc {
         this.onLedger = onLedger;
     }
 
+    //TODO rename to protected postRequest to prevent need for override and hide it
+
     // Sends a request to the smart contract service
     // You can wait for the request to complete by using the returned RequestID
     // as parameter to Service.waitRequest()

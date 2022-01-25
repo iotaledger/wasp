@@ -37,8 +37,8 @@ impl ImmutableTestCoreState {
 		ScImmutableColor::new(self.id, STATE_MINTED_COLOR.get_key_id())
 	}
 
-    pub fn minted_supply(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_MINTED_SUPPLY.get_key_id())
+    pub fn minted_supply(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, STATE_MINTED_SUPPLY.get_key_id())
 	}
 }
 
@@ -69,7 +69,7 @@ impl MutableTestCoreState {
 		ScMutableColor::new(self.id, STATE_MINTED_COLOR.get_key_id())
 	}
 
-    pub fn minted_supply(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_MINTED_SUPPLY.get_key_id())
+    pub fn minted_supply(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, STATE_MINTED_SUPPLY.get_key_id())
 	}
 }

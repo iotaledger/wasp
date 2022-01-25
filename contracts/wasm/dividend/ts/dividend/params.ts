@@ -25,8 +25,8 @@ export class ImmutableMemberParams extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamAddress));
 	}
 
-    factor(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamFactor));
+    factor(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamFactor));
 	}
 }
 
@@ -35,8 +35,8 @@ export class MutableMemberParams extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamAddress));
 	}
 
-    factor(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamFactor));
+    factor(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamFactor));
 	}
 }
 

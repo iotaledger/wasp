@@ -9,8 +9,8 @@ import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
 export class ImmutableGetInfoResults extends wasmlib.ScMapID {
-    bidders(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBidders));
+    bidders(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBidders));
 	}
 
     color(): wasmlib.ScImmutableColor {
@@ -21,46 +21,46 @@ export class ImmutableGetInfoResults extends wasmlib.ScMapID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultCreator));
 	}
 
-    deposit(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultDeposit));
+    deposit(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultDeposit));
 	}
 
     description(): wasmlib.ScImmutableString {
 		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultDescription));
 	}
 
-    duration(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultDuration));
+    duration(): wasmlib.ScImmutableUint32 {
+		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultDuration));
 	}
 
-    highestBid(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultHighestBid));
+    highestBid(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultHighestBid));
 	}
 
     highestBidder(): wasmlib.ScImmutableAgentID {
 		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultHighestBidder));
 	}
 
-    minimumBid(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultMinimumBid));
+    minimumBid(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultMinimumBid));
 	}
 
-    numTokens(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultNumTokens));
+    numTokens(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultNumTokens));
 	}
 
-    ownerMargin(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultOwnerMargin));
+    ownerMargin(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultOwnerMargin));
 	}
 
-    whenStarted(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultWhenStarted));
+    whenStarted(): wasmlib.ScImmutableUint64 {
+		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultWhenStarted));
 	}
 }
 
 export class MutableGetInfoResults extends wasmlib.ScMapID {
-    bidders(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultBidders));
+    bidders(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBidders));
 	}
 
     color(): wasmlib.ScMutableColor {
@@ -71,39 +71,39 @@ export class MutableGetInfoResults extends wasmlib.ScMapID {
 		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultCreator));
 	}
 
-    deposit(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultDeposit));
+    deposit(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultDeposit));
 	}
 
     description(): wasmlib.ScMutableString {
 		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultDescription));
 	}
 
-    duration(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultDuration));
+    duration(): wasmlib.ScMutableUint32 {
+		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultDuration));
 	}
 
-    highestBid(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultHighestBid));
+    highestBid(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultHighestBid));
 	}
 
     highestBidder(): wasmlib.ScMutableAgentID {
 		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultHighestBidder));
 	}
 
-    minimumBid(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultMinimumBid));
+    minimumBid(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultMinimumBid));
 	}
 
-    numTokens(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultNumTokens));
+    numTokens(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultNumTokens));
 	}
 
-    ownerMargin(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultOwnerMargin));
+    ownerMargin(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultOwnerMargin));
 	}
 
-    whenStarted(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultWhenStarted));
+    whenStarted(): wasmlib.ScMutableUint64 {
+		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultWhenStarted));
 	}
 }

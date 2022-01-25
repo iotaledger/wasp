@@ -25,10 +25,6 @@ func OnLoad() {
 	exports.AddView(ViewOwnerOf, viewOwnerOfThunk)
 	exports.AddView(ViewSymbol, viewSymbolThunk)
 	exports.AddView(ViewTokenURI, viewTokenURIThunk)
-
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
-	}
 }
 
 type ApproveContext struct {
@@ -41,10 +37,10 @@ func funcApproveThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("erc721.funcApprove")
 	f := &ApproveContext{
 		Params: ImmutableApproveParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.TokenID().Exists(), "missing mandatory tokenID")
@@ -62,10 +58,10 @@ func funcBurnThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("erc721.funcBurn")
 	f := &BurnContext{
 		Params: ImmutableBurnParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.TokenID().Exists(), "missing mandatory tokenID")
@@ -83,10 +79,10 @@ func funcInitThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("erc721.funcInit")
 	f := &InitContext{
 		Params: ImmutableInitParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
@@ -105,10 +101,10 @@ func funcMintThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("erc721.funcMint")
 	f := &MintContext{
 		Params: ImmutableMintParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.TokenID().Exists(), "missing mandatory tokenID")
@@ -126,10 +122,10 @@ func funcSafeTransferFromThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("erc721.funcSafeTransferFrom")
 	f := &SafeTransferFromContext{
 		Params: ImmutableSafeTransferFromParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.From().Exists(), "missing mandatory from")
@@ -149,10 +145,10 @@ func funcSetApprovalForAllThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("erc721.funcSetApprovalForAll")
 	f := &SetApprovalForAllContext{
 		Params: ImmutableSetApprovalForAllParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Approval().Exists(), "missing mandatory approval")
@@ -171,10 +167,10 @@ func funcTransferFromThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("erc721.funcTransferFrom")
 	f := &TransferFromContext{
 		Params: ImmutableTransferFromParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.From().Exists(), "missing mandatory from")
@@ -194,13 +190,13 @@ func viewBalanceOfThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc721.viewBalanceOf")
 	f := &BalanceOfContext{
 		Params: ImmutableBalanceOfParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableBalanceOfResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Owner().Exists(), "missing mandatory owner")
@@ -218,13 +214,13 @@ func viewGetApprovedThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc721.viewGetApproved")
 	f := &GetApprovedContext{
 		Params: ImmutableGetApprovedParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetApprovedResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.TokenID().Exists(), "missing mandatory tokenID")
@@ -242,13 +238,13 @@ func viewIsApprovedForAllThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc721.viewIsApprovedForAll")
 	f := &IsApprovedForAllContext{
 		Params: ImmutableIsApprovedForAllParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableIsApprovedForAllResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Operator().Exists(), "missing mandatory operator")
@@ -266,10 +262,10 @@ func viewNameThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc721.viewName")
 	f := &NameContext{
 		Results: MutableNameResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewName(ctx, f)
@@ -286,13 +282,13 @@ func viewOwnerOfThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc721.viewOwnerOf")
 	f := &OwnerOfContext{
 		Params: ImmutableOwnerOfParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableOwnerOfResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.TokenID().Exists(), "missing mandatory tokenID")
@@ -309,10 +305,10 @@ func viewSymbolThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc721.viewSymbol")
 	f := &SymbolContext{
 		Results: MutableSymbolResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewSymbol(ctx, f)
@@ -329,13 +325,13 @@ func viewTokenURIThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc721.viewTokenURI")
 	f := &TokenURIContext{
 		Params: ImmutableTokenURIParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableTokenURIResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: wasmlib.NewResultsProxy(),
 		},
 		State: ImmutableErc721State{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.TokenID().Exists(), "missing mandatory tokenID")

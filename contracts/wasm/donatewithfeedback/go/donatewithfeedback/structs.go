@@ -7,68 +7,69 @@
 
 package donatewithfeedback
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import (
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type Donation struct {
-	Amount    int64             // amount donated
-	Donator   wasmlib.ScAgentID // who donated
-	Error     string            // error to be reported to donator if anything goes wrong
-	Feedback  string            // the feedback for the person donated to
-	Timestamp int64             // when the donation took place
+	Amount    uint64              // amount donated
+	Donator   wasmtypes.ScAgentID // who donated
+	Error     string              // error to be reported to donator if anything goes wrong
+	Feedback  string              // the feedback for the person donated to
+	Timestamp uint64              // when the donation took place
 }
 
-func NewDonationFromBytes(bytes []byte) *Donation {
-	decode := wasmlib.NewBytesDecoder(bytes)
+func NewDonationFromBytes(buf []byte) *Donation {
+	dec := wasmcodec.NewWasmDecoder(buf)
 	data := &Donation{}
-	data.Amount = decode.Int64()
-	data.Donator = decode.AgentID()
-	data.Error = decode.String()
-	data.Feedback = decode.String()
-	data.Timestamp = decode.Int64()
-	decode.Close()
+	data.Amount = wasmtypes.DecodeUint64(dec)
+	data.Donator = wasmtypes.DecodeAgentID(dec)
+	data.Error = wasmtypes.DecodeString(dec)
+	data.Feedback = wasmtypes.DecodeString(dec)
+	data.Timestamp = wasmtypes.DecodeUint64(dec)
+	dec.Close()
 	return data
 }
 
 func (o *Donation) Bytes() []byte {
-	return wasmlib.NewBytesEncoder().
-		Int64(o.Amount).
-		AgentID(o.Donator).
-		String(o.Error).
-		String(o.Feedback).
-		Int64(o.Timestamp).
-		Data()
+	enc := wasmcodec.NewWasmEncoder()
+	wasmtypes.EncodeUint64(enc, o.Amount)
+	wasmtypes.EncodeAgentID(enc, o.Donator)
+	wasmtypes.EncodeString(enc, o.Error)
+	wasmtypes.EncodeString(enc, o.Feedback)
+	wasmtypes.EncodeUint64(enc, o.Timestamp)
+	return enc.Buf()
 }
 
 type ImmutableDonation struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o ImmutableDonation) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o ImmutableDonation) Value() *Donation {
-	return NewDonationFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewDonationFromBytes(o.proxy.Get())
 }
 
 type MutableDonation struct {
-	objID int32
-	keyID wasmlib.Key32
+	proxy wasmtypes.Proxy
 }
 
 func (o MutableDonation) Delete() {
-	wasmlib.DelKey(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	o.proxy.Delete()
 }
 
 func (o MutableDonation) Exists() bool {
-	return wasmlib.Exists(o.objID, o.keyID, wasmlib.TYPE_BYTES)
+	return o.proxy.Exists()
 }
 
 func (o MutableDonation) SetValue(value *Donation) {
-	wasmlib.SetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES, value.Bytes())
+	o.proxy.Set(value.Bytes())
 }
 
 func (o MutableDonation) Value() *Donation {
-	return NewDonationFromBytes(wasmlib.GetBytes(o.objID, o.keyID, wasmlib.TYPE_BYTES))
+	return NewDonationFromBytes(o.proxy.Get())
 }

@@ -8,22 +8,22 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
-export class MapAgentIDToImmutableInt64 {
+export class MapAgentIDToImmutableUint64 {
 	objID: i32;
 
     constructor(objID: i32) {
         this.objID = objID;
     }
 
-    getInt64(key: wasmlib.ScAgentID): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.objID, key.getKeyID());
+    getUint64(key: wasmlib.ScAgentID): wasmlib.ScImmutableUint64 {
+        return new wasmlib.ScImmutableUint64(this.objID, key.getKeyID());
     }
 }
 
-export class ImmutableAllowancesForAgent extends MapAgentIDToImmutableInt64 {
+export class ImmutableAllowancesForAgent extends MapAgentIDToImmutableUint64 {
 };
 
-export class MapAgentIDToMutableInt64 {
+export class MapAgentIDToMutableUint64 {
 	objID: i32;
 
     constructor(objID: i32) {
@@ -34,10 +34,10 @@ export class MapAgentIDToMutableInt64 {
         wasmlib.clear(this.objID);
     }
 
-    getInt64(key: wasmlib.ScAgentID): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.objID, key.getKeyID());
+    getUint64(key: wasmlib.ScAgentID): wasmlib.ScMutableUint64 {
+        return new wasmlib.ScMutableUint64(this.objID, key.getKeyID());
     }
 }
 
-export class MutableAllowancesForAgent extends MapAgentIDToMutableInt64 {
+export class MutableAllowancesForAgent extends MapAgentIDToMutableUint64 {
 };

@@ -51,13 +51,13 @@ var ScFuncs Funcs
 
 func (sc Funcs) Deposit(ctx wasmlib.ScFuncCallContext) *DepositCall {
 	f := &DepositCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDeposit)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) Harvest(ctx wasmlib.ScFuncCallContext) *HarvestCall {
 	f := &HarvestCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncHarvest)}
-	f.Func.SetPtrs(&f.Params.id, nil)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
@@ -67,25 +67,27 @@ func (sc Funcs) Withdraw(ctx wasmlib.ScFuncCallContext) *WithdrawCall {
 
 func (sc Funcs) Accounts(ctx wasmlib.ScViewCallContext) *AccountsCall {
 	f := &AccountsCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccounts)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) Balance(ctx wasmlib.ScViewCallContext) *BalanceCall {
 	f := &BalanceCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalance)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) GetAccountNonce(ctx wasmlib.ScViewCallContext) *GetAccountNonceCall {
 	f := &GetAccountNonceCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetAccountNonce)}
-	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 
 func (sc Funcs) TotalAssets(ctx wasmlib.ScViewCallContext) *TotalAssetsCall {
 	f := &TotalAssetsCall{Func: wasmlib.NewScView(ctx, HScName, HViewTotalAssets)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }
 

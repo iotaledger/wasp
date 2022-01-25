@@ -14,24 +14,24 @@ pub struct FairRouletteEvents {
 
 impl FairRouletteEvents {
 
-	pub fn bet(&self, address: &ScAddress, amount: i64, number: i64) {
+	pub fn bet(&self, address: &ScAddress, amount: u64, number: u16) {
 		let mut encoder = EventEncoder::new("fairroulette.bet");
 		encoder.address(&address);
-		encoder.int64(amount);
-		encoder.int64(number);
+		encoder.uint64(amount);
+		encoder.uint16(number);
 		encoder.emit();
 	}
 
-	pub fn payout(&self, address: &ScAddress, amount: i64) {
+	pub fn payout(&self, address: &ScAddress, amount: u64) {
 		let mut encoder = EventEncoder::new("fairroulette.payout");
 		encoder.address(&address);
-		encoder.int64(amount);
+		encoder.uint64(amount);
 		encoder.emit();
 	}
 
-	pub fn round(&self, number: i64) {
+	pub fn round(&self, number: u32) {
 		let mut encoder = EventEncoder::new("fairroulette.round");
-		encoder.int64(number);
+		encoder.uint32(number);
 		encoder.emit();
 	}
 
@@ -43,9 +43,9 @@ impl FairRouletteEvents {
 		EventEncoder::new("fairroulette.stop").emit();
 	}
 
-	pub fn winner(&self, number: i64) {
+	pub fn winner(&self, number: u16) {
 		let mut encoder = EventEncoder::new("fairroulette.winner");
-		encoder.int64(number);
+		encoder.uint16(number);
 		encoder.emit();
 	}
 }

@@ -7,12 +7,12 @@
 
 package timestamp
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "timestamp"
 	ScDescription = "Extremely simple timestamp server"
-	HScName       = wasmlib.ScHname(0x3988002e)
+	HScName       = wasmtypes.ScHname(0x3988002e)
 )
 
 const (
@@ -29,6 +29,6 @@ const (
 )
 
 const (
-	HFuncNow          = wasmlib.ScHname(0xd73b7fc9)
-	HViewGetTimestamp = wasmlib.ScHname(0x40c6376a)
+	HFuncNow          = wasmtypes.ScHname(0xd73b7fc9)
+	HViewGetTimestamp = wasmtypes.ScHname(0x40c6376a)
 )

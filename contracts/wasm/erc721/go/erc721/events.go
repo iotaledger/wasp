@@ -8,11 +8,14 @@
 //nolint:gocritic
 package erc721
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import (
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type Erc721Events struct{}
 
-func (e Erc721Events) Approval(approved wasmlib.ScAgentID, owner wasmlib.ScAgentID, tokenID wasmlib.ScHash) {
+func (e Erc721Events) Approval(approved wasmtypes.ScAgentID, owner wasmtypes.ScAgentID, tokenID wasmtypes.ScHash) {
 	wasmlib.NewEventEncoder("erc721.approval").
 		AgentID(approved).
 		AgentID(owner).
@@ -20,7 +23,7 @@ func (e Erc721Events) Approval(approved wasmlib.ScAgentID, owner wasmlib.ScAgent
 		Emit()
 }
 
-func (e Erc721Events) ApprovalForAll(approval bool, operator wasmlib.ScAgentID, owner wasmlib.ScAgentID) {
+func (e Erc721Events) ApprovalForAll(approval bool, operator wasmtypes.ScAgentID, owner wasmtypes.ScAgentID) {
 	wasmlib.NewEventEncoder("erc721.approvalForAll").
 		Bool(approval).
 		AgentID(operator).
@@ -35,7 +38,7 @@ func (e Erc721Events) Init(name string, symbol string) {
 		Emit()
 }
 
-func (e Erc721Events) Mint(balance uint64, owner wasmlib.ScAgentID, tokenID wasmlib.ScHash) {
+func (e Erc721Events) Mint(balance uint64, owner wasmtypes.ScAgentID, tokenID wasmtypes.ScHash) {
 	wasmlib.NewEventEncoder("erc721.mint").
 		Uint64(balance).
 		AgentID(owner).
@@ -43,7 +46,7 @@ func (e Erc721Events) Mint(balance uint64, owner wasmlib.ScAgentID, tokenID wasm
 		Emit()
 }
 
-func (e Erc721Events) Transfer(from wasmlib.ScAgentID, to wasmlib.ScAgentID, tokenID wasmlib.ScHash) {
+func (e Erc721Events) Transfer(from wasmtypes.ScAgentID, to wasmtypes.ScAgentID, tokenID wasmtypes.ScHash) {
 	wasmlib.NewEventEncoder("erc721.transfer").
 		AgentID(from).
 		AgentID(to).

@@ -38,13 +38,13 @@ impl ImmutableErc20State {
 		MapAgentIDToImmutableAllowancesForAgent { obj_id: map_id }
 	}
 
-    pub fn balances(&self) -> MapAgentIDToImmutableInt64 {
+    pub fn balances(&self) -> MapAgentIDToImmutableUint64 {
 		let map_id = get_object_id(self.id, STATE_BALANCES.get_key_id(), TYPE_MAP);
-		MapAgentIDToImmutableInt64 { obj_id: map_id }
+		MapAgentIDToImmutableUint64 { obj_id: map_id }
 	}
 
-    pub fn supply(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, STATE_SUPPLY.get_key_id())
+    pub fn supply(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, STATE_SUPPLY.get_key_id())
 	}
 }
 
@@ -79,12 +79,12 @@ impl MutableErc20State {
 		MapAgentIDToMutableAllowancesForAgent { obj_id: map_id }
 	}
 
-    pub fn balances(&self) -> MapAgentIDToMutableInt64 {
+    pub fn balances(&self) -> MapAgentIDToMutableUint64 {
 		let map_id = get_object_id(self.id, STATE_BALANCES.get_key_id(), TYPE_MAP);
-		MapAgentIDToMutableInt64 { obj_id: map_id }
+		MapAgentIDToMutableUint64 { obj_id: map_id }
 	}
 
-    pub fn supply(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, STATE_SUPPLY.get_key_id())
+    pub fn supply(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, STATE_SUPPLY.get_key_id())
 	}
 }

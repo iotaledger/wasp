@@ -43,8 +43,8 @@ pub struct ImmutableWithdrawParams {
 }
 
 impl ImmutableWithdrawParams {
-    pub fn amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 }
 
@@ -54,8 +54,8 @@ pub struct MutableWithdrawParams {
 }
 
 impl MutableWithdrawParams {
-    pub fn amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_AMOUNT.get_key_id())
+    pub fn amount(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
 	}
 }
 
@@ -65,8 +65,8 @@ pub struct ImmutableDonationParams {
 }
 
 impl ImmutableDonationParams {
-    pub fn nr(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_NR.get_key_id())
+    pub fn nr(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.id, PARAM_NR.get_key_id())
 	}
 }
 
@@ -76,7 +76,7 @@ pub struct MutableDonationParams {
 }
 
 impl MutableDonationParams {
-    pub fn nr(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_NR.get_key_id())
+    pub fn nr(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.id, PARAM_NR.get_key_id())
 	}
 }

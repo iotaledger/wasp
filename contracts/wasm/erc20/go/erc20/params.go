@@ -7,148 +7,148 @@
 
 package erc20
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableApproveParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableApproveParams) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamAmount))
+func (s ImmutableApproveParams) Amount() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamAmount))
 }
 
-func (s ImmutableApproveParams) Delegation() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamDelegation))
+func (s ImmutableApproveParams) Delegation() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamDelegation))
 }
 
 type MutableApproveParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableApproveParams) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamAmount))
+func (s MutableApproveParams) Amount() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamAmount))
 }
 
-func (s MutableApproveParams) Delegation() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamDelegation))
+func (s MutableApproveParams) Delegation() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamDelegation))
 }
 
 type ImmutableInitParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableInitParams) Creator() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamCreator])
+func (s ImmutableInitParams) Creator() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamCreator))
 }
 
-func (s ImmutableInitParams) Supply() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamSupply])
+func (s ImmutableInitParams) Supply() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamSupply))
 }
 
 type MutableInitParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableInitParams) Creator() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamCreator])
+func (s MutableInitParams) Creator() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamCreator))
 }
 
-func (s MutableInitParams) Supply() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxParamSupply])
+func (s MutableInitParams) Supply() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamSupply))
 }
 
 type ImmutableTransferParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTransferParams) Account() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
+func (s ImmutableTransferParams) Account() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAccount))
 }
 
-func (s ImmutableTransferParams) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamAmount))
+func (s ImmutableTransferParams) Amount() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamAmount))
 }
 
 type MutableTransferParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableTransferParams) Account() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
+func (s MutableTransferParams) Account() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAccount))
 }
 
-func (s MutableTransferParams) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamAmount))
+func (s MutableTransferParams) Amount() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamAmount))
 }
 
 type ImmutableTransferFromParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableTransferFromParams) Account() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
+func (s ImmutableTransferFromParams) Account() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAccount))
 }
 
-func (s ImmutableTransferFromParams) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ParamAmount))
+func (s ImmutableTransferFromParams) Amount() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamAmount))
 }
 
-func (s ImmutableTransferFromParams) Recipient() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamRecipient))
+func (s ImmutableTransferFromParams) Recipient() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamRecipient))
 }
 
 type MutableTransferFromParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableTransferFromParams) Account() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
+func (s MutableTransferFromParams) Account() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAccount))
 }
 
-func (s MutableTransferFromParams) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ParamAmount))
+func (s MutableTransferFromParams) Amount() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamAmount))
 }
 
-func (s MutableTransferFromParams) Recipient() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamRecipient))
+func (s MutableTransferFromParams) Recipient() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamRecipient))
 }
 
 type ImmutableAllowanceParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableAllowanceParams) Account() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
+func (s ImmutableAllowanceParams) Account() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAccount))
 }
 
-func (s ImmutableAllowanceParams) Delegation() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamDelegation))
+func (s ImmutableAllowanceParams) Delegation() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamDelegation))
 }
 
 type MutableAllowanceParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableAllowanceParams) Account() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
+func (s MutableAllowanceParams) Account() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAccount))
 }
 
-func (s MutableAllowanceParams) Delegation() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamDelegation))
+func (s MutableAllowanceParams) Delegation() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamDelegation))
 }
 
 type ImmutableBalanceOfParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableBalanceOfParams) Account() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
+func (s ImmutableBalanceOfParams) Account() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAccount))
 }
 
 type MutableBalanceOfParams struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableBalanceOfParams) Account() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ParamAccount))
+func (s MutableBalanceOfParams) Account() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAccount))
 }

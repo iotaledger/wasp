@@ -6,20 +6,3 @@
 // Change the json schema instead
 
 package timestamp
-
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
-
-const (
-	IdxResultTimestamp = 0
-
-	IdxStateTimestamp = 1
-)
-
-const keyMapLen = 2
-
-var keyMap = [keyMapLen]wasmlib.Key{
-	ResultTimestamp,
-	StateTimestamp,
-}
-
-var idxMap [keyMapLen]wasmlib.Key32

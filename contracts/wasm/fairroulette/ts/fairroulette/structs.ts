@@ -8,25 +8,25 @@
 import * as wasmlib from "wasmlib";
 
 export class Bet {
-    amount : i64 = 0; 
+    amount : u64 = 0; 
     better : wasmlib.ScAgentID = new wasmlib.ScAgentID(); 
-    number : i64 = 0; 
+    number : u16 = 0; 
 
     static fromBytes(bytes: u8[]): Bet {
         let decode = new wasmlib.BytesDecoder(bytes);
         let data = new Bet();
-        data.amount = decode.int64();
+        data.amount = decode.uint64();
         data.better = decode.agentID();
-        data.number = decode.int64();
+        data.number = decode.uint16();
         decode.close();
         return data;
     }
 
     bytes(): u8[] {
         return new wasmlib.BytesEncoder().
-		    int64(this.amount).
+		    uint64(this.amount).
 		    agentID(this.better).
-		    int64(this.number).
+		    uint16(this.number).
             data();
     }
 }

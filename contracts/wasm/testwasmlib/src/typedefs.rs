@@ -16,12 +16,12 @@ pub struct ArrayOfImmutableString {
 }
 
 impl ArrayOfImmutableString {
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_string(&self, index: i32) -> ScImmutableString {
-        ScImmutableString::new(self.obj_id, Key32(index))
+    pub fn get_string(&self, index: u32) -> ScImmutableString {
+        ScImmutableString::new(self.obj_id, Key32(index as i32))
     }
 }
 
@@ -37,12 +37,12 @@ impl ArrayOfMutableString {
         clear(self.obj_id);
     }
 
-    pub fn length(&self) -> i32 {
+    pub fn length(&self) -> u32 {
         get_length(self.obj_id)
     }
 
-    pub fn get_string(&self, index: i32) -> ScMutableString {
-        ScMutableString::new(self.obj_id, Key32(index))
+    pub fn get_string(&self, index: u32) -> ScMutableString {
+        ScMutableString::new(self.obj_id, Key32(index as i32))
     }
 }
 

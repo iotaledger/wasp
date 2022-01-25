@@ -130,7 +130,7 @@ func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64)
 	ctx.Chain.Env.AssertAddressIotas(ctx.Chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-minus)
 }
 
-func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.SoloAgent, amount int64) {
+func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.SoloAgent, amount uint64) {
 	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
 	f := coreaccounts.ScFuncs.Deposit(ctxAcc.Sign(user))
 	if target != nil {

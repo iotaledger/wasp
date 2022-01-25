@@ -15,12 +15,12 @@ export class ArrayOfImmutableColor {
         this.objID = objID;
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getColor(index: i32): wasmlib.ScImmutableColor {
-        return new wasmlib.ScImmutableColor(this.objID, new wasmlib.Key32(index));
+    getColor(index: u32): wasmlib.ScImmutableColor {
+        return new wasmlib.ScImmutableColor(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 
@@ -59,12 +59,12 @@ export class ArrayOfMutableColor {
         wasmlib.clear(this.objID);
     }
 
-    length(): i32 {
+    length(): u32 {
         return wasmlib.getLength(this.objID);
     }
 
-    getColor(index: i32): wasmlib.ScMutableColor {
-        return new wasmlib.ScMutableColor(this.objID, new wasmlib.Key32(index));
+    getColor(index: u32): wasmlib.ScMutableColor {
+        return new wasmlib.ScMutableColor(this.objID, new wasmlib.Key32(index as i32));
     }
 }
 
