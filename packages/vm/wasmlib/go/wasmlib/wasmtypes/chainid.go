@@ -24,6 +24,9 @@ func EncodeChainID(enc *wasmcodec.WasmEncoder, value ScChainID) {
 }
 
 func ChainIDFromBytes(buf []byte) ScChainID {
+	if buf == nil {
+		return ScChainID{id: [ScChainIDLength]byte{2}}
+	}
 	if len(buf) != ScChainIDLength {
 		Panic("invalid ChainID length")
 	}

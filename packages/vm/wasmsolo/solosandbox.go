@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -89,6 +90,10 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, tran
 	req := solo.NewCallParamsFromDic(contract, function, params)
 	req.WithTransfers(transfer)
 	ctx := s.ctx
+	if ctx.mint > 0 {
+		mintAddress := ledgerstate.NewED25519Address(ctx.keyPair.PublicKey)
+		req.WithMint(mintAddress, ctx.mint)
+	}
 	_ = wasmhost.Connect(ctx.wasmHostOld)
 	var res dict.Dict
 	if ctx.offLedger {

@@ -24,6 +24,9 @@ func EncodeHash(enc *wasmcodec.WasmEncoder, value ScHash) {
 }
 
 func HashFromBytes(buf []byte) ScHash {
+	if buf == nil {
+		return ScHash{}
+	}
 	if len(buf) != ScHashLength {
 		Panic("invalid Hash length")
 	}

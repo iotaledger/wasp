@@ -24,6 +24,9 @@ func EncodeRequestID(enc *wasmcodec.WasmEncoder, value ScRequestID) {
 }
 
 func RequestIDFromBytes(buf []byte) ScRequestID {
+	if buf == nil {
+		return ScRequestID{}
+	}
 	if len(buf) != ScRequestIDLength {
 		Panic("invalid RequestID length")
 	}

@@ -24,6 +24,9 @@ func EncodeAddress(enc *wasmcodec.WasmEncoder, value ScAddress) {
 }
 
 func AddressFromBytes(buf []byte) ScAddress {
+	if buf == nil {
+		return ScAddress{}
+	}
 	if len(buf) != ScAddressLength {
 		Panic("invalid Address length")
 	}

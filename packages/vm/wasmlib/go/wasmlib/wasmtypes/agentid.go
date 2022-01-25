@@ -26,6 +26,9 @@ func EncodeAgentID(enc *wasmcodec.WasmEncoder, value ScAgentID) {
 }
 
 func AgentIDFromBytes(buf []byte) ScAgentID {
+	if buf == nil {
+		return ScAgentID{}
+	}
 	if len(buf) != ScAgentIDLength {
 		Panic("invalid AgentID length")
 	}

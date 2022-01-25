@@ -35,6 +35,9 @@ func EncodeColor(enc *wasmcodec.WasmEncoder, value ScColor) {
 }
 
 func ColorFromBytes(buf []byte) ScColor {
+	if buf == nil {
+		return ScColor{}
+	}
 	if len(buf) != ScColorLength {
 		Panic("invalid Color length")
 	}

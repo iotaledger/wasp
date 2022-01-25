@@ -24,6 +24,9 @@ func EncodeHname(enc *wasmcodec.WasmEncoder, value ScHname) {
 }
 
 func HnameFromBytes(buf []byte) ScHname {
+	if buf == nil {
+		return 0
+	}
 	if len(buf) != ScHnameLength {
 		Panic("invalid Hname length")
 	}
