@@ -115,12 +115,13 @@ type GetInfoContext struct {
 
 func viewGetInfoThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("fairauction.viewGetInfo")
+	results := wasmlib.NewScDict()
 	f := &GetInfoContext{
 		Params: ImmutableGetInfoParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetInfoResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableFairAuctionState{
 			proxy: wasmlib.NewStateProxy(),
@@ -129,4 +130,5 @@ func viewGetInfoThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
 	viewGetInfo(ctx, f)
 	ctx.Log("fairauction.viewGetInfo ok")
+	ctx.Results(results)
 }

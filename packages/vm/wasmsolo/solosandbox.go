@@ -39,6 +39,7 @@ var sandboxFunctions = []func(*SoloSandbox, []byte) []byte{
 	(*SoloSandbox).fnPost,
 	(*SoloSandbox).fnRequest,
 	(*SoloSandbox).fnRequestID,
+	(*SoloSandbox).fnResults,
 	(*SoloSandbox).fnSend,
 	(*SoloSandbox).fnStateAnchor,
 	(*SoloSandbox).fnTimestamp,
@@ -155,8 +156,9 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	}
 
 	res, err := s.ctx.Chain.CallView(s.ctx.scName, funcName, params)
+	s.ctx.Err = err
 	if err != nil {
-		s.Panicf(err.Error())
+		return nil
 	}
 	return res.Bytes()
 }
@@ -238,7 +240,7 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	s.checkErr(err)
 	transfer, err := colored.BalancesFromBytes(req.Transfer)
 	s.checkErr(err)
-	if len(transfer) == 0 {
+	if len(transfer) == 0 && !s.ctx.offLedger {
 		s.Panicf("transfer is required for post")
 	}
 	if req.Delay != 0 {
@@ -253,6 +255,10 @@ func (s *SoloSandbox) fnRequest(args []byte) []byte {
 
 func (s *SoloSandbox) fnRequestID(args []byte) []byte {
 	return append(s.ctx.Chain.ChainID.Bytes()[1:], 0, 0)
+}
+
+func (s *SoloSandbox) fnResults(args []byte) []byte {
+	panic("implement me")
 }
 
 // transfer tokens to address

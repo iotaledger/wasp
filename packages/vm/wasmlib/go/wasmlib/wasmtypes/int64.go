@@ -21,6 +21,9 @@ func EncodeInt64(enc *wasmcodec.WasmEncoder, value int64) {
 }
 
 func Int64FromBytes(buf []byte) int64 {
+	if buf == nil {
+		return 0
+	}
 	if len(buf) != 8 {
 		Panic("invalid Int64 length")
 	}

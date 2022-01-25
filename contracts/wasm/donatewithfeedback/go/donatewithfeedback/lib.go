@@ -67,12 +67,13 @@ type DonationContext struct {
 
 func viewDonationThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("donatewithfeedback.viewDonation")
+	results := wasmlib.NewScDict()
 	f := &DonationContext{
 		Params: ImmutableDonationParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableDonationResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableDonateWithFeedbackState{
 			proxy: wasmlib.NewStateProxy(),
@@ -81,6 +82,7 @@ func viewDonationThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Nr().Exists(), "missing mandatory nr")
 	viewDonation(ctx, f)
 	ctx.Log("donatewithfeedback.viewDonation ok")
+	ctx.Results(results)
 }
 
 type DonationInfoContext struct {
@@ -90,9 +92,10 @@ type DonationInfoContext struct {
 
 func viewDonationInfoThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("donatewithfeedback.viewDonationInfo")
+	results := wasmlib.NewScDict()
 	f := &DonationInfoContext{
 		Results: MutableDonationInfoResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableDonateWithFeedbackState{
 			proxy: wasmlib.NewStateProxy(),
@@ -100,4 +103,5 @@ func viewDonationInfoThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewDonationInfo(ctx, f)
 	ctx.Log("donatewithfeedback.viewDonationInfo ok")
+	ctx.Results(results)
 }

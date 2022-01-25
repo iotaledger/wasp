@@ -14,19 +14,14 @@ type ScDict map[string][]byte
 
 var _ wasmtypes.IKvStore = ScDict{}
 
-func NewDictProxy() wasmtypes.Proxy {
-	return wasmtypes.NewProxy(NewScDict())
-}
-
-func NewResultsProxy() wasmtypes.Proxy {
-	return wasmtypes.NewProxy(NewScDict())
-}
-
 func NewScDict() ScDict {
 	return make(ScDict)
 }
 
 func NewScDictFromBytes(buf []byte) ScDict {
+	if len(buf) == 0 {
+		return make(ScDict)
+	}
 	size, buf := wasmcodec.ExtractUint32(buf)
 	dict := make(ScDict, size)
 	var k uint16
@@ -41,6 +36,10 @@ func NewScDictFromBytes(buf []byte) ScDict {
 		dict.Set(key, val)
 	}
 	return dict
+}
+
+func (d ScDict) AsProxy() wasmtypes.Proxy {
+	return wasmtypes.NewProxy(d)
 }
 
 func (d ScDict) Bytes() []byte {

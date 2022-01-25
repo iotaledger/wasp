@@ -23,7 +23,10 @@ type WasmProcessor struct {
 	wasmVM           func() WasmVM
 }
 
-var _ iscp.VMProcessor = &WasmProcessor{}
+var (
+	_ iscp.VMProcessor = new(WasmProcessor)
+	_ WasmStore        = new(WasmProcessor)
+)
 
 var GoWasmVM func() WasmVM
 
@@ -58,22 +61,6 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 	return proc, nil
 }
 
-func (proc *WasmProcessor) GetDescription() string {
-	return "Wasm VM smart contract processor"
-}
-
-func (proc *WasmProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
-	function := proc.FunctionFromCode(uint32(code))
-	if function == "" && code != iscp.EntryPointInit {
-		return nil, false
-	}
-	return proc.wasmContext(function), true
-}
-
-func (proc *WasmProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
-	return proc.wasmContext(FuncDefault)
-}
-
 func (proc *WasmProcessor) GetContext(id int32) *WasmContext {
 	if id == 0 {
 		id = proc.currentContextID
@@ -93,27 +80,20 @@ func (proc *WasmProcessor) GetContext(id int32) *WasmContext {
 	return mainProcessor.contexts[id]
 }
 
-func (proc *WasmProcessor) KillContext(id int32) {
-	proc.contextLock.Lock()
-	defer proc.contextLock.Unlock()
-	delete(proc.contexts, id)
+func (proc *WasmProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
+	return proc.wasmContext(FuncDefault)
 }
 
-func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
-	processor := proc
-	vmInstance := proc.NewInstance()
-	if vmInstance != nil {
-		processor = proc.getSubProcessor(vmInstance)
+func (proc *WasmProcessor) GetDescription() string {
+	return "Wasm VM smart contract processor"
+}
+
+func (proc *WasmProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
+	function := proc.FunctionFromCode(uint32(code))
+	if function == "" && code != iscp.EntryPointInit {
+		return nil, false
 	}
-	wc := NewWasmContext(function, processor)
-
-	proc.contextLock.Lock()
-	defer proc.contextLock.Unlock()
-
-	proc.nextContextID++
-	wc.id = proc.nextContextID
-	proc.contexts[wc.id] = wc
-	return wc
+	return proc.wasmContext(function), true
 }
 
 func (proc *WasmProcessor) getSubProcessor(vmInstance WasmVM) *WasmProcessor {
@@ -137,4 +117,27 @@ func (proc *WasmProcessor) getSubProcessor(vmInstance WasmVM) *WasmProcessor {
 		panic("Cannot run on_load: " + err.Error())
 	}
 	return processor
+}
+
+func (proc *WasmProcessor) KillContext(id int32) {
+	proc.contextLock.Lock()
+	defer proc.contextLock.Unlock()
+	delete(proc.contexts, id)
+}
+
+func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
+	processor := proc
+	vmInstance := proc.NewInstance()
+	if vmInstance != nil {
+		processor = proc.getSubProcessor(vmInstance)
+	}
+	wc := NewWasmContext(function, processor)
+
+	proc.contextLock.Lock()
+	defer proc.contextLock.Unlock()
+
+	proc.nextContextID++
+	wc.id = proc.nextContextID
+	proc.contexts[wc.id] = wc
+	return wc
 }

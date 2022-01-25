@@ -264,9 +264,10 @@ type GetCounterContext struct {
 
 func viewGetCounterThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("inccounter.viewGetCounter")
+	results := wasmlib.NewScDict()
 	f := &GetCounterContext{
 		Results: MutableGetCounterResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableIncCounterState{
 			proxy: wasmlib.NewStateProxy(),
@@ -274,6 +275,7 @@ func viewGetCounterThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewGetCounter(ctx, f)
 	ctx.Log("inccounter.viewGetCounter ok")
+	ctx.Results(results)
 }
 
 type GetVliContext struct {
@@ -284,12 +286,13 @@ type GetVliContext struct {
 
 func viewGetVliThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("inccounter.viewGetVli")
+	results := wasmlib.NewScDict()
 	f := &GetVliContext{
 		Params: ImmutableGetVliParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetVliResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableIncCounterState{
 			proxy: wasmlib.NewStateProxy(),
@@ -298,6 +301,7 @@ func viewGetVliThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Ni64().Exists(), "missing mandatory ni64")
 	viewGetVli(ctx, f)
 	ctx.Log("inccounter.viewGetVli ok")
+	ctx.Results(results)
 }
 
 type GetVluContext struct {
@@ -308,12 +312,13 @@ type GetVluContext struct {
 
 func viewGetVluThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("inccounter.viewGetVlu")
+	results := wasmlib.NewScDict()
 	f := &GetVluContext{
 		Params: ImmutableGetVluParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetVluResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableIncCounterState{
 			proxy: wasmlib.NewStateProxy(),
@@ -322,4 +327,5 @@ func viewGetVluThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Nu64().Exists(), "missing mandatory nu64")
 	viewGetVlu(ctx, f)
 	ctx.Log("inccounter.viewGetVlu ok")
+	ctx.Results(results)
 }

@@ -115,7 +115,7 @@ func TestFaOneBidTooLow(t *testing.T) {
 
 	require.NoError(t, ctx.Err)
 	require.EqualValues(t, 0, getInfo.Results.Bidders().Value())
-	require.EqualValues(t, -1, getInfo.Results.HighestBid().Value())
+	require.EqualValues(t, 0, getInfo.Results.HighestBid().Value())
 }
 
 func TestFaOneBid(t *testing.T) {

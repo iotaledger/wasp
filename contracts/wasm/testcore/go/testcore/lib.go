@@ -54,12 +54,13 @@ type CallOnChainContext struct {
 
 func funcCallOnChainThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcCallOnChain")
+	results := wasmlib.NewScDict()
 	f := &CallOnChainContext{
 		Params: ImmutableCallOnChainParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableCallOnChainResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: MutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
@@ -68,6 +69,7 @@ func funcCallOnChainThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
 	funcCallOnChain(ctx, f)
 	ctx.Log("testcore.funcCallOnChain ok")
+	ctx.Results(results)
 }
 
 type CheckContextFromFullEPContext struct {
@@ -116,9 +118,10 @@ type GetMintedSupplyContext struct {
 
 func funcGetMintedSupplyThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcGetMintedSupply")
+	results := wasmlib.NewScDict()
 	f := &GetMintedSupplyContext{
 		Results: MutableGetMintedSupplyResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: MutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
@@ -126,6 +129,7 @@ func funcGetMintedSupplyThunk(ctx wasmlib.ScFuncContext) {
 	}
 	funcGetMintedSupply(ctx, f)
 	ctx.Log("testcore.funcGetMintedSupply ok")
+	ctx.Results(results)
 }
 
 type IncCounterContext struct {
@@ -200,12 +204,13 @@ type RunRecursionContext struct {
 
 func funcRunRecursionThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcRunRecursion")
+	results := wasmlib.NewScDict()
 	f := &RunRecursionContext{
 		Params: ImmutableRunRecursionParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableRunRecursionResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: MutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
@@ -214,6 +219,7 @@ func funcRunRecursionThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
 	funcRunRecursion(ctx, f)
 	ctx.Log("testcore.funcRunRecursion ok")
+	ctx.Results(results)
 }
 
 type SendToAddressContext struct {
@@ -346,9 +352,10 @@ type TestChainOwnerIDFullContext struct {
 
 func funcTestChainOwnerIDFullThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcTestChainOwnerIDFull")
+	results := wasmlib.NewScDict()
 	f := &TestChainOwnerIDFullContext{
 		Results: MutableTestChainOwnerIDFullResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: MutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
@@ -356,6 +363,7 @@ func funcTestChainOwnerIDFullThunk(ctx wasmlib.ScFuncContext) {
 	}
 	funcTestChainOwnerIDFull(ctx, f)
 	ctx.Log("testcore.funcTestChainOwnerIDFull ok")
+	ctx.Results(results)
 }
 
 type TestEventLogDeployContext struct {
@@ -474,12 +482,13 @@ type FibonacciContext struct {
 
 func viewFibonacciThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewFibonacci")
+	results := wasmlib.NewScDict()
 	f := &FibonacciContext{
 		Params: ImmutableFibonacciParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableFibonacciResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
@@ -488,6 +497,7 @@ func viewFibonacciThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
 	viewFibonacci(ctx, f)
 	ctx.Log("testcore.viewFibonacci ok")
+	ctx.Results(results)
 }
 
 type GetCounterContext struct {
@@ -497,9 +507,10 @@ type GetCounterContext struct {
 
 func viewGetCounterThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewGetCounter")
+	results := wasmlib.NewScDict()
 	f := &GetCounterContext{
 		Results: MutableGetCounterResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
@@ -507,6 +518,7 @@ func viewGetCounterThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewGetCounter(ctx, f)
 	ctx.Log("testcore.viewGetCounter ok")
+	ctx.Results(results)
 }
 
 type GetIntContext struct {
@@ -517,12 +529,13 @@ type GetIntContext struct {
 
 func viewGetIntThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewGetInt")
+	results := wasmlib.NewScDict()
 	f := &GetIntContext{
 		Params: ImmutableGetIntParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetIntResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
@@ -531,6 +544,7 @@ func viewGetIntThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	viewGetInt(ctx, f)
 	ctx.Log("testcore.viewGetInt ok")
+	ctx.Results(results)
 }
 
 type GetStringValueContext struct {
@@ -541,12 +555,13 @@ type GetStringValueContext struct {
 
 func viewGetStringValueThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewGetStringValue")
+	results := wasmlib.NewScDict()
 	f := &GetStringValueContext{
 		Params: ImmutableGetStringValueParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetStringValueResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
@@ -555,6 +570,7 @@ func viewGetStringValueThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.VarName().Exists(), "missing mandatory varName")
 	viewGetStringValue(ctx, f)
 	ctx.Log("testcore.viewGetStringValue ok")
+	ctx.Results(results)
 }
 
 type JustViewContext struct {
@@ -624,9 +640,10 @@ type TestChainOwnerIDViewContext struct {
 
 func viewTestChainOwnerIDViewThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewTestChainOwnerIDView")
+	results := wasmlib.NewScDict()
 	f := &TestChainOwnerIDViewContext{
 		Results: MutableTestChainOwnerIDViewResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
@@ -634,6 +651,7 @@ func viewTestChainOwnerIDViewThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewTestChainOwnerIDView(ctx, f)
 	ctx.Log("testcore.viewTestChainOwnerIDView ok")
+	ctx.Results(results)
 }
 
 type TestPanicViewEPContext struct {
@@ -658,9 +676,10 @@ type TestSandboxCallContext struct {
 
 func viewTestSandboxCallThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testcore.viewTestSandboxCall")
+	results := wasmlib.NewScDict()
 	f := &TestSandboxCallContext{
 		Results: MutableTestSandboxCallResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestCoreState{
 			proxy: wasmlib.NewStateProxy(),
@@ -668,4 +687,5 @@ func viewTestSandboxCallThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewTestSandboxCall(ctx, f)
 	ctx.Log("testcore.viewTestSandboxCall ok")
+	ctx.Results(results)
 }

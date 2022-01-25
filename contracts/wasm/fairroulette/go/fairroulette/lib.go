@@ -135,9 +135,10 @@ type LastWinningNumberContext struct {
 
 func viewLastWinningNumberThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("fairroulette.viewLastWinningNumber")
+	results := wasmlib.NewScDict()
 	f := &LastWinningNumberContext{
 		Results: MutableLastWinningNumberResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableFairRouletteState{
 			proxy: wasmlib.NewStateProxy(),
@@ -145,6 +146,7 @@ func viewLastWinningNumberThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewLastWinningNumber(ctx, f)
 	ctx.Log("fairroulette.viewLastWinningNumber ok")
+	ctx.Results(results)
 }
 
 type RoundNumberContext struct {
@@ -154,9 +156,10 @@ type RoundNumberContext struct {
 
 func viewRoundNumberThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("fairroulette.viewRoundNumber")
+	results := wasmlib.NewScDict()
 	f := &RoundNumberContext{
 		Results: MutableRoundNumberResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableFairRouletteState{
 			proxy: wasmlib.NewStateProxy(),
@@ -164,6 +167,7 @@ func viewRoundNumberThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewRoundNumber(ctx, f)
 	ctx.Log("fairroulette.viewRoundNumber ok")
+	ctx.Results(results)
 }
 
 type RoundStartedAtContext struct {
@@ -173,9 +177,10 @@ type RoundStartedAtContext struct {
 
 func viewRoundStartedAtThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("fairroulette.viewRoundStartedAt")
+	results := wasmlib.NewScDict()
 	f := &RoundStartedAtContext{
 		Results: MutableRoundStartedAtResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableFairRouletteState{
 			proxy: wasmlib.NewStateProxy(),
@@ -183,6 +188,7 @@ func viewRoundStartedAtThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewRoundStartedAt(ctx, f)
 	ctx.Log("fairroulette.viewRoundStartedAt ok")
+	ctx.Results(results)
 }
 
 type RoundStatusContext struct {
@@ -192,9 +198,10 @@ type RoundStatusContext struct {
 
 func viewRoundStatusThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("fairroulette.viewRoundStatus")
+	results := wasmlib.NewScDict()
 	f := &RoundStatusContext{
 		Results: MutableRoundStatusResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableFairRouletteState{
 			proxy: wasmlib.NewStateProxy(),
@@ -202,4 +209,5 @@ func viewRoundStatusThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewRoundStatus(ctx, f)
 	ctx.Log("fairroulette.viewRoundStatus ok")
+	ctx.Results(results)
 }

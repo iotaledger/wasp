@@ -22,6 +22,9 @@ func EncodeBool(enc *wasmcodec.WasmEncoder, value bool) {
 }
 
 func BoolFromBytes(buf []byte) bool {
+	if buf == nil {
+		return false
+	}
 	if len(buf) != 1 {
 		Panic("invalid Bool length")
 	}

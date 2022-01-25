@@ -117,12 +117,13 @@ type AllowanceContext struct {
 
 func viewAllowanceThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc20.viewAllowance")
+	results := wasmlib.NewScDict()
 	f := &AllowanceContext{
 		Params: ImmutableAllowanceParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableAllowanceResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableErc20State{
 			proxy: wasmlib.NewStateProxy(),
@@ -132,6 +133,7 @@ func viewAllowanceThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Delegation().Exists(), "missing mandatory delegation")
 	viewAllowance(ctx, f)
 	ctx.Log("erc20.viewAllowance ok")
+	ctx.Results(results)
 }
 
 type BalanceOfContext struct {
@@ -142,12 +144,13 @@ type BalanceOfContext struct {
 
 func viewBalanceOfThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc20.viewBalanceOf")
+	results := wasmlib.NewScDict()
 	f := &BalanceOfContext{
 		Params: ImmutableBalanceOfParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableBalanceOfResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableErc20State{
 			proxy: wasmlib.NewStateProxy(),
@@ -156,6 +159,7 @@ func viewBalanceOfThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Account().Exists(), "missing mandatory account")
 	viewBalanceOf(ctx, f)
 	ctx.Log("erc20.viewBalanceOf ok")
+	ctx.Results(results)
 }
 
 type TotalSupplyContext struct {
@@ -165,9 +169,10 @@ type TotalSupplyContext struct {
 
 func viewTotalSupplyThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("erc20.viewTotalSupply")
+	results := wasmlib.NewScDict()
 	f := &TotalSupplyContext{
 		Results: MutableTotalSupplyResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableErc20State{
 			proxy: wasmlib.NewStateProxy(),
@@ -175,4 +180,5 @@ func viewTotalSupplyThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewTotalSupply(ctx, f)
 	ctx.Log("erc20.viewTotalSupply ok")
+	ctx.Results(results)
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"golang.org/x/xerrors"
 )
 
 // provide implementation for Wasm-only function
@@ -57,7 +58,21 @@ func (vm *WasmGoVM) RunFunction(functionName string, args ...interface{}) error 
 	return errors.New("WasmGoVM: cannot run function: " + functionName)
 }
 
-func (vm *WasmGoVM) RunScFunction(index int32) error {
+func (vm *WasmGoVM) RunScFunction(index int32) (err error) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+		switch errType := r.(type) {
+		case error:
+			err = errType
+		case string:
+			err = errors.New(errType)
+		default:
+			err = xerrors.Errorf("RunScFunction: %v", errType)
+		}
+	}()
 	return vm.Run(func() error {
 		wasmlib.OnCall(index)
 		return nil

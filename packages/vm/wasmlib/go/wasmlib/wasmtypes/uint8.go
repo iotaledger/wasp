@@ -20,6 +20,9 @@ func EncodeUint8(enc *wasmcodec.WasmEncoder, value uint8) {
 }
 
 func Uint8FromBytes(buf []byte) uint8 {
+	if buf == nil {
+		return 0
+	}
 	if len(buf) != 1 {
 		Panic("invalid Uint8 length")
 	}

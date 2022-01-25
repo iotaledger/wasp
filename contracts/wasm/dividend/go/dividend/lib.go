@@ -114,12 +114,13 @@ type GetFactorContext struct {
 
 func viewGetFactorThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("dividend.viewGetFactor")
+	results := wasmlib.NewScDict()
 	f := &GetFactorContext{
 		Params: ImmutableGetFactorParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableGetFactorResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableDividendState{
 			proxy: wasmlib.NewStateProxy(),
@@ -128,6 +129,7 @@ func viewGetFactorThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
 	viewGetFactor(ctx, f)
 	ctx.Log("dividend.viewGetFactor ok")
+	ctx.Results(results)
 }
 
 type GetOwnerContext struct {
@@ -137,9 +139,10 @@ type GetOwnerContext struct {
 
 func viewGetOwnerThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("dividend.viewGetOwner")
+	results := wasmlib.NewScDict()
 	f := &GetOwnerContext{
 		Results: MutableGetOwnerResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableDividendState{
 			proxy: wasmlib.NewStateProxy(),
@@ -147,4 +150,5 @@ func viewGetOwnerThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewGetOwner(ctx, f)
 	ctx.Log("dividend.viewGetOwner ok")
+	ctx.Results(results)
 }

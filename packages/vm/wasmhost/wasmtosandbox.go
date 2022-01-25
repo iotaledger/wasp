@@ -39,6 +39,7 @@ var sandboxFunctions = []func(*WasmToSandbox, []byte) []byte{
 	(*WasmToSandbox).fnPost,
 	(*WasmToSandbox).fnRequest,
 	(*WasmToSandbox).fnRequestID,
+	(*WasmToSandbox).fnResults,
 	(*WasmToSandbox).fnSend,
 	(*WasmToSandbox).fnStateAnchor,
 	(*WasmToSandbox).fnTimestamp,
@@ -260,6 +261,15 @@ func (s *WasmToSandbox) fnRequest(args []byte) []byte {
 
 func (s *WasmToSandbox) fnRequestID(args []byte) []byte {
 	return s.ctx.Request().ID().Bytes()
+}
+
+func (s *WasmToSandbox) fnResults(args []byte) []byte {
+	results, err := dict.FromBytes(args)
+	if err != nil {
+		s.Panicf("call results: %s", err.Error())
+	}
+	s.wc.results = results
+	return nil
 }
 
 // transfer tokens to address

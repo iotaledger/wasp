@@ -22,6 +22,9 @@ func EncodeUint16(enc *wasmcodec.WasmEncoder, value uint16) {
 }
 
 func Uint16FromBytes(buf []byte) uint16 {
+	if buf == nil {
+		return 0
+	}
 	if len(buf) != 2 {
 		Panic("invalid Uint16 length")
 	}

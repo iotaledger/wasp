@@ -33,20 +33,21 @@ const (
 	FnPost                = int32(-19)
 	FnRequest             = int32(-20)
 	FnRequestID           = int32(-21)
-	FnSend                = int32(-22)
-	FnStateAnchor         = int32(-23)
-	FnTimestamp           = int32(-24)
-	FnTrace               = int32(-25)
-	FnUtilsBase58Decode   = int32(-26)
-	FnUtilsBase58Encode   = int32(-27)
-	FnUtilsBlsAddress     = int32(-28)
-	FnUtilsBlsAggregate   = int32(-29)
-	FnUtilsBlsValid       = int32(-30)
-	FnUtilsEd25519Address = int32(-31)
-	FnUtilsEd25519Valid   = int32(-32)
-	FnUtilsHashBlake2b    = int32(-33)
-	FnUtilsHashName       = int32(-34)
-	FnUtilsHashSha3       = int32(-35)
+	FnResults             = int32(-22)
+	FnSend                = int32(-23)
+	FnStateAnchor         = int32(-24)
+	FnTimestamp           = int32(-25)
+	FnTrace               = int32(-26)
+	FnUtilsBase58Decode   = int32(-27)
+	FnUtilsBase58Encode   = int32(-28)
+	FnUtilsBlsAddress     = int32(-29)
+	FnUtilsBlsAggregate   = int32(-30)
+	FnUtilsBlsValid       = int32(-31)
+	FnUtilsEd25519Address = int32(-32)
+	FnUtilsEd25519Valid   = int32(-33)
+	FnUtilsHashBlake2b    = int32(-34)
+	FnUtilsHashName       = int32(-35)
+	FnUtilsHashSha3       = int32(-36)
 )
 
 type ScSandbox struct{}
@@ -133,6 +134,10 @@ func (s ScSandbox) Require(cond bool, msg string) {
 	if !cond {
 		s.Panic(msg)
 	}
+}
+
+func (s ScSandbox) Results(results ScDict) {
+	Sandbox(FnResults, results.Bytes())
 }
 
 // deterministic time stamp fixed at the moment of calling the smart contract

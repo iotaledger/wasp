@@ -22,6 +22,9 @@ func EncodeUint32(enc *wasmcodec.WasmEncoder, value uint32) {
 }
 
 func Uint32FromBytes(buf []byte) uint32 {
+	if buf == nil {
+		return 0
+	}
 	if len(buf) != 4 {
 		Panic("invalid Uint32 length")
 	}

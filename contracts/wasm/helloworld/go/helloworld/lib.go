@@ -37,9 +37,10 @@ type GetHelloWorldContext struct {
 
 func viewGetHelloWorldThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("helloworld.viewGetHelloWorld")
+	results := wasmlib.NewScDict()
 	f := &GetHelloWorldContext{
 		Results: MutableGetHelloWorldResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableHelloWorldState{
 			proxy: wasmlib.NewStateProxy(),
@@ -47,4 +48,5 @@ func viewGetHelloWorldThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewGetHelloWorld(ctx, f)
 	ctx.Log("helloworld.viewGetHelloWorld ok")
+	ctx.Results(results)
 }

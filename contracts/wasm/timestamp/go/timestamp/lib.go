@@ -37,9 +37,10 @@ type GetTimestampContext struct {
 
 func viewGetTimestampThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("timestamp.viewGetTimestamp")
+	results := wasmlib.NewScDict()
 	f := &GetTimestampContext{
 		Results: MutableGetTimestampResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutabletimestampState{
 			proxy: wasmlib.NewStateProxy(),
@@ -47,4 +48,5 @@ func viewGetTimestampThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewGetTimestamp(ctx, f)
 	ctx.Log("timestamp.viewGetTimestamp ok")
+	ctx.Results(results)
 }

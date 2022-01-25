@@ -204,12 +204,13 @@ type ArrayLengthContext struct {
 
 func viewArrayLengthThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewArrayLength")
+	results := wasmlib.NewScDict()
 	f := &ArrayLengthContext{
 		Params: ImmutableArrayLengthParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableArrayLengthResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
 			proxy: wasmlib.NewStateProxy(),
@@ -218,6 +219,7 @@ func viewArrayLengthThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	viewArrayLength(ctx, f)
 	ctx.Log("testwasmlib.viewArrayLength ok")
+	ctx.Results(results)
 }
 
 type ArrayValueContext struct {
@@ -228,12 +230,13 @@ type ArrayValueContext struct {
 
 func viewArrayValueThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewArrayValue")
+	results := wasmlib.NewScDict()
 	f := &ArrayValueContext{
 		Params: ImmutableArrayValueParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableArrayValueResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
 			proxy: wasmlib.NewStateProxy(),
@@ -243,6 +246,7 @@ func viewArrayValueThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	viewArrayValue(ctx, f)
 	ctx.Log("testwasmlib.viewArrayValue ok")
+	ctx.Results(results)
 }
 
 type BlockRecordContext struct {
@@ -253,12 +257,13 @@ type BlockRecordContext struct {
 
 func viewBlockRecordThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewBlockRecord")
+	results := wasmlib.NewScDict()
 	f := &BlockRecordContext{
 		Params: ImmutableBlockRecordParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableBlockRecordResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
 			proxy: wasmlib.NewStateProxy(),
@@ -268,6 +273,7 @@ func viewBlockRecordThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.RecordIndex().Exists(), "missing mandatory recordIndex")
 	viewBlockRecord(ctx, f)
 	ctx.Log("testwasmlib.viewBlockRecord ok")
+	ctx.Results(results)
 }
 
 type BlockRecordsContext struct {
@@ -278,12 +284,13 @@ type BlockRecordsContext struct {
 
 func viewBlockRecordsThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewBlockRecords")
+	results := wasmlib.NewScDict()
 	f := &BlockRecordsContext{
 		Params: ImmutableBlockRecordsParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableBlockRecordsResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
 			proxy: wasmlib.NewStateProxy(),
@@ -292,6 +299,7 @@ func viewBlockRecordsThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.BlockIndex().Exists(), "missing mandatory blockIndex")
 	viewBlockRecords(ctx, f)
 	ctx.Log("testwasmlib.viewBlockRecords ok")
+	ctx.Results(results)
 }
 
 type GetRandomContext struct {
@@ -301,9 +309,10 @@ type GetRandomContext struct {
 
 func viewGetRandomThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewGetRandom")
+	results := wasmlib.NewScDict()
 	f := &GetRandomContext{
 		Results: MutableGetRandomResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
 			proxy: wasmlib.NewStateProxy(),
@@ -311,6 +320,7 @@ func viewGetRandomThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewGetRandom(ctx, f)
 	ctx.Log("testwasmlib.viewGetRandom ok")
+	ctx.Results(results)
 }
 
 type IotaBalanceContext struct {
@@ -320,9 +330,10 @@ type IotaBalanceContext struct {
 
 func viewIotaBalanceThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewIotaBalance")
+	results := wasmlib.NewScDict()
 	f := &IotaBalanceContext{
 		Results: MutableIotaBalanceResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
 			proxy: wasmlib.NewStateProxy(),
@@ -330,6 +341,7 @@ func viewIotaBalanceThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewIotaBalance(ctx, f)
 	ctx.Log("testwasmlib.viewIotaBalance ok")
+	ctx.Results(results)
 }
 
 type MapValueContext struct {
@@ -340,12 +352,13 @@ type MapValueContext struct {
 
 func viewMapValueThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewMapValue")
+	results := wasmlib.NewScDict()
 	f := &MapValueContext{
 		Params: ImmutableMapValueParams{
 			proxy: wasmlib.NewParamsProxy(),
 		},
 		Results: MutableMapValueResults{
-			proxy: wasmlib.NewResultsProxy(),
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableTestWasmLibState{
 			proxy: wasmlib.NewStateProxy(),
@@ -355,4 +368,5 @@ func viewMapValueThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	viewMapValue(ctx, f)
 	ctx.Log("testwasmlib.viewMapValue ok")
+	ctx.Results(results)
 }
