@@ -377,7 +377,7 @@ func (r *RequestReceipt) Short() string {
 	if r.Request.IsOffLedger() {
 		prefix = "api"
 	}
-	
+
 	ret := fmt.Sprintf("%s/%s", prefix, r.Request.ID())
 
 	if r.Error != nil {

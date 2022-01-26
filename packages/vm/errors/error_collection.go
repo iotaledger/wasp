@@ -23,14 +23,7 @@ func (e *DefaultErrorCollection) Create(errorId int, params ...interface{}) (*Bl
 	if errorDefinition := e.Get(errorId); errorDefinition == nil {
 		return nil, xerrors.Errorf("No error found with id %v", errorId)
 	} else {
-		errorInstance := errorDefinition.Create(params)
+		errorInstance := errorDefinition.Create(params...)
 		return &errorInstance, nil
 	}
-}
-
-var GeneralErrorCollection = DefaultErrorCollection{
-	Errors: map[int]ErrorDefinition{
-		1: NewBlockErrorDefinition(1, "Failed to load %v"),
-		2: NewBlockErrorDefinition(2, "Could not read from %v"),
-	},
 }

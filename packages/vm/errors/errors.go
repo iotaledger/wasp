@@ -9,11 +9,11 @@ import (
 )
 
 type ErrorDefinition struct {
-	id            int16
+	id            uint16
 	messageFormat string
 }
 
-func (e *ErrorDefinition) Id() int16 {
+func (e *ErrorDefinition) Id() uint16 {
 	return e.id
 }
 
@@ -30,29 +30,9 @@ func (e *ErrorDefinition) Create(params ...interface{}) BlockError {
 }
 
 type BlockError struct {
-	Id            int16
+	Id            uint16
 	MessageFormat string
 	Params        []interface{}
-}
-
-func (e *BlockError) deserializeParams(mu marshalutil.MarshalUtil) error {
-	var err error
-	var paramLength uint16
-	var params []byte
-
-	if paramLength, err = mu.ReadUint16(); err != nil {
-		return err
-	}
-
-	if params, err = mu.ReadBytes(int(paramLength)); err != nil {
-		return err
-	}
-
-	if err = json.Unmarshal(params, &e.Params); err != nil {
-		return err
-	}
-
-	return err
 }
 
 func (e *BlockError) Message() string {
@@ -79,11 +59,11 @@ func (e *BlockError) serializeParams(mu *marshalutil.MarshalUtil) error {
 }
 
 func (e *BlockError) Serialize(mu *marshalutil.MarshalUtil) error {
-	hash := e.Hash()
+	hash := []byte(e.Hash())
 
-	mu.WriteInt16(e.Id).
+	mu.WriteUint16(e.Id).
 		WriteUint16(uint16(len(hash))).
-		WriteBytes([]byte(hash))
+		WriteBytes(hash)
 
 	// For now, JSON encoded.
 	err := e.serializeParams(mu)
@@ -91,19 +71,43 @@ func (e *BlockError) Serialize(mu *marshalutil.MarshalUtil) error {
 	return err
 }
 
-func NewBlockErrorDefinition(id int16, messageFormat string) ErrorDefinition {
+func NewBlockErrorDefinition(id uint16, messageFormat string) ErrorDefinition {
 	return ErrorDefinition{id: id, messageFormat: messageFormat}
+}
+
+func (e *BlockError) deserializeParams(mu *marshalutil.MarshalUtil) error {
+	var err error
+	var paramLength uint16
+	var params []byte
+
+	if paramLength, err = mu.ReadUint16(); err != nil {
+		return err
+	}
+
+	if params, err = mu.ReadBytes(int(paramLength)); err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal(params, &e.Params); err != nil {
+		return err
+	}
+
+	return err
 }
 
 func ErrorFromBytes(mu *marshalutil.MarshalUtil, e ErrorCollection) (*BlockError, error) {
 	var err error
 	var hash string
 	var hashLength uint16
-	var errorId int16
+	var errorId uint16
 	var blockError *BlockError
 
-	if errorId, err = mu.ReadInt16(); err != nil {
+	if errorId, err = mu.ReadUint16(); err != nil {
 		return nil, err
+	}
+
+	if errorId == 0 {
+		return nil, nil
 	}
 
 	if blockError, err = e.Create(int(errorId)); err != nil {
@@ -120,7 +124,7 @@ func ErrorFromBytes(mu *marshalutil.MarshalUtil, e ErrorCollection) (*BlockError
 		hash = string(hashInBytes)
 	}
 
-	if err = blockError.deserializeParams(*mu); err != nil {
+	if err = blockError.deserializeParams(mu); err != nil {
 		return nil, err
 	}
 
