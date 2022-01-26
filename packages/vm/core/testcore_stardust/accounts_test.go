@@ -529,7 +529,7 @@ func TestDepositIotas(t *testing.T) {
 	for _, addIotas := range []uint64{0, 50, 150, 200, 1000} {
 		t.Run("add iotas "+strconv.Itoa(int(addIotas)), func(t *testing.T) {
 			v := initDepositTest(t)
-			v.req.WithGasBudget(1000)
+			v.req.WithGasBudget(100_000)
 			gas, _, err := v.ch.EstimateGasOnLedger(v.req, v.user)
 			require.NoError(t, err)
 

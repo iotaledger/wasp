@@ -135,6 +135,10 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 			vmctx.Debugf(string(debug.Stack()))
 		}()
 		callRet, callErr = vmctx.callFromRequest()
+		// ensure at least the minimum amount of gas is charged
+		if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest1P.Cost() {
+			vmctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, vmctx.GasBurned())
+		}
 	}()
 	if callErr != nil {
 		// panic happened during VM plugin call. Restore the state
@@ -145,7 +149,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	vmctx.chargeGasFee()
 	// write receipt no matter what
 	receipt = vmctx.writeReceiptToBlockLog(callErr)
-	return
+	return receipt, callRet, callErr
 }
 
 // TODO make it configurable (move to governance)
@@ -208,6 +212,13 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 // how many tokens the sender has in its account and how many are allowed for the target.
 // Safe arithmetics is used
 func (vmctx *VMContext) calculateAffordableGasBudget() {
+	// when estimating gas, if maxUint64 is provided, use the maximum gas budget possible
+	if vmctx.task.EstimateGasMode && vmctx.req.GasBudget() == math.MaxUint64 {
+		vmctx.gasBudgetAdjusted = gas.MaxGasPerCall
+		vmctx.gasMaxTokensToSpendForGasFee = math.MaxUint64
+		return
+	}
+
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.SenderAddress() == nil")
 	}
@@ -269,6 +280,7 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 // chargeGasFee takes burned tokens from the sender's account
 // It should always be enough because gas budget is set affordable
 func (vmctx *VMContext) chargeGasFee() {
+	// disable gas burn
 	vmctx.gasBurnEnable(false)
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.Request().SenderAddress() == nil")
@@ -279,10 +291,11 @@ func (vmctx *VMContext) chargeGasFee() {
 	}
 
 	availableToPayFee := vmctx.gasMaxTokensToSpendForGasFee
-	if !vmctx.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(availableToPayFee) {
+	if !vmctx.task.EstimateGasMode && !vmctx.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(availableToPayFee) {
 		// user didn't specify enough iotas to cover the minimum request fee, charge whetever is present in the user's account
 		availableToPayFee = vmctx.GetSenderTokenBalanceForFees()
 	}
+
 	// total fees to charge
 	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), availableToPayFee)
 	vmctx.gasFeeCharged = sendToOwner + sendToValidator

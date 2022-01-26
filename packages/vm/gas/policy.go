@@ -26,11 +26,6 @@ func calcFee(gasUnits, gasPerToken uint64) uint64 {
 // FeeFromGas return ownerFee and validatorFee
 func (p *GasFeePolicy) FeeFromGas(gasUnits, availableTokens uint64) (sendToOwner, sendToValidator uint64) {
 	var fee uint64
-	// ensure at least the minimum amount of gas is charged
-	minimumGas := BurnCodeMinimumGasPerRequest.Cost()
-	if gasUnits < minimumGas {
-		gasUnits = minimumGas
-	}
 
 	// round up
 	fee = calcFee(gasUnits, p.GasPerToken)
@@ -50,7 +45,7 @@ func (p *GasFeePolicy) FeeFromGas(gasUnits, availableTokens uint64) (sendToOwner
 }
 
 func (p *GasFeePolicy) IsEnoughForMinimumFee(availableTokens uint64) bool {
-	minFee := calcFee(BurnCodeMinimumGasPerRequest.Cost(), p.GasPerToken)
+	minFee := calcFee(BurnCodeMinimumGasPerRequest1P.Cost(), p.GasPerToken)
 	return availableTokens >= minFee
 }
 

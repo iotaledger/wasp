@@ -3,8 +3,8 @@ package gas
 import "golang.org/x/xerrors"
 
 const (
-	MaxGasPerBlock = uint64(10_000_000)
-	MaxGasPerCall  = uint64(500_000)
+	MaxGasPerBlock = uint64(100_000_000)
+	MaxGasPerCall  = uint64(5_000_000)
 )
 
 const (
@@ -36,7 +36,7 @@ const (
 	BurnCodeUtilsBLSAggregateBLS1P
 
 	BurnCodeWasm1P
-	BurnCodeMinimumGasPerRequest
+	BurnCodeMinimumGasPerRequest1P
 )
 
 // burnTable contains all possible burn codes with their burn value computing functions
@@ -46,7 +46,7 @@ var burnTable = BurnTable{
 	BurnCodeGetCallerData:              {"caller", constValue(10)},
 	BurnCodeGetStateAnchorInfo:         {"anchor", constValue(10)},
 	BurnCodeGetBalance:                 {"balance", constValue(20)},
-	BurnCodeCallContract:               {"call", constValue(10)},
+	BurnCodeCallContract:               {"call", constValue(100)},
 	BurnCodeEmitEventFixed:             {"event", constValue(10)},
 	BurnCodeGetAllowance:               {"allowance", constValue(10)},
 	BurnCodeTransferAllowance:          {"transfer", constValue(10)},
@@ -65,7 +65,7 @@ var burnTable = BurnTable{
 	BurnCodeUtilsBLSValidSignature:     {"bls valid", constValue(2000)},
 	BurnCodeUtilsBLSAddrFromPubKey:     {"bls addr", constValue(50)},
 	BurnCodeUtilsBLSAggregateBLS1P:     {"bls aggregate", linear(CoefBLSAggregate)},
-	BurnCodeMinimumGasPerRequest:       {"minimum gas per request", constValue(100)}, // TODO maybe make it configurable (gov contract?)
+	BurnCodeMinimumGasPerRequest1P:     {"minimum gas per request", minBurn(10000)}, // TODO maybe make it configurable (gov contract?)
 }
 
 const (
@@ -80,10 +80,10 @@ func constValue(constGas uint64) BurnFunction {
 	}
 }
 
-func (c BurnCode) Cost(p ...int) uint64 {
+func (c BurnCode) Cost(p ...uint64) uint64 {
 	x := uint64(0)
 	if len(p) > 0 {
-		x = uint64(p[0])
+		x = p[0]
 	}
 	if r, ok := burnTable[c]; ok {
 		return r.BurnFunction(x)
@@ -94,5 +94,11 @@ func (c BurnCode) Cost(p ...int) uint64 {
 func linear(a uint64) BurnFunction {
 	return func(x uint64) uint64 {
 		return a * x
+	}
+}
+
+func minBurn(minGasBurn uint64) BurnFunction {
+	return func(currentBurnedGas uint64) uint64 {
+		return minGasBurn - currentBurnedGas
 	}
 }

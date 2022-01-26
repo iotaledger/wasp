@@ -385,7 +385,9 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 // Gas fee is calculated but not charged, so it can be used to estimate the gas
 // needed to run the request.
 func (ch *Chain) SimulateRequestOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
-	req.WithGasBudget(math.MaxUint64)
+	if req.GasBudget() == 0 {
+		req.WithGasBudget(math.MaxUint64)
+	}
 	r, err := ch.requestFromParams(req, keyPair)
 	if err != nil {
 		return nil, err
@@ -398,13 +400,17 @@ func (ch *Chain) SimulateRequestOnLedger(req *CallParams, keyPair *cryptolib.Key
 // Gas fee is calculated but not charged, so it can be used to estimate the gas
 // needed to run the request.
 func (ch *Chain) SimulateRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
-	req.WithGasBudget(math.MaxUint64)
+	if req.GasBudget() == 0 {
+		req.WithGasBudget(math.MaxUint64)
+	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	return ch.estimateGas(r), nil
 }
 
 // EstimateGasOnLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
+// when a gasBudget is provided in `req`, the execution will be estimated using real VM contrains, if no gasBudget is specified: the maximum possible budget is used for estmation
+// WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
 	res, err := ch.SimulateRequestOnLedger(req, keyPair)
 	if err != nil {
@@ -415,6 +421,8 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
+// when a gasBudget is provided in `req`, the execution will be estimated using real VM contrains, if no gasBudget is specified: the maximum possible budget is used for estmation
+// WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
 	res, err := ch.SimulateRequestOffLedger(req, keyPair)
 	if err != nil {

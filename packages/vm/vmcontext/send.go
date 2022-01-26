@@ -16,7 +16,7 @@ func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 	}
 
 	vmctx.numPostedOutputs++
-	vmctx.GasBurn(gas.BurnCodeSendL1Request, vmctx.numPostedOutputs)
+	vmctx.GasBurn(gas.BurnCodeSendL1Request, uint64(vmctx.numPostedOutputs))
 
 	assets := par.Assets
 	// create extended output with adjusted dust deposit

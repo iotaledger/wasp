@@ -1,6 +1,8 @@
 package sbtestsc
 
 import (
+	"strings"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	assert2 "github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -112,6 +114,6 @@ func getInt(ctx iscp.SandboxView) (dict.Dict, error) {
 func infiniteLoop(ctx iscp.Sandbox) (dict.Dict, error) {
 	for {
 		// do nothing, just waste gas
-		ctx.Call(Contract.Hname(), FuncDoNothing.Hname(), nil, nil)
+		ctx.State().Set("foo", []byte(strings.Repeat("dummy data", 1000)))
 	}
 }

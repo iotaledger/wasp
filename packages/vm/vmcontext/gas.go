@@ -15,7 +15,7 @@ func (vmctx *VMContext) gasSetBudget(gasBudget uint64) {
 	vmctx.gasBurned = 0
 }
 
-func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...int) {
+func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	if !vmctx.gasBurnEnabled {
 		return
 	}

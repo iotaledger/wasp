@@ -103,7 +103,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
 		req := solo.NewCallParams("dummyContract", "dummyEP").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrTargetContractNotFound)
@@ -140,7 +140,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
 		req := solo.NewCallParams("dummyContract", "dummyEP").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetContractNotFound.Error())
@@ -177,7 +177,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
@@ -214,7 +214,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
@@ -269,7 +269,7 @@ func TestOkCall(t *testing.T) {
 	ch := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	env.WaitPublisher()
@@ -303,7 +303,7 @@ func TestEstimateGas(t *testing.T) {
 
 	var estimatedGas, estimatedGasFee uint64
 	{
-		keyPair, _ := env.NewKeyPair()
+		keyPair, _ := env.NewKeyPairWithFunds()
 
 		// we can call EstimateGas even with 0 iotas in L2 account
 		estimatedGas, estimatedGasFee, err = ch.EstimateGasOffLedger(callParams(), keyPair)
@@ -316,11 +316,11 @@ func TestEstimateGas(t *testing.T) {
 		require.EqualValues(t, 0, getInt())
 	}
 
-	// dirty hack to find out the dust deposit + gas fee necessary for DepositIotasToL2
+	// find out the gas fee necessary for DepositIotasToL2
 	depositFee := func() uint64 {
-		keyPair, addr := env.NewKeyPairWithFunds()
-		ch.MustDepositIotasToL2(1000, keyPair)
-		return 1000 - ch.L2Iotas(iscp.NewAgentID(addr, 0))
+		keyPair, _ := env.NewKeyPairWithFunds()
+		_, gasFee, _ := ch.EstimateGasOnLedger(solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name), keyPair)
+		return gasFee
 	}()
 
 	for _, testCase := range []struct {
@@ -355,15 +355,19 @@ func TestEstimateGas(t *testing.T) {
 	} {
 		t.Run(testCase.Desc, func(t *testing.T) {
 			keyPair, addr := env.NewKeyPairWithFunds()
+			agentID := iscp.NewAgentID(addr, 0)
+
 			if testCase.L2Balance > 0 {
 				ch.MustDepositIotasToL2(testCase.L2Balance+depositFee, keyPair)
-				require.Equal(t, testCase.L2Balance, ch.L2Iotas(iscp.NewAgentID(addr, 0)))
+				require.Equal(t, testCase.L2Balance, ch.L2Iotas(agentID))
 			}
 
 			_, err := ch.PostRequestOffLedger(
 				callParams().WithGasBudget(testCase.GasBudget),
 				keyPair,
 			)
+			rec := ch.LastReceipt()
+			println(rec)
 			if testCase.ExpectedError != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedError)
@@ -383,7 +387,7 @@ func TestRepeatInit(t *testing.T) {
 		err := ch.DepositIotasToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(root.Contract.Name, "init").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, root.ErrChainInitConditionsFailed)
@@ -395,7 +399,7 @@ func TestRepeatInit(t *testing.T) {
 		err := ch.DepositIotasToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(accounts.Contract.Name, "init").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
@@ -407,7 +411,7 @@ func TestRepeatInit(t *testing.T) {
 		err := ch.DepositIotasToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(blocklog.Contract.Name, "init").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
@@ -419,7 +423,7 @@ func TestRepeatInit(t *testing.T) {
 		err := ch.DepositIotasToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(blob.Contract.Name, "init").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
@@ -431,7 +435,7 @@ func TestRepeatInit(t *testing.T) {
 		err := ch.DepositIotasToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(governance.Contract.Name, "init").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
