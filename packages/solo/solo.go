@@ -6,7 +6,6 @@ package solo
 import (
 	"math/big"
 	"math/rand"
-	"strings"
 	"sync"
 	"time"
 
@@ -31,7 +30,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/atomic"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/xerrors"
 )
@@ -55,8 +53,6 @@ type Solo struct {
 	ledgerMutex                  sync.RWMutex
 	chains                       map[iscp.ChainID]*Chain
 	vmRunner                     vm.VMRunner
-	publisherWG                  sync.WaitGroup
-	publisherEnabled             atomic.Bool
 	processorConfig              *processors.Config
 	disableAutoAdjustDustDeposit bool
 }
@@ -168,6 +164,11 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v, milestone index: #%d",
 		globalTime.Time.Format(timeLayout), ret.utxoDB.TimeStep(), globalTime.MilestoneIndex)
+
+	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
+		ret.logger.Infof("solo publisher: %s %v", msgType, parts)
+	}))
+
 	return ret
 }
 
@@ -278,18 +279,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
-	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
-		if !env.publisherEnabled.Load() {
-			return
-		}
-		msg := msgType + " " + strings.Join(parts, " ")
-		env.publisherWG.Add(1)
-		go func() {
-			chainlog.Infof("SOLO PUBLISHER (test %s):: '%s'", env.T.Name(), msg)
-			env.publisherWG.Done()
-		}()
-	}))
-
 	outs, ids = env.utxoDB.GetUnspentOutputs(originatorAddr)
 	initTx, err := transaction.NewRootInitRequestTransaction(
 		ret.OriginatorPrivateKey,
@@ -371,16 +360,6 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 
 		ch.runVMMutex.Unlock()
 	}
-}
-
-// EnablePublisher enables Solo publisher
-func (env *Solo) EnablePublisher(enable bool) {
-	env.publisherEnabled.Store(enable)
-}
-
-// WaitPublisher waits until all messages are published
-func (env *Solo) WaitPublisher() {
-	env.publisherWG.Wait()
 }
 
 func (ch *Chain) GetAnchorOutput() (*iotago.AliasOutput, *iotago.UTXOInput) {
