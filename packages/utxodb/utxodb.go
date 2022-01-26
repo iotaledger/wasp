@@ -23,7 +23,7 @@ const (
 	Mi = 1_000_000
 
 	// FundsFromFaucetAmount is how many iotas are returned from the faucet.
-	FundsFromFaucetAmount = 1 * Mi
+	FundsFromFaucetAmount = 1000 * Mi
 )
 
 var (

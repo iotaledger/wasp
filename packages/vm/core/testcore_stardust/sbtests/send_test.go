@@ -54,7 +54,7 @@ func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	dustDeposit := tx.Essence.Outputs[0].Deposit()
-	ch.Env.AssertL1AddressIotas(walletAddr, beforeWallet.AssetsL1.Iotas+allowance-dustDeposit)
+	ch.Env.AssertL1Iotas(walletAddr, beforeWallet.AssetsL1.Iotas+allowance-dustDeposit)
 }
 
 func TestSeveralOutputsInASingleCallFail(t *testing.T) { run2(t, testSeveralOutputsInASingleCallFail) }
@@ -74,7 +74,7 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 	const allowance = 1000
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
 		AddIotaAllowance(allowance).
-		WithGasBudget(200_000)
+		WithGasBudget(400_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
@@ -102,7 +102,7 @@ func testSplitTokensFail(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
 		AddAssetsIotas(100_000).
-		WithGasBudget(200_000)
+		WithGasBudget(400_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
 	require.NotContains(t, err.Error(), "skipped")
@@ -136,8 +136,8 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 		WithGasBudget(200_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
-	require.Equal(t, ch.L2AccountNativeTokens(agentID, &tokenID).Int64(), amountMintedTokens-amountTokensToSend)
-	require.Equal(t, ch.Env.L1NativeTokenBalance(addr, &tokenID).Int64(), amountTokensToSend)
+	require.Equal(t, ch.L2NativeTokens(agentID, &tokenID).Int64(), amountMintedTokens-amountTokensToSend)
+	require.Equal(t, ch.Env.L1NativeTokens(addr, &tokenID).Int64(), amountTokensToSend)
 }
 
 // TestPingIotas1 sends some iotas to SC and receives the whole allowance sent back to L1 as on-ledger request
@@ -154,23 +154,13 @@ func testPingIotas1(t *testing.T, w bool) {
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
 	const expectedBack = 1_000
-	ch.Env.AssertL1AddressIotas(userAddr, solo.Saldo)
-
-	reqEstimate := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddAssetsIotas(100_000).
-		AddIotaAllowance(expectedBack).
-		WithGasBudget(100_000)
-
-	gasEstimate, feeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
-	require.NoError(t, err)
-	t.Logf("gasEstimate: %d, feeEstimate: %d", gasEstimate, feeEstimate)
+	ch.Env.AssertL1Iotas(userAddr, solo.Saldo)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddAssetsIotas(feeEstimate + expectedBack).
-		AddIotaAllowance(expectedBack).
-		WithGasBudget(gasEstimate)
+		AddAssetsIotas(expectedBack).
+		AddIotaAllowance(expectedBack)
 
-	_, err = ch.PostRequestSync(req, user)
+	_, receipt, _, err := ch.PostRequestSyncExt(req, user)
 	require.NoError(t, err)
 	rec := ch.LastReceipt()
 
@@ -178,12 +168,13 @@ func testPingIotas1(t *testing.T, w bool) {
 	commonAfter := ch.L2CommonAccountAssets()
 	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", rec, userFundsAfter, commonAfter)
 
-	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, solo.Saldo-feeEstimate)
+	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, solo.Saldo-receipt.GasFeeCharged)
 	require.EqualValues(t, int(commonBefore.Iotas+rec.GasFeeCharged), int(commonAfter.Iotas))
-	require.EqualValues(t, feeEstimate-rec.GasFeeCharged, int(userFundsAfter.AssetsL2.Iotas))
+	require.EqualValues(t, receipt.GasFeeCharged-rec.GasFeeCharged, int(userFundsAfter.AssetsL2.Iotas))
 }
 
 func TestEstimateMinimumDust(t *testing.T) { run2(t, testEstimateMinimumDust) }
+
 func testEstimateMinimumDust(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)

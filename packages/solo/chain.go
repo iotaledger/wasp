@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -26,9 +24,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 )
 
 // String is string representation for main parameters of the chain
@@ -50,7 +48,7 @@ func (ch *Chain) DumpAccounts() string {
 	for i := range acc {
 		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
-		bals := ch.L2AccountAssets(aid)
+		bals := ch.L2Assets(aid)
 		ret += fmt.Sprintf("%s\n", bals.String())
 	}
 	return ret
@@ -119,33 +117,10 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 		// blob exists, return hash of existing
 		return expectedHash, nil
 	}
-
-	userAddr := cryptolib.Ed25519AddressFromPubKey(user.PublicKey)
-	// We have to have some iotas even in estimate mode, otherwise we cannot create transaction
-	const minimumIotasForEstimate = 100_000
-
-	// estimate gas
-	userIotas := ch.Env.L1IotaBalance(userAddr)
-	if userIotas < minimumIotasForEstimate {
-		return hashing.HashValue{}, xerrors.Errorf("expected at least %d iotas on user L1 account", minimumIotasForEstimate)
-	}
-	// estimate gas budget and iotas needed
-	reqEstimate := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
-		AddAssetsIotas(minimumIotasForEstimate).
-		WithGasBudget(minimumIotasForEstimate)
-	gasBudgetEstimate, gasFeeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
-	require.NoError(ch.Env.T, err)
-
-	// check if user has required iotas on L2
-	userIotasL2 := ch.L2AccountIotas(iscp.NewAgentID(userAddr, 0))
-	if userIotasL2 < gasFeeEstimate*2 {
-		err = xerrors.Errorf("sender's %di on L2 is not enough. At least %di is required", userIotasL2, gasFeeEstimate*2)
-		return hashing.HashValue{}, err
-	}
-	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
-		WithGasBudget(gasBudgetEstimate * 2) // double the estimate, to be on the safe side
-	res, err := ch.PostRequestOffLedger(req, user)
-
+	res, err := ch.PostRequestOffLedger(
+		NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...),
+		user,
+	)
 	if err != nil {
 		return
 	}
@@ -235,22 +210,10 @@ func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHas
 	for k, v := range parseParams(params) {
 		par[k] = v
 	}
-	reqEstimate := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
-		WithGasBudget(100_000).
-		AddAssetsIotas(10_000)
-	gasEstimate, gasFeeEstimate, err := ch.EstimateGasOnLedger(reqEstimate, user)
-	require.NoError(ch.Env.T, err)
-
-	userAddr := cryptolib.Ed25519AddressFromPubKey(user.PublicKey)
-	userIotasL2 := ch.L2AccountIotas(iscp.NewAgentID(userAddr, 0))
-	if userIotasL2 < gasFeeEstimate*2 {
-		return xerrors.Errorf("sender's %di on L2 is not enough. At least %di is required", userIotasL2, gasFeeEstimate*2)
-	}
-
-	req := NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
-		WithGasBudget(gasEstimate)
-
-	_, err = ch.PostRequestSync(req, user)
+	_, err := ch.PostRequestSync(
+		NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par),
+		user,
+	)
 	return err
 }
 
@@ -564,7 +527,7 @@ func (a *L1L2AddressAssets) String() string {
 func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
 	return &L1L2AddressAssets{
 		Address:  addr,
-		AssetsL1: ch.Env.L1AddressBalances(addr),
-		AssetsL2: ch.L2AccountAssets(iscp.NewAgentID(addr, 0)),
+		AssetsL1: ch.Env.L1Assets(addr),
+		AssetsL2: ch.L2Assets(iscp.NewAgentID(addr, 0)),
 	}
 }

@@ -7,8 +7,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -21,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 )
@@ -190,7 +189,7 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 	entryPoint := vmctx.req.CallTarget().EntryPoint
 	targetContract := vmctx.targetContract()
 	if targetContract == nil {
-		vmctx.GasBurn(gas.BurnCallTargetNotFound)
+		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
 		panic(xerrors.Errorf("%v: target = %s", ErrTargetContractNotFound, vmctx.req.CallTarget().Contract))
 	}
 	return vmctx.callByProgramHash(
@@ -216,7 +215,10 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	f1, f2 := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.req.GasBudget(), guaranteedFeeTokens)
 	vmctx.gasMaxTokensToSpendForGasFee = f1 + f2
 	// calculate affordable gas budget
-	affordable := vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
+	affordable := uint64(math.MaxUint64)
+	if !vmctx.task.EstimateGasMode {
+		affordable = vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
+	}
 	// adjust gas budget to what is affordable
 	vmctx.gasBudgetAdjusted = util.MinUint64(vmctx.req.GasBudget(), affordable)
 }
@@ -224,6 +226,10 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 // calcGuaranteedFeeTokens return hiw maximum tokens (iotas or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
 func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
+	if vmctx.task.EstimateGasMode {
+		return math.MaxUint64
+	}
+
 	var tokensGuaranteed uint64
 
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
@@ -281,6 +287,11 @@ func (vmctx *VMContext) chargeGasFee() {
 	// calc gas totals
 	vmctx.gasBurnedTotal += vmctx.gasBurned
 	vmctx.gasFeeChargedTotal += vmctx.gasFeeCharged
+
+	if vmctx.task.EstimateGasMode {
+		// If estimating gas, compute the gas fee but do not attempt to charge
+		return
+	}
 
 	transferToValidator := &iscp.Assets{}
 	transferToOwner := &iscp.Assets{}

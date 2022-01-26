@@ -15,13 +15,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (ch *Chain) AssertL2AccountNativeToken(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID, bal interface{}) {
-	bals := ch.L2AccountAssets(agentID)
+func (ch *Chain) AssertL2NativeTokens(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID, bal interface{}) {
+	bals := ch.L2Assets(agentID)
 	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
-func (ch *Chain) AssertL2AccountIotas(agentID *iscp.AgentID, bal uint64) {
-	require.Equal(ch.Env.T, int(bal), int(ch.L2AccountAssets(agentID).Iotas))
+func (ch *Chain) AssertL2Iotas(agentID *iscp.AgentID, bal uint64) {
+	require.Equal(ch.Env.T, int(bal), int(ch.L2Assets(agentID).Iotas))
 }
 
 // CheckChain checks fundamental integrity of the chain
@@ -43,30 +43,30 @@ func (ch *Chain) CheckChain() {
 // CheckAccountLedger check integrity of the on-chain ledger.
 // Sum of all accounts must be equal to total assets
 func (ch *Chain) CheckAccountLedger() {
-	total := ch.L2TotalAssetsInAccounts()
+	total := ch.L2TotalAssets()
 	accs := ch.L2Accounts()
 	sum := iscp.NewEmptyAssets()
 	for i := range accs {
 		acc := accs[i]
-		sum.Add(ch.L2AccountAssets(acc))
+		sum.Add(ch.L2Assets(acc))
 	}
 	require.True(ch.Env.T, total.Equals(sum))
 	coreacc := iscp.NewAgentID(ch.ChainID.AsAddress(), root.Contract.Hname())
-	require.True(ch.Env.T, ch.L2AccountAssets(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), blob.Contract.Hname())
-	require.True(ch.Env.T, ch.L2AccountAssets(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), accounts.Contract.Hname())
-	require.True(ch.Env.T, ch.L2AccountAssets(coreacc).IsEmpty())
-	require.True(ch.Env.T, ch.L2AccountAssets(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 }
 
 func (ch *Chain) AssertL2TotalNativeTokens(tokenID *iotago.NativeTokenID, bal interface{}) {
-	bals := ch.L2TotalAssetsInAccounts()
+	bals := ch.L2TotalAssets()
 	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
 func (ch *Chain) AssertL2TotalIotas(bal uint64) {
-	iotas := ch.L2TotalIotasInAccounts()
+	iotas := ch.L2TotalIotas()
 	require.EqualValues(ch.Env.T, int(bal), int(iotas))
 }
 
@@ -77,10 +77,10 @@ func (ch *Chain) AssertControlAddresses() {
 	require.EqualValues(ch.Env.T, 0, rec.SinceBlockIndex)
 }
 
-func (env *Solo) AssertL1AddressIotas(addr iotago.Address, expected uint64) {
-	require.EqualValues(env.T, int(expected), int(env.L1IotaBalance(addr)))
+func (env *Solo) AssertL1Iotas(addr iotago.Address, expected uint64) {
+	require.EqualValues(env.T, int(expected), int(env.L1Iotas(addr)))
 }
 
 func (env *Solo) AssertL1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID, expected interface{}) {
-	require.True(env.T, env.L1NativeTokenBalance(addr, tokenID).Cmp(util.ToBigInt(expected)) == 0)
+	require.True(env.T, env.L1NativeTokens(addr, tokenID).Cmp(util.ToBigInt(expected)) == 0)
 }

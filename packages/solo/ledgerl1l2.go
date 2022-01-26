@@ -46,7 +46,7 @@ func (ch *Chain) L2Ledger() map[string]*iscp.Assets {
 	accs := ch.L2Accounts()
 	ret := make(map[string]*iscp.Assets)
 	for i := range accs {
-		ret[accs[i].String()] = ch.L2AccountAssets(accs[i])
+		ret[accs[i].String()] = ch.L2Assets(accs[i])
 	}
 	return ret
 }
@@ -66,43 +66,43 @@ func (ch *Chain) L2LedgerString() string {
 	return ret
 }
 
-// L2AccountAssets return all assets contained in the on-chain account controlled by the 'agentID'
-func (ch *Chain) L2AccountAssets(agentID *iscp.AgentID) *iscp.Assets {
+// L2Assets return all assets contained in the on-chain account controlled by the 'agentID'
+func (ch *Chain) L2Assets(agentID *iscp.AgentID) *iscp.Assets {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
 	)
 }
 
-func (ch *Chain) L2AccountIotas(agentID *iscp.AgentID) uint64 {
-	return ch.L2AccountAssets(agentID).Iotas
+func (ch *Chain) L2Iotas(agentID *iscp.AgentID) uint64 {
+	return ch.L2Assets(agentID).Iotas
 }
 
-func (ch *Chain) L2AccountNativeTokens(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
-	return ch.L2AccountAssets(agentID).AmountNativeToken(tokenID)
+func (ch *Chain) L2NativeTokens(agentID *iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+	return ch.L2Assets(agentID).AmountNativeToken(tokenID)
 }
 
 func (ch *Chain) L2CommonAccountAssets() *iscp.Assets {
-	return ch.L2AccountAssets(ch.CommonAccount())
+	return ch.L2Assets(ch.CommonAccount())
 }
 
 func (ch *Chain) L2CommonAccountIotas() uint64 {
-	return ch.L2AccountAssets(ch.CommonAccount()).Iotas
+	return ch.L2Assets(ch.CommonAccount()).Iotas
 }
 
 func (ch *Chain) L2CommonAccountNativeTokens(tokenID *iotago.NativeTokenID) *big.Int {
-	return ch.L2AccountAssets(ch.CommonAccount()).AmountNativeToken(tokenID)
+	return ch.L2Assets(ch.CommonAccount()).AmountNativeToken(tokenID)
 }
 
-// L2TotalAssetsInAccounts return total sum of assets contained in the on-chain accounts
-func (ch *Chain) L2TotalAssetsInAccounts() *iscp.Assets {
+// L2TotalAssets return total sum of assets contained in the on-chain accounts
+func (ch *Chain) L2TotalAssets() *iscp.Assets {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewTotalAssets.Name),
 	)
 }
 
-// L2TotalIotasInAccounts return total sum of iotas
-func (ch *Chain) L2TotalIotasInAccounts() uint64 {
-	return ch.L2TotalAssetsInAccounts().Iotas
+// L2TotalIotas return total sum of iotas in L2 (all accounts)
+func (ch *Chain) L2TotalIotas() uint64 {
+	return ch.L2TotalAssets().Iotas
 }
 
 func mustNativeTokenIDFromBytes(data []byte) *iotago.NativeTokenID {
@@ -154,13 +154,13 @@ type foundryParams struct {
 	maxSupply *big.Int
 }
 
-// CreateFoundryGasBudgetIotas always takes 1000 iotas as gas budget and assets for the call
+// CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and assets for the call
 const (
-	CreateFoundryGasBudgetIotas   = 1000
-	MintTokensGasBudgetIotas      = 1000
-	DestroyTokensGasBudgetIotas   = 1000
-	SendToL2AccountGasBudgetIotas = 1000
-	DestroyFoundryGasBudgetIotas  = 1000
+	CreateFoundryGasBudgetIotas   = 100_000
+	MintTokensGasBudgetIotas      = 100_000
+	DestroyTokensGasBudgetIotas   = 100_000
+	SendToL2AccountGasBudgetIotas = 100_000
+	DestroyFoundryGasBudgetIotas  = 100_000
 )
 
 func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams {
@@ -283,14 +283,11 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 
 // DepositAssetsToL2 deposits assets on user's on-chain account
 func (ch *Chain) DepositAssetsToL2(assets *iscp.Assets, user *cryptolib.KeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddAssets(assets).
-		WithGasBudget(10_000)
-	gas, _, err := ch.EstimateGasOnLedger(req, user)
-	require.NoError(ch.Env.T, err)
-
-	req.WithGasBudget(gas * 2)
-	_, err = ch.PostRequestSync(req, user)
+	_, err := ch.PostRequestSync(
+		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			AddAssets(assets),
+		user,
+	)
 	return err
 }
 
@@ -309,18 +306,12 @@ func (ch *Chain) MustDepositIotasToL2(amount uint64, user *cryptolib.KeyPair) {
 func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.Assets, target *iscp.AgentID, user *cryptolib.KeyPair) error {
 	require.False(ch.Env.T, toSend.IsEmpty())
 	sumAssets := toSend.Clone().AddIotas(feeIotas)
-	reqEstimate := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
-		AddAssets(sumAssets).
-		AddAllowance(toSend).
-		WithGasBudget(10_000)
-	gas, _, err := ch.EstimateGasOnLedger(reqEstimate, user)
-	require.NoError(ch.Env.T, err)
-
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
-		AddAssets(sumAssets).
-		WithGasBudget(gas).
-		AddAllowance(toSend)
-	_, err = ch.PostRequestSync(req, user)
+	_, err := ch.PostRequestSync(
+		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
+			AddAssets(sumAssets).
+			AddAllowance(toSend),
+		user,
+	)
 	return err
 }
 
