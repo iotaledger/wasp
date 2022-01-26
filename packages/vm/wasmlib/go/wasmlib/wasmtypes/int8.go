@@ -5,17 +5,15 @@ package wasmtypes
 
 import (
 	"strconv"
-
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 )
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-func DecodeInt8(dec *wasmcodec.WasmDecoder) int8 {
+func DecodeInt8(dec *WasmDecoder) int8 {
 	return int8(dec.Byte())
 }
 
-func EncodeInt8(enc *wasmcodec.WasmEncoder, value int8) {
+func EncodeInt8(enc *WasmEncoder, value int8) {
 	enc.Byte(byte(value))
 }
 
@@ -24,7 +22,7 @@ func Int8FromBytes(buf []byte) int8 {
 		return 0
 	}
 	if len(buf) != 1 {
-		Panic("invalid Int8 length")
+		panic("invalid Int8 length")
 	}
 	return int8(buf[0])
 }
@@ -33,7 +31,7 @@ func BytesFromInt8(value int8) []byte {
 	return []byte{byte(value)}
 }
 
-func StringFromInt8(value int8) string {
+func Int8ToString(value int8) string {
 	return strconv.FormatInt(int64(value), 10)
 }
 
@@ -52,7 +50,7 @@ func (o ScImmutableInt8) Exists() bool {
 }
 
 func (o ScImmutableInt8) String() string {
-	return StringFromInt8(o.Value())
+	return Int8ToString(o.Value())
 }
 
 func (o ScImmutableInt8) Value() int8 {

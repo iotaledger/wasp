@@ -6,7 +6,6 @@ package wasmlib
 import (
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -22,7 +21,7 @@ func NewScDictFromBytes(buf []byte) ScDict {
 	if len(buf) == 0 {
 		return make(ScDict)
 	}
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	size := wasmtypes.Uint32FromBytes(dec.FixedBytes(wasmtypes.ScUint32Length))
 	dict := make(ScDict, size)
 	for i := uint32(0); i < size; i++ {
@@ -47,7 +46,7 @@ func (d ScDict) Bytes() []byte {
 	sort.Slice(keys, func(i, j int) bool {
 		return keys[i] < keys[j]
 	})
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	enc.FixedBytes(wasmtypes.BytesFromUint32(uint32(len(keys))), wasmtypes.ScUint32Length)
 	for _, k := range keys {
 		key := []byte(k)

@@ -50,7 +50,7 @@ type MapAgentIDToImmutableBid struct {
 }
 
 func (m MapAgentIDToImmutableBid) GetBid(key wasmtypes.ScAgentID) ImmutableBid {
-	return ImmutableBid{proxy: m.proxy.Key(key.Bytes())}
+	return ImmutableBid{proxy: m.proxy.Key(wasmtypes.BytesFromAgentID(key))}
 }
 
 type ImmutableBids = MapAgentIDToImmutableBid
@@ -64,7 +64,7 @@ func (m MapAgentIDToMutableBid) Clear() {
 }
 
 func (m MapAgentIDToMutableBid) GetBid(key wasmtypes.ScAgentID) MutableBid {
-	return MutableBid{proxy: m.proxy.Key(key.Bytes())}
+	return MutableBid{proxy: m.proxy.Key(wasmtypes.BytesFromAgentID(key))}
 }
 
 type MutableBids = MapAgentIDToMutableBid

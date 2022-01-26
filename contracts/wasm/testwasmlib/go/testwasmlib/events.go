@@ -15,8 +15,8 @@ import (
 type TestWasmLibEvents struct{}
 
 func (e TestWasmLibEvents) Test(address wasmtypes.ScAddress, name string) {
-	wasmlib.NewEventEncoder("testwasmlib.test").
-		Address(address).
-		String(name).
-		Emit()
+	evt := wasmlib.NewEventEncoder("testwasmlib.test")
+	evt.Encode(wasmtypes.AddressToString(address))
+	evt.Encode(wasmtypes.StringToString(name))
+	evt.Emit()
 }

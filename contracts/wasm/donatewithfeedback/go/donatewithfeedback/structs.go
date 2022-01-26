@@ -7,10 +7,7 @@
 
 package donatewithfeedback
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
-)
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type Donation struct {
 	Amount    uint64              // amount donated
@@ -21,7 +18,7 @@ type Donation struct {
 }
 
 func NewDonationFromBytes(buf []byte) *Donation {
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Donation{}
 	data.Amount = wasmtypes.DecodeUint64(dec)
 	data.Donator = wasmtypes.DecodeAgentID(dec)
@@ -33,7 +30,7 @@ func NewDonationFromBytes(buf []byte) *Donation {
 }
 
 func (o *Donation) Bytes() []byte {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.EncodeUint64(enc, o.Amount)
 	wasmtypes.EncodeAgentID(enc, o.Donator)
 	wasmtypes.EncodeString(enc, o.Error)

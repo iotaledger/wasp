@@ -26,7 +26,7 @@ type MapAddressToImmutableUint64 struct {
 }
 
 func (m MapAddressToImmutableUint64) GetUint64(key wasmtypes.ScAddress) wasmtypes.ScImmutableUint64 {
-	return wasmtypes.NewScImmutableUint64(m.proxy.Key(key.Bytes()))
+	return wasmtypes.NewScImmutableUint64(m.proxy.Key(wasmtypes.BytesFromAddress(key)))
 }
 
 type ImmutableDividendState struct {
@@ -78,7 +78,7 @@ func (m MapAddressToMutableUint64) Clear() {
 }
 
 func (m MapAddressToMutableUint64) GetUint64(key wasmtypes.ScAddress) wasmtypes.ScMutableUint64 {
-	return wasmtypes.NewScMutableUint64(m.proxy.Key(key.Bytes()))
+	return wasmtypes.NewScMutableUint64(m.proxy.Key(wasmtypes.BytesFromAddress(key)))
 }
 
 type MutableDividendState struct {

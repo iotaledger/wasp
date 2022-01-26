@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -169,10 +168,10 @@ func viewGetCounter(ctx wasmlib.ScViewContext, f *GetCounterContext) {
 
 //nolint:dupl
 func viewGetVli(ctx wasmlib.ScViewContext, f *GetVliContext) {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	n := f.Params.Ni64().Value()
 	buf := enc.VliEncode(n).Buf()
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	x := wasmtypes.DecodeInt64(dec)
 
 	str := strconv.FormatInt(n, 10) + " -"
@@ -190,10 +189,10 @@ func viewGetVli(ctx wasmlib.ScViewContext, f *GetVliContext) {
 
 //nolint:dupl
 func viewGetVlu(ctx wasmlib.ScViewContext, f *GetVluContext) {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	n := f.Params.Nu64().Value()
 	buf := enc.VluEncode(n).Buf()
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	x := wasmtypes.DecodeUint64(dec)
 
 	str := strconv.FormatUint(n, 10) + " -"
@@ -219,12 +218,12 @@ func localStatePost(ctx wasmlib.ScFuncContext, nr int64) {
 }
 
 func vliSave(ctx wasmlib.ScFuncContext, name string, value int64) {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	state := wasmlib.ScState{}
 	state.Set([]byte(name), enc.VliEncode(value).Buf())
 
 	buf := state.Get([]byte(name))
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	retrieved := wasmtypes.DecodeInt64(dec)
 	if retrieved != value {
 		ctx.Log(name + " in : " + ctx.Utility().String(value))
@@ -233,12 +232,12 @@ func vliSave(ctx wasmlib.ScFuncContext, name string, value int64) {
 }
 
 func vluSave(ctx wasmlib.ScFuncContext, name string, value uint64) {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	state := wasmlib.ScState{}
 	state.Set([]byte(name), enc.VluEncode(value).Buf())
 
 	buf := state.Get([]byte(name))
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	retrieved := wasmtypes.DecodeUint64(dec)
 	if retrieved != value {
 		ctx.Log(name + " in : " + ctx.Utility().String(int64(value)))

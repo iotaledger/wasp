@@ -14,7 +14,7 @@ type MapAgentIDToImmutableUint64 struct {
 }
 
 func (m MapAgentIDToImmutableUint64) GetUint64(key wasmtypes.ScAgentID) wasmtypes.ScImmutableUint64 {
-	return wasmtypes.NewScImmutableUint64(m.proxy.Key(key.Bytes()))
+	return wasmtypes.NewScImmutableUint64(m.proxy.Key(wasmtypes.BytesFromAgentID(key)))
 }
 
 type ImmutableAllowancesForAgent = MapAgentIDToImmutableUint64
@@ -28,7 +28,7 @@ func (m MapAgentIDToMutableUint64) Clear() {
 }
 
 func (m MapAgentIDToMutableUint64) GetUint64(key wasmtypes.ScAgentID) wasmtypes.ScMutableUint64 {
-	return wasmtypes.NewScMutableUint64(m.proxy.Key(key.Bytes()))
+	return wasmtypes.NewScMutableUint64(m.proxy.Key(wasmtypes.BytesFromAgentID(key)))
 }
 
 type MutableAllowancesForAgent = MapAgentIDToMutableUint64

@@ -4,7 +4,6 @@
 package wasmlib
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -25,7 +24,7 @@ func (u ScSandboxUtils) BlsAddressFromPubKey(pubKey []byte) wasmtypes.ScAddress 
 }
 
 func (u ScSandboxUtils) BlsAggregateSignatures(pubKeys, sigs [][]byte) ([]byte, []byte) {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.EncodeUint32(enc, uint32(len(pubKeys)))
 	for _, pubKey := range pubKeys {
 		enc.Bytes(pubKey)
@@ -35,12 +34,12 @@ func (u ScSandboxUtils) BlsAggregateSignatures(pubKeys, sigs [][]byte) ([]byte, 
 		enc.Bytes(sig)
 	}
 	result := Sandbox(FnUtilsBlsAggregate, enc.Buf())
-	decode := wasmcodec.NewWasmDecoder(result)
+	decode := wasmtypes.NewWasmDecoder(result)
 	return decode.Bytes(), decode.Bytes()
 }
 
 func (u ScSandboxUtils) BlsValidSignature(data, pubKey, signature []byte) bool {
-	enc := wasmcodec.NewWasmEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
+	enc := wasmtypes.NewWasmEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
 	return wasmtypes.BoolFromBytes(Sandbox(FnUtilsBlsValid, enc.Buf()))
 }
 
@@ -49,7 +48,7 @@ func (u ScSandboxUtils) Ed25519AddressFromPubKey(pubKey []byte) wasmtypes.ScAddr
 }
 
 func (u ScSandboxUtils) Ed25519ValidSignature(data, pubKey, signature []byte) bool {
-	enc := wasmcodec.NewWasmEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
+	enc := wasmtypes.NewWasmEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
 	return wasmtypes.BoolFromBytes(Sandbox(FnUtilsEd25519Valid, enc.Buf()))
 }
 
@@ -70,5 +69,5 @@ func (u ScSandboxUtils) Hname(value string) wasmtypes.ScHname {
 
 // converts an integer to its string representation
 func (u ScSandboxUtils) String(value int64) string {
-	return wasmtypes.StringFromInt64(value)
+	return wasmtypes.Int64ToString(value)
 }

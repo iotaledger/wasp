@@ -7,10 +7,7 @@
 
 package fairauction
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
-)
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type Auction struct {
 	Color         wasmtypes.ScColor   // color of tokens for sale
@@ -27,7 +24,7 @@ type Auction struct {
 }
 
 func NewAuctionFromBytes(buf []byte) *Auction {
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Auction{}
 	data.Color = wasmtypes.DecodeColor(dec)
 	data.Creator = wasmtypes.DecodeAgentID(dec)
@@ -45,7 +42,7 @@ func NewAuctionFromBytes(buf []byte) *Auction {
 }
 
 func (o *Auction) Bytes() []byte {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.EncodeColor(enc, o.Color)
 	wasmtypes.EncodeAgentID(enc, o.Creator)
 	wasmtypes.EncodeUint64(enc, o.Deposit)
@@ -99,7 +96,7 @@ type Bid struct {
 }
 
 func NewBidFromBytes(buf []byte) *Bid {
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Bid{}
 	data.Amount = wasmtypes.DecodeUint64(dec)
 	data.Index = wasmtypes.DecodeUint32(dec)
@@ -109,7 +106,7 @@ func NewBidFromBytes(buf []byte) *Bid {
 }
 
 func (o *Bid) Bytes() []byte {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.EncodeUint64(enc, o.Amount)
 	wasmtypes.EncodeUint32(enc, o.Index)
 	wasmtypes.EncodeUint64(enc, o.Timestamp)

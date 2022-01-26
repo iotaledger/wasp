@@ -3,12 +3,6 @@
 
 package wasmtypes
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-)
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 const ScAgentIDLength = ScAddressLength + ScHnameLength
 
 type ScAgentID struct {
@@ -16,38 +10,15 @@ type ScAgentID struct {
 	hname   ScHname
 }
 
-func DecodeAgentID(dec *wasmcodec.WasmDecoder) ScAgentID {
-	return newAgentIDFromBytes(dec.FixedBytes(ScAgentIDLength))
+func NewScAgentID(address ScAddress, hname ScHname) ScAgentID {
+	return ScAgentID{address: address, hname: hname}
 }
 
-func EncodeAgentID(enc *wasmcodec.WasmEncoder, value ScAgentID) {
-	EncodeAddress(enc, value.address)
-	EncodeHname(enc, value.hname)
-}
-
-func AgentIDFromBytes(buf []byte) ScAgentID {
-	if buf == nil {
-		return ScAgentID{}
-	}
-	if len(buf) != ScAgentIDLength {
-		Panic("invalid AgentID length")
-	}
-	// max ledgerstate.AliasAddressType
-	if buf[0] > 2 {
-		Panic("invalid AgentID: address type > 2")
-	}
-	return newAgentIDFromBytes(buf)
-}
-
-func newAgentIDFromBytes(buf []byte) ScAgentID {
+func agentIDFromBytes(buf []byte) ScAgentID {
 	return ScAgentID{
 		address: AddressFromBytes(buf[:ScAddressLength]),
 		hname:   HnameFromBytes(buf[ScAddressLength:]),
 	}
-}
-
-func NewScAgentID(address ScAddress, hname ScHname) ScAgentID {
-	return ScAgentID{address: address, hname: hname}
 }
 
 func (o ScAgentID) Address() ScAddress {
@@ -55,7 +26,7 @@ func (o ScAgentID) Address() ScAddress {
 }
 
 func (o ScAgentID) Bytes() []byte {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := NewWasmEncoder()
 	EncodeAgentID(enc, o)
 	return enc.Buf()
 }
@@ -71,6 +42,39 @@ func (o ScAgentID) IsAddress() bool {
 func (o ScAgentID) String() string {
 	// TODO standardize human readable string
 	return o.address.String() + "::" + o.hname.String()
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+func DecodeAgentID(dec *WasmDecoder) ScAgentID {
+	return agentIDFromBytes(dec.FixedBytes(ScAgentIDLength))
+}
+
+func EncodeAgentID(enc *WasmEncoder, value ScAgentID) {
+	EncodeAddress(enc, value.address)
+	EncodeHname(enc, value.hname)
+}
+
+func AgentIDFromBytes(buf []byte) ScAgentID {
+	if buf == nil {
+		return ScAgentID{}
+	}
+	if len(buf) != ScAgentIDLength {
+		panic("invalid AgentID length")
+	}
+	// max ledgerstate.AliasAddressType
+	if buf[0] > 2 {
+		panic("invalid AgentID: address type > 2")
+	}
+	return agentIDFromBytes(buf)
+}
+
+func BytesFromAgentID(value ScAgentID) []byte {
+	return value.Bytes()
+}
+
+func AgentIDToString(value ScAgentID) string {
+	return value.String()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

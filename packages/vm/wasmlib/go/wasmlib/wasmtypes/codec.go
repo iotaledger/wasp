@@ -1,7 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package wasmcodec
+package wasmtypes
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type WasmDecoder struct {
 	buf []byte
@@ -85,7 +87,7 @@ func (d *WasmDecoder) VluDecode(bits int) uint64 {
 	// while continuation bit is set
 	for ; (b & 0x80) != 0; s += 7 {
 		if s >= bits {
-			d.abort("integer representation too long")
+			d.abort("unsigned representation too long")
 		}
 
 		// next group of 7 bits
@@ -178,4 +180,26 @@ func (e *WasmEncoder) VluEncode(value uint64) *WasmEncoder {
 	// emit without continuation bit
 	e.buf = append(e.buf, b)
 	return e
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// wrapper for simplified use by hashtypes
+func base58Encode(buf []byte) string {
+	// TODO
+	// return string(wasmlib.Sandbox(wasmstore.FnUtilsBase58Encode, buf))
+	return hex(buf)
+}
+
+func hex(buf []byte) string {
+	const hexa = "0123456789abcdef"
+	digits := len(buf) * 2
+	res := make([]byte, digits)
+	for _, b := range buf {
+		digits--
+		res[digits] = hexa[b&0x0f]
+		digits--
+		res[digits] = hexa[b>>4]
+	}
+	return string(res)
 }

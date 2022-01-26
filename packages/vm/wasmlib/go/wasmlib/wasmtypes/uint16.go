@@ -5,19 +5,17 @@ package wasmtypes
 
 import (
 	"strconv"
-
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 )
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const ScUint16Length = 2
 
-func DecodeUint16(dec *wasmcodec.WasmDecoder) uint16 {
+func DecodeUint16(dec *WasmDecoder) uint16 {
 	return uint16(dec.VluDecode(16))
 }
 
-func EncodeUint16(enc *wasmcodec.WasmEncoder, value uint16) {
+func EncodeUint16(enc *WasmEncoder, value uint16) {
 	enc.VluEncode(uint64(value))
 }
 
@@ -26,7 +24,7 @@ func Uint16FromBytes(buf []byte) uint16 {
 		return 0
 	}
 	if len(buf) != ScUint16Length {
-		Panic("invalid Uint16 length")
+		panic("invalid Uint16 length")
 	}
 	return uint16(buf[0]) | uint16(buf[1])<<8
 }
@@ -35,7 +33,7 @@ func BytesFromUint16(value uint16) []byte {
 	return []byte{byte(value), byte(value >> 8)}
 }
 
-func StringFromUint16(value uint16) string {
+func Uint16ToString(value uint16) string {
 	return strconv.FormatUint(uint64(value), 10)
 }
 
@@ -54,7 +52,7 @@ func (o ScImmutableUint16) Exists() bool {
 }
 
 func (o ScImmutableUint16) String() string {
-	return StringFromUint16(o.Value())
+	return Uint16ToString(o.Value())
 }
 
 func (o ScImmutableUint16) Value() uint16 {

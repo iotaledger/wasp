@@ -7,10 +7,7 @@
 
 package tokenregistry
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
-)
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type Token struct {
 	Created     uint64              // creation timestamp
@@ -23,7 +20,7 @@ type Token struct {
 }
 
 func NewTokenFromBytes(buf []byte) *Token {
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Token{}
 	data.Created = wasmtypes.DecodeUint64(dec)
 	data.Description = wasmtypes.DecodeString(dec)
@@ -37,7 +34,7 @@ func NewTokenFromBytes(buf []byte) *Token {
 }
 
 func (o *Token) Bytes() []byte {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.EncodeUint64(enc, o.Created)
 	wasmtypes.EncodeString(enc, o.Description)
 	wasmtypes.EncodeAgentID(enc, o.MintedBy)

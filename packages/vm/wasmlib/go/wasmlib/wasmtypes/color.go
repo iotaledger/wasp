@@ -3,12 +3,6 @@
 
 package wasmtypes
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-)
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 const ScColorLength = 32
 
 type ScColor struct {
@@ -26,24 +20,6 @@ func init() {
 	}
 }
 
-func DecodeColor(dec *wasmcodec.WasmDecoder) ScColor {
-	return newColorFromBytes(dec.FixedBytes(ScColorLength))
-}
-
-func EncodeColor(enc *wasmcodec.WasmEncoder, value ScColor) {
-	enc.FixedBytes(value.Bytes(), ScColorLength)
-}
-
-func ColorFromBytes(buf []byte) ScColor {
-	if buf == nil {
-		return ScColor{}
-	}
-	if len(buf) != ScColorLength {
-		Panic("invalid Color length")
-	}
-	return newColorFromBytes(buf)
-}
-
 func newColorFromBytes(buf []byte) ScColor {
 	o := ScColor{}
 	copy(o.id[:], buf)
@@ -57,6 +33,34 @@ func (o ScColor) Bytes() []byte {
 func (o ScColor) String() string {
 	// TODO standardize human readable string
 	return base58Encode(o.id[:])
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+func DecodeColor(dec *WasmDecoder) ScColor {
+	return newColorFromBytes(dec.FixedBytes(ScColorLength))
+}
+
+func EncodeColor(enc *WasmEncoder, value ScColor) {
+	enc.FixedBytes(value.Bytes(), ScColorLength)
+}
+
+func ColorFromBytes(buf []byte) ScColor {
+	if buf == nil {
+		return ScColor{}
+	}
+	if len(buf) != ScColorLength {
+		panic("invalid Color length")
+	}
+	return newColorFromBytes(buf)
+}
+
+func BytesFromColor(value ScColor) []byte {
+	return value.Bytes()
+}
+
+func ColorToString(value ScColor) string {
+	return value.String()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

@@ -14,7 +14,7 @@ type MapColorToImmutableAuction struct {
 }
 
 func (m MapColorToImmutableAuction) GetAuction(key wasmtypes.ScColor) ImmutableAuction {
-	return ImmutableAuction{proxy: m.proxy.Key(key.Bytes())}
+	return ImmutableAuction{proxy: m.proxy.Key(wasmtypes.BytesFromColor(key))}
 }
 
 type MapColorToImmutableBidderList struct {
@@ -22,7 +22,7 @@ type MapColorToImmutableBidderList struct {
 }
 
 func (m MapColorToImmutableBidderList) GetBidderList(key wasmtypes.ScColor) ImmutableBidderList {
-	return ImmutableBidderList{proxy: m.proxy.Key(key.Bytes())}
+	return ImmutableBidderList{proxy: m.proxy.Key(wasmtypes.BytesFromColor(key))}
 }
 
 type MapColorToImmutableBids struct {
@@ -30,7 +30,7 @@ type MapColorToImmutableBids struct {
 }
 
 func (m MapColorToImmutableBids) GetBids(key wasmtypes.ScColor) ImmutableBids {
-	return ImmutableBids{proxy: m.proxy.Key(key.Bytes())}
+	return ImmutableBids{proxy: m.proxy.Key(wasmtypes.BytesFromColor(key))}
 }
 
 type ImmutableFairAuctionState struct {
@@ -62,7 +62,7 @@ func (m MapColorToMutableAuction) Clear() {
 }
 
 func (m MapColorToMutableAuction) GetAuction(key wasmtypes.ScColor) MutableAuction {
-	return MutableAuction{proxy: m.proxy.Key(key.Bytes())}
+	return MutableAuction{proxy: m.proxy.Key(wasmtypes.BytesFromColor(key))}
 }
 
 type MapColorToMutableBidderList struct {
@@ -74,7 +74,7 @@ func (m MapColorToMutableBidderList) Clear() {
 }
 
 func (m MapColorToMutableBidderList) GetBidderList(key wasmtypes.ScColor) MutableBidderList {
-	return MutableBidderList{proxy: m.proxy.Key(key.Bytes())}
+	return MutableBidderList{proxy: m.proxy.Key(wasmtypes.BytesFromColor(key))}
 }
 
 type MapColorToMutableBids struct {
@@ -86,7 +86,7 @@ func (m MapColorToMutableBids) Clear() {
 }
 
 func (m MapColorToMutableBids) GetBids(key wasmtypes.ScColor) MutableBids {
-	return MutableBids{proxy: m.proxy.Key(key.Bytes())}
+	return MutableBids{proxy: m.proxy.Key(wasmtypes.BytesFromColor(key))}
 }
 
 type MutableFairAuctionState struct {

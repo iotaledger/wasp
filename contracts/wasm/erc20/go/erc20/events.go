@@ -16,17 +16,17 @@ import (
 type Erc20Events struct{}
 
 func (e Erc20Events) Approval(amount uint64, owner wasmtypes.ScAgentID, spender wasmtypes.ScAgentID) {
-	wasmlib.NewEventEncoder("erc20.approval").
-		Uint64(amount).
-		AgentID(owner).
-		AgentID(spender).
-		Emit()
+	evt := wasmlib.NewEventEncoder("erc20.approval")
+	evt.Encode(wasmtypes.Uint64ToString(amount))
+	evt.Encode(wasmtypes.AgentIDToString(owner))
+	evt.Encode(wasmtypes.AgentIDToString(spender))
+	evt.Emit()
 }
 
 func (e Erc20Events) Transfer(amount uint64, from wasmtypes.ScAgentID, to wasmtypes.ScAgentID) {
-	wasmlib.NewEventEncoder("erc20.transfer").
-		Uint64(amount).
-		AgentID(from).
-		AgentID(to).
-		Emit()
+	evt := wasmlib.NewEventEncoder("erc20.transfer")
+	evt.Encode(wasmtypes.Uint64ToString(amount))
+	evt.Encode(wasmtypes.AgentIDToString(from))
+	evt.Encode(wasmtypes.AgentIDToString(to))
+	evt.Emit()
 }

@@ -3,10 +3,6 @@
 
 package wasmtypes
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-)
-
 type IKvStore interface {
 	Delete(key []byte)
 	Exists(key []byte) bool
@@ -51,12 +47,12 @@ func (p Proxy) ClearMap() {
 	p.Delete()
 }
 
-func (p Proxy) Decoder() *wasmcodec.WasmDecoder {
+func (p Proxy) Decoder() *WasmDecoder {
 	return p.decoder(p.Get())
 }
 
-func (p Proxy) decoder(buf []byte) *wasmcodec.WasmDecoder {
-	return wasmcodec.NewWasmDecoder(buf)
+func (p Proxy) decoder(buf []byte) *WasmDecoder {
+	return NewWasmDecoder(buf)
 }
 
 func (p Proxy) Delete() {
@@ -69,8 +65,8 @@ func (p Proxy) element(index uint32) Proxy {
 	return p.sub('#', enc.Buf())
 }
 
-func (p Proxy) Encoder() *wasmcodec.WasmEncoder {
-	return wasmcodec.NewWasmEncoder()
+func (p Proxy) Encoder() *WasmEncoder {
+	return NewWasmEncoder()
 }
 
 func (p Proxy) Exists() bool {
@@ -124,7 +120,7 @@ func (p Proxy) Set(value []byte) {
 
 // sub returns a proxy for an element of a container.
 // The separator is significant, it prevents potential clashes with other elements.
-// Different separators can be used to indicate different subcontainers
+// Different separators can be used to indicate different sub-containers
 func (p Proxy) sub(sep byte, key []byte) Proxy {
 	if p.key == nil {
 		// this must be a root proxy

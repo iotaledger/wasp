@@ -18,7 +18,8 @@ func NewEventEncoder(eventName string) *EventEncoder {
 	e := &EventEncoder{event: eventName}
 	timestamp := ScSandbox{}.Timestamp()
 	// convert nanoseconds to seconds
-	return e.Uint64(timestamp / 1_000_000_000)
+	e.Encode(wasmtypes.Uint64ToString(timestamp / 1_000_000_000))
+	return e
 }
 
 func (e *EventEncoder) Address(value wasmtypes.ScAddress) *EventEncoder {
@@ -50,6 +51,11 @@ func (e *EventEncoder) Color(value wasmtypes.ScColor) *EventEncoder {
 
 func (e *EventEncoder) Emit() {
 	ScSandboxFunc{}.Event(e.event)
+}
+
+func (e *EventEncoder) Encode(value string) {
+	// TODO encode potential vertical bars that are present in the value string
+	e.event += "|" + value
 }
 
 func (e *EventEncoder) Hash(value wasmtypes.ScHash) *EventEncoder {

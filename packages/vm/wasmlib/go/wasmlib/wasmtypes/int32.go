@@ -7,17 +7,15 @@ package wasmtypes
 import (
 	"encoding/binary"
 	"strconv"
-
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 )
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-func DecodeInt32(dec *wasmcodec.WasmDecoder) int32 {
+func DecodeInt32(dec *WasmDecoder) int32 {
 	return int32(dec.VliDecode(32))
 }
 
-func EncodeInt32(enc *wasmcodec.WasmEncoder, value int32) {
+func EncodeInt32(enc *WasmEncoder, value int32) {
 	enc.VliEncode(int64(value))
 }
 
@@ -26,7 +24,7 @@ func Int32FromBytes(buf []byte) int32 {
 		return 0
 	}
 	if len(buf) != 4 {
-		Panic("invalid Int32 length")
+		panic("invalid Int32 length")
 	}
 	return int32(binary.LittleEndian.Uint32(buf))
 }
@@ -37,7 +35,7 @@ func BytesFromInt32(value int32) []byte {
 	return tmp
 }
 
-func StringFromInt32(value int32) string {
+func Int32ToString(value int32) string {
 	return strconv.FormatInt(int64(value), 10)
 }
 
@@ -56,7 +54,7 @@ func (o ScImmutableInt32) Exists() bool {
 }
 
 func (o ScImmutableInt32) String() string {
-	return StringFromInt32(o.Value())
+	return Int32ToString(o.Value())
 }
 
 func (o ScImmutableInt32) Value() int32 {

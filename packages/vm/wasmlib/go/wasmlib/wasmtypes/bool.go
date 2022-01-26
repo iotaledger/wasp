@@ -3,17 +3,13 @@
 
 package wasmtypes
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-)
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-func DecodeBool(dec *wasmcodec.WasmDecoder) bool {
+func DecodeBool(dec *WasmDecoder) bool {
 	return dec.Byte() != 0
 }
 
-func EncodeBool(enc *wasmcodec.WasmEncoder, value bool) {
+func EncodeBool(enc *WasmEncoder, value bool) {
 	if value {
 		enc.Byte(1)
 		return
@@ -26,13 +22,13 @@ func BoolFromBytes(buf []byte) bool {
 		return false
 	}
 	if len(buf) != 1 {
-		Panic("invalid Bool length")
+		panic("invalid Bool length")
 	}
 	if buf[0] == 0x00 {
 		return false
 	}
 	if buf[0] != 0xff {
-		Panic("invalid Bool value")
+		panic("invalid Bool value")
 	}
 	return true
 }
@@ -44,7 +40,7 @@ func BytesFromBool(value bool) []byte {
 	return []byte{0x00}
 }
 
-func StringFromBool(value bool) string {
+func BoolToString(value bool) string {
 	if value {
 		return "1"
 	}
@@ -66,7 +62,7 @@ func (o ScImmutableBool) Exists() bool {
 }
 
 func (o ScImmutableBool) String() string {
-	return StringFromBool(o.Value())
+	return BoolToString(o.Value())
 }
 
 func (o ScImmutableBool) Value() bool {

@@ -14,7 +14,7 @@ type MapAgentIDToImmutableBool struct {
 }
 
 func (m MapAgentIDToImmutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScImmutableBool {
-	return wasmtypes.NewScImmutableBool(m.proxy.Key(key.Bytes()))
+	return wasmtypes.NewScImmutableBool(m.proxy.Key(wasmtypes.BytesFromAgentID(key)))
 }
 
 type ImmutableOperators = MapAgentIDToImmutableBool
@@ -28,7 +28,7 @@ func (m MapAgentIDToMutableBool) Clear() {
 }
 
 func (m MapAgentIDToMutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScMutableBool {
-	return wasmtypes.NewScMutableBool(m.proxy.Key(key.Bytes()))
+	return wasmtypes.NewScMutableBool(m.proxy.Key(wasmtypes.BytesFromAgentID(key)))
 }
 
 type MutableOperators = MapAgentIDToMutableBool

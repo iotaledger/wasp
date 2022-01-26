@@ -7,10 +7,7 @@
 
 package wasmrequests
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
-)
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type CallRequest struct {
 	Contract wasmtypes.ScHname
@@ -20,7 +17,7 @@ type CallRequest struct {
 }
 
 func NewCallRequestFromBytes(buf []byte) *CallRequest {
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &CallRequest{}
 	data.Contract = wasmtypes.DecodeHname(dec)
 	data.Function = wasmtypes.DecodeHname(dec)
@@ -31,7 +28,7 @@ func NewCallRequestFromBytes(buf []byte) *CallRequest {
 }
 
 func (o *CallRequest) Bytes() []byte {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.EncodeHname(enc, o.Contract)
 	wasmtypes.EncodeHname(enc, o.Function)
 	wasmtypes.EncodeBytes(enc, o.Params)
@@ -79,7 +76,7 @@ type DeployRequest struct {
 }
 
 func NewDeployRequestFromBytes(buf []byte) *DeployRequest {
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &DeployRequest{}
 	data.Description = wasmtypes.DecodeString(dec)
 	data.Name = wasmtypes.DecodeString(dec)
@@ -90,7 +87,7 @@ func NewDeployRequestFromBytes(buf []byte) *DeployRequest {
 }
 
 func (o *DeployRequest) Bytes() []byte {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.EncodeString(enc, o.Description)
 	wasmtypes.EncodeString(enc, o.Name)
 	wasmtypes.EncodeBytes(enc, o.Params)
@@ -140,7 +137,7 @@ type PostRequest struct {
 }
 
 func NewPostRequestFromBytes(buf []byte) *PostRequest {
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &PostRequest{}
 	data.ChainID = wasmtypes.DecodeChainID(dec)
 	data.Contract = wasmtypes.DecodeHname(dec)
@@ -153,7 +150,7 @@ func NewPostRequestFromBytes(buf []byte) *PostRequest {
 }
 
 func (o *PostRequest) Bytes() []byte {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.EncodeChainID(enc, o.ChainID)
 	wasmtypes.EncodeHname(enc, o.Contract)
 	wasmtypes.EncodeUint32(enc, o.Delay)
@@ -201,7 +198,7 @@ type SendRequest struct {
 }
 
 func NewSendRequestFromBytes(buf []byte) *SendRequest {
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &SendRequest{}
 	data.Address = wasmtypes.DecodeAddress(dec)
 	data.Transfer = wasmtypes.DecodeBytes(dec)
@@ -210,7 +207,7 @@ func NewSendRequestFromBytes(buf []byte) *SendRequest {
 }
 
 func (o *SendRequest) Bytes() []byte {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.EncodeAddress(enc, o.Address)
 	wasmtypes.EncodeBytes(enc, o.Transfer)
 	return enc.Buf()

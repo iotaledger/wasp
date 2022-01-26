@@ -7,10 +7,7 @@
 
 package fairroulette
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
-)
+import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 
 type Bet struct {
 	Amount uint64
@@ -19,7 +16,7 @@ type Bet struct {
 }
 
 func NewBetFromBytes(buf []byte) *Bet {
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Bet{}
 	data.Amount = wasmtypes.DecodeUint64(dec)
 	data.Better = wasmtypes.DecodeAgentID(dec)
@@ -29,7 +26,7 @@ func NewBetFromBytes(buf []byte) *Bet {
 }
 
 func (o *Bet) Bytes() []byte {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.EncodeUint64(enc, o.Amount)
 	wasmtypes.EncodeAgentID(enc, o.Better)
 	wasmtypes.EncodeUint16(enc, o.Number)

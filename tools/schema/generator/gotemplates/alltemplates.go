@@ -48,37 +48,12 @@ var TypeDependent = model.StringMapMap{
 		"Uint32":    "uint32",
 		"Uint64":    "uint64",
 	},
-	"fldToBytes": {
-		"Address":   "key.Bytes()",
-		"AgentID":   "key.Bytes()",
-		"Bool":      "wasmtypes.BytesFromBool(key)",
-		"Bytes":     "wasmtypes.BytesFromBytes(key)",
-		"ChainID":   "key.Bytes()",
-		"Color":     "key.Bytes()",
-		"Hash":      "key.Bytes()",
-		"Hname":     "key.Bytes()",
-		"Int8":      "wasmtypes.BytesFromInt8(key)",
-		"Int16":     "wasmtypes.BytesFromInt16(key)",
-		"Int32":     "wasmtypes.BytesFromInt32(key)",
-		"Int64":     "wasmtypes.BytesFromInt64(key)",
-		"RequestID": "key.Bytes()",
-		"String":    "wasmtypes.BytesFromString(key)",
-		"Uint8":     "wasmtypes.BytesFromUint8(key)",
-		"Uint16":    "wasmtypes.BytesFromUint16(key)",
-		"Uint32":    "wasmtypes.BytesFromUint32(key)",
-		"Uint64":    "wasmtypes.BytesFromUint64(key)",
-		"":          "key.Bytes()",
-	},
 }
 
 var common = map[string]string{
 	// *******************************
 	"goPackage": `
 package $package
-`,
-	// *******************************
-	"importWasmCodec": `
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 `,
 	// *******************************
 	"importWasmLib": `

@@ -5,7 +5,6 @@ package wasmsolo
 
 import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -26,7 +25,7 @@ func (s *SoloSandbox) fnUtilsBlsAddress(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnUtilsBlsAggregate(args []byte) []byte {
-	dec := wasmcodec.NewWasmDecoder(args)
+	dec := wasmtypes.NewWasmDecoder(args)
 	count := int(wasmtypes.DecodeUint32(dec))
 	pubKeysBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
@@ -39,11 +38,11 @@ func (s *SoloSandbox) fnUtilsBlsAggregate(args []byte) []byte {
 	}
 	pubKeyBin, sigBin, err := s.utils.BLS().AggregateBLSSignatures(pubKeysBin, sigsBin)
 	s.checkErr(err)
-	return wasmcodec.NewWasmEncoder().Bytes(pubKeyBin).Bytes(sigBin).Buf()
+	return wasmtypes.NewWasmEncoder().Bytes(pubKeyBin).Bytes(sigBin).Buf()
 }
 
 func (s *SoloSandbox) fnUtilsBlsValid(args []byte) []byte {
-	dec := wasmcodec.NewWasmDecoder(args)
+	dec := wasmtypes.NewWasmDecoder(args)
 	data := dec.Bytes()
 	pubKey := dec.Bytes()
 	signature := dec.Bytes()
@@ -58,7 +57,7 @@ func (s *SoloSandbox) fnUtilsEd25519Address(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnUtilsEd25519Valid(args []byte) []byte {
-	dec := wasmcodec.NewWasmDecoder(args)
+	dec := wasmtypes.NewWasmDecoder(args)
 	data := dec.Bytes()
 	pubKey := dec.Bytes()
 	signature := dec.Bytes()

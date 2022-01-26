@@ -5,35 +5,13 @@ package wasmtypes
 
 import (
 	"encoding/binary"
-
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 )
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const ScHnameLength = 4
 
 type ScHname uint32
 
-func DecodeHname(dec *wasmcodec.WasmDecoder) ScHname {
-	return newHnameFromBytes(dec.FixedBytes(ScHnameLength))
-}
-
-func EncodeHname(enc *wasmcodec.WasmEncoder, value ScHname) {
-	enc.FixedBytes(value.Bytes(), ScHnameLength)
-}
-
-func HnameFromBytes(buf []byte) ScHname {
-	if buf == nil {
-		return 0
-	}
-	if len(buf) != ScHnameLength {
-		Panic("invalid Hname length")
-	}
-	return newHnameFromBytes(buf)
-}
-
-func newHnameFromBytes(buf []byte) ScHname {
+func hnameFromBytes(buf []byte) ScHname {
 	return ScHname(binary.LittleEndian.Uint32(buf))
 }
 
@@ -50,6 +28,34 @@ func (o ScHname) Bytes() []byte {
 func (o ScHname) String() string {
 	// TODO standardize human readable string
 	return hex(o.Bytes())
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+func DecodeHname(dec *WasmDecoder) ScHname {
+	return hnameFromBytes(dec.FixedBytes(ScHnameLength))
+}
+
+func EncodeHname(enc *WasmEncoder, value ScHname) {
+	enc.FixedBytes(value.Bytes(), ScHnameLength)
+}
+
+func HnameFromBytes(buf []byte) ScHname {
+	if buf == nil {
+		return 0
+	}
+	if len(buf) != ScHnameLength {
+		panic("invalid Hname length")
+	}
+	return hnameFromBytes(buf)
+}
+
+func BytesFromHname(value ScHname) []byte {
+	return value.Bytes()
+}
+
+func HnameToString(value ScHname) string {
+	return value.String()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

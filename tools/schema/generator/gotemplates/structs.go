@@ -5,7 +5,6 @@ var structsGo = map[string]string{
 	"structs.go": `
 $#emit goPackage
 
-$#emit importWasmCodec
 $#emit importWasmTypes
 $#each structs structType
 `,
@@ -17,7 +16,7 @@ $#each struct structField
 }
 
 func New$StrName$+FromBytes(buf []byte) *$StrName {
-	dec := wasmcodec.NewWasmDecoder(buf)
+	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &$StrName$+{}
 $#each struct structDecode
 	dec.Close()
@@ -25,7 +24,7 @@ $#each struct structDecode
 }
 
 func (o *$StrName) Bytes() []byte {
-	enc := wasmcodec.NewWasmEncoder()
+	enc := wasmtypes.NewWasmEncoder()
 $#each struct structEncode
 	return enc.Buf()
 }

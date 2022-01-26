@@ -3,41 +3,13 @@
 
 package wasmtypes
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-)
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 const ScRequestIDLength = 34
 
 type ScRequestID struct {
 	id [ScRequestIDLength]byte
 }
 
-func DecodeRequestID(dec *wasmcodec.WasmDecoder) ScRequestID {
-	return newRequestIDFromBytes(dec.FixedBytes(ScRequestIDLength))
-}
-
-func EncodeRequestID(enc *wasmcodec.WasmEncoder, value ScRequestID) {
-	enc.FixedBytes(value.Bytes(), ScRequestIDLength)
-}
-
-func RequestIDFromBytes(buf []byte) ScRequestID {
-	if buf == nil {
-		return ScRequestID{}
-	}
-	if len(buf) != ScRequestIDLength {
-		Panic("invalid RequestID length")
-	}
-	// final uint16 output index must be > ledgerstate.MaxOutputCount
-	if buf[ScHashLength] > 127 || buf[ScHashLength+1] != 0 {
-		Panic("invalid RequestID: output index > 127")
-	}
-	return newRequestIDFromBytes(buf)
-}
-
-func newRequestIDFromBytes(buf []byte) ScRequestID {
+func requestIDFromBytes(buf []byte) ScRequestID {
 	o := ScRequestID{}
 	copy(o.id[:], buf)
 	return o
@@ -50,6 +22,38 @@ func (o ScRequestID) Bytes() []byte {
 func (o ScRequestID) String() string {
 	// TODO standardize human readable string
 	return base58Encode(o.id[:])
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+func DecodeRequestID(dec *WasmDecoder) ScRequestID {
+	return requestIDFromBytes(dec.FixedBytes(ScRequestIDLength))
+}
+
+func EncodeRequestID(enc *WasmEncoder, value ScRequestID) {
+	enc.FixedBytes(value.Bytes(), ScRequestIDLength)
+}
+
+func RequestIDFromBytes(buf []byte) ScRequestID {
+	if buf == nil {
+		return ScRequestID{}
+	}
+	if len(buf) != ScRequestIDLength {
+		panic("invalid RequestID length")
+	}
+	// final uint16 output index must be > ledgerstate.MaxOutputCount
+	if buf[ScHashLength] > 127 || buf[ScHashLength+1] != 0 {
+		panic("invalid RequestID: output index > 127")
+	}
+	return requestIDFromBytes(buf)
+}
+
+func BytesFromRequestID(value ScRequestID) []byte {
+	return value.Bytes()
+}
+
+func RequestIDToString(value ScRequestID) string {
+	return value.String()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

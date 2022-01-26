@@ -3,34 +3,10 @@
 
 package wasmtypes
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-)
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 const ScHashLength = 32
 
 type ScHash struct {
 	id [ScHashLength]byte
-}
-
-func DecodeHash(dec *wasmcodec.WasmDecoder) ScHash {
-	return newHashFromBytes(dec.FixedBytes(ScHashLength))
-}
-
-func EncodeHash(enc *wasmcodec.WasmEncoder, value ScHash) {
-	enc.FixedBytes(value.Bytes(), ScHashLength)
-}
-
-func HashFromBytes(buf []byte) ScHash {
-	if buf == nil {
-		return ScHash{}
-	}
-	if len(buf) != ScHashLength {
-		Panic("invalid Hash length")
-	}
-	return newHashFromBytes(buf)
 }
 
 func newHashFromBytes(buf []byte) ScHash {
@@ -46,6 +22,34 @@ func (o ScHash) Bytes() []byte {
 func (o ScHash) String() string {
 	// TODO standardize human readable string
 	return base58Encode(o.id[:])
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+func DecodeHash(dec *WasmDecoder) ScHash {
+	return newHashFromBytes(dec.FixedBytes(ScHashLength))
+}
+
+func EncodeHash(enc *WasmEncoder, value ScHash) {
+	enc.FixedBytes(value.Bytes(), ScHashLength)
+}
+
+func HashFromBytes(buf []byte) ScHash {
+	if buf == nil {
+		return ScHash{}
+	}
+	if len(buf) != ScHashLength {
+		panic("invalid Hash length")
+	}
+	return newHashFromBytes(buf)
+}
+
+func BytesFromHash(value ScHash) []byte {
+	return value.Bytes()
+}
+
+func HashToString(value ScHash) string {
+	return value.String()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

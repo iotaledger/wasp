@@ -19,9 +19,9 @@ $#set separator
 $#each event eventParam
 
 func (e $TypeName) $EvtName($params) {
-	wasmlib.NewEventEncoder("$package.$evtName").
+	evt := wasmlib.NewEventEncoder("$package.$evtName")
 $#each event eventEmit
-		Emit()
+	evt.Emit()
 }
 `,
 	// *******************************
@@ -31,6 +31,6 @@ $#set separator ,
 `,
 	// *******************************
 	"eventEmit": `
-		$FldType($fldName).
+	evt.Encode(wasmtypes.$FldType$+ToString($fldName))
 `,
 }

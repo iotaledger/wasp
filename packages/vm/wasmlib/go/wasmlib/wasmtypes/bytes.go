@@ -3,22 +3,22 @@
 
 package wasmtypes
 
-import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
-)
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-func DecodeBytes(dec *wasmcodec.WasmDecoder) []byte {
+func DecodeBytes(dec *WasmDecoder) []byte {
 	return dec.Bytes()
 }
 
-func EncodeBytes(enc *wasmcodec.WasmEncoder, value []byte) {
+func EncodeBytes(enc *WasmEncoder, value []byte) {
 	enc.Bytes(value)
 }
 
 func BytesFromBytes(buf []byte) []byte {
 	return buf
+}
+
+func BytesToString(buf []byte) string {
+	return base58Encode(buf)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -36,7 +36,7 @@ func (o ScImmutableBytes) Exists() bool {
 }
 
 func (o ScImmutableBytes) String() string {
-	return StringFromBytes(o.Value())
+	return BytesToString(o.Value())
 }
 
 func (o ScImmutableBytes) Value() []byte {
