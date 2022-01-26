@@ -17,7 +17,7 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-wasmlib = { path = "../../packages/vm/wasmlib" }
+wasmlib = { path = "../../wasmvm/wasmlib" }
 #wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by

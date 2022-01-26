@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibclient"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
-	coreaccountsclient "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient/coreaccounts"
+	wasmclient2 "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient/coreaccounts"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,18 +23,18 @@ func setupClient(t *testing.T) *testwasmlibclient.TestWasmLibService {
 	// for now skip client tests
 	t.SkipNow()
 
-	require.True(t, wasmclient.SeedIsValid(mySeed))
-	require.True(t, wasmclient.ChainIsValid(myChainID))
+	require.True(t, wasmclient2.SeedIsValid(mySeed))
+	require.True(t, wasmclient2.ChainIsValid(myChainID))
 
 	// we're testing against wasp-cluster, so defaults will do
-	svcClient := wasmclient.DefaultServiceClient()
+	svcClient := wasmclient2.DefaultServiceClient()
 
 	// create the service for the testwasmlib smart contract
 	svc, err := testwasmlibclient.NewTestWasmLibService(svcClient, myChainID)
 	require.NoError(t, err)
 
 	// we'll use the first address in the seed to sign requests
-	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, 0))
+	svc.SignRequests(wasmclient2.SeedToKeyPair(mySeed, 0))
 	return svc
 }
 
@@ -49,7 +49,7 @@ func TestClientEvents(t *testing.T) {
 	// get new triggerEvent interface, pass params, and post the request
 	f := svc.TriggerEvent()
 	f.Name("Lala")
-	f.Address(wasmclient.SeedToAddress(mySeed, 0))
+	f.Address(wasmclient2.SeedToAddress(mySeed, 0))
 	req1 := f.Post()
 	require.NoError(t, req1.Error())
 
@@ -59,7 +59,7 @@ func TestClientEvents(t *testing.T) {
 	// get new triggerEvent interface, pass params, and post the request
 	f = svc.TriggerEvent()
 	f.Name("Trala")
-	f.Address(wasmclient.SeedToAddress(mySeed, 1))
+	f.Address(wasmclient2.SeedToAddress(mySeed, 1))
 	req2 := f.Post()
 	require.NoError(t, req2.Error())
 
@@ -129,17 +129,17 @@ func TestAccountBalance(t *testing.T) {
 	t.SkipNow()
 
 	// we're testing against wasp-cluster, so defaults will do
-	svcClient := wasmclient.DefaultServiceClient()
+	svcClient := wasmclient2.DefaultServiceClient()
 
 	// create the service for the testwasmlib smart contract
 	svc, err := coreaccountsclient.NewCoreAccountsService(svcClient, myChainID)
 	require.NoError(t, err)
 
 	// we'll use the first address in the seed to sign requests
-	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, 0))
+	svc.SignRequests(wasmclient2.SeedToKeyPair(mySeed, 0))
 
 	bal := svc.Balance()
-	agendID := wasmclient.SeedToAgentID(mySeed, 0)
+	agendID := wasmclient2.SeedToAgentID(mySeed, 0)
 	bal.AgentID(agendID)
 	res := bal.Call()
 	require.NoError(t, bal.Error())

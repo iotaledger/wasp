@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/contracts/wasm/fairroulette/go/fairroulette"
-	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
+	wasmsolo2 "github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
-func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, fairroulette.ScName, fairroulette.OnLoad)
+func setupTest(t *testing.T) *wasmsolo2.SoloContext {
+	return wasmsolo2.NewSoloContext(t, fairroulette.ScName, fairroulette.OnLoad)
 }
 
 func TestDeploy(t *testing.T) {
@@ -23,7 +23,7 @@ func TestDeploy(t *testing.T) {
 
 func TestBets(t *testing.T) {
 	ctx := setupTest(t)
-	var better [10]*wasmsolo.SoloAgent
+	var better [10]*wasmsolo2.SoloAgent
 	for i := 0; i < 10; i++ {
 		better[i] = ctx.NewSoloAgent()
 		placeBet := fairroulette.ScFuncs.PlaceBet(ctx.Sign(better[i]))

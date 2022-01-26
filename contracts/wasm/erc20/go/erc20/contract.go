@@ -7,7 +7,7 @@
 
 package erc20
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
 
 type ApproveCall struct {
 	Func   *wasmlib.ScFunc

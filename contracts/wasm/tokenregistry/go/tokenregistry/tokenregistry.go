@@ -4,7 +4,7 @@
 package tokenregistry
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
 )
 
 func funcMintSupply(ctx wasmlib.ScFuncContext, f *MintSupplyContext) {

@@ -7,7 +7,7 @@
 
 package helloworld
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableHelloWorldState struct {
 	proxy wasmtypes.Proxy

@@ -7,7 +7,9 @@
 
 package erc721client
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
+import (
+	wasmclient2 "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
+)
 
 var erc721Handlers = map[string]func(*Erc721Events, []string){
 	"erc721.approval":       func(evt *Erc721Events, msg []string) { evt.onErc721ApprovalThunk(msg) },
@@ -53,10 +55,10 @@ func (h *Erc721Events) OnErc721Transfer(handler func(e *EventTransfer)) {
 }
 
 type EventApproval struct {
-	wasmclient.Event
-	Approved wasmclient.AgentID
-	Owner    wasmclient.AgentID
-	TokenID  wasmclient.Hash
+	wasmclient2.Event
+	Approved wasmclient2.AgentID
+	Owner    wasmclient2.AgentID
+	TokenID  wasmclient2.Hash
 }
 
 func (h *Erc721Events) onErc721ApprovalThunk(message []string) {
@@ -72,10 +74,10 @@ func (h *Erc721Events) onErc721ApprovalThunk(message []string) {
 }
 
 type EventApprovalForAll struct {
-	wasmclient.Event
+	wasmclient2.Event
 	Approval bool
-	Operator wasmclient.AgentID
-	Owner    wasmclient.AgentID
+	Operator wasmclient2.AgentID
+	Owner    wasmclient2.AgentID
 }
 
 func (h *Erc721Events) onErc721ApprovalForAllThunk(message []string) {
@@ -91,7 +93,7 @@ func (h *Erc721Events) onErc721ApprovalForAllThunk(message []string) {
 }
 
 type EventInit struct {
-	wasmclient.Event
+	wasmclient2.Event
 	Name   string
 	Symbol string
 }
@@ -108,10 +110,10 @@ func (h *Erc721Events) onErc721InitThunk(message []string) {
 }
 
 type EventMint struct {
-	wasmclient.Event
+	wasmclient2.Event
 	Balance uint64
-	Owner   wasmclient.AgentID
-	TokenID wasmclient.Hash
+	Owner   wasmclient2.AgentID
+	TokenID wasmclient2.Hash
 }
 
 func (h *Erc721Events) onErc721MintThunk(message []string) {
@@ -127,10 +129,10 @@ func (h *Erc721Events) onErc721MintThunk(message []string) {
 }
 
 type EventTransfer struct {
-	wasmclient.Event
-	From    wasmclient.AgentID
-	To      wasmclient.AgentID
-	TokenID wasmclient.Hash
+	wasmclient2.Event
+	From    wasmclient2.AgentID
+	To      wasmclient2.AgentID
+	TokenID wasmclient2.Hash
 }
 
 func (h *Erc721Events) onErc721TransferThunk(message []string) {

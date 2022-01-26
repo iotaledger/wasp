@@ -7,7 +7,7 @@
 
 package testwasmlib
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
 
 type ArrayAppendCall struct {
 	Func   *wasmlib.ScFunc

@@ -9,7 +9,7 @@ $#if funcs emitContract
 	// *******************************
 	"emitContract": `
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
+import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmclient"
 
 const (
 $#each params constArg

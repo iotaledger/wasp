@@ -7,7 +7,7 @@
 package erc20
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
 )
 
 // Sets the allowance value for delegated account

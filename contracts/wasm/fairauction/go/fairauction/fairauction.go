@@ -4,8 +4,8 @@
 package fairauction
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 const (

@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/inccounter/go/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
-	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 

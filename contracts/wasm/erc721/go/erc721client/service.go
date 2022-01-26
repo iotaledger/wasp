@@ -7,7 +7,9 @@
 
 package erc721client
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmclient"
+import (
+	wasmclient2 "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
+)
 
 const (
 	ArgApproval = "approval"
@@ -34,19 +36,19 @@ const (
 ///////////////////////////// approve /////////////////////////////
 
 type ApproveFunc struct {
-	wasmclient.ClientFunc
-	args wasmclient.Arguments
+	wasmclient2.ClientFunc
+	args wasmclient2.Arguments
 }
 
-func (f *ApproveFunc) Approved(v wasmclient.AgentID) {
+func (f *ApproveFunc) Approved(v wasmclient2.AgentID) {
 	f.args.Set(ArgApproved, f.args.FromAgentID(v))
 }
 
-func (f *ApproveFunc) TokenID(v wasmclient.Hash) {
+func (f *ApproveFunc) TokenID(v wasmclient2.Hash) {
 	f.args.Set(ArgTokenID, f.args.FromHash(v))
 }
 
-func (f *ApproveFunc) Post() wasmclient.Request {
+func (f *ApproveFunc) Post() wasmclient2.Request {
 	f.args.Mandatory(ArgTokenID)
 	return f.ClientFunc.Post(0xa0661268, &f.args)
 }
@@ -54,15 +56,15 @@ func (f *ApproveFunc) Post() wasmclient.Request {
 ///////////////////////////// burn /////////////////////////////
 
 type BurnFunc struct {
-	wasmclient.ClientFunc
-	args wasmclient.Arguments
+	wasmclient2.ClientFunc
+	args wasmclient2.Arguments
 }
 
-func (f *BurnFunc) TokenID(v wasmclient.Hash) {
+func (f *BurnFunc) TokenID(v wasmclient2.Hash) {
 	f.args.Set(ArgTokenID, f.args.FromHash(v))
 }
 
-func (f *BurnFunc) Post() wasmclient.Request {
+func (f *BurnFunc) Post() wasmclient2.Request {
 	f.args.Mandatory(ArgTokenID)
 	return f.ClientFunc.Post(0x7bc1efb1, &f.args)
 }
@@ -70,8 +72,8 @@ func (f *BurnFunc) Post() wasmclient.Request {
 ///////////////////////////// init /////////////////////////////
 
 type InitFunc struct {
-	wasmclient.ClientFunc
-	args wasmclient.Arguments
+	wasmclient2.ClientFunc
+	args wasmclient2.Arguments
 }
 
 func (f *InitFunc) Name(v string) {
@@ -82,7 +84,7 @@ func (f *InitFunc) Symbol(v string) {
 	f.args.Set(ArgSymbol, f.args.FromString(v))
 }
 
-func (f *InitFunc) Post() wasmclient.Request {
+func (f *InitFunc) Post() wasmclient2.Request {
 	f.args.Mandatory(ArgName)
 	f.args.Mandatory(ArgSymbol)
 	return f.ClientFunc.Post(0x1f44d644, &f.args)
@@ -91,11 +93,11 @@ func (f *InitFunc) Post() wasmclient.Request {
 ///////////////////////////// mint /////////////////////////////
 
 type MintFunc struct {
-	wasmclient.ClientFunc
-	args wasmclient.Arguments
+	wasmclient2.ClientFunc
+	args wasmclient2.Arguments
 }
 
-func (f *MintFunc) TokenID(v wasmclient.Hash) {
+func (f *MintFunc) TokenID(v wasmclient2.Hash) {
 	f.args.Set(ArgTokenID, f.args.FromHash(v))
 }
 
@@ -103,7 +105,7 @@ func (f *MintFunc) TokenURI(v string) {
 	f.args.Set(ArgTokenURI, f.args.FromString(v))
 }
 
-func (f *MintFunc) Post() wasmclient.Request {
+func (f *MintFunc) Post() wasmclient2.Request {
 	f.args.Mandatory(ArgTokenID)
 	return f.ClientFunc.Post(0xa29addcf, &f.args)
 }
@@ -111,27 +113,27 @@ func (f *MintFunc) Post() wasmclient.Request {
 ///////////////////////////// safeTransferFrom /////////////////////////////
 
 type SafeTransferFromFunc struct {
-	wasmclient.ClientFunc
-	args wasmclient.Arguments
+	wasmclient2.ClientFunc
+	args wasmclient2.Arguments
 }
 
 func (f *SafeTransferFromFunc) Data(v []byte) {
 	f.args.Set(ArgData, f.args.FromBytes(v))
 }
 
-func (f *SafeTransferFromFunc) From(v wasmclient.AgentID) {
+func (f *SafeTransferFromFunc) From(v wasmclient2.AgentID) {
 	f.args.Set(ArgFrom, f.args.FromAgentID(v))
 }
 
-func (f *SafeTransferFromFunc) To(v wasmclient.AgentID) {
+func (f *SafeTransferFromFunc) To(v wasmclient2.AgentID) {
 	f.args.Set(ArgTo, f.args.FromAgentID(v))
 }
 
-func (f *SafeTransferFromFunc) TokenID(v wasmclient.Hash) {
+func (f *SafeTransferFromFunc) TokenID(v wasmclient2.Hash) {
 	f.args.Set(ArgTokenID, f.args.FromHash(v))
 }
 
-func (f *SafeTransferFromFunc) Post() wasmclient.Request {
+func (f *SafeTransferFromFunc) Post() wasmclient2.Request {
 	f.args.Mandatory(ArgFrom)
 	f.args.Mandatory(ArgTo)
 	f.args.Mandatory(ArgTokenID)
@@ -141,19 +143,19 @@ func (f *SafeTransferFromFunc) Post() wasmclient.Request {
 ///////////////////////////// setApprovalForAll /////////////////////////////
 
 type SetApprovalForAllFunc struct {
-	wasmclient.ClientFunc
-	args wasmclient.Arguments
+	wasmclient2.ClientFunc
+	args wasmclient2.Arguments
 }
 
 func (f *SetApprovalForAllFunc) Approval(v bool) {
 	f.args.Set(ArgApproval, f.args.FromBool(v))
 }
 
-func (f *SetApprovalForAllFunc) Operator(v wasmclient.AgentID) {
+func (f *SetApprovalForAllFunc) Operator(v wasmclient2.AgentID) {
 	f.args.Set(ArgOperator, f.args.FromAgentID(v))
 }
 
-func (f *SetApprovalForAllFunc) Post() wasmclient.Request {
+func (f *SetApprovalForAllFunc) Post() wasmclient2.Request {
 	f.args.Mandatory(ArgApproval)
 	f.args.Mandatory(ArgOperator)
 	return f.ClientFunc.Post(0xb8d8c776, &f.args)
@@ -162,23 +164,23 @@ func (f *SetApprovalForAllFunc) Post() wasmclient.Request {
 ///////////////////////////// transferFrom /////////////////////////////
 
 type TransferFromFunc struct {
-	wasmclient.ClientFunc
-	args wasmclient.Arguments
+	wasmclient2.ClientFunc
+	args wasmclient2.Arguments
 }
 
-func (f *TransferFromFunc) From(v wasmclient.AgentID) {
+func (f *TransferFromFunc) From(v wasmclient2.AgentID) {
 	f.args.Set(ArgFrom, f.args.FromAgentID(v))
 }
 
-func (f *TransferFromFunc) To(v wasmclient.AgentID) {
+func (f *TransferFromFunc) To(v wasmclient2.AgentID) {
 	f.args.Set(ArgTo, f.args.FromAgentID(v))
 }
 
-func (f *TransferFromFunc) TokenID(v wasmclient.Hash) {
+func (f *TransferFromFunc) TokenID(v wasmclient2.Hash) {
 	f.args.Set(ArgTokenID, f.args.FromHash(v))
 }
 
-func (f *TransferFromFunc) Post() wasmclient.Request {
+func (f *TransferFromFunc) Post() wasmclient2.Request {
 	f.args.Mandatory(ArgFrom)
 	f.args.Mandatory(ArgTo)
 	f.args.Mandatory(ArgTokenID)
@@ -188,11 +190,11 @@ func (f *TransferFromFunc) Post() wasmclient.Request {
 ///////////////////////////// balanceOf /////////////////////////////
 
 type BalanceOfView struct {
-	wasmclient.ClientView
-	args wasmclient.Arguments
+	wasmclient2.ClientView
+	args wasmclient2.Arguments
 }
 
-func (f *BalanceOfView) Owner(v wasmclient.AgentID) {
+func (f *BalanceOfView) Owner(v wasmclient2.AgentID) {
 	f.args.Set(ArgOwner, f.args.FromAgentID(v))
 }
 
@@ -203,7 +205,7 @@ func (f *BalanceOfView) Call() BalanceOfResults {
 }
 
 type BalanceOfResults struct {
-	res wasmclient.Results
+	res wasmclient2.Results
 }
 
 func (r *BalanceOfResults) AmountExists() bool {
@@ -217,11 +219,11 @@ func (r *BalanceOfResults) Amount() uint64 {
 ///////////////////////////// getApproved /////////////////////////////
 
 type GetApprovedView struct {
-	wasmclient.ClientView
-	args wasmclient.Arguments
+	wasmclient2.ClientView
+	args wasmclient2.Arguments
 }
 
-func (f *GetApprovedView) TokenID(v wasmclient.Hash) {
+func (f *GetApprovedView) TokenID(v wasmclient2.Hash) {
 	f.args.Set(ArgTokenID, f.args.FromHash(v))
 }
 
@@ -232,29 +234,29 @@ func (f *GetApprovedView) Call() GetApprovedResults {
 }
 
 type GetApprovedResults struct {
-	res wasmclient.Results
+	res wasmclient2.Results
 }
 
 func (r *GetApprovedResults) ApprovedExists() bool {
 	return r.res.Exists(ResApproved)
 }
 
-func (r *GetApprovedResults) Approved() wasmclient.AgentID {
+func (r *GetApprovedResults) Approved() wasmclient2.AgentID {
 	return r.res.ToAgentID(r.res.Get(ResApproved))
 }
 
 ///////////////////////////// isApprovedForAll /////////////////////////////
 
 type IsApprovedForAllView struct {
-	wasmclient.ClientView
-	args wasmclient.Arguments
+	wasmclient2.ClientView
+	args wasmclient2.Arguments
 }
 
-func (f *IsApprovedForAllView) Operator(v wasmclient.AgentID) {
+func (f *IsApprovedForAllView) Operator(v wasmclient2.AgentID) {
 	f.args.Set(ArgOperator, f.args.FromAgentID(v))
 }
 
-func (f *IsApprovedForAllView) Owner(v wasmclient.AgentID) {
+func (f *IsApprovedForAllView) Owner(v wasmclient2.AgentID) {
 	f.args.Set(ArgOwner, f.args.FromAgentID(v))
 }
 
@@ -266,7 +268,7 @@ func (f *IsApprovedForAllView) Call() IsApprovedForAllResults {
 }
 
 type IsApprovedForAllResults struct {
-	res wasmclient.Results
+	res wasmclient2.Results
 }
 
 func (r *IsApprovedForAllResults) ApprovalExists() bool {
@@ -280,7 +282,7 @@ func (r *IsApprovedForAllResults) Approval() bool {
 ///////////////////////////// name /////////////////////////////
 
 type NameView struct {
-	wasmclient.ClientView
+	wasmclient2.ClientView
 }
 
 func (f *NameView) Call() NameResults {
@@ -289,7 +291,7 @@ func (f *NameView) Call() NameResults {
 }
 
 type NameResults struct {
-	res wasmclient.Results
+	res wasmclient2.Results
 }
 
 func (r *NameResults) Name() string {
@@ -299,11 +301,11 @@ func (r *NameResults) Name() string {
 ///////////////////////////// ownerOf /////////////////////////////
 
 type OwnerOfView struct {
-	wasmclient.ClientView
-	args wasmclient.Arguments
+	wasmclient2.ClientView
+	args wasmclient2.Arguments
 }
 
-func (f *OwnerOfView) TokenID(v wasmclient.Hash) {
+func (f *OwnerOfView) TokenID(v wasmclient2.Hash) {
 	f.args.Set(ArgTokenID, f.args.FromHash(v))
 }
 
@@ -314,21 +316,21 @@ func (f *OwnerOfView) Call() OwnerOfResults {
 }
 
 type OwnerOfResults struct {
-	res wasmclient.Results
+	res wasmclient2.Results
 }
 
 func (r *OwnerOfResults) OwnerExists() bool {
 	return r.res.Exists(ResOwner)
 }
 
-func (r *OwnerOfResults) Owner() wasmclient.AgentID {
+func (r *OwnerOfResults) Owner() wasmclient2.AgentID {
 	return r.res.ToAgentID(r.res.Get(ResOwner))
 }
 
 ///////////////////////////// symbol /////////////////////////////
 
 type SymbolView struct {
-	wasmclient.ClientView
+	wasmclient2.ClientView
 }
 
 func (f *SymbolView) Call() SymbolResults {
@@ -337,7 +339,7 @@ func (f *SymbolView) Call() SymbolResults {
 }
 
 type SymbolResults struct {
-	res wasmclient.Results
+	res wasmclient2.Results
 }
 
 func (r *SymbolResults) Symbol() string {
@@ -347,11 +349,11 @@ func (r *SymbolResults) Symbol() string {
 ///////////////////////////// tokenURI /////////////////////////////
 
 type TokenURIView struct {
-	wasmclient.ClientView
-	args wasmclient.Arguments
+	wasmclient2.ClientView
+	args wasmclient2.Arguments
 }
 
-func (f *TokenURIView) TokenID(v wasmclient.Hash) {
+func (f *TokenURIView) TokenID(v wasmclient2.Hash) {
 	f.args.Set(ArgTokenID, f.args.FromHash(v))
 }
 
@@ -362,7 +364,7 @@ func (f *TokenURIView) Call() TokenURIResults {
 }
 
 type TokenURIResults struct {
-	res wasmclient.Results
+	res wasmclient2.Results
 }
 
 func (r *TokenURIResults) TokenURIExists() bool {
@@ -376,10 +378,10 @@ func (r *TokenURIResults) TokenURI() string {
 ///////////////////////////// Erc721Service /////////////////////////////
 
 type Erc721Service struct {
-	wasmclient.Service
+	wasmclient2.Service
 }
 
-func NewErc721Service(cl *wasmclient.ServiceClient, chainID string) (*Erc721Service, error) {
+func NewErc721Service(cl *wasmclient2.ServiceClient, chainID string) (*Erc721Service, error) {
 	s := &Erc721Service{}
 	err := s.Service.Init(cl, chainID, 0xd967c216)
 	return s, err

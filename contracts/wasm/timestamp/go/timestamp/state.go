@@ -7,7 +7,7 @@
 
 package timestamp
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutabletimestampState struct {
 	proxy wasmtypes.Proxy

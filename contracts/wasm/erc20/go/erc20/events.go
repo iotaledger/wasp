@@ -9,8 +9,8 @@
 package erc20
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 type Erc20Events struct{}
