@@ -1,6 +1,7 @@
 package blocklog
 
 import (
+	"github.com/iotaledger/hive.go/marshalutil"
 	"testing"
 	"time"
 
@@ -8,13 +9,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestSimpleErrorSerialization(t *testing.T) {
+	failedToLoadError := errorCollection.Errors[1]
+	blockError := failedToLoadError.Create("placeBet", "destroy", "setAdmin")
+
+	t.Log(blockError.Hash())
+	t.Log(blockError.Message())
+
+	mu := marshalutil.New()
+	err := blockError.Serialize(mu)
+	require.NoError(t, err)
+
+	t.Log(blockError.Hash())
+
+	newError, err := ErrorFromBytes(mu, &errorCollection)
+	require.NoError(t, err)
+
+	require.EqualValues(t, blockError.Hash(), newError.Hash())
+	require.EqualValues(t, blockError.Params, newError.Params)
+
+}
+
 func TestSerdeRequestReceipt(t *testing.T) {
 	nonce := uint64(time.Now().UnixNano())
 	req := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("0"), iscp.Hn("0"), nil, nonce)
 
 	rec := &RequestReceipt{
-		Request:  req,
-		ErrorStr: "some log data",
+		Request: req,
+		//	ErrorStr: "some log data",
 	}
 	forward := rec.Bytes()
 	back, err := RequestReceiptFromBytes(forward)
