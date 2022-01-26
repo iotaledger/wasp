@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/coregovernance"
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 const (
@@ -41,9 +41,9 @@ func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
 	counter.SetValue(counter.Value() + 1)
 
 	params := wasmlib.NewScDict()
-	params.Set([]byte(ParamIntValue), wasmcodec.AppendInt64(nil, paramIn))
+	params.Set([]byte(ParamIntValue), wasmtypes.BytesFromInt64(paramIn))
 	ret := ctx.Call(hnameContract, hnameEP, params, nil)
-	retVal, _ := wasmcodec.ExtractInt64(ret.Get([]byte(ParamIntValue)))
+	retVal := wasmtypes.Int64FromBytes(ret.Get([]byte(ParamIntValue)))
 	f.Results.IntValue().SetValue(retVal)
 }
 

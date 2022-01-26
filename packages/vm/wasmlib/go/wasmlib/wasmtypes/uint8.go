@@ -11,6 +11,8 @@ import (
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+const ScUint8Length = 1
+
 func DecodeUint8(dec *wasmcodec.WasmDecoder) uint8 {
 	return dec.Byte()
 }
@@ -23,7 +25,7 @@ func Uint8FromBytes(buf []byte) uint8 {
 	if buf == nil {
 		return 0
 	}
-	if len(buf) != 1 {
+	if len(buf) != ScUint8Length {
 		Panic("invalid Uint8 length")
 	}
 	return buf[0]

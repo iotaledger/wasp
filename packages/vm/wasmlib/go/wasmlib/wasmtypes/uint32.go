@@ -1,7 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//nolint:dupl
 package wasmtypes
 
 import (
@@ -12,6 +11,8 @@ import (
 )
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+const ScUint32Length = 4
 
 func DecodeUint32(dec *wasmcodec.WasmDecoder) uint32 {
 	return uint32(dec.VluDecode(32))
@@ -25,14 +26,14 @@ func Uint32FromBytes(buf []byte) uint32 {
 	if buf == nil {
 		return 0
 	}
-	if len(buf) != 4 {
+	if len(buf) != ScUint32Length {
 		Panic("invalid Uint32 length")
 	}
 	return binary.LittleEndian.Uint32(buf)
 }
 
 func BytesFromUint32(value uint32) []byte {
-	tmp := make([]byte, 4)
+	tmp := make([]byte, ScUint32Length)
 	binary.LittleEndian.PutUint32(tmp, value)
 	return tmp
 }

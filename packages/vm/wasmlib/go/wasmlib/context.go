@@ -32,7 +32,8 @@ func (ctx ScFuncContext) Host() ScHost {
 func (ctx ScFuncContext) InitFuncCallContext() {
 }
 
-func (ctx ScFuncContext) InitViewCallContext() {
+func (ctx ScFuncContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+	return hContract
 }
 
 // TODO deprecated
@@ -53,5 +54,6 @@ type ScViewContext struct {
 
 var _ ScViewCallContext = &ScViewContext{}
 
-func (ctx ScViewContext) InitViewCallContext() {
+func (ctx ScViewContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+	return hContract
 }

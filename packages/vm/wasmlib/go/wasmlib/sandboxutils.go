@@ -41,8 +41,7 @@ func (u ScSandboxUtils) BlsAggregateSignatures(pubKeys, sigs [][]byte) ([]byte, 
 
 func (u ScSandboxUtils) BlsValidSignature(data, pubKey, signature []byte) bool {
 	enc := wasmcodec.NewWasmEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
-	valid, _ := wasmcodec.ExtractBool(Sandbox(FnUtilsBlsValid, enc.Buf()))
-	return valid
+	return wasmtypes.BoolFromBytes(Sandbox(FnUtilsBlsValid, enc.Buf()))
 }
 
 func (u ScSandboxUtils) Ed25519AddressFromPubKey(pubKey []byte) wasmtypes.ScAddress {
@@ -51,8 +50,7 @@ func (u ScSandboxUtils) Ed25519AddressFromPubKey(pubKey []byte) wasmtypes.ScAddr
 
 func (u ScSandboxUtils) Ed25519ValidSignature(data, pubKey, signature []byte) bool {
 	enc := wasmcodec.NewWasmEncoder().Bytes(data).Bytes(pubKey).Bytes(signature)
-	valid, _ := wasmcodec.ExtractBool(Sandbox(FnUtilsEd25519Valid, enc.Buf()))
-	return valid
+	return wasmtypes.BoolFromBytes(Sandbox(FnUtilsEd25519Valid, enc.Buf()))
 }
 
 // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash

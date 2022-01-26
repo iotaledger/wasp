@@ -56,7 +56,7 @@ func (d *WasmDecoder) VliDecode(bits int) (value int64) {
 	s := 6
 
 	// while continuation bit is set
-	for (b & 0x80) != 0 {
+	for ; (b & 0x80) != 0; s += 7 {
 		if s >= bits {
 			d.abort("integer representation too long")
 		}
@@ -64,7 +64,6 @@ func (d *WasmDecoder) VliDecode(bits int) (value int64) {
 		// next group of 7 bits
 		b = d.Byte()
 		value |= int64(b&0x7f) << s
-		s += 7
 	}
 
 	if sign == 0 {
@@ -84,7 +83,7 @@ func (d *WasmDecoder) VluDecode(bits int) uint64 {
 	s := 7
 
 	// while continuation bit is set
-	for (b & 0x80) != 0 {
+	for ; (b & 0x80) != 0; s += 7 {
 		if s >= bits {
 			d.abort("integer representation too long")
 		}
@@ -92,7 +91,6 @@ func (d *WasmDecoder) VluDecode(bits int) uint64 {
 		// next group of 7 bits
 		b = d.Byte()
 		value |= uint64(b&0x7f) << s
-		s += 7
 	}
 	return value
 }

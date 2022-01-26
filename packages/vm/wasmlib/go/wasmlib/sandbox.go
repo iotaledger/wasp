@@ -6,7 +6,6 @@ package wasmlib
 import (
 	"encoding/binary"
 
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmrequests"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -64,8 +63,7 @@ func (s ScSandbox) AccountID() wasmtypes.ScAgentID {
 }
 
 func (s ScSandbox) Balance(color wasmtypes.ScColor) uint64 {
-	bal, _ := wasmcodec.ExtractUint64(Sandbox(FnBalance, color.Bytes()))
-	return bal
+	return wasmtypes.Uint64FromBytes(Sandbox(FnBalance, color.Bytes()))
 }
 
 // access the current balances for all assets
@@ -142,8 +140,7 @@ func (s ScSandbox) Results(results ScDict) {
 
 // deterministic time stamp fixed at the moment of calling the smart contract
 func (s ScSandbox) Timestamp() uint64 {
-	ts, _ := wasmcodec.ExtractUint64(Sandbox(FnTimestamp, nil))
-	return ts
+	return wasmtypes.Uint64FromBytes(Sandbox(FnTimestamp, nil))
 }
 
 // logs debugging trace text message

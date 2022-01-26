@@ -12,6 +12,8 @@ import (
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+const ScUint64Length = 8
+
 func DecodeUint64(dec *wasmcodec.WasmDecoder) uint64 {
 	return dec.VluDecode(64)
 }
@@ -24,14 +26,14 @@ func Uint64FromBytes(buf []byte) uint64 {
 	if buf == nil {
 		return 0
 	}
-	if len(buf) != 8 {
+	if len(buf) != ScUint64Length {
 		Panic("invalid Uint64 length")
 	}
 	return binary.LittleEndian.Uint64(buf)
 }
 
 func BytesFromUint64(value uint64) []byte {
-	tmp := make([]byte, 8)
+	tmp := make([]byte, ScUint64Length)
 	binary.LittleEndian.PutUint64(tmp, value)
 	return tmp
 }

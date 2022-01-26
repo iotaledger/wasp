@@ -2,6 +2,7 @@ package wasmsolo
 
 import (
 	"bytes"
+	"errors"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -14,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmrequests"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmtypes"
+	"golang.org/x/xerrors"
 )
 
 // NOTE: These functions correspond to the Sandbox fnXxx constants in WasmLib
@@ -69,6 +71,25 @@ func NewSoloSandbox(ctx *SoloContext) *SoloSandbox {
 }
 
 func (s *SoloSandbox) Call(funcNr int32, params []byte) []byte {
+	s.ctx.Err = nil
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+		if s.ctx.Err != nil {
+			s.ctx.Chain.Log.Infof("stacked error: %s", s.ctx.Err.Error())
+		}
+		switch errType := r.(type) {
+		case error:
+			s.ctx.Err = errType
+		case string:
+			s.ctx.Err = errors.New(errType)
+		default:
+			s.ctx.Err = xerrors.Errorf("RunScFunction: %v", errType)
+		}
+		s.ctx.Chain.Log.Infof("stolor error:: %s", s.ctx.Err.Error())
+	}()
 	return sandboxFunctions[-funcNr](s, params)
 }
 
@@ -142,7 +163,7 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	contract, err := iscp.HnameFromBytes(req.Contract.Bytes())
 	s.checkErr(err)
 	if contract != iscp.Hn(s.ctx.scName) {
-		s.Panicf("unknown contract: %s", contract.String())
+		s.Panicf("unknown contract: %s vs. %s", contract.String(), s.ctx.scName)
 	}
 	function, err := iscp.HnameFromBytes(req.Function.Bytes())
 	s.checkErr(err)

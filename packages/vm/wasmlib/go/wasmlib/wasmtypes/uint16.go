@@ -1,17 +1,17 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//nolint:dupl
 package wasmtypes
 
 import (
-	"encoding/binary"
 	"strconv"
 
 	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib/wasmcodec"
 )
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+const ScUint16Length = 2
 
 func DecodeUint16(dec *wasmcodec.WasmDecoder) uint16 {
 	return uint16(dec.VluDecode(16))
@@ -25,16 +25,14 @@ func Uint16FromBytes(buf []byte) uint16 {
 	if buf == nil {
 		return 0
 	}
-	if len(buf) != 2 {
+	if len(buf) != ScUint16Length {
 		Panic("invalid Uint16 length")
 	}
-	return binary.LittleEndian.Uint16(buf)
+	return uint16(buf[0]) | uint16(buf[1])<<8
 }
 
 func BytesFromUint16(value uint16) []byte {
-	tmp := make([]byte, 2)
-	binary.LittleEndian.PutUint16(tmp, value)
-	return tmp
+	return []byte{byte(value), byte(value >> 8)}
 }
 
 func StringFromUint16(value uint16) string {

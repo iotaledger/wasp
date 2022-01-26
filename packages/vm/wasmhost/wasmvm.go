@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
 )
 
 const (
@@ -122,11 +124,14 @@ func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 	ptr := vm.impl.VMGetBytes(iovs, 8)
 	text := int32(binary.LittleEndian.Uint32(ptr[0:4]))
 	size := int32(binary.LittleEndian.Uint32(ptr[4:8]))
-	msg := vm.impl.VMGetBytes(text, size)
-	fmt.Print(string(msg))
+	// msg := vm.impl.VMGetBytes(text, size)
+	// fmt.Print(string(msg))
 	ptr = make([]byte, 4)
 	binary.LittleEndian.PutUint32(ptr, uint32(size))
 	vm.impl.VMSetBytes(written, size, ptr)
+
+	// strip off "panic: " prefix and call sandbox panic function
+	vm.HostStateGet(0, wasmlib.FnPanic, text+7, size)
 	return size
 }
 
@@ -191,6 +196,18 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 	ctx := vm.getContext(0)
 	ctx.log().Debugf("HostStateSet(k(%d,%d),v(%d,s%d))", keyRef, keyLen, valRef, valLen)
 
+	// export name?
+	if keyRef == 0 {
+		name := string(vm.impl.VMGetBytes(valRef, valLen))
+		if keyLen < 0 {
+			// ExportWasmTag, log the wasm tag name
+			ctx.proc.log.Infof(name)
+			return
+		}
+		ctx.ExportName(keyLen, name)
+		return
+	}
+
 	key := vm.impl.VMGetBytes(keyRef, keyLen)
 
 	// delete key ?
@@ -199,6 +216,7 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 		return
 	}
 
+	// set key
 	value := vm.impl.VMGetBytes(valRef, valLen)
 	ctx.StateSet(key, value)
 }
@@ -219,18 +237,18 @@ func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 }
 
 func (vm *WasmVMBase) Run(runner func() error) (err error) {
-	defer func() {
-		r := recover()
-		if r == nil {
-			return
-		}
-		// could be the wrong panic message due to a WasmTime bug, so we always
-		// rethrow our intercepted first panic instead of WasmTime's last panic
-		if vm.panicErr != nil {
-			panic(vm.panicErr)
-		}
-		panic(r)
-	}()
+	//defer func() {
+	//	r := recover()
+	//	if r == nil {
+	//		return
+	//	}
+	//	// could be the wrong panic message due to a WasmTime bug, so we always
+	//	// rethrow our intercepted first panic instead of WasmTime's last panic
+	//	if vm.panicErr != nil {
+	//		panic(vm.panicErr)
+	//	}
+	//	panic(r)
+	//}()
 
 	if vm.timeoutStarted {
 		// no need to wrap nested calls in timeout code

@@ -22,17 +22,14 @@ func NewScDictFromBytes(buf []byte) ScDict {
 	if len(buf) == 0 {
 		return make(ScDict)
 	}
-	size, buf := wasmcodec.ExtractUint32(buf)
+	dec := wasmcodec.NewWasmDecoder(buf)
+	size := wasmtypes.Uint32FromBytes(dec.FixedBytes(wasmtypes.ScUint32Length))
 	dict := make(ScDict, size)
-	var k uint16
-	var v uint32
-	var key []byte
-	var val []byte
 	for i := uint32(0); i < size; i++ {
-		k, buf = wasmcodec.ExtractUint16(buf)
-		key, buf = wasmcodec.ExtractBytes(buf, int(k))
-		v, buf = wasmcodec.ExtractUint32(buf)
-		val, buf = wasmcodec.ExtractBytes(buf, int(v))
+		keyLen := wasmtypes.Uint16FromBytes(dec.FixedBytes(wasmtypes.ScUint16Length))
+		key := dec.FixedBytes(uint32(keyLen))
+		valLen := wasmtypes.Uint32FromBytes(dec.FixedBytes(wasmtypes.ScUint32Length))
+		val := dec.FixedBytes(valLen)
 		dict.Set(key, val)
 	}
 	return dict
@@ -50,15 +47,17 @@ func (d ScDict) Bytes() []byte {
 	sort.Slice(keys, func(i, j int) bool {
 		return keys[i] < keys[j]
 	})
-	buf := wasmcodec.AppendUint32(nil, uint32(len(keys)))
+	enc := wasmcodec.NewWasmEncoder()
+	enc.FixedBytes(wasmtypes.BytesFromUint32(uint32(len(keys))), wasmtypes.ScUint32Length)
 	for _, k := range keys {
-		v := d[k]
-		buf = wasmcodec.AppendUint16(buf, uint16(len(k)))
-		buf = wasmcodec.AppendBytes(buf, []byte(k))
-		buf = wasmcodec.AppendUint32(buf, uint32(len(v)))
-		buf = wasmcodec.AppendBytes(buf, v)
+		key := []byte(k)
+		val := d[k]
+		enc.FixedBytes(wasmtypes.BytesFromUint16(uint16(len(key))), wasmtypes.ScUint16Length)
+		enc.FixedBytes(key, uint32(len(key)))
+		enc.FixedBytes(wasmtypes.BytesFromUint32(uint32(len(val))), wasmtypes.ScUint32Length)
+		enc.FixedBytes(val, uint32(len(val)))
 	}
-	return buf
+	return enc.Buf()
 }
 
 func (d ScDict) Delete(key []byte) {

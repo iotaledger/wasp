@@ -117,7 +117,7 @@ func (wc *WasmContext) IsView() bool {
 }
 
 func (wc *WasmContext) log() iscp.LogInterface {
-	if wc.sandbox.common != nil {
+	if wc.sandbox != nil && wc.sandbox.common != nil {
 		return wc.sandbox.common.Log()
 	}
 	return wc.proc.log

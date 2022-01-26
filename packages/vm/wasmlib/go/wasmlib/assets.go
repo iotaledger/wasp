@@ -13,14 +13,15 @@ import (
 type ScAssets map[wasmtypes.ScColor]uint64
 
 func NewScAssetsFromBytes(buf []byte) ScAssets {
-	dict := make(ScAssets)
-	size, buf := wasmcodec.ExtractUint32(buf)
-	var k []byte
-	var v uint64
+	if len(buf) == 0 {
+		return make(ScAssets)
+	}
+	dec := wasmcodec.NewWasmDecoder(buf)
+	size := wasmtypes.Uint32FromBytes(dec.FixedBytes(wasmtypes.ScUint32Length))
+	dict := make(ScAssets, size)
 	for i := uint32(0); i < size; i++ {
-		k, buf = wasmcodec.ExtractBytes(buf, 32)
-		v, buf = wasmcodec.ExtractUint64(buf)
-		dict[wasmtypes.ColorFromBytes(k)] = v
+		color := wasmtypes.ColorFromBytes(dec.FixedBytes(wasmtypes.ScColorLength))
+		dict[color] = wasmtypes.Uint64FromBytes(dec.FixedBytes(wasmtypes.ScUint64Length))
 	}
 	return dict
 }
@@ -33,13 +34,13 @@ func (a ScAssets) Bytes() []byte {
 	sort.Slice(keys, func(i, j int) bool {
 		return string(keys[i].Bytes()) < string(keys[j].Bytes())
 	})
-	buf := wasmcodec.AppendUint32(nil, uint32(len(keys)))
-	for _, k := range keys {
-		v := a[k]
-		buf = wasmcodec.AppendBytes(buf, k.Bytes())
-		buf = wasmcodec.AppendUint64(buf, v)
+	enc := wasmcodec.NewWasmEncoder()
+	enc.FixedBytes(wasmtypes.BytesFromUint32(uint32(len(keys))), wasmtypes.ScUint32Length)
+	for _, color := range keys {
+		enc.FixedBytes(color.Bytes(), wasmtypes.ScColorLength)
+		enc.FixedBytes(wasmtypes.BytesFromUint64(a[color]), wasmtypes.ScUint64Length)
 	}
-	return buf
+	return enc.Buf()
 }
 
 func (a ScAssets) Balances() ScBalances {

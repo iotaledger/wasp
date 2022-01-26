@@ -14,7 +14,7 @@ type ScFuncCallContext interface {
 }
 
 type ScViewCallContext interface {
-	InitViewCallContext()
+	InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -27,7 +27,8 @@ type ScView struct {
 }
 
 func NewScView(ctx ScViewCallContext, hContract, hFunction wasmtypes.ScHname) *ScView {
-	ctx.InitViewCallContext()
+	// allow context to override default hContract
+	hContract = ctx.InitViewCallContext(hContract)
 	v := new(ScView)
 	v.initView(hContract, hFunction)
 	return v
@@ -83,6 +84,8 @@ func NewScInitFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname
 		ctx.InitFuncCallContext()
 		return f
 	}
+
+	// TODO: is this still necessary?
 
 	// Special initialization for SoloContext usage
 	// Note that we do not have a contract context that can talk to the host

@@ -28,14 +28,20 @@ func BoolFromBytes(buf []byte) bool {
 	if len(buf) != 1 {
 		Panic("invalid Bool length")
 	}
-	return buf[0] != 0
+	if buf[0] == 0x00 {
+		return false
+	}
+	if buf[0] != 0xff {
+		Panic("invalid Bool value")
+	}
+	return true
 }
 
 func BytesFromBool(value bool) []byte {
 	if value {
-		return []byte{1}
+		return []byte{0xff}
 	}
-	return []byte{0}
+	return []byte{0x00}
 }
 
 func StringFromBool(value bool) string {

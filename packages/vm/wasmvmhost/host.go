@@ -58,11 +58,14 @@ func (w *WasmVMHost) ConnectWasmHost() {
 }
 
 func (w *WasmVMHost) ExportName(index int32, name string) {
+	// nil key indicates export name, with keyLen indicating index
+	// this removes the need for a separate hostExportName function
 	value := []byte(name)
 	hostStateSet(nil, index, ptr(value), int32(len(value)))
 }
 
 func (w *WasmVMHost) ExportWasmTag() {
+	// special index -1 indicates this is not an export name but the wasm tag
 	w.ExportName(-1, "WASM::GO")
 }
 
