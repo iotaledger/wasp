@@ -11,13 +11,6 @@ import (
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// wrapper for simplified use by hashtypes
-func base58Encode(bytes []byte) string {
-	return ScSandboxUtils{}.Base58Encode(bytes)
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 // smart contract func sandbox interface
 type ScFuncContext struct {
 	ScSandboxFunc
