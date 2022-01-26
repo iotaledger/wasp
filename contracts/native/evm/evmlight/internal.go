@@ -25,7 +25,7 @@ import (
 // in the ISCP block; otherwise it returns the previously created instance. The purpose is to
 // create a single Ethereum block for each ISCP block.
 func getEmulatorInBlockContext(ctx iscp.Sandbox) *emulator.EVMEmulator {
-	bctx := ctx.BlockContext(
+	bctx := ctx.Privileged().BlockContext(
 		func(ctx iscp.Sandbox) interface{} { return createEmulator(ctx) },
 		func(bctx interface{}) { bctx.(*emulator.EVMEmulator).MintBlock() },
 	)

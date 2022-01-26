@@ -98,8 +98,6 @@ type Sandbox interface {
 	Send(metadata RequestParameters)
 	// EstimateRequiredDustDeposit returns the amount of iotas needed to cover for a given request's dust deposit
 	EstimateRequiredDustDeposit(r RequestParameters) (uint64, error)
-	// BlockContext Internal for use in native hardcoded contracts
-	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
 
@@ -113,7 +111,7 @@ type Privileged interface {
 	CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64)
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
-	// BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
+	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters

@@ -50,8 +50,6 @@ func (vmctx *VMContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	return vmctx.txbuilder.ModifyNativeTokenSupply(&tokenID, delta)
 }
 
-// TODO move BlockContext to Privileged sub-interface.
-//   do we need ctx as parameter?
 func (vmctx *VMContext) BlockContext(ctx iscp.Sandbox, construct func(ctx iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
 	hname := vmctx.CurrentContractHname()
 	if bctx, alreadyExists := vmctx.blockContext[hname]; alreadyExists {

@@ -134,11 +134,6 @@ func (s *sandbox) Utils() iscp.Utils {
 	return NewUtils(s.Gas())
 }
 
-func (s *sandbox) BlockContext(construct func(ctx iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
-	// doesn't have a gas burn, only used for internal (native) contracts
-	return s.vmctx.BlockContext(s, construct, onClose)
-}
-
 func (s *sandbox) StateAnchor() *iscp.StateAnchor {
 	return s.vmctx.StateAnchor()
 }
@@ -181,5 +176,28 @@ func (s *sandbox) RequireCallerIsChainOwner(str ...string) {
 }
 
 func (s *sandbox) Privileged() iscp.Privileged {
-	return s.vmctx
+	return s
+}
+
+// privileged methods:
+
+func (s *sandbox) TryLoadContract(programHash hashing.HashValue) error {
+	return s.vmctx.TryLoadContract(programHash)
+}
+
+func (s *sandbox) CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64) {
+	return s.vmctx.CreateNewFoundry(scheme, tag, maxSupply, metadata)
+}
+
+func (s *sandbox) DestroyFoundry(sn uint32) uint64 {
+	return s.vmctx.DestroyFoundry(sn)
+}
+
+func (s *sandbox) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
+	return s.vmctx.ModifyFoundrySupply(sn, delta)
+}
+
+func (s *sandbox) BlockContext(construct func(ctx iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
+	// doesn't have a gas burn, only used for internal (native) contracts
+	return s.vmctx.BlockContext(s, construct, onClose)
 }

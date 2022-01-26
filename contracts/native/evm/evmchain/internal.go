@@ -38,7 +38,7 @@ func isNotFound(err error) bool {
 // in the ISCP block; otherwise it returns the previously created instance. The purpose is to
 // create a single Ethereum block for each ISCP block.
 func getEmulatorInBlockContext(ctx iscp.Sandbox) *emulator.EVMEmulator {
-	bctx := ctx.BlockContext(createEmulator, commitEthereumBlock)
+	bctx := ctx.Privileged().BlockContext(createEmulator, commitEthereumBlock)
 	return bctx.(*emulator.EVMEmulator)
 }
 
