@@ -7,7 +7,7 @@
 
 package erc721
 
-import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableBalanceOfResults struct {
 	proxy wasmtypes.Proxy

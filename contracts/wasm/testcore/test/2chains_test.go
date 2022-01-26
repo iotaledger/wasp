@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
-	wasmsolo2 "github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,13 +14,13 @@ func Test2Chains(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		core.PrintWellKnownHnames()
 
-		chain1 := wasmsolo2.StartChain(t, "chain1")
+		chain1 := wasmsolo.StartChain(t, "chain1")
 		chain1.CheckAccountLedger()
 
-		chain2 := wasmsolo2.StartChain(t, "chain2", chain1.Env)
+		chain2 := wasmsolo.StartChain(t, "chain2", chain1.Env)
 		chain2.CheckAccountLedger()
 
-		user := wasmsolo2.NewSoloAgent(chain1.Env)
+		user := wasmsolo.NewSoloAgent(chain1.Env)
 		require.EqualValues(t, solo.Saldo, user.Balance())
 
 		ctx1 := deployTestCoreOnChain(t, w, chain1, nil)

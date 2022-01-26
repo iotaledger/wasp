@@ -6,8 +6,8 @@ package wasmlib
 import (
 	"encoding/binary"
 
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmrequests"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 const (

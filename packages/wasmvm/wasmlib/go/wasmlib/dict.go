@@ -6,7 +6,7 @@ package wasmlib
 import (
 	"sort"
 
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 type ScDict map[string][]byte

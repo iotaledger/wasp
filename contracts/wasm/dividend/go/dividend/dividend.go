@@ -15,8 +15,8 @@
 package dividend
 
 import (
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 // 'init' is used as a way to initialize a smart contract. It is an optional

@@ -8,21 +8,21 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/coreaccounts"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/coregovernance"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/coreroot"
-	wasmsolo2 "github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreroot"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
-func deployTestCore(t *testing.T, runWasm bool, addCreator ...bool) *wasmsolo2.SoloContext {
-	chain := wasmsolo2.StartChain(t, "chain1")
+func deployTestCore(t *testing.T, runWasm bool, addCreator ...bool) *wasmsolo.SoloContext {
+	chain := wasmsolo.StartChain(t, "chain1")
 
-	var creator *wasmsolo2.SoloAgent
+	var creator *wasmsolo.SoloAgent
 	if len(addCreator) != 0 && addCreator[0] {
-		creator = wasmsolo2.NewSoloAgent(chain.Env)
-		setDeployer(t, &wasmsolo2.SoloContext{Chain: chain}, creator)
+		creator = wasmsolo.NewSoloAgent(chain.Env)
+		setDeployer(t, &wasmsolo.SoloContext{Chain: chain}, creator)
 	}
 
 	ctx := deployTestCoreOnChain(t, runWasm, chain, creator)
@@ -30,12 +30,12 @@ func deployTestCore(t *testing.T, runWasm bool, addCreator ...bool) *wasmsolo2.S
 	return ctx
 }
 
-func deployTestCoreOnChain(t *testing.T, runWasm bool, chain *solo.Chain, creator *wasmsolo2.SoloAgent, init ...*wasmlib.ScInitFunc) *wasmsolo2.SoloContext {
+func deployTestCoreOnChain(t *testing.T, runWasm bool, chain *solo.Chain, creator *wasmsolo.SoloAgent, init ...*wasmlib.ScInitFunc) *wasmsolo.SoloContext {
 	if runWasm {
-		return wasmsolo2.NewSoloContextForChain(t, chain, creator, testcore.ScName, testcore.OnLoad, init...)
+		return wasmsolo.NewSoloContextForChain(t, chain, creator, testcore.ScName, testcore.OnLoad, init...)
 	}
 
-	return wasmsolo2.NewSoloContextForNative(t, chain, creator, testcore.ScName, testcore.OnLoad, sbtestsc.Processor, init...)
+	return wasmsolo.NewSoloContextForNative(t, chain, creator, testcore.ScName, testcore.OnLoad, sbtestsc.Processor, init...)
 }
 
 func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
@@ -48,12 +48,12 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 		return
 	}
 
-	saveGoDebug := *wasmsolo2.GoDebug
-	saveGoWasm := *wasmsolo2.GoWasm
-	saveTsWasm := *wasmsolo2.TsWasm
-	*wasmsolo2.GoDebug = false
-	*wasmsolo2.GoWasm = false
-	*wasmsolo2.TsWasm = false
+	saveGoDebug := *wasmsolo.GoDebug
+	saveGoWasm := *wasmsolo.GoWasm
+	saveTsWasm := *wasmsolo.TsWasm
+	*wasmsolo.GoDebug = false
+	*wasmsolo.GoWasm = false
+	*wasmsolo.TsWasm = false
 
 	//exists, _ := util.ExistsFilePath("../pkg/testcore_bg.wasm")
 	//if exists {
@@ -65,12 +65,12 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 
 	exists, _ := util.ExistsFilePath("../go/pkg/testcore_go.wasm")
 	if exists {
-		*wasmsolo2.GoWasm = true
+		*wasmsolo.GoWasm = true
 		wasmlib.ConnectHost(nil)
 		t.Run(fmt.Sprintf("run GO version of %s", t.Name()), func(t *testing.T) {
 			test(t, true)
 		})
-		*wasmsolo2.GoWasm = false
+		*wasmsolo.GoWasm = false
 	}
 
 	//exists, _ = util.ExistsFilePath("../ts/pkg/testcore_ts.wasm")
@@ -83,15 +83,15 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	//	*wasmsolo.TsWasm = false
 	//}
 
-	*wasmsolo2.GoDebug = true
+	*wasmsolo.GoDebug = true
 	wasmlib.ConnectHost(nil)
 	t.Run(fmt.Sprintf("run GOVM version of %s", t.Name()), func(t *testing.T) {
 		test(t, true)
 	})
 
-	*wasmsolo2.GoDebug = saveGoDebug
-	*wasmsolo2.GoWasm = saveGoWasm
-	*wasmsolo2.TsWasm = saveTsWasm
+	*wasmsolo.GoDebug = saveGoDebug
+	*wasmsolo.GoWasm = saveGoWasm
+	*wasmsolo.TsWasm = saveTsWasm
 }
 
 func TestDeployTestCore(t *testing.T) {
@@ -110,7 +110,7 @@ func TestDeployTestCoreWithCreator(t *testing.T) {
 
 // chainAccountBalances checks the balance of the chain account and the total
 // balance of all accounts, taking any extra uploadWasm() into account
-func chainAccountBalances(ctx *wasmsolo2.SoloContext, w bool, chain, total uint64) {
+func chainAccountBalances(ctx *wasmsolo.SoloContext, w bool, chain, total uint64) {
 	if w {
 		// wasm setup takes 1 more iota than core setup due to uploadWasm()
 		chain++
@@ -122,7 +122,7 @@ func chainAccountBalances(ctx *wasmsolo2.SoloContext, w bool, chain, total uint6
 
 // originatorBalanceReducedBy checks the balance of the originator address has
 // reduced by the given amount, taking any extra uploadWasm() into account
-func originatorBalanceReducedBy(ctx *wasmsolo2.SoloContext, w bool, minus uint64) {
+func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64) {
 	if w {
 		// wasm setup takes 1 more iota than core setup due to uploadWasm()
 		minus++
@@ -130,7 +130,7 @@ func originatorBalanceReducedBy(ctx *wasmsolo2.SoloContext, w bool, minus uint64
 	ctx.Chain.Env.AssertAddressIotas(ctx.Chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-minus)
 }
 
-func deposit(t *testing.T, ctx *wasmsolo2.SoloContext, user, target *wasmsolo2.SoloAgent, amount uint64) {
+func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.SoloAgent, amount uint64) {
 	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
 	f := coreaccounts.ScFuncs.Deposit(ctxAcc.Sign(user))
 	if target != nil {
@@ -140,7 +140,7 @@ func deposit(t *testing.T, ctx *wasmsolo2.SoloContext, user, target *wasmsolo2.S
 	require.NoError(t, ctxAcc.Err)
 }
 
-func setDeployer(t *testing.T, ctx *wasmsolo2.SoloContext, deployer *wasmsolo2.SoloAgent) {
+func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.SoloAgent) {
 	ctxRoot := ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnLoad)
 	f := coreroot.ScFuncs.GrantDeployPermission(ctxRoot)
 	f.Params.Deployer().SetValue(deployer.ScAgentID())
@@ -148,7 +148,7 @@ func setDeployer(t *testing.T, ctx *wasmsolo2.SoloContext, deployer *wasmsolo2.S
 	require.NoError(t, ctxRoot.Err)
 }
 
-func setOwnerFee(t *testing.T, ctx *wasmsolo2.SoloContext, amount int64) {
+func setOwnerFee(t *testing.T, ctx *wasmsolo.SoloContext, amount int64) {
 	ctxGov := ctx.SoloContextForCore(t, coregovernance.ScName, coregovernance.OnLoad)
 	f := coregovernance.ScFuncs.SetContractFee(ctxGov)
 	f.Params.Hname().SetValue(testcore.HScName)
@@ -157,7 +157,7 @@ func setOwnerFee(t *testing.T, ctx *wasmsolo2.SoloContext, amount int64) {
 	require.NoError(t, ctxGov.Err)
 }
 
-func withdraw(t *testing.T, ctx *wasmsolo2.SoloContext, user *wasmsolo2.SoloAgent) {
+func withdraw(t *testing.T, ctx *wasmsolo.SoloContext, user *wasmsolo.SoloAgent) {
 	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
 	f := coreaccounts.ScFuncs.Withdraw(ctxAcc.Sign(user))
 	f.Func.TransferIotas(1).Post()

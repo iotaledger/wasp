@@ -6,9 +6,9 @@ package testwasmlib
 import (
 	"bytes"
 
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/coreblocklog"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblocklog"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 func funcArrayAppend(ctx wasmlib.ScFuncContext, f *ArrayAppendContext) {

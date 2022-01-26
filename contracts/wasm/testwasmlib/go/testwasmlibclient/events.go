@@ -7,9 +7,7 @@
 
 package testwasmlibclient
 
-import (
-	wasmclient2 "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
-)
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 
 var testWasmLibHandlers = map[string]func(*TestWasmLibEvents, []string){
 	"testwasmlib.test": func(evt *TestWasmLibEvents, msg []string) { evt.onTestWasmLibTestThunk(msg) },
@@ -31,8 +29,8 @@ func (h *TestWasmLibEvents) OnTestWasmLibTest(handler func(e *EventTest)) {
 }
 
 type EventTest struct {
-	wasmclient2.Event
-	Address wasmclient2.Address
+	wasmclient.Event
+	Address wasmclient.Address
 	Name    string
 }
 

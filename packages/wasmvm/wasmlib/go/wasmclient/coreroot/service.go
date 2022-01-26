@@ -7,9 +7,7 @@
 
 package corerootclient
 
-import (
-	wasmclient2 "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
-)
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 
 const (
 	ArgDeployer    = "dp"
@@ -26,8 +24,8 @@ const (
 ///////////////////////////// deployContract /////////////////////////////
 
 type DeployContractFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
 func (f *DeployContractFunc) Description(v string) {
@@ -38,11 +36,11 @@ func (f *DeployContractFunc) Name(v string) {
 	f.args.Set(ArgName, f.args.FromString(v))
 }
 
-func (f *DeployContractFunc) ProgramHash(v wasmclient2.Hash) {
+func (f *DeployContractFunc) ProgramHash(v wasmclient.Hash) {
 	f.args.Set(ArgProgramHash, f.args.FromHash(v))
 }
 
-func (f *DeployContractFunc) Post() wasmclient2.Request {
+func (f *DeployContractFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgName)
 	f.args.Mandatory(ArgProgramHash)
 	return f.ClientFunc.Post(0x28232c27, &f.args)
@@ -51,15 +49,15 @@ func (f *DeployContractFunc) Post() wasmclient2.Request {
 ///////////////////////////// grantDeployPermission /////////////////////////////
 
 type GrantDeployPermissionFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
-func (f *GrantDeployPermissionFunc) Deployer(v wasmclient2.AgentID) {
+func (f *GrantDeployPermissionFunc) Deployer(v wasmclient.AgentID) {
 	f.args.Set(ArgDeployer, f.args.FromAgentID(v))
 }
 
-func (f *GrantDeployPermissionFunc) Post() wasmclient2.Request {
+func (f *GrantDeployPermissionFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgDeployer)
 	return f.ClientFunc.Post(0xf440263a, &f.args)
 }
@@ -67,15 +65,15 @@ func (f *GrantDeployPermissionFunc) Post() wasmclient2.Request {
 ///////////////////////////// revokeDeployPermission /////////////////////////////
 
 type RevokeDeployPermissionFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
-func (f *RevokeDeployPermissionFunc) Deployer(v wasmclient2.AgentID) {
+func (f *RevokeDeployPermissionFunc) Deployer(v wasmclient.AgentID) {
 	f.args.Set(ArgDeployer, f.args.FromAgentID(v))
 }
 
-func (f *RevokeDeployPermissionFunc) Post() wasmclient2.Request {
+func (f *RevokeDeployPermissionFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgDeployer)
 	return f.ClientFunc.Post(0x850744f1, &f.args)
 }
@@ -83,11 +81,11 @@ func (f *RevokeDeployPermissionFunc) Post() wasmclient2.Request {
 ///////////////////////////// findContract /////////////////////////////
 
 type FindContractView struct {
-	wasmclient2.ClientView
-	args wasmclient2.Arguments
+	wasmclient.ClientView
+	args wasmclient.Arguments
 }
 
-func (f *FindContractView) Hname(v wasmclient2.Hname) {
+func (f *FindContractView) Hname(v wasmclient.Hname) {
 	f.args.Set(ArgHname, f.args.FromHname(v))
 }
 
@@ -98,7 +96,7 @@ func (f *FindContractView) Call() FindContractResults {
 }
 
 type FindContractResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
 func (r *FindContractResults) ContractFound() []byte {
@@ -112,7 +110,7 @@ func (r *FindContractResults) ContractRecData() []byte {
 ///////////////////////////// getContractRecords /////////////////////////////
 
 type GetContractRecordsView struct {
-	wasmclient2.ClientView
+	wasmclient.ClientView
 }
 
 func (f *GetContractRecordsView) Call() GetContractRecordsResults {
@@ -121,11 +119,11 @@ func (f *GetContractRecordsView) Call() GetContractRecordsResults {
 }
 
 type GetContractRecordsResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
-func (r *GetContractRecordsResults) ContractRegistry() map[wasmclient2.Hname][]byte {
-	res := make(map[wasmclient2.Hname][]byte)
+func (r *GetContractRecordsResults) ContractRegistry() map[wasmclient.Hname][]byte {
+	res := make(map[wasmclient.Hname][]byte)
 	r.res.ForEach(func(key []byte, val []byte) {
 		res[r.res.ToHname(key)] = r.res.ToBytes(val)
 	})
@@ -135,10 +133,10 @@ func (r *GetContractRecordsResults) ContractRegistry() map[wasmclient2.Hname][]b
 ///////////////////////////// CoreRootService /////////////////////////////
 
 type CoreRootService struct {
-	wasmclient2.Service
+	wasmclient.Service
 }
 
-func NewCoreRootService(cl *wasmclient2.ServiceClient, chainID string) (*CoreRootService, error) {
+func NewCoreRootService(cl *wasmclient.ServiceClient, chainID string) (*CoreRootService, error) {
 	s := &CoreRootService{}
 	err := s.Service.Init(cl, chainID, 0xcebf5908)
 	return s, err

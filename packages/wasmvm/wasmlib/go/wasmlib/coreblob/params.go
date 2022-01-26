@@ -7,7 +7,7 @@
 
 package coreblob
 
-import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type MapStringToImmutableBytes struct {
 	proxy wasmtypes.Proxy

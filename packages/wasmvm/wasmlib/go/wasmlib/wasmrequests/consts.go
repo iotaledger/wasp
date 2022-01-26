@@ -7,7 +7,7 @@
 
 package wasmrequests
 
-import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "requests"

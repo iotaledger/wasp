@@ -5,7 +5,7 @@ package wasmsolo
 
 import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 func (s *SoloSandbox) fnUtilsBase58Decode(args []byte) []byte {

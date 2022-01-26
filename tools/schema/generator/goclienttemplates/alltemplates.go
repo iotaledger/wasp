@@ -162,6 +162,6 @@ var common = map[string]string{
 	"clientHeader": `
 package $package$+client
 
-import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmclient"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 `,
 }

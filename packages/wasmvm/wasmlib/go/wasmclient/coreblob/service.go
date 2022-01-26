@@ -7,9 +7,7 @@
 
 package coreblobclient
 
-import (
-	wasmclient2 "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
-)
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 
 const (
 	ArgBlobs = "this"
@@ -24,30 +22,30 @@ const (
 ///////////////////////////// storeBlob /////////////////////////////
 
 type StoreBlobFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
 func (f *StoreBlobFunc) Blobs(v []byte) {
 	f.args.Set(ArgBlobs, f.args.FromBytes(v))
 }
 
-func (f *StoreBlobFunc) Post() wasmclient2.Request {
+func (f *StoreBlobFunc) Post() wasmclient.Request {
 	return f.ClientFunc.Post(0xddd4c281, &f.args)
 }
 
 ///////////////////////////// getBlobField /////////////////////////////
 
 type GetBlobFieldView struct {
-	wasmclient2.ClientView
-	args wasmclient2.Arguments
+	wasmclient.ClientView
+	args wasmclient.Arguments
 }
 
 func (f *GetBlobFieldView) Field(v string) {
 	f.args.Set(ArgField, f.args.FromString(v))
 }
 
-func (f *GetBlobFieldView) Hash(v wasmclient2.Hash) {
+func (f *GetBlobFieldView) Hash(v wasmclient.Hash) {
 	f.args.Set(ArgHash, f.args.FromHash(v))
 }
 
@@ -59,7 +57,7 @@ func (f *GetBlobFieldView) Call() GetBlobFieldResults {
 }
 
 type GetBlobFieldResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
 func (r *GetBlobFieldResults) Bytes() []byte {
@@ -69,11 +67,11 @@ func (r *GetBlobFieldResults) Bytes() []byte {
 ///////////////////////////// getBlobInfo /////////////////////////////
 
 type GetBlobInfoView struct {
-	wasmclient2.ClientView
-	args wasmclient2.Arguments
+	wasmclient.ClientView
+	args wasmclient.Arguments
 }
 
-func (f *GetBlobInfoView) Hash(v wasmclient2.Hash) {
+func (f *GetBlobInfoView) Hash(v wasmclient.Hash) {
 	f.args.Set(ArgHash, f.args.FromHash(v))
 }
 
@@ -84,7 +82,7 @@ func (f *GetBlobInfoView) Call() GetBlobInfoResults {
 }
 
 type GetBlobInfoResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
 func (r *GetBlobInfoResults) BlobSizes() map[string]int32 {
@@ -98,7 +96,7 @@ func (r *GetBlobInfoResults) BlobSizes() map[string]int32 {
 ///////////////////////////// listBlobs /////////////////////////////
 
 type ListBlobsView struct {
-	wasmclient2.ClientView
+	wasmclient.ClientView
 }
 
 func (f *ListBlobsView) Call() ListBlobsResults {
@@ -107,11 +105,11 @@ func (f *ListBlobsView) Call() ListBlobsResults {
 }
 
 type ListBlobsResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
-func (r *ListBlobsResults) BlobSizes() map[wasmclient2.Hash]int32 {
-	res := make(map[wasmclient2.Hash]int32)
+func (r *ListBlobsResults) BlobSizes() map[wasmclient.Hash]int32 {
+	res := make(map[wasmclient.Hash]int32)
 	r.res.ForEach(func(key []byte, val []byte) {
 		res[r.res.ToHash(key)] = r.res.ToInt32(val)
 	})
@@ -121,10 +119,10 @@ func (r *ListBlobsResults) BlobSizes() map[wasmclient2.Hash]int32 {
 ///////////////////////////// CoreBlobService /////////////////////////////
 
 type CoreBlobService struct {
-	wasmclient2.Service
+	wasmclient.Service
 }
 
-func NewCoreBlobService(cl *wasmclient2.ServiceClient, chainID string) (*CoreBlobService, error) {
+func NewCoreBlobService(cl *wasmclient.ServiceClient, chainID string) (*CoreBlobService, error) {
 	s := &CoreBlobService{}
 	err := s.Service.Init(cl, chainID, 0xfd91bc63)
 	return s, err

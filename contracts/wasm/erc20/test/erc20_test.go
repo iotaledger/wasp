@@ -6,26 +6,26 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/erc20/go/erc20"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
-	wasmsolo2 "github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	chain   *solo.Chain
-	creator *wasmsolo2.SoloAgent
+	creator *wasmsolo.SoloAgent
 )
 
 func setupTest(t *testing.T) {
-	chain = wasmsolo2.StartChain(t, "chain1")
-	creator = wasmsolo2.NewSoloAgent(chain.Env)
+	chain = wasmsolo.StartChain(t, "chain1")
+	creator = wasmsolo.NewSoloAgent(chain.Env)
 }
 
-func setupErc20(t *testing.T) *wasmsolo2.SoloContext {
+func setupErc20(t *testing.T) *wasmsolo.SoloContext {
 	setupTest(t)
 	init := erc20.ScFuncs.Init(nil)
 	init.Params.Supply().SetValue(solo.Saldo)
 	init.Params.Creator().SetValue(creator.ScAgentID())
-	ctx := wasmsolo2.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
+	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
 	require.NoError(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
 	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
@@ -41,7 +41,7 @@ func setupErc20(t *testing.T) *wasmsolo2.SoloContext {
 	return ctx
 }
 
-func checkErc20Balance(ctx *wasmsolo2.SoloContext, account *wasmsolo2.SoloAgent, amount uint64) {
+func checkErc20Balance(ctx *wasmsolo.SoloContext, account *wasmsolo.SoloAgent, amount uint64) {
 	t := chain.Env.T
 	balanceOf := erc20.ScFuncs.BalanceOf(ctx)
 	balanceOf.Params.Account().SetValue(account.ScAgentID())
@@ -52,7 +52,7 @@ func checkErc20Balance(ctx *wasmsolo2.SoloContext, account *wasmsolo2.SoloAgent,
 	require.EqualValues(t, amount, balance.Value())
 }
 
-func checkErc20Allowance(ctx *wasmsolo2.SoloContext, account, delegation *wasmsolo2.SoloAgent, amount uint64) {
+func checkErc20Allowance(ctx *wasmsolo.SoloContext, account, delegation *wasmsolo.SoloAgent, amount uint64) {
 	t := chain.Env.T
 	allowance := erc20.ScFuncs.Allowance(ctx)
 	allowance.Params.Account().SetValue(account.ScAgentID())
@@ -64,7 +64,7 @@ func checkErc20Allowance(ctx *wasmsolo2.SoloContext, account, delegation *wasmso
 	require.EqualValues(t, amount, balance.Value())
 }
 
-func approve(ctx *wasmsolo2.SoloContext, from, to *wasmsolo2.SoloAgent, amount uint64) error {
+func approve(ctx *wasmsolo.SoloContext, from, to *wasmsolo.SoloAgent, amount uint64) error {
 	appr := erc20.ScFuncs.Approve(ctx.Sign(from))
 	appr.Params.Delegation().SetValue(to.ScAgentID())
 	appr.Params.Amount().SetValue(amount)
@@ -72,7 +72,7 @@ func approve(ctx *wasmsolo2.SoloContext, from, to *wasmsolo2.SoloAgent, amount u
 	return ctx.Err
 }
 
-func transfer(ctx *wasmsolo2.SoloContext, from, to *wasmsolo2.SoloAgent, amount uint64) error {
+func transfer(ctx *wasmsolo.SoloContext, from, to *wasmsolo.SoloAgent, amount uint64) error {
 	tx := erc20.ScFuncs.Transfer(ctx.Sign(from))
 	tx.Params.Account().SetValue(to.ScAgentID())
 	tx.Params.Amount().SetValue(amount)
@@ -80,7 +80,7 @@ func transfer(ctx *wasmsolo2.SoloContext, from, to *wasmsolo2.SoloAgent, amount 
 	return ctx.Err
 }
 
-func transferFrom(ctx *wasmsolo2.SoloContext, delegate, from, to *wasmsolo2.SoloAgent, amount uint64) error {
+func transferFrom(ctx *wasmsolo.SoloContext, delegate, from, to *wasmsolo.SoloAgent, amount uint64) error {
 	tx := erc20.ScFuncs.TransferFrom(ctx.Sign(delegate))
 	tx.Params.Account().SetValue(from.ScAgentID())
 	tx.Params.Recipient().SetValue(to.ScAgentID())

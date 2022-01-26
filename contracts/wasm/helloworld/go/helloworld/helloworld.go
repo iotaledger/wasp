@@ -4,7 +4,7 @@
 package helloworld
 
 import (
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 //nolint:unparam

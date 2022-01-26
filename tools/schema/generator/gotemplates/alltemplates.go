@@ -57,11 +57,11 @@ package $package
 `,
 	// *******************************
 	"importWasmLib": `
-import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 `,
 	// *******************************
 	"importWasmTypes": `
-import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 `,
 	// *******************************
 	"goHeader": `

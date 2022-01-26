@@ -7,7 +7,7 @@
 
 package donatewithfeedback
 
-import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Donation struct {
 	Amount    uint64              // amount donated

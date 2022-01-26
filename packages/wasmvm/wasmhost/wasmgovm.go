@@ -7,7 +7,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 // provide implementation for Wasm-only function

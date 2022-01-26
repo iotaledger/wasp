@@ -7,9 +7,7 @@
 
 package coreaccountsclient
 
-import (
-	wasmclient2 "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
-)
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 
 const (
 	ArgAgentID        = "a"
@@ -24,51 +22,51 @@ const (
 ///////////////////////////// deposit /////////////////////////////
 
 type DepositFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
-func (f *DepositFunc) AgentID(v wasmclient2.AgentID) {
+func (f *DepositFunc) AgentID(v wasmclient.AgentID) {
 	f.args.Set(ArgAgentID, f.args.FromAgentID(v))
 }
 
-func (f *DepositFunc) Post() wasmclient2.Request {
+func (f *DepositFunc) Post() wasmclient.Request {
 	return f.ClientFunc.Post(0xbdc9102d, &f.args)
 }
 
 ///////////////////////////// harvest /////////////////////////////
 
 type HarvestFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
 func (f *HarvestFunc) WithdrawAmount(v int64) {
 	f.args.Set(ArgWithdrawAmount, f.args.FromInt64(v))
 }
 
-func (f *HarvestFunc) WithdrawColor(v wasmclient2.Color) {
+func (f *HarvestFunc) WithdrawColor(v wasmclient.Color) {
 	f.args.Set(ArgWithdrawColor, f.args.FromColor(v))
 }
 
-func (f *HarvestFunc) Post() wasmclient2.Request {
+func (f *HarvestFunc) Post() wasmclient.Request {
 	return f.ClientFunc.Post(0x7b40efbd, &f.args)
 }
 
 ///////////////////////////// withdraw /////////////////////////////
 
 type WithdrawFunc struct {
-	wasmclient2.ClientFunc
+	wasmclient.ClientFunc
 }
 
-func (f *WithdrawFunc) Post() wasmclient2.Request {
+func (f *WithdrawFunc) Post() wasmclient.Request {
 	return f.ClientFunc.Post(0x9dcc0f41, nil)
 }
 
 ///////////////////////////// accounts /////////////////////////////
 
 type AccountsView struct {
-	wasmclient2.ClientView
+	wasmclient.ClientView
 }
 
 func (f *AccountsView) Call() AccountsResults {
@@ -77,11 +75,11 @@ func (f *AccountsView) Call() AccountsResults {
 }
 
 type AccountsResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
-func (r *AccountsResults) Agents() map[wasmclient2.AgentID][]byte {
-	res := make(map[wasmclient2.AgentID][]byte)
+func (r *AccountsResults) Agents() map[wasmclient.AgentID][]byte {
+	res := make(map[wasmclient.AgentID][]byte)
 	r.res.ForEach(func(key []byte, val []byte) {
 		res[r.res.ToAgentID(key)] = r.res.ToBytes(val)
 	})
@@ -91,11 +89,11 @@ func (r *AccountsResults) Agents() map[wasmclient2.AgentID][]byte {
 ///////////////////////////// balance /////////////////////////////
 
 type BalanceView struct {
-	wasmclient2.ClientView
-	args wasmclient2.Arguments
+	wasmclient.ClientView
+	args wasmclient.Arguments
 }
 
-func (f *BalanceView) AgentID(v wasmclient2.AgentID) {
+func (f *BalanceView) AgentID(v wasmclient.AgentID) {
 	f.args.Set(ArgAgentID, f.args.FromAgentID(v))
 }
 
@@ -106,11 +104,11 @@ func (f *BalanceView) Call() BalanceResults {
 }
 
 type BalanceResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
-func (r *BalanceResults) Balances() map[wasmclient2.Color]int64 {
-	res := make(map[wasmclient2.Color]int64)
+func (r *BalanceResults) Balances() map[wasmclient.Color]int64 {
+	res := make(map[wasmclient.Color]int64)
 	r.res.ForEach(func(key []byte, val []byte) {
 		res[r.res.ToColor(key)] = r.res.ToInt64(val)
 	})
@@ -120,11 +118,11 @@ func (r *BalanceResults) Balances() map[wasmclient2.Color]int64 {
 ///////////////////////////// getAccountNonce /////////////////////////////
 
 type GetAccountNonceView struct {
-	wasmclient2.ClientView
-	args wasmclient2.Arguments
+	wasmclient.ClientView
+	args wasmclient.Arguments
 }
 
-func (f *GetAccountNonceView) AgentID(v wasmclient2.AgentID) {
+func (f *GetAccountNonceView) AgentID(v wasmclient.AgentID) {
 	f.args.Set(ArgAgentID, f.args.FromAgentID(v))
 }
 
@@ -135,7 +133,7 @@ func (f *GetAccountNonceView) Call() GetAccountNonceResults {
 }
 
 type GetAccountNonceResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
 func (r *GetAccountNonceResults) AccountNonce() int64 {
@@ -145,7 +143,7 @@ func (r *GetAccountNonceResults) AccountNonce() int64 {
 ///////////////////////////// totalAssets /////////////////////////////
 
 type TotalAssetsView struct {
-	wasmclient2.ClientView
+	wasmclient.ClientView
 }
 
 func (f *TotalAssetsView) Call() TotalAssetsResults {
@@ -154,11 +152,11 @@ func (f *TotalAssetsView) Call() TotalAssetsResults {
 }
 
 type TotalAssetsResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
-func (r *TotalAssetsResults) Balances() map[wasmclient2.Color]int64 {
-	res := make(map[wasmclient2.Color]int64)
+func (r *TotalAssetsResults) Balances() map[wasmclient.Color]int64 {
+	res := make(map[wasmclient.Color]int64)
 	r.res.ForEach(func(key []byte, val []byte) {
 		res[r.res.ToColor(key)] = r.res.ToInt64(val)
 	})
@@ -168,10 +166,10 @@ func (r *TotalAssetsResults) Balances() map[wasmclient2.Color]int64 {
 ///////////////////////////// CoreAccountsService /////////////////////////////
 
 type CoreAccountsService struct {
-	wasmclient2.Service
+	wasmclient.Service
 }
 
-func NewCoreAccountsService(cl *wasmclient2.ServiceClient, chainID string) (*CoreAccountsService, error) {
+func NewCoreAccountsService(cl *wasmclient.ServiceClient, chainID string) (*CoreAccountsService, error) {
 	s := &CoreAccountsService{}
 	err := s.Service.Init(cl, chainID, 0x3c4b5e02)
 	return s, err

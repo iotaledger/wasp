@@ -7,7 +7,7 @@
 
 package testwasmlib
 
-import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ArrayOfImmutableString struct {
 	proxy wasmtypes.Proxy

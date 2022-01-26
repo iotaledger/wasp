@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
-	wasmsolo2 "github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,7 +33,7 @@ func TestCounter(t *testing.T) {
 func TestSynchronous(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		// TODO fails with 999 instead of 1000 at WaitForPendingRequests
-		if *wasmsolo2.GoDebug || *wasmsolo2.GoWasmEdge {
+		if *wasmsolo.GoDebug || *wasmsolo.GoWasmEdge {
 			t.SkipNow()
 		}
 		ctx := deployTestCore(t, w)
@@ -42,7 +42,7 @@ func TestSynchronous(t *testing.T) {
 		f.Func.TransferIotas(1)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
-		if wasmsolo2.SoloDebug {
+		if wasmsolo.SoloDebug {
 			for i := range repeats {
 				repeats[i] /= 10
 			}
@@ -89,7 +89,7 @@ func TestConcurrency(t *testing.T) {
 			WithIotas(1)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
-		if wasmsolo2.SoloDebug {
+		if wasmsolo.SoloDebug {
 			for i := range repeats {
 				repeats[i] /= 10
 			}
@@ -135,7 +135,7 @@ func TestConcurrency2(t *testing.T) {
 			WithIotas(1)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
-		if wasmsolo2.SoloDebug {
+		if wasmsolo.SoloDebug {
 			for i := range repeats {
 				repeats[i] /= 10
 			}
@@ -147,7 +147,7 @@ func TestConcurrency2(t *testing.T) {
 		}
 
 		chain := ctx.Chain
-		users := make([]*wasmsolo2.SoloAgent, len(repeats))
+		users := make([]*wasmsolo.SoloAgent, len(repeats))
 		for r, n := range repeats {
 			go func(r, n int) {
 				users[r] = ctx.NewSoloAgent()
@@ -185,7 +185,7 @@ func TestViewConcurrency(t *testing.T) {
 		f.Func.TransferIotas(1).Post()
 
 		times := 2000
-		if wasmsolo2.SoloDebug {
+		if wasmsolo.SoloDebug {
 			times /= 10
 		}
 

@@ -7,9 +7,7 @@
 
 package coregovernanceclient
 
-import (
-	wasmclient2 "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
-)
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
 
 const (
 	ArgChainOwner             = "oi"
@@ -39,23 +37,23 @@ const (
 ///////////////////////////// addAllowedStateControllerAddress /////////////////////////////
 
 type AddAllowedStateControllerAddressFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
-func (f *AddAllowedStateControllerAddressFunc) ChainOwner(v wasmclient2.AgentID) {
+func (f *AddAllowedStateControllerAddressFunc) ChainOwner(v wasmclient.AgentID) {
 	f.args.Set(ArgChainOwner, f.args.FromAgentID(v))
 }
 
-func (f *AddAllowedStateControllerAddressFunc) FeeColor(v wasmclient2.Color) {
+func (f *AddAllowedStateControllerAddressFunc) FeeColor(v wasmclient.Color) {
 	f.args.Set(ArgFeeColor, f.args.FromColor(v))
 }
 
-func (f *AddAllowedStateControllerAddressFunc) StateControllerAddress(v wasmclient2.Address) {
+func (f *AddAllowedStateControllerAddressFunc) StateControllerAddress(v wasmclient.Address) {
 	f.args.Set(ArgStateControllerAddress, f.args.FromAddress(v))
 }
 
-func (f *AddAllowedStateControllerAddressFunc) Post() wasmclient2.Request {
+func (f *AddAllowedStateControllerAddressFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgChainOwner)
 	f.args.Mandatory(ArgStateControllerAddress)
 	return f.ClientFunc.Post(0x9469d567, &f.args)
@@ -64,25 +62,25 @@ func (f *AddAllowedStateControllerAddressFunc) Post() wasmclient2.Request {
 ///////////////////////////// claimChainOwnership /////////////////////////////
 
 type ClaimChainOwnershipFunc struct {
-	wasmclient2.ClientFunc
+	wasmclient.ClientFunc
 }
 
-func (f *ClaimChainOwnershipFunc) Post() wasmclient2.Request {
+func (f *ClaimChainOwnershipFunc) Post() wasmclient.Request {
 	return f.ClientFunc.Post(0x03ff0fc0, nil)
 }
 
 ///////////////////////////// delegateChainOwnership /////////////////////////////
 
 type DelegateChainOwnershipFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
-func (f *DelegateChainOwnershipFunc) ChainOwner(v wasmclient2.AgentID) {
+func (f *DelegateChainOwnershipFunc) ChainOwner(v wasmclient.AgentID) {
 	f.args.Set(ArgChainOwner, f.args.FromAgentID(v))
 }
 
-func (f *DelegateChainOwnershipFunc) Post() wasmclient2.Request {
+func (f *DelegateChainOwnershipFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgChainOwner)
 	return f.ClientFunc.Post(0x93ecb6ad, &f.args)
 }
@@ -90,15 +88,15 @@ func (f *DelegateChainOwnershipFunc) Post() wasmclient2.Request {
 ///////////////////////////// removeAllowedStateControllerAddress /////////////////////////////
 
 type RemoveAllowedStateControllerAddressFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
-func (f *RemoveAllowedStateControllerAddressFunc) StateControllerAddress(v wasmclient2.Address) {
+func (f *RemoveAllowedStateControllerAddressFunc) StateControllerAddress(v wasmclient.Address) {
 	f.args.Set(ArgStateControllerAddress, f.args.FromAddress(v))
 }
 
-func (f *RemoveAllowedStateControllerAddressFunc) Post() wasmclient2.Request {
+func (f *RemoveAllowedStateControllerAddressFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgStateControllerAddress)
 	return f.ClientFunc.Post(0x31f69447, &f.args)
 }
@@ -106,15 +104,15 @@ func (f *RemoveAllowedStateControllerAddressFunc) Post() wasmclient2.Request {
 ///////////////////////////// rotateStateController /////////////////////////////
 
 type RotateStateControllerFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
-func (f *RotateStateControllerFunc) StateControllerAddress(v wasmclient2.Address) {
+func (f *RotateStateControllerFunc) StateControllerAddress(v wasmclient.Address) {
 	f.args.Set(ArgStateControllerAddress, f.args.FromAddress(v))
 }
 
-func (f *RotateStateControllerFunc) Post() wasmclient2.Request {
+func (f *RotateStateControllerFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgStateControllerAddress)
 	return f.ClientFunc.Post(0x244d1038, &f.args)
 }
@@ -122,8 +120,8 @@ func (f *RotateStateControllerFunc) Post() wasmclient2.Request {
 ///////////////////////////// setChainInfo /////////////////////////////
 
 type SetChainInfoFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
 func (f *SetChainInfoFunc) MaxBlobSize(v int32) {
@@ -146,18 +144,18 @@ func (f *SetChainInfoFunc) ValidatorFee(v int64) {
 	f.args.Set(ArgValidatorFee, f.args.FromInt64(v))
 }
 
-func (f *SetChainInfoFunc) Post() wasmclient2.Request {
+func (f *SetChainInfoFunc) Post() wasmclient.Request {
 	return f.ClientFunc.Post(0x702f5d2b, &f.args)
 }
 
 ///////////////////////////// setContractFee /////////////////////////////
 
 type SetContractFeeFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
-func (f *SetContractFeeFunc) Hname(v wasmclient2.Hname) {
+func (f *SetContractFeeFunc) Hname(v wasmclient.Hname) {
 	f.args.Set(ArgHname, f.args.FromHname(v))
 }
 
@@ -169,7 +167,7 @@ func (f *SetContractFeeFunc) ValidatorFee(v int64) {
 	f.args.Set(ArgValidatorFee, f.args.FromInt64(v))
 }
 
-func (f *SetContractFeeFunc) Post() wasmclient2.Request {
+func (f *SetContractFeeFunc) Post() wasmclient.Request {
 	f.args.Mandatory(ArgHname)
 	return f.ClientFunc.Post(0x8421a42b, &f.args)
 }
@@ -177,8 +175,8 @@ func (f *SetContractFeeFunc) Post() wasmclient2.Request {
 ///////////////////////////// setDefaultFee /////////////////////////////
 
 type SetDefaultFeeFunc struct {
-	wasmclient2.ClientFunc
-	args wasmclient2.Arguments
+	wasmclient.ClientFunc
+	args wasmclient.Arguments
 }
 
 func (f *SetDefaultFeeFunc) OwnerFee(v int64) {
@@ -189,14 +187,14 @@ func (f *SetDefaultFeeFunc) ValidatorFee(v int64) {
 	f.args.Set(ArgValidatorFee, f.args.FromInt64(v))
 }
 
-func (f *SetDefaultFeeFunc) Post() wasmclient2.Request {
+func (f *SetDefaultFeeFunc) Post() wasmclient.Request {
 	return f.ClientFunc.Post(0x3310ecd0, &f.args)
 }
 
 ///////////////////////////// getAllowedStateControllerAddresses /////////////////////////////
 
 type GetAllowedStateControllerAddressesView struct {
-	wasmclient2.ClientView
+	wasmclient.ClientView
 }
 
 func (f *GetAllowedStateControllerAddressesView) Call() GetAllowedStateControllerAddressesResults {
@@ -205,7 +203,7 @@ func (f *GetAllowedStateControllerAddressesView) Call() GetAllowedStateControlle
 }
 
 type GetAllowedStateControllerAddressesResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
 func (r *GetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() []byte {
@@ -215,7 +213,7 @@ func (r *GetAllowedStateControllerAddressesResults) AllowedStateControllerAddres
 ///////////////////////////// getChainInfo /////////////////////////////
 
 type GetChainInfoView struct {
-	wasmclient2.ClientView
+	wasmclient.ClientView
 }
 
 func (f *GetChainInfoView) Call() GetChainInfoResults {
@@ -224,14 +222,14 @@ func (f *GetChainInfoView) Call() GetChainInfoResults {
 }
 
 type GetChainInfoResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
-func (r *GetChainInfoResults) ChainID() wasmclient2.ChainID {
+func (r *GetChainInfoResults) ChainID() wasmclient.ChainID {
 	return r.res.ToChainID(r.res.Get(ResChainID))
 }
 
-func (r *GetChainInfoResults) ChainOwnerID() wasmclient2.AgentID {
+func (r *GetChainInfoResults) ChainOwnerID() wasmclient.AgentID {
 	return r.res.ToAgentID(r.res.Get(ResChainOwnerID))
 }
 
@@ -247,7 +245,7 @@ func (r *GetChainInfoResults) Description() string {
 	return r.res.ToString(r.res.Get(ResDescription))
 }
 
-func (r *GetChainInfoResults) FeeColor() wasmclient2.Color {
+func (r *GetChainInfoResults) FeeColor() wasmclient.Color {
 	return r.res.ToColor(r.res.Get(ResFeeColor))
 }
 
@@ -266,11 +264,11 @@ func (r *GetChainInfoResults) MaxEventsPerReq() int16 {
 ///////////////////////////// getFeeInfo /////////////////////////////
 
 type GetFeeInfoView struct {
-	wasmclient2.ClientView
-	args wasmclient2.Arguments
+	wasmclient.ClientView
+	args wasmclient.Arguments
 }
 
-func (f *GetFeeInfoView) Hname(v wasmclient2.Hname) {
+func (f *GetFeeInfoView) Hname(v wasmclient.Hname) {
 	f.args.Set(ArgHname, f.args.FromHname(v))
 }
 
@@ -281,10 +279,10 @@ func (f *GetFeeInfoView) Call() GetFeeInfoResults {
 }
 
 type GetFeeInfoResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
-func (r *GetFeeInfoResults) FeeColor() wasmclient2.Color {
+func (r *GetFeeInfoResults) FeeColor() wasmclient.Color {
 	return r.res.ToColor(r.res.Get(ResFeeColor))
 }
 
@@ -299,7 +297,7 @@ func (r *GetFeeInfoResults) ValidatorFee() int64 {
 ///////////////////////////// getMaxBlobSize /////////////////////////////
 
 type GetMaxBlobSizeView struct {
-	wasmclient2.ClientView
+	wasmclient.ClientView
 }
 
 func (f *GetMaxBlobSizeView) Call() GetMaxBlobSizeResults {
@@ -308,7 +306,7 @@ func (f *GetMaxBlobSizeView) Call() GetMaxBlobSizeResults {
 }
 
 type GetMaxBlobSizeResults struct {
-	res wasmclient2.Results
+	res wasmclient.Results
 }
 
 func (r *GetMaxBlobSizeResults) MaxBlobSize() int32 {
@@ -318,10 +316,10 @@ func (r *GetMaxBlobSizeResults) MaxBlobSize() int32 {
 ///////////////////////////// CoreGovernanceService /////////////////////////////
 
 type CoreGovernanceService struct {
-	wasmclient2.Service
+	wasmclient.Service
 }
 
-func NewCoreGovernanceService(cl *wasmclient2.ServiceClient, chainID string) (*CoreGovernanceService, error) {
+func NewCoreGovernanceService(cl *wasmclient.ServiceClient, chainID string) (*CoreGovernanceService, error) {
 	s := &CoreGovernanceService{}
 	err := s.Service.Init(cl, chainID, 0x17cf909f)
 	return s, err

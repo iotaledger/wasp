@@ -7,7 +7,7 @@
 
 package dividend
 
-import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableGetFactorResults struct {
 	proxy wasmtypes.Proxy

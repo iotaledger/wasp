@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-	wasmsolo2 "github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -146,16 +146,16 @@ func TestTransferFrom(t *testing.T) {
 	require.EqualValues(t, owner.ScAgentID(), currentOwner)
 }
 
-func setup(t *testing.T) *wasmsolo2.SoloContext {
+func setup(t *testing.T) *wasmsolo.SoloContext {
 	init := erc721.ScFuncs.Init(nil)
 	init.Params.Name().SetValue("My Valuable NFT")
 	init.Params.Symbol().SetValue("MVNFT")
-	ctx := wasmsolo2.NewSoloContext(t, erc721.ScName, erc721.OnLoad, init.Func)
+	ctx := wasmsolo.NewSoloContext(t, erc721.ScName, erc721.OnLoad, init.Func)
 	require.NoError(t, ctx.Err)
 	return ctx
 }
 
-func approve(ctx *wasmsolo2.SoloContext, owner, approved *wasmsolo2.SoloAgent, tokenID wasmtypes.ScHash) {
+func approve(ctx *wasmsolo.SoloContext, owner, approved *wasmsolo.SoloAgent, tokenID wasmtypes.ScHash) {
 	f := erc721.ScFuncs.Approve(ctx.Sign(owner))
 	if approved != nil {
 		f.Params.Approved().SetValue(approved.ScAgentID())
@@ -164,7 +164,7 @@ func approve(ctx *wasmsolo2.SoloContext, owner, approved *wasmsolo2.SoloAgent, t
 	f.Func.TransferIotas(1).Post()
 }
 
-func getApproved(t *testing.T, ctx *wasmsolo2.SoloContext, tokenID wasmtypes.ScHash) *wasmtypes.ScAgentID {
+func getApproved(t *testing.T, ctx *wasmsolo.SoloContext, tokenID wasmtypes.ScHash) *wasmtypes.ScAgentID {
 	v := erc721.ScFuncs.GetApproved(ctx)
 	v.Params.TokenID().SetValue(tokenID)
 	v.Func.Call()
@@ -177,7 +177,7 @@ func getApproved(t *testing.T, ctx *wasmsolo2.SoloContext, tokenID wasmtypes.ScH
 	return &ret
 }
 
-func isApprovedForAll(t *testing.T, ctx *wasmsolo2.SoloContext, owner, friend *wasmsolo2.SoloAgent) bool {
+func isApprovedForAll(t *testing.T, ctx *wasmsolo.SoloContext, owner, friend *wasmsolo.SoloAgent) bool {
 	v := erc721.ScFuncs.IsApprovedForAll(ctx)
 	v.Params.Owner().SetValue(owner.ScAgentID())
 	v.Params.Operator().SetValue(friend.ScAgentID())
@@ -186,13 +186,13 @@ func isApprovedForAll(t *testing.T, ctx *wasmsolo2.SoloContext, owner, friend *w
 	return v.Results.Approval().Value()
 }
 
-func mint(ctx *wasmsolo2.SoloContext, owner *wasmsolo2.SoloAgent, tokenID wasmtypes.ScHash) {
+func mint(ctx *wasmsolo.SoloContext, owner *wasmsolo.SoloAgent, tokenID wasmtypes.ScHash) {
 	f := erc721.ScFuncs.Mint(ctx.Sign(owner))
 	f.Params.TokenID().SetValue(tokenID)
 	f.Func.TransferIotas(1).Post()
 }
 
-func ownerOf(t *testing.T, ctx *wasmsolo2.SoloContext, tokenID wasmtypes.ScHash) wasmtypes.ScAgentID {
+func ownerOf(t *testing.T, ctx *wasmsolo.SoloContext, tokenID wasmtypes.ScHash) wasmtypes.ScAgentID {
 	v := erc721.ScFuncs.OwnerOf(ctx)
 	v.Params.TokenID().SetValue(tokenID)
 	v.Func.Call()
@@ -200,14 +200,14 @@ func ownerOf(t *testing.T, ctx *wasmsolo2.SoloContext, tokenID wasmtypes.ScHash)
 	return v.Results.Owner().Value()
 }
 
-func setApprovalForAll(ctx *wasmsolo2.SoloContext, owner, operator *wasmsolo2.SoloAgent, approval bool) {
+func setApprovalForAll(ctx *wasmsolo.SoloContext, owner, operator *wasmsolo.SoloAgent, approval bool) {
 	f := erc721.ScFuncs.SetApprovalForAll(ctx.Sign(owner))
 	f.Params.Operator().SetValue(operator.ScAgentID())
 	f.Params.Approval().SetValue(approval)
 	f.Func.TransferIotas(1).Post()
 }
 
-func transferFrom(ctx *wasmsolo2.SoloContext, sender, from, to *wasmsolo2.SoloAgent, tokenID wasmtypes.ScHash) {
+func transferFrom(ctx *wasmsolo.SoloContext, sender, from, to *wasmsolo.SoloAgent, tokenID wasmtypes.ScHash) {
 	f := erc721.ScFuncs.TransferFrom(ctx.Sign(sender))
 	f.Params.From().SetValue(from.ScAgentID())
 	f.Params.To().SetValue(to.ScAgentID())

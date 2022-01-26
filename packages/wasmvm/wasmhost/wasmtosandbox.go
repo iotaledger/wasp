@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmrequests"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
 )
 
 // NOTE: These functions correspond to the Sandbox fnXxx constants in WasmLib

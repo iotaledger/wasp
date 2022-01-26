@@ -3,7 +3,7 @@
 
 package timestamp
 
-import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 func funcNow(ctx wasmlib.ScFuncContext, f *NowContext) {
 	f.State.Timestamp().SetValue(ctx.Timestamp())

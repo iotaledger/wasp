@@ -7,7 +7,7 @@
 
 package testcore
 
-import "github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableTestCoreState struct {
 	proxy wasmtypes.Proxy

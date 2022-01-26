@@ -9,7 +9,7 @@
 
 package main
 
-import "github.com/iotaledger/wasp/packages/vm/wasmvmhost"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmvmhost"
 
 import "github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 

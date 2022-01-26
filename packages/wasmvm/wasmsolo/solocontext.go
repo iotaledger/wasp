@@ -17,9 +17,9 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/wasmhost"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,10 +37,10 @@ var ( // TODO set back to false
 )
 
 type SoloContext struct {
-	Chain     *solo.Chain
-	Convertor SoloConvertor
-	creator   *SoloAgent
-	Err       error
+	Chain       *solo.Chain
+	Convertor   SoloConvertor
+	creator     *SoloAgent
+	Err         error
 	Hprog       hashing.HashValue
 	keyPair     *ed25519.KeyPair
 	isRequest   bool
