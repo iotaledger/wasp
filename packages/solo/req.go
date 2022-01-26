@@ -127,6 +127,10 @@ func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount
 	})
 }
 
+func (r *CallParams) GasBudget() uint64 {
+	return r.gasBudget
+}
+
 func (r *CallParams) WithGasBudget(gasBudget uint64) *CallParams {
 	r.gasBudget = gasBudget
 	return r
@@ -466,6 +470,19 @@ func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Dur
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+const waitUntilMempoolIsEmptyDefaultTimeout = 5 * time.Second
+
+func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) {
+	realTimeout := waitUntilMempoolIsEmptyDefaultTimeout
+	if len(timeout) > 0 {
+		realTimeout = timeout[0]
+	}
+	startTime := time.Now()
+	ch.mempool.WaitInBufferEmpty(timeout...)
+	remainingTimeout := realTimeout - time.Since(startTime)
+	ch.mempool.WaitPoolEmpty(remainingTimeout)
 }
 
 // WaitForRequestsThrough waits for the moment when counters for incoming requests and removed

@@ -3,6 +3,11 @@ package gas
 import "golang.org/x/xerrors"
 
 const (
+	MaxGasPerBlock = uint64(10_000_000)
+	MaxGasPerCall  = uint64(500_000)
+)
+
+const (
 	BurnCodeStorage1P = BurnCode(iota)
 	BurnCodeReadFromState1P
 	BurnCodeCallTargetNotFound

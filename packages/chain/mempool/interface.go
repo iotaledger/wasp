@@ -17,6 +17,7 @@ type Mempool interface {
 	Info() MempoolInfo
 	WaitRequestInPool(reqid iscp.RequestID, timeout ...time.Duration) bool // for testing
 	WaitInBufferEmpty(timeout ...time.Duration) bool                       // for testing
+	WaitPoolEmpty(timeout ...time.Duration) bool                           // for testing
 	Close()
 }
 

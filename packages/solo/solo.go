@@ -350,6 +350,27 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[iscp.ChainID][]iscp
 	return ret
 }
 
+func (env *Solo) AddRequestsToChainMempool(ch *Chain, reqs []iscp.Request) {
+	env.glbMutex.RLock()
+	defer env.glbMutex.RUnlock()
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	ch.mempool.ReceiveRequests(reqs...)
+}
+
+// AddRequestsToChainMempoolWaitUntilInbufferEmpty adds all the requests to the chain mempool,
+// then waits for the in-buffer to be empty, before resuming VM execution
+func (env *Solo) AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch *Chain, reqs []iscp.Request, timeout ...time.Duration) {
+	env.glbMutex.RLock()
+	defer env.glbMutex.RUnlock()
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	ch.mempool.ReceiveRequests(reqs...)
+	ch.mempool.WaitInBufferEmpty(timeout...)
+}
+
 // EnqueueRequests adds requests contained in the transaction to mempools of respective target chains
 func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 	env.glbMutex.RLock()

@@ -67,10 +67,12 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 				Error:   callErr,
 			}
 		},
+		// any of this errors will result in the request being skipped (goes back to mempool)
 		vmtxbuilder.ErrInputLimitExceeded,
 		vmtxbuilder.ErrOutputLimitExceeded,
 		vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit,
 		vmtxbuilder.ErrNumberOfNativeTokensLimitExceeded,
+		vmtxbuilder.ErrGasLimitExceeded,
 	)
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
@@ -217,7 +219,9 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	// calculate affordable gas budget
 	affordable := vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
 	// adjust gas budget to what is affordable
-	vmctx.gasBudgetAdjusted = util.MinUint64(vmctx.req.GasBudget(), affordable)
+	affordable = util.MinUint64(vmctx.req.GasBudget(), affordable)
+	// cap gas to the maximum allowed per tx
+	vmctx.gasBudgetAdjusted = util.MinUint64(affordable, gas.MaxGasPerCall)
 }
 
 // calcGuaranteedFeeTokens return hiw maximum tokens (iotas or native) can be guaranteed for the fee,
@@ -286,6 +290,9 @@ func (vmctx *VMContext) chargeGasFee() {
 	// calc gas totals
 	vmctx.gasBurnedTotal += vmctx.gasBurned
 	vmctx.gasFeeChargedTotal += vmctx.gasFeeCharged
+	if vmctx.gasBurnedTotal > gas.MaxGasPerBlock {
+		panic(vmtxbuilder.ErrGasLimitExceeded)
+	}
 
 	if vmctx.task.EstimateGasMode {
 		// If estimating gas, compute the gas fee but do not attempt to charge

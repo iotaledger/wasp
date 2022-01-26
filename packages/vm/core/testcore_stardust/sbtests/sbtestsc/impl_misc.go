@@ -108,3 +108,10 @@ func getInt(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret.Set(kv.Key(paramName), codec.EncodeInt64(paramValue))
 	return ret, nil
 }
+
+func infiniteLoop(ctx iscp.Sandbox) (dict.Dict, error) {
+	for {
+		// do nothing, just waste gas
+		ctx.Call(Contract.Hname(), FuncDoNothing.Hname(), nil, nil)
+	}
+}
