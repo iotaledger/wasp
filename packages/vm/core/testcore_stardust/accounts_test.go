@@ -44,9 +44,7 @@ func TestFoundries(t *testing.T) {
 
 	initTest := func() {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		env.EnablePublisher(true)
 		ch = env.NewChain(nil, "chain1")
-		defer env.WaitPublisher()
 		defer ch.Log.Sync()
 
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
