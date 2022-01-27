@@ -131,7 +131,7 @@ type RequestParameters struct {
 }
 
 type Gas interface {
-	Burn(burnCode gas.BurnCode, par ...int)
+	Burn(burnCode gas.BurnCode, par ...uint64)
 	Budget() uint64
 }
 

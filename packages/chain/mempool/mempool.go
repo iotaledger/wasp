@@ -406,7 +406,7 @@ func (m *mempool) inBufferLen() int {
 
 const waitInBufferEmptyTimeoutDefault = 5 * time.Second
 
-// WaitAllRequestsIn waits until in buffer becomes empty. Used in synchronous situations when the caller
+// WaitInBufferEmpty waits until in buffer becomes empty. Used in synchronous situations when the caller
 // want to be sure all requests were fed into the pool. May create nondeterminism when used from goroutines
 func (m *mempool) WaitInBufferEmpty(timeout ...time.Duration) bool {
 	currentTime := time.Now()
@@ -416,6 +416,25 @@ func (m *mempool) WaitInBufferEmpty(timeout ...time.Duration) bool {
 	}
 	for {
 		if m.inBufferLen() == 0 {
+			return true
+		}
+		time.Sleep(10 * time.Millisecond)
+		if time.Now().After(deadline) {
+			return false
+		}
+	}
+}
+
+// WaitPoolEmpty waits until mempool becomes empty. Used in synchronous situations when the caller
+// want to be sure all requests from the pool were processed. May create nondeterminism when used from goroutines
+func (m *mempool) WaitPoolEmpty(timeout ...time.Duration) bool {
+	currentTime := time.Now()
+	deadline := currentTime.Add(waitInBufferEmptyTimeoutDefault)
+	if len(timeout) > 0 {
+		deadline = currentTime.Add(timeout[0])
+	}
+	for {
+		if len(m.pool) == 0 {
 			return true
 		}
 		time.Sleep(10 * time.Millisecond)

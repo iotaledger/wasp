@@ -130,7 +130,7 @@ func (s *sandboxview) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandboxview) Burn(burnCode gas.BurnCode, par ...int) {
+func (s *sandboxview) Burn(burnCode gas.BurnCode, par ...uint64) {
 	s.gasBurned += burnCode.Cost(par...)
 	if s.gasBurned > s.gasBudget {
 		panic(coreutil.ErrorGasBudgetExceeded)

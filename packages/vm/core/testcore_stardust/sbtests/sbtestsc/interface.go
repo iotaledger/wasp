@@ -51,6 +51,7 @@ var Processor = Contract.Processor(initialize,
 	FuncSplitFundsNativeTokens.WithHandler(testSplitFundsNativeTokens),
 	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
 	FuncEstimateMinDust.WithHandler(testEstimateMinimumDust),
+	FuncInfiniteLoop.WithHandler(infiniteLoop),
 )
 
 var (
@@ -100,6 +101,7 @@ var (
 	FuncSplitFundsNativeTokens = coreutil.Func("splitFundsNativeTokens")
 	FuncPingAllowanceBack      = coreutil.Func("pingAllowanceBack")
 	FuncEstimateMinDust        = coreutil.Func("estimateMinDust")
+	FuncInfiniteLoop           = coreutil.Func("infiniteLoop")
 )
 
 const (

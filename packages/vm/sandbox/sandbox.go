@@ -142,7 +142,7 @@ func (s *sandbox) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandbox) Burn(burnCode gas.BurnCode, par ...int) {
+func (s *sandbox) Burn(burnCode gas.BurnCode, par ...uint64) {
 	s.vmctx.GasBurn(burnCode, par...)
 }
 

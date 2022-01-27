@@ -285,7 +285,7 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 func (ch *Chain) DepositAssetsToL2(assets *iscp.Assets, user *cryptolib.KeyPair) error {
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			AddAssets(assets),
+			WithAssets(assets),
 		user,
 	)
 	return err

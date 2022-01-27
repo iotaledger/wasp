@@ -95,7 +95,7 @@ func (s *sandboxView) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandboxView) Burn(burnCode gas.BurnCode, par ...int) {
+func (s *sandboxView) Burn(burnCode gas.BurnCode, par ...uint64) {
 	s.vmctx.GasBurn(burnCode, par...)
 }
 

@@ -35,6 +35,69 @@ func TestDeposit(t *testing.T) {
 	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
 }
 
+// allowance shouldnt allow you to bypass gas fees.
+func TestDepositCheatAllowance(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
+	senderAgentID := iscp.NewAgentID(senderAddr, 0)
+	ch := env.NewChain(nil, "chain1")
+
+	iotasSent := uint64(1000)
+
+	// send a request where allowance == assets - so that no iotas are available outside allowance
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			AddAssetsIotas(iotasSent).
+			WithGasBudget(100_000).
+			AddIotaAllowance(iotasSent),
+		sender,
+	)
+	require.Error(t, err)
+
+	rec := ch.LastReceipt()
+	finalBalance := ch.L2Iotas(senderAgentID)
+	require.Less(t, finalBalance, iotasSent)
+	require.EqualValues(t, iotasSent, finalBalance+rec.GasFeeCharged)
+}
+
+func TestWithdrawEverything(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
+	senderAgentID := iscp.NewAgentID(senderAddr, 0)
+	ch := env.NewChain(nil, "chain1")
+
+	// deposit some iotas to L2
+	initialL1balance := ch.Env.L1Iotas(senderAddr)
+	iotasToDepositToL2 := uint64(100_000)
+	err := ch.DepositIotasToL2(iotasToDepositToL2, sender)
+	require.NoError(t, err)
+
+	depositGasFee := ch.LastReceipt().GasFeeCharged
+	l2balance := ch.L2Iotas(senderAgentID)
+
+	// construct request with low allowance (just sufficient for dust balance), so its possible to estimate the gas fees
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
+		WithAssets(iscp.NewAssetsIotas(l2balance)).AddAllowance(iscp.NewAssetsIotas(5200))
+
+	gasEstimate, fee, err := ch.EstimateGasOffLedger(req, sender)
+	require.NoError(t, err)
+
+	// set the allowance to the maximum possible value
+	req = req.WithAllowance(iscp.NewAssetsIotas(l2balance - fee)).
+		WithGasBudget(gasEstimate)
+
+	_, err = ch.PostRequestOffLedger(req, sender)
+	require.NoError(t, err)
+
+	withdrawalGasFee := ch.LastReceipt().GasFeeCharged
+	finalL1Balance := ch.Env.L1Iotas(senderAddr)
+	finalL2Balance := ch.L2Iotas(senderAgentID)
+
+	// ensure everything was withdrawn
+	require.Equal(t, initialL1balance, finalL1Balance+depositGasFee+withdrawalGasFee)
+	require.Zero(t, finalL2Balance)
+}
+
 func TestFoundries(t *testing.T) {
 	var env *solo.Solo
 	var ch *solo.Chain
@@ -464,7 +527,7 @@ func TestDepositIotas(t *testing.T) {
 	for _, addIotas := range []uint64{0, 50, 150, 200, 1000} {
 		t.Run("add iotas "+strconv.Itoa(int(addIotas)), func(t *testing.T) {
 			v := initDepositTest(t)
-			v.req.WithGasBudget(1000)
+			v.req.WithGasBudget(100_000)
 			gas, _, err := v.ch.EstimateGasOnLedger(v.req, v.user)
 			require.NoError(t, err)
 

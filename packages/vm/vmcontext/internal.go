@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"math"
 	"math/big"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -108,6 +109,21 @@ func (vmctx *VMContext) GetAssets(agentID *iscp.AgentID) *iscp.Assets {
 		}
 	})
 	return ret
+}
+
+func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
+	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
+		// iotas are used as gas tokens
+		return vmctx.GetIotaBalance(vmctx.req.SenderAccount())
+	}
+	// native tokens are used for gas fee
+	tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
+	// to pay for gas chain is configured to use some native token, not IOTA
+	tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), tokenID)
+	if tokensAvailableBig.IsUint64() {
+		return tokensAvailableBig.Uint64()
+	}
+	return math.MaxUint64
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {
