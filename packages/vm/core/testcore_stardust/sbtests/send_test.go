@@ -160,7 +160,7 @@ func testPingIotas1(t *testing.T, w bool) {
 		AddAssetsIotas(expectedBack + 1_000). // add extra iotas besides allowance in order to estimate the gas fees
 		AddIotaAllowance(expectedBack)
 
-	gas, gasFee, err := ch.EstimateGasOnLedger(req, user)
+	gas, gasFee, err := ch.EstimateGasOnLedger(req, user, true)
 	require.NoError(t, err)
 	req.
 		WithAssets(iscp.NewAssetsIotas(expectedBack + gasFee)).

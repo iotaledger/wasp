@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
@@ -350,54 +349,32 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	return tx, res.Receipt, res.Return, res.Error
 }
 
-// SimulateRequestOnLedger executes the given on-ledger request without
-// committing any changes in the ledger.
-// Gas fee is calculated but not charged, so it can be used to estimate the gas
-// needed to run the request.
-func (ch *Chain) SimulateRequestOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
-	if req.GasBudget() == 0 {
+// EstimateGasOnLedger executes the given on-ledger request without committing
+// any changes in the ledger. It returns the amount of gas consumed.
+// if useFakeBalance is `true` the request will be executed as if the sender had enough iotas to cover the maximum gas allowed
+// WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
+func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBalance ...bool) (gas, gasFee uint64, err error) {
+	if len(useFakeBalance) > 0 && useFakeBalance[0] {
 		req.WithGasBudget(math.MaxUint64)
 	}
 	r, err := ch.requestFromParams(req, keyPair)
 	if err != nil {
-		return nil, err
-	}
-	return ch.estimateGas(r), nil
-}
-
-// SimulateRequestOffLedger executes the given off-ledger request without
-// committing any changes in the ledger.
-// Gas fee is calculated but not charged, so it can be used to estimate the gas
-// needed to run the request.
-func (ch *Chain) SimulateRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
-	if req.GasBudget() == 0 {
-		req.WithGasBudget(math.MaxUint64)
-	}
-	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
-	return ch.estimateGas(r), nil
-}
-
-// EstimateGasOnLedger executes the given on-ledger request without committing
-// any changes in the ledger. It returns the amount of gas consumed.
-// when a gasBudget is provided in `req`, the execution will be estimated using real VM contrains, if no gasBudget is specified: the maximum possible budget is used for estmation
-// WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
-func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
-	res, err := ch.SimulateRequestOnLedger(req, keyPair)
-	if err != nil {
 		return 0, 0, err
 	}
+	res := ch.estimateGas(r)
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
 }
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
-// when a gasBudget is provided in `req`, the execution will be estimated using real VM contrains, if no gasBudget is specified: the maximum possible budget is used for estmation
+// if useFakeBalance is `true` the request will be executed as if the sender had enough iotas to cover the maximum gas allowed
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
-func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
-	res, err := ch.SimulateRequestOffLedger(req, keyPair)
-	if err != nil {
-		return 0, 0, err
+func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBalance ...bool) (gas, gasFee uint64, err error) {
+	if len(useFakeBalance) > 0 && useFakeBalance[0] {
+		req.WithGasBudget(math.MaxUint64)
 	}
+	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
+	res := ch.estimateGas(r)
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
 }
 

@@ -79,7 +79,7 @@ func TestWithdrawEverything(t *testing.T) {
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
 		WithAssets(iscp.NewAssetsIotas(l2balance)).AddAllowance(iscp.NewAssetsIotas(5200))
 
-	gasEstimate, fee, err := ch.EstimateGasOffLedger(req, sender)
+	gasEstimate, fee, err := ch.EstimateGasOffLedger(req, sender, true)
 	require.NoError(t, err)
 
 	// set the allowance to the maximum possible value

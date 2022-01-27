@@ -288,7 +288,7 @@ func TestEstimateGas(t *testing.T) {
 		keyPair, _ := env.NewKeyPairWithFunds()
 
 		// we can call EstimateGas even with 0 iotas in L2 account
-		estimatedGas, estimatedGasFee, err = ch.EstimateGasOffLedger(callParams(), keyPair)
+		estimatedGas, estimatedGasFee, err = ch.EstimateGasOffLedger(callParams(), keyPair, true)
 		require.NoError(t, err)
 		require.NotZero(t, estimatedGas)
 		require.NotZero(t, estimatedGasFee)
@@ -301,7 +301,8 @@ func TestEstimateGas(t *testing.T) {
 	// find out the gas fee necessary for DepositIotasToL2
 	depositFee := func() uint64 {
 		keyPair, _ := env.NewKeyPairWithFunds()
-		_, gasFee, _ := ch.EstimateGasOnLedger(solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name), keyPair)
+		_, gasFee, err := ch.EstimateGasOnLedger(solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name), keyPair, true)
+		require.NoError(t, err)
 		return gasFee
 	}()
 
@@ -341,7 +342,8 @@ func TestEstimateGas(t *testing.T) {
 
 			if testCase.L2Balance > 0 {
 				ch.MustDepositIotasToL2(testCase.L2Balance+depositFee, keyPair)
-				require.Equal(t, testCase.L2Balance, ch.L2Iotas(agentID))
+				balance := ch.L2Iotas(agentID)
+				require.Equal(t, testCase.L2Balance, balance)
 			}
 
 			_, err := ch.PostRequestOffLedger(
