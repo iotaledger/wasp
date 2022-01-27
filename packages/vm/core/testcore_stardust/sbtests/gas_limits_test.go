@@ -68,8 +68,8 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 	require.NoError(t, err)
 	// the request number #{nRequests} should overflow the block and be moved to the next one
 	require.Equal(t, fullGasBlockInfo.TotalRequests, uint16(nRequests-1))
-	// gas burned will be sightly above the limit (1 operation over it)
-	require.Greater(t, fullGasBlockInfo.GasBurned, gas.MaxGasPerBlock)
+	// gas burned will be sightly below the limit
+	require.Less(t, fullGasBlockInfo.GasBurned, gas.MaxGasPerBlock)
 
 	// 1 requests should be moved to the next block
 	followingBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex + 2)
