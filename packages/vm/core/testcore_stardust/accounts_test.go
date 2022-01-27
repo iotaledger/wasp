@@ -145,7 +145,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("supply exceed max possible", func(t *testing.T) {
 		initTest()
-		maxSupply := big.NewInt(0).Set(abi.MaxUint256)
+		maxSupply := new(big.Int).Set(util.MaxUint256)
 		maxSupply.Add(maxSupply, big.NewInt(1))
 		_, _, err := ch.NewFoundryParams(maxSupply).CreateFoundry()
 		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrCreateFoundryMaxSupplyTooBig)
@@ -159,8 +159,8 @@ func TestFoundries(t *testing.T) {
 			CreateFoundry()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
-		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
-		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, util.Big0)
+		ch.AssertL2TotalNativeTokens(&tokenID, util.Big0)
 
 		err = ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
@@ -179,8 +179,8 @@ func TestFoundries(t *testing.T) {
 			CreateFoundry()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
-		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
-		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, util.Big0)
+		ch.AssertL2TotalNativeTokens(&tokenID, util.Big0)
 
 		err = ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
@@ -202,8 +202,8 @@ func TestFoundries(t *testing.T) {
 		err = ch.MintTokens(sn, 2, senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, vmtxbuilder.ErrNativeTokenSupplyOutOffBounds)
 
-		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
-		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, util.Big0)
+		ch.AssertL2TotalNativeTokens(&tokenID, util.Big0)
 	})
 	t.Run("max supply 1000, mintTokens 500_500_1", func(t *testing.T) {
 		initTest()
@@ -261,8 +261,8 @@ func TestFoundries(t *testing.T) {
 
 		err = ch.DestroyTokensOnL2(sn, big.NewInt(1), senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
-		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
-		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, util.Big0)
+		ch.AssertL2TotalNativeTokens(&tokenID, util.Big0)
 	})
 	t.Run("max supply 100, mint_20, destroy_10", func(t *testing.T) {
 		initTest()
@@ -275,8 +275,8 @@ func TestFoundries(t *testing.T) {
 		out, err := ch.GetFoundryOutput(1)
 		require.NoError(t, err)
 		require.EqualValues(t, out.MustNativeTokenID(), tokenID)
-		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
-		ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, util.Big0)
+		ch.AssertL2TotalNativeTokens(&tokenID, util.Big0)
 
 		err = ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
@@ -317,11 +317,11 @@ func TestFoundries(t *testing.T) {
 		// FIXME bug iotago can't destroy foundry
 		// err = destroyTokens(sn, big.NewInt(1000000))
 		// require.NoError(t, err)
-		// ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
-		// ch.AssertL2NativeTokens(userAgentID, &tokenID, big.NewInt(0))
+		// ch.AssertL2TotalNativeTokens(&tokenID, util.Big0)
+		// ch.AssertL2NativeTokens(userAgentID, &tokenID, util.Big0)
 		// out, err = ch.GetFoundryOutput(1)
 		// require.NoError(t, err)
-		// require.True(t, big.NewInt(0).Cmp(out.CirculatingSupply) == 0)
+		// require.True(t, util.Big0.Cmp(out.CirculatingSupply) == 0)
 	})
 	t.Run("10 foundries", func(t *testing.T) {
 		initTest()
@@ -335,8 +335,8 @@ func TestFoundries(t *testing.T) {
 				CreateFoundry()
 			require.NoError(t, err)
 			require.EqualValues(t, int(sn), int(snBack))
-			ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(0))
-			ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(0))
+			ch.AssertL2NativeTokens(senderAgentID, &tokenID, util.Big0)
+			ch.AssertL2TotalNativeTokens(&tokenID, util.Big0)
 		}
 		// mint max supply from each
 		for sn := uint32(1); sn <= 10; sn++ {
@@ -384,7 +384,7 @@ func TestFoundryValidation(t *testing.T) {
 	circSupplyChange := big.NewInt(-1000000)
 
 	outSumsBad := iotago.NativeTokenSum{}
-	outSumsGood := iotago.NativeTokenSum{tokenID: big.NewInt(0)}
+	outSumsGood := iotago.NativeTokenSum{tokenID: util.Big0}
 
 	t.Run("fail", func(t *testing.T) {
 		err := iotago.NativeTokenSumBalancedWithDiff(tokenID, inSums, outSumsBad, circSupplyChange)
@@ -890,7 +890,7 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 				SerialNumber: 1,
 				TokenTag:     tokenTag,
 				// burn supply by -50
-				CirculatingSupply: big.NewInt(0),
+				CirculatingSupply: util.Big0,
 				MaximumSupply:     big.NewInt(50),
 				TokenScheme:       &iotago.SimpleTokenScheme{},
 				Blocks:            nil,

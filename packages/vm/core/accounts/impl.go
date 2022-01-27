@@ -1,8 +1,6 @@
 package accounts
 
 import (
-	"math/big"
-
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -205,7 +203,7 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
-	ctx.Requiref(out.CirculatingSupply.Cmp(big.NewInt(0)) == 0, "can't destroy foundry with positive circulating supply")
+	ctx.Requiref(util.IsZeroBigInt(out.CirculatingSupply), "can't destroy foundry with positive circulating supply")
 
 	dustDepositFree := ctx.Privileged().DestroyFoundry(sn)
 
@@ -227,7 +225,7 @@ func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamFoundrySN)
 	delta := par.MustGetBigInt(ParamSupplyDeltaAbs)
-	if delta.Cmp(big.NewInt(0)) == 0 {
+	if util.IsZeroBigInt(delta) {
 		return nil
 	}
 	destroy := par.MustGetBool(ParamDestroyTokens, false)

@@ -2,11 +2,11 @@ package sbtestsc
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // testSplitFunds calls Send in a loop by sending 200 iotas back to the caller
@@ -31,7 +31,7 @@ func testSplitFundsNativeTokens(ctx iscp.Sandbox) dict.Dict {
 	// claims all iotas from allowance
 	ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAssetsIotas(ctx.AllowanceAvailable().Iotas))
 	for _, token := range ctx.AllowanceAvailable().Tokens {
-		for ctx.AllowanceAvailable().AmountNativeToken(&token.ID).Cmp(big.NewInt(0)) > 0 {
+		for ctx.AllowanceAvailable().AmountNativeToken(&token.ID).Cmp(util.Big0) > 0 {
 			// claim 1 token from allowance at a time
 			// send back to caller's address
 			// depending on the amount of tokens, it will exceed number of outputs or not

@@ -1,6 +1,14 @@
 package util
 
-import "math/big"
+import (
+	"math/big"
+)
+
+var (
+	Big0       = big.NewInt(0)
+	Big1       = big.NewInt(1)
+	MaxUint256 = new(big.Int).Sub(new(big.Int).Lsh(Big1, 256), Big1)
+)
 
 func StringInList(s string, lst []string) bool {
 	for _, l := range lst {
