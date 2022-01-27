@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -36,19 +35,16 @@ const (
 	VarDescription = "dscr"
 )
 
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())
 	params := ctx.Params()
-	val, err := codec.DecodeInt64(params.MustGet(VarCounter), 0)
-	if err != nil {
-		return nil, fmt.Errorf("incCounter: %v", err)
-	}
+	val := codec.MustDecodeInt64(params.MustGet(VarCounter), 0)
 	ctx.State().Set(VarCounter, codec.EncodeInt64(val))
 	ctx.Event(fmt.Sprintf("inccounter.init.success. counter = %d", val))
-	return nil, nil
+	return nil
 }
 
-func incCounter(ctx iscp.Sandbox) (dict.Dict, error) {
+func incCounter(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.Contract().String())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	inc := par.MustGetInt64(VarCounter, 1)
@@ -64,16 +60,13 @@ func incCounter(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof("incCounter: incoming transfer: %s", tra)
 	ctx.State().Set(VarCounter, codec.EncodeInt64(val+inc))
 	ctx.Event(fmt.Sprintf("incCounter: counter = %d", val+inc))
-	return nil, nil
+	return nil
 }
 
-func incCounterAndRepeatOnce(ctx iscp.Sandbox) (dict.Dict, error) {
+func incCounterAndRepeatOnce(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatOnce")
 	state := ctx.State()
-	val, err := codec.DecodeInt64(state.MustGet(VarCounter), 0)
-	if err != nil {
-		ctx.Log().Panicf("%s", err)
-	}
+	val := codec.MustDecodeInt64(state.MustGet(VarCounter), 0)
 
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
@@ -91,32 +84,26 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) (dict.Dict, error) {
 	//return nil, nil
 }
 
-func incCounterAndRepeatMany(ctx iscp.Sandbox) (dict.Dict, error) {
+func incCounterAndRepeatMany(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany")
 
 	state := ctx.State()
 	params := ctx.Params()
 
-	val, err := codec.DecodeInt64(state.MustGet(VarCounter), 0)
-	if err != nil {
-		ctx.Log().Panicf("%s", err)
-	}
+	val := codec.MustDecodeInt64(state.MustGet(VarCounter), 0)
 
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: increasing counter value: %d", val)
 
 	var numRepeats int64
 	if params.MustHas(VarNumRepeats) {
-		numRepeats, err = codec.DecodeInt64(params.MustGet(VarNumRepeats), 0)
+		numRepeats = codec.MustDecodeInt64(params.MustGet(VarNumRepeats), 0)
 	} else {
-		numRepeats, err = codec.DecodeInt64(state.MustGet(VarNumRepeats), 0)
-	}
-	if err != nil {
-		ctx.Log().Panicf("%s", err)
+		numRepeats = codec.MustDecodeInt64(state.MustGet(VarNumRepeats), 0)
 	}
 	if numRepeats == 0 {
 		ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: finished chain of requests. counter value: %d", val)
-		return nil, nil
+		return nil
 	}
 
 	ctx.Log().Debugf("chain of %d requests ahead", numRepeats)
@@ -138,7 +125,7 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 // spawn deploys new contract and calls it
-func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
+func spawn(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.spawn")
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
@@ -147,28 +134,19 @@ func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
 	name := par.MustGetString(VarName)
 	dscr := par.MustGetString(VarDescription, "N/A")
 
-	a := assert.NewAssert(ctx.Log())
-
 	callPar := dict.New()
 	callPar.Set(VarCounter, codec.EncodeInt64(val+1))
-	err := ctx.DeployContract(Contract.ProgramHash, name, dscr, callPar)
-	a.RequireNoError(err)
+	ctx.DeployContract(Contract.ProgramHash, name, dscr, callPar)
 
 	// increase counter in newly spawned contract
 	hname := iscp.Hn(name)
-	_, err = ctx.Call(hname, FuncIncCounter.Hname(), nil, nil)
-	a.RequireNoError(err)
+	ctx.Call(hname, FuncIncCounter.Hname(), nil, nil)
 
-	return nil, nil
+	return nil
 }
 
-func getCounter(ctx iscp.SandboxView) (dict.Dict, error) {
+func getCounter(ctx iscp.SandboxView) dict.Dict {
 	state := ctx.State()
-	val, err := codec.DecodeInt64(state.MustGet(VarCounter), 0)
-	if err != nil {
-		ctx.Log().Panicf("%s", err)
-	}
-	ret := dict.New()
-	ret.Set(VarCounter, codec.EncodeInt64(val))
-	return ret, nil
+	val := codec.MustDecodeInt64(state.MustGet(VarCounter), 0)
+	return dict.Dict{VarCounter: codec.EncodeInt64(val)}
 }

@@ -27,11 +27,11 @@ func getBlockContext1(ctx iscp.Sandbox) *blockCtx1 {
 	return bctx
 }
 
-func testBlockContext1(ctx iscp.Sandbox) (dict.Dict, error) {
+func testBlockContext1(ctx iscp.Sandbox) dict.Dict {
 	bctx := getBlockContext1(ctx)
 	bctx.numcalls++
 
-	return nil, nil
+	return nil
 }
 
 type blockCtx2 struct {
@@ -52,17 +52,17 @@ func onClose2(obj interface{}) {
 	bctx.log.Infof("closing block context...")
 }
 
-func testBlockContext2(ctx iscp.Sandbox) (dict.Dict, error) {
+func testBlockContext2(ctx iscp.Sandbox) dict.Dict {
 	ctx.Privileged().BlockContext(construct2, onClose2) // just creating context, doing nothing, checking side effect
-	return nil, nil
+	return nil
 }
 
-func getStringValue(ctx iscp.SandboxView) (dict.Dict, error) {
+func getStringValue(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Infof(FuncGetStringValue.Name)
 	deco := kvdecoder.New(ctx.Params(), ctx.Log())
 	varName := deco.MustGetString(ParamVarName)
 	value := string(ctx.State().MustGet(kv.Key(varName)))
 	ret := dict.New()
 	ret.Set(kv.Key(varName), codec.EncodeString(value))
-	return ret, nil
+	return ret
 }

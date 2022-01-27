@@ -31,7 +31,7 @@ var Processor = Contract.Processor(initialize,
 	FuncViewAccounts.WithHandler(viewAccounts),
 )
 
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) dict.Dict {
 	// validating and storing dust deposit assumption constants
 	iotasOnAnchor := ctx.StateAnchor().Deposit
 	dustAssumptionsBin := ctx.Params().MustGet(ParamDustDepositAssumptionsBin)
@@ -44,34 +44,34 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	// initial load with iotas from origin anchor output exceeding minimum dust deposit assumption
 	initialLoadIotas := iscp.NewAssets(iotasOnAnchor-dustDepositAssumptions.AnchorOutput, nil)
 	CreditToAccount(ctx.State(), commonaccount.Get(ctx.ChainID()), initialLoadIotas)
-	return nil, nil
+	return nil
 }
 
 // deposit is a function to deposit attached assets to the sender's chain account
 // It does nothing because assets are already on the sender's account
 // Allowance is ignored
-func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
+func deposit(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.deposit")
-	return nil, nil
+	return nil
 }
 
 // transferAllowanceTo moves whole allowance from the caller to the specified account on the chain.
 // Can be sent as a request (sender is the caller) or can be called
 // Params:
 // - ParamAgentID. mandatory
-func transferAllowanceTo(ctx iscp.Sandbox) (dict.Dict, error) {
+func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
 
 	targetAccount := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(ParamAgentID)
 	ctx.TransferAllowedFunds(targetAccount)
 	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.AllowanceAvailable())
-	return nil, nil
+	return nil
 }
 
 // withdraw sends caller's funds to the caller on-ledger (cross chain)
 // The caller explicitly specify the funds to withdraw via the allowance in the request
 // Btw: the whole code of entry point is generic, i.e. not specific to the accounts TODO use this feature
-func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
+func withdraw(ctx iscp.Sandbox) dict.Dict {
 	state := ctx.State()
 	checkLedger(state, "accounts.withdraw.begin")
 
@@ -79,7 +79,7 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	if ctx.Caller().Address().Equal(ctx.ChainID().AsAddress()) {
 		// if the caller is on the same chain, do nothing
-		return nil, nil
+		return nil
 	}
 	// move all allowed funds to the account of the current contract context
 	// before saving the allowance budget because after the transfer it is mutated
@@ -98,14 +98,14 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 		},
 	})
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
-	return nil, nil
+	return nil
 }
 
 // TODO refactor owner of the chain moves all tokens balance the common account to its own account
 // Params:
 //   ParamForceMinimumIotas specify how may iotas should be left on the common account
 //   but not less that MinimumIotasOnCommonAccount constant
-func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
+func harvest(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("accounts.harvest")
 
 	state := ctx.State()
@@ -119,64 +119,62 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	toWithdraw := GetAccountAssets(state, commonAccount)
 	if toWithdraw.IsEmpty() {
 		// empty toWithdraw, nothing to withdraw. Can't be
-		return nil, nil
+		return nil
 	}
 	if toWithdraw.Iotas > bottomIotas {
 		toWithdraw.Iotas -= bottomIotas
 	}
 	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw)
-	return nil, nil
+	return nil
 }
 
 // viewBalance returns colored balances of the account belonging to the AgentID
 // Params:
 // - ParamAgentID
-func viewBalance(ctx iscp.SandboxView) (dict.Dict, error) {
+func viewBalance(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewBalance")
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	aid, err := params.GetAgentID(ParamAgentID)
-	if err != nil {
-		return nil, err
-	}
-	return getAccountBalanceDict(getAccountR(ctx.State(), aid)), nil
+	ctx.RequireNoError(err)
+	return getAccountBalanceDict(getAccountR(ctx.State(), aid))
 }
 
 // viewTotalAssets returns total colored balances controlled by the chain
-func viewTotalAssets(ctx iscp.SandboxView) (dict.Dict, error) {
+func viewTotalAssets(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.State())), nil
+	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.State()))
 }
 
 // viewAccounts returns list of all accounts as keys of the ImmutableCodec
-func viewAccounts(ctx iscp.SandboxView) (dict.Dict, error) {
-	return getAccountsIntern(ctx.State()), nil
+func viewAccounts(ctx iscp.SandboxView) dict.Dict {
+	return getAccountsIntern(ctx.State())
 }
 
-func getAccountNonce(ctx iscp.SandboxView) (dict.Dict, error) {
+func getAccountNonce(ctx iscp.SandboxView) dict.Dict {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	account := par.MustGetAgentID(ParamAgentID)
 	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
 	ret := dict.New()
 	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
-	return ret, nil
+	return ret
 }
 
 // viewGetNativeTokenIDRegistry returns all native token ID accounted in the chian
-func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) (dict.Dict, error) {
+func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
 	mapping := getNativeTokenOutputMapR(ctx.State())
 	ret := dict.New()
 	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
 		ret.Set(kv.Key(elemKey), []byte{0xFF})
 		return true
 	})
-	return ret, nil
+	return ret
 }
 
 // Params:
 // - token scheme
 // - token tag
 // - max supply big integer
-func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
+func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 
@@ -195,11 +193,11 @@ func foundryCreateNew(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	ret := dict.New()
 	ret.Set(ParamFoundrySN, util.Uint32To4Bytes(sn))
-	return ret, nil
+	return ret
 }
 
 // foundryDestroy destroys foundry if that is possible
-func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
+func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryDestroy")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamFoundrySN)
@@ -217,7 +215,7 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 	CreditToAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
 		Iotas: dustDepositFree,
 	})
-	return nil, nil
+	return nil
 }
 
 // foundryModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller
@@ -225,12 +223,12 @@ func foundryDestroy(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamFoundrySN serial number of the foundry
 // - ParamSupplyDeltaAbs absolute delta of the supply as big.Int
 // - ParamDestroyTokens true if destroy supply, false (default) if mint new supply
-func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
+func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	sn := par.MustGetUint32(ParamFoundrySN)
 	delta := par.MustGetBigInt(ParamSupplyDeltaAbs)
 	if delta.Cmp(big.NewInt(0)) == 0 {
-		return nil, nil
+		return nil
 	}
 	destroy := par.MustGetBool(ParamDestroyTokens, false)
 	// check if foundry is controlled by the caller
@@ -253,11 +251,11 @@ func foundryModifySupply(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	// adjust iotas on L2 due to the possible change in dust deposit
 	AdjustAccountIotas(ctx.State(), commonaccount.Get(ctx.ChainID()), dustAdjustment)
-	return nil, nil
+	return nil
 }
 
 // foundryOutput takes serial number and returns corresponding foundry output in serialized form
-func foundryOutput(ctx iscp.SandboxView) (dict.Dict, error) {
+func foundryOutput(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryOutput")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 
@@ -268,5 +266,5 @@ func foundryOutput(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.RequireNoError(err, "internal: error while serializing foundry output")
 	ret := dict.New()
 	ret.Set(ParamFoundryOutputBin, outBin)
-	return ret, nil
+	return ret
 }

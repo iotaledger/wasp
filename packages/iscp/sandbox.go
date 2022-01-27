@@ -72,11 +72,11 @@ type Sandbox interface {
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and
 	// target contract's accounts (if enough). If the entry point is view, 'transfer' has no effect
-	Call(target, entryPoint Hname, params dict.Dict, allowance *Assets) (dict.Dict, error)
+	Call(target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
 	// Caller is the agentID of the caller.
 	Caller() *AgentID
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
-	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error
+	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict)
 	// Event emits an event
 	Event(msg string)
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
@@ -97,7 +97,7 @@ type Sandbox interface {
 	// Send sends a on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
 	// EstimateRequiredDustDeposit returns the amount of iotas needed to cover for a given request's dust deposit
-	EstimateRequiredDustDeposit(r RequestParameters) (uint64, error)
+	EstimateRequiredDustDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
 

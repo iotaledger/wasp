@@ -19,7 +19,7 @@ import (
 // If it fails, nothing happens and the state has trace of the failure in the state
 // If it is successful VM takes over and replaces resulting transaction with
 // governance transition. The state of the chain remains unchanged
-func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
+func rotateStateController(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("rotateStateController")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	newStateControllerAddr := par.MustGetAddress(governance.ParamStateControllerAddress)
@@ -33,48 +33,47 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 		// StateVarRotateToAddress value should never persist in the state
 		ctx.Log().Infof("Governance::RotateStateController: newStateControllerAddress=%s", newStateControllerAddr.String())
 		ctx.State().Set(governance.StateVarRotateToAddress, iscp.BytesFromAddress(newStateControllerAddr))
-		return nil, nil
+		return nil
 	}
 	// here the new state controller address from the request equals to the state controller address in the anchor output
 	// Two situations possible:
 	// - either there's no need to rotate
 	// - or it just has been rotated. In case of the second situation we emit a 'rotate' event
-	addrs, err := ctx.Call(coreutil.CoreContractBlocklogHname, blocklog.FuncControlAddresses.Hname(), nil, nil)
-	ctx.RequireNoError(err)
+	addrs := ctx.Call(coreutil.CoreContractBlocklogHname, blocklog.FuncControlAddresses.Hname(), nil, nil)
 	par = kvdecoder.New(addrs, ctx.Log())
 	storedStateController := par.MustGetAddress(blocklog.ParamStateControllerAddress)
 	if !storedStateController.Equal(newStateControllerAddr) {
 		// state controller address recorded in the blocklog is different from the new one
 		// It means rotation happened
 		ctx.Event(fmt.Sprintf("rotate %s %s", newStateControllerAddr.Bech32(iscp.Bech32Prefix), storedStateController.Bech32(iscp.Bech32Prefix)))
-		return nil, nil
+		return nil
 	}
 	// no need to rotate because address does not change
-	return nil, nil
+	return nil
 }
 
-func addAllowedStateControllerAddress(ctx iscp.Sandbox) (dict.Dict, error) {
+func addAllowedStateControllerAddress(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("addAllowedStateControllerAddress")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	addr := par.MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	amap.MustSetAt(iscp.BytesFromAddress(addr), []byte{0xFF})
-	return nil, nil
+	return nil
 }
 
-func removeAllowedStateControllerAddress(ctx iscp.Sandbox) (dict.Dict, error) {
+func removeAllowedStateControllerAddress(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("removeAllowedStateControllerAddress")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	addr := par.MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	amap.MustDelAt(iscp.BytesFromAddress(addr))
-	return nil, nil
+	return nil
 }
 
-func getAllowedStateControllerAddresses(ctx iscp.SandboxView) (dict.Dict, error) {
+func getAllowedStateControllerAddresses(ctx iscp.SandboxView) dict.Dict {
 	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
 	if amap.MustLen() == 0 {
-		return nil, nil
+		return nil
 	}
 	ret := dict.New()
 	retArr := collections.NewArray16(ret, string(governance.ParamAllowedStateControllerAddresses))
@@ -82,5 +81,5 @@ func getAllowedStateControllerAddresses(ctx iscp.SandboxView) (dict.Dict, error)
 		retArr.MustPush(elemKey)
 		return true
 	})
-	return ret, nil
+	return ret
 }

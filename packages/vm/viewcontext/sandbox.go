@@ -76,8 +76,8 @@ func (s *sandboxview) Assets() *iscp.Assets {
 	panic("not implemented")
 }
 
-func (s *sandboxview) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) (dict.Dict, error) {
-	return s.vctx.CallView(contractHname, entryPoint, params)
+func (s *sandboxview) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {
+	return s.vctx.callView(contractHname, entryPoint, params)
 }
 
 func (s *sandboxview) ChainID() *iscp.ChainID {
@@ -85,9 +85,7 @@ func (s *sandboxview) ChainID() *iscp.ChainID {
 }
 
 func (s *sandboxview) ChainOwnerID() *iscp.AgentID {
-	r, err := s.Call(governance.Contract.Hname(), getChainInfoHname, nil)
-	a := assert.NewAssert(s.Log())
-	a.RequireNoError(err)
+	r := s.Call(governance.Contract.Hname(), getChainInfoHname, nil)
 	res := kvdecoder.New(r, s.Log())
 	return res.MustGetAgentID(governance.VarChainOwnerID)
 }

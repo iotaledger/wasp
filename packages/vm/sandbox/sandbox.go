@@ -49,7 +49,7 @@ func (s *sandbox) Assets() *iscp.Assets {
 }
 
 // Call calls an entry point of contract, passes parameters and funds
-func (s *sandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *iscp.Assets) (dict.Dict, error) {
+func (s *sandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *iscp.Assets) dict.Dict {
 	return s.vmctx.Call(target, entryPoint, params, transfer)
 }
 
@@ -75,9 +75,8 @@ func (s *sandbox) ContractCreator() *iscp.AgentID {
 
 // DeployContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
-func (s *sandbox) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) error {
-	err := s.vmctx.DeployContract(programHash, name, description, initParams)
-	return err
+func (s *sandbox) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) {
+	s.vmctx.DeployContract(programHash, name, description, initParams)
 }
 
 func (s *sandbox) Event(msg string) {
@@ -122,7 +121,7 @@ func (s *sandbox) Send(par iscp.RequestParameters) {
 	s.vmctx.Send(par)
 }
 
-func (s *sandbox) EstimateRequiredDustDeposit(par iscp.RequestParameters) (uint64, error) {
+func (s *sandbox) EstimateRequiredDustDeposit(par iscp.RequestParameters) uint64 {
 	return s.vmctx.EstimateRequiredDustDeposit(par)
 }
 
