@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"os"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -118,7 +119,7 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 		return expectedHash, nil
 	}
 	res, err := ch.PostRequestOffLedger(
-		NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...),
+		NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).WithGasBudget(math.MaxUint64),
 		user,
 	)
 	if err != nil {
@@ -211,7 +212,8 @@ func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHas
 		par[k] = v
 	}
 	_, err := ch.PostRequestSync(
-		NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par),
+		NewCallParams(root.Contract.Name, root.FuncDeployContract.Name, par).
+			WithGasBudget(math.MaxUint64),
 		user,
 	)
 	return err

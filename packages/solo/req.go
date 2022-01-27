@@ -277,20 +277,6 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (d
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
-	if req.gasBudget == 0 {
-		gas, fee, err := ch.EstimateGasOffLedger(req, keyPair)
-		if err != nil {
-			return nil, xerrors.Errorf("cannot estimate gas: %w", err)
-		}
-		if fee > 0 {
-			err := ch.checkCanAffordFee(fee, req, keyPair)
-			if err != nil {
-				return nil, err
-			}
-		}
-		req.WithGasBudget(gas)
-	}
-
 	if keyPair == nil {
 		keyPair = &ch.OriginatorPrivateKey
 	}
@@ -353,22 +339,6 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 
 func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
-
-	if req.gasBudget == 0 {
-		gas, fee, err := ch.EstimateGasOnLedger(req, keyPair)
-		if err != nil {
-			return nil, nil, nil, xerrors.Errorf("cannot estimate gas: %w", err)
-		}
-
-		if fee > 0 {
-			err := ch.checkCanAffordFee(fee, req, keyPair)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-		}
-
-		req.WithGasBudget(gas)
-	}
 
 	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
 	require.NoError(ch.Env.T, err)

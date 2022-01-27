@@ -15,7 +15,7 @@ func TestBasicBlockContext1(t *testing.T) {
 	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncTestBlockContext1.Name).
-		WithGasBudget(10_000)
+		WithGasBudget(100_000)
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 }
@@ -27,7 +27,7 @@ func TestBasicBlockContext2(t *testing.T) {
 	ch.MustDepositIotasToL2(10_000, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncTestBlockContext2.Name).
-		WithGasBudget(10_000)
+		WithGasBudget(100_000)
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
