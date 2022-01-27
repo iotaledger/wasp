@@ -72,7 +72,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 		vmtxbuilder.ErrOutputLimitExceeded,
 		vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit,
 		vmtxbuilder.ErrNumberOfNativeTokensLimitExceeded,
-		vmtxbuilder.ErrGasLimitExceeded,
+		vmtxbuilder.ErrBlockGasLimitExceeded,
 	)
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
@@ -181,6 +181,9 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 			panic(err)
 		}
 		if errors.Is(err, vmtxbuilder.ErrNumberOfNativeTokensLimitExceeded) {
+			panic(err)
+		}
+		if errors.Is(err, vmtxbuilder.ErrBlockGasLimitExceeded) {
 			panic(err)
 		}
 	}
@@ -301,11 +304,7 @@ func (vmctx *VMContext) chargeGasFee() {
 	vmctx.gasFeeCharged = sendToOwner + sendToValidator
 
 	// calc gas totals
-	vmctx.gasBurnedTotal += vmctx.gasBurned
 	vmctx.gasFeeChargedTotal += vmctx.gasFeeCharged
-	if vmctx.gasBurnedTotal > gas.MaxGasPerBlock {
-		panic(vmtxbuilder.ErrGasLimitExceeded)
-	}
 
 	if vmctx.task.EstimateGasMode {
 		// If estimating gas, compute the gas fee but do not attempt to charge

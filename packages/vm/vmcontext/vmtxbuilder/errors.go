@@ -8,7 +8,7 @@ import (
 
 // error codes used for handled panics
 var (
-	ErrGasLimitExceeded                     = xerrors.Errorf("exceeded maximum gas allowed in a block. MaxGasPerBlock = %d", gas.MaxGasPerBlock)
+	ErrBlockGasLimitExceeded                = xerrors.Errorf("exceeded maximum gas allowed in a block. MaxGasPerBlock = %d", gas.MaxGasPerBlock)
 	ErrInputLimitExceeded                   = xerrors.Errorf("exceeded maximum number of inputs in transaction. iotago.MaxInputsCount = %d", iotago.MaxInputsCount)
 	ErrOutputLimitExceeded                  = xerrors.Errorf("exceeded maximum number of outputs in transaction. iotago.MaxOutputsCount = %d", iotago.MaxOutputsCount)
 	ErrOutputLimitInSingleCallExceeded      = xerrors.Errorf("exceeded maximum number of outputs a contract call can produce. iotago.MaxOutputsCount = %d", iotago.MaxOutputsCount)

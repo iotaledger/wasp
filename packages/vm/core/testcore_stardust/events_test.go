@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"math"
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -16,7 +17,7 @@ import (
 
 func incrementSCCounter(t *testing.T, ch *solo.Chain) iscp.RequestID {
 	tx, _, err := ch.PostRequestSyncTx(
-		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name),
+		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).WithGasBudget(math.MaxUint64),
 		nil,
 	)
 	require.NoError(t, err)

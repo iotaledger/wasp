@@ -2,6 +2,7 @@ package solo
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"sort"
 
@@ -285,7 +286,8 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 func (ch *Chain) DepositAssetsToL2(assets *iscp.Assets, user *cryptolib.KeyPair) error {
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			WithAssets(assets),
+			WithAssets(assets).
+			WithGasBudget(math.MaxUint64),
 		user,
 	)
 	return err
@@ -309,7 +311,8 @@ func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.Assets, tar
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
 			AddAssets(sumAssets).
-			AddAllowance(toSend),
+			AddAllowance(toSend).
+			WithGasBudget(math.MaxUint64),
 		user,
 	)
 	return err
