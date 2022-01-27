@@ -134,7 +134,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 			vmctx.Debugf("%v", panicErr)
 			vmctx.Debugf(string(debug.Stack()))
 		}()
-		callRet, callErr = vmctx.callFromRequest()
+		callRet = vmctx.callFromRequest()
 		// ensure at least the minimum amount of gas is charged
 		if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest1P.Cost() {
 			vmctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, vmctx.GasBurned())
@@ -191,7 +191,7 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 }
 
 // callFromRequest is the call itself. Assumes sc exists
-func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
+func (vmctx *VMContext) callFromRequest() dict.Dict {
 	vmctx.Debugf("callFromRequest: %s", vmctx.req.ID().String())
 
 	// calling only non view entry points. Calling the view will trigger error and fallback

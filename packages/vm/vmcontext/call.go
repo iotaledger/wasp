@@ -12,7 +12,7 @@ import (
 )
 
 // Call implements sandbox logic of the call between contracts on-chain
-func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets) (dict.Dict, error) {
+func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets) dict.Dict {
 	vmctx.GasBurn(gas.BurnCodeCallContract)
 
 	vmctx.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
@@ -23,10 +23,10 @@ func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict
 	panic(xerrors.Errorf("%v: contract='%s'", ErrContractNotFound, targetContract))
 }
 
-func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets, progHash hashing.HashValue) (dict.Dict, error) {
+func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Assets, progHash hashing.HashValue) dict.Dict {
 	proc, err := vmctx.task.Processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
@@ -46,7 +46,6 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 		}
 		return ep.Call(NewSandboxView(vmctx))
 	}
-	// no view
 	// prevent calling 'init' not from root contract or not while initializing root
 	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {

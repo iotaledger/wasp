@@ -6,7 +6,7 @@ import (
 )
 
 // calls withdrawToChain to the chain ID
-func withdrawToChain(ctx iscp.Sandbox) (dict.Dict, error) {
+func withdrawToChain(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Infof(FuncWithdrawToChain.Name)
 	//params := kvdecoder.New(ctx.Params(), ctx.Log())
 	//targetChain := params.MustGetChainID(ParamChainID)
@@ -19,5 +19,5 @@ func withdrawToChain(ctx iscp.Sandbox) (dict.Dict, error) {
 	//	return nil, fmt.Errorf("failed to post request")
 	//}
 	//ctx.Log().Infof("%s: success", FuncWithdrawToChain)
-	return nil, nil
+	return nil
 }

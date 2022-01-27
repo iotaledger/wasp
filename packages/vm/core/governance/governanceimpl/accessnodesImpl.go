@@ -28,7 +28,7 @@ import (
 //      accessNodes          :: map(pubKey => ())
 //  )
 //
-func getChainNodesFuncHandler(ctx iscp.SandboxView) (dict.Dict, error) {
+func getChainNodesFuncHandler(ctx iscp.SandboxView) dict.Dict {
 	res := dict.New()
 	ac := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodeCandidates))
 	an := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodes))
@@ -40,7 +40,7 @@ func getChainNodesFuncHandler(ctx iscp.SandboxView) (dict.Dict, error) {
 		an.MustSetAt(key, value)
 		return true
 	})
-	return res, nil
+	return res
 }
 
 // SC Command Function handler.
@@ -50,7 +50,7 @@ func getChainNodesFuncHandler(ctx iscp.SandboxView) (dict.Dict, error) {
 //      accessNodeInfo{NodePubKey, Certificate, ForCommittee, AccessAPI}
 //  ) => ()
 //
-func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
+func addCandidateNodeFuncHandler(ctx iscp.Sandbox) dict.Dict {
 	ani := governance.NewAccessNodeInfoFromAddCandidateNodeParams(ctx)
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 	pubKeyStr := base64.StdEncoding.EncodeToString(ani.NodePubKey)
@@ -65,7 +65,7 @@ func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 		ctx.Log().Infof("Governance::AddCandidateNode: accessNode added, pubKey=%s", pubKeyStr)
 	}
 
-	return nil, nil
+	return nil
 }
 
 // SC Command Function handler.
@@ -80,7 +80,7 @@ func addCandidateNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 // The node is removed from the list of access nodes immediately, but the validator rotation
 // must be initiated by the chain owner explicitly.
 //
-func revokeAccessNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
+func revokeAccessNodeFuncHandler(ctx iscp.Sandbox) dict.Dict {
 	ani := governance.NewAccessNodeInfoFromRevokeAccessNodeParams(ctx)
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 
@@ -89,7 +89,7 @@ func revokeAccessNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
 	accessNodes.MustDelAt(ani.NodePubKey)
 
-	return nil, nil
+	return nil
 }
 
 // SC Command Function handler.
@@ -99,7 +99,7 @@ func revokeAccessNodeFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 //      actions: map(pubKey => ChangeAccessNodeAction)
 //  ) => ()
 //
-func changeAccessNodesFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
+func changeAccessNodesFuncHandler(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
@@ -120,5 +120,5 @@ func changeAccessNodesFuncHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 		}
 		return true
 	})
-	return nil, nil
+	return nil
 }

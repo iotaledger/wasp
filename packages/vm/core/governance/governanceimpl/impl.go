@@ -40,7 +40,7 @@ var Processor = governance.Contract.Processor(initialize,
 	governance.FuncChangeAccessNodes.WithHandler(changeAccessNodesFuncHandler),
 )
 
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("governance.initialize.begin")
 	state := ctx.State()
 
@@ -62,5 +62,5 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	state.Set(governance.VarGasFeePolicyBytes, feePolicyBytes)
 
-	return nil, nil
+	return nil
 }

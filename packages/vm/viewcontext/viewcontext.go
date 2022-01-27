@@ -60,16 +60,16 @@ func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dic
 			v.log.Debugf("CallView: %v", err)
 			v.log.Debugf(string(debug.Stack()))
 		}()
-		ret, err = v.callView(contractHname, epCode, params)
+		ret = v.callView(contractHname, epCode, params)
 	}()
 	return ret, err
 }
 
-func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dict) (dict.Dict, error) {
+func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dict) dict.Dict {
 	var err error
 	contractRecord := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Contract.Hname()), contractHname)
 	if contractRecord == nil {
-		return nil, xerrors.Errorf("contract not found %s", contractHname)
+		panic(fmt.Sprintf("contract not found %s", contractHname))
 	}
 	proc, err := v.processors.GetOrCreateProcessor(contractRecord, func(programHash hashing.HashValue) (string, []byte, error) {
 		if vmtype, ok := v.processors.Config.GetNativeProcessorType(programHash); ok {
@@ -78,16 +78,16 @@ func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dic
 		return blob.LocateProgram(contractStateSubpartition(v.stateReader.KVStoreReader(), blob.Contract.Hname()), programHash)
 	})
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, fmt.Errorf("trying to call contract '%s': can't find entry point '%s'", proc.GetDescription(), epCode.String())
+		panic(fmt.Sprintf("trying to call contract '%s': can't find entry point '%s'", proc.GetDescription(), epCode.String()))
 	}
 
 	if !ep.IsView() {
-		return nil, fmt.Errorf("only view entry point can be called in this context")
+		panic("only view entry point can be called in this context")
 	}
 	return ep.Call(newSandboxView(v, contractHname, params))
 }

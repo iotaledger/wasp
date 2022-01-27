@@ -51,7 +51,7 @@ func (s *sandboxView) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
 	panic("implement me")
 }
 
-func (s *sandboxView) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) (dict.Dict, error) {
+func (s *sandboxView) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 

@@ -15,5 +15,5 @@ type SandboxView interface {
 	// State immutable k/v store of the current call (in the context of the smart contract)
 	State() kv.KVStoreReader
 	// Call calls another contract. Only calls view entry points
-	Call(contractHname Hname, entryPoint Hname, params dict.Dict) (dict.Dict, error)
+	Call(contractHname Hname, entryPoint Hname, params dict.Dict) dict.Dict
 }
