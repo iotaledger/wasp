@@ -184,6 +184,10 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	if keyPair == nil {
 		keyPair = &ch.OriginatorPrivateKey
 	}
+	L1Iotas := ch.Env.L1Iotas(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey))
+	if L1Iotas == 0 {
+		panic("PostRequestSync - Signer doesn't own any iotas on L1")
+	}
 	addr := iotago.Ed25519AddressFromPubKey(keyPair.PublicKey)
 	allOuts, ids := ch.Env.utxoDB.GetUnspentOutputs(&addr)
 

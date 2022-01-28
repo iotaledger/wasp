@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const IotasDepositFee = 100_000
+const IotasDepositFee = 100
 
 func TestDeposit(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
@@ -372,6 +372,40 @@ func TestFoundries(t *testing.T) {
 			ch.AssertL2NativeTokens(senderAgentID, &tokenID, big.NewInt(int64(sn)))
 			ch.AssertL2TotalNativeTokens(&tokenID, big.NewInt(int64(sn)))
 		}
+	})
+	t.Run("constant dust deposit to hold a token UTXO", func(t *testing.T) {
+		initTest()
+		// create a foundry for the maximum amount of tokens possible
+		sn, tokenID, err := ch.NewFoundryParams(util.MaxUint256).
+			WithUser(senderKeyPair).
+			CreateFoundry()
+		require.NoError(t, err)
+
+		err = ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1, ch.CommonAccount(), senderKeyPair)
+		require.NoError(t, err)
+		x := ch.L2CommonAccountIotas()
+		t.Logf("common account iotas = %d before mint", x)
+
+		big1 := big.NewInt(1)
+		err = ch.MintTokens(sn, big1, senderKeyPair)
+		require.NoError(t, err)
+
+		ch.AssertL2NativeTokens(senderAgentID, &tokenID, big1)
+		ch.AssertL2TotalNativeTokens(&tokenID, big1)
+
+		commonAccountBalanceBeforeLastMint := ch.L2CommonAccountIotas()
+
+		// after minting 1 token, try to mint the remaining tokens
+		allOtherTokens := new(big.Int).Set(util.MaxUint256)
+		allOtherTokens = allOtherTokens.Sub(allOtherTokens, big1)
+
+		err = ch.MintTokens(sn, allOtherTokens, senderKeyPair)
+		require.NoError(t, err)
+
+		// assert that no extra iotas were used for the dust deposit
+		receipt := ch.LastReceipt()
+		commonAccountBalanceAfterLastMint := ch.L2CommonAccountIotas()
+		require.Equal(t, commonAccountBalanceAfterLastMint, commonAccountBalanceBeforeLastMint+receipt.GasFeeCharged)
 	})
 }
 
