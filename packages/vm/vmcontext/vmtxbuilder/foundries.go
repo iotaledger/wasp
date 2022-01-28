@@ -4,13 +4,9 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-
-	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/wasp/packages/util"
-
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 func (txb *AnchorTransactionBuilder) CreateNewFoundry(
@@ -19,10 +15,10 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	maxSupply *big.Int,
 	metadata []byte,
 ) (uint32, uint64) {
-	if maxSupply.Cmp(big.NewInt(0)) <= 0 {
+	if maxSupply.Cmp(util.Big0) <= 0 {
 		panic(ErrCreateFoundryMaxSupplyMustBePositive)
 	}
-	if maxSupply.Cmp(abi.MaxUint256) > 0 {
+	if maxSupply.Cmp(util.MaxUint256) > 0 {
 		panic(ErrCreateFoundryMaxSupplyTooBig)
 	}
 
@@ -73,7 +69,7 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 	}
 	// check the supply bounds
 	newSupply := big.NewInt(0).Add(f.out.CirculatingSupply, delta)
-	if newSupply.Cmp(big.NewInt(0)) < 0 || newSupply.Cmp(f.out.MaximumSupply) > 0 {
+	if newSupply.Cmp(util.Big0) < 0 || newSupply.Cmp(f.out.MaximumSupply) > 0 {
 		panic(ErrNativeTokenSupplyOutOffBounds)
 	}
 	// accrue/adjust this token balance in the internal outputs
