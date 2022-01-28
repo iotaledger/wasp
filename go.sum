@@ -679,6 +679,8 @@ github.com/jwilder/encoding v0.0.0-20170811194829-b4e1701a28ef/go.mod h1:Ct9fl0F
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=
 github.com/kabukky/httpscerts v0.0.0-20150320125433-617593d7dcb3/go.mod h1:BYpt4ufZiIGv2nXn4gMxnfKV306n3mWXgNu/d2TqdTU=
 github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d/go.mod h1:P2viExyCEfeWGU259JnaQ34Inuec4R38JCyBx2edgD0=
+github.com/kape1395/goshimmer v0.7.5-0.20220126105741-2bc797667497 h1:Xteehyq9wIA12gi4lkvmd+VOXrgjlt9PGmm2AtOIotA=
+github.com/kape1395/goshimmer v0.7.5-0.20220126105741-2bc797667497/go.mod h1:L4a9tQOOlD37go7UztwlCFMrNlmgwKK9ixaPf45A/8U=
 github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515 h1:5oWqeyYqb0A+XNeM4qIESTfrgbTdCF+YTPgb9Rc50iM=
 github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515/go.mod h1:XadZ7V3kvoIfFGVb8s/ndgVitoHRNRjzgPlHhhb9HlI=
 github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3 h1:b7VGpy3biHI8Q0O8BthxiJfOXhx5F0Ej4TNuJ9A1omo=
