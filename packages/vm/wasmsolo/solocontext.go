@@ -352,6 +352,10 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 	exists, _ := util.ExistsFilePath(rsFile)
 	if exists {
 		wasmFile = rsFile
+	} else {
+		rsFile := wasmFile
+		exists, _ = util.ExistsFilePath(rsFile)
+		wasmFile = rsFile
 	}
 
 	// try Go Wasm file?
@@ -360,6 +364,12 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 		exists, _ = util.ExistsFilePath(goFile)
 		if exists {
 			wasmFile = goFile
+		} else {
+			goFile = ctx.scName + "_go.wasm"
+			exists, _ = util.ExistsFilePath(goFile)
+			if exists {
+				wasmFile = goFile
+			}
 		}
 	}
 
@@ -369,6 +379,12 @@ func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 		exists, _ = util.ExistsFilePath(tsFile)
 		if exists {
 			wasmFile = tsFile
+		} else {
+			tsFile = ctx.scName + "_ts.wasm"
+			exists, _ = util.ExistsFilePath(tsFile)
+			if exists {
+				wasmFile = tsFile
+			}
 		}
 	}
 
