@@ -16,45 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBlobRepeatInit(t *testing.T) {
-	env := solo.New(t, false, false)
-	chain := env.NewChain(nil, "chain1")
-	req := solo.NewCallParams(blob.Contract.Name, "init")
-	_, err := chain.PostRequestSync(req, nil)
-	require.Error(t, err)
-}
-
-func TestBlobUpload(t *testing.T) {
-	env := solo.New(t, false, false)
-	chain := env.NewChain(nil, "chain1")
-	binary := []byte("supposed to be wasm")
-	hwasm, err := chain.UploadWasm(nil, binary)
-	require.NoError(t, err)
-
-	binBack, err := chain.GetWasmBinary(hwasm)
-	require.NoError(t, err)
-
-	require.EqualValues(t, binary, binBack)
-}
-
-func TestBlobUploadTwice(t *testing.T) {
-	env := solo.New(t, false, false)
-	chain := env.NewChain(nil, "chain1")
-	binary := []byte("supposed to be wasm")
-	hwasm1, err := chain.UploadWasm(nil, binary)
-	require.NoError(t, err)
-
-	hwasm2, err := chain.UploadWasm(nil, binary)
-	require.NoError(t, err)
-
-	require.EqualValues(t, hwasm1, hwasm2)
-
-	binBack, err := chain.GetWasmBinary(hwasm1)
-	require.NoError(t, err)
-
-	require.EqualValues(t, binary, binBack)
-}
-
 var wasmFile = "sbtests/sbtestsc/testcore_bg.wasm"
 
 func TestDeploy(t *testing.T) {
