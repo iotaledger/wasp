@@ -6,28 +6,29 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutablePlaceBetParams extends wasmlib.ScMapID {
-    number(): wasmlib.ScImmutableUint16 {
-		return new wasmlib.ScImmutableUint16(this.mapID, wasmlib.Key32.fromString(sc.ParamNumber));
+export class ImmutablePlaceBetParams extends wasmtypes.ScProxy {
+    number(): wasmtypes.ScImmutableUint16 {
+		return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.ParamNumber));
 	}
 }
 
-export class MutablePlaceBetParams extends wasmlib.ScMapID {
-    number(): wasmlib.ScMutableUint16 {
-		return new wasmlib.ScMutableUint16(this.mapID, wasmlib.Key32.fromString(sc.ParamNumber));
+export class MutablePlaceBetParams extends wasmtypes.ScProxy {
+    number(): wasmtypes.ScMutableUint16 {
+		return new wasmtypes.ScMutableUint16(this.proxy.root(sc.ParamNumber));
 	}
 }
 
-export class ImmutablePlayPeriodParams extends wasmlib.ScMapID {
-    playPeriod(): wasmlib.ScImmutableUint32 {
-		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamPlayPeriod));
+export class ImmutablePlayPeriodParams extends wasmtypes.ScProxy {
+    playPeriod(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamPlayPeriod));
 	}
 }
 
-export class MutablePlayPeriodParams extends wasmlib.ScMapID {
-    playPeriod(): wasmlib.ScMutableUint32 {
-		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamPlayPeriod));
+export class MutablePlayPeriodParams extends wasmtypes.ScProxy {
+    playPeriod(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamPlayPeriod));
 	}
 }

@@ -138,7 +138,7 @@ $#if basetype callResultGetterBasic callResultGetterStruct
 func (r *$FuncName$+Results) $FldName() map[$fldKeyLangType]$fldLangType {
     res := make(map[$fldKeyLangType]$fldLangType)
     r.res.ForEach(func(key []byte, val []byte) {
-        res[r.res.To$fldMapKey(key)] = r.res.To$FldType(val)
+        res[r.res.To$FldMapKey(key)] = r.res.To$FldType(val)
     })
 	return res
 }

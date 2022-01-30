@@ -20,22 +20,22 @@ type Donation struct {
 func NewDonationFromBytes(buf []byte) *Donation {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Donation{}
-	data.Amount = wasmtypes.DecodeUint64(dec)
-	data.Donator = wasmtypes.DecodeAgentID(dec)
-	data.Error = wasmtypes.DecodeString(dec)
-	data.Feedback = wasmtypes.DecodeString(dec)
-	data.Timestamp = wasmtypes.DecodeUint64(dec)
+	data.Amount = wasmtypes.Uint64Decode(dec)
+	data.Donator = wasmtypes.AgentIDDecode(dec)
+	data.Error = wasmtypes.StringDecode(dec)
+	data.Feedback = wasmtypes.StringDecode(dec)
+	data.Timestamp = wasmtypes.Uint64Decode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *Donation) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.EncodeUint64(enc, o.Amount)
-	wasmtypes.EncodeAgentID(enc, o.Donator)
-	wasmtypes.EncodeString(enc, o.Error)
-	wasmtypes.EncodeString(enc, o.Feedback)
-	wasmtypes.EncodeUint64(enc, o.Timestamp)
+	wasmtypes.Uint64Encode(enc, o.Amount)
+	wasmtypes.AgentIDEncode(enc, o.Donator)
+	wasmtypes.StringEncode(enc, o.Error)
+	wasmtypes.StringEncode(enc, o.Feedback)
+	wasmtypes.Uint64Encode(enc, o.Timestamp)
 	return enc.Buf()
 }
 

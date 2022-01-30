@@ -6,76 +6,77 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableIncrementWithDelayParams extends wasmlib.ScMapID {
-    delay(): wasmlib.ScImmutableUint32 {
-		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamDelay));
+export class ImmutableIncrementWithDelayParams extends wasmtypes.ScProxy {
+    delay(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamDelay));
 	}
 }
 
-export class MutableIncrementWithDelayParams extends wasmlib.ScMapID {
-    delay(): wasmlib.ScMutableUint32 {
-		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamDelay));
+export class MutableIncrementWithDelayParams extends wasmtypes.ScProxy {
+    delay(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamDelay));
 	}
 }
 
-export class ImmutableInitParams extends wasmlib.ScMapID {
-    counter(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamCounter]);
+export class ImmutableInitParams extends wasmtypes.ScProxy {
+    counter(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamCounter));
 	}
 }
 
-export class MutableInitParams extends wasmlib.ScMapID {
-    counter(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamCounter]);
+export class MutableInitParams extends wasmtypes.ScProxy {
+    counter(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamCounter));
 	}
 }
 
-export class ImmutableRepeatManyParams extends wasmlib.ScMapID {
-    numRepeats(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamNumRepeats));
+export class ImmutableRepeatManyParams extends wasmtypes.ScProxy {
+    numRepeats(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamNumRepeats));
 	}
 }
 
-export class MutableRepeatManyParams extends wasmlib.ScMapID {
-    numRepeats(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamNumRepeats));
+export class MutableRepeatManyParams extends wasmtypes.ScProxy {
+    numRepeats(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamNumRepeats));
 	}
 }
 
-export class ImmutableWhenMustIncrementParams extends wasmlib.ScMapID {
-    dummy(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamDummy));
+export class ImmutableWhenMustIncrementParams extends wasmtypes.ScProxy {
+    dummy(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamDummy));
 	}
 }
 
-export class MutableWhenMustIncrementParams extends wasmlib.ScMapID {
-    dummy(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamDummy));
+export class MutableWhenMustIncrementParams extends wasmtypes.ScProxy {
+    dummy(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamDummy));
 	}
 }
 
-export class ImmutableGetVliParams extends wasmlib.ScMapID {
-    ni64(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamNi64));
+export class ImmutableGetVliParams extends wasmtypes.ScProxy {
+    ni64(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamNi64));
 	}
 }
 
-export class MutableGetVliParams extends wasmlib.ScMapID {
-    ni64(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamNi64));
+export class MutableGetVliParams extends wasmtypes.ScProxy {
+    ni64(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamNi64));
 	}
 }
 
-export class ImmutableGetVluParams extends wasmlib.ScMapID {
-    nu64(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamNu64));
+export class ImmutableGetVluParams extends wasmtypes.ScProxy {
+    nu64(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamNu64));
 	}
 }
 
-export class MutableGetVluParams extends wasmlib.ScMapID {
-    nu64(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamNu64));
+export class MutableGetVluParams extends wasmtypes.ScProxy {
+    nu64(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamNu64));
 	}
 }

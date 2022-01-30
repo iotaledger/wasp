@@ -52,16 +52,16 @@ var TypeDependent = model.StringMapMap{
 
 var common = map[string]string{
 	// *******************************
-	"goPackage": `
-package $package
-`,
-	// *******************************
 	"importWasmLib": `
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 `,
 	// *******************************
 	"importWasmTypes": `
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+`,
+	// *******************************
+	"goPackage": `
+package $package
 `,
 	// *******************************
 	"goHeader": `

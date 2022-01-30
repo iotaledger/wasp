@@ -6,172 +6,173 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableAddAllowedStateControllerAddressParams extends wasmlib.ScMapID {
-    chainOwner(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamChainOwner));
+export class ImmutableAddAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
+    chainOwner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamChainOwner));
 	}
 
-    feeColor(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamFeeColor));
+    feeColor(): wasmtypes.ScImmutableColor {
+		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamFeeColor));
 	}
 
-    stateControllerAddress(): wasmlib.ScImmutableAddress {
-		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamStateControllerAddress));
-	}
-}
-
-export class MutableAddAllowedStateControllerAddressParams extends wasmlib.ScMapID {
-    chainOwner(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamChainOwner));
-	}
-
-    feeColor(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamFeeColor));
-	}
-
-    stateControllerAddress(): wasmlib.ScMutableAddress {
-		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamStateControllerAddress));
+    stateControllerAddress(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
 	}
 }
 
-export class ImmutableDelegateChainOwnershipParams extends wasmlib.ScMapID {
-    chainOwner(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamChainOwner));
+export class MutableAddAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
+    chainOwner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamChainOwner));
+	}
+
+    feeColor(): wasmtypes.ScMutableColor {
+		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamFeeColor));
+	}
+
+    stateControllerAddress(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
 	}
 }
 
-export class MutableDelegateChainOwnershipParams extends wasmlib.ScMapID {
-    chainOwner(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamChainOwner));
+export class ImmutableDelegateChainOwnershipParams extends wasmtypes.ScProxy {
+    chainOwner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamChainOwner));
 	}
 }
 
-export class ImmutableRemoveAllowedStateControllerAddressParams extends wasmlib.ScMapID {
-    stateControllerAddress(): wasmlib.ScImmutableAddress {
-		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamStateControllerAddress));
+export class MutableDelegateChainOwnershipParams extends wasmtypes.ScProxy {
+    chainOwner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamChainOwner));
 	}
 }
 
-export class MutableRemoveAllowedStateControllerAddressParams extends wasmlib.ScMapID {
-    stateControllerAddress(): wasmlib.ScMutableAddress {
-		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamStateControllerAddress));
+export class ImmutableRemoveAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
+    stateControllerAddress(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
 	}
 }
 
-export class ImmutableRotateStateControllerParams extends wasmlib.ScMapID {
-    stateControllerAddress(): wasmlib.ScImmutableAddress {
-		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamStateControllerAddress));
+export class MutableRemoveAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
+    stateControllerAddress(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
 	}
 }
 
-export class MutableRotateStateControllerParams extends wasmlib.ScMapID {
-    stateControllerAddress(): wasmlib.ScMutableAddress {
-		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamStateControllerAddress));
+export class ImmutableRotateStateControllerParams extends wasmtypes.ScProxy {
+    stateControllerAddress(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
 	}
 }
 
-export class ImmutableSetChainInfoParams extends wasmlib.ScMapID {
-    maxBlobSize(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamMaxBlobSize));
-	}
-
-    maxEventSize(): wasmlib.ScImmutableInt16 {
-		return new wasmlib.ScImmutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ParamMaxEventSize));
-	}
-
-    maxEventsPerReq(): wasmlib.ScImmutableInt16 {
-		return new wasmlib.ScImmutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ParamMaxEventsPerReq));
-	}
-
-    ownerFee(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerFee));
-	}
-
-    validatorFee(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamValidatorFee));
+export class MutableRotateStateControllerParams extends wasmtypes.ScProxy {
+    stateControllerAddress(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
 	}
 }
 
-export class MutableSetChainInfoParams extends wasmlib.ScMapID {
-    maxBlobSize(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ParamMaxBlobSize));
+export class ImmutableSetChainInfoParams extends wasmtypes.ScProxy {
+    maxBlobSize(): wasmtypes.ScImmutableInt32 {
+		return new wasmtypes.ScImmutableInt32(this.proxy.root(sc.ParamMaxBlobSize));
 	}
 
-    maxEventSize(): wasmlib.ScMutableInt16 {
-		return new wasmlib.ScMutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ParamMaxEventSize));
+    maxEventSize(): wasmtypes.ScImmutableInt16 {
+		return new wasmtypes.ScImmutableInt16(this.proxy.root(sc.ParamMaxEventSize));
 	}
 
-    maxEventsPerReq(): wasmlib.ScMutableInt16 {
-		return new wasmlib.ScMutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ParamMaxEventsPerReq));
+    maxEventsPerReq(): wasmtypes.ScImmutableInt16 {
+		return new wasmtypes.ScImmutableInt16(this.proxy.root(sc.ParamMaxEventsPerReq));
 	}
 
-    ownerFee(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerFee));
+    ownerFee(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamOwnerFee));
 	}
 
-    validatorFee(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamValidatorFee));
-	}
-}
-
-export class ImmutableSetContractFeeParams extends wasmlib.ScMapID {
-    hname(): wasmlib.ScImmutableHname {
-		return new wasmlib.ScImmutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
-	}
-
-    ownerFee(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerFee));
-	}
-
-    validatorFee(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamValidatorFee));
+    validatorFee(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamValidatorFee));
 	}
 }
 
-export class MutableSetContractFeeParams extends wasmlib.ScMapID {
-    hname(): wasmlib.ScMutableHname {
-		return new wasmlib.ScMutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
+export class MutableSetChainInfoParams extends wasmtypes.ScProxy {
+    maxBlobSize(): wasmtypes.ScMutableInt32 {
+		return new wasmtypes.ScMutableInt32(this.proxy.root(sc.ParamMaxBlobSize));
 	}
 
-    ownerFee(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerFee));
+    maxEventSize(): wasmtypes.ScMutableInt16 {
+		return new wasmtypes.ScMutableInt16(this.proxy.root(sc.ParamMaxEventSize));
 	}
 
-    validatorFee(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamValidatorFee));
-	}
-}
-
-export class ImmutableSetDefaultFeeParams extends wasmlib.ScMapID {
-    ownerFee(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerFee));
+    maxEventsPerReq(): wasmtypes.ScMutableInt16 {
+		return new wasmtypes.ScMutableInt16(this.proxy.root(sc.ParamMaxEventsPerReq));
 	}
 
-    validatorFee(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamValidatorFee));
+    ownerFee(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamOwnerFee));
+	}
+
+    validatorFee(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamValidatorFee));
 	}
 }
 
-export class MutableSetDefaultFeeParams extends wasmlib.ScMapID {
-    ownerFee(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamOwnerFee));
+export class ImmutableSetContractFeeParams extends wasmtypes.ScProxy {
+    hname(): wasmtypes.ScImmutableHname {
+		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamHname));
 	}
 
-    validatorFee(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamValidatorFee));
+    ownerFee(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamOwnerFee));
 	}
-}
 
-export class ImmutableGetFeeInfoParams extends wasmlib.ScMapID {
-    hname(): wasmlib.ScImmutableHname {
-		return new wasmlib.ScImmutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
+    validatorFee(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamValidatorFee));
 	}
 }
 
-export class MutableGetFeeInfoParams extends wasmlib.ScMapID {
-    hname(): wasmlib.ScMutableHname {
-		return new wasmlib.ScMutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamHname));
+export class MutableSetContractFeeParams extends wasmtypes.ScProxy {
+    hname(): wasmtypes.ScMutableHname {
+		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamHname));
+	}
+
+    ownerFee(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamOwnerFee));
+	}
+
+    validatorFee(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamValidatorFee));
+	}
+}
+
+export class ImmutableSetDefaultFeeParams extends wasmtypes.ScProxy {
+    ownerFee(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamOwnerFee));
+	}
+
+    validatorFee(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamValidatorFee));
+	}
+}
+
+export class MutableSetDefaultFeeParams extends wasmtypes.ScProxy {
+    ownerFee(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamOwnerFee));
+	}
+
+    validatorFee(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamValidatorFee));
+	}
+}
+
+export class ImmutableGetFeeInfoParams extends wasmtypes.ScProxy {
+    hname(): wasmtypes.ScImmutableHname {
+		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamHname));
+	}
+}
+
+export class MutableGetFeeInfoParams extends wasmtypes.ScProxy {
+    hname(): wasmtypes.ScMutableHname {
+		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamHname));
 	}
 }

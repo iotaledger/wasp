@@ -145,8 +145,8 @@ func viewLastWinningNumberThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewLastWinningNumber(ctx, f)
-	ctx.Log("fairroulette.viewLastWinningNumber ok")
 	ctx.Results(results)
+	ctx.Log("fairroulette.viewLastWinningNumber ok")
 }
 
 type RoundNumberContext struct {
@@ -166,8 +166,8 @@ func viewRoundNumberThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewRoundNumber(ctx, f)
-	ctx.Log("fairroulette.viewRoundNumber ok")
 	ctx.Results(results)
+	ctx.Log("fairroulette.viewRoundNumber ok")
 }
 
 type RoundStartedAtContext struct {
@@ -187,8 +187,8 @@ func viewRoundStartedAtThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewRoundStartedAt(ctx, f)
-	ctx.Log("fairroulette.viewRoundStartedAt ok")
 	ctx.Results(results)
+	ctx.Log("fairroulette.viewRoundStartedAt ok")
 }
 
 type RoundStatusContext struct {
@@ -208,6 +208,6 @@ func viewRoundStatusThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewRoundStatus(ctx, f)
-	ctx.Log("fairroulette.viewRoundStatus ok")
 	ctx.Results(results)
+	ctx.Log("fairroulette.viewRoundStatus ok")
 }

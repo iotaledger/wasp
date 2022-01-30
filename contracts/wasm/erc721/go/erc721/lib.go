@@ -202,8 +202,8 @@ func viewBalanceOfThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.Owner().Exists(), "missing mandatory owner")
 	viewBalanceOf(ctx, f)
-	ctx.Log("erc721.viewBalanceOf ok")
 	ctx.Results(results)
+	ctx.Log("erc721.viewBalanceOf ok")
 }
 
 type GetApprovedContext struct {
@@ -228,8 +228,8 @@ func viewGetApprovedThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.TokenID().Exists(), "missing mandatory tokenID")
 	viewGetApproved(ctx, f)
-	ctx.Log("erc721.viewGetApproved ok")
 	ctx.Results(results)
+	ctx.Log("erc721.viewGetApproved ok")
 }
 
 type IsApprovedForAllContext struct {
@@ -255,8 +255,8 @@ func viewIsApprovedForAllThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Operator().Exists(), "missing mandatory operator")
 	ctx.Require(f.Params.Owner().Exists(), "missing mandatory owner")
 	viewIsApprovedForAll(ctx, f)
-	ctx.Log("erc721.viewIsApprovedForAll ok")
 	ctx.Results(results)
+	ctx.Log("erc721.viewIsApprovedForAll ok")
 }
 
 type NameContext struct {
@@ -276,8 +276,8 @@ func viewNameThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewName(ctx, f)
-	ctx.Log("erc721.viewName ok")
 	ctx.Results(results)
+	ctx.Log("erc721.viewName ok")
 }
 
 type OwnerOfContext struct {
@@ -302,8 +302,8 @@ func viewOwnerOfThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.TokenID().Exists(), "missing mandatory tokenID")
 	viewOwnerOf(ctx, f)
-	ctx.Log("erc721.viewOwnerOf ok")
 	ctx.Results(results)
+	ctx.Log("erc721.viewOwnerOf ok")
 }
 
 type SymbolContext struct {
@@ -323,8 +323,8 @@ func viewSymbolThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewSymbol(ctx, f)
-	ctx.Log("erc721.viewSymbol ok")
 	ctx.Results(results)
+	ctx.Log("erc721.viewSymbol ok")
 }
 
 type TokenURIContext struct {
@@ -349,6 +349,6 @@ func viewTokenURIThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.TokenID().Exists(), "missing mandatory tokenID")
 	viewTokenURI(ctx, f)
-	ctx.Log("erc721.viewTokenURI ok")
 	ctx.Results(results)
+	ctx.Log("erc721.viewTokenURI ok")
 }

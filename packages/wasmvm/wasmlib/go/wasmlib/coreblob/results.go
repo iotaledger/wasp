@@ -46,7 +46,7 @@ type MapStringToImmutableInt32 struct {
 }
 
 func (m MapStringToImmutableInt32) GetInt32(key string) wasmtypes.ScImmutableInt32 {
-	return wasmtypes.NewScImmutableInt32(m.proxy.Key(wasmtypes.BytesFromString(key)))
+	return wasmtypes.NewScImmutableInt32(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type ImmutableGetBlobInfoResults struct {
@@ -67,7 +67,7 @@ func (m MapStringToMutableInt32) Clear() {
 }
 
 func (m MapStringToMutableInt32) GetInt32(key string) wasmtypes.ScMutableInt32 {
-	return wasmtypes.NewScMutableInt32(m.proxy.Key(wasmtypes.BytesFromString(key)))
+	return wasmtypes.NewScMutableInt32(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type MutableGetBlobInfoResults struct {
@@ -84,7 +84,7 @@ type MapHashToImmutableInt32 struct {
 }
 
 func (m MapHashToImmutableInt32) GetInt32(key wasmtypes.ScHash) wasmtypes.ScImmutableInt32 {
-	return wasmtypes.NewScImmutableInt32(m.proxy.Key(wasmtypes.BytesFromHash(key)))
+	return wasmtypes.NewScImmutableInt32(m.proxy.Key(wasmtypes.HashToBytes(key)))
 }
 
 type ImmutableListBlobsResults struct {
@@ -105,7 +105,7 @@ func (m MapHashToMutableInt32) Clear() {
 }
 
 func (m MapHashToMutableInt32) GetInt32(key wasmtypes.ScHash) wasmtypes.ScMutableInt32 {
-	return wasmtypes.NewScMutableInt32(m.proxy.Key(wasmtypes.BytesFromHash(key)))
+	return wasmtypes.NewScMutableInt32(m.proxy.Key(wasmtypes.HashToBytes(key)))
 }
 
 type MutableListBlobsResults struct {

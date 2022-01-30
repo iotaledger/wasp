@@ -6,76 +6,67 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class MapStringToImmutableBytes {
-	objID: i32;
+export class MapStringToImmutableBytes extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getBytes(key: string): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.objID, wasmlib.Key32.fromString(key));
+    getBytes(key: string): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.key(wasmtypes.stringToBytes(key)));
     }
 }
 
-export class ImmutableStoreBlobParams extends wasmlib.ScMapID {
+export class ImmutableStoreBlobParams extends wasmtypes.ScProxy {
     blobs(): sc.MapStringToImmutableBytes {
-		return new sc.MapStringToImmutableBytes(this.mapID);
+		return new sc.MapStringToImmutableBytes(this.proxy);
 	}
 }
 
-export class MapStringToMutableBytes {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapStringToMutableBytes extends wasmtypes.ScProxy {
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearMap();
     }
 
-    getBytes(key: string): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.objID, wasmlib.Key32.fromString(key));
+    getBytes(key: string): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.key(wasmtypes.stringToBytes(key)));
     }
 }
 
-export class MutableStoreBlobParams extends wasmlib.ScMapID {
+export class MutableStoreBlobParams extends wasmtypes.ScProxy {
     blobs(): sc.MapStringToMutableBytes {
-		return new sc.MapStringToMutableBytes(this.mapID);
+		return new sc.MapStringToMutableBytes(this.proxy);
 	}
 }
 
-export class ImmutableGetBlobFieldParams extends wasmlib.ScMapID {
-    field(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamField));
+export class ImmutableGetBlobFieldParams extends wasmtypes.ScProxy {
+    field(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamField));
 	}
 
-    hash(): wasmlib.ScImmutableHash {
-		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamHash));
-	}
-}
-
-export class MutableGetBlobFieldParams extends wasmlib.ScMapID {
-    field(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamField));
-	}
-
-    hash(): wasmlib.ScMutableHash {
-		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamHash));
+    hash(): wasmtypes.ScImmutableHash {
+		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamHash));
 	}
 }
 
-export class ImmutableGetBlobInfoParams extends wasmlib.ScMapID {
-    hash(): wasmlib.ScImmutableHash {
-		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamHash));
+export class MutableGetBlobFieldParams extends wasmtypes.ScProxy {
+    field(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamField));
+	}
+
+    hash(): wasmtypes.ScMutableHash {
+		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamHash));
 	}
 }
 
-export class MutableGetBlobInfoParams extends wasmlib.ScMapID {
-    hash(): wasmlib.ScMutableHash {
-		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamHash));
+export class ImmutableGetBlobInfoParams extends wasmtypes.ScProxy {
+    hash(): wasmtypes.ScImmutableHash {
+		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamHash));
+	}
+}
+
+export class MutableGetBlobInfoParams extends wasmtypes.ScProxy {
+    hash(): wasmtypes.ScMutableHash {
+		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamHash));
 	}
 }

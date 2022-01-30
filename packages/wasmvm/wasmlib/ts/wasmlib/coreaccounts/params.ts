@@ -6,60 +6,61 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableDepositParams extends wasmlib.ScMapID {
-    agentID(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
+export class ImmutableDepositParams extends wasmtypes.ScProxy {
+    agentID(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 }
 
-export class MutableDepositParams extends wasmlib.ScMapID {
-    agentID(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
+export class MutableDepositParams extends wasmtypes.ScProxy {
+    agentID(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 }
 
-export class ImmutableHarvestParams extends wasmlib.ScMapID {
-    withdrawAmount(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamWithdrawAmount));
+export class ImmutableHarvestParams extends wasmtypes.ScProxy {
+    withdrawAmount(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ParamWithdrawAmount));
 	}
 
-    withdrawColor(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamWithdrawColor));
-	}
-}
-
-export class MutableHarvestParams extends wasmlib.ScMapID {
-    withdrawAmount(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamWithdrawAmount));
-	}
-
-    withdrawColor(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamWithdrawColor));
+    withdrawColor(): wasmtypes.ScImmutableColor {
+		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ParamWithdrawColor));
 	}
 }
 
-export class ImmutableBalanceParams extends wasmlib.ScMapID {
-    agentID(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
+export class MutableHarvestParams extends wasmtypes.ScProxy {
+    withdrawAmount(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ParamWithdrawAmount));
+	}
+
+    withdrawColor(): wasmtypes.ScMutableColor {
+		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ParamWithdrawColor));
 	}
 }
 
-export class MutableBalanceParams extends wasmlib.ScMapID {
-    agentID(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
+export class ImmutableBalanceParams extends wasmtypes.ScProxy {
+    agentID(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 }
 
-export class ImmutableGetAccountNonceParams extends wasmlib.ScMapID {
-    agentID(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
+export class MutableBalanceParams extends wasmtypes.ScProxy {
+    agentID(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 }
 
-export class MutableGetAccountNonceParams extends wasmlib.ScMapID {
-    agentID(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAgentID));
+export class ImmutableGetAccountNonceParams extends wasmtypes.ScProxy {
+    agentID(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
+	}
+}
+
+export class MutableGetAccountNonceParams extends wasmtypes.ScProxy {
+    agentID(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 }

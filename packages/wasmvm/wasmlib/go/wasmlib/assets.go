@@ -19,7 +19,7 @@ func NewScAssetsFromBytes(buf []byte) ScAssets {
 	size := wasmtypes.Uint32FromBytes(dec.FixedBytes(wasmtypes.ScUint32Length))
 	dict := make(ScAssets, size)
 	for i := uint32(0); i < size; i++ {
-		color := wasmtypes.ColorFromBytes(dec.FixedBytes(wasmtypes.ScColorLength))
+		color := wasmtypes.ColorDecode(dec)
 		dict[color] = wasmtypes.Uint64FromBytes(dec.FixedBytes(wasmtypes.ScUint64Length))
 	}
 	return dict
@@ -34,10 +34,10 @@ func (a ScAssets) Bytes() []byte {
 		return string(keys[i].Bytes()) < string(keys[j].Bytes())
 	})
 	enc := wasmtypes.NewWasmEncoder()
-	enc.FixedBytes(wasmtypes.BytesFromUint32(uint32(len(keys))), wasmtypes.ScUint32Length)
+	enc.FixedBytes(wasmtypes.Uint32ToBytes(uint32(len(keys))), wasmtypes.ScUint32Length)
 	for _, color := range keys {
-		enc.FixedBytes(color.Bytes(), wasmtypes.ScColorLength)
-		enc.FixedBytes(wasmtypes.BytesFromUint64(a[color]), wasmtypes.ScUint64Length)
+		wasmtypes.ColorEncode(enc, color)
+		enc.FixedBytes(wasmtypes.Uint64ToBytes(a[color]), wasmtypes.ScUint64Length)
 	}
 	return enc.Buf()
 }
@@ -73,7 +73,12 @@ func NewScTransfers() ScTransfers {
 
 // create a new transfers object from a balances object
 func NewScTransfersFromBalances(balances ScBalances) ScTransfers {
-	return ScTransfers(balances.assets)
+	transfer := NewScTransfers()
+	colors := balances.Colors()
+	for _, color := range colors {
+		transfer.Set(color, balances.Balance(color))
+	}
+	return transfer
 }
 
 // create a new transfers object and initialize it with the specified amount of iotas
@@ -83,8 +88,8 @@ func NewScTransferIotas(amount uint64) ScTransfers {
 
 // create a new transfers object and initialize it with the specified token transfer
 func NewScTransfer(color wasmtypes.ScColor, amount uint64) ScTransfers {
-	transfer := make(ScTransfers)
-	transfer[color] = amount
+	transfer := NewScTransfers()
+	transfer.Set(color, amount)
 	return transfer
 }
 

@@ -84,7 +84,7 @@ $#emit setVarType
 `,
 	// *******************************
 	"typedefProxyMap": `
-$#set proxy Map$fldMapKey$+To$mut$FldType
+$#set proxy Map$FldMapKey$+To$mut$FldType
 $#if exist else typedefProxyMapNew
 `,
 	// *******************************

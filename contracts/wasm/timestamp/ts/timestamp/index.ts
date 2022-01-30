@@ -9,7 +9,6 @@ export * from "./timestamp";
 
 export * from "./consts";
 export * from "./contract";
-export * from "./keys";
 export * from "./lib";
 export * from "./results";
 export * from "./state";

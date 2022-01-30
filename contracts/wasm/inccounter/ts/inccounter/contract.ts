@@ -6,6 +6,7 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class CallIncrementCall {
@@ -13,7 +14,7 @@ export class CallIncrementCall {
 }
 
 export class CallIncrementContext {
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class CallIncrementRecurse5xCall {
@@ -21,7 +22,7 @@ export class CallIncrementRecurse5xCall {
 }
 
 export class CallIncrementRecurse5xContext {
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class EndlessLoopCall {
@@ -29,7 +30,7 @@ export class EndlessLoopCall {
 }
 
 export class EndlessLoopContext {
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class IncrementCall {
@@ -37,27 +38,27 @@ export class IncrementCall {
 }
 
 export class IncrementContext {
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class IncrementWithDelayCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncIncrementWithDelay);
-	params: sc.MutableIncrementWithDelayParams = new sc.MutableIncrementWithDelayParams();
+	params: sc.MutableIncrementWithDelayParams = new sc.MutableIncrementWithDelayParams(wasmlib.ScView.nilProxy);
 }
 
 export class IncrementWithDelayContext {
-	params: sc.ImmutableIncrementWithDelayParams = new sc.ImmutableIncrementWithDelayParams();
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	params: sc.ImmutableIncrementWithDelayParams = new sc.ImmutableIncrementWithDelayParams(wasmlib.paramsProxy());
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class InitCall {
 	func: wasmlib.ScInitFunc = new wasmlib.ScInitFunc(sc.HScName, sc.HFuncInit);
-	params: sc.MutableInitParams = new sc.MutableInitParams();
+	params: sc.MutableInitParams = new sc.MutableInitParams(wasmlib.ScView.nilProxy);
 }
 
 export class InitContext {
-	params: sc.ImmutableInitParams = new sc.ImmutableInitParams();
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	params: sc.ImmutableInitParams = new sc.ImmutableInitParams(wasmlib.paramsProxy());
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class LocalStateInternalCallCall {
@@ -65,7 +66,7 @@ export class LocalStateInternalCallCall {
 }
 
 export class LocalStateInternalCallContext {
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class LocalStatePostCall {
@@ -73,7 +74,7 @@ export class LocalStatePostCall {
 }
 
 export class LocalStatePostContext {
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class LocalStateSandboxCallCall {
@@ -81,7 +82,7 @@ export class LocalStateSandboxCallCall {
 }
 
 export class LocalStateSandboxCallContext {
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class PostIncrementCall {
@@ -89,17 +90,17 @@ export class PostIncrementCall {
 }
 
 export class PostIncrementContext {
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class RepeatManyCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRepeatMany);
-	params: sc.MutableRepeatManyParams = new sc.MutableRepeatManyParams();
+	params: sc.MutableRepeatManyParams = new sc.MutableRepeatManyParams(wasmlib.ScView.nilProxy);
 }
 
 export class RepeatManyContext {
-	params: sc.ImmutableRepeatManyParams = new sc.ImmutableRepeatManyParams();
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	params: sc.ImmutableRepeatManyParams = new sc.ImmutableRepeatManyParams(wasmlib.paramsProxy());
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class TestVliCodecCall {
@@ -107,7 +108,7 @@ export class TestVliCodecCall {
 }
 
 export class TestVliCodecContext {
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class TestVluCodecCall {
@@ -115,51 +116,51 @@ export class TestVluCodecCall {
 }
 
 export class TestVluCodecContext {
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class WhenMustIncrementCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncWhenMustIncrement);
-	params: sc.MutableWhenMustIncrementParams = new sc.MutableWhenMustIncrementParams();
+	params: sc.MutableWhenMustIncrementParams = new sc.MutableWhenMustIncrementParams(wasmlib.ScView.nilProxy);
 }
 
 export class WhenMustIncrementContext {
-	params: sc.ImmutableWhenMustIncrementParams = new sc.ImmutableWhenMustIncrementParams();
-	state: sc.MutableIncCounterState = new sc.MutableIncCounterState();
+	params: sc.ImmutableWhenMustIncrementParams = new sc.ImmutableWhenMustIncrementParams(wasmlib.paramsProxy());
+	state: sc.MutableIncCounterState = new sc.MutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class GetCounterCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetCounter);
-	results: sc.ImmutableGetCounterResults = new sc.ImmutableGetCounterResults();
+	results: sc.ImmutableGetCounterResults = new sc.ImmutableGetCounterResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetCounterContext {
-	results: sc.MutableGetCounterResults = new sc.MutableGetCounterResults();
-	state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState();
+	results: sc.MutableGetCounterResults = new sc.MutableGetCounterResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class GetVliCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetVli);
-	params: sc.MutableGetVliParams = new sc.MutableGetVliParams();
-	results: sc.ImmutableGetVliResults = new sc.ImmutableGetVliResults();
+	params: sc.MutableGetVliParams = new sc.MutableGetVliParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableGetVliResults = new sc.ImmutableGetVliResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetVliContext {
-	params: sc.ImmutableGetVliParams = new sc.ImmutableGetVliParams();
-	results: sc.MutableGetVliResults = new sc.MutableGetVliResults();
-	state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState();
+	params: sc.ImmutableGetVliParams = new sc.ImmutableGetVliParams(wasmlib.paramsProxy());
+	results: sc.MutableGetVliResults = new sc.MutableGetVliResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class GetVluCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetVlu);
-	params: sc.MutableGetVluParams = new sc.MutableGetVluParams();
-	results: sc.ImmutableGetVluResults = new sc.ImmutableGetVluResults();
+	params: sc.MutableGetVluParams = new sc.MutableGetVluParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableGetVluResults = new sc.ImmutableGetVluResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetVluContext {
-	params: sc.ImmutableGetVluParams = new sc.ImmutableGetVluParams();
-	results: sc.MutableGetVluResults = new sc.MutableGetVluResults();
-	state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState();
+	params: sc.ImmutableGetVluParams = new sc.ImmutableGetVluParams(wasmlib.paramsProxy());
+	results: sc.MutableGetVluResults = new sc.MutableGetVluResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableIncCounterState = new sc.ImmutableIncCounterState(wasmlib.ScState.proxy());
 }
 
 export class ScFuncs {
@@ -180,14 +181,14 @@ export class ScFuncs {
     }
 
     static incrementWithDelay(ctx: wasmlib.ScFuncCallContext): IncrementWithDelayCall {
-        let f = new IncrementWithDelayCall();
-        f.func.setPtrs(f.params, null);
+        const f = new IncrementWithDelayCall();
+		f.params = new sc.MutableIncrementWithDelayParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
     static init(ctx: wasmlib.ScFuncCallContext): InitCall {
-        let f = new InitCall();
-        f.func.setPtrs(f.params, null);
+        const f = new InitCall();
+		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
@@ -208,8 +209,8 @@ export class ScFuncs {
     }
 
     static repeatMany(ctx: wasmlib.ScFuncCallContext): RepeatManyCall {
-        let f = new RepeatManyCall();
-        f.func.setPtrs(f.params, null);
+        const f = new RepeatManyCall();
+		f.params = new sc.MutableRepeatManyParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
@@ -222,26 +223,28 @@ export class ScFuncs {
     }
 
     static whenMustIncrement(ctx: wasmlib.ScFuncCallContext): WhenMustIncrementCall {
-        let f = new WhenMustIncrementCall();
-        f.func.setPtrs(f.params, null);
+        const f = new WhenMustIncrementCall();
+		f.params = new sc.MutableWhenMustIncrementParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
     static getCounter(ctx: wasmlib.ScViewCallContext): GetCounterCall {
-        let f = new GetCounterCall();
-        f.func.setPtrs(null, f.results);
+        const f = new GetCounterCall();
+		f.results = new sc.ImmutableGetCounterResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
     static getVli(ctx: wasmlib.ScViewCallContext): GetVliCall {
-        let f = new GetVliCall();
-        f.func.setPtrs(f.params, f.results);
+        const f = new GetVliCall();
+		f.params = new sc.MutableGetVliParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableGetVliResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
     static getVlu(ctx: wasmlib.ScViewCallContext): GetVluCall {
-        let f = new GetVluCall();
-        f.func.setPtrs(f.params, f.results);
+        const f = new GetVluCall();
+		f.params = new sc.MutableGetVluParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableGetVluResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 }

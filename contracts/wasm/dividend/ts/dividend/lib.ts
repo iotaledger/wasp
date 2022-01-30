@@ -6,6 +6,7 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export function on_call(index: i32): void {
@@ -20,16 +21,11 @@ export function on_load(): void {
     exports.addFunc(sc.FuncSetOwner,  funcSetOwnerThunk);
     exports.addView(sc.ViewGetFactor, viewGetFactorThunk);
     exports.addView(sc.ViewGetOwner,  viewGetOwnerThunk);
-
-    for (let i = 0; i < sc.keyMap.length; i++) {
-        sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
-    }
 }
 
 function funcDivideThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("dividend.funcDivide");
 	let f = new sc.DivideContext();
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcDivide(ctx, f);
 	ctx.log("dividend.funcDivide ok");
 }
@@ -37,23 +33,19 @@ function funcDivideThunk(ctx: wasmlib.ScFuncContext): void {
 function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("dividend.funcInit");
 	let f = new sc.InitContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcInit(ctx, f);
 	ctx.log("dividend.funcInit ok");
 }
 
 function funcMemberThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("dividend.funcMember");
+	let f = new sc.MemberContext();
 
 	// only defined owner of contract can add members
-	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("owner"));
+	const access = f.state.owner();
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller().equals(access.value()), "no permission");
 
-	let f = new sc.MemberContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	ctx.require(f.params.address().exists(), "missing mandatory address");
 	ctx.require(f.params.factor().exists(), "missing mandatory factor");
 	sc.funcMember(ctx, f);
@@ -62,15 +54,13 @@ function funcMemberThunk(ctx: wasmlib.ScFuncContext): void {
 
 function funcSetOwnerThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("dividend.funcSetOwner");
+	let f = new sc.SetOwnerContext();
 
 	// only defined owner of contract can change owner
-	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("owner"));
+	const access = f.state.owner();
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller().equals(access.value()), "no permission");
 
-	let f = new sc.SetOwnerContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	ctx.require(f.params.owner().exists(), "missing mandatory owner");
 	sc.funcSetOwner(ctx, f);
 	ctx.log("dividend.funcSetOwner ok");
@@ -79,19 +69,20 @@ function funcSetOwnerThunk(ctx: wasmlib.ScFuncContext): void {
 function viewGetFactorThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("dividend.viewGetFactor");
 	let f = new sc.GetFactorContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
+    const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableGetFactorResults(results.asProxy());
 	ctx.require(f.params.address().exists(), "missing mandatory address");
 	sc.viewGetFactor(ctx, f);
+	ctx.results(results);
 	ctx.log("dividend.viewGetFactor ok");
 }
 
 function viewGetOwnerThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("dividend.viewGetOwner");
 	let f = new sc.GetOwnerContext();
-    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
+    const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableGetOwnerResults(results.asProxy());
 	sc.viewGetOwner(ctx, f);
+	ctx.results(results);
 	ctx.log("dividend.viewGetOwner ok");
 }

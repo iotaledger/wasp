@@ -1,185 +1,131 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+import * as wasmrequests from "./wasmrequests"
+import * as wasmtypes from "./wasmtypes"
+import {ScAssets, ScTransfers} from "./assets";
+import {ScDict} from "./dict";
+import {sandbox} from "./host";
+import {FnCall, FnPost, panic, ScSandbox} from "./sandbox";
+
 // base contract objects
 
-import {BytesEncoder} from "./bytes";
-import {ROOT,ScTransfers} from "./context";
-import {ScChainID,ScHname} from "./hashtypes";
-import {getObjectID, panic, TYPE_MAP} from "./host";
-import * as keys from "./keys";
-import {ScMutableMap} from "./mutable";
-
 export interface ScFuncCallContext {
-    canCallFunc():void;
+    canCallFunc(): void;
 }
 
 export interface ScViewCallContext {
-    canCallView():void;
+    canCallView(): void;
 }
 
-export class ScMapID {
-    mapID: i32 = 0;
+export function newCallParamsProxy(v: ScView): wasmtypes.Proxy {
+    v.params = new ScDict([]);
+    return v.params.asProxy();
 }
 
-type NullableScMapID = ScMapID | null;
+export function newCallResultsProxy(v: ScView): wasmtypes.Proxy {
+    const proxy = new ScDict([]).asProxy();
+    v.resultsProxy = proxy;
+    return proxy
+}
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScView {
-    hContract: ScHname;
-    hFunction: ScHname;
-    paramsID: NullableScMapID;
-    resultsID: NullableScMapID;
+    private static nilParams: ScDict = new ScDict([]);
+    public static nilProxy: wasmtypes.Proxy = new wasmtypes.Proxy(ScView.nilParams);
 
-    constructor(hContract: ScHname, hFunction: ScHname) {
+    hContract: wasmtypes.ScHname;
+    hFunction: wasmtypes.ScHname;
+    params: ScDict;
+    resultsProxy: wasmtypes.Proxy| null;
+
+    constructor(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname) {
         this.hContract = hContract;
         this.hFunction = hFunction;
-        this.paramsID = null;
-        this.resultsID = null;
-    }
-
-    setPtrs(paramsID: NullableScMapID, resultsID: NullableScMapID): void {
-        this.paramsID = paramsID;
-        this.resultsID = resultsID;
-
-        if (paramsID === null) {
-        } else {
-            paramsID.mapID = ScMutableMap.create().mapID();
-        }
+        this.params = ScView.nilParams;
+        this.resultsProxy = null;
     }
 
     call(): void {
-        this.callWithTransfer(0);
+        this.callWithTransfer(null);
     }
 
-    callWithTransfer(transferID: i32): void {
-        let encode = new BytesEncoder();
-        encode.hname(this.hContract);
-        encode.hname(this.hFunction);
-        encode.int32(this.id(this.paramsID));
-        encode.int32(transferID);
-        ROOT.getBytes(keys.KEY_CALL).setValue(encode.data());
-
-        let resultsID = this.resultsID;
-        if (resultsID === null) {
-        } else {
-            resultsID.mapID = getObjectID(1, keys.KEY_RETURN, TYPE_MAP);
+    protected callWithTransfer(transfer: ScAssets | null): void {
+        //TODO new ScSandboxFunc().call(...)
+        if (transfer === null) {
+            transfer = new ScAssets([]);
+        }
+        const req = new wasmrequests.CallRequest();
+        req.contract = this.hContract;
+        req.function = this.hFunction;
+        req.params = this.params.toBytes();
+        req.transfer = transfer.toBytes();
+        const res = sandbox(FnCall, req.bytes());
+        const proxy = this.resultsProxy;
+        if (proxy != null) {
+            proxy.kvStore = new ScDict(res);
         }
     }
 
-    clone(): ScView {
-        let o = new ScView(this.hContract, this.hFunction);
-        o.paramsID = this.paramsID;
-        o.resultsID = this.resultsID;
-        return o;
-    }
-
-    ofContract(hContract: ScHname): ScView {
-        let ret = this.clone();
-        ret.hContract = hContract;
-        return ret;
-    }
-
-    id(paramsID: NullableScMapID): i32 {
-        if (paramsID === null) {
-            return 0;
-        }
-        return paramsID.mapID;
+    ofContract(hContract: wasmtypes.ScHname): ScView {
+        this.hContract = hContract;
+        return this;
     }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export class ScInitFunc {
-    view: ScView;
-
-    constructor(hContract: ScHname, hFunction: ScHname) {
-        this.view = new ScView(hContract, hFunction);
-    }
-
-    setPtrs(paramsID: NullableScMapID, resultsID: NullableScMapID): void {
-        this.view.setPtrs(paramsID, resultsID);
-    }
-
+export class ScInitFunc extends ScView {
     call(): void {
         return panic("cannot call init");
     }
-
-    clone(): ScInitFunc {
-        let o = new ScInitFunc(this.view.hContract, this.view.hFunction);
-        o.view = this.view.clone();
-        return o;
-    }
-
-    ofContract(hContract: ScHname): ScInitFunc {
-        let ret = this.clone();
-        ret.view.hContract = hContract;
-        return ret;
-    }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export class ScFunc {
-    view: ScView;
+export class ScFunc extends ScView {
     delaySeconds: u32 = 0;
-    transferID: i32 = 0;
-
-    constructor(hContract: ScHname, hFunction: ScHname) {
-        this.view = new ScView(hContract, hFunction);
-    }
-
-    setPtrs(paramsID: NullableScMapID, resultsID: NullableScMapID): void {
-        this.view.setPtrs(paramsID, resultsID);
-    }
+    transfers: ScAssets | null = null;
 
     call(): void {
         if (this.delaySeconds != 0) {
             return panic("cannot delay a call");
         }
-        this.view.callWithTransfer(this.transferID);
-    }
-
-    clone(): ScFunc {
-        let o = new ScFunc(this.view.hContract, this.view.hFunction);
-        o.view = this.view.clone();
-        o.delaySeconds = this.delaySeconds;
-        o.transferID = this.transferID;
-        return o;
+        this.callWithTransfer(this.transfers);
     }
 
     delay(seconds: u32): ScFunc {
-        let ret = this.clone();
-        ret.delaySeconds = seconds;
-        return ret;
-    }
-
-    ofContract(hContract: ScHname): ScFunc {
-        let ret = this.clone();
-        ret.view.hContract = hContract;
-        return ret;
+        this.delaySeconds = seconds;
+        return this;
     }
 
     post(): void {
-        return this.postToChain(ROOT.getChainID(keys.KEY_CHAIN_ID).value());
+        return this.postToChain(new ScSandbox().chainID());
     }
 
-    postToChain(chainID: ScChainID): void {
-        let encode = new BytesEncoder();
-        encode.chainID(chainID);
-        encode.hname(this.view.hContract);
-        encode.hname(this.view.hFunction);
-        encode.int32(this.view.id(this.view.paramsID));
-        encode.int32(this.transferID);
-        encode.uint32(this.delaySeconds);
-        ROOT.getBytes(keys.KEY_POST).setValue(encode.data());
+    postToChain(chainID: wasmtypes.ScChainID): void {
+        let transfer = this.transfers;
+        if (transfer === null) {
+            transfer = new ScAssets([]);
+        }
+        const req = new wasmrequests.PostRequest();
+        req.chainID = chainID;
+        req.contract = this.hContract;
+        req.function = this.hFunction;
+        req.params = this.params.toBytes();
+        req.transfer = transfer.toBytes();
+        req.delay = this.delaySeconds;
+        const res = sandbox(FnPost, req.bytes());
+        if (this.resultsProxy) {
+            //TODO set kvStore directly?
+            this.resultsProxy = new wasmtypes.Proxy(new ScDict(res));
+        }
     }
 
-    transfer(transfer: ScTransfers): ScFunc {
-        let ret = this.clone();
-        ret.transferID = transfer.transfers.objID;
-        return ret;
+    transfer(transfers: ScTransfers): ScFunc {
+        this.transfers = transfers;
+        return this;
     }
 
     transferIotas(amount: i64): ScFunc {

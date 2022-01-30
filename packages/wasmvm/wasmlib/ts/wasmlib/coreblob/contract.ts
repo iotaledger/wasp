@@ -6,53 +6,57 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class StoreBlobCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncStoreBlob);
-	params: sc.MutableStoreBlobParams = new sc.MutableStoreBlobParams();
-	results: sc.ImmutableStoreBlobResults = new sc.ImmutableStoreBlobResults();
+	params: sc.MutableStoreBlobParams = new sc.MutableStoreBlobParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableStoreBlobResults = new sc.ImmutableStoreBlobResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetBlobFieldCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetBlobField);
-	params: sc.MutableGetBlobFieldParams = new sc.MutableGetBlobFieldParams();
-	results: sc.ImmutableGetBlobFieldResults = new sc.ImmutableGetBlobFieldResults();
+	params: sc.MutableGetBlobFieldParams = new sc.MutableGetBlobFieldParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableGetBlobFieldResults = new sc.ImmutableGetBlobFieldResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetBlobInfoCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetBlobInfo);
-	params: sc.MutableGetBlobInfoParams = new sc.MutableGetBlobInfoParams();
-	results: sc.ImmutableGetBlobInfoResults = new sc.ImmutableGetBlobInfoResults();
+	params: sc.MutableGetBlobInfoParams = new sc.MutableGetBlobInfoParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableGetBlobInfoResults = new sc.ImmutableGetBlobInfoResults(wasmlib.ScView.nilProxy);
 }
 
 export class ListBlobsCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewListBlobs);
-	results: sc.ImmutableListBlobsResults = new sc.ImmutableListBlobsResults();
+	results: sc.ImmutableListBlobsResults = new sc.ImmutableListBlobsResults(wasmlib.ScView.nilProxy);
 }
 
 export class ScFuncs {
     static storeBlob(ctx: wasmlib.ScFuncCallContext): StoreBlobCall {
-        let f = new StoreBlobCall();
-        f.func.setPtrs(f.params, f.results);
+        const f = new StoreBlobCall();
+		f.params = new sc.MutableStoreBlobParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableStoreBlobResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
     static getBlobField(ctx: wasmlib.ScViewCallContext): GetBlobFieldCall {
-        let f = new GetBlobFieldCall();
-        f.func.setPtrs(f.params, f.results);
+        const f = new GetBlobFieldCall();
+		f.params = new sc.MutableGetBlobFieldParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableGetBlobFieldResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
     static getBlobInfo(ctx: wasmlib.ScViewCallContext): GetBlobInfoCall {
-        let f = new GetBlobInfoCall();
-        f.func.setPtrs(f.params, f.results);
+        const f = new GetBlobInfoCall();
+		f.params = new sc.MutableGetBlobInfoParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableGetBlobInfoResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
     static listBlobs(ctx: wasmlib.ScViewCallContext): ListBlobsCall {
-        let f = new ListBlobsCall();
-        f.func.setPtrs(null, f.results);
+        const f = new ListBlobsCall();
+		f.results = new sc.ImmutableListBlobsResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 }

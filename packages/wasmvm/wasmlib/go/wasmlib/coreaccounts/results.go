@@ -14,7 +14,7 @@ type MapAgentIDToImmutableBytes struct {
 }
 
 func (m MapAgentIDToImmutableBytes) GetBytes(key wasmtypes.ScAgentID) wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.BytesFromAgentID(key)))
+	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
 type ImmutableAccountsResults struct {
@@ -35,7 +35,7 @@ func (m MapAgentIDToMutableBytes) Clear() {
 }
 
 func (m MapAgentIDToMutableBytes) GetBytes(key wasmtypes.ScAgentID) wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.BytesFromAgentID(key)))
+	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
 type MutableAccountsResults struct {
@@ -52,7 +52,7 @@ type MapColorToImmutableInt64 struct {
 }
 
 func (m MapColorToImmutableInt64) GetInt64(key wasmtypes.ScColor) wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(m.proxy.Key(wasmtypes.BytesFromColor(key)))
+	return wasmtypes.NewScImmutableInt64(m.proxy.Key(wasmtypes.ColorToBytes(key)))
 }
 
 type ImmutableBalanceResults struct {
@@ -73,7 +73,7 @@ func (m MapColorToMutableInt64) Clear() {
 }
 
 func (m MapColorToMutableInt64) GetInt64(key wasmtypes.ScColor) wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(m.proxy.Key(wasmtypes.BytesFromColor(key)))
+	return wasmtypes.NewScMutableInt64(m.proxy.Key(wasmtypes.ColorToBytes(key)))
 }
 
 type MutableBalanceResults struct {

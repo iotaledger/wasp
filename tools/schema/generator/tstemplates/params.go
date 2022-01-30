@@ -23,7 +23,7 @@ $#if param paramsProxyStruct
 $#set TypeName $mut$FuncName$+Params
 $#each param proxyContainers
 
-export class $TypeName extends wasmlib.ScMapID {
+export class $TypeName extends wasmtypes.ScProxy {
 $#set separator $false
 $#each param proxyMethods
 }

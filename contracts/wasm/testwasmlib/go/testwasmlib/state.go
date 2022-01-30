@@ -14,7 +14,7 @@ type MapStringToImmutableStringArray struct {
 }
 
 func (m MapStringToImmutableStringArray) GetStringArray(key string) ImmutableStringArray {
-	return ImmutableStringArray{proxy: m.proxy.Key(wasmtypes.BytesFromString(key))}
+	return ImmutableStringArray{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
 }
 
 type MapStringToImmutableStringMap struct {
@@ -22,7 +22,7 @@ type MapStringToImmutableStringMap struct {
 }
 
 func (m MapStringToImmutableStringMap) GetStringMap(key string) ImmutableStringMap {
-	return ImmutableStringMap{proxy: m.proxy.Key(wasmtypes.BytesFromString(key))}
+	return ImmutableStringMap{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
 }
 
 type ImmutableTestWasmLibState struct {
@@ -50,7 +50,7 @@ func (m MapStringToMutableStringArray) Clear() {
 }
 
 func (m MapStringToMutableStringArray) GetStringArray(key string) MutableStringArray {
-	return MutableStringArray{proxy: m.proxy.Key(wasmtypes.BytesFromString(key))}
+	return MutableStringArray{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
 }
 
 type MapStringToMutableStringMap struct {
@@ -62,7 +62,7 @@ func (m MapStringToMutableStringMap) Clear() {
 }
 
 func (m MapStringToMutableStringMap) GetStringMap(key string) MutableStringMap {
-	return MutableStringMap{proxy: m.proxy.Key(wasmtypes.BytesFromString(key))}
+	return MutableStringMap{proxy: m.proxy.Key(wasmtypes.StringToBytes(key))}
 }
 
 type MutableTestWasmLibState struct {

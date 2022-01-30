@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmlib from "wasmlib"
+import * as wasmtypes from "wasmlib/wasmtypes"
 import * as sc from "./index";
 
 export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): void {
     let donation = new sc.Donation();
-    donation.amount = ctx.incoming().balance(wasmlib.ScColor.IOTA);
+    donation.amount = ctx.incoming().balance(wasmtypes.IOTA);
     donation.donator = ctx.caller();
     donation.error = "";
     donation.feedback = f.params.feedback().value();
@@ -19,7 +20,7 @@ export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): voi
         }
     }
     let log = f.state.log();
-    log.getDonation(log.length()).setValue(donation);
+    log.appendDonation().setValue(donation);
 
     let largestDonation = f.state.maxDonation();
     let totalDonated = f.state.totalDonation();
@@ -30,7 +31,7 @@ export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): voi
 }
 
 export function funcWithdraw(ctx: wasmlib.ScFuncContext, f: sc.WithdrawContext): void {
-    let balance = ctx.balances().balance(wasmlib.ScColor.IOTA);
+    let balance = ctx.balances().balance(wasmtypes.IOTA);
     let amount = f.params.amount().value();
     if (amount == 0 || amount > balance) {
         amount = balance;

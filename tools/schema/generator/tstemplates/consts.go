@@ -3,11 +3,11 @@ package tstemplates
 var constsTs = map[string]string{
 	// *******************************
 	"consts.ts": `
-$#emit importWasmLib
+$#emit importWasmTypes
 
 export const ScName        = "$scName";
 export const ScDescription = "$scDesc";
-export const HScName       = new wasmlib.ScHname(0x$hscName);
+export const HScName       = new wasmtypes.ScHname(0x$hscName);
 $#if params constParams
 $#if results constResults
 $#if state constState
@@ -44,6 +44,6 @@ export const $Kind$FuncName$funcPad = "$funcName";
 `,
 	// *******************************
 	"constHFunc": `
-export const H$Kind$FuncName$funcPad = new wasmlib.ScHname(0x$hFuncName);
+export const H$Kind$FuncName$funcPad = new wasmtypes.ScHname(0x$hFuncName);
 `,
 }

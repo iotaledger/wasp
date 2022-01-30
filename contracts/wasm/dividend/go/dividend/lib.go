@@ -128,8 +128,8 @@ func viewGetFactorThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
 	viewGetFactor(ctx, f)
-	ctx.Log("dividend.viewGetFactor ok")
 	ctx.Results(results)
+	ctx.Log("dividend.viewGetFactor ok")
 }
 
 type GetOwnerContext struct {
@@ -149,6 +149,6 @@ func viewGetOwnerThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewGetOwner(ctx, f)
-	ctx.Log("dividend.viewGetOwner ok")
 	ctx.Results(results)
+	ctx.Log("dividend.viewGetOwner ok")
 }

@@ -6,124 +6,125 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableApproveParams extends wasmlib.ScMapID {
-    amount(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
+export class ImmutableApproveParams extends wasmtypes.ScProxy {
+    amount(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamAmount));
 	}
 
-    delegation(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDelegation));
-	}
-}
-
-export class MutableApproveParams extends wasmlib.ScMapID {
-    amount(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
-	}
-
-    delegation(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDelegation));
+    delegation(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamDelegation));
 	}
 }
 
-export class ImmutableInitParams extends wasmlib.ScMapID {
-    creator(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamCreator]);
+export class MutableApproveParams extends wasmtypes.ScProxy {
+    amount(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamAmount));
 	}
 
-    supply(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, sc.idxMap[sc.IdxParamSupply]);
-	}
-}
-
-export class MutableInitParams extends wasmlib.ScMapID {
-    creator(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamCreator]);
-	}
-
-    supply(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, sc.idxMap[sc.IdxParamSupply]);
+    delegation(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamDelegation));
 	}
 }
 
-export class ImmutableTransferParams extends wasmlib.ScMapID {
-    account(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
+export class ImmutableInitParams extends wasmtypes.ScProxy {
+    creator(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamCreator));
 	}
 
-    amount(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
-	}
-}
-
-export class MutableTransferParams extends wasmlib.ScMapID {
-    account(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
-	}
-
-    amount(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
+    supply(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamSupply));
 	}
 }
 
-export class ImmutableTransferFromParams extends wasmlib.ScMapID {
-    account(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
+export class MutableInitParams extends wasmtypes.ScProxy {
+    creator(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamCreator));
 	}
 
-    amount(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
-	}
-
-    recipient(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamRecipient));
+    supply(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamSupply));
 	}
 }
 
-export class MutableTransferFromParams extends wasmlib.ScMapID {
-    account(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
+export class ImmutableTransferParams extends wasmtypes.ScProxy {
+    account(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAccount));
 	}
 
-    amount(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ParamAmount));
-	}
-
-    recipient(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamRecipient));
+    amount(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamAmount));
 	}
 }
 
-export class ImmutableAllowanceParams extends wasmlib.ScMapID {
-    account(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
+export class MutableTransferParams extends wasmtypes.ScProxy {
+    account(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAccount));
 	}
 
-    delegation(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDelegation));
-	}
-}
-
-export class MutableAllowanceParams extends wasmlib.ScMapID {
-    account(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
-	}
-
-    delegation(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamDelegation));
+    amount(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamAmount));
 	}
 }
 
-export class ImmutableBalanceOfParams extends wasmlib.ScMapID {
-    account(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
+export class ImmutableTransferFromParams extends wasmtypes.ScProxy {
+    account(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAccount));
+	}
+
+    amount(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamAmount));
+	}
+
+    recipient(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamRecipient));
 	}
 }
 
-export class MutableBalanceOfParams extends wasmlib.ScMapID {
-    account(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamAccount));
+export class MutableTransferFromParams extends wasmtypes.ScProxy {
+    account(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAccount));
+	}
+
+    amount(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamAmount));
+	}
+
+    recipient(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamRecipient));
+	}
+}
+
+export class ImmutableAllowanceParams extends wasmtypes.ScProxy {
+    account(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAccount));
+	}
+
+    delegation(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamDelegation));
+	}
+}
+
+export class MutableAllowanceParams extends wasmtypes.ScProxy {
+    account(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAccount));
+	}
+
+    delegation(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamDelegation));
+	}
+}
+
+export class ImmutableBalanceOfParams extends wasmtypes.ScProxy {
+    account(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAccount));
+	}
+}
+
+export class MutableBalanceOfParams extends wasmtypes.ScProxy {
+    account(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAccount));
 	}
 }

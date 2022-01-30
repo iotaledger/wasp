@@ -6,98 +6,77 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ArrayOfImmutableColor {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class ArrayOfImmutableColor extends wasmtypes.ScProxy {
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
-    getColor(index: u32): wasmlib.ScImmutableColor {
-        return new wasmlib.ScImmutableColor(this.objID, new wasmlib.Key32(index as i32));
-    }
-}
-
-export class MapColorToImmutableToken {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getToken(key: wasmlib.ScColor): sc.ImmutableToken {
-        return new sc.ImmutableToken(this.objID, key.getKeyID());
+    getColor(index: u32): wasmtypes.ScImmutableColor {
+        return new wasmtypes.ScImmutableColor(this.proxy.index(index));
     }
 }
 
-export class ImmutableTokenRegistryState extends wasmlib.ScMapID {
+export class MapColorToImmutableToken extends wasmtypes.ScProxy {
+
+    getToken(key: wasmtypes.ScColor): sc.ImmutableToken {
+        return new sc.ImmutableToken(this.proxy.key(wasmtypes.colorToBytes(key)));
+    }
+}
+
+export class ImmutableTokenRegistryState extends wasmtypes.ScProxy {
     colorList(): sc.ArrayOfImmutableColor {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateColorList), wasmlib.TYPE_ARRAY|wasmlib.TYPE_COLOR);
-		return new sc.ArrayOfImmutableColor(arrID);
+		return new sc.ArrayOfImmutableColor(this.proxy.root(sc.StateColorList));
 	}
 
     registry(): sc.MapColorToImmutableToken {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateRegistry), wasmlib.TYPE_MAP);
-		return new sc.MapColorToImmutableToken(mapID);
+		return new sc.MapColorToImmutableToken(this.proxy.root(sc.StateRegistry));
 	}
 }
 
-export class ArrayOfMutableColor {
-	objID: i32;
+export class ArrayOfMutableColor extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	appendColor(): wasmtypes.ScMutableColor {
+		return new wasmtypes.ScMutableColor(this.proxy.append());
+	}
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearArray();
     }
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
-    getColor(index: u32): wasmlib.ScMutableColor {
-        return new wasmlib.ScMutableColor(this.objID, new wasmlib.Key32(index as i32));
+    getColor(index: u32): wasmtypes.ScMutableColor {
+        return new wasmtypes.ScMutableColor(this.proxy.index(index));
     }
 }
 
-export class MapColorToMutableToken {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapColorToMutableToken extends wasmtypes.ScProxy {
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearMap();
     }
 
-    getToken(key: wasmlib.ScColor): sc.MutableToken {
-        return new sc.MutableToken(this.objID, key.getKeyID());
+    getToken(key: wasmtypes.ScColor): sc.MutableToken {
+        return new sc.MutableToken(this.proxy.key(wasmtypes.colorToBytes(key)));
     }
 }
 
-export class MutableTokenRegistryState extends wasmlib.ScMapID {
+export class MutableTokenRegistryState extends wasmtypes.ScProxy {
     asImmutable(): sc.ImmutableTokenRegistryState {
-		const imm = new sc.ImmutableTokenRegistryState();
-		imm.mapID = this.mapID;
-		return imm;
+		return new sc.ImmutableTokenRegistryState(this.proxy);
 	}
 
     colorList(): sc.ArrayOfMutableColor {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateColorList), wasmlib.TYPE_ARRAY|wasmlib.TYPE_COLOR);
-		return new sc.ArrayOfMutableColor(arrID);
+		return new sc.ArrayOfMutableColor(this.proxy.root(sc.StateColorList));
 	}
 
     registry(): sc.MapColorToMutableToken {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateRegistry), wasmlib.TYPE_MAP);
-		return new sc.MapColorToMutableToken(mapID);
+		return new sc.MapColorToMutableToken(this.proxy.root(sc.StateRegistry));
 	}
 }

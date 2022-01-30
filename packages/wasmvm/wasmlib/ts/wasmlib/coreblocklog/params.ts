@@ -6,116 +6,117 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableGetBlockInfoParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableUint32 {
-		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+export class ImmutableGetBlockInfoParams extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 }
 
-export class MutableGetBlockInfoParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableUint32 {
-		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+export class MutableGetBlockInfoParams extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 }
 
-export class ImmutableGetEventsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableUint32 {
-		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+export class ImmutableGetEventsForBlockParams extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 }
 
-export class MutableGetEventsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableUint32 {
-		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+export class MutableGetEventsForBlockParams extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 }
 
-export class ImmutableGetEventsForContractParams extends wasmlib.ScMapID {
-    contractHname(): wasmlib.ScImmutableHname {
-		return new wasmlib.ScImmutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamContractHname));
+export class ImmutableGetEventsForContractParams extends wasmtypes.ScProxy {
+    contractHname(): wasmtypes.ScImmutableHname {
+		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamContractHname));
 	}
 
-    fromBlock(): wasmlib.ScImmutableUint32 {
-		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamFromBlock));
+    fromBlock(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFromBlock));
 	}
 
-    toBlock(): wasmlib.ScImmutableUint32 {
-		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamToBlock));
-	}
-}
-
-export class MutableGetEventsForContractParams extends wasmlib.ScMapID {
-    contractHname(): wasmlib.ScMutableHname {
-		return new wasmlib.ScMutableHname(this.mapID, wasmlib.Key32.fromString(sc.ParamContractHname));
-	}
-
-    fromBlock(): wasmlib.ScMutableUint32 {
-		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamFromBlock));
-	}
-
-    toBlock(): wasmlib.ScMutableUint32 {
-		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamToBlock));
+    toBlock(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamToBlock));
 	}
 }
 
-export class ImmutableGetEventsForRequestParams extends wasmlib.ScMapID {
-    requestID(): wasmlib.ScImmutableRequestID {
-		return new wasmlib.ScImmutableRequestID(this.mapID, wasmlib.Key32.fromString(sc.ParamRequestID));
+export class MutableGetEventsForContractParams extends wasmtypes.ScProxy {
+    contractHname(): wasmtypes.ScMutableHname {
+		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamContractHname));
+	}
+
+    fromBlock(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamFromBlock));
+	}
+
+    toBlock(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamToBlock));
 	}
 }
 
-export class MutableGetEventsForRequestParams extends wasmlib.ScMapID {
-    requestID(): wasmlib.ScMutableRequestID {
-		return new wasmlib.ScMutableRequestID(this.mapID, wasmlib.Key32.fromString(sc.ParamRequestID));
+export class ImmutableGetEventsForRequestParams extends wasmtypes.ScProxy {
+    requestID(): wasmtypes.ScImmutableRequestID {
+		return new wasmtypes.ScImmutableRequestID(this.proxy.root(sc.ParamRequestID));
 	}
 }
 
-export class ImmutableGetRequestIDsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableUint32 {
-		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+export class MutableGetEventsForRequestParams extends wasmtypes.ScProxy {
+    requestID(): wasmtypes.ScMutableRequestID {
+		return new wasmtypes.ScMutableRequestID(this.proxy.root(sc.ParamRequestID));
 	}
 }
 
-export class MutableGetRequestIDsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableUint32 {
-		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+export class ImmutableGetRequestIDsForBlockParams extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 }
 
-export class ImmutableGetRequestReceiptParams extends wasmlib.ScMapID {
-    requestID(): wasmlib.ScImmutableRequestID {
-		return new wasmlib.ScImmutableRequestID(this.mapID, wasmlib.Key32.fromString(sc.ParamRequestID));
+export class MutableGetRequestIDsForBlockParams extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 }
 
-export class MutableGetRequestReceiptParams extends wasmlib.ScMapID {
-    requestID(): wasmlib.ScMutableRequestID {
-		return new wasmlib.ScMutableRequestID(this.mapID, wasmlib.Key32.fromString(sc.ParamRequestID));
+export class ImmutableGetRequestReceiptParams extends wasmtypes.ScProxy {
+    requestID(): wasmtypes.ScImmutableRequestID {
+		return new wasmtypes.ScImmutableRequestID(this.proxy.root(sc.ParamRequestID));
 	}
 }
 
-export class ImmutableGetRequestReceiptsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableUint32 {
-		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+export class MutableGetRequestReceiptParams extends wasmtypes.ScProxy {
+    requestID(): wasmtypes.ScMutableRequestID {
+		return new wasmtypes.ScMutableRequestID(this.proxy.root(sc.ParamRequestID));
 	}
 }
 
-export class MutableGetRequestReceiptsForBlockParams extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableUint32 {
-		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ParamBlockIndex));
+export class ImmutableGetRequestReceiptsForBlockParams extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 }
 
-export class ImmutableIsRequestProcessedParams extends wasmlib.ScMapID {
-    requestID(): wasmlib.ScImmutableRequestID {
-		return new wasmlib.ScImmutableRequestID(this.mapID, wasmlib.Key32.fromString(sc.ParamRequestID));
+export class MutableGetRequestReceiptsForBlockParams extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamBlockIndex));
 	}
 }
 
-export class MutableIsRequestProcessedParams extends wasmlib.ScMapID {
-    requestID(): wasmlib.ScMutableRequestID {
-		return new wasmlib.ScMutableRequestID(this.mapID, wasmlib.Key32.fromString(sc.ParamRequestID));
+export class ImmutableIsRequestProcessedParams extends wasmtypes.ScProxy {
+    requestID(): wasmtypes.ScImmutableRequestID {
+		return new wasmtypes.ScImmutableRequestID(this.proxy.root(sc.ParamRequestID));
+	}
+}
+
+export class MutableIsRequestProcessedParams extends wasmtypes.ScProxy {
+    requestID(): wasmtypes.ScMutableRequestID {
+		return new wasmtypes.ScMutableRequestID(this.proxy.root(sc.ParamRequestID));
 	}
 }

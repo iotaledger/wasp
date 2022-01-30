@@ -6,108 +6,89 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableStoreBlobResults extends wasmlib.ScMapID {
-    hash(): wasmlib.ScImmutableHash {
-		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ResultHash));
+export class ImmutableStoreBlobResults extends wasmtypes.ScProxy {
+    hash(): wasmtypes.ScImmutableHash {
+		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ResultHash));
 	}
 }
 
-export class MutableStoreBlobResults extends wasmlib.ScMapID {
-    hash(): wasmlib.ScMutableHash {
-		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ResultHash));
+export class MutableStoreBlobResults extends wasmtypes.ScProxy {
+    hash(): wasmtypes.ScMutableHash {
+		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ResultHash));
 	}
 }
 
-export class ImmutableGetBlobFieldResults extends wasmlib.ScMapID {
-    bytes(): wasmlib.ScImmutableBytes {
-		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBytes));
+export class ImmutableGetBlobFieldResults extends wasmtypes.ScProxy {
+    bytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultBytes));
 	}
 }
 
-export class MutableGetBlobFieldResults extends wasmlib.ScMapID {
-    bytes(): wasmlib.ScMutableBytes {
-		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBytes));
+export class MutableGetBlobFieldResults extends wasmtypes.ScProxy {
+    bytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultBytes));
 	}
 }
 
-export class MapStringToImmutableInt32 {
-	objID: i32;
+export class MapStringToImmutableInt32 extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getInt32(key: string): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.objID, wasmlib.Key32.fromString(key));
+    getInt32(key: string): wasmtypes.ScImmutableInt32 {
+        return new wasmtypes.ScImmutableInt32(this.proxy.key(wasmtypes.stringToBytes(key)));
     }
 }
 
-export class ImmutableGetBlobInfoResults extends wasmlib.ScMapID {
+export class ImmutableGetBlobInfoResults extends wasmtypes.ScProxy {
     blobSizes(): sc.MapStringToImmutableInt32 {
-		return new sc.MapStringToImmutableInt32(this.mapID);
+		return new sc.MapStringToImmutableInt32(this.proxy);
 	}
 }
 
-export class MapStringToMutableInt32 {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapStringToMutableInt32 extends wasmtypes.ScProxy {
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearMap();
     }
 
-    getInt32(key: string): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.objID, wasmlib.Key32.fromString(key));
+    getInt32(key: string): wasmtypes.ScMutableInt32 {
+        return new wasmtypes.ScMutableInt32(this.proxy.key(wasmtypes.stringToBytes(key)));
     }
 }
 
-export class MutableGetBlobInfoResults extends wasmlib.ScMapID {
+export class MutableGetBlobInfoResults extends wasmtypes.ScProxy {
     blobSizes(): sc.MapStringToMutableInt32 {
-		return new sc.MapStringToMutableInt32(this.mapID);
+		return new sc.MapStringToMutableInt32(this.proxy);
 	}
 }
 
-export class MapHashToImmutableInt32 {
-	objID: i32;
+export class MapHashToImmutableInt32 extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getInt32(key: wasmlib.ScHash): wasmlib.ScImmutableInt32 {
-        return new wasmlib.ScImmutableInt32(this.objID, key.getKeyID());
+    getInt32(key: wasmtypes.ScHash): wasmtypes.ScImmutableInt32 {
+        return new wasmtypes.ScImmutableInt32(this.proxy.key(wasmtypes.hashToBytes(key)));
     }
 }
 
-export class ImmutableListBlobsResults extends wasmlib.ScMapID {
+export class ImmutableListBlobsResults extends wasmtypes.ScProxy {
     blobSizes(): sc.MapHashToImmutableInt32 {
-		return new sc.MapHashToImmutableInt32(this.mapID);
+		return new sc.MapHashToImmutableInt32(this.proxy);
 	}
 }
 
-export class MapHashToMutableInt32 {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapHashToMutableInt32 extends wasmtypes.ScProxy {
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearMap();
     }
 
-    getInt32(key: wasmlib.ScHash): wasmlib.ScMutableInt32 {
-        return new wasmlib.ScMutableInt32(this.objID, key.getKeyID());
+    getInt32(key: wasmtypes.ScHash): wasmtypes.ScMutableInt32 {
+        return new wasmtypes.ScMutableInt32(this.proxy.key(wasmtypes.hashToBytes(key)));
     }
 }
 
-export class MutableListBlobsResults extends wasmlib.ScMapID {
+export class MutableListBlobsResults extends wasmtypes.ScProxy {
     blobSizes(): sc.MapHashToMutableInt32 {
-		return new sc.MapHashToMutableInt32(this.mapID);
+		return new sc.MapHashToMutableInt32(this.proxy);
 	}
 }

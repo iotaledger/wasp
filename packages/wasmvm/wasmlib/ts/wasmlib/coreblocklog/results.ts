@@ -6,246 +6,225 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableControlAddressesResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableUint32 {
-		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+export class ImmutableControlAddressesResults extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
 	}
 
-    governingAddress(): wasmlib.ScImmutableAddress {
-		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultGoverningAddress));
+    governingAddress(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ResultGoverningAddress));
 	}
 
-    stateControllerAddress(): wasmlib.ScImmutableAddress {
-		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultStateControllerAddress));
-	}
-}
-
-export class MutableControlAddressesResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableUint32 {
-		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
-	}
-
-    governingAddress(): wasmlib.ScMutableAddress {
-		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultGoverningAddress));
-	}
-
-    stateControllerAddress(): wasmlib.ScMutableAddress {
-		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ResultStateControllerAddress));
+    stateControllerAddress(): wasmtypes.ScImmutableAddress {
+		return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ResultStateControllerAddress));
 	}
 }
 
-export class ImmutableGetBlockInfoResults extends wasmlib.ScMapID {
-    blockInfo(): wasmlib.ScImmutableBytes {
-		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
+export class MutableControlAddressesResults extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
+	}
+
+    governingAddress(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ResultGoverningAddress));
+	}
+
+    stateControllerAddress(): wasmtypes.ScMutableAddress {
+		return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ResultStateControllerAddress));
 	}
 }
 
-export class MutableGetBlockInfoResults extends wasmlib.ScMapID {
-    blockInfo(): wasmlib.ScMutableBytes {
-		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
+export class ImmutableGetBlockInfoResults extends wasmtypes.ScProxy {
+    blockInfo(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultBlockInfo));
 	}
 }
 
-export class ArrayOfImmutableBytes {
-	objID: i32;
+export class MutableGetBlockInfoResults extends wasmtypes.ScProxy {
+    blockInfo(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultBlockInfo));
+	}
+}
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class ArrayOfImmutableBytes extends wasmtypes.ScProxy {
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
-    getBytes(index: u32): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.objID, new wasmlib.Key32(index as i32));
+    getBytes(index: u32): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.index(index));
     }
 }
 
-export class ImmutableGetEventsForBlockResults extends wasmlib.ScMapID {
+export class ImmutableGetEventsForBlockResults extends wasmtypes.ScProxy {
     event(): sc.ArrayOfImmutableBytes {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfImmutableBytes(arrID);
+		return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultEvent));
 	}
 }
 
-export class ArrayOfMutableBytes {
-	objID: i32;
+export class ArrayOfMutableBytes extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	appendBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.append());
+	}
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearArray();
     }
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
-    getBytes(index: u32): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.objID, new wasmlib.Key32(index as i32));
+    getBytes(index: u32): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.index(index));
     }
 }
 
-export class MutableGetEventsForBlockResults extends wasmlib.ScMapID {
+export class MutableGetEventsForBlockResults extends wasmtypes.ScProxy {
     event(): sc.ArrayOfMutableBytes {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfMutableBytes(arrID);
+		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultEvent));
 	}
 }
 
-export class ImmutableGetEventsForContractResults extends wasmlib.ScMapID {
+export class ImmutableGetEventsForContractResults extends wasmtypes.ScProxy {
     event(): sc.ArrayOfImmutableBytes {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfImmutableBytes(arrID);
+		return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultEvent));
 	}
 }
 
-export class MutableGetEventsForContractResults extends wasmlib.ScMapID {
+export class MutableGetEventsForContractResults extends wasmtypes.ScProxy {
     event(): sc.ArrayOfMutableBytes {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfMutableBytes(arrID);
+		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultEvent));
 	}
 }
 
-export class ImmutableGetEventsForRequestResults extends wasmlib.ScMapID {
+export class ImmutableGetEventsForRequestResults extends wasmtypes.ScProxy {
     event(): sc.ArrayOfImmutableBytes {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfImmutableBytes(arrID);
+		return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultEvent));
 	}
 }
 
-export class MutableGetEventsForRequestResults extends wasmlib.ScMapID {
+export class MutableGetEventsForRequestResults extends wasmtypes.ScProxy {
     event(): sc.ArrayOfMutableBytes {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultEvent), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfMutableBytes(arrID);
+		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultEvent));
 	}
 }
 
-export class ImmutableGetLatestBlockInfoResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableUint32 {
-		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+export class ImmutableGetLatestBlockInfoResults extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
 	}
 
-    blockInfo(): wasmlib.ScImmutableBytes {
-		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
-	}
-}
-
-export class MutableGetLatestBlockInfoResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableUint32 {
-		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
-	}
-
-    blockInfo(): wasmlib.ScMutableBytes {
-		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockInfo));
+    blockInfo(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultBlockInfo));
 	}
 }
 
-export class ArrayOfImmutableRequestID {
-	objID: i32;
+export class MutableGetLatestBlockInfoResults extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
+	}
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+    blockInfo(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultBlockInfo));
+	}
+}
+
+export class ArrayOfImmutableRequestID extends wasmtypes.ScProxy {
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
-    getRequestID(index: u32): wasmlib.ScImmutableRequestID {
-        return new wasmlib.ScImmutableRequestID(this.objID, new wasmlib.Key32(index as i32));
+    getRequestID(index: u32): wasmtypes.ScImmutableRequestID {
+        return new wasmtypes.ScImmutableRequestID(this.proxy.index(index));
     }
 }
 
-export class ImmutableGetRequestIDsForBlockResults extends wasmlib.ScMapID {
+export class ImmutableGetRequestIDsForBlockResults extends wasmtypes.ScProxy {
     requestID(): sc.ArrayOfImmutableRequestID {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestID), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_REQUEST_ID);
-		return new sc.ArrayOfImmutableRequestID(arrID);
+		return new sc.ArrayOfImmutableRequestID(this.proxy.root(sc.ResultRequestID));
 	}
 }
 
-export class ArrayOfMutableRequestID {
-	objID: i32;
+export class ArrayOfMutableRequestID extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	appendRequestID(): wasmtypes.ScMutableRequestID {
+		return new wasmtypes.ScMutableRequestID(this.proxy.append());
+	}
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearArray();
     }
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
-    getRequestID(index: u32): wasmlib.ScMutableRequestID {
-        return new wasmlib.ScMutableRequestID(this.objID, new wasmlib.Key32(index as i32));
+    getRequestID(index: u32): wasmtypes.ScMutableRequestID {
+        return new wasmtypes.ScMutableRequestID(this.proxy.index(index));
     }
 }
 
-export class MutableGetRequestIDsForBlockResults extends wasmlib.ScMapID {
+export class MutableGetRequestIDsForBlockResults extends wasmtypes.ScProxy {
     requestID(): sc.ArrayOfMutableRequestID {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestID), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_REQUEST_ID);
-		return new sc.ArrayOfMutableRequestID(arrID);
+		return new sc.ArrayOfMutableRequestID(this.proxy.root(sc.ResultRequestID));
 	}
 }
 
-export class ImmutableGetRequestReceiptResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScImmutableUint32 {
-		return new wasmlib.ScImmutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
+export class ImmutableGetRequestReceiptResults extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
 	}
 
-    requestIndex(): wasmlib.ScImmutableUint16 {
-		return new wasmlib.ScImmutableUint16(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestIndex));
+    requestIndex(): wasmtypes.ScImmutableUint16 {
+		return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.ResultRequestIndex));
 	}
 
-    requestRecord(): wasmlib.ScImmutableBytes {
-		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord));
-	}
-}
-
-export class MutableGetRequestReceiptResults extends wasmlib.ScMapID {
-    blockIndex(): wasmlib.ScMutableUint32 {
-		return new wasmlib.ScMutableUint32(this.mapID, wasmlib.Key32.fromString(sc.ResultBlockIndex));
-	}
-
-    requestIndex(): wasmlib.ScMutableUint16 {
-		return new wasmlib.ScMutableUint16(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestIndex));
-	}
-
-    requestRecord(): wasmlib.ScMutableBytes {
-		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord));
+    requestRecord(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultRequestRecord));
 	}
 }
 
-export class ImmutableGetRequestReceiptsForBlockResults extends wasmlib.ScMapID {
+export class MutableGetRequestReceiptResults extends wasmtypes.ScProxy {
+    blockIndex(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
+	}
+
+    requestIndex(): wasmtypes.ScMutableUint16 {
+		return new wasmtypes.ScMutableUint16(this.proxy.root(sc.ResultRequestIndex));
+	}
+
+    requestRecord(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultRequestRecord));
+	}
+}
+
+export class ImmutableGetRequestReceiptsForBlockResults extends wasmtypes.ScProxy {
     requestRecord(): sc.ArrayOfImmutableBytes {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfImmutableBytes(arrID);
+		return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultRequestRecord));
 	}
 }
 
-export class MutableGetRequestReceiptsForBlockResults extends wasmlib.ScMapID {
+export class MutableGetRequestReceiptsForBlockResults extends wasmtypes.ScProxy {
     requestRecord(): sc.ArrayOfMutableBytes {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestRecord), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfMutableBytes(arrID);
+		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultRequestRecord));
 	}
 }
 
-export class ImmutableIsRequestProcessedResults extends wasmlib.ScMapID {
-    requestProcessed(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestProcessed));
+export class ImmutableIsRequestProcessedResults extends wasmtypes.ScProxy {
+    requestProcessed(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultRequestProcessed));
 	}
 }
 
-export class MutableIsRequestProcessedResults extends wasmlib.ScMapID {
-    requestProcessed(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultRequestProcessed));
+export class MutableIsRequestProcessedResults extends wasmtypes.ScProxy {
+    requestProcessed(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultRequestProcessed));
 	}
 }

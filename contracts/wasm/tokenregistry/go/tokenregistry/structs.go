@@ -22,26 +22,26 @@ type Token struct {
 func NewTokenFromBytes(buf []byte) *Token {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Token{}
-	data.Created = wasmtypes.DecodeUint64(dec)
-	data.Description = wasmtypes.DecodeString(dec)
-	data.MintedBy = wasmtypes.DecodeAgentID(dec)
-	data.Owner = wasmtypes.DecodeAgentID(dec)
-	data.Supply = wasmtypes.DecodeUint64(dec)
-	data.Updated = wasmtypes.DecodeUint64(dec)
-	data.UserDefined = wasmtypes.DecodeString(dec)
+	data.Created = wasmtypes.Uint64Decode(dec)
+	data.Description = wasmtypes.StringDecode(dec)
+	data.MintedBy = wasmtypes.AgentIDDecode(dec)
+	data.Owner = wasmtypes.AgentIDDecode(dec)
+	data.Supply = wasmtypes.Uint64Decode(dec)
+	data.Updated = wasmtypes.Uint64Decode(dec)
+	data.UserDefined = wasmtypes.StringDecode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *Token) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.EncodeUint64(enc, o.Created)
-	wasmtypes.EncodeString(enc, o.Description)
-	wasmtypes.EncodeAgentID(enc, o.MintedBy)
-	wasmtypes.EncodeAgentID(enc, o.Owner)
-	wasmtypes.EncodeUint64(enc, o.Supply)
-	wasmtypes.EncodeUint64(enc, o.Updated)
-	wasmtypes.EncodeString(enc, o.UserDefined)
+	wasmtypes.Uint64Encode(enc, o.Created)
+	wasmtypes.StringEncode(enc, o.Description)
+	wasmtypes.AgentIDEncode(enc, o.MintedBy)
+	wasmtypes.AgentIDEncode(enc, o.Owner)
+	wasmtypes.Uint64Encode(enc, o.Supply)
+	wasmtypes.Uint64Encode(enc, o.Updated)
+	wasmtypes.StringEncode(enc, o.UserDefined)
 	return enc.Buf()
 }
 

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmlib from "wasmlib"
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 const DURATION_DEFAULT: u32 = 60;
@@ -24,9 +25,9 @@ export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAu
             ownerFee = 1;
         }
         // finalizeAuction request token was probably not confirmed yet
-        transferTokens(ctx, ctx.contractCreator(), wasmlib.ScColor.IOTA, ownerFee - 1);
+        transferTokens(ctx, ctx.contractCreator(), wasmtypes.IOTA, ownerFee - 1);
         transferTokens(ctx, auction.creator, auction.color, auction.numTokens);
-        transferTokens(ctx, auction.creator, wasmlib.ScColor.IOTA, auction.deposit - ownerFee);
+        transferTokens(ctx, auction.creator, wasmtypes.IOTA, auction.deposit - ownerFee);
         return;
     }
 
@@ -43,18 +44,18 @@ export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAu
         let loser = bidderList.getAgentID(i).value();
         if (loser != auction.highestBidder) {
             let bid = bids.getBid(loser).value();
-            transferTokens(ctx, loser, wasmlib.ScColor.IOTA, bid.amount);
+            transferTokens(ctx, loser, wasmtypes.IOTA, bid.amount);
         }
     }
 
     // finalizeAuction request token was probably not confirmed yet
-    transferTokens(ctx, ctx.contractCreator(), wasmlib.ScColor.IOTA, ownerFee - 1);
+    transferTokens(ctx, ctx.contractCreator(), wasmtypes.IOTA, ownerFee - 1);
     transferTokens(ctx, auction.highestBidder, auction.color, auction.numTokens);
-    transferTokens(ctx, auction.creator, wasmlib.ScColor.IOTA, auction.deposit + auction.highestBid - ownerFee);
+    transferTokens(ctx, auction.creator, wasmtypes.IOTA, auction.deposit + auction.highestBid - ownerFee);
 }
 
 export function funcPlaceBid(ctx: wasmlib.ScFuncContext, f: sc.PlaceBidContext): void {
-    let bidAmount = ctx.incoming().balance(wasmlib.ScColor.IOTA);
+    let bidAmount = ctx.incoming().balance(wasmtypes.IOTA);
     ctx.require(bidAmount > 0, "Missing bid amount");
 
     let color = f.params.color().value();
@@ -77,7 +78,7 @@ export function funcPlaceBid(ctx: wasmlib.ScFuncContext, f: sc.PlaceBidContext):
         ctx.require(bidAmount >= auction.minimumBid, "Insufficient bid amount");
         ctx.log("New bid from: " + caller.toString());
         let index = bidderList.length();
-        bidderList.getAgentID(index).setValue(caller);
+        bidderList.appendAgentID().setValue(caller);
         let bid = new sc.Bid();
         bid.index = index;
         bid.amount = bidAmount;
@@ -105,7 +106,7 @@ export function funcSetOwnerMargin(ctx: wasmlib.ScFuncContext, f: sc.SetOwnerMar
 
 export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionContext): void {
     let color = f.params.color().value();
-    if (color == wasmlib.ScColor.IOTA || color == wasmlib.ScColor.MINT) {
+    if (color == wasmtypes.IOTA || color == wasmtypes.MINT) {
         ctx.panic("Reserved auction token color");
     }
     let numTokens = ctx.incoming().balance(color);
@@ -145,7 +146,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
     if (margin == 0) {
         margin = 1;
     }
-    let deposit = ctx.incoming().balance(wasmlib.ScColor.IOTA);
+    let deposit = ctx.incoming().balance(wasmtypes.IOTA);
     if (deposit < margin) {
         ctx.panic("Insufficient deposit");
     }
@@ -162,7 +163,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
     auction.description = description;
     auction.duration = duration;
     auction.highestBid = 0;
-    auction.highestBidder = new wasmlib.ScAgentID();
+    auction.highestBidder = wasmtypes.agentIDFromBytes(null);
     auction.minimumBid = minimumBid;
     auction.numTokens = numTokens;
     auction.ownerMargin = ownerMargin;

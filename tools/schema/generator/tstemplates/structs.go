@@ -4,6 +4,7 @@ var structsTs = map[string]string{
 	// *******************************
 	"structs.ts": `
 $#emit importWasmLib
+$#emit importWasmTypes
 $#each structs structType
 `,
 	// *******************************
@@ -12,18 +13,18 @@ $#each structs structType
 export class $StrName {
 $#each struct structField
 
-    static fromBytes(bytes: u8[]): $StrName {
-        let decode = new wasmlib.BytesDecoder(bytes);
-        let data = new $StrName();
+    static fromBytes(buf: u8[]|null): $StrName {
+        const dec = new wasmtypes.WasmDecoder(buf);
+        const data = new $StrName();
 $#each struct structDecode
-        decode.close();
+        dec.close();
         return data;
     }
 
     bytes(): u8[] {
-        return new wasmlib.BytesEncoder().
+        const enc = new wasmtypes.WasmEncoder();
 $#each struct structEncode
-            data();
+        return enc.buf();
     }
 }
 $#set mut Immutable
@@ -37,32 +38,25 @@ $#emit structMethods
 `,
 	// *******************************
 	"structDecode": `
-        data.$fldName$fldPad = decode.$fldType();
+        data.$fldName$fldPad = wasmtypes.$fldType$+Decode(dec);
 `,
 	// *******************************
 	"structEncode": `
-		    $fldType(this.$fldName).
+		    wasmtypes.$fldType$+Encode(enc, this.$fldName);
 `,
 	// *******************************
 	"structMethods": `
 
-export class $mut$StrName {
-    objID: i32;
-    keyID: wasmlib.Key32;
-
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+export class $mut$StrName extends wasmtypes.ScProxy {
 $#if mut structMethodDelete
 
     exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        return this.proxy.exists();
     }
 $#if mut structMethodSetValue
 
     value(): $StrName {
-        return $StrName.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
+        return $StrName.fromBytes(this.proxy.get());
     }
 }
 `,
@@ -70,14 +64,14 @@ $#if mut structMethodSetValue
 	"structMethodDelete": `
 
     delete(): void {
-        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        this.proxy.delete();
     }
 `,
 	// *******************************
 	"structMethodSetValue": `
 
     setValue(value: $StrName): void {
-        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());
+        this.proxy.set(value.bytes());
     }
 `,
 }

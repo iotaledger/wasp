@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "blocklog";
 export const ScDescription = "Core block log contract";
-export const HScName       = new wasmlib.ScHname(0xf538ef2b);
+export const HScName       = new wasmtypes.ScHname(0xf538ef2b);
 
 export const ParamBlockIndex    = "n";
 export const ParamContractHname = "h";
@@ -38,13 +38,13 @@ export const ViewGetRequestReceipt          = "getRequestReceipt";
 export const ViewGetRequestReceiptsForBlock = "getRequestReceiptsForBlock";
 export const ViewIsRequestProcessed         = "isRequestProcessed";
 
-export const HViewControlAddresses           = new wasmlib.ScHname(0x796bd223);
-export const HViewGetBlockInfo               = new wasmlib.ScHname(0xbe89f9b3);
-export const HViewGetEventsForBlock          = new wasmlib.ScHname(0x36232798);
-export const HViewGetEventsForContract       = new wasmlib.ScHname(0x682a1922);
-export const HViewGetEventsForRequest        = new wasmlib.ScHname(0x4f8d68e4);
-export const HViewGetLatestBlockInfo         = new wasmlib.ScHname(0x084a1760);
-export const HViewGetRequestIDsForBlock      = new wasmlib.ScHname(0x5a20327a);
-export const HViewGetRequestReceipt          = new wasmlib.ScHname(0xb7f9534f);
-export const HViewGetRequestReceiptsForBlock = new wasmlib.ScHname(0x77e3beef);
-export const HViewIsRequestProcessed         = new wasmlib.ScHname(0xd57d50a9);
+export const HViewControlAddresses           = new wasmtypes.ScHname(0x796bd223);
+export const HViewGetBlockInfo               = new wasmtypes.ScHname(0xbe89f9b3);
+export const HViewGetEventsForBlock          = new wasmtypes.ScHname(0x36232798);
+export const HViewGetEventsForContract       = new wasmtypes.ScHname(0x682a1922);
+export const HViewGetEventsForRequest        = new wasmtypes.ScHname(0x4f8d68e4);
+export const HViewGetLatestBlockInfo         = new wasmtypes.ScHname(0x084a1760);
+export const HViewGetRequestIDsForBlock      = new wasmtypes.ScHname(0x5a20327a);
+export const HViewGetRequestReceipt          = new wasmtypes.ScHname(0xb7f9534f);
+export const HViewGetRequestReceiptsForBlock = new wasmtypes.ScHname(0x77e3beef);
+export const HViewIsRequestProcessed         = new wasmtypes.ScHname(0xd57d50a9);

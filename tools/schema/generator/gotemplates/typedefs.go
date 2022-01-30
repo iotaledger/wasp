@@ -83,7 +83,7 @@ func (a $proxy) Get$FldType(index uint32) $mut$FldType {
 `,
 	// *******************************
 	"typedefProxyMap": `
-$#set proxy Map$fldMapKey$+To$mut$FldType
+$#set proxy Map$FldMapKey$+To$mut$FldType
 $#if exist else typedefProxyMapNew
 `,
 	// *******************************
@@ -107,14 +107,14 @@ func (m $proxy) Clear() {
 	"typedefProxyMapNewBaseType": `
 
 func (m $proxy) Get$FldType(key $fldKeyLangType) wasmtypes.Sc$mut$FldType {
-	return wasmtypes.NewSc$mut$FldType(m.proxy.Key(wasmtypes.BytesFrom$fldMapKey(key)))
+	return wasmtypes.NewSc$mut$FldType(m.proxy.Key(wasmtypes.$FldMapKey$+ToBytes(key)))
 }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
 
 func (m $proxy) Get$FldType(key $fldKeyLangType) $mut$FldType {
-	return $mut$FldType{proxy: m.proxy.Key(wasmtypes.BytesFrom$fldMapKey(key))}
+	return $mut$FldType{proxy: m.proxy.Key(wasmtypes.$FldMapKey$+ToBytes(key))}
 }
 `,
 }

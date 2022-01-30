@@ -43,27 +43,27 @@ $#if events PackageEventsExist
 `,
 	// *******************************
 	"ImmutableFuncNameParams": `
-	params: sc.Immutable$FuncName$+Params = new sc.Immutable$FuncName$+Params();
+	params: sc.Immutable$FuncName$+Params = new sc.Immutable$FuncName$+Params(wasmlib.paramsProxy());
 `,
 	// *******************************
 	"MutableFuncNameParams": `
-	params: sc.Mutable$FuncName$+Params = new sc.Mutable$FuncName$+Params();
+	params: sc.Mutable$FuncName$+Params = new sc.Mutable$FuncName$+Params(wasmlib.ScView.nilProxy);
 `,
 	// *******************************
 	"ImmutableFuncNameResults": `
-	results: sc.Immutable$FuncName$+Results = new sc.Immutable$FuncName$+Results();
+	results: sc.Immutable$FuncName$+Results = new sc.Immutable$FuncName$+Results(wasmlib.ScView.nilProxy);
 `,
 	// *******************************
 	"MutableFuncNameResults": `
-	results: sc.Mutable$FuncName$+Results = new sc.Mutable$FuncName$+Results();
+	results: sc.Mutable$FuncName$+Results = new sc.Mutable$FuncName$+Results(wasmlib.ScView.nilProxy);
 `,
 	// *******************************
 	"ImmutablePackageState": `
-	state: sc.Immutable$Package$+State = new sc.Immutable$Package$+State();
+	state: sc.Immutable$Package$+State = new sc.Immutable$Package$+State(wasmlib.ScState.proxy());
 `,
 	// *******************************
 	"MutablePackageState": `
-	state: sc.Mutable$Package$+State = new sc.Mutable$Package$+State();
+	state: sc.Mutable$Package$+State = new sc.Mutable$Package$+State(wasmlib.ScState.proxy());
 `,
 	// *******************************
 	"FuncNameForCall": `
@@ -71,26 +71,23 @@ $#emit setupInitFunc
 $#if separator newline
 $#set separator $true
     static $funcName(ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
-$#set paramsID null
-$#set resultsID null
-$#if param setParamsID
-$#if result setResultsID
 $#if ptrs setPtrs noPtrs
     }
 `,
 	// *******************************
 	"setPtrs": `
-        let f = new $FuncName$+Call();
-        f.func.setPtrs($paramsID, $resultsID);
+        const f = new $FuncName$+Call();
+$#if param initParams
+$#if result initResults
         return f;
 `,
 	// *******************************
-	"setParamsID": `
-$#set paramsID f.params
+	"initParams": `
+		f.params = new sc.Mutable$FuncName$+Params(wasmlib.newCallParamsProxy(f.func));
 `,
 	// *******************************
-	"setResultsID": `
-$#set resultsID f.results
+	"initResults": `
+		f.results = new sc.Immutable$FuncName$+Results(wasmlib.newCallResultsProxy(f.func));
 `,
 	// *******************************
 	"noPtrs": `

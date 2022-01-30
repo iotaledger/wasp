@@ -14,7 +14,7 @@ type MapAgentIDToImmutableAllowancesForAgent struct {
 }
 
 func (m MapAgentIDToImmutableAllowancesForAgent) GetAllowancesForAgent(key wasmtypes.ScAgentID) ImmutableAllowancesForAgent {
-	return ImmutableAllowancesForAgent{proxy: m.proxy.Key(wasmtypes.BytesFromAgentID(key))}
+	return ImmutableAllowancesForAgent{proxy: m.proxy.Key(wasmtypes.AgentIDToBytes(key))}
 }
 
 type ImmutableErc20State struct {
@@ -42,7 +42,7 @@ func (m MapAgentIDToMutableAllowancesForAgent) Clear() {
 }
 
 func (m MapAgentIDToMutableAllowancesForAgent) GetAllowancesForAgent(key wasmtypes.ScAgentID) MutableAllowancesForAgent {
-	return MutableAllowancesForAgent{proxy: m.proxy.Key(wasmtypes.BytesFromAgentID(key))}
+	return MutableAllowancesForAgent{proxy: m.proxy.Key(wasmtypes.AgentIDToBytes(key))}
 }
 
 type MutableErc20State struct {

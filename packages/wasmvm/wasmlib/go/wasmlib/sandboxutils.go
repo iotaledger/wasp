@@ -25,11 +25,11 @@ func (u ScSandboxUtils) BlsAddressFromPubKey(pubKey []byte) wasmtypes.ScAddress 
 
 func (u ScSandboxUtils) BlsAggregateSignatures(pubKeys, sigs [][]byte) ([]byte, []byte) {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.EncodeUint32(enc, uint32(len(pubKeys)))
+	wasmtypes.Uint32Encode(enc, uint32(len(pubKeys)))
 	for _, pubKey := range pubKeys {
 		enc.Bytes(pubKey)
 	}
-	wasmtypes.EncodeUint32(enc, uint32(len(sigs)))
+	wasmtypes.Uint32Encode(enc, uint32(len(sigs)))
 	for _, sig := range sigs {
 		enc.Bytes(sig)
 	}

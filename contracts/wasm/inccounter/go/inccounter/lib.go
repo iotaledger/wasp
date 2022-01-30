@@ -274,8 +274,8 @@ func viewGetCounterThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewGetCounter(ctx, f)
-	ctx.Log("inccounter.viewGetCounter ok")
 	ctx.Results(results)
+	ctx.Log("inccounter.viewGetCounter ok")
 }
 
 type GetVliContext struct {
@@ -300,8 +300,8 @@ func viewGetVliThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.Ni64().Exists(), "missing mandatory ni64")
 	viewGetVli(ctx, f)
-	ctx.Log("inccounter.viewGetVli ok")
 	ctx.Results(results)
+	ctx.Log("inccounter.viewGetVli ok")
 }
 
 type GetVluContext struct {
@@ -326,6 +326,6 @@ func viewGetVluThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.Nu64().Exists(), "missing mandatory nu64")
 	viewGetVlu(ctx, f)
-	ctx.Log("inccounter.viewGetVlu ok")
 	ctx.Results(results)
+	ctx.Log("inccounter.viewGetVlu ok")
 }

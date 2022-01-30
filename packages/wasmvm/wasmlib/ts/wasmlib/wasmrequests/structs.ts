@@ -6,75 +6,62 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class CallRequest {
-    contract : wasmlib.ScHname = new wasmlib.ScHname(0); 
-    function : wasmlib.ScHname = new wasmlib.ScHname(0); 
+    contract : wasmtypes.ScHname = new wasmtypes.ScHname(0); 
+    function : wasmtypes.ScHname = new wasmtypes.ScHname(0); 
     params   : u8[] = []; 
     transfer : u8[] = []; 
 
-    static fromBytes(bytes: u8[]): CallRequest {
-        let decode = new wasmlib.BytesDecoder(bytes);
-        let data = new CallRequest();
-        data.contract = decode.hname();
-        data.function = decode.hname();
-        data.params   = decode.bytes();
-        data.transfer = decode.bytes();
-        decode.close();
+    static fromBytes(buf: u8[]|null): CallRequest {
+        const dec = new wasmtypes.WasmDecoder(buf);
+        const data = new CallRequest();
+        data.contract = wasmtypes.hnameDecode(dec);
+        data.function = wasmtypes.hnameDecode(dec);
+        data.params   = wasmtypes.bytesDecode(dec);
+        data.transfer = wasmtypes.bytesDecode(dec);
+        dec.close();
         return data;
     }
 
     bytes(): u8[] {
-        return new wasmlib.BytesEncoder().
-		    hname(this.contract).
-		    hname(this.function).
-		    bytes(this.params).
-		    bytes(this.transfer).
-            data();
+        const enc = new wasmtypes.WasmEncoder();
+		    wasmtypes.hnameEncode(enc, this.contract);
+		    wasmtypes.hnameEncode(enc, this.function);
+		    wasmtypes.bytesEncode(enc, this.params);
+		    wasmtypes.bytesEncode(enc, this.transfer);
+        return enc.buf();
     }
 }
 
-export class ImmutableCallRequest {
-    objID: i32;
-    keyID: wasmlib.Key32;
-
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+export class ImmutableCallRequest extends wasmtypes.ScProxy {
 
     exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        return this.proxy.exists();
     }
 
     value(): CallRequest {
-        return CallRequest.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
+        return CallRequest.fromBytes(this.proxy.get());
     }
 }
 
-export class MutableCallRequest {
-    objID: i32;
-    keyID: wasmlib.Key32;
-
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+export class MutableCallRequest extends wasmtypes.ScProxy {
 
     delete(): void {
-        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        this.proxy.delete();
     }
 
     exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        return this.proxy.exists();
     }
 
     setValue(value: CallRequest): void {
-        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());
+        this.proxy.set(value.bytes());
     }
 
     value(): CallRequest {
-        return CallRequest.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
+        return CallRequest.fromBytes(this.proxy.get());
     }
 }
 
@@ -82,211 +69,169 @@ export class DeployRequest {
     description : string = ""; 
     name        : string = ""; 
     params      : u8[] = []; 
-    progHash    : wasmlib.ScHash = new wasmlib.ScHash(); 
+    progHash    : wasmtypes.ScHash = new wasmtypes.ScHash(); 
 
-    static fromBytes(bytes: u8[]): DeployRequest {
-        let decode = new wasmlib.BytesDecoder(bytes);
-        let data = new DeployRequest();
-        data.description = decode.string();
-        data.name        = decode.string();
-        data.params      = decode.bytes();
-        data.progHash    = decode.hash();
-        decode.close();
+    static fromBytes(buf: u8[]|null): DeployRequest {
+        const dec = new wasmtypes.WasmDecoder(buf);
+        const data = new DeployRequest();
+        data.description = wasmtypes.stringDecode(dec);
+        data.name        = wasmtypes.stringDecode(dec);
+        data.params      = wasmtypes.bytesDecode(dec);
+        data.progHash    = wasmtypes.hashDecode(dec);
+        dec.close();
         return data;
     }
 
     bytes(): u8[] {
-        return new wasmlib.BytesEncoder().
-		    string(this.description).
-		    string(this.name).
-		    bytes(this.params).
-		    hash(this.progHash).
-            data();
+        const enc = new wasmtypes.WasmEncoder();
+		    wasmtypes.stringEncode(enc, this.description);
+		    wasmtypes.stringEncode(enc, this.name);
+		    wasmtypes.bytesEncode(enc, this.params);
+		    wasmtypes.hashEncode(enc, this.progHash);
+        return enc.buf();
     }
 }
 
-export class ImmutableDeployRequest {
-    objID: i32;
-    keyID: wasmlib.Key32;
-
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+export class ImmutableDeployRequest extends wasmtypes.ScProxy {
 
     exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        return this.proxy.exists();
     }
 
     value(): DeployRequest {
-        return DeployRequest.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
+        return DeployRequest.fromBytes(this.proxy.get());
     }
 }
 
-export class MutableDeployRequest {
-    objID: i32;
-    keyID: wasmlib.Key32;
-
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+export class MutableDeployRequest extends wasmtypes.ScProxy {
 
     delete(): void {
-        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        this.proxy.delete();
     }
 
     exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        return this.proxy.exists();
     }
 
     setValue(value: DeployRequest): void {
-        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());
+        this.proxy.set(value.bytes());
     }
 
     value(): DeployRequest {
-        return DeployRequest.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
+        return DeployRequest.fromBytes(this.proxy.get());
     }
 }
 
 export class PostRequest {
-    chainID  : wasmlib.ScChainID = new wasmlib.ScChainID(); 
-    contract : wasmlib.ScHname = new wasmlib.ScHname(0); 
+    chainID  : wasmtypes.ScChainID = new wasmtypes.ScChainID(); 
+    contract : wasmtypes.ScHname = new wasmtypes.ScHname(0); 
     delay    : u32 = 0; 
-    function : wasmlib.ScHname = new wasmlib.ScHname(0); 
+    function : wasmtypes.ScHname = new wasmtypes.ScHname(0); 
     params   : u8[] = []; 
     transfer : u8[] = []; 
 
-    static fromBytes(bytes: u8[]): PostRequest {
-        let decode = new wasmlib.BytesDecoder(bytes);
-        let data = new PostRequest();
-        data.chainID  = decode.chainID();
-        data.contract = decode.hname();
-        data.delay    = decode.uint32();
-        data.function = decode.hname();
-        data.params   = decode.bytes();
-        data.transfer = decode.bytes();
-        decode.close();
+    static fromBytes(buf: u8[]|null): PostRequest {
+        const dec = new wasmtypes.WasmDecoder(buf);
+        const data = new PostRequest();
+        data.chainID  = wasmtypes.chainIDDecode(dec);
+        data.contract = wasmtypes.hnameDecode(dec);
+        data.delay    = wasmtypes.uint32Decode(dec);
+        data.function = wasmtypes.hnameDecode(dec);
+        data.params   = wasmtypes.bytesDecode(dec);
+        data.transfer = wasmtypes.bytesDecode(dec);
+        dec.close();
         return data;
     }
 
     bytes(): u8[] {
-        return new wasmlib.BytesEncoder().
-		    chainID(this.chainID).
-		    hname(this.contract).
-		    uint32(this.delay).
-		    hname(this.function).
-		    bytes(this.params).
-		    bytes(this.transfer).
-            data();
+        const enc = new wasmtypes.WasmEncoder();
+		    wasmtypes.chainIDEncode(enc, this.chainID);
+		    wasmtypes.hnameEncode(enc, this.contract);
+		    wasmtypes.uint32Encode(enc, this.delay);
+		    wasmtypes.hnameEncode(enc, this.function);
+		    wasmtypes.bytesEncode(enc, this.params);
+		    wasmtypes.bytesEncode(enc, this.transfer);
+        return enc.buf();
     }
 }
 
-export class ImmutablePostRequest {
-    objID: i32;
-    keyID: wasmlib.Key32;
-
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+export class ImmutablePostRequest extends wasmtypes.ScProxy {
 
     exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        return this.proxy.exists();
     }
 
     value(): PostRequest {
-        return PostRequest.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
+        return PostRequest.fromBytes(this.proxy.get());
     }
 }
 
-export class MutablePostRequest {
-    objID: i32;
-    keyID: wasmlib.Key32;
-
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+export class MutablePostRequest extends wasmtypes.ScProxy {
 
     delete(): void {
-        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        this.proxy.delete();
     }
 
     exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        return this.proxy.exists();
     }
 
     setValue(value: PostRequest): void {
-        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());
+        this.proxy.set(value.bytes());
     }
 
     value(): PostRequest {
-        return PostRequest.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
+        return PostRequest.fromBytes(this.proxy.get());
     }
 }
 
 export class SendRequest {
-    address  : wasmlib.ScAddress = new wasmlib.ScAddress(); 
+    address  : wasmtypes.ScAddress = new wasmtypes.ScAddress(); 
     transfer : u8[] = []; 
 
-    static fromBytes(bytes: u8[]): SendRequest {
-        let decode = new wasmlib.BytesDecoder(bytes);
-        let data = new SendRequest();
-        data.address  = decode.address();
-        data.transfer = decode.bytes();
-        decode.close();
+    static fromBytes(buf: u8[]|null): SendRequest {
+        const dec = new wasmtypes.WasmDecoder(buf);
+        const data = new SendRequest();
+        data.address  = wasmtypes.addressDecode(dec);
+        data.transfer = wasmtypes.bytesDecode(dec);
+        dec.close();
         return data;
     }
 
     bytes(): u8[] {
-        return new wasmlib.BytesEncoder().
-		    address(this.address).
-		    bytes(this.transfer).
-            data();
+        const enc = new wasmtypes.WasmEncoder();
+		    wasmtypes.addressEncode(enc, this.address);
+		    wasmtypes.bytesEncode(enc, this.transfer);
+        return enc.buf();
     }
 }
 
-export class ImmutableSendRequest {
-    objID: i32;
-    keyID: wasmlib.Key32;
-
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+export class ImmutableSendRequest extends wasmtypes.ScProxy {
 
     exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        return this.proxy.exists();
     }
 
     value(): SendRequest {
-        return SendRequest.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
+        return SendRequest.fromBytes(this.proxy.get());
     }
 }
 
-export class MutableSendRequest {
-    objID: i32;
-    keyID: wasmlib.Key32;
-
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+export class MutableSendRequest extends wasmtypes.ScProxy {
 
     delete(): void {
-        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        this.proxy.delete();
     }
 
     exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        return this.proxy.exists();
     }
 
     setValue(value: SendRequest): void {
-        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());
+        this.proxy.set(value.bytes());
     }
 
     value(): SendRequest {
-        return SendRequest.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
+        return SendRequest.fromBytes(this.proxy.get());
     }
 }

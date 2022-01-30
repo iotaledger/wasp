@@ -15,7 +15,7 @@ $#emit stateProxyStruct
 $#set TypeName $mut$Package$+State
 $#each state proxyContainers
 
-export class $TypeName extends wasmlib.ScMapID {
+export class $TypeName extends wasmtypes.ScProxy {
 $#set separator $false
 $#if mut stateProxyImmutableFunc
 $#each state proxyMethods
@@ -25,9 +25,7 @@ $#each state proxyMethods
 	"stateProxyImmutableFunc": `
 $#set separator $true
     asImmutable(): sc.Immutable$Package$+State {
-		const imm = new sc.Immutable$Package$+State();
-		imm.mapID = this.mapID;
-		return imm;
+		return new sc.Immutable$Package$+State(this.proxy);
 	}
 `,
 }

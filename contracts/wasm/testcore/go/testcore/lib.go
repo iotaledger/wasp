@@ -68,8 +68,8 @@ func funcCallOnChainThunk(ctx wasmlib.ScFuncContext) {
 	}
 	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
 	funcCallOnChain(ctx, f)
-	ctx.Log("testcore.funcCallOnChain ok")
 	ctx.Results(results)
+	ctx.Log("testcore.funcCallOnChain ok")
 }
 
 type CheckContextFromFullEPContext struct {
@@ -128,8 +128,8 @@ func funcGetMintedSupplyThunk(ctx wasmlib.ScFuncContext) {
 		},
 	}
 	funcGetMintedSupply(ctx, f)
-	ctx.Log("testcore.funcGetMintedSupply ok")
 	ctx.Results(results)
+	ctx.Log("testcore.funcGetMintedSupply ok")
 }
 
 type IncCounterContext struct {
@@ -218,8 +218,8 @@ func funcRunRecursionThunk(ctx wasmlib.ScFuncContext) {
 	}
 	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
 	funcRunRecursion(ctx, f)
-	ctx.Log("testcore.funcRunRecursion ok")
 	ctx.Results(results)
+	ctx.Log("testcore.funcRunRecursion ok")
 }
 
 type SendToAddressContext struct {
@@ -362,8 +362,8 @@ func funcTestChainOwnerIDFullThunk(ctx wasmlib.ScFuncContext) {
 		},
 	}
 	funcTestChainOwnerIDFull(ctx, f)
-	ctx.Log("testcore.funcTestChainOwnerIDFull ok")
 	ctx.Results(results)
+	ctx.Log("testcore.funcTestChainOwnerIDFull ok")
 }
 
 type TestEventLogDeployContext struct {
@@ -496,8 +496,8 @@ func viewFibonacciThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.IntValue().Exists(), "missing mandatory intValue")
 	viewFibonacci(ctx, f)
-	ctx.Log("testcore.viewFibonacci ok")
 	ctx.Results(results)
+	ctx.Log("testcore.viewFibonacci ok")
 }
 
 type GetCounterContext struct {
@@ -517,8 +517,8 @@ func viewGetCounterThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewGetCounter(ctx, f)
-	ctx.Log("testcore.viewGetCounter ok")
 	ctx.Results(results)
+	ctx.Log("testcore.viewGetCounter ok")
 }
 
 type GetIntContext struct {
@@ -543,8 +543,8 @@ func viewGetIntThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	viewGetInt(ctx, f)
-	ctx.Log("testcore.viewGetInt ok")
 	ctx.Results(results)
+	ctx.Log("testcore.viewGetInt ok")
 }
 
 type GetStringValueContext struct {
@@ -569,8 +569,8 @@ func viewGetStringValueThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.VarName().Exists(), "missing mandatory varName")
 	viewGetStringValue(ctx, f)
-	ctx.Log("testcore.viewGetStringValue ok")
 	ctx.Results(results)
+	ctx.Log("testcore.viewGetStringValue ok")
 }
 
 type JustViewContext struct {
@@ -650,8 +650,8 @@ func viewTestChainOwnerIDViewThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewTestChainOwnerIDView(ctx, f)
-	ctx.Log("testcore.viewTestChainOwnerIDView ok")
 	ctx.Results(results)
+	ctx.Log("testcore.viewTestChainOwnerIDView ok")
 }
 
 type TestPanicViewEPContext struct {
@@ -686,6 +686,6 @@ func viewTestSandboxCallThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewTestSandboxCall(ctx, f)
-	ctx.Log("testcore.viewTestSandboxCall ok")
 	ctx.Results(results)
+	ctx.Log("testcore.viewTestSandboxCall ok")
 }

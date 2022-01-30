@@ -33,106 +33,85 @@ $#if exist else typedefProxyArrayNew
 	// *******************************
 	"typedefProxyArrayNew": `
 
-export class $proxy {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-$#if mut typedefProxyArrayClear
+export class $proxy extends wasmtypes.ScProxy {
+$#if mut typedefProxyArrayMut
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 $#if basetype typedefProxyArrayNewBaseType typedefProxyArrayNewOtherType
 }
 $#set exist $proxy
 `,
 	// *******************************
-	"typedefProxyArrayClear": `
+	"typedefProxyArrayMut": `
+$#if basetype typedefProxyArrayAppendBaseType typedefProxyArrayAppendOtherType
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearArray();
     }
+`,
+	// *******************************
+	"typedefProxyArrayAppendBaseType": `
+
+	append$FldType(): wasmtypes.Sc$mut$FldType {
+		return new wasmtypes.Sc$mut$FldType(this.proxy.append());
+	}
+`,
+	// *******************************
+	"typedefProxyArrayAppendOtherType": `
+
+	append$FldType(): sc.$mut$FldType {
+		return new sc.$mut$FldType(this.proxy.append());
+	}
 `,
 	// *******************************
 	"typedefProxyArrayNewBaseType": `
 
-    get$FldType(index: u32): wasmlib.Sc$mut$FldType {
-        return new wasmlib.Sc$mut$FldType(this.objID, new wasmlib.Key32(index as i32));
+    get$FldType(index: u32): wasmtypes.Sc$mut$FldType {
+        return new wasmtypes.Sc$mut$FldType(this.proxy.index(index));
     }
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherType": `
-$#if typedef typedefProxyArrayNewOtherTypeTypeDef typedefProxyArrayNewOtherTypeStruct
-`,
-	// *******************************
-	"typedefProxyArrayNewOtherTypeTypeDef": `
-$#emit setVarType
-
-	get$OldType(index: u32): sc.$mut$OldType {
-		let subID = wasmlib.getObjectID(this.objID, new wasmlib.Key32(index as i32), $varType);
-		return new sc.$mut$OldType(subID);
-	}
-`,
-	// *******************************
-	"typedefProxyArrayNewOtherTypeStruct": `
 
 	get$FldType(index: u32): sc.$mut$FldType {
-		return new sc.$mut$FldType(this.objID, new wasmlib.Key32(index as i32));
+		return new sc.$mut$FldType(this.proxy.index(index));
 	}
 `,
 	// *******************************
 	"typedefProxyMap": `
-$#set proxy Map$fldMapKey$+To$mut$FldType
+$#set proxy Map$FldMapKey$+To$mut$FldType
 $#if exist else typedefProxyMapNew
 `,
 	// *******************************
 	"typedefProxyMapNew": `
 
-export class $proxy {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-$#if mut typedefProxyMapClear
+export class $proxy extends wasmtypes.ScProxy {
+$#if mut typedefProxyMapMut
 $#if basetype typedefProxyMapNewBaseType typedefProxyMapNewOtherType
 }
 $#set exist $proxy
 `,
 	// *******************************
-	"typedefProxyMapClear": `
+	"typedefProxyMapMut": `
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearMap();
     }
 `,
 	// *******************************
 	"typedefProxyMapNewBaseType": `
 
-    get$FldType(key: $fldKeyLangType): wasmlib.Sc$mut$FldType {
-        return new wasmlib.Sc$mut$FldType(this.objID, $fldKeyToKey32);
+    get$FldType(key: $fldKeyLangType): wasmtypes.Sc$mut$FldType {
+        return new wasmtypes.Sc$mut$FldType(this.proxy.key(wasmtypes.$fldMapKey$+ToBytes(key)));
     }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
-$#if typedef typedefProxyMapNewOtherTypeTypeDef typedefProxyMapNewOtherTypeStruct
-`,
-	// *******************************
-	"typedefProxyMapNewOtherTypeTypeDef": `
-$#emit setVarType
-
-    get$OldType(key: $oldKeyLangType): sc.$mut$OldType {
-        let subID = wasmlib.getObjectID(this.objID, $oldKeyToKey32, $varType);
-        return new sc.$mut$OldType(subID);
-    }
-`,
-	// *******************************
-	"typedefProxyMapNewOtherTypeStruct": `
 
     get$FldType(key: $fldKeyLangType): sc.$mut$FldType {
-        return new sc.$mut$FldType(this.objID, $fldKeyToKey32);
+        return new sc.$mut$FldType(this.proxy.key(wasmtypes.$fldMapKey$+ToBytes(key)));
     }
 `,
 }

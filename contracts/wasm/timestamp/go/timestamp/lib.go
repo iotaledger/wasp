@@ -47,6 +47,6 @@ func viewGetTimestampThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewGetTimestamp(ctx, f)
-	ctx.Log("timestamp.viewGetTimestamp ok")
 	ctx.Results(results)
+	ctx.Log("timestamp.viewGetTimestamp ok")
 }

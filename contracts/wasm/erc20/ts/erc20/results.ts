@@ -6,40 +6,41 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableAllowanceResults extends wasmlib.ScMapID {
-    amount(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultAmount));
+export class ImmutableAllowanceResults extends wasmtypes.ScProxy {
+    amount(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultAmount));
 	}
 }
 
-export class MutableAllowanceResults extends wasmlib.ScMapID {
-    amount(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultAmount));
+export class MutableAllowanceResults extends wasmtypes.ScProxy {
+    amount(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultAmount));
 	}
 }
 
-export class ImmutableBalanceOfResults extends wasmlib.ScMapID {
-    amount(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultAmount));
+export class ImmutableBalanceOfResults extends wasmtypes.ScProxy {
+    amount(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultAmount));
 	}
 }
 
-export class MutableBalanceOfResults extends wasmlib.ScMapID {
-    amount(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultAmount));
+export class MutableBalanceOfResults extends wasmtypes.ScProxy {
+    amount(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultAmount));
 	}
 }
 
-export class ImmutableTotalSupplyResults extends wasmlib.ScMapID {
-    supply(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultSupply));
+export class ImmutableTotalSupplyResults extends wasmtypes.ScProxy {
+    supply(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultSupply));
 	}
 }
 
-export class MutableTotalSupplyResults extends wasmlib.ScMapID {
-    supply(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultSupply));
+export class MutableTotalSupplyResults extends wasmtypes.ScProxy {
+    supply(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultSupply));
 	}
 }

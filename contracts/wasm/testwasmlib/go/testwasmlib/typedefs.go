@@ -50,7 +50,7 @@ type MapStringToImmutableString struct {
 }
 
 func (m MapStringToImmutableString) GetString(key string) wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(m.proxy.Key(wasmtypes.BytesFromString(key)))
+	return wasmtypes.NewScImmutableString(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type ImmutableStringMap = MapStringToImmutableString
@@ -64,7 +64,7 @@ func (m MapStringToMutableString) Clear() {
 }
 
 func (m MapStringToMutableString) GetString(key string) wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(m.proxy.Key(wasmtypes.BytesFromString(key)))
+	return wasmtypes.NewScMutableString(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type MutableStringMap = MapStringToMutableString

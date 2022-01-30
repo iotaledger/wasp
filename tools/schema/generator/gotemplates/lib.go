@@ -39,8 +39,8 @@ $#if view ImmutablePackageStateInit
 $#emit accessCheck
 $#each mandatory requireMandatory
 	$kind$FuncName(ctx, f)
-	ctx.Log("$package.$kind$FuncName ok")
 $#if result returnResultDict
+	ctx.Log("$package.$kind$FuncName ok")
 }
 `,
 	// *******************************

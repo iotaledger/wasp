@@ -30,10 +30,10 @@ const (
 )
 
 var ( // TODO set back to false
-	GoDebug    = flag.Bool("godebug", true, "debug go smart contract code")
+	GoDebug    = flag.Bool("godebug", false, "debug go smart contract code")
 	GoWasm     = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
 	GoWasmEdge = flag.Bool("gowasmedge", false, "use WasmEdge instead of WasmTime")
-	TsWasm     = flag.Bool("tswasm", false, "prefer typescript wasm smart contract code")
+	TsWasm     = flag.Bool("tswasm", true, "prefer typescript wasm smart contract code")
 )
 
 type SoloContext struct {
@@ -175,7 +175,6 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 		wasmhost.DisableWasmTimeout = true
 	}
 	wasmhost.HostTracing = SoloHostTracing
-	// wasmhost.HostTracingAll = SoloHostTracing
 
 	var soloEnv *solo.Solo
 	if len(env) != 0 {

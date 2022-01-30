@@ -8,6 +8,7 @@
 // through a minimal implementation and not to come up with a complete real-world solution.
 
 import * as wasmlib from "wasmlib"
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 // Define some default configuration parameters.
@@ -36,7 +37,8 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     // Get the array of current bets from state storage.
     let bets: sc.ArrayOfMutableBet = f.state.bets();
 
-    for (let i: u32 = 0; i < bets.length(); i++) {
+    const nrBets = bets.length();
+    for (let i: u32 = 0; i < nrBets; i++) {
         let bet: sc.Bet = bets.getBet(i).value();
 
         if (bet.better.address() == ctx.caller().address()) {
@@ -57,7 +59,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     let incoming: wasmlib.ScBalances = ctx.incoming();
 
     // Retrieve the amount of plain iota tokens that are part of the incoming balance.
-    let amount: u64 = incoming.balance(wasmlib.ScColor.IOTA);
+    let amount: u64 = incoming.balance(wasmtypes.IOTA);
 
     // Require that there are actually some plain iotas there
     ctx.require(amount > 0, "empty bet");
@@ -75,7 +77,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
 
     // Append the bet data to the bets array. The bet array will automatically take care
     // of serializing the bet struct into a bytes representation.
-    bets.getBet(betNr).setValue(bet);
+    bets.appendBet().setValue(bet);
 
     f.events.bet(bet.better.address(), bet.amount, bet.number);
 

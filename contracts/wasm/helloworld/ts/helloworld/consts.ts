@@ -5,16 +5,16 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "helloworld";
 export const ScDescription = "The ubiquitous hello world demo";
-export const HScName       = new wasmlib.ScHname(0x0683223c);
+export const HScName       = new wasmtypes.ScHname(0x0683223c);
 
 export const ResultHelloWorld = "helloWorld";
 
 export const FuncHelloWorld    = "helloWorld";
 export const ViewGetHelloWorld = "getHelloWorld";
 
-export const HFuncHelloWorld    = new wasmlib.ScHname(0x9d042e65);
-export const HViewGetHelloWorld = new wasmlib.ScHname(0x210439ce);
+export const HFuncHelloWorld    = new wasmtypes.ScHname(0x9d042e65);
+export const HViewGetHelloWorld = new wasmtypes.ScHname(0x210439ce);

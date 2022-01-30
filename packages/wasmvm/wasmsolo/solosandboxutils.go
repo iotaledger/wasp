@@ -26,12 +26,12 @@ func (s *SoloSandbox) fnUtilsBlsAddress(args []byte) []byte {
 
 func (s *SoloSandbox) fnUtilsBlsAggregate(args []byte) []byte {
 	dec := wasmtypes.NewWasmDecoder(args)
-	count := int(wasmtypes.DecodeUint32(dec))
+	count := int(wasmtypes.Uint32Decode(dec))
 	pubKeysBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		pubKeysBin[i] = dec.Bytes()
 	}
-	count = int(wasmtypes.DecodeUint32(dec))
+	count = int(wasmtypes.Uint32Decode(dec))
 	sigsBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		sigsBin[i] = dec.Bytes()

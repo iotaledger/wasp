@@ -134,7 +134,7 @@ type MapStringToImmutableBytes struct {
 }
 
 func (m MapStringToImmutableBytes) GetBytes(key string) wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.BytesFromString(key)))
+	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type ImmutableParamTypesParams struct {
@@ -227,7 +227,7 @@ func (m MapStringToMutableBytes) Clear() {
 }
 
 func (m MapStringToMutableBytes) GetBytes(key string) wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.BytesFromString(key)))
+	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type MutableParamTypesParams struct {

@@ -19,7 +19,7 @@ const (
 )
 
 func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
-	paramIn := f.Params.IntValue().Value()
+	paramInt := f.Params.IntValue().Value()
 
 	hnameContract := ctx.Contract()
 	if f.Params.HnameContract().Exists() {
@@ -41,9 +41,10 @@ func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
 	counter.SetValue(counter.Value() + 1)
 
 	params := wasmlib.NewScDict()
-	params.Set([]byte(ParamIntValue), wasmtypes.BytesFromInt64(paramIn))
+	key := []byte(ParamIntValue)
+	params.Set(key, wasmtypes.Int64ToBytes(paramInt))
 	ret := ctx.Call(hnameContract, hnameEP, params, nil)
-	retVal := wasmtypes.Int64FromBytes(ret.Get([]byte(ParamIntValue)))
+	retVal := wasmtypes.Int64FromBytes(ret.Get(key))
 	f.Results.IntValue().SetValue(retVal)
 }
 
@@ -107,8 +108,8 @@ func funcRunRecursion(ctx wasmlib.ScFuncContext, f *RunRecursionContext) {
 }
 
 func funcSendToAddress(ctx wasmlib.ScFuncContext, f *SendToAddressContext) {
-	balances := wasmlib.NewScTransfersFromBalances(ctx.Balances())
-	ctx.TransferToAddress(f.Params.Address().Value(), balances)
+	transfer := wasmlib.NewScTransfersFromBalances(ctx.Balances())
+	ctx.TransferToAddress(f.Params.Address().Value(), transfer)
 }
 
 func funcSetInt(ctx wasmlib.ScFuncContext, f *SetIntContext) {

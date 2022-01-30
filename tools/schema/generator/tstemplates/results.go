@@ -23,7 +23,7 @@ $#if result resultsProxyStruct
 $#set TypeName $mut$FuncName$+Results
 $#each result proxyContainers
 
-export class $TypeName extends wasmlib.ScMapID {
+export class $TypeName extends wasmtypes.ScProxy {
 $#set separator $false
 $#each result proxyMethods
 }

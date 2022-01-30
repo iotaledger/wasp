@@ -6,28 +6,29 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableGetFactorResults extends wasmlib.ScMapID {
-    factor(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultFactor));
+export class ImmutableGetFactorResults extends wasmtypes.ScProxy {
+    factor(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultFactor));
 	}
 }
 
-export class MutableGetFactorResults extends wasmlib.ScMapID {
-    factor(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultFactor));
+export class MutableGetFactorResults extends wasmtypes.ScProxy {
+    factor(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultFactor));
 	}
 }
 
-export class ImmutableGetOwnerResults extends wasmlib.ScMapID {
-    owner(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultOwner));
+export class ImmutableGetOwnerResults extends wasmtypes.ScProxy {
+    owner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultOwner));
 	}
 }
 
-export class MutableGetOwnerResults extends wasmlib.ScMapID {
-    owner(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultOwner));
+export class MutableGetOwnerResults extends wasmtypes.ScProxy {
+    owner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultOwner));
 	}
 }

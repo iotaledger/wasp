@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
-import * as sc from "./index";
 
 export const IdxParamAddress     = 0;
 export const IdxParamAgentID     = 1;
@@ -33,53 +31,3 @@ export const IdxParamUint32      = 21;
 export const IdxParamUint64      = 22;
 export const IdxParamUint8       = 23;
 export const IdxParamValue       = 24;
-
-export const IdxResultCount  = 25;
-export const IdxResultIotas  = 26;
-export const IdxResultLength = 27;
-export const IdxResultRandom = 28;
-export const IdxResultRecord = 29;
-export const IdxResultValue  = 30;
-
-export const IdxStateArrays = 31;
-export const IdxStateMaps   = 32;
-export const IdxStateRandom = 33;
-
-export let keyMap: string[] = [
-	sc.ParamAddress,
-	sc.ParamAgentID,
-	sc.ParamBlockIndex,
-	sc.ParamBool,
-	sc.ParamBytes,
-	sc.ParamChainID,
-	sc.ParamColor,
-	sc.ParamHash,
-	sc.ParamHname,
-	sc.ParamIndex,
-	sc.ParamInt16,
-	sc.ParamInt32,
-	sc.ParamInt64,
-	sc.ParamInt8,
-	sc.ParamKey,
-	sc.ParamName,
-	sc.ParamParam,
-	sc.ParamRecordIndex,
-	sc.ParamRequestID,
-	sc.ParamString,
-	sc.ParamUint16,
-	sc.ParamUint32,
-	sc.ParamUint64,
-	sc.ParamUint8,
-	sc.ParamValue,
-	sc.ResultCount,
-	sc.ResultIotas,
-	sc.ResultLength,
-	sc.ResultRandom,
-	sc.ResultRecord,
-	sc.ResultValue,
-	sc.StateArrays,
-	sc.StateMaps,
-	sc.StateRandom,
-];
-
-export let idxMap: wasmlib.Key32[] = new Array(keyMap.length);

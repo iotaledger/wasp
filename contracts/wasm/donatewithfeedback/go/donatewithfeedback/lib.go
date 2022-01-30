@@ -81,8 +81,8 @@ func viewDonationThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.Nr().Exists(), "missing mandatory nr")
 	viewDonation(ctx, f)
-	ctx.Log("donatewithfeedback.viewDonation ok")
 	ctx.Results(results)
+	ctx.Log("donatewithfeedback.viewDonation ok")
 }
 
 type DonationInfoContext struct {
@@ -102,6 +102,6 @@ func viewDonationInfoThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewDonationInfo(ctx, f)
-	ctx.Log("donatewithfeedback.viewDonationInfo ok")
 	ctx.Results(results)
+	ctx.Log("donatewithfeedback.viewDonationInfo ok")
 }

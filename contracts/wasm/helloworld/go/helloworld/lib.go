@@ -47,6 +47,6 @@ func viewGetHelloWorldThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewGetHelloWorld(ctx, f)
-	ctx.Log("helloworld.viewGetHelloWorld ok")
 	ctx.Results(results)
+	ctx.Log("helloworld.viewGetHelloWorld ok")
 }

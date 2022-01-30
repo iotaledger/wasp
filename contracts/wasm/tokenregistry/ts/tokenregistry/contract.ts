@@ -6,70 +6,71 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class MintSupplyCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncMintSupply);
-	params: sc.MutableMintSupplyParams = new sc.MutableMintSupplyParams();
+	params: sc.MutableMintSupplyParams = new sc.MutableMintSupplyParams(wasmlib.ScView.nilProxy);
 }
 
 export class MintSupplyContext {
-	params: sc.ImmutableMintSupplyParams = new sc.ImmutableMintSupplyParams();
-	state: sc.MutableTokenRegistryState = new sc.MutableTokenRegistryState();
+	params: sc.ImmutableMintSupplyParams = new sc.ImmutableMintSupplyParams(wasmlib.paramsProxy());
+	state: sc.MutableTokenRegistryState = new sc.MutableTokenRegistryState(wasmlib.ScState.proxy());
 }
 
 export class TransferOwnershipCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncTransferOwnership);
-	params: sc.MutableTransferOwnershipParams = new sc.MutableTransferOwnershipParams();
+	params: sc.MutableTransferOwnershipParams = new sc.MutableTransferOwnershipParams(wasmlib.ScView.nilProxy);
 }
 
 export class TransferOwnershipContext {
-	params: sc.ImmutableTransferOwnershipParams = new sc.ImmutableTransferOwnershipParams();
-	state: sc.MutableTokenRegistryState = new sc.MutableTokenRegistryState();
+	params: sc.ImmutableTransferOwnershipParams = new sc.ImmutableTransferOwnershipParams(wasmlib.paramsProxy());
+	state: sc.MutableTokenRegistryState = new sc.MutableTokenRegistryState(wasmlib.ScState.proxy());
 }
 
 export class UpdateMetadataCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncUpdateMetadata);
-	params: sc.MutableUpdateMetadataParams = new sc.MutableUpdateMetadataParams();
+	params: sc.MutableUpdateMetadataParams = new sc.MutableUpdateMetadataParams(wasmlib.ScView.nilProxy);
 }
 
 export class UpdateMetadataContext {
-	params: sc.ImmutableUpdateMetadataParams = new sc.ImmutableUpdateMetadataParams();
-	state: sc.MutableTokenRegistryState = new sc.MutableTokenRegistryState();
+	params: sc.ImmutableUpdateMetadataParams = new sc.ImmutableUpdateMetadataParams(wasmlib.paramsProxy());
+	state: sc.MutableTokenRegistryState = new sc.MutableTokenRegistryState(wasmlib.ScState.proxy());
 }
 
 export class GetInfoCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetInfo);
-	params: sc.MutableGetInfoParams = new sc.MutableGetInfoParams();
+	params: sc.MutableGetInfoParams = new sc.MutableGetInfoParams(wasmlib.ScView.nilProxy);
 }
 
 export class GetInfoContext {
-	params: sc.ImmutableGetInfoParams = new sc.ImmutableGetInfoParams();
-	state: sc.ImmutableTokenRegistryState = new sc.ImmutableTokenRegistryState();
+	params: sc.ImmutableGetInfoParams = new sc.ImmutableGetInfoParams(wasmlib.paramsProxy());
+	state: sc.ImmutableTokenRegistryState = new sc.ImmutableTokenRegistryState(wasmlib.ScState.proxy());
 }
 
 export class ScFuncs {
     static mintSupply(ctx: wasmlib.ScFuncCallContext): MintSupplyCall {
-        let f = new MintSupplyCall();
-        f.func.setPtrs(f.params, null);
+        const f = new MintSupplyCall();
+		f.params = new sc.MutableMintSupplyParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
     static transferOwnership(ctx: wasmlib.ScFuncCallContext): TransferOwnershipCall {
-        let f = new TransferOwnershipCall();
-        f.func.setPtrs(f.params, null);
+        const f = new TransferOwnershipCall();
+		f.params = new sc.MutableTransferOwnershipParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
     static updateMetadata(ctx: wasmlib.ScFuncCallContext): UpdateMetadataCall {
-        let f = new UpdateMetadataCall();
-        f.func.setPtrs(f.params, null);
+        const f = new UpdateMetadataCall();
+		f.params = new sc.MutableUpdateMetadataParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
     static getInfo(ctx: wasmlib.ScViewCallContext): GetInfoCall {
-        let f = new GetInfoCall();
-        f.func.setPtrs(f.params, null);
+        const f = new GetInfoCall();
+		f.params = new sc.MutableGetInfoParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 }

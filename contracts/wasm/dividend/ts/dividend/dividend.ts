@@ -89,12 +89,9 @@ export function funcMember(ctx: wasmlib.ScFuncContext, f: sc.MemberContext): voi
         let memberList: sc.ArrayOfMutableAddress = f.state.memberList();
 
         // Now we will append the new address to the memberList array.
-        // First we determine the current length of the array.
-        let length: u32 = memberList.length();
-
-        // Next we create an ScMutableAddress proxy to the address value that lives
-        // at that index in the memberList array (no value, since we're appending).
-        let newAddress: wasmlib.ScMutableAddress = memberList.getAddress(length);
+        // We create an ScMutableAddress proxy to an address value that lives
+        // at the end of the memberList array (no value yet, since we're appending).
+        let newAddress: wasmlib.ScMutableAddress = memberList.appendAddress();
 
         // And finally we append the new address to the array by telling the proxy
         // to update the value it refers to with the 'address' parameter.
@@ -142,7 +139,7 @@ export function funcDivide(ctx: wasmlib.ScFuncContext, f: sc.DivideContext): voi
     let balances: wasmlib.ScBalances = ctx.balances();
 
     // Retrieve the amount of plain iota tokens from the account balance.
-    let amount: u64 = balances.balance(wasmlib.ScColor.IOTA);
+    let amount: u64 = balances.balance(wasmlib.IOTA);
 
     // Retrieve the pre-calculated totalFactor value from the state storage.
     let totalFactor: u64 = f.state.totalFactor().value();
@@ -182,7 +179,7 @@ export function funcDivide(ctx: wasmlib.ScFuncContext, f: sc.DivideContext): voi
             // member address. The transferToAddress() method receives the address
             // value and the proxy to the new transfers map on the host, and will
             // call the corresponding host sandbox function with these values.
-            ctx.transferToAddress(address, transfers);
+            ctx.send(address, transfers);
         }
     }
 }

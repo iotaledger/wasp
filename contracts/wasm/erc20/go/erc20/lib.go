@@ -132,8 +132,8 @@ func viewAllowanceThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Account().Exists(), "missing mandatory account")
 	ctx.Require(f.Params.Delegation().Exists(), "missing mandatory delegation")
 	viewAllowance(ctx, f)
-	ctx.Log("erc20.viewAllowance ok")
 	ctx.Results(results)
+	ctx.Log("erc20.viewAllowance ok")
 }
 
 type BalanceOfContext struct {
@@ -158,8 +158,8 @@ func viewBalanceOfThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.Account().Exists(), "missing mandatory account")
 	viewBalanceOf(ctx, f)
-	ctx.Log("erc20.viewBalanceOf ok")
 	ctx.Results(results)
+	ctx.Log("erc20.viewBalanceOf ok")
 }
 
 type TotalSupplyContext struct {
@@ -179,6 +179,6 @@ func viewTotalSupplyThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewTotalSupply(ctx, f)
-	ctx.Log("erc20.viewTotalSupply ok")
 	ctx.Results(results)
+	ctx.Log("erc20.viewTotalSupply ok")
 }

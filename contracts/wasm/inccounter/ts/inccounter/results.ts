@@ -6,88 +6,89 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableGetCounterResults extends wasmlib.ScMapID {
-    counter(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultCounter));
+export class ImmutableGetCounterResults extends wasmtypes.ScProxy {
+    counter(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultCounter));
 	}
 }
 
-export class MutableGetCounterResults extends wasmlib.ScMapID {
-    counter(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultCounter));
+export class MutableGetCounterResults extends wasmtypes.ScProxy {
+    counter(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultCounter));
 	}
 }
 
-export class ImmutableGetVliResults extends wasmlib.ScMapID {
-    buf(): wasmlib.ScImmutableBytes {
-		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBuf));
+export class ImmutableGetVliResults extends wasmtypes.ScProxy {
+    buf(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultBuf));
 	}
 
-    ni64(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultNi64));
+    ni64(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultNi64));
 	}
 
-    str(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultStr));
+    str(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultStr));
 	}
 
-    xi64(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultXi64));
-	}
-}
-
-export class MutableGetVliResults extends wasmlib.ScMapID {
-    buf(): wasmlib.ScMutableBytes {
-		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBuf));
-	}
-
-    ni64(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultNi64));
-	}
-
-    str(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultStr));
-	}
-
-    xi64(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultXi64));
+    xi64(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultXi64));
 	}
 }
 
-export class ImmutableGetVluResults extends wasmlib.ScMapID {
-    buf(): wasmlib.ScImmutableBytes {
-		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBuf));
+export class MutableGetVliResults extends wasmtypes.ScProxy {
+    buf(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultBuf));
 	}
 
-    nu64(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultNu64));
+    ni64(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultNi64));
 	}
 
-    str(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultStr));
+    str(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultStr));
 	}
 
-    xu64(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultXu64));
+    xi64(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultXi64));
 	}
 }
 
-export class MutableGetVluResults extends wasmlib.ScMapID {
-    buf(): wasmlib.ScMutableBytes {
-		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultBuf));
+export class ImmutableGetVluResults extends wasmtypes.ScProxy {
+    buf(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultBuf));
 	}
 
-    nu64(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultNu64));
+    nu64(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultNu64));
 	}
 
-    str(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultStr));
+    str(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultStr));
 	}
 
-    xu64(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.ResultXu64));
+    xu64(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultXu64));
+	}
+}
+
+export class MutableGetVluResults extends wasmtypes.ScProxy {
+    buf(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultBuf));
+	}
+
+    nu64(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultNu64));
+	}
+
+    str(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultStr));
+	}
+
+    xu64(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultXu64));
 	}
 }

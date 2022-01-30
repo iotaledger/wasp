@@ -39,11 +39,11 @@ $#emit structMethods
 `,
 	// *******************************
 	"structDecode": `
-	data.$FldName$fldPad = wasmtypes.Decode$FldType(dec)
+	data.$FldName$fldPad = wasmtypes.$FldType$+Decode(dec)
 `,
 	// *******************************
 	"structEncode": `
-		wasmtypes.Encode$FldType(enc, o.$FldName)
+		wasmtypes.$FldType$+Encode(enc, o.$FldName)
 `,
 	// *******************************
 	"structMethods": `

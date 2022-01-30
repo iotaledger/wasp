@@ -172,7 +172,7 @@ func viewGetVli(ctx wasmlib.ScViewContext, f *GetVliContext) {
 	n := f.Params.Ni64().Value()
 	buf := enc.VliEncode(n).Buf()
 	dec := wasmtypes.NewWasmDecoder(buf)
-	x := wasmtypes.DecodeInt64(dec)
+	x := wasmtypes.Int64Decode(dec)
 
 	str := strconv.FormatInt(n, 10) + " -"
 	for j := 0; j < len(buf); j++ {
@@ -193,7 +193,7 @@ func viewGetVlu(ctx wasmlib.ScViewContext, f *GetVluContext) {
 	n := f.Params.Nu64().Value()
 	buf := enc.VluEncode(n).Buf()
 	dec := wasmtypes.NewWasmDecoder(buf)
-	x := wasmtypes.DecodeUint64(dec)
+	x := wasmtypes.Uint64Decode(dec)
 
 	str := strconv.FormatUint(n, 10) + " -"
 	for j := 0; j < len(buf); j++ {
@@ -220,11 +220,10 @@ func localStatePost(ctx wasmlib.ScFuncContext, nr int64) {
 func vliSave(ctx wasmlib.ScFuncContext, name string, value int64) {
 	enc := wasmtypes.NewWasmEncoder()
 	state := wasmlib.ScState{}
-	state.Set([]byte(name), enc.VliEncode(value).Buf())
-
-	buf := state.Get([]byte(name))
-	dec := wasmtypes.NewWasmDecoder(buf)
-	retrieved := wasmtypes.DecodeInt64(dec)
+	key := []byte(name)
+	state.Set(key, enc.VliEncode(value).Buf())
+	dec := wasmtypes.NewWasmDecoder(state.Get(key))
+	retrieved := wasmtypes.Int64Decode(dec)
 	if retrieved != value {
 		ctx.Log(name + " in : " + ctx.Utility().String(value))
 		ctx.Log(name + " out: " + ctx.Utility().String(retrieved))
@@ -234,11 +233,10 @@ func vliSave(ctx wasmlib.ScFuncContext, name string, value int64) {
 func vluSave(ctx wasmlib.ScFuncContext, name string, value uint64) {
 	enc := wasmtypes.NewWasmEncoder()
 	state := wasmlib.ScState{}
-	state.Set([]byte(name), enc.VluEncode(value).Buf())
-
-	buf := state.Get([]byte(name))
-	dec := wasmtypes.NewWasmDecoder(buf)
-	retrieved := wasmtypes.DecodeUint64(dec)
+	key := []byte(name)
+	state.Set(key, enc.VluEncode(value).Buf())
+	dec := wasmtypes.NewWasmDecoder(state.Get(key))
+	retrieved := wasmtypes.Uint64Decode(dec)
 	if retrieved != value {
 		ctx.Log(name + " in : " + ctx.Utility().String(int64(value)))
 		ctx.Log(name + " out: " + ctx.Utility().String(int64(retrieved)))

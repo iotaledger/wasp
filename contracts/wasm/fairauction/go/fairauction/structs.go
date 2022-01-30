@@ -26,34 +26,34 @@ type Auction struct {
 func NewAuctionFromBytes(buf []byte) *Auction {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Auction{}
-	data.Color = wasmtypes.DecodeColor(dec)
-	data.Creator = wasmtypes.DecodeAgentID(dec)
-	data.Deposit = wasmtypes.DecodeUint64(dec)
-	data.Description = wasmtypes.DecodeString(dec)
-	data.Duration = wasmtypes.DecodeUint32(dec)
-	data.HighestBid = wasmtypes.DecodeUint64(dec)
-	data.HighestBidder = wasmtypes.DecodeAgentID(dec)
-	data.MinimumBid = wasmtypes.DecodeUint64(dec)
-	data.NumTokens = wasmtypes.DecodeUint64(dec)
-	data.OwnerMargin = wasmtypes.DecodeUint64(dec)
-	data.WhenStarted = wasmtypes.DecodeUint64(dec)
+	data.Color = wasmtypes.ColorDecode(dec)
+	data.Creator = wasmtypes.AgentIDDecode(dec)
+	data.Deposit = wasmtypes.Uint64Decode(dec)
+	data.Description = wasmtypes.StringDecode(dec)
+	data.Duration = wasmtypes.Uint32Decode(dec)
+	data.HighestBid = wasmtypes.Uint64Decode(dec)
+	data.HighestBidder = wasmtypes.AgentIDDecode(dec)
+	data.MinimumBid = wasmtypes.Uint64Decode(dec)
+	data.NumTokens = wasmtypes.Uint64Decode(dec)
+	data.OwnerMargin = wasmtypes.Uint64Decode(dec)
+	data.WhenStarted = wasmtypes.Uint64Decode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *Auction) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.EncodeColor(enc, o.Color)
-	wasmtypes.EncodeAgentID(enc, o.Creator)
-	wasmtypes.EncodeUint64(enc, o.Deposit)
-	wasmtypes.EncodeString(enc, o.Description)
-	wasmtypes.EncodeUint32(enc, o.Duration)
-	wasmtypes.EncodeUint64(enc, o.HighestBid)
-	wasmtypes.EncodeAgentID(enc, o.HighestBidder)
-	wasmtypes.EncodeUint64(enc, o.MinimumBid)
-	wasmtypes.EncodeUint64(enc, o.NumTokens)
-	wasmtypes.EncodeUint64(enc, o.OwnerMargin)
-	wasmtypes.EncodeUint64(enc, o.WhenStarted)
+	wasmtypes.ColorEncode(enc, o.Color)
+	wasmtypes.AgentIDEncode(enc, o.Creator)
+	wasmtypes.Uint64Encode(enc, o.Deposit)
+	wasmtypes.StringEncode(enc, o.Description)
+	wasmtypes.Uint32Encode(enc, o.Duration)
+	wasmtypes.Uint64Encode(enc, o.HighestBid)
+	wasmtypes.AgentIDEncode(enc, o.HighestBidder)
+	wasmtypes.Uint64Encode(enc, o.MinimumBid)
+	wasmtypes.Uint64Encode(enc, o.NumTokens)
+	wasmtypes.Uint64Encode(enc, o.OwnerMargin)
+	wasmtypes.Uint64Encode(enc, o.WhenStarted)
 	return enc.Buf()
 }
 
@@ -98,18 +98,18 @@ type Bid struct {
 func NewBidFromBytes(buf []byte) *Bid {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Bid{}
-	data.Amount = wasmtypes.DecodeUint64(dec)
-	data.Index = wasmtypes.DecodeUint32(dec)
-	data.Timestamp = wasmtypes.DecodeUint64(dec)
+	data.Amount = wasmtypes.Uint64Decode(dec)
+	data.Index = wasmtypes.Uint32Decode(dec)
+	data.Timestamp = wasmtypes.Uint64Decode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *Bid) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.EncodeUint64(enc, o.Amount)
-	wasmtypes.EncodeUint32(enc, o.Index)
-	wasmtypes.EncodeUint64(enc, o.Timestamp)
+	wasmtypes.Uint64Encode(enc, o.Amount)
+	wasmtypes.Uint32Encode(enc, o.Index)
+	wasmtypes.Uint64Encode(enc, o.Timestamp)
 	return enc.Buf()
 }
 

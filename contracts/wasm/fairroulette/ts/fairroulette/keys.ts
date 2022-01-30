@@ -5,37 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
-import * as sc from "./index";
 
 export const IdxParamNumber     = 0;
 export const IdxParamPlayPeriod = 1;
-
-export const IdxResultLastWinningNumber = 2;
-export const IdxResultRoundNumber       = 3;
-export const IdxResultRoundStartedAt    = 4;
-export const IdxResultRoundStatus       = 5;
-
-export const IdxStateBets              = 6;
-export const IdxStateLastWinningNumber = 7;
-export const IdxStatePlayPeriod        = 8;
-export const IdxStateRoundNumber       = 9;
-export const IdxStateRoundStartedAt    = 10;
-export const IdxStateRoundStatus       = 11;
-
-export let keyMap: string[] = [
-	sc.ParamNumber,
-	sc.ParamPlayPeriod,
-	sc.ResultLastWinningNumber,
-	sc.ResultRoundNumber,
-	sc.ResultRoundStartedAt,
-	sc.ResultRoundStatus,
-	sc.StateBets,
-	sc.StateLastWinningNumber,
-	sc.StatePlayPeriod,
-	sc.StateRoundNumber,
-	sc.StateRoundStartedAt,
-	sc.StateRoundStatus,
-];
-
-export let idxMap: wasmlib.Key32[] = new Array(keyMap.length);

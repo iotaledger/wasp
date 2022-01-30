@@ -6,76 +6,67 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ArrayOfImmutableDonation {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class ArrayOfImmutableDonation extends wasmtypes.ScProxy {
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
 	getDonation(index: u32): sc.ImmutableDonation {
-		return new sc.ImmutableDonation(this.objID, new wasmlib.Key32(index as i32));
+		return new sc.ImmutableDonation(this.proxy.index(index));
 	}
 }
 
-export class ImmutableDonateWithFeedbackState extends wasmlib.ScMapID {
+export class ImmutableDonateWithFeedbackState extends wasmtypes.ScProxy {
     log(): sc.ArrayOfImmutableDonation {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateLog), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfImmutableDonation(arrID);
+		return new sc.ArrayOfImmutableDonation(this.proxy.root(sc.StateLog));
 	}
 
-    maxDonation(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateMaxDonation));
+    maxDonation(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateMaxDonation));
 	}
 
-    totalDonation(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalDonation));
+    totalDonation(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateTotalDonation));
 	}
 }
 
-export class ArrayOfMutableDonation {
-	objID: i32;
+export class ArrayOfMutableDonation extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	appendDonation(): sc.MutableDonation {
+		return new sc.MutableDonation(this.proxy.append());
+	}
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearArray();
     }
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
 	getDonation(index: u32): sc.MutableDonation {
-		return new sc.MutableDonation(this.objID, new wasmlib.Key32(index as i32));
+		return new sc.MutableDonation(this.proxy.index(index));
 	}
 }
 
-export class MutableDonateWithFeedbackState extends wasmlib.ScMapID {
+export class MutableDonateWithFeedbackState extends wasmtypes.ScProxy {
     asImmutable(): sc.ImmutableDonateWithFeedbackState {
-		const imm = new sc.ImmutableDonateWithFeedbackState();
-		imm.mapID = this.mapID;
-		return imm;
+		return new sc.ImmutableDonateWithFeedbackState(this.proxy);
 	}
 
     log(): sc.ArrayOfMutableDonation {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateLog), wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfMutableDonation(arrID);
+		return new sc.ArrayOfMutableDonation(this.proxy.root(sc.StateLog));
 	}
 
-    maxDonation(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateMaxDonation));
+    maxDonation(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateMaxDonation));
 	}
 
-    totalDonation(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateTotalDonation));
+    totalDonation(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateTotalDonation));
 	}
 }

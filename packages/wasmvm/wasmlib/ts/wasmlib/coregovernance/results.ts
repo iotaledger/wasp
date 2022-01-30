@@ -6,170 +6,163 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ArrayOfImmutableBytes {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class ArrayOfImmutableBytes extends wasmtypes.ScProxy {
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
-    getBytes(index: u32): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.objID, new wasmlib.Key32(index as i32));
+    getBytes(index: u32): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.index(index));
     }
 }
 
-export class ImmutableGetAllowedStateControllerAddressesResults extends wasmlib.ScMapID {
+export class ImmutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
     allowedStateControllerAddresses(): sc.ArrayOfImmutableBytes {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultAllowedStateControllerAddresses), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfImmutableBytes(arrID);
+		return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultAllowedStateControllerAddresses));
 	}
 }
 
-export class ArrayOfMutableBytes {
-	objID: i32;
+export class ArrayOfMutableBytes extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	appendBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.append());
+	}
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearArray();
     }
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
-    getBytes(index: u32): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.objID, new wasmlib.Key32(index as i32));
+    getBytes(index: u32): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.index(index));
     }
 }
 
-export class MutableGetAllowedStateControllerAddressesResults extends wasmlib.ScMapID {
+export class MutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
     allowedStateControllerAddresses(): sc.ArrayOfMutableBytes {
-		let arrID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultAllowedStateControllerAddresses), wasmlib.TYPE_ARRAY16|wasmlib.TYPE_BYTES);
-		return new sc.ArrayOfMutableBytes(arrID);
+		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultAllowedStateControllerAddresses));
 	}
 }
 
-export class ImmutableGetChainInfoResults extends wasmlib.ScMapID {
-    chainID(): wasmlib.ScImmutableChainID {
-		return new wasmlib.ScImmutableChainID(this.mapID, wasmlib.Key32.fromString(sc.ResultChainID));
+export class ImmutableGetChainInfoResults extends wasmtypes.ScProxy {
+    chainID(): wasmtypes.ScImmutableChainID {
+		return new wasmtypes.ScImmutableChainID(this.proxy.root(sc.ResultChainID));
 	}
 
-    chainOwnerID(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultChainOwnerID));
+    chainOwnerID(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
 	}
 
-    defaultOwnerFee(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultDefaultOwnerFee));
+    defaultOwnerFee(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultDefaultOwnerFee));
 	}
 
-    defaultValidatorFee(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultDefaultValidatorFee));
+    defaultValidatorFee(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultDefaultValidatorFee));
 	}
 
-    description(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultDescription));
+    description(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultDescription));
 	}
 
-    feeColor(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ResultFeeColor));
+    feeColor(): wasmtypes.ScImmutableColor {
+		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ResultFeeColor));
 	}
 
-    maxBlobSize(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxBlobSize));
+    maxBlobSize(): wasmtypes.ScImmutableInt32 {
+		return new wasmtypes.ScImmutableInt32(this.proxy.root(sc.ResultMaxBlobSize));
 	}
 
-    maxEventSize(): wasmlib.ScImmutableInt16 {
-		return new wasmlib.ScImmutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxEventSize));
+    maxEventSize(): wasmtypes.ScImmutableInt16 {
+		return new wasmtypes.ScImmutableInt16(this.proxy.root(sc.ResultMaxEventSize));
 	}
 
-    maxEventsPerReq(): wasmlib.ScImmutableInt16 {
-		return new wasmlib.ScImmutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxEventsPerReq));
-	}
-}
-
-export class MutableGetChainInfoResults extends wasmlib.ScMapID {
-    chainID(): wasmlib.ScMutableChainID {
-		return new wasmlib.ScMutableChainID(this.mapID, wasmlib.Key32.fromString(sc.ResultChainID));
-	}
-
-    chainOwnerID(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ResultChainOwnerID));
-	}
-
-    defaultOwnerFee(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultDefaultOwnerFee));
-	}
-
-    defaultValidatorFee(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultDefaultValidatorFee));
-	}
-
-    description(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ResultDescription));
-	}
-
-    feeColor(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ResultFeeColor));
-	}
-
-    maxBlobSize(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxBlobSize));
-	}
-
-    maxEventSize(): wasmlib.ScMutableInt16 {
-		return new wasmlib.ScMutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxEventSize));
-	}
-
-    maxEventsPerReq(): wasmlib.ScMutableInt16 {
-		return new wasmlib.ScMutableInt16(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxEventsPerReq));
+    maxEventsPerReq(): wasmtypes.ScImmutableInt16 {
+		return new wasmtypes.ScImmutableInt16(this.proxy.root(sc.ResultMaxEventsPerReq));
 	}
 }
 
-export class ImmutableGetFeeInfoResults extends wasmlib.ScMapID {
-    feeColor(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ResultFeeColor));
+export class MutableGetChainInfoResults extends wasmtypes.ScProxy {
+    chainID(): wasmtypes.ScMutableChainID {
+		return new wasmtypes.ScMutableChainID(this.proxy.root(sc.ResultChainID));
 	}
 
-    ownerFee(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultOwnerFee));
+    chainOwnerID(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
 	}
 
-    validatorFee(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultValidatorFee));
+    defaultOwnerFee(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultDefaultOwnerFee));
+	}
+
+    defaultValidatorFee(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultDefaultValidatorFee));
+	}
+
+    description(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultDescription));
+	}
+
+    feeColor(): wasmtypes.ScMutableColor {
+		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ResultFeeColor));
+	}
+
+    maxBlobSize(): wasmtypes.ScMutableInt32 {
+		return new wasmtypes.ScMutableInt32(this.proxy.root(sc.ResultMaxBlobSize));
+	}
+
+    maxEventSize(): wasmtypes.ScMutableInt16 {
+		return new wasmtypes.ScMutableInt16(this.proxy.root(sc.ResultMaxEventSize));
+	}
+
+    maxEventsPerReq(): wasmtypes.ScMutableInt16 {
+		return new wasmtypes.ScMutableInt16(this.proxy.root(sc.ResultMaxEventsPerReq));
 	}
 }
 
-export class MutableGetFeeInfoResults extends wasmlib.ScMapID {
-    feeColor(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ResultFeeColor));
+export class ImmutableGetFeeInfoResults extends wasmtypes.ScProxy {
+    feeColor(): wasmtypes.ScImmutableColor {
+		return new wasmtypes.ScImmutableColor(this.proxy.root(sc.ResultFeeColor));
 	}
 
-    ownerFee(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultOwnerFee));
+    ownerFee(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultOwnerFee));
 	}
 
-    validatorFee(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultValidatorFee));
-	}
-}
-
-export class ImmutableGetMaxBlobSizeResults extends wasmlib.ScMapID {
-    maxBlobSize(): wasmlib.ScImmutableInt32 {
-		return new wasmlib.ScImmutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxBlobSize));
+    validatorFee(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultValidatorFee));
 	}
 }
 
-export class MutableGetMaxBlobSizeResults extends wasmlib.ScMapID {
-    maxBlobSize(): wasmlib.ScMutableInt32 {
-		return new wasmlib.ScMutableInt32(this.mapID, wasmlib.Key32.fromString(sc.ResultMaxBlobSize));
+export class MutableGetFeeInfoResults extends wasmtypes.ScProxy {
+    feeColor(): wasmtypes.ScMutableColor {
+		return new wasmtypes.ScMutableColor(this.proxy.root(sc.ResultFeeColor));
+	}
+
+    ownerFee(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultOwnerFee));
+	}
+
+    validatorFee(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultValidatorFee));
+	}
+}
+
+export class ImmutableGetMaxBlobSizeResults extends wasmtypes.ScProxy {
+    maxBlobSize(): wasmtypes.ScImmutableInt32 {
+		return new wasmtypes.ScImmutableInt32(this.proxy.root(sc.ResultMaxBlobSize));
+	}
+}
+
+export class MutableGetMaxBlobSizeResults extends wasmtypes.ScProxy {
+    maxBlobSize(): wasmtypes.ScMutableInt32 {
+		return new wasmtypes.ScMutableInt32(this.proxy.root(sc.ResultMaxBlobSize));
 	}
 }

@@ -18,18 +18,18 @@ type Bet struct {
 func NewBetFromBytes(buf []byte) *Bet {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Bet{}
-	data.Amount = wasmtypes.DecodeUint64(dec)
-	data.Better = wasmtypes.DecodeAgentID(dec)
-	data.Number = wasmtypes.DecodeUint16(dec)
+	data.Amount = wasmtypes.Uint64Decode(dec)
+	data.Better = wasmtypes.AgentIDDecode(dec)
+	data.Number = wasmtypes.Uint16Decode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *Bet) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.EncodeUint64(enc, o.Amount)
-	wasmtypes.EncodeAgentID(enc, o.Better)
-	wasmtypes.EncodeUint16(enc, o.Number)
+	wasmtypes.Uint64Encode(enc, o.Amount)
+	wasmtypes.AgentIDEncode(enc, o.Better)
+	wasmtypes.Uint16Encode(enc, o.Number)
 	return enc.Buf()
 }
 

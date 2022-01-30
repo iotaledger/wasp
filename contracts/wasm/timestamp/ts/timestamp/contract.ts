@@ -6,6 +6,7 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class NowCall {
@@ -13,17 +14,17 @@ export class NowCall {
 }
 
 export class NowContext {
-	state: sc.MutabletimestampState = new sc.MutabletimestampState();
+	state: sc.MutabletimestampState = new sc.MutabletimestampState(wasmlib.ScState.proxy());
 }
 
 export class GetTimestampCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetTimestamp);
-	results: sc.ImmutableGetTimestampResults = new sc.ImmutableGetTimestampResults();
+	results: sc.ImmutableGetTimestampResults = new sc.ImmutableGetTimestampResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetTimestampContext {
-	results: sc.MutableGetTimestampResults = new sc.MutableGetTimestampResults();
-	state: sc.ImmutabletimestampState = new sc.ImmutabletimestampState();
+	results: sc.MutableGetTimestampResults = new sc.MutableGetTimestampResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutabletimestampState = new sc.ImmutabletimestampState(wasmlib.ScState.proxy());
 }
 
 export class ScFuncs {
@@ -32,8 +33,8 @@ export class ScFuncs {
     }
 
     static getTimestamp(ctx: wasmlib.ScViewCallContext): GetTimestampCall {
-        let f = new GetTimestampCall();
-        f.func.setPtrs(null, f.results);
+        const f = new GetTimestampCall();
+		f.results = new sc.ImmutableGetTimestampResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 }

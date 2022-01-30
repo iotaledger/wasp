@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 const (
@@ -34,9 +35,6 @@ var (
 
 	// HostTracing turns on debug tracing for ScHost calls
 	HostTracing = false
-
-	// HostTracingAll turns on *all* debug tracing for ScHost calls
-	HostTracingAll = false
 
 	// WasmTimeout set this to non-zero for a one-time override of the defaultTimeout
 	WasmTimeout = 0 * time.Second
@@ -159,7 +157,9 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 	defer vm.catchPanicMessage()
 
 	ctx := vm.getContext(0)
-	ctx.log().Debugf("HostStateGet(k(%d,%d),v(%d,s%d))", keyRef, keyLen, valRef, valLen)
+	if HostTracing {
+		vm.traceGet(ctx, keyRef, keyLen, valRef, valLen)
+	}
 
 	// only check for existence ?
 	if valLen < 0 {
@@ -194,7 +194,9 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 	defer vm.catchPanicMessage()
 
 	ctx := vm.getContext(0)
-	ctx.log().Debugf("HostStateSet(k(%d,%d),v(%d,s%d))", keyRef, keyLen, valRef, valLen)
+	if HostTracing {
+		vm.traceSet(ctx, keyRef, keyLen, valRef, valLen)
+	}
 
 	// export name?
 	if keyRef == 0 {
@@ -237,18 +239,18 @@ func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 }
 
 func (vm *WasmVMBase) Run(runner func() error) (err error) {
-	//defer func() {
-	//	r := recover()
-	//	if r == nil {
-	//		return
-	//	}
-	//	// could be the wrong panic message due to a WasmTime bug, so we always
-	//	// rethrow our intercepted first panic instead of WasmTime's last panic
-	//	if vm.panicErr != nil {
-	//		panic(vm.panicErr)
-	//	}
-	//	panic(r)
-	//}()
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+		// could be the wrong panic message due to a WasmTime bug, so we always
+		// rethrow our intercepted first panic instead of WasmTime's last panic
+		if vm.panicErr != nil {
+			panic(vm.panicErr)
+		}
+		panic(r)
+	}()
 
 	if vm.timeoutStarted {
 		// no need to wrap nested calls in timeout code
@@ -309,4 +311,85 @@ func (vm *WasmVMBase) VMSetBytes(offset, size int32, bytes []byte) int32 {
 		copy(ptr[offset:offset+size], bytes)
 	}
 	return int32(len(bytes))
+}
+
+func (vm *WasmVMBase) traceGet(ctx *WasmContext, keyRef, keyLen, valRef, valLen int32) {
+	// only check for existence ?
+	if valLen < 0 {
+		key := vm.impl.VMGetBytes(keyRef, keyLen)
+		ctx.log().Debugf("StateExists(%s) = %v", vm.traceKey(key), ctx.StateExists(key))
+		return
+	}
+
+	// get value for key request, or get cached result request (keyLen == 0)
+	if keyLen >= 0 {
+		if keyLen == 0 {
+			ctx.log().Debugf("=> %s", vm.traceVal(vm.result))
+			return
+		}
+		// retrieve value associated with key
+		key := vm.impl.VMGetBytes(keyRef, keyLen)
+		ctx.log().Debugf("StateGet(%s)", vm.traceKey(key))
+		return
+	}
+
+	// sandbox func call request, keyLen is func nr
+	if keyLen == wasmlib.FnLog {
+		return
+	}
+	params := vm.impl.VMGetBytes(valRef, valLen)
+	ctx.log().Debugf("Sandbox(%s)", traceSandbox(keyLen, params))
+}
+
+func (vm *WasmVMBase) traceSet(ctx *WasmContext, keyRef, keyLen, valRef, valLen int32) {
+	// export name?
+	if keyRef == 0 {
+		name := string(vm.impl.VMGetBytes(valRef, valLen))
+		ctx.log().Debugf("ExportName(%d, %s)", keyLen, name)
+		return
+	}
+
+	key := vm.impl.VMGetBytes(keyRef, keyLen)
+
+	// delete key ?
+	if valLen < 0 {
+		ctx.log().Debugf("StateDelete(%s)", vm.traceKey(key))
+		return
+	}
+
+	// set key
+	val := vm.impl.VMGetBytes(valRef, valLen)
+	ctx.log().Debugf("StateSet(%s, %s)", vm.traceKey(key), vm.traceVal(val))
+}
+
+func (vm *WasmVMBase) traceKey(key []byte) string {
+	name := ""
+	for i, b := range key {
+		if b == '.' {
+			return string(key[:i+1]) + wasmtypes.Hex(key[i+1:])
+		}
+		if b == '#' {
+			name = string(key[:i+1])
+			j := i + 1
+			for ; (key[j] & 0x80) != 0; j++ {
+			}
+			dec := wasmtypes.NewWasmDecoder(key[i+1 : j+1])
+			index := wasmtypes.Uint64Decode(dec)
+			name += wasmtypes.Uint64ToString(index)
+			if j+1 == len(key) {
+				return name
+			}
+			return name + "..." + wasmtypes.Hex(key[j+1:])
+		}
+	}
+	return `"` + string(key) + `"`
+}
+
+func (vm *WasmVMBase) traceVal(val []byte) string {
+	for _, b := range val {
+		if b < ' ' || b > '~' {
+			return wasmtypes.Hex(val)
+		}
+	}
+	return string(val)
 }

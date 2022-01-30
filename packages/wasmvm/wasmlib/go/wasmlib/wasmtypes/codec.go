@@ -5,6 +5,7 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// WasmDecoder decodes separate entities from a byte buffer
 type WasmDecoder struct {
 	buf []byte
 }
@@ -14,11 +15,12 @@ func NewWasmDecoder(buf []byte) *WasmDecoder {
 }
 
 func (d *WasmDecoder) abort(msg string) {
-	// make sure deferred Close() will not trigger another panic
+	// make sure a deferred Close() will not trigger another panic
 	d.buf = nil
 	panic(msg)
 }
 
+// Byte decodes the next byte from the byte buffer
 func (d *WasmDecoder) Byte() byte {
 	if len(d.buf) == 0 {
 		d.abort("insufficient bytes")
@@ -28,17 +30,20 @@ func (d *WasmDecoder) Byte() byte {
 	return value
 }
 
+// Bytes decodes the next variable sized slice of bytes from the byte buffer
 func (d *WasmDecoder) Bytes() []byte {
 	length := uint32(d.VluDecode(32))
 	return d.FixedBytes(length)
 }
 
+// Close finalizes decoding by panicking if any bytes remain in the byte buffer
 func (d *WasmDecoder) Close() {
 	if len(d.buf) != 0 {
 		d.abort("extra bytes")
 	}
 }
 
+// FixedBytes decodes the next fixed size slice of bytes from the byte buffer
 func (d *WasmDecoder) FixedBytes(size uint32) []byte {
 	if uint32(len(d.buf)) < size {
 		d.abort("insufficient bytes")
@@ -48,13 +53,13 @@ func (d *WasmDecoder) FixedBytes(size uint32) []byte {
 	return value
 }
 
-// VliDecode: Variable Length Integer decoder
-func (d *WasmDecoder) VliDecode(bits int) (value int64) {
+// VliDecode: Variable Length Integer decoder, uses modified LEB128
+func (d *WasmDecoder) VliDecode(bits int) int64 {
 	b := d.Byte()
 	sign := b & 0x40
 
 	// first group of 6 bits
-	value = int64(b & 0x3f)
+	value := int64(b & 0x3f)
 	s := 6
 
 	// while continuation bit is set
@@ -77,7 +82,7 @@ func (d *WasmDecoder) VliDecode(bits int) (value int64) {
 	return value | (int64(-1) << s)
 }
 
-// VluDecode: Variable Length Unsigned decoder
+// VluDecode: Variable Length Unsigned decoder, uses ULEB128
 func (d *WasmDecoder) VluDecode(bits int) uint64 {
 	// first group of 7 bits
 	b := d.Byte()
@@ -99,6 +104,7 @@ func (d *WasmDecoder) VluDecode(bits int) uint64 {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// WasmEncoder encodes separate entities into a byte buffer
 type WasmEncoder struct {
 	buf []byte
 }
@@ -107,15 +113,18 @@ func NewWasmEncoder() *WasmEncoder {
 	return &WasmEncoder{buf: make([]byte, 0, 128)}
 }
 
+// Buf retrieves the encoded byte buffer
 func (e *WasmEncoder) Buf() []byte {
 	return e.buf
 }
 
+// Byte encodes a single byte into the byte buffer
 func (e *WasmEncoder) Byte(value uint8) *WasmEncoder {
 	e.buf = append(e.buf, value)
 	return e
 }
 
+// Bytes encodes a variable sized slice of bytes into the byte buffer
 func (e *WasmEncoder) Bytes(value []byte) *WasmEncoder {
 	length := len(value)
 	e.VluEncode(uint64(length))
@@ -123,26 +132,29 @@ func (e *WasmEncoder) Bytes(value []byte) *WasmEncoder {
 	return e
 }
 
+// FixedBytes encodes a fixed size slice of bytes into the byte buffer
 func (e *WasmEncoder) FixedBytes(value []byte, length uint32) *WasmEncoder {
-	if len(value) != int(length) {
+	if uint32(len(value)) != length {
 		panic("invalid fixed bytes length")
 	}
 	e.buf = append(e.buf, value...)
 	return e
 }
 
-// vli (variable length integer) encoder
+// VliEncode Variable Length Integer encoder, uses modified LEB128
 func (e *WasmEncoder) VliEncode(value int64) *WasmEncoder {
-	// first group of 6 bits
-	// 1st byte encodes 0 as positive in bit 6
+	// bit 7 is always continuation bit
+
+	// first group: 6 bits of data plus sign bit
+	// bit 6 encodes 0 as positive and 1 as negative
 	b := byte(value) & 0x3f
 	value >>= 6
 
 	finalValue := int64(0)
 	if value < 0 {
-		// encode negative value
 		// 1st byte encodes 1 as negative in bit 6
 		b |= 0x40
+		// negative value, start with all high bits set to 1
 		finalValue = -1
 	}
 
@@ -151,19 +163,21 @@ func (e *WasmEncoder) VliEncode(value int64) *WasmEncoder {
 		// emit with continuation bit
 		e.buf = append(e.buf, b|0x80)
 
-		// next group of 7 bits
+		// next group of 7 data bits
 		b = byte(value) & 0x7f
 		value >>= 7
 	}
 
-	// emit without continuation bit
+	// emit without continuation bit to signal end
 	e.buf = append(e.buf, b)
 	return e
 }
 
-// vlu (variable length unsigned) encoder
+// VluEncode Variable Length Unsigned encoder, uses ULEB128
 func (e *WasmEncoder) VluEncode(value uint64) *WasmEncoder {
-	// first group of 7 bits
+	// bit 7 is always continuation bit
+
+	// first group of 7 data bits
 	b := byte(value)
 	value >>= 7
 
@@ -172,34 +186,32 @@ func (e *WasmEncoder) VluEncode(value uint64) *WasmEncoder {
 		// emit with continuation bit
 		e.buf = append(e.buf, b|0x80)
 
-		// next group of 7 bits
+		// next group of 7 data bits
 		b = byte(value)
 		value >>= 7
 	}
 
-	// emit without continuation bit
+	// emit without continuation bit to signal end
 	e.buf = append(e.buf, b)
 	return e
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// wrapper for simplified use by hashtypes
+// base58Encode wrapper for simplified use by hashtypes
 func base58Encode(buf []byte) string {
 	// TODO
 	// return string(wasmlib.Sandbox(wasmstore.FnUtilsBase58Encode, buf))
-	return hex(buf)
+	return Hex(buf)
 }
 
-func hex(buf []byte) string {
+// hex returns a hex string representing the byte buffer
+func Hex(buf []byte) string {
 	const hexa = "0123456789abcdef"
-	digits := len(buf) * 2
-	res := make([]byte, digits)
-	for _, b := range buf {
-		digits--
-		res[digits] = hexa[b&0x0f]
-		digits--
-		res[digits] = hexa[b>>4]
+	res := make([]byte, len(buf)*2)
+	for i, b := range buf {
+		res[i*2] = hexa[b>>4]
+		res[i*2+1] = hexa[b&0x0f]
 	}
 	return string(res)
 }

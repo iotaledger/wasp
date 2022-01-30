@@ -19,20 +19,20 @@ type CallRequest struct {
 func NewCallRequestFromBytes(buf []byte) *CallRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &CallRequest{}
-	data.Contract = wasmtypes.DecodeHname(dec)
-	data.Function = wasmtypes.DecodeHname(dec)
-	data.Params = wasmtypes.DecodeBytes(dec)
-	data.Transfer = wasmtypes.DecodeBytes(dec)
+	data.Contract = wasmtypes.HnameDecode(dec)
+	data.Function = wasmtypes.HnameDecode(dec)
+	data.Params = wasmtypes.BytesDecode(dec)
+	data.Transfer = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *CallRequest) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.EncodeHname(enc, o.Contract)
-	wasmtypes.EncodeHname(enc, o.Function)
-	wasmtypes.EncodeBytes(enc, o.Params)
-	wasmtypes.EncodeBytes(enc, o.Transfer)
+	wasmtypes.HnameEncode(enc, o.Contract)
+	wasmtypes.HnameEncode(enc, o.Function)
+	wasmtypes.BytesEncode(enc, o.Params)
+	wasmtypes.BytesEncode(enc, o.Transfer)
 	return enc.Buf()
 }
 
@@ -78,20 +78,20 @@ type DeployRequest struct {
 func NewDeployRequestFromBytes(buf []byte) *DeployRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &DeployRequest{}
-	data.Description = wasmtypes.DecodeString(dec)
-	data.Name = wasmtypes.DecodeString(dec)
-	data.Params = wasmtypes.DecodeBytes(dec)
-	data.ProgHash = wasmtypes.DecodeHash(dec)
+	data.Description = wasmtypes.StringDecode(dec)
+	data.Name = wasmtypes.StringDecode(dec)
+	data.Params = wasmtypes.BytesDecode(dec)
+	data.ProgHash = wasmtypes.HashDecode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *DeployRequest) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.EncodeString(enc, o.Description)
-	wasmtypes.EncodeString(enc, o.Name)
-	wasmtypes.EncodeBytes(enc, o.Params)
-	wasmtypes.EncodeHash(enc, o.ProgHash)
+	wasmtypes.StringEncode(enc, o.Description)
+	wasmtypes.StringEncode(enc, o.Name)
+	wasmtypes.BytesEncode(enc, o.Params)
+	wasmtypes.HashEncode(enc, o.ProgHash)
 	return enc.Buf()
 }
 
@@ -139,24 +139,24 @@ type PostRequest struct {
 func NewPostRequestFromBytes(buf []byte) *PostRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &PostRequest{}
-	data.ChainID = wasmtypes.DecodeChainID(dec)
-	data.Contract = wasmtypes.DecodeHname(dec)
-	data.Delay = wasmtypes.DecodeUint32(dec)
-	data.Function = wasmtypes.DecodeHname(dec)
-	data.Params = wasmtypes.DecodeBytes(dec)
-	data.Transfer = wasmtypes.DecodeBytes(dec)
+	data.ChainID = wasmtypes.ChainIDDecode(dec)
+	data.Contract = wasmtypes.HnameDecode(dec)
+	data.Delay = wasmtypes.Uint32Decode(dec)
+	data.Function = wasmtypes.HnameDecode(dec)
+	data.Params = wasmtypes.BytesDecode(dec)
+	data.Transfer = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *PostRequest) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.EncodeChainID(enc, o.ChainID)
-	wasmtypes.EncodeHname(enc, o.Contract)
-	wasmtypes.EncodeUint32(enc, o.Delay)
-	wasmtypes.EncodeHname(enc, o.Function)
-	wasmtypes.EncodeBytes(enc, o.Params)
-	wasmtypes.EncodeBytes(enc, o.Transfer)
+	wasmtypes.ChainIDEncode(enc, o.ChainID)
+	wasmtypes.HnameEncode(enc, o.Contract)
+	wasmtypes.Uint32Encode(enc, o.Delay)
+	wasmtypes.HnameEncode(enc, o.Function)
+	wasmtypes.BytesEncode(enc, o.Params)
+	wasmtypes.BytesEncode(enc, o.Transfer)
 	return enc.Buf()
 }
 
@@ -200,16 +200,16 @@ type SendRequest struct {
 func NewSendRequestFromBytes(buf []byte) *SendRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &SendRequest{}
-	data.Address = wasmtypes.DecodeAddress(dec)
-	data.Transfer = wasmtypes.DecodeBytes(dec)
+	data.Address = wasmtypes.AddressDecode(dec)
+	data.Transfer = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *SendRequest) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.EncodeAddress(enc, o.Address)
-	wasmtypes.EncodeBytes(enc, o.Transfer)
+	wasmtypes.AddressEncode(enc, o.Address)
+	wasmtypes.BytesEncode(enc, o.Transfer)
 	return enc.Buf()
 }
 

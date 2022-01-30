@@ -6,62 +6,64 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class DeployContractCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncDeployContract);
-	params: sc.MutableDeployContractParams = new sc.MutableDeployContractParams();
+	params: sc.MutableDeployContractParams = new sc.MutableDeployContractParams(wasmlib.ScView.nilProxy);
 }
 
 export class GrantDeployPermissionCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncGrantDeployPermission);
-	params: sc.MutableGrantDeployPermissionParams = new sc.MutableGrantDeployPermissionParams();
+	params: sc.MutableGrantDeployPermissionParams = new sc.MutableGrantDeployPermissionParams(wasmlib.ScView.nilProxy);
 }
 
 export class RevokeDeployPermissionCall {
 	func: wasmlib.ScFunc = new wasmlib.ScFunc(sc.HScName, sc.HFuncRevokeDeployPermission);
-	params: sc.MutableRevokeDeployPermissionParams = new sc.MutableRevokeDeployPermissionParams();
+	params: sc.MutableRevokeDeployPermissionParams = new sc.MutableRevokeDeployPermissionParams(wasmlib.ScView.nilProxy);
 }
 
 export class FindContractCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewFindContract);
-	params: sc.MutableFindContractParams = new sc.MutableFindContractParams();
-	results: sc.ImmutableFindContractResults = new sc.ImmutableFindContractResults();
+	params: sc.MutableFindContractParams = new sc.MutableFindContractParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableFindContractResults = new sc.ImmutableFindContractResults(wasmlib.ScView.nilProxy);
 }
 
 export class GetContractRecordsCall {
 	func: wasmlib.ScView = new wasmlib.ScView(sc.HScName, sc.HViewGetContractRecords);
-	results: sc.ImmutableGetContractRecordsResults = new sc.ImmutableGetContractRecordsResults();
+	results: sc.ImmutableGetContractRecordsResults = new sc.ImmutableGetContractRecordsResults(wasmlib.ScView.nilProxy);
 }
 
 export class ScFuncs {
     static deployContract(ctx: wasmlib.ScFuncCallContext): DeployContractCall {
-        let f = new DeployContractCall();
-        f.func.setPtrs(f.params, null);
+        const f = new DeployContractCall();
+		f.params = new sc.MutableDeployContractParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
     static grantDeployPermission(ctx: wasmlib.ScFuncCallContext): GrantDeployPermissionCall {
-        let f = new GrantDeployPermissionCall();
-        f.func.setPtrs(f.params, null);
+        const f = new GrantDeployPermissionCall();
+		f.params = new sc.MutableGrantDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
     static revokeDeployPermission(ctx: wasmlib.ScFuncCallContext): RevokeDeployPermissionCall {
-        let f = new RevokeDeployPermissionCall();
-        f.func.setPtrs(f.params, null);
+        const f = new RevokeDeployPermissionCall();
+		f.params = new sc.MutableRevokeDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
     static findContract(ctx: wasmlib.ScViewCallContext): FindContractCall {
-        let f = new FindContractCall();
-        f.func.setPtrs(f.params, f.results);
+        const f = new FindContractCall();
+		f.params = new sc.MutableFindContractParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableFindContractResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
     static getContractRecords(ctx: wasmlib.ScViewCallContext): GetContractRecordsCall {
-        let f = new GetContractRecordsCall();
-        f.func.setPtrs(null, f.results);
+        const f = new GetContractRecordsCall();
+		f.results = new sc.ImmutableGetContractRecordsResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 }

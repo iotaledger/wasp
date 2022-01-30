@@ -34,6 +34,7 @@ func (ctx ScFuncContext) Incoming() ScBalances {
 	return ctx.IncomingTransfer()
 }
 
+// TODO deprecated
 func (ctx ScFuncContext) TransferToAddress(address wasmtypes.ScAddress, transfer ScTransfers) {
 	ctx.Send(address, transfer)
 }
@@ -42,7 +43,7 @@ func (ctx ScFuncContext) TransferToAddress(address wasmtypes.ScAddress, transfer
 
 // smart contract view sandbox interface
 type ScViewContext struct {
-	ScSandbox
+	ScSandboxView
 }
 
 var _ ScViewCallContext = &ScViewContext{}

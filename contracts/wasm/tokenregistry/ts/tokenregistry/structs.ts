@@ -6,83 +6,70 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Token {
     created     : u64 = 0;  // creation timestamp
     description : string = "";  // description what minted token represents
-    mintedBy    : wasmlib.ScAgentID = new wasmlib.ScAgentID();  // original minter
-    owner       : wasmlib.ScAgentID = new wasmlib.ScAgentID();  // current owner
+    mintedBy    : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes(null);  // original minter
+    owner       : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes(null);  // current owner
     supply      : u64 = 0;  // amount of tokens originally minted
     updated     : u64 = 0;  // last update timestamp
     userDefined : string = "";  // any user defined text
 
-    static fromBytes(bytes: u8[]): Token {
-        let decode = new wasmlib.BytesDecoder(bytes);
-        let data = new Token();
-        data.created     = decode.uint64();
-        data.description = decode.string();
-        data.mintedBy    = decode.agentID();
-        data.owner       = decode.agentID();
-        data.supply      = decode.uint64();
-        data.updated     = decode.uint64();
-        data.userDefined = decode.string();
-        decode.close();
+    static fromBytes(buf: u8[]|null): Token {
+        const dec = new wasmtypes.WasmDecoder(buf);
+        const data = new Token();
+        data.created     = wasmtypes.uint64Decode(dec);
+        data.description = wasmtypes.stringDecode(dec);
+        data.mintedBy    = wasmtypes.agentIDDecode(dec);
+        data.owner       = wasmtypes.agentIDDecode(dec);
+        data.supply      = wasmtypes.uint64Decode(dec);
+        data.updated     = wasmtypes.uint64Decode(dec);
+        data.userDefined = wasmtypes.stringDecode(dec);
+        dec.close();
         return data;
     }
 
     bytes(): u8[] {
-        return new wasmlib.BytesEncoder().
-		    uint64(this.created).
-		    string(this.description).
-		    agentID(this.mintedBy).
-		    agentID(this.owner).
-		    uint64(this.supply).
-		    uint64(this.updated).
-		    string(this.userDefined).
-            data();
+        const enc = new wasmtypes.WasmEncoder();
+		    wasmtypes.uint64Encode(enc, this.created);
+		    wasmtypes.stringEncode(enc, this.description);
+		    wasmtypes.agentIDEncode(enc, this.mintedBy);
+		    wasmtypes.agentIDEncode(enc, this.owner);
+		    wasmtypes.uint64Encode(enc, this.supply);
+		    wasmtypes.uint64Encode(enc, this.updated);
+		    wasmtypes.stringEncode(enc, this.userDefined);
+        return enc.buf();
     }
 }
 
-export class ImmutableToken {
-    objID: i32;
-    keyID: wasmlib.Key32;
-
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+export class ImmutableToken extends wasmtypes.ScProxy {
 
     exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        return this.proxy.exists();
     }
 
     value(): Token {
-        return Token.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
+        return Token.fromBytes(this.proxy.get());
     }
 }
 
-export class MutableToken {
-    objID: i32;
-    keyID: wasmlib.Key32;
-
-    constructor(objID: i32, keyID: wasmlib.Key32) {
-        this.objID = objID;
-        this.keyID = keyID;
-    }
+export class MutableToken extends wasmtypes.ScProxy {
 
     delete(): void {
-        wasmlib.delKey(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        this.proxy.delete();
     }
 
     exists(): boolean {
-        return wasmlib.exists(this.objID, this.keyID, wasmlib.TYPE_BYTES);
+        return this.proxy.exists();
     }
 
     setValue(value: Token): void {
-        wasmlib.setBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES, value.bytes());
+        this.proxy.set(value.bytes());
     }
 
     value(): Token {
-        return Token.fromBytes(wasmlib.getBytes(this.objID, this.keyID, wasmlib.TYPE_BYTES));
+        return Token.fromBytes(this.proxy.get());
     }
 }

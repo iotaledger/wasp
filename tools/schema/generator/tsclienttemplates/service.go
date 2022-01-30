@@ -127,7 +127,7 @@ $#if basetype callResultGetterBasic callResultGetterStruct
 	$fldName(): Map<$fldKeyLangType, $fldLangType> {
 		const res = new Map<$fldKeyLangType, $fldLangType>();
 		this.forEach((key, val) => {
-			res.set(this.to$fldMapKey(key), this.to$FldType(val));
+			res.set(this.to$FldMapKey(key), this.to$FldType(val));
 		});
 		return res;
 	}

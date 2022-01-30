@@ -14,7 +14,7 @@ type MapHashToImmutableAgentID struct {
 }
 
 func (m MapHashToImmutableAgentID) GetAgentID(key wasmtypes.ScHash) wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(m.proxy.Key(wasmtypes.BytesFromHash(key)))
+	return wasmtypes.NewScImmutableAgentID(m.proxy.Key(wasmtypes.HashToBytes(key)))
 }
 
 type MapAgentIDToImmutableOperators struct {
@@ -22,7 +22,7 @@ type MapAgentIDToImmutableOperators struct {
 }
 
 func (m MapAgentIDToImmutableOperators) GetOperators(key wasmtypes.ScAgentID) ImmutableOperators {
-	return ImmutableOperators{proxy: m.proxy.Key(wasmtypes.BytesFromAgentID(key))}
+	return ImmutableOperators{proxy: m.proxy.Key(wasmtypes.AgentIDToBytes(key))}
 }
 
 type MapAgentIDToImmutableUint64 struct {
@@ -30,7 +30,7 @@ type MapAgentIDToImmutableUint64 struct {
 }
 
 func (m MapAgentIDToImmutableUint64) GetUint64(key wasmtypes.ScAgentID) wasmtypes.ScImmutableUint64 {
-	return wasmtypes.NewScImmutableUint64(m.proxy.Key(wasmtypes.BytesFromAgentID(key)))
+	return wasmtypes.NewScImmutableUint64(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
 type MapHashToImmutableString struct {
@@ -38,7 +38,7 @@ type MapHashToImmutableString struct {
 }
 
 func (m MapHashToImmutableString) GetString(key wasmtypes.ScHash) wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(m.proxy.Key(wasmtypes.BytesFromHash(key)))
+	return wasmtypes.NewScImmutableString(m.proxy.Key(wasmtypes.HashToBytes(key)))
 }
 
 type ImmutableErc721State struct {
@@ -82,7 +82,7 @@ func (m MapHashToMutableAgentID) Clear() {
 }
 
 func (m MapHashToMutableAgentID) GetAgentID(key wasmtypes.ScHash) wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(m.proxy.Key(wasmtypes.BytesFromHash(key)))
+	return wasmtypes.NewScMutableAgentID(m.proxy.Key(wasmtypes.HashToBytes(key)))
 }
 
 type MapAgentIDToMutableOperators struct {
@@ -94,7 +94,7 @@ func (m MapAgentIDToMutableOperators) Clear() {
 }
 
 func (m MapAgentIDToMutableOperators) GetOperators(key wasmtypes.ScAgentID) MutableOperators {
-	return MutableOperators{proxy: m.proxy.Key(wasmtypes.BytesFromAgentID(key))}
+	return MutableOperators{proxy: m.proxy.Key(wasmtypes.AgentIDToBytes(key))}
 }
 
 type MapAgentIDToMutableUint64 struct {
@@ -106,7 +106,7 @@ func (m MapAgentIDToMutableUint64) Clear() {
 }
 
 func (m MapAgentIDToMutableUint64) GetUint64(key wasmtypes.ScAgentID) wasmtypes.ScMutableUint64 {
-	return wasmtypes.NewScMutableUint64(m.proxy.Key(wasmtypes.BytesFromAgentID(key)))
+	return wasmtypes.NewScMutableUint64(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
 type MapHashToMutableString struct {
@@ -118,7 +118,7 @@ func (m MapHashToMutableString) Clear() {
 }
 
 func (m MapHashToMutableString) GetString(key wasmtypes.ScHash) wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(m.proxy.Key(wasmtypes.BytesFromHash(key)))
+	return wasmtypes.NewScMutableString(m.proxy.Key(wasmtypes.HashToBytes(key)))
 }
 
 type MutableErc721State struct {

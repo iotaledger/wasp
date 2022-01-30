@@ -6,78 +6,63 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ArrayOfImmutableAgentID {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class ArrayOfImmutableAgentID extends wasmtypes.ScProxy {
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
-    getAgentID(index: u32): wasmlib.ScImmutableAgentID {
-        return new wasmlib.ScImmutableAgentID(this.objID, new wasmlib.Key32(index as i32));
+    getAgentID(index: u32): wasmtypes.ScImmutableAgentID {
+        return new wasmtypes.ScImmutableAgentID(this.proxy.index(index));
     }
 }
 
 export class ImmutableBidderList extends ArrayOfImmutableAgentID {
 };
 
-export class ArrayOfMutableAgentID {
-	objID: i32;
+export class ArrayOfMutableAgentID extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+	appendAgentID(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.append());
+	}
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearArray();
     }
 
     length(): u32 {
-        return wasmlib.getLength(this.objID);
+        return this.proxy.length();
     }
 
-    getAgentID(index: u32): wasmlib.ScMutableAgentID {
-        return new wasmlib.ScMutableAgentID(this.objID, new wasmlib.Key32(index as i32));
+    getAgentID(index: u32): wasmtypes.ScMutableAgentID {
+        return new wasmtypes.ScMutableAgentID(this.proxy.index(index));
     }
 }
 
 export class MutableBidderList extends ArrayOfMutableAgentID {
 };
 
-export class MapAgentIDToImmutableBid {
-	objID: i32;
+export class MapAgentIDToImmutableBid extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getBid(key: wasmlib.ScAgentID): sc.ImmutableBid {
-        return new sc.ImmutableBid(this.objID, key.getKeyID());
+    getBid(key: wasmtypes.ScAgentID): sc.ImmutableBid {
+        return new sc.ImmutableBid(this.proxy.key(wasmtypes.agentIDToBytes(key)));
     }
 }
 
 export class ImmutableBids extends MapAgentIDToImmutableBid {
 };
 
-export class MapAgentIDToMutableBid {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapAgentIDToMutableBid extends wasmtypes.ScProxy {
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearMap();
     }
 
-    getBid(key: wasmlib.ScAgentID): sc.MutableBid {
-        return new sc.MutableBid(this.objID, key.getKeyID());
+    getBid(key: wasmtypes.ScAgentID): sc.MutableBid {
+        return new sc.MutableBid(this.proxy.key(wasmtypes.agentIDToBytes(key)));
     }
 }
 

@@ -6,45 +6,46 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Erc721Events {
 
-	approval(approved: wasmlib.ScAgentID, owner: wasmlib.ScAgentID, tokenID: wasmlib.ScHash): void {
-		new wasmlib.EventEncoder("erc721.approval").
-		agentID(approved).
-		agentID(owner).
-		hash(tokenID).
-		emit();
+	approval(approved: wasmtypes.ScAgentID, owner: wasmtypes.ScAgentID, tokenID: wasmtypes.ScHash): void {
+		const evt = new wasmlib.EventEncoder("erc721.approval");
+		evt.encode(wasmtypes.agentIDToString(approved));
+		evt.encode(wasmtypes.agentIDToString(owner));
+		evt.encode(wasmtypes.hashToString(tokenID));
+		evt.emit();
 	}
 
-	approvalForAll(approval: bool, operator: wasmlib.ScAgentID, owner: wasmlib.ScAgentID): void {
-		new wasmlib.EventEncoder("erc721.approvalForAll").
-		bool(approval).
-		agentID(operator).
-		agentID(owner).
-		emit();
+	approvalForAll(approval: bool, operator: wasmtypes.ScAgentID, owner: wasmtypes.ScAgentID): void {
+		const evt = new wasmlib.EventEncoder("erc721.approvalForAll");
+		evt.encode(wasmtypes.boolToString(approval));
+		evt.encode(wasmtypes.agentIDToString(operator));
+		evt.encode(wasmtypes.agentIDToString(owner));
+		evt.emit();
 	}
 
 	init(name: string, symbol: string): void {
-		new wasmlib.EventEncoder("erc721.init").
-		string(name).
-		string(symbol).
-		emit();
+		const evt = new wasmlib.EventEncoder("erc721.init");
+		evt.encode(wasmtypes.stringToString(name));
+		evt.encode(wasmtypes.stringToString(symbol));
+		evt.emit();
 	}
 
-	mint(balance: u64, owner: wasmlib.ScAgentID, tokenID: wasmlib.ScHash): void {
-		new wasmlib.EventEncoder("erc721.mint").
-		uint64(balance).
-		agentID(owner).
-		hash(tokenID).
-		emit();
+	mint(balance: u64, owner: wasmtypes.ScAgentID, tokenID: wasmtypes.ScHash): void {
+		const evt = new wasmlib.EventEncoder("erc721.mint");
+		evt.encode(wasmtypes.uint64ToString(balance));
+		evt.encode(wasmtypes.agentIDToString(owner));
+		evt.encode(wasmtypes.hashToString(tokenID));
+		evt.emit();
 	}
 
-	transfer(from: wasmlib.ScAgentID, to: wasmlib.ScAgentID, tokenID: wasmlib.ScHash): void {
-		new wasmlib.EventEncoder("erc721.transfer").
-		agentID(from).
-		agentID(to).
-		hash(tokenID).
-		emit();
+	transfer(from: wasmtypes.ScAgentID, to: wasmtypes.ScAgentID, tokenID: wasmtypes.ScHash): void {
+		const evt = new wasmlib.EventEncoder("erc721.transfer");
+		evt.encode(wasmtypes.agentIDToString(from));
+		evt.encode(wasmtypes.agentIDToString(to));
+		evt.encode(wasmtypes.hashToString(tokenID));
+		evt.emit();
 	}
 }

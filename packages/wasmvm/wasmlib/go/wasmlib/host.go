@@ -37,14 +37,6 @@ func ConnectHost(h ScHost) ScHost {
 	return oldHost
 }
 
-func Log(text string) {
-	host.Sandbox(FnLog, []byte(text))
-}
-
-func Panic(text string) {
-	host.Sandbox(FnPanic, []byte(text))
-}
-
 func ExportName(index int32, name string) {
 	host.ExportName(index, name)
 }

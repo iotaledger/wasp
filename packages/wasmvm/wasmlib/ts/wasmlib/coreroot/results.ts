@@ -6,66 +6,55 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class ImmutableFindContractResults extends wasmlib.ScMapID {
-    contractFound(): wasmlib.ScImmutableBytes {
-		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultContractFound));
+export class ImmutableFindContractResults extends wasmtypes.ScProxy {
+    contractFound(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultContractFound));
 	}
 
-    contractRecData(): wasmlib.ScImmutableBytes {
-		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultContractRecData));
-	}
-}
-
-export class MutableFindContractResults extends wasmlib.ScMapID {
-    contractFound(): wasmlib.ScMutableBytes {
-		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultContractFound));
-	}
-
-    contractRecData(): wasmlib.ScMutableBytes {
-		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ResultContractRecData));
+    contractRecData(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultContractRecData));
 	}
 }
 
-export class MapHnameToImmutableBytes {
-	objID: i32;
+export class MutableFindContractResults extends wasmtypes.ScProxy {
+    contractFound(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultContractFound));
+	}
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+    contractRecData(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultContractRecData));
+	}
+}
 
-    getBytes(key: wasmlib.ScHname): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.objID, key.getKeyID());
+export class MapHnameToImmutableBytes extends wasmtypes.ScProxy {
+
+    getBytes(key: wasmtypes.ScHname): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.key(wasmtypes.hnameToBytes(key)));
     }
 }
 
-export class ImmutableGetContractRecordsResults extends wasmlib.ScMapID {
+export class ImmutableGetContractRecordsResults extends wasmtypes.ScProxy {
     contractRegistry(): sc.MapHnameToImmutableBytes {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultContractRegistry), wasmlib.TYPE_MAP);
-		return new sc.MapHnameToImmutableBytes(mapID);
+		return new sc.MapHnameToImmutableBytes(this.proxy.root(sc.ResultContractRegistry));
 	}
 }
 
-export class MapHnameToMutableBytes {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapHnameToMutableBytes extends wasmtypes.ScProxy {
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearMap();
     }
 
-    getBytes(key: wasmlib.ScHname): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.objID, key.getKeyID());
+    getBytes(key: wasmtypes.ScHname): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.key(wasmtypes.hnameToBytes(key)));
     }
 }
 
-export class MutableGetContractRecordsResults extends wasmlib.ScMapID {
+export class MutableGetContractRecordsResults extends wasmtypes.ScProxy {
     contractRegistry(): sc.MapHnameToMutableBytes {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.ResultContractRegistry), wasmlib.TYPE_MAP);
-		return new sc.MapHnameToMutableBytes(mapID);
+		return new sc.MapHnameToMutableBytes(this.proxy.root(sc.ResultContractRegistry));
 	}
 }

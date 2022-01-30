@@ -8,7 +8,10 @@ package wasmvmhost
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-// new Wasm VM
+// interface WasmLib to the VM host
+
+// These 2 external functions are funneling the entire WasmLib functionality
+// to their counterparts on the host.
 
 //go:wasm-module WasmLib
 //export hostStateGet
@@ -60,8 +63,8 @@ func (w *WasmVMHost) ConnectWasmHost() {
 func (w *WasmVMHost) ExportName(index int32, name string) {
 	// nil key indicates export name, with keyLen indicating index
 	// this removes the need for a separate hostExportName function
-	value := []byte(name)
-	hostStateSet(nil, index, ptr(value), int32(len(value)))
+	buf := []byte(name)
+	hostStateSet(nil, index, ptr(buf), int32(len(buf)))
 }
 
 func (w *WasmVMHost) ExportWasmTag() {

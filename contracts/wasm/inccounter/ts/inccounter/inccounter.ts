@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmlib from "wasmlib"
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
+import {ScState} from "../../../../../packages/wasmvm/wasmlib/ts/wasmlib";
 
 const hex = "0123456789abcdef";
 
@@ -104,16 +106,16 @@ export function funcRepeatMany(ctx: wasmlib.ScFuncContext, f: sc.RepeatManyConte
 
 export function funcTestVliCodec(ctx: wasmlib.ScFuncContext, f: sc.TestVliCodecContext): void {
     for (let i: i64 = -1000000; i < 1000000; i++) {
-        let enc = new wasmlib.BytesEncoder();
-        enc.int64(i);
-        let buf = enc.data();
+        let enc = new wasmtypes.WasmEncoder();
+        wasmtypes.int64Encode(enc, i);
+        let buf = enc.buf();
         // let txt = i.toString() + " -";
         // for (let j = 0; j < buf.length; j++) {
         //     let b = buf[j];
         //     txt += " " + hex.charAt((b >> 4) & 0x0f) + hex.charAt(b & 0x0f);
         // }
-        let dec = new wasmlib.BytesDecoder(buf);
-        let v = dec.int64();
+        let dec = new wasmtypes.WasmDecoder(buf);
+        let v = wasmtypes.int64Decode(dec);
         // txt += " - " + v.toString();
         // ctx.log(txt);
         ctx.require(i == v, "coder value mismatch")
@@ -144,16 +146,16 @@ export function funcTestVliCodec(ctx: wasmlib.ScFuncContext, f: sc.TestVliCodecC
 
 export function funcTestVluCodec(ctx: wasmlib.ScFuncContext, f: sc.TestVluCodecContext): void {
     for (let i: u64 = 0; i < 2000000; i++) {
-        let enc = new wasmlib.BytesEncoder();
-        enc.uint64(i);
-        let buf = enc.data();
+        let enc = new wasmtypes.WasmEncoder();
+        wasmtypes.uint64Encode(enc, i);
+        let buf = enc.buf();
         // let txt = i.toString() + " -";
         // for (let j = 0; j < buf.length; j++) {
         //     let b = buf[j];
         //     txt += " " + hex.charAt((b >> 4) & 0x0f) + hex.charAt(b & 0x0f);
         // }
-        let dec = new wasmlib.BytesDecoder(buf);
-        let v = dec.uint64();
+        let dec = new wasmtypes.WasmDecoder(buf);
+        let v = wasmtypes.uint64Decode(dec);
         // txt += " - " + v.toString();
         // ctx.log(txt);
         ctx.require(i == v, "coder value mismatch")
@@ -186,12 +188,12 @@ export function viewGetCounter(ctx: wasmlib.ScViewContext, f: sc.GetCounterConte
 }
 
 export function viewGetVli(ctx: wasmlib.ScViewContext, f: sc.GetVliContext): void {
-    let enc = new wasmlib.BytesEncoder();
+    let enc = new wasmtypes.WasmEncoder();
     let n = f.params.ni64().value();
-    enc = enc.int64(n);
-    let buf = enc.data();
-    let dec = new wasmlib.BytesDecoder(buf);
-    let x = dec.int64();
+    wasmtypes.int64Encode(enc, n);
+    let buf = enc.buf();
+    let dec = new wasmtypes.WasmDecoder(buf);
+    let x = wasmtypes.int64Decode(dec);
 
     let str = n.toString() + " -";
     for (let j = 0; j < buf.length; j++) {
@@ -207,12 +209,12 @@ export function viewGetVli(ctx: wasmlib.ScViewContext, f: sc.GetVliContext): voi
 }
 
 export function viewGetVlu(ctx: wasmlib.ScViewContext, f: sc.GetVluContext): void {
-    let enc = new wasmlib.BytesEncoder();
+    let enc = new wasmtypes.WasmEncoder();
     let n = f.params.nu64().value();
-    enc = enc.uint64(n);
-    let buf = enc.data();
-    let dec = new wasmlib.BytesDecoder(buf);
-    let x = dec.uint64();
+    wasmtypes.uint64Encode(enc, n);
+    let buf = enc.buf();
+    let dec = new wasmtypes.WasmDecoder(buf);
+    let x = wasmtypes.uint64Decode(dec);
 
     let str = n.toString() + " -";
     for (let j = 0; j < buf.length; j++) {
@@ -237,14 +239,12 @@ function localStatePost(ctx: wasmlib.ScFuncContext, nr: i64): void {
 }
 
 function vliSave(ctx: wasmlib.ScFuncContext, name: string, value: i64): void {
-    let encoder = new wasmlib.BytesEncoder();
-    encoder.int64(value);
-    let spot = ctx.state().getBytes(wasmlib.Key32.fromString(name));
-    spot.setValue(encoder.data());
-
-    let bytes = spot.value();
-    let decoder = new wasmlib.BytesDecoder(bytes);
-    let retrieved = decoder.int64();
+    let enc = new wasmtypes.WasmEncoder();
+    const state = new ScState();
+    let key = wasmtypes.stringToBytes(name);
+    state.set(key, enc.vliEncode(value).buf());
+    let dec = new wasmtypes.WasmDecoder(state.get(key));
+    let retrieved = wasmtypes.int64Decode(dec);
     if (retrieved != value) {
         ctx.log(name.toString() + " in : " + value.toString());
         ctx.log(name.toString() + " out: " + retrieved.toString());
@@ -252,14 +252,12 @@ function vliSave(ctx: wasmlib.ScFuncContext, name: string, value: i64): void {
 }
 
 function vluSave(ctx: wasmlib.ScFuncContext, name: string, value: u64): void {
-    let encoder = new wasmlib.BytesEncoder();
-    encoder.uint64(value);
-    let spot = ctx.state().getBytes(wasmlib.Key32.fromString(name));
-    spot.setValue(encoder.data());
-
-    let bytes = spot.value();
-    let decoder = new wasmlib.BytesDecoder(bytes);
-    let retrieved = decoder.uint64();
+    let enc = new wasmtypes.WasmEncoder();
+    const state = new ScState();
+    let key = wasmtypes.stringToBytes(name);
+    state.set(key, enc.vluEncode(value).buf());
+    let dec = new wasmtypes.WasmDecoder(state.get(key));
+    let retrieved = wasmtypes.uint64Decode(dec);
     if (retrieved != value) {
         ctx.log(name.toString() + " in : " + value.toString());
         ctx.log(name.toString() + " out: " + retrieved.toString());

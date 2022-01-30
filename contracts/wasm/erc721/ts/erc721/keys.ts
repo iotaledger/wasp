@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
-import * as sc from "./index";
 
 export const IdxParamApproval = 0;
 export const IdxParamApproved = 1;
@@ -19,49 +17,3 @@ export const IdxParamSymbol   = 7;
 export const IdxParamTo       = 8;
 export const IdxParamTokenID  = 9;
 export const IdxParamTokenURI = 10;
-
-export const IdxResultAmount   = 11;
-export const IdxResultApproval = 12;
-export const IdxResultApproved = 13;
-export const IdxResultName     = 14;
-export const IdxResultOwner    = 15;
-export const IdxResultSymbol   = 16;
-export const IdxResultTokenURI = 17;
-
-export const IdxStateApprovedAccounts  = 18;
-export const IdxStateApprovedOperators = 19;
-export const IdxStateBalances          = 20;
-export const IdxStateName              = 21;
-export const IdxStateOwners            = 22;
-export const IdxStateSymbol            = 23;
-export const IdxStateTokenURIs         = 24;
-
-export let keyMap: string[] = [
-	sc.ParamApproval,
-	sc.ParamApproved,
-	sc.ParamData,
-	sc.ParamFrom,
-	sc.ParamName,
-	sc.ParamOperator,
-	sc.ParamOwner,
-	sc.ParamSymbol,
-	sc.ParamTo,
-	sc.ParamTokenID,
-	sc.ParamTokenURI,
-	sc.ResultAmount,
-	sc.ResultApproval,
-	sc.ResultApproved,
-	sc.ResultName,
-	sc.ResultOwner,
-	sc.ResultSymbol,
-	sc.ResultTokenURI,
-	sc.StateApprovedAccounts,
-	sc.StateApprovedOperators,
-	sc.StateBalances,
-	sc.StateName,
-	sc.StateOwners,
-	sc.StateSymbol,
-	sc.StateTokenURIs,
-];
-
-export let idxMap: wasmlib.Key32[] = new Array(keyMap.length);

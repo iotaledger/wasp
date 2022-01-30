@@ -6,102 +6,73 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class MapStringToImmutableStringArray {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapStringToImmutableStringArray extends wasmtypes.ScProxy {
 
     getStringArray(key: string): sc.ImmutableStringArray {
-        let subID = wasmlib.getObjectID(this.objID, wasmlib.Key32.fromString(key), wasmlib.TYPE_ARRAY|wasmlib.TYPE_STRING);
-        return new sc.ImmutableStringArray(subID);
+        return new sc.ImmutableStringArray(this.proxy.key(wasmtypes.stringToBytes(key)));
     }
 }
 
-export class MapStringToImmutableStringMap {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapStringToImmutableStringMap extends wasmtypes.ScProxy {
 
     getStringMap(key: string): sc.ImmutableStringMap {
-        let subID = wasmlib.getObjectID(this.objID, wasmlib.Key32.fromString(key), wasmlib.TYPE_MAP);
-        return new sc.ImmutableStringMap(subID);
+        return new sc.ImmutableStringMap(this.proxy.key(wasmtypes.stringToBytes(key)));
     }
 }
 
-export class ImmutableTestWasmLibState extends wasmlib.ScMapID {
+export class ImmutableTestWasmLibState extends wasmtypes.ScProxy {
     arrays(): sc.MapStringToImmutableStringArray {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateArrays), wasmlib.TYPE_MAP);
-		return new sc.MapStringToImmutableStringArray(mapID);
+		return new sc.MapStringToImmutableStringArray(this.proxy.root(sc.StateArrays));
 	}
 
     maps(): sc.MapStringToImmutableStringMap {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateMaps), wasmlib.TYPE_MAP);
-		return new sc.MapStringToImmutableStringMap(mapID);
+		return new sc.MapStringToImmutableStringMap(this.proxy.root(sc.StateMaps));
 	}
 
-    random(): wasmlib.ScImmutableUint64 {
-		return new wasmlib.ScImmutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateRandom));
+    random(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateRandom));
 	}
 }
 
-export class MapStringToMutableStringArray {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapStringToMutableStringArray extends wasmtypes.ScProxy {
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearMap();
     }
 
     getStringArray(key: string): sc.MutableStringArray {
-        let subID = wasmlib.getObjectID(this.objID, wasmlib.Key32.fromString(key), wasmlib.TYPE_ARRAY|wasmlib.TYPE_STRING);
-        return new sc.MutableStringArray(subID);
+        return new sc.MutableStringArray(this.proxy.key(wasmtypes.stringToBytes(key)));
     }
 }
 
-export class MapStringToMutableStringMap {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapStringToMutableStringMap extends wasmtypes.ScProxy {
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearMap();
     }
 
     getStringMap(key: string): sc.MutableStringMap {
-        let subID = wasmlib.getObjectID(this.objID, wasmlib.Key32.fromString(key), wasmlib.TYPE_MAP);
-        return new sc.MutableStringMap(subID);
+        return new sc.MutableStringMap(this.proxy.key(wasmtypes.stringToBytes(key)));
     }
 }
 
-export class MutableTestWasmLibState extends wasmlib.ScMapID {
+export class MutableTestWasmLibState extends wasmtypes.ScProxy {
     asImmutable(): sc.ImmutableTestWasmLibState {
-		const imm = new sc.ImmutableTestWasmLibState();
-		imm.mapID = this.mapID;
-		return imm;
+		return new sc.ImmutableTestWasmLibState(this.proxy);
 	}
 
     arrays(): sc.MapStringToMutableStringArray {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateArrays), wasmlib.TYPE_MAP);
-		return new sc.MapStringToMutableStringArray(mapID);
+		return new sc.MapStringToMutableStringArray(this.proxy.root(sc.StateArrays));
 	}
 
     maps(): sc.MapStringToMutableStringMap {
-		let mapID = wasmlib.getObjectID(this.mapID, wasmlib.Key32.fromString(sc.StateMaps), wasmlib.TYPE_MAP);
-		return new sc.MapStringToMutableStringMap(mapID);
+		return new sc.MapStringToMutableStringMap(this.proxy.root(sc.StateMaps));
 	}
 
-    random(): wasmlib.ScMutableUint64 {
-		return new wasmlib.ScMutableUint64(this.mapID, wasmlib.Key32.fromString(sc.StateRandom));
+    random(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateRandom));
 	}
 }

@@ -38,7 +38,7 @@ type MapHnameToImmutableBytes struct {
 }
 
 func (m MapHnameToImmutableBytes) GetBytes(key wasmtypes.ScHname) wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.BytesFromHname(key)))
+	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.HnameToBytes(key)))
 }
 
 type ImmutableGetContractRecordsResults struct {
@@ -58,7 +58,7 @@ func (m MapHnameToMutableBytes) Clear() {
 }
 
 func (m MapHnameToMutableBytes) GetBytes(key wasmtypes.ScHname) wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.BytesFromHname(key)))
+	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.HnameToBytes(key)))
 }
 
 type MutableGetContractRecordsResults struct {

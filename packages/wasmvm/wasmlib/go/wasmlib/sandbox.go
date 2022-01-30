@@ -4,8 +4,6 @@
 package wasmlib
 
 import (
-	"encoding/binary"
-
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -53,6 +51,14 @@ type ScSandbox struct{}
 
 // TODO go over core contract schemas to set correct unsigned types
 
+func Log(text string) {
+	ScSandbox{}.Log(text)
+}
+
+func Panic(text string) {
+	ScSandbox{}.Panic(text)
+}
+
 func NewParamsProxy() wasmtypes.Proxy {
 	return wasmtypes.NewProxy(NewScDictFromBytes(Sandbox(FnParams, nil)))
 }
@@ -71,13 +77,11 @@ func (s ScSandbox) Balances() ScBalances {
 	return NewScAssetsFromBytes(Sandbox(FnBalances, nil)).Balances()
 }
 
-// calls a smart contract view
-func (s ScSandbox) Call(hContract, hFunction wasmtypes.ScHname, params ScDict) ScImmutableDict {
-	return s.call(hContract, hFunction, params, nil)
-}
-
 // calls a smart contract function
-func (s ScSandbox) call(hContract, hFunction wasmtypes.ScHname, params ScDict, transfer ScTransfers) ScImmutableDict {
+func (s ScSandbox) call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers) *ScImmutableDict {
+	if params == nil {
+		params = NewScDict()
+	}
 	req := &wasmrequests.CallRequest{
 		Contract: hContract,
 		Function: hFunction,
@@ -119,7 +123,7 @@ func (s ScSandbox) Panic(text string) {
 }
 
 // retrieve parameters passed to the smart contract function that was called
-func (s ScSandbox) Params() ScImmutableDict {
+func (s ScSandbox) Params() *ScImmutableDict {
 	return NewScDictFromBytes(Sandbox(FnParams, nil)).Immutable()
 }
 
@@ -134,7 +138,10 @@ func (s ScSandbox) Require(cond bool, msg string) {
 	}
 }
 
-func (s ScSandbox) Results(results ScDict) {
+func (s ScSandbox) Results(results *ScDict) {
+	if results == nil {
+		results = NewScDict()
+	}
 	Sandbox(FnResults, results.Bytes())
 }
 
@@ -153,6 +160,15 @@ func (s ScSandbox) Utility() ScSandboxUtils {
 	return ScSandboxUtils{}
 }
 
+type ScSandboxView struct {
+	ScSandbox
+}
+
+// calls a smart contract view
+func (s ScSandboxView) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict) *ScImmutableDict {
+	return s.call(hContract, hFunction, params, nil)
+}
+
 type ScSandboxFunc struct {
 	ScSandbox
 }
@@ -162,7 +178,7 @@ type ScSandboxFunc struct {
 //}
 
 // calls a smart contract function
-func (s ScSandboxFunc) Call(hContract, hFunction wasmtypes.ScHname, params ScDict, transfer ScTransfers) ScImmutableDict {
+func (s ScSandboxFunc) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers) *ScImmutableDict {
 	return s.call(hContract, hFunction, params, transfer)
 }
 
@@ -172,7 +188,10 @@ func (s ScSandboxFunc) Caller() wasmtypes.ScAgentID {
 }
 
 // deploys a smart contract
-func (s ScSandboxFunc) DeployContract(programHash wasmtypes.ScHash, name, description string, initParams ScDict) {
+func (s ScSandboxFunc) DeployContract(programHash wasmtypes.ScHash, name, description string, initParams *ScDict) {
+	if initParams == nil {
+		initParams = NewScDict()
+	}
 	req := &wasmrequests.DeployRequest{
 		ProgHash:    programHash,
 		Name:        name,
@@ -204,7 +223,10 @@ func (s ScSandboxFunc) Minted() ScBalances {
 }
 
 // (delayed) posts a smart contract function request
-func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params ScDict, transfer ScTransfers, delay uint32) {
+func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers, delay uint32) {
+	if params == nil {
+		params = NewScDict()
+	}
 	if len(transfer) == 0 {
 		s.Panic("missing transfer")
 	}
@@ -241,9 +263,9 @@ func (s ScSandboxFunc) Random(max uint64) (rnd uint64) {
 		entropy = s.Utility().HashBlake2b(entropy).Bytes()
 		offset = 0
 	}
-	rnd = binary.LittleEndian.Uint64(entropy[offset:offset+8]) % max
+	rnd = wasmtypes.Uint64FromBytes(entropy[offset:offset+8]) % max
 	offset += 8
-	return
+	return rnd
 }
 
 func (s ScSandboxFunc) RawState() ScState {

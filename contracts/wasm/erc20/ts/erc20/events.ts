@@ -6,22 +6,23 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Erc20Events {
 
-	approval(amount: u64, owner: wasmlib.ScAgentID, spender: wasmlib.ScAgentID): void {
-		new wasmlib.EventEncoder("erc20.approval").
-		uint64(amount).
-		agentID(owner).
-		agentID(spender).
-		emit();
+	approval(amount: u64, owner: wasmtypes.ScAgentID, spender: wasmtypes.ScAgentID): void {
+		const evt = new wasmlib.EventEncoder("erc20.approval");
+		evt.encode(wasmtypes.uint64ToString(amount));
+		evt.encode(wasmtypes.agentIDToString(owner));
+		evt.encode(wasmtypes.agentIDToString(spender));
+		evt.emit();
 	}
 
-	transfer(amount: u64, from: wasmlib.ScAgentID, to: wasmlib.ScAgentID): void {
-		new wasmlib.EventEncoder("erc20.transfer").
-		uint64(amount).
-		agentID(from).
-		agentID(to).
-		emit();
+	transfer(amount: u64, from: wasmtypes.ScAgentID, to: wasmtypes.ScAgentID): void {
+		const evt = new wasmlib.EventEncoder("erc20.transfer");
+		evt.encode(wasmtypes.uint64ToString(amount));
+		evt.encode(wasmtypes.agentIDToString(from));
+		evt.encode(wasmtypes.agentIDToString(to));
+		evt.emit();
 	}
 }

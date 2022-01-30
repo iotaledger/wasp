@@ -9,7 +9,6 @@ export * from "./dividend";
 
 export * from "./consts";
 export * from "./contract";
-export * from "./keys";
 export * from "./lib";
 export * from "./params";
 export * from "./results";

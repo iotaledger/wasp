@@ -22,7 +22,7 @@ type ScViewCallContext interface {
 type ScView struct {
 	hContract    wasmtypes.ScHname
 	hFunction    wasmtypes.ScHname
-	params       ScDict
+	params       *ScDict
 	resultsProxy *wasmtypes.Proxy
 }
 
@@ -36,7 +36,7 @@ func NewScView(ctx ScViewCallContext, hContract, hFunction wasmtypes.ScHname) *S
 
 func NewCallParamsProxy(v *ScView) wasmtypes.Proxy {
 	v.params = NewScDict()
-	return wasmtypes.NewProxy(v.params)
+	return v.params.AsProxy()
 }
 
 func NewCallResultsProxy(v *ScView, resultsProxy *wasmtypes.Proxy) {
@@ -110,7 +110,7 @@ func (f *ScInitFunc) OfContract(hContract wasmtypes.ScHname) *ScInitFunc {
 
 func (f *ScInitFunc) Params() []interface{} {
 	var params []interface{}
-	for k, v := range f.params {
+	for k, v := range f.params.dict {
 		params = append(params, k)
 		params = append(params, v)
 	}

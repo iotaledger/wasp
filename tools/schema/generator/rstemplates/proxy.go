@@ -48,15 +48,15 @@ $#if this proxyMapThis proxyMapOther
 `,
 	// *******************************
 	"proxyMapThis": `
-    pub fn $fld_name(&self) -> Map$fldMapKey$+To$mut$FldType {
-		Map$fldMapKey$+To$mut$FldType { obj_id: self.id }
+    pub fn $fld_name(&self) -> Map$FldMapKey$+To$mut$FldType {
+		Map$FldMapKey$+To$mut$FldType { obj_id: self.id }
 	}
 `,
 	// *******************************
 	"proxyMapOther": `
-    pub fn $fld_name(&self) -> Map$fldMapKey$+To$mut$FldType {
+    pub fn $fld_name(&self) -> Map$FldMapKey$+To$mut$FldType {
 		let map_id = get_object_id(self.id, $varID, TYPE_MAP);
-		Map$fldMapKey$+To$mut$FldType { obj_id: map_id }
+		Map$FldMapKey$+To$mut$FldType { obj_id: map_id }
 	}
 `,
 	// *******************************

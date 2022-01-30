@@ -5,15 +5,4 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
-import * as sc from "./index";
 
-
-export const IdxResultHelloWorld = 0;
-
-
-export let keyMap: string[] = [
-	sc.ResultHelloWorld,
-];
-
-export let idxMap: wasmlib.Key32[] = new Array(keyMap.length);

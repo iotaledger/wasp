@@ -12,10 +12,6 @@ export function on_call(index: i32): void {
 export function on_load(): void {
     let exports = new wasmlib.ScExports();
 $#each func libExportFunc
-
-    for (let i = 0; i < sc.keyMap.length; i++) {
-        sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
-    }
 }
 $#each func libThunk
 `,
@@ -28,29 +24,28 @@ $#each func libThunk
 
 function $kind$FuncName$+Thunk(ctx: wasmlib.Sc$Kind$+Context): void {
 	ctx.log("$package.$kind$FuncName");
-$#emit accessCheck
 	let f = new sc.$FuncName$+Context();
-$#if param ImmutableFuncNameParamsInit
-$#if result MutableFuncNameResultsInit
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
+$#if result initResultsDict
+$#emit accessCheck
 $#each mandatory requireMandatory
 	sc.$kind$FuncName(ctx, f);
+$#if result returnResultDict
 	ctx.log("$package.$kind$FuncName ok");
 }
 `,
 	// *******************************
-	"ImmutableFuncNameParamsInit": `
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
+	"initResultsDict": `
+    const results = new wasmlib.ScDict([]);
+	f.results = new sc.Mutable$FuncName$+Results(results.asProxy());
 `,
 	// *******************************
-	"MutableFuncNameResultsInit": `
-    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
+	"returnResultDict": `
+	ctx.results(results);
 `,
 	// *******************************
 	"requireMandatory": `
 	ctx.require(f.params.$fldName().exists(), "missing mandatory $fldName");
 `,
-
 	// *******************************
 	"accessCheck": `
 $#set accessFinalize accessOther
@@ -85,7 +80,7 @@ $#set accessFinalize accessDone
 	// *******************************
 	"accessOther": `
 $#if funcAccessComment accessComment
-	let access = ctx.state().getAgentID(wasmlib.Key32.fromString("$funcAccess"));
+	const access = f.state.$funcAccess();
 	ctx.require(access.exists(), "access not set: $funcAccess");
 	ctx.require(ctx.caller().equals(access.value()), "no permission");
 

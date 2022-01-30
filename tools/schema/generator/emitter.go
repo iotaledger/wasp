@@ -405,6 +405,7 @@ func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 	}
 	g.setMultiKeyValues("fldName", g.currentField.Name)
 	g.setMultiKeyValues("fldType", g.currentField.Type)
+	g.setMultiKeyValues("fldMapKey", g.currentField.MapKey)
 
 	isArray := ""
 	if g.currentField.Array {
@@ -415,7 +416,6 @@ func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 
 	g.keys["fldAlias"] = g.currentField.Alias
 	g.keys["fldComment"] = g.currentField.Comment
-	g.keys["fldMapKey"] = g.currentField.MapKey
 	g.keys["fldIndex"] = strconv.Itoa(g.currentField.KeyID)
 
 	if pad {

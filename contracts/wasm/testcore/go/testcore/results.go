@@ -118,7 +118,7 @@ type MapStringToImmutableInt64 struct {
 }
 
 func (m MapStringToImmutableInt64) GetInt64(key string) wasmtypes.ScImmutableInt64 {
-	return wasmtypes.NewScImmutableInt64(m.proxy.Key(wasmtypes.BytesFromString(key)))
+	return wasmtypes.NewScImmutableInt64(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type ImmutableGetIntResults struct {
@@ -139,7 +139,7 @@ func (m MapStringToMutableInt64) Clear() {
 }
 
 func (m MapStringToMutableInt64) GetInt64(key string) wasmtypes.ScMutableInt64 {
-	return wasmtypes.NewScMutableInt64(m.proxy.Key(wasmtypes.BytesFromString(key)))
+	return wasmtypes.NewScMutableInt64(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type MutableGetIntResults struct {
@@ -156,7 +156,7 @@ type MapStringToImmutableString struct {
 }
 
 func (m MapStringToImmutableString) GetString(key string) wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(m.proxy.Key(wasmtypes.BytesFromString(key)))
+	return wasmtypes.NewScImmutableString(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type ImmutableGetStringValueResults struct {
@@ -177,7 +177,7 @@ func (m MapStringToMutableString) Clear() {
 }
 
 func (m MapStringToMutableString) GetString(key string) wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(m.proxy.Key(wasmtypes.BytesFromString(key)))
+	return wasmtypes.NewScMutableString(m.proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type MutableGetStringValueResults struct {

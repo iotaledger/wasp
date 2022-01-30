@@ -6,108 +6,89 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
-export class MapAgentIDToImmutableBytes {
-	objID: i32;
+export class MapAgentIDToImmutableBytes extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getBytes(key: wasmlib.ScAgentID): wasmlib.ScImmutableBytes {
-        return new wasmlib.ScImmutableBytes(this.objID, key.getKeyID());
+    getBytes(key: wasmtypes.ScAgentID): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.key(wasmtypes.agentIDToBytes(key)));
     }
 }
 
-export class ImmutableAccountsResults extends wasmlib.ScMapID {
+export class ImmutableAccountsResults extends wasmtypes.ScProxy {
     agents(): sc.MapAgentIDToImmutableBytes {
-		return new sc.MapAgentIDToImmutableBytes(this.mapID);
+		return new sc.MapAgentIDToImmutableBytes(this.proxy);
 	}
 }
 
-export class MapAgentIDToMutableBytes {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapAgentIDToMutableBytes extends wasmtypes.ScProxy {
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearMap();
     }
 
-    getBytes(key: wasmlib.ScAgentID): wasmlib.ScMutableBytes {
-        return new wasmlib.ScMutableBytes(this.objID, key.getKeyID());
+    getBytes(key: wasmtypes.ScAgentID): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.key(wasmtypes.agentIDToBytes(key)));
     }
 }
 
-export class MutableAccountsResults extends wasmlib.ScMapID {
+export class MutableAccountsResults extends wasmtypes.ScProxy {
     agents(): sc.MapAgentIDToMutableBytes {
-		return new sc.MapAgentIDToMutableBytes(this.mapID);
+		return new sc.MapAgentIDToMutableBytes(this.proxy);
 	}
 }
 
-export class MapColorToImmutableInt64 {
-	objID: i32;
+export class MapColorToImmutableInt64 extends wasmtypes.ScProxy {
 
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
-
-    getInt64(key: wasmlib.ScColor): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.objID, key.getKeyID());
+    getInt64(key: wasmtypes.ScColor): wasmtypes.ScImmutableInt64 {
+        return new wasmtypes.ScImmutableInt64(this.proxy.key(wasmtypes.colorToBytes(key)));
     }
 }
 
-export class ImmutableBalanceResults extends wasmlib.ScMapID {
+export class ImmutableBalanceResults extends wasmtypes.ScProxy {
     balances(): sc.MapColorToImmutableInt64 {
-		return new sc.MapColorToImmutableInt64(this.mapID);
+		return new sc.MapColorToImmutableInt64(this.proxy);
 	}
 }
 
-export class MapColorToMutableInt64 {
-	objID: i32;
-
-    constructor(objID: i32) {
-        this.objID = objID;
-    }
+export class MapColorToMutableInt64 extends wasmtypes.ScProxy {
 
     clear(): void {
-        wasmlib.clear(this.objID);
+        this.proxy.clearMap();
     }
 
-    getInt64(key: wasmlib.ScColor): wasmlib.ScMutableInt64 {
-        return new wasmlib.ScMutableInt64(this.objID, key.getKeyID());
+    getInt64(key: wasmtypes.ScColor): wasmtypes.ScMutableInt64 {
+        return new wasmtypes.ScMutableInt64(this.proxy.key(wasmtypes.colorToBytes(key)));
     }
 }
 
-export class MutableBalanceResults extends wasmlib.ScMapID {
+export class MutableBalanceResults extends wasmtypes.ScProxy {
     balances(): sc.MapColorToMutableInt64 {
-		return new sc.MapColorToMutableInt64(this.mapID);
+		return new sc.MapColorToMutableInt64(this.proxy);
 	}
 }
 
-export class ImmutableGetAccountNonceResults extends wasmlib.ScMapID {
-    accountNonce(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultAccountNonce));
+export class ImmutableGetAccountNonceResults extends wasmtypes.ScProxy {
+    accountNonce(): wasmtypes.ScImmutableInt64 {
+		return new wasmtypes.ScImmutableInt64(this.proxy.root(sc.ResultAccountNonce));
 	}
 }
 
-export class MutableGetAccountNonceResults extends wasmlib.ScMapID {
-    accountNonce(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ResultAccountNonce));
+export class MutableGetAccountNonceResults extends wasmtypes.ScProxy {
+    accountNonce(): wasmtypes.ScMutableInt64 {
+		return new wasmtypes.ScMutableInt64(this.proxy.root(sc.ResultAccountNonce));
 	}
 }
 
-export class ImmutableTotalAssetsResults extends wasmlib.ScMapID {
+export class ImmutableTotalAssetsResults extends wasmtypes.ScProxy {
     balances(): sc.MapColorToImmutableInt64 {
-		return new sc.MapColorToImmutableInt64(this.mapID);
+		return new sc.MapColorToImmutableInt64(this.proxy);
 	}
 }
 
-export class MutableTotalAssetsResults extends wasmlib.ScMapID {
+export class MutableTotalAssetsResults extends wasmtypes.ScProxy {
     balances(): sc.MapColorToMutableInt64 {
-		return new sc.MapColorToMutableInt64(this.mapID);
+		return new sc.MapColorToMutableInt64(this.proxy);
 	}
 }

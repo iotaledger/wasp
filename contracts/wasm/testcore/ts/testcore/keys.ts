@@ -5,8 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
-import * as sc from "./index";
 
 export const IdxParamAddress         = 0;
 export const IdxParamAgentID         = 1;
@@ -30,58 +28,3 @@ export const IdxParamProgHash        = 18;
 export const IdxParamString          = 19;
 export const IdxParamStringZero      = 20;
 export const IdxParamVarName         = 21;
-
-export const IdxResultChainOwnerID = 22;
-export const IdxResultCounter      = 23;
-export const IdxResultIntValue     = 24;
-export const IdxResultMintedColor  = 25;
-export const IdxResultMintedSupply = 26;
-export const IdxResultSandboxCall  = 27;
-export const IdxResultValues       = 28;
-export const IdxResultVars         = 29;
-
-export const IdxStateCounter      = 30;
-export const IdxStateHnameEP      = 31;
-export const IdxStateInts         = 32;
-export const IdxStateMintedColor  = 33;
-export const IdxStateMintedSupply = 34;
-
-export let keyMap: string[] = [
-	sc.ParamAddress,
-	sc.ParamAgentID,
-	sc.ParamCaller,
-	sc.ParamChainID,
-	sc.ParamChainOwnerID,
-	sc.ParamContractCreator,
-	sc.ParamContractID,
-	sc.ParamCounter,
-	sc.ParamFail,
-	sc.ParamHash,
-	sc.ParamHname,
-	sc.ParamHnameContract,
-	sc.ParamHnameEP,
-	sc.ParamHnameZero,
-	sc.ParamInt64,
-	sc.ParamInt64Zero,
-	sc.ParamIntValue,
-	sc.ParamName,
-	sc.ParamProgHash,
-	sc.ParamString,
-	sc.ParamStringZero,
-	sc.ParamVarName,
-	sc.ResultChainOwnerID,
-	sc.ResultCounter,
-	sc.ResultIntValue,
-	sc.ResultMintedColor,
-	sc.ResultMintedSupply,
-	sc.ResultSandboxCall,
-	sc.ResultValues,
-	sc.ResultVars,
-	sc.StateCounter,
-	sc.StateHnameEP,
-	sc.StateInts,
-	sc.StateMintedColor,
-	sc.StateMintedSupply,
-];
-
-export let idxMap: wasmlib.Key32[] = new Array(keyMap.length);

@@ -37,16 +37,16 @@ $#if this proxyMapThis proxyMapOther
 	// *******************************
 	"proxyMapThis": `
 
-func (s $TypeName) $FldName() Map$fldMapKey$+To$mut$FldType {
+func (s $TypeName) $FldName() Map$FldMapKey$+To$mut$FldType {
 	//nolint:gosimple
-	return Map$fldMapKey$+To$mut$FldType{proxy: s.proxy}
+	return Map$FldMapKey$+To$mut$FldType{proxy: s.proxy}
 }
 `,
 	// *******************************
 	"proxyMapOther": `
 
-func (s $TypeName) $FldName() Map$fldMapKey$+To$mut$FldType {
-	return Map$fldMapKey$+To$mut$FldType{proxy: s.proxy.Root($Kind$FldName)}
+func (s $TypeName) $FldName() Map$FldMapKey$+To$mut$FldType {
+	return Map$FldMapKey$+To$mut$FldType{proxy: s.proxy.Root($Kind$FldName)}
 }
 `,
 	// *******************************

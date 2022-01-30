@@ -6,43 +6,44 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class FairRouletteEvents {
 
-	bet(address: wasmlib.ScAddress, amount: u64, number: u16): void {
-		new wasmlib.EventEncoder("fairroulette.bet").
-		address(address).
-		uint64(amount).
-		uint16(number).
-		emit();
+	bet(address: wasmtypes.ScAddress, amount: u64, number: u16): void {
+		const evt = new wasmlib.EventEncoder("fairroulette.bet");
+		evt.encode(wasmtypes.addressToString(address));
+		evt.encode(wasmtypes.uint64ToString(amount));
+		evt.encode(wasmtypes.uint16ToString(number));
+		evt.emit();
 	}
 
-	payout(address: wasmlib.ScAddress, amount: u64): void {
-		new wasmlib.EventEncoder("fairroulette.payout").
-		address(address).
-		uint64(amount).
-		emit();
+	payout(address: wasmtypes.ScAddress, amount: u64): void {
+		const evt = new wasmlib.EventEncoder("fairroulette.payout");
+		evt.encode(wasmtypes.addressToString(address));
+		evt.encode(wasmtypes.uint64ToString(amount));
+		evt.emit();
 	}
 
 	round(number: u32): void {
-		new wasmlib.EventEncoder("fairroulette.round").
-		uint32(number).
-		emit();
+		const evt = new wasmlib.EventEncoder("fairroulette.round");
+		evt.encode(wasmtypes.uint32ToString(number));
+		evt.emit();
 	}
 
 	start(): void {
-		new wasmlib.EventEncoder("fairroulette.start").
-		emit();
+		const evt = new wasmlib.EventEncoder("fairroulette.start");
+		evt.emit();
 	}
 
 	stop(): void {
-		new wasmlib.EventEncoder("fairroulette.stop").
-		emit();
+		const evt = new wasmlib.EventEncoder("fairroulette.stop");
+		evt.emit();
 	}
 
 	winner(number: u16): void {
-		new wasmlib.EventEncoder("fairroulette.winner").
-		uint16(number).
-		emit();
+		const evt = new wasmlib.EventEncoder("fairroulette.winner");
+		evt.encode(wasmtypes.uint16ToString(number));
+		evt.emit();
 	}
 }

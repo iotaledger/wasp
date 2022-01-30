@@ -129,6 +129,6 @@ func viewGetInfoThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.Color().Exists(), "missing mandatory color")
 	viewGetInfo(ctx, f)
-	ctx.Log("fairauction.viewGetInfo ok")
 	ctx.Results(results)
+	ctx.Log("fairauction.viewGetInfo ok")
 }

@@ -5,10 +5,10 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "requests";
 export const ScDescription = "WasmLib request structures";
-export const HScName       = new wasmlib.ScHname(0x98e19453);
+export const HScName       = new wasmtypes.ScHname(0x98e19453);
 
 

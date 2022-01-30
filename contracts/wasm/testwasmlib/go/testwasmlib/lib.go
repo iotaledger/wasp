@@ -218,8 +218,8 @@ func viewArrayLengthThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	viewArrayLength(ctx, f)
-	ctx.Log("testwasmlib.viewArrayLength ok")
 	ctx.Results(results)
+	ctx.Log("testwasmlib.viewArrayLength ok")
 }
 
 type ArrayValueContext struct {
@@ -245,8 +245,8 @@ func viewArrayValueThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Index().Exists(), "missing mandatory index")
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	viewArrayValue(ctx, f)
-	ctx.Log("testwasmlib.viewArrayValue ok")
 	ctx.Results(results)
+	ctx.Log("testwasmlib.viewArrayValue ok")
 }
 
 type BlockRecordContext struct {
@@ -272,8 +272,8 @@ func viewBlockRecordThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.BlockIndex().Exists(), "missing mandatory blockIndex")
 	ctx.Require(f.Params.RecordIndex().Exists(), "missing mandatory recordIndex")
 	viewBlockRecord(ctx, f)
-	ctx.Log("testwasmlib.viewBlockRecord ok")
 	ctx.Results(results)
+	ctx.Log("testwasmlib.viewBlockRecord ok")
 }
 
 type BlockRecordsContext struct {
@@ -298,8 +298,8 @@ func viewBlockRecordsThunk(ctx wasmlib.ScViewContext) {
 	}
 	ctx.Require(f.Params.BlockIndex().Exists(), "missing mandatory blockIndex")
 	viewBlockRecords(ctx, f)
-	ctx.Log("testwasmlib.viewBlockRecords ok")
 	ctx.Results(results)
+	ctx.Log("testwasmlib.viewBlockRecords ok")
 }
 
 type GetRandomContext struct {
@@ -319,8 +319,8 @@ func viewGetRandomThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewGetRandom(ctx, f)
-	ctx.Log("testwasmlib.viewGetRandom ok")
 	ctx.Results(results)
+	ctx.Log("testwasmlib.viewGetRandom ok")
 }
 
 type IotaBalanceContext struct {
@@ -340,8 +340,8 @@ func viewIotaBalanceThunk(ctx wasmlib.ScViewContext) {
 		},
 	}
 	viewIotaBalance(ctx, f)
-	ctx.Log("testwasmlib.viewIotaBalance ok")
 	ctx.Results(results)
+	ctx.Log("testwasmlib.viewIotaBalance ok")
 }
 
 type MapValueContext struct {
@@ -367,6 +367,6 @@ func viewMapValueThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Key().Exists(), "missing mandatory key")
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	viewMapValue(ctx, f)
-	ctx.Log("testwasmlib.viewMapValue ok")
 	ctx.Results(results)
+	ctx.Log("testwasmlib.viewMapValue ok")
 }

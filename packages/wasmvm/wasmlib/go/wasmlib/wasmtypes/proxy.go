@@ -3,6 +3,8 @@
 
 package wasmtypes
 
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 type IKvStore interface {
 	Delete(key []byte)
 	Exists(key []byte) bool
@@ -61,7 +63,7 @@ func (p Proxy) Delete() {
 
 func (p Proxy) element(index uint32) Proxy {
 	enc := p.Encoder()
-	EncodeUint32(enc, index)
+	Uint32Encode(enc, index)
 	return p.sub('#', enc.Buf())
 }
 
@@ -76,7 +78,7 @@ func (p Proxy) Exists() bool {
 func (p Proxy) Expand(length uint32) {
 	// update the length counter
 	enc := p.Encoder()
-	EncodeUint32(enc, length)
+	Uint32Encode(enc, length)
 	p.Set(enc.Buf())
 }
 
@@ -86,7 +88,11 @@ func (p Proxy) Get() []byte {
 
 // Index gets a Proxy for an element of an Array by its index
 func (p Proxy) Index(index uint32) Proxy {
-	if index >= p.Length() {
+	size := p.Length()
+	if index >= size {
+		if index == size {
+			panic("invalid index: use append")
+		}
 		panic("invalid index")
 	}
 	return p.element(index)
@@ -105,7 +111,7 @@ func (p Proxy) Length() uint32 {
 	if buf == nil {
 		return 0
 	}
-	return DecodeUint32(p.decoder(buf))
+	return Uint32Decode(p.decoder(buf))
 }
 
 // Root returns a Proxy for an element of a root container (Params/Results/State).

@@ -5,11 +5,11 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
+import * as wasmtypes from "wasmlib/wasmtypes";
 
 export const ScName        = "governance";
 export const ScDescription = "Core governance contract";
-export const HScName       = new wasmlib.ScHname(0x17cf909f);
+export const HScName       = new wasmtypes.ScHname(0x17cf909f);
 
 export const ParamChainOwner             = "oi";
 export const ParamFeeColor               = "fc";
@@ -47,15 +47,15 @@ export const ViewGetChainInfo                        = "getChainInfo";
 export const ViewGetFeeInfo                          = "getFeeInfo";
 export const ViewGetMaxBlobSize                      = "getMaxBlobSize";
 
-export const HFuncAddAllowedStateControllerAddress    = new wasmlib.ScHname(0x9469d567);
-export const HFuncClaimChainOwnership                 = new wasmlib.ScHname(0x03ff0fc0);
-export const HFuncDelegateChainOwnership              = new wasmlib.ScHname(0x93ecb6ad);
-export const HFuncRemoveAllowedStateControllerAddress = new wasmlib.ScHname(0x31f69447);
-export const HFuncRotateStateController               = new wasmlib.ScHname(0x244d1038);
-export const HFuncSetChainInfo                        = new wasmlib.ScHname(0x702f5d2b);
-export const HFuncSetContractFee                      = new wasmlib.ScHname(0x8421a42b);
-export const HFuncSetDefaultFee                       = new wasmlib.ScHname(0x3310ecd0);
-export const HViewGetAllowedStateControllerAddresses  = new wasmlib.ScHname(0xf3505183);
-export const HViewGetChainInfo                        = new wasmlib.ScHname(0x434477e2);
-export const HViewGetFeeInfo                          = new wasmlib.ScHname(0x9fe54b48);
-export const HViewGetMaxBlobSize                      = new wasmlib.ScHname(0xe1db3d28);
+export const HFuncAddAllowedStateControllerAddress    = new wasmtypes.ScHname(0x9469d567);
+export const HFuncClaimChainOwnership                 = new wasmtypes.ScHname(0x03ff0fc0);
+export const HFuncDelegateChainOwnership              = new wasmtypes.ScHname(0x93ecb6ad);
+export const HFuncRemoveAllowedStateControllerAddress = new wasmtypes.ScHname(0x31f69447);
+export const HFuncRotateStateController               = new wasmtypes.ScHname(0x244d1038);
+export const HFuncSetChainInfo                        = new wasmtypes.ScHname(0x702f5d2b);
+export const HFuncSetContractFee                      = new wasmtypes.ScHname(0x8421a42b);
+export const HFuncSetDefaultFee                       = new wasmtypes.ScHname(0x3310ecd0);
+export const HViewGetAllowedStateControllerAddresses  = new wasmtypes.ScHname(0xf3505183);
+export const HViewGetChainInfo                        = new wasmtypes.ScHname(0x434477e2);
+export const HViewGetFeeInfo                          = new wasmtypes.ScHname(0x9fe54b48);
+export const HViewGetMaxBlobSize                      = new wasmtypes.ScHname(0xe1db3d28);
