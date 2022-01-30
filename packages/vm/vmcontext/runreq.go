@@ -295,7 +295,7 @@ func (vmctx *VMContext) chargeGasFee() {
 
 	availableToPayFee := vmctx.gasMaxTokensToSpendForGasFee
 	if !vmctx.task.EstimateGasMode && !vmctx.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(availableToPayFee) {
-		// user didn't specify enough iotas to cover the minimum request fee, charge whetever is present in the user's account
+		// user didn't specify enough iotas to cover the minimum request fee, charge whatever is present in the user's account
 		availableToPayFee = vmctx.GetSenderTokenBalanceForFees()
 	}
 

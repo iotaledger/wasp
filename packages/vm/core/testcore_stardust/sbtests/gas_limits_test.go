@@ -36,8 +36,8 @@ func testTxWithGasOverLimit(t *testing.T, w bool) {
 	require.Error(t, err) // tx expected to run out of gas
 	testmisc.RequireErrorToBe(t, err, coreutil.ErrorGasBudgetExceeded)
 	receipt := ch.LastReceipt()
-	// assert that the submited gas budger was limited to the max per call
-	require.Less(t, receipt.GasBurned, req.GasBudget())
+	// assert that the submitted gas budget was limited to the max per call
+	require.Less(t, req.GasBudget(), receipt.GasBurned)
 	require.Greater(t, receipt.GasBurned, gas.MaxGasPerCall) // should exceed MaxGasPerCall by 1 operation
 }
 

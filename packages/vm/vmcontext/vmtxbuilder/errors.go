@@ -24,6 +24,5 @@ var (
 	ErrNativeTokenSupplyOutOffBounds        = xerrors.New("token supply is out of bounds")
 	ErrFatalTxBuilderNotBalanced            = xerrors.New("fatal: tx builder is not balanced")
 	ErrInconsistentL2LedgerWithL1TxBuilder  = xerrors.New("fatal: L2 ledger is not consistent with the L1 tx builder")
-	ErrCantDestroyFoundryWithSupply         = xerrors.New("can't destroy foundry with non-zero circulating supply")
 	ErrCantDestroyFoundryBeingCreated       = xerrors.New("can't destroy foundry which is being created")
 )

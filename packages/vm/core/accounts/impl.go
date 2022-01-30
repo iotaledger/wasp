@@ -172,6 +172,7 @@ func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
 // - token scheme
 // - token tag
 // - max supply big integer
+// - must be enough allowance for the dust deposit
 func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -182,10 +183,14 @@ func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 
 	// create UTXO
 	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, tokenTag, tokenMaxSupply, nil)
-	// dust deposit is taken from the callers account
-	DebitFromAccount(ctx.State(), ctx.Caller(), &iscp.Assets{
-		Iotas: dustConsumed,
-	})
+
+	// dust deposit is taken from the allowance
+	// first is transferred to the common account then debited
+	commonAccount := commonaccount.Get(ctx.ChainID())
+	dustAssets := iscp.NewAssetsIotas(dustConsumed)
+	ctx.TransferAllowedFunds(commonAccount, dustAssets)
+	DebitFromAccount(ctx.State(), commonAccount, dustAssets)
+
 	// add to the ownership list of the account
 	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
 

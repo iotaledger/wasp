@@ -4,7 +4,7 @@ import "golang.org/x/xerrors"
 
 const (
 	MaxGasPerBlock = uint64(100_000_000)
-	MaxGasPerCall  = uint64(5_000_000)
+	MaxGasPerCall  = MaxGasPerBlock / 20 // one call cannot be more than 5% of maximum block
 )
 
 const (
@@ -52,7 +52,7 @@ var burnTable = BurnTable{
 	BurnCodeTransferAllowance:          {"transfer", constValue(10)},
 	BurnCodeSendL1Request:              {"send", linear(Coef1Send)},
 	BurnCodeDeployContract:             {"deploy", constValue(10)},
-	BurnCodeStorage1P:                  {"storage", linear(100)},
+	BurnCodeStorage1P:                  {"storage", linear(1)}, // 1 gas per byte
 	BurnCodeReadFromState1P:            {"state read", linear(1)},
 	BurnCodeWasm1P:                     {"wasm", linear(1)},
 	BurnCodeUtilsHashingBlake2b:        {"blake2b", constValue(50)},
