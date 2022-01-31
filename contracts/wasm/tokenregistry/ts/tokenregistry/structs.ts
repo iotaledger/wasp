@@ -18,7 +18,7 @@ export class Token {
     userDefined : string = "";  // any user defined text
 
     static fromBytes(buf: u8[]|null): Token {
-        const dec = new wasmtypes.WasmDecoder(buf);
+        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
         const data = new Token();
         data.created     = wasmtypes.uint64Decode(dec);
         data.description = wasmtypes.stringDecode(dec);
@@ -46,7 +46,7 @@ export class Token {
 
 export class ImmutableToken extends wasmtypes.ScProxy {
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -61,7 +61,7 @@ export class MutableToken extends wasmtypes.ScProxy {
         this.proxy.delete();
     }
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 

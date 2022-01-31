@@ -1,10 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
 import {WasmDecoder, WasmEncoder} from "./codec";
 import {uint32Decode, uint32Encode} from "./scuint32";
 import {stringToBytes} from "./scstring";
+import {panic} from "../sandbox";
 
 export interface IKvStore {
     delete(key: u8[]): void;
@@ -25,10 +25,13 @@ export class ScProxy {
 }
 
 export class Proxy {
+    static proxies: u32 = 0;
+    id: u32;
     _key: u8[] = [];
     kvStore: IKvStore;
 
     constructor(kvStore: IKvStore) {
+        this.id = Proxy.proxies++;
         this.kvStore = kvStore;
     }
 
@@ -60,41 +63,34 @@ export class Proxy {
         this.delete();
     }
 
-    public decoder(): WasmDecoder {
-        return this._decoder(this.get());
-    }
-
-    protected _decoder(buf: u8[] | null): WasmDecoder {
-        return new WasmDecoder(buf);
-    }
-
     delete(): void {
+        //log(this.id.toString() + ".delete(" + keya(this._key) + ")");
         this.kvStore.delete(this._key);
     }
 
     protected element(index: u32): Proxy {
-        let enc = this.encoder();
+        let enc = new WasmEncoder();
         uint32Encode(enc, index);
         return this.sub('#'.charCodeAt(0) as u8, enc.buf());
     }
 
-    public encoder(): WasmEncoder {
-        return new WasmEncoder();
-    }
-
     exists(): bool {
+        //log(this.id.toString() + ".exists(" + keya(this._key) + ")");
         return this.kvStore.exists(this._key);
     }
 
-    public expand(length: u32): void {
+    //TODO have a Grow function that grows an array?
+    protected expand(length: u32): void {
         // update the length counter
-        let enc = this.encoder();
+        let enc = new WasmEncoder();
         uint32Encode(enc, length);
         this.set(enc.buf());
     }
 
     get(): u8[] | null {
-        return this.kvStore.get(this._key);
+        const buf = this.kvStore.get(this._key);
+        //log(this.id.toString() + ".get(" + keya(this._key) + ") = " + vala(buf));
+        return buf;
     }
 
     // Index gets a Proxy for an element of an Array by its index
@@ -122,7 +118,8 @@ export class Proxy {
         if (buf == null) {
             return 0;
         }
-        return uint32Decode(this._decoder(buf));
+        const dec = new WasmDecoder(buf)
+        return uint32Decode(dec);
     }
 
     protected proxy(kvStore: IKvStore, key: u8[]): Proxy {
@@ -138,6 +135,7 @@ export class Proxy {
     }
 
     set(value: u8[]): void {
+        //log(this.id.toString() + ".set(" + keya(this._key) + ") = " + vala(value));
         this.kvStore.set(this._key, value);
     }
 

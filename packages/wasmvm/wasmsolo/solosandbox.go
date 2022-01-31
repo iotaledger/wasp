@@ -181,7 +181,9 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 		return s.postSync(s.ctx.scName, funcName, params, transfer)
 	}
 
+	_ = wasmhost.Connect(s.ctx.wasmHostOld)
 	res, err := s.ctx.Chain.CallView(s.ctx.scName, funcName, params)
+	_ = wasmhost.Connect(s.ctx.wc)
 	s.ctx.Err = err
 	if err != nil {
 		return nil
@@ -237,7 +239,7 @@ func (s *SoloSandbox) fnMinted(args []byte) []byte {
 }
 
 func (s *SoloSandbox) fnPanic(args []byte) []byte {
-	s.ctx.Chain.Log.Panicf(string(args))
+	s.ctx.Chain.Log.Panicf("SOLO panic: %s", string(args))
 	return nil
 }
 

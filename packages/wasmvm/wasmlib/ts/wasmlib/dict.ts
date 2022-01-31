@@ -2,7 +2,24 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmtypes from "./wasmtypes"
+import {hex, stringFromBytes} from "./wasmtypes"
 import {log} from "./sandbox";
+
+export function keya(key: u8[]): string {
+    for (let i = 0; i < key.length; i++) {
+        if (key[i] == 0x23) {
+            return stringFromBytes(key.slice(0, i + 1)) + hex(key.slice(i + 1));
+        }
+        if (key[i] < 0x20 || key[i] > 0x7e) {
+            return hex(key);
+        }
+    }
+    return stringFromBytes(key);
+}
+
+export function vala(val: u8[] | null): string {
+    return val != null ? "[" + hex(val) + "]" : "null";
+}
 
 export class ScDict implements wasmtypes.IKvStore {
     dict: Map<string, u8[]> = new Map();
@@ -12,7 +29,6 @@ export class ScDict implements wasmtypes.IKvStore {
         for (let i = 0; i < buf.length; i++) {
             key += String.fromCharCode((buf[i] >> 4) + 0x40, (buf[i] & 0x0f) + 0x40);
         }
-        //log("toKey(" + wasmtypes.hex(buf) + ")=" + key);
         return key;
     }
 
@@ -23,7 +39,6 @@ export class ScDict implements wasmtypes.IKvStore {
             const b2 = key.charCodeAt(i + 1) as u8;
             buf[i / 2] = (((b1 - 0x40) << 4) | (b2 - 0x40));
         }
-        //log("fromKey(" + key + ")=" + wasmtypes.hex(buf));
         return buf;
     }
 
@@ -32,9 +47,11 @@ export class ScDict implements wasmtypes.IKvStore {
             const dec = new wasmtypes.WasmDecoder(buf);
             const size = wasmtypes.uint32FromBytes(dec.fixedBytes(wasmtypes.ScUint32Length));
             for (let i: u32 = 0; i < size; i++) {
-                const keyLen = wasmtypes.uint16FromBytes(dec.fixedBytes(wasmtypes.ScUint16Length));
+                const keyBuf = dec.fixedBytes(wasmtypes.ScUint16Length);
+                const keyLen = wasmtypes.uint16FromBytes(keyBuf);
                 const key = dec.fixedBytes(keyLen as u32);
-                const valLen = wasmtypes.uint32FromBytes(dec.fixedBytes(wasmtypes.ScUint32Length));
+                const valBuf = dec.fixedBytes(wasmtypes.ScUint32Length);
+                const valLen = wasmtypes.uint32FromBytes(valBuf);
                 const val = dec.fixedBytes(valLen);
                 this.set(key, val);
             }
@@ -46,19 +63,37 @@ export class ScDict implements wasmtypes.IKvStore {
     }
 
     delete(key: u8[]): void {
+        // this.dump("delete");
+        // log("dict.delete(" + keya(key) + ")");
         this.dict.delete(ScDict.toKey(key));
+        // this.dump("Delete")
+    }
+
+    protected dump(which: string): void {
+        const keys = this.dict.keys()
+        for (let i = 0; i < keys.length; i++) {
+            log("dict." + which + "." + i.toString() + "." + keya(ScDict.fromKey(keys[i])) + " = " + vala(this.dict.get(keys[i])));
+        }
     }
 
     exists(key: u8[]): bool {
-        return this.dict.has(ScDict.toKey(key));
+        const mapKey = ScDict.toKey(key);
+        const ret = this.dict.has(mapKey);
+        // this.dump("exists");
+        // log("dict.exists(" + keya(key) + ") = " + ret.toString());
+        return ret;
     }
 
     get(key: u8[]): u8[] | null {
+        // this.dump("get")
         const mapKey = ScDict.toKey(key);
-        if (! this.dict.has(mapKey)) {
+        if (!this.dict.has(mapKey)) {
+            // log("dict.get(" + keya(key) + ") = null");
             return null;
         }
-        return this.dict.get(mapKey);
+        const value = this.dict.get(mapKey);
+        // log("dict.get(" + keya(key) + ") = " + vala(value));
+        return value;
     }
 
     public immutable(): ScImmutableDict {
@@ -66,7 +101,10 @@ export class ScDict implements wasmtypes.IKvStore {
     }
 
     set(key: u8[], value: u8[]): void {
+        // this.dump("set")
+        // log("dict.set(" + keya(key) + ", " + vala(value) + ")");
         this.dict.set(ScDict.toKey(key), value);
+        // this.dump("Set")
     }
 
     public toBytes(): u8[] {
@@ -105,7 +143,7 @@ export class ScImmutableDict {
 
     get(key: u8[]): u8[] | null {
         const mapKey = ScDict.toKey(key);
-        if (! this.dict.has(mapKey)) {
+        if (!this.dict.has(mapKey)) {
             return null;
         }
         return this.dict.get(mapKey);

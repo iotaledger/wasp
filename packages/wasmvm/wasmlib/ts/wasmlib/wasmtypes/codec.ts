@@ -9,8 +9,11 @@ import {panic} from "../sandbox";
 export class WasmDecoder {
     buf: u8[];
 
-    constructor(buf: u8[] | null) {
-        this.buf = buf == null ? [] : buf;
+    constructor(buf: u8[]) {
+        if (buf.length == 0) {
+            panic("empty decode buffer");
+        }
+        this.buf = buf;
     }
 
     // decodes the next byte from the byte buffer
@@ -18,7 +21,9 @@ export class WasmDecoder {
         if (this.buf.length == 0) {
             panic("insufficient bytes");
         }
-        return this.buf.shift();
+        const value = this.buf[0];
+        this.buf = this.buf.slice(1);
+        return value;
     }
 
     // decodes the next variable sized slice of bytes from the byte buffer
@@ -37,7 +42,7 @@ export class WasmDecoder {
     // decodes the next fixed size slice of bytes from the byte buffer
     fixedBytes(size: u32): u8[] {
         if ((this.buf.length as u32) < size) {
-            panic("insufficient bytes");
+            panic("insufficient fixed bytes");
         }
         let value = this.buf.slice(0, size);
         this.buf = this.buf.slice(size);
@@ -206,7 +211,7 @@ export function hex(buf: u8[]): string {
         const b = buf[i];
         res += hexa.charAt(b >> 4) + hexa.charAt(b & 0x0f);
     }
-    return res
+    return res;
 }
 
 export function zeroes(count: u32): u8[] {

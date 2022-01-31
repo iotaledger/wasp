@@ -7,6 +7,10 @@ import * as coreblocklog from "wasmlib/coreblocklog"
 import * as sc from "./index";
 
 export function funcArrayAppend(ctx: wasmlib.ScFuncContext, f: sc.ArrayAppendContext): void {
+    let name = f.params.name().value();
+    let array = f.state.arrays().getStringArray(name);
+    let value = f.params.value().value();
+    array.appendString().setValue(value);
 }
 
 export function funcArrayClear(ctx: wasmlib.ScFuncContext, f: sc.ArrayClearContext): void {
@@ -24,9 +28,17 @@ export function funcArraySet(ctx: wasmlib.ScFuncContext, f: sc.ArraySetContext):
 }
 
 export function funcMapClear(ctx: wasmlib.ScFuncContext, f: sc.MapClearContext): void {
+    let name = f.params.name().value();
+    let myMap = f.state.maps().getStringMap(name);
+    myMap.clear();
 }
 
 export function funcMapSet(ctx: wasmlib.ScFuncContext, f: sc.MapSetContext): void {
+    let name = f.params.name().value();
+    let myMap = f.state.maps().getStringMap(name);
+    let key = f.params.key().value();
+    let value = f.params.value().value();
+    myMap.getString(key).setValue(value);
 }
 
 export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesContext): void {
@@ -118,8 +130,17 @@ export function viewBlockRecord(ctx: wasmlib.ScViewContext, f: sc.BlockRecordCon
     records.params.blockIndex().setValue(f.params.blockIndex().value());
     records.func.call();
     let recordIndex = f.params.recordIndex().value();
-    ctx.require(recordIndex < records.results.requestRecord().length(), "invalid recordIndex");
-    f.results.record().setValue(records.results.requestRecord().getBytes(recordIndex).value());
+    ctx.log("index: " + recordIndex.toString());
+    recordIndex = f.params.recordIndex().value();
+    ctx.log("index: " + recordIndex.toString());
+    const requestRecord = records.results.requestRecord();
+    const length = requestRecord.length();
+    ctx.log("length: " + length.toString());
+    const length2 = requestRecord.length();
+    ctx.log("length2: " + length2.toString());
+    ctx.require(recordIndex < length, "invalid recordIndex");
+    const buf = requestRecord.getBytes(recordIndex).value();
+    f.results.record().setValue(buf);
 }
 
 export function viewBlockRecords(ctx: wasmlib.ScViewContext, f: sc.BlockRecordsContext): void {
@@ -138,4 +159,9 @@ export function viewIotaBalance(ctx: wasmlib.ScViewContext, f: sc.IotaBalanceCon
 }
 
 export function viewMapValue(ctx: wasmlib.ScViewContext, f: sc.MapValueContext): void {
+    let name = f.params.name().value();
+    let myMap = f.state.maps().getStringMap(name);
+    let key = f.params.key().value();
+    let value = myMap.getString(key).value();
+    f.results.value().setValue(value);
 }

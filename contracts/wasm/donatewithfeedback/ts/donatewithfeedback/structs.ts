@@ -16,7 +16,7 @@ export class Donation {
     timestamp : u64 = 0;  // when the donation took place
 
     static fromBytes(buf: u8[]|null): Donation {
-        const dec = new wasmtypes.WasmDecoder(buf);
+        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
         const data = new Donation();
         data.amount    = wasmtypes.uint64Decode(dec);
         data.donator   = wasmtypes.agentIDDecode(dec);
@@ -40,7 +40,7 @@ export class Donation {
 
 export class ImmutableDonation extends wasmtypes.ScProxy {
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -55,7 +55,7 @@ export class MutableDonation extends wasmtypes.ScProxy {
         this.proxy.delete();
     }
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 

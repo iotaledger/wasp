@@ -38,7 +38,7 @@ export class ScView {
     hContract: wasmtypes.ScHname;
     hFunction: wasmtypes.ScHname;
     params: ScDict;
-    resultsProxy: wasmtypes.Proxy| null;
+    resultsProxy: wasmtypes.Proxy | null;
 
     constructor(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname) {
         this.hContract = hContract;

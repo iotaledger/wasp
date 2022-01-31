@@ -25,7 +25,7 @@ func NewProxy(kvStore IKvStore) Proxy {
 // Note that this will essentially return the element at Length()
 func (p Proxy) Append() Proxy {
 	length := p.Length()
-	p.Expand(length + 1)
+	p.expand(length + 1)
 	return p.element(length)
 }
 
@@ -49,35 +49,24 @@ func (p Proxy) ClearMap() {
 	p.Delete()
 }
 
-func (p Proxy) Decoder() *WasmDecoder {
-	return p.decoder(p.Get())
-}
-
-func (p Proxy) decoder(buf []byte) *WasmDecoder {
-	return NewWasmDecoder(buf)
-}
-
 func (p Proxy) Delete() {
 	p.kvStore.Delete(p.key)
 }
 
 func (p Proxy) element(index uint32) Proxy {
-	enc := p.Encoder()
+	enc := NewWasmEncoder()
 	Uint32Encode(enc, index)
 	return p.sub('#', enc.Buf())
-}
-
-func (p Proxy) Encoder() *WasmEncoder {
-	return NewWasmEncoder()
 }
 
 func (p Proxy) Exists() bool {
 	return p.kvStore.Exists(p.key)
 }
 
-func (p Proxy) Expand(length uint32) {
+// TODO have a Grow function that grows an array?
+func (p Proxy) expand(length uint32) {
 	// update the length counter
-	enc := p.Encoder()
+	enc := NewWasmEncoder()
 	Uint32Encode(enc, length)
 	p.Set(enc.Buf())
 }
@@ -111,7 +100,8 @@ func (p Proxy) Length() uint32 {
 	if buf == nil {
 		return 0
 	}
-	return Uint32Decode(p.decoder(buf))
+	dec := NewWasmDecoder(buf)
+	return Uint32Decode(dec)
 }
 
 // Root returns a Proxy for an element of a root container (Params/Results/State).

@@ -11,6 +11,9 @@ type WasmDecoder struct {
 }
 
 func NewWasmDecoder(buf []byte) *WasmDecoder {
+	if len(buf) == 0 {
+		panic("empty decode buffer")
+	}
 	return &WasmDecoder{buf: buf}
 }
 
@@ -46,7 +49,7 @@ func (d *WasmDecoder) Close() {
 // FixedBytes decodes the next fixed size slice of bytes from the byte buffer
 func (d *WasmDecoder) FixedBytes(size uint32) []byte {
 	if uint32(len(d.buf)) < size {
-		d.abort("insufficient bytes")
+		d.abort("insufficient fixed bytes")
 	}
 	value := d.buf[:size]
 	d.buf = d.buf[size:]

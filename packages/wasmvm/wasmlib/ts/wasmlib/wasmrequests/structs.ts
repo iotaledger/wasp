@@ -15,7 +15,7 @@ export class CallRequest {
     transfer : u8[] = []; 
 
     static fromBytes(buf: u8[]|null): CallRequest {
-        const dec = new wasmtypes.WasmDecoder(buf);
+        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
         const data = new CallRequest();
         data.contract = wasmtypes.hnameDecode(dec);
         data.function = wasmtypes.hnameDecode(dec);
@@ -37,7 +37,7 @@ export class CallRequest {
 
 export class ImmutableCallRequest extends wasmtypes.ScProxy {
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -52,7 +52,7 @@ export class MutableCallRequest extends wasmtypes.ScProxy {
         this.proxy.delete();
     }
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -72,7 +72,7 @@ export class DeployRequest {
     progHash    : wasmtypes.ScHash = new wasmtypes.ScHash(); 
 
     static fromBytes(buf: u8[]|null): DeployRequest {
-        const dec = new wasmtypes.WasmDecoder(buf);
+        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
         const data = new DeployRequest();
         data.description = wasmtypes.stringDecode(dec);
         data.name        = wasmtypes.stringDecode(dec);
@@ -94,7 +94,7 @@ export class DeployRequest {
 
 export class ImmutableDeployRequest extends wasmtypes.ScProxy {
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -109,7 +109,7 @@ export class MutableDeployRequest extends wasmtypes.ScProxy {
         this.proxy.delete();
     }
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -131,7 +131,7 @@ export class PostRequest {
     transfer : u8[] = []; 
 
     static fromBytes(buf: u8[]|null): PostRequest {
-        const dec = new wasmtypes.WasmDecoder(buf);
+        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
         const data = new PostRequest();
         data.chainID  = wasmtypes.chainIDDecode(dec);
         data.contract = wasmtypes.hnameDecode(dec);
@@ -157,7 +157,7 @@ export class PostRequest {
 
 export class ImmutablePostRequest extends wasmtypes.ScProxy {
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -172,7 +172,7 @@ export class MutablePostRequest extends wasmtypes.ScProxy {
         this.proxy.delete();
     }
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -190,7 +190,7 @@ export class SendRequest {
     transfer : u8[] = []; 
 
     static fromBytes(buf: u8[]|null): SendRequest {
-        const dec = new wasmtypes.WasmDecoder(buf);
+        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
         const data = new SendRequest();
         data.address  = wasmtypes.addressDecode(dec);
         data.transfer = wasmtypes.bytesDecode(dec);
@@ -208,7 +208,7 @@ export class SendRequest {
 
 export class ImmutableSendRequest extends wasmtypes.ScProxy {
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -223,7 +223,7 @@ export class MutableSendRequest extends wasmtypes.ScProxy {
         this.proxy.delete();
     }
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 

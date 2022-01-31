@@ -14,7 +14,7 @@ export class Bet {
     number : u16 = 0; 
 
     static fromBytes(buf: u8[]|null): Bet {
-        const dec = new wasmtypes.WasmDecoder(buf);
+        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
         const data = new Bet();
         data.amount = wasmtypes.uint64Decode(dec);
         data.better = wasmtypes.agentIDDecode(dec);
@@ -34,7 +34,7 @@ export class Bet {
 
 export class ImmutableBet extends wasmtypes.ScProxy {
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -49,7 +49,7 @@ export class MutableBet extends wasmtypes.ScProxy {
         this.proxy.delete();
     }
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 

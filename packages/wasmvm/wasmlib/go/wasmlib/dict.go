@@ -39,9 +39,11 @@ func NewScDictFromBytes(buf []byte) *ScDict {
 	size := wasmtypes.Uint32FromBytes(dec.FixedBytes(wasmtypes.ScUint32Length))
 	dict := NewScDict()
 	for i := uint32(0); i < size; i++ {
-		keyLen := wasmtypes.Uint16FromBytes(dec.FixedBytes(wasmtypes.ScUint16Length))
+		keyBuf := dec.FixedBytes(wasmtypes.ScUint16Length)
+		keyLen := wasmtypes.Uint16FromBytes(keyBuf)
 		key := dec.FixedBytes(uint32(keyLen))
-		valLen := wasmtypes.Uint32FromBytes(dec.FixedBytes(wasmtypes.ScUint32Length))
+		valBuf := dec.FixedBytes(wasmtypes.ScUint32Length)
+		valLen := wasmtypes.Uint32FromBytes(valBuf)
 		val := dec.FixedBytes(valLen)
 		dict.Set(key, val)
 	}

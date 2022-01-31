@@ -207,7 +207,7 @@ func (s *WasmToSandbox) fnMinted(args []byte) []byte {
 }
 
 func (s *WasmToSandbox) fnPanic(args []byte) []byte {
-	s.common.Log().Panicf(string(args))
+	s.common.Log().Panicf("WASM panic: %s", string(args))
 	return nil
 }
 

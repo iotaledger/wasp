@@ -219,27 +219,29 @@ func localStatePost(ctx wasmlib.ScFuncContext, nr int64) {
 
 func vliSave(ctx wasmlib.ScFuncContext, name string, value int64) {
 	enc := wasmtypes.NewWasmEncoder()
-	state := wasmlib.ScState{}
+	state := ctx.RawState()
 	key := []byte(name)
 	state.Set(key, enc.VliEncode(value).Buf())
-	dec := wasmtypes.NewWasmDecoder(state.Get(key))
-	retrieved := wasmtypes.Int64Decode(dec)
-	if retrieved != value {
+	buf := state.Get(key)
+	dec := wasmtypes.NewWasmDecoder(buf)
+	val := wasmtypes.Int64Decode(dec)
+	if val != value {
 		ctx.Log(name + " in : " + ctx.Utility().String(value))
-		ctx.Log(name + " out: " + ctx.Utility().String(retrieved))
+		ctx.Log(name + " out: " + ctx.Utility().String(val))
 	}
 }
 
 func vluSave(ctx wasmlib.ScFuncContext, name string, value uint64) {
 	enc := wasmtypes.NewWasmEncoder()
-	state := wasmlib.ScState{}
+	state := ctx.RawState()
 	key := []byte(name)
 	state.Set(key, enc.VluEncode(value).Buf())
-	dec := wasmtypes.NewWasmDecoder(state.Get(key))
-	retrieved := wasmtypes.Uint64Decode(dec)
-	if retrieved != value {
+	buf := state.Get(key)
+	dec := wasmtypes.NewWasmDecoder(buf)
+	val := wasmtypes.Uint64Decode(dec)
+	if val != value {
 		ctx.Log(name + " in : " + ctx.Utility().String(int64(value)))
-		ctx.Log(name + " out: " + ctx.Utility().String(int64(retrieved)))
+		ctx.Log(name + " out: " + ctx.Utility().String(int64(val)))
 	}
 }
 

@@ -4,7 +4,6 @@
 import * as wasmlib from "wasmlib"
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
-import {ScState} from "../../../../../packages/wasmvm/wasmlib/ts/wasmlib";
 
 const hex = "0123456789abcdef";
 
@@ -240,27 +239,29 @@ function localStatePost(ctx: wasmlib.ScFuncContext, nr: i64): void {
 
 function vliSave(ctx: wasmlib.ScFuncContext, name: string, value: i64): void {
     let enc = new wasmtypes.WasmEncoder();
-    const state = new ScState();
+    const state = ctx.rawState();
     let key = wasmtypes.stringToBytes(name);
     state.set(key, enc.vliEncode(value).buf());
-    let dec = new wasmtypes.WasmDecoder(state.get(key));
-    let retrieved = wasmtypes.int64Decode(dec);
-    if (retrieved != value) {
+    const buf = state.get(key);
+    let dec = new wasmtypes.WasmDecoder(buf == null ? [] : buf);
+    let val = wasmtypes.int64Decode(dec);
+    if (val != value) {
         ctx.log(name.toString() + " in : " + value.toString());
-        ctx.log(name.toString() + " out: " + retrieved.toString());
+        ctx.log(name.toString() + " out: " + val.toString());
     }
 }
 
 function vluSave(ctx: wasmlib.ScFuncContext, name: string, value: u64): void {
     let enc = new wasmtypes.WasmEncoder();
-    const state = new ScState();
+    const state = ctx.rawState();
     let key = wasmtypes.stringToBytes(name);
     state.set(key, enc.vluEncode(value).buf());
-    let dec = new wasmtypes.WasmDecoder(state.get(key));
-    let retrieved = wasmtypes.uint64Decode(dec);
-    if (retrieved != value) {
+    const buf = state.get(key);
+    let dec = new wasmtypes.WasmDecoder(buf == null ? [] : buf);
+    let val = wasmtypes.uint64Decode(dec);
+    if (val != value) {
         ctx.log(name.toString() + " in : " + value.toString());
-        ctx.log(name.toString() + " out: " + retrieved.toString());
+        ctx.log(name.toString() + " out: " + val.toString());
     }
 }
 

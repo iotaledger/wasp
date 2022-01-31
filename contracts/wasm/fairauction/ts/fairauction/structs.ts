@@ -22,7 +22,7 @@ export class Auction {
     whenStarted   : u64 = 0;  // timestamp when auction started
 
     static fromBytes(buf: u8[]|null): Auction {
-        const dec = new wasmtypes.WasmDecoder(buf);
+        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
         const data = new Auction();
         data.color         = wasmtypes.colorDecode(dec);
         data.creator       = wasmtypes.agentIDDecode(dec);
@@ -58,7 +58,7 @@ export class Auction {
 
 export class ImmutableAuction extends wasmtypes.ScProxy {
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -73,7 +73,7 @@ export class MutableAuction extends wasmtypes.ScProxy {
         this.proxy.delete();
     }
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -92,7 +92,7 @@ export class Bid {
     timestamp : u64 = 0;  // timestamp of most recent bid
 
     static fromBytes(buf: u8[]|null): Bid {
-        const dec = new wasmtypes.WasmDecoder(buf);
+        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
         const data = new Bid();
         data.amount    = wasmtypes.uint64Decode(dec);
         data.index     = wasmtypes.uint32Decode(dec);
@@ -112,7 +112,7 @@ export class Bid {
 
 export class ImmutableBid extends wasmtypes.ScProxy {
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 
@@ -127,7 +127,7 @@ export class MutableBid extends wasmtypes.ScProxy {
         this.proxy.delete();
     }
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 

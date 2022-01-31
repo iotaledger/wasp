@@ -14,7 +14,7 @@ export class $StrName {
 $#each struct structField
 
     static fromBytes(buf: u8[]|null): $StrName {
-        const dec = new wasmtypes.WasmDecoder(buf);
+        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
         const data = new $StrName();
 $#each struct structDecode
         dec.close();
@@ -50,7 +50,7 @@ $#emit structMethods
 export class $mut$StrName extends wasmtypes.ScProxy {
 $#if mut structMethodDelete
 
-    exists(): boolean {
+    exists(): bool {
         return this.proxy.exists();
     }
 $#if mut structMethodSetValue

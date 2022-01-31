@@ -45,7 +45,7 @@ export class ScBalances {
 
     public balance(color: wasmtypes.ScColor): u64 {
         const mapKey = ScDict.toKey(color.id);
-        if (! this.assets.has(mapKey)) {
+        if (!this.assets.has(mapKey)) {
             return 0;
         }
         return this.assets.get(mapKey);

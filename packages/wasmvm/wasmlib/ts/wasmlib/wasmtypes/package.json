@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "author": "Eric Hop",
   "dependencies": {
-    "@assemblyscript/loader": "^0.19.18"
+    "@assemblyscript/loader": "^0.19.22"
   },
   "devDependencies": {
-    "assemblyscript": "^0.19.18"
+    "assemblyscript": "^0.19.22"
   }
 }
