@@ -2,6 +2,8 @@ package testcore
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -141,27 +143,27 @@ func TestUploadWasm(t *testing.T) {
 	})
 }
 
-// TODO working on it
-//func TestBigBlob(t *testing.T) {
-//	env := solo.New(t)
-//	ch := env.NewChain(nil, "chain1")
-//
-//	// uploada blob that is too big
-//	bigblobSize := governance.DefaultMaxBlobSize + 100
-//	blobBin := make([]byte, bigblobSize)
-//
-//	_, err := ch.UploadWasm(&ch.OriginatorPrivateKey, blobBin)
-//	require.Error(t, err)
-//
-//	req := solo.NewCallParams(
-//		governance.Contract.Name, governance.FuncSetChainInfo.Name,
-//		governance.ParamMaxBlobSizeUint32, bigblobSize,
-//	)
-//	// update max blob size to allow for bigger blobs_
-//	_, err = ch.PostRequestSync(req, nil)
-//	require.NoError(t, err)
-//
-//	// blob upload must now succeed
-//	_, err = ch.UploadWasm(&ch.OriginatorPrivateKey, blobBin)
-//	require.NoError(t, err)
-//}
+func TestBigBlob(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	ch := env.NewChain(nil, "chain1")
+
+	// upload a blob that is too big
+	bigblobSize := governance.DefaultMaxBlobSize + 100
+	blobBin := make([]byte, bigblobSize)
+
+	_, err := ch.UploadWasm(&ch.OriginatorPrivateKey, blobBin)
+	testmisc.RequireErrorToBe(t, err, "blob too big")
+
+	ch.MustDepositIotasToL2(100_000, nil)
+	req := solo.NewCallParams(
+		governance.Contract.Name, governance.FuncSetChainInfo.Name,
+		governance.ParamMaxBlobSizeUint32, bigblobSize,
+	).WithGasBudget(10_000)
+	// update max blob size to allow for bigger blobs_
+	_, err = ch.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	// blob upload must now succeed
+	_, err = ch.UploadWasm(&ch.OriginatorPrivateKey, blobBin)
+	require.NoError(t, err)
+}
