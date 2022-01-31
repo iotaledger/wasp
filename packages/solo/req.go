@@ -439,15 +439,18 @@ func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Dur
 
 const waitUntilMempoolIsEmptyDefaultTimeout = 5 * time.Second
 
-func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) {
+func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) bool {
 	realTimeout := waitUntilMempoolIsEmptyDefaultTimeout
 	if len(timeout) > 0 {
 		realTimeout = timeout[0]
 	}
 	startTime := time.Now()
-	ch.mempool.WaitInBufferEmpty(timeout...)
+	ret := ch.mempool.WaitInBufferEmpty(timeout...)
+	if !ret {
+		return false
+	}
 	remainingTimeout := realTimeout - time.Since(startTime)
-	ch.mempool.WaitPoolEmpty(remainingTimeout)
+	return ch.mempool.WaitPoolEmpty(remainingTimeout)
 }
 
 // WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
