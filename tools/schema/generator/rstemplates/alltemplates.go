@@ -33,6 +33,7 @@ var TypeDependent = model.StringMapMap{
 		"Address":   "ScAddress",
 		"AgentID":   "ScAgentID",
 		"Bool":      "bool",
+		"Bytes":     "Vec<u8>",
 		"ChainID":   "ScChainID",
 		"Color":     "ScColor",
 		"Hash":      "ScHash",

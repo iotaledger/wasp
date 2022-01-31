@@ -28,6 +28,8 @@ pub mod host;
 mod immutable;
 pub mod keys;
 mod mutable;
+//pub mod wasmrequests;
+pub mod wasmtypes;
 
 // When the `wee_alloc` feature is enabled,
 // use `wee_alloc` as the global allocator.

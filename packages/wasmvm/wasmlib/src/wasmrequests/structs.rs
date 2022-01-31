@@ -15,8 +15,8 @@ use wasmlib::host::*;
 pub struct CallRequest {
     pub contract : ScHname, 
     pub function : ScHname, 
-    pub params   : , 
-    pub transfer : , 
+    pub params   : Vec<u8>, 
+    pub transfer : Vec<u8>, 
 }
 
 impl CallRequest {
@@ -84,7 +84,7 @@ impl MutableCallRequest {
 pub struct DeployRequest {
     pub description : String, 
     pub name        : String, 
-    pub params      : , 
+    pub params      : Vec<u8>, 
     pub prog_hash   : ScHash, 
 }
 
@@ -155,8 +155,8 @@ pub struct PostRequest {
     pub contract : ScHname, 
     pub delay    : u32, 
     pub function : ScHname, 
-    pub params   : , 
-    pub transfer : , 
+    pub params   : Vec<u8>, 
+    pub transfer : Vec<u8>, 
 }
 
 impl PostRequest {
@@ -227,7 +227,7 @@ impl MutablePostRequest {
 #[derive(Clone)]
 pub struct SendRequest {
     pub address  : ScAddress, 
-    pub transfer : , 
+    pub transfer : Vec<u8>, 
 }
 
 impl SendRequest {

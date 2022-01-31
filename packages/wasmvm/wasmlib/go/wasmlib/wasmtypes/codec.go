@@ -131,8 +131,7 @@ func (e *WasmEncoder) Byte(value uint8) *WasmEncoder {
 func (e *WasmEncoder) Bytes(value []byte) *WasmEncoder {
 	length := len(value)
 	e.VluEncode(uint64(length))
-	e.FixedBytes(value, uint32(length))
-	return e
+	return e.FixedBytes(value, uint32(length))
 }
 
 // FixedBytes encodes a fixed size slice of bytes into the byte buffer

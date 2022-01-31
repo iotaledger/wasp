@@ -6,7 +6,7 @@ var structsRs = map[string]string{
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use wasmlib::*;
+$#if core useCrate useWasmLib
 use wasmlib::host::*;
 $#if typedefs useTypeDefs
 $#each structs structType
