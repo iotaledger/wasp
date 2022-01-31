@@ -194,7 +194,7 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, assets *iscp.Asse
 	defer checkLedger(state, "DebitFromAccount OUT")
 
 	if !debitFromAccount(account, assets) {
-		panic(xerrors.Errorf(" agentID: %s. %v", agentID.String(), ErrNotEnoughFunds))
+		panic(xerrors.Errorf(" debit from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, assets))
 	}
 	if !debitFromAccount(getTotalL2AssetsAccount(state), assets) {
 		panic("debitFromAccount: inconsistent ledger state")
@@ -256,7 +256,7 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID,
 
 func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, assets *iscp.Assets) {
 	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, assets) {
-		panic(xerrors.Errorf(" agentID: %s. %w", fromAgentID.String(), ErrNotEnoughFunds))
+		panic(xerrors.Errorf(" agentID: %s. %v. assets: %s", fromAgentID, ErrNotEnoughFunds, assets))
 	}
 }
 

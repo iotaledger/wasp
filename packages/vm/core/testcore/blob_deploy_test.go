@@ -10,50 +10,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
-
-func TestBlobRepeatInit(t *testing.T) {
-	env := solo.New(t, false, false)
-	chain := env.NewChain(nil, "chain1")
-	req := solo.NewCallParams(blob.Contract.Name, "init")
-	_, err := chain.PostRequestSync(req, nil)
-	require.Error(t, err)
-}
-
-func TestBlobUpload(t *testing.T) {
-	env := solo.New(t, false, false)
-	chain := env.NewChain(nil, "chain1")
-	binary := []byte("supposed to be wasm")
-	hwasm, err := chain.UploadWasm(nil, binary)
-	require.NoError(t, err)
-
-	binBack, err := chain.GetWasmBinary(hwasm)
-	require.NoError(t, err)
-
-	require.EqualValues(t, binary, binBack)
-}
-
-func TestBlobUploadTwice(t *testing.T) {
-	env := solo.New(t, false, false)
-	chain := env.NewChain(nil, "chain1")
-	binary := []byte("supposed to be wasm")
-	hwasm1, err := chain.UploadWasm(nil, binary)
-	require.NoError(t, err)
-
-	hwasm2, err := chain.UploadWasm(nil, binary)
-	require.NoError(t, err)
-
-	require.EqualValues(t, hwasm1, hwasm2)
-
-	binBack, err := chain.GetWasmBinary(hwasm1)
-	require.NoError(t, err)
-
-	require.EqualValues(t, binary, binBack)
-}
 
 var wasmFile = "sbtests/sbtestsc/testcore_bg.wasm"
 
@@ -85,17 +44,6 @@ func TestDeployRubbish(t *testing.T) {
 
 	_, err = chain.FindContract(name)
 	require.Error(t, err)
-}
-
-func TestListBlobs(t *testing.T) {
-	env := solo.New(t, false, false)
-	chain := env.NewChain(nil, "chain1")
-	err := chain.DeployWasmContract(nil, "testCore", wasmFile)
-	require.NoError(t, err)
-
-	ret, err := chain.CallView(blob.Contract.Name, blob.FuncListBlobs.Name)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, len(ret))
 }
 
 func TestDeployNotAuthorized(t *testing.T) {
@@ -176,32 +124,6 @@ func TestDeployGrantFail(t *testing.T) {
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.Error(t, err)
-}
-
-func TestBigBlob(t *testing.T) {
-	env := solo.New(t, false, false)
-	ch := env.NewChain(nil, "chain1")
-
-	// uploada blob that is too big
-	bigblobSize := governance.DefaultMaxBlobSize + 100
-	blobBin := make([]byte, bigblobSize)
-
-	_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
-	require.Error(t, err)
-
-	// update max blob size to allow for bigger blobs_
-	_, err = ch.PostRequestSync(
-		solo.NewCallParams(
-			governance.Contract.Name, governance.FuncSetChainInfo.Name,
-			governance.ParamMaxBlobSizeUint32, bigblobSize,
-		).AddAssetsIotas(1),
-		nil,
-	)
-	require.NoError(t, err)
-
-	// blob upload must now succeed
-	_, err = ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
-	require.NoError(t, err)
 }
 
 func TestOpenDeploymentToAnyone(t *testing.T) {

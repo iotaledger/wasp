@@ -106,6 +106,9 @@ func (vmctx *VMContext) isCoreAccount(agentID *iscp.AgentID) bool {
 // targetAccountExists check if there's an account with non-zero balance,
 // or it is an existing smart contract
 func (vmctx *VMContext) targetAccountExists(agentID *iscp.AgentID) bool {
+	if agentID.Equals(commonaccount.Get(vmctx.ChainID())) {
+		return true
+	}
 	accountExists := false
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accountExists = accounts.AccountExists(s, agentID)

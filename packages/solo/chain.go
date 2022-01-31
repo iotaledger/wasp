@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"fmt"
+	"golang.org/x/xerrors"
 	"math"
 	"os"
 
@@ -118,16 +119,19 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 		// blob exists, return hash of existing
 		return expectedHash, nil
 	}
-	res, err := ch.PostRequestOffLedger(
-		NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).WithGasBudget(math.MaxUint64),
-		user,
-	)
+	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...)
+	g, _, err := ch.EstimateGasOffLedger(req, nil, true)
+	if err != nil {
+		return [32]byte{}, err
+	}
+	req.WithGasBudget(g)
+	res, err := ch.PostRequestOffLedger(req, user)
 	if err != nil {
 		return
 	}
 	resBin := res.MustGet(blob.ParamHash)
 	if resBin == nil {
-		err = fmt.Errorf("internal error: no hash returned")
+		err = xerrors.Errorf("internal error: no hash returned")
 		return
 	}
 	ret, err = codec.DecodeHashValue(resBin)
@@ -461,7 +465,7 @@ func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
-	).AddAssetsIotas(1)
+	)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -470,7 +474,7 @@ func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptol
 func (ch *Chain) RemoveAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
-	).AddAssetsIotas(1)
+	)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -526,7 +530,20 @@ func (a *L1L2AddressAssets) String() string {
 	return fmt.Sprintf("Address: %s\nL1 assets:\n  %s\nL2 assets:\n  %s", a.Address, a.AssetsL1, a.AssetsL2)
 }
 
-func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
+func getAddr(addrOrKeypair interface{}) iotago.Address {
+	switch a := addrOrKeypair.(type) {
+	case iotago.Address:
+		return a
+	case *cryptolib.KeyPair:
+		return cryptolib.Ed25519AddressFromPubKey(a.PublicKey)
+	case cryptolib.KeyPair:
+		return cryptolib.Ed25519AddressFromPubKey(a.PublicKey)
+	}
+	panic(xerrors.Errorf("getAddr: wrong type %T", addrOrKeypair))
+}
+
+func (ch *Chain) L1L2Funds(addrOrKeypair interface{}) *L1L2AddressAssets {
+	addr := getAddr(addrOrKeypair)
 	return &L1L2AddressAssets{
 		Address:  addr,
 		AssetsL1: ch.Env.L1Assets(addr),

@@ -186,7 +186,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	}
 	L1Iotas := ch.Env.L1Iotas(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey))
 	if L1Iotas == 0 {
-		panic("PostRequestSync - Signer doesn't own any iotas on L1")
+		return nil, xerrors.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
 	}
 	addr := iotago.Ed25519AddressFromPubKey(keyPair.PublicKey)
 	allOuts, ids := ch.Env.utxoDB.GetUnspentOutputs(&addr)
@@ -357,8 +357,8 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 // any changes in the ledger. It returns the amount of gas consumed.
 // if useFakeBalance is `true` the request will be executed as if the sender had enough iotas to cover the maximum gas allowed
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
-func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBalance ...bool) (gas, gasFee uint64, err error) {
-	if len(useFakeBalance) > 0 && useFakeBalance[0] {
+func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBudget ...bool) (gas, gasFee uint64, err error) {
+	if len(useFakeBudget) > 0 && useFakeBudget[0] {
 		req.WithGasBudget(math.MaxUint64)
 	}
 	r, err := ch.requestFromParams(req, keyPair)
@@ -373,9 +373,12 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 // any changes in the ledger. It returns the amount of gas consumed.
 // if useFakeBalance is `true` the request will be executed as if the sender had enough iotas to cover the maximum gas allowed
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
-func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBalance ...bool) (gas, gasFee uint64, err error) {
-	if len(useFakeBalance) > 0 && useFakeBalance[0] {
+func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair, useMaxBalance ...bool) (gas, gasFee uint64, err error) {
+	if len(useMaxBalance) > 0 && useMaxBalance[0] {
 		req.WithGasBudget(math.MaxUint64)
+	}
+	if keyPair == nil {
+		keyPair = &ch.OriginatorPrivateKey
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res := ch.estimateGas(r)
