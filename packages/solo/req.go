@@ -373,8 +373,8 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 // any changes in the ledger. It returns the amount of gas consumed.
 // if useFakeBalance is `true` the request will be executed as if the sender had enough iotas to cover the maximum gas allowed
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
-func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBalance ...bool) (gas, gasFee uint64, err error) {
-	if len(useFakeBalance) > 0 && useFakeBalance[0] {
+func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair, useMaxBalance ...bool) (gas, gasFee uint64, err error) {
+	if len(useMaxBalance) > 0 && useMaxBalance[0] {
 		req.WithGasBudget(math.MaxUint64)
 	}
 	if keyPair == nil {

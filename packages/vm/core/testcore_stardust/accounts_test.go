@@ -558,8 +558,6 @@ func (v *testParams) createFoundryAndMint(sch iotago.TokenScheme, tag *iotago.To
 		CreateFoundry()
 	require.NoError(v.env.T, err)
 	// mint some tokens for the user
-	//err = v.ch.SendFromL1ToL2AccountIotas(IotasDepositFee, 1000, v.ch.CommonAccount(), v.user)
-	//require.NoError(v.env.T, err)
 	err = v.ch.MintTokens(sn, amount, v.user)
 	require.NoError(v.env.T, err)
 	// check the balance of the user

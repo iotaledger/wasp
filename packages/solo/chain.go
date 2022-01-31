@@ -119,20 +119,19 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 		// blob exists, return hash of existing
 		return expectedHash, nil
 	}
-	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...).
-		WithGasBudget(math.MaxUint64)
-	g, gFee, err := ch.EstimateGasOffLedger(req, nil)
-	require.NoError(ch.Env.T, err)
-
-	ch.Env.T.Logf("estimate gas: %d, gasFee: %d", g, gFee)
-
+	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...)
+	g, _, err := ch.EstimateGasOffLedger(req, nil, true)
+	if err != nil {
+		return [32]byte{}, err
+	}
+	req.WithGasBudget(g)
 	res, err := ch.PostRequestOffLedger(req, user)
 	if err != nil {
 		return
 	}
 	resBin := res.MustGet(blob.ParamHash)
 	if resBin == nil {
-		err = fmt.Errorf("internal error: no hash returned")
+		err = xerrors.Errorf("internal error: no hash returned")
 		return
 	}
 	ret, err = codec.DecodeHashValue(resBin)

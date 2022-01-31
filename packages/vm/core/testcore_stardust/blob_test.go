@@ -127,4 +127,41 @@ func TestUploadWasm(t *testing.T) {
 		//err = ch.DeployContract(nil, "testCore", hwasm)
 		//require.NoError(t, err)
 	})
+	t.Run("list blobs", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain(nil, "chain1")
+		ch.MustDepositIotasToL2(100_000, nil)
+		_, err := ch.UploadWasmFromFile(nil, wasmFile)
+		require.NoError(t, err)
+
+		ret, err := ch.CallView(blob.Contract.Name, blob.FuncListBlobs.Name)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, len(ret))
+
+	})
 }
+
+// TODO working on it
+//func TestBigBlob(t *testing.T) {
+//	env := solo.New(t)
+//	ch := env.NewChain(nil, "chain1")
+//
+//	// uploada blob that is too big
+//	bigblobSize := governance.DefaultMaxBlobSize + 100
+//	blobBin := make([]byte, bigblobSize)
+//
+//	_, err := ch.UploadWasm(&ch.OriginatorPrivateKey, blobBin)
+//	require.Error(t, err)
+//
+//	req := solo.NewCallParams(
+//		governance.Contract.Name, governance.FuncSetChainInfo.Name,
+//		governance.ParamMaxBlobSizeUint32, bigblobSize,
+//	)
+//	// update max blob size to allow for bigger blobs_
+//	_, err = ch.PostRequestSync(req, nil)
+//	require.NoError(t, err)
+//
+//	// blob upload must now succeed
+//	_, err = ch.UploadWasm(&ch.OriginatorPrivateKey, blobBin)
+//	require.NoError(t, err)
+//}
