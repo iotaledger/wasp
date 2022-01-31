@@ -214,6 +214,9 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		return nil, err
 	}
 
+	if tx.Essence.Outputs[0].Deposit() == 0 {
+		return nil, xerrors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustDustDeposit: true}")
+	}
 	return tx, err
 }
 
