@@ -99,8 +99,8 @@ impl ScMutableAddress<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, val: &ScAddress) {
-        self.proxy.set(address_to_bytes(&val));
+    pub fn set_value(&self, value: &ScAddress) {
+        self.proxy.set(address_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {

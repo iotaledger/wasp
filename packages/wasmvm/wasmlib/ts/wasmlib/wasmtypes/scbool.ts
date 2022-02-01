@@ -12,7 +12,7 @@ export const ScBoolTrue = 0xff
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export function boolDecode(dec: WasmDecoder): bool {
-    return dec.byte() != 0;
+    return dec.byte() != ScBoolFalse;
 }
 
 export function boolEncode(enc: WasmEncoder, value: bool): void {

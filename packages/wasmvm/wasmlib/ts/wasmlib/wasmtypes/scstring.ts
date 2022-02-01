@@ -46,7 +46,7 @@ export class ScImmutableString {
     }
 
     toString(): string {
-        return this.value().toString();
+        return this.value();
     }
 
     value(): string {

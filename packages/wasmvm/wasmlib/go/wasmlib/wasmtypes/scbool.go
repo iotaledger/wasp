@@ -12,7 +12,7 @@ const (
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func BoolDecode(dec *WasmDecoder) bool {
-	return dec.Byte() != 0
+	return dec.Byte() != ScBoolFalse
 }
 
 func BoolEncode(enc *WasmEncoder, value bool) {

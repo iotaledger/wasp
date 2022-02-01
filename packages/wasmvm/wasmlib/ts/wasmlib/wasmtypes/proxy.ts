@@ -25,14 +25,18 @@ export class ScProxy {
 }
 
 export class Proxy {
-    static proxies: u32 = 0;
-    id: u32;
     _key: u8[] = [];
     kvStore: IKvStore;
 
     constructor(kvStore: IKvStore) {
-        this.id = Proxy.proxies++;
         this.kvStore = kvStore;
+    }
+
+    // alternative constructor
+    protected proxy(kvStore: IKvStore, key: u8[]): Proxy {
+        const res = new Proxy(kvStore);
+        res._key = key;
+        return res;
     }
 
     // Append returns a Proxy for a newly appended null element
@@ -57,7 +61,7 @@ export class Proxy {
     // ClearMap clears a map by deleting all elements
     // TODO Note that this does not delete recursive container elements
     public clearMap(): void {
-        // TODO clearPrefix
+        // TODO clear prefix
 
         // clear the length counter
         this.delete();
@@ -71,7 +75,8 @@ export class Proxy {
     protected element(index: u32): Proxy {
         let enc = new WasmEncoder();
         uint32Encode(enc, index);
-        return this.sub('#'.charCodeAt(0) as u8, enc.buf());
+        // 0x23 is '#'
+        return this.sub(0x23, enc.buf());
     }
 
     exists(): bool {
@@ -107,7 +112,8 @@ export class Proxy {
 
     // Key gets a Proxy for an element of a Map by its key
     public key(key: u8[]): Proxy {
-        return this.sub('.'.charCodeAt(0) as u8, key);
+        // 0x2e is '.'
+        return this.sub(0x2e, key);
     }
 
     // Length returns the number of elements in an Array
@@ -120,12 +126,6 @@ export class Proxy {
         }
         const dec = new WasmDecoder(buf)
         return uint32Decode(dec);
-    }
-
-    protected proxy(kvStore: IKvStore, key: u8[]): Proxy {
-        const res = new Proxy(kvStore);
-        res._key = key;
-        return res;
     }
 
     // Root returns a Proxy for an element of a root container (Params/Results/State).

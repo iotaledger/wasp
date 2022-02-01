@@ -99,8 +99,8 @@ impl ScMutableHash<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, val: &ScHash) {
-        self.proxy.set(hash_to_bytes(&val));
+    pub fn set_value(&self, value: &ScHash) {
+        self.proxy.set(hash_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {

@@ -102,8 +102,8 @@ impl ScMutableColor<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, val: &ScColor) {
-        self.proxy.set(color_to_bytes(&val));
+    pub fn set_value(&self, value: &ScColor) {
+        self.proxy.set(color_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {

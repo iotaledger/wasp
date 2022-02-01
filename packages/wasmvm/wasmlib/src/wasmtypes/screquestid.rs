@@ -99,8 +99,8 @@ impl ScMutableRequestId<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, val: &ScRequestId) {
-        self.proxy.set(request_id_to_bytes(&val));
+    pub fn set_value(&self, value: &ScRequestId) {
+        self.proxy.set(request_id_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {

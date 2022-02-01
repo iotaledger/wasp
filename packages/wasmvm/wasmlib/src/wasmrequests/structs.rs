@@ -8,7 +8,7 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use wasmlib::*;
+use crate::*;
 use wasmlib::host::*;
 
 #[derive(Clone)]

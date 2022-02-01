@@ -99,8 +99,8 @@ impl ScMutableHname<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, val: &ScHname) {
-        self.proxy.set(hname_to_bytes(&val));
+    pub fn set_value(&self, value: &ScHname) {
+        self.proxy.set(hname_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {

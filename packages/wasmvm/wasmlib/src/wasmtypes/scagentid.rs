@@ -99,8 +99,8 @@ impl ScMutableAgentId<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, val: &ScAgentId) {
-        self.proxy.set(agent_id_to_bytes(&val));
+    pub fn set_value(&self, value: &ScAgentId) {
+        self.proxy.set(agent_id_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {

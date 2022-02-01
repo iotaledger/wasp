@@ -13,11 +13,11 @@ pub const SC_UINT8_LENGTH: usize = 1;
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub fn uint8_decode(dec: &mut WasmDecoder) -> u8 {
-    dec.vlu_decode(8) as u8
+    dec.byte()
 }
 
 pub fn uint8_encode(enc: &mut WasmEncoder, value: u8)  {
-    enc.vlu_encode(value as u64);
+    enc.byte(value);
 }
 
 pub fn uint8_from_bytes(buf: &[u8]) -> u8 {
@@ -82,8 +82,8 @@ impl ScMutableUint8<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, val: u8) {
-        self.proxy.set(&uint8_to_bytes(val));
+    pub fn set_value(&self, value: u8) {
+        self.proxy.set(&uint8_to_bytes(value));
     }
 
     pub fn to_string(&self) -> String {

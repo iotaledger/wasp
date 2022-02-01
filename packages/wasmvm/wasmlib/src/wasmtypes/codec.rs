@@ -206,6 +206,11 @@ pub fn base58_encode(buf: &[u8]) -> String {
 }
 
 pub fn hex(buf: &[u8]) -> String {
-    //TODO
-    "".to_string()
+    let hexa = "0123456789abcdef".as_bytes();
+    let mut res: Vec<u8> =  Vec::new();
+    for b in buf {
+        res.push(hexa[*b as usize >> 4]);
+        res.push(hexa[*b as usize & 0x0f]);
+    }
+    String::from_utf8(res).expect("WTF? invalid?")
 }

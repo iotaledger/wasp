@@ -78,8 +78,8 @@ impl ScMutableUint64<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, val: u64) {
-        self.proxy.set(&uint64_to_bytes(val));
+    pub fn set_value(&self, value: u64) {
+        self.proxy.set(&uint64_to_bytes(value));
     }
 
     pub fn to_string(&self) -> String {
