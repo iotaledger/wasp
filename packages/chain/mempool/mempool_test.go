@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	//iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -50,9 +49,9 @@ func getRequestsOnLedger(t *testing.T, amount int) []*iscp.OnLedgerRequestData {
 	}
 	result := make([]*iscp.OnLedgerRequestData, amount)
 	for i := range result {
-		output, err := transaction.ExtendedOutputFromPostData(addr, iscp.Hn("dummySenderContract"), requestParams, utxo.RentStructure())
-		require.NoError(t, err)
+		output := transaction.ExtendedOutputFromPostData(addr, iscp.Hn("dummySenderContract"), requestParams, utxo.RentStructure())
 		outputID := tpkg.RandOutputID(uint16(i)).UTXOInput()
+		var err error
 		result[i], err = iscp.OnLedgerFromUTXO(output, outputID)
 		require.NoError(t, err)
 	}
