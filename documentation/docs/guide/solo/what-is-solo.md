@@ -45,7 +45,7 @@ The GoLang environment with the Rust plugin is a good combination.
 
 You can find example implementations of smart contracts (including source code
 and tests) in the Wasp repository, in the
-[contracts/rust folder](https://github.com/iotaledger/wasp/tree/master/contracts/rust).
+[contracts/wasm folder](https://github.com/iotaledger/wasp/tree/master/contracts/wasm).
 
 :::tip
 You can find the documentation for all the functionalities available in solo in [go-docs](https://pkg.go.dev/github.com/iotaledger/wasp/packages/solo).
