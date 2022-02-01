@@ -89,7 +89,11 @@ func (vmctx *VMContext) AccountID() *iscp.AgentID {
 
 func (vmctx *VMContext) AllowanceAvailable() *iscp.Assets {
 	vmctx.GasBurn(gas.BurnCodeGetAllowance)
-	return vmctx.getCallContext().allowanceAvailable.Clone()
+	allowance := vmctx.getCallContext().allowanceAvailable
+	if allowance == nil {
+		return iscp.NewEmptyAssets()
+	}
+	return allowance.Clone()
 }
 
 func (vmctx *VMContext) isOnChainAccount(agentID *iscp.AgentID) bool {

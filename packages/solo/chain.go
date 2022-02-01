@@ -205,9 +205,6 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
 //     smart contract must be made available with the call examples.AddProcessor
 func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
-	if user == nil {
-		user = &ch.OriginatorPrivateKey
-	}
 	par := codec.MakeDict(map[string]interface{}{
 		root.ParamProgramHash: programHash,
 		root.ParamName:        name,

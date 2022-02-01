@@ -208,9 +208,9 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
 
 	var originatorAddr iotago.Address
-	var origKeyPair cryptolib.KeyPair
 	if chainOriginator == nil {
-		origKeyPair, originatorAddr = env.utxoDB.NewKeyPairByIndex(1) // cryptolib.NewKeyPairFromSeed(env.seed.SubSeed(1))
+		origKeyPair := cryptolib.NewKeyPair()
+		originatorAddr = cryptolib.Ed25519AddressFromPubKey(origKeyPair.PublicKey)
 		chainOriginator = &origKeyPair
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)

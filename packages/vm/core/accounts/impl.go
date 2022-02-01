@@ -60,8 +60,16 @@ func deposit(ctx iscp.Sandbox) dict.Dict {
 func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
 
-	targetAccount := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(ParamAgentID)
-	ctx.TransferAllowedFunds(targetAccount)
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	targetAccount := par.MustGetAgentID(ParamAgentID)
+	forceOpenAccount := par.MustGetBool(ParamForceOpenAccount, false)
+
+	if forceOpenAccount {
+		ctx.TransferAllowedFundsForceCreateTarget(targetAccount)
+	} else {
+		ctx.TransferAllowedFunds(targetAccount)
+	}
+
 	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.AllowanceAvailable())
 	return nil
 }
@@ -81,20 +89,24 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	}
 	// move all allowed funds to the account of the current contract context
 	// before saving the allowance budget because after the transfer it is mutated
-	fundsToWithdraw := ctx.AllowanceAvailable().Clone()
+	fundsToWithdraw := ctx.AllowanceAvailable()
 	remains := ctx.TransferAllowedFunds(ctx.AccountID())
 
 	// por las dudas
 	ctx.Requiref(remains.IsEmpty(), "internal: allowance left after must be empty")
 
-	ctx.Send(iscp.RequestParameters{
+	a := ctx.Caller() // TODO remove
+	println(a)
+
+	tx := iscp.RequestParameters{
 		TargetAddress: ctx.Caller().Address(),
 		Assets:        fundsToWithdraw,
 		Metadata: &iscp.SendMetadata{
 			TargetContract: ctx.Caller().Hname(),
 			// other metadata parameters are not important for withdrawal
 		},
-	})
+	}
+	ctx.Send(tx)
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
 	return nil
 }

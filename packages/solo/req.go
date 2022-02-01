@@ -457,6 +457,7 @@ func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) bool {
 // requests in the mempool of the chain both become equal to the specified number
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
 	return ch.WaitUntil(func(mstats mempool.MempoolInfo) bool {
+		println("Waiting for requests", mstats.InBufCounter)
 		return mstats.InBufCounter == numReq && mstats.OutPoolCounter == numReq
 	}, maxWait...)
 }

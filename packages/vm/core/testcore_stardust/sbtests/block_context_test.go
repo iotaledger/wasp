@@ -10,7 +10,7 @@ import (
 
 func TestBasicBlockContext1(t *testing.T) {
 	_, ch := setupChain(t, nil)
-	_, _ = setupTestSandboxSC(t, ch, nil, false)
+	setupTestSandboxSC(t, ch, nil, false)
 
 	ch.MustDepositIotasToL2(10_000, nil)
 
@@ -22,7 +22,7 @@ func TestBasicBlockContext1(t *testing.T) {
 
 func TestBasicBlockContext2(t *testing.T) {
 	_, ch := setupChain(t, nil)
-	_, _ = setupTestSandboxSC(t, ch, nil, false)
+	setupTestSandboxSC(t, ch, nil, false)
 
 	ch.MustDepositIotasToL2(10_000, nil)
 

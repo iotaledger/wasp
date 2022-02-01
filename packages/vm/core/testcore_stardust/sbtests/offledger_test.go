@@ -16,7 +16,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		t.SkipNow() // TODO EMPTY BLOCKS NOT SUPPORTED IN SOLO
 
 		env, chain := setupChain(t, nil)
-		cAID, _ := setupTestSandboxSC(t, chain, nil, w)
+		cAID := setupTestSandboxSC(t, chain, nil, w)
 
 		user, userAddr := env.NewKeyPairWithFunds()
 		userAgentID := iscp.NewAgentID(userAddr, 0)
@@ -40,7 +40,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 func TestOffLedgerSuccess(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		env, ch := setupChain(t, nil)
-		cAID, _ := setupTestSandboxSC(t, ch, nil, w)
+		cAID := setupTestSandboxSC(t, ch, nil, w)
 
 		user, userAddr := env.NewKeyPairWithFunds()
 		userAgentID := iscp.NewAgentID(userAddr, 0)
