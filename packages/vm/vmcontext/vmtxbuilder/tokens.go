@@ -59,7 +59,7 @@ func (n *nativeTokenBalance) identicalInOut() bool {
 		panic("identicalExtendedOutputs: internal inconsistency 1")
 	case n.in == nil || n.out == nil:
 		return false
-	case !n.in.Address.Equal(n.out.Address):
+	case !n.in.Ident().Equal(n.out.Ident()):
 		return false
 	case n.in.Amount != n.out.Amount:
 		return false
@@ -88,12 +88,14 @@ func cloneInternalExtendedOutputOrNil(o *iotago.ExtendedOutput) *iotago.Extended
 
 func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.AliasID, nativeTokenID iotago.NativeTokenID) *iotago.ExtendedOutput {
 	return &iotago.ExtendedOutput{
-		Address: aliasID.ToAddress(),
-		Amount:  txb.dustDepositAssumption.NativeTokenOutput,
+		Amount: txb.dustDepositAssumption.NativeTokenOutput,
 		NativeTokens: iotago.NativeTokens{{
 			ID:     nativeTokenID,
 			Amount: big.NewInt(0),
 		}},
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: aliasID.ToAddress()},
+		},
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
 				Address: aliasID.ToAddress(),

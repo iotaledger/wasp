@@ -54,10 +54,11 @@ func MakeExtendedOutput(
 		assets = &iscp.Assets{}
 	}
 	ret := &iotago.ExtendedOutput{
-		Address:      targetAddress,
 		Amount:       assets.Iotas,
 		NativeTokens: assets.Tokens,
-		Blocks:       iotago.FeatureBlocks{},
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: targetAddress},
+		},
 	}
 	if senderAddress != nil {
 		ret.Blocks = append(ret.Blocks, &iotago.SenderFeatureBlock{

@@ -160,7 +160,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	output, _ := vmctx.req.AsOnLedger().Output().(iotago.TransIndepIdentOutput)
 
 	unlockable := output.UnlockableBy(vmctx.task.AnchorOutput.AliasID.ToAddress(), &iotago.ExternalUnlockParameters{
-		ConfUnix:    uint64(vmctx.finalStateTimestamp.Unix()),
+		ConfUnix:    uint32(vmctx.finalStateTimestamp.Unix()),
 		ConfMsIndex: vmctx.task.TimeAssumption.MilestoneIndex,
 	})
 

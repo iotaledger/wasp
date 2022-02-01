@@ -23,7 +23,6 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	}
 
 	f := &iotago.FoundryOutput{
-		Address:           txb.anchorOutput.AliasID.ToAddress(),
 		Amount:            0,
 		NativeTokens:      nil,
 		SerialNumber:      txb.nextFoundrySerialNumber(),
@@ -31,7 +30,10 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		CirculatingSupply: big.NewInt(0),
 		MaximumSupply:     maxSupply,
 		TokenScheme:       scheme,
-		Blocks:            nil,
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: txb.anchorOutput.AliasID.ToAddress()},
+		},
+		Blocks: nil,
 	}
 	if len(metadata) > 0 {
 		f.Blocks = iotago.FeatureBlocks{&iotago.MetadataFeatureBlock{
@@ -222,7 +224,7 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 		panic("identicalFoundries: inconsistency, foundry is not expected not contain native tokens")
 	case f1.MaximumSupply.Cmp(f2.MaximumSupply) != 0:
 		panic("identicalFoundries: inconsistency, maximum supply is immutable")
-	case !f1.Address.Equal(f2.Address):
+	case !f1.Ident().Equal(f2.Ident()):
 		panic("identicalFoundries: inconsistency, addresses must always be equal")
 	case f1.TokenScheme != f2.TokenScheme:
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token schemes must be equal")
