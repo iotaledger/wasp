@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -54,7 +53,6 @@ type ChainCore interface {
 type ChainEntry interface {
 	ReceiveTransaction(*iotago.Transaction)
 	ReceiveState(stateOutput *iotago.AliasOutput, timestamp time.Time)
-
 	Dismiss(reason string)
 	IsDismissed() bool
 }
