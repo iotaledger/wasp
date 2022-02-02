@@ -150,7 +150,8 @@ type StateAnchor struct {
 }
 
 type SendOptions struct {
-	Timelock *TimeData
+	Timelock   *TimeData
+	Expiration *TimeData
 }
 
 // RequestMetadata represents content of the data payload of the output

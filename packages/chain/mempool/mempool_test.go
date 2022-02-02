@@ -393,48 +393,68 @@ func TestTimeLock(t *testing.T) {
 	testStatsFun()
 }
 
-/*func TestFallbackOptions(t *testing.T) {
+func TestExpiration(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(chainAddress, rdr, testlogger.NewLogger(t), mempoolMetrics)
-	requests := getRequestsOnLedger(t, 3)
-
-	address := ledgerstate.NewAliasAddress([]byte{1, 2, 3})
-	validDeadline := time.Now().Add(FallbackDeadlineMinAllowedInterval).Add(time.Second)
-	pastDeadline := time.Now().Add(-time.Second)
-	requests[1].Output().(*iotago.ExtendedOutput).WithFallbackOptions(address, validDeadline)
-	requests[2].Output().(*iotago.ExtendedOutput).WithFallbackOptions(address, pastDeadline)
-
-	testStatsFun := func() { // Info does not change after requests are added to the mempool
-		stats := pool.Info()
-		require.EqualValues(t, 3, stats.InPoolCounter)
-		require.EqualValues(t, 0, stats.OutPoolCounter)
-		require.EqualValues(t, 3, stats.TotalPool)
-		require.EqualValues(t, 2, stats.ReadyCounter)
-	}
+	start := time.Now()
+	requests := getRequestsOnLedger(t, 4, func(i int, p *iscp.RequestParameters) {
+		switch i {
+		case 1:
+			// expired
+			p.Options = &iscp.SendOptions{Expiration: &iscp.TimeData{Time: start.Add(-FallbackDeadlineMinAllowedInterval)}}
+		case 2:
+			// will expire soon
+			p.Options = &iscp.SendOptions{Expiration: &iscp.TimeData{Time: start.Add(FallbackDeadlineMinAllowedInterval / 2)}}
+		case 3:
+			// not expired yet
+			p.Options = &iscp.SendOptions{Expiration: &iscp.TimeData{Time: start.Add(FallbackDeadlineMinAllowedInterval * 2)}}
+		}
+	})
 
 	pool.ReceiveRequests(
-		requests[0], // + No fallback options
-		requests[1], // + Valid deadline
-		requests[2], // + Expired deadline
+		requests[0], // + No expiration
+		requests[1], // + Expired
+		requests[2], // + Will expire soon
+		requests[3], // + Still valid
 	)
 
 	require.True(t, pool.WaitRequestInPool(requests[0].ID()))
 	require.True(t, pool.WaitRequestInPool(requests[1].ID()))
 	require.True(t, pool.WaitRequestInPool(requests[2].ID()))
-	testStatsFun()
+	require.True(t, pool.WaitRequestInPool(requests[3].ID()))
 
-	ready := pool.ReadyNow()
-	require.True(t, len(ready) == 2)
+	stats := pool.Info(iscp.TimeData{Time: start})
+	require.EqualValues(t, 4, stats.InPoolCounter)
+	require.EqualValues(t, 0, stats.OutPoolCounter)
+	require.EqualValues(t, 4, stats.TotalPool)
+	require.EqualValues(t, 2, stats.ReadyCounter)
+
+	ready := pool.ReadyNow(iscp.TimeData{Time: start})
+	require.Len(t, ready, 2)
 	require.Contains(t, ready, requests[0])
-	require.Contains(t, ready, requests[1])
+	require.Contains(t, ready, requests[3])
 
-	// request with the invalid deadline should have been removed from the mempool
-	time.Sleep(500 * time.Millisecond) // just to let the `RemoveRequests` go routine get the pool mutex before we look into it
-	require.Nil(t, pool.GetRequest(requests[2].ID()))
-	require.Len(t, pool.(*mempool).pool, 2)
-}*/
+	// requests with the invalid deadline should have been removed from the mempool
+	ok := false
+	for i := 0; i < 100; i++ {
+		// just to let the `RemoveRequests` go routine get the pool mutex before we look into it
+		time.Sleep(10 * time.Millisecond)
+		if pool.GetRequest(requests[1].ID()) != nil {
+			continue
+		}
+		if pool.GetRequest(requests[2].ID()) != nil {
+			continue
+		}
+		if len(pool.(*mempool).pool) != 2 {
+			continue
+		}
+		ok = true
+		break
+	}
+	require.True(t, ok)
+}
 
 // Test if ReadyFromIDs function correctly handle non-existing or removed IDs
 func TestReadyFromIDs(t *testing.T) {

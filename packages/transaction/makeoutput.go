@@ -81,6 +81,15 @@ func MakeExtendedOutput(
 			}
 			ret.Conditions = append(ret.Conditions, cond)
 		}
+		if options.Expiration != nil {
+			cond := &iotago.ExpirationUnlockCondition{
+				MilestoneIndex: options.Expiration.MilestoneIndex,
+			}
+			if !options.Expiration.Time.IsZero() {
+				cond.UnixTime = uint32(options.Expiration.Time.Unix())
+			}
+			ret.Conditions = append(ret.Conditions, cond)
+		}
 	}
 
 	// Adjust to minimum dust deposit, if needed

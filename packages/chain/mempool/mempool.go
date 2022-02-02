@@ -277,10 +277,11 @@ func (m *mempool) isRequestReady(ref *requestRef, currentTime iscp.TimeData) (is
 		return false, true
 	}
 
-	if !m.isUnlockable(ref, currentTime) {
-		return false, isExpired(ref, currentTime)
+	if isExpired(ref, currentTime) {
+		return false, true
 	}
-	return true, false
+
+	return m.isUnlockable(ref, currentTime), false
 }
 
 // ReadyNow returns preliminary batch of requests for consensus.
