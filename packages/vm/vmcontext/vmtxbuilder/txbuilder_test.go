@@ -34,7 +34,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 			Tokens: iotago.NativeTokens{{id, big.NewInt(int64(amountNative))}},
 		}
 	}
-	out, _ := transaction.MakeExtendedOutput(
+	out := transaction.MakeExtendedOutput(
 		txb.anchorOutput.AliasID.ToAddress(),
 		nil,
 		assets,
@@ -63,7 +63,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 			},
 		},
 	}
-	exout, _ := transaction.ExtendedOutputFromPostData(
+	exout := transaction.ExtendedOutputFromPostData(
 		txb.anchorOutput.AliasID.ToAddress(),
 		iscp.Hn("test"),
 		iscp.RequestParameters{
@@ -89,14 +89,16 @@ func TestTxBuilderBasic(t *testing.T) {
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
 	anchor := &iotago.AliasOutput{
-		Amount:               initialTotalIotas,
-		NativeTokens:         nil,
-		AliasID:              aliasID,
-		StateController:      addr,
-		GovernanceController: addr,
-		StateIndex:           0,
-		StateMetadata:        stateMetadata[:],
-		FoundryCounter:       0,
+		Amount:       initialTotalIotas,
+		NativeTokens: nil,
+		AliasID:      aliasID,
+		Conditions: iotago.UnlockConditions{
+			&iotago.StateControllerAddressUnlockCondition{Address: addr},
+			&iotago.GovernorAddressUnlockCondition{Address: addr},
+		},
+		StateIndex:     0,
+		StateMetadata:  stateMetadata[:],
+		FoundryCounter: 0,
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
 				Address: aliasID.ToAddress(),
@@ -211,14 +213,16 @@ func TestTxBuilderConsistency(t *testing.T) {
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
 	anchor := &iotago.AliasOutput{
-		Amount:               initialTotalIotas,
-		NativeTokens:         nil,
-		AliasID:              aliasID,
-		StateController:      addr,
-		GovernanceController: addr,
-		StateIndex:           0,
-		StateMetadata:        stateMetadata[:],
-		FoundryCounter:       0,
+		Amount:       initialTotalIotas,
+		NativeTokens: nil,
+		AliasID:      aliasID,
+		Conditions: iotago.UnlockConditions{
+			&iotago.StateControllerAddressUnlockCondition{Address: addr},
+			&iotago.GovernorAddressUnlockCondition{Address: addr},
+		},
+		StateIndex:     0,
+		StateMetadata:  stateMetadata[:],
+		FoundryCounter: 0,
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
 				Address: aliasID.ToAddress(),
@@ -632,7 +636,7 @@ func TestDustDeposit(t *testing.T) {
 	})
 	t.Run("adjusts the output amount to the correct bytecost when needed", func(t *testing.T) {
 		assets := iscp.NewEmptyAssets()
-		out, _ := transaction.MakeExtendedOutput(
+		out := transaction.MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
@@ -644,7 +648,7 @@ func TestDustDeposit(t *testing.T) {
 	})
 	t.Run("keeps the same amount of iotas when enough for dust cost", func(t *testing.T) {
 		assets := iscp.NewAssets(10000, nil)
-		out, _ := transaction.MakeExtendedOutput(
+		out := transaction.MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
@@ -662,14 +666,16 @@ func TestFoundries(t *testing.T) {
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
 	anchor := &iotago.AliasOutput{
-		Amount:               initialTotalIotas,
-		NativeTokens:         nil,
-		AliasID:              aliasID,
-		StateController:      addr,
-		GovernanceController: addr,
-		StateIndex:           0,
-		StateMetadata:        stateMetadata[:],
-		FoundryCounter:       0,
+		Amount:       initialTotalIotas,
+		NativeTokens: nil,
+		AliasID:      aliasID,
+		Conditions: iotago.UnlockConditions{
+			&iotago.StateControllerAddressUnlockCondition{Address: addr},
+			&iotago.GovernorAddressUnlockCondition{Address: addr},
+		},
+		StateIndex:     0,
+		StateMetadata:  stateMetadata[:],
+		FoundryCounter: 0,
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
 				Address: aliasID.ToAddress(),
@@ -747,7 +753,7 @@ func TestSerDe(t *testing.T) {
 			GasBudget:      0,
 		}
 		assets := iscp.NewEmptyAssets()
-		out, _ := transaction.MakeExtendedOutput(
+		out := transaction.MakeExtendedOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
@@ -760,14 +766,18 @@ func TestSerDe(t *testing.T) {
 		outBack := &iotago.ExtendedOutput{}
 		_, err = outBack.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
-		require.True(t, out.Address.Equal(outBack.Address))
+		condSet := out.Conditions.MustSet()
+		condSetBack := outBack.Conditions.MustSet()
+		require.True(t, condSet[iotago.UnlockConditionAddress].Equal(condSetBack[iotago.UnlockConditionAddress]))
 		require.EqualValues(t, out.Amount, outBack.Amount)
 		require.EqualValues(t, 0, len(outBack.NativeTokens))
 		require.True(t, outBack.Blocks.Equal(out.Blocks))
 	})
 	t.Run("serde FoundryOutput", func(t *testing.T) {
 		out := &iotago.FoundryOutput{
-			Address:           tpkg.RandAliasAddress(),
+			Conditions: iotago.UnlockConditions{
+				&iotago.AddressUnlockCondition{Address: tpkg.RandAliasAddress()},
+			},
 			Amount:            1337,
 			NativeTokens:      nil,
 			SerialNumber:      5,
