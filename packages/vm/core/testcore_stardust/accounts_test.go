@@ -49,7 +49,7 @@ func TestDepositCheatAllowance(t *testing.T) {
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 			AddAssetsIotas(iotasSent).
 			WithGasBudget(100_000).
-			AddIotaAllowance(iotasSent),
+			AddAllowanceIotas(iotasSent),
 		sender,
 	)
 	require.Error(t, err)
@@ -626,7 +626,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	})
 	t.Run("withdraw not enough for dust", func(t *testing.T) {
 		v := initWithdrawTest(t, 10_000)
-		v.req.AddNativeTokensAllowanceVect(&iotago.NativeToken{
+		v.req.AddAllowanceNativeTokensVect(&iotago.NativeToken{
 			ID:     *v.tokenID,
 			Amount: big.NewInt(100),
 		})

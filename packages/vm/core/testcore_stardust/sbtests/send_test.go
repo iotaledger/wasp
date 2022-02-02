@@ -24,7 +24,7 @@ func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
 		AddAssetsIotas(10_000_000).
-		AddIotaAllowance(40_000). // 40k iotas = 200 outputs
+		AddAllowanceIotas(40_000). // 40k iotas = 200 outputs
 		WithGasBudget(10_000_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.Error(t, err)
@@ -48,7 +48,7 @@ func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
 	// this will SUCCEED because it will result in 4 = 800/200 outputs in the single call
 	const allowance = 800
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
-		AddIotaAllowance(allowance).
+		AddAllowanceIotas(allowance).
 		WithGasBudget(200_000)
 	tx, _, err := ch.PostRequestSyncTx(req, wallet)
 	require.NoError(t, err)
@@ -73,7 +73,7 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 	// this will FAIL because it will result in 1000/200 = 5 outputs in the single call
 	const allowance = 1000
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
-		AddIotaAllowance(allowance).
+		AddAllowanceIotas(allowance).
 		WithGasBudget(400_000)
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vmcontext.ErrExceededPostedOutputLimit)
@@ -158,7 +158,7 @@ func testPingIotas1(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
 		AddAssetsIotas(expectedBack + 1_000). // add extra iotas besides allowance in order to estimate the gas fees
-		AddIotaAllowance(expectedBack)
+		AddAllowanceIotas(expectedBack)
 
 	gas, gasFee, err := ch.EstimateGasOnLedger(req, user, true)
 	require.NoError(t, err)

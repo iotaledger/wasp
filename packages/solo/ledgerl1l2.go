@@ -282,7 +282,7 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 		accounts.ParamDestroyTokens, true,
 	).WithGasBudget(DestroyTokensGasBudgetIotas).AddAssetsIotas(1000)
 	req.AddAssetsNativeTokens(tokenID, amount)
-	req.AddNativeTokensAllowance(tokenID, amount)
+	req.AddAllowanceNativeTokens(tokenID, amount)
 	if user == nil {
 		user = &ch.OriginatorPrivateKey
 	}

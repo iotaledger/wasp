@@ -382,9 +382,16 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRecei
 }
 
 // GetRequestReceiptsForBlock returns all request log records for a particular block
-func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32) []*blocklog.RequestReceipt {
+func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.RequestReceipt {
+	var blockIdx uint32
+	if len(blockIndex) == 0 {
+		blockIdx = ch.GetLatestBlockInfo().BlockIndex
+	} else {
+		blockIdx = blockIndex[0]
+	}
+
 	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestReceiptsForBlock.Name,
-		blocklog.ParamBlockIndex, blockIndex)
+		blocklog.ParamBlockIndex, blockIdx)
 	if err != nil {
 		return nil
 	}
@@ -395,7 +402,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32) []*blocklog.Reque
 		require.NoError(ch.Env.T, err)
 		ret[i], err = blocklog.RequestReceiptFromBytes(data)
 		require.NoError(ch.Env.T, err)
-		ret[i].WithBlockData(blockIndex, uint16(i))
+		ret[i].WithBlockData(blockIdx, uint16(i))
 	}
 	return ret
 }

@@ -74,17 +74,17 @@ func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
 	return r
 }
 
-func (r *CallParams) AddIotaAllowance(amount uint64) *CallParams {
+func (r *CallParams) AddAllowanceIotas(amount uint64) *CallParams {
 	return r.AddAllowance(iscp.NewAssets(amount, nil))
 }
 
-func (r *CallParams) AddNativeTokensAllowanceVect(tokens ...*iotago.NativeToken) *CallParams {
+func (r *CallParams) AddAllowanceNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
 	return r.AddAllowance(&iscp.Assets{
 		Tokens: tokens,
 	})
 }
 
-func (r *CallParams) AddNativeTokensAllowance(id *iotago.NativeTokenID, amount interface{}) *CallParams {
+func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount interface{}) *CallParams {
 	return r.AddAllowance(&iscp.Assets{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *id,
@@ -292,7 +292,6 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 		return nil, xerrors.Errorf("request was skipped")
 	}
 	res := results[0]
-	ch.lastReceipt = res.Receipt
 	return res.Return, res.Error
 }
 
@@ -304,8 +303,13 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 	return tx, res, receipt.Error()
 }
 
+// LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
 func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
-	return ch.lastReceipt
+	lastBlockReceipts := ch.GetRequestReceiptsForBlock()
+	if len(lastBlockReceipts) == 0 {
+		return nil
+	}
+	return lastBlockReceipts[len(lastBlockReceipts)-1]
 }
 
 func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptolib.KeyPair) error {
@@ -352,7 +356,6 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	require.NoError(ch.Env.T, err)
 	results := ch.runRequestsSync(reqs, "post")
 	res := results[0]
-	ch.lastReceipt = res.Receipt
 	return tx, res.Receipt, res.Return, res.Error
 }
 
