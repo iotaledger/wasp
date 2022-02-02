@@ -239,7 +239,7 @@ func isUnlockable(ref *requestRef, currentTime time.Time) bool {
 	output, _ := ref.req.AsOnLedger().Output().(iotago.TransIndepIdentOutput)
 
 	unlockable := output.UnlockableBy(ref.req.SenderAddress(), &iotago.ExternalUnlockParameters{
-		ConfUnix: uint64(currentTime.Unix()),
+		ConfUnix: uint32(currentTime.Unix()),
 	})
 
 	return unlockable

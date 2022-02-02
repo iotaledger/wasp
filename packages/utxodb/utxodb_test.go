@@ -5,6 +5,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/stretchr/testify/require"
@@ -70,23 +71,33 @@ func TestDoubleSpend(t *testing.T) {
 	tx1ID, err := tx1.ID()
 	require.NoError(t, err)
 
-	spend2, err := iotago.NewTransactionBuilder().
-		AddInput(&iotago.ToBeSignedUTXOInput{Address: addr1, Input: &iotago.UTXOInput{
+	spend2, err := builder.NewTransactionBuilder().
+		AddInput(&builder.ToBeSignedUTXOInput{Address: addr1, Input: &iotago.UTXOInput{
 			TransactionID:          *tx1ID,
 			TransactionOutputIndex: 0,
 		}}).
-		AddOutput(&iotago.ExtendedOutput{Address: addr2, Amount: FundsFromFaucetAmount}).
+		AddOutput(&iotago.ExtendedOutput{
+			Amount: FundsFromFaucetAmount,
+			Conditions: iotago.UnlockConditions{
+				&iotago.AddressUnlockCondition{Address: addr2},
+			},
+		}).
 		Build(u.deSeriParams(), key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend2)
 	require.NoError(t, err)
 
-	spend3, err := iotago.NewTransactionBuilder().
-		AddInput(&iotago.ToBeSignedUTXOInput{Address: addr1, Input: &iotago.UTXOInput{
+	spend3, err := builder.NewTransactionBuilder().
+		AddInput(&builder.ToBeSignedUTXOInput{Address: addr1, Input: &iotago.UTXOInput{
 			TransactionID:          *tx1ID,
 			TransactionOutputIndex: 0,
 		}}).
-		AddOutput(&iotago.ExtendedOutput{Address: addr3, Amount: FundsFromFaucetAmount}).
+		AddOutput(&iotago.ExtendedOutput{
+			Amount: FundsFromFaucetAmount,
+			Conditions: iotago.UnlockConditions{
+				&iotago.AddressUnlockCondition{Address: addr3},
+			},
+		}).
 		Build(u.deSeriParams(), key1Signer)
 	require.NoError(t, err)
 	err = u.AddToLedger(spend3)

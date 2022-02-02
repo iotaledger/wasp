@@ -72,8 +72,8 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, *iotag
 		IsOrigin:             isOrigin,
 		OutputID:             iotago.OutputIDFromTransactionIDAndIndex(*txid, 0),
 		ChainID:              iscp.ChainIDFromAliasID(aliasID),
-		StateController:      anchorOutput.StateController,
-		GovernanceController: anchorOutput.GovernanceController,
+		StateController:      anchorOutput.StateController(),
+		GovernanceController: anchorOutput.GovernorAddress(),
 		StateIndex:           anchorOutput.StateIndex,
 		StateData:            sd,
 		Deposit:              anchorOutput.Amount,
@@ -187,10 +187,11 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 		return nil, nil
 	}
 	ret := &iotago.ExtendedOutput{
-		Address:      senderAddress,
 		Amount:       remIotas,
 		NativeTokens: iotago.NativeTokens{},
-		Blocks:       nil,
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: senderAddress},
+		},
 	}
 	for id, b := range remTokens {
 		ret.NativeTokens = append(ret.NativeTokens, &iotago.NativeToken{

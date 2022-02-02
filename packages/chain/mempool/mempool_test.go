@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	//iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -33,26 +32,29 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 	return ret, vs
 }
 
-func getRequestsOnLedger(t *testing.T, amount int) []*iscp.OnLedgerRequestData {
+func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestParameters)) []*iscp.OnLedgerRequestData {
 	utxo := utxodb.New()
 	addr := tpkg.RandEd25519Address()
-	requestParams := iscp.RequestParameters{
-		TargetAddress: tpkg.RandEd25519Address(),
-		Assets:        nil,
-		Metadata: &iscp.SendMetadata{
-			TargetContract: iscp.Hn("dummyTargetContract"),
-			EntryPoint:     iscp.Hn("dummyEP"),
-			Params:         dict.New(),
-			Allowance:      nil,
-			GasBudget:      1000,
-		},
-		AdjustToMinimumDustDeposit: true,
-	}
 	result := make([]*iscp.OnLedgerRequestData, amount)
 	for i := range result {
-		output, err := transaction.ExtendedOutputFromPostData(addr, iscp.Hn("dummySenderContract"), requestParams, utxo.RentStructure())
-		require.NoError(t, err)
+		requestParams := iscp.RequestParameters{
+			TargetAddress: tpkg.RandEd25519Address(),
+			Assets:        nil,
+			Metadata: &iscp.SendMetadata{
+				TargetContract: iscp.Hn("dummyTargetContract"),
+				EntryPoint:     iscp.Hn("dummyEP"),
+				Params:         dict.New(),
+				Allowance:      nil,
+				GasBudget:      1000,
+			},
+			AdjustToMinimumDustDeposit: true,
+		}
+		if len(f) == 1 {
+			f[0](i, &requestParams)
+		}
+		output := transaction.ExtendedOutputFromPostData(addr, iscp.Hn("dummySenderContract"), requestParams, utxo.RentStructure())
 		outputID := tpkg.RandOutputID(uint16(i)).UTXOInput()
+		var err error
 		result[i], err = iscp.OnLedgerFromUTXO(output, outputID)
 		require.NoError(t, err)
 	}
