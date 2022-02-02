@@ -101,7 +101,6 @@ type PeerDomainProvider interface {
 
 // PeerSender represents an interface to some remote peer.
 type PeerSender interface {
-
 	// NetID identifies the peer.
 	NetID() string
 
