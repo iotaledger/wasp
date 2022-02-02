@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"errors"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"math"
 	"math/big"
 	"runtime/debug"
@@ -20,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 )
 
@@ -50,7 +50,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 	// so far there were no panics except optimistic reader
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 
-	// catches error which is not the request or contract fault
+	// catches protocol exception error which is not the request or contract fault
 	// If it occurs, the request is just skipped
 	err = util.CatchPanicReturnError(
 		func() {
@@ -66,13 +66,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 				Return:  callRet,
 				Error:   callErr,
 			}
-		},
-		// any of this errors will result in the request being skipped (goes back to mempool)
-		vmtxbuilder.ErrInputLimitExceeded,
-		vmtxbuilder.ErrOutputLimitExceeded,
-		vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit,
-		vmtxbuilder.ErrNumberOfNativeTokensLimitExceeded,
-		vmtxbuilder.ErrBlockGasLimitExceeded,
+		}, exceptions.All...,
 	)
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
@@ -152,14 +146,14 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	return receipt, callRet, callErr
 }
 
-// TODO make it configurable (move to governance)
-const maxOuputsProducedInSingleCall = 5
-
 func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 	if r == nil {
 		return nil
 	}
 	// re-panic-ing if error it not user nor VM plugin fault.
+	if exceptions.IsProtocolLimitException(r) {
+		panic(r)
+	}
 	// Otherwise, the panic is wrapped into the returned error, including gas-related panic
 	switch err := r.(type) {
 	case *kv.DBError:
@@ -168,22 +162,6 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 		r = errors.New(err)
 	case error:
 		if errors.Is(err, coreutil.ErrorStateInvalidated) {
-			panic(err)
-		}
-		if errors.Is(err, vmtxbuilder.ErrOutputLimitExceeded) {
-			outputsCreatedByRequest := vmctx.txbuilder.NumOutputs() - vmctx.txsnapshot.NumOutputs()
-			if outputsCreatedByRequest > maxOuputsProducedInSingleCall {
-				return vmtxbuilder.ErrOutputLimitInSingleCallExceeded
-			}
-			panic(err)
-		}
-		if errors.Is(err, vmtxbuilder.ErrInputLimitExceeded) {
-			panic(err)
-		}
-		if errors.Is(err, vmtxbuilder.ErrNumberOfNativeTokensLimitExceeded) {
-			panic(err)
-		}
-		if errors.Is(err, vmtxbuilder.ErrBlockGasLimitExceeded) {
 			panic(err)
 		}
 	}

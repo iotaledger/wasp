@@ -1,6 +1,7 @@
 package vmtxbuilder
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -403,8 +404,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		err := util.CatchPanicReturnError(func() {
 			runConsume(runTimes, testAmount)
-		}, ErrInputLimitExceeded)
-		require.Error(t, err, ErrInputLimitExceeded)
+		}, exceptions.ErrInputLimitExceeded)
+		require.Error(t, err, exceptions.ErrInputLimitExceeded)
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
@@ -426,9 +427,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		err = util.CatchPanicReturnError(func() {
 			runPostRequest(runTimesOutputs, 1)
-		}, ErrOutputLimitExceeded)
+		}, exceptions.ErrOutputLimitExceeded)
 
-		require.Error(t, err, ErrOutputLimitExceeded)
+		require.Error(t, err, exceptions.ErrOutputLimitExceeded)
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
@@ -450,9 +451,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		err = util.CatchPanicReturnError(func() {
 			runPostRequestRandomly(runTimesOutputs, 1)
-		}, ErrOutputLimitExceeded)
+		}, exceptions.ErrOutputLimitExceeded)
 
-		require.Error(t, err, ErrOutputLimitExceeded)
+		require.Error(t, err, exceptions.ErrOutputLimitExceeded)
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
@@ -732,8 +733,8 @@ func TestFoundries(t *testing.T) {
 		initTest()
 		err := util.CatchPanicReturnError(func() {
 			createNFoundries(5)
-		}, ErrNotEnoughFundsForInternalDustDeposit)
-		require.Error(t, err, ErrNotEnoughFundsForInternalDustDeposit)
+		}, exceptions.ErrNotEnoughFundsForInternalDustDeposit)
+		require.Error(t, err, exceptions.ErrNotEnoughFundsForInternalDustDeposit)
 
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)

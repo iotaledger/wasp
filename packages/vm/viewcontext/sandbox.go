@@ -1,6 +1,7 @@
 package viewcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"math/big"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -8,7 +9,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -131,7 +131,7 @@ func (s *sandboxview) Gas() iscp.Gas {
 func (s *sandboxview) Burn(burnCode gas.BurnCode, par ...uint64) {
 	s.gasBurned += burnCode.Cost(par...)
 	if s.gasBurned > s.gasBudget {
-		panic(coreutil.ErrorGasBudgetExceeded)
+		panic(vmcontext.ErrGasBudgetExceeded)
 	}
 }
 

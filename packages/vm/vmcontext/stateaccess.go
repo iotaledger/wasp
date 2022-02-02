@@ -117,7 +117,7 @@ func (s chainStateWrapper) Get(name kv.Key) ([]byte, error) {
 		return v, nil
 	}
 	ret, err := s.vmctx.virtualState.KVStore().Get(name)
-	s.vmctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(ret)/100))
+	s.vmctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(ret)/100)+1) // minimum 1
 	return ret, err
 }
 
