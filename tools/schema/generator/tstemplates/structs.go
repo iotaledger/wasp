@@ -13,8 +13,8 @@ $#each structs structType
 export class $StrName {
 $#each struct structField
 
-    static fromBytes(buf: u8[]|null): $StrName {
-        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
+    static fromBytes(buf: u8[]): $StrName {
+        const dec = new wasmtypes.WasmDecoder(buf);
         const data = new $StrName();
 $#each struct structDecode
         dec.close();

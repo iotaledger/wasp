@@ -163,7 +163,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
     auction.description = description;
     auction.duration = duration;
     auction.highestBid = 0;
-    auction.highestBidder = wasmtypes.agentIDFromBytes(null);
+    auction.highestBidder = wasmtypes.agentIDFromBytes([]);
     auction.minimumBid = minimumBid;
     auction.numTokens = numTokens;
     auction.ownerMargin = ownerMargin;

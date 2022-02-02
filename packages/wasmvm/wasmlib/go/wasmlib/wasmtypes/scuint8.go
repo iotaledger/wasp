@@ -20,7 +20,7 @@ func Uint8Encode(enc *WasmEncoder, value uint8) {
 }
 
 func Uint8FromBytes(buf []byte) uint8 {
-	if buf == nil {
+	if len(buf) == 0 {
 		return 0
 	}
 	if len(buf) != ScUint8Length {

@@ -24,7 +24,7 @@ func BoolEncode(enc *WasmEncoder, value bool) {
 }
 
 func BoolFromBytes(buf []byte) bool {
-	if buf == nil {
+	if len(buf) == 0 {
 		return false
 	}
 	if len(buf) != ScBoolLength {

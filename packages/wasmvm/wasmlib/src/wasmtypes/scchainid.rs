@@ -3,6 +3,7 @@
 
 use std::convert::TryInto;
 
+use crate::*;
 use crate::wasmtypes::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -10,16 +11,20 @@ use crate::wasmtypes::*;
 pub const SC_CHAIN_ID_LENGTH: usize = 33;
 
 #[derive(PartialEq, Clone)]
-pub struct ScChainId {
+pub struct ScChainID {
     id: [u8; SC_CHAIN_ID_LENGTH],
 }
 
-impl ScChainId {
-    pub fn from_bytes(buf: &[u8]) -> ScChainId {
+impl ScChainID {
+    pub fn new(buf: &[u8]) -> ScChainID {
         chain_id_from_bytes(buf)
     }
 
-    pub fn to_bytes(&self) -> &[u8] {
+    pub fn address(&self) -> ScAddress {
+        address_from_bytes(&self.id)
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
         chain_id_to_bytes(self)
     }
 
@@ -30,29 +35,29 @@ impl ScChainId {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub fn chain_id_decode(dec: &mut WasmDecoder) -> ScChainId {
-    chain_id_from_bytes_unchecked(dec.fixed_bytes(SC_CHAIN_ID_LENGTH))
+pub fn chain_id_decode(dec: &mut WasmDecoder) -> ScChainID {
+    chain_id_from_bytes_unchecked(&dec.fixed_bytes(SC_CHAIN_ID_LENGTH))
 }
 
-pub fn chain_id_encode(enc: &mut WasmEncoder, value: &ScChainId)  {
+pub fn chain_id_encode(enc: &mut WasmEncoder, value: &ScChainID)  {
     enc.fixed_bytes(&value.to_bytes(), SC_CHAIN_ID_LENGTH);
 }
 
-pub fn chain_id_from_bytes(buf: &[u8]) -> ScChainId {
-    ScChainId { id: buf.try_into().expect("invalid ChainId length") }
+pub fn chain_id_from_bytes(buf: &[u8]) -> ScChainID {
+    ScChainID { id: buf.try_into().expect("invalid ChainId length") }
 }
 
-pub fn chain_id_to_bytes(value: &ScChainId) -> &[u8] {
-    &value.id
+pub fn chain_id_to_bytes(value: &ScChainID) -> Vec<u8> {
+    value.id.to_vec()
 }
 
-pub fn chain_id_to_string(value: &ScChainId) -> String {
+pub fn chain_id_to_string(value: &ScChainID) -> String {
     // TODO standardize human readable string
     base58_encode(&value.id)
 }
 
-fn chain_id_from_bytes_unchecked(buf: &[u8]) -> ScChainId {
-    ScChainId { id: buf.try_into().expect("invalid ChainId length") }
+fn chain_id_from_bytes_unchecked(buf: &[u8]) -> ScChainID {
+    ScChainID { id: buf.try_into().expect("invalid ChainId length") }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -74,8 +79,8 @@ impl ScImmutableChainId<'_> {
         chain_id_to_string(&self.value())
     }
 
-    pub fn value(&self) -> ScChainId {
-        chain_id_from_bytes(self.proxy.get())
+    pub fn value(&self) -> ScChainID {
+        chain_id_from_bytes(&self.proxy.get())
     }
 }
 
@@ -91,7 +96,7 @@ impl ScMutableChainId<'_> {
         ScMutableChainId { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&mut self)  {
         self.proxy.delete();
     }
 
@@ -99,15 +104,15 @@ impl ScMutableChainId<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: &ScChainId) {
-        self.proxy.set(chain_id_to_bytes(&value));
+    pub fn set_value(&mut self, value: &ScChainID) {
+        self.proxy.set(&chain_id_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {
         chain_id_to_string(&self.value())
     }
 
-    pub fn value(&self) -> ScChainId {
-        chain_id_from_bytes(self.proxy.get())
+    pub fn value(&self) -> ScChainID {
+        chain_id_from_bytes(&self.proxy.get())
     }
 }

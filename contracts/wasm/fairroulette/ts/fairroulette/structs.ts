@@ -10,11 +10,11 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Bet {
     amount : u64 = 0; 
-    better : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes(null); 
+    better : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]); 
     number : u16 = 0; 
 
-    static fromBytes(buf: u8[]|null): Bet {
-        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
+    static fromBytes(buf: u8[]): Bet {
+        const dec = new wasmtypes.WasmDecoder(buf);
         const data = new Bet();
         data.amount = wasmtypes.uint64Decode(dec);
         data.better = wasmtypes.agentIDDecode(dec);

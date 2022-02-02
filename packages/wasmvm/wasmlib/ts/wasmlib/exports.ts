@@ -4,7 +4,7 @@
 // Provide host with details about funcs and views in this smart contract
 
 import {ScFuncContext, ScViewContext} from "./context";
-import {exportName, exportWasmTag} from "./host";
+import {exportName} from "./host";
 
 // Note that we do not use the Wasm export symbol table on purpose
 // because Wasm does not allow us to determine whether the symbols
@@ -44,7 +44,7 @@ export function onCall(index: i32): void {
 export class ScExports {
     // constructs the symbol export context for the onLoad function
     constructor() {
-        exportWasmTag()
+        exportName(-1, "WASM::TYPESCRIPT");
     }
 
     // defines the external name of a smart contract func

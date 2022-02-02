@@ -15,11 +15,11 @@ pub struct ScHash {
 }
 
 impl ScHash {
-    pub fn from_bytes(buf: &[u8]) -> ScHash {
+    pub fn new(buf: &[u8]) -> ScHash {
         hash_from_bytes(buf)
     }
 
-    pub fn to_bytes(&self) -> &[u8] {
+    pub fn to_bytes(&self) -> Vec<u8> {
         hash_to_bytes(self)
     }
 
@@ -31,7 +31,7 @@ impl ScHash {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub fn hash_decode(dec: &mut WasmDecoder) -> ScHash {
-    hash_from_bytes_unchecked(dec.fixed_bytes(SC_HASH_LENGTH))
+    hash_from_bytes_unchecked(&dec.fixed_bytes(SC_HASH_LENGTH))
 }
 
 pub fn hash_encode(enc: &mut WasmEncoder, value: &ScHash)  {
@@ -42,8 +42,8 @@ pub fn hash_from_bytes(buf: &[u8]) -> ScHash {
     ScHash { id: buf.try_into().expect("invalid Hash length") }
 }
 
-pub fn hash_to_bytes(value: &ScHash) -> &[u8] {
-    &value.id
+pub fn hash_to_bytes(value: &ScHash) -> Vec<u8> {
+    value.id.to_vec()
 }
 
 pub fn hash_to_string(value: &ScHash) -> String {
@@ -75,7 +75,7 @@ impl ScImmutableHash<'_> {
     }
 
     pub fn value(&self) -> ScHash {
-        hash_from_bytes(self.proxy.get())
+        hash_from_bytes(&self.proxy.get())
     }
 }
 
@@ -91,7 +91,7 @@ impl ScMutableHash<'_> {
         ScMutableHash { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&mut self)  {
         self.proxy.delete();
     }
 
@@ -99,8 +99,8 @@ impl ScMutableHash<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: &ScHash) {
-        self.proxy.set(hash_to_bytes(&value));
+    pub fn set_value(&mut self, value: &ScHash) {
+        self.proxy.set(&hash_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {
@@ -108,6 +108,6 @@ impl ScMutableHash<'_> {
     }
 
     pub fn value(&self) -> ScHash {
-        hash_from_bytes(self.proxy.get())
+        hash_from_bytes(&self.proxy.get())
     }
 }

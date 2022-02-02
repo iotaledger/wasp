@@ -129,19 +129,25 @@ func TestInvalidSizeParams(t *testing.T) {
 	for index, param := range allParams {
 		t.Run("InvalidSize "+param, func(t *testing.T) {
 			invalidLength := fmt.Sprintf("invalid %s%s length", strings.ToUpper(param[:1]), param[1:])
+
+			// note that zero lengths are valid and will return a default value
+
+			// no need to check bool/int8/uint8
+			if allLengths[index] != 1 {
+				pt := testwasmlib.ScFuncs.ParamTypes(ctx)
+				pt.Params.Param().GetBytes(param).SetValue(make([]byte, 1))
+				pt.Func.TransferIotas(1).Post()
+				require.Error(t, ctx.Err)
+				require.Contains(t, ctx.Err.Error(), invalidLength)
+
+				pt = testwasmlib.ScFuncs.ParamTypes(ctx)
+				pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]-1))
+				pt.Func.TransferIotas(1).Post()
+				require.Error(t, ctx.Err)
+				require.Contains(t, ctx.Err.Error(), invalidLength)
+			}
+
 			pt := testwasmlib.ScFuncs.ParamTypes(ctx)
-			pt.Params.Param().GetBytes(param).SetValue(make([]byte, 0))
-			pt.Func.TransferIotas(1).Post()
-			require.Error(t, ctx.Err)
-			require.Contains(t, ctx.Err.Error(), invalidLength)
-
-			pt = testwasmlib.ScFuncs.ParamTypes(ctx)
-			pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]-1))
-			pt.Func.TransferIotas(1).Post()
-			require.Error(t, ctx.Err)
-			require.Contains(t, ctx.Err.Error(), invalidLength)
-
-			pt = testwasmlib.ScFuncs.ParamTypes(ctx)
 			pt.Params.Param().GetBytes(param).SetValue(make([]byte, allLengths[index]+1))
 			pt.Func.TransferIotas(1).Post()
 			require.Error(t, ctx.Err)

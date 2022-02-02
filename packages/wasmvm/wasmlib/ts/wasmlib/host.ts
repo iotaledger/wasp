@@ -19,10 +19,6 @@ export function exportName(index: i32, name: string): void {
     hostStateSet(0, index, buf.dataStart, buf.length as i32);
 }
 
-export function exportWasmTag(): void {
-    exportName(-1, "WASM::TYPESCRIPT");
-}
-
 export function sandbox(funcNr: i32, params: u8[] | null): u8[] {
     if (params === null) {
         params = [];

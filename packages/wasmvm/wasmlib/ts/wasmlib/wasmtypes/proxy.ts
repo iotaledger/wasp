@@ -11,7 +11,7 @@ export interface IKvStore {
 
     exists(key: u8[]): bool;
 
-    get(key: u8[]): u8[] | null;
+    get(key: u8[]): u8[];
 
     set(key: u8[], value: u8[]): void;
 }
@@ -92,7 +92,7 @@ export class Proxy {
         this.set(enc.buf());
     }
 
-    get(): u8[] | null {
+    get(): u8[] {
         const buf = this.kvStore.get(this._key);
         //log(this.id.toString() + ".get(" + keya(this._key) + ") = " + vala(buf));
         return buf;
@@ -121,7 +121,7 @@ export class Proxy {
     public length(): u32 {
         // get the length counter
         let buf = this.get();
-        if (buf == null) {
+        if (buf.length == 0) {
             return 0;
         }
         const dec = new WasmDecoder(buf)

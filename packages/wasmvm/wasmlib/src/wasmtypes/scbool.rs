@@ -3,7 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::host::*;
+use crate::sandbox::*;
 use crate::wasmtypes::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -76,7 +76,7 @@ impl ScImmutableBool<'_> {
     }
 
     pub fn value(&self) -> bool {
-        bool_from_bytes(self.proxy.get())
+        bool_from_bytes(&self.proxy.get())
     }
 }
 
@@ -92,7 +92,7 @@ impl ScMutableBool<'_> {
         ScMutableBool { proxy }
     }
 
-    pub fn delete(&self) {
+    pub fn delete(&mut self) {
         self.proxy.delete();
     }
 
@@ -100,7 +100,7 @@ impl ScMutableBool<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: bool) {
+    pub fn set_value(&mut self, value: bool) {
         self.proxy.set(&bool_to_bytes(value));
     }
 
@@ -109,6 +109,6 @@ impl ScMutableBool<'_> {
     }
 
     pub fn value(&self) -> bool {
-        bool_from_bytes(self.proxy.get())
+        bool_from_bytes(&self.proxy.get())
     }
 }

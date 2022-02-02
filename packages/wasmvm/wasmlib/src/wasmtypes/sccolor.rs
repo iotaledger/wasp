@@ -18,11 +18,11 @@ impl ScColor {
     pub const IOTA: ScColor = ScColor { id: [0x00; SC_COLOR_LENGTH] };
     pub const MINT: ScColor = ScColor { id: [0xff; SC_COLOR_LENGTH] };
 
-    pub fn from_bytes(buf: &[u8]) -> ScColor {
+    pub fn new(buf: &[u8]) -> ScColor {
         color_from_bytes(buf)
     }
 
-    pub fn to_bytes(&self) -> &[u8] {
+    pub fn to_bytes(&self) -> Vec<u8> {
         color_to_bytes(self)
     }
 
@@ -34,7 +34,7 @@ impl ScColor {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub fn color_decode(dec: &mut WasmDecoder) -> ScColor {
-    color_from_bytes_unchecked(dec.fixed_bytes(SC_COLOR_LENGTH))
+    color_from_bytes_unchecked(&dec.fixed_bytes(SC_COLOR_LENGTH))
 }
 
 pub fn color_encode(enc: &mut WasmEncoder, value: &ScColor)  {
@@ -45,8 +45,8 @@ pub fn color_from_bytes(buf: &[u8]) -> ScColor {
     ScColor { id: buf.try_into().expect("invalid Color length") }
 }
 
-pub fn color_to_bytes(value: &ScColor) -> &[u8] {
-    &value.id
+pub fn color_to_bytes(value: &ScColor) -> Vec<u8> {
+    value.id.to_vec()
 }
 
 pub fn color_to_string(value: &ScColor) -> String {
@@ -78,7 +78,7 @@ impl ScImmutableColor<'_> {
     }
 
     pub fn value(&self) -> ScColor {
-        color_from_bytes(self.proxy.get())
+        color_from_bytes(&self.proxy.get())
     }
 }
 
@@ -94,7 +94,7 @@ impl ScMutableColor<'_> {
         ScMutableColor { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&mut self)  {
         self.proxy.delete();
     }
 
@@ -102,8 +102,8 @@ impl ScMutableColor<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: &ScColor) {
-        self.proxy.set(color_to_bytes(&value));
+    pub fn set_value(&mut self, value: &ScColor) {
+        self.proxy.set(&color_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {
@@ -111,6 +111,6 @@ impl ScMutableColor<'_> {
     }
 
     pub fn value(&self) -> ScColor {
-        color_from_bytes(self.proxy.get())
+        color_from_bytes(&self.proxy.get())
     }
 }

@@ -14,8 +14,8 @@ export function stringEncode(enc: WasmEncoder, value: string): void {
     enc.bytes(stringToBytes(value));
 }
 
-export function stringFromBytes(buf: u8[] | null): string {
-    return buf == null ? "" : String.UTF8.decodeUnsafe(buf.dataStart, buf.length);
+export function stringFromBytes(buf: u8[]): string {
+    return String.UTF8.decodeUnsafe(buf.dataStart, buf.length);
 }
 
 export function stringToBytes(value: string): u8[] {

@@ -3,6 +3,7 @@
 
 use std::convert::TryInto;
 
+use crate::*;
 use crate::wasmtypes::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -15,11 +16,15 @@ pub struct ScAddress {
 }
 
 impl ScAddress {
-    pub fn from_bytes(buf: &[u8]) -> ScAddress {
+    pub fn new(buf: &[u8]) -> ScAddress {
         address_from_bytes(buf)
     }
 
-    pub fn to_bytes(&self) -> &[u8] {
+    pub fn as_agent_id(&self) -> ScAgentID {
+        ScAgentID::new(self, &ScHname(0))
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
         address_to_bytes(self)
     }
 
@@ -31,7 +36,7 @@ impl ScAddress {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub fn address_decode(dec: &mut WasmDecoder) -> ScAddress {
-    address_from_bytes_unchecked(dec.fixed_bytes(SC_ADDRESS_LENGTH))
+    address_from_bytes_unchecked(&dec.fixed_bytes(SC_ADDRESS_LENGTH))
 }
 
 pub fn address_encode(enc: &mut WasmEncoder, value: &ScAddress)  {
@@ -42,8 +47,8 @@ pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
     ScAddress { id: buf.try_into().expect("invalid Address length") }
 }
 
-pub fn address_to_bytes(value: &ScAddress) -> &[u8] {
-    &value.id
+pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
+    value.id.to_vec()
 }
 
 pub fn address_to_string(value: &ScAddress) -> String {
@@ -75,7 +80,7 @@ impl ScImmutableAddress<'_> {
     }
 
     pub fn value(&self) -> ScAddress {
-        address_from_bytes(self.proxy.get())
+        address_from_bytes(&self.proxy.get())
     }
 }
 
@@ -91,7 +96,7 @@ impl ScMutableAddress<'_> {
         ScMutableAddress { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&mut self)  {
         self.proxy.delete();
     }
 
@@ -99,8 +104,8 @@ impl ScMutableAddress<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: &ScAddress) {
-        self.proxy.set(address_to_bytes(&value));
+    pub fn set_value(&mut self, value: &ScAddress) {
+        self.proxy.set(&address_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {
@@ -108,6 +113,6 @@ impl ScMutableAddress<'_> {
     }
 
     pub fn value(&self) -> ScAddress {
-        address_from_bytes(self.proxy.get())
+        address_from_bytes(&self.proxy.get())
     }
 }

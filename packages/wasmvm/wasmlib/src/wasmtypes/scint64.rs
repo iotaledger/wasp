@@ -54,7 +54,7 @@ impl ScImmutableInt64<'_> {
     }
 
     pub fn value(&self) -> i64 {
-        int64_from_bytes(self.proxy.get())
+        int64_from_bytes(&self.proxy.get())
     }
 }
 
@@ -70,7 +70,7 @@ impl ScMutableInt64<'_> {
         ScMutableInt64 { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&mut self)  {
         self.proxy.delete();
     }
 
@@ -78,7 +78,7 @@ impl ScMutableInt64<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: i64) {
+    pub fn set_value(&mut self, value: i64) {
         self.proxy.set(&int64_to_bytes(value));
     }
 
@@ -87,6 +87,6 @@ impl ScMutableInt64<'_> {
     }
 
     pub fn value(&self) -> i64 {
-        int64_from_bytes(self.proxy.get())
+        int64_from_bytes(&self.proxy.get())
     }
 }

@@ -43,8 +43,8 @@ export function hnameEncode(enc: WasmEncoder, value: ScHname): void {
     enc.fixedBytes(value.toBytes(), ScHnameLength);
 }
 
-export function hnameFromBytes(buf: u8[] | null): ScHname {
-    if (buf == null) {
+export function hnameFromBytes(buf: u8[]): ScHname {
+    if (buf.length == 0) {
         return new ScHname(0);
     }
     if (buf.length != ScHnameLength) {

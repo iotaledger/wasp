@@ -17,8 +17,8 @@ export function uint32Encode(enc: WasmEncoder, value: u32): void {
     enc.vluEncode(value as u64);
 }
 
-export function uint32FromBytes(buf: u8[] | null): u32 {
-    if (buf == null) {
+export function uint32FromBytes(buf: u8[]): u32 {
+    if (buf.length == 0) {
         return 0;
     }
     if (buf.length != ScUint32Length) {

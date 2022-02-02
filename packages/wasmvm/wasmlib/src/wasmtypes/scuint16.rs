@@ -54,7 +54,7 @@ impl ScImmutableUint16<'_> {
     }
 
     pub fn value(&self) -> u16 {
-        uint16_from_bytes(self.proxy.get())
+        uint16_from_bytes(&self.proxy.get())
     }
 }
 
@@ -70,7 +70,7 @@ impl ScMutableUint16<'_> {
         ScMutableUint16 { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&mut self)  {
         self.proxy.delete();
     }
 
@@ -78,7 +78,7 @@ impl ScMutableUint16<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: u16) {
+    pub fn set_value(&mut self, value: u16) {
         self.proxy.set(&uint16_to_bytes(value));
     }
 
@@ -87,6 +87,6 @@ impl ScMutableUint16<'_> {
     }
 
     pub fn value(&self) -> u16 {
-        uint16_from_bytes(self.proxy.get())
+        uint16_from_bytes(&self.proxy.get())
     }
 }

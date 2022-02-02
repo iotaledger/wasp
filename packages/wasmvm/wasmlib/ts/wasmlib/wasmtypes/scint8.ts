@@ -17,8 +17,8 @@ export function int8Encode(enc: WasmEncoder, value: i8): void {
     enc.byte(value as u8);
 }
 
-export function int8FromBytes(buf: u8[] | null): i8 {
-    if (buf == null) {
+export function int8FromBytes(buf: u8[]): i8 {
+    if (buf.length == 0) {
         return 0;
     }
     if (buf.length != ScInt8Length) {

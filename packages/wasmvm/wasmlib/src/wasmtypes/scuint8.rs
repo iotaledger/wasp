@@ -3,7 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::host::*;
+use crate::sandbox::*;
 use crate::wasmtypes::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -58,7 +58,7 @@ impl ScImmutableUint8<'_> {
     }
 
     pub fn value(&self) -> u8 {
-        uint8_from_bytes(self.proxy.get())
+        uint8_from_bytes(&self.proxy.get())
     }
 }
 
@@ -74,7 +74,7 @@ impl ScMutableUint8<'_> {
         ScMutableUint8 { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&mut self)  {
         self.proxy.delete();
     }
 
@@ -82,7 +82,7 @@ impl ScMutableUint8<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: u8) {
+    pub fn set_value(&mut self, value: u8) {
         self.proxy.set(&uint8_to_bytes(value));
     }
 
@@ -91,6 +91,6 @@ impl ScMutableUint8<'_> {
     }
 
     pub fn value(&self) -> u8 {
-        uint8_from_bytes(self.proxy.get())
+        uint8_from_bytes(&self.proxy.get())
     }
 }

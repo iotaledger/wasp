@@ -50,7 +50,7 @@ var TypeDependent = model.StringMapMap{
 	},
 	"fldTypeInit": {
 		"Address":   "new wasmtypes.ScAddress()",
-		"AgentID":   "wasmtypes.agentIDFromBytes(null)",
+		"AgentID":   "wasmtypes.agentIDFromBytes([])",
 		"Bool":      "false",
 		"Bytes":     "[]",
 		"ChainID":   "new wasmtypes.ScChainID()",

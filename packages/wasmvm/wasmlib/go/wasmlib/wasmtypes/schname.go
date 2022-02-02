@@ -36,7 +36,7 @@ func HnameEncode(enc *WasmEncoder, value ScHname) {
 }
 
 func HnameFromBytes(buf []byte) ScHname {
-	if buf == nil {
+	if len(buf) == 0 {
 		return 0
 	}
 	if len(buf) != ScHnameLength {

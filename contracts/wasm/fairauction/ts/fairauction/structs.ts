@@ -10,19 +10,19 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Auction {
     color         : wasmtypes.ScColor = new wasmtypes.ScColor(0);  // color of tokens for sale
-    creator       : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes(null);  // issuer of start_auction transaction
+    creator       : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);  // issuer of start_auction transaction
     deposit       : u64 = 0;  // deposit by auction owner to cover the SC fees
     description   : string = "";  // auction description
     duration      : u32 = 0;  // auction duration in minutes
     highestBid    : u64 = 0;  // the current highest bid amount
-    highestBidder : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes(null);  // the current highest bidder
+    highestBidder : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);  // the current highest bidder
     minimumBid    : u64 = 0;  // minimum bid amount
     numTokens     : u64 = 0;  // number of tokens for sale
     ownerMargin   : u64 = 0;  // auction owner's margin in promilles
     whenStarted   : u64 = 0;  // timestamp when auction started
 
-    static fromBytes(buf: u8[]|null): Auction {
-        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
+    static fromBytes(buf: u8[]): Auction {
+        const dec = new wasmtypes.WasmDecoder(buf);
         const data = new Auction();
         data.color         = wasmtypes.colorDecode(dec);
         data.creator       = wasmtypes.agentIDDecode(dec);
@@ -91,8 +91,8 @@ export class Bid {
     index     : u32 = 0;  // index of bidder in bidder list
     timestamp : u64 = 0;  // timestamp of most recent bid
 
-    static fromBytes(buf: u8[]|null): Bid {
-        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
+    static fromBytes(buf: u8[]): Bid {
+        const dec = new wasmtypes.WasmDecoder(buf);
         const data = new Bid();
         data.amount    = wasmtypes.uint64Decode(dec);
         data.index     = wasmtypes.uint32Decode(dec);

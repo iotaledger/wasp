@@ -97,7 +97,7 @@ func (p Proxy) Key(key []byte) Proxy {
 func (p Proxy) Length() uint32 {
 	// get the length counter
 	buf := p.Get()
-	if buf == nil {
+	if len(buf) == 0 {
 		return 0
 	}
 	dec := NewWasmDecoder(buf)
@@ -118,7 +118,7 @@ func (p Proxy) Set(value []byte) {
 // The separator is significant, it prevents potential clashes with other elements.
 // Different separators can be used to indicate different sub-containers
 func (p Proxy) sub(sep byte, key []byte) Proxy {
-	if p.key == nil {
+	if len(p.key) == 0 {
 		// this must be a root proxy
 		return Proxy{kvStore: p.kvStore, key: key}
 	}

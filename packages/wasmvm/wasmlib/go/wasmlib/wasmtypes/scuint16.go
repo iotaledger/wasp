@@ -21,7 +21,7 @@ func Uint16Encode(enc *WasmEncoder, value uint16) {
 }
 
 func Uint16FromBytes(buf []byte) uint16 {
-	if buf == nil {
+	if len(buf) == 0 {
 		return 0
 	}
 	if len(buf) != ScUint16Length {

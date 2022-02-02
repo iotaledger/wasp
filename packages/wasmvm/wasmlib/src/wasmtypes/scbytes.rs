@@ -19,8 +19,8 @@ pub fn bytes_from_bytes(buf: &[u8]) -> Vec<u8> {
     buf.to_vec()
 }
 
-pub fn bytes_to_bytes(value: &[u8]) -> &[u8] {
-    value
+pub fn bytes_to_bytes(value: &[u8]) -> Vec<u8> {
+    value.to_vec()
 }
 
 pub fn bytes_to_string(value: &[u8]) -> String {
@@ -48,7 +48,7 @@ impl ScImmutableBytes<'_> {
     }
 
     pub fn value(&self) -> Vec<u8> {
-        bytes_from_bytes(self.proxy.get())
+        bytes_from_bytes(&self.proxy.get())
     }
 }
 
@@ -64,7 +64,7 @@ impl ScMutableBytes<'_> {
         ScMutableBytes { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&mut self)  {
         self.proxy.delete();
     }
 
@@ -72,8 +72,8 @@ impl ScMutableBytes<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: &[u8]) {
-        self.proxy.set(bytes_to_bytes(value));
+    pub fn set_value(&mut self, value: &[u8]) {
+        self.proxy.set(&bytes_to_bytes(value));
     }
 
     pub fn to_string(&self) -> String {
@@ -81,6 +81,6 @@ impl ScMutableBytes<'_> {
     }
 
     pub fn value(&self) -> Vec<u8> {
-        bytes_from_bytes(self.proxy.get())
+        bytes_from_bytes(&self.proxy.get())
     }
 }

@@ -21,7 +21,7 @@ func Int32Encode(enc *WasmEncoder, value int32) {
 }
 
 func Int32FromBytes(buf []byte) int32 {
-	if buf == nil {
+	if len(buf) == 0 {
 		return 0
 	}
 	if len(buf) != ScInt32Length {

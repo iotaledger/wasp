@@ -24,8 +24,8 @@ export function bytesEncode(enc: WasmEncoder, value: u8[]): void {
     enc.bytes(value);
 }
 
-export function bytesFromBytes(buf: u8[] | null): u8[] {
-    return buf == null ? [] : buf;
+export function bytesFromBytes(buf: u8[]): u8[] {
+    return buf;
 }
 
 export function bytesToBytes(buf: u8[]): u8[] {

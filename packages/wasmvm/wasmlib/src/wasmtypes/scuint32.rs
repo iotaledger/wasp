@@ -23,7 +23,7 @@ pub fn uint32_from_bytes(buf: &[u8]) -> u32 {
     if buf.len() == 0 {
         return 0;
     }
-    u32::from_le_bytes(buf.try_into().expect("invalid u32 length"))
+    u32::from_le_bytes(buf.try_into().expect("invalid Uint32 length"))
 }
 
 pub fn uint32_to_bytes(value: u32) -> Vec<u8> {
@@ -54,7 +54,7 @@ impl ScImmutableUint32<'_> {
     }
 
     pub fn value(&self) -> u32 {
-        uint32_from_bytes(self.proxy.get())
+        uint32_from_bytes(&self.proxy.get())
     }
 }
 
@@ -70,7 +70,7 @@ impl ScMutableUint32<'_> {
         ScMutableUint32 { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&mut self)  {
         self.proxy.delete();
     }
 
@@ -78,7 +78,7 @@ impl ScMutableUint32<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: u32) {
+    pub fn set_value(&mut self, value: u32) {
         self.proxy.set(&uint32_to_bytes(value));
     }
 
@@ -87,6 +87,6 @@ impl ScMutableUint32<'_> {
     }
 
     pub fn value(&self) -> u32 {
-        uint32_from_bytes(self.proxy.get())
+        uint32_from_bytes(&self.proxy.get())
     }
 }

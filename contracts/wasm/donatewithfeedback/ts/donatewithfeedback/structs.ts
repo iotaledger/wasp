@@ -10,13 +10,13 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class Donation {
     amount    : u64 = 0;  // amount donated
-    donator   : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes(null);  // who donated
+    donator   : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);  // who donated
     error     : string = "";  // error to be reported to donator if anything goes wrong
     feedback  : string = "";  // the feedback for the person donated to
     timestamp : u64 = 0;  // when the donation took place
 
-    static fromBytes(buf: u8[]|null): Donation {
-        const dec = new wasmtypes.WasmDecoder(buf==null ? [] : buf);
+    static fromBytes(buf: u8[]): Donation {
+        const dec = new wasmtypes.WasmDecoder(buf);
         const data = new Donation();
         data.amount    = wasmtypes.uint64Decode(dec);
         data.donator   = wasmtypes.agentIDDecode(dec);

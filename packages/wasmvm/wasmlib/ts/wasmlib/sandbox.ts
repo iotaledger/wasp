@@ -48,37 +48,38 @@ export const FnUtilsHashName       : i32 = -35;
 export const FnUtilsHashSha3       : i32 = -36;
 // @formatter:on
 
-// Direct logging of informational text to host log
+// Direct logging of text to host log
 export function log(text: string): void {
-    new ScSandbox().log(text);
+    sandbox(FnLog, wasmtypes.stringToBytes(text));
 }
 
 // Direct logging of error to host log, followed by panicking out of the Wasm code
 export function panic(text: string): void {
-    new ScSandbox().panic(text);
+    sandbox(FnPanic, wasmtypes.stringToBytes(text));
+}
+
+// Direct conditional logging of debug-level informational text to host log
+export function trace(text: string): void {
+    sandbox(FnTrace, wasmtypes.stringToBytes(text));
 }
 
 export function paramsProxy(): wasmtypes.Proxy {
     return new ScDict(sandbox(FnParams, null)).asProxy();
 }
 
-export function resultsProxy(): wasmtypes.Proxy {
-    return new ScDict([]).asProxy();
-}
-
 export class ScSandbox {
     // retrieve the agent id of this contract account
     public accountID(): wasmtypes.ScAgentID {
-        return wasmtypes.agentIDFromBytes(sandbox(FnAccountID, null))
+        return wasmtypes.agentIDFromBytes(sandbox(FnAccountID, null));
     }
 
     public balance(color: wasmtypes.ScColor): u64 {
-        return wasmtypes.uint64FromBytes(sandbox(FnBalance, color.toBytes()))
+        return wasmtypes.uint64FromBytes(sandbox(FnBalance, color.toBytes()));
     }
 
     // access the current balances for all assets
     public balances(): ScBalances {
-        return new ScAssets(sandbox(FnBalances, null)).balances()
+        return new ScAssets(sandbox(FnBalances, null)).balances();
     }
 
     // calls a smart contract function
@@ -95,62 +96,58 @@ export class ScSandbox {
         req.params = params.toBytes();
         req.transfer = transfer.toBytes();
         const res = sandbox(FnCall, req.bytes());
-        return new ScDict(res).immutable()
+        return new ScDict(res).immutable();
     }
 
     // retrieve the chain id of the chain this contract lives on
     public chainID(): wasmtypes.ScChainID {
-        return wasmtypes.chainIDFromBytes(sandbox(FnChainID, null))
+        return wasmtypes.chainIDFromBytes(sandbox(FnChainID, null));
     }
 
     // retrieve the agent id of the owner of the chain this contract lives on
     public chainOwnerID(): wasmtypes.ScAgentID {
-        return wasmtypes.agentIDFromBytes(sandbox(FnChainOwnerID, null))
+        return wasmtypes.agentIDFromBytes(sandbox(FnChainOwnerID, null));
     }
 
     // retrieve the hname of this contract
     public contract(): wasmtypes.ScHname {
-        return wasmtypes.hnameFromBytes(sandbox(FnContract, null))
+        return wasmtypes.hnameFromBytes(sandbox(FnContract, null));
     }
 
     // retrieve the agent id of the creator of this contract
     public contractCreator(): wasmtypes.ScAgentID {
-        return wasmtypes.agentIDFromBytes(sandbox(FnContractCreator, null))
+        return wasmtypes.agentIDFromBytes(sandbox(FnContractCreator, null));
     }
 
     // logs informational text message
     public log(text: string): void {
-        sandbox(FnLog, wasmtypes.stringToBytes(text))
+        sandbox(FnLog, wasmtypes.stringToBytes(text));
     }
 
     // logs error text message and then panics
     public panic(text: string): void {
-        sandbox(FnPanic, wasmtypes.stringToBytes(text))
+        sandbox(FnPanic, wasmtypes.stringToBytes(text));
     }
 
     // retrieve parameters passed to the smart contract function that was called
     public params(): ScImmutableDict {
-        return new ScDict(sandbox(FnParams, null)).immutable()
-    }
-
-    public rawState(): ScImmutableState {
-        return new ScImmutableState();
+        return new ScDict(sandbox(FnParams, null)).immutable();
     }
 
     // panics if condition is not satisfied
     public require(cond: bool, msg: string): void {
         if (!cond) {
-            this.panic(msg)
+            this.panic(msg);
         }
     }
 
     public results(results: ScDict): void {
-        sandbox(FnResults, results.toBytes())
+        sandbox(FnResults, results.toBytes());
     }
 
     // deterministic time stamp fixed at the moment of calling the smart contract
     public timestamp(): u64 {
-        return wasmtypes.uint64FromBytes(sandbox(FnTimestamp, null))
+        return wasmtypes.uint64FromBytes(sandbox(FnTimestamp, null));
     }
 
     // logs debugging trace text message
@@ -167,7 +164,11 @@ export class ScSandbox {
 export class ScSandboxView extends ScSandbox {
     // calls a smart contract view
     public call(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null): ScImmutableDict {
-        return this.callWithTransfer(hContract, hFunction, params, null)
+        return this.callWithTransfer(hContract, hFunction, params, null);
+    }
+
+    public rawState(): ScImmutableState {
+        return new ScImmutableState();
     }
 }
 
@@ -181,12 +182,12 @@ export class ScSandboxFunc extends ScSandbox {
 
     // calls a smart contract function
     public call(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, transfer: ScTransfers | null): ScImmutableDict {
-        return this.callWithTransfer(hContract, hFunction, params, transfer)
+        return this.callWithTransfer(hContract, hFunction, params, transfer);
     }
 
     // retrieve the agent id of the caller of the smart contract
     public caller(): wasmtypes.ScAgentID {
-        return wasmtypes.agentIDFromBytes(sandbox(FnCaller, null))
+        return wasmtypes.agentIDFromBytes(sandbox(FnCaller, null));
     }
 
     // deploys a smart contract
@@ -199,17 +200,17 @@ export class ScSandboxFunc extends ScSandbox {
         req.name = name;
         req.description = description;
         req.params = initParams.toBytes();
-        sandbox(FnDeployContract, req.bytes())
+        sandbox(FnDeployContract, req.bytes());
     }
 
     // returns random entropy data for current request.
     public entropy(): wasmtypes.ScHash {
-        return wasmtypes.hashFromBytes(sandbox(FnEntropy, null))
+        return wasmtypes.hashFromBytes(sandbox(FnEntropy, null));
     }
 
     // signals an event on the node that external entities can subscribe to
     public event(msg: string): void {
-        sandbox(FnEvent, wasmtypes.stringToBytes(msg))
+        sandbox(FnEvent, wasmtypes.stringToBytes(msg));
     }
 
     // access the incoming balances for all assets
@@ -220,7 +221,7 @@ export class ScSandboxFunc extends ScSandbox {
 
     // retrieve the assets that were minted in this transaction
     public minted(): ScBalances {
-        return new ScAssets(sandbox(FnMinted, null)).balances()
+        return new ScAssets(sandbox(FnMinted, null)).balances();
     }
 
     // (delayed) posts a smart contract function request
@@ -235,7 +236,7 @@ export class ScSandboxFunc extends ScSandbox {
         req.params = params.toBytes();
         req.transfer = transfer.toBytes();
         req.delay = delay;
-        sandbox(FnPost, req.bytes())
+        sandbox(FnPost, req.bytes());
     }
 
     // generates a random value from 0 to max (exclusive: max) using a deterministic RNG
@@ -270,7 +271,7 @@ export class ScSandboxFunc extends ScSandbox {
 
     // retrieve the request id of this transaction
     public requestID(): wasmtypes.ScRequestID {
-        return wasmtypes.requestIDFromBytes(sandbox(FnRequestID, null))
+        return wasmtypes.requestIDFromBytes(sandbox(FnRequestID, null));
     }
 
     // transfer assetss to the specified Tangle ledger address
@@ -284,13 +285,13 @@ export class ScSandboxFunc extends ScSandbox {
         }
         if (assets == 0) {
             // only try to send when non-zero assets
-            return
+            return;
         }
 
         const req = new wasmrequests.SendRequest();
         req.address = address;
         req.transfer = transfer.toBytes();
-        sandbox(FnSend, req.bytes())
+        sandbox(FnSend, req.bytes());
     }
 
     //public stateAnchor(): interface{} {

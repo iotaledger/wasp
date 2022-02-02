@@ -52,11 +52,15 @@ type ScSandbox struct{}
 // TODO go over core contract schemas to set correct unsigned types
 
 func Log(text string) {
-	ScSandbox{}.Log(text)
+	Sandbox(FnLog, []byte(text))
 }
 
 func Panic(text string) {
-	ScSandbox{}.Panic(text)
+	Sandbox(FnPanic, []byte(text))
+}
+
+func Trace(text string) {
+	Sandbox(FnTrace, []byte(text))
 }
 
 func NewParamsProxy() wasmtypes.Proxy {

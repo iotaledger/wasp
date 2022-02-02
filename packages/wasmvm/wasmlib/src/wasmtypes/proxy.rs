@@ -1,14 +1,14 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::host::*;
+use crate::sandbox::*;
 use crate::wasmtypes::*;
 
 pub trait IKvStore {
-    fn delete(&self, key: &[u8]);
+    fn delete(&mut self, key: &[u8]);
     fn exists(&self, key: &[u8]) -> bool;
-    fn get(&self, key: &[u8]) -> &[u8];
-    fn set(&self, key: &[u8], value: &[u8]);
+    fn get(&self, key: &[u8]) -> Vec<u8>;
+    fn set(&mut self, key: &[u8], value: &[u8]);
 }
 
 pub struct Proxy<'a> {
@@ -21,13 +21,13 @@ impl Proxy<'_> {
         Proxy { kv_store, key: Vec::new() }
     }
 
-    pub fn append(&self) -> Proxy {
+    pub fn append(&mut self) -> Proxy {
         let length = self.length();
         self.expand(length + 1);
         self.element(length)
     }
 
-    pub fn clear_array(&self) {
+    pub fn clear_array(&mut self) {
         let mut length = self.length();
         while length != 0 {
             length -= 1;
@@ -38,14 +38,14 @@ impl Proxy<'_> {
         self.delete();
     }
 
-    pub fn clear_map(&self) {
+    pub fn clear_map(&mut self) {
         // TODO clear prefix
 
         // clear the length counter
         self.delete();
     }
 
-    pub fn delete(&self) {
+    pub fn delete(&mut self) {
         self.kv_store.delete(&self.key);
     }
 
@@ -60,14 +60,14 @@ impl Proxy<'_> {
         self.kv_store.exists(&self.key)
     }
 
-    pub fn expand(&self, length: u32)     {
+    pub fn expand(&mut self, length: u32)     {
         // update the length counter
         let mut enc = WasmEncoder::new();
         uint32_encode(&mut enc, length);
         self.set(&enc.buf());
     }
 
-    pub fn get(&self) -> &[u8] {
+    pub fn get(&self) -> Vec<u8> {
         self.kv_store.get(&self.key)
     }
 
@@ -92,7 +92,7 @@ impl Proxy<'_> {
         if buf.len() == 0 {
             return 0;
         }
-        let mut dec = WasmDecoder::new(buf);
+        let mut dec = WasmDecoder::new(&buf);
         uint32_decode(&mut dec)
     }
 
@@ -100,7 +100,7 @@ impl Proxy<'_> {
         Proxy { kv_store: self.kv_store, key: string_to_bytes(key).to_vec() }
     }
 
-    pub fn set(&self, value: &[u8]) {
+    pub fn set(&mut self, value: &[u8]) {
         self.kv_store.set(&self.key, value);
     }
 

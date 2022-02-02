@@ -47,8 +47,8 @@ export function colorEncode(enc: WasmEncoder, value: ScColor): void {
     enc.fixedBytes(value.toBytes(), ScColorLength);
 }
 
-export function colorFromBytes(buf: u8[] | null): ScColor {
-    if (buf == null) {
+export function colorFromBytes(buf: u8[]): ScColor {
+    if (buf.length == 0) {
         return new ScColor(0);
     }
     if (buf.length != ScColorLength) {

@@ -30,7 +30,7 @@ const (
 )
 
 var ( // TODO set back to false
-	GoDebug    = flag.Bool("godebug", true, "debug go smart contract code")
+	GoDebug    = flag.Bool("godebug", false, "debug go smart contract code")
 	GoWasm     = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
 	GoWasmEdge = flag.Bool("gowasmedge", false, "use WasmEdge instead of WasmTime")
 	TsWasm     = flag.Bool("tswasm", false, "prefer typescript wasm smart contract code")

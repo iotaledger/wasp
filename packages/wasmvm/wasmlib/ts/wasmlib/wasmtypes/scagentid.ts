@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import {WasmDecoder, WasmEncoder, zeroes} from "./codec";
+import {WasmDecoder, WasmEncoder} from "./codec";
 import {Proxy} from "./proxy";
-import {addressEncode, addressFromBytes, ScAddress, ScAddressLength} from "./scaddress";
-import {hnameEncode, hnameFromBytes, ScHname} from "./schname";
+import {addressDecode, addressEncode, addressFromBytes, ScAddress, ScAddressLength} from "./scaddress";
+import {hnameDecode, hnameEncode, hnameFromBytes, ScHname} from "./schname";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -51,7 +51,7 @@ export class ScAgentID {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export function agentIDDecode(dec: WasmDecoder): ScAgentID {
-    return agentIDFromBytesUnchecked(dec.fixedBytes(ScAgentIDLength));
+    return new ScAgentID(addressDecode(dec), hnameDecode(dec))
 }
 
 export function agentIDEncode(enc: WasmEncoder, value: ScAgentID): void {
@@ -59,9 +59,9 @@ export function agentIDEncode(enc: WasmEncoder, value: ScAgentID): void {
     hnameEncode(enc, value._hname);
 }
 
-export function agentIDFromBytes(buf: u8[] | null): ScAgentID {
-    if (buf == null) {
-        return agentIDFromBytesUnchecked(zeroes(ScAgentIDLength));
+export function agentIDFromBytes(buf: u8[]): ScAgentID {
+    if (buf.length == 0) {
+        return new ScAgentID(addressFromBytes(buf), hnameFromBytes(buf));
     }
     if (buf.length != ScAgentIDLength) {
         panic("invalid AgentID length");
@@ -70,7 +70,9 @@ export function agentIDFromBytes(buf: u8[] | null): ScAgentID {
     if (buf[0] > 2) {
         panic("invalid AgentID: address type > 2");
     }
-    return agentIDFromBytesUnchecked(buf);
+    return new ScAgentID(
+        addressFromBytes(buf.slice(0, ScAddressLength)),
+        hnameFromBytes(buf.slice(ScAddressLength)));
 }
 
 export function agentIDToBytes(value: ScAgentID): u8[] {
@@ -82,12 +84,6 @@ export function agentIDToBytes(value: ScAgentID): u8[] {
 export function agentIDToString(value: ScAgentID): string {
     // TODO standardize human readable string
     return value._address.toString() + "::" + value._hname.toString();
-}
-
-function agentIDFromBytesUnchecked(buf: u8[]): ScAgentID {
-    return new ScAgentID(
-        addressFromBytes(buf.slice(0, ScAddressLength)),
-        hnameFromBytes(buf.slice(ScAddressLength)));
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

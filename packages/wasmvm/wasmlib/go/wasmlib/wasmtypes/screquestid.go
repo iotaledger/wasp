@@ -30,7 +30,7 @@ func RequestIDEncode(enc *WasmEncoder, value ScRequestID) {
 }
 
 func RequestIDFromBytes(buf []byte) ScRequestID {
-	if buf == nil {
+	if len(buf) == 0 {
 		return ScRequestID{}
 	}
 	if len(buf) != ScRequestIDLength {

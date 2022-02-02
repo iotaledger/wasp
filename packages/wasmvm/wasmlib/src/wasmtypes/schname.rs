@@ -10,16 +10,14 @@ use crate::wasmtypes::*;
 pub const SC_HNAME_LENGTH: usize = 4;
 
 #[derive(PartialEq, Clone)]
-pub struct ScHname {
-    id: [u8; SC_HNAME_LENGTH],
-}
+pub struct ScHname(pub u32);
 
 impl ScHname {
-    pub fn from_bytes(buf: &[u8]) -> ScHname {
-        hname_from_bytes(buf)
+    pub fn new(buf: &[u8]) -> ScHname {
+        ScHname(uint32_from_bytes(buf))
     }
 
-    pub fn to_bytes(&self) -> &[u8] {
+    pub fn to_bytes(&self) -> Vec<u8> {
         hname_to_bytes(self)
     }
 
@@ -31,28 +29,33 @@ impl ScHname {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub fn hname_decode(dec: &mut WasmDecoder) -> ScHname {
-    hname_from_bytes_unchecked(dec.fixed_bytes(SC_HNAME_LENGTH))
+    hname_from_bytes(&dec.fixed_bytes(SC_HNAME_LENGTH))
 }
 
 pub fn hname_encode(enc: &mut WasmEncoder, value: &ScHname)  {
-    enc.fixed_bytes(&value.to_bytes(), SC_HNAME_LENGTH);
+    enc.fixed_bytes(&hname_to_bytes(value), SC_HNAME_LENGTH);
 }
 
 pub fn hname_from_bytes(buf: &[u8]) -> ScHname {
-    ScHname { id: buf.try_into().expect("invalid Hname length") }
+    if buf.len() == 0 {
+        return ScHname(0);
+    }
+    ScHname(u32::from_le_bytes(buf.try_into().expect("invalid Hname length")))
 }
 
-pub fn hname_to_bytes(value: &ScHname) -> &[u8] {
-    &value.id
+pub fn hname_to_bytes(value: &ScHname) -> Vec<u8> {
+    value.0.to_le_bytes().to_vec()
 }
 
 pub fn hname_to_string(value: &ScHname) -> String {
-    // TODO standardize human readable string
-    base58_encode(&value.id)
-}
-
-fn hname_from_bytes_unchecked(buf: &[u8]) -> ScHname {
-    ScHname { id: buf.try_into().expect("invalid Hname length") }
+    let hexa = "0123456789abcdef".as_bytes();
+    let mut res = [0u8; 8];
+    let mut val = value.0;
+    for n in 0..8 {
+        res[7 - n] = hexa[val as usize & 0x0f];
+        val >>= 4;
+    }
+    String::from_utf8(res.to_vec()).expect("WTF? invalid?")
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -75,7 +78,7 @@ impl ScImmutableHname<'_> {
     }
 
     pub fn value(&self) -> ScHname {
-        hname_from_bytes(self.proxy.get())
+        hname_from_bytes(&self.proxy.get())
     }
 }
 
@@ -91,7 +94,7 @@ impl ScMutableHname<'_> {
         ScMutableHname { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&mut self)  {
         self.proxy.delete();
     }
 
@@ -99,8 +102,8 @@ impl ScMutableHname<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: &ScHname) {
-        self.proxy.set(hname_to_bytes(&value));
+    pub fn set_value(&mut self, value: &ScHname) {
+        self.proxy.set(&hname_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {
@@ -108,6 +111,6 @@ impl ScMutableHname<'_> {
     }
 
     pub fn value(&self) -> ScHname {
-        hname_from_bytes(self.proxy.get())
+        hname_from_bytes(&self.proxy.get())
     }
 }

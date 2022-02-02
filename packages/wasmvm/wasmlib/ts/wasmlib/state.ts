@@ -10,8 +10,9 @@ export class ScImmutableState {
         return stateExists(key);
     }
 
-    get(key: u8[]): u8[] | null {
-        return stateGet(key);
+    get(key: u8[]): u8[] {
+        const val = stateGet(key);
+        return val === null ? [] : val;
     }
 }
 
@@ -28,8 +29,9 @@ export class ScState implements IKvStore {
         return stateExists(key);
     }
 
-    get(key: u8[]): u8[] | null {
-        return stateGet(key);
+    get(key: u8[]): u8[] {
+        const val = stateGet(key);
+        return val === null ? [] : val;
     }
 
     public immutable(): ScImmutableState {

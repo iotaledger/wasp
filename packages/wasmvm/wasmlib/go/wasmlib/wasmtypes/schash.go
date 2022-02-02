@@ -30,7 +30,7 @@ func HashEncode(enc *WasmEncoder, value ScHash) {
 }
 
 func HashFromBytes(buf []byte) ScHash {
-	if buf == nil {
+	if len(buf) == 0 {
 		return ScHash{}
 	}
 	if len(buf) != ScHashLength {

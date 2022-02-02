@@ -35,7 +35,7 @@ func AddressEncode(enc *WasmEncoder, value ScAddress) {
 }
 
 func AddressFromBytes(buf []byte) ScAddress {
-	if buf == nil {
+	if len(buf) == 0 {
 		return ScAddress{}
 	}
 	if len(buf) != ScAddressLength {

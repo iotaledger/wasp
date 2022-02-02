@@ -8,19 +8,19 @@ use crate::wasmtypes::*;
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub fn string_decode(dec: &mut WasmDecoder) -> String {
-    string_from_bytes(dec.bytes())
+    string_from_bytes(&dec.bytes())
 }
 
 pub fn string_encode(enc: &mut WasmEncoder, value: &str) {
-    enc.bytes(string_to_bytes(value));
+    enc.bytes(&string_to_bytes(value));
 }
 
 pub fn string_from_bytes(buf: &[u8]) -> String {
     String::from_utf8_lossy(buf).to_string()
 }
 
-pub fn string_to_bytes(value: &str) -> &[u8] {
-    value.as_bytes()
+pub fn string_to_bytes(value: &str) -> Vec<u8> {
+    value.to_vec()
 }
 
 pub fn string_to_string(value: &str) -> String {
@@ -47,7 +47,7 @@ impl ScImmutableString<'_> {
     }
 
     pub fn value(&self) -> String {
-        string_from_bytes(self.proxy.get())
+        string_from_bytes(&self.proxy.get())
     }
 }
 
@@ -63,7 +63,7 @@ impl ScMutableString<'_> {
         ScMutableString { proxy }
     }
 
-    pub fn delete(&self) {
+    pub fn delete(&mut self) {
         self.proxy.delete();
     }
 
@@ -71,8 +71,8 @@ impl ScMutableString<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: &str) {
-        self.proxy.set(string_to_bytes(value));
+    pub fn set_value(&mut self, value: &str) {
+        self.proxy.set(&string_to_bytes(value));
     }
 
     pub fn to_string(&self) -> String {
@@ -80,6 +80,6 @@ impl ScMutableString<'_> {
     }
 
     pub fn value(&self) -> String {
-        string_from_bytes(self.proxy.get())
+        string_from_bytes(&self.proxy.get())
     }
 }

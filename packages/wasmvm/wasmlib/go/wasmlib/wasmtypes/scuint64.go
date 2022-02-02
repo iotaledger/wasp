@@ -21,7 +21,7 @@ func Uint64Encode(enc *WasmEncoder, value uint64) {
 }
 
 func Uint64FromBytes(buf []byte) uint64 {
-	if buf == nil {
+	if len(buf) == 0 {
 		return 0
 	}
 	if len(buf) != ScUint64Length {

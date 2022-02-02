@@ -1,8 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::hashtypes::*;
-use crate::host::*;
+use crate::sandbox::*;
 
 pub struct WasmDecoder<'a> {
     buf: &'a [u8],
@@ -18,7 +17,7 @@ impl WasmDecoder<'_> {
     }
 
     // decodes the next variable length substring of bytes from the byte buffer
-    pub fn bytes(&mut self) -> &[u8] {
+    pub fn bytes(&mut self) -> Vec<u8> {
         let length = self.vlu_decode(32);
         self.fixed_bytes(length as usize)
     }
@@ -34,13 +33,13 @@ impl WasmDecoder<'_> {
     }
 
     // decodes the next fixed length substring of bytes from the byte buffer
-    pub fn fixed_bytes(&mut self, size: usize) -> &[u8] {
+    pub fn fixed_bytes(&mut self, size: usize) -> Vec<u8> {
         if self.buf.len() < size {
             panic("insufficient fixed bytes");
         }
         let value = &self.buf[..size];
         self.buf = &self.buf[size..];
-        value
+        value.to_vec()
     }
 
     // vli (variable length integer) decoder

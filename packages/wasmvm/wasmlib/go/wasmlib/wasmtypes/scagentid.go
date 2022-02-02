@@ -39,7 +39,10 @@ func (o ScAgentID) String() string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func AgentIDDecode(dec *WasmDecoder) ScAgentID {
-	return agentIDFromBytesUnchecked(dec.FixedBytes(ScAgentIDLength))
+	return ScAgentID{
+		address: AddressDecode(dec),
+		hname:   HnameDecode(dec),
+	}
 }
 
 func AgentIDEncode(enc *WasmEncoder, value ScAgentID) {
@@ -48,7 +51,7 @@ func AgentIDEncode(enc *WasmEncoder, value ScAgentID) {
 }
 
 func AgentIDFromBytes(buf []byte) ScAgentID {
-	if buf == nil {
+	if len(buf) == 0 {
 		return ScAgentID{}
 	}
 	if len(buf) != ScAgentIDLength {
@@ -58,7 +61,10 @@ func AgentIDFromBytes(buf []byte) ScAgentID {
 	if buf[0] > 2 {
 		panic("invalid AgentID: address type > 2")
 	}
-	return agentIDFromBytesUnchecked(buf)
+	return ScAgentID{
+		address: AddressFromBytes(buf[:ScAddressLength]),
+		hname:   HnameFromBytes(buf[ScAddressLength:]),
+	}
 }
 
 func AgentIDToBytes(value ScAgentID) []byte {
@@ -70,13 +76,6 @@ func AgentIDToBytes(value ScAgentID) []byte {
 func AgentIDToString(value ScAgentID) string {
 	// TODO standardize human readable string
 	return value.address.String() + "::" + value.hname.String()
-}
-
-func agentIDFromBytesUnchecked(buf []byte) ScAgentID {
-	return ScAgentID{
-		address: AddressFromBytes(buf[:ScAddressLength]),
-		hname:   HnameFromBytes(buf[ScAddressLength:]),
-	}
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

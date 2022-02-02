@@ -10,16 +10,16 @@ use crate::wasmtypes::*;
 pub const SC_REQUEST_ID_LENGTH: usize = 34;
 
 #[derive(PartialEq, Clone)]
-pub struct ScRequestId {
+pub struct ScRequestID {
     id: [u8; SC_REQUEST_ID_LENGTH],
 }
 
-impl ScRequestId {
-    pub fn from_bytes(buf: &[u8]) -> ScRequestId {
+impl ScRequestID {
+    pub fn new(buf: &[u8]) -> ScRequestID {
         request_id_from_bytes(buf)
     }
 
-    pub fn to_bytes(&self) -> &[u8] {
+    pub fn to_bytes(&self) -> Vec<u8> {
         request_id_to_bytes(self)
     }
 
@@ -30,29 +30,29 @@ impl ScRequestId {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub fn request_id_decode(dec: &mut WasmDecoder) -> ScRequestId {
-    request_id_from_bytes_unchecked(dec.fixed_bytes(SC_REQUEST_ID_LENGTH))
+pub fn request_id_decode(dec: &mut WasmDecoder) -> ScRequestID {
+    request_id_from_bytes_unchecked(&dec.fixed_bytes(SC_REQUEST_ID_LENGTH))
 }
 
-pub fn request_id_encode(enc: &mut WasmEncoder, value: &ScRequestId)  {
+pub fn request_id_encode(enc: &mut WasmEncoder, value: &ScRequestID)  {
     enc.fixed_bytes(&value.to_bytes(), SC_REQUEST_ID_LENGTH);
 }
 
-pub fn request_id_from_bytes(buf: &[u8]) -> ScRequestId {
-    ScRequestId { id: buf.try_into().expect("invalid RequestId length") }
+pub fn request_id_from_bytes(buf: &[u8]) -> ScRequestID {
+    ScRequestID { id: buf.try_into().expect("invalid RequestId length") }
 }
 
-pub fn request_id_to_bytes(value: &ScRequestId) -> &[u8] {
-    &value.id
+pub fn request_id_to_bytes(value: &ScRequestID) -> Vec<u8> {
+    value.id.to_vec()
 }
 
-pub fn request_id_to_string(value: &ScRequestId) -> String {
+pub fn request_id_to_string(value: &ScRequestID) -> String {
     // TODO standardize human readable string
     base58_encode(&value.id)
 }
 
-fn request_id_from_bytes_unchecked(buf: &[u8]) -> ScRequestId {
-    ScRequestId { id: buf.try_into().expect("invalid RequestId length") }
+fn request_id_from_bytes_unchecked(buf: &[u8]) -> ScRequestID {
+    ScRequestID { id: buf.try_into().expect("invalid RequestId length") }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -74,8 +74,8 @@ impl ScImmutableRequestId<'_> {
         request_id_to_string(&self.value())
     }
 
-    pub fn value(&self) -> ScRequestId {
-        request_id_from_bytes(self.proxy.get())
+    pub fn value(&self) -> ScRequestID {
+        request_id_from_bytes(&self.proxy.get())
     }
 }
 
@@ -91,7 +91,7 @@ impl ScMutableRequestId<'_> {
         ScMutableRequestId { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&mut self)  {
         self.proxy.delete();
     }
 
@@ -99,15 +99,15 @@ impl ScMutableRequestId<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: &ScRequestId) {
-        self.proxy.set(request_id_to_bytes(&value));
+    pub fn set_value(&mut self, value: &ScRequestID) {
+        self.proxy.set(&request_id_to_bytes(&value));
     }
 
     pub fn to_string(&self) -> String {
         request_id_to_string(&self.value())
     }
 
-    pub fn value(&self) -> ScRequestId {
-        request_id_from_bytes(self.proxy.get())
+    pub fn value(&self) -> ScRequestID {
+        request_id_from_bytes(&self.proxy.get())
     }
 }

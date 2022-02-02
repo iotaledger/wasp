@@ -17,8 +17,8 @@ export function int32Encode(enc: WasmEncoder, value: i32): void {
     enc.vliEncode(value as i64);
 }
 
-export function int32FromBytes(buf: u8[] | null): i32 {
-    if (buf == null) {
+export function int32FromBytes(buf: u8[]): i32 {
+    if (buf.length == 0) {
         return 0;
     }
     if (buf.length != ScInt32Length) {

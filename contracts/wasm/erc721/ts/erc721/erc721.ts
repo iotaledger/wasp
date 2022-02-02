@@ -17,7 +17,7 @@ import * as sc from "./index";
 
 // set the required base URI, to which the base58 encoded token ID will be concatenated
 const BASE_URI = "my/special/base/uri/";
-const ZERO = wasmtypes.agentIDFromBytes(null);
+const ZERO = wasmtypes.agentIDFromBytes([]);
 
 ///////////////////////////  HELPER FUNCTIONS  ////////////////////////////
 

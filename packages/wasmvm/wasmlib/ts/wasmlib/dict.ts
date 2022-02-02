@@ -17,8 +17,8 @@ export function keya(key: u8[]): string {
     return stringFromBytes(key);
 }
 
-export function vala(val: u8[] | null): string {
-    return val != null ? "[" + hex(val) + "]" : "null";
+export function vala(val: u8[]): string {
+    return hex(val);
 }
 
 export class ScDict implements wasmtypes.IKvStore {
@@ -84,12 +84,12 @@ export class ScDict implements wasmtypes.IKvStore {
         return ret;
     }
 
-    get(key: u8[]): u8[] | null {
+    get(key: u8[]): u8[] {
         // this.dump("get")
         const mapKey = ScDict.toKey(key);
         if (!this.dict.has(mapKey)) {
             // log("dict.get(" + keya(key) + ") = null");
-            return null;
+            return [];
         }
         const value = this.dict.get(mapKey);
         // log("dict.get(" + keya(key) + ") = " + vala(value));
@@ -118,9 +118,6 @@ export class ScDict implements wasmtypes.IKvStore {
             const k = keys[i];
             const key = ScDict.fromKey(k);
             let val = this.dict.get(k);
-            if (val === null) {
-                val = [];
-            }
             enc.fixedBytes(wasmtypes.uint16ToBytes(key.length as u16), wasmtypes.ScUint16Length);
             enc.fixedBytes(key, key.length as u32);
             enc.fixedBytes(wasmtypes.uint32ToBytes(val.length as u32), wasmtypes.ScUint32Length);
@@ -141,10 +138,10 @@ export class ScImmutableDict {
         return this.dict.has(ScDict.toKey(key));
     }
 
-    get(key: u8[]): u8[] | null {
+    get(key: u8[]): u8[] {
         const mapKey = ScDict.toKey(key);
         if (!this.dict.has(mapKey)) {
-            return null;
+            return [];
         }
         return this.dict.get(mapKey);
     }
