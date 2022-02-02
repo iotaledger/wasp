@@ -34,7 +34,7 @@ func (ch *Chain) ContractAgentID(name string) *iscp.AgentID {
 
 // Warning: if the same `req` is passed in different occasions, the resulting request will have different IDs (because the ledger state is different)
 func NewIscpRequestFromCallParams(ch *Chain, req *CallParams, keyPair *cryptolib.KeyPair) (iscp.Request, error) {
-	tx, err := ch.createRequestTx(req, keyPair)
+	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
 		return nil, err
 	}

@@ -6,7 +6,6 @@ package solo
 import (
 	"bytes"
 	"fmt"
-	"golang.org/x/xerrors"
 	"math"
 	"os"
 
@@ -29,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
 )
 
 // String is string representation for main parameters of the chain
