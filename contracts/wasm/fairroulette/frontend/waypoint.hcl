@@ -18,7 +18,6 @@ variable "goshimmer_url" {
 
 variable "chainid" {
     type = string
-    default = "be1j1GwB971eEAVfDmNFUtUfQ7rHEEF43Mz7yTP2bdkH"
 }
 
 variable "adminWhitelist" {
@@ -36,7 +35,7 @@ variable "ghcr" {
 # An application to deploy.
 app "fairroulette" {
     # Build specifies how an application should be deployed. In this case,
-    # we'll build using a Dockerfile and keeping it in a local registry.
+    # we'll build using a Dockerfile and keeping it in a github registry.
     build {
         use "docker" {
             disable_entrypoint = true
