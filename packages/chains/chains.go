@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package chains
 
 import (
@@ -12,10 +15,10 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/wal"
 	"golang.org/x/xerrors"
 )
 
@@ -81,7 +84,7 @@ func (c *Chains) SetNodeConn(nodeConn chain.NodeConnection) {
 	c.nodeConn = nodeConn
 }
 
-func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics *metrics.Metrics) error {
+func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics *metrics.Metrics, w *wal.WAL) error {
 	chainRecords, err := registryProvider().GetChainRecords()
 	if err != nil {
 		return err
@@ -95,7 +98,7 @@ func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, all
 
 	for _, chr := range chainRecords {
 		if chr.Active {
-			if err := c.Activate(chr, registryProvider, allMetrics); err != nil {
+			if err := c.Activate(chr, registryProvider, allMetrics, w); err != nil {
 				c.log.Errorf("cannot activate chain %s: %v", chr.ChainID, err)
 			}
 		}
@@ -107,7 +110,7 @@ func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, all
 // - creates chain object
 // - insert it into the runtime registry
 // - subscribes for related transactions in he IOTA node
-func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.Provider, allMetrics *metrics.Metrics) error {
+func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.Provider, allMetrics *metrics.Metrics, w *wal.WAL) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -121,26 +124,20 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		return nil
 	}
 	// create new chain object
-	peerNetworkConfig, err := peering.NewStaticPeerNetworkConfigProvider(
-		parameters.GetString(parameters.PeeringMyNetID),
-		parameters.GetInt(parameters.PeeringPort),
-		chr.Peers...,
-	)
-	if err != nil {
-		return xerrors.Errorf("cannot create peer network config provider")
-	}
-
 	defaultRegistry := registryProvider()
 	chainKVStore := c.getOrCreateKVStore(chr.ChainID)
 	chainMetrics := allMetrics.NewChainMetrics(chr.ChainID)
+	chainWAL, err := w.NewChainWAL(chr.ChainID)
+	if err != nil {
+		c.log.Debugf("Error creating wal object: %v", err)
+		chainWAL = wal.NewDefault()
+	}
 	newChain := chainimpl.NewChain(
 		chr.ChainID,
 		c.log,
 		c.nodeConn,
-		peerNetworkConfig,
 		chainKVStore,
 		c.networkProvider,
-		defaultRegistry,
 		defaultRegistry,
 		defaultRegistry,
 		c.processorConfig,
@@ -148,6 +145,7 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		c.offledgerBroadcastInterval,
 		c.pullMissingRequestsFromCommittee,
 		chainMetrics,
+		chainWAL,
 	)
 	if newChain == nil {
 		return xerrors.New("Chains.Activate: failed to create chain object")

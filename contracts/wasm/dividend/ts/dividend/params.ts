@@ -22,44 +22,44 @@ export class MutableInitParams extends wasmlib.ScMapID {
 
 export class ImmutableMemberParams extends wasmlib.ScMapID {
     address(): wasmlib.ScImmutableAddress {
-		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamAddress));
 	}
 
     factor(): wasmlib.ScImmutableInt64 {
-		return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamFactor]);
+		return new wasmlib.ScImmutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamFactor));
 	}
 }
 
 export class MutableMemberParams extends wasmlib.ScMapID {
     address(): wasmlib.ScMutableAddress {
-		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamAddress));
 	}
 
     factor(): wasmlib.ScMutableInt64 {
-		return new wasmlib.ScMutableInt64(this.mapID, sc.idxMap[sc.IdxParamFactor]);
+		return new wasmlib.ScMutableInt64(this.mapID, wasmlib.Key32.fromString(sc.ParamFactor));
 	}
 }
 
 export class ImmutableSetOwnerParams extends wasmlib.ScMapID {
     owner(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamOwner));
 	}
 }
 
 export class MutableSetOwnerParams extends wasmlib.ScMapID {
     owner(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamOwner));
 	}
 }
 
 export class ImmutableGetFactorParams extends wasmlib.ScMapID {
     address(): wasmlib.ScImmutableAddress {
-		return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+		return new wasmlib.ScImmutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamAddress));
 	}
 }
 
 export class MutableGetFactorParams extends wasmlib.ScMapID {
     address(): wasmlib.ScMutableAddress {
-		return new wasmlib.ScMutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
+		return new wasmlib.ScMutableAddress(this.mapID, wasmlib.Key32.fromString(sc.ParamAddress));
 	}
 }

@@ -13,16 +13,17 @@ pub const SC_NAME        : &str = "erc721";
 pub const SC_DESCRIPTION : &str = "ERC-721 NFT PoC for IOTA Smart Contracts";
 pub const HSC_NAME       : ScHname = ScHname(0xd967c216);
 
-pub const PARAM_APPROVAL : &str = "approval";
-pub const PARAM_APPROVED : &str = "approved";
-pub const PARAM_DATA     : &str = "data";
-pub const PARAM_FROM     : &str = "from";
-pub const PARAM_NAME     : &str = "n";
-pub const PARAM_OPERATOR : &str = "operator";
-pub const PARAM_OWNER    : &str = "owner";
-pub const PARAM_SYMBOL   : &str = "s";
-pub const PARAM_TO       : &str = "to";
-pub const PARAM_TOKEN_ID : &str = "tokenID";
+pub const PARAM_APPROVAL  : &str = "approval";
+pub const PARAM_APPROVED  : &str = "approved";
+pub const PARAM_DATA      : &str = "data";
+pub const PARAM_FROM      : &str = "from";
+pub const PARAM_NAME      : &str = "n";
+pub const PARAM_OPERATOR  : &str = "operator";
+pub const PARAM_OWNER     : &str = "owner";
+pub const PARAM_SYMBOL    : &str = "s";
+pub const PARAM_TO        : &str = "to";
+pub const PARAM_TOKEN_ID  : &str = "tokenID";
+pub const PARAM_TOKEN_URI : &str = "tokenURI";
 
 pub const RESULT_AMOUNT    : &str = "amount";
 pub const RESULT_APPROVAL  : &str = "approval";
@@ -38,6 +39,7 @@ pub const STATE_BALANCES           : &str = "balances";
 pub const STATE_NAME               : &str = "name";
 pub const STATE_OWNERS             : &str = "owners";
 pub const STATE_SYMBOL             : &str = "symbol";
+pub const STATE_TOKEN_UR_IS        : &str = "tokenURIs";
 
 pub const FUNC_APPROVE              : &str = "approve";
 pub const FUNC_BURN                 : &str = "burn";

@@ -48,6 +48,7 @@ type WaspServices interface {
 	CallView(chainID *iscp.ChainID, scName, fname string, params dict.Dict) (dict.Dict, error)
 	GetChainNodeConnectionMetrics(*iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error)
 	GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error)
+	GetChainConsensusWorkflowStatus(*iscp.ChainID) (chain.ConsensusWorkflowStatus, error)
 }
 
 type Dashboard struct {
@@ -108,6 +109,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"decUint32":              decUint32,
 		"bytesToString":          bytesToString,
 		"keyToString":            keyToString,
+		"anythingToString":       anythingToString,
 		"base58":                 base58.Encode,
 		"replace":                strings.Replace,
 		"uri":                    func(s string, p ...interface{}) string { return e.Reverse(s, p...) },

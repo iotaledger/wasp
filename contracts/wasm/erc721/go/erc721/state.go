@@ -34,36 +34,49 @@ func (m MapAgentIDToImmutableUint64) GetUint64(key wasmlib.ScAgentID) wasmlib.Sc
 	return wasmlib.NewScImmutableUint64(m.objID, key.KeyID())
 }
 
+type MapHashToImmutableString struct {
+	objID int32
+}
+
+func (m MapHashToImmutableString) GetString(key wasmlib.ScHash) wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(m.objID, key.KeyID())
+}
+
 type ImmutableErc721State struct {
 	id int32
 }
 
 func (s ImmutableErc721State) ApprovedAccounts() MapHashToImmutableAgentID {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateApprovedAccounts], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateApprovedAccounts), wasmlib.TYPE_MAP)
 	return MapHashToImmutableAgentID{objID: mapID}
 }
 
 func (s ImmutableErc721State) ApprovedOperators() MapAgentIDToImmutableOperators {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateApprovedOperators], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateApprovedOperators), wasmlib.TYPE_MAP)
 	return MapAgentIDToImmutableOperators{objID: mapID}
 }
 
 func (s ImmutableErc721State) Balances() MapAgentIDToImmutableUint64 {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBalances], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBalances), wasmlib.TYPE_MAP)
 	return MapAgentIDToImmutableUint64{objID: mapID}
 }
 
 func (s ImmutableErc721State) Name() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxStateName])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(StateName))
 }
 
 func (s ImmutableErc721State) Owners() MapHashToImmutableAgentID {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateOwners], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateOwners), wasmlib.TYPE_MAP)
 	return MapHashToImmutableAgentID{objID: mapID}
 }
 
 func (s ImmutableErc721State) Symbol() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxStateSymbol])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(StateSymbol))
+}
+
+func (s ImmutableErc721State) TokenURIs() MapHashToImmutableString {
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateTokenURIs), wasmlib.TYPE_MAP)
+	return MapHashToImmutableString{objID: mapID}
 }
 
 type MapHashToMutableAgentID struct {
@@ -103,34 +116,55 @@ func (m MapAgentIDToMutableUint64) GetUint64(key wasmlib.ScAgentID) wasmlib.ScMu
 	return wasmlib.NewScMutableUint64(m.objID, key.KeyID())
 }
 
+type MapHashToMutableString struct {
+	objID int32
+}
+
+func (m MapHashToMutableString) Clear() {
+	wasmlib.Clear(m.objID)
+}
+
+func (m MapHashToMutableString) GetString(key wasmlib.ScHash) wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(m.objID, key.KeyID())
+}
+
 type MutableErc721State struct {
 	id int32
 }
 
+func (s MutableErc721State) AsImmutable() ImmutableErc721State {
+	return ImmutableErc721State(s)
+}
+
 func (s MutableErc721State) ApprovedAccounts() MapHashToMutableAgentID {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateApprovedAccounts], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateApprovedAccounts), wasmlib.TYPE_MAP)
 	return MapHashToMutableAgentID{objID: mapID}
 }
 
 func (s MutableErc721State) ApprovedOperators() MapAgentIDToMutableOperators {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateApprovedOperators], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateApprovedOperators), wasmlib.TYPE_MAP)
 	return MapAgentIDToMutableOperators{objID: mapID}
 }
 
 func (s MutableErc721State) Balances() MapAgentIDToMutableUint64 {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateBalances], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateBalances), wasmlib.TYPE_MAP)
 	return MapAgentIDToMutableUint64{objID: mapID}
 }
 
 func (s MutableErc721State) Name() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxStateName])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(StateName))
 }
 
 func (s MutableErc721State) Owners() MapHashToMutableAgentID {
-	mapID := wasmlib.GetObjectID(s.id, idxMap[IdxStateOwners], wasmlib.TYPE_MAP)
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateOwners), wasmlib.TYPE_MAP)
 	return MapHashToMutableAgentID{objID: mapID}
 }
 
 func (s MutableErc721State) Symbol() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxStateSymbol])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(StateSymbol))
+}
+
+func (s MutableErc721State) TokenURIs() MapHashToMutableString {
+	mapID := wasmlib.GetObjectID(s.id, wasmlib.KeyID(StateTokenURIs), wasmlib.TYPE_MAP)
+	return MapHashToMutableString{objID: mapID}
 }

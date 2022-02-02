@@ -14,7 +14,7 @@ type ImmutableGetTimestampResults struct {
 }
 
 func (s ImmutableGetTimestampResults) Timestamp() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultTimestamp])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultTimestamp))
 }
 
 type MutableGetTimestampResults struct {
@@ -22,5 +22,5 @@ type MutableGetTimestampResults struct {
 }
 
 func (s MutableGetTimestampResults) Timestamp() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultTimestamp])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultTimestamp))
 }

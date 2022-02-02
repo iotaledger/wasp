@@ -141,6 +141,12 @@ func funcMint(ctx wasmlib.ScFuncContext, f *MintContext) {
 	tokenOwner := f.State.Owners().GetAgentID(tokenID)
 	ctx.Require(!tokenOwner.Exists(), "tokenID already minted")
 
+	// save optional token uri
+	tokenURI := f.Params.TokenURI()
+	if tokenURI.Exists() {
+		f.State.TokenURIs().GetString(tokenID).SetValue(tokenURI.Value())
+	}
+
 	owner := ctx.Caller()
 	tokenOwner.SetValue(owner)
 	balance := f.State.Balances().GetUint64(owner)
@@ -239,6 +245,11 @@ func viewSymbol(ctx wasmlib.ScViewContext, f *SymbolContext) {
 func viewTokenURI(ctx wasmlib.ScViewContext, f *TokenURIContext) {
 	tokenID := f.Params.TokenID()
 	if tokenID.Exists() {
-		f.Results.TokenURI().SetValue(baseURI + tokenID.String())
+		tokenURI := baseURI + tokenID.String()
+		savedURI := f.State.TokenURIs().GetString(tokenID.Value())
+		if savedURI.Exists() {
+			tokenURI = savedURI.Value()
+		}
+		f.Results.TokenURI().SetValue(tokenURI)
 	}
 }

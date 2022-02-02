@@ -39,7 +39,7 @@ $#if events PackageEventsExist
 `,
 	// *******************************
 	"PackageEventsExist": `
-	events:  sc.$Package$+Events = new sc.$Package$+Events();
+	events: sc.$Package$+Events = new sc.$Package$+Events();
 `,
 	// *******************************
 	"ImmutableFuncNameParams": `

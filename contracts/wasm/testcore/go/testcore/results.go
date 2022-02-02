@@ -14,7 +14,7 @@ type ImmutableCallOnChainResults struct {
 }
 
 func (s ImmutableCallOnChainResults) IntValue() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultIntValue])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
 }
 
 type MutableCallOnChainResults struct {
@@ -22,7 +22,7 @@ type MutableCallOnChainResults struct {
 }
 
 func (s MutableCallOnChainResults) IntValue() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultIntValue])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
 }
 
 type ImmutableGetMintedSupplyResults struct {
@@ -30,11 +30,11 @@ type ImmutableGetMintedSupplyResults struct {
 }
 
 func (s ImmutableGetMintedSupplyResults) MintedColor() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxResultMintedColor])
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ResultMintedColor))
 }
 
 func (s ImmutableGetMintedSupplyResults) MintedSupply() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultMintedSupply])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultMintedSupply))
 }
 
 type MutableGetMintedSupplyResults struct {
@@ -42,11 +42,11 @@ type MutableGetMintedSupplyResults struct {
 }
 
 func (s MutableGetMintedSupplyResults) MintedColor() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxResultMintedColor])
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ResultMintedColor))
 }
 
 func (s MutableGetMintedSupplyResults) MintedSupply() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultMintedSupply])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultMintedSupply))
 }
 
 type ImmutableRunRecursionResults struct {
@@ -54,7 +54,7 @@ type ImmutableRunRecursionResults struct {
 }
 
 func (s ImmutableRunRecursionResults) IntValue() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultIntValue])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
 }
 
 type MutableRunRecursionResults struct {
@@ -62,7 +62,7 @@ type MutableRunRecursionResults struct {
 }
 
 func (s MutableRunRecursionResults) IntValue() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultIntValue])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
 }
 
 type ImmutableTestChainOwnerIDFullResults struct {
@@ -70,7 +70,7 @@ type ImmutableTestChainOwnerIDFullResults struct {
 }
 
 func (s ImmutableTestChainOwnerIDFullResults) ChainOwnerID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxResultChainOwnerID])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
 }
 
 type MutableTestChainOwnerIDFullResults struct {
@@ -78,7 +78,7 @@ type MutableTestChainOwnerIDFullResults struct {
 }
 
 func (s MutableTestChainOwnerIDFullResults) ChainOwnerID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxResultChainOwnerID])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
 }
 
 type ImmutableFibonacciResults struct {
@@ -86,7 +86,7 @@ type ImmutableFibonacciResults struct {
 }
 
 func (s ImmutableFibonacciResults) IntValue() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultIntValue])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
 }
 
 type MutableFibonacciResults struct {
@@ -94,7 +94,7 @@ type MutableFibonacciResults struct {
 }
 
 func (s MutableFibonacciResults) IntValue() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultIntValue])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultIntValue))
 }
 
 type ImmutableGetCounterResults struct {
@@ -102,7 +102,7 @@ type ImmutableGetCounterResults struct {
 }
 
 func (s ImmutableGetCounterResults) Counter() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultCounter])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultCounter))
 }
 
 type MutableGetCounterResults struct {
@@ -110,7 +110,7 @@ type MutableGetCounterResults struct {
 }
 
 func (s MutableGetCounterResults) Counter() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultCounter])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultCounter))
 }
 
 type MapStringToImmutableInt64 struct {
@@ -190,7 +190,7 @@ type ImmutableTestChainOwnerIDViewResults struct {
 }
 
 func (s ImmutableTestChainOwnerIDViewResults) ChainOwnerID() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxResultChainOwnerID])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
 }
 
 type MutableTestChainOwnerIDViewResults struct {
@@ -198,7 +198,7 @@ type MutableTestChainOwnerIDViewResults struct {
 }
 
 func (s MutableTestChainOwnerIDViewResults) ChainOwnerID() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxResultChainOwnerID])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultChainOwnerID))
 }
 
 type ImmutableTestSandboxCallResults struct {
@@ -206,7 +206,7 @@ type ImmutableTestSandboxCallResults struct {
 }
 
 func (s ImmutableTestSandboxCallResults) SandboxCall() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxResultSandboxCall])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultSandboxCall))
 }
 
 type MutableTestSandboxCallResults struct {
@@ -214,5 +214,5 @@ type MutableTestSandboxCallResults struct {
 }
 
 func (s MutableTestSandboxCallResults) SandboxCall() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxResultSandboxCall])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultSandboxCall))
 }

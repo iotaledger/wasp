@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -51,6 +52,7 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 			dki.PublicCommits = make([]kyber.Point, 0)
 			dki.PublicShares = make([]kyber.Point, 0)
 		}
+		dki.NodePubKeys = make([]*ed25519.PublicKey, 0)
 		dkb = dki.Bytes()
 		require.Nil(t, util.WriteBytes16(&buf, dkb))
 	}

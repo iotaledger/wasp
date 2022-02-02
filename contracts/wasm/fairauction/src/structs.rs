@@ -12,6 +12,7 @@ use wasmlib::*;
 use wasmlib::host::*;
 use crate::typedefs::*;
 
+#[derive(Clone)]
 pub struct Auction {
     pub color          : ScColor,  // color of tokens for sale
     pub creator        : ScAgentID,  // issuer of start_auction transaction
@@ -61,6 +62,7 @@ impl Auction {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct ImmutableAuction {
     pub(crate) obj_id: i32,
     pub(crate) key_id: Key32,
@@ -76,6 +78,7 @@ impl ImmutableAuction {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MutableAuction {
     pub(crate) obj_id: i32,
     pub(crate) key_id: Key32,
@@ -99,6 +102,7 @@ impl MutableAuction {
     }
 }
 
+#[derive(Clone)]
 pub struct Bid {
     pub amount    : i64,  // cumulative amount of bids from same bidder
     pub index     : i32,  // index of bidder in bidder list
@@ -124,6 +128,7 @@ impl Bid {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct ImmutableBid {
     pub(crate) obj_id: i32,
     pub(crate) key_id: Key32,
@@ -139,6 +144,7 @@ impl ImmutableBid {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MutableBid {
     pub(crate) obj_id: i32,
     pub(crate) key_id: Key32,

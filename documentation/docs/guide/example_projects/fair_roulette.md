@@ -65,7 +65,7 @@ Off-ledger requests are directly sent to Wasp nodes and do not require validatio
 :::note
 This example uses On-ledger requests to initiate a betting request. A method to invoke Off-ledger requests is implemented inside the frontend.
 
-See: [placeBetOffLedger](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L133)
+See: [placeBetOffLedger](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/wasm/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L133)
 :::
 
 #### Funds
@@ -217,7 +217,7 @@ This service comprises two parts:
 
 ##### PlaceBetOnLedger
 
-The [placeBetOnLedger](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L149) function is responsible for sending On-Ledger bet requests. It constructs a simple OnLedger object containing:
+The [placeBetOnLedger](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/wasm/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L149) function is responsible for sending On-Ledger bet requests. It constructs a simple OnLedger object containing:
 
 * The smart contract ID: `fairroulette` 
 * The function to invoke: `placeBet` 
@@ -235,7 +235,7 @@ See: [CoreTypes](https://wiki.iota.org/wasp/misc/coretypes) and [Invoking](https
 
 ##### CallView 
 
-The [callView](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L165) function is responsible for calling smart contract view functions. 
+The [callView](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/wasm/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L165) function is responsible for calling smart contract view functions. 
 
 See: [Calling a view](https://wiki.iota.org/wasp/guide/solo/view-sc) 
 
@@ -246,9 +246,9 @@ State changes that happen afterwards are published through the websocket event s
 
 You can find examples to guide you in building similar functions in:
 
-* Frontend: [getRoundStatus](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L181) 
+* Frontend: [getRoundStatus](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/wasm/fairroulette/frontend/src/lib/fairroulette_client/fair_roulette_service.ts#L181) 
 
-* Smart Contract: [view_round_status](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/rust/fairroulette/src/fairroulette.rs#L312)
+* Smart Contract: [view_round_status](https://github.com/iotaledger/wasp/blob/7b3ddc54891ccf021c7aaa32db35d88361fade16/contracts/wasm/fairroulette/src/fairroulette.rs#L312)
 
 Since data returned by the views is encoded in Base64, the frontend needs to decode this by using simple `Buffer` methods. 
 The `view_round_status` view returns an `UInt16` which has a state of either `0` or `1`. 

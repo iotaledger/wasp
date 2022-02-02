@@ -245,6 +245,56 @@ func TestClearArray(t *testing.T) {
 	require.Error(t, ctx.Err)
 }
 
+func TestClearMap(t *testing.T) {
+	// test reproduces a problem that needs fixing
+	t.SkipNow()
+
+	*wasmsolo.GoDebug = true
+	ctx := setupTest(t)
+
+	as := testwasmlib.ScFuncs.MapSet(ctx)
+	as.Params.Name().SetValue("albums")
+	as.Params.Key().SetValue("Simple Minds")
+	as.Params.Value().SetValue("New Gold Dream")
+	as.Func.TransferIotas(1).Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapSet(ctx)
+	as.Params.Name().SetValue("bands")
+	as.Params.Key().SetValue("Dire Straits")
+	as.Params.Value().SetValue("Calling Elvis")
+	as.Func.TransferIotas(1).Post()
+	require.NoError(t, ctx.Err)
+
+	as = testwasmlib.ScFuncs.MapSet(ctx)
+	as.Params.Name().SetValue("bands")
+	as.Params.Key().SetValue("ELO")
+	as.Params.Value().SetValue("Mr. Blue Sky")
+	as.Func.TransferIotas(1).Post()
+	require.NoError(t, ctx.Err)
+
+	av := testwasmlib.ScFuncs.MapValue(ctx)
+	av.Params.Name().SetValue("bands")
+	av.Params.Key().SetValue("Dire Straits")
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	value := av.Results.Value()
+	require.True(t, value.Exists())
+	require.EqualValues(t, "Calling Elvis", value.Value())
+
+	ac := testwasmlib.ScFuncs.ArrayClear(ctx)
+	ac.Params.Name().SetValue("bands")
+	ac.Func.TransferIotas(1).Post()
+	require.NoError(t, ctx.Err)
+
+	av = testwasmlib.ScFuncs.MapValue(ctx)
+	av.Params.Name().SetValue("bands")
+	av.Params.Key().SetValue("Dire Straits")
+	av.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, "", value.Value())
+}
+
 func TestViewBalance(t *testing.T) {
 	ctx := setupTest(t)
 

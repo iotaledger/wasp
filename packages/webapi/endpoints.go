@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package webapi
 
 import (
@@ -11,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
 	"github.com/iotaledger/wasp/packages/webapi/info"
 	"github.com/iotaledger/wasp/packages/webapi/reqstatus"
@@ -33,6 +37,7 @@ func Init(
 	nodeProvider dkg.NodeProvider,
 	shutdown admapi.ShutdownFunc,
 	metrics *metricspkg.Metrics,
+	w *wal.WAL,
 ) {
 	log = logger.NewLogger("WebAPI")
 
@@ -50,6 +55,7 @@ func Init(
 		chainsProvider.ChainProvider(),
 		webapiutil.GetAccountBalance,
 		webapiutil.HasRequestBeenProcessed,
+		network.Self().PubKey(),
 		time.Duration(parameters.GetInt(parameters.OffledgerAPICacheTTL))*time.Second,
 		log,
 	)
@@ -65,6 +71,7 @@ func Init(
 		nodeProvider,
 		shutdown,
 		metrics,
+		w,
 	)
 	log.Infof("added web api endpoints")
 }

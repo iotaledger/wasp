@@ -22,14 +22,10 @@ func metricsNodeconnBreadcrumb(e *echo.Echo) Tab {
 func (d *Dashboard) initMetricsNodeconn(e *echo.Echo, r renderer) {
 	route := e.GET("/metrics/nodeconn", d.handleMetricsNodeconn)
 	route.Name = "metricsNodeconn"
-	r[route.Path] = d.makeTemplate(e, tplMetricsNodeconnMessages, tplMetricsNodeconn)
+	r[route.Path] = d.makeTemplate(e, tplMetricsChainNodeconn, tplMetricsNodeconn)
 }
 
 func (d *Dashboard) handleMetricsNodeconn(c echo.Context) error {
-	chains, err := d.fetchChains()
-	if err != nil {
-		return err
-	}
 	metrics, err := d.wasp.GetNodeConnectionMetrics()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
@@ -37,13 +33,11 @@ func (d *Dashboard) handleMetricsNodeconn(c echo.Context) error {
 	tab := metricsNodeconnBreadcrumb(c.Echo())
 	return c.Render(http.StatusOK, c.Path(), &MetricsNodeconnTemplateParams{
 		BaseTemplateParams: d.BaseParams(c, tab),
-		Chains:             chains,
 		Metrics:            metrics,
 	})
 }
 
 type MetricsNodeconnTemplateParams struct {
 	BaseTemplateParams
-	Chains  []*ChainOverview
 	Metrics nodeconnmetrics.NodeConnectionMetrics
 }

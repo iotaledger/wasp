@@ -26,6 +26,8 @@ type waspServicesMock struct {
 	chains map[[ledgerstate.AddressLength]byte]*solo.Chain
 }
 
+var _ WaspServices = &waspServicesMock{}
+
 func (w *waspServicesMock) ConfigDump() map[string]interface{} {
 	return map[string]interface{}{
 		"foo": "bar",
@@ -104,6 +106,14 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
+	pubKey0, err := ed25519.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	if err != nil {
+		return nil, err
+	}
+	pubKey1, err := ed25519.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	if err != nil {
+		return nil, err
+	}
 	return &chain.CommitteeInfo{
 		Address:       ledgerstate.NewED25519Address(ed25519.PublicKey{}),
 		Size:          2,
@@ -112,14 +122,14 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 		PeerStatus: []*chain.PeerStatus{
 			{
 				Index:     0,
-				PeeringID: "0",
-				IsSelf:    true,
+				NetID:     "localhost:2000",
+				PubKey:    &pubKey0,
 				Connected: true,
 			},
 			{
 				Index:     1,
-				PeeringID: "1",
-				IsSelf:    false,
+				NetID:     "localhost:2001",
+				PubKey:    &pubKey1,
 				Connected: true,
 			},
 		},
@@ -131,6 +141,10 @@ func (w *waspServicesMock) GetChainNodeConnectionMetrics(*iscp.ChainID) (nodecon
 }
 
 func (w *waspServicesMock) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error) {
+	panic("Not implemented")
+}
+
+func (w *waspServicesMock) GetChainConsensusWorkflowStatus(chainID *iscp.ChainID) (chain.ConsensusWorkflowStatus, error) {
 	panic("Not implemented")
 }
 

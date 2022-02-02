@@ -3,6 +3,7 @@ package chain
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -34,6 +35,7 @@ func postRequestCmd() *cobra.Command {
 			scClient := SCClient(iscp.Hn(args[0]))
 
 			if offLedger {
+				params.Nonce = uint64(time.Now().UnixNano())
 				util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.OffLedger, error) {
 					return scClient.PostOffLedgerRequest(fname, params)
 				})

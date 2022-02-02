@@ -14,11 +14,11 @@ type ImmutableMintSupplyParams struct {
 }
 
 func (s ImmutableMintSupplyParams) Description() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamDescription])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamDescription))
 }
 
 func (s ImmutableMintSupplyParams) UserDefined() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxParamUserDefined])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ParamUserDefined))
 }
 
 type MutableMintSupplyParams struct {
@@ -26,11 +26,11 @@ type MutableMintSupplyParams struct {
 }
 
 func (s MutableMintSupplyParams) Description() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamDescription])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamDescription))
 }
 
 func (s MutableMintSupplyParams) UserDefined() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxParamUserDefined])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ParamUserDefined))
 }
 
 type ImmutableTransferOwnershipParams struct {
@@ -38,7 +38,7 @@ type ImmutableTransferOwnershipParams struct {
 }
 
 func (s ImmutableTransferOwnershipParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 type MutableTransferOwnershipParams struct {
@@ -46,7 +46,7 @@ type MutableTransferOwnershipParams struct {
 }
 
 func (s MutableTransferOwnershipParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 type ImmutableUpdateMetadataParams struct {
@@ -54,7 +54,7 @@ type ImmutableUpdateMetadataParams struct {
 }
 
 func (s ImmutableUpdateMetadataParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 type MutableUpdateMetadataParams struct {
@@ -62,7 +62,7 @@ type MutableUpdateMetadataParams struct {
 }
 
 func (s MutableUpdateMetadataParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 type ImmutableGetInfoParams struct {
@@ -70,7 +70,7 @@ type ImmutableGetInfoParams struct {
 }
 
 func (s ImmutableGetInfoParams) Color() wasmlib.ScImmutableColor {
-	return wasmlib.NewScImmutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScImmutableColor(s.id, wasmlib.KeyID(ParamColor))
 }
 
 type MutableGetInfoParams struct {
@@ -78,5 +78,5 @@ type MutableGetInfoParams struct {
 }
 
 func (s MutableGetInfoParams) Color() wasmlib.ScMutableColor {
-	return wasmlib.NewScMutableColor(s.id, idxMap[IdxParamColor])
+	return wasmlib.NewScMutableColor(s.id, wasmlib.KeyID(ParamColor))
 }

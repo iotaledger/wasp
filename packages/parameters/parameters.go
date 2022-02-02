@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package parameters
 
 import (
@@ -12,6 +15,8 @@ import (
 var all *configuration.Configuration
 
 const (
+	NodeOwnerAddresses = "node.ownerAddresses"
+
 	LoggerLevel             = "logger.level"
 	LoggerDisableCaller     = "logger.disableCaller"
 	LoggerDisableStacktrace = "logger.disableStacktrace"
@@ -35,7 +40,6 @@ const (
 
 	PeeringMyNetID                   = "peering.netid"
 	PeeringPort                      = "peering.port"
-	PeeringNeighbors                 = "peering.neighbors"
 	PullMissingRequestsFromCommittee = "peering.pullMissingRequests"
 
 	NanomsgPublisherPort = "nanomsg.port"
@@ -52,11 +56,16 @@ const (
 
 	MetricsBindAddress = "metrics.bindAddress"
 	MetricsEnabled     = "metrics.enabled"
+
+	WALEnabled   = "wal.enabled"
+	WALDirectory = "wal.directory"
 )
 
 func Init() *configuration.Configuration {
 	// set the default logger config
 	all = configuration.New()
+
+	flag.StringSlice(NodeOwnerAddresses, []string{}, "A list of node owner addresses.")
 
 	flag.String(LoggerLevel, "info", "log level")
 	flag.Bool(LoggerDisableCaller, false, "disable caller info in log")
@@ -81,7 +90,7 @@ func Init() *configuration.Configuration {
 
 	flag.Int(PeeringPort, 4000, "port for Wasp committee connection/peering")
 	flag.String(PeeringMyNetID, "127.0.0.1:4000", "node host address as it is recognized by other peers")
-	flag.StringSlice(PeeringNeighbors, []string{}, "list of neighbors: known peer netIDs")
+
 	flag.Bool(PullMissingRequestsFromCommittee, true, "whether or not to pull missing requests from other committee members")
 
 	flag.Int(NanomsgPublisherPort, 5550, "the port for nanomsg even publisher")
@@ -98,6 +107,9 @@ func Init() *configuration.Configuration {
 
 	flag.String(MetricsBindAddress, "127.0.0.1:2112", "prometheus metrics http server address")
 	flag.Bool(MetricsEnabled, false, "disable and enable prometheus metrics")
+
+	flag.Bool(WALEnabled, true, "enabled wal")
+	flag.String(WALDirectory, "wal", "path to logs folder")
 
 	return all
 }

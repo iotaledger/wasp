@@ -10,56 +10,56 @@ import * as sc from "./index";
 
 export class ImmutableMintSupplyParams extends wasmlib.ScMapID {
     description(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamDescription]);
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamDescription));
 	}
 
     userDefined(): wasmlib.ScImmutableString {
-		return new wasmlib.ScImmutableString(this.mapID, sc.idxMap[sc.IdxParamUserDefined]);
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamUserDefined));
 	}
 }
 
 export class MutableMintSupplyParams extends wasmlib.ScMapID {
     description(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamDescription]);
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamDescription));
 	}
 
     userDefined(): wasmlib.ScMutableString {
-		return new wasmlib.ScMutableString(this.mapID, sc.idxMap[sc.IdxParamUserDefined]);
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamUserDefined));
 	}
 }
 
 export class ImmutableTransferOwnershipParams extends wasmlib.ScMapID {
     color(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }
 
 export class MutableTransferOwnershipParams extends wasmlib.ScMapID {
     color(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }
 
 export class ImmutableUpdateMetadataParams extends wasmlib.ScMapID {
     color(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }
 
 export class MutableUpdateMetadataParams extends wasmlib.ScMapID {
     color(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }
 
 export class ImmutableGetInfoParams extends wasmlib.ScMapID {
     color(): wasmlib.ScImmutableColor {
-		return new wasmlib.ScImmutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScImmutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }
 
 export class MutableGetInfoParams extends wasmlib.ScMapID {
     color(): wasmlib.ScMutableColor {
-		return new wasmlib.ScMutableColor(this.mapID, sc.idxMap[sc.IdxParamColor]);
+		return new wasmlib.ScMutableColor(this.mapID, wasmlib.Key32.fromString(sc.ParamColor));
 	}
 }

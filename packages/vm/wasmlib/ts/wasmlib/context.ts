@@ -319,6 +319,9 @@ export class ScFuncContext extends ScBaseContext implements ScViewCallContext, S
 
     // generates a random value from 0 to max (exclusive max) using a deterministic RNG
     random(max: i64): i64 {
+        if (max == 0) {
+            this.panic("random: max parameter should be non-zero");
+        }
         let state = new ScMutableMap(OBJ_ID_STATE);
         let rnd = state.getBytes(keys.KEY_RANDOM);
         let seed = rnd.value();
