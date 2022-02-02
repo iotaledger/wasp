@@ -82,6 +82,7 @@ type chainObj struct {
 	missingRequestIDsPeerMsgPipe       pipe.Pipe
 	missingRequestPeerMsgPipe          pipe.Pipe
 	timerTickMsgPipe                   pipe.Pipe
+	wal                                chain.WAL
 }
 
 type committeeStruct struct {
@@ -102,6 +103,7 @@ func NewChain(
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
 	chainMetrics metrics.ChainMetrics,
+	wal chain.WAL,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chainID.String())
 
@@ -138,6 +140,7 @@ func NewChain(
 		missingRequestIDsPeerMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		missingRequestPeerMsgPipe:        pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
+		wal:                              wal,
 	}
 	ret.committee.Store(&committeeStruct{})
 
@@ -153,7 +156,8 @@ func NewChain(
 		log.Errorf("NewChain: unable to create stateMgr.fallbackPeers domain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics)
+
+	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics, wal)
 	ret.stateMgr.SetChainPeers(chainPeerNodes)
 
 	ret.eventChainTransitionClosure = events.NewClosure(ret.processChainTransition)
