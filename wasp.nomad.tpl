@@ -43,8 +43,11 @@ variable "wasp_config" {
 		"port": {{ env "NOMAD_PORT_peering" }},
 		"netid": "{{ env "NOMAD_ADDR_peering" }}"
 	},
+  "profiling":{
+    "enabled": true
+  },
 	"nodeconn": {
-		"address": "{{ range service "goshimmer-leader-node" }}{{ if in .Tags "txstream" }}{{ .Address }}:{{ .Port }}{{end}}{{end}}"
+		"address": "goshimmer.sc.iota.org:5000"
 	},
 	"nanomsg":{
 		"port": {{ env "NOMAD_PORT_nanomsg" }}
@@ -74,7 +77,7 @@ job "iscp-evm" {
       sticky  = true
     }
 
-    count = 5
+    count = 0
 
     network {
       mode = "host"
@@ -179,7 +182,7 @@ job "iscp-evm" {
       sticky  = true
     }
 
-    count = 3
+    count = 1
 
     network {
       mode = "host"
