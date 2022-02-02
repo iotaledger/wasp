@@ -96,7 +96,7 @@ type Committee interface {
 
 type (
 	NodeConnectionHandleTransactionFun func(*iotago.Transaction)
-	//NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
+	// NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
 	NodeConnectionHandleOutputFun             func(iotago.Output)
 	NodeConnectionHandleUnspentAliasOutputFun func(*iotago.AliasOutput, time.Time)
 )
@@ -104,19 +104,15 @@ type (
 type NodeConnection interface {
 	Subscribe(addr iotago.Address)
 	Unsubscribe(addr iotago.Address)
-
 	AttachToTransactionReceived(*iotago.AliasAddress, NodeConnectionHandleTransactionFun)
-	//AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
+	// AttachToInclusionStateReceived(*iotago.AliasAddress, NodeConnectionHandleInclusionStateFun) TODO: refactor
 	AttachToOutputReceived(*iotago.AliasAddress, NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(*iotago.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState(addr *iotago.AliasAddress)
 	PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID)
 	PullConfirmedOutput(addr iotago.Address, outputID iotago.OutputID)
 	PostTransaction(tx *iotago.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-
 	DetachFromTransactionReceived(*iotago.AliasAddress)
 	DetachFromInclusionStateReceived(*iotago.AliasAddress)
 	DetachFromOutputReceived(*iotago.AliasAddress)
@@ -126,17 +122,14 @@ type NodeConnection interface {
 
 type ChainNodeConnection interface {
 	AttachToTransactionReceived(NodeConnectionHandleTransactionFun)
-	//AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)	TODO: refactor
+	// AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)	TODO: refactor
 	AttachToOutputReceived(NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState()
 	PullTransactionInclusionState(txid iotago.TransactionID)
 	PullConfirmedOutput(outputID iotago.OutputID)
 	PostTransaction(tx *iotago.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
-
 	DetachFromTransactionReceived()
 	DetachFromInclusionStateReceived()
 	DetachFromOutputReceived()
@@ -177,6 +170,21 @@ type AsynchronousCommonSubsetRunner interface {
 	Close()
 }
 
+type WAL interface {
+	Write(bytes []byte) error
+	Contains(i uint32) bool
+	Read(i uint32) ([]byte, error)
+}
+
+type MempoolInfo struct {
+	TotalPool      int
+	ReadyCounter   int
+	InBufCounter   int
+	OutBufCounter  int
+	InPoolCounter  int
+	OutPoolCounter int
+}
+
 type SyncInfo struct {
 	Synced                bool
 	SyncedBlockIndex      uint32
@@ -204,7 +212,6 @@ type ConsensusWorkflowStatus interface {
 	IsTransactionPosted() bool
 	IsTransactionSeen() bool
 	IsInProgress() bool
-
 	GetBatchProposalSentTime() time.Time
 	GetConsensusBatchKnownTime() time.Time
 	GetVMStartedTime() time.Time

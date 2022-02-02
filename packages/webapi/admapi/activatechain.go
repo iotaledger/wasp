@@ -4,12 +4,21 @@
 package admapi
 
 import (
+	"fmt"
+	"net/http"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -20,14 +29,16 @@ type chainWebAPI struct {
 	chains     chains.Provider
 	network    peering.NetworkProvider
 	allMetrics *metrics.Metrics
+	w          *wal.WAL
 }
 
-func addChainEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, chainsProvider chains.Provider, network peering.NetworkProvider, allMetrics *metrics.Metrics) {
+func addChainEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, chainsProvider chains.Provider, network peering.NetworkProvider, allMetrics *metrics.Metrics, w *wal.WAL) {
 	c := &chainWebAPI{
 		registryProvider,
 		chainsProvider,
 		network,
 		allMetrics,
+		w,
 	}
 
 	adm.POST(routes.ActivateChain(":chainID"), c.handleActivateChain).
@@ -59,7 +70,7 @@ func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
 	// }
 
 	// log.Debugw("calling Chains.Activate", "chainID", rec.ChainID.String())
-	// if err := w.chains().Activate(rec, w.registry, w.allMetrics); err != nil {
+	// if err := w.chains().Activate(rec, w.registry, w.allMetrics, w.w); err != nil {
 	// 	return err
 	// }
 

@@ -344,6 +344,7 @@ func (c *consensus) checkQuorum() {
 	if !chainOutput.GetIsGovernanceUpdated() {
 		// if it is not state controller rotation, sending message to state manager
 		// Otherwise state manager is not notified
+		c.writeToWAL()
 		chainOutputID := chainOutput.ID()
 		c.chain.StateCandidateToStateManager(c.resultState, chainOutputID)
 		c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
@@ -365,6 +366,16 @@ func (c *consensus) checkQuorum() {
 	}
 	c.workflow.setTransactionFinalized()
 	c.pullInclusionStateDeadline = time.Now()
+}
+
+func (c *consensus) writeToWAL() {
+	block, err := c.resultState.ExtractBlock()
+	if err == nil {
+		err = c.wal.Write(block.Bytes())
+		if err != nil {
+			c.log.Debugf("Error writing block to wal: %v", err)
+		}
+	}
 }
 
 // postTransactionIfNeeded posts a finalized transaction upon deadline unless it was evidenced on L1 before the deadline.
