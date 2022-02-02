@@ -425,7 +425,7 @@ func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Dur
 	}
 	deadline = time.Now().Add(maxw)
 	for {
-		mstats := ch.mempool.Info()
+		mstats := ch.MempoolInfo()
 		if p(mstats) {
 			return true
 		}
@@ -460,5 +460,5 @@ func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bo
 
 // MempoolInfo returns stats about the chain mempool
 func (ch *Chain) MempoolInfo() mempool.MempoolInfo {
-	return ch.mempool.Info()
+	return ch.mempool.Info(ch.Env.GlobalTime())
 }

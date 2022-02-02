@@ -20,19 +20,19 @@ import (
 )
 
 type mempool struct {
-	inBuffer                map[iscp.RequestID]iscp.Request
-	inMutex                 sync.RWMutex
-	poolMutex               sync.RWMutex
-	inBufCounter            int
-	outBufCounter           int
-	inPoolCounter           int
-	outPoolCounter          int
-	stateReader             state.OptimisticStateReader
-	pool                    map[iscp.RequestID]*requestRef
-	chStop                  chan struct{}
-	solidificationLoopDelay time.Duration
-	log                     *logger.Logger
-	mempoolMetrics          metrics.MempoolMetrics
+	chainAddress       iotago.Address
+	inBuffer           map[iscp.RequestID]iscp.Request
+	inMutex            sync.RWMutex
+	poolMutex          sync.RWMutex
+	inBufCounter       int
+	outBufCounter      int
+	inPoolCounter      int
+	outPoolCounter     int
+	isRequestProcessed func(*iscp.RequestID) (bool, error)
+	pool               map[iscp.RequestID]*requestRef
+	chStop             chan struct{}
+	log                *logger.Logger
+	mempoolMetrics     metrics.MempoolMetrics
 }
 
 var _ Mempool = &mempool{}
@@ -43,23 +43,42 @@ type requestRef struct {
 }
 
 const (
-	defaultSolidificationLoopDelay = 200 * time.Millisecond
-	moveToPoolLoopDelay            = 20 * time.Millisecond
+	moveToPoolLoopDelay = 20 * time.Millisecond
 )
 
-func New(stateReader state.OptimisticStateReader, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) Mempool {
-	ret := &mempool{
-		inBuffer:       make(map[iscp.RequestID]iscp.Request),
-		stateReader:    stateReader,
-		pool:           make(map[iscp.RequestID]*requestRef),
-		chStop:         make(chan struct{}),
-		log:            log.Named("m"),
-		mempoolMetrics: mempoolMetrics,
+func New(
+	chainAddress iotago.Address,
+	stateReader state.OptimisticStateReader,
+	log *logger.Logger,
+	mempoolMetrics metrics.MempoolMetrics,
+) Mempool {
+	isRequestProcessed := func(reqID *iscp.RequestID) (bool, error) {
+		stateReader.SetBaseline()
+		ret, err := blocklog.IsRequestProcessed(stateReader.KVStoreReader(), reqID)
+		if err != nil {
+			// may be invalidated state. Do not remove from in-buffer yet
+			log.Debugf("addToPool, IsRequestProcessed error: %v", err)
+			return false, err
+		}
+		return ret, nil
 	}
-	if len(solidificationLoopDelay) > 0 {
-		ret.solidificationLoopDelay = solidificationLoopDelay[0]
-	} else {
-		ret.solidificationLoopDelay = defaultSolidificationLoopDelay
+	return newMempool(chainAddress, isRequestProcessed, log, mempoolMetrics)
+}
+
+func newMempool(
+	chainAddress iotago.Address,
+	isRequestProcessed func(*iscp.RequestID) (bool, error),
+	log *logger.Logger,
+	mempoolMetrics metrics.MempoolMetrics,
+) Mempool {
+	ret := &mempool{
+		chainAddress:       chainAddress,
+		inBuffer:           make(map[iscp.RequestID]iscp.Request),
+		isRequestProcessed: isRequestProcessed,
+		pool:               make(map[iscp.RequestID]*requestRef),
+		chStop:             make(chan struct{}),
+		log:                log.Named("mempool"),
+		mempoolMetrics:     mempoolMetrics,
 	}
 	go ret.moveToPoolLoop()
 	return ret
@@ -105,11 +124,9 @@ func (m *mempool) addToPool(req iscp.Request) bool {
 	reqid := req.ID()
 
 	// checking in the state if request is processed. Reading may fail
-	m.stateReader.SetBaseline()
-	alreadyProcessed, err := blocklog.IsRequestProcessed(m.stateReader.KVStoreReader(), &reqid)
+	alreadyProcessed, err := m.isRequestProcessed(&reqid)
 	if err != nil {
-		// may be invalidated state. Do not remove from in-buffer yet
-		m.log.Debugf("addToPool, IsRequestProcessed error: %v", err)
+		// could not check if it is processed or not, leave it in the in-buffer
 		return false
 	}
 	if alreadyProcessed {
@@ -222,32 +239,33 @@ func (m *mempool) traceOut(reqid iscp.RequestID) {
 // don't process any request which deadline will expire within 1 minute
 const FallbackDeadlineMinAllowedInterval = time.Minute * 1
 
-func isUnlockable(ref *requestRef, currentTime time.Time) bool {
+func isExpired(ref *requestRef, currentTime iscp.TimeData) bool {
 	r := ref.req.(*iscp.OnLedgerRequestData)
 	expiry, _ := r.Expiry()
-
 	if expiry == nil {
-		return true
+		return false
 	}
-	windowFrom := currentTime.Add(-FallbackDeadlineMinAllowedInterval)
-	windowTo := currentTime.Add(FallbackDeadlineMinAllowedInterval)
+	if expiry.MilestoneIndex != 0 && currentTime.MilestoneIndex >= expiry.MilestoneIndex {
+		return false
+	}
+	return !expiry.Time.IsZero() && currentTime.Time.After(expiry.Time.Add(-FallbackDeadlineMinAllowedInterval))
+}
 
-	if expiry.Time.After(windowFrom) && expiry.Time.Before(windowTo) {
+func (m *mempool) isUnlockable(ref *requestRef, currentTime iscp.TimeData) bool {
+	if isExpired(ref, currentTime) {
 		return false
 	}
 
 	output, _ := ref.req.AsOnLedger().Output().(iotago.TransIndepIdentOutput)
 
-	unlockable := output.UnlockableBy(ref.req.SenderAddress(), &iotago.ExternalUnlockParameters{
-		ConfUnix: uint32(currentTime.Unix()),
+	return output.UnlockableBy(m.chainAddress, &iotago.ExternalUnlockParameters{
+		ConfMsIndex: currentTime.MilestoneIndex,
+		ConfUnix:    uint32(currentTime.Time.Unix()),
 	})
-
-	return unlockable
 }
 
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
-// return isReady, shouldBeRemoved
-func isRequestReady(ref *requestRef, currentTime time.Time) (bool, bool) {
+func (m *mempool) isRequestReady(ref *requestRef, currentTime iscp.TimeData) (isReady bool, shouldBeRemoved bool) {
 	if ref.req.IsOffLedger() {
 		return true, false
 	}
@@ -259,28 +277,19 @@ func isRequestReady(ref *requestRef, currentTime time.Time) (bool, bool) {
 		return false, true
 	}
 
-	if !isUnlockable(ref, currentTime) {
-		return false, false
+	if !m.isUnlockable(ref, currentTime) {
+		return false, isExpired(ref, currentTime)
 	}
-	// time lock
-	timeData := r.TimeLock()
-	if timeData == nil {
-		return true, false
-	}
-	return timeData.Time.IsZero() || timeData.Time.Before(currentTime), false
+	return true, false
 }
 
 // ReadyNow returns preliminary batch of requests for consensus.
 // Note that later status of request may change due to the time change and time constraints
 // If there's at least one committee rotation request in the mempool, the ReadyNow returns
 // batch with only one request, the oldest committee rotation request
-func (m *mempool) ReadyNow(currentTime ...time.Time) []iscp.Request {
+func (m *mempool) ReadyNow(currentTime iscp.TimeData) []iscp.Request {
 	m.poolMutex.RLock()
 
-	timeToValidate := time.Now()
-	if len(currentTime) > 0 {
-		timeToValidate = currentTime[0]
-	}
 	var oldestRotate iscp.Request
 	var oldestRotateTime time.Time
 
@@ -288,7 +297,7 @@ func (m *mempool) ReadyNow(currentTime ...time.Time) []iscp.Request {
 
 	ret := make([]iscp.Request, 0, len(m.pool))
 	for _, ref := range m.pool {
-		rdy, shouldBeRemoved := isRequestReady(ref, timeToValidate)
+		rdy, shouldBeRemoved := m.isRequestReady(ref, currentTime)
 		if shouldBeRemoved {
 			toRemove = append(toRemove, ref.req.ID())
 			continue
@@ -332,7 +341,7 @@ func (m *mempool) ReadyNow(currentTime ...time.Time) []iscp.Request {
 // - (a list of processable requests), true if the list can be deterministically calculated
 // Note that (a list of processable requests) can be empty if none satisfies currentTime time constraint (timelock, fallback)
 // For requests which are known and solidified, the result is deterministic
-func (m *mempool) ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool) {
+func (m *mempool) ReadyFromIDs(currentTime iscp.TimeData, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool) {
 	requests := make([]iscp.Request, 0, len(reqIDs))
 	missingRequestIndexes := []int{}
 	toRemove := []iscp.RequestID{}
@@ -343,7 +352,7 @@ func (m *mempool) ReadyFromIDs(currentTime time.Time, reqIDs ...iscp.RequestID) 
 			missingRequestIndexes = append(missingRequestIndexes, i)
 			continue
 		}
-		rdy, shouldBeRemoved := isRequestReady(reqref, currentTime)
+		rdy, shouldBeRemoved := m.isRequestReady(reqref, currentTime)
 		if rdy {
 			requests = append(requests, reqref.req)
 			continue
@@ -445,7 +454,7 @@ func (m *mempool) WaitPoolEmpty(timeout ...time.Duration) bool {
 }
 
 // Stats collects mempool stats
-func (m *mempool) Info() MempoolInfo {
+func (m *mempool) Info(currentTime iscp.TimeData) MempoolInfo {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
@@ -456,9 +465,8 @@ func (m *mempool) Info() MempoolInfo {
 		OutBufCounter:  m.outBufCounter,
 		TotalPool:      len(m.pool),
 	}
-	currentTime := time.Now()
 	for _, ref := range m.pool {
-		rdy, _ := isRequestReady(ref, currentTime)
+		rdy, _ := m.isRequestReady(ref, currentTime)
 		if rdy {
 			ret.ReadyCounter++
 		}

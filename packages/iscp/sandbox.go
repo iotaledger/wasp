@@ -149,7 +149,8 @@ type StateAnchor struct {
 	NativeTokens         iotago.NativeTokens
 }
 
-type SendOptions struct { // TODO
+type SendOptions struct {
+	Timelock *TimeData
 }
 
 // RequestMetadata represents content of the data payload of the output
