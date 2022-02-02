@@ -22,11 +22,11 @@ pub struct ImmutableApproveParams {
 
 impl ImmutableApproveParams {
     pub fn approved(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_APPROVED))
+		ScImmutableAgentID::new(self.id, PARAM_APPROVED.get_key_id())
 	}
 
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -37,11 +37,11 @@ pub struct MutableApproveParams {
 
 impl MutableApproveParams {
     pub fn approved(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_APPROVED))
+		ScMutableAgentID::new(self.id, PARAM_APPROVED.get_key_id())
 	}
 
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -52,7 +52,7 @@ pub struct ImmutableBurnParams {
 
 impl ImmutableBurnParams {
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -63,7 +63,7 @@ pub struct MutableBurnParams {
 
 impl MutableBurnParams {
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -104,7 +104,11 @@ pub struct ImmutableMintParams {
 
 impl ImmutableMintParams {
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
+	}
+
+    pub fn token_uri(&self) -> ScImmutableString {
+		ScImmutableString::new(self.id, PARAM_TOKEN_URI.get_key_id())
 	}
 }
 
@@ -115,7 +119,11 @@ pub struct MutableMintParams {
 
 impl MutableMintParams {
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
+	}
+
+    pub fn token_uri(&self) -> ScMutableString {
+		ScMutableString::new(self.id, PARAM_TOKEN_URI.get_key_id())
 	}
 }
 
@@ -126,19 +134,19 @@ pub struct ImmutableSafeTransferFromParams {
 
 impl ImmutableSafeTransferFromParams {
     pub fn data(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.id, idx_map(IDX_PARAM_DATA))
+		ScImmutableBytes::new(self.id, PARAM_DATA.get_key_id())
 	}
 
     pub fn from(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_FROM))
+		ScImmutableAgentID::new(self.id, PARAM_FROM.get_key_id())
 	}
 
     pub fn to(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_TO))
+		ScImmutableAgentID::new(self.id, PARAM_TO.get_key_id())
 	}
 
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -149,19 +157,19 @@ pub struct MutableSafeTransferFromParams {
 
 impl MutableSafeTransferFromParams {
     pub fn data(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.id, idx_map(IDX_PARAM_DATA))
+		ScMutableBytes::new(self.id, PARAM_DATA.get_key_id())
 	}
 
     pub fn from(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_FROM))
+		ScMutableAgentID::new(self.id, PARAM_FROM.get_key_id())
 	}
 
     pub fn to(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_TO))
+		ScMutableAgentID::new(self.id, PARAM_TO.get_key_id())
 	}
 
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -172,11 +180,11 @@ pub struct ImmutableSetApprovalForAllParams {
 
 impl ImmutableSetApprovalForAllParams {
     pub fn approval(&self) -> ScImmutableBool {
-		ScImmutableBool::new(self.id, idx_map(IDX_PARAM_APPROVAL))
+		ScImmutableBool::new(self.id, PARAM_APPROVAL.get_key_id())
 	}
 
     pub fn operator(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OPERATOR))
+		ScImmutableAgentID::new(self.id, PARAM_OPERATOR.get_key_id())
 	}
 }
 
@@ -187,11 +195,11 @@ pub struct MutableSetApprovalForAllParams {
 
 impl MutableSetApprovalForAllParams {
     pub fn approval(&self) -> ScMutableBool {
-		ScMutableBool::new(self.id, idx_map(IDX_PARAM_APPROVAL))
+		ScMutableBool::new(self.id, PARAM_APPROVAL.get_key_id())
 	}
 
     pub fn operator(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OPERATOR))
+		ScMutableAgentID::new(self.id, PARAM_OPERATOR.get_key_id())
 	}
 }
 
@@ -202,15 +210,15 @@ pub struct ImmutableTransferFromParams {
 
 impl ImmutableTransferFromParams {
     pub fn from(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_FROM))
+		ScImmutableAgentID::new(self.id, PARAM_FROM.get_key_id())
 	}
 
     pub fn to(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_TO))
+		ScImmutableAgentID::new(self.id, PARAM_TO.get_key_id())
 	}
 
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -221,15 +229,15 @@ pub struct MutableTransferFromParams {
 
 impl MutableTransferFromParams {
     pub fn from(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_FROM))
+		ScMutableAgentID::new(self.id, PARAM_FROM.get_key_id())
 	}
 
     pub fn to(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_TO))
+		ScMutableAgentID::new(self.id, PARAM_TO.get_key_id())
 	}
 
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -240,7 +248,7 @@ pub struct ImmutableBalanceOfParams {
 
 impl ImmutableBalanceOfParams {
     pub fn owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+		ScImmutableAgentID::new(self.id, PARAM_OWNER.get_key_id())
 	}
 }
 
@@ -251,7 +259,7 @@ pub struct MutableBalanceOfParams {
 
 impl MutableBalanceOfParams {
     pub fn owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+		ScMutableAgentID::new(self.id, PARAM_OWNER.get_key_id())
 	}
 }
 
@@ -262,7 +270,7 @@ pub struct ImmutableGetApprovedParams {
 
 impl ImmutableGetApprovedParams {
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -273,7 +281,7 @@ pub struct MutableGetApprovedParams {
 
 impl MutableGetApprovedParams {
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -284,11 +292,11 @@ pub struct ImmutableIsApprovedForAllParams {
 
 impl ImmutableIsApprovedForAllParams {
     pub fn operator(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OPERATOR))
+		ScImmutableAgentID::new(self.id, PARAM_OPERATOR.get_key_id())
 	}
 
     pub fn owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+		ScImmutableAgentID::new(self.id, PARAM_OWNER.get_key_id())
 	}
 }
 
@@ -299,11 +307,11 @@ pub struct MutableIsApprovedForAllParams {
 
 impl MutableIsApprovedForAllParams {
     pub fn operator(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OPERATOR))
+		ScMutableAgentID::new(self.id, PARAM_OPERATOR.get_key_id())
 	}
 
     pub fn owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_OWNER))
+		ScMutableAgentID::new(self.id, PARAM_OWNER.get_key_id())
 	}
 }
 
@@ -314,7 +322,7 @@ pub struct ImmutableOwnerOfParams {
 
 impl ImmutableOwnerOfParams {
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -325,7 +333,7 @@ pub struct MutableOwnerOfParams {
 
 impl MutableOwnerOfParams {
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -336,7 +344,7 @@ pub struct ImmutableTokenURIParams {
 
 impl ImmutableTokenURIParams {
     pub fn token_id(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScImmutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }
 
@@ -347,6 +355,6 @@ pub struct MutableTokenURIParams {
 
 impl MutableTokenURIParams {
     pub fn token_id(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, idx_map(IDX_PARAM_TOKEN_ID))
+		ScMutableHash::new(self.id, PARAM_TOKEN_ID.get_key_id())
 	}
 }

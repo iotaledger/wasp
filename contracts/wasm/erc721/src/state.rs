@@ -15,6 +15,7 @@ use crate::*;
 use crate::keys::*;
 use crate::typedefs::*;
 
+#[derive(Clone, Copy)]
 pub struct MapHashToImmutableAgentID {
 	pub(crate) obj_id: i32,
 }
@@ -25,6 +26,7 @@ impl MapHashToImmutableAgentID {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToImmutableOperators {
 	pub(crate) obj_id: i32,
 }
@@ -36,6 +38,7 @@ impl MapAgentIDToImmutableOperators {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToImmutableUint64 {
 	pub(crate) obj_id: i32,
 }
@@ -47,40 +50,57 @@ impl MapAgentIDToImmutableUint64 {
 }
 
 #[derive(Clone, Copy)]
+pub struct MapHashToImmutableString {
+	pub(crate) obj_id: i32,
+}
+
+impl MapHashToImmutableString {
+    pub fn get_string(&self, key: &ScHash) -> ScImmutableString {
+        ScImmutableString::new(self.obj_id, key.get_key_id())
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct ImmutableErc721State {
     pub(crate) id: i32,
 }
 
 impl ImmutableErc721State {
     pub fn approved_accounts(&self) -> MapHashToImmutableAgentID {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_APPROVED_ACCOUNTS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_APPROVED_ACCOUNTS.get_key_id(), TYPE_MAP);
 		MapHashToImmutableAgentID { obj_id: map_id }
 	}
 
     pub fn approved_operators(&self) -> MapAgentIDToImmutableOperators {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_APPROVED_OPERATORS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_APPROVED_OPERATORS.get_key_id(), TYPE_MAP);
 		MapAgentIDToImmutableOperators { obj_id: map_id }
 	}
 
     pub fn balances(&self) -> MapAgentIDToImmutableUint64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_BALANCES), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_BALANCES.get_key_id(), TYPE_MAP);
 		MapAgentIDToImmutableUint64 { obj_id: map_id }
 	}
 
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_STATE_NAME))
+		ScImmutableString::new(self.id, STATE_NAME.get_key_id())
 	}
 
     pub fn owners(&self) -> MapHashToImmutableAgentID {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_OWNERS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_OWNERS.get_key_id(), TYPE_MAP);
 		MapHashToImmutableAgentID { obj_id: map_id }
 	}
 
     pub fn symbol(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, idx_map(IDX_STATE_SYMBOL))
+		ScImmutableString::new(self.id, STATE_SYMBOL.get_key_id())
+	}
+
+    pub fn token_ur_is(&self) -> MapHashToImmutableString {
+		let map_id = get_object_id(self.id, STATE_TOKEN_UR_IS.get_key_id(), TYPE_MAP);
+		MapHashToImmutableString { obj_id: map_id }
 	}
 }
 
+#[derive(Clone, Copy)]
 pub struct MapHashToMutableAgentID {
 	pub(crate) obj_id: i32,
 }
@@ -95,6 +115,7 @@ impl MapHashToMutableAgentID {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToMutableOperators {
 	pub(crate) obj_id: i32,
 }
@@ -110,6 +131,7 @@ impl MapAgentIDToMutableOperators {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MapAgentIDToMutableUint64 {
 	pub(crate) obj_id: i32,
 }
@@ -125,36 +147,60 @@ impl MapAgentIDToMutableUint64 {
 }
 
 #[derive(Clone, Copy)]
+pub struct MapHashToMutableString {
+	pub(crate) obj_id: i32,
+}
+
+impl MapHashToMutableString {
+    pub fn clear(&self) {
+        clear(self.obj_id);
+    }
+
+    pub fn get_string(&self, key: &ScHash) -> ScMutableString {
+        ScMutableString::new(self.obj_id, key.get_key_id())
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct MutableErc721State {
     pub(crate) id: i32,
 }
 
 impl MutableErc721State {
+    pub fn as_immutable(&self) -> ImmutableErc721State {
+		ImmutableErc721State { id: self.id }
+	}
+
     pub fn approved_accounts(&self) -> MapHashToMutableAgentID {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_APPROVED_ACCOUNTS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_APPROVED_ACCOUNTS.get_key_id(), TYPE_MAP);
 		MapHashToMutableAgentID { obj_id: map_id }
 	}
 
     pub fn approved_operators(&self) -> MapAgentIDToMutableOperators {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_APPROVED_OPERATORS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_APPROVED_OPERATORS.get_key_id(), TYPE_MAP);
 		MapAgentIDToMutableOperators { obj_id: map_id }
 	}
 
     pub fn balances(&self) -> MapAgentIDToMutableUint64 {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_BALANCES), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_BALANCES.get_key_id(), TYPE_MAP);
 		MapAgentIDToMutableUint64 { obj_id: map_id }
 	}
 
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_STATE_NAME))
+		ScMutableString::new(self.id, STATE_NAME.get_key_id())
 	}
 
     pub fn owners(&self) -> MapHashToMutableAgentID {
-		let map_id = get_object_id(self.id, idx_map(IDX_STATE_OWNERS), TYPE_MAP);
+		let map_id = get_object_id(self.id, STATE_OWNERS.get_key_id(), TYPE_MAP);
 		MapHashToMutableAgentID { obj_id: map_id }
 	}
 
     pub fn symbol(&self) -> ScMutableString {
-		ScMutableString::new(self.id, idx_map(IDX_STATE_SYMBOL))
+		ScMutableString::new(self.id, STATE_SYMBOL.get_key_id())
+	}
+
+    pub fn token_ur_is(&self) -> MapHashToMutableString {
+		let map_id = get_object_id(self.id, STATE_TOKEN_UR_IS.get_key_id(), TYPE_MAP);
+		MapHashToMutableString { obj_id: map_id }
 	}
 }

@@ -14,6 +14,7 @@ $#each structs structType
 	// *******************************
 	"structType": `
 
+#[derive(Clone)]
 pub struct $StrName {
 $#each struct structField
 }
@@ -52,6 +53,7 @@ $#emit structMethods
 	// *******************************
 	"structMethods": `
 
+#[derive(Clone, Copy)]
 pub struct $mut$StrName {
     pub(crate) obj_id: i32,
     pub(crate) key_id: Key32,

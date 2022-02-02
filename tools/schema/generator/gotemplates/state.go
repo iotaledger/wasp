@@ -19,6 +19,14 @@ $#each state proxyContainers
 type $TypeName struct {
 	id int32
 }
+$#if mut stateProxyImmutableFunc
 $#each state proxyMethods
+`,
+	// *******************************
+	"stateProxyImmutableFunc": `
+
+func (s $TypeName) AsImmutable() Immutable$Package$+State {
+	return Immutable$Package$+State(s)
+}
 `,
 }

@@ -79,3 +79,7 @@ Re-using an existing Chain ID is not recommended, and can be a security risk. Fo
 
 The current implementation uses the wasp-cli's saves the account to pay for any fees in IOTA while using the JSON-RPC interface.  This is of course not ideal in a normal usage scenario. Upcoming releases  will address this in a more user-friendly way.
 :::
+
+## Video Tutorial
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/JbUGX-9BTSo" title="EVM Chain Setup" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

@@ -17,14 +17,19 @@ export function on_load(): void {
     exports.addFunc(sc.FuncArrayClear,   funcArrayClearThunk);
     exports.addFunc(sc.FuncArrayCreate,  funcArrayCreateThunk);
     exports.addFunc(sc.FuncArraySet,     funcArraySetThunk);
+    exports.addFunc(sc.FuncMapClear,     funcMapClearThunk);
+    exports.addFunc(sc.FuncMapCreate,    funcMapCreateThunk);
+    exports.addFunc(sc.FuncMapSet,       funcMapSetThunk);
     exports.addFunc(sc.FuncParamTypes,   funcParamTypesThunk);
     exports.addFunc(sc.FuncRandom,       funcRandomThunk);
+    exports.addFunc(sc.FuncTriggerEvent, funcTriggerEventThunk);
     exports.addView(sc.ViewArrayLength,  viewArrayLengthThunk);
     exports.addView(sc.ViewArrayValue,   viewArrayValueThunk);
     exports.addView(sc.ViewBlockRecord,  viewBlockRecordThunk);
     exports.addView(sc.ViewBlockRecords, viewBlockRecordsThunk);
     exports.addView(sc.ViewGetRandom,    viewGetRandomThunk);
     exports.addView(sc.ViewIotaBalance,  viewIotaBalanceThunk);
+    exports.addView(sc.ViewMapValue,     viewMapValueThunk);
 
     for (let i = 0; i < sc.keyMap.length; i++) {
         sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
@@ -63,6 +68,38 @@ function funcArraySetThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testwasmlib.funcArraySet ok");
 }
 
+function funcMapClearThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcMapClear");
+	let f = new sc.MapClearContext();
+    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	sc.funcMapClear(ctx, f);
+	ctx.log("testwasmlib.funcMapClear ok");
+}
+
+function funcMapCreateThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcMapCreate");
+	let f = new sc.MapCreateContext();
+    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	sc.funcMapCreate(ctx, f);
+	ctx.log("testwasmlib.funcMapCreate ok");
+}
+
+function funcMapSetThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcMapSet");
+	let f = new sc.MapSetContext();
+    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	ctx.require(f.params.key().exists(), "missing mandatory key");
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	ctx.require(f.params.value().exists(), "missing mandatory value");
+	sc.funcMapSet(ctx, f);
+	ctx.log("testwasmlib.funcMapSet ok");
+}
+
 function funcParamTypesThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("testwasmlib.funcParamTypes");
 	let f = new sc.ParamTypesContext();
@@ -78,6 +115,17 @@ function funcRandomThunk(ctx: wasmlib.ScFuncContext): void {
     f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcRandom(ctx, f);
 	ctx.log("testwasmlib.funcRandom ok");
+}
+
+function funcTriggerEventThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("testwasmlib.funcTriggerEvent");
+	let f = new sc.TriggerEventContext();
+    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	ctx.require(f.params.address().exists(), "missing mandatory address");
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	sc.funcTriggerEvent(ctx, f);
+	ctx.log("testwasmlib.funcTriggerEvent ok");
 }
 
 function viewArrayLengthThunk(ctx: wasmlib.ScViewContext): void {
@@ -142,4 +190,16 @@ function viewIotaBalanceThunk(ctx: wasmlib.ScViewContext): void {
     f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.viewIotaBalance(ctx, f);
 	ctx.log("testwasmlib.viewIotaBalance ok");
+}
+
+function viewMapValueThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewMapValue");
+	let f = new sc.MapValueContext();
+    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
+    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
+    f.state.mapID = wasmlib.OBJ_ID_STATE;
+	ctx.require(f.params.key().exists(), "missing mandatory key");
+	ctx.require(f.params.name().exists(), "missing mandatory name");
+	sc.viewMapValue(ctx, f);
+	ctx.log("testwasmlib.viewMapValue ok");
 }

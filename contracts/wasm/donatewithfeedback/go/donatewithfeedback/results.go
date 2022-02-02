@@ -14,23 +14,23 @@ type ImmutableDonationResults struct {
 }
 
 func (s ImmutableDonationResults) Amount() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultAmount])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultAmount))
 }
 
 func (s ImmutableDonationResults) Donator() wasmlib.ScImmutableAgentID {
-	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxResultDonator])
+	return wasmlib.NewScImmutableAgentID(s.id, wasmlib.KeyID(ResultDonator))
 }
 
 func (s ImmutableDonationResults) Error() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxResultError])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultError))
 }
 
 func (s ImmutableDonationResults) Feedback() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxResultFeedback])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultFeedback))
 }
 
 func (s ImmutableDonationResults) Timestamp() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultTimestamp])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultTimestamp))
 }
 
 type MutableDonationResults struct {
@@ -38,23 +38,23 @@ type MutableDonationResults struct {
 }
 
 func (s MutableDonationResults) Amount() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultAmount])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultAmount))
 }
 
 func (s MutableDonationResults) Donator() wasmlib.ScMutableAgentID {
-	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxResultDonator])
+	return wasmlib.NewScMutableAgentID(s.id, wasmlib.KeyID(ResultDonator))
 }
 
 func (s MutableDonationResults) Error() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxResultError])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultError))
 }
 
 func (s MutableDonationResults) Feedback() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxResultFeedback])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultFeedback))
 }
 
 func (s MutableDonationResults) Timestamp() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultTimestamp])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultTimestamp))
 }
 
 type ImmutableDonationInfoResults struct {
@@ -62,15 +62,15 @@ type ImmutableDonationInfoResults struct {
 }
 
 func (s ImmutableDonationInfoResults) Count() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultCount])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultCount))
 }
 
 func (s ImmutableDonationInfoResults) MaxDonation() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultMaxDonation])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultMaxDonation))
 }
 
 func (s ImmutableDonationInfoResults) TotalDonation() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultTotalDonation])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultTotalDonation))
 }
 
 type MutableDonationInfoResults struct {
@@ -78,13 +78,13 @@ type MutableDonationInfoResults struct {
 }
 
 func (s MutableDonationInfoResults) Count() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultCount])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultCount))
 }
 
 func (s MutableDonationInfoResults) MaxDonation() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultMaxDonation])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultMaxDonation))
 }
 
 func (s MutableDonationInfoResults) TotalDonation() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultTotalDonation])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultTotalDonation))
 }

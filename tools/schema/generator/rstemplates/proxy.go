@@ -10,9 +10,14 @@ $#if map typedefProxyMap
 	"proxyMethods": `
 $#if separator newline
 $#set separator $true
-$#set varID idx_map(IDX_$Kind$FLD_NAME)
+$#set varID $Kind$FLD_NAME.get_key_id()
+$#if init setInitVarID
 $#if core setCoreVarID
 $#if array proxyArray proxyMethods2
+`,
+	// *******************************
+	"setInitVarID": `
+$#set varID idx_map(IDX_$Kind$FLD_NAME)
 `,
 	// *******************************
 	"proxyMethods2": `
@@ -48,7 +53,7 @@ $#if this proxyMapThis proxyMapOther
 	}
 `,
 	// *******************************
-	"proxyMapOther": `55544444.0
+	"proxyMapOther": `
     pub fn $fld_name(&self) -> Map$fldMapKey$+To$mut$FldType {
 		let map_id = get_object_id(self.id, $varID, TYPE_MAP);
 		Map$fldMapKey$+To$mut$FldType { obj_id: map_id }

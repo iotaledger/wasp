@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -34,6 +35,7 @@ func AddEndpoints(
 	nodeProvider dkg.NodeProvider,
 	shutdown ShutdownFunc,
 	metrics *metricspkg.Metrics,
+	w *wal.WAL,
 ) {
 	initLogger()
 
@@ -46,10 +48,10 @@ func AddEndpoints(
 	}
 
 	addShutdownEndpoint(adm, shutdown)
+	addNodeOwnerEndpoints(adm, registryProvider)
 	addChainRecordEndpoints(adm, registryProvider)
-	addChainStatsEndpoints(adm, chainsProvider)
-	addCommitteeRecordEndpoints(adm, registryProvider, chainsProvider)
-	addChainEndpoints(adm, registryProvider, chainsProvider, metrics)
+	addChainMetricsEndpoints(adm, chainsProvider)
+	addChainEndpoints(adm, registryProvider, chainsProvider, network, metrics, w)
 	addDKSharesEndpoints(adm, registryProvider, nodeProvider)
 	addPeeringEndpoints(adm, network, tnm)
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -33,6 +34,7 @@ func AddEndpoints(
 	getChain chains.ChainProvider,
 	getChainBalance getAccountBalanceFn,
 	hasRequestBeenProcessed hasRequestBeenProcessedFn,
+	nodePubKey *ed25519.PublicKey,
 	cacheTTL time.Duration,
 	log *logger.Logger,
 ) {
@@ -41,6 +43,7 @@ func AddEndpoints(
 		getAccountBalance:       getChainBalance,
 		hasRequestBeenProcessed: hasRequestBeenProcessed,
 		requestsCache:           expiringcache.New(cacheTTL),
+		nodePubKey:              nodePubKey,
 		log:                     log,
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
@@ -59,6 +62,7 @@ type offLedgerReqAPI struct {
 	getAccountBalance       getAccountBalanceFn
 	hasRequestBeenProcessed hasRequestBeenProcessedFn
 	requestsCache           *expiringcache.ExpiringCache
+	nodePubKey              *ed25519.PublicKey
 	log                     *logger.Logger
 }
 
@@ -120,7 +124,7 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 			ChainID: ch.ID(),
 			Req:     offLedgerReq,
 		},
-		SenderNetID: "",
+		SenderPubKey: o.nodePubKey,
 	})
 
 	return c.NoContent(http.StatusAccepted)

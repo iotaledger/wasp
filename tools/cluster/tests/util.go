@@ -157,7 +157,7 @@ func (e *chainEnv) printAccounts(title string) {
 	for aid, bals := range allBalances {
 		s += fmt.Sprintf("     %s\n", aid.String())
 		for k, v := range bals {
-			s += fmt.Sprintf("                %s: %d\n", k, v)
+			s += fmt.Sprintf("                %s: %d\n", k.String(), v)
 		}
 	}
 	fmt.Println(s)

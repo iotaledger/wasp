@@ -23,11 +23,14 @@ type Metrics struct {
 	processedRequestCounter *prometheus.CounterVec
 	messagesReceived        *prometheus.CounterVec
 	requestAckMessages      *prometheus.CounterVec
+	currentStateIndex       *prometheus.GaugeVec
 	requestProcessingTime   *prometheus.GaugeVec
 	vmRunTime               *prometheus.GaugeVec
 	vmRunCounter            *prometheus.CounterVec
 	blocksPerChain          *prometheus.CounterVec
 	blockSizes              *prometheus.GaugeVec
+	lastSeenStateIndex      *prometheus.GaugeVec
+	lastSeenStateIndexVal   uint32
 	nodeconnMetrics         nodeconnmetrics.NodeConnectionMetrics
 }
 
@@ -109,6 +112,12 @@ func (m *Metrics) registerMetrics() {
 	}, []string{"chain"})
 	prometheus.MustRegister(m.requestAckMessages)
 
+	m.currentStateIndex = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "current_state_index",
+		Help: "The current chain state index.",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.currentStateIndex)
+
 	m.requestProcessingTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "request_processing_time",
 		Help: "Time to process request",
@@ -138,6 +147,12 @@ func (m *Metrics) registerMetrics() {
 		Help: "Block sizes",
 	}, []string{"block_index", "chain"})
 	prometheus.MustRegister(m.blockSizes)
+
+	m.lastSeenStateIndex = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "last_seen_state_index",
+		Help: "Last seen state index",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.lastSeenStateIndex)
 }
 
 func (m *Metrics) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {

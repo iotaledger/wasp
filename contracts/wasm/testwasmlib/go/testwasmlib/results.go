@@ -14,7 +14,7 @@ type ImmutableArrayLengthResults struct {
 }
 
 func (s ImmutableArrayLengthResults) Length() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxResultLength])
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultLength))
 }
 
 type MutableArrayLengthResults struct {
@@ -22,7 +22,7 @@ type MutableArrayLengthResults struct {
 }
 
 func (s MutableArrayLengthResults) Length() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxResultLength])
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultLength))
 }
 
 type ImmutableArrayValueResults struct {
@@ -30,7 +30,7 @@ type ImmutableArrayValueResults struct {
 }
 
 func (s ImmutableArrayValueResults) Value() wasmlib.ScImmutableString {
-	return wasmlib.NewScImmutableString(s.id, idxMap[IdxResultValue])
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultValue))
 }
 
 type MutableArrayValueResults struct {
@@ -38,7 +38,7 @@ type MutableArrayValueResults struct {
 }
 
 func (s MutableArrayValueResults) Value() wasmlib.ScMutableString {
-	return wasmlib.NewScMutableString(s.id, idxMap[IdxResultValue])
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultValue))
 }
 
 type ImmutableBlockRecordResults struct {
@@ -46,7 +46,7 @@ type ImmutableBlockRecordResults struct {
 }
 
 func (s ImmutableBlockRecordResults) Record() wasmlib.ScImmutableBytes {
-	return wasmlib.NewScImmutableBytes(s.id, idxMap[IdxResultRecord])
+	return wasmlib.NewScImmutableBytes(s.id, wasmlib.KeyID(ResultRecord))
 }
 
 type MutableBlockRecordResults struct {
@@ -54,7 +54,7 @@ type MutableBlockRecordResults struct {
 }
 
 func (s MutableBlockRecordResults) Record() wasmlib.ScMutableBytes {
-	return wasmlib.NewScMutableBytes(s.id, idxMap[IdxResultRecord])
+	return wasmlib.NewScMutableBytes(s.id, wasmlib.KeyID(ResultRecord))
 }
 
 type ImmutableBlockRecordsResults struct {
@@ -62,7 +62,7 @@ type ImmutableBlockRecordsResults struct {
 }
 
 func (s ImmutableBlockRecordsResults) Count() wasmlib.ScImmutableInt32 {
-	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxResultCount])
+	return wasmlib.NewScImmutableInt32(s.id, wasmlib.KeyID(ResultCount))
 }
 
 type MutableBlockRecordsResults struct {
@@ -70,7 +70,7 @@ type MutableBlockRecordsResults struct {
 }
 
 func (s MutableBlockRecordsResults) Count() wasmlib.ScMutableInt32 {
-	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxResultCount])
+	return wasmlib.NewScMutableInt32(s.id, wasmlib.KeyID(ResultCount))
 }
 
 type ImmutableGetRandomResults struct {
@@ -78,7 +78,7 @@ type ImmutableGetRandomResults struct {
 }
 
 func (s ImmutableGetRandomResults) Random() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultRandom])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultRandom))
 }
 
 type MutableGetRandomResults struct {
@@ -86,7 +86,7 @@ type MutableGetRandomResults struct {
 }
 
 func (s MutableGetRandomResults) Random() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultRandom])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultRandom))
 }
 
 type ImmutableIotaBalanceResults struct {
@@ -94,7 +94,7 @@ type ImmutableIotaBalanceResults struct {
 }
 
 func (s ImmutableIotaBalanceResults) Iotas() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultIotas])
+	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(ResultIotas))
 }
 
 type MutableIotaBalanceResults struct {
@@ -102,5 +102,21 @@ type MutableIotaBalanceResults struct {
 }
 
 func (s MutableIotaBalanceResults) Iotas() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultIotas])
+	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(ResultIotas))
+}
+
+type ImmutableMapValueResults struct {
+	id int32
+}
+
+func (s ImmutableMapValueResults) Value() wasmlib.ScImmutableString {
+	return wasmlib.NewScImmutableString(s.id, wasmlib.KeyID(ResultValue))
+}
+
+type MutableMapValueResults struct {
+	id int32
+}
+
+func (s MutableMapValueResults) Value() wasmlib.ScMutableString {
+	return wasmlib.NewScMutableString(s.id, wasmlib.KeyID(ResultValue))
 }

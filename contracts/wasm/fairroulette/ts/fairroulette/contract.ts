@@ -13,7 +13,7 @@ export class ForcePayoutCall {
 }
 
 export class ForcePayoutContext {
-	events:  sc.FairRouletteEvents = new sc.FairRouletteEvents();
+	events: sc.FairRouletteEvents = new sc.FairRouletteEvents();
 	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }
 
@@ -22,7 +22,7 @@ export class ForceResetCall {
 }
 
 export class ForceResetContext {
-	events:  sc.FairRouletteEvents = new sc.FairRouletteEvents();
+	events: sc.FairRouletteEvents = new sc.FairRouletteEvents();
 	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }
 
@@ -31,7 +31,7 @@ export class PayWinnersCall {
 }
 
 export class PayWinnersContext {
-	events:  sc.FairRouletteEvents = new sc.FairRouletteEvents();
+	events: sc.FairRouletteEvents = new sc.FairRouletteEvents();
 	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }
 
@@ -41,7 +41,7 @@ export class PlaceBetCall {
 }
 
 export class PlaceBetContext {
-	events:  sc.FairRouletteEvents = new sc.FairRouletteEvents();
+	events: sc.FairRouletteEvents = new sc.FairRouletteEvents();
 	params: sc.ImmutablePlaceBetParams = new sc.ImmutablePlaceBetParams();
 	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }
@@ -52,7 +52,7 @@ export class PlayPeriodCall {
 }
 
 export class PlayPeriodContext {
-	events:  sc.FairRouletteEvents = new sc.FairRouletteEvents();
+	events: sc.FairRouletteEvents = new sc.FairRouletteEvents();
 	params: sc.ImmutablePlayPeriodParams = new sc.ImmutablePlayPeriodParams();
 	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState();
 }

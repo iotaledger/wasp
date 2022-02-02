@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -15,9 +16,11 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/ready"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -29,6 +32,8 @@ type ChainCore interface {
 	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
+	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
+	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger
 
 	// Most of these methods are made public for mocking in tests
@@ -45,7 +50,6 @@ type ChainCore interface {
 type ChainEntry interface {
 	ReceiveTransaction(*ledgerstate.Transaction)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
-
 	Dismiss(reason string)
 	IsDismissed() bool
 }
@@ -59,6 +63,7 @@ type ChainRequests interface {
 
 type ChainMetrics interface {
 	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
+	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
 }
 
 type Chain interface {
@@ -81,8 +86,7 @@ type Committee interface {
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
-	GetOtherValidatorsPeerIDs() []string
-	GetRandomValidators(upToN int) []string
+	GetRandomValidators(upToN int) []*ed25519.PublicKey // TODO: Remove after OffLedgerRequest dissemination is changed.
 }
 
 type (
@@ -95,19 +99,15 @@ type (
 type NodeConnection interface {
 	Subscribe(addr ledgerstate.Address)
 	Unsubscribe(addr ledgerstate.Address)
-
 	AttachToTransactionReceived(*ledgerstate.AliasAddress, NodeConnectionHandleTransactionFun)
 	AttachToInclusionStateReceived(*ledgerstate.AliasAddress, NodeConnectionHandleInclusionStateFun)
 	AttachToOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState(addr *ledgerstate.AliasAddress)
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-
 	DetachFromTransactionReceived(*ledgerstate.AliasAddress)
 	DetachFromInclusionStateReceived(*ledgerstate.AliasAddress)
 	DetachFromOutputReceived(*ledgerstate.AliasAddress)
@@ -120,14 +120,11 @@ type ChainNodeConnection interface {
 	AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)
 	AttachToOutputReceived(NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState()
 	PullTransactionInclusionState(txid ledgerstate.TransactionID)
 	PullConfirmedOutput(outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
-
 	DetachFromTransactionReceived()
 	DetachFromInclusionStateReceived()
 	DetachFromOutputReceived()
@@ -144,6 +141,7 @@ type StateManager interface {
 	EnqueueStateCandidateMsg(state.VirtualStateAccess, ledgerstate.OutputID)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
+	SetChainPeers(peers []*ed25519.PublicKey)
 	Close()
 }
 
@@ -158,6 +156,7 @@ type Consensus interface {
 	IsReady() bool
 	Close()
 	GetStatusSnapshot() *ConsensusInfo
+	GetWorkflowStatus() ConsensusWorkflowStatus
 	ShouldReceiveMissingRequest(req iscp.Request) bool
 }
 
@@ -178,6 +177,12 @@ type Mempool interface {
 type AsynchronousCommonSubsetRunner interface {
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
 	Close()
+}
+
+type WAL interface {
+	Write(bytes []byte) error
+	Contains(i uint32) bool
+	Read(i uint32) ([]byte, error)
 }
 
 type MempoolInfo struct {
@@ -206,6 +211,26 @@ type ConsensusInfo struct {
 	TimerTick  int
 }
 
+type ConsensusWorkflowStatus interface {
+	IsStateReceived() bool
+	IsBatchProposalSent() bool
+	IsConsensusBatchKnown() bool
+	IsVMStarted() bool
+	IsVMResultSigned() bool
+	IsTransactionFinalized() bool
+	IsTransactionPosted() bool
+	IsTransactionSeen() bool
+	IsInProgress() bool
+	GetBatchProposalSentTime() time.Time
+	GetConsensusBatchKnownTime() time.Time
+	GetVMStartedTime() time.Time
+	GetVMResultSignedTime() time.Time
+	GetTransactionFinalizedTime() time.Time
+	GetTransactionPostedTime() time.Time
+	GetTransactionSeenTime() time.Time
+	GetCompletedTime() time.Time
+}
+
 type ReadyListRecord struct {
 	Request iscp.Request
 	Seen    map[uint16]bool
@@ -221,8 +246,8 @@ type CommitteeInfo struct {
 
 type PeerStatus struct {
 	Index     int
-	PeeringID string
-	IsSelf    bool
+	PubKey    *ed25519.PublicKey
+	NetID     string
 	Connected bool
 }
 

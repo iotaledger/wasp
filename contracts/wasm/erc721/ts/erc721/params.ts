@@ -10,33 +10,33 @@ import * as sc from "./index";
 
 export class ImmutableApproveParams extends wasmlib.ScMapID {
     approved(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamApproved]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamApproved));
 	}
 
     tokenID(): wasmlib.ScImmutableHash {
-		return new wasmlib.ScImmutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class MutableApproveParams extends wasmlib.ScMapID {
     approved(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamApproved]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamApproved));
 	}
 
     tokenID(): wasmlib.ScMutableHash {
-		return new wasmlib.ScMutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class ImmutableBurnParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScImmutableHash {
-		return new wasmlib.ScImmutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class MutableBurnParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScMutableHash {
-		return new wasmlib.ScMutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
@@ -62,164 +62,172 @@ export class MutableInitParams extends wasmlib.ScMapID {
 
 export class ImmutableMintParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScImmutableHash {
-		return new wasmlib.ScImmutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
+	}
+
+    tokenURI(): wasmlib.ScImmutableString {
+		return new wasmlib.ScImmutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenURI));
 	}
 }
 
 export class MutableMintParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScMutableHash {
-		return new wasmlib.ScMutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
+	}
+
+    tokenURI(): wasmlib.ScMutableString {
+		return new wasmlib.ScMutableString(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenURI));
 	}
 }
 
 export class ImmutableSafeTransferFromParams extends wasmlib.ScMapID {
     data(): wasmlib.ScImmutableBytes {
-		return new wasmlib.ScImmutableBytes(this.mapID, sc.idxMap[sc.IdxParamData]);
+		return new wasmlib.ScImmutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ParamData));
 	}
 
     from(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamFrom]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamFrom));
 	}
 
     to(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamTo]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamTo));
 	}
 
     tokenID(): wasmlib.ScImmutableHash {
-		return new wasmlib.ScImmutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class MutableSafeTransferFromParams extends wasmlib.ScMapID {
     data(): wasmlib.ScMutableBytes {
-		return new wasmlib.ScMutableBytes(this.mapID, sc.idxMap[sc.IdxParamData]);
+		return new wasmlib.ScMutableBytes(this.mapID, wasmlib.Key32.fromString(sc.ParamData));
 	}
 
     from(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamFrom]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamFrom));
 	}
 
     to(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamTo]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamTo));
 	}
 
     tokenID(): wasmlib.ScMutableHash {
-		return new wasmlib.ScMutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class ImmutableSetApprovalForAllParams extends wasmlib.ScMapID {
     approval(): wasmlib.ScImmutableBool {
-		return new wasmlib.ScImmutableBool(this.mapID, sc.idxMap[sc.IdxParamApproval]);
+		return new wasmlib.ScImmutableBool(this.mapID, wasmlib.Key32.fromString(sc.ParamApproval));
 	}
 
     operator(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOperator]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamOperator));
 	}
 }
 
 export class MutableSetApprovalForAllParams extends wasmlib.ScMapID {
     approval(): wasmlib.ScMutableBool {
-		return new wasmlib.ScMutableBool(this.mapID, sc.idxMap[sc.IdxParamApproval]);
+		return new wasmlib.ScMutableBool(this.mapID, wasmlib.Key32.fromString(sc.ParamApproval));
 	}
 
     operator(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOperator]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamOperator));
 	}
 }
 
 export class ImmutableTransferFromParams extends wasmlib.ScMapID {
     from(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamFrom]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamFrom));
 	}
 
     to(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamTo]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamTo));
 	}
 
     tokenID(): wasmlib.ScImmutableHash {
-		return new wasmlib.ScImmutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class MutableTransferFromParams extends wasmlib.ScMapID {
     from(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamFrom]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamFrom));
 	}
 
     to(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamTo]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamTo));
 	}
 
     tokenID(): wasmlib.ScMutableHash {
-		return new wasmlib.ScMutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class ImmutableBalanceOfParams extends wasmlib.ScMapID {
     owner(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamOwner));
 	}
 }
 
 export class MutableBalanceOfParams extends wasmlib.ScMapID {
     owner(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamOwner));
 	}
 }
 
 export class ImmutableGetApprovedParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScImmutableHash {
-		return new wasmlib.ScImmutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class MutableGetApprovedParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScMutableHash {
-		return new wasmlib.ScMutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class ImmutableIsApprovedForAllParams extends wasmlib.ScMapID {
     operator(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOperator]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamOperator));
 	}
 
     owner(): wasmlib.ScImmutableAgentID {
-		return new wasmlib.ScImmutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
+		return new wasmlib.ScImmutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamOwner));
 	}
 }
 
 export class MutableIsApprovedForAllParams extends wasmlib.ScMapID {
     operator(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOperator]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamOperator));
 	}
 
     owner(): wasmlib.ScMutableAgentID {
-		return new wasmlib.ScMutableAgentID(this.mapID, sc.idxMap[sc.IdxParamOwner]);
+		return new wasmlib.ScMutableAgentID(this.mapID, wasmlib.Key32.fromString(sc.ParamOwner));
 	}
 }
 
 export class ImmutableOwnerOfParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScImmutableHash {
-		return new wasmlib.ScImmutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class MutableOwnerOfParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScMutableHash {
-		return new wasmlib.ScMutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class ImmutableTokenURIParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScImmutableHash {
-		return new wasmlib.ScImmutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScImmutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
 
 export class MutableTokenURIParams extends wasmlib.ScMapID {
     tokenID(): wasmlib.ScMutableHash {
-		return new wasmlib.ScMutableHash(this.mapID, sc.idxMap[sc.IdxParamTokenID]);
+		return new wasmlib.ScMutableHash(this.mapID, wasmlib.Key32.fromString(sc.ParamTokenID));
 	}
 }
