@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // RequestDataFromMarshalUtil read Request from byte stream. First byte is interpreted as boolean flag if its an off-ledger request data
@@ -313,9 +312,11 @@ type OnLedgerRequestData struct {
 	inputID iotago.UTXOInput
 	output  iotago.Output
 
-	// featureBlocksCache and requestMetadata originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
-	featureBlocksCache iotago.FeatureBlocksSet
-	requestMetadata    *RequestMetadata
+	// the following originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
+
+	featureBlocks    iotago.FeatureBlocksSet
+	unlockConditions iotago.UnlockConditionsSet
+	requestMetadata  *RequestMetadata
 }
 
 func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestData, error) {
@@ -331,16 +332,27 @@ func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (*OnLedgerRequestDa
 	if err != nil {
 		return nil, err
 	}
+
 	reqMetadata, err = RequestMetadataFromFeatureBlocksSet(fbSet)
 	if err != nil {
 		return nil, err
 	}
 
+	uco, ok := o.(iotago.UnlockConditionOutput)
+	if !ok {
+		panic("wrong type. Expected iotago.UnlockConditionOutput")
+	}
+	ucSet, err := uco.UnlockConditions().Set()
+	if err != nil {
+		return nil, err
+	}
+
 	return &OnLedgerRequestData{
-		output:             o,
-		inputID:            *id,
-		featureBlocksCache: fbSet,
-		requestMetadata:    reqMetadata,
+		output:           o,
+		inputID:          *id,
+		featureBlocks:    fbSet,
+		unlockConditions: ucSet,
+		requestMetadata:  reqMetadata,
 	}, nil
 }
 
@@ -408,7 +420,7 @@ func (r *OnLedgerRequestData) SenderAccount() *AgentID {
 }
 
 func (r *OnLedgerRequestData) SenderAddress() iotago.Address {
-	senderBlock := r.featureBlocksCache.SenderFeatureBlock()
+	senderBlock := r.featureBlocks.SenderFeatureBlock()
 	if senderBlock == nil {
 		return nil
 	}
@@ -428,9 +440,9 @@ func (r *OnLedgerRequestData) CallTarget() CallTarget {
 func (r *OnLedgerRequestData) TargetAddress() iotago.Address {
 	switch out := r.output.(type) {
 	case *iotago.ExtendedOutput:
-		return out.Address
+		return out.Ident()
 	case *iotago.FoundryOutput:
-		return out.Address
+		return out.Ident()
 	case *iotago.AliasOutput:
 		return out.AliasID.ToAddress()
 	default:
@@ -510,43 +522,37 @@ func (r *OnLedgerRequestData) IsInternalUTXO(chinID *ChainID) bool {
 var _ Features = &OnLedgerRequestData{}
 
 func (r *OnLedgerRequestData) TimeLock() *TimeData {
-	timelockMilestoneFB, hasMilestoneFB := r.featureBlocksCache[iotago.FeatureBlockTimelockMilestoneIndex]
-	timelockDeadlineFB, hasDeadlineFB := r.featureBlocksCache[iotago.FeatureBlockTimelockUnix]
-	if !hasMilestoneFB && !hasDeadlineFB {
+	timelock := r.unlockConditions.Timelock()
+	if timelock == nil {
 		return nil
 	}
 	ret := &TimeData{}
-	if hasMilestoneFB {
-		ret.MilestoneIndex = timelockMilestoneFB.(*iotago.TimelockMilestoneIndexFeatureBlock).MilestoneIndex
-	}
-	if hasDeadlineFB {
-		ret.Time = time.Unix(int64(timelockDeadlineFB.(*iotago.TimelockUnixFeatureBlock).UnixTime), 0)
+	ret.MilestoneIndex = timelock.MilestoneIndex
+	if timelock.UnixTime != 0 {
+		ret.Time = time.Unix(int64(timelock.UnixTime), 0)
 	}
 	return ret
 }
 
 func (r *OnLedgerRequestData) Expiry() (*TimeData, iotago.Address) {
-	expiryMilestoneFB, hasMilestoneFB := r.featureBlocksCache[iotago.FeatureBlockExpirationMilestoneIndex]
-	expiryDeadlineFB, hasDeadlineFB := r.featureBlocksCache[iotago.FeatureBlockExpirationUnix]
-	if !hasMilestoneFB && !hasDeadlineFB {
+	expiration := r.unlockConditions.Expiration()
+	if expiration == nil {
 		return nil, nil
 	}
 	ret := &TimeData{}
-	if hasMilestoneFB {
-		ret.MilestoneIndex = expiryMilestoneFB.(*iotago.ExpirationMilestoneIndexFeatureBlock).MilestoneIndex
+	ret.MilestoneIndex = expiration.MilestoneIndex
+	if expiration.UnixTime != 0 {
+		ret.Time = time.Unix(int64(expiration.UnixTime), 0)
 	}
-	if hasDeadlineFB {
-		ret.Time = time.Unix(int64(expiryDeadlineFB.(*iotago.ExpirationUnixFeatureBlock).UnixTime), 0)
-	}
-	return ret, r.SenderAddress()
+	return ret, expiration.ReturnAddress
 }
 
 func (r *OnLedgerRequestData) ReturnAmount() (uint64, bool) {
-	senderBlock, has := r.featureBlocksCache[iotago.FeatureBlockDustDepositReturn]
-	if !has {
+	senderBlock := r.unlockConditions.DustDepositReturn()
+	if senderBlock == nil {
 		return 0, false
 	}
-	return senderBlock.(*iotago.DustDepositReturnFeatureBlock).Amount, true
+	return senderBlock.Amount, true
 }
 
 // endregion

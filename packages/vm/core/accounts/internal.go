@@ -501,7 +501,6 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) 
 	}
 	rec := mustFoundryOutputRecFromBytes(data)
 	ret := &iotago.FoundryOutput{
-		Address:           chainID.AsAddress(),
 		Amount:            rec.Amount,
 		NativeTokens:      nil,
 		SerialNumber:      sn,
@@ -509,7 +508,10 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *iscp.ChainID) 
 		TokenTag:          rec.TokenTag,
 		CirculatingSupply: rec.CirculatingSupply,
 		MaximumSupply:     rec.MaximumSupply,
-		Blocks:            nil,
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: chainID.AsAddress()},
+		},
+		Blocks: nil,
 	}
 	return ret, rec.BlockIndex, rec.OutputIndex
 }
@@ -635,11 +637,14 @@ func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID,
 	}
 	tokenRec := mustNativeTokenOutputRecFromBytes(data)
 	ret := &iotago.ExtendedOutput{
-		Address: chainID.AsAddress(),
-		Amount:  tokenRec.DustIotas,
+		Amount: tokenRec.DustIotas,
 		NativeTokens: iotago.NativeTokens{{
-			*tokenID, tokenRec.Amount,
+			ID:     *tokenID,
+			Amount: tokenRec.Amount,
 		}},
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: chainID.AsAddress()},
+		},
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
 				Address: chainID.AsAddress(),

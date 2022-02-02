@@ -226,8 +226,8 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		blocklog.SaveNextBlockInfo(s, blockInfo)
 		blocklog.SaveControlAddressesIfNecessary(
 			s,
-			vmctx.task.AnchorOutput.StateController,
-			vmctx.task.AnchorOutput.GovernanceController,
+			vmctx.task.AnchorOutput.StateController(),
+			vmctx.task.AnchorOutput.GovernorAddress(),
 			vmctx.task.AnchorOutput.StateIndex,
 		)
 	})

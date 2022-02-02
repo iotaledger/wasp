@@ -7,14 +7,13 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -123,9 +122,14 @@ func (u *UtxoDB) deSeriParams() *iotago.DeSerializationParameters {
 }
 
 func (u *UtxoDB) genesisInit() {
-	genesisTx, err := iotago.NewTransactionBuilder().
-		AddInput(&iotago.ToBeSignedUTXOInput{Address: genesisAddress, Input: &iotago.UTXOInput{}}).
-		AddOutput(&iotago.ExtendedOutput{Address: genesisAddress, Amount: DefaultIOTASupply}).
+	genesisTx, err := builder.NewTransactionBuilder().
+		AddInput(&builder.ToBeSignedUTXOInput{Address: genesisAddress, Input: &iotago.UTXOInput{}}).
+		AddOutput(&iotago.ExtendedOutput{
+			Amount: DefaultIOTASupply,
+			Conditions: iotago.UnlockConditions{
+				&iotago.AddressUnlockCondition{Address: genesisAddress},
+			},
+		}).
 		Build(u.deSeriParams(), genesisSigner)
 	if err != nil {
 		panic(err)
@@ -207,10 +211,20 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 	}
 	utxo := unspent[0]
 	out := u.getOutput(utxo.ID()).(*iotago.ExtendedOutput)
-	tx, err := iotago.NewTransactionBuilder().
-		AddInput(&iotago.ToBeSignedUTXOInput{Address: genesisAddress, Input: utxo}).
-		AddOutput(&iotago.ExtendedOutput{Address: target, Amount: fundsAmount}).
-		AddOutput(&iotago.ExtendedOutput{Address: genesisAddress, Amount: out.Amount - fundsAmount}).
+	tx, err := builder.NewTransactionBuilder().
+		AddInput(&builder.ToBeSignedUTXOInput{Address: genesisAddress, Input: utxo}).
+		AddOutput(&iotago.ExtendedOutput{
+			Amount: fundsAmount,
+			Conditions: iotago.UnlockConditions{
+				&iotago.AddressUnlockCondition{Address: target},
+			},
+		}).
+		AddOutput(&iotago.ExtendedOutput{
+			Amount: out.Amount - fundsAmount,
+			Conditions: iotago.UnlockConditions{
+				&iotago.AddressUnlockCondition{Address: genesisAddress},
+			},
+		}).
 		Build(u.deSeriParams(), genesisSigner)
 	if err != nil {
 		panic(err)
@@ -297,7 +311,7 @@ func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 		semValCtx := &iotago.SemanticValidationContext{
 			ExtParas: &iotago.ExternalUnlockParameters{
 				ConfMsIndex: u.globalLogicalTime.MilestoneIndex,
-				ConfUnix:    uint64(u.globalLogicalTime.Time.Unix()),
+				ConfUnix:    uint32(u.globalLogicalTime.Time.Unix()),
 			},
 		}
 		if err := tx.SemanticallyValidate(semValCtx, inputs); err != nil {

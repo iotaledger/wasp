@@ -226,14 +226,16 @@ func (txb *AnchorTransactionBuilder) outputs(stateData *iscp.StateData) iotago.O
 		aliasID = iotago.AliasIDFromOutputID(txb.anchorOutputID.ID())
 	}
 	anchorOutput := &iotago.AliasOutput{
-		Amount:               txb.totalIotasInL2Accounts + txb.dustDepositAssumption.AnchorOutput,
-		NativeTokens:         nil, // anchor output does not contain native tokens
-		AliasID:              aliasID,
-		StateController:      txb.anchorOutput.StateController,
-		GovernanceController: txb.anchorOutput.GovernanceController,
-		StateIndex:           txb.anchorOutput.StateIndex + 1,
-		StateMetadata:        stateData.Bytes(),
-		FoundryCounter:       txb.nextFoundryCounter(),
+		Amount:         txb.totalIotasInL2Accounts + txb.dustDepositAssumption.AnchorOutput,
+		NativeTokens:   nil, // anchor output does not contain native tokens
+		AliasID:        aliasID,
+		StateIndex:     txb.anchorOutput.StateIndex + 1,
+		StateMetadata:  stateData.Bytes(),
+		FoundryCounter: txb.nextFoundryCounter(),
+		Conditions: iotago.UnlockConditions{
+			&iotago.StateControllerAddressUnlockCondition{Address: txb.anchorOutput.StateController()},
+			&iotago.GovernorAddressUnlockCondition{Address: txb.anchorOutput.GovernorAddress()},
+		},
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
 				Address: aliasID.ToAddress(),

@@ -881,22 +881,25 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 	inputIDs := tpkg.RandOutputIDs(3)
 	inputs := iotago.OutputSet{
 		inputIDs[0]: &iotago.ExtendedOutput{
-			Address: ident1,
-			Amount:  OneMi,
+			Amount: OneMi,
+			Conditions: iotago.UnlockConditions{
+				&iotago.AddressUnlockCondition{Address: ident1},
+			},
 		},
 		inputIDs[1]: &iotago.AliasOutput{
-			Amount:               OneMi,
-			NativeTokens:         nil,
-			AliasID:              aliasIdent1.AliasID(),
-			StateController:      ident1,
-			GovernanceController: ident1,
-			StateIndex:           1,
-			StateMetadata:        nil,
-			FoundryCounter:       1,
-			Blocks:               nil,
+			Amount:         OneMi,
+			NativeTokens:   nil,
+			AliasID:        aliasIdent1.AliasID(),
+			StateIndex:     1,
+			StateMetadata:  nil,
+			FoundryCounter: 1,
+			Conditions: iotago.UnlockConditions{
+				&iotago.StateControllerAddressUnlockCondition{Address: ident1},
+				&iotago.GovernorAddressUnlockCondition{Address: ident1},
+			},
+			Blocks: nil,
 		},
 		inputIDs[2]: &iotago.FoundryOutput{
-			Address:           aliasIdent1,
 			Amount:            OneMi,
 			NativeTokens:      nil,
 			SerialNumber:      1,
@@ -904,7 +907,10 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 			CirculatingSupply: big.NewInt(50),
 			MaximumSupply:     big.NewInt(50),
 			TokenScheme:       &iotago.SimpleTokenScheme{},
-			Blocks:            nil,
+			Conditions: iotago.UnlockConditions{
+				&iotago.AddressUnlockCondition{Address: aliasIdent1},
+			},
+			Blocks: nil,
 		},
 	}
 
@@ -921,18 +927,19 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 		Inputs: inputIDs.UTXOInputs(),
 		Outputs: iotago.Outputs{
 			&iotago.AliasOutput{
-				Amount:               OneMi,
-				NativeTokens:         nil,
-				AliasID:              aliasIdent1.AliasID(),
-				StateController:      ident1,
-				GovernanceController: ident1,
-				StateIndex:           1,
-				StateMetadata:        nil,
-				FoundryCounter:       1,
-				Blocks:               nil,
+				Amount:         OneMi,
+				NativeTokens:   nil,
+				AliasID:        aliasIdent1.AliasID(),
+				StateIndex:     1,
+				StateMetadata:  nil,
+				FoundryCounter: 1,
+				Conditions: iotago.UnlockConditions{
+					&iotago.StateControllerAddressUnlockCondition{Address: ident1},
+					&iotago.GovernorAddressUnlockCondition{Address: ident1},
+				},
+				Blocks: nil,
 			},
 			&iotago.FoundryOutput{
-				Address:      aliasIdent1,
 				Amount:       2 * OneMi,
 				NativeTokens: nil,
 				SerialNumber: 1,
@@ -941,7 +948,10 @@ func TestCirculatingSupplyBurn(t *testing.T) {
 				CirculatingSupply: util.Big0,
 				MaximumSupply:     big.NewInt(50),
 				TokenScheme:       &iotago.SimpleTokenScheme{},
-				Blocks:            nil,
+				Conditions: iotago.UnlockConditions{
+					&iotago.AddressUnlockCondition{Address: aliasIdent1},
+				},
+				Blocks: nil,
 			},
 		},
 	}
