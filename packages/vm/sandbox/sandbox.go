@@ -159,15 +159,24 @@ func (s *sandbox) RequireNoError(err error, str ...string) {
 	s.assert.RequireNoError(err, str...)
 }
 
+func (s *sandbox) RequireCallerAnyOf(agentIDs []*iscp.AgentID, str ...string) {
+	ok := false
+	for _, agentID := range agentIDs {
+		if s.Caller().Equals(agentID) {
+			ok = true
+		}
+	}
+	if !ok {
+		if len(str) > 0 {
+			s.Log().Panicf("'%s': unauthorized access", str[0])
+		} else {
+			s.Log().Panicf("unauthorized access")
+		}
+	}
+}
+
 func (s *sandbox) RequireCaller(agentID *iscp.AgentID, str ...string) {
-	if s.Caller().Equals(agentID) {
-		return
-	}
-	if len(str) > 0 {
-		s.Log().Panicf("'%s': unauthorized access", str[0])
-	} else {
-		s.Log().Panicf("unauthorized access")
-	}
+	s.RequireCallerAnyOf([]*iscp.AgentID{agentID}, str...)
 }
 
 func (s *sandbox) RequireCallerIsChainOwner(str ...string) {

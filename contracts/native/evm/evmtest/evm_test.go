@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmchain"
 	"github.com/iotaledger/wasp/contracts/native/evm/evmlight"
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/evm/evmflavors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -113,7 +113,7 @@ func TestGasCharged(t *testing.T) {
 		iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
 		iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
 
-		initialBalance := evmChain.solo.L1NativeTokens(iotaAddress, colored.IOTA)
+		initialBalance := evmChain.solo.L1Iotas(iotaAddress)
 		iotasSent := initialBalance - 1
 
 		// call `store(999)` with enough gas
@@ -169,7 +169,7 @@ func TestOwner(t *testing.T) {
 		_, err = evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, user1AgentID).
 				AddAssetsIotas(100000),
-			evmChain.soloChain.OriginatorPrivateKey,
+			&evmChain.soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
 
@@ -223,7 +223,7 @@ func TestGasPerIotas(t *testing.T) {
 		require.Equal(t, evm.DefaultGasPerIota, evmChain.getGasPerIotas())
 
 		// current owner is able to set a new gasPerIotas
-		err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: evmChain.soloChain.OriginatorPrivateKey})
+		err = evmChain.setGasPerIotas(newGasPerIota, iotaCallOptions{wallet: &evmChain.soloChain.OriginatorPrivateKey})
 		require.NoError(t, err)
 		require.Equal(t, newGasPerIota, evmChain.getGasPerIotas())
 
@@ -271,7 +271,7 @@ func TestLoop(t *testing.T) {
 		iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
 		iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
 
-		initialBalance := evmChain.solo.L1NativeTokens(iotaAddress, colored.IOTA)
+		initialBalance := evmChain.solo.L1Iotas(iotaAddress)
 		iotasSpent1 := uint64(100)
 		res, err := loop.loop(ethCallOptions{
 			gasLimit: iotasSpent1 * gasPerIotas,
@@ -291,7 +291,7 @@ func TestLoop(t *testing.T) {
 		require.Greater(t, res.receipt.GasUsed, gasUsed)
 
 		// ensure iotas sent are kept in the ISCP chain
-		require.Equal(t, evmChain.solo.L1NativeTokens(iotaAddress, colored.IOTA), initialBalance-iotasSpent1-iotasSpent2)
+		require.Equal(t, evmChain.solo.L1Iotas(iotaAddress), initialBalance-iotasSpent1-iotasSpent2)
 		evmChain.soloChain.AssertL2Iotas(iotaAgentID, 0)
 	})
 }
@@ -329,7 +329,7 @@ func TestPrePaidFees(t *testing.T) {
 		require.EqualValues(t, 42, storage.retrieve())
 
 		// deposit funds
-		initialBalance := evmChain.solo.L1NativeTokens(iotaAddress, colored.IOTA)
+		initialBalance := evmChain.solo.L1Iotas(iotaAddress)
 		_, err := evmChain.soloChain.PostRequestSync(
 			solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).AddAssetsIotas(initialBalance),
 			iotaWallet,
@@ -355,7 +355,7 @@ func TestISCPContract(t *testing.T) {
 	//   returns the ChainID of the underlying ISCP chain
 	chainID := iscpTest.getChainID()
 
-	require.Equal(t, evmChain.soloChain.ChainID.Array(), chainID.Array())
+	require.True(t, evmChain.soloChain.ChainID.Equals(chainID))
 }
 
 func TestISCPTriggerEvent(t *testing.T) {
@@ -415,8 +415,8 @@ func TestBlockTime(t *testing.T) {
 	require.EqualValues(t, 1, mempoolInfo.InBufCounter-mempoolInfo.OutPoolCounter)
 
 	// first block gets minted
-	evmChain.solo.AdvanceClockBy(61 * time.Second)
-	evmChain.soloChain.WaitUntil(func(mstats chain.MempoolInfo) bool {
+	evmChain.solo.AdvanceClockBy(61*time.Second, 0)
+	evmChain.soloChain.WaitUntil(func(mstats mempool.MempoolInfo) bool {
 		return mstats.OutPoolCounter == mempoolInfo.InBufCounter
 	})
 	require.EqualValues(t, 1, evmChain.getBlockNumber())
@@ -428,8 +428,8 @@ func TestBlockTime(t *testing.T) {
 	require.EqualValues(t, 1, mempoolInfo.InBufCounter-mempoolInfo.OutPoolCounter)
 
 	// second (empty) block gets minted
-	evmChain.solo.AdvanceClockBy(61 * time.Second)
-	evmChain.soloChain.WaitUntil(func(mstats chain.MempoolInfo) bool {
+	evmChain.solo.AdvanceClockBy(61*time.Second, 0)
+	evmChain.soloChain.WaitUntil(func(mstats mempool.MempoolInfo) bool {
 		return mstats.OutPoolCounter == mempoolInfo.InBufCounter
 	})
 	require.EqualValues(t, 2, evmChain.getBlockNumber())
@@ -440,7 +440,8 @@ func TestBlockTime(t *testing.T) {
 func initBenchmark(b *testing.B, evmFlavor *coreutil.ContractInfo) (*solo.Chain, []*solo.CallParams) {
 	// setup: deploy the EVM chain
 	log := testlogger.NewSilentLogger(b.Name(), true)
-	env := solo.NewWithLogger(b, log).WithNativeContract(evmflavors.Processors[evmFlavor.Name])
+	env := solo.New(b, &solo.InitOptions{Log: log}).
+		WithNativeContract(evmflavors.Processors[evmFlavor.Name])
 	evmChain := initEVMChainWithSolo(b, evmFlavor, env)
 	// setup: deploy the `storage` EVM contract
 	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
