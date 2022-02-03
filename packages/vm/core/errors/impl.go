@@ -11,24 +11,26 @@ var Processor = Contract.Processor(initialize,
 	FuncRegisterError.WithHandler(funcRegisterError),
 )
 
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("errors.initialize.success hname = %s", Contract.Hname().String())
-	return nil, nil
+	return nil
 }
 
-func funcRegisterError(ctx iscp.Sandbox) (dict.Dict, error) {
+func funcRegisterError(ctx iscp.Sandbox) dict.Dict {
+	e := NewStateErrorCollection(ctx.State(), ctx.Caller().Hname())
+
 	params := kvdecoder.New(ctx.Params())
 	errorId := params.MustGetUint16(ParamErrorId)
 	errorMessageFormat := params.MustGetString(ParamErrorMessageFormat)
 
-	success, err := AddErrorDefinition(ctx.State(), ctx.Caller().Hname(), errorId, errorMessageFormat)
+	errorDefinition, err := e.Register(errorId, errorMessageFormat)
 
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	ret := dict.New()
-	ret.Set(ParamErrorDefinitionAdded, codec.EncodeBool(success))
+	ret.Set(ParamErrorDefinitionAdded, codec.EncodeBool(errorDefinition != nil))
 
-	return ret, nil
+	return ret
 }

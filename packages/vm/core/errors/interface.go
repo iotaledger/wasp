@@ -28,14 +28,15 @@ const (
 	ParamErrorDefinitionAdded = "a"
 )
 
-type ErrorDefinition struct {
-	prefixId      uint32
-	id            uint16
-	messageFormat string
+type IErrorCollection interface {
+	Get(errorId uint16) (*ErrorDefinition, error)
+	//Create(errorId uint16, params ...interface{}) (*BlockError, error)
+	Register(errorId uint16, messageFormat string) (*ErrorDefinition, error)
 }
 
-func (e *ErrorDefinition) PrefixId() uint32 {
-	return e.prefixId
+type ErrorDefinition struct {
+	id            uint16
+	messageFormat string
 }
 
 func (e *ErrorDefinition) Id() uint16 {
@@ -49,7 +50,6 @@ func (e *ErrorDefinition) MessageFormat() string {
 func (e *ErrorDefinition) Create(params ...interface{}) BlockError {
 	return BlockError{
 		Id:            e.Id(),
-		PrefixId:      e.PrefixId(),
 		MessageFormat: e.MessageFormat(),
 		Params:        params,
 	}
@@ -92,31 +92,7 @@ func ErrorDefinitionFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ErrorDefiniti
 	return &e, nil
 }
 
-func ErrorDefinitionsFromMarshalUtil(mu *marshalutil.MarshalUtil) ([]*ErrorDefinition, error) {
-	doneReading, err := mu.DoneReading()
-	errorDefinitions := make([]*ErrorDefinition, 0)
-
-	if err != nil {
-		return nil, err
-	} else if doneReading {
-		return errorDefinitions, nil
-	}
-
-	for !doneReading {
-		errorDefinition, err := ErrorDefinitionFromMarshalUtil(mu)
-
-		if err != nil {
-			return nil, err
-		}
-
-		errorDefinitions = append(errorDefinitions, errorDefinition)
-	}
-
-	return errorDefinitions, nil
-}
-
 type BlockError struct {
-	PrefixId      uint32
 	Id            uint16
 	MessageFormat string
 	Params        []interface{}
@@ -126,7 +102,7 @@ func (e *BlockError) Message() string {
 	return fmt.Sprintf(e.MessageFormat, e.Params...)
 }
 
-func (e *BlockError) AsError() error {
+func (e *BlockError) Error() error {
 	return xerrors.Errorf(e.MessageFormat, e.Params...)
 }
 
@@ -147,8 +123,7 @@ func (e *BlockError) serializeParams(mu *marshalutil.MarshalUtil) error {
 func (e *BlockError) Serialize(mu *marshalutil.MarshalUtil) error {
 	hash := e.Hash()
 
-	mu.WriteUint32(e.PrefixId).
-		WriteUint16(e.Id).
+	mu.WriteUint16(e.Id).
 		WriteUint32(hash)
 
 	// For now, JSON encoded.

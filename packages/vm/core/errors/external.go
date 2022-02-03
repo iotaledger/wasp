@@ -43,3 +43,15 @@ func ErrorFromBytes(mu *marshalutil.MarshalUtil) (*errors.BlockError, error) {
 	return blockError, nil
 }
 */
+
+const GLOBAL_ERROR_START uint16 = 4096
+
+var globalErrorCollection IErrorCollection = NewErrorCollection()
+
+func RegisterGlobalError(errorId uint16, messageFormat string) (*ErrorDefinition, error) {
+	return globalErrorCollection.Register(errorId, messageFormat)
+}
+
+func GetError(errorId uint16) (*ErrorDefinition, error) {
+	return globalErrorCollection.Get(errorId)
+}
