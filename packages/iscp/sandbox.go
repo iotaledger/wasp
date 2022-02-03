@@ -46,6 +46,7 @@ type Helpers interface {
 
 type Authorize interface {
 	RequireCaller(agentID *AgentID, str ...string)
+	RequireCallerAnyOf(agentID []*AgentID, str ...string)
 	RequireCallerIsChainOwner(str ...string)
 }
 
@@ -72,11 +73,11 @@ type Sandbox interface {
 	// Call calls the entry point of the contract with parameters and transfer.
 	// If the entry point is full entry point, transfer tokens are moved between caller's and
 	// target contract's accounts (if enough). If the entry point is view, 'transfer' has no effect
-	Call(target, entryPoint Hname, params dict.Dict, allowance *Assets) (dict.Dict, error)
+	Call(target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
 	// Caller is the agentID of the caller.
 	Caller() *AgentID
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
-	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error
+	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict)
 	// Event emits an event
 	Event(msg string)
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
@@ -97,9 +98,7 @@ type Sandbox interface {
 	// Send sends a on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
 	// EstimateRequiredDustDeposit returns the amount of iotas needed to cover for a given request's dust deposit
-	EstimateRequiredDustDeposit(r RequestParameters) (uint64, error)
-	// BlockContext Internal for use in native hardcoded contracts
-	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
+	EstimateRequiredDustDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
 
@@ -113,7 +112,7 @@ type Privileged interface {
 	CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64)
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
-	// BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
+	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
@@ -133,7 +132,7 @@ type RequestParameters struct {
 }
 
 type Gas interface {
-	Burn(burnCode gas.BurnCode, par ...int)
+	Burn(burnCode gas.BurnCode, par ...uint64)
 	Budget() uint64
 }
 
@@ -151,7 +150,9 @@ type StateAnchor struct {
 	NativeTokens         iotago.NativeTokens
 }
 
-type SendOptions struct { // TODO
+type SendOptions struct {
+	Timelock   *TimeData
+	Expiration *TimeData
 }
 
 // RequestMetadata represents content of the data payload of the output

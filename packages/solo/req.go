@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/stretchr/testify/require"
@@ -61,6 +60,11 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
 }
 
+func (r *CallParams) WithAllowance(allowance *iscp.Assets) *CallParams {
+	r.allowance = allowance.Clone()
+	return r
+}
+
 func (r *CallParams) AddAllowance(allowance *iscp.Assets) *CallParams {
 	if r.allowance == nil {
 		r.allowance = allowance.Clone()
@@ -89,6 +93,11 @@ func (r *CallParams) AddNativeTokensAllowance(id *iotago.NativeTokenID, amount i
 	})
 }
 
+func (r *CallParams) WithAssets(assets *iscp.Assets) *CallParams {
+	r.assets = assets.Clone()
+	return r
+}
+
 func (r *CallParams) AddAssets(assets *iscp.Assets) *CallParams {
 	if r.assets == nil {
 		r.assets = assets.Clone()
@@ -115,6 +124,10 @@ func (r *CallParams) AddAssetsNativeTokens(tokenID *iotago.NativeTokenID, amount
 			Amount: util.ToBigInt(amount),
 		}},
 	})
+}
+
+func (r *CallParams) GasBudget() uint64 {
+	return r.gasBudget
 }
 
 func (r *CallParams) WithGasBudget(gasBudget uint64) *CallParams {
@@ -171,6 +184,10 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	if keyPair == nil {
 		keyPair = &ch.OriginatorPrivateKey
 	}
+	L1Iotas := ch.Env.L1Iotas(cryptolib.Ed25519AddressFromPubKey(keyPair.PublicKey))
+	if L1Iotas == 0 {
+		return nil, xerrors.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
+	}
 	addr := iotago.Ed25519AddressFromPubKey(keyPair.PublicKey)
 	allOuts, ids := ch.Env.utxoDB.GetUnspentOutputs(&addr)
 
@@ -197,6 +214,9 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		return nil, err
 	}
 
+	if tx.Essence.Outputs[0].Deposit() == 0 {
+		return nil, xerrors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustDustDeposit: true}")
+	}
 	return tx, err
 }
 
@@ -263,20 +283,6 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (d
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
-	if req.gasBudget == 0 {
-		gas, fee, err := ch.EstimateGasOffLedger(req, keyPair)
-		if err != nil {
-			return nil, xerrors.Errorf("cannot estimate gas: %w", err)
-		}
-		if fee > 0 {
-			err := ch.checkCanAffordFee(fee, req, keyPair)
-			if err != nil {
-				return nil, err
-			}
-		}
-		req.WithGasBudget(gas)
-	}
-
 	if keyPair == nil {
 		keyPair = &ch.OriginatorPrivateKey
 	}
@@ -340,22 +346,6 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
-	if req.gasBudget == 0 {
-		gas, fee, err := ch.EstimateGasOnLedger(req, keyPair)
-		if err != nil {
-			return nil, nil, nil, xerrors.Errorf("cannot estimate gas: %w", err)
-		}
-
-		if fee > 0 {
-			err := ch.checkCanAffordFee(fee, req, keyPair)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-		}
-
-		req.WithGasBudget(gas)
-	}
-
 	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
 	require.NoError(ch.Env.T, err)
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
@@ -366,44 +356,35 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	return tx, res.Receipt, res.Return, res.Error
 }
 
-// SimulateRequestOnLedger executes the given on-ledger request without
-// committing any changes in the ledger.
-// Gas fee is calculated but not charged, so it can be used to estimate the gas
-// needed to run the request.
-func (ch *Chain) SimulateRequestOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
-	r, err := ch.requestFromParams(req, keyPair)
-	if err != nil {
-		return nil, err
-	}
-	return ch.estimateGas(r), nil
-}
-
-// SimulateRequestOffLedger executes the given off-ledger request without
-// committing any changes in the ledger.
-// Gas fee is calculated but not charged, so it can be used to estimate the gas
-// needed to run the request.
-func (ch *Chain) SimulateRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*vm.RequestResult, error) {
-	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
-	return ch.estimateGas(r), nil
-}
-
 // EstimateGasOnLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
-func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
-	res, err := ch.SimulateRequestOnLedger(req, keyPair)
+// if useFakeBalance is `true` the request will be executed as if the sender had enough iotas to cover the maximum gas allowed
+// WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
+func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBudget ...bool) (gas, gasFee uint64, err error) {
+	if len(useFakeBudget) > 0 && useFakeBudget[0] {
+		req.WithGasBudget(math.MaxUint64)
+	}
+	r, err := ch.requestFromParams(req, keyPair)
 	if err != nil {
 		return 0, 0, err
 	}
+	res := ch.estimateGas(r)
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
 }
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
-func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (gas uint64, gasFee uint64, err error) {
-	res, err := ch.SimulateRequestOffLedger(req, keyPair)
-	if err != nil {
-		return 0, 0, err
+// if useFakeBalance is `true` the request will be executed as if the sender had enough iotas to cover the maximum gas allowed
+// WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
+func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair, useMaxBalance ...bool) (gas, gasFee uint64, err error) {
+	if len(useMaxBalance) > 0 && useMaxBalance[0] {
+		req.WithGasBudget(math.MaxUint64)
 	}
+	if keyPair == nil {
+		keyPair = &ch.OriginatorPrivateKey
+	}
+	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
+	res := ch.estimateGas(r)
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
 }
 
@@ -444,7 +425,7 @@ func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Dur
 	}
 	deadline = time.Now().Add(maxw)
 	for {
-		mstats := ch.mempool.Info()
+		mstats := ch.MempoolInfo()
 		if p(mstats) {
 			return true
 		}
@@ -454,6 +435,19 @@ func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Dur
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+const waitUntilMempoolIsEmptyDefaultTimeout = 5 * time.Second
+
+func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) {
+	realTimeout := waitUntilMempoolIsEmptyDefaultTimeout
+	if len(timeout) > 0 {
+		realTimeout = timeout[0]
+	}
+	startTime := time.Now()
+	ch.mempool.WaitInBufferEmpty(timeout...)
+	remainingTimeout := realTimeout - time.Since(startTime)
+	ch.mempool.WaitPoolEmpty(remainingTimeout)
 }
 
 // WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
@@ -466,5 +460,5 @@ func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bo
 
 // MempoolInfo returns stats about the chain mempool
 func (ch *Chain) MempoolInfo() mempool.MempoolInfo {
-	return ch.mempool.Info()
+	return ch.mempool.Info(ch.Env.GlobalTime())
 }

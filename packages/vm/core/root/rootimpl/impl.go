@@ -40,7 +40,7 @@ var Processor = root.Contract.Processor(initialize,
 // - ParamChainID iscp.ChainID. ID of the chain. Cannot be changed
 // - ParamDescription string defaults to "N/A"
 // - ParamDustDepositAssumptionsBin encoded assumptions about minimum dust deposit for internal outputs
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.initialize.begin")
 
 	state := ctx.State()
@@ -84,7 +84,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	state.Set(root.StateVarStateInitialized, []byte{0xFF})
 
 	ctx.Log().Debugf("root.initialize.success")
-	return nil, nil
+	return nil
 }
 
 // deployContract deploys contract and calls its 'init' constructor.
@@ -95,7 +95,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
 //     In case of hardcoded examples its an arbitrary unique hash set in the global call examples.AddProcessor
 // - ParamDescription string is an arbitrary string. Defaults to "N/A"
-func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
+func deployContract(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.deployContract.begin")
 	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller())
 
@@ -124,11 +124,10 @@ func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 		Name:        name,
 		Creator:     ctx.Caller(),
 	})
-	_, err = ctx.Call(iscp.Hn(name), iscp.EntryPointInit, initParams, nil)
-	ctx.RequireNoError(err)
+	ctx.Call(iscp.Hn(name), iscp.EntryPointInit, initParams, nil)
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
 		name, iscp.Hn(name), progHash.String(), description))
-	return nil, nil
+	return nil
 }
 
 // findContract view finds and returns encoded record of the contract
@@ -136,11 +135,9 @@ func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamHname
 // Output:
 // - ParamData
-func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
+func findContract(ctx iscp.SandboxView) dict.Dict {
 	hname, err := kvdecoder.New(ctx.Params()).GetHname(root.ParamHname)
-	if err != nil {
-		return nil, err
-	}
+	ctx.RequireNoError(err)
 	rec := root.FindContract(ctx.State(), hname)
 	ret := dict.New()
 	found := rec != nil
@@ -148,36 +145,36 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	if found {
 		ret.Set(root.ParamContractRecData, rec.Bytes())
 	}
-	return ret, nil
+	return ret
 }
 
 // grantDeployPermission grants permission to deploy contracts
 // Input:
 //  - ParamDeployer iscp.AgentID
-func grantDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
+func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("root.grantDeployPermissions: not authorized")
 
 	deployer := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(root.ParamDeployer)
 
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
 	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer))
-	return nil, nil
+	return nil
 }
 
 // revokeDeployPermission revokes permission to deploy contracts
 // Input:
 //  - ParamDeployer iscp.AgentID
-func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
+func revokeDeployPermission(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("root.revokeDeployPermissions: not authorized")
 
 	deployer := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(root.ParamDeployer)
 
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustDelAt(deployer.Bytes())
 	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
-	return nil, nil
+	return nil
 }
 
-func getContractRecords(ctx iscp.SandboxView) (dict.Dict, error) {
+func getContractRecords(ctx iscp.SandboxView) dict.Dict {
 	src := root.GetContractRegistryR(ctx.State())
 
 	ret := dict.New()
@@ -187,12 +184,12 @@ func getContractRecords(ctx iscp.SandboxView) (dict.Dict, error) {
 		return true
 	})
 
-	return ret, nil
+	return ret
 }
 
-func requireDeployPermissions(ctx iscp.Sandbox) (dict.Dict, error) {
+func requireDeployPermissions(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("root.revokeDeployPermissions: not authorized")
 	permissionsEnabled := kvdecoder.New(ctx.Params()).MustGetBool(root.ParamDeployPermissionsEnabled)
 	ctx.State().Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
-	return nil, nil
+	return nil
 }

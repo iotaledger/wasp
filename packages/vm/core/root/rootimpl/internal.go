@@ -17,8 +17,7 @@ func mustStoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo) {
 
 func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, params dict.Dict) {
 	mustStoreContract(ctx, i)
-	_, err := ctx.Call(iscp.Hn(i.Name), iscp.EntryPointInit, params, nil)
-	ctx.RequireNoError(err)
+	ctx.Call(iscp.Hn(i.Name), iscp.EntryPointInit, params, nil)
 }
 
 func mustStoreContractRecord(ctx iscp.Sandbox, rec *root.ContractRecord) {

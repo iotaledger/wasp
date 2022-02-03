@@ -17,7 +17,7 @@ func testPanicFull(t *testing.T, w bool) {
 	setupTestSandboxSC(t, chain, nil, w)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPanicFullEP.Name).
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	_, err := chain.PostRequestSync(req, nil)
 	testmisc.RequireErrorToBe(t, err, sbtestsc.MsgFullPanic)
 

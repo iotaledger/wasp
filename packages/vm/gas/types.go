@@ -13,10 +13,7 @@ type BurnCodeRecord struct {
 
 type BurnTable map[BurnCode]BurnCodeRecord
 
-var (
-	ErrUnknownBurnCode            = xerrors.New("unknown gas burn code")
-	ErrInLinear1ParameterExpected = xerrors.New("'linear' gas burn requires exactly 1 parameter")
-)
+var ErrUnknownBurnCode = xerrors.New("unknown gas burn code")
 
 func (c BurnCode) Name() string {
 	r, ok := burnTable[c]

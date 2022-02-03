@@ -14,7 +14,7 @@ import (
 )
 
 // getChainInfo view returns general info about the chain: chain ID, chain owner ID, limits and default fees
-func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
+func getChainInfo(ctx iscp.SandboxView) dict.Dict {
 	info := governance.MustGetChainInfo(ctx.State())
 	ret := dict.New()
 	ret.Set(governance.VarChainID, codec.EncodeChainID(info.ChainID))
@@ -25,7 +25,7 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret.Set(governance.VarMaxEventSize, codec.EncodeUint16(info.MaxEventSize))
 	ret.Set(governance.VarMaxEventsPerReq, codec.EncodeUint16(info.MaxEventsPerReq))
 
-	return ret, nil
+	return ret
 }
 
 // setChainInfo sets the configuration parameters of the chain
@@ -34,7 +34,7 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 // - ParamMaxEventSizeUint16        - uint16 maximum size of a single event.
 // - ParamMaxEventsPerRequestUint16 - uint16 maximum number of events per request.
 // Does not set gas fee policy!
-func setChainInfo(ctx iscp.Sandbox) (dict.Dict, error) {
+func setChainInfo(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner("governance.setContractFee: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -66,15 +66,15 @@ func setChainInfo(ctx iscp.Sandbox) (dict.Dict, error) {
 		ctx.State().Set(governance.VarMaxEventsPerReq, codec.Encode(maxEventsPerReq))
 		ctx.Event(fmt.Sprintf("[updated chain config] max eventsPerRequest: %d", maxEventsPerReq))
 	}
-	return nil, nil
+	return nil
 }
 
-func getMaxBlobSize(ctx iscp.SandboxView) (dict.Dict, error) {
+func getMaxBlobSize(ctx iscp.SandboxView) dict.Dict {
 	maxBlobSize, err := ctx.State().Get(governance.VarMaxBlobSize)
 	if err != nil {
 		ctx.Log().Panicf("error getting max blob size, %v", err)
 	}
 	ret := dict.New()
 	ret.Set(governance.ParamMaxBlobSizeUint32, maxBlobSize)
-	return ret, nil
+	return ret
 }

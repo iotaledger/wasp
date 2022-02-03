@@ -46,7 +46,7 @@ func InitializeManagement(ctx iscp.Sandbox) {
 	ctx.State().Set(keyEVMOwner, codec.EncodeAgentID(ctx.ContractCreator()))
 }
 
-func setBlockTime(ctx iscp.Sandbox) (dict.Dict, error) {
+func setBlockTime(ctx iscp.Sandbox) dict.Dict {
 	requireOwner(ctx)
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -61,7 +61,7 @@ func setBlockTime(ctx iscp.Sandbox) (dict.Dict, error) {
 	if mustSchedule {
 		ScheduleNextBlock(ctx)
 	}
-	return nil, nil
+	return nil
 }
 
 func getBlockTime(state kv.KVStoreReader) uint32 {
@@ -77,65 +77,67 @@ func ScheduleNextBlock(ctx iscp.Sandbox) {
 		return
 	}
 
-	ok := ctx.Send(ctx.ChainID().AsAddress(), iscp.NewAssets(1, nil), &iscp.SendMetadata{
-		TargetContract: ctx.Contract(),
-		EntryPoint:     evm.FuncMintBlock.Hname(),
-	}, iscp.SendOptions{
-		TimeLock: uint32(time.Unix(0, ctx.Timestamp()).Unix()) + blockTime,
+	ctx.Send(iscp.RequestParameters{
+		TargetAddress:              ctx.ChainID().AsAddress(),
+		Assets:                     iscp.NewAssets(1, nil),
+		AdjustToMinimumDustDeposit: true,
+		Metadata: &iscp.SendMetadata{
+			TargetContract: ctx.Contract(),
+			EntryPoint:     evm.FuncMintBlock.Hname(),
+		},
+		Options: &iscp.SendOptions{Timelock: &iscp.TimeData{
+			Time: time.Unix(0, ctx.Timestamp()).
+				Add(time.Duration(blockTime) * time.Second),
+		}},
 	})
-	a := assert.NewAssert(ctx.Log())
-	a.Requiref(ok, "failed to schedule next block")
 }
 
 func requireOwner(ctx iscp.Sandbox, allowSelf ...bool) {
 	contractOwner, err := codec.DecodeAgentID(ctx.State().MustGet(keyEVMOwner))
-	a := assert.NewAssert(ctx.Log())
-	a.RequireNoError(err)
+	ctx.RequireNoError(err)
 
 	allowed := []*iscp.AgentID{contractOwner}
 	if len(allowSelf) > 0 && allowSelf[0] {
 		allowed = append(allowed, iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract()))
 	}
 
-	a.RequireCaller(ctx, allowed)
+	ctx.RequireCallerAnyOf(allowed)
 }
 
-func setNextOwner(ctx iscp.Sandbox) (dict.Dict, error) {
+func setNextOwner(ctx iscp.Sandbox) dict.Dict {
 	requireOwner(ctx)
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	ctx.State().Set(keyNextEVMOwner, codec.EncodeAgentID(par.MustGetAgentID(evm.FieldNextEVMOwner)))
-	return nil, nil
+	return nil
 }
 
-func claimOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-
+func claimOwnership(ctx iscp.Sandbox) dict.Dict {
 	nextOwner, err := codec.DecodeAgentID(ctx.State().MustGet(keyNextEVMOwner))
-	a.RequireNoError(err)
-	a.RequireCaller(ctx, []*iscp.AgentID{nextOwner})
+	ctx.RequireNoError(err)
+	ctx.RequireCaller(nextOwner)
 
 	ctx.State().Set(keyEVMOwner, codec.EncodeAgentID(nextOwner))
 	ScheduleNextBlock(ctx)
-	return nil, nil
+	return nil
 }
 
-func getOwner(ctx iscp.SandboxView) (dict.Dict, error) {
-	return Result(ctx.State().MustGet(keyEVMOwner)), nil
+func getOwner(ctx iscp.SandboxView) dict.Dict {
+	return Result(ctx.State().MustGet(keyEVMOwner))
 }
 
-func setGasPerIota(ctx iscp.Sandbox) (dict.Dict, error) {
+func setGasPerIota(ctx iscp.Sandbox) dict.Dict {
 	requireOwner(ctx)
 	par := kvdecoder.New(ctx.Params())
 	gasPerIotaBin := codec.EncodeUint64(par.MustGetUint64(evm.FieldGasPerIota))
 	ctx.State().Set(keyGasPerIota, gasPerIotaBin)
-	return nil, nil
+	return nil
 }
 
-func getGasPerIota(ctx iscp.SandboxView) (dict.Dict, error) {
-	return Result(ctx.State().MustGet(keyGasPerIota)), nil
+func getGasPerIota(ctx iscp.SandboxView) dict.Dict {
+	return Result(ctx.State().MustGet(keyGasPerIota))
 }
 
-func ApplyTransaction(ctx iscp.Sandbox, apply func(tx *types.Transaction, blockTime uint32) (*types.Receipt, error)) (dict.Dict, error) {
+func ApplyTransaction(ctx iscp.Sandbox, apply func(tx *types.Transaction, blockTime uint32) *types.Receipt) dict.Dict {
 	a := assert.NewAssert(ctx.Log())
 
 	tx := &types.Transaction{}
@@ -143,8 +145,7 @@ func ApplyTransaction(ctx iscp.Sandbox, apply func(tx *types.Transaction, blockT
 	a.RequireNoError(err)
 
 	blockTime := getBlockTime(ctx.State())
-	receipt, err := apply(tx, blockTime)
-	a.RequireNoError(err)
+	receipt := apply(tx, blockTime)
 
 	gasPerIota, err := codec.DecodeUint64(ctx.State().MustGet(keyGasPerIota), evm.DefaultGasPerIota)
 	a.RequireNoError(err)
@@ -153,5 +154,5 @@ func ApplyTransaction(ctx iscp.Sandbox, apply func(tx *types.Transaction, blockT
 		// TODO: this is just informative, gas is currently not being charged
 		evm.FieldGasFee:  codec.EncodeUint64(receipt.GasUsed / gasPerIota),
 		evm.FieldGasUsed: codec.EncodeUint64(receipt.GasUsed),
-	}, nil
+	}
 }

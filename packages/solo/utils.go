@@ -31,3 +31,15 @@ func (ch *Chain) RevokeDeployPermission(keyPair *cryptolib.KeyPair, deployerAgen
 func (ch *Chain) ContractAgentID(name string) *iscp.AgentID {
 	return iscp.NewAgentID(ch.ChainID.AsAddress(), iscp.Hn(name))
 }
+
+func IscpRequestFromCallParams(ch *Chain, req *CallParams, keyPair *cryptolib.KeyPair) (iscp.Request, error) {
+	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
+	if err != nil {
+		return nil, err
+	}
+	requestsFromSignedTx, err := iscp.RequestsInTransaction(tx)
+	if err != nil {
+		return nil, err
+	}
+	return requestsFromSignedTx[*ch.ChainID][0], nil
+}

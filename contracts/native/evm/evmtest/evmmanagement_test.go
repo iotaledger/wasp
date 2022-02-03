@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -26,11 +25,9 @@ var (
 func TestRequestGasFees(t *testing.T) {
 	withEVMFlavors(t, func(t *testing.T, evmFlavor *coreutil.ContractInfo) {
 		evmChainMgmtProcessor := evmChainMgmtContract.Processor(nil,
-			mgmtFuncClaimOwnership.WithHandler(func(ctx iscp.Sandbox) (dict.Dict, error) {
-				a := assert.NewAssert(ctx.Log())
-				_, err := ctx.Call(evmFlavor.Hname(), evm.FuncClaimOwnership.Hname(), nil, nil)
-				a.RequireNoError(err)
-				return nil, nil
+			mgmtFuncClaimOwnership.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+				ctx.Call(evmFlavor.Hname(), evm.FuncClaimOwnership.Hname(), nil, nil)
+				return nil
 			}),
 		)
 
@@ -48,14 +45,14 @@ func TestRequestGasFees(t *testing.T) {
 		_, err = soloChain.PostRequestSync(
 			solo.NewCallParams(evmFlavor.Name, evm.FuncSetNextOwner.Name, evm.FieldNextEVMOwner, managerAgentID).
 				AddAssetsIotas(1),
-			soloChain.OriginatorPrivateKey,
+			&soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
 
 		// claim ownership
 		_, err = soloChain.PostRequestSync(
 			solo.NewCallParams(evmChainMgmtContract.Name, mgmtFuncClaimOwnership.Name).AddAssetsIotas(1),
-			soloChain.OriginatorPrivateKey,
+			&soloChain.OriginatorPrivateKey,
 		)
 		require.NoError(t, err)
 	})

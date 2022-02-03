@@ -14,20 +14,17 @@ func TestFeePolicySerde(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, feePolicy.GasFeeTokenID, feePolicyBack.GasFeeTokenID)
 	require.EqualValues(t, feePolicy.ValidatorFeeShare, feePolicyBack.ValidatorFeeShare)
-	require.EqualValues(t, feePolicy.GasPricePerNominalUnit, feePolicyBack.GasPricePerNominalUnit)
-	require.EqualValues(t, feePolicy.GasNominalUnit, feePolicyBack.GasNominalUnit)
+	require.EqualValues(t, feePolicy.GasPerToken, feePolicyBack.GasPerToken)
 
-	fgb := uint64(100)
 	feePolicy = &GasFeePolicy{
-		GasFeeTokenID:          &tpkg.RandNativeToken().ID,
-		GasPricePerNominalUnit: fgb,
-		ValidatorFeeShare:      10,
+		GasFeeTokenID:     &tpkg.RandNativeToken().ID,
+		GasPerToken:       uint64(100),
+		ValidatorFeeShare: 10,
 	}
 	feePolicyBin = feePolicy.Bytes()
 	feePolicyBack, err = GasFeePolicyFromBytes(feePolicyBin)
 	require.NoError(t, err)
 	require.EqualValues(t, feePolicy.GasFeeTokenID, feePolicyBack.GasFeeTokenID)
 	require.EqualValues(t, feePolicy.ValidatorFeeShare, feePolicyBack.ValidatorFeeShare)
-	require.EqualValues(t, feePolicy.GasPricePerNominalUnit, feePolicyBack.GasPricePerNominalUnit)
-	require.EqualValues(t, feePolicy.GasNominalUnit, feePolicyBack.GasNominalUnit)
+	require.EqualValues(t, feePolicy.GasPerToken, feePolicyBack.GasPerToken)
 }

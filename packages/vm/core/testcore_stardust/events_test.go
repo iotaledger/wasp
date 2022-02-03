@@ -1,6 +1,10 @@
 package testcore
 
 import (
+	"fmt"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"math"
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -12,11 +16,120 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO test analysis not finished
+var (
+	nEvents                = int(governance.DefaultMaxEventsPerRequest + 1000)
+	bigEventSize           = int(governance.DefaultMaxEventSize + 1000)
+	manyEventsContractName = "ManyEventsContract"
+	manyEventsContract     = coreutil.NewContract(manyEventsContractName, "many events contract")
+
+	funcManyEvents = coreutil.Func("manyevents")
+	funcBigEvent   = coreutil.Func("bigevent")
+
+	manyEventsContractProcessor = manyEventsContract.Processor(nil,
+		funcManyEvents.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+			for i := 0; i < nEvents; i++ {
+				ctx.Event(fmt.Sprintf("testing many events %d", i))
+			}
+			return nil
+		}),
+		funcBigEvent.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+			buf := make([]byte, bigEventSize)
+			ctx.Event(string(buf))
+			return nil
+		}),
+	)
+)
+
+func setupTest(t *testing.T) *solo.Chain {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
+		WithNativeContract(manyEventsContractProcessor)
+	ch := env.NewChain(nil, "ch")
+	err := ch.DeployContract(nil, manyEventsContract.Name, manyEventsContract.ProgramHash)
+	require.NoError(t, err)
+	return ch
+}
+
+func checkNEvents(t *testing.T, ch *solo.Chain, reqid iscp.RequestID, n int) {
+	// fetch events from blocklog
+	events, err := ch.GetEventsForContract(manyEventsContractName)
+	require.NoError(t, err)
+	require.Len(t, events, n)
+
+	events, err = ch.GetEventsForRequest(reqid)
+	require.NoError(t, err)
+	require.Len(t, events, n)
+}
+
+func TestManyEvents(t *testing.T) {
+	ch := setupTest(t)
+	ch.MustDepositIotasToL2(10_000_000, nil)
+
+	// post a request that issues too many events (nEvents)
+	tx, _, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name).AddAssetsIotas(1),
+		nil,
+	)
+	require.Error(t, err) // error expected (too many events)
+	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
+	require.NoError(t, err)
+	reqID := reqs[0].ID()
+	checkNEvents(t, ch, reqID, 0) // no events are saved
+
+	// allow for more events per request in root contract
+	req := solo.NewCallParams(
+		governance.Contract.Name, governance.FuncSetChainInfo.Name,
+		governance.ParamMaxEventsPerRequestUint16, uint16(nEvents),
+	).WithGasBudget(10_000)
+	_, err = ch.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	// check events are now saved
+	req = solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name).
+		WithGasBudget(10_000_000)
+	tx, _, err = ch.PostRequestSyncTx(req, nil)
+	require.NoError(t, err)
+
+	reqs, err = ch.Env.RequestsForChain(tx, ch.ChainID)
+	require.NoError(t, err)
+	reqID = reqs[0].ID()
+	checkNEvents(t, ch, reqID, nEvents)
+}
+
+func TestEventTooLarge(t *testing.T) {
+	ch := setupTest(t)
+
+	// post a request that issues an event too large
+	req := solo.NewCallParams(manyEventsContract.Name, funcBigEvent.Name).
+		WithGasBudget(1000)
+	tx, _, err := ch.PostRequestSyncTx(req, nil)
+	require.Error(t, err) // error expected (event too large)
+	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
+	require.NoError(t, err)
+	reqID := reqs[0].ID()
+	checkNEvents(t, ch, reqID, 0) // no events are saved
+
+	// allow for bigger events in root contract
+	req = solo.NewCallParams(
+		governance.Contract.Name, governance.FuncSetChainInfo.Name,
+		governance.ParamMaxEventSizeUint16, uint16(bigEventSize),
+	).WithGasBudget(100_000)
+	_, err = ch.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	// check event is now saved
+	req = solo.NewCallParams(manyEventsContract.Name, funcBigEvent.Name).
+		WithGasBudget(10_000)
+	tx, _, err = ch.PostRequestSyncTx(req, nil)
+	require.NoError(t, err)
+	reqs, err = ch.Env.RequestsForChain(tx, ch.ChainID)
+	require.NoError(t, err)
+	reqID = reqs[0].ID()
+	checkNEvents(t, ch, reqID, 1)
+}
 
 func incrementSCCounter(t *testing.T, ch *solo.Chain) iscp.RequestID {
 	tx, _, err := ch.PostRequestSyncTx(
-		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name),
+		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).WithGasBudget(math.MaxUint64),
 		nil,
 	)
 	require.NoError(t, err)

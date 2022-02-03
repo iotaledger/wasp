@@ -22,7 +22,6 @@ import (
 
 func TestInitLoad(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	env.EnablePublisher(true)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
 	env.AssertL1Iotas(userAddr, solo.Saldo)
 	ch, _, _ := env.NewChainExt(user, 10_000, "chain1")
@@ -37,7 +36,6 @@ func TestInitLoad(t *testing.T) {
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	env.EnablePublisher(true)
 	genesisAddr := env.L1Ledger().GenesisAddress()
 	assets := env.L1Assets(genesisAddr)
 	require.EqualValues(t, env.L1Ledger().Supply(), assets.Iotas)
@@ -45,7 +43,6 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	// create chain
 	ch, _, initTx := env.NewChainExt(nil, 0, "chain1")
 	defer ch.Log.Sync()
-	env.WaitPublisher()
 	ch.AssertControlAddresses()
 	t.Logf("originator address iotas: %d (spent %d)",
 		env.L1Iotas(ch.OriginatorAddress), solo.Saldo-env.L1Iotas(ch.OriginatorAddress))
@@ -93,7 +90,6 @@ func TestLedgerBaseConsistency(t *testing.T) {
 func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
 		defer ch.Log.Sync()
 
@@ -103,7 +99,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
 		req := solo.NewCallParams("dummyContract", "dummyEP").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrTargetContractNotFound)
@@ -122,11 +118,9 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		ch.AssertL2Iotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
 		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
-		env.WaitPublisher()
 	})
 	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
 		defer ch.Log.Sync()
 
@@ -140,7 +134,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
 		req := solo.NewCallParams("dummyContract", "dummyEP").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetContractNotFound.Error())
@@ -163,11 +157,9 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		ch.AssertL2Iotas(senderAgentID, reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
 		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
-		env.WaitPublisher()
 	})
 	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
 		defer ch.Log.Sync()
 
@@ -177,7 +169,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
@@ -196,11 +188,9 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		ch.AssertL2Iotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
 		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
-		env.WaitPublisher()
 	})
 	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		env.EnablePublisher(true)
 		ch := env.NewChain(nil, "chain1")
 		defer ch.Log.Sync()
 
@@ -214,7 +204,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
 
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
 		require.Contains(t, err.Error(), vmcontext.ErrTargetEntryPointNotFound.Error())
@@ -236,49 +226,41 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		ch.AssertL2Iotas(senderAgentID, reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
 		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
-		env.WaitPublisher()
 	})
 }
 
 func TestNoTargetView(t *testing.T) {
 	t.Run("no contract view", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		env.EnablePublisher(true)
 		chain := env.NewChain(nil, "chain1")
 		chain.AssertControlAddresses()
 
 		_, err := chain.CallView("dummyContract", "dummyEP")
 		require.Error(t, err)
-		env.WaitPublisher()
 	})
 	t.Run("no EP view", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		env.EnablePublisher(true)
 		chain := env.NewChain(nil, "chain1")
 		chain.AssertControlAddresses()
 
 		_, err := chain.CallView(root.Contract.Name, "dummyEP")
 		require.Error(t, err)
-		env.WaitPublisher()
 	})
 }
 
 func TestOkCall(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	env.EnablePublisher(true)
 	ch := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(1000)
+		WithGasBudget(100_000)
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
-	env.WaitPublisher()
 }
 
 func TestEstimateGas(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
 		WithNativeContract(sbtestsc.Processor)
-	env.EnablePublisher(true)
 	ch := env.NewChain(nil, "chain1")
 	ch.MustDepositIotasToL2(10000, nil)
 	err := ch.DeployContract(nil, sbtestsc.Contract.Name, sbtestsc.Contract.ProgramHash)
@@ -303,10 +285,10 @@ func TestEstimateGas(t *testing.T) {
 
 	var estimatedGas, estimatedGasFee uint64
 	{
-		keyPair, _ := env.NewKeyPair()
+		keyPair, _ := env.NewKeyPairWithFunds()
 
 		// we can call EstimateGas even with 0 iotas in L2 account
-		estimatedGas, estimatedGasFee, err = ch.EstimateGasOffLedger(callParams(), keyPair)
+		estimatedGas, estimatedGasFee, err = ch.EstimateGasOffLedger(callParams(), keyPair, true)
 		require.NoError(t, err)
 		require.NotZero(t, estimatedGas)
 		require.NotZero(t, estimatedGasFee)
@@ -316,11 +298,12 @@ func TestEstimateGas(t *testing.T) {
 		require.EqualValues(t, 0, getInt())
 	}
 
-	// dirty hack to find out the dust deposit + gas fee necessary for DepositIotasToL2
+	// find out the gas fee necessary for DepositIotasToL2
 	depositFee := func() uint64 {
-		keyPair, addr := env.NewKeyPairWithFunds()
-		ch.MustDepositIotasToL2(1000, keyPair)
-		return 1000 - ch.L2Iotas(iscp.NewAgentID(addr, 0))
+		keyPair, _ := env.NewKeyPairWithFunds()
+		_, gasFee, err := ch.EstimateGasOnLedger(solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name), keyPair, true)
+		require.NoError(t, err)
+		return gasFee
 	}()
 
 	for _, testCase := range []struct {
@@ -355,15 +338,20 @@ func TestEstimateGas(t *testing.T) {
 	} {
 		t.Run(testCase.Desc, func(t *testing.T) {
 			keyPair, addr := env.NewKeyPairWithFunds()
+			agentID := iscp.NewAgentID(addr, 0)
+
 			if testCase.L2Balance > 0 {
 				ch.MustDepositIotasToL2(testCase.L2Balance+depositFee, keyPair)
-				require.Equal(t, testCase.L2Balance, ch.L2Iotas(iscp.NewAgentID(addr, 0)))
+				balance := ch.L2Iotas(agentID)
+				require.Equal(t, testCase.L2Balance, balance)
 			}
 
 			_, err := ch.PostRequestOffLedger(
 				callParams().WithGasBudget(testCase.GasBudget),
 				keyPair,
 			)
+			rec := ch.LastReceipt()
+			println(rec)
 			if testCase.ExpectedError != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedError)
@@ -383,7 +371,7 @@ func TestRepeatInit(t *testing.T) {
 		err := ch.DepositIotasToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(root.Contract.Name, "init").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, root.ErrChainInitConditionsFailed)
@@ -395,7 +383,7 @@ func TestRepeatInit(t *testing.T) {
 		err := ch.DepositIotasToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(accounts.Contract.Name, "init").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
@@ -407,7 +395,7 @@ func TestRepeatInit(t *testing.T) {
 		err := ch.DepositIotasToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(blocklog.Contract.Name, "init").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
@@ -419,7 +407,7 @@ func TestRepeatInit(t *testing.T) {
 		err := ch.DepositIotasToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(blob.Contract.Name, "init").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
@@ -431,7 +419,7 @@ func TestRepeatInit(t *testing.T) {
 		err := ch.DepositIotasToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(governance.Contract.Name, "init").
-			WithGasBudget(1000)
+			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vmcontext.ErrRepeatingInitCall)
@@ -443,7 +431,6 @@ func TestDeployNativeContract(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
 		WithNativeContract(sbtestsc.Processor)
 
-	env.EnablePublisher(true)
 	ch := env.NewChain(nil, "chain1")
 
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
@@ -470,7 +457,6 @@ func TestDeployNativeContract(t *testing.T) {
 	//
 	//req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name)
 	//_, err := ch.PostRequestSync(req, nil)
-	env.WaitPublisher()
 }
 
 func TestFeeBasic(t *testing.T) {

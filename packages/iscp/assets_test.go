@@ -4,10 +4,10 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/iotaledger/iota.go/v3/tpkg"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,7 +27,7 @@ func TestMarshalling(t *testing.T) {
 		},
 		&iotago.NativeToken{
 			ID:     [iotago.NativeTokenIDLength]byte{3},
-			Amount: maxVal,
+			Amount: util.MaxUint256,
 		},
 	}
 

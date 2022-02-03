@@ -4,19 +4,16 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"golang.org/x/xerrors"
 )
-
-const MaxPostedOutputsInOneRequest = 4
 
 // Send implements sandbox function of sending cross-chain request
 func (vmctx *VMContext) Send(par iscp.RequestParameters) {
 	if vmctx.numPostedOutputs >= MaxPostedOutputsInOneRequest {
-		panic(xerrors.Errorf("%v: max = %d", ErrExceededPostedOutputLimit, MaxPostedOutputsInOneRequest))
+		panic(ErrExceededPostedOutputLimit)
 	}
 
 	vmctx.numPostedOutputs++
-	vmctx.GasBurn(gas.BurnCodeSendL1Request, vmctx.numPostedOutputs)
+	vmctx.GasBurn(gas.BurnCodeSendL1Request, uint64(vmctx.numPostedOutputs))
 
 	assets := par.Assets
 	// create extended output with adjusted dust deposit

@@ -117,7 +117,7 @@ func (s chainStateWrapper) Get(name kv.Key) ([]byte, error) {
 		return v, nil
 	}
 	ret, err := s.vmctx.virtualState.KVStore().Get(name)
-	s.vmctx.GasBurn(gas.BurnCodeReadFromState1P, len(ret))
+	s.vmctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(ret)/100)+1) // minimum 1
 	return ret, err
 }
 
@@ -132,7 +132,7 @@ func (s chainStateWrapper) Set(name kv.Key, value []byte) {
 
 	s.vmctx.currentStateUpdate.Mutations().Set(name, value)
 	// only burning gas when storing bytes to the state
-	s.vmctx.GasBurn(gas.BurnCodeStorage1P, len(name)+len(value))
+	s.vmctx.GasBurn(gas.BurnCodeStorage1P, uint64(len(name)+len(value)))
 }
 
 func (vmctx *VMContext) State() kv.KVStore {

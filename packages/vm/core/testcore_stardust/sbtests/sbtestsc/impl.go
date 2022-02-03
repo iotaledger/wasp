@@ -9,105 +9,87 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
-	if p, err := ctx.Params().Get(ParamFail); err == nil && p != nil {
-		return nil, fmt.Errorf("failing on purpose")
-	}
-	return nil, nil
+func initialize(ctx iscp.Sandbox) dict.Dict {
+	p := ctx.Params().MustGet(ParamFail)
+	ctx.Requiref(p == nil, "failing on purpose")
+	return nil
 }
 
 // testEventLogGenericData is called several times in log_test.go
-func testEventLogGenericData(ctx iscp.Sandbox) (dict.Dict, error) {
+func testEventLogGenericData(ctx iscp.Sandbox) dict.Dict {
 	params := ctx.Params()
-	inc, err := codec.DecodeInt64(params.MustGet(VarCounter), 1)
-	if err != nil {
-		return nil, err
-	}
+	inc := codec.MustDecodeInt64(params.MustGet(VarCounter), 1)
 	ctx.Event(fmt.Sprintf("[GenericData] Counter Number: %d", inc))
-	return nil, nil
+	return nil
 }
 
-func testEventLogEventData(ctx iscp.Sandbox) (dict.Dict, error) {
+func testEventLogEventData(ctx iscp.Sandbox) dict.Dict {
 	ctx.Event("[Event] - Testing Event...")
-	return nil, nil
+	return nil
 }
 
-func testChainOwnerIDView(ctx iscp.SandboxView) (dict.Dict, error) {
+func testChainOwnerIDView(ctx iscp.SandboxView) dict.Dict {
 	cOwnerID := ctx.ChainOwnerID()
-	ret := dict.New()
-	ret.Set(ParamChainOwnerID, cOwnerID.Bytes())
-
-	return ret, nil
+	return dict.Dict{ParamChainOwnerID: cOwnerID.Bytes()}
 }
 
-func testChainOwnerIDFull(ctx iscp.Sandbox) (dict.Dict, error) {
+func testChainOwnerIDFull(ctx iscp.Sandbox) dict.Dict {
 	cOwnerID := ctx.ChainOwnerID()
-	ret := dict.New()
-	ret.Set(ParamChainOwnerID, cOwnerID.Bytes())
-
-	return ret, nil
+	return dict.Dict{ParamChainOwnerID: cOwnerID.Bytes()}
 }
 
-func testSandboxCall(ctx iscp.SandboxView) (dict.Dict, error) {
-	ret, err := ctx.Call(governance.Contract.Hname(), governance.FuncGetChainInfo.Hname(), nil)
-	if err != nil {
-		return nil, err
-	}
+func testSandboxCall(ctx iscp.SandboxView) dict.Dict {
+	ret := ctx.Call(governance.Contract.Hname(), governance.FuncGetChainInfo.Hname(), nil)
 	desc := ret.MustGet(governance.VarDescription)
-
 	ret.Set(VarSandboxCall, desc)
-
-	return ret, nil
+	return ret
 }
 
-func testEventLogDeploy(ctx iscp.Sandbox) (dict.Dict, error) {
+func testEventLogDeploy(ctx iscp.Sandbox) dict.Dict {
 	// Deploy the same contract with another name
-	err := ctx.DeployContract(Contract.ProgramHash,
+	ctx.DeployContract(Contract.ProgramHash,
 		VarContractNameDeployed, "test contract deploy log", nil)
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
+	return nil
 }
 
-func testPanicFullEP(ctx iscp.Sandbox) (dict.Dict, error) {
+func testPanicFullEP(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Panicf(MsgFullPanic)
-	return nil, nil
+	return nil
 }
 
-func testPanicViewEP(ctx iscp.SandboxView) (dict.Dict, error) {
+func testPanicViewEP(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Panicf(MsgViewPanic)
-	return nil, nil
+	return nil
 }
 
-func testJustView(ctx iscp.SandboxView) (dict.Dict, error) {
+func testJustView(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Infof("calling empty view entry point")
-	return nil, nil
+	return nil
 }
 
-func testCallPanicFullEP(ctx iscp.Sandbox) (dict.Dict, error) {
+func testCallPanicFullEP(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicFullEP)
 	return ctx.Call(Contract.Hname(), FuncPanicFullEP.Hname(), nil, nil)
 }
 
-func testCallPanicViewEPFromFull(ctx iscp.Sandbox) (dict.Dict, error) {
+func testCallPanicViewEPFromFull(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicViewEP)
 	return ctx.Call(Contract.Hname(), FuncPanicViewEP.Hname(), nil, nil)
 }
 
-func testCallPanicViewEPFromView(ctx iscp.SandboxView) (dict.Dict, error) {
+func testCallPanicViewEPFromView(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Infof("will be calling entry point '%s' from view EP", FuncPanicViewEP)
 	return ctx.Call(Contract.Hname(), FuncPanicViewEP.Hname(), nil)
 }
 
-func doNothing(ctx iscp.Sandbox) (dict.Dict, error) {
+func doNothing(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Infof(MsgDoNothing)
-	return nil, nil
+	return nil
 }
 
 // sendToAddress send the whole account to ParamAddress if invoked by the creator
 // Panics if wrong parameter or unauthorized access
-//func sendToAddress(ctx iscp.Sandbox) (dict.Dict, error) {
+//func sendToAddress(ctx iscp.Sandbox) (dict.Dict) {
 //	ctx.Log().Infof(FuncSendToAddress.Name)
 //	a := assert.NewAssert(ctx.Log())
 //	par := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -118,5 +100,5 @@ func doNothing(ctx iscp.Sandbox) (dict.Dict, error) {
 //		fmt.Sprintf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String()))
 //
 //	ctx.Log().Infof("sent to %s: tokens:\n%s", targetAddress.Base58(), myTokens.String())
-//	return nil, nil
+//	return nil
 //}

@@ -51,7 +51,7 @@ func (s *sandboxView) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {
 	panic("implement me")
 }
 
-func (s *sandboxView) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) (dict.Dict, error) {
+func (s *sandboxView) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
@@ -95,7 +95,7 @@ func (s *sandboxView) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandboxView) Burn(burnCode gas.BurnCode, par ...int) {
+func (s *sandboxView) Burn(burnCode gas.BurnCode, par ...uint64) {
 	s.vmctx.GasBurn(burnCode, par...)
 }
 

@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"errors"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"math"
 	"math/big"
 	"runtime/debug"
@@ -20,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 )
 
@@ -50,7 +50,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 	// so far there were no panics except optimistic reader
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 
-	// catches error which is not the request or contract fault
+	// catches protocol exception error which is not the request or contract fault
 	// If it occurs, the request is just skipped
 	err = util.CatchPanicReturnError(
 		func() {
@@ -66,11 +66,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 				Return:  callRet,
 				Error:   callErr,
 			}
-		},
-		vmtxbuilder.ErrInputLimitExceeded,
-		vmtxbuilder.ErrOutputLimitExceeded,
-		vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit,
-		vmtxbuilder.ErrNumberOfNativeTokensLimitExceeded,
+		}, exceptions.All...,
 	)
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
@@ -132,7 +128,11 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 			vmctx.Debugf("%v", panicErr)
 			vmctx.Debugf(string(debug.Stack()))
 		}()
-		callRet, callErr = vmctx.callFromRequest()
+		callRet = vmctx.callFromRequest()
+		// ensure at least the minimum amount of gas is charged
+		if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest1P.Cost() {
+			vmctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, vmctx.GasBurned())
+		}
 	}()
 	if callErr != nil {
 		// panic happened during VM plugin call. Restore the state
@@ -143,17 +143,17 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	vmctx.chargeGasFee()
 	// write receipt no matter what
 	receipt = vmctx.writeReceiptToBlockLog(callErr)
-	return
+	return receipt, callRet, callErr
 }
-
-// TODO make it configurable (move to governance)
-const maxOuputsProducedInSingleCall = 5
 
 func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 	if r == nil {
 		return nil
 	}
 	// re-panic-ing if error it not user nor VM plugin fault.
+	if exceptions.IsProtocolLimitException(r) {
+		panic(r)
+	}
 	// Otherwise, the panic is wrapped into the returned error, including gas-related panic
 	switch err := r.(type) {
 	case *kv.DBError:
@@ -164,25 +164,12 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 		if errors.Is(err, coreutil.ErrorStateInvalidated) {
 			panic(err)
 		}
-		if errors.Is(err, vmtxbuilder.ErrOutputLimitExceeded) {
-			outputsCreatedByRequest := vmctx.txbuilder.NumOutputs() - vmctx.txsnapshot.NumOutputs()
-			if outputsCreatedByRequest > maxOuputsProducedInSingleCall {
-				return vmtxbuilder.ErrOutputLimitInSingleCallExceeded
-			}
-			panic(err)
-		}
-		if errors.Is(err, vmtxbuilder.ErrInputLimitExceeded) {
-			panic(err)
-		}
-		if errors.Is(err, vmtxbuilder.ErrNumberOfNativeTokensLimitExceeded) {
-			panic(err)
-		}
 	}
 	return xerrors.Errorf("%v", r)
 }
 
 // callFromRequest is the call itself. Assumes sc exists
-func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
+func (vmctx *VMContext) callFromRequest() dict.Dict {
 	vmctx.Debugf("callFromRequest: %s", vmctx.req.ID().String())
 
 	// calling only non view entry points. Calling the view will trigger error and fallback
@@ -206,6 +193,13 @@ func (vmctx *VMContext) callFromRequest() (dict.Dict, error) {
 // how many tokens the sender has in its account and how many are allowed for the target.
 // Safe arithmetics is used
 func (vmctx *VMContext) calculateAffordableGasBudget() {
+	// when estimating gas, if maxUint64 is provided, use the maximum gas budget possible
+	if vmctx.task.EstimateGasMode && vmctx.req.GasBudget() == math.MaxUint64 {
+		vmctx.gasBudgetAdjusted = gas.MaxGasPerCall
+		vmctx.gasMaxTokensToSpendForGasFee = math.MaxUint64
+		return
+	}
+
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.SenderAddress() == nil")
 	}
@@ -215,21 +209,16 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	f1, f2 := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.req.GasBudget(), guaranteedFeeTokens)
 	vmctx.gasMaxTokensToSpendForGasFee = f1 + f2
 	// calculate affordable gas budget
-	affordable := uint64(math.MaxUint64)
-	if !vmctx.task.EstimateGasMode {
-		affordable = vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
-	}
+	affordable := vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
 	// adjust gas budget to what is affordable
-	vmctx.gasBudgetAdjusted = util.MinUint64(vmctx.req.GasBudget(), affordable)
+	affordable = util.MinUint64(vmctx.req.GasBudget(), affordable)
+	// cap gas to the maximum allowed per tx
+	vmctx.gasBudgetAdjusted = util.MinUint64(affordable, gas.MaxGasPerCall)
 }
 
 // calcGuaranteedFeeTokens return hiw maximum tokens (iotas or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
 func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
-	if vmctx.task.EstimateGasMode {
-		return math.MaxUint64
-	}
-
 	var tokensGuaranteed uint64
 
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
@@ -272,6 +261,7 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 // chargeGasFee takes burned tokens from the sender's account
 // It should always be enough because gas budget is set affordable
 func (vmctx *VMContext) chargeGasFee() {
+	// disable gas burn
 	vmctx.gasBurnEnable(false)
 	if vmctx.req.SenderAddress() == nil {
 		panic("inconsistency: vmctx.req.Request().SenderAddress() == nil")
@@ -280,12 +270,18 @@ func (vmctx *VMContext) chargeGasFee() {
 		// do not charge gas fees if init request
 		return
 	}
+
+	availableToPayFee := vmctx.gasMaxTokensToSpendForGasFee
+	if !vmctx.task.EstimateGasMode && !vmctx.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(availableToPayFee) {
+		// user didn't specify enough iotas to cover the minimum request fee, charge whatever is present in the user's account
+		availableToPayFee = vmctx.GetSenderTokenBalanceForFees()
+	}
+
 	// total fees to charge
-	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), vmctx.gasMaxTokensToSpendForGasFee)
+	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), availableToPayFee)
 	vmctx.gasFeeCharged = sendToOwner + sendToValidator
 
 	// calc gas totals
-	vmctx.gasBurnedTotal += vmctx.gasBurned
 	vmctx.gasFeeChargedTotal += vmctx.gasFeeCharged
 
 	if vmctx.task.EstimateGasMode {

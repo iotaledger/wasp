@@ -25,7 +25,7 @@ import (
 // in the ISCP block; otherwise it returns the previously created instance. The purpose is to
 // create a single Ethereum block for each ISCP block.
 func getEmulatorInBlockContext(ctx iscp.Sandbox) *emulator.EVMEmulator {
-	bctx := ctx.BlockContext(
+	bctx := ctx.Privileged().BlockContext(
 		func(ctx iscp.Sandbox) interface{} { return createEmulator(ctx) },
 		func(bctx interface{}) { bctx.(*emulator.EVMEmulator).MintBlock() },
 	)
@@ -46,16 +46,16 @@ func timestamp(ctx iscp.SandboxBase) uint64 {
 	return uint64(tsNano / time.Second)
 }
 
-func blockResult(emu *emulator.EVMEmulator, block *types.Block) (dict.Dict, error) {
+func blockResult(emu *emulator.EVMEmulator, block *types.Block) dict.Dict {
 	if block == nil {
-		return nil, nil
+		return nil
 	}
-	return evminternal.Result(evmtypes.EncodeBlock(block)), nil
+	return evminternal.Result(evmtypes.EncodeBlock(block))
 }
 
-func txResult(emu *emulator.EVMEmulator, tx *types.Transaction) (dict.Dict, error) {
+func txResult(emu *emulator.EVMEmulator, tx *types.Transaction) dict.Dict {
 	if tx == nil {
-		return nil, nil
+		return nil
 	}
 	bc := emu.BlockchainDB()
 	blockNumber, ok := bc.GetBlockNumberByTxHash(tx.Hash())
@@ -66,18 +66,18 @@ func txResult(emu *emulator.EVMEmulator, tx *types.Transaction) (dict.Dict, erro
 		evm.FieldTransaction: evmtypes.EncodeTransaction(tx),
 		evm.FieldBlockHash:   bc.GetBlockHashByBlockNumber(blockNumber).Bytes(),
 		evm.FieldBlockNumber: codec.EncodeUint64(blockNumber),
-	}, nil
+	}
 }
 
-func txCountResult(emu *emulator.EVMEmulator, block *types.Block) (dict.Dict, error) {
+func txCountResult(emu *emulator.EVMEmulator, block *types.Block) dict.Dict {
 	if block == nil {
-		return nil, nil
+		return nil
 	}
 	n := uint64(0)
 	if block.NumberU64() != 0 {
 		n = 1
 	}
-	return evminternal.Result(codec.EncodeUint64(n)), nil
+	return evminternal.Result(codec.EncodeUint64(n))
 }
 
 func blockByNumber(ctx iscp.SandboxView) (*emulator.EVMEmulator, *types.Block) {

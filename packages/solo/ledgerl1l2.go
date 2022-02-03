@@ -2,6 +2,7 @@ package solo
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"sort"
 
@@ -156,8 +157,6 @@ type foundryParams struct {
 
 // CreateFoundryGasBudgetIotas always takes 100000 iotas as gas budget and assets for the call
 const (
-	CreateFoundryGasBudgetIotas   = 100_000
-	MintTokensGasBudgetIotas      = 100_000
 	DestroyTokensGasBudgetIotas   = 100_000
 	SendToL2AccountGasBudgetIotas = 100_000
 	DestroyFoundryGasBudgetIotas  = 100_000
@@ -186,6 +185,8 @@ func (fp *foundryParams) WithTag(tag *iotago.TokenTag) *foundryParams {
 	return fp
 }
 
+const allowanceForFoundryDustDeposit = 1000
+
 func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	par := dict.New()
 	if fp.sch != nil {
@@ -202,8 +203,12 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 		user = fp.user
 	}
 	req := NewCallParamsFromDic(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
-		WithGasBudget(CreateFoundryGasBudgetIotas).
-		AddAssetsIotas(CreateFoundryGasBudgetIotas)
+		WithAllowance(iscp.NewAssetsIotas(allowanceForFoundryDustDeposit))
+	gas, _, err := fp.ch.EstimateGasOnLedger(req, user, true)
+	if err != nil {
+		return 0, iotago.NativeTokenID{}, err
+	}
+	req.WithGasBudget(gas)
 	res, err := fp.ch.PostRequestSync(req, user)
 
 	retSN := uint32(0)
@@ -240,13 +245,17 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
 		accounts.ParamFoundrySN, toFoundrySN(foundry),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
-	).
-		WithGasBudget(MintTokensGasBudgetIotas).
-		AddAssetsIotas(MintTokensGasBudgetIotas)
+	)
+	g, _, err := ch.EstimateGasOnLedger(req, user, true)
+	if err != nil {
+		return err
+	}
+
+	req.WithGasBudget(g)
 	if user == nil {
 		user = &ch.OriginatorPrivateKey
 	}
-	_, err := ch.PostRequestSync(req, user)
+	_, err = ch.PostRequestSync(req, user)
 	return err
 }
 
@@ -285,7 +294,8 @@ func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interfa
 func (ch *Chain) DepositAssetsToL2(assets *iscp.Assets, user *cryptolib.KeyPair) error {
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-			AddAssets(assets),
+			WithAssets(assets).
+			WithGasBudget(math.MaxUint64),
 		user,
 	)
 	return err
@@ -309,7 +319,8 @@ func (ch *Chain) SendFromL1ToL2Account(feeIotas uint64, toSend *iscp.Assets, tar
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
 			AddAssets(sumAssets).
-			AddAllowance(toSend),
+			AddAllowance(toSend).
+			WithGasBudget(math.MaxUint64),
 		user,
 	)
 	return err

@@ -49,7 +49,7 @@ func (s *sandbox) Assets() *iscp.Assets {
 }
 
 // Call calls an entry point of contract, passes parameters and funds
-func (s *sandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *iscp.Assets) (dict.Dict, error) {
+func (s *sandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *iscp.Assets) dict.Dict {
 	return s.vmctx.Call(target, entryPoint, params, transfer)
 }
 
@@ -75,9 +75,8 @@ func (s *sandbox) ContractCreator() *iscp.AgentID {
 
 // DeployContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
-func (s *sandbox) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) error {
-	err := s.vmctx.DeployContract(programHash, name, description, initParams)
-	return err
+func (s *sandbox) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) {
+	s.vmctx.DeployContract(programHash, name, description, initParams)
 }
 
 func (s *sandbox) Event(msg string) {
@@ -122,7 +121,7 @@ func (s *sandbox) Send(par iscp.RequestParameters) {
 	s.vmctx.Send(par)
 }
 
-func (s *sandbox) EstimateRequiredDustDeposit(par iscp.RequestParameters) (uint64, error) {
+func (s *sandbox) EstimateRequiredDustDeposit(par iscp.RequestParameters) uint64 {
 	return s.vmctx.EstimateRequiredDustDeposit(par)
 }
 
@@ -134,11 +133,6 @@ func (s *sandbox) Utils() iscp.Utils {
 	return NewUtils(s.Gas())
 }
 
-func (s *sandbox) BlockContext(construct func(ctx iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
-	// doesn't have a gas burn, only used for internal (native) contracts
-	return s.vmctx.BlockContext(s, construct, onClose)
-}
-
 func (s *sandbox) StateAnchor() *iscp.StateAnchor {
 	return s.vmctx.StateAnchor()
 }
@@ -147,7 +141,7 @@ func (s *sandbox) Gas() iscp.Gas {
 	return s
 }
 
-func (s *sandbox) Burn(burnCode gas.BurnCode, par ...int) {
+func (s *sandbox) Burn(burnCode gas.BurnCode, par ...uint64) {
 	s.vmctx.GasBurn(burnCode, par...)
 }
 
@@ -165,15 +159,24 @@ func (s *sandbox) RequireNoError(err error, str ...string) {
 	s.assert.RequireNoError(err, str...)
 }
 
+func (s *sandbox) RequireCallerAnyOf(agentIDs []*iscp.AgentID, str ...string) {
+	ok := false
+	for _, agentID := range agentIDs {
+		if s.Caller().Equals(agentID) {
+			ok = true
+		}
+	}
+	if !ok {
+		if len(str) > 0 {
+			s.Log().Panicf("'%s': unauthorized access", str[0])
+		} else {
+			s.Log().Panicf("unauthorized access")
+		}
+	}
+}
+
 func (s *sandbox) RequireCaller(agentID *iscp.AgentID, str ...string) {
-	if s.Caller().Equals(agentID) {
-		return
-	}
-	if len(str) > 0 {
-		s.Log().Panicf("'%s': unauthorized access", str[0])
-	} else {
-		s.Log().Panicf("unauthorized access")
-	}
+	s.RequireCallerAnyOf([]*iscp.AgentID{agentID}, str...)
 }
 
 func (s *sandbox) RequireCallerIsChainOwner(str ...string) {
@@ -181,5 +184,28 @@ func (s *sandbox) RequireCallerIsChainOwner(str ...string) {
 }
 
 func (s *sandbox) Privileged() iscp.Privileged {
-	return s.vmctx
+	return s
+}
+
+// privileged methods:
+
+func (s *sandbox) TryLoadContract(programHash hashing.HashValue) error {
+	return s.vmctx.TryLoadContract(programHash)
+}
+
+func (s *sandbox) CreateNewFoundry(scheme iotago.TokenScheme, tag iotago.TokenTag, maxSupply *big.Int, metadata []byte) (uint32, uint64) {
+	return s.vmctx.CreateNewFoundry(scheme, tag, maxSupply, metadata)
+}
+
+func (s *sandbox) DestroyFoundry(sn uint32) uint64 {
+	return s.vmctx.DestroyFoundry(sn)
+}
+
+func (s *sandbox) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
+	return s.vmctx.ModifyFoundrySupply(sn, delta)
+}
+
+func (s *sandbox) BlockContext(construct func(ctx iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
+	// doesn't have a gas burn, only used for internal (native) contracts
+	return s.vmctx.BlockContext(s, construct, onClose)
 }

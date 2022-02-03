@@ -11,69 +11,53 @@ import (
 type GasFeePolicy struct {
 	// GasFeeTokenID contains iotago.NativeTokenID used to pay for gas, or nil if iotas are used for gas fee
 	GasFeeTokenID *iotago.NativeTokenID
-	// GasNominalUnit price is specified per how many gas units
-	GasNominalUnit uint64
-	// GasPricePer1000Units how many gas tokens you pay for 1000 gas
-	GasPricePerNominalUnit uint64
+	// GasPerToken specifies how many gas units are paid for each token ( 100 means 1 tokens pays for 100 gas)
+	GasPerToken uint64
 	// ValidatorFeeShare Validator/Governor fee split: percentage of fees which goes to Validator
 	// 0 mean all goes to Governor
 	// >=100 all goes to Validator
 	ValidatorFeeShare uint8
 }
 
+func calcFee(gasUnits, gasPerToken uint64) uint64 {
+	return uint64(math.Ceil(float64(gasUnits) / float64(gasPerToken)))
+}
+
 // FeeFromGas return ownerFee and validatorFee
-func (p *GasFeePolicy) FeeFromGas(g uint64, availableTokens ...uint64) (uint64, uint64) {
-	available := uint64(math.MaxUint64)
-	if len(availableTokens) > 0 {
-		available = availableTokens[0]
-	}
-	var totalFee uint64
-	nominalUnits := g / p.GasNominalUnit
-	if nominalUnits == 0 {
-		totalFee = util.MinUint64(available, p.GasPricePerNominalUnit)
-	} else {
-		if nominalUnits > math.MaxUint64/p.GasPricePerNominalUnit {
-			totalFee = math.MaxUint64
-		} else {
-			totalFee = nominalUnits * p.GasPricePerNominalUnit
-		}
-	}
-	totalFee = util.MinUint64(totalFee, available)
+func (p *GasFeePolicy) FeeFromGas(gasUnits, availableTokens uint64) (sendToOwner, sendToValidator uint64) {
+	var fee uint64
+
+	// round up
+	fee = calcFee(gasUnits, p.GasPerToken)
+	fee = util.MinUint64(fee, availableTokens)
 
 	validatorPercentage := p.ValidatorFeeShare
 	if validatorPercentage > 100 {
 		validatorPercentage = 100
 	}
-	var sendToValidator uint64
 	// safe arithmetics
-	if totalFee >= 100 {
-		sendToValidator = (totalFee / 100) * uint64(validatorPercentage)
+	if fee >= 100 {
+		sendToValidator = (fee / 100) * uint64(validatorPercentage)
 	} else {
-		sendToValidator = (totalFee * uint64(validatorPercentage)) / 100
+		sendToValidator = (fee * uint64(validatorPercentage)) / 100
 	}
-	return totalFee - sendToValidator, sendToValidator
+	return fee - sendToValidator, sendToValidator
+}
+
+func (p *GasFeePolicy) IsEnoughForMinimumFee(availableTokens uint64) bool {
+	minFee := calcFee(BurnCodeMinimumGasPerRequest1P.Cost(), p.GasPerToken)
+	return availableTokens >= minFee
 }
 
 func (p *GasFeePolicy) AffordableGasBudgetFromAvailableTokens(availableTokens uint64) uint64 {
-	if p.GasPricePerNominalUnit == 0 {
-		return math.MaxUint64
-	}
-	if availableTokens < p.GasPricePerNominalUnit {
-		return 0 // if available tokens are less than price of 1 nominal gas unit, can;t afford and gas
-	}
-	nominalUnitsOfGas := availableTokens / p.GasPricePerNominalUnit
-	if nominalUnitsOfGas > math.MaxUint64/p.GasNominalUnit {
-		return math.MaxUint64
-	}
-	return nominalUnitsOfGas * p.GasNominalUnit
+	return availableTokens * p.GasPerToken
 }
 
 func DefaultGasFeePolicy() *GasFeePolicy {
 	return &GasFeePolicy{
-		GasFeeTokenID:          nil, // default is iotas
-		GasNominalUnit:         100, // gas is burned in 100-s and not less than 100
-		GasPricePerNominalUnit: 1,   // default is 1 iota = 100 gas
-		ValidatorFeeShare:      0,   // by default all goes to the governor
+		GasFeeTokenID:     nil, // default is iotas
+		GasPerToken:       100, // each token pays for 100 units of gas
+		ValidatorFeeShare: 0,   // by default all goes to the governor
 	}
 }
 
@@ -101,10 +85,7 @@ func GasFeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 		ret.GasFeeTokenID = &iotago.NativeTokenID{}
 		copy(ret.GasFeeTokenID[:], b)
 	}
-	if ret.GasNominalUnit, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
-	if ret.GasPricePerNominalUnit, err = mu.ReadUint64(); err != nil {
+	if ret.GasPerToken, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
 	if ret.ValidatorFeeShare, err = mu.ReadUint8(); err != nil {
@@ -119,8 +100,7 @@ func (g *GasFeePolicy) Bytes() []byte {
 	if g.GasFeeTokenID != nil {
 		mu.WriteBytes(g.GasFeeTokenID[:])
 	}
-	mu.WriteUint64(g.GasNominalUnit)
-	mu.WriteUint64(g.GasPricePerNominalUnit)
+	mu.WriteUint64(g.GasPerToken)
 	mu.WriteUint8(g.ValidatorFeeShare)
 	return mu.Bytes()
 }

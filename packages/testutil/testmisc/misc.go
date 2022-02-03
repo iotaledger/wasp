@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func RequireErrorToBe(t *testing.T, err error, target interface{}) {
 	if err == nil {
-		t.Errorf("error expected, found nil")
+		assert.Fail(t, "error expected, found nil")
 		t.FailNow()
 		return
 	}
@@ -31,6 +32,6 @@ func RequireErrorToBe(t *testing.T, err error, target interface{}) {
 	if strings.Contains(err.Error(), targ) {
 		return
 	}
-	t.Errorf("error does not contain '%s' but instead is '%v'", targ, err)
+	assert.Fail(t, fmt.Sprintf("error does not contain '%s' but instead is '%v'", targ, err))
 	t.FailNow()
 }
