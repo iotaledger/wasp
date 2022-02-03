@@ -28,7 +28,7 @@ var nodeconnMetricsCmd = &cobra.Command{
 			}
 			printMessagesMetrics(&nodeconnMetrics.NodeConnectionMessagesMetrics)
 		} else {
-			chid, err := iscp.ChainIDFromBase58(chainIDStr)
+			chid, err := iscp.ChainIDFromString(chainIDStr)
 			log.Check(err)
 			msgsMetrics, err := client.GetChainNodeConnectionMetrics(chid)
 			log.Check(err)

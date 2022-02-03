@@ -33,7 +33,7 @@ func WithTransaction(f func() (*iotago.Transaction, error)) *iotago.Transaction 
 func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (*iscp.OffLedgerRequestData, error)) {
 	req, err := f()
 	log.Check(err)
-	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().Base58())
+	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
 	if config.WaitForCompletion {
 		log.Check(config.WaspClient().WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute))
 	}

@@ -41,6 +41,15 @@ func ChainIDFromHex(s string) (*ChainID, error) {
 	return ChainIDFromBytes(bin)
 }
 
+func ChainIDFromString(s string) (*ChainID, error) {
+	_, addr, err := iotago.ParseBech32(s)
+	if err != nil {
+		return &ChainID{}, err
+	}
+	ret := ChainIDFromAddress(addr.(*iotago.Ed25519Address))
+	return &ret, nil
+}
+
 // ChainIDFromMarshalUtil reads from Marshalutil
 func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainID, error) {
 	bin, err := mu.ReadBytes(ChainIDLength)
@@ -89,7 +98,7 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 
 // String human readable form (hex encoding)
 func (chid *ChainID) String() string {
-	return "$/" + chid.Hex()
+	return chid.AsAddress().Bech32(iotago.NetworkPrefix(Bech32Prefix))
 }
 
 func (chid *ChainID) Hex() string {

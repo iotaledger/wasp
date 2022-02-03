@@ -15,7 +15,7 @@ type WalletConfig struct {
 }
 
 type Wallet struct {
-	KeyPair cryptolib.KeyPair
+	KeyPair *cryptolib.KeyPair
 }
 
 var initCmd = &cobra.Command{
@@ -44,7 +44,8 @@ func Load() *Wallet {
 	seedBytes, err := base58.Decode(seedb58)
 	log.Check(err)
 	seed := cryptolib.SeedFromByteArray(seedBytes)
-	return &Wallet{cryptolib.NewKeyPairFromSeed(seed)}
+	kp := cryptolib.NewKeyPairFromSeed(seed)
+	return &Wallet{KeyPair: &kp}
 }
 
 var addressIndex int
