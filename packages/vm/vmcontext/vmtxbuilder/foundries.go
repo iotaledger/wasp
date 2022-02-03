@@ -1,6 +1,7 @@
 package vmtxbuilder
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"math/big"
 	"sort"
 
@@ -45,7 +46,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		txb.subDeltaIotasFromTotal(f.Amount)
 	}, ErrNotEnoughIotaBalance)
 	if err != nil {
-		panic(ErrNotEnoughFundsForInternalDustDeposit)
+		panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}
 	txb.invokedFoundries[f.SerialNumber] = &foundryInvoked{
 		serialNumber: f.SerialNumber,

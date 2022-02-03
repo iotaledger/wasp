@@ -1,11 +1,11 @@
 package sbtests
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore_stardust/sbtests/sbtestsc"
@@ -34,7 +34,7 @@ func testTxWithGasOverLimit(t *testing.T, w bool) {
 	req, wallet := maxGasRequest(ch, 2)
 	_, err := ch.PostRequestSync(req, wallet)
 	require.Error(t, err) // tx expected to run out of gas
-	testmisc.RequireErrorToBe(t, err, coreutil.ErrorGasBudgetExceeded)
+	testmisc.RequireErrorToBe(t, err, vmcontext.ErrGasBudgetExceeded)
 	receipt := ch.LastReceipt()
 	// assert that the submitted gas budget was limited to the max per call
 	require.Less(t, req.GasBudget(), receipt.GasBurned)
@@ -43,7 +43,6 @@ func testTxWithGasOverLimit(t *testing.T, w bool) {
 
 // queue many transactions with enough gas to fill a block, assert that they are split across blocks
 func TestBlockGasOverflow(t *testing.T) { run2(t, testBlockGasOverflow) }
-
 func testBlockGasOverflow(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
@@ -67,7 +66,7 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 	fullGasBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex + 1)
 	require.NoError(t, err)
 	// the request number #{nRequests} should overflow the block and be moved to the next one
-	require.Equal(t, fullGasBlockInfo.TotalRequests, uint16(nRequests-1))
+	require.Equal(t, int(fullGasBlockInfo.TotalRequests), nRequests-1)
 	// gas burned will be sightly below the limit
 	require.Less(t, fullGasBlockInfo.GasBurned, gas.MaxGasPerBlock)
 

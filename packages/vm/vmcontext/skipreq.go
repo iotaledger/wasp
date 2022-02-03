@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"golang.org/x/xerrors"
 )
 
@@ -99,7 +99,7 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 		return err
 	}
 	if vmctx.txbuilder.InputsAreFull() {
-		return vmtxbuilder.ErrInputLimitExceeded
+		return exceptions.ErrInputLimitExceeded
 	}
 	if err := vmctx.checkReasonRequestProcessed(); err != nil {
 		return err

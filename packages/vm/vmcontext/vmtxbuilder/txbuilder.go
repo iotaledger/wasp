@@ -3,6 +3,7 @@ package vmtxbuilder
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -139,10 +140,10 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.Request) int64 {
 		panic(xerrors.New("txbuilder.Consume: must be UTXO"))
 	}
 	if txb.InputsAreFull() {
-		panic(ErrInputLimitExceeded)
+		panic(exceptions.ErrInputLimitExceeded)
 	}
 	if txb.numNativeTokensExceeded() {
-		panic(ErrNumberOfNativeTokensLimitExceeded)
+		panic(exceptions.ErrNumberOfNativeTokensLimitExceeded)
 	}
 	txb.consumed = append(txb.consumed, inp)
 
@@ -163,10 +164,10 @@ func (txb *AnchorTransactionBuilder) Consume(inp iscp.Request) int64 {
 // Return adjustment needed for the L2 ledger (adjustment on iotas related to dust protection)
 func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	if txb.outputsAreFull() {
-		panic(ErrOutputLimitExceeded)
+		panic(exceptions.ErrOutputLimitExceeded)
 	}
 	if txb.numNativeTokensExceeded() {
-		panic(ErrNumberOfNativeTokensLimitExceeded)
+		panic(exceptions.ErrNumberOfNativeTokensLimitExceeded)
 	}
 
 	requiredDustDeposit := o.VByteCost(txb.rentStructure, nil)
@@ -350,13 +351,13 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id *iotago.NativeT
 	}
 	in, input := txb.loadTokenOutput(id) // output will be nil if no such token id accounted yet
 	if in != nil && txb.InputsAreFull() {
-		panic(ErrInputLimitExceeded)
+		panic(exceptions.ErrInputLimitExceeded)
 	}
 	if in != nil && txb.outputsAreFull() {
-		panic(ErrOutputLimitExceeded)
+		panic(exceptions.ErrOutputLimitExceeded)
 	}
 	if txb.numNativeTokensExceeded() {
-		panic(ErrNumberOfNativeTokensLimitExceeded)
+		panic(exceptions.ErrNumberOfNativeTokensLimitExceeded)
 	}
 	var out *iotago.ExtendedOutput
 	if in == nil {
@@ -409,7 +410,7 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 		// There's a need for additional dust deposit on the respective UTXO, so delta for the anchor is negative
 		nt.dustDepositCharged = true
 		if txb.dustDepositAssumption.NativeTokenOutput > txb.totalIotasInL2Accounts {
-			panic(ErrNotEnoughFundsForInternalDustDeposit)
+			panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
 		}
 		txb.subDeltaIotasFromTotal(txb.dustDepositAssumption.NativeTokenOutput)
 		return -int64(txb.dustDepositAssumption.NativeTokenOutput)

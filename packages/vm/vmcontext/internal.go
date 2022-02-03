@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"math"
 	"math/big"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
@@ -215,6 +215,6 @@ func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64) {
 		})
 	}, accounts.ErrNotEnoughFunds)
 	if err != nil {
-		panic(vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit)
+		panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}
 }
