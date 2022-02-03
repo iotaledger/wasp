@@ -12,7 +12,8 @@ import (
 
 func PostTransaction(tx *iotago.Transaction) {
 	WithTransaction(func() (*iotago.Transaction, error) {
-		return tx, config.GoshimmerClient().PostTransaction(tx)
+		panic("TODO implement")
+		// return tx, config.GoshimmerClient().PostTransaction(tx)
 	})
 }
 
@@ -22,7 +23,8 @@ func WithTransaction(f func() (*iotago.Transaction, error)) *iotago.Transaction 
 	logTx(tx, nil)
 
 	if config.WaitForCompletion {
-		log.Check(config.GoshimmerClient().WaitForConfirmation(tx.ID()))
+		panic("TODO implement")
+		// log.Check(config.GoshimmerClient().WaitForConfirmation(tx.ID()))
 	}
 
 	return tx

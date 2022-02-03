@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -18,9 +19,10 @@ var consensusMetricsCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := config.WaspClient()
-		chid, err := iscp.ChainIDFromBase58(chainIDStr)
+		_, chainAddress, err := iotago.ParseBech32(chainIDStr)
 		log.Check(err)
-		workflowStatus, err := client.GetChainConsensusWorkflowStatus(chid)
+		chid := iscp.ChainIDFromAddress(chainAddress.(*iotago.Ed25519Address))
+		workflowStatus, err := client.GetChainConsensusWorkflowStatus(&chid)
 		log.Check(err)
 		header := []string{"Flag name", "Value", "Last time set"}
 		table := make([][]string, 9)

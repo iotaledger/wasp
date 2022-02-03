@@ -96,10 +96,11 @@ func requireOwner(ctx iscp.Sandbox, allowSelf ...bool) {
 	contractOwner, err := codec.DecodeAgentID(ctx.State().MustGet(keyEVMOwner))
 	ctx.RequireNoError(err)
 
-	allowed := []*iscp.AgentID{contractOwner}
-	if len(allowSelf) > 0 && allowSelf[0] {
-		allowed = append(allowed, iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract()))
-	}
+	// TODO
+	// allowed := []*iscp.AgentID{contractOwner}
+	// if len(allowSelf) > 0 && allowSelf[0] {
+	// 	allowed = append(allowed, iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract()))
+	// }
 
 	ctx.RequireCallerAnyOf(allowed)
 }

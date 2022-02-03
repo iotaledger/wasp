@@ -41,7 +41,6 @@ func ChainIDFromHex(s string) (*ChainID, error) {
 	return ChainIDFromBytes(bin)
 }
 
-// TODO adjust to iotago style
 // ChainIDFromMarshalUtil reads from Marshalutil
 func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainID, error) {
 	bin, err := mu.ReadBytes(ChainIDLength)
@@ -49,6 +48,12 @@ func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainID, error) {
 		return &ChainID{}, err
 	}
 	return ChainIDFromBytes(bin)
+}
+
+func ChainIDFromAddress(addr *iotago.Ed25519Address) ChainID {
+	var alias iotago.AliasID
+	copy(alias[:], addr[:])
+	return ChainIDFromAliasID(alias)
 }
 
 // RandomChainID creates a random chain ID. Used for testing only
