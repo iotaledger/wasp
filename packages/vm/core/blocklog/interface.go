@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"io"
 	"math"
@@ -17,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/errors"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log contract")
@@ -322,7 +322,7 @@ func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
 func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
 	ret := &RequestReceipt{}
 	var err error
-	if ret.Error, err = errors.ErrorFromBytes(mu, &errors.GeneralErrorCollection); err != nil {
+	if ret.Error, err = errors.ErrorFromBytes(mu); err != nil {
 		return nil, err
 	}
 	if ret.GasBudget, err = mu.ReadUint64(); err != nil {
@@ -344,8 +344,9 @@ func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
 
 	if r.Error == nil {
-		mu.WriteUint16(0)
+		mu.WriteBool(false)
 	} else {
+		mu.WriteBool(true)
 		r.Error.Serialize(mu)
 	}
 

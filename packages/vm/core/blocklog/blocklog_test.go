@@ -2,6 +2,7 @@ package blocklog
 
 import (
 	"github.com/iotaledger/hive.go/marshalutil"
+	errors2 "github.com/iotaledger/wasp/packages/vm/core/errors/errorimpl"
 	"github.com/iotaledger/wasp/packages/vm/errors"
 	"testing"
 	"time"
@@ -14,14 +15,14 @@ func TestSimpleErrorSerialization(t *testing.T) {
 	mu := marshalutil.New()
 
 	// Initial error
-	blockError := errors.FailedToLoadError.Create("placeBet", "destroy", "setAdmin")
+	blockError := errors2.FailedToLoadError.Create("placeBet", "destroy", "setAdmin")
 
 	// Serialize error to bytes
 	err := blockError.Serialize(mu)
 	require.NoError(t, err)
 
 	// Recreate error from bytes
-	newError, err := errors.ErrorFromBytes(mu, &errors.GeneralErrorCollection)
+	newError, err := errors.ErrorFromBytes(mu, errors2.GeneralErrorCollection)
 	require.NoError(t, err)
 
 	// Validate that properties are the same
@@ -38,7 +39,7 @@ func TestSimpleErrorSerialization(t *testing.T) {
 func TestSerdeRequestReceipt(t *testing.T) {
 	nonce := uint64(time.Now().UnixNano())
 	req := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("0"), iscp.Hn("0"), nil, nonce)
-	testError, err := errors.GeneralErrorCollection.Create(1)
+	testError, err := errors2.GeneralErrorCollection.Create(1, 1)
 
 	rec := &RequestReceipt{
 		Request: req,
