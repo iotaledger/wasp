@@ -16,7 +16,7 @@ Current gas costs are still experimental and will change.
 | SendL1Request              | 200*N     | send a L1 transaction (N = number of issued txs in the current call) |
 | DeployContract             | 10        | deploy a contract                                                    |
 | Storage                    | 1*B       | storage (B = number of bytes)                                        |
-| ReadFromState              | 1*(B/100) | read from state (B = number of bytes, adjusted in teh call)          |
+| ReadFromState              | 1*(B/100) | read from state (B = number of bytes, adjusted in the call)          |
 | Wasm                       | X         | wasm code execution (X = gas returnted by WASM VM)                   |
 | UtilsHashingBlake2b        | 5*B       | blake2b hash function (B = number of bytes)                          |
 | UtilsHashingSha3           | 8*B       | sha3 hash function (B = number of bytes)                             |
