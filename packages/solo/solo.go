@@ -275,7 +275,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		proc:                   processors.MustNew(env.processorConfig),
 		Log:                    chainlog,
 	}
-	ret.mempool = mempool.New(ret.StateReader, chainlog, metrics.DefaultChainMetrics())
+	ret.mempool = mempool.New(chainID.AsAddress(), ret.StateReader, chainlog, metrics.DefaultChainMetrics())
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
@@ -398,7 +398,7 @@ func (ch *Chain) collateBatch() []iscp.Request {
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
 	timeAssumption := ch.Env.GlobalTime()
-	ready := ch.mempool.ReadyNow(timeAssumption.Time)
+	ready := ch.mempool.ReadyNow(timeAssumption)
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch
@@ -452,7 +452,7 @@ func (ch *Chain) collateAndRunBatch() bool {
 
 // BacklogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) BacklogLen() int {
-	mstats := ch.mempool.Info()
+	mstats := ch.MempoolInfo()
 	return mstats.InBufCounter - mstats.OutPoolCounter
 }
 
