@@ -7,8 +7,8 @@
 
 #![allow(dead_code)]
 
-use crate::*;
 use crate::coreblob::*;
+use crate::*;
 
 pub struct StoreBlobCall {
 	pub func: ScFunc,

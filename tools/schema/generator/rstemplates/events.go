@@ -6,7 +6,7 @@ var eventsRs = map[string]string{
 #![allow(dead_code)]
 #![allow(unused_mut)]
 
-use wasmlib::*;
+$#if core useCrate useWasmLib
 
 $#set TypeName $Package$+Events
 pub struct $TypeName {

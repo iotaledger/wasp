@@ -91,64 +91,12 @@ $#if core setCrate
 $#set crate (crate)
 `,
 	// *******************************
-	"rsHeader": `
-$#if core useCrate useWasmLib
-`,
-	// *******************************
-	"modEvents": `
-mod events;
-`,
-	// *******************************
-	"modParams": `
-mod params;
-`,
-	// *******************************
-	"modResults": `
-mod results;
-`,
-	// *******************************
-	"modStructs": `
-mod structs;
-`,
-	// *******************************
-	"modTypeDefs": `
-mod typedefs;
-`,
-	// *******************************
-	"useConsts": `
-use crate::consts::*;
-`,
-	// *******************************
 	"useCoreContract": `
 use crate::$package::*;
 `,
 	// *******************************
 	"useCrate": `
 use crate::*;
-`,
-	// *******************************
-	"useEvents": `
-use crate::events::*;
-`,
-	// *******************************
-	"useHost": `
-use crate::host::*;
-`,
-	// *******************************
-	"useParams": `
-use crate::params::*;
-`,
-	// *******************************
-	"useResults": `
-use crate::results::*;
-`,
-	// *******************************
-	"useStructs": `
-use crate::structs::*;
-`,
-	// *******************************
-	"useTypedefs": `
-use crate::typedefs::*;
 `,
 	// *******************************
 	"useWasmLib": `

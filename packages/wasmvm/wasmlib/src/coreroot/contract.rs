@@ -7,8 +7,8 @@
 
 #![allow(dead_code)]
 
-use crate::*;
 use crate::coreroot::*;
+use crate::*;
 
 pub struct DeployContractCall {
 	pub func: ScFunc,

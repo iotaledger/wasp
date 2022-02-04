@@ -7,8 +7,8 @@
 
 #![allow(dead_code)]
 
-use crate::*;
 use crate::coreblocklog::*;
+use crate::*;
 
 pub struct ControlAddressesCall {
 	pub func: ScView,

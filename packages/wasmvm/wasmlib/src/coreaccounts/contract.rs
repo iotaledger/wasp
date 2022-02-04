@@ -7,8 +7,8 @@
 
 #![allow(dead_code)]
 
-use crate::*;
 use crate::coreaccounts::*;
+use crate::*;
 
 pub struct DepositCall {
 	pub func: ScFunc,

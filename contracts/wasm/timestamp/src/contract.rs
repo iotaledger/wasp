@@ -8,9 +8,7 @@
 #![allow(dead_code)]
 
 use wasmlib::*;
-
-use crate::consts::*;
-use crate::results::*;
+use crate::*;
 
 pub struct NowCall {
 	pub func: ScFunc,

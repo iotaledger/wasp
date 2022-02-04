@@ -21,6 +21,7 @@ mod contract;
 mod params;
 mod results;
 mod state;
+
 mod testcore;
 
 #[no_mangle]

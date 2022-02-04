@@ -21,6 +21,7 @@ mod contract;
 mod params;
 mod state;
 mod structs;
+
 mod tokenregistry;
 
 #[no_mangle]

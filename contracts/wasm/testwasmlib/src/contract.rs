@@ -8,10 +8,7 @@
 #![allow(dead_code)]
 
 use wasmlib::*;
-
-use crate::consts::*;
-use crate::params::*;
-use crate::results::*;
+use crate::*;
 
 pub struct ArrayAppendCall {
 	pub func: ScFunc,

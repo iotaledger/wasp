@@ -5,8 +5,8 @@ var typedefsRs = map[string]string{
 	"typedefs.rs": `
 #![allow(dead_code)]
 
-use wasmlib::*;
-$#if structs useStructs
+$#if core else useWasmLib
+use crate::*;
 $#each typedef typedefProxy
 `,
 	// *******************************

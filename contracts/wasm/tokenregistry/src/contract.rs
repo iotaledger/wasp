@@ -8,9 +8,7 @@
 #![allow(dead_code)]
 
 use wasmlib::*;
-
-use crate::consts::*;
-use crate::params::*;
+use crate::*;
 
 pub struct MintSupplyCall {
 	pub func: ScFunc,

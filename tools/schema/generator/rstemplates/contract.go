@@ -5,8 +5,8 @@ var contractRs = map[string]string{
 	"contract.rs": `
 #![allow(dead_code)]
 
-$#if core useCrate useWasmLib
-$#if core useCoreContract contractUses
+$#if core useCoreContract useWasmLib
+use crate::*;
 $#each func FuncNameCall
 
 pub struct ScFuncs {
@@ -16,13 +16,6 @@ impl ScFuncs {
 $#set separator $false
 $#each func FuncNameForCall
 }
-`,
-	// *******************************
-	"contractUses": `
-
-use crate::consts::*;
-$#if params useParams
-$#if results useResults
 `,
 	// *******************************
 	"FuncNameCall": `

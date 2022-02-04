@@ -7,8 +7,8 @@
 
 #![allow(dead_code)]
 
-use crate::*;
 use crate::wasmrequests::*;
+use crate::*;
 
 pub struct ScFuncs {
 }

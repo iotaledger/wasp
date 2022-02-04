@@ -7,8 +7,8 @@
 
 #![allow(dead_code)]
 
-use crate::*;
 use crate::coregovernance::*;
+use crate::*;
 
 pub struct AddAllowedStateControllerAddressCall {
 	pub func: ScFunc,

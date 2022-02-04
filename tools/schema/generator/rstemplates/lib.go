@@ -10,21 +10,32 @@ use $package::*;
 use wasmlib::*;
 
 use crate::consts::*;
-$#if events useEvents
-$#if params useParams
-$#if results useResults
+$#set moduleName events
+$#if events useModule
+$#set moduleName params
+$#if params useModule
+$#set moduleName results
+$#if results useModule
 use crate::state::*;
-$#if structs useStructs
-$#if typedefs useTypedefs
+$#set moduleName structs
+$#if structs useModule
+$#set moduleName typedefs
+$#if typedefs useModule
 
 mod consts;
 mod contract;
-$#if events modEvents
-$#if params modParams
-$#if results modResults
+$#set moduleName events
+$#if events modModule
+$#set moduleName params
+$#if params modModule
+$#set moduleName results
+$#if results modModule
 mod state;
-$#if structs modStructs
-$#if typedefs modTypeDefs
+$#set moduleName structs
+$#if structs modModule
+$#set moduleName typedefs
+$#if typedefs modModule
+
 mod $package;
 
 #[no_mangle]
@@ -33,6 +44,14 @@ fn on_load() {
 $#each func libExportFunc
 }
 $#each func libThunk
+`,
+	// *******************************
+	"useModule": `
+use crate::$moduleName::*;
+`,
+	// *******************************
+	"modModule": `
+mod $moduleName;
 `,
 	// *******************************
 	"libExportFunc": `

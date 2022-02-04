@@ -9,7 +9,6 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use crate::typedefs::*;
 
 #[derive(Clone)]
 pub struct Auction {

@@ -25,6 +25,7 @@ mod params;
 mod results;
 mod state;
 mod structs;
+
 mod fairroulette;
 
 #[no_mangle]

@@ -8,7 +8,7 @@
 #![allow(dead_code)]
 
 use wasmlib::*;
-use crate::structs::*;
+use crate::*;
 
 #[derive(Clone)]
 pub struct ArrayOfImmutableAgentID {

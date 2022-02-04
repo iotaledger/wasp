@@ -7,7 +7,6 @@ var structsRs = map[string]string{
 #![allow(unused_imports)]
 
 $#if core useCrate useWasmLib
-$#if typedefs useTypedefs
 $#each structs structType
 `,
 	// *******************************

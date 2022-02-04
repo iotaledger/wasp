@@ -8,6 +8,7 @@
 #![allow(dead_code)]
 
 use wasmlib::*;
+use crate::*;
 
 #[derive(Clone)]
 pub struct MapAgentIDToImmutableBool {

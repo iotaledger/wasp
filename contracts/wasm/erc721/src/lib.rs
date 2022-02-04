@@ -25,6 +25,7 @@ mod params;
 mod results;
 mod state;
 mod typedefs;
+
 mod erc721;
 
 #[no_mangle]
