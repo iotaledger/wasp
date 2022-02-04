@@ -11,14 +11,12 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/contracts/native/evm"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 type EVMChain struct {
@@ -55,13 +53,14 @@ func (e *EVMChain) BlockNumber() (*big.Int, error) {
 }
 
 func (e *EVMChain) FeeColor() ([]byte, error) {
-	feeInfo, err := e.backend.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, dict.Dict{
-		root.ParamHname: iscp.Hn(e.contractName).Bytes(),
-	})
-	if err != nil {
-		return []byte{}, err
-	}
-	return feeInfo.Get(governance.ParamFeeColor)
+	panic("TODO implement")
+	// feeInfo, err := e.backend.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, dict.Dict{
+	// 	root.ParamHname: iscp.Hn(e.contractName).Bytes(),
+	// })
+	// if err != nil {
+	// 	return []byte{}, err
+	// }
+	// return feeInfo.Get(governance.ParamFeeColor)
 }
 
 func (e *EVMChain) GasLimitFee(tx *types.Transaction) ([]byte, uint64, error) {
@@ -77,7 +76,7 @@ func (e *EVMChain) GasLimitFee(tx *types.Transaction) ([]byte, uint64, error) {
 }
 
 func (e *EVMChain) GetOnChainBalance() (*iscp.Assets, error) {
-	agentID := iscp.NewAgentID(util.AddreessFromKey(e.backend.Signer()), 0)
+	agentID := iscp.NewAgentID(cryptolib.Ed25519AddressFromPubKey(e.backend.Signer().PublicKey), 0)
 	ret, err := e.backend.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	}))
@@ -88,30 +87,31 @@ func (e *EVMChain) GetOnChainBalance() (*iscp.Assets, error) {
 }
 
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
-	feeColor, feeAmount, err := e.GasLimitFee(tx)
-	if err != nil {
-		return err
-	}
-	bal, err := e.GetOnChainBalance()
-	if err != nil {
-		return err
-	}
-	fee := colored.NewBalancesForColor(feeColor, feeAmount)
-	if bal[feeColor] < feeAmount {
-		// make a deposit if not enough on-chain balance to cover the fees
-		err = e.backend.PostOnLedgerRequest(accounts.Contract.Name, accounts.FuncDeposit.Name, fee, nil)
-		if err != nil {
-			return err
-		}
-	}
-	txdata, err := tx.MarshalBinary()
-	if err != nil {
-		return err
-	}
-	// send the Ethereum transaction
-	return e.backend.PostOffLedgerRequest(e.contractName, evm.FuncSendTransaction.Name, fee, dict.Dict{
-		evm.FieldTransactionData: txdata,
-	})
+	panic("TODO implement")
+	// feeColor, feeAmount, err := e.GasLimitFee(tx)
+	// if err != nil {
+	// 	return err
+	// }
+	// bal, err := e.GetOnChainBalance()
+	// if err != nil {
+	// 	return err
+	// }
+	// fee := colored.NewBalancesForColor(feeColor, feeAmount)
+	// if bal[feeColor] < feeAmount {
+	// 	// make a deposit if not enough on-chain balance to cover the fees
+	// 	err = e.backend.PostOnLedgerRequest(accounts.Contract.Name, accounts.FuncDeposit.Name, fee, nil)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+	// txdata, err := tx.MarshalBinary()
+	// if err != nil {
+	// 	return err
+	// }
+	// // send the Ethereum transaction
+	// return e.backend.PostOffLedgerRequest(e.contractName, evm.FuncSendTransaction.Name, fee, dict.Dict{
+	// 	evm.FieldTransactionData: txdata,
+	// })
 }
 
 func paramsWithOptionalBlockNumber(blockNumber *big.Int, params dict.Dict) dict.Dict {

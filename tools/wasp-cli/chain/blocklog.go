@@ -71,22 +71,12 @@ func logRequestsInBlock(index uint32) {
 func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 	req := receipt.Request
 
-	feePrepaid := "no"
-	if req.IsFeePrepaid() {
-		feePrepaid = "yes"
-	}
-
 	kind := "on-ledger"
 	if req.IsOffLedger() {
 		kind = "off-ledger"
 	}
 
-	timestamp := "n/a"
-	if !req.IsOffLedger() {
-		timestamp = req.Timestamp().UTC().Format(time.RFC3339)
-	}
-
-	args := req.Args()
+	args := req.Params()
 	var argsTree interface{} = "(empty)"
 	if len(args) > 0 {
 		argsTree = dict.Dict(args)
@@ -99,18 +89,16 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 
 	tree := []log.TreeItem{
 		{K: "Kind", V: kind},
-		{K: "Fee prepaid", V: feePrepaid},
 		{K: "Sender", V: req.SenderAccount().String()},
 		{K: "Contract Hname", V: req.CallTarget().Contract.String()},
 		{K: "Entry point", V: req.CallTarget().EntryPoint.String()},
-		{K: "Timestamp", V: timestamp},
 		{K: "Arguments", V: argsTree},
 		{K: "Error", V: errMsg},
 	}
 	if len(index) > 0 {
-		log.Printf("Request #%d (%s):\n", index[0], req.ID().Base58())
+		log.Printf("Request #%d (%s):\n", index[0], req.ID().String())
 	} else {
-		log.Printf("Request %s:\n", req.ID().Base58())
+		log.Printf("Request %s:\n", req.ID().String())
 	}
 	log.PrintTree(tree, 2, 2)
 }
@@ -129,7 +117,7 @@ func requestCmd() *cobra.Command {
 		Short: "Get information about a request given its ID",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			reqID, err := iscp.RequestIDFromBase58(args[0])
+			reqID, err := iscp.RequestIDFromString(args[0])
 			log.Check(err)
 			ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetRequestReceipt.Name, dict.Dict{
 				blocklog.ParamRequestID: codec.EncodeRequestID(reqID),

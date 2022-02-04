@@ -54,7 +54,7 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 
 	for i := 0; i < nRequests; i++ {
 		req, wallet := maxGasRequest(ch, i)
-		iscpReq, err := solo.IscpRequestFromCallParams(ch, req, wallet)
+		iscpReq, err := solo.NewIscpRequestFromCallParams(ch, req, wallet)
 		require.NoError(t, err)
 		reqs[i] = iscpReq
 	}

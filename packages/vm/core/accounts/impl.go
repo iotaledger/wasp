@@ -1,6 +1,8 @@
 package accounts
 
 import (
+	"math"
+
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -60,11 +62,22 @@ func deposit(ctx iscp.Sandbox) dict.Dict {
 func transferAllowanceTo(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
 
-	targetAccount := kvdecoder.New(ctx.Params(), ctx.Log()).MustGetAgentID(ParamAgentID)
-	ctx.TransferAllowedFunds(targetAccount)
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	targetAccount := par.MustGetAgentID(ParamAgentID)
+	forceOpenAccount := par.MustGetBool(ParamForceOpenAccount, false)
+
+	if forceOpenAccount {
+		ctx.TransferAllowedFundsForceCreateTarget(targetAccount)
+	} else {
+		ctx.TransferAllowedFunds(targetAccount)
+	}
+
 	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.AllowanceAvailable())
 	return nil
 }
+
+// TODO this is just a temporary value, we need to make deposits fee constant across chains.
+const ConstDepositFeeTmp = uint64(500)
 
 // withdraw sends caller's funds to the caller on-ledger (cross chain)
 // The caller explicitly specify the funds to withdraw via the allowance in the request
@@ -81,20 +94,38 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	}
 	// move all allowed funds to the account of the current contract context
 	// before saving the allowance budget because after the transfer it is mutated
-	fundsToWithdraw := ctx.AllowanceAvailable().Clone()
+	fundsToWithdraw := ctx.AllowanceAvailable()
 	remains := ctx.TransferAllowedFunds(ctx.AccountID())
 
 	// por las dudas
 	ctx.Requiref(remains.IsEmpty(), "internal: allowance left after must be empty")
 
-	ctx.Send(iscp.RequestParameters{
+	caller := ctx.Caller()
+	isCallerAContract := caller.Hname() != 0
+
+	if isCallerAContract {
+		// send funds to a contract on another chain
+		tx := iscp.RequestParameters{
+			TargetAddress: ctx.Caller().Address(),
+			Assets:        fundsToWithdraw,
+			Metadata: &iscp.SendMetadata{
+				TargetContract: Contract.Hname(),
+				EntryPoint:     FuncTransferAllowanceTo.Hname(),
+				Allowance:      iscp.NewAssetsIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
+				Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(caller)},
+				GasBudget:      math.MaxUint64, // TODO This call will fail if not enough gas, and the funds will be lost (credited to this accounts on the target chain)
+			},
+		}
+
+		ctx.Send(tx)
+		ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
+		return nil
+	}
+	tx := iscp.RequestParameters{
 		TargetAddress: ctx.Caller().Address(),
 		Assets:        fundsToWithdraw,
-		Metadata: &iscp.SendMetadata{
-			TargetContract: ctx.Caller().Hname(),
-			// other metadata parameters are not important for withdrawal
-		},
-	})
+	}
+	ctx.Send(tx)
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
 	return nil
 }

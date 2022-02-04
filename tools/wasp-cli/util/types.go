@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -36,9 +37,9 @@ func ValueFromString(vtype, s string) []byte {
 		log.Check(err)
 		return b
 	case "chainid":
-		chainid, err := iscp.ChainIDFromString(s)
+		_, chainid, err := iotago.ParseBech32(s)
 		log.Check(err)
-		return chainid.Bytes()
+		return iscp.BytesFromAddress(chainid)
 	case "file":
 		return ReadFile(s)
 	case "hash":
@@ -98,7 +99,7 @@ func ValueToString(vtype string, v []byte) string {
 	case "address":
 		addr, err := codec.DecodeAddress(v)
 		log.Check(err)
-		return addr.Base58()
+		return addr.Bech32(iscp.Bech32Prefix)
 	case "agentid":
 		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)

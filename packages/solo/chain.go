@@ -6,7 +6,6 @@ package solo
 import (
 	"bytes"
 	"fmt"
-	"golang.org/x/xerrors"
 	"math"
 	"os"
 
@@ -29,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
 )
 
 // String is string representation for main parameters of the chain
@@ -205,9 +205,6 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
 //     smart contract must be made available with the call examples.AddProcessor
 func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
-	if user == nil {
-		user = &ch.OriginatorPrivateKey
-	}
 	par := codec.MakeDict(map[string]interface{}{
 		root.ParamProgramHash: programHash,
 		root.ParamName:        name,
@@ -385,9 +382,16 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRecei
 }
 
 // GetRequestReceiptsForBlock returns all request log records for a particular block
-func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32) []*blocklog.RequestReceipt {
+func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.RequestReceipt {
+	var blockIdx uint32
+	if len(blockIndex) == 0 {
+		blockIdx = ch.GetLatestBlockInfo().BlockIndex
+	} else {
+		blockIdx = blockIndex[0]
+	}
+
 	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestReceiptsForBlock.Name,
-		blocklog.ParamBlockIndex, blockIndex)
+		blocklog.ParamBlockIndex, blockIdx)
 	if err != nil {
 		return nil
 	}
@@ -398,7 +402,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32) []*blocklog.Reque
 		require.NoError(ch.Env.T, err)
 		ret[i], err = blocklog.RequestReceiptFromBytes(data)
 		require.NoError(ch.Env.T, err)
-		ret[i].WithBlockData(blockIndex, uint16(i))
+		ret[i].WithBlockData(blockIdx, uint16(i))
 	}
 	return ret
 }

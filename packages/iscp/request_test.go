@@ -5,12 +5,10 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/kv/dict"
-
-	"github.com/iotaledger/wasp/packages/iscp"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,8 +40,7 @@ func TestSerializeRequestData(t *testing.T) {
 			GasBudget:      1000,
 		}
 		outputOn := &iotago.ExtendedOutput{
-			Address: sender,
-			Amount:  123,
+			Amount: 123,
 			NativeTokens: iotago.NativeTokens{
 				&iotago.NativeToken{
 					ID:     [iotago.NativeTokenIDLength]byte{1},
@@ -53,6 +50,9 @@ func TestSerializeRequestData(t *testing.T) {
 			Blocks: iotago.FeatureBlocks{
 				&iotago.MetadataFeatureBlock{Data: requestMetadata.Bytes()},
 				&iotago.SenderFeatureBlock{Address: sender},
+			},
+			Conditions: iotago.UnlockConditions{
+				&iotago.AddressUnlockCondition{Address: sender},
 			},
 		}
 		req, err = iscp.OnLedgerFromUTXO(outputOn, &iotago.UTXOInput{})
@@ -69,4 +69,15 @@ func TestSerializeRequestData(t *testing.T) {
 		serialized2 := req2.Bytes()
 		require.True(t, bytes.Equal(serialized, serialized2))
 	})
+}
+
+func TestRequestIDToFromString(t *testing.T) {
+	req := iscp.NewOffLedgerRequest(iscp.RandomChainID(), 3, 14, dict.New(), 1337)
+	oritinalID := req.ID()
+	s := oritinalID.String()
+	require.NotEmpty(t, s)
+	parsedID, err := iscp.RequestIDFromString(s)
+	require.NoError(t, err)
+	require.Equal(t, oritinalID.TransactionID, parsedID.TransactionID)
+	require.Equal(t, oritinalID.TransactionOutputIndex, parsedID.TransactionOutputIndex)
 }

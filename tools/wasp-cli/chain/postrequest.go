@@ -1,8 +1,9 @@
 package chain
 
 import (
+	"bytes"
+	"encoding/hex"
 	"math/big"
-	"strconv"
 	"strings"
 	"time"
 
@@ -27,7 +28,7 @@ func postRequestCmd() *cobra.Command {
 			fname := args[1]
 			params := chainclient.PostRequestParams{
 				Args:     util.EncodeParams(args[2:]),
-				Transfer: parseColoredBalances(transfer),
+				Transfer: parseAssets(transfer),
 			}
 
 			scClient := SCClient(iscp.Hn(args[0]))
@@ -56,29 +57,34 @@ func postRequestCmd() *cobra.Command {
 }
 
 func assetIDFromString(s string) []byte {
-	panic("TODO implement")
-	// if s == colored.IOTA.String() {
-	// 	return colored.IOTA
-	// }
-	// c, err := colored.ColorFromBase58EncodedString(s)
-	// log.Check(err)
-	// return c
+	ret, err := hex.DecodeString(s)
+	log.Check(err)
+	return ret
 }
 
-func parseColoredBalances(args []string) *iscp.Assets {
+func parseAssets(args []string) *iscp.Assets {
 	assets := iscp.NewEmptyAssets()
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {
 			log.Fatalf("colored balances syntax: <color>:<amount>,<color:amount>... -- Example: IOTA:100")
 		}
-		assetID := assetIDFromString(parts[0])
+		assetIDBytes := assetIDFromString(parts[0])
 
-		panic("TODO amount needs to support uint256")
-		amount, err := strconv.Atoi(parts[1])
+		amount, ok := new(big.Int).SetString(parts[1], 10)
+		if !ok {
+			log.Fatalf("error parsing token amount")
+		}
+
+		if bytes.Equal(assetIDBytes, iscp.IotaAssetID) {
+			assets.AddIotas(amount.Uint64())
+			continue
+		}
+
+		assetID, err := iscp.NativeTokenIDFromBytes(assetIDBytes)
 		log.Check(err)
 
-		assets.AddAsset(assetID, big.NewInt(int64(amount)))
+		assets.AddNativeTokens(assetID, amount)
 	}
 	return assets
 }

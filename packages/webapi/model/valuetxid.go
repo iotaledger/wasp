@@ -10,7 +10,7 @@ import (
 type ValueTxID string
 
 func NewValueTxID(id *iotago.TransactionID) ValueTxID {
-	return ValueTxID(id.String())
+	return ValueTxID(string(id[:]))
 }
 
 func (id ValueTxID) MarshalJSON() ([]byte, error) {

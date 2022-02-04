@@ -143,7 +143,7 @@ func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (*tcrypto.DKShare, erro
 }
 
 func dbKeyForDKShare(sharedAddress iotago.Address) []byte {
-	return dbkeys.MakeKey(dbkeys.ObjectTypeDistributedKeyData, sharedAddress.Bytes())
+	return dbkeys.MakeKey(dbkeys.ObjectTypeDistributedKeyData, iscp.BytesFromAddress(sharedAddress))
 }
 
 // endregion //////////////////////////////////////////////////////////////

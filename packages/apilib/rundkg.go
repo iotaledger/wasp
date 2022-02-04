@@ -7,6 +7,7 @@ import (
 	"math"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"golang.org/x/xerrors"
@@ -33,8 +34,8 @@ func RunDKG(apiHosts, peerPubKeys []string, threshold, initiatorIndex uint16, ti
 	if err != nil {
 		return nil, err
 	}
-	var addr iotago.Address
-	if addr, err = iotago.AddressFromBase58EncodedString(dkShares.Address); err != nil {
+	_, addr, err := iotago.ParseBech32(dkShares.Address)
+	if err != nil {
 		return nil, xerrors.Errorf("RunDKG: invalid address returned from DKG: %w", err)
 	}
 

@@ -5,6 +5,8 @@ import (
 	"crypto"
 	"encoding/hex"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/hive.go/marshalutil"
@@ -295,7 +297,7 @@ func (r *OffLedgerRequestData) GasBudget() uint64 {
 
 func (r *OffLedgerRequestData) String() string {
 	return fmt.Sprintf("OffLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, nonce: %d }",
-		r.ID().Base58(),
+		r.ID().String(),
 		"**not impl**", // TODO r.SenderAddress().Base58(),
 		r.contract.String(),
 		r.entryPoint.String(),
@@ -593,16 +595,22 @@ func RequestIDFromBytes(data []byte) (RequestID, error) {
 	return RequestIDFromMarshalUtil(marshalutil.New(data))
 }
 
-// TODO change all Base58 to Bech
-func RequestIDFromBase58(b58 string) (ret RequestID, err error) {
-	//var oid ledgerstate.OutputID
-	//oid, err = ledgerstate.OutputIDFromBase58(b58)
-	//if err != nil {
-	//	return
-	//}
-	//ret = RequestID(oid)
-	ret = RequestID{}
-	return
+func RequestIDFromString(s string) (ret RequestID, err error) {
+	split := strings.Split(s, "/")
+	if len(split) != 2 {
+		return ret, fmt.Errorf("error parsing requestID")
+	}
+	txOutputIndex, err := strconv.ParseUint(split[0], 10, 16)
+	if err != nil {
+		return ret, err
+	}
+	ret.TransactionOutputIndex = uint16(txOutputIndex)
+	txID, err := hex.DecodeString(split[1])
+	if err != nil {
+		return ret, err
+	}
+	copy(ret.TransactionID[:], txID)
+	return ret, nil
 }
 
 func (rid RequestID) OutputID() *iotago.UTXOInput {
@@ -615,13 +623,6 @@ func (rid RequestID) LookupDigest() RequestLookupDigest {
 	// copy(ret[:RequestIDDigestLen], rid[:RequestIDDigestLen])
 	// copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.OutputID().OutputIndex()))
 	return ret
-}
-
-// TODO change all Base58 to Bech
-// Base58 returns a base58 encoded version of the request id.
-func (rid RequestID) Base58() string {
-	// return ledgerstate.OutputID(rid).Base58()
-	return ""
 }
 
 func (rid RequestID) Bytes() []byte {
@@ -638,11 +639,11 @@ func (rid RequestID) String() string {
 func (rid RequestID) Short() string {
 	oid := rid.OutputID()
 	txid := hex.EncodeToString(oid.TransactionID[:])
-	return fmt.Sprintf("[%d]%s", oid.TransactionOutputIndex, txid[:6]+"..")
+	return fmt.Sprintf("%d/%s", oid.TransactionOutputIndex, txid[:6]+"..")
 }
 
 func OID(o *iotago.UTXOInput) string {
-	return fmt.Sprintf("[%d]%s", o.TransactionOutputIndex, hex.EncodeToString(o.TransactionID[:]))
+	return fmt.Sprintf("%d/%s", o.TransactionOutputIndex, hex.EncodeToString(o.TransactionID[:]))
 }
 
 func ShortRequestIDs(ids []RequestID) []string {

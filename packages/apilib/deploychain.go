@@ -5,31 +5,30 @@ package apilib
 
 import (
 	"fmt"
+	"io"
+	"math/rand"
+	"time"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
-	"io"
-	"math/rand"
-	"time"
 )
 
 // TODO DeployChain on peering domain, not on committee
 
 type CreateChainParams struct {
-	Layer1Client          interface{}
-	CommitteeAPIHosts     []string
+	Layer1Client      interface{}
+	CommitteeAPIHosts []string
 	CommitteePubKeys  []string
-	N                     uint16
-	T                     uint16
-	OriginatorKeyPair     *cryptolib.KeyPair
-	Description           string
-	Textout               io.Writer
-	Prefix                string
+	N                 uint16
+	T                 uint16
+	OriginatorKeyPair *cryptolib.KeyPair
+	Description       string
+	Textout           io.Writer
+	Prefix            string
 }
 
 // DeployChainWithDKG performs all actions needed to deploy the chain
@@ -80,10 +79,10 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 	err = ActivateChainOnAccessNodes(par.CommitteeAPIHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
-		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.Bech32(iscp.Bech32Prefix), err)
+		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.AsAddress().Bech32(iscp.Bech32Prefix), err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
-	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.Bech32(iscp.Bech32Prefix))
+	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.AsAddress().Bech32(iscp.Bech32Prefix))
 
 	peers := multiclient.New(par.CommitteeAPIHosts)
 
