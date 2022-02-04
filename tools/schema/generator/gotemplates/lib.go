@@ -48,10 +48,6 @@ $#if result returnResultDict
 	results := wasmlib.NewScDict()
 `,
 	// *******************************
-	"returnResultDict": `
-	ctx.Results(results)
-`,
-	// *******************************
 	"PackageEvents": `
 $#if events PackageEventsExist
 `,
@@ -100,10 +96,13 @@ $#if events PackageEventsExist
 		},
 `,
 	// *******************************
+	"returnResultDict": `
+	ctx.Results(results)
+`,
+	// *******************************
 	"requireMandatory": `
 	ctx.Require(f.Params.$FldName().Exists(), "missing mandatory $fldName")
 `,
-
 	// *******************************
 	"accessCheck": `
 $#set accessFinalize accessOther

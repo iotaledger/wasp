@@ -80,13 +80,9 @@ $#if view ImmutablePackageStateInit
 $#emit accessCheck
 $#each mandatory requireMandatory
 	$kind$+_$func_name(ctx, &f);
-$#if result sendResults
+$#if result returnResultDict
 	ctx.log("$package.$kind$FuncName ok");
 }
-`,
-	// *******************************
-	"sendResults": `
-	ctx.results(&f.results.proxy.kv_store);
 `,
 	// *******************************
 	"PackageEvents": `
@@ -135,6 +131,10 @@ $#if events PackageEventsInitExist
 	// *******************************
 	"ImmutablePackageStateInit": `
 		state: Immutable$Package$+State { proxy: state_proxy() },
+`,
+	// *******************************
+	"returnResultDict": `
+	ctx.results(&f.results.proxy.kv_store);
 `,
 	// *******************************
 	"requireMandatory": `

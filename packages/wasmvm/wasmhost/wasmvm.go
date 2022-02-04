@@ -314,7 +314,18 @@ func (vm *WasmVMBase) traceGet(ctx *WasmContext, keyRef, keyLen, valRef, valLen 
 		return
 	}
 	params := vm.impl.VMGetBytes(valRef, valLen)
-	ctx.log().Debugf("Sandbox(%s)", traceSandbox(keyLen, params))
+	ctx.log().Debugf("Sandbox(%s)", vm.traceSandbox(keyLen, params))
+}
+
+func (vm *WasmVMBase) traceSandbox(funcNr int32, params []byte) string {
+	name := sandboxFuncNames[-funcNr]
+	if name[0] == '$' {
+		return name[1:] + ", " + string(params)
+	}
+	if name[0] != '#' {
+		return name
+	}
+	return name[1:] + ", " + wasmtypes.Hex(params)
 }
 
 func (vm *WasmVMBase) traceSet(ctx *WasmContext, keyRef, keyLen, valRef, valLen int32) {

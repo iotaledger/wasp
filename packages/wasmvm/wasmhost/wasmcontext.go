@@ -21,7 +21,7 @@ type WasmContext struct {
 	host     *WasmHost
 	mini     ISandbox
 	proc     *WasmProcessor
-	sandbox  *WasmToSandbox
+	sandbox  *WasmHostSandbox
 	results  dict.Dict
 }
 
@@ -53,7 +53,7 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 		panic("Context id is zero")
 	}
 
-	wc.sandbox = NewWasmToSandbox(wc, ctx)
+	wc.sandbox = NewWasmHostSandbox(wc, ctx)
 	wc.mini = wc.sandbox
 
 	wcSaved := Connect(wc)

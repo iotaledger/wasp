@@ -18,11 +18,11 @@ $#if map proxyMap proxyMethods3
 `,
 	// *******************************
 	"proxyMethods3": `
-$#if basetype proxyBaseType proxyMethods4
+$#if basetype proxyBaseType proxyOtherType
 `,
 	// *******************************
 	// TODO when will this be called, and if so, fix it
-	"proxyMethods4": `
+	"proxyOtherType": `
 $#if typedef proxyTypeDef proxyStruct
 `,
 	// *******************************

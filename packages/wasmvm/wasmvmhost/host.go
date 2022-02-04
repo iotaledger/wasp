@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// go:build wasm
+//go:build wasm
 // +build wasm
 
 package wasmvmhost
