@@ -1,4 +1,4 @@
-FROM node:current-alpine as build
+FROM node:lts-buster as build
 
 COPY package.json .
 COPY package-lock.json .

@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
 	"github.com/iotaledger/wasp/packages/webapi/info"
 	"github.com/iotaledger/wasp/packages/webapi/reqstatus"
@@ -36,6 +37,7 @@ func Init(
 	nodeProvider dkg.NodeProvider,
 	shutdown admapi.ShutdownFunc,
 	metrics *metricspkg.Metrics,
+	w *wal.WAL,
 ) {
 	log = logger.NewLogger("WebAPI")
 
@@ -69,6 +71,7 @@ func Init(
 		nodeProvider,
 		shutdown,
 		metrics,
+		w,
 	)
 	log.Infof("added web api endpoints")
 }
