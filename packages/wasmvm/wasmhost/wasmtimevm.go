@@ -46,23 +46,6 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) (err error) {
 	vm.linker = wasmtime.NewLinker(vm.engine)
 	_ = vm.WasmVMBase.LinkHost(impl, host)
 
-	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostGetBytes, vm.HostGetBytes)
-	if err != nil {
-		return err
-	}
-	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostGetKeyID, vm.HostGetKeyID)
-	if err != nil {
-		return err
-	}
-	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostGetObjectID, vm.HostGetObjectID)
-	if err != nil {
-		return err
-	}
-	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostSetBytes, vm.HostSetBytes)
-	if err != nil {
-		return err
-	}
-
 	// new Wasm VM interface
 	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostStateGet, vm.HostStateGet)
 	if err != nil {

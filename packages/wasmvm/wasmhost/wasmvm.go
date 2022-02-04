@@ -14,19 +14,15 @@ import (
 )
 
 const (
-	defaultTimeout      = 5 * time.Second
-	FuncAbort           = "abort"
-	FuncFdWrite         = "fd_write"
-	FuncHostGetBytes    = "hostGetBytes"
-	FuncHostGetKeyID    = "hostGetKeyID"
-	FuncHostGetObjectID = "hostGetObjectID"
-	FuncHostSetBytes    = "hostSetBytes"
-	FuncHostStateGet    = "hostStateGet"
-	FuncHostStateSet    = "hostStateSet"
-	ModuleEnv           = "env"
-	ModuleWasi1         = "wasi_unstable"
-	ModuleWasi2         = "wasi_snapshot_preview1"
-	ModuleWasmLib       = "WasmLib"
+	defaultTimeout   = 5 * time.Second
+	FuncAbort        = "abort"
+	FuncFdWrite      = "fd_write"
+	FuncHostStateGet = "hostStateGet"
+	FuncHostStateSet = "hostStateSet"
+	ModuleEnv        = "env"
+	ModuleWasi1      = "wasi_unstable"
+	ModuleWasi2      = "wasi_snapshot_preview1"
+	ModuleWasmLib    = "WasmLib"
 )
 
 var (
@@ -131,26 +127,6 @@ func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 	// strip off "panic: " prefix and call sandbox panic function
 	vm.HostStateGet(0, wasmlib.FnPanic, text+7, size)
 	return size
-}
-
-func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) int32 {
-	defer vm.catchPanicMessage()
-	panic("deprecated: HostGetBytes")
-}
-
-func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
-	defer vm.catchPanicMessage()
-	panic("deprecated: HostGetKeyID")
-}
-
-func (vm *WasmVMBase) HostGetObjectID(objID, keyID, typeID int32) int32 {
-	defer vm.catchPanicMessage()
-	panic("deprecated: HostGetObjectID")
-}
-
-func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) {
-	defer vm.catchPanicMessage()
-	panic("deprecated: HostSetBytes")
 }
 
 func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {

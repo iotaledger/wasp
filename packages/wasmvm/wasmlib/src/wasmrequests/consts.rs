@@ -12,5 +12,3 @@ use crate::*;
 pub const SC_NAME        : &str = "requests";
 pub const SC_DESCRIPTION : &str = "WasmLib request structures";
 pub const HSC_NAME       : ScHname = ScHname(0x98e19453);
-
-

@@ -18,6 +18,7 @@ $#each events eventFunc
 `,
 	// *******************************
 	"eventFunc": `
+$#set separator 
 $#set params 
 $#each event eventParam
 
@@ -30,6 +31,7 @@ $#each event eventEmit
 	// *******************************
 	"eventParam": `
 $#set params $params, $fld_name: $fldRef$fldParamLangType
+$#set separator , 
 `,
 	// *******************************
 	"eventEmit": `

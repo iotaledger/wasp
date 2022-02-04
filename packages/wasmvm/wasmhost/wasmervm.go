@@ -40,12 +40,6 @@ func (vm *WasmerVM) LinkHost(impl WasmVM, host *WasmHost) error {
 	_ = vm.WasmVMBase.LinkHost(impl, host)
 
 	funcs := map[string]wasmer.IntoExtern{
-		FuncHostGetBytes:    vm.importFunc(5, 1, vm.exportHostGetBytes),
-		FuncHostGetKeyID:    vm.importFunc(2, 1, vm.exportHostGetKeyID),
-		FuncHostGetObjectID: vm.importFunc(3, 1, vm.exportHostGetObjectID),
-		FuncHostSetBytes:    vm.importFunc(5, 0, vm.exportHostSetBytes),
-
-		// new Wasm VM interface
 		FuncHostStateGet: vm.importFunc(4, 1, vm.exportHostStateGet),
 		FuncHostStateSet: vm.importFunc(4, 0, vm.exportHostStateSet),
 	}
@@ -131,41 +125,6 @@ func (vm *WasmerVM) exportFdWrite(args []wasmer.Value) ([]wasmer.Value, error) {
 	written := args[3].I32()
 	ret := vm.HostFdWrite(fd, iovs, size, written)
 	return []wasmer.Value{wasmer.NewI32(ret)}, nil
-}
-
-func (vm *WasmerVM) exportHostGetBytes(args []wasmer.Value) ([]wasmer.Value, error) {
-	objID := args[0].I32()
-	keyID := args[1].I32()
-	typeID := args[2].I32()
-	stringRef := args[3].I32()
-	size := args[4].I32()
-	ret := vm.HostGetBytes(objID, keyID, typeID, stringRef, size)
-	return []wasmer.Value{wasmer.NewI32(ret)}, nil
-}
-
-func (vm *WasmerVM) exportHostGetKeyID(args []wasmer.Value) ([]wasmer.Value, error) {
-	keyRef := args[0].I32()
-	size := args[1].I32()
-	ret := vm.HostGetKeyID(keyRef, size)
-	return []wasmer.Value{wasmer.NewI32(ret)}, nil
-}
-
-func (vm *WasmerVM) exportHostGetObjectID(args []wasmer.Value) ([]wasmer.Value, error) {
-	objID := args[0].I32()
-	keyID := args[1].I32()
-	typeID := args[2].I32()
-	ret := vm.HostGetObjectID(objID, keyID, typeID)
-	return []wasmer.Value{wasmer.NewI32(ret)}, nil
-}
-
-func (vm *WasmerVM) exportHostSetBytes(args []wasmer.Value) ([]wasmer.Value, error) {
-	objID := args[0].I32()
-	keyID := args[1].I32()
-	typeID := args[2].I32()
-	stringRef := args[3].I32()
-	size := args[4].I32()
-	vm.HostSetBytes(objID, keyID, typeID, stringRef, size)
-	return nil, nil
 }
 
 func (vm *WasmerVM) exportHostStateGet(args []wasmer.Value) ([]wasmer.Value, error) {

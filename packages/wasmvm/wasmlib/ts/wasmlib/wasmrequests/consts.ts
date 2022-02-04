@@ -10,5 +10,3 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 export const ScName        = "requests";
 export const ScDescription = "WasmLib request structures";
 export const HScName       = new wasmtypes.ScHname(0x98e19453);
-
-

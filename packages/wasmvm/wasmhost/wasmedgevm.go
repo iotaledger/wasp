@@ -66,11 +66,6 @@ func (vm *WasmEdgeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 	_ = vm.WasmVMBase.LinkHost(impl, host)
 
 	vm.importModule(ModuleWasmLib)
-	vm.importFunc(5, 1, FuncHostGetBytes, vm.exportHostGetBytes)
-	vm.importFunc(2, 1, FuncHostGetKeyID, vm.exportHostGetKeyID)
-	vm.importFunc(3, 1, FuncHostGetObjectID, vm.exportHostGetObjectID)
-	vm.importFunc(5, 0, FuncHostSetBytes, vm.exportHostSetBytes)
-
 	vm.importFunc(4, 1, FuncHostStateGet, vm.exportHostStateGet)
 	vm.importFunc(4, 0, FuncHostStateSet, vm.exportHostStateSet)
 	err := vm.edge.RegisterImport(vm.module)
@@ -182,41 +177,6 @@ func (vm *WasmEdgeVM) exportFdWrite(args []interface{}) []interface{} {
 	written := args[3].(int32)
 	ret := vm.HostFdWrite(fd, iovs, size, written)
 	return []interface{}{ret}
-}
-
-func (vm *WasmEdgeVM) exportHostGetBytes(args []interface{}) []interface{} {
-	objID := args[0].(int32)
-	keyID := args[1].(int32)
-	typeID := args[2].(int32)
-	stringRef := args[3].(int32)
-	size := args[4].(int32)
-	ret := vm.HostGetBytes(objID, keyID, typeID, stringRef, size)
-	return []interface{}{ret}
-}
-
-func (vm *WasmEdgeVM) exportHostGetKeyID(args []interface{}) []interface{} {
-	keyRef := args[0].(int32)
-	size := args[1].(int32)
-	ret := vm.HostGetKeyID(keyRef, size)
-	return []interface{}{ret}
-}
-
-func (vm *WasmEdgeVM) exportHostGetObjectID(args []interface{}) []interface{} {
-	objID := args[0].(int32)
-	keyID := args[1].(int32)
-	typeID := args[2].(int32)
-	ret := vm.HostGetObjectID(objID, keyID, typeID)
-	return []interface{}{ret}
-}
-
-func (vm *WasmEdgeVM) exportHostSetBytes(args []interface{}) []interface{} {
-	objID := args[0].(int32)
-	keyID := args[1].(int32)
-	typeID := args[2].(int32)
-	stringRef := args[3].(int32)
-	size := args[4].(int32)
-	vm.HostSetBytes(objID, keyID, typeID, stringRef, size)
-	return nil
 }
 
 func (vm *WasmEdgeVM) exportHostStateGet(args []interface{}) []interface{} {
