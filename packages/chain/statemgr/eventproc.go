@@ -77,7 +77,7 @@ func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
 	}
 }
 
-func (sm *stateManager) EnqueueOutputMsg(output iotago.Output, id iotago.OutputID) {
+func (sm *stateManager) EnqueueOutputMsg(output iotago.Output, id *iotago.UTXOInput) {
 	sm.eventOutputMsgPipe.In() <- &messages.OutputMsg{
 		Output: output,
 		ID:     id,
@@ -85,14 +85,13 @@ func (sm *stateManager) EnqueueOutputMsg(output iotago.Output, id iotago.OutputI
 }
 
 func (sm *stateManager) handleOutputMsg(msg *messages.OutputMsg) {
-	otherID := msg.ID.UTXOInput()
-	sm.log.Debugf("EventOutputMsg received: %s", iscp.OID(otherID))
+	sm.log.Debugf("EventOutputMsg received: %s", iscp.OID(msg.ID))
 	chainOutput, ok := msg.Output.(*iotago.AliasOutput)
 	if !ok {
 		sm.log.Debugf("EventOutputMsg ignored: output is of type %t, expecting *iotago.AliasOutput", msg.Output)
 		return
 	}
-	if sm.outputPulled(iscp.NewAliasOutputWithID(chainOutput, otherID)) {
+	if sm.outputPulled(iscp.NewAliasOutputWithID(chainOutput, msg.ID)) {
 		sm.takeAction()
 	}
 }

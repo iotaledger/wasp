@@ -125,6 +125,9 @@ func (b *blockImpl) writeEssence(w io.Writer) error {
 }
 
 func (b *blockImpl) writeOutputID(w io.Writer) error {
+	if b.stateOutputID == nil {
+		return nil
+	}
 	serialized, err := b.stateOutputID.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		return err

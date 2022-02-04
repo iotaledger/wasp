@@ -1,23 +1,40 @@
 package testchain
 
 import (
+	"time"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
 type MockedNodeConn struct {
-	id                              string
-	onPullState                     func()
-	onPullTransactionInclusionState func(txid iotago.TransactionID)
-	onPullConfirmedOutput           func(outputID *iotago.UTXOInput)
-	onPostTransaction               func(tx *iotago.Transaction)
+	ledger                        *MockedLedger
+	id                            string
+	pullStateAllowed              bool
+	pullConfirmedOutputAllowedFun func(outputID *iotago.UTXOInput) bool
+	receiveTxAllowedFun           func(tx *iotago.Transaction) bool
+	handleTransactionFun          chain.NodeConnectionHandleTransactionFun
+	handleOutputFun               chain.NodeConnectionHandleOutputFun
+	handleUnspentAliasOutputFun   chain.NodeConnectionHandleUnspentAliasOutputFun
 }
 
 var _ chain.ChainNodeConnection = &MockedNodeConn{}
 
-func NewMockedNodeConnection(id string) *MockedNodeConn {
-	return &MockedNodeConn{id: id}
+func NewMockedNodeConnection(id string, ledger *MockedLedger) *MockedNodeConn {
+	result := &MockedNodeConn{
+		id:                            id,
+		ledger:                        ledger,
+		pullStateAllowed:              true,
+		pullConfirmedOutputAllowedFun: func(*iotago.UTXOInput) bool { return true },
+		receiveTxAllowedFun:           func(*iotago.Transaction) bool { return true },
+	}
+	result.handleTransactionFun = result.defaultHandleTransactionFun
+	result.handleOutputFun = result.defaultHandleOutputFun
+	result.handleUnspentAliasOutputFun = result.defaultHandleUnspentAliasOutputFun
+	ledger.addNode(result)
+	return result
 }
 
 func (m *MockedNodeConn) ID() string {
@@ -25,49 +42,68 @@ func (m *MockedNodeConn) ID() string {
 }
 
 func (m *MockedNodeConn) PullState() {
-	m.onPullState()
+	if m.pullStateAllowed {
+		output := m.ledger.pullState()
+		if output != nil {
+			m.handleUnspentAliasOutputFun(output, time.Now())
+		}
+	}
 }
 
 func (m *MockedNodeConn) PullTransactionInclusionState(txid iotago.TransactionID) {
-	m.onPullTransactionInclusionState(txid)
+	// TODO
 }
 
 func (m *MockedNodeConn) PullConfirmedOutput(outputID *iotago.UTXOInput) {
-	m.onPullConfirmedOutput(outputID)
+	if m.pullConfirmedOutputAllowedFun(outputID) {
+		output := m.ledger.pullConfirmedOutput(outputID)
+		if output != nil {
+			m.handleOutputFun(output, outputID)
+		}
+	}
 }
 
 func (m *MockedNodeConn) PostTransaction(tx *iotago.Transaction) {
-	m.onPostTransaction(tx)
+	if m.receiveTxAllowedFun(tx) {
+		m.ledger.receiveTx(tx)
+	}
 }
 
-func (m *MockedNodeConn) OnPullState(f func()) {
-	m.onPullState = f
+func (m *MockedNodeConn) SetPullStateAllowed(flag bool) {
+	m.pullStateAllowed = flag
 }
 
-func (m *MockedNodeConn) OnPullTransactionInclusionState(f func(txid iotago.TransactionID)) {
-	m.onPullTransactionInclusionState = f
+func (m *MockedNodeConn) defaultHandleTransactionFun(*iotago.Transaction) {}
+
+func (m *MockedNodeConn) AttachToTransactionReceived(fun chain.NodeConnectionHandleTransactionFun) {
+	m.handleTransactionFun = fun
 }
 
-func (m *MockedNodeConn) OnPullConfirmedOutput(f func(outputID *iotago.UTXOInput)) {
-	m.onPullConfirmedOutput = f
+func (m *MockedNodeConn) DetachFromTransactionReceived() {
+	m.handleTransactionFun = m.defaultHandleTransactionFun
 }
 
-func (m *MockedNodeConn) OnPostTransaction(f func(tx *iotago.Transaction)) {
-	m.onPostTransaction = f
+func (m *MockedNodeConn) DetachFromInclusionStateReceived() { /* TODO */ }
+
+func (m *MockedNodeConn) defaultHandleOutputFun(iotago.Output, *iotago.UTXOInput) {}
+
+func (m *MockedNodeConn) AttachToOutputReceived(fun chain.NodeConnectionHandleOutputFun) {
+	m.handleOutputFun = fun
 }
 
-func (m *MockedNodeConn) AttachToTransactionReceived(chain.NodeConnectionHandleTransactionFun) {}
-
-/*func (m *MockedNodeConn) AttachToInclusionStateReceived(chain.NodeConnectionHandleInclusionStateFun) {
-}*/
-func (m *MockedNodeConn) AttachToOutputReceived(chain.NodeConnectionHandleOutputFun) {}
-func (m *MockedNodeConn) AttachToUnspentAliasOutputReceived(chain.NodeConnectionHandleUnspentAliasOutputFun) {
+func (m *MockedNodeConn) DetachFromOutputReceived() {
+	m.handleOutputFun = m.defaultHandleOutputFun
 }
 
-func (m *MockedNodeConn) DetachFromTransactionReceived()        {}
-func (m *MockedNodeConn) DetachFromInclusionStateReceived()     {}
-func (m *MockedNodeConn) DetachFromOutputReceived()             {}
-func (m *MockedNodeConn) DetachFromUnspentAliasOutputReceived() {}
+func (m *MockedNodeConn) defaultHandleUnspentAliasOutputFun(*iscp.AliasOutputWithID, time.Time) {}
+
+func (m *MockedNodeConn) AttachToUnspentAliasOutputReceived(fun chain.NodeConnectionHandleUnspentAliasOutputFun) {
+	m.handleUnspentAliasOutputFun = fun
+}
+
+func (m *MockedNodeConn) DetachFromUnspentAliasOutputReceived() {
+	m.handleUnspentAliasOutputFun = m.defaultHandleUnspentAliasOutputFun
+}
 
 func (m *MockedNodeConn) Close() {}
 

@@ -97,7 +97,7 @@ type Committee interface {
 type (
 	NodeConnectionHandleTransactionFun func(*iotago.Transaction)
 	//NodeConnectionHandleInclusionStateFun     func(iotago.TransactionID, iotago.InclusionState) TODO: refactor
-	NodeConnectionHandleOutputFun             func(iotago.Output, iotago.OutputID)
+	NodeConnectionHandleOutputFun             func(iotago.Output, *iotago.UTXOInput)
 	NodeConnectionHandleUnspentAliasOutputFun func(*iscp.AliasOutputWithID, time.Time)
 )
 
@@ -112,7 +112,7 @@ type NodeConnection interface {
 
 	PullState(addr *iotago.AliasAddress)
 	PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID)
-	PullConfirmedOutput(addr iotago.Address, outputID iotago.OutputID)
+	PullConfirmedOutput(addr iotago.Address, outputID *iotago.UTXOInput)
 	PostTransaction(tx *iotago.Transaction)
 
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
@@ -149,7 +149,7 @@ type StateManager interface {
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
 	EnqueueStateMsg(msg *messages.StateMsg)
-	EnqueueOutputMsg(iotago.Output, iotago.OutputID)
+	EnqueueOutputMsg(iotago.Output, *iotago.UTXOInput)
 	EnqueueStateCandidateMsg(state.VirtualStateAccess, *iotago.UTXOInput)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo

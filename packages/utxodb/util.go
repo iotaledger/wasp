@@ -15,9 +15,10 @@ func GetSingleChainedAliasOutput(tx *iotago.Transaction) (*iotago.AliasOutput, i
 	var count int
 	for id, output := range outputs {
 		var ok bool
-		rOutput, ok = output.(*iotago.AliasOutput)
+		aliasOutput, ok := output.(*iotago.AliasOutput)
 		if ok {
 			rID = id
+			rOutput = aliasOutput
 			count++
 		}
 	}

@@ -20,6 +20,10 @@ func NewAliasOutputWithID(output *iotago.AliasOutput, id *iotago.UTXOInput) *Ali
 	}
 }
 
+func (aowiT *AliasOutputWithID) GetAliasOutput() *iotago.AliasOutput {
+	return aowiT.output
+}
+
 func (aowiT *AliasOutputWithID) ID() *iotago.UTXOInput {
 	return aowiT.id
 }
@@ -38,4 +42,8 @@ func (aowiT *AliasOutputWithID) GetStateCommitment() (hashing.HashValue, error) 
 		return hashing.NilHash, err
 	}
 	return sd.Commitment, nil
+}
+
+func (aowiT *AliasOutputWithID) GetStateAddress() iotago.Address {
+	return aowiT.output.StateController
 }

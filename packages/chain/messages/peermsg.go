@@ -46,7 +46,7 @@ type StateCandidateMsg struct {
 // Level 1 sends new state output to state manager
 type OutputMsg struct {
 	Output iotago.Output
-	ID     iotago.OutputID
+	ID     *iotago.UTXOInput
 }
 
 // VMResultMsg Consensus -> Consensus. VM sends result of async task started by Consensus to itself
