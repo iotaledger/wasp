@@ -302,11 +302,11 @@ func TestTimeLock(t *testing.T) {
 	requests := getRequestsOnLedger(t, 6, func(i int, p *iscp.RequestParameters) {
 		switch i {
 		case 1:
-			p.Options = &iscp.SendOptions{Timelock: &iscp.TimeData{Time: start.Add(-2 * time.Hour)}}
+			p.Options.Timelock = &iscp.TimeData{Time: start.Add(-2 * time.Hour)}
 		case 2:
-			p.Options = &iscp.SendOptions{Timelock: &iscp.TimeData{Time: start}}
+			p.Options.Timelock = &iscp.TimeData{Time: start}
 		case 3:
-			p.Options = &iscp.SendOptions{Timelock: &iscp.TimeData{Time: start.Add(2 * time.Hour)}}
+			p.Options.Timelock = &iscp.TimeData{Time: start.Add(2 * time.Hour)}
 		}
 	})
 
@@ -403,13 +403,22 @@ func TestExpiration(t *testing.T) {
 		switch i {
 		case 1:
 			// expired
-			p.Options = &iscp.SendOptions{Expiration: &iscp.TimeData{Time: start.Add(-FallbackDeadlineMinAllowedInterval)}}
+			p.Options.Expiration = &iscp.Expiration{
+				TimeData:      iscp.TimeData{Time: start.Add(-iscp.RequestConsideredExpiredWindow)},
+				ReturnAddress: chainAddress,
+			}
 		case 2:
 			// will expire soon
-			p.Options = &iscp.SendOptions{Expiration: &iscp.TimeData{Time: start.Add(FallbackDeadlineMinAllowedInterval / 2)}}
+			p.Options.Expiration = &iscp.Expiration{
+				TimeData:      iscp.TimeData{Time: start.Add(iscp.RequestConsideredExpiredWindow / 2)},
+				ReturnAddress: chainAddress,
+			}
 		case 3:
 			// not expired yet
-			p.Options = &iscp.SendOptions{Expiration: &iscp.TimeData{Time: start.Add(FallbackDeadlineMinAllowedInterval * 2)}}
+			p.Options.Expiration = &iscp.Expiration{
+				TimeData:      iscp.TimeData{Time: start.Add(iscp.RequestConsideredExpiredWindow * 2)},
+				ReturnAddress: chainAddress,
+			}
 		}
 	})
 

@@ -5,6 +5,7 @@ package emulator
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -112,13 +113,16 @@ func (e *EVMEmulator) GasLimit() uint64 {
 }
 
 func newRevertError(result *core.ExecutionResult) *revertError {
-	reason, errUnpack := abi.UnpackRevert(result.Revert())
-	err := xerrors.New("execution reverted")
-	if errUnpack == nil {
-		err = xerrors.Errorf("execution reverted: %v", reason)
+	reason := "(empty reason)"
+	if len(result.Revert()) > 0 {
+		var err error
+		reason, err = abi.UnpackRevert(result.Revert())
+		if err != nil {
+			reason = fmt.Sprintf("(failed to decode revert reason: %v)", err)
+		}
 	}
 	return &revertError{
-		error:  err,
+		msg:    fmt.Sprintf("execution reverted: %s", reason),
 		reason: hexutil.Encode(result.Revert()),
 	}
 }
@@ -126,8 +130,12 @@ func newRevertError(result *core.ExecutionResult) *revertError {
 // revertError is an API error that encompasses an EVM revert with JSON error
 // code and a binary data blob.
 type revertError struct {
-	error
+	msg    string
 	reason string // revert reason hex encoded
+}
+
+func (e *revertError) Error() string {
+	return e.msg
 }
 
 // ErrorCode returns the JSON error code for a revert.
@@ -147,8 +155,7 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// If the result contains a revert reason, try to unpack and return it.
-	if len(res.Revert()) > 0 {
+	if res.Err == vm.ErrExecutionReverted {
 		return nil, newRevertError(res)
 	}
 	return res.Return(), res.Err
@@ -208,10 +215,10 @@ func (e *EVMEmulator) EstimateGas(call ethereum.CallMsg) (uint64, error) {
 		}
 		if failed {
 			if result != nil && !errors.Is(result.Err, vm.ErrOutOfGas) {
-				if len(result.Revert()) > 0 {
-					return 0, newRevertError(result)
+				if result.Err == vm.ErrExecutionReverted {
+					return 0, xerrors.Errorf("(estimateGas) %v", newRevertError(result))
 				}
-				return 0, xerrors.Errorf("revert: %w", result.Err)
+				return 0, xerrors.Errorf("(estimateGas) %w", result.Err)
 			}
 			// Otherwise, the specified gas cap is too low
 			return 0, xerrors.Errorf("gas required exceeds allowance (%d)", max)
@@ -257,8 +264,9 @@ func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header 
 }
 
 func (e *EVMEmulator) vmConfig() vm.Config {
+	jt := vm.NewISCPInstructionSet(e.GetIEVMBackend)
 	return vm.Config{
-		JumpTable: vm.NewISCPInstructionSet(e.GetIEVMBackend),
+		JumpTable: &jt,
 	}
 }
 

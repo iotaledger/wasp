@@ -236,52 +236,24 @@ func (m *mempool) traceOut(reqid iscp.RequestID) {
 	}
 }
 
-// don't process any request which deadline will expire within 1 minute
-const FallbackDeadlineMinAllowedInterval = time.Minute * 1
-
-func isExpired(ref *requestRef, currentTime iscp.TimeData) bool {
-	r := ref.req.(*iscp.OnLedgerRequestData)
-	expiry, _ := r.Expiry()
-	if expiry == nil {
-		return false
-	}
-	if expiry.MilestoneIndex != 0 && currentTime.MilestoneIndex >= expiry.MilestoneIndex {
-		return false
-	}
-	return !expiry.Time.IsZero() && currentTime.Time.After(expiry.Time.Add(-FallbackDeadlineMinAllowedInterval))
-}
-
-func (m *mempool) isUnlockable(ref *requestRef, currentTime iscp.TimeData) bool {
-	if isExpired(ref, currentTime) {
-		return false
-	}
-
-	output, _ := ref.req.AsOnLedger().Output().(iotago.TransIndepIdentOutput)
-
-	return output.UnlockableBy(m.chainAddress, &iotago.ExternalUnlockParameters{
-		ConfMsIndex: currentTime.MilestoneIndex,
-		ConfUnix:    uint32(currentTime.Time.Unix()),
-	})
-}
-
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
 func (m *mempool) isRequestReady(ref *requestRef, currentTime iscp.TimeData) (isReady bool, shouldBeRemoved bool) {
 	if ref.req.IsOffLedger() {
 		return true, false
 	}
 
-	r := ref.req.(*iscp.OnLedgerRequestData)
+	onLedgerReq := ref.req.AsOnLedger()
 
 	// Skip anything with return amounts in this version.
-	if _, ok := r.AsOnLedger().Features().ReturnAmount(); ok {
+	if _, ok := onLedgerReq.Features().ReturnAmount(); ok {
 		return false, true
 	}
 
-	if isExpired(ref, currentTime) {
+	if iscp.RequestIsExpired(onLedgerReq, currentTime) {
 		return false, true
 	}
 
-	return m.isUnlockable(ref, currentTime), false
+	return iscp.RequestIsUnlockable(onLedgerReq, m.chainAddress, currentTime), false
 }
 
 // ReadyNow returns preliminary batch of requests for consensus.
@@ -348,18 +320,18 @@ func (m *mempool) ReadyFromIDs(currentTime iscp.TimeData, reqIDs ...iscp.Request
 	toRemove := []iscp.RequestID{}
 	m.poolMutex.RLock()
 	for i, reqID := range reqIDs {
-		reqref, ok := m.pool[reqID]
+		ref, ok := m.pool[reqID]
 		if !ok {
 			missingRequestIndexes = append(missingRequestIndexes, i)
 			continue
 		}
-		rdy, shouldBeRemoved := m.isRequestReady(reqref, currentTime)
+		rdy, shouldBeRemoved := m.isRequestReady(ref, currentTime)
 		if rdy {
-			requests = append(requests, reqref.req)
+			requests = append(requests, ref.req)
 			continue
 		}
 		if shouldBeRemoved {
-			toRemove = append(toRemove, reqref.req.ID())
+			toRemove = append(toRemove, ref.req.ID())
 		}
 	}
 	m.poolMutex.RUnlock()
@@ -382,8 +354,8 @@ func (m *mempool) GetRequest(id iscp.RequestID) iscp.Request {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
-	if reqRef, ok := m.pool[id]; ok {
-		return reqRef.req
+	if ref, ok := m.pool[id]; ok {
+		return ref.req
 	}
 	return nil
 }
@@ -466,8 +438,8 @@ func (m *mempool) Info(currentTime iscp.TimeData) MempoolInfo {
 		OutBufCounter:  m.outBufCounter,
 		TotalPool:      len(m.pool),
 	}
-	for _, ref := range m.pool {
-		rdy, _ := m.isRequestReady(ref, currentTime)
+	for _, req := range m.pool {
+		rdy, _ := m.isRequestReady(req, currentTime)
 		if rdy {
 			ret.ReadyCounter++
 		}

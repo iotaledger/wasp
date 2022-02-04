@@ -135,6 +135,11 @@ func (r *CallParams) WithGasBudget(gasBudget uint64) *CallParams {
 	return r
 }
 
+func (r *CallParams) WithMaxAffordableGasBudget() *CallParams {
+	r.gasBudget = math.MaxUint64
+	return r
+}
+
 func (r *CallParams) WithNonce(nonce uint64) *CallParams {
 	r.nonce = nonce
 	return r
@@ -205,7 +210,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 				Allowance:      req.allowance,
 				GasBudget:      req.gasBudget,
 			},
-			Options: nil,
+			Options: iscp.SendOptions{},
 		}},
 		RentStructure:                ch.Env.utxoDB.RentStructure(),
 		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,

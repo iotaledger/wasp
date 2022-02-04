@@ -82,7 +82,7 @@ func nativeTokenOutputDustDeposit(rent *iotago.RentStructure) uint64 {
 			}},
 		},
 		nil,
-		nil,
+		iscp.SendOptions{},
 		rent,
 	)
 	return o.VByteCost(rent, nil)

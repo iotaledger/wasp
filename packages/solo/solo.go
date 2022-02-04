@@ -397,8 +397,8 @@ func (ch *Chain) collateBatch() []iscp.Request {
 	// emulating variable sized blocks
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
-	timeAssumption := ch.Env.GlobalTime()
-	ready := ch.mempool.ReadyNow(timeAssumption)
+	now := ch.Env.GlobalTime()
+	ready := ch.mempool.ReadyNow(now)
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch
@@ -406,8 +406,8 @@ func (ch *Chain) collateBatch() []iscp.Request {
 	ret := make([]iscp.Request, 0)
 	for _, req := range ready[:batchSize] {
 		if !req.IsOffLedger() {
-			timeData := req.AsOnLedger().Features().TimeLock()
-			if timeData != nil && timeData.Time.After(timeAssumption.Time) {
+			onLedgerReq := req.AsOnLedger()
+			if !iscp.RequestIsUnlockable(onLedgerReq, ch.ChainID.AsAddress(), now) {
 				continue
 			}
 		}

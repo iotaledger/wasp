@@ -127,3 +127,30 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 	}
 	return ret, nil
 }
+
+// don't process any request which deadline will expire within 1 minute
+const RequestConsideredExpiredWindow = time.Minute * 1
+
+func RequestIsExpired(req AsOnLedger, currentTime TimeData) bool {
+	expiry, _ := req.Features().Expiry()
+	if expiry == nil {
+		return false
+	}
+	if expiry.MilestoneIndex != 0 && currentTime.MilestoneIndex >= expiry.MilestoneIndex {
+		return false
+	}
+	return !expiry.Time.IsZero() && currentTime.Time.After(expiry.Time.Add(-RequestConsideredExpiredWindow))
+}
+
+func RequestIsUnlockable(req AsOnLedger, chainAddress iotago.Address, currentTime TimeData) bool {
+	if RequestIsExpired(req, currentTime) {
+		return false
+	}
+
+	output, _ := req.Output().(iotago.TransIndepIdentOutput)
+
+	return output.UnlockableBy(chainAddress, &iotago.ExternalUnlockParameters{
+		ConfMsIndex: currentTime.MilestoneIndex,
+		ConfUnix:    uint32(currentTime.Time.Unix()),
+	})
+}

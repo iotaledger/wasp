@@ -2,7 +2,6 @@ package vmcontext
 
 import (
 	"errors"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"math"
 	"math/big"
 	"runtime/debug"
@@ -21,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"golang.org/x/xerrors"
 )
 
@@ -125,7 +125,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 				return
 			}
 			callErr = panicErr
-			vmctx.Debugf("%v", panicErr)
+			vmctx.Debugf("recovered panic from contract call: %v", panicErr)
 			vmctx.Debugf(string(debug.Stack()))
 		}()
 		callRet = vmctx.callFromRequest()
