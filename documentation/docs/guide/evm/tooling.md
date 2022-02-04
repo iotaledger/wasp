@@ -60,7 +60,7 @@ If you also want to use the [Remix IDE](https://remix.ethereum.org/) to deploy a
 
 [Hardhat](https://hardhat.org/) is a commandline toolbox that allows you to deploy, test, verify, and interact with Solidity smart contracts on an EVM chain. EVM chains running on IOTA Smart Contracts are compatible with Hardhat; simply make sure you add the correct network parameters to your `hardhat.config.js`, for example:
 
-```javascript=
+```javascript
 networks: {
     local: {
         url: 'http://localhost:8545',

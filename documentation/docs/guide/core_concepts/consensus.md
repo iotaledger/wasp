@@ -35,7 +35,7 @@ The anchor transaction contains chain state transition, the AliasOutput and toke
 
 **It is only possible to produce valid signatures of inputs of the anchor transaction by the quorum** of nodes. In this case, a confirmed anchor transaction becomes a cryptographical **proof of consensus** in the committee.  
 
-To archive this, IOTA Smart Contracts uses **BLS threshold signatures in combination with polynomial (Shamir) secret sharing** to identify the address controlling the chain state. In order for the secret keys to be distributed across the chain validators, a DKG (Distributed Key Generation) procedure is executed when starting a chain (using the Rabin-Gennaro algorithm).
+To achieve this, IOTA Smart Contracts uses **BLS threshold signatures in combination with polynomial (Shamir) secret sharing** to identify the address controlling the chain state. In order for the secret keys to be distributed across the chain validators, a DKG (Distributed Key Generation) procedure is executed when starting a chain (using the Rabin-Gennaro algorithm).
 
 ## The Consensus Algorithm
 

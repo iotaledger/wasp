@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/wal"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
@@ -238,7 +239,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 			})
 		}
 	})
-	ret.StateManager = New(ret.store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, timers)
+	ret.StateManager = New(ret.store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, wal.NewDefault(), timers)
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualStateAccess, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())

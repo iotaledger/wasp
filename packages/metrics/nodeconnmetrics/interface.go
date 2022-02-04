@@ -9,7 +9,6 @@ import (
 
 type NodeConnectionMessageMetrics interface {
 	CountLastMessage(interface{})
-
 	GetMessageTotal() uint32
 	GetLastEvent() time.Time
 	GetLastMessage() interface{}
@@ -20,7 +19,6 @@ type NodeConnectionMessagesMetrics interface {
 	GetOutPullTransactionInclusionState() NodeConnectionMessageMetrics
 	GetOutPullConfirmedOutput() NodeConnectionMessageMetrics
 	GetOutPostTransaction() NodeConnectionMessageMetrics
-
 	GetInTransaction() NodeConnectionMessageMetrics
 	GetInInclusionState() NodeConnectionMessageMetrics
 	GetInOutput() NodeConnectionMessageMetrics
@@ -29,11 +27,9 @@ type NodeConnectionMessagesMetrics interface {
 
 type NodeConnectionMetrics interface {
 	NodeConnectionMessagesMetrics
-
 	SetSubscribed(ledgerstate.Address)
 	SetUnsubscribed(ledgerstate.Address)
 	GetSubscribed() []ledgerstate.Address
-
 	RegisterMetrics()
 	NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics
 }

@@ -50,7 +50,6 @@ type ChainCore interface {
 type ChainEntry interface {
 	ReceiveTransaction(*ledgerstate.Transaction)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
-
 	Dismiss(reason string)
 	IsDismissed() bool
 }
@@ -100,19 +99,15 @@ type (
 type NodeConnection interface {
 	Subscribe(addr ledgerstate.Address)
 	Unsubscribe(addr ledgerstate.Address)
-
 	AttachToTransactionReceived(*ledgerstate.AliasAddress, NodeConnectionHandleTransactionFun)
 	AttachToInclusionStateReceived(*ledgerstate.AliasAddress, NodeConnectionHandleInclusionStateFun)
 	AttachToOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(*ledgerstate.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState(addr *ledgerstate.AliasAddress)
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-
 	DetachFromTransactionReceived(*ledgerstate.AliasAddress)
 	DetachFromInclusionStateReceived(*ledgerstate.AliasAddress)
 	DetachFromOutputReceived(*ledgerstate.AliasAddress)
@@ -125,14 +120,11 @@ type ChainNodeConnection interface {
 	AttachToInclusionStateReceived(NodeConnectionHandleInclusionStateFun)
 	AttachToOutputReceived(NodeConnectionHandleOutputFun)
 	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
-
 	PullState()
 	PullTransactionInclusionState(txid ledgerstate.TransactionID)
 	PullConfirmedOutput(outputID ledgerstate.OutputID)
 	PostTransaction(tx *ledgerstate.Transaction)
-
 	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
-
 	DetachFromTransactionReceived()
 	DetachFromInclusionStateReceived()
 	DetachFromOutputReceived()
@@ -187,6 +179,12 @@ type AsynchronousCommonSubsetRunner interface {
 	Close()
 }
 
+type WAL interface {
+	Write(bytes []byte) error
+	Contains(i uint32) bool
+	Read(i uint32) ([]byte, error)
+}
+
 type MempoolInfo struct {
 	TotalPool      int
 	ReadyCounter   int
@@ -223,7 +221,6 @@ type ConsensusWorkflowStatus interface {
 	IsTransactionPosted() bool
 	IsTransactionSeen() bool
 	IsInProgress() bool
-
 	GetBatchProposalSentTime() time.Time
 	GetConsensusBatchKnownTime() time.Time
 	GetVMStartedTime() time.Time
