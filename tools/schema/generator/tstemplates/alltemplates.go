@@ -83,12 +83,6 @@ import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 `,
 	// *******************************
-	"tsImports": `
-$#emit importWasmLib
-$#emit importWasmTypes
-$#emit importSc
-`,
-	// *******************************
 	"tsconfig.json": `
 {
   "extends": "assemblyscript/std/assembly.json",

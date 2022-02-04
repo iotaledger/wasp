@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ScFuncs {

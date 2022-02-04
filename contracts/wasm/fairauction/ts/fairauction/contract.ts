@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class FinalizeAuctionCall {
@@ -62,31 +61,31 @@ export class GetInfoContext {
 }
 
 export class ScFuncs {
-    static finalizeAuction(ctx: wasmlib.ScFuncCallContext): FinalizeAuctionCall {
+    static finalizeAuction(_ctx: wasmlib.ScFuncCallContext): FinalizeAuctionCall {
         const f = new FinalizeAuctionCall();
 		f.params = new sc.MutableFinalizeAuctionParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static placeBid(ctx: wasmlib.ScFuncCallContext): PlaceBidCall {
+    static placeBid(_ctx: wasmlib.ScFuncCallContext): PlaceBidCall {
         const f = new PlaceBidCall();
 		f.params = new sc.MutablePlaceBidParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static setOwnerMargin(ctx: wasmlib.ScFuncCallContext): SetOwnerMarginCall {
+    static setOwnerMargin(_ctx: wasmlib.ScFuncCallContext): SetOwnerMarginCall {
         const f = new SetOwnerMarginCall();
 		f.params = new sc.MutableSetOwnerMarginParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static startAuction(ctx: wasmlib.ScFuncCallContext): StartAuctionCall {
+    static startAuction(_ctx: wasmlib.ScFuncCallContext): StartAuctionCall {
         const f = new StartAuctionCall();
 		f.params = new sc.MutableStartAuctionParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static getInfo(ctx: wasmlib.ScViewCallContext): GetInfoCall {
+    static getInfo(_ctx: wasmlib.ScViewCallContext): GetInfoCall {
         const f = new GetInfoCall();
 		f.params = new sc.MutableGetInfoParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetInfoResults(wasmlib.newCallResultsProxy(f.func));

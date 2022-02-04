@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class HelloWorldCall {
@@ -28,11 +27,11 @@ export class GetHelloWorldContext {
 }
 
 export class ScFuncs {
-    static helloWorld(ctx: wasmlib.ScFuncCallContext): HelloWorldCall {
+    static helloWorld(_ctx: wasmlib.ScFuncCallContext): HelloWorldCall {
         return new HelloWorldCall();
     }
 
-    static getHelloWorld(ctx: wasmlib.ScViewCallContext): GetHelloWorldCall {
+    static getHelloWorld(_ctx: wasmlib.ScViewCallContext): GetHelloWorldCall {
         const f = new GetHelloWorldCall();
 		f.results = new sc.ImmutableGetHelloWorldResults(wasmlib.newCallResultsProxy(f.func));
         return f;

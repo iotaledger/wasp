@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class DonateCall {
@@ -52,26 +51,26 @@ export class DonationInfoContext {
 }
 
 export class ScFuncs {
-    static donate(ctx: wasmlib.ScFuncCallContext): DonateCall {
+    static donate(_ctx: wasmlib.ScFuncCallContext): DonateCall {
         const f = new DonateCall();
 		f.params = new sc.MutableDonateParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static withdraw(ctx: wasmlib.ScFuncCallContext): WithdrawCall {
+    static withdraw(_ctx: wasmlib.ScFuncCallContext): WithdrawCall {
         const f = new WithdrawCall();
 		f.params = new sc.MutableWithdrawParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static donation(ctx: wasmlib.ScViewCallContext): DonationCall {
+    static donation(_ctx: wasmlib.ScViewCallContext): DonationCall {
         const f = new DonationCall();
 		f.params = new sc.MutableDonationParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableDonationResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static donationInfo(ctx: wasmlib.ScViewCallContext): DonationInfoCall {
+    static donationInfo(_ctx: wasmlib.ScViewCallContext): DonationInfoCall {
         const f = new DonationInfoCall();
 		f.results = new sc.ImmutableDonationInfoResults(wasmlib.newCallResultsProxy(f.func));
         return f;

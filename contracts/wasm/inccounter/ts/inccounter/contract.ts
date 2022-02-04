@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class CallIncrementCall {
@@ -164,84 +163,84 @@ export class GetVluContext {
 }
 
 export class ScFuncs {
-    static callIncrement(ctx: wasmlib.ScFuncCallContext): CallIncrementCall {
+    static callIncrement(_ctx: wasmlib.ScFuncCallContext): CallIncrementCall {
         return new CallIncrementCall();
     }
 
-    static callIncrementRecurse5x(ctx: wasmlib.ScFuncCallContext): CallIncrementRecurse5xCall {
+    static callIncrementRecurse5x(_ctx: wasmlib.ScFuncCallContext): CallIncrementRecurse5xCall {
         return new CallIncrementRecurse5xCall();
     }
 
-    static endlessLoop(ctx: wasmlib.ScFuncCallContext): EndlessLoopCall {
+    static endlessLoop(_ctx: wasmlib.ScFuncCallContext): EndlessLoopCall {
         return new EndlessLoopCall();
     }
 
-    static increment(ctx: wasmlib.ScFuncCallContext): IncrementCall {
+    static increment(_ctx: wasmlib.ScFuncCallContext): IncrementCall {
         return new IncrementCall();
     }
 
-    static incrementWithDelay(ctx: wasmlib.ScFuncCallContext): IncrementWithDelayCall {
+    static incrementWithDelay(_ctx: wasmlib.ScFuncCallContext): IncrementWithDelayCall {
         const f = new IncrementWithDelayCall();
 		f.params = new sc.MutableIncrementWithDelayParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static init(ctx: wasmlib.ScFuncCallContext): InitCall {
+    static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
         const f = new InitCall();
 		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static localStateInternalCall(ctx: wasmlib.ScFuncCallContext): LocalStateInternalCallCall {
+    static localStateInternalCall(_ctx: wasmlib.ScFuncCallContext): LocalStateInternalCallCall {
         return new LocalStateInternalCallCall();
     }
 
-    static localStatePost(ctx: wasmlib.ScFuncCallContext): LocalStatePostCall {
+    static localStatePost(_ctx: wasmlib.ScFuncCallContext): LocalStatePostCall {
         return new LocalStatePostCall();
     }
 
-    static localStateSandboxCall(ctx: wasmlib.ScFuncCallContext): LocalStateSandboxCallCall {
+    static localStateSandboxCall(_ctx: wasmlib.ScFuncCallContext): LocalStateSandboxCallCall {
         return new LocalStateSandboxCallCall();
     }
 
-    static postIncrement(ctx: wasmlib.ScFuncCallContext): PostIncrementCall {
+    static postIncrement(_ctx: wasmlib.ScFuncCallContext): PostIncrementCall {
         return new PostIncrementCall();
     }
 
-    static repeatMany(ctx: wasmlib.ScFuncCallContext): RepeatManyCall {
+    static repeatMany(_ctx: wasmlib.ScFuncCallContext): RepeatManyCall {
         const f = new RepeatManyCall();
 		f.params = new sc.MutableRepeatManyParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static testVliCodec(ctx: wasmlib.ScFuncCallContext): TestVliCodecCall {
+    static testVliCodec(_ctx: wasmlib.ScFuncCallContext): TestVliCodecCall {
         return new TestVliCodecCall();
     }
 
-    static testVluCodec(ctx: wasmlib.ScFuncCallContext): TestVluCodecCall {
+    static testVluCodec(_ctx: wasmlib.ScFuncCallContext): TestVluCodecCall {
         return new TestVluCodecCall();
     }
 
-    static whenMustIncrement(ctx: wasmlib.ScFuncCallContext): WhenMustIncrementCall {
+    static whenMustIncrement(_ctx: wasmlib.ScFuncCallContext): WhenMustIncrementCall {
         const f = new WhenMustIncrementCall();
 		f.params = new sc.MutableWhenMustIncrementParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static getCounter(ctx: wasmlib.ScViewCallContext): GetCounterCall {
+    static getCounter(_ctx: wasmlib.ScViewCallContext): GetCounterCall {
         const f = new GetCounterCall();
 		f.results = new sc.ImmutableGetCounterResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getVli(ctx: wasmlib.ScViewCallContext): GetVliCall {
+    static getVli(_ctx: wasmlib.ScViewCallContext): GetVliCall {
         const f = new GetVliCall();
 		f.params = new sc.MutableGetVliParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetVliResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getVlu(ctx: wasmlib.ScViewCallContext): GetVluCall {
+    static getVlu(_ctx: wasmlib.ScViewCallContext): GetVluCall {
         const f = new GetVluCall();
 		f.params = new sc.MutableGetVluParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetVluResults(wasmlib.newCallResultsProxy(f.func));

@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ApproveCall {
@@ -88,45 +87,45 @@ export class TotalSupplyContext {
 }
 
 export class ScFuncs {
-    static approve(ctx: wasmlib.ScFuncCallContext): ApproveCall {
+    static approve(_ctx: wasmlib.ScFuncCallContext): ApproveCall {
         const f = new ApproveCall();
 		f.params = new sc.MutableApproveParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static init(ctx: wasmlib.ScFuncCallContext): InitCall {
+    static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
         const f = new InitCall();
 		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static transfer(ctx: wasmlib.ScFuncCallContext): TransferCall {
+    static transfer(_ctx: wasmlib.ScFuncCallContext): TransferCall {
         const f = new TransferCall();
 		f.params = new sc.MutableTransferParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static transferFrom(ctx: wasmlib.ScFuncCallContext): TransferFromCall {
+    static transferFrom(_ctx: wasmlib.ScFuncCallContext): TransferFromCall {
         const f = new TransferFromCall();
 		f.params = new sc.MutableTransferFromParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static allowance(ctx: wasmlib.ScViewCallContext): AllowanceCall {
+    static allowance(_ctx: wasmlib.ScViewCallContext): AllowanceCall {
         const f = new AllowanceCall();
 		f.params = new sc.MutableAllowanceParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableAllowanceResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static balanceOf(ctx: wasmlib.ScViewCallContext): BalanceOfCall {
+    static balanceOf(_ctx: wasmlib.ScViewCallContext): BalanceOfCall {
         const f = new BalanceOfCall();
 		f.params = new sc.MutableBalanceOfParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBalanceOfResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static totalSupply(ctx: wasmlib.ScViewCallContext): TotalSupplyCall {
+    static totalSupply(_ctx: wasmlib.ScViewCallContext): TotalSupplyCall {
         const f = new TotalSupplyCall();
 		f.results = new sc.ImmutableTotalSupplyResults(wasmlib.newCallResultsProxy(f.func));
         return f;

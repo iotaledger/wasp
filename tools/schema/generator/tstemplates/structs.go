@@ -3,7 +3,6 @@ package tstemplates
 var structsTs = map[string]string{
 	// *******************************
 	"structs.ts": `
-$#emit importWasmLib
 $#emit importWasmTypes
 $#each structs structType
 `,

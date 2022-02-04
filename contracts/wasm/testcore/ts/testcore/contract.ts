@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class CallOnChainCall {
@@ -316,174 +315,174 @@ export class TestSandboxCallContext {
 }
 
 export class ScFuncs {
-    static callOnChain(ctx: wasmlib.ScFuncCallContext): CallOnChainCall {
+    static callOnChain(_ctx: wasmlib.ScFuncCallContext): CallOnChainCall {
         const f = new CallOnChainCall();
 		f.params = new sc.MutableCallOnChainParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableCallOnChainResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static checkContextFromFullEP(ctx: wasmlib.ScFuncCallContext): CheckContextFromFullEPCall {
+    static checkContextFromFullEP(_ctx: wasmlib.ScFuncCallContext): CheckContextFromFullEPCall {
         const f = new CheckContextFromFullEPCall();
 		f.params = new sc.MutableCheckContextFromFullEPParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static doNothing(ctx: wasmlib.ScFuncCallContext): DoNothingCall {
+    static doNothing(_ctx: wasmlib.ScFuncCallContext): DoNothingCall {
         return new DoNothingCall();
     }
 
-    static getMintedSupply(ctx: wasmlib.ScFuncCallContext): GetMintedSupplyCall {
+    static getMintedSupply(_ctx: wasmlib.ScFuncCallContext): GetMintedSupplyCall {
         const f = new GetMintedSupplyCall();
 		f.results = new sc.ImmutableGetMintedSupplyResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static incCounter(ctx: wasmlib.ScFuncCallContext): IncCounterCall {
+    static incCounter(_ctx: wasmlib.ScFuncCallContext): IncCounterCall {
         return new IncCounterCall();
     }
 
-    static init(ctx: wasmlib.ScFuncCallContext): InitCall {
+    static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
         const f = new InitCall();
 		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static passTypesFull(ctx: wasmlib.ScFuncCallContext): PassTypesFullCall {
+    static passTypesFull(_ctx: wasmlib.ScFuncCallContext): PassTypesFullCall {
         const f = new PassTypesFullCall();
 		f.params = new sc.MutablePassTypesFullParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static runRecursion(ctx: wasmlib.ScFuncCallContext): RunRecursionCall {
+    static runRecursion(_ctx: wasmlib.ScFuncCallContext): RunRecursionCall {
         const f = new RunRecursionCall();
 		f.params = new sc.MutableRunRecursionParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableRunRecursionResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static sendToAddress(ctx: wasmlib.ScFuncCallContext): SendToAddressCall {
+    static sendToAddress(_ctx: wasmlib.ScFuncCallContext): SendToAddressCall {
         const f = new SendToAddressCall();
 		f.params = new sc.MutableSendToAddressParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static setInt(ctx: wasmlib.ScFuncCallContext): SetIntCall {
+    static setInt(_ctx: wasmlib.ScFuncCallContext): SetIntCall {
         const f = new SetIntCall();
 		f.params = new sc.MutableSetIntParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static spawn(ctx: wasmlib.ScFuncCallContext): SpawnCall {
+    static spawn(_ctx: wasmlib.ScFuncCallContext): SpawnCall {
         const f = new SpawnCall();
 		f.params = new sc.MutableSpawnParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static testBlockContext1(ctx: wasmlib.ScFuncCallContext): TestBlockContext1Call {
+    static testBlockContext1(_ctx: wasmlib.ScFuncCallContext): TestBlockContext1Call {
         return new TestBlockContext1Call();
     }
 
-    static testBlockContext2(ctx: wasmlib.ScFuncCallContext): TestBlockContext2Call {
+    static testBlockContext2(_ctx: wasmlib.ScFuncCallContext): TestBlockContext2Call {
         return new TestBlockContext2Call();
     }
 
-    static testCallPanicFullEP(ctx: wasmlib.ScFuncCallContext): TestCallPanicFullEPCall {
+    static testCallPanicFullEP(_ctx: wasmlib.ScFuncCallContext): TestCallPanicFullEPCall {
         return new TestCallPanicFullEPCall();
     }
 
-    static testCallPanicViewEPFromFull(ctx: wasmlib.ScFuncCallContext): TestCallPanicViewEPFromFullCall {
+    static testCallPanicViewEPFromFull(_ctx: wasmlib.ScFuncCallContext): TestCallPanicViewEPFromFullCall {
         return new TestCallPanicViewEPFromFullCall();
     }
 
-    static testChainOwnerIDFull(ctx: wasmlib.ScFuncCallContext): TestChainOwnerIDFullCall {
+    static testChainOwnerIDFull(_ctx: wasmlib.ScFuncCallContext): TestChainOwnerIDFullCall {
         const f = new TestChainOwnerIDFullCall();
 		f.results = new sc.ImmutableTestChainOwnerIDFullResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static testEventLogDeploy(ctx: wasmlib.ScFuncCallContext): TestEventLogDeployCall {
+    static testEventLogDeploy(_ctx: wasmlib.ScFuncCallContext): TestEventLogDeployCall {
         return new TestEventLogDeployCall();
     }
 
-    static testEventLogEventData(ctx: wasmlib.ScFuncCallContext): TestEventLogEventDataCall {
+    static testEventLogEventData(_ctx: wasmlib.ScFuncCallContext): TestEventLogEventDataCall {
         return new TestEventLogEventDataCall();
     }
 
-    static testEventLogGenericData(ctx: wasmlib.ScFuncCallContext): TestEventLogGenericDataCall {
+    static testEventLogGenericData(_ctx: wasmlib.ScFuncCallContext): TestEventLogGenericDataCall {
         const f = new TestEventLogGenericDataCall();
 		f.params = new sc.MutableTestEventLogGenericDataParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static testPanicFullEP(ctx: wasmlib.ScFuncCallContext): TestPanicFullEPCall {
+    static testPanicFullEP(_ctx: wasmlib.ScFuncCallContext): TestPanicFullEPCall {
         return new TestPanicFullEPCall();
     }
 
-    static withdrawToChain(ctx: wasmlib.ScFuncCallContext): WithdrawToChainCall {
+    static withdrawToChain(_ctx: wasmlib.ScFuncCallContext): WithdrawToChainCall {
         const f = new WithdrawToChainCall();
 		f.params = new sc.MutableWithdrawToChainParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static checkContextFromViewEP(ctx: wasmlib.ScViewCallContext): CheckContextFromViewEPCall {
+    static checkContextFromViewEP(_ctx: wasmlib.ScViewCallContext): CheckContextFromViewEPCall {
         const f = new CheckContextFromViewEPCall();
 		f.params = new sc.MutableCheckContextFromViewEPParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static fibonacci(ctx: wasmlib.ScViewCallContext): FibonacciCall {
+    static fibonacci(_ctx: wasmlib.ScViewCallContext): FibonacciCall {
         const f = new FibonacciCall();
 		f.params = new sc.MutableFibonacciParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableFibonacciResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getCounter(ctx: wasmlib.ScViewCallContext): GetCounterCall {
+    static getCounter(_ctx: wasmlib.ScViewCallContext): GetCounterCall {
         const f = new GetCounterCall();
 		f.results = new sc.ImmutableGetCounterResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getInt(ctx: wasmlib.ScViewCallContext): GetIntCall {
+    static getInt(_ctx: wasmlib.ScViewCallContext): GetIntCall {
         const f = new GetIntCall();
 		f.params = new sc.MutableGetIntParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetIntResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getStringValue(ctx: wasmlib.ScViewCallContext): GetStringValueCall {
+    static getStringValue(_ctx: wasmlib.ScViewCallContext): GetStringValueCall {
         const f = new GetStringValueCall();
 		f.params = new sc.MutableGetStringValueParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetStringValueResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static justView(ctx: wasmlib.ScViewCallContext): JustViewCall {
+    static justView(_ctx: wasmlib.ScViewCallContext): JustViewCall {
         return new JustViewCall();
     }
 
-    static passTypesView(ctx: wasmlib.ScViewCallContext): PassTypesViewCall {
+    static passTypesView(_ctx: wasmlib.ScViewCallContext): PassTypesViewCall {
         const f = new PassTypesViewCall();
 		f.params = new sc.MutablePassTypesViewParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static testCallPanicViewEPFromView(ctx: wasmlib.ScViewCallContext): TestCallPanicViewEPFromViewCall {
+    static testCallPanicViewEPFromView(_ctx: wasmlib.ScViewCallContext): TestCallPanicViewEPFromViewCall {
         return new TestCallPanicViewEPFromViewCall();
     }
 
-    static testChainOwnerIDView(ctx: wasmlib.ScViewCallContext): TestChainOwnerIDViewCall {
+    static testChainOwnerIDView(_ctx: wasmlib.ScViewCallContext): TestChainOwnerIDViewCall {
         const f = new TestChainOwnerIDViewCall();
 		f.results = new sc.ImmutableTestChainOwnerIDViewResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static testPanicViewEP(ctx: wasmlib.ScViewCallContext): TestPanicViewEPCall {
+    static testPanicViewEP(_ctx: wasmlib.ScViewCallContext): TestPanicViewEPCall {
         return new TestPanicViewEPCall();
     }
 
-    static testSandboxCall(ctx: wasmlib.ScViewCallContext): TestSandboxCallCall {
+    static testSandboxCall(_ctx: wasmlib.ScViewCallContext): TestSandboxCallCall {
         const f = new TestSandboxCallCall();
 		f.results = new sc.ImmutableTestSandboxCallResults(wasmlib.newCallResultsProxy(f.func));
         return f;

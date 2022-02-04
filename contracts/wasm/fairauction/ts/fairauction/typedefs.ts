@@ -5,7 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
@@ -21,7 +20,7 @@ export class ArrayOfImmutableAgentID extends wasmtypes.ScProxy {
 }
 
 export class ImmutableBidderList extends ArrayOfImmutableAgentID {
-};
+}
 
 export class ArrayOfMutableAgentID extends wasmtypes.ScProxy {
 
@@ -43,7 +42,7 @@ export class ArrayOfMutableAgentID extends wasmtypes.ScProxy {
 }
 
 export class MutableBidderList extends ArrayOfMutableAgentID {
-};
+}
 
 export class MapAgentIDToImmutableBid extends wasmtypes.ScProxy {
 
@@ -53,7 +52,7 @@ export class MapAgentIDToImmutableBid extends wasmtypes.ScProxy {
 }
 
 export class ImmutableBids extends MapAgentIDToImmutableBid {
-};
+}
 
 export class MapAgentIDToMutableBid extends wasmtypes.ScProxy {
 
@@ -67,4 +66,4 @@ export class MapAgentIDToMutableBid extends wasmtypes.ScProxy {
 }
 
 export class MutableBids extends MapAgentIDToMutableBid {
-};
+}

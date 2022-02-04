@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class NowCall {
@@ -28,11 +27,11 @@ export class GetTimestampContext {
 }
 
 export class ScFuncs {
-    static now(ctx: wasmlib.ScFuncCallContext): NowCall {
+    static now(_ctx: wasmlib.ScFuncCallContext): NowCall {
         return new NowCall();
     }
 
-    static getTimestamp(ctx: wasmlib.ScViewCallContext): GetTimestampCall {
+    static getTimestamp(_ctx: wasmlib.ScViewCallContext): GetTimestampCall {
         const f = new GetTimestampCall();
 		f.results = new sc.ImmutableGetTimestampResults(wasmlib.newCallResultsProxy(f.func));
         return f;

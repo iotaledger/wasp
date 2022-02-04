@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class DivideCall {
@@ -70,36 +69,36 @@ export class GetOwnerContext {
 }
 
 export class ScFuncs {
-    static divide(ctx: wasmlib.ScFuncCallContext): DivideCall {
+    static divide(_ctx: wasmlib.ScFuncCallContext): DivideCall {
         return new DivideCall();
     }
 
-    static init(ctx: wasmlib.ScFuncCallContext): InitCall {
+    static init(_ctx: wasmlib.ScFuncCallContext): InitCall {
         const f = new InitCall();
 		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static member(ctx: wasmlib.ScFuncCallContext): MemberCall {
+    static member(_ctx: wasmlib.ScFuncCallContext): MemberCall {
         const f = new MemberCall();
 		f.params = new sc.MutableMemberParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static setOwner(ctx: wasmlib.ScFuncCallContext): SetOwnerCall {
+    static setOwner(_ctx: wasmlib.ScFuncCallContext): SetOwnerCall {
         const f = new SetOwnerCall();
 		f.params = new sc.MutableSetOwnerParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static getFactor(ctx: wasmlib.ScViewCallContext): GetFactorCall {
+    static getFactor(_ctx: wasmlib.ScViewCallContext): GetFactorCall {
         const f = new GetFactorCall();
 		f.params = new sc.MutableGetFactorParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetFactorResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getOwner(ctx: wasmlib.ScViewCallContext): GetOwnerCall {
+    static getOwner(_ctx: wasmlib.ScViewCallContext): GetOwnerCall {
         const f = new GetOwnerCall();
 		f.results = new sc.ImmutableGetOwnerResults(wasmlib.newCallResultsProxy(f.func));
         return f;

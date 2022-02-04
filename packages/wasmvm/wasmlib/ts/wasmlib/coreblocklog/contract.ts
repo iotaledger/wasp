@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class ControlAddressesCall {
@@ -68,68 +67,68 @@ export class IsRequestProcessedCall {
 }
 
 export class ScFuncs {
-    static controlAddresses(ctx: wasmlib.ScViewCallContext): ControlAddressesCall {
+    static controlAddresses(_ctx: wasmlib.ScViewCallContext): ControlAddressesCall {
         const f = new ControlAddressesCall();
 		f.results = new sc.ImmutableControlAddressesResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getBlockInfo(ctx: wasmlib.ScViewCallContext): GetBlockInfoCall {
+    static getBlockInfo(_ctx: wasmlib.ScViewCallContext): GetBlockInfoCall {
         const f = new GetBlockInfoCall();
 		f.params = new sc.MutableGetBlockInfoParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetBlockInfoResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getEventsForBlock(ctx: wasmlib.ScViewCallContext): GetEventsForBlockCall {
+    static getEventsForBlock(_ctx: wasmlib.ScViewCallContext): GetEventsForBlockCall {
         const f = new GetEventsForBlockCall();
 		f.params = new sc.MutableGetEventsForBlockParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetEventsForBlockResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getEventsForContract(ctx: wasmlib.ScViewCallContext): GetEventsForContractCall {
+    static getEventsForContract(_ctx: wasmlib.ScViewCallContext): GetEventsForContractCall {
         const f = new GetEventsForContractCall();
 		f.params = new sc.MutableGetEventsForContractParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetEventsForContractResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getEventsForRequest(ctx: wasmlib.ScViewCallContext): GetEventsForRequestCall {
+    static getEventsForRequest(_ctx: wasmlib.ScViewCallContext): GetEventsForRequestCall {
         const f = new GetEventsForRequestCall();
 		f.params = new sc.MutableGetEventsForRequestParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetEventsForRequestResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getLatestBlockInfo(ctx: wasmlib.ScViewCallContext): GetLatestBlockInfoCall {
+    static getLatestBlockInfo(_ctx: wasmlib.ScViewCallContext): GetLatestBlockInfoCall {
         const f = new GetLatestBlockInfoCall();
 		f.results = new sc.ImmutableGetLatestBlockInfoResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getRequestIDsForBlock(ctx: wasmlib.ScViewCallContext): GetRequestIDsForBlockCall {
+    static getRequestIDsForBlock(_ctx: wasmlib.ScViewCallContext): GetRequestIDsForBlockCall {
         const f = new GetRequestIDsForBlockCall();
 		f.params = new sc.MutableGetRequestIDsForBlockParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetRequestIDsForBlockResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getRequestReceipt(ctx: wasmlib.ScViewCallContext): GetRequestReceiptCall {
+    static getRequestReceipt(_ctx: wasmlib.ScViewCallContext): GetRequestReceiptCall {
         const f = new GetRequestReceiptCall();
 		f.params = new sc.MutableGetRequestReceiptParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetRequestReceiptResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getRequestReceiptsForBlock(ctx: wasmlib.ScViewCallContext): GetRequestReceiptsForBlockCall {
+    static getRequestReceiptsForBlock(_ctx: wasmlib.ScViewCallContext): GetRequestReceiptsForBlockCall {
         const f = new GetRequestReceiptsForBlockCall();
 		f.params = new sc.MutableGetRequestReceiptsForBlockParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetRequestReceiptsForBlockResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static isRequestProcessed(ctx: wasmlib.ScViewCallContext): IsRequestProcessedCall {
+    static isRequestProcessed(_ctx: wasmlib.ScViewCallContext): IsRequestProcessedCall {
         const f = new IsRequestProcessedCall();
 		f.params = new sc.MutableIsRequestProcessedParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableIsRequestProcessedResults(wasmlib.newCallResultsProxy(f.func));

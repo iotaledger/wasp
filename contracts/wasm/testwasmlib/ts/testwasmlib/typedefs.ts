@@ -5,7 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
@@ -21,7 +20,7 @@ export class ArrayOfImmutableString extends wasmtypes.ScProxy {
 }
 
 export class ImmutableStringArray extends ArrayOfImmutableString {
-};
+}
 
 export class ArrayOfMutableString extends wasmtypes.ScProxy {
 
@@ -43,7 +42,7 @@ export class ArrayOfMutableString extends wasmtypes.ScProxy {
 }
 
 export class MutableStringArray extends ArrayOfMutableString {
-};
+}
 
 export class MapStringToImmutableString extends wasmtypes.ScProxy {
 
@@ -53,7 +52,7 @@ export class MapStringToImmutableString extends wasmtypes.ScProxy {
 }
 
 export class ImmutableStringMap extends MapStringToImmutableString {
-};
+}
 
 export class MapStringToMutableString extends wasmtypes.ScProxy {
 
@@ -67,4 +66,4 @@ export class MapStringToMutableString extends wasmtypes.ScProxy {
 }
 
 export class MutableStringMap extends MapStringToMutableString {
-};
+}

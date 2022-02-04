@@ -5,7 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-import * as wasmlib from "wasmlib";
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
@@ -17,7 +16,7 @@ export class MapAgentIDToImmutableBool extends wasmtypes.ScProxy {
 }
 
 export class ImmutableOperators extends MapAgentIDToImmutableBool {
-};
+}
 
 export class MapAgentIDToMutableBool extends wasmtypes.ScProxy {
 
@@ -31,4 +30,4 @@ export class MapAgentIDToMutableBool extends wasmtypes.ScProxy {
 }
 
 export class MutableOperators extends MapAgentIDToMutableBool {
-};
+}

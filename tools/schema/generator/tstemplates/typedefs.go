@@ -3,7 +3,8 @@ package tstemplates
 var typedefsTs = map[string]string{
 	// *******************************
 	"typedefs.ts": `
-$#emit tsImports
+$#emit importWasmTypes
+$#emit importSc
 $#each typedef typedefProxy
 `,
 	// *******************************
@@ -23,7 +24,7 @@ $#if map typedefProxyAlias
 	"typedefProxyAlias": `
 
 export class $mut$FldName extends $proxy {
-};
+}
 `,
 	// *******************************
 	"typedefProxyArray": `

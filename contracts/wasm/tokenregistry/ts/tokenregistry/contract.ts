@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class MintSupplyCall {
@@ -50,25 +49,25 @@ export class GetInfoContext {
 }
 
 export class ScFuncs {
-    static mintSupply(ctx: wasmlib.ScFuncCallContext): MintSupplyCall {
+    static mintSupply(_ctx: wasmlib.ScFuncCallContext): MintSupplyCall {
         const f = new MintSupplyCall();
 		f.params = new sc.MutableMintSupplyParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static transferOwnership(ctx: wasmlib.ScFuncCallContext): TransferOwnershipCall {
+    static transferOwnership(_ctx: wasmlib.ScFuncCallContext): TransferOwnershipCall {
         const f = new TransferOwnershipCall();
 		f.params = new sc.MutableTransferOwnershipParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static updateMetadata(ctx: wasmlib.ScFuncCallContext): UpdateMetadataCall {
+    static updateMetadata(_ctx: wasmlib.ScFuncCallContext): UpdateMetadataCall {
         const f = new UpdateMetadataCall();
 		f.params = new sc.MutableUpdateMetadataParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static getInfo(ctx: wasmlib.ScViewCallContext): GetInfoCall {
+    static getInfo(_ctx: wasmlib.ScViewCallContext): GetInfoCall {
         const f = new GetInfoCall();
 		f.params = new sc.MutableGetInfoParams(wasmlib.newCallParamsProxy(f.func));
         return f;

@@ -3,7 +3,8 @@ package tstemplates
 var contractTs = map[string]string{
 	// *******************************
 	"contract.ts": `
-$#emit tsImports
+$#emit importWasmLib
+$#emit importSc
 $#each func FuncNameCall
 
 export class ScFuncs {
@@ -70,7 +71,7 @@ $#if events PackageEventsExist
 $#emit setupInitFunc
 $#if separator newline
 $#set separator $true
-    static $funcName(ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
+    static $funcName(_ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
 $#if ptrs setPtrs noPtrs
     }
 `,

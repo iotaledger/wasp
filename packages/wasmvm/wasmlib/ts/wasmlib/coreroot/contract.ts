@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class DeployContractCall {
@@ -36,32 +35,32 @@ export class GetContractRecordsCall {
 }
 
 export class ScFuncs {
-    static deployContract(ctx: wasmlib.ScFuncCallContext): DeployContractCall {
+    static deployContract(_ctx: wasmlib.ScFuncCallContext): DeployContractCall {
         const f = new DeployContractCall();
 		f.params = new sc.MutableDeployContractParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static grantDeployPermission(ctx: wasmlib.ScFuncCallContext): GrantDeployPermissionCall {
+    static grantDeployPermission(_ctx: wasmlib.ScFuncCallContext): GrantDeployPermissionCall {
         const f = new GrantDeployPermissionCall();
 		f.params = new sc.MutableGrantDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static revokeDeployPermission(ctx: wasmlib.ScFuncCallContext): RevokeDeployPermissionCall {
+    static revokeDeployPermission(_ctx: wasmlib.ScFuncCallContext): RevokeDeployPermissionCall {
         const f = new RevokeDeployPermissionCall();
 		f.params = new sc.MutableRevokeDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static findContract(ctx: wasmlib.ScViewCallContext): FindContractCall {
+    static findContract(_ctx: wasmlib.ScViewCallContext): FindContractCall {
         const f = new FindContractCall();
 		f.params = new sc.MutableFindContractParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableFindContractResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getContractRecords(ctx: wasmlib.ScViewCallContext): GetContractRecordsCall {
+    static getContractRecords(_ctx: wasmlib.ScViewCallContext): GetContractRecordsCall {
         const f = new GetContractRecordsCall();
 		f.results = new sc.ImmutableGetContractRecordsResults(wasmlib.newCallResultsProxy(f.func));
         return f;

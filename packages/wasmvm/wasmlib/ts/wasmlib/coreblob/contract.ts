@@ -6,7 +6,6 @@
 // Change the json schema instead
 
 import * as wasmlib from "wasmlib";
-import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
 export class StoreBlobCall {
@@ -33,28 +32,28 @@ export class ListBlobsCall {
 }
 
 export class ScFuncs {
-    static storeBlob(ctx: wasmlib.ScFuncCallContext): StoreBlobCall {
+    static storeBlob(_ctx: wasmlib.ScFuncCallContext): StoreBlobCall {
         const f = new StoreBlobCall();
 		f.params = new sc.MutableStoreBlobParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableStoreBlobResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getBlobField(ctx: wasmlib.ScViewCallContext): GetBlobFieldCall {
+    static getBlobField(_ctx: wasmlib.ScViewCallContext): GetBlobFieldCall {
         const f = new GetBlobFieldCall();
 		f.params = new sc.MutableGetBlobFieldParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetBlobFieldResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static getBlobInfo(ctx: wasmlib.ScViewCallContext): GetBlobInfoCall {
+    static getBlobInfo(_ctx: wasmlib.ScViewCallContext): GetBlobInfoCall {
         const f = new GetBlobInfoCall();
 		f.params = new sc.MutableGetBlobInfoParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetBlobInfoResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    static listBlobs(ctx: wasmlib.ScViewCallContext): ListBlobsCall {
+    static listBlobs(_ctx: wasmlib.ScViewCallContext): ListBlobsCall {
         const f = new ListBlobsCall();
 		f.results = new sc.ImmutableListBlobsResults(wasmlib.newCallResultsProxy(f.func));
         return f;
