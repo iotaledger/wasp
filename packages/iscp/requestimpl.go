@@ -38,7 +38,7 @@ func RequestDataToMarshalUtil(req Request, mu *marshalutil.MarshalUtil) {
 		mu.WriteBool(true)
 		req.writeToMarshalUtil(mu)
 	default:
-		panic("RequestDataToMarshalUtil: very bad")
+		panic(fmt.Sprintf("RequestDataToMarshalUtil: no handler for type %T", req))
 	}
 }
 

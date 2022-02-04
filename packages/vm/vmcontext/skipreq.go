@@ -1,8 +1,9 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
 
 	"github.com/iotaledger/wasp/packages/kv"
 
@@ -120,8 +121,10 @@ func (vmctx *VMContext) checkInternalOutput() error {
 func (vmctx *VMContext) checkReasonTimeLock() error {
 	lock := vmctx.req.AsOnLedger().Features().TimeLock()
 	if lock != nil {
-		if lock.Time.Before(vmctx.finalStateTimestamp) {
-			return xerrors.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
+		if !lock.Time.IsZero() {
+			if vmctx.finalStateTimestamp.Before(lock.Time) {
+				return xerrors.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
+			}
 		}
 		if lock.MilestoneIndex != 0 && vmctx.task.TimeAssumption.MilestoneIndex < lock.MilestoneIndex {
 			return xerrors.Errorf("can't be consumed due to lock until milestone index #%v", vmctx.task.TimeAssumption.MilestoneIndex)

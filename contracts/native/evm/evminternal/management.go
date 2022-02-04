@@ -4,6 +4,7 @@
 package evminternal
 
 import (
+	"math"
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -84,8 +85,9 @@ func ScheduleNextBlock(ctx iscp.Sandbox) {
 		Metadata: &iscp.SendMetadata{
 			TargetContract: ctx.Contract(),
 			EntryPoint:     evm.FuncMintBlock.Hname(),
+			GasBudget:      math.MaxUint64, // TODO: ?
 		},
-		Options: &iscp.SendOptions{Timelock: &iscp.TimeData{
+		Options: iscp.SendOptions{Timelock: &iscp.TimeData{
 			Time: time.Unix(0, ctx.Timestamp()).
 				Add(time.Duration(blockTime) * time.Second),
 		}},
