@@ -7,8 +7,6 @@
 
 #![allow(dead_code)]
 
-use std::ptr;
-
 use crate::*;
 use crate::coreroot::*;
 
@@ -42,49 +40,50 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn deploy_contract(_ctx: & dyn ScFuncCallContext) -> DeployContractCall {
+    pub fn deploy_contract(_ctx: &dyn ScFuncCallContext) -> DeployContractCall {
         let mut f = DeployContractCall {
             func: ScFunc::new(HSC_NAME, HFUNC_DEPLOY_CONTRACT),
-            params: MutableDeployContractParams { id: 0 },
+            params: MutableDeployContractParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn grant_deploy_permission(_ctx: & dyn ScFuncCallContext) -> GrantDeployPermissionCall {
+    pub fn grant_deploy_permission(_ctx: &dyn ScFuncCallContext) -> GrantDeployPermissionCall {
         let mut f = GrantDeployPermissionCall {
             func: ScFunc::new(HSC_NAME, HFUNC_GRANT_DEPLOY_PERMISSION),
-            params: MutableGrantDeployPermissionParams { id: 0 },
+            params: MutableGrantDeployPermissionParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn revoke_deploy_permission(_ctx: & dyn ScFuncCallContext) -> RevokeDeployPermissionCall {
+    pub fn revoke_deploy_permission(_ctx: &dyn ScFuncCallContext) -> RevokeDeployPermissionCall {
         let mut f = RevokeDeployPermissionCall {
             func: ScFunc::new(HSC_NAME, HFUNC_REVOKE_DEPLOY_PERMISSION),
-            params: MutableRevokeDeployPermissionParams { id: 0 },
+            params: MutableRevokeDeployPermissionParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn find_contract(_ctx: & dyn ScViewCallContext) -> FindContractCall {
+    pub fn find_contract(_ctx: &dyn ScViewCallContext) -> FindContractCall {
         let mut f = FindContractCall {
             func: ScView::new(HSC_NAME, HVIEW_FIND_CONTRACT),
-            params: MutableFindContractParams { id: 0 },
-            results: ImmutableFindContractResults { id: 0 },
+            params: MutableFindContractParams { proxy: Proxy::nil() },
+            results: ImmutableFindContractResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_contract_records(_ctx: & dyn ScViewCallContext) -> GetContractRecordsCall {
+    pub fn get_contract_records(_ctx: &dyn ScViewCallContext) -> GetContractRecordsCall {
         let mut f = GetContractRecordsCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_CONTRACT_RECORDS),
-            results: ImmutableGetContractRecordsResults { id: 0 },
+            results: ImmutableGetContractRecordsResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 }

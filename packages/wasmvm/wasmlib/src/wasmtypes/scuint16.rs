@@ -3,7 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::wasmtypes::*;
+use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -23,7 +23,10 @@ pub fn uint16_from_bytes(buf: &[u8]) -> u16 {
     if buf.len() == 0 {
         return 0;
     }
-    u16::from_le_bytes(buf.try_into().expect("invalid Uint16 length"))
+    if buf.len() != SC_UINT16_LENGTH {
+        panic("invalid Uint16 length");
+    }
+    u16::from_le_bytes(buf.try_into().expect("WTF?"))
 }
 
 pub fn uint16_to_bytes(value: u16) -> Vec<u8> {
@@ -36,11 +39,11 @@ pub fn uint16_to_string(value: u16) -> String {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableUint16<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableUint16 {
+    proxy: Proxy
 }
 
-impl ScImmutableUint16<'_> {
+impl ScImmutableUint16 {
     pub fn new(proxy: Proxy) -> ScImmutableUint16 {
         ScImmutableUint16 { proxy }
     }
@@ -61,16 +64,16 @@ impl ScImmutableUint16<'_> {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // value proxy for mutable u16 in host container
-pub struct ScMutableUint16<'a> {
-    proxy: Proxy<'a>,
+pub struct ScMutableUint16 {
+    proxy: Proxy
 }
 
-impl ScMutableUint16<'_> {
+impl ScMutableUint16 {
     pub fn new(proxy: Proxy) -> ScMutableUint16 {
         ScMutableUint16 { proxy }
     }
 
-    pub fn delete(&mut self)  {
+    pub fn delete(&self)  {
         self.proxy.delete();
     }
 
@@ -78,7 +81,7 @@ impl ScMutableUint16<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: u16) {
+    pub fn set_value(&self, value: u16) {
         self.proxy.set(&uint16_to_bytes(value));
     }
 

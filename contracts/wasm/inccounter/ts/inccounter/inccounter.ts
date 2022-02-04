@@ -238,13 +238,14 @@ function localStatePost(ctx: wasmlib.ScFuncContext, nr: i64): void {
 }
 
 function vliSave(ctx: wasmlib.ScFuncContext, name: string, value: i64): void {
-    let enc = new wasmtypes.WasmEncoder();
+    const enc = new wasmtypes.WasmEncoder();
     const state = ctx.rawState();
-    let key = wasmtypes.stringToBytes(name);
+    const key = wasmtypes.stringToBytes(name);
     state.set(key, enc.vliEncode(value).buf());
+
     const buf = state.get(key);
-    let dec = new wasmtypes.WasmDecoder(buf == null ? [] : buf);
-    let val = wasmtypes.int64Decode(dec);
+    const dec = new wasmtypes.WasmDecoder(buf);
+    const val = dec.vliDecode(64);
     if (val != value) {
         ctx.log(name.toString() + " in : " + value.toString());
         ctx.log(name.toString() + " out: " + val.toString());
@@ -252,13 +253,14 @@ function vliSave(ctx: wasmlib.ScFuncContext, name: string, value: i64): void {
 }
 
 function vluSave(ctx: wasmlib.ScFuncContext, name: string, value: u64): void {
-    let enc = new wasmtypes.WasmEncoder();
+    const enc = new wasmtypes.WasmEncoder();
     const state = ctx.rawState();
-    let key = wasmtypes.stringToBytes(name);
+    const key = wasmtypes.stringToBytes(name);
     state.set(key, enc.vluEncode(value).buf());
+
     const buf = state.get(key);
-    let dec = new wasmtypes.WasmDecoder(buf == null ? [] : buf);
-    let val = wasmtypes.uint64Decode(dec);
+    const dec = new wasmtypes.WasmDecoder(buf);
+    const val = dec.vluDecode(64);
     if (val != value) {
         ctx.log(name.toString() + " in : " + value.toString());
         ctx.log(name.toString() + " out: " + val.toString());

@@ -8,102 +8,101 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::*;
 use crate::coreaccounts::*;
-use crate::host::*;
+use crate::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableDepositParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableDepositParams {
     pub fn agent_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableDepositParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableDepositParams {
     pub fn agent_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableHarvestParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableHarvestParams {
     pub fn withdraw_amount(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_WITHDRAW_AMOUNT.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(PARAM_WITHDRAW_AMOUNT))
 	}
 
     pub fn withdraw_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.id, PARAM_WITHDRAW_COLOR.get_key_id())
+		ScImmutableColor::new(self.proxy.root(PARAM_WITHDRAW_COLOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableHarvestParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableHarvestParams {
     pub fn withdraw_amount(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_WITHDRAW_AMOUNT.get_key_id())
+		ScMutableInt64::new(self.proxy.root(PARAM_WITHDRAW_AMOUNT))
 	}
 
     pub fn withdraw_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.id, PARAM_WITHDRAW_COLOR.get_key_id())
+		ScMutableColor::new(self.proxy.root(PARAM_WITHDRAW_COLOR))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableBalanceParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableBalanceParams {
     pub fn agent_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableBalanceParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableBalanceParams {
     pub fn agent_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetAccountNonceParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetAccountNonceParams {
     pub fn agent_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetAccountNonceParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetAccountNonceParams {
     pub fn agent_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_AGENT_ID.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 }

@@ -7,8 +7,6 @@
 
 #![allow(dead_code)]
 
-use std::ptr;
-
 use crate::*;
 use crate::coreblocklog::*;
 
@@ -74,101 +72,109 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn control_addresses(_ctx: & dyn ScViewCallContext) -> ControlAddressesCall {
+    pub fn control_addresses(_ctx: &dyn ScViewCallContext) -> ControlAddressesCall {
         let mut f = ControlAddressesCall {
             func: ScView::new(HSC_NAME, HVIEW_CONTROL_ADDRESSES),
-            results: ImmutableControlAddressesResults { id: 0 },
+            results: ImmutableControlAddressesResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_block_info(_ctx: & dyn ScViewCallContext) -> GetBlockInfoCall {
+    pub fn get_block_info(_ctx: &dyn ScViewCallContext) -> GetBlockInfoCall {
         let mut f = GetBlockInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_BLOCK_INFO),
-            params: MutableGetBlockInfoParams { id: 0 },
-            results: ImmutableGetBlockInfoResults { id: 0 },
+            params: MutableGetBlockInfoParams { proxy: Proxy::nil() },
+            results: ImmutableGetBlockInfoResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_events_for_block(_ctx: & dyn ScViewCallContext) -> GetEventsForBlockCall {
+    pub fn get_events_for_block(_ctx: &dyn ScViewCallContext) -> GetEventsForBlockCall {
         let mut f = GetEventsForBlockCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_EVENTS_FOR_BLOCK),
-            params: MutableGetEventsForBlockParams { id: 0 },
-            results: ImmutableGetEventsForBlockResults { id: 0 },
+            params: MutableGetEventsForBlockParams { proxy: Proxy::nil() },
+            results: ImmutableGetEventsForBlockResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_events_for_contract(_ctx: & dyn ScViewCallContext) -> GetEventsForContractCall {
+    pub fn get_events_for_contract(_ctx: &dyn ScViewCallContext) -> GetEventsForContractCall {
         let mut f = GetEventsForContractCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_EVENTS_FOR_CONTRACT),
-            params: MutableGetEventsForContractParams { id: 0 },
-            results: ImmutableGetEventsForContractResults { id: 0 },
+            params: MutableGetEventsForContractParams { proxy: Proxy::nil() },
+            results: ImmutableGetEventsForContractResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_events_for_request(_ctx: & dyn ScViewCallContext) -> GetEventsForRequestCall {
+    pub fn get_events_for_request(_ctx: &dyn ScViewCallContext) -> GetEventsForRequestCall {
         let mut f = GetEventsForRequestCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_EVENTS_FOR_REQUEST),
-            params: MutableGetEventsForRequestParams { id: 0 },
-            results: ImmutableGetEventsForRequestResults { id: 0 },
+            params: MutableGetEventsForRequestParams { proxy: Proxy::nil() },
+            results: ImmutableGetEventsForRequestResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_latest_block_info(_ctx: & dyn ScViewCallContext) -> GetLatestBlockInfoCall {
+    pub fn get_latest_block_info(_ctx: &dyn ScViewCallContext) -> GetLatestBlockInfoCall {
         let mut f = GetLatestBlockInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_LATEST_BLOCK_INFO),
-            results: ImmutableGetLatestBlockInfoResults { id: 0 },
+            results: ImmutableGetLatestBlockInfoResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_request_i_ds_for_block(_ctx: & dyn ScViewCallContext) -> GetRequestIDsForBlockCall {
+    pub fn get_request_i_ds_for_block(_ctx: &dyn ScViewCallContext) -> GetRequestIDsForBlockCall {
         let mut f = GetRequestIDsForBlockCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_REQUEST_I_DS_FOR_BLOCK),
-            params: MutableGetRequestIDsForBlockParams { id: 0 },
-            results: ImmutableGetRequestIDsForBlockResults { id: 0 },
+            params: MutableGetRequestIDsForBlockParams { proxy: Proxy::nil() },
+            results: ImmutableGetRequestIDsForBlockResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_request_receipt(_ctx: & dyn ScViewCallContext) -> GetRequestReceiptCall {
+    pub fn get_request_receipt(_ctx: &dyn ScViewCallContext) -> GetRequestReceiptCall {
         let mut f = GetRequestReceiptCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_REQUEST_RECEIPT),
-            params: MutableGetRequestReceiptParams { id: 0 },
-            results: ImmutableGetRequestReceiptResults { id: 0 },
+            params: MutableGetRequestReceiptParams { proxy: Proxy::nil() },
+            results: ImmutableGetRequestReceiptResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_request_receipts_for_block(_ctx: & dyn ScViewCallContext) -> GetRequestReceiptsForBlockCall {
+    pub fn get_request_receipts_for_block(_ctx: &dyn ScViewCallContext) -> GetRequestReceiptsForBlockCall {
         let mut f = GetRequestReceiptsForBlockCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_REQUEST_RECEIPTS_FOR_BLOCK),
-            params: MutableGetRequestReceiptsForBlockParams { id: 0 },
-            results: ImmutableGetRequestReceiptsForBlockResults { id: 0 },
+            params: MutableGetRequestReceiptsForBlockParams { proxy: Proxy::nil() },
+            results: ImmutableGetRequestReceiptsForBlockResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn is_request_processed(_ctx: & dyn ScViewCallContext) -> IsRequestProcessedCall {
+    pub fn is_request_processed(_ctx: &dyn ScViewCallContext) -> IsRequestProcessedCall {
         let mut f = IsRequestProcessedCall {
             func: ScView::new(HSC_NAME, HVIEW_IS_REQUEST_PROCESSED),
-            params: MutableIsRequestProcessedParams { id: 0 },
-            results: ImmutableIsRequestProcessedResults { id: 0 },
+            params: MutableIsRequestProcessedParams { proxy: Proxy::nil() },
+            results: ImmutableIsRequestProcessedResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 }

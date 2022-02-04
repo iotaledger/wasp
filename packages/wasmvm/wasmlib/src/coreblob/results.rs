@@ -8,146 +8,145 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::*;
 use crate::coreblob::*;
-use crate::host::*;
+use crate::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableStoreBlobResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableStoreBlobResults {
     pub fn hash(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, RESULT_HASH.get_key_id())
+		ScImmutableHash::new(self.proxy.root(RESULT_HASH))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableStoreBlobResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableStoreBlobResults {
     pub fn hash(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, RESULT_HASH.get_key_id())
+		ScMutableHash::new(self.proxy.root(RESULT_HASH))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetBlobFieldResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetBlobFieldResults {
     pub fn bytes(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.id, RESULT_BYTES.get_key_id())
+		ScImmutableBytes::new(self.proxy.root(RESULT_BYTES))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetBlobFieldResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetBlobFieldResults {
     pub fn bytes(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.id, RESULT_BYTES.get_key_id())
+		ScMutableBytes::new(self.proxy.root(RESULT_BYTES))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToImmutableInt32 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToImmutableInt32 {
     pub fn get_int32(&self, key: &str) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.obj_id, key.get_key_id())
+        ScImmutableInt32::new(self.proxy.key(&string_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetBlobInfoResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetBlobInfoResults {
     pub fn blob_sizes(&self) -> MapStringToImmutableInt32 {
-		MapStringToImmutableInt32 { obj_id: self.id }
+		MapStringToImmutableInt32 { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToMutableInt32 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToMutableInt32 {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_int32(&self, key: &str) -> ScMutableInt32 {
-        ScMutableInt32::new(self.obj_id, key.get_key_id())
+        ScMutableInt32::new(self.proxy.key(&string_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetBlobInfoResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetBlobInfoResults {
     pub fn blob_sizes(&self) -> MapStringToMutableInt32 {
-		MapStringToMutableInt32 { obj_id: self.id }
+		MapStringToMutableInt32 { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapHashToImmutableInt32 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapHashToImmutableInt32 {
     pub fn get_int32(&self, key: &ScHash) -> ScImmutableInt32 {
-        ScImmutableInt32::new(self.obj_id, key.get_key_id())
+        ScImmutableInt32::new(self.proxy.key(&hash_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableListBlobsResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableListBlobsResults {
     pub fn blob_sizes(&self) -> MapHashToImmutableInt32 {
-		MapHashToImmutableInt32 { obj_id: self.id }
+		MapHashToImmutableInt32 { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapHashToMutableInt32 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapHashToMutableInt32 {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_int32(&self, key: &ScHash) -> ScMutableInt32 {
-        ScMutableInt32::new(self.obj_id, key.get_key_id())
+        ScMutableInt32::new(self.proxy.key(&hash_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableListBlobsResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableListBlobsResults {
     pub fn blob_sizes(&self) -> MapHashToMutableInt32 {
-		MapHashToMutableInt32 { obj_id: self.id }
+		MapHashToMutableInt32 { proxy: self.proxy.clone() }
 	}
 }

@@ -8,86 +8,83 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::*;
 use crate::coreroot::*;
-use crate::host::*;
+use crate::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableFindContractResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableFindContractResults {
     pub fn contract_found(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.id, RESULT_CONTRACT_FOUND.get_key_id())
+		ScImmutableBytes::new(self.proxy.root(RESULT_CONTRACT_FOUND))
 	}
 
     pub fn contract_rec_data(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.id, RESULT_CONTRACT_REC_DATA.get_key_id())
+		ScImmutableBytes::new(self.proxy.root(RESULT_CONTRACT_REC_DATA))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableFindContractResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableFindContractResults {
     pub fn contract_found(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.id, RESULT_CONTRACT_FOUND.get_key_id())
+		ScMutableBytes::new(self.proxy.root(RESULT_CONTRACT_FOUND))
 	}
 
     pub fn contract_rec_data(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.id, RESULT_CONTRACT_REC_DATA.get_key_id())
+		ScMutableBytes::new(self.proxy.root(RESULT_CONTRACT_REC_DATA))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapHnameToImmutableBytes {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapHnameToImmutableBytes {
     pub fn get_bytes(&self, key: ScHname) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.obj_id, key.get_key_id())
+        ScImmutableBytes::new(self.proxy.key(&hname_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetContractRecordsResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetContractRecordsResults {
     pub fn contract_registry(&self) -> MapHnameToImmutableBytes {
-		let map_id = get_object_id(self.id, RESULT_CONTRACT_REGISTRY.get_key_id(), TYPE_MAP);
-		MapHnameToImmutableBytes { obj_id: map_id }
+		MapHnameToImmutableBytes { proxy: self.proxy.root(RESULT_CONTRACT_REGISTRY) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapHnameToMutableBytes {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapHnameToMutableBytes {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_bytes(&self, key: ScHname) -> ScMutableBytes {
-        ScMutableBytes::new(self.obj_id, key.get_key_id())
+        ScMutableBytes::new(self.proxy.key(&hname_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetContractRecordsResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetContractRecordsResults {
     pub fn contract_registry(&self) -> MapHnameToMutableBytes {
-		let map_id = get_object_id(self.id, RESULT_CONTRACT_REGISTRY.get_key_id(), TYPE_MAP);
-		MapHnameToMutableBytes { obj_id: map_id }
+		MapHnameToMutableBytes { proxy: self.proxy.root(RESULT_CONTRACT_REGISTRY) }
 	}
 }

@@ -9,110 +9,99 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::*;
-use crate::keys::*;
-use crate::typedefs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToImmutableStringArray {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToImmutableStringArray {
     pub fn get_string_array(&self, key: &str) -> ImmutableStringArray {
-        let sub_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_ARRAY | TYPE_STRING);
-        ImmutableStringArray { obj_id: sub_id }
+        ImmutableStringArray { proxy: self.proxy.key(&string_to_bytes(key)) }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToImmutableStringMap {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToImmutableStringMap {
     pub fn get_string_map(&self, key: &str) -> ImmutableStringMap {
-        let sub_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_MAP);
-        ImmutableStringMap { obj_id: sub_id }
+        ImmutableStringMap { proxy: self.proxy.key(&string_to_bytes(key)) }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTestWasmLibState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTestWasmLibState {
     pub fn arrays(&self) -> MapStringToImmutableStringArray {
-		let map_id = get_object_id(self.id, STATE_ARRAYS.get_key_id(), TYPE_MAP);
-		MapStringToImmutableStringArray { obj_id: map_id }
+		MapStringToImmutableStringArray { proxy: self.proxy.root(STATE_ARRAYS) }
 	}
 
     pub fn maps(&self) -> MapStringToImmutableStringMap {
-		let map_id = get_object_id(self.id, STATE_MAPS.get_key_id(), TYPE_MAP);
-		MapStringToImmutableStringMap { obj_id: map_id }
+		MapStringToImmutableStringMap { proxy: self.proxy.root(STATE_MAPS) }
 	}
 
     pub fn random(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.id, STATE_RANDOM.get_key_id())
+		ScImmutableUint64::new(self.proxy.root(STATE_RANDOM))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToMutableStringArray {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToMutableStringArray {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_string_array(&self, key: &str) -> MutableStringArray {
-        let sub_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_ARRAY | TYPE_STRING);
-        MutableStringArray { obj_id: sub_id }
+        MutableStringArray { proxy: self.proxy.key(&string_to_bytes(key)) }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToMutableStringMap {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToMutableStringMap {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_string_map(&self, key: &str) -> MutableStringMap {
-        let sub_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_MAP);
-        MutableStringMap { obj_id: sub_id }
+        MutableStringMap { proxy: self.proxy.key(&string_to_bytes(key)) }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTestWasmLibState {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTestWasmLibState {
     pub fn as_immutable(&self) -> ImmutableTestWasmLibState {
-		ImmutableTestWasmLibState { id: self.id }
+		ImmutableTestWasmLibState { proxy: self.proxy.root("") }
 	}
 
     pub fn arrays(&self) -> MapStringToMutableStringArray {
-		let map_id = get_object_id(self.id, STATE_ARRAYS.get_key_id(), TYPE_MAP);
-		MapStringToMutableStringArray { obj_id: map_id }
+		MapStringToMutableStringArray { proxy: self.proxy.root(STATE_ARRAYS) }
 	}
 
     pub fn maps(&self) -> MapStringToMutableStringMap {
-		let map_id = get_object_id(self.id, STATE_MAPS.get_key_id(), TYPE_MAP);
-		MapStringToMutableStringMap { obj_id: map_id }
+		MapStringToMutableStringMap { proxy: self.proxy.root(STATE_MAPS) }
 	}
 
     pub fn random(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.id, STATE_RANDOM.get_key_id())
+		ScMutableUint64::new(self.proxy.root(STATE_RANDOM))
 	}
 }

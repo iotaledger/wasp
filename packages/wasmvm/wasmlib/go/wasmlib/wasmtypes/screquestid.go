@@ -37,7 +37,7 @@ func RequestIDFromBytes(buf []byte) ScRequestID {
 		panic("invalid RequestID length")
 	}
 	// final uint16 output index must be > ledgerstate.MaxOutputCount
-	if buf[ScHashLength] > 127 || buf[ScHashLength+1] != 0 {
+	if buf[ScRequestIDLength-2] > 127 || buf[ScRequestIDLength-1] != 0 {
 		panic("invalid RequestID: output index > 127")
 	}
 	return requestIDFromBytesUnchecked(buf)

@@ -22,7 +22,7 @@ pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
         }
     }
     let log = f.state.log();
-    log.get_donation(log.length()).set_value(&donation);
+    log.append_donation().set_value(&donation);
 
     let largest_donation = f.state.max_donation();
     let total_donated = f.state.total_donation();

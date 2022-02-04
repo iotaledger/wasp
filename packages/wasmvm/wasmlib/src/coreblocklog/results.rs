@@ -8,344 +8,341 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::*;
 use crate::coreblocklog::*;
-use crate::host::*;
+use crate::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableControlAddressesResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableControlAddressesResults {
     pub fn block_index(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
 	}
 
     pub fn governing_address(&self) -> ScImmutableAddress {
-		ScImmutableAddress::new(self.id, RESULT_GOVERNING_ADDRESS.get_key_id())
+		ScImmutableAddress::new(self.proxy.root(RESULT_GOVERNING_ADDRESS))
 	}
 
     pub fn state_controller_address(&self) -> ScImmutableAddress {
-		ScImmutableAddress::new(self.id, RESULT_STATE_CONTROLLER_ADDRESS.get_key_id())
+		ScImmutableAddress::new(self.proxy.root(RESULT_STATE_CONTROLLER_ADDRESS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableControlAddressesResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableControlAddressesResults {
     pub fn block_index(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+		ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
 	}
 
     pub fn governing_address(&self) -> ScMutableAddress {
-		ScMutableAddress::new(self.id, RESULT_GOVERNING_ADDRESS.get_key_id())
+		ScMutableAddress::new(self.proxy.root(RESULT_GOVERNING_ADDRESS))
 	}
 
     pub fn state_controller_address(&self) -> ScMutableAddress {
-		ScMutableAddress::new(self.id, RESULT_STATE_CONTROLLER_ADDRESS.get_key_id())
+		ScMutableAddress::new(self.proxy.root(RESULT_STATE_CONTROLLER_ADDRESS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetBlockInfoResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetBlockInfoResults {
     pub fn block_info(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
+		ScImmutableBytes::new(self.proxy.root(RESULT_BLOCK_INFO))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetBlockInfoResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetBlockInfoResults {
     pub fn block_info(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
+		ScMutableBytes::new(self.proxy.root(RESULT_BLOCK_INFO))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ArrayOfImmutableBytes {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfImmutableBytes {
     pub fn length(&self) -> u32 {
-        get_length(self.obj_id)
+        self.proxy.length()
     }
 
     pub fn get_bytes(&self, index: u32) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.obj_id, Key32(index as i32))
+        ScImmutableBytes::new(self.proxy.index(index))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetEventsForBlockResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetEventsForBlockResults {
     pub fn event(&self) -> ArrayOfImmutableBytes {
-		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-		ArrayOfImmutableBytes { obj_id: arr_id }
+		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ArrayOfMutableBytes {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfMutableBytes {
-    pub fn clear(&self) {
-        clear(self.obj_id);
+	pub fn append_bytes(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.append())
+	}
+
+	pub fn clear(&self) {
+        self.proxy.clear_array();
     }
 
     pub fn length(&self) -> u32 {
-        get_length(self.obj_id)
+        self.proxy.length()
     }
 
     pub fn get_bytes(&self, index: u32) -> ScMutableBytes {
-        ScMutableBytes::new(self.obj_id, Key32(index as i32))
+        ScMutableBytes::new(self.proxy.index(index))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetEventsForBlockResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetEventsForBlockResults {
     pub fn event(&self) -> ArrayOfMutableBytes {
-		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-		ArrayOfMutableBytes { obj_id: arr_id }
+		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetEventsForContractResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetEventsForContractResults {
     pub fn event(&self) -> ArrayOfImmutableBytes {
-		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-		ArrayOfImmutableBytes { obj_id: arr_id }
+		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetEventsForContractResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetEventsForContractResults {
     pub fn event(&self) -> ArrayOfMutableBytes {
-		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-		ArrayOfMutableBytes { obj_id: arr_id }
+		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetEventsForRequestResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetEventsForRequestResults {
     pub fn event(&self) -> ArrayOfImmutableBytes {
-		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-		ArrayOfImmutableBytes { obj_id: arr_id }
+		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetEventsForRequestResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetEventsForRequestResults {
     pub fn event(&self) -> ArrayOfMutableBytes {
-		let arr_id = get_object_id(self.id, RESULT_EVENT.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-		ArrayOfMutableBytes { obj_id: arr_id }
+		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetLatestBlockInfoResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetLatestBlockInfoResults {
     pub fn block_index(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
 	}
 
     pub fn block_info(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
+		ScImmutableBytes::new(self.proxy.root(RESULT_BLOCK_INFO))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetLatestBlockInfoResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetLatestBlockInfoResults {
     pub fn block_index(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+		ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
 	}
 
     pub fn block_info(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.id, RESULT_BLOCK_INFO.get_key_id())
+		ScMutableBytes::new(self.proxy.root(RESULT_BLOCK_INFO))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ArrayOfImmutableRequestID {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfImmutableRequestID {
     pub fn length(&self) -> u32 {
-        get_length(self.obj_id)
+        self.proxy.length()
     }
 
     pub fn get_request_id(&self, index: u32) -> ScImmutableRequestID {
-        ScImmutableRequestID::new(self.obj_id, Key32(index as i32))
+        ScImmutableRequestID::new(self.proxy.index(index))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetRequestIDsForBlockResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetRequestIDsForBlockResults {
     pub fn request_id(&self) -> ArrayOfImmutableRequestID {
-		let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY16 | TYPE_REQUEST_ID);
-		ArrayOfImmutableRequestID { obj_id: arr_id }
+		ArrayOfImmutableRequestID { proxy: self.proxy.root(RESULT_REQUEST_ID) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ArrayOfMutableRequestID {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfMutableRequestID {
-    pub fn clear(&self) {
-        clear(self.obj_id);
+	pub fn append_request_id(&self) -> ScMutableRequestID {
+		ScMutableRequestID::new(self.proxy.append())
+	}
+
+	pub fn clear(&self) {
+        self.proxy.clear_array();
     }
 
     pub fn length(&self) -> u32 {
-        get_length(self.obj_id)
+        self.proxy.length()
     }
 
     pub fn get_request_id(&self, index: u32) -> ScMutableRequestID {
-        ScMutableRequestID::new(self.obj_id, Key32(index as i32))
+        ScMutableRequestID::new(self.proxy.index(index))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetRequestIDsForBlockResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetRequestIDsForBlockResults {
     pub fn request_id(&self) -> ArrayOfMutableRequestID {
-		let arr_id = get_object_id(self.id, RESULT_REQUEST_ID.get_key_id(), TYPE_ARRAY16 | TYPE_REQUEST_ID);
-		ArrayOfMutableRequestID { obj_id: arr_id }
+		ArrayOfMutableRequestID { proxy: self.proxy.root(RESULT_REQUEST_ID) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetRequestReceiptResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetRequestReceiptResults {
     pub fn block_index(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
 	}
 
     pub fn request_index(&self) -> ScImmutableUint16 {
-		ScImmutableUint16::new(self.id, RESULT_REQUEST_INDEX.get_key_id())
+		ScImmutableUint16::new(self.proxy.root(RESULT_REQUEST_INDEX))
 	}
 
     pub fn request_record(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.id, RESULT_REQUEST_RECORD.get_key_id())
+		ScImmutableBytes::new(self.proxy.root(RESULT_REQUEST_RECORD))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetRequestReceiptResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetRequestReceiptResults {
     pub fn block_index(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, RESULT_BLOCK_INDEX.get_key_id())
+		ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
 	}
 
     pub fn request_index(&self) -> ScMutableUint16 {
-		ScMutableUint16::new(self.id, RESULT_REQUEST_INDEX.get_key_id())
+		ScMutableUint16::new(self.proxy.root(RESULT_REQUEST_INDEX))
 	}
 
     pub fn request_record(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.id, RESULT_REQUEST_RECORD.get_key_id())
+		ScMutableBytes::new(self.proxy.root(RESULT_REQUEST_RECORD))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetRequestReceiptsForBlockResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetRequestReceiptsForBlockResults {
     pub fn request_record(&self) -> ArrayOfImmutableBytes {
-		let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-		ArrayOfImmutableBytes { obj_id: arr_id }
+		ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECORD) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetRequestReceiptsForBlockResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetRequestReceiptsForBlockResults {
     pub fn request_record(&self) -> ArrayOfMutableBytes {
-		let arr_id = get_object_id(self.id, RESULT_REQUEST_RECORD.get_key_id(), TYPE_ARRAY16 | TYPE_BYTES);
-		ArrayOfMutableBytes { obj_id: arr_id }
+		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECORD) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableIsRequestProcessedResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableIsRequestProcessedResults {
     pub fn request_processed(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, RESULT_REQUEST_PROCESSED.get_key_id())
+		ScImmutableString::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableIsRequestProcessedResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableIsRequestProcessedResults {
     pub fn request_processed(&self) -> ScMutableString {
-		ScMutableString::new(self.id, RESULT_REQUEST_PROCESSED.get_key_id())
+		ScMutableString::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
 	}
 }

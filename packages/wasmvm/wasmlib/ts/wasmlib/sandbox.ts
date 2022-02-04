@@ -278,10 +278,10 @@ export class ScSandboxFunc extends ScSandbox {
     public send(address: wasmtypes.ScAddress, transfer: ScTransfers): void {
         // we need some assets to send
         let assets: u64 = 0;
-        const balances = transfer.balances();
-        const colors = balances.colors();
+        const colors = transfer.balances().colors();
         for (let i = 0; i < colors.length; i++) {
-            assets += balances.balance(colors[i]);
+            const color = colors[i];
+            assets += transfer.balances().balance(color);
         }
         if (assets == 0) {
             // only try to send when non-zero assets

@@ -31,7 +31,7 @@ fn on_call(index: i32) {
         }
 
         // mutable full function, invoke with a func context
-        FUNCS[index as usize](&ctx);
+        FUNCS[index as usize](&ScFuncContext {});
     }
 }
 

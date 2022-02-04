@@ -3,13 +3,13 @@
 
 use std::convert::TryInto;
 
-use crate::wasmtypes::*;
+use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub const SC_COLOR_LENGTH: usize = 32;
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy, Eq, Hash)]
 pub struct ScColor {
     id: [u8; SC_COLOR_LENGTH],
 }
@@ -42,7 +42,13 @@ pub fn color_encode(enc: &mut WasmEncoder, value: &ScColor)  {
 }
 
 pub fn color_from_bytes(buf: &[u8]) -> ScColor {
-    ScColor { id: buf.try_into().expect("invalid Color length") }
+    if buf.len() == 0 {
+        return ScColor { id: [0;SC_COLOR_LENGTH] };
+    }
+    if buf.len() != SC_COLOR_LENGTH {
+        panic("invalid Color length");
+    }
+    ScColor { id: buf.try_into().expect("WTF?") }
 }
 
 pub fn color_to_bytes(value: &ScColor) -> Vec<u8> {
@@ -60,11 +66,11 @@ fn color_from_bytes_unchecked(buf: &[u8]) -> ScColor {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableColor<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableColor {
+    proxy: Proxy
 }
 
-impl ScImmutableColor<'_> {
+impl ScImmutableColor {
     pub fn new(proxy: Proxy) -> ScImmutableColor {
         ScImmutableColor { proxy }
     }
@@ -85,16 +91,16 @@ impl ScImmutableColor<'_> {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // value proxy for mutable ScColor in host container
-pub struct ScMutableColor<'a> {
-    proxy: Proxy<'a>,
+pub struct ScMutableColor {
+    proxy: Proxy
 }
 
-impl ScMutableColor<'_> {
+impl ScMutableColor {
     pub fn new(proxy: Proxy) -> ScMutableColor {
         ScMutableColor { proxy }
     }
 
-    pub fn delete(&mut self)  {
+    pub fn delete(&self)  {
         self.proxy.delete();
     }
 
@@ -102,7 +108,7 @@ impl ScMutableColor<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: &ScColor) {
+    pub fn set_value(&self, value: &ScColor) {
         self.proxy.set(&color_to_bytes(&value));
     }
 

@@ -8,146 +8,145 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::*;
 use crate::coreaccounts::*;
-use crate::host::*;
+use crate::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapAgentIDToImmutableBytes {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToImmutableBytes {
     pub fn get_bytes(&self, key: &ScAgentID) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.obj_id, key.get_key_id())
+        ScImmutableBytes::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableAccountsResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableAccountsResults {
     pub fn agents(&self) -> MapAgentIDToImmutableBytes {
-		MapAgentIDToImmutableBytes { obj_id: self.id }
+		MapAgentIDToImmutableBytes { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapAgentIDToMutableBytes {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToMutableBytes {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_bytes(&self, key: &ScAgentID) -> ScMutableBytes {
-        ScMutableBytes::new(self.obj_id, key.get_key_id())
+        ScMutableBytes::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableAccountsResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableAccountsResults {
     pub fn agents(&self) -> MapAgentIDToMutableBytes {
-		MapAgentIDToMutableBytes { obj_id: self.id }
+		MapAgentIDToMutableBytes { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapColorToImmutableInt64 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapColorToImmutableInt64 {
     pub fn get_int64(&self, key: &ScColor) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.obj_id, key.get_key_id())
+        ScImmutableInt64::new(self.proxy.key(&color_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableBalanceResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableBalanceResults {
     pub fn balances(&self) -> MapColorToImmutableInt64 {
-		MapColorToImmutableInt64 { obj_id: self.id }
+		MapColorToImmutableInt64 { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapColorToMutableInt64 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapColorToMutableInt64 {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_int64(&self, key: &ScColor) -> ScMutableInt64 {
-        ScMutableInt64::new(self.obj_id, key.get_key_id())
+        ScMutableInt64::new(self.proxy.key(&color_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableBalanceResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableBalanceResults {
     pub fn balances(&self) -> MapColorToMutableInt64 {
-		MapColorToMutableInt64 { obj_id: self.id }
+		MapColorToMutableInt64 { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetAccountNonceResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetAccountNonceResults {
     pub fn account_nonce(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_ACCOUNT_NONCE.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(RESULT_ACCOUNT_NONCE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetAccountNonceResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetAccountNonceResults {
     pub fn account_nonce(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_ACCOUNT_NONCE.get_key_id())
+		ScMutableInt64::new(self.proxy.root(RESULT_ACCOUNT_NONCE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTotalAssetsResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTotalAssetsResults {
     pub fn balances(&self) -> MapColorToImmutableInt64 {
-		MapColorToImmutableInt64 { obj_id: self.id }
+		MapColorToImmutableInt64 { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTotalAssetsResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTotalAssetsResults {
     pub fn balances(&self) -> MapColorToMutableInt64 {
-		MapColorToMutableInt64 { obj_id: self.id }
+		MapColorToMutableInt64 { proxy: self.proxy.clone() }
 	}
 }

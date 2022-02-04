@@ -10,19 +10,17 @@
 
 use erc20::*;
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::consts::*;
 use crate::events::*;
-use crate::keys::*;
 use crate::params::*;
 use crate::results::*;
 use crate::state::*;
+use crate::typedefs::*;
 
 mod consts;
 mod contract;
 mod events;
-mod keys;
 mod params;
 mod results;
 mod state;
@@ -39,12 +37,6 @@ fn on_load() {
     exports.add_view(VIEW_ALLOWANCE,     view_allowance_thunk);
     exports.add_view(VIEW_BALANCE_OF,    view_balance_of_thunk);
     exports.add_view(VIEW_TOTAL_SUPPLY,  view_total_supply_thunk);
-
-    unsafe {
-        for i in 0..KEY_MAP_LEN {
-            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
-        }
-    }
 }
 
 pub struct ApproveContext {
@@ -57,12 +49,8 @@ fn func_approve_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc20.funcApprove");
 	let f = ApproveContext {
 		events:  Erc20Events {},
-		params: ImmutableApproveParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableErc20State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableApproveParams { proxy: params_proxy() },
+		state: MutableErc20State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.amount().exists(), "missing mandatory amount");
 	ctx.require(f.params.delegation().exists(), "missing mandatory delegation");
@@ -80,12 +68,8 @@ fn func_init_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc20.funcInit");
 	let f = InitContext {
 		events:  Erc20Events {},
-		params: ImmutableInitParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableErc20State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableInitParams { proxy: params_proxy() },
+		state: MutableErc20State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.creator().exists(), "missing mandatory creator");
 	ctx.require(f.params.supply().exists(), "missing mandatory supply");
@@ -103,12 +87,8 @@ fn func_transfer_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc20.funcTransfer");
 	let f = TransferContext {
 		events:  Erc20Events {},
-		params: ImmutableTransferParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableErc20State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableTransferParams { proxy: params_proxy() },
+		state: MutableErc20State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.account().exists(), "missing mandatory account");
 	ctx.require(f.params.amount().exists(), "missing mandatory amount");
@@ -126,12 +106,8 @@ fn func_transfer_from_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc20.funcTransferFrom");
 	let f = TransferFromContext {
 		events:  Erc20Events {},
-		params: ImmutableTransferFromParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableErc20State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableTransferFromParams { proxy: params_proxy() },
+		state: MutableErc20State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.account().exists(), "missing mandatory account");
 	ctx.require(f.params.amount().exists(), "missing mandatory amount");
@@ -149,19 +125,14 @@ pub struct AllowanceContext {
 fn view_allowance_thunk(ctx: &ScViewContext) {
 	ctx.log("erc20.viewAllowance");
 	let f = AllowanceContext {
-		params: ImmutableAllowanceParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableAllowanceResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableErc20State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableAllowanceParams { proxy: params_proxy() },
+		results: MutableAllowanceResults { proxy: results_proxy() },
+		state: ImmutableErc20State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.account().exists(), "missing mandatory account");
 	ctx.require(f.params.delegation().exists(), "missing mandatory delegation");
 	view_allowance(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("erc20.viewAllowance ok");
 }
 
@@ -174,18 +145,13 @@ pub struct BalanceOfContext {
 fn view_balance_of_thunk(ctx: &ScViewContext) {
 	ctx.log("erc20.viewBalanceOf");
 	let f = BalanceOfContext {
-		params: ImmutableBalanceOfParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableBalanceOfResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableErc20State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableBalanceOfParams { proxy: params_proxy() },
+		results: MutableBalanceOfResults { proxy: results_proxy() },
+		state: ImmutableErc20State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.account().exists(), "missing mandatory account");
 	view_balance_of(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("erc20.viewBalanceOf ok");
 }
 
@@ -197,13 +163,10 @@ pub struct TotalSupplyContext {
 fn view_total_supply_thunk(ctx: &ScViewContext) {
 	ctx.log("erc20.viewTotalSupply");
 	let f = TotalSupplyContext {
-		results: MutableTotalSupplyResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableErc20State {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableTotalSupplyResults { proxy: results_proxy() },
+		state: ImmutableErc20State { proxy: state_proxy() },
 	};
 	view_total_supply(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("erc20.viewTotalSupply ok");
 }

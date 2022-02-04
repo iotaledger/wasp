@@ -7,8 +7,6 @@
 
 #![allow(dead_code)]
 
-use std::ptr;
-
 use wasmlib::*;
 
 use crate::consts::*;
@@ -61,75 +59,75 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn force_payout(_ctx: & dyn ScFuncCallContext) -> ForcePayoutCall {
+    pub fn force_payout(_ctx: &dyn ScFuncCallContext) -> ForcePayoutCall {
         ForcePayoutCall {
             func: ScFunc::new(HSC_NAME, HFUNC_FORCE_PAYOUT),
         }
     }
 
-    pub fn force_reset(_ctx: & dyn ScFuncCallContext) -> ForceResetCall {
+    pub fn force_reset(_ctx: &dyn ScFuncCallContext) -> ForceResetCall {
         ForceResetCall {
             func: ScFunc::new(HSC_NAME, HFUNC_FORCE_RESET),
         }
     }
 
-    pub fn pay_winners(_ctx: & dyn ScFuncCallContext) -> PayWinnersCall {
+    pub fn pay_winners(_ctx: &dyn ScFuncCallContext) -> PayWinnersCall {
         PayWinnersCall {
             func: ScFunc::new(HSC_NAME, HFUNC_PAY_WINNERS),
         }
     }
 
-    pub fn place_bet(_ctx: & dyn ScFuncCallContext) -> PlaceBetCall {
+    pub fn place_bet(_ctx: &dyn ScFuncCallContext) -> PlaceBetCall {
         let mut f = PlaceBetCall {
             func: ScFunc::new(HSC_NAME, HFUNC_PLACE_BET),
-            params: MutablePlaceBetParams { id: 0 },
+            params: MutablePlaceBetParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn play_period(_ctx: & dyn ScFuncCallContext) -> PlayPeriodCall {
+    pub fn play_period(_ctx: &dyn ScFuncCallContext) -> PlayPeriodCall {
         let mut f = PlayPeriodCall {
             func: ScFunc::new(HSC_NAME, HFUNC_PLAY_PERIOD),
-            params: MutablePlayPeriodParams { id: 0 },
+            params: MutablePlayPeriodParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn last_winning_number(_ctx: & dyn ScViewCallContext) -> LastWinningNumberCall {
+    pub fn last_winning_number(_ctx: &dyn ScViewCallContext) -> LastWinningNumberCall {
         let mut f = LastWinningNumberCall {
             func: ScView::new(HSC_NAME, HVIEW_LAST_WINNING_NUMBER),
-            results: ImmutableLastWinningNumberResults { id: 0 },
+            results: ImmutableLastWinningNumberResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn round_number(_ctx: & dyn ScViewCallContext) -> RoundNumberCall {
+    pub fn round_number(_ctx: &dyn ScViewCallContext) -> RoundNumberCall {
         let mut f = RoundNumberCall {
             func: ScView::new(HSC_NAME, HVIEW_ROUND_NUMBER),
-            results: ImmutableRoundNumberResults { id: 0 },
+            results: ImmutableRoundNumberResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn round_started_at(_ctx: & dyn ScViewCallContext) -> RoundStartedAtCall {
+    pub fn round_started_at(_ctx: &dyn ScViewCallContext) -> RoundStartedAtCall {
         let mut f = RoundStartedAtCall {
             func: ScView::new(HSC_NAME, HVIEW_ROUND_STARTED_AT),
-            results: ImmutableRoundStartedAtResults { id: 0 },
+            results: ImmutableRoundStartedAtResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn round_status(_ctx: & dyn ScViewCallContext) -> RoundStatusCall {
+    pub fn round_status(_ctx: &dyn ScViewCallContext) -> RoundStatusCall {
         let mut f = RoundStatusCall {
             func: ScView::new(HSC_NAME, HVIEW_ROUND_STATUS),
-            results: ImmutableRoundStatusResults { id: 0 },
+            results: ImmutableRoundStatusResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 }

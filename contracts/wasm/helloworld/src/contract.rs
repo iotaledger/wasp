@@ -7,8 +7,6 @@
 
 #![allow(dead_code)]
 
-use std::ptr;
-
 use wasmlib::*;
 
 use crate::consts::*;
@@ -27,18 +25,18 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn hello_world(_ctx: & dyn ScFuncCallContext) -> HelloWorldCall {
+    pub fn hello_world(_ctx: &dyn ScFuncCallContext) -> HelloWorldCall {
         HelloWorldCall {
             func: ScFunc::new(HSC_NAME, HFUNC_HELLO_WORLD),
         }
     }
 
-    pub fn get_hello_world(_ctx: & dyn ScViewCallContext) -> GetHelloWorldCall {
+    pub fn get_hello_world(_ctx: &dyn ScViewCallContext) -> GetHelloWorldCall {
         let mut f = GetHelloWorldCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_HELLO_WORLD),
-            results: ImmutableGetHelloWorldResults { id: 0 },
+            results: ImmutableGetHelloWorldResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 }

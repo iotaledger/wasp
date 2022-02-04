@@ -13,14 +13,14 @@ type EventEncoder struct {
 
 func NewEventEncoder(eventName string) *EventEncoder {
 	e := &EventEncoder{event: eventName}
-	timestamp := ScSandbox{}.Timestamp()
+	timestamp := ScFuncContext{}.Timestamp()
 	// convert nanoseconds to seconds
 	e.Encode(wasmtypes.Uint64ToString(timestamp / 1_000_000_000))
 	return e
 }
 
 func (e *EventEncoder) Emit() {
-	ScSandboxFunc{}.Event(e.event)
+	ScFuncContext{}.Event(e.event)
 }
 
 func (e *EventEncoder) Encode(value string) {

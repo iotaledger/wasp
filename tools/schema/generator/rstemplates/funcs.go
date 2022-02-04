@@ -7,7 +7,7 @@ use wasmlib::*;
 
 use crate::*;
 $#if structs useStructs
-$#if typedefs useTypeDefs
+$#if typedefs useTypedefs
 $#each func funcSignature
 `,
 	// *******************************

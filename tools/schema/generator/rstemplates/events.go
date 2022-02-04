@@ -4,6 +4,7 @@ var eventsRs = map[string]string{
 	// *******************************
 	"events.rs": `
 #![allow(dead_code)]
+#![allow(unused_mut)]
 
 use wasmlib::*;
 
@@ -21,7 +22,9 @@ $#set params
 $#each event eventParam
 
 	pub fn $evt_name(&self$params) {
-$#if event eventParams eventParamNone
+		let mut evt = EventEncoder::new("$package.$evtName");
+$#each event eventEmit
+		evt.emit();
 	}
 `,
 	// *******************************
@@ -29,17 +32,7 @@ $#if event eventParams eventParamNone
 $#set params $params, $fld_name: $fldRef$fldParamLangType
 `,
 	// *******************************
-	"eventParamNone": `
-		EventEncoder::new("$package.$evtName").emit();
-`,
-	// *******************************
-	"eventParams": `
-		let mut encoder = EventEncoder::new("$package.$evtName");
-$#each event eventEmit
-		encoder.emit();
-`,
-	// *******************************
 	"eventEmit": `
-		encoder.$fld_type($fldRef$fld_name);
+		evt.encode(&$fld_type$+_to_string($fldRef$fld_name));
 `,
 }

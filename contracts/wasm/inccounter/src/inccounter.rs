@@ -167,12 +167,12 @@ pub fn view_get_counter(_ctx: &ScViewContext, f: &GetCounterContext) {
 }
 
 pub fn view_get_vli(_ctx: &ScViewContext, f: &GetVliContext) {
-    let mut enc = BytesEncoder::new();
+    let mut enc = WasmEncoder::new();
     let n = f.params.ni64().value();
-    enc.int64(n);
-    let buf = enc.data();
-    let mut dec = BytesDecoder::new(&buf);
-    let x = dec.int64();
+    int64_encode(&mut enc,n);
+    let buf = enc.buf();
+    let mut dec = WasmDecoder::new(&buf);
+    let x = int64_decode(&mut dec);
 
     let mut str = n.to_string() + " -";
     for b in &buf {
@@ -189,12 +189,12 @@ pub fn view_get_vli(_ctx: &ScViewContext, f: &GetVliContext) {
 }
 
 pub fn view_get_vlu(_ctx: &ScViewContext, f: &GetVluContext) {
-    let mut enc = BytesEncoder::new();
+    let mut enc = WasmEncoder::new();
     let n = f.params.nu64().value();
-    enc.uint64(n);
-    let buf = enc.data();
-    let mut dec = BytesDecoder::new(&buf);
-    let x = dec.uint64();
+    uint64_encode(&mut enc, n);
+    let buf = enc.buf();
+    let mut dec = WasmDecoder::new(&buf);
+    let x = uint64_decode(&mut dec);
 
     let mut str = n.to_string() + " -";
     for b in &buf {
@@ -220,32 +220,32 @@ fn local_state_post(ctx: &ScFuncContext, nr: i64) {
 }
 
 fn vli_save(ctx: &ScFuncContext, name: &str, value: i64) {
-    let mut encoder = BytesEncoder::new();
-    encoder.int64(value);
-    let spot = ctx.state().get_bytes(name);
-    spot.set_value(&encoder.data());
+    let mut enc = WasmEncoder::new();
+    let state = ctx.raw_state();
+    let key = string_to_bytes(name);
+    state.set(&key, &enc.vli_encode(value).buf());
 
-    let bytes = spot.value();
-    let mut decoder = BytesDecoder::new(&bytes);
-    let retrieved = decoder.int64();
-    if retrieved != value {
+    let buf = state.get(&key);
+    let mut dec = WasmDecoder::new(&buf);
+    let val = dec.vli_decode(64);
+    if val != value {
         ctx.log(&(name.to_string() + " in : " + &value.to_string()));
-        ctx.log(&(name.to_string() + " out: " + &retrieved.to_string()));
+        ctx.log(&(name.to_string() + " out: " + &val.to_string()));
     }
 }
 
 fn vlu_save(ctx: &ScFuncContext, name: &str, value: u64) {
-    let mut encoder = BytesEncoder::new();
-    encoder.uint64(value);
-    let spot = ctx.state().get_bytes(name);
-    spot.set_value(&encoder.data());
+    let mut enc = WasmEncoder::new();
+    let state = ctx.raw_state();
+    let key = string_to_bytes(name);
+    state.set(&key, &enc.vlu_encode(value).buf());
 
-    let bytes = spot.value();
-    let mut decoder = BytesDecoder::new(&bytes);
-    let retrieved = decoder.uint64();
-    if retrieved != value {
+    let buf = state.get(&key);
+    let mut dec = WasmDecoder::new(&buf);
+    let val = dec.vlu_decode(64);
+    if val != value {
         ctx.log(&(name.to_string() + " in : " + &value.to_string()));
-        ctx.log(&(name.to_string() + " out: " + &retrieved.to_string()));
+        ctx.log(&(name.to_string() + " out: " + &val.to_string()));
     }
 }
 

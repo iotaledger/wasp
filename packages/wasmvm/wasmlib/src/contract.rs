@@ -3,14 +3,10 @@
 
 // base contract objects
 
-use std::ptr;
+use std::rc::Rc;
 
-use crate::bytes::*;
-use crate::context::*;
-use crate::hashtypes::*;
+use crate::*;
 use crate::host::*;
-use crate::keys::*;
-use crate::mutable::*;
 
 pub trait ScFuncCallContext {
     fn can_call_func(&self);
@@ -22,12 +18,12 @@ pub trait ScViewCallContext {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ScView {
     h_contract: ScHname,
     h_function: ScHname,
-    params_id: *mut i32,
-    results_id: *mut i32,
+    params: Rc<ScDict>,
+    results: Rc<ScDict>,
 }
 
 impl ScView {
@@ -35,39 +31,35 @@ impl ScView {
         ScView {
             h_contract: h_contract,
             h_function: h_function,
-            params_id: ptr::null_mut(),
-            results_id: ptr::null_mut(),
+            params: Rc::new(ScDict::new(&[])),
+            results: Rc::new(ScDict::new(&[])),
         }
     }
 
-    pub fn set_ptrs(&mut self, params_id: *mut i32, results_id: *mut i32) {
-        self.params_id = params_id;
-        self.results_id = results_id;
+    pub fn link_params(proxy: &mut Proxy, view: &ScView) {
+        Proxy::link(proxy, &view.params);
+    }
 
-        unsafe {
-            if params_id != ptr::null_mut() {
-                *params_id = ScMutableMap::new().map_id();
-            }
-        }
+    pub fn link_results(proxy: &mut Proxy, view: &ScView) {
+        Proxy::link(proxy, &view.results);
     }
 
     pub fn call(&self) {
-        self.call_with_transfer(0);
+        self.call_with_transfer(None);
     }
 
-    fn call_with_transfer(&self, transfer_id: i32) {
-        let mut encode = BytesEncoder::new();
-        encode.hname(self.h_contract);
-        encode.hname(self.h_function);
-        encode.int32(self.id(self.params_id));
-        encode.int32(transfer_id);
-        ROOT.get_bytes(&KEY_CALL).set_value(&encode.data());
-
-        unsafe {
-            if self.results_id != ptr::null_mut() {
-                *self.results_id = get_object_id(1, KEY_RETURN, TYPE_MAP);
-            }
+    fn call_with_transfer(&self, transfer: Option<ScAssets>) {
+        let mut req = wasmrequests::CallRequest {
+            contract: self.h_contract,
+            function: self.h_function,
+            params: self.params.to_bytes(),
+            transfer: vec![0; SC_UINT32_LENGTH],
+        };
+        if let Some(transfer) = transfer {
+            req.transfer = transfer.to_bytes();
         }
+        let res = sandbox(FN_CALL, &req.to_bytes());
+        self.results.copy(&res);
     }
 
     pub fn of_contract(&self, h_contract: ScHname) -> ScView {
@@ -75,20 +67,11 @@ impl ScView {
         ret.h_contract = h_contract;
         ret
     }
-
-    fn id(&self, params_id: *mut i32) -> i32 {
-        unsafe {
-            if params_id == ptr::null_mut() {
-                return 0;
-            }
-            *params_id
-        }
-    }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ScInitFunc {
     view: ScView,
 }
@@ -100,8 +83,12 @@ impl ScInitFunc {
         }
     }
 
-    pub fn set_ptrs(&mut self, params_id: *mut i32, results_id: *mut i32) {
-        self.view.set_ptrs(params_id, results_id);
+    pub fn link_params(proxy: &mut Proxy, func: &ScInitFunc) {
+        ScView::link_params(proxy, &func.view);
+    }
+
+    pub fn link_results(proxy: &mut Proxy, func: &ScInitFunc) {
+        ScView::link_results(proxy, &func.view);
     }
 
     pub fn call(&self) {
@@ -117,11 +104,11 @@ impl ScInitFunc {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ScFunc {
-    view: ScView,
+    pub view: ScView,
     delay: u32,
-    transfer_id: i32,
+    transfer: ScAssets,
 }
 
 impl ScFunc {
@@ -129,19 +116,23 @@ impl ScFunc {
         ScFunc {
             view: ScView::new(h_contract, h_function),
             delay: 0,
-            transfer_id: 0,
+            transfer: ScAssets::new(&[]),
         }
     }
 
-    pub fn set_ptrs(&mut self, params_id: *mut i32, results_id: *mut i32) {
-        self.view.set_ptrs(params_id, results_id);
+    pub fn link_params(proxy: &mut Proxy, func: &ScFunc) {
+        ScView::link_params(proxy, &func.view);
+    }
+
+    pub fn link_results(proxy: &mut Proxy, func: &ScFunc) {
+        ScView::link_results(proxy, &func.view);
     }
 
     pub fn call(&self) {
         if self.delay != 0 {
             panic("cannot delay a call")
         }
-        self.view.call_with_transfer(self.transfer_id);
+        self.view.call_with_transfer(Some(self.transfer.clone()));
     }
 
     pub fn delay(&self, seconds: u32) -> ScFunc {
@@ -157,23 +148,25 @@ impl ScFunc {
     }
 
     pub fn post(&self) {
-        self.post_to_chain(ROOT.get_chain_id(&KEY_CHAIN_ID).value())
+        self.post_to_chain(ScFuncContext {}.chain_id())
     }
 
     pub fn post_to_chain(&self, chain_id: ScChainID) {
-        let mut encode = BytesEncoder::new();
-        encode.chain_id(&chain_id);
-        encode.hname(self.view.h_contract);
-        encode.hname(self.view.h_function);
-        encode.int32(self.view.id(self.view.params_id));
-        encode.int32(self.transfer_id);
-        encode.uint32(self.delay);
-        ROOT.get_bytes(&KEY_POST).set_value(&encode.data());
+        let req = wasmrequests::PostRequest {
+            chain_id: chain_id,
+            contract: self.view.h_contract,
+            function: self.view.h_function,
+            params: self.view.params.to_bytes(),
+            transfer: self.transfer.to_bytes(),
+            delay: self.delay,
+        };
+        let res = sandbox(FN_POST, &req.to_bytes());
+        self.view.results.copy(&res);
     }
 
     pub fn transfer(&self, transfer: ScTransfers) -> ScFunc {
         let mut ret = self.clone();
-        ret.transfer_id = transfer.transfers.obj_id;
+        ret.transfer = transfer.as_assets();
         ret
     }
 

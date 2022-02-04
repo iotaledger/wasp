@@ -9,188 +9,184 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
-use crate::typedefs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableApproveParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableApproveParams {
     pub fn amount(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
+		ScImmutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 
     pub fn delegation(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_DELEGATION.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_DELEGATION))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableApproveParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableApproveParams {
     pub fn amount(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
+		ScMutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 
     pub fn delegation(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_DELEGATION.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_DELEGATION))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableInitParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableInitParams {
     pub fn creator(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CREATOR))
+		ScImmutableAgentID::new(self.proxy.root(PARAM_CREATOR))
 	}
 
     pub fn supply(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.id, idx_map(IDX_PARAM_SUPPLY))
+		ScImmutableUint64::new(self.proxy.root(PARAM_SUPPLY))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableInitParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableInitParams {
     pub fn creator(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CREATOR))
+		ScMutableAgentID::new(self.proxy.root(PARAM_CREATOR))
 	}
 
     pub fn supply(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.id, idx_map(IDX_PARAM_SUPPLY))
+		ScMutableUint64::new(self.proxy.root(PARAM_SUPPLY))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTransferParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTransferParams {
     pub fn account(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
     pub fn amount(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
+		ScImmutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTransferParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTransferParams {
     pub fn account(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
     pub fn amount(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
+		ScMutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTransferFromParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTransferFromParams {
     pub fn account(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
     pub fn amount(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
+		ScImmutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 
     pub fn recipient(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_RECIPIENT.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_RECIPIENT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTransferFromParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTransferFromParams {
     pub fn account(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
     pub fn amount(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.id, PARAM_AMOUNT.get_key_id())
+		ScMutableUint64::new(self.proxy.root(PARAM_AMOUNT))
 	}
 
     pub fn recipient(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_RECIPIENT.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_RECIPIENT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableAllowanceParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableAllowanceParams {
     pub fn account(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
     pub fn delegation(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_DELEGATION.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_DELEGATION))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableAllowanceParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableAllowanceParams {
     pub fn account(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 
     pub fn delegation(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_DELEGATION.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_DELEGATION))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableBalanceOfParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableBalanceOfParams {
     pub fn account(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableBalanceOfParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableBalanceOfParams {
     pub fn account(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_ACCOUNT.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_ACCOUNT))
 	}
 }

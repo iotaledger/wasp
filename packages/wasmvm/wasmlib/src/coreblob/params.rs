@@ -8,106 +8,105 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::*;
 use crate::coreblob::*;
-use crate::host::*;
+use crate::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToImmutableBytes {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToImmutableBytes {
     pub fn get_bytes(&self, key: &str) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.obj_id, key.get_key_id())
+        ScImmutableBytes::new(self.proxy.key(&string_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableStoreBlobParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableStoreBlobParams {
     pub fn blobs(&self) -> MapStringToImmutableBytes {
-		MapStringToImmutableBytes { obj_id: self.id }
+		MapStringToImmutableBytes { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToMutableBytes {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToMutableBytes {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_bytes(&self, key: &str) -> ScMutableBytes {
-        ScMutableBytes::new(self.obj_id, key.get_key_id())
+        ScMutableBytes::new(self.proxy.key(&string_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableStoreBlobParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableStoreBlobParams {
     pub fn blobs(&self) -> MapStringToMutableBytes {
-		MapStringToMutableBytes { obj_id: self.id }
+		MapStringToMutableBytes { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetBlobFieldParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetBlobFieldParams {
     pub fn field(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, PARAM_FIELD.get_key_id())
+		ScImmutableString::new(self.proxy.root(PARAM_FIELD))
 	}
 
     pub fn hash(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, PARAM_HASH.get_key_id())
+		ScImmutableHash::new(self.proxy.root(PARAM_HASH))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetBlobFieldParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetBlobFieldParams {
     pub fn field(&self) -> ScMutableString {
-		ScMutableString::new(self.id, PARAM_FIELD.get_key_id())
+		ScMutableString::new(self.proxy.root(PARAM_FIELD))
 	}
 
     pub fn hash(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, PARAM_HASH.get_key_id())
+		ScMutableHash::new(self.proxy.root(PARAM_HASH))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetBlobInfoParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetBlobInfoParams {
     pub fn hash(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, PARAM_HASH.get_key_id())
+		ScImmutableHash::new(self.proxy.root(PARAM_HASH))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetBlobInfoParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetBlobInfoParams {
     pub fn hash(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, PARAM_HASH.get_key_id())
+		ScMutableHash::new(self.proxy.root(PARAM_HASH))
 	}
 }

@@ -39,7 +39,8 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
     // Get the array of current bets from state storage.
     let bets: ArrayOfMutableBet = f.state.bets();
 
-    for i in 0..bets.length() {
+    let nr_of_bets = bets.length();
+    for i in 0..nr_of_bets {
         let bet: Bet = bets.get_bet(i).value();
 
         if bet.better.address() == ctx.caller().address() {
@@ -74,17 +75,14 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
         number: number,
     };
 
-    // Determine what the next bet number is by retrieving the length of the bets array.
-    let bet_nr: u32 = bets.length();
-
     // Append the bet data to the bets array. The bet array will automatically take care
     // of serializing the bet struct into a bytes representation.
-    bets.get_bet(bet_nr).set_value(&bet);
+    bets.append_bet().set_value(&bet);
 
     f.events.bet(&bet.better.address(), bet.amount, bet.number);
 
     // Was this the first bet of this round?
-    if bet_nr == 0 {
+    if nr_of_bets == 0 {
         // Yes it was, query the state for the length of the playing period in seconds by
         // retrieving the playPeriod value from state storage
         let mut play_period: u32 = f.state.play_period().value();
@@ -154,10 +152,10 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     let bets: ArrayOfMutableBet = f.state.bets();
 
     // Determine the amount of bets in the 'bets' array.
-    let nr_bets: u32 = bets.length();
+    let nr_of_bets: u32 = bets.length();
 
     // Loop through all indexes of the 'bets' array.
-    for i in 0..nr_bets {
+    for i in 0..nr_of_bets {
         // Retrieve the bet stored at the next index
         let bet: Bet = bets.get_bet(i).value();
 

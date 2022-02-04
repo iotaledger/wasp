@@ -3,8 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::sandbox::*;
-use crate::wasmtypes::*;
+use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -40,11 +39,11 @@ pub fn int8_to_string(value: i8) -> String {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableInt8<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableInt8 {
+    proxy: Proxy
 }
 
-impl ScImmutableInt8<'_> {
+impl ScImmutableInt8 {
     pub fn new(proxy: Proxy) -> ScImmutableInt8 {
         ScImmutableInt8 { proxy }
     }
@@ -65,16 +64,16 @@ impl ScImmutableInt8<'_> {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // value proxy for mutable i8 in host container
-pub struct ScMutableInt8<'a> {
-    proxy: Proxy<'a>,
+pub struct ScMutableInt8 {
+    proxy: Proxy
 }
 
-impl ScMutableInt8<'_> {
+impl ScMutableInt8 {
     pub fn new(proxy: Proxy) -> ScMutableInt8 {
         ScMutableInt8 { proxy }
     }
 
-    pub fn delete(&mut self)  {
+    pub fn delete(&self)  {
         self.proxy.delete();
     }
 
@@ -82,7 +81,7 @@ impl ScMutableInt8<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: i8) {
+    pub fn set_value(&self, value: i8) {
         self.proxy.set(&int8_to_bytes(value));
     }
 

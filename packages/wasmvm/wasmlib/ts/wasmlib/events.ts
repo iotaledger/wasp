@@ -2,21 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmtypes from "./wasmtypes"
-import {ScSandboxFunc} from "./sandbox";
+import {ScFuncContext} from "./context";
 
 export class EventEncoder {
     event: string;
 
-    // constructs an encoder
     constructor(eventName: string) {
         this.event = eventName;
-        let timestamp = new ScSandboxFunc().timestamp();
+        let timestamp = new ScFuncContext().timestamp();
         // convert nanoseconds to seconds
         this.encode(wasmtypes.uint64ToString(timestamp / 1_000_000_000));
     }
 
     emit(): void {
-        new ScSandboxFunc().event(this.event);
+        new ScFuncContext().event(this.event);
     }
 
     encode(value: string): void {

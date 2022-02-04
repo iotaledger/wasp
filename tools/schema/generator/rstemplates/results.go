@@ -6,19 +6,9 @@ var resultsRs = map[string]string{
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-$#if core useCrate useWasmLib
-$#if core useCoreContract
-$#if core useHost resultsUses
-$#each func resultsFunc
-`,
-	// *******************************
-	"resultsUses": `
-use wasmlib::host::*;
-
+$#if core useCoreContract useWasmLib
 use crate::*;
-use crate::keys::*;
-$#if structs useStructs
-$#if typedefs useTypeDefs
+$#each func resultsFunc
 `,
 	// *******************************
 	"resultsFunc": `
@@ -37,9 +27,9 @@ $#if result resultsProxyStruct
 $#set TypeName $mut$FuncName$+Results
 $#each result proxyContainers
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct $TypeName {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl $TypeName {

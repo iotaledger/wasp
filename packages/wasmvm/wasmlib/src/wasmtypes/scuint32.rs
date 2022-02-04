@@ -3,7 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::wasmtypes::*;
+use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -23,7 +23,10 @@ pub fn uint32_from_bytes(buf: &[u8]) -> u32 {
     if buf.len() == 0 {
         return 0;
     }
-    u32::from_le_bytes(buf.try_into().expect("invalid Uint32 length"))
+    if buf.len() != SC_UINT32_LENGTH {
+        panic("invalid Uint32 length");
+    }
+    u32::from_le_bytes(buf.try_into().expect("WTF?"))
 }
 
 pub fn uint32_to_bytes(value: u32) -> Vec<u8> {
@@ -36,11 +39,11 @@ pub fn uint32_to_string(value: u32) -> String {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableUint32<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableUint32 {
+    proxy: Proxy
 }
 
-impl ScImmutableUint32<'_> {
+impl ScImmutableUint32 {
     pub fn new(proxy: Proxy) -> ScImmutableUint32 {
         ScImmutableUint32 { proxy }
     }
@@ -61,16 +64,16 @@ impl ScImmutableUint32<'_> {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // value proxy for mutable u32 in host container
-pub struct ScMutableUint32<'a> {
-    proxy: Proxy<'a>,
+pub struct ScMutableUint32 {
+    proxy: Proxy
 }
 
-impl ScMutableUint32<'_> {
+impl ScMutableUint32 {
     pub fn new(proxy: Proxy) -> ScMutableUint32 {
         ScMutableUint32 { proxy }
     }
 
-    pub fn delete(&mut self)  {
+    pub fn delete(&self)  {
         self.proxy.delete();
     }
 
@@ -78,7 +81,7 @@ impl ScMutableUint32<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: u32) {
+    pub fn set_value(&self, value: u32) {
         self.proxy.set(&uint32_to_bytes(value));
     }
 

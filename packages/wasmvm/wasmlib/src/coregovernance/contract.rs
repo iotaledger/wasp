@@ -7,8 +7,6 @@
 
 #![allow(dead_code)]
 
-use std::ptr;
-
 use crate::*;
 use crate::coregovernance::*;
 
@@ -76,109 +74,110 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn add_allowed_state_controller_address(_ctx: & dyn ScFuncCallContext) -> AddAllowedStateControllerAddressCall {
+    pub fn add_allowed_state_controller_address(_ctx: &dyn ScFuncCallContext) -> AddAllowedStateControllerAddressCall {
         let mut f = AddAllowedStateControllerAddressCall {
             func: ScFunc::new(HSC_NAME, HFUNC_ADD_ALLOWED_STATE_CONTROLLER_ADDRESS),
-            params: MutableAddAllowedStateControllerAddressParams { id: 0 },
+            params: MutableAddAllowedStateControllerAddressParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn claim_chain_ownership(_ctx: & dyn ScFuncCallContext) -> ClaimChainOwnershipCall {
+    pub fn claim_chain_ownership(_ctx: &dyn ScFuncCallContext) -> ClaimChainOwnershipCall {
         ClaimChainOwnershipCall {
             func: ScFunc::new(HSC_NAME, HFUNC_CLAIM_CHAIN_OWNERSHIP),
         }
     }
 
-    pub fn delegate_chain_ownership(_ctx: & dyn ScFuncCallContext) -> DelegateChainOwnershipCall {
+    pub fn delegate_chain_ownership(_ctx: &dyn ScFuncCallContext) -> DelegateChainOwnershipCall {
         let mut f = DelegateChainOwnershipCall {
             func: ScFunc::new(HSC_NAME, HFUNC_DELEGATE_CHAIN_OWNERSHIP),
-            params: MutableDelegateChainOwnershipParams { id: 0 },
+            params: MutableDelegateChainOwnershipParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn remove_allowed_state_controller_address(_ctx: & dyn ScFuncCallContext) -> RemoveAllowedStateControllerAddressCall {
+    pub fn remove_allowed_state_controller_address(_ctx: &dyn ScFuncCallContext) -> RemoveAllowedStateControllerAddressCall {
         let mut f = RemoveAllowedStateControllerAddressCall {
             func: ScFunc::new(HSC_NAME, HFUNC_REMOVE_ALLOWED_STATE_CONTROLLER_ADDRESS),
-            params: MutableRemoveAllowedStateControllerAddressParams { id: 0 },
+            params: MutableRemoveAllowedStateControllerAddressParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn rotate_state_controller(_ctx: & dyn ScFuncCallContext) -> RotateStateControllerCall {
+    pub fn rotate_state_controller(_ctx: &dyn ScFuncCallContext) -> RotateStateControllerCall {
         let mut f = RotateStateControllerCall {
             func: ScFunc::new(HSC_NAME, HFUNC_ROTATE_STATE_CONTROLLER),
-            params: MutableRotateStateControllerParams { id: 0 },
+            params: MutableRotateStateControllerParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn set_chain_info(_ctx: & dyn ScFuncCallContext) -> SetChainInfoCall {
+    pub fn set_chain_info(_ctx: &dyn ScFuncCallContext) -> SetChainInfoCall {
         let mut f = SetChainInfoCall {
             func: ScFunc::new(HSC_NAME, HFUNC_SET_CHAIN_INFO),
-            params: MutableSetChainInfoParams { id: 0 },
+            params: MutableSetChainInfoParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn set_contract_fee(_ctx: & dyn ScFuncCallContext) -> SetContractFeeCall {
+    pub fn set_contract_fee(_ctx: &dyn ScFuncCallContext) -> SetContractFeeCall {
         let mut f = SetContractFeeCall {
             func: ScFunc::new(HSC_NAME, HFUNC_SET_CONTRACT_FEE),
-            params: MutableSetContractFeeParams { id: 0 },
+            params: MutableSetContractFeeParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn set_default_fee(_ctx: & dyn ScFuncCallContext) -> SetDefaultFeeCall {
+    pub fn set_default_fee(_ctx: &dyn ScFuncCallContext) -> SetDefaultFeeCall {
         let mut f = SetDefaultFeeCall {
             func: ScFunc::new(HSC_NAME, HFUNC_SET_DEFAULT_FEE),
-            params: MutableSetDefaultFeeParams { id: 0 },
+            params: MutableSetDefaultFeeParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn get_allowed_state_controller_addresses(_ctx: & dyn ScViewCallContext) -> GetAllowedStateControllerAddressesCall {
+    pub fn get_allowed_state_controller_addresses(_ctx: &dyn ScViewCallContext) -> GetAllowedStateControllerAddressesCall {
         let mut f = GetAllowedStateControllerAddressesCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_ALLOWED_STATE_CONTROLLER_ADDRESSES),
-            results: ImmutableGetAllowedStateControllerAddressesResults { id: 0 },
+            results: ImmutableGetAllowedStateControllerAddressesResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_chain_info(_ctx: & dyn ScViewCallContext) -> GetChainInfoCall {
+    pub fn get_chain_info(_ctx: &dyn ScViewCallContext) -> GetChainInfoCall {
         let mut f = GetChainInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_CHAIN_INFO),
-            results: ImmutableGetChainInfoResults { id: 0 },
+            results: ImmutableGetChainInfoResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_fee_info(_ctx: & dyn ScViewCallContext) -> GetFeeInfoCall {
+    pub fn get_fee_info(_ctx: &dyn ScViewCallContext) -> GetFeeInfoCall {
         let mut f = GetFeeInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_FEE_INFO),
-            params: MutableGetFeeInfoParams { id: 0 },
-            results: ImmutableGetFeeInfoResults { id: 0 },
+            params: MutableGetFeeInfoParams { proxy: Proxy::nil() },
+            results: ImmutableGetFeeInfoResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_max_blob_size(_ctx: & dyn ScViewCallContext) -> GetMaxBlobSizeCall {
+    pub fn get_max_blob_size(_ctx: &dyn ScViewCallContext) -> GetMaxBlobSizeCall {
         let mut f = GetMaxBlobSizeCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_MAX_BLOB_SIZE),
-            results: ImmutableGetMaxBlobSizeResults { id: 0 },
+            results: ImmutableGetMaxBlobSizeResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 }

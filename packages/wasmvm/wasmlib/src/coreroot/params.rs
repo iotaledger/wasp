@@ -8,110 +8,109 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::*;
 use crate::coreroot::*;
-use crate::host::*;
+use crate::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableDeployContractParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableDeployContractParams {
     pub fn description(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, PARAM_DESCRIPTION.get_key_id())
+		ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
 
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, PARAM_NAME.get_key_id())
+		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
     pub fn program_hash(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.id, PARAM_PROGRAM_HASH.get_key_id())
+		ScImmutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableDeployContractParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableDeployContractParams {
     pub fn description(&self) -> ScMutableString {
-		ScMutableString::new(self.id, PARAM_DESCRIPTION.get_key_id())
+		ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
 	}
 
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, PARAM_NAME.get_key_id())
+		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
     pub fn program_hash(&self) -> ScMutableHash {
-		ScMutableHash::new(self.id, PARAM_PROGRAM_HASH.get_key_id())
+		ScMutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGrantDeployPermissionParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGrantDeployPermissionParams {
     pub fn deployer(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGrantDeployPermissionParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGrantDeployPermissionParams {
     pub fn deployer(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableRevokeDeployPermissionParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableRevokeDeployPermissionParams {
     pub fn deployer(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableRevokeDeployPermissionParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableRevokeDeployPermissionParams {
     pub fn deployer(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_DEPLOYER.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableFindContractParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableFindContractParams {
     pub fn hname(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
+		ScImmutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableFindContractParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableFindContractParams {
     pub fn hname(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
+		ScMutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 }

@@ -8,19 +8,18 @@ var libRs = map[string]string{
 
 use $package::*;
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::consts::*;
 $#if events useEvents
-use crate::keys::*;
 $#if params useParams
 $#if results useResults
 use crate::state::*;
+$#if structs useStructs
+$#if typedefs useTypedefs
 
 mod consts;
 mod contract;
 $#if events modEvents
-mod keys;
 $#if params modParams
 $#if results modResults
 mod state;
@@ -32,12 +31,6 @@ mod $package;
 fn on_load() {
     let exports = ScExports::new();
 $#each func libExportFunc
-
-    unsafe {
-        for i in 0..KEY_MAP_LEN {
-            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
-        }
-    }
 }
 $#each func libThunk
 `,
@@ -58,7 +51,6 @@ $#if view ImmutablePackageState
 
 fn $kind$+_$func_name$+_thunk(ctx: &Sc$Kind$+Context) {
 	ctx.log("$package.$kind$FuncName");
-$#emit accessCheck
 	let f = $FuncName$+Context {
 $#if func PackageEventsInit
 $#if param ImmutableFuncNameParamsInit
@@ -66,10 +58,16 @@ $#if result MutableFuncNameResultsInit
 $#if func MutablePackageStateInit
 $#if view ImmutablePackageStateInit
 	};
+$#emit accessCheck
 $#each mandatory requireMandatory
 	$kind$+_$func_name(ctx, &f);
+$#if result sendResults
 	ctx.log("$package.$kind$FuncName ok");
 }
+`,
+	// *******************************
+	"sendResults": `
+	ctx.results(&f.results.proxy.kv_store);
 `,
 	// *******************************
 	"PackageEvents": `
@@ -93,9 +91,7 @@ $#if events PackageEventsInitExist
 `,
 	// *******************************
 	"ImmutableFuncNameParamsInit": `
-		params: Immutable$FuncName$+Params {
-			id: OBJ_ID_PARAMS,
-		},
+		params: Immutable$FuncName$+Params { proxy: params_proxy() },
 `,
 	// *******************************
 	"MutableFuncNameResults": `
@@ -103,9 +99,7 @@ $#if events PackageEventsInitExist
 `,
 	// *******************************
 	"MutableFuncNameResultsInit": `
-		results: Mutable$FuncName$+Results {
-			id: OBJ_ID_RESULTS,
-		},
+		results: Mutable$FuncName$+Results { proxy: results_proxy() },
 `,
 	// *******************************
 	"MutablePackageState": `
@@ -113,9 +107,7 @@ $#if events PackageEventsInitExist
 `,
 	// *******************************
 	"MutablePackageStateInit": `
-		state: Mutable$Package$+State {
-			id: OBJ_ID_STATE,
-		},
+		state: Mutable$Package$+State { proxy: state_proxy() },
 `,
 	// *******************************
 	"ImmutablePackageState": `
@@ -123,15 +115,12 @@ $#if events PackageEventsInitExist
 `,
 	// *******************************
 	"ImmutablePackageStateInit": `
-		state: Immutable$Package$+State {
-			id: OBJ_ID_STATE,
-		},
+		state: Immutable$Package$+State { proxy: state_proxy() },
 `,
 	// *******************************
 	"requireMandatory": `
 	ctx.require(f.params.$fld_name().exists(), "missing mandatory $fldName");
 `,
-
 	// *******************************
 	"accessCheck": `
 $#set accessFinalize accessOther
@@ -166,7 +155,7 @@ $#set accessFinalize accessDone
 	// *******************************
 	"accessOther": `
 $#if funcAccessComment accessComment
-	let access = ctx.state().get_agent_id("$funcAccess");
+	let access = f.state.$func_access();
 	ctx.require(access.exists(), "access not set: $funcAccess");
 	ctx.require(ctx.caller() == access.value(), "no permission");
 

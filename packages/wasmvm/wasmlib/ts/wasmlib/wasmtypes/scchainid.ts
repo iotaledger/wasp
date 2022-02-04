@@ -45,7 +45,9 @@ export function chainIDEncode(enc: WasmEncoder, value: ScChainID): void {
 
 export function chainIDFromBytes(buf: u8[]): ScChainID {
     if (buf.length == 0) {
-        return new ScChainID();
+        const chainID =  new ScChainID();
+        chainID.id[0] = 2; // ledgerstate.AliasAddressType
+        return chainID;
     }
     if (buf.length != ScChainIDLength) {
         panic("invalid ChainID length");

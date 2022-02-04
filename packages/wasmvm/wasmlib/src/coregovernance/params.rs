@@ -8,254 +8,253 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::*;
 use crate::coregovernance::*;
-use crate::host::*;
+use crate::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableAddAllowedStateControllerAddressParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableAddAllowedStateControllerAddressParams {
     pub fn chain_owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
 	}
 
     pub fn fee_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.id, PARAM_FEE_COLOR.get_key_id())
+		ScImmutableColor::new(self.proxy.root(PARAM_FEE_COLOR))
 	}
 
     pub fn state_controller_address(&self) -> ScImmutableAddress {
-		ScImmutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+		ScImmutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableAddAllowedStateControllerAddressParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableAddAllowedStateControllerAddressParams {
     pub fn chain_owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
 	}
 
     pub fn fee_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.id, PARAM_FEE_COLOR.get_key_id())
+		ScMutableColor::new(self.proxy.root(PARAM_FEE_COLOR))
 	}
 
     pub fn state_controller_address(&self) -> ScMutableAddress {
-		ScMutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+		ScMutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableDelegateChainOwnershipParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableDelegateChainOwnershipParams {
     pub fn chain_owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableDelegateChainOwnershipParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableDelegateChainOwnershipParams {
     pub fn chain_owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, PARAM_CHAIN_OWNER.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableRemoveAllowedStateControllerAddressParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableRemoveAllowedStateControllerAddressParams {
     pub fn state_controller_address(&self) -> ScImmutableAddress {
-		ScImmutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+		ScImmutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableRemoveAllowedStateControllerAddressParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableRemoveAllowedStateControllerAddressParams {
     pub fn state_controller_address(&self) -> ScMutableAddress {
-		ScMutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+		ScMutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableRotateStateControllerParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableRotateStateControllerParams {
     pub fn state_controller_address(&self) -> ScImmutableAddress {
-		ScImmutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+		ScImmutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableRotateStateControllerParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableRotateStateControllerParams {
     pub fn state_controller_address(&self) -> ScMutableAddress {
-		ScMutableAddress::new(self.id, PARAM_STATE_CONTROLLER_ADDRESS.get_key_id())
+		ScMutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableSetChainInfoParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableSetChainInfoParams {
     pub fn max_blob_size(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_MAX_BLOB_SIZE.get_key_id())
+		ScImmutableInt32::new(self.proxy.root(PARAM_MAX_BLOB_SIZE))
 	}
 
     pub fn max_event_size(&self) -> ScImmutableInt16 {
-		ScImmutableInt16::new(self.id, PARAM_MAX_EVENT_SIZE.get_key_id())
+		ScImmutableInt16::new(self.proxy.root(PARAM_MAX_EVENT_SIZE))
 	}
 
     pub fn max_events_per_req(&self) -> ScImmutableInt16 {
-		ScImmutableInt16::new(self.id, PARAM_MAX_EVENTS_PER_REQ.get_key_id())
+		ScImmutableInt16::new(self.proxy.root(PARAM_MAX_EVENTS_PER_REQ))
 	}
 
     pub fn owner_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
     pub fn validator_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableSetChainInfoParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableSetChainInfoParams {
     pub fn max_blob_size(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_MAX_BLOB_SIZE.get_key_id())
+		ScMutableInt32::new(self.proxy.root(PARAM_MAX_BLOB_SIZE))
 	}
 
     pub fn max_event_size(&self) -> ScMutableInt16 {
-		ScMutableInt16::new(self.id, PARAM_MAX_EVENT_SIZE.get_key_id())
+		ScMutableInt16::new(self.proxy.root(PARAM_MAX_EVENT_SIZE))
 	}
 
     pub fn max_events_per_req(&self) -> ScMutableInt16 {
-		ScMutableInt16::new(self.id, PARAM_MAX_EVENTS_PER_REQ.get_key_id())
+		ScMutableInt16::new(self.proxy.root(PARAM_MAX_EVENTS_PER_REQ))
 	}
 
     pub fn owner_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+		ScMutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
     pub fn validator_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+		ScMutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableSetContractFeeParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableSetContractFeeParams {
     pub fn hname(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
+		ScImmutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 
     pub fn owner_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
     pub fn validator_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableSetContractFeeParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableSetContractFeeParams {
     pub fn hname(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
+		ScMutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 
     pub fn owner_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+		ScMutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
     pub fn validator_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+		ScMutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableSetDefaultFeeParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableSetDefaultFeeParams {
     pub fn owner_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
     pub fn validator_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableSetDefaultFeeParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableSetDefaultFeeParams {
     pub fn owner_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_OWNER_FEE.get_key_id())
+		ScMutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
 	}
 
     pub fn validator_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_VALIDATOR_FEE.get_key_id())
+		ScMutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetFeeInfoParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetFeeInfoParams {
     pub fn hname(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, PARAM_HNAME.get_key_id())
+		ScImmutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetFeeInfoParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetFeeInfoParams {
     pub fn hname(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, PARAM_HNAME.get_key_id())
+		ScMutableHname::new(self.proxy.root(PARAM_HNAME))
 	}
 }

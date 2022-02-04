@@ -90,12 +90,9 @@ pub fn func_member(_ctx: &ScFuncContext, f: &MemberContext) {
         let member_list: ArrayOfMutableAddress = f.state.member_list();
 
         // Now we will append the new address to the memberList array.
-        // First we determine the current length of the array.
-        let length: u32 = member_list.length();
-
-        // Next we create an ScMutableAddress proxy to the address value that lives
-        // at that index in the memberList array (no value, since we're appending).
-        let new_address: ScMutableAddress = member_list.get_address(length);
+        // We create an ScMutableAddress proxy to an address value that lives
+        // at the end of the memberList array (no value yet, since we're appending).
+        let new_address: ScMutableAddress = member_list.append_address();
 
         // And finally we append the new address to the array by telling the proxy
         // to update the value it refers to with the 'address' parameter.

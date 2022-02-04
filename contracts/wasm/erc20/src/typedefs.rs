@@ -8,33 +8,32 @@
 #![allow(dead_code)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapAgentIDToImmutableUint64 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToImmutableUint64 {
     pub fn get_uint64(&self, key: &ScAgentID) -> ScImmutableUint64 {
-        ScImmutableUint64::new(self.obj_id, key.get_key_id())
+        ScImmutableUint64::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 
 pub type ImmutableAllowancesForAgent = MapAgentIDToImmutableUint64;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapAgentIDToMutableUint64 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToMutableUint64 {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_uint64(&self, key: &ScAgentID) -> ScMutableUint64 {
-        ScMutableUint64::new(self.obj_id, key.get_key_id())
+        ScMutableUint64::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 

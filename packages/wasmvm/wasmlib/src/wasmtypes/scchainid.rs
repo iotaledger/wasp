@@ -4,7 +4,6 @@
 use std::convert::TryInto;
 
 use crate::*;
-use crate::wasmtypes::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -44,7 +43,19 @@ pub fn chain_id_encode(enc: &mut WasmEncoder, value: &ScChainID)  {
 }
 
 pub fn chain_id_from_bytes(buf: &[u8]) -> ScChainID {
-    ScChainID { id: buf.try_into().expect("invalid ChainId length") }
+    if buf.len() == 0 {
+        let mut chain_id = ScChainID { id: [0;SC_CHAIN_ID_LENGTH] };
+        chain_id.id[0] = 2; // ledgerstate.AliasAddressType
+        return chain_id;
+    }
+    if buf.len() != SC_CHAIN_ID_LENGTH {
+        panic("invalid ChainID length");
+    }
+    // must be ledgerstate.AliasAddressType
+    if buf[0] != 2 {
+        panic("invalid ChainID: not an alias address");
+    }
+    ScChainID { id: buf.try_into().expect("WTF?") }
 }
 
 pub fn chain_id_to_bytes(value: &ScChainID) -> Vec<u8> {
@@ -57,18 +68,18 @@ pub fn chain_id_to_string(value: &ScChainID) -> String {
 }
 
 fn chain_id_from_bytes_unchecked(buf: &[u8]) -> ScChainID {
-    ScChainID { id: buf.try_into().expect("invalid ChainId length") }
+    ScChainID { id: buf.try_into().expect("invalid ChainID length") }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableChainId<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableChainID {
+    proxy: Proxy
 }
 
-impl ScImmutableChainId<'_> {
-    pub fn new(proxy: Proxy) -> ScImmutableChainId {
-        ScImmutableChainId { proxy }
+impl ScImmutableChainID {
+    pub fn new(proxy: Proxy) -> ScImmutableChainID {
+        ScImmutableChainID { proxy }
     }
 
     pub fn exists(&self) -> bool {
@@ -86,17 +97,17 @@ impl ScImmutableChainId<'_> {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// value proxy for mutable ScChainId in host container
-pub struct ScMutableChainId<'a> {
-    proxy: Proxy<'a>,
+// value proxy for mutable ScChainID in host container
+pub struct ScMutableChainID {
+    proxy: Proxy
 }
 
-impl ScMutableChainId<'_> {
-    pub fn new(proxy: Proxy) -> ScMutableChainId {
-        ScMutableChainId { proxy }
+impl ScMutableChainID {
+    pub fn new(proxy: Proxy) -> ScMutableChainID {
+        ScMutableChainID { proxy }
     }
 
-    pub fn delete(&mut self)  {
+    pub fn delete(&self)  {
         self.proxy.delete();
     }
 
@@ -104,7 +115,7 @@ impl ScMutableChainId<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: &ScChainID) {
+    pub fn set_value(&self, value: &ScChainID) {
         self.proxy.set(&chain_id_to_bytes(&value));
     }
 

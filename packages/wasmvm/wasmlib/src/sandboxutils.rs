@@ -1,67 +1,73 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::*;
 use crate::host::*;
-use crate::wasmtypes;
 
 pub struct ScSandboxUtils {}
 
 impl ScSandboxUtils {
     // decodes the specified base58-encoded string value to its original bytes
-    pub fn base58Decode(value: string) -> &[u8] {
-    return sandbox(util.FnUtilsBase58Decode, wasmtypes.stringToBytes(value));
+    pub fn base58_ecode(&self, value: &str) -> Vec<u8> {
+        sandbox(FN_UTILS_BASE58_DECODE, &string_to_bytes(value))
     }
 
     // encodes the specified bytes to a base-58-encoded string
-    pub fn base58Encode(bytes: &[u8]) -> string {
-    return wasmtypes.bytesToString(sandbox(util.FnUtilsBase58Encode, bytes));
+    pub fn base58_encode(&self, bytes: &[u8]) -> String {
+        bytes_to_string(&sandbox(FN_UTILS_BASE58_ENCODE, bytes))
     }
 
-    pub fn blsAddressFromPubKey(pubKey: &[u8]) -> wasmtypes.ScAddress {
-    return wasmtypes.addressFromBytes(sandbox(util.FnUtilsBlsAddress, pubKey));
+    pub fn bls_address_from_pub_key(&self, pub_key: &[u8]) -> ScAddress {
+        address_from_bytes(&sandbox(FN_UTILS_BLS_ADDRESS, pub_key))
     }
 
-    pub fn blsAggregateSignatures(pubKeys: &[u8][], sigs: &[u8][]) -> &[u8][] {
-    const enc = new wasmtypes.WasmEncoder();
-    wasmtypes.uint32Encode(enc, pubKeys.length as u32);
-    for (let i = 0; i < pubKeys.length; i++) {
-    enc.bytes(pubKeys[i]);
+    pub fn bls_aggregate_signatures(&self, pub_keys: &[&[u8]], sigs: &[&[u8]]) -> Vec<Vec<u8>> {
+        let mut enc = WasmEncoder::new();
+        uint32_encode(&mut enc, pub_keys.len() as u32);
+        for i in 0..pub_keys.len() {
+            enc.bytes(pub_keys[i]);
+        }
+        uint32_encode(&mut enc, sigs.len() as u32);
+        for i in 0..sigs.len() {
+            enc.bytes(sigs[i]);
+        }
+        let res = sandbox(FN_UTILS_BLS_AGGREGATE, &enc.buf());
+        let mut dec = WasmDecoder::new(&res);
+        return [dec.bytes(), dec.bytes()].to_vec();
     }
-    wasmtypes.uint32Encode(enc, sigs.length as u32);
-    for (let i = 0; i < sigs.length; i++) {
-    enc.bytes(sigs[i]);
+
+    pub fn bls_valid_signature(&self, data: &[u8], pub_key: &[u8], signature: &[u8]) -> bool {
+        let mut enc = WasmEncoder::new();
+        enc.bytes(data);
+        enc.bytes(pub_key);
+        enc.bytes(signature);
+        bool_from_bytes(&sandbox(FN_UTILS_BLS_VALID, &enc.buf()))
     }
-    const result = sandbox(util.FnUtilsBlsAggregate, enc.buf());
-    const decode = new wasmtypes.WasmDecoder(result);
-    return [decode.bytes(), decode.bytes()];
+
+    pub fn ed25519_address_from_pub_key(&self, pub_key: &[u8]) -> ScAddress {
+        address_from_bytes(&sandbox(FN_UTILS_ED25519_ADDRESS, pub_key))
     }
 
-    pub fn blsValidSignature(data: &[u8], pubKey: &[u8], signature: &[u8]) -> bool {
-    const enc = new wasmtypes.WasmEncoder().bytes(data).bytes(pubKey).bytes(signature);
-    return wasmtypes.boolFromBytes(sandbox(util.FnUtilsBlsValid, enc.buf()));
-}
+    pub fn ed25519_valid_signature(&self, data: &[u8], pub_key: &[u8], signature: &[u8]) -> bool {
+        let mut enc = WasmEncoder::new();
+        enc.bytes(data);
+        enc.bytes(pub_key);
+        enc.bytes(signature);
+        bool_from_bytes(&sandbox(FN_UTILS_ED25519_VALID, &enc.buf()))
+    }
 
-pub fn ed25519AddressFromPubKey(pubKey: &[u8]) -> wasmtypes.ScAddress {
-return wasmtypes.addressFromBytes(sandbox(util.FnUtilsEd25519Address, pubKey));
-}
+    // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+    pub fn hash_blake2b(&self, value: &[u8]) -> ScHash {
+        hash_from_bytes(&sandbox(FN_UTILS_HASH_BLAKE2B, value))
+    }
 
-pub fn ed25519ValidSignature(data: &[u8], pubKey: &[u8], signature: &[u8]) -> bool {
-const enc = new wasmtypes.WasmEncoder().bytes(data).bytes(pubKey).bytes(signature);
-return wasmtypes.boolFromBytes(sandbox(util.FnUtilsEd25519Valid, enc.buf()));
-}
+    // hashes the specified value bytes using sha3 hashing and returns the resulting 32-byte hash
+    pub fn hash_sha3(&self, value: &[u8]) -> ScHash {
+        hash_from_bytes(&sandbox(FN_UTILS_HASH_SHA3, value))
+    }
 
-// hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
-pub fn hashBlake2b(value: &[u8]) -> wasmtypes.ScHash {
-return wasmtypes.hashFromBytes(sandbox(util.FnUtilsHashBlake2b, value));
-}
-
-// hashes the specified value bytes using sha3 hashing and returns the resulting 32-byte hash
-pub fn hashSha3(value: &[u8]) -> wasmtypes.ScHash {
-return wasmtypes.hashFromBytes(sandbox(util.FnUtilsHashSha3, value));
-}
-
-// hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
-pub fn hname(value: string) -> wasmtypes.ScHname {
-return wasmtypes.hnameFromBytes(sandbox(util.FnUtilsHashName, wasmtypes.stringToBytes(value)));
-}
+    // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+    pub fn hash_name(&self, value: &str) -> ScHname {
+        hname_from_bytes(&sandbox(FN_UTILS_HASH_NAME, &string_to_bytes(value)))
+    }
 }

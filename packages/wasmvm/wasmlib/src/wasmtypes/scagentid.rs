@@ -4,8 +4,6 @@
 use std::convert::TryInto;
 
 use crate::*;
-use crate::sandbox::*;
-use crate::wasmtypes::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -18,7 +16,7 @@ pub struct ScAgentID {
 }
 
 impl ScAgentID {
-    pub fn new(address: &ScAddress, hname: &ScHname) -> ScAgentID {
+    pub fn new(address: &ScAddress, hname: ScHname) -> ScAgentID {
         ScAgentID { address: address_from_bytes(&address.to_bytes()), hname: hname_from_bytes(&hname.to_bytes()) }
     }
 
@@ -26,12 +24,12 @@ impl ScAgentID {
         agent_id_from_bytes(buf)
     }
 
-    pub fn address(&self) -> &ScAddress {
-        &self.address
+    pub fn address(&self) -> ScAddress {
+        self.address.clone()
     }
 
-    pub fn hname(&self) -> &ScHname {
-        &self.hname
+    pub fn hname(&self) -> ScHname {
+        self.hname
     }
 
     pub fn is_address(&self) -> bool {
@@ -54,7 +52,7 @@ pub fn agent_id_decode(dec: &mut WasmDecoder) -> ScAgentID {
 }
 
 pub fn agent_id_encode(enc: &mut WasmEncoder, value: &ScAgentID) {
-    address_encode(enc, value.address());
+    address_encode(enc, &value.address());
     hname_encode(enc, value.hname());
 }
 
@@ -63,7 +61,7 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
         return ScAgentID { address: address_from_bytes(buf), hname: hname_from_bytes(buf) };
     }
     if buf.len() != SC_AGENT_ID_LENGTH {
-        panic("invalid AgentId length");
+        panic("invalid AgentID length");
     }
     // max ledgerstate.AliasAddressType
     if buf[0] > 2 {
@@ -88,13 +86,13 @@ pub fn agent_id_to_string(value: &ScAgentID) -> String {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableAgentId<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableAgentID {
+    proxy: Proxy,
 }
 
-impl ScImmutableAgentId<'_> {
-    pub fn new(proxy: Proxy) -> ScImmutableAgentId {
-        ScImmutableAgentId { proxy }
+impl ScImmutableAgentID {
+    pub fn new(proxy: Proxy) -> ScImmutableAgentID {
+        ScImmutableAgentID { proxy }
     }
 
     pub fn exists(&self) -> bool {
@@ -112,17 +110,17 @@ impl ScImmutableAgentId<'_> {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// value proxy for mutable ScAgentId in host container
-pub struct ScMutableAgentId<'a> {
-    proxy: Proxy<'a>,
+// value proxy for mutable ScAgentID in host container
+pub struct ScMutableAgentID {
+    proxy: Proxy,
 }
 
-impl ScMutableAgentId<'_> {
-    pub fn new(proxy: Proxy) -> ScMutableAgentId {
-        ScMutableAgentId { proxy }
+impl ScMutableAgentID {
+    pub fn new(proxy: Proxy) -> ScMutableAgentID {
+        ScMutableAgentID { proxy }
     }
 
-    pub fn delete(&mut self) {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 
@@ -130,7 +128,7 @@ impl ScMutableAgentId<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: &ScAgentID) {
+    pub fn set_value(&self, value: &ScAgentID) {
         self.proxy.set(&agent_id_to_bytes(&value));
     }
 

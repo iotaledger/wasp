@@ -80,7 +80,7 @@ pub fn func_place_bid(ctx: &ScFuncContext, f: &PlaceBidContext) {
         ctx.require(bid_amount >= auction.minimum_bid, "Insufficient bid amount");
         ctx.log(&("New bid from: ".to_string() + &caller.to_string()));
         let index = bidder_list.length();
-        bidder_list.get_agent_id(index).set_value(&caller);
+        bidder_list.append_agent_id().set_value(&caller);
         let bid = Bid {
             index: index,
             amount: bid_amount,

@@ -55,15 +55,15 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	*wasmsolo.GoWasm = false
 	*wasmsolo.TsWasm = false
 
-	//exists, _ := util.ExistsFilePath("../pkg/testcore_bg.wasm")
-	//if exists {
-	//	wasmlib.ConnectHost(nil)
-	//	t.Run(fmt.Sprintf("run RUST version of %s", t.Name()), func(t *testing.T) {
-	//		test(t, true)
-	//	})
-	//}
+	exists, _ := util.ExistsFilePath("../pkg/testcore_bg.wasm")
+	if exists {
+		wasmlib.ConnectHost(nil)
+		t.Run(fmt.Sprintf("run RUST version of %s", t.Name()), func(t *testing.T) {
+			test(t, true)
+		})
+	}
 
-	exists, _ := util.ExistsFilePath("../go/pkg/testcore_go.wasm")
+	exists, _ = util.ExistsFilePath("../go/pkg/testcore_go.wasm")
 	if exists {
 		*wasmsolo.GoWasm = true
 		wasmlib.ConnectHost(nil)

@@ -10,19 +10,17 @@
 
 use erc721::*;
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::consts::*;
 use crate::events::*;
-use crate::keys::*;
 use crate::params::*;
 use crate::results::*;
 use crate::state::*;
+use crate::typedefs::*;
 
 mod consts;
 mod contract;
 mod events;
-mod keys;
 mod params;
 mod results;
 mod state;
@@ -46,12 +44,6 @@ fn on_load() {
     exports.add_view(VIEW_OWNER_OF,             view_owner_of_thunk);
     exports.add_view(VIEW_SYMBOL,               view_symbol_thunk);
     exports.add_view(VIEW_TOKEN_URI,            view_token_uri_thunk);
-
-    unsafe {
-        for i in 0..KEY_MAP_LEN {
-            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
-        }
-    }
 }
 
 pub struct ApproveContext {
@@ -64,12 +56,8 @@ fn func_approve_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc721.funcApprove");
 	let f = ApproveContext {
 		events:  Erc721Events {},
-		params: ImmutableApproveParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableApproveParams { proxy: params_proxy() },
+		state: MutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.token_id().exists(), "missing mandatory tokenID");
 	func_approve(ctx, &f);
@@ -86,12 +74,8 @@ fn func_burn_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc721.funcBurn");
 	let f = BurnContext {
 		events:  Erc721Events {},
-		params: ImmutableBurnParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableBurnParams { proxy: params_proxy() },
+		state: MutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.token_id().exists(), "missing mandatory tokenID");
 	func_burn(ctx, &f);
@@ -108,12 +92,8 @@ fn func_init_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc721.funcInit");
 	let f = InitContext {
 		events:  Erc721Events {},
-		params: ImmutableInitParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableInitParams { proxy: params_proxy() },
+		state: MutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.name().exists(), "missing mandatory name");
 	ctx.require(f.params.symbol().exists(), "missing mandatory symbol");
@@ -131,12 +111,8 @@ fn func_mint_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc721.funcMint");
 	let f = MintContext {
 		events:  Erc721Events {},
-		params: ImmutableMintParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableMintParams { proxy: params_proxy() },
+		state: MutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.token_id().exists(), "missing mandatory tokenID");
 	func_mint(ctx, &f);
@@ -153,12 +129,8 @@ fn func_safe_transfer_from_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc721.funcSafeTransferFrom");
 	let f = SafeTransferFromContext {
 		events:  Erc721Events {},
-		params: ImmutableSafeTransferFromParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableSafeTransferFromParams { proxy: params_proxy() },
+		state: MutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.from().exists(), "missing mandatory from");
 	ctx.require(f.params.to().exists(), "missing mandatory to");
@@ -177,12 +149,8 @@ fn func_set_approval_for_all_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc721.funcSetApprovalForAll");
 	let f = SetApprovalForAllContext {
 		events:  Erc721Events {},
-		params: ImmutableSetApprovalForAllParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableSetApprovalForAllParams { proxy: params_proxy() },
+		state: MutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.approval().exists(), "missing mandatory approval");
 	ctx.require(f.params.operator().exists(), "missing mandatory operator");
@@ -200,12 +168,8 @@ fn func_transfer_from_thunk(ctx: &ScFuncContext) {
 	ctx.log("erc721.funcTransferFrom");
 	let f = TransferFromContext {
 		events:  Erc721Events {},
-		params: ImmutableTransferFromParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableTransferFromParams { proxy: params_proxy() },
+		state: MutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.from().exists(), "missing mandatory from");
 	ctx.require(f.params.to().exists(), "missing mandatory to");
@@ -223,18 +187,13 @@ pub struct BalanceOfContext {
 fn view_balance_of_thunk(ctx: &ScViewContext) {
 	ctx.log("erc721.viewBalanceOf");
 	let f = BalanceOfContext {
-		params: ImmutableBalanceOfParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableBalanceOfResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableBalanceOfParams { proxy: params_proxy() },
+		results: MutableBalanceOfResults { proxy: results_proxy() },
+		state: ImmutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.owner().exists(), "missing mandatory owner");
 	view_balance_of(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("erc721.viewBalanceOf ok");
 }
 
@@ -247,18 +206,13 @@ pub struct GetApprovedContext {
 fn view_get_approved_thunk(ctx: &ScViewContext) {
 	ctx.log("erc721.viewGetApproved");
 	let f = GetApprovedContext {
-		params: ImmutableGetApprovedParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableGetApprovedResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableGetApprovedParams { proxy: params_proxy() },
+		results: MutableGetApprovedResults { proxy: results_proxy() },
+		state: ImmutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.token_id().exists(), "missing mandatory tokenID");
 	view_get_approved(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("erc721.viewGetApproved ok");
 }
 
@@ -271,19 +225,14 @@ pub struct IsApprovedForAllContext {
 fn view_is_approved_for_all_thunk(ctx: &ScViewContext) {
 	ctx.log("erc721.viewIsApprovedForAll");
 	let f = IsApprovedForAllContext {
-		params: ImmutableIsApprovedForAllParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableIsApprovedForAllResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableIsApprovedForAllParams { proxy: params_proxy() },
+		results: MutableIsApprovedForAllResults { proxy: results_proxy() },
+		state: ImmutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.operator().exists(), "missing mandatory operator");
 	ctx.require(f.params.owner().exists(), "missing mandatory owner");
 	view_is_approved_for_all(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("erc721.viewIsApprovedForAll ok");
 }
 
@@ -295,14 +244,11 @@ pub struct NameContext {
 fn view_name_thunk(ctx: &ScViewContext) {
 	ctx.log("erc721.viewName");
 	let f = NameContext {
-		results: MutableNameResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableNameResults { proxy: results_proxy() },
+		state: ImmutableErc721State { proxy: state_proxy() },
 	};
 	view_name(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("erc721.viewName ok");
 }
 
@@ -315,18 +261,13 @@ pub struct OwnerOfContext {
 fn view_owner_of_thunk(ctx: &ScViewContext) {
 	ctx.log("erc721.viewOwnerOf");
 	let f = OwnerOfContext {
-		params: ImmutableOwnerOfParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableOwnerOfResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableOwnerOfParams { proxy: params_proxy() },
+		results: MutableOwnerOfResults { proxy: results_proxy() },
+		state: ImmutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.token_id().exists(), "missing mandatory tokenID");
 	view_owner_of(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("erc721.viewOwnerOf ok");
 }
 
@@ -338,14 +279,11 @@ pub struct SymbolContext {
 fn view_symbol_thunk(ctx: &ScViewContext) {
 	ctx.log("erc721.viewSymbol");
 	let f = SymbolContext {
-		results: MutableSymbolResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableSymbolResults { proxy: results_proxy() },
+		state: ImmutableErc721State { proxy: state_proxy() },
 	};
 	view_symbol(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("erc721.viewSymbol ok");
 }
 
@@ -358,17 +296,12 @@ pub struct TokenURIContext {
 fn view_token_uri_thunk(ctx: &ScViewContext) {
 	ctx.log("erc721.viewTokenURI");
 	let f = TokenURIContext {
-		params: ImmutableTokenURIParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableTokenURIResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableErc721State {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableTokenURIParams { proxy: params_proxy() },
+		results: MutableTokenURIResults { proxy: results_proxy() },
+		state: ImmutableErc721State { proxy: state_proxy() },
 	};
 	ctx.require(f.params.token_id().exists(), "missing mandatory tokenID");
 	view_token_uri(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("erc721.viewTokenURI ok");
 }

@@ -3,7 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::wasmtypes::*;
+use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -30,11 +30,11 @@ pub fn bytes_to_string(value: &[u8]) -> String {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableBytes<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableBytes {
+    proxy: Proxy
 }
 
-impl ScImmutableBytes<'_> {
+impl ScImmutableBytes {
     pub fn new(proxy: Proxy) -> ScImmutableBytes {
         ScImmutableBytes { proxy }
     }
@@ -55,16 +55,16 @@ impl ScImmutableBytes<'_> {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // value proxy for mutable ScBytes in host container
-pub struct ScMutableBytes<'a> {
-    proxy: Proxy<'a>,
+pub struct ScMutableBytes {
+    proxy: Proxy
 }
 
-impl ScMutableBytes<'_> {
+impl ScMutableBytes {
     pub fn new(proxy: Proxy) -> ScMutableBytes {
         ScMutableBytes { proxy }
     }
 
-    pub fn delete(&mut self)  {
+    pub fn delete(&self)  {
         self.proxy.delete();
     }
 
@@ -72,7 +72,7 @@ impl ScMutableBytes<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: &[u8]) {
+    pub fn set_value(&self, value: &[u8]) {
         self.proxy.set(&bytes_to_bytes(value));
     }
 

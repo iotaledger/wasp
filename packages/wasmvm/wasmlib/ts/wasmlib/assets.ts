@@ -63,7 +63,6 @@ export class ScBalances {
 }
 
 export class ScTransfers extends ScAssets {
-
     public constructor() {
         super([]);
     }

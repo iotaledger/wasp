@@ -37,8 +37,8 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     // Get the array of current bets from state storage.
     let bets: sc.ArrayOfMutableBet = f.state.bets();
 
-    const nrBets = bets.length();
-    for (let i: u32 = 0; i < nrBets; i++) {
+    const nrOfBets = bets.length();
+    for (let i: u32 = 0; i < nrOfBets; i++) {
         let bet: sc.Bet = bets.getBet(i).value();
 
         if (bet.better.address() == ctx.caller().address()) {
@@ -72,9 +72,6 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     bet.amount = amount;
     bet.number = number;
 
-    // Determine what the next bet number is by retrieving the length of the bets array.
-    let betNr: u32 = bets.length();
-
     // Append the bet data to the bets array. The bet array will automatically take care
     // of serializing the bet struct into a bytes representation.
     bets.appendBet().setValue(bet);
@@ -82,7 +79,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     f.events.bet(bet.better.address(), bet.amount, bet.number);
 
     // Was this the first bet of this round?
-    if (betNr == 0) {
+    if (nrOfBets == 0) {
         // Yes it was, query the state for the length of the playing period in seconds by
         // retrieving the playPeriod value from state storage
         let playPeriod: u32 = f.state.playPeriod().value();
@@ -152,10 +149,10 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
     let bets: sc.ArrayOfMutableBet = f.state.bets();
 
     // Determine the amount of bets in the 'bets' array.
-    let nrBets: u32 = bets.length();
+    let nrOfBets: u32 = bets.length();
 
     // Loop through all indexes of the 'bets' array.
-    for (let i: u32 = 0; i < nrBets; i++) {
+    for (let i: u32 = 0; i < nrOfBets; i++) {
         // Retrieve the bet stored at the next index
         let bet: sc.Bet = bets.getBet(i).value();
 

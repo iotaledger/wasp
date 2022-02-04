@@ -35,7 +35,9 @@ func ChainIDEncode(enc *WasmEncoder, value ScChainID) {
 
 func ChainIDFromBytes(buf []byte) ScChainID {
 	if len(buf) == 0 {
-		return ScChainID{id: [ScChainIDLength]byte{2}}
+		chainID := ScChainID{}
+		chainID.id[0] = 2 // ledgerstate.AliasAddressType
+		return chainID
 	}
 	if len(buf) != ScChainIDLength {
 		panic("invalid ChainID length")

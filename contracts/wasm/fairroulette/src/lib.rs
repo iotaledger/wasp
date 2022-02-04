@@ -10,19 +10,17 @@
 
 use fairroulette::*;
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::consts::*;
 use crate::events::*;
-use crate::keys::*;
 use crate::params::*;
 use crate::results::*;
 use crate::state::*;
+use crate::structs::*;
 
 mod consts;
 mod contract;
 mod events;
-mod keys;
 mod params;
 mod results;
 mod state;
@@ -41,12 +39,6 @@ fn on_load() {
     exports.add_view(VIEW_ROUND_NUMBER,        view_round_number_thunk);
     exports.add_view(VIEW_ROUND_STARTED_AT,    view_round_started_at_thunk);
     exports.add_view(VIEW_ROUND_STATUS,        view_round_status_thunk);
-
-    unsafe {
-        for i in 0..KEY_MAP_LEN {
-            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
-        }
-    }
 }
 
 pub struct ForcePayoutContext {
@@ -56,16 +48,14 @@ pub struct ForcePayoutContext {
 
 fn func_force_payout_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairroulette.funcForcePayout");
+	let f = ForcePayoutContext {
+		events:  FairRouletteEvents {},
+		state: MutableFairRouletteState { proxy: state_proxy() },
+	};
 
 	// only SC creator can restart the round forcefully
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-	let f = ForcePayoutContext {
-		events:  FairRouletteEvents {},
-		state: MutableFairRouletteState {
-			id: OBJ_ID_STATE,
-		},
-	};
 	func_force_payout(ctx, &f);
 	ctx.log("fairroulette.funcForcePayout ok");
 }
@@ -77,16 +67,14 @@ pub struct ForceResetContext {
 
 fn func_force_reset_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairroulette.funcForceReset");
+	let f = ForceResetContext {
+		events:  FairRouletteEvents {},
+		state: MutableFairRouletteState { proxy: state_proxy() },
+	};
 
 	// only SC creator can restart the round forcefully
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-	let f = ForceResetContext {
-		events:  FairRouletteEvents {},
-		state: MutableFairRouletteState {
-			id: OBJ_ID_STATE,
-		},
-	};
 	func_force_reset(ctx, &f);
 	ctx.log("fairroulette.funcForceReset ok");
 }
@@ -98,16 +86,14 @@ pub struct PayWinnersContext {
 
 fn func_pay_winners_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairroulette.funcPayWinners");
+	let f = PayWinnersContext {
+		events:  FairRouletteEvents {},
+		state: MutableFairRouletteState { proxy: state_proxy() },
+	};
 
 	// only SC itself can invoke this function
 	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
-	let f = PayWinnersContext {
-		events:  FairRouletteEvents {},
-		state: MutableFairRouletteState {
-			id: OBJ_ID_STATE,
-		},
-	};
 	func_pay_winners(ctx, &f);
 	ctx.log("fairroulette.funcPayWinners ok");
 }
@@ -122,12 +108,8 @@ fn func_place_bet_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairroulette.funcPlaceBet");
 	let f = PlaceBetContext {
 		events:  FairRouletteEvents {},
-		params: ImmutablePlaceBetParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableFairRouletteState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutablePlaceBetParams { proxy: params_proxy() },
+		state: MutableFairRouletteState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.number().exists(), "missing mandatory number");
 	func_place_bet(ctx, &f);
@@ -142,19 +124,15 @@ pub struct PlayPeriodContext {
 
 fn func_play_period_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairroulette.funcPlayPeriod");
+	let f = PlayPeriodContext {
+		events:  FairRouletteEvents {},
+		params: ImmutablePlayPeriodParams { proxy: params_proxy() },
+		state: MutableFairRouletteState { proxy: state_proxy() },
+	};
 
 	// only SC creator can update the play period
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-	let f = PlayPeriodContext {
-		events:  FairRouletteEvents {},
-		params: ImmutablePlayPeriodParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableFairRouletteState {
-			id: OBJ_ID_STATE,
-		},
-	};
 	ctx.require(f.params.play_period().exists(), "missing mandatory playPeriod");
 	func_play_period(ctx, &f);
 	ctx.log("fairroulette.funcPlayPeriod ok");
@@ -168,14 +146,11 @@ pub struct LastWinningNumberContext {
 fn view_last_winning_number_thunk(ctx: &ScViewContext) {
 	ctx.log("fairroulette.viewLastWinningNumber");
 	let f = LastWinningNumberContext {
-		results: MutableLastWinningNumberResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableFairRouletteState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableLastWinningNumberResults { proxy: results_proxy() },
+		state: ImmutableFairRouletteState { proxy: state_proxy() },
 	};
 	view_last_winning_number(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("fairroulette.viewLastWinningNumber ok");
 }
 
@@ -187,14 +162,11 @@ pub struct RoundNumberContext {
 fn view_round_number_thunk(ctx: &ScViewContext) {
 	ctx.log("fairroulette.viewRoundNumber");
 	let f = RoundNumberContext {
-		results: MutableRoundNumberResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableFairRouletteState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableRoundNumberResults { proxy: results_proxy() },
+		state: ImmutableFairRouletteState { proxy: state_proxy() },
 	};
 	view_round_number(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("fairroulette.viewRoundNumber ok");
 }
 
@@ -206,14 +178,11 @@ pub struct RoundStartedAtContext {
 fn view_round_started_at_thunk(ctx: &ScViewContext) {
 	ctx.log("fairroulette.viewRoundStartedAt");
 	let f = RoundStartedAtContext {
-		results: MutableRoundStartedAtResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableFairRouletteState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableRoundStartedAtResults { proxy: results_proxy() },
+		state: ImmutableFairRouletteState { proxy: state_proxy() },
 	};
 	view_round_started_at(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("fairroulette.viewRoundStartedAt ok");
 }
 
@@ -225,13 +194,10 @@ pub struct RoundStatusContext {
 fn view_round_status_thunk(ctx: &ScViewContext) {
 	ctx.log("fairroulette.viewRoundStatus");
 	let f = RoundStatusContext {
-		results: MutableRoundStatusResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableFairRouletteState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableRoundStatusResults { proxy: results_proxy() },
+		state: ImmutableFairRouletteState { proxy: state_proxy() },
 	};
 	view_round_status(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("fairroulette.viewRoundStatus ok");
 }

@@ -3,7 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::wasmtypes::*;
+use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -20,7 +20,7 @@ pub fn string_from_bytes(buf: &[u8]) -> String {
 }
 
 pub fn string_to_bytes(value: &str) -> Vec<u8> {
-    value.to_vec()
+    value.as_bytes().to_vec()
 }
 
 pub fn string_to_string(value: &str) -> String {
@@ -29,11 +29,11 @@ pub fn string_to_string(value: &str) -> String {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableString<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableString {
+    proxy: Proxy
 }
 
-impl ScImmutableString<'_> {
+impl ScImmutableString {
     pub fn new(proxy: Proxy) -> ScImmutableString {
         ScImmutableString { proxy }
     }
@@ -54,16 +54,16 @@ impl ScImmutableString<'_> {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // value proxy for mutable ScString in host container
-pub struct ScMutableString<'a> {
-    proxy: Proxy<'a>,
+pub struct ScMutableString {
+    proxy: Proxy
 }
 
-impl ScMutableString<'_> {
+impl ScMutableString {
     pub fn new(proxy: Proxy) -> ScMutableString {
         ScMutableString { proxy }
     }
 
-    pub fn delete(&mut self) {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 
@@ -71,7 +71,7 @@ impl ScMutableString<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: &str) {
+    pub fn set_value(&self, value: &str) {
         self.proxy.set(&string_to_bytes(value));
     }
 

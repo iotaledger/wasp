@@ -3,7 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::wasmtypes::*;
+use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -39,7 +39,17 @@ pub fn request_id_encode(enc: &mut WasmEncoder, value: &ScRequestID)  {
 }
 
 pub fn request_id_from_bytes(buf: &[u8]) -> ScRequestID {
-    ScRequestID { id: buf.try_into().expect("invalid RequestId length") }
+    if buf.len() == 0 {
+        return ScRequestID { id: [0;SC_REQUEST_ID_LENGTH] };
+    }
+    if buf.len() != SC_REQUEST_ID_LENGTH {
+        panic("invalid RequestID length");
+    }
+    // final uint16 output index must be > ledgerstate.MaxOutputCount
+    if buf[SC_REQUEST_ID_LENGTH - 2] > 127 || buf[SC_REQUEST_ID_LENGTH - 1] != 0 {
+        panic("invalid RequestID: output index > 127");
+    }
+    ScRequestID { id: buf.try_into().expect("WTF?") }
 }
 
 pub fn request_id_to_bytes(value: &ScRequestID) -> Vec<u8> {
@@ -52,18 +62,18 @@ pub fn request_id_to_string(value: &ScRequestID) -> String {
 }
 
 fn request_id_from_bytes_unchecked(buf: &[u8]) -> ScRequestID {
-    ScRequestID { id: buf.try_into().expect("invalid RequestId length") }
+    ScRequestID { id: buf.try_into().expect("invalid RequestID length") }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableRequestId<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableRequestID {
+    proxy: Proxy
 }
 
-impl ScImmutableRequestId<'_> {
-    pub fn new(proxy: Proxy) -> ScImmutableRequestId {
-        ScImmutableRequestId { proxy }
+impl ScImmutableRequestID {
+    pub fn new(proxy: Proxy) -> ScImmutableRequestID {
+        ScImmutableRequestID { proxy }
     }
 
     pub fn exists(&self) -> bool {
@@ -81,17 +91,17 @@ impl ScImmutableRequestId<'_> {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// value proxy for mutable ScRequestId in host container
-pub struct ScMutableRequestId<'a> {
-    proxy: Proxy<'a>,
+// value proxy for mutable ScRequestID in host container
+pub struct ScMutableRequestID {
+    proxy: Proxy
 }
 
-impl ScMutableRequestId<'_> {
-    pub fn new(proxy: Proxy) -> ScMutableRequestId {
-        ScMutableRequestId { proxy }
+impl ScMutableRequestID {
+    pub fn new(proxy: Proxy) -> ScMutableRequestID {
+        ScMutableRequestID { proxy }
     }
 
-    pub fn delete(&mut self)  {
+    pub fn delete(&self)  {
         self.proxy.delete();
     }
 
@@ -99,7 +109,7 @@ impl ScMutableRequestId<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: &ScRequestID) {
+    pub fn set_value(&self, value: &ScRequestID) {
         self.proxy.set(&request_id_to_bytes(&value));
     }
 

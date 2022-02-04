@@ -33,11 +33,12 @@ pub fn func_call_on_chain(ctx: &ScFuncContext, f: &CallOnChainContext) {
 
     counter.set_value(counter.value() + 1);
 
-    let parms = ScMutableMap::new();
-    parms.get_int64(PARAM_INT_VALUE).set_value(param_int);
+    let parms = ScDict::new(&[]);
+    let key = string_to_bytes(PARAM_INT_VALUE);
+    parms.set(&key, &int64_to_bytes(param_int));
     let ret = ctx.call(hname_contract, hname_ep, Some(parms), None);
-    let ret_val = ret.get_int64(RESULT_INT_VALUE);
-    f.results.int_value().set_value(ret_val.value());
+    let ret_val = int64_from_bytes(&ret.get(&key));
+    f.results.int_value().set_value(ret_val);
 }
 
 pub fn func_check_context_from_full_ep(ctx: &ScFuncContext, f: &CheckContextFromFullEPContext) {
@@ -55,8 +56,8 @@ pub fn func_do_nothing(ctx: &ScFuncContext, _f: &DoNothingContext) {
 pub fn func_get_minted_supply(ctx: &ScFuncContext, f: &GetMintedSupplyContext) {
     let minted = ctx.minted();
     let minted_colors = minted.colors();
-    ctx.require(minted_colors.length() == 1, "test only supports one minted color");
-    let color = minted_colors.get_color(0).value();
+    ctx.require(minted_colors.len() == 1, "test only supports one minted color");
+    let color = minted_colors.get(0).unwrap();
     let amount = minted.balance(&color);
     f.results.minted_supply().set_value(amount);
     f.results.minted_color().set_value(&color);
@@ -80,7 +81,7 @@ pub fn func_pass_types_full(ctx: &ScFuncContext, f: &PassTypesFullContext) {
     ctx.require(f.params.int64_zero().value() == 0, "int64-0 wrong");
     ctx.require(f.params.string().value() == PARAM_STRING, "string wrong");
     ctx.require(f.params.string_zero().value() == "", "string-0 wrong");
-    ctx.require(f.params.hname().value() == ScHname::new(PARAM_HNAME), "Hname wrong");
+    ctx.require(f.params.hname().value() == ctx.utility().hash_name(PARAM_HNAME), "Hname wrong");
     ctx.require(f.params.hname_zero().value() == ScHname(0), "Hname-0 wrong");
 }
 
@@ -110,9 +111,9 @@ pub fn func_set_int(_ctx: &ScFuncContext, f: &SetIntContext) {
 pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
     let spawn_name = SC_NAME.to_string() + "_spawned";
     let spawn_descr = "spawned contract description";
-    ctx.deploy(&f.params.prog_hash().value(), &spawn_name, spawn_descr, None);
+    ctx.deploy_contract(&f.params.prog_hash().value(), &spawn_name, spawn_descr, None);
 
-    let spawn_hname = ScHname::new(&spawn_name);
+    let spawn_hname = ctx.utility().hash_name(&spawn_name);
     for _i in 0..5 {
         ctx.call(spawn_hname, HFUNC_INC_COUNTER, None, None);
     }
@@ -141,7 +142,7 @@ pub fn func_test_chain_owner_id_full(ctx: &ScFuncContext, f: &TestChainOwnerIDFu
 pub fn func_test_event_log_deploy(ctx: &ScFuncContext, _f: &TestEventLogDeployContext) {
     // deploy the same contract with another name
     let program_hash = ctx.utility().hash_blake2b("testcore".as_bytes());
-    ctx.deploy(&program_hash, CONTRACT_NAME_DEPLOYED, "test contract deploy log", None);
+    ctx.deploy_contract(&program_hash, CONTRACT_NAME_DEPLOYED, "test contract deploy log", None);
 }
 
 pub fn func_test_event_log_event_data(ctx: &ScFuncContext, _f: &TestEventLogEventDataContext) {
@@ -214,7 +215,7 @@ pub fn view_pass_types_view(ctx: &ScViewContext, f: &PassTypesViewContext) {
     ctx.require(f.params.int64_zero().value() == 0, "int64-0 wrong");
     ctx.require(f.params.string().value() == PARAM_STRING, "string wrong");
     ctx.require(f.params.string_zero().value() == "", "string-0 wrong");
-    ctx.require(f.params.hname().value() == ScHname::new(PARAM_HNAME), "Hname wrong");
+    ctx.require(f.params.hname().value() == ctx.utility().hash_name(PARAM_HNAME), "Hname wrong");
     ctx.require(f.params.hname_zero().value() == ScHname(0), "Hname-0 wrong");
 }
 

@@ -3,7 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::wasmtypes::*;
+use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -23,7 +23,10 @@ pub fn uint64_from_bytes(buf: &[u8]) -> u64 {
     if buf.len() == 0 {
         return 0;
     }
-    u64::from_le_bytes(buf.try_into().expect("invalid Uint64 length"))
+    if buf.len() != SC_UINT64_LENGTH {
+        panic("invalid Uint64 length");
+    }
+    u64::from_le_bytes(buf.try_into().expect("WTF?"))
 }
 
 pub fn uint64_to_bytes(value: u64) -> Vec<u8> {
@@ -36,11 +39,11 @@ pub fn uint64_to_string(value: u64) -> String {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableUint64<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableUint64 {
+    proxy: Proxy
 }
 
-impl ScImmutableUint64<'_> {
+impl ScImmutableUint64 {
     pub fn new(proxy: Proxy) -> ScImmutableUint64 {
         ScImmutableUint64 { proxy }
     }
@@ -61,16 +64,16 @@ impl ScImmutableUint64<'_> {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // value proxy for mutable u64 in host container
-pub struct ScMutableUint64<'a> {
-    proxy: Proxy<'a>,
+pub struct ScMutableUint64 {
+    proxy: Proxy
 }
 
-impl ScMutableUint64<'_> {
+impl ScMutableUint64 {
     pub fn new(proxy: Proxy) -> ScMutableUint64 {
         ScMutableUint64 { proxy }
     }
 
-    pub fn delete(&mut self)  {
+    pub fn delete(&self)  {
         self.proxy.delete();
     }
 
@@ -78,7 +81,7 @@ impl ScMutableUint64<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: u64) {
+    pub fn set_value(&self, value: u64) {
         self.proxy.set(&uint64_to_bytes(value));
     }
 

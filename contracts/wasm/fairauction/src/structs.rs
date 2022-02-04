@@ -9,7 +9,6 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 use crate::typedefs::*;
 
 #[derive(Clone)]
@@ -29,76 +28,74 @@ pub struct Auction {
 
 impl Auction {
     pub fn from_bytes(bytes: &[u8]) -> Auction {
-        let mut decode = BytesDecoder::new(bytes);
+        let mut dec = WasmDecoder::new(bytes);
         Auction {
-            color          : decode.color(),
-            creator        : decode.agent_id(),
-            deposit        : decode.uint64(),
-            description    : decode.string(),
-            duration       : decode.uint32(),
-            highest_bid    : decode.uint64(),
-            highest_bidder : decode.agent_id(),
-            minimum_bid    : decode.uint64(),
-            num_tokens     : decode.uint64(),
-            owner_margin   : decode.uint64(),
-            when_started   : decode.uint64(),
+            color          : color_decode(&mut dec),
+            creator        : agent_id_decode(&mut dec),
+            deposit        : uint64_decode(&mut dec),
+            description    : string_decode(&mut dec),
+            duration       : uint32_decode(&mut dec),
+            highest_bid    : uint64_decode(&mut dec),
+            highest_bidder : agent_id_decode(&mut dec),
+            minimum_bid    : uint64_decode(&mut dec),
+            num_tokens     : uint64_decode(&mut dec),
+            owner_margin   : uint64_decode(&mut dec),
+            when_started   : uint64_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut encode = BytesEncoder::new();
-		encode.color(&self.color);
-		encode.agent_id(&self.creator);
-		encode.uint64(self.deposit);
-		encode.string(&self.description);
-		encode.uint32(self.duration);
-		encode.uint64(self.highest_bid);
-		encode.agent_id(&self.highest_bidder);
-		encode.uint64(self.minimum_bid);
-		encode.uint64(self.num_tokens);
-		encode.uint64(self.owner_margin);
-		encode.uint64(self.when_started);
-        return encode.data();
+        let mut enc = WasmEncoder::new();
+		color_encode(&mut enc, &self.color);
+		agent_id_encode(&mut enc, &self.creator);
+		uint64_encode(&mut enc, self.deposit);
+		string_encode(&mut enc, &self.description);
+		uint32_encode(&mut enc, self.duration);
+		uint64_encode(&mut enc, self.highest_bid);
+		agent_id_encode(&mut enc, &self.highest_bidder);
+		uint64_encode(&mut enc, self.minimum_bid);
+		uint64_encode(&mut enc, self.num_tokens);
+		uint64_encode(&mut enc, self.owner_margin);
+		uint64_encode(&mut enc, self.when_started);
+        enc.buf()
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableAuction {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableAuction {
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn value(&self) -> Auction {
-        Auction::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        Auction::from_bytes(&self.proxy.get())
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableAuction {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableAuction {
     pub fn delete(&self) {
-        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+        self.proxy.delete();
     }
 
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn set_value(&self, value: &Auction) {
-        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+        self.proxy.set(&value.to_bytes());
     }
 
     pub fn value(&self) -> Auction {
-        Auction::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        Auction::from_bytes(&self.proxy.get())
     }
 }
 
@@ -111,59 +108,57 @@ pub struct Bid {
 
 impl Bid {
     pub fn from_bytes(bytes: &[u8]) -> Bid {
-        let mut decode = BytesDecoder::new(bytes);
+        let mut dec = WasmDecoder::new(bytes);
         Bid {
-            amount    : decode.uint64(),
-            index     : decode.uint32(),
-            timestamp : decode.uint64(),
+            amount    : uint64_decode(&mut dec),
+            index     : uint32_decode(&mut dec),
+            timestamp : uint64_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut encode = BytesEncoder::new();
-		encode.uint64(self.amount);
-		encode.uint32(self.index);
-		encode.uint64(self.timestamp);
-        return encode.data();
+        let mut enc = WasmEncoder::new();
+		uint64_encode(&mut enc, self.amount);
+		uint32_encode(&mut enc, self.index);
+		uint64_encode(&mut enc, self.timestamp);
+        enc.buf()
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableBid {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableBid {
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn value(&self) -> Bid {
-        Bid::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        Bid::from_bytes(&self.proxy.get())
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableBid {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableBid {
     pub fn delete(&self) {
-        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+        self.proxy.delete();
     }
 
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn set_value(&self, value: &Bid) {
-        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+        self.proxy.set(&value.to_bytes());
     }
 
     pub fn value(&self) -> Bid {
-        Bid::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        Bid::from_bytes(&self.proxy.get())
     }
 }

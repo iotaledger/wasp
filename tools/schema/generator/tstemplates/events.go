@@ -13,8 +13,8 @@ $#each events eventFunc
 `,
 	// *******************************
 	"eventFunc": `
-$#set params 
 $#set separator 
+$#set params 
 $#each event eventParam
 
 	$evtName($params): void {

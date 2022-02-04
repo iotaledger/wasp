@@ -9,7 +9,6 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 #[derive(Clone)]
 pub struct Donation {
@@ -22,63 +21,61 @@ pub struct Donation {
 
 impl Donation {
     pub fn from_bytes(bytes: &[u8]) -> Donation {
-        let mut decode = BytesDecoder::new(bytes);
+        let mut dec = WasmDecoder::new(bytes);
         Donation {
-            amount    : decode.uint64(),
-            donator   : decode.agent_id(),
-            error     : decode.string(),
-            feedback  : decode.string(),
-            timestamp : decode.uint64(),
+            amount    : uint64_decode(&mut dec),
+            donator   : agent_id_decode(&mut dec),
+            error     : string_decode(&mut dec),
+            feedback  : string_decode(&mut dec),
+            timestamp : uint64_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut encode = BytesEncoder::new();
-		encode.uint64(self.amount);
-		encode.agent_id(&self.donator);
-		encode.string(&self.error);
-		encode.string(&self.feedback);
-		encode.uint64(self.timestamp);
-        return encode.data();
+        let mut enc = WasmEncoder::new();
+		uint64_encode(&mut enc, self.amount);
+		agent_id_encode(&mut enc, &self.donator);
+		string_encode(&mut enc, &self.error);
+		string_encode(&mut enc, &self.feedback);
+		uint64_encode(&mut enc, self.timestamp);
+        enc.buf()
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableDonation {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableDonation {
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn value(&self) -> Donation {
-        Donation::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        Donation::from_bytes(&self.proxy.get())
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableDonation {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableDonation {
     pub fn delete(&self) {
-        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+        self.proxy.delete();
     }
 
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn set_value(&self, value: &Donation) {
-        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+        self.proxy.set(&value.to_bytes());
     }
 
     pub fn value(&self) -> Donation {
-        Donation::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        Donation::from_bytes(&self.proxy.get())
     }
 }

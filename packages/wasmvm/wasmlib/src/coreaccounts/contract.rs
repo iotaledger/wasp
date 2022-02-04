@@ -7,8 +7,6 @@
 
 #![allow(dead_code)]
 
-use std::ptr;
-
 use crate::*;
 use crate::coreaccounts::*;
 
@@ -52,65 +50,67 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn deposit(_ctx: & dyn ScFuncCallContext) -> DepositCall {
+    pub fn deposit(_ctx: &dyn ScFuncCallContext) -> DepositCall {
         let mut f = DepositCall {
             func: ScFunc::new(HSC_NAME, HFUNC_DEPOSIT),
-            params: MutableDepositParams { id: 0 },
+            params: MutableDepositParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn harvest(_ctx: & dyn ScFuncCallContext) -> HarvestCall {
+    pub fn harvest(_ctx: &dyn ScFuncCallContext) -> HarvestCall {
         let mut f = HarvestCall {
             func: ScFunc::new(HSC_NAME, HFUNC_HARVEST),
-            params: MutableHarvestParams { id: 0 },
+            params: MutableHarvestParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn withdraw(_ctx: & dyn ScFuncCallContext) -> WithdrawCall {
+    pub fn withdraw(_ctx: &dyn ScFuncCallContext) -> WithdrawCall {
         WithdrawCall {
             func: ScFunc::new(HSC_NAME, HFUNC_WITHDRAW),
         }
     }
 
-    pub fn accounts(_ctx: & dyn ScViewCallContext) -> AccountsCall {
+    pub fn accounts(_ctx: &dyn ScViewCallContext) -> AccountsCall {
         let mut f = AccountsCall {
             func: ScView::new(HSC_NAME, HVIEW_ACCOUNTS),
-            results: ImmutableAccountsResults { id: 0 },
+            results: ImmutableAccountsResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn balance(_ctx: & dyn ScViewCallContext) -> BalanceCall {
+    pub fn balance(_ctx: &dyn ScViewCallContext) -> BalanceCall {
         let mut f = BalanceCall {
             func: ScView::new(HSC_NAME, HVIEW_BALANCE),
-            params: MutableBalanceParams { id: 0 },
-            results: ImmutableBalanceResults { id: 0 },
+            params: MutableBalanceParams { proxy: Proxy::nil() },
+            results: ImmutableBalanceResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn get_account_nonce(_ctx: & dyn ScViewCallContext) -> GetAccountNonceCall {
+    pub fn get_account_nonce(_ctx: &dyn ScViewCallContext) -> GetAccountNonceCall {
         let mut f = GetAccountNonceCall {
             func: ScView::new(HSC_NAME, HVIEW_GET_ACCOUNT_NONCE),
-            params: MutableGetAccountNonceParams { id: 0 },
-            results: ImmutableGetAccountNonceResults { id: 0 },
+            params: MutableGetAccountNonceParams { proxy: Proxy::nil() },
+            results: ImmutableGetAccountNonceResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn total_assets(_ctx: & dyn ScViewCallContext) -> TotalAssetsCall {
+    pub fn total_assets(_ctx: &dyn ScViewCallContext) -> TotalAssetsCall {
         let mut f = TotalAssetsCall {
             func: ScView::new(HSC_NAME, HVIEW_TOTAL_ASSETS),
-            results: ImmutableTotalAssetsResults { id: 0 },
+            results: ImmutableTotalAssetsResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 }

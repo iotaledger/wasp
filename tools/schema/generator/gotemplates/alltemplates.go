@@ -16,7 +16,6 @@ var Templates = []map[string]string{
 	contractGo,
 	eventsGo,
 	funcsGo,
-	keysGo,
 	libGo,
 	mainGo,
 	paramsGo,

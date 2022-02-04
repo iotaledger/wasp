@@ -10,17 +10,15 @@
 
 use donatewithfeedback::*;
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::consts::*;
-use crate::keys::*;
 use crate::params::*;
 use crate::results::*;
 use crate::state::*;
+use crate::structs::*;
 
 mod consts;
 mod contract;
-mod keys;
 mod params;
 mod results;
 mod state;
@@ -34,12 +32,6 @@ fn on_load() {
     exports.add_func(FUNC_WITHDRAW,      func_withdraw_thunk);
     exports.add_view(VIEW_DONATION,      view_donation_thunk);
     exports.add_view(VIEW_DONATION_INFO, view_donation_info_thunk);
-
-    unsafe {
-        for i in 0..KEY_MAP_LEN {
-            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
-        }
-    }
 }
 
 pub struct DonateContext {
@@ -50,12 +42,8 @@ pub struct DonateContext {
 fn func_donate_thunk(ctx: &ScFuncContext) {
 	ctx.log("donatewithfeedback.funcDonate");
 	let f = DonateContext {
-		params: ImmutableDonateParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableDonateWithFeedbackState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableDonateParams { proxy: params_proxy() },
+		state: MutableDonateWithFeedbackState { proxy: state_proxy() },
 	};
 	func_donate(ctx, &f);
 	ctx.log("donatewithfeedback.funcDonate ok");
@@ -68,18 +56,14 @@ pub struct WithdrawContext {
 
 fn func_withdraw_thunk(ctx: &ScFuncContext) {
 	ctx.log("donatewithfeedback.funcWithdraw");
+	let f = WithdrawContext {
+		params: ImmutableWithdrawParams { proxy: params_proxy() },
+		state: MutableDonateWithFeedbackState { proxy: state_proxy() },
+	};
 
 	// only SC creator can withdraw donated funds
 	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
-	let f = WithdrawContext {
-		params: ImmutableWithdrawParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableDonateWithFeedbackState {
-			id: OBJ_ID_STATE,
-		},
-	};
 	func_withdraw(ctx, &f);
 	ctx.log("donatewithfeedback.funcWithdraw ok");
 }
@@ -93,18 +77,13 @@ pub struct DonationContext {
 fn view_donation_thunk(ctx: &ScViewContext) {
 	ctx.log("donatewithfeedback.viewDonation");
 	let f = DonationContext {
-		params: ImmutableDonationParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableDonationResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableDonateWithFeedbackState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableDonationParams { proxy: params_proxy() },
+		results: MutableDonationResults { proxy: results_proxy() },
+		state: ImmutableDonateWithFeedbackState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.nr().exists(), "missing mandatory nr");
 	view_donation(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("donatewithfeedback.viewDonation ok");
 }
 
@@ -116,13 +95,10 @@ pub struct DonationInfoContext {
 fn view_donation_info_thunk(ctx: &ScViewContext) {
 	ctx.log("donatewithfeedback.viewDonationInfo");
 	let f = DonationInfoContext {
-		results: MutableDonationInfoResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableDonateWithFeedbackState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableDonationInfoResults { proxy: results_proxy() },
+		state: ImmutableDonateWithFeedbackState { proxy: state_proxy() },
 	};
 	view_donation_info(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("donatewithfeedback.viewDonationInfo ok");
 }

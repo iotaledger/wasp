@@ -3,25 +3,31 @@
 
 #![allow(dead_code)]
 
-// pub use context::*;
-// pub use contract::*;
-// pub use events::*;
+pub use context::*;
+pub use assets::*;
+pub use contract::*;
+pub use dict::*;
+pub use events::*;
 pub use exports::ScExports;
+pub use sandbox::*;
+pub use sandboxutils::*;
+pub use wasmtypes::*;
 
-// mod context;
-// mod contract;
-// pub mod coreaccounts;
-// pub mod coreblob;
-// pub mod coreblocklog;
-// pub mod coregovernance;
-// pub mod coreroot;
+pub mod context;
+pub mod assets;
+pub mod contract;
+pub mod coreaccounts;
+pub mod coreblob;
+pub mod coreblocklog;
+pub mod coregovernance;
+pub mod coreroot;
 pub mod dict;
-// mod events;
-mod exports;
+pub mod events;
+pub mod exports;
 pub mod host;
 pub mod sandbox;
-pub mod state;
-//pub mod wasmrequests;
+pub mod sandboxutils;
+pub mod wasmrequests;
 pub mod wasmtypes;
 
 // When the `wee_alloc` feature is enabled,

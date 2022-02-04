@@ -6,6 +6,7 @@
 // Change the json schema instead
 
 #![allow(dead_code)]
+#![allow(unused_mut)]
 
 use wasmlib::*;
 
@@ -15,37 +16,39 @@ pub struct FairRouletteEvents {
 impl FairRouletteEvents {
 
 	pub fn bet(&self, address: &ScAddress, amount: u64, number: u16) {
-		let mut encoder = EventEncoder::new("fairroulette.bet");
-		encoder.address(&address);
-		encoder.uint64(amount);
-		encoder.uint16(number);
-		encoder.emit();
+		let mut evt = EventEncoder::new("fairroulette.bet");
+		evt.encode(&address_to_string(&address));
+		evt.encode(&uint64_to_string(amount));
+		evt.encode(&uint16_to_string(number));
+		evt.emit();
 	}
 
 	pub fn payout(&self, address: &ScAddress, amount: u64) {
-		let mut encoder = EventEncoder::new("fairroulette.payout");
-		encoder.address(&address);
-		encoder.uint64(amount);
-		encoder.emit();
+		let mut evt = EventEncoder::new("fairroulette.payout");
+		evt.encode(&address_to_string(&address));
+		evt.encode(&uint64_to_string(amount));
+		evt.emit();
 	}
 
 	pub fn round(&self, number: u32) {
-		let mut encoder = EventEncoder::new("fairroulette.round");
-		encoder.uint32(number);
-		encoder.emit();
+		let mut evt = EventEncoder::new("fairroulette.round");
+		evt.encode(&uint32_to_string(number));
+		evt.emit();
 	}
 
 	pub fn start(&self) {
-		EventEncoder::new("fairroulette.start").emit();
+		let mut evt = EventEncoder::new("fairroulette.start");
+		evt.emit();
 	}
 
 	pub fn stop(&self) {
-		EventEncoder::new("fairroulette.stop").emit();
+		let mut evt = EventEncoder::new("fairroulette.stop");
+		evt.emit();
 	}
 
 	pub fn winner(&self, number: u16) {
-		let mut encoder = EventEncoder::new("fairroulette.winner");
-		encoder.uint16(number);
-		encoder.emit();
+		let mut evt = EventEncoder::new("fairroulette.winner");
+		evt.encode(&uint16_to_string(number));
+		evt.emit();
 	}
 }

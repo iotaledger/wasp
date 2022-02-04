@@ -222,12 +222,13 @@ func vliSave(ctx wasmlib.ScFuncContext, name string, value int64) {
 	state := ctx.RawState()
 	key := []byte(name)
 	state.Set(key, enc.VliEncode(value).Buf())
+
 	buf := state.Get(key)
 	dec := wasmtypes.NewWasmDecoder(buf)
-	val := wasmtypes.Int64Decode(dec)
+	val := dec.VliDecode(64)
 	if val != value {
-		ctx.Log(name + " in : " + ctx.Utility().String(value))
-		ctx.Log(name + " out: " + ctx.Utility().String(val))
+		ctx.Log(name + " in : " + wasmtypes.Int64ToString(value))
+		ctx.Log(name + " out: " + wasmtypes.Int64ToString(val))
 	}
 }
 
@@ -236,12 +237,13 @@ func vluSave(ctx wasmlib.ScFuncContext, name string, value uint64) {
 	state := ctx.RawState()
 	key := []byte(name)
 	state.Set(key, enc.VluEncode(value).Buf())
+
 	buf := state.Get(key)
 	dec := wasmtypes.NewWasmDecoder(buf)
-	val := wasmtypes.Uint64Decode(dec)
+	val := dec.VluDecode(64)
 	if val != value {
-		ctx.Log(name + " in : " + ctx.Utility().String(int64(value)))
-		ctx.Log(name + " out: " + ctx.Utility().String(int64(val)))
+		ctx.Log(name + " in : " + wasmtypes.Uint64ToString(value))
+		ctx.Log(name + " out: " + wasmtypes.Uint64ToString(val))
 	}
 }
 

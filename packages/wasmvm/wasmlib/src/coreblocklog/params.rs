@@ -8,198 +8,197 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::*;
 use crate::coreblocklog::*;
-use crate::host::*;
+use crate::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetBlockInfoParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetBlockInfoParams {
     pub fn block_index(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetBlockInfoParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetBlockInfoParams {
     pub fn block_index(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+		ScMutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetEventsForBlockParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetEventsForBlockParams {
     pub fn block_index(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetEventsForBlockParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetEventsForBlockParams {
     pub fn block_index(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+		ScMutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetEventsForContractParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetEventsForContractParams {
     pub fn contract_hname(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.id, PARAM_CONTRACT_HNAME.get_key_id())
+		ScImmutableHname::new(self.proxy.root(PARAM_CONTRACT_HNAME))
 	}
 
     pub fn from_block(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, PARAM_FROM_BLOCK.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(PARAM_FROM_BLOCK))
 	}
 
     pub fn to_block(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, PARAM_TO_BLOCK.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(PARAM_TO_BLOCK))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetEventsForContractParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetEventsForContractParams {
     pub fn contract_hname(&self) -> ScMutableHname {
-		ScMutableHname::new(self.id, PARAM_CONTRACT_HNAME.get_key_id())
+		ScMutableHname::new(self.proxy.root(PARAM_CONTRACT_HNAME))
 	}
 
     pub fn from_block(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, PARAM_FROM_BLOCK.get_key_id())
+		ScMutableUint32::new(self.proxy.root(PARAM_FROM_BLOCK))
 	}
 
     pub fn to_block(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, PARAM_TO_BLOCK.get_key_id())
+		ScMutableUint32::new(self.proxy.root(PARAM_TO_BLOCK))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetEventsForRequestParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetEventsForRequestParams {
     pub fn request_id(&self) -> ScImmutableRequestID {
-		ScImmutableRequestID::new(self.id, PARAM_REQUEST_ID.get_key_id())
+		ScImmutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetEventsForRequestParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetEventsForRequestParams {
     pub fn request_id(&self) -> ScMutableRequestID {
-		ScMutableRequestID::new(self.id, PARAM_REQUEST_ID.get_key_id())
+		ScMutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetRequestIDsForBlockParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetRequestIDsForBlockParams {
     pub fn block_index(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetRequestIDsForBlockParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetRequestIDsForBlockParams {
     pub fn block_index(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+		ScMutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetRequestReceiptParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetRequestReceiptParams {
     pub fn request_id(&self) -> ScImmutableRequestID {
-		ScImmutableRequestID::new(self.id, PARAM_REQUEST_ID.get_key_id())
+		ScImmutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetRequestReceiptParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetRequestReceiptParams {
     pub fn request_id(&self) -> ScMutableRequestID {
-		ScMutableRequestID::new(self.id, PARAM_REQUEST_ID.get_key_id())
+		ScMutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetRequestReceiptsForBlockParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetRequestReceiptsForBlockParams {
     pub fn block_index(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetRequestReceiptsForBlockParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetRequestReceiptsForBlockParams {
     pub fn block_index(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, PARAM_BLOCK_INDEX.get_key_id())
+		ScMutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableIsRequestProcessedParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableIsRequestProcessedParams {
     pub fn request_id(&self) -> ScImmutableRequestID {
-		ScImmutableRequestID::new(self.id, PARAM_REQUEST_ID.get_key_id())
+		ScImmutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableIsRequestProcessedParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableIsRequestProcessedParams {
     pub fn request_id(&self) -> ScMutableRequestID {
-		ScMutableRequestID::new(self.id, PARAM_REQUEST_ID.get_key_id())
+		ScMutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
 	}
 }

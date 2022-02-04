@@ -9,7 +9,6 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 #[derive(Clone)]
 pub struct Bet {
@@ -20,59 +19,57 @@ pub struct Bet {
 
 impl Bet {
     pub fn from_bytes(bytes: &[u8]) -> Bet {
-        let mut decode = BytesDecoder::new(bytes);
+        let mut dec = WasmDecoder::new(bytes);
         Bet {
-            amount : decode.uint64(),
-            better : decode.agent_id(),
-            number : decode.uint16(),
+            amount : uint64_decode(&mut dec),
+            better : agent_id_decode(&mut dec),
+            number : uint16_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut encode = BytesEncoder::new();
-		encode.uint64(self.amount);
-		encode.agent_id(&self.better);
-		encode.uint16(self.number);
-        return encode.data();
+        let mut enc = WasmEncoder::new();
+		uint64_encode(&mut enc, self.amount);
+		agent_id_encode(&mut enc, &self.better);
+		uint16_encode(&mut enc, self.number);
+        enc.buf()
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableBet {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableBet {
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn value(&self) -> Bet {
-        Bet::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        Bet::from_bytes(&self.proxy.get())
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableBet {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableBet {
     pub fn delete(&self) {
-        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+        self.proxy.delete();
     }
 
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn set_value(&self, value: &Bet) {
-        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+        self.proxy.set(&value.to_bytes());
     }
 
     pub fn value(&self) -> Bet {
-        Bet::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        Bet::from_bytes(&self.proxy.get())
     }
 }

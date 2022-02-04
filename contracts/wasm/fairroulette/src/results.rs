@@ -9,96 +9,92 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
-use crate::structs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableLastWinningNumberResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableLastWinningNumberResults {
     pub fn last_winning_number(&self) -> ScImmutableUint16 {
-		ScImmutableUint16::new(self.id, RESULT_LAST_WINNING_NUMBER.get_key_id())
+		ScImmutableUint16::new(self.proxy.root(RESULT_LAST_WINNING_NUMBER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableLastWinningNumberResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableLastWinningNumberResults {
     pub fn last_winning_number(&self) -> ScMutableUint16 {
-		ScMutableUint16::new(self.id, RESULT_LAST_WINNING_NUMBER.get_key_id())
+		ScMutableUint16::new(self.proxy.root(RESULT_LAST_WINNING_NUMBER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableRoundNumberResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableRoundNumberResults {
     pub fn round_number(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, RESULT_ROUND_NUMBER.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(RESULT_ROUND_NUMBER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableRoundNumberResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableRoundNumberResults {
     pub fn round_number(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, RESULT_ROUND_NUMBER.get_key_id())
+		ScMutableUint32::new(self.proxy.root(RESULT_ROUND_NUMBER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableRoundStartedAtResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableRoundStartedAtResults {
     pub fn round_started_at(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, RESULT_ROUND_STARTED_AT.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(RESULT_ROUND_STARTED_AT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableRoundStartedAtResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableRoundStartedAtResults {
     pub fn round_started_at(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, RESULT_ROUND_STARTED_AT.get_key_id())
+		ScMutableUint32::new(self.proxy.root(RESULT_ROUND_STARTED_AT))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableRoundStatusResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableRoundStatusResults {
     pub fn round_status(&self) -> ScImmutableUint16 {
-		ScImmutableUint16::new(self.id, RESULT_ROUND_STATUS.get_key_id())
+		ScImmutableUint16::new(self.proxy.root(RESULT_ROUND_STATUS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableRoundStatusResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableRoundStatusResults {
     pub fn round_status(&self) -> ScMutableUint16 {
-		ScMutableUint16::new(self.id, RESULT_ROUND_STATUS.get_key_id())
+		ScMutableUint16::new(self.proxy.root(RESULT_ROUND_STATUS))
 	}
 }

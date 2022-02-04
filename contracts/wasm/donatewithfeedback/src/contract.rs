@@ -7,8 +7,6 @@
 
 #![allow(dead_code)]
 
-use std::ptr;
-
 use wasmlib::*;
 
 use crate::consts::*;
@@ -40,40 +38,41 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn donate(_ctx: & dyn ScFuncCallContext) -> DonateCall {
+    pub fn donate(_ctx: &dyn ScFuncCallContext) -> DonateCall {
         let mut f = DonateCall {
             func: ScFunc::new(HSC_NAME, HFUNC_DONATE),
-            params: MutableDonateParams { id: 0 },
+            params: MutableDonateParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn withdraw(_ctx: & dyn ScFuncCallContext) -> WithdrawCall {
+    pub fn withdraw(_ctx: &dyn ScFuncCallContext) -> WithdrawCall {
         let mut f = WithdrawCall {
             func: ScFunc::new(HSC_NAME, HFUNC_WITHDRAW),
-            params: MutableWithdrawParams { id: 0 },
+            params: MutableWithdrawParams { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn donation(_ctx: & dyn ScViewCallContext) -> DonationCall {
+    pub fn donation(_ctx: &dyn ScViewCallContext) -> DonationCall {
         let mut f = DonationCall {
             func: ScView::new(HSC_NAME, HVIEW_DONATION),
-            params: MutableDonationParams { id: 0 },
-            results: ImmutableDonationResults { id: 0 },
+            params: MutableDonationParams { proxy: Proxy::nil() },
+            results: ImmutableDonationResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 
-    pub fn donation_info(_ctx: & dyn ScViewCallContext) -> DonationInfoCall {
+    pub fn donation_info(_ctx: &dyn ScViewCallContext) -> DonationInfoCall {
         let mut f = DonationInfoCall {
             func: ScView::new(HSC_NAME, HVIEW_DONATION_INFO),
-            results: ImmutableDonationInfoResults { id: 0 },
+            results: ImmutableDonationInfoResults { proxy: Proxy::nil() },
         };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }
 }

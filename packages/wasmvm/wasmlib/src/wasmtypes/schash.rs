@@ -3,7 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::wasmtypes::*;
+use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -39,7 +39,13 @@ pub fn hash_encode(enc: &mut WasmEncoder, value: &ScHash)  {
 }
 
 pub fn hash_from_bytes(buf: &[u8]) -> ScHash {
-    ScHash { id: buf.try_into().expect("invalid Hash length") }
+    if buf.len() == 0 {
+        return ScHash { id: [0;SC_HASH_LENGTH] };
+    }
+    if buf.len() != SC_HASH_LENGTH {
+        panic("invalid Hash length");
+    }
+    ScHash { id: buf.try_into().expect("WTF?") }
 }
 
 pub fn hash_to_bytes(value: &ScHash) -> Vec<u8> {
@@ -57,11 +63,11 @@ fn hash_from_bytes_unchecked(buf: &[u8]) -> ScHash {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableHash<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableHash {
+    proxy: Proxy
 }
 
-impl ScImmutableHash<'_> {
+impl ScImmutableHash {
     pub fn new(proxy: Proxy) -> ScImmutableHash {
         ScImmutableHash { proxy }
     }
@@ -82,16 +88,16 @@ impl ScImmutableHash<'_> {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // value proxy for mutable ScHash in host container
-pub struct ScMutableHash<'a> {
-    proxy: Proxy<'a>,
+pub struct ScMutableHash {
+    proxy: Proxy
 }
 
-impl ScMutableHash<'_> {
+impl ScMutableHash {
     pub fn new(proxy: Proxy) -> ScMutableHash {
         ScMutableHash { proxy }
     }
 
-    pub fn delete(&mut self)  {
+    pub fn delete(&self)  {
         self.proxy.delete();
     }
 
@@ -99,7 +105,7 @@ impl ScMutableHash<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: &ScHash) {
+    pub fn set_value(&self, value: &ScHash) {
         self.proxy.set(&hash_to_bytes(&value));
     }
 

@@ -9,7 +9,6 @@
 #![allow(unused_imports)]
 
 use crate::*;
-use wasmlib::host::*;
 
 #[derive(Clone)]
 pub struct CallRequest {
@@ -21,62 +20,60 @@ pub struct CallRequest {
 
 impl CallRequest {
     pub fn from_bytes(bytes: &[u8]) -> CallRequest {
-        let mut decode = BytesDecoder::new(bytes);
+        let mut dec = WasmDecoder::new(bytes);
         CallRequest {
-            contract : decode.hname(),
-            function : decode.hname(),
-            params   : decode.bytes(),
-            transfer : decode.bytes(),
+            contract : hname_decode(&mut dec),
+            function : hname_decode(&mut dec),
+            params   : bytes_decode(&mut dec),
+            transfer : bytes_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut encode = BytesEncoder::new();
-		encode.hname(self.contract);
-		encode.hname(self.function);
-		encode.bytes(self.params);
-		encode.bytes(self.transfer);
-        return encode.data();
+        let mut enc = WasmEncoder::new();
+		hname_encode(&mut enc, self.contract);
+		hname_encode(&mut enc, self.function);
+		bytes_encode(&mut enc, &self.params);
+		bytes_encode(&mut enc, &self.transfer);
+        enc.buf()
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableCallRequest {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableCallRequest {
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn value(&self) -> CallRequest {
-        CallRequest::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        CallRequest::from_bytes(&self.proxy.get())
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableCallRequest {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableCallRequest {
     pub fn delete(&self) {
-        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+        self.proxy.delete();
     }
 
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn set_value(&self, value: &CallRequest) {
-        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+        self.proxy.set(&value.to_bytes());
     }
 
     pub fn value(&self) -> CallRequest {
-        CallRequest::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        CallRequest::from_bytes(&self.proxy.get())
     }
 }
 
@@ -90,62 +87,60 @@ pub struct DeployRequest {
 
 impl DeployRequest {
     pub fn from_bytes(bytes: &[u8]) -> DeployRequest {
-        let mut decode = BytesDecoder::new(bytes);
+        let mut dec = WasmDecoder::new(bytes);
         DeployRequest {
-            description : decode.string(),
-            name        : decode.string(),
-            params      : decode.bytes(),
-            prog_hash   : decode.hash(),
+            description : string_decode(&mut dec),
+            name        : string_decode(&mut dec),
+            params      : bytes_decode(&mut dec),
+            prog_hash   : hash_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut encode = BytesEncoder::new();
-		encode.string(&self.description);
-		encode.string(&self.name);
-		encode.bytes(self.params);
-		encode.hash(&self.prog_hash);
-        return encode.data();
+        let mut enc = WasmEncoder::new();
+		string_encode(&mut enc, &self.description);
+		string_encode(&mut enc, &self.name);
+		bytes_encode(&mut enc, &self.params);
+		hash_encode(&mut enc, &self.prog_hash);
+        enc.buf()
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableDeployRequest {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableDeployRequest {
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn value(&self) -> DeployRequest {
-        DeployRequest::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        DeployRequest::from_bytes(&self.proxy.get())
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableDeployRequest {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableDeployRequest {
     pub fn delete(&self) {
-        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+        self.proxy.delete();
     }
 
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn set_value(&self, value: &DeployRequest) {
-        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+        self.proxy.set(&value.to_bytes());
     }
 
     pub fn value(&self) -> DeployRequest {
-        DeployRequest::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        DeployRequest::from_bytes(&self.proxy.get())
     }
 }
 
@@ -161,66 +156,64 @@ pub struct PostRequest {
 
 impl PostRequest {
     pub fn from_bytes(bytes: &[u8]) -> PostRequest {
-        let mut decode = BytesDecoder::new(bytes);
+        let mut dec = WasmDecoder::new(bytes);
         PostRequest {
-            chain_id : decode.chain_id(),
-            contract : decode.hname(),
-            delay    : decode.uint32(),
-            function : decode.hname(),
-            params   : decode.bytes(),
-            transfer : decode.bytes(),
+            chain_id : chain_id_decode(&mut dec),
+            contract : hname_decode(&mut dec),
+            delay    : uint32_decode(&mut dec),
+            function : hname_decode(&mut dec),
+            params   : bytes_decode(&mut dec),
+            transfer : bytes_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut encode = BytesEncoder::new();
-		encode.chain_id(&self.chain_id);
-		encode.hname(self.contract);
-		encode.uint32(self.delay);
-		encode.hname(self.function);
-		encode.bytes(self.params);
-		encode.bytes(self.transfer);
-        return encode.data();
+        let mut enc = WasmEncoder::new();
+		chain_id_encode(&mut enc, &self.chain_id);
+		hname_encode(&mut enc, self.contract);
+		uint32_encode(&mut enc, self.delay);
+		hname_encode(&mut enc, self.function);
+		bytes_encode(&mut enc, &self.params);
+		bytes_encode(&mut enc, &self.transfer);
+        enc.buf()
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutablePostRequest {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutablePostRequest {
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn value(&self) -> PostRequest {
-        PostRequest::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        PostRequest::from_bytes(&self.proxy.get())
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutablePostRequest {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutablePostRequest {
     pub fn delete(&self) {
-        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+        self.proxy.delete();
     }
 
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn set_value(&self, value: &PostRequest) {
-        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+        self.proxy.set(&value.to_bytes());
     }
 
     pub fn value(&self) -> PostRequest {
-        PostRequest::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        PostRequest::from_bytes(&self.proxy.get())
     }
 }
 
@@ -232,57 +225,55 @@ pub struct SendRequest {
 
 impl SendRequest {
     pub fn from_bytes(bytes: &[u8]) -> SendRequest {
-        let mut decode = BytesDecoder::new(bytes);
+        let mut dec = WasmDecoder::new(bytes);
         SendRequest {
-            address  : decode.address(),
-            transfer : decode.bytes(),
+            address  : address_decode(&mut dec),
+            transfer : bytes_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut encode = BytesEncoder::new();
-		encode.address(&self.address);
-		encode.bytes(self.transfer);
-        return encode.data();
+        let mut enc = WasmEncoder::new();
+		address_encode(&mut enc, &self.address);
+		bytes_encode(&mut enc, &self.transfer);
+        enc.buf()
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableSendRequest {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableSendRequest {
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn value(&self) -> SendRequest {
-        SendRequest::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        SendRequest::from_bytes(&self.proxy.get())
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableSendRequest {
-    pub(crate) obj_id: i32,
-    pub(crate) key_id: Key32,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableSendRequest {
     pub fn delete(&self) {
-        del_key(self.obj_id, self.key_id, TYPE_BYTES);
+        self.proxy.delete();
     }
 
     pub fn exists(&self) -> bool {
-        exists(self.obj_id, self.key_id, TYPE_BYTES)
+        self.proxy.exists()
     }
 
     pub fn set_value(&self, value: &SendRequest) {
-        set_bytes(self.obj_id, self.key_id, TYPE_BYTES, &value.to_bytes());
+        self.proxy.set(&value.to_bytes());
     }
 
     pub fn value(&self) -> SendRequest {
-        SendRequest::from_bytes(&get_bytes(self.obj_id, self.key_id, TYPE_BYTES))
+        SendRequest::from_bytes(&self.proxy.get())
     }
 }

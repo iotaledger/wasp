@@ -4,7 +4,6 @@
 use std::convert::TryInto;
 
 use crate::*;
-use crate::wasmtypes::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -21,7 +20,7 @@ impl ScAddress {
     }
 
     pub fn as_agent_id(&self) -> ScAgentID {
-        ScAgentID::new(self, &ScHname(0))
+        ScAgentID::new(self, ScHname(0))
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -44,7 +43,17 @@ pub fn address_encode(enc: &mut WasmEncoder, value: &ScAddress)  {
 }
 
 pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
-    ScAddress { id: buf.try_into().expect("invalid Address length") }
+    if buf.len() == 0 {
+        return ScAddress { id: [0;SC_ADDRESS_LENGTH] };
+    }
+    if buf.len() != SC_ADDRESS_LENGTH {
+        panic("invalid Address length");
+    }
+    // max ledgerstate.AliasAddressType
+    if buf[0] > 2 {
+        panic("invalid Address: address type > 2");
+    }
+    ScAddress { id: buf.try_into().expect("WTF?") }
 }
 
 pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
@@ -62,11 +71,11 @@ fn address_from_bytes_unchecked(buf: &[u8]) -> ScAddress {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableAddress<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableAddress {
+    proxy: Proxy,
 }
 
-impl ScImmutableAddress<'_> {
+impl ScImmutableAddress {
     pub fn new(proxy: Proxy) -> ScImmutableAddress {
         ScImmutableAddress { proxy }
     }
@@ -87,16 +96,16 @@ impl ScImmutableAddress<'_> {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // value proxy for mutable ScAddress in host container
-pub struct ScMutableAddress<'a> {
-    proxy: Proxy<'a>,
+pub struct ScMutableAddress {
+    proxy: Proxy,
 }
 
-impl ScMutableAddress<'_> {
+impl ScMutableAddress {
     pub fn new(proxy: Proxy) -> ScMutableAddress {
         ScMutableAddress { proxy }
     }
 
-    pub fn delete(&mut self)  {
+    pub fn delete(&self)  {
         self.proxy.delete();
     }
 
@@ -104,7 +113,7 @@ impl ScMutableAddress<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: &ScAddress) {
+    pub fn set_value(&self, value: &ScAddress) {
         self.proxy.set(&address_to_bytes(&value));
     }
 

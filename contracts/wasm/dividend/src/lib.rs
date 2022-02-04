@@ -10,17 +10,14 @@
 
 use dividend::*;
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::consts::*;
-use crate::keys::*;
 use crate::params::*;
 use crate::results::*;
 use crate::state::*;
 
 mod consts;
 mod contract;
-mod keys;
 mod params;
 mod results;
 mod state;
@@ -35,12 +32,6 @@ fn on_load() {
     exports.add_func(FUNC_SET_OWNER,  func_set_owner_thunk);
     exports.add_view(VIEW_GET_FACTOR, view_get_factor_thunk);
     exports.add_view(VIEW_GET_OWNER,  view_get_owner_thunk);
-
-    unsafe {
-        for i in 0..KEY_MAP_LEN {
-            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
-        }
-    }
 }
 
 pub struct DivideContext {
@@ -50,9 +41,7 @@ pub struct DivideContext {
 fn func_divide_thunk(ctx: &ScFuncContext) {
 	ctx.log("dividend.funcDivide");
 	let f = DivideContext {
-		state: MutableDividendState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutableDividendState { proxy: state_proxy() },
 	};
 	func_divide(ctx, &f);
 	ctx.log("dividend.funcDivide ok");
@@ -66,12 +55,8 @@ pub struct InitContext {
 fn func_init_thunk(ctx: &ScFuncContext) {
 	ctx.log("dividend.funcInit");
 	let f = InitContext {
-		params: ImmutableInitParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableDividendState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableInitParams { proxy: params_proxy() },
+		state: MutableDividendState { proxy: state_proxy() },
 	};
 	func_init(ctx, &f);
 	ctx.log("dividend.funcInit ok");
@@ -84,20 +69,16 @@ pub struct MemberContext {
 
 fn func_member_thunk(ctx: &ScFuncContext) {
 	ctx.log("dividend.funcMember");
+	let f = MemberContext {
+		params: ImmutableMemberParams { proxy: params_proxy() },
+		state: MutableDividendState { proxy: state_proxy() },
+	};
 
 	// only defined owner of contract can add members
-	let access = ctx.state().get_agent_id("owner");
+	let access = f.state.owner();
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller() == access.value(), "no permission");
 
-	let f = MemberContext {
-		params: ImmutableMemberParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableDividendState {
-			id: OBJ_ID_STATE,
-		},
-	};
 	ctx.require(f.params.address().exists(), "missing mandatory address");
 	ctx.require(f.params.factor().exists(), "missing mandatory factor");
 	func_member(ctx, &f);
@@ -111,20 +92,16 @@ pub struct SetOwnerContext {
 
 fn func_set_owner_thunk(ctx: &ScFuncContext) {
 	ctx.log("dividend.funcSetOwner");
+	let f = SetOwnerContext {
+		params: ImmutableSetOwnerParams { proxy: params_proxy() },
+		state: MutableDividendState { proxy: state_proxy() },
+	};
 
 	// only defined owner of contract can change owner
-	let access = ctx.state().get_agent_id("owner");
+	let access = f.state.owner();
 	ctx.require(access.exists(), "access not set: owner");
 	ctx.require(ctx.caller() == access.value(), "no permission");
 
-	let f = SetOwnerContext {
-		params: ImmutableSetOwnerParams {
-			id: OBJ_ID_PARAMS,
-		},
-		state: MutableDividendState {
-			id: OBJ_ID_STATE,
-		},
-	};
 	ctx.require(f.params.owner().exists(), "missing mandatory owner");
 	func_set_owner(ctx, &f);
 	ctx.log("dividend.funcSetOwner ok");
@@ -139,18 +116,13 @@ pub struct GetFactorContext {
 fn view_get_factor_thunk(ctx: &ScViewContext) {
 	ctx.log("dividend.viewGetFactor");
 	let f = GetFactorContext {
-		params: ImmutableGetFactorParams {
-			id: OBJ_ID_PARAMS,
-		},
-		results: MutableGetFactorResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableDividendState {
-			id: OBJ_ID_STATE,
-		},
+		params: ImmutableGetFactorParams { proxy: params_proxy() },
+		results: MutableGetFactorResults { proxy: results_proxy() },
+		state: ImmutableDividendState { proxy: state_proxy() },
 	};
 	ctx.require(f.params.address().exists(), "missing mandatory address");
 	view_get_factor(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("dividend.viewGetFactor ok");
 }
 
@@ -162,13 +134,10 @@ pub struct GetOwnerContext {
 fn view_get_owner_thunk(ctx: &ScViewContext) {
 	ctx.log("dividend.viewGetOwner");
 	let f = GetOwnerContext {
-		results: MutableGetOwnerResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableDividendState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableGetOwnerResults { proxy: results_proxy() },
+		state: ImmutableDividendState { proxy: state_proxy() },
 	};
 	view_get_owner(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("dividend.viewGetOwner ok");
 }

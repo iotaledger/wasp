@@ -9,52 +9,48 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
-use crate::structs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutablePlaceBetParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutablePlaceBetParams {
     pub fn number(&self) -> ScImmutableUint16 {
-		ScImmutableUint16::new(self.id, PARAM_NUMBER.get_key_id())
+		ScImmutableUint16::new(self.proxy.root(PARAM_NUMBER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutablePlaceBetParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutablePlaceBetParams {
     pub fn number(&self) -> ScMutableUint16 {
-		ScMutableUint16::new(self.id, PARAM_NUMBER.get_key_id())
+		ScMutableUint16::new(self.proxy.root(PARAM_NUMBER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutablePlayPeriodParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutablePlayPeriodParams {
     pub fn play_period(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.id, PARAM_PLAY_PERIOD.get_key_id())
+		ScImmutableUint32::new(self.proxy.root(PARAM_PLAY_PERIOD))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutablePlayPeriodParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutablePlayPeriodParams {
     pub fn play_period(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.id, PARAM_PLAY_PERIOD.get_key_id())
+		ScMutableUint32::new(self.proxy.root(PARAM_PLAY_PERIOD))
 	}
 }

@@ -3,8 +3,7 @@
 
 use std::convert::TryInto;
 
-use crate::sandbox::*;
-use crate::wasmtypes::*;
+use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -36,7 +35,7 @@ pub fn bool_from_bytes(buf: &[u8]) -> bool {
     if buf[0] == SC_BOOL_FALSE {
         return false;
     }
-    if buf[0] != SC_BOOL_FALSE {
+    if buf[0] != SC_BOOL_TRUE {
         panic("invalid Bool value");
     }
     return true;
@@ -58,11 +57,11 @@ pub fn bool_to_string(value: bool) -> String {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-pub struct ScImmutableBool<'a> {
-    proxy: Proxy<'a>,
+pub struct ScImmutableBool {
+    proxy: Proxy,
 }
 
-impl ScImmutableBool<'_> {
+impl ScImmutableBool {
     pub fn new(proxy: Proxy) -> ScImmutableBool {
         ScImmutableBool { proxy }
     }
@@ -83,16 +82,16 @@ impl ScImmutableBool<'_> {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // value proxy for mutable bool in host container
-pub struct ScMutableBool<'a> {
-    proxy: Proxy<'a>,
+pub struct ScMutableBool {
+    proxy: Proxy,
 }
 
-impl ScMutableBool<'_> {
+impl ScMutableBool {
     pub fn new(proxy: Proxy) -> ScMutableBool {
         ScMutableBool { proxy }
     }
 
-    pub fn delete(&mut self) {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 
@@ -100,7 +99,7 @@ impl ScMutableBool<'_> {
         self.proxy.exists()
     }
 
-    pub fn set_value(&mut self, value: bool) {
+    pub fn set_value(&self, value: bool) {
         self.proxy.set(&bool_to_bytes(value));
     }
 
