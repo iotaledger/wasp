@@ -13,10 +13,10 @@ address constant ISCP_YUL_ADDRESS      = 0x0000000000000000000000000000000000001
 contract ISCP {
 
 	// The ChainID of the underlying ISCP chain
-    ISCPChainID chainId;
+    ISCPChainID chainID;
 
-	function getChainId() public view returns (ISCPChainID) {
-		return chainId;
+	function getChainID() public view returns (ISCPChainID) {
+		return chainID;
 	}
 }
 

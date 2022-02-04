@@ -356,9 +356,6 @@ func TestPrePaidFees(t *testing.T) {
 }
 
 func TestISCPContract(t *testing.T) {
-	// TODO not working
-	t.SkipNow()
-
 	// deploy the evmlight contract, which starts an EVM chain and automatically
 	// deploys the iscp.sol EVM contract at address 0x1074
 	evmChain := initEVMChain(t, evmlight.Contract)
@@ -420,7 +417,7 @@ func TestBlockTime(t *testing.T) {
 			accounts.ParamAgentID, iscp.NewAgentID(evmChain.soloChain.ChainID.AsAddress(), evmChain.evmFlavor.Hname()),
 		).
 			AddAssetsIotas(200000).
-			AddIotaAllowance(100000).
+			AddAllowanceIotas(100000).
 			WithMaxAffordableGasBudget(),
 		nil,
 	)

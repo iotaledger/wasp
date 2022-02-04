@@ -46,9 +46,11 @@ func init() {
 func DeployOnGenesis(genesisAlloc core.GenesisAlloc, chainID *iscp.ChainID) {
 	// TODO: Execute a constructor instead of filling out storage manually
 	// Note: To get the storage layout: solc --storage-layout ISCP.sol | tail -n +4 | jq .
-	// slot 0: [offset 0 = ISCP.chainID]
+
+	// slot 0: [------- empty ----- [ISCP.chainID]]
 	slot0 := common.Hash{}
-	copy(slot0[:], chainID.Bytes())
+	chainIDBytes := chainID.Bytes()
+	copy(slot0[len(slot0)-len(chainIDBytes):], chainIDBytes)
 
 	genesisAlloc[EVMAddress] = core.GenesisAccount{
 		Code: common.FromHex(strings.TrimSpace(bytecodeHex)),
