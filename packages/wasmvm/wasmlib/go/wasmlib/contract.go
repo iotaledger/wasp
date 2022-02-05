@@ -74,7 +74,6 @@ func (v *ScView) OfContract(hContract wasmtypes.ScHname) *ScView {
 
 type ScInitFunc struct {
 	ScView
-	host ScHost
 }
 
 func NewScInitFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *ScInitFunc {
