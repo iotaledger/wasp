@@ -17,6 +17,10 @@ import "github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
 func main() {
 }
 
+func init() {
+	wasmvmhost.ConnectWasmHost()
+}
+
 //export on_call
 func onCall(index int32) {
 	dividend.OnLoad(index)
@@ -24,7 +28,5 @@ func onCall(index int32) {
 
 //export on_load
 func onLoad() {
-	h := &wasmvmhost.WasmVMHost{}
-	h.ConnectWasmHost()
 	dividend.OnLoad(-1)
 }

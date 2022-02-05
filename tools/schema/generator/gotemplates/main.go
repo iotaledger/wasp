@@ -15,6 +15,10 @@ import "$module/go/$package"
 func main() {
 }
 
+func init() {
+	wasmvmhost.ConnectWasmHost()
+}
+
 //export on_call
 func onCall(index int32) {
 	$package.OnLoad(index)
@@ -22,8 +26,6 @@ func onCall(index int32) {
 
 //export on_load
 func onLoad() {
-	h := &wasmvmhost.WasmVMHost{}
-	h.ConnectWasmHost()
 	$package.OnLoad(-1)
 }
 `,

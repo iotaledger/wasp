@@ -88,18 +88,22 @@ func (wc *WasmContext) callFunction() error {
 }
 
 func (wc *WasmContext) ExportName(index int32, name string) {
-	if index == -1 {
-		if wc.proc != nil {
-			wc.proc.log.Infof("WASM::GO::DEBUG")
-			return
-		}
-		if wc.mini != nil {
-			wc.mini.Call(wasmlib.FnLog, wasmtypes.StringToBytes("WASM::SOLO"))
-			return
-		}
-		panic(name)
+	if index >= 0 {
+		wc.host.SetExport(index, name)
+		return
 	}
-	wc.host.SetExport(index, name)
+
+	// log WASM tag
+	if wc.proc != nil {
+		wc.proc.log.Infof("WASM::GO::DEBUG")
+		return
+	}
+	if wc.mini != nil {
+		wc.mini.Call(wasmlib.FnLog, wasmtypes.StringToBytes("WASM::SOLO"))
+		return
+	}
+	// should never get here
+	panic("cannot determine wasm tag: " + name)
 }
 
 func (wc *WasmContext) FunctionFromCode(code uint32) string {
@@ -111,7 +115,7 @@ func (wc *WasmContext) Host() *WasmHost {
 }
 
 func (wc *WasmContext) IsView() bool {
-	return wc.host.IsView(wc.function)
+	return wc.proc.IsView(wc.function)
 }
 
 func (wc *WasmContext) log() iscp.LogInterface {

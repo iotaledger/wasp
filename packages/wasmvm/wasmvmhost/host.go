@@ -40,7 +40,8 @@ type WasmVMHost struct {
 // implements wasmlib.ScHost interface
 var _ wasmlib.ScHost = &WasmVMHost{}
 
-func (w *WasmVMHost) ConnectWasmHost() {
+func ConnectWasmHost() {
+	w := &WasmVMHost{}
 	wasmlib.ConnectHost(w)
 }
 
