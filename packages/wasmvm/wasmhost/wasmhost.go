@@ -7,7 +7,6 @@ import (
 	"errors"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 type WasmStore interface {
@@ -18,24 +17,8 @@ type WasmHost struct {
 	codeToFunc  map[uint32]string
 	funcToCode  map[string]uint32
 	funcToIndex map[string]int32
-	funcs       []wasmlib.ScFuncContextFunction
-	views       []wasmlib.ScViewContextFunction
 	store       WasmStore
 	vm          WasmVM
-}
-
-func (host *WasmHost) AddFunc(f wasmlib.ScFuncContextFunction) []wasmlib.ScFuncContextFunction {
-	if f != nil {
-		host.funcs = append(host.funcs, f)
-	}
-	return host.funcs
-}
-
-func (host *WasmHost) AddView(v wasmlib.ScViewContextFunction) []wasmlib.ScViewContextFunction {
-	if v != nil {
-		host.views = append(host.views, v)
-	}
-	return host.views
 }
 
 func (host *WasmHost) InitVM(vm WasmVM, store WasmStore) error {

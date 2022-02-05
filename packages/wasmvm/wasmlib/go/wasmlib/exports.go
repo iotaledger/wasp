@@ -9,15 +9,6 @@ type ScExportMap struct {
 	Views []ScViewContextFunction
 }
 
-func OnCall(index int32) {
-	if (index & 0x8000) == 0 {
-		AddFunc(nil)[index](ScFuncContext{})
-		return
-	}
-
-	AddView(nil)[index&0x7fff](ScViewContext{})
-}
-
 func FuncError(ctx ScFuncContext) {
 	Panic("Invalid core func call")
 }
@@ -29,7 +20,7 @@ func ViewError(ctx ScViewContext) {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func ScExportsExport(exportMap *ScExportMap) {
-	ExportWasmTag()
+	ExportName(-1, "WASM::GO")
 
 	for i := range exportMap.Funcs {
 		ExportName(int32(i), exportMap.Names[i])
@@ -49,21 +40,4 @@ func ScExportsCall(index int32, exportMap *ScExportMap) {
 	}
 	// immutable view function, invoke with a view context
 	exportMap.Views[index&0x7fff](ScViewContext{})
-}
-
-type ScExports struct{}
-
-func NewScExports() ScExports {
-	ExportWasmTag()
-	return ScExports{}
-}
-
-func (ctx ScExports) AddFunc(name string, f ScFuncContextFunction) {
-	index := int32(len(AddFunc(f))) - 1
-	ExportName(index, name)
-}
-
-func (ctx ScExports) AddView(name string, v ScViewContextFunction) {
-	index := int32(len(AddView(v))) - 1
-	ExportName(index|0x8000, name)
 }

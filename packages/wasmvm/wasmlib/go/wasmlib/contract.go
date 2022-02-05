@@ -82,20 +82,7 @@ func NewScInitFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname
 	f.initView(hContract, hFunction)
 	if ctx != nil {
 		ctx.InitFuncCallContext()
-		return f
 	}
-
-	// TODO: is this still necessary?
-
-	// Special initialization for SoloContext usage
-	// Note that we do not have a contract context that can talk to the host
-	// until *after* deployment of the contract, so we cannot use the normal
-	// params proxy to pass parameters because it does not exist yet.
-	// Instead, we use a special temporary host implementation that knows
-	// just enough to gather the parameter data and pass it correctly to
-	// solo's contract deployment function, which in turn passes it to the
-	// contract's init() function
-	f.host = ConnectHost(NewInitHost())
 	return f
 }
 
@@ -114,7 +101,6 @@ func (f *ScInitFunc) Params() []interface{} {
 		params = append(params, k)
 		params = append(params, v)
 	}
-	ConnectHost(f.host)
 	return params
 }
 

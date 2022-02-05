@@ -8,10 +8,7 @@ type (
 	ScViewContextFunction func(ScViewContext)
 
 	ScHost interface {
-		AddFunc(f ScFuncContextFunction) []ScFuncContextFunction
-		AddView(v ScViewContextFunction) []ScViewContextFunction
 		ExportName(index int32, name string)
-		ExportWasmTag()
 		Sandbox(funcNr int32, params []byte) []byte
 		StateDelete(key []byte)
 		StateExists(key []byte) bool
@@ -23,14 +20,6 @@ type (
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 var host ScHost
 
-func AddFunc(f ScFuncContextFunction) []ScFuncContextFunction {
-	return host.AddFunc(f)
-}
-
-func AddView(v ScViewContextFunction) []ScViewContextFunction {
-	return host.AddView(v)
-}
-
 func ConnectHost(h ScHost) ScHost {
 	oldHost := host
 	host = h
@@ -39,10 +28,6 @@ func ConnectHost(h ScHost) ScHost {
 
 func ExportName(index int32, name string) {
 	host.ExportName(index, name)
-}
-
-func ExportWasmTag() {
-	host.ExportWasmTag()
 }
 
 func Sandbox(funcNr int32, params []byte) []byte {

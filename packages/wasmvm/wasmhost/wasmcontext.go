@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 const (
@@ -38,14 +39,6 @@ func NewWasmMiniContext(function string, mini ISandbox) *WasmContext {
 	wc := &WasmContext{function: function, mini: mini, host: &WasmHost{}}
 	wc.host.Init()
 	return wc
-}
-
-func (wc *WasmContext) AddFunc(f wasmlib.ScFuncContextFunction) []wasmlib.ScFuncContextFunction {
-	return wc.host.AddFunc(f)
-}
-
-func (wc *WasmContext) AddView(v wasmlib.ScViewContextFunction) []wasmlib.ScViewContextFunction {
-	return wc.host.AddView(v)
 }
 
 func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
@@ -95,13 +88,18 @@ func (wc *WasmContext) callFunction() error {
 }
 
 func (wc *WasmContext) ExportName(index int32, name string) {
-	wc.host.SetExport(index, name)
-}
-
-func (wc *WasmContext) ExportWasmTag() {
-	if wc.proc != nil {
-		wc.proc.log.Infof("WASM::GO::DEBUG")
+	if index == -1 {
+		if wc.proc != nil {
+			wc.proc.log.Infof("WASM::GO::DEBUG")
+			return
+		}
+		if wc.mini != nil {
+			wc.mini.Call(wasmlib.FnLog, wasmtypes.StringToBytes("WASM::SOLO"))
+			return
+		}
+		panic(name)
 	}
+	wc.host.SetExport(index, name)
 }
 
 func (wc *WasmContext) FunctionFromCode(code uint32) string {

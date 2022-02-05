@@ -35,26 +35,10 @@ func ptr(buf []byte) *byte {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type WasmVMHost struct {
-	funcs []wasmlib.ScFuncContextFunction
-	views []wasmlib.ScViewContextFunction
 }
 
 // implements wasmlib.ScHost interface
 var _ wasmlib.ScHost = &WasmVMHost{}
-
-func (w *WasmVMHost) AddFunc(f wasmlib.ScFuncContextFunction) []wasmlib.ScFuncContextFunction {
-	if f != nil {
-		w.funcs = append(w.funcs, f)
-	}
-	return w.funcs
-}
-
-func (w *WasmVMHost) AddView(v wasmlib.ScViewContextFunction) []wasmlib.ScViewContextFunction {
-	if v != nil {
-		w.views = append(w.views, v)
-	}
-	return w.views
-}
 
 func (w *WasmVMHost) ConnectWasmHost() {
 	wasmlib.ConnectHost(w)
@@ -65,11 +49,6 @@ func (w *WasmVMHost) ExportName(index int32, name string) {
 	// this removes the need for a separate hostExportName function
 	buf := []byte(name)
 	hostStateSet(nil, index, ptr(buf), int32(len(buf)))
-}
-
-func (w *WasmVMHost) ExportWasmTag() {
-	// special index -1 indicates this is not an export name but the wasm tag
-	w.ExportName(-1, "WASM::GO")
 }
 
 func (w *WasmVMHost) Sandbox(funcNr int32, params []byte) []byte {
