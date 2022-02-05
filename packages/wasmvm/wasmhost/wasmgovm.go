@@ -15,13 +15,15 @@ func Connect(h wasmlib.ScHost) wasmlib.ScHost {
 	return wasmlib.ConnectHost(h)
 }
 
+type ScOnloadFunc func(index int32)
+
 type WasmGoVM struct {
 	WasmVMBase
 	scName string
-	onLoad func()
+	onLoad ScOnloadFunc
 }
 
-func NewWasmGoVM(scName string, onLoad func()) WasmVM {
+func NewWasmGoVM(scName string, onLoad ScOnloadFunc) WasmVM {
 	return &WasmGoVM{scName: scName, onLoad: onLoad}
 }
 
@@ -51,7 +53,7 @@ func (vm *WasmGoVM) LoadWasm(wasmData []byte) error {
 
 func (vm *WasmGoVM) RunFunction(functionName string, args ...interface{}) error {
 	if functionName == "on_load" {
-		vm.onLoad()
+		vm.onLoad(-1)
 		return nil
 	}
 	return errors.New("WasmGoVM: cannot run function: " + functionName)
@@ -73,7 +75,7 @@ func (vm *WasmGoVM) RunScFunction(index int32) (err error) {
 	//	}
 	//}()
 	return vm.Run(func() error {
-		wasmlib.OnCall(index)
+		vm.onLoad(index)
 		return nil
 	})
 }

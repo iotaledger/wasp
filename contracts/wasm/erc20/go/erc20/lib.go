@@ -9,15 +9,36 @@ package erc20
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncApprove, funcApproveThunk)
-	exports.AddFunc(FuncInit, funcInitThunk)
-	exports.AddFunc(FuncTransfer, funcTransferThunk)
-	exports.AddFunc(FuncTransferFrom, funcTransferFromThunk)
-	exports.AddView(ViewAllowance, viewAllowanceThunk)
-	exports.AddView(ViewBalanceOf, viewBalanceOfThunk)
-	exports.AddView(ViewTotalSupply, viewTotalSupplyThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncApprove,
+		FuncInit,
+		FuncTransfer,
+		FuncTransferFrom,
+		ViewAllowance,
+		ViewBalanceOf,
+		ViewTotalSupply,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcApproveThunk,
+		funcInitThunk,
+		funcTransferThunk,
+		funcTransferFromThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewAllowanceThunk,
+		viewBalanceOfThunk,
+		viewTotalSupplyThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type ApproveContext struct {

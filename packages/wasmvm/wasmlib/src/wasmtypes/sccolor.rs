@@ -37,13 +37,13 @@ pub fn color_decode(dec: &mut WasmDecoder) -> ScColor {
     color_from_bytes_unchecked(&dec.fixed_bytes(SC_COLOR_LENGTH))
 }
 
-pub fn color_encode(enc: &mut WasmEncoder, value: &ScColor)  {
+pub fn color_encode(enc: &mut WasmEncoder, value: &ScColor) {
     enc.fixed_bytes(&value.to_bytes(), SC_COLOR_LENGTH);
 }
 
 pub fn color_from_bytes(buf: &[u8]) -> ScColor {
     if buf.len() == 0 {
-        return ScColor { id: [0;SC_COLOR_LENGTH] };
+        return ScColor { id: [0; SC_COLOR_LENGTH] };
     }
     if buf.len() != SC_COLOR_LENGTH {
         panic("invalid Color length");
@@ -67,7 +67,7 @@ fn color_from_bytes_unchecked(buf: &[u8]) -> ScColor {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub struct ScImmutableColor {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScImmutableColor {
@@ -92,7 +92,7 @@ impl ScImmutableColor {
 
 // value proxy for mutable ScColor in host container
 pub struct ScMutableColor {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScMutableColor {
@@ -100,7 +100,7 @@ impl ScMutableColor {
         ScMutableColor { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 

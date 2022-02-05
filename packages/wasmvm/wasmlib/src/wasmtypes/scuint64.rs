@@ -15,7 +15,7 @@ pub fn uint64_decode(dec: &mut WasmDecoder) -> u64 {
     dec.vlu_decode(64)
 }
 
-pub fn uint64_encode(enc: &mut WasmEncoder, value: u64)  {
+pub fn uint64_encode(enc: &mut WasmEncoder, value: u64) {
     enc.vlu_encode(value);
 }
 
@@ -40,7 +40,7 @@ pub fn uint64_to_string(value: u64) -> String {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub struct ScImmutableUint64 {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScImmutableUint64 {
@@ -65,7 +65,7 @@ impl ScImmutableUint64 {
 
 // value proxy for mutable u64 in host container
 pub struct ScMutableUint64 {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScMutableUint64 {
@@ -73,7 +73,7 @@ impl ScMutableUint64 {
         ScMutableUint64 { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 

@@ -22,11 +22,27 @@ mod state;
 
 mod helloworld;
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_HELLO_WORLD,
+    	VIEW_GET_HELLO_WORLD,
+	],
+    funcs: &[
+    	func_hello_world_thunk,
+	],
+    views: &[
+    	view_get_hello_world_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_HELLO_WORLD,     func_hello_world_thunk);
-    exports.add_view(VIEW_GET_HELLO_WORLD, view_get_hello_world_thunk);
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct HelloWorldContext {

@@ -26,13 +26,31 @@ mod structs;
 
 mod donatewithfeedback;
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_DONATE,
+    	FUNC_WITHDRAW,
+    	VIEW_DONATION,
+    	VIEW_DONATION_INFO,
+	],
+    funcs: &[
+    	func_donate_thunk,
+    	func_withdraw_thunk,
+	],
+    views: &[
+    	view_donation_thunk,
+    	view_donation_info_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_DONATE,        func_donate_thunk);
-    exports.add_func(FUNC_WITHDRAW,      func_withdraw_thunk);
-    exports.add_view(VIEW_DONATION,      view_donation_thunk);
-    exports.add_view(VIEW_DONATION_INFO, view_donation_info_thunk);
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct DonateContext {

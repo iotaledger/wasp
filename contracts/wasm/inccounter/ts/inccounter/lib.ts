@@ -8,29 +8,55 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+const exportMap: wasmlib.ScExportMap = {
+    names: [
+    	sc.FuncCallIncrement,
+    	sc.FuncCallIncrementRecurse5x,
+    	sc.FuncEndlessLoop,
+    	sc.FuncIncrement,
+    	sc.FuncIncrementWithDelay,
+    	sc.FuncInit,
+    	sc.FuncLocalStateInternalCall,
+    	sc.FuncLocalStatePost,
+    	sc.FuncLocalStateSandboxCall,
+    	sc.FuncPostIncrement,
+    	sc.FuncRepeatMany,
+    	sc.FuncTestVliCodec,
+    	sc.FuncTestVluCodec,
+    	sc.FuncWhenMustIncrement,
+    	sc.ViewGetCounter,
+    	sc.ViewGetVli,
+    	sc.ViewGetVlu,
+    ],
+    funcs: [
+    	funcCallIncrementThunk,
+    	funcCallIncrementRecurse5xThunk,
+    	funcEndlessLoopThunk,
+    	funcIncrementThunk,
+    	funcIncrementWithDelayThunk,
+    	funcInitThunk,
+    	funcLocalStateInternalCallThunk,
+    	funcLocalStatePostThunk,
+    	funcLocalStateSandboxCallThunk,
+    	funcPostIncrementThunk,
+    	funcRepeatManyThunk,
+    	funcTestVliCodecThunk,
+    	funcTestVluCodecThunk,
+    	funcWhenMustIncrementThunk,
+    ],
+    views: [
+    	viewGetCounterThunk,
+    	viewGetVliThunk,
+    	viewGetVluThunk,
+    ],
+};
+
 export function on_call(index: i32): void {
-    return wasmlib.onCall(index);
+    wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncCallIncrement,          funcCallIncrementThunk);
-    exports.addFunc(sc.FuncCallIncrementRecurse5x, funcCallIncrementRecurse5xThunk);
-    exports.addFunc(sc.FuncEndlessLoop,            funcEndlessLoopThunk);
-    exports.addFunc(sc.FuncIncrement,              funcIncrementThunk);
-    exports.addFunc(sc.FuncIncrementWithDelay,     funcIncrementWithDelayThunk);
-    exports.addFunc(sc.FuncInit,                   funcInitThunk);
-    exports.addFunc(sc.FuncLocalStateInternalCall, funcLocalStateInternalCallThunk);
-    exports.addFunc(sc.FuncLocalStatePost,         funcLocalStatePostThunk);
-    exports.addFunc(sc.FuncLocalStateSandboxCall,  funcLocalStateSandboxCallThunk);
-    exports.addFunc(sc.FuncPostIncrement,          funcPostIncrementThunk);
-    exports.addFunc(sc.FuncRepeatMany,             funcRepeatManyThunk);
-    exports.addFunc(sc.FuncTestVliCodec,           funcTestVliCodecThunk);
-    exports.addFunc(sc.FuncTestVluCodec,           funcTestVluCodecThunk);
-    exports.addFunc(sc.FuncWhenMustIncrement,      funcWhenMustIncrementThunk);
-    exports.addView(sc.ViewGetCounter,             viewGetCounterThunk);
-    exports.addView(sc.ViewGetVli,                 viewGetVliThunk);
-    exports.addView(sc.ViewGetVlu,                 viewGetVluThunk);
+    wasmlib.ScExports.export(exportMap);
 }
 
 function funcCallIncrementThunk(ctx: wasmlib.ScFuncContext): void {

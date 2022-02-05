@@ -8,27 +8,51 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+const exportMap: wasmlib.ScExportMap = {
+    names: [
+    	sc.FuncArrayAppend,
+    	sc.FuncArrayClear,
+    	sc.FuncArraySet,
+    	sc.FuncMapClear,
+    	sc.FuncMapSet,
+    	sc.FuncParamTypes,
+    	sc.FuncRandom,
+    	sc.FuncTriggerEvent,
+    	sc.ViewArrayLength,
+    	sc.ViewArrayValue,
+    	sc.ViewBlockRecord,
+    	sc.ViewBlockRecords,
+    	sc.ViewGetRandom,
+    	sc.ViewIotaBalance,
+    	sc.ViewMapValue,
+    ],
+    funcs: [
+    	funcArrayAppendThunk,
+    	funcArrayClearThunk,
+    	funcArraySetThunk,
+    	funcMapClearThunk,
+    	funcMapSetThunk,
+    	funcParamTypesThunk,
+    	funcRandomThunk,
+    	funcTriggerEventThunk,
+    ],
+    views: [
+    	viewArrayLengthThunk,
+    	viewArrayValueThunk,
+    	viewBlockRecordThunk,
+    	viewBlockRecordsThunk,
+    	viewGetRandomThunk,
+    	viewIotaBalanceThunk,
+    	viewMapValueThunk,
+    ],
+};
+
 export function on_call(index: i32): void {
-    return wasmlib.onCall(index);
+    wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncArrayAppend,  funcArrayAppendThunk);
-    exports.addFunc(sc.FuncArrayClear,   funcArrayClearThunk);
-    exports.addFunc(sc.FuncArraySet,     funcArraySetThunk);
-    exports.addFunc(sc.FuncMapClear,     funcMapClearThunk);
-    exports.addFunc(sc.FuncMapSet,       funcMapSetThunk);
-    exports.addFunc(sc.FuncParamTypes,   funcParamTypesThunk);
-    exports.addFunc(sc.FuncRandom,       funcRandomThunk);
-    exports.addFunc(sc.FuncTriggerEvent, funcTriggerEventThunk);
-    exports.addView(sc.ViewArrayLength,  viewArrayLengthThunk);
-    exports.addView(sc.ViewArrayValue,   viewArrayValueThunk);
-    exports.addView(sc.ViewBlockRecord,  viewBlockRecordThunk);
-    exports.addView(sc.ViewBlockRecords, viewBlockRecordsThunk);
-    exports.addView(sc.ViewGetRandom,    viewGetRandomThunk);
-    exports.addView(sc.ViewIotaBalance,  viewIotaBalanceThunk);
-    exports.addView(sc.ViewMapValue,     viewMapValueThunk);
+    wasmlib.ScExports.export(exportMap);
 }
 
 function funcArrayAppendThunk(ctx: wasmlib.ScFuncContext): void {

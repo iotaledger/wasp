@@ -8,17 +8,31 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+const exportMap: wasmlib.ScExportMap = {
+    names: [
+    	sc.FuncFinalizeAuction,
+    	sc.FuncPlaceBid,
+    	sc.FuncSetOwnerMargin,
+    	sc.FuncStartAuction,
+    	sc.ViewGetInfo,
+    ],
+    funcs: [
+    	funcFinalizeAuctionThunk,
+    	funcPlaceBidThunk,
+    	funcSetOwnerMarginThunk,
+    	funcStartAuctionThunk,
+    ],
+    views: [
+    	viewGetInfoThunk,
+    ],
+};
+
 export function on_call(index: i32): void {
-    return wasmlib.onCall(index);
+    wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncFinalizeAuction, funcFinalizeAuctionThunk);
-    exports.addFunc(sc.FuncPlaceBid,        funcPlaceBidThunk);
-    exports.addFunc(sc.FuncSetOwnerMargin,  funcSetOwnerMarginThunk);
-    exports.addFunc(sc.FuncStartAuction,    funcStartAuctionThunk);
-    exports.addView(sc.ViewGetInfo,         viewGetInfoThunk);
+    wasmlib.ScExports.export(exportMap);
 }
 
 function funcFinalizeAuctionThunk(ctx: wasmlib.ScFuncContext): void {

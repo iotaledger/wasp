@@ -38,13 +38,13 @@ pub fn chain_id_decode(dec: &mut WasmDecoder) -> ScChainID {
     chain_id_from_bytes_unchecked(&dec.fixed_bytes(SC_CHAIN_ID_LENGTH))
 }
 
-pub fn chain_id_encode(enc: &mut WasmEncoder, value: &ScChainID)  {
+pub fn chain_id_encode(enc: &mut WasmEncoder, value: &ScChainID) {
     enc.fixed_bytes(&value.to_bytes(), SC_CHAIN_ID_LENGTH);
 }
 
 pub fn chain_id_from_bytes(buf: &[u8]) -> ScChainID {
     if buf.len() == 0 {
-        let mut chain_id = ScChainID { id: [0;SC_CHAIN_ID_LENGTH] };
+        let mut chain_id = ScChainID { id: [0; SC_CHAIN_ID_LENGTH] };
         chain_id.id[0] = 2; // ledgerstate.AliasAddressType
         return chain_id;
     }
@@ -74,7 +74,7 @@ fn chain_id_from_bytes_unchecked(buf: &[u8]) -> ScChainID {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub struct ScImmutableChainID {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScImmutableChainID {
@@ -99,7 +99,7 @@ impl ScImmutableChainID {
 
 // value proxy for mutable ScChainID in host container
 pub struct ScMutableChainID {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScMutableChainID {
@@ -107,7 +107,7 @@ impl ScMutableChainID {
         ScMutableChainID { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 

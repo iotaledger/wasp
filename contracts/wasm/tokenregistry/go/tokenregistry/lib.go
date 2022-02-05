@@ -9,12 +9,30 @@ package tokenregistry
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncMintSupply, funcMintSupplyThunk)
-	exports.AddFunc(FuncTransferOwnership, funcTransferOwnershipThunk)
-	exports.AddFunc(FuncUpdateMetadata, funcUpdateMetadataThunk)
-	exports.AddView(ViewGetInfo, viewGetInfoThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncMintSupply,
+		FuncTransferOwnership,
+		FuncUpdateMetadata,
+		ViewGetInfo,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcMintSupplyThunk,
+		funcTransferOwnershipThunk,
+		funcUpdateMetadataThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewGetInfoThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type MintSupplyContext struct {

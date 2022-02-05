@@ -11,7 +11,7 @@ pub fn bytes_decode(dec: &mut WasmDecoder) -> Vec<u8> {
     dec.bytes().to_vec()
 }
 
-pub fn bytes_encode(enc: &mut WasmEncoder, value: &[u8])  {
+pub fn bytes_encode(enc: &mut WasmEncoder, value: &[u8]) {
     enc.bytes(value);
 }
 
@@ -31,7 +31,7 @@ pub fn bytes_to_string(value: &[u8]) -> String {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub struct ScImmutableBytes {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScImmutableBytes {
@@ -56,7 +56,7 @@ impl ScImmutableBytes {
 
 // value proxy for mutable ScBytes in host container
 pub struct ScMutableBytes {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScMutableBytes {
@@ -64,7 +64,7 @@ impl ScMutableBytes {
         ScMutableBytes { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 

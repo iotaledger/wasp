@@ -91,13 +91,33 @@ func (sc Funcs) TotalAssets(ctx wasmlib.ScViewCallContext) *TotalAssetsCall {
 	return f
 }
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncDeposit, wasmlib.FuncError)
-	exports.AddFunc(FuncHarvest, wasmlib.FuncError)
-	exports.AddFunc(FuncWithdraw, wasmlib.FuncError)
-	exports.AddView(ViewAccounts, wasmlib.ViewError)
-	exports.AddView(ViewBalance, wasmlib.ViewError)
-	exports.AddView(ViewGetAccountNonce, wasmlib.ViewError)
-	exports.AddView(ViewTotalAssets, wasmlib.ViewError)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncDeposit,
+		FuncHarvest,
+		FuncWithdraw,
+		ViewAccounts,
+		ViewBalance,
+		ViewGetAccountNonce,
+		ViewTotalAssets,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		panic("Calling core contract?")
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }

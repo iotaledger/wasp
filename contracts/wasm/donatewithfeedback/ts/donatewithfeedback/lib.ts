@@ -8,16 +8,29 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+const exportMap: wasmlib.ScExportMap = {
+    names: [
+    	sc.FuncDonate,
+    	sc.FuncWithdraw,
+    	sc.ViewDonation,
+    	sc.ViewDonationInfo,
+    ],
+    funcs: [
+    	funcDonateThunk,
+    	funcWithdrawThunk,
+    ],
+    views: [
+    	viewDonationThunk,
+    	viewDonationInfoThunk,
+    ],
+};
+
 export function on_call(index: i32): void {
-    return wasmlib.onCall(index);
+    wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncDonate,       funcDonateThunk);
-    exports.addFunc(sc.FuncWithdraw,     funcWithdrawThunk);
-    exports.addView(sc.ViewDonation,     viewDonationThunk);
-    exports.addView(sc.ViewDonationInfo, viewDonationInfoThunk);
+    wasmlib.ScExports.export(exportMap);
 }
 
 function funcDonateThunk(ctx: wasmlib.ScFuncContext): void {

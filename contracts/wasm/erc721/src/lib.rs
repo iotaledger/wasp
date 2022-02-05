@@ -28,23 +28,51 @@ mod typedefs;
 
 mod erc721;
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_APPROVE,
+    	FUNC_BURN,
+    	FUNC_INIT,
+    	FUNC_MINT,
+    	FUNC_SAFE_TRANSFER_FROM,
+    	FUNC_SET_APPROVAL_FOR_ALL,
+    	FUNC_TRANSFER_FROM,
+    	VIEW_BALANCE_OF,
+    	VIEW_GET_APPROVED,
+    	VIEW_IS_APPROVED_FOR_ALL,
+    	VIEW_NAME,
+    	VIEW_OWNER_OF,
+    	VIEW_SYMBOL,
+    	VIEW_TOKEN_URI,
+	],
+    funcs: &[
+    	func_approve_thunk,
+    	func_burn_thunk,
+    	func_init_thunk,
+    	func_mint_thunk,
+    	func_safe_transfer_from_thunk,
+    	func_set_approval_for_all_thunk,
+    	func_transfer_from_thunk,
+	],
+    views: &[
+    	view_balance_of_thunk,
+    	view_get_approved_thunk,
+    	view_is_approved_for_all_thunk,
+    	view_name_thunk,
+    	view_owner_of_thunk,
+    	view_symbol_thunk,
+    	view_token_uri_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_APPROVE,              func_approve_thunk);
-    exports.add_func(FUNC_BURN,                 func_burn_thunk);
-    exports.add_func(FUNC_INIT,                 func_init_thunk);
-    exports.add_func(FUNC_MINT,                 func_mint_thunk);
-    exports.add_func(FUNC_SAFE_TRANSFER_FROM,   func_safe_transfer_from_thunk);
-    exports.add_func(FUNC_SET_APPROVAL_FOR_ALL, func_set_approval_for_all_thunk);
-    exports.add_func(FUNC_TRANSFER_FROM,        func_transfer_from_thunk);
-    exports.add_view(VIEW_BALANCE_OF,           view_balance_of_thunk);
-    exports.add_view(VIEW_GET_APPROVED,         view_get_approved_thunk);
-    exports.add_view(VIEW_IS_APPROVED_FOR_ALL,  view_is_approved_for_all_thunk);
-    exports.add_view(VIEW_NAME,                 view_name_thunk);
-    exports.add_view(VIEW_OWNER_OF,             view_owner_of_thunk);
-    exports.add_view(VIEW_SYMBOL,               view_symbol_thunk);
-    exports.add_view(VIEW_TOKEN_URI,            view_token_uri_thunk);
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct ApproveContext {

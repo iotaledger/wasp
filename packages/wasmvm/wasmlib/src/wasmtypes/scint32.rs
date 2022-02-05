@@ -15,7 +15,7 @@ pub fn int32_decode(dec: &mut WasmDecoder) -> i32 {
     dec.vli_decode(32) as i32
 }
 
-pub fn int32_encode(enc: &mut WasmEncoder, value: i32)  {
+pub fn int32_encode(enc: &mut WasmEncoder, value: i32) {
     enc.vli_encode(value as i64);
 }
 
@@ -40,7 +40,7 @@ pub fn int32_to_string(value: i32) -> String {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub struct ScImmutableInt32 {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScImmutableInt32 {
@@ -65,7 +65,7 @@ impl ScImmutableInt32 {
 
 // value proxy for mutable i32 in host container
 pub struct ScMutableInt32 {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScMutableInt32 {
@@ -73,7 +73,7 @@ impl ScMutableInt32 {
         ScMutableInt32 { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 

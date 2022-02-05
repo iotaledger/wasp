@@ -9,10 +9,26 @@ package helloworld
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncHelloWorld, funcHelloWorldThunk)
-	exports.AddView(ViewGetHelloWorld, viewGetHelloWorldThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncHelloWorld,
+		ViewGetHelloWorld,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcHelloWorldThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewGetHelloWorldThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type HelloWorldContext struct {

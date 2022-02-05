@@ -63,10 +63,27 @@ func (sc Funcs) ListBlobs(ctx wasmlib.ScViewCallContext) *ListBlobsCall {
 	return f
 }
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncStoreBlob, wasmlib.FuncError)
-	exports.AddView(ViewGetBlobField, wasmlib.ViewError)
-	exports.AddView(ViewGetBlobInfo, wasmlib.ViewError)
-	exports.AddView(ViewListBlobs, wasmlib.ViewError)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncStoreBlob,
+		ViewGetBlobField,
+		ViewGetBlobInfo,
+		ViewListBlobs,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		wasmlib.FuncError,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		panic("Calling core contract?")
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }

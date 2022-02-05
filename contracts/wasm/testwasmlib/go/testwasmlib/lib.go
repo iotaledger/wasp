@@ -9,23 +9,52 @@ package testwasmlib
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncArrayAppend, funcArrayAppendThunk)
-	exports.AddFunc(FuncArrayClear, funcArrayClearThunk)
-	exports.AddFunc(FuncArraySet, funcArraySetThunk)
-	exports.AddFunc(FuncMapClear, funcMapClearThunk)
-	exports.AddFunc(FuncMapSet, funcMapSetThunk)
-	exports.AddFunc(FuncParamTypes, funcParamTypesThunk)
-	exports.AddFunc(FuncRandom, funcRandomThunk)
-	exports.AddFunc(FuncTriggerEvent, funcTriggerEventThunk)
-	exports.AddView(ViewArrayLength, viewArrayLengthThunk)
-	exports.AddView(ViewArrayValue, viewArrayValueThunk)
-	exports.AddView(ViewBlockRecord, viewBlockRecordThunk)
-	exports.AddView(ViewBlockRecords, viewBlockRecordsThunk)
-	exports.AddView(ViewGetRandom, viewGetRandomThunk)
-	exports.AddView(ViewIotaBalance, viewIotaBalanceThunk)
-	exports.AddView(ViewMapValue, viewMapValueThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncArrayAppend,
+		FuncArrayClear,
+		FuncArraySet,
+		FuncMapClear,
+		FuncMapSet,
+		FuncParamTypes,
+		FuncRandom,
+		FuncTriggerEvent,
+		ViewArrayLength,
+		ViewArrayValue,
+		ViewBlockRecord,
+		ViewBlockRecords,
+		ViewGetRandom,
+		ViewIotaBalance,
+		ViewMapValue,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcArrayAppendThunk,
+		funcArrayClearThunk,
+		funcArraySetThunk,
+		funcMapClearThunk,
+		funcMapSetThunk,
+		funcParamTypesThunk,
+		funcRandomThunk,
+		funcTriggerEventThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewArrayLengthThunk,
+		viewArrayValueThunk,
+		viewBlockRecordThunk,
+		viewBlockRecordsThunk,
+		viewGetRandomThunk,
+		viewIotaBalanceThunk,
+		viewMapValueThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type ArrayAppendContext struct {

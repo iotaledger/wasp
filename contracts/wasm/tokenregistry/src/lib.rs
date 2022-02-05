@@ -24,13 +24,31 @@ mod structs;
 
 mod tokenregistry;
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_MINT_SUPPLY,
+    	FUNC_TRANSFER_OWNERSHIP,
+    	FUNC_UPDATE_METADATA,
+    	VIEW_GET_INFO,
+	],
+    funcs: &[
+    	func_mint_supply_thunk,
+    	func_transfer_ownership_thunk,
+    	func_update_metadata_thunk,
+	],
+    views: &[
+    	view_get_info_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_MINT_SUPPLY,        func_mint_supply_thunk);
-    exports.add_func(FUNC_TRANSFER_OWNERSHIP, func_transfer_ownership_thunk);
-    exports.add_func(FUNC_UPDATE_METADATA,    func_update_metadata_thunk);
-    exports.add_view(VIEW_GET_INFO,           view_get_info_thunk);
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct MintSupplyContext {

@@ -34,13 +34,13 @@ pub fn hash_decode(dec: &mut WasmDecoder) -> ScHash {
     hash_from_bytes_unchecked(&dec.fixed_bytes(SC_HASH_LENGTH))
 }
 
-pub fn hash_encode(enc: &mut WasmEncoder, value: &ScHash)  {
+pub fn hash_encode(enc: &mut WasmEncoder, value: &ScHash) {
     enc.fixed_bytes(&value.to_bytes(), SC_HASH_LENGTH);
 }
 
 pub fn hash_from_bytes(buf: &[u8]) -> ScHash {
     if buf.len() == 0 {
-        return ScHash { id: [0;SC_HASH_LENGTH] };
+        return ScHash { id: [0; SC_HASH_LENGTH] };
     }
     if buf.len() != SC_HASH_LENGTH {
         panic("invalid Hash length");
@@ -64,7 +64,7 @@ fn hash_from_bytes_unchecked(buf: &[u8]) -> ScHash {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub struct ScImmutableHash {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScImmutableHash {
@@ -89,7 +89,7 @@ impl ScImmutableHash {
 
 // value proxy for mutable ScHash in host container
 pub struct ScMutableHash {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScMutableHash {
@@ -97,7 +97,7 @@ impl ScMutableHash {
         ScMutableHash { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 

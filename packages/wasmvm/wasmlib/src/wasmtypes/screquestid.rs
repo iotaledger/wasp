@@ -34,13 +34,13 @@ pub fn request_id_decode(dec: &mut WasmDecoder) -> ScRequestID {
     request_id_from_bytes_unchecked(&dec.fixed_bytes(SC_REQUEST_ID_LENGTH))
 }
 
-pub fn request_id_encode(enc: &mut WasmEncoder, value: &ScRequestID)  {
+pub fn request_id_encode(enc: &mut WasmEncoder, value: &ScRequestID) {
     enc.fixed_bytes(&value.to_bytes(), SC_REQUEST_ID_LENGTH);
 }
 
 pub fn request_id_from_bytes(buf: &[u8]) -> ScRequestID {
     if buf.len() == 0 {
-        return ScRequestID { id: [0;SC_REQUEST_ID_LENGTH] };
+        return ScRequestID { id: [0; SC_REQUEST_ID_LENGTH] };
     }
     if buf.len() != SC_REQUEST_ID_LENGTH {
         panic("invalid RequestID length");
@@ -68,7 +68,7 @@ fn request_id_from_bytes_unchecked(buf: &[u8]) -> ScRequestID {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub struct ScImmutableRequestID {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScImmutableRequestID {
@@ -93,7 +93,7 @@ impl ScImmutableRequestID {
 
 // value proxy for mutable ScRequestID in host container
 pub struct ScMutableRequestID {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScMutableRequestID {
@@ -101,7 +101,7 @@ impl ScMutableRequestID {
         ScMutableRequestID { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 

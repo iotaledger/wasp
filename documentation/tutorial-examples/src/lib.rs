@@ -6,13 +6,29 @@ use wasmlib::*;
 const PARAM_STRING: &str = "paramString";
 const VAR_STRING: &str = "storedString";
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+        "storeString",
+        "withdrawIota",
+        "getString",
+    ],
+    funcs: &[
+        store_string,
+        withdraw_iota,
+    ],
+    views: &[
+        get_string,
+    ],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+    ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    // declare entry points of the smart contract
-    let exports = ScExports::new();
-    exports.add_func("storeString", store_string);
-    exports.add_view("getString", get_string);
-    exports.add_func("withdrawIota", withdraw_iota);
+    ScExports::export(&EXPORT_MAP);
 }
 
 // storeString entry point stores a string provided as parameters

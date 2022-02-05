@@ -28,24 +28,53 @@ mod typedefs;
 
 mod testwasmlib;
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_ARRAY_APPEND,
+    	FUNC_ARRAY_CLEAR,
+    	FUNC_ARRAY_SET,
+    	FUNC_MAP_CLEAR,
+    	FUNC_MAP_SET,
+    	FUNC_PARAM_TYPES,
+    	FUNC_RANDOM,
+    	FUNC_TRIGGER_EVENT,
+    	VIEW_ARRAY_LENGTH,
+    	VIEW_ARRAY_VALUE,
+    	VIEW_BLOCK_RECORD,
+    	VIEW_BLOCK_RECORDS,
+    	VIEW_GET_RANDOM,
+    	VIEW_IOTA_BALANCE,
+    	VIEW_MAP_VALUE,
+	],
+    funcs: &[
+    	func_array_append_thunk,
+    	func_array_clear_thunk,
+    	func_array_set_thunk,
+    	func_map_clear_thunk,
+    	func_map_set_thunk,
+    	func_param_types_thunk,
+    	func_random_thunk,
+    	func_trigger_event_thunk,
+	],
+    views: &[
+    	view_array_length_thunk,
+    	view_array_value_thunk,
+    	view_block_record_thunk,
+    	view_block_records_thunk,
+    	view_get_random_thunk,
+    	view_iota_balance_thunk,
+    	view_map_value_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_ARRAY_APPEND,  func_array_append_thunk);
-    exports.add_func(FUNC_ARRAY_CLEAR,   func_array_clear_thunk);
-    exports.add_func(FUNC_ARRAY_SET,     func_array_set_thunk);
-    exports.add_func(FUNC_MAP_CLEAR,     func_map_clear_thunk);
-    exports.add_func(FUNC_MAP_SET,       func_map_set_thunk);
-    exports.add_func(FUNC_PARAM_TYPES,   func_param_types_thunk);
-    exports.add_func(FUNC_RANDOM,        func_random_thunk);
-    exports.add_func(FUNC_TRIGGER_EVENT, func_trigger_event_thunk);
-    exports.add_view(VIEW_ARRAY_LENGTH,  view_array_length_thunk);
-    exports.add_view(VIEW_ARRAY_VALUE,   view_array_value_thunk);
-    exports.add_view(VIEW_BLOCK_RECORD,  view_block_record_thunk);
-    exports.add_view(VIEW_BLOCK_RECORDS, view_block_records_thunk);
-    exports.add_view(VIEW_GET_RANDOM,    view_get_random_thunk);
-    exports.add_view(VIEW_IOTA_BALANCE,  view_iota_balance_thunk);
-    exports.add_view(VIEW_MAP_VALUE,     view_map_value_thunk);
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct ArrayAppendContext {

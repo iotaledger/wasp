@@ -9,14 +9,34 @@ package dividend
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncDivide, funcDivideThunk)
-	exports.AddFunc(FuncInit, funcInitThunk)
-	exports.AddFunc(FuncMember, funcMemberThunk)
-	exports.AddFunc(FuncSetOwner, funcSetOwnerThunk)
-	exports.AddView(ViewGetFactor, viewGetFactorThunk)
-	exports.AddView(ViewGetOwner, viewGetOwnerThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncDivide,
+		FuncInit,
+		FuncMember,
+		FuncSetOwner,
+		ViewGetFactor,
+		ViewGetOwner,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcDivideThunk,
+		funcInitThunk,
+		funcMemberThunk,
+		funcSetOwnerThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewGetFactorThunk,
+		viewGetOwnerThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type DivideContext struct {

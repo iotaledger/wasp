@@ -32,7 +32,7 @@ pub fn hname_decode(dec: &mut WasmDecoder) -> ScHname {
     hname_from_bytes(&dec.fixed_bytes(SC_HNAME_LENGTH))
 }
 
-pub fn hname_encode(enc: &mut WasmEncoder, value: ScHname)  {
+pub fn hname_encode(enc: &mut WasmEncoder, value: ScHname) {
     enc.fixed_bytes(&hname_to_bytes(value), SC_HNAME_LENGTH);
 }
 
@@ -64,7 +64,7 @@ pub fn hname_to_string(value: ScHname) -> String {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub struct ScImmutableHname {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScImmutableHname {
@@ -89,7 +89,7 @@ impl ScImmutableHname {
 
 // value proxy for mutable ScHname in host container
 pub struct ScMutableHname {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScMutableHname {
@@ -97,7 +97,7 @@ impl ScMutableHname {
         ScMutableHname { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 

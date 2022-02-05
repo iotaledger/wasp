@@ -163,7 +163,7 @@ impl WasmEncoder {
         // keep shifting until all bits are done
         while value != final_value {
             // emit with continuation bit
-            self.buf.push(b|0x80);
+            self.buf.push(b | 0x80);
 
             // next group of 7 bits
             b = value as u8 & 0x7f;
@@ -187,7 +187,7 @@ impl WasmEncoder {
         // keep shifting until all bits are done
         while value != 0 {
             // emit with continuation bit
-            self.buf.push(b|0x80);
+            self.buf.push(b | 0x80);
 
             // next group of 7 bits
             b = value as u8;
@@ -206,7 +206,7 @@ pub fn base58_encode(buf: &[u8]) -> String {
 
 pub fn hex(buf: &[u8]) -> String {
     let hexa = "0123456789abcdef".as_bytes();
-    let mut res: Vec<u8> =  Vec::new();
+    let mut res: Vec<u8> = Vec::new();
     for b in buf {
         res.push(hexa[*b as usize >> 4]);
         res.push(hexa[*b as usize & 0x0f]);

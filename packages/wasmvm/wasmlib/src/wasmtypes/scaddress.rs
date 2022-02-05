@@ -38,13 +38,13 @@ pub fn address_decode(dec: &mut WasmDecoder) -> ScAddress {
     address_from_bytes_unchecked(&dec.fixed_bytes(SC_ADDRESS_LENGTH))
 }
 
-pub fn address_encode(enc: &mut WasmEncoder, value: &ScAddress)  {
+pub fn address_encode(enc: &mut WasmEncoder, value: &ScAddress) {
     enc.fixed_bytes(&value.to_bytes(), SC_ADDRESS_LENGTH);
 }
 
 pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
     if buf.len() == 0 {
-        return ScAddress { id: [0;SC_ADDRESS_LENGTH] };
+        return ScAddress { id: [0; SC_ADDRESS_LENGTH] };
     }
     if buf.len() != SC_ADDRESS_LENGTH {
         panic("invalid Address length");
@@ -105,7 +105,7 @@ impl ScMutableAddress {
         ScMutableAddress { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 

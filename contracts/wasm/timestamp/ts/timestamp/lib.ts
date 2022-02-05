@@ -8,14 +8,25 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+const exportMap: wasmlib.ScExportMap = {
+    names: [
+    	sc.FuncNow,
+    	sc.ViewGetTimestamp,
+    ],
+    funcs: [
+    	funcNowThunk,
+    ],
+    views: [
+    	viewGetTimestampThunk,
+    ],
+};
+
 export function on_call(index: i32): void {
-    return wasmlib.onCall(index);
+    wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncNow,          funcNowThunk);
-    exports.addView(sc.ViewGetTimestamp, viewGetTimestampThunk);
+    wasmlib.ScExports.export(exportMap);
 }
 
 function funcNowThunk(ctx: wasmlib.ScFuncContext): void {

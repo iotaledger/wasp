@@ -139,16 +139,38 @@ func (sc Funcs) IsRequestProcessed(ctx wasmlib.ScViewCallContext) *IsRequestProc
 	return f
 }
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddView(ViewControlAddresses, wasmlib.ViewError)
-	exports.AddView(ViewGetBlockInfo, wasmlib.ViewError)
-	exports.AddView(ViewGetEventsForBlock, wasmlib.ViewError)
-	exports.AddView(ViewGetEventsForContract, wasmlib.ViewError)
-	exports.AddView(ViewGetEventsForRequest, wasmlib.ViewError)
-	exports.AddView(ViewGetLatestBlockInfo, wasmlib.ViewError)
-	exports.AddView(ViewGetRequestIDsForBlock, wasmlib.ViewError)
-	exports.AddView(ViewGetRequestReceipt, wasmlib.ViewError)
-	exports.AddView(ViewGetRequestReceiptsForBlock, wasmlib.ViewError)
-	exports.AddView(ViewIsRequestProcessed, wasmlib.ViewError)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		ViewControlAddresses,
+		ViewGetBlockInfo,
+		ViewGetEventsForBlock,
+		ViewGetEventsForContract,
+		ViewGetEventsForRequest,
+		ViewGetLatestBlockInfo,
+		ViewGetRequestIDsForBlock,
+		ViewGetRequestReceipt,
+		ViewGetRequestReceiptsForBlock,
+		ViewIsRequestProcessed,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{},
+	Views: []wasmlib.ScViewContextFunction{
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		panic("Calling core contract?")
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }

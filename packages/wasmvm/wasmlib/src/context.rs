@@ -13,6 +13,7 @@ pub struct ScFuncContext {}
 
 // reuse shared part of interface
 impl ScSandbox for ScFuncContext {}
+
 impl ScSandboxFunc for ScFuncContext {}
 
 impl ScFuncCallContext for ScFuncContext {
@@ -44,6 +45,7 @@ pub struct ScViewContext {}
 
 // reuse shared part of interface
 impl ScSandbox for ScViewContext {}
+
 impl ScSandboxView for ScViewContext {}
 
 impl ScViewCallContext for ScViewContext {

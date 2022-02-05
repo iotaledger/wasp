@@ -60,14 +60,25 @@ $#set complex $true
 	// *******************************
 	"coreOnload": `
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+$#each func coreExportName
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
 $#each func coreExportFunc
+	},
+	Views: []wasmlib.ScViewContextFunction{
+$#each func coreExportView
+	},
 }
-`,
-	// *******************************
-	"coreExportFunc": `
-	exports.Add$Kind($Kind$FuncName, wasmlib.$Kind$+Error)
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		panic("Calling core contract?")
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
+}
 `,
 	// *******************************
 	"initComplex": `
@@ -87,5 +98,25 @@ $#if result initResults
 	// *******************************
 	"initSimple": `
 	return &$FuncName$+Call{Func: wasmlib.NewSc$initFunc$Kind(ctx, HScName, H$Kind$FuncName)}
+`,
+	// *******************************
+	"coreExportName": `
+    	$Kind$FuncName,
+`,
+	// *******************************
+	"coreExportFunc": `
+$#if func coreExportFuncThunk
+`,
+	// *******************************
+	"coreExportFuncThunk": `
+		wasmlib.$Kind$+Error,
+`,
+	// *******************************
+	"coreExportView": `
+$#if view coreExportViewThunk
+`,
+	// *******************************
+	"coreExportViewThunk": `
+		wasmlib.$Kind$+Error,
 `,
 }

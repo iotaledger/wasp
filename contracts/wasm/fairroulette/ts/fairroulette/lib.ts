@@ -8,21 +8,39 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+const exportMap: wasmlib.ScExportMap = {
+    names: [
+    	sc.FuncForcePayout,
+    	sc.FuncForceReset,
+    	sc.FuncPayWinners,
+    	sc.FuncPlaceBet,
+    	sc.FuncPlayPeriod,
+    	sc.ViewLastWinningNumber,
+    	sc.ViewRoundNumber,
+    	sc.ViewRoundStartedAt,
+    	sc.ViewRoundStatus,
+    ],
+    funcs: [
+    	funcForcePayoutThunk,
+    	funcForceResetThunk,
+    	funcPayWinnersThunk,
+    	funcPlaceBetThunk,
+    	funcPlayPeriodThunk,
+    ],
+    views: [
+    	viewLastWinningNumberThunk,
+    	viewRoundNumberThunk,
+    	viewRoundStartedAtThunk,
+    	viewRoundStatusThunk,
+    ],
+};
+
 export function on_call(index: i32): void {
-    return wasmlib.onCall(index);
+    wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncForcePayout,       funcForcePayoutThunk);
-    exports.addFunc(sc.FuncForceReset,        funcForceResetThunk);
-    exports.addFunc(sc.FuncPayWinners,        funcPayWinnersThunk);
-    exports.addFunc(sc.FuncPlaceBet,          funcPlaceBetThunk);
-    exports.addFunc(sc.FuncPlayPeriod,        funcPlayPeriodThunk);
-    exports.addView(sc.ViewLastWinningNumber, viewLastWinningNumberThunk);
-    exports.addView(sc.ViewRoundNumber,       viewRoundNumberThunk);
-    exports.addView(sc.ViewRoundStartedAt,    viewRoundStartedAtThunk);
-    exports.addView(sc.ViewRoundStatus,       viewRoundStatusThunk);
+    wasmlib.ScExports.export(exportMap);
 }
 
 function funcForcePayoutThunk(ctx: wasmlib.ScFuncContext): void {

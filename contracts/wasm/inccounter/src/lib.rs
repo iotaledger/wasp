@@ -24,26 +24,57 @@ mod state;
 
 mod inccounter;
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_CALL_INCREMENT,
+    	FUNC_CALL_INCREMENT_RECURSE5X,
+    	FUNC_ENDLESS_LOOP,
+    	FUNC_INCREMENT,
+    	FUNC_INCREMENT_WITH_DELAY,
+    	FUNC_INIT,
+    	FUNC_LOCAL_STATE_INTERNAL_CALL,
+    	FUNC_LOCAL_STATE_POST,
+    	FUNC_LOCAL_STATE_SANDBOX_CALL,
+    	FUNC_POST_INCREMENT,
+    	FUNC_REPEAT_MANY,
+    	FUNC_TEST_VLI_CODEC,
+    	FUNC_TEST_VLU_CODEC,
+    	FUNC_WHEN_MUST_INCREMENT,
+    	VIEW_GET_COUNTER,
+    	VIEW_GET_VLI,
+    	VIEW_GET_VLU,
+	],
+    funcs: &[
+    	func_call_increment_thunk,
+    	func_call_increment_recurse5x_thunk,
+    	func_endless_loop_thunk,
+    	func_increment_thunk,
+    	func_increment_with_delay_thunk,
+    	func_init_thunk,
+    	func_local_state_internal_call_thunk,
+    	func_local_state_post_thunk,
+    	func_local_state_sandbox_call_thunk,
+    	func_post_increment_thunk,
+    	func_repeat_many_thunk,
+    	func_test_vli_codec_thunk,
+    	func_test_vlu_codec_thunk,
+    	func_when_must_increment_thunk,
+	],
+    views: &[
+    	view_get_counter_thunk,
+    	view_get_vli_thunk,
+    	view_get_vlu_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_CALL_INCREMENT,            func_call_increment_thunk);
-    exports.add_func(FUNC_CALL_INCREMENT_RECURSE5X,  func_call_increment_recurse5x_thunk);
-    exports.add_func(FUNC_ENDLESS_LOOP,              func_endless_loop_thunk);
-    exports.add_func(FUNC_INCREMENT,                 func_increment_thunk);
-    exports.add_func(FUNC_INCREMENT_WITH_DELAY,      func_increment_with_delay_thunk);
-    exports.add_func(FUNC_INIT,                      func_init_thunk);
-    exports.add_func(FUNC_LOCAL_STATE_INTERNAL_CALL, func_local_state_internal_call_thunk);
-    exports.add_func(FUNC_LOCAL_STATE_POST,          func_local_state_post_thunk);
-    exports.add_func(FUNC_LOCAL_STATE_SANDBOX_CALL,  func_local_state_sandbox_call_thunk);
-    exports.add_func(FUNC_POST_INCREMENT,            func_post_increment_thunk);
-    exports.add_func(FUNC_REPEAT_MANY,               func_repeat_many_thunk);
-    exports.add_func(FUNC_TEST_VLI_CODEC,            func_test_vli_codec_thunk);
-    exports.add_func(FUNC_TEST_VLU_CODEC,            func_test_vlu_codec_thunk);
-    exports.add_func(FUNC_WHEN_MUST_INCREMENT,       func_when_must_increment_thunk);
-    exports.add_view(VIEW_GET_COUNTER,               view_get_counter_thunk);
-    exports.add_view(VIEW_GET_VLI,                   view_get_vli_thunk);
-    exports.add_view(VIEW_GET_VLU,                   view_get_vlu_thunk);
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct CallIncrementContext {

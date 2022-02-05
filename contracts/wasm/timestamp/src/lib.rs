@@ -22,11 +22,27 @@ mod state;
 
 mod timestamp;
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_NOW,
+    	VIEW_GET_TIMESTAMP,
+	],
+    funcs: &[
+    	func_now_thunk,
+	],
+    views: &[
+    	view_get_timestamp_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_NOW,           func_now_thunk);
-    exports.add_view(VIEW_GET_TIMESTAMP, view_get_timestamp_thunk);
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct NowContext {

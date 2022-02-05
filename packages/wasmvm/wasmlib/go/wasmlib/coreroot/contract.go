@@ -70,11 +70,29 @@ func (sc Funcs) GetContractRecords(ctx wasmlib.ScViewCallContext) *GetContractRe
 	return f
 }
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncDeployContract, wasmlib.FuncError)
-	exports.AddFunc(FuncGrantDeployPermission, wasmlib.FuncError)
-	exports.AddFunc(FuncRevokeDeployPermission, wasmlib.FuncError)
-	exports.AddView(ViewFindContract, wasmlib.ViewError)
-	exports.AddView(ViewGetContractRecords, wasmlib.ViewError)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncDeployContract,
+		FuncGrantDeployPermission,
+		FuncRevokeDeployPermission,
+		ViewFindContract,
+		ViewGetContractRecords,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		panic("Calling core contract?")
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }

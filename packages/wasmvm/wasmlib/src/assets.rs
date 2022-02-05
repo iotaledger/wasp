@@ -10,7 +10,7 @@ fn read_bytes(assets: &mut BTreeMap<Vec<u8>, u64>, buf: &[u8]) {
         let mut dec = WasmDecoder::new(buf);
         let size = uint32_from_bytes(&dec.fixed_bytes(SC_UINT32_LENGTH));
         for _i in 0..size {
-            let color  = color_decode(&mut dec);
+            let color = color_decode(&mut dec);
             let amount_buf = dec.fixed_bytes(SC_UINT64_LENGTH);
             let amount = uint64_from_bytes(&amount_buf);
             assets.insert(color.to_bytes(), amount);
@@ -99,7 +99,7 @@ impl ScTransfers {
         ScTransfers::transfer(&ScColor::IOTA, amount)
     }
 
-    pub fn transfer(color: &ScColor, amount: u64) ->ScTransfers {
+    pub fn transfer(color: &ScColor, amount: u64) -> ScTransfers {
         let mut transfers = ScTransfers { assets: BTreeMap::new() };
         transfers.set(color, amount);
         transfers

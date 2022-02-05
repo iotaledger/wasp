@@ -24,41 +24,87 @@ mod state;
 
 mod testcore;
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_CALL_ON_CHAIN,
+    	FUNC_CHECK_CONTEXT_FROM_FULL_EP,
+    	FUNC_DO_NOTHING,
+    	FUNC_GET_MINTED_SUPPLY,
+    	FUNC_INC_COUNTER,
+    	FUNC_INIT,
+    	FUNC_PASS_TYPES_FULL,
+    	FUNC_RUN_RECURSION,
+    	FUNC_SEND_TO_ADDRESS,
+    	FUNC_SET_INT,
+    	FUNC_SPAWN,
+    	FUNC_TEST_BLOCK_CONTEXT1,
+    	FUNC_TEST_BLOCK_CONTEXT2,
+    	FUNC_TEST_CALL_PANIC_FULL_EP,
+    	FUNC_TEST_CALL_PANIC_VIEW_EP_FROM_FULL,
+    	FUNC_TEST_CHAIN_OWNER_ID_FULL,
+    	FUNC_TEST_EVENT_LOG_DEPLOY,
+    	FUNC_TEST_EVENT_LOG_EVENT_DATA,
+    	FUNC_TEST_EVENT_LOG_GENERIC_DATA,
+    	FUNC_TEST_PANIC_FULL_EP,
+    	FUNC_WITHDRAW_TO_CHAIN,
+    	VIEW_CHECK_CONTEXT_FROM_VIEW_EP,
+    	VIEW_FIBONACCI,
+    	VIEW_GET_COUNTER,
+    	VIEW_GET_INT,
+    	VIEW_GET_STRING_VALUE,
+    	VIEW_JUST_VIEW,
+    	VIEW_PASS_TYPES_VIEW,
+    	VIEW_TEST_CALL_PANIC_VIEW_EP_FROM_VIEW,
+    	VIEW_TEST_CHAIN_OWNER_ID_VIEW,
+    	VIEW_TEST_PANIC_VIEW_EP,
+    	VIEW_TEST_SANDBOX_CALL,
+	],
+    funcs: &[
+    	func_call_on_chain_thunk,
+    	func_check_context_from_full_ep_thunk,
+    	func_do_nothing_thunk,
+    	func_get_minted_supply_thunk,
+    	func_inc_counter_thunk,
+    	func_init_thunk,
+    	func_pass_types_full_thunk,
+    	func_run_recursion_thunk,
+    	func_send_to_address_thunk,
+    	func_set_int_thunk,
+    	func_spawn_thunk,
+    	func_test_block_context1_thunk,
+    	func_test_block_context2_thunk,
+    	func_test_call_panic_full_ep_thunk,
+    	func_test_call_panic_view_ep_from_full_thunk,
+    	func_test_chain_owner_id_full_thunk,
+    	func_test_event_log_deploy_thunk,
+    	func_test_event_log_event_data_thunk,
+    	func_test_event_log_generic_data_thunk,
+    	func_test_panic_full_ep_thunk,
+    	func_withdraw_to_chain_thunk,
+	],
+    views: &[
+    	view_check_context_from_view_ep_thunk,
+    	view_fibonacci_thunk,
+    	view_get_counter_thunk,
+    	view_get_int_thunk,
+    	view_get_string_value_thunk,
+    	view_just_view_thunk,
+    	view_pass_types_view_thunk,
+    	view_test_call_panic_view_ep_from_view_thunk,
+    	view_test_chain_owner_id_view_thunk,
+    	view_test_panic_view_ep_thunk,
+    	view_test_sandbox_call_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_CALL_ON_CHAIN,                     func_call_on_chain_thunk);
-    exports.add_func(FUNC_CHECK_CONTEXT_FROM_FULL_EP,        func_check_context_from_full_ep_thunk);
-    exports.add_func(FUNC_DO_NOTHING,                        func_do_nothing_thunk);
-    exports.add_func(FUNC_GET_MINTED_SUPPLY,                 func_get_minted_supply_thunk);
-    exports.add_func(FUNC_INC_COUNTER,                       func_inc_counter_thunk);
-    exports.add_func(FUNC_INIT,                              func_init_thunk);
-    exports.add_func(FUNC_PASS_TYPES_FULL,                   func_pass_types_full_thunk);
-    exports.add_func(FUNC_RUN_RECURSION,                     func_run_recursion_thunk);
-    exports.add_func(FUNC_SEND_TO_ADDRESS,                   func_send_to_address_thunk);
-    exports.add_func(FUNC_SET_INT,                           func_set_int_thunk);
-    exports.add_func(FUNC_SPAWN,                             func_spawn_thunk);
-    exports.add_func(FUNC_TEST_BLOCK_CONTEXT1,               func_test_block_context1_thunk);
-    exports.add_func(FUNC_TEST_BLOCK_CONTEXT2,               func_test_block_context2_thunk);
-    exports.add_func(FUNC_TEST_CALL_PANIC_FULL_EP,           func_test_call_panic_full_ep_thunk);
-    exports.add_func(FUNC_TEST_CALL_PANIC_VIEW_EP_FROM_FULL, func_test_call_panic_view_ep_from_full_thunk);
-    exports.add_func(FUNC_TEST_CHAIN_OWNER_ID_FULL,          func_test_chain_owner_id_full_thunk);
-    exports.add_func(FUNC_TEST_EVENT_LOG_DEPLOY,             func_test_event_log_deploy_thunk);
-    exports.add_func(FUNC_TEST_EVENT_LOG_EVENT_DATA,         func_test_event_log_event_data_thunk);
-    exports.add_func(FUNC_TEST_EVENT_LOG_GENERIC_DATA,       func_test_event_log_generic_data_thunk);
-    exports.add_func(FUNC_TEST_PANIC_FULL_EP,                func_test_panic_full_ep_thunk);
-    exports.add_func(FUNC_WITHDRAW_TO_CHAIN,                 func_withdraw_to_chain_thunk);
-    exports.add_view(VIEW_CHECK_CONTEXT_FROM_VIEW_EP,        view_check_context_from_view_ep_thunk);
-    exports.add_view(VIEW_FIBONACCI,                         view_fibonacci_thunk);
-    exports.add_view(VIEW_GET_COUNTER,                       view_get_counter_thunk);
-    exports.add_view(VIEW_GET_INT,                           view_get_int_thunk);
-    exports.add_view(VIEW_GET_STRING_VALUE,                  view_get_string_value_thunk);
-    exports.add_view(VIEW_JUST_VIEW,                         view_just_view_thunk);
-    exports.add_view(VIEW_PASS_TYPES_VIEW,                   view_pass_types_view_thunk);
-    exports.add_view(VIEW_TEST_CALL_PANIC_VIEW_EP_FROM_VIEW, view_test_call_panic_view_ep_from_view_thunk);
-    exports.add_view(VIEW_TEST_CHAIN_OWNER_ID_VIEW,          view_test_chain_owner_id_view_thunk);
-    exports.add_view(VIEW_TEST_PANIC_VIEW_EP,                view_test_panic_view_ep_thunk);
-    exports.add_view(VIEW_TEST_SANDBOX_CALL,                 view_test_sandbox_call_thunk);
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct CallOnChainContext {

@@ -38,10 +38,26 @@ $#if typedefs modModule
 
 mod $package;
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+$#each func libExportName
+	],
+    funcs: &[
+$#each func libExportFunc
+	],
+    views: &[
+$#each func libExportView
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-$#each func libExportFunc
+    ScExports::export(&EXPORT_MAP);
 }
 $#each func libThunk
 `,
@@ -54,8 +70,24 @@ use crate::$moduleName::*;
 mod $moduleName;
 `,
 	// *******************************
+	"libExportName": `
+    	$KIND$+_$FUNC_NAME,
+`,
+	// *******************************
 	"libExportFunc": `
-    exports.add_$kind($KIND$+_$FUNC_NAME,$func_pad $kind$+_$func_name$+_thunk);
+$#if func libExportFuncThunk
+`,
+	// *******************************
+	"libExportFuncThunk": `
+    	$kind$+_$func_name$+_thunk,
+`,
+	// *******************************
+	"libExportView": `
+$#if view libExportViewThunk
+`,
+	// *******************************
+	"libExportViewThunk": `
+    	$kind$+_$func_name$+_thunk,
 `,
 	// *******************************
 	"libThunk": `

@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//go:build wasm
 // +build wasm
 
 package main
@@ -16,9 +17,14 @@ import "github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
 func main() {
 }
 
+//export on_call
+func onCall(index int32) {
+	dividend.OnLoad(index)
+}
+
 //export on_load
 func onLoad() {
 	h := &wasmvmhost.WasmVMHost{}
 	h.ConnectWasmHost()
-	dividend.OnLoad()
+	dividend.OnLoad(-1)
 }

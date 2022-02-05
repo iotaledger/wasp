@@ -9,10 +9,26 @@ package timestamp
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncNow, funcNowThunk)
-	exports.AddView(ViewGetTimestamp, viewGetTimestampThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncNow,
+		ViewGetTimestamp,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcNowThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewGetTimestampThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type NowContext struct {

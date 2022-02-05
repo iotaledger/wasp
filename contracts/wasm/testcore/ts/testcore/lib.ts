@@ -8,44 +8,85 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+const exportMap: wasmlib.ScExportMap = {
+    names: [
+    	sc.FuncCallOnChain,
+    	sc.FuncCheckContextFromFullEP,
+    	sc.FuncDoNothing,
+    	sc.FuncGetMintedSupply,
+    	sc.FuncIncCounter,
+    	sc.FuncInit,
+    	sc.FuncPassTypesFull,
+    	sc.FuncRunRecursion,
+    	sc.FuncSendToAddress,
+    	sc.FuncSetInt,
+    	sc.FuncSpawn,
+    	sc.FuncTestBlockContext1,
+    	sc.FuncTestBlockContext2,
+    	sc.FuncTestCallPanicFullEP,
+    	sc.FuncTestCallPanicViewEPFromFull,
+    	sc.FuncTestChainOwnerIDFull,
+    	sc.FuncTestEventLogDeploy,
+    	sc.FuncTestEventLogEventData,
+    	sc.FuncTestEventLogGenericData,
+    	sc.FuncTestPanicFullEP,
+    	sc.FuncWithdrawToChain,
+    	sc.ViewCheckContextFromViewEP,
+    	sc.ViewFibonacci,
+    	sc.ViewGetCounter,
+    	sc.ViewGetInt,
+    	sc.ViewGetStringValue,
+    	sc.ViewJustView,
+    	sc.ViewPassTypesView,
+    	sc.ViewTestCallPanicViewEPFromView,
+    	sc.ViewTestChainOwnerIDView,
+    	sc.ViewTestPanicViewEP,
+    	sc.ViewTestSandboxCall,
+    ],
+    funcs: [
+    	funcCallOnChainThunk,
+    	funcCheckContextFromFullEPThunk,
+    	funcDoNothingThunk,
+    	funcGetMintedSupplyThunk,
+    	funcIncCounterThunk,
+    	funcInitThunk,
+    	funcPassTypesFullThunk,
+    	funcRunRecursionThunk,
+    	funcSendToAddressThunk,
+    	funcSetIntThunk,
+    	funcSpawnThunk,
+    	funcTestBlockContext1Thunk,
+    	funcTestBlockContext2Thunk,
+    	funcTestCallPanicFullEPThunk,
+    	funcTestCallPanicViewEPFromFullThunk,
+    	funcTestChainOwnerIDFullThunk,
+    	funcTestEventLogDeployThunk,
+    	funcTestEventLogEventDataThunk,
+    	funcTestEventLogGenericDataThunk,
+    	funcTestPanicFullEPThunk,
+    	funcWithdrawToChainThunk,
+    ],
+    views: [
+    	viewCheckContextFromViewEPThunk,
+    	viewFibonacciThunk,
+    	viewGetCounterThunk,
+    	viewGetIntThunk,
+    	viewGetStringValueThunk,
+    	viewJustViewThunk,
+    	viewPassTypesViewThunk,
+    	viewTestCallPanicViewEPFromViewThunk,
+    	viewTestChainOwnerIDViewThunk,
+    	viewTestPanicViewEPThunk,
+    	viewTestSandboxCallThunk,
+    ],
+};
+
 export function on_call(index: i32): void {
-    return wasmlib.onCall(index);
+    wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncCallOnChain,                 funcCallOnChainThunk);
-    exports.addFunc(sc.FuncCheckContextFromFullEP,      funcCheckContextFromFullEPThunk);
-    exports.addFunc(sc.FuncDoNothing,                   funcDoNothingThunk);
-    exports.addFunc(sc.FuncGetMintedSupply,             funcGetMintedSupplyThunk);
-    exports.addFunc(sc.FuncIncCounter,                  funcIncCounterThunk);
-    exports.addFunc(sc.FuncInit,                        funcInitThunk);
-    exports.addFunc(sc.FuncPassTypesFull,               funcPassTypesFullThunk);
-    exports.addFunc(sc.FuncRunRecursion,                funcRunRecursionThunk);
-    exports.addFunc(sc.FuncSendToAddress,               funcSendToAddressThunk);
-    exports.addFunc(sc.FuncSetInt,                      funcSetIntThunk);
-    exports.addFunc(sc.FuncSpawn,                       funcSpawnThunk);
-    exports.addFunc(sc.FuncTestBlockContext1,           funcTestBlockContext1Thunk);
-    exports.addFunc(sc.FuncTestBlockContext2,           funcTestBlockContext2Thunk);
-    exports.addFunc(sc.FuncTestCallPanicFullEP,         funcTestCallPanicFullEPThunk);
-    exports.addFunc(sc.FuncTestCallPanicViewEPFromFull, funcTestCallPanicViewEPFromFullThunk);
-    exports.addFunc(sc.FuncTestChainOwnerIDFull,        funcTestChainOwnerIDFullThunk);
-    exports.addFunc(sc.FuncTestEventLogDeploy,          funcTestEventLogDeployThunk);
-    exports.addFunc(sc.FuncTestEventLogEventData,       funcTestEventLogEventDataThunk);
-    exports.addFunc(sc.FuncTestEventLogGenericData,     funcTestEventLogGenericDataThunk);
-    exports.addFunc(sc.FuncTestPanicFullEP,             funcTestPanicFullEPThunk);
-    exports.addFunc(sc.FuncWithdrawToChain,             funcWithdrawToChainThunk);
-    exports.addView(sc.ViewCheckContextFromViewEP,      viewCheckContextFromViewEPThunk);
-    exports.addView(sc.ViewFibonacci,                   viewFibonacciThunk);
-    exports.addView(sc.ViewGetCounter,                  viewGetCounterThunk);
-    exports.addView(sc.ViewGetInt,                      viewGetIntThunk);
-    exports.addView(sc.ViewGetStringValue,              viewGetStringValueThunk);
-    exports.addView(sc.ViewJustView,                    viewJustViewThunk);
-    exports.addView(sc.ViewPassTypesView,               viewPassTypesViewThunk);
-    exports.addView(sc.ViewTestCallPanicViewEPFromView, viewTestCallPanicViewEPFromViewThunk);
-    exports.addView(sc.ViewTestChainOwnerIDView,        viewTestChainOwnerIDViewThunk);
-    exports.addView(sc.ViewTestPanicViewEP,             viewTestPanicViewEPThunk);
-    exports.addView(sc.ViewTestSandboxCall,             viewTestSandboxCallThunk);
+    wasmlib.ScExports.export(exportMap);
 }
 
 function funcCallOnChainThunk(ctx: wasmlib.ScFuncContext): void {

@@ -1,9 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+use std::rc::Rc;
+
 use crate::*;
 use crate::host::*;
-use std::rc::Rc;
 
 // @formatter:off
 pub const FN_ACCOUNT_ID            : i32 = -1;

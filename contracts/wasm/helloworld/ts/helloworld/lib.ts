@@ -8,14 +8,25 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+const exportMap: wasmlib.ScExportMap = {
+    names: [
+    	sc.FuncHelloWorld,
+    	sc.ViewGetHelloWorld,
+    ],
+    funcs: [
+    	funcHelloWorldThunk,
+    ],
+    views: [
+    	viewGetHelloWorldThunk,
+    ],
+};
+
 export function on_call(index: i32): void {
-    return wasmlib.onCall(index);
+    wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncHelloWorld,    funcHelloWorldThunk);
-    exports.addView(sc.ViewGetHelloWorld, viewGetHelloWorldThunk);
+    wasmlib.ScExports.export(exportMap);
 }
 
 function funcHelloWorldThunk(ctx: wasmlib.ScFuncContext): void {

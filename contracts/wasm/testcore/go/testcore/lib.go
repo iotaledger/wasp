@@ -10,40 +10,86 @@ package testcore
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncCallOnChain, funcCallOnChainThunk)
-	exports.AddFunc(FuncCheckContextFromFullEP, funcCheckContextFromFullEPThunk)
-	exports.AddFunc(FuncDoNothing, funcDoNothingThunk)
-	exports.AddFunc(FuncGetMintedSupply, funcGetMintedSupplyThunk)
-	exports.AddFunc(FuncIncCounter, funcIncCounterThunk)
-	exports.AddFunc(FuncInit, funcInitThunk)
-	exports.AddFunc(FuncPassTypesFull, funcPassTypesFullThunk)
-	exports.AddFunc(FuncRunRecursion, funcRunRecursionThunk)
-	exports.AddFunc(FuncSendToAddress, funcSendToAddressThunk)
-	exports.AddFunc(FuncSetInt, funcSetIntThunk)
-	exports.AddFunc(FuncSpawn, funcSpawnThunk)
-	exports.AddFunc(FuncTestBlockContext1, funcTestBlockContext1Thunk)
-	exports.AddFunc(FuncTestBlockContext2, funcTestBlockContext2Thunk)
-	exports.AddFunc(FuncTestCallPanicFullEP, funcTestCallPanicFullEPThunk)
-	exports.AddFunc(FuncTestCallPanicViewEPFromFull, funcTestCallPanicViewEPFromFullThunk)
-	exports.AddFunc(FuncTestChainOwnerIDFull, funcTestChainOwnerIDFullThunk)
-	exports.AddFunc(FuncTestEventLogDeploy, funcTestEventLogDeployThunk)
-	exports.AddFunc(FuncTestEventLogEventData, funcTestEventLogEventDataThunk)
-	exports.AddFunc(FuncTestEventLogGenericData, funcTestEventLogGenericDataThunk)
-	exports.AddFunc(FuncTestPanicFullEP, funcTestPanicFullEPThunk)
-	exports.AddFunc(FuncWithdrawToChain, funcWithdrawToChainThunk)
-	exports.AddView(ViewCheckContextFromViewEP, viewCheckContextFromViewEPThunk)
-	exports.AddView(ViewFibonacci, viewFibonacciThunk)
-	exports.AddView(ViewGetCounter, viewGetCounterThunk)
-	exports.AddView(ViewGetInt, viewGetIntThunk)
-	exports.AddView(ViewGetStringValue, viewGetStringValueThunk)
-	exports.AddView(ViewJustView, viewJustViewThunk)
-	exports.AddView(ViewPassTypesView, viewPassTypesViewThunk)
-	exports.AddView(ViewTestCallPanicViewEPFromView, viewTestCallPanicViewEPFromViewThunk)
-	exports.AddView(ViewTestChainOwnerIDView, viewTestChainOwnerIDViewThunk)
-	exports.AddView(ViewTestPanicViewEP, viewTestPanicViewEPThunk)
-	exports.AddView(ViewTestSandboxCall, viewTestSandboxCallThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncCallOnChain,
+		FuncCheckContextFromFullEP,
+		FuncDoNothing,
+		FuncGetMintedSupply,
+		FuncIncCounter,
+		FuncInit,
+		FuncPassTypesFull,
+		FuncRunRecursion,
+		FuncSendToAddress,
+		FuncSetInt,
+		FuncSpawn,
+		FuncTestBlockContext1,
+		FuncTestBlockContext2,
+		FuncTestCallPanicFullEP,
+		FuncTestCallPanicViewEPFromFull,
+		FuncTestChainOwnerIDFull,
+		FuncTestEventLogDeploy,
+		FuncTestEventLogEventData,
+		FuncTestEventLogGenericData,
+		FuncTestPanicFullEP,
+		FuncWithdrawToChain,
+		ViewCheckContextFromViewEP,
+		ViewFibonacci,
+		ViewGetCounter,
+		ViewGetInt,
+		ViewGetStringValue,
+		ViewJustView,
+		ViewPassTypesView,
+		ViewTestCallPanicViewEPFromView,
+		ViewTestChainOwnerIDView,
+		ViewTestPanicViewEP,
+		ViewTestSandboxCall,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcCallOnChainThunk,
+		funcCheckContextFromFullEPThunk,
+		funcDoNothingThunk,
+		funcGetMintedSupplyThunk,
+		funcIncCounterThunk,
+		funcInitThunk,
+		funcPassTypesFullThunk,
+		funcRunRecursionThunk,
+		funcSendToAddressThunk,
+		funcSetIntThunk,
+		funcSpawnThunk,
+		funcTestBlockContext1Thunk,
+		funcTestBlockContext2Thunk,
+		funcTestCallPanicFullEPThunk,
+		funcTestCallPanicViewEPFromFullThunk,
+		funcTestChainOwnerIDFullThunk,
+		funcTestEventLogDeployThunk,
+		funcTestEventLogEventDataThunk,
+		funcTestEventLogGenericDataThunk,
+		funcTestPanicFullEPThunk,
+		funcWithdrawToChainThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewCheckContextFromViewEPThunk,
+		viewFibonacciThunk,
+		viewGetCounterThunk,
+		viewGetIntThunk,
+		viewGetStringValueThunk,
+		viewJustViewThunk,
+		viewPassTypesViewThunk,
+		viewTestCallPanicViewEPFromViewThunk,
+		viewTestChainOwnerIDViewThunk,
+		viewTestPanicViewEPThunk,
+		viewTestSandboxCallThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type CallOnChainContext struct {

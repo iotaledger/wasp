@@ -15,7 +15,7 @@ pub fn int16_decode(dec: &mut WasmDecoder) -> i16 {
     dec.vli_decode(16) as i16
 }
 
-pub fn int16_encode(enc: &mut WasmEncoder, value: i16)  {
+pub fn int16_encode(enc: &mut WasmEncoder, value: i16) {
     enc.vli_encode(value as i64);
 }
 
@@ -40,7 +40,7 @@ pub fn int16_to_string(value: i16) -> String {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub struct ScImmutableInt16 {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScImmutableInt16 {
@@ -65,7 +65,7 @@ impl ScImmutableInt16 {
 
 // value proxy for mutable i16 in host container
 pub struct ScMutableInt16 {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScMutableInt16 {
@@ -73,7 +73,7 @@ impl ScMutableInt16 {
         ScMutableInt16 { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 

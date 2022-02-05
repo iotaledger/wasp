@@ -15,58 +15,46 @@ use crate::host::*;
 // on_load (which must be defined by the SC code) and
 // on_call (which is defined here as part of WasmLib)
 
-static mut FUNCS: Vec<fn(&ScFuncContext)> = vec![];
-static mut VIEWS: Vec<fn(&ScViewContext)> = vec![];
-
-#[no_mangle]
-// general entrypoint for the host to call any SC function
-// the host will pass the index of one of the entry points
-// that was provided by on_load during SC initialization
-fn on_call(index: i32) {
-    unsafe {
-        if (index & 0x8000) != 0 {
-            // immutable view function, invoke with a view context
-            VIEWS[(index & 0x7fff) as usize](&ScViewContext {});
-            return;
-        }
-
-        // mutable full function, invoke with a func context
-        FUNCS[index as usize](&ScFuncContext {});
-    }
+pub struct ScExportMap {
+    pub names: &'static [&'static str],
+    pub funcs: &'static [fn(&ScFuncContext)],
+    pub views: &'static [fn(&ScViewContext)],
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // context for on_load function to be able to tell host which
 // funcs and views are available as entry points to the SC
-pub struct ScExports {
-}
+pub struct ScExports {}
 
 impl ScExports {
     // constructs the symbol export context for the on_load function
-    pub fn new() -> ScExports {
+    pub fn export(export_map: &ScExportMap) {
         export_name(-1, "WASM::RUST");
-        ScExports { }
-    }
 
-    // defines the external name of a smart contract func
-    // and the entry point function associated with it
-    pub fn add_func(&self, name: &str, f: fn(&ScFuncContext)) {
-        unsafe {
-            let index = FUNCS.len() as i32;
-            FUNCS.push(f);
-            export_name(index, name);
+        for i in 0..export_map.funcs.len() {
+            export_name(i as i32, export_map.names[i]);
+        }
+
+        let offset = export_map.funcs.len();
+        for i in 0..export_map.views.len() {
+            export_name(i as i32 | 0x8000, export_map.names[offset + i]);
         }
     }
 
-    // defines the external name of a smart contract view
-    // and the entry point function associated with it
-    pub fn add_view(&self, name: &str, v: fn(&ScViewContext)) {
-        unsafe {
-            let index = VIEWS.len() as i32;
-            VIEWS.push(v);
-            export_name(index | 0x8000, name);
+    // general entrypoint for the host to call any SC function
+    // the host will pass the index of one of the entry points
+    // that was provided by on_load during SC initialization
+    pub fn call(index: i32, export_map: &ScExportMap) {
+        if (index & 0x8000) == 0 {
+            // mutable full function, invoke with a func context
+            let func = export_map.funcs[index as usize];
+            func(&ScFuncContext {});
+            return;
         }
+        // immutable view function, invoke with a view context
+        let view = export_map.views[(index & 0x7fff) as usize];
+        view(&ScViewContext {});
     }
 }
 

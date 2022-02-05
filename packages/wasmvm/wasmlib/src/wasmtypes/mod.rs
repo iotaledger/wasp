@@ -13,16 +13,16 @@ pub use scchainid::*;
 pub use sccolor::*;
 pub use schash::*;
 pub use schname::*;
-pub use scint8::*;
 pub use scint16::*;
 pub use scint32::*;
 pub use scint64::*;
+pub use scint8::*;
 pub use screquestid::*;
 pub use scstring::*;
-pub use scuint8::*;
 pub use scuint16::*;
 pub use scuint32::*;
 pub use scuint64::*;
+pub use scuint8::*;
 
 mod codec;
 mod proxy;

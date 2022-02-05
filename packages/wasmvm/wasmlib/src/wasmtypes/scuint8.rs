@@ -15,7 +15,7 @@ pub fn uint8_decode(dec: &mut WasmDecoder) -> u8 {
     dec.byte()
 }
 
-pub fn uint8_encode(enc: &mut WasmEncoder, value: u8)  {
+pub fn uint8_encode(enc: &mut WasmEncoder, value: u8) {
     enc.byte(value);
 }
 
@@ -40,7 +40,7 @@ pub fn uint8_to_string(value: u8) -> String {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub struct ScImmutableUint8 {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScImmutableUint8 {
@@ -65,7 +65,7 @@ impl ScImmutableUint8 {
 
 // value proxy for mutable u8 in host container
 pub struct ScMutableUint8 {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScMutableUint8 {
@@ -73,7 +73,7 @@ impl ScMutableUint8 {
         ScMutableUint8 { proxy }
     }
 
-    pub fn delete(&self)  {
+    pub fn delete(&self) {
         self.proxy.delete();
     }
 

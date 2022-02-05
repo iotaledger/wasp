@@ -9,22 +9,50 @@ package erc721
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncApprove, funcApproveThunk)
-	exports.AddFunc(FuncBurn, funcBurnThunk)
-	exports.AddFunc(FuncInit, funcInitThunk)
-	exports.AddFunc(FuncMint, funcMintThunk)
-	exports.AddFunc(FuncSafeTransferFrom, funcSafeTransferFromThunk)
-	exports.AddFunc(FuncSetApprovalForAll, funcSetApprovalForAllThunk)
-	exports.AddFunc(FuncTransferFrom, funcTransferFromThunk)
-	exports.AddView(ViewBalanceOf, viewBalanceOfThunk)
-	exports.AddView(ViewGetApproved, viewGetApprovedThunk)
-	exports.AddView(ViewIsApprovedForAll, viewIsApprovedForAllThunk)
-	exports.AddView(ViewName, viewNameThunk)
-	exports.AddView(ViewOwnerOf, viewOwnerOfThunk)
-	exports.AddView(ViewSymbol, viewSymbolThunk)
-	exports.AddView(ViewTokenURI, viewTokenURIThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncApprove,
+		FuncBurn,
+		FuncInit,
+		FuncMint,
+		FuncSafeTransferFrom,
+		FuncSetApprovalForAll,
+		FuncTransferFrom,
+		ViewBalanceOf,
+		ViewGetApproved,
+		ViewIsApprovedForAll,
+		ViewName,
+		ViewOwnerOf,
+		ViewSymbol,
+		ViewTokenURI,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcApproveThunk,
+		funcBurnThunk,
+		funcInitThunk,
+		funcMintThunk,
+		funcSafeTransferFromThunk,
+		funcSetApprovalForAllThunk,
+		funcTransferFromThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewBalanceOfThunk,
+		viewGetApprovedThunk,
+		viewIsApprovedForAllThunk,
+		viewNameThunk,
+		viewOwnerOfThunk,
+		viewSymbolThunk,
+		viewTokenURIThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type ApproveContext struct {

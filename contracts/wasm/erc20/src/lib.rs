@@ -28,16 +28,37 @@ mod typedefs;
 
 mod erc20;
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_APPROVE,
+    	FUNC_INIT,
+    	FUNC_TRANSFER,
+    	FUNC_TRANSFER_FROM,
+    	VIEW_ALLOWANCE,
+    	VIEW_BALANCE_OF,
+    	VIEW_TOTAL_SUPPLY,
+	],
+    funcs: &[
+    	func_approve_thunk,
+    	func_init_thunk,
+    	func_transfer_thunk,
+    	func_transfer_from_thunk,
+	],
+    views: &[
+    	view_allowance_thunk,
+    	view_balance_of_thunk,
+    	view_total_supply_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_APPROVE,       func_approve_thunk);
-    exports.add_func(FUNC_INIT,          func_init_thunk);
-    exports.add_func(FUNC_TRANSFER,      func_transfer_thunk);
-    exports.add_func(FUNC_TRANSFER_FROM, func_transfer_from_thunk);
-    exports.add_view(VIEW_ALLOWANCE,     view_allowance_thunk);
-    exports.add_view(VIEW_BALANCE_OF,    view_balance_of_thunk);
-    exports.add_view(VIEW_TOTAL_SUPPLY,  view_total_supply_thunk);
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct ApproveContext {

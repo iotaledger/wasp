@@ -24,15 +24,35 @@ mod state;
 
 mod dividend;
 
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_DIVIDE,
+    	FUNC_INIT,
+    	FUNC_MEMBER,
+    	FUNC_SET_OWNER,
+    	VIEW_GET_FACTOR,
+    	VIEW_GET_OWNER,
+	],
+    funcs: &[
+    	func_divide_thunk,
+    	func_init_thunk,
+    	func_member_thunk,
+    	func_set_owner_thunk,
+	],
+    views: &[
+    	view_get_factor_thunk,
+    	view_get_owner_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
+
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_DIVIDE,     func_divide_thunk);
-    exports.add_func(FUNC_INIT,       func_init_thunk);
-    exports.add_func(FUNC_MEMBER,     func_member_thunk);
-    exports.add_func(FUNC_SET_OWNER,  func_set_owner_thunk);
-    exports.add_view(VIEW_GET_FACTOR, view_get_factor_thunk);
-    exports.add_view(VIEW_GET_OWNER,  view_get_owner_thunk);
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct DivideContext {

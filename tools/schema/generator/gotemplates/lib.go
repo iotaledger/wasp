@@ -6,15 +6,47 @@ var libGo = map[string]string{
 //nolint:dupl
 $#emit goHeader
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+$#each func libExportName
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
 $#each func libExportFunc
+	},
+	Views: []wasmlib.ScViewContextFunction{
+$#each func libExportView
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return;
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 $#each func libThunk
 `,
 	// *******************************
+	"libExportName": `
+    	$Kind$FuncName,
+`,
+	// *******************************
 	"libExportFunc": `
-	exports.Add$Kind($Kind$FuncName,$funcPad $kind$FuncName$+Thunk)
+$#if func libExportFuncThunk
+`,
+	// *******************************
+	"libExportFuncThunk": `
+    	$kind$FuncName$+Thunk,
+`,
+	// *******************************
+	"libExportView": `
+$#if view libExportViewThunk
+`,
+	// *******************************
+	"libExportViewThunk": `
+    	$kind$FuncName$+Thunk,
 `,
 	// *******************************
 	"libThunk": `

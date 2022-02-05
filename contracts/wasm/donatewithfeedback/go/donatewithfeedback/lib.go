@@ -9,12 +9,30 @@ package donatewithfeedback
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncDonate, funcDonateThunk)
-	exports.AddFunc(FuncWithdraw, funcWithdrawThunk)
-	exports.AddView(ViewDonation, viewDonationThunk)
-	exports.AddView(ViewDonationInfo, viewDonationInfoThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncDonate,
+		FuncWithdraw,
+		ViewDonation,
+		ViewDonationInfo,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcDonateThunk,
+		funcWithdrawThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewDonationThunk,
+		viewDonationInfoThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type DonateContext struct {

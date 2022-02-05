@@ -9,13 +9,32 @@ package fairauction
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncFinalizeAuction, funcFinalizeAuctionThunk)
-	exports.AddFunc(FuncPlaceBid, funcPlaceBidThunk)
-	exports.AddFunc(FuncSetOwnerMargin, funcSetOwnerMarginThunk)
-	exports.AddFunc(FuncStartAuction, funcStartAuctionThunk)
-	exports.AddView(ViewGetInfo, viewGetInfoThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncFinalizeAuction,
+		FuncPlaceBid,
+		FuncSetOwnerMargin,
+		FuncStartAuction,
+		ViewGetInfo,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcFinalizeAuctionThunk,
+		funcPlaceBidThunk,
+		funcSetOwnerMarginThunk,
+		funcStartAuctionThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewGetInfoThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type FinalizeAuctionContext struct {

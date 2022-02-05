@@ -79,7 +79,7 @@ func (ctx *SoloContext) SetBudget(i int64) {
 // the contract's init() function can be specified.
 // Unless you want to use a different chain than the default "chain1" this will be your
 // function of choice to set up a smart contract for your tests
-func NewSoloContext(t *testing.T, scName string, onLoad func(), init ...*wasmlib.ScInitFunc) *SoloContext {
+func NewSoloContext(t *testing.T, scName string, onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc) *SoloContext {
 	ctx := NewSoloContextForChain(t, nil, nil, scName, onLoad, init...)
 	require.NoError(t, ctx.Err)
 	return ctx
@@ -93,8 +93,8 @@ func NewSoloContext(t *testing.T, scName string, onLoad func(), init ...*wasmlib
 // Optionally, an init.Func that has been initialized with the parameters to pass to
 // the contract's init() function can be specified.
 // You can check for any error that occurred by checking the ctx.Err member.
-func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent, scName string, onLoad func(),
-	init ...*wasmlib.ScInitFunc) *SoloContext {
+func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent, scName string,
+	onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
 
 	var keyPair *ed25519.KeyPair
@@ -138,7 +138,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 // Optionally, an init.Func that has been initialized with the parameters to pass to
 // the contract's init() function can be specified.
 // You can check for any error that occurred by checking the ctx.Err member.
-func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent, scName string, onLoad func(),
+func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent, scName string, onLoad wasmhost.ScOnloadFunc,
 	proc *coreutil.ContractProcessor, init ...*wasmlib.ScInitFunc) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
 	ctx.Chain.Env.WithNativeContract(proc)
@@ -259,10 +259,10 @@ func (ctx *SoloContext) Host() wasmlib.ScHost {
 }
 
 // init further initializes the SoloContext.
-func (ctx *SoloContext) init(onLoad func()) *SoloContext {
+func (ctx *SoloContext) init(onLoad wasmhost.ScOnloadFunc) *SoloContext {
 	ctx.wc = wasmhost.NewWasmMiniContext("-solo-", NewSoloSandbox(ctx))
 	ctx.wasmHostOld = wasmhost.Connect(ctx.wc)
-	onLoad()
+	onLoad(-1)
 	return ctx
 }
 
@@ -321,7 +321,7 @@ func (ctx *SoloContext) Sign(agent *SoloAgent, mint ...uint64) wasmlib.ScFuncCal
 	return ctx
 }
 
-func (ctx *SoloContext) SoloContextForCore(t *testing.T, scName string, onLoad func()) *SoloContext {
+func (ctx *SoloContext) SoloContextForCore(t *testing.T, scName string, onLoad wasmhost.ScOnloadFunc) *SoloContext {
 	ctxCore := soloContext(t, ctx.Chain, scName, nil).init(onLoad)
 	ctxCore.wasmHostOld = ctx.wasmHostOld
 	return ctxCore

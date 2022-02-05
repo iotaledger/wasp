@@ -19,10 +19,6 @@ pub fn export_name(index: i32, name: &str) {
     }
 }
 
-pub fn export_wasm_tag() {
-    export_name(-1, "WASM::RUST");
-}
-
 pub fn sandbox(func_nr: i32, params: &[u8]) -> Vec<u8> {
     unsafe {
         // call sandbox function, result value will be cached by host

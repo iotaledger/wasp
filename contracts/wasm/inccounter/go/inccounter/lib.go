@@ -9,25 +9,56 @@ package inccounter
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncCallIncrement, funcCallIncrementThunk)
-	exports.AddFunc(FuncCallIncrementRecurse5x, funcCallIncrementRecurse5xThunk)
-	exports.AddFunc(FuncEndlessLoop, funcEndlessLoopThunk)
-	exports.AddFunc(FuncIncrement, funcIncrementThunk)
-	exports.AddFunc(FuncIncrementWithDelay, funcIncrementWithDelayThunk)
-	exports.AddFunc(FuncInit, funcInitThunk)
-	exports.AddFunc(FuncLocalStateInternalCall, funcLocalStateInternalCallThunk)
-	exports.AddFunc(FuncLocalStatePost, funcLocalStatePostThunk)
-	exports.AddFunc(FuncLocalStateSandboxCall, funcLocalStateSandboxCallThunk)
-	exports.AddFunc(FuncPostIncrement, funcPostIncrementThunk)
-	exports.AddFunc(FuncRepeatMany, funcRepeatManyThunk)
-	exports.AddFunc(FuncTestVliCodec, funcTestVliCodecThunk)
-	exports.AddFunc(FuncTestVluCodec, funcTestVluCodecThunk)
-	exports.AddFunc(FuncWhenMustIncrement, funcWhenMustIncrementThunk)
-	exports.AddView(ViewGetCounter, viewGetCounterThunk)
-	exports.AddView(ViewGetVli, viewGetVliThunk)
-	exports.AddView(ViewGetVlu, viewGetVluThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncCallIncrement,
+		FuncCallIncrementRecurse5x,
+		FuncEndlessLoop,
+		FuncIncrement,
+		FuncIncrementWithDelay,
+		FuncInit,
+		FuncLocalStateInternalCall,
+		FuncLocalStatePost,
+		FuncLocalStateSandboxCall,
+		FuncPostIncrement,
+		FuncRepeatMany,
+		FuncTestVliCodec,
+		FuncTestVluCodec,
+		FuncWhenMustIncrement,
+		ViewGetCounter,
+		ViewGetVli,
+		ViewGetVlu,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcCallIncrementThunk,
+		funcCallIncrementRecurse5xThunk,
+		funcEndlessLoopThunk,
+		funcIncrementThunk,
+		funcIncrementWithDelayThunk,
+		funcInitThunk,
+		funcLocalStateInternalCallThunk,
+		funcLocalStatePostThunk,
+		funcLocalStateSandboxCallThunk,
+		funcPostIncrementThunk,
+		funcRepeatManyThunk,
+		funcTestVliCodecThunk,
+		funcTestVluCodecThunk,
+		funcWhenMustIncrementThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewGetCounterThunk,
+		viewGetVliThunk,
+		viewGetVluThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type CallIncrementContext struct {

@@ -6,19 +6,46 @@ var libTs = map[string]string{
 $#emit importWasmLib
 $#emit importSc
 
+const exportMap: wasmlib.ScExportMap = {
+    names: [
+$#each func libExportName
+    ],
+    funcs: [
+$#each func libExportFunc
+    ],
+    views: [
+$#each func libExportView
+    ],
+};
+
 export function on_call(index: i32): void {
-    return wasmlib.onCall(index);
+    wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    let exports = new wasmlib.ScExports();
-$#each func libExportFunc
+    wasmlib.ScExports.export(exportMap);
 }
 $#each func libThunk
 `,
 	// *******************************
+	"libExportName": `
+    	sc.$Kind$FuncName,
+`,
+	// *******************************
 	"libExportFunc": `
-    exports.add$Kind(sc.$Kind$FuncName,$funcPad $kind$FuncName$+Thunk);
+$#if func libExportFuncThunk
+`,
+	// *******************************
+	"libExportFuncThunk": `
+    	$kind$FuncName$+Thunk,
+`,
+	// *******************************
+	"libExportView": `
+$#if view libExportViewThunk
+`,
+	// *******************************
+	"libExportViewThunk": `
+    	$kind$FuncName$+Thunk,
 `,
 	// *******************************
 	"libThunk": `

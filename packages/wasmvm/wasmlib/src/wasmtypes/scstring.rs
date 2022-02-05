@@ -30,7 +30,7 @@ pub fn string_to_string(value: &str) -> String {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub struct ScImmutableString {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScImmutableString {
@@ -55,7 +55,7 @@ impl ScImmutableString {
 
 // value proxy for mutable ScString in host container
 pub struct ScMutableString {
-    proxy: Proxy
+    proxy: Proxy,
 }
 
 impl ScMutableString {

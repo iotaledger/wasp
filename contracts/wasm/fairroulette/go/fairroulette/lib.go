@@ -9,17 +9,40 @@ package fairroulette
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncForcePayout, funcForcePayoutThunk)
-	exports.AddFunc(FuncForceReset, funcForceResetThunk)
-	exports.AddFunc(FuncPayWinners, funcPayWinnersThunk)
-	exports.AddFunc(FuncPlaceBet, funcPlaceBetThunk)
-	exports.AddFunc(FuncPlayPeriod, funcPlayPeriodThunk)
-	exports.AddView(ViewLastWinningNumber, viewLastWinningNumberThunk)
-	exports.AddView(ViewRoundNumber, viewRoundNumberThunk)
-	exports.AddView(ViewRoundStartedAt, viewRoundStartedAtThunk)
-	exports.AddView(ViewRoundStatus, viewRoundStatusThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncForcePayout,
+		FuncForceReset,
+		FuncPayWinners,
+		FuncPlaceBet,
+		FuncPlayPeriod,
+		ViewLastWinningNumber,
+		ViewRoundNumber,
+		ViewRoundStartedAt,
+		ViewRoundStatus,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcForcePayoutThunk,
+		funcForceResetThunk,
+		funcPayWinnersThunk,
+		funcPlaceBetThunk,
+		funcPlayPeriodThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewLastWinningNumberThunk,
+		viewRoundNumberThunk,
+		viewRoundStartedAtThunk,
+		viewRoundStatusThunk,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type ForcePayoutContext struct {

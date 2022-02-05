@@ -144,18 +144,43 @@ func (sc Funcs) GetMaxBlobSize(ctx wasmlib.ScViewCallContext) *GetMaxBlobSizeCal
 	return f
 }
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncAddAllowedStateControllerAddress, wasmlib.FuncError)
-	exports.AddFunc(FuncClaimChainOwnership, wasmlib.FuncError)
-	exports.AddFunc(FuncDelegateChainOwnership, wasmlib.FuncError)
-	exports.AddFunc(FuncRemoveAllowedStateControllerAddress, wasmlib.FuncError)
-	exports.AddFunc(FuncRotateStateController, wasmlib.FuncError)
-	exports.AddFunc(FuncSetChainInfo, wasmlib.FuncError)
-	exports.AddFunc(FuncSetContractFee, wasmlib.FuncError)
-	exports.AddFunc(FuncSetDefaultFee, wasmlib.FuncError)
-	exports.AddView(ViewGetAllowedStateControllerAddresses, wasmlib.ViewError)
-	exports.AddView(ViewGetChainInfo, wasmlib.ViewError)
-	exports.AddView(ViewGetFeeInfo, wasmlib.ViewError)
-	exports.AddView(ViewGetMaxBlobSize, wasmlib.ViewError)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncAddAllowedStateControllerAddress,
+		FuncClaimChainOwnership,
+		FuncDelegateChainOwnership,
+		FuncRemoveAllowedStateControllerAddress,
+		FuncRotateStateController,
+		FuncSetChainInfo,
+		FuncSetContractFee,
+		FuncSetDefaultFee,
+		ViewGetAllowedStateControllerAddresses,
+		ViewGetChainInfo,
+		ViewGetFeeInfo,
+		ViewGetMaxBlobSize,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+	},
+}
+
+func OnLoad(index int32) {
+	if index >= 0 {
+		panic("Calling core contract?")
+	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
