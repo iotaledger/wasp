@@ -3,6 +3,8 @@
 
 package wasmlib
 
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+
 type (
 	ScFuncContextFunction func(ScFuncContext)
 	ScViewContextFunction func(ScViewContext)
@@ -19,6 +21,12 @@ type (
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 var host ScHost
+
+func init() {
+	wasmtypes.Base58Encode = func(buf []byte) string {
+		return string(Sandbox(FnUtilsBase58Encode, buf))
+	}
+}
 
 func ConnectHost(h ScHost) ScHost {
 	oldHost := host

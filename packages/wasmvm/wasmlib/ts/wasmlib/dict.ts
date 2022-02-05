@@ -2,22 +2,32 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmtypes from "./wasmtypes"
-import {hex, stringFromBytes} from "./wasmtypes"
 import {log} from "./sandbox";
 
-export function keya(key: u8[]): string {
+// returns a hex string representing the byte buffer
+function hex(buf: u8[]): string {
+    const hexa = "0123456789abcdef";
+    let res = "";
+    for (let i = 0; i < buf.length; i++) {
+        const b = buf[i];
+        res += hexa.charAt(b >> 4) + hexa.charAt(b & 0x0f);
+    }
+    return res;
+}
+
+function keya(key: u8[]): string {
     for (let i = 0; i < key.length; i++) {
         if (key[i] == 0x23) {
-            return stringFromBytes(key.slice(0, i + 1)) + hex(key.slice(i + 1));
+            return wasmtypes.stringFromBytes(key.slice(0, i + 1)) + hex(key.slice(i + 1));
         }
         if (key[i] < 0x20 || key[i] > 0x7e) {
             return hex(key);
         }
     }
-    return stringFromBytes(key);
+    return wasmtypes.stringFromBytes(key);
 }
 
-export function vala(val: u8[]): string {
+function vala(val: u8[]): string {
     return hex(val);
 }
 

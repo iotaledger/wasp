@@ -1,7 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
+import {FnUtilsBase58Encode, panic} from "../sandbox";
+import {stringFromBytes} from "./scstring";
+import {sandbox} from "../host";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -198,20 +200,7 @@ export class WasmEncoder {
 
 // wrapper for simplified use by hashtypes
 export function base58Encode(buf: u8[]): string {
-    // TODO
-    // return string(wasmlib.Sandbox(wasmstore.FnUtilsBase58Encode, buf))
-    return hex(buf);
-}
-
-// returns a hex string representing the byte buffer
-export function hex(buf: u8[]): string {
-    const hexa = "0123456789abcdef";
-    let res = "";
-    for (let i = 0; i < buf.length; i++) {
-        const b = buf[i];
-        res += hexa.charAt(b >> 4) + hexa.charAt(b & 0x0f);
-    }
-    return res;
+    return stringFromBytes(sandbox(FnUtilsBase58Encode, buf));
 }
 
 export function zeroes(count: u32): u8[] {

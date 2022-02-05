@@ -62,8 +62,8 @@ func (vm *WasmEdgeVM) importModule(name string) {
 	vm.importers = append(vm.importers, vm.module)
 }
 
-func (vm *WasmEdgeVM) LinkHost(impl WasmVM, host *WasmHost) error {
-	_ = vm.WasmVMBase.LinkHost(impl, host)
+func (vm *WasmEdgeVM) LinkHost(proc *WasmProcessor) error {
+	_ = vm.WasmVMBase.LinkHost(proc)
 
 	vm.importModule(ModuleWasmLib)
 	vm.importFunc(4, 1, FuncHostStateGet, vm.exportHostStateGet)
@@ -125,9 +125,6 @@ func (vm *WasmEdgeVM) RunFunction(functionName string, args ...interface{}) erro
 }
 
 func (vm *WasmEdgeVM) RunScFunction(index int32) error {
-	frame := vm.PreCall()
-	defer vm.PostCall(frame)
-
 	return vm.Run(func() (err error) {
 		_, err = vm.edge.Execute("on_call", index)
 		return err
@@ -166,7 +163,7 @@ func (vm *WasmEdgeVM) exportAbort(args []interface{}) []interface{} {
 	fileName := args[1].(int32)
 	line := args[2].(int32)
 	col := args[3].(int32)
-	vm.EnvAbort(errMsg, fileName, line, col)
+	vm.HostAbort(errMsg, fileName, line, col)
 	return nil
 }
 

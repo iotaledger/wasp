@@ -35,9 +35,10 @@ func (vm *WasmerVM) Interrupt() {
 	panic("implement me")
 }
 
-func (vm *WasmerVM) LinkHost(impl WasmVM, host *WasmHost) error {
+func (vm *WasmerVM) LinkHost(proc *WasmProcessor) error {
+	_ = vm.WasmVMBase.LinkHost(proc)
+
 	vm.linker = wasmer.NewImportObject()
-	_ = vm.WasmVMBase.LinkHost(impl, host)
 
 	funcs := map[string]wasmer.IntoExtern{
 		FuncHostStateGet: vm.importFunc(4, 1, vm.exportHostStateGet),
@@ -96,12 +97,10 @@ func (vm *WasmerVM) RunScFunction(index int32) error {
 	if err != nil {
 		return err
 	}
-	frame := vm.PreCall()
 	err = vm.Run(func() error {
 		_, err = export(index)
 		return err
 	})
-	vm.PostCall(frame)
 	return err
 }
 
@@ -114,7 +113,7 @@ func (vm *WasmerVM) exportAbort(args []wasmer.Value) ([]wasmer.Value, error) {
 	fileName := args[1].I32()
 	line := args[2].I32()
 	col := args[3].I32()
-	vm.EnvAbort(errMsg, fileName, line, col)
+	vm.HostAbort(errMsg, fileName, line, col)
 	return nil, nil
 }
 

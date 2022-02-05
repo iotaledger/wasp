@@ -12,29 +12,31 @@ import (
 )
 
 type WasmProcessor struct {
-	WasmHost
 	contextLock      sync.Mutex
 	contexts         map[int32]*WasmContext
 	currentContextID int32
+	funcTable        *WasmFuncTable
 	instanceLock     sync.Mutex
 	log              *logger.Logger
 	mainProcessor    *WasmProcessor
 	nextContextID    int32
 	scContext        *WasmContext
+	vm               WasmVM
 	wasmVM           func() WasmVM
 }
 
-var (
-	_ iscp.VMProcessor = new(WasmProcessor)
-	_ WasmStore        = new(WasmProcessor)
-)
+var _ iscp.VMProcessor = new(WasmProcessor)
 
 var GoWasmVM func() WasmVM
 
 // GetProcessor creates a new Wasm VM processor.
 func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error) {
-	proc := &WasmProcessor{log: log, contexts: make(map[int32]*WasmContext), wasmVM: NewWasmTimeVM}
-	proc.Init()
+	proc := &WasmProcessor{
+		contexts:  make(map[int32]*WasmContext),
+		funcTable: NewWasmFuncTable(),
+		log:       log,
+		wasmVM:    NewWasmTimeVM,
+	}
 
 	// By default, we will use WasmTimeVM, but this can be overruled by setting GoWasmVm
 	// This setting will also be propagated to all the sub-processors of this processor
@@ -42,9 +44,10 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error
 		proc.wasmVM = GoWasmVM
 		GoWasmVM = nil
 	}
+	proc.vm = proc.wasmVM()
 
 	// Run setup on main processor, because we will be sharing stuff with the sub-processors
-	err := proc.InitVM(proc.wasmVM())
+	err := proc.vm.LinkHost(proc)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +90,7 @@ func (proc *WasmProcessor) GetDescription() string {
 }
 
 func (proc *WasmProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
-	function := proc.FunctionFromCode(uint32(code))
+	function := proc.funcTable.FunctionFromCode(uint32(code))
 	if function == "" && code != iscp.EntryPointInit {
 		return nil, false
 	}
@@ -95,18 +98,22 @@ func (proc *WasmProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntry
 }
 
 func (proc *WasmProcessor) getSubProcessor(vmInstance WasmVM) *WasmProcessor {
-	processor := &WasmProcessor{log: proc.log, mainProcessor: proc, wasmVM: proc.wasmVM}
-	processor.Init()
-	err := processor.InitVM(vmInstance)
+	processor := &WasmProcessor{
+		log:           proc.log,
+		mainProcessor: proc,
+		vm:            vmInstance,
+		wasmVM:        proc.wasmVM,
+	}
+	err := processor.vm.LinkHost(processor)
 	if err != nil {
-		panic("Cannot clone processor: " + err.Error())
+		panic("cannot link: " + err.Error())
 	}
 
 	processor.scContext = NewWasmContext("", processor)
 	Connect(processor.scContext)
 	err = processor.vm.Instantiate()
 	if err != nil {
-		panic("Cannot instantiate: " + err.Error())
+		panic("cannot instantiate: " + err.Error())
 	}
 	return processor
 }
@@ -135,7 +142,7 @@ func (proc *WasmProcessor) wasmContext(function string) *WasmContext {
 }
 
 func (proc *WasmProcessor) RunScFunction(functionName string) (err error) {
-	index, ok := proc.MainProc().funcToIndex[functionName]
+	index, ok := proc.MainProc().funcTable.funcToIndex[functionName]
 	if !ok {
 		return errors.New("unknown SC function name: " + functionName)
 	}
@@ -143,7 +150,7 @@ func (proc *WasmProcessor) RunScFunction(functionName string) (err error) {
 }
 
 func (proc *WasmProcessor) IsView(function string) bool {
-	return (proc.MainProc().funcToIndex[function] & 0x8000) != 0
+	return (proc.MainProc().funcTable.funcToIndex[function] & 0x8000) != 0
 }
 
 func (proc *WasmProcessor) MainProc() *WasmProcessor {
@@ -151,9 +158,4 @@ func (proc *WasmProcessor) MainProc() *WasmProcessor {
 		return proc
 	}
 	return proc.mainProcessor
-}
-
-func (proc *WasmProcessor) InitVM(vm WasmVM) error {
-	proc.store = proc
-	return vm.LinkHost(vm, &proc.WasmHost)
 }

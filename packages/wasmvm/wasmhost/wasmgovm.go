@@ -53,6 +53,7 @@ func (vm *WasmGoVM) LoadWasm(wasmData []byte) error {
 
 func (vm *WasmGoVM) RunFunction(functionName string, args ...interface{}) error {
 	if functionName == "on_load" {
+		// note: on_load is funneled through onload()
 		vm.onLoad(-1)
 		return nil
 	}
@@ -60,21 +61,8 @@ func (vm *WasmGoVM) RunFunction(functionName string, args ...interface{}) error 
 }
 
 func (vm *WasmGoVM) RunScFunction(index int32) (err error) {
-	//defer func() {
-	//	r := recover()
-	//	if r == nil {
-	//		return
-	//	}
-	//	switch errType := r.(type) {
-	//	case error:
-	//		err = errType
-	//	case string:
-	//		err = errors.New(errType)
-	//	default:
-	//		err = xerrors.Errorf("RunScFunction: %v", errType)
-	//	}
-	//}()
 	return vm.Run(func() error {
+		// note: on_call is funneled through onload()
 		vm.onLoad(index)
 		return nil
 	})

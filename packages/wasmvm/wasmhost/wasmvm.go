@@ -39,7 +39,7 @@ var (
 type WasmVM interface {
 	Instantiate() error
 	Interrupt()
-	LinkHost(impl WasmVM, host *WasmHost) error
+	LinkHost(proc *WasmProcessor) error
 	LoadWasm(wasmData []byte) error
 	NewInstance() WasmVM
 	RunFunction(functionName string, args ...interface{}) error
@@ -51,8 +51,7 @@ type WasmVM interface {
 }
 
 type WasmVMBase struct {
-	impl           WasmVM
-	host           *WasmHost
+	proc           *WasmProcessor
 	panicErr       error
 	result         []byte
 	timeoutStarted bool
@@ -81,28 +80,29 @@ func (vm *WasmVMBase) catchPanicMessage() {
 }
 
 func (vm *WasmVMBase) getContext(id int32) *WasmContext {
-	return vm.host.store.GetContext(id)
+	return vm.proc.GetContext(id)
 }
 
 func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 	// crude implementation assumes texts to only use ASCII part of UTF-16
 
 	defer vm.catchPanicMessage()
+	impl := vm.proc.vm
 
 	// null-terminated UTF-16 error message
 	str1 := make([]byte, 0)
-	ptr := vm.impl.VMGetBytes(errMsg, 2)
+	ptr := impl.VMGetBytes(errMsg, 2)
 	for i := errMsg; ptr[0] != 0; i += 2 {
 		str1 = append(str1, ptr[0])
-		ptr = vm.impl.VMGetBytes(i, 2)
+		ptr = impl.VMGetBytes(i, 2)
 	}
 
 	// null-terminated UTF-16 file name
 	str2 := make([]byte, 0)
-	ptr = vm.impl.VMGetBytes(fileName, 2)
+	ptr = impl.VMGetBytes(fileName, 2)
 	for i := fileName; ptr[0] != 0; i += 2 {
 		str2 = append(str2, ptr[0])
-		ptr = vm.impl.VMGetBytes(i, 2)
+		ptr = impl.VMGetBytes(i, 2)
 	}
 
 	panic(fmt.Sprintf("AssemblyScript panic: %s (%s %d:%d)", string(str1), string(str2), line, col))
@@ -110,19 +110,20 @@ func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 
 func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 	defer vm.catchPanicMessage()
+	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
 	ctx.log().Debugf("HostFdWrite(...)")
 
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
-	ptr := vm.impl.VMGetBytes(iovs, 8)
+	ptr := impl.VMGetBytes(iovs, 8)
 	text := int32(binary.LittleEndian.Uint32(ptr[0:4]))
 	size := int32(binary.LittleEndian.Uint32(ptr[4:8]))
 	// msg := vm.impl.VMGetBytes(text, size)
 	// fmt.Print(string(msg))
 	ptr = make([]byte, 4)
 	binary.LittleEndian.PutUint32(ptr, uint32(size))
-	vm.impl.VMSetBytes(written, size, ptr)
+	impl.VMSetBytes(written, size, ptr)
 
 	// strip off "panic: " prefix and call sandbox panic function
 	vm.HostStateGet(0, wasmlib.FnPanic, text+7, size)
@@ -131,6 +132,7 @@ func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 
 func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 	defer vm.catchPanicMessage()
+	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
 	if HostTracing {
@@ -139,7 +141,7 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 
 	// only check for existence ?
 	if valLen < 0 {
-		key := vm.impl.VMGetBytes(keyRef, keyLen)
+		key := impl.VMGetBytes(keyRef, keyLen)
 		if ctx.StateExists(key) {
 			return 0
 		}
@@ -151,23 +153,24 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 	if keyLen >= 0 {
 		if keyLen > 0 {
 			// retrieve value associated with key
-			key := vm.impl.VMGetBytes(keyRef, keyLen)
+			key := impl.VMGetBytes(keyRef, keyLen)
 			vm.result = ctx.StateGet(key)
 		}
 		if vm.result == nil {
 			return -1
 		}
-		return vm.impl.VMSetBytes(valRef, valLen, vm.result)
+		return impl.VMSetBytes(valRef, valLen, vm.result)
 	}
 
 	// sandbox func call request, keyLen is func nr
-	params := vm.impl.VMGetBytes(valRef, valLen)
+	params := impl.VMGetBytes(valRef, valLen)
 	vm.result = ctx.Sandbox(keyLen, params)
 	return int32(len(vm.result))
 }
 
 func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 	defer vm.catchPanicMessage()
+	impl := vm.proc.vm
 
 	ctx := vm.getContext(0)
 	if HostTracing {
@@ -176,7 +179,7 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 
 	// export name?
 	if keyRef == 0 {
-		name := string(vm.impl.VMGetBytes(valRef, valLen))
+		name := string(impl.VMGetBytes(valRef, valLen))
 		if keyLen < 0 {
 			// ExportWasmTag, log the wasm tag name
 			ctx.proc.log.Infof(name)
@@ -186,7 +189,7 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 		return
 	}
 
-	key := vm.impl.VMGetBytes(keyRef, keyLen)
+	key := impl.VMGetBytes(keyRef, keyLen)
 
 	// delete key ?
 	if valLen < 0 {
@@ -195,7 +198,7 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 	}
 
 	// set key
-	value := vm.impl.VMGetBytes(valRef, valLen)
+	value := impl.VMGetBytes(valRef, valLen)
 	ctx.StateSet(key, value)
 }
 
@@ -203,14 +206,12 @@ func (vm *WasmVMBase) Instantiate() error {
 	return errors.New("cannot be cloned")
 }
 
-func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
+func (vm *WasmVMBase) LinkHost(proc *WasmProcessor) error {
 	// trick vm into thinking it doesn't have to start the timeout timer
 	// useful when debugging to prevent timing out on breakpoints
 	vm.timeoutStarted = DisableWasmTimeout
 
-	vm.impl = impl
-	vm.host = host
-	host.vm = impl
+	vm.proc = proc
 	return nil
 }
 
@@ -252,7 +253,7 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 		case <-done: // runner was done before timeout
 		case <-time.After(timeout):
 			// timeout: interrupt Wasm
-			vm.impl.Interrupt()
+			vm.proc.vm.Interrupt()
 			// wait for runner to finish
 			<-done
 		}
@@ -270,29 +271,31 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 }
 
 func (vm *WasmVMBase) VMGetBytes(offset, size int32) []byte {
-	ptr := vm.impl.UnsafeMemory()
+	ptr := vm.proc.vm.UnsafeMemory()
 	bytes := make([]byte, size)
 	copy(bytes, ptr[offset:offset+size])
 	return bytes
 }
 
 func (vm *WasmVMBase) VMGetSize() int32 {
-	ptr := vm.impl.UnsafeMemory()
+	ptr := vm.proc.vm.UnsafeMemory()
 	return int32(len(ptr))
 }
 
 func (vm *WasmVMBase) VMSetBytes(offset, size int32, bytes []byte) int32 {
 	if size != 0 {
-		ptr := vm.impl.UnsafeMemory()
+		ptr := vm.proc.vm.UnsafeMemory()
 		copy(ptr[offset:offset+size], bytes)
 	}
 	return int32(len(bytes))
 }
 
 func (vm *WasmVMBase) traceGet(ctx *WasmContext, keyRef, keyLen, valRef, valLen int32) {
+	impl := vm.proc.vm
+
 	// only check for existence ?
 	if valLen < 0 {
-		key := vm.impl.VMGetBytes(keyRef, keyLen)
+		key := impl.VMGetBytes(keyRef, keyLen)
 		ctx.log().Debugf("StateExists(%s) = %v", vm.traceKey(key), ctx.StateExists(key))
 		return
 	}
@@ -304,7 +307,7 @@ func (vm *WasmVMBase) traceGet(ctx *WasmContext, keyRef, keyLen, valRef, valLen 
 			return
 		}
 		// retrieve value associated with key
-		key := vm.impl.VMGetBytes(keyRef, keyLen)
+		key := impl.VMGetBytes(keyRef, keyLen)
 		ctx.log().Debugf("StateGet(%s)", vm.traceKey(key))
 		return
 	}
@@ -313,7 +316,7 @@ func (vm *WasmVMBase) traceGet(ctx *WasmContext, keyRef, keyLen, valRef, valLen 
 	if keyLen == wasmlib.FnLog {
 		return
 	}
-	params := vm.impl.VMGetBytes(valRef, valLen)
+	params := impl.VMGetBytes(valRef, valLen)
 	ctx.log().Debugf("Sandbox(%s)", vm.traceSandbox(keyLen, params))
 }
 
@@ -325,18 +328,20 @@ func (vm *WasmVMBase) traceSandbox(funcNr int32, params []byte) string {
 	if name[0] != '#' {
 		return name
 	}
-	return name[1:] + ", " + wasmtypes.Hex(params)
+	return name[1:] + ", " + hex(params)
 }
 
 func (vm *WasmVMBase) traceSet(ctx *WasmContext, keyRef, keyLen, valRef, valLen int32) {
+	impl := vm.proc.vm
+
 	// export name?
 	if keyRef == 0 {
-		name := string(vm.impl.VMGetBytes(valRef, valLen))
+		name := string(impl.VMGetBytes(valRef, valLen))
 		ctx.log().Debugf("ExportName(%d, %s)", keyLen, name)
 		return
 	}
 
-	key := vm.impl.VMGetBytes(keyRef, keyLen)
+	key := impl.VMGetBytes(keyRef, keyLen)
 
 	// delete key ?
 	if valLen < 0 {
@@ -345,7 +350,7 @@ func (vm *WasmVMBase) traceSet(ctx *WasmContext, keyRef, keyLen, valRef, valLen 
 	}
 
 	// set key
-	val := vm.impl.VMGetBytes(valRef, valLen)
+	val := impl.VMGetBytes(valRef, valLen)
 	ctx.log().Debugf("StateSet(%s, %s)", vm.traceKey(key), vm.traceVal(val))
 }
 
@@ -353,7 +358,7 @@ func (vm *WasmVMBase) traceKey(key []byte) string {
 	name := ""
 	for i, b := range key {
 		if b == '.' {
-			return string(key[:i+1]) + wasmtypes.Hex(key[i+1:])
+			return string(key[:i+1]) + hex(key[i+1:])
 		}
 		if b == '#' {
 			name = string(key[:i+1])
@@ -366,7 +371,7 @@ func (vm *WasmVMBase) traceKey(key []byte) string {
 			if j+1 == len(key) {
 				return name
 			}
-			return name + "..." + wasmtypes.Hex(key[j+1:])
+			return name + "..." + hex(key[j+1:])
 		}
 	}
 	return `"` + string(key) + `"`
@@ -375,8 +380,19 @@ func (vm *WasmVMBase) traceKey(key []byte) string {
 func (vm *WasmVMBase) traceVal(val []byte) string {
 	for _, b := range val {
 		if b < ' ' || b > '~' {
-			return wasmtypes.Hex(val)
+			return hex(val)
 		}
 	}
 	return string(val)
+}
+
+// hex returns a hex string representing the byte buffer
+func hex(buf []byte) string {
+	const hexa = "0123456789abcdef"
+	res := make([]byte, len(buf)*2)
+	for i, b := range buf {
+		res[i*2] = hexa[b>>4]
+		res[i*2+1] = hexa[b&0x0f]
+	}
+	return string(res)
 }

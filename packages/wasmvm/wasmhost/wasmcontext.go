@@ -17,13 +17,13 @@ type ISandbox interface {
 }
 
 type WasmContext struct {
-	function string
-	id       int32
-	host     *WasmHost
-	mini     ISandbox
-	proc     *WasmProcessor
-	sandbox  *WasmHostSandbox
-	results  dict.Dict
+	funcName  string
+	funcTable *WasmFuncTable
+	id        int32
+	mini      ISandbox
+	proc      *WasmProcessor
+	results   dict.Dict
+	sandbox   *WasmHostSandbox
 }
 
 var (
@@ -32,13 +32,20 @@ var (
 )
 
 func NewWasmContext(function string, proc *WasmProcessor) *WasmContext {
-	return &WasmContext{function: function, proc: proc, host: &proc.WasmHost}
+	return &WasmContext{
+		funcName:  function,
+		proc:      proc,
+		funcTable: proc.funcTable,
+	}
 }
 
+// TODO sensible name?
 func NewWasmMiniContext(function string, mini ISandbox) *WasmContext {
-	wc := &WasmContext{function: function, mini: mini, host: &WasmHost{}}
-	wc.host.Init()
-	return wc
+	return &WasmContext{
+		funcName:  function,
+		mini:      mini,
+		funcTable: NewWasmFuncTable(),
+	}
 }
 
 func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
@@ -56,21 +63,21 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 		wc.proc.KillContext(wc.id)
 	}()
 
-	if wc.function == "" {
+	if wc.funcName == "" {
 		// init function was missing, do nothing
 		return nil, nil
 	}
 
-	if wc.function == FuncDefault {
+	if wc.funcName == FuncDefault {
 		// TODO default function, do nothing for now
 		return nil, nil
 	}
 
-	wc.log().Debugf("Calling " + wc.function)
+	wc.log().Debugf("Calling " + wc.funcName)
 	wc.results = nil
 	err := wc.callFunction()
 	if err != nil {
-		wc.log().Infof("VM call %s(): error %v", wc.function, err)
+		wc.log().Infof("VM call %s(): error %v", wc.funcName, err)
 		return nil, err
 	}
 	return wc.results, nil
@@ -82,14 +89,14 @@ func (wc *WasmContext) callFunction() error {
 
 	saveID := wc.proc.currentContextID
 	wc.proc.currentContextID = wc.id
-	err := wc.proc.RunScFunction(wc.function)
+	err := wc.proc.RunScFunction(wc.funcName)
 	wc.proc.currentContextID = saveID
 	return err
 }
 
 func (wc *WasmContext) ExportName(index int32, name string) {
 	if index >= 0 {
-		wc.host.SetExport(index, name)
+		wc.funcTable.SetExport(index, name)
 		return
 	}
 
@@ -107,15 +114,11 @@ func (wc *WasmContext) ExportName(index int32, name string) {
 }
 
 func (wc *WasmContext) FunctionFromCode(code uint32) string {
-	return wc.host.FunctionFromCode(code)
-}
-
-func (wc *WasmContext) Host() *WasmHost {
-	return wc.host
+	return wc.funcTable.FunctionFromCode(code)
 }
 
 func (wc *WasmContext) IsView() bool {
-	return wc.proc.IsView(wc.function)
+	return wc.proc.IsView(wc.funcName)
 }
 
 func (wc *WasmContext) log() iscp.LogInterface {
@@ -129,6 +132,7 @@ func (wc *WasmContext) Sandbox(funcNr int32, params []byte) []byte {
 	return wc.mini.Call(funcNr, params)
 }
 
+// state reduces the context state to a KVStoreReader
 func (wc *WasmContext) state() kv.KVStoreReader {
 	ctx := wc.sandbox.ctx
 	if ctx != nil {

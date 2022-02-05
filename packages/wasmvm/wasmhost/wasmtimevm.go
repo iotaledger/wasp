@@ -36,7 +36,9 @@ func (vm *WasmTimeVM) Interrupt() {
 	vm.interrupt.Interrupt()
 }
 
-func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) (err error) {
+func (vm *WasmTimeVM) LinkHost(proc *WasmProcessor) (err error) {
+	_ = vm.WasmVMBase.LinkHost(proc)
+
 	vm.store = wasmtime.NewStore(vm.engine)
 	vm.interrupt, err = vm.store.InterruptHandle()
 	if err != nil {
@@ -44,7 +46,6 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) (err error) {
 	}
 
 	vm.linker = wasmtime.NewLinker(vm.engine)
-	_ = vm.WasmVMBase.LinkHost(impl, host)
 
 	// new Wasm VM interface
 	err = vm.linker.DefineFunc(vm.store, ModuleWasmLib, FuncHostStateGet, vm.HostStateGet)

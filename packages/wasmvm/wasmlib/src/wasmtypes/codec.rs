@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::sandbox::*;
+use crate::*;
 
 pub struct WasmDecoder<'a> {
     buf: &'a [u8],
@@ -201,15 +201,5 @@ impl WasmEncoder {
 }
 
 pub fn base58_encode(buf: &[u8]) -> String {
-    hex(buf)
-}
-
-pub fn hex(buf: &[u8]) -> String {
-    let hexa = "0123456789abcdef".as_bytes();
-    let mut res: Vec<u8> = Vec::new();
-    for b in buf {
-        res.push(hexa[*b as usize >> 4]);
-        res.push(hexa[*b as usize & 0x0f]);
-    }
-    String::from_utf8(res).expect("WTF? invalid?")
+    string_from_bytes(&host::sandbox(FN_UTILS_BASE58_ENCODE, buf))
 }

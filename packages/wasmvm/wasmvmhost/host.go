@@ -83,15 +83,6 @@ func (w *WasmVMHost) StateExists(key []byte) bool {
 }
 
 func (w *WasmVMHost) StateGet(key []byte) []byte {
-	//TODO optimize when type size is known in advance?
-	// or maybe pass in a larger buffer that will fit most results?
-	//size := int32(len(value))
-	//if size != 0 {
-	//	// size known in advance, just get the data
-	//	_ = hostStateGet(&key[0], int32(len(key)), &value[0], size)
-	//	return value
-	//}
-
 	// variable sized result expected,
 	// query size first by passing zero length buffer
 	// value will be cached by host

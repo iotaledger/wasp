@@ -56,7 +56,7 @@ func ColorToBytes(value ScColor) []byte {
 
 func ColorToString(value ScColor) string {
 	// TODO standardize human readable string
-	return base58Encode(value.id[:])
+	return Base58Encode(value.id[:])
 }
 
 func colorFromBytesUnchecked(buf []byte) ScColor {

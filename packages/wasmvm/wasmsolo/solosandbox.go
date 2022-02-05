@@ -167,7 +167,7 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	}
 	function, err := iscp.HnameFromBytes(req.Function.Bytes())
 	s.checkErr(err)
-	funcName := s.ctx.wc.Host().FunctionFromCode(uint32(function))
+	funcName := s.ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
 	}
@@ -259,7 +259,7 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	}
 	function, err := iscp.HnameFromBytes(req.Function.Bytes())
 	s.checkErr(err)
-	funcName := s.ctx.wc.Host().FunctionFromCode(uint32(function))
+	funcName := s.ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
 	}

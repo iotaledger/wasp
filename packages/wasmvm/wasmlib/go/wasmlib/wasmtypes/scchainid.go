@@ -55,7 +55,7 @@ func ChainIDToBytes(value ScChainID) []byte {
 
 func ChainIDToString(value ScChainID) string {
 	// TODO standardize human readable string
-	return base58Encode(value.id[:])
+	return Base58Encode(value.id[:])
 }
 
 func chainIDFromBytesUnchecked(buf []byte) ScChainID {

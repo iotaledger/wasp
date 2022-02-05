@@ -22,7 +22,7 @@ func BytesToBytes(buf []byte) []byte {
 }
 
 func BytesToString(value []byte) string {
-	return base58Encode(value)
+	return Base58Encode(value)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

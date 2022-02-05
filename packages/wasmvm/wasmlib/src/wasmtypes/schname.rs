@@ -58,7 +58,7 @@ pub fn hname_to_string(value: ScHname) -> String {
         res[7 - n] = hexa[val as usize & 0x0f];
         val >>= 4;
     }
-    String::from_utf8(res.to_vec()).expect("WTF? invalid?")
+    string_from_bytes(&res)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

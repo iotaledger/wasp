@@ -5,6 +5,9 @@ package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+// Base58Encode sandbox function wrapper for simplified use by hashtypes
+var Base58Encode func(buf []byte) string
+
 // WasmDecoder decodes separate entities from a byte buffer
 type WasmDecoder struct {
 	buf []byte
@@ -196,24 +199,4 @@ func (e *WasmEncoder) VluEncode(value uint64) *WasmEncoder {
 	// emit without continuation bit to signal end
 	e.buf = append(e.buf, b)
 	return e
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-// base58Encode wrapper for simplified use by hashtypes
-func base58Encode(buf []byte) string {
-	// TODO
-	// return string(wasmlib.Sandbox(wasmstore.FnUtilsBase58Encode, buf))
-	return Hex(buf)
-}
-
-// hex returns a hex string representing the byte buffer
-func Hex(buf []byte) string {
-	const hexa = "0123456789abcdef"
-	res := make([]byte, len(buf)*2)
-	for i, b := range buf {
-		res[i*2] = hexa[b>>4]
-		res[i*2+1] = hexa[b&0x0f]
-	}
-	return string(res)
 }
