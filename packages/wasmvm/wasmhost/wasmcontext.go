@@ -20,10 +20,10 @@ type WasmContext struct {
 	funcName  string
 	funcTable *WasmFuncTable
 	id        int32
-	mini      ISandbox
 	proc      *WasmProcessor
 	results   dict.Dict
-	sandbox   *WasmHostSandbox
+	sandbox   ISandbox
+	wcSandbox *WasmContextSandbox
 }
 
 var (
@@ -39,11 +39,10 @@ func NewWasmContext(function string, proc *WasmProcessor) *WasmContext {
 	}
 }
 
-// TODO sensible name?
-func NewWasmMiniContext(function string, mini ISandbox) *WasmContext {
+func NewWasmContextForSoloContext(function string, sandbox ISandbox) *WasmContext {
 	return &WasmContext{
 		funcName:  function,
-		mini:      mini,
+		sandbox:   sandbox,
 		funcTable: NewWasmFuncTable(),
 	}
 }
@@ -53,8 +52,8 @@ func (wc *WasmContext) Call(ctx interface{}) (dict.Dict, error) {
 		panic("Context id is zero")
 	}
 
-	wc.sandbox = NewWasmHostSandbox(wc, ctx)
-	wc.mini = wc.sandbox
+	wc.wcSandbox = NewWasmContextSandbox(wc, ctx)
+	wc.sandbox = wc.wcSandbox
 
 	wcSaved := Connect(wc)
 	defer func() {
@@ -100,17 +99,15 @@ func (wc *WasmContext) ExportName(index int32, name string) {
 		return
 	}
 
-	// log WASM tag
+	// index -1 means log WASM tag
 	if wc.proc != nil {
+		// Invocation through WasmGoVM
 		wc.proc.log.Infof("WASM::GO::DEBUG")
 		return
 	}
-	if wc.mini != nil {
-		wc.mini.Call(wasmlib.FnLog, wasmtypes.StringToBytes("WASM::SOLO"))
-		return
-	}
-	// should never get here
-	panic("cannot determine wasm tag: " + name)
+
+	// Invocation through SoloContext
+	wc.sandbox.Call(wasmlib.FnLog, wasmtypes.StringToBytes("WASM::SOLO"))
 }
 
 func (wc *WasmContext) FunctionFromCode(code uint32) string {
@@ -122,23 +119,23 @@ func (wc *WasmContext) IsView() bool {
 }
 
 func (wc *WasmContext) log() iscp.LogInterface {
-	if wc.sandbox != nil && wc.sandbox.common != nil {
-		return wc.sandbox.common.Log()
+	if wc.wcSandbox != nil && wc.wcSandbox.common != nil {
+		return wc.wcSandbox.common.Log()
 	}
 	return wc.proc.log
 }
 
 func (wc *WasmContext) Sandbox(funcNr int32, params []byte) []byte {
-	return wc.mini.Call(funcNr, params)
+	return wc.sandbox.Call(funcNr, params)
 }
 
 // state reduces the context state to a KVStoreReader
 func (wc *WasmContext) state() kv.KVStoreReader {
-	ctx := wc.sandbox.ctx
+	ctx := wc.wcSandbox.ctx
 	if ctx != nil {
 		return ctx.State()
 	}
-	ctxView := wc.sandbox.ctxView
+	ctxView := wc.wcSandbox.ctxView
 	if ctxView != nil {
 		return ctxView.State()
 	}
@@ -146,7 +143,7 @@ func (wc *WasmContext) state() kv.KVStoreReader {
 }
 
 func (wc *WasmContext) StateDelete(key []byte) {
-	ctx := wc.sandbox.ctx
+	ctx := wc.wcSandbox.ctx
 	if ctx == nil {
 		panic("StateDelete: readonly state")
 	}
@@ -154,19 +151,23 @@ func (wc *WasmContext) StateDelete(key []byte) {
 }
 
 func (wc *WasmContext) StateExists(key []byte) bool {
-	// TODO check err?
-	exists, _ := wc.state().Has(kv.Key(key))
+	exists, err := wc.state().Has(kv.Key(key))
+	if err != nil {
+		panic("StateExists: " + err.Error())
+	}
 	return exists
 }
 
 func (wc *WasmContext) StateGet(key []byte) []byte {
-	// TODO check err?
-	res, _ := wc.state().Get(kv.Key(key))
+	res, err := wc.state().Get(kv.Key(key))
+	if err != nil {
+		panic("StateGet: " + err.Error())
+	}
 	return res
 }
 
 func (wc *WasmContext) StateSet(key, value []byte) {
-	ctx := wc.sandbox.ctx
+	ctx := wc.wcSandbox.ctx
 	if ctx == nil {
 		panic("StateSet: readonly state")
 	}

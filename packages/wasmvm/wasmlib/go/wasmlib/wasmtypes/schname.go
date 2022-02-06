@@ -50,7 +50,6 @@ func HnameToBytes(value ScHname) []byte {
 }
 
 func HnameToString(value ScHname) string {
-	// TODO standardize human readable string
 	res := strconv.FormatUint(uint64(value), 16)
 	return "0000000"[:8-len(res)] + res
 }

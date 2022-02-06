@@ -23,13 +23,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
+const ( // TODO set back to false
 	SoloDebug        = true
 	SoloHostTracing  = true
 	SoloStackTracing = true
 )
 
-var ( // TODO set back to false
+var (
 	GoDebug    = flag.Bool("godebug", false, "debug go smart contract code")
 	GoWasm     = flag.Bool("gowasm", false, "prefer go wasm smart contract code")
 	GoWasmEdge = flag.Bool("gowasmedge", false, "use WasmEdge instead of WasmTime")
@@ -260,7 +260,7 @@ func (ctx *SoloContext) Host() wasmlib.ScHost {
 
 // init further initializes the SoloContext.
 func (ctx *SoloContext) init(onLoad wasmhost.ScOnloadFunc) *SoloContext {
-	ctx.wc = wasmhost.NewWasmMiniContext("-solo-", NewSoloSandbox(ctx))
+	ctx.wc = wasmhost.NewWasmContextForSoloContext("-solo-", NewSoloSandbox(ctx))
 	ctx.wasmHostOld = wasmhost.Connect(ctx.wc)
 	onLoad(-1)
 	return ctx

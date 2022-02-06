@@ -53,7 +53,7 @@ type WasmVM interface {
 type WasmVMBase struct {
 	proc           *WasmProcessor
 	panicErr       error
-	result         []byte
+	cachedResult   []byte
 	timeoutStarted bool
 }
 
@@ -154,18 +154,18 @@ func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
 		if keyLen > 0 {
 			// retrieve value associated with key
 			key := impl.VMGetBytes(keyRef, keyLen)
-			vm.result = ctx.StateGet(key)
+			vm.cachedResult = ctx.StateGet(key)
 		}
-		if vm.result == nil {
+		if vm.cachedResult == nil {
 			return -1
 		}
-		return impl.VMSetBytes(valRef, valLen, vm.result)
+		return impl.VMSetBytes(valRef, valLen, vm.cachedResult)
 	}
 
 	// sandbox func call request, keyLen is func nr
 	params := impl.VMGetBytes(valRef, valLen)
-	vm.result = ctx.Sandbox(keyLen, params)
-	return int32(len(vm.result))
+	vm.cachedResult = ctx.Sandbox(keyLen, params)
+	return int32(len(vm.cachedResult))
 }
 
 func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
@@ -303,7 +303,7 @@ func (vm *WasmVMBase) traceGet(ctx *WasmContext, keyRef, keyLen, valRef, valLen 
 	// get value for key request, or get cached result request (keyLen == 0)
 	if keyLen >= 0 {
 		if keyLen == 0 {
-			ctx.log().Debugf("=> %s", vm.traceVal(vm.result))
+			ctx.log().Debugf("  => %s", vm.traceVal(vm.cachedResult))
 			return
 		}
 		// retrieve value associated with key

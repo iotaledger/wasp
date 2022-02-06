@@ -17,44 +17,44 @@ import (
 )
 
 // NOTE: These functions correspond to the Sandbox fnXxx constants in WasmLib
-var sandboxFunctions = []func(*WasmHostSandbox, []byte) []byte{
+var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	nil,
-	(*WasmHostSandbox).fnAccountID,
-	(*WasmHostSandbox).fnBalance,
-	(*WasmHostSandbox).fnBalances,
-	(*WasmHostSandbox).fnBlockContext,
-	(*WasmHostSandbox).fnCall,
-	(*WasmHostSandbox).fnCaller,
-	(*WasmHostSandbox).fnChainID,
-	(*WasmHostSandbox).fnChainOwnerID,
-	(*WasmHostSandbox).fnContract,
-	(*WasmHostSandbox).fnContractCreator,
-	(*WasmHostSandbox).fnDeployContract,
-	(*WasmHostSandbox).fnEntropy,
-	(*WasmHostSandbox).fnEvent,
-	(*WasmHostSandbox).fnIncomingTransfer,
-	(*WasmHostSandbox).fnLog,
-	(*WasmHostSandbox).fnMinted,
-	(*WasmHostSandbox).fnPanic,
-	(*WasmHostSandbox).fnParams,
-	(*WasmHostSandbox).fnPost,
-	(*WasmHostSandbox).fnRequest,
-	(*WasmHostSandbox).fnRequestID,
-	(*WasmHostSandbox).fnResults,
-	(*WasmHostSandbox).fnSend,
-	(*WasmHostSandbox).fnStateAnchor,
-	(*WasmHostSandbox).fnTimestamp,
-	(*WasmHostSandbox).fnTrace,
-	(*WasmHostSandbox).fnUtilsBase58Decode,
-	(*WasmHostSandbox).fnUtilsBase58Encode,
-	(*WasmHostSandbox).fnUtilsBlsAddress,
-	(*WasmHostSandbox).fnUtilsBlsAggregate,
-	(*WasmHostSandbox).fnUtilsBlsValid,
-	(*WasmHostSandbox).fnUtilsEd25519Address,
-	(*WasmHostSandbox).fnUtilsEd25519Valid,
-	(*WasmHostSandbox).fnUtilsHashBlake2b,
-	(*WasmHostSandbox).fnUtilsHashName,
-	(*WasmHostSandbox).fnUtilsHashSha3,
+	(*WasmContextSandbox).fnAccountID,
+	(*WasmContextSandbox).fnBalance,
+	(*WasmContextSandbox).fnBalances,
+	(*WasmContextSandbox).fnBlockContext,
+	(*WasmContextSandbox).fnCall,
+	(*WasmContextSandbox).fnCaller,
+	(*WasmContextSandbox).fnChainID,
+	(*WasmContextSandbox).fnChainOwnerID,
+	(*WasmContextSandbox).fnContract,
+	(*WasmContextSandbox).fnContractCreator,
+	(*WasmContextSandbox).fnDeployContract,
+	(*WasmContextSandbox).fnEntropy,
+	(*WasmContextSandbox).fnEvent,
+	(*WasmContextSandbox).fnIncomingTransfer,
+	(*WasmContextSandbox).fnLog,
+	(*WasmContextSandbox).fnMinted,
+	(*WasmContextSandbox).fnPanic,
+	(*WasmContextSandbox).fnParams,
+	(*WasmContextSandbox).fnPost,
+	(*WasmContextSandbox).fnRequest,
+	(*WasmContextSandbox).fnRequestID,
+	(*WasmContextSandbox).fnResults,
+	(*WasmContextSandbox).fnSend,
+	(*WasmContextSandbox).fnStateAnchor,
+	(*WasmContextSandbox).fnTimestamp,
+	(*WasmContextSandbox).fnTrace,
+	(*WasmContextSandbox).fnUtilsBase58Decode,
+	(*WasmContextSandbox).fnUtilsBase58Encode,
+	(*WasmContextSandbox).fnUtilsBlsAddress,
+	(*WasmContextSandbox).fnUtilsBlsAggregate,
+	(*WasmContextSandbox).fnUtilsBlsValid,
+	(*WasmContextSandbox).fnUtilsEd25519Address,
+	(*WasmContextSandbox).fnUtilsEd25519Valid,
+	(*WasmContextSandbox).fnUtilsHashBlake2b,
+	(*WasmContextSandbox).fnUtilsHashName,
+	(*WasmContextSandbox).fnUtilsHashSha3,
 }
 
 // '$' prefix indicates a string param
@@ -101,18 +101,20 @@ var sandboxFuncNames = []string{
 	"#FnUtilsHashSha3",
 }
 
-type WasmHostSandbox struct {
+// WasmContextSandbox is the host side of the WasmLib Sandbox interface
+// It acts as a change-resistant layer to wrap changes to the ISCP sandbox,
+// to limit bothering users of WasmLib as little as possible with those changes.
+type WasmContextSandbox struct {
 	common  iscp.SandboxBase
 	ctx     iscp.Sandbox
 	ctxView iscp.SandboxView
 	wc      *WasmContext
 }
 
-var _ ISandbox = new(WasmHostSandbox)
+var _ ISandbox = new(WasmContextSandbox)
 
-func NewWasmHostSandbox(wc *WasmContext, ctx interface{}) *WasmHostSandbox {
-	s := new(WasmHostSandbox)
-	s.wc = wc
+func NewWasmContextSandbox(wc *WasmContext, ctx interface{}) *WasmContextSandbox {
+	s := &WasmContextSandbox{wc: wc}
 	switch tctx := ctx.(type) {
 	case iscp.Sandbox:
 		s.common = tctx
@@ -126,45 +128,45 @@ func NewWasmHostSandbox(wc *WasmContext, ctx interface{}) *WasmHostSandbox {
 	return s
 }
 
-func (s *WasmHostSandbox) Call(funcNr int32, params []byte) []byte {
+func (s *WasmContextSandbox) Call(funcNr int32, params []byte) []byte {
 	return sandboxFunctions[-funcNr](s, params)
 }
 
-func (s *WasmHostSandbox) checkErr(err error) {
+func (s *WasmContextSandbox) checkErr(err error) {
 	if err != nil {
 		s.Panicf(err.Error())
 	}
 }
 
-func (s *WasmHostSandbox) Panicf(format string, args ...interface{}) {
+func (s *WasmContextSandbox) Panicf(format string, args ...interface{}) {
 	s.common.Log().Panicf(format, args...)
 }
 
-func (s *WasmHostSandbox) Tracef(format string, args ...interface{}) {
+func (s *WasmContextSandbox) Tracef(format string, args ...interface{}) {
 	s.common.Log().Debugf(format, args...)
 }
 
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
 
-func (s *WasmHostSandbox) fnAccountID(args []byte) []byte {
+func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
 	return s.common.AccountID().Bytes()
 }
 
-func (s *WasmHostSandbox) fnBalance(args []byte) []byte {
+func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
 	color, err := colored.ColorFromBytes(args)
 	s.checkErr(err)
 	return codec.EncodeUint64(s.ctx.Balance(color))
 }
 
-func (s *WasmHostSandbox) fnBalances(args []byte) []byte {
+func (s *WasmContextSandbox) fnBalances(args []byte) []byte {
 	return s.common.Balances().Bytes()
 }
 
-func (s *WasmHostSandbox) fnBlockContext(args []byte) []byte {
+func (s *WasmContextSandbox) fnBlockContext(args []byte) []byte {
 	panic("implement me")
 }
 
-func (s *WasmHostSandbox) fnCall(args []byte) []byte {
+func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	req := wasmrequests.NewCallRequestFromBytes(args)
 	contract, err := iscp.HnameFromBytes(req.Contract.Bytes())
 	s.checkErr(err)
@@ -180,7 +182,7 @@ func (s *WasmHostSandbox) fnCall(args []byte) []byte {
 	return results.Bytes()
 }
 
-func (s *WasmHostSandbox) callUnlocked(contract, function iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
+func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
 
@@ -190,27 +192,27 @@ func (s *WasmHostSandbox) callUnlocked(contract, function iscp.Hname, params dic
 	return s.ctxView.Call(contract, function, params)
 }
 
-func (s *WasmHostSandbox) fnCaller(args []byte) []byte {
+func (s *WasmContextSandbox) fnCaller(args []byte) []byte {
 	return s.ctx.Caller().Bytes()
 }
 
-func (s *WasmHostSandbox) fnChainID(args []byte) []byte {
+func (s *WasmContextSandbox) fnChainID(args []byte) []byte {
 	return s.common.ChainID().Bytes()
 }
 
-func (s *WasmHostSandbox) fnChainOwnerID(args []byte) []byte {
+func (s *WasmContextSandbox) fnChainOwnerID(args []byte) []byte {
 	return s.common.ChainOwnerID().Bytes()
 }
 
-func (s *WasmHostSandbox) fnContract(args []byte) []byte {
+func (s *WasmContextSandbox) fnContract(args []byte) []byte {
 	return s.common.Contract().Bytes()
 }
 
-func (s *WasmHostSandbox) fnContractCreator(args []byte) []byte {
+func (s *WasmContextSandbox) fnContractCreator(args []byte) []byte {
 	return s.common.ContractCreator().Bytes()
 }
 
-func (s *WasmHostSandbox) fnDeployContract(args []byte) []byte {
+func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {
 	req := wasmrequests.NewDeployRequestFromBytes(args)
 	programHash, err := hashing.HashValueFromBytes(req.ProgHash.Bytes())
 	s.checkErr(err)
@@ -222,45 +224,45 @@ func (s *WasmHostSandbox) fnDeployContract(args []byte) []byte {
 	return nil
 }
 
-func (s *WasmHostSandbox) deployUnlocked(programHash hashing.HashValue, name, description string, params dict.Dict) error {
+func (s *WasmContextSandbox) deployUnlocked(programHash hashing.HashValue, name, description string, params dict.Dict) error {
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
 
 	return s.ctx.DeployContract(programHash, name, description, params)
 }
 
-func (s *WasmHostSandbox) fnEntropy(args []byte) []byte {
+func (s *WasmContextSandbox) fnEntropy(args []byte) []byte {
 	return s.ctx.GetEntropy().Bytes()
 }
 
-func (s *WasmHostSandbox) fnEvent(args []byte) []byte {
+func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
 	s.ctx.Event(string(args))
 	return nil
 }
 
-func (s *WasmHostSandbox) fnIncomingTransfer(args []byte) []byte {
+func (s *WasmContextSandbox) fnIncomingTransfer(args []byte) []byte {
 	return s.ctx.IncomingTransfer().Bytes()
 }
 
-func (s *WasmHostSandbox) fnLog(args []byte) []byte {
+func (s *WasmContextSandbox) fnLog(args []byte) []byte {
 	s.common.Log().Infof(string(args))
 	return nil
 }
 
-func (s *WasmHostSandbox) fnMinted(args []byte) []byte {
+func (s *WasmContextSandbox) fnMinted(args []byte) []byte {
 	return s.ctx.Minted().Bytes()
 }
 
-func (s *WasmHostSandbox) fnPanic(args []byte) []byte {
+func (s *WasmContextSandbox) fnPanic(args []byte) []byte {
 	s.common.Log().Panicf("WASM panic: %s", string(args))
 	return nil
 }
 
-func (s *WasmHostSandbox) fnParams(args []byte) []byte {
+func (s *WasmContextSandbox) fnParams(args []byte) []byte {
 	return s.common.Params().Bytes()
 }
 
-func (s *WasmHostSandbox) fnPost(args []byte) []byte {
+func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	req := wasmrequests.NewPostRequestFromBytes(args)
 	chainID, err := iscp.ChainIDFromBytes(req.ChainID.Bytes())
 	s.checkErr(err)
@@ -300,15 +302,15 @@ func (s *WasmHostSandbox) fnPost(args []byte) []byte {
 	return nil
 }
 
-func (s *WasmHostSandbox) fnRequest(args []byte) []byte {
+func (s *WasmContextSandbox) fnRequest(args []byte) []byte {
 	return s.ctx.Request().Bytes()
 }
 
-func (s *WasmHostSandbox) fnRequestID(args []byte) []byte {
+func (s *WasmContextSandbox) fnRequestID(args []byte) []byte {
 	return s.ctx.Request().ID().Bytes()
 }
 
-func (s *WasmHostSandbox) fnResults(args []byte) []byte {
+func (s *WasmContextSandbox) fnResults(args []byte) []byte {
 	results, err := dict.FromBytes(args)
 	if err != nil {
 		s.Panicf("call results: %s", err.Error())
@@ -318,7 +320,7 @@ func (s *WasmHostSandbox) fnResults(args []byte) []byte {
 }
 
 // transfer tokens to address
-func (s *WasmHostSandbox) fnSend(args []byte) []byte {
+func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 	req := wasmrequests.NewSendRequestFromBytes(args)
 	address, _, err := ledgerstate.AddressFromBytes(req.Address.Bytes())
 	s.checkErr(err)
@@ -332,36 +334,36 @@ func (s *WasmHostSandbox) fnSend(args []byte) []byte {
 	return nil
 }
 
-func (s *WasmHostSandbox) fnStateAnchor(args []byte) []byte {
+func (s *WasmContextSandbox) fnStateAnchor(args []byte) []byte {
 	panic("implement me")
 }
 
-func (s *WasmHostSandbox) fnTimestamp(args []byte) []byte {
+func (s *WasmContextSandbox) fnTimestamp(args []byte) []byte {
 	return codec.EncodeInt64(s.common.GetTimestamp())
 }
 
-func (s *WasmHostSandbox) fnTrace(args []byte) []byte {
+func (s *WasmContextSandbox) fnTrace(args []byte) []byte {
 	s.common.Log().Debugf(string(args))
 	return nil
 }
 
-func (s WasmHostSandbox) fnUtilsBase58Decode(args []byte) []byte {
+func (s WasmContextSandbox) fnUtilsBase58Decode(args []byte) []byte {
 	bytes, err := s.common.Utils().Base58().Decode(string(args))
 	s.checkErr(err)
 	return bytes
 }
 
-func (s WasmHostSandbox) fnUtilsBase58Encode(args []byte) []byte {
+func (s WasmContextSandbox) fnUtilsBase58Encode(args []byte) []byte {
 	return []byte(s.common.Utils().Base58().Encode(args))
 }
 
-func (s WasmHostSandbox) fnUtilsBlsAddress(args []byte) []byte {
+func (s WasmContextSandbox) fnUtilsBlsAddress(args []byte) []byte {
 	address, err := s.common.Utils().BLS().AddressFromPublicKey(args)
 	s.checkErr(err)
 	return address.Bytes()
 }
 
-func (s WasmHostSandbox) fnUtilsBlsAggregate(args []byte) []byte {
+func (s WasmContextSandbox) fnUtilsBlsAggregate(args []byte) []byte {
 	dec := wasmtypes.NewWasmDecoder(args)
 	count := wasmtypes.Uint32Decode(dec)
 	pubKeysBin := make([][]byte, count)
@@ -378,7 +380,7 @@ func (s WasmHostSandbox) fnUtilsBlsAggregate(args []byte) []byte {
 	return wasmtypes.NewWasmEncoder().Bytes(pubKeyBin).Bytes(sigBin).Buf()
 }
 
-func (s WasmHostSandbox) fnUtilsBlsValid(args []byte) []byte {
+func (s WasmContextSandbox) fnUtilsBlsValid(args []byte) []byte {
 	dec := wasmtypes.NewWasmDecoder(args)
 	data := dec.Bytes()
 	pubKey := dec.Bytes()
@@ -387,13 +389,13 @@ func (s WasmHostSandbox) fnUtilsBlsValid(args []byte) []byte {
 	return codec.EncodeBool(valid)
 }
 
-func (s WasmHostSandbox) fnUtilsEd25519Address(args []byte) []byte {
+func (s WasmContextSandbox) fnUtilsEd25519Address(args []byte) []byte {
 	address, err := s.common.Utils().ED25519().AddressFromPublicKey(args)
 	s.checkErr(err)
 	return address.Bytes()
 }
 
-func (s WasmHostSandbox) fnUtilsEd25519Valid(args []byte) []byte {
+func (s WasmContextSandbox) fnUtilsEd25519Valid(args []byte) []byte {
 	dec := wasmtypes.NewWasmDecoder(args)
 	data := dec.Bytes()
 	pubKey := dec.Bytes()
@@ -402,14 +404,14 @@ func (s WasmHostSandbox) fnUtilsEd25519Valid(args []byte) []byte {
 	return codec.EncodeBool(valid)
 }
 
-func (s WasmHostSandbox) fnUtilsHashBlake2b(args []byte) []byte {
+func (s WasmContextSandbox) fnUtilsHashBlake2b(args []byte) []byte {
 	return s.common.Utils().Hashing().Blake2b(args).Bytes()
 }
 
-func (s WasmHostSandbox) fnUtilsHashName(args []byte) []byte {
+func (s WasmContextSandbox) fnUtilsHashName(args []byte) []byte {
 	return codec.EncodeHname(s.common.Utils().Hashing().Hname(string(args)))
 }
 
-func (s WasmHostSandbox) fnUtilsHashSha3(args []byte) []byte {
+func (s WasmContextSandbox) fnUtilsHashSha3(args []byte) []byte {
 	return s.common.Utils().Hashing().Sha3(args).Bytes()
 }

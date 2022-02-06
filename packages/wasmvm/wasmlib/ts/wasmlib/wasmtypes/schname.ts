@@ -58,7 +58,6 @@ export function hnameToBytes(value: ScHname): u8[] {
 }
 
 export function hnameToString(value: ScHname): string {
-    // TODO standardize human readable string
     const res = uint32FromBytes(value.id).toString(16);
     return "0000000".slice(0, 8 - res.length) + res;
 }
