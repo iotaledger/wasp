@@ -9,198 +9,183 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::*;
-use crate::keys::*;
-use crate::typedefs::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapHashToImmutableAgentID {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapHashToImmutableAgentID {
     pub fn get_agent_id(&self, key: &ScHash) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.obj_id, key.get_key_id())
+        ScImmutableAgentID::new(self.proxy.key(&hash_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapAgentIDToImmutableOperators {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToImmutableOperators {
     pub fn get_operators(&self, key: &ScAgentID) -> ImmutableOperators {
-        let sub_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_MAP);
-        ImmutableOperators { obj_id: sub_id }
+        ImmutableOperators { proxy: self.proxy.key(&agent_id_to_bytes(key)) }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapAgentIDToImmutableUint64 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToImmutableUint64 {
     pub fn get_uint64(&self, key: &ScAgentID) -> ScImmutableUint64 {
-        ScImmutableUint64::new(self.obj_id, key.get_key_id())
+        ScImmutableUint64::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapHashToImmutableString {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapHashToImmutableString {
     pub fn get_string(&self, key: &ScHash) -> ScImmutableString {
-        ScImmutableString::new(self.obj_id, key.get_key_id())
+        ScImmutableString::new(self.proxy.key(&hash_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableErc721State {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableErc721State {
     pub fn approved_accounts(&self) -> MapHashToImmutableAgentID {
-		let map_id = get_object_id(self.id, STATE_APPROVED_ACCOUNTS.get_key_id(), TYPE_MAP);
-		MapHashToImmutableAgentID { obj_id: map_id }
+		MapHashToImmutableAgentID { proxy: self.proxy.root(STATE_APPROVED_ACCOUNTS) }
 	}
 
     pub fn approved_operators(&self) -> MapAgentIDToImmutableOperators {
-		let map_id = get_object_id(self.id, STATE_APPROVED_OPERATORS.get_key_id(), TYPE_MAP);
-		MapAgentIDToImmutableOperators { obj_id: map_id }
+		MapAgentIDToImmutableOperators { proxy: self.proxy.root(STATE_APPROVED_OPERATORS) }
 	}
 
     pub fn balances(&self) -> MapAgentIDToImmutableUint64 {
-		let map_id = get_object_id(self.id, STATE_BALANCES.get_key_id(), TYPE_MAP);
-		MapAgentIDToImmutableUint64 { obj_id: map_id }
+		MapAgentIDToImmutableUint64 { proxy: self.proxy.root(STATE_BALANCES) }
 	}
 
     pub fn name(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, STATE_NAME.get_key_id())
+		ScImmutableString::new(self.proxy.root(STATE_NAME))
 	}
 
     pub fn owners(&self) -> MapHashToImmutableAgentID {
-		let map_id = get_object_id(self.id, STATE_OWNERS.get_key_id(), TYPE_MAP);
-		MapHashToImmutableAgentID { obj_id: map_id }
+		MapHashToImmutableAgentID { proxy: self.proxy.root(STATE_OWNERS) }
 	}
 
     pub fn symbol(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, STATE_SYMBOL.get_key_id())
+		ScImmutableString::new(self.proxy.root(STATE_SYMBOL))
 	}
 
     pub fn token_ur_is(&self) -> MapHashToImmutableString {
-		let map_id = get_object_id(self.id, STATE_TOKEN_UR_IS.get_key_id(), TYPE_MAP);
-		MapHashToImmutableString { obj_id: map_id }
+		MapHashToImmutableString { proxy: self.proxy.root(STATE_TOKEN_UR_IS) }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapHashToMutableAgentID {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapHashToMutableAgentID {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_agent_id(&self, key: &ScHash) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.obj_id, key.get_key_id())
+        ScMutableAgentID::new(self.proxy.key(&hash_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapAgentIDToMutableOperators {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToMutableOperators {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_operators(&self, key: &ScAgentID) -> MutableOperators {
-        let sub_id = get_object_id(self.obj_id, key.get_key_id(), TYPE_MAP);
-        MutableOperators { obj_id: sub_id }
+        MutableOperators { proxy: self.proxy.key(&agent_id_to_bytes(key)) }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapAgentIDToMutableUint64 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToMutableUint64 {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_uint64(&self, key: &ScAgentID) -> ScMutableUint64 {
-        ScMutableUint64::new(self.obj_id, key.get_key_id())
+        ScMutableUint64::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapHashToMutableString {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapHashToMutableString {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_string(&self, key: &ScHash) -> ScMutableString {
-        ScMutableString::new(self.obj_id, key.get_key_id())
+        ScMutableString::new(self.proxy.key(&hash_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableErc721State {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableErc721State {
     pub fn as_immutable(&self) -> ImmutableErc721State {
-		ImmutableErc721State { id: self.id }
+		ImmutableErc721State { proxy: self.proxy.root("") }
 	}
 
     pub fn approved_accounts(&self) -> MapHashToMutableAgentID {
-		let map_id = get_object_id(self.id, STATE_APPROVED_ACCOUNTS.get_key_id(), TYPE_MAP);
-		MapHashToMutableAgentID { obj_id: map_id }
+		MapHashToMutableAgentID { proxy: self.proxy.root(STATE_APPROVED_ACCOUNTS) }
 	}
 
     pub fn approved_operators(&self) -> MapAgentIDToMutableOperators {
-		let map_id = get_object_id(self.id, STATE_APPROVED_OPERATORS.get_key_id(), TYPE_MAP);
-		MapAgentIDToMutableOperators { obj_id: map_id }
+		MapAgentIDToMutableOperators { proxy: self.proxy.root(STATE_APPROVED_OPERATORS) }
 	}
 
     pub fn balances(&self) -> MapAgentIDToMutableUint64 {
-		let map_id = get_object_id(self.id, STATE_BALANCES.get_key_id(), TYPE_MAP);
-		MapAgentIDToMutableUint64 { obj_id: map_id }
+		MapAgentIDToMutableUint64 { proxy: self.proxy.root(STATE_BALANCES) }
 	}
 
     pub fn name(&self) -> ScMutableString {
-		ScMutableString::new(self.id, STATE_NAME.get_key_id())
+		ScMutableString::new(self.proxy.root(STATE_NAME))
 	}
 
     pub fn owners(&self) -> MapHashToMutableAgentID {
-		let map_id = get_object_id(self.id, STATE_OWNERS.get_key_id(), TYPE_MAP);
-		MapHashToMutableAgentID { obj_id: map_id }
+		MapHashToMutableAgentID { proxy: self.proxy.root(STATE_OWNERS) }
 	}
 
     pub fn symbol(&self) -> ScMutableString {
-		ScMutableString::new(self.id, STATE_SYMBOL.get_key_id())
+		ScMutableString::new(self.proxy.root(STATE_SYMBOL))
 	}
 
     pub fn token_ur_is(&self) -> MapHashToMutableString {
-		let map_id = get_object_id(self.id, STATE_TOKEN_UR_IS.get_key_id(), TYPE_MAP);
-		MapHashToMutableString { obj_id: map_id }
+		MapHashToMutableString { proxy: self.proxy.root(STATE_TOKEN_UR_IS) }
 	}
 }

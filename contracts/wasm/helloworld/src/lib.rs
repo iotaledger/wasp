@@ -10,31 +10,39 @@
 
 use helloworld::*;
 use wasmlib::*;
-use wasmlib::host::*;
 
 use crate::consts::*;
-use crate::keys::*;
 use crate::results::*;
 use crate::state::*;
 
 mod consts;
 mod contract;
-mod keys;
 mod results;
 mod state;
+
 mod helloworld;
+
+const EXPORT_MAP: ScExportMap = ScExportMap {
+    names: &[
+    	FUNC_HELLO_WORLD,
+    	VIEW_GET_HELLO_WORLD,
+	],
+    funcs: &[
+    	func_hello_world_thunk,
+	],
+    views: &[
+    	view_get_hello_world_thunk,
+	],
+};
+
+#[no_mangle]
+fn on_call(index: i32) {
+	ScExports::call(index, &EXPORT_MAP);
+}
 
 #[no_mangle]
 fn on_load() {
-    let exports = ScExports::new();
-    exports.add_func(FUNC_HELLO_WORLD,     func_hello_world_thunk);
-    exports.add_view(VIEW_GET_HELLO_WORLD, view_get_hello_world_thunk);
-
-    unsafe {
-        for i in 0..KEY_MAP_LEN {
-            IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
-        }
-    }
+    ScExports::export(&EXPORT_MAP);
 }
 
 pub struct HelloWorldContext {
@@ -44,9 +52,7 @@ pub struct HelloWorldContext {
 fn func_hello_world_thunk(ctx: &ScFuncContext) {
 	ctx.log("helloworld.funcHelloWorld");
 	let f = HelloWorldContext {
-		state: MutableHelloWorldState {
-			id: OBJ_ID_STATE,
-		},
+		state: MutableHelloWorldState { proxy: state_proxy() },
 	};
 	func_hello_world(ctx, &f);
 	ctx.log("helloworld.funcHelloWorld ok");
@@ -60,13 +66,10 @@ pub struct GetHelloWorldContext {
 fn view_get_hello_world_thunk(ctx: &ScViewContext) {
 	ctx.log("helloworld.viewGetHelloWorld");
 	let f = GetHelloWorldContext {
-		results: MutableGetHelloWorldResults {
-			id: OBJ_ID_RESULTS,
-		},
-		state: ImmutableHelloWorldState {
-			id: OBJ_ID_STATE,
-		},
+		results: MutableGetHelloWorldResults { proxy: results_proxy() },
+		state: ImmutableHelloWorldState { proxy: state_proxy() },
 	};
 	view_get_hello_world(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("helloworld.viewGetHelloWorld ok");
 }

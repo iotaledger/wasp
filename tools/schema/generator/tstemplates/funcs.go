@@ -3,7 +3,9 @@ package tstemplates
 var funcsTs = map[string]string{
 	// *******************************
 	"funcs.ts": `
-$#emit tsImports
+$#emit importWasmLib
+$#emit importWasmTypes
+$#emit importSc
 $#each func funcSignature
 `,
 	// *******************************

@@ -7,7 +7,7 @@
 package erc20
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 // Sets the allowance value for delegated account
@@ -17,11 +17,10 @@ import (
 func funcApprove(ctx wasmlib.ScFuncContext, f *ApproveContext) {
 	delegation := f.Params.Delegation().Value()
 	amount := f.Params.Amount().Value()
-	ctx.Require(amount >= 0, "erc20.approve.fail: wrong 'amount' parameter")
 
 	// all allowances are in the map under the name of he owner
 	allowances := f.State.AllAllowances().GetAllowancesForAgent(ctx.Caller())
-	allowances.GetInt64(delegation).SetValue(amount)
+	allowances.GetUint64(delegation).SetValue(amount)
 	f.Events.Approval(amount, ctx.Caller(), delegation)
 }
 
@@ -39,7 +38,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 	// so, owner of the initial supply must be provided as a parameter PARAM_CREATOR to constructor (on_init)
 	// assign the whole supply to creator
 	creator := f.Params.Creator().Value()
-	f.State.Balances().GetInt64(creator).SetValue(supply)
+	f.State.Balances().GetUint64(creator).SetValue(supply)
 
 	t := "erc20.on_init.success. Supply: " + f.Params.Supply().String() +
 		", creator:" + creator.String()
@@ -47,23 +46,20 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 }
 
 // transfer moves tokens from caller's account to target account
-// This function emits the Allowance event.
+// This function emits the Transfer event.
 // Input:
 // - PARAM_ACCOUNT: agentID
 // - PARAM_AMOUNT: i64
 func funcTransfer(ctx wasmlib.ScFuncContext, f *TransferContext) {
 	amount := f.Params.Amount().Value()
-	ctx.Require(amount >= 0, "erc20.transfer.fail: wrong 'amount' parameter")
 
 	balances := f.State.Balances()
 	sourceAgent := ctx.Caller()
-	sourceBalance := balances.GetInt64(sourceAgent)
+	sourceBalance := balances.GetUint64(sourceAgent)
 	ctx.Require(sourceBalance.Value() >= amount, "erc20.transfer.fail: not enough funds")
 
 	targetAgent := f.Params.Account().Value()
-	targetBalance := balances.GetInt64(targetAgent)
-	result := targetBalance.Value() + amount
-	ctx.Require(result >= 0, "erc20.transfer.fail: overflow")
+	targetBalance := balances.GetUint64(targetAgent)
 
 	sourceBalance.SetValue(sourceBalance.Value() - amount)
 	targetBalance.SetValue(targetBalance.Value() + amount)
@@ -73,7 +69,7 @@ func funcTransfer(ctx wasmlib.ScFuncContext, f *TransferContext) {
 
 // Moves the amount of tokens from sender to recipient using the allowance mechanism.
 // Amount is then deducted from the caller’s allowance.
-// This function emits the Allowance event.
+// This function emits the Transfer event.
 // Input:
 // - PARAM_ACCOUNT: agentID   the spender
 // - PARAM_RECIPIENT: agentID   the target
@@ -81,22 +77,19 @@ func funcTransfer(ctx wasmlib.ScFuncContext, f *TransferContext) {
 func funcTransferFrom(ctx wasmlib.ScFuncContext, f *TransferFromContext) {
 	// validate parameters
 	amount := f.Params.Amount().Value()
-	ctx.Require(amount >= 0, "erc20.transfer_from.fail: wrong 'amount' parameter")
 
 	// allowances are in the map under the name of the account
 	sourceAgent := f.Params.Account().Value()
 	allowances := f.State.AllAllowances().GetAllowancesForAgent(sourceAgent)
-	allowance := allowances.GetInt64(ctx.Caller())
+	allowance := allowances.GetUint64(ctx.Caller())
 	ctx.Require(allowance.Value() >= amount, "erc20.transfer_from.fail: not enough allowance")
 
 	balances := f.State.Balances()
-	sourceBalance := balances.GetInt64(sourceAgent)
+	sourceBalance := balances.GetUint64(sourceAgent)
 	ctx.Require(sourceBalance.Value() >= amount, "erc20.transfer_from.fail: not enough funds")
 
 	targetAgent := f.Params.Recipient().Value()
-	targetBalance := balances.GetInt64(targetAgent)
-	result := targetBalance.Value() + amount
-	ctx.Require(result >= 0, "erc20.transfer_from.fail: overflow")
+	targetBalance := balances.GetUint64(targetAgent)
 
 	sourceBalance.SetValue(sourceBalance.Value() - amount)
 	targetBalance.SetValue(targetBalance.Value() + amount)
@@ -115,7 +108,7 @@ func funcTransferFrom(ctx wasmlib.ScFuncContext, f *TransferFromContext) {
 func viewAllowance(ctx wasmlib.ScViewContext, f *AllowanceContext) {
 	// all allowances of the address 'owner' are stored in the map of the same name
 	allowances := f.State.AllAllowances().GetAllowancesForAgent(f.Params.Account().Value())
-	allow := allowances.GetInt64(f.Params.Delegation().Value()).Value()
+	allow := allowances.GetUint64(f.Params.Delegation().Value()).Value()
 	f.Results.Amount().SetValue(allow)
 }
 
@@ -124,7 +117,7 @@ func viewAllowance(ctx wasmlib.ScViewContext, f *AllowanceContext) {
 // - PARAM_ACCOUNT: agentID
 func viewBalanceOf(ctx wasmlib.ScViewContext, f *BalanceOfContext) {
 	balances := f.State.Balances()
-	balance := balances.GetInt64(f.Params.Account().Value())
+	balance := balances.GetUint64(f.Params.Account().Value())
 	f.Results.Amount().SetValue(balance.Value())
 }
 

@@ -7,12 +7,12 @@
 
 package dividend
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "dividend"
 	ScDescription = "Simple dividend smart contract"
-	HScName       = wasmlib.ScHname(0xcce2e239)
+	HScName       = wasmtypes.ScHname(0xcce2e239)
 )
 
 const (
@@ -43,10 +43,10 @@ const (
 )
 
 const (
-	HFuncDivide    = wasmlib.ScHname(0xc7878107)
-	HFuncInit      = wasmlib.ScHname(0x1f44d644)
-	HFuncMember    = wasmlib.ScHname(0xc07da2cb)
-	HFuncSetOwner  = wasmlib.ScHname(0x2a15fe7b)
-	HViewGetFactor = wasmlib.ScHname(0x0ee668fe)
-	HViewGetOwner  = wasmlib.ScHname(0x137107a6)
+	HFuncDivide    = wasmtypes.ScHname(0xc7878107)
+	HFuncInit      = wasmtypes.ScHname(0x1f44d644)
+	HFuncMember    = wasmtypes.ScHname(0xc07da2cb)
+	HFuncSetOwner  = wasmtypes.ScHname(0x2a15fe7b)
+	HViewGetFactor = wasmtypes.ScHname(0x0ee668fe)
+	HViewGetOwner  = wasmtypes.ScHname(0x137107a6)
 )

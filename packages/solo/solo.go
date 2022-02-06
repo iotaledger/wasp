@@ -124,8 +124,6 @@ func defaultInitOptions() *InitOptions {
 // New creates an instance of the Solo environment
 // If solo is used for unit testing, 't' should be the *testing.T instance;
 // otherwise it can be either nil or an instance created with NewTestContext.
-// If solo is used for unit testing, 't' should be the *testing.T instance;
-// otherwise it can be either nil or an instance created with NewTestContext.
 func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	if t == nil {
 		t = NewTestContext("solo")

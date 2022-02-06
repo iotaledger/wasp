@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -152,7 +152,7 @@ func TestConcurrency2(t *testing.T) {
 			go func(r, n int) {
 				users[r] = ctx.NewSoloAgent()
 				for i := 0; i < n; i++ {
-					tx, _, err := chain.RequestFromParamsToLedger(req, users[r].PrivateKey)
+					tx, _, err := chain.RequestFromParamsToLedger(req, users[r].Pair)
 					require.NoError(t, err)
 					chain.Env.EnqueueRequests(tx)
 				}

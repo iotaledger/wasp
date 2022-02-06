@@ -10,14 +10,7 @@ $#if map typedefProxyMap
 	"proxyMethods": `
 $#if separator newline
 $#set separator $true
-$#set varID $Kind$FLD_NAME.get_key_id()
-$#if init setInitVarID
-$#if core setCoreVarID
 $#if array proxyArray proxyMethods2
-`,
-	// *******************************
-	"setInitVarID": `
-$#set varID idx_map(IDX_$Kind$FLD_NAME)
 `,
 	// *******************************
 	"proxyMethods2": `
@@ -25,21 +18,17 @@ $#if map proxyMap proxyMethods3
 `,
 	// *******************************
 	"proxyMethods3": `
-$#if basetype proxyBaseType proxyMethods4
+$#if basetype proxyBaseType proxyOtherType
 `,
 	// *******************************
-	"proxyMethods4": `
+	// TODO when will this be called, and if so, fix it
+	"proxyOtherType": `
 $#if typedef proxyTypeDef proxyStruct
-`,
-	// *******************************
-	"setCoreVarID": `
-$#set varID $Kind$FLD_NAME.get_key_id()
 `,
 	// *******************************
 	"proxyArray": `
     pub fn $fld_name(&self) -> ArrayOf$mut$FldType {
-		let arr_id = get_object_id(self.id, $varID, $arrayTypeID | $fldTypeID);
-		ArrayOf$mut$FldType { obj_id: arr_id }
+		ArrayOf$mut$FldType { proxy: self.proxy.root($Kind$FLD_NAME) }
 	}
 `,
 	// *******************************
@@ -48,24 +37,24 @@ $#if this proxyMapThis proxyMapOther
 `,
 	// *******************************
 	"proxyMapThis": `
-    pub fn $fld_name(&self) -> Map$fldMapKey$+To$mut$FldType {
-		Map$fldMapKey$+To$mut$FldType { obj_id: self.id }
+    pub fn $fld_name(&self) -> Map$FldMapKey$+To$mut$FldType {
+		Map$FldMapKey$+To$mut$FldType { proxy: self.proxy.clone() }
 	}
 `,
 	// *******************************
 	"proxyMapOther": `
-    pub fn $fld_name(&self) -> Map$fldMapKey$+To$mut$FldType {
-		let map_id = get_object_id(self.id, $varID, TYPE_MAP);
-		Map$fldMapKey$+To$mut$FldType { obj_id: map_id }
+    pub fn $fld_name(&self) -> Map$FldMapKey$+To$mut$FldType {
+		Map$FldMapKey$+To$mut$FldType { proxy: self.proxy.root($Kind$FLD_NAME) }
 	}
 `,
 	// *******************************
 	"proxyBaseType": `
     pub fn $fld_name(&self) -> Sc$mut$FldType {
-		Sc$mut$FldType::new(self.id, $varID)
+		Sc$mut$FldType::new(self.proxy.root($Kind$FLD_NAME))
 	}
 `,
 	// *******************************
+	// TODO when will this be called, and if so, fix it
 	"proxyTypeDef": `
 $#emit setVarType
     pub fn $old_name(&self) -> $mut$OldType {
@@ -74,6 +63,7 @@ $#emit setVarType
 	}
 `,
 	// *******************************
+	// TODO when will this be called, and if so, fix it
 	"proxyStruct": `
     pub fn $fld_name(&self) -> $mut$FldType {
 		$mut$FldType { obj_id: self.id, key_id: $varID }

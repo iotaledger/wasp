@@ -7,8 +7,8 @@ import * as sc from "./index";
 export function funcMintSupply(ctx: wasmlib.ScFuncContext, f: sc.MintSupplyContext): void {
     let minted = ctx.minted();
     let mintedColors = minted.colors();
-    ctx.require(mintedColors.length() == 1, "need single minted color");
-    let mintedColor = mintedColors.getColor(0).value();
+    ctx.require(mintedColors.length == 1, "need single minted color");
+    let mintedColor = mintedColors[0];
     let currentToken = f.state.registry().getToken(mintedColor);
     if (currentToken.exists()) {
         // should never happen, because transaction id is unique
@@ -27,7 +27,7 @@ export function funcMintSupply(ctx: wasmlib.ScFuncContext, f: sc.MintSupplyConte
     }
     currentToken.setValue(token);
     let colorList = f.state.colorList();
-    colorList.getColor(colorList.length()).setValue(mintedColor);
+    colorList.appendColor().setValue(mintedColor);
 }
 
 export function funcTransferOwnership(ctx: wasmlib.ScFuncContext, f: sc.TransferOwnershipContext): void {

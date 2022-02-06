@@ -9,287 +9,284 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableCallOnChainResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableCallOnChainResults {
     pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableCallOnChainResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableCallOnChainResults {
     pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
+		ScMutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetMintedSupplyResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetMintedSupplyResults {
     pub fn minted_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.id, RESULT_MINTED_COLOR.get_key_id())
+		ScImmutableColor::new(self.proxy.root(RESULT_MINTED_COLOR))
 	}
 
-    pub fn minted_supply(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_MINTED_SUPPLY.get_key_id())
+    pub fn minted_supply(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(RESULT_MINTED_SUPPLY))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetMintedSupplyResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetMintedSupplyResults {
     pub fn minted_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.id, RESULT_MINTED_COLOR.get_key_id())
+		ScMutableColor::new(self.proxy.root(RESULT_MINTED_COLOR))
 	}
 
-    pub fn minted_supply(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_MINTED_SUPPLY.get_key_id())
+    pub fn minted_supply(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_MINTED_SUPPLY))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableRunRecursionResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableRunRecursionResults {
     pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableRunRecursionResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableRunRecursionResults {
     pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
+		ScMutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTestChainOwnerIDFullResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTestChainOwnerIDFullResults {
     pub fn chain_owner_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, RESULT_CHAIN_OWNER_ID.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTestChainOwnerIDFullResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTestChainOwnerIDFullResults {
     pub fn chain_owner_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, RESULT_CHAIN_OWNER_ID.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableFibonacciResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableFibonacciResults {
     pub fn int_value(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableFibonacciResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableFibonacciResults {
     pub fn int_value(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_INT_VALUE.get_key_id())
+		ScMutableInt64::new(self.proxy.root(RESULT_INT_VALUE))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetCounterResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetCounterResults {
     pub fn counter(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, RESULT_COUNTER.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(RESULT_COUNTER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetCounterResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetCounterResults {
     pub fn counter(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, RESULT_COUNTER.get_key_id())
+		ScMutableInt64::new(self.proxy.root(RESULT_COUNTER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToImmutableInt64 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToImmutableInt64 {
     pub fn get_int64(&self, key: &str) -> ScImmutableInt64 {
-        ScImmutableInt64::new(self.obj_id, key.get_key_id())
+        ScImmutableInt64::new(self.proxy.key(&string_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetIntResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetIntResults {
     pub fn values(&self) -> MapStringToImmutableInt64 {
-		MapStringToImmutableInt64 { obj_id: self.id }
+		MapStringToImmutableInt64 { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToMutableInt64 {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToMutableInt64 {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_int64(&self, key: &str) -> ScMutableInt64 {
-        ScMutableInt64::new(self.obj_id, key.get_key_id())
+        ScMutableInt64::new(self.proxy.key(&string_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetIntResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetIntResults {
     pub fn values(&self) -> MapStringToMutableInt64 {
-		MapStringToMutableInt64 { obj_id: self.id }
+		MapStringToMutableInt64 { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToImmutableString {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToImmutableString {
     pub fn get_string(&self, key: &str) -> ScImmutableString {
-        ScImmutableString::new(self.obj_id, key.get_key_id())
+        ScImmutableString::new(self.proxy.key(&string_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableGetStringValueResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetStringValueResults {
     pub fn vars(&self) -> MapStringToImmutableString {
-		MapStringToImmutableString { obj_id: self.id }
+		MapStringToImmutableString { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MapStringToMutableString {
-	pub(crate) obj_id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MapStringToMutableString {
     pub fn clear(&self) {
-        clear(self.obj_id);
+        self.proxy.clear_map();
     }
 
     pub fn get_string(&self, key: &str) -> ScMutableString {
-        ScMutableString::new(self.obj_id, key.get_key_id())
+        ScMutableString::new(self.proxy.key(&string_to_bytes(key)))
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetStringValueResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetStringValueResults {
     pub fn vars(&self) -> MapStringToMutableString {
-		MapStringToMutableString { obj_id: self.id }
+		MapStringToMutableString { proxy: self.proxy.clone() }
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTestChainOwnerIDViewResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTestChainOwnerIDViewResults {
     pub fn chain_owner_id(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.id, RESULT_CHAIN_OWNER_ID.get_key_id())
+		ScImmutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTestChainOwnerIDViewResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTestChainOwnerIDViewResults {
     pub fn chain_owner_id(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.id, RESULT_CHAIN_OWNER_ID.get_key_id())
+		ScMutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableTestSandboxCallResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTestSandboxCallResults {
     pub fn sandbox_call(&self) -> ScImmutableString {
-		ScImmutableString::new(self.id, RESULT_SANDBOX_CALL.get_key_id())
+		ScImmutableString::new(self.proxy.root(RESULT_SANDBOX_CALL))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableTestSandboxCallResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableTestSandboxCallResults {
     pub fn sandbox_call(&self) -> ScMutableString {
-		ScMutableString::new(self.id, RESULT_SANDBOX_CALL.get_key_id())
+		ScMutableString::new(self.proxy.root(RESULT_SANDBOX_CALL))
 	}
 }

@@ -7,7 +7,7 @@
 
 package helloworld
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type HelloWorldCall struct {
 	Func *wasmlib.ScFunc
@@ -28,6 +28,6 @@ func (sc Funcs) HelloWorld(ctx wasmlib.ScFuncCallContext) *HelloWorldCall {
 
 func (sc Funcs) GetHelloWorld(ctx wasmlib.ScViewCallContext) *GetHelloWorldCall {
 	f := &GetHelloWorldCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetHelloWorld)}
-	f.Func.SetPtrs(nil, &f.Results.id)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f
 }

@@ -7,23 +7,42 @@
 
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncForcePayout, funcForcePayoutThunk)
-	exports.AddFunc(FuncForceReset, funcForceResetThunk)
-	exports.AddFunc(FuncPayWinners, funcPayWinnersThunk)
-	exports.AddFunc(FuncPlaceBet, funcPlaceBetThunk)
-	exports.AddFunc(FuncPlayPeriod, funcPlayPeriodThunk)
-	exports.AddView(ViewLastWinningNumber, viewLastWinningNumberThunk)
-	exports.AddView(ViewRoundNumber, viewRoundNumberThunk)
-	exports.AddView(ViewRoundStartedAt, viewRoundStartedAtThunk)
-	exports.AddView(ViewRoundStatus, viewRoundStatusThunk)
+var exportMap = wasmlib.ScExportMap{
+	Names: []string{
+		FuncForcePayout,
+		FuncForceReset,
+		FuncPayWinners,
+		FuncPlaceBet,
+		FuncPlayPeriod,
+		ViewLastWinningNumber,
+		ViewRoundNumber,
+		ViewRoundStartedAt,
+		ViewRoundStatus,
+	},
+	Funcs: []wasmlib.ScFuncContextFunction{
+		funcForcePayoutThunk,
+		funcForceResetThunk,
+		funcPayWinnersThunk,
+		funcPlaceBetThunk,
+		funcPlayPeriodThunk,
+	},
+	Views: []wasmlib.ScViewContextFunction{
+		viewLastWinningNumberThunk,
+		viewRoundNumberThunk,
+		viewRoundStartedAtThunk,
+		viewRoundStatusThunk,
+	},
+}
 
-	for i, key := range keyMap {
-		idxMap[i] = key.KeyID()
+func OnLoad(index int32) {
+	if index >= 0 {
+		wasmlib.ScExportsCall(index, &exportMap)
+		return
 	}
+
+	wasmlib.ScExportsExport(&exportMap)
 }
 
 type ForcePayoutContext struct {
@@ -33,15 +52,15 @@ type ForcePayoutContext struct {
 
 func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcForcePayout")
+	f := &ForcePayoutContext{
+		State: MutableFairRouletteState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
 
 	// only SC creator can restart the round forcefully
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
-	f := &ForcePayoutContext{
-		State: MutableFairRouletteState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
 	funcForcePayout(ctx, f)
 	ctx.Log("fairroulette.funcForcePayout ok")
 }
@@ -53,15 +72,15 @@ type ForceResetContext struct {
 
 func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcForceReset")
+	f := &ForceResetContext{
+		State: MutableFairRouletteState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
 
 	// only SC creator can restart the round forcefully
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
-	f := &ForceResetContext{
-		State: MutableFairRouletteState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
 	funcForceReset(ctx, f)
 	ctx.Log("fairroulette.funcForceReset ok")
 }
@@ -73,15 +92,15 @@ type PayWinnersContext struct {
 
 func funcPayWinnersThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcPayWinners")
+	f := &PayWinnersContext{
+		State: MutableFairRouletteState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
 
 	// only SC itself can invoke this function
 	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
-	f := &PayWinnersContext{
-		State: MutableFairRouletteState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
 	funcPayWinners(ctx, f)
 	ctx.Log("fairroulette.funcPayWinners ok")
 }
@@ -96,10 +115,10 @@ func funcPlaceBetThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcPlaceBet")
 	f := &PlaceBetContext{
 		Params: ImmutablePlaceBetParams{
-			id: wasmlib.OBJ_ID_PARAMS,
+			proxy: wasmlib.NewParamsProxy(),
 		},
 		State: MutableFairRouletteState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	ctx.Require(f.Params.Number().Exists(), "missing mandatory number")
@@ -115,18 +134,18 @@ type PlayPeriodContext struct {
 
 func funcPlayPeriodThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairroulette.funcPlayPeriod")
+	f := &PlayPeriodContext{
+		Params: ImmutablePlayPeriodParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableFairRouletteState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
 
 	// only SC creator can update the play period
 	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
-	f := &PlayPeriodContext{
-		Params: ImmutablePlayPeriodParams{
-			id: wasmlib.OBJ_ID_PARAMS,
-		},
-		State: MutableFairRouletteState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
 	ctx.Require(f.Params.PlayPeriod().Exists(), "missing mandatory playPeriod")
 	funcPlayPeriod(ctx, f)
 	ctx.Log("fairroulette.funcPlayPeriod ok")
@@ -139,15 +158,17 @@ type LastWinningNumberContext struct {
 
 func viewLastWinningNumberThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("fairroulette.viewLastWinningNumber")
+	results := wasmlib.NewScDict()
 	f := &LastWinningNumberContext{
 		Results: MutableLastWinningNumberResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableFairRouletteState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewLastWinningNumber(ctx, f)
+	ctx.Results(results)
 	ctx.Log("fairroulette.viewLastWinningNumber ok")
 }
 
@@ -158,15 +179,17 @@ type RoundNumberContext struct {
 
 func viewRoundNumberThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("fairroulette.viewRoundNumber")
+	results := wasmlib.NewScDict()
 	f := &RoundNumberContext{
 		Results: MutableRoundNumberResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableFairRouletteState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewRoundNumber(ctx, f)
+	ctx.Results(results)
 	ctx.Log("fairroulette.viewRoundNumber ok")
 }
 
@@ -177,15 +200,17 @@ type RoundStartedAtContext struct {
 
 func viewRoundStartedAtThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("fairroulette.viewRoundStartedAt")
+	results := wasmlib.NewScDict()
 	f := &RoundStartedAtContext{
 		Results: MutableRoundStartedAtResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableFairRouletteState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewRoundStartedAt(ctx, f)
+	ctx.Results(results)
 	ctx.Log("fairroulette.viewRoundStartedAt ok")
 }
 
@@ -196,14 +221,16 @@ type RoundStatusContext struct {
 
 func viewRoundStatusThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("fairroulette.viewRoundStatus")
+	results := wasmlib.NewScDict()
 	f := &RoundStatusContext{
 		Results: MutableRoundStatusResults{
-			id: wasmlib.OBJ_ID_RESULTS,
+			proxy: results.AsProxy(),
 		},
 		State: ImmutableFairRouletteState{
-			id: wasmlib.OBJ_ID_STATE,
+			proxy: wasmlib.NewStateProxy(),
 		},
 	}
 	viewRoundStatus(ctx, f)
+	ctx.Results(results)
 	ctx.Log("fairroulette.viewRoundStatus ok")
 }

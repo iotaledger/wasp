@@ -9,95 +9,136 @@
 #![allow(unused_imports)]
 
 use wasmlib::*;
-use wasmlib::host::*;
-
 use crate::*;
-use crate::keys::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableIncrementWithDelayParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableIncrementWithDelayParams {
-    pub fn delay(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.id, PARAM_DELAY.get_key_id())
+    pub fn delay(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(PARAM_DELAY))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableIncrementWithDelayParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableIncrementWithDelayParams {
-    pub fn delay(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.id, PARAM_DELAY.get_key_id())
+    pub fn delay(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(PARAM_DELAY))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableInitParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableInitParams {
     pub fn counter(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
+		ScImmutableInt64::new(self.proxy.root(PARAM_COUNTER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableInitParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableInitParams {
     pub fn counter(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, idx_map(IDX_PARAM_COUNTER))
+		ScMutableInt64::new(self.proxy.root(PARAM_COUNTER))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableRepeatManyParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableRepeatManyParams {
     pub fn num_repeats(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_NUM_REPEATS.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(PARAM_NUM_REPEATS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableRepeatManyParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableRepeatManyParams {
     pub fn num_repeats(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_NUM_REPEATS.get_key_id())
+		ScMutableInt64::new(self.proxy.root(PARAM_NUM_REPEATS))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImmutableWhenMustIncrementParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl ImmutableWhenMustIncrementParams {
     pub fn dummy(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.id, PARAM_DUMMY.get_key_id())
+		ScImmutableInt64::new(self.proxy.root(PARAM_DUMMY))
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableWhenMustIncrementParams {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableWhenMustIncrementParams {
     pub fn dummy(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.id, PARAM_DUMMY.get_key_id())
+		ScMutableInt64::new(self.proxy.root(PARAM_DUMMY))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableGetVliParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableGetVliParams {
+    pub fn ni64(&self) -> ScImmutableInt64 {
+		ScImmutableInt64::new(self.proxy.root(PARAM_NI64))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableGetVliParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableGetVliParams {
+    pub fn ni64(&self) -> ScMutableInt64 {
+		ScMutableInt64::new(self.proxy.root(PARAM_NI64))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableGetVluParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableGetVluParams {
+    pub fn nu64(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(PARAM_NU64))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableGetVluParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableGetVluParams {
+    pub fn nu64(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(PARAM_NU64))
 	}
 }

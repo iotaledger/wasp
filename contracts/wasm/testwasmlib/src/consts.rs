@@ -50,11 +50,10 @@ pub const STATE_ARRAYS : &str = "arrays";
 pub const STATE_MAPS   : &str = "maps";
 pub const STATE_RANDOM : &str = "random";
 
+pub const FUNC_ARRAY_APPEND  : &str = "arrayAppend";
 pub const FUNC_ARRAY_CLEAR   : &str = "arrayClear";
-pub const FUNC_ARRAY_CREATE  : &str = "arrayCreate";
 pub const FUNC_ARRAY_SET     : &str = "arraySet";
 pub const FUNC_MAP_CLEAR     : &str = "mapClear";
-pub const FUNC_MAP_CREATE    : &str = "mapCreate";
 pub const FUNC_MAP_SET       : &str = "mapSet";
 pub const FUNC_PARAM_TYPES   : &str = "paramTypes";
 pub const FUNC_RANDOM        : &str = "random";
@@ -67,11 +66,10 @@ pub const VIEW_GET_RANDOM    : &str = "getRandom";
 pub const VIEW_IOTA_BALANCE  : &str = "iotaBalance";
 pub const VIEW_MAP_VALUE     : &str = "mapValue";
 
+pub const HFUNC_ARRAY_APPEND  : ScHname = ScHname(0x612f835f);
 pub const HFUNC_ARRAY_CLEAR   : ScHname = ScHname(0x88021821);
-pub const HFUNC_ARRAY_CREATE  : ScHname = ScHname(0x1ed5b23b);
 pub const HFUNC_ARRAY_SET     : ScHname = ScHname(0x2c4150b3);
 pub const HFUNC_MAP_CLEAR     : ScHname = ScHname(0x027f215a);
-pub const HFUNC_MAP_CREATE    : ScHname = ScHname(0x6295d599);
 pub const HFUNC_MAP_SET       : ScHname = ScHname(0xf2260404);
 pub const HFUNC_PARAM_TYPES   : ScHname = ScHname(0x6921c4cd);
 pub const HFUNC_RANDOM        : ScHname = ScHname(0xe86c97ca);

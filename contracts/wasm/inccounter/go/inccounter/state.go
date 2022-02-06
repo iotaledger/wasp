@@ -7,32 +7,32 @@
 
 package inccounter
 
-import "github.com/iotaledger/wasp/packages/vm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type ImmutableIncCounterState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableIncCounterState) Counter() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateCounter))
+func (s ImmutableIncCounterState) Counter() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(StateCounter))
 }
 
-func (s ImmutableIncCounterState) NumRepeats() wasmlib.ScImmutableInt64 {
-	return wasmlib.NewScImmutableInt64(s.id, wasmlib.KeyID(StateNumRepeats))
+func (s ImmutableIncCounterState) NumRepeats() wasmtypes.ScImmutableInt64 {
+	return wasmtypes.NewScImmutableInt64(s.proxy.Root(StateNumRepeats))
 }
 
 type MutableIncCounterState struct {
-	id int32
+	proxy wasmtypes.Proxy
 }
 
 func (s MutableIncCounterState) AsImmutable() ImmutableIncCounterState {
 	return ImmutableIncCounterState(s)
 }
 
-func (s MutableIncCounterState) Counter() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateCounter))
+func (s MutableIncCounterState) Counter() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(StateCounter))
 }
 
-func (s MutableIncCounterState) NumRepeats() wasmlib.ScMutableInt64 {
-	return wasmlib.NewScMutableInt64(s.id, wasmlib.KeyID(StateNumRepeats))
+func (s MutableIncCounterState) NumRepeats() wasmtypes.ScMutableInt64 {
+	return wasmtypes.NewScMutableInt64(s.proxy.Root(StateNumRepeats))
 }

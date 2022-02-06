@@ -27,31 +27,28 @@ state:
 # ##################################
   arrays: map[String]StringArray
   maps: map[String]StringMap
-  random: Int64
+  random: Uint64
 # latLong: map[Int32]Longitude
 
 # ##################################
 funcs:
 # ##################################
-  arrayClear:
+  arrayAppend:
     params:
       name: String
+      value: String
 
-  arrayCreate:
+  arrayClear:
     params:
       name: String
 
   arraySet:
     params:
-      index: Int32
+      index: Uint32
       name: String
       value: String
 
   mapClear:
-    params:
-      name: String
-
-  mapCreate:
     params:
       name: String
 
@@ -97,31 +94,31 @@ views:
     params:
       name: String
     results:
-      length: Int32
+      length: Uint32
 
   arrayValue:
     params:
-      index: Int32
+      index: Uint32
       name: String
     results:
       value: String
 
   blockRecord:
     params:
-      blockIndex: Int32
-      recordIndex: Int32
+      blockIndex: Uint32
+      recordIndex: Uint32
     results:
       record: Bytes
 
   blockRecords:
     params:
-      blockIndex: Int32
+      blockIndex: Uint32
     results:
-      count: Int32
+      count: Uint32
 
   iotaBalance:
     results:
-      iotas: Int64
+      iotas: Uint64
 
   mapValue:
     params:
@@ -132,4 +129,4 @@ views:
 
   getRandom:
     results:
-      random: Int64
+      random: Uint64

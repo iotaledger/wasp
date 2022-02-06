@@ -8,36 +8,60 @@
 import * as wasmlib from "wasmlib";
 import * as sc from "./index";
 
+const exportMap: wasmlib.ScExportMap = {
+    names: [
+    	sc.FuncCallIncrement,
+    	sc.FuncCallIncrementRecurse5x,
+    	sc.FuncEndlessLoop,
+    	sc.FuncIncrement,
+    	sc.FuncIncrementWithDelay,
+    	sc.FuncInit,
+    	sc.FuncLocalStateInternalCall,
+    	sc.FuncLocalStatePost,
+    	sc.FuncLocalStateSandboxCall,
+    	sc.FuncPostIncrement,
+    	sc.FuncRepeatMany,
+    	sc.FuncTestVliCodec,
+    	sc.FuncTestVluCodec,
+    	sc.FuncWhenMustIncrement,
+    	sc.ViewGetCounter,
+    	sc.ViewGetVli,
+    	sc.ViewGetVlu,
+    ],
+    funcs: [
+    	funcCallIncrementThunk,
+    	funcCallIncrementRecurse5xThunk,
+    	funcEndlessLoopThunk,
+    	funcIncrementThunk,
+    	funcIncrementWithDelayThunk,
+    	funcInitThunk,
+    	funcLocalStateInternalCallThunk,
+    	funcLocalStatePostThunk,
+    	funcLocalStateSandboxCallThunk,
+    	funcPostIncrementThunk,
+    	funcRepeatManyThunk,
+    	funcTestVliCodecThunk,
+    	funcTestVluCodecThunk,
+    	funcWhenMustIncrementThunk,
+    ],
+    views: [
+    	viewGetCounterThunk,
+    	viewGetVliThunk,
+    	viewGetVluThunk,
+    ],
+};
+
 export function on_call(index: i32): void {
-    return wasmlib.onCall(index);
+    wasmlib.ScExports.call(index, exportMap);
 }
 
 export function on_load(): void {
-    let exports = new wasmlib.ScExports();
-    exports.addFunc(sc.FuncCallIncrement,          funcCallIncrementThunk);
-    exports.addFunc(sc.FuncCallIncrementRecurse5x, funcCallIncrementRecurse5xThunk);
-    exports.addFunc(sc.FuncEndlessLoop,            funcEndlessLoopThunk);
-    exports.addFunc(sc.FuncIncrement,              funcIncrementThunk);
-    exports.addFunc(sc.FuncIncrementWithDelay,     funcIncrementWithDelayThunk);
-    exports.addFunc(sc.FuncInit,                   funcInitThunk);
-    exports.addFunc(sc.FuncLocalStateInternalCall, funcLocalStateInternalCallThunk);
-    exports.addFunc(sc.FuncLocalStatePost,         funcLocalStatePostThunk);
-    exports.addFunc(sc.FuncLocalStateSandboxCall,  funcLocalStateSandboxCallThunk);
-    exports.addFunc(sc.FuncPostIncrement,          funcPostIncrementThunk);
-    exports.addFunc(sc.FuncRepeatMany,             funcRepeatManyThunk);
-    exports.addFunc(sc.FuncTestLeb128,             funcTestLeb128Thunk);
-    exports.addFunc(sc.FuncWhenMustIncrement,      funcWhenMustIncrementThunk);
-    exports.addView(sc.ViewGetCounter,             viewGetCounterThunk);
-
-    for (let i = 0; i < sc.keyMap.length; i++) {
-        sc.idxMap[i] = wasmlib.Key32.fromString(sc.keyMap[i]);
-    }
+    wasmlib.ScExports.export(exportMap);
 }
 
 function funcCallIncrementThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcCallIncrement");
 	let f = new sc.CallIncrementContext();
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcCallIncrement(ctx, f);
 	ctx.log("inccounter.funcCallIncrement ok");
 }
@@ -45,7 +69,6 @@ function funcCallIncrementThunk(ctx: wasmlib.ScFuncContext): void {
 function funcCallIncrementRecurse5xThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcCallIncrementRecurse5x");
 	let f = new sc.CallIncrementRecurse5xContext();
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcCallIncrementRecurse5x(ctx, f);
 	ctx.log("inccounter.funcCallIncrementRecurse5x ok");
 }
@@ -53,7 +76,6 @@ function funcCallIncrementRecurse5xThunk(ctx: wasmlib.ScFuncContext): void {
 function funcEndlessLoopThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcEndlessLoop");
 	let f = new sc.EndlessLoopContext();
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcEndlessLoop(ctx, f);
 	ctx.log("inccounter.funcEndlessLoop ok");
 }
@@ -61,7 +83,6 @@ function funcEndlessLoopThunk(ctx: wasmlib.ScFuncContext): void {
 function funcIncrementThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcIncrement");
 	let f = new sc.IncrementContext();
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcIncrement(ctx, f);
 	ctx.log("inccounter.funcIncrement ok");
 }
@@ -69,8 +90,6 @@ function funcIncrementThunk(ctx: wasmlib.ScFuncContext): void {
 function funcIncrementWithDelayThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcIncrementWithDelay");
 	let f = new sc.IncrementWithDelayContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	ctx.require(f.params.delay().exists(), "missing mandatory delay");
 	sc.funcIncrementWithDelay(ctx, f);
 	ctx.log("inccounter.funcIncrementWithDelay ok");
@@ -79,8 +98,6 @@ function funcIncrementWithDelayThunk(ctx: wasmlib.ScFuncContext): void {
 function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcInit");
 	let f = new sc.InitContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcInit(ctx, f);
 	ctx.log("inccounter.funcInit ok");
 }
@@ -88,7 +105,6 @@ function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
 function funcLocalStateInternalCallThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcLocalStateInternalCall");
 	let f = new sc.LocalStateInternalCallContext();
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcLocalStateInternalCall(ctx, f);
 	ctx.log("inccounter.funcLocalStateInternalCall ok");
 }
@@ -96,7 +112,6 @@ function funcLocalStateInternalCallThunk(ctx: wasmlib.ScFuncContext): void {
 function funcLocalStatePostThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcLocalStatePost");
 	let f = new sc.LocalStatePostContext();
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcLocalStatePost(ctx, f);
 	ctx.log("inccounter.funcLocalStatePost ok");
 }
@@ -104,7 +119,6 @@ function funcLocalStatePostThunk(ctx: wasmlib.ScFuncContext): void {
 function funcLocalStateSandboxCallThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcLocalStateSandboxCall");
 	let f = new sc.LocalStateSandboxCallContext();
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcLocalStateSandboxCall(ctx, f);
 	ctx.log("inccounter.funcLocalStateSandboxCall ok");
 }
@@ -112,7 +126,6 @@ function funcLocalStateSandboxCallThunk(ctx: wasmlib.ScFuncContext): void {
 function funcPostIncrementThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcPostIncrement");
 	let f = new sc.PostIncrementContext();
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcPostIncrement(ctx, f);
 	ctx.log("inccounter.funcPostIncrement ok");
 }
@@ -120,25 +133,27 @@ function funcPostIncrementThunk(ctx: wasmlib.ScFuncContext): void {
 function funcRepeatManyThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcRepeatMany");
 	let f = new sc.RepeatManyContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcRepeatMany(ctx, f);
 	ctx.log("inccounter.funcRepeatMany ok");
 }
 
-function funcTestLeb128Thunk(ctx: wasmlib.ScFuncContext): void {
-	ctx.log("inccounter.funcTestLeb128");
-	let f = new sc.TestLeb128Context();
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
-	sc.funcTestLeb128(ctx, f);
-	ctx.log("inccounter.funcTestLeb128 ok");
+function funcTestVliCodecThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("inccounter.funcTestVliCodec");
+	let f = new sc.TestVliCodecContext();
+	sc.funcTestVliCodec(ctx, f);
+	ctx.log("inccounter.funcTestVliCodec ok");
+}
+
+function funcTestVluCodecThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("inccounter.funcTestVluCodec");
+	let f = new sc.TestVluCodecContext();
+	sc.funcTestVluCodec(ctx, f);
+	ctx.log("inccounter.funcTestVluCodec ok");
 }
 
 function funcWhenMustIncrementThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("inccounter.funcWhenMustIncrement");
 	let f = new sc.WhenMustIncrementContext();
-    f.params.mapID = wasmlib.OBJ_ID_PARAMS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
 	sc.funcWhenMustIncrement(ctx, f);
 	ctx.log("inccounter.funcWhenMustIncrement ok");
 }
@@ -146,8 +161,31 @@ function funcWhenMustIncrementThunk(ctx: wasmlib.ScFuncContext): void {
 function viewGetCounterThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("inccounter.viewGetCounter");
 	let f = new sc.GetCounterContext();
-    f.results.mapID = wasmlib.OBJ_ID_RESULTS;
-    f.state.mapID = wasmlib.OBJ_ID_STATE;
+    const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableGetCounterResults(results.asProxy());
 	sc.viewGetCounter(ctx, f);
+	ctx.results(results);
 	ctx.log("inccounter.viewGetCounter ok");
+}
+
+function viewGetVliThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("inccounter.viewGetVli");
+	let f = new sc.GetVliContext();
+    const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableGetVliResults(results.asProxy());
+	ctx.require(f.params.ni64().exists(), "missing mandatory ni64");
+	sc.viewGetVli(ctx, f);
+	ctx.results(results);
+	ctx.log("inccounter.viewGetVli ok");
+}
+
+function viewGetVluThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("inccounter.viewGetVlu");
+	let f = new sc.GetVluContext();
+    const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableGetVluResults(results.asProxy());
+	ctx.require(f.params.nu64().exists(), "missing mandatory nu64");
+	sc.viewGetVlu(ctx, f);
+	ctx.results(results);
+	ctx.log("inccounter.viewGetVlu ok");
 }
