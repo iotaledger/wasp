@@ -1,6 +1,7 @@
 package blocklog
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"math"
 	"time"
 
@@ -71,14 +72,22 @@ func viewIsRequestProcessed(ctx iscp.SandboxView) dict.Dict {
 func viewGetRequestReceipt(ctx iscp.SandboxView) dict.Dict {
 	params := kvdecoder.New(ctx.Params())
 	requestID := params.MustGetRequestID(ParamRequestID)
-	recBin, blockIndex, requestIndex, found := getRequestRecordDataByRequestID(ctx, requestID)
+	recBin, rec, blockIndex, requestIndex, found := getRequestRecordDataByRequestID(ctx, requestID)
+
 	if !found {
 		return nil
 	}
+
+	if rec.Error != nil {
+		rec.Error.RequestMessageFormat(errors.SandboxErrorMessageResolver(ctx))
+	}
+
+	// TODO: Find better solution (extend receipt itself with error?)
 	return dict.Dict{
-		ParamRequestRecord: recBin,
-		ParamBlockIndex:    codec.EncodeUint32(blockIndex),
-		ParamRequestIndex:  codec.EncodeUint16(requestIndex),
+		ParamErrorMessageFormat: codec.EncodeString(rec.Error.MessageFormat),
+		ParamRequestRecord:      recBin,
+		ParamBlockIndex:         codec.EncodeUint32(blockIndex),
+		ParamRequestIndex:       codec.EncodeUint16(requestIndex),
 	}
 }
 

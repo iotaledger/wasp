@@ -80,6 +80,8 @@ type Sandbox interface {
 	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict)
 	// Event emits an event
 	Event(msg string)
+	// RegisterError registers an error
+	RegisterError(errorId uint16, messageFormat string)
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
 	GetEntropy() hashing.HashValue
 	// AllowanceAvailable specifies max remaining (after transfers) budget of assets the smart contract can take

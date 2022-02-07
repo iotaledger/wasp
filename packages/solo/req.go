@@ -301,7 +301,7 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 	if err != nil {
 		return tx, res, err
 	}
-	return tx, res, receipt.Error()
+	return tx, res, receipt.Error
 }
 
 func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
@@ -369,7 +369,7 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 		return 0, 0, err
 	}
 	res := ch.estimateGas(r)
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error
 }
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
@@ -385,7 +385,7 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	}
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res := ch.estimateGas(r)
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error()
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error
 }
 
 // callViewFull calls the view entry point of the smart contract

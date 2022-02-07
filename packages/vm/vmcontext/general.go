@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -207,4 +208,14 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, desc
 	vmctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
 
 	vmctx.GasBurn(gas.BurnCodeDeployContract)
+}
+
+func (vmctx *VMContext) RegisterError(errorId uint16, messageFormat string) {
+	vmctx.Debugf("vmcontext.RegisterError: errorId: %v, messageFormat: '%s'", errorId, messageFormat)
+
+	params := dict.New()
+	params.Set(errors.ParamErrorId, codec.EncodeUint16(errorId))
+	params.Set(errors.ParamErrorMessageFormat, codec.EncodeString(messageFormat))
+
+	vmctx.Call(errors.Contract.Hname(), errors.FuncRegisterError.Hname(), params, nil)
 }

@@ -15,7 +15,7 @@ func (r VMRunner) Run(task *vm.VMTask) {
 	// optimistic read panic catcher for the whole VM task
 	err := util.CatchPanicReturnError(
 		func() { runTask(task) },
-		coreutil.ErrorStateInvalidated,
+		coreutil.ErrorStateInvalidated.Create(),
 	)
 	if err != nil {
 		task.VMError = err

@@ -2,6 +2,7 @@ package errors
 
 import (
 	"golang.org/x/xerrors"
+	"math"
 )
 
 // ErrorCollection implements IErrorCollection. Is used for global errors. Does not require vm context state.
@@ -23,23 +24,13 @@ func (e *ErrorCollection) Get(errorId uint16) (*ErrorDefinition, error) {
 	return nil, nil
 }
 
-func (e *ErrorCollection) Create(errorId uint16, params ...interface{}) (*BlockError, error) {
-	if errorDefinition, err := e.Get(errorId); err != nil {
-		return nil, err
-	} else if errorDefinition == nil {
-		return nil, xerrors.Errorf("No error found with id %v", errorId)
-	} else {
-		errorInstance := errorDefinition.Create(params...)
-		return &errorInstance, nil
-	}
-}
-
 func (e *ErrorCollection) Register(errorId uint16, messageFormat string) (*ErrorDefinition, error) {
 	if _, exists := e.errors[errorId]; exists {
 		return nil, xerrors.Errorf("Error with id %v already registered", errorId)
 	}
 
 	errorDefinition := ErrorDefinition{
+		prefixId:      math.MaxUint32, // Global errors should be a constant MaxUint32 instead of being a misleading zero.
 		id:            errorId,
 		messageFormat: messageFormat,
 	}

@@ -79,6 +79,10 @@ func (s *sandbox) DeployContract(programHash hashing.HashValue, name, descriptio
 	s.vmctx.DeployContract(programHash, name, description, initParams)
 }
 
+func (s *sandbox) RegisterError(errorId uint16, messageFormat string) {
+	s.vmctx.RegisterError(errorId, messageFormat)
+}
+
 func (s *sandbox) Event(msg string) {
 	s.Log().Infof("event::%s -> '%s'", s.vmctx.CurrentContractHname(), msg)
 	s.vmctx.MustSaveEvent(s.vmctx.CurrentContractHname(), msg)

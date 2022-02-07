@@ -1,9 +1,12 @@
 package util
 
-import "golang.org/x/xerrors"
+import (
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	"golang.org/x/xerrors"
+)
 
-func CatchPanicReturnError(fun func(), catchErrors ...error) error {
-	var err error
+func CatchPanicReturnError(fun func(), catchErrors ...*errors.Error) *errors.Error {
+	var err *errors.Error
 	func() {
 		defer func() {
 			r := recover()

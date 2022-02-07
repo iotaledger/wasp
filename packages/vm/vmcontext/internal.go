@@ -147,14 +147,10 @@ func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
 	return blocklog.NewEventLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex, vmctx.requestEventIndex)
 }
 
-func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.RequestReceipt {
-	errStr := ""
-	if errProvided != nil {
-		errStr = errProvided.Error()
-	}
+func (vmctx *VMContext) writeReceiptToBlockLog(errProvided *iscp.Error) *blocklog.RequestReceipt {
 	receipt := &blocklog.RequestReceipt{
 		Request:       vmctx.req,
-		ErrorStr:      errStr,
+		Error:         errProvided,
 		GasBudget:     vmctx.gasBudgetAdjusted,
 		GasBurned:     vmctx.gasBurned,
 		GasFeeCharged: vmctx.gasFeeCharged,

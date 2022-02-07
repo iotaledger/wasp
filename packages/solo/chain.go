@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"golang.org/x/xerrors"
 	"math"
 	"os"
@@ -340,6 +341,20 @@ func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	return blockInfo
 }
 
+func (ch *Chain) GetErrorMessageFormat(contract iscp.Hname, errorId uint16) (string, error) {
+	ret, err := ch.CallView(errors.Contract.Name, errors.FuncGetErrorMessageFormat.Name,
+		errors.ParamErrorId, errorId, errors.ParamContractHname, contract)
+
+	if err != nil {
+		return "", err
+	}
+	resultDecoder := kvdecoder.New(ret, ch.Log)
+	messageFormat, err := resultDecoder.GetString(errors.ParamErrorMessageFormat)
+
+	require.NoError(ch.Env.T, err)
+	return messageFormat, nil
+}
+
 // GetBlockInfo return BlockInfo for the particular block index in the chain
 func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetBlockInfo.Name,
@@ -377,6 +392,11 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRecei
 		return nil, false
 	}
 	ret1, err := blocklog.RequestReceiptFromBytes(binRec)
+
+	if ret1.Error != nil {
+		ret1.Error.MessageFormat, _ = resultDecoder.GetString(blocklog.ParamErrorMessageFormat)
+	}
+
 	require.NoError(ch.Env.T, err)
 	ret1.BlockIndex = resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	ret1.RequestIndex = resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
@@ -397,6 +417,9 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32) []*blocklog.Reque
 		data, err := recs.GetAt(uint16(i))
 		require.NoError(ch.Env.T, err)
 		ret[i], err = blocklog.RequestReceiptFromBytes(data)
+		if ret[i].Error != nil {
+			ret[i].Error.MessageFormat, _ = ch.GetErrorMessageFormat(ret[i].Error.PrefixId, ret[i].Error.Id)
+		}
 		require.NoError(ch.Env.T, err)
 		ret[i].WithBlockData(blockIndex, uint16(i))
 	}

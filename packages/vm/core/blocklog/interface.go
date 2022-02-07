@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"io"
 	"math"
@@ -58,6 +57,7 @@ const (
 	ParamRequestRecord          = "d"
 	ParamEvent                  = "e"
 	ParamStateControllerAddress = "s"
+	ParamErrorMessageFormat     = "m"
 )
 
 // region BlockInfo //////////////////////////////////////////////////////////////
@@ -305,7 +305,7 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
 	Request       iscp.Request // TODO request may be big (blobs). Do we want to store it all?
-	Error         *errors.BlockError
+	Error         *iscp.Error
 	GasBudget     uint64
 	GasBurned     uint64
 	GasFeeCharged uint64
@@ -321,10 +321,9 @@ func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
 
 func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
 	ret := &RequestReceipt{}
+
 	var err error
-	if ret.Error, err = errors.ErrorFromBytes(mu); err != nil {
-		return nil, err
-	}
+
 	if ret.GasBudget, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
@@ -337,11 +336,28 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	if ret.Request, err = iscp.RequestDataFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
+
+	if isError, err := mu.ReadBool(); err != nil {
+		return nil, err
+	} else if !isError {
+		return ret, nil
+	}
+
+	if ret.Error, err = iscp.ErrorFromBytes(mu, nil); err != nil {
+		return nil, err
+	}
+
 	return ret, nil
 }
 
 func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
+
+	mu.WriteUint64(r.GasBudget).
+		WriteUint64(r.GasBurned).
+		WriteUint64(r.GasFeeCharged)
+
+	iscp.RequestDataToMarshalUtil(r.Request, mu)
 
 	if r.Error == nil {
 		mu.WriteBool(false)
@@ -350,11 +366,6 @@ func (r *RequestReceipt) Bytes() []byte {
 		r.Error.Serialize(mu)
 	}
 
-	mu.WriteUint64(r.GasBudget).
-		WriteUint64(r.GasBurned).
-		WriteUint64(r.GasFeeCharged)
-
-	iscp.RequestDataToMarshalUtil(r.Request, mu)
 	return mu.Bytes()
 }
 
@@ -366,7 +377,7 @@ func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *
 
 func (r *RequestReceipt) String() string {
 	ret := fmt.Sprintf("ID: %s\n", r.Request.ID().String())
-	ret += fmt.Sprintf("Err: '%s'\n", r.Error.Message())
+	ret += fmt.Sprintf("Err: '%s'\n", r.Error)
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
 	ret += fmt.Sprintf("Call data: %s\n", r.Request.String())
@@ -382,7 +393,7 @@ func (r *RequestReceipt) Short() string {
 	ret := fmt.Sprintf("%s/%s", prefix, r.Request.ID())
 
 	if r.Error != nil {
-		ret += ": '" + r.Error.Message() + "'"
+		ret += ": '" + r.Error.Error() + "'"
 	}
 	return ret
 }

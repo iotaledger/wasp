@@ -1,8 +1,9 @@
 package vmcontext
 
 import (
-	"errors"
+	errorlib "errors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 	"math"
 	"math/big"
 	"runtime/debug"
@@ -111,7 +112,7 @@ func (vmctx *VMContext) prepareGasBudget() {
 }
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
-func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict, callErr error) {
+func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict, callErr *iscp.Error) {
 	vmctx.txsnapshot = vmctx.createTxBuilderSnapshot()
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
@@ -146,7 +147,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	return receipt, callRet, callErr
 }
 
-func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
+func (vmctx *VMContext) checkVMPluginPanic(r interface{}) *iscp.Error {
 	if r == nil {
 		return nil
 	}
@@ -156,16 +157,18 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 	}
 	// Otherwise, the panic is wrapped into the returned error, including gas-related panic
 	switch err := r.(type) {
+	case *iscp.Error:
+		return r.(*iscp.Error)
 	case *kv.DBError:
 		panic(err)
 	case string:
-		r = errors.New(err)
+		return vmtxbuilder.ErrBasicMessageError.Create(err)
 	case error:
-		if errors.Is(err, coreutil.ErrorStateInvalidated) {
+		if errorlib.Is(err, coreutil.ErrorStateInvalidated) {
 			panic(err)
 		}
 	}
-	return xerrors.Errorf("%v", r)
+	return vmtxbuilder.ErrBasicMessageError.Create(r)
 }
 
 // callFromRequest is the call itself. Assumes sc exists
