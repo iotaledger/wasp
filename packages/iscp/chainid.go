@@ -4,8 +4,6 @@
 package iscp
 
 import (
-	"encoding/hex"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -31,14 +29,6 @@ func ChainIDFromBytes(data []byte) (*ChainID, error) {
 	}
 	copy(ret[:], data)
 	return &ret, nil
-}
-
-func ChainIDFromHex(s string) (*ChainID, error) {
-	bin, err := hex.DecodeString(s)
-	if err != nil {
-		return &ChainID{}, err
-	}
-	return ChainIDFromBytes(bin)
 }
 
 func ChainIDFromString(s string) (*ChainID, error) {
@@ -96,13 +86,9 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 	return *chid == *chid1
 }
 
-// String human readable form (hex encoding)
+// String human readable form (bech32)
 func (chid *ChainID) String() string {
-	return chid.AsAddress().Bech32(iotago.NetworkPrefix(Bech32Prefix))
-}
-
-func (chid *ChainID) Hex() string {
-	return hex.EncodeToString(chid[:])
+	return chid.AsAddress().Bech32(Bech32Prefix)
 }
 
 func (chid *ChainID) AsAddress() iotago.Address {
@@ -110,6 +96,7 @@ func (chid *ChainID) AsAddress() iotago.Address {
 	return &ret
 }
 
-func (chid *ChainID) AsAliasAddress() iotago.AliasAddress {
-	return iotago.AliasAddress(*chid)
+func (chid *ChainID) AsAliasAddress() *iotago.AliasAddress {
+	ret := iotago.AliasAddress(*chid)
+	return &ret
 }

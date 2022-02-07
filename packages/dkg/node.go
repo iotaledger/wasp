@@ -99,7 +99,7 @@ func (n *Node) Close() {
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
 //nolint:funlen,gocritic
 func (n *Node) GenerateDistributedKey(
-	peerPubs []cryptolib.PublicKey,
+	peerPubs []*cryptolib.PublicKey,
 	threshold uint16,
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
 	stepRetry time.Duration, // Retry for Initiator -> Peer communication.

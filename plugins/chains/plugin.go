@@ -1,6 +1,7 @@
 package chains
 
 import (
+	"context"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -31,7 +32,7 @@ var (
 )
 
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
@@ -48,7 +49,7 @@ func run(_ *node.Plugin) {
 		peering.DefaultNetworkProvider(),
 		database.GetOrCreateKVStore,
 	)
-	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
+	err := daemon.BackgroundWorker(PluginName, func(ctx context.Context) {
 		if parameters.GetBool(parameters.MetricsEnabled) {
 			allMetrics = metrics.AllMetrics()
 		}
@@ -60,7 +61,7 @@ func run(_ *node.Plugin) {
 
 		initialized.SetReady()
 
-		<-shutdownSignal
+		<-ctx.Done()
 
 		log.Info("dismissing chains...")
 		go func() {

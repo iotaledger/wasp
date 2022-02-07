@@ -112,7 +112,7 @@ type NodeConnection interface {
 	AttachToUnspentAliasOutputReceived(*iotago.AliasAddress, NodeConnectionHandleUnspentAliasOutputFun)
 	PullState(addr *iotago.AliasAddress)
 	PullTransactionInclusionState(addr iotago.Address, txid iotago.TransactionID)
-	PullConfirmedOutput(addr iotago.Address, outputID iotago.OutputID)
+	PullConfirmedOutput(addr iotago.Address, outputID *iotago.OutputID)
 	PostTransaction(tx *iotago.Transaction)
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 	DetachFromTransactionReceived(*iotago.AliasAddress)
@@ -129,7 +129,7 @@ type ChainNodeConnection interface {
 	AttachToUnspentAliasOutputReceived(NodeConnectionHandleUnspentAliasOutputFun)
 	PullState()
 	PullTransactionInclusionState(txid iotago.TransactionID)
-	PullConfirmedOutput(outputID iotago.OutputID)
+	PullConfirmedOutput(outputID *iotago.OutputID)
 	PostTransaction(tx *iotago.Transaction)
 	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 	DetachFromTransactionReceived()

@@ -4,10 +4,10 @@
 package admapi
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -101,13 +101,9 @@ func (w *chainWebAPI) handleDeactivateChain(c echo.Context) error {
 }
 
 func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
-	scAddress, err := ledgerstate.AddressFromBase58EncodedString(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainID")))
-	}
-	chainID, err := iscp.ChainIDFromAddress(scAddress)
-	if err != nil {
-		return err
 	}
 
 	chain := w.chains().Get(chainID, true)
@@ -122,20 +118,20 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	}
 
 	chainNodes := chain.GetChainNodes()
-	peeringStatus := make(map[cryptolib.PublicKey]peering.PeerStatusProvider)
+	peeringStatus := make(map[*cryptolib.PublicKey]peering.PeerStatusProvider)
 	for _, n := range w.network.PeerStatus() {
-		peeringStatus[*n.PubKey()] = n
+		peeringStatus[n.PubKey()] = n
 	}
-	candidateNodes := make(map[cryptolib.PublicKey]*governance.AccessNodeInfo)
+	candidateNodes := make(map[*cryptolib.PublicKey]*governance.AccessNodeInfo)
 	for _, n := range chain.GetCandidateNodes() {
-		pubKey, _, err := cryptolib.PublicKeyFromBytes(n.NodePubKey)
+		pubKey, err := cryptolib.PublicKeyFromBytes(n.NodePubKey)
 		if err != nil {
 			return err
 		}
-		candidateNodes[pubKey] = n
+		candidateNodes[&pubKey] = n
 	}
 
-	inChainNodes := make(map[cryptolib.PublicKey]bool)
+	inChainNodes := make(map[*cryptolib.PublicKey]bool)
 
 	//
 	// Committee nodes.
@@ -154,7 +150,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	}
 
 	res := model.ChainInfo{
-		ChainID:        model.ChainID(chainID.Base58()),
+		ChainID:        model.ChainID(chainID.String()),
 		Active:         chainRecord.Active,
 		StateAddress:   model.NewAddress(committeeInfo.Address),
 		CommitteeNodes: cmtNodes,
@@ -167,14 +163,14 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 
 func makeCmtNodes(
 	dkShare *tcrypto.DKShare,
-	peeringStatus map[cryptolib.PublicKey]peering.PeerStatusProvider,
-	candidateNodes map[cryptolib.PublicKey]*governance.AccessNodeInfo,
-	inChainNodes map[cryptolib.PublicKey]bool,
+	peeringStatus map[*cryptolib.PublicKey]peering.PeerStatusProvider,
+	candidateNodes map[*cryptolib.PublicKey]*governance.AccessNodeInfo,
+	inChainNodes map[*cryptolib.PublicKey]bool,
 ) []*model.ChainNodeStatus {
 	cmtNodes := make([]*model.ChainNodeStatus, 0)
 	for _, cmtNodePubKey := range dkShare.NodePubKeys {
 		cmtNodes = append(cmtNodes, makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes))
-		inChainNodes[*cmtNodePubKey] = true
+		inChainNodes[cmtNodePubKey] = true
 	}
 	return cmtNodes
 }
@@ -182,16 +178,16 @@ func makeCmtNodes(
 func makeAcnNodes(
 	dkShare *tcrypto.DKShare,
 	chainNodes []peering.PeerStatusProvider,
-	peeringStatus map[cryptolib.PublicKey]peering.PeerStatusProvider,
-	candidateNodes map[cryptolib.PublicKey]*governance.AccessNodeInfo,
-	inChainNodes map[cryptolib.PublicKey]bool,
+	peeringStatus map[*cryptolib.PublicKey]peering.PeerStatusProvider,
+	candidateNodes map[*cryptolib.PublicKey]*governance.AccessNodeInfo,
+	inChainNodes map[*cryptolib.PublicKey]bool,
 ) []*model.ChainNodeStatus {
 	acnNodes := make([]*model.ChainNodeStatus, 0)
 	for _, chainNode := range chainNodes {
 		acnPubKey := chainNode.PubKey()
 		skip := false
 		for _, cmtNodePubKey := range dkShare.NodePubKeys {
-			if *acnPubKey == *cmtNodePubKey {
+			if bytes.Equal(*acnPubKey, *cmtNodePubKey) {
 				skip = true
 				break
 			}
@@ -200,23 +196,23 @@ func makeAcnNodes(
 			continue
 		}
 		acnNodes = append(acnNodes, makeChainNodeStatus(acnPubKey, peeringStatus, candidateNodes))
-		inChainNodes[*acnPubKey] = true
+		inChainNodes[acnPubKey] = true
 	}
 	return acnNodes
 }
 
 func makeCndNodes(
-	peeringStatus map[cryptolib.PublicKey]peering.PeerStatusProvider,
-	candidateNodes map[cryptolib.PublicKey]*governance.AccessNodeInfo,
-	inChainNodes map[cryptolib.PublicKey]bool,
+	peeringStatus map[*cryptolib.PublicKey]peering.PeerStatusProvider,
+	candidateNodes map[*cryptolib.PublicKey]*governance.AccessNodeInfo,
+	inChainNodes map[*cryptolib.PublicKey]bool,
 ) ([]*model.ChainNodeStatus, error) {
 	cndNodes := make([]*model.ChainNodeStatus, 0)
 	for _, c := range candidateNodes {
-		pubKey, _, err := cryptolib.PublicKeyFromBytes(c.NodePubKey)
+		pubKey, err := cryptolib.PublicKeyFromBytes(c.NodePubKey)
 		if err != nil {
 			return nil, err
 		}
-		if _, ok := inChainNodes[pubKey]; ok {
+		if _, ok := inChainNodes[&pubKey]; ok {
 			continue // Only include unused candidates here.
 		}
 		cndNodes = append(cndNodes, makeChainNodeStatus(&pubKey, peeringStatus, candidateNodes))
@@ -226,20 +222,20 @@ func makeCndNodes(
 
 func makeChainNodeStatus(
 	pubKey *cryptolib.PublicKey,
-	peeringStatus map[cryptolib.PublicKey]peering.PeerStatusProvider,
-	candidateNodes map[cryptolib.PublicKey]*governance.AccessNodeInfo,
+	peeringStatus map[*cryptolib.PublicKey]peering.PeerStatusProvider,
+	candidateNodes map[*cryptolib.PublicKey]*governance.AccessNodeInfo,
 ) *model.ChainNodeStatus {
 	cns := model.ChainNodeStatus{
 		Node: model.PeeringNodeStatus{
-			PubKey: pubKey.String(),
+			// PubKey: pubKey, // TODO
 		},
 	}
-	if n, ok := peeringStatus[*pubKey]; ok {
+	if n, ok := peeringStatus[pubKey]; ok {
 		cns.Node.NetID = n.NetID()
 		cns.Node.IsAlive = n.IsAlive()
 		cns.Node.NumUsers = n.NumUsers()
 	}
-	if n, ok := candidateNodes[*pubKey]; ok {
+	if n, ok := candidateNodes[pubKey]; ok {
 		cns.ForCommittee = n.ForCommittee
 		cns.ForAccess = true
 		cns.AccessAPI = n.AccessAPI

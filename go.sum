@@ -87,6 +87,7 @@ github.com/NebulousLabs/merkletree v0.0.0-20181203152040-08d5d54b07f5/go.mod h1:
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/PuerkitoBio/goquery v1.6.1 h1:FgjbQZKl5HTmcn4sKBgvx8vv63nhyhIpv7lJpFGCWpk=
 github.com/PuerkitoBio/goquery v1.6.1/go.mod h1:GsLWisAFVj4WgDibEWF4pvYnkVQBpKBKeU+7zCJoLcc=
+github.com/ReneKroon/ttlcache/v2 v2.11.0/go.mod h1:mBxvsNY+BT8qLLd6CuAJubbKo6r0jh3nb5et22bbfGY=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
@@ -634,7 +635,6 @@ github.com/influxdata/tdigest v0.0.0-20181121200506-bf2b5ad3c0a9/go.mod h1:Js0mq
 github.com/influxdata/usage-client v0.0.0-20160829180054-6d3895376368/go.mod h1:Wbbw6tYNvwa5dlB6304Sd+82Z3f7PmVZHVKU637d4po=
 github.com/iotaledger/goshimmer v0.8.5 h1:jpAWk60yeBlvFGLS44gI3GsSYdWbUMdPU5fCM/s6Buk=
 github.com/iotaledger/goshimmer v0.8.5/go.mod h1:rEM1UEPZmVqBhsl2EX6uSbuuqSQLc4Or2P2XynRF1p0=
-github.com/iotaledger/hive.go v0.0.0-20211207105259-9e48241c18f7 h1:bZVD8Vr6B2V+VbIxjPQExVgo+VjCwf6dHxoQKje2IdU=
 github.com/iotaledger/hive.go v0.0.0-20211207105259-9e48241c18f7/go.mod h1:F2KWrG2oFNebt3PZf3hzh2z860Z568etEJDo74SchHg=
 github.com/iotaledger/hive.go v0.0.0-20220131083956-9001f8dfb134 h1:Xy9XCaP7Nsymnr8/cuYNp69vF+nTU0sBlHO46KSW3nw=
 github.com/iotaledger/hive.go v0.0.0-20220131083956-9001f8dfb134/go.mod h1:kAp5zXl/MWy+2LYf1APBwSlX9FZ4uIIJr0QrvVLTvsc=
@@ -1982,6 +1982,7 @@ golang.org/x/tools v0.0.0-20200804011535-6c149bb5ef0d/go.mod h1:njjCfa9FT2d7l9Bc
 golang.org/x/tools v0.0.0-20200825202427-b303f430e36d/go.mod h1:njjCfa9FT2d7l9Bc6FUM5FLjQPp3cFF28FI3qnDFljA=
 golang.org/x/tools v0.0.0-20201224043029-2b0845dc783e/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.0.0-20210106214847-113979e3529a/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
+golang.org/x/tools v0.0.0-20210112230658-8b4aab62c064/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.1.0/go.mod h1:xkSsbof2nBLbhDlRMhhhyNLN/zl3eTqcnHD5viDpcZ0=
 golang.org/x/tools v0.1.1/go.mod h1:o0xws9oXOQQZyjljx8fwUC0k7L1pTE6eaCbjGeHmOkk=
 golang.org/x/tools v0.1.5 h1:ouewzE6p+/VEB31YYnTbEJdi8pFqKp4P4n85vwo3DHA=

@@ -41,7 +41,7 @@ var (
 )
 
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 type waspServices struct{}
@@ -175,7 +175,7 @@ func run(_ *node.Plugin) {
 	}
 }
 
-func worker(shutdownSignal <-chan struct{}) {
+func worker(ctx context.Context) {
 	stopped := make(chan struct{})
 	go func() {
 		defer close(stopped)
@@ -189,7 +189,7 @@ func worker(shutdownSignal <-chan struct{}) {
 	}()
 
 	select {
-	case <-shutdownSignal:
+	case <-ctx.Done():
 	case <-stopped:
 	}
 
