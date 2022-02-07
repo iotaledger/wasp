@@ -8,9 +8,8 @@ import "@iscpcontract/ISCP.sol";
 ISCP constant iscp = ISCP(ISCP_CONTRACT_ADDRESS);
 
 contract ISCPTest {
-    function getChainId() public view returns (ISCPAddress memory) {
-		ISCPAddress memory r = iscp.getChainId();
-		return r;
+    function getChainID() public view returns (ISCPChainID) {
+		return iscp.getChainID();
     }
 
 	function triggerEvent(string memory s) public {
