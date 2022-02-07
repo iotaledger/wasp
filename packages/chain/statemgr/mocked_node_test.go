@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -23,17 +22,12 @@ import (
 )
 
 type MockedNode struct {
-	PubKey          *ed25519.PublicKey
-	Env             *MockedEnv
-	store           kvstore.KVStore
-	NodeConn        *testchain.MockedNodeConn
-	ChainCore       *testchain.MockedChainCore
-	ChainPeers      peering.PeerDomainProvider
-	stateSync       coreutil.ChainStateSync
-	Peers           peering.PeerDomainProvider
-	StateManager    chain.StateManager
-	StateTransition *testchain.MockedStateTransition
-	Log             *logger.Logger
+	PubKey       *ed25519.PublicKey
+	Env          *MockedEnv
+	NodeConn     *testchain.MockedNodeConn
+	ChainCore    *testchain.MockedChainCore
+	StateManager chain.StateManager
+	Log          *logger.Logger
 }
 
 type MockedStateManagerMetrics struct{}
@@ -46,30 +40,26 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 	log := env.Log.Named(nodePubKeyStr)
 	var peeringID peering.PeeringID
 	copy(peeringID[:], env.ChainID[:iotago.AliasIDLength])
-	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(peeringID, env.NodePubKeys)
-	require.NoError(env.T, err)
 	stateMgrDomain, err := NewDomainWithFallback(peeringID, env.NetworkProviders[nodeIndex], log)
 	require.NoError(env.T, err)
 	ret := &MockedNode{
-		PubKey:     nodePubKey,
-		Env:        env,
-		NodeConn:   testchain.NewMockedNodeConnection("Node_"+nodePubKeyStr, env.Ledger, log),
-		store:      mapdb.NewMapDB(),
-		stateSync:  coreutil.NewChainStateSync(),
-		ChainCore:  testchain.NewMockedChainCore(env.T, env.ChainID, log),
-		ChainPeers: peers,
-		Peers:      peers,
-		Log:        log,
+		PubKey:    nodePubKey,
+		Env:       env,
+		NodeConn:  testchain.NewMockedNodeConnection("Node_"+nodePubKeyStr, env.Ledger, log),
+		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, log),
+		Log:       log,
 	}
 
+	stateSync := coreutil.NewChainStateSync()
+	store := mapdb.NewMapDB()
 	stateMgrMetrics := new(MockedStateManagerMetrics)
 	ret.ChainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
-		return ret.stateSync
+		return stateSync
 	})
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
-		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
+		return state.NewOptimisticStateReader(store, stateSync)
 	})
-	ret.StateManager = New(ret.store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, timers)
+	ret.StateManager = New(store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, timers)
 	ret.NodeConn.AttachToUnspentAliasOutputReceived(func(chainOutput *iscp.AliasOutputWithID, timestamp time.Time) {
 		ret.Log.Debugf("Alias output received %v: enqueing state message", iscp.OID(chainOutput.ID()))
 		ret.StateManager.EnqueueStateMsg(&messages.StateMsg{

@@ -4,7 +4,6 @@
 package statemgr
 
 import (
-	"io"
 	"sync"
 	"testing"
 
@@ -32,7 +31,6 @@ type MockedEnv struct {
 	NodePubKeys       []*ed25519.PublicKey
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
-	NetworkCloser     io.Closer
 	ChainID           *iscp.ChainID
 	mutex             sync.Mutex
 	Nodes             map[ed25519.PublicKey]*MockedNode
@@ -74,7 +72,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *iotago.
 
 	nodeIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	ret.NodePubKeys = testpeers.PublicKeys(nodeIdentities)
-	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
+	ret.NetworkProviders, _ = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
 
 	log.Infof("Testing environment is ready")
 
