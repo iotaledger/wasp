@@ -3,7 +3,7 @@ package vmcontext
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 
 	"github.com/iotaledger/wasp/packages/kv"
 
@@ -100,7 +100,7 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 		return err
 	}
 	if vmctx.txbuilder.InputsAreFull() {
-		return exceptions.ErrInputLimitExceeded
+		return vmexceptions.ErrInputLimitExceeded
 	}
 	if err := vmctx.checkReasonRequestProcessed(); err != nil {
 		return err

@@ -1,7 +1,7 @@
 package vmtxbuilder
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -125,7 +125,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		require.EqualValues(t, 0, len(totals.NativeTokenBalances))
 
 		require.EqualValues(t, 1, txb.numInputs())
-		require.EqualValues(t, 1, txb.NumOutputs())
+		require.EqualValues(t, 1, txb.numOutputs())
 		require.False(t, txb.InputsAreFull())
 		require.False(t, txb.outputsAreFull())
 
@@ -404,8 +404,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		initTest()
 		err := util.CatchPanicReturnError(func() {
 			runConsume(runTimes, testAmount)
-		}, exceptions.ErrInputLimitExceeded)
-		require.Error(t, err, exceptions.ErrInputLimitExceeded)
+		}, vmexceptions.ErrInputLimitExceeded)
+		require.Error(t, err, vmexceptions.ErrInputLimitExceeded)
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
@@ -427,9 +427,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		err = util.CatchPanicReturnError(func() {
 			runPostRequest(runTimesOutputs, 1)
-		}, exceptions.ErrOutputLimitExceeded)
+		}, vmexceptions.ErrOutputLimitExceeded)
 
-		require.Error(t, err, exceptions.ErrOutputLimitExceeded)
+		require.Error(t, err, vmexceptions.ErrOutputLimitExceeded)
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
@@ -451,9 +451,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		err = util.CatchPanicReturnError(func() {
 			runPostRequestRandomly(runTimesOutputs, 1)
-		}, exceptions.ErrOutputLimitExceeded)
+		}, vmexceptions.ErrOutputLimitExceeded)
 
-		require.Error(t, err, exceptions.ErrOutputLimitExceeded)
+		require.Error(t, err, vmexceptions.ErrOutputLimitExceeded)
 
 		_, _, err = txb.Totals()
 		require.NoError(t, err)
@@ -733,8 +733,8 @@ func TestFoundries(t *testing.T) {
 		initTest()
 		err := util.CatchPanicReturnError(func() {
 			createNFoundries(5)
-		}, exceptions.ErrNotEnoughFundsForInternalDustDeposit)
-		require.Error(t, err, exceptions.ErrNotEnoughFundsForInternalDustDeposit)
+		}, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
+		require.Error(t, err, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 
 		essence := txb.BuildTransactionEssence(&iscp.StateData{})
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)

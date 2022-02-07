@@ -1,7 +1,7 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"math"
 	"math/big"
 
@@ -215,6 +215,6 @@ func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64) {
 		})
 	}, accounts.ErrNotEnoughFunds)
 	if err != nil {
-		panic(exceptions.ErrNotEnoughFundsForInternalDustDeposit)
+		panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}
 }

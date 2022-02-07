@@ -20,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/exceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
 
@@ -66,7 +66,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 				Return:  callRet,
 				Error:   callErr,
 			}
-		}, exceptions.All...,
+		}, vmexceptions.AllProtocolLimits...,
 	)
 	if err != nil {
 		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
@@ -151,7 +151,7 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 		return nil
 	}
 	// re-panic-ing if error it not user nor VM plugin fault.
-	if exceptions.IsProtocolLimitException(r) {
+	if vmexceptions.IsSkipRequestException(r) {
 		panic(r)
 	}
 	// Otherwise, the panic is wrapped into the returned error, including gas-related panic
