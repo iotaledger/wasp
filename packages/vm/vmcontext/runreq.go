@@ -87,21 +87,30 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		return
 	}
 	// Consume the output. Adjustment in L2 is needed because of the dust in the internal UTXOs
-	dustAdjustmentOfTheCommonAccount := vmctx.txbuilder.Consume(vmctx.req)
-	// update the state, the account ledger
-	// NOTE: sender account will be CommonAccount if sender address is not available
-	// It means any random sends to the chain end up in the common account
-	vmctx.creditToAccount(vmctx.req.SenderAccount(), vmctx.req.Assets())
+	dustAdjustment := vmctx.txbuilder.Consume(vmctx.req)
 
-	// adjust the common account with the dust consumed or returned by internal UTXOs
-	// If common account does not contain enough funds for internal dust, it panics with
-	// vmtxbuilder.ErrNotEnoughFundsForInternalDustDeposit and the request will be skipped
-	vmctx.adjustL2IotasIfNeeded(dustAdjustmentOfTheCommonAccount)
+	// if sender is specified, all assets goes to sender's account
+	// Otherwise it all goes to the common account and panics is logged in the SC call
+	account := vmctx.req.SenderAccount()
+	if account == nil {
+		account = commonaccount.Get(vmctx.ChainID())
+	}
+	vmctx.creditToAccount(account, vmctx.req.Assets())
+
+	// adjust the sender's account with the dust consumed or returned by internal UTXOs
+	// if iotas in the sender's account is not enough for the dust deposit of newly created TNT outputs
+	// it will panic with exceptions.ErrNotEnoughFundsForInternalDustDeposit
+	// TNT outputs will use dust deposit from the caller
+	// TODO remove attack vector when iotas for dust deposit is not enough and the request keeps being skipped
+	vmctx.adjustL2IotasIfNeeded(dustAdjustment, account)
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
 	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
 }
 
 func (vmctx *VMContext) prepareGasBudget() {
+	if vmctx.req.SenderAccount() == nil {
+		return
+	}
 	if vmctx.isInitChainRequest() {
 		return
 	}
@@ -172,6 +181,10 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 func (vmctx *VMContext) callFromRequest() dict.Dict {
 	vmctx.Debugf("callFromRequest: %s", vmctx.req.ID().String())
 
+	if vmctx.req.SenderAccount() == nil {
+		// if sender unknown, follow panic path
+		panic(ErrSenderUnknown)
+	}
 	// calling only non view entry points. Calling the view will trigger error and fallback
 	entryPoint := vmctx.req.CallTarget().EntryPoint
 	targetContract := vmctx.targetContract()
@@ -263,8 +276,9 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 func (vmctx *VMContext) chargeGasFee() {
 	// disable gas burn
 	vmctx.gasBurnEnable(false)
-	if vmctx.req.SenderAddress() == nil {
-		panic("inconsistency: vmctx.req.Request().SenderAddress() == nil")
+	if vmctx.req.SenderAccount() == nil {
+		// no charging if sender is unknown
+		return
 	}
 	if vmctx.isInitChainRequest() {
 		// do not charge gas fees if init request

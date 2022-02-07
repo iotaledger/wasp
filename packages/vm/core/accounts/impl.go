@@ -284,7 +284,7 @@ func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 	}
 
 	// adjust iotas on L2 due to the possible change in dust deposit
-	AdjustAccountIotas(ctx.State(), commonaccount.Get(ctx.ChainID()), dustAdjustment)
+	AdjustAccountIotas(ctx.State(), ctx.Caller(), dustAdjustment)
 	return nil
 }
 
