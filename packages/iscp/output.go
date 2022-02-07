@@ -47,7 +47,7 @@ func (aowiT *AliasOutputWithID) GetStateCommitment() (hashing.HashValue, error) 
 }
 
 func (aowiT *AliasOutputWithID) GetStateAddress() iotago.Address {
-	return aowiT.output.StateController
+	return aowiT.output.StateController()
 }
 
 func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {
@@ -66,20 +66,6 @@ func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {
 	if ao1.AliasID != ao2.AliasID {
 		return false
 	}
-	if ao1.StateController == nil {
-		if ao2.StateController != nil {
-			return false
-		}
-	} else if !ao1.StateController.Equal(ao2.StateController) {
-		return false
-	}
-	if ao1.GovernanceController == nil {
-		if ao2.StateController != nil {
-			return false
-		}
-	} else if !ao1.GovernanceController.Equal(ao2.GovernanceController) {
-		return false
-	}
 	if ao1.StateIndex != ao2.StateIndex {
 		return false
 	}
@@ -88,6 +74,14 @@ func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {
 	}
 	if ao1.FoundryCounter != ao2.FoundryCounter {
 		return false
+	}
+	if len(ao1.Conditions) != len(ao2.Conditions) {
+		return false
+	}
+	for index := range ao1.Conditions {
+		if !ao1.Conditions[index].Equal(ao2.Conditions[index]) {
+			return false
+		}
 	}
 	return ao1.Blocks.Equal(ao2.Blocks)
 }

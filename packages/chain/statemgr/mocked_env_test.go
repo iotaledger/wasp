@@ -55,10 +55,12 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *iotago.
 	addr := cryptolib.Ed25519AddressFromPubKey(cryptolib.HivePublicKeyToCryptolibPublicKey(keyPair.PublicKey))
 
 	originOutput := &iotago.AliasOutput{
-		Amount:               iotago.TokenSupply,
-		StateController:      addr,
-		GovernanceController: addr,
-		StateMetadata:        state.OriginStateHash().Bytes(),
+		Amount:        iotago.TokenSupply,
+		StateMetadata: state.OriginStateHash().Bytes(),
+		Conditions: iotago.UnlockConditions{
+			&iotago.StateControllerAddressUnlockCondition{Address: addr},
+			&iotago.GovernorAddressUnlockCondition{Address: addr},
+		},
 		Blocks: iotago.FeatureBlocks{
 			&iotago.SenderFeatureBlock{
 				Address: addr,
