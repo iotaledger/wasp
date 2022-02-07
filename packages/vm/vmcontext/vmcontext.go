@@ -39,6 +39,7 @@ type VMContext struct {
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
 	blockOutputCount     uint8
+	dustAssumptions      *transaction.DustDepositAssumption
 	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
 	txsnapshot           *vmtxbuilder.AnchorTransactionBuilder
 	gasBurnedTotal       uint64
@@ -122,18 +123,17 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.gasBurnLog = gas.NewGasBurnLog()
 	}
 	// at the beginning of each block
-	var dustAssumptions *transaction.DustDepositAssumption
 
 	if task.AnchorOutput.StateIndex > 0 {
 		ret.currentStateUpdate = state.NewStateUpdate()
 
 		// load and validate chain's dust assumptions about internal outputs. They must not get bigger!
 		ret.callCore(accounts.Contract, func(s kv.KVStore) {
-			dustAssumptions = accounts.GetDustAssumptions(s)
+			ret.dustAssumptions = accounts.GetDustAssumptions(s)
 		})
 		currentDustDepositValues := transaction.NewDepositEstimate(task.RentStructure)
-		if currentDustDepositValues.AnchorOutput > dustAssumptions.AnchorOutput ||
-			currentDustDepositValues.NativeTokenOutput > dustAssumptions.NativeTokenOutput {
+		if currentDustDepositValues.AnchorOutput > ret.dustAssumptions.AnchorOutput ||
+			currentDustDepositValues.NativeTokenOutput > ret.dustAssumptions.NativeTokenOutput {
 			panic(ErrInconsistentDustAssumptions)
 		}
 
@@ -146,7 +146,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.currentStateUpdate = nil
 	} else {
 		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
-		dustAssumptions = transaction.NewDepositEstimate(task.RentStructure)
+		ret.dustAssumptions = transaction.NewDepositEstimate(task.RentStructure)
 	}
 
 	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.ExtendedOutput, *iotago.UTXOInput) {
@@ -160,7 +160,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		&task.AnchorOutputID,
 		nativeTokenBalanceLoader,
 		foundryLoader,
-		*dustAssumptions,
+		*ret.dustAssumptions,
 		task.RentStructure,
 	)
 

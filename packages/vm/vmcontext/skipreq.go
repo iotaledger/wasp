@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/iscp"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
@@ -99,6 +100,9 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 	if err := vmctx.checkReasonExpiry(); err != nil {
 		return err
 	}
+	if err := vmctx.checkReasonNotEnoughIotas(); err != nil {
+		return err
+	}
 	if vmctx.txbuilder.InputsAreFull() {
 		return vmexceptions.ErrInputLimitExceeded
 	}
@@ -177,7 +181,20 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 // checkReasonReturnAmount skipping anything with return amounts in this version. There's no risk to lose funds
 func (vmctx *VMContext) checkReasonReturnAmount() error {
 	if _, ok := vmctx.req.AsOnLedger().Features().ReturnAmount(); ok {
-		return xerrors.Errorf("return amount feature not supported in this version")
+		return xerrors.New("return amount feature not supported in this version")
+	}
+	return nil
+}
+
+func (vmctx *VMContext) checkReasonNotEnoughIotas() error {
+	out := vmctx.req.AsOnLedger().Output()
+	if len(iscp.AssetsFromOutput(out).Tokens) == 0 {
+		return nil
+	}
+	// if request contains at least 1 native asset, require deposit of iotas at least the amount needed for TNT output
+	if out.Deposit() < vmctx.dustAssumptions.NativeTokenOutput {
+		return xerrors.Errorf("amount of iotas expected to be at least %d (found %d). Must be enough for dust deposit of internal TNT output",
+			vmctx.dustAssumptions.NativeTokenOutput, out.Deposit())
 	}
 	return nil
 }
