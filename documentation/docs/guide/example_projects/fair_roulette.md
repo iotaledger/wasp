@@ -131,7 +131,7 @@ All state changes such as the `round started` ,`round ended`, `placed bets`, and
 
 #### Building the Contract
 
-```
+```bash
 cd contracts/wasm/fairroulette
 wasm-pack build 
 ```
