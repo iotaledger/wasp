@@ -117,7 +117,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	block, err := ch.State.ExtractBlock()
 	require.NoError(ch.Env.T, err)
 	require.NotNil(ch.Env.T, block)
-	block.SetApprovingOutputID(anchor.OutputID)
+	block.SetApprovingOutputID(anchor.OutputID.UTXOInput())
 
 	err = ch.State.Commit(block)
 	require.NoError(ch.Env.T, err)
@@ -125,7 +125,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(ch.ChainID), ch.State.BlockIndex())
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
-	require.EqualValues(ch.Env.T, anchor.OutputID, blockBack.ApprovingOutputID())
+	require.EqualValues(ch.Env.T, anchor.OutputID, blockBack.ApprovingOutputID().ID())
 
 	chain.PublishStateTransition(ch.ChainID, anchor.OutputID, stateOutput, len(reqids))
 	chain.PublishRequestsSettled(ch.ChainID, anchor.StateIndex, reqids)
