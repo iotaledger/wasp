@@ -29,6 +29,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/xerrors"
@@ -142,12 +144,6 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		opt.RentStructure = testdeserparams.RentStructure()
 	}
 
-	// disable wasmtime vm for now
-	//err := processorConfig.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (iscp.VMProcessor, error) {
-	//	return wasmproc.GetProcessor(binary, log)
-	//})
-	//require.NoError(t, err)
-
 	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:]).WithRentStructure(opt.RentStructure)
 	ret := &Solo{
 		T:                            t,
@@ -162,6 +158,11 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v, milestone index: #%d",
 		globalTime.Time.Format(timeLayout), ret.utxoDB.TimeStep(), globalTime.MilestoneIndex)
+
+	err := ret.processorConfig.RegisterVMType(vmtypes.WasmTime, func(binaryCode []byte) (iscp.VMProcessor, error) {
+		return wasmhost.GetProcessor(binaryCode, opt.Log)
+	})
+	require.NoError(t, err)
 
 	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
 		ret.logger.Infof("solo publisher: %s %v", msgType, parts)

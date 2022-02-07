@@ -57,9 +57,8 @@ func AgentIDFromBytes(buf []byte) ScAgentID {
 	if len(buf) != ScAgentIDLength {
 		panic("invalid AgentID length")
 	}
-	// max ledgerstate.AliasAddressType
-	if buf[0] > 2 {
-		panic("invalid AgentID: address type > 2")
+	if buf[0] > AddressNFT {
+		panic("invalid AgentID address type")
 	}
 	return ScAgentID{
 		address: AddressFromBytes(buf[:ScAddressLength]),

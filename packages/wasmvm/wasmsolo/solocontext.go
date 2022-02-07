@@ -178,7 +178,7 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 		soloEnv = env[0]
 	}
 	if soloEnv == nil {
-		soloEnv = solo.New(t, &solo.InitOptions{Debug: SoloDebug, PrintStackTrace: SoloStackTracing})
+		soloEnv = solo.New(t, &solo.InitOptions{Debug: SoloDebug, PrintStackTrace: SoloStackTracing, AutoAdjustDustDeposit: true})
 	}
 	return soloEnv.NewChain(nil, chainName)
 }
