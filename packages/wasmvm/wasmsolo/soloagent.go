@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -25,7 +26,7 @@ func NewSoloAgent(env *solo.Solo) *SoloAgent {
 }
 
 func (a *SoloAgent) ScAddress() wasmtypes.ScAddress {
-	return SoloConvertor{}.ScAddress(a.address)
+	return wasmhost.WasmConvertor{}.ScAddress(a.address)
 }
 
 func (a *SoloAgent) ScAgentID() wasmtypes.ScAgentID {
@@ -49,5 +50,5 @@ func (a *SoloAgent) Balance(color ...wasmtypes.ScColor) int64 {
 
 func (a *SoloAgent) Mint(amount int64) (wasmtypes.ScColor, error) {
 	color, err := a.Env.MintTokens(a.Pair, uint64(amount))
-	return SoloConvertor{}.ScColor(color), err
+	return wasmhost.WasmConvertor{}.ScColor(color), err
 }

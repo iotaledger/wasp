@@ -7,8 +7,8 @@ package wasmtypes
 
 const (
 	AddressEd25519 byte = 0 // length 32
-	AddressAlias   byte = 1 // actually 8, length 20
-	AddressNFT     byte = 2 // actually 16, length 20
+	AddressNFT     byte = 1 // actually 16, length 20
+	AddressAlias   byte = 2 // actually 8, length 20
 
 	ScAddressLength = 33
 )
@@ -47,7 +47,7 @@ func AddressFromBytes(buf []byte) ScAddress {
 	if len(buf) != ScAddressLength {
 		panic("invalid Address length")
 	}
-	if buf[0] > AddressNFT {
+	if buf[0] > AddressAlias {
 		panic("invalid Address type")
 	}
 	return addressFromBytesUnchecked(buf)

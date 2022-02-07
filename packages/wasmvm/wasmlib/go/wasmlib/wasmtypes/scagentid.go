@@ -57,7 +57,7 @@ func AgentIDFromBytes(buf []byte) ScAgentID {
 	if len(buf) != ScAgentIDLength {
 		panic("invalid AgentID length")
 	}
-	if buf[0] > AddressNFT {
+	if buf[0] > AddressAlias {
 		panic("invalid AgentID address type")
 	}
 	return ScAgentID{

@@ -21,11 +21,6 @@ $#if map proxyMap proxyMethods3
 $#if basetype proxyBaseType proxyOtherType
 `,
 	// *******************************
-	// TODO when will this be called, and if so, fix it
-	"proxyOtherType": `
-$#if typedef proxyTypeDef proxyStruct
-`,
-	// *******************************
 	"proxyArray": `
     $fldName(): sc.ArrayOf$mut$FldType {
 		return new sc.ArrayOf$mut$FldType(this.proxy.root(sc.$Kind$FldName));
@@ -54,18 +49,9 @@ $#if this proxyMapThis proxyMapOther
 	}
 `,
 	// *******************************
-	// TODO when will this be called, and if so, fix it
-	"proxyTypeDef": `
-    $oldName(): sc.$mut$OldType {
-		let subID = wasmlib.getObjectID(this.mapID, $varID, $varType);
-		return new sc.$mut$OldType(subID);
-	}
-`,
-	// *******************************
-	// TODO when will this be called, and if so, fix it
-	"proxyStruct": `
+	"proxyOtherType": `
     $fldName(): sc.$mut$FldType {
-		return new sc.$mut$FldType(this.mapID, $varID);
+		return new sc.$mut$FldType(this.proxy.root(sc.$Kind$FldName));
 	}
 `,
 }

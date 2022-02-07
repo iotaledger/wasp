@@ -35,7 +35,7 @@ var (
 
 type SoloContext struct {
 	Chain     *solo.Chain
-	Convertor SoloConvertor
+	Convertor wasmhost.WasmConvertor
 	creator   *SoloAgent
 	Err       error
 	Hprog     hashing.HashValue
